@@ -13,7 +13,7 @@ array(string) channels = ({ });
 
 void console(object stdin, Stdio.Buffer buf)
 {
-	while (string line=buf->match("%s\n")) //Will usually happen exactly once, but if you type before lastchan is set, it might loop
+	while (string line=buf->match("%s\n")) //Will usually happen exactly once
 		execcommand(line);
 }
 
