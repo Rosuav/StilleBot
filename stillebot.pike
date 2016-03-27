@@ -31,6 +31,12 @@ void execcommand(string line)
 		G->irc->part_channel("#"+chan);
 		channels -= ({"#"+chan});
 	}
+	else if (line == "/update")
+	{
+		write("%%% Reloading all...\n");
+		bootstrap_all();
+		write("%%% Reload completed.\n");
+	}
 	else if (sscanf(line, "/update %s", string file))
 	{
 		write("%%% Updating "+file+"\n");
@@ -46,6 +52,13 @@ void bootstrap(string c)
 	if (!compiled) werror("Compilation failed for "+c+"\n");
 	if (mixed ex=catch {compiled(c);}) werror(describe_backtrace(ex)+"\n");
 	werror("Bootstrapped "+c+"\n");
+}
+
+void bootstrap_all()
+{
+	bootstrap("globals.pike");
+	bootstrap("connection.pike");
+	foreach (sort(get_dir("modules")), string fn) bootstrap("modules/"+fn);
 }
 
 int main(int argc,array(string) argv)
@@ -78,9 +91,7 @@ channels: rosuav ellalune lara_cr cookingfornoobs
 		write("Edit twitchbot_config.txt to make this bot work!\n");
 		return 0;
 	}
-	bootstrap("globals.pike");
-	bootstrap("connection.pike");
-	foreach (sort(get_dir("modules")), string fn) bootstrap("modules/"+fn);
+	bootstrap_all();
 	Stdio.stdin->set_buffer_mode(Stdio.Buffer(),0);
 	Stdio.stdin->set_read_callback(console);
 	if (has_value(argv,"--gui"))
