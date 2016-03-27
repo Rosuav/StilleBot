@@ -103,6 +103,7 @@ channels: rosuav ellalune lara_cr cookingfornoobs
 		write("Edit twitchbot_config.txt to make this bot work!\n");
 		return 0;
 	}
+	bootstrap("globals.pike");
 	bootstrap("connection.pike");
 	Stdio.stdin->set_buffer_mode(Stdio.Buffer(),0);
 	Stdio.stdin->set_read_callback(console);
