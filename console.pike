@@ -3,13 +3,13 @@ void execcommand(string line)
 	if (sscanf(line, "/join %s", string chan))
 	{
 		write("%%% Joining #"+chan+"\n");
-		G->irc->join_channel("#"+chan);
+		G->G->irc->join_channel("#"+chan);
 		G->channels += ({"#"+chan});
 	}
 	else if (sscanf(line, "/part %s", string chan))
 	{
 		write("%%% Parting #"+chan+"\n");
-		G->irc->part_channel("#"+chan);
+		G->G->irc->part_channel("#"+chan);
 		G->channels -= ({"#"+chan});
 	}
 	else if (line == "/update")
