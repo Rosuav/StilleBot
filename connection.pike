@@ -1,5 +1,5 @@
 object irc;
-mapping(string:string) commands = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_commands.json")||"{}");
+mapping(string:string) commands = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_commands.json")||"{}"); //BROKEN
 
 void reconnect()
 {
@@ -51,40 +51,6 @@ class channel_notif
 
 	void not_join(object who) {write("%sJoin %s: %s\e[0m\n",color,name,who->nick);}
 	void not_part(object who,string message,object executor) {write("%sPart %s: %s\e[0m\n",color,name,who->nick);}
-
-	void cmd_hostthis(object person, string param) {send_message("#"+person->nick, "/host "+name[1..]);}
-	void cmd_addcmd(object person, string param)
-	{
-		if (sscanf(param, "!%s %s", string cmd, string response) == 2)
-		{
-			//Create a new command
-			string newornot = commands["!"+cmd] ? "Updated" : "Created new";
-			commands["!"+cmd] = response;
-			Stdio.write_file("twitchbot_commands.json", string_to_utf8(Standards.JSON.encode(commands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL)));
-			send_message(name, sprintf("@%s: %s command !%s", person->nick, newornot, cmd));
-		}
-	}
-	#if 0
-	void cmd_tz(object person, string param)
-	{
-		string tz = timezone_info(param);
-		while (sizeof(tz) > 200)
-		{
-			sscanf(tz, "%200s%s %s", string piece, string word, tz);
-			send_message(name, sprintf("@%s: %s%s ...", person->nick, piece, word));
-		}
-		send_message(name, sprintf("@%s: %s", person->nick, tz));
-	}
-	#endif
-
-	void cmd_help(object person, string param)
-	{
-		array(string) cmds=({ });
-		foreach (indices(this), string attr) if (sscanf(attr, "cmd_%s", string c)) cmds+=({"!"+c});
-		cmds += indices(commands);
-		sort(cmds);
-		send_message(name, sprintf("@%s: Available commands are:%{ %s%}", person->nick, cmds));
-	}
 
 	void not_message(object person,string msg)
 	{

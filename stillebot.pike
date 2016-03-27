@@ -11,21 +11,6 @@ mapping G = ([]);
 mapping config = ([]);
 array(string) channels = ({ });
 
-mapping timezones;
-
-string timezone_info(string tz)
-{
-	if (!tz || tz=="") return "Regions are: " + sort(indices(timezones))*", ";
-	mapping|string region = timezones;
-	foreach (lower_case(tz)/"/", string part) if (!mappingp(region=region[part])) break;
-	if (undefinedp(region))
-		return "Unknown region "+tz+" - use '!tz' to list";
-	if (mappingp(region))
-		return "Locations in region "+tz+": "+sort(indices(region))*", ";
-	if (catch {return region+" - "+Calendar.Gregorian.Second()->set_timezone(region)->format_time();})
-		return "Unable to figure out the time in that location, sorry.";
-}
-
 void console(object stdin, Stdio.Buffer buf)
 {
 	while (string line=buf->match("%s\n")) //Will usually happen exactly once, but if you type before lastchan is set, it might loop
@@ -66,16 +51,6 @@ void bootstrap(string c)
 int main(int argc,array(string) argv)
 {
 	add_constant("G", this);
-	timezones = ([]);
-	foreach (sort(Calendar.TZnames.zonenames()), string zone)
-	{
-		array(string) parts = lower_case(zone)/"/";
-		mapping tz = timezones;
-		foreach (parts[..<1], string region)
-			if (!tz[region]) tz = tz[region] = ([]);
-			else tz = tz[region];
-		tz[parts[-1]] = zone;
-	}
 	if (!file_stat("twitchbot_config.txt"))
 	{
 		Stdio.write_file("twitchbot_config.txt",#"# twitchbot.pike config file
