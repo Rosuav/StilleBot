@@ -3,7 +3,7 @@ object irc;
 void reconnect()
 {
 	//NOTE: This appears to be creating duplicate channel joinings, for some reason.
-	if (irc) write("%% Reconnecting\n");
+	if (irc) werror("%% Reconnecting\n");
 	G->G->irc = irc = Protocols.IRC.Client("irc.chat.twitch.tv", G->config);
 	irc->cmd->cap("REQ","twitch.tv/membership");
 	irc->join_channel(G->channels[*]);

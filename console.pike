@@ -14,13 +14,13 @@ void execcommand(string line)
 	}
 	else if (line == "/update")
 	{
-		write("%%% Reloading all...\n");
+		werror("%%% Reloading all...\n");
 		G->bootstrap_all();
-		write("%%% Reload completed.\n");
+		werror("%%% Reload completed.\n");
 	}
 	else if (sscanf(line, "/update %s", string file))
 	{
-		write("%%% Updating "+file+"\n");
+		werror("%%% Updating "+file+"\n");
 		G->bootstrap(file);
 	}
 }
