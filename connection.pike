@@ -10,6 +10,9 @@ void reconnect()
 	irc->join_channel(G->channels[*]);
 }
 
+//NOTE: When this file gets updated, the queue will not be migrated.
+//The old queue will be pumped by the old code, and the new code will
+//have a new (empty) queue.
 int lastmsgtime = time();
 array msgqueue = ({ });
 void pump_queue()
