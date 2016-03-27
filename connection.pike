@@ -1,5 +1,4 @@
 object irc;
-mapping(string:string) commands = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_commands.json")||"{}"); //BROKEN
 
 void reconnect()
 {
@@ -57,8 +56,9 @@ class channel_notif
 		if (lower_case(person->nick) == lower_case(G->config->nick)) lastmsgtime = time(1);
 		if (function f = has_prefix(msg,"!") && G->G->commands[msg[1..]]) f(this, person, "");
 		if (function f = (sscanf(msg, "!%s %s", string cmd, string param) == 2) && G->G->commands[cmd]) f(this, person, param);
-		if (commands[msg]) send_message(name, commands[msg]);
-		if (sscanf(msg, "%s %s", string cmd, string param) && commands[cmd]) send_message(name, replace(commands[cmd], "%s", param));
+		if (string response = G->G->echocommands[msg]) send_message(name, response);
+		if (string response = sscanf(msg, "%s %s", string cmd, string param) && G->G->echocommands[cmd])
+			send_message(name, replace(response, "%s", param));
 		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
 		else msg = person->nick+": "+msg;
 		string pfx=sprintf("[%s] ",name);
