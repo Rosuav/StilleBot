@@ -61,11 +61,7 @@ channels: rosuav ellalune lara_cr cookingfornoobs
 		if (key=="channels") channels += "#" + (val/" ")[*];
 		else config[key] = val;
 	}
-	if (config->pass[0] == '<')
-	{
-		werror("Edit twitchbot_config.txt to make this bot work!\n");
-		return 0;
-	}
+	if (config->pass[0] == '<') exit(1, "Edit twitchbot_config.txt to make this bot work!\n");
 	bootstrap_all();
 	Stdio.stdin->set_buffer_mode(Stdio.Buffer(),0);
 	Stdio.stdin->set_read_callback(console);
