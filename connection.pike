@@ -52,7 +52,6 @@ class channel_notif
 	void not_join(object who) {write("%sJoin %s: %s\e[0m\n",color,name,who->nick);}
 	void not_part(object who,string message,object executor) {write("%sPart %s: %s\e[0m\n",color,name,who->nick);}
 
-	void cmd_hello(object person, string param) {send_message(name, "Hello, "+person->nick+"!");}
 	void cmd_hostthis(object person, string param) {send_message("#"+person->nick, "/host "+name[1..]);}
 	void cmd_addcmd(object person, string param)
 	{
@@ -90,8 +89,8 @@ class channel_notif
 	void not_message(object person,string msg)
 	{
 		if (lower_case(person->nick) == lower_case(G->config->nick)) lastmsgtime = time(1);
-		if (function f = has_prefix(msg,"!") && this["cmd_"+msg[1..]]) f(person, "");
-		if (function f = (sscanf(msg, "!%s %s", string cmd, string param) == 2) && this["cmd_"+cmd]) f(person, param);
+		if (function f = has_prefix(msg,"!") && G->G->commands[msg[1..]]) f(this, person, "");
+		if (function f = (sscanf(msg, "!%s %s", string cmd, string param) == 2) && G->G->commands[cmd]) f(this, person, param);
 		if (commands[msg]) send_message(name, commands[msg]);
 		if (sscanf(msg, "%s %s", string cmd, string param) && commands[cmd]) send_message(name, replace(commands[cmd], "%s", param));
 		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
@@ -109,4 +108,5 @@ void create()
 	if (!G->G->channelcolor) G->G->channelcolor = ([]);
 	irc = G->G->irc;
 	if (!irc) reconnect();
+	add_constant("send_message", send_message);
 }

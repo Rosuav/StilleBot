@@ -105,6 +105,7 @@ channels: rosuav ellalune lara_cr cookingfornoobs
 	}
 	bootstrap("globals.pike");
 	bootstrap("connection.pike");
+	foreach (sort(get_dir("modules")), string fn) bootstrap("modules/"+fn);
 	Stdio.stdin->set_buffer_mode(Stdio.Buffer(),0);
 	Stdio.stdin->set_read_callback(console);
 	if (has_value(argv,"--gui"))
