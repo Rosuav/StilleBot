@@ -10,38 +10,12 @@ and change your user and realname accordingly.
 mapping G = ([]);
 mapping config = ([]);
 array(string) channels = ({ });
+function(string:void) execcommand;
 
 void console(object stdin, Stdio.Buffer buf)
 {
 	while (string line=buf->match("%s\n")) //Will usually happen exactly once
 		execcommand(line);
-}
-
-void execcommand(string line)
-{
-	if (sscanf(line, "/join %s", string chan))
-	{
-		write("%%% Joining #"+chan+"\n");
-		G->irc->join_channel("#"+chan);
-		channels += ({"#"+chan});
-	}
-	else if (sscanf(line, "/part %s", string chan))
-	{
-		write("%%% Parting #"+chan+"\n");
-		G->irc->part_channel("#"+chan);
-		channels -= ({"#"+chan});
-	}
-	else if (line == "/update")
-	{
-		write("%%% Reloading all...\n");
-		bootstrap_all();
-		write("%%% Reload completed.\n");
-	}
-	else if (sscanf(line, "/update %s", string file))
-	{
-		write("%%% Updating "+file+"\n");
-		bootstrap(file);
-	}
 }
 
 void bootstrap(string c)
@@ -58,6 +32,7 @@ void bootstrap_all()
 {
 	bootstrap("globals.pike");
 	bootstrap("connection.pike");
+	bootstrap("console.pike");
 	foreach (sort(get_dir("modules")), string fn) bootstrap("modules/"+fn);
 }
 
