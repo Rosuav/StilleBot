@@ -46,6 +46,11 @@ void execcommand(string line)
 		G->irc->part_channel("#"+chan);
 		channels -= ({"#"+chan});
 	}
+	else if (sscanf(line, "/update %s", string file))
+	{
+		write("%%% Updating "+file+"\n");
+		bootstrap(file);
+	}
 }
 
 void bootstrap(string c)
