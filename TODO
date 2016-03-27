@@ -5,3 +5,4 @@
 * Quotes
 * Better GUI (as a separate file)
 * Per-channel echocommands?
+* Recognizing channels where the bot is a mod?
