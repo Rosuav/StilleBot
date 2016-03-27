@@ -63,7 +63,7 @@ channels: rosuav ellalune lara_cr cookingfornoobs
 	}
 	if (config->pass[0] == '<')
 	{
-		write("Edit twitchbot_config.txt to make this bot work!\n");
+		werror("Edit twitchbot_config.txt to make this bot work!\n");
 		return 0;
 	}
 	bootstrap_all();
