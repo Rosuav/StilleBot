@@ -73,6 +73,7 @@ void create()
 	G->config->connection_lost = reconnect;
 	if (!G->G->channelcolor) G->G->channelcolor = ([]);
 	irc = G->G->irc;
-	if (!irc) reconnect();
+	if (irc) destruct(irc); //HACK: Force reconnection every time
+	reconnect();
 	add_constant("send_message", send_message);
 }
