@@ -1,6 +1,5 @@
 * Bot-level permissions - some people can add commands, others not
 * Channel-level permissions - "all mods can do this". Would tie in with the above.
-* Channel uptime and online/offline status
 * Channel currency, because why not.
 * Quotes
 * Better GUI (as a separate file)
