@@ -7,7 +7,7 @@ http://twitchapps.com/tmi/
 and change your user and realname accordingly.
 */
 
-array(string) bootstrap_files = ({"globals.pike", "connection.pike", "console.pike", "modules"});
+array(string) bootstrap_files = ({"globals.pike", "connection.pike", "console.pike", "poll.pike", "modules"});
 mapping G = ([]);
 mapping config = ([]);
 array(string) channels = ({ });
