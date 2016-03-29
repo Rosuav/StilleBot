@@ -7,6 +7,7 @@ http://twitchapps.com/tmi/
 and change your user and realname accordingly.
 */
 
+array(string) bootstrap_files = ({"globals.pike", "connection.pike", "console.pike", "modules"});
 mapping G = ([]);
 mapping config = ([]);
 array(string) channels = ({ });
@@ -18,22 +19,24 @@ void console(object stdin, Stdio.Buffer buf)
 		execcommand(line);
 }
 
-void bootstrap(string c)
+object bootstrap(string c)
 {
-	program compiled;
+	program|object compiled;
 	mixed ex=catch {compiled=compile_file(c);};
-	if (ex) {werror("Exception in compile!\n"); werror(ex->describe()+"\n"); return;}
+	if (ex) {werror("Exception in compile!\n"); werror(ex->describe()+"\n"); return 0;}
 	if (!compiled) werror("Compilation failed for "+c+"\n");
-	if (mixed ex=catch {compiled(c);}) werror(describe_backtrace(ex)+"\n");
+	if (mixed ex=catch {compiled = compiled(c);}) werror(describe_backtrace(ex)+"\n");
 	werror("Bootstrapped "+c+"\n");
+	return compiled;
 }
 
 void bootstrap_all()
 {
-	bootstrap("globals.pike");
-	bootstrap("connection.pike");
-	bootstrap("console.pike");
-	foreach (sort(get_dir("modules")), string fn) bootstrap("modules/"+fn);
+	object main = bootstrap(__FILE__);
+	if (!main || !main->bootstrap_files) {werror("UNABLE TO RESET ALL\n"); return;}
+	foreach (bootstrap_files = main->bootstrap_files, string fn)
+		if (file_stat(fn)->isdir) foreach (sort(get_dir(fn)), string f) bootstrap(fn+"/"+f);
+		else bootstrap(fn);
 }
 
 int main(int argc,array(string) argv)
