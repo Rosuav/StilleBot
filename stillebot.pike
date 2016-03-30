@@ -53,7 +53,7 @@ pass: <password>
 # List the channels you want to monitor. Only these channels will
 # be logged, and commands will be noticed only if they're in one
 # of these channels. Any number of channels can be specified.
-channels: rosuav ellalune lara_cr cookingfornoobs
+channels: rosuav ellalune lara_cr cookingfornoobs sweetsandbeats
 ");
 	}
 	foreach (Stdio.read_file("twitchbot_config.txt")/"\n", string l)
