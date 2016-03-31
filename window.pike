@@ -544,8 +544,9 @@ class mainwindow
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
 	constant elements=({"kwd:Channel", "?allcmds:All commands active", "+notes:Notes"});
 	constant persist_key = "channels";
+	mapping(string:mapping(string:mixed)) items = persist->setdefault(persist_key,([])); //Necessary because we bypass ::create()
 	constant is_subwindow = 0;
-	void create() {window::create("mainwindow");}
+	void create() {window::create("mainwindow");} //Bypass the configdlg constructor which would pass on no args
 
 	GTK2.Widget makecontent()
 	{
