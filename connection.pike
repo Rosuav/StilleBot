@@ -4,7 +4,7 @@ void reconnect()
 {
 	//NOTE: This appears to be creating duplicate channel joinings, for some reason.
 	//HACK: Destroy and reconnect - this might solve the above problem. CJA 20160401.
-	if (irc) {destruct(irc); werror("%% Reconnecting\n");}
+	if (irc) {irc->close(); werror("%% Reconnecting\n");}
 	G->G->irc = irc = Protocols.IRC.Client("irc.chat.twitch.tv", G->config);
 	irc->cmd->cap("REQ","twitch.tv/membership");
 	irc->join_channel(("#"+indices(persist["channels"])[*])[*]);
