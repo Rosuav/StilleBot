@@ -548,11 +548,13 @@ class mainwindow
 	constant is_subwindow = 0;
 	void create() {window::create("mainwindow");} //Bypass the configdlg constructor which would pass on no args
 
-	GTK2.Widget makecontent()
+	void makewindow()
 	{
-		return two_column(collect_widgets() + ({
-			//Add non-channel stuff here
-		}));
+		::makewindow();
+		//Remove the close button - we don't need it.
+		//(You can still click the cross or press Alt-F4 or anything else.)
+		win->buttonbox->remove(win->stock_close);
+		destruct(win->stock_close);
 	}
 
 	void save_content(mapping(string:mixed) info)
