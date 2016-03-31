@@ -536,7 +536,7 @@ class configdlg
 //End code lifted from Gypsum
 
 //All GUI code starts with this file, which also constructs the primary window.
-//Normally, the "inherit window" line would be at top level, but in this case,
+//Normally, the "inherit configdlg" line would be at top level, but in this case,
 //the above class definitions have to happen before this one.
 class mainwindow
 {
