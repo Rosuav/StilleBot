@@ -551,9 +551,26 @@ class mainwindow
 	GTK2.Widget makecontent()
 	{
 		return two_column(collect_widgets() + ({
-			
+			//Add non-channel stuff here
 		}));
 	}
+
+	void save_content(mapping(string:mixed) info)
+	{
+		string kwd = win->kwd->get_text();
+		if (!G->G->irc->channels["#"+kwd])
+		{
+			write("%%% Joining #"+kwd+"\n");
+			G->G->irc->join_channel("#"+kwd);
+		}
+	}
+	void delete_content(string kwd,mapping(string:mixed) info)
+	{
+		write("%%% Parting #"+kwd+"\n");
+		G->G->irc->part_channel("#"+kwd);
+	}
+
+	void closewindow() {exit(0);}
 }
 
 void create(string name)

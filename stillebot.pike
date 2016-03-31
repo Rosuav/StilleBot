@@ -10,7 +10,6 @@ and change your user and realname accordingly.
 array(string) bootstrap_files = ({"persist.pike", "globals.pike", "connection.pike", "console.pike", "poll.pike", "modules", "window.pike"});
 mapping G = ([]);
 mapping config = ([]);
-array(string) channels = ({ });
 function(string:void) execcommand;
 
 void console(object stdin, Stdio.Buffer buf)
@@ -51,10 +50,6 @@ nick: <bot nickname here>
 realname: <bot real name here>
 # Get an OAuth2 key here: 
 pass: <password>
-# List the channels you want to monitor. Only these channels will
-# be logged, and commands will be noticed only if they're in one
-# of these channels. Any number of channels can be specified.
-channels: rosuav ellalune lara_cr cookingfornoobs sweetsandbeats
 ");
 	}
 	foreach (Stdio.read_file("twitchbot_config.txt")/"\n", string l)
@@ -62,8 +57,7 @@ channels: rosuav ellalune lara_cr cookingfornoobs sweetsandbeats
 		l = String.trim_all_whites(l);
 		if (l=="" || l[0]=='#') continue;
 		sscanf(l, "%s: %s", string key, string val); if (!val) continue;
-		if (key=="channels") channels += "#" + (val/" ")[*];
-		else config[key] = val;
+		config[key] = val;
 	}
 	if (config->pass[0] == '<') exit(1, "Edit twitchbot_config.txt to make this bot work!\n");
 	bootstrap_all();

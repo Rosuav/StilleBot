@@ -7,7 +7,7 @@ void reconnect()
 	if (irc) {destruct(irc); werror("%% Reconnecting\n");}
 	G->G->irc = irc = Protocols.IRC.Client("irc.chat.twitch.tv", G->config);
 	irc->cmd->cap("REQ","twitch.tv/membership");
-	irc->join_channel(G->channels[*]);
+	irc->join_channel(("#"+indices(persist["channels"])[*])[*]);
 }
 
 //NOTE: When this file gets updated, the queue will not be migrated.

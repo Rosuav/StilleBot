@@ -20,8 +20,8 @@ void streaminfo(string data)
 void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //TODO: Make the poll interval customizable
-	foreach (G->channels, string chan)
-		make_request("https://api.twitch.tv/kraken/streams/"+chan[1..], streaminfo);
+	foreach (indices(persist["channels"]), string chan)
+		make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo);
 }
 
 void create()
