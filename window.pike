@@ -569,6 +569,11 @@ class mainwindow
 			G->G->irc->join_channel("#"+kwd);
 		}
 	}
+	void load_content(mapping(string:mixed) info)
+	{
+		//TODO
+		string since = function_object(G->commands->uptime)->online_since(selecteditem());
+	}
 	void delete_content(string kwd,mapping(string:mixed) info)
 	{
 		write("%%% Parting #"+kwd+"\n");
