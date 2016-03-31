@@ -7,7 +7,7 @@ http://twitchapps.com/tmi/
 and change your user and realname accordingly.
 */
 
-array(string) bootstrap_files = ({"globals.pike", "connection.pike", "console.pike", "poll.pike", "modules"});
+array(string) bootstrap_files = ({"persist.pike", "globals.pike", "connection.pike", "console.pike", "poll.pike", "modules", "window.pike"});
 mapping G = ([]);
 mapping config = ([]);
 array(string) channels = ({ });
@@ -42,6 +42,7 @@ void bootstrap_all()
 int main(int argc,array(string) argv)
 {
 	add_constant("G", this);
+	G->argv = argv;
 	if (!file_stat("twitchbot_config.txt"))
 	{
 		Stdio.write_file("twitchbot_config.txt",#"# twitchbot.pike config file
@@ -68,14 +69,5 @@ channels: rosuav ellalune lara_cr cookingfornoobs sweetsandbeats
 	bootstrap_all();
 	Stdio.stdin->set_buffer_mode(Stdio.Buffer(),0);
 	Stdio.stdin->set_read_callback(console);
-	if (has_value(argv,"--gui"))
-	{
-		GTK2.setup_gtk(argv);
-		object ef=GTK2.Entry()->set_width_chars(40)->set_activates_default(1);
-		object btn=GTK2.Button()->set_size_request(0,0)->set_flags(GTK2.CAN_DEFAULT);
-		btn->signal_connect("clicked",lambda() {execcommand(ef->get_text()); ef->set_text("");});
-		GTK2.Window(0)->add(GTK2.Vbox(0,0)->add(ef)->pack_end(btn,0,0,0))->set_title("Twitch Bot")->show_all();
-		btn->grab_default();
-	}
 	return -1;
 }
