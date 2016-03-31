@@ -555,7 +555,10 @@ class mainwindow
 		//(You can still click the cross or press Alt-F4 or anything else.)
 		win->buttonbox->remove(win->stock_close);
 		destruct(win->stock_close);
+		win->buttonbox->add(win->update=GTK2.Button("Update code"));
 	}
+
+	void sig_update_clicked(object self) {G->bootstrap_all();}
 
 	void save_content(mapping(string:mixed) info)
 	{
