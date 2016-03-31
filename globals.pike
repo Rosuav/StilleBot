@@ -8,16 +8,20 @@ void create(string n)
 
 class command
 {
-	//Override this if the command should be available only in channels with "All Commands" selected
-	int process_privileged(object channel, object person, string param) { }
-	//Override this if the command should be available in all channels
-	int process(object channel, object person, string param)
+	constant require_allcmds = 0; //Set to 1 if this command should be available only if allcmds is set for the channel
+	constant require_moderator = 0; //Set to 1 if the command is mods-only
+	//Override this to do the command's actual functionality, after permission checks.
+	void process(object channel, object person, string param) { }
+
+	void check_perms(object channel, object person, string param)
 	{
-		if (channel->config->allcmds) process_privileged(channel, person, param);
+		if (require_allcmds && !channel->config->allcmds) return;
+		if (require_moderator && !channel->mods[person->user]) return;
+		process(channel, person, param);
 	}
 	void create(string name)
 	{
 		sscanf(explode_path(name)[-1],"%s.pike",name);
-		if (name) G->G->commands[name]=process;
+		if (name) G->G->commands[name]=check_perms;
 	}
 }

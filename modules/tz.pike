@@ -15,7 +15,7 @@ string timezone_info(string tz)
 		return "Unable to figure out the time in that location, sorry.";
 }
 
-int process(object channel, object person, string param)
+void process(object channel, object person, string param)
 {
 	string tz = timezone_info(param);
 	while (sizeof(tz) > 200)

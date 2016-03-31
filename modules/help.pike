@@ -1,6 +1,6 @@
 inherit command;
 
-int process(object channel, object person, string param)
+void process(object channel, object person, string param)
 {
 	array(string) cmds = indices(G->G->commands) + indices(G->G->echocommands);
 	sort(cmds);

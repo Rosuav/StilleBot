@@ -1,6 +1,6 @@
 inherit command;
 
-int process(object channel, object person, string param)
+void process(object channel, object person, string param)
 {
 	if (sscanf(param, "!%s %s", string cmd, string response) == 2)
 	{
