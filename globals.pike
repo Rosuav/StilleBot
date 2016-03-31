@@ -8,7 +8,13 @@ void create(string n)
 
 class command
 {
-	int process(object channel, object person, string param) { }
+	//Override this if the command should be available only in channels with "All Commands" selected
+	int process_privileged(object channel, object person, string param) { }
+	//Override this if the command should be available in all channels
+	int process(object channel, object person, string param)
+	{
+		if (channel->config->allcmds) process_privileged(channel, person, param);
+	}
 	void create(string name)
 	{
 		sscanf(explode_path(name)[-1],"%s.pike",name);

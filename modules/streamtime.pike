@@ -1,6 +1,6 @@
 inherit command;
 
-int process(object channel, object person, string param)
+int process_privileged(object channel, object person, string param)
 {
 	if (object started = G->G->stream_online_since[channel->name[1..]])
 	{

@@ -42,11 +42,13 @@ class channel_notif
 {
 	inherit Protocols.IRC.Channel;
 	string color;
-	void create() {call_out(setcolor,0);}
-	void setcolor() //Needs to happen after this->name is injected by Protocols.IRC.Client
+	mapping config;
+	void create() {call_out(configure,0);}
+	void configure() //Needs to happen after this->name is injected by Protocols.IRC.Client
 	{
 		if (!G->G->channelcolor[name]) {if (++G->G->nextcolor>7) G->G->nextcolor=1; G->G->channelcolor[name]=G->G->nextcolor;}
 		color = sprintf("\e[1;3%dm", G->G->channelcolor[name]);
+		config = persist["channels"][name[1..]];
 	}
 
 	void not_join(object who) {write("%sJoin %s: %s\e[0m\n",color,name,who->nick);}
