@@ -43,6 +43,7 @@ class channel_notif
 	inherit Protocols.IRC.Channel;
 	string color;
 	mapping config;
+	multiset mods=(<>);
 	void create() {call_out(configure,0);}
 	void configure() //Needs to happen after this->name is injected by Protocols.IRC.Client
 	{
@@ -67,6 +68,12 @@ class channel_notif
 		string pfx=sprintf("[%s] ",name);
 		int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
 		write("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
+	}
+	void not_mode(object who,string mode)
+	{
+		if (sscanf(mode, "+o %s", string newmod)) mods[newmod] = 1;
+		if (sscanf(mode, "-o %s", string outmod)) mods[outmod] = 1;
+		write("%sMode %s: %s %O\e[0m\n",color,name,who->nick,mode);
 	}
 }
 
