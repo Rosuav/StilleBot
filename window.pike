@@ -552,7 +552,9 @@ class mainwindow
 {
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
-	constant elements=({"kwd:Channel", "?allcmds:All commands active", "+notes:Notes", "'uptime:"});
+	constant elements=({"kwd:Channel", "?allcmds:All commands active", "+notes:Notes", "'uptime:",
+		"Currency name", "#Payout interval", "#payout_offline:Offline divisor [0 = none]", "#payout_mod:Mod multiplier",
+	});
 	constant persist_key = "channels";
 	mapping(string:mapping(string:mixed)) items = persist->setdefault(persist_key,([])); //Necessary because we bypass ::create()
 	constant is_subwindow = 0;
@@ -573,7 +575,12 @@ class mainwindow
 	void save_content(mapping(string:mixed) info)
 	{
 		string kwd = win->kwd->get_text();
-		if (!G->G->irc->channels["#"+kwd])
+		if (object chan=G->G->irc->channels["#"+kwd])
+		{
+			write("%%% Saving data for #"+kwd+"\n");
+			chan->save();
+		}
+		else
 		{
 			write("%%% Joining #"+kwd+"\n");
 			G->G->irc->join_channel("#"+kwd);

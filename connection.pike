@@ -46,6 +46,7 @@ class channel_notif
 	multiset mods=(<>);
 	mapping(string:int) viewers = ([]);
 	mapping(string:int) viewertime;
+	mapping(string:array(int)) wealth;
 	mixed save_call_out;
 
 	void create() {call_out(configure,0);}
@@ -54,9 +55,8 @@ class channel_notif
 		if (!G->G->channelcolor[name]) {if (++G->G->nextcolor>7) G->G->nextcolor=1; G->G->channelcolor[name]=G->G->nextcolor;}
 		color = sprintf("\e[1;3%dm", G->G->channelcolor[name]);
 		config = persist["channels"][name[1..]];
-		mapping vt = persist->setdefault("viewertime", ([]));
-		if (!vt[name]) vt[name] = ([]);
-		viewertime = vt[name];
+		viewertime = persist->path("viewertime", name);
+		if (config->currency && config->currency!="") wealth = persist->path("wealth", name);
 		save_call_out = call_out(save, 300);
 	}
 
@@ -67,10 +67,21 @@ class channel_notif
 		remove_call_out(save_call_out); save_call_out = call_out(save, 300);
 		if (!as_at) as_at = time();
 		int count = 0;
+		int payout_div = wealth && (G->G->stream_online_since[name[1..]] ? 1 : config->payout_offline);
 		foreach (viewers; string user; int start) if (start && as_at > start)
 		{
-			viewertime[user] += as_at-start;
+			int t = as_at-start;
+			viewertime[user] += t;
 			viewers[user] = as_at;
+			if (payout_div)
+			{
+				if (!wealth[user]) wealth[user] = ({0, 0});
+				if (int mul = mods[user] && config->payout_mod) t *= mul;
+				t /= payout_div; //If offline payout is 1:3, divide the time spent by 3 and discard the loose seconds.
+				t += wealth[user][1];
+				wealth[user][0] += t / config->payout;
+				wealth[user][1] = t % config->payout;
+			}
 			++count;
 		}
 		write("[Saved %d viewer times for channel %s]\n", count, name);
