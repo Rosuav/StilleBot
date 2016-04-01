@@ -107,8 +107,7 @@ class channel_notif
 		if (function f = (sscanf(msg, "!%s %s", string cmd, string param) == 2) && G->G->commands[cmd]) return f(this, person, param);
 		if (string cur = config->currency!="" && config->currency)
 		{
-			//Note that !currency will work, as will !<currency-name>.
-			//And don't set the currency name to "currency" or it'll happen twice :)
+			//Note that !currency will work (cf the above code), but !<currency-name> is the recommended way.
 			if (msg == "!"+cur) return G->G->commands->currency(this, person, "");
 			if (sscanf(msg, "!"+cur+" %s", string param) == 1) return G->G->commands->currency(this, person, param);
 		}
