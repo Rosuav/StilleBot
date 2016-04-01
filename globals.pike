@@ -25,3 +25,13 @@ class command
 		if (name) G->G->commands[name]=check_perms;
 	}
 }
+
+string describe_time(int tm)
+{
+	string msg = "";
+	if (int t = tm/86400) {msg += sprintf(", %d days", t); tm %= 86400;}
+	if (int t = tm/3600) {msg += sprintf(", %d hours", t); tm %= 3600;}
+	if (int t = tm/60) {msg += sprintf(", %d minutes", t); tm %= 60;}
+	if (tm) msg += sprintf(", %d seconds", tm);
+	return msg[2..];
+}
