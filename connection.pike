@@ -52,8 +52,8 @@ class channel_notif
 		config = persist["channels"][name[1..]];
 	}
 
-	void not_join(object who) {write("%sJoin %s: %s\e[0m\n",color,name,who->nick);}
-	void not_part(object who,string message,object executor) {write("%sPart %s: %s\e[0m\n",color,name,who->nick);}
+	void not_join(object who) {write("%sJoin %s: %s\e[0m\n",color,name,who->user);}
+	void not_part(object who,string message,object executor) {write("%sPart %s: %s\e[0m\n",color,name,who->user);}
 
 	void not_message(object person,string msg)
 	{
