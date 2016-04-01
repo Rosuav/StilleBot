@@ -552,7 +552,7 @@ class mainwindow
 {
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
-	constant elements=({"kwd:Channel", "?allcmds:All commands active", "+notes:Notes"});
+	constant elements=({"kwd:Channel", "?allcmds:All commands active", "+notes:Notes", "'uptime:"});
 	constant persist_key = "channels";
 	mapping(string:mapping(string:mixed)) items = persist->setdefault(persist_key,([])); //Necessary because we bypass ::create()
 	constant is_subwindow = 0;
@@ -581,8 +581,8 @@ class mainwindow
 	}
 	void load_content(mapping(string:mixed) info)
 	{
-		//TODO
-		string since = function_object(G->commands->uptime)->online_since(selecteditem());
+		if (G->G->commands->uptime && selecteditem())
+			win->uptime->set_text(function_object(G->G->commands->uptime)->channel_uptime(selecteditem()) || "");
 	}
 	void delete_content(string kwd,mapping(string:mixed) info)
 	{
