@@ -61,17 +61,19 @@ class channel_notif
 	}
 
 	void destroy() {save(); remove_call_out(save_call_out);}
-	void save()
+	void save(int|void as_at)
 	{
 		//Save everyone's online time on code reload and periodically
 		remove_call_out(save_call_out); save_call_out = call_out(save, 300);
-		int now = time();
-		foreach (viewers; string user; int start)
+		if (!as_at) as_at = time();
+		int count = 0;
+		foreach (viewers; string user; int start) if (start && as_at > start)
 		{
-			viewertime[user] += now-start;
-			viewers[user] = start;
+			viewertime[user] += as_at-start;
+			viewers[user] = as_at;
+			++count;
 		}
-		write("[Saved %d viewer times for channel %s]\n", sizeof(viewers), name);
+		write("[Saved %d viewer times for channel %s]\n", count, name);
 		persist->save();
 	}
 	void not_join(object who) {write("%sJoin %s: %s\e[0m\n",color,name,who->user); viewers[who->user] = time(1);}
