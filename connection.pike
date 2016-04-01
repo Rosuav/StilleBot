@@ -47,7 +47,6 @@ class channel_notif
 	mapping(string:int) viewers = ([]);
 	mapping(string:int) viewertime;
 	mixed save_call_out;
-	int is_online;
 
 	void create() {call_out(configure,0);}
 	void configure() //Needs to happen after this->name is injected by Protocols.IRC.Client
