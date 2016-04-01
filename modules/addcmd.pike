@@ -1,6 +1,6 @@
 inherit command;
 
-void process(object channel, object person, string param)
+string process(object channel, object person, string param)
 {
 	if (sscanf(param, "!%s %s", string cmd, string response) == 2)
 	{
@@ -9,8 +9,9 @@ void process(object channel, object person, string param)
 		G->G->echocommands["!"+cmd] = response;
 		string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 		Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
-		send_message(channel->name, sprintf("@%s: %s command !%s", person->nick, newornot, cmd));
+		return sprintf("@$$: %s command !%s", newornot, cmd);
 	}
+	return "Check usage [TODO]";
 }
 
 void create(string name)
