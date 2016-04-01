@@ -35,3 +35,9 @@ string describe_time(int tm)
 	if (tm) msg += sprintf(", %d seconds", tm);
 	return msg[2..];
 }
+
+string channel_uptime(string channel)
+{
+	if (object started = G->G->stream_online_since[channel])
+		return describe_time(started->distance(Calendar.now())->how_many(Calendar.Second()));
+}

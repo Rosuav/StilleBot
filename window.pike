@@ -581,8 +581,8 @@ class mainwindow
 	}
 	void load_content(mapping(string:mixed) info)
 	{
-		if (G->G->commands->uptime && selecteditem())
-			win->uptime->set_text(function_object(G->G->commands->uptime)->channel_uptime(selecteditem()) || "");
+		if (selecteditem())
+			win->uptime->set_text(channel_uptime(selecteditem()) || "");
 	}
 	void delete_content(string kwd,mapping(string:mixed) info)
 	{
