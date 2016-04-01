@@ -15,6 +15,7 @@ string timezone_info(string tz)
 		return "Unable to figure out the time in that location, sorry.";
 }
 
+//TODO: Make string return capable of doing this wrapping automatically
 void process(object channel, object person, string param)
 {
 	string tz = timezone_info(param);
