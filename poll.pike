@@ -11,8 +11,32 @@ void streaminfo(string data)
 {
 	mapping info = Standards.JSON.decode(data);
 	sscanf(info->_links->self, "https://api.twitch.tv/kraken/streams/%s", string name);
-	if (!info->stream) m_delete(G->G->stream_online_since, name);
-	else G->G->stream_online_since[name] = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->stream->created_at);
+	if (!info->stream)
+	{
+		if (m_delete(G->G->stream_online_since, name))
+		{
+			write("** Channel %s noticed offline at %s **\n", name, Calendar.now()->format_nice());
+			if (object chan = G->G->irc->channels["#"+name])
+			{
+				chan->save(); //We don't get the offline time, so we'll pretend it was online all up until we noticed.
+				chan->is_online = 0;
+			}
+		}
+	}
+	else
+	{
+		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->stream->created_at);
+		if (!G->G->stream_online_since[name])
+		{
+			write("** Channel %s went online at %s **\n", name, started->format_nice());
+			if (object chan = G->G->irc->channels["#"+name])
+			{
+				chan->save(started->unix_time());
+				chan->is_online = 1;
+			}
+		}
+		G->G->stream_online_since[name] = started;
+	}
 	//write("%O\n", G->G->stream_online_since);
 	//write("%s: %O\n", name, info->stream);
 }
