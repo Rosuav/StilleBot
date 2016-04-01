@@ -11,13 +11,14 @@ class command
 	constant require_allcmds = 0; //Set to 1 if this command should be available only if allcmds is set for the channel
 	constant require_moderator = 0; //Set to 1 if the command is mods-only
 	//Override this to do the command's actual functionality, after permission checks.
-	void process(object channel, object person, string param) { }
+	//Return a string to send that string, with "@$$" to @-notify the user.
+	string process(object channel, object person, string param) { }
 
-	void check_perms(object channel, object person, string param)
+	string check_perms(object channel, object person, string param)
 	{
-		if (require_allcmds && !channel->config->allcmds) return;
-		if (require_moderator && !channel->mods[person->user]) return;
-		process(channel, person, param);
+		if (require_allcmds && !channel->config->allcmds) return 0;
+		if (require_moderator && !channel->mods[person->user]) return 0;
+		return process(channel, person, param);
 	}
 	void create(string name)
 	{
