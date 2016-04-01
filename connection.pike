@@ -106,6 +106,13 @@ class channel_notif
 		if (lower_case(person->nick) == lower_case(G->config->nick)) lastmsgtime = time(1);
 		if (function f = has_prefix(msg,"!") && G->G->commands[msg[1..]]) f(this, person, "");
 		if (function f = (sscanf(msg, "!%s %s", string cmd, string param) == 2) && G->G->commands[cmd]) f(this, person, param);
+		if (string cur = config->currency!="" && config->currency)
+		{
+			//Note that !currency will work, as will !<currency-name>.
+			//And don't set the currency name to "currency" or it'll happen twice :)
+			if (msg == "!"+cur) G->G->commands->currency(this, person, "");
+			if (sscanf(msg, "!"+cur+" %s", string param) == 1) G->G->commands->currency(this, person, param);
+		}
 		if (string response = G->G->echocommands[msg]) send_message(name, response);
 		if (string response = sscanf(msg, "%s %s", string cmd, string param) && G->G->echocommands[cmd])
 			send_message(name, replace(response, "%s", param));
