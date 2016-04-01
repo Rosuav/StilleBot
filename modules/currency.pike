@@ -3,9 +3,9 @@
 //will invoke this command.
 inherit command;
 
-void process(object channel, object person, string param)
+string process(object channel, object person, string param)
 {
-	if (!channel->wealth) return;
+	if (!channel->wealth) return 0;
 	if (param == "help")
 	{
 		string offline = "";
@@ -13,11 +13,10 @@ void process(object channel, object person, string param)
 			offline = sprintf(" while the channel is online, or every %s while offline",
 				describe_time(channel->config->payout * ofl));
 		//Note that the mod bonus isn't mentioned in "!currency help".
-		send_message(channel->name, sprintf("@%s: Earn %s by hanging out in chat! You earn one every %s%s.",
-			person->nick, channel->config->currency, describe_time(channel->config->payout), offline));
-		return;
+		return sprintf("@$$: Earn %s by hanging out in chat! You earn one every %s%s.",
+			channel->config->currency, describe_time(channel->config->payout), offline);
 	}
-	send_message(channel->name, sprintf("@%s: You have been with the stream for %s, and have earned %d %s.",
-			person->nick, describe_time(channel->viewertime[person->user]),
-			channel->wealth[person->user][0], channel->config->currency));
+	return sprintf("@$$: You have been with the stream for %s, and have earned %d %s.",
+		describe_time(channel->viewertime[person->user]),
+		channel->wealth[person->user][0], channel->config->currency);
 }
