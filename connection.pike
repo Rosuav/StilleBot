@@ -44,16 +44,49 @@ class channel_notif
 	string color;
 	mapping config;
 	multiset mods=(<>);
+	mapping(string:int) viewers = ([]);
+	mapping(string:int) viewertime;
+	mixed save_call_out;
+
 	void create() {call_out(configure,0);}
 	void configure() //Needs to happen after this->name is injected by Protocols.IRC.Client
 	{
 		if (!G->G->channelcolor[name]) {if (++G->G->nextcolor>7) G->G->nextcolor=1; G->G->channelcolor[name]=G->G->nextcolor;}
 		color = sprintf("\e[1;3%dm", G->G->channelcolor[name]);
 		config = persist["channels"][name[1..]];
+		mapping vt = persist->setdefault("viewertime", ([]));
+		if (!vt[name]) vt[name] = ([]);
+		viewertime = vt[name];
+		save_call_out = call_out(save, 300);
 	}
 
-	void not_join(object who) {write("%sJoin %s: %s\e[0m\n",color,name,who->user);}
-	void not_part(object who,string message,object executor) {write("%sPart %s: %s\e[0m\n",color,name,who->user);}
+	void destroy() {save(); remove_call_out(save_call_out);}
+	void save()
+	{
+		//Save everyone's online time on code reload and periodically
+		remove_call_out(save_call_out); save_call_out = call_out(save, 300);
+		int now = time();
+		foreach (viewers; string user; int start)
+		{
+			viewertime[user] += now-start;
+			viewers[user] = start;
+		}
+		write("[Saved %d viewer times for channel %s]\n", sizeof(viewers), name);
+		persist->save();
+	}
+	void not_join(object who) {write("%sJoin %s: %s\e[0m\n",color,name,who->user); viewers[who->user] = time(1);}
+	void not_part(object who,string message,object executor)
+	{
+		int tm = viewers[who->user];
+		string msg = "";
+		if (tm)
+		{
+			tm = time()-tm;
+			viewertime[who->user] += tm; persist->save();
+			msg = " [watched for " + describe_time(tm) + "]";
+		}
+		write("%sPart %s: %s%s\e[0m\n", color, name, who->user, msg);
+	}
 
 	void not_message(object person,string msg)
 	{
