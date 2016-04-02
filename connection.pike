@@ -45,8 +45,8 @@ class channel_notif
 	mapping config;
 	multiset mods=(<>);
 	mapping(string:int) viewers = ([]);
-	mapping(string:int) viewertime;
-	mapping(string:array(int)) wealth;
+	mapping(string:array(int)) viewertime; //({while online, while offline})
+	mapping(string:array(int)) wealth; //({actual currency, fractional currency})
 	mixed save_call_out;
 
 	void create() {call_out(configure,0);}
@@ -56,6 +56,7 @@ class channel_notif
 		color = sprintf("\e[1;3%dm", G->G->channelcolor[name]);
 		config = persist["channels"][name[1..]];
 		viewertime = persist->path("viewertime", name);
+		foreach (viewertime; string user; int|array val) if (intp(val)) m_delete(viewertime, user); persist->save();
 		if (config->currency && config->currency!="") wealth = persist->path("wealth", name);
 		save_call_out = call_out(save, 300);
 	}
@@ -67,11 +68,13 @@ class channel_notif
 		remove_call_out(save_call_out); save_call_out = call_out(save, 300);
 		if (!as_at) as_at = time();
 		int count = 0;
-		int payout_div = wealth && (G->G->stream_online_since[name[1..]] ? 1 : config->payout_offline);
+		int offline = !G->G->stream_online_since[name[1..]];
+		int payout_div = wealth && (offline ? config->payout_offline : 1);
 		foreach (viewers; string user; int start) if (start && as_at > start)
 		{
 			int t = as_at-start;
-			viewertime[user] += t;
+			if (!viewertime[user]) viewertime[user] = ({0,0});
+			viewertime[user][offline] += t;
 			viewers[user] = as_at;
 			if (payout_div)
 			{
@@ -90,11 +93,8 @@ class channel_notif
 	void not_join(object who) {write("%sJoin %s: %s\e[0m\n",color,name,who->user); viewers[who->user] = time(1);}
 	void not_part(object who,string message,object executor)
 	{
-		if (int tm = m_delete(viewers, who->user))
-		{
-			viewertime[who->user] += time()-tm;
-			persist->save();
-		}
+		save(); //TODO, maybe: Save just this viewer's data
+		m_delete(viewers, who->user);
 		write("%sPart %s: %s\e[0m\n", color, name, who->user);
 	}
 
