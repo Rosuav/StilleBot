@@ -90,7 +90,7 @@ class channel_notif
 	void not_join(object who) {write("%sJoin %s: %s\e[0m\n",color,name,who->user); viewers[who->user] = time(1);}
 	void not_part(object who,string message,object executor)
 	{
-		if (int tm = viewers[who->user])
+		if (int tm = m_delete(viewers, who->user))
 		{
 			viewertime[who->user] += time()-tm;
 			persist->save();
