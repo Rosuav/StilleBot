@@ -22,7 +22,7 @@ void streaminfo(string data)
 	}
 	else
 	{
-		G->G->channel_info[name] = info->stream->channel;
+		G->G->channel_info[name] = info->stream->channel; //Not cleared when the stream goes offline - this will retain "last sighted" info.
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->stream->created_at);
 		if (!G->G->stream_online_since[name])
 		{
