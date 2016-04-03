@@ -22,6 +22,7 @@ void streaminfo(string data)
 	}
 	else
 	{
+		G->G->channel_info[name] = info->stream->channel;
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->stream->created_at);
 		if (!G->G->stream_online_since[name])
 		{
@@ -45,6 +46,7 @@ void poll()
 void create()
 {
 	if (!G->G->stream_online_since) G->G->stream_online_since = ([]);
+	if (!G->G->channel_info) G->G->channel_info = ([]);
 	remove_call_out(G->G->poll_call_out);
 	poll();
 }
