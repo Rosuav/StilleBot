@@ -17,6 +17,6 @@ string process(object channel, object person, string param)
 			channel->config->currency, describe_time(channel->config->payout), offline);
 	}
 	return sprintf("@$$: You have been with the stream for %s, and have earned %d %s.",
-		describe_time(channel->viewertime[person->user][1]),
+		describe_time(channel->viewertime[person->user][0]),
 		channel->wealth[person->user][0], channel->config->currency);
 }
