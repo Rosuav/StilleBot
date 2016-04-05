@@ -92,7 +92,7 @@ class channel_notif
 			}
 			++count;
 		}
-		log("[Saved %d viewer times for channel %s]\n", count, name);
+		//write("[Saved %d viewer times for channel %s]\n", count, name);
 		persist->save();
 	}
 	void not_join(object who) {log("%sJoin %s: %s\e[0m\n",color,name,who->user); viewers[who->user] = time(1);}
