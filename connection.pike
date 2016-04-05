@@ -53,9 +53,13 @@ class channel_notif
 	void create() {call_out(configure,0);}
 	void configure() //Needs to happen after this->name is injected by Protocols.IRC.Client
 	{
-		if (!G->G->channelcolor[name]) {if (++G->G->nextcolor>7) G->G->nextcolor=1; G->G->channelcolor[name]=G->G->nextcolor;}
-		color = sprintf("\e[1;3%dm", G->G->channelcolor[name]);
 		config = persist["channels"][name[1..]];
+		if (config->chatlog)
+		{
+			if (!G->G->channelcolor[name]) {if (++G->G->nextcolor>7) G->G->nextcolor=1; G->G->channelcolor[name]=G->G->nextcolor;}
+			color = sprintf("\e[1;3%dm", G->G->channelcolor[name]);
+		}
+		else color = "\e[0m"; //Nothing will normally be logged, so don't allocate a color. If logging gets enabled, it'll take a reset to assign one.
 		viewertime = persist->path("viewertime", name);
 		foreach (viewertime; string user; int|array val) if (intp(val)) m_delete(viewertime, user); persist->save();
 		if (config->currency && config->currency!="") wealth = persist->path("wealth", name);
