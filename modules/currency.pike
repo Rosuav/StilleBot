@@ -16,6 +16,16 @@ string process(object channel, object person, string param)
 		return sprintf("@$$: Earn %s by hanging out in chat! You earn one every %s%s.",
 			channel->config->currency, describe_time(channel->config->payout), offline);
 	}
+	if (channel->mods[person->user] && sscanf(param, "top%d", int top) && top) //Hidden mod-only command
+	{
+		array people = indices(channel->wealth);
+		array wealth = sort(values(channel->wealth), people);
+		people = people[<top-1..]; wealth = wealth[<top-1..];
+		string msg = "";
+		foreach (people; int i; string person)
+			msg = sprintf("; %s: %d%s", person, wealth[i][0], msg);
+		return sprintf("@$$: The top %d hoarders of %s are: %s", sizeof(people), channel->config->currency, msg[2..]);
+	}
 	return sprintf("@$$: You have been with the stream for %s, and have earned %d %s.",
 		describe_time(channel->viewertime[person->user][0]),
 		channel->wealth[person->user][0], channel->config->currency);
