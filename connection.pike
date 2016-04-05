@@ -88,15 +88,15 @@ class channel_notif
 			}
 			++count;
 		}
-		write("[Saved %d viewer times for channel %s]\n", count, name);
+		log("[Saved %d viewer times for channel %s]\n", count, name);
 		persist->save();
 	}
-	void not_join(object who) {write("%sJoin %s: %s\e[0m\n",color,name,who->user); viewers[who->user] = time(1);}
+	void not_join(object who) {log("%sJoin %s: %s\e[0m\n",color,name,who->user); viewers[who->user] = time(1);}
 	void not_part(object who,string message,object executor)
 	{
 		save(); //TODO, maybe: Save just this viewer's data
 		m_delete(viewers, who->user);
-		write("%sPart %s: %s\e[0m\n", color, name, who->user);
+		log("%sPart %s: %s\e[0m\n", color, name, who->user);
 	}
 
 	string handle_command(object person, string msg)
@@ -123,13 +123,18 @@ class channel_notif
 		else msg = person->nick+": "+msg;
 		string pfx=sprintf("[%s] ",name);
 		int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
-		write("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
+		log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
 	}
 	void not_mode(object who,string mode)
 	{
 		if (sscanf(mode, "+o %s", string newmod)) mods[newmod] = 1;
 		if (sscanf(mode, "-o %s", string outmod)) mods[outmod] = 1;
-		write("%sMode %s: %s %O\e[0m\n",color,name,who->nick,mode);
+		log("%sMode %s: %s %O\e[0m\n",color,name,who->nick,mode);
+	}
+
+	void log(strict_sprintf_format fmt, sprintf_args ... args)
+	{
+		if (config->chatlog) write(fmt, @args);
 	}
 }
 
