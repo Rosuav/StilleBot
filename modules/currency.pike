@@ -26,6 +26,10 @@ string process(object channel, object person, string param)
 			msg = sprintf("; %s: %d%s", person, wealth[i][0], msg);
 		return sprintf("@$$: The top %d hoarders of %s are: %s", sizeof(people), channel->config->currency, msg[2..]);
 	}
+	if (array w = channel->mods[person->user] && channel->wealth[lower_case(param)])
+		return sprintf("@$$: %s has been with the stream for %s, and has earned %d %s.",
+			param, describe_time(channel->viewertime[lower_case(param)][0]),
+			w[0], channel->config->currency);
 	return sprintf("@$$: You have been with the stream for %s, and have earned %d %s.",
 		describe_time(channel->viewertime[person->user][0]),
 		channel->wealth[person->user][0], channel->config->currency);
