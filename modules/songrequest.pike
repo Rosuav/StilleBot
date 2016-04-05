@@ -34,3 +34,18 @@ string process(object channel, object person, string param)
 {
 	return "@$$: Song requests are not yet implemented.";
 }
+
+void create()
+{
+	//NOTE: Do not create a *file* called song_cache, as it'll mess with this :)
+	if (!file_stat("song_cache"))
+	{
+		mkdir("song_cache");
+		Stdio.write_file("song_cache/README", #"Requested song cache
+
+Files in this directory have been downloaded by and in response to the !songrequest
+command. See modules/songrequest.pike for more information. Any time StilleBot is
+not running song requests, the contents of this directory can be freely deleted.
+");
+	}
+}
