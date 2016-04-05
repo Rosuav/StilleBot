@@ -16,6 +16,8 @@ the concept of .part files for ones that aren't fully downloaded. This
 MAY be sufficient.) TODO: Allow mods to say "!songrequest force youtubeid"
 to delete and force redownloading.
 
+youtube-dl --prefer-ffmpeg -f bestaudio -o '%(duration)s-%(id)s' --match-filter 'duration < 600' YOUTUBE-ID
+
 The player is pretty simple. Invoke "cvlc --play-and-exit filename.m4a"
 and have an event on its termination. Edge cases: There might not be any
 currently-downloaded files (eg on first song request), so the downloader
