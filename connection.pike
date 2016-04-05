@@ -4,7 +4,7 @@ void reconnect()
 {
 	//NOTE: This appears to be creating duplicate channel joinings, for some reason.
 	//HACK: Destroy and reconnect - this might solve the above problem. CJA 20160401.
-	if (irc) {irc->close(); destruct(irc->raw); destruct(irc); werror("%% Reconnecting\n");}
+	if (irc) {irc->close(); destruct(irc); werror("%% Reconnecting\n");}
 	//TODO: Dodge the synchronous gethostbyname?
 	G->G->irc = irc = Protocols.IRC.Client("irc.chat.twitch.tv", G->config);
 	irc->cmd->cap("REQ","twitch.tv/membership");
@@ -148,7 +148,7 @@ void create()
 	G->config->connection_lost = reconnect;
 	if (!G->G->channelcolor) G->G->channelcolor = ([]);
 	irc = G->G->irc;
-	if (irc) destruct(irc); //HACK: Force reconnection every time
-	reconnect();
+	//if (!irc) //HACK: Force reconnection every time
+		reconnect();
 	add_constant("send_message", send_message);
 }
