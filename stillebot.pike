@@ -29,13 +29,15 @@ object bootstrap(string c)
 	return compiled;
 }
 
-void bootstrap_all()
+int bootstrap_all()
 {
 	object main = bootstrap(__FILE__);
-	if (!main || !main->bootstrap_files) {werror("UNABLE TO RESET ALL\n"); return;}
+	if (!main || !main->bootstrap_files) {werror("UNABLE TO RESET ALL\n"); return 1;}
+	int err = 0;
 	foreach (bootstrap_files = main->bootstrap_files, string fn)
-		if (file_stat(fn)->isdir) foreach (sort(get_dir(fn)), string f) bootstrap(fn+"/"+f);
-		else bootstrap(fn);
+		if (file_stat(fn)->isdir) foreach (sort(get_dir(fn)), string f) err += !bootstrap(fn+"/"+f);
+		else err += !bootstrap(fn);
+	return err;
 }
 
 int main(int argc,array(string) argv)
