@@ -64,6 +64,7 @@ class channel_notif
 		foreach (viewertime; string user; int|array val) if (intp(val)) m_delete(viewertime, user); persist->save();
 		if (config->currency && config->currency!="") wealth = persist->path("wealth", name);
 		save_call_out = call_out(save, 300);
+		mods[name[1..]] = 1; //HACK: Assume that the streamer is a mod. Makes for faster startup.
 	}
 
 	void destroy() {save(); remove_call_out(save_call_out);}
