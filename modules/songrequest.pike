@@ -16,8 +16,6 @@ the concept of .part files for ones that aren't fully downloaded. This
 MAY be sufficient.) TODO: Allow mods to say "!songrequest force youtubeid"
 to delete and force redownloading.
 
-youtube-dl --prefer-ffmpeg -f bestaudio -o '%(duration)s-%(id)s' --match-filter 'duration < 600' YOUTUBE-ID
-
 The player is pretty simple. Invoke "cvlc --play-and-exit filename.m4a"
 and have an event on its termination. Edge cases: There might not be any
 currently-downloaded files (eg on first song request), so the downloader
@@ -33,13 +31,129 @@ maybe even outright bannings ("FredTheTroll did nothing but rickroll us,
 so he's not allowed to request songs any more").
 */
 
-string process(object channel, object person, string param)
+void check_queue()
 {
-	return "@$$: Song requests are not yet implemented.";
+	if (check_queue != G->G->check_queue) {G->G->check_queue(); return;}
+	object p = G->G->songrequest_player;
+	if (p && !p->status()) return; //Already playing something.
+	m_delete(G->G, "songrequest_nowplaying");
+	mapping(string:array) cache = ([]);
+	foreach (get_dir("song_cache"), string fn)
+	{
+		if (fn == "README") continue;
+		sscanf(fn, "%d-%s-%s", int len, string id, string title);
+		if (has_suffix(title, ".part")) continue; //Ignore partial files
+		cache[id] = ({len, title, fn, id});
+	}
+	foreach (persist["songrequests"], string song)
+	{
+		if (G->G->songrequest_downloading[song]) continue; //Can't play if still downloading (or can we??)
+		persist["songrequests"] -= ({song});
+		if (!cache[song]) continue; //Not in cache and not downloading. Presumably the download failed - drop it.
+		//Okay, so we can play this one.
+		G->G->songrequest_nowplaying = cache[song];
+		G->G->songrequest_player = Process.create_process(
+			({"cvlc", "--play-and-exit", "song_cache/"+cache[song][2]}),
+			([
+				"callback": check_queue,
+				"stdout": Stdio.File("/dev/null", "w")->pipe(Stdio.PROP_IPC),
+				"stderr": Stdio.File("/dev/null", "w")->pipe(Stdio.PROP_IPC),
+			])
+		);
+	}
 }
 
-void create()
+class youtube_dl(string videoid, string reqchan, string requser)
 {
+	inherit Process.create_process;
+	Stdio.File stdout, stderr;
+
+	void create()
+	{
+		stdout = Stdio.File(); stderr = Stdio.File();
+		stdout->set_read_callback(data_received);
+		::create(
+			({"youtube-dl",
+				"--prefer-ffmpeg", "-f","bestaudio",
+				"-o","%(duration)s-%(id)s-%(title)s", "--match-filter","duration < 600",
+				videoid
+			}),
+			([
+				"callback": download_complete,
+				"cwd": "song_cache",
+				"stdout": stdout->pipe(Stdio.PROP_IPC|Stdio.PROP_NONBLOCK),
+			])
+		);
+	}
+
+	void data_received(mixed id, string data)
+	{
+		if (sscanf(data, "[download] %s does not pass filter duration < %d, skipping", string title, int maxlen))
+		{
+			send_message(reqchan, sprintf("@%s: Video too long [max = %s]: %s", requser, describe_time(maxlen), title));
+			return;
+		}
+		werror("youtube-dl for %s: %O\n", videoid, data);
+	}
+
+	void download_complete()
+	{
+		wait();
+		stdout->close();
+		stderr->close();
+		m_delete(G->G->songrequest_downloading, videoid);
+		check_queue();
+	}
+}
+
+string process(object channel, object person, string param)
+{
+	if (!G->G->stream_online_since[channel->name[1..]]) return "@$$: Song requests are available only while the channel is online.";
+	werror("songrequest: %O\n", param);
+	if (param == "status" && channel->mods[person->user])
+	{
+		foreach (sort(get_dir("song_cache")), string fn)
+		{
+			if (fn == "README") continue;
+			sscanf(fn, "%d-%s-%s", int len, string id, string title);
+			int partial = has_suffix(title, ".part"); if (partial) title = title[..<5];
+			send_message(channel->name, sprintf("%s: [%s]: %s %O",
+				partial ? "Partial download" : "Cached file",
+				describe_time(len), id, title));
+		}
+		foreach (G->G->songrequest_downloading; string videoid; object proc)
+			send_message(channel->name, "Currently downloading "+videoid+": status "+proc->status());
+		if (array x=G->G->songrequest_nowplaying)
+			send_message(channel->name, sprintf("Now playing [%s]: %O", describe_time(x[0]), x[1]));
+		return "Song queue: "+persist["songrequests"]*", ";
+	}
+	if (param == "skip" && channel->mods[person->user])
+	{
+		object p = G->G->songrequest_player;
+		if (!p) return "@$$: Nothing currently playing.";
+		p->kill(2); //Send SIGINT
+		return "@$$: Song skipped.";
+	}
+	if (param == "flush" && channel->mods[person->user])
+	{
+		persist["songrequests"] = ({ });
+		return "@$$: Song request queue flushed. After current song, silence.";
+	}
+	if (sizeof(param) != 11) return "@$$: Try !songrequest YOUTUBE-ID";
+	if (G->G->songrequest_nowplaying && G->G->songrequest_nowplaying[3] == param)
+		return "@$$: That's what's currently playing!";
+	if (has_value(persist["songrequests"], param)) return "@$$: Song is already in the queue";
+	persist["songrequests"] += ({param});
+	array found = glob("*-"+param+"*", get_dir("song_cache"));
+	if (sizeof(found)) {check_queue(); return "@$$: Added to queue [cache hit]";}
+	if (G->G->songrequest_downloading[param]) return "@$$: Added to queue [already downloading]";
+	G->G->songrequest_downloading[param] = youtube_dl(param, channel->name, person->user);
+	return "@$$: Added to queue [download started]";
+}
+
+void create(string name)
+{
+	::create(name);
 	//NOTE: Do not create a *file* called song_cache, as it'll mess with this :)
 	if (!file_stat("song_cache"))
 	{
@@ -51,4 +165,7 @@ command. See modules/songrequest.pike for more information. Any time StilleBot i
 not running song requests, the contents of this directory can be freely deleted.
 ");
 	}
+	if (!G->G->songrequest_downloading) G->G->songrequest_downloading = ([]);
+	if (!persist["songrequests"]) persist["songrequests"] = ({ });
+	G->G->check_queue = check_queue;
 }
