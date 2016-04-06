@@ -6,6 +6,7 @@ inherit command;
 string process(object channel, object person, string param)
 {
 	if (!channel->wealth) return 0;
+	channel->save();
 	if (param == "help")
 	{
 		string offline = "";
