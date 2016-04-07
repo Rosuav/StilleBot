@@ -573,7 +573,7 @@ class mainwindow
 	constant persist_key = "channels";
 	mapping(string:mapping(string:mixed)) items = persist->setdefault(persist_key,([])); //Necessary because we bypass ::create()
 	constant is_subwindow = 0;
-	void create() {window::create("mainwindow");} //Bypass the configdlg constructor which would pass on no args
+	void create() {window::create("mainwindow"); remake_content();} //Bypass the configdlg constructor which would pass on no args
 
 	void makewindow()
 	{
@@ -583,6 +583,23 @@ class mainwindow
 		win->buttonbox->remove(win->stock_close);
 		destruct(win->stock_close);
 		win->buttonbox->add(win->update=GTK2.Button("Update code"));
+	}
+
+	//This allows updating of the content block in a live configdlg.
+	//Downside: It probably *only* works (reliably) with the new 'elements'
+	//system; no guarantees about all the older ways of doing things. So
+	//it's not currently a core feature, and upstream Gypsum doesn't have it
+	//at all. Eventually, a new and not-backward-compatible configdlg may be
+	//created, with a new name, and it can have this kind of feature. (It
+	//needn't actually break active stuff - it'll just drop support for all
+	//the old and deprecated things, like the action button.)
+	GTK2.Widget make_content() {return win->contentblock = ::make_content();}
+	void remake_content()
+	{
+		object parent = win->contentblock->get_parent();
+		parent->remove(win->contentblock);
+		//win->contentblock->destroy();
+		parent->add(make_content()->show_all());
 	}
 
 	void sig_update_clicked(object self)
