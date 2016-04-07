@@ -108,6 +108,7 @@ class youtube_dl(string videoid, string reqchan, string requser)
 
 string process(object channel, object person, string param)
 {
+	if (!channel->config->songreq) return "@$$: Song requests are not currently active.";
 	if (!G->G->stream_online_since[channel->name[1..]]) return "@$$: Song requests are available only while the channel is online.";
 	werror("songrequest: %O\n", param);
 	if (param == "status" && channel->mods[person->user])
