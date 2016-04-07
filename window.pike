@@ -566,9 +566,10 @@ class mainwindow
 {
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
-	constant elements=({"kwd:Channel", "?allcmds:All commands active", "?chatlog:Log chat to console", "+notes:Notes", "'uptime:",
-		"Currency name", "#Payout interval", "#payout_offline:Offline divisor [0 = none]", "#payout_mod:Mod multiplier",
-	});
+	constant elements=({"kwd:Channel", "?allcmds:All commands active", "?chatlog:Log chat to console", "+notes:Notes", "'uptime:", ([
+		"Channel currency": ({"Currency name", "#Payout interval", "#payout_offline:Offline divisor [0 = none]", "#payout_mod:Mod multiplier"}),
+		"Song requests": ({"?songreq:Active", "#Length (seconds maximum)"}),
+	])});
 	constant persist_key = "channels";
 	mapping(string:mapping(string:mixed)) items = persist->setdefault(persist_key,([])); //Necessary because we bypass ::create()
 	constant is_subwindow = 0;
