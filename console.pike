@@ -1,3 +1,16 @@
+//Recursively enumerate files in a directory
+array(string) all_files(string dir)
+{
+	array ret = ({ });
+	foreach (sort(get_dir(dir)), string fn)
+	{
+		fn = dir+"/"+fn;
+		if (file_stat(fn)->isdir) ret += all_files(fn);
+		else ret += ({fn});
+	}
+	return ret;
+}
+
 void execcommand(string line)
 {
 	if (sscanf(line, "/join %s", string chan))
@@ -24,6 +37,18 @@ void execcommand(string line)
 	{
 		werror("%%% Updating "+file+"\n");
 		G->bootstrap(file);
+	}
+	else if (sscanf(line, "/playlist %s", string dir))
+	{
+		if (dir == "clear")
+		{
+			G->G->songrequest_playlist = ({ });
+			werror("%%% Cleared playlist.\n");
+			return;
+		}
+		werror("%%% Adding playlist files from "+dir+"...\n");
+		G->G->songrequest_playlist += all_files(dir);
+		werror("%%% Playlist now has "+sizeof(G->G->songrequest_playlist)+" files.\n");
 	}
 }
 

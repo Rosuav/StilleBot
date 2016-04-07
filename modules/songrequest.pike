@@ -51,6 +51,7 @@ void check_queue()
 	if (p && !p->status()) return; //Already playing something.
 	m_delete(G->G, "songrequest_nowplaying");
 	mapping(string:array) cache = read_cache();
+	string fn = 0;
 	foreach (persist["songrequests"], string song)
 	{
 		if (G->G->songrequest_downloading[song]) continue; //Can't play if still downloading (or can we??)
@@ -58,15 +59,22 @@ void check_queue()
 		if (!cache[song]) continue; //Not in cache and not downloading. Presumably the download failed - drop it.
 		//Okay, so we can play this one.
 		G->G->songrequest_nowplaying = cache[song];
+		fn = "song_cache/"+cache[song][2];
+		break;
+	}
+	if (!fn && sizeof(G->G->songrequest_playlist))
+		//Nothing in song request queue, but we have a playlist.
+		[fn, G->G->songrequest_playlist] = Array.shift(G->G->songrequest_playlist);
+	if (fn)
+		//We have something to play!
 		G->G->songrequest_player = Process.create_process(
-			({"cvlc", "--play-and-exit", "song_cache/"+cache[song][2]}),
+			({"cvlc", "--play-and-exit", fn}),
 			([
 				"callback": check_queue,
 				"stdout": Stdio.File("/dev/null", "w")->pipe(Stdio.PROP_IPC),
 				"stderr": Stdio.File("/dev/null", "w")->pipe(Stdio.PROP_IPC),
 			])
 		);
-	}
 }
 
 class youtube_dl(string videoid, string requser)
@@ -180,6 +188,7 @@ not running song requests, the contents of this directory can be freely deleted.
 ");
 	}
 	if (!G->G->songrequest_downloading) G->G->songrequest_downloading = ([]);
+	if (!G->G->songrequest_playlist) G->G->songrequest_playlist = ({ });
 	if (!persist["songrequests"]) persist["songrequests"] = ({ });
 	G->G->check_queue = check_queue;
 }
