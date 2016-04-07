@@ -600,6 +600,7 @@ class mainwindow
 		parent->remove(win->contentblock);
 		//win->contentblock->destroy();
 		parent->add(make_content()->show_all());
+		sig_sel_changed();
 	}
 
 	void sig_update_clicked(object self)
