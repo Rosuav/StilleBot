@@ -568,7 +568,7 @@ class mainwindow
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
 	constant elements=({"kwd:Channel", "?allcmds:All commands active", "?chatlog:Log chat to console", "+notes:Notes", "'uptime:", ([
 		"Channel currency": ({"Currency name", "#Payout interval", "#payout_offline:Offline divisor [0 = none]", "#payout_mod:Mod multiplier"}),
-		"Song requests": ({"?songreq:Active", "#Length (seconds maximum)"}),
+		"Song requests": ({"?songreq:Active", "#songreq_length:Max length (seconds)"}),
 	])});
 	constant persist_key = "channels";
 	mapping(string:mapping(string:mixed)) items = persist->setdefault(persist_key,([])); //Necessary because we bypass ::create()

@@ -31,12 +31,8 @@ maybe even outright bannings ("FredTheTroll did nothing but rickroll us,
 so he's not allowed to request songs any more").
 */
 
-void check_queue()
+mapping(string:array) read_cache()
 {
-	if (check_queue != G->G->check_queue) {G->G->check_queue(); return;}
-	object p = G->G->songrequest_player;
-	if (p && !p->status()) return; //Already playing something.
-	m_delete(G->G, "songrequest_nowplaying");
 	mapping(string:array) cache = ([]);
 	foreach (get_dir("song_cache"), string fn)
 	{
@@ -45,6 +41,16 @@ void check_queue()
 		if (has_suffix(title, ".part")) continue; //Ignore partial files
 		cache[id] = ({len, title, fn, id});
 	}
+	return cache;
+}
+
+void check_queue()
+{
+	if (check_queue != G->G->check_queue) {G->G->check_queue(); return;}
+	object p = G->G->songrequest_player;
+	if (p && !p->status()) return; //Already playing something.
+	m_delete(G->G, "songrequest_nowplaying");
+	mapping(string:array) cache = read_cache();
 	foreach (persist["songrequests"], string song)
 	{
 		if (G->G->songrequest_downloading[song]) continue; //Can't play if still downloading (or can we??)
@@ -63,19 +69,21 @@ void check_queue()
 	}
 }
 
-class youtube_dl(string videoid, string reqchan, string requser)
+class youtube_dl(string videoid, string requser)
 {
 	inherit Process.create_process;
 	Stdio.File stdout, stderr;
+	string reqchan;
 
-	void create()
+	void create(object channel)
 	{
+		reqchan = channel->name;
 		stdout = Stdio.File(); stderr = Stdio.File();
 		stdout->set_read_callback(data_received);
 		::create(
 			({"youtube-dl",
 				"--prefer-ffmpeg", "-f","bestaudio",
-				"-o","%(duration)s-%(id)s-%(title)s", "--match-filter","duration < 600",
+				"-o","%(duration)s-%(id)s-%(title)s", "--match-filter","duration < "+channel->config->songreq_length,
 				videoid
 			}),
 			([
@@ -144,11 +152,16 @@ string process(object channel, object person, string param)
 	if (G->G->songrequest_nowplaying && G->G->songrequest_nowplaying[3] == param)
 		return "@$$: That's what's currently playing!";
 	if (has_value(persist["songrequests"], param)) return "@$$: Song is already in the queue";
+	mapping cache = read_cache();
+	if (array info = cache[param])
+	{
+		if (info[0] > channel->config->songreq_length) return "@$$: Song too long to request [cache hit]";
+		check_queue();
+		return "@$$: Added to queue [cache hit]";
+	}
 	persist["songrequests"] += ({param});
-	array found = glob("*-"+param+"*", get_dir("song_cache"));
-	if (sizeof(found)) {check_queue(); return "@$$: Added to queue [cache hit]";}
 	if (G->G->songrequest_downloading[param]) return "@$$: Added to queue [already downloading]";
-	G->G->songrequest_downloading[param] = youtube_dl(param, channel->name, person->user);
+	G->G->songrequest_downloading[param] = youtube_dl(param, person->user, channel);
 	return "@$$: Added to queue [download started]";
 }
 
