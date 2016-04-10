@@ -11,6 +11,12 @@ array(string) all_files(string dir)
 	return ret;
 }
 
+//Policy: Everything possible here should also be possible through the GUI.
+//This won't always be perfect (eg multi-select in a file dlg is not the same
+//as recursively collecting files from a dir, for "/playlist"), but since the
+//commands here are completely non-discoverable, it's much better to not work
+//in a way that some users will be completely unable to use.
+//But having /update here is a Good Thing, in situations of GUI breakage :)
 void execcommand(string line)
 {
 	if (sscanf(line, "/join %s", string chan))
