@@ -593,6 +593,9 @@ class mainwindow
 	//created, with a new name, and it can have this kind of feature. (It
 	//needn't actually break active stuff - it'll just drop support for all
 	//the old and deprecated things, like the action button.)
+	//Also, this can't adequately handle removal/renaming of objects. There's
+	//no guarantee that the old objects will be destroyed; in fact, they'll
+	//probably hang around in win[].
 	GTK2.Widget make_content() {return win->contentblock = ::make_content();}
 	void remake_content()
 	{
