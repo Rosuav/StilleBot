@@ -66,6 +66,8 @@ void check_queue()
 		//Nothing in song request queue, but we have a playlist.
 		[fn, G->G->songrequest_playlist] = Array.shift(G->G->songrequest_playlist);
 	if (fn)
+	{
+		G->G->songrequest_lastplayed = fn;
 		//We have something to play!
 		G->G->songrequest_player = Process.create_process(
 			({"cvlc", "--play-and-exit", fn}),
@@ -75,6 +77,7 @@ void check_queue()
 				"stderr": Stdio.File("/dev/null", "w")->pipe(Stdio.PROP_IPC),
 			])
 		);
+	}
 }
 
 class youtube_dl(string videoid, string requser)

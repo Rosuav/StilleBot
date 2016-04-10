@@ -562,6 +562,72 @@ class configdlg
 //All GUI code starts with this file, which also constructs the primary window.
 //Normally, the "inherit configdlg" line would be at top level, but in this case,
 //the above class definitions have to happen before this one.
+
+class songrequests
+{
+	inherit window;
+	constant is_subwindow = 0;
+	void create() {::create();}
+
+	void makewindow()
+	{
+		win->mainwindow=GTK2.Window((["title":"Song request status"]))->add(GTK2.Vbox(0, 10)
+			->add(GTK2.Frame("Requested songs")->add(win->songreq=GTK2.Label()))
+			->add(GTK2.Frame("Playlist")->add(win->playlist=GTK2.Label()))
+			->add(GTK2.Frame("Downloading")->add(win->downloading=GTK2.Label()))
+			->add(win->nowplaying=GTK2.Label())
+			->add(GTK2.HbuttonBox()
+				->add(win->add_playlist=GTK2.Button("Add to playlist"))
+				->add(win->check_queue=GTK2.Button("Check queue"))
+				->add(stock_close())
+			)
+		);
+		update();
+	}
+
+	void update()
+	{
+		win->songreq->set_text(persist["songrequests"]*"\n");
+		win->playlist->set_text(G->G->songrequest_playlist*"\n");
+		win->downloading->set_text(indices(G->G->songrequest_downloading)*"\n");
+		array nowplaying = G->G->songrequest_nowplaying;
+		string tm = "";
+		if (!nowplaying)
+		{
+			//Not playing any requested song. Maybe we have a playlist song.
+			//We don't track lengths of those, though, so that'll be blank.
+			if (G->G->songrequest_player) nowplaying = ({0, G->G->songrequest_lastplayed});
+			else nowplaying = ({0, "(nothing)"});
+		}
+		if (nowplaying[0]) tm = " [" + describe_time(nowplaying[0]) + "]";
+		win->nowplaying->set_text(sprintf("Now playing%s:\n%s", tm, nowplaying[1]));
+	}
+
+	void sig_add_playlist_clicked()
+	{
+		object dlg=GTK2.FileChooserDialog("Add file(s) to playlist",win->mainwindow,
+			GTK2.FILE_CHOOSER_ACTION_OPEN,({(["text":"Send","id":GTK2.RESPONSE_OK]),(["text":"Cancel","id":GTK2.RESPONSE_CANCEL])})
+		)->set_select_multiple(1)->show_all();
+		dlg->signal_connect("response",add_playlist_response);
+		dlg->set_current_folder(".");
+	}
+
+	void add_playlist_response(object dlg,int btn)
+	{
+		array fn=dlg->get_filenames();
+		dlg->destroy();
+		if (btn != GTK2.RESPONSE_OK) return;
+		G->G->songrequest_playlist += fn;
+		update();
+	}
+
+	void sig_check_queue_clicked()
+	{
+		G->G->check_queue();
+		update();
+	}
+}
+
 class mainwindow
 {
 	inherit configdlg;
@@ -583,6 +649,7 @@ class mainwindow
 		win->buttonbox->remove(win->stock_close);
 		destruct(win->stock_close);
 		win->buttonbox->add(win->update=GTK2.Button("Update code"));
+		win->buttonbox->add(win->songreqstatus=GTK2.Button("Song requests"));
 	}
 
 	//This allows updating of the content block in a live configdlg.
@@ -613,6 +680,11 @@ class mainwindow
 		if (string winid = getenv("WINDOWID")) //On some Linux systems we can pop the console up.
 			catch (Process.create_process(({"wmctrl", "-ia", winid}))->wait()); //Try, but don't mind errors, eg if wmctrl isn't installed.
 		MessageBox(0, GTK2.MESSAGE_ERROR, GTK2.BUTTONS_OK, err + " compilation error(s) - see console", win->mainwindow);
+	}
+
+	void sig_songreqstatus_clicked()
+	{
+		songrequests();
 	}
 
 	void save_content(mapping(string:mixed) info)
