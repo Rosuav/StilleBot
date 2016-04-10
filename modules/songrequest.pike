@@ -128,6 +128,11 @@ class youtube_dl(string videoid, string requser)
 
 string process(object channel, object person, string param)
 {
+	//TODO: Somehow do these two checks also in check_queue().
+	//There's this weird situation where song requests are configured
+	//in per-channel settings, but are global; maybe there needs to be
+	//a special status for "my channel" (the streamer's), which may not
+	//necessarily (and usually will not be) the bot's channel.
 	if (!channel->config->songreq) return "@$$: Song requests are not currently active.";
 	if (!G->G->stream_online_since[channel->name[1..]]) return "@$$: Song requests are available only while the channel is online.";
 	werror("songrequest: %O\n", param);
