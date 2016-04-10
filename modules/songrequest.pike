@@ -164,6 +164,7 @@ string process(object channel, object person, string param)
 	if (array info = cache[param])
 	{
 		if (info[0] > channel->config->songreq_length) return "@$$: Song too long to request [cache hit]";
+		persist["songrequests"] += ({param});
 		check_queue();
 		return "@$$: Added to queue [cache hit]";
 	}
