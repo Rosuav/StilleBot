@@ -94,7 +94,8 @@ class youtube_dl(string videoid, string requser)
 		::create(
 			({"youtube-dl",
 				"--prefer-ffmpeg", "-f","bestaudio",
-				"-o","%(duration)s-%(id)s-%(title)s", "--match-filter","duration < "+channel->config->songreq_length,
+				"-o", "%(duration)s-%(id)s-%(title)s",
+				"--match-filter", "duration < " + channel->config->songreq_length,
 				videoid
 			}),
 			([
