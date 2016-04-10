@@ -114,6 +114,7 @@ class channel_notif
 			if (msg == "!"+cur) return G->G->commands->currency(this, person, "");
 			if (sscanf(msg, "!"+cur+" %s", string param) == 1) return G->G->commands->currency(this, person, param);
 		}
+		if (!config->allcmds) return 0;
 		if (string response = G->G->echocommands[msg]) return response;
 		if (string response = sscanf(msg, "%s %s", string cmd, string param) && G->G->echocommands[cmd])
 			return replace(response, "%s", param);
