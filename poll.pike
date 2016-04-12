@@ -50,3 +50,29 @@ void create()
 	remove_call_out(G->G->poll_call_out);
 	poll();
 }
+
+#if !constant(G)
+mapping G = (["G":([])]);
+mapping persist = (["channels": ({ })]);
+
+int streams;
+void streaminfo_display(string data)
+{
+	mapping info = Standards.JSON.decode(data);
+	sscanf(info->_links->self, "https://api.twitch.tv/kraken/streams/%s", string name);
+	if (info->stream)
+	{
+		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->stream->created_at);
+		write("Channel %s went online at %s\n", name, started->format_nice());
+	}
+	else write("Channel %s is offline.\n", name);
+	if (!--streams) exit(0);
+}
+int main(int argc, array(string) argv)
+{
+	streams = argc-1;
+	foreach (argv[1..], string chan)
+		make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo_display);
+	return streams && -1;
+}
+#endif
