@@ -189,8 +189,7 @@ class window
 
 	//Subclasses should call ::dosignals() and then append to to win->signals. This is the
 	//only place where win->signals is reset. Note that it's perfectly legitimate to have
-	//non-signals in the array; for future compatibility, ensure that everything is either
-	//a gtksignal object or the integer 0, though as of 20150103 nothing depends on this.
+	//nulls in the array, as exploited here.
 	void dosignals()
 	{
 		//NOTE: This does *not* use += here - this is where we (re)initialize the array.
@@ -201,6 +200,7 @@ class window
 		collect_signals("sig_", win);
 	}
 
+	//NOTE: prefix *must* be a single 'word' followed by an underscore. Stuff breaks otherwise.
 	void collect_signals(string prefix, mapping(string:mixed) searchme,mixed|void arg)
 	{
 		foreach (indices(this),string key) if (has_prefix(key,prefix) && callablep(this[key]))
@@ -209,7 +209,8 @@ class window
 			//(Note that classes are callable, so they can be used as signal handlers too.)
 			//This may pose problems, as it's possible for x and y to have underscores in
 			//them, so we scan along and find the shortest such name that exists in win[].
-			//If there's none, ignore it. This can create ambiguities, but only in really
+			//If there's none, ignore the callable (currently without any error or warning,
+			//despite the explicit prefix). This can create ambiguities, but only in really
 			//contrived situations, so I'm deciding not to care. :)
 			array parts=(key/"_")[1..];
 			int b4=(parts[0]=="b4"); if (b4) parts=parts[1..]; //sig_b4_some_object_some_signal will connect _before_ the normal action
@@ -395,6 +396,8 @@ class configdlg
 			if (string descr=descr_key && items[kwd][descr_key]) ls->set_value(iter,1,descr);
 		}
 		if (allow_new) ls->set_value(win->new_iter=ls->append(),0,"-- New --");
+		//TODO: Have a way to customize this a little (eg a menu bar) without
+		//completely replacing this function.
 		win->mainwindow=GTK2.Window(windowprops)
 			->add(GTK2.Vbox(0,10)
 				->add(GTK2.Hbox(0,5)
