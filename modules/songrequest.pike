@@ -32,6 +32,7 @@ for different people ("subscribers can request songs for free"); and
 maybe even outright bannings ("FredTheTroll did nothing but rickroll us,
 so he's not allowed to request songs any more").
 */
+array(function) status_update = ({ }); //Call this to update all open status windows
 
 mapping(string:array) read_cache()
 {
@@ -52,6 +53,7 @@ void check_queue()
 	object p = G->G->songrequest_player;
 	if (p && !p->status()) return; //Already playing something.
 	m_delete(G->G, "songrequest_nowplaying");
+	call_out(status_update, 0);
 	mapping(string:array) cache = read_cache();
 	string fn = 0;
 	foreach (persist["songrequests"], string song)
@@ -86,7 +88,8 @@ class menu_clicked
 {
 	inherit window;
 	constant is_subwindow = 0;
-	void create() {::create();}
+	void create() {::create(); status_update += ({update});}
+	void closewindow() {::closewindow(); status_update -= ({update});}
 
 	void makewindow()
 	{
@@ -142,7 +145,7 @@ class menu_clicked
 
 	void sig_check_queue_clicked()
 	{
-		G->G->check_queue();
+		check_queue();
 		update();
 	}
 }
