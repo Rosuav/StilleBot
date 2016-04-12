@@ -643,6 +643,8 @@ class mainwindow
 
 	void makewindow()
 	{
+		//TODO: Have a menu bar, which other modules can add stuff
+		//to. Then move all songrequest stuff to there.
 		::makewindow();
 		//Remove the close button - we don't need it.
 		//(You can still click the cross or press Alt-F4 or anything else.)
