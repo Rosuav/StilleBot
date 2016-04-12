@@ -89,7 +89,7 @@ class menu_clicked
 	inherit window;
 	constant is_subwindow = 0;
 	void create() {::create(); status_update += ({update});}
-	void closewindow() {::closewindow(); status_update -= ({update});}
+	void closewindow() {status_update -= ({update}); ::closewindow();}
 
 	void makewindow()
 	{
