@@ -566,6 +566,25 @@ class configdlg
 //Normally, the "inherit configdlg" line would be at top level, but in this case,
 //the above class definitions have to happen before this one.
 
+class menu_item
+{
+	//Provide:
+	constant menu_label=0; //(string) The initial label for your menu item.
+	void menu_clicked() { }
+	//End provide.
+
+	mapping(string:mixed) mi=([]);
+	void create(string|void name)
+	{
+		if (!name) return;
+		sscanf(explode_path(name)[-1],"%s.pike",name);
+		if (object old=G->G->menu_items[name]) old->destroy();
+		object mi = GTK2.MenuItem(menu_label);
+		G->G->windows->mainwindow->win->optmenu->add(mi->show());
+		mi->signal_connect("activate",menu_clicked);
+	}
+}
+
 class songrequests
 {
 	inherit window;
@@ -646,14 +665,19 @@ class mainwindow
 
 	void makewindow()
 	{
-		//TODO: Have a menu bar, which other modules can add stuff
-		//to. Then move all songrequest stuff to there.
 		::makewindow();
+		//Add a menu bar. This is a bit of a hack.
+		object vbox = win->mainwindow->get_child();
+		object menubar = GTK2.MenuBar()
+			->add(GTK2.MenuItem("_Options")->set_submenu(win->optmenu=GTK2.Menu()
+				->add(win->update=GTK2.MenuItem("Update code"))
+			));
+		vbox->pack_start(menubar,0,0,0)->reorder_child(menubar, 0);
 		//Remove the close button - we don't need it.
 		//(You can still click the cross or press Alt-F4 or anything else.)
 		win->buttonbox->remove(win->stock_close);
 		destruct(win->stock_close);
-		win->buttonbox->add(win->update=GTK2.Button("Update code"));
+		//win->buttonbox->add(win->update=GTK2.Button("Update code"));
 		win->buttonbox->add(win->songreqstatus=GTK2.Button("Song requests"));
 	}
 
@@ -678,7 +702,7 @@ class mainwindow
 		sig_sel_changed();
 	}
 
-	void sig_update_clicked(object self)
+	void sig_update_activate(object self)
 	{
 		int err = G->bootstrap_all();
 		if (!err) return; //All OK? Be silent.
@@ -723,11 +747,15 @@ class mainwindow
 void create(string name)
 {
 	add_constant("window", window);
+	add_constant("menu_item", menu_item);
 	if (!G->G->windows)
 	{
 		//First time initialization
 		G->G->windows = ([]);
 		G->G->argv = GTK2.setup_gtk(G->G->argv);
 	}
+	G->G->window = this;
+	if (G->G->menuitems) values(G->G->menuitems)->destroy();
+	G->G->menuitems = ([]);
 	mainwindow();
 }
