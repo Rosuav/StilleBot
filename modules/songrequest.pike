@@ -1,5 +1,7 @@
 inherit command;
 constant require_allcmds = 1;
+inherit menu_item;
+constant menu_label = "Song requests";
 /* Currently a stub for notetaking.
 
 Proposal: Implement song requests using a download cache and VLC.
@@ -77,6 +79,71 @@ void check_queue()
 				"stderr": Stdio.File("/dev/null", "w")->pipe(Stdio.PROP_IPC),
 			])
 		);
+	}
+}
+
+class menu_clicked
+{
+	inherit window;
+	constant is_subwindow = 0;
+	void create() {::create();}
+
+	void makewindow()
+	{
+		win->mainwindow=GTK2.Window((["title":"Song request status"]))->add(GTK2.Vbox(0, 10)
+			->add(GTK2.Frame("Requested songs")->add(win->songreq=GTK2.Label()))
+			->add(GTK2.Frame("Playlist")->add(win->playlist=GTK2.Label()))
+			->add(GTK2.Frame("Downloading")->add(win->downloading=GTK2.Label()))
+			->add(win->nowplaying=GTK2.Label())
+			->add(GTK2.HbuttonBox()
+				->add(win->add_playlist=GTK2.Button("Add to playlist"))
+				->add(win->check_queue=GTK2.Button("Check queue"))
+				->add(stock_close())
+			)
+		);
+		update();
+	}
+
+	void update()
+	{
+		win->songreq->set_text(persist["songrequests"]*"\n");
+		win->playlist->set_text(G->G->songrequest_playlist*"\n");
+		win->downloading->set_text(indices(G->G->songrequest_downloading)*"\n");
+		array nowplaying = G->G->songrequest_nowplaying;
+		string tm = "";
+		if (!nowplaying)
+		{
+			//Not playing any requested song. Maybe we have a playlist song.
+			//We don't track lengths of those, though, so that'll be blank.
+			if (G->G->songrequest_player) nowplaying = ({0, G->G->songrequest_lastplayed});
+			else nowplaying = ({0, "(nothing)"});
+		}
+		if (nowplaying[0]) tm = " [" + describe_time(nowplaying[0]) + "]";
+		win->nowplaying->set_text(sprintf("Now playing%s:\n%s", tm, nowplaying[1]));
+	}
+
+	void sig_add_playlist_clicked()
+	{
+		object dlg=GTK2.FileChooserDialog("Add file(s) to playlist",win->mainwindow,
+			GTK2.FILE_CHOOSER_ACTION_OPEN,({(["text":"Send","id":GTK2.RESPONSE_OK]),(["text":"Cancel","id":GTK2.RESPONSE_CANCEL])})
+		)->set_select_multiple(1)->show_all();
+		dlg->signal_connect("response",add_playlist_response);
+		dlg->set_current_folder(".");
+	}
+
+	void add_playlist_response(object dlg,int btn)
+	{
+		array fn=dlg->get_filenames();
+		dlg->destroy();
+		if (btn != GTK2.RESPONSE_OK) return;
+		G->G->songrequest_playlist += fn;
+		update();
+	}
+
+	void sig_check_queue_clicked()
+	{
+		G->G->check_queue();
+		update();
 	}
 }
 
