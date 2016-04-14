@@ -195,6 +195,7 @@ class youtube_dl(string videoid, string requser)
 	{
 		if (sscanf(data, "[download] %s does not pass filter duration < %d, skipping", string title, int maxlen))
 		{
+			//TODO: Run "youtube-dl --prefer-ffmpeg --get-duration "+videoid, and show the actual duration
 			send_message(reqchan, sprintf("@%s: Video too long [max = %s]: %s", requser, describe_time(maxlen), title));
 			return;
 		}
