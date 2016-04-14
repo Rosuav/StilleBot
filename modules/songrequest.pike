@@ -40,7 +40,7 @@ mapping(string:array) read_cache()
 	foreach (get_dir("song_cache"), string fn)
 	{
 		if ((<"README", "nowplaying.txt">)[fn]) continue;
-		sscanf(fn, "%d-%s-%s", int len, string id, string title);
+		sscanf(fn, "%d-%11[^\n]-%s", int len, string id, string title);
 		if (has_suffix(title, ".part")) continue; //Ignore partial files
 		cache[id] = ({len, title, fn, id});
 	}
