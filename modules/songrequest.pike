@@ -24,7 +24,6 @@ maybe even outright bannings ("FredTheTroll did nothing but rickroll us,
 so he's not allowed to request songs any more").
 */
 
-string nowplaying_info;
 void statusfile()
 {
 	array nowplaying = G->G->songrequest_nowplaying;
@@ -46,10 +45,10 @@ void statusfile()
 		else msg = "(nothing)";
 	}
 	Stdio.write_file("song_cache/nowplaying.txt", msg + "\n");
-	nowplaying_info = msg;
+	G->G->songrequest_nowplaying_info = msg;
 }
 
-array(function) status_update = ({statusfile}); //Call this to update all open status windows
+array(function) status_update = ({statusfile}); //Call this to update all open status windows (and the status file)
 
 mapping(string:array) read_cache()
 {
@@ -146,7 +145,7 @@ class menu_clicked
 		win->songreq->set_text(reqs);
 		win->playlist->set_text(G->G->songrequest_playlist*"\n");
 		win->downloading->set_text(indices(G->G->songrequest_downloading)*"\n");
-		string msg = nowplaying_info;
+		string msg = G->G->songrequest_nowplaying_info;
 		if (G->G->songrequest_player) msg += "\nBeen playing "+describe_time(time() - G->G->songrequest_started);
 		win->nowplaying->set_text(msg);
 	}
@@ -172,6 +171,7 @@ class menu_clicked
 	void sig_check_queue_clicked()
 	{
 		check_queue();
+		status_update();
 		update();
 	}
 }
