@@ -30,10 +30,10 @@ class command
 string describe_time(int tm)
 {
 	string msg = "";
-	if (int t = tm/86400) {msg += sprintf(", %d days", t); tm %= 86400;}
-	if (int t = tm/3600) {msg += sprintf(", %d hours", t); tm %= 3600;}
-	if (int t = tm/60) {msg += sprintf(", %d minutes", t); tm %= 60;}
-	if (tm) msg += sprintf(", %d seconds", tm);
+	if (int t = tm/86400) {msg += sprintf(", %d day%s", t, t>1?"s":""); tm %= 86400;}
+	if (int t = tm/3600) {msg += sprintf(", %d hour%s", t, t>1?"s":""); tm %= 3600;}
+	if (int t = tm/60) {msg += sprintf(", %d minute%s", t, t>1?"s":""); tm %= 60;}
+	if (tm) msg += sprintf(", %d second%s", tm, tm>1?"s":"");
 	return msg[2..];
 }
 
