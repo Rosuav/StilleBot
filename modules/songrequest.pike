@@ -292,6 +292,7 @@ string process(object channel, object person, string param)
 	//on follower/subscriber status, or anything else the channel owner wishes.
 	persist["songrequests"] += ({param});
 	persist["songrequest_meta"] += ({(["by": person->user, "at": time()])});
+	msg += sprintf(" - song #%d in the queue", sizeof(persist["songrequests"]));
 	check_queue();
 	return msg;
 }
