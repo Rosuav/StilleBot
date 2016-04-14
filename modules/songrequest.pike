@@ -203,8 +203,6 @@ class youtube_dl(string videoid, string requser)
 
 string process(object channel, object person, string param)
 {
-	//TODO: Track who requested which songs (incl retaining it after
-	//the track's started playing, and maybe after it stops, too).
 	if (!channel->config->songreq) return "@$$: Song requests are not currently active.";
 	if (!G->G->stream_online_since[channel->name[1..]]) return "@$$: Song requests are available only while the channel is online.";
 	G->G->songrequest_channel = channel->name[1..];
@@ -259,6 +257,7 @@ string process(object channel, object person, string param)
 		}
 	}
 	persist["songrequests"] += ({param});
+	persist["songrequest_meta"] += ({(["by": person->user, "at": time()])});
 	check_queue();
 }
 
@@ -279,5 +278,6 @@ not running song requests, the contents of this directory can be freely deleted.
 	if (!G->G->songrequest_downloading) G->G->songrequest_downloading = ([]);
 	if (!G->G->songrequest_playlist) G->G->songrequest_playlist = ({ });
 	if (!persist["songrequests"]) persist["songrequests"] = ({ });
+	if (!persist["songrequest_meta"]) persist["songrequest_meta"] = ({ });
 	G->G->check_queue = check_queue;
 }
