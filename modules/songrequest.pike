@@ -280,6 +280,9 @@ string process(object channel, object person, string param)
 			msg = "@$$: Added to queue [download started]";
 		}
 	}
+	//This is the only place where the queue gets added to.
+	//This is, therefore, the place to add a channel currency cost, a restriction
+	//on follower/subscriber status, or anything else the channel owner wishes.
 	persist["songrequests"] += ({param});
 	persist["songrequest_meta"] += ({(["by": person->user, "at": time()])});
 	check_queue();
