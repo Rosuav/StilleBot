@@ -189,7 +189,6 @@ class youtube_dl(string videoid, string requser)
 			send_message(reqchan, sprintf("@%s: Video too long [max = %s]: %s", requser, describe_time(maxlen), title));
 			return;
 		}
-		werror("youtube-dl for %s: %O\n", videoid, data);
 	}
 
 	void download_complete()
