@@ -119,16 +119,24 @@ class menu_clicked
 		win->playlist->set_text(G->G->songrequest_playlist*"\n");
 		win->downloading->set_text(indices(G->G->songrequest_downloading)*"\n");
 		array nowplaying = G->G->songrequest_nowplaying;
-		string tm = "";
-		if (!nowplaying)
+		string msg;
+		if (nowplaying)
+		{
+			msg = sprintf("[%s] %s", describe_time(nowplaying[0]), nowplaying[1]);
+			//Locate the metadata block by scanning backwards.
+			//There'll be meta entries for all requests, moving forward. There may be
+			//any number of meta entries *behind* the current request, so always count back.
+			mapping meta = persist["songrequest_meta"][-1-sizeof(persist["songrequests"])];
+			msg += sprintf("\nRequested by %s at %s", meta->by, ctime(meta->at));
+		}
+		else
 		{
 			//Not playing any requested song. Maybe we have a playlist song.
-			//We don't track lengths of those, though, so that'll be blank.
-			if (G->G->songrequest_player) nowplaying = ({0, G->G->songrequest_lastplayed});
-			else nowplaying = ({0, "(nothing)"});
+			//We don't track lengths of those, though.
+			if (G->G->songrequest_player) msg = G->G->songrequest_lastplayed;
+			else msg = "(nothing)";
 		}
-		if (nowplaying[0]) tm = "[" + describe_time(nowplaying[0]) + "] ";
-		win->nowplaying->set_text(tm + nowplaying[1]);
+		win->nowplaying->set_text(msg);
 	}
 
 	void sig_add_playlist_clicked()
