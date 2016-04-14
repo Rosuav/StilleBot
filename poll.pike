@@ -7,12 +7,25 @@ void make_request(string url, function cbdata)
 		Protocols.HTTP.Query()->set_callbacks(request_ok,request_fail,cbdata));
 }
 
+void channelinfo(string data)
+{
+	mapping info = Standards.JSON.decode(data);
+	sscanf(info->_links->self, "https://api.twitch.tv/kraken/channels/%s", string name);
+	if (!G->G->channel_info[name]) G->G->channel_info[name] = info;
+}
+
 void streaminfo(string data)
 {
 	mapping info = Standards.JSON.decode(data);
 	sscanf(info->_links->self, "https://api.twitch.tv/kraken/streams/%s", string name);
 	if (!info->stream)
 	{
+		if (!G->G->channel_info[name])
+		{
+			//Make sure we know about all channels
+			write("** Channel %s isn't online - fetching last-known state **\n", name);
+			make_request("https://api.twitch.tv/kraken/channels/"+name, channelinfo);
+		}
 		if (m_delete(G->G->stream_online_since, name))
 		{
 			write("** Channel %s noticed offline at %s **\n", name, Calendar.now()->format_nice());
@@ -22,7 +35,7 @@ void streaminfo(string data)
 	}
 	else
 	{
-		G->G->channel_info[name] = info->stream->channel; //Not cleared when the stream goes offline - this will retain "last sighted" info.
+		G->G->channel_info[name] = info->stream->channel; //Take advantage of what we're given and update our cache with a single request
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->stream->created_at);
 		if (!G->G->stream_online_since[name])
 		{
