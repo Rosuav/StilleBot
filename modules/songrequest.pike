@@ -269,6 +269,7 @@ string process(object channel, object person, string param)
 	persist["songrequests"] += ({param});
 	persist["songrequest_meta"] += ({(["by": person->user, "at": time()])});
 	check_queue();
+	return msg;
 }
 
 void create(string name)
