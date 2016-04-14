@@ -204,14 +204,6 @@ class youtube_dl(string videoid, string requser)
 
 string process(object channel, object person, string param)
 {
-	//TODO: Somehow do these two checks also in check_queue().
-	//There's this weird situation where song requests are configured
-	//in per-channel settings, but are global; maybe there needs to be
-	//a special status for "my channel" (the streamer's), which may not
-	//necessarily (and usually will not be) the bot's channel.
-	//TODO: Track the last channel that !songrequest was successfully
-	//used on. That's going to be close enough. So long as that channel
-	//is still permitting requests, keep the queue pumping.
 	//TODO: Track who requested which songs (incl retaining it after
 	//the track's started playing, and maybe after it stops, too).
 	if (!channel->config->songreq) return "@$$: Song requests are not currently active.";
