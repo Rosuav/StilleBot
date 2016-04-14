@@ -147,8 +147,8 @@ class menu_clicked
 			if (G->G->songrequest_player) msg = explode_path(G->G->songrequest_lastplayed)[-1];
 			else msg = "(nothing)";
 		}
-		if (G->G->songrequest_player) msg += "\nBeen playing "+describe_time(time() - G->G->songrequest_started);
 		Stdio.write_file("song_cache/nowplaying.txt", msg + "\n");
+		if (G->G->songrequest_player) msg += "\nBeen playing "+describe_time(time() - G->G->songrequest_started);
 		win->nowplaying->set_text(msg);
 	}
 
