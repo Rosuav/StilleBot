@@ -237,7 +237,7 @@ string process(object channel, object person, string param)
 	if (param == "flush" && channel->mods[person->user])
 	{
 		persist["songrequests"] = ({ });
-		return "@$$: Song request queue flushed. After current song, silence.";
+		return "@$$: Song request queue flushed. After current song, back to the playlist.";
 	}
 	if (sizeof(param) != 11) return "@$$: Try !songrequest YOUTUBE-ID";
 	if (G->G->songrequest_nowplaying && G->G->songrequest_nowplaying[3] == param)
