@@ -27,6 +27,17 @@ class command
 	}
 }
 
+string describe_time_short(int tm)
+{
+	string msg = "";
+	int secs = tm;
+	if (int t = secs/86400) {msg += sprintf("%d, ", t); secs %= 86400;}
+	if (tm >= 3600) msg += sprintf("%02d:%02d:%02d", secs/3600, (secs%3600)/60, secs%60);
+	else if (tm >= 60) msg += sprintf("%02d:%02d", secs/60, secs%60);
+	else msg += sprintf("%02d", tm);
+	return msg;
+}
+
 string describe_time(int tm)
 {
 	string msg = "";
