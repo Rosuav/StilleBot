@@ -22,7 +22,7 @@ void pump_queue()
 	if (tm == lastmsgtime) {call_out(pump_queue, 1); return;}
 	lastmsgtime = tm;
 	[[string|array to, string msg], msgqueue] = Array.shift(msgqueue);
-	irc->send_message(to, msg);
+	irc->send_message(to, string_to_utf8(msg));
 }
 void send_message(string|array to,string msg)
 {
@@ -35,7 +35,7 @@ void send_message(string|array to,string msg)
 	else
 	{
 		lastmsgtime = tm;
-		irc->send_message(to, msg);
+		irc->send_message(to, string_to_utf8(msg));
 	}
 }
 
