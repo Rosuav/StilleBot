@@ -268,6 +268,8 @@ string process(object channel, object person, string param)
 		return "@$$: Song request queue flushed. After current song, back to the playlist.";
 	}
 	//Attempt to parse out a few common link formats
+	//TODO: Support sources other than Youtube itself - youtube-dl can.
+	//This will require less stringent parsing here, plus a different way of tagging the cache
 	sscanf(param, "https://youtu.be/%s", param);
 	sscanf(param, "https://www.youtube.com/watch?v=%s", param);
 	sscanf(param, "?v=%s", param);
