@@ -39,7 +39,7 @@ mapping(string:array) read_cache()
 	mapping(string:array) cache = ([]);
 	foreach (get_dir("song_cache"), string fn)
 	{
-		if (fn == "README") continue;
+		if ((<"README", "nowplaying.txt">)[fn]) continue;
 		sscanf(fn, "%d-%s-%s", int len, string id, string title);
 		if (has_suffix(title, ".part")) continue; //Ignore partial files
 		cache[id] = ({len, title, fn, id});
@@ -133,9 +133,10 @@ class menu_clicked
 		{
 			//Not playing any requested song. Maybe we have a playlist song.
 			//We don't track lengths of those, though.
-			if (G->G->songrequest_player) msg = G->G->songrequest_lastplayed;
+			if (G->G->songrequest_player) msg = explode_path(G->G->songrequest_lastplayed)[-1];
 			else msg = "(nothing)";
 		}
+		Stdio.write_file("song_cache/nowplaying.txt", msg + "\n");
 		win->nowplaying->set_text(msg);
 	}
 
