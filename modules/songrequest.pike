@@ -244,17 +244,23 @@ string process(object channel, object person, string param)
 		return "@$$: That's what's currently playing!";
 	if (has_value(persist["songrequests"], param)) return "@$$: Song is already in the queue";
 	mapping cache = read_cache();
+	string msg;
 	if (array info = cache[param])
 	{
 		if (info[0] > channel->config->songreq_length) return "@$$: Song too long to request [cache hit]";
-		persist["songrequests"] += ({param});
-		check_queue();
-		return "@$$: Added to queue [cache hit]";
+		msg = "@$$: Added to queue [cache hit]";
+	}
+	else
+	{
+		if (G->G->songrequest_downloading[param]) msg = "@$$: Added to queue [already downloading]";
+		else
+		{
+			G->G->songrequest_downloading[param] = youtube_dl(param, person->user, channel);
+			msg = "@$$: Added to queue [download started]";
+		}
 	}
 	persist["songrequests"] += ({param});
-	if (G->G->songrequest_downloading[param]) return "@$$: Added to queue [already downloading]";
-	G->G->songrequest_downloading[param] = youtube_dl(param, person->user, channel);
-	return "@$$: Added to queue [download started]";
+	check_queue();
 }
 
 void create(string name)
