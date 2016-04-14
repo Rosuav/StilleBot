@@ -19,8 +19,9 @@ string process(object channel, object person, string param)
 	}
 	if (channel->mods[person->user] && sscanf(param, "top%d", int top) && top) //Hidden mod-only command
 	{
-		array people = indices(channel->wealth);
-		array wealth = sort(values(channel->wealth), people);
+		mapping cw = channel->wealth - (<channel->name[1..]>); //Suppress the streamer from display :)
+		array people = indices(cw);
+		array wealth = sort(values(cw), people);
 		people = people[<top-1..]; wealth = wealth[<top-1..];
 		string msg = "";
 		foreach (people; int i; string person)
