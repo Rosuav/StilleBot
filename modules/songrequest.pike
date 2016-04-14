@@ -206,6 +206,8 @@ string process(object channel, object person, string param)
 	//TODO: Track the last channel that !songrequest was successfully
 	//used on. That's going to be close enough. So long as that channel
 	//is still permitting requests, keep the queue pumping.
+	//TODO: Track who requested which songs (incl retaining it after
+	//the track's started playing, and maybe after it stops, too).
 	if (!channel->config->songreq) return "@$$: Song requests are not currently active.";
 	if (!G->G->stream_online_since[channel->name[1..]]) return "@$$: Song requests are available only while the channel is online.";
 	werror("songrequest: %O\n", param);
