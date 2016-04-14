@@ -97,7 +97,7 @@ class menu_clicked
 			->add(GTK2.Frame("Requested songs")->add(win->songreq=GTK2.Label()))
 			->add(GTK2.Frame("Playlist")->add(win->playlist=GTK2.Label()))
 			->add(GTK2.Frame("Downloading")->add(win->downloading=GTK2.Label()))
-			->add(win->nowplaying=GTK2.Label())
+			->add(GTK2.Frame("Now playing")->add(win->nowplaying=GTK2.Label()))
 			->add(GTK2.HbuttonBox()
 				->add(win->add_playlist=GTK2.Button("Add to playlist"))
 				->add(win->check_queue=GTK2.Button("Check queue"))
@@ -121,8 +121,8 @@ class menu_clicked
 			if (G->G->songrequest_player) nowplaying = ({0, G->G->songrequest_lastplayed});
 			else nowplaying = ({0, "(nothing)"});
 		}
-		if (nowplaying[0]) tm = " [" + describe_time(nowplaying[0]) + "]";
-		win->nowplaying->set_text(sprintf("Now playing%s:\n%s", tm, nowplaying[1]));
+		if (nowplaying[0]) tm = "[" + describe_time(nowplaying[0]) + "] ";
+		win->nowplaying->set_text(tm + nowplaying[1]);
 	}
 
 	void sig_add_playlist_clicked()
