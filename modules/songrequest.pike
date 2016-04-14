@@ -229,7 +229,7 @@ string process(object channel, object person, string param)
 	if (!channel->config->songreq) return "@$$: Song requests are not currently active.";
 	if (!G->G->stream_online_since[channel->name[1..]]) return "@$$: Song requests are available only while the channel is online.";
 	G->G->songrequest_channel = channel->name[1..];
-	if (param == "status" && channel->mods[person->user])
+	if (param == "status" && person->user == channel->name[1..])
 	{
 		foreach (sort(get_dir("song_cache")), string fn)
 		{
