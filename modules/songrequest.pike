@@ -32,7 +32,33 @@ for different people ("subscribers can request songs for free"); and
 maybe even outright bannings ("FredTheTroll did nothing but rickroll us,
 so he's not allowed to request songs any more").
 */
-array(function) status_update = ({ }); //Call this to update all open status windows
+
+string nowplaying_info;
+void statusfile()
+{
+	array nowplaying = G->G->songrequest_nowplaying;
+	string msg;
+	if (nowplaying)
+	{
+		msg = sprintf("[%s] %s", describe_time(nowplaying[0]), nowplaying[1]);
+		//Locate the metadata block by scanning backwards.
+		//There'll be meta entries for all requests, moving forward. There may be
+		//any number of meta entries *behind* the current request, so always count back.
+		mapping meta = persist["songrequest_meta"][-1-sizeof(persist["songrequests"])];
+		msg += sprintf("\nRequested by %s at %s", meta->by, ctime(meta->at)[..<1]);
+	}
+	else
+	{
+		//Not playing any requested song. Maybe we have a playlist song.
+		//We don't track lengths of those, though.
+		if (G->G->songrequest_player) msg = explode_path(G->G->songrequest_lastplayed)[-1];
+		else msg = "(nothing)";
+	}
+	Stdio.write_file("song_cache/nowplaying.txt", msg + "\n");
+	nowplaying_info = msg;
+}
+
+array(function) status_update = ({statusfile}); //Call this to update all open status windows
 
 mapping(string:array) read_cache()
 {
@@ -129,25 +155,7 @@ class menu_clicked
 		win->songreq->set_text(reqs);
 		win->playlist->set_text(G->G->songrequest_playlist*"\n");
 		win->downloading->set_text(indices(G->G->songrequest_downloading)*"\n");
-		array nowplaying = G->G->songrequest_nowplaying;
-		string msg;
-		if (nowplaying)
-		{
-			msg = sprintf("[%s] %s", describe_time(nowplaying[0]), nowplaying[1]);
-			//Locate the metadata block by scanning backwards.
-			//There'll be meta entries for all requests, moving forward. There may be
-			//any number of meta entries *behind* the current request, so always count back.
-			mapping meta = persist["songrequest_meta"][-1-sizeof(persist["songrequests"])];
-			msg += sprintf("\nRequested by %s at %s", meta->by, ctime(meta->at)[..<1]);
-		}
-		else
-		{
-			//Not playing any requested song. Maybe we have a playlist song.
-			//We don't track lengths of those, though.
-			if (G->G->songrequest_player) msg = explode_path(G->G->songrequest_lastplayed)[-1];
-			else msg = "(nothing)";
-		}
-		Stdio.write_file("song_cache/nowplaying.txt", msg + "\n");
+		string msg = nowplaying_info;
 		if (G->G->songrequest_player) msg += "\nBeen playing "+describe_time(time() - G->G->songrequest_started);
 		win->nowplaying->set_text(msg);
 	}
