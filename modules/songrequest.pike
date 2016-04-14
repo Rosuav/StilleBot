@@ -267,6 +267,12 @@ string process(object channel, object person, string param)
 		persist["songrequests"] = ({ });
 		return "@$$: Song request queue flushed. After current song, back to the playlist.";
 	}
+	//Attempt to parse out a few common link formats
+	sscanf(param, "https://youtu.be/%s", param);
+	sscanf(param, "https://www.youtube.com/watch?v=%s", param);
+	sscanf(param, "?v=%s", param);
+	sscanf(param, "v=%s", param);
+	sscanf(param, "%s&", param); //If any of the previous ones has "?v=blah&other-info=junk", trim that off
 	if (sizeof(param) != 11) return "@$$: Try !songrequest YOUTUBE-ID";
 	if (G->G->songrequest_nowplaying && G->G->songrequest_nowplaying[3] == param)
 		return "@$$: That's what's currently playing!";
