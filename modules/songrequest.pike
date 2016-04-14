@@ -2,14 +2,7 @@ inherit command;
 constant require_allcmds = 1;
 inherit menu_item;
 constant menu_label = "Song requests";
-/* Currently a stub for notetaking.
-
-Proposal: Implement song requests using a download cache and VLC.
-
-This will require:
-* Downloader, triggered by the !songrequest command (this one)
-* Global queue of requested songs
-* Player
+/* Song requests with a download cache and VLC.
 
 The queue needs to acknowledge that a file may not yet have been fully
 downloaded. TODO: How do we detect broken files? Can we have youtube-dl
