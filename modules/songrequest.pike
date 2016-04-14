@@ -138,7 +138,7 @@ class menu_clicked
 			//There'll be meta entries for all requests, moving forward. There may be
 			//any number of meta entries *behind* the current request, so always count back.
 			mapping meta = persist["songrequest_meta"][-1-sizeof(persist["songrequests"])];
-			msg += sprintf("\nRequested by %s at %s", meta->by, ctime(meta->at));
+			msg += sprintf("\nRequested by %s at %s", meta->by, ctime(meta->at)[..<1]);
 		}
 		else
 		{
