@@ -21,9 +21,7 @@ to delete and force redownloading.
 The player is pretty simple. Invoke "cvlc --play-and-exit filename.m4a"
 and have an event on its termination. Edge cases: There might not be any
 currently-downloaded files (eg on first song request), so the downloader
-may need to trigger the player. Also, it's entirely possible for playback
-to stall; might need a mod-only command to kill it and start the next
-track (maybe that can just be called !nextsong or something).
+may need to trigger the player.
 
 TODO: Flexible system for permitting/denying song requests. For example,
 permit mods only, or followers/subs only (once StilleBot learns about
