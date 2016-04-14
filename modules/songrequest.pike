@@ -78,6 +78,7 @@ void check_queue()
 	if (fn)
 	{
 		G->G->songrequest_lastplayed = fn;
+		G->G->songrequest_started = time();
 		//We have something to play!
 		G->G->songrequest_player = Process.create_process(
 			({"cvlc", "--play-and-exit", fn}),
@@ -146,6 +147,7 @@ class menu_clicked
 			if (G->G->songrequest_player) msg = explode_path(G->G->songrequest_lastplayed)[-1];
 			else msg = "(nothing)";
 		}
+		if (G->G->songrequest_player) msg += "\nBeen playing "+describe_time(time() - G->G->songrequest_started);
 		Stdio.write_file("song_cache/nowplaying.txt", msg + "\n");
 		win->nowplaying->set_text(msg);
 	}
