@@ -115,7 +115,17 @@ class menu_clicked
 
 	void update()
 	{
-		win->songreq->set_text(persist["songrequests"]*"\n");
+		string reqs = "";
+		mapping(string:array) cache = read_cache();
+		foreach (persist["songrequests"], string song)
+		{
+			string downloading = G->G->songrequest_downloading[song] && " (downloading)";
+			if (array c = cache[song])
+				reqs += sprintf("[%s] %s%s\n", describe_time(c[0]), c[1], downloading || "");
+			else
+				if (downloading) reqs += song+" (downloading)\n";
+		}
+		win->songreq->set_text(reqs);
 		win->playlist->set_text(G->G->songrequest_playlist*"\n");
 		win->downloading->set_text(indices(G->G->songrequest_downloading)*"\n");
 		array nowplaying = G->G->songrequest_nowplaying;
@@ -196,6 +206,8 @@ class youtube_dl(string videoid, string requser)
 		if (sscanf(data, "[download] %s does not pass filter duration < %d, skipping", string title, int maxlen))
 		{
 			//TODO: Run "youtube-dl --prefer-ffmpeg --get-duration "+videoid, and show the actual duration
+			//NOTE: This does *not* remove the entries from the visible queue, as that would mess with
+			//the metadata array. They will be quietly skipped over once they get reached.
 			send_message(reqchan, sprintf("@%s: Video too long [max = %s]: %s", requser, describe_time(maxlen), title));
 			return;
 		}
