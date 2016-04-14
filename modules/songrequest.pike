@@ -40,7 +40,7 @@ void statusfile()
 	string msg;
 	if (nowplaying)
 	{
-		msg = sprintf("[%s] %s", describe_time(nowplaying[0]), nowplaying[1]);
+		msg = sprintf("[%s] %s", describe_time_short(nowplaying[0]), nowplaying[1]);
 		//Locate the metadata block by scanning backwards.
 		//There'll be meta entries for all requests, moving forward. There may be
 		//any number of meta entries *behind* the current request, so always count back.
