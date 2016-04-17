@@ -81,7 +81,7 @@ void create()
 mapping G = (["G":([])]);
 mapping persist = (["channels": ({ })]);
 
-int streams;
+int requests;
 void streaminfo_display(string data)
 {
 	mapping info = Standards.JSON.decode(data);
@@ -92,13 +92,25 @@ void streaminfo_display(string data)
 		write("Channel %s went online at %s\n", name, started->format_nice());
 	}
 	else write("Channel %s is offline.\n", name);
-	if (!--streams) exit(0);
+	if (!--requests) exit(0);
+}
+void chaninfo_display(string data)
+{
+	mapping info = Standards.JSON.decode(data);
+	sscanf(info->_links->self, "https://api.twitch.tv/kraken/channels/%s", string name);
+	write("%s was last playing %s, at %s - %s\n",
+		info->display_name, info->game, info->url, info->status);
+	if (!--requests) exit(0);
 }
 int main(int argc, array(string) argv)
 {
-	streams = argc-1;
+	requests = argc * 2 - 2;
 	foreach (argv[1..], string chan)
+	{
+		//For online channels, we could save ourselves one request. Simpler to just do 'em all though.
 		make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo_display);
-	return streams && -1;
+		make_request("https://api.twitch.tv/kraken/channels/"+chan, chaninfo_display);
+	}
+	return requests && -1;
 }
 #endif
