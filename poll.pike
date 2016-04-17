@@ -25,6 +25,7 @@ class get_channel_info(string name, function callback)
 	}
 }
 
+//TODO: Cope with error returns without bombing out
 void streaminfo(string data)
 {
 	mapping info = Standards.JSON.decode(data);
