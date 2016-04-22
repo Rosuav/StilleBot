@@ -147,7 +147,7 @@ class menu_clicked
 		win->downloading->set_text(indices(G->G->songrequest_downloading)*"\n");
 		string msg = G->G->songrequest_nowplaying_info;
 		if (G->G->songrequest_player) msg += "\nBeen playing "+describe_time_short(time() - G->G->songrequest_started);
-		win->nowplaying->set_text(msg);
+		win->nowplaying->set_text(msg || "");
 	}
 
 	void sig_add_playlist_clicked()
