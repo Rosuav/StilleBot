@@ -12,4 +12,3 @@ string process(object channel, object person, string param)
 	if (cur && cur != "") cmds += ({"!"+cur});
 	return "@$$: Available commands are: " + sort(cmds) * " ";
 }
-
