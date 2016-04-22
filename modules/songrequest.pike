@@ -124,6 +124,7 @@ class menu_clicked
 			->add(GTK2.HbuttonBox()
 				->add(win->add_playlist=GTK2.Button("Add to playlist"))
 				->add(win->check_queue=GTK2.Button("Check queue"))
+				->add(win->skip=GTK2.Button("Skip current song"))
 				->add(stock_close())
 			)
 		);
@@ -173,6 +174,13 @@ class menu_clicked
 		check_queue();
 		status_update();
 		update();
+	}
+
+	void sig_skip_clicked()
+	{
+		object p = G->G->songrequest_player;
+		if (p) p->kill(signum("SIGINT"));
+		call_out(sig_check_queue_clicked, 0);
 	}
 }
 
