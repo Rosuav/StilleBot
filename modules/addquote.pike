@@ -9,7 +9,7 @@ string process(object channel, object person, string param)
 	channel->config->quotes += ({([
 		"msg": param,
 		"game": chaninfo->game,
-		"mature": chaninfo->mature, //TODO: Have !quote show mature quotes only if the requesting channel is also marked mature
+		"mature": chaninfo->mature,
 		"timestamp": time(),
 	])});
 	persist->save();
