@@ -13,7 +13,7 @@ string process(object channel, object person, string param)
 		Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
 		return sprintf("@$$: %s command !%s", newornot, cmd);
 	}
-	return "Check usage [TODO]";
+	return "@$$: Try !addcmd !newcmdname response-message";
 }
 
 void create(string name)
