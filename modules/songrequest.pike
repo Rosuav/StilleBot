@@ -180,7 +180,7 @@ class menu_clicked
 	{
 		object p = G->G->songrequest_player;
 		if (p) p->kill(signum("SIGINT"));
-		call_out(sig_check_queue_clicked, 0);
+		call_out(sig_check_queue_clicked, 0.1);
 	}
 }
 
