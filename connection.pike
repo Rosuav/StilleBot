@@ -43,7 +43,7 @@ class channel_notif
 {
 	inherit Protocols.IRC.Channel;
 	string color;
-	mapping config;
+	mapping config = ([]);
 	multiset mods=(<>);
 	mapping(string:int) viewers = ([]);
 	mapping(string:array(int)) viewertime; //({while online, while offline})
