@@ -25,10 +25,10 @@ class get_channel_info(string name, function callback)
 	}
 }
 
-//TODO: Cope with error returns without bombing out
 void streaminfo(string data)
 {
 	mapping info = Standards.JSON.decode(data);
+	if (info->error) return; //Ignore the 503s and stuff that come back.
 	sscanf(info->_links->self, "https://api.twitch.tv/kraken/streams/%s", string name);
 	if (!info->stream)
 	{
