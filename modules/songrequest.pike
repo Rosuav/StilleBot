@@ -231,6 +231,7 @@ class youtube_dl(string videoid, string requser)
 
 	void process_done()
 	{
+		::process_done();
 		m_delete(G->G->songrequest_downloading, videoid);
 		check_queue();
 		if (sscanf(data, "%*s\n[download] %s does not pass filter duration < %d, skipping", string title, int maxlen))
