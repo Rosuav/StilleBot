@@ -210,6 +210,21 @@ class run_process
 	}
 }
 
+class get_video_length(string reqchan, string requser, int maxlen, string title)
+{
+	inherit run_process;
+	void create(string videoid)
+	{
+		::create(({"youtube-dl", "--prefer-ffmpeg", "--get-duration", videoid}), ([]));
+	}
+	void process_done()
+	{
+		::process_done();
+		send_message(reqchan, sprintf("@%s: Video too long [%s, max %s]: %s",
+			requser, String.trim_all_whites(data), describe_time_short(maxlen), title));
+	}
+}
+
 class youtube_dl(string videoid, string requser)
 {
 	inherit run_process;
@@ -236,10 +251,9 @@ class youtube_dl(string videoid, string requser)
 		check_queue();
 		if (sscanf(data, "%*s\n[download] %s does not pass filter duration < %d, skipping", string title, int maxlen))
 		{
-			//TODO: Run "youtube-dl --prefer-ffmpeg --get-duration "+videoid, and show the actual duration
+			get_video_length(reqchan, requser, maxlen, title, videoid);
 			//NOTE: This does *not* remove the entries from the visible queue, as that would mess with
 			//the metadata array. They will be quietly skipped over once they get reached.
-			send_message(reqchan, sprintf("@%s: Video too long [max = %s]: %s", requser, describe_time(maxlen), title));
 		}
 	}
 }
