@@ -120,11 +120,30 @@ class channel_notif
 			return replace(response, "%s", param);
 	}
 
+	void wrap_message(object person, string msg)
+	{
+		if (sizeof(msg) <= 200)
+		{
+			//Short enough to just send as-is.
+			send_message(name, replace(msg, "$$", person->user));
+			return;
+		}
+		string target = sscanf(msg, "@$$: %s", msg) ? sprintf("@%s: ", person->user) : "";
+		msg = replace(msg, "$$", person->user);
+		//VERY simplistic form of word wrap.
+		while (sizeof(msg) > 200)
+		{
+			sscanf(msg, "%200s%s %s", string piece, string word, msg);
+			send_message(name, sprintf("%s%s%s ...", target, piece, word));
+		}
+		send_message(name, target + msg);
+	}
+
 	void not_message(object person,string msg)
 	{
 		if (lower_case(person->nick) == lower_case(G->config->nick)) lastmsgtime = time(1);
 		string response = handle_command(person, msg);
-		if (response) send_message(name, replace(response, "$$", person->user));
+		if (response) wrap_message(person, response);
 		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
 		else msg = person->nick+": "+msg;
 		string pfx=sprintf("[%s] ",name);

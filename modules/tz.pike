@@ -15,16 +15,9 @@ string timezone_info(string tz)
 		return "Unable to figure out the time in that location, sorry.";
 }
 
-//TODO: Make string return capable of doing this wrapping automatically
-void process(object channel, object person, string param)
+string process(object channel, object person, string param)
 {
-	string tz = timezone_info(param);
-	while (sizeof(tz) > 200)
-	{
-		sscanf(tz, "%200s%s %s", string piece, string word, tz);
-		send_message(channel->name, sprintf("@%s: %s%s ...", person->nick, piece, word));
-	}
-	send_message(channel->name, sprintf("@%s: %s", person->nick, tz));
+	return "@$$: " + timezone_info(param);
 }
 
 void create(string name)
