@@ -187,13 +187,13 @@ class menu_clicked
 class youtube_dl(string videoid, string requser)
 {
 	inherit Process.create_process;
-	Stdio.File stdout, stderr;
+	Stdio.File stdout;
 	string reqchan;
 
 	void create(object channel)
 	{
 		reqchan = channel->name;
-		stdout = Stdio.File(); stderr = Stdio.File();
+		stdout = Stdio.File();
 		stdout->set_read_callback(data_received);
 		::create(
 			({"youtube-dl",
@@ -226,7 +226,6 @@ class youtube_dl(string videoid, string requser)
 	{
 		wait();
 		stdout->close();
-		stderr->close();
 		m_delete(G->G->songrequest_downloading, videoid);
 		check_queue();
 	}
