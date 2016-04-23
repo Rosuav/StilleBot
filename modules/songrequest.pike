@@ -184,17 +184,40 @@ class menu_clicked
 	}
 }
 
-class youtube_dl(string videoid, string requser)
+class run_process
 {
 	inherit Process.create_process;
 	Stdio.File stdout;
+	string data = "";
+
+	void create(array command, mapping opts)
+	{
+		stdout = Stdio.File();
+		stdout->set_read_callback(data_received);
+		::create(command, opts + ([
+			"callback": process_done,
+			"stdout": stdout->pipe(Stdio.PROP_IPC|Stdio.PROP_NONBLOCK),
+		]));
+	}
+
+	void data_received(mixed id, string partialdata) {data += partialdata;}
+
+	//Override this to be notified on completion.
+	void process_done()
+	{
+		wait();
+		stdout->close();
+	}
+}
+
+class youtube_dl(string videoid, string requser)
+{
+	inherit run_process;
 	string reqchan;
 
 	void create(object channel)
 	{
 		reqchan = channel->name;
-		stdout = Stdio.File();
-		stdout->set_read_callback(data_received);
 		::create(
 			({"youtube-dl",
 				"--prefer-ffmpeg", "-f","bestaudio",
@@ -202,32 +225,21 @@ class youtube_dl(string videoid, string requser)
 				"--match-filter", "duration < " + channel->config->songreq_length,
 				videoid
 			}),
-			([
-				"callback": download_complete,
-				"cwd": "song_cache",
-				"stdout": stdout->pipe(Stdio.PROP_IPC|Stdio.PROP_NONBLOCK),
-			])
+			(["cwd": "song_cache"])
 		);
 	}
 
-	void data_received(mixed id, string data)
+	void process_done()
 	{
-		if (sscanf(data, "[download] %s does not pass filter duration < %d, skipping", string title, int maxlen))
+		m_delete(G->G->songrequest_downloading, videoid);
+		check_queue();
+		if (sscanf(data, "%*s\n[download] %s does not pass filter duration < %d, skipping", string title, int maxlen))
 		{
 			//TODO: Run "youtube-dl --prefer-ffmpeg --get-duration "+videoid, and show the actual duration
 			//NOTE: This does *not* remove the entries from the visible queue, as that would mess with
 			//the metadata array. They will be quietly skipped over once they get reached.
 			send_message(reqchan, sprintf("@%s: Video too long [max = %s]: %s", requser, describe_time(maxlen), title));
-			return;
 		}
-	}
-
-	void download_complete()
-	{
-		wait();
-		stdout->close();
-		m_delete(G->G->songrequest_downloading, videoid);
-		check_queue();
 	}
 }
 
