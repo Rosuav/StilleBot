@@ -210,6 +210,8 @@ class run_process
 	}
 }
 
+//I guess this is proof that classes are a poor man's closures. Or is it proof that
+//closures are a poor man's classes?
 class get_video_length(string reqchan, string requser, int maxlen, string title)
 {
 	inherit run_process;
