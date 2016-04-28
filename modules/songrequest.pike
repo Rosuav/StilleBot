@@ -24,6 +24,17 @@ maybe even outright bannings ("FredTheTroll did nothing but rickroll us,
 so he's not allowed to request songs any more").
 */
 
+Stdio.File nullfile()
+{
+	//Is there a cross-platform way to find the null device? Python has os.devnull for that.
+	#ifdef __NT__
+	return Stdio.File("nul", "wct");
+	#else
+	return Stdio.File("/dev/null", "wct");
+	#endif
+}
+Stdio.File nullpipe() {return nullfile()->pipe(Stdio.PROP_IPC);}
+
 void statusfile()
 {
 	array nowplaying = G->G->songrequest_nowplaying;
@@ -100,8 +111,8 @@ void check_queue()
 			({"cvlc", "--play-and-exit", fn}),
 			([
 				"callback": check_queue,
-				"stdout": Stdio.File("/dev/null", "w")->pipe(Stdio.PROP_IPC),
-				"stderr": Stdio.File("/dev/null", "w")->pipe(Stdio.PROP_IPC),
+				"stdout": nullpipe(),
+				"stderr": nullpipe(),
 			])
 		);
 	}
