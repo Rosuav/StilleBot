@@ -12,10 +12,14 @@ mapping G = ([]);
 mapping config = ([]);
 function(string:void) execcommand;
 
-void console(object stdin, Stdio.Buffer buf)
+void console(object stdin, string buf)
 {
-	while (string line=buf->match("%s\n")) //Will usually happen exactly once
+	while (has_value(buf, "\n"))
+	{
+		sscanf(buf, "%s\n%s", string line, buf);
 		execcommand(line);
+	}
+	if (buf!="") execcommand(buf);
 }
 
 object bootstrap(string c)
@@ -63,7 +67,6 @@ pass: <password>
 	}
 	if (config->pass[0] == '<') exit(1, "Edit twitchbot_config.txt to make this bot work!\n");
 	bootstrap_all();
-	Stdio.stdin->set_buffer_mode(Stdio.Buffer(),0);
 	Stdio.stdin->set_read_callback(console);
 	return -1;
 }
