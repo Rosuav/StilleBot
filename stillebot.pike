@@ -54,7 +54,7 @@ int main(int argc,array(string) argv)
 # Basic names
 nick: <bot nickname here>
 realname: <bot real name here>
-# Get an OAuth2 key here: 
+# Get an OAuth2 key here: http://twitchapps.com/tmi/
 pass: <password>
 ");
 	}
