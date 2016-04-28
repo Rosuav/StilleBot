@@ -62,8 +62,8 @@ pass: <password>
 	{
 		l = String.trim_all_whites(l);
 		if (l=="" || l[0]=='#') continue;
-		sscanf(l, "%s: %s", string key, string val); if (!val) continue;
-		config[key] = val;
+		sscanf(l, "%s:%s", string key, string val); if (!val) continue;
+		config[key] = String.trim_all_whites(val);
 	}
 	if (config->pass[0] == '<') exit(1, "Edit twitchbot_config.txt to make this bot work!\n");
 	bootstrap_all();
