@@ -60,9 +60,14 @@ class channel_notif
 			color = sprintf("\e[1;3%dm", G->G->channelcolor[name]);
 		}
 		else color = "\e[0m"; //Nothing will normally be logged, so don't allocate a color. If logging gets enabled, it'll take a reset to assign one.
-		viewertime = persist->path("viewertime", name);
-		foreach (viewertime; string user; int|array val) if (intp(val)) m_delete(viewertime, user); persist->save();
 		if (config->currency && config->currency!="") wealth = persist->path("wealth", name);
+		if (config->countactive || wealth) //Note that having channel currency implies counting activity time.
+		{
+			viewertime = persist->path("viewertime", name);
+			foreach (viewertime; string user; int|array val) if (intp(val)) m_delete(viewertime, user);
+		}
+		else m_delete(persist["viewertime"], name);
+		persist->save();
 		save_call_out = call_out(save, 300);
 		mods[name[1..]] = 1; //HACK: Assume that the streamer is a mod. Makes for faster startup.
 	}
@@ -79,8 +84,11 @@ class channel_notif
 		foreach (viewers; string user; int start) if (start && as_at > start)
 		{
 			int t = as_at-start;
-			if (!viewertime[user]) viewertime[user] = ({0,0});
-			viewertime[user][offline] += t;
+			if (viewertime)
+			{
+				if (!viewertime[user]) viewertime[user] = ({0,0});
+				viewertime[user][offline] += t;
+			}
 			viewers[user] = as_at;
 			if (payout_div)
 			{

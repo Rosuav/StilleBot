@@ -590,8 +590,9 @@ class mainwindow
 {
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
-	constant elements=({"kwd:Channel", "?allcmds:All commands active", "?chatlog:Log chat to console", "+notes:Notes", "'uptime:", ([
+	constant elements=({"kwd:Channel", "?allcmds:All commands active", "+notes:Notes", "'uptime:", ([
 		"Channel currency": ({"Currency name", "#Payout interval", "#payout_offline:Offline divisor [0 = none]", "#payout_mod:Mod multiplier"}),
+		"Logging": ({"?chatlog:Log chat to console", "?countactive:Count participant activity"}),
 		"Song requests": ({"?songreq:Active", "#songreq_length:Max length (seconds)"}),
 	])});
 	constant persist_key = "channels";
