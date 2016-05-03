@@ -2,6 +2,12 @@ StilleBot handles Twitch chat and some other functionality. It's named after
 Oberstille, because he joked around with me about names right at the time when
 I needed to figure out a name. (On such thin threads...)
 
+Installation information and tips for Windows and for Mac OS X can be found in
+README.WIN and README.OSX respectively. Installation on Linux depends on your
+distribution; search your package manager for "pike" or see the above web site.
+Compiling Pike from source is best, if you're comfortable with that; Pike 8.1
+has a number of improvements over Pike 7.8.
+
 
 License: MIT
 

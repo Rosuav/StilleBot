@@ -1,0 +1,24 @@
+StilleBot should be fully functional on Microsoft Windows. It is most easily
+installed using the GitHub zip archive distribution, and can be kept up-to-date
+the same way.
+
+Start with this installer for the Pike interpreter:
+http://pike.lysator.liu.se/pub/pike/all/7.8.866/Pike-v7.8.866-win32.msi
+
+Note that the current Pike 8.0 installers do not provide a sufficiently-recent
+GTK, and are not advised. Use the above installer for the time being.
+
+Then download a ZIP file of the latest StilleBot:
+https://github.com/Rosuav/StilleBot/archive/master.zip
+
+Unzip this file into a convenient location, such as C:\StilleBot, and double-click
+on stillebot.pike (which may be shown as simply "stillebot" if file extensions are
+being hidden). This will normally work. Otherwise, open up a command prompt,
+change to the StilleBot directory, and type "pike stillebot", or "stillebot.pike"
+(omitting the quotes, either way). If none of these methods brings anything up,
+get in touch with me and I'll see what I can do. (Note that installing
+StilleBot into Program Files is unnecessary and may cause permissions issues.)
+
+Once you have this installed and working, you can normally keep up-to-date with
+the latest improvements by using the Options|Download and Update menu item in
+the program itself.
