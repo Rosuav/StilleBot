@@ -73,15 +73,7 @@ void data_available(object q)
 {
 	//Note that it's impossible for zip update to include a "delete this file" signal.
 	//Consequently, file deletions (including renames) would leave old files behind,
-	//possibly causing build failures, unless we wipe them out. The simplest way would
-	//be to empty out the plugins directory (bar zz_local) prior to extraction, but
-	//this is risky - if there's a problem, we'll probably have nuked update.pike, and
-	//that makes it a little tricky to repair! So instead, we delete any that weren't
-	//referenced, and only at the very end. Note though that this is still riskier than
-	//git-based updates; git will ignore untracked files (and subdirectories), but this
-	//will destroy them. I hope that anyone who does changes to the plugins directory
-	//itself (as opposed to sticking to zz_local, which is safe) will be using git, for
-	//safety; otherwise, stuff WILL be wiped out. Sorry.
+	//possibly causing build failures, unless we wipe them out.
 	array(string) oldfiles="modules/"+get_dir("modules")[*];
 	if (mixed err=catch {unzip(q->data(),lambda(string fn,string data)
 	{
