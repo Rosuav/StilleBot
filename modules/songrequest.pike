@@ -136,6 +136,9 @@ class menu_clicked
 				->add(win->add_playlist=GTK2.Button("Add to playlist"))
 				->add(win->check_queue=GTK2.Button("Check queue"))
 				->add(win->skip=GTK2.Button("Skip current song"))
+				//SIGSTOP doesn't seem to be working. TODO: Investigate.
+				//->add(win->pause=GTK2.Button("Pause"))
+				//->add(win->cont=GTK2.Button("Continue"))
 				->add(stock_close())
 			)
 		);
@@ -192,6 +195,18 @@ class menu_clicked
 		object p = G->G->songrequest_player;
 		if (p) p->kill(signum("SIGINT"));
 		call_out(sig_check_queue_clicked, 0.1);
+	}
+
+	//These two aren't working. Not sure why.
+	void sig_pause_clicked()
+	{
+		object p = G->G->songrequest_player;
+		if (p) p->kill(signum("SIGSTOP"));
+	}
+	void sig_cont_clicked()
+	{
+		object p = G->G->songrequest_player;
+		if (p) p->kill(signum("SIGCONT"));
 	}
 }
 
