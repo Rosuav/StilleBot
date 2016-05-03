@@ -1,4 +1,5 @@
 object irc;
+string bot_nick;
 
 void reconnect()
 {
@@ -6,7 +7,10 @@ void reconnect()
 	//HACK: Destroy and reconnect - this might solve the above problem. CJA 20160401.
 	if (irc) {irc->close(); destruct(irc); werror("%% Reconnecting\n");}
 	//TODO: Dodge the synchronous gethostbyname?
-	G->G->irc = irc = Protocols.IRC.Client("irc.chat.twitch.tv", G->config);
+	mapping opt = persist["ircsettings"];
+	if (!opt) return; //Not yet configured - can't connect.
+	opt += (["channel_program": channel_notif, "connection_lost": reconnect]);
+	G->G->irc = irc = Protocols.IRC.Client("irc.chat.twitch.tv", opt);
 	irc->cmd->cap("REQ","twitch.tv/membership");
 	irc->join_channel(("#"+indices(persist["channels"])[*])[*]);
 }
@@ -149,7 +153,7 @@ class channel_notif
 
 	void not_message(object person,string msg)
 	{
-		if (lower_case(person->nick) == lower_case(G->config->nick)) lastmsgtime = time(1);
+		if (lower_case(person->nick) == lower_case(bot_nick)) lastmsgtime = time(1);
 		string response = handle_command(person, msg);
 		if (response) wrap_message(person, response);
 		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
@@ -173,11 +177,10 @@ class channel_notif
 
 void create()
 {
-	G->config->channel_program = channel_notif;
-	G->config->connection_lost = reconnect;
 	if (!G->G->channelcolor) G->G->channelcolor = ([]);
 	irc = G->G->irc;
 	//if (!irc) //HACK: Force reconnection every time
 		reconnect();
+	if (persist["ircsettings"]) bot_nick = persist["ircsettings"]->nick || "";
 	add_constant("send_message", send_message);
 }

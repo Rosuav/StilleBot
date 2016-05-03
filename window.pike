@@ -586,6 +586,43 @@ class menu_item
 	}
 }
 
+class ircsettings
+{
+	inherit window;
+	constant is_subwindow = 0;
+	mapping config = persist->path("ircsettings");
+
+	void makewindow()
+	{
+		win->mainwindow=GTK2.Window((["title":"Authenticate StilleBot"]))->add(two_column(({
+			win->open_auth=GTK2.Button("Open http://twitchapps.com/tmi/"),0,
+			"Nickname", win->nick=GTK2.Entry()->set_text(config->nick||""),
+			"Real name", win->realname=GTK2.Entry()->set_text(config->realname||""),
+			"OAuth2 key", win->pass=GTK2.Entry(),
+			GTK2.Label("Key will not be shown above."),0,
+			GTK2.HbuttonBox()
+				->add(win->save=GTK2.Button("Save"))
+				->add(stock_close())
+			,0
+		})));
+	}
+
+	void sig_open_auth_clicked()
+	{
+		invoke_browser("http://twitchapps.com/tmi/");
+	}
+
+	void sig_save_clicked()
+	{
+		config->nick = win->nick->get_text();
+		config->realname = win->realname->get_text();
+		string pass = win->pass->get_text();
+		if (has_prefix(pass, "oauth:")) config->pass = pass;
+		persist->save();
+		closewindow();
+	}
+}
+
 class mainwindow
 {
 	inherit configdlg;
@@ -608,6 +645,7 @@ class mainwindow
 		object menubar = GTK2.MenuBar()
 			->add(GTK2.MenuItem("_Options")->set_submenu(win->optmenu=GTK2.Menu()
 				->add(win->update=GTK2.MenuItem("Update code"))
+				->add(win->authenticate=GTK2.MenuItem("Authenticate with Twitch"))
 			));
 		vbox->pack_start(menubar,0,0,0)->reorder_child(menubar, 0);
 		//Remove the close button - we don't need it.
@@ -645,6 +683,8 @@ class mainwindow
 			catch (Process.create_process(({"wmctrl", "-ia", winid}))->wait()); //Try, but don't mind errors, eg if wmctrl isn't installed.
 		MessageBox(0, GTK2.MESSAGE_ERROR, GTK2.BUTTONS_OK, err + " compilation error(s) - see console", win->mainwindow);
 	}
+
+	void sig_authenticate_activate() {ircsettings();}
 
 	void save_content(mapping(string:mixed) info)
 	{
@@ -688,4 +728,5 @@ void create(string name)
 	if (G->G->menuitems) values(G->G->menuitems)->destroy();
 	G->G->menuitems = ([]);
 	mainwindow();
+	if (!persist["ircsettings"]) ircsettings();
 }

@@ -9,7 +9,6 @@ and change your user and realname accordingly.
 
 array(string) bootstrap_files = ({"persist.pike", "globals.pike", "connection.pike", "console.pike", "poll.pike", "window.pike", "modules"});
 mapping G = ([]);
-mapping config = ([]);
 function(string:void) execcommand;
 
 void console(object stdin, string buf)
@@ -48,25 +47,24 @@ int main(int argc,array(string) argv)
 {
 	add_constant("G", this);
 	G->argv = argv;
-	if (!file_stat("twitchbot_config.txt"))
-	{
-		Stdio.write_file("twitchbot_config.txt",#"# twitchbot.pike config file
-# Basic names
-nick: <bot nickname here>
-realname: <bot real name here>
-# Get an OAuth2 key here: http://twitchapps.com/tmi/
-pass: <password>
-");
-	}
-	foreach (Stdio.read_file("twitchbot_config.txt")/"\n", string l)
-	{
-		l = String.trim_all_whites(l); //Trim off carriage returns as needed
-		if (l=="" || l[0]=='#') continue;
-		sscanf(l, "%s:%s", string key, string val); if (!val) continue;
-		config[key] = String.trim_all_whites(val); //Permit (but don't require) a space after the colon
-	}
-	if (config->pass[0] == '<') exit(1, "Edit twitchbot_config.txt to make this bot work!\n");
 	bootstrap_all();
+	//Compat: Import settings from the old text config
+	if (file_stat("twitchbot_config.txt"))
+	{
+		mapping config = ([]);
+		foreach (Stdio.read_file("twitchbot_config.txt")/"\n", string l)
+		{
+			l = String.trim_all_whites(l); //Trim off carriage returns as needed
+			if (l=="" || l[0]=='#') continue;
+			sscanf(l, "%s:%s", string key, string val); if (!val) continue;
+			config[key] = String.trim_all_whites(val); //Permit (but don't require) a space after the colon
+		}
+		if (config->pass[0] == '<') m_delete(config, "pass");
+		object persist = all_constants()["persist"]; //Since we can't use the constant as such :)
+		persist["ircsettings"] = config;
+		persist->dosave(); //Save synchronously before destroying the config file
+		if (!persist->saving) rm("twitchbot_config.txt");
+	}
 	Stdio.stdin->set_read_callback(console);
 	return -1;
 }
