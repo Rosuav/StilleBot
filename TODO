@@ -1,3 +1,2 @@
 * Per-channel echocommands?
 * Recognizing channels where the bot is a mod?
-* Globals explorer (which might be worth backporting to Gypsum too). Expand out a GTK2.TreeView; each level adds more levels for non-empty arrays/mappings, and sprintf("%O") leaf nodes for all else.
