@@ -1,2 +1,5 @@
 * Per-channel echocommands?
 * Recognizing channels where the bot is a mod?
+* Per-channel rate limiting instead of the current one-per-second globally
+  - Where the bot is a mod, the default can be zero. Elsewhere, default to one.
+  - Is there a way to detect channel slow mode?
