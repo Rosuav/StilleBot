@@ -137,7 +137,7 @@ class menu_clicked
 				->add(win->check_queue=GTK2.Button("Check queue"))
 				->add(win->skip=GTK2.Button("Skip current song"))
 				//SIGSTOP doesn't seem to be working. TODO: Investigate.
-				//Or better still, activate a control pipe and send commands.
+				//Or better still, send commands over stdin and use the 'rc' interface.
 				//->add(win->pause=GTK2.Button("Pause"))
 				//->add(win->cont=GTK2.Button("Continue"))
 				->add(stock_close())
