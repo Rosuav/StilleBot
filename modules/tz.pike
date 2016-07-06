@@ -4,16 +4,23 @@ mapping timezones;
 
 constant days_of_week = ({"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"});
 
+//Like String.sillycaps but splitting on underscores, so broken_hill becomes Broken_Hill
+string capitalize(string timezone)
+{
+	return String.capitalize((timezone/"_")[*])*"_";
+}
+
 string timezone_info(string tz)
 {
-	if (!tz || tz=="") return "Regions are: " + sort(indices(timezones))*", " + ". You can also add a weekday and time, eg '!tz America/Los_Angeles Thu 10:00'.";
+	if (!tz || tz=="") return "Regions are: " + capitalize(sort(indices(timezones))[*])*", "
+		+ ". You can also add a weekday and time, eg '!tz America/Los_Angeles Thu 10:00'.";
 	sscanf(tz, "%s %s", tz, string time);
 	mapping|string region = timezones;
 	foreach (lower_case(tz)/"/", string part) if (!mappingp(region=region[part])) break;
 	if (undefinedp(region))
 		return "Unknown region "+tz+" - use '!tz' to list";
 	if (mappingp(region))
-		return "Locations in region "+tz+": "+sort(indices(region))*", ";
+		return "Locations in region " + tz + ": " + capitalize(sort(indices(region))[*])*", ";
 	if (catch {
 		if (!time) return region+" - "+Calendar.Gregorian.Second()->set_timezone(region)->format_time();
 		string ret = "";
