@@ -13,7 +13,12 @@ string capitalize(string timezone)
 string timezone_info(string tz)
 {
 	if (!tz || tz=="") return "Regions are: " + capitalize(sort(indices(timezones))[*])*", "
-		+ ". You can also add a weekday and time, eg '!tz America/Los_Angeles Thu 10:00'.";
+		+ ". You can also add a weekday and time, eg '!tz America/Los_Angeles Thu 10:00'. Type '!tz help' for more info.";
+	if (tz == "help") return "Hi! I'm a timezone-converting bot. You can inquire about the current time in any of the " +
+		sizeof(Calendar.TZnames.zonenames()) + " timezones that I'm familiar with; to do this, simply type '!tz " +
+		random(Calendar.TZnames.zonenames()) + "' or '!tz " + random(Calendar.TZnames.zonenames()) + "'. You can also " +
+		"convert times from your timezone into Christine's, by typing '!tz " + random(Calendar.TZnames.zonenames()) +
+		" " + random(days_of_week)[..2] + " " + random(24) + ":00', with am/pm times also supported.";
 	sscanf(tz, "%s %s", tz, string time);
 	mapping|string region = timezones;
 	foreach (lower_case(tz)/"/", string part) if (!mappingp(region=region[part])) break;
