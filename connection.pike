@@ -134,7 +134,7 @@ class channel_notif
 
 	void wrap_message(object person, string msg)
 	{
-		if (sizeof(msg) <= 200)
+		if (sizeof(msg) <= 400)
 		{
 			//Short enough to just send as-is.
 			send_message(name, replace(msg, "$$", person->user));
@@ -143,9 +143,9 @@ class channel_notif
 		string target = sscanf(msg, "@$$: %s", msg) ? sprintf("@%s: ", person->user) : "";
 		msg = replace(msg, "$$", person->user);
 		//VERY simplistic form of word wrap.
-		while (sizeof(msg) > 200)
+		while (sizeof(msg) > 400)
 		{
-			sscanf(msg, "%200s%s %s", string piece, string word, msg);
+			sscanf(msg, "%400s%s %s", string piece, string word, msg);
 			send_message(name, sprintf("%s%s%s ...", target, piece, word));
 		}
 		send_message(name, target + msg);
