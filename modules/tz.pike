@@ -1,6 +1,7 @@
 inherit command;
 
 mapping timezones;
+mapping(string:string) tzleaf;
 
 constant days_of_week = ({"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"});
 
@@ -20,6 +21,7 @@ string timezone_info(string tz)
 		"convert times from your timezone into Christine's, by typing '!tz " + random(Calendar.TZnames.zonenames()) +
 		" " + random(days_of_week)[..2] + " " + random(24) + ":00', with am/pm times also supported.";
 	sscanf(tz, "%s %s", tz, string time);
+	tz = tzleaf[lower_case(tz)] || tz; //If you enter "Melbourne", use "Australia/Melbourne" automatically.
 	mapping|string region = timezones;
 	foreach (lower_case(tz)/"/", string part) if (!mappingp(region=region[part])) break;
 	if (undefinedp(region))
@@ -60,7 +62,7 @@ string process(object channel, object person, string param)
 
 void create(string name)
 {
-	timezones = ([]);
+	timezones = ([]); tzleaf = ([]);
 	foreach (sort(Calendar.TZnames.zonenames()), string zone)
 	{
 		array(string) parts = lower_case(zone)/"/";
@@ -69,6 +71,7 @@ void create(string name)
 			if (!tz[region]) tz = tz[region] = ([]);
 			else tz = tz[region];
 		tz[parts[-1]] = zone;
+		tzleaf[parts[-1]] = zone;
 	}
 	::create(name);
 }
