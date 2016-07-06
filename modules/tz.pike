@@ -71,7 +71,8 @@ void create(string name)
 			if (!tz[region]) tz = tz[region] = ([]);
 			else tz = tz[region];
 		tz[parts[-1]] = zone;
-		tzleaf[parts[-1]] = zone;
+		if (tzleaf[parts[-1]]) werror("%s\n", tzleaf[parts[-1]] = "ASSERT FAILED - duplicate leaf node " + tzleaf[parts[-1]] + " and " + zone);
+		else tzleaf[parts[-1]] = zone;
 	}
 	::create(name);
 }
