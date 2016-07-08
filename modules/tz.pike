@@ -43,7 +43,9 @@ string timezone_info(string tz)
 			int dow = -1;
 			foreach (days_of_week; int idx; string d) if (has_prefix(lower_case(d), dayname)) dow = idx;
 			Calendar.Gregorian.Day day = Calendar.Gregorian.Day()->set_timezone(tzfrom);
-			sscanf(time, "%d:%d%s", int hr, int min, string ampm); if ((<"PM","pm">)[ampm]) hr+=12;
+			sscanf(time, "%d:%d%s", int hr, int min, string ampm);
+			if (!min) sscanf(time, "%d%s", hr, ampm); //Catch "6pm" correctly
+			if ((<"PM","pm">)[ampm]) hr+=12;
 			if (!hr) hr = (int)time;
 			Calendar.Gregorian.Second tm = day->second(3600*hr+60*min);
 			if (int diff=hr-tm->hour_no()) tm=tm->add(3600*diff); //If DST switch happened, adjust time
