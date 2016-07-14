@@ -10,9 +10,20 @@ void reconnect()
 	mapping opt = persist["ircsettings"];
 	if (!opt) return; //Not yet configured - can't connect.
 	opt += (["channel_program": channel_notif, "connection_lost": reconnect]);
-	G->G->irc = irc = Protocols.IRC.Client("irc.chat.twitch.tv", opt);
-	irc->cmd->cap("REQ","twitch.tv/membership");
-	irc->join_channel(("#"+indices(persist["channels"])[*])[*]);
+	if (mixed ex = catch {
+		G->G->irc = irc = Protocols.IRC.Client("irc.chat.twitch.tv", opt);
+		irc->cmd->cap("REQ","twitch.tv/membership");
+		irc->join_channel(("#"+indices(persist["channels"])[*])[*]);
+	})
+	{
+		//Something went wrong with the connection. Most likely, it's a
+		//network issue, so just print the exception and retry in a
+		//minute (non-backoff).
+		werror("%% Error connecting to Twitch:\n%s\n", describe_error(ex));
+		//Since other modules will want to look up G->G->irc->channels,
+		//let them. One little shim is all it takes.
+		G->G->irc = (["close": lambda() { }, "channels": ([])]);
+	}
 }
 
 //NOTE: When this file gets updated, the queue will not be migrated.
