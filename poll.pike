@@ -51,7 +51,7 @@ void streaminfo(string data)
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->stream->created_at);
 		if (!G->G->stream_online_since[name])
 		{
-			write("** Channel %s went online at %s **\n", name, started->format_nice());
+			write("** Channel %s went online at %s **\n", name, started->format_nice()); //TODO: Show this in local time instead of UTC
 			if (object chan = G->G->irc->channels["#"+name])
 				chan->save(started->unix_time());
 		}
