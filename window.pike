@@ -247,6 +247,7 @@ class window
 	int closewindow()
 	{
 		win->mainwindow->destroy();
+		destruct(win->mainwindow);
 		return 1;
 	}
 }
