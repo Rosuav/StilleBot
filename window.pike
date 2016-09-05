@@ -3,7 +3,8 @@
 
 //Usage: gtksignal(some_object,"some_signal",handler,arg,arg,arg) --> save that object.
 //Equivalent to some_object->signal_connect("some_signal",handler,arg,arg,arg)
-//When it expires, the signal is removed. obj should be a GTK2.G.Object or similar.
+//When this object expires, the signal is disconnected, which should gc the function.
+//obj should be a GTK2.G.Object or similar.
 class gtksignal(object obj)
 {
 	int signal_id;
