@@ -760,7 +760,7 @@ class mainwindow
 		foreach (users; string user; mapping info)
 		{
 			int since = time() - info->lastnotice;
-			if (since < limit) write("----> %s %s - %ds ago\n", user, info->following ? "(following)" : "", since);
+			if (since < limit) write("----> %s%s - %ds ago\n", user, info->following ? " (following " + info->following + ")" : "", since);
 		}
 	}
 

@@ -63,6 +63,28 @@ void streaminfo(string data)
 	//write("%s: %O\n", name, info->stream);
 }
 
+void following(string data)
+{
+	mapping info; catch {info = Standards.JSON.decode(data);}; //As above
+	if (!info) return; //Server failure, probably
+	if (info->status == 404)
+	{
+		//Not following. Explicitly store that info.
+		sscanf(info->message, "%s is not following %s", string user, string chan);
+		if (!chan) return;
+		G_G_("participants", chan, user)->following = 0;
+	}
+	if (info->error) return; //Unknown error. Ignore it (most likely the user will be assumed not to be a follower).
+	sscanf(info->_links->self, "https://api.twitch.tv/kraken/users/%s/follows/channels/%s", string user, string chan);
+	G_G_("participants", chan, user)->following = "since " + info->created_at;
+}
+
+void check_following(string user, string chan)
+{
+	write("Checking if %s is following %s\n", user, chan);
+	make_request("https://api.twitch.tv/kraken/users/" + user + "/follows/channels/" + chan, following);
+}
+
 void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //TODO: Make the poll interval customizable
@@ -77,6 +99,7 @@ void create()
 	remove_call_out(G->G->poll_call_out);
 	poll();
 	add_constant("get_channel_info", get_channel_info);
+	add_constant("check_following", check_following);
 }
 
 #if !constant(G)

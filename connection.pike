@@ -132,10 +132,11 @@ class channel_notif
 		if (config->allcmds && has_value(msg, config->noticeme||""))
 		{
 			mapping user = G_G_("participants", name[1..], person->user);
-			if (user->lastfollowcheck <= G->G->follower_reset)
+			//Re-check every five minutes, max. We assume that people don't unfollow, so just recheck those every day.
+			if (user->lastfollowcheck <= time() - (user->following ? 86400 : 300))
 			{
-				//TODO: Fire off a check for follower-or-not
 				user->lastfollowcheck = time();
+				check_following(person->user, name[1..]);
 			}
 			user->lastnotice = time();
 		}
