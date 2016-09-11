@@ -96,7 +96,7 @@ class check_following(string user, string chan, function|void callback)
 void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //TODO: Make the poll interval customizable
-	foreach (indices(persist["channels"]), string chan)
+	foreach (indices(persist["channels"] || ({ })), string chan)
 		make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo);
 }
 
