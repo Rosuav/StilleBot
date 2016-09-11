@@ -710,6 +710,7 @@ class mainwindow
 		parent->remove(win->contentblock);
 		//win->contentblock->destroy();
 		parent->add(make_content()->show_all());
+		dosignals(); //For some reason, updating code redoes signals BEFORE triggering this.
 		sig_sel_changed();
 	}
 
