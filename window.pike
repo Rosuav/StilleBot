@@ -3,7 +3,8 @@
 
 //Usage: gtksignal(some_object,"some_signal",handler,arg,arg,arg) --> save that object.
 //Equivalent to some_object->signal_connect("some_signal",handler,arg,arg,arg)
-//When it expires, the signal is removed. obj should be a GTK2.G.Object or similar.
+//When this object expires, the signal is disconnected, which should gc the function.
+//obj should be a GTK2.G.Object or similar.
 class gtksignal(object obj)
 {
 	int signal_id;
@@ -247,6 +248,7 @@ class window
 	int closewindow()
 	{
 		win->mainwindow->destroy();
+		destruct(win->mainwindow);
 		return 1;
 	}
 }
@@ -278,14 +280,9 @@ class movablewindow
 
 	void savepos()
 	{
-		if (!pos_key) {werror("%% Assertion failed: Cannot save position without pos_key set!"); return;} //Shouldn't happen.
+		if (!pos_key) {werror("%% Assertion failed: Cannot save position without pos_key set!\n"); return;} //Shouldn't happen.
 		mapping sz=win->mainwindow->get_size();
 		persist[pos_key]=({m_delete(win,"x"),m_delete(win,"y"),sz->width,sz->height});
-	}
-
-	void dosignals()
-	{
-		::dosignals();
 	}
 }
 
@@ -294,6 +291,10 @@ class movablewindow
 //It may be worth breaking out some of this code into a dedicated ListBox class
 //for future reuse. Currently I don't actually need that for Gypsum, but it'd
 //make a nice utility class for other programs.
+//NOTE: This class may end up becoming the legacy compatibility class, with a new
+//and simpler one (under a new name) being created, thus freeing current code from
+//the baggage of backward compatibility - which this has a lot of. I could then
+//deprecate this class (with no intention of removal) and start fresh.
 class configdlg
 {
 	inherit window;
@@ -312,18 +313,25 @@ class configdlg
 	constant ints=({ }); //Simple integer bindings, ditto
 	constant bools=({ }); //Simple boolean bindings (to CheckButtons), ditto
 	constant labels=({ }); //Labels for the above
-	/* ADVISORY and under test: Instead of using all of the above four, use a single list of
+	/* PROVISIONAL: Instead of using all of the above four, use a single list of
 	tokens which gets parsed out to provide keyword, label, and type.
 	constant elements=({"kwd:Keyword", "name:Name", "?state:State of Being", "#value:Value","+descr:Description"});
 	If the colon is omitted, the keyword will be the first word of the lowercased name, so this is equivalent:
 	constant elements=({"kwd:Keyword", "Name", "?State of Being", "#Value", "+descr:Description"});
 	In most cases, this and persist_key will be all you need to set.
-	TODO: Figure out a way to allow a SelectBox. Or maybe some kind of marker "custom thing goes here"?
+	Still figuring out a good way to allow a SelectBox. Currently messing with "@name:lbl",({opt,opt,opt}) which
+	is far from ideal.
+	This is eventually going to be the primary way to do things, but it's currently unpledged to permit changes.
+	In fact, I'd say that it's _now_ (20160809) the primary way to do things, but I haven't yet deprovisionalized
+	it in case I want to make changes (esp to the SelectBox and Notebook APIs). There's already way too much
+	cruft in this class to risk letting even more in.
 	*/
 	constant elements=({ });
 	constant persist_key=0; //(string) Set this to the persist[] key to load items[] from; if set, persist will be saved after edits.
 	constant descr_key=0; //(string) Set this to a key inside the info mapping to populate with descriptions.
+	string selectme; //If this contains a non-null string, it will be preselected.
 	//... end provide me.
+	mapping defaults = ([]); //TODO: Figure out if any usage of defaults needs the value to be 'put back', or not be a string, or anything.
 
 	void create() {if (persist_key && !items) items=persist->setdefault(persist_key,([])); ::create();} //Pass on no args to the window constructor - all configdlgs are independent
 
@@ -378,15 +386,15 @@ class configdlg
 		string kwd=selecteditem();
 		mapping info=items[kwd] || ([]);
 		if (win->kwd) win->kwd->set_text(kwd || "");
-		foreach (win->real_strings,string key) win[key]->set_text((string)(info[key] || ""));
-		foreach (win->real_ints,string key) win[key]->set_text((string)info[key]);
+		foreach (win->real_strings,string key) win[key]->set_text((string)(info[key] || defaults[key] || ""));
+		foreach (win->real_ints,string key) win[key]->set_text((string)(info[key] || defaults[key]));
 		foreach (win->real_bools,string key) win[key]->set_active((int)info[key]);
 		load_content(info);
 	}
 
 	void makewindow()
 	{
-		win->real_strings = win->real_ints = win->real_bools = ({ });
+		win->real_strings = strings; win->real_ints = ints; win->real_bools = bools; //Migrate the constants
 		object ls=GTK2.ListStore(({"string","string"}));
 		//TODO: Break out the list box code into a separate object - it'd be useful eg for zoneinfo.pike.
 		foreach (sort(indices(items)),string kwd)
@@ -420,15 +428,27 @@ class configdlg
 			);
 		win->sel=win->list->get_selection(); win->sel->select_iter(win->new_iter||ls->get_iter_first()); sig_sel_changed();
 		::makewindow();
+		if (stringp(selectme)) select_keyword(selectme) || (win->kwd && win->kwd->set_text(selectme));
 	}
 
 	//Generate a widget collection from either the constant or migration mode
 	array(string|GTK2.Widget) collect_widgets(array|void elem)
 	{
 		array objects = ({ });
+		win->real_strings = win->real_ints = win->real_bools = ({ });
 		elem = elem || elements; if (!sizeof(elem)) elem = migrate_elements();
+		string next_obj_name = 0;
 		foreach (elem, mixed element)
 		{
+			if (next_obj_name)
+			{
+				if (arrayp(element))
+					objects += ({win[next_obj_name] = SelectBox(element)});
+				else
+					error("Assertion failed: SelectBox without element array\n");
+				next_obj_name = 0;
+				continue;
+			}
 			if (mappingp(element))
 			{
 				//EXPERIMENTAL: A mapping creates a notebook.
@@ -443,9 +463,11 @@ class configdlg
 				objects += ({nb, 0});
 				continue;
 			}
-			sscanf(element, "%1[?#+']%s", string type, element);
+			sscanf(element, "%1[?#+'@]%s", string type, element);
+			sscanf(element, "%s=%s", element, string dflt); //NOTE: I'm rather worried about collisions here. This is definitely PROVISIONAL.
 			sscanf(element, "%s:%s", string name, string lbl);
 			if (!lbl) sscanf(lower_case(lbl = element)+" ", "%s ", name);
+			if (dflt) defaults[name] = dflt;
 			switch (type)
 			{
 				case "?": //Boolean
@@ -477,6 +499,14 @@ class configdlg
 					object obj = noex(GTK2.Label(lbltext || element)->set_line_wrap(1));
 					objects += ({obj, 0});
 					if (lbltext) win[lblname] = obj;
+					break;
+				}
+				case "@": //Drop-down
+				{
+					//Special case: Integer drop-downs are marked with "@#".
+					if (name[0] == '#') win->real_ints += ({name=name[1..]});
+					else win->real_strings += ({name});
+					objects += ({lbl}); next_obj_name = name; //Object creation happens next iteration
 					break;
 				}
 			}
