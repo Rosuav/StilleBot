@@ -667,6 +667,7 @@ class mainwindow
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
 	constant elements=({"kwd:Channel", "?allcmds:All commands active", "+notes:Notes", "'uptime:", ([
+		"\"Notice Me!\"": ({"'Let chat participants get your attention.", "?Followers only", "NoticeMe keyword", "#Timeout on keyword=600", "!Whisper participants"}),
 		"Channel currency": ({"Currency name", "#Payout interval", "#payout_offline:Offline divisor [0 = none]", "#payout_mod:Mod multiplier"}),
 		"Logging": ({"?chatlog:Log chat to console", "?countactive:Count participant activity"}),
 		"Song requests": ({"?songreq:Active", "#songreq_length:Max length (seconds)"}),
@@ -749,6 +750,12 @@ class mainwindow
 	{
 		write("%%% Parting #"+kwd+"\n");
 		G->G->irc->part_channel("#"+kwd);
+	}
+
+	void sig_whisper_clicked()
+	{
+		write("### Whisper participants for %s ###\n", selecteditem());
+		catch {write("%O\n", items[selecteditem()]->timeout || 600);};
 	}
 
 	void closewindow() {exit(0);}
