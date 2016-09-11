@@ -1,0 +1,1 @@
+git -C ../Gypsum show $1 globals.pike|sed 's/globals.pike/window.pike/g; 1d; 2s/^Author/From/'|git am -
