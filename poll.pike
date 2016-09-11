@@ -83,13 +83,13 @@ class check_following(string user, string chan, function|void callback)
 			if (!chan) return;
 			mapping foll = G_G_("participants", chan, user);
 			foll->following = 0;
-			if (callback) callback(chan, user, foll, @cbargs);
+			if (callback) callback(user, chan, foll, @cbargs);
 		}
 		if (info->error) return; //Unknown error. Ignore it (most likely the user will be assumed not to be a follower).
 		sscanf(info->_links->self, "https://api.twitch.tv/kraken/users/%s/follows/channels/%s", string user, string chan);
 		mapping foll = G_G_("participants", chan, user);
 		foll->following = "since " + info->created_at;
-		if (callback) callback(chan, user, foll, @cbargs);
+		if (callback) callback(user, chan, foll, @cbargs);
 	}
 }
 
