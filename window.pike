@@ -667,7 +667,7 @@ class mainwindow
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
 	constant elements=({"kwd:Channel", "?allcmds:All commands active", "+notes:Notes", "'uptime:", ([
-		"\"Notice Me!\"": ({"'Let chat participants get your attention.", "?Followers only", "NoticeMe keyword", "#Timeout on keyword=600", "!Whisper participants"}),
+		"\"Notice Me!\"": ({"'Let chat participants get your attention.", "?Followers only", "NoticeMe keyword", "#Timeout on keyword=600", "!Whisper to participants"}),
 		"Channel currency": ({"Currency name", "#Payout interval", "#payout_offline:Offline divisor [0 = none]", "#payout_mod:Mod multiplier"}),
 		"Logging": ({"?chatlog:Log chat to console", "?countactive:Count participant activity"}),
 		"Song requests": ({"?songreq:Active", "#songreq_length:Max length (seconds)"}),
@@ -754,8 +754,14 @@ class mainwindow
 
 	void sig_whisper_clicked()
 	{
+		mapping users = G_G_("participants", selecteditem());
 		write("### Whisper participants for %s ###\n", selecteditem());
-		catch {write("%O\n", items[selecteditem()]->timeout || 600);};
+		int limit = (int)win->timeout->get_text() || 600;
+		foreach (users; string user; mapping info)
+		{
+			int since = time() - info->lastnotice;
+			if (since < limit) write("----> %s %s - %ds ago\n", user, info->following ? "(following)" : "", since);
+		}
 	}
 
 	void closewindow() {exit(0);}

@@ -129,6 +129,16 @@ class channel_notif
 
 	string handle_command(object person, string msg)
 	{
+		if (config->allcmds && has_value(msg, config->noticeme||""))
+		{
+			mapping user = G_G_("participants", name[1..], person->user);
+			if (user->lastfollowcheck <= G->G->follower_reset)
+			{
+				//TODO: Fire off a check for follower-or-not
+				user->lastfollowcheck = time();
+			}
+			user->lastnotice = time();
+		}
 		if (function f = has_prefix(msg,"!") && G->G->commands[msg[1..]]) return f(this, person, "");
 		if (function f = (sscanf(msg, "!%s %s", string cmd, string param) == 2) && G->G->commands[cmd]) return f(this, person, param);
 		if (string cur = config->currency!="" && config->currency)

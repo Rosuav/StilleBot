@@ -79,3 +79,14 @@ int invoke_browser(string url)
 		return 1; //If no exception is thrown, hope that it worked.
 	};
 }
+
+mapping G_G_(string ... path)
+{
+	mapping ret = G->G;
+	foreach (path, string part)
+	{
+		if (!ret[part]) ret[part] = ([]);
+		ret = ret[part];
+	}
+	return ret;
+}
