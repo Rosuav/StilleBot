@@ -13,6 +13,7 @@ void reconnect()
 	if (mixed ex = catch {
 		G->G->irc = irc = Protocols.IRC.Client("irc.chat.twitch.tv", opt);
 		irc->cmd->cap("REQ","twitch.tv/membership");
+		//Maybe grab 'commands' cap too?
 		irc->join_channel(("#"+indices(persist["channels"])[*])[*]);
 	})
 	{
