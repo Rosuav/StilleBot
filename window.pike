@@ -610,26 +610,6 @@ class configdlg
 //Normally, the "inherit configdlg" line would be at top level, but in this case,
 //the above class definitions have to happen before this one.
 
-class menu_item
-{
-	//Provide:
-	constant menu_label=0; //(string) The initial label for your menu item.
-	void menu_clicked() { }
-	//End provide.
-
-	mapping(string:mixed) mi=([]);
-	void create(string|void name)
-	{
-		if (!name) return;
-		sscanf(explode_path(name)[-1],"%s.pike",name);
-		if (object old=G->G->menuitems[name]) old->destroy();
-		object mi = GTK2.MenuItem(menu_label);
-		G->G->windows->mainwindow->optmenu->add(mi->show());
-		mi->signal_connect("activate",menu_clicked);
-		G->G->menuitems[name] = mi;
-	}
-}
-
 class mainwindow
 {
 	inherit configdlg;
@@ -715,7 +695,5 @@ void create(string name)
 		G->G->argv = GTK2.setup_gtk(G->G->argv);
 	}
 	G->G->window = this;
-	if (G->G->menuitems) values(G->G->menuitems)->destroy();
-	G->G->menuitems = ([]);
 	mainwindow();
 }
