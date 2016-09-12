@@ -1,5 +1,6 @@
 //GTK utility functions/classes lifted straight from Gypsum
 
+mapping persist = (["save":lambda() {}]);
 
 //Usage: gtksignal(some_object,"some_signal",handler,arg,arg,arg) --> save that object.
 //Equivalent to some_object->signal_connect("some_signal",handler,arg,arg,arg)
@@ -335,7 +336,7 @@ class configdlg
 
 	void create(string|void name)
 	{
-		if (persist_key && !items) items=persist->setdefault(persist_key,([]));
+		if (persist_key && !items) items=([]);
 		::create(!is_subwindow && name); //Unless we're a main window, pass on no args to the window constructor - all configdlgs are independent
 	}
 
@@ -633,7 +634,7 @@ class ircsettings
 {
 	inherit window;
 	constant is_subwindow = 0;
-	mapping config = persist->path("ircsettings");
+	mapping config = ([]);
 
 	void makewindow()
 	{

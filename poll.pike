@@ -93,58 +93,11 @@ class check_following(string user, string chan, function|void callback)
 	}
 }
 
-void poll()
-{
-	G->G->poll_call_out = call_out(poll, 60); //TODO: Make the poll interval customizable
-	foreach (indices(persist["channels"] || ({ })), string chan)
-		make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo);
-}
-
 void create()
 {
 	if (!G->G->stream_online_since) G->G->stream_online_since = ([]);
 	if (!G->G->channel_info) G->G->channel_info = ([]);
 	remove_call_out(G->G->poll_call_out);
-	poll();
 	add_constant("get_channel_info", get_channel_info);
 	add_constant("check_following", check_following);
 }
-
-#if !constant(G)
-mapping G = (["G":([])]);
-mapping persist = (["channels": ({ })]);
-
-int requests;
-void streaminfo_display(string data)
-{
-	mapping info = Standards.JSON.decode(data);
-	sscanf(info->_links->self, "https://api.twitch.tv/kraken/streams/%s", string name);
-	if (info->stream)
-	{
-		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->stream->created_at);
-		write("Channel %s went online at %s\n", name, started->format_nice());
-	}
-	else write("Channel %s is offline.\n", name);
-	if (!--requests) exit(0);
-}
-void chaninfo_display(string data)
-{
-	mapping info = Standards.JSON.decode(data);
-	sscanf(info->_links->self, "https://api.twitch.tv/kraken/channels/%s", string name);
-	if (info->mature) write("[MATURE] ");
-	write("%s was last playing %s, at %s - %s\n",
-		info->display_name, info->game || "(null)", info->url, string_to_utf8(info->status || "(null)"));
-	if (!--requests) exit(0);
-}
-int main(int argc, array(string) argv)
-{
-	requests = argc * 2 - 2;
-	foreach (argv[1..], string chan)
-	{
-		//For online channels, we could save ourselves one request. Simpler to just do 'em all though.
-		make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo_display);
-		make_request("https://api.twitch.tv/kraken/channels/"+chan, chaninfo_display);
-	}
-	return requests && -1;
-}
-#endif

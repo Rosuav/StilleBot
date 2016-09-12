@@ -7,13 +7,13 @@ void reconnect()
 	//HACK: Destroy and reconnect - this might solve the above problem. CJA 20160401.
 	if (irc) {irc->close(); if (objectp(irc)) destruct(irc); werror("%% Reconnecting\n");}
 	//TODO: Dodge the synchronous gethostbyname?
-	mapping opt = persist["ircsettings"];
+	mapping opt = (["nick": "Rosuav", "realname": "Chris Angelico", "pass": "oauth:<censored>"]);
 	if (!opt) return; //Not yet configured - can't connect.
 	opt += (["channel_program": channel_notif, "connection_lost": reconnect]);
 	if (mixed ex = catch {
 		G->G->irc = irc = Protocols.IRC.Client("irc.chat.twitch.tv", opt);
 		irc->cmd->cap("REQ","twitch.tv/membership");
-		irc->join_channel(("#"+indices(persist["channels"])[*])[*]);
+		irc->join_channel("#rosuav");
 	})
 	{
 		//Something went wrong with the connection. Most likely, it's a
@@ -68,21 +68,13 @@ class channel_notif
 	void create() {call_out(configure,0);}
 	void configure() //Needs to happen after this->name is injected by Protocols.IRC.Client
 	{
-		config = persist["channels"][name[1..]];
+		config = ([]);
 		if (config->chatlog)
 		{
 			if (!G->G->channelcolor[name]) {if (++G->G->nextcolor>7) G->G->nextcolor=1; G->G->channelcolor[name]=G->G->nextcolor;}
 			color = sprintf("\e[1;3%dm", G->G->channelcolor[name]);
 		}
 		else color = "\e[0m"; //Nothing will normally be logged, so don't allocate a color. If logging gets enabled, it'll take a reset to assign one.
-		if (config->currency && config->currency!="") wealth = persist->path("wealth", name);
-		if (config->countactive || wealth) //Note that having channel currency implies counting activity time.
-		{
-			viewertime = persist->path("viewertime", name);
-			foreach (viewertime; string user; int|array val) if (intp(val)) m_delete(viewertime, user);
-		}
-		else m_delete(persist["viewertime"], name);
-		persist->save();
 		save_call_out = call_out(save, 300);
 		mods[name[1..]] = 1; //HACK: Assume that the streamer is a mod. Makes for faster startup.
 	}
@@ -117,7 +109,6 @@ class channel_notif
 			++count;
 		}
 		//write("[Saved %d viewer times for channel %s]\n", count, name);
-		persist->save();
 	}
 	void not_join(object who) {log("%sJoin %s: %s\e[0m\n",color,name,who->user); viewers[who->user] = time(1);}
 	void not_part(object who,string message,object executor)
@@ -203,6 +194,5 @@ void create()
 	irc = G->G->irc;
 	//if (!irc) //HACK: Force reconnection every time
 		reconnect();
-	if (persist["ircsettings"]) bot_nick = persist["ircsettings"]->nick || "";
 	add_constant("send_message", send_message);
 }
