@@ -12,6 +12,12 @@ class channel_notif
 		int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
 		write("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg);
 	}
+	//Stubs because older Pikes don't include all of these by default
+	void not_join(object who) { }
+	void not_part(object who, string message, object executor) { }
+	void not_mode(object who, string mode) { }
+	void not_failed_to_join() { }
+	void not_invite(object who) { }
 }
 
 int main()
