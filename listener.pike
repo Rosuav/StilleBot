@@ -16,9 +16,9 @@ class channel_notif
 
 int main()
 {
-	Protocols.IRC.Client("irc.chat.twitch.tv",([
-		"nick": "Rosuav", "realname": "Chris Angelico", "pass": String.trim_all_whites(Stdio.read_file("pwd")),
-		"channel_program": channel_notif])
-	)->join_channel("#rosuav");
+	mapping opts = (["nick": "Rosuav", "realname": "Chris Angelico", "pass": String.trim_all_whites(Stdio.read_file("pwd"))]);
+	object irc = Protocols.IRC.Client("irc.chat.twitch.tv", opts);
+	irc->cmd->join("#rosuav");
+	(irc->channels["#rosuav"] = channel_notif())->name = "#rosuav";
 	return -1;
 }
