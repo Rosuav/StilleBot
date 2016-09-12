@@ -1,4 +1,3 @@
-array(string) bootstrap_files = ({"connection.pike", "window.pike"});
 mapping G = ([]);
 
 object bootstrap(string c)
@@ -12,20 +11,11 @@ object bootstrap(string c)
 	return compiled;
 }
 
-int bootstrap_all()
-{
-	object main = bootstrap(__FILE__);
-	if (!main || !main->bootstrap_files) {werror("UNABLE TO RESET ALL\n"); return 1;}
-	int err = 0;
-	foreach (bootstrap_files = main->bootstrap_files, string fn)
-		err += !bootstrap(fn);
-	return err;
-}
-
 int main(int argc,array(string) argv)
 {
 	add_constant("G", this);
 	G->argv = argv;
-	bootstrap_all();
+	bootstrap("connection.pike");
+	bootstrap("window.pike");
 	return -1;
 }

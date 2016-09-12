@@ -683,15 +683,6 @@ class mainwindow
 		sig_sel_changed();
 	}
 
-	void sig_update_activate(object self)
-	{
-		int err = G->bootstrap_all();
-		if (!err) return; //All OK? Be silent.
-		if (string winid = getenv("WINDOWID")) //On some Linux systems we can pop the console up.
-			catch (Process.create_process(({"wmctrl", "-ia", winid}))->wait()); //Try, but don't mind errors, eg if wmctrl isn't installed.
-		MessageBox(0, GTK2.MESSAGE_ERROR, GTK2.BUTTONS_OK, err + " compilation error(s) - see console", win->mainwindow);
-	}
-
 	void save_content(mapping(string:mixed) info)
 	{
 		string kwd = win->kwd->get_text();
