@@ -57,85 +57,10 @@ void send_message(string|array to,string msg)
 class channel_notif
 {
 	inherit Protocols.IRC.Channel;
-	string color;
-	mapping config = ([]);
-	multiset mods=(<>);
-	mapping(string:int) viewers = ([]);
-	mapping(string:array(int)) viewertime; //({while online, while offline})
-	mapping(string:array(int)) wealth; //({actual currency, fractional currency})
-	mixed save_call_out;
+	string color = "\e[1;34m";
 
-	void create() {call_out(configure,0);}
-	void configure() //Needs to happen after this->name is injected by Protocols.IRC.Client
-	{
-		config = ([]);
-		if (config->chatlog)
-		{
-			if (!G->G->channelcolor[name]) {if (++G->G->nextcolor>7) G->G->nextcolor=1; G->G->channelcolor[name]=G->G->nextcolor;}
-			color = sprintf("\e[1;3%dm", G->G->channelcolor[name]);
-		}
-		else color = "\e[0m"; //Nothing will normally be logged, so don't allocate a color. If logging gets enabled, it'll take a reset to assign one.
-		save_call_out = call_out(save, 300);
-		mods[name[1..]] = 1; //HACK: Assume that the streamer is a mod. Makes for faster startup.
-	}
-
-	void destroy() {save(); remove_call_out(save_call_out);}
-	void save(int|void as_at)
-	{
-		//Save everyone's online time on code reload and periodically
-		remove_call_out(save_call_out); save_call_out = call_out(save, 300);
-		if (!as_at) as_at = time();
-		int count = 0;
-		int offline = !G->G->stream_online_since[name[1..]];
-		int payout_div = wealth && (offline ? config->payout_offline : 1);
-		foreach (viewers; string user; int start) if (start && as_at > start)
-		{
-			int t = as_at-start;
-			if (viewertime)
-			{
-				if (!viewertime[user]) viewertime[user] = ({0,0});
-				viewertime[user][offline] += t;
-			}
-			viewers[user] = as_at;
-			if (payout_div)
-			{
-				if (!wealth[user]) wealth[user] = ({0, 0});
-				if (int mul = mods[user] && config->payout_mod) t *= mul;
-				t /= payout_div; //If offline payout is 1:3, divide the time spent by 3 and discard the loose seconds.
-				t += wealth[user][1];
-				wealth[user][0] += t / config->payout;
-				wealth[user][1] = t % config->payout;
-			}
-			++count;
-		}
-		//write("[Saved %d viewer times for channel %s]\n", count, name);
-	}
-	void not_join(object who) {log("%sJoin %s: %s\e[0m\n",color,name,who->user); viewers[who->user] = time(1);}
-	void not_part(object who,string message,object executor)
-	{
-		save(); //TODO, maybe: Save just this viewer's data
-		m_delete(viewers, who->user);
-		log("%sPart %s: %s\e[0m\n", color, name, who->user);
-	}
-
-	void wrap_message(object person, string msg)
-	{
-		if (sizeof(msg) <= 400)
-		{
-			//Short enough to just send as-is.
-			send_message(name, replace(msg, "$$", person->user));
-			return;
-		}
-		string target = sscanf(msg, "@$$: %s", msg) ? sprintf("@%s: ", person->user) : "";
-		msg = replace(msg, "$$", person->user);
-		//VERY simplistic form of word wrap.
-		while (sizeof(msg) > 400)
-		{
-			sscanf(msg, "%400s%s %s", string piece, string word, msg);
-			send_message(name, sprintf("%s%s%s ...", target, piece, word));
-		}
-		send_message(name, target + msg);
-	}
+	void not_join(object who) {write("%sJoin %s: %s\e[0m\n",color,name,who->user);}
+	void not_part(object who,string message,object executor) {write("%sPart %s: %s\e[0m\n", color, name, who->user);}
 
 	void not_message(object person,string msg)
 	{
@@ -144,18 +69,11 @@ class channel_notif
 		else msg = person->nick+": "+msg;
 		string pfx=sprintf("[%s] ",name);
 		int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
-		log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
+		write("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
 	}
 	void not_mode(object who,string mode)
 	{
-		if (sscanf(mode, "+o %s", string newmod)) mods[newmod] = 1;
-		if (sscanf(mode, "-o %s", string outmod)) mods[outmod] = 1;
-		log("%sMode %s: %s %O\e[0m\n",color,name,who->nick,mode);
-	}
-
-	void log(strict_sprintf_format fmt, sprintf_args ... args)
-	{
-		if (config->chatlog) write(fmt, @args);
+		write("%sMode %s: %s %O\e[0m\n",color,name,who->nick,mode);
 	}
 }
 
