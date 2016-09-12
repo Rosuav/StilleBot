@@ -7,24 +7,6 @@ void make_request(string url, function cbdata)
 		Protocols.HTTP.Query()->set_callbacks(request_ok,request_fail,cbdata));
 }
 
-class get_channel_info(string name, function callback)
-{
-	array cbargs;
-	void create(mixed ... cbargs)
-	{
-		this->cbargs = cbargs;
-		make_request("https://api.twitch.tv/kraken/channels/"+name, got_data);
-	}
-
-	void got_data(string data)
-	{
-		mapping info = Standards.JSON.decode(data);
-		sscanf(info->_links->self, "https://api.twitch.tv/kraken/channels/%s", string name);
-		if (!G->G->channel_info[name]) G->G->channel_info[name] = info;
-		if (callback) callback(info, @cbargs);
-	}
-}
-
 void streaminfo(string data)
 {
 	mapping info; catch {info = Standards.JSON.decode(data);}; //Some error returns aren't even JSON
@@ -32,12 +14,6 @@ void streaminfo(string data)
 	sscanf(info->_links->self, "https://api.twitch.tv/kraken/streams/%s", string name);
 	if (!info->stream)
 	{
-		if (!G->G->channel_info[name])
-		{
-			//Make sure we know about all channels
-			write("** Channel %s isn't online - fetching last-known state **\n", name);
-			get_channel_info(name, 0);
-		}
 		if (m_delete(G->G->stream_online_since, name))
 		{
 			write("** Channel %s noticed offline at %s **\n", name, Calendar.now()->format_nice());
@@ -68,5 +44,4 @@ void create()
 	if (!G->G->stream_online_since) G->G->stream_online_since = ([]);
 	if (!G->G->channel_info) G->G->channel_info = ([]);
 	remove_call_out(G->G->poll_call_out);
-	add_constant("get_channel_info", get_channel_info);
 }
