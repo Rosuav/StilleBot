@@ -13,11 +13,27 @@ void not_mode(object who, string mode) {write("[mode %s %s]\n", who->nick, mode)
 void not_failed_to_join() { }
 void not_invite(object who) { }
 
-int main()
+object irc;
+void console(object stdin, string buf)
+{
+	while (has_value(buf, "\n"))
+	{
+		sscanf(buf, "%s\n%s", string line, buf);
+		irc->send_message("#rosuav", string_to_utf8(line));
+	}
+	if (buf!="") irc->send_message("#rosuav", string_to_utf8(buf));
+}
+
+int main(int argc, array(string) argv)
 {
 	mapping opts = (["nick": "Rosuav", "realname": "Chris Angelico", "pass": String.trim_all_whites(Stdio.read_file("pwd"))]);
-	object irc = Protocols.IRC.Client("irc.chat.twitch.tv", opts);
+	irc = Protocols.IRC.Client("irc.chat.twitch.tv", opts);
 	irc->cmd->join("#rosuav");
 	irc->channels["#rosuav"] = this;
+	if (argc > 1 && argv[1] == "console")
+	{
+		Stdio.stdin->set_read_callback(console);
+		write("Console active.\n");
+	}
 	return -1;
 }
