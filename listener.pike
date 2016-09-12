@@ -7,9 +7,9 @@ void not_message(object person,string msg)
 	else write("%s: %s\n", person->nick, msg);
 }
 //Stubs because older Pikes don't include all of these by default
-void not_join(object who) { }
-void not_part(object who, string message, object executor) { }
-void not_mode(object who, string mode) { }
+void not_join(object who) {write("[join %s]\n", who->nick);}
+void not_part(object who, string message, object executor) {write("[part %s]\n", who->nick);}
+void not_mode(object who, string mode) {write("[mode %s %s]\n", who->nick, mode);}
 void not_failed_to_join() { }
 void not_invite(object who) { }
 
