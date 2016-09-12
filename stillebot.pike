@@ -16,6 +16,5 @@ int main(int argc,array(string) argv)
 	add_constant("G", this);
 	G->argv = argv;
 	bootstrap("connection.pike");
-	bootstrap("window.pike");
 	return -1;
 }
