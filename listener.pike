@@ -3,14 +3,10 @@
 
 class channel_notif
 {
-	inherit Protocols.IRC.Channel;
 	void not_message(object person,string msg)
 	{
-		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
-		else msg = person->nick+": "+msg;
-		string pfx=sprintf("[%s] ",name);
-		int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
-		write("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg);
+		if (sscanf(msg, "\1ACTION %s\1", string slashme)) write("%s %s\n", person->nick, slashme);
+		else write("%s: %s\n", person->nick, msg);
 	}
 	//Stubs because older Pikes don't include all of these by default
 	void not_join(object who) { }
@@ -25,6 +21,6 @@ int main()
 	mapping opts = (["nick": "Rosuav", "realname": "Chris Angelico", "pass": String.trim_all_whites(Stdio.read_file("pwd"))]);
 	object irc = Protocols.IRC.Client("irc.chat.twitch.tv", opts);
 	irc->cmd->join("#rosuav");
-	(irc->channels["#rosuav"] = channel_notif())->name = "#rosuav";
+	irc->channels["#rosuav"] = channel_notif();
 	return -1;
 }
