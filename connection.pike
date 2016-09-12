@@ -118,33 +118,6 @@ class channel_notif
 		log("%sPart %s: %s\e[0m\n", color, name, who->user);
 	}
 
-	string handle_command(object person, string msg)
-	{
-		if (config->allcmds && has_value(msg, config->noticeme||""))
-		{
-			mapping user = G_G_("participants", name[1..], person->user);
-			//Re-check every five minutes, max. We assume that people don't unfollow, so just recheck those every day.
-			if (user->lastfollowcheck <= time() - (user->following ? 86400 : 300))
-			{
-				user->lastfollowcheck = time();
-				check_following(person->user, name[1..]);
-			}
-			user->lastnotice = time();
-		}
-		if (function f = has_prefix(msg,"!") && G->G->commands[msg[1..]]) return f(this, person, "");
-		if (function f = (sscanf(msg, "!%s %s", string cmd, string param) == 2) && G->G->commands[cmd]) return f(this, person, param);
-		if (string cur = config->currency!="" && config->currency)
-		{
-			//Note that !currency will work (cf the above code), but !<currency-name> is the recommended way.
-			if (msg == "!"+cur) return G->G->commands->currency(this, person, "");
-			if (sscanf(msg, "!"+cur+" %s", string param) == 1) return G->G->commands->currency(this, person, param);
-		}
-		if (!config->allcmds) return 0;
-		if (string response = G->G->echocommands[msg]) return response;
-		if (string response = sscanf(msg, "%s %s", string cmd, string param) && G->G->echocommands[cmd])
-			return replace(response, "%s", param);
-	}
-
 	void wrap_message(object person, string msg)
 	{
 		if (sizeof(msg) <= 400)
@@ -167,8 +140,6 @@ class channel_notif
 	void not_message(object person,string msg)
 	{
 		if (lower_case(person->nick) == lower_case(bot_nick)) lastmsgtime = time(1);
-		string response = handle_command(person, msg);
-		if (response) wrap_message(person, response);
 		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
 		else msg = person->nick+": "+msg;
 		string pfx=sprintf("[%s] ",name);

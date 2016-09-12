@@ -63,41 +63,10 @@ void streaminfo(string data)
 	//write("%s: %O\n", name, info->stream);
 }
 
-class check_following(string user, string chan, function|void callback)
-{
-	array cbargs;
-	void create(mixed ... cbargs)
-	{
-		this->cbargs = cbargs;
-		make_request("https://api.twitch.tv/kraken/users/" + user + "/follows/channels/" + chan, got_data);
-	}
-
-	void got_data(string data)
-	{
-		mapping info; catch {info = Standards.JSON.decode(data);}; //As above
-		if (!info) return; //Server failure, probably
-		if (info->status == 404)
-		{
-			//Not following. Explicitly store that info.
-			sscanf(info->message, "%s is not following %s", string user, string chan);
-			if (!chan) return;
-			mapping foll = G_G_("participants", chan, user);
-			foll->following = 0;
-			if (callback) callback(user, chan, foll, @cbargs);
-		}
-		if (info->error) return; //Unknown error. Ignore it (most likely the user will be assumed not to be a follower).
-		sscanf(info->_links->self, "https://api.twitch.tv/kraken/users/%s/follows/channels/%s", string user, string chan);
-		mapping foll = G_G_("participants", chan, user);
-		foll->following = "since " + info->created_at;
-		if (callback) callback(user, chan, foll, @cbargs);
-	}
-}
-
 void create()
 {
 	if (!G->G->stream_online_since) G->G->stream_online_since = ([]);
 	if (!G->G->channel_info) G->G->channel_info = ([]);
 	remove_call_out(G->G->poll_call_out);
 	add_constant("get_channel_info", get_channel_info);
-	add_constant("check_following", check_following);
 }
