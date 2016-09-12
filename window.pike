@@ -639,7 +639,6 @@ class ircsettings
 	void makewindow()
 	{
 		win->mainwindow=GTK2.Window((["title":"Authenticate StilleBot"]))->add(two_column(({
-			win->open_auth=GTK2.Button("Open http://twitchapps.com/tmi/"),0,
 			"Nickname", win->nick=GTK2.Entry()->set_text(config->nick||""),
 			"Real name", win->realname=GTK2.Entry()->set_text(config->realname||""),
 			"OAuth2 key", win->pass=GTK2.Entry(),
@@ -649,11 +648,6 @@ class ircsettings
 				->add(stock_close())
 			,0
 		})));
-	}
-
-	void sig_open_auth_clicked()
-	{
-		invoke_browser("http://twitchapps.com/tmi/");
 	}
 
 	void sig_save_clicked()
