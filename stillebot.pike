@@ -1,4 +1,4 @@
-array(string) bootstrap_files = ({"globals.pike", "connection.pike", "window.pike"});
+array(string) bootstrap_files = ({"connection.pike", "window.pike"});
 mapping G = ([]);
 
 object bootstrap(string c)

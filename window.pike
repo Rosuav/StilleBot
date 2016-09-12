@@ -745,18 +745,6 @@ class mainwindow
 		G->G->irc->part_channel("#"+kwd);
 	}
 
-	void sig_whisper_clicked()
-	{
-		mapping users = G_G_("participants", selecteditem());
-		write("### Whisper participants for %s ###\n", selecteditem());
-		int limit = (int)win->timeout->get_text() || 600;
-		foreach (users; string user; mapping info)
-		{
-			int since = time() - info->lastnotice;
-			if (since < limit) write("----> %s%s - %ds ago\n", user, info->following ? " (following " + info->following + ")" : "", since);
-		}
-	}
-
 	void closewindow() {exit(0);}
 }
 
