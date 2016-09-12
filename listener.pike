@@ -18,7 +18,7 @@ int main()
 {
 	Protocols.IRC.Client("irc.chat.twitch.tv",([
 		"nick": "Rosuav", "realname": "Chris Angelico", "pass": String.trim_all_whites(Stdio.read_file("pwd")),
-		"channel_program": channel_notif]);
+		"channel_program": channel_notif])
 	)->join_channel("#rosuav");
 	return -1;
 }
