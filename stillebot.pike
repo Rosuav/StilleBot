@@ -7,7 +7,7 @@ http://twitchapps.com/tmi/
 and change your user and realname accordingly.
 */
 
-array(string) bootstrap_files = ({"globals.pike", "poll.pike", "connection.pike", "window.pike"});
+array(string) bootstrap_files = ({"globals.pike", "connection.pike", "window.pike"});
 mapping G = ([]);
 function(string:void) execcommand;
 

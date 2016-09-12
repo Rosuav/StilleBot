@@ -745,11 +745,6 @@ class mainwindow
 			G->G->irc->join_channel("#"+kwd);
 		}
 	}
-	void load_content(mapping(string:mixed) info)
-	{
-		if (selecteditem())
-			win->uptime->set_text(channel_uptime(selecteditem()) || "");
-	}
 	void delete_content(string kwd,mapping(string:mixed) info)
 	{
 		write("%%% Parting #"+kwd+"\n");
