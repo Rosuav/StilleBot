@@ -757,9 +757,11 @@ class mainwindow
 
 	void sig_whisper_clicked()
 	{
-		mapping users = G_G_("participants", selecteditem());
-		write("### Whisper participants for %s ###\n", selecteditem());
+		string chan = selecteditem();
+		if (!chan) return;
+		mapping users = G_G_("participants", chan);
 		int limit = (int)win->timeout->get_text() || 600;
+		write("### Whisper participants for %s ###\n", chan);
 		foreach (users; string user; mapping info)
 		{
 			int since = time() - info->lastnotice;
