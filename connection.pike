@@ -3,7 +3,7 @@ object irc;
 void reconnect()
 {
 	if (irc) {irc->close(); if (objectp(irc)) destruct(irc); werror("%% Reconnecting\n");}
-	mapping opt = (["nick": "Rosuav", "realname": "Chris Angelico", "pass": "oauth:<censored>"]);
+	mapping opt = (["nick": "Rosuav", "realname": "Chris Angelico", "pass": String.trim_all_whites(Stdio.read_file("pwd"))]);
 	if (!opt) return; //Not yet configured - can't connect.
 	opt += (["channel_program": channel_notif, "connection_lost": reconnect]);
 	G->G->irc = irc = Protocols.IRC.Client("irc.chat.twitch.tv", opt);

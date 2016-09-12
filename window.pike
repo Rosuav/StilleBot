@@ -630,37 +630,6 @@ class menu_item
 	}
 }
 
-class ircsettings
-{
-	inherit window;
-	constant is_subwindow = 0;
-	mapping config = ([]);
-
-	void makewindow()
-	{
-		win->mainwindow=GTK2.Window((["title":"Authenticate StilleBot"]))->add(two_column(({
-			"Nickname", win->nick=GTK2.Entry()->set_text(config->nick||""),
-			"Real name", win->realname=GTK2.Entry()->set_text(config->realname||""),
-			"OAuth2 key", win->pass=GTK2.Entry(),
-			GTK2.Label("Key will not be shown above."),0,
-			GTK2.HbuttonBox()
-				->add(win->save=GTK2.Button("Save"))
-				->add(stock_close())
-			,0
-		})));
-	}
-
-	void sig_save_clicked()
-	{
-		config->nick = win->nick->get_text();
-		config->realname = win->realname->get_text();
-		string pass = win->pass->get_text();
-		if (has_prefix(pass, "oauth:")) config->pass = pass;
-		persist->save();
-		closewindow();
-	}
-}
-
 class mainwindow
 {
 	inherit configdlg;
@@ -723,8 +692,6 @@ class mainwindow
 		MessageBox(0, GTK2.MESSAGE_ERROR, GTK2.BUTTONS_OK, err + " compilation error(s) - see console", win->mainwindow);
 	}
 
-	void sig_authenticate_activate() {ircsettings();}
-
 	void save_content(mapping(string:mixed) info)
 	{
 		string kwd = win->kwd->get_text();
@@ -750,8 +717,6 @@ class mainwindow
 
 void create(string name)
 {
-	add_constant("window", window);
-	add_constant("menu_item", menu_item);
 	if (!G->G->windows)
 	{
 		//First time initialization
@@ -762,5 +727,4 @@ void create(string name)
 	if (G->G->menuitems) values(G->G->menuitems)->destroy();
 	G->G->menuitems = ([]);
 	mainwindow();
-	if (!persist["ircsettings"]) ircsettings();
 }
