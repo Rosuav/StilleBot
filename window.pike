@@ -677,9 +677,8 @@ class mainwindow
 		"Song requests": ({"?songreq:Active", "#songreq_length:Max length (seconds)"}),
 	])});
 	constant persist_key = "channels";
-	mapping(string:mapping(string:mixed)) items = persist->setdefault(persist_key,([])); //Necessary because we bypass ::create()
 	constant is_subwindow = 0;
-	void create() {window::create("mainwindow"); remake_content();} //Bypass the configdlg constructor which would pass on no args
+	void create() {::create("mainwindow"); remake_content();}
 
 	void makewindow()
 	{
