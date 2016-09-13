@@ -1,0 +1,33 @@
+How to use StilleBot to play games with viewers
+===============================================
+
+The "Whisper to participants" feature can be used to restrict some sort of code
+or password to a subset of viewers (those "participating" in some form or other).
+There are a few things to be done to set up a system for such gaming, and then
+you have a simple way to disseminate the password.
+
+First and foremost, be sure the code isn't visible on your stream!! This sounds
+like a no-brainer, but it's easy to get caught out (if you hide the code behind
+your webcam but use a green-screen, a green water bottle could betray you!), so
+check this carefully. Consider having a scene with a dedicated masking image in
+the area where the code will be, or switching to a "Getting Ready" scene with a
+close-up of your webcam instead of game capture.
+
+Then decide what your definition of "participating" is. Followers only? Type a
+specific keyword, or just any chat message? (Some chat message is required, to
+prevent lurkers from being unexpectedly called out.) After how long should a
+person be dropped from the list if not still talking? (Default is 10 minutes or
+600 seconds.)
+
+Start StilleBot, eg by double-clicking on its name. If it's the first time you
+started it, you'll be prompted to register your bot with Twitch. You can reuse
+the name of an existing bot you control, or create a dedicated account. The bot
+doesn't need a modsword or other privileges. Fill in your channel name in the
+top right, tick the box to enable "Notice Me!", adjust parameters if required,
+and click "Save" in the bottom center of the screen.
+
+At this point, StilleBot is listening to your chat, and taking notice of who is
+speaking. (If you filled in a keyword, only those who say that keyword will be
+noticed.) You can then open up "Whisper to Participants", key in the password or
+secret code, and then click on people's names to send them the info. What you do
+with this power is up to you, now :)
