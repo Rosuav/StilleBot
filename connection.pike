@@ -158,7 +158,7 @@ class channel_notif
 
 	string handle_command(object person, string msg)
 	{
-		if (config->allcmds && has_value(msg, config->noticeme||""))
+		if (config->noticechat && has_value(msg, config->noticeme||""))
 		{
 			mapping user = G_G_("participants", name[1..], person->user);
 			//Re-check every five minutes, max. We assume that people don't unfollow, so just recheck those every day.

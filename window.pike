@@ -723,7 +723,7 @@ class _mainwindow
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
 	constant elements=({"kwd:Channel", "?allcmds:All commands active", "+notes:Notes", "'uptime:", ([
-		"\"Notice Me!\"": ({"'Let chat participants get your attention.", "?Followers only", "NoticeMe keyword", "#Timeout on keyword=600", "!Whisper to participants"}),
+		"\"Notice Me!\"": ({"'Let chat participants get your attention.", "?noticechat:Enabled", "?Followers only", "NoticeMe keyword", "#Timeout on keyword=600", "!Whisper to participants"}),
 		"Channel currency": ({"Currency name", "#Payout interval", "#payout_offline:Offline divisor [0 = none]", "#payout_mod:Mod multiplier"}),
 		"Logging": ({"?chatlog:Log chat to console", "?countactive:Count participant activity"}),
 		"Song requests": ({"?songreq:Active", "#songreq_length:Max length (seconds)"}),
