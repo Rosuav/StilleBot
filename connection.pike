@@ -1,6 +1,32 @@
 object irc;
 string bot_nick;
 
+#if __REAL_VERSION__ < 8.1
+//Basically monkey-patch in a couple of methods that Pike 8.0 doesn't ship with.
+class IRCClient
+{
+	inherit Protocols.IRC.Client;
+	void join_channel(string chan)
+	{
+	   cmd->join(chan);
+	   if (options->channel_program)
+	   {
+	      object ch = options->channel_program();
+	      ch->name = lower_case(chan);
+	      channels[lower_case(chan)] = ch;
+	   }
+	}
+
+	void part_channel(string chan)
+	{
+	   cmd->part(chan);
+	   m_delete(channels, lower_case(chan));
+	}
+}
+#else
+#define IRCClient Protocols.IRC.Client
+#endif
+
 void reconnect()
 {
 	//NOTE: This appears to be creating duplicate channel joinings, for some reason.
@@ -11,7 +37,7 @@ void reconnect()
 	if (!opt) return; //Not yet configured - can't connect.
 	opt += (["channel_program": channel_notif, "connection_lost": reconnect]);
 	if (mixed ex = catch {
-		G->G->irc = irc = Protocols.IRC.Client("irc.chat.twitch.tv", opt);
+		G->G->irc = irc = IRCClient("irc.chat.twitch.tv", opt);
 		irc->cmd->cap("REQ","twitch.tv/membership");
 		//Maybe grab 'commands' cap too?
 		irc->join_channel(("#"+indices(persist["channels"])[*])[*]);
