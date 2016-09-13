@@ -632,7 +632,6 @@ class menu_item
 class ircsettings
 {
 	inherit window;
-	constant is_subwindow = 0;
 	mapping config = persist->path("ircsettings");
 
 	void makewindow()
