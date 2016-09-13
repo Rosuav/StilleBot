@@ -641,7 +641,7 @@ class ircsettings
 			win->open_auth=GTK2.Button("Open http://twitchapps.com/tmi/"),0,
 			"Nickname", win->nick=GTK2.Entry()->set_text(config->nick||""),
 			"Real name", win->realname=GTK2.Entry()->set_text(config->realname||""),
-			"OAuth2 key", win->pass=GTK2.Entry(),
+			"OAuth2 key", win->pass=GTK2.Entry()->set_invisible_char('*'),
 			GTK2.Label("Key will not be shown above."),0,
 			GTK2.HbuttonBox()
 				->add(win->save=GTK2.Button("Save"))
