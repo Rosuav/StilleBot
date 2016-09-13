@@ -666,7 +666,7 @@ class ircsettings
 	}
 }
 
-class whisper_participants(string chan, int limit)
+class whisper_participants(string chan, int limit, int followersonly)
 {
 	inherit window;
 	void create() {::create();}
@@ -698,7 +698,13 @@ class whisper_participants(string chan, int limit)
 		{
 			int since = time() - info->lastnotice;
 			if (since > limit) continue;
-			string msg = sprintf("%s%s", user, info->following ? " (following " + (info->following/"T")[0] + ")" : "");
+			string msg;
+			if (!info->following)
+			{
+				if (followersonly) continue;
+				msg = user;
+			}
+			else msg = sprintf("%s (following %s)", user, (info->following/"T")[0]);
 			object btn = GTK2.Button(msg)->show();
 			win->people->add(btn);
 			btn->signal_connect("clicked", send_whisper, user);
@@ -805,7 +811,7 @@ class _mainwindow
 	{
 		string chan = selecteditem();
 		if (!chan) return;
-		whisper_participants(chan, (int)win->timeout->get_text() || 600);
+		whisper_participants(chan, (int)win->timeout->get_text() || 600, win->followers->get_active());
 	}
 
 	void closewindow() {exit(0);}
