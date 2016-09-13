@@ -106,7 +106,7 @@ void register_hook(string event, function handler)
 
 int runhooks(string event, string skip, mixed ... args)
 {
-	array(array(string|function)) hooks = G->G->hooks;
+	array(array(string|function)) hooks = G->G->hooks[event];
 	if (!hooks) return 0; //Nothing registered for this event
 	foreach (hooks, [string name, function func]) if (!skip || skip<name)
 		if (mixed ex = catch {if (func(@args)) return 1;})
