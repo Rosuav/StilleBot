@@ -4,6 +4,7 @@ void create(string n)
 	//TODO: Have some way to 'declare' these down below, rather than
 	//coding them here.
 	if (!G->G->commands) G->G->commands=([]);
+	if (!G->G->hooks) G->G->hooks=([]);
 }
 
 class command
@@ -89,4 +90,25 @@ mapping G_G_(string ... path)
 		ret = ret[part];
 	}
 	return ret;
+}
+
+void register_hook(string event, function handler)
+{
+	string origin = Program.defined(function_program(handler));
+	//Trim out any hooks for this event that were defined in the same class
+	//"Same class" is identified by its textual origin, rather than the actual
+	//identity of the program, such that a reloaded/updated version of a class
+	//counts as the same one as before.
+	G->G->hooks[event] = filter(G->G->hooks[event] || ({ }),
+		lambda(array(string|function) f) {return f[0] != origin;}
+	) + ({({origin, handler})});
+}
+
+int runhooks(string event, string skip, mixed ... args)
+{
+	array(array(string|function)) hooks = G->G->hooks;
+	if (!hooks) return 0; //Nothing registered for this event
+	foreach (hooks, [string name, function func]) if (!skip || skip<name)
+		if (mixed ex = catch {if (func(@args)) return 1;})
+			werror("Error in hook %s->%s: %s", name, event, describe_backtrace(ex));
 }
