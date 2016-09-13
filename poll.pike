@@ -43,6 +43,7 @@ void streaminfo(string data)
 			write("** Channel %s noticed offline at %s **\n", name, Calendar.now()->format_nice());
 			if (object chan = G->G->irc->channels["#"+name])
 				chan->save(); //We don't get the offline time, so we'll pretend it was online right up until the time we noticed.
+			runhooks("channel-offline", name);
 		}
 	}
 	else
@@ -56,6 +57,7 @@ void streaminfo(string data)
 			write("** Channel %s went online at %s **\n", name, started_here->format_nice());
 			if (object chan = G->G->irc->channels["#"+name])
 				chan->save(started->unix_time());
+			runhooks("channel-online", name);
 		}
 		G->G->stream_online_since[name] = started;
 	}
