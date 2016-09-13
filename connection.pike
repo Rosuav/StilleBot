@@ -110,7 +110,7 @@ class channel_notif
 			viewertime = persist->path("viewertime", name);
 			foreach (viewertime; string user; int|array val) if (intp(val)) m_delete(viewertime, user);
 		}
-		else m_delete(persist["viewertime"], name);
+		else if (persist["viewertime"]) m_delete(persist["viewertime"], name);
 		persist->save();
 		save_call_out = call_out(save, 300);
 		mods[name[1..]] = 1; //HACK: Assume that the streamer is a mod. Makes for faster startup.
