@@ -663,6 +663,7 @@ class ircsettings
 		if (has_prefix(pass, "oauth:")) config->pass = pass;
 		persist->save();
 		closewindow();
+		if (!G->G->irc) G->bootstrap_all(); //Force an update to get us connected.
 	}
 }
 
