@@ -17,6 +17,8 @@ array(string) all_files(string dir)
 //commands here are completely non-discoverable, it's much better to not work
 //in a way that some users will be completely unable to use.
 //But having /update here is a Good Thing, in situations of GUI breakage :)
+//Note that the console is entirely unavailable on Windows; but development
+//on Windows sucks anyway, so the assumption is that this will be deployed.
 void execcommand(string line)
 {
 	if (sscanf(line, "/join %s", string chan))
