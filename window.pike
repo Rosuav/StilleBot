@@ -666,18 +666,53 @@ class ircsettings
 	}
 }
 
-void whisper_participants(string chan, int limit)
+class whisper_participants(string chan, int limit)
 {
-	mapping users = G_G_("participants", chan);
-	write("### Whisper participants for %s ###\n", chan);
-	foreach (users; string user; mapping info)
+	inherit window;
+	void create() {::create();}
+
+	void makewindow()
 	{
-		int since = time() - info->lastnotice;
-		if (since < limit) write("----> %s%s - %ds ago\n", user, info->following ? " (following " + info->following + ")" : "", since);
+		win->mainwindow = GTK2.Window((["title": "Whisper to chat participants"]))->add(GTK2.Vbox(0, 10)
+			->add(GTK2.Label("Whisper to participants for " + chan))
+			->add(GTK2.Hbox(0, 10)
+				->pack_start(GTK2.Label("Message:"), 0, 0, 0)
+				->add(win->msg = GTK2.Entry())
+			)
+			->add(win->people = GTK2.VbuttonBox())
+			->add(GTK2.HbuttonBox()
+				->add(win->refresh = GTK2.Button("Refresh"))
+				->add(stock_close())
+			)
+		);
+		sig_refresh_clicked();
+	}
+
+	void sig_refresh_clicked()
+	{
+		mapping users = G_G_("participants", chan);
+		array prev = win->people->get_children();
+		prev->destroy(); destruct(prev[*]);
+		//TODO: Sort them by earliest comment/notice?
+		foreach (users; string user; mapping info)
+		{
+			int since = time() - info->lastnotice;
+			if (since > limit) continue;
+			string msg = sprintf("%s%s", user, info->following ? " (following " + (info->following/"T")[0] + ")" : "");
+			object btn = GTK2.Button(msg)->show();
+			win->people->add(btn);
+			btn->signal_connect("clicked", send_whisper, user);
+		}
+	}
+
+	void send_whisper(object self, string user)
+	{
+		send_message("#" + chan, "/w " + user + " " + win->msg->get_text());
 	}
 }
 
-class mainwindow
+object mainwindow;
+class _mainwindow
 {
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
@@ -689,7 +724,7 @@ class mainwindow
 	])});
 	constant persist_key = "channels";
 	constant is_subwindow = 0;
-	void create() {::create("mainwindow"); remake_content();}
+	void create() {::create("mainwindow"); remake_content(); mainwindow = win->mainwindow;}
 
 	void makewindow()
 	{
@@ -789,6 +824,6 @@ void create(string name)
 	G->G->window = this;
 	if (G->G->menuitems) values(G->G->menuitems)->destroy();
 	G->G->menuitems = ([]);
-	mainwindow();
+	_mainwindow();
 	if (!persist["ircsettings"]) ircsettings();
 }
