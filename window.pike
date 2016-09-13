@@ -749,6 +749,13 @@ class _mainwindow
 		destruct(win->stock_close);
 	}
 
+	void sig_kwd_changed()
+	{
+		string txt = win->kwd->get_text();
+		string lc = lower_case(txt);
+		if (lc != txt) win->kwd->set_text(lc);
+	}
+
 	//This allows updating of the content block in a live configdlg.
 	//Downside: It probably *only* works (reliably) with the new 'elements'
 	//system; no guarantees about all the older ways of doing things. So
