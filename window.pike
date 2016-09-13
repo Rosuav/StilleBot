@@ -666,6 +666,17 @@ class ircsettings
 	}
 }
 
+void whisper_participants(string chan, int limit)
+{
+	mapping users = G_G_("participants", chan);
+	write("### Whisper participants for %s ###\n", chan);
+	foreach (users; string user; mapping info)
+	{
+		int since = time() - info->lastnotice;
+		if (since < limit) write("----> %s%s - %ds ago\n", user, info->following ? " (following " + info->following + ")" : "", since);
+	}
+}
+
 class mainwindow
 {
 	inherit configdlg;
@@ -759,14 +770,7 @@ class mainwindow
 	{
 		string chan = selecteditem();
 		if (!chan) return;
-		mapping users = G_G_("participants", chan);
-		int limit = (int)win->timeout->get_text() || 600;
-		write("### Whisper participants for %s ###\n", chan);
-		foreach (users; string user; mapping info)
-		{
-			int since = time() - info->lastnotice;
-			if (since < limit) write("----> %s%s - %ds ago\n", user, info->following ? " (following " + info->following + ")" : "", since);
-		}
+		whisper_participants(chan, (int)win->timeout->get_text() || 600);
 	}
 
 	void closewindow() {exit(0);}
