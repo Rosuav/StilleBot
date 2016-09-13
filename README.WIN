@@ -3,10 +3,7 @@ installed using the GitHub zip archive distribution, and can be kept up-to-date
 the same way.
 
 Start with this installer for the Pike interpreter:
-http://pike.lysator.liu.se/pub/pike/all/7.8.866/Pike-v7.8.866-win32.msi
-
-Note that the current Pike 8.0 installers do not provide a sufficiently-recent
-GTK, and are not advised. Use the above installer for the time being.
+http://pike.lysator.liu.se/pub/pike/latest-stable/Pike-v8.0.276-win32-oldlibs.msi
 
 Then download a ZIP file of the latest StilleBot:
 https://github.com/Rosuav/StilleBot/archive/master.zip
