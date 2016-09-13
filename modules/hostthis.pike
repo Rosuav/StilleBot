@@ -12,8 +12,9 @@ string process(object channel, object person, string param)
 	G->G->hostthis[channel->name[1..]] += ({person->nick});
 }
 
-void create()
+void create(string name)
 {
 	if (!G->G->hostthis) G->G->hostthis = ([]);
 	register_hook("channel-offline", gone);
+	::create(name);
 }
