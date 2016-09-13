@@ -38,7 +38,9 @@ void reconnect()
 	opt += (["channel_program": channel_notif, "connection_lost": reconnect]);
 	if (mixed ex = catch {
 		G->G->irc = irc = IRCClient("irc.chat.twitch.tv", opt);
+		#if __REAL_VERSION__ >= 8.1
 		irc->cmd->cap("REQ","twitch.tv/membership");
+		#endif
 		//Maybe grab 'commands' cap too?
 		irc->join_channel(("#"+indices(persist["channels"])[*])[*]);
 	})
