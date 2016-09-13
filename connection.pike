@@ -210,7 +210,11 @@ class channel_notif
 		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
 		else msg = person->nick+": "+msg;
 		string pfx=sprintf("[%s] ",name);
+		#ifdef __NT__
+		int wid = 80 - sizeof(pfx);
+		#else
 		int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
+		#endif
 		log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
 	}
 	void not_mode(object who,string mode)
