@@ -2,7 +2,7 @@ inherit command;
 
 int gone(string channel)
 {
-	foreach (G->G->hostthis[channel] || ({ }), string person)
+	foreach (m_delete(G->G->hostthis, channel) || ({ }), string person)
 		send_message("#" + person, "/unhost");
 }
 
