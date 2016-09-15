@@ -71,6 +71,7 @@ class check_following(string user, string chan, function|void callback)
 	void create(mixed ... cbargs)
 	{
 		this->cbargs = cbargs;
+		//TODO: Use a client ID to avoid rate-limiting
 		make_request("https://api.twitch.tv/kraken/users/" + user + "/follows/channels/" + chan, got_data);
 	}
 
