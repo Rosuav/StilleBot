@@ -14,9 +14,3 @@ string process(object channel, object person, string param)
 	if (param == "") param = person->user;
 	check_following(lower_case(param), channel->name[1..], respond, person->user);
 }
-
-void create(string name)
-{
-	::create(name);
-	G->G->echocommands = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_commands.json")||"{}");
-}
