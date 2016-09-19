@@ -116,6 +116,8 @@ void create()
 #if !constant(G)
 mapping G = (["G":([])]);
 mapping persist = (["channels": ({ })]);
+void runhooks(mixed ... args) { }
+mapping G_G_(mixed ... args) {return ([]);}
 
 int requests;
 void streaminfo_display(string data)
@@ -139,14 +141,29 @@ void chaninfo_display(string data)
 		info->display_name, info->game || "(null)", info->url, string_to_utf8(info->status || "(null)"));
 	if (!--requests) exit(0);
 }
+void followinfo_display(string user, string chan, mapping info)
+{
+	if (!info->following) write("%s is not following %s.", user, chan);
+	else write("%s has been following %s %s.", user, chan, (info->following/"T")[0]);
+	if (!--requests) exit(0);
+	if (!--requests) exit(0); //yeah, this one kinda counts as two
+}
 int main(int argc, array(string) argv)
 {
 	requests = argc * 2 - 2;
 	foreach (argv[1..], string chan)
 	{
-		//For online channels, we could save ourselves one request. Simpler to just do 'em all though.
-		make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo_display);
-		make_request("https://api.twitch.tv/kraken/channels/"+chan, chaninfo_display);
+		if (sscanf(chan, "%s/%s", string chan, string user) && user)
+		{
+			write("Checking follow status...\n");
+			check_following(user, chan, followinfo_display);
+		}
+		else
+		{
+			//For online channels, we could save ourselves one request. Simpler to just do 'em all though.
+			make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo_display);
+			make_request("https://api.twitch.tv/kraken/channels/"+chan, chaninfo_display);
+		}
 	}
 	return requests && -1;
 }
