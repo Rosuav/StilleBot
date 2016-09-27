@@ -2,7 +2,8 @@
 inherit menu_item;
 #endif
 
-//Most of this code is lifted from Gypsum. TODO: Synchronize them somehow.
+//Most of this code is lifted from Gypsum. TODO: Synchronize them somehow. Or make this all
+//part of some kind of generic framework, like Hogan has - it'd be a self-updating GUI app.
 
 //Unzip the specified data (should be exactly what could be read from/written to a .zip file)
 //and call the callback for each file, with the file name, contents, and the provided arg.
