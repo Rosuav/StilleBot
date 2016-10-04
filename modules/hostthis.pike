@@ -1,5 +1,6 @@
 inherit command;
 
+//TODO: Only gone them if the last hostthis by that person was this channel.
 int gone(string channel)
 {
 	foreach (m_delete(G->G->hostthis, channel) || ({ }), string person)
