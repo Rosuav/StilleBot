@@ -76,6 +76,9 @@ class check_following(string user, string chan, function|void callback)
 		//TODO: Use a client ID to avoid rate-limiting
 		//https://github.com/justintv/Twitch-API/blob/master/authentication.md
 		//I'm not sure whether the client secret is ever necessary here.
+		//CJA 20161006: Am now sending auth, but it's the default auth. Might
+		//need to get a stronger auth than chat_login, which would mean properly
+		//talking to the API and setting everything up.
 		make_request("https://api.twitch.tv/kraken/users/" + user + "/follows/channels/" + chan, got_data);
 	}
 
