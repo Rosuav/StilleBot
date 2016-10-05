@@ -145,8 +145,8 @@ void chaninfo_display(string data)
 }
 void followinfo_display(string user, string chan, mapping info)
 {
-	if (!info->following) write("%s is not following %s.", user, chan);
-	else write("%s has been following %s %s.", user, chan, (info->following/"T")[0]);
+	if (!info->following) write("%s is not following %s.\n", user, chan);
+	else write("%s has been following %s %s.\n", user, chan, (info->following/"T")[0]);
 	if (!--requests) exit(0);
 	if (!--requests) exit(0); //yeah, this one kinda counts as two
 }
