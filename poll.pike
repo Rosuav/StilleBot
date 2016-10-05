@@ -3,7 +3,9 @@ void request_ok(object q, function cbdata) {q->async_fetch(data_available, cbdat
 void request_fail(object q) { } //If a poll request fails, just ignore it and let the next poll pick it up.
 void make_request(string url, function cbdata)
 {
-	Protocols.HTTP.do_async_method("GET",url,0,0,
+	sscanf(persist["ircsettings"]["pass"] || "", "oauth:%s", string pass);
+	Protocols.HTTP.do_async_method("GET",url,0,
+		pass && (["Authorization": "OAuth " + pass]),
 		Protocols.HTTP.Query()->set_callbacks(request_ok,request_fail,cbdata));
 }
 
@@ -117,7 +119,7 @@ void create()
 
 #if !constant(G)
 mapping G = (["G":([])]);
-mapping persist = (["channels": ({ })]);
+mapping persist = (["channels": ({ }), "ircsettings": Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"))["ircsettings"] || ([])]);
 void runhooks(mixed ... args) { }
 mapping G_G_(mixed ... args) {return ([]);}
 
