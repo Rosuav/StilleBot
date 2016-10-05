@@ -72,6 +72,10 @@ class check_following(string user, string chan, function|void callback)
 	{
 		this->cbargs = cbargs;
 		//TODO: Use a client ID to avoid rate-limiting
+		//https://github.com/justintv/Twitch-API/blob/master/authentication.md
+		//This seems to require a client ID, which must be kept secret (naturally);
+		//but should deployed instances of a running bot share a client ID, or
+		//should one be generated anew for every instance?
 		make_request("https://api.twitch.tv/kraken/users/" + user + "/follows/channels/" + chan, got_data);
 	}
 
