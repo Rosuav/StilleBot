@@ -224,6 +224,7 @@ class window
 		collect_signals("sig_", win);
 		if (win->stock_menu_bar)
 		{
+			multiset(string) seen = (<>);
 			foreach (sort(indices(this_program)), string attr)
 			{
 				if (sscanf(attr, "menu_%s_%s", string menu, string item) && this[menu + "_" + item])
@@ -238,8 +239,12 @@ class window
 					m->add(mi->show());
 					win->signals += ({gtksignal(mi, "activate", this[menu + "_" + item])});
 					win->menuitems[attr] = mi;
+					seen[attr] = 1;
 				}
 			}
+			//Having marked off everything we've added/updated, remove the left-overs.
+			foreach (win->menuitems - seen; string key;)
+				m_delete(win->menuitems, key)->destroy();
 		}
 	}
 
