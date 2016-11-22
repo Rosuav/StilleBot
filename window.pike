@@ -856,6 +856,7 @@ class _mainwindow
 	}
 	void load_content(mapping(string:mixed) info)
 	{
+		//TODO: If not online, show who the channel is hosting, if any.
 		if (selecteditem())
 			win->uptime->set_text(channel_uptime(selecteditem()) || "");
 	}
