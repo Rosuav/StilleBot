@@ -125,9 +125,18 @@ void runhooks(mixed ... args) { }
 mapping G_G_(mixed ... args) {return ([]);}
 
 int requests;
-void streaminfo_display(string data)
+
+mapping decode(string data)
 {
 	mapping info = Standards.JSON.decode(data);
+	if (info && !info->error) return info;
+	if (!info) write("Request failed - server down?\n");
+	else write("%d %s: %s\n", info->status, info->error, info->message||"(unknown)");
+	if (!--requests) exit(0);
+}
+void streaminfo_display(string data)
+{
+	mapping info = decode(data); if (!info) return;
 	sscanf(info->_links->self, "https://api.twitch.tv/kraken/streams/%s", string name);
 	if (info->stream)
 	{
@@ -139,7 +148,7 @@ void streaminfo_display(string data)
 }
 void chaninfo_display(string data)
 {
-	mapping info = Standards.JSON.decode(data);
+	mapping info = decode(data); if (!info) return;
 	sscanf(info->_links->self, "https://api.twitch.tv/kraken/channels/%s", string name);
 	if (info->mature) write("[MATURE] ");
 	write("%s was last playing %s, at %s - %s\n",
@@ -151,7 +160,6 @@ void followinfo_display(string user, string chan, mapping info)
 	if (!info->following) write("%s is not following %s.\n", user, chan);
 	else write("%s has been following %s %s.\n", user, chan, (info->following/"T")[0]);
 	if (!--requests) exit(0);
-	if (!--requests) exit(0); //yeah, this one kinda counts as two
 }
 int main(int argc, array(string) argv)
 {
@@ -161,6 +169,7 @@ int main(int argc, array(string) argv)
 		if (sscanf(chan, "%s/%s", string ch, string user) && user)
 		{
 			write("Checking follow status...\n");
+			--requests; //These count as only one, not two
 			check_following(user, ch, followinfo_display);
 		}
 		else
