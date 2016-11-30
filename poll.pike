@@ -158,10 +158,10 @@ int main(int argc, array(string) argv)
 	requests = argc * 2 - 2;
 	foreach (argv[1..], string chan)
 	{
-		if (sscanf(chan, "%s/%s", string chan, string user) && user)
+		if (sscanf(chan, "%s/%s", string ch, string user) && user)
 		{
 			write("Checking follow status...\n");
-			check_following(user, chan, followinfo_display);
+			check_following(user, ch, followinfo_display);
 		}
 		else
 		{
