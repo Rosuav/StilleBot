@@ -40,6 +40,7 @@ void reconnect()
 		G->G->irc = irc = IRCClient("irc.chat.twitch.tv", opt);
 		#if __REAL_VERSION__ >= 8.1
 		irc->cmd->cap("REQ","twitch.tv/membership");
+		irc->cmd->cap("REQ","twitch.tv/commands");
 		#endif
 		//Maybe grab 'commands' cap too?
 		irc->join_channel(("#"+indices(persist["channels"])[*])[*]);
@@ -93,6 +94,7 @@ class channel_notif
 	mapping(string:array(int)) viewertime; //({while online, while offline})
 	mapping(string:array(int)) wealth; //({actual currency, fractional currency})
 	mixed save_call_out;
+	string hosting;
 
 	void create() {call_out(configure,0);}
 	void configure() //Needs to happen after this->name is injected by Protocols.IRC.Client
@@ -204,6 +206,13 @@ class channel_notif
 
 	void not_message(object person,string msg)
 	{
+		if (person->nick == "tmi.twitch.tv")
+		{
+			//It's probably a NOTICE rather than a PRIVMSG
+			if (sscanf(msg, "Now hosting %s.", string h) && h)
+				hosting = h;
+			//Fall through and display them, if only for debugging
+		}
 		if (lower_case(person->nick) == lower_case(bot_nick)) lastmsgtime = time(1);
 		string response = handle_command(person, msg);
 		if (response) wrap_message(person, response);
