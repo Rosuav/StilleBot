@@ -729,23 +729,30 @@ class whisper_participants(string chan, int limit, int followersonly)
 				->pack_start(GTK2.Label("Message:"), 0, 0, 0)
 				->add(win->msg = GTK2.Entry())
 			)
-			->add(win->people = GTK2.VbuttonBox())
+			->add(win->people = GTK2.Table(50, 5, 0))
 			->add(GTK2.HbuttonBox()
 				->add(win->refresh = GTK2.Button("Refresh"))
+				->add(win->shuffle = GTK2.Button("Shuffle"))
 				->add(stock_close())
 			)
 		);
 		sig_refresh_clicked();
 	}
 
-	void sig_refresh_clicked()
+	void sig_refresh_clicked() {redraw(0);}
+	void sig_shuffle_clicked() {redraw(1);}
+	void redraw(int sortmode)
 	{
-		mapping users = G_G_("participants", chan);
+		mapping userinfo = G_G_("participants", chan);
 		array prev = win->people->get_children();
 		prev->destroy(); destruct(prev[*]);
-		//TODO: Sort them by earliest comment/notice?
-		foreach (users; string user; mapping info)
+		array(string) users = indices(userinfo);
+		if (sortmode) Array.shuffle(users);
+		//TODO: Sort them by earliest comment/notice for sortmode 2?
+		int pos = 0;
+		foreach (users, string user)
 		{
+			mapping info = userinfo[user];
 			int since = time() - info->lastnotice;
 			if (since > limit) continue;
 			string msg;
@@ -756,7 +763,8 @@ class whisper_participants(string chan, int limit, int followersonly)
 			}
 			else msg = sprintf("%s (following %s)", user, (info->following/"T")[0]);
 			object btn = GTK2.Button(msg)->show();
-			win->people->add(btn);
+			int row = pos/5, col = pos%5; ++pos;
+			win->people->attach(btn, col, col+1, row, row+1, 0, 0, 1, 1);
 			btn->signal_connect("clicked", send_whisper, user);
 		}
 	}
