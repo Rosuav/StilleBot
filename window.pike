@@ -763,7 +763,7 @@ class whisper_participants(string chan, int limit, int followersonly)
 			}
 			else msg = sprintf("%s (following %s)", user, (info->following/"T")[0]);
 			object btn = GTK2.Button(msg)->show();
-			int row = pos/5, col = pos%5; ++pos;
+			int row = pos/4, col = pos%4; ++pos;
 			win->people->attach(btn, col, col+1, row, row+1, 0, 0, 1, 1);
 			btn->signal_connect("clicked", send_whisper, user);
 		}
