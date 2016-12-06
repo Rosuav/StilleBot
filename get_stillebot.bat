@@ -8,7 +8,7 @@ start /wait pike.msi
 mkdir c:\stillebot
 mkdir c:\stillebot\modules
 cd c:\stillebot
-powershell -command "& { (New-Object Net.WebClient).DownloadFile('http://rosuav.github.io/stillebot/modules/dlupdate.pike', 'modules\dlupdate.pike') }"
+powershell -command "& { (New-Object Net.WebClient).DownloadFile('http://rosuav.github.io/StilleBot/modules/dlupdate.pike', 'modules\dlupdate.pike') }"
 
 plugins\dlupdate.pike
 
