@@ -2,6 +2,11 @@ StilleBot should be fully functional on Microsoft Windows. It is most easily
 installed using the GitHub zip archive distribution, and can be kept up-to-date
 the same way.
 
+On recent-enough Windowses, this installer should be able to do everything:
+https://rosuav.github.io/stillebot/get_stillebot.bat
+
+If it doesn't, for any reason, you will need to install manually.
+
 Start with this installer for the Pike interpreter:
 http://pike.lysator.liu.se/pub/pike/latest-stable/Pike-v8.0.358-win32-oldlibs.msi
 
