@@ -106,12 +106,11 @@ void menu_clicked()
 #else
 //Stand-alone usage: Update, with minimal dependencies
 //Ideally, this will work even if startup is failing.
-mapping G=([]);
+object G = this;
 void bootstrap_all() {exit(0,"Update complete.\n");}
 int main(int argc,array(string) argv)
 {
 	cd(combine_path(@explode_path(argv[0])[..<2]));
-	add_constant("G",this);
 	Protocols.HTTP.do_async_method("GET","https://codeload.github.com/Rosuav/StilleBot/zip/master",0,0,
 		Protocols.HTTP.Query()->set_callbacks(request_ok,request_fail,([])));
 	write("Downloading latest code...\n");
