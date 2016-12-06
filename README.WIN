@@ -3,7 +3,7 @@ installed using the GitHub zip archive distribution, and can be kept up-to-date
 the same way.
 
 Start with this installer for the Pike interpreter:
-http://pike.lysator.liu.se/pub/pike/latest-stable/Pike-v8.0.276-win32-oldlibs.msi
+http://pike.lysator.liu.se/pub/pike/latest-stable/Pike-v8.0.358-win32-oldlibs.msi
 
 Then download a ZIP file of the latest StilleBot:
 https://github.com/Rosuav/StilleBot/archive/master.zip
