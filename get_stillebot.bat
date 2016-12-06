@@ -10,7 +10,7 @@ mkdir c:\stillebot\modules
 cd c:\stillebot
 powershell -command "& { (New-Object Net.WebClient).DownloadFile('http://rosuav.github.io/StilleBot/modules/dlupdate.pike', 'modules\dlupdate.pike') }"
 
-plugins\dlupdate.pike
+modules\dlupdate.pike
 
 rem Create a shortcut. In theory, WindowStyle=7 should give a minimized window.
 rem TODO: Find the desktop directory even if it isn't obvious.
