@@ -163,7 +163,8 @@ class channel_notif
 		if (config->noticechat && has_value(lower_case(msg), config->noticeme||""))
 		{
 			mapping user = G_G_("participants", name[1..], person->user);
-			//Re-check every five minutes, max. We assume that people don't unfollow, so just recheck those every day.
+			//Re-check every five minutes, max. We assume that people don't
+			//generally unfollow, so just recheck those every day.
 			if (config->followers && user->lastfollowcheck <= time() - (user->following ? 86400 : 300))
 			{
 				user->lastfollowcheck = time();
