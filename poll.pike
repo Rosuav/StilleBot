@@ -50,6 +50,7 @@ void streaminfo(string data)
 	}
 	else
 	{
+		//TODO: Report when the game changes?
 		G->G->channel_info[name] = info->stream->channel; //Take advantage of what we're given and update our cache with a single request
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->stream->created_at);
 		if (!G->G->stream_online_since[name])
