@@ -213,6 +213,7 @@ class channel_notif
 			if (sscanf(msg, "Now hosting %s.", string h) && h)
 				hosting = h;
 			if (msg == "Exited host mode.") hosting = 0;
+			if (has_suffix(msg, " has gone offline. Exiting host mode.")) hosting = 0;
 			//Fall through and display them, if only for debugging
 		}
 		if (lower_case(person->nick) == lower_case(bot_nick)) lastmsgtime = time(1);
