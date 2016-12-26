@@ -688,10 +688,11 @@ class ircsettings
 	{
 		win->mainwindow=GTK2.Window((["title":"Authenticate StilleBot"]))->add(two_column(({
 			win->open_auth=GTK2.Button("Open http://twitchapps.com/tmi/"),0,
-			"Nickname", win->nick=GTK2.Entry()->set_text(config->nick||""),
-			"Real name", win->realname=GTK2.Entry()->set_text(config->realname||""),
+			"Twitch user name", win->nick=GTK2.Entry()->set_text(config->nick||""),
+			"Real name (optional)", win->realname=GTK2.Entry()->set_text(config->realname||""),
 			"OAuth2 key", win->pass=GTK2.Entry()->set_visibility(0),
-			GTK2.Label("Key will not be shown above."),0,
+			GTK2.Label("Key will not be shown above. Obtain"),0,
+			GTK2.Label("one from twitchapps and paste it in."),0,
 			GTK2.HbuttonBox()
 				->add(win->save=GTK2.Button("Save"))
 				->add(stock_close())
