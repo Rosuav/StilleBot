@@ -782,6 +782,7 @@ class easy_auth
 		persist->save();
 		closewindow();
 		if (!G->G->irc) G->bootstrap_all(); //Force an update to get us connected.
+		mainwindow->ensure_active_in_channel(win->nick);
 	}
 }
 
@@ -957,6 +958,16 @@ class _mainwindow
 	}
 
 	void closewindow() {exit(0);}
+
+	void ensure_active_in_channel(string chan)
+	{
+		//Pile of hacks. Because why not.
+		if (persist["channels"][chan]) return; //Already active
+		if (selecteditem()) select_keyword("-- New --");
+		win->kwd->set_text(chan);
+		win->allcmds->set_active(1);
+		sig_pb_save_clicked();
+	}
 }
 
 void create(string name)
