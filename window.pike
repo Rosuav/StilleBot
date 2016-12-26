@@ -756,7 +756,7 @@ class easy_auth
 		mixed data = Standards.JSON.decode(q->unicode_data());
 		if (data->error || !data->name) {win->check->set_label("Error checking key"); return;}
 		win->check->set_label("Checked OK");
-		win->nick = data->name; win->realname = data->display_name; win->oauth = pass;
+		win->nick = data->name; win->realname = data->display_name; win->oauth = "oauth:" + pass;
 		win->save->set_sensitive(1)->set_label("Save: "+data->display_name);
 	}
 	void request_ok(object q, string pass) {q->async_fetch(data_available, pass);}
