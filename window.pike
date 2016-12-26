@@ -681,6 +681,7 @@ class menu_item
 
 class ircsettings
 {
+	//Full control but less convenient
 	inherit window;
 	mapping config = persist->path("ircsettings");
 
@@ -711,6 +712,73 @@ class ircsettings
 		config->realname = win->realname->get_text();
 		string pass = win->pass->get_text();
 		if (has_prefix(pass, "oauth:")) config->pass = pass;
+		persist->save();
+		closewindow();
+		if (!G->G->irc) G->bootstrap_all(); //Force an update to get us connected.
+	}
+}
+
+class easy_auth
+{
+	//The simple, normal way to authenticate
+	inherit window;
+	mapping config = persist->path("ircsettings");
+	//TODO: Generate our own, probably using a github.io redirect URI
+	constant url = "https://api.twitch.tv/kraken/oauth2/authorize?response_type=token&client_id=q6batx0epp608isickayubi39itsckt&redirect_uri=https://twitchapps.com/tmi/&scope=chat_login+user_read";
+
+	void makewindow()
+	{
+		win->mainwindow=GTK2.Window((["title":"Authenticate with Twitch"]))->add(GTK2.Vbox(0, 10)
+			->add(GTK2.Entry()->set_text(url)->set_editable(0))
+			->add(win->open_auth=GTK2.Button("Open in web browser"))
+			->add(GTK2.Hbox(0, 10)
+				->add(GTK2.Label("OAuth2 key"))
+				->add(win->pass=GTK2.Entry()->set_visibility(0))
+			)
+			->add(win->check=GTK2.Button("Paste your key above")->set_sensitive(0))
+			->add(GTK2.HbuttonBox()
+				->add(win->save=GTK2.Button("Save")->set_sensitive(0))
+				->add(stock_close())
+			)
+		);
+	}
+
+	void sig_open_auth_clicked() {invoke_browser(url);}
+
+	void sig_pass_changed()
+	{
+		if (win->pass->get_text() == "") win->check->set_sensitive(0)->set_label("Paste your key above");
+		else win->check->set_sensitive(1)->set_label("Check key");
+	}
+
+	void data_available(object q, string pass)
+	{
+		mixed data = Standards.JSON.decode(q->unicode_data());
+		if (data->error || !data->name) {win->check->set_label("Error checking key"); return;}
+		win->check->set_label("Checked OK");
+		win->nick = data->name; win->realname = data->display_name; win->oauth = pass;
+		win->save->set_sensitive(1)->set_label("Save: "+data->display_name);
+	}
+	void request_ok(object q, string pass) {q->async_fetch(data_available, pass);}
+	void request_fail(object q, string pass) { }
+
+	void sig_check_clicked()
+	{
+		win->check->set_sensitive(0)->set_label("Checking...");
+		sscanf(win->pass->get_text(), "oauth:%s", string pass);
+		if (!pass) return;
+		Protocols.HTTP.do_async_method("GET", "https://api.twitch.tv/kraken/user", 0,
+			(["Authorization": "OAuth " + pass]),
+			Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, pass));
+	}
+
+	void sig_save_clicked()
+	{
+		if (!win->oauth) return; //Shouldn't happen (button is disabled till it's set)
+		mapping config = persist->path("ircsettings");
+		config->nick = win->nick;
+		config->realname = win->realname;
+		config->pass = win->oauth;
 		persist->save();
 		closewindow();
 		if (!G->G->irc) G->bootstrap_all(); //Force an update to get us connected.
@@ -798,8 +866,9 @@ class _mainwindow
 		object vbox = win->mainwindow->get_child();
 		object menubar = GTK2.MenuBar()
 			->add(GTK2.MenuItem("_Options")->set_submenu(win->optmenu=GTK2.Menu()
-				->add(win->update=GTK2.MenuItem("Update code"))
-				->add(win->authenticate=GTK2.MenuItem("Authenticate with Twitch"))
+				->add(win->update=GTK2.MenuItem("Update (developer mode)"))
+				->add(win->authenticate=GTK2.MenuItem("Change Twitch user"))
+				->add(win->manual_auth=GTK2.MenuItem("Authenticate manually"))
 			));
 		vbox->pack_start(menubar,0,0,0)->reorder_child(menubar, 0);
 		//Remove the close button - we don't need it.
@@ -847,7 +916,8 @@ class _mainwindow
 		MessageBox(0, GTK2.MESSAGE_ERROR, GTK2.BUTTONS_OK, err + " compilation error(s) - see console", win->mainwindow);
 	}
 
-	void sig_authenticate_activate() {ircsettings();}
+	void sig_authenticate_activate() {easy_auth();}
+	void sig_manual_auth_activate() {ircsettings();}
 
 	void save_content(mapping(string:mixed) info)
 	{
@@ -903,5 +973,5 @@ void create(string name)
 	if (G->G->menuitems) values(G->G->menuitems)->destroy();
 	G->G->menuitems = ([]);
 	_mainwindow();
-	if (!persist["ircsettings"]) ircsettings();
+	if (!persist["ircsettings"]) easy_auth();
 }
