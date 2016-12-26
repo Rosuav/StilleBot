@@ -3,7 +3,7 @@ cd %TMP%
 
 rem Download the Pike installer and Gypsum's archive
 rem http://superuser.com/a/760010
-powershell -command "& { (New-Object Net.WebClient).DownloadFile('http://pike.lysator.liu.se/pub/pike/latest-stable/Pike-v8.0.358-win32-oldlibs.msi', 'pike.msi') }"
+powershell -command "& { (New-Object Net.WebClient).DownloadFile('http://pike.lysator.liu.se/pub/pike/latest-stable/Pike-v8.0.370-win32-oldlibs.msi', 'pike.msi') }"
 start /wait pike.msi
 mkdir c:\stillebot
 mkdir c:\stillebot\modules
