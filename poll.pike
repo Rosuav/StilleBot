@@ -162,8 +162,38 @@ void followinfo_display(string user, string chan, mapping info)
 	else write("%s has been following %s %s.\n", user, chan, (info->following/"T")[0]);
 	if (!--requests) exit(0);
 }
+mapping gamecounts = ([]), gameviewers = ([]), gamechannel = ([]);
+void show_turkish(string data)
+{
+	mapping info = decode(data); if (!info) exit(0);
+	foreach (info->streams, mapping st)
+	{
+		gamecounts[st->channel->game]++;
+		gameviewers[st->channel->game] += st->viewers;
+		gamechannel[st->channel->game] = st->channel->display_name + ": " + st->channel->status;
+	}
+	if (sizeof(info->streams) == 100) {make_request(info->_links->next, show_turkish); return;}
+	//Print out a summary
+	if (sizeof(gamecounts))
+	{
+		array games = ({ });
+		foreach (gamecounts; string game; int count)
+			if (count > 1) games += ({sprintf("%3d:%3d %s", count, gameviewers[game], game)});
+			else games += ({sprintf("  1:%3d %s - %s", gameviewers[game], game, gamechannel[game])});
+		sort(games);
+		write("%{%s\n%}", reverse(games));
+	}
+	else write("No games online.\n");
+	exit(0);
+}
 int main(int argc, array(string) argv)
 {
+	if (argc > 1 && argv[1] == "hack")
+	{
+		//TODO: Have a generic way to do this nicely.
+		make_request("https://api.twitch.tv/kraken/streams?language=tr&limit=100&stream_type=live", show_turkish);
+		return -1;
+	}
 	requests = argc * 2 - 2;
 	foreach (argv[1..], string chan)
 	{
