@@ -160,7 +160,7 @@ class channel_notif
 
 	string handle_command(object person, string msg)
 	{
-		if (config->noticechat && has_value(lower_case(msg), config->noticeme||""))
+		if (config->noticechat && person->user && has_value(lower_case(msg), config->noticeme||""))
 		{
 			mapping user = G_G_("participants", name[1..], person->user);
 			//Re-check every five minutes, max. We assume that people don't
