@@ -152,7 +152,7 @@ void chaninfo_display(string data)
 	mapping info = decode(data); if (!info) return;
 	sscanf(info->_links->self, "https://api.twitch.tv/kraken/channels/%s", string name);
 	if (info->mature) write("[MATURE] ");
-	write("%s was last playing %s, at %s - %s\n",
+	write("%s was last seen playing %s, at %s - %s\n",
 		info->display_name, info->game || "(null)", info->url, string_to_utf8(info->status || "(null)"));
 	if (!--requests) exit(0);
 }
