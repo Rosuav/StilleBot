@@ -1,3 +1,5 @@
+//Can be invoked from the command line for tools or interactive API inspection.
+
 void data_available(object q, function cbdata) {cbdata(q->unicode_data());}
 void request_ok(object q, function cbdata) {q->async_fetch(data_available, cbdata);}
 void request_fail(object q) { } //If a poll request fails, just ignore it and let the next poll pick it up.
