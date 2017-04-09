@@ -140,9 +140,8 @@ void interactive(string data)
 {
 	mapping info = decode(data); if (!info) return;
 	write("%O\n", info);
-	write("-- request: %s\n", info->_links->self);
 }
-void req(string url)
+int req(string url) //Returns 0 to suppress Hilfe warning.
 {
 	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/kraken/" + url[url[0]=='/'..];
 	make_request(url, interactive);
@@ -201,6 +200,11 @@ void show_turkish(string data)
 }
 int main(int argc, array(string) argv)
 {
+	if (argc == 1)
+	{
+		Tools.Hilfe.StdinHilfe(({"inherit \"poll.pike\";", "start backend"}));
+		return 0;
+	}
 	if (argc > 1 && argv[1] == "hack")
 	{
 		//TODO: Have a generic way to do this nicely.
