@@ -142,6 +142,9 @@ void interactive(string data)
 {
 	mapping info = decode(data); if (!info) return;
 	write("%O\n", info);
+	//TODO: Surely there's a better way to access the history object for the running Hilfe...
+	object history = function_object(all_constants()["backend_thread"]->backtrace()[0]->args[0])->history;
+	history->push(info);
 }
 int req(string url) //Returns 0 to suppress Hilfe warning.
 {
