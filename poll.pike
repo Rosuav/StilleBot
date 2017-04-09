@@ -135,6 +135,19 @@ mapping decode(string data)
 	else write("%d %s: %s\n", info->status, info->error, info->message||"(unknown)");
 	if (!--requests) exit(0);
 }
+
+void interactive(string data)
+{
+	mapping info = decode(data); if (!info) return;
+	write("%O\n", info);
+	write("-- request: %s\n", info->_links->self);
+}
+void req(string url)
+{
+	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/kraken/" + url[url[0]=='/'..];
+	make_request(url, interactive);
+}
+
 void streaminfo_display(string data)
 {
 	mapping info = decode(data); if (!info) return;
