@@ -48,6 +48,17 @@ void streaminfo(string data)
 			if (object chan = G->G->irc->channels["#"+name])
 				chan->save(); //We don't get the offline time, so we'll pretend it was online right up until the time we noticed.
 			runhooks("channel-offline", name);
+			mapping vstat = G->G->viewer_stats[name];
+			if (sizeof(vstat->half_hour) == 30)
+			{
+				mapping config = persist["channels"][name];
+				config->stream_stats += ({([
+					"start": vstat->start, "end": time(),
+					"viewers_high": vstat->high_half_hour,
+					"viewers_low": vstat->low_half_hour,
+				])});
+				persist->save();
+			}
 		}
 	}
 	else
@@ -65,6 +76,22 @@ void streaminfo(string data)
 			runhooks("channel-online", name);
 		}
 		G->G->stream_online_since[name] = started;
+		int viewers = info->stream->viewers;
+		//Calculate half-hour rolling average, and then do stats on that
+		//Record each stream's highest and lowest half-hour average, and maybe the overall average (not the average of the averages)
+		//Offer a graph showing the channel's progress
+		mapping vstat = G->G->viewer_stats; if (!vstat) vstat = G->G->viewer_stats = ([]);
+		if (!vstat[name]) vstat[name] = (["start": time()]);
+		vstat = vstat[name]; //Focus on this channel.
+		vstat->half_hour += ({viewers});
+		if (sizeof(vstat->half_hour) >= 30)
+		{
+			vstat->half_hour = vstat->half_hour[<29..]; //Keep just the last half hour of stats
+			int avg = `+(@vstat->half_hour) / 30;
+			vstat->high_half_hour = max(vstat->high_half_hour, avg);
+			if (!has_index(vstat, "low_half_hour")) vstat->low_half_hour = avg;
+			else vstat->low_half_hour = min(vstat->low_half_hour, avg);
+		}
 	}
 	//write("%O\n", G->G->stream_online_since);
 	//write("%s: %O\n", name, info->stream);
