@@ -26,7 +26,7 @@ class menu_clicked
 		//Next up: Recognized types of nested structures.
 		if (arrayp(thing) || multisetp(thing))
 		{
-			win->store->set_value(row, 0, sprintf("%s%t", name, thing));
+			win->store->set_value(row, 0, sprintf("%s%t (%d)", name, thing, sizeof(thing)));
 			thing = (array)thing;
 			foreach (thing[..99], mixed subthing)
 				add_to_store(subthing, 0, row);
@@ -36,7 +36,7 @@ class menu_clicked
 		}
 		else if (mappingp(thing))
 		{
-			win->store->set_value(row, 0, name + "mapping");
+			win->store->set_value(row, 0, sprintf("%smapping (%d)", name, sizeof(thing)));
 			int count = 0;
 			foreach (sort(indices(thing)), mixed key)
 			{
