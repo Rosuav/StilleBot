@@ -48,7 +48,7 @@ void streaminfo(string data)
 			if (object chan = G->G->irc->channels["#"+name])
 				chan->save(); //We don't get the offline time, so we'll pretend it was online right up until the time we noticed.
 			runhooks("channel-offline", name);
-			mapping vstat = G->G->viewer_stats[name];
+			mapping vstat = m_delete(G->G->viewer_stats, name);
 			if (sizeof(vstat->half_hour) == 30)
 			{
 				mapping config = persist["channels"][name];
