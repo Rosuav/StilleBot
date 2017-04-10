@@ -81,7 +81,7 @@ void streaminfo(string data)
 		//Record each stream's highest and lowest half-hour average, and maybe the overall average (not the average of the averages)
 		//Offer a graph showing the channel's progress
 		mapping vstat = G->G->viewer_stats; if (!vstat) vstat = G->G->viewer_stats = ([]);
-		if (!vstat[name]) vstat[name] = (["start": time()]);
+		if (!vstat[name]) vstat[name] = (["start": time()]); //The stats might not have started at stream start, eg if bot wasn't running
 		vstat = vstat[name]; //Focus on this channel.
 		vstat->half_hour += ({viewers});
 		if (sizeof(vstat->half_hour) >= 30)
