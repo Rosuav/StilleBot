@@ -891,7 +891,7 @@ class _mainwindow
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
 	constant elements=({"kwd:Channel", "?allcmds:All commands active", "+notes:Notes", "'uptime:", ([
-		"\"Notice Me!\"": ({"'Let chat participants get your attention.", "?noticechat:Enabled", "?Followers only", "NoticeMe keyword", "#Timeout (within X sec)=600", "!Whisper to participants"}),
+		"\"Notice Me!\"": ({"'Let chat participants get your attention.", "?noticechat:Enabled", "?Followers only", "NoticeMe keyword", "#Timeout (within X sec)=600", "!Notify participants"}),
 		"Channel currency": ({"Currency name", "#Payout interval", "#payout_offline:Offline divisor [0 for none]", "#payout_mod:Mod multiplier"}),
 		"Logging": ({"?chatlog:Log chat to console", "?countactive:Count participant activity"}),
 		"Song requests": ({"?songreq:Active", "#songreq_length:Max length (seconds)"}),
@@ -990,7 +990,7 @@ class _mainwindow
 		G->G->irc->part_channel("#"+kwd);
 	}
 
-	void sig_whisper_clicked()
+	void sig_notify_clicked()
 	{
 		string chan = selecteditem();
 		if (!chan) return;
