@@ -174,7 +174,7 @@ class channel_notif
 		}
 		//HACK - Autorespond whenever CCB is someone's senpai :D
 		//TODO: Allow modules to notice this kind of line
-		if (has_suffix(msg, " is looking for their senpai, cutiecakebot . Senpai, notice me! <3"))
+		if (has_suffix(msg, " is looking for their senpai, cutiecakebot . Senpai, notice me! devicatTYVM"))
 		{
 			// /*Hack: let me try it too (debugging mode)*/
 			if (name != "#devi_cat"/* && name != "#rosuav"*/) return 0; //Restrict this to the right channel
