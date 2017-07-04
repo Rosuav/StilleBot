@@ -5,9 +5,10 @@ constant require_moderator = 1;
 void shoutout(mapping info, string channel)
 {
 	string game = "playing " + (info->game||"(null)"); if (info->game == "Creative") game = "being creative";
-	send_message(channel, sprintf("%s was last seen %s, at %s - go check that stream out, maybe drop a follow! The last thing done was: %s",
+	send_message(channel, utf8_to_string(sprintf(
+		"%s was last seen %s, at %s - go check that stream out, maybe drop a follow! The last thing done was: %s",
 		info->display_name, game, info->url, info->status || "(null)"
-	));
+	)));
 }
 
 string process(object channel, object person, string param)
