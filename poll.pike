@@ -1,5 +1,8 @@
 //Can be invoked from the command line for tools or interactive API inspection.
 
+//NOTE: The saved stream and channel info are exactly as given by Twitch. Notably,
+//all text strings are encoded UTF-8, and must be decoded before use.
+
 void data_available(object q, function cbdata) {cbdata(q->unicode_data());}
 void request_ok(object q, function cbdata) {q->async_fetch(data_available, cbdata);}
 void request_fail(object q) { } //If a poll request fails, just ignore it and let the next poll pick it up.
