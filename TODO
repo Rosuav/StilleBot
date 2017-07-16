@@ -6,5 +6,5 @@
 * Log showing channel game changes as well as online/offline
 * Autorespond using whispers, eg for Jackbox gaming
 * !currency command is sometimes crashing (maybe if you have none??)
-* Song requests are spamming with "too long" spuriously
+* Song requests are spamming with "too long" spuriously (might be fixed)
 * Song request "Skip" button not working
