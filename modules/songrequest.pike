@@ -11,10 +11,13 @@ the concept of .part files for ones that aren't fully downloaded. This
 MAY be sufficient.) TODO: Allow mods to say "!songrequest force youtubeid"
 to delete and force redownloading.
 
-The player is pretty simple. Invoke "cvlc --play-and-exit filename.m4a"
-and have an event on its termination. Edge cases: There might not be any
-currently-downloaded files (eg on first song request), so the downloader
-may need to trigger the player.
+The player invokes VLC (with its full default interface, giving manual
+control eg of volume) and connects to its STDIN control interface. Newly
+added tracks are enqueued, and whenever one finishes, the status will be
+updated.
+
+TODO: As of 20170717, the player has a GUI. Should we download video as
+well as audio?
 
 TODO: Flexible system for permitting/denying song requests. For example,
 permit mods only, or followers/subs only (once StilleBot learns about
@@ -74,18 +77,54 @@ mapping(string:array) read_cache()
 	return cache;
 }
 
+mixed check_call_out;
+void vlc_stdin(mixed id, string data)
+{
+	if (vlc_stdin != G->G->vlc_stdin) {G->G->vlc_stdin(id, data); return;}
+	while (sscanf(data, "%*s+----[ CLI commands matching `marker' ]\r\n+----[ end of help ]\r\n%s> %s", string response, data))
+	{
+		sscanf(response, "%d\r\n%s", G->G->songrequest_active, string info);
+		int length, time;
+		if (G->G->songrequest_active) sscanf(info, "%d\r\n%d\r\n", length, time); //Otherwise they're invalid info, so just use 0 and 0.
+		int delay = (length - time) / 2;
+		if (delay < 1) delay = 1; //Never hammer the pipe (that's an interesting visual)
+		if (delay > 30) delay = 30; //Periodically re-check
+		check_call_out = call_out(check_queue, delay);
+	}
+}
+
 void check_queue()
 {
+	if (check_call_out) {remove_call_out(check_call_out); check_call_out = 0;}
 	if (check_queue != G->G->check_queue) {G->G->check_queue(); return;}
 	object p = G->G->songrequest_player;
-	if (p && !p->status()) return; //Already playing something.
+	if (p && p->status() == 2) {
+		//Process has ended. Reap it cleanly.
+		p->wait();
+		p = 0;
+		m_delete(G->G, "songrequest_player");
+	}
 	m_delete(G->G, "songrequest_nowplaying");
 	call_out(status_update, 0);
 	if (string chan = G->G->songrequest_channel)
 	{
 		//Disable song requests once the channel's offline or has song reqs disabled
-		if (!persist["channels"][chan]->songreq) return; //Song requests are not currently active.
-		if (!G->G->stream_online_since[chan]) return; //Song requests are available only while the channel is online.
+		if (!persist["channels"][chan]->songreq //Song requests are not currently active.
+			||!G->G->stream_online_since[chan]) //Song requests are available only while the channel is online.
+		{
+			if (p) G->G->songrequest_stdin->write("quit\n");
+			return;
+		}
+	}
+	//Check if something's currently being played.
+	if (p)
+	{
+		G->G->songrequest_stdin->write("help marker\nis_playing\nget_length\nget_time\n");
+		//Should be two possibilities:
+		//1) "0\r\n\r\n\r\n" (ie "0" and two blanks) - not playing
+		//2) "1\r\nNNN\r\nMMM\r\n" (three numbers; NNN >= MMM) - playing
+		//Either way, there'll be a "> " when we're done
+		if (G->G->songrequest_active) return;
 	}
 	mapping(string:array) cache = read_cache();
 	string fn = 0;
@@ -107,15 +146,28 @@ void check_queue()
 		G->G->songrequest_lastplayed = fn;
 		G->G->songrequest_started = time();
 		//We have something to play!
-		G->G->songrequest_player = Process.create_process(
-			//TODO: Make the additional parameters part customizable
-			({"cvlc", "--play-and-exit", fn, "--alsa-audio-device", "default"}),
-			([
-				"callback": check_queue,
-				"stdout": nullpipe(),
-				"stderr": nullpipe(),
-			])
-		);
+		if (!p)
+		{
+			G->G->songrequest_stdout = Stdio.File();
+			G->G->songrequest_player = p = Process.create_process(
+				//TODO: Make the additional parameters part customizable
+				//Useful console commands:
+				//enqueue <filename> - when a song is finished downloading
+				//next - to veto a song; also hit this immediately after enqueuing onto an empty playlist
+				//get_title - find out the currently-playing track
+				//get_time - find out how far we are into it (subtract from track length)
+				({"vlc", "--no-play-and-exit", "--extraintf", "lua", "--alsa-audio-device", "default"}),
+				([
+					"callback": check_queue,
+					"stdin": (G->G->songrequest_stdin=Stdio.File())->pipe(),
+					"stdout": (G->G->songrequest_stdout=Stdio.File())->pipe(),
+					"stderr": nullpipe(),
+				])
+			);
+			G->G->songrequest_stdout->set_nonblocking(vlc_stdin, 0);
+		}
+		G->G->songrequest_stdin->write("enqueue "+fn+"\nnext\n");
+		call_out(check_queue, 1);
 	}
 }
 
@@ -379,4 +431,5 @@ not running song requests, the contents of this directory can be freely deleted.
 	if (!persist["songrequests"]) persist["songrequests"] = ({ });
 	if (!persist["songrequest_meta"]) persist["songrequest_meta"] = ({ });
 	G->G->check_queue = check_queue;
+	G->G->vlc_stdin = vlc_stdin;
 }
