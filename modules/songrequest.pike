@@ -108,7 +108,8 @@ void check_queue()
 		G->G->songrequest_started = time();
 		//We have something to play!
 		G->G->songrequest_player = Process.create_process(
-			({"cvlc", "--play-and-exit", fn}),
+			//TODO: Make the additional parameters part customizable
+			({"cvlc", "--play-and-exit", fn, "--alsa-audio-device", "default"}),
 			([
 				"callback": check_queue,
 				"stdout": nullpipe(),
