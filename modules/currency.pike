@@ -32,7 +32,8 @@ string process(object channel, object person, string param)
 		return sprintf("@$$: %s has been with the stream for %s, and has earned %d %s.",
 			param, describe_time(channel->viewertime[lower_case(param)][0]),
 			w[0], channel->config->currency);
+	array w = channel->wealth(person->user) || ({0}); //Brand new viewers have zero currency
 	return sprintf("@$$: You have been with the stream for %s, and have earned %d %s.",
 		describe_time(channel->viewertime[person->user][0]),
-		channel->wealth[person->user][0], channel->config->currency);
+		w[0], channel->config->currency);
 }
