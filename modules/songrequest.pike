@@ -251,7 +251,7 @@ class get_video_length(string reqchan, string requser, int maxlen, string title)
 	{
 		::process_done();
 		send_message(reqchan, sprintf("@%s: Video too long [%s, max %s]: %s",
-			requser, String.trim_all_whites(data), describe_time_short(maxlen), title));
+			requser, String.trim_all_whites(data), describe_time_short(maxlen), title || "(unknown)"));
 	}
 }
 
