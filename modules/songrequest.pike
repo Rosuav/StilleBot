@@ -331,7 +331,7 @@ class youtube_dl(string videoid, string requser)
 		::process_done();
 		m_delete(G->G->songrequest_downloading, videoid);
 		check_queue();
-		if (sscanf(data, "%*s\n[download] %s does not pass filter duration < %d, skipping", string title, int maxlen))
+		if (sscanf(data, "%*s\n[download] %s does not pass filter duration < %d, skipping", string title, int maxlen) && maxlen)
 		{
 			get_video_length(reqchan, requser, maxlen, title, videoid);
 			//NOTE: This does *not* remove the entries from the visible queue, as that would mess with
