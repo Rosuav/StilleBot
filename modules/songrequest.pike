@@ -247,7 +247,7 @@ class menu_clicked
 	void sig_skip_clicked()
 	{
 		object p = G->G->songrequest_player;
-		if (p) p->kill(signum("SIGINT"));
+		//if (p) p->kill(signum("SIGINT")); //Nerfed. Use the VLC GUI for now. TODO.
 		call_out(sig_check_queue_clicked, 0.1);
 	}
 
@@ -366,7 +366,7 @@ string process(object channel, object person, string param)
 	{
 		object p = G->G->songrequest_player;
 		if (!p) return "@$$: Nothing currently playing.";
-		p->kill(signum("SIGINT"));
+		//p->kill(signum("SIGINT")); //Nerfed (see similar code below)
 		return "@$$: Song skipped.";
 	}
 	if (param == "flush" && channel->mods[person->user])
