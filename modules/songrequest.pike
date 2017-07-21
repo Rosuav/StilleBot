@@ -366,7 +366,7 @@ string process(object channel, object person, string param)
 	{
 		object p = G->G->songrequest_player;
 		if (!p) return "@$$: Nothing currently playing.";
-		//p->kill(signum("SIGINT")); //Nerfed (see similar code below)
+		//p->kill(signum("SIGINT")); //Nerfed (see similar code above)
 		return "@$$: Song skipped.";
 	}
 	if (param == "flush" && channel->mods[person->user])
