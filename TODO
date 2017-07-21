@@ -5,3 +5,4 @@
   - Is there a way to detect channel slow mode automatically?
 * Log showing channel game changes as well as online/offline
 * Autorespond using whispers, eg for Jackbox gaming
+* Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
