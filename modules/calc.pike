@@ -10,7 +10,7 @@ string process(object channel, object person, string param)
 	if (mixed ex=catch {
 		int|float ret = compile("int|float _() {return "+param+";}")()->_();
 		if (intp(ret) || floatp(ret)) return sprintf("@$$: %O", ret);
-	}) return "@$$: Invalid expression ["+describe_error(ex)+"]";
+	}) return "@$$: Invalid expression [" + (describe_error(ex)/"\n")[0] + "]";
 	//This shouldn't normally happen - anything that returns a non-int/float will
 	//normally trigger a compilation error - but we don't want to be silent.
 	return "@$$: Invalid expression [must have real result]";
