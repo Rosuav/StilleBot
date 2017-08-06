@@ -1,5 +1,4 @@
 inherit command;
-constant require_allcmds = 1;
 constant require_moderator = 1;
 
 void shoutout(mapping info, string channel)

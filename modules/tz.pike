@@ -1,6 +1,7 @@
 //Note that this is currently aimed somewhat at CookingForNoobs, with its timezone conversions.
 //TODO: Make the target timezone per-channel customizable.
 inherit command;
+constant all_channels = 1;
 
 mapping timezones;
 mapping(string:string) tzleaf;

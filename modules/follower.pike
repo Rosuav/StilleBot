@@ -1,6 +1,4 @@
 inherit command;
-
-constant require_allcmds = 1;
 constant require_moderator = 1; //TODO: Allow non-mods to check their own status
 
 void respond(string user, string chan, mapping info, string requester)
