@@ -66,7 +66,10 @@ string timezone_info(string tz)
 
 string process(object channel, object person, string param)
 {
-	return "@$$: " + timezone_info(param);
+	if (channel->config->allcmds || channel->name == "#cookingfornoobs")
+		//TODO: Have a generic way to choose which commands something's open in.
+		//Possibly by configuring the default timezone???
+		return "@$$: " + timezone_info(param);
 }
 
 void create(string name)
