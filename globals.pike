@@ -11,6 +11,7 @@ class command
 {
 	constant all_channels = 0; //Set to 1 if this command should be available even if allcmds is not set for the channel
 	constant require_moderator = 0; //Set to 1 if the command is mods-only
+	constant active_channels = ({ }); //To restrict this to some channels only, set this to a non-empty array.
 	//Override this to do the command's actual functionality, after permission checks.
 	//Return a string to send that string, with "@$$" to @-notify the user.
 	string process(object channel, object person, string param) { }
@@ -27,7 +28,9 @@ class command
 	void create(string name)
 	{
 		sscanf(explode_path(name)[-1],"%s.pike",name);
-		if (name) G->G->commands[name]=check_perms;
+		if (!name) return;
+		if (!sizeof(active_channels)) G->G->commands[name] = check_perms;
+		else foreach (active_channels, string chan) if (chan!="") G->G->commands[name + "#" + chan] = check_perms;
 	}
 }
 
