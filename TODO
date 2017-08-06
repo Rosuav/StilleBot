@@ -6,3 +6,4 @@
 * Log showing channel game changes as well as online/offline
 * Autorespond using whispers, eg for Jackbox gaming
 * Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
+* !jackbox ABCD to put the code on screen
