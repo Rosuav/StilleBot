@@ -42,7 +42,6 @@ function find_command(object channel, string cmd, int is_mod)
 	//per-chan commands. Since channel->name begins with a hash, that's our
 	//separator. We'll try "help#rosuav" and "help" for "!help".
 	if (has_value(cmd, '#')) return 0;
-	write("find_command(%s, %O, %O)\n", channel->name, cmd, is_mod);
 	foreach (({cmd + channel->name, cmd}), string tryme)
 	{
 		//NOTE: G->G->commands holds the actual function that gets
