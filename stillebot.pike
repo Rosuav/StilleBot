@@ -38,7 +38,11 @@ int bootstrap_all()
 	if (!main || !main->bootstrap_files) {werror("UNABLE TO RESET ALL\n"); return 1;}
 	int err = 0;
 	foreach (bootstrap_files = main->bootstrap_files, string fn)
-		if (file_stat(fn)->isdir) foreach (sort(get_dir(fn)), string f) err += !bootstrap(fn+"/"+f);
+		if (file_stat(fn)->isdir)
+		{
+			foreach (sort(get_dir(fn)), string f)
+				if (has_suffix(f, ".pike")) err += !bootstrap(fn + "/" + f);
+		}
 		else err += !bootstrap(fn);
 	return err;
 }
