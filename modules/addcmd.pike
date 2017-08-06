@@ -5,12 +5,15 @@ string process(object channel, object person, string param)
 {
 	if (sscanf(param, "!%s %s", string cmd, string response) == 2)
 	{
-		//Create a new command
-		string newornot = G->G->echocommands["!"+cmd] ? "Updated" : "Created new";
-		G->G->echocommands["!"+cmd] = response;
+		//Create a new command. Note that it *always* gets the channel name appended,
+		//making it a channel-specific command; global commands can only be created by
+		//manually editing the JSON file.
+		cmd += channel->name;
+		string newornot = G->G->echocommands[cmd] ? "Updated" : "Created new";
+		G->G->echocommands[cmd] = response;
 		string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 		Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
-		return sprintf("@$$: %s command !%s", newornot, cmd);
+		return sprintf("@$$: %s command !%s", newornot, cmd - channel->name);
 	}
 	return "@$$: Try !addcmd !newcmdname response-message";
 }

@@ -15,6 +15,9 @@ class command
 	//Return a string to send that string, with "@$$" to @-notify the user.
 	string process(object channel, object person, string param) { }
 
+	//Make sure that inappropriate commands aren't called. Normally these
+	//checks are done in find_command below, but it's cheap to re-check.
+	//(Maybe remove this and depend on find_command??)
 	string check_perms(object channel, object person, string param)
 	{
 		if (!all_channels && !channel->config->allcmds) return 0;
@@ -25,6 +28,37 @@ class command
 	{
 		sscanf(explode_path(name)[-1],"%s.pike",name);
 		if (name) G->G->commands[name]=check_perms;
+	}
+}
+
+//Attempt to find a "likely command" for a given channel.
+//If it returns 0, there's no such command. It may return a function
+//that eventually fails, but it will attempt to do so as rarely as
+//possible; returning nonzero will NORMALLY mean that the command is
+//fully active.
+function find_command(object channel, string cmd, int is_mod)
+{
+	//Prevent commands from containing a hash, allowing us to use that for
+	//per-chan commands. Since channel->name begins with a hash, that's our
+	//separator. We'll try "help#rosuav" and "help" for "!help".
+	if (has_value(cmd, '#')) return 0;
+	write("find_command(%s, %O, %O)\n", channel->name, cmd, is_mod);
+	foreach (({cmd + channel->name, cmd}), string tryme)
+	{
+		//NOTE: G->G->commands holds the actual function that gets
+		//called, but we need the corresponding object.
+		function f = G->G->commands[tryme];
+		if (f)
+		{
+			object obj = function_object(f);
+			if (!obj->all_channels && !channel->config->allcmds) continue;
+			if (obj->require_moderator && !is_mod) continue;
+			//If we get here, the command is acceptable.
+			return f;
+		}
+		//TODO: Handle these more efficiently, rather than constructing lambda functions every time
+		if (string response = channel->config->allcmds && G->G->echocommands[tryme])
+			return lambda(object c, object p, string param) {return replace(response, "%s", param);};
 	}
 }
 

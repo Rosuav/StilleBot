@@ -182,8 +182,9 @@ class channel_notif
 			sscanf(msg, "%s is", string recip);
 			return "!hug " + recip; //TODO: Make it something that has CCB do the hugging
 		}
-		if (function f = has_prefix(msg,"!") && G->G->commands[msg[1..]]) return f(this, person, "");
-		if (function f = (sscanf(msg, "!%s %s", string cmd, string param) == 2) && G->G->commands[cmd]) return f(this, person, param);
+		int mod = mods[person->user];
+		if (function f = has_prefix(msg,"!") && find_command(this, msg[1..], mod)) return f(this, person, "");
+		if (function f = (sscanf(msg, "!%s %s", string cmd, string param) == 2) && find_command(this, cmd, mod)) return f(this, person, param);
 		if (string cur = config->currency!="" && config->currency)
 		{
 			//Note that !currency will work (cf the above code), but !<currency-name> is the recommended way.
