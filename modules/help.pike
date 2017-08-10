@@ -16,7 +16,8 @@ string process(object channel, object person, string param)
 				//Availability flags come from the providing object, normally.
 				functionp(handler) ? function_object(handler) :
 				//String commands use these default flags.
-				(["all_channels": 0, "require_moderator": 0]);
+				(["all_channels": 0, "require_moderator": 0, "hidden_command": 0]);
+			if (flags->hidden_command) continue;
 			if (!flags->all_channels && !channel->config->allcmds) continue;
 			if (flags->require_moderator && !is_mod) continue;
 			if (!has_value(cmd, '#') || has_suffix(cmd, channel->name))
