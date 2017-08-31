@@ -228,7 +228,7 @@ void show_turkish(string data)
 			if (count > 1) games += ({sprintf("%3d:%3d %s", count, gameviewers[game], game)});
 			else games += ({sprintf("  1:%3d %s - %s", gameviewers[game], game, gamechannel[game])});
 		sort(games);
-		write("%{%s\n%}", reverse(games));
+		write("%{%s\n%}", string_to_utf8(reverse(games)[*]));
 	}
 	else write("No games online.\n");
 	exit(0);
