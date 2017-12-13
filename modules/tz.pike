@@ -72,6 +72,11 @@ string process(object channel, object person, string param)
 		return "@$$: " + timezone_info(param);
 }
 
+string default_time(object channel, object person, string param)
+{
+	return check_perms(channel, person, "America/Los_Angeles");
+}
+
 void create(string name)
 {
 	timezones = ([]); tzleaf = ([]);
@@ -87,4 +92,5 @@ void create(string name)
 		else tzleaf[parts[-1]] = zone;
 	}
 	::create(name);
+	G->G->commands["time"] = default_time;
 }
