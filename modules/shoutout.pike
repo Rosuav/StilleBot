@@ -20,3 +20,9 @@ string process(object channel, object person, string param)
 	}
 	else shoutout(info, channel->name);
 }
+
+void create(string name)
+{
+	::create(name);
+	G->G->commands["so"] = check_perms;
+}
