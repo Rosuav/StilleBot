@@ -174,6 +174,7 @@ class channel_notif
 		}
 		//HACK - Autorespond whenever CCB is someone's senpai :D
 		//TODO: Allow modules to notice this kind of line
+		//(Doesn't seem to be functional atm. That's okay, no biggie. Was just a fun easter egg anyway.)
 		if (has_suffix(msg, " is looking for their senpai, cutiecakebot . Senpai, notice me! devicatTYVM"))
 		{
 			// /*Hack: let me try it too (debugging mode)*/
