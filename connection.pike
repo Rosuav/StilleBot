@@ -119,6 +119,7 @@ class channel_notif
 	}
 
 	void destroy() {save(); remove_call_out(save_call_out);}
+	void _destruct() {save(); remove_call_out(save_call_out);}
 	void save(int|void as_at)
 	{
 		//Save everyone's online time on code reload and periodically

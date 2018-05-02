@@ -10,6 +10,7 @@ class gtksignal(object obj)
 	int signal_id;
 	void create(mixed ... args) {if (obj) signal_id=obj->signal_connect(@args);}
 	void destroy() {if (obj && signal_id) obj->signal_disconnect(signal_id);}
+	void _destruct() {if (obj && signal_id) obj->signal_disconnect(signal_id);}
 }
 
 class MessageBox
