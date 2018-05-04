@@ -3,6 +3,7 @@ constant require_moderator = 1;
 
 void shoutout(mapping info, string channel)
 {
+	if (!info) {send_message(channel, "No channel found (do you have the Twitch time machine?)"); return;}
 	string game = "playing " + (info->game||"(null)"); if (info->game == "Creative") game = "being creative";
 	send_message(channel, sprintf(
 		"%s was last seen %s, at %s - go check that stream out, maybe drop a follow! The last thing done was: %s",
