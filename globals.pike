@@ -59,7 +59,7 @@ function find_command(object channel, string cmd, int is_mod)
 			return f;
 		}
 		//TODO: Handle these more efficiently, rather than constructing lambda functions every time
-		if (string response = channel->config->allcmds && G->G->echocommands[tryme])
+		if (string response = G->G->echocommands[tryme])
 			return lambda(object c, object p, string param) {return replace(response, "%s", param);};
 	}
 }
