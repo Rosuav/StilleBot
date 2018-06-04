@@ -184,6 +184,18 @@ int req(string url) //Returns 0 to suppress Hilfe warning.
 	make_request(url, interactive);
 }
 
+//Lifted from globals because I can't be bothered refactoring
+string describe_time_short(int tm)
+{
+	string msg = "";
+	int secs = tm;
+	if (int t = secs/86400) {msg += sprintf("%d, ", t); secs %= 86400;}
+	if (tm >= 3600) msg += sprintf("%02d:%02d:%02d", secs/3600, (secs%3600)/60, secs%60);
+	else if (tm >= 60) msg += sprintf("%02d:%02d", secs/60, secs%60);
+	else msg += sprintf("%02d", tm);
+	return msg;
+}
+
 void streaminfo_display(string data)
 {
 	mapping info = decode(data); if (!info) return;
@@ -192,6 +204,7 @@ void streaminfo_display(string data)
 	{
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->stream->created_at);
 		write("Channel %s went online at %s\n", name, started->format_nice());
+		write("Uptime: %s\n", describe_time_short(started->distance(Calendar.now())->how_many(Calendar.Second())));
 	}
 	else write("Channel %s is offline.\n", name);
 	if (!--requests) exit(0);
