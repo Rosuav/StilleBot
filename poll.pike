@@ -10,7 +10,7 @@ void make_request(string url, function cbdata)
 {
 	sscanf(persist["ircsettings"]["pass"] || "", "oauth:%s", string pass);
 	Protocols.HTTP.do_async_method("GET",url,0,
-		pass && (["Authorization": "OAuth " + pass]),
+		pass && (["Accept": "application/vnd.twitchtv.v5+json", "Authorization": "OAuth " + pass]),
 		Protocols.HTTP.Query()->set_callbacks(request_ok,request_fail,cbdata));
 }
 
