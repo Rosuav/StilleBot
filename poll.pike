@@ -6,11 +6,13 @@
 void data_available(object q, function cbdata) {cbdata(q->unicode_data());}
 void request_ok(object q, function cbdata) {q->async_fetch(data_available, cbdata);}
 void request_fail(object q) { } //If a poll request fails, just ignore it and let the next poll pick it up.
-void make_request(string url, function cbdata)
+void make_request(string url, function cbdata, int|void v5)
 {
 	sscanf(persist["ircsettings"]["pass"] || "", "oauth:%s", string pass);
-	Protocols.HTTP.do_async_method("GET",url,0,
-		pass && (["Accept": "application/vnd.twitchtv.v5+json", "Authorization": "OAuth " + pass]),
+	mapping params = ([]);
+	if (v5) params["Accept"] = "application/vnd.twitchtv.v5+json";
+	if (pass) params["Authorization"] = "OAuth " + pass;
+	Protocols.HTTP.do_async_method("GET", url, 0, params,
 		Protocols.HTTP.Query()->set_callbacks(request_ok,request_fail,cbdata));
 }
 
@@ -178,10 +180,10 @@ void interactive(string data)
 	object history = function_object(all_constants()["backend_thread"]->backtrace()[0]->args[0])->history;
 	history->push(info);
 }
-int req(string url) //Returns 0 to suppress Hilfe warning.
+int req(string url, int|void v5) //Returns 0 to suppress Hilfe warning.
 {
 	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/kraken/" + url[url[0]=='/'..];
-	make_request(url, interactive);
+	make_request(url, interactive, v5);
 }
 
 //Lifted from globals because I can't be bothered refactoring
