@@ -9,10 +9,10 @@ void request_fail(object q) { } //If a poll request fails, just ignore it and le
 void make_request(string url, function cbdata, int|void v5)
 {
 	sscanf(persist["ircsettings"]["pass"] || "", "oauth:%s", string pass);
-	mapping params = ([]);
-	if (v5) params["Accept"] = "application/vnd.twitchtv.v5+json";
-	if (pass) params["Authorization"] = "OAuth " + pass;
-	Protocols.HTTP.do_async_method("GET", url, 0, params,
+	mapping headers = ([]);
+	if (v5) headers["Accept"] = "application/vnd.twitchtv.v5+json";
+	if (pass) headers["Authorization"] = "OAuth " + pass;
+	Protocols.HTTP.do_async_method("GET", url, 0, headers,
 		Protocols.HTTP.Query()->set_callbacks(request_ok,request_fail,cbdata));
 }
 
