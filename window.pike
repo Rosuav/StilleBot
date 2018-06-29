@@ -35,8 +35,9 @@ class MessageBox
 
 	void response(object self,int button,mixed cb_arg)
 	{
-		self->destroy();
+		if (self->destroy) self->destroy();
 		if (callback) callback(button,cb_arg);
+		destruct();
 	}
 }
 
