@@ -1023,7 +1023,12 @@ void create(string name)
 		G->G->argv = GTK2.setup_gtk(G->G->argv);
 	}
 	G->G->window = this;
-	if (G->G->menuitems) values(G->G->menuitems)->destroy();
+	if (G->G->menuitems)
+	{
+		array mi = values(G->G->menuitems);
+		mi->destroy();
+		destruct(mi[*]);
+	}
 	G->G->menuitems = ([]);
 	_mainwindow();
 	if (!persist["ircsettings"]) easy_auth();
