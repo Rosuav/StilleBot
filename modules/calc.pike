@@ -1,6 +1,6 @@
 inherit command;
 
-constant legal = "0123456789+-/*() "; //For now, permit a VERY few characters, for safety.
+constant legal = "0123456789+-/*() ."; //For now, permit a VERY few characters, for safety.
 
 string process(object channel, object person, string param)
 {
