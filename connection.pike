@@ -186,14 +186,24 @@ class channel_notif
 
 	void wrap_message(object person, string msg)
 	{
+		string target = sscanf(msg, "@$$: %s", msg) ? sprintf("@%s: ", person->user) : "";
+		msg = replace(msg, "$$", person->user);
+		if (config->noticechat && has_value(msg, "$participant$"))
+		{
+			array users = ({ });
+			int limit = time() - config->timeout;
+			foreach (G_G_("participants", name[1..]); string name; mapping info)
+				if (info->lastnotice >= limit && name != person->user) users += ({name});
+			//If there are no other chat participants, pick the person speaking.
+			string chosen = sizeof(users) ? random(users) : person->user;
+			msg = replace(msg, "$participant$", chosen);
+		}
 		if (sizeof(msg) <= 400)
 		{
 			//Short enough to just send as-is.
-			send_message(name, replace(msg, "$$", person->user));
+			send_message(name, msg);
 			return;
 		}
-		string target = sscanf(msg, "@$$: %s", msg) ? sprintf("@%s: ", person->user) : "";
-		msg = replace(msg, "$$", person->user);
 		//VERY simplistic form of word wrap.
 		while (sizeof(msg) > 400)
 		{
