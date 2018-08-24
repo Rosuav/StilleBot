@@ -36,6 +36,24 @@ class get_channel_info(string name, function callback)
 	}
 }
 
+class get_video_info(string name, function callback)
+{
+	array cbargs;
+	void create(mixed ... cbargs)
+	{
+		this->cbargs = cbargs;
+		make_request("https://api.twitch.tv/kraken/channels/" + name + "/videos?broadcast_type=archive&limit=1", got_data);
+	}
+
+	void got_data(string data)
+	{
+		mapping info = Standards.JSON.decode(data);
+		if (info->status == 404 || !sizeof(info->videos)) info = 0; //Probably a dud channel name
+		else info = info->videos[0];
+		if (callback) callback(info, @cbargs);
+	}
+}
+
 void streaminfo(string data)
 {
 	mapping info; catch {info = Standards.JSON.decode(data);}; //Some error returns aren't even JSON
@@ -153,6 +171,7 @@ void create()
 	poll();
 	add_constant("get_channel_info", get_channel_info);
 	add_constant("check_following", check_following);
+	add_constant("get_video_info", get_video_info);
 }
 
 #if !constant(G)

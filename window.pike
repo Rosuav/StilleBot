@@ -895,7 +895,7 @@ class _mainwindow
 	constant elements=({"kwd:Channel", "?allcmds:All commands active", "+notes:Notes", "'uptime:", ([
 		"\"Notice Me!\"": ({"'Let chat participants get your attention.", "?noticechat:Enabled", "?Followers only", "NoticeMe keyword", "#Timeout (within X sec)=600", "!Notify participants"}),
 		"Channel currency": ({"Currency name", "#Payout interval", "#payout_offline:Offline divisor [0 for none]", "#payout_mod:Mod multiplier"}),
-		"Logging": ({"?chatlog:Log chat to console", "?countactive:Count participant activity"}),
+		"Logging": ({"?chatlog:Log chat to console", "?countactive:Count participant activity", "?reporttrans:Report transcoding availability"}),
 		"Song requests": ({"?songreq:Active", "#songreq_length:Max length (seconds)"}),
 	])});
 	constant persist_key = "channels";
