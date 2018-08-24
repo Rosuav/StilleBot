@@ -245,6 +245,26 @@ void followinfo_display(string user, string chan, mapping info)
 	else write("%s has been following %s %s.\n", user, chan, (info->following/"T")[0]);
 	if (!--requests) exit(0);
 }
+
+void transcoding_display(string data)
+{
+	mapping info = Standards.JSON.decode(data);
+	if (info->status == 404 || !sizeof(info->videos))
+	{
+		write("Error fetching transcoding info: %O\n", info);
+		if (!--requests) exit(0);
+		return;
+	}
+	foreach (info->videos, mapping videoinfo)
+	{
+		mapping res = videoinfo->resolutions;
+		if (!res || !sizeof(res)) return; //Shouldn't happen
+		string dflt = m_delete(res, "chunked") || "?? unknown res ??"; //Not sure if "chunked" can ever be missing
+		write("[%s] %-9s %s - %s\n", videoinfo->created_at, dflt, sizeof(res) ? "TC" : "  ", videoinfo->game);
+	}
+	if (!--requests) exit(0);
+}
+
 mapping gamecounts = ([]), gameviewers = ([]), gamechannel = ([]);
 void show_turkish(string data)
 {
@@ -282,18 +302,24 @@ int main(int argc, array(string) argv)
 		make_request("https://api.twitch.tv/kraken/streams?language=tr&limit=100&stream_type=live", show_turkish);
 		return -1;
 	}
-	requests = argc * 2 - 2;
+	requests = argc - 1;
 	foreach (argv[1..], string chan)
 	{
 		if (sscanf(chan, "%s/%s", string ch, string user) && user)
 		{
+			if (user == "transcoding")
+			{
+				write("Checking transcoding history...\n");
+				make_request("https://api.twitch.tv/kraken/channels/" + ch + "/videos?broadcast_type=archive&limit=100", transcoding_display);
+				continue;
+			}
 			write("Checking follow status...\n");
-			--requests; //These count as only one, not two
 			check_following(user, ch, followinfo_display);
 		}
 		else
 		{
 			//For online channels, we could save ourselves one request. Simpler to just do 'em all though.
+			++requests; //These require two requests
 			make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo_display);
 			make_request("https://api.twitch.tv/kraken/channels/"+chan, chaninfo_display);
 		}
