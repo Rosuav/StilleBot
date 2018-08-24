@@ -173,17 +173,6 @@ class channel_notif
 			}
 			user->lastnotice = time();
 		}
-		//HACK - Autorespond whenever CCB is someone's senpai :D
-		//TODO: Allow modules to notice this kind of line
-		//(Doesn't seem to be functional atm. That's okay, no biggie. Was just a fun easter egg anyway.)
-		if (has_suffix(msg, " is looking for their senpai, cutiecakebot . Senpai, notice me! devicatTYVM"))
-		{
-			// /*Hack: let me try it too (debugging mode)*/
-			if (name != "#devi_cat"/* && name != "#rosuav"*/) return 0; //Restrict this to the right channel
-			if (person->user != "cutiecakebot"/* && person->user != "rosuav"*/) return 0; //And only if CCB says it
-			sscanf(msg, "%s is", string recip);
-			return "!hug " + recip; //TODO: Make it something that has CCB do the hugging
-		}
 		int mod = mods[person->user];
 		if (function f = has_prefix(msg,"!") && find_command(this, msg[1..], mod)) return f(this, person, "");
 		if (function f = (sscanf(msg, "!%s %s", string cmd, string param) == 2) && find_command(this, cmd, mod)) return f(this, person, param);
