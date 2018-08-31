@@ -104,7 +104,9 @@ void streaminfo(string data)
 		int viewers = info->stream->viewers;
 		//Calculate half-hour rolling average, and then do stats on that
 		//Record each stream's highest and lowest half-hour average, and maybe the overall average (not the average of the averages)
-		//TODO: Offer a graph showing the channel's progress
+		//To maybe do: Offer a graph showing the channel's progress. Probably now done better by
+		//StreamLabs, but we could have our own graph to double-check and maybe learn about
+		//different measuring/reporting techniques.
 		mapping vstat = G->G->viewer_stats; if (!vstat) vstat = G->G->viewer_stats = ([]);
 		if (!vstat[name]) vstat[name] = (["start": time()]); //The stats might not have started at stream start, eg if bot wasn't running
 		vstat = vstat[name]; //Focus on this channel.
