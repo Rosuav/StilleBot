@@ -219,7 +219,16 @@ class channel_notif
 		{
 			//It's probably a NOTICE rather than a PRIVMSG
 			if (sscanf(msg, "Now hosting %s.", string h) && h)
+			{
+				if (G->G->stream_online_since[name[1..]])
+				{
+					//Hosting when you're live is a raid. (It might not use the
+					//actual /raid command, but for our purposes, it counts.)
+					Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s\n",
+						Calendar.now()->format_time(), name[1..], h));
+				}
 				hosting = h;
+			}
 			if (msg == "Exited host mode.") hosting = 0;
 			if (has_suffix(msg, " has gone offline. Exiting host mode.")) hosting = 0;
 			//Fall through and display them, if only for debugging
