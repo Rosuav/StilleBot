@@ -224,6 +224,12 @@ class channel_notif
 				{
 					//Hosting when you're live is a raid. (It might not use the
 					//actual /raid command, but for our purposes, it counts.)
+					//This has a number of good uses. Firstly, a streamer can
+					//check this to see who hasn't been raided recently, and
+					//spread the love around; and secondly, a viewer can see
+					//which channel led to some other channel ("ohh, I met you
+					//when X raided you last week"). Other uses may also be
+					//possible. So it's in a flat file, easily greppable.
 					Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s\n",
 						Calendar.now()->format_time(), name[1..], h));
 				}
