@@ -10,7 +10,12 @@ void report_transcoding(object videoinfo, string pfx)
 	if (!res || !sizeof(res)) return; //Shouldn't happen
 	string dflt = m_delete(res, "chunked") || "?? unknown res ??"; //Not sure if "chunked" can ever be missing
 	string msg = pfx + " View this stream in glorious " + dflt + "!";
-	if (sizeof(res)) msg += " Or any of its other resolutions: " + values(res) * ", ";
+	if (sizeof(res))
+	{
+		array text = values(res), num = -((array(int))text)[*];
+		sort(num, text); //Sort by the intifications, descending
+		msg += " Or any of its other resolutions: " + text * ", ";
+	}
 	send_message("#" + channel, msg);
 }
 
