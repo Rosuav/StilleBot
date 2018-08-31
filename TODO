@@ -6,4 +6,3 @@
 * Autorespond using whispers, eg for Jackbox gaming
 * Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
 * !jackbox ABCD to put the code on screen
-* Can I probe a stream and see if transcoding is active? Announce on channel-go-live?
