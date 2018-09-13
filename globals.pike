@@ -29,6 +29,7 @@ class command
 	{
 		sscanf(explode_path(name)[-1],"%s.pike",name);
 		if (!name) return;
+		foreach (indices(G->G->commands), string n) if (n == name || has_prefix(n, name + "#")) m_delete(G->G->commands, n);
 		if (!sizeof(active_channels)) G->G->commands[name] = check_perms;
 		else foreach (active_channels, string chan) if (chan!="") G->G->commands[name + "#" + chan] = check_perms;
 	}
