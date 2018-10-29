@@ -1,6 +1,6 @@
 * Per-channel rate limiting instead of the current one-per-second globally
   - Where the bot is a mod, the limit is three per sec. In other channels, must respect slow mode.
-  - Is there a way to detect channel slow mode automatically?
+  - Is there a way to detect channel slow mode on connection? If it changes, there's a NOTICE.
 * Log showing channel category changes as well as online/offline
 * Autorespond using whispers, eg for Jackbox gaming (framework exists, not easy to do yet)
 * Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
