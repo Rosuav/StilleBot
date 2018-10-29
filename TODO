@@ -5,3 +5,4 @@
 * Autorespond using whispers, eg for Jackbox gaming (framework exists, not easy to do yet)
 * Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
 * !jackbox ABCD to put the code on screen
+* Commands returning arrays: send all the messages, one after another. Would be a good thing to add to !addcmd somehow too.
