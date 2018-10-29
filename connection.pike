@@ -60,16 +60,17 @@ void reconnect()
 //The old queue will be pumped by the old code, and the new code will
 //have a new (empty) queue.
 int lastmsgtime = time();
+int modmsgs = 0;
 array msgqueue = ({ });
 void pump_queue()
 {
 	int tm = time(1);
 	if (tm == lastmsgtime) {call_out(pump_queue, 1); return;}
-	lastmsgtime = tm;
+	lastmsgtime = tm; modmsgs = 0;
 	[[string|array to, string msg], msgqueue] = Array.shift(msgqueue);
 	irc->send_message(to, string_to_utf8(msg));
 }
-void send_message(string|array to,string msg)
+void send_message(string|array to, string msg, int|void is_mod)
 {
 	if (stringp(to) && has_prefix(to, "/"))
 	{
@@ -77,6 +78,18 @@ void send_message(string|array to,string msg)
 		to = "#" + bot_nick; //Shouldn't matter what the dest is with these.
 	}
 	int tm = time(1);
+	if (is_mod)
+	{
+		//Mods can always ignore slow-mode. But they should still keep it to
+		//a max of 100 messages in 30 seconds (which I simplify down to 3/sec)
+		//to avoid getting globalled.
+		if (tm != lastmsgtime) {lastmsgtime = tm; modmsgs = 0;}
+		if (++modmsgs < 3)
+		{
+			irc->send_message(to, string_to_utf8(msg));
+			return;
+		}
+	}
 	if (sizeof(msgqueue) || tm == lastmsgtime)
 	{
 		msgqueue += ({({to, msg})});
@@ -84,7 +97,7 @@ void send_message(string|array to,string msg)
 	}
 	else
 	{
-		lastmsgtime = tm;
+		lastmsgtime = tm; modmsgs = 0;
 		irc->send_message(to, string_to_utf8(msg));
 	}
 }
@@ -213,16 +226,16 @@ class channel_notif
 		if (sizeof(msg) <= 400)
 		{
 			//Short enough to just send as-is.
-			send_message(dest || name, msg);
+			send_message(dest || name, msg, mods[bot_nick]);
 			return;
 		}
 		//VERY simplistic form of word wrap.
 		while (sizeof(msg) > 400)
 		{
 			sscanf(msg, "%400s%s %s", string piece, string word, msg);
-			send_message(dest || name, sprintf("%s%s%s ...", target, piece, word));
+			send_message(dest || name, sprintf("%s%s%s ...", target, piece, word), mods[bot_nick]);
 		}
-		send_message(dest || name, target + msg);
+		send_message(dest || name, target + msg, mods[bot_nick]);
 	}
 
 	void not_message(object person,string msg)
@@ -260,7 +273,7 @@ class channel_notif
 			}
 			//Fall through and display them, if only for debugging
 		}
-		if (lower_case(person->nick) == lower_case(bot_nick)) lastmsgtime = time(1);
+		if (lower_case(person->nick) == lower_case(bot_nick)) {lastmsgtime = time(1); modmsgs = 0;}
 		string response = handle_command(person, msg);
 		if (response) wrap_message(person, response);
 		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
