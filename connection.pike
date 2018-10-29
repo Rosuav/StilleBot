@@ -327,7 +327,10 @@ void generic_notify(string from, string type, string to, string message, string 
 			}
 			break;
 		}
-		default: break; //TODO maybe: keep a list of all the types that get sent??
+		default:
+			//Record the types in case something looks interesting
+			if (!G->G->notify_types) G->G->notify_types = (<>);
+			G->G->notify_types[type] = 1;
 	}
 }
 
