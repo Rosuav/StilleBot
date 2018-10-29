@@ -6,7 +6,6 @@ int last_used = 0;
 
 string process(object channel, object person, string param)
 {
-	return 0; //Currently disabled.
 	if (time() < last_used + 60) return 0;
 	last_used = time();
 	string user = person->user;
