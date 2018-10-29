@@ -275,6 +275,7 @@ class channel_notif
 			- Your message was not sent because it is identical to the previous one you sent, less than 30 seconds ago.
 			- This room is in slow mode and you are sending messages too quickly. You will be able to talk again in %d seconds.
 			- You are banned from talking in %*s for %d more seconds.
+			All of these indicate that the most recent message wasn't sent. Is it worth trying to retrieve that message?
 			*/
 			//Fall through and display them, if only for debugging
 		}
