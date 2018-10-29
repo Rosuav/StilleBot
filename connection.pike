@@ -140,7 +140,7 @@ class channel_notif
 		//special powers (Twitch staff etc), so they may not be able to run
 		//mod-only commands until the "MODE" lines come through.
 		mods[name[1..]] = 1;
-		irc->send_message(name, "/mods");
+		call_out(irc->send_message, 1, name, "/mods");
 	}
 
 	void destroy() {save(); remove_call_out(save_call_out);}
