@@ -115,7 +115,14 @@ class channel_notif
 		else if (persist["viewertime"]) m_delete(persist["viewertime"], name);
 		persist->save();
 		save_call_out = call_out(save, 300);
-		mods[name[1..]] = 1; //HACK: Assume that the streamer is a mod. Makes for faster startup.
+		//Twitch will (eventually) notify us of who has "ops" privilege, which
+		//corresponds to mods and other people with equivalent powers. But on
+		//startup, it's quicker to (a) grant mod powers to the streamer, and
+		//(b) ask Twitch who the other mods are. This won't catch people with
+		//special powers (Twitch staff etc), so they may not be able to run
+		//mod-only commands until the "MODE" lines come through.
+		mods[name[1..]] = 1;
+		irc->send_message(name, "/mods");
 	}
 
 	void destroy() {save(); remove_call_out(save_call_out);}
@@ -237,6 +244,15 @@ class channel_notif
 			}
 			if (msg == "Exited host mode.") hosting = 0;
 			if (has_suffix(msg, " has gone offline. Exiting host mode.")) hosting = 0;
+			if (sscanf(msg, "The moderators of this channel are: %s", string names) && names)
+			{
+				//Response to a "/mods" command
+				foreach (names / ", ", string name) if (!mods[name])
+				{
+					log("%sAcknowledging %s as a mod\e[0m\n", color, name);
+					mods[name] = 1;
+				}
+			}
 			//Fall through and display them, if only for debugging
 		}
 		if (lower_case(person->nick) == lower_case(bot_nick)) lastmsgtime = time(1);
