@@ -271,6 +271,11 @@ class channel_notif
 					mods[name] = 1;
 				}
 			}
+			/* Other useful NOTICE messages:
+			- Your message was not sent because it is identical to the previous one you sent, less than 30 seconds ago.
+			- This room is in slow mode and you are sending messages too quickly. You will be able to talk again in %d seconds.
+			- You are banned from talking in %*s for %d more seconds.
+			*/
 			//Fall through and display them, if only for debugging
 		}
 		if (lower_case(person->nick) == lower_case(bot_nick)) {lastmsgtime = time(1); modmsgs = 0;}
