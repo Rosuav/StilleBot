@@ -35,7 +35,7 @@ void reconnect()
 	//TODO: Dodge the synchronous gethostbyname?
 	mapping opt = persist["ircsettings"];
 	if (!opt) return; //Not yet configured - can't connect.
-	opt += (["channel_program": channel_notif, "connection_lost": reconnect]);
+	opt += (["channel_program": channel_notif, "connection_lost": reconnect, "generic_notify": generic_notify]);
 	if (mixed ex = catch {
 		G->G->irc = irc = IRCClient("irc.chat.twitch.tv", opt);
 		#if __REAL_VERSION__ >= 8.1
@@ -71,6 +71,11 @@ void pump_queue()
 }
 void send_message(string|array to,string msg)
 {
+	if (stringp(to) && has_prefix(to, "/"))
+	{
+		msg = to + " " + msg; //eg "/w target message"
+		to = "#" + bot_nick; //Shouldn't matter what the dest is with these.
+	}
 	int tm = time(1);
 	if (sizeof(msgqueue) || tm == lastmsgtime)
 	{
@@ -191,7 +196,7 @@ class channel_notif
 		}
 	}
 
-	void wrap_message(object person, string msg)
+	void wrap_message(object person, string msg, string|void dest)
 	{
 		string target = sscanf(msg, "@$$: %s", msg) ? sprintf("@%s: ", person->user) : "";
 		msg = replace(msg, "$$", person->user);
@@ -208,16 +213,16 @@ class channel_notif
 		if (sizeof(msg) <= 400)
 		{
 			//Short enough to just send as-is.
-			send_message(name, msg);
+			send_message(dest || name, msg);
 			return;
 		}
 		//VERY simplistic form of word wrap.
 		while (sizeof(msg) > 400)
 		{
 			sscanf(msg, "%400s%s %s", string piece, string word, msg);
-			send_message(name, sprintf("%s%s%s ...", target, piece, word));
+			send_message(dest || name, sprintf("%s%s%s ...", target, piece, word));
 		}
-		send_message(name, target + msg);
+		send_message(dest || name, target + msg);
 	}
 
 	void not_message(object person,string msg)
@@ -278,6 +283,32 @@ class channel_notif
 	void log(strict_sprintf_format fmt, sprintf_args ... args)
 	{
 		if (config->chatlog) write(fmt, @args);
+	}
+}
+
+void generic_notify(string from, string type, string to, string message, string extra)
+{
+	//NOTE: This function gets *everything*. Even if it's handled elsewhere.
+	//Cherry-pick the few things that are interesting and ignore the rest.
+	switch (type)
+	{
+		case "WHISPER":
+		{
+			sscanf(from, "%s!", string nick);
+			write("** Whisper from %s: %s\n", nick, message);
+			//Rather than having a pseudo-channel, it would probably be better to
+			//have a "primary channel" that handles all whispers - effectively,
+			//whispered commands are treated as if they were sent to that channel,
+			//except that the response is whispered.
+			if (object chan = G->G->irc->channels["#!whisper"])
+			{
+				mapping person = (["user": nick]); //Hack: The only way person is ever used is person->user. If that changes, replace this with something proper.
+				string response = chan->handle_command(person, message);
+				if (response) chan->wrap_message(person, response, "/w " + nick);
+			}
+			break;
+		}
+		default: break; //TODO maybe: keep a list of all the types that get sent??
 	}
 }
 
