@@ -205,8 +205,6 @@ class channel_notif
 		if (stringp(msg)) return replace(msg, "%s", param);
 		if (mappingp(msg)) return msg | (["message": replace(msg->message, "%s", param)]);
 		if (arrayp(msg)) return substitute_percent(msg[*], param); //Yes, recursive. You shouldn't have arrays in arrays though.
-		//Functions do not get %s handling. If they want it, they can do it themselves,
-		//and if they don't want it, it would mess things up badly to do it here.
 		return msg;
 	}
 
@@ -225,9 +223,10 @@ class channel_notif
 			user->lastnotice = time();
 		}
 		[command_handler cmd, string param] = locate_command(person, msg);
-		cmd = substitute_percent(cmd, param);
+		//Functions do not get %s handling. If they want it, they can do it themselves,
+		//and if they don't want it, it would mess things up badly to do it here.
 		if (functionp(cmd)) return cmd(this, person, param);
-		return 0;
+		return substitute_percent(cmd, param);
 	}
 
 	void wrap_message(object person, string|mapping|array(string|mapping) info)
@@ -236,6 +235,7 @@ class channel_notif
 		if (arrayp(info)) {wrap_message(person, info[*]); return;}
 		if (stringp(info)) info = (["message": info]);
 		string msg = info->message, dest = info->dest || name;
+		if (dest == "/w $$") dest = "/w " + person->user;
 		string target = sscanf(msg, "@$$: %s", msg) ? sprintf("@%s: ", person->user) : "";
 		msg = replace(msg, "$$", person->user);
 		if (config->noticechat && has_value(msg, "$participant$"))
@@ -346,7 +346,7 @@ void generic_notify(string from, string type, string to, string message, string 
 			if (object chan = G->G->irc->channels["#!whisper"])
 			{
 				mapping person = (["user": nick]); //Hack: The only way person is ever used is person->user. If that changes, replace this with something proper.
-				chan->wrap_message(person, chan->handle_command(person, message) | (["dest": "/w " + nick]));
+				chan->wrap_message(person, chan->handle_command(person, message) | (["dest": "/w $$"]));
 			}
 			break;
 		}
