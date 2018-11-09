@@ -222,6 +222,7 @@ class channel_notif
 
 	void wrap_message(object person, string msg, string|void dest)
 	{
+		if (!msg) return;
 		string target = sscanf(msg, "@$$: %s", msg) ? sprintf("@%s: ", person->user) : "";
 		msg = replace(msg, "$$", person->user);
 		if (config->noticechat && has_value(msg, "$participant$"))
@@ -291,8 +292,7 @@ class channel_notif
 			//Fall through and display them, if only for debugging
 		}
 		if (lower_case(person->nick) == lower_case(bot_nick)) {lastmsgtime = time(1); modmsgs = 0;}
-		string response = handle_command(person, msg);
-		if (response) wrap_message(person, response);
+		wrap_message(person, handle_command(person, msg));
 		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
 		else msg = person->nick+": "+msg;
 		string pfx=sprintf("[%s] ",name);
@@ -333,8 +333,7 @@ void generic_notify(string from, string type, string to, string message, string 
 			if (object chan = G->G->irc->channels["#!whisper"])
 			{
 				mapping person = (["user": nick]); //Hack: The only way person is ever used is person->user. If that changes, replace this with something proper.
-				string response = chan->handle_command(person, message);
-				if (response) chan->wrap_message(person, response, "/w " + nick);
+				chan->wrap_message(person, chan->handle_command(person, message), "/w " + nick);
 			}
 			break;
 		}
