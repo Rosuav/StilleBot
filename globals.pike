@@ -7,6 +7,12 @@ void create(string n)
 	if (!G->G->hooks) G->G->hooks=([]);
 }
 
+//A sendable message could be a string (echo that string), a mapping with a "message"
+//key (echo that string, possibly with other attributes), or an array of the above
+//(echo them all, in order). An array of arrays is NOT permitted - this does not nest.
+typedef string|mapping|array(string|mapping) echoable_message;
+typedef echoable_message|function(object,object,string:echoable_message) command_handler;
+
 class command
 {
 	constant all_channels = 0; //Set to 1 if this command should be available even if allcmds is not set for the channel
@@ -14,12 +20,12 @@ class command
 	constant active_channels = ({ }); //To restrict this to some channels only, set this to a non-empty array.
 	//Override this to do the command's actual functionality, after permission checks.
 	//Return a string to send that string, with "@$$" to @-notify the user.
-	string|mapping|array(string|mapping) process(object channel, object person, string param) { }
+	echoable_message process(object channel, object person, string param) { }
 
 	//Make sure that inappropriate commands aren't called. Normally these
 	//checks are done in find_command below, but it's cheap to re-check.
 	//(Maybe remove this and depend on find_command??)
-	string|mapping|array(string|mapping) check_perms(object channel, object person, string param)
+	echoable_message check_perms(object channel, object person, string param)
 	{
 		if (!all_channels && !channel->config->allcmds) return 0;
 		if (require_moderator && !channel->mods[person->user]) return 0;
@@ -34,12 +40,6 @@ class command
 		else foreach (active_channels, string chan) if (chan!="") G->G->commands[name + "#" + chan] = check_perms;
 	}
 }
-
-//A command handler could be a string (echo that string), a mapping with a "message"
-//key (echo that string, possibly with other attributes), an array of the above (echo
-//them all, in order), or a function returning one of the above. Note that an array
-//of functions is NOT permitted, nor arrays of arrays - this does not nest.
-typedef string|mapping|array(string|mapping)|function command_handler;
 
 //Attempt to find a "likely command" for a given channel.
 //If it returns 0, there's no such command. It may return a function
@@ -66,7 +66,7 @@ command_handler find_command(object channel, string cmd, int is_mod)
 			return f;
 		}
 		//Echo commands are not allowed to be functions, unsurprisingly
-		if (string|mapping|array(string|mapping) response = G->G->echocommands[tryme]) return response;
+		if (echoable_message response = G->G->echocommands[tryme]) return response;
 	}
 }
 

@@ -200,7 +200,7 @@ class channel_notif
 		return ({0, 0});
 	}
 
-	string|mapping|array(string|mapping) substitute_percent(string|mapping|array(string|mapping) msg, string param)
+	echoable_message substitute_percent(string|mapping|array(string|mapping) msg, string param)
 	{
 		if (stringp(msg)) return replace(msg, "%s", param);
 		if (mappingp(msg)) return msg | (["message": replace(msg->message, "%s", param)]);
@@ -208,7 +208,7 @@ class channel_notif
 		return msg;
 	}
 
-	string|mapping|array(string|mapping) handle_command(object person, string msg)
+	echoable_message handle_command(object person, string msg)
 	{
 		if (config->noticechat && person->user && has_value(lower_case(msg), config->noticeme||""))
 		{
@@ -229,7 +229,7 @@ class channel_notif
 		return substitute_percent(cmd, param);
 	}
 
-	void wrap_message(object person, string|mapping|array(string|mapping) info)
+	void wrap_message(object person, echoable_message info)
 	{
 		if (!info) return;
 		if (arrayp(info)) {wrap_message(person, info[*]); return;}

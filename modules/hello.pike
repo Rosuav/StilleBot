@@ -1,7 +1,7 @@
 inherit command;
 constant hidden_command = 1;
 
-string|mapping|array(string|mapping) process(object channel, object person, string param)
+echoable_message process(object channel, object person, string param)
 {
 	//Respond by whisper:
 	//return (["message": "Hello $$ in a whisper", "dest": "/w $$"]);
