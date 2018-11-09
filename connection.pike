@@ -220,9 +220,10 @@ class channel_notif
 		return 0;
 	}
 
-	void wrap_message(object person, string msg, string|void dest)
+	void wrap_message(object person, string|array(string) msg, string|void dest)
 	{
 		if (!msg) return;
+		if (arrayp(msg)) {wrap_message(person, msg[*], dest); return;}
 		string target = sscanf(msg, "@$$: %s", msg) ? sprintf("@%s: ", person->user) : "";
 		msg = replace(msg, "$$", person->user);
 		if (config->noticechat && has_value(msg, "$participant$"))
