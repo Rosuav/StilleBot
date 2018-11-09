@@ -35,12 +35,17 @@ class command
 	}
 }
 
+//A command handler could be a string (echo that string), an array of strings (echo
+//them all, in order), or a function returning one of the above. Note that an array
+//of functions is NOT permitted, nor arrays of arrays.
+typedef function|string|array(string) command_handler;
+
 //Attempt to find a "likely command" for a given channel.
 //If it returns 0, there's no such command. It may return a function
 //that eventually fails, but it will attempt to do so as rarely as
 //possible; returning nonzero will NORMALLY mean that the command is
 //fully active.
-function find_command(object channel, string cmd, int is_mod)
+command_handler find_command(object channel, string cmd, int is_mod)
 {
 	//Prevent commands from containing a hash, allowing us to use that for
 	//per-chan commands. Since channel->name begins with a hash, that's our
@@ -59,9 +64,7 @@ function find_command(object channel, string cmd, int is_mod)
 			//If we get here, the command is acceptable.
 			return f;
 		}
-		//TODO: Handle these more efficiently, rather than constructing lambda functions every time
-		if (string response = G->G->echocommands[tryme])
-			return lambda(object c, object p, string param) {return replace(response, "%s", param);};
+		if (string response = G->G->echocommands[tryme]) return response;
 	}
 }
 

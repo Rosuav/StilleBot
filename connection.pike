@@ -184,6 +184,22 @@ class channel_notif
 		log("%sPart %s: %s\e[0m\n", color, name, who->user);
 	}
 
+	array(command_handler|string) locate_command(object person, string msg)
+	{
+		int mod = mods[person->user];
+		if (command_handler f = has_prefix(msg,"!") && find_command(this, msg[1..], mod)) return ({f, ""});
+		if (command_handler f = sscanf(msg, "!%s %s", string cmd, string param) == 2
+			&& find_command(this, cmd, mod))
+				return ({f, param});
+		if (string cur = config->currency!="" && config->currency)
+		{
+			//Note that !currency will work (cf the above code), but !<currency-name> is the recommended way.
+			if (msg == "!"+cur) return ({G->G->commands->currency, ""});
+			if (sscanf(msg, "!"+cur+" %s", string param) == 1) return ({G->G->commands->currency, param});
+		}
+		return ({0, 0});
+	}
+
 	string handle_command(object person, string msg)
 	{
 		if (config->noticechat && person->user && has_value(lower_case(msg), config->noticeme||""))
@@ -198,15 +214,10 @@ class channel_notif
 			}
 			user->lastnotice = time();
 		}
-		int mod = mods[person->user];
-		if (function f = has_prefix(msg,"!") && find_command(this, msg[1..], mod)) return f(this, person, "");
-		if (function f = (sscanf(msg, "!%s %s", string cmd, string param) == 2) && find_command(this, cmd, mod)) return f(this, person, param);
-		if (string cur = config->currency!="" && config->currency)
-		{
-			//Note that !currency will work (cf the above code), but !<currency-name> is the recommended way.
-			if (msg == "!"+cur) return G->G->commands->currency(this, person, "");
-			if (sscanf(msg, "!"+cur+" %s", string param) == 1) return G->G->commands->currency(this, person, param);
-		}
+		[command_handler cmd, string param] = locate_command(person, msg);
+		if (stringp(cmd)) return replace(cmd, "%s", param);
+		if (functionp(cmd)) return cmd(this, person, param);
+		return 0;
 	}
 
 	void wrap_message(object person, string msg, string|void dest)
