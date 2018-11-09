@@ -32,7 +32,7 @@ void menu_clicked()
 		catch (Process.create_process(({"wmctrl", "-ia", winid}))->wait());
 }
 
-string process(object channel, object person, string param)
+echoable_message process(object channel, object person, string param)
 {
 	//Special permissions check. If you are a mod in the bot's own channel
 	//(the bot must be active in that channel for that to have meaning), you
@@ -42,14 +42,15 @@ string process(object channel, object person, string param)
 	object botchan = G->G->irc->channels["#" + bot];
 	if (!botchan) return 0; //Bot doesn't manage his own channel. Mod status is not granted.
 	if (!botchan->mods[person->user]) return 0; //You're not a mod in the bot's channel. Permission denied.
+	array response = ({ });
 	foreach (get_raids(); string chan; array(string) destinations)
 	{
 		string msg = "Channel " + chan + ": ";
 		foreach (destinations, string dest)
 			msg += (dest / " Raided ")[1] + ", ";
-		channel->wrap_message(person, msg, "/w " + person->user);
+		response += ({(["message": msg, "dest": "/w $$"])});
 	}
-	return 0;
+	return response;
 }
 
 void create(string name) {::create(name);}

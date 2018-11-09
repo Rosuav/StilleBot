@@ -229,12 +229,12 @@ class channel_notif
 		return substitute_percent(cmd, param);
 	}
 
-	void wrap_message(object person, echoable_message info)
+	void wrap_message(object person, echoable_message info, string|void defaultdest)
 	{
 		if (!info) return;
-		if (arrayp(info)) {wrap_message(person, info[*]); return;}
+		if (arrayp(info)) {wrap_message(person, info[*], defaultdest); return;}
 		if (stringp(info)) info = (["message": info]);
-		string msg = info->message, dest = info->dest || name;
+		string msg = info->message, dest = info->dest || defaultdest || name;
 		if (dest == "/w $$") dest = "/w " + person->user;
 		string target = sscanf(msg, "@$$: %s", msg) ? sprintf("@%s: ", person->user) : "";
 		msg = replace(msg, "$$", person->user);
@@ -346,7 +346,7 @@ void generic_notify(string from, string type, string to, string message, string 
 			if (object chan = G->G->irc->channels["#!whisper"])
 			{
 				mapping person = (["user": nick]); //Hack: The only way person is ever used is person->user. If that changes, replace this with something proper.
-				chan->wrap_message(person, chan->handle_command(person, message) | (["dest": "/w $$"]));
+				chan->wrap_message(person, chan->handle_command(person, message), "/w $$");
 			}
 			break;
 		}

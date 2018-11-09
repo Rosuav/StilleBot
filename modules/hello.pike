@@ -5,7 +5,7 @@ echoable_message process(object channel, object person, string param)
 {
 	//Respond by whisper:
 	//return (["message": "Hello $$ in a whisper", "dest": "/w $$"]);
-	//Send someone else a whisper, but if whispered to the bot, will whisper back to sender:
+	//Send someone else a whisper, even if !hello was whispered to the bot:
 	//return (["message": "Hello from $$!", "dest": "/w " + param]);
 	//Respond with multiple messages:
 	//return ({"Hello, world!", "And hello $$ too."});
