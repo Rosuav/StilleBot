@@ -14,12 +14,12 @@ class command
 	constant active_channels = ({ }); //To restrict this to some channels only, set this to a non-empty array.
 	//Override this to do the command's actual functionality, after permission checks.
 	//Return a string to send that string, with "@$$" to @-notify the user.
-	string process(object channel, object person, string param) { }
+	string|array(string) process(object channel, object person, string param) { }
 
 	//Make sure that inappropriate commands aren't called. Normally these
 	//checks are done in find_command below, but it's cheap to re-check.
 	//(Maybe remove this and depend on find_command??)
-	string check_perms(object channel, object person, string param)
+	string|array(string) check_perms(object channel, object person, string param)
 	{
 		if (!all_channels && !channel->config->allcmds) return 0;
 		if (require_moderator && !channel->mods[person->user]) return 0;
@@ -64,7 +64,7 @@ command_handler find_command(object channel, string cmd, int is_mod)
 			//If we get here, the command is acceptable.
 			return f;
 		}
-		if (string response = G->G->echocommands[tryme]) return response;
+		if (string|array(string) response = G->G->echocommands[tryme]) return response;
 	}
 }
 

@@ -200,7 +200,7 @@ class channel_notif
 		return ({0, 0});
 	}
 
-	string handle_command(object person, string msg)
+	string|array(string) handle_command(object person, string msg)
 	{
 		if (config->noticechat && person->user && has_value(lower_case(msg), config->noticeme||""))
 		{

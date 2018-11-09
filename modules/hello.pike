@@ -1,7 +1,7 @@
 inherit command;
 constant hidden_command = 1;
 
-string process(object channel, object person, string param)
+string|array(string) process(object channel, object person, string param)
 {
 	//Respond by whisper:
 	//channel->wrap_message(person, "Hello $$ in a whisper!", "/w " + person->nick);
