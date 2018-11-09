@@ -216,6 +216,7 @@ class channel_notif
 		}
 		[command_handler cmd, string param] = locate_command(person, msg);
 		if (stringp(cmd)) return replace(cmd, "%s", param);
+		if (arrayp(cmd)) return replace(cmd[*], "%s", param);
 		if (functionp(cmd)) return cmd(this, person, param);
 		return 0;
 	}
