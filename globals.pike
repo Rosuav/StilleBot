@@ -58,7 +58,7 @@ command_handler find_command(object channel, string cmd, int is_mod)
 		function f = G->G->commands[tryme];
 		if (f)
 		{
-			object obj = function_object(f);
+			object obj = functionp(f) ? function_object(f) : ([]);
 			if (!obj->all_channels && !channel->config->allcmds) continue;
 			if (obj->require_moderator && !is_mod) continue;
 			//If we get here, the command is acceptable.
