@@ -1,5 +1,6 @@
 //Note that this is currently aimed somewhat at CookingForNoobs, with its timezone conversions.
 //TODO: Make the target timezone per-channel customizable.
+//TODO: Return an array instead of depending on wrap
 inherit command;
 constant all_channels = 1;
 
