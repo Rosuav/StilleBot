@@ -14,12 +14,12 @@ class command
 	constant active_channels = ({ }); //To restrict this to some channels only, set this to a non-empty array.
 	//Override this to do the command's actual functionality, after permission checks.
 	//Return a string to send that string, with "@$$" to @-notify the user.
-	string|array(string) process(object channel, object person, string param) { }
+	string|mapping|array(string|mapping) process(object channel, object person, string param) { }
 
 	//Make sure that inappropriate commands aren't called. Normally these
 	//checks are done in find_command below, but it's cheap to re-check.
 	//(Maybe remove this and depend on find_command??)
-	string|array(string) check_perms(object channel, object person, string param)
+	string|mapping|array(string|mapping) check_perms(object channel, object person, string param)
 	{
 		if (!all_channels && !channel->config->allcmds) return 0;
 		if (require_moderator && !channel->mods[person->user]) return 0;
@@ -35,10 +35,11 @@ class command
 	}
 }
 
-//A command handler could be a string (echo that string), an array of strings (echo
+//A command handler could be a string (echo that string), a mapping with a "message"
+//key (echo that string, possibly with other attributes), an array of the above (echo
 //them all, in order), or a function returning one of the above. Note that an array
-//of functions is NOT permitted, nor arrays of arrays.
-typedef function|string|array(string) command_handler;
+//of functions is NOT permitted, nor arrays of arrays - this does not nest.
+typedef string|mapping|array(string|mapping)|function command_handler;
 
 //Attempt to find a "likely command" for a given channel.
 //If it returns 0, there's no such command. It may return a function
@@ -55,7 +56,7 @@ command_handler find_command(object channel, string cmd, int is_mod)
 	{
 		//NOTE: G->G->commands holds the actual function that gets
 		//called, but we need the corresponding object.
-		function f = G->G->commands[tryme];
+		command_handler f = G->G->commands[tryme];
 		if (f)
 		{
 			object obj = functionp(f) ? function_object(f) : ([]);
@@ -64,7 +65,8 @@ command_handler find_command(object channel, string cmd, int is_mod)
 			//If we get here, the command is acceptable.
 			return f;
 		}
-		if (string|array(string) response = G->G->echocommands[tryme]) return response;
+		//Echo commands are not allowed to be functions, unsurprisingly
+		if (string|mapping|array(string|mapping) response = G->G->echocommands[tryme]) return response;
 	}
 }
 

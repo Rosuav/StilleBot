@@ -200,7 +200,17 @@ class channel_notif
 		return ({0, 0});
 	}
 
-	string|array(string) handle_command(object person, string msg)
+	string|mapping|array(string|mapping) substitute_percent(string|mapping|array(string|mapping) msg, string param)
+	{
+		if (stringp(msg)) return replace(msg, "%s", param);
+		if (mappingp(msg)) return msg | (["message": replace(msg->message, "%s", param)]);
+		if (arrayp(msg)) return substitute_percent(msg[*], param); //Yes, recursive. You shouldn't have arrays in arrays though.
+		//Functions do not get %s handling. If they want it, they can do it themselves,
+		//and if they don't want it, it would mess things up badly to do it here.
+		return msg;
+	}
+
+	string|mapping|array(string|mapping) handle_command(object person, string msg)
 	{
 		if (config->noticechat && person->user && has_value(lower_case(msg), config->noticeme||""))
 		{
@@ -215,16 +225,17 @@ class channel_notif
 			user->lastnotice = time();
 		}
 		[command_handler cmd, string param] = locate_command(person, msg);
-		if (stringp(cmd)) return replace(cmd, "%s", param);
-		if (arrayp(cmd)) return replace(cmd[*], "%s", param);
+		cmd = substitute_percent(cmd, param);
 		if (functionp(cmd)) return cmd(this, person, param);
 		return 0;
 	}
 
-	void wrap_message(object person, string|array(string) msg, string|void dest)
+	void wrap_message(object person, string|mapping|array(string|mapping) info)
 	{
-		if (!msg) return;
-		if (arrayp(msg)) {wrap_message(person, msg[*], dest); return;}
+		if (!info) return;
+		if (arrayp(info)) {wrap_message(person, info[*]); return;}
+		if (stringp(info)) info = (["message": info]);
+		string msg = info->message, dest = info->dest || name;
 		string target = sscanf(msg, "@$$: %s", msg) ? sprintf("@%s: ", person->user) : "";
 		msg = replace(msg, "$$", person->user);
 		if (config->noticechat && has_value(msg, "$participant$"))
@@ -240,16 +251,16 @@ class channel_notif
 		if (sizeof(msg) <= 400)
 		{
 			//Short enough to just send as-is.
-			send_message(dest || name, msg, mods[bot_nick]);
+			send_message(dest, msg, mods[bot_nick]);
 			return;
 		}
 		//VERY simplistic form of word wrap.
 		while (sizeof(msg) > 400)
 		{
 			sscanf(msg, "%400s%s %s", string piece, string word, msg);
-			send_message(dest || name, sprintf("%s%s%s ...", target, piece, word), mods[bot_nick]);
+			send_message(dest, sprintf("%s%s%s ...", target, piece, word), mods[bot_nick]);
 		}
-		send_message(dest || name, target + msg, mods[bot_nick]);
+		send_message(dest, target + msg, mods[bot_nick]);
 	}
 
 	void not_message(object person,string msg)
@@ -335,7 +346,7 @@ void generic_notify(string from, string type, string to, string message, string 
 			if (object chan = G->G->irc->channels["#!whisper"])
 			{
 				mapping person = (["user": nick]); //Hack: The only way person is ever used is person->user. If that changes, replace this with something proper.
-				chan->wrap_message(person, chan->handle_command(person, message), "/w " + nick);
+				chan->wrap_message(person, chan->handle_command(person, message) | (["dest": "/w " + nick]));
 			}
 			break;
 		}
