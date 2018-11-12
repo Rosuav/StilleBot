@@ -91,7 +91,7 @@ the consequences of this."))
 					->append_column(GTK2.TreeViewColumn("",GTK2.CellRendererText(),"text",0))
 				)
 			)
-			->add(GTK2.HbuttonBox()->add(stock_close()))
+			->pack_start(GTK2.HbuttonBox()->add(stock_close()), 0, 0, 0)
 		);
 	}
 
