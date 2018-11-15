@@ -13,6 +13,7 @@ void shoutout(mapping info, string channel)
 
 string process(object channel, object person, string param)
 {
+	param = replace(param, ({"@", " "}), "");
 	mapping info = G->G->channel_info[lower_case(param)];
 	if (!info)
 	{
