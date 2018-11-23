@@ -70,6 +70,9 @@ command_handler find_command(object channel, string cmd, int is_mod)
 	}
 }
 
+//Shorthand for a common targeting style
+echoable_message targeted(string text) {return (["message": text, "prefix": "@$$: "]);}
+
 string describe_time_short(int tm)
 {
 	string msg = "";

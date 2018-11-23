@@ -69,7 +69,7 @@ string timezone_info(string tz)
 string process(object channel, object person, string param)
 {
 	if (channel->config->allcmds)
-		return "@$$: " + timezone_info(param);
+		return targeted(timezone_info(param));
 }
 
 string default_time(object channel, object person, string param)
