@@ -236,7 +236,7 @@ class channel_notif
 		if (stringp(info)) info = (["message": info]);
 		string msg = info->message, dest = info->dest || defaultdest || name;
 		if (dest == "/w $$") dest = "/w " + person->user;
-		string target = sscanf(msg, "@$$: %s", msg) ? sprintf("@%s: ", person->user) : "";
+		string prefix = replace(info->prefix || "", "$$", person->user);
 		msg = replace(msg, "$$", person->user);
 		if (config->noticechat && has_value(msg, "$participant$"))
 		{
@@ -251,16 +251,16 @@ class channel_notif
 		if (sizeof(msg) <= 400)
 		{
 			//Short enough to just send as-is.
-			send_message(dest, target + msg, mods[bot_nick]);
+			send_message(dest, prefix + msg, mods[bot_nick]);
 			return;
 		}
 		//VERY simplistic form of word wrap.
 		while (sizeof(msg) > 400)
 		{
 			sscanf(msg, "%400s%s %s", string piece, string word, msg);
-			send_message(dest, sprintf("%s%s%s ...", target, piece, word), mods[bot_nick]);
+			send_message(dest, sprintf("%s%s%s ...", prefix, piece, word), mods[bot_nick]);
 		}
-		send_message(dest, target + msg, mods[bot_nick]);
+		send_message(dest, prefix + msg, mods[bot_nick]);
 	}
 
 	void not_message(object person,string msg)
