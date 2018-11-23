@@ -251,7 +251,7 @@ class channel_notif
 		if (sizeof(msg) <= 400)
 		{
 			//Short enough to just send as-is.
-			send_message(dest, msg, mods[bot_nick]);
+			send_message(dest, target + msg, mods[bot_nick]);
 			return;
 		}
 		//VERY simplistic form of word wrap.
