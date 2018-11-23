@@ -3,6 +3,7 @@
 //TODO: Return an array instead of depending on wrap
 inherit command;
 constant all_channels = 1;
+constant active_channels = ({"rosuav"}); //Reenable by adding "cookingfornoobs" to this array
 
 mapping timezones;
 mapping(string:string) tzleaf;
@@ -67,9 +68,7 @@ string timezone_info(string tz)
 
 string process(object channel, object person, string param)
 {
-	if (channel->config->allcmds /*|| channel->name == "#cookingfornoobs"*/)
-		//TODO: Have a generic way to choose which commands something's open in.
-		//Possibly by configuring the default timezone???
+	if (channel->config->allcmds)
 		return "@$$: " + timezone_info(param);
 }
 
