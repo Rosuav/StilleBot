@@ -27,15 +27,17 @@ class IRCClient
 #define IRCClient Protocols.IRC.Client
 #endif
 
+int mod_query_delay = 0;
 void reconnect()
 {
 	//NOTE: This appears to be creating duplicate channel joinings, for some reason.
 	//HACK: Destroy and reconnect - this might solve the above problem. CJA 20160401.
-	if (irc) {irc->close(); if (objectp(irc)) destruct(irc); werror("%% Reconnecting\n");}
+	if (irc && irc == G->G->irc) {irc->close(); if (objectp(irc)) destruct(irc); werror("%% Reconnecting\n");}
 	//TODO: Dodge the synchronous gethostbyname?
 	mapping opt = persist["ircsettings"];
 	if (!opt) return; //Not yet configured - can't connect.
 	opt += (["channel_program": channel_notif, "connection_lost": reconnect, "generic_notify": generic_notify]);
+	mod_query_delay = 0; //Reset the delay
 	if (mixed ex = catch {
 		G->G->irc = irc = IRCClient("irc.chat.twitch.tv", opt);
 		#if __REAL_VERSION__ >= 8.1
@@ -140,7 +142,7 @@ class channel_notif
 		//special powers (Twitch staff etc), so they may not be able to run
 		//mod-only commands until the "MODE" lines come through.
 		mods[name[1..]] = 1;
-		call_out(irc->send_message, 1, name, "/mods");
+		call_out(irc->send_message, ++mod_query_delay, name, "/mods");
 	}
 
 	void destroy() {save(); remove_call_out(save_call_out);}
