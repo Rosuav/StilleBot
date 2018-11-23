@@ -27,6 +27,8 @@ class IRCClient
 #define IRCClient Protocols.IRC.Client
 #endif
 
+void error_notify(mixed ... args) {werror("error_notify: %O\n", args);}
+
 int mod_query_delay = 0;
 void reconnect()
 {
@@ -36,7 +38,8 @@ void reconnect()
 	//TODO: Dodge the synchronous gethostbyname?
 	mapping opt = persist["ircsettings"];
 	if (!opt) return; //Not yet configured - can't connect.
-	opt += (["channel_program": channel_notif, "connection_lost": reconnect, "generic_notify": generic_notify]);
+	opt += (["channel_program": channel_notif, "connection_lost": reconnect,
+		"generic_notify": generic_notify, "error_notify": error_notify]);
 	mod_query_delay = 0; //Reset the delay
 	if (mixed ex = catch {
 		G->G->irc = irc = IRCClient("irc.chat.twitch.tv", opt);
