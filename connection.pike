@@ -248,12 +248,6 @@ class channel_notif
 			string chosen = sizeof(users) ? random(users) : person->user;
 			msg = replace(msg, "$participant$", chosen);
 		}
-		if (sizeof(msg) <= 400)
-		{
-			//Short enough to just send as-is.
-			send_message(dest, prefix + msg, mods[bot_nick]);
-			return;
-		}
 		//VERY simplistic form of word wrap.
 		while (sizeof(msg) > 400)
 		{
