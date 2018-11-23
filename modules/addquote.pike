@@ -1,4 +1,6 @@
 inherit command;
+//TODO: Allow non-mods to add quotes, but they get saved as "pending". The one
+//most recent pending quote can be permasaved by any mod with a simple command.
 constant require_moderator = 1;
 
 string process(object channel, object person, string param)
