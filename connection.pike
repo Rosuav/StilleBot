@@ -142,6 +142,10 @@ class channel_notif
 		//special powers (Twitch staff etc), so they may not be able to run
 		//mod-only commands until the "MODE" lines come through.
 		mods[name[1..]] = 1;
+		//For some reason, this one line of code triggers the reconnect loop
+		//bug. I have no idea what the actual cause is, but the issue seems
+		//to be less common if the commands get spaced out a bit - delay the
+		//first one by 1 second, the second by 2, etc.
 		call_out(irc->send_message, ++mod_query_delay, name, "/mods");
 	}
 
