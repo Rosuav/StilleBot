@@ -291,6 +291,20 @@ void show_turkish(string data)
 	else write("No games online.\n");
 	exit(0);
 }
+
+int n = 0;
+void find_s0lar(string data)
+{
+	mapping info = decode(data); if (!info) exit(0);
+	n += sizeof(info->follows);
+	foreach (info->follows, mapping f)
+		if (has_value(f->user->name + f->user->display_name, "s0lar"))
+			write("%s created %s followed %s\n", f->user->display_name, f->user->created_at, f->created_at);
+	if (!info->_links->next) {werror("Checked %d followers\n", n); exit(0);} //Not working - it's not stopping. Weird.
+	werror("%d...\r", n);
+	make_request(info->_links->next, find_s0lar);
+}
+
 int main(int argc, array(string) argv)
 {
 	if (argc == 1)
@@ -301,7 +315,8 @@ int main(int argc, array(string) argv)
 	if (argc > 1 && argv[1] == "hack")
 	{
 		//TODO: Have a generic way to do this nicely.
-		make_request("https://api.twitch.tv/kraken/streams?language=tr&limit=100&stream_type=live", show_turkish);
+		//make_request("https://api.twitch.tv/kraken/streams?language=tr&limit=100&stream_type=live", show_turkish);
+		make_request("https://api.twitch.tv/kraken/channels/devicat/follows?limit=100", find_s0lar);
 		return -1;
 	}
 	requests = argc - 1;
