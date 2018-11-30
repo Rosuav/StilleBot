@@ -76,13 +76,25 @@ void streaminfo(string data)
 			mapping vstat = m_delete(G->G->viewer_stats, name);
 			if (sizeof(vstat->half_hour) == 30)
 			{
-				mapping config = persist["channels"][name];
-				config->stream_stats += ({([
+				mapping status = persist_status["stream_stats"];
+				if (!status)
+				{
+					//Migrate from old persist
+					status = ([]);
+					foreach (persist_config["channels"]; string name; mapping chan)
+					{
+						array stats = m_delete(chan, "stream_stats");
+						if (stats) status[name] = stats;
+					}
+					persist_status["stream_stats"] = status;
+					persist_config->save();
+				}
+				status[name] += ({([
 					"start": vstat->start, "end": time(),
 					"viewers_high": vstat->high_half_hour,
 					"viewers_low": vstat->low_half_hour,
 				])});
-				persist->save();
+				persist_status->save();
 			}
 		}
 	}
