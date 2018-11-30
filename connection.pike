@@ -36,7 +36,7 @@ void reconnect()
 	//HACK: Destroy and reconnect - this might solve the above problem. CJA 20160401.
 	if (irc && irc == G->G->irc) {irc->close(); if (objectp(irc)) destruct(irc); werror("%% Reconnecting\n");}
 	//TODO: Dodge the synchronous gethostbyname?
-	mapping opt = persist["ircsettings"];
+	mapping opt = persist_config["ircsettings"];
 	if (!opt) return; //Not yet configured - can't connect.
 	opt += (["channel_program": channel_notif, "connection_lost": reconnect,
 		"generic_notify": generic_notify, "error_notify": error_notify]);
@@ -48,7 +48,7 @@ void reconnect()
 		irc->cmd->cap("REQ","twitch.tv/commands");
 		#endif
 		//Maybe grab 'commands' cap too?
-		irc->join_channel(("#"+indices(persist["channels"])[*])[*]);
+		irc->join_channel(("#"+indices(persist_config["channels"])[*])[*]);
 	})
 	{
 		//Something went wrong with the connection. Most likely, it's a
@@ -122,21 +122,21 @@ class channel_notif
 	void create() {call_out(configure,0);}
 	void configure() //Needs to happen after this->name is injected by Protocols.IRC.Client
 	{
-		config = persist["channels"][name[1..]];
+		config = persist_config["channels"][name[1..]];
 		if (config->chatlog)
 		{
 			if (!G->G->channelcolor[name]) {if (++G->G->nextcolor>7) G->G->nextcolor=1; G->G->channelcolor[name]=G->G->nextcolor;}
 			color = sprintf("\e[1;3%dm", G->G->channelcolor[name]);
 		}
 		else color = "\e[0m"; //Nothing will normally be logged, so don't allocate a color. If logging gets enabled, it'll take a reset to assign one.
-		if (config->currency && config->currency!="") wealth = persist->path("wealth", name);
+		if (config->currency && config->currency!="") wealth = persist->path("wealth", name); //TODO-STATUS
 		if (config->countactive || wealth) //Note that having channel currency implies counting activity time.
 		{
-			viewertime = persist->path("viewertime", name);
+			viewertime = persist->path("viewertime", name); //TODO-STATUS
 			foreach (viewertime; string user; int|array val) if (intp(val)) m_delete(viewertime, user);
 		}
-		else if (persist["viewertime"]) m_delete(persist["viewertime"], name);
-		persist->save();
+		else if (persist["viewertime"]) m_delete(persist["viewertime"], name); //TODO-STATUS
+		persist->save(); //TODO-STATUS
 		save_call_out = call_out(save, 300);
 		//Twitch will (eventually) notify us of who has "ops" privilege, which
 		//corresponds to mods and other people with equivalent powers. But on
@@ -183,7 +183,7 @@ class channel_notif
 			++count;
 		}
 		//write("[Saved %d viewer times for channel %s]\n", count, name);
-		persist->save();
+		persist->save(); //TODO-STATUS
 	}
 	void not_join(object who) {log("%sJoin %s: %s\e[0m\n",color,name,who->user); viewers[who->user] = time(1);}
 	void not_part(object who,string message,object executor)
@@ -366,6 +366,6 @@ void create()
 	irc = G->G->irc;
 	//if (!irc) //HACK: Force reconnection every time
 		reconnect();
-	if (persist["ircsettings"]) bot_nick = persist["ircsettings"]->nick || "";
+	if (persist_config["ircsettings"]) bot_nick = persist_config["ircsettings"]->nick || "";
 	add_constant("send_message", send_message);
 }
