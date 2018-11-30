@@ -82,8 +82,14 @@ the consequences of this."))
 			return;
 		}
 		win->store = GTK2.TreeStore(({"string"}));
+		//Completely ephemeral - discarded on program restart. Survives code reload.
 		add_to_store(G->G, "G", UNDEFINED);
-		add_to_store(persist->data, "persist", UNDEFINED);
+		//Stored permanently but may be fast-changing or uninteresting
+		add_to_store(persist_status->data, "persist_status", UNDEFINED);
+		//Stored permanently and intended to be stable. Should change only in direct
+		//response to the operator's command (or a mod or other person with reconfig
+		//powers), and can be git-managed.
+		add_to_store(persist_config->data, "persist_config", UNDEFINED);
 		win->mainwindow=GTK2.Window((["title":"Explore StilleBot internals"]))->add(GTK2.Vbox(0,0)
 			->add(GTK2.ScrolledWindow()
 				->set_policy(GTK2.POLICY_AUTOMATIC,GTK2.POLICY_AUTOMATIC)

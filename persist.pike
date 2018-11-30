@@ -1,6 +1,6 @@
 //Persistent data, stored to a JSON file in the current directory.
 #if !constant(persist) //On reload, don't update this.
-object persist=class(string savefn)
+class Persist(string savefn)
 {
 	//Persistent storage (when this dies, bring it back with a -1/-1 counter on it).
 	//It's also undying storage. When it dies, bring it back one way or the other. :)
@@ -75,10 +75,17 @@ object persist=class(string savefn)
 			call_out(dosave,60);
 		}
 	}
-}("twitchbot_config.json");
+}
+//TODO: Migrate fast-moving or user-data persisted info out of persist into status
+//The idea is that twitchbot_config.json should become a stable file that can be
+//git-managed.
+object persist = Persist("twitchbot_config.json");
+object status = Persist("twitchbot_status.json");
 
 void create()
 {
-	add_constant("persist",persist);
+	add_constant("persist", persist); //Deprecated. Use one of the others.
+	add_constant("persist_config", persist);
+	add_constant("persist_status", status);
 }
 #endif
