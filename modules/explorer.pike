@@ -66,7 +66,7 @@ class menu_clicked
 
 	void makewindow()
 	{
-		if (!persist["explorer_active"])
+		if (!persist_config["explorer_active"])
 		{
 			win->mainwindow=GTK2.Window((["title":"Explore StilleBot internals"]))->add(GTK2.Vbox(0,0)
 				->add(GTK2.Label(#"CAUTION: This will reveal a lot of deep internals
@@ -103,7 +103,7 @@ the consequences of this."))
 
 	void sig_do_as_i_say_clicked()
 	{
-		persist["explorer_active"] = 1;
+		persist_config["explorer_active"] = 1;
 		closewindow();
 		menu_clicked();
 	}
