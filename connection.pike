@@ -48,7 +48,7 @@ void reconnect()
 		irc->cmd->cap("REQ","twitch.tv/commands");
 		#endif
 		//Maybe grab 'commands' cap too?
-		irc->join_channel(("#"+indices(persist_config["channels"])[*])[*]);
+		irc->join_channel(("#"+(indices(persist_config["channels"])-({"!whisper"}))[*])[*]);
 	})
 	{
 		//Something went wrong with the connection. Most likely, it's a
