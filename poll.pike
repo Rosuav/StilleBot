@@ -8,7 +8,7 @@ void request_ok(object q, function cbdata) {q->async_fetch(data_available, cbdat
 void request_fail(object q) { } //If a poll request fails, just ignore it and let the next poll pick it up.
 void make_request(string url, function cbdata, int|void v5)
 {
-	sscanf(persist["ircsettings"]["pass"] || "", "oauth:%s", string pass);
+	sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
 	mapping headers = ([]);
 	if (v5) headers["Accept"] = "application/vnd.twitchtv.v5+json";
 	if (pass) headers["Authorization"] = "OAuth " + pass;
@@ -173,7 +173,7 @@ class check_following(string user, string chan, function|void callback)
 void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //TODO: Make the poll interval customizable
-	foreach (indices(persist["channels"] || ({ })), string chan)
+	foreach (indices(persist_config["channels"] || ({ })), string chan)
 		make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo);
 }
 
@@ -190,7 +190,7 @@ void create()
 
 #if !constant(G)
 mapping G = (["G":([])]);
-mapping persist = (["channels": ({ }), "ircsettings": Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"))["ircsettings"] || ([])]);
+mapping persist_config = (["channels": ({ }), "ircsettings": Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"))["ircsettings"] || ([])]);
 void runhooks(mixed ... args) { }
 mapping G_G_(mixed ... args) {return ([]);}
 
