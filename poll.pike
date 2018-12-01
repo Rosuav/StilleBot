@@ -191,6 +191,7 @@ void create()
 #if !constant(G)
 mapping G = (["G":([])]);
 mapping persist_config = (["channels": ({ }), "ircsettings": Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"))["ircsettings"] || ([])]);
+mapping persist_status = ([]);
 void runhooks(mixed ... args) { }
 mapping G_G_(mixed ... args) {return ([]);}
 
