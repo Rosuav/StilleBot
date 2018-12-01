@@ -1,5 +1,4 @@
-twitchbot_config.json
-twitchbot_commands.json
+twitchbot_*.json
 song_cache
 pwd
 outgoing_raids.log
