@@ -79,13 +79,13 @@ class Persist(string savefn)
 //TODO: Migrate fast-moving or user-data persisted info out of persist into status
 //The idea is that twitchbot_config.json should become a stable file that can be
 //git-managed.
-object persist = Persist("twitchbot_config.json");
+object config = Persist("twitchbot_config.json");
 object status = Persist("twitchbot_status.json");
 
 void create()
 {
-	add_constant("persist", persist); //Deprecated. Use one of the others.
-	add_constant("persist_config", persist);
+	add_constant("persist", config); //Deprecated. Use one of the others.
+	add_constant("persist_config", config);
 	add_constant("persist_status", status);
 }
 #endif
