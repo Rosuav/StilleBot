@@ -43,7 +43,7 @@ void reconnect()
 	mod_query_delay = 0; //Reset the delay
 	if (mixed ex = catch {
 		G->G->irc = irc = IRCClient("irc.chat.twitch.tv", opt);
-		#if __REAL_VERSION__ >= 8.1
+		#if __REAL_VERSION__ >= 8.1 //Why? What's broken in 8.0? CHECK.
 		irc->cmd->cap("REQ","twitch.tv/membership");
 		irc->cmd->cap("REQ","twitch.tv/commands");
 		#endif
