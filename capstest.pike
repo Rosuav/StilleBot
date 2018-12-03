@@ -1,0 +1,78 @@
+object irc;
+mapping persist_config = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"));
+
+class IRCClient
+{
+	inherit Protocols.IRC.Client;
+	void got_command(string what,string ... args)
+	{
+		if (has_prefix(what, "@") && sscanf(args[0],"%s :%s", string a, string message) == 2)
+		{
+			mapping attr = ([]);
+			foreach (what[1..]/";", string att)
+			{
+				[string name, string val] = att/"=";
+				attr[replace(name, "-", "_")] = val;
+			}
+			write(">> %O %O <<\n", args[0], attr);
+			array parts = a / " ";
+			if (sizeof(parts) >= 3 && parts[1] == "WHISPER")
+			{
+				if (options->whisper_notif)
+					options->whisper_notif(person(@(parts[0] / "!")), parts[2], message, attr);
+				return;
+			}
+			if (sizeof(parts) >= 3 && (<"PRIVMSG", "NOTICE">)[parts[1]])
+			{
+				if (object c = channels[lower_case(parts[2])])
+				{
+					c->not_message(person(@(parts[0] / "!")), message, attr);
+					return;
+				}
+			}
+		}
+		::got_command(what, @args);
+	}
+}
+
+void terminate()
+{
+	werror("Connection lost, terminating.\n");
+	exit(0);
+}
+
+class channel_notif
+{
+	inherit Protocols.IRC.Channel;
+	void not_message(object person, string msg, mapping|void params)
+	{
+		params = params || ([]);
+		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
+		else msg = person->nick+": "+msg;
+		string pfx=sprintf("[%s-%s] ", params->user_id||"", name);
+		int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
+		write("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg);
+	}
+}
+
+void whisper(object person, string recip, string msg, mapping|void params)
+{
+	params = params || ([]);
+	if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
+	else msg = person->nick+": "+msg;
+	string pfx=sprintf("[%s-@%s] ", params->user_id||"", recip);
+	int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
+	write("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg);
+}
+
+int main()
+{
+	mapping opt = persist_config["ircsettings"];
+	opt += (["channel_program": channel_notif, "connection_lost": terminate, "whisper_notif": whisper]);
+	irc = IRCClient("irc.chat.twitch.tv", opt);
+	irc->cmd->cap("REQ","twitch.tv/membership");
+	irc->cmd->cap("REQ","twitch.tv/commands");
+	irc->cmd->cap("REQ","twitch.tv/tags");
+	irc->join_channel("#rosuav");
+	return -1;
+}
