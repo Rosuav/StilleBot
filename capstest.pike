@@ -14,7 +14,7 @@ class IRCClient
 				[string name, string val] = att/"=";
 				attr[replace(name, "-", "_")] = val;
 			}
-			write(">> %O %O <<\n", args[0], attr);
+			//write(">> %O %O <<\n", args[0], attr);
 			array parts = a / " ";
 			if (sizeof(parts) >= 3 && parts[1] == "WHISPER")
 			{
@@ -41,15 +41,37 @@ void terminate()
 	exit(0);
 }
 
+constant badge_flags = ([
+	"broadcaster": "mod", "moderator": "mod", //TODO: Also add staff and global mods
+	"vip": "vip", //Unconfirmed
+	"subscriber": "sub",
+]);
+mapping gather_person_info(object person, mapping params)
+{
+	mapping ret = (["nick": person->nick]);
+	if (params->user_id) ret->uid = (int)params->user_id;
+	ret->displayname = params->display_name || person->nick;
+	if (params->badges)
+	{
+		ret->badges = params->badges / ",";
+		foreach (ret->badges, string badge)
+		{
+			sscanf(badge, "%s/%d", badge, int status);
+			if (string flag = badge_flags[badge]) ret[flag] = status;
+		}
+	}
+	return ret;
+}
+
 class channel_notif
 {
 	inherit Protocols.IRC.Channel;
 	void not_message(object person, string msg, mapping|void params)
 	{
-		params = params || ([]);
-		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
-		else msg = person->nick+": "+msg;
-		string pfx=sprintf("[%s-%s] ", params->user_id||"", name);
+		mapping originator = gather_person_info(person, params || ([]));
+		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = originator->displayname+" "+slashme;
+		else msg = originator->displayname+": "+msg;
+		string pfx=sprintf("[%d-%s] ", originator->uid, name);
 		int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
 		write("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg);
 	}
@@ -57,10 +79,10 @@ class channel_notif
 
 void whisper(object person, string recip, string msg, mapping|void params)
 {
-	params = params || ([]);
-	if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
-	else msg = person->nick+": "+msg;
-	string pfx=sprintf("[%s-@%s] ", params->user_id||"", recip);
+	mapping originator = gather_person_info(person, params || ([]));
+	if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = originator->displayname+" "+slashme;
+	else msg = originator->displayname+": "+msg;
+	string pfx=sprintf("[%d-@%s] ", originator->uid, recip);
 	int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
 	write("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg);
 }
