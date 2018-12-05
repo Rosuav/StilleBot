@@ -48,9 +48,8 @@ void terminate()
 	exit(0);
 }
 
-constant badge_flags = ([
+constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
 	"broadcaster": "mod", "moderator": "mod", //TODO: Also add staff and global mods
-	"vip": "vip", //Unconfirmed
 	"subscriber": "sub",
 ]);
 mapping(string:mixed) gather_person_info(object person, mapping params)
@@ -60,11 +59,12 @@ mapping(string:mixed) gather_person_info(object person, mapping params)
 	ret->displayname = params->display_name || person->nick;
 	if (params->badges)
 	{
-		ret->badges = params->badges / ",";
-		foreach (ret->badges, string badge)
+		ret->badges = ([]);
+		foreach (params->badges / ",", string badge)
 		{
 			sscanf(badge, "%s/%d", badge, int status);
-			if (string flag = badge_flags[badge]) ret[flag] = status;
+			ret->badges[badge] = status;
+			if (string flag = badge_aliases[badge]) ret[flag] = status;
 		}
 	}
 	return ret;
