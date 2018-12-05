@@ -6,9 +6,16 @@ class IRCClient
 	inherit Protocols.IRC.Client;
 	void got_command(string what,string ... args)
 	{
+		//With the capability "twitch.tv/tags" active, some messages get delivered prefixed.
+		//The Pike IRC client doesn't handle the prefixes, and I'm not sure how standardized
+		//this concept is (it could be completely Twitch-exclusive), so I'm handling it here.
+		//The prefix is formatted as "@x=y;a=b;q=w" with simple key=value pairs. We parse it
+		//out into a mapping and pass that along to not_message. Note that we also parse out
+		//whispers the same way, even though there's actually no such thing as whisper_notif
+		//in the core Protocols.IRC.Client handler.
 		if (has_prefix(what, "@") && sscanf(args[0],"%s :%s", string a, string message) == 2)
 		{
-			mapping attr = ([]);
+			mapping(string:string) attr = ([]);
 			foreach (what[1..]/";", string att)
 			{
 				[string name, string val] = att/"=";
@@ -46,7 +53,7 @@ constant badge_flags = ([
 	"vip": "vip", //Unconfirmed
 	"subscriber": "sub",
 ]);
-mapping gather_person_info(object person, mapping params)
+mapping(string:mixed) gather_person_info(object person, mapping params)
 {
 	mapping ret = (["nick": person->nick]);
 	if (params->user_id) ret->uid = (int)params->user_id;
@@ -66,9 +73,9 @@ mapping gather_person_info(object person, mapping params)
 class channel_notif
 {
 	inherit Protocols.IRC.Channel;
-	void not_message(object person, string msg, mapping|void params)
+	void not_message(object person, string msg, mapping(string:string)|void params)
 	{
-		mapping originator = gather_person_info(person, params || ([]));
+		mapping(string:mixed) originator = gather_person_info(person, params || ([]));
 		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = originator->displayname+" "+slashme;
 		else msg = originator->displayname+": "+msg;
 		string pfx=sprintf("[%d-%s] ", originator->uid, name);
@@ -79,7 +86,7 @@ class channel_notif
 
 void whisper(object person, string recip, string msg, mapping|void params)
 {
-	mapping originator = gather_person_info(person, params || ([]));
+	mapping(string:mixed) originator = gather_person_info(person, params || ([]));
 	if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = originator->displayname+" "+slashme;
 	else msg = originator->displayname+": "+msg;
 	string pfx=sprintf("[%d-@%s] ", originator->uid, recip);
