@@ -13,7 +13,9 @@ COMPATIBILITY NOTE: In the near future (as of 20181203), the module protocol
 will be changed. Instead of passing around "object person", it will become
 "mapping person", and will contain slightly different information. Other than
 person->nick and person->user, nothing is guaranteed; check your modules and
-check for anything that could be broken by this.
+check for anything that could be broken by this. It is recommended to switch
+to using either person->uid (for identifying users) or person->displayname
+(for addressing users), once the change goes through.
 
 
 License: MIT
