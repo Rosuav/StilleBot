@@ -50,16 +50,16 @@ void terminate()
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
 	"broadcaster": "mod", "moderator": "mod", //TODO: Also add staff and global mods
-	"subscriber": "sub",
+	//"subscriber": "sub", //if you want shorthand
 ]);
 mapping(string:mixed) gather_person_info(object person, mapping params)
 {
 	mapping ret = (["nick": person->nick, "user": person->user]);
 	if (params->user_id) ret->uid = (int)params->user_id;
 	ret->displayname = params->display_name || person->nick;
-	if (params->badges)
+	ret->badges = ([]);
+	if (params->badges && params->badges != "")
 	{
-		ret->badges = ([]);
 		foreach (params->badges / ",", string badge)
 		{
 			sscanf(badge, "%s/%d", badge, int status);
