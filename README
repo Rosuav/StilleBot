@@ -12,8 +12,8 @@ has a number of improvements over Pike 7.8.
 COMPATIBILITY NOTE: In the near future (as of 20181203), the module protocol
 will be changed. Instead of passing around "object person", it will become
 "mapping person", and will contain slightly different information. Other than
-person->nick, nothing is guaranteed; check your modules and check for anything
-that could be broken by this.
+person->nick and person->user, nothing is guaranteed; check your modules and
+check for anything that could be broken by this.
 
 
 License: MIT

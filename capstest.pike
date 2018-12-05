@@ -55,7 +55,7 @@ constant badge_flags = ([
 ]);
 mapping(string:mixed) gather_person_info(object person, mapping params)
 {
-	mapping ret = (["nick": person->nick]);
+	mapping ret = (["nick": person->nick, "user": person->user]);
 	if (params->user_id) ret->uid = (int)params->user_id;
 	ret->displayname = params->display_name || person->nick;
 	if (params->badges)
