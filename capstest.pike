@@ -64,7 +64,7 @@ mapping(string:mixed) gather_person_info(object person, mapping params)
 		{
 			sscanf(badge, "%s/%d", badge, int status);
 			ret->badges[badge] = status;
-			if (string flag = badge_aliases[badge]) ret[flag] = status;
+			if (string flag = badge_aliases[badge]) ret->badges[flag] = status;
 		}
 	}
 	return ret;
