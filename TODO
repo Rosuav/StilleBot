@@ -4,6 +4,14 @@
 * Log showing channel category changes as well as online/offline
 * Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
 * !jackbox ABCD to put the code on screen
-* Notice followers
+* Notice followers (would need a new API to get the info)
 * Timed/automated commands
 * Thank people for hosting (effectively a spam command triggered by a host notice)
+  - Get the user ID of the channel
+    - https://api.twitch.tv/helix/users?login=miccoelaine
+  - Query currently-hosting channels
+    - https://tmi.twitch.tv/hosts?include_logins=1&target=60299966
+  - Compare periodically :( No notification.
+  - To avoid alert spam, record names until the stream goes offline, even if they
+    stop hosting? Or record a timestamp when they disappear?
+  - What about autohosts? Want to avoid spam, again, but it can be nice to acknowledge.
