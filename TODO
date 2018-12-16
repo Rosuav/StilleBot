@@ -15,3 +15,4 @@
   - To avoid alert spam, record names until the stream goes offline, even if they
     stop hosting? Or record a timestamp when they disappear?
   - What about autohosts? Want to avoid spam, again, but it can be nice to acknowledge.
+* GitHub Pages info for all commands - generate it on update from all commands' docstrings
