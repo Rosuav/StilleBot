@@ -16,3 +16,6 @@
     stop hosting? Or record a timestamp when they disappear?
   - What about autohosts? Want to avoid spam, again, but it can be nice to acknowledge.
 * GitHub Pages info for all commands - generate it on update from all commands' docstrings
+* Create some globals.pike facilities for common or wordy actions:
+  - Command aliases (shoutout->so) - also good for the docs pages
+  - Callouts or other callbacks that automatically slide to an updated version of the code
