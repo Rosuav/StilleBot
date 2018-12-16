@@ -734,6 +734,7 @@ class ircsettings
 			win->open_auth=GTK2.Button("Open http://twitchapps.com/tmi/"),0,
 			"Twitch user name", win->nick=GTK2.Entry()->set_text(config->nick||""),
 			"Real name (optional)", win->realname=GTK2.Entry()->set_text(config->realname||""),
+			"Client ID (optional)", win->clientid=GTK2.Entry()->set_text(config->clientid||""),
 			"OAuth2 key", win->pass=GTK2.Entry()->set_visibility(0),
 			GTK2.Label("Key will not be shown above. Obtain"),0,
 			GTK2.Label("one from twitchapps and paste it in."),0,
@@ -753,6 +754,7 @@ class ircsettings
 	{
 		config->nick = win->nick->get_text();
 		config->realname = win->realname->get_text();
+		config->clientid = win->clientid->get_text();
 		string pass = win->pass->get_text();
 		if (has_prefix(pass, "oauth:")) config->pass = pass;
 		persist->save();

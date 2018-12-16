@@ -12,6 +12,9 @@ void make_request(string url, function cbdata, int|void v5)
 	mapping headers = ([]);
 	if (v5) headers["Accept"] = "application/vnd.twitchtv.v5+json";
 	if (pass) headers["Authorization"] = "OAuth " + pass;
+	if (string c=persist_config["ircsettings"]["clientid"])
+		//Some requests require a Client ID. Not sure which or why.
+		headers["Client-ID"] = c;
 	Protocols.HTTP.do_async_method("GET", url, 0, headers,
 		Protocols.HTTP.Query()->set_callbacks(request_ok,request_fail,cbdata));
 }
