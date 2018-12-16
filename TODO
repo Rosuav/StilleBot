@@ -4,3 +4,6 @@
 * Log showing channel category changes as well as online/offline
 * Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
 * !jackbox ABCD to put the code on screen
+* Notice followers
+* Timed/automated commands
+* Thank people for hosting (effectively a spam command triggered by a host notice)
