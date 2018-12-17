@@ -4,6 +4,7 @@ constant require_moderator = 1;
 void autospam(string channel, string msg)
 {
 	if (function f = bounce(this_function)) return f(channel, msg);
+	//TODO: Spam only if there's been text from someone other than the bot?
 	werror("Online: %O\n", G->G->stream_online_since[channel[1..]]);
 	//if (!G->G->stream_online_since[channel[1..]]) return;
 	mapping cfg = persist_config["channels"][channel[1..]];
@@ -14,11 +15,6 @@ void autospam(string channel, string msg)
 	//~ G->G->autocommands[key] = call_out(autospam, mins * 60 - 60 + random(120), channel, msg); //plus or minus a minute
 	//G->G->autocommands[key] = call_out(autospam, mins, channel, msg); //hack
 	send_message(channel, "*+* " + msg);
-}
-
-int connected(string channel)
-{
-	//TODO: Start all timers for this channel at random(delay*60-60)+60
 }
 
 echoable_message process(object channel, object person, string param)
@@ -57,6 +53,20 @@ echoable_message unrepeat(object channel, object person, string param)
 	return process(channel, person, "-1 " + param);
 }
 
+int connected(string channel)
+{
+	//TODO: Start all timers for this channel at random(delay*60-60)+60
+	mapping ac = persist["channels"][channel]->autocommands;
+	if (!ac) return 0;
+	foreach (ac; string msg; int mins)
+	{
+		string key = "#" + channel + " " + msg;
+		mixed id = G->G->autocommands[key];
+		if (!id || undefinedp(find_call_out(id)))
+			G->G->autocommands[key] = call_out(autospam, mins /* * 60 */, "#" + channel, msg);
+	}
+}
+
 void check_autocommands()
 {
 	//First look for any that should be removed
@@ -70,15 +80,7 @@ void check_autocommands()
 	}
 	//Next, look for any that need to be started.
 	foreach (persist["channels"]; string channel; mapping cfg)
-	{
-		foreach (cfg->autocommands || ([]); string msg; int mins)
-		{
-			string key = "#" + channel + " " + msg;
-			mixed id = G->G->autocommands[key];
-			if (!id || undefinedp(find_call_out(id)))
-				G->G->autocommands[key] = call_out(autospam, mins /* * 60 */, "#" + channel, msg);
-		}
-	}
+		connected(channel);
 }
 
 void create(string name)
