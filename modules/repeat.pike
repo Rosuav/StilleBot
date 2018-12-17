@@ -19,7 +19,8 @@ void autospam(string channel, string msg)
 	{
 		//If a command is given, pretend the bot typed it, and process as normal.
 		object chan = G->G->irc->channels[channel];
-		chan->not_message((["nick": persist_config["ircsettings"]->nick]), msg);
+		string me = persist_config["ircsettings"]->nick;
+		chan->not_message((["nick": me, "user": me]), msg);
 		return;
 	}
 	send_message(channel, msg);
