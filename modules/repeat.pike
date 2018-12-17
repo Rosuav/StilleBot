@@ -12,13 +12,22 @@ void autospam(string channel, string msg)
 	if (!mins) return; //Autocommand disabled
 	string key = channel + " " + msg;
 	G->G->autocommands[key] = call_out(autospam, mins * 60 - 60 + random(120), channel, msg); //plus or minus a minute
+	if (sscanf(msg, "!%[^ ]%*[ ]%s", string cmd, string param))
+	{
+		//TODO: Make this work for _any_ command, not just echo commands
+		//Possibly by chaining straight into the channel config, pretending that
+		//the bot actually typed the entire message.
+		echoable_message response = G->G->echocommands[cmd + channel];
+		if (!response) response = G->G->echocommands[cmd];
+		if (arrayp(response)) send_message(channel, response[*]);
+		else send_message(channel, response);
+		return;
+	}
 	send_message(channel, msg);
 }
 
 echoable_message process(object channel, object person, string param)
 {
-	//TODO: "!repeat 10 Hello, world" to pop out "Hello, world" every
-	//10 +/- 1 minutes. If it begins !, run that command instead.
 	if (param == "")
 	{
 		//TODO: Report all current repeated messages
