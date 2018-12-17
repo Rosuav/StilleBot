@@ -12,15 +12,11 @@ void autospam(string channel, string msg)
 	if (!mins) return; //Autocommand disabled
 	string key = channel + " " + msg;
 	G->G->autocommands[key] = call_out(autospam, mins * 60 - 60 + random(120), channel, msg); //plus or minus a minute
-	if (sscanf(msg, "!%[^ ]%*[ ]%s", string cmd, string param))
+	if (has_prefix(msg, "!"))
 	{
-		//TODO: Make this work for _any_ command, not just echo commands
-		//Possibly by chaining straight into the channel config, pretending that
-		//the bot actually typed the entire message.
-		echoable_message response = G->G->echocommands[cmd + channel];
-		if (!response) response = G->G->echocommands[cmd];
-		if (arrayp(response)) send_message(channel, response[*]);
-		else send_message(channel, response);
+		//If a command is given, pretend the bot typed it, and process as normal.
+		object chan = G->G->irc->channels[channel];
+		chan->not_message((["nick": persist_config["ircsettings"]->nick]), msg);
 		return;
 	}
 	send_message(channel, msg);
