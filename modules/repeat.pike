@@ -5,6 +5,9 @@ void autospam(string channel, string msg)
 {
 	if (function f = bounce(this_function)) return f(channel, msg);
 	//TODO: Spam only if there's been text from someone other than the bot?
+	//And if so, then how recently? Since the last time this echo command happened?
+	//If we defer, do we skip an entire execution? Nothing's perfect here, so for
+	//now, just keep it simple: repeated commands WILL repeat, no matter what.
 	if (!G->G->stream_online_since[channel[1..]]) return;
 	mapping cfg = persist_config["channels"][channel[1..]];
 	if (!cfg) return; //Channel no longer configured
