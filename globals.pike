@@ -5,6 +5,7 @@ void create(string n)
 	//coding them here.
 	if (!G->G->commands) G->G->commands=([]);
 	if (!G->G->hooks) G->G->hooks=([]);
+	if (!G->G->bouncers) G->G->bouncers = ([]);
 }
 
 //A sendable message could be a string (echo that string), a mapping with a "message"
@@ -156,4 +157,24 @@ int runhooks(string event, string skip, mixed ... args)
 	foreach (hooks, [string name, function func]) if (!skip || skip<name)
 		if (mixed ex = catch {if (func(@args)) return 1;})
 			werror("Error in hook %s->%s: %s", name, event, describe_backtrace(ex));
+}
+
+/* Easily slide a delayed callback to the latest code
+
+In create(), call register_bouncer(some_function)
+In some_function, start with:
+if (function f = bounce(this_function)) return f(...my args...);
+
+If the code has been updated since the callback was triggered, it'll give back
+the new function. Functions are identified by their %O descriptions.
+*/
+void register_bouncer(function f)
+{
+	G->G->bouncers[sprintf("%O", f)] = f;
+}
+function|void bounce(function f)
+{
+	function current = G->G->bouncers[sprintf("%O", f)];
+	if (current != f) return current;
+	return UNDEFINED;
 }
