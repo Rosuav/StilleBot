@@ -12,7 +12,7 @@ void autospam(string channel, string msg)
 	if (!mins) return; //Autocommand disabled
 	string key = channel + " " + msg;
 	G->G->autocommands[key] = call_out(autospam, mins * 60 - 60 + random(120), channel, msg); //plus or minus a minute
-	send_message(channel, "*+* " + msg);
+	send_message(channel, msg);
 }
 
 echoable_message process(object channel, object person, string param)
