@@ -233,7 +233,7 @@ class window
 				{
 					object m = win->menus[menu];
 					if (!m) error("%s has no corresponding menu [try%{ %s%}]\n", attr, indices(win->menus));
-					if (object old = win->menuitems[attr]) old->destroy();
+					if (object old = win->menuitems[attr]) {({old->destroy})(); destruct(old);}
 					array|string info = this[attr];
 					GTK2.MenuItem mi = arrayp(info)
 						? GTK2.MenuItem(info[0])->add_accelerator("activate", stock_accel_group(), info[1], info[2], GTK2.ACCEL_VISIBLE)
@@ -714,7 +714,7 @@ class menu_item
 	{
 		if (!name) return;
 		sscanf(explode_path(name)[-1],"%s.pike",name);
-		if (object old=G->G->menuitems[name]) old->destroy();
+		if (object old=G->G->menuitems[name]) {({old->destroy})(); destruct(old);}
 		object mi = GTK2.MenuItem(menu_label);
 		G->G->windows->mainwindow->optmenu->add(mi->show());
 		mi->signal_connect("activate",menu_clicked);
@@ -913,6 +913,7 @@ class _mainwindow
 		object menubar = GTK2.MenuBar()
 			->add(GTK2.MenuItem("_Options")->set_submenu(win->optmenu=GTK2.Menu()
 				->add(win->update=GTK2.MenuItem("Update (developer mode)"))
+				->add(win->updatemodules=GTK2.MenuItem("Update modules (developer mode)"))
 				->add(win->authenticate=GTK2.MenuItem("Change Twitch user"))
 				->add(win->manual_auth=GTK2.MenuItem("Authenticate manually"))
 			));
@@ -956,6 +957,16 @@ class _mainwindow
 	void sig_update_activate(object self)
 	{
 		int err = G->bootstrap_all();
+		if (!err) return; //All OK? Be silent.
+		if (string winid = getenv("WINDOWID")) //On some Linux systems we can pop the console up.
+			catch (Process.create_process(({"wmctrl", "-ia", winid}))->wait()); //Try, but don't mind errors, eg if wmctrl isn't installed.
+		MessageBox(0, GTK2.MESSAGE_ERROR, GTK2.BUTTONS_OK, err + " compilation error(s) - see console", win->mainwindow);
+	}
+	void sig_updatemodules_activate(object self)
+	{
+		int err = 0;
+		foreach (sort(get_dir("modules")), string f)
+			if (has_suffix(f, ".pike")) err += !G->bootstrap("modules/" + f);
 		if (!err) return; //All OK? Be silent.
 		if (string winid = getenv("WINDOWID")) //On some Linux systems we can pop the console up.
 			catch (Process.create_process(({"wmctrl", "-ia", winid}))->wait()); //Try, but don't mind errors, eg if wmctrl isn't installed.
