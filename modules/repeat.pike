@@ -5,15 +5,13 @@ void autospam(string channel, string msg)
 {
 	if (function f = bounce(this_function)) return f(channel, msg);
 	//TODO: Spam only if there's been text from someone other than the bot?
-	werror("Online: %O\n", G->G->stream_online_since[channel[1..]]);
-	//if (!G->G->stream_online_since[channel[1..]]) return;
+	if (!G->G->stream_online_since[channel[1..]]) return;
 	mapping cfg = persist_config["channels"][channel[1..]];
 	if (!cfg) return; //Channel no longer configured
 	int mins = cfg->autocommands[msg];
 	if (!mins) return; //Autocommand disabled
 	string key = channel + " " + msg;
-	//~ G->G->autocommands[key] = call_out(autospam, mins * 60 - 60 + random(120), channel, msg); //plus or minus a minute
-	//G->G->autocommands[key] = call_out(autospam, mins, channel, msg); //hack
+	G->G->autocommands[key] = call_out(autospam, mins * 60 - 60 + random(120), channel, msg); //plus or minus a minute
 	send_message(channel, "*+* " + msg);
 }
 
@@ -44,7 +42,7 @@ echoable_message process(object channel, object person, string param)
 	if (mixed id = m_delete(G->G->autocommands, key))
 		remove_call_out(id);
 	ac[msg] = mins;
-	G->G->autocommands[key] = call_out(autospam, mins /* * 60 */, channel->name, msg);
+	G->G->autocommands[key] = call_out(autospam, mins * 60, channel->name, msg);
 	return "Added to the repetition table.";
 }
 
@@ -55,7 +53,6 @@ echoable_message unrepeat(object channel, object person, string param)
 
 int connected(string channel)
 {
-	//TODO: Start all timers for this channel at random(delay*60-60)+60
 	mapping ac = persist["channels"][channel]->autocommands;
 	if (!ac) return 0;
 	foreach (ac; string msg; int mins)
@@ -63,7 +60,7 @@ int connected(string channel)
 		string key = "#" + channel + " " + msg;
 		mixed id = G->G->autocommands[key];
 		if (!id || undefinedp(find_call_out(id)))
-			G->G->autocommands[key] = call_out(autospam, mins /* * 60 */, "#" + channel, msg);
+			G->G->autocommands[key] = call_out(autospam, mins * 60 - 60 + random(120), "#" + channel, msg);
 	}
 }
 
