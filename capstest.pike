@@ -56,6 +56,7 @@ class IRCClient
 			{
 				if (object c = channels[lower_case(parts[2])])
 				{
+					attr->_type = parts[1]; //Distinguish NOTICE from text, in case it matters
 					c->not_message(person(@(parts[0] / "!")), message, attr);
 					return;
 				}
