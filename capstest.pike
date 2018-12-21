@@ -33,15 +33,18 @@ class IRCClient
 		//out into a mapping and pass that along to not_message. Note that we also parse out
 		//whispers the same way, even though there's actually no such thing as whisper_notif
 		//in the core Protocols.IRC.Client handler.
-		if (has_prefix(what, "@") && sscanf(args[0],"%s :%s", string a, string message) == 2)
+		mapping(string:string) attr = ([]);
+		if (has_prefix(what, "@"))
 		{
-			mapping(string:string) attr = ([]);
 			foreach (what[1..]/";", string att)
 			{
 				[string name, string val] = att/"=";
 				attr[replace(name, "-", "_")] = val;
 			}
 			//write(">> %O %O <<\n", args[0], attr);
+		}
+		if (sscanf(args[0],"%s :%s", string a, string message) == 2)
+		{
 			array parts = a / " ";
 			if (sizeof(parts) >= 3 && parts[1] == "WHISPER")
 			{
