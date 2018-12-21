@@ -91,6 +91,10 @@ void reconnect()
 		cap("REQ","twitch.tv/tags");
 		irc->join_channel(("#"+(indices(persist_config["channels"])-({"!whisper"}))[*])[*]);
 		//Hack: Create a fake channel object for whispers
+		//Rather than having a pseudo-channel, it would probably be better to
+		//have a "primary channel" that handles all whispers - effectively,
+		//whispered commands are treated as if they were sent to that channel,
+		//except that the response is whispered.
 		if (persist_config["channels"]["!whisper"])
 		{
 			object ch = channel_notif();
