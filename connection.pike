@@ -74,7 +74,7 @@ void reconnect()
 	mapping opt = persist_config["ircsettings"];
 	if (!opt) return; //Not yet configured - can't connect.
 	opt += (["channel_program": channel_notif, "connection_lost": reconnect,
-		"generic_notify": generic_notify, "error_notify": error_notify]);
+		"error_notify": error_notify]);
 	mod_query_delay = 0; //Reset the delay
 	if (mixed ex = catch {
 		G->G->irc = irc = IRCClient("irc.chat.twitch.tv", opt);
@@ -404,34 +404,6 @@ class channel_notif
 	void log(strict_sprintf_format fmt, sprintf_args ... args)
 	{
 		if (config->chatlog) write(fmt, @args);
-	}
-}
-
-void generic_notify(string from, string type, string to, string message, string extra)
-{
-	//NOTE: This function gets *everything*. Even if it's handled elsewhere.
-	//Cherry-pick the few things that are interesting and ignore the rest.
-	switch (type)
-	{
-		case "WHISPER":
-		{
-			sscanf(from, "%s!", string nick);
-			write("** Whisper from %s: %s\n", nick, message);
-			//Rather than having a pseudo-channel, it would probably be better to
-			//have a "primary channel" that handles all whispers - effectively,
-			//whispered commands are treated as if they were sent to that channel,
-			//except that the response is whispered.
-			if (object chan = G->G->irc->channels["#!whisper"])
-			{
-				mapping person = (["user": nick]); //Hack: The only way person is ever used is person->user. If that changes, replace this with something proper.
-				chan->wrap_message(person, chan->handle_command(person, message), "/w $$");
-			}
-			break;
-		}
-		default:
-			//Record the types in case something looks interesting
-			if (!G->G->notify_types) G->G->notify_types = (<>);
-			G->G->notify_types[type] = 1;
 	}
 }
 
