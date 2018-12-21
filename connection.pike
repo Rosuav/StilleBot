@@ -220,7 +220,10 @@ class channel_notif
 		//bug. I have no idea what the actual cause is, but the issue seems
 		//to be less common if the commands get spaced out a bit - delay the
 		//first one by 1 second, the second by 2, etc.
-		call_out(irc->send_message, ++mod_query_delay, name, "/mods");
+		//call_out(irc->send_message, ++mod_query_delay, name, "/mods");
+		//20181221: Instead of asking about all mods, we instead wait for one
+		//of two events - either the MODE lines, or the person speaking in
+		//chat, with the mod badge or equivalent.
 	}
 
 	void destroy() {save(); remove_call_out(save_call_out);}
@@ -290,7 +293,7 @@ class channel_notif
 		return msg;
 	}
 
-	echoable_message handle_command(object person, string msg)
+	echoable_message handle_command(object|mapping person, string msg)
 	{
 		if (config->noticechat && person->user && has_value(lower_case(msg), config->noticeme||""))
 		{
@@ -311,7 +314,7 @@ class channel_notif
 		return substitute_percent(cmd, param);
 	}
 
-	void wrap_message(object person, echoable_message info, string|void defaultdest)
+	void wrap_message(object|mapping person, echoable_message info, string|void defaultdest)
 	{
 		if (!info) return;
 		if (arrayp(info)) {wrap_message(person, info[*], defaultdest); return;}
@@ -339,8 +342,9 @@ class channel_notif
 		send_message(dest, prefix + msg, mods[bot_nick]);
 	}
 
-	void not_message(object person, string msg, mapping(string:string)|void params)
+	void not_message(object ircperson, string msg, mapping(string:string)|void params)
 	{
+		mapping(string:mixed) person = gather_person_info(ircperson, params||([]));
 		if (person->nick == "tmi.twitch.tv")
 		{
 			//It's probably a NOTICE rather than a PRIVMSG
@@ -383,15 +387,17 @@ class channel_notif
 		string defaultdest;
 		if (params && params->_type == "WHISPER") defaultdest = "/w $$";
 		if (lower_case(person->nick) == lower_case(bot_nick)) {lastmsgtime = time(1); modmsgs = 0;}
+		if (person->badges) mods[person->user] = person->badges->_mod;
 		wrap_message(person, handle_command(person, msg), defaultdest);
-		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
-		else msg = person->nick+": "+msg;
-		string pfx=sprintf("[%s] ",name);
+		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->displayname+" "+slashme;
+		else msg = person->displayname+": "+msg;
+		string pfx=sprintf("[%s] ", name);
 		#ifdef __NT__
 		int wid = 80 - sizeof(pfx);
 		#else
 		int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
 		#endif
+		if (person->badges?->_mod) msg = string_to_utf8("\u2694 ") + msg;
 		log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
 	}
 	void not_mode(object who,string mode)
