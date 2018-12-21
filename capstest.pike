@@ -4,6 +4,26 @@ mapping persist_config = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_c
 class IRCClient
 {
 	inherit Protocols.IRC.Client;
+	#if __REAL_VERSION__ < 8.1
+	//Basically monkey-patch in a couple of methods that Pike 8.0 doesn't ship with.
+	void join_channel(string chan)
+	{
+	   cmd->join(chan);
+	   if (options->channel_program)
+	   {
+	      object ch = options->channel_program();
+	      ch->name = lower_case(chan);
+	      channels[lower_case(chan)] = ch;
+	   }
+	}
+
+	void part_channel(string chan)
+	{
+	   cmd->part(chan);
+	   m_delete(channels, lower_case(chan));
+	}
+	#endif
+
 	void got_command(string what,string ... args)
 	{
 		//With the capability "twitch.tv/tags" active, some messages get delivered prefixed.
