@@ -120,9 +120,14 @@ int main()
 	mapping opt = persist_config["ircsettings"];
 	opt += (["channel_program": channel_notif, "connection_lost": terminate, "whisper_notif": whisper]);
 	irc = IRCClient("irc.chat.twitch.tv", opt);
-	irc->cmd->cap("REQ","twitch.tv/membership");
-	irc->cmd->cap("REQ","twitch.tv/commands");
-	irc->cmd->cap("REQ","twitch.tv/tags");
+	#if __REAL_VERSION__ >= 8.1
+	function cap = irc->cmd->cap;
+	#else
+	function cap = irc->cmd->SyncRequest(Protocols.IRC.Requests.NoReply("CAP", "string", "text"), irc->cmd);
+	#endif
+	cap("REQ","twitch.tv/membership");
+	cap("REQ","twitch.tv/commands");
+	cap("REQ","twitch.tv/tags");
 	irc->join_channel("#rosuav");
 	return -1;
 }
