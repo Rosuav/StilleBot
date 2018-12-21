@@ -46,17 +46,13 @@ class IRCClient
 		if (sscanf(args[0],"%s :%s", string a, string message) == 2)
 		{
 			array parts = a / " ";
-			if (sizeof(parts) >= 3 && parts[1] == "WHISPER")
+			if (sizeof(parts) >= 3 && (<"PRIVMSG", "NOTICE", "WHISPER">)[parts[1]])
 			{
-				if (options->whisper_notif)
-					options->whisper_notif(person(@(parts[0] / "!")), parts[2], message, attr);
-				return;
-			}
-			if (sizeof(parts) >= 3 && (<"PRIVMSG", "NOTICE">)[parts[1]])
-			{
-				if (object c = channels[lower_case(parts[2])])
+				//Send whispers to a pseudochannel named #!whisper
+				string chan = parts[1] == "WHISPER" ? "#!whisper" : lower_case(parts[2]);
+				if (object c = channels[chan])
 				{
-					attr->_type = parts[1]; //Distinguish NOTICE from text, in case it matters
+					attr->_type = parts[1]; //Distinguish the three types of message
 					c->not_message(person(@(parts[0] / "!")), message, attr);
 					return;
 				}
@@ -92,6 +88,7 @@ void reconnect()
 		#endif
 		cap("REQ","twitch.tv/membership");
 		cap("REQ","twitch.tv/commands");
+		//cap("REQ","twitch.tv/tags");
 		irc->join_channel(("#"+(indices(persist_config["channels"])-({"!whisper"}))[*])[*]);
 	})
 	{
@@ -149,6 +146,29 @@ void send_message(string|array to, string msg, int|void is_mod)
 		lastmsgtime = tm; modmsgs = 0;
 		irc->send_message(to, string_to_utf8(msg));
 	}
+}
+
+constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
+	"broadcaster": "_mod", "moderator": "_mod", //TODO: Also add staff and global mods
+	//"subscriber": "_sub", //if you want shorthand
+]);
+//Go through a message's parameters/tags to get the info about the person
+mapping(string:mixed) gather_person_info(object person, mapping params)
+{
+	mapping ret = (["nick": person->nick, "user": person->user]);
+	if (params->user_id) ret->uid = (int)params->user_id;
+	ret->displayname = params->display_name || person->nick;
+	if (params->badges)
+	{
+		ret->badges = ([]);
+		foreach (params->badges / ",", string badge) if (badge != "")
+		{
+			sscanf(badge, "%s/%d", badge, int status);
+			ret->badges[badge] = status;
+			if (string flag = badge_aliases[badge]) ret->badges[flag] = status;
+		}
+	}
+	return ret;
 }
 
 class channel_notif
@@ -353,8 +373,10 @@ class channel_notif
 			*/
 			//Fall through and display them, if only for debugging
 		}
+		string defaultdest;
+		if (params && params->_type == "WHISPER") defaultdest = "/w $$";
 		if (lower_case(person->nick) == lower_case(bot_nick)) {lastmsgtime = time(1); modmsgs = 0;}
-		wrap_message(person, handle_command(person, msg));
+		wrap_message(person, handle_command(person, msg), defaultdest);
 		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->nick+" "+slashme;
 		else msg = person->nick+": "+msg;
 		string pfx=sprintf("[%s] ",name);
