@@ -94,6 +94,7 @@ class channel_notif
 {
 	inherit Protocols.IRC.Channel;
 	void not_join(object who) {write("not_join(%O)\n", who);} //Needed for Pike 8.0 to prevent crash
+	void not_mode(object who,string mode) {}
 	void not_message(object person, string msg, mapping(string:string)|void params)
 	{
 		mapping(string:mixed) originator = gather_person_info(person, params || ([]));
