@@ -184,6 +184,7 @@ class channel_notif
 		//write("[Saved %d viewer times for channel %s]\n", count, name);
 		persist->save(); //TODO-STATUS
 	}
+	//NOTE: Without not_join, Pike 8.0 will crash. (8.1 is safe.)
 	void not_join(object who) {log("%sJoin %s: %s\e[0m\n",color,name,who->user); viewers[who->user] = time(1);}
 	void not_part(object who,string message,object executor)
 	{
