@@ -88,8 +88,15 @@ void reconnect()
 		#endif
 		cap("REQ","twitch.tv/membership");
 		cap("REQ","twitch.tv/commands");
-		//cap("REQ","twitch.tv/tags");
+		cap("REQ","twitch.tv/tags");
 		irc->join_channel(("#"+(indices(persist_config["channels"])-({"!whisper"}))[*])[*]);
+		//Hack: Create a fake channel object for whispers
+		if (persist_config["channels"]["!whisper"])
+		{
+			object ch = channel_notif();
+			ch->name = "#!whisper";
+			irc->channels["#!whisper"] = ch;
+		}
 	})
 	{
 		//Something went wrong with the connection. Most likely, it's a
