@@ -1,11 +1,11 @@
 object irc;
 string bot_nick;
 
-#if __REAL_VERSION__ < 8.1
-//Basically monkey-patch in a couple of methods that Pike 8.0 doesn't ship with.
 class IRCClient
 {
 	inherit Protocols.IRC.Client;
+	#if __REAL_VERSION__ < 8.1
+	//Basically monkey-patch in a couple of methods that Pike 8.0 doesn't ship with.
 	void join_channel(string chan)
 	{
 	   cmd->join(chan);
@@ -22,10 +22,49 @@ class IRCClient
 	   cmd->part(chan);
 	   m_delete(channels, lower_case(chan));
 	}
+	#endif
+
+	void got_command(string what, string ... args)
+	{
+		//With the capability "twitch.tv/tags" active, some messages get delivered prefixed.
+		//The Pike IRC client doesn't handle the prefixes, and I'm not sure how standardized
+		//this concept is (it could be completely Twitch-exclusive), so I'm handling it here.
+		//The prefix is formatted as "@x=y;a=b;q=w" with simple key=value pairs. We parse it
+		//out into a mapping and pass that along to not_message. Note that we also parse out
+		//whispers the same way, even though there's actually no such thing as whisper_notif
+		//in the core Protocols.IRC.Client handler.
+		mapping(string:string) attr = ([]);
+		if (has_prefix(what, "@"))
+		{
+			foreach (what[1..]/";", string att)
+			{
+				[string name, string val] = att/"=";
+				attr[replace(name, "-", "_")] = replace(val, "\\s", " ");
+			}
+			//write(">> %O %O <<\n", args[0], attr);
+		}
+		if (sscanf(args[0],"%s :%s", string a, string message) == 2)
+		{
+			array parts = a / " ";
+			if (sizeof(parts) >= 3 && parts[1] == "WHISPER")
+			{
+				if (options->whisper_notif)
+					options->whisper_notif(person(@(parts[0] / "!")), parts[2], message, attr);
+				return;
+			}
+			if (sizeof(parts) >= 3 && (<"PRIVMSG", "NOTICE">)[parts[1]])
+			{
+				if (object c = channels[lower_case(parts[2])])
+				{
+					attr->_type = parts[1]; //Distinguish NOTICE from text, in case it matters
+					c->not_message(person(@(parts[0] / "!")), message, attr);
+					return;
+				}
+			}
+		}
+		::got_command(what, @args);
+	}
 }
-#else
-#define IRCClient Protocols.IRC.Client
-#endif
 
 void error_notify(mixed ... args) {werror("error_notify: %O\n", args);}
 
@@ -273,7 +312,7 @@ class channel_notif
 		send_message(dest, prefix + msg, mods[bot_nick]);
 	}
 
-	void not_message(object person,string msg)
+	void not_message(object person, string msg, mapping(string:string)|void params)
 	{
 		if (person->nick == "tmi.twitch.tv")
 		{
