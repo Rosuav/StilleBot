@@ -46,6 +46,9 @@ void reconnect()
 		#if __REAL_VERSION__ >= 8.1
 		function cap = irc->cmd->cap;
 		#else
+		//The 'cap' command isn't supported by Pike 8.0's Protocols.IRC.Client,
+		//so we create our own, the same way. There will be noisy failures from
+		//the responses, but it's fine in fire-and-forget mode.
 		function cap = irc->cmd->SyncRequest(Protocols.IRC.Requests.NoReply("CAP", "string", "text"), irc->cmd);
 		#endif
 		cap("REQ","twitch.tv/membership");
