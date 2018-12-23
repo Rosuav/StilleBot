@@ -9,6 +9,17 @@ string process(object channel, object person, string param)
 	if (!channel->config->quotes) channel->config->quotes = ({ });
 	mapping chaninfo = G->G->channel_info[channel->name[1..]];
 	if (!chaninfo) return "@$$: Internal error - no channel info"; //I'm pretty sure this shouldn't happen
+	//If you type "!addquote personname text", transform it.
+	if (sscanf(param, "%s %s", string who, string what) && what)
+	{
+		if (lower_case(who) == channel->name[1..] || channel->viewers[lower_case(who)])
+		{
+			//Seems to be a person's name at the start. Flip it to the end.
+			//Note that this isn't perfect; if the person happens to not be in
+			//the viewer list, the transformation won't work.
+			param = sprintf("\"%s\" -- %s", what, who);
+		}
+	}
 	channel->config->quotes += ({([
 		"msg": param,
 		"game": chaninfo->game,
