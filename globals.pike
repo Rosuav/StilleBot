@@ -68,7 +68,7 @@ Available to: %s
 				}
 			}
 			if (newtext) cmds += ({newtext});
-			sort(cmds);
+			sort(cmds); //TODO: Figure out why this didn't work
 			string index = sprintf("%s\n\nCommands in alphabetical order:\n%s\n\n---\n%s",
 				before, cmds * "\n* ", after);
 			if (index != oldindex) Stdio.write_file("commands/index.md", index);
