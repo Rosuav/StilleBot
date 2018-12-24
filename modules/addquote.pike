@@ -2,6 +2,16 @@ inherit command;
 //TODO: Allow non-mods to add quotes, but they get saved as "pending". The one
 //most recent pending quote can be permasaved by any mod with a simple command.
 constant require_moderator = 1;
+constant docstring = #"
+Add a channel quote
+
+Usage: `!addquote \"Something funny\" -- person` or 
+`!addquote person Something funny`
+
+Record those funny moments when amazing things happen. The quote is
+automatically timestamped and gets the current stream category recorded.
+Anyone can view these quotes with the [!quote](quote) command.
+";
 
 string process(object channel, object person, string param)
 {
