@@ -19,6 +19,7 @@ class command
 	constant all_channels = 0; //Set to 1 if this command should be available even if allcmds is not set for the channel
 	constant require_moderator = 0; //Set to 1 if the command is mods-only
 	constant active_channels = ({ }); //To restrict this to some channels only, set this to a non-empty array.
+	constant docstring = ""; //Override this with your docs
 	//Override this to do the command's actual functionality, after permission checks.
 	//Return a string to send that string, with "@$$" to @-notify the user.
 	echoable_message process(object channel, object person, string param) { }
@@ -39,6 +40,38 @@ class command
 		foreach (indices(G->G->commands), string n) if (n == name || has_prefix(n, name + "#")) m_delete(G->G->commands, n);
 		if (!sizeof(active_channels)) G->G->commands[name] = check_perms;
 		else foreach (active_channels, string chan) if (chan!="") G->G->commands[name + "#" + chan] = check_perms;
+		//Update the docs for this command. NOTE: Nothing will currently
+		//remove docs for a defunct command. Do this manually.
+		if (sscanf(docstring, "%*[\n]%s\n\n%s", string summary, string main) && main)
+		{
+			string content = string_to_utf8(sprintf(#"# !%s: %s
+
+Available to: %s
+
+%s
+", name, summary, require_moderator ? "mods only" : "all users", main));
+			string fn = sprintf("commands/%s.md", name);
+			string oldcontent = Stdio.read_file(fn);
+			if (content != oldcontent) Stdio.write_file(fn, content);
+			string oldindex = Stdio.read_file("commands/index.md");
+			sscanf(oldindex, "%s\n\nCommands in alphabetical order:\n%s\n\n---\n%s",
+				string before, string commands, string after);
+			array cmds = commands / "\n* "; //First one will always be an empty string
+			int done = 0;
+			foreach (cmds; int i; string cmd)
+			{
+				if (has_prefix(cmd, sprintf("!%s: ", name)))
+				{
+					cmds[i] = sprintf("!%s: %s", name, summary);
+					done = 1;
+					break;
+				}
+			}
+			if (!done) cmds += ({sprintf("!%s: %s", name, summary)});
+			string index = sprintf("%s\n\nCommands in alphabetical order:\n%s\n\n---\n%s",
+				before, cmds * "\n* ", after);
+			if (index != oldindex) Stdio.write_file("commands/index.md", index);
+		}
 	}
 }
 

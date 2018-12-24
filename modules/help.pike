@@ -1,4 +1,10 @@
 inherit command;
+constant docstring = #"
+List commands available to you
+
+This command will list every command that you have permission to use in the
+channel you are in, apart from hidden commands.
+";
 
 string process(object channel, object person, string param)
 {

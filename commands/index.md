@@ -7,5 +7,9 @@ the channel you want to check.
 
 Commands in alphabetical order:
 
+* !help: List commands available to you
+
+---
+
 If the command you seek is not mentioned here, it is possibly a channel-specific
 echo command.
