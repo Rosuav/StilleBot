@@ -3,6 +3,7 @@
 //TODO: Return an array instead of depending on wrap
 inherit command;
 constant all_channels = 1;
+constant hidden_command = 1;
 constant active_channels = ({"rosuav"}); //Reenable by adding "cookingfornoobs" to this array
 
 mapping timezones;

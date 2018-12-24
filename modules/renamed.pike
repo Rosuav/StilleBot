@@ -1,5 +1,6 @@
 inherit command;
 constant all_channels = 1;
+constant hidden_command = 1;
 constant active_channels = ({"devicat"});
 constant require_moderator = 1; //If 0, anyone can tag themselves. Mods can always tag anyone.
 int last_used = 0;

@@ -1,5 +1,6 @@
 inherit command;
 constant require_allcmds = 1;
+constant hidden_command = 1;
 inherit menu_item;
 constant menu_label = "Recent raids";
 constant active_channels = ({"!whisper"});
