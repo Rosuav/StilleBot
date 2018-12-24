@@ -48,7 +48,7 @@ void statusfile()
 		//Locate the metadata block by scanning backwards.
 		//There'll be meta entries for all requests, moving forward. There may be
 		//any number of meta entries *behind* the current request, so always count back.
-		mapping meta = persist["songrequest_meta"][-1-sizeof(persist["songrequests"])];
+		mapping meta = persist_status["songrequest_meta"][-1-sizeof(persist_status["songrequests"])];
 		msg += sprintf("\nRequested by %s at %s", meta->by, ctime(meta->at)[..<1]);
 	}
 	else
@@ -128,10 +128,10 @@ void check_queue()
 	}
 	mapping(string:array) cache = read_cache();
 	string fn = 0;
-	foreach (persist["songrequests"], string song)
+	foreach (persist_status["songrequests"], string song)
 	{
 		if (G->G->songrequest_downloading[song]) continue; //Can't play if still downloading (or can we??)
-		persist["songrequests"] -= ({song});
+		persist_status["songrequests"] -= ({song});
 		if (!cache[song]) continue; //Not in cache and not downloading. Presumably the download failed - drop it.
 		//Okay, so we can play this one.
 		G->G->songrequest_nowplaying = cache[song];
@@ -203,7 +203,7 @@ class menu_clicked
 	{
 		string reqs = "";
 		mapping(string:array) cache = read_cache();
-		foreach (persist["songrequests"], string song)
+		foreach (persist_status["songrequests"], string song)
 		{
 			string downloading = G->G->songrequest_downloading[song] && " (downloading)";
 			if (array c = cache[song])
@@ -360,7 +360,7 @@ string process(object channel, object person, string param)
 			send_message(channel->name, "Currently downloading "+videoid+": status "+proc->status());
 		if (array x=G->G->songrequest_nowplaying)
 			send_message(channel->name, sprintf("Now playing [%s]: %O", describe_time(x[0]), x[1]));
-		return "Song queue: "+persist["songrequests"]*", ";
+		return "Song queue: "+persist_status["songrequests"]*", ";
 	}
 	if (param == "skip" && channel->mods[person->user])
 	{
@@ -371,7 +371,7 @@ string process(object channel, object person, string param)
 	}
 	if (param == "flush" && channel->mods[person->user])
 	{
-		persist["songrequests"] = ({ });
+		persist_status["songrequests"] = ({ });
 		return "@$$: Song request queue flushed. After current song, back to the playlist.";
 	}
 	//Attempt to parse out a few common link formats
@@ -385,7 +385,7 @@ string process(object channel, object person, string param)
 	if (sizeof(param) != 11) return "@$$: Try !songrequest YOUTUBE-ID";
 	if (G->G->songrequest_nowplaying && G->G->songrequest_nowplaying[3] == param)
 		return "@$$: That's what's currently playing!";
-	if (has_value(persist["songrequests"], param)) return "@$$: Song is already in the queue";
+	if (has_value(persist_status["songrequests"], param)) return "@$$: Song is already in the queue";
 	mapping cache = read_cache();
 	string msg;
 	if (array info = cache[param])
@@ -405,9 +405,9 @@ string process(object channel, object person, string param)
 	//This is the only place where the queue gets added to.
 	//This is, therefore, the place to add a channel currency cost, a restriction
 	//on follower/subscriber status, or anything else the channel owner wishes.
-	persist["songrequests"] += ({param});
-	persist["songrequest_meta"] += ({(["by": person->user, "at": time()])});
-	msg += sprintf(" - song #%d in the queue", sizeof(persist["songrequests"]));
+	persist_status["songrequests"] += ({param});
+	persist_status["songrequest_meta"] += ({(["by": person->user, "at": time()])});
+	msg += sprintf(" - song #%d in the queue", sizeof(persist_status["songrequests"]));
 	check_queue();
 	return msg;
 }
@@ -428,8 +428,8 @@ not running song requests, the contents of this directory can be freely deleted.
 	}
 	if (!G->G->songrequest_downloading) G->G->songrequest_downloading = ([]);
 	if (!G->G->songrequest_playlist) G->G->songrequest_playlist = ({ });
-	if (!persist["songrequests"]) persist["songrequests"] = ({ });
-	if (!persist["songrequest_meta"]) persist["songrequest_meta"] = ({ });
+	if (!persist_status["songrequests"]) persist_status["songrequests"] = ({ });
+	if (!persist_status["songrequest_meta"]) persist_status["songrequest_meta"] = ({ });
 	G->G->check_queue = check_queue;
 	G->G->vlc_stdin = vlc_stdin;
 }

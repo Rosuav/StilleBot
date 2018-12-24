@@ -111,6 +111,8 @@ void create()
 	//Compat: Migrate ephemeral info from config into status
 	migrate("wealth");
 	migrate("viewertime");
+	migrate("songrequests");
+	migrate("songrequest_meta");
 	add_constant("persist", config); //Deprecated. Use one of the others.
 	add_constant("persist_config", config);
 	add_constant("persist_status", status);
