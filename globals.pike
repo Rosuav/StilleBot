@@ -57,17 +57,18 @@ Available to: %s
 			sscanf(oldindex, "%s\n\nCommands in alphabetical order:\n%s\n\n---\n%s",
 				string before, string commands, string after);
 			array cmds = commands / "\n* "; //First one will always be an empty string
-			int done = 0;
+			string newtext = sprintf("[!%s: %s](%[0]s)", name, summary);
 			foreach (cmds; int i; string cmd)
 			{
-				if (has_prefix(cmd, sprintf("!%s: ", name)))
+				if (has_prefix(cmd, sprintf("[!%s: ", name)))
 				{
-					cmds[i] = sprintf("!%s: %s", name, summary);
-					done = 1;
+					cmds[i] = newtext;
+					newtext = 0;
 					break;
 				}
 			}
-			if (!done) cmds += ({sprintf("!%s: %s", name, summary)});
+			if (newtext) cmds += ({newtext});
+			sort(cmds);
 			string index = sprintf("%s\n\nCommands in alphabetical order:\n%s\n\n---\n%s",
 				before, cmds * "\n* ", after);
 			if (index != oldindex) Stdio.write_file("commands/index.md", index);
