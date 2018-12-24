@@ -8,6 +8,7 @@ the channel you want to check.
 Commands in alphabetical order:
 
 * !help: List commands available to you
+* !addcmd: Add an echo command for this channel
 
 ---
 
