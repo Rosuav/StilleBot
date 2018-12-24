@@ -1,6 +1,6 @@
 //Persistent data, stored to a JSON file in the current directory.
 #if !constant(persist) //On reload, don't update this.
-class Persist(string savefn)
+class Persist(string savefn, int flip_save)
 {
 	//Persistent storage (when this dies, bring it back with a -1/-1 counter on it).
 	//It's also undying storage. When it dies, bring it back one way or the other. :)
@@ -65,8 +65,17 @@ class Persist(string savefn)
 		string enc = Standards.JSON.encode(data, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 		if (mixed ex=catch
 		{
-			Stdio.write_file(savefn+".1",string_to_utf8(enc));
-			mv(savefn+".1",savefn); //Depends on atomic mv, otherwise this might run into issues.
+			if (flip_save)
+			{
+				//Safer against breakage
+				Stdio.write_file(savefn+".1",string_to_utf8(enc));
+				mv(savefn+".1",savefn); //Depends on atomic mv, otherwise this might run into issues.
+			}
+			else
+			{
+				//Compatible with symlinked files
+				Stdio.write_file(savefn, string_to_utf8(enc));
+			}
 			saving=0;
 		})
 		{
@@ -79,8 +88,8 @@ class Persist(string savefn)
 //TODO: Migrate fast-moving or user-data persisted info out of persist into status
 //The idea is that twitchbot_config.json should become a stable file that can be
 //git-managed.
-object config = Persist("twitchbot_config.json");
-object status = Persist("twitchbot_status.json");
+object config = Persist("twitchbot_config.json", 0);
+object status = Persist("twitchbot_status.json", 1);
 
 //Migrate one entry from config to status
 //Will not merge if it already exists in status.
