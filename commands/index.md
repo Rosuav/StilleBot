@@ -11,6 +11,8 @@ Commands in alphabetical order:
 * [!addquote: Add a channel quote](addquote)
 * [!help: List commands available to you](help)
 * [!quote: View a chosen or randomly-selected quote](quote)
+* [!repeat: Add a repeated command (autocommand) for this channel](repeat)
+* [!unrepeat: Cancel a repeated command](repeat)
 
 ---
 

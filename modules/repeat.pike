@@ -1,5 +1,31 @@
 inherit command;
 constant require_moderator = 1;
+constant docstring = #"
+Add a repeated command (autocommand) for this channel
+
+Usage: `!repeat minutes text-to-send` or `!repeat minutes !command`
+
+Creates an automated command for this channel. Every N minutes (randomized
+a little each way to avoid emitting text in lock-step) while the channel is
+live, the text will be sent to the channel, or the command will be run.
+The time delay must be at least 5 minutes, but anything less than 20-30 mins
+will be too spammy for most channels. Use this feature responsibly.
+
+It's generally best to create autocommands based on (echo commands)[addcmd],
+as this will allow your mods and/or viewers to access the information directly
+rather than waiting for the bot to offer it voluntarily. This also makes any
+reconfiguration easy, as the autocommand is simple and easy to type.
+
+---
+
+Usage: `!unrepeat text-to-send` or `!unrepeat !command`
+
+Remove an autocommand. The command or text must exactly match something that
+was previously set to repeat.
+
+Both of these commands can be used while the channel is offline, but the
+automated echoing will happen only while the stream is live.
+";
 
 void autospam(string channel, string msg)
 {
@@ -34,7 +60,7 @@ echoable_message process(object channel, object person, string param)
 		return "(unimpl)";
 	}
 	sscanf(param, "%d %s", int mins, string msg);
-	if (!mins || !msg) return "Try: !repeat 10 Hello, world"; //TODO: Link to docs on GH Pages, when they exist
+	if (!mins || !msg) return "Check https://rosuav.github.io/StilleBot/commands/repeat for usage information.";
 	mapping ac = channel->config->autocommands;
 	if (!ac) ac = channel->config->autocommands = ([]);
 	string key = channel->name + " " + msg;
