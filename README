@@ -9,13 +9,13 @@ Compiling Pike from source is best, if you're comfortable with that; Pike 8.1
 has a number of improvements over Pike 7.8.
 
 
-COMPATIBILITY NOTE: In the near future (as of 20181203), the module protocol
-will be changed. Instead of passing around "object person", it will become
+COMPATIBILITY NOTE: As of 20181221, the module protocol for command handlers
+has been changed. Instead of passing around "object person", handlers are given
 "mapping person", and will contain slightly different information. Other than
 person->nick and person->user, nothing is guaranteed; check your modules and
 check for anything that could be broken by this. It is recommended to switch
 to using either person->uid (for identifying users) or person->displayname
-(for addressing users), once the change goes through.
+(for addressing users).
 
 
 License: MIT
