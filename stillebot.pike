@@ -52,6 +52,9 @@ int main(int argc,array(string) argv)
 	add_constant("G", this);
 	G->argv = argv;
 	bootstrap_all();
+	foreach ("persist_config command send_message window" / " ", string vital)
+		if (!all_constants()[vital])
+			exit(1, "Vital core files failed to compile, cannot continue.\n");
 	//Compat: Import settings from the old text config
 	if (file_stat("twitchbot_config.txt"))
 	{
