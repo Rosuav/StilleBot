@@ -10,7 +10,7 @@ live, the text will be sent to the channel, or the command will be run.
 The time delay must be at least 5 minutes, but anything less than 20-30 mins
 will be too spammy for most channels. Use this feature responsibly.
 
-It's generally best to create autocommands based on (echo commands)[addcmd],
+It's generally best to create autocommands based on [echo commands](addcmd),
 as this will allow your mods and/or viewers to access the information directly
 rather than waiting for the bot to offer it voluntarily. This also makes any
 reconfiguration easy, as the autocommand is simple and easy to type.
