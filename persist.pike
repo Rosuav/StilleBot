@@ -109,7 +109,8 @@ void migrate(string ... path)
 void create()
 {
 	//Compat: Migrate ephemeral info from config into status
-	//migrate("viewertime");
+	migrate("wealth");
+	migrate("viewertime");
 	add_constant("persist", config); //Deprecated. Use one of the others.
 	add_constant("persist_config", config);
 	add_constant("persist_status", status);

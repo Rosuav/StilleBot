@@ -204,14 +204,14 @@ class channel_notif
 			color = sprintf("\e[1;3%dm", G->G->channelcolor[name]);
 		}
 		else color = "\e[0m"; //Nothing will normally be logged, so don't allocate a color. If logging gets enabled, it'll take a reset to assign one.
-		if (config->currency && config->currency!="") wealth = persist->path("wealth", name); //TODO-STATUS
+		if (config->currency && config->currency!="") wealth = persist_status->path("wealth", name);
 		if (config->countactive || wealth) //Note that having channel currency implies counting activity time.
 		{
-			viewertime = persist->path("viewertime", name); //TODO-STATUS
+			viewertime = persist_status->path("viewertime", name);
 			foreach (viewertime; string user; int|array val) if (intp(val)) m_delete(viewertime, user);
 		}
-		else if (persist["viewertime"]) m_delete(persist["viewertime"], name); //TODO-STATUS
-		persist->save(); //TODO-STATUS
+		else if (persist_status["viewertime"]) m_delete(persist_status["viewertime"], name);
+		persist_status->save();
 		save_call_out = call_out(save, 300);
 		//Twitch will (eventually) notify us of who has "ops" privilege, which
 		//corresponds to mods and other people with equivalent powers. But on
@@ -261,7 +261,7 @@ class channel_notif
 			++count;
 		}
 		//write("[Saved %d viewer times for channel %s]\n", count, name);
-		persist->save(); //TODO-STATUS
+		persist_status->save();
 	}
 	//NOTE: Without not_join and its friends, Pike 8.0 will spam noisy failure
 	//messages. Everything seems to still work, though.
