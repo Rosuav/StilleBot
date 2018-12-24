@@ -1,4 +1,5 @@
 inherit command;
+//TODO-DOCSTRING
 
 string process(object channel, object person, string param)
 {

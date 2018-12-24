@@ -1,4 +1,5 @@
 inherit command;
+//TODO-DOCSTRING
 
 constant legal = "0123456789+-/*() ."; //For now, permit a VERY few characters, for safety.
 

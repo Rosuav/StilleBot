@@ -2,6 +2,7 @@
 //For example, in Rosuav's channel, the currency is "chocolates", so !chocolates
 //will invoke this command.
 inherit command;
+//TODO-DOCSTRING
 
 string process(object channel, object person, string param)
 {

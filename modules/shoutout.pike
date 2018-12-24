@@ -1,5 +1,6 @@
 inherit command;
 constant require_moderator = 1;
+//TODO-DOCSTRING
 
 void shoutout(mapping info, string channel)
 {

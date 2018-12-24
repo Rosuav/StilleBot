@@ -1,5 +1,6 @@
 inherit command;
 constant require_moderator = 1; //TODO: Allow non-mods to check their own status
+//TODO-DOCSTRING
 
 void respond(string user, string chan, mapping info, string requester)
 {

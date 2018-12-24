@@ -1,5 +1,6 @@
 inherit command;
 constant require_moderator = 1;
+//TODO-DOCSTRING
 
 echoable_message process(object channel, object person, string param)
 {

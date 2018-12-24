@@ -2,6 +2,7 @@ inherit command;
 constant require_allcmds = 1;
 inherit menu_item;
 constant menu_label = "Song requests";
+//TODO-DOCSTRING
 /* Song requests with a download cache and VLC.
 
 The queue needs to acknowledge that a file may not yet have been fully
