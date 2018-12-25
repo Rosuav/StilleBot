@@ -8,6 +8,8 @@ distribution; search your package manager for "pike" or see the above web site.
 Compiling Pike from source is best, if you're comfortable with that; Pike 8.1
 has a number of improvements over Pike 7.8.
 
+For a list of available in-chat commands, check [these pages](https://rosuav.github.io/StilleBot/commands/).
+
 
 COMPATIBILITY NOTE: As of 20181221, the module protocol for command handlers
 has been changed. Instead of passing around "object person", handlers are given
