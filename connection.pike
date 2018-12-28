@@ -32,7 +32,8 @@ class IRCClient
 		//The prefix is formatted as "@x=y;a=b;q=w" with simple key=value pairs. We parse it
 		//out into a mapping and pass that along to not_message. Note that we also parse out
 		//whispers the same way, even though there's actually no such thing as whisper_notif
-		//in the core Protocols.IRC.Client handler.
+		//in the core Protocols.IRC.Client handler - they go through to not_message for some
+		//channel (currently "#!whisper", though this may change in the future).
 		mapping(string:string) attr = ([]);
 		if (has_prefix(what, "@"))
 		{
