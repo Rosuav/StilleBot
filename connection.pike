@@ -347,7 +347,8 @@ class channel_notif
 
 	void not_message(object ircperson, string msg, mapping(string:string)|void params)
 	{
-		mapping(string:mixed) person = gather_person_info(ircperson, params||([]));
+		if (!params) params = ([]);
+		mapping(string:mixed) person = gather_person_info(ircperson, params);
 		if (person->nick == "tmi.twitch.tv")
 		{
 			//It's probably a NOTICE rather than a PRIVMSG
@@ -388,7 +389,7 @@ class channel_notif
 			//Fall through and display them, if only for debugging
 		}
 		string defaultdest;
-		if (params && params->_type == "WHISPER") defaultdest = "/w $$";
+		if (params->_type == "WHISPER") defaultdest = "/w $$";
 		if (lower_case(person->nick) == lower_case(bot_nick)) {lastmsgtime = time(1); modmsgs = 0;}
 		if (person->badges) mods[person->user] = person->badges->_mod;
 		wrap_message(person, handle_command(person, msg), defaultdest);
