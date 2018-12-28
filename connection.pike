@@ -44,19 +44,17 @@ class IRCClient
 			}
 			//write(">> %O %O <<\n", args[0], attr);
 		}
-		if (sscanf(args[0],"%s :%s", string a, string message) == 2)
+		sscanf(args[0], "%s :%s", string a, string message);
+		array parts = (a || args[0]) / " ";
+		if (sizeof(parts) >= 3 && (<"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE">)[parts[1]])
 		{
-			array parts = a / " ";
-			if (sizeof(parts) >= 3 && (<"PRIVMSG", "NOTICE", "WHISPER">)[parts[1]])
+			//Send whispers to a pseudochannel named #!whisper
+			string chan = parts[1] == "WHISPER" ? "#!whisper" : lower_case(parts[2]);
+			if (object c = channels[chan])
 			{
-				//Send whispers to a pseudochannel named #!whisper
-				string chan = parts[1] == "WHISPER" ? "#!whisper" : lower_case(parts[2]);
-				if (object c = channels[chan])
-				{
-					attr->_type = parts[1]; //Distinguish the three types of message
-					c->not_message(person(@(parts[0] / "!")), message, attr);
-					return;
-				}
+				attr->_type = parts[1]; //Distinguish the three types of message
+				c->not_message(person(@(parts[0] / "!")), message, attr);
+				return;
 			}
 		}
 		::got_command(what, @args);
