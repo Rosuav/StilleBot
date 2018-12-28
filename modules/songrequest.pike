@@ -110,7 +110,7 @@ void check_queue()
 	if (string chan = G->G->songrequest_channel)
 	{
 		//Disable song requests once the channel's offline or has song reqs disabled
-		if (!persist["channels"][chan]->songreq //Song requests are not currently active.
+		if (!persist_config["channels"][chan]->songreq //Song requests are not currently active.
 			||!G->G->stream_online_since[chan]) //Song requests are available only while the channel is online.
 		{
 			if (p) G->G->songrequest_stdin->write("quit\n");

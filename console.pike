@@ -23,17 +23,17 @@ void execcommand(string line)
 {
 	if (sscanf(line, "/join %s", string chan))
 	{
-		if (persist["channels"][chan]) {write("%%% Already joined.\n"); return;}
+		if (persist_config["channels"][chan]) {write("%%% Already joined.\n"); return;}
 		write("%%% Joining #"+chan+"\n");
 		G->G->irc->join_channel("#"+chan);
-		persist["channels"][chan] = ([]);
-		persist->save();
+		persist_config["channels"][chan] = ([]);
+		persist_config->save();
 	}
 	else if (sscanf(line, "/part %s", string chan))
 	{
 		write("%%% Parting #"+chan+"\n");
 		G->G->irc->part_channel("#"+chan);
-		if (m_delete(persist["channels"], chan)) persist->save();
+		if (m_delete(persist_config["channels"], chan)) persist_config->save();
 	}
 	else if (line == "/update")
 	{

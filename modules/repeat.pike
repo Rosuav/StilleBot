@@ -88,7 +88,7 @@ echoable_message unrepeat(object channel, object person, string param)
 
 int connected(string channel)
 {
-	mapping ac = persist["channels"][channel]->autocommands;
+	mapping ac = persist_config["channels"][channel]->autocommands;
 	if (!ac) return 0;
 	foreach (ac; string msg; int mins)
 	{
@@ -111,7 +111,7 @@ void check_autocommands()
 			remove_call_out(m_delete(G->G->autocommands, key));
 	}
 	//Next, look for any that need to be started.
-	foreach (persist["channels"]; string channel; mapping cfg)
+	foreach (persist_config["channels"]; string channel; mapping cfg)
 		connected(channel);
 }
 

@@ -1,5 +1,8 @@
 //GTK utility functions/classes lifted straight from Gypsum
 
+//NOTE: In this file, persist is a valid alias for persist_config, for
+//compatibility where the code exists also elsewhere (eg Gypsum).
+#define persist persist_config
 
 //Usage: gtksignal(some_object,"some_signal",handler,arg,arg,arg) --> save that object.
 //Equivalent to some_object->signal_connect("some_signal",handler,arg,arg,arg)

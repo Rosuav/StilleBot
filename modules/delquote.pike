@@ -12,6 +12,6 @@ echoable_message process(object channel, object person, string param)
 	if (!idx || idx > sizeof(channel->config->quotes)) return "@$$: No such quote.";
 	channel->config->quotes[idx - 1] = 0;
 	channel->config->quotes -= ({0});
-	persist->save();
+	persist_config->save();
 	return "@$$: Removed quote #" + idx;
 }

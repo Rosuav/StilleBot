@@ -21,7 +21,7 @@ void report_transcoding(object videoinfo, string pfx)
 
 int connected(string channel)
 {
-	if (persist["channels"][channel]->reporttrans)
+	if (persist_config["channels"][channel]->reporttrans)
 		get_video_info(channel, report_transcoding, "Welcome to the stream!");
 }
 

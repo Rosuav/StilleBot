@@ -36,6 +36,6 @@ string process(object channel, object person, string param)
 		"mature": chaninfo->mature,
 		"timestamp": time(),
 	])});
-	persist->save();
+	persist_config->save();
 	return "@$$: Added quote #" + sizeof(channel->config->quotes);
 }
