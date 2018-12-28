@@ -1,10 +1,8 @@
 /* Chat bot for Twitch.tv
 See API docs:
-https://github.com/justintv/Twitch-API/blob/master/IRC.md
+https://dev.twitch.tv/docs/v5/
 
-To make this work, get yourself an oauth key here:
-http://twitchapps.com/tmi/
-and change your user and realname accordingly.
+Requires OAuth authentication, which is by default handled by the GUI.
 */
 
 array(string) bootstrap_files = ({"persist.pike", "globals.pike", "poll.pike", "connection.pike", "console.pike", "window.pike", "modules", "zz_local"});
