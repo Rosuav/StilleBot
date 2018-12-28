@@ -401,13 +401,17 @@ class channel_notif
 					}
 				}
 				break;
-				/* Other useful NOTICE messages:
-				- Your message was not sent because it is identical to the previous one you sent, less than 30 seconds ago.
-				- This room is in slow mode and you are sending messages too quickly. You will be able to talk again in %d seconds.
-				- You are banned from talking in %*s for %d more seconds.
-				All of these indicate that the most recent message wasn't sent. Is it worth trying to retrieve that message?
-				*/
-				default: werror("Unrecognized %s with msg_id %O on channel %s\n", params->_type, params->msg_id, name);
+				case "slow_on": case "slow_off": break; //Channel is now/no longer in slow mode
+				case "msg_duplicate": case "msg_slowmode": case "msg_timedout": case "msg_banned":
+					/* Last message wasn't sent, for some reason. There seems to be no additional info in the tags.
+					- Your message was not sent because it is identical to the previous one you sent, less than 30 seconds ago.
+					- This room is in slow mode and you are sending messages too quickly. You will be able to talk again in %d seconds.
+					- You are banned from talking in %*s for %d more seconds.
+					All of these indicate that the most recent message wasn't sent. Is it worth trying to retrieve that message?
+					*/
+					break;
+				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
+					params->_type, params->msg_id, name, params, msg);
 			}
 			break;
 			case "WHISPER": defaultdest = "/w $$"; //fallthrough
