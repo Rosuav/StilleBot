@@ -448,12 +448,24 @@ class channel_notif
 	}
 }
 
+void http_handler(Protocols.HTTP.Server.Request req)
+{
+	werror("HTTP request: %s %O\n", req->request_type, req->not_query);
+	req->response_and_finish(([
+		"data": "Hello, world!\n",
+		"type": "text/plain; charset=\"UTF-8\"",
+	]));
+}
+
 void create()
 {
 	if (!G->G->channelcolor) G->G->channelcolor = ([]);
 	irc = G->G->irc;
 	//if (!irc) //HACK: Force reconnection every time
 		reconnect();
+	//if (object http = m_delete(G->G, "httpserver")) http->close(); //Force the HTTP server to be fully restarted
+	if (G->G->httpserver) G->G->httpserver->callback = http_handler;
+	else G->G->httpserver = Protocols.HTTP.Server.Port(http_handler, 6789);
 	if (persist_config["ircsettings"]) bot_nick = persist_config["ircsettings"]->nick || "";
 	add_constant("send_message", send_message);
 }
