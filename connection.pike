@@ -347,62 +347,89 @@ class channel_notif
 
 	void not_message(object ircperson, string msg, mapping(string:string)|void params)
 	{
+		//TODO: Figure out whether msg and params are bytes or text
+		//"Now hosting" needs to be decoded UTF-8 currently - should it be in here
+		//or up in the higher-level parser?
 		if (!params) params = ([]);
 		mapping(string:mixed) person = gather_person_info(ircperson, params);
-		if (person->nick == "tmi.twitch.tv")
+		if (!params->_type && person->nick == "tmi.twitch.tv")
 		{
-			//It's probably a NOTICE rather than a PRIVMSG
-			if (sscanf(msg, "Now hosting %s.", string h) && h)
-			{
-				if (G->G->stream_online_since[name[1..]])
-				{
-					//Hosting when you're live is a raid. (It might not use the
-					//actual /raid command, but for our purposes, it counts.)
-					//This has a number of good uses. Firstly, a streamer can
-					//check this to see who hasn't been raided recently, and
-					//spread the love around; and secondly, a viewer can see
-					//which channel led to some other channel ("ohh, I met you
-					//when X raided you last week"). Other uses may also be
-					//possible. So it's in a flat file, easily greppable.
-					Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s\n",
-						Calendar.now()->format_time(), name[1..], h));
-				}
-				hosting = h;
-			}
-			if (msg == "Exited host mode.") hosting = 0;
-			if (has_suffix(msg, " has gone offline. Exiting host mode.")) hosting = 0;
-			if (sscanf(msg, "The moderators of this channel are: %s", string names) && names)
-			{
-				//Response to a "/mods" command
-				foreach (names / ", ", string name) if (!mods[name])
-				{
-					log("%sAcknowledging %s as a mod\e[0m\n", color, name);
-					mods[name] = 1;
-				}
-			}
-			/* Other useful NOTICE messages:
-			- Your message was not sent because it is identical to the previous one you sent, less than 30 seconds ago.
-			- This room is in slow mode and you are sending messages too quickly. You will be able to talk again in %d seconds.
-			- You are banned from talking in %*s for %d more seconds.
-			All of these indicate that the most recent message wasn't sent. Is it worth trying to retrieve that message?
-			*/
-			//Fall through and display them, if only for debugging
+			//HACK: If we don't have the actual type provided, guess based on
+			//the person's nick and the text of the message. Note that this code
+			//is undertested and may easily be buggy. The normal case is that we
+			//WILL get the correct message IDs, thus guaranteeing reliability.
+			params->_type = "NOTICE";
+			foreach (([
+				"Now hosting %*s.": "host_on",
+				"Exited host mode.": "host_off",
+				"%*s has gone offline. Exiting host mode.": "host_target_went_offline",
+				"The moderators of this channel are: %*s": "room_mods",
+			]); string match; string id)
+				if (sscanf(msg, match)) params->msg_id = id;
 		}
 		string defaultdest;
-		if (params->_type == "WHISPER") defaultdest = "/w $$";
-		if (lower_case(person->nick) == lower_case(bot_nick)) {lastmsgtime = time(1); modmsgs = 0;}
-		if (person->badges) mods[person->user] = person->badges->_mod;
-		wrap_message(person, handle_command(person, msg), defaultdest);
-		if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->displayname+" "+slashme;
-		else msg = person->displayname+": "+msg;
-		string pfx=sprintf("[%s] ", name);
-		#ifdef __NT__
-		int wid = 80 - sizeof(pfx);
-		#else
-		int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
-		#endif
-		if (person->badges?->_mod) msg = string_to_utf8("\u2694 ") + msg;
-		log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
+		switch (params->_type)
+		{
+			case "NOTICE": case "USERNOTICE": switch (params->msg_id)
+			{
+				case "host_on": if (sscanf(msg, "Now hosting %s.", string h) && h)
+				{
+					if (G->G->stream_online_since[name[1..]])
+					{
+						//Hosting when you're live is a raid. (It might not use the
+						//actual /raid command, but for our purposes, it counts.)
+						//This has a number of good uses. Firstly, a streamer can
+						//check this to see who hasn't been raided recently, and
+						//spread the love around; and secondly, a viewer can see
+						//which channel led to some other channel ("ohh, I met you
+						//when X raided you last week"). Other uses may also be
+						//possible. So it's in a flat file, easily greppable.
+						Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s\n",
+							Calendar.now()->format_time(), name[1..], h));
+					}
+					hosting = h;
+				}
+				break;
+				case "host_off": case "host_target_went_offline": hosting = 0; break;
+				case "room_mods": if (sscanf(msg, "The moderators of this channel are: %s", string names) && names)
+				{
+					//Response to a "/mods" command
+					foreach (names / ", ", string name) if (!mods[name])
+					{
+						log("%sAcknowledging %s as a mod\e[0m\n", color, name);
+						mods[name] = 1;
+					}
+				}
+				break;
+				/* Other useful NOTICE messages:
+				- Your message was not sent because it is identical to the previous one you sent, less than 30 seconds ago.
+				- This room is in slow mode and you are sending messages too quickly. You will be able to talk again in %d seconds.
+				- You are banned from talking in %*s for %d more seconds.
+				All of these indicate that the most recent message wasn't sent. Is it worth trying to retrieve that message?
+				*/
+				default: werror("Unrecognized %s with msg_id %O on channel %s\n", params->_type, params->msg_id, name);
+			}
+			break;
+			case "WHISPER": defaultdest = "/w $$"; //fallthrough
+			case "PRIVMSG":
+			{
+				if (lower_case(person->nick) == lower_case(bot_nick)) {lastmsgtime = time(1); modmsgs = 0;}
+				if (person->badges) mods[person->user] = person->badges->_mod;
+				wrap_message(person, handle_command(person, msg), defaultdest);
+				if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->displayname+" "+slashme;
+				else msg = person->displayname+": "+msg;
+				string pfx=sprintf("[%s] ", name);
+				#ifdef __NT__
+				int wid = 80 - sizeof(pfx);
+				#else
+				int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
+				#endif
+				if (person->badges?->_mod) msg = string_to_utf8("\u2694 ") + msg;
+				log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
+				break;
+			}
+			default: werror("Unknown message type %O on channel %s\n", params->_type, name);
+		}
 	}
 	void not_mode(object who,string mode)
 	{
