@@ -450,7 +450,14 @@ class channel_notif
 
 void http_handler(Protocols.HTTP.Server.Request req)
 {
-	werror("HTTP request: %s %O\n", req->request_type, req->not_query);
+	if (string c = req->variables["hub.challenge"])
+	{
+		//It's a hook confirmation from Twitch
+		werror("HTTP - hub.challenge %s\n", req->variables["hub.topic"] || "(??)");
+		req->response_and_finish((["data": c]));
+		return;
+	}
+	werror("HTTP request: %s %O %O\n", req->request_type, req->not_query, req->variables);
 	req->response_and_finish(([
 		"data": "Hello, world!\n",
 		"type": "text/plain; charset=\"UTF-8\"",
@@ -466,6 +473,22 @@ void create()
 	//if (object http = m_delete(G->G, "httpserver")) http->close(); //Force the HTTP server to be fully restarted
 	if (G->G->httpserver) G->G->httpserver->callback = http_handler;
 	else G->G->httpserver = Protocols.HTTP.Server.Port(http_handler, 6789);
+	#if 0
+	string resp = Protocols.HTTP.post_url_data("https://api.twitch.tv/helix/webhooks/hub",
+		string_to_utf8(Standards.JSON.encode(([
+			"hub.callback": "http://sikorsky.rosuav.com:6789", //TODO: Configure this, and if not configged, don't hook
+			"hub.mode": "subscribe",
+			//req("https://api.twitch.tv/helix/users?login=rosuav"); //TODO: Repeat for each user
+			"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&to_id=49497888",
+			"hub.lease_seconds": 0,
+			"hub.secret": "TODO: Generate randomly and store in G->G",
+		]))), ([
+			"Content-Type": "application/json",
+			"Client-Id": persist_config["ircsettings"]["clientid"],
+		])
+	);
+	werror("** Response from webhook sub **\n%s\n*******\n", resp);
+	#endif
 	if (persist_config["ircsettings"]) bot_nick = persist_config["ircsettings"]->nick || "";
 	add_constant("send_message", send_message);
 }
