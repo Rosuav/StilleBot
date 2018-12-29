@@ -410,6 +410,8 @@ class channel_notif
 					All of these indicate that the most recent message wasn't sent. Is it worth trying to retrieve that message?
 					*/
 					break;
+				case "raid": break; //Incoming raids already get announced and we don't get any more info
+				case "sub": case "resub": break; //Subs/resubs ditto, but check again in Jan 2019 for the total subbed months?
 				case "subgift":
 					log("%s%s gave %s a T%c %s sub - %s months\e[0m\n", color,
 						params->display_name, params->msg_param_recipient_display_name,
