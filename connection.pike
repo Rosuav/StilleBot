@@ -466,6 +466,17 @@ void http_handler(Protocols.HTTP.Server.Request req)
 		return;
 	}
 	werror("HTTP request: %s %O %O\n", req->request_type, req->not_query, req->variables);
+	if (req->body_raw != "" && has_prefix(req->request_headers["content-type"], "application/json"))
+	{
+		//We assume that any JSON is UTF-8. It's probably safe.
+		mixed body = Standards.JSON.decode_utf8(req->body_raw);
+		array|mapping data = mappingp(body) && body->data;
+		if (!data) {req->response_and_finish((["error": 400, "data": "Unrecognized body type"])); return;}
+		werror("Data: %O\n", data);
+		werror("Headers: %O\n", req->request_headers);
+		req->response_and_finish((["data": "PRAD"]));
+		return;
+	}
 	req->response_and_finish(([
 		"data": "Hello, world!\n",
 		"type": "text/plain; charset=\"UTF-8\"",
@@ -484,11 +495,11 @@ void create()
 	#if 0
 	string resp = Protocols.HTTP.post_url_data("https://api.twitch.tv/helix/webhooks/hub",
 		string_to_utf8(Standards.JSON.encode(([
-			"hub.callback": "http://sikorsky.rosuav.com:6789", //TODO: Configure this, and if not configged, don't hook
+			"hub.callback": "http://sikorsky.rosuav.com:6789/follow/rosuav", //TODO: Configure this, and if not configged, don't hook
 			"hub.mode": "subscribe",
 			//req("https://api.twitch.tv/helix/users?login=rosuav"); //TODO: Repeat for each user
-			"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&to_id=49497888",
-			"hub.lease_seconds": 0,
+			"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&from_id=49497888", //normally to_id
+			"hub.lease_seconds": 600,
 			"hub.secret": "TODO: Generate randomly and store in G->G",
 		]))), ([
 			"Content-Type": "application/json",
