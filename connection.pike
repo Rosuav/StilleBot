@@ -410,6 +410,14 @@ class channel_notif
 					All of these indicate that the most recent message wasn't sent. Is it worth trying to retrieve that message?
 					*/
 					break;
+				case "subgift":
+					log("%s%s gave %s a T%c %s sub - %s months\e[0m\n", color,
+						params->display_name, params->msg_param_recipient_display_name,
+						params->msg_param_sub_plan[0], name, params->msg_param_months);
+					//Other params: login, user_id, msg_param_recipient_user_name, msg_param_recipient_id,
+					//msg_param_sender_count (the total gifts this person has given in this channel)
+					//Remember that all params are strings, even those that look like numbers
+					break;
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
 					params->_type, params->msg_id, name, params, msg);
 			}
