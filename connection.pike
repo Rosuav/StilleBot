@@ -467,18 +467,21 @@ void http_handler(Protocols.HTTP.Server.Request req)
 		req->response_and_finish((["data": c]));
 		return;
 	}
-	werror("HTTP request: %s %O %O\n", req->request_type, req->not_query, req->variables);
-	if (req->body_raw != "" && has_prefix(req->request_headers["content-type"], "application/json"))
+	if (req->not_query == "/junket" && req->body_raw != "" && has_prefix(req->request_headers["content-type"], "application/json"))
 	{
 		//We assume that any JSON is UTF-8. It's probably safe.
 		mixed body = Standards.JSON.decode_utf8(req->body_raw);
 		array|mapping data = mappingp(body) && body->data;
 		if (!data) {req->response_and_finish((["error": 400, "data": "Unrecognized body type"])); return;}
-		werror("Data: %O\n", data);
-		werror("Headers: %O\n", req->request_headers);
+		//TODO: Validate req->request_headers["x-hub-signature"]
+		foreach (data, mapping follower)
+			write("New follower on %s: %s\n", req->variables->follow, follower->from_name);
+		//werror("Data: %O\n", data);
 		req->response_and_finish((["data": "PRAD"]));
 		return;
 	}
+	werror("HTTP request: %s %O %O\n", req->request_type, req->not_query, req->variables);
+	werror("Headers: %O\n", req->request_headers);
 	req->response_and_finish(([
 		"data": "Hello, world!\n",
 		"type": "text/plain; charset=\"UTF-8\"",
@@ -497,10 +500,10 @@ void create()
 	#if 0
 	string resp = Protocols.HTTP.post_url_data("https://api.twitch.tv/helix/webhooks/hub",
 		string_to_utf8(Standards.JSON.encode(([
-			"hub.callback": "http://sikorsky.rosuav.com:6789/follow/rosuav", //TODO: Configure this, and if not configged, don't hook
+			"hub.callback": "http://sikorsky.rosuav.com:6789/junket?follow=rosuav", //TODO: Configure this, and if not configged, don't hook
 			"hub.mode": "subscribe",
 			//req("https://api.twitch.tv/helix/users?login=rosuav"); //TODO: Repeat for each user
-			"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&from_id=49497888", //normally to_id
+			"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&to_id=49497888",
 			"hub.lease_seconds": 600,
 			"hub.secret": "TODO: Generate randomly and store in G->G",
 		]))), ([
