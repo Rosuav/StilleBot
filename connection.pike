@@ -412,6 +412,7 @@ class channel_notif
 					break;
 				case "raid": break; //Incoming raids already get announced and we don't get any more info
 				case "sub": case "resub": break; //Subs/resubs ditto, but check again in Jan 2019 for the total subbed months?
+				case "giftpaidupgrade": break; //Pledging to continue a subscription (first introduced for the Subtember special in 2018, and undocumented)
 				case "subgift":
 					log("%s%s gave %s a T%c %s sub - %s months\e[0m\n", color,
 						params->display_name, params->msg_param_recipient_display_name,
