@@ -6,7 +6,7 @@ This command will list every command that you have permission to use in the
 channel you are in, apart from hidden commands.
 ";
 
-string process(object channel, object person, string param)
+echoable_message process(object channel, mapping person, string param)
 {
 	multiset(string) cmds = (<>);
 	int is_mod = channel->mods[person->user];
@@ -35,5 +35,6 @@ string process(object channel, object person, string param)
 	cmds["currency"] = 0;
 	string cur = channel->config->currency;
 	if (cur && cur != "") cmds[cur] = 1;
-	return "@$$: Available commands are: " + ("!"+sort(indices(cmds))[*]) * " ";
+	return ({"@$$: Available commands are: " + ("!"+sort(indices(cmds))[*]) * " ",
+		"For additional information, see https://rosuav.github.io/StilleBot/commands/"});
 }
