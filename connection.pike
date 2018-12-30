@@ -410,7 +410,7 @@ class channel_notif
 					All of these indicate that the most recent message wasn't sent. Is it worth trying to retrieve that message?
 					*/
 					break;
-				case "raid": break; //Incoming raids already get announced and we don't get any more info
+				case "raid": case "unraid": break; //Incoming raids already get announced and we don't get any more info
 				case "sub": case "resub": break; //Subs/resubs ditto, but check again in Jan 2019 for the total subbed months?
 				case "giftpaidupgrade": break; //Pledging to continue a subscription (first introduced for the Subtember special in 2018, and undocumented)
 				case "subgift":
