@@ -414,12 +414,17 @@ class channel_notif
 				case "sub": case "resub": break; //Subs/resubs ditto, but check again in Jan 2019 for the total subbed months?
 				case "giftpaidupgrade": break; //Pledging to continue a subscription (first introduced for the Subtember special in 2018, and undocumented)
 				case "subgift":
-					log("%s%s gave %s a T%c %s sub - %s months\e[0m\n", color,
+					write("%s%s gave %s a T%c %s sub - %s months\e[0m\n", color,
 						params->display_name, params->msg_param_recipient_display_name,
 						params->msg_param_sub_plan[0], name, params->msg_param_months);
 					//Other params: login, user_id, msg_param_recipient_user_name, msg_param_recipient_id,
 					//msg_param_sender_count (the total gifts this person has given in this channel)
 					//Remember that all params are strings, even those that look like numbers
+					break;
+				case "submysterygift": //Sub bomb
+					write("%s%s gave %s T%c subs to the %s community\e[0m\n", color,
+						params->display_name, params->msg_param_mass_gift_count,
+						params->msg_param_sub_plan[0], name);
 					break;
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
 					params->_type, params->msg_id, name, params, msg);
