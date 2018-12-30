@@ -475,11 +475,21 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	}
 	if (req->not_query == "/junket" && req->body_raw != "" && has_prefix(req->request_headers["content-type"], "application/json"))
 	{
-		//We assume that any JSON is UTF-8. It's probably safe.
+		object signer = G->G->webhook_signer[req->variables->follow];
+		//It's probably safe to assume that any message sent by Twitch is in UTF-8.
+		//So we verify the signature, and then trust the rest. Also, we assume that
+		//Twitch is using a sha256 HMAC; if they ever change that (eg sha512 etc),
+		//the signatures will just start failing.
+		if (!signer || req->request_headers["x-hub-signature"] != "sha256=" + String.string2hex(signer(req->body_raw)))
+		{
+			werror("Signature failed! Message discarded. Body:\n%O\nSig: %O\n",
+				req->body_raw, req->request_headers["x-hub-signature"]);
+			req->response_and_finish((["data": "Signature mismatch"])); //HTTP 200 because it might just mean we did a code reload
+			return;
+		}
 		mixed body = Standards.JSON.decode_utf8(req->body_raw);
 		array|mapping data = mappingp(body) && body->data;
 		if (!data) {req->response_and_finish((["error": 400, "data": "Unrecognized body type"])); return;}
-		//TODO: Validate req->request_headers["x-hub-signature"]
 		foreach (data, mapping follower)
 			write("New follower on %s: %s\n", req->variables->follow, follower->from_name);
 		//werror("Data: %O\n", data);
@@ -504,14 +514,17 @@ void create()
 	if (G->G->httpserver) G->G->httpserver->callback = http_handler;
 	else G->G->httpserver = Protocols.HTTP.Server.Port(http_handler, 6789);
 	#if 0
+	string chan = "rosuav";
+	string secret = MIME.encode_base64(random_string(15));
+	G->G->webhook_signer = ([chan: Crypto.SHA256.HMAC(secret)]);
 	string resp = Protocols.HTTP.post_url_data("https://api.twitch.tv/helix/webhooks/hub",
 		string_to_utf8(Standards.JSON.encode(([
-			"hub.callback": "http://sikorsky.rosuav.com:6789/junket?follow=rosuav", //TODO: Configure this, and if not configged, don't hook
+			"hub.callback": "http://sikorsky.rosuav.com:6789/junket?follow="+chan, //TODO: Configure this, and if not configged, don't hook
 			"hub.mode": "subscribe",
 			//req("https://api.twitch.tv/helix/users?login=rosuav"); //TODO: Repeat for each user
-			"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&to_id=49497888",
+			"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&from_id=49497888", //normally to_id=49497888
 			"hub.lease_seconds": 600,
-			"hub.secret": "TODO: Generate randomly and store in G->G",
+			"hub.secret": secret,
 		]))), ([
 			"Content-Type": "application/json",
 			"Client-Id": persist_config["ircsettings"]["clientid"],
