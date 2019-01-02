@@ -9,3 +9,7 @@ exists as a global command, the channel-specific echo command will shadow it
 (meaning that the global command cannot be accessed in this channel). Please
 do not shoot yourself in the foot :)
 
+Echo commands themselves are available to everyone in the channel, and simply
+display the text they have been given. The marker `%s` will be replaced with
+whatever additional words are given with the command, if any.
+
