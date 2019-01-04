@@ -195,6 +195,8 @@ void webhooks(string resp)
 	{
 		if (watching[chan]) continue; //Already got a hook
 		if (!cfg->chatlog) continue; //Show only for channels we're logging chat of, for now
+		int userid = G->G->channel_info[chan]?->_id;
+		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses !whisper.)
 		string secret = MIME.encode_base64(random_string(15));
 		G->G->webhook_signer[chan] = Crypto.SHA256.HMAC(secret);
 		write("Creating webhook for %s\n", chan);
@@ -206,11 +208,10 @@ void webhooks(string resp)
 			Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, confirm_webhook),
 			string_to_utf8(Standards.JSON.encode(([
 				//TODO: Configure the base URL, and if not configged, don't hook
-				"hub.callback": "http://sikorsky.rosuav.com:6789/junket?follow="+chan,
+				"hub.callback": "http://sikorsky.rosuav.com:6789/junket?follow=" + chan,
 				"hub.mode": "subscribe",
-				//req("https://api.twitch.tv/helix/users?login=rosuav"); //TODO: Repeat for each user
-				"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&to_id=49497888", //normally to_id=49497888
-				"hub.lease_seconds": 600,
+				"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&to_id=" + userid,
+				"hub.lease_seconds": 86400, //TODO: Go the full ten days
 				"hub.secret": secret,
 			]))),
 		);
