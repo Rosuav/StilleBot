@@ -4,7 +4,6 @@
 * Log showing channel category changes as well as online/offline
 * Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
 * !jackbox ABCD to put the code on screen
-* Timed/automated commands
 * Thank people for hosting (effectively a spam command triggered by a host notice)
   - Get the user ID of the channel
     - https://api.twitch.tv/helix/users?login=miccoelaine
@@ -14,7 +13,5 @@
   - To avoid alert spam, record names until the stream goes offline, even if they
     stop hosting? Or record a timestamp when they disappear?
   - What about autohosts? Want to avoid spam, again, but it can be nice to acknowledge.
-* GitHub Pages info for all commands - generate it on update from all commands' docstrings
 * Create some globals.pike facilities for common or wordy actions:
   - Command aliases (shoutout->so) - also good for the docs pages
-  - Callouts or other callbacks that automatically slide to an updated version of the code
