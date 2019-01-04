@@ -17,7 +17,7 @@ whatever additional words are given with the command, if any.
 
 string process(object channel, object person, string param)
 {
-	if (sscanf(param, "!%s %s", string cmd, string response) == 2)
+	if (sscanf(param, "!%[^# ] %s", string cmd, string response) == 2)
 	{
 		//Create a new command. Note that it *always* gets the channel name appended,
 		//making it a channel-specific command; global commands can only be created by
