@@ -205,7 +205,8 @@ void webhooks(string resp)
 			]),
 			Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, confirm_webhook),
 			string_to_utf8(Standards.JSON.encode(([
-				"hub.callback": "http://sikorsky.rosuav.com:6789/junket?follow="+chan, //TODO: Configure this, and if not configged, don't hook
+				//TODO: Configure the base URL, and if not configged, don't hook
+				"hub.callback": "http://sikorsky.rosuav.com:6789/junket?follow="+chan,
 				"hub.mode": "subscribe",
 				//req("https://api.twitch.tv/helix/users?login=rosuav"); //TODO: Repeat for each user
 				"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&to_id=49497888", //normally to_id=49497888
