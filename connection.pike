@@ -491,7 +491,12 @@ void http_handler(Protocols.HTTP.Server.Request req)
 		array|mapping data = mappingp(body) && body->data;
 		if (!data) {req->response_and_finish((["error": 400, "data": "Unrecognized body type"])); return;}
 		foreach (data, mapping follower)
+		{
 			write("New follower on %s: %s\n", req->variables->follow, follower->from_name);
+			if (follower->to_id == "49497888")
+				//Hack!
+				send_message("#rosuav", "Thank you for following, " + follower->from_name + "! Enjoy your visit to Wonderland!", 1);
+		}
 		//werror("Data: %O\n", data);
 		req->response_and_finish((["data": "PRAD"]));
 		return;
@@ -513,25 +518,6 @@ void create()
 	//if (object http = m_delete(G->G, "httpserver")) http->close(); //Force the HTTP server to be fully restarted
 	if (G->G->httpserver) G->G->httpserver->callback = http_handler;
 	else G->G->httpserver = Protocols.HTTP.Server.Port(http_handler, 6789);
-	#if 0
-	string chan = "rosuav";
-	string secret = MIME.encode_base64(random_string(15));
-	G->G->webhook_signer = ([chan: Crypto.SHA256.HMAC(secret)]);
-	string resp = Protocols.HTTP.post_url_data("https://api.twitch.tv/helix/webhooks/hub",
-		string_to_utf8(Standards.JSON.encode(([
-			"hub.callback": "http://sikorsky.rosuav.com:6789/junket?follow="+chan, //TODO: Configure this, and if not configged, don't hook
-			"hub.mode": "subscribe",
-			//req("https://api.twitch.tv/helix/users?login=rosuav"); //TODO: Repeat for each user
-			"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&from_id=49497888", //normally to_id=49497888
-			"hub.lease_seconds": 600,
-			"hub.secret": secret,
-		]))), ([
-			"Content-Type": "application/json",
-			"Client-Id": persist_config["ircsettings"]["clientid"],
-		])
-	);
-	werror("** Response from webhook sub **\n%s\n*******\n", resp);
-	#endif
 	if (persist_config["ircsettings"]) bot_nick = persist_config["ircsettings"]->nick || "";
 	add_constant("send_message", send_message);
 }

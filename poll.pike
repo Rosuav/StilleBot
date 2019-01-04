@@ -173,10 +173,48 @@ class check_following(string user, string chan, function|void callback)
 	}
 }
 
-void webhooks(string resp)
+void confirm_webhook(string resp)
 {
 	mixed data = Standards.JSON.decode_utf8(resp); if (!mappingp(data)) return;
-	write("GOT WEBHOOKS: %O\n", data);
+	write("Confirming webhook: %O\n", data);
+}
+
+void webhooks(string resp)
+{
+	//NOTE: Does not paginate. If we have more than 100 webhooks, some will be lost.
+	mixed data = Standards.JSON.decode_utf8(resp); if (!mappingp(data)) return;
+	multiset(string) watching = (<>);
+	foreach (data->data, mapping hook)
+	{
+		int time_left = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", hook->expires_at)->unix_time() - time();
+		if (time_left < 300) continue;
+		sscanf(hook->callback, "http://sikorsky.rosuav.com:6789/junket?%s=%s", string type, string channel);
+		if (type == "follow") watching[channel] = 1;
+	}
+	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
+	foreach (persist_config["channels"] || ([]); string chan; mapping cfg)
+	{
+		if (watching[chan]) continue; //Already got a hook
+		if (!cfg->chatlog) continue; //Show only for channels we're logging chat of, for now
+		string secret = MIME.encode_base64(random_string(15));
+		G->G->webhook_signer[chan] = Crypto.SHA256.HMAC(secret);
+		write("Creating webhook for %s\n", chan);
+		Protocols.HTTP.do_async_method("POST", "https://api.twitch.tv/helix/webhooks/hub", 0,
+			([
+				"Content-Type": "application/json",
+				"Client-Id": persist_config["ircsettings"]["clientid"],
+			]),
+			Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, confirm_webhook),
+			string_to_utf8(Standards.JSON.encode(([
+				"hub.callback": "http://sikorsky.rosuav.com:6789/junket?follow="+chan, //TODO: Configure this, and if not configged, don't hook
+				"hub.mode": "subscribe",
+				//req("https://api.twitch.tv/helix/users?login=rosuav"); //TODO: Repeat for each user
+				"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&to_id=49497888", //normally to_id=49497888
+				"hub.lease_seconds": 600,
+				"hub.secret": secret,
+			]))),
+		);
+	}
 }
 
 void check_webhooks()
@@ -212,6 +250,7 @@ void poll()
 	G->G->poll_call_out = call_out(poll, 60); //TODO: Make the poll interval customizable
 	foreach (indices(persist_config["channels"] || ({ })), string chan)
 		make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo);
+	if (!sizeof(persist_config["channels"])) return; //Don't check webhooks when there'll be nothing to check
 	if (G->G->webhook_lookup_token_expiry < time()) get_lookup_token();
 	else check_webhooks();
 }
