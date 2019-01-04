@@ -195,7 +195,8 @@ void webhooks(string resp)
 	{
 		if (watching[chan]) continue; //Already got a hook
 		if (!cfg->chatlog) continue; //Show only for channels we're logging chat of, for now
-		int userid = G->G->channel_info[chan]?->_id;
+		mapping c = G->G->channel_info[chan];
+		int userid = c && c->_id; //For some reason, ?-> is misparsing the data type (???)
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses !whisper.)
 		string secret = MIME.encode_base64(random_string(15));
 		G->G->webhook_signer[chan] = Crypto.SHA256.HMAC(secret);
