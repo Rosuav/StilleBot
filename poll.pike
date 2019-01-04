@@ -175,8 +175,7 @@ class check_following(string user, string chan, function|void callback)
 
 void confirm_webhook(string resp)
 {
-	mixed data = Standards.JSON.decode_utf8(resp); if (!mappingp(data)) return;
-	write("Confirming webhook: %O\n", data);
+	write("Confirming webhook: %O\n", resp);
 }
 
 void webhooks(string resp)
