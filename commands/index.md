@@ -9,6 +9,7 @@ Commands in alphabetical order:
 
 * [!addcmd: Add an echo command for this channel](addcmd)
 * [!addquote: Add a channel quote](addquote)
+* [!delcmd: Remove an echo command for this channel](delcmd)
 * [!help: List commands available to you](help)
 * [!quote: View a chosen or randomly-selected quote](quote)
 * [!repeat: Add a repeated command (autocommand) for this channel](repeat)
