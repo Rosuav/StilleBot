@@ -13,5 +13,3 @@
   - To avoid alert spam, record names until the stream goes offline, even if they
     stop hosting? Or record a timestamp when they disappear?
   - What about autohosts? Want to avoid spam, again, but it can be nice to acknowledge.
-* Create some globals.pike facilities for common or wordy actions:
-  - Command aliases (shoutout->so) - also good for the docs pages

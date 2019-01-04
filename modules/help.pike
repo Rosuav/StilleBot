@@ -28,11 +28,12 @@ echoable_message process(object channel, mapping person, string param)
 			return sprintf("@$$: !%s is an echo command - see https://rosuav.github.io/StilleBot/commands/addcmd", param);
 		}
 		object obj = function_object([function]cmd);
+		string pgm = sprintf("%O", object_program(obj)) - ".pike"; //For some reason function_name isn't giving me the right result (??)
 		return sprintf("@$$: !%s is a%s%s%s command.%s", param,
 			!obj->docstring ? "n undocumented ": "",
 			obj->hidden_command ? " hidden": "",
 			modonly,
-			obj->docstring && !obj->hidden_command ? " Learn more at https://rosuav.github.io/StilleBot/commands/" + param : "",
+			obj->docstring && !obj->hidden_command ? " Learn more at https://rosuav.github.io/StilleBot/commands/" + pgm : "",
 		);
 	}
 	foreach (({G->G->commands, G->G->echocommands}), mapping commands)
