@@ -211,7 +211,7 @@ void webhooks(string resp)
 				"hub.callback": "http://sikorsky.rosuav.com:6789/junket?follow=" + chan,
 				"hub.mode": "subscribe",
 				"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&to_id=" + userid,
-				"hub.lease_seconds": 86400, //TODO: Go the full ten days
+				"hub.lease_seconds": 864000,
 				"hub.secret": secret,
 			]))),
 		);
