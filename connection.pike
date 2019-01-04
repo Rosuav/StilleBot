@@ -275,10 +275,9 @@ class channel_notif
 	array(command_handler|string) locate_command(object person, string msg)
 	{
 		int mod = mods[person->user];
-		if (command_handler f = has_prefix(msg,"!") && find_command(this, msg[1..], mod)) return ({f, ""});
-		if (command_handler f = sscanf(msg, "!%s %s", string cmd, string param) == 2
+		if (command_handler f = sscanf(msg, "!%[^# ] %s", string cmd, string param)
 			&& find_command(this, cmd, mod))
-				return ({f, param});
+				return ({f, param||""});
 		if (string cur = config->currency!="" && config->currency)
 		{
 			//Note that !currency will work (cf the above code), but !<currency-name> is the recommended way.
