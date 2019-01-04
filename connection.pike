@@ -492,9 +492,10 @@ void http_handler(Protocols.HTTP.Server.Request req)
 		foreach (data, mapping follower)
 		{
 			write("New follower on %s: %s\n", req->variables->follow, follower->from_name);
-			if (follower->to_id == "49497888")
-				//Hack!
-				send_message("#rosuav", "Thank you for following, " + follower->from_name + "! Enjoy your visit to Wonderland!", 1);
+			echoable_message response = G->G->echocommands["!follower#" + req->variables->follow];
+			if (!response) continue;
+			if (object chan = G->G->irc->channels["#" + req->variables->follow])
+				chan->wrap_message((["user": follower->from_name]), response);
 		}
 		//werror("Data: %O\n", data);
 		req->response_and_finish((["data": "PRAD"]));

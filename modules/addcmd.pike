@@ -13,8 +13,15 @@ do not shoot yourself in the foot :)
 Echo commands themselves are available to everyone in the channel, and simply
 display the text they have been given. The marker `%s` will be replaced with
 whatever additional words are given with the command, if any.
+
+Special usage: `!addcmd !!follower text-to-echo-for-new-follower`
+
+Pseudo-commands are not executed in the normal way, but are triggered on
+certain events. The `!!follower` pseudo-command happens whenever a person
+follows the channel - use `$$` for the person's name.
 ";
 
+constant SPECIALS = (<"!follower">);
 string process(object channel, object person, string param)
 {
 	if (sscanf(param, "!%[^# ] %s", string cmd, string response) == 2)
@@ -22,6 +29,7 @@ string process(object channel, object person, string param)
 		//Create a new command. Note that it *always* gets the channel name appended,
 		//making it a channel-specific command; global commands can only be created by
 		//manually editing the JSON file.
+		if (!SPECIALS[cmd] && has_value(cmd, '!')) return "@$$: Command names cannot include exclamation marks";
 		cmd += channel->name;
 		string newornot = G->G->echocommands[cmd] ? "Updated" : "Created new";
 		G->G->echocommands[cmd] = response;
