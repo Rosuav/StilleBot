@@ -173,21 +173,33 @@ class check_following(string user, string chan, function|void callback)
 	}
 }
 
+void webhooks(string resp)
+{
+	mixed data = Standards.JSON.decode_utf8(resp); if (!mappingp(data)) return;
+	write("GOT WEBHOOKS: %O\n", data);
+}
+
+void check_webhooks()
+{
+	if (!G->G->webhook_lookup_token) return;
+	Protocols.HTTP.do_async_method("GET", "https://api.twitch.tv/helix/webhooks/subscriptions?first=100", 0, ([
+		"Authorization": "Bearer " + G->G->webhook_lookup_token,
+	]), Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, webhooks));
+}
+
 void got_lookup_token(string resp)
 {
-	mixed data = Standards.JSON.decode_utf8(resp);
-	if (mappingp(data))
-	{
-		G->G->webhook_lookup_token = data->access_token;
-		G->G->webhook_lookup_token_expiry = time() + data->expires_in - 120;
-	}
+	mixed data = Standards.JSON.decode_utf8(resp); if (!mappingp(data)) return;
+	G->G->webhook_lookup_token = data->access_token;
+	G->G->webhook_lookup_token_expiry = time() + data->expires_in - 120;
+	check_webhooks();
 }
 
 void get_lookup_token()
 {
 	if (!persist_config["ircsettings"]["clientsecret"]) return;
 	m_delete(G->G, "webhook_lookup_token");
-	m_delete(G->G, "webhook_lookup_token_expiry");
+	G->G->webhook_lookup_token_expiry = time() + 1; //Prevent spinning
 	Protocols.HTTP.do_async_method("POST", "https://id.twitch.tv/oauth2/token", ([
 		"client_id": persist_config["ircsettings"]["clientid"],
 		"client_secret": persist_config["ircsettings"]["clientsecret"],
@@ -201,6 +213,7 @@ void poll()
 	foreach (indices(persist_config["channels"] || ({ })), string chan)
 		make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo);
 	if (G->G->webhook_lookup_token_expiry < time()) get_lookup_token();
+	else check_webhooks();
 }
 
 void create()
