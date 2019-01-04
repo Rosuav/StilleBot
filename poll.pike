@@ -173,11 +173,34 @@ class check_following(string user, string chan, function|void callback)
 	}
 }
 
+void got_lookup_token(string resp)
+{
+	mixed data = Standards.JSON.decode_utf8(resp);
+	if (mappingp(data))
+	{
+		G->G->webhook_lookup_token = data->access_token;
+		G->G->webhook_lookup_token_expiry = time() + data->expires_in - 120;
+	}
+}
+
+void get_lookup_token()
+{
+	if (!persist_config["ircsettings"]["clientsecret"]) return;
+	m_delete(G->G, "webhook_lookup_token");
+	m_delete(G->G, "webhook_lookup_token_expiry");
+	Protocols.HTTP.do_async_method("POST", "https://id.twitch.tv/oauth2/token", ([
+		"client_id": persist_config["ircsettings"]["clientid"],
+		"client_secret": persist_config["ircsettings"]["clientsecret"],
+		"grant_type": "client_credentials",
+	]), 0, Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, got_lookup_token));
+}
+
 void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //TODO: Make the poll interval customizable
 	foreach (indices(persist_config["channels"] || ({ })), string chan)
 		make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo);
+	if (G->G->webhook_lookup_token_expiry < time()) get_lookup_token();
 }
 
 void create()
