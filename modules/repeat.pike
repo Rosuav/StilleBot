@@ -16,6 +16,8 @@ as this will allow your mods and/or viewers to access the information directly
 rather than waiting for the bot to offer it voluntarily. This also makes any
 reconfiguration easy, as the autocommand is simple and easy to type.
 
+Example: `!repeat 60 !uptime` - show the channel's live time roughly every hour
+
 ---
 
 Usage: `!unrepeat text-to-send` or `!unrepeat !command`
