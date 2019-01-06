@@ -73,6 +73,7 @@ echoable_message process(object channel, object person, string param)
 		if (!m_delete(ac, msg)) return "That message wasn't being repeated, and can't be cancelled";
 		if (mixed id = m_delete(G->G->autocommands, key))
 			remove_call_out(id);
+		persist_config->save();
 		return "Repeated command disabled.";
 	}
 	if (mins < 5) return "Minimum five-minute repeat cycle. You should probably keep to a minimum of 20 mins.";
@@ -80,6 +81,7 @@ echoable_message process(object channel, object person, string param)
 		remove_call_out(id);
 	ac[msg] = mins;
 	G->G->autocommands[key] = call_out(autospam, mins * 60, channel->name, msg);
+	persist_config->save();
 	return "Added to the repetition table.";
 }
 
