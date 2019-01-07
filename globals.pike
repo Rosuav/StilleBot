@@ -241,8 +241,16 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 		if (sizeof(token) > 80 || has_value(token, ' ')) //TODO: Check more reliably for it being a 'token'
 			error("Invalid token name %O in templates/%s - possible mismatched marker",
 				"$$" + token[..80] + "$$", template);
+		int trim_before = has_prefix(token, ">");
+		int trim_after  = has_suffix(token, "<");
+		token = token[trim_before..<trim_after];
 		if (!replacements[token]) error("Token %O not found in templates/%s", "$$" + token + "$$", template);
 		pieces[i] = replacements[token];
+		if (pieces[i] == "")
+		{
+			if (trim_before) pieces[i-1] = String.trim("^" + pieces[i-1])[1..];
+			if (trim_after)  pieces[i+1] = String.trim(pieces[i+1] + "$")[..<1];
+		}
 	}
 	content = pieces * "";
 	if (has_suffix(template, ".md"))

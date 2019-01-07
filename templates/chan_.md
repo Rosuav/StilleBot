@@ -8,7 +8,7 @@ StilleBot can do here:
 * [Channel-specific commands](commands)
 * [Special responses](specials) - coming soon
 * [Repeated/automatic commands](repeat) - coming soon
-$$currency$$
+$$currency<$$
 * [Quotes](quotes) - coming soon
 
 $$uptime$$
