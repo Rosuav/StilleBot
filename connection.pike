@@ -287,11 +287,11 @@ class channel_notif
 		return ({0, 0});
 	}
 
-	echoable_message substitute_percent(string|mapping|array(string|mapping) msg, string param)
+	echoable_message substitute_markers(string|mapping|array(string|mapping) msg, mapping(string:string) markers)
 	{
-		if (stringp(msg)) return replace(msg, "%s", param);
-		if (mappingp(msg)) return msg | (["message": replace(msg->message, "%s", param)]);
-		if (arrayp(msg)) return substitute_percent(msg[*], param); //Yes, recursive. You shouldn't have arrays in arrays though.
+		if (stringp(msg)) return replace(msg, markers);
+		if (mappingp(msg)) return msg | (["message": replace(msg->message, markers)]);
+		if (arrayp(msg)) return substitute_markers(msg[*], markers); //Yes, recursive. You shouldn't have arrays in arrays though.
 		return msg;
 	}
 
@@ -313,7 +313,7 @@ class channel_notif
 		//Functions do not get %s handling. If they want it, they can do it themselves,
 		//and if they don't want it, it would mess things up badly to do it here.
 		if (functionp(cmd)) return cmd(this, person, param);
-		return substitute_percent(cmd, param);
+		return substitute_markers(cmd, (["%s": param]));
 	}
 
 	void wrap_message(object|mapping person, echoable_message info, string|void defaultdest)
