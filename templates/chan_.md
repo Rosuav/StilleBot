@@ -7,7 +7,7 @@ StilleBot can do here:
   all supported channels
 * [Channel-specific commands](commands)
 * [Special responses](specials)
-* [Repeated/automatic commands](repeat) - coming soon
+* [Repeated/automatic commands](repeats)
 $$currency<$$
 * [Quotes](quotes) - coming soon
 
