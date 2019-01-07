@@ -9,6 +9,6 @@ StilleBot can do here:
 * [Special responses](specials)
 * [Repeated/automatic commands](repeats)
 $$currency<$$
-* [Quotes](quotes) - coming soon
+* [Quotes](quotes)
 
 $$uptime$$
