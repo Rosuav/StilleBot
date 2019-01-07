@@ -6,11 +6,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, object cha
 {
 	string c = channel->name;
 	array commands = ({ });
-	foreach (G->G->echocommands; string cmd; echoable_message response) if (has_suffix(cmd, c))
+	foreach (G->G->echocommands; string cmd; echoable_message response) if (!has_prefix(cmd, "!") && has_suffix(cmd, c))
 	{
 		cmd -= c;
-		if (arrayp(response)) commands += ({sprintf("* %s ==>%{ `%s`%}", cmd, respstr(response[*]))});
-		else commands += ({sprintf("* %s ==> `%s`", cmd, respstr(response))});
+		if (arrayp(response)) commands += ({sprintf("* !%s ==>%{ `%s`%}", cmd, respstr(response[*]))});
+		else commands += ({sprintf("* !%s ==> `%s`", cmd, respstr(response))});
 	}
 	sort(commands);
 	return render_template("chan_commands.md", ([

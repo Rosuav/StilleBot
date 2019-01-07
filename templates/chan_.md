@@ -6,7 +6,7 @@ StilleBot can do here:
 * [Global commands](https://rosuav.github.io/StilleBot/commands/) - available in
   all supported channels
 * [Channel-specific commands](commands)
-* [Special responses](specials) - coming soon
+* [Special responses](specials)
 * [Repeated/automatic commands](repeat) - coming soon
 $$currency<$$
 * [Quotes](quotes) - coming soon
