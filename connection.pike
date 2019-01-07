@@ -534,9 +534,15 @@ void create()
 	irc = G->G->irc;
 	//if (!irc) //HACK: Force reconnection every time
 		reconnect();
-	//if (object http = m_delete(G->G, "httpserver")) http->close(); //Force the HTTP server to be fully restarted
-	if (G->G->httpserver) G->G->httpserver->callback = http_handler;
-	else G->G->httpserver = Protocols.HTTP.Server.Port(http_handler, 6789);
-	if (persist_config["ircsettings"]) bot_nick = persist_config["ircsettings"]->nick || "";
+	if (mapping irc = persist_config["ircsettings"])
+	{
+		bot_nick = persist_config["ircsettings"]->nick || "";
+		if (sscanf(irc->http_address, "%*s:%d", int port) && port)
+		{
+			//if (object http = m_delete(G->G, "httpserver")) http->close(); //Force the HTTP server to be fully restarted
+			if (G->G->httpserver) G->G->httpserver->callback = http_handler;
+			else G->G->httpserver = Protocols.HTTP.Server.Port(http_handler, port);
+		}
+	}
 	add_constant("send_message", send_message);
 }
