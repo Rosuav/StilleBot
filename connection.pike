@@ -445,6 +445,8 @@ class channel_notif
 				#endif
 				if (person->badges?->_mod) msg = string_to_utf8("\u2694 ") + msg;
 				log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
+				if (params->bits && (int)params->bits)
+					trigger_special("!cheer", person, (["{bits}": params->bits]));
 				break;
 			}
 			default: werror("Unknown message type %O on channel %s\n", params->_type, name);
@@ -460,6 +462,13 @@ class channel_notif
 	void log(strict_sprintf_format fmt, sprintf_args ... args)
 	{
 		if (config->chatlog) write(fmt, @args);
+	}
+
+	void trigger_special(string special, mapping person, mapping info)
+	{
+		echoable_message response = G->G->echocommands[special + name];
+		if (!response) return;
+		wrap_message(person, substitute_markers(response, info));
 	}
 }
 

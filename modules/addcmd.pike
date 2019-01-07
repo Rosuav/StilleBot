@@ -30,7 +30,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!cheer      | Bits are cheered            | The giver        | {bits}
 ";
 
-constant SPECIALS = (<"!follower">);
+constant SPECIALS = (<"!follower", "!cheer">);
 string process(object channel, object person, string param)
 {
 	if (sscanf(param, "!%[^# ] %s", string cmd, string response) == 2)
