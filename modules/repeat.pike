@@ -59,6 +59,7 @@ echoable_message process(object channel, object person, string param)
 	if (param == "")
 	{
 		//TODO: Report all current repeated messages
+		//Or link to the web info if there's a server running.
 		return "(unimpl)";
 	}
 	sscanf(param, "%d %s", int mins, string msg);
