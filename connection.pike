@@ -491,9 +491,15 @@ void http_handler(Protocols.HTTP.Server.Request req)
 		req->response_and_finish((["data": c]));
 		return;
 	}
-	if (function handler = G->G->http_endpoints[req->not_query[1..]])
+	if (function handler = !has_prefix(req->not_query, "/chan_") &&
+		G->G->http_endpoints[req->not_query[1..]])
 	{
 		if (mapping resp = handler(req)) {req->response_and_finish(resp); return;}
+	}
+	if (function handler = sscanf(req->not_query, "/channels/%s/%s", string chan, string endpoint) &&
+		G->G->irc->channels["#" + chan] && G->G->http_endpoints["chan_" + endpoint])
+	{
+		if (mapping resp = handler(req, chan)) {req->response_and_finish(resp); return;}
 	}
 	werror("HTTP request: %s %O %O\n", req->request_type, req->not_query, req->variables);
 	werror("Headers: %O\n", req->request_headers);
