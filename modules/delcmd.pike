@@ -13,6 +13,7 @@ string process(object channel, object person, string param)
 	if (sscanf(param, "%*[!]%[^# ]", string cmd) == 2)
 	{
 		//As with addcmd, it *always* gets the channel name appended.
+		cmd = lower_case(cmd); //TODO: Switch this out for a proper Unicode casefold
 		cmd += channel->name;
 		if (!G->G->echocommands[cmd]) return "@$$: No echo command with that name exists here.";
 		m_delete(G->G->echocommands, cmd);
