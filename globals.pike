@@ -6,6 +6,7 @@ void create(string n)
 	if (!G->G->commands) G->G->commands=([]);
 	if (!G->G->hooks) G->G->hooks=([]);
 	if (!G->G->bouncers) G->G->bouncers = ([]);
+	if (!G->G->http_endpoints) G->G->http_endpoints = ([]);
 }
 
 //A sendable message could be a string (echo that string), a mapping with a "message"
@@ -212,4 +213,17 @@ function|void bounce(function f)
 	function current = G->G->bouncers[sprintf("%O", f)];
 	if (current != f) return current;
 	return UNDEFINED;
+}
+
+class http_endpoint
+{
+	constant require_moderator = 0; //Set to 1 if the command is mods-only - requires OAuth - not supported yet - TODO
+	mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) { }
+
+	void create(string name)
+	{
+		sscanf(explode_path(name)[-1],"%s.pike",name);
+		if (!name) return;
+		G->G->http_endpoints[name] = http_request;
+	}
 }

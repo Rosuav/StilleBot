@@ -5,7 +5,7 @@ https://dev.twitch.tv/docs/v5/
 Requires OAuth authentication, which is by default handled by the GUI.
 */
 
-array(string) bootstrap_files = ({"persist.pike", "globals.pike", "poll.pike", "connection.pike", "console.pike", "window.pike", "modules", "zz_local"});
+array(string) bootstrap_files = ({"persist.pike", "globals.pike", "poll.pike", "connection.pike", "console.pike", "window.pike", "modules", "modules/http", "zz_local"});
 mapping G = ([]);
 function(string:void) execcommand;
 
