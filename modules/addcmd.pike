@@ -23,7 +23,11 @@ certain events. The special action must be one of the following:
 Special name | When it happens             | Initiator (`$$`) | Other info
 -------------|-----------------------------|------------------|-------------
 !!follower   | Someone follows the channel | The new follower |
-
+!!sub        | Brand new subscription      | The subscriber   | {tier} 1, 2, or 3
+!!resub      | Resub is announced          | The subscriber   | {tier}, {months}
+!!giftsub    | Someone gives a sub         | The giver        | {tier}, {months}, {recipient}
+!!subbomb    | Someone gives many subgifts | The giver        | {tier}, {gifts}
+!!cheer      | Bits are cheered            | The giver        | {bits}
 ";
 
 constant SPECIALS = (<"!follower">);
