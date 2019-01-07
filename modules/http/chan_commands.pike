@@ -13,6 +13,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, object cha
 		else commands += ({sprintf("* !%s ==> `%s`", cmd, respstr(response))});
 	}
 	sort(commands);
+	if (!sizeof(commands)) commands = ({"(none)"});
 	return render_template("chan_commands.md", ([
 		"channel": channel->name[1..], "commands": commands * "\n",
 	]));

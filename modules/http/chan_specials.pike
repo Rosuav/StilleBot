@@ -12,6 +12,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, object cha
 			if (arrayp(response)) commands += ({sprintf("* !%s ==>%{ `%s`%}", spec, respstr(response[*]))});
 			else commands += ({sprintf("* !%s ==> `%s`", spec, respstr(response))});
 		}
+	if (!sizeof(commands)) commands = ({"(none)"});
 	return render_template("chan_specials.md", ([
 		"channel": channel->name[1..], "commands": commands * "\n",
 	]));
