@@ -2,9 +2,9 @@ inherit http_endpoint;
 
 string respstr(mapping|string resp) {return stringp(resp) ? resp : resp->message;}
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string channel)
+mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, object channel)
 {
-	string c = "#" + channel;
+	string c = channel->name;
 	array commands = ({ });
 	foreach (G->G->echocommands; string cmd; echoable_message response) if (has_suffix(cmd, c))
 	{
@@ -14,6 +14,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string cha
 	}
 	sort(commands);
 	return render_template("chan_commands.md", ([
-		"channel": channel, "commands": commands * "\n",
+		"channel": channel->name[1..], "commands": commands * "\n",
 	]));
 }

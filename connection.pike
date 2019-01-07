@@ -497,11 +497,11 @@ void http_handler(Protocols.HTTP.Server.Request req)
 		if (mapping resp = handler(req)) {req->response_and_finish(resp); return;}
 	}
 	if (function handler = sscanf(req->not_query, "/channels/%s/%s", string chan, string endpoint) &&
-		G->G->irc->channels["#" + chan] && G->G->http_endpoints["chan_" + endpoint])
+		G->G->http_endpoints["chan_" + endpoint])
 	{
-		if (!G->G->irc->channels["#" + chan]->config->allcmds)
+		object channel = G->G->irc->channels["#" + chan];
+		if (!channel || !channel->config->allcmds)
 		{
-			write("-- ignoring quiet channel --\n");
 			//TODO: Better handle the quieter channels?
 			req->response_and_finish(([
 				"data": "No such page.\n",
@@ -511,7 +511,7 @@ void http_handler(Protocols.HTTP.Server.Request req)
 			//Don't bother reporting these on the console. We know the endpoint is valid.
 			return;
 		}
-		if (mapping resp = handler(req, chan)) {req->response_and_finish(resp); return;}
+		if (mapping resp = handler(req, channel)) {req->response_and_finish(resp); return;}
 	}
 	werror("HTTP request: %s %O %O\n", req->request_type, req->not_query, req->variables);
 	werror("Headers: %O\n", req->request_headers);

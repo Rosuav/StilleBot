@@ -218,8 +218,8 @@ function|void bounce(function f)
 class http_endpoint
 {
 	constant require_moderator = 0; //Set to 1 if the command is mods-only - requires OAuth - not supported yet - TODO
-	//A channel name will be provided if and only if this is chan_foo.pike and the URL is /channels/spam/foo
-	mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string|void channel) { }
+	//A channel will be provided if and only if this is chan_foo.pike and the URL is /channels/spam/foo
+	mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, object|void channel) { }
 
 	void create(string name)
 	{
