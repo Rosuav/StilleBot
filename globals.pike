@@ -89,6 +89,7 @@ command_handler find_command(object channel, string cmd, int is_mod)
 	//separator. We'll try "help#rosuav" and "help" for "!help".
 	if (has_value(cmd, '#')) return 0;
 	if (has_value(cmd, '!')) return 0; //Pseudo-commands can't be run as normal commands
+	cmd = lower_case(cmd); //TODO: Switch this out for a proper Unicode casefold
 	foreach (({cmd + channel->name, cmd}), string tryme)
 	{
 		//NOTE: G->G->commands holds the actual function that gets
