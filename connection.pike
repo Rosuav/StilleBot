@@ -499,6 +499,18 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	if (function handler = sscanf(req->not_query, "/channels/%s/%s", string chan, string endpoint) &&
 		G->G->irc->channels["#" + chan] && G->G->http_endpoints["chan_" + endpoint])
 	{
+		if (!G->G->irc->channels["#" + chan]->config->allcmds)
+		{
+			write("-- ignoring quiet channel --\n");
+			//TODO: Better handle the quieter channels?
+			req->response_and_finish(([
+				"data": "No such page.\n",
+				"type": "text/plain; charset=\"UTF-8\"",
+				"error": 404,
+			]));
+			//Don't bother reporting these on the console. We know the endpoint is valid.
+			return;
+		}
 		if (mapping resp = handler(req, chan)) {req->response_and_finish(resp); return;}
 	}
 	werror("HTTP request: %s %O %O\n", req->request_type, req->not_query, req->variables);
