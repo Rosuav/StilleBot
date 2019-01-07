@@ -228,3 +228,27 @@ class http_endpoint
 		G->G->http_endpoints[name] = http_request;
 	}
 }
+
+mapping(string:mixed) render_template(string template, mapping(string:string) replacements)
+{
+	string content = Stdio.read_file("templates/" + template);
+	if (!content) error("Unable to load templates/" + template);
+	array pieces = content / "$$";
+	if (!(sizeof(pieces) & 1)) error("Mismatched $$ in templates/" + template);
+	for (int i = 1; i < sizeof(pieces); i += 2)
+	{
+		string token = pieces[i];
+		if (sizeof(token) > 80 || has_value(token, ' ')) //TODO: Check more reliably for it being a 'token'
+			error("Invalid token name %O in templates/%s - possible mismatched marker",
+				"$$" + token[..80] + "$$", template);
+		if (!replacements[token]) error("Token %O not found in templates/%s", "$$" + token + "$$", template);
+		pieces[i] = replacements[token];
+	}
+	content = pieces * "";
+	if (has_suffix(template, ".md"))
+		content = Tools.Markdown.parse(content);
+	return ([
+		"data": content,
+		"type": "text/html; charset=\"UTF-8\"",
+	]);
+}
