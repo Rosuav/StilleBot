@@ -535,7 +535,18 @@ void create()
 		{
 			//if (object http = m_delete(G->G, "httpserver")) http->close(); //Force the HTTP server to be fully restarted
 			if (G->G->httpserver) G->G->httpserver->callback = http_handler;
-			else G->G->httpserver = Protocols.HTTP.Server.Port(http_handler, port);
+			else if (!irc->use_https) G->G->httpserver = Protocols.HTTP.Server.Port(http_handler, port);
+			else
+			{
+				string cert = Stdio.read_file("certificate.pem"),
+					key = Stdio.read_file("privkey.pem");
+				array certs = cert && Standards.PEM.Messages(cert)->get_certificates();
+				string pk = key && Standards.PEM.simple_decode(key);
+				//If we don't have a valid PK and cert(s), Pike will autogenerate a cert.
+				//TODO: Save the cert? That way, the self-signed could be pinned
+				//permanently. Currently it'll be regenned each startup.
+				G->G->httpserver = Protocols.HTTP.Server.SSLPort(http_handler, port, UNDEFINED, pk, certs);
+			}
 		}
 	}
 	add_constant("send_message", send_message);

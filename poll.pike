@@ -187,7 +187,7 @@ void webhooks(string resp)
 	{
 		int time_left = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", hook->expires_at)->unix_time() - time();
 		if (time_left < 300) continue;
-		sscanf(hook->callback, "http://%*s/junket?%s=%s", string type, string channel);
+		sscanf(hook->callback, "http%*[s]://%*s/junket?%s=%s", string type, string channel);
 		if (type == "follow") watching[channel] = 1;
 	}
 	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
@@ -208,7 +208,11 @@ void webhooks(string resp)
 			]),
 			Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, confirm_webhook),
 			string_to_utf8(Standards.JSON.encode(([
-				"hub.callback": sprintf("http://%s/junket?follow=%s", persist_config["ircsettings"]["http_address"], chan),
+				"hub.callback": sprintf("http%s://%s/junket?follow=%s",
+					"s" * persist_config["ircsettings"]["use_https"],
+					persist_config["ircsettings"]["http_address"],
+					chan,
+				),
 				"hub.mode": "subscribe",
 				"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&to_id=" + userid,
 				"hub.lease_seconds": 864000,

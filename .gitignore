@@ -2,3 +2,4 @@ twitchbot_*.json
 song_cache
 pwd
 outgoing_raids.log
+*.pem
