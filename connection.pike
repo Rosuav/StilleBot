@@ -486,6 +486,7 @@ class channel_notif
 	{
 		echoable_message response = G->G->echocommands[special + name];
 		if (!response) return;
+		if (has_value(info, 0)) werror("DEBUG: Special %O got info %O\n", special, info); //Track down those missing-info errors
 		wrap_message(person, substitute_markers(response, info));
 	}
 }
