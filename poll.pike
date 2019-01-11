@@ -208,8 +208,7 @@ void webhooks(string resp)
 			]),
 			Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, confirm_webhook),
 			string_to_utf8(Standards.JSON.encode(([
-				"hub.callback": sprintf("http%s://%s/junket?follow=%s",
-					"s" * persist_config["ircsettings"]["use_https"],
+				"hub.callback": sprintf("%s/junket?follow=%s",
 					persist_config["ircsettings"]["http_address"],
 					chan,
 				),
@@ -256,7 +255,8 @@ void poll()
 	foreach (indices(persist_config["channels"] || ({ })), string chan)
 		make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo);
 	if (!sizeof(persist_config["channels"])) return; //Don't check webhooks when there'll be nothing to check
-	if (has_value(persist_config["ircsettings"]["http_address"], ":"))
+	string addr = persist_config["ircsettings"]["http_address"];
+	if (addr && addr != "")
 	{
 		if (G->G->webhook_lookup_token_expiry < time()) get_lookup_token();
 		else check_webhooks();

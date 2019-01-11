@@ -536,7 +536,7 @@ void create()
 			int use_https = has_prefix(irc->http_address, "https://");
 			string listen_addr = "::"; //By default, listen on IPv4 and IPv6
 			int listen_port = use_https ? 443 : 80; //Default port from protocol
-			sscanf(irc->http_address - "https://", "%*s:%d", listen_port); //If one is set for the dest addr, use that
+			sscanf(irc->http_address, "http%*[s]://%*s:%d", listen_port); //If one is set for the dest addr, use that
 			//Or if there's an explicit listen address/port set, use that.
 			sscanf(irc->listen_address||"", "%d", listen_port);
 			sscanf(irc->listen_address||"", "%s:%d", listen_addr, listen_port);
