@@ -419,12 +419,14 @@ class channel_notif
 				case "giftpaidupgrade": break; //Pledging to continue a subscription (first introduced for the Subtember special in 2018, and undocumented)
 				case "subgift":
 				{
+					write("DEBUG SUBGIFT: chan %s disp %O user %O mon %O recip %O\n",
+						name, person->displayname, person->user,
+						params->msg_param_months, params->msg_param_recipient_display_name);
 					trigger_special("!subgift", person, ([
 						"{tier}": params->msg_param_sub_plan[0],
 						"{months}": params->msg_param_months,
 						"{recipient}": params->msg_param_recipient_display_name,
 					]));
-					write("DEBUG SUBGIFT: chan %s disp %O user %O\n", name, person->displayname, person->user);
 					//Other params: login, user_id, msg_param_recipient_user_name, msg_param_recipient_id,
 					//msg_param_sender_count (the total gifts this person has given in this channel)
 					//Remember that all params are strings, even those that look like numbers
