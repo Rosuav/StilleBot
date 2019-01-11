@@ -432,11 +432,17 @@ class channel_notif
 					//Remember that all params are strings, even those that look like numbers
 					break;
 				}
-				case "submysterygift": trigger_special("!subbomb", person, ([
-					"{tier}": params->msg_param_sub_plan[0],
-					"{gifts}": params->msg_param_mass_gift_count,
-				]));
-				break;
+				case "submysterygift":
+				{
+					write("DEBUG SUBGIFT: chan %s disp %O user %O gifts %O\n",
+						name, person->displayname, person->user,
+						params->msg_param_mass_gift_count);
+					trigger_special("!subbomb", person, ([
+						"{tier}": params->msg_param_sub_plan[0],
+						"{gifts}": params->msg_param_mass_gift_count,
+					]));
+					break;
+				}
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
 					params->_type, params->msg_id, name, params, msg);
 			}
