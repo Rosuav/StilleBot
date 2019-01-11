@@ -496,6 +496,12 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	{
 		if (mapping resp = handler(req)) {req->response_and_finish(resp); return;}
 	}
+	if (sscanf(req->not_query, "/channels/%[^/]%s", string chan, string no_endpoint) && no_endpoint == "")
+	{
+		//Hack: Redirect /channels/rosuav to /channels/rosuav/
+		req->response_and_finish((["error": 301, "extra_heads": (["Location": sprintf("/channels/%s/", chan)])]));
+		return;
+	}
 	if (function handler = sscanf(req->not_query, "/channels/%s/%s", string chan, string endpoint) &&
 		G->G->http_endpoints["chan_" + endpoint])
 	{
