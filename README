@@ -19,8 +19,8 @@ check for anything that could be broken by this. It is recommended to switch
 to using either person->uid (for identifying users) or person->displayname
 (for addressing users).
 
-Enabling SSL for the web configuration pages requires some setup work. See
-[instructions](SSL).
+Enabling SSL (https) for the web configuration pages requires some setup
+work. See [instructions](SSL).
 
 
 License: MIT

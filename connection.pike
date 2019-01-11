@@ -531,11 +531,25 @@ void create()
 	if (mapping irc = persist_config["ircsettings"])
 	{
 		bot_nick = persist_config["ircsettings"]->nick || "";
-		if (sscanf(irc->http_address, "%*s:%d", int port) && port)
+		if (irc->http_address && irc->http_address != "")
 		{
-			//if (object http = m_delete(G->G, "httpserver")) http->close(); //Force the HTTP server to be fully restarted
+			int use_https = has_prefix(irc->http_address, "https://");
+			string listen_addr = "::"; //By default, listen on IPv4 and IPv6
+			int listen_port = use_https ? 443 : 80; //Default port from protocol
+			sscanf(irc->http_address - "https://", "%*s:%d", listen_port); //If one is set for the dest addr, use that
+			//Or if there's an explicit listen address/port set, use that.
+			sscanf(irc->listen_address||"", "%d", listen_port);
+			sscanf(irc->listen_address||"", "%s:%d", listen_addr, listen_port);
+
+			if (listen_port * -use_https != G->G->httpserver_port_used)
+			{
+				//Port or SSL status has changed. Force the server to be restarted.
+				if (object http = m_delete(G->G, "httpserver")) http->close();
+				G->G->httpserver_port_used = listen_port * -use_https;
+			}
+
 			if (G->G->httpserver) G->G->httpserver->callback = http_handler;
-			else if (!irc->use_https) G->G->httpserver = Protocols.HTTP.Server.Port(http_handler, port);
+			else if (!use_https) G->G->httpserver = Protocols.HTTP.Server.Port(http_handler, listen_port, listen_addr);
 			else
 			{
 				string cert = Stdio.read_file("certificate.pem"),
@@ -545,7 +559,7 @@ void create()
 				//If we don't have a valid PK and cert(s), Pike will autogenerate a cert.
 				//TODO: Save the cert? That way, the self-signed could be pinned
 				//permanently. Currently it'll be regenned each startup.
-				G->G->httpserver = Protocols.HTTP.Server.SSLPort(http_handler, port, UNDEFINED, pk, certs);
+				G->G->httpserver = Protocols.HTTP.Server.SSLPort(http_handler, listen_port, listen_addr, pk, certs);
 			}
 		}
 	}
