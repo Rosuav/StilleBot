@@ -261,3 +261,11 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 		"type": "text/html; charset=\"UTF-8\"",
 	]);
 }
+
+class TwitchAuth
+{
+	inherit Web.Auth.OAuth2.Client;
+	constant OAUTH_AUTH_URI  = "https://id.twitch.tv/oauth2/authorize";
+	constant OAUTH_TOKEN_URI = "https://id.twitch.tv/oauth2/token";
+	protected multiset(string) valid_scopes = (<"user_read">); //TODO: Fill these in
+}
