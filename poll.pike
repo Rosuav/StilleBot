@@ -192,7 +192,7 @@ void webhooks(string resp)
 	foreach (persist_config["channels"] || ([]); string chan; mapping cfg)
 	{
 		if (watching[chan]) continue; //Already got a hook
-		if (!cfg->chatlog) continue; //Show only for channels we're logging chat of, for now
+		if (!cfg->allcmds) continue; //Show only for channels we're fully active in
 		mapping c = G->G->channel_info[chan];
 		int userid = c && c->_id; //For some reason, ?-> is misparsing the data type (???)
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses !whisper.)
