@@ -743,6 +743,7 @@ class ircsettings
 			GTK2.Label("Keys will not be shown above. Obtain"),0,
 			GTK2.Label("one from twitchapps and paste it in."),0,
 			"Web config address (optional)", win->http_address=GTK2.Entry()->set_text(config->http_address||""),
+			"Listen address:port (optional)", win->listen_address=GTK2.Entry()->set_text(config->listen_address||""),
 			0, win->use_https=GTK2.CheckButton("Use HTTPS (see documentation)")->set_active(config->use_https),
 			GTK2.HbuttonBox()
 				->add(win->save=GTK2.Button("Save"))
@@ -766,6 +767,7 @@ class ircsettings
 		string pass = win->pass->get_text();
 		if (has_prefix(pass, "oauth:")) config->pass = pass;
 		config->http_address = win->http_address->get_text();
+		config->listen_address = win->listen_address->get_text();
 		config->use_https = win->use_https->get_active();
 		persist->save();
 		closewindow();
