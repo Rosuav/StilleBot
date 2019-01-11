@@ -290,6 +290,7 @@ class channel_notif
 	echoable_message substitute_markers(string|mapping|array(string|mapping) msg, mapping(string:string) markers)
 	{
 		if (stringp(msg)) return replace(msg, markers);
+		//TODO: Also transform msg->dest, so "/w %s" works (would be cleaner than relying on nonwrapped messages)
 		if (mappingp(msg)) return msg | (["message": replace(msg->message, markers)]);
 		if (arrayp(msg)) return substitute_markers(msg[*], markers); //Yes, recursive. You shouldn't have arrays in arrays though.
 		return msg;
