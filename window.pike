@@ -766,9 +766,10 @@ class ircsettings
 		if (secret != "") config->clientsecret = secret;
 		string pass = win->pass->get_text();
 		if (has_prefix(pass, "oauth:")) config->pass = pass;
-		config->http_address = (win->http_address->get_text() / "/" - ({""})) * "/"; //Compress slashes, strip any at start/end
+		config->http_address = win->http_address->get_text();
 		if (!sscanf(config->http_address, "http%*[s]://%s", string addr) || !addr)
 			config->http_address = "http://" + config->http_address;
+		if (has_suffix(config->http_address, "/")) config->http_address = config->http_address[..<1]; //Strip trailing slash
 		config->listen_address = win->listen_address->get_text();
 		persist->save();
 		closewindow();
