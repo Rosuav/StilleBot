@@ -173,10 +173,7 @@ class check_following(string user, string chan, function|void callback)
 	}
 }
 
-void confirm_webhook(string resp)
-{
-	write("Confirming webhook: %O\n", resp);
-}
+void confirm_webhook() {/* There's no data or anything, so nothing to do */}
 
 void webhooks(string resp)
 {
@@ -190,6 +187,7 @@ void webhooks(string resp)
 		sscanf(hook->callback, "http%*[s]://%*s/junket?%s=%s", string type, string channel);
 		if (type == "follow") watching[channel] = 1;
 	}
+	//write("Already got webhooks for %s\n", indices(watching) * ", ");
 	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
 	foreach (persist_config["channels"] || ([]); string chan; mapping cfg)
 	{
