@@ -504,7 +504,13 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	if (function handler = !has_prefix(req->not_query, "/chan_") &&
 		G->G->http_endpoints[req->not_query[1..]])
 	{
-		if (mapping resp = handler(req)) {req->response_and_finish(resp); return;}
+		if (mixed ex = catch {if (mapping resp = handler(req)) {req->response_and_finish(resp); return;}})
+		{
+			werror("HTTP handler crash: %O\n", req->not_query);
+			werror(describe_backtrace(ex));
+			req->response_and_finish((["error": 500, "data": "Internal server error\n", "type": "text/plain; charset=\"UTF-8\""]));
+			return;
+		}
 	}
 	if (sscanf(req->not_query, "/channels/%[^/]%s", string chan, string no_endpoint) && no_endpoint == "")
 	{
@@ -527,7 +533,13 @@ void http_handler(Protocols.HTTP.Server.Request req)
 			//Don't bother reporting these on the console. We know the endpoint is valid.
 			return;
 		}
-		if (mapping resp = handler(req, channel)) {req->response_and_finish(resp); return;}
+		if (mixed ex = catch {if (mapping resp = handler(req, channel)) {req->response_and_finish(resp); return;}})
+		{
+			werror("HTTP handler crash: %O\n", req->not_query);
+			werror(describe_backtrace(ex));
+			req->response_and_finish((["error": 500, "data": "Internal server error\n", "type": "text/plain; charset=\"UTF-8\""]));
+			return;
+		}
 	}
 	werror("HTTP request: %s %O %O\n", req->request_type, req->not_query, req->variables);
 	werror("Headers: %O\n", req->request_headers);
