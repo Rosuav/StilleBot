@@ -262,6 +262,11 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 	]);
 }
 
+mapping(string:mixed) redirect(string url, int|void status)
+{
+	return (["error": status||302, "extra_heads": (["Location": url])]);
+}
+
 class TwitchAuth
 {
 	inherit Web.Auth.OAuth2.Client;

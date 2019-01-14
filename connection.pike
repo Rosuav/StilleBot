@@ -509,7 +509,7 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	if (sscanf(req->not_query, "/channels/%[^/]%s", string chan, string no_endpoint) && no_endpoint == "")
 	{
 		//Hack: Redirect /channels/rosuav to /channels/rosuav/
-		req->response_and_finish((["error": 301, "extra_heads": (["Location": sprintf("/channels/%s/", chan)])]));
+		req->response_and_finish(redirect(sprintf("/channels/%s/", chan), 301));
 		return;
 	}
 	if (function handler = sscanf(req->not_query, "/channels/%s/%s", string chan, string endpoint) &&

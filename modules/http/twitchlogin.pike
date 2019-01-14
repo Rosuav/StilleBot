@@ -18,5 +18,5 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		return (["data": "Hello, " + info->data[0]->display_name, "type": "text/html"]);
 	}
 	write("Redirecting to Twitch...\n");
-	return (["error": 302, "extra_heads": (["Location": auth->get_auth_uri()])]);
+	return redirect(auth->get_auth_uri());
 }
