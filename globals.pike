@@ -7,6 +7,7 @@ void create(string n)
 	if (!G->G->hooks) G->G->hooks=([]);
 	if (!G->G->bouncers) G->G->bouncers = ([]);
 	if (!G->G->http_endpoints) G->G->http_endpoints = ([]);
+	if (!G->G->http_sessions) G->G->http_sessions = ([]);
 }
 
 //A sendable message could be a string (echo that string), a mapping with a "message"
@@ -279,7 +280,6 @@ void session_cleanup()
 {
 	//Go through all HTTP sessions and dispose of old ones
 	mapping sess = G->G->http_sessions;
-	if (!sess) {G->G->http_sessions = ([]); return;}
 	int limit = time();
 	foreach (sess; string cookie; mapping info)
 		if (info->expires <= limit) m_delete(sess, cookie);

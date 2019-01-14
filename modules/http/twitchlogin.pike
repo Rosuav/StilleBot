@@ -16,7 +16,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		mapping user = Standards.JSON.decode_utf8(data)->data[0];
 		write("Login: %O\n", user);
 		mapping resp = redirect("/login_ok");
-		if (!G->G->http_sessions) G->G->http_sessions = ([]);
 		string cookie;
 		do {cookie = random(1<<64)->digits(36);} while (G->G->http_sessions[cookie]);
 		write("Cookie: %O\n", cookie);
