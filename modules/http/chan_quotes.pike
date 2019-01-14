@@ -10,6 +10,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, object cha
 	foreach (quotes; int i; mapping quote)
 		q += ({sprintf("%d. %s [%s]", i + 1, quote->msg, quote->game)});
 	return render_template("chan_quotes.md", ([
-		"channel": channel->name[1..], "quotes": q * "\n",
+		"channel": G->G->channel_info[channel->name[1..]]?->display_name || channel->name[1..],
+		"quotes": q * "\n",
 	]));
 }

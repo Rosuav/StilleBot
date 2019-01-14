@@ -18,6 +18,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, object cha
 		else commands += sprintf("<tr><td colspan=4>Response: <pre>%s</pre></td></tr>", respstr(Array.arrayify(response)[*])[*]);
 	}
 	return render_template("chan_specials.html", ([
-		"channel": channel->name[1..], "commands": commands * "\n",
+		"channel": G->G->channel_info[channel->name[1..]]?->display_name || channel->name[1..],
+		"commands": commands * "\n",
 	]));
 }

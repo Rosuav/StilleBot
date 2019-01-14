@@ -7,7 +7,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, object cha
 		user_is_mod = "Welcome, " + session->user->display_name + ", and your modsword.";
 	string uptime = channel_uptime(channel->name[1..]);
 	return render_template("chan_.md", ([
-		"channel": channel->name[1..],
+		"channel": G->G->channel_info[channel->name[1..]]?->display_name || channel->name[1..],
 		"bot_or_mod": channel->mods[persist_config["ircsettings"]->nick] ? "mod" : "bot",
 		"currency": channel->config->currency && channel->config->currency != "" ?
 			"* [Channel currency](currency) - coming soon" : "",

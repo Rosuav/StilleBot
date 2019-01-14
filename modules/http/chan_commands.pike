@@ -15,6 +15,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, object cha
 	sort(commands);
 	if (!sizeof(commands)) commands = ({"(none)"});
 	return render_template("chan_commands.md", ([
-		"channel": channel->name[1..], "commands": commands * "\n",
+		"channel": G->G->channel_info[channel->name[1..]]?->display_name || channel->name[1..],
+		"commands": commands * "\n",
 	]));
 }
