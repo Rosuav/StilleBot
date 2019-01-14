@@ -274,3 +274,13 @@ class TwitchAuth
 	constant OAUTH_TOKEN_URI = "https://id.twitch.tv/oauth2/token";
 	protected multiset(string) valid_scopes = (<"user_read">); //TODO: Fill these in
 }
+
+void session_cleanup()
+{
+	//Go through all HTTP sessions and dispose of old ones
+	mapping sess = G->G->http_sessions;
+	if (!sess) {G->G->http_sessions = ([]); return;}
+	int limit = time();
+	foreach (sess; string cookie; mapping info)
+		if (info->expires <= limit) m_delete(sess, cookie);
+}
