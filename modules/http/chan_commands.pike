@@ -2,7 +2,7 @@ inherit http_endpoint;
 
 string respstr(mapping|string resp) {return stringp(resp) ? resp : resp->message;}
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, object channel)
+mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, object channel, mapping(string:mixed) session)
 {
 	string c = channel->name;
 	array commands = ({ });

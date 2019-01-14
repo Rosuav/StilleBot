@@ -533,7 +533,8 @@ void http_handler(Protocols.HTTP.Server.Request req)
 			//Don't bother reporting these on the console. We know the endpoint is valid.
 			return;
 		}
-		if (mixed ex = catch {if (mapping resp = handler(req, channel)) {req->response_and_finish(resp); return;}})
+		mapping session = G->G->http_sessions[req->cookies->session];
+		if (mixed ex = catch {if (mapping resp = handler(req, channel, session)) {req->response_and_finish(resp); return;}})
 		{
 			werror("HTTP handler crash: %O\n", req->not_query);
 			werror(describe_backtrace(ex));

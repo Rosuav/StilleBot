@@ -12,3 +12,5 @@ $$currency<$$
 * [Quotes](quotes)
 
 $$uptime$$
+
+$$user_is_mod$$
