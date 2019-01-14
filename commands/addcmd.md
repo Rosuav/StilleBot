@@ -21,10 +21,11 @@ certain events. The special action must be one of the following:
 
 Special name | When it happens             | Initiator (`$$`) | Other info
 -------------|-----------------------------|------------------|-------------
-!!follower   | Someone follows the channel | The new follower |
-!!sub        | Brand new subscription      | The subscriber   | {tier} (1, 2, or 3)
-!!resub      | Resub is announced          | The subscriber   | {tier}, {months}
-!!subgift    | Someone gives a sub         | The giver        | {tier}, {months}, {recipient}
-!!subbomb    | Someone gives many subgifts | The giver        | {tier}, {gifts}
-!!cheer      | Bits are cheered            | The giver        | {bits}
+!!cheer | Any bits are cheered | The giver | {bits}
+!!resub | Resub is announced | The subscriber | {tier}, {months}
+!!sub | Brand new subscription | The subscriber | {tier} (1, 2, or 3)
+!!follower | Someone follows the channel | The new follower | 
+!!subbomb | Someone gives many subgifts | The giver | {tier}, {gifts}
+!!subgift | Someone gives a sub | The giver | {tier}, {months}, {recipient}
+
 

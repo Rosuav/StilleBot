@@ -1,6 +1,14 @@
 inherit command;
 constant require_moderator = 1;
-constant docstring = #"
+constant SPECIALS = ([
+	"!follower": ({"Someone follows the channel", "The new follower", ""}),
+	"!sub": ({"Brand new subscription", "The subscriber", "{tier} (1, 2, or 3)"}),
+	"!resub": ({"Resub is announced", "The subscriber", "{tier}, {months}"}),
+	"!subgift": ({"Someone gives a sub", "The giver", "{tier}, {months}, {recipient}"}),
+	"!subbomb": ({"Someone gives many subgifts", "The giver", "{tier}, {gifts}"}),
+	"!cheer": ({"Any bits are cheered", "The giver", "{bits}"}),
+]);
+constant docstring = sprintf(#"
 Add an echo command for this channel
 
 Usage: `!addcmd !newcommandname text-to-echo`
@@ -11,7 +19,7 @@ exists as a global command, the channel-specific echo command will shadow it
 do not shoot yourself in the foot :)
 
 Echo commands themselves are available to everyone in the channel, and simply
-display the text they have been given. The marker `%s` will be replaced with
+display the text they have been given. The marker `%%s` will be replaced with
 whatever additional words are given with the command, if any. Similarly, `$$`
 is replaced with the username of the person who triggered the command.
 
@@ -22,15 +30,9 @@ certain events. The special action must be one of the following:
 
 Special name | When it happens             | Initiator (`$$`) | Other info
 -------------|-----------------------------|------------------|-------------
-!!follower   | Someone follows the channel | The new follower |
-!!sub        | Brand new subscription      | The subscriber   | {tier} (1, 2, or 3)
-!!resub      | Resub is announced          | The subscriber   | {tier}, {months}
-!!subgift    | Someone gives a sub         | The giver        | {tier}, {months}, {recipient}
-!!subbomb    | Someone gives many subgifts | The giver        | {tier}, {gifts}
-!!cheer      | Bits are cheered            | The giver        | {bits}
-";
-
-constant SPECIALS = (<"!follower", "!sub", "!resub", "!subgift", "!subbomb", "!cheer">);
+%{!%s%{ | %s%}
+%}
+", (array)SPECIALS);
 string process(object channel, object person, string param)
 {
 	if (sscanf(param, "!%[^# ] %s", string cmd, string response) == 2)
