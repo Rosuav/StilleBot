@@ -501,25 +501,16 @@ void http_handler(Protocols.HTTP.Server.Request req)
 		req->response_and_finish((["data": c]));
 		return;
 	}
-	if (function handler = !has_prefix(req->not_query, "/chan_") &&
-		G->G->http_endpoints[req->not_query[1..]])
-	{
-		if (mixed ex = catch {if (mapping resp = handler(req)) {req->response_and_finish(resp); return;}})
-		{
-			werror("HTTP handler crash: %O\n", req->not_query);
-			werror(describe_backtrace(ex));
-			req->response_and_finish((["error": 500, "data": "Internal server error\n", "type": "text/plain; charset=\"UTF-8\""]));
-			return;
-		}
-	}
+	mapping session = req->misc->session = G->G->http_sessions[req->cookies->session];
+	function handler = !has_prefix(req->not_query, "/chan_") && G->G->http_endpoints[req->not_query[1..]];
 	if (sscanf(req->not_query, "/channels/%[^/]%s", string chan, string no_endpoint) && no_endpoint == "")
 	{
 		//Hack: Redirect /channels/rosuav to /channels/rosuav/
 		req->response_and_finish(redirect(sprintf("/channels/%s/", chan), 301));
 		return;
 	}
-	if (function handler = sscanf(req->not_query, "/channels/%s/%s", string chan, string endpoint) &&
-		G->G->http_endpoints["chan_" + endpoint])
+	if (!handler && (handler = sscanf(req->not_query, "/channels/%s/%s", string chan, string endpoint) &&
+		G->G->http_endpoints["chan_" + endpoint]))
 	{
 		object channel = G->G->irc->channels["#" + chan];
 		if (!channel || !channel->config->allcmds)
@@ -533,8 +524,13 @@ void http_handler(Protocols.HTTP.Server.Request req)
 			//Don't bother reporting these on the console. We know the endpoint is valid.
 			return;
 		}
-		mapping session = G->G->http_sessions[req->cookies->session];
-		if (mixed ex = catch {if (mapping resp = handler(req, channel, session)) {req->response_and_finish(resp); return;}})
+		req->misc->channel = channel;
+		req->misc->channel_name = G->G->channel_info[channel->name[1..]]?->display_name || channel->name[1..];
+		req->misc->is_mod = session && session->user && channel->mods[session->user->login];
+	}
+	if (handler)
+	{
+		if (mixed ex = catch {if (mapping resp = handler(req)) {req->response_and_finish(resp); return;}})
 		{
 			werror("HTTP handler crash: %O\n", req->not_query);
 			werror(describe_backtrace(ex));
