@@ -240,6 +240,7 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 	for (int i = 1; i < sizeof(pieces); i += 2)
 	{
 		string token = pieces[i];
+		if (token == "") {pieces[i] = "$$"; continue;} //Escape a $$ by doubling it ($$$$)
 		if (sizeof(token) > 80 || has_value(token, ' ')) //TODO: Check more reliably for it being a 'token'
 			error("Invalid token name %O in templates/%s - possible mismatched marker",
 				"$$" + token[..80] + "$$", template);
