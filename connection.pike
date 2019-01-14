@@ -324,8 +324,8 @@ class channel_notif
 		if (stringp(info)) info = (["message": info]);
 		string msg = info->message, dest = info->dest || defaultdest || name;
 		if (dest == "/w $$") dest = "/w " + person->user;
-		string prefix = replace(info->prefix || "", "$$", person->user);
-		msg = replace(msg, "$$", person->user);
+		string prefix = replace(info->prefix || "", "$$", person->displayname);
+		msg = replace(msg, "$$", person->displayname);
 		if (config->noticechat && has_value(msg, "$participant$"))
 		{
 			array users = ({ });
