@@ -256,8 +256,7 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 		}
 	}
 	content = pieces * "";
-	if (has_suffix(template, ".md"))
-		content = Tools.Markdown.parse(content);
+	if (has_suffix(template, ".md")) return render_template("markdown.html", replacements | (["content": Tools.Markdown.parse(content)]));
 	return ([
 		"data": content,
 		"type": "text/html; charset=\"UTF-8\"",
