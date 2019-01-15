@@ -34,7 +34,7 @@ class IRCClient
 		//whispers the same way, even though there's actually no such thing as whisper_notif
 		//in the core Protocols.IRC.Client handler - they go through to not_message for some
 		//channel (currently "#!whisper", though this may change in the future).
-		what = utf8_to_string(what); //TODO: Check if anything ever breaks because of this
+		what = utf8_to_string(what); args[0] = utf8_to_string(args[0]); //TODO: Check if anything ever breaks because of this
 		mapping(string:string) attr = ([]);
 		if (has_prefix(what, "@"))
 		{
