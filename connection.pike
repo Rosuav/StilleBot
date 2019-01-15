@@ -34,6 +34,7 @@ class IRCClient
 		//whispers the same way, even though there's actually no such thing as whisper_notif
 		//in the core Protocols.IRC.Client handler - they go through to not_message for some
 		//channel (currently "#!whisper", though this may change in the future).
+		what = utf8_to_string(what); //TODO: Check if anything ever breaks because of this
 		mapping(string:string) attr = ([]);
 		if (has_prefix(what, "@"))
 		{
@@ -348,8 +349,8 @@ class channel_notif
 	void not_message(object ircperson, string msg, mapping(string:string)|void params)
 	{
 		//TODO: Figure out whether msg and params are bytes or text
-		//"Now hosting" needs to be decoded UTF-8 currently - should it be in here
-		//or up in the higher-level parser?
+		//With the tags parser, they are now always text (I think), but the
+		//default parser may be using bytes.
 		if (!params) params = ([]);
 		mapping(string:mixed) person = gather_person_info(ircperson, params);
 		if (!params->_type && person->nick == "tmi.twitch.tv")
