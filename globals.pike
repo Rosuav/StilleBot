@@ -233,7 +233,7 @@ class http_endpoint
 
 mapping(string:mixed) render_template(string template, mapping(string:string) replacements)
 {
-	string content = Stdio.read_file("templates/" + template);
+	string content = utf8_to_string(Stdio.read_file("templates/" + template));
 	if (!content) error("Unable to load templates/" + template);
 	array pieces = content / "$$";
 	if (!(sizeof(pieces) & 1)) error("Mismatched $$ in templates/" + template);
@@ -258,7 +258,7 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 	content = pieces * "";
 	if (has_suffix(template, ".md")) return render_template("markdown.html", replacements | (["content": Tools.Markdown.parse(content)]));
 	return ([
-		"data": content,
+		"data": string_to_utf8(content),
 		"type": "text/html; charset=\"UTF-8\"",
 	]);
 }
