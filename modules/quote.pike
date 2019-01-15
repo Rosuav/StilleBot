@@ -8,10 +8,27 @@ add more quotes, so when funny things happen, use the [!addquote](addquote)
 command to save it for posterity!
 ";
 
-string process(object channel, object person, string param)
+echoable_message process(object channel, object person, string param)
 {
 	array quotes = channel->config->quotes;
 	if (!quotes) return 0; //Ignore !quote when there are no quotes saved
+	if (param == "re-encode")
+	{
+		//Fix the encoding of all quotes taken before 20190116 when it got fixed
+		array ret = ({ });
+		foreach (channel->config->quotes; int idx; mapping quote) catch
+		{
+			string dec = utf8_to_string(quote->msg);
+			if (dec != quote->msg)
+			{
+				quote->msg = dec;
+				ret += ({sprintf("Fixed quote #%d: %s [%s]", idx, quote->msg, quote->game)});
+			}
+		};
+		if (!sizeof(ret)) return "No quotes need re-encoding.";
+		persist_config->save();
+		return ret;
+	}
 	//For safety, we show mature quotes only if the requesting channel is also marked mature.
 	mapping chaninfo = G->G->channel_info[channel->name[1..]];
 	if (!chaninfo) return "@$$: Internal error - no channel info"; //I'm pretty sure this shouldn't happen
