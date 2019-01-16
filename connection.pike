@@ -450,7 +450,7 @@ class channel_notif
 			}
 			break;
 			case "WHISPER": defaultdest = "/w $$"; //fallthrough
-			case "PRIVMSG":
+			case "PRIVMSG": case 0: //If there's no params block, assume it's a PRIVMSG
 			{
 				if (lower_case(person->nick) == lower_case(bot_nick)) {lastmsgtime = time(1); modmsgs = 0;}
 				if (person->badges) mods[person->user] = person->badges->_mod;
