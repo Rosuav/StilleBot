@@ -11,3 +11,12 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string fil
 	//TODO: Play nicely with caches by providing an etag
 	return (["file": Stdio.File("httpstatic/" + filename)]);
 }
+
+//Handle /favicon.ico as if it were /static/favicon.ico
+mapping(string:mixed) favicon(Protocols.HTTP.Server.Request req) {return http_request(req, "favicon.ico");}
+
+void create(string name)
+{
+	::create(name);
+	G->G->http_endpoints["favicon.ico"] = favicon;
+}
