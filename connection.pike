@@ -503,7 +503,7 @@ void http_handler(Protocols.HTTP.Server.Request req)
 		req->response_and_finish((["data": c]));
 		return;
 	}
-	mapping session = req->misc->session = G->G->http_sessions[req->cookies->session];
+	req->misc->session = G->G->http_sessions[req->cookies->session];
 	function handler = !has_prefix(req->not_query, "/chan_") && G->G->http_endpoints[req->not_query[1..]];
 	array args = ({ });
 	if (sscanf(req->not_query, "/channels/%[^/]%s", string chan, string no_endpoint) && no_endpoint == "")
@@ -511,25 +511,6 @@ void http_handler(Protocols.HTTP.Server.Request req)
 		//Hack: Redirect /channels/rosuav to /channels/rosuav/
 		req->response_and_finish(redirect(sprintf("/channels/%s/", chan), 301));
 		return;
-	}
-	if (!handler && (handler = sscanf(req->not_query, "/channels/%s/%s", string chan, string endpoint) &&
-		G->G->http_endpoints["chan_" + endpoint]))
-	{
-		object channel = G->G->irc->channels["#" + chan];
-		if (!channel || !channel->config->allcmds)
-		{
-			//TODO: Better handle the quieter channels?
-			req->response_and_finish(([
-				"data": "No such page.\n",
-				"type": "text/plain; charset=\"UTF-8\"",
-				"error": 404,
-			]));
-			//Don't bother reporting these on the console. We know the endpoint is valid.
-			return;
-		}
-		req->misc->channel = channel;
-		req->misc->channel_name = G->G->channel_info[channel->name[1..]]?->display_name || channel->name[1..];
-		req->misc->is_mod = session && session->user && channel->mods[session->user->login];
 	}
 	if (!handler)
 	{
