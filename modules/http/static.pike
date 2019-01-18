@@ -1,8 +1,9 @@
 inherit http_endpoint;
 
 constant http_path_pattern = "/static/%[^/]";
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
+mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string filename)
 {
 	//TODO: Handle static files eg CSS
-	//The pattern's sscanf result will be made available in req->misc somewhere.
+	write("Static file: %O\n", filename);
+	return (["data": "fn: " + filename]);
 }

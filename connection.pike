@@ -504,6 +504,7 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	}
 	mapping session = req->misc->session = G->G->http_sessions[req->cookies->session];
 	function handler = !has_prefix(req->not_query, "/chan_") && G->G->http_endpoints[req->not_query[1..]];
+	array args = ({ });
 	if (sscanf(req->not_query, "/channels/%[^/]%s", string chan, string no_endpoint) && no_endpoint == "")
 	{
 		//Hack: Redirect /channels/rosuav to /channels/rosuav/
@@ -529,9 +530,21 @@ void http_handler(Protocols.HTTP.Server.Request req)
 		req->misc->channel_name = G->G->channel_info[channel->name[1..]]?->display_name || channel->name[1..];
 		req->misc->is_mod = session && session->user && channel->mods[session->user->login];
 	}
+	if (!handler)
+	{
+		//Try all the sscanf-based handlers
+		//TODO: Look these up more efficiently (and deterministically)
+		foreach (G->G->http_endpoints; string pat; function h)
+		{
+			array pieces = array_sscanf(req->not_query, pat);
+			if (!pieces || !sizeof(pieces)) continue;
+			handler = h; args = pieces;
+			break;
+		}
+	}
 	if (handler)
 	{
-		if (mixed ex = catch {if (mapping resp = handler(req)) {req->response_and_finish(resp); return;}})
+		if (mixed ex = catch {if (mapping resp = handler(req, @args)) {req->response_and_finish(resp); return;}})
 		{
 			werror("HTTP handler crash: %O\n", req->not_query);
 			werror(describe_backtrace(ex));
