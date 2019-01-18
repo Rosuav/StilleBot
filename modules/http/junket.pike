@@ -24,7 +24,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			echoable_message response = G->G->echocommands["!follower#" + req->variables->follow];
 			if (!response) continue;
 			if (object chan = G->G->irc->channels["#" + req->variables->follow])
-				chan->wrap_message((["user": follower->from_name]), response);
+				chan->wrap_message(([
+					"user": follower->from_name,
+					"displayname": follower->display_name || follower->from_name
+				]), response);
 		}
 		//werror("Data: %O\n", data);
 		return (["data": "PRAD"]);
