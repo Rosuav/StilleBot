@@ -13,3 +13,5 @@
   - To avoid alert spam, record names until the stream goes offline, even if they
     stop hosting? Or record a timestamp when they disappear?
   - What about autohosts? Want to avoid spam, again, but it can be nice to acknowledge.
+* Pike HTTP, SSL, and keep-alive: what's going on? Is that why Chrome gets confused?
+  - As a shortcut, can I just disable it server-side?
