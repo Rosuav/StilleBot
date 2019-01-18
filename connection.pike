@@ -506,12 +506,6 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	req->misc->session = G->G->http_sessions[req->cookies->session];
 	function handler = !has_prefix(req->not_query, "/chan_") && G->G->http_endpoints[req->not_query[1..]];
 	array args = ({ });
-	if (sscanf(req->not_query, "/channels/%[^/]%s", string chan, string no_endpoint) && no_endpoint == "")
-	{
-		//Hack: Redirect /channels/rosuav to /channels/rosuav/
-		req->response_and_finish(redirect(sprintf("/channels/%s/", chan), 301));
-		return;
-	}
 	if (!handler)
 	{
 		//Try all the sscanf-based handlers
