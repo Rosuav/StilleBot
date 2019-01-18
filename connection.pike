@@ -498,6 +498,7 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	if (string c = req->variables["hub.challenge"])
 	{
 		//It's a hook confirmation from Twitch
+		//TODO: Can this be handled by junket.pike?
 		werror("HTTP - hub.challenge %s\n", req->variables["hub.topic"] || "(??)");
 		req->response_and_finish((["data": c]));
 		return;
