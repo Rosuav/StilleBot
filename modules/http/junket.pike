@@ -26,7 +26,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			if (object chan = G->G->irc->channels["#" + req->variables->follow])
 				chan->wrap_message(([
 					"user": follower->from_name,
-					"displayname": follower->display_name || follower->from_name
+					"displayname": follower->from_name,
 				]), response);
 		}
 		//werror("Data: %O\n", data);
