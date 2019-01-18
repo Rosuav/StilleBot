@@ -16,6 +16,12 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		mapping user = Standards.JSON.decode_utf8(data)->data[0];
 		write("Login: %O\n", user);
 		mapping resp = redirect("/login_ok");
+		object channel = G->G->irc->channels["#" + user->login];
+		if (channel && channel->config->allcmds)
+		{
+			//This is a streamer's login. Redirect to the stream's landing page.
+			resp = redirect("/channels/" + user->login + "/");
+		}
 		string cookie;
 		do {cookie = random(1<<64)->digits(36);} while (G->G->http_sessions[cookie]);
 		write("Cookie: %O\n", cookie);
