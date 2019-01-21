@@ -506,6 +506,7 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	req->misc->session = G->G->http_sessions[req->cookies->session];
 	function handler = !has_prefix(req->not_query, "/chan_") && G->G->http_endpoints[req->not_query[1..]];
 	array args = ({ });
+	mapping resp;
 	if (!handler)
 	{
 		//Try all the sscanf-based handlers
@@ -523,21 +524,25 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	}
 	if (handler)
 	{
-		if (mixed ex = catch {if (mapping resp = handler(req, @args)) {req->response_and_finish(resp); return;}})
+		if (mixed ex = catch {resp = handler(req, @args);})
 		{
 			werror("HTTP handler crash: %O\n", req->not_query);
 			werror(describe_backtrace(ex));
-			req->response_and_finish((["error": 500, "data": "Internal server error\n", "type": "text/plain; charset=\"UTF-8\""]));
-			return;
+			resp = (["error": 500, "data": "Internal server error\n", "type": "text/plain; charset=\"UTF-8\""]);
 		}
 	}
-	werror("HTTP request: %s %O %O\n", req->request_type, req->not_query, req->variables);
-	werror("Headers: %O\n", req->request_headers);
-	req->response_and_finish(([
-		"data": "No such page.\n",
-		"type": "text/plain; charset=\"UTF-8\"",
-		"error": 404,
-	]));
+	if (!resp)
+	{
+		werror("HTTP request: %s %O %O\n", req->request_type, req->not_query, req->variables);
+		werror("Headers: %O\n", req->request_headers);
+		resp = ([
+			"data": "No such page.\n",
+			"type": "text/plain; charset=\"UTF-8\"",
+			"error": 404,
+		]);
+	}
+	//All requests should get to this point with a response.
+	req->response_and_finish(resp);
 }
 
 void create()
