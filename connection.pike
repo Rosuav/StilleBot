@@ -495,14 +495,6 @@ class channel_notif
 
 void http_handler(Protocols.HTTP.Server.Request req)
 {
-	if (string c = req->variables["hub.challenge"])
-	{
-		//It's a hook confirmation from Twitch
-		//TODO: Can this be handled by junket.pike?
-		werror("HTTP - hub.challenge %s\n", req->variables["hub.topic"] || "(??)");
-		req->response_and_finish((["data": c]));
-		return;
-	}
 	req->misc->session = G->G->http_sessions[req->cookies->session];
 	function handler = !has_prefix(req->not_query, "/chan_") && G->G->http_endpoints[req->not_query[1..]];
 	array args = ({ });

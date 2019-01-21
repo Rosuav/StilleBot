@@ -2,6 +2,8 @@ inherit http_endpoint;
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
+	if (string c = req->variables["hub.challenge"]) //Hook confirmation from Twitch
+		return (["data": c]);
 	if (req->body_raw != "" && has_prefix(req->request_headers["content-type"], "application/json"))
 	{
 		object signer = G->G->webhook_signer[req->variables->follow];
