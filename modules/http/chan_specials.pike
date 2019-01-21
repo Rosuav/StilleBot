@@ -16,7 +16,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		else if (!response) commands += ({"<tr><td colspan=4>Not active</td></tr>"});
 		else commands += sprintf("<tr><td colspan=4>Response: <pre>%s</pre></td></tr>", respstr(Array.arrayify(response)[*])[*]);
 	}
-	return render_template("chan_specials.html", ([
+	mapping replacements = ([
 		"channel": req->misc->channel_name, "commands": commands * "\n",
-	]));
+	]);
+	//Double-parse the same way Markdown files are, but without actually using Markdown
+	return render_template("markdown.html", replacements | (["content": render_template("chan_specials.html", replacements)->data]));
 }
