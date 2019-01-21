@@ -542,6 +542,11 @@ void http_handler(Protocols.HTTP.Server.Request req)
 		]);
 	}
 	//All requests should get to this point with a response.
+
+	//As of 20190122, the Pike HTTP server doesn't seem to handle keep-alive.
+	//The simplest fix is to just add "Connection: close" to all responses.
+	if (!resp->extra_heads) resp->extra_heads = ([]);
+	resp->extra_heads->Connection = "close";
 	req->response_and_finish(resp);
 }
 
