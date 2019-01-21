@@ -20,15 +20,11 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	function handler = G->G->http_endpoints["chan_" + endpoint];
 	if (!handler) return (["error": 404]);
 	object channel = G->G->irc->channels["#" + chan];
-	if (!channel || !channel->config->allcmds)
-	{
-		//TODO: Better handle the quieter channels?
-		return ([
-			"data": "No such page.\n",
-			"type": "text/plain; charset=\"UTF-8\"",
-			"error": 404,
-		]);
-	}
+	if (!channel || !channel->config->allcmds) return ([ //TODO: Better handle the quieter channels?
+		"data": "No such page.\n",
+		"type": "text/plain; charset=\"UTF-8\"",
+		"error": 404,
+	]);
 	req->misc->channel = channel;
 	req->misc->channel_name = G->G->channel_info[channel->name[1..]]?->display_name || channel->name[1..];
 	req->misc->is_mod = req->misc->session && req->misc->session->user && channel->mods[req->misc->session->user->login];
