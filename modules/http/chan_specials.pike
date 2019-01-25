@@ -50,6 +50,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mapping replacements = ([
 		"channel": req->misc->channel_name, "commands": commands * "\n",
 		"messages": messages,
+		"save_or_login": req->misc->is_mod ? "<input type=submit value=\"Save all\">" : "<a href=\"/twitchlogin\">Mods, login to make changes</a>",
 	]);
 	//Double-parse the same way Markdown files are, but without actually using Markdown
 	return render_template("markdown.html", replacements | (["content": render_template("chan_specials.html", replacements)->data]));
