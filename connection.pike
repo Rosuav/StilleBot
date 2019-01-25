@@ -445,6 +445,28 @@ class channel_notif
 					]));
 					break;
 				}
+				/* New, first seen 20190125:
+					([
+					  "_type": "USERNOTICE",
+					  "badges": "subscriber/6,bits-leader/2",
+					  "color": "#DAA520",
+					  "display_name": "Axdrian",
+					  "emotes": "",
+					  "flags": "",
+					  "id": "4f05858e-4857-42f8-841e-efe8748845bc",
+					  "login": "axdrian",
+					  "mod": "0",
+					  "msg_id": "bitsbadgetier",
+					  "msg_param_threshold": "1000",
+					  "room_id": "54212603",
+					  "subscriber": "1",
+					  "system_msg": "bits badge tier notification",
+					  "tmi_sent_ts": "1548382102376",
+					  "turbo": "0",
+					  "user_id": "157768357",
+					  "user_type": ""
+					])
+				*/
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
 					params->_type, params->msg_id, name, params, msg);
 			}
