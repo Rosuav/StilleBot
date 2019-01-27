@@ -447,7 +447,7 @@ class channel_notif
 				}
 				case "bitsbadgetier":
 				{
-					trigger_special("!bitsbadge", person, ([
+					trigger_special("!cheerbadge", person, ([
 						"{level}": params->msg_param_threshold,
 					]));
 					break;
