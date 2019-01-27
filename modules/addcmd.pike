@@ -33,6 +33,9 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 -------------|-----------------------------|------------------|-------------
 %{!%s%{ | %s%}
 %}
+
+Editing these special commands can also be done via the bot's web browser
+configuration pages, where available.
 ", (array)SPECIALS);
 string process(object channel, object person, string param)
 {

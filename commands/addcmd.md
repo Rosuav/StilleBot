@@ -30,3 +30,6 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!subgift | Someone gives a sub | The giver | {tier}, {months}, {recipient}
 
 
+Editing these special commands can also be done via the bot's web browser
+configuration pages, where available.
+
