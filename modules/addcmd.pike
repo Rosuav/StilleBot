@@ -7,6 +7,7 @@ constant SPECIALS = ([
 	"!subgift": ({"Someone gives a sub", "The giver", "{tier}, {months}, {recipient}"}),
 	"!subbomb": ({"Someone gives many subgifts", "The giver", "{tier}, {gifts}"}),
 	"!cheer": ({"Any bits are cheered", "The giver", "{bits}"}),
+	"!bitsbadge": ({"A viewer attains a new cheer badge", "The cheerer", "{level} - badge for N bits"}),
 ]);
 constant docstring = sprintf(#"
 Add an echo command for this channel
