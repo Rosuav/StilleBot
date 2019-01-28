@@ -14,4 +14,5 @@
     stop hosting? Or record a timestamp when they disappear?
   - What about autohosts? Want to avoid spam, again, but it can be nice to acknowledge.
 * Pike HTTP, SSL, and keep-alive: what's going on? Is that why Chrome gets confused?
-  - As a shortcut, can I just disable it server-side?
+  - It's currently just disabled - we add "Connection: close" to all responses. Would
+    be nice to figure out what's actually wrong and then reap the performance benefits.
