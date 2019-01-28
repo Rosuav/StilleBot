@@ -22,13 +22,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			//This is a streamer's login. Redirect to the stream's landing page.
 			resp = redirect("/channels/" + user->login + "/");
 		}
-		string cookie;
-		do {cookie = random(1<<64)->digits(36);} while (G->G->http_sessions[cookie]);
-		write("Cookie: %O\n", cookie);
-		resp->extra_heads["Set-Cookie"] = "session=" + cookie;
-		mapping session = G->G->http_sessions[cookie] = (["expires": time() + 86400]);
-		session->user = user;
-		call_out(session_cleanup, 86401);
+		ensure_session(req, resp);
+		req->misc->session->user = user;
 		return resp;
 	}
 	write("Redirecting to Twitch...\n");

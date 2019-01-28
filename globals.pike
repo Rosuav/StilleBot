@@ -290,3 +290,16 @@ void session_cleanup()
 	foreach (sess; string cookie; mapping info)
 		if (info->expires <= limit) m_delete(sess, cookie);
 }
+
+//Make sure we have a session and cookie active. The given response will have
+//a Set-Cookie added if necessary, otherwise no changes are made.
+void ensure_session(Protocols.HTTP.Server.Request req, mapping(string:mixed) resp)
+{
+	if (req->misc->session) return 0;
+	string cookie;
+	do {cookie = random(1<<64)->digits(36);} while (G->G->http_sessions[cookie]);
+	req->misc->session = G->G->http_sessions[cookie] = (["expires": time() + 86400]);
+	if (!resp->extra_heads) resp->extra_heads = ([]);
+	resp->extra_heads["Set-Cookie"] = "session=" + cookie;
+	call_out(session_cleanup, 86401); //TODO: Don't have too many of these queued.
+}
