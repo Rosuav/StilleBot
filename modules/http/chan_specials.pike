@@ -37,7 +37,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				respstr(Array.arrayify(response||"")[*])[*]);
 		}
 		else if (!response) commands += ({"<tr><td colspan=4>Not active</td></tr>"});
-		else commands += sprintf("<tr><td colspan=4>Response: <pre>%s</pre></td></tr>", respstr(Array.arrayify(response)[*])[*]);
+		else commands += sprintf("<tr><td colspan=4>Response: <code>%s</code></td></tr>", respstr(Array.arrayify(response)[*])[*]);
 	}
 	string messages = "";
 	if (sizeof(updates))
