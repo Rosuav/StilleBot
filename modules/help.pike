@@ -62,6 +62,9 @@ echoable_message process(object channel, mapping person, string param)
 	cmds["currency"] = 0;
 	string cur = channel->config->currency;
 	if (cur && cur != "") cmds[cur] = 1;
+	string local_info = "";
+	if (string addr = persist_config["ircsettings"]->http_address)
+		local_info = " You can also view further information about this specific channel at " + addr + "/channels/" + channel->name[1..];
 	return ({"@$$: Available commands are: " + ("!"+sort(indices(cmds))[*]) * " ",
-		"For additional information, see https://rosuav.github.io/StilleBot/commands/"});
+		"For additional information, see https://rosuav.github.io/StilleBot/commands/" + local_info});
 }
