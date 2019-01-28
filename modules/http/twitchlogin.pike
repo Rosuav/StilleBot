@@ -15,17 +15,25 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		]));
 		mapping user = Standards.JSON.decode_utf8(data)->data[0];
 		write("Login: %O\n", user);
-		mapping resp = redirect("/login_ok");
-		object channel = G->G->irc->channels["#" + user->login];
-		if (channel && channel->config->allcmds)
+		string dest = m_delete(req->misc->session, "redirect_after_login");
+		if (!dest)
 		{
-			//This is a streamer's login. Redirect to the stream's landing page.
-			resp = redirect("/channels/" + user->login + "/");
+			//If no destination was given, try to figure out a plausible default.
+			//For streamers, redirect to the stream's landing page. Doesn't work
+			//for mods, as we have no easy way to check which channel(s).
+			object channel = G->G->irc->channels["#" + user->login];
+			if (channel && channel->config->allcmds)
+				dest = "/channels/" + user->login + "/";
+			else dest = "/login_ok";
 		}
+		mapping resp = redirect(dest);
 		ensure_session(req, resp);
 		req->misc->session->user = user;
 		return resp;
 	}
 	write("Redirecting to Twitch...\n");
-	return redirect(auth->get_auth_uri());
+	mapping resp = redirect(auth->get_auth_uri());
+	ensure_session(req, resp);
+	req->misc->session->redirect_after_login = req->variables->next;
+	return resp;
 }
