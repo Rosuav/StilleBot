@@ -9,7 +9,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	{
 		string cmdname = spec + req->misc->channel->name;
 		mixed response = G->G->echocommands[cmdname];
-		commands += ({sprintf("<tr><td>!%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", spec, desc, originator, params)});
+		commands += ({sprintf("<tr class=gap></tr><tr><td>!%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", spec, desc, originator, params)});
 		if (req->misc->is_mod)
 		{
 			if (string text = req->request_type == "POST" && req->variables[spec[1..]])
@@ -32,12 +32,12 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				}
 			}
 			commands += sprintf(
-				"<tr><td colspan=4>Response: <input name=%s value=\"%s\" size=100></td></tr>",
+				"<tr><td colspan=4>Response:<span class=gap></span><input name=%s value=\"%s\" size=100></td></tr>",
 				spec[1..],
 				respstr(Array.arrayify(response||"")[*])[*]);
 		}
 		else if (!response) commands += ({"<tr><td colspan=4>Not active</td></tr>"});
-		else commands += sprintf("<tr><td colspan=4>Response: <code>%s</code></td></tr>", respstr(Array.arrayify(response)[*])[*]);
+		else commands += sprintf("<tr><td colspan=4>Response:<span class=gap></span><code>%s</code></td></tr>", respstr(Array.arrayify(response)[*])[*]);
 	}
 	string messages = "";
 	if (sizeof(updates))
