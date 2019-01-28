@@ -34,6 +34,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	write("Redirecting to Twitch...\n");
 	mapping resp = redirect(auth->get_auth_uri());
 	ensure_session(req, resp);
+	//TODO: Sanitize or whitelist-check the destination
 	req->misc->session->redirect_after_login = req->variables->next;
 	return resp;
 }
