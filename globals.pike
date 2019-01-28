@@ -240,20 +240,20 @@ class http_endpoint
 mapping(string:mixed) render_template(string template, mapping(string:string) replacements)
 {
 	string content = utf8_to_string(Stdio.read_file("templates/" + template));
-	if (!content) error("Unable to load templates/" + template);
+	if (!content) error("Unable to load templates/" + template + "\n");
 	array pieces = content / "$$";
-	if (!(sizeof(pieces) & 1)) error("Mismatched $$ in templates/" + template);
+	if (!(sizeof(pieces) & 1)) error("Mismatched $$ in templates/" + template + "\n");
 	for (int i = 1; i < sizeof(pieces); i += 2)
 	{
 		string token = pieces[i];
 		if (token == "") {pieces[i] = "$$"; continue;} //Escape a $$ by doubling it ($$$$)
 		if (sizeof(token) > 80 || has_value(token, ' ')) //TODO: Check more reliably for it being a 'token'
-			error("Invalid token name %O in templates/%s - possible mismatched marker",
+			error("Invalid token name %O in templates/%s - possible mismatched marker\n",
 				"$$" + token[..80] + "$$", template);
 		int trim_before = has_prefix(token, ">");
 		int trim_after  = has_suffix(token, "<");
 		token = token[trim_before..<trim_after];
-		if (!replacements[token]) error("Token %O not found in templates/%s", "$$" + token + "$$", template);
+		if (!replacements[token]) error("Token %O not found in templates/%s\n", "$$" + token + "$$", template);
 		pieces[i] = replacements[token];
 		if (pieces[i] == "")
 		{
