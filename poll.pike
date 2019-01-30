@@ -31,7 +31,7 @@ class get_channel_info(string name, function callback)
 	void got_data(string data)
 	{
 		mapping info = Standards.JSON.decode(data);
-		if (info->status == 404) {callback(0, @cbargs); return;} //Probably a dud channel name
+		if (info->status == 404) {if (callback) callback(0, @cbargs); return;} //Probably a dud channel name
 		//sscanf(info->_links->self, "https://api.twitch.tv/kraken/channels/%s", string gotname);
 		//if (gotname != name) assert_fail;
 		if (!G->G->channel_info[name]) G->G->channel_info[name] = info;
