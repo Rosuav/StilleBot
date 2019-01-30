@@ -185,7 +185,7 @@ void webhooks(string resp)
 		int time_left = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", hook->expires_at)->unix_time() - time();
 		if (time_left < 300) continue;
 		sscanf(hook->callback, "http%*[s]://%*s/junket?%s=%s", string type, string channel);
-		if (type == "follow") watching[channel] = 1;
+		if (type == "follow" && G->G->webhook_signer[channel]) watching[channel] = 1;
 	}
 	//write("Already got webhooks for %s\n", indices(watching) * ", ");
 	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
