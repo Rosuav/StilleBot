@@ -1,8 +1,12 @@
 # Repeated commands for $$channel$$
 
-Frequency | Command | Output
-----------|---------|--------
+$$messages$$
+
+Frequency | Command | Output |
+----------|---------|--------|-
 $$repeats$$
+
+$$save_or_login$$
 
 Create new autocommands with [!repeat](https://rosuav.github.io/StilleBot/commands/repeat)
 and remove them with [!unrepeat](https://rosuav.github.io/StilleBot/commands/repeat).
