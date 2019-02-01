@@ -23,7 +23,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			else if (mappingp(cmd)) output = cmd->message;
 			else if (arrayp(cmd)) output = cmd * " "; //TODO: Handle array of mappings
 			else output = "(unknown/variable)";
-			repeats += ({sprintf("%d mins | %s | %s", mins, msg, user(output))});
+			repeats += ({sprintf("%d mins | %s | %s", mins, user(msg), user(output))});
 		}
 		//Arbitrary echoed text, no associated command
 		else repeats += ({sprintf("%d mins |- | %s", mins, user(msg))});
