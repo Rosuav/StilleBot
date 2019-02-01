@@ -19,7 +19,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			string output;
 			echoable_message cmd = G->G->echocommands[msg[1..] + req->misc->channel->name];
 			if (undefinedp(cmd)) output = "(command not found)";
-			else if (stringp(cmd)) output = cmd; //Easy - outputs one command.
+			else if (stringp(cmd)) output = cmd; //Easy - outputs one message.
 			else if (mappingp(cmd)) output = cmd->message;
 			else if (arrayp(cmd)) output = cmd * " "; //TODO: Handle array of mappings
 			else output = "(unknown/variable)";
