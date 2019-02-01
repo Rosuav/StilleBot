@@ -17,3 +17,4 @@
   - It's currently just disabled - we add "Connection: close" to all responses. Would
     be nice to figure out what's actually wrong and then reap the performance benefits.
 * Add a Logout link (to /logout) to all pages when you're logged in
+* Go through all the web config pages and add user() to any user-defined text
