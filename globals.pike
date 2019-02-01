@@ -237,6 +237,39 @@ class http_endpoint
 	}
 }
 
+class _Markdown
+{
+	//We can't just inherit Tools.Markdown.Renderer as it's protected
+	//(or at least, it is in 8.1 as of 20190201). So we inherit the
+	//entire module and make our own small tweaks.
+	inherit Tools.Markdown;
+	class AltRenderer
+	{
+		inherit Renderer;
+		//Put borders on all tables
+		string table(string header, string body)
+		{
+			return replace(::table(header, body), "<table>", "<table border>");
+		}
+		//Allow cell spanning by putting just a hyphen in a cell (it will
+		//be joined to the NEXT cell, not the preceding one)
+		int spancount = 0;
+		string tablecell(string cell, mapping flags)
+		{
+			if (String.trim(cell) == "-") {++spancount; return "";} //A cell with just a hyphen will not be rendered, and the next cell spans.
+			string html = ::tablecell(cell, flags);
+			if (!spancount) return html;
+			string colspan = " colspan=" + (spancount + 1);
+			spancount = 0;
+			//Insert the colspan just before the first ">"
+			array parts = html / ">";
+			parts[0] += colspan;
+			return parts * ">";
+		}
+	}
+}
+program _AltRenderer = _Markdown()->AltRenderer;
+
 mapping(string:mixed) render_template(string template, mapping(string:string) replacements)
 {
 	string content = utf8_to_string(Stdio.read_file("templates/" + template));
@@ -263,7 +296,8 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 	}
 	content = pieces * "";
 	//TODO maybe: Subclass Tools.Markdown.Renderer and add support for other things, eg colspan cells in tables
-	if (has_suffix(template, ".md")) return render_template("markdown.html", replacements | (["content": Tools.Markdown.parse(content)]));
+	if (has_suffix(template, ".md"))
+		return render_template("markdown.html", replacements | (["content": Tools.Markdown.parse(content, (["renderer": _AltRenderer]))]));
 	return ([
 		"data": string_to_utf8(content),
 		"type": "text/html; charset=\"UTF-8\"",
