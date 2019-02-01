@@ -237,6 +237,21 @@ class http_endpoint
 	}
 }
 
+class user_text
+{
+	/* Instantiate one of these, then call it with any user-defined text
+	(untrusted text) to be inserted into the output. Render whatever it
+	gives back. Then, provide this as the "user text" option (yes, with
+	the space) to render_template, and the texts will be safely inserted
+	into the resulting output file. */
+	array texts = ({ });
+	string `()(string text)
+	{
+		texts += ({text});
+		return sprintf("\uFFFA%d\uFFFB", sizeof(texts) - 1);
+	}
+}
+
 class _Markdown
 {
 	//We can't just inherit Tools.Markdown.Renderer as it's protected
@@ -265,6 +280,19 @@ class _Markdown
 			array parts = html / ">";
 			parts[0] += colspan;
 			return parts * ">";
+		}
+		//Interpolate magic markers
+		string text(string t)
+		{
+			if (!options->user_text) return t;
+			array texts = options->user_text->texts;
+			string output = "";
+			while (sscanf(t, "%s\uFFFA%d\uFFFB%s", string before, int idx, string after))
+			{
+				output += before + encode_html(texts[idx]);
+				t = after;
+			}
+			return output + t;
 		}
 	}
 }
@@ -297,7 +325,9 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 	content = pieces * "";
 	//TODO maybe: Subclass Tools.Markdown.Renderer and add support for other things, eg colspan cells in tables
 	if (has_suffix(template, ".md"))
-		return render_template("markdown.html", replacements | (["content": Tools.Markdown.parse(content, (["renderer": _AltRenderer]))]));
+		return render_template("markdown.html", replacements | (["content":
+			Tools.Markdown.parse(content, (["renderer": _AltRenderer, "user_text": replacements["user text"]]))
+		]));
 	return ([
 		"data": string_to_utf8(content),
 		"type": "text/html; charset=\"UTF-8\"",
