@@ -1,5 +1,7 @@
 # Repeated commands for $$channel$$
 
+Frequency | Command | Output
+----------|---------|--------
 $$repeats$$
 
 Create new autocommands with [!repeat](https://rosuav.github.io/StilleBot/commands/repeat)
