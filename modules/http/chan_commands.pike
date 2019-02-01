@@ -9,6 +9,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	foreach (G->G->echocommands; string cmd; echoable_message response) if (!has_prefix(cmd, "!") && has_suffix(cmd, c))
 	{
 		cmd -= c;
+		//TODO: Cope with backticks in responses (or, technically, command names)
 		if (arrayp(response)) commands += ({sprintf("`!%s` | `%s`", cmd, respstr(response[*]) * "`<br>`")});
 		else commands += ({sprintf("`!%s` | `%s`", cmd, respstr(response))});
 	}
