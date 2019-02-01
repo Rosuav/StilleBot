@@ -88,7 +88,7 @@ echoable_message process(object channel, object person, string param)
 
 echoable_message unrepeat(object channel, object person, string param)
 {
-	return process(channel, person, "-1 " + param);
+	return check_perms(channel, person, "-1 " + param);
 }
 
 int connected(string channel)
