@@ -7,6 +7,21 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mapping ac = req->misc->channel->config->autocommands;
 	array repeats = ({ }), messages = ({ });
 	object user = user_text();
+	if (req->misc->is_mod)
+	{
+		if (req->request_type == "POST" && req->variables->add)
+		{
+			int mins = (int)req->variables->mins;
+			string msg = req->variables->command || "";
+			if (!mins) messages += ({"* Must provide a repetition frequency (in minutes)"});
+			else if (mins < 5) messages += ({"* Repetition frequency must be at least 5 minutes"});
+			else if (msg == "") messages += ({"* Need a command to repeat"});
+			else messages += ({"* " + G->G->commands->repeat(req->misc->channel, (["user": req->misc->session->user->login]), sprintf("%d %s", mins, msg))});
+		}
+		//NOTE: If this is not at the top, pressing Enter in the form will click the wrong
+		//submit button and will delete the first autocommand. Not good.
+		repeats += ({"<input name=mins type=number min=5 max=1440> mins | - | <input name=command size=50> | <input type=submit name=add value=\"Add new\">"});
+	}
 	foreach (ac || ({ }); string msg; int mins)
 	{
 		string delete = "";
@@ -43,7 +58,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			repeats += ({sprintf("%d mins | %s | %s%s", mins, user(msg), user(output), delete)});
 		}
 		//Arbitrary echoed text, no associated command
-		else repeats += ({sprintf("%d mins |- | %s%s", mins, user(msg), delete)});
+		else repeats += ({sprintf("%d mins | - | %s%s", mins, user(msg), delete)});
 	}
 	if (!sizeof(repeats)) repeats = ({"- | - | (none)"});
 	return render_template("chan_repeats.md", ([
@@ -51,8 +66,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"channel": req->misc->channel_name,
 		"repeats": repeats * "\n",
 		"messages": messages * "\n",
-		"save_or_login": req->misc->is_mod ?
-			"<input type=submit value=\"Save all\">" :
+		"login": req->misc->is_mod ? "" :
 			"<a href=\"/twitchlogin?next=" + req->not_query + "\">Mods, login to make changes</a>",
 	]));
 }
