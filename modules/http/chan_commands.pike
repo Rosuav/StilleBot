@@ -40,6 +40,14 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				{
 					string resp = req->variables[sprintf("%s!%d", cmd, i)];
 					if (!resp) break;
+					//TODO: Allow response flags to be set (making the resp into a
+					//mapping). As of 20190205, the only flag that would be useful
+					//is 'dest', which could be set to a variety of handy values -
+					//"/w $$" to whisper to the person who sent the command, or an
+					//explicit "/w somename" to send the whisper elsewhere. One
+					//command might need to have multiple distinct responses, eg a
+					//quick "got it" to the channel, and a more detailed whisper to
+					//the person who's managing this (maybe for entering a contest).
 					if (i >= sizeof(response)) response += ({""});
 					if (respstr(response[i]) != resp)
 					{
