@@ -323,7 +323,6 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 		}
 	}
 	content = pieces * "";
-	//TODO maybe: Subclass Tools.Markdown.Renderer and add support for other things, eg colspan cells in tables
 	if (has_suffix(template, ".md"))
 		return render_template("markdown.html", replacements | (["content":
 			Tools.Markdown.parse(content, (["renderer": _AltRenderer, "user_text": replacements["user text"]]))
