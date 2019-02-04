@@ -30,12 +30,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			if (req->request_type == "POST" && req->variables["delete" + msg] == "Delete")
 			{
 				//TODO: Should it confirm before deleting?
-				//As with specials: TODO: Dedup
-				m_delete(ac, msg);
-				if (mixed id = m_delete(G->G->autocommands, req->misc->channel->name + " " + msg))
-					remove_call_out(id);
-				persist_config->save();
-				messages += ({"* Removed repeated command: " + user(msg)});
+				messages += ({"* " + G->G->commands->repeat(req->misc->channel, (["user": req->misc->session->user->login]), "-1 " + msg)});
 				continue;
 			}
 			//Add a Delete button to the end of each row
