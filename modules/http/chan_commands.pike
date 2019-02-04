@@ -83,7 +83,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (req->misc->is_mod) commands += ({"Add: <input name=newcmd_name size=10 placeholder=\"!hype\"> | <input name=newcmd_resp size=200>"});
 	if (changes_made)
 	{
-		//Once again, TODO: Dedup
+		//Once again, TODO: Dedup. Or migrate these into persist_config??
 		string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 		Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
 	}
