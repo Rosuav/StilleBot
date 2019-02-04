@@ -3,8 +3,8 @@ constant require_moderator = 1;
 constant SPECIALS = ([
 	"!follower": ({"Someone follows the channel", "The new follower", ""}),
 	"!sub": ({"Brand new subscription", "The subscriber", "{tier} (1, 2, or 3)"}),
-	"!resub": ({"Resub is announced", "The subscriber", "{tier}, {months}"}),
-	"!subgift": ({"Someone gives a sub", "The giver", "{tier}, {months}, {recipient}"}),
+	"!resub": ({"Resub is announced", "The subscriber", "{tier}, {months}, {streak}"}),
+	"!subgift": ({"Someone gives a sub", "The giver", "{tier}, {months}, {streak}, {recipient}"}),
 	"!subbomb": ({"Someone gives many subgifts", "The giver", "{tier}, {gifts}"}),
 	"!cheer": ({"Any bits are cheered", "The giver", "{bits}"}),
 	"!cheerbadge": ({"A viewer attains a new cheer badge", "The cheerer", "{level} - badge for N bits"}),

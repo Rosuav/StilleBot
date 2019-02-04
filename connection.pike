@@ -415,7 +415,8 @@ class channel_notif
 				case "sub": trigger_special("!sub", person, (["{tier}": params->msg_param_sub_plan[0]])); break;
 				case "resub": trigger_special("!resub", person, ([
 					"{tier}": params->msg_param_sub_plan[0],
-					"{months}": params->msg_param_months,
+					"{months}": params->msg_param_cumulative_months,
+					"{streak}": params->msg_param_streak_months || "",
 				]));
 				break;
 				case "giftpaidupgrade": break; //Pledging to continue a subscription (first introduced for the Subtember special in 2018, and undocumented)
@@ -426,7 +427,8 @@ class channel_notif
 						params->msg_param_months, params->msg_param_recipient_display_name);
 					trigger_special("!subgift", person, ([
 						"{tier}": params->msg_param_sub_plan[0],
-						"{months}": params->msg_param_months,
+						"{months}": params->msg_param_cumulative_months,
+						"{streak}": params->msg_param_streak_months || "",
 						"{recipient}": params->msg_param_recipient_display_name,
 					]));
 					//Other params: login, user_id, msg_param_recipient_user_name, msg_param_recipient_id,
