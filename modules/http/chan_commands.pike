@@ -47,9 +47,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 						response[i] = resp; //NOTE: This will currently lose any mapping flags.
 					}
 				}
+				response -= ({""});
 				if (edited)
 				{
-					response -= ({""});
 					changes_made = 1;
 					if (!sizeof(response))
 					{
@@ -67,7 +67,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			foreach (Array.arrayify(response); int i; string|mapping resp)
 				inputs += sprintf("<br><input name=\"%s!%d\" value=\"%s\" size=200>",
 					usercmd, i, Parser.encode_html_entities(respstr(resp)));
-			commands += ({sprintf("<code>!%s</code> | %s", usercmd, inputs[4..])});
+			commands += ({sprintf("<code>!%s</code> | %s<button type=button name=\"%[0]s!%d\" title=\"Add another line\">+</button>",
+				usercmd, inputs[4..], arrayp(response) ? sizeof(response) : 1)});
 		}
 		else
 		{

@@ -12,3 +12,15 @@ Command | Output |
 $$commands$$
 
 $$save_or_login$$
+
+<script>
+document.querySelectorAll("button").forEach(btn => btn.onclick = e => {
+	const inp = document.createElement("input");
+	inp.name = e.currentTarget.name;
+	inp.size = 200;
+	const parent = e.currentTarget.parentElement;
+	parent.removeChild(e.currentTarget);
+	parent.appendChild(document.createElement("br"));
+	parent.appendChild(inp);
+});
+</script>
