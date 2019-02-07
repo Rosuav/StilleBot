@@ -489,6 +489,7 @@ class channel_notif
 		log("%sMode %s: %s %O\e[0m\n",color,name,who->nick,mode);
 	}
 
+	//Requires a UTF-8 encoded byte string (not Unicode text). May contain colour codes.
 	void log(strict_sprintf_format fmt, sprintf_args ... args)
 	{
 		if (config->chatlog) write(fmt, @args);
