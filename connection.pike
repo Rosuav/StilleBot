@@ -472,7 +472,8 @@ class channel_notif
 				#else
 				int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
 				#endif
-				if (person->badges?->_mod) msg = string_to_utf8("\u2694 ") + msg;
+				if (person->badges?->_mod) msg = "\u2694 " + msg;
+				msg = string_to_utf8(msg);
 				log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
 				if (params->bits && (int)params->bits)
 					trigger_special("!cheer", person, (["{bits}": params->bits]));
@@ -490,7 +491,7 @@ class channel_notif
 
 	void log(strict_sprintf_format fmt, sprintf_args ... args)
 	{
-		if (config->chatlog) write(string_to_utf8(sprintf(fmt, @args)));
+		if (config->chatlog) write(fmt, @args);
 	}
 
 	void trigger_special(string special, mapping person, mapping info)
