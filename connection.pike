@@ -490,7 +490,7 @@ class channel_notif
 
 	void log(strict_sprintf_format fmt, sprintf_args ... args)
 	{
-		if (config->chatlog) write(fmt, @args);
+		if (config->chatlog) write(string_to_utf8(sprintf(fmt, @args)));
 	}
 
 	void trigger_special(string special, mapping person, mapping info)
