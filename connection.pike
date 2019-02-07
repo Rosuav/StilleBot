@@ -403,6 +403,7 @@ class channel_notif
 				}
 				break;
 				case "slow_on": case "slow_off": break; //Channel is now/no longer in slow mode
+				case "emote_only_on": case "emote_only_off": break; //Channel is now/no longer in emote-only mode
 				case "msg_duplicate": case "msg_slowmode": case "msg_timedout": case "msg_banned":
 					/* Last message wasn't sent, for some reason. There seems to be no additional info in the tags.
 					- Your message was not sent because it is identical to the previous one you sent, less than 30 seconds ago.
