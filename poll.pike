@@ -79,6 +79,45 @@ void streaminfo(string data)
 		stream_status(chan, channels[chan]);
 }
 
+int fetching_game_names = 0;
+void gamenames(string data)
+{
+	mapping info; catch {info = Standards.JSON.decode(data);}; //Some error returns aren't even JSON
+	if (!info || info->error) return; //Ignore the 503s and stuff that come back.
+	foreach (info->data, mapping game) G->G->category_names[game->id] = game->name;
+	write("Fetched %d games, total %d\n", sizeof(info->data), sizeof(G->G->category_names));
+	if (!info->pagination || !info->pagination->cursor) {fetching_game_names = 0; write("-- Done!\n");}
+	else call_out(cache_game_names, 2, info->pagination->cursor);
+}
+void cache_game_names(string pag) {make_request("https://api.twitch.tv/helix/games/top?first=100&after=" + pag, gamenames);}
+
+//Attempt to construct a channel info mapping from the stream info
+//May use other caches of information. If unable to build the full
+//channel info, returns 0 (recommendation: fetch info via Kraken).
+mapping build_channel_info(mapping stream)
+{
+	mapping ret = ([]);
+	ret->game_id = stream->game_id;
+	if (!(ret->game = G->G->category_names[stream->game_id]))
+	{
+		if (!fetching_game_names)
+		{
+			G->G->category_names = ([]);
+			fetching_game_names = 1;
+			cache_game_names("");
+		}
+		return 0;
+	}
+	//TODO: ret->mature, if possible
+	ret->display_name = stream->user_name; //TODO: Check if this is login or display name
+	ret->url = "https://www.twitch.tv/" + lower_case(stream->user_name); //See why?
+	ret->status = stream->title;
+	ret->_id = ret->user_id = stream->user_id;
+	ret->_raw = stream; //Avoid using this except for testing
+	//Add anything else here that might be of interest
+	return ret;
+}
+
 //Receive stream status, either polled or by notification
 void stream_status(string name, mapping info)
 {
@@ -123,10 +162,13 @@ void stream_status(string name, mapping info)
 	}
 	else
 	{
-		//TODO: Make it so we don't need to do this all the time
-		//This may mean gathering info in other ways, and it may
-		//mean using less info elsewhere.
-		get_channel_info(name, 0);
+		//Attempt to gather channel info from the stream info. If we
+		//can't, we'll get that info via Kraken.
+		string last_title = G->G->channel_info[name]?->status; //hack
+		mapping synthesized = build_channel_info(info);
+		if (synthesized) G->G->channel_info[name] = synthesized;
+		else get_channel_info(name, 0);
+		if (synthesized?->status != last_title) write("Old title: %O\nNew title: %O\n", last_title, synthesized?->status); //hack
 		//TODO: Report when the game changes?
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->started_at);
 		if (!G->G->stream_online_since[name])
@@ -291,6 +333,7 @@ void create()
 {
 	if (!G->G->stream_online_since) G->G->stream_online_since = ([]);
 	if (!G->G->channel_info) G->G->channel_info = ([]);
+	if (!G->G->category_names) G->G->category_names = ([]);
 	remove_call_out(G->G->poll_call_out);
 	poll();
 	add_constant("get_channel_info", get_channel_info);
