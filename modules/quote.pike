@@ -37,7 +37,8 @@ echoable_message process(object channel, object person, string param)
 	if (param == "")
 	{
 		if (!sizeof(quotes)) return "@$$: No quotes recorded.";
-		if (!chaninfo->mature)
+		//CJA 20190215: The Mature flag isn't coming through with the new API. :(
+		/*if (!chaninfo->mature)
 		{
 			//Pick a random non-mature quote, if available.
 			array(int) safequotes = ({ });
@@ -46,7 +47,7 @@ echoable_message process(object channel, object person, string param)
 			if (!sizeof(safequotes)) return "@$$: All this channel's quotes are for mature audiences, sorry!";
 			idx = random(safequotes) + 1;
 		}
-		else idx = random(sizeof(quotes)) + 1;
+		else */idx = random(sizeof(quotes)) + 1;
 	}
 	else if (idx <= 0 || idx > sizeof(quotes)) return "@$$: No such quote.";
 	mapping quote = quotes[idx-1];
