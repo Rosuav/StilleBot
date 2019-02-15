@@ -36,6 +36,13 @@ class get_channel_info(string name, function callback)
 		//if (gotname != name) assert_fail;
 		if (!G->G->channel_info[name]) G->G->channel_info[name] = info;
 		if (callback) callback(info, @cbargs);
+		/* Things we make use of:
+		 * game => category
+		 * mature => boolean, true if has click-through warning
+		 * display_name => preferred way to show the channel name
+		 * url => just "https://www.twitch.tv/"+name if we want to hack it
+		 * status => stream title
+		 */
 	}
 }
 
