@@ -18,3 +18,9 @@
     be nice to figure out what's actually wrong and then reap the performance benefits.
 * Add a Logout link (to /logout) to all pages when you're logged in
 * Go through all the web config pages and add user() to any user-defined text
+* Polling:
+  - Get more webhooks that give instant notification
+  - Use the same functions for webhooks as for polling
+    - ergo, use Helix for polling, not Kraken
+  - Ensure that the hook lookup will find everything (see TODO in code)
+  - Make sure all callers are happy with the Helix-provided info format

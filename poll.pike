@@ -184,7 +184,7 @@ void confirm_webhook() {/* There's no data or anything, so nothing to do */}
 
 void webhooks(string resp)
 {
-	//NOTE: Does not paginate. If we have more than 100 webhooks, some will be lost.
+	//TODO: Paginate properly. If we have more than 100 webhooks, some will be lost.
 	mixed data = Standards.JSON.decode_utf8(resp); if (!mappingp(data)) return;
 	multiset(string) watching = (<>);
 	foreach (data->data, mapping hook)
