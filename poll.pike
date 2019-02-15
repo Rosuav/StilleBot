@@ -109,8 +109,8 @@ mapping build_channel_info(mapping stream)
 		return 0;
 	}
 	//TODO: ret->mature, if possible
-	ret->display_name = stream->user_name; //TODO: Check if this is login or display name
-	ret->url = "https://www.twitch.tv/" + lower_case(stream->user_name); //See why?
+	ret->display_name = stream->user_name;
+	ret->url = "https://www.twitch.tv/" + lower_case(stream->user_name); //TODO: Get the actual login, which may be different
 	ret->status = stream->title;
 	ret->_id = ret->user_id = stream->user_id;
 	ret->_raw = stream; //Avoid using this except for testing
