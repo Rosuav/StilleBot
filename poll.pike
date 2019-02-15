@@ -238,11 +238,32 @@ class check_following(string user, string chan, function|void callback)
 
 void confirm_webhook() {/* There's no data or anything, so nothing to do */}
 
+void create_webhook(string callback, string topic, string secret)
+{
+	Protocols.HTTP.do_async_method("POST", "https://api.twitch.tv/helix/webhooks/hub", 0,
+		([
+			"Content-Type": "application/json",
+			"Client-Id": persist_config["ircsettings"]["clientid"],
+		]),
+		Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, confirm_webhook),
+		string_to_utf8(Standards.JSON.encode(([
+			"hub.callback": sprintf("%s/junket?%s",
+				persist_config["ircsettings"]["http_address"],
+				callback,
+			),
+			"hub.mode": "subscribe",
+			"hub.topic": topic,
+			"hub.lease_seconds": 864000,
+			"hub.secret": secret,
+		]))),
+	);
+}
+
 void webhooks(string resp)
 {
 	//TODO: Paginate properly. If we have more than 100 webhooks, some will be lost.
 	mixed data = Standards.JSON.decode_utf8(resp); if (!mappingp(data)) return;
-	multiset(string) follows = (<>);
+	multiset(string) follows = (<>), status = (<>);
 	foreach (data->data, mapping hook)
 	{
 		int time_left = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", hook->expires_at)->unix_time() - time();
@@ -250,36 +271,23 @@ void webhooks(string resp)
 		sscanf(hook->callback, "http%*[s]://%*s/junket?%s=%s", string type, string channel);
 		if (!G->G->webhook_signer[channel]) continue; //Probably means the bot's been restarted
 		if (type == "follow") follows[channel] = 1;
+		if (type == "status") status[channel] = 1;
 	}
 	//write("Already got webhooks for %s\n", indices(watching) * ", ");
 	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
 	foreach (persist_config["channels"] || ([]); string chan; mapping cfg)
 	{
-		if (follows[chan]) continue; //Already got a hook
+		if (follows[chan] /*&& status[chan]*/) continue; //Already got all hooks
 		if (!cfg->allcmds) continue; //Show only for channels we're fully active in
 		mapping c = G->G->channel_info[chan];
 		int userid = c && c->_id; //For some reason, ?-> is misparsing the data type (???)
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses !whisper.)
 		string secret = MIME.encode_base64(random_string(15));
 		G->G->webhook_signer[chan] = Crypto.SHA256.HMAC(secret);
-		write("Creating webhook for %s\n", chan);
-		Protocols.HTTP.do_async_method("POST", "https://api.twitch.tv/helix/webhooks/hub", 0,
-			([
-				"Content-Type": "application/json",
-				"Client-Id": persist_config["ircsettings"]["clientid"],
-			]),
-			Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, confirm_webhook),
-			string_to_utf8(Standards.JSON.encode(([
-				"hub.callback": sprintf("%s/junket?follow=%s",
-					persist_config["ircsettings"]["http_address"],
-					chan,
-				),
-				"hub.mode": "subscribe",
-				"hub.topic": "https://api.twitch.tv/helix/users/follows?first=1&to_id=" + userid,
-				"hub.lease_seconds": 864000,
-				"hub.secret": secret,
-			]))),
-		);
+		write("Creating webhooks for %s\n", chan);
+		create_webhook("follow=" + chan, "https://api.twitch.tv/helix/users/follows?first=1&to_id=" + userid, secret);
+		//Not currently using this hook. It doesn't actually give us any benefit!
+		//create_webhook("status=" + chan, "https://api.twitch.tv/helix/streams?user_id=" + userid, secret);
 	}
 }
 
@@ -340,6 +348,7 @@ void create()
 	add_constant("get_channel_info", get_channel_info);
 	add_constant("check_following", check_following);
 	add_constant("get_video_info", get_video_info);
+	add_constant("stream_status", stream_status);
 }
 
 #if !constant(G)
