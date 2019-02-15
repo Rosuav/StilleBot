@@ -6,12 +6,13 @@
 void data_available(object q, function cbdata) {cbdata(q->unicode_data());}
 void request_ok(object q, function cbdata) {q->async_fetch(data_available, cbdata);}
 void request_fail(object q) { } //If a poll request fails, just ignore it and let the next poll pick it up.
-void make_request(string url, function cbdata, int|void v5)
+void make_request(string url, function cbdata, int|void which_api) //which_api: 0=v3, 1=v5, 2=Helix
 {
 	sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
 	mapping headers = ([]);
-	if (v5) headers["Accept"] = "application/vnd.twitchtv.v5+json";
+	if (which_api == 1) headers["Accept"] = "application/vnd.twitchtv.v5+json";
 	if (pass) headers["Authorization"] = "OAuth " + pass;
+	//TODO: Use bearer auth where appropriate (is it exclusively when which_api==2?)
 	if (string c=persist_config["ircsettings"]["clientid"])
 		//Some requests require a Client ID. Not sure which or why.
 		headers["Client-ID"] = c;
