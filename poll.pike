@@ -43,6 +43,7 @@ class get_channel_info(string name, function callback)
 		 * display_name => preferred way to show the channel name
 		 * url => just "https://www.twitch.tv/"+name if we want to hack it
 		 * status => stream title
+		 * _id => numeric user ID
 		 */
 	}
 }
@@ -69,8 +70,19 @@ void streaminfo(string data)
 {
 	mapping info; catch {info = Standards.JSON.decode(data);}; //Some error returns aren't even JSON
 	if (!info || info->error) return; //Ignore the 503s and stuff that come back.
-	sscanf(info->_links->self, "https://api.twitch.tv/kraken/streams/%s", string name);
-	if (!info->stream)
+	//First, quickly remap the array into a lookup mapping
+	//This helps us ensure that we look up those we care about, and no others.
+	mapping channels = ([]);
+	foreach (info->data, mapping chan) channels[lower_case(chan->user_name)] = chan; //TODO: Figure out if user_name is login or display name
+	//Now we check over our own list of channels. Anything absent is assumed offline.
+	foreach (indices(persist_config["channels"]), string chan)
+		stream_status(chan, channels[chan]);
+}
+
+//Receive stream status, either polled or by notification
+void stream_status(string name, mapping info)
+{
+	if (!info)
 	{
 		if (!G->G->channel_info[name])
 		{
@@ -111,9 +123,12 @@ void streaminfo(string data)
 	}
 	else
 	{
+		//TODO: Make it so we don't need to do this all the time
+		//This may mean gathering info in other ways, and it may
+		//mean using less info elsewhere.
+		get_channel_info(name, 0);
 		//TODO: Report when the game changes?
-		G->G->channel_info[name] = info->stream->channel; //Take advantage of what we're given and update our cache with a single request
-		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->stream->created_at);
+		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->started_at);
 		if (!G->G->stream_online_since[name])
 		{
 			//Is there a cleaner way to say "convert to local time"?
@@ -124,7 +139,7 @@ void streaminfo(string data)
 			runhooks("channel-online", 0, name);
 		}
 		G->G->stream_online_since[name] = started;
-		int viewers = info->stream->viewers;
+		int viewers = info->viewer_count;
 		//Calculate half-hour rolling average, and then do stats on that
 		//Record each stream's highest and lowest half-hour average, and maybe the overall average (not the average of the averages)
 		//To maybe do: Offer a graph showing the channel's progress. Probably now done better by
@@ -143,8 +158,6 @@ void streaminfo(string data)
 			else vstat->low_half_hour = min(vstat->low_half_hour, avg);
 		}
 	}
-	//write("%O\n", G->G->stream_online_since);
-	//write("%s: %O\n", name, info->stream);
 }
 
 class check_following(string user, string chan, function|void callback)
@@ -258,9 +271,14 @@ void get_lookup_token()
 void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //TODO: Make the poll interval customizable
-	foreach (indices(persist_config["channels"] || ({ })), string chan)
-		make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo);
-	if (!sizeof(persist_config["channels"])) return; //Don't check webhooks when there'll be nothing to check
+	array chan = indices(persist_config["channels"] || ({ }));
+	if (!sizeof(chan)) return; //Nothing to check.
+	//Note: There's a slight TOCTOU here - the list of channel names will be
+	//re-checked from persist_config when the response comes in. If there are
+	//channels that we get info for and don't need, ignore them; if there are
+	//some that we wanted but didn't get, we'll just think they're offline
+	//until the next poll.
+	make_request(sprintf("https://api.twitch.tv/helix/streams?%{user_login=%s&%}", chan), streaminfo);
 	string addr = persist_config["ircsettings"]["http_address"];
 	if (addr && addr != "")
 	{
