@@ -54,6 +54,7 @@ class get_video_info(string name, function callback)
 	void create(mixed ... cbargs)
 	{
 		this->cbargs = cbargs;
+		//Can't replace this with Helix as there's no video formats/resolutions info in Helix
 		make_request("https://api.twitch.tv/kraken/channels/" + name + "/videos?broadcast_type=archive&limit=1", got_data);
 	}
 
@@ -204,6 +205,7 @@ void stream_status(string name, mapping info)
 
 class check_following(string user, string chan, function|void callback)
 {
+	//TODO: Switch to Helix - https://api.twitch.tv/helix/users/follows?from_id=<user ID>&to_id=<user ID>
 	array cbargs;
 	void create(mixed ... cbargs)
 	{
