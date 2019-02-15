@@ -242,19 +242,20 @@ void webhooks(string resp)
 {
 	//TODO: Paginate properly. If we have more than 100 webhooks, some will be lost.
 	mixed data = Standards.JSON.decode_utf8(resp); if (!mappingp(data)) return;
-	multiset(string) watching = (<>);
+	multiset(string) follows = (<>);
 	foreach (data->data, mapping hook)
 	{
 		int time_left = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", hook->expires_at)->unix_time() - time();
 		if (time_left < 300) continue;
 		sscanf(hook->callback, "http%*[s]://%*s/junket?%s=%s", string type, string channel);
-		if (type == "follow" && G->G->webhook_signer[channel]) watching[channel] = 1;
+		if (!G->G->webhook_signer[channel]) continue; //Probably means the bot's been restarted
+		if (type == "follow") follows[channel] = 1;
 	}
 	//write("Already got webhooks for %s\n", indices(watching) * ", ");
 	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
 	foreach (persist_config["channels"] || ([]); string chan; mapping cfg)
 	{
-		if (watching[chan]) continue; //Already got a hook
+		if (follows[chan]) continue; //Already got a hook
 		if (!cfg->allcmds) continue; //Show only for channels we're fully active in
 		mapping c = G->G->channel_info[chan];
 		int userid = c && c->_id; //For some reason, ?-> is misparsing the data type (???)
