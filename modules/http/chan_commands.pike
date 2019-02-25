@@ -5,16 +5,16 @@ string respstr(mapping|string resp) {return stringp(resp) ? resp : resp->message
 constant MAX_RESPONSES = 10; //Ridiculously large? Probably.
 
 constant TEMPLATES = ({
-	"!discord Join my Discord server: https://discord.gg/YOUR_URL_HERE",
-	"!shop stephe21LOOT Get some phat lewt at https://www.redbubble.com/people/YOUR_REDBUBBLE_NAME/portfolio iimdprLoot",
-	"!twitter Follow my Twitter for updates, notifications, and other whatever-it-is-I-post: https://twitter.com/YOUR_TWITTER_NAME",
+	"!discord | Join my Discord server: https://discord.gg/YOUR_URL_HERE",
+	"!shop | stephe21LOOT Get some phat lewt at https://www.redbubble.com/people/YOUR_REDBUBBLE_NAME/portfolio iimdprLoot",
+	"!twitter | Follow my Twitter for updates, notifications, and other whatever-it-is-I-post: https://twitter.com/YOUR_TWITTER_NAME",
 
-	"!love rosuavLove maayaHeart fxnLove devicatLOVE devicatHUG laracrG noobsLove stephe21Heart ladydr1Teamluv ladydr1HoG ladydr1Rainbow",
-	"!hype maayaHype devicatHYPU noobsHype maayaHype devicatHYPU noobsHype maayaHype devicatHYPU noobsHype",
-	"!hug /me devicatHUG $$ warmly hugs %s maayaHug",
-	"!lurk $$ drops into the realm of lurkdom devicatLURK",
-	"!unlurk $$ returns from the realm of lurk devicatLURK",
-	"!raid Let's go raiding! Copy and paste this raid call: \"/me twitchRaid YOUR RAID CALL HERE twitchRaid \" and be ready when I host our target!",
+	"!love | rosuavLove maayaHeart fxnLove devicatLOVE devicatHUG laracrG noobsLove stephe21Heart ladydr1Teamluv ladydr1HoG ladydr1Rainbow",
+	"!hype | maayaHype devicatHYPU noobsHype maayaHype devicatHYPU noobsHype maayaHype devicatHYPU noobsHype",
+	"!hug | /me devicatHUG $$ warmly hugs %s maayaHug",
+	"!lurk | $$ drops into the realm of lurkdom devicatLURK",
+	"!unlurk | $$ returns from the realm of lurk devicatLURK",
+	"!raid | Let's go raiding! Copy and paste this raid call: \"/me twitchRaid YOUR RAID CALL HERE twitchRaid \" and be ready when I host our target!",
 });
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
@@ -112,9 +112,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"user text": user,
 		"channel": req->misc->channel_name, "commands": commands * "\n",
 		"messages": messages * "\n",
-		"templates": Standards.JSON.encode(TEMPLATES),
+		"templates": TEMPLATES * "\n",
 		"save_or_login": req->misc->is_mod ?
-			"<input type=submit value=\"Save all\">" :
+			"<p><a href=\"#examples\" id=examples>Example and template commands</a></p><input type=submit value=\"Save all\">" :
 			"<a href=\"/twitchlogin?next=" + req->not_query + "\">Mods, login to make changes</a>",
 	]));
 }

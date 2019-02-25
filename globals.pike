@@ -294,6 +294,17 @@ class _Markdown
 			}
 			return output + t;
 		}
+		//Allow a blockquote to become a dialog
+		string blockquote(string text)
+		{
+			if (sscanf(text, "<p>dialog%[^\n<]</p>%s", string attr, string t) && t)
+			{
+				//It's a block quote that starts "> dialog" or "> dialog x=y a=b"
+				//Turn it into a <dialog> tag instead of <blockquote>.
+				return sprintf("<dialog%s>%s</dialog>", attr, t);
+			}
+			return sprintf("<blockquote>%s</blockquote>", text);
+		}
 	}
 }
 program _AltRenderer = _Markdown()->AltRenderer;
