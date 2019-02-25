@@ -17,6 +17,8 @@ reconfiguration easy, as the autocommand is simple and easy to type.
 
 Example: `!repeat 60 !uptime` - show the channel's live time roughly every hour
 
+Example: `!repeat 30-60 !twitter` - show your Twitter link every 45 minutes, ish
+
 ---
 
 Usage: `!unrepeat text-to-send` or `!unrepeat !command`

@@ -24,6 +24,3 @@
     - ergo, use Helix for polling, not Kraken
   - Ensure that the hook lookup will find everything (see TODO in code)
   - Make sure all callers are happy with the Helix-provided info format
-* Autocommands: have both minimum and maximum repeat periods (eg "15 to 45 mins")
-  - Currently it has a single repeat period, with 15 implying "14 to 16 mins".
-  - UI: If either field is left blank, duplicate the other

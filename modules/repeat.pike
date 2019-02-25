@@ -18,6 +18,8 @@ reconfiguration easy, as the autocommand is simple and easy to type.
 
 Example: `!repeat 60 !uptime` - show the channel's live time roughly every hour
 
+Example: `!repeat 30-60 !twitter` - show your Twitter link every 45 minutes, ish
+
 ---
 
 Usage: `!unrepeat text-to-send` or `!unrepeat !command`
@@ -34,6 +36,7 @@ automated echoing will happen only while the stream is live.
 int seconds(int|array mins)
 {
 	if (!arrayp(mins)) mins = ({mins-1, mins+1});
+	write("Triggering repeat after %d-%d mins\n", @mins);
 	return mins[0] * 60 + random((mins[1]-mins[0]) * 60);
 }
 void autospam(string channel, string msg)
@@ -69,12 +72,15 @@ echoable_message process(object channel, object person, string param)
 		//Or link to the web info if there's a server running.
 		return "(unimpl)";
 	}
-	sscanf(param, "%d %s", int mins, string msg);
-	if (!mins || !msg) return "Check https://rosuav.github.io/StilleBot/commands/repeat for usage information.";
+	int|array(int) mins = ({0, 0});
+	sscanf(param, "%d-%d %s", mins[0], mins[1], string msg);
+	if (!msg && sscanf(param, "%d %s", int m, msg)) mins = ({m-1, m+1});
+	if (!mins[0] || !msg) return "Check https://rosuav.github.io/StilleBot/commands/repeat for usage information.";
 	mapping ac = channel->config->autocommands;
 	if (!ac) ac = channel->config->autocommands = ([]);
 	string key = channel->name + " " + msg;
-	if (mins == -1)
+	write("%O %O\n", mins, msg);
+	if (mins[0] < 0)
 	{
 		//Normally spelled "!unrepeat some-message" but you can do it
 		//as "!repeat -1 some-message" if you really want to
@@ -84,10 +90,11 @@ echoable_message process(object channel, object person, string param)
 		persist_config->save();
 		return "Repeated command disabled.";
 	}
-	if (mins < 5) return "Minimum five-minute repeat cycle. You should probably keep to a minimum of 20 mins.";
+	if (mins[0] < 5) return "Minimum five-minute repeat cycle. You should probably keep to a minimum of 20 mins.";
+	if (mins[1] < mins[0]) return "Maximum period must be at least the minimum period.";
 	if (mixed id = m_delete(G->G->autocommands, key))
 		remove_call_out(id);
-	ac[msg] = mins; //TODO
+	ac[msg] = mins;
 	G->G->autocommands[key] = call_out(autospam, seconds(mins), channel->name, msg);
 	persist_config->save();
 	return "Added to the repetition table.";
