@@ -22,8 +22,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//submit button and will delete the first autocommand. Not good.
 		repeats += ({"<input name=mins type=number min=5 max=1440> mins | - | <input name=command size=50> | <input type=submit name=add value=\"Add new\">"});
 	}
-	foreach (ac || ({ }); string msg; int mins)
+	foreach (ac || ({ }); string msg; int|array(int) mins)
 	{
+		if (!arrayp(mins)) mins = ({mins-1, mins+1});
 		string delete = "";
 		if (req->misc->is_mod)
 		{
@@ -50,10 +51,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			else if (mappingp(cmd)) output = cmd->message;
 			else if (arrayp(cmd)) output = cmd * " "; //TODO: Handle array of mappings
 			else output = "(unknown/variable)";
-			repeats += ({sprintf("%d mins | %s | %s%s", mins, user(msg), user(output), delete)});
+			repeats += ({sprintf("%d mins | %s | %s%s", (mins[0]+mins[1])/2, user(msg), user(output), delete)});
 		}
 		//Arbitrary echoed text, no associated command
-		else repeats += ({sprintf("%d mins | - | %s%s", mins, user(msg), delete)});
+		else repeats += ({sprintf("%d mins | - | %s%s", (mins[0]+mins[1])/2, user(msg), delete)});
 	}
 	if (!sizeof(repeats)) repeats = ({"- | - | (none)"});
 	return render_template("chan_repeats.md", ([

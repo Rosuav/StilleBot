@@ -29,6 +29,13 @@ Both of these commands can be used while the channel is offline, but the
 automated echoing will happen only while the stream is live.
 ";
 
+//Convert a number of minutes into a somewhat randomized number of seconds
+//Assumes a span of +/- 1 minute if not explicitly given
+int seconds(int|array mins)
+{
+	if (!arrayp(mins)) mins = ({mins-1, mins+1});
+	return mins[0] * 60 + random((mins[1]-mins[0]) * 60);
+}
 void autospam(string channel, string msg)
 {
 	if (function f = bounce(this_function)) return f(channel, msg);
@@ -39,10 +46,10 @@ void autospam(string channel, string msg)
 	if (!G->G->stream_online_since[channel[1..]]) return;
 	mapping cfg = persist_config["channels"][channel[1..]];
 	if (!cfg) return; //Channel no longer configured
-	int mins = cfg->autocommands[msg];
+	int|array(int) mins = cfg->autocommands[msg];
 	if (!mins) return; //Autocommand disabled
 	string key = channel + " " + msg;
-	G->G->autocommands[key] = call_out(autospam, mins * 60 - 60 + random(120), channel, msg); //plus or minus a minute
+	G->G->autocommands[key] = call_out(autospam, seconds(mins), channel, msg);
 	if (has_prefix(msg, "!"))
 	{
 		//If a command is given, pretend the bot typed it, and process as normal.
@@ -80,8 +87,8 @@ echoable_message process(object channel, object person, string param)
 	if (mins < 5) return "Minimum five-minute repeat cycle. You should probably keep to a minimum of 20 mins.";
 	if (mixed id = m_delete(G->G->autocommands, key))
 		remove_call_out(id);
-	ac[msg] = mins;
-	G->G->autocommands[key] = call_out(autospam, mins * 60, channel->name, msg);
+	ac[msg] = mins; //TODO
+	G->G->autocommands[key] = call_out(autospam, seconds(mins), channel->name, msg);
 	persist_config->save();
 	return "Added to the repetition table.";
 }
@@ -95,12 +102,12 @@ int connected(string channel)
 {
 	mapping ac = persist_config["channels"][channel]->autocommands;
 	if (!ac) return 0;
-	foreach (ac; string msg; int mins)
+	foreach (ac; string msg; int|array(int) mins)
 	{
 		string key = "#" + channel + " " + msg;
 		mixed id = G->G->autocommands[key];
 		if (!id || undefinedp(find_call_out(id)))
-			G->G->autocommands[key] = call_out(autospam, mins * 60 - 60 + random(120), "#" + channel, msg);
+			G->G->autocommands[key] = call_out(autospam, seconds(mins), "#" + channel, msg);
 	}
 }
 
@@ -125,7 +132,7 @@ void create(string name)
 	register_hook("channel-online", connected);
 	register_bouncer(autospam);
 	if (!G->G->autocommands) G->G->autocommands = ([]);
-	else check_autocommands();
+	check_autocommands();
 	G->G->commands["unrepeat"] = unrepeat;
 	::create(name);
 }
