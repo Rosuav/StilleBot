@@ -14,6 +14,7 @@ $$commands$$
 $$save_or_login$$
 
 <script>
+const templates = $$templates$$;
 document.querySelectorAll("button").forEach(btn => btn.onclick = e => {
 	const inp = document.createElement("input");
 	inp.name = e.currentTarget.name;
