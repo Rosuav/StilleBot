@@ -19,7 +19,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (string c = req->variables["hub.challenge"]) //Hook confirmation from Twitch
 		return (["data": c]);
-	write("Got junket: %O\n", req->variables);
+	//write("Got junket: %O\n", req->variables);
 	if (req->body_raw != "" && has_prefix(req->request_headers["content-type"], "application/json"))
 	{
 		object signer = G->G->webhook_signer[req->variables->follow || req->variables->status];
