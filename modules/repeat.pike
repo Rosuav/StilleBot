@@ -36,7 +36,6 @@ automated echoing will happen only while the stream is live.
 int seconds(int|array mins)
 {
 	if (!arrayp(mins)) mins = ({mins-1, mins+1});
-	write("Triggering repeat after %d-%d mins\n", @mins);
 	return mins[0] * 60 + random((mins[1]-mins[0]) * 60);
 }
 void autospam(string channel, string msg)
@@ -79,7 +78,6 @@ echoable_message process(object channel, object person, string param)
 	mapping ac = channel->config->autocommands;
 	if (!ac) ac = channel->config->autocommands = ([]);
 	string key = channel->name + " " + msg;
-	write("%O %O\n", mins, msg);
 	if (mins[0] < 0)
 	{
 		//Normally spelled "!unrepeat some-message" but you can do it
