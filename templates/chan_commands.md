@@ -32,6 +32,9 @@ document.querySelectorAll("button").forEach(btn => btn.onclick = e => {
 	parent.appendChild(document.createElement("br"));
 	parent.appendChild(inp);
 });
+//Will bomb when not logged in. This isn't a problem other than that it's noisy
+//on the console. TODO: Remove most of this code so it doesn't even need to be
+//downloaded to non-authenticated users.
 document.getElementById("examples").onclick = e => {
 	e.preventDefault();
 	document.getElementById("templates").showModal();
