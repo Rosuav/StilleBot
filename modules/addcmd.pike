@@ -6,7 +6,7 @@ constant SPECIALS = ([
 	"!resub": ({"Resub is announced", "The subscriber", "{tier}, {months}, {streak}"}),
 	"!subgift": ({"Someone gives a sub", "The giver", "{tier}, {months}, {streak}, {recipient}"}),
 	"!subbomb": ({"Someone gives many subgifts", "The giver", "{tier}, {gifts}"}),
-	"!cheer": ({"Any bits are cheered", "The giver", "{bits}"}),
+	"!cheer": ({"Any bits are cheered (including anonymously)", "The giver", "{bits}"}),
 	"!cheerbadge": ({"A viewer attains a new cheer badge", "The cheerer", "{level} - badge for N bits"}),
 ]);
 constant docstring = sprintf(#"

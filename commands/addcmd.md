@@ -23,7 +23,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 -------------|-----------------------------|------------------|-------------
 !!subbomb | Someone gives many subgifts | The giver | {tier}, {gifts}
 !!follower | Someone follows the channel | The new follower | 
-!!cheer | Any bits are cheered | The giver | {bits}
+!!cheer | Any bits are cheered (including anonymously) | The giver | {bits}
 !!sub | Brand new subscription | The subscriber | {tier} (1, 2, or 3)
 !!cheerbadge | A viewer attains a new cheer badge | The cheerer | {level} - badge for N bits
 !!resub | Resub is announced | The subscriber | {tier}, {months}, {streak}
