@@ -466,6 +466,8 @@ class channel_notif
 				if (person->badges) mods[person->user] = person->badges->_mod;
 				wrap_message(person, handle_command(person, msg), defaultdest);
 				if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->displayname+" "+slashme;
+				//For some reason, whispers show up with "/me" at the start, not "ACTION".
+				else if (sscanf(msg, "/me %s", string slashme)) msg = person->displayname+" "+slashme;
 				else msg = person->displayname+": "+msg;
 				string pfx=sprintf("[%s] ", name);
 				#ifdef __NT__
