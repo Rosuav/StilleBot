@@ -20,7 +20,7 @@ string process(object channel, object person, string param)
 	mapping chaninfo = G->G->channel_info[channel->name[1..]];
 	if (!chaninfo) return "@$$: Internal error - no channel info"; //I'm pretty sure this shouldn't happen
 	//If you type "!addquote personname text", transform it.
-	if (sscanf(param, "%s %s", string who, string what) && what)
+	if (sscanf(param, "%*[@]%s %s", string who, string what) && what)
 	{
 		if (lower_case(who) == channel->name[1..] || channel->viewers[lower_case(who)])
 		{
