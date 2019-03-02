@@ -1,0 +1,70 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Test</title>
+</head>
+<body>
+
+<div id="yt"></div>
+<script async src="https://www.youtube.com/iframe_api"></script>
+<p><button type=button id=sync>Synchronize</button></p>
+<script>
+let yt;
+const more = ["ikIXmUUumjg", "kZrNHq0NmRk", "B7xai5u_tnk"];
+function onYouTubeIframeAPIReady() {
+	yt = new YT.Player("yt", {width: 640, height: 390,
+		videoId: "A67ZkAd1wmI",
+		events: {
+			onReady: yt_ready,
+			onStateChange: yt_state_changed,
+		},
+	});
+}
+function yt_ready(event) {
+	console.log("READY", event);
+	event.target.playVideo();
+}
+
+function yt_state_changed(event) {
+	console.log("STATE", ["unstarted", "ended", "playing", "paused", "buffering", "cued"][event.data + 1]);
+	if (event.data == 0 && more.length) event.target.loadVideoById(more.pop());
+}
+
+const fn = "song-sync";
+const is_master = window.location.hash != "#slave"; //Slaves will never respond to ping.
+var socket;
+var synctime, syncnonce;
+function socksend(data) {
+	socket.send(JSON.stringify(data));
+}
+function connect()
+{
+	socket = new WebSocket("ws://gideon.rosuav.com:8000/ws");
+	socket.onopen = () => {
+		console.log("Socket connection established.");
+		socksend({cmd: "mpn", fn});
+	};
+	socket.onclose = () => {
+		console.log("Socket connection lost.");
+		setTimeout(connect, 250);
+	};
+	socket.onmessage = (ev) => {
+		let data = JSON.parse(ev.data);
+		console.log(data.body);
+		if (!data.body) return; //Server acknowledgement of our message
+		const ping = is_master && /^ping (0\.[0-9]+)$/.exec(data.body);
+		if (ping) {socksend({cmd: "mpn", fn, "content": "pong " + ping[1] + " " + yt.getCurrentTime()}); return;}
+		const pong = /^pong (0\.[0-9]+) ([0-9.]+)$/.exec(data.body);
+		if (pong && pong[1] === syncnonce) console.log("PONG!", (+new Date)-synctime, pong);
+	};
+}
+connect();
+
+document.getElementById("sync").onclick = e => {
+	console.log(yt.getCurrentTime());
+	synctime = +new Date; syncnonce = "" + Math.random();
+	socksend({cmd: "mpn", fn, content: "ping " + syncnonce});
+};
+</script>
+</body>
+</html>
