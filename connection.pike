@@ -561,12 +561,23 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 	if (function f = bounce(this_function)) {f(frm, conn); return;}
 	mixed data;
 	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
+	if (!stringp(data->cmd)) return;
+	mapping reply;
+	switch (data->cmd)
+	{
+		case "init": break;
+		case "ping": reply = (["cmd": "ping"]); break;
+		case "pong": reply = (["cmd": "pong", "pos": data->pos]); break;
+		default: break;
+	}
+	if (reply) (G->G->websockets[conn->channel] - ({conn->sock}))->send_text(Standards.JSON.encode(reply));
 	write("Message: %O\n", data);
 }
 
 void ws_close(int reason, mapping conn)
 {
 	if (function f = bounce(this_function)) {f(reason, conn); return;}
+	G->G->websockets[conn->channel] -= ({conn->sock});
 	m_delete(conn, "sock"); //De-floop
 }
 
@@ -579,15 +590,18 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 		return;
 	}
 	Protocols.WebSocket.Connection sock = req->websocket_accept(0);
-	sock->set_id((["sock": sock])); //Minstrel Hall style floop
+	string chan = "(sole)"; //TODO: Key clients to their channels somehow
+	sock->set_id((["sock": sock, "channel": chan])); //Minstrel Hall style floop
 	sock->onmessage = ws_msg;
 	sock->onclose = ws_close;
+	G->G->websockets[chan] += ({sock});
 	write("Conn: %O\n", sock);
 }
 
 void create()
 {
 	if (!G->G->channelcolor) G->G->channelcolor = ([]);
+	if (!G->G->websockets) G->G->websockets = ([]);
 	irc = G->G->irc;
 	//if (!irc) //HACK: Force reconnection every time
 		reconnect();

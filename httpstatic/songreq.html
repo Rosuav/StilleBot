@@ -30,10 +30,8 @@ function yt_state_changed(event) {
 	if (event.data == 0 && more.length) event.target.loadVideoById(more.pop());
 }
 
-const fn = "song-sync";
 const is_master = window.location.hash != "#slave"; //Slaves will never respond to ping.
-var socket;
-var synctime, syncnonce;
+let socket, synctime;
 function socksend(data) {
 	socket.send(JSON.stringify(data));
 }
@@ -43,7 +41,7 @@ function connect()
 	socket = new WebSocket(protocol + window.location.host + "/ws");
 	socket.onopen = () => {
 		console.log("Socket connection established.");
-		socksend({cmd: "mpn", fn});
+		socksend({cmd: "init"}); //TODO: Somehow recognize who you're songreq'ing for
 	};
 	socket.onclose = () => {
 		console.log("Socket connection lost.");
@@ -51,20 +49,27 @@ function connect()
 	};
 	socket.onmessage = (ev) => {
 		let data = JSON.parse(ev.data);
-		console.log(data.body);
-		if (!data.body) return; //Server acknowledgement of our message
-		const ping = is_master && /^ping (0\.[0-9]+)$/.exec(data.body);
-		if (ping) {socksend({cmd: "mpn", fn, "content": "pong " + ping[1] + " " + yt.getCurrentTime()}); return;}
-		const pong = /^pong (0\.[0-9]+) ([0-9.]+)$/.exec(data.body);
-		if (pong && pong[1] === syncnonce) console.log("PONG!", (+new Date)-synctime, pong);
+		if (is_master && data.cmd === "ping") {socksend({cmd: "pong", "pos": yt.getCurrentTime()}); return;}
+		if (data.cmd === "pong")
+		{
+			const uncertainty = (+new Date)-synctime; //Buh bye Heisenberg
+			console.log("PONG!", uncertainty, data.pos);
+			//We assume here that the uncertainty (measured in ms) is split
+			//evenly between the outbound and return journeys. That means
+			//the correct playback location here is half the uncertainty
+			//further forward than the other end's location as of when it
+			//was sent. (Since the position is measured in seconds, divide
+			//also by a thousand for unit conversion.)
+			yt.seekTo(data.pos + uncertainty/2000, true);
+		}
 	};
 }
 connect();
 
 document.getElementById("sync").onclick = e => {
 	console.log(yt.getCurrentTime());
-	synctime = +new Date; syncnonce = "" + Math.random();
-	socksend({cmd: "mpn", fn, content: "ping " + syncnonce});
+	synctime = +new Date;
+	socksend({cmd: "ping"});
 };
 </script>
 </body>
