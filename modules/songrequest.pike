@@ -28,6 +28,19 @@ who's followed/subbed); channel currency cost, which could be different
 for different people ("subscribers can request songs for free"); and
 maybe even outright bannings ("FredTheTroll did nothing but rickroll us,
 so he's not allowed to request songs any more").
+
+TODO: Allow browser-based song requests rather than VLC-based.
+- Don't download all the content. Just use youtube-dl --get-filename,
+  which should be sufficient to get basic metadata (length, track name)
+  and then feed the YT ID to all connected websockets for this channel.
+- The websocket connections will need to specify a channel
+- If the user is allowed to control playback that way, there'll need to
+  be authentication on the web end - tie in with /twitchlogin, but maybe
+  require that it be the streamer specifically? Or make the URL include
+  the channel name (/rosuav/songreq and /rosuav/songqueue)? It might be
+  cleanest to let mods control it same as the streamer does.
+- Make sure there are no global (non-per-channel) statuses that would be
+  broken by this. It's okay to assume max of one VLC player though.
 */
 
 Stdio.File nullfile()
