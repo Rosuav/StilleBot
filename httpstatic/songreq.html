@@ -10,7 +10,7 @@
 <p><button type=button id=sync>Synchronize</button></p>
 <script>
 let yt;
-const more = ["ikIXmUUumjg", "kZrNHq0NmRk", "B7xai5u_tnk"];
+const more = ["ikIXmUUumjg", "kZrNHq0NmRk", "B7xai5u_tnk", "KR-eV7fHNbM"];
 function onYouTubeIframeAPIReady() {
 	yt = new YT.Player("yt", {width: 640, height: 390,
 		videoId: "A67ZkAd1wmI",
@@ -37,9 +37,10 @@ var synctime, syncnonce;
 function socksend(data) {
 	socket.send(JSON.stringify(data));
 }
+const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 function connect()
 {
-	socket = new WebSocket("ws://gideon.rosuav.com:8000/ws");
+	socket = new WebSocket(protocol + window.location.host + "/ws");
 	socket.onopen = () => {
 		console.log("Socket connection established.");
 		socksend({cmd: "mpn", fn});

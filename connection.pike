@@ -556,12 +556,42 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	req->response_and_finish(resp);
 }
 
+void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
+{
+	if (function f = bounce(this_function)) {f(frm, conn); return;}
+	mixed data;
+	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
+	write("Message: %O\n", data);
+}
+
+void ws_close(int reason, mapping conn)
+{
+	if (function f = bounce(this_function)) {f(reason, conn); return;}
+	m_delete(conn, "sock"); //De-floop
+}
+
+void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
+{
+	if (function f = bounce(this_function)) {f(proto, req); return;}
+	if (req->not_query != "/ws")
+	{
+		req->response_and_finish((["error": 404, "type": "text/plain", "data": "Not found"]));
+		return;
+	}
+	Protocols.WebSocket.Connection sock = req->websocket_accept(0);
+	sock->set_id((["sock": sock])); //Minstrel Hall style floop
+	sock->onmessage = ws_msg;
+	sock->onclose = ws_close;
+	write("Conn: %O\n", sock);
+}
+
 void create()
 {
 	if (!G->G->channelcolor) G->G->channelcolor = ([]);
 	irc = G->G->irc;
 	//if (!irc) //HACK: Force reconnection every time
 		reconnect();
+	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
 	if (mapping irc = persist_config["ircsettings"])
 	{
 		bot_nick = persist_config["ircsettings"]->nick || "";
@@ -583,7 +613,7 @@ void create()
 			}
 
 			if (G->G->httpserver) G->G->httpserver->callback = http_handler;
-			else if (!use_https) G->G->httpserver = Protocols.HTTP.Server.Port(http_handler, listen_port, listen_addr);
+			else if (!use_https) G->G->httpserver = Protocols.WebSocket.Port(http_handler, ws_handler, listen_port, listen_addr);
 			else
 			{
 				string cert = Stdio.read_file("certificate.pem"),
@@ -593,7 +623,7 @@ void create()
 				//If we don't have a valid PK and cert(s), Pike will autogenerate a cert.
 				//TODO: Save the cert? That way, the self-signed could be pinned
 				//permanently. Currently it'll be regenned each startup.
-				G->G->httpserver = Protocols.HTTP.Server.SSLPort(http_handler, listen_port, listen_addr, pk, certs);
+				G->G->httpserver = Protocols.WebSocket.SSLPort(http_handler, ws_handler, listen_port, listen_addr, pk, certs);
 			}
 		}
 	}
