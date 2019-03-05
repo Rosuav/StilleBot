@@ -267,6 +267,7 @@ void webhooks(string resp)
 	//TODO: Paginate properly. If we have more than 100 webhooks, some will be lost.
 	mixed data = Standards.JSON.decode_utf8(resp); if (!mappingp(data)) return;
 	multiset(string) follows = (<>), status = (<>);
+	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
 	foreach (data->data, mapping hook)
 	{
 		int time_left = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", hook->expires_at)->unix_time() - time();
@@ -277,7 +278,6 @@ void webhooks(string resp)
 		if (type == "status") status[channel] = 1;
 	}
 	//write("Already got webhooks for %s\n", indices(watching) * ", ");
-	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
 	foreach (persist_config["channels"] || ([]); string chan; mapping cfg)
 	{
 		if (follows[chan] /*&& status[chan]*/) continue; //Already got all hooks
