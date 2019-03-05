@@ -101,8 +101,9 @@ mapping build_channel_info(mapping stream)
 	ret->game_id = stream->game_id;
 	if (!(ret->game = G->G->category_names[stream->game_id]))
 	{
-		if (!fetching_game_names)
+		if (stream->game_id != "0" && !fetching_game_names)
 		{
+			write("Fetching games because no idea what game %O is\n", stream->game_id);
 			G->G->category_names = ([]);
 			fetching_game_names = 1;
 			cache_game_names("");
