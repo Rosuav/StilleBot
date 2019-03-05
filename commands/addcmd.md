@@ -21,13 +21,13 @@ certain events. The special action must be one of the following:
 
 Special name | When it happens             | Initiator (`$$`) | Other info
 -------------|-----------------------------|------------------|-------------
-!!subbomb | Someone gives many subgifts | The giver | {tier}, {gifts}
+!!cheerbadge | A viewer attains a new cheer badge | The cheerer | {level} - badge for N bits
 !!follower | Someone follows the channel | The new follower | 
+!!subgift | Someone gives a sub | The giver | {tier}, {months}, {streak}, {recipient}
+!!subbomb | Someone gives many subgifts | The giver | {tier}, {gifts}
+!!resub | Resub is announced | The subscriber | {tier}, {months}, {streak}
 !!cheer | Any bits are cheered (including anonymously) | The giver | {bits}
 !!sub | Brand new subscription | The subscriber | {tier} (1, 2, or 3)
-!!cheerbadge | A viewer attains a new cheer badge | The cheerer | {level} - badge for N bits
-!!resub | Resub is announced | The subscriber | {tier}, {months}, {streak}
-!!subgift | Someone gives a sub | The giver | {tier}, {months}, {streak}, {recipient}
 
 
 Editing these special commands can also be done via the bot's web browser
