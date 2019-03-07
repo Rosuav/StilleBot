@@ -25,8 +25,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	int changes_made = 0;
 	if (req->misc->is_mod && req->request_type == "POST")
 	{
-		string name = lower_case(req->variables->newcmd_name || "") - "!";
-		string resp = req->variables->newcmd_resp || "";
+		string name = String.trim(lower_case(req->variables->newcmd_name || "") - "!");
+		string resp = String.trim(req->variables->newcmd_resp || "");
 		if (name != "" && resp != "")
 		{
 			changes_made = 1;
