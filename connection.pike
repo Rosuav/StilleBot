@@ -428,7 +428,7 @@ class channel_notif
 						params->msg_param_months, params->msg_param_recipient_display_name);
 					trigger_special("!subgift", person, ([
 						"{tier}": params->msg_param_sub_plan[0],
-						"{months}": params->msg_param_cumulative_months,
+						"{months}": params->msg_param_cumulative_months || params->msg_param_months || "1",
 						"{streak}": params->msg_param_streak_months || "",
 						"{recipient}": params->msg_param_recipient_display_name,
 					]));
