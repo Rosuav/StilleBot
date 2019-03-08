@@ -10,10 +10,10 @@
 <p><button type=button id=sync>Synchronize</button></p>
 <script>
 let yt;
-const more = ["ikIXmUUumjg", "kZrNHq0NmRk", "B7xai5u_tnk", "KR-eV7fHNbM"];
+const more = ["ikIXmUUumjg", "kZrNHq0NmRk", "B7xai5u_tnk", "KR-eV7fHNbM", "A67ZkAd1wmI"]; //last plays first
 function onYouTubeIframeAPIReady() {
 	yt = new YT.Player("yt", {width: 640, height: 390,
-		videoId: "A67ZkAd1wmI",
+		videoId: more.pop(),
 		events: {
 			onReady: yt_ready,
 			onStateChange: yt_state_changed,
