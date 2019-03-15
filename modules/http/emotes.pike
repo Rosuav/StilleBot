@@ -37,8 +37,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//string data = Protocols.HTTP.get_url_data("https://twitchemotes.com/api_cache/v3/sets.json");
 		//NOTE: This is over a hundred megabytes of data. We're forcing EVERYONE
 		//to wait while we fetch that. Not good. Fortunately it caches easily.
-		write("Fetching emote set info\n");
+		write("Fetching emote set info...\n");
 		string data = Process.run(({"curl", "https://twitchemotes.com/api_cache/v3/sets.json"}))->stdout;
+		write("Emote set info fetched. (Sorry for the big lag.)\n");
 		mapping info = Standards.JSON.decode(data);
 		info->fetchtime = time();
 		G->G->emote_set_mapping = info;
@@ -46,7 +47,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mapping(string:string) emotesets = ([]);
 	foreach (G->G->bot_emote_list->emoticon_sets; string setid; array emotes)
 	{
-		//~ if (sizeof(emotes) > 3) continue;
 		string set = "";
 		foreach (emotes, mapping em)
 			set += sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0) ", em->code, em->id);
