@@ -23,7 +23,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"Client-ID": cfg->clientid,
 		]));
 		mapping info = Standards.JSON.decode(data);
-		//~ info->fetchtime = time();
+		info->fetchtime = time();
 		G->G->bot_emote_list = info;
 	}
 	if (!G->G->emote_set_mapping)
