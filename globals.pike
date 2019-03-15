@@ -305,6 +305,26 @@ class _Markdown
 			}
 			return sprintf("<blockquote>%s</blockquote>", text);
 		}
+		//Allow paragraphs to get extra attributes
+		string paragraph(string text)
+		{
+			string last_line = (text / "\n")[-1];
+			mapping attr = ([]);
+			if (sscanf(last_line, "{:%{ %[.#]%[a-z]%}}%s", array attrs, string empty) && empty == "")
+			{
+				text = text[..<sizeof(last_line)+1];
+				foreach (attrs, [string t, string val]) switch (t)
+				{
+					case ".":
+						if (attr["class"]) attr["class"] += " " + val;
+						else attr["class"] = val;
+						break;
+					case "#": attr["id"] = val; break;
+					default: break; //Shouldn't happen
+				}
+			}
+			return sprintf("<p%{ %s=%q%}>%s</p>", (array)attr, text);
+		}
 	}
 }
 program _AltRenderer = _Markdown()->AltRenderer;
