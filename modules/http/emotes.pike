@@ -1,5 +1,11 @@
 inherit http_endpoint;
 
+//TODO: If logged in as the bot, allow emotesets to be added/remove to/from a collection
+//of "permanent emotes". These will be highlighted in the emote list. For simplicity, do
+//not distinguish tiered emotes; just use the channel name alone, and highlight all tiers
+//that are currently available. (It's unlikely that the difference between "permanent T1"
+//and "currently T3" will be significant.)
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->variables->flushcache)
