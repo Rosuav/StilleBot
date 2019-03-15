@@ -5,9 +5,6 @@ inherit http_endpoint;
 //not distinguish tiered emotes; just use the channel name alone, and highlight all tiers
 //that are currently available. (It's unlikely that the difference between "permanent T1"
 //and "currently T3" will be significant.)
-multiset(string) highlight = (<>);
-//Example for hacky testing:
-//multiset(string) highlight = (<"devicat", "cookingfornoobs", "rosuav">);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -53,6 +50,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		info->fetchtime = time();
 		G->G->emote_set_mapping = info;
 	}
+	mapping highlight = persist_config["permanently_available_emotes"];
+	if (!highlight) persist_config["permanently_available_emotes"] = highlight = ([]);
 	mapping(string:string) emotesets = ([]);
 	foreach (G->G->bot_emote_list->emoticon_sets; string setid; array emotes)
 	{
