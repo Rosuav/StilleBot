@@ -4,7 +4,8 @@ inherit http_endpoint;
 //of "permanent emotes". These will be highlighted in the emote list. For simplicity, do
 //not distinguish tiered emotes; just use the channel name alone, and highlight all tiers
 //that are currently available. (It's unlikely that the difference between "permanent T1"
-//and "currently T3" will be significant.)
+//and "currently T3" will be significant.) Map the channel name to time() so they can be
+//tracked chronologically - we can't do multisets in JSON anyway, so an object will do.
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
