@@ -68,7 +68,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	array emoteinfo = values(emotesets); sort(indices(emotesets), emoteinfo);
 	return render_template("emotes.md", ([
-		"channel": "hack",
+		"channel": "hack", //TODO: Deal with this (we don't want a back link, there's no channel page)
 		"emotes": emoteinfo * "",
 	]));
 }
