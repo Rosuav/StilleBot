@@ -26,3 +26,4 @@
   - Make sure all callers are happy with the Helix-provided info format
 * When doing shoutouts, differentiate between "now playing" and "last seen playing"
   - If the shouted-out channel is currently hosting, override with "last seen".
+* Check tags to see if "creating Art" vs "playing Alice"
