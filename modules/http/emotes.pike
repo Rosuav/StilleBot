@@ -5,6 +5,9 @@ inherit http_endpoint;
 //not distinguish tiered emotes; just use the channel name alone, and highlight all tiers
 //that are currently available. (It's unlikely that the difference between "permanent T1"
 //and "currently T3" will be significant.)
+multiset(string) highlight = (<>);
+//Example for hacky testing:
+//multiset(string) highlight = (<"devicat", "cookingfornoobs", "rosuav">);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -59,6 +62,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		mapping setinfo = G->G->emote_set_mapping[setid] || (["channel_name": "Special unlocks"]);
 		string chan = setinfo->channel_name;
 		if (setid == "0") chan = "Global emotes";
+		if (highlight[chan]) emotesets[chan + "-Z"] = "\n{: .highlight}";
 		if (setinfo->tier > 1) emotesets[chan + "-T" + setinfo->tier] = sprintf(" T%d: %s", setinfo->tier, set);
 		else if (emotesets[chan]) emotesets[chan] += sprintf(" %s", set);
 		else emotesets[chan] = sprintf("\n\n**%s**: %s", G->G->channel_info[chan]?->display_name || chan, set);
@@ -66,6 +70,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	array emoteinfo = values(emotesets); sort(indices(emotesets), emoteinfo);
 	return render_template("emotes.md", ([
 		"channel": "hack",
-		"emotes": emoteinfo * "\n",
+		"emotes": emoteinfo * "",
 	]));
 }
