@@ -56,16 +56,16 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		string set = "";
 		foreach (emotes, mapping em)
 			set += sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0) ", em->code, em->id);
-		mapping setinfo = G->G->emote_set_mapping[setid] || (["channel_name": "- Special -"]);
+		mapping setinfo = G->G->emote_set_mapping[setid] || (["channel_name": "Special unlocks"]);
 		string chan = setinfo->channel_name;
-		if (setid == "0") chan = "- Global emotes -";
-		if (setinfo->tier > 1) emotesets[chan + "-T" + setinfo->tier] = sprintf("T%d: %s\n", setinfo->tier, set);
-		else if (emotesets[chan]) emotesets[chan] += sprintf("%s\n", set);
-		else emotesets[chan] = sprintf("## %s\n%s\n", G->G->channel_info[chan]?->display_name || chan, set);
+		if (setid == "0") chan = "Global emotes";
+		if (setinfo->tier > 1) emotesets[chan + "-T" + setinfo->tier] = sprintf(" T%d: %s", setinfo->tier, set);
+		else if (emotesets[chan]) emotesets[chan] += sprintf(" %s", set);
+		else emotesets[chan] = sprintf("\n\n**%s**: %s", G->G->channel_info[chan]?->display_name || chan, set);
 	}
 	array emoteinfo = values(emotesets); sort(indices(emotesets), emoteinfo);
 	return render_template("emotes.md", ([
 		"channel": "hack",
-		"emotes": emoteinfo * "",
+		"emotes": emoteinfo * "\n",
 	]));
 }
