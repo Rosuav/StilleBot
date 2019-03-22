@@ -537,6 +537,11 @@ void http_handler(Protocols.HTTP.Server.Request req)
 			werror(describe_backtrace(ex));
 			resp = (["error": 500, "data": "Internal server error\n", "type": "text/plain; charset=\"UTF-8\""]);
 		}
+		//TODO: Allow the handler to say "working on it" and then give a result
+		//asynchronously. TODO especially: ensure that we can have generic
+		//handling eg of Connection: Close, even though the handler will need to
+		//call response_and_finish later. That probably means having our own
+		//send_response function, or something like that.
 	}
 	if (!resp)
 	{
