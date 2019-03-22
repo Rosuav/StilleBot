@@ -1,11 +1,11 @@
 inherit http_endpoint;
 
-//TODO: If logged in as the bot, allow emotesets to be added/remove to/from a collection
-//of "permanent emotes". These will be highlighted in the emote list. For simplicity, do
-//not distinguish tiered emotes; just use the channel name alone, and highlight all tiers
-//that are currently available. (It's unlikely that the difference between "permanent T1"
-//and "currently T3" will be significant.) Map the channel name to time() so they can be
-//tracked chronologically - we can't do multisets in JSON anyway, so an object will do.
+//If the user is logged in as the bot, emotesets can be added/remove to/from a collection
+//of "permanent emotes". These will be highlighted in the emote list. For simplicity, does
+//not distinguish tiered emotes - just uses the channel name alone (all available tiers of
+//a sub are shown together anyway). It's unlikely that the difference between "permanent T1"
+//and "currently T3" will be significant. The channel name is mapped to time() so they can
+//be tracked chronologically - we can't do multisets in JSON anyway, so an object will do.
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
