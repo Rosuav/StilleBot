@@ -325,6 +325,14 @@ class _Markdown
 			}
 			return sprintf("<p%{ %s=%q%}>%s</p>", (array)attr, text);
 		}
+		//Retain headings in case they're wanted
+		string heading(string text, int level, string raw)
+		{
+			if (options->headings && !options->headings[level])
+				//Retain the first-seen heading of each level
+				options->headings[level] = text;
+			return ::heading(text, level, raw);
+		}
 	}
 }
 program _AltRenderer = _Markdown()->AltRenderer;
@@ -355,9 +363,22 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 	}
 	content = pieces * "";
 	if (has_suffix(template, ".md"))
-		return render_template("markdown.html", replacements | (["content":
-			Tools.Markdown.parse(content, (["renderer": _AltRenderer, "user_text": replacements["user text"]]))
+	{
+		mapping headings = ([]);
+		string content = Tools.Markdown.parse(content, ([
+			"renderer": _AltRenderer,
+			"user_text": replacements["user text"],
+			"headings": headings,
 		]));
+		return render_template("markdown.html", ([
+			//Defaults - can be overridden
+			"title": headings[1] || "StilleBot",
+			"backlink": "<small><a href=\"./\">StilleBot - " + replacements->channel + "</a></small>",
+		]) | replacements | ([
+			//Forced attributes
+			"content": content,
+		]));
+	}
 	return ([
 		"data": string_to_utf8(content),
 		"type": "text/html; charset=\"UTF-8\"",
