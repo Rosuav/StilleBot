@@ -70,6 +70,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			{
 				if (!req->variables[chan]) m_delete(highlight, chan);
 				else if (req->variables[chan] && !highlight[chan]) highlight[chan] = time();
+				persist_config->save();
 				//Fall through using the *new* highlight status
 			}
 			emotesets[chan + "-Y"] = sprintf("<br><label><input type=checkbox %s name=\"%s\">Permanent</label>",
