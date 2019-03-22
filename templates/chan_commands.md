@@ -11,6 +11,8 @@ Command | Output |
 --------|--------|-
 $$commands$$
 
+<a id=emotepicker href="/emotes">Emotes available to the bot</a>
+
 $$save_or_login$$
 
 > dialog id=templates
@@ -32,6 +34,10 @@ document.querySelectorAll("button").forEach(btn => btn.onclick = e => {
 	parent.appendChild(document.createElement("br"));
 	parent.appendChild(inp);
 });
+document.getElementById("emotepicker").onclick = e => {
+	e.preventDefault();
+	window.open("/emotes", "emotes", "width=900, height=700");
+};
 //Will bomb when not logged in. This isn't a problem other than that it's noisy
 //on the console. TODO: Remove most of this code so it doesn't even need to be
 //downloaded to non-authenticated users.
