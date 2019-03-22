@@ -54,6 +54,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mapping highlight = persist_config["permanently_available_emotes"];
 	if (!highlight) persist_config["permanently_available_emotes"] = highlight = ([]);
 	mapping(string:string) emotesets = ([]);
+	mapping session = G->G->http_sessions[req->cookies->session];
+	int is_bot = session?->user?->login == persist_config["ircsettings"]->nick;
 	foreach (G->G->bot_emote_list->emoticon_sets; string setid; array emotes)
 	{
 		string set = "";
@@ -62,6 +64,17 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		mapping setinfo = G->G->emote_set_mapping[setid] || (["channel_name": "Special unlocks"]);
 		string chan = setinfo->channel_name;
 		if (setid == "0") chan = "Global emotes";
+		if (is_bot)
+		{
+			if (req->request_type == "POST")
+			{
+				if (!req->variables[chan]) m_delete(highlight, chan);
+				else if (req->variables[chan] && !highlight[chan]) highlight[chan] = time();
+				//Fall through using the *new* highlight status
+			}
+			emotesets[chan + "-Y"] = sprintf("<br><label><input type=checkbox %s name=\"%s\">Permanent</label>",
+				"checked" * !!highlight[chan], chan);
+		}
 		if (highlight[chan]) emotesets[chan + "-Z"] = "\n{: .highlight}";
 		if (setinfo->tier > 1) emotesets[chan + "-T" + setinfo->tier] = sprintf(" T%d: %s", setinfo->tier, set);
 		else if (emotesets[chan]) emotesets[chan] += sprintf(" %s", set);
@@ -71,5 +84,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	return render_template("emotes.md", ([
 		"backlink": "",
 		"emotes": emoteinfo * "",
+		"save": is_bot ? "<input type=submit value=\"Update permanents\">" : "",
 	]));
 }
