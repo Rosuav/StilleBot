@@ -446,6 +446,46 @@ void transcoding_display(string data)
 	if (!--requests) exit(0);
 }
 
+class clips_display(string channel)
+{
+	string dir; multiset unseen;
+	void create()
+	{
+		make_request("https://api.twitch.tv/kraken/clips/top?channel=" + channel + "&period=all&limit=100", this, 1);
+		dir = "../clips/" + channel;
+		array files = get_dir(dir);
+		if (files) unseen = (multiset)glob("*.json", files);
+	}
+	void `()(string data)
+	{
+		mapping info = Standards.JSON.decode(data);
+		if (info->status == 404 || !info->clips)
+		{
+			write("Error fetching clips: %O\n", info);
+			if (!--requests) exit(0);
+			return;
+		}
+		foreach (info->clips, mapping clip)
+		{
+			if (unseen)
+			{
+				unseen[clip->slug + ".json"] = 0;
+				Stdio.write_file(dir + "/" + clip->slug + ".json", Standards.JSON.encode(clip, 7));
+			}
+			write(string_to_utf8(sprintf("[%s] %s %s - %s\n", clip->created_at, clip->slug, clip->curator->display_name, clip->title)));
+		}
+		if (info->_cursor != "")
+		{
+			write("Fetching more... %s %O\n", info->_cursor, MIME.decode_base64(info->_cursor));
+			make_request("https://api.twitch.tv/kraken/clips/top?channel=" + channel + "&period=all&limit=100&cursor=" + info->_cursor, this, 1);
+			return;
+		}
+		if (unseen && sizeof(unseen))
+			write("%d deleted clips:\n%{\t%s\n%}", sizeof(unseen), sort((array)unseen));
+		if (!--requests) exit(0);
+	}
+}
+
 mapping gamecounts = ([]), gameviewers = ([]), gamechannel = ([]);
 void show_turkish(string data)
 {
@@ -507,6 +547,12 @@ int main(int argc, array(string) argv)
 			{
 				write("Checking transcoding history...\n");
 				make_request("https://api.twitch.tv/kraken/channels/" + ch + "/videos?broadcast_type=archive&limit=100", transcoding_display);
+				continue;
+			}
+			if (user == "clips")
+			{
+				write("Searching for clips...\n");
+				clips_display(ch);
 				continue;
 			}
 			write("Checking follow status...\n");
