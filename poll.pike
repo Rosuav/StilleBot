@@ -169,7 +169,12 @@ void stream_status(string name, mapping info)
 		//string last_title = G->G->channel_info[name]?->status; //hack
 		mapping synthesized = build_channel_info(info);
 		if (synthesized) G->G->channel_info[name] = synthesized;
-		else get_channel_info(name, 0);
+		else
+		{
+			write("SYNTHESIS FAILED - maybe bad game? %O\n", info->game_id);
+			G->G->channel_info[name] = 0; //Force an update by clearing the old info
+			get_channel_info(name, 0);
+		}
 		//if (synthesized?->status != last_title) write("Old title: %O\nNew title: %O\n", last_title, synthesized?->status); //hack
 		//TODO: Report when the game changes?
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->started_at);
