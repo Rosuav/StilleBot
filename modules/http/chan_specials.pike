@@ -49,6 +49,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	mapping replacements = ([
 		"channel": req->misc->channel_name, "commands": commands * "\n",
+		"title": "Special responses for " + req->misc->channel_name,
+		"backlink": "<small><a href=\"./\">StilleBot - " + req->misc->channel_name + "</a></small>",
 		"messages": messages,
 		"save_or_login": req->misc->is_mod ?
 			"<input type=submit value=\"Save all\">" :
