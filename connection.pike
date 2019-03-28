@@ -414,9 +414,10 @@ class channel_notif
 					*/
 					break;
 				case "raid": case "unraid": break; //Incoming raids already get announced and we don't get any more info
-				case "sub": trigger_special("!sub", person, (["{tier}": params->msg_param_sub_plan[0]])); break;
+				//TODO: Handle sub plans better, esp since "Prime" should count as tier 1
+				case "sub": trigger_special("!sub", person, (["{tier}": params->msg_param_sub_plan[0..0]])); break;
 				case "resub": trigger_special("!resub", person, ([
-					"{tier}": params->msg_param_sub_plan[0],
+					"{tier}": params->msg_param_sub_plan[0..0],
 					"{months}": params->msg_param_cumulative_months,
 					"{streak}": params->msg_param_streak_months || "",
 				]));
@@ -428,7 +429,7 @@ class channel_notif
 						name, person->displayname, person->user,
 						params->msg_param_months, params->msg_param_recipient_display_name);
 					trigger_special("!subgift", person, ([
-						"{tier}": params->msg_param_sub_plan[0],
+						"{tier}": params->msg_param_sub_plan[0..0],
 						"{months}": params->msg_param_cumulative_months || params->msg_param_months || "1",
 						"{streak}": params->msg_param_streak_months || "",
 						"{recipient}": params->msg_param_recipient_display_name,
@@ -444,7 +445,7 @@ class channel_notif
 						name, person->displayname, person->user,
 						params->msg_param_mass_gift_count);
 					trigger_special("!subbomb", person, ([
-						"{tier}": params->msg_param_sub_plan[0],
+						"{tier}": params->msg_param_sub_plan[0..0],
 						"{gifts}": params->msg_param_mass_gift_count,
 					]));
 					break;
