@@ -7,6 +7,10 @@ inherit http_endpoint;
 //and "currently T3" will be significant. The channel name is mapped to time() so they can
 //be tracked chronologically - we can't do multisets in JSON anyway, so an object will do.
 
+//To access this programmatically: http[s]://SERVERNAME/emotes?format=json
+//You'll get back a two-key object "ephemeral" and "permanent", each one mapping channel
+//name to array of emotes.
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->variables->flushcache)
@@ -54,6 +58,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mapping highlight = persist_config["permanently_available_emotes"];
 	if (!highlight) persist_config["permanently_available_emotes"] = highlight = ([]);
 	mapping(string:string) emotesets = ([]);
+	array(mapping(string:array(mapping(string:string)))) emote_raw = ({([]), ([])});
 	mapping session = G->G->http_sessions[req->cookies->session];
 	int is_bot = session?->user?->login == persist_config["ircsettings"]->nick;
 	foreach (G->G->bot_emote_list->emoticon_sets; string setid; array emotes)
@@ -64,6 +69,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		mapping setinfo = G->G->emote_set_mapping[setid] || (["channel_name": "Special unlocks"]);
 		string chan = setinfo->channel_name;
 		if (setid == "0") chan = "Global emotes";
+		emote_raw[!highlight[chan]][chan] += emotes;
 		if (is_bot)
 		{
 			if (req->request_type == "POST")
@@ -81,6 +87,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		else if (emotesets[chan]) emotesets[chan] += sprintf(" %s", set);
 		else emotesets[chan] = sprintf("\n\n**%s**: %s", G->G->channel_info[chan]?->display_name || chan, set);
 	}
+	if (req->variables->format == "json") return ([
+		"data": Standards.JSON.encode(mkmapping(({"permanent", "ephemeral"}), emote_raw), 7),
+		"type": "application/json",
+	]);
 	array emoteinfo = values(emotesets); sort(indices(emotesets), emoteinfo);
 	return render_template("emotes.md", ([
 		"backlink": "",
