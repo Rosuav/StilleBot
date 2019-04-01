@@ -544,6 +544,11 @@ void http_handler(Protocols.HTTP.Server.Request req)
 		//call response_and_finish later. That probably means having our own
 		//send_response function, or something like that.
 	}
+	send_http_response(req, resp);
+}
+
+void send_http_response(Protocols.HTTP.Server.Request req, mapping resp)
+{
 	if (!resp)
 	{
 		werror("HTTP request: %s %O %O\n", req->request_type, req->not_query, req->variables);
