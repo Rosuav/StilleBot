@@ -509,6 +509,13 @@ class channel_notif
 	}
 }
 
+void handle_http_error(mixed ex, Protocols.HTTP.Server.Request req)
+{
+	werror("HTTP handler crash: %O\n", req->not_query);
+	werror(describe_backtrace(ex));
+	send_http_response((["error": 500, "data": "Internal server error\n", "type": "text/plain; charset=\"UTF-8\""]), req);
+}
+
 void http_handler(Protocols.HTTP.Server.Request req)
 {
 	req->misc->session = G->G->http_sessions[req->cookies->session];
@@ -532,16 +539,10 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	}
 	if (handler)
 	{
-		if (mixed ex = catch {resp = handler(req, @args);})
-		{
-			werror("HTTP handler crash: %O\n", req->not_query);
-			werror(describe_backtrace(ex));
-			resp = (["error": 500, "data": "Internal server error\n", "type": "text/plain; charset=\"UTF-8\""]);
-		}
+		if (mixed ex = catch {resp = handler(req, @args);}) {handle_http_error(ex, req); return;}
 	}
 	if (resp->on_success && resp->on_failure) //Duck-typed Future/Promise recognition
-		//TODO: on_failure, go into the catch handler above and kick back a 500
-		resp->on_success(send_http_response, req);
+		resp->on_success(send_http_response, req)->on_failure(handle_http_error, req);
 	else send_http_response(resp, req);
 }
 
