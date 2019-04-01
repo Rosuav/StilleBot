@@ -1,16 +1,30 @@
 inherit http_endpoint;
 
+class Waiter
+{
+	inherit Concurrent.Promise;
+	void create(int|float delay)
+	{
+		::create();
+		call_out(success, delay);
+	}
+}
+
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
+	string msg = "Hello, world!";
+	object ret = Concurrent.resolve(0);
 	int delay = (int)req->variables->delay;
-	if (delay)
-	{
-		object ret = Concurrent.Promise();
-		call_out(lambda() {ret->success((["data": "Hello, world after " + delay + " seconds!",
-			"type": "text/plain; charset=\"UTF-8\""]));}, delay);
-		return ret->future();
-	}
-	return (["data": "Hello, world!", "type": "text/plain; charset=\"UTF-8\""]);
+	if (delay) ret = ret->then(lambda() {
+		msg += " We've delayed " + delay + " seconds!";
+		return Waiter(delay);
+	});
+	int sleep = (int)req->variables->sleep;
+	if (sleep) ret = ret->then(lambda() {
+		msg += " We've slept " + sleep + " milliseconds!";
+		return Waiter(sleep / 1000.0);
+	});
+	return ret->then(lambda() {return (["data": msg, "type": "text/plain; charset=\"UTF-8\""]);});
 }
 
 void create(string name)
