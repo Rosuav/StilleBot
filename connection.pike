@@ -514,7 +514,7 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	req->misc->session = G->G->http_sessions[req->cookies->session];
 	function handler = !has_prefix(req->not_query, "/chan_") && G->G->http_endpoints[req->not_query[1..]];
 	array args = ({ });
-	mapping resp;
+	mapping|Concurrent.Future resp;
 	if (!handler)
 	{
 		//Try all the sscanf-based handlers
@@ -538,16 +538,14 @@ void http_handler(Protocols.HTTP.Server.Request req)
 			werror(describe_backtrace(ex));
 			resp = (["error": 500, "data": "Internal server error\n", "type": "text/plain; charset=\"UTF-8\""]);
 		}
-		//TODO: Allow the handler to say "working on it" and then give a result
-		//asynchronously. TODO especially: ensure that we can have generic
-		//handling eg of Connection: Close, even though the handler will need to
-		//call response_and_finish later. That probably means having our own
-		//send_response function, or something like that.
 	}
-	send_http_response(req, resp);
+	if (resp->on_success && resp->on_failure) //Duck-typed Future/Promise recognition
+		//TODO: on_failure, go into the catch handler above and kick back a 500
+		resp->on_success(send_http_response, req);
+	else send_http_response(resp, req);
 }
 
-void send_http_response(Protocols.HTTP.Server.Request req, mapping resp)
+void send_http_response(mapping resp, Protocols.HTTP.Server.Request req) //The odd argument order simplifies Future handling.
 {
 	if (!resp)
 	{
