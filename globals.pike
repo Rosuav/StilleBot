@@ -222,7 +222,7 @@ class http_endpoint
 	//Set to an sscanf pattern to handle multiple request URIs. Otherwise will handle just "/myname".
 	constant http_path_pattern = 0;
 	//A channel will be provided if and only if this is chan_foo.pike and the URL is /channels/spam/foo
-	mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, object|void channel) { }
+	mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req, object|void channel) { }
 
 	void create(string name)
 	{

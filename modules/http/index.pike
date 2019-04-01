@@ -1,6 +1,6 @@
 inherit http_endpoint;
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
+mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	int delay = (int)req->variables->delay;
 	if (delay)
