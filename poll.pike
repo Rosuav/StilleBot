@@ -272,6 +272,9 @@ void create_webhook(string callback, string topic, string secret)
 void webhooks(string resp)
 {
 	//TODO: Paginate properly. If we have more than 100 webhooks, some will be lost.
+	//TODO: Make a pagination handler that takes the string, decodes, gathers the
+	//data array, and then calls the 'real' handler with just the array, after all
+	//pages are done. This function would become void webhooks(array data).
 	mixed data = Standards.JSON.decode_utf8(resp); if (!mappingp(data)) return;
 	multiset(string) follows = (<>), status = (<>);
 	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);

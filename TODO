@@ -20,7 +20,10 @@
 * Go through all the web config pages and add user() to any user-defined text
 * Polling:
   - Get more webhooks that give instant notification
+    - Actually, they aren't always any better - it's SLOWER than polling for
+      stream-live and stream-down notifications
   - Use the same functions for webhooks as for polling
     - ergo, use Helix for polling, not Kraken
+    - Some can't be changed. Offline channel info requires Kraken (as of 20190405).
   - Ensure that the hook lookup will find everything (see TODO in code)
   - Make sure all callers are happy with the Helix-provided info format
