@@ -12,10 +12,18 @@ May be abbreviated to `!so streamername` for convenience (has the same effect).
 constant game_desc = ([
 	"Art": "creating %s",
 	"Food & Drink": "creating %s",
+	"Just Chatting": "%s",
 	"Makers & Crafting": "being crafty", //Really don't like this description :|
 	"Music & Performing Arts": "creating %s",
 	"Science & Technology": "creating %s",
 	//All others come up as "playing %s"
+	//TODO: Handle the IRL-tagged categories better.
+	//"ASMR"
+	//"Beauty & Body Art"
+	//"Talk Shows & Podcasts"
+	//"Travel & Outdoors"
+	//"Special Events"
+	//"Sports & Fitness"
 ]);
 
 void shoutout(mapping info, string channel)
