@@ -114,6 +114,7 @@ mapping build_channel_info(mapping stream)
 	ret->display_name = stream->user_name;
 	ret->url = "https://www.twitch.tv/" + lower_case(stream->user_name); //TODO: Get the actual login, which may be different
 	ret->status = stream->title;
+	ret->online_type = stream->type; //Really, THIS should be called "status" (eg "live"), and "status" should be called Title. But whatevs.
 	ret->_id = ret->user_id = stream->user_id;
 	ret->_raw = stream; //Avoid using this except for testing
 	//Add anything else here that might be of interest
@@ -131,6 +132,7 @@ void stream_status(string name, mapping info)
 			write("** Channel %s isn't online - fetching last-known state **\n", name);
 			get_channel_info(name, 0);
 		}
+		else m_delete(G->G->channel_info[name], "online_type");
 		if (m_delete(G->G->stream_online_since, name))
 		{
 			write("** Channel %s noticed offline at %s **\n", name, Calendar.now()->format_nice());

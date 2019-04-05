@@ -30,11 +30,22 @@ void shoutout(mapping info, string channel)
 {
 	if (!info) {send_message(channel, "No channel found (do you have the Twitch time machine?)"); return;}
 	string game = replace(game_desc[info->game] || "playing %s", "%s", info->game);
-	//TODO: Differentiate between "is now" and "was last seen"
-	//If the channel is currently hosting, override with "was last seen".
+	string chron = "was last seen";
+	//Note that the Kraken info - which is what we get if the channel isn't polled -
+	//doesn't include info about whether the stream is live. That would require a
+	//second API call, which would increase the shoutout latency, all for the sake
+	//of saying "is now playing" instead of "was last seen playing".
+	//If we can get last-known Helix info on call, that will be WAY better.
+	if (info->online_type == "live") chron = "is now";
+	//TODO: If the channel is currently hosting, override with "was last seen".
+	//Is there any way, in either Helix or Kraken, to get that info? For the GUI,
+	//we get the info via IRC. Ah, what fun - getting info from IRC, Kraken, Helix,
+	//push notifications (which are heavily derived from Helix), and maybe one day
+	//the websocket pubsub...
+	else if (info->online_type) write("Shouting out channel %s which is online_type %O\n", channel, info->online_type);
 	send_message(channel, sprintf(
-		"%s was last seen %s, at %s - go check that stream out, maybe drop a follow! The last thing done was: %s",
-		info->display_name, game, info->url, info->status || "(null)"
+		"%s %s %s, at %s - go check that stream out, maybe drop a follow! The last thing done was: %s",
+		info->display_name, chron, game, info->url, info->status || "(null)"
 	));
 }
 
