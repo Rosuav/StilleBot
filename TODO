@@ -24,6 +24,3 @@
     - ergo, use Helix for polling, not Kraken
   - Ensure that the hook lookup will find everything (see TODO in code)
   - Make sure all callers are happy with the Helix-provided info format
-* When doing shoutouts, differentiate between "now playing" and "last seen playing"
-  - If the shouted-out channel is currently hosting, override with "last seen".
-* Check tags to see if "creating Art" vs "playing Alice"

@@ -9,11 +9,21 @@ definitely check him/her out\". Give shout-outs to people who deserve them!
 May be abbreviated to `!so streamername` for convenience (has the same effect).
 ";
 
+constant game_desc = ([
+	"Art": "creating %s",
+	"Food & Drink": "creating %s",
+	"Makers & Crafting": "being crafty", //Really don't like this description :|
+	"Music & Performing Arts": "creating %s",
+	"Science & Technology": "creating %s",
+	//All others come up as "playing %s"
+]);
+
 void shoutout(mapping info, string channel)
 {
 	if (!info) {send_message(channel, "No channel found (do you have the Twitch time machine?)"); return;}
-	//TODO: Since Creative is now a tag, how should this word things?
-	string game = "playing " + (info->game||"(null)"); if (info->game == "Creative") game = "being creative";
+	string game = replace(game_desc[info->game] || "playing %s", "%s", info->game);
+	//TODO: Differentiate between "is now" and "was last seen"
+	//If the channel is currently hosting, override with "was last seen".
 	send_message(channel, sprintf(
 		"%s was last seen %s, at %s - go check that stream out, maybe drop a follow! The last thing done was: %s",
 		info->display_name, game, info->url, info->status || "(null)"
