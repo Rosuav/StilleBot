@@ -541,7 +541,7 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	{
 		if (mixed ex = catch {resp = handler(req, @args);}) {handle_http_error(ex, req); return;}
 	}
-	if (resp->on_success && resp->on_failure) //Duck-typed Future/Promise recognition
+	if (resp && resp->on_success && resp->on_failure) //Duck-typed Future/Promise recognition
 		resp->on_success(send_http_response, req)->on_failure(handle_http_error, req);
 	else send_http_response(resp, req);
 }
