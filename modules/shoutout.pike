@@ -14,7 +14,7 @@ constant game_desc = ([
 	"Art": "creating %s",
 	"Food & Drink": "creating %s",
 	"Just Chatting": "%s",
-	"Makers & Crafting": "being crafty", //Really don't like this description :|
+	"Makers & Crafting": "streaming craft", //Don't really like this description, as it doesn't include the actual category
 	"Music & Performing Arts": "creating %s",
 	"Science & Technology": "creating %s",
 	//All others come up as "playing %s"
