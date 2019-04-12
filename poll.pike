@@ -255,14 +255,12 @@ void stream_status(string name, mapping info)
 class check_following(string user, string chan, function|void callback)
 {
 	//TODO: Switch to Helix - https://api.twitch.tv/helix/users/follows?from_id=<user ID>&to_id=<user ID>
+	//Or not, since that would require looking up the from and to names to
+	//get their IDs first, and THEN finding out if they're linked.
 	array cbargs;
 	void create(mixed ... cbargs)
 	{
 		this->cbargs = cbargs;
-		//CJA 20161006: Am now sending auth, but it's the default auth. Might
-		//need to get a stronger auth than chat_login, which would mean properly
-		//talking to the API and setting everything up.
-		//https://github.com/justintv/Twitch-API/blob/master/authentication.md
 		make_request("https://api.twitch.tv/kraken/users/" + user + "/follows/channels/" + chan, got_data);
 	}
 

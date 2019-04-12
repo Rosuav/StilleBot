@@ -1,6 +1,6 @@
 inherit command;
-constant require_moderator = 1; //TODO: Allow non-mods to check their own status
-//TODO-DOCSTRING
+constant require_moderator = 1; //In theory, non-mods could be allowed to check their own status
+constant hidden_command = 1; //Made unnecessary by Twitch changes, but kept in case it's wanted eg for mobile
 
 void respond(string user, string chan, mapping info, string requester)
 {
