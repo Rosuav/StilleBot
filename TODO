@@ -1,6 +1,7 @@
 * Per-channel rate limiting instead of the current one-per-second globally
   - Where the bot is a mod, the limit is three per sec. In other channels, must respect slow mode.
   - Is there a way to detect channel slow mode on connection? If it changes, there's a NOTICE.
+    - Possibly ROOMSTATE, but I'm not receiving those.
 * Log showing channel category changes as well as online/offline
   - May no longer be as useful, since Twitch divides VODs into "chapters"
 * Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
