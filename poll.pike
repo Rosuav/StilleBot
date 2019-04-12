@@ -20,7 +20,7 @@ void make_request(string url, function cbdata, int|void which_api) //which_api: 
 		Protocols.HTTP.Query()->set_callbacks(request_ok,request_fail,cbdata));
 }
 
-class fetch_helix_paginated(string method, string uri, mapping|void query, mapping|void headers, mixed|void json_body)
+class get_helix_paginated(string uri, mapping|void query, mapping|void headers)
 {
 	inherit Concurrent.Promise;
 	array data = ({ });
@@ -28,15 +28,13 @@ class fetch_helix_paginated(string method, string uri, mapping|void query, mappi
 	void create()
 	{
 		query = (query || ([])) + ([]); //Get a safe copy for potential mutation
-		if (json_body) json_body = string_to_utf8(Standards.JSON.encode(json_body));
 		send_query();
 	}
 
 	void send_query()
 	{
-		Protocols.HTTP.do_async_method(method, uri, query, headers,
-			Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, nextpage),
-			json_body);
+		Protocols.HTTP.do_async_method("GET", uri, query, headers,
+			Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, nextpage));
 	}
 
 	void nextpage(string resp)
@@ -110,6 +108,7 @@ void streaminfo(string data)
 		stream_status(chan, channels[chan]);
 }
 
+//TODO maybe: use get_helix_paginated for this
 int fetching_game_names = 0;
 void gamenames(string data)
 {
@@ -332,7 +331,7 @@ void webhooks(array data)
 void check_webhooks()
 {
 	if (!G->G->webhook_lookup_token) return;
-	fetch_helix_paginated("GET", "https://api.twitch.tv/helix/webhooks/subscriptions",
+	get_helix_paginated("https://api.twitch.tv/helix/webhooks/subscriptions",
 		(["first": "100"]),
 		(["Authorization": "Bearer " + G->G->webhook_lookup_token]),
 	)->on_success(webhooks);
