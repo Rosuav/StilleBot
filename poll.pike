@@ -25,9 +25,23 @@ class get_helix_paginated(string uri, mapping|void query, mapping|void headers)
 	inherit Concurrent.Promise;
 	array data = ({ });
 
-	void create()
+	void create(string|void authtype)
 	{
 		query = (query || ([])) + ([]); //Get a safe copy for potential mutation
+		headers = (headers || ([])) + ([]);
+		switch (authtype)
+		{
+			case "v5": headers["Accept"] = "application/vnd.twitchtv.v5+json"; //fallthrough
+			case "oauth":
+			{
+				sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
+				if (pass) headers["Authorization"] = "OAuth " + pass;
+				break;
+			}
+			default: break;
+		}
+		//TODO as above - bearer auth
+		if (string c = persist_config["ircsettings"]["clientid"]) headers["Client-ID"] = c;
 		send_query();
 	}
 
@@ -95,14 +109,12 @@ class get_video_info(string name, function callback)
 	}
 }
 
-void streaminfo(string data)
+void streaminfo(array data)
 {
-	mapping info; catch {info = Standards.JSON.decode(data);}; //Some error returns aren't even JSON
-	if (!info || info->error) return; //Ignore the 503s and stuff that come back.
 	//First, quickly remap the array into a lookup mapping
 	//This helps us ensure that we look up those we care about, and no others.
 	mapping channels = ([]);
-	foreach (info->data, mapping chan) channels[lower_case(chan->user_name)] = chan; //TODO: Figure out if user_name is login or display name
+	foreach (data, mapping chan) channels[lower_case(chan->user_name)] = chan; //TODO: Figure out if user_name is login or display name
 	//Now we check over our own list of channels. Anything absent is assumed offline.
 	foreach (indices(persist_config["channels"]), string chan)
 		stream_status(chan, channels[chan]);
@@ -367,7 +379,8 @@ void poll()
 	//channels that we get info for and don't need, ignore them; if there are
 	//some that we wanted but didn't get, we'll just think they're offline
 	//until the next poll.
-	make_request(sprintf("https://api.twitch.tv/helix/streams?%{user_login=%s&%}", chan), streaminfo);
+	get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_login": chan]))
+		->on_success(streaminfo);
 	string addr = persist_config["ircsettings"]["http_address"];
 	if (addr && addr != "")
 	{
