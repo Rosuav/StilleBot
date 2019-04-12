@@ -73,7 +73,7 @@ void terminate()
 }
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
-	"broadcaster": "_mod", "moderator": "_mod", //TODO: Also add staff and global mods
+	"broadcaster": "_mod", "moderator": "_mod",
 	//"subscriber": "_sub", //if you want shorthand
 ]);
 mapping(string:mixed) gather_person_info(object person, mapping params)
