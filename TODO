@@ -2,6 +2,7 @@
   - Where the bot is a mod, the limit is three per sec. In other channels, must respect slow mode.
   - Is there a way to detect channel slow mode on connection? If it changes, there's a NOTICE.
 * Log showing channel category changes as well as online/offline
+  - May no longer be as useful, since Twitch divides VODs into "chapters"
 * Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
 * !jackbox ABCD to put the code on screen
 * Thank people for hosting (effectively a spam command triggered by a host notice)
