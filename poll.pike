@@ -20,6 +20,36 @@ void make_request(string url, function cbdata, int|void which_api) //which_api: 
 		Protocols.HTTP.Query()->set_callbacks(request_ok,request_fail,cbdata));
 }
 
+class fetch_helix_paginated(string method, string uri, mapping|void query, mapping|void headers, mixed|void json_body)
+{
+	inherit Concurrent.Promise;
+	array data = ({ });
+
+	void create()
+	{
+		query = (query || ([])) + ([]); //Get a safe copy for potential mutation
+		if (json_body) json_body = string_to_utf8(Standards.JSON.encode(json_body));
+		send_query();
+	}
+
+	void send_query()
+	{
+		Protocols.HTTP.do_async_method(method, uri, query, headers,
+			Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, nextpage),
+			json_body);
+	}
+
+	void nextpage(string resp)
+	{
+		mixed raw = Standards.JSON.decode_utf8(resp); if (!mappingp(raw)) {failure(resp); return;}
+		if (!raw->data) {failure(raw); return;}
+		data += raw->data;
+		if (!raw->pagination || !raw->pagination->cursor) {success(data); return;}
+		query["after"] = raw->pagination->cursor;
+		send_query();
+	}
+}
+
 class get_channel_info(string name, function callback)
 {
 	array cbargs;
@@ -269,16 +299,11 @@ void create_webhook(string callback, string topic, string secret)
 	);
 }
 
-void webhooks(string resp)
+void webhooks(array data)
 {
-	//TODO: Paginate properly. If we have more than 100 webhooks, some will be lost.
-	//TODO: Make a pagination handler that takes the string, decodes, gathers the
-	//data array, and then calls the 'real' handler with just the array, after all
-	//pages are done. This function would become void webhooks(array data).
-	mixed data = Standards.JSON.decode_utf8(resp); if (!mappingp(data)) return;
 	multiset(string) follows = (<>), status = (<>);
 	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
-	foreach (data->data, mapping hook)
+	foreach (data, mapping hook)
 	{
 		int time_left = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", hook->expires_at)->unix_time() - time();
 		if (time_left < 300) continue;
@@ -307,9 +332,10 @@ void webhooks(string resp)
 void check_webhooks()
 {
 	if (!G->G->webhook_lookup_token) return;
-	Protocols.HTTP.do_async_method("GET", "https://api.twitch.tv/helix/webhooks/subscriptions?first=100", 0, ([
-		"Authorization": "Bearer " + G->G->webhook_lookup_token,
-	]), Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, webhooks));
+	fetch_helix_paginated("GET", "https://api.twitch.tv/helix/webhooks/subscriptions",
+		(["first": "100"]),
+		(["Authorization": "Bearer " + G->G->webhook_lookup_token]),
+	)->on_success(webhooks);
 }
 
 void got_lookup_token(string resp)
