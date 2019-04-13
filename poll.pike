@@ -53,7 +53,9 @@ class get_helix_paginated(string uri, mapping|void query, mapping|void headers)
 
 	void nextpage(string resp)
 	{
-		mixed raw = Standards.JSON.decode_utf8(resp); if (!mappingp(raw)) {failure(resp); return;}
+		mixed raw;
+		if (catch {raw = Standards.JSON.decode_utf8(resp);}) raw = Standards.JSON.decode(resp); //TODO: Figure out one of these and make sure all callers use it
+		if (!mappingp(raw)) {failure(resp); return;}
 		if (!raw->data) {failure(raw); return;}
 		data += raw->data;
 		if (!raw->pagination || !raw->pagination->cursor) {success(data); return;}
