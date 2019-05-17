@@ -4,7 +4,7 @@ void got_followers(string chan, array data)
 {
 	foreach (data, mapping follower)
 	{
-		write("New follower on %s: %s\n", chan, string_to_utf8(follower->from_name));
+		//write("New follower on %s: %s\n", chan, string_to_utf8(follower->from_name));
 		echoable_message response = G->G->echocommands["!follower#" + chan];
 		if (!response) continue;
 		if (object chan = G->G->irc->channels["#" + chan])
