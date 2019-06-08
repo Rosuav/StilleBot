@@ -27,6 +27,9 @@ string process(object channel, object person, string param)
 			//Seems to be a person's name at the start. Flip it to the end.
 			//Note that this isn't perfect; if the person happens to not be in
 			//the viewer list, the transformation won't work.
+			//TODO: Check if there's an emote at either end of the 'what' and
+			//add a space between that and the quote. Will need the tags from
+			//the incoming message (not just 'string param').
 			param = sprintf("\"%s\" -- %s", what, who);
 		}
 	}
