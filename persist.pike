@@ -85,9 +85,6 @@ class Persist(string savefn, int flip_save)
 		}
 	}
 }
-//TODO: Migrate fast-moving or user-data persisted info out of persist into status
-//The idea is that twitchbot_config.json should become a stable file that can be
-//git-managed.
 object config = Persist("twitchbot_config.json", 0);
 object status = Persist("twitchbot_status.json", 1);
 
