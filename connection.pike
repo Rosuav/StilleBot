@@ -405,6 +405,7 @@ class channel_notif
 				case "slow_on": case "slow_off": break; //Channel is now/no longer in slow mode
 				case "emote_only_on": case "emote_only_off": break; //Channel is now/no longer in emote-only mode
 				case "followers_on": case "followers_off": break; //Channel is now/no longer in follower-only mode (regardless of minimum time)
+				case "followers_on_zero": break; //Regardless? Not quite; if it's zero-second followers-only mode, it's separate.
 				case "msg_duplicate": case "msg_slowmode": case "msg_timedout": case "msg_banned":
 					/* Last message wasn't sent, for some reason. There seems to be no additional info in the tags.
 					- Your message was not sent because it is identical to the previous one you sent, less than 30 seconds ago.
@@ -414,6 +415,7 @@ class channel_notif
 					*/
 					break;
 				case "raid": case "unraid": break; //Incoming raids already get announced and we don't get any more info
+				case "rewardgift": break; //Used for special promo messages eg "so-and-so's cheer just gave X people a bonus emote"
 				//TODO: Handle sub plans better, esp since "Prime" should count as tier 1
 				case "sub": trigger_special("!sub", person, (["{tier}": params->msg_param_sub_plan[0..0]])); break;
 				case "resub": trigger_special("!resub", person, ([
