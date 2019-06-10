@@ -325,6 +325,9 @@ class channel_notif
 			user->lastnotice = time();
 		}
 		[command_handler cmd, string param] = locate_command(person, msg);
+		int offset = sizeof(msg) - sizeof(param);
+		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
+		person->measurement_offset = offset;
 		//Functions do not get %s handling. If they want it, they can do it themselves,
 		//and if they don't want it, it would mess things up badly to do it here.
 		if (functionp(cmd)) return cmd(this, person, param);
