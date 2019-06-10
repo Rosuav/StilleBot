@@ -1,5 +1,5 @@
 //Persistent data, stored to a JSON file in the current directory.
-#if !constant(persist) //On reload, don't update this.
+#if !constant(persist_config) //On reload, don't update this.
 class Persist(string savefn, int flip_save)
 {
 	//Persistent storage (when this dies, bring it back with a -1/-1 counter on it).
@@ -110,7 +110,6 @@ void create()
 	migrate("viewertime");
 	migrate("songrequests");
 	migrate("songrequest_meta");
-	add_constant("persist", config); //Deprecated. Use one of the others.
 	add_constant("persist_config", config);
 	add_constant("persist_status", status);
 }
