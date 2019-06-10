@@ -283,9 +283,9 @@ class channel_notif
 		{
 			//Note that !currency will work (cf the above code), but !<currency-name> is the recommended way.
 			if (msg == "!"+cur) return ({G->G->commands->currency, ""});
-			if (sscanf(msg, "!"+cur+" %s", string param) == 1) return ({G->G->commands->currency, param});
+			if (sscanf(msg, "!"+cur+" %s", string param) == 1) return ({G->G->commands->currency, param||""});
 		}
-		return ({0, 0});
+		return ({0, ""});
 	}
 
 	echoable_message substitute_markers(string|mapping|array(string|mapping) msg, mapping(string:string) markers)
