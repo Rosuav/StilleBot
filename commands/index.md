@@ -15,6 +15,7 @@ Commands in alphabetical order:
 * [!repeat: Add a repeated command (autocommand) for this channel](repeat)
 * [!shoutout: Give a shout-out to another streamer](shoutout)
 * [!unrepeat: Cancel a repeated command](repeat)
+* [!uptime: Show channel uptime.](uptime)
 
 ---
 
