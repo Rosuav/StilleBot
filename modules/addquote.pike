@@ -20,6 +20,7 @@ string process(object channel, object person, string param)
 	mapping chaninfo = G->G->channel_info[channel->name[1..]];
 	if (!chaninfo) return "@$$: Internal error - no channel info"; //I'm pretty sure this shouldn't happen
 	//If you type "!addquote personname text", transform it.
+	int simulate = sscanf(param, "-n %s", param);
 	if (sscanf(param, "%*[@]%s %s", string who, string what) && what)
 	{
 		if (lower_case(who) == channel->name[1..] || channel->viewers[lower_case(who)])
@@ -33,6 +34,10 @@ string process(object channel, object person, string param)
 			param = sprintf("\"%s\" -- %s", what, who);
 		}
 	}
+	if (simulate)
+		//For testing, just simulate adding the quote and displaying it
+		return sprintf("@$$: SimQuote #%d: %s [%s]",
+			sizeof(channel->config->quotes) + 1, param, chaninfo->game);
 	channel->config->quotes += ({([
 		"msg": param,
 		"game": chaninfo->game,
