@@ -123,8 +123,6 @@ void streaminfo(array data)
 }
 
 //TODO maybe: use get_helix_paginated for this
-//TODO: Make this actually get all games. For some reason, a lot of channel info synthesis is failing...
-//Current best guess: games with no live streams are perhaps being omitted??
 int fetching_game_names = 0;
 void gamenames(string data)
 {
@@ -148,8 +146,14 @@ mapping build_channel_info(mapping stream)
 	{
 		if (stream->game_id != "0" && !fetching_game_names)
 		{
-			write("Fetching games because no idea what game %O is\n", stream->game_id);
-			G->G->category_names = ([]);
+			write("Fetching games because we know %d games but not %O\n",
+				sizeof(G->G->category_names), stream->game_id);
+			//Note that category_names is NOT cleared before we start. There
+			//have been many instances where games aren't being detected, and I
+			//suspect that either some games are being omitted from the return
+			//value, or they're slipping in the gap between pages due to changes
+			//in the ordering of the "top 100" and "next 100". It should be safe
+			//to retain any previous ones seen this run.
 			fetching_game_names = 1;
 			cache_game_names("");
 		}
