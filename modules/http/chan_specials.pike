@@ -5,7 +5,7 @@ string respstr(mapping|string resp) {return Parser.encode_html_entities(stringp(
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	array commands = ({ }), updates = ({ });
-	foreach (function_object(G->G->commands->addcmd)->SPECIALS; string spec; [string desc, string originator, string params])
+	foreach (function_object(G->G->commands->addcmd)->SPECIALS, [string spec, [string desc, string originator, string params]])
 	{
 		string cmdname = spec + req->misc->channel->name;
 		mixed response = G->G->echocommands[cmdname];

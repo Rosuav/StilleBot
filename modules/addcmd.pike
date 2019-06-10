@@ -1,14 +1,15 @@
 inherit command;
 constant require_moderator = 1;
-constant SPECIALS = ([
-	"!follower": ({"Someone follows the channel", "The new follower", ""}),
-	"!sub": ({"Brand new subscription", "The subscriber", "{tier} (1, 2, or 3)"}),
-	"!resub": ({"Resub is announced", "The subscriber", "{tier}, {months}, {streak}"}),
-	"!subgift": ({"Someone gives a sub", "The giver", "{tier}, {months}, {streak}, {recipient}"}),
-	"!subbomb": ({"Someone gives many subgifts", "The giver", "{tier}, {gifts}"}),
-	"!cheer": ({"Any bits are cheered (including anonymously)", "The giver", "{bits}"}),
-	"!cheerbadge": ({"A viewer attains a new cheer badge", "The cheerer", "{level} - badge for N bits"}),
-]);
+constant SPECIALS = ({
+	({"!follower", ({"Someone follows the channel", "The new follower", ""})}),
+	({"!sub", ({"Brand new subscription", "The subscriber", "{tier} (1, 2, or 3)"})}),
+	({"!resub", ({"Resub is announced", "The subscriber", "{tier}, {months}, {streak}"})}),
+	({"!subgift", ({"Someone gives a sub", "The giver", "{tier}, {months}, {streak}, {recipient}"})}),
+	({"!subbomb", ({"Someone gives many subgifts", "The giver", "{tier}, {gifts}"})}),
+	({"!cheer", ({"Any bits are cheered (including anonymously)", "The giver", "{bits}"})}),
+	({"!cheerbadge", ({"A viewer attains a new cheer badge", "The cheerer", "{level} - badge for N bits"})}),
+});
+constant SPECIAL_NAMES = (multiset)SPECIALS[*][0];
 constant docstring = sprintf(#"
 Add an echo command for this channel
 
@@ -36,7 +37,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 
 Editing these special commands can also be done via the bot's web browser
 configuration pages, where available.
-", (array)SPECIALS);
+", SPECIALS);
 string process(object channel, object person, string param)
 {
 	if (sscanf(param, "!%[^# ] %s", string cmd, string response) == 2)
@@ -45,7 +46,7 @@ string process(object channel, object person, string param)
 		//making it a channel-specific command; global commands can only be created by
 		//manually editing the JSON file.
 		cmd = lower_case(cmd); //TODO: Switch this out for a proper Unicode casefold
-		if (!SPECIALS[cmd] && has_value(cmd, '!')) return "@$$: Command names cannot include exclamation marks";
+		if (!SPECIAL_NAMES[cmd] && has_value(cmd, '!')) return "@$$: Command names cannot include exclamation marks";
 		cmd += channel->name;
 		string newornot = G->G->echocommands[cmd] ? "Updated" : "Created new";
 		G->G->echocommands[cmd] = response;
