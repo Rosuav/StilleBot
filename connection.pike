@@ -164,6 +164,8 @@ constant badge_aliases = ([ //Fold a few badges together, and give shorthands fo
 	//"subscriber": "_sub", //if you want shorthand
 ]);
 //Go through a message's parameters/tags to get the info about the person
+//There may be some non-person info gathered into here too, just for
+//convenience; in fact, the name "person" here is kinda orphanned. (Tragic.)
 mapping(string:mixed) gather_person_info(object person, mapping params)
 {
 	mapping ret = (["nick": person->nick, "user": person->user]);
