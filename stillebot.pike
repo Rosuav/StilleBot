@@ -53,23 +53,6 @@ int main(int argc,array(string) argv)
 	foreach ("persist_config command send_message window" / " ", string vital)
 		if (!all_constants()[vital])
 			exit(1, "Vital core files failed to compile, cannot continue.\n");
-	//Compat: Import settings from the old text config
-	if (file_stat("twitchbot_config.txt"))
-	{
-		mapping config = ([]);
-		foreach (Stdio.read_file("twitchbot_config.txt")/"\n", string l)
-		{
-			l = String.trim_all_whites(l); //Trim off carriage returns as needed
-			if (l=="" || l[0]=='#') continue;
-			sscanf(l, "%s:%s", string key, string val); if (!val) continue;
-			config[key] = String.trim_all_whites(val); //Permit (but don't require) a space after the colon
-		}
-		if (config->pass[0] == '<') m_delete(config, "pass");
-		object persist = all_constants()["persist"]; //Since we can't use the constant as such :)
-		persist["ircsettings"] = config;
-		persist->dosave(); //Save synchronously before destroying the config file
-		if (!persist->saving) rm("twitchbot_config.txt");
-	}
 	#ifndef __NT__
 	//Windows has big problems with read callbacks on both stdin and one or more sockets.
 	//(I suspect it's because the select() function works on sockets, not file descriptors.)
