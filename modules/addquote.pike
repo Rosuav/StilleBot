@@ -19,8 +19,9 @@ string process(object channel, object person, string param)
 	if (!channel->config->quotes) channel->config->quotes = ({ });
 	mapping chaninfo = G->G->channel_info[channel->name[1..]];
 	if (!chaninfo) return "@$$: Internal error - no channel info"; //I'm pretty sure this shouldn't happen
-	//If you type "!addquote personname text", transform it.
+	int orig_length = sizeof(param);
 	int simulate = sscanf(param, "-n %s", param);
+	//If you type "!addquote personname text", transform it.
 	if (sscanf(param, "%*[@]%s %s", string who, string what) && what)
 	{
 		if (lower_case(who) == channel->name[1..] || channel->viewers[lower_case(who)])
@@ -28,9 +29,21 @@ string process(object channel, object person, string param)
 			//Seems to be a person's name at the start. Flip it to the end.
 			//Note that this isn't perfect; if the person happens to not be in
 			//the viewer list, the transformation won't work.
-			//TODO: Check if there's an emote at either end of the 'what' and
-			//add a space between that and the quote. Will need the tags from
-			//the incoming message (not just 'string param').
+			if (person->measurement_offset >= 0 && person->emotes)
+			{
+				//Calculate a new offset by seeing how much we've trimmed off the start
+				int ofs = person->measurement_offset + orig_length - sizeof(what);
+				//Check the emotes to see if any of them covers the beginning or end
+				//of the quoted text.
+				int startswith = 0, endswith = 0;
+				foreach (person->emotes, [int id, int start, int end])
+				{
+					if (start - ofs <= 0) startswith = 1;
+					if (end - ofs >= sizeof(what) - 1) endswith = 1;
+				}
+				//Ensure there's a space around emotes, but not else.
+				what = " " * startswith + String.trim(what) + " " * endswith;
+			}
 			param = sprintf("\"%s\" -- %s", what, who);
 		}
 	}
