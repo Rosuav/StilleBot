@@ -181,6 +181,17 @@ mapping(string:mixed) gather_person_info(object person, mapping params)
 			if (string flag = badge_aliases[badge]) ret->badges[flag] = status;
 		}
 	}
+	if (params->emotes)
+	{
+		ret->emotes = ({ });
+		foreach (params->emotes / "/", string emote) if (emote != "")
+		{
+			sscanf(emote, "%d:%d-%d", int id, int start, int end);
+			if (end < start) continue; //Shouldn't happen (probably a parse failure)
+			ret->emotes += ({({id, start, end})});
+		}
+	}
+	//ret->raw = params; //For testing
 	return ret;
 }
 
