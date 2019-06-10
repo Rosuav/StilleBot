@@ -123,6 +123,8 @@ void streaminfo(array data)
 }
 
 //TODO maybe: use get_helix_paginated for this
+//TODO: Make this actually get all games. For some reason, a lot of channel info synthesis is failing...
+//Current best guess: games with no live streams are perhaps being omitted??
 int fetching_game_names = 0;
 void gamenames(string data)
 {
