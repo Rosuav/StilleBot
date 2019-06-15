@@ -32,3 +32,4 @@
   it lets them whisper a single link?
   - Would make it functional in channels where they're hard-blocked at the Twitch end.
   - Problem: a bad link can't just be purged by a mod, since it's come from another mod.
+* Can the bot delete one of his own previously-posted messages without losing sword? Test.
