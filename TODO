@@ -28,3 +28,7 @@
     - ergo, use Helix for polling, not Kraken
     - Some can't be changed. Offline channel info requires Kraken (as of 20190405).
   - Make sure all callers are happy with the Helix-provided info format
+* Create a variant of !permit where, instead of stopping someone from being timed out,
+  it lets them whisper a single link?
+  - Would make it functional in channels where they're hard-blocked at the Twitch end.
+  - Problem: a bad link can't just be purged by a mod, since it's come from another mod.
