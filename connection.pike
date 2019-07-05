@@ -648,19 +648,21 @@ void create()
 			sscanf(irc->listen_address||"", "%d", listen_port);
 			sscanf(irc->listen_address||"", "%s:%d", listen_addr, listen_port);
 
-			if (listen_port * -use_https != G->G->httpserver_port_used)
+			string cert = Stdio.read_file("certificate.pem");
+			if (listen_port * -use_https != G->G->httpserver_port_used || cert != G->G->httpserver_certificate)
 			{
 				//Port or SSL status has changed. Force the server to be restarted.
 				if (object http = m_delete(G->G, "httpserver")) http->close();
 				G->G->httpserver_port_used = listen_port * -use_https;
+				werror("Resetting HTTP server.\n");
 			}
 
 			if (G->G->httpserver) G->G->httpserver->callback = http_handler;
 			else if (!use_https) G->G->httpserver = Protocols.WebSocket.Port(http_handler, ws_handler, listen_port, listen_addr);
 			else
 			{
-				string cert = Stdio.read_file("certificate.pem"),
-					key = Stdio.read_file("privkey.pem");
+				G->G->httpserver_certificate = cert;
+				string key = Stdio.read_file("privkey.pem");
 				array certs = cert && Standards.PEM.Messages(cert)->get_certificates();
 				string pk = key && Standards.PEM.simple_decode(key);
 				//If we don't have a valid PK and cert(s), Pike will autogenerate a cert.
