@@ -29,6 +29,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		string resp = String.trim(req->variables->newcmd_resp || "");
 		if (name != "" && resp != "")
 		{
+			//TODO: If this collides with an existing one, error out or something
+			//Currently it's being overwritten by the old one.
 			changes_made = 1;
 			G->G->echocommands[name + c] = resp;
 			messages += ({"* Created !" + name});
