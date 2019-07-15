@@ -555,6 +555,13 @@ void http_handler(Protocols.HTTP.Server.Request req)
 			break;
 		}
 	}
+	//If we receive URL-encoded form data, assume it's UTF-8.
+	if (req->request_headers["content-type"] == "application/x-www-form-urlencoded" && mappingp(req->variables))
+	{
+		//NOTE: We currently don't UTF-8-decode the keys; they should usually all be ASCII anyway.
+		foreach (req->variables; string key; mixed value)
+			if (stringp(value)) req->variables[key] = utf8_to_string(value);
+	}
 	if (handler)
 	{
 		if (mixed ex = catch {resp = handler(req, @args);}) {handle_http_error(ex, req); return;}
