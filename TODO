@@ -37,4 +37,3 @@
     IDs. This makes things hard.
 * What happens if there's a long HTTP connection and you update code?
   - Currently I don't do much with websockets, but it can be tested using songreq.html.
-* Bug: Updating Stillebot commands via the web can break encoding
