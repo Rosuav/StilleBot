@@ -559,8 +559,9 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	if (req->request_headers["content-type"] == "application/x-www-form-urlencoded" && mappingp(req->variables))
 	{
 		//NOTE: We currently don't UTF-8-decode the keys; they should usually all be ASCII anyway.
-		foreach (req->variables; string key; mixed value)
+		foreach (req->variables; string key; mixed value) catch {
 			if (stringp(value)) req->variables[key] = utf8_to_string(value);
+		};
 	}
 	if (handler)
 	{
