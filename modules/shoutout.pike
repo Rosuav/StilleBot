@@ -29,7 +29,7 @@ constant game_desc = ([
 
 void shoutout(mapping info, string channel)
 {
-	if (!info) {send_message(channel, "No channel found (do you have the Twitch time machine?)"); return;}
+	if (!info || !info->url) {send_message(channel, "No channel found (do you have the Twitch time machine?)"); return;}
 	string game = replace(game_desc[info->game] || "playing %s", "%s", info->game || "(null)");
 	string chron = "was last seen";
 	//Note that the Kraken info - which is what we get if the channel isn't polled -
