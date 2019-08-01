@@ -460,23 +460,19 @@ string describe_time_short(int tm)
 	return msg;
 }
 
-void streaminfo_display(string data)
+void streaminfo_display(mapping info)
 {
-	mapping info = decode(data); if (!info) return;
-	sscanf(info->_links->self, "https://api.twitch.tv/kraken/streams/%s", string name);
 	if (info->stream)
 	{
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->stream->created_at);
-		write("Channel %s went online at %s\n", name, started->format_nice());
+		write("Channel went online at %s\n", started->format_nice());
 		write("Uptime: %s\n", describe_time_short(started->distance(Calendar.now())->how_many(Calendar.Second())));
 	}
-	else write("Channel %s is offline.\n", name);
+	else write("Channel is offline.\n");
 	if (!--requests) exit(0);
 }
-void chaninfo_display(string data)
+void chaninfo_display(mapping info)
 {
-	mapping info = decode(data); if (!info) return;
-	sscanf(info->_links->self, "https://api.twitch.tv/kraken/channels/%s", string name);
 	if (info->mature) write("[MATURE] ");
 	write("%s was last seen playing %s, at %s - %s\n",
 		info->display_name, string_to_utf8(info->game || "(null)"), info->url, string_to_utf8(info->status || "(null)"));
@@ -579,8 +575,9 @@ int main(int argc, array(string) argv)
 		{
 			//For online channels, we could save ourselves one request. Simpler to just do 'em all though.
 			++requests; //These require two requests
-			make_request("https://api.twitch.tv/kraken/streams/"+chan, streaminfo_display);
-			make_request("https://api.twitch.tv/kraken/channels/"+chan, chaninfo_display);
+			get_channel_info(chan)->then(chaninfo_display)
+				->then(lambda() {return request("https://api.twitch.tv/helix/streams?user_login=" + chan);})
+				->then(streaminfo_display);
 		}
 	}
 	return requests && -1;
