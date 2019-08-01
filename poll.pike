@@ -20,6 +20,27 @@ void make_request(string url, function cbdata, int|void which_api) //which_api: 
 		Protocols.HTTP.Query()->set_callbacks(request_ok,request_fail,cbdata));
 }
 
+//Same as make_request but returns a Future instead of using a callback
+//TODO: Replace all use of make_request with this (note that this does the JSON decode automatically)
+Concurrent.Future request(string url, int|void which_api) //which_api: 0=v3 (deprecated), 1=v5, 2=Helix
+{
+	sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
+	mapping headers = ([]);
+	if (which_api == 1) headers["Accept"] = "application/vnd.twitchtv.v5+json";
+	if (pass) headers["Authorization"] = "OAuth " + pass;
+	//TODO: Use bearer auth where appropriate (is it exclusively when which_api==2?)
+	if (string c=persist_config["ircsettings"]["clientid"])
+		//Some requests require a Client ID. Not sure which or why.
+		headers["Client-ID"] = c;
+	return Protocols.HTTP.Promise.get_url(url, Protocols.HTTP.Promise.Arguments((["headers": headers])))
+		->then(lambda(Protocols.HTTP.Promise.Result res) {
+			mixed data = Standards.JSON.decode(res->get());
+			if (!mappingp(data)) return Concurrent.reject("Bad response"); //TODO: Give more useful info?
+			if (data->status) return Concurrent.reject(sprintf("Error %d from Twitch", data->status));
+			return data;
+		});
+}
+
 class get_helix_paginated(string uri, mapping|void query, mapping|void headers)
 {
 	inherit Concurrent.Promise;
@@ -375,6 +396,14 @@ void get_lookup_token()
 	]), 0, Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, got_lookup_token));
 }
 
+Concurrent.Future get_user_id(string username)
+{
+	username = lower_case(username);
+	if (int id = G->G->userids[username]) return Concurrent.resolve(id); //Local cache for efficiency
+	return request("https://api.twitch.tv/kraken/users?login=" + username, 1)
+		->then(lambda(mapping data) {return G->G->userids[username] = (int)data->users[0]->_id;});
+}
+
 void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //Maybe make the poll interval customizable?
@@ -400,12 +429,14 @@ void create()
 	if (!G->G->stream_online_since) G->G->stream_online_since = ([]);
 	if (!G->G->channel_info) G->G->channel_info = ([]);
 	if (!G->G->category_names) G->G->category_names = ([]);
+	if (!G->G->userids) G->G->userids = ([]);
 	remove_call_out(G->G->poll_call_out);
 	poll();
 	add_constant("get_channel_info", get_channel_info);
 	add_constant("check_following", check_following);
 	add_constant("get_video_info", get_video_info);
 	add_constant("stream_status", stream_status);
+	add_constant("get_user_id", get_user_id);
 }
 
 #if !constant(G)
