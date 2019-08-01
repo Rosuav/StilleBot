@@ -548,57 +548,12 @@ class clips_display(string channel)
 	}
 }
 
-mapping gamecounts = ([]), gameviewers = ([]), gamechannel = ([]);
-void show_turkish(string data)
-{
-	mapping info = decode(data); if (!info) exit(0);
-	foreach (info->streams, mapping st)
-	{
-		gamecounts[st->channel->game]++;
-		gameviewers[st->channel->game] += st->viewers;
-		gamechannel[st->channel->game] = st->channel->display_name + ": " + st->channel->status;
-	}
-	if (sizeof(info->streams) == 100) {make_request(info->_links->next, show_turkish); return;}
-	//Print out a summary
-	if (sizeof(gamecounts))
-	{
-		array games = ({ });
-		foreach (gamecounts; string game; int count)
-			if (count > 1) games += ({sprintf("%3d:%3d %s", count, gameviewers[game], game)});
-			else games += ({sprintf("  1:%3d %s - %s", gameviewers[game], game, gamechannel[game])});
-		sort(games);
-		write("%{%s\n%}", string_to_utf8(reverse(games)[*]));
-	}
-	else write("No games online.\n");
-	exit(0);
-}
-
-int n = 0;
-void find_s0lar(string data)
-{
-	mapping info = decode(data); if (!info) exit(0);
-	n += sizeof(info->follows);
-	foreach (info->follows, mapping f)
-		if (has_value(f->user->name + f->user->display_name, "s0lar"))
-			write("%s created %s followed %s\n", f->user->display_name, f->user->created_at, f->created_at);
-	if (!info->_links->next) {werror("Checked %d followers\n", n); exit(0);} //Not working - it's not stopping. Weird.
-	werror("%d...\r", n);
-	make_request(info->_links->next, find_s0lar);
-}
-
 int main(int argc, array(string) argv)
 {
 	if (argc == 1)
 	{
 		Tools.Hilfe.StdinHilfe(({"inherit \"poll.pike\";", "start backend"}));
 		return 0;
-	}
-	if (argc > 1 && argv[1] == "hack")
-	{
-		//TODO: Have a generic way to do this nicely.
-		//make_request("https://api.twitch.tv/kraken/streams?language=tr&limit=100&stream_type=live", show_turkish);
-		make_request("https://api.twitch.tv/kraken/channels/devicat/follows?limit=100", find_s0lar);
-		return -1;
 	}
 	requests = argc - 1;
 	foreach (argv[1..], string chan)
