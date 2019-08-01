@@ -827,7 +827,8 @@ class easy_auth
 		sscanf(win->pass->get_text(), "oauth:%s", string pass);
 		if (!pass) return;
 		Protocols.HTTP.do_async_method("GET", "https://api.twitch.tv/kraken/user", 0,
-			(["Authorization": "OAuth " + pass]),
+			(["Authorization": "OAuth " + pass,
+			"Accept": "application/vnd.twitchtv.v5+json"]),
 			Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, pass));
 	}
 
