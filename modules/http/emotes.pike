@@ -11,7 +11,7 @@ inherit http_endpoint;
 //You'll get back a two-key object "ephemeral" and "permanent", each one mapping channel
 //name to array of emotes.
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
+mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->variables->flushcache)
 	{
@@ -29,9 +29,12 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (!cfg->nick || cfg->nick == "") return (["data": "Oops, shouldn't happen"]);
 		sscanf(cfg["pass"] || "", "oauth:%s", string pass);
 		write("Fetching emote list\n");
-		ret = ret->then(lambda() {return Protocols.HTTP.Promise.get_url("https://api.twitch.tv/kraken/users/" + cfg->nick + "/emotes",
+		ret = ret->then(lambda() {return get_user_id(cfg->nick);})
+		->then(lambda(int id) {
+			return Protocols.HTTP.Promise.get_url("https://api.twitch.tv/kraken/users/" + id + "/emotes",
 			Protocols.HTTP.Promise.Arguments((["headers": ([
 				"Authorization": "OAuth " + pass,
+				"Accept": "application/vnd.twitchtv.v5+json",
 				"Client-ID": cfg->clientid,
 			])])));
 		})->then(lambda(Protocols.HTTP.Promise.Result res) {
