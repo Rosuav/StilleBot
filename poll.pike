@@ -36,7 +36,7 @@ Concurrent.Future request(string url, int|void which_api) //which_api: 0=v3 (dep
 		->then(lambda(Protocols.HTTP.Promise.Result res) {
 			mixed data = Standards.JSON.decode(res->get());
 			if (!mappingp(data)) return Concurrent.reject("Bad response"); //TODO: Give more useful info?
-			if (data->status) return Concurrent.reject(sprintf("Error %d from Twitch", data->status));
+			if (data->error) return Concurrent.reject(sprintf("Error from Twitch: %O (%O)", data->error, data->status));
 			return data;
 		});
 }
@@ -93,23 +93,12 @@ class get_helix_paginated(string uri, mapping|void query, mapping|void headers)
 	}
 }
 
-class get_channel_info(string name, function callback)
+Concurrent.Future get_channel_info(string name)
 {
-	array cbargs;
-	void create(mixed ... cbargs)
-	{
-		this->cbargs = cbargs;
-		make_request("https://api.twitch.tv/kraken/channels/"+name, got_data);
-	}
-
-	void got_data(string data)
-	{
-		mapping info = Standards.JSON.decode(data);
-		if (info->status == 404) {if (callback) callback(0, @cbargs); return;} //Probably a dud channel name
-		//sscanf(info->_links->self, "https://api.twitch.tv/kraken/channels/%s", string gotname);
-		//if (gotname != name) assert_fail;
-		if (!G->G->channel_info[name]) G->G->channel_info[name] = info;
-		if (callback) callback(info, @cbargs);
+	return get_user_id(name)->then(lambda(int id) {return request("https://api.twitch.tv/kraken/channels/"+id, 1);})
+	->then(lambda(mapping info) {
+		if (!G->G->channel_info[name]) G->G->channel_info[name] = info; //Autocache
+		return info;
 		/* Things we make use of:
 		 * game => category
 		 * mature => boolean, true if has click-through warning
@@ -118,7 +107,7 @@ class get_channel_info(string name, function callback)
 		 * status => stream title
 		 * _id => numeric user ID
 		 */
-	}
+	});
 }
 
 class get_video_info(string name, function callback)
@@ -208,7 +197,7 @@ void stream_status(string name, mapping info)
 		{
 			//Make sure we know about all channels
 			write("** Channel %s isn't online - fetching last-known state **\n", name);
-			get_channel_info(name, 0);
+			get_channel_info(name);
 		}
 		else m_delete(G->G->channel_info[name], "online_type");
 		if (m_delete(G->G->stream_online_since, name))
@@ -253,7 +242,7 @@ void stream_status(string name, mapping info)
 		{
 			write("SYNTHESIS FAILED - maybe bad game? %O\n", info->game_id);
 			G->G->channel_info[name] = 0; //Force an update by clearing the old info
-			get_channel_info(name, 0);
+			get_channel_info(name);
 		}
 		//if (synthesized?->status != last_title) write("Old title: %O\nNew title: %O\n", last_title, synthesized?->status); //hack
 		//TODO: Report when the game changes?

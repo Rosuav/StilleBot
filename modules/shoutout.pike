@@ -58,7 +58,7 @@ string process(object channel, object person, string param)
 	if (!info)
 	{
 		write("... fetching channel info to give shout-out to %s...\n", param);
-		get_channel_info(lower_case(param), shoutout, channel->name);
+		get_channel_info(lower_case(param))->then(lambda(mapping info) {shoutout(info, channel->name);});
 	}
 	else shoutout(info, channel->name);
 }
