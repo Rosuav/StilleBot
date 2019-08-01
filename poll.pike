@@ -41,6 +41,14 @@ Concurrent.Future request(string url, int|void which_api) //which_api: 0=v3 (dep
 		});
 }
 
+Concurrent.Future get_user_id(string username)
+{
+	username = lower_case(username);
+	if (int id = G->G->userids[username]) return Concurrent.resolve(id); //Local cache for efficiency
+	return request("https://api.twitch.tv/kraken/users?login=" + username, 1)
+		->then(lambda(mapping data) {return G->G->userids[username] = (int)data->users[0]->_id;});
+}
+
 class get_helix_paginated(string uri, mapping|void query, mapping|void headers)
 {
 	inherit Concurrent.Promise;
@@ -394,14 +402,6 @@ void get_lookup_token()
 		"client_secret": persist_config["ircsettings"]["clientsecret"],
 		"grant_type": "client_credentials",
 	]), 0, Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, got_lookup_token));
-}
-
-Concurrent.Future get_user_id(string username)
-{
-	username = lower_case(username);
-	if (int id = G->G->userids[username]) return Concurrent.resolve(id); //Local cache for efficiency
-	return request("https://api.twitch.tv/kraken/users?login=" + username, 1)
-		->then(lambda(mapping data) {return G->G->userids[username] = (int)data->users[0]->_id;});
 }
 
 void poll()
