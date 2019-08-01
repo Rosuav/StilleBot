@@ -2,9 +2,8 @@ inherit command;
 constant hidden_command = 1;
 constant require_moderator = 1;
 
-void report_transcoding(object videoinfo, string pfx)
+void report_transcoding(mapping videoinfo, string pfx)
 {
-	if (!videoinfo) return;
 	string channel = videoinfo->channel->name;
 	mapping res = videoinfo->resolutions;
 	if (!res || !sizeof(res)) return; //Shouldn't happen
@@ -22,12 +21,12 @@ void report_transcoding(object videoinfo, string pfx)
 int connected(string channel)
 {
 	if (persist_config["channels"][channel]->reporttrans)
-		get_video_info(channel, report_transcoding, "Welcome to the stream!");
+		get_video_info(channel)->then(lambda(mapping info) {report_transcoding(info, "Welcome to the stream!");});
 }
 
 string process(object channel, object person, string param)
 {
-	get_video_info(channel->name[1..], report_transcoding, "@" + person->user + ":");
+	get_video_info(channel->name[1..])->then(lambda(mapping info) {report_transcoding(info, "@" + person->user + ":");});
 }
 
 void create(string name)

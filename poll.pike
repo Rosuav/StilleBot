@@ -110,23 +110,11 @@ Concurrent.Future get_channel_info(string name)
 	});
 }
 
-class get_video_info(string name, function callback)
+Concurrent.Future get_video_info(string name)
 {
-	array cbargs;
-	void create(mixed ... cbargs)
-	{
-		this->cbargs = cbargs;
-		//Can't replace this with Helix as there's no video formats/resolutions info in Helix
-		make_request("https://api.twitch.tv/kraken/channels/" + name + "/videos?broadcast_type=archive&limit=1", got_data);
-	}
-
-	void got_data(string data)
-	{
-		mapping info = Standards.JSON.decode(data);
-		if (info->status == 404 || !sizeof(info->videos)) info = 0; //Probably a dud channel name
-		else info = info->videos[0];
-		if (callback) callback(info, @cbargs);
-	}
+	return get_user_id(name)->then(lambda(int id) {return
+		request("https://api.twitch.tv/kraken/channels/"+id+"/videos?broadcast_type=archive&limit=1", 1);
+	})->then(lambda(mapping info) {return info->videos[0];});
 }
 
 void streaminfo(array data)
