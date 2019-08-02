@@ -558,7 +558,9 @@ int main(int argc, array(string) argv)
 			if (user == "transcoding")
 			{
 				write("Checking transcoding history...\n");
-				request("https://api.twitch.tv/kraken/channels/" + ch + "/videos?broadcast_type=archive&limit=100")->then(transcoding_display);
+				get_user_id(ch)->then(lambda(int id) {return
+					request("https://api.twitch.tv/kraken/channels/" + id + "/videos?broadcast_type=archive&limit=100", 1);
+				})->then(transcoding_display);
 				continue;
 			}
 			if (user == "clips")
