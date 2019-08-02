@@ -139,7 +139,7 @@ void gamenames(string data)
 	if (!info->pagination || !info->pagination->cursor) {fetching_game_names = 0; write("-- Done!\n");}
 	else call_out(cache_game_names, 2, info->pagination->cursor);
 }
-void cache_game_names(string pag) {make_request("https://api.twitch.tv/helix/games/top?first=100&after=" + pag, gamenames);}
+void cache_game_names(string pag) {make_request("https://api.twitch.tv/helix/games/top?first=100&after=" + pag, gamenames, 2);}
 
 //Attempt to construct a channel info mapping from the stream info
 //May use other caches of information. If unable to build the full
