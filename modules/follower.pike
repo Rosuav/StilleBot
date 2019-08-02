@@ -11,5 +11,6 @@ void respond(string user, string chan, mapping info, string requester)
 string process(object channel, object person, string param)
 {
 	if (param == "") param = person->user;
-	check_following(lower_case(param), channel->name[1..], respond, person->user);
+	check_following(lower_case(param), channel->name[1..])
+		->then(lambda(array args) {respond(@args, person->user);});
 }

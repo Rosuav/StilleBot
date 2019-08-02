@@ -266,22 +266,13 @@ void stream_status(string name, mapping info)
 	}
 }
 
-class check_following(string user, string chan, function|void callback)
+Concurrent.Future check_following(string user, string chan)
 {
 	//TODO: Switch to Helix - https://api.twitch.tv/helix/users/follows?from_id=<user ID>&to_id=<user ID>
 	//Or not, since that would require looking up the from and to names to
 	//get their IDs first, and THEN finding out if they're linked.
-	array cbargs;
-	void create(mixed ... cbargs)
-	{
-		this->cbargs = cbargs;
-		make_request("https://api.twitch.tv/kraken/users/" + user + "/follows/channels/" + chan, got_data);
-	}
-
-	void got_data(string data)
-	{
-		mapping info; catch {info = Standards.JSON.decode(data);}; //As above
-		if (!info) return; //Server failure, probably
+	return request("https://api.twitch.tv/kraken/users/" + user + "/follows/channels/" + chan, 0)
+	->then(lambda(mapping info) {
 		if (info->status == 404)
 		{
 			//Not following. Explicitly store that info.
@@ -289,14 +280,14 @@ class check_following(string user, string chan, function|void callback)
 			if (!chan) return;
 			mapping foll = G_G_("participants", chan, user);
 			foll->following = 0;
-			if (callback) callback(user, chan, foll, @cbargs);
+			return ({user, chan, foll});
 		}
 		if (info->error) return; //Unknown error. Ignore it (most likely the user will be assumed not to be a follower).
 		sscanf(info->_links->self, "https://api.twitch.tv/kraken/users/%s/follows/channels/%s", string user, string chan);
 		mapping foll = G_G_("participants", chan, user);
 		foll->following = "since " + info->created_at;
-		if (callback) callback(user, chan, foll, @cbargs);
-	}
+		return ({user, chan, foll});
+	});
 }
 
 void confirm_webhook() {/* There's no data or anything, so nothing to do */}
@@ -478,8 +469,9 @@ void chaninfo_display(mapping info)
 		info->display_name, string_to_utf8(info->game || "(null)"), info->url, string_to_utf8(info->status || "(null)"));
 	if (!--requests) exit(0);
 }
-void followinfo_display(string user, string chan, mapping info)
+void followinfo_display(array args)
 {
+	[string user, string chan, mapping info] = args;
 	if (!info->following) write("%s is not following %s.\n", user, chan);
 	else write("%s has been following %s %s.\n", user, chan, (info->following/"T")[0]);
 	if (!--requests) exit(0);
@@ -570,7 +562,7 @@ int main(int argc, array(string) argv)
 				continue;
 			}
 			write("Checking follow status...\n");
-			check_following(user, ch, followinfo_display);
+			check_following(user, ch)->then(followinfo_display);
 		}
 		else
 		{
