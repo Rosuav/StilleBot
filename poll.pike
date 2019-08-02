@@ -6,8 +6,9 @@
 void data_available(object q, function cbdata) {cbdata(q->unicode_data());}
 void request_ok(object q, function cbdata) {q->async_fetch(data_available, cbdata);}
 void request_fail(object q) { } //If a poll request fails, just ignore it and let the next poll pick it up.
-void make_request(string url, function cbdata, int|void which_api) //which_api: 0=v3, 1=v5, 2=Helix
+void make_request(string url, function cbdata, int|void which_api) //which_api: 1=v5, 2=Helix
 {
+	if (!which_api) error("Must specify an API - 1=Kraken v5, 2=Helix\n");
 	sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
 	mapping headers = ([]);
 	if (which_api == 1) headers["Accept"] = "application/vnd.twitchtv.v5+json";
@@ -22,8 +23,9 @@ void make_request(string url, function cbdata, int|void which_api) //which_api: 
 
 //Same as make_request but returns a Future instead of using a callback
 //TODO: Replace all use of make_request with this (note that this does the JSON decode automatically)
-Concurrent.Future request(string url, int|void which_api) //which_api: 0=v3 (deprecated), 1=v5, 2=Helix
+Concurrent.Future request(string url, int|void which_api) //which_api: 1=v5, 2=Helix
 {
+	if (!which_api) error("Must specify an API - 1=Kraken v5, 2=Helix\n");
 	sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
 	mapping headers = ([]);
 	if (which_api == 1) headers["Accept"] = "application/vnd.twitchtv.v5+json";
@@ -430,9 +432,8 @@ void interactive(mixed info)
 }
 int req(string url, int|void which_api) //Returns 0 to suppress Hilfe warning.
 {
-	if (undefinedp(which_api)) which_api = 1; //Default to v5, but support v3 if explicitly requested
 	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/kraken/" + url[url[0]=='/'..];
-	request(url, which_api)->then(interactive, interactive); //Errors go through to the same place
+	request(url, which_api || 1)->then(interactive, interactive); //Errors go through to the same place
 }
 
 //Lifted from globals because I can't be bothered refactoring
@@ -565,7 +566,7 @@ int main(int argc, array(string) argv)
 			//For online channels, we could save ourselves one request. Simpler to just do 'em all though.
 			++requests; //These require two requests
 			get_channel_info(chan)->then(chaninfo_display)
-				->then(lambda() {return request("https://api.twitch.tv/helix/streams?user_login=" + chan);})
+				->then(lambda() {return request("https://api.twitch.tv/helix/streams?user_login=" + chan, 2);})
 				->then(streaminfo_display);
 		}
 	}
