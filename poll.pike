@@ -95,7 +95,6 @@ class get_helix_paginated(string uri, mapping|void query, mapping|void headers)
 	}
 }
 
-//FIXME: The switch to v5 seems to have broken encodings here (see !so sarahburnsstudio).
 Concurrent.Future get_channel_info(string name)
 {
 	return get_user_id(name)->then(lambda(int id) {return request("https://api.twitch.tv/kraken/channels/"+id, 1);})
