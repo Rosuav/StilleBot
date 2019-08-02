@@ -95,6 +95,7 @@ class get_helix_paginated(string uri, mapping|void query, mapping|void headers)
 	}
 }
 
+//FIXME: The switch to v5 seems to have broken encodings here (see !so sarahburnsstudio).
 Concurrent.Future get_channel_info(string name)
 {
 	return get_user_id(name)->then(lambda(int id) {return request("https://api.twitch.tv/kraken/channels/"+id, 1);})
@@ -433,7 +434,7 @@ void interactive(mixed info)
 int req(string url, int|void which_api) //Returns 0 to suppress Hilfe warning.
 {
 	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/kraken/" + url[url[0]=='/'..];
-	request(url, which_api || 1)->then(interactive, interactive); //Errors go through to the same place
+	request(url, which_api || 1)->then(interactive); //Errors go through to the same place
 }
 
 //Lifted from globals because I can't be bothered refactoring
