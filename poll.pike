@@ -36,7 +36,7 @@ Concurrent.Future request(string url, int|void which_api) //which_api: 1=v5, 2=H
 		headers["Client-ID"] = c;
 	return Protocols.HTTP.Promise.get_url(url, Protocols.HTTP.Promise.Arguments((["headers": headers])))
 		->then(lambda(Protocols.HTTP.Promise.Result res) {
-			mixed data = Standards.JSON.decode(res->get());
+			mixed data = Standards.JSON.decode_utf8(res->get());
 			if (!mappingp(data)) return Concurrent.reject(({"Unparseable response\n", backtrace()}));
 			if (data->error) return Concurrent.reject(({sprintf("Error from Twitch: %O (%O)\n", data->error, data->status), backtrace()}));
 			return data;
