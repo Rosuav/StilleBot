@@ -485,9 +485,8 @@ void followinfo_display(string user, string chan, mapping info)
 	if (!--requests) exit(0);
 }
 
-void transcoding_display(string data)
+void transcoding_display(mapping info)
 {
-	mapping info = Standards.JSON.decode(data);
 	if (info->status == 404 || !sizeof(info->videos))
 	{
 		write("Error fetching transcoding info: %O\n", info);
@@ -559,7 +558,7 @@ int main(int argc, array(string) argv)
 			if (user == "transcoding")
 			{
 				write("Checking transcoding history...\n");
-				make_request("https://api.twitch.tv/kraken/channels/" + ch + "/videos?broadcast_type=archive&limit=100", transcoding_display);
+				request("https://api.twitch.tv/kraken/channels/" + ch + "/videos?broadcast_type=archive&limit=100")->then(transcoding_display);
 				continue;
 			}
 			if (user == "clips")
