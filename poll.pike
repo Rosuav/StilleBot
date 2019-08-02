@@ -434,18 +434,18 @@ mapping decode(string data)
 	if (!--requests) exit(0);
 }
 
-void interactive(string data)
+void interactive(mixed info)
 {
-	mapping info = decode(data); if (!info) return;
 	write("%O\n", info);
 	//TODO: Surely there's a better way to access the history object for the running Hilfe...
 	object history = function_object(all_constants()["backend_thread"]->backtrace()[0]->args[0])->history;
 	history->push(info);
 }
-int req(string url, int|void v5) //Returns 0 to suppress Hilfe warning.
+int req(string url, int|void which_api) //Returns 0 to suppress Hilfe warning.
 {
+	if (undefinedp(which_api)) which_api = 1; //Default to v5, but support v3 if explicitly requested
 	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/kraken/" + url[url[0]=='/'..];
-	make_request(url, interactive, v5);
+	request(url, which_api)->then(interactive, interactive); //Errors go through to the same place
 }
 
 //Lifted from globals because I can't be bothered refactoring
