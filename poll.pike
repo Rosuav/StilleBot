@@ -25,7 +25,7 @@ void make_request(string url, function cbdata, int|void which_api) //which_api: 
 //TODO: Replace all use of make_request with this (note that this does the JSON decode automatically)
 Concurrent.Future request(string url, int|void which_api) //which_api: 1=v5, 2=Helix
 {
-	if (!which_api) error("Must specify an API - 1=Kraken v5, 2=Helix\n");
+	if (!which_api) return Concurrent.reject(({"Must specify an API - 1=Kraken v5, 2=Helix\n", backtrace()}));
 	sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
 	mapping headers = ([]);
 	if (which_api == 1) headers["Accept"] = "application/vnd.twitchtv.v5+json";
@@ -37,8 +37,8 @@ Concurrent.Future request(string url, int|void which_api) //which_api: 1=v5, 2=H
 	return Protocols.HTTP.Promise.get_url(url, Protocols.HTTP.Promise.Arguments((["headers": headers])))
 		->then(lambda(Protocols.HTTP.Promise.Result res) {
 			mixed data = Standards.JSON.decode(res->get());
-			if (!mappingp(data)) return Concurrent.reject("Bad response"); //TODO: Give more useful info?
-			if (data->error) return Concurrent.reject(sprintf("Error from Twitch: %O (%O)", data->error, data->status));
+			if (!mappingp(data)) return Concurrent.reject(({"Unparseable response\n", backtrace()}));
+			if (data->error) return Concurrent.reject(({sprintf("Error from Twitch: %O (%O)\n", data->error, data->status), backtrace()}));
 			return data;
 		});
 }
@@ -278,7 +278,7 @@ Concurrent.Future check_following(string user, string chan)
 		foll->following = "since " + info->created_at;
 		return ({user, chan, foll});
 	}, lambda(mixed err) {
-		if (err == "Error from Twitch: \"Not Found\" (404)") //TODO: Report errors more cleanly
+		if (err[0] == "Error from Twitch: \"Not Found\" (404)") //TODO: Report errors more cleanly
 		{
 			//Not following. Explicitly store that info.
 			mapping foll = G_G_("participants", chan, user);
@@ -391,6 +391,8 @@ void poll()
 	}
 }
 
+void report_error(mixed err) {werror(describe_backtrace(err));}
+
 void create()
 {
 	if (!G->G->stream_online_since) G->G->stream_online_since = ([]);
@@ -398,6 +400,7 @@ void create()
 	if (!G->G->category_names) G->G->category_names = ([]);
 	if (!G->G->userids) G->G->userids = ([]);
 	remove_call_out(G->G->poll_call_out);
+	Concurrent.on_failure(report_error);
 	poll();
 	add_constant("get_channel_info", get_channel_info);
 	add_constant("check_following", check_following);
@@ -434,7 +437,7 @@ void interactive(mixed info)
 int req(string url, int|void which_api) //Returns 0 to suppress Hilfe warning.
 {
 	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/kraken/" + url[url[0]=='/'..];
-	request(url, which_api || 1)->then(interactive); //Errors go through to the same place
+	request(url, which_api || 1)->then(interactive);
 }
 
 //Lifted from globals because I can't be bothered refactoring
