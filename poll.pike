@@ -268,25 +268,21 @@ void stream_status(string name, mapping info)
 
 Concurrent.Future check_following(string user, string chan)
 {
-	//TODO: Switch to Helix - https://api.twitch.tv/helix/users/follows?from_id=<user ID>&to_id=<user ID>
-	//Or not, since that would require looking up the from and to names to
-	//get their IDs first, and THEN finding out if they're linked.
-	return request("https://api.twitch.tv/kraken/users/" + user + "/follows/channels/" + chan, 0)
+	return Concurrent.all(get_user_id(user), get_user_id(chan))
+	->then(lambda(array(int) id) {return request("https://api.twitch.tv/kraken/users/" + id[0] + "/follows/channels/" + id[1], 1);})
 	->then(lambda(mapping info) {
-		if (info->status == 404)
+		mapping foll = G_G_("participants", chan, user);
+		foll->following = "since " + info->created_at;
+		return ({user, chan, foll});
+	}, lambda(mixed err) {
+		if (err == "Error from Twitch: \"Not Found\" (404)") //TODO: Report errors more cleanly
 		{
 			//Not following. Explicitly store that info.
-			sscanf(info->message, "%s is not following %s", string user, string chan);
-			if (!chan) return;
 			mapping foll = G_G_("participants", chan, user);
 			foll->following = 0;
 			return ({user, chan, foll});
 		}
-		if (info->error) return; //Unknown error. Ignore it (most likely the user will be assumed not to be a follower).
-		sscanf(info->_links->self, "https://api.twitch.tv/kraken/users/%s/follows/channels/%s", string user, string chan);
-		mapping foll = G_G_("participants", chan, user);
-		foll->following = "since " + info->created_at;
-		return ({user, chan, foll});
+		return ({user, chan, ([])}); //Unknown error. Ignore it (most likely the user will be assumed not to be a follower).
 	});
 }
 
