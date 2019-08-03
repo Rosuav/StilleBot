@@ -453,21 +453,21 @@ string describe_time_short(int tm)
 
 void streaminfo_display(mapping info)
 {
-	if (info->stream)
+	if (sizeof(info->data))
 	{
-		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->stream->created_at);
+		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->data[0]->started_at);
 		write("Channel went online at %s\n", started->format_nice());
 		write("Uptime: %s\n", describe_time_short(started->distance(Calendar.now())->how_many(Calendar.Second())));
 	}
 	else write("Channel is offline.\n");
 	if (!--requests) exit(0);
 }
-void chaninfo_display(mapping info)
+Concurrent.Future chaninfo_display(mapping info)
 {
 	if (info->mature) write("[MATURE] ");
 	write("%s was last seen playing %s, at %s - %s\n",
 		info->display_name, string_to_utf8(info->game || "(null)"), info->url, string_to_utf8(info->status || "(null)"));
-	if (!--requests) exit(0);
+	return request("https://api.twitch.tv/helix/streams?user_id=" + info->_id, 2)->then(streaminfo_display);
 }
 void followinfo_display(array args)
 {
@@ -566,11 +566,7 @@ int main(int argc, array(string) argv)
 		}
 		else
 		{
-			//For online channels, we could save ourselves one request. Simpler to just do 'em all though.
-			++requests; //These require two requests
-			get_channel_info(chan)->then(chaninfo_display)
-				->then(lambda() {return request("https://api.twitch.tv/helix/streams?user_login=" + chan, 2);})
-				->then(streaminfo_display);
+			get_channel_info(chan)->then(chaninfo_display);
 		}
 	}
 	return requests && -1;
