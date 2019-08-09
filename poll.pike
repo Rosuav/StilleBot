@@ -11,10 +11,13 @@ void request_fail(object q) { } //If a poll request fails, just ignore it and le
 Concurrent.Future request(Protocols.HTTP.Session.URL url, int|void which_api, mapping|void headers) //which_api: 1=v5, 2=Helix
 {
 	if (!which_api) return Concurrent.reject(({"Must specify an API - 1=Kraken v5, 2=Helix\n", backtrace()}));
-	sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
 	headers = (headers || ([])) + ([]);
 	if (which_api == 1) headers["Accept"] = "application/vnd.twitchtv.v5+json";
-	if (pass) headers["Authorization"] = "OAuth " + pass;
+	if (!headers["Authorization"])
+	{
+		sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
+		if (pass) headers["Authorization"] = "OAuth " + pass;
+	}
 	//TODO: Use bearer auth where appropriate (is it exclusively when which_api==2?)
 	if (string c=persist_config["ircsettings"]["clientid"])
 		//Some requests require a Client ID. Not sure which or why.
