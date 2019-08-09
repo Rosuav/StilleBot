@@ -390,8 +390,6 @@ void poll()
 	}
 }
 
-void report_error(mixed err) {werror(describe_backtrace(err));}
-
 protected void create()
 {
 	if (!G->G->stream_online_since) G->G->stream_online_since = ([]);
@@ -399,7 +397,6 @@ protected void create()
 	if (!G->G->category_names) G->G->category_names = ([]);
 	if (!G->G->userids) G->G->userids = ([]);
 	remove_call_out(G->G->poll_call_out);
-	//~ Concurrent.on_failure(report_error);
 	poll();
 	add_constant("get_channel_info", get_channel_info);
 	add_constant("check_following", check_following);
