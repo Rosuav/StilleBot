@@ -78,7 +78,7 @@ string default_time(object channel, object person, string param)
 	return check_perms(channel, person, "America/Los_Angeles");
 }
 
-void create(string name)
+protected void create(string name)
 {
 	timezones = ([]); tzleaf = ([]);
 	foreach (sort(Calendar.TZnames.zonenames()), string zone)

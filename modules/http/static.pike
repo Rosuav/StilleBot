@@ -20,7 +20,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string fil
 //Handle /favicon.ico as if it were /static/favicon.ico
 mapping(string:mixed) favicon(Protocols.HTTP.Server.Request req) {return http_request(req, "favicon.ico");}
 
-void create(string name)
+protected void create(string name)
 {
 	::create(name);
 	G->G->http_endpoints["favicon.ico"] = favicon;

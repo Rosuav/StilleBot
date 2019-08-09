@@ -191,7 +191,7 @@ class menu_clicked
 {
 	inherit window;
 	constant is_subwindow = 0;
-	void create() {::create(); status_update += ({update});}
+	protected void create() {::create(); status_update += ({update});}
 	void closewindow() {status_update -= ({update}); ::closewindow();}
 
 	void makewindow()
@@ -286,7 +286,7 @@ class run_process
 	Stdio.File stdout;
 	string data = "";
 
-	void create(array command, mapping opts)
+	protected void create(array command, mapping opts)
 	{
 		stdout = Stdio.File();
 		stdout->set_read_callback(data_received);
@@ -311,7 +311,7 @@ class run_process
 class get_video_length(string reqchan, string requser, int maxlen, string title)
 {
 	inherit run_process;
-	void create(string videoid)
+	protected void create(string videoid)
 	{
 		::create(({"youtube-dl", "--prefer-ffmpeg", "--get-duration", videoid}), ([]));
 	}
@@ -328,7 +328,7 @@ class youtube_dl(string videoid, string requser)
 	inherit run_process;
 	string reqchan;
 
-	void create(object channel)
+	protected void create(object channel)
 	{
 		reqchan = channel->name;
 		::create(
@@ -428,7 +428,7 @@ string process(object channel, object person, string param)
 	return msg;
 }
 
-void create(string name)
+protected void create(string name)
 {
 	::create(name);
 	//NOTE: Do not create a *file* called song_cache, as it'll mess with this :)

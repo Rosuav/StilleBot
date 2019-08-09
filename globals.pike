@@ -1,4 +1,4 @@
-void create(string n)
+protected void create(string n)
 {
 	foreach (indices(this),string f) if (f!="create" && f[0]!='_') add_constant(f,this[f]);
 	//TODO: Have some way to 'declare' these down below, rather than
@@ -35,7 +35,7 @@ class command
 		if (require_moderator && !channel->mods[person->user]) return 0;
 		return process(channel, person, param);
 	}
-	void create(string name)
+	protected void create(string name)
 	{
 		sscanf(explode_path(name)[-1],"%s.pike",name);
 		if (!name) return;
@@ -224,7 +224,7 @@ class http_endpoint
 	//A channel will be provided if and only if this is chan_foo.pike and the URL is /channels/spam/foo
 	mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req, object|void channel) { }
 
-	void create(string name)
+	protected void create(string name)
 	{
 		if (http_path_pattern)
 		{
@@ -245,7 +245,7 @@ class user_text
 	the space) to render_template, and the texts will be safely inserted
 	into the resulting output file. */
 	array texts = ({ });
-	string `()(string text)
+	protected string `()(string text)
 	{
 		texts += ({text});
 		return sprintf("\uFFFA%d\uFFFB", sizeof(texts) - 1);

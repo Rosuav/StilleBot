@@ -54,4 +54,4 @@ echoable_message process(object channel, object person, string param)
 	return response;
 }
 
-void create(string name) {::create(name);}
+protected void create(string name) {::create(name);}

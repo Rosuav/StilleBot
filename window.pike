@@ -11,9 +11,9 @@
 class gtksignal(object obj)
 {
 	int signal_id;
-	void create(mixed ... args) {if (obj) signal_id=obj->signal_connect(@args);}
-	void destroy() {if (obj && signal_id) obj->signal_disconnect(signal_id);}
-	void _destruct() {if (obj && signal_id) obj->signal_disconnect(signal_id);}
+	protected void create(mixed ... args) {if (obj) signal_id=obj->signal_connect(@args);}
+	protected void destroy() {if (obj && signal_id) obj->signal_disconnect(signal_id);}
+	protected void _destruct() {if (obj && signal_id) obj->signal_disconnect(signal_id);}
 }
 
 class MessageBox
@@ -22,7 +22,7 @@ class MessageBox
 	function callback;
 
 	//flags: Normally 0. type: 0 for info, else GTK2.MESSAGE_ERROR or similar. buttons: GTK2.BUTTONS_OK etc.
-	void create(int flags,int type,int buttons,string message,GTK2.Window parent,function|void cb,mixed|void cb_arg)
+	protected void create(int flags,int type,int buttons,string message,GTK2.Window parent,function|void cb,mixed|void cb_arg)
 	{
 		callback=cb;
 		#if constant(COMPAT_MSGDLG)
@@ -49,7 +49,7 @@ class MessageBox
 class confirm
 {
 	inherit MessageBox;
-	void create(int flags,string message,GTK2.Window parent,function cb,mixed|void cb_arg)
+	protected void create(int flags,string message,GTK2.Window parent,function cb,mixed|void cb_arg)
 	{
 		::create(flags,GTK2.MESSAGE_WARNING,GTK2.BUTTONS_OK_CANCEL,message,parent,cb,cb_arg);
 	}
@@ -110,7 +110,7 @@ class MultiLineEntryField
 class SelectBox(array(string) strings)
 {
 	inherit GTK2.ComboBox;
-	void create() {::create(""); foreach (strings,string str) append_text(str);}
+	protected void create() {::create(""); foreach (strings,string str) append_text(str);}
 	this_program set_text(string txt)
 	{
 		set_active(search(strings,txt));
@@ -277,7 +277,7 @@ class window
 			}
 		}
 	}
-	void create(string|void name)
+	protected void create(string|void name)
 	{
 		if (name) sscanf(explode_path(name)[-1],"%s.pike",name);
 		if (name) {if (G->G->windows[name]) win=G->G->windows[name]; else G->G->windows[name]=win;}
@@ -386,7 +386,7 @@ class configdlg
 	mapping defaults = ([]); //TODO: Figure out if any usage of defaults needs the value to be 'put back', or not be a string, or anything.
 	string last_selected; //Set when something is loaded. Unless the user renames the thing, will be equal to win->kwd->get_text().
 
-	void create(string|void name)
+	protected void create(string|void name)
 	{
 		if (persist_key && !items) items=persist->setdefault(persist_key,([]));
 		::create(!is_subwindow && name); //Unless we're a main window, pass on no args to the window constructor - all configdlgs are independent
@@ -713,7 +713,7 @@ class menu_item
 	//End provide.
 
 	mapping(string:mixed) mi=([]);
-	void create(string|void name)
+	protected void create(string|void name)
 	{
 		if (!name) return;
 		sscanf(explode_path(name)[-1],"%s.pike",name);
@@ -849,7 +849,7 @@ class easy_auth
 class whisper_participants(string chan, int limit, int followersonly)
 {
 	inherit window;
-	void create() {::create();}
+	protected void create() {::create();}
 
 	void makewindow()
 	{
@@ -918,7 +918,7 @@ class _mainwindow
 	])});
 	constant persist_key = "channels";
 	constant is_subwindow = 0;
-	void create() {::create("mainwindow"); remake_content(); mainwindow = win->mainwindow;}
+	protected void create() {::create("mainwindow"); remake_content(); mainwindow = win->mainwindow;}
 
 	void makewindow()
 	{
@@ -1043,7 +1043,7 @@ class _mainwindow
 	}
 }
 
-void create(string name)
+protected void create(string name)
 {
 	add_constant("window", window);
 	add_constant("menu_item", menu_item);

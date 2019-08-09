@@ -132,7 +132,7 @@ void check_autocommands()
 		connected(channel);
 }
 
-void create(string name)
+protected void create(string name)
 {
 	register_hook("channel-online", connected);
 	register_bouncer(autospam);

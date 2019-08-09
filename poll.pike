@@ -56,7 +56,7 @@ class get_helix_paginated(string uri, mapping|void query, mapping|void headers)
 	inherit Concurrent.Promise;
 	array data = ({ });
 
-	void create(string|void authtype)
+	protected void create(string|void authtype)
 	{
 		query = (query || ([])) + ([]); //Get a safe copy for potential mutation
 		headers = (headers || ([])) + ([]);
@@ -392,14 +392,14 @@ void poll()
 
 void report_error(mixed err) {werror(describe_backtrace(err));}
 
-void create()
+protected void create()
 {
 	if (!G->G->stream_online_since) G->G->stream_online_since = ([]);
 	if (!G->G->channel_info) G->G->channel_info = ([]);
 	if (!G->G->category_names) G->G->category_names = ([]);
 	if (!G->G->userids) G->G->userids = ([]);
 	remove_call_out(G->G->poll_call_out);
-	Concurrent.on_failure(report_error);
+	//~ Concurrent.on_failure(report_error);
 	poll();
 	add_constant("get_channel_info", get_channel_info);
 	add_constant("check_following", check_following);
@@ -498,14 +498,14 @@ void transcoding_display(mapping info)
 class clips_display(string channel)
 {
 	string dir; multiset unseen;
-	void create()
+	protected void create()
 	{
 		make_request("https://api.twitch.tv/kraken/clips/top?channel=" + channel + "&period=all&limit=100", this, 1);
 		dir = "../clips/" + channel;
 		array files = get_dir(dir);
 		if (files) unseen = (multiset)glob("*.json", files);
 	}
-	void `()(string data)
+	protected void `()(string data)
 	{
 		mapping info = Standards.JSON.decode(data);
 		if (info->status == 404 || !info->clips)

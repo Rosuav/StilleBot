@@ -1,9 +1,10 @@
 inherit http_endpoint;
 
+//TODO: Replace this with the built-in now that one exists.
 class Waiter
 {
 	inherit Concurrent.Promise;
-	void create(int|float delay)
+	protected void create(int|float delay)
 	{
 		::create();
 		call_out(success, delay);
@@ -27,7 +28,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	return ret->then(lambda() {return (["data": msg, "type": "text/plain; charset=\"UTF-8\""]);});
 }
 
-void create(string name)
+protected void create(string name)
 {
 	::create(name);
 	G->G->http_endpoints[""] = http_request;

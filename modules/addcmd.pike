@@ -57,7 +57,7 @@ string process(object channel, object person, string param)
 	return "@$$: Try !addcmd !newcmdname response-message";
 }
 
-void create(string name)
+protected void create(string name)
 {
 	::create(name);
 	G->G->echocommands = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_commands.json")||"{}");

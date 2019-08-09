@@ -29,7 +29,7 @@ string process(object channel, object person, string param)
 	get_video_info(channel->name[1..])->then(lambda(mapping info) {report_transcoding(info, "@" + person->user + ":");});
 }
 
-void create(string name)
+protected void create(string name)
 {
 	register_hook("channel-online", connected);
 	::create(name);

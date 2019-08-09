@@ -207,7 +207,7 @@ class channel_notif
 	mixed save_call_out;
 	string hosting;
 
-	void create() {call_out(configure,0);}
+	protected void create() {call_out(configure,0);}
 	void configure() //Needs to happen after this->name is injected by Protocols.IRC.Client
 	{
 		config = persist_config["channels"][name[1..]];
@@ -243,8 +243,8 @@ class channel_notif
 		//chat, with the mod badge or equivalent.
 	}
 
-	void destroy() {save(); remove_call_out(save_call_out);}
-	void _destruct() {save(); remove_call_out(save_call_out);}
+	protected void destroy() {save(); remove_call_out(save_call_out);}
+	protected void _destruct() {save(); remove_call_out(save_call_out);}
 	void save(int|void as_at)
 	{
 		//Save everyone's online time on code reload and periodically
@@ -635,7 +635,7 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 	write("Conn: %O\n", sock);
 }
 
-void create()
+protected void create()
 {
 	if (!G->G->channelcolor) G->G->channelcolor = ([]);
 	if (!G->G->websockets) G->G->websockets = ([]);

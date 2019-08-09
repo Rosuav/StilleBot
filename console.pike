@@ -60,7 +60,7 @@ void execcommand(string line)
 	}
 }
 
-void create()
+protected void create()
 {
 	G->execcommand = execcommand;
 }

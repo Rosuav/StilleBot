@@ -38,7 +38,7 @@ mapping(string:mixed) redirect_no_slash(Protocols.HTTP.Server.Request req, strin
 }
 
 
-void create(string name)
+protected void create(string name)
 {
 	::create(name);
 	G->G->http_endpoints["/channels/%[^/]"] = redirect_no_slash;
