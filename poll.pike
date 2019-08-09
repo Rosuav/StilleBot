@@ -492,24 +492,20 @@ void transcoding_display(mapping info)
 	if (!--requests) exit(0);
 }
 
-class clips_display(string channel)
+void clips_display(string channel)
 {
-	string dir; multiset unseen;
-	protected void create()
+	string dir = "../clips/" + channel;
+	array files = get_dir(dir);
+	multiset unseen;
+	if (files) unseen = (multiset)glob("*.json", files);
+	string endpoint = "https://api.twitch.tv/kraken/clips/top?channel=" + channel + "&period=all&limit=100";
+	Concurrent.Future process(mapping info)
 	{
-		make_request("https://api.twitch.tv/kraken/clips/top?channel=" + channel + "&period=all&limit=100", this, 1);
-		dir = "../clips/" + channel;
-		array files = get_dir(dir);
-		if (files) unseen = (multiset)glob("*.json", files);
-	}
-	protected void `()(string data)
-	{
-		mapping info = Standards.JSON.decode(data);
 		if (info->status == 404 || !info->clips)
 		{
 			write("Error fetching clips: %O\n", info);
 			if (!--requests) exit(0);
-			return;
+			return 0;
 		}
 		foreach (info->clips, mapping clip)
 		{
@@ -523,13 +519,13 @@ class clips_display(string channel)
 		if (info->_cursor != "")
 		{
 			write("Fetching more... %s %O\n", info->_cursor, MIME.decode_base64(info->_cursor));
-			make_request("https://api.twitch.tv/kraken/clips/top?channel=" + channel + "&period=all&limit=100&cursor=" + info->_cursor, this, 1);
-			return;
+			return request(endpoint + "&cursor=" + info->_cursor, 1)->then(process);
 		}
 		if (unseen && sizeof(unseen))
 			write("%d deleted clips:\n%{\t%s\n%}", sizeof(unseen), sort((array)unseen));
 		if (!--requests) exit(0);
 	}
+	request(endpoint, 1)->then(process);
 }
 
 int main(int argc, array(string) argv)
