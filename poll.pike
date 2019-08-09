@@ -1,28 +1,8 @@
 //Can be invoked from the command line for tools or interactive API inspection.
 
-//NOTE: The saved stream and channel info are exactly as given by Twitch. Notably,
-//all text strings are encoded UTF-8, and must be decoded before use.
-
-void data_available(object q, function cbdata) {cbdata(q->unicode_data());}
-void request_ok(object q, function cbdata) {q->async_fetch(data_available, cbdata);}
-void request_fail(object q) { } //If a poll request fails, just ignore it and let the next poll pick it up.
-void make_request(string url, function cbdata, int|void which_api) //which_api: 1=v5, 2=Helix
-{
-	if (!which_api) error("Must specify an API - 1=Kraken v5, 2=Helix\n");
-	sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
-	mapping headers = ([]);
-	if (which_api == 1) headers["Accept"] = "application/vnd.twitchtv.v5+json";
-	if (pass) headers["Authorization"] = "OAuth " + pass;
-	//TODO: Use bearer auth where appropriate (is it exclusively when which_api==2?)
-	if (string c=persist_config["ircsettings"]["clientid"])
-		//Some requests require a Client ID. Not sure which or why.
-		headers["Client-ID"] = c;
-	Protocols.HTTP.do_async_method("GET", url, 0, headers,
-		Protocols.HTTP.Query()->set_callbacks(request_ok,request_fail,cbdata));
-}
-
-//Same as make_request but returns a Future instead of using a callback
-//TODO: Replace all use of make_request with this (note that this does the JSON decode automatically)
+//Place a request to the API. Returns a Future that will be resolved with a fully
+//decoded result (a mapping of Unicode text, generally), or rejects if Twitch or
+//the network failed the request.
 Concurrent.Future request(Protocols.HTTP.Session.URL url, int|void which_api, mapping|void headers) //which_api: 1=v5, 2=Helix
 {
 	if (!which_api) return Concurrent.reject(({"Must specify an API - 1=Kraken v5, 2=Helix\n", backtrace()}));
