@@ -23,11 +23,11 @@ void make_request(string url, function cbdata, int|void which_api) //which_api: 
 
 //Same as make_request but returns a Future instead of using a callback
 //TODO: Replace all use of make_request with this (note that this does the JSON decode automatically)
-Concurrent.Future request(string url, int|void which_api) //which_api: 1=v5, 2=Helix
+Concurrent.Future request(Protocols.HTTP.Session.URL url, int|void which_api, mapping|void headers) //which_api: 1=v5, 2=Helix
 {
 	if (!which_api) return Concurrent.reject(({"Must specify an API - 1=Kraken v5, 2=Helix\n", backtrace()}));
 	sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
-	mapping headers = ([]);
+	headers = (headers || ([])) + ([]);
 	if (which_api == 1) headers["Accept"] = "application/vnd.twitchtv.v5+json";
 	if (pass) headers["Authorization"] = "OAuth " + pass;
 	//TODO: Use bearer auth where appropriate (is it exclusively when which_api==2?)
@@ -51,48 +51,23 @@ Concurrent.Future get_user_id(string username)
 		->then(lambda(mapping data) {return G->G->userids[username] = (int)data->users[0]->_id;});
 }
 
-class get_helix_paginated(string uri, mapping|void query, mapping|void headers)
+Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers)
 {
-	inherit Concurrent.Promise;
 	array data = ({ });
-
-	protected void create(string|void authtype)
+	Standards.URI uri = Standards.URI(url);
+	query = (query || ([])) + ([]);
+	//NOTE: uri->set_query_variables() doesn't correctly encode query data.
+	uri->query = Protocols.HTTP.http_encode_query(query);
+	mixed nextpage(mapping raw)
 	{
-		query = (query || ([])) + ([]); //Get a safe copy for potential mutation
-		headers = (headers || ([])) + ([]);
-		switch (authtype)
-		{
-			case "v5": headers["Accept"] = "application/vnd.twitchtv.v5+json"; //fallthrough
-			case "oauth":
-			{
-				sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
-				if (pass) headers["Authorization"] = "OAuth " + pass;
-				break;
-			}
-			default: break;
-		}
-		//TODO as above - bearer auth
-		if (string c = persist_config["ircsettings"]["clientid"]) headers["Client-ID"] = c;
-		send_query();
-	}
-
-	void send_query()
-	{
-		Protocols.HTTP.do_async_method("GET", uri, query, headers,
-			Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, nextpage));
-	}
-
-	void nextpage(string resp)
-	{
-		mixed raw;
-		if (catch {raw = Standards.JSON.decode_utf8(resp);}) raw = Standards.JSON.decode(resp); //TODO: Figure out one of these and make sure all callers use it
-		if (!mappingp(raw)) {failure(resp); return;}
-		if (!raw->data) {failure(raw); return;}
+		if (!raw->data) return Concurrent.reject(({"Unparseable response\n", backtrace()}));
 		data += raw->data;
-		if (!raw->pagination || !raw->pagination->cursor) {success(data); return;}
-		query["after"] = raw->pagination->cursor;
-		send_query();
+		if (!raw->pagination || !raw->pagination->cursor) return data;
+		//uri->add_query_variable("after", raw->pagination->cursor);
+		query["after"] = raw->pagination->cursor; uri->query = Protocols.HTTP.http_encode_query(query);
+		return request(uri, 2, headers)->then(nextpage);
 	}
+	return request(uri, 2, headers)->then(nextpage);
 }
 
 Concurrent.Future get_channel_info(string name)
@@ -130,18 +105,16 @@ void streaminfo(array data)
 		stream_status(chan, channels[chan]);
 }
 
-//TODO maybe: use get_helix_paginated for this
 int fetching_game_names = 0;
-void gamenames(string data)
+void cache_game_names()
 {
-	mapping info; catch {info = Standards.JSON.decode(data);}; //Some error returns aren't even JSON
-	if (!info || info->error) return; //Ignore the 503s and stuff that come back.
-	foreach (info->data, mapping game) G->G->category_names[game->id] = game->name;
-	write("Fetched %d games, total %d\n", sizeof(info->data), sizeof(G->G->category_names));
-	if (!info->pagination || !info->pagination->cursor) {fetching_game_names = 0; write("-- Done!\n");}
-	else call_out(cache_game_names, 2, info->pagination->cursor);
+	get_helix_paginated("https://api.twitch.tv/helix/games/top", (["first":"100"]))
+	->then(lambda(array games) {
+		foreach (games, mapping game) G->G->category_names[game->id] = game->name;
+		write("Fetched %d games, total %d\n", sizeof(games), sizeof(G->G->category_names));
+		fetching_game_names = 0;
+	});
 }
-void cache_game_names(string pag) {make_request("https://api.twitch.tv/helix/games/top?first=100&after=" + pag, gamenames, 2);}
 
 //Attempt to construct a channel info mapping from the stream info
 //May use other caches of information. If unable to build the full
@@ -163,7 +136,7 @@ mapping build_channel_info(mapping stream)
 			//in the ordering of the "top 100" and "next 100". It should be safe
 			//to retain any previous ones seen this run.
 			fetching_game_names = 1;
-			cache_game_names("");
+			cache_game_names();
 		}
 		return 0;
 	}
