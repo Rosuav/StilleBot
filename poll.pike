@@ -38,7 +38,7 @@ Concurrent.Future request(string url, int|void which_api) //which_api: 1=v5, 2=H
 		->then(lambda(Protocols.HTTP.Promise.Result res) {
 			mixed data = Standards.JSON.decode_utf8(res->get());
 			if (!mappingp(data)) return Concurrent.reject(({"Unparseable response\n", backtrace()}));
-			if (data->error) return Concurrent.reject(({sprintf("Error from Twitch: %O (%O)\n", data->error, data->status), backtrace()}));
+			if (data->error) return Concurrent.reject(({sprintf("%s\nError from Twitch: %O (%O)\n", url, data->error, data->status), backtrace()}));
 			return data;
 		});
 }
@@ -126,7 +126,7 @@ void streaminfo(array data)
 	mapping channels = ([]);
 	foreach (data, mapping chan) channels[lower_case(chan->user_name)] = chan; //TODO: Figure out if user_name is login or display name
 	//Now we check over our own list of channels. Anything absent is assumed offline.
-	foreach (indices(persist_config["channels"]), string chan)
+	foreach (indices(persist_config["channels"]), string chan) if (chan != "!whisper")
 		stream_status(chan, channels[chan]);
 }
 
