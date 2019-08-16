@@ -10,6 +10,7 @@ command to save it for posterity!
 
 echoable_message process(object channel, object person, string param)
 {
+	if (channel->config->disable_quotes) return 0;
 	array quotes = channel->config->quotes;
 	if (!quotes) return 0; //Ignore !quote when there are no quotes saved
 	if (param == "re-encode")

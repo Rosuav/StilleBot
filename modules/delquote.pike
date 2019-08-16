@@ -4,6 +4,7 @@ constant require_moderator = 1;
 
 echoable_message process(object channel, object person, string param)
 {
+	if (channel->config->disable_quotes) return 0;
 	if (param == "") return "";
 	if (!channel->config->quotes) return "";
 	mapping chaninfo = G->G->channel_info[channel->name[1..]];
