@@ -26,6 +26,11 @@ protected class Session
 }
 //End GPLv2 code from Pike
 
+/*
+Talking to Twitch, the leak happens if a local session is used but not if a
+global (retained) session object is reused. Talking to Pike HTTP, the leak
+happens either way!!
+*/
 Session gsess;
 void poll()
 {
