@@ -1,7 +1,3 @@
-mapping irc = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"))["ircsettings"] || ([]);
-mapping headers = (["Authorization": replace(irc["pass"], "oauth:", "OAuth "), "Client-ID": irc["clientid"]]);
-string channel = "rosuav";
-
 //Code lifted from Pike's Protocols.HTTP.Promise (GPLv2) for testing
 protected class Session
 {
@@ -27,17 +23,21 @@ protected class Session
 //End GPLv2 code from Pike
 
 /*
-Talking to Twitch, the leak happens if a local session is used but not if a
-global (retained) session object is reused. Talking to Pike HTTP, the leak
-happens either way!!
+If the server says Connection: keep-alive and the Session is retained,
+the leak does not happen - total number of open files stabilizes. If
+keep-alive but a new Session is made for each request, there is a FD
+leak. If the server says Connection: close, though, there is a (smaller)
+FD leak regardless of whether the Session is made anew each time or is
+retained globally.
 */
 Session gsess;
 void poll()
 {
-	call_out(poll, 1);
+	call_out(poll, 3);
 	write("Polling... %d open files\n", sizeof(get_dir("/proc/self/fd")));
 	Session lsess = gsess || Session();
-	lsess->async_do_method_url("GET", "https://api.twitch.tv/helix/streams?user_login=" + channel, 0, 0, headers, 0,
+	//~ lsess->async_do_method_url("GET", "https://sikorsky.rosuav.com/", 0, 0, 0, 0, //Connection: close
+	lsess->async_do_method_url("GET", "http://pike.lysator.liu.se/", 0, 0, 0, 0, //Connection: keep-alive
 		lambda(string res) {
 			write("%O\n", res[..27]);
 		}, 0, ({ }));
