@@ -1,7 +1,6 @@
 mapping irc = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"))["ircsettings"] || ([]);
-
+mapping headers = (["Authorization": replace(irc["pass"], "oauth:", "OAuth "), "Client-ID": irc["clientid"]]);
 string channel = "rosuav";
-mapping headers = ([]);
 
 Concurrent.Future request(Protocols.HTTP.Session.URL url)
 {
@@ -30,9 +29,6 @@ void poll()
 int main(int argc, array(string) argv)
 {
 	write("My PID is: %d\n", getpid());
-	sscanf(irc["pass"] || "", "oauth:%s", string pass);
-	headers["Authorization"] = "OAuth " + pass;
-	headers["Client-ID"] = irc["clientid"];
 	poll();
 	return -1;
 }
