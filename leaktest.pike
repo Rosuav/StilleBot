@@ -46,17 +46,13 @@ protected class Session
   }
 }
 
-public Concurrent.Future do_method(string http_method,
-                                   Protocols.HTTP.Session.URL url,
-                                   Protocols.HTTP.Promise.Arguments args)
+public Concurrent.Future get_url(Protocols.HTTP.Session.URL url, mapping headers)
 {
   Concurrent.Promise p = Concurrent.Promise();
   Session s = Session(); //If this is retained, the leak vanishes
 
-  s->async_do_method_url(http_method, url,
-                         args->variables,
-                         args->data,
-                         args->headers,
+  s->async_do_method_url("GET", url, 0, 0,
+                         headers,
                          0, // headers received callback
                          lambda (string ok) {p->success(ok);},
                          lambda (string fail) {p->failure(fail);},
@@ -69,8 +65,7 @@ void poll()
 {
 	call_out(poll, 3);
 	write("Polling... %d open files\n", sizeof(get_dir("/proc/self/fd")));
-	do_method("GET", "https://api.twitch.tv/helix/streams?user_login=" + channel,
-		Protocols.HTTP.Promise.Arguments((["headers": headers])))
+	get_url("https://api.twitch.tv/helix/streams?user_login=" + channel, headers)
 		->on_success(lambda(string res) {
 			mixed raw = Standards.JSON.decode_utf8(res);
 			if (!sizeof(raw->data)) write("** Channel %s is offline **\n", channel);
