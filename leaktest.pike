@@ -17,16 +17,6 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers)
 		});
 }
 
-Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers)
-{
-	array data = ({ });
-	Standards.URI uri = Standards.URI(url);
-	query = (query || ([])) + ([]);
-	//NOTE: uri->set_query_variables() doesn't correctly encode query data.
-	uri->query = Protocols.HTTP.http_encode_query(query);
-	return request(uri, headers)->then(lambda(mapping raw) {return raw->data;});
-}
-
 void streaminfo(array data)
 {
 	//First, quickly remap the array into a lookup mapping
@@ -44,8 +34,9 @@ void poll()
 {
 	call_out(poll, 3);
 	write("Polling... %d open files\n", sizeof(get_dir("/proc/self/fd")));
-	get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_login": channels]))
-		->on_success(streaminfo);
+	Standards.URI uri = Standards.URI("https://api.twitch.tv/helix/streams");
+	uri->query = Protocols.HTTP.http_encode_query((["user_login": channels]));
+	request(uri)->then(lambda(mapping raw) {return raw->data;})->on_success(streaminfo);
 }
 
 int main(int argc, array(string) argv)
