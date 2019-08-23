@@ -12,10 +12,7 @@ protected class Session
     protected void async_fail(object q)
     {
       con->set_callbacks(0, 0);
-      array eca = extra_callback_arguments;
-      function fc = fail_callback;
       set_callbacks(0, 0, 0); // drop all references
-      fc(0);
     }
 
     protected void async_ok(object q)
@@ -27,7 +24,6 @@ protected class Session
     protected void async_data() {
       string s = con->data();
       con->set_callbacks(0, 0);
-      array eca = extra_callback_arguments;
       function dc = data_callback;
       set_callbacks(0, 0, 0); // drop all references
       dc(s);
@@ -55,7 +51,7 @@ public Concurrent.Future get_url(Protocols.HTTP.Session.URL url, mapping headers
                          headers,
                          0, // headers received callback
                          lambda (string ok) {p->success(ok);},
-                         lambda (string fail) {p->failure(fail);},
+                         0,
 			 ({ }));
   return p->future();
 }
