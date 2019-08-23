@@ -26,13 +26,12 @@ protected class Session
 }
 //End GPLv2 code from Pike
 
-Session gsess = Session();
+Session gsess;
 void poll()
 {
 	call_out(poll, 1);
 	write("Polling... %d open files\n", sizeof(get_dir("/proc/self/fd")));
-	Session lsess = Session();
-	//Change lsess to gsess here to remove the leak
+	Session lsess = gsess || Session();
 	lsess->async_do_method_url("GET", "https://api.twitch.tv/helix/streams?user_login=" + channel, 0, 0, headers, 0,
 		lambda(string res) {
 			mixed raw = Standards.JSON.decode_utf8(res);
@@ -41,4 +40,10 @@ void poll()
 		}, 0, ({ }));
 }
 
-int main() {write("My PID is: %d\n", getpid()); poll(); return -1;}
+int main(int argc, array(string) argv)
+{
+	if (has_value(argv, "--retain")) gsess = Session();
+	write("My PID is: %d\n", getpid());
+	poll();
+	return -1;
+}
