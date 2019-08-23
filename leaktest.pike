@@ -28,17 +28,6 @@ protected class Session
       set_callbacks(0, 0, 0); // drop all references
       dc(s);
     }
-
-    //If this function is removed, Session::_destruct isn't called either.
-    //If it's present, even with no code in it, Session::_destruct IS called.
-    protected void _destruct() {				
-      werror("%O()._destruct()\n", object_program(this)); 
-    }
-  }
-
-
-  protected void _destruct() {				
-    werror("%O()._destruct()\n", object_program(this)); 
   }
 }
 //End GPLv2 code from Pike
