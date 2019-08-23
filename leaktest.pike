@@ -1,6 +1,6 @@
 mapping irc = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"))["ircsettings"] || ([]);
 
-array channels = "rosuav silentlilac stephenangelico" / " ";
+string channel = "rosuav";
 mapping headers = ([]);
 
 Concurrent.Future request(Protocols.HTTP.Session.URL url)
@@ -16,22 +16,15 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url)
 
 void streaminfo(mapping raw)
 {
-	mapping chaninfo = ([]);
-	foreach (raw->data, mapping chan) chaninfo[lower_case(chan->user_name)] = chan;
-	foreach (channels, string name)
-		if (mapping info = chaninfo[name])
-			write("** Channel %s went online at %s **\n", name, info->started_at);
-		else
-			write("** Channel %s isn't online **\n", name);
+	if (!sizeof(raw->data)) write("** Channel %s is offline **\n", channel);
+	else write("** Channel %s went online at %s **\n", channel, raw->data[0]->started_at);
 }
 
 void poll()
 {
 	call_out(poll, 3);
 	write("Polling... %d open files\n", sizeof(get_dir("/proc/self/fd")));
-	Standards.URI uri = Standards.URI("https://api.twitch.tv/helix/streams");
-	uri->query = Protocols.HTTP.http_encode_query((["user_login": channels]));
-	request(uri)->on_success(streaminfo);
+	request("https://api.twitch.tv/helix/streams?user_login=" + channel)->on_success(streaminfo);
 }
 
 int main(int argc, array(string) argv)
