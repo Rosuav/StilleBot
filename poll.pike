@@ -9,6 +9,9 @@ void request_fail(object q) { } //If a poll request fails, just ignore it and le
 //Place a request to the API. Returns a Future that will be resolved with a fully
 //decoded result (a mapping of Unicode text, generally), or rejects if Twitch or
 //the network failed the request.
+//TODO: If there's actually nothing special for Helix, maybe which_api can just
+//be detected - if "kraken" in URL, add the accept header? Now that we don't need
+//any v3 calls, that should be safe.
 Concurrent.Future request(Protocols.HTTP.Session.URL url, int|void which_api, mapping|void headers) //which_api: 1=v5, 2=Helix
 {
 	if (!which_api) return Concurrent.reject(({"Must specify an API - 1=Kraken v5, 2=Helix\n", backtrace()}));
