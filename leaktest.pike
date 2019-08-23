@@ -2,23 +2,12 @@ mapping irc = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"
 
 array channels = "rosuav silentlilac stephenangelico" / " ";
 
-//Place a request to the API. Returns a Future that will be resolved with a fully
-//decoded result (a mapping of Unicode text, generally), or rejects if Twitch or
-//the network failed the request.
-Concurrent.Future request(Protocols.HTTP.Session.URL url, int|void which_api, mapping|void headers) //which_api: 1=v5, 2=Helix
+Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers)
 {
-	if (!which_api) return Concurrent.reject(({"Must specify an API - 1=Kraken v5, 2=Helix\n", backtrace()}));
 	headers = (headers || ([])) + ([]);
-	if (which_api == 1) headers["Accept"] = "application/vnd.twitchtv.v5+json";
-	if (!headers["Authorization"])
-	{
-		sscanf(irc["pass"] || "", "oauth:%s", string pass);
-		if (pass) headers["Authorization"] = "OAuth " + pass;
-	}
-	//TODO: Use bearer auth where appropriate (is it exclusively when which_api==2?)
-	if (string c=irc["clientid"])
-		//Some requests require a Client ID. Not sure which or why.
-		headers["Client-ID"] = c;
+	sscanf(irc["pass"] || "", "oauth:%s", string pass);
+	headers["Authorization"] = "OAuth " + pass;
+	headers["Client-ID"] = irc["clientid"];
 	return Protocols.HTTP.Promise.get_url(url, Protocols.HTTP.Promise.Arguments((["headers": headers])))
 		->then(lambda(Protocols.HTTP.Promise.Result res) {
 			mixed data = Standards.JSON.decode_utf8(res->get());
@@ -35,16 +24,7 @@ Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|vo
 	query = (query || ([])) + ([]);
 	//NOTE: uri->set_query_variables() doesn't correctly encode query data.
 	uri->query = Protocols.HTTP.http_encode_query(query);
-	mixed nextpage(mapping raw)
-	{
-		if (!raw->data) return Concurrent.reject(({"Unparseable response\n", backtrace()}));
-		data += raw->data;
-		if (!raw->pagination || !raw->pagination->cursor) return data;
-		//uri->add_query_variable("after", raw->pagination->cursor);
-		query["after"] = raw->pagination->cursor; uri->query = Protocols.HTTP.http_encode_query(query);
-		return request(uri, 2, headers)->then(nextpage);
-	}
-	return request(uri, 2, headers)->then(nextpage);
+	return request(uri, headers)->then(lambda(mapping raw) {return raw->data;});
 }
 
 void streaminfo(array data)
