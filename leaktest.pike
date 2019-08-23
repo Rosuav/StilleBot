@@ -42,18 +42,10 @@ protected class Session
   }
 }
 
-public Concurrent.Future get_url(Protocols.HTTP.Session.URL url, mapping headers)
+void get_url(Protocols.HTTP.Session.URL url, mapping headers, function cb)
 {
-  Concurrent.Promise p = Concurrent.Promise();
   Session s = Session(); //If this is retained, the leak vanishes
-
-  s->async_do_method_url("GET", url, 0, 0,
-                         headers,
-                         0, // headers received callback
-                         lambda (string ok) {p->success(ok);},
-                         0,
-			 ({ }));
-  return p->future();
+  s->async_do_method_url("GET", url, 0, 0, headers, 0, cb, 0, ({ }));
 }
 //End GPLv2 code from Pike
 
@@ -61,12 +53,11 @@ void poll()
 {
 	call_out(poll, 3);
 	write("Polling... %d open files\n", sizeof(get_dir("/proc/self/fd")));
-	get_url("https://api.twitch.tv/helix/streams?user_login=" + channel, headers)
-		->on_success(lambda(string res) {
-			mixed raw = Standards.JSON.decode_utf8(res);
-			if (!sizeof(raw->data)) write("** Channel %s is offline **\n", channel);
-			else write("** Channel %s went online at %s **\n", channel, raw->data[0]->started_at);
-		});
+	get_url("https://api.twitch.tv/helix/streams?user_login=" + channel, headers, lambda(string res) {
+		mixed raw = Standards.JSON.decode_utf8(res);
+		if (!sizeof(raw->data)) write("** Channel %s is offline **\n", channel);
+		else write("** Channel %s went online at %s **\n", channel, raw->data[0]->started_at);
+	});
 }
 
 int main() {write("My PID is: %d\n", getpid()); poll(); return -1;}
