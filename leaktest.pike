@@ -9,12 +9,6 @@ protected class Session
   class Request
   {
     inherit parent::Request;
-    protected void async_fail(object q)
-    {
-      con->set_callbacks(0, 0);
-      set_callbacks(0, 0, 0); // drop all references
-    }
-
     protected void async_ok(object q)
     {
       con->set_callbacks(0, 0);
