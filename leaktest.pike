@@ -6,61 +6,26 @@ string channel = "rosuav";
 protected class Session
 {
   inherit Protocols.HTTP.Session : parent;
-
-  public int(0..) maxtime, timeout;
-
   class Request
   {
     inherit parent::Request;
-
     protected void async_fail(object q)
     {
-      // clear callbacks for possible garbation of this Request object
       con->set_callbacks(0, 0);
-
       array eca = extra_callback_arguments;
       function fc = fail_callback;
       set_callbacks(0, 0, 0); // drop all references
-
-      if (fc) {
-        Protocols.HTTP.Promise.Result ret = Protocols.HTTP.Promise.Result(url_requested, q, eca && eca[1..]);
-        fc(ret);
-      }
+      fc(Protocols.HTTP.Promise.Result(url_requested, q, eca && eca[1..]));
     }
 
     protected void async_ok(object q)
     {
-      ::check_for_cookies();
-
-      if (con->status >= 300 && con->status < 400 &&
-          con->headers->location && follow_redirects)
-      {
-        Standards.URI loc = Standards.URI(con->headers->location,url_requested);
-
-        if (loc->scheme == "http" || loc->scheme == "https") {
-          destroy(); // clear
-          follow_redirects--;
-          do_async(prepare_method("GET", loc));
-          return;
-        }
-      }
-
-      // clear callbacks for possible garbation of this Request object
       con->set_callbacks(0, 0);
-
-      if (data_callback)
-        con->timed_async_fetch(async_data, async_fail); // start data downloading
-      else
-        extra_callback_arguments = 0; // to allow garb
+      con->timed_async_fetch(async_data, async_fail); // start data downloading
     }
 
     protected void async_data() {
       string s = con->data();
-
-      if (!s)		// data incomplete, try again later
-        return;
-
-      // clear callbacks for possible garbation of this Request object
       con->set_callbacks(0, 0);
 
       array eca = extra_callback_arguments;
@@ -79,26 +44,6 @@ protected class Session
   }
 
 
-  class SessionQuery
-  {
-    inherit parent::SessionQuery;
-
-    protected void create()
-    {
-      if (Session::maxtime) {
-        this::maxtime = Session::maxtime;
-      }
-
-      if (Session::timeout) {
-        this::timeout = Session::timeout;
-      }
-    }
-
-    protected void _destruct() {			
-      werror("%O()._destruct()\n", object_program(this));
-    }
-  }
-
   protected void _destruct() {				
     werror("%O()._destruct()\n", object_program(this)); 
   }
@@ -106,12 +51,8 @@ protected class Session
 
 public Concurrent.Future do_method(string http_method,
                                    Protocols.HTTP.Session.URL url,
-                                   void|Protocols.HTTP.Promise.Arguments args)
+                                   Protocols.HTTP.Promise.Arguments args)
 {
-  if (!args) {
-    args = Protocols.HTTP.Promise.Arguments();
-  }
-
   Concurrent.Promise p = Concurrent.Promise();
   Session s = Session();
 
