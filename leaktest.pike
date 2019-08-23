@@ -41,23 +41,21 @@ protected class Session
     werror("%O()._destruct()\n", object_program(this)); 
   }
 }
-
-void get_url(Protocols.HTTP.Session.URL url, mapping headers, function cb)
-{
-  Session s = Session(); //If this is retained, the leak vanishes
-  s->async_do_method_url("GET", url, 0, 0, headers, 0, cb, 0, ({ }));
-}
 //End GPLv2 code from Pike
 
+Session gsess = Session();
 void poll()
 {
-	call_out(poll, 3);
+	call_out(poll, 1);
 	write("Polling... %d open files\n", sizeof(get_dir("/proc/self/fd")));
-	get_url("https://api.twitch.tv/helix/streams?user_login=" + channel, headers, lambda(string res) {
-		mixed raw = Standards.JSON.decode_utf8(res);
-		if (!sizeof(raw->data)) write("** Channel %s is offline **\n", channel);
-		else write("** Channel %s went online at %s **\n", channel, raw->data[0]->started_at);
-	});
+	Session lsess = Session();
+	//Change lsess to gsess here to remove the leak
+	lsess->async_do_method_url("GET", "https://api.twitch.tv/helix/streams?user_login=" + channel, 0, 0, headers, 0,
+		lambda(string res) {
+			mixed raw = Standards.JSON.decode_utf8(res);
+			if (!sizeof(raw->data)) write("** Channel %s is offline **\n", channel);
+			else write("** Channel %s went online at %s **\n", channel, raw->data[0]->started_at);
+		}, 0, ({ }));
 }
 
 int main() {write("My PID is: %d\n", getpid()); poll(); return -1;}
