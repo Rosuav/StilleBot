@@ -15,7 +15,7 @@ protected class Session
       array eca = extra_callback_arguments;
       function fc = fail_callback;
       set_callbacks(0, 0, 0); // drop all references
-      fc(Protocols.HTTP.Promise.Result(url_requested, q, eca && eca[1..]));
+      fc(0);
     }
 
     protected void async_ok(object q)
@@ -27,15 +27,10 @@ protected class Session
     protected void async_data() {
       string s = con->data();
       con->set_callbacks(0, 0);
-
       array eca = extra_callback_arguments;
       function dc = data_callback;
       set_callbacks(0, 0, 0); // drop all references
-
-      if (dc) {
-        Protocols.HTTP.Promise.Result ret = Protocols.HTTP.Promise.Result(url_requested, con, eca && eca[1..], s);
-        dc(ret);
-      }
+      dc(s);
     }
 
     //If this function is removed, Session::_destruct isn't called either.
@@ -63,13 +58,9 @@ public Concurrent.Future do_method(string http_method,
                          args->data,
                          args->headers,
                          0, // headers received callback
-                         lambda (Protocols.HTTP.Promise.Result ok) {
-                           p->success(ok);
-                         },
-                         lambda (Protocols.HTTP.Promise.Result fail) {
-                           p->failure(fail);
-                         },
-                         args->extra_args || ({}));
+                         lambda (string ok) {p->success(ok);},
+                         lambda (string fail) {p->failure(fail);},
+			 ({ }));
   return p->future();
 }
 //End GPLv2 code from Pike
@@ -80,8 +71,8 @@ void poll()
 	write("Polling... %d open files\n", sizeof(get_dir("/proc/self/fd")));
 	do_method("GET", "https://api.twitch.tv/helix/streams?user_login=" + channel,
 		Protocols.HTTP.Promise.Arguments((["headers": headers])))
-		->on_success(lambda(Protocols.HTTP.Promise.Result res) {
-			mixed raw = Standards.JSON.decode_utf8(res->get());
+		->on_success(lambda(string res) {
+			mixed raw = Standards.JSON.decode_utf8(res);
 			if (!sizeof(raw->data)) write("** Channel %s is offline **\n", channel);
 			else write("** Channel %s went online at %s **\n", channel, raw->data[0]->started_at);
 		});
