@@ -39,9 +39,7 @@ void poll()
 	Session lsess = gsess || Session();
 	lsess->async_do_method_url("GET", "https://api.twitch.tv/helix/streams?user_login=" + channel, 0, 0, headers, 0,
 		lambda(string res) {
-			mixed raw = Standards.JSON.decode_utf8(res);
-			if (!sizeof(raw->data)) write("** Channel %s is offline **\n", channel);
-			else write("** Channel %s went online at %s **\n", channel, raw->data[0]->started_at);
+			write("%O\n", res[..27]);
 		}, 0, ({ }));
 }
 
