@@ -1,13 +1,10 @@
 mapping irc = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"))["ircsettings"] || ([]);
 
 array channels = "rosuav silentlilac stephenangelico" / " ";
+mapping headers = ([]);
 
-Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers)
+Concurrent.Future request(Protocols.HTTP.Session.URL url)
 {
-	headers = (headers || ([])) + ([]);
-	sscanf(irc["pass"] || "", "oauth:%s", string pass);
-	headers["Authorization"] = "OAuth " + pass;
-	headers["Client-ID"] = irc["clientid"];
 	return Protocols.HTTP.Promise.get_url(url, Protocols.HTTP.Promise.Arguments((["headers": headers])))
 		->then(lambda(Protocols.HTTP.Promise.Result res) {
 			mixed data = Standards.JSON.decode_utf8(res->get());
@@ -17,12 +14,10 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers)
 		});
 }
 
-void streaminfo(array data)
+void streaminfo(mapping raw)
 {
-	//First, quickly remap the array into a lookup mapping
-	//This helps us ensure that we look up those we care about, and no others.
 	mapping chaninfo = ([]);
-	foreach (data, mapping chan) chaninfo[lower_case(chan->user_name)] = chan; //TODO: Figure out if user_name is login or display name
+	foreach (raw->data, mapping chan) chaninfo[lower_case(chan->user_name)] = chan;
 	foreach (channels, string name)
 		if (mapping info = chaninfo[name])
 			write("** Channel %s went online at %s **\n", name, info->started_at);
@@ -36,12 +31,15 @@ void poll()
 	write("Polling... %d open files\n", sizeof(get_dir("/proc/self/fd")));
 	Standards.URI uri = Standards.URI("https://api.twitch.tv/helix/streams");
 	uri->query = Protocols.HTTP.http_encode_query((["user_login": channels]));
-	request(uri)->then(lambda(mapping raw) {return raw->data;})->on_success(streaminfo);
+	request(uri)->on_success(streaminfo);
 }
 
 int main(int argc, array(string) argv)
 {
 	write("My PID is: %d\n", getpid());
+	sscanf(irc["pass"] || "", "oauth:%s", string pass);
+	headers["Authorization"] = "OAuth " + pass;
+	headers["Client-ID"] = irc["clientid"];
 	poll();
 	return -1;
 }
