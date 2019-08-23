@@ -38,6 +38,8 @@ protected class Session
       }
     }
 
+    //If this function is removed, Session::_destruct isn't called either.
+    //If it's present, even with no code in it, Session::_destruct IS called.
     protected void _destruct() {				
       werror("%O()._destruct()\n", object_program(this)); 
     }
@@ -54,7 +56,7 @@ public Concurrent.Future do_method(string http_method,
                                    Protocols.HTTP.Promise.Arguments args)
 {
   Concurrent.Promise p = Concurrent.Promise();
-  Session s = Session();
+  Session s = Session(); //If this is retained, the leak vanishes
 
   s->async_do_method_url(http_method, url,
                          args->variables,
