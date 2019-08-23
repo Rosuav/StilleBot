@@ -23,12 +23,16 @@ protected class Session
 //End GPLv2 code from Pike
 
 /*
-If the server says Connection: keep-alive and the Session is retained,
-the leak does not happen - total number of open files stabilizes. If
-keep-alive but a new Session is made for each request, there is a FD
-leak. If the server says Connection: close, though, there is a (smaller)
-FD leak regardless of whether the Session is made anew each time or is
-retained globally.
+The rules seem to be different depending on whether the connection is
+made over TLS or not. All tests have been done with https:// URLs.
+
+With "Connection: keep-alive" in the HTTP response:
+If the Session object is retained, the number of open file descriptors
+stabilizes after a while. If a new one is created each iteration, open
+FDs get leaked each iteration.
+
+With "Connection: close" in the HTTP response:
+Regardless of Session object retention, file descriptors are leaked.
 */
 Session gsess;
 void poll()
@@ -36,8 +40,8 @@ void poll()
 	call_out(poll, 3);
 	write("Polling... %d open files\n", sizeof(get_dir("/proc/self/fd")));
 	Session lsess = gsess || Session();
-	//~ lsess->async_do_method_url("GET", "https://sikorsky.rosuav.com/", 0, 0, 0, 0, //Connection: close
-	lsess->async_do_method_url("GET", "http://pike.lysator.liu.se/", 0, 0, 0, 0, //Connection: keep-alive
+	//lsess->async_do_method_url("GET", "https://sikorsky.rosuav.com/", 0, 0, 0, 0, //Connection: close
+	lsess->async_do_method_url("GET", "https://pike.lysator.liu.se/", 0, 0, 0, 0, //Connection: keep-alive
 		lambda(string res) {
 			write("%O\n", res[..27]);
 		}, 0, ({ }));
