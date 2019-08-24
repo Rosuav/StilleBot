@@ -76,7 +76,7 @@ int sslonly()
 {
 	//Just create and destruct() a bunch of SSL.File objects
 	call_out(sslonly, 3);
-	write("Polling... %d open files\n", sizeof(get_dir("/proc/self/fd")));
+	write("Spinning... %d open files\n", sizeof(get_dir("/proc/self/fd")));
 	object sock = Stdio.File(); sock->open_socket();
 	sock->set_nonblocking(readable, connected, 0);
 	sock->connect("sikorsky.rosuav.com", 443);
