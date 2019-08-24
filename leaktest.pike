@@ -63,29 +63,8 @@ void poll()
 		}, 0, ({ }));
 }
 
-void readable(object sock, string data) {write("%O\n", (data/"\r\n\r\n")[1]);}
-void writable(object sock) {sock->write("GET / HTTP/1.0\r\n\r\n"); sock->set_nonblocking(readable, 0, 0);}
-void connected(object sock)
-{
-	write("Connected\n");
-	object ssl = SSL.File(sock, SSL.Context());
-	ssl->connect("sikorsky.rosuav.com");
-	ssl->set_nonblocking(readable, writable, 0);
-}
-int sslonly()
-{
-	//Just create and destruct() a bunch of SSL.File objects
-	call_out(sslonly, 3);
-	write("Spinning... %d open files\n", sizeof(get_dir("/proc/self/fd")));
-	object sock = Stdio.File(); sock->open_socket();
-	sock->set_nonblocking(readable, connected, 0);
-	sock->connect("sikorsky.rosuav.com", 443);
-	return -1;
-}
-
 int main(int argc, array(string) argv)
 {
-	if (has_value(argv, "--sslonly")) return sslonly();
 	if (has_value(argv, "--retain")) gsess = Session();
 	write("My PID is: %d\n", getpid());
 	poll();
