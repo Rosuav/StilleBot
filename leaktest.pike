@@ -53,6 +53,10 @@ Regardless of Session object retention, file descriptors are leaked.
 
 The call to return_connection() always seems to close three FDs if
 Connection: close, but it needs to close four.
+
+It seems the Session is not getting garbage collected. Even creating it
+with maximum_connection_reuse = 0 doesn't solve it, because the request
+isn't returned to pool once the Result is yielded.
 */
 Session gsess;
 void poll()
