@@ -57,6 +57,17 @@ Connection: close, but it needs to close four.
 It seems the Session is not getting garbage collected. Even creating it
 with maximum_connection_reuse = 0 doesn't solve it, because the request
 isn't returned to pool once the Result is yielded.
+
+There appear to be THREE separate problems here.
+1) TCP sockets are leaked because nothing ever returns them to the pool.
+   In Promise::Session::Request, after sending the data, dispose of
+   self, thus returning the connection (or destroying it if no KA).
+2) With keep-alive, even though the session will never be reused, the
+   sockets are leaked because the Session cannot be disposed of.
+   In Promise::do_method, set s->maximum_connection_reuse to zero.
+3) When using -DHTTP_PROMISE_DESTRUCT_DEBUG to add _destruct methods
+   to various types, the DNS socket is leaked. Using an IP address
+   avoids this leak, or call ::_destruct().
 */
 Session gsess;
 void poll()
@@ -78,6 +89,7 @@ void promises()
 	call_out(promises, 3);
 	write("Promising... %d garbage, %d open files\n", 0 && gc(), sizeof(get_dir("/proc/self/fd")));
 	Protocols.HTTP.Promise.get_url("https://sikorsky.rosuav.com/")
+	//Protocols.HTTP.Promise.get_url("https://192.168.0.19/") //No UDP leak
 	//Protocols.HTTP.Promise.get_url("https://pike.lysator.liu.se/")
 		->on_success(lambda(Protocols.HTTP.Promise.Result res) {
 			string raw = res->get();
