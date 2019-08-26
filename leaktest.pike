@@ -73,7 +73,7 @@ Session gsess;
 void poll()
 {
 	call_out(poll, 3);
-	write("Polling... %d garbage, %d open files\n", 0 && gc(), sizeof(get_dir("/proc/self/fd")));
+	write("Polling... %d garbage, %d open files\n", gc(), sizeof(get_dir("/proc/self/fd")));
 	Session lsess = gsess || Session();
 	//lsess->async_do_method_url("GET", "https://sikorsky.rosuav.com/", 0, 0, 0, 0, //Connection: close
 	lsess->async_do_method_url("GET", "https://pike.lysator.liu.se/", 0, 0, 0, 0, //Connection: keep-alive
@@ -87,7 +87,7 @@ void poll()
 void promises()
 {
 	call_out(promises, 3);
-	write("Promising... %d garbage, %d open files\n", 0 && gc(), sizeof(get_dir("/proc/self/fd")));
+	write("Promising... %d garbage, %d open files\n", gc(), sizeof(get_dir("/proc/self/fd")));
 	Protocols.HTTP.Promise.get_url("https://sikorsky.rosuav.com/")
 	//Protocols.HTTP.Promise.get_url("https://192.168.0.19/") //No UDP leak
 	//Protocols.HTTP.Promise.get_url("https://pike.lysator.liu.se/")
