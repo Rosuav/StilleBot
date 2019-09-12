@@ -441,6 +441,7 @@ class channel_notif
 				]));
 				break;
 				case "giftpaidupgrade": break; //Pledging to continue a subscription (first introduced for the Subtember special in 2018, and undocumented)
+				case "anongiftpaidupgrade": break; //Ditto but when the original gift was anonymous
 				case "subgift":
 				{
 					write("DEBUG SUBGIFT: chan %s disp %O user %O mon %O recip %O\n",
