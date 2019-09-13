@@ -35,3 +35,5 @@
     IDs. This makes things hard.
 * What happens if there's a long HTTP connection and you update code?
   - Currently I don't do much with websockets, but it can be tested using songreq.html.
+* Use the "special responses" system to customize texts like shoutouts? Would need a way
+  to provide default text, and then explicitly removing it would mean "don't do this".
