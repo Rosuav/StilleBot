@@ -161,7 +161,7 @@ void send_message(string|array to, string msg, int|void is_mod)
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
 	"broadcaster": "_mod", "moderator": "_mod", "staff": "_mod",
-	//"subscriber": "_sub", //if you want shorthand
+	"subscriber": "_sub", "founder": "_sub", //Founders (the first 10 or 25 subs) have a special badge.
 ]);
 //Go through a message's parameters/tags to get the info about the person
 //There may be some non-person info gathered into here too, just for
