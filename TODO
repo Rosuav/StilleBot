@@ -37,3 +37,4 @@
   - Currently I don't do much with websockets, but it can be tested using songreq.html.
 * Use the "special responses" system to customize texts like shoutouts? Would need a way
   to provide default text, and then explicitly removing it would mean "don't do this".
+* On the bot's emote list, allow search/filter by text
