@@ -8,7 +8,6 @@ StilleBot can do here:
 * [Channel-specific commands](commands)
 * [Special responses](specials)
 * [Repeated/automatic commands](repeats)
-$$currency<$$
 * [Quotes](quotes)
 
 $$uptime$$
