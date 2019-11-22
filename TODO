@@ -43,6 +43,7 @@
   - Optionally separate them out by origin
   - Retain the last X whispers seen
     - Is there a way to query Twitch for whisper history?
-    - If not, retain only for the current session
+      - The Twitch UI uses gql for this, so there probably isn't any documented way.
+    - If not, retain only for the current session - or maybe current connection only
     - It'll be wonky anyway w/o that query, so just accept the wonk
   - Mark the window Urgent on new whisper (optionally)
