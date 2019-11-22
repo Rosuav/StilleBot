@@ -38,3 +38,11 @@
 * Use the "special responses" system to customize texts like shoutouts? Would need a way
   to provide default text, and then explicitly removing it would mean "don't do this".
 * On the bot's emote list, allow search/filter by text
+* Whispers window, since the new Twitch dashboard (as of 20191122) doesn't show them.
+  - Show all whispers by default
+  - Optionally separate them out by origin
+  - Retain the last X whispers seen
+    - Is there a way to query Twitch for whisper history?
+    - If not, retain only for the current session
+    - It'll be wonky anyway w/o that query, so just accept the wonk
+  - Mark the window Urgent on new whisper (optionally)
