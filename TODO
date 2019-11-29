@@ -38,18 +38,3 @@
 * Use the "special responses" system to customize texts like shoutouts? Would need a way
   to provide default text, and then explicitly removing it would mean "don't do this".
 * On the bot's emote list, allow search/filter by text
-* Whispers window, since the new Twitch dashboard (as of 20191122) doesn't show them.
-  - Show all whispers by default
-  - Optionally separate them out by origin
-  - Retain the last X whispers seen
-    - Is there a way to query Twitch for whisper history?
-      - The Twitch UI uses gql for this, so there probably isn't any documented way.
-    - If not, retain only for the current session - or maybe current connection only
-    - It'll be wonky anyway w/o that query, so just accept the wonk
-  - Mark the window Urgent on new whisper (optionally)
-  - Better: Make it a web page, unrelated to StilleBot, available on GH Pages
-    - Use ComfyJS
-    - Link to TMI for auth
-    - Store auth in LocalStorage (and tell the user this)
-    - Check the required scopes
-    - Use Choc Factory
