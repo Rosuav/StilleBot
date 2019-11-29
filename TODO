@@ -47,3 +47,9 @@
     - If not, retain only for the current session - or maybe current connection only
     - It'll be wonky anyway w/o that query, so just accept the wonk
   - Mark the window Urgent on new whisper (optionally)
+  - Better: Make it a web page, unrelated to StilleBot, available on GH Pages
+    - Use ComfyJS
+    - Link to TMI for auth
+    - Store auth in LocalStorage (and tell the user this)
+    - Check the required scopes
+    - Use Choc Factory
