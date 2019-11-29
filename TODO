@@ -38,3 +38,6 @@
 * Use the "special responses" system to customize texts like shoutouts? Would need a way
   to provide default text, and then explicitly removing it would mean "don't do this".
 * On the bot's emote list, allow search/filter by text
+* Allow commands to contain spaces. They cannot ever be invoked that way, but some commands
+  could look for them, so for instance shoutout.pike could look for "!so someusername" and
+  if found, use that text instead. (Thanks Mirror for the idea!)
