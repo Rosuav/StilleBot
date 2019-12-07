@@ -339,6 +339,7 @@ void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //Maybe make the poll interval customizable?
 	array chan = indices(persist_config["channels"] || ({ }));
+	chan -= ({"!whisper"});
 	if (!sizeof(chan)) return; //Nothing to check.
 	//Note: There's a slight TOCTOU here - the list of channel names will be
 	//re-checked from persist_config when the response comes in. If there are
