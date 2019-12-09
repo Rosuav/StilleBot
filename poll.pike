@@ -348,6 +348,11 @@ void poll()
 	//until the next poll.
 	get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_login": chan]))
 		->on_success(streaminfo);
+	//There has been an issue with failures and a rate limiting from Twitch.
+	//I suspect that something is automatically retrying AND the sixty-sec
+	//poll is triggering again, causing stacking requests. Look into it if
+	//possible. Otherwise, there'll be a bit of outage (cooldown) any time
+	//I hit this sort of problem.
 	string addr = persist_config["ircsettings"]["http_address"];
 	if (addr && addr != "")
 	{
