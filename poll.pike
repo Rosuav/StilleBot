@@ -1,11 +1,5 @@
 //Can be invoked from the command line for tools or interactive API inspection.
 
-//Deprecated callback bouncers (currently used only by a couple of POST requests,
-//since the generic request() handler is GET-only)
-void data_available(object q, function cbdata) {cbdata(q->unicode_data());}
-void request_ok(object q, function cbdata) {q->async_fetch(data_available, cbdata);}
-void request_fail(object q) { } //If a poll request fails, just ignore it and let the next poll pick it up.
-
 //Place a request to the API. Returns a Future that will be resolved with a fully
 //decoded result (a mapping of Unicode text, generally), or rejects if Twitch or
 //the network failed the request.
@@ -16,18 +10,20 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 {
 	headers = (headers || ([])) + ([]);
 	options = options || ([]);
+	string body = options->json ? Standards.JSON.encode(options->json) : options->data;
+	string method = options->method || (body ? "POST" : "GET");
 	if (options->kraken) headers["Accept"] = "application/vnd.twitchtv.v5+json";
 	if (!headers["Authorization"])
 	{
 		sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
 		if (pass) headers["Authorization"] = "OAuth " + pass;
 	}
-	//TODO: Use bearer auth where appropriate (is it exclusively when which_api==2?)
+	//TODO: Use bearer auth where appropriate (is it exclusively when using Helix?)
 	if (string c=persist_config["ircsettings"]["clientid"])
 		//Some requests require a Client ID. Not sure which or why.
 		headers["Client-ID"] = c;
-	return Protocols.HTTP.Promise.do_method(options->method || "GET", url,
-			Protocols.HTTP.Promise.Arguments((["headers": headers])))
+	return Protocols.HTTP.Promise.do_method(method, url,
+			Protocols.HTTP.Promise.Arguments((["headers": headers, "data": body])))
 		->then(lambda(Protocols.HTTP.Promise.Result res) {
 			int limit = (int)res->headers["ratelimit-limit"],
 				left = (int)res->headers["ratelimit-remaining"];
@@ -261,17 +257,12 @@ Concurrent.Future check_following(string user, string chan)
 	});
 }
 
-void confirm_webhook() {/* There's no data or anything, so nothing to do */}
-
 void create_webhook(string callback, string topic, string secret)
 {
-	Protocols.HTTP.do_async_method("POST", "https://api.twitch.tv/helix/webhooks/hub", 0,
-		([
+	request("https://api.twitch.tv/helix/webhooks/hub", ([
 			"Content-Type": "application/json",
 			"Client-Id": persist_config["ircsettings"]["clientid"],
-		]),
-		Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, confirm_webhook),
-		string_to_utf8(Standards.JSON.encode(([
+		]), (["json": ([
 			"hub.callback": sprintf("%s/junket?%s",
 				persist_config["ircsettings"]["http_address"],
 				callback,
@@ -280,8 +271,7 @@ void create_webhook(string callback, string topic, string secret)
 			"hub.topic": topic,
 			"hub.lease_seconds": 864000,
 			"hub.secret": secret,
-		]))),
-	);
+		])]));
 }
 
 void webhooks(array data)
@@ -323,24 +313,24 @@ void check_webhooks()
 	)->on_success(webhooks);
 }
 
-void got_lookup_token(string resp)
-{
-	mixed data = Standards.JSON.decode_utf8(resp); if (!mappingp(data)) return;
-	G->G->webhook_lookup_token = data->access_token;
-	G->G->webhook_lookup_token_expiry = time() + data->expires_in - 120;
-	check_webhooks();
-}
-
 void get_lookup_token()
 {
 	if (!persist_config["ircsettings"]["clientsecret"]) return;
 	m_delete(G->G, "webhook_lookup_token");
 	G->G->webhook_lookup_token_expiry = time() + 1; //Prevent spinning
-	Protocols.HTTP.do_async_method("POST", "https://id.twitch.tv/oauth2/token", ([
+	Standards.URI uri = Standards.URI("https://id.twitch.tv/oauth2/token");
+	//As above, uri->set_query_variables() doesn't correctly encode query data.
+	uri->query = Protocols.HTTP.http_encode_query(([
 		"client_id": persist_config["ircsettings"]["clientid"],
 		"client_secret": persist_config["ircsettings"]["clientsecret"],
 		"grant_type": "client_credentials",
-	]), 0, Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, got_lookup_token));
+	]));
+	request(uri, ([]), (["method": "POST"]))
+		->then(lambda (mapping data) {
+			G->G->webhook_lookup_token = data->access_token;
+			G->G->webhook_lookup_token_expiry = time() + data->expires_in - 120;
+			check_webhooks();
+		});
 }
 
 void poll()
