@@ -12,11 +12,11 @@ void request_fail(object q) { } //If a poll request fails, just ignore it and le
 //TODO: If there's actually nothing special for Helix, maybe which_api can just
 //be detected - if "kraken" in URL, add the accept header? Now that we don't need
 //any v3 calls, that should be safe.
-Concurrent.Future request(Protocols.HTTP.Session.URL url, int|void which_api, mapping|void headers) //which_api: 1=v5, 2=Helix
+Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, mapping|void options)
 {
-	if (!which_api) return Concurrent.reject(({"Must specify an API - 1=Kraken v5, 2=Helix\n", backtrace()}));
 	headers = (headers || ([])) + ([]);
-	if (which_api == 1) headers["Accept"] = "application/vnd.twitchtv.v5+json";
+	options = options || ([]);
+	if (options->kraken) headers["Accept"] = "application/vnd.twitchtv.v5+json";
 	if (!headers["Authorization"])
 	{
 		sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
@@ -42,7 +42,7 @@ Concurrent.Future get_user_id(string username)
 {
 	username = lower_case(username);
 	if (int id = G->G->userids[username]) return Concurrent.resolve(id); //Local cache for efficiency
-	return request("https://api.twitch.tv/kraken/users?login=" + username, 1)
+	return request("https://api.twitch.tv/kraken/users?login=" + username, ([]), (["kraken": 1]))
 		->then(lambda(mapping data) {return G->G->userids[username] = (int)data->users[0]->_id;});
 }
 
@@ -64,14 +64,14 @@ Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|vo
 		if (raw->pagination->cursor == "IA") return data;
 		//uri->add_query_variable("after", raw->pagination->cursor);
 		query["after"] = raw->pagination->cursor; uri->query = Protocols.HTTP.http_encode_query(query);
-		return request(uri, 2, headers)->then(nextpage);
+		return request(uri, headers)->then(nextpage);
 	}
-	return request(uri, 2, headers)->then(nextpage);
+	return request(uri, headers)->then(nextpage);
 }
 
 Concurrent.Future get_channel_info(string name)
 {
-	return get_user_id(name)->then(lambda(int id) {return request("https://api.twitch.tv/kraken/channels/"+id, 1);})
+	return get_user_id(name)->then(lambda(int id) {return request("https://api.twitch.tv/kraken/channels/"+id, ([]), (["kraken": 1]));})
 	->then(lambda(mapping info) {
 		if (!G->G->channel_info[name]) G->G->channel_info[name] = info; //Autocache
 		return info;
@@ -89,7 +89,7 @@ Concurrent.Future get_channel_info(string name)
 Concurrent.Future get_video_info(string name)
 {
 	return get_user_id(name)->then(lambda(int id) {return
-		request("https://api.twitch.tv/kraken/channels/"+id+"/videos?broadcast_type=archive&limit=1", 1);
+		request("https://api.twitch.tv/kraken/channels/"+id+"/videos?broadcast_type=archive&limit=1", ([]), (["kraken": 1]));
 	})->then(lambda(mapping info) {return info->videos[0];});
 }
 
@@ -243,7 +243,7 @@ void stream_status(string name, mapping info)
 Concurrent.Future check_following(string user, string chan)
 {
 	return Concurrent.all(get_user_id(user), get_user_id(chan))
-	->then(lambda(array(int) id) {return request("https://api.twitch.tv/kraken/users/" + id[0] + "/follows/channels/" + id[1], 1);})
+	->then(lambda(array(int) id) {return request("https://api.twitch.tv/kraken/users/" + id[0] + "/follows/channels/" + id[1], ([]), (["kraken": 1]));})
 	->then(lambda(mapping info) {
 		mapping foll = G_G_("participants", chan, user);
 		foll->following = "since " + info->created_at;
@@ -408,10 +408,10 @@ void interactive(mixed info)
 	object history = function_object(all_constants()["backend_thread"]->backtrace()[0]->args[0])->history;
 	history->push(info);
 }
-int req(string url, int|void which_api) //Returns 0 to suppress Hilfe warning.
+int req(string url) //Returns 0 to suppress Hilfe warning.
 {
 	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/kraken/" + url[url[0]=='/'..];
-	request(url, which_api || 1)->then(interactive);
+	request(url, (["kraken": has_value(url, "/kraken/")]))->then(interactive);
 }
 
 //Lifted from globals because I can't be bothered refactoring
@@ -442,7 +442,7 @@ Concurrent.Future chaninfo_display(mapping info)
 	if (info->mature) write("[MATURE] ");
 	write("%s was last seen playing %s, at %s - %s\n",
 		info->display_name, string_to_utf8(info->game || "(null)"), info->url, string_to_utf8(info->status || "(null)"));
-	return request("https://api.twitch.tv/helix/streams?user_id=" + info->_id, 2)->then(streaminfo_display);
+	return request("https://api.twitch.tv/helix/streams?user_id=" + info->_id)->then(streaminfo_display);
 }
 void followinfo_display(array args)
 {
@@ -497,13 +497,13 @@ void clips_display(string channel)
 		if (info->_cursor != "")
 		{
 			write("Fetching more... %s %O\n", info->_cursor, MIME.decode_base64(info->_cursor));
-			return request(endpoint + "&cursor=" + info->_cursor, 1)->then(process);
+			return request(endpoint + "&cursor=" + info->_cursor, ([]), (["kraken": 1]))->then(process);
 		}
 		if (unseen && sizeof(unseen))
 			write("%d deleted clips:\n%{\t%s\n%}", sizeof(unseen), sort((array)unseen));
 		if (!--requests) exit(0);
 	}
-	request(endpoint, 1)->then(process);
+	request(endpoint, ([]), (["kraken": 1]))->then(process);
 }
 
 int main(int argc, array(string) argv)
@@ -522,7 +522,7 @@ int main(int argc, array(string) argv)
 			{
 				write("Checking transcoding history...\n");
 				get_user_id(ch)->then(lambda(int id) {return
-					request("https://api.twitch.tv/kraken/channels/" + id + "/videos?broadcast_type=archive&limit=100", 1);
+					request("https://api.twitch.tv/kraken/channels/" + id + "/videos?broadcast_type=archive&limit=100", ([]), (["kraken": 1]));
 				})->then(transcoding_display);
 				continue;
 			}
