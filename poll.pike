@@ -353,7 +353,7 @@ void poll()
 	//channels that we get info for and don't need, ignore them; if there are
 	//some that we wanted but didn't get, we'll just think they're offline
 	//until the next poll.
-	get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_login": chan]))
+	get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_login": chan, "first": "100"]))
 		->on_success(streaminfo);
 	//There has been an issue with failures and a rate limiting from Twitch.
 	//I suspect that something is automatically retrying AND the sixty-sec
