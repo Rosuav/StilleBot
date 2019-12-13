@@ -26,7 +26,8 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 	if (string c=persist_config["ircsettings"]["clientid"])
 		//Some requests require a Client ID. Not sure which or why.
 		headers["Client-ID"] = c;
-	return Protocols.HTTP.Promise.get_url(url, Protocols.HTTP.Promise.Arguments((["headers": headers])))
+	return Protocols.HTTP.Promise.do_method(options->method || "GET", url,
+			Protocols.HTTP.Promise.Arguments((["headers": headers])))
 		->then(lambda(Protocols.HTTP.Promise.Result res) {
 			int limit = (int)res->headers["ratelimit-limit"],
 				left = (int)res->headers["ratelimit-remaining"];
