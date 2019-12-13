@@ -58,6 +58,10 @@ Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|vo
 		if (!raw->data) return Concurrent.reject(({"Unparseable response\n", backtrace()}));
 		data += raw->data;
 		if (!raw->pagination || !raw->pagination->cursor) return data;
+		//Possible Twitch API bug: If the returned cursor is precisely "IA",
+		//it's probably the end of the results. It's come up more than once
+		//in the past, and might well happen again.
+		if (raw->pagination->cursor == "IA") return data;
 		//uri->add_query_variable("after", raw->pagination->cursor);
 		query["after"] = raw->pagination->cursor; uri->query = Protocols.HTTP.http_encode_query(query);
 		return request(uri, 2, headers)->then(nextpage);
