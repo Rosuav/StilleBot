@@ -339,8 +339,14 @@ class channel_notif
 		if (!info) return;
 		if (arrayp(info)) {wrap_message(person, info[*], defaultdest); return;}
 		if (stringp(info)) info = (["message": info]);
-		string msg = info->message, dest = info->dest || defaultdest || name;
+		string dest = info->dest || defaultdest || name;
 		if (dest == "/w $$") dest = "/w " + person->user;
+		//TODO: With an array of string messages, replicate the attributes down.
+		//So (["message": ({"a", "b", "c"}), "foo": 1]) would be the same as
+		//({(["message": "a", "foo": 1]), .....}). Currently only the destination
+		//works that way.
+		if (arrayp(info->message)) {wrap_message(person, info->message[*], dest); return;}
+		string msg = info->message;
 		string prefix = replace(info->prefix || "", "$$", person->displayname);
 		msg = replace(msg, "$$", person->displayname);
 		if (config->noticechat && has_value(msg, "$participant$"))
