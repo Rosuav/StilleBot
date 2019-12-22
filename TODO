@@ -37,6 +37,9 @@
   - Currently I don't do much with websockets, but it can be tested using songreq.html.
 * Use the "special responses" system to customize texts like shoutouts? Would need a way
   to provide default text, and then explicitly removing it would mean "don't do this".
+* Allow the bot's commands to be individually enabled and disabled for a particular channel
+  using the web interface. Would then largely subsume the active_channels feature, although
+  that way would still be more performant if it's for a very narrow set of channels (eg 1).
 * On the bot's emote list, allow search/filter by text
 * Allow commands to contain spaces. They cannot ever be invoked that way, but some commands
   could look for them, so for instance shoutout.pike could look for "!so someusername" and
