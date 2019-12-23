@@ -345,10 +345,12 @@ class channel_notif
 		//So (["message": ({"a", "b", "c"}), "foo": 1]) would be the same as
 		//({(["message": "a", "foo": 1]), .....}). Currently only the destination
 		//works that way.
-		//TODO: If info->mode is "random" and an array of messages, pick one at
-		//random and send that one only. Good for variety or a magic 8-ball.
-		if (arrayp(info->message)) {wrap_message(person, info->message[*], dest); return;}
-		string msg = info->message;
+		string|array msg = info->message;
+		if (arrayp(msg))
+		{
+			if (info->mode == "random") msg = random(msg);
+			else {wrap_message(person, info->message[*], dest); return;}
+		}
 		string prefix = replace(info->prefix || "", "$$", person->displayname);
 		msg = replace(msg, "$$", person->displayname);
 		if (config->noticechat && has_value(msg, "$participant$"))
