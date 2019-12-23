@@ -77,8 +77,12 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 					}
 				}
 				response -= ({""});
-				//TODO: Update the flags (and set edited to 1 if there were changes)
-				//if (cmd == "bot") {flags->mode = "random"; edited = 1;} //Hack for demo
+
+				//Update the flags (be sure to m_delete any that state defaults)
+				string resp = req->variables[cmd + "!mode"];
+				if (resp == "random") {flags->mode = "random"; edited = 1;}
+				else if (resp == "sequential") {m_delete(flags, "mode"); edited = 1;}
+
 				if (edited)
 				{
 					changes_made = 1;
@@ -91,14 +95,21 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 					if (sizeof(response) == 1) response = response[0];
 					messages += ({"* Updated !" + cmd});
 					G->G->echocommands[cmd + c] = response;
-					if (sizeof(flags)) G->G->echocommands[cmd + c] = flags | (["message": G->G->echocommands[cmd + c]]);
+					if (sizeof(indices(flags) - ({"message"})))
+						G->G->echocommands[cmd + c] = flags | (["message": G->G->echocommands[cmd + c]]);
 				}
 			}
 			string usercmd = Parser.encode_html_entities(cmd);
 			string inputs = "";
 			foreach (Array.arrayify(response); int i; string|mapping resp)
+			{
 				inputs += sprintf("<br><input name=\"%s!%d\" value=\"%s\" size=200>",
 					usercmd, i, Parser.encode_html_entities(respstr(resp)));
+				if (!i && arrayp(response) && sizeof(response) > 1)
+					inputs += sprintf("<select name=\"%s!mode\">"
+						"<option value=sequential>Sequential</option>"
+						"<option value=random>Random</option></select>", usercmd);
+			}
 			commands += ({sprintf("<code>!%s</code> | %s<button type=button name=\"%[0]s!%d\" title=\"Add another line\">+</button>",
 				usercmd, inputs[4..], arrayp(response) ? sizeof(response) : 1)});
 		}
