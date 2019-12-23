@@ -24,7 +24,7 @@
       stream-live and stream-down notifications
   - Use the same functions for webhooks as for polling
     - ergo, use Helix for polling, not Kraken
-    - Some can't be changed. Offline channel info requires Kraken (as of 20190405).
+    - Some can't be changed. Offline channel info still requires Kraken as of 20191223.
   - Make sure all callers are happy with the Helix-provided info format
 * Create a variant of !permit where, instead of stopping someone from being timed out,
   it lets them whisper a single link?
