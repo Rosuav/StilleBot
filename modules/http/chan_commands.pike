@@ -80,8 +80,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 
 				//Update the flags (be sure to m_delete any that state defaults)
 				string resp = req->variables[cmd + "!mode"];
-				if (resp == "random") {flags->mode = "random"; edited = 1;}
-				else if (resp == "sequential") {m_delete(flags, "mode"); edited = 1;}
+				if (resp == "random" && flags->mode != "random") {flags->mode = "random"; edited = 1;}
+				else if (resp == "sequential" && flags->mode) {m_delete(flags, "mode"); edited = 1;}
 
 				if (edited)
 				{
@@ -108,7 +108,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				if (!i && arrayp(response) && sizeof(response) > 1)
 					inputs += sprintf("<select name=\"%s!mode\">"
 						"<option value=sequential>Sequential</option>"
-						"<option value=random>Random</option></select>", usercmd);
+						"<option value=random%s>Random</option></select>",
+					usercmd, flags->mode == "random" ? " selected" : "");
 			}
 			commands += ({sprintf("<code>!%s</code> | %s<button type=button name=\"%[0]s!%d\" title=\"Add another line\">+</button>",
 				usercmd, inputs[4..], arrayp(response) ? sizeof(response) : 1)});
