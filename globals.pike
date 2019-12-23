@@ -14,7 +14,15 @@ protected void create(string n)
 //key (echo that string, possibly with other attributes), or an array of the above
 //(echo them all, in order). An array of arrays is NOT permitted - this does not nest.
 //Note that (["message": ({...})]) is valid, but the meaningful attributes may not be
-//the same as for a string message.
+//the same as for a string message. Note also that, in theory, mappings and arrays can
+//nest arbitrarily, but in practice, stick to one of the following:
+//- "single message"
+//- ({"sequential", "messages"})
+//- (["message": "text to send", "attr": "value"])
+//- ({(["message": "sequential", "attr": "value"]), "messages"})
+//- (["message": ({"sequential", "messages"}), "attr": "value"])
+//- ([({(["message": "sequential", "attr": "value"]), "messages"}), "otherattr": "value"])
+//Don't nest more deeply than these.
 typedef string|mapping|array(string|mapping) echoable_message;
 typedef echoable_message|function(object,object,string:echoable_message) command_handler;
 

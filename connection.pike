@@ -345,7 +345,7 @@ class channel_notif
 		//So (["message": ({"a", "b", "c"}), "foo": 1]) would be the same as
 		//({(["message": "a", "foo": 1]), .....}). Currently only the destination
 		//works that way.
-		//TODO: If info->random_choice and an array of messages, pick one at
+		//TODO: If info->mode is "random" and an array of messages, pick one at
 		//random and send that one only. Good for variety or a magic 8-ball.
 		if (arrayp(info->message)) {wrap_message(person, info->message[*], dest); return;}
 		string msg = info->message;

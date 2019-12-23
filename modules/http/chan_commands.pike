@@ -39,6 +39,12 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	foreach (G->G->echocommands; string cmd; echoable_message response) if (!has_prefix(cmd, "!") && has_suffix(cmd, c))
 	{
 		cmd -= c;
+		mapping flags = ([]);
+		if (mappingp(response) && arrayp(response->message))
+		{
+			flags = response | ([]);
+			response = flags->message;
+		}
 		if (req->misc->is_mod)
 		{
 			//NOTE: If you attempt to save an edit for something that's been deleted
@@ -71,6 +77,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 					}
 				}
 				response -= ({""});
+				//TODO: Update the flags (and set edited to 1 if there were changes)
+				//if (cmd == "bot") {flags->mode = "random"; edited = 1;} //Hack for demo
 				if (edited)
 				{
 					changes_made = 1;
@@ -83,6 +91,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 					if (sizeof(response) == 1) response = response[0];
 					messages += ({"* Updated !" + cmd});
 					G->G->echocommands[cmd + c] = response;
+					if (sizeof(flags)) G->G->echocommands[cmd + c] = flags | (["message": G->G->echocommands[cmd + c]]);
 				}
 			}
 			string usercmd = Parser.encode_html_entities(cmd);
