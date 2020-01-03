@@ -293,7 +293,7 @@ void webhooks(array data)
 		if (follows[chan] /*&& status[chan]*/) continue; //Already got all hooks
 		if (!cfg->allcmds) continue; //Show only for channels we're fully active in
 		mapping c = G->G->channel_info[chan];
-		int userid = c && c->_id; //For some reason, ?-> is misparsing the data type (???)
+		int userid = c->?_id;
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses !whisper.)
 		string secret = MIME.encode_base64(random_string(15));
 		G->G->webhook_signer[chan] = Crypto.SHA256.HMAC(secret);
