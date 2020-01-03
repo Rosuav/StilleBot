@@ -38,33 +38,22 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	}
 	if (!G->G->emote_set_mapping) ret = ret->then(lambda()
 	{
-		//For some reason, Pike's inbuilt HTTPS client refuses to download this.
-		//I'm not sure why. Possibly a cert issue, but I don't know if I can
-		//easily just disable cert checking to test that.
-		//So we cheat: we call on someone else. TODO: Handle absence of curl by
-		//trying python3, python2, wget, or anything else.
-		//string data = Protocols.HTTP.get_url_data("https://twitchemotes.com/api_cache/v3/sets.json");
 		//NOTE: This fetches only the sets that the bot is able to use. This is
 		//a LOT faster than fetching them all (which could take up to 90 secs),
 		//but if more sets are added - eg a gift sub is dropped on the bot - then
 		//this list becomes outdated :(
+		//NOTE: Formerly this used curl due to an unknown failure. If weird stuff
+		//happens, go back to 9da66622 and consider reversion.
 		write("Fetching emote set info...\n");
-		Stdio.File pipe = Stdio.File();
-		object promise = Concurrent.Promise();
-		object proc = Process.create_process(({"curl", "https://api.twitchemotes.com/api/v4/sets?id="
-				+ indices(G->G->bot_emote_list->emoticon_sets) * ","}),
-			(["stdout": pipe->pipe()]));
-		array(string) pieces = ({ });
-		pipe->set_read_callback(lambda(mixed _, string data) {pieces += ({data});});
-		pipe->set_close_callback(lambda() {
-			write("Emote set info fetched. (Sorry for the long wait.)\n");
-			array data = Standards.JSON.decode(pieces * "");
-			mapping info = (["fetchtime": time()]);
-			foreach (data, mapping setinfo) info[setinfo->set_id] = setinfo;
-			G->G->emote_set_mapping = info;
-			promise->success(0);
-		});
-		return promise;
+		return Protocols.HTTP.Promise.get_url("https://api.twitchemotes.com/api/v4/sets?id="
+				+ indices(G->G->bot_emote_list->emoticon_sets) * ",")
+			->then(lambda(object result) {
+				write("Emote set info fetched.\n");
+				mapping info = (["fetchtime": time()]);
+				foreach (Standards.JSON.decode(result->get()), mapping setinfo)
+					info[setinfo->set_id] = setinfo;
+				G->G->emote_set_mapping = info;
+			});
 	});
 	return ret->then(lambda() {
 		mapping highlight = persist_config["permanently_available_emotes"];
