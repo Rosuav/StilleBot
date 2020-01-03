@@ -22,8 +22,9 @@ as they come from permanent subscriptions. They may be removed or altered by the
 creators, but should not expire on their own.
 {: .highlight}
 
-Unhighlighted emotes may disappear
-from the bot at any time, but can be restored with a gift subscription.
+Unhighlighted emotes may disappear from the bot at any time, but can be restored
+with a gift subscription. Emotes not listed in this page (but available) include
+temporary emotes unlocked with channel currency, and bit-unlock emotes.
 
 Selected emotes - click emotes to add them, then copy/paste the images or
 emote names<br><input id=emotenames readonly><br>

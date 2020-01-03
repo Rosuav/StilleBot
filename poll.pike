@@ -10,6 +10,31 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 {
 	headers = (headers || ([])) + ([]);
 	options = options || ([]);
+	if (options->username)
+	{
+		//Convert a user name into a user ID. Assumes the URL is a string with {{USER}} where the ID belongs.
+		mapping usernames;
+		if (stringp(options->username)) usernames = (["{{USER}}": options->username]);
+		else usernames = options->username + ([]);
+		array reqs = ({ });
+		foreach (usernames; string tag; string user)
+		{
+			user = lower_case(user);
+			if (int id = G->G->userids[user]) usernames[tag] = (string)id; //Local cache for efficiency
+			else reqs += ({request("https://api.twitch.tv/kraken/users?login=" + user, ([]), (["kraken": 1]))
+				->then(lambda(mapping data) {
+					G->G->userids[data->users[0]->name] = (int)data->users[0]->_id;
+					replace(usernames, data->users[0]->name, data->users[0]->_id);
+				})
+			});
+		}
+		if (sizeof(reqs) > 1) reqs = ({Concurrent.all(@reqs)});
+		if (sizeof(reqs)) return reqs[0]->then(lambda() {
+			return request(replace(url, usernames), headers, options - (<"username">));
+		});
+		url = replace(url, usernames);
+		//If we found everything in cache, carry on with a modified URL.
+	}
 	string body = options->json ? Standards.JSON.encode(options->json) : options->data;
 	string method = options->method || (body ? "POST" : "GET");
 	if (options->kraken) headers["Accept"] = "application/vnd.twitchtv.v5+json";
@@ -33,14 +58,6 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 			if (data->error) return Concurrent.reject(({sprintf("%s\nError from Twitch: %O (%O)\n", url, data->error, data->status), backtrace()}));
 			return data;
 		});
-}
-
-Concurrent.Future get_user_id(string username)
-{
-	username = lower_case(username);
-	if (int id = G->G->userids[username]) return Concurrent.resolve(id); //Local cache for efficiency
-	return request("https://api.twitch.tv/kraken/users?login=" + username, ([]), (["kraken": 1]))
-		->then(lambda(mapping data) {return G->G->userids[username] = (int)data->users[0]->_id;});
 }
 
 Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers)
@@ -68,7 +85,7 @@ Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|vo
 
 Concurrent.Future get_channel_info(string name)
 {
-	return get_user_id(name)->then(lambda(int id) {return request("https://api.twitch.tv/kraken/channels/"+id, ([]), (["kraken": 1]));})
+	return request("https://api.twitch.tv/kraken/channels/{{USER}}", ([]), (["kraken": 1, "username": name]))
 	->then(lambda(mapping info) {
 		if (!G->G->channel_info[name]) G->G->channel_info[name] = info; //Autocache
 		return info;
@@ -85,9 +102,8 @@ Concurrent.Future get_channel_info(string name)
 
 Concurrent.Future get_video_info(string name)
 {
-	return get_user_id(name)->then(lambda(int id) {return
-		request("https://api.twitch.tv/kraken/channels/"+id+"/videos?broadcast_type=archive&limit=1", ([]), (["kraken": 1]));
-	})->then(lambda(mapping info) {return info->videos[0];});
+	return request("https://api.twitch.tv/kraken/channels/{{USER}}/videos?broadcast_type=archive&limit=1", ([]), (["kraken": 1, "username": name]))
+		->then(lambda(mapping info) {return info->videos[0];});
 }
 
 void streaminfo(array data)
@@ -239,8 +255,8 @@ void stream_status(string name, mapping info)
 
 Concurrent.Future check_following(string user, string chan)
 {
-	return Concurrent.all(get_user_id(user), get_user_id(chan))
-	->then(lambda(array(int) id) {return request("https://api.twitch.tv/kraken/users/" + id[0] + "/follows/channels/" + id[1], ([]), (["kraken": 1]));})
+	return request("https://api.twitch.tv/kraken/users/{{USER}}/follows/channels/{{CHAN}}", ([]),
+		(["kraken": 1, "username": (["{{USER}}": user, "{{CHAN}}": chan])]))
 	->then(lambda(mapping info) {
 		mapping foll = G_G_("participants", chan, user);
 		foll->following = "since " + info->created_at;
@@ -371,7 +387,7 @@ protected void create()
 	add_constant("check_following", check_following);
 	add_constant("get_video_info", get_video_info);
 	add_constant("stream_status", stream_status);
-	add_constant("get_user_id", get_user_id);
+	add_constant("twitch_api_request", request);
 }
 
 #if !constant(G)
@@ -512,9 +528,8 @@ int main(int argc, array(string) argv)
 			if (user == "transcoding")
 			{
 				write("Checking transcoding history...\n");
-				get_user_id(ch)->then(lambda(int id) {return
-					request("https://api.twitch.tv/kraken/channels/" + id + "/videos?broadcast_type=archive&limit=100", ([]), (["kraken": 1]));
-				})->then(transcoding_display);
+				request("https://api.twitch.tv/kraken/channels/{{USER}}/videos?broadcast_type=archive&limit=100", ([]), (["kraken": 1, "username": ch]))
+					->then(transcoding_display);
 				continue;
 			}
 			if (user == "clips")

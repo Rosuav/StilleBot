@@ -29,16 +29,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (!cfg->nick || cfg->nick == "") return (["data": "Oops, shouldn't happen"]);
 		sscanf(cfg["pass"] || "", "oauth:%s", string pass);
 		write("Fetching emote list\n");
-		ret = ret->then(lambda() {return get_user_id(cfg->nick);})
-		->then(lambda(int id) {
-			return Protocols.HTTP.Promise.get_url("https://api.twitch.tv/kraken/users/" + id + "/emotes",
-			Protocols.HTTP.Promise.Arguments((["headers": ([
-				"Authorization": "OAuth " + pass,
-				"Accept": "application/vnd.twitchtv.v5+json",
-				"Client-ID": cfg->clientid,
-			])])));
-		})->then(lambda(Protocols.HTTP.Promise.Result res) {
-			mapping info = Standards.JSON.decode(res->get());
+		ret = ret->then(lambda() {return twitch_api_request("https://api.twitch.tv/kraken/users/{{USER}}/emotes",
+			0, (["username": cfg->nick, "kraken": 1]));
+		})->then(lambda(mapping info) {
 			info->fetchtime = time();
 			G->G->bot_emote_list = info;
 		});
@@ -58,14 +51,16 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		write("Fetching emote set info...\n");
 		Stdio.File pipe = Stdio.File();
 		object promise = Concurrent.Promise();
-		object proc = Process.create_process(({"curl", "https://twitchemotes.com/api_cache/v3/sets.json"}),
+		object proc = Process.create_process(({"curl", "https://api.twitchemotes.com/api/v4/sets?id="
+				+ indices(G->G->bot_emote_list->emoticon_sets) * ","}),
 			(["stdout": pipe->pipe()]));
 		array(string) pieces = ({ });
 		pipe->set_read_callback(lambda(mixed _, string data) {pieces += ({data});});
 		pipe->set_close_callback(lambda() {
 			write("Emote set info fetched. (Sorry for the long wait.)\n");
-			mapping info = Standards.JSON.decode(pieces * "");
-			info->fetchtime = time();
+			array data = Standards.JSON.decode(pieces * "");
+			mapping info = (["fetchtime": time()]);
+			foreach (data, mapping setinfo) info[setinfo->set_id] = setinfo;
 			G->G->emote_set_mapping = info;
 			promise->success(0);
 		});
