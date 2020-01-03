@@ -77,7 +77,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		mapping(string:string) emotesets = ([]);
 		array(mapping(string:array(mapping(string:string)))) emote_raw = ({([]), ([])});
 		mapping session = G->G->http_sessions[req->cookies->session];
-		int is_bot = session?->user?->login == persist_config["ircsettings"]->nick;
+		int is_bot = session->?user->?login == persist_config["ircsettings"]->nick;
 		if (!G->G->bot_emote_list->emoticon_sets) return render_template("emotes.md", ([
 			"backlink": "",
 			"emotes": "Unable to fetch emotes from Twitch - check again later",
@@ -107,7 +107,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			if (highlight[chan]) emotesets[chan + "-Z"] = "\n{: .highlight}";
 			if (setinfo->tier > 1) emotesets[chan + "-T" + setinfo->tier] = sprintf(" T%d: %s", setinfo->tier, set);
 			else if (emotesets[chan]) emotesets[chan] += sprintf(" %s", set);
-			else emotesets[chan] = sprintf("\n\n**%s**: %s", G->G->channel_info[chan]?->display_name || chan, set);
+			else emotesets[chan] = sprintf("\n\n**%s**: %s", G->G->channel_info[chan]->?display_name || chan, set);
 		}
 		if (req->variables->format == "json") return ([
 			"data": Standards.JSON.encode(mkmapping(({"permanent", "ephemeral"}), emote_raw), 7),

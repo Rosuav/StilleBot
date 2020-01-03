@@ -507,7 +507,7 @@ class channel_notif
 				#else
 				int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
 				#endif
-				if (person->badges?->_mod) msg = "\u2694 " + msg;
+				if (person->badges->?_mod) msg = "\u2694 " + msg;
 				msg = string_to_utf8(msg);
 				log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
 				if (params->bits && (int)params->bits)

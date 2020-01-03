@@ -194,7 +194,7 @@ void stream_status(string name, mapping info)
 	{
 		//Attempt to gather channel info from the stream info. If we
 		//can't, we'll get that info via Kraken.
-		//string last_title = G->G->channel_info[name]?->status; //hack
+		//string last_title = G->G->channel_info[name]->?status; //hack
 		mapping synthesized = build_channel_info(info);
 		if (synthesized) G->G->channel_info[name] = synthesized;
 		else
@@ -203,7 +203,7 @@ void stream_status(string name, mapping info)
 			G->G->channel_info[name] = 0; //Force an update by clearing the old info
 			get_channel_info(name);
 		}
-		//if (synthesized?->status != last_title) write("Old title: %O\nNew title: %O\n", last_title, synthesized?->status); //hack
+		//if (synthesized->?status != last_title) write("Old title: %O\nNew title: %O\n", last_title, synthesized->?status); //hack
 		//TODO: Report when the game changes?
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->started_at);
 		if (!G->G->stream_online_since[name])

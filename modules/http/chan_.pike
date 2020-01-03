@@ -26,7 +26,7 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 		"error": 404,
 	]);
 	req->misc->channel = channel;
-	req->misc->channel_name = G->G->channel_info[channel->name[1..]]?->display_name || channel->name[1..];
+	req->misc->channel_name = G->G->channel_info[channel->name[1..]]->?display_name || channel->name[1..];
 	req->misc->is_mod = req->misc->session && req->misc->session->user && channel->mods[req->misc->session->user->login];
 	return handler(req);
 }
