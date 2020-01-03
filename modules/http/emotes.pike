@@ -44,10 +44,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//So we cheat: we call on someone else. TODO: Handle absence of curl by
 		//trying python3, python2, wget, or anything else.
 		//string data = Protocols.HTTP.get_url_data("https://twitchemotes.com/api_cache/v3/sets.json");
-		//NOTE: This is over a hundred megabytes of data. We're forcing the client
-		//to wait while we fetch that. Not good. Fortunately it caches easily.
-		//Since this is all asynchronous, the rest of the bot is still functional,
-		//but the requestor will have to wait a good while.
+		//NOTE: This fetches only the sets that the bot is able to use. This is
+		//a LOT faster than fetching them all (which could take up to 90 secs),
+		//but if more sets are added - eg a gift sub is dropped on the bot - then
+		//this list becomes outdated :(
 		write("Fetching emote set info...\n");
 		Stdio.File pipe = Stdio.File();
 		object promise = Concurrent.Promise();
