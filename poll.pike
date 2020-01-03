@@ -3,9 +3,6 @@
 //Place a request to the API. Returns a Future that will be resolved with a fully
 //decoded result (a mapping of Unicode text, generally), or rejects if Twitch or
 //the network failed the request.
-//TODO: If there's actually nothing special for Helix, maybe which_api can just
-//be detected - if "kraken" in URL, add the accept header? Now that we don't need
-//any v3 calls, that should be safe.
 Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, mapping|void options)
 {
 	headers = (headers || ([])) + ([]);
@@ -21,7 +18,7 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 		{
 			user = lower_case(user);
 			if (int id = G->G->userids[user]) usernames[tag] = (string)id; //Local cache for efficiency
-			else reqs += ({request("https://api.twitch.tv/kraken/users?login=" + user, ([]), (["kraken": 1]))
+			else reqs += ({request("https://api.twitch.tv/kraken/users?login=" + user)
 				->then(lambda(mapping data) {
 					G->G->userids[data->users[0]->name] = (int)data->users[0]->_id;
 					replace(usernames, data->users[0]->name, data->users[0]->_id);
@@ -37,7 +34,7 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 	}
 	string body = options->json ? Standards.JSON.encode(options->json) : options->data;
 	string method = options->method || (body ? "POST" : "GET");
-	if (options->kraken) headers["Accept"] = "application/vnd.twitchtv.v5+json";
+	headers["Accept"] = "application/vnd.twitchtv.v5+json"; //Only needed for Kraken but doesn't seem to hurt
 	if (!headers["Authorization"])
 	{
 		sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
@@ -85,7 +82,7 @@ Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|vo
 
 Concurrent.Future get_channel_info(string name)
 {
-	return request("https://api.twitch.tv/kraken/channels/{{USER}}", ([]), (["kraken": 1, "username": name]))
+	return request("https://api.twitch.tv/kraken/channels/{{USER}}", ([]), (["username": name]))
 	->then(lambda(mapping info) {
 		if (!G->G->channel_info[name]) G->G->channel_info[name] = info; //Autocache
 		return info;
@@ -102,7 +99,7 @@ Concurrent.Future get_channel_info(string name)
 
 Concurrent.Future get_video_info(string name)
 {
-	return request("https://api.twitch.tv/kraken/channels/{{USER}}/videos?broadcast_type=archive&limit=1", ([]), (["kraken": 1, "username": name]))
+	return request("https://api.twitch.tv/kraken/channels/{{USER}}/videos?broadcast_type=archive&limit=1", ([]), (["username": name]))
 		->then(lambda(mapping info) {return info->videos[0];});
 }
 
@@ -256,7 +253,7 @@ void stream_status(string name, mapping info)
 Concurrent.Future check_following(string user, string chan)
 {
 	return request("https://api.twitch.tv/kraken/users/{{USER}}/follows/channels/{{CHAN}}", ([]),
-		(["kraken": 1, "username": (["{{USER}}": user, "{{CHAN}}": chan])]))
+		(["username": (["{{USER}}": user, "{{CHAN}}": chan])]))
 	->then(lambda(mapping info) {
 		mapping foll = G_G_("participants", chan, user);
 		foll->following = "since " + info->created_at;
@@ -418,7 +415,7 @@ void interactive(mixed info)
 int req(string url) //Returns 0 to suppress Hilfe warning.
 {
 	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/kraken/" + url[url[0]=='/'..];
-	request(url, (["kraken": has_value(url, "/kraken/")]))->then(interactive);
+	request(url)->then(interactive);
 }
 
 //Lifted from globals because I can't be bothered refactoring
@@ -504,13 +501,13 @@ void clips_display(string channel)
 		if (info->_cursor != "")
 		{
 			write("Fetching more... %s %O\n", info->_cursor, MIME.decode_base64(info->_cursor));
-			return request(endpoint + "&cursor=" + info->_cursor, ([]), (["kraken": 1]))->then(process);
+			return request(endpoint + "&cursor=" + info->_cursor)->then(process);
 		}
 		if (unseen && sizeof(unseen))
 			write("%d deleted clips:\n%{\t%s\n%}", sizeof(unseen), sort((array)unseen));
 		if (!--requests) exit(0);
 	}
-	request(endpoint, ([]), (["kraken": 1]))->then(process);
+	request(endpoint)->then(process);
 }
 
 int main(int argc, array(string) argv)
@@ -528,7 +525,7 @@ int main(int argc, array(string) argv)
 			if (user == "transcoding")
 			{
 				write("Checking transcoding history...\n");
-				request("https://api.twitch.tv/kraken/channels/{{USER}}/videos?broadcast_type=archive&limit=100", ([]), (["kraken": 1, "username": ch]))
+				request("https://api.twitch.tv/kraken/channels/{{USER}}/videos?broadcast_type=archive&limit=100", ([]), (["username": ch]))
 					->then(transcoding_display);
 				continue;
 			}
