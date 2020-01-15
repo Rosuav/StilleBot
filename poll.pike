@@ -20,6 +20,7 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 			if (int id = G->G->userids[user]) usernames[tag] = (string)id; //Local cache for efficiency
 			else reqs += ({request("https://api.twitch.tv/kraken/users?login=" + user)
 				->then(lambda(mapping data) {
+					if (!sizeof(data->users)) return Concurrent.reject(({"User not found\n", backtrace()}));
 					G->G->userids[data->users[0]->name] = (int)data->users[0]->_id;
 					replace(usernames, data->users[0]->name, data->users[0]->_id);
 				})
