@@ -14,10 +14,15 @@ $$uptime$$
 
 $$user_is_mod$$
 
+Channel configuration:
+
+- | -
+-------------|---------
+Timezone     | $$timezone$$
+Transcoding  | $$transcoding$$
+- | More to come
+
 <!-- TODO: Configs
 * Notice Me (only if useful remotely) - enabled, followers-only, keyword, and timeout
-* Count Participant Activity?
-* Report Transcoding
-* Enable/Disable quotes (or should this go on /quotes ?)
-* Timezone
+* Enable/Disable quotes?
 -->

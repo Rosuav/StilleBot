@@ -50,7 +50,7 @@ int seconds(int|array mins, string timezone)
 		case 1: //Scheduled at hh:mm in the user's timezone
 		{
 			//werror("Scheduling at %02d:%02d in %s\n", mins[0], mins[1], timezone);
-			if (timezone == "") timezone = "UTC";
+			if (!timezone || timezone == "") timezone = "UTC";
 			object now = Calendar.Gregorian.Second()->set_timezone(timezone);
 			int target = mins[0] * 3600 + mins[1] * 60;
 			target -= now->hour_no() * 3600 + now->minute_no() * 60 + now->second_no();
