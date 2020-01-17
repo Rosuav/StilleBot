@@ -33,10 +33,26 @@ automated echoing will happen only while the stream is live.
 
 //Convert a number of minutes into a somewhat randomized number of seconds
 //Assumes a span of +/- 1 minute if not explicitly given
-int seconds(int|array mins)
+int seconds(int|array mins, string timezone)
 {
-	if (!arrayp(mins)) mins = ({mins-1, mins+1});
-	return mins[0] * 60 + random((mins[1]-mins[0]) * 60);
+	if (!arrayp(mins)) mins = ({mins-1, mins+1, 0});
+	if (sizeof(mins) == 2) mins += ({0});
+	switch (mins[2])
+	{
+		case 0: //Scheduled between X and Y minutes
+			return mins[0] * 60 + random((mins[1]-mins[0]) * 60);
+		case 1: //Scheduled at hh:mm in the user's timezone
+		{
+			//werror("Scheduling at %02d:%02d in %s\n", mins[0], mins[1], timezone);
+			if (timezone == "") timezone = "UTC";
+			object now = Calendar.Gregorian.Second()->set_timezone(timezone);
+			int target = mins[0] * 3600 + mins[1] * 60;
+			target -= now->hour_no() * 3600 + now->minute_no() * 60 + now->second_no();
+			if (target <= 0) target += 86400;
+			return target;
+		}
+		default: return 86400; //Probably a bug somewhere.
+	}
 }
 void autospam(string channel, string msg)
 {
@@ -51,7 +67,7 @@ void autospam(string channel, string msg)
 	int|array(int) mins = cfg->autocommands[msg];
 	if (!mins) return; //Autocommand disabled
 	string key = channel + " " + msg;
-	G->G->autocommands[key] = call_out(autospam, seconds(mins), channel, msg);
+	G->G->autocommands[key] = call_out(autospam, seconds(mins, cfg->timezone), channel, msg);
 	if (has_prefix(msg, "!"))
 	{
 		//If a command is given, pretend the bot typed it, and process as normal.
@@ -71,10 +87,15 @@ echoable_message process(object channel, object person, string param)
 		//Or link to the web info if there's a server running.
 		return "(unimpl)";
 	}
-	int|array(int) mins = ({0, 0});
-	sscanf(param, "%d-%d %s", mins[0], mins[1], string msg);
-	if (!msg && sscanf(param, "%d %s", int m, msg)) mins = ({m-1, m+1});
-	if (!mins[0] || !msg) return "Check https://rosuav.github.io/StilleBot/commands/repeat for usage information.";
+	array(int) mins;
+	string msg;
+	if (sscanf(param, "%d:%d %s", int hr, int min, msg) && msg)
+		mins = ({hr, min, 1}); //Scheduled at hh:mm
+	else if (sscanf(param, "%d-%d %s", int min, int max, msg) && msg)
+		mins = ({min, max, 0}); //Repeated between X and Y minutes
+	else if (sscanf(param, "%d %s", int m, msg) && msg)
+		mins = ({m-1, m+1, 0}); //Repeated approx every X minutes
+	if (!mins) return "Check https://rosuav.github.io/StilleBot/commands/repeat for usage information.";
 	mapping ac = channel->config->autocommands;
 	if (!ac) ac = channel->config->autocommands = ([]);
 	string key = channel->name + " " + msg;
@@ -88,12 +109,22 @@ echoable_message process(object channel, object person, string param)
 		persist_config->save();
 		return "Repeated command disabled.";
 	}
-	if (mins[0] < 5) return "Minimum five-minute repeat cycle. You should probably keep to a minimum of 20 mins.";
-	if (mins[1] < mins[0]) return "Maximum period must be at least the minimum period.";
+	switch (mins[2])
+	{
+		case 0:
+			if (mins[0] < 5) return "Minimum five-minute repeat cycle. You should probably keep to a minimum of 20 mins.";
+			if (mins[1] < mins[0]) return "Maximum period must be at least the minimum period.";
+			break;
+		case 1:
+			if (mins[0] < 0 || mins[0] >= 24 || mins[1] < 0 || mins[1] >= 60)
+				return "Time must be specified as hh:mm (in your local timezone).";
+			break;
+		default: return "Huh?"; //Shouldn't happen
+	}
 	if (mixed id = m_delete(G->G->autocommands, key))
 		remove_call_out(id);
 	ac[msg] = mins;
-	G->G->autocommands[key] = call_out(autospam, seconds(mins), channel->name, msg);
+	G->G->autocommands[key] = call_out(autospam, seconds(mins, channel->config->timezone), channel->name, msg);
 	persist_config->save();
 	return "Added to the repetition table.";
 }
@@ -105,14 +136,14 @@ echoable_message unrepeat(object channel, object person, string param)
 
 int connected(string channel)
 {
-	mapping ac = persist_config["channels"][channel]->autocommands;
-	if (!ac) return 0;
-	foreach (ac; string msg; int|array(int) mins)
+	mapping cfg = persist_config["channels"][channel];
+	if (!cfg->autocommands) return 0;
+	foreach (cfg->autocommands; string msg; int|array(int) mins)
 	{
 		string key = "#" + channel + " " + msg;
 		mixed id = G->G->autocommands[key];
 		if (!id || undefinedp(find_call_out(id)))
-			G->G->autocommands[key] = call_out(autospam, seconds(mins), "#" + channel, msg);
+			G->G->autocommands[key] = call_out(autospam, seconds(mins, cfg->timezone), "#" + channel, msg);
 	}
 }
 
