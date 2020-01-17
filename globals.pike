@@ -279,6 +279,11 @@ class _Markdown
 		//Allow cell spanning by putting just a hyphen in a cell (it will
 		//be joined to the NEXT cell, not the preceding one)
 		int spancount = 0;
+		string tablerow(string row)
+		{
+			spancount = 0; //Can't span across rows
+			return ::tablerow(row);
+		}
 		string tablecell(string cell, mapping flags)
 		{
 			if (String.trim(cell) == "-") {++spancount; return "";} //A cell with just a hyphen will not be rendered, and the next cell spans.
