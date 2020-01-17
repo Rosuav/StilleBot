@@ -24,7 +24,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				else
 				{
 					messages += ({"* Set timezone to " + req->variables->timezone});
-					channel->config->timezone = req->variables->timezone;
+					channel->config->timezone = timezone = req->variables->timezone;
 					persist_config->save();
 				}
 			}
