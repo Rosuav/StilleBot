@@ -282,6 +282,7 @@ class _Markdown
 		string tablerow(string row)
 		{
 			spancount = 0; //Can't span across rows
+			if (row == "") return ""; //Suppress the entire row if all cells were suppressed
 			return ::tablerow(row);
 		}
 		string tablecell(string cell, mapping flags)
