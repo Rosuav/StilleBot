@@ -911,11 +911,33 @@ class _mainwindow
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
 	constant elements=({"kwd:Channel", "?allcmds:All commands active", "+notes:Notes", "'uptime:", ([
-		"\"Notice Me!\"": ({"'Let chat participants get your attention.", "?noticechat:Enabled", "?Followers only", "NoticeMe keyword", "#Timeout (within X sec)=600", "!Notify participants"}),
-		"Currency": ({"Currency name", "#Payout interval", "#payout_offline:Offline divisor [0 for none]", "#payout_mod:Mod multiplier"}),
-		"Logging": ({"?chatlog:Log chat to console", "?countactive:Count participant activity", "?reporttrans:Report transcoding availability"}),
-		"Perms": ({"?disable_quotes:Disable quotes", "'TODO: Have a way here to allow non-mods to create pending quotes"}),
-		"Song requests": ({"?songreq:Active", "#songreq_length:Max length (seconds)"}),
+		"\"Notice Me!\"": ({
+			"'Let chat participants get your attention.",
+			"?noticechat:Enabled",
+			"?Followers only",
+			"NoticeMe keyword",
+			"#Timeout (within X sec)=600",
+			"!Notify participants",
+		}),
+		"Currency": ({
+			"Currency name",
+			"#Payout interval",
+			"#payout_offline:Offline divisor [0 for none]",
+			"#payout_mod:Mod multiplier",
+		}),
+		"Logging": ({
+			"?chatlog:Log chat to console",
+			"?countactive:Count participant activity",
+			"?reporttrans:Report transcoding availability",
+		}),
+		"Perms": ({
+			"?disable_quotes:Disable quotes",
+			"'TODO: Have a way here to allow non-mods to create pending quotes",
+		}),
+		"Song requests": ({
+			"?songreq:Active",
+			"#songreq_length:Max length (seconds)",
+		}),
 	])});
 	constant persist_key = "channels";
 	constant is_subwindow = 0;
