@@ -13,3 +13,10 @@ StilleBot can do here:
 $$uptime$$
 
 $$user_is_mod$$
+
+<!-- TODO: Configs
+* Notice Me (only if useful remotely) - enabled, followers-only, keyword, and timeout
+* Count Participant Activity?
+* Report Transcoding
+* Enable/Disable quotes (or should this go on /quotes ?)
+-->
