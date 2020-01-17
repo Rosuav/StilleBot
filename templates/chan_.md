@@ -16,11 +16,13 @@ $$user_is_mod$$
 
 Channel configuration:
 
+$$messages$$
+
 - | -
 -------------|---------
 Timezone     | $$timezone$$
 Transcoding  | $$transcoding$$
-- | More to come
+- | $$save_config$$
 
 <!-- TODO: Configs
 * Notice Me (only if useful remotely) - enabled, followers-only, keyword, and timeout

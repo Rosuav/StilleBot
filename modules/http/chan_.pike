@@ -8,13 +8,45 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string timezone = channel->config->timezone;
 	if (!timezone || timezone == "") timezone = "UTC";
 	string transcoding = channel->config->reporttrans ? "Announced on startup" : "Not announced";
+	string save_config = "More to come";
+	array(string) messages = ({ });
 	if (req->misc->is_mod)
 	{
+		if (req->request_type == "POST")
+		{
+			if (req->variables->timezone != channel->config->timezone)
+			{
+				if (!has_value(Calendar.TZnames.zonenames(), req->variables->timezone))
+				{
+					//TODO: Handle timezone abbreviations
+					messages += ({"* Invalid timezone " + req->variables->timezone});
+				}
+				else
+				{
+					messages += ({"* Set timezone to " + req->variables->timezone});
+					channel->config->timezone = req->variables->timezone;
+					persist_config->save();
+				}
+			}
+			if (channel->config->reporttrans && !req->variables->reporttrans)
+			{
+				channel->config->reporttrans = 0;
+				messages += ({"* Disabled the reporting of transcoding"});
+				persist_config->save();
+			}
+			if (!channel->config->reporttrans && req->variables->reporttrans) //note that req->variables->reporttrans will be a string eg "on"
+			{
+				channel->config->reporttrans = 1;
+				messages += ({"* Enabled the reporting of transcoding"});
+				persist_config->save();
+			}
+		}
 		user_is_mod = "Welcome, " + req->misc->session->user->display_name + ", and your modsword.";
 		//TODO: Have a way to grab the client's timezone (see Mustard Mine)
 		timezone = sprintf("<input name=timezone size=30 value=\"%s\">", Parser.encode_html_entities(timezone));
 		transcoding = sprintf("<label><input type=checkbox %s name=reporttrans> Report on stream start</label>",
 			channel->config->reporttrans ? "checked" : "");
+		save_config = "<input type=submit value=Save>";
 	}
 	return render_template("chan_.md", ([
 		"channel": req->misc->channel_name,
@@ -23,6 +55,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"user_is_mod": user_is_mod,
 		"timezone": timezone,
 		"transcoding": transcoding,
+		"save_config": save_config,
+		"messages": messages * "\n",
 	]));
 }
 
