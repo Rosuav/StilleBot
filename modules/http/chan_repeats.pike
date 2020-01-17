@@ -11,24 +11,25 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	{
 		if (req->request_type == "POST" && req->variables->add)
 		{
-			array mins = ({(int)req->variables->mins1, (int)req->variables->mins2});
-			if (int m = (int)req->variables->mins) mins = ({m-1, m+1}); //Compat with older form
+			string mins = req->variables->mins;
+			int mins1 = (int)req->variables->mins1, mins2 = (int)req->variables->mins2;
+			if (!mins && mins1 && mins2) mins = sprintf("%d-%d", mins1, mins2); //Compat with previous form
 			string msg = req->variables->command || "";
-			if (!mins[0]) messages += ({"* Must provide a repetition frequency (in minutes)"});
-			else if (mins[0] < 5) messages += ({"* Repetition frequency must be at least 5 minutes"});
-			else if (mins[1] < mins[0]) messages += ({"* Maximum period must be at least the minimum period"});
+			if (mins == "") messages += ({"* Must provide a repetition frequency or scheduled time"});
 			else if (msg == "") messages += ({"* Need a command to repeat"});
 			else messages += ({"* " + G->G->commands->repeat(req->misc->channel,
-				(["user": req->misc->session->user->login]), sprintf("%d-%d %s", mins[0], mins[1], msg))});
+				(["user": req->misc->session->user->login]), mins + " " + msg)});
 		}
 		//NOTE: If this is not at the top, pressing Enter in the form will click the wrong
 		//submit button and will delete the first autocommand. Not good.
-		repeats += ({"<input name=mins1 type=number min=5 max=1440>-<input name=mins2 type=number min=5 max=1440> mins"
+		repeats += ({"<input name=mins size=10> mins or time"
 			" | - | <input name=command size=50> | <input type=submit name=add value=\"Add new\">"});
 	}
 	foreach (ac || ({ }); string msg; int|array(int) mins)
 	{
-		if (!arrayp(mins)) mins = ({mins-1, mins+1});
+		if (!arrayp(mins)) mins = ({mins-1, mins+1, 0});
+		if (sizeof(mins) == 2) mins += ({0});
+		string time = mins[2] ? sprintf("at %d:%d", mins[0], mins[1]) : sprintf("%d-%d mins", mins[0], mins[1]);
 		string delete = "";
 		if (req->misc->is_mod)
 		{
@@ -55,10 +56,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			else if (mappingp(cmd)) output = cmd->message;
 			else if (arrayp(cmd)) output = cmd * " "; //TODO: Handle array of mappings
 			else output = "(unknown/variable)";
-			repeats += ({sprintf("%d-%d mins | %s | %s%s", mins[0], mins[1], user(msg), user(output), delete)});
+			repeats += ({sprintf("%s | %s | %s%s", time, user(msg), user(output), delete)});
 		}
 		//Arbitrary echoed text, no associated command
-		else repeats += ({sprintf("%d-%d mins | - | %s%s", mins[0], mins[1], user(msg), delete)});
+		else repeats += ({sprintf("%s | - | %s%s", time, user(msg), delete)});
 	}
 	if (!sizeof(repeats)) repeats = ({"- | - | (none)"});
 	return render_template("chan_repeats.md", ([
