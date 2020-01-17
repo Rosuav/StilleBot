@@ -930,9 +930,11 @@ class _mainwindow
 			"?countactive:Count participant activity",
 			"?reporttrans:Report transcoding availability",
 		}),
-		"Perms": ({
+		"Perms": ({ //TODO: Find a better name for this tab
 			"?disable_quotes:Disable quotes",
 			"'TODO: Have a way here to allow non-mods to create pending quotes",
+			"Timezone",
+			"'Scheduled commands (!repeat) will use this timezone", //And so might other things in the future
 		}),
 		"Song requests": ({
 			"?songreq:Active",
