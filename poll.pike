@@ -123,7 +123,7 @@ void cache_game_names()
 		foreach (games, mapping game) G->G->category_names[game->id] = game->name;
 		write("Fetched %d games, total %d\n", sizeof(games), sizeof(G->G->category_names));
 		fetching_game_names = 0;
-	});
+	})->thencatch(lambda() {fetching_game_names = 0;});
 }
 
 //Attempt to construct a channel info mapping from the stream info
