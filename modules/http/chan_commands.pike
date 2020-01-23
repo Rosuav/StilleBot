@@ -8,8 +8,7 @@ constant TEMPLATES = ({
 	"!discord | Join my Discord server: https://discord.gg/YOUR_URL_HERE",
 	"!shop | stephe21LOOT Get some phat lewt at https://www.redbubble.com/people/YOUR_REDBUBBLE_NAME/portfolio iimdprLoot",
 	"!twitter | Follow my Twitter for updates, notifications, and other whatever-it-is-I-post: https://twitter.com/YOUR_TWITTER_NAME",
-
-	"!love | rosuavLove maayaHeart fxnLove devicatLOVE devicatHUG noobsLove stephe21Heart beauatLOVE scared5Hug",
+	"!love | rosuavLove maayaHeart fxnLove devicatLOVE devicatHUG noobsLove stephe21Heart beauatLOVE kattvHeart",
 	"!hype | maayaHype devicatHYPU noobsHype maayaHype devicatHYPU noobsHype maayaHype devicatHYPU noobsHype",
 	"!hug | /me devicatHUG $$ warmly hugs %s maayaHug",
 	"!lurk | $$ drops into the realm of lurkdom devicatLURK",
