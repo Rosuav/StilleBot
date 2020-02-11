@@ -72,7 +72,13 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	]);
 	req->misc->channel = channel;
 	req->misc->channel_name = G->G->channel_info[channel->name[1..]]->?display_name || channel->name[1..];
-	req->misc->is_mod = req->misc->session && req->misc->session->user && channel->mods[req->misc->session->user->login];
+	req->misc->is_mod = 0; //If is_mod is false, there will be a login_link.
+	if (req->misc->session && req->misc->session->user)
+	{
+		if (channel->mods[req->misc->session->user->login]) req->misc->is_mod = 1;
+		else req->misc->login_link = "<i>You're logged in, but not a recognized mod. Before you can make changes, go to the channel and say something, so I can see your mod sword. Thanks!</i>";
+	}
+	else req->misc->login_link = "<a href=\"/twitchlogin?next=" + req->not_query + "\">Mods, login to make changes</a>";
 	return handler(req);
 }
 

@@ -136,8 +136,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"channel": req->misc->channel_name, "commands": commands * "\n",
 		"messages": messages * "\n",
 		"templates": TEMPLATES * "\n",
-		"save_or_login": req->misc->is_mod ?
-			"<p><a href=\"#examples\" id=examples>Example and template commands</a></p><input type=submit value=\"Save all\">" :
-			"<a href=\"/twitchlogin?next=" + req->not_query + "\">Mods, login to make changes</a>",
+		"save_or_login": req->misc->login_link || "<p><a href=\"#examples\" id=examples>Example and template commands</a></p><input type=submit value=\"Save all\">",
 	]));
 }

@@ -67,7 +67,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"channel": req->misc->channel_name,
 		"repeats": repeats * "\n",
 		"messages": messages * "\n",
-		"login": req->misc->is_mod ? "" :
-			"<a href=\"/twitchlogin?next=" + req->not_query + "\">Mods, login to make changes</a>",
+		"login": req->misc->login_link || "",
 	]));
 }
