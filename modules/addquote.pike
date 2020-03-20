@@ -16,7 +16,7 @@ Anyone can view these quotes with the [!quote](quote) command.
 string process(object channel, object person, string param)
 {
 	if (channel->config->disable_quotes) return 0;
-	if (param == "") return "@$$: Try '!addquote Something someone said -- person'";
+	if (param == "") return "@$$: Try '!addquote \"Something someone said\" -- person'";
 	if (!channel->config->quotes) channel->config->quotes = ({ });
 	mapping chaninfo = G->G->channel_info[channel->name[1..]];
 	if (!chaninfo) return "@$$: Internal error - no channel info"; //I'm pretty sure this shouldn't happen
@@ -57,6 +57,7 @@ string process(object channel, object person, string param)
 		"game": chaninfo->game,
 		"mature": chaninfo->mature,
 		"timestamp": time(),
+		"recorder": person->user,
 	])});
 	persist_config->save();
 	return "@$$: Added quote #" + sizeof(channel->config->quotes);
