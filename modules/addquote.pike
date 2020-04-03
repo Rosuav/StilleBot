@@ -52,6 +52,7 @@ string process(object channel, object person, string param)
 		//For testing, just simulate adding the quote and displaying it
 		return sprintf("@$$: SimQuote #%d: %s [%s]",
 			sizeof(channel->config->quotes) + 1, param, chaninfo->game);
+	//TODO: Record the emotes from the input and retain them for the web site.
 	channel->config->quotes += ({([
 		"msg": param,
 		"game": chaninfo->game,

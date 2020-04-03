@@ -8,7 +8,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (!quotes || !sizeof(quotes)) return render_template("chan_quotes.md", (["channel": req->misc->channel_name, "quotes": "(none)"]));
 	array q = ({ });
 	foreach (quotes; int i; mapping quote)
+	{
+		//TODO: Render emotes. Use the bot's emote list primarily, but
+		//if we have emote info retained from addquote, use that too.
 		q += ({sprintf("%d. %s [%s]", i + 1, quote->msg, quote->game)});
+	}
 	return render_template("chan_quotes.md", ([
 		"channel": req->misc->channel_name,
 		"quotes": q * "\n",
