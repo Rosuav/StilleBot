@@ -14,3 +14,5 @@ on("click", "li", e => {
 	set_content("#recorder", quote.recorder || "(unknown)");
 	dlg.showModal();
 });
+
+on("click", ".dialog_cancel", e => e.match.parentElement.close());
