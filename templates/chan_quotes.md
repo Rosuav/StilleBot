@@ -9,7 +9,7 @@ Twitch Clips, quotes are a great way to remember those fun moments forever.
 >
 > &nbsp;    | !quote <span id=idx></span>
 > ----------|-----------
-> Text      | <input id=text size=80>
+> Text      | <textarea id=text rows=4 cols=80></textarea>
 > Quoted at | <span id=timestamp></span>
 > Category  | <span id=category></span>
 > Recorder  | <span id=recorder></span>
