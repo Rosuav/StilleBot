@@ -16,5 +16,7 @@ Twitch Clips, quotes are a great way to remember those fun moments forever.
 > Quoted at | <span id=timestamp></span>
 > Category  | <span id=category></span>
 > Recorder  | <span id=recorder></span>
+>
+> <button type=button id=update>Update</button>
 
 $$editjs$$
