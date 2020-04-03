@@ -1,7 +1,5 @@
 inherit http_endpoint;
 
-string respstr(mapping|string resp) {return stringp(resp) ? resp : resp->message;}
-
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	array quotes = req->misc->channel->config->quotes;
