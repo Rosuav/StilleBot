@@ -5,8 +5,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	array quotes = req->misc->channel->config->quotes;
 	if (!quotes || !sizeof(quotes)) return render_template("chan_quotes.md", (["channel": req->misc->channel_name, "quotes": "(none)"]));
 	string editjs = "";
-	//FIXME: Eventually make this available to all mods. For testing, it's bot-self only.
-	if (req->misc->is_mod && req->misc->session->user->login == function_object(send_message)->bot_nick)
+	if (req->misc->is_mod)
 	{
 		//All the work is done client-side
 		editjs = "<script>const quotes = " + Standards.JSON.encode(quotes) + "</script>"
