@@ -3,7 +3,7 @@ inherit http_endpoint;
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	array quotes = req->misc->channel->config->quotes;
-	if (!quotes || !sizeof(quotes)) return render_template("chan_quotes.md", (["channel": req->misc->channel_name, "quotes": "(none)"]));
+	if (!quotes || !sizeof(quotes)) return render_template("chan_quotes.md", (["channel": req->misc->channel_name, "quotes": "(none)", "editjs": ""]));
 	string editjs = "";
 	if (req->misc->is_mod)
 	{
