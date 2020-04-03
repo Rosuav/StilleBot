@@ -6,17 +6,13 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	array quotes = req->misc->channel->config->quotes;
 	if (!quotes || !sizeof(quotes)) return render_template("chan_quotes.md", (["channel": req->misc->channel_name, "quotes": "(none)"]));
-	string editlink = ""; int editing = 0;
+	string editjs = "";
 	//FIXME: Eventually make this available to all mods. For testing, it's bot-self only.
 	if (req->misc->is_mod && req->misc->session->user->login == function_object(send_message)->bot_nick)
 	{
-		if (req->variables->edit)
-		{
-			//TODO
-			editing = 1;
-			editlink = "[Cancel changes](quotes)";
-		}
-		else editlink = "[Welcome, owner. Edit quotes if desired.](quotes?edit)";
+		//All the work is done client-side
+		editjs = "<script>const quotes = " + Standards.JSON.encode(quotes) + "</script>"
+			"<script type=module src=\"/static/quotes.js\"></script>";
 	}
 	array q = ({ });
 	foreach (quotes; int i; mapping quote)
@@ -28,6 +24,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	return render_template("chan_quotes.md", ([
 		"channel": req->misc->channel_name,
 		"quotes": q * "\n",
-		"editlink": editlink,
+		"editjs": editjs,
 	]));
 }
