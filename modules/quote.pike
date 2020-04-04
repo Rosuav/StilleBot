@@ -55,6 +55,6 @@ echoable_message process(object channel, object person, string param)
 	object ts = Calendar.Gregorian.Second("unix", quote->timestamp);
 	if (string tz = channel->config->timezone) ts = ts->set_timezone(tz) || ts;
 	string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
-	return sprintf("@$$: Quote #%d: %s [%s, %s]", idx, quote->msg, quote->game, date);
+	return sprintf("@$$: Quote #%d: %s [%s, %s]", idx, quote->msg, quote->game || "uncategorized", date);
 }
 
