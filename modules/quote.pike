@@ -52,6 +52,9 @@ echoable_message process(object channel, object person, string param)
 	}
 	else if (idx <= 0 || idx > sizeof(quotes)) return "@$$: No such quote.";
 	mapping quote = quotes[idx-1];
-	return sprintf("@$$: Quote #%d: %s [%s]", idx, quote->msg, quote->game);
+	object ts = Calendar.Gregorian.Second("unix", quote->timestamp);
+	if (string tz = channel->config->timezone) ts = ts->set_timezone(tz) || ts;
+	string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
+	return sprintf("@$$: Quote #%d: %s [%s, %s]", idx, quote->msg, quote->game, date);
 }
 
