@@ -31,7 +31,7 @@ on("click", "#update", async e => {
 	});
 	if (!res.ok) {console.error("Not okay response", res); return;}
 	console.log("Updated successfully.");
-	//Synthesize the updated quote text
+	//Synthesize the updated quote text. Currently loses the date. (TODO: Preserve, don't synthesize.)
 	set_content(quote_li, text + " [" + quotes[editing_quote - 1].game + "]");
 	dlg.close();
 });
