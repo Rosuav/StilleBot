@@ -52,3 +52,4 @@
   - !newtimer !hypetrain 1:0:0 A hype train can happen again!
   - Maybe have a detailed thing in the web allowing customization of initial response, clash
     behaviour (reset time or error), and message when it expires
+  - Just like with permanent autocommands, emit only if online at the time.
