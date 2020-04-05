@@ -783,7 +783,7 @@ class easy_auth
 	inherit window;
 	mapping config = persist->path("ircsettings");
 	//TODO: Generate our own, probably using a github.io redirect URI
-	constant url = "https://api.twitch.tv/kraken/oauth2/authorize?response_type=token&client_id=q6batx0epp608isickayubi39itsckt&redirect_uri=https://twitchapps.com/tmi/&scope=chat_login+user_read";
+	constant url = "https://api.twitch.tv/kraken/oauth2/authorize?response_type=token&client_id=q6batx0epp608isickayubi39itsckt&redirect_uri=https://twitchapps.com/tmi/&scope=chat_login+user_read+whispers:edit";
 
 	void makewindow()
 	{
