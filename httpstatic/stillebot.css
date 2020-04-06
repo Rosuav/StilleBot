@@ -24,6 +24,7 @@ main {
 	max-width: 1200px;
 	margin: auto;
 	background-color: #eeeeee;
+	padding: 0 0.5em;
 }
 
 h1,h2,h3 {
