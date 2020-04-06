@@ -321,14 +321,13 @@ class _Markdown
 			}
 			return sprintf("<blockquote>%s</blockquote>", text);
 		}
-		//Allow paragraphs to get extra attributes
-		string paragraph(string text)
+		//Give this the last line of text. It'll return a mapping of attributes, or 0.
+		//If zero, keep the text in the output, otherwise hide it.
+		mapping parse_attrs(string text)
 		{
-			string last_line = (text / "\n")[-1];
-			mapping attr = ([]);
-			if (sscanf(last_line, "{:%{ %[.#]%[a-z]%}}%s", array attrs, string empty) && empty == "")
+			if (sscanf(text, "{:%{ %[.#]%[a-z]%}}%s", array attrs, string empty) && empty == "")
 			{
-				text = text[..<sizeof(last_line)+1];
+				mapping attr = ([]);
 				foreach (attrs, [string t, string val]) switch (t)
 				{
 					case ".":
@@ -338,8 +337,29 @@ class _Markdown
 					case "#": attr["id"] = val; break;
 					default: break; //Shouldn't happen
 				}
+				return attr;
 			}
+		}
+		//Allow paragraphs to get extra attributes
+		string paragraph(string text)
+		{
+			string last_line = (text / "\n")[-1];
+			mapping attr = parse_attrs(last_line);
+			if (attr) text = text[..<sizeof(last_line)+1]; else attr = ([]);
 			return sprintf("<p%{ %s=%q%}>%s</p>", (array)attr, text);
+		}
+		//Ditto for lists. TODO: Simplify this.
+		string list(string text, void|bool ordered)
+		{
+			array lines = text / "\n";
+			mapping attr;
+			if (lines[-1] == "" && has_suffix(lines[-2], "</li>")) //Should always be the case
+			{
+				attr = parse_attrs(lines[-2][..<5]);
+				if (attr) {lines[-2] = "</li>"; text = lines * "\n";}
+				else attr = ([]);
+			}
+			return sprintf("<%s%{ %s=%q%}>%s</%[0]s>", ordered ? "ol" : "ul", (array)attr, text);
 		}
 		//Retain headings in case they're wanted
 		string heading(string text, int level, string raw)
