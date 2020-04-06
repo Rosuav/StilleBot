@@ -24,13 +24,17 @@ $$save_or_login$$
 > Be sure to customize the command text to suit your channel, lest your commands
 > look identical to everyone else's :)
 
+<style>
+table {width: 100%;}
+</style>
 <script>
 document.querySelectorAll("button").forEach(btn => btn.onclick = e => {
 	const inp = document.createElement("input");
 	inp.name = e.currentTarget.name;
-	inp.size = 150;
-	const parent = e.currentTarget.parentElement;
+	inp.className = "widetext";
+	let parent = e.currentTarget.parentElement;
 	parent.removeChild(e.currentTarget);
+	parent = parent.previousElementSibling;
 	parent.appendChild(document.createElement("br"));
 	parent.appendChild(inp);
 });

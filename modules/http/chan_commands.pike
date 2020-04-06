@@ -104,17 +104,17 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			string inputs = "";
 			foreach (Array.arrayify(response); int i; string|mapping resp)
 			{
-				//TODO: Nest a CSS Grid inside the table cell, for better layout
-				inputs += sprintf("<br><input name=\"%s!%d\" value=\"%s\" size=150>",
+				inputs += sprintf("<br><input name=\"%s!%d\" value=\"%s\" class=widetext>",
 					usercmd, i, Parser.encode_html_entities(respstr(resp)));
-				if (!i && arrayp(response) && sizeof(response) > 1)
-					inputs += sprintf("<select name=\"%s!mode\">"
-						"<option value=sequential>Sequential</option>"
-						"<option value=random%s>Random</option></select>",
-					usercmd, flags->mode == "random" ? " selected" : "");
 			}
-			commands += ({sprintf("<code>!%s</code> | %s<button type=button name=\"%[0]s!%d\" title=\"Add another line\">+</button>",
-				usercmd, inputs[4..], arrayp(response) ? sizeof(response) : 1)});
+			string mode = "";
+			if (arrayp(response) && sizeof(response) > 1)
+				mode = sprintf("<select name=\"%s!mode\">"
+						"<option value=sequential>Sequential</option>"
+						"<option value=random%s>Random</option></select><br>",
+					usercmd, flags->mode == "random" ? " selected" : "");
+			commands += ({sprintf("<code>!%s</code> | %s | %s<button type=button name=\"%[0]s!%d\" title=\"Add another line\">+</button>",
+				usercmd, inputs[4..], mode, arrayp(response) ? sizeof(response) : 1)});
 		}
 		else
 		{
@@ -126,7 +126,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	sort(order, commands);
 	if (!sizeof(commands)) commands = ({"(none) |"});
-	if (req->misc->is_mod) commands += ({"Add: <input name=newcmd_name size=10 placeholder=\"!hype\"> | <input name=newcmd_resp size=150>"});
+	if (req->misc->is_mod) commands += ({"Add: <input name=newcmd_name size=10 placeholder=\"!hype\"> | <input name=newcmd_resp class=widetext>"});
 	if (changes_made)
 	{
 		//Once again, TODO: Dedup. Or migrate these into persist_config??
