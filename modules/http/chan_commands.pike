@@ -11,6 +11,7 @@ constant TEMPLATES = ({
 	"!love | rosuavLove maayaHeart fxnLove devicatLOVE devicatHUG noobsLove stephe21Heart beauatLOVE kattvHeart",
 	"!hype | maayaHype devicatHYPU noobsHype maayaHype devicatHYPU noobsHype maayaHype devicatHYPU noobsHype",
 	"!hug | /me devicatHUG $$ warmly hugs %s maayaHug",
+	"!loot | HypeChest RPGPhatLoot Loot ALL THE THINGS!! stephe21LOOT iimdprLoot",
 	"!lurk | $$ drops into the realm of lurkdom devicatLURK",
 	"!unlurk | $$ returns from the realm of lurk devicatLURK",
 	"!raid | Let's go raiding! Copy and paste this raid call and be ready when I host our target! >>> /me twitchRaid YOUR RAID CALL HERE twitchRaid",
