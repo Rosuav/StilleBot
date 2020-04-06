@@ -1,4 +1,5 @@
 /* Styling across all StilleBot pages */
+* {box-sizing: border-box;}
 
 td {padding: 0.25em 0.5em;}
 
@@ -17,4 +18,15 @@ input[type=submit] {background: inherit;}
 
 .emotedtext {
 	line-height: 35px;
+}
+
+main {
+	max-width: 1200px;
+	margin: auto;
+	background-color: #eeeeee;
+}
+
+h1,h2,h3 {
+	max-width: max-content;
+	margin-left: auto; margin-right: auto;
 }

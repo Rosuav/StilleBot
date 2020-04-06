@@ -104,7 +104,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			string inputs = "";
 			foreach (Array.arrayify(response); int i; string|mapping resp)
 			{
-				inputs += sprintf("<br><input name=\"%s!%d\" value=\"%s\" size=200>",
+				//TODO: Nest a CSS Grid inside the table cell, for better layout
+				inputs += sprintf("<br><input name=\"%s!%d\" value=\"%s\" size=150>",
 					usercmd, i, Parser.encode_html_entities(respstr(resp)));
 				if (!i && arrayp(response) && sizeof(response) > 1)
 					inputs += sprintf("<select name=\"%s!mode\">"
@@ -125,7 +126,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	sort(order, commands);
 	if (!sizeof(commands)) commands = ({"(none) |"});
-	if (req->misc->is_mod) commands += ({"Add: <input name=newcmd_name size=10 placeholder=\"!hype\"> | <input name=newcmd_resp size=200>"});
+	if (req->misc->is_mod) commands += ({"Add: <input name=newcmd_name size=10 placeholder=\"!hype\"> | <input name=newcmd_resp size=150>"});
 	if (changes_made)
 	{
 		//Once again, TODO: Dedup. Or migrate these into persist_config??
