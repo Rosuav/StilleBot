@@ -28,7 +28,7 @@ $$save_or_login$$
 document.querySelectorAll("button").forEach(btn => btn.onclick = e => {
 	const inp = document.createElement("input");
 	inp.name = e.currentTarget.name;
-	inp.size = 200;
+	inp.size = 150;
 	const parent = e.currentTarget.parentElement;
 	parent.removeChild(e.currentTarget);
 	parent.appendChild(document.createElement("br"));
