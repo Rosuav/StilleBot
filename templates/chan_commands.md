@@ -26,6 +26,8 @@ $$save_or_login$$
 
 <style>
 table {width: 100%;}
+th, td {width: 100%;}
+th:first-of-type, th:last-of-type, td:first-of-type, td:last-of-type {width: max-content;}
 </style>
 <script>
 document.querySelectorAll("button").forEach(btn => btn.onclick = e => {
