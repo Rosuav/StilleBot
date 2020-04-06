@@ -14,3 +14,7 @@ input[type=submit] {background: inherit;}
 	position: absolute;
 	right: 1em; top: 1em;
 }
+
+.emotedtext {
+	line-height: 35px;
+}
