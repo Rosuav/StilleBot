@@ -13,6 +13,7 @@ Commands in alphabetical order:
 * [!help: List commands available to you](help)
 * [!quote: View a chosen or randomly-selected quote](quote)
 * [!repeat: Add a repeated command (autocommand) for this channel](repeat)
+* [!setcmd: Configure an echo command for this channel](setcmd)
 * [!shoutout: Give a shout-out to another streamer](shoutout)
 * [!unrepeat: Cancel a repeated command](repeat)
 * [!uptime: Show channel uptime.](uptime)
