@@ -127,9 +127,13 @@ void pump_queue()
 	[[string|array to, string msg], msgqueue] = Array.shift(msgqueue);
 	irc->send_message(to, string_to_utf8(msg));
 }
-void send_message(string|array to, string msg, int|void is_mod)
+void send_message(string to, string msg, int|void is_mod)
 {
-	if (stringp(to) && has_prefix(to, "/"))
+	//20200410: Changed function signature from "string|array to" to just "string to".
+	//I don't *think* anything ever calls this with an array??? So this check should
+	//be able to be dropped.
+	if (arrayp(to)) to = [array](mixed)to * ",";
+	if (has_prefix(to, "/"))
 	{
 		msg = to + " " + msg; //eg "/w target message"
 		to = "#" + bot_nick; //Shouldn't matter what the dest is with these.
