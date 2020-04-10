@@ -16,9 +16,7 @@ string process(object channel, object person, string param)
 		cmd = lower_case(cmd); //TODO: Switch this out for a proper Unicode casefold
 		cmd += channel->name;
 		if (!G->G->echocommands[cmd]) return "@$$: No echo command with that name exists here.";
-		m_delete(G->G->echocommands, cmd);
-		string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
-		Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
+		make_echocommand(G->G->echocommands, 0);
 		return sprintf("@$$: Deleted command !%s", cmd - channel->name);
 	}
 	return "@$$: Try !delcmd !cmdname";

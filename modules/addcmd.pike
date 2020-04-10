@@ -38,6 +38,16 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 Editing these special commands can also be done via the bot's web browser
 configuration pages, where available.
 ", SPECIALS);
+
+//Update (or delete) an echo command and save them to disk
+void make_echocommand(string cmd, echoable_message response)
+{
+	G->G->echocommands[cmd] = response;
+	if (!response) m_delete(G->G->echocommands, cmd);
+	string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
+	Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
+}
+
 string process(object channel, object person, string param)
 {
 	if (sscanf(param, "!%[^# ] %s", string cmd, string response) == 2)
@@ -49,9 +59,7 @@ string process(object channel, object person, string param)
 		if (!SPECIAL_NAMES[cmd] && has_value(cmd, '!')) return "@$$: Command names cannot include exclamation marks";
 		cmd += channel->name;
 		string newornot = G->G->echocommands[cmd] ? "Updated" : "Created new";
-		G->G->echocommands[cmd] = response;
-		string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
-		Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
+		make_echocommand(cmd, response);
 		return sprintf("@$$: %s command !%s", newornot, cmd - channel->name);
 	}
 	return "@$$: Try !addcmd !newcmdname response-message";
@@ -61,4 +69,5 @@ protected void create(string name)
 {
 	::create(name);
 	G->G->echocommands = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_commands.json")||"{}");
+	add_constant("make_echocommand", make_echocommand);
 }

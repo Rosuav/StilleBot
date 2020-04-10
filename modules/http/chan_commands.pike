@@ -127,12 +127,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	sort(order, commands);
 	if (!sizeof(commands)) commands = ({"(none) |"});
 	if (req->misc->is_mod) commands += ({"Add: <input name=newcmd_name size=10 placeholder=\"!hype\"> | <input name=newcmd_resp class=widetext>"});
-	if (changes_made)
-	{
-		//Once again, TODO: Dedup. Or migrate these into persist_config??
-		string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
-		Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
-	}
+	if (changes_made) make_echocommand(0, 0); //Trigger a save
 	return render_template("chan_commands.md", ([
 		"user text": user,
 		"channel": req->misc->channel_name, "commands": commands * "\n",

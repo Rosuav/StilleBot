@@ -54,9 +54,7 @@ string process(object channel, object person, string param)
 			default: return "@$$: Unknown option " + flag; //Won't update the command
 		}
 		if (sizeof(command) == 1) command = command->message; //No unnecessary mappings
-		G->G->echocommands[cmd] = command;
-		string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
-		Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
+		make_echocommand(cmd, command);
 		return sprintf("@$$: Updated command !%s", cmd - channel->name);
 	}
 	return "@$$: Try !setcmd !cmdname option -- see https://rosuav.github.io/StilleBot/commands/setcmd";

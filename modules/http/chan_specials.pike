@@ -43,9 +43,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (sizeof(updates))
 	{
 		messages = "<ul>" + updates * "\n" + "</ul>";
-		//TODO: Deduplicate this with addcmd.pike
-		string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
-		Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
+		make_echocommand(0, 0); //Trigger a save without adding a command
 	}
 	mapping replacements = ([
 		"channel": req->misc->channel_name, "commands": commands * "\n",
