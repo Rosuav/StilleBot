@@ -1,5 +1,5 @@
 inherit command;
-constant all_channels = 1;
+constant require_allcmds = 0;
 constant hidden_command = 1;
 
 //TODO: Only gone them if the last hostthis by that person was this channel.

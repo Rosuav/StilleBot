@@ -23,7 +23,7 @@ typedef echoable_message|function(object,object,string:echoable_message) command
 
 class command
 {
-	constant all_channels = 0; //Set to 1 if this command should be available even if allcmds is not set for the channel
+	constant require_allcmds = 1; //Set to 0 if the command should be available even if allcmds is not set for the channel
 	constant require_moderator = 0; //(deprecated) Set to 1 if the command is mods-only (equivalent to access="mod")
 	//Command flags, same as can be managed for echocommands with !setcmd
 	//Note that the keywords given here by default should be treated as equivalent
@@ -41,7 +41,7 @@ class command
 	//(Maybe remove this and depend on find_command??)
 	echoable_message check_perms(object channel, object person, string param)
 	{
-		if (!all_channels && !channel->config->allcmds) return 0;
+		if (require_allcmds && !channel->config->allcmds) return 0;
 		if ((require_moderator || access == "mod") && !channel->mods[person->user]) return 0;
 		return process(channel, person, param);
 	}
@@ -105,17 +105,13 @@ command_handler find_command(object channel, string cmd, int is_mod)
 	{
 		//NOTE: G->G->commands holds the actual function that gets
 		//called, but we need the corresponding object.
-		command_handler f = G->G->commands[tryme];
-		if (f)
-		{
-			object obj = functionp(f) ? function_object(f) : ([]);
-			if (!obj->all_channels && !channel->config->allcmds) continue;
-			if ((obj->require_moderator || obj->access == "mod") && !is_mod) continue;
-			//If we get here, the command is acceptable.
-			return f;
-		}
-		//Echo commands are not allowed to be functions, unsurprisingly
-		if (echoable_message response = G->G->echocommands[tryme]) return response;
+		command_handler f = G->G->commands[tryme] || G->G->echocommands[tryme];
+		if (!f) continue;
+		object|mapping flags = functionp(f) ? function_object(f) : mappingp(f) ? f : ([]);
+		if (flags->require_allcmds && !channel->config->allcmds) continue;
+		if ((flags->require_moderator || flags->access == "mod") && !is_mod) continue;
+		//If we get here, the command is acceptable.
+		return f;
 	}
 }
 

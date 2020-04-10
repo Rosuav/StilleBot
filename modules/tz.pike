@@ -1,8 +1,8 @@
 //Note that this is currently aimed somewhat at CookingForNoobs, with its timezone conversions.
-//TODO: Make the target timezone per-channel customizable.
+//TODO: Make the target timezone per-channel customizable. (Especially since I actually have a tz setting.)
 //TODO: Return an array instead of depending on wrap
 inherit command;
-constant all_channels = 1;
+constant require_allcmds = 0;
 constant hidden_command = 1;
 constant active_channels = ({"rosuav"}); //Reenable by adding "cookingfornoobs" to this array
 
