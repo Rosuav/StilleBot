@@ -301,7 +301,7 @@ class channel_notif
 		return ({0, ""});
 	}
 
-	//Recursively substitute markers in any echoable message
+	//Recursively substitute markers in any echoable message. Non-mutating (will return a new array/mapping as needed).
 	echoable_message substitute_markers(echoable_message msg, mapping(string:string) markers)
 	{
 		if (stringp(msg)) return replace(msg, markers);
@@ -335,23 +335,24 @@ class channel_notif
 		return substitute_markers(cmd, (["%s": param]));
 	}
 
-	void wrap_message(object|mapping person, echoable_message info, string|void defaultdest)
+	void wrap_message(object|mapping person, echoable_message info, mapping|void defaults)
 	{
 		if (!info) return;
-		if (arrayp(info)) {wrap_message(person, info[*], defaultdest); return;}
-		if (stringp(info)) info = (["message": info]);
-		string dest = info->dest || defaultdest || name;
-		if (dest == "/w $$") dest = "/w " + person->user;
-		//TODO: With an array of string messages, replicate the attributes down.
-		//So (["message": ({"a", "b", "c"}), "foo": 1]) would be the same as
-		//({(["message": "a", "foo": 1]), .....}). Currently only the destination
-		//works that way.
-		string|array msg = info->message;
+		if (!mappingp(info)) info = (["message": info]);
+		if (defaults) info = defaults | info;
+
+		//You shouldn't normally have (["message": ([ ... ]) ]) but it's legal.
+		while (mappingp(info->message)) info = info | info->message;
+
+		echoable_message msg = info->message;
 		if (arrayp(msg))
 		{
-			if (info->mode == "random") msg = random(msg);
-			else {wrap_message(person, info->message[*], dest); return;}
+			if (info->mode == "random") wrap_message(person, random(msg), info);
+			else wrap_message(person, msg[*], info);
+			return;
 		}
+
+		//And now we have just a single string to send. But it might be too long, so wrap it.
 		string prefix = replace(info->prefix || "", "$$", person->displayname);
 		msg = replace(msg, "$$", person->displayname);
 		if (config->noticechat && has_value(msg, "$participant$"))
@@ -364,6 +365,8 @@ class channel_notif
 			string chosen = sizeof(users) ? random(users) : person->user;
 			msg = replace(msg, "$participant$", chosen);
 		}
+		string dest = info->dest || name;
+		if (dest == "/w $$") dest = "/w " + person->user;
 		//VERY simplistic form of word wrap.
 		while (sizeof(msg) > 400)
 		{
@@ -395,7 +398,7 @@ class channel_notif
 			]); string match; string id)
 				if (sscanf(msg, match)) params->msg_id = id;
 		}
-		string defaultdest;
+		mapping responsedefaults;
 		switch (params->_type)
 		{
 			case "NOTICE": case "USERNOTICE": switch (params->msg_id)
@@ -492,12 +495,12 @@ class channel_notif
 					params->_type, params->msg_id, name, params, msg);
 			}
 			break;
-			case "WHISPER": defaultdest = "/w $$"; //fallthrough
+			case "WHISPER": responsedefaults = (["dest": "/w $$"]); //fallthrough
 			case "PRIVMSG": case 0: //If there's no params block, assume it's a PRIVMSG
 			{
 				if (lower_case(person->nick) == lower_case(bot_nick)) {lastmsgtime = time(1); modmsgs = 0;}
 				if (person->badges) mods[person->user] = person->badges->_mod;
-				wrap_message(person, handle_command(person, msg), defaultdest);
+				wrap_message(person, handle_command(person, msg), responsedefaults);
 				if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->displayname+" "+slashme;
 				//For some reason, whispers show up with "/me" at the start, not "ACTION".
 				else if (sscanf(msg, "/me %s", string slashme)) msg = person->displayname+" "+slashme;
