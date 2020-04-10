@@ -113,7 +113,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 						"<option value=sequential>Sequential</option>"
 						"<option value=random%s>Random</option></select><br>",
 					usercmd, flags->mode == "random" ? " selected" : "");
-			commands += ({sprintf("<code>!%s</code> | %s | %s<button type=button name=\"%[0]s!%d\" title=\"Add another line\">+</button>",
+			commands += ({sprintf("<code>!%s</code> | %s | %s"
+					//"<button type=button class=options data-cmd=\"%[0]s\" title=\"Set command options\">\u2699</button>"
+					"<button type=button class=addline data-cmd=\"%[0]s\" data-idx=%d title=\"Add another line\">+</button>",
 				usercmd, inputs[4..], mode, arrayp(response) ? sizeof(response) : 1)});
 		}
 		else

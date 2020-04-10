@@ -30,12 +30,11 @@ th, td {width: 100%;}
 th:first-of-type, th:last-of-type, td:first-of-type, td:last-of-type {width: max-content;}
 </style>
 <script>
-document.querySelectorAll("button").forEach(btn => btn.onclick = e => {
+document.querySelectorAll("button.addline").forEach(btn => btn.onclick = e => {
 	const inp = document.createElement("input");
-	inp.name = e.currentTarget.name;
+	inp.name = e.currentTarget.dataset.cmd + "!" + e.currentTarget.dataset.idx++;
 	inp.className = "widetext";
 	let parent = e.currentTarget.parentElement;
-	parent.removeChild(e.currentTarget);
 	parent = parent.previousElementSibling;
 	parent.appendChild(document.createElement("br"));
 	parent.appendChild(inp);
