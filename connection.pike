@@ -135,6 +135,12 @@ void send_message(string to, string msg, int|void is_mod)
 	if (arrayp(to)) to = [array](mixed)to * ",";
 	if (has_prefix(to, "/"))
 	{
+		if (to == "/w " + bot_nick)
+		{
+			//Hack: Instead of whispering to ourselves, write to the console.
+			write("<self-whisper> %s\n", msg);
+			return;
+		}
 		msg = to + " " + msg; //eg "/w target message"
 		to = "#" + bot_nick; //Shouldn't matter what the dest is with these.
 	}
