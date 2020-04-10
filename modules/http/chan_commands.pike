@@ -37,10 +37,12 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			messages += ({"* Created !" + name});
 		}
 	}
+	mapping cmd_raw = ([]);
 	foreach (G->G->echocommands; string cmd; echoable_message response) if (!has_prefix(cmd, "!") && has_suffix(cmd, c))
 	{
 		cmd -= c;
 		mapping flags = ([]);
+		cmd_raw[cmd] = response;
 		if (mappingp(response) && arrayp(response->message))
 		{
 			flags = response | ([]);
@@ -128,6 +130,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	sort(order, commands);
 	if (!sizeof(commands)) commands = ({"(none) |"});
+	//TODO: Put an addline button on this too
 	if (req->misc->is_mod) commands += ({"Add: <input name=newcmd_name size=10 placeholder=\"!hype\"> | <input name=newcmd_resp class=widetext>"});
 	if (changes_made) make_echocommand(0, 0); //Trigger a save
 	return render_template("chan_commands.md", ([
@@ -135,6 +138,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"channel": req->misc->channel_name, "commands": commands * "\n",
 		"messages": messages * "\n",
 		"templates": TEMPLATES * "\n",
-		"save_or_login": req->misc->login_link || "<p><a href=\"#examples\" id=examples>Example and template commands</a></p><input type=submit value=\"Save all\">",
+		"save_or_login": req->misc->login_link || ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
+			"<input type=submit value=\"Save all\">"
+			"\n<script>const commands = " + Standards.JSON.encode(cmd_raw) + "</script>" //newline forces it to be treated as HTML not text
+			"<script type=module src=\"/static/commands.js\"></script>"
+		),
 	]));
 }
