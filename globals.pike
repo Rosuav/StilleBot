@@ -29,7 +29,12 @@ typedef echoable_message|function(object,object,string:echoable_message) command
 class command
 {
 	constant all_channels = 0; //Set to 1 if this command should be available even if allcmds is not set for the channel
-	constant require_moderator = 0; //Set to 1 if the command is mods-only
+	constant require_moderator = 0; //(deprecated) Set to 1 if the command is mods-only (equivalent to access="mod")
+	//Command flags, same as can be managed for echocommands with !setcmd
+	//Note that the keywords given here by default should be treated as equivalent
+	//to a 0, as echocommands will normally use 0 for the defaults.
+	constant access = "any"; //Set to "mod" for mod-only commands - others may be available later
+	constant visibility = "visible"; //Set to "hidden" to suppress the command from !help (or set hidden_command to 1, deprecated alternative)
 	constant active_channels = ({ }); //To restrict this to some channels only, set this to a non-empty array.
 	constant docstring = ""; //Override this with your docs
 	//Override this to do the command's actual functionality, after permission checks.
@@ -42,7 +47,7 @@ class command
 	echoable_message check_perms(object channel, object person, string param)
 	{
 		if (!all_channels && !channel->config->allcmds) return 0;
-		if (require_moderator && !channel->mods[person->user]) return 0;
+		if ((require_moderator || access == "mod") && !channel->mods[person->user]) return 0;
 		return process(channel, person, param);
 	}
 	protected void create(string name)
@@ -61,7 +66,7 @@ class command
 Available to: %s
 
 %s
-", name, summary, require_moderator ? "mods only" : "all users", main));
+", name, summary, require_moderator ? "mods only" : (["mod": "mods only", "any": "all users"])[access], main));
 			string fn = sprintf("commands/%s.md", name);
 			string oldcontent = Stdio.read_file(fn);
 			if (content != oldcontent) Stdio.write_file(fn, content);
@@ -110,7 +115,7 @@ command_handler find_command(object channel, string cmd, int is_mod)
 		{
 			object obj = functionp(f) ? function_object(f) : ([]);
 			if (!obj->all_channels && !channel->config->allcmds) continue;
-			if (obj->require_moderator && !is_mod) continue;
+			if ((obj->require_moderator || obj->access == "mod") && !is_mod) continue;
 			//If we get here, the command is acceptable.
 			return f;
 		}

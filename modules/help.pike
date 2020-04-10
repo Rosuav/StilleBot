@@ -24,20 +24,21 @@ echoable_message process(object channel, mapping person, string param)
 		if (!cmd) return "@$$: That isn't a command in this channel, so far as I can tell.";
 		if (!functionp(cmd))
 		{
-			//Do I need any more info? Maybe check if it's a mapping to see if it has a defaultdest?
+			//Do I need any more info? Maybe check if it's a mapping to see if it has a dest?
 			return sprintf("@$$: !%s is an echo command - see https://rosuav.github.io/StilleBot/commands/addcmd", param);
 		}
 		object obj = function_object([function]cmd);
 		string pgm = sprintf("%O", object_program(obj)) - ".pike"; //For some reason function_name isn't giving me the right result (??)
+		int hidden = obj->hidden_command || obj->visibility == "hidden";
 		return sprintf("@$$: !%s is a%s%s%s command.%s", param,
 			!obj->docstring ? "n undocumented ": "",
-			obj->hidden_command ? " hidden": "",
+			hidden ? " hidden": "",
 			modonly,
-			obj->docstring && !obj->hidden_command ? " Learn more at https://rosuav.github.io/StilleBot/commands/" + pgm : "",
+			obj->docstring && !hidden ? " Learn more at https://rosuav.github.io/StilleBot/commands/" + pgm : "",
 		);
 	}
 	foreach (({G->G->commands, G->G->echocommands}), mapping commands)
-		foreach (commands; string cmd; string|function handler)
+		foreach (commands; string cmd; command_handler handler)
 		{
 			//Note that we support strings and functions in both mappings.
 			//Actual command execution isn't currently quite this flexible,
@@ -45,13 +46,13 @@ echoable_message process(object channel, mapping person, string param)
 			//in G->G->echocommands. It may be worth making execution more
 			//flexible, which might simplify some multi-command modules.
 			object|mapping flags =
-				//Availability flags come from the providing object, normally.
+				//Availability flags come from the providing object for coded functions.
 				functionp(handler) ? function_object(handler) :
-				//String commands use these default flags.
-				(["all_channels": 0, "require_moderator": 0, "hidden_command": 0]);
-			if (flags->hidden_command) continue;
+				//Those with their own flags use those. Otherwise assume all defaults.
+				mappingp(handler) ? handler : ([]);
+			if (flags->hidden_command || flags->visibility == "hidden") continue;
 			if (!flags->all_channels && !channel->config->allcmds) continue;
-			if (flags->require_moderator && !is_mod) continue;
+			if ((flags->require_moderator || flags->access == "mod") && !is_mod) continue;
 			if (has_prefix(cmd, "!")) continue; //Special responses aren't commands
 			if (!has_value(cmd, '#') || has_suffix(cmd, channel->name))
 				cmds[cmd - channel->name] = 1;
