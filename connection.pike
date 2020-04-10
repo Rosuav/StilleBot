@@ -301,11 +301,13 @@ class channel_notif
 		return ({0, ""});
 	}
 
-	echoable_message substitute_markers(string|mapping|array(string|mapping) msg, mapping(string:string) markers)
+	//Recursively substitute markers in any echoable message
+	echoable_message substitute_markers(echoable_message msg, mapping(string:string) markers)
 	{
 		if (stringp(msg)) return replace(msg, markers);
-		if (mappingp(msg)) return msg | (["message": replace(msg->message, markers), "dest": msg->dest && replace(msg->dest, markers)]);
-		if (arrayp(msg)) return substitute_markers(msg[*], markers); //Yes, recursive. You shouldn't have arrays in arrays though.
+		if (mappingp(msg)) return msg | (["message": substitute_markers(msg->message, markers),
+						"dest": msg->dest && replace(msg->dest, markers)]);
+		if (arrayp(msg)) return substitute_markers(msg[*], markers);
 		return msg;
 	}
 
