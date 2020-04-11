@@ -16,7 +16,7 @@ string process(object channel, object person, string param)
 		cmd = lower_case(cmd); //TODO: Switch this out for a proper Unicode casefold
 		cmd += channel->name;
 		if (!G->G->echocommands[cmd]) return "@$$: No echo command with that name exists here.";
-		make_echocommand(G->G->echocommands, 0);
+		make_echocommand(cmd, 0);
 		return sprintf("@$$: Deleted command !%s", cmd - channel->name);
 	}
 	return "@$$: Try !delcmd !cmdname";
