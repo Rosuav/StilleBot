@@ -268,9 +268,9 @@ class _Markdown
 	{
 		inherit Renderer;
 		//Put borders on all tables
-		string table(string header, string body)
+		string table(string header, string body, mapping|void attrs)
 		{
-			return replace(::table(header, body), "<table>", "<table border>");
+			return replace(::table(header, body, attrs), "<table>", "<table border>");
 		}
 		//Allow cell spanning by putting just a hyphen in a cell (it will
 		//be joined to the NEXT cell, not the preceding one)
@@ -336,26 +336,30 @@ class _Markdown
 				return attr;
 			}
 		}
-		//Allow paragraphs to get extra attributes
-		string paragraph(string text)
+		//Allow paragraphs to get extra attributes. Not needed if attributes mode is supported in core.
+		string paragraph(string text, mapping|void attrs)
 		{
-			string last_line = (text / "\n")[-1];
-			mapping attr = parse_attrs(last_line);
-			if (attr) text = text[..<sizeof(last_line)+1]; else attr = ([]);
-			return sprintf("<p%{ %s=%q%}>%s</p>", (array)attr, text);
+			if (!attrs)
+			{
+				string last_line = (text / "\n")[-1];
+				attrs = parse_attrs(last_line);
+				if (attrs) text = text[..<sizeof(last_line)+1]; else attrs = ([]);
+			}
+			return sprintf("<p%{ %s=%q%}>%s</p>", (array)attrs, text);
 		}
-		//Ditto for lists. TODO: Simplify this.
-		string list(string text, void|bool ordered)
+		//Ditto for lists. And again, not needed if supported by Pike itself.
+		string list(string text, void|bool ordered, mapping|void attrs)
 		{
 			array lines = text / "\n";
-			mapping attr;
-			if (lines[-1] == "" && has_suffix(lines[-2], "</li>")) //Should always be the case
+			//If attributes mode is supported but attributes aren't passed, we're wasting
+			//our time looking, but it's no big deal.
+			if (!attrs && lines[-1] == "" && has_suffix(lines[-2], "</li>"))
 			{
-				attr = parse_attrs(lines[-2][..<5]);
-				if (attr) {lines[-2] = "</li>"; text = lines * "\n";}
-				else attr = ([]);
+				attrs = parse_attrs(lines[-2][..<5]);
+				if (attrs) {lines[-2] = "</li>"; text = lines * "\n";}
+				else attrs = ([]);
 			}
-			return sprintf("<%s%{ %s=%q%}>%s</%[0]s>", ordered ? "ol" : "ul", (array)attr, text);
+			return sprintf("<%s%{ %s=%q%}>%s</%[0]s>", ordered ? "ol" : "ul", (array)attrs, text);
 		}
 		//Retain headings in case they're wanted
 		string heading(string text, int level, string raw)
@@ -401,6 +405,7 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 			"renderer": _AltRenderer,
 			"user_text": replacements["user text"],
 			"headings": headings,
+			"attributes": 1, //Ignored if using older Pike (or, as of 2020-04-13, vanilla Pike - it's only on branch rosuav/markdown-attribute-syntax)
 		]));
 		return render_template("markdown.html", ([
 			//Defaults - can be overridden
