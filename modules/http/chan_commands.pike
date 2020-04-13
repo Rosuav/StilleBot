@@ -1,6 +1,12 @@
 inherit http_endpoint;
 
-string respstr(mapping|string resp) {return stringp(resp) ? resp : resp->message;}
+//Simplified stringification. Good for comparisons (ignoring flags), simple text output, etc.
+string respstr(echoable_message resp)
+{
+	if (stringp(resp)) return resp;
+	if (arrayp(resp)) return respstr(resp[*]) * "\n";
+	return respstr(resp->message);
+}
 
 constant MAX_RESPONSES = 10; //Ridiculously large? Probably.
 
@@ -30,26 +36,29 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		string resp = String.trim(req->variables->newcmd_resp || "");
 		if (name != "" && resp != "")
 		{
-			//TODO: If this collides with an existing one, error out or something
-			//Currently it's being overwritten by the old one.
-			changes_made = 1;
-			G->G->echocommands[name + c] = resp;
-			messages += ({"* Created !" + name});
+			if (!G->G->echocommands[name + c])
+			{
+				changes_made = 1;
+				G->G->echocommands[name + c] = resp;
+				messages += ({"* Created !" + name});
+			}
+			else messages += ({"* Did not create !" + name + " - already exists"});
 		}
 	}
-	mapping cmd_raw = ([]);
+	mapping cmd_raw = ([]); //Only used if not is_mod
 	foreach (G->G->echocommands; string cmd; echoable_message response) if (!has_prefix(cmd, "!") && has_suffix(cmd, c))
 	{
 		cmd -= c;
 		mapping flags = ([]);
-		cmd_raw[cmd] = response;
-		if (mappingp(response) && arrayp(response->message))
+		cmd_raw[cmd] = mappingp(response) ? response : (["message": response]); //To save JS some type-checking trouble
+		while (mappingp(response))
 		{
-			flags = response | ([]);
-			response = flags->message;
+			flags |= response ^ (["message": 1]);
+			response = response->message;
 		}
 		if (req->misc->is_mod)
 		{
+			if (!arrayp(response)) response = ({response});
 			//NOTE: If you attempt to save an edit for something that's been deleted
 			//elsewhere, this will quietly ignore it. We have no way of knowing that
 			//you changed anything, so it could just as easily be an untouched entry
@@ -58,33 +67,25 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			//the form fields just for the sake of detecting differences.
 			if (req->request_type == "POST")
 			{
-				response = Array.arrayify(response) + ({ });
+				response += ({ }); //anti-mutation for safety/simplicity
 				int edited = 0;
 				for (int i = 0; i < MAX_RESPONSES; ++i)
 				{
 					string resp = req->variables[sprintf("%s!%d", cmd, i)];
 					if (!resp) break;
-					//TODO: Allow response flags to be set (making the resp into a
-					//mapping). As of 20190205, the only flag that would be useful
-					//is 'dest', which could be set to a variety of handy values -
-					//"/w $$" to whisper to the person who sent the command, or an
-					//explicit "/w somename" to send the whisper elsewhere. One
-					//command might need to have multiple distinct responses, eg a
-					//quick "got it" to the channel, and a more detailed whisper to
-					//the person who's managing this (maybe for entering a contest).
 					if (i >= sizeof(response)) response += ({""});
+					//Note that this won't correctly handle arrays-in-arrays, but
+					//if you didn't edit it (it'll have had a newline), you should be
+					//fine. Use the popup dialog to edit unusual commands like that.
+					//This also loses any subresponse flags.
 					if (respstr(response[i]) != resp)
 					{
 						edited = 1;
-						response[i] = resp; //NOTE: This will currently lose any mapping flags.
+						if (has_value(resp, '\n')) response[i] = resp / "\n";
+						else response[i] = resp;
 					}
 				}
 				response -= ({""});
-
-				//Update the flags (be sure to m_delete any that state defaults)
-				string resp = req->variables[cmd + "!mode"];
-				if (resp == "random" && flags->mode != "random") {flags->mode = "random"; edited = 1;}
-				else if (resp == "sequential" && flags->mode) {m_delete(flags, "mode"); edited = 1;}
 
 				if (edited)
 				{
@@ -97,9 +98,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 					}
 					if (sizeof(response) == 1) response = response[0];
 					messages += ({"* Updated !" + cmd});
-					G->G->echocommands[cmd + c] = response;
-					if (sizeof(indices(flags) - ({"message"})))
-						G->G->echocommands[cmd + c] = flags | (["message": G->G->echocommands[cmd + c]]);
+					if (sizeof(flags)) G->G->echocommands[cmd + c] = flags | (["message": response]);
+					else G->G->echocommands[cmd + c] = response;
 				}
 			}
 			string usercmd = Parser.encode_html_entities(cmd);
@@ -109,22 +109,25 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				inputs += sprintf("<br><input name=\"%s!%d\" value=\"%s\" class=widetext>",
 					usercmd, i, Parser.encode_html_entities(respstr(resp)));
 			}
-			string mode = "";
-			if (arrayp(response) && sizeof(response) > 1)
-				mode = sprintf("<select name=\"%s!mode\">"
-						"<option value=sequential>Sequential</option>"
-						"<option value=random%s>Random</option></select><br>",
-					usercmd, flags->mode == "random" ? " selected" : "");
-			commands += ({sprintf("<code>!%s</code> | %s | %s"
-					//"<button type=button class=options data-cmd=\"%[0]s\" title=\"Set command options\">\u2699</button>"
+			commands += ({sprintf("<code>!%s</code> | %s | "
+					"<button type=button class=options data-cmd=\"%[0]s\" title=\"Set command options\">\u2699</button>"
 					"<button type=button class=addline data-cmd=\"%[0]s\" data-idx=%d title=\"Add another line\">+</button>",
-				usercmd, inputs[4..], mode, arrayp(response) ? sizeof(response) : 1)});
+				usercmd, inputs[4..], arrayp(response) ? sizeof(response) : 1)});
 		}
 		else
 		{
-			if (arrayp(response)) response = user(respstr(response[*])[*]) * "</code><br><code>";
-			else response = user(respstr(response));
-			commands += ({sprintf("<code>!%s</code> | <code>%s</code>", user(cmd), response)});
+			if (flags->visibility == "hidden") continue; //Hide hidden messages, including from the order array below
+			//Recursively convert a response into HTML. Ignores submessage flags.
+			string htmlify(echoable_message response) {
+				if (stringp(response)) return user(response);
+				if (arrayp(response)) return htmlify(response[*]) * "</code><br><code>";
+				if (mappingp(response)) return htmlify(response->message);
+			}
+			commands += ({sprintf("<code>!%s</code> | <code>%s</code> | %s",
+				user(cmd), htmlify(response),
+				//TODO: Show if a response would be whispered?
+				flags->access == "mod" ? "Mod-only" : "",
+			)});
 		}
 		order += ({cmd});
 	}

@@ -31,6 +31,7 @@ $$save_or_login$$
 table {width: 100%;}
 th, td {width: 100%;}
 th:first-of-type, th:last-of-type, td:first-of-type, td:last-of-type {width: max-content;}
+td:nth-of-type(2n+1) {white-space: nowrap;}
 
 #templates tbody tr:nth-child(odd) {
 	background: #eef;
@@ -46,3 +47,18 @@ th:first-of-type, th:last-of-type, td:first-of-type, td:last-of-type {width: max
 	background: #ff0;
 }
 </style>
+
+> dialog id=options
+> <button type=button class=dialog_cancel>x</button>
+>
+> Set command options for <code id=cmdname></code>
+>
+> Option      | Effect
+> ------------|-----------
+> <select id="flg_mode"><option value="">Sequential</option><option value=random>Random</option></select> | Where multiple responses are available, send them all or pick one at random?
+> <select id="flg_dest"><option value="">Chat</option><option value="/w $$$$">Whisper</option><option value="/w %s">Whisper to target</option></select> | Where should the response be sent?
+> <select id="flg_access"><option value="">Anyone</option><option value="mod">Mods only</option></select> | Who should be able to use this command?
+> <select id="flg_visibility"><option value="">Visible</option><option value="hidden">Hidden</option></select> | Should the command be listed in !help and the non-mod commands view?
+>
+> <p><button type=button id=saveopts>Save</button> <button type=button class=dialog_close>Cancel</button></p>
+>

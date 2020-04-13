@@ -1,5 +1,6 @@
 import choc, {set_content} from "https://rosuav.github.io/shed/chocfactory.js";
 const {BR, INPUT} = choc;
+const all_flags = "mode dest access visibility".split(" ");
 
 on("click", "button.addline", e => {
 	let parent = e.match.closest("td").previousElementSibling;
@@ -9,6 +10,37 @@ on("click", "button.addline", e => {
 		className: "widetext"
 	}));
 });
+
+on("click", "button.options", e => {
+	const cmd = commands[e.match.dataset.cmd];
+	//TODO: Handle all forms of recursive echoable-message
+	//Currently handles the top level options only (and Pike is guaranteeing us a top-level object).
+	set_content("#cmdname", "!" + e.match.dataset.cmd);
+	all_flags.forEach(flag => {
+		document.getElementById("flg_" + flag).value = cmd[flag] || "";
+	});
+	document.getElementById("options").showModal();
+});
+
+on("click", "#saveopts", async e => {
+	const flags = {};
+	const cmd = commands[document.getElementById("cmdname").innerText.slice(1)];
+	all_flags.forEach(flag => {
+		const val = document.getElementById("flg_" + flag).value;
+		if (val) flags[flag] = val;
+		cmd[flag] = val; //Yes, this will put empty strings where nulls were. Won't matter, it's only local.
+	});
+	document.getElementById("options").close();
+	flags.cmdname = document.getElementById("cmdname").innerText;
+	const res = await fetch("command_edit", {
+		method: "POST",
+		headers: {"Content-Type": "application/json"},
+		body: JSON.stringify(flags),
+	});
+	if (!res.ok) {console.error("Not okay response", res); return;}
+	console.log("Updated successfully.");
+});
+
 on("click", 'a[href="/emotes"]', e => {
 	e.preventDefault();
 	window.open("/emotes", "emotes", "width=900, height=700");
@@ -33,3 +65,4 @@ document.querySelectorAll("dialog").forEach(dlg => {
 	if (!dlg.showModal) dlg.showModal = function() {this.style.display = "block";}
 	if (!dlg.close) dlg.close = function() {this.style.removeProperty("display");}
 });
+on("click", ".dialog_cancel,.dialog_close", e => e.match.closest("dialog").close());
