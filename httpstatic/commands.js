@@ -1,30 +1,26 @@
 import choc, {set_content} from "https://rosuav.github.io/shed/chocfactory.js";
 const {BR, INPUT} = choc;
 
-//TODO: Chocify this code
-document.querySelectorAll("button.addline").forEach(btn => btn.onclick = e => {
-	const inp = document.createElement("input");
-	inp.name = e.currentTarget.dataset.cmd + "!" + e.currentTarget.dataset.idx++;
-	inp.className = "widetext";
-	let parent = e.currentTarget.parentElement;
-	parent = parent.previousElementSibling;
-	parent.appendChild(document.createElement("br"));
-	parent.appendChild(inp);
+on("click", "button.addline", e => {
+	let parent = e.match.closest("td").previousElementSibling;
+	parent.appendChild(BR());
+	parent.appendChild(INPUT({
+		name: e.match.dataset.cmd + "!" + e.match.dataset.idx++,
+		className: "widetext"
+	}));
 });
-document.getElementById("emotepicker").onclick = e => {
+on("click", "#emotepicker", e => {
 	e.preventDefault();
 	window.open("/emotes", "emotes", "width=900, height=700");
-};
-//Will bomb when not logged in. This isn't a problem other than that it's noisy
-//on the console. TODO: Remove most of this code so it doesn't even need to be
-//downloaded to non-authenticated users.
-document.getElementById("examples").onclick = e => {
+});
+
+on("click", "#examples", e => {
 	e.preventDefault();
 	document.getElementById("templates").showModal();
-};
-document.querySelectorAll("#templates tbody tr").forEach(tr => tr.onclick = e => {
+});
+on("click", "#templates tbody tr", e => {
 	document.getElementById("templates").close();
-	const [cmd, text] = e.currentTarget.children;
+	const [cmd, text] = e.match.children;
 	document.forms[0].newcmd_name.value = cmd.innerText;
 	document.forms[0].newcmd_resp.value = text.innerText;
 });
