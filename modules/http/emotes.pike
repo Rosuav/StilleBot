@@ -11,6 +11,12 @@ inherit http_endpoint;
 //You'll get back a two-key object "ephemeral" and "permanent", each one mapping channel
 //name to array of emotes.
 
+//Assign categories to some of the limited-time-unlockable emotes (only if they're kept permanently)
+constant limited_time_emotes = ([
+	"300206311": "Pride", "488737509": "Streamer Luv", "477339272": "Hype Train",
+	"472873131": "Hahahalidays", "300548762": "RPG",
+]);
+
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->variables->flushcache)
@@ -69,10 +75,16 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		]));
 		foreach (G->G->bot_emote_list->emoticon_sets; string setid; array emotes)
 		{
-			string set = "";
+			array|string set = ({ });
 			foreach (emotes, mapping em)
-				set += sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0) ", em->code, em->id);
-			mapping setinfo = G->G->emote_set_mapping[setid] || (["channel_name": "Special unlocks"]);
+				set += ({sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0) ", em->code, em->id)});
+			set = sort(set) * "";
+			mapping setinfo = G->G->emote_set_mapping[setid] //Ideally get info from the API
+				|| (["channel_name": "Special unlocks - " + (
+					limited_time_emotes[setid] || //Some limited-time emote sets get their own names
+					//sprintf("Other (%s)", setid) || //For debugging, uncomment to see the set IDs
+					"other" //Otherwise lump them together as "other".
+				)]);
 			string chan = setinfo->channel_name;
 			if (setid == "0") chan = "Global emotes";
 			emote_raw[!highlight[chan]][chan] += emotes;
