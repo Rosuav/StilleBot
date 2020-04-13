@@ -11,7 +11,7 @@ Command | Output |
 --------|--------|-
 $$commands$$
 
-<a id=emotepicker href="/emotes">Emotes available to the bot</a>
+[Emotes available to the bot](/emotes)
 
 $$save_or_login$$
 

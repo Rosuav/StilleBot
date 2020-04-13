@@ -9,7 +9,7 @@ on("click", "button.addline", e => {
 		className: "widetext"
 	}));
 });
-on("click", "#emotepicker", e => {
+on("click", 'a[href="/emotes"]', e => {
 	e.preventDefault();
 	window.open("/emotes", "emotes", "width=900, height=700");
 });
