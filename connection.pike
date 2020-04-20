@@ -187,6 +187,9 @@ mapping(string:mixed) gather_person_info(object person, mapping params)
 		//change is represented by the last two keys.
 		mapping u2n = persist_status->path("uid_to_name", params->user_id);
 		if (!u2n[person->user]) {u2n[person->user] = time(); persist_status->save();}
+		//The name-to-UID mapping should be considered advisory, and useful mainly for recent ones.
+		mapping n2u = persist_status->path("name_to_uid");
+		if (n2u[person->user] != params->user_id) {n2u[person->user] = params->user_id; persist_status->save();}
 	}
 	ret->displayname = params->display_name || person->nick;
 	if (params->badges)
