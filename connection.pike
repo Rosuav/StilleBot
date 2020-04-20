@@ -179,7 +179,15 @@ constant badge_aliases = ([ //Fold a few badges together, and give shorthands fo
 mapping(string:mixed) gather_person_info(object person, mapping params)
 {
 	mapping ret = (["nick": person->nick, "user": person->user]);
-	if (params->user_id) ret->uid = (int)params->user_id;
+	if (params->user_id)
+	{
+		ret->uid = (int)params->user_id;
+		//uid_to_name[(string)userid] maps the user names seen to the timestamps.
+		//To detect renames, sort the keys and values in parallel; the most recent
+		//change is represented by the last two keys.
+		mapping u2n = persist_status->path("uid_to_name", params->user_id);
+		if (!u2n[person->user]) {u2n[person->user] = time(); persist_status->save();}
+	}
 	ret->displayname = params->display_name || person->nick;
 	if (params->badges)
 	{
