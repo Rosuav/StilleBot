@@ -8,12 +8,6 @@ int last_used = 0;
 string process(object channel, object person, string param)
 {
 	if (time() < last_used + 60) return 0;
-	if (param == "status")
-	{
-		mapping allu2n = persist_status["uid_to_name"];
-		return sprintf("@$$: Currently have %d with total %d.",
-			sizeof(allu2n), `+(@sizeof(values(allu2n)[*])));
-	}
 	if (param == "parse" && person->user == "rosuav") //Special special case. Shouldn't be needed much.
 	{
 		//Parse the saved JSON dumps
