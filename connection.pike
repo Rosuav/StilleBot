@@ -388,6 +388,32 @@ class channel_notif
 		}
 		string dest = info->dest || name;
 		if (dest == "/w $$") dest = "/w " + person->user;
+		if (sscanf(dest, "/web %s", string recip) && recip)
+		{
+			//Hack: Stash the text away and send a simple message to the channel
+			//TODO: Make a convenient UI for having one command emit messages to
+			//multiple destinations, and then remove this hack in favour of just
+			//having a public message as well as the private one.
+			mapping n2u = persist_status->path("name_to_uid");
+			string uid = n2u[lower_case(recip)]; //Yes, it's a string, even though it's always going to be digits
+			if (!uid)
+			{
+				//TODO: Look the person up, delay the message, and then if
+				//still not found, give a different error. For now, it depends
+				//on the person having said something at some point.
+				msg = sprintf("%s: User %s not found, has s/he said anything in chat?", person->user, recip);
+			}
+			else
+			{
+				//Normally, you'll be sending something to someone who was recently in chat.
+				mapping msgs = persist_status->path("private", name, uid);
+				msgs[time()] = msg;
+				persist_status->save();
+				msg = sprintf("Congratulations, @%s! There's something waiting for you at https://sikorsky.rosuav.com/channels/%s/private !",
+					recip, name - "#");
+			}
+			dest = name; //Send it to the default, the channel.
+		}
 		//VERY simplistic form of word wrap.
 		while (sizeof(msg) > 400)
 		{
