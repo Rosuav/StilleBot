@@ -15,7 +15,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	foreach (text; int i; string msg) //I actually want to map over zip(text, times) really
 	{
 		int tm = (int)times[i];
-		text[i] = "* " + ctime(tm)[..<1] + ":<br>\n" + msg;
+		text[i] = "* " + ctime(tm)[..<1] + ":<br>\n" + emotify_user_text(msg, user);
 	}
 	if (!sizeof(text)) text = ({"You have no private messages from this channel."});
 	return render_template("chan_private.md", ([
