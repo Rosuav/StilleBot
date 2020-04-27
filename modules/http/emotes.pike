@@ -59,6 +59,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				foreach (Standards.JSON.decode(result->get()), mapping setinfo)
 					info[setinfo->set_id] = setinfo;
 				G->G->emote_set_mapping = info;
+				mapping emotes = ([]);
+				//What if there's a collision? Should we prioritize?
+				foreach (G->G->bot_emote_list->emoticon_sets;; array set) foreach (set, mapping em)
+					emotes[em->code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0)", em->code, em->id);
+				G->G->emote_code_to_markdown = emotes;
 			});
 	});
 	return ret->then(lambda() {

@@ -456,3 +456,17 @@ void ensure_session(Protocols.HTTP.Server.Request req, mapping(string:mixed) res
 	resp->extra_heads["Set-Cookie"] = "session=" + cookie;
 	call_out(session_cleanup, 86401); //TODO: Don't have too many of these queued.
 }
+
+//User text will be given to the given user_text object; emotes will be markdowned.
+string emotify_user_text(string text, object user)
+{
+	mapping emotes = G->G->emote_code_to_markdown;
+	if (!emotes) return user(text);
+	array words = text / " ";
+	//This is pretty inefficient - it makes a separate user() entry for each
+	//individual word. If this is a problem, consider at least checking for
+	//any emotes at all, and if not, just return user(text) instead.
+	foreach (words; int i; string w)
+		words[i] = emotes[w] || user(w);
+	return words * " ";
+}
