@@ -13,8 +13,8 @@ inherit http_endpoint;
 
 //Assign categories to some of the limited-time-unlockable emotes (only if they're kept permanently)
 constant limited_time_emotes = ([
-	"300206311": "Pride", "488737509": "Streamer Luv", "477339272": "Hype Train",
-	"472873131": "Hahahalidays", "300548762": "RPG",
+	"300206296": "Pride", "300819901": "Streamer Luv", "300695050": "Hype Train (a)",
+	"301040478": "Hype Train (b)", "300636018": "Hahahalidays", "300548768": "RPG",
 ]);
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
