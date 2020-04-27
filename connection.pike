@@ -492,7 +492,12 @@ class channel_notif
 					*/
 					break;
 				case "raid": case "unraid": break; //Incoming raids already get announced and we don't get any more info
-				case "rewardgift": break; //Used for special promo messages eg "so-and-so's cheer just gave X people a bonus emote"
+				case "rewardgift": //Used for special promo messages eg "so-and-so's cheer just gave X people a bonus emote"
+				{
+					write("DEBUG REWARDGIFT: chan %s disp %O user %O params %O\n",
+						name, person->displayname, person->user, params);
+					break;
+				}
 				//TODO: Handle sub plans better, esp since "Prime" should count as tier 1
 				case "sub": trigger_special("!sub", person, (["{tier}": params->msg_param_sub_plan[0..0]])); break;
 				case "resub": trigger_special("!resub", person, ([
