@@ -15,7 +15,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			])])))->then(lambda(Protocols.HTTP.Promise.Result res)
 		{
 			mapping user = Standards.JSON.decode_utf8(res->get())->data[0];
-			write("Login: %O\n", user);
+			write("Login: %O %O\n", auth->access_token, user);
 			string dest = m_delete(req->misc->session, "redirect_after_login");
 			if (!dest)
 			{

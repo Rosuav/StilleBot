@@ -38,8 +38,11 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 	headers["Accept"] = "application/vnd.twitchtv.v5+json"; //Only needed for Kraken but doesn't seem to hurt
 	if (!headers["Authorization"])
 	{
+		//TODO: Under what circumstances do we need to use "OAuth <token>" instead?
+		//In Mustard Mine, the only remaining place is PUT /kraken/channels which we
+		//don't use here, but are there any others?
 		sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
-		if (pass) headers["Authorization"] = "OAuth " + pass;
+		if (pass) headers["Authorization"] = "Bearer " + pass;
 	}
 	//TODO: Use bearer auth where appropriate (is it exclusively when using Helix?)
 	if (string c=persist_config["ircsettings"]["clientid"])
@@ -53,7 +56,7 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 			if (limit) write("Rate limit: %d/%d   \r", limit - left, limit); //Will usually get overwritten
 			mixed data = Standards.JSON.decode_utf8(res->get());
 			if (!mappingp(data)) return Concurrent.reject(({"Unparseable response\n", backtrace()}));
-			if (data->error) return Concurrent.reject(({sprintf("%s\nError from Twitch: %O (%O)\n", url, data->error, data->status), backtrace()}));
+			if (data->error) return Concurrent.reject(({sprintf("%s\nError from Twitch: %O (%O)\n%O\n", url, data->error, data->status, data), backtrace()}));
 			return data;
 		});
 }

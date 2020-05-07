@@ -75,6 +75,12 @@ void reconnect()
 	if (!opt) return; //Not yet configured - can't connect.
 	opt += (["channel_program": channel_notif, "connection_lost": reconnect,
 		"error_notify": error_notify]);
+	//I don't understand what's happening with logins. If I use my own client ID, I can't
+	//log in to chat, but can use the API. But I can log in using a token associated with
+	//the tmi.twitch.tv client ID. So for now, I'm just separating the OAuth tokens - one
+	//for chat, and one for the API. There is no UI way to do this, just hack it into the
+	//JSON config file. Good luck.
+	if (opt->hack_chat_login) opt->pass = opt->hack_chat_login;
 	mod_query_delay = 0; //Reset the delay
 	if (mixed ex = catch {
 		G->G->irc = irc = IRCClient("irc.chat.twitch.tv", opt);
