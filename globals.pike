@@ -432,7 +432,21 @@ class TwitchAuth
 	inherit Web.Auth.OAuth2.Client;
 	constant OAUTH_AUTH_URI  = "https://id.twitch.tv/oauth2/authorize";
 	constant OAUTH_TOKEN_URI = "https://id.twitch.tv/oauth2/token";
-	protected multiset(string) valid_scopes = (<"user_read">); //TODO: Fill these in
+	protected multiset(string) valid_scopes = (<
+		//Helix API:
+		"analytics:read:extensions", "analytics:read:games", "bits:read",
+		"channel:edit:commercial", "channel:read:subscriptions", "clips:edit",
+		"user:edit", "user:edit:broadcast", "user:edit:follows",
+		"user:read:broadcast", "user:read:email",
+		//v5 API
+		"channel_check_subscription", "channel_commercial", "channel_editor",
+		"channel_feed_edit", "channel_feed_read", "channel_read", "channel_stream",
+		"channel_subscriptions", "chat_login", "collections_edit", "communities_edit",
+		"comunities_moderate", "openid", "user_blocks_edit", "user_blocks_read",
+		"user_read", "user_subscriptions", "viewing_activity_read",
+		//Chat/PubSub
+		"channel:moderate", "chat:read", "chat:edit", "whispers:read", "whispers:edit",
+	>);
 }
 
 void session_cleanup()
