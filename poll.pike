@@ -41,8 +41,9 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 		//TODO: Under what circumstances do we need to use "OAuth <token>" instead?
 		//In Mustard Mine, the only remaining place is PUT /kraken/channels which we
 		//don't use here, but are there any others?
+		//20200511: It seems emote lookups require "OAuth" instead of "Bearer". Sheesh.
 		sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
-		if (pass) headers["Authorization"] = "Bearer " + pass;
+		if (pass) headers["Authorization"] = (options->authtype || "Bearer") + " " + pass;
 	}
 	//TODO: Use bearer auth where appropriate (is it exclusively when using Helix?)
 	if (string c=persist_config["ircsettings"]["clientid"])

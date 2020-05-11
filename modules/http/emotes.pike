@@ -36,7 +36,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		sscanf(cfg["pass"] || "", "oauth:%s", string pass);
 		write("Fetching emote list\n");
 		ret = ret->then(lambda() {return twitch_api_request("https://api.twitch.tv/kraken/users/{{USER}}/emotes",
-			0, (["username": cfg->nick]));
+			0, (["username": cfg->nick, "authtype": "OAuth"]));
 		})->then(lambda(mapping info) {
 			info->fetchtime = time();
 			G->G->bot_emote_list = info;
