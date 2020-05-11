@@ -139,7 +139,7 @@ mapping build_channel_info(mapping stream)
 	ret->game_id = stream->game_id;
 	if (!(ret->game = G->G->category_names[stream->game_id]))
 	{
-		if (stream->game_id != "0" && !fetching_game_names)
+		if (stream->game_id != "0" && stream->game_id != "" && !fetching_game_names)
 		{
 			write("Fetching games because we know %d games but not %O\n",
 				sizeof(G->G->category_names), stream->game_id);
@@ -217,7 +217,8 @@ void stream_status(string name, mapping info)
 		if (synthesized) G->G->channel_info[name] = synthesized;
 		else
 		{
-			write("SYNTHESIS FAILED - maybe bad game? %O\n", info->game_id);
+			//Suppress the message if there's no game selected
+			if (info->game_id != "") write("SYNTHESIS FAILED - maybe bad game? %O\n", info->game_id);
 			G->G->channel_info[name] = 0; //Force an update by clearing the old info
 			get_channel_info(name);
 		}
