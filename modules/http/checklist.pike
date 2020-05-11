@@ -28,32 +28,40 @@ Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	string user = req->variables->user;
-	if (!user)
+	if (!req->misc->session->?scopes || !has_value(req->misc->session->scopes, "user_subscriptions"))
 	{
-		return render_template("checklist.md",
-			(["backlink": "","text": words->replace(hypetrain, lambda(string w) {
-				string md = G->G->emote_code_to_markdown[w];
-				if (md) return replace(md, "/1.0", "/3.0");
-				int id = emoteids[w];
-				if (id) return sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/3.0)", w, id);
-				return w;
-			}),
-		]));
+		//We need actual scoped authentication for this, not just a user ID
+		return G->G->twitchlogin(req, "user_subscriptions");
 	}
 	object ret = Concurrent.resolve(0);
 	mapping emotelist;
 	if (!emotelist) //TODO: Cache this for a bit (and then skip this block if found in cache)
 		ret = ret->then(lambda() {return twitch_api_request("https://api.twitch.tv/kraken/users/{{USER}}/emotes",
-			0, (["username": user]));
+			(["Authorization": "OAuth " + req->misc->session->token]),
+			(["username": req->misc->session->user->login]));
 			})->then(lambda(mapping info) {
 				info->fetchtime = time();
 				emotelist = info;
 			});
 	return ret->then(lambda() {
-		return ([
-			"data": Standards.JSON.encode(emotelist, 7),
-			"type": "application/json",
-		]);
+		mapping have_emotes = ([]);
+		array(string) used = ({ }); //Emote names that we have AND used
+		foreach (emotelist->emoticon_sets;; array set) foreach (set, mapping em)
+			have_emotes[em->code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/3.0)", em->code, em->id);
+		string text = words->replace(hypetrain, lambda(string w) {
+			//1) Do we (the logged-in user) have the emote?
+			if (string have = have_emotes[w]) {used += ({w}); return have;}
+			//2) Does the bot have the emote?
+			string md = G->G->emote_code_to_markdown[w];
+			if (md) return replace(md, "/1.0", "/3.0");
+			//3) Is it in the hard-coded list of known emote IDs?
+			int id = emoteids[w];
+			if (id) return sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/3.0)", w, id);
+			return w;
+		});
+		return render_template("checklist.md", ([
+			"backlink": "", "text": text,
+			"emotes": sprintf("img[title=\"%s\"]", used[*]) * ", ",
+		]));
 	});
 }
