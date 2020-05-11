@@ -1,12 +1,16 @@
 inherit http_endpoint;
 
+//constant scopes = "chat:read chat:edit whispers:read whispers:edit user_subscriptions"; //For authenticating the bot itself
+constant scopes = ""; //no scopes currently needed
+
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping cfg = persist_config["ircsettings"];
-	object auth = TwitchAuth(cfg->clientid, cfg->clientsecret, cfg->http_address + "/twitchlogin", ""); //no scopes currently needed
+	object auth = TwitchAuth(cfg->clientid, cfg->clientsecret, cfg->http_address + "/twitchlogin", scopes / " ");
 	if (req->variables->code)
 	{
 		//It's a positive response from Twitch
+		//write("%O\n", req->variables);
 		auth->set_from_cookie(auth->request_access_token(req->variables->code));
 		return Protocols.HTTP.Promise.get_url("https://api.twitch.tv/helix/users",
 			Protocols.HTTP.Promise.Arguments((["headers": ([
@@ -33,7 +37,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			return resp;
 		});
 	}
-	write("Redirecting to Twitch...\n");
+	write("Redirecting to Twitch...\n%s\n", auth->get_auth_uri());
 	mapping resp = redirect(auth->get_auth_uri());
 	ensure_session(req, resp);
 	//TODO: Sanitize or whitelist-check the destination
