@@ -417,10 +417,10 @@ void interactive(mixed info)
 	object history = function_object(all_constants()["backend_thread"]->backtrace()[0]->args[0])->history;
 	history->push(info);
 }
-int req(string url) //Returns 0 to suppress Hilfe warning.
+int req(string url, string|void username) //Returns 0 to suppress Hilfe warning.
 {
 	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/kraken/" + url[url[0]=='/'..];
-	request(url)->then(interactive);
+	request(url, 0, (["username": username]))->then(interactive);
 }
 
 //Lifted from globals because I can't be bothered refactoring
