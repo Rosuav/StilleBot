@@ -3,6 +3,14 @@ inherit http_endpoint;
 //Markdown; emote names will be replaced with their emotes, but will
 //be greyed out if not available.
 constant hypetrain = #"
+## Set one
+HypeBigfoot1 HypeBigfoot2 HypeBigfoot3 HypeBigfoot4 HypeBigfoot5 HypeBigfoot6<br>
+HypeGriffin1 HypeGriffin2 HypeGriffin3 HypeGriffin4 HypeGriffin5 HypeGriffin6<br>
+HypeOni1 HypeOni2 HypeOni3 HypeOni4 HypeOni5 HypeOni6<br>
+HypeDragon1 HypeDragon2 HypeDragon3 HypeDragon4 HypeDragon5 HypeDragon6<br>
+HypeUnicorn1 HypeUnicorn2 HypeUnicorn3 HypeUnicorn4 HypeUnicorn5 HypeUnicorn6<br>
+
+## Set two
 HypeChimp HypeGhost HypeChest HypeFrog HypeCherry HypePeace<br>
 HypeSideeye HypeBrain HypeZap HypeShip HypeSign HypeBug<br>
 HypeYikes HypeRacer HypeCar HypeFirst HypeTrophy HypeBanana<br>
@@ -13,7 +21,7 @@ HypeLove HypePunk HypeKO HypePunch HypeFire HypePizza<br>
 //For others, list them here and they'll work.
 constant emoteids = ([
 	"HypePeace": 301739470, "HypeBug": 301739471, "HypeBanana": 301739487,
-	"HypeTeamwork": 301739494, "HypePizza": 301739502,
+	"HypeTeamwork": 301739494, "HypePizza": 301739502, "HypeOni6": 301205427,
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
