@@ -11,10 +11,11 @@ inherit http_endpoint;
 //You'll get back a two-key object "ephemeral" and "permanent", each one mapping channel
 //name to array of emotes.
 
-//Assign categories to some of the limited-time-unlockable emotes (only if they're kept permanently)
+//Assign categories to some of the limited-time-unlockable emotes (only if they're kept permanently).
+//The actual emote set IDs change, so we detect them by looking for one of the emotes.
 constant limited_time_emotes = ([
-	"300206296": "Pride", "300819901": "Streamer Luv", "300695050": "Hype Train (a)",
-	"301040478": "Hype Train (b)", "300636018": "Hahahalidays", "300548768": "RPG",
+	"PrideBalloons": "Pride", "LuvHearts": "Streamer Luv", "HypeBigfoot1": "Hype Train (a)",
+	"HypeChest": "Hype Train (b)", "HahaCat": "Hahahalidays", "RPGPhatLoot": "RPG",
 ]);
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -80,17 +81,21 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		]));
 		foreach (G->G->bot_emote_list->emoticon_sets; string setid; array emotes)
 		{
-			array|string set = ({ });
-			foreach (emotes, mapping em)
-				set += ({sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0) ", em->code, em->id)});
-			set = sort(set) * "";
 			mapping setinfo = G->G->emote_set_mapping[setid] //Ideally get info from the API
 				|| (["channel_name": "Special unlocks - " + (
-					limited_time_emotes[setid] || //Some limited-time emote sets get their own names
 					//sprintf("Other (%s)", setid) || //For debugging, uncomment to see the set IDs
 					"other" //Otherwise lump them together as "other".
 				)]);
 			string chan = setinfo->channel_name;
+			array|string set = ({ });
+			foreach (emotes, mapping em)
+			{
+				if (string set = limited_time_emotes[em->code])
+					//Patch in set names if we recognize an iconic emote from the set
+					chan = "Special unlocks - " + set;
+				set += ({sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0) ", em->code, em->id)});
+			}
+			set = sort(set) * "";
 			if (setid == "0") chan = "Global emotes";
 			emote_raw[!highlight[chan]][chan] += emotes;
 			if (is_bot)
