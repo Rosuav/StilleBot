@@ -53,3 +53,8 @@
   - Maybe have a detailed thing in the web allowing customization of initial response, clash
     behaviour (reset time or error), and message when it expires
   - Just like with permanent autocommands, emit only if online at the time.
+* Raid target finder
+  - Look at your follow list (will need proper logins, now possible - see G->G->twitchlogin)
+  - For each channel, show thumbnail (maybe), viewer count if poss, category, as per follow list
+  - Look up recent raids and show the date/time of the last sighted raid
+  - Works only for channels that I track, but I don't have to bot for them.
