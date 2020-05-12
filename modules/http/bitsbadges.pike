@@ -13,9 +13,7 @@ string header(int level)
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	//TODO: Deduplicate this (cf checklist.pike)
-	if (!req->misc->session->?scopes || !has_value(req->misc->session->scopes, "bits:read"))
-		return G->G->twitchlogin(req, "bits:read");
+	if (mapping resp = ensure_login(req, "bits:read")) return resp;
 	return twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=100",
 			(["Authorization": "Bearer " + req->misc->session->token]))
 		->then(lambda(mapping info) {

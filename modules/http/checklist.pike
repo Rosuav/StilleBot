@@ -28,11 +28,7 @@ Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	if (!req->misc->session->?scopes || !has_value(req->misc->session->scopes, "user_subscriptions"))
-	{
-		//We need actual scoped authentication for this, not just a user ID
-		return G->G->twitchlogin(req, "user_subscriptions");
-	}
+	if (mapping resp = ensure_login(req, "user_subscriptions")) return resp;
 	object ret = Concurrent.resolve(0);
 	mapping emotelist;
 	if (!emotelist) //TODO: Cache this for a bit (and then skip this block if found in cache)

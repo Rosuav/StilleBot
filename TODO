@@ -54,7 +54,7 @@
     behaviour (reset time or error), and message when it expires
   - Just like with permanent autocommands, emit only if online at the time.
 * Raid target finder
-  - Look at your follow list (will need proper logins, now possible - see G->G->twitchlogin)
+  - Look at your follow list (will need proper logins, now possible - see twitchlogin())
   - For each channel, show thumbnail (maybe), viewer count if poss, category, as per follow
     list; also show tags (especially language tags), uptime, and any other useful info.
   - Show how many viewers *you* have, too.
