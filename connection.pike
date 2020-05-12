@@ -581,6 +581,10 @@ class channel_notif
 			default: werror("Unknown message type %O on channel %s\n", params->_type, name);
 		}
 	}
+
+	//As of 20200615, this is going to be inapplicable (they won't send it). This will
+	//basically just mean that it becomes more necessary to have the full badge-based
+	//recognition active, so that's effectively now a requirement.
 	void not_mode(object who,string mode)
 	{
 		if (sscanf(mode, "+o %s", string newmod)) mods[newmod] = 1;
