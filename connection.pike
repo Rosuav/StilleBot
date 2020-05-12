@@ -464,6 +464,8 @@ class channel_notif
 						//possible. So it's in a flat file, easily greppable.
 						Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s\n",
 							Calendar.now()->format_time(), name[1..], h));
+						write("Debug outgoing raid: chan %s msg %O params %O\n",
+							name, msg, params);
 					}
 					hosting = h;
 				}
