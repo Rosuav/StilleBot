@@ -491,7 +491,13 @@ class channel_notif
 					All of these indicate that the most recent message wasn't sent. Is it worth trying to retrieve that message?
 					*/
 					break;
-				case "raid": case "unraid": break; //Incoming raids already get announced and we don't get any more info
+				case "raid": case "unraid": //Incoming raids already get announced and we don't get any more info
+				{
+					//TODO: Record incoming raids for the sake of the raid target finder
+					write("Debug raid (incoming? outgoing?): chan %s user %O params %O\n",
+						name, person->displayname, params);
+					break;
+				}
 				case "rewardgift": //Used for special promo messages eg "so-and-so's cheer just gave X people a bonus emote"
 				{
 					write("DEBUG REWARDGIFT: chan %s disp %O user %O params %O\n",
