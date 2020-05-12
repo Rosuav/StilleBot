@@ -71,7 +71,14 @@
     - Limited to 100 query IDs. Problem.
     - Provides game IDs (but not actual category names)
     - Provides tag IDs also. Steal code from Mustard Mine to understand them.
+    - Scopes required: None
   - https://dev.twitch.tv/docs/v5/reference/streams#get-followed-streams
     - This directly does what I want ("show me all followed streams currently online") but
       doesn't include tags. Might need to use this, and then use Helix to grab the tags.
+    - Scopes required: user_read
+  - Undocumented https://api.twitch.tv/kraken/users/<userid>/follows/games
+    - Lists followed categories. Format is a bit odd but they do seem to include an _id
+      (which corresponds to G->G->category_names).
+    - Can then use /helix/streams (#get-streams) with game_id (up to ten of them).
+    - Scopes required: probably user_read?
   - Use a clientside sortable table to make it easy to navigate
