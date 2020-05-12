@@ -521,7 +521,6 @@ mapping(string:mixed)|Concurrent.Future twitchlogin(Protocols.HTTP.Server.Reques
 mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|void scopes)
 {
 	multiset havescopes = req->misc->session->?scopes;
-	if (!multisetp(havescopes)) havescopes = 0; //Compat: if you have old session data, just relogin. 20200512.
 	multiset wantscopes = scopes ? (multiset)(scopes / " ") : (<>);
 	if (!havescopes) return twitchlogin(req, wantscopes); //Even if you aren't requesting any scopes
 	multiset needscopes = havescopes | wantscopes; //Note that we'll keep any that we already have.
