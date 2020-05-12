@@ -75,7 +75,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//I'm not sure if I should be stricter here or if that's okay. You won't be
 		//able to redirect outside of the StilleBot environment this way.
 	}
-	return twitchlogin(req, "", req->variables->next);
+	return twitchlogin(req, "", next);
 }
 
 protected void create(string n) {::create(n); G->G->twitchlogin = twitchlogin;}
