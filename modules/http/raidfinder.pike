@@ -1,9 +1,7 @@
 inherit http_endpoint;
 /* Raid target finder
-  - Look at your follow list (will need proper logins, now possible - see twitchlogin())
-  - For each channel, show thumbnail (maybe), viewer count if poss, category, as per follow
-    list; also show tags (especially language tags), uptime, and any other useful info.
-  - Show how many viewers *you* have, too.
+  - Show tags (especially language tags) in follow list
+  - Show how many viewers *you* have, somewhere.
   - Look up recent raids and show the date/time of the last sighted raid
   - Works only for channels that I track, but I don't have to bot for them.
   - Identify people by user ID if poss, not channel name
@@ -27,7 +25,6 @@ inherit http_endpoint;
       (which corresponds to G->G->category_names).
     - Can then use /helix/streams (#get-streams) with game_id (up to ten of them).
     - Scopes required: probably user_read?
-  - Use a clientside sortable table to make it easy to navigate
 */
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
