@@ -1,5 +1,5 @@
 import choc, {set_content} from "https://rosuav.github.io/shed/chocfactory.js";
-const {DIV, IMG, P, UL, LI} = choc;
+const {A, DIV, IMG, P, UL, LI} = choc;
 
 const sortfunc = {
 	Viewers: (s1, s2) => s1.viewers - s2.viewers,
@@ -29,13 +29,13 @@ function uptime(startdate) {
 console.log(follows);
 function build_follow_list() {
 	set_content("#streams", follows.map(stream => stream.element = DIV([
-		IMG({src: stream.preview.medium}),
+		A({href: stream.channel.url}, IMG({src: stream.preview.medium})),
 		DIV({className: "inforow"}, [
 			//TODO: Make these links. Duh.
-			DIV({className: "img"}, IMG({className: "avatar", src: stream.channel.logo})),
+			DIV({className: "img"}, A({href: stream.channel.url}, IMG({className: "avatar", src: stream.channel.logo}))),
 			UL([
+				A({href: stream.channel.url}, LI(stream.channel.display_name)),
 				LI(stream.channel.status),
-				LI(stream.channel.display_name),
 				LI(stream.game),
 				LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
 				LI(stream.tags.join(", ")),
