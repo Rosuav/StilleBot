@@ -30,6 +30,20 @@ inherit http_endpoint;
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "user_read")) return resp;
+	//Legacy data (currently all data): Parse the outgoing raid log
+	//Note that this cannot handle renames, and will 'lose' them.
+	string login = req->misc->session->user->login, disp = req->misc->session->user->display_name;
+	write("%O %O\n", login, disp);
+	mapping raids = ([]);
+	foreach ((Stdio.read_file("outgoing_raids.log") || "") / "\n", string raid)
+	{
+		sscanf(raid, "[%d-%d-%d %*d:%*d:%*d] %s => %s", int y, int m, int d, string from, string to);
+		if (!to) continue;
+		if (from == login) raids[lower_case(to)] += ({sprintf("%d-%02d-%02d You raided %s", y, m, d, to)});
+		if (to == disp) raids[from] += ({sprintf("%d-%02d-%02d %s raided you", y, m, d, from)});
+	}
+	//Once raids get tracked by user IDs (and stored in persist_status),
+	//they can be added to raids[] using numeric keys.
 	array follows;
 	mapping(int:array(string)) channel_tags = ([]);
 	return twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
@@ -60,6 +74,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				foreach (channel_tags[strm->channel->_id], string tagid)
 					if (string tagname = tagnames[tagid]) tags += ({tagname});
 				strm->tags = tags;
+				strm->raids = raids[strm->channel->name] || ({ });
 			}
 			//End stream tags work
 			return render_template("raidfinder.md", ([

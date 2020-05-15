@@ -3,6 +3,7 @@
 * Viewers
 * Category
 * Uptime
+* Raided
 {: #sort}
 
 <div id=streams></div>
@@ -18,6 +19,10 @@
 	margin-bottom: 1em;
 }
 #streams ul {list-style-type: none; margin: 0; padding: 0; flex-grow: 1;}
+#streams li {
+	padding-left: 2em;
+	text-indent: -2em;
+}
 .avatar {max-width: 40px;}
 .inforow {display: flex;}
 .inforow .img {flex-grow: 0; padding: 0.25em;}
@@ -30,6 +35,7 @@
 	margin: 0.25em;
 	padding: 0.25em;
 }
+.raid-incoming {font-weight: bold;}
 main {max-width: none!important;} /* Override the normal StilleBot style */
 </style>
 

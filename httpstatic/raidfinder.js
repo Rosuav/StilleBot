@@ -5,6 +5,7 @@ const sortfunc = {
 	Viewers: (s1, s2) => s1.viewers - s2.viewers,
 	Category: (s1, s2) => s1.game.localeCompare(s2.game),
 	Uptime: (s1, s2) => new Date(s2.created_at) - new Date(s1.created_at),
+	Raided: (s1, s2) => (s1.raids[s1.raids.length-1]||"").localeCompare(s2.raids[s2.raids.length-1]||""),
 }
 
 on("click", "#sort li", e => {
@@ -28,6 +29,12 @@ function uptime(startdate) {
 
 console.log(follows);
 function build_follow_list() {
+	function describe_raid(raids) {
+		if (!raids.length) return null;
+		const raiddesc = raids[raids.length - 1];
+		//TODO: Retain the full array and make this clickable
+		return LI({className: raiddesc.includes("You raided") ? "raid-outgoing" : "raid-incoming"}, raiddesc);
+	}
 	set_content("#streams", follows.map(stream => stream.element = DIV([
 		A({href: stream.channel.url}, IMG({src: stream.preview.medium})),
 		DIV({className: "inforow"}, [
@@ -43,8 +50,7 @@ function build_follow_list() {
 				//raided them, put a CSS class on it so we can highlight it. If this
 				//is clicked, pop up a dialog with a full list of raids (scrolled to
 				//the bottom initially but allowing upward scrolling).
-				0 && LI({className: "raidedus"}, "Raided us dd mon yyyy"),
-				0 && LI("Last raided dd mon yyyy"),
+				describe_raid(stream.raids),
 			]),
 			DIV({className: "img"}, IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.game + "-40x54.jpg"})),
 		]),
