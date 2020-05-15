@@ -31,6 +31,7 @@ function build_follow_list() {
 	set_content("#streams", follows.map(stream => stream.element = DIV([
 		IMG({src: stream.preview.medium}),
 		DIV({className: "inforow"}, [
+			//TODO: Make these links. Duh.
 			DIV({className: "img"}, IMG({className: "avatar", src: stream.channel.logo})),
 			UL([
 				LI(stream.channel.status),
