@@ -33,11 +33,11 @@ inherit http_endpoint;
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "user_read")) return resp;
-	return twitch_api_request("https://api.twitch.tv/kraken/streams/followed",
+	return twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
 			(["Authorization": "OAuth " + req->misc->session->token]))
 		->then(lambda(mapping info) {
 			return render_template("raidfinder.md", ([
-				"backlink": "", "dump": sprintf("%O", info),
+				"backlink": "", "follows": Standards.JSON.encode(info["streams"], Standards.JSON.ASCII_ONLY),
 			]));
 		});
 }
