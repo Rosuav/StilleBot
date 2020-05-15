@@ -30,11 +30,15 @@ console.log(follows);
 function build_follow_list() {
 	set_content("#streams", follows.map(stream => stream.element = DIV([
 		IMG({src: stream.preview.medium}),
-		UL([
-			LI(stream.channel.status),
-			LI(stream.channel.display_name),
-			LI(stream.game),
-			LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
+		DIV({className: "inforow"}, [
+			DIV({className: "img"}, IMG({className: "avatar", src: stream.channel.logo})),
+			UL([
+				LI(stream.channel.status),
+				LI(stream.channel.display_name),
+				LI(stream.game),
+				LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
+			]),
+			DIV({className: "img"}, IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.game + "-40x54.jpg"})),
 		]),
 	])));
 }

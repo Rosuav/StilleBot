@@ -15,8 +15,12 @@
 }
 #streams > div {
 	width: 320px; /* the width of the preview image */
+	margin-bottom: 1em;
 }
-#streams ul {list-style-type: none; padding: 0;}
+#streams ul {list-style-type: none; margin: 0; padding: 0;}
+.avatar {max-width: 40px;}
+.inforow {display: flex;}
+.inforow .img {flex-grow: 0; padding: 0.25em;}
 #sort {
 	display: flex;
 	list-style-type: none;
