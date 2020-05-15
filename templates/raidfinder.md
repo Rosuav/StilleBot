@@ -16,6 +16,7 @@
 #streams > div {
 	width: 320px; /* the width of the preview image */
 }
+#streams ul {list-style-type: none; padding: 0;}
 #sort {
 	display: flex;
 	list-style-type: none;
@@ -25,6 +26,7 @@
 	margin: 0.25em;
 	padding: 0.25em;
 }
+main {max-width: none!important;} /* Override the normal StilleBot style */
 </style>
 
 <script>

@@ -34,8 +34,7 @@ function build_follow_list() {
 			LI(stream.channel.status),
 			LI(stream.channel.display_name),
 			LI(stream.game),
-			LI("Uptime: " + uptime(stream.created_at)),
-			LI("Viewers: " + stream.viewers),
+			LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
 		]),
 	])));
 }
