@@ -38,6 +38,7 @@ function build_follow_list() {
 				LI(stream.channel.display_name),
 				LI(stream.game),
 				LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
+				LI(stream.tags.join(", ")),
 				//TODO: Show the one most recent raid. If they've raided us since we
 				//raided them, put a CSS class on it so we can highlight it. If this
 				//is clicked, pop up a dialog with a full list of raids (scrolled to

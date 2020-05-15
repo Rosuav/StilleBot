@@ -30,11 +30,40 @@ inherit http_endpoint;
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "user_read")) return resp;
+	array follows;
+	mapping(int:array(string)) channel_tags = ([]);
 	return twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
 			(["Authorization": "OAuth " + req->misc->session->token]))
 		->then(lambda(mapping info) {
+			follows = info->streams;
+			//All this work is just to get the stream tags :(
+			array(int) channels = follows->channel->_id;
+			//TODO: Paginate if >100
+			write("Fetching %d streams...\n", sizeof(channels));
+			return twitch_api_request("https://api.twitch.tv/helix/streams?first=100" + sprintf("%{&user_id=%d%}", channels));
+		})->then(lambda(mapping info) {
+			multiset all_tags = (<>);
+			foreach (info->data, mapping strm)
+			{
+				channel_tags[(int)strm->user_id] = strm->tag_ids;
+				all_tags |= (multiset)strm->tag_ids;
+			}
+			//TODO again: Paginate if >100
+			write("Fetching %d tags...\n", sizeof(all_tags));
+			return twitch_api_request("https://api.twitch.tv/helix/tags/streams?first=100" + sprintf("%{&tag_id=%s%}", (array)all_tags));
+		})->then(lambda(mapping info) {
+			mapping tagnames = ([]);
+			foreach (info->data, mapping tag) tagnames[tag->tag_id] = tag->localization_names["en-us"];
+			foreach (follows, mapping strm)
+			{
+				array tags = ({ });
+				foreach (channel_tags[strm->channel->_id], string tagid)
+					if (string tagname = tagnames[tagid]) tags += ({tagname});
+				strm->tags = tags;
+			}
+			//End stream tags work
 			return render_template("raidfinder.md", ([
-				"backlink": "", "follows": Standards.JSON.encode(info["streams"], Standards.JSON.ASCII_ONLY),
+				"backlink": "", "follows": Standards.JSON.encode(follows, Standards.JSON.ASCII_ONLY),
 			]));
 		});
 }
