@@ -27,9 +27,14 @@ inherit http_endpoint;
     - Scopes required: probably user_read?
 */
 
+string cached_follows;
+
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "user_read")) return resp;
+	if (req->variables->use_cache && cached_follows) return render_template("raidfinder.md", ([
+		"backlink": "", "follows": cached_follows,
+	]));
 	//Legacy data (currently all data): Parse the outgoing raid log
 	//Note that this cannot handle renames, and will 'lose' them.
 	string login = req->misc->session->user->login, disp = req->misc->session->user->display_name;
@@ -78,7 +83,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			}
 			//End stream tags work
 			return render_template("raidfinder.md", ([
-				"backlink": "", "follows": Standards.JSON.encode(follows, Standards.JSON.ASCII_ONLY),
+				"backlink": "", "follows": cached_follows = Standards.JSON.encode(follows, Standards.JSON.ASCII_ONLY),
 			]));
 		});
 }
