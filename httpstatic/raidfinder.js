@@ -56,9 +56,8 @@ function build_follow_list() {
 		DIV({className: "inforow"}, [
 			DIV({className: "img"}, A({href: stream.channel.url}, IMG({className: "avatar", src: stream.channel.logo}))),
 			UL([
-				A({href: stream.channel.url}, LI(stream.channel.display_name)),
+				LI([A({href: stream.channel.url}, stream.channel.display_name), " - ", stream.game]),
 				LI({className: "streamtitle"}, stream.channel.status),
-				LI(stream.game),
 				LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
 				LI(stream.tags.map(tag => SPAN({className: "tag"}, tag + " "))),
 				describe_raid(stream.raids),
