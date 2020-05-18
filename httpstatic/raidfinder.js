@@ -38,7 +38,6 @@ function build_follow_list() {
 	set_content("#streams", follows.map(stream => stream.element = DIV([
 		A({href: stream.channel.url}, IMG({src: stream.preview.medium})),
 		DIV({className: "inforow"}, [
-			//TODO: Make these links. Duh.
 			DIV({className: "img"}, A({href: stream.channel.url}, IMG({className: "avatar", src: stream.channel.logo}))),
 			UL([
 				A({href: stream.channel.url}, LI(stream.channel.display_name)),
@@ -52,6 +51,7 @@ function build_follow_list() {
 				//the bottom initially but allowing upward scrolling).
 				describe_raid(stream.raids),
 			]),
+			//TODO: Make this a link to the category.
 			DIV({className: "img"}, IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.game + "-40x54.jpg"})),
 		]),
 	])));
