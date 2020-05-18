@@ -41,10 +41,15 @@ function build_follow_list() {
 	function describe_raid(raids) {
 		if (!raids.length) return null;
 		const raiddesc = raids[raids.length - 1];
+		const outgoing = raiddesc.includes("You raided");
 		return LI({
-			className: raiddesc.includes("You raided") ? "raid-outgoing" : "raid-incoming",
+			className: outgoing ? "raid-outgoing" : "raid-incoming",
 			onclick: () => show_raids(raids),
-		}, raiddesc);
+		}, [
+			!outgoing && IMG({className: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v1/62836/1.0"}), //twitchRaid
+			/^[-0-9]+/.exec(raiddesc)[0], //Just the date
+			outgoing && IMG({className: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v1/62836/1.0"}),
+		]);
 	}
 	set_content("#streams", follows.map(stream => stream.element = DIV([
 		A({href: stream.channel.url}, IMG({src: stream.preview.medium})),
@@ -52,7 +57,7 @@ function build_follow_list() {
 			DIV({className: "img"}, A({href: stream.channel.url}, IMG({className: "avatar", src: stream.channel.logo}))),
 			UL([
 				A({href: stream.channel.url}, LI(stream.channel.display_name)),
-				LI(stream.channel.status),
+				LI({className: "streamtitle"}, stream.channel.status),
 				LI(stream.game),
 				LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
 				LI(stream.tags.join(", ")),

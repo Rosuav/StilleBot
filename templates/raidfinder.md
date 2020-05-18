@@ -33,6 +33,9 @@
 .avatar {max-width: 40px;}
 .inforow {display: flex;}
 .inforow .img {flex-grow: 0; padding: 0.25em;}
+.streamtitle {font-size: 85%;}
+.emote {max-height: 1.25em;}
+
 #sort {
 	display: flex;
 	list-style-type: none;
