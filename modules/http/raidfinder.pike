@@ -61,23 +61,26 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			write("Fetching %d streams...\n", sizeof(channels));
 			return twitch_api_request("https://api.twitch.tv/helix/streams?first=100" + sprintf("%{&user_id=%d%}", channels));
 		})->then(lambda(mapping info) {
+			if (!G->G->tagnames) G->G->tagnames = ([]);
 			multiset all_tags = (<>);
 			foreach (info->data, mapping strm)
 			{
 				channel_tags[(int)strm->user_id] = strm->tag_ids;
-				all_tags |= (multiset)strm->tag_ids;
+				//all_tags |= (tag_ids &~ G->G->tagnames); //sorta kinda
+				foreach (strm->tag_ids, string tag)
+					if (!G->G->tagnames[tag]) all_tags[tag] = 1;
 			}
+			if (!sizeof(all_tags)) return Concurrent.resolve((["data": ({ })]));
 			//TODO again: Paginate if >100
 			write("Fetching %d tags...\n", sizeof(all_tags));
 			return twitch_api_request("https://api.twitch.tv/helix/tags/streams?first=100" + sprintf("%{&tag_id=%s%}", (array)all_tags));
 		})->then(lambda(mapping info) {
-			mapping tagnames = ([]);
-			foreach (info->data, mapping tag) tagnames[tag->tag_id] = tag->localization_names["en-us"];
+			foreach (info->data, mapping tag) G->G->tagnames[tag->tag_id] = tag->localization_names["en-us"];
 			foreach (follows, mapping strm)
 			{
 				array tags = ({ });
 				foreach (channel_tags[strm->channel->_id], string tagid)
-					if (string tagname = tagnames[tagid]) tags += ({tagname});
+					if (string tagname = G->G->tagnames[tagid]) tags += ({tagname});
 				strm->tags = tags;
 				strm->raids = raids[strm->channel->name] || ({ });
 			}
