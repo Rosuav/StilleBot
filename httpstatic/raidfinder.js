@@ -59,7 +59,7 @@ function build_follow_list() {
 				LI([A({href: stream.channel.url}, stream.channel.display_name), " - ", stream.game]),
 				LI({className: "streamtitle"}, stream.channel.status),
 				LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
-				LI(stream.tags.map(tag => SPAN({className: "tag"}, tag + " "))),
+				LI(stream.tags.map(tag => SPAN({className: "tag"}, tag.name + " "))),
 				describe_raid(stream.raids),
 			]),
 			//TODO: Make this a link to the category.
