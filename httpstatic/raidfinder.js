@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, DIV, IMG, P, UL, LI} = choc;
+const {A, DIV, IMG, P, UL, LI, SPAN} = choc;
 
 const sortfunc = {
 	Viewers: (s1, s2) => s1.viewers - s2.viewers,
@@ -60,7 +60,7 @@ function build_follow_list() {
 				LI({className: "streamtitle"}, stream.channel.status),
 				LI(stream.game),
 				LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
-				LI(stream.tags.join(", ")),
+				LI(stream.tags.map(tag => SPAN({className: "tag"}, tag + " "))),
 				describe_raid(stream.raids),
 			]),
 			//TODO: Make this a link to the category.

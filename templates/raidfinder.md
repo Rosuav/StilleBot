@@ -35,6 +35,14 @@
 .inforow .img {flex-grow: 0; padding: 0.25em;}
 .streamtitle {font-size: 85%;}
 .emote {max-height: 1.25em;}
+.tag {
+	display: inline-block;
+	padding: 0 0.125em; text-indent: 0; /* Override the general text-wrap settings from above */
+	background: #ddd;
+	border: 1px solid black;
+	margin-right: 0.5em;
+	font-size: 80%;
+}
 
 #sort {
 	display: flex;
