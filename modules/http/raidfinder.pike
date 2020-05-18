@@ -39,12 +39,14 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//they can be added to raids[] using numeric keys.
 	array follows;
 	mapping(int:array(string)) channel_tags = ([]);
+	int your_viewers; string your_category;
 	return twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
 			(["Authorization": "OAuth " + req->misc->session->token]))
 		->then(lambda(mapping info) {
 			follows = info->streams;
-			//All this work is just to get the stream tags :(
+			//All this work is just to get the stream tags (and some info about your own stream)
 			array(int) channels = follows->channel->_id;
+			channels += ({(int)req->misc->session->user->id});
 			//TODO: Paginate if >100
 			write("Fetching %d streams...\n", sizeof(channels));
 			return twitch_api_request("https://api.twitch.tv/helix/streams?first=100" + sprintf("%{&user_id=%d%}", channels));
@@ -54,8 +56,16 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			foreach (info->data, mapping strm)
 			{
 				channel_tags[(int)strm->user_id] = strm->tag_ids;
+				if (strm->user_id == req->misc->session->user->id)
+				{
+					//Info about your own stream. Handy but doesn't go in the main display.
+					//write("Your tags: %O\n", strm->tag_ids); //Is it worth trying to find people with similar tags?
+					your_viewers = strm->viewer_count;
+					your_category = strm->game_id;
+					continue;
+				}
 				//all_tags |= (tag_ids &~ G->G->tagnames); //sorta kinda
-				foreach (strm->tag_ids, string tag)
+				foreach (strm->tag_ids || ({ }), string tag)
 					if (!G->G->tagnames[tag]) all_tags[tag] = 1;
 			}
 			if (!sizeof(all_tags)) return Concurrent.resolve((["data": ({ })]));
@@ -75,6 +85,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			//End stream tags work
 			return render_template("raidfinder.md", ([
 				"backlink": "", "follows": cached_follows = Standards.JSON.encode(follows, Standards.JSON.ASCII_ONLY),
+				"your_viewers": (string)your_viewers,
+				"your_category": Standards.JSON.encode(G->G->category_names[your_category], Standards.JSON.ASCII_ONLY),
 			]));
-		});
+		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);});
 }

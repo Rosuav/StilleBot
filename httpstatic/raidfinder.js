@@ -51,6 +51,7 @@ function build_follow_list() {
 			outgoing && IMG({className: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v1/62836/1.0"}),
 		]);
 	}
+	//TODO: Show when stream.viewers is a long way above or below your_viewers
 	set_content("#streams", follows.map(stream => stream.element = DIV([
 		A({href: stream.channel.url}, IMG({src: stream.preview.medium})),
 		DIV({className: "inforow"}, [
@@ -66,6 +67,11 @@ function build_follow_list() {
 			DIV({className: "img"}, IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.game + "-40x54.jpg"})),
 		]),
 	])));
+	//TODO maybe: Have this link back to raidfinder with a marker saying "your cat",
+	//and thus get all the recent raid info etc.
+	set_content("#yourcat",
+		["You have ", ""+your_viewers, " viewers in ", your_category],
+	).href = "https://www.twitch.tv/directory/game/" + your_category;
 }
 build_follow_list();
 
