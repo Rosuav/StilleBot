@@ -8,6 +8,13 @@
 
 <div id=streams></div>
 
+> dialog id=raids
+> <button type=button class=dialog_cancel>x</button>
+>
+> Raids to or from this channel:
+>
+> <ul></ul>
+
 <style>
 #streams {
 	display: flex;
@@ -36,7 +43,10 @@
 	padding: 0.25em;
 }
 .raid-incoming {font-weight: bold;}
+.raid-incoming,.raid-outgoing {cursor: pointer;}
 main {max-width: none!important;} /* Override the normal StilleBot style */
+
+#raids ul {overflow-y: auto; max-height: 10em;}
 </style>
 
 <script>

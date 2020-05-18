@@ -1,4 +1,4 @@
-import choc, {set_content} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, DIV, IMG, P, UL, LI} = choc;
 
 const sortfunc = {
@@ -27,13 +27,24 @@ function uptime(startdate) {
 	return ret;
 }
 
+function show_raids(raids) {
+	const ul = set_content("#raids ul", raids.map(desc => LI(
+		{className: desc.includes("You raided") ? "raid-outgoing" : "raid-incoming"},
+		desc,
+	)));
+	DOM("#raids").showModal();
+	ul.scrollTop = ul.scrollHeight;
+}
+
 console.log(follows);
 function build_follow_list() {
 	function describe_raid(raids) {
 		if (!raids.length) return null;
 		const raiddesc = raids[raids.length - 1];
-		//TODO: Retain the full array and make this clickable
-		return LI({className: raiddesc.includes("You raided") ? "raid-outgoing" : "raid-incoming"}, raiddesc);
+		return LI({
+			className: raiddesc.includes("You raided") ? "raid-outgoing" : "raid-incoming",
+			onclick: () => show_raids(raids),
+		}, raiddesc);
 	}
 	set_content("#streams", follows.map(stream => stream.element = DIV([
 		A({href: stream.channel.url}, IMG({src: stream.preview.medium})),
@@ -45,10 +56,6 @@ function build_follow_list() {
 				LI(stream.game),
 				LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
 				LI(stream.tags.join(", ")),
-				//TODO: Show the one most recent raid. If they've raided us since we
-				//raided them, put a CSS class on it so we can highlight it. If this
-				//is clicked, pop up a dialog with a full list of raids (scrolled to
-				//the bottom initially but allowing upward scrolling).
 				describe_raid(stream.raids),
 			]),
 			//TODO: Make this a link to the category.
@@ -57,3 +64,13 @@ function build_follow_list() {
 	])));
 }
 build_follow_list();
+
+//Compat shim lifted from Mustard Mine
+//For browsers with only partial support for the <dialog> tag, add the barest minimum.
+//On browsers with full support, there are many advantages to using dialog rather than
+//plain old div, but this way, other browsers at least have it pop up and down.
+document.querySelectorAll("dialog").forEach(dlg => {
+	if (!dlg.showModal) dlg.showModal = function() {this.style.display = "block";}
+	if (!dlg.close) dlg.close = function() {this.style.removeProperty("display");}
+});
+on("click", ".dialog_cancel,.dialog_close", e => e.match.closest("dialog").close());
