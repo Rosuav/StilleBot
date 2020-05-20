@@ -56,8 +56,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			return w;
 		});
 		return render_template("checklist.md", ([
-			"backlink": "", "text": text,
-			"emotes": sprintf("img[title=\"%s\"]", used[*]) * ", ",
+			"text": text, "emotes": sprintf("img[title=\"%s\"]", used[*]) * ", ",
 		]));
 	});
 }

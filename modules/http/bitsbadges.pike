@@ -17,10 +17,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	return twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=100",
 			(["Authorization": "Bearer " + req->misc->session->token]))
 		->then(lambda(mapping info) {
-			if (!sizeof(info->data)) return render_template("bitsbadges.md", (["backlink": "", "text": "No data found."]));
+			if (!sizeof(info->data)) return render_template("bitsbadges.md", (["text": "No data found."]));
 			int lvl = 0;
 			while (lvl < sizeof(levels) && levels[lvl] > info->data[0]->score) ++lvl;
-			if (lvl >= sizeof(levels)) return render_template("bitsbadges.md", (["backlink": "", "text": "Nobody has any badges."]));
+			if (lvl >= sizeof(levels)) return render_template("bitsbadges.md", (["text": "Nobody has any badges."]));
 			string text = header(levels[lvl]);
 			string users = "";
 			nomoreusers: foreach (info->data, mapping user)
@@ -35,8 +35,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				users += ", " + user->user_name;
 			}
 			if (sizeof(info->data) == 100) text += "\n\nNOTE: This shows only the top 100 users, and the last tier may have other people in it.";
-			return render_template("bitsbadges.md", ([
-				"backlink": "", "text": text,
-			]));
+			return render_template("bitsbadges.md", (["text": text]));
 		});
 }

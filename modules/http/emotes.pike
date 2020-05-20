@@ -75,7 +75,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		mapping session = G->G->http_sessions[req->cookies->session];
 		int is_bot = session->?user->?login == persist_config["ircsettings"]->nick;
 		if (!G->G->bot_emote_list->emoticon_sets) return render_template("emotes.md", ([
-			"backlink": "",
 			"emotes": "Unable to fetch emotes from Twitch - check again later",
 			"save": "",
 		]));
@@ -121,7 +120,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		]);
 		array emoteinfo = values(emotesets); sort(indices(emotesets), emoteinfo);
 		return render_template("emotes.md", ([
-			"backlink": "",
 			"emotes": emoteinfo * "",
 			"save": is_bot ? "<input type=submit value=\"Update permanents\">" : "",
 		]));

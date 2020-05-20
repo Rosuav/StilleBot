@@ -383,14 +383,19 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 	{
 		string token = pieces[i];
 		if (token == "") {pieces[i] = "$$"; continue;} //Escape a $$ by doubling it ($$$$)
-		if (sizeof(token) > 80 || has_value(token, ' ')) //TODO: Check more reliably for it being a 'token'
+		if (sizeof(token) > 200) //TODO: Check more reliably for it being a 'token'
 			error("Invalid token name %O in templates/%s - possible mismatched marker\n",
 				"$$" + token[..80] + "$$", template);
+		sscanf(token, "%s||%s", token, string dflt);
 		int trim_before = has_prefix(token, ">");
 		int trim_after  = has_suffix(token, "<");
 		token = token[trim_before..<trim_after];
-		if (!replacements[token]) error("Token %O not found in templates/%s\n", "$$" + token + "$$", template);
-		pieces[i] = replacements[token];
+		if (!replacements[token])
+		{
+			if (dflt) pieces[i] = dflt;
+			else error("Token %O not found in templates/%s\n", "$$" + token + "$$", template);
+		}
+		else pieces[i] = replacements[token];
 		if (pieces[i] == "")
 		{
 			if (trim_before) pieces[i-1] = String.trim("^" + pieces[i-1])[1..];
@@ -410,7 +415,7 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 		return render_template("markdown.html", ([
 			//Defaults - can be overridden
 			"title": headings[1] || "StilleBot",
-			"backlink": "<small><a href=\"./\">StilleBot - " + replacements->channel + "</a></small>",
+			"backlink": replacements->channel && "<small><a href=\"./\">StilleBot - " + replacements->channel + "</a></small>",
 		]) | replacements | ([
 			//Forced attributes
 			"content": content,
