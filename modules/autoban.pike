@@ -32,11 +32,13 @@ string process(object channel, object person, string param)
 	if (!tm)
 	{
 		int prev = m_delete(channel->config->autoban, badword);
+		persist_config->save();
 		if (!prev) return "@$$: That word wasn't banned.";
 		if (prev == -1) return "@$$: That word will no longer cause an automatic ban.";
 		return sprintf("@$$: That word will no longer cause an automatic %d second timeout.", prev);
 	}
 	channel->config->autoban[badword] = tm;
+	persist_config->save();
 	if (tm == -1) return "@$$: Done. Next time I see that, I'll automatically ban.";
 	return sprintf("@$$: Done. Next time I see that, I'll automatically time out for %d seconds.", tm);
 }
@@ -45,6 +47,7 @@ int message(object channel, object person, string msg)
 {
 	mapping autoban = channel->config->autoban;
 	if (!autoban) return 0;
+	if (person->_mod) return 0; //Don't time out mods. It usually won't work anyway, but don't try.
 	foreach (autoban; string badword; int tm) if (has_value(msg, badword))
 	{
 		if (tm == -1) send_message(channel->name, "/ban " + person->user);
