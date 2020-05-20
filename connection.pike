@@ -346,6 +346,7 @@ class channel_notif
 			}
 			user->lastnotice = time();
 		}
+		runhooks("all-msgs", 0, this, person, msg);
 		[command_handler cmd, string param] = locate_command(person, msg);
 		int offset = sizeof(msg) - sizeof(param);
 		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
