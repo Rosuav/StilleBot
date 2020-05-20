@@ -48,6 +48,7 @@ int message(object channel, object person, string msg)
 	mapping autoban = channel->config->autoban;
 	if (!autoban) return 0;
 	if (person->_mod) return 0; //Don't time out mods. It usually won't work anyway, but don't try.
+	msg = lower_case(msg);
 	foreach (autoban; string badword; int tm) if (has_value(msg, badword))
 	{
 		if (tm == -1) send_message(channel->name, "/ban " + person->user);
