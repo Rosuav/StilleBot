@@ -75,7 +75,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			foreach (follows, mapping strm)
 			{
 				array tags = ({ });
-				foreach (channel_tags[strm->channel->_id], string tagid)
+				foreach (channel_tags[strm->channel->_id] || ({ }), string tagid)
 					if (string tagname = G->G->tagnames[tagid]) tags += ({(["id": tagid, "name": tagname])});
 				strm->tags = tags;
 				strm->raids = raids[strm->channel->name] || ({ });
