@@ -15,7 +15,6 @@ $$commands$$
 
 $$save_or_login$$
 
-> dialog id=templates
 > <button type=button class=dialog_cancel>x</button>
 >
 > Some handy commands that your channel may want to use:
@@ -26,6 +25,7 @@ $$save_or_login$$
 >
 > Be sure to customize the command text to suit your channel, lest your commands
 > look identical to everyone else's :)
+{: tag=dialog #templates}
 
 <style>
 table {width: 100%;}
@@ -48,7 +48,6 @@ td:nth-of-type(2n+1) {white-space: nowrap;}
 }
 </style>
 
-> dialog id=options
 > <button type=button class=dialog_cancel>x</button>
 >
 > Set command options for <code id=cmdname></code>
@@ -62,3 +61,4 @@ td:nth-of-type(2n+1) {white-space: nowrap;}
 >
 > <p><button type=button id=saveopts>Save</button> <button type=button class=dialog_close>Cancel</button></p>
 >
+{: tag=dialog #options}

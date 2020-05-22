@@ -258,120 +258,125 @@ class user_text
 	}
 }
 
-class _Markdown
+#if constant(Parser.Markdown)
+class Renderer
 {
-	//We can't just inherit Tools.Markdown.Renderer as it's protected
-	//(or at least, it is in 8.1 as of 20190201). So we inherit the
-	//entire module and make our own small tweaks.
-	inherit Tools.Markdown;
-	class AltRenderer
+	inherit Parser.Markdown.Renderer;
+	//Put borders on all tables
+	string table(string header, string body, mapping token)
 	{
-		inherit Renderer;
-		//Put borders on all tables
-		string table(string header, string body, mapping|void attrs)
+		return ::table(header, body, (["attr_border": "1"]) | token);
+	}
+	//Allow cell spanning by putting just a hyphen in a cell (it will
+	//be joined to the NEXT cell, not the preceding one)
+	int spancount = 0;
+	string tablerow(string row, mapping token)
+	{
+		spancount = 0; //Can't span across rows
+		if (row == "") return ""; //Suppress the entire row if all cells were suppressed
+		return ::tablerow(row, token);
+	}
+	string tablecell(string cell, mapping flags, mapping token)
+	{
+		if (String.trim(cell) == "-") {++spancount; return "";} //A cell with just a hyphen will not be rendered, and the next cell spans.
+		if (spancount) token |= (["attr_colspan": (string)(spancount + 1)]);
+		spancount = 0;
+		return ::tablecell(cell, flags, token);
+	}
+	//Interpolate magic markers
+	string text(string t)
+	{
+		if (!options->user_text) return t;
+		array texts = options->user_text->texts;
+		string output = "";
+		while (sscanf(t, "%s\uFFFA%d\uFFFB%s", string before, int idx, string after))
 		{
-			return replace(::table(header, body, attrs), "<table>", "<table border>");
+			output += before + replace(texts[idx], (["<": "&lt;", "&": "&amp;"]));
+			t = after;
 		}
-		//Allow cell spanning by putting just a hyphen in a cell (it will
-		//be joined to the NEXT cell, not the preceding one)
-		int spancount = 0;
-		string tablerow(string row)
-		{
-			spancount = 0; //Can't span across rows
-			if (row == "") return ""; //Suppress the entire row if all cells were suppressed
-			return ::tablerow(row);
-		}
-		string tablecell(string cell, mapping flags)
-		{
-			if (String.trim(cell) == "-") {++spancount; return "";} //A cell with just a hyphen will not be rendered, and the next cell spans.
-			string html = ::tablecell(cell, flags);
-			if (!spancount) return html;
-			string colspan = " colspan=" + (spancount + 1);
-			spancount = 0;
-			//Insert the colspan just before the first ">"
-			array parts = html / ">";
-			parts[0] += colspan;
-			return parts * ">";
-		}
-		//Interpolate magic markers
-		string text(string t)
-		{
-			if (!options->user_text) return t;
-			array texts = options->user_text->texts;
-			string output = "";
-			while (sscanf(t, "%s\uFFFA%d\uFFFB%s", string before, int idx, string after))
-			{
-				output += before + encode_html(texts[idx]);
-				t = after;
-			}
-			return output + t;
-		}
-		//Allow a blockquote to become a dialog
-		string blockquote(string text)
-		{
-			if (sscanf(text, "<p>dialog%[^\n<]</p>%s", string attr, string t) && t)
-			{
-				//It's a block quote that starts "> dialog" or "> dialog x=y a=b"
-				//Turn it into a <dialog> tag instead of <blockquote>.
-				return sprintf("<dialog%s>%s</dialog>", attr, t);
-			}
-			return sprintf("<blockquote>%s</blockquote>", text);
-		}
-		//Give this the last line of text. It'll return a mapping of attributes, or 0.
-		//If zero, keep the text in the output, otherwise hide it.
-		mapping parse_attrs(string text)
-		{
-			if (sscanf(text, "{:%{ %[.#]%[a-z]%}}%s", array attrs, string empty) && empty == "")
-			{
-				mapping attr = ([]);
-				foreach (attrs, [string t, string val]) switch (t)
-				{
-					case ".":
-						if (attr["class"]) attr["class"] += " " + val;
-						else attr["class"] = val;
-						break;
-					case "#": attr["id"] = val; break;
-					default: break; //Shouldn't happen
-				}
-				return attr;
-			}
-		}
-		//Allow paragraphs to get extra attributes. Not needed if attributes mode is supported in core.
-		string paragraph(string text, mapping|void attrs)
-		{
-			if (!attrs)
-			{
-				string last_line = (text / "\n")[-1];
-				attrs = parse_attrs(last_line);
-				if (attrs) text = text[..<sizeof(last_line)+1]; else attrs = ([]);
-			}
-			return sprintf("<p%{ %s=%q%}>%s</p>", (array)attrs, text);
-		}
-		//Ditto for lists. And again, not needed if supported by Pike itself.
-		string list(string text, void|bool ordered, mapping|void attrs)
-		{
-			array lines = text / "\n";
-			//If attributes mode is supported but attributes aren't passed, we're wasting
-			//our time looking, but it's no big deal.
-			if (!attrs && lines[-1] == "" && has_suffix(lines[-2], "</li>"))
-			{
-				attrs = parse_attrs(lines[-2][..<5]);
-				if (attrs) {lines[-2] = "</li>"; text = lines * "\n";}
-				else attrs = ([]);
-			}
-			return sprintf("<%s%{ %s=%q%}>%s</%[0]s>", ordered ? "ol" : "ul", (array)attrs, text);
-		}
-		//Retain headings in case they're wanted
-		string heading(string text, int level, string raw)
-		{
-			if (options->headings && !options->headings[level])
-				//Retain the first-seen heading of each level
-				options->headings[level] = text;
-			return ::heading(text, level, raw);
-		}
+		return output + t;
+	}
+	//Allow a blockquote to become a dialog
+	string blockquote(string text, mapping token)
+	{
+		if (string tag = m_delete(token, "attr_tag"))
+			return sprintf("<%s%s>%s</%[0]s>", tag, attrs(token), text);
+		return ::blockquote(text, token);
+	}
+	string heading(string text, int level, string raw, mapping token)
+	{
+		if (options->headings && !options->headings[level])
+			//Retain the first-seen heading of each level
+			options->headings[level] = text;
+		return ::heading(text, level, raw, token);
 	}
 }
-program _AltRenderer = _Markdown()->AltRenderer;
+class Lexer
+{
+	inherit Parser.Markdown.Lexer;
+	bool parse_attrs(string text, mapping tok)
+	{
+		if (sscanf(text, "{:%[^{}\n]}%s", string attrs, string empty) && empty == "")
+		{
+			foreach (attrs / " ", string att)
+			{
+				if (sscanf(att, ".%s", string cls) && cls && cls != "")
+				{
+					if (tok["attr_class"]) tok["attr_class"] += " " + cls;
+					else tok["attr_class"] = cls;
+				}
+				else if (sscanf(att, "#%s", string id) && id && id != "")
+					tok["attr_id"] = id;
+				else if (sscanf(att, "%s=%s", string a, string v) && a != "" && v)
+					tok["attr_" + a] = v;
+			}
+			return 1;
+		}
+	}
+	object_program lex(string src)
+	{
+		::lex(src);
+		foreach (tokens; int i; mapping tok)
+		{
+			if (tok->type == "paragraph" && tok->text[-1] == '}')
+			{
+				mapping target = tok;
+				array(string) lines = tok->text / "\n";
+				if (tokens[i + 1]->type == "blockquote_end") target = tokens[i + 1];
+				else if (sizeof(lines) == 1 && i > 0)
+				{
+					//It's a paragraph consisting ONLY of attributes.
+					//Attach the attributes to the preceding token.
+					//TODO: Only do this if the preceding token is a
+					//type that can take attributes.
+					target = tokens[i - 1];
+				}
+				if (parse_attrs(lines[-1], target))
+				{
+					if (sizeof(lines) > 1) tok->text = lines[..<1] * "\n";
+					else tok->type = "space"; //Suppress the text altogether.
+				}
+			}
+			if (tok->type == "list_end")
+			{
+				//Scan backwards into the list, finding the last text.
+				//If that text can be parsed as attributes, apply them to the
+				//list_end, which will then apply them to the list itself.
+				for (int j = i - 1; j >= 0; --j)
+				{
+					if (tokens[j]->type == "text")
+					{
+						if (parse_attrs(tokens[j]->text, tok))
+							tokens[j]->type = "space";
+						break;
+					}
+					if (!(<"space", "list_item_end">)[tokens[j]->type]) break;
+				}
+			}
+		}
+		return this;
+	}
+}
 
 mapping(string:mixed) render_template(string template, mapping(string:string) replacements)
 {
@@ -407,7 +412,7 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 	{
 		mapping headings = ([]);
 		string content = Tools.Markdown.parse(content, ([
-			"renderer": _AltRenderer,
+			"renderer": Renderer, "lexer": Lexer,
 			"user_text": replacements["user text"],
 			"headings": headings,
 			"attributes": 1, //Ignored if using older Pike (or, as of 2020-04-13, vanilla Pike - it's only on branch rosuav/markdown-attribute-syntax)
@@ -426,6 +431,13 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 		"type": "text/html; charset=\"UTF-8\"",
 	]);
 }
+#else
+//With no Markdown parser, the web interface will be broken, but the rest of the bot should be fine.
+mapping(string:mixed) render_template(string template, mapping(string:string) replacements)
+{
+	return (["data": "ERROR: Markdown parser unavailable", "type": "text/plain"]);
+}
+#endif
 
 mapping(string:mixed) redirect(string url, int|void status)
 {

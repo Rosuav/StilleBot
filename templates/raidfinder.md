@@ -10,12 +10,12 @@
 
 <a id=yourcat href="#">Your current category: ??</a>
 
-> dialog id=raids
 > <button type=button class=dialog_cancel>x</button>
 >
 > Raids to or from this channel:
 >
 > <ul></ul>
+{: tag=dialog #raids}
 
 <style>
 #streams {
