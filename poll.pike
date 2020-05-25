@@ -14,6 +14,7 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 		if (stringp(options->username)) usernames = (["{{USER}}": options->username]);
 		else usernames = options->username + ([]);
 		array reqs = ({ });
+		//TODO: Use get_user_id() below (yes, this will then be mutually recursive)
 		foreach (usernames; string tag; string user)
 		{
 			user = lower_case(user);
@@ -59,6 +60,18 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 			if (!mappingp(data)) return Concurrent.reject(({"Unparseable response\n", backtrace()}));
 			if (data->error) return Concurrent.reject(({sprintf("%s\nError from Twitch: %O (%O)\n%O\n", url, data->error, data->status, data), backtrace()}));
 			return data;
+		});
+}
+
+Concurrent.Future get_user_id(string user)
+{
+	user = lower_case(user);
+	if (int id = G->G->userids[user]) return Concurrent.resolve(id);
+	return request("https://api.twitch.tv/kraken/users?login=" + user)
+		->then(lambda(mapping data) {
+			if (!sizeof(data->users)) return Concurrent.reject(({"User not found\n", backtrace()}));
+			G->G->userids[data->users[0]->name] = (int)data->users[0]->_id;
+			return data->users[0]->_id;
 		});
 }
 
@@ -391,6 +404,7 @@ protected void create()
 	add_constant("get_video_info", get_video_info);
 	add_constant("stream_status", stream_status);
 	add_constant("twitch_api_request", request);
+	add_constant("get_user_id", get_user_id);
 }
 
 #if !constant(G)
