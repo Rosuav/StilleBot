@@ -431,12 +431,13 @@ class channel_notif
 		Concurrent.all(
 			fromid ? Concurrent.resolve(fromid) : get_user_id(fromname),
 			toid ? Concurrent.resolve(toid) : get_user_id(toname),
-		)->then(lambda(int fromid, int toid) {
+		)->then(lambda(array(int) ids) {
 			//Record all raids in a "base" of the lower user ID, for
 			//consistency. If UID 1234 raids UID 2345, it's an outgoing
 			//raid from 1234 to 2345; if 2345 raids 1234, it is instead
 			//an incoming raid for 1234 from 2345. Either way, it's in
 			//status->raids->1234->2345 and then has the timestamp.
+			[int fromid, int toid] = ids;
 			int outgoing = fromid < toid;
 			int base = outgoing ? fromid : toid;
 			int other = outgoing ? toid : fromid;
