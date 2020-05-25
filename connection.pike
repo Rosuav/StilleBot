@@ -441,6 +441,7 @@ class channel_notif
 			int outgoing = fromid < toid;
 			int base = outgoing ? fromid : toid;
 			int other = outgoing ? toid : fromid;
+			write("DEBUG RAID IDS: %O %O [%O]\n", base, other, outgoing);
 			mapping raids = persist_status->path("raids", (string)base);
 			if (!raids[other]) raids[other] = ({ });
 			else if (raids[other][-1]->time > ts - 60) return; //Ignore duplicate raids within 60s
@@ -450,6 +451,7 @@ class channel_notif
 				"outgoing": outgoing,
 				//TODO: Record the number of raiders??
 			])});
+			write("DEBUG RAID LOG: %O\n", raids[other]);
 			persist_status->save();
 		});
 	}
