@@ -25,6 +25,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//Note that this cannot handle renames, and will 'lose' them.
 	string login = req->misc->session->user->login, disp = req->misc->session->user->display_name;
 	write("%O %O\n", login, disp);
+	//TODO: Show these in the logged-in user's specified timezone (if we have a
+	//channel for that user), or UTC. Apologize on the page if no TZ available.
 	mapping raids = ([]);
 	foreach ((Stdio.read_file("outgoing_raids.log") || "") / "\n", string raid)
 	{
