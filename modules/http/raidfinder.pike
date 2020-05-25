@@ -85,7 +85,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				int otheruid = (int)strm->user_id;
 				int swap = otheruid < userid;
 				array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[swap ? userid : otheruid];
-				foreach (raids, mapping raid)
+				foreach (raids || ({ }), mapping raid)
 				{
 					write("DEBUG RAID LOG: %O\n", raid);
 					//TODO: Translate these by timezone (if available)
