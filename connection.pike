@@ -424,6 +424,34 @@ class channel_notif
 		send_message(dest, prefix + msg, mods[bot_nick]);
 	}
 
+	void record_raid(int fromid, string fromname, int toid, string toname, int|void ts)
+	{
+		if (!ts) ts = time();
+		Concurrent.all(
+			fromid ? Concurrent.resolve(fromid) : get_user_id(fromname),
+			toid ? Concurrent.resolve(toid) : get_user_id(toname),
+		)->then(lambda(int fromid, int toid) {
+			//Record all raids in a "base" of the lower user ID, for
+			//consistency. If UID 1234 raids UID 2345, it's an outgoing
+			//raid from 1234 to 2345; if 2345 raids 1234, it is instead
+			//an incoming raid for 1234 from 2345. Either way, it's in
+			//status->raids->1234->2345 and then has the timestamp.
+			int outgoing = fromid < toid;
+			int base = outgoing ? fromid : toid;
+			int other = outgoing ? toid : fromid;
+			mapping raids = persist_status->path("raids", (string)base);
+			if (!raids[other]) raids[other] = ({ });
+			else if (raids[other][-1]->time > ts - 60) return; //Ignore duplicate raids within 60s
+			raids[other] += ({([
+				"time": ts,
+				"from": fromname, "to": toname,
+				"outgoing": outgoing,
+				//TODO: Record the number of raiders??
+			])});
+			persist_status->save();
+		});
+	}
+
 	void not_message(object ircperson, string msg, mapping(string:string)|void params)
 	{
 		//TODO: Figure out whether msg and params are bytes or text
@@ -467,6 +495,7 @@ class channel_notif
 							Calendar.now()->format_time(), name[1..], h));
 						write("Debug outgoing raid: chan %s msg %O params %O\n",
 							name, msg, params);
+						record_raid(0, name[1..], 0, h);
 					}
 					hosting = h;
 				}
@@ -496,9 +525,12 @@ class channel_notif
 					break;
 				case "raid": case "unraid": //Incoming raids already get announced and we don't get any more info
 				{
-					//TODO: Record incoming raids for the sake of the raid target finder
-					write("Debug raid (incoming? outgoing?): chan %s user %O params %O\n",
+					write("Debug incoming raid: chan %s user %O params %O\n",
 						name, person->displayname, params);
+					//NOTE: The destination "room ID" might not remain forever.
+					//If it doesn't, we'll need to get the channel's user id instead.
+					record_raid((int)person->user_id, person->display_name,
+						(int)params->room_id, name[1..], (int)params->tmi_sent_ts);
 					break;
 				}
 				case "rewardgift": //Used for special promo messages eg "so-and-so's cheer just gave X people a bonus emote"

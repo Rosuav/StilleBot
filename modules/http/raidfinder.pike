@@ -24,7 +24,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//Legacy data (currently all data): Parse the outgoing raid log
 	//Note that this cannot handle renames, and will 'lose' them.
 	string login = req->misc->session->user->login, disp = req->misc->session->user->display_name;
-	write("%O %O\n", login, disp);
+	int userid = (int)req->misc->session->user->id;
+	write("%O %O %O\n", userid, login, disp);
 	//TODO: Show these in the logged-in user's specified timezone (if we have a
 	//channel for that user), or UTC. Apologize on the page if no TZ available.
 	mapping raids = ([]);
@@ -81,6 +82,19 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					if (string tagname = G->G->tagnames[tagid]) tags += ({(["id": tagid, "name": tagname])});
 				strm->tags = tags;
 				strm->raids = raids[strm->channel->name] || ({ });
+				int otheruid = (int)strm->user_id;
+				int swap = otheruid < userid;
+				array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[swap ? userid : otheruid];
+				foreach (raids, mapping raid)
+				{
+					write("DEBUG RAID LOG: %O\n", raid);
+					//TODO: Translate these by timezone (if available)
+					object time = Calendar.ISO.Second("unix", raid->time);
+					if (swap != raid->outgoing)
+						strm->raids += ({sprintf("%s You raided %s", time->format_ymd(), raid->to)});
+					else
+						strm->raids += ({sprintf("%s %s raided you", time->format_ymd(), raid->to)});
+				}
 			}
 			//End stream tags work
 			return render_template("raidfinder.md", ([
