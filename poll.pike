@@ -70,8 +70,7 @@ Concurrent.Future get_user_id(string user)
 	return request("https://api.twitch.tv/kraken/users?login=" + user)
 		->then(lambda(mapping data) {
 			if (!sizeof(data->users)) return Concurrent.reject(({"User not found\n", backtrace()}));
-			G->G->userids[data->users[0]->name] = (int)data->users[0]->_id;
-			return data->users[0]->_id;
+			return G->G->userids[data->users[0]->name] = (int)data->users[0]->_id;
 		});
 }
 

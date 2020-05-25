@@ -426,6 +426,7 @@ class channel_notif
 
 	void record_raid(int fromid, string fromname, int toid, string toname, int|void ts)
 	{
+		write("DEBUG RECORD RAID: %O %O %O %O %O\n", fromid, fromname, toid, toname, ts);
 		if (!ts) ts = time();
 		Concurrent.all(
 			fromid ? Concurrent.resolve(fromid) : get_user_id(fromname),
