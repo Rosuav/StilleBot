@@ -555,6 +555,7 @@ class channel_notif
 				case "anongiftpaidupgrade": break; //Ditto but when the original gift was anonymous
 				case "primepaidupgrade": break; //Similar to the above - if you were on Prime but now pledge to continue, which could be done half price Subtember 2019.
 				case "standardpayforward": break; //X is paying forward the Gift they got from Y to Z!
+				case "communitypayforward": break; //X is paying forward the Gift they got from Y to the community!
 				case "subgift":
 				{
 					write("DEBUG SUBGIFT: chan %s disp %O user %O mon %O recip %O\n",
