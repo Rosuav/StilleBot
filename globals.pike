@@ -539,6 +539,7 @@ mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|voi
 {
 	multiset havescopes = req->misc->session->?scopes;
 	multiset wantscopes = scopes ? (multiset)(scopes / " ") : (<>);
+	wantscopes[""] = 0; //Remove any empty entry, just in case
 	if (!havescopes) return twitchlogin(req, wantscopes); //Even if you aren't requesting any scopes
 	multiset needscopes = havescopes | wantscopes; //Note that we'll keep any that we already have.
 	if (sizeof(needscopes) > sizeof(havescopes)) return twitchlogin(req, needscopes);
