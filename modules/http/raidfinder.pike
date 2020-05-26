@@ -19,6 +19,7 @@ string cached_follows;
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
+	write("BIG LOG: %O\n", persist_status->path("raids"));
 	if (mapping resp = ensure_login(req, "user_read")) return resp;
 	if (req->variables->use_cache && cached_follows) return render_template("raidfinder.md", (["follows": cached_follows]));
 	//Legacy data (currently all data): Parse the outgoing raid log
