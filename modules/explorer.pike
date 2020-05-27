@@ -40,8 +40,7 @@ class menu_clicked
 			int count = 0;
 			foreach (sort(indices(thing)), mixed key)
 			{
-				if (!stringp(key)) key = sprintf("%O", key);
-				add_to_store(thing[key], key, row);
+				add_to_store(thing[key], stringp(key) ? key : sprintf("%O", key), row);
 				if (++count >= 100) break;
 			}
 			if (sizeof(thing) > count)
