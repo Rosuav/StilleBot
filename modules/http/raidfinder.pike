@@ -19,36 +19,49 @@ string cached_follows;
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	write("BIG LOG: %O\n", persist_status->path("raids"));
 	if (mapping resp = ensure_login(req, "user_read")) return resp;
 	if (req->variables->use_cache && cached_follows) return render_template("raidfinder.md", (["follows": cached_follows]));
 	//Legacy data (currently all data): Parse the outgoing raid log
 	//Note that this cannot handle renames, and will 'lose' them.
-	string login = req->misc->session->user->login, disp = req->misc->session->user->display_name;
-	int userid = (int)req->misc->session->user->id;
-	write("%O %O %O\n", userid, login, disp);
-	//TODO: Show these in the logged-in user's specified timezone (if we have a
-	//channel for that user), or UTC. Apologize on the page if no TZ available.
-	mapping raids = ([]);
-	foreach ((Stdio.read_file("outgoing_raids.log") || "") / "\n", string raid)
+	Concurrent.Future uid = Concurrent.resolve((int)req->misc->session->user->id);
+	if (string chan = req->variables["for"])
 	{
-		sscanf(raid, "[%d-%d-%d %*d:%*d:%*d] %s => %s", int y, int m, int d, string from, string to);
-		if (!to) continue;
-		if (from == login) raids[lower_case(to)] += ({sprintf("%d-%02d-%02d You raided %s", y, m, d, to)});
-		if (to == disp) raids[from] += ({sprintf("%d-%02d-%02d %s raided you", y, m, d, from)});
+		//When fetching raid info on behalf of another streamer, you see your own follow
+		//list, but that streamer's raid history. It's good for making recommendations.
+		//It's NOT the same as the streamer checking the raid finder.
+		write("On behalf of %O\n", chan);
+		uid = get_user_id(chan);
 	}
-	//Once raids get tracked by user IDs (and stored in persist_status),
-	//they can be added to raids[] using numeric keys.
+	mapping raids = ([]);
 	array follows;
 	mapping(int:array(string)) channel_tags = ([]);
 	int your_viewers; string your_category;
-	return twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
-			(["Authorization": "OAuth " + req->misc->session->token]))
-		->then(lambda(mapping info) {
+	int userid;
+	return uid->then(lambda(int u) {
+			userid = u;
+			string login = req->misc->session->user->login, disp = req->misc->session->user->display_name;
+			if (mapping user = u != (int)req->misc->session->user->id && G->G->user_info[u])
+			{
+				login = user->name;
+				disp = user->display_name;
+			}
+			//TODO: Show these in the logged-in user's specified timezone (if we have a
+			//channel for that user), or UTC. Apologize on the page if no TZ available.
+			//TODO: If working on behalf of someone else, which tz should we use?
+			foreach ((Stdio.read_file("outgoing_raids.log") || "") / "\n", string raid)
+			{
+				sscanf(raid, "[%d-%d-%d %*d:%*d:%*d] %s => %s", int y, int m, int d, string from, string to);
+				if (!to) continue;
+				if (from == login) raids[lower_case(to)] += ({sprintf("%d-%02d-%02d You raided %s", y, m, d, to)});
+				if (to == disp) raids[from] += ({sprintf("%d-%02d-%02d %s raided you", y, m, d, from)});
+			}
+			return twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
+				(["Authorization": "OAuth " + req->misc->session->token]));
+		})->then(lambda(mapping info) {
 			follows = info->streams;
 			//All this work is just to get the stream tags (and some info about your own stream)
 			array(int) channels = follows->channel->_id;
-			channels += ({(int)req->misc->session->user->id});
+			channels += ({userid});
 			//TODO: Paginate if >100
 			write("Fetching %d streams...\n", sizeof(channels));
 			return twitch_api_request("https://api.twitch.tv/helix/streams?first=100" + sprintf("%{&user_id=%d%}", channels));
@@ -58,7 +71,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			foreach (info->data, mapping strm)
 			{
 				channel_tags[(int)strm->user_id] = strm->tag_ids;
-				if (strm->user_id == req->misc->session->user->id)
+				if ((int)strm->user_id == userid)
 				{
 					//Info about your own stream. Handy but doesn't go in the main display.
 					//write("Your tags: %O\n", strm->tag_ids); //Is it worth trying to find people with similar tags?
@@ -103,5 +116,5 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				"your_viewers": (string)your_viewers,
 				"your_category": Standards.JSON.encode(G->G->category_names[your_category], Standards.JSON.ASCII_ONLY),
 			]));
-		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);});
+		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: Return a nice message if for=junk given
 }
