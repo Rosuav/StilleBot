@@ -1,11 +1,8 @@
 inherit http_endpoint;
 /* Raid target finder
-  - Show how many viewers *you* have, somewhere.
   - Raid tracking works only for channels that I track, but I don't have to bot for them.
-  - Identify people by user ID if poss, not channel name
-  - Also log incoming raids perhaps? Would be useful for other reasons too.
-    - There's not going to be any easy UI for it, but it'd be great to have a "raided my friend"
-      feature, where we can see any time that X raided Y where Y is one of my friends... hard.
+  - There's not going to be any easy UI for it, but it'd be great to have a "raided my friend"
+    feature, where we can see any time that X raided Y where Y is one of my friends... hard.
   - Might also be worth showing anyone in the same category you're currently in.
   - Also show your followed categories, if possible. Both these would be shown separately.
   - Undocumented https://api.twitch.tv/kraken/users/<userid>/follows/games
