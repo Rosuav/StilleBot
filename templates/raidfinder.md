@@ -64,7 +64,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 
 <script>
 const follows = $$follows$$;
-const your_viewers = $$your_viewers$$;
+const your_viewers = $$your_viewers$$; //if -1, you're not online
 const your_category = $$your_category$$;
 </script>
 

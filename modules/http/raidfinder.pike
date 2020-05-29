@@ -35,7 +35,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	mapping raids = ([]);
 	array follows;
 	mapping(int:array(string)) channel_tags = ([]);
-	int your_viewers; string your_category;
+	int your_viewers = -1; string your_category;
 	int userid;
 	return uid->then(lambda(int u) {
 			userid = u;
