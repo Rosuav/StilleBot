@@ -504,7 +504,7 @@ mapping(string:mixed)|Concurrent.Future twitchlogin(Protocols.HTTP.Server.Reques
 			])])))->then(lambda(Protocols.HTTP.Promise.Result res)
 		{
 			mapping user = Standards.JSON.decode_utf8(res->get())->data[0];
-			write("Login: %O %O\n", auth->access_token, user);
+			//write("Login: %O %O\n", auth->access_token, user);
 			string dest = m_delete(req->misc->session, "redirect_after_login");
 			if (!dest || dest == req->not_query)
 			{
@@ -524,7 +524,7 @@ mapping(string:mixed)|Concurrent.Future twitchlogin(Protocols.HTTP.Server.Reques
 			return resp;
 		});
 	}
-	write("Redirecting to Twitch...\n%s\n", auth->get_auth_uri());
+	//write("Redirecting to Twitch...\n%s\n", auth->get_auth_uri());
 	mapping resp = redirect(auth->get_auth_uri());
 	ensure_session(req, resp);
 	req->misc->session->redirect_after_login = next || req->not_query;
