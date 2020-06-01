@@ -7,7 +7,14 @@ figure {
 	display: inline-block;
 	margin: 0; padding: 0;
 }
-figcaption {text-align: center;}
+figcaption
+{
+	text-align: center;
+	/* There's a bit of a gap above the caption, which seems wrong.
+	Move that gap to the bottom instead. */
+	margin-top: -0.25em;
+	margin-bottom: 0.25em;
+}
 img {
 	filter: saturate(0);
 	border: 2px solid transparent;
