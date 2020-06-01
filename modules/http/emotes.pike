@@ -18,22 +18,14 @@ constant limited_time_emotes = ([
 	"HypeChest": "Hype Train (b)", "HahaCat": "Hahahalidays", "RPGPhatLoot": "RPG",
 ]);
 
-mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+Concurrent.Future fetch_emotes()
 {
-	if (req->variables->flushcache)
-	{
-		//Flush the list of the bot's emotes
-		G->G->bot_emote_list->fetchtime = 0;
-		//Also flush the emote set mapping but ONLY if it's at least half an hour old.
-		if (G->G->emote_set_mapping->fetchtime < time() - 1800) G->G->emote_set_mapping = 0;
-		return redirect("/emotes");
-	}
 	object ret = Concurrent.resolve(0);
 	if (!G->G->bot_emote_list || G->G->bot_emote_list->fetchtime < time() - 600)
 	{
 		mapping cfg = persist_config["ircsettings"];
-		if (!cfg) return (["data": "Oops, shouldn't happen"]);
-		if (!cfg->nick || cfg->nick == "") return (["data": "Oops, shouldn't happen"]);
+		if (!cfg) return Concurrent.reject("Oops, shouldn't happen");
+		if (!cfg->nick || cfg->nick == "") return Concurrent.reject("Oops, shouldn't happen");
 		sscanf(cfg["pass"] || "", "oauth:%s", string pass);
 		write("Fetching emote list\n");
 		ret = ret->then(lambda() {return twitch_api_request("https://api.twitch.tv/kraken/users/{{USER}}/emotes",
@@ -67,7 +59,20 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				G->G->emote_code_to_markdown = emotes;
 			});
 	});
-	return ret->then(lambda() {
+	return ret;
+}
+
+mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+{
+	if (req->variables->flushcache)
+	{
+		//Flush the list of the bot's emotes
+		G->G->bot_emote_list->fetchtime = 0;
+		//Also flush the emote set mapping but ONLY if it's at least half an hour old.
+		if (G->G->emote_set_mapping->fetchtime < time() - 1800) G->G->emote_set_mapping = 0;
+		return redirect("/emotes");
+	}
+	return fetch_emotes()->then(lambda() {
 		mapping highlight = persist_config["permanently_available_emotes"];
 		if (!highlight) persist_config["permanently_available_emotes"] = highlight = ([]);
 		mapping(string:string) emotesets = ([]);
@@ -124,4 +129,12 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			"save": is_bot ? "<input type=submit value=\"Update permanents\">" : "",
 		]));
 	});
+}
+
+protected void create(string name)
+{
+	::create(name);
+	mapping cfg = persist_config["ircsettings"];
+	if (cfg && cfg->nick && cfg->nick != "" && !G->G->emote_set_mapping)
+		fetch_emotes();
 }
