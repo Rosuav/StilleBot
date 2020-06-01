@@ -2,7 +2,7 @@ inherit http_endpoint;
 
 //Markdown; emote names will be replaced with their emotes, but will
 //be greyed out if not available.
-constant hypetrain = #"
+constant hypetrain = replace(#"
 ## Set one
 HypeBigfoot1 HypeBigfoot2 HypeBigfoot3 HypeBigfoot4 HypeBigfoot5 HypeBigfoot6<br>
 HypeGriffin1 HypeGriffin2 HypeGriffin3 HypeGriffin4 HypeGriffin5 HypeGriffin6<br>
@@ -16,7 +16,7 @@ HypeSideeye HypeBrain HypeZap HypeShip HypeSign HypeBug<br>
 HypeYikes HypeRacer HypeCar HypeFirst HypeTrophy HypeBanana<br>
 HypeBlock HypeDaze HypeBounce HypeJewel HypeBlob HypeTeamwork<br>
 HypeLove HypePunk HypeKO HypePunch HypeFire HypePizza<br>
-";
+", "<br>\n", "<br>"); //Remove the newlines after the line breaks so we don't get superfluous empty paragraphs
 //For emotes that the bot has, we can get their IDs from the API.
 //For others, list them here and they'll work.
 constant emoteids = ([
@@ -25,6 +25,12 @@ constant emoteids = ([
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
+
+string img(string code, int id)
+{
+	return sprintf("<figure>![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/3.0)"
+		"<figcaption>%[0]s</figcaption></figure>", code, id);
+}
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
@@ -43,7 +49,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		mapping have_emotes = ([]);
 		array(string) used = ({ }); //Emote names that we have AND used
 		foreach (emotelist->emoticon_sets;; array set) foreach (set, mapping em)
-			have_emotes[em->code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/3.0)", em->code, em->id);
+			have_emotes[em->code] = img(em->code, em->id);
 		string text = words->replace(hypetrain, lambda(string w) {
 			//1) Do we (the logged-in user) have the emote?
 			if (string have = have_emotes[w]) {used += ({w}); return have;}
@@ -52,7 +58,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			if (md) return replace(md, "/1.0", "/3.0");
 			//3) Is it in the hard-coded list of known emote IDs?
 			int id = emoteids[w];
-			if (id) return sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/3.0)", w, id);
+			if (id) return img(w, id);
 			return w;
 		});
 		return render_template("checklist.md", ([
