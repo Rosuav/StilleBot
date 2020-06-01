@@ -26,7 +26,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//When fetching raid info on behalf of another streamer, you see your own follow
 		//list, but that streamer's raid history. It's good for making recommendations.
 		//It's NOT the same as the streamer checking the raid finder.
-		write("On behalf of %O\n", chan);
+		//write("On behalf of %O\n", chan);
 		uid = get_user_id(chan);
 	}
 	mapping raids = ([]);
