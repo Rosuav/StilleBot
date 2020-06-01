@@ -8,7 +8,7 @@
 
 <div id=streams></div>
 
-<a id=yourcat href="#">Your current category: ??</a>
+<a id=yourcat href="#">Current category: ??</a>
 
 > <button type=button class=dialog_cancel>x</button>
 >
@@ -64,8 +64,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 
 <script>
 const follows = $$follows$$;
-const your_viewers = $$your_viewers$$; //if -1, you're not online
-const your_category = $$your_category$$;
+const your_stream = $$your_stream$$; //if 0, you're not online
 </script>
 
 <script type=module src="/static/raidfinder.js"></script>

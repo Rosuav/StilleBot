@@ -69,10 +69,10 @@ function build_follow_list() {
 	])));
 	//TODO maybe: Have this link back to raidfinder with a marker saying "your cat",
 	//and thus get all the recent raid info etc.
-	if (your_viewers >= 0)
-		set_content("#yourcat",
-			["You have ", ""+your_viewers, " viewers in ", your_category],
-		).href = "https://www.twitch.tv/directory/game/" + your_category;
+	if (your_stream)
+		set_content("#yourcat", [
+			your_stream.user_name + " has " + your_stream.viewer_count + " viewers in " + your_stream.category,
+		]).href = "https://www.twitch.tv/directory/game/" + your_stream.category;
 	else set_content("#yourcat", "");
 }
 build_follow_list();

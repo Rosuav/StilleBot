@@ -32,7 +32,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	mapping raids = ([]);
 	array follows;
 	mapping(int:array(string)) channel_tags = ([]);
-	int your_viewers = -1; string your_category;
+	mapping your_stream;
 	int userid;
 	return uid->then(lambda(int u) {
 			userid = u;
@@ -72,8 +72,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				{
 					//Info about your own stream. Handy but doesn't go in the main display.
 					//write("Your tags: %O\n", strm->tag_ids); //Is it worth trying to find people with similar tags?
-					your_viewers = strm->viewer_count;
-					your_category = strm->game_id;
+					your_stream = strm;
+					your_stream->category = G->G->category_names[strm->game_id];
 					continue;
 				}
 				//all_tags |= (tag_ids &~ G->G->tagnames); //sorta kinda
@@ -110,8 +110,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			//End stream tags work
 			return render_template("raidfinder.md", ([
 				"follows": cached_follows = Standards.JSON.encode(follows, Standards.JSON.ASCII_ONLY),
-				"your_viewers": (string)your_viewers,
-				"your_category": Standards.JSON.encode(G->G->category_names[your_category], Standards.JSON.ASCII_ONLY),
+				"your_stream": Standards.JSON.encode(your_stream, Standards.JSON.ASCII_ONLY),
 			]));
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: Return a nice message if for=junk given
 }
