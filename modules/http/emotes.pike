@@ -18,6 +18,31 @@ constant limited_time_emotes = ([
 	"HypeChest": "Hype Train (b)", "HahaCat": "Hahahalidays", "RPGPhatLoot": "RPG",
 ]);
 
+Concurrent.Future fetch_emotes()
+{
+	//NOTE: This fetches only the sets that the bot is able to use. This is
+	//a LOT faster than fetching them all (which could take up to 90 secs),
+	//but if more sets are added - eg a gift sub is dropped on the bot - then
+	//this list becomes outdated :(
+	//NOTE: Formerly this used curl due to an unknown failure. If weird stuff
+	//happens, go back to 9da66622 and consider reversion.
+	write("Fetching emote set info...\n");
+	return Protocols.HTTP.Promise.get_url("https://api.twitchemotes.com/api/v4/sets?id="
+			+ indices(G->G->bot_emote_list->emoticon_sets) * ",")
+		->then(lambda(object result) {
+			write("Emote set info fetched.\n");
+			mapping info = (["fetchtime": time()]);
+			foreach (Standards.JSON.decode(result->get()), mapping setinfo)
+				info[setinfo->set_id] = setinfo;
+			G->G->emote_set_mapping = info;
+			mapping emotes = ([]);
+			//What if there's a collision? Should we prioritize?
+			foreach (G->G->bot_emote_list->emoticon_sets;; array set) foreach (set, mapping em)
+				emotes[em->code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0)", em->code, em->id);
+			G->G->emote_code_to_markdown = emotes;
+		});
+}
+
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->variables->flushcache)
@@ -43,30 +68,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			G->G->bot_emote_list = info;
 		});
 	}
-	if (!G->G->emote_set_mapping) ret = ret->then(lambda()
-	{
-		//NOTE: This fetches only the sets that the bot is able to use. This is
-		//a LOT faster than fetching them all (which could take up to 90 secs),
-		//but if more sets are added - eg a gift sub is dropped on the bot - then
-		//this list becomes outdated :(
-		//NOTE: Formerly this used curl due to an unknown failure. If weird stuff
-		//happens, go back to 9da66622 and consider reversion.
-		write("Fetching emote set info...\n");
-		return Protocols.HTTP.Promise.get_url("https://api.twitchemotes.com/api/v4/sets?id="
-				+ indices(G->G->bot_emote_list->emoticon_sets) * ",")
-			->then(lambda(object result) {
-				write("Emote set info fetched.\n");
-				mapping info = (["fetchtime": time()]);
-				foreach (Standards.JSON.decode(result->get()), mapping setinfo)
-					info[setinfo->set_id] = setinfo;
-				G->G->emote_set_mapping = info;
-				mapping emotes = ([]);
-				//What if there's a collision? Should we prioritize?
-				foreach (G->G->bot_emote_list->emoticon_sets;; array set) foreach (set, mapping em)
-					emotes[em->code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0)", em->code, em->id);
-				G->G->emote_code_to_markdown = emotes;
-			});
-	});
+	if (!G->G->emote_set_mapping) ret = ret->then(fetch_emotes);
 	return ret->then(lambda() {
 		mapping highlight = persist_config["permanently_available_emotes"];
 		if (!highlight) persist_config["permanently_available_emotes"] = highlight = ([]);
@@ -124,4 +126,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			"save": is_bot ? "<input type=submit value=\"Update permanents\">" : "",
 		]));
 	});
+}
+
+protected void create(string name)
+{
+	::create(name);
+	if (!G->G->emote_set_mapping) fetch_emotes();
 }
