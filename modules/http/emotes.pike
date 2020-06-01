@@ -35,6 +35,7 @@ Concurrent.Future fetch_emotes()
 			G->G->bot_emote_list = info;
 		});
 	}
+	//TODO: Always update if the sets have changed
 	if (!G->G->emote_set_mapping) ret = ret->then(lambda()
 	{
 		//NOTE: This fetches only the sets that the bot is able to use. This is
@@ -44,11 +45,11 @@ Concurrent.Future fetch_emotes()
 		//NOTE: Formerly this used curl due to an unknown failure. If weird stuff
 		//happens, go back to 9da66622 and consider reversion.
 		write("Fetching emote set info...\n");
-		return Protocols.HTTP.Promise.get_url("https://api.twitchemotes.com/api/v4/sets?id="
-				+ indices(G->G->bot_emote_list->emoticon_sets) * ",")
+		string sets = indices(G->G->bot_emote_list->emoticon_sets) * ",";
+		return Protocols.HTTP.Promise.get_url("https://api.twitchemotes.com/api/v4/sets?id=" + sets)
 			->then(lambda(object result) {
 				write("Emote set info fetched.\n");
-				mapping info = (["fetchtime": time()]);
+				mapping info = (["fetchtime": time(), "sets": sets]);
 				foreach (Standards.JSON.decode(result->get()), mapping setinfo)
 					info[setinfo->set_id] = setinfo;
 				G->G->emote_set_mapping = info;
