@@ -8,7 +8,7 @@
 
 <div id=streams></div>
 
-<a id=yourcat href="#">Current category: ??</a>
+<a id=yourcat href="#" target="_blank">Current category: ??</a>
 
 > <button type=button class=dialog_cancel>x</button>
 >
