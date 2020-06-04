@@ -533,7 +533,7 @@ class channel_notif
 						name, person->displayname, params);
 					//NOTE: The destination "room ID" might not remain forever.
 					//If it doesn't, we'll need to get the channel's user id instead.
-					record_raid((int)person->user_id, person->display_name,
+					record_raid((int)params->user_id, person->displayname,
 						(int)params->room_id, name[1..], (int)params->tmi_sent_ts);
 					break;
 				}
