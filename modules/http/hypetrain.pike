@@ -8,11 +8,12 @@ inherit http_endpoint;
 
 //Determine how long until the specified time. If ts is null, malformed,
 //or in the past, returns 0.
-int until(string ts)
+int until(string ts, int now)
 {
 	object tm = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", ts || "");
-	return tm && max(tm->unix_time() - time(), 0);
+	return tm && max(tm->unix_time() - now, 0);
 }
+mapping cached = 0; int cache_time = 0;
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
@@ -24,9 +25,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			(["Authorization": "Bearer " + req->misc->session->token]))
 		->then(lambda(mapping info) {
 			mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
-			write("Hype train data: %O\n", data);
-			int cooldown = until(data->cooldown_end_time);
-			int expires = until(data->expires_at);
+			int now = time();
+			if (cached && req->variables->use == "cache") {data = cached; now = cache_time;}
+			else write("Hype train data: [%d] %O\n", cache_time = now, cached = data);
+			int cooldown = until(data->cooldown_end_time, now);
+			int expires = until(data->expires_at, now);
 			//TODO: Show hype conductor stats
 			if (expires)
 			{
