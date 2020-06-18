@@ -463,6 +463,8 @@ class TwitchAuth
 		"user_read", "user_subscriptions", "viewing_activity_read",
 		//Chat/PubSub
 		"channel:moderate", "chat:read", "chat:edit", "whispers:read", "whispers:edit",
+		//Hype trains (new as of 20200619)
+		"channel:read:hype_train",
 	>);
 }
 
