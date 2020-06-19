@@ -21,7 +21,7 @@ const expiry = +new Date() + target * 1000;
 function update() {
 	let tm = Math.floor((expiry - +new Date()) / 1000);
 	let t = ":" + ("0" + (tm % 60)).slice(-2);
-	if (tm >= 3600) t = Math.floor(tm / 3600) + ("0" + (Math.floor(tm / 60) % 60)).slice(-2) + t;
+	if (tm >= 3600) t = Math.floor(tm / 3600) + ("0" + (Math.floor(tm / 60) % 60)).slice(-2) + ":" + t;
 	else t = Math.floor(tm / 60) + t; //Common case - less than an hour
 	document.getElementById("time").innerHTML = t;
 }

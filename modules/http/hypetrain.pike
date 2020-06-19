@@ -15,6 +15,8 @@ int until(string ts, int now)
 }
 mapping cached = 0; int cache_time = 0;
 
+//TODO: Test other auth
+
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "channel:read:hype_train")) return resp;
@@ -62,3 +64,32 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			]));
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);});
 }
+/*
+Hype train data: [1592560805] ([
+  "broadcaster_id": "96065689",
+  "cooldown_end_time": "2020-06-19T11:59:58Z",
+  "expires_at": "2020-06-19T09:59:58Z",
+  "goal": 1600,
+  "id": "86cda003-7be9-44b9-ac9e-1d7df2d148f5",
+  "last_contribution": ([
+      "total": 300,
+      "type": "BITS",
+      "user": "139300055"
+    ]),
+  "level": 1,
+  "started_at": "2020-06-19T09:54:58Z",
+  "top_contributions": ({
+        ([
+          "total": 300,
+          "type": "BITS",
+          "user": "139300055"
+        ]),
+        ([
+          "total": 500,
+          "type": "SUBS",
+          "user": "139300055"
+        ])
+    }),
+  "total": 1100
+])
+*/
