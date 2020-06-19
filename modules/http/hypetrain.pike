@@ -14,18 +14,20 @@ int until(string ts, int now)
 	return tm && max(tm->unix_time() - now, 0);
 }
 mapping cached = 0; int cache_time = 0;
-
-//TODO: Test other auth
+string token;
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	if (mapping resp = ensure_login(req, "channel:read:hype_train")) return resp;
-	//Weirdly, this seems to work even if the broadcaster_id isn't the one you logged in as.
-	//Should I just log in once and then use that, and let people specify a channel??
-	int|string id = (int)req->variables["for"] || req->misc->session->user->id;
-	return twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + id,
-			(["Authorization": "Bearer " + req->misc->session->token]))
+	if (mapping resp = !token && ensure_login(req, "channel:read:hype_train")) return resp;
+	//Weirdly, this seems to work even if the broadcaster_id isn't the one you logged
+	//in as, but you need to have the appropriate scope. So once we see a token that
+	//works, save it, until it doesn't. (TODO: actually discard that token once it's
+	//no longer valid.)
+	return twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id={{USER}}",
+			(["Authorization": "Bearer " + (token || req->misc->session->token)]),
+			(["username": req->variables["for"] || "devicat"]))
 		->then(lambda(mapping info) {
+			if (!token) token = req->misc->session->token;
 			mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
 			int now = time();
 			if (cached && req->variables->use == "cache") {data = cached; now = cache_time;}
