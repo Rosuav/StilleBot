@@ -44,6 +44,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				if (need < 0) goal += " TIER FIVE COMPLETE!";
 				else goal += sprintf(" Need %d more bits or %d more subs.",
 					need, (need + 499) / 500);
+				//TODO: Show the emotes you could get at current level and next level
 				return render_template("hypetrain.md", ([
 					"status": "HYPE TRAIN ACTIVE!",
 					"target": (string)expires,
