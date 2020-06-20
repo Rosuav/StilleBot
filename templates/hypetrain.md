@@ -2,6 +2,8 @@
 
 <div id=status></div>
 
+<button type=button id=refresh>Refresh</button>
+
 <style>
 #countdown {
 	font-size: 250%;

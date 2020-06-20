@@ -36,12 +36,15 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			int cooldown = until(data->cooldown_end_time, now);
 			int expires = until(data->expires_at, now);
 			//TODO: Show hype conductor stats
-			return render_template("hypetrain.md", (["state": Standards.JSON.encode(([
+			string state = Standards.JSON.encode(([
 				"cooldown": cooldown, "expires": expires,
 				"level": (int)data->level, "goal": (int)data->goal, "total": (int)data->total,
 				"channel": req->variables["for"], "broadcaster_id": (int)data->broadcaster_id,
-			]), Standards.JSON.ASCII_ONLY)]));
-		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);});
+			]), Standards.JSON.ASCII_ONLY);
+			//Temporary AJAXy way to get it, pending a proper websocket
+			if (req->variables->fmt == "json") return (["data": state, "type": "application/json"]);
+			return render_template("hypetrain.md", (["state": state]));
+		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: If auth error, clear the token
 }
 /*
 Hype train data: [1592560805] ([

@@ -16,6 +16,8 @@ correct setup.
 
 */
 
+const channel = window.state.channel;
+
 //Uses your own clock in case it's not synchronized. Will be vulnerable to
 //latency but not to clock drift/shift.
 //When expiry < +new Date(), refresh the page automatically.
@@ -59,5 +61,10 @@ function render(state) {
 		P({className: "countdown"}, "Cookies are done!"),
 	]);
 }
-console.log(window.state)
+//TODO: Call this automatically when the timer expires, but don't get stuck in a loop
+async function refresh() {
+	const state = await (await fetch("/hypetrain?fmt=json&for=" + channel)).json();
+	render(state);
+};
+DOM("#refresh").onclick = refresh;
 render(window.state);
