@@ -18,6 +18,7 @@ string token;
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
+	if (!req->variables["for"]) return render_template("hypetrain.md", (["state": "{}"]));
 	if (mapping resp = !token && ensure_login(req, "channel:read:hype_train")) return resp;
 	//Weirdly, this seems to work even if the broadcaster_id isn't the one you logged
 	//in as, but you need to have the appropriate scope. So once we see a token that
@@ -25,7 +26,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//no longer valid.)
 	return twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id={{USER}}",
 			(["Authorization": "Bearer " + (token || req->misc->session->token)]),
-			(["username": req->variables["for"] || "devicat"]))
+			(["username": req->variables["for"]]))
 		->then(lambda(mapping info) {
 			if (!token) token = req->misc->session->token;
 			mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
@@ -35,36 +36,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			int cooldown = until(data->cooldown_end_time, now);
 			int expires = until(data->expires_at, now);
 			//TODO: Show hype conductor stats
-			if (expires)
-			{
-				//Active hype train!
-				string goal = sprintf("Level %d requires %d bits or %d tier one subs.",
-					data->level, data->goal, (data->goal + 499) / 500);
-				int need = data->goal - data->total;
-				if (need < 0) goal += " TIER FIVE COMPLETE!";
-				else goal += sprintf(" Need %d more bits or %d more subs.",
-					need, (need + 499) / 500);
-				//TODO: Show the emotes you could get at current level and next level
-				return render_template("hypetrain.md", ([
-					"status": "HYPE TRAIN ACTIVE!",
-					"target": (string)expires,
-					"goal": goal,
-				]));
-			}
-			if (cooldown)
-			{
-				//Recent hype train. Show stats, and the cooldown.
-				return render_template("hypetrain.md", ([
-					"status": "The cookies are in the oven.",
-					"target": (string)cooldown,
-					"goal": "",
-				]));
-			}
-			return render_template("hypetrain.md", ([
-				"status": "Cookies are done!",
-				"target": "0",
-				"goal": "",
-			]));
+			return render_template("hypetrain.md", (["state": Standards.JSON.encode(([
+				"cooldown": cooldown, "expires": expires,
+				"level": (int)data->level, "goal": (int)data->goal, "total": (int)data->total,
+				"channel": req->variables["for"], "broadcaster_id": (int)data->broadcaster_id,
+			]), Standards.JSON.ASCII_ONLY)]));
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);});
 }
 /*
