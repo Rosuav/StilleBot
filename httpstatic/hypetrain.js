@@ -21,9 +21,15 @@ const channel = window.state.channel;
 //Uses your own clock in case it's not synchronized. Will be vulnerable to
 //latency but not to clock drift/shift.
 //When expiry < +new Date(), refresh the page automatically.
-let expiry;
+let expiry, updating = null;
 function update() {
 	let tm = Math.floor((expiry - +new Date()) / 1000);
+	if (tm <= 0) {
+		clearInterval(updating); updating = null;
+		document.getElementById("time").innerHTML = "";
+		refresh();
+		return;
+	}
 	//TODO: If t <= 0, update stuff. Also if cooldown is over, optionally play a sound.
 	let t = ":" + ("0" + (tm % 60)).slice(-2);
 	if (tm >= 3600) t = Math.floor(tm / 3600) + ("0" + (Math.floor(tm / 60) % 60)).slice(-2) + ":" + t;
@@ -55,7 +61,9 @@ function render(state) {
 			]),
 			goal && P({id: "goal"}, goal),
 		]);
-		update(); setInterval(update, 1000);
+		update();
+		if (updating) clearInterval(updating);
+		updating = setInterval(update, 1000);
 	}
 	else set_content("#status", [
 		P({className: "countdown"}, "Cookies are done!"),
