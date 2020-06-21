@@ -77,7 +77,7 @@ function connect()
 	socket = new WebSocket(protocol + window.location.host + "/ws");
 	socket.onopen = () => {
 		console.log("Socket connection established.");
-		socket.send(JSON.stringify({cmd: "init", type: "hypetrain", group: "" + window.channelid}));
+		socket.send(JSON.stringify({cmd: "init", type: "hypetrain", group: window.channelid}));
 	};
 	socket.onclose = () => {
 		socket = null;

@@ -246,7 +246,7 @@ class http_endpoint
 
 class websocket_handler
 {
-	mapping(string:array(object)) websocket_groups;
+	mapping(string|int:array(object)) websocket_groups;
 	//If msg->cmd is "init", it's a new client and base processing has already been done.
 	//If msg is 0, a client has disconnected and is about to be removed from its group.
 	//Use websocket_groups[conn->group] to find an array of related sockets.

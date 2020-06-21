@@ -61,10 +61,10 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		return;
 	}
 	if (sizeof(websocket_groups[conn->group]) == 1) ; //TODO: First one - establish a webhook
-	write("HYPETRAIN: Got a msg %s from client in group %s\n", msg->cmd, conn->group);
+	write("HYPETRAIN: Got a msg %s from client in group %d\n", msg->cmd, conn->group);
 	if (msg->cmd == "refresh" || msg->cmd == "init")
 	{
-		get_hype_state((int)conn->group)->then(lambda(mapping state) {
+		get_hype_state(conn->group)->then(lambda(mapping state) {
 			//conn->sock will have definitely been a thing when we were called,
 			//but by the time we get the hype state, it might have been dc'd.
 			state->cmd = "update";

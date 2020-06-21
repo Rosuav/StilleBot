@@ -726,7 +726,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 		if (conn->type) return; //Can't init twice
 		object handler = G->G->websocket_types[data->type];
 		if (!handler) return; //Ignore any unknown types.
-		string group = stringp(data->group) ? data->group : "";
+		string group = (stringp(data->group) || intp(data->group)) ? data->group : "";
 		conn->type = data->type; conn->group = group;
 		handler->websocket_groups[group] += ({conn->sock});
 	}
