@@ -10,5 +10,6 @@
 }
 </style>
 
-<script>window.state = $$state$$;</script>
+<script>window.channel = $$channel$$;</script>
+<script>window.channelid = $$channelid$$;</script>
 <script type=module src="/static/hypetrain.js"></script>

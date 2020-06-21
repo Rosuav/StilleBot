@@ -16,8 +16,7 @@ correct setup.
 
 */
 
-const channel = window.state.channel;
-const channelid = window.state.broadcaster_id; //TODO: Get this slightly differently, and don't have initial state
+//window.channel, window.channelid have our crucial identifiers
 
 //Uses your own clock in case it's not synchronized. Will be vulnerable to
 //latency but not to clock drift/shift.
@@ -78,7 +77,7 @@ function connect()
 	socket = new WebSocket(protocol + window.location.host + "/ws");
 	socket.onopen = () => {
 		console.log("Socket connection established.");
-		socket.send(JSON.stringify({cmd: "init", type: "hypetrain", group: "" + channelid}));
+		socket.send(JSON.stringify({cmd: "init", type: "hypetrain", group: "" + window.channelid}));
 	};
 	socket.onclose = () => {
 		socket = null;
@@ -88,19 +87,18 @@ function connect()
 	socket.onmessage = (ev) => {
 		let data = JSON.parse(ev.data);
 		console.log("Got message from server:", data);
-		if (data.cmd === "update") refresh(data);
+		if (data.cmd === "update") render(data);
 	};
 }
-if (channelid) connect();
+if (window.channelid) connect();
+else set_content("#status", "Need a channel name (TODO: have a form)");
 
 //TODO: Call this automatically when the timer expires, but don't get stuck in a loop
 //TODO: Remove the need for this by having the webhook trigger refreshes (but keep the
 //button, it makes people happy if they can force something to refresh).
-async function refresh() {
+function refresh() {
 	if (socket) return socket.send(JSON.stringify({cmd: "refresh"}));
-	const state = await (await fetch("/hypetrain?fmt=json&for=" + channel)).json();
-	render(state);
+	//Should we try to reconnect the socket w/o reloading?
+	window.location.reload();
 };
 DOM("#refresh").onclick = refresh;
-
-render(window.state);

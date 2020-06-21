@@ -41,19 +41,20 @@ Concurrent.Future get_hype_state(int|string channel)
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	if (!req->variables["for"]) return render_template("hypetrain.md", (["state": "{}"]));
-	if (mapping resp = !token && ensure_login(req, "channel:read:hype_train")) return resp;
-	//Weirdly, this seems to work even if the broadcaster_id isn't the one you logged
-	//in as, but you need to have the appropriate scope. So once we see a token that
-	//works, save it, until it doesn't. (TODO: actually discard that token once it's
-	//no longer valid.)
-	if (!token) token = req->misc->session->token;
-	return get_hype_state(req->variables["for"])
-		->then(lambda(mapping state) {
-			string json = Standards.JSON.encode(state, Standards.JSON.ASCII_ONLY);
-			//Temporary AJAXy way to get it, pending a proper websocket
-			if (req->variables->fmt == "json") return (["data": json, "type": "application/json"]);
-			return render_template("hypetrain.md", (["state": json]));
+	string channel = req->variables["for"];
+	if (!channel) return render_template("hypetrain.md", (["state": "{}"]));
+	if (!token)
+	{
+		if (mapping resp = ensure_login(req, "channel:read:hype_train")) return resp;
+		//Weirdly, this seems to work even if the broadcaster_id isn't the one you logged
+		//in as, but you need to have the appropriate scope. So once we see a token that
+		//works, save it, until it doesn't. (TODO: actually discard that token once it's
+		//no longer valid.)
+		token = req->misc->session->token;
+	}
+	return get_user_id(channel)
+		->then(lambda(int uid) {
+			return render_template("hypetrain.md", (["channel": Standards.JSON.encode(channel), "channelid": (string)uid]));
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: If auth error, clear the token
 }
 
@@ -66,12 +67,13 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	}
 	if (sizeof(websocket_groups[conn->group]) == 1) ; //TODO: First one - establish a webhook
 	write("HYPETRAIN: Got a msg %s from client in group %s\n", msg->cmd, conn->group);
-	if (msg->cmd == "refresh")
+	if (msg->cmd == "refresh" || msg->cmd == "init")
 	{
 		get_hype_state((int)conn->group)->then(lambda(mapping state) {
-			write("Sending new state.\n");
+			//conn->sock will have definitely been a thing when we were called,
+			//but by the time we get the hype state, it might have been dc'd.
 			state->cmd = "update";
-			conn->sock->send_text(Standards.JSON.encode(state));
+			if (conn->sock) conn->sock->send_text(Standards.JSON.encode(state));
 		});
 	}
 }
