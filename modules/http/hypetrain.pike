@@ -17,14 +17,10 @@ int until(string ts, int now)
 mapping cached = 0; int cache_time = 0;
 string token;
 
-Concurrent.Future get_hype_state(int|string channel)
+Concurrent.Future get_hype_state(int channel)
 {
-	mapping opts = ([]); string uid = "{{USER}}";
-	if (stringp(channel)) opts->username = channel;
-	else uid = (string)channel;
-	return twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + uid,
-			(["Authorization": "Bearer " + token]),
-			opts)
+	return twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + (string)channel,
+			(["Authorization": "Bearer " + token]))
 		->then(lambda(mapping info) {
 			mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
 			int now = time();
@@ -34,7 +30,6 @@ Concurrent.Future get_hype_state(int|string channel)
 			return ([
 				"cooldown": cooldown, "expires": expires,
 				"level": (int)data->level, "goal": (int)data->goal, "total": (int)data->total,
-				"channel": channel, "broadcaster_id": (int)data->broadcaster_id,
 			]);
 		});
 }
