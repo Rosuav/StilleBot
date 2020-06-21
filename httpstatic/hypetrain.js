@@ -17,6 +17,7 @@ correct setup.
 */
 
 const channel = window.state.channel;
+const channelid = window.state.broadcaster_id; //TODO: Get this slightly differently, and don't have initial state
 
 //Uses your own clock in case it's not synchronized. Will be vulnerable to
 //latency but not to clock drift/shift.
@@ -39,6 +40,7 @@ function update() {
 
 function subs(n) {return Math.floor((n + 499) / 500);} //Calculate how many T1 subs are needed
 
+//TODO: Render less aggressively if the basic mode hasn't changed
 function render(state) {
 	let goal;
 	if (state.expires)
@@ -69,10 +71,36 @@ function render(state) {
 		P({className: "countdown"}, "Cookies are done!"),
 	]);
 }
+let socket;
+const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
+function connect()
+{
+	socket = new WebSocket(protocol + window.location.host + "/ws");
+	socket.onopen = () => {
+		console.log("Socket connection established.");
+		socket.send(JSON.stringify({cmd: "init", type: "hypetrain", group: "" + channelid}));
+	};
+	socket.onclose = () => {
+		socket = null;
+		console.log("Socket connection lost.");
+		setTimeout(connect, 250);
+	};
+	socket.onmessage = (ev) => {
+		let data = JSON.parse(ev.data);
+		console.log("Got message from server:", data);
+		if (data.cmd === "update") refresh(data);
+	};
+}
+if (channelid) connect();
+
 //TODO: Call this automatically when the timer expires, but don't get stuck in a loop
+//TODO: Remove the need for this by having the webhook trigger refreshes (but keep the
+//button, it makes people happy if they can force something to refresh).
 async function refresh() {
+	if (socket) return socket.send(JSON.stringify({cmd: "refresh"}));
 	const state = await (await fetch("/hypetrain?fmt=json&for=" + channel)).json();
 	render(state);
 };
 DOM("#refresh").onclick = refresh;
+
 render(window.state);

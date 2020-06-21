@@ -1,4 +1,5 @@
 inherit http_endpoint;
+inherit websocket_handler;
 /* Hype train status
   - Requires channel:read:hypetrain and possibly user:read:broadcast - test the error messages
   - Show the status of any current hype train. If there is none, show a big ticking countdown.
@@ -16,6 +17,28 @@ int until(string ts, int now)
 mapping cached = 0; int cache_time = 0;
 string token;
 
+Concurrent.Future get_hype_state(int|string channel)
+{
+	mapping opts = ([]); string uid = "{{USER}}";
+	if (stringp(channel)) opts->username = channel;
+	else uid = (string)channel;
+	return twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + uid,
+			(["Authorization": "Bearer " + token]),
+			opts)
+		->then(lambda(mapping info) {
+			mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
+			int now = time();
+			int cooldown = until(data->cooldown_end_time, now);
+			int expires = until(data->expires_at, now);
+			//TODO: Show hype conductor stats
+			return ([
+				"cooldown": cooldown, "expires": expires,
+				"level": (int)data->level, "goal": (int)data->goal, "total": (int)data->total,
+				"channel": channel, "broadcaster_id": (int)data->broadcaster_id,
+			]);
+		});
+}
+
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (!req->variables["for"]) return render_template("hypetrain.md", (["state": "{}"]));
@@ -24,27 +47,33 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//in as, but you need to have the appropriate scope. So once we see a token that
 	//works, save it, until it doesn't. (TODO: actually discard that token once it's
 	//no longer valid.)
-	return twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id={{USER}}",
-			(["Authorization": "Bearer " + (token || req->misc->session->token)]),
-			(["username": req->variables["for"]]))
-		->then(lambda(mapping info) {
-			if (!token) token = req->misc->session->token;
-			mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
-			int now = time();
-			if (cached && req->variables->use == "cache") {data = cached; now = cache_time;}
-			else write("Hype train data: [%d] %O\n", cache_time = now, cached = data);
-			int cooldown = until(data->cooldown_end_time, now);
-			int expires = until(data->expires_at, now);
-			//TODO: Show hype conductor stats
-			string state = Standards.JSON.encode(([
-				"cooldown": cooldown, "expires": expires,
-				"level": (int)data->level, "goal": (int)data->goal, "total": (int)data->total,
-				"channel": req->variables["for"], "broadcaster_id": (int)data->broadcaster_id,
-			]), Standards.JSON.ASCII_ONLY);
+	if (!token) token = req->misc->session->token;
+	return get_hype_state(req->variables["for"])
+		->then(lambda(mapping state) {
+			string json = Standards.JSON.encode(state, Standards.JSON.ASCII_ONLY);
 			//Temporary AJAXy way to get it, pending a proper websocket
-			if (req->variables->fmt == "json") return (["data": state, "type": "application/json"]);
-			return render_template("hypetrain.md", (["state": state]));
+			if (req->variables->fmt == "json") return (["data": json, "type": "application/json"]);
+			return render_template("hypetrain.md", (["state": json]));
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: If auth error, clear the token
+}
+
+void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
+{
+	if (!msg)
+	{
+		if (sizeof(websocket_groups[conn->group]) == 1) ; //TODO: Last one - dispose of the webhook (after a short delay?)
+		return;
+	}
+	if (sizeof(websocket_groups[conn->group]) == 1) ; //TODO: First one - establish a webhook
+	write("HYPETRAIN: Got a msg %s from client in group %s\n", msg->cmd, conn->group);
+	if (msg->cmd == "refresh")
+	{
+		get_hype_state((int)conn->group)->then(lambda(mapping state) {
+			write("Sending new state.\n");
+			state->cmd = "update";
+			conn->sock->send_text(Standards.JSON.encode(state));
+		});
+	}
 }
 /*
 Hype train data: [1592560805] ([
@@ -75,3 +104,4 @@ Hype train data: [1592560805] ([
   "total": 1100
 ])
 */
+protected void create(string name) {::create(name);}
