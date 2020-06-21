@@ -8,6 +8,7 @@ protected void create(string n)
 	if (!G->G->bouncers) G->G->bouncers = ([]);
 	if (!G->G->http_endpoints) G->G->http_endpoints = ([]);
 	if (!G->G->http_sessions) G->G->http_sessions = ([]);
+	if (!G->G->websocket_types) G->G->websocket_types = ([]);
 }
 
 //A sendable message could be a string (echo that string), a mapping with a "message"
@@ -240,6 +241,24 @@ class http_endpoint
 		sscanf(explode_path(name)[-1],"%s.pike",name);
 		if (!name) return;
 		G->G->http_endpoints[name] = http_request;
+	}
+}
+
+class websocket_handler
+{
+	mapping(string:array(object)) websocket_groups;
+	//If msg->cmd is "init", it's a new client and base processing has already been done.
+	//If msg is 0, a client has disconnected and is about to be removed from its group.
+	//Use websocket_groups[conn->group] to find an array of related sockets.
+	void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg) { }
+
+	protected void create(string name)
+	{
+		sscanf(explode_path(name)[-1],"%s.pike",name);
+		if (!name) return;
+		if (!(websocket_groups = G->G->websocket_groups[name]))
+			websocket_groups = G->G->websocket_groups[name] = ([]);
+		G->G->websocket_types[name] = this;
 	}
 }
 

@@ -718,22 +718,30 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 	mixed data;
 	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
 	if (!stringp(data->cmd)) return;
-	mapping reply;
-	switch (data->cmd)
+	if (data->cmd == "init")
 	{
-		case "init": break;
-		case "ping": reply = (["cmd": "ping"]); break;
-		case "pong": reply = (["cmd": "pong", "pos": data->pos]); break;
-		default: break;
+		//Initialization is done with a type and a group.
+		//The type has to match a module ("inherit websocket_handler")
+		//The group has to be a string.
+		if (conn->type) return; //Can't init twice
+		object handler = G->G->websocket_types[data->type];
+		if (!handler) return; //Ignore any unknown types.
+		string group = stringp(data->group) ? data->group : "";
+		conn->type = data->type; conn->group = group;
+		handler->websocket_groups[group] += ({conn->sock});
 	}
-	if (reply) (G->G->websockets[conn->channel] - ({conn->sock}))->send_text(Standards.JSON.encode(reply));
+	if (object handler = G->G->websocket_types[conn->type]) handler->websocket_msg(conn, data);
 	write("Message: %O\n", data);
 }
 
 void ws_close(int reason, mapping conn)
 {
 	if (function f = bounce(this_function)) {f(reason, conn); return;}
-	G->G->websockets[conn->channel] -= ({conn->sock});
+	if (object handler = G->G->websocket_types[conn->type])
+	{
+		handler->websocket_msg(conn, 0);
+		handler->websocket_groups[conn->group] -= ({conn->sock});
+	}
 	m_delete(conn, "sock"); //De-floop
 }
 
@@ -746,18 +754,15 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 		return;
 	}
 	Protocols.WebSocket.Connection sock = req->websocket_accept(0);
-	string chan = "(sole)"; //TODO: Key clients to their channels somehow
-	sock->set_id((["sock": sock, "channel": chan])); //Minstrel Hall style floop
+	sock->set_id((["sock": sock])); //Minstrel Hall style floop
 	sock->onmessage = ws_msg;
 	sock->onclose = ws_close;
-	G->G->websockets[chan] += ({sock});
 	write("Conn: %O\n", sock);
 }
 
 protected void create()
 {
 	if (!G->G->channelcolor) G->G->channelcolor = ([]);
-	if (!G->G->websockets) G->G->websockets = ([]);
 	irc = G->G->irc;
 	//if (!irc) //HACK: Force reconnection every time
 		reconnect();

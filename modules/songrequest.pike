@@ -4,6 +4,7 @@ inherit menu_item;
 constant menu_label = "Song requests";
 constant hidden_command = 1;
 constant active_channels = ({"rosuav"});
+inherit websocket_handler;
 //TODO-DOCSTRING
 /* Song requests with a download cache and VLC.
 
@@ -426,6 +427,19 @@ string process(object channel, object person, string param)
 	msg += sprintf(" - song #%d in the queue", sizeof(persist_status["songrequests"]));
 	check_queue();
 	return msg;
+}
+
+void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
+{
+	if (!msg) return; //Don't need to handle socket closures
+	mapping reply;
+	switch (msg->cmd)
+	{
+		case "ping": reply = (["cmd": "ping"]); break;
+		case "pong": reply = (["cmd": "pong", "pos": msg->pos]); break;
+		default: break;
+	}
+	if (reply) (websocket_groups[conn->group] - ({conn->sock}))->send_text(Standards.JSON.encode(reply));
 }
 
 protected void create(string name)

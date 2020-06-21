@@ -41,7 +41,7 @@ function connect()
 	socket = new WebSocket(protocol + window.location.host + "/ws");
 	socket.onopen = () => {
 		console.log("Socket connection established.");
-		socksend({cmd: "init"}); //TODO: Somehow recognize who you're songreq'ing for
+		socksend({cmd: "init", type: "songrequest", group: "(sole)"}); //TODO: Somehow recognize who you're songreq'ing for
 	};
 	socket.onclose = () => {
 		console.log("Socket connection lost.");
