@@ -17,6 +17,19 @@ int until(string ts, int now)
 mapping cached = 0; int cache_time = 0;
 string token;
 
+mapping(int:mixed) hype_train_pinger = ([]);
+void ping_ongoing(int channel)
+{
+	if (function f = bounce(this_function)) {f(channel); return;}
+	m_delete(hype_train_pinger, channel);
+	if (!sizeof(websocket_groups[channel])) return; //Nobody's watching it, don't bother pinging
+	get_hype_state(channel)->then(lambda(mapping state) {
+		state->cmd = "update";
+		write("Pinging %d clients for hype train %d\n", sizeof(websocket_groups[channel]), channel);
+		(websocket_groups[channel] - ({0}))->send_text(Standards.JSON.encode(state));
+	});
+}
+
 Concurrent.Future get_hype_state(int channel)
 {
 	return twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + (string)channel,
@@ -26,6 +39,8 @@ Concurrent.Future get_hype_state(int channel)
 			int now = time();
 			int cooldown = until(data->cooldown_end_time, now);
 			int expires = until(data->expires_at, now);
+			if (expires && !hype_train_pinger[channel])
+				hype_train_pinger[channel] = call_out(ping_ongoing, 10, channel);
 			//TODO: Show hype conductor stats
 			return ([
 				"cooldown": cooldown, "expires": expires,
@@ -101,4 +116,8 @@ Hype train data: [1592560805] ([
   "total": 1100
 ])
 */
-protected void create(string name) {::create(name);}
+protected void create(string name)
+{
+	::create(name);
+	register_bouncer(ping_ongoing);
+}
