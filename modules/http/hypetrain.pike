@@ -15,16 +15,14 @@ Hype Train. Game plan.
 5) Add optional audio to start and/or end
 6) Have a landing page for configs. Use local storage??
 7) Show the emotes you could get at this and the next level (per TODO)
-
-TODO: Change from drift-safe to latency-safe, since the webhook seems to have latency
 */
 
-//Determine how long until the specified time. If ts is null, malformed,
+//Parse a timestamp into a valid Unix time. If ts is null, malformed,
 //or in the past, returns 0.
 int until(string ts, int now)
 {
 	object tm = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", ts || "");
-	return tm && max(tm->unix_time() - now, 0);
+	return tm && tm->unix_time() > now && tm->unix_time();
 }
 mapping cached = 0; int cache_time = 0;
 string token;

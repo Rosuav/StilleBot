@@ -18,9 +18,6 @@ correct setup.
 
 //window.channel, window.channelid have our crucial identifiers
 
-//Uses your own clock in case it's not synchronized. Will be vulnerable to
-//latency but not to clock drift/shift.
-//When expiry < +new Date(), refresh the page automatically.
 let expiry, updating = null;
 function update() {
 	let tm = Math.floor((expiry - +new Date()) / 1000);
@@ -54,7 +51,7 @@ function render(state) {
 	}
 	if (state.expires || state.cooldown)
 	{
-		expiry = +new Date() + (state.expires || state.cooldown) * 1000;
+		expiry = (state.expires || state.cooldown) * 1000;
 		set_content("#status", [
 			P({className: "countdown"}, [
 				goal ? "HYPE TRAIN ACTIVE! " : "The cookies are in the oven. ",
@@ -94,8 +91,8 @@ if (window.channelid) connect();
 else set_content("#status", "Need a channel name (TODO: have a form)");
 
 //TODO: Call this automatically when the timer expires, but don't get stuck in a loop
-//TODO: Remove the need for this by having the webhook trigger refreshes (but keep the
-//button, it makes people happy if they can force something to refresh).
+//This isn't needed most of the time (the webhook will signal us), but can help if
+//anonymous events happen and are missed by the hook.
 function refresh() {
 	if (socket) return socket.send(JSON.stringify({cmd: "refresh"}));
 	//Should we try to reconnect the socket w/o reloading?
