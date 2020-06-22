@@ -27,17 +27,17 @@ const hardmode = [0, 5000, 7500, 10600, 14600, 22300];
 let expiry, updating = null;
 function update() {
 	let tm = Math.floor((expiry - +new Date()) / 1000);
-	if (tm <= 0) {
+	const time = document.getElementById("time");
+	if (tm <= 0 || !time) {
 		clearInterval(updating); updating = null;
-		document.getElementById("time").innerHTML = "";
+		if (time) time.innerHTML = "";
 		refresh();
 		return;
 	}
-	//TODO: If t <= 0, update stuff. Also if cooldown is over, optionally play a sound.
 	let t = ":" + ("0" + (tm % 60)).slice(-2);
 	if (tm >= 3600) t = Math.floor(tm / 3600) + ("0" + (Math.floor(tm / 60) % 60)).slice(-2) + ":" + t;
 	else t = Math.floor(tm / 60) + t; //Common case - less than an hour
-	document.getElementById("time").innerHTML = t;
+	time.innerHTML = t;
 }
 
 function subs(n) {return Math.floor((n + 499) / 500);} //Calculate how many T1 subs are needed
