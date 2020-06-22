@@ -21,26 +21,40 @@ int until(string ts, int now)
 mapping cached = 0; int cache_time = 0;
 string token;
 
-mapping parse_hype_status(mapping data)
+Concurrent.Future parse_hype_status(mapping data)
 {
 	int now = time();
 	int cooldown = until(data->cooldown_end_time, now);
 	int expires = until(data->expires_at, now);
-	//TODO: Show hype conductor stats
-	//TODO: Show last contribution
-	return ([
+	mapping state = ([
 		"cooldown": cooldown, "expires": expires,
 		"level": (int)data->level, "goal": (int)data->goal, "total": (int)data->total,
 	]);
+	return get_user_info(data->last_contribution->user)->then(lambda(mapping lastcontrib) {
+		//Show last contribution (with user name)
+		state->lastcontrib = data->last_contribution;
+		state->lastcontrib->display_name = lastcontrib->display_name;
+		return Concurrent.all(get_user_info(data->top_contributions->user[*]));
+	})->then(lambda(array conductors) {
+		//Show hype conductor stats (with user name)
+		state->conductors = data->top_contributions;
+		mapping cond = mkmapping(conductors->id, conductors);
+		foreach (state->conductors, mapping c)
+		{
+			if (cond[c->user]) c->display_name = cond[c->user]->display_name;
+		}
+		return state;
+	});
 }
 
 void hypetrain_progression(string chan, array data)
 {
 	int channel = (int)chan;
-	mapping state = parse_hype_status(data[0]->event_data);
-	state->cmd = "update";
-	write("Pinging %d clients for hype train %d\n", sizeof(websocket_groups[channel]), channel);
-	(websocket_groups[channel] - ({0}))->send_text(Standards.JSON.encode(state));
+	parse_hype_status(data[0]->event_data)->then(lambda(mapping state) {
+		state->cmd = "update";
+		write("Pinging %d clients for hype train %d\n", sizeof(websocket_groups[channel]), channel);
+		(websocket_groups[channel] - ({0}))->send_text(Standards.JSON.encode(state));
+	});
 }
 
 Concurrent.Future get_hype_state(int channel)
