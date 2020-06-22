@@ -1,4 +1,4 @@
-# Hype train status
+# Train Tracks
 
 <div id=status></div>
 
