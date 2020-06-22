@@ -14,7 +14,7 @@ Hype Train. Game plan.
 4) [DONE] Manage the web hook
 5) Add optional audio to start and/or end
 6) Have a landing page for configs. Use local storage??
-7) Show the emotes you could get at this and the next level (per TODO)
+7) [DONE] Show the emotes you could get at this and the next level
 */
 
 //Parse a timestamp into a valid Unix time. If ts is null, malformed,
@@ -59,10 +59,16 @@ Concurrent.Future get_hype_state(int channel)
 		});
 }
 
+constant emotes = #"HypeChimp HypeGhost HypeChest HypeFrog HypeCherry HypePeace
+HypeSideeye HypeBrain HypeZap HypeShip HypeSign HypeBug
+HypeYikes HypeRacer HypeCar HypeFirst HypeTrophy HypeBanana
+HypeBlock HypeDaze HypeBounce HypeJewel HypeBlob HypeTeamwork
+HypeLove HypePunk HypeKO HypePunch HypeFire HypePizza";
+
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	string channel = req->variables["for"];
-	if (!channel) return render_template("hypetrain.md", (["channel": "1", "channelid": "2"]));
+	if (!channel) return render_template("hypetrain.md", (["channel": "1", "channelid": "2", "emotes": ""]));
 	if (!token)
 	{
 		if (mapping resp = ensure_login(req, "channel:read:hype_train")) return resp;
@@ -72,9 +78,21 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//no longer valid.)
 		token = req->misc->session->token;
 	}
+	mapping emotemd = G->G->emote_code_to_markdown || ([]);
+	string avail_emotes = "";
+	foreach (emotes / "\n", string level)
+	{
+		avail_emotes += "\n*";
+		foreach (level / " ", string emote)
+			avail_emotes += " " + (emotemd[emote] || emote);
+	}
 	return get_user_id(channel)
 		->then(lambda(int uid) {
-			return render_template("hypetrain.md", (["channel": Standards.JSON.encode(channel), "channelid": (string)uid]));
+			return render_template("hypetrain.md", ([
+				"channel": Standards.JSON.encode(channel),
+				"channelid": (string)uid,
+				"emotes": avail_emotes,
+			]));
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: If auth error, clear the token
 }
 

@@ -16,6 +16,12 @@ correct setup.
 
 */
 
+//The threshold for "Super Hard" is this many bits per level (not total).
+//In order to unlock the sixth emote for each level, you need to have a
+//goal that is at least this number of bits for the level (since Insane
+//is even higher - level 1 needs 10,000 bits).
+const hardmode = [0, 5000, 7500, 10600, 14600, 22300];
+
 //window.channel, window.channelid have our crucial identifiers
 
 let expiry, updating = null;
@@ -46,9 +52,14 @@ function render(state) {
 		let need = state.goal - state.total;
 		if (need < 0) goal += " TIER FIVE COMPLETE!";
 		else goal += ` Need ${need} more bits or ${subs(need)} more subs.`;
-		//TODO: Show the emotes you could get at current level and next level
+		document.querySelectorAll("#emotes li").forEach((li, idx) => li.className = 
+			state.level >= idx + 2 || state.total >= state.goal ? "available" :
+			state.level === idx + 1 ? "next" : "locked"
+		);
+		document.getElementById("emotes").classList.toggle("hardmode", state.goal >= hardmode[state.level]);
 		//And then fall through
 	}
+	else document.querySelectorAll("#emotes li").forEach(li => li.className = "");
 	if (state.expires || state.cooldown)
 	{
 		expiry = (state.expires || state.cooldown) * 1000;

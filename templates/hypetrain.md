@@ -14,10 +14,20 @@ Note also that broadcaster actions do not affect hype trains at all - you can't
 start a hype train for yourself, nor can you progress it. Except for the sneaky
 loophole of anonymity, of course...
 
+$$emotes$$
+{:#emotes}
+
+[Check which hype emotes you have](/checklist)
+
 <style>
 #countdown {
 	font-size: 250%;
 }
+#emotes li img:last-of-type {display: none;}
+#emotes.hardmode li img:last-of-type {display: inline-block;}
+#emotes li.available:before {content: "Earnable: ";}
+#emotes li.next:before {content: "Next goal: ";}
+#emotes li:not(.next):not(.available) {display: none;}
 </style>
 
 <script>window.channel = $$channel$$;</script>
