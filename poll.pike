@@ -78,8 +78,9 @@ Concurrent.Future get_user_id(string user)
 
 //Will return from cache if available. Cache is always available if this
 //immediately follows get_user_id. (TODO: Dedup?)
-Concurrent.Future get_user_info(int userid)
+Concurrent.Future get_user_info(int|string userid)
 {
+	userid = (int)userid;
 	if (mapping info = G->G->user_info[userid]) return Concurrent.resolve(info);
 	return request("https://api.twitch.tv/helix/users?id=" + userid)
 		->then(lambda(mapping data) {
