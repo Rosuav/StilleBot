@@ -67,12 +67,26 @@ Concurrent.Future get_user_id(string user)
 {
 	user = lower_case(user);
 	if (int id = G->G->userids[user]) return Concurrent.resolve(id);
-	return request("https://api.twitch.tv/kraken/users?login=" + user)
+	return request("https://api.twitch.tv/helix/users?login=" + user)
 		->then(lambda(mapping data) {
-			if (!sizeof(data->users)) return Concurrent.reject(({"User not found\n", backtrace()}));
-			int uid = G->G->userids[data->users[0]->name] = (int)data->users[0]->_id;
-			G->G->user_info[uid] = data->users[0];
+			if (!sizeof(data->data)) return Concurrent.reject(({"User not found\n", backtrace()}));
+			int uid = G->G->userids[data->data[0]->name] = (int)data->data[0]->id;
+			G->G->user_info[uid] = data->data[0];
 			return uid;
+		});
+}
+
+//Will return from cache if available. Cache is always available if this
+//immediately follows get_user_id. (TODO: Dedup?)
+Concurrent.Future get_user_info(int userid)
+{
+	if (mapping info = G->G->user_info[userid]) return Concurrent.resolve(info);
+	return request("https://api.twitch.tv/helix/users?id=" + userid)
+		->then(lambda(mapping data) {
+			if (!sizeof(data->data)) return Concurrent.reject(({"User not found\n", backtrace()}));
+			int uid = G->G->userids[data->data[0]->name] = (int)data->data[0]->id;
+			G->G->user_info[uid] = data->data[0];
+			return G->G->user_info[uid];
 		});
 }
 
@@ -408,6 +422,7 @@ protected void create()
 	add_constant("stream_status", stream_status);
 	add_constant("twitch_api_request", request);
 	add_constant("get_user_id", get_user_id);
+	add_constant("get_user_info", get_user_info);
 	add_constant("create_webhook", create_webhook);
 }
 

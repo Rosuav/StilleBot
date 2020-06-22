@@ -39,7 +39,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			string login = req->misc->session->user->login, disp = req->misc->session->user->display_name;
 			if (mapping user = u != (int)req->misc->session->user->id && G->G->user_info[u])
 			{
-				login = user->name;
+				login = user->login || user->name; //helix || kraken
 				disp = user->display_name;
 			}
 			//TODO: Show these in the logged-in user's specified timezone (if we have a
