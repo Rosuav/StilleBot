@@ -5,6 +5,18 @@ inherit websocket_handler;
   - Show the status of any current hype train. If there is none, show a big ticking countdown.
   - Show stats for the most recent hype train(s)?
   - MAYBE set up a webhook for live updates if (and only if) this page is open, and websocket it?
+
+Hype Train. Game plan.
+1) [DONE] Do everything client-side with a single coherent JSON status object. Continue to tick unmanaged.
+2) [DONE] Have a button to request a new JSON status object from the server.
+3) [DONE] Have a websocket and send JSON status periodically or when the time expires.
+   - No initial state. Just establish the websocket and have THAT provide the state. Faster IPL than doing it twice.
+4) [DONE] Manage the web hook
+5) Add optional audio to start and/or end
+6) Have a landing page for configs. Use local storage??
+7) Show the emotes you could get at this and the next level (per TODO)
+
+TODO: Change from drift-safe to latency-safe, since the webhook seems to have latency
 */
 
 //Determine how long until the specified time. If ts is null, malformed,
@@ -17,17 +29,26 @@ int until(string ts, int now)
 mapping cached = 0; int cache_time = 0;
 string token;
 
-mapping(int:mixed) hype_train_pinger = ([]);
-void ping_ongoing(int channel)
+mapping parse_hype_status(mapping data)
 {
-	if (function f = bounce(this_function)) {f(channel); return;}
-	m_delete(hype_train_pinger, channel);
-	if (!sizeof(websocket_groups[channel])) return; //Nobody's watching it, don't bother pinging
-	get_hype_state(channel)->then(lambda(mapping state) {
-		state->cmd = "update";
-		write("Pinging %d clients for hype train %d\n", sizeof(websocket_groups[channel]), channel);
-		(websocket_groups[channel] - ({0}))->send_text(Standards.JSON.encode(state));
-	});
+	int now = time();
+	int cooldown = until(data->cooldown_end_time, now);
+	int expires = until(data->expires_at, now);
+	//TODO: Show hype conductor stats
+	//TODO: Show last contribution
+	return ([
+		"cooldown": cooldown, "expires": expires,
+		"level": (int)data->level, "goal": (int)data->goal, "total": (int)data->total,
+	]);
+}
+
+void hypetrain_progression(string chan, array data)
+{
+	int channel = (int)chan;
+	mapping state = parse_hype_status(data[0]->event_data);
+	state->cmd = "update";
+	write("Pinging %d clients for hype train %d\n", sizeof(websocket_groups[channel]), channel);
+	(websocket_groups[channel] - ({0}))->send_text(Standards.JSON.encode(state));
 }
 
 Concurrent.Future get_hype_state(int channel)
@@ -36,23 +57,14 @@ Concurrent.Future get_hype_state(int channel)
 			(["Authorization": "Bearer " + token]))
 		->then(lambda(mapping info) {
 			mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
-			int now = time();
-			int cooldown = until(data->cooldown_end_time, now);
-			int expires = until(data->expires_at, now);
-			if (expires && !hype_train_pinger[channel])
-				hype_train_pinger[channel] = call_out(ping_ongoing, 10, channel);
-			//TODO: Show hype conductor stats
-			return ([
-				"cooldown": cooldown, "expires": expires,
-				"level": (int)data->level, "goal": (int)data->goal, "total": (int)data->total,
-			]);
+			return parse_hype_status(data);
 		});
 }
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	string channel = req->variables["for"];
-	if (!channel) return render_template("hypetrain.md", (["state": "{}"]));
+	if (!channel) return render_template("hypetrain.md", (["channel": "1", "channelid": "2"]));
 	if (!token)
 	{
 		if (mapping resp = ensure_login(req, "channel:read:hype_train")) return resp;
@@ -84,6 +96,15 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			//but by the time we get the hype state, it might have been dc'd.
 			state->cmd = "update";
 			if (conn->sock) conn->sock->send_text(Standards.JSON.encode(state));
+			if (G->G->webhook_active["hypetrain=" + conn->group] < 300)
+			{
+				write("Creating webhook for hype train %O\n", conn->group);
+				create_webhook(
+					"hypetrain=" + conn->group,
+					"https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + conn->group,
+					1800,
+				);
+			}
 		});
 	}
 }
@@ -119,5 +140,5 @@ Hype train data: [1592560805] ([
 protected void create(string name)
 {
 	::create(name);
-	register_bouncer(ping_ongoing);
+	G->G->webhook_endpoints->hypetrain = hypetrain_progression;
 }

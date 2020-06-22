@@ -311,6 +311,7 @@ void create_webhook(string callback, string topic, int seconds)
 
 void webhooks(array data)
 {
+	G->G->webhook_active = ([]);
 	multiset(string) follows = (<>), status = (<>);
 	foreach (data, mapping hook)
 	{
@@ -318,8 +319,9 @@ void webhooks(array data)
 		if (time_left < 300) continue;
 		sscanf(hook->callback, "http%*[s]://%*s/junket?%s=%s", string type, string channel);
 		if (!G->G->webhook_signer[type + "=" + channel]) continue; //Probably means the bot's been restarted
+		G->G->webhook_active[type + "=" + channel] = time_left;
 		if (type == "follow") follows[channel] = 1;
-		if (type == "status") status[channel] = 1;
+		else if (type == "status") status[channel] = 1;
 	}
 	//write("Already got webhooks for %s\n", indices(watching) * ", ");
 	foreach (persist_config["channels"] || ([]); string chan; mapping cfg)
