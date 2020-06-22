@@ -290,11 +290,13 @@ Concurrent.Future check_following(string user, string chan)
 	});
 }
 
-void create_webhook(string callback, string topic, string secret)
+void create_webhook(string callback, string topic, int seconds)
 {
+	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
+	string secret = MIME.encode_base64(random_string(15));
+	G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
 	request("https://api.twitch.tv/helix/webhooks/hub", ([
 			"Content-Type": "application/json",
-			"Client-Id": persist_config["ircsettings"]["clientid"],
 		]), (["json": ([
 			"hub.callback": sprintf("%s/junket?%s",
 				persist_config["ircsettings"]["http_address"],
@@ -302,7 +304,7 @@ void create_webhook(string callback, string topic, string secret)
 			),
 			"hub.mode": "subscribe",
 			"hub.topic": topic,
-			"hub.lease_seconds": 864000,
+			"hub.lease_seconds": seconds,
 			"hub.secret": secret,
 		])]));
 }
@@ -310,13 +312,12 @@ void create_webhook(string callback, string topic, string secret)
 void webhooks(array data)
 {
 	multiset(string) follows = (<>), status = (<>);
-	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
 	foreach (data, mapping hook)
 	{
 		int time_left = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", hook->expires_at)->unix_time() - time();
 		if (time_left < 300) continue;
 		sscanf(hook->callback, "http%*[s]://%*s/junket?%s=%s", string type, string channel);
-		if (!G->G->webhook_signer[channel]) continue; //Probably means the bot's been restarted
+		if (!G->G->webhook_signer[type + "=" + channel]) continue; //Probably means the bot's been restarted
 		if (type == "follow") follows[channel] = 1;
 		if (type == "status") status[channel] = 1;
 	}
@@ -328,12 +329,10 @@ void webhooks(array data)
 		mapping c = G->G->channel_info[chan];
 		int userid = c->?_id;
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses !whisper.)
-		string secret = MIME.encode_base64(random_string(15));
-		G->G->webhook_signer[chan] = Crypto.SHA256.HMAC(secret);
 		write("Creating webhooks for %s\n", chan);
-		create_webhook("follow=" + chan, "https://api.twitch.tv/helix/users/follows?first=1&to_id=" + userid, secret);
+		create_webhook("follow=" + chan, "https://api.twitch.tv/helix/users/follows?first=1&to_id=" + userid, 864000);
 		//Not currently using this hook. It doesn't actually give us any benefit!
-		//create_webhook("status=" + chan, "https://api.twitch.tv/helix/streams?user_id=" + userid, secret);
+		//create_webhook("status=" + chan, "https://api.twitch.tv/helix/streams?user_id=" + userid, 864000);
 	}
 }
 
@@ -407,6 +406,7 @@ protected void create()
 	add_constant("stream_status", stream_status);
 	add_constant("twitch_api_request", request);
 	add_constant("get_user_id", get_user_id);
+	add_constant("create_webhook", create_webhook);
 }
 
 #if !constant(G)

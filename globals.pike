@@ -9,6 +9,8 @@ protected void create(string n)
 	if (!G->G->http_endpoints) G->G->http_endpoints = ([]);
 	if (!G->G->http_sessions) G->G->http_sessions = ([]);
 	if (!G->G->websocket_types) G->G->websocket_types = ([]);
+	if (!G->G->websocket_groups) G->G->websocket_groups = ([]);
+	if (!G->G->webhook_endpoints) G->G->webhook_endpoints = ([]); //Doesn't currently have a corresponding inheritable
 }
 
 //A sendable message could be a string (echo that string), a mapping with a "message"
@@ -484,6 +486,8 @@ class TwitchAuth
 		"channel:moderate", "chat:read", "chat:edit", "whispers:read", "whispers:edit",
 		//Hype trains (new as of 20200619)
 		"channel:read:hype_train",
+		//Insufficiently documented. Dunno if we need it or not.
+		"moderation:read",
 	>);
 }
 
