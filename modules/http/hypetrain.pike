@@ -1,12 +1,6 @@
 inherit http_endpoint;
 inherit websocket_handler;
-/* Hype train status
-  - Requires channel:read:hypetrain and possibly user:read:broadcast - test the error messages
-  - Show the status of any current hype train. If there is none, show a big ticking countdown.
-  - Show stats for the most recent hype train(s)?
-  - MAYBE set up a webhook for live updates if (and only if) this page is open, and websocket it?
-
-Hype Train. Game plan.
+/* Hype Train. Game plan.
 1) [DONE] Do everything client-side with a single coherent JSON status object. Continue to tick unmanaged.
 2) [DONE] Have a button to request a new JSON status object from the server.
 3) [DONE] Have a websocket and send JSON status periodically or when the time expires.
