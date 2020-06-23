@@ -30,6 +30,5 @@ $$emotes$$
 #emotes li:not(.next):not(.available) {display: none;}
 </style>
 
-<script>window.channel = $$channel$$;</script>
 <script>window.channelid = $$channelid$$;</script>
 <script type=module src="/static/hypetrain.js"></script>

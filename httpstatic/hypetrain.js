@@ -22,7 +22,7 @@ correct setup.
 //is even higher - level 1 needs 10,000 bits).
 const hardmode = [0, 5000, 7500, 10600, 14600, 22300];
 
-//window.channel, window.channelid have our crucial identifiers
+//window.channelid has our crucial identifier
 
 let expiry, updating = null;
 function update() {

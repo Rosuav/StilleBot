@@ -76,7 +76,7 @@ HypeLove HypePunk HypeKO HypePunch HypeFire HypePizza";
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	string channel = req->variables["for"];
-	if (!channel) return render_template("hypetrain.md", (["channel": "1", "channelid": "2", "emotes": ""]));
+	if (!channel) return render_template("hypetrain.md", (["channelid": "2", "emotes": ""]));
 	if (!token)
 	{
 		if (mapping resp = ensure_login(req, "channel:read:hype_train")) return resp;
@@ -97,7 +97,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	return get_user_id(channel)
 		->then(lambda(int uid) {
 			return render_template("hypetrain.md", ([
-				"channel": Standards.JSON.encode(channel),
 				"channelid": (string)uid,
 				"emotes": avail_emotes,
 			]));
