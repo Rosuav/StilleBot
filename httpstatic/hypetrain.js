@@ -42,6 +42,11 @@ function update() {
 
 function subs(n) {return Math.floor((n + 499) / 500);} //Calculate how many T1 subs are needed
 
+function fmt_contrib(c) {
+	if (c.type === "BITS") return `${c.display_name} with ${c.total} bits`;
+	return `${c.display_name} with ${c.total / 500} T1 subs (or equivalent)`;
+}
+
 //TODO: Render less aggressively if the basic mode hasn't changed
 function render(state) {
 	let goal;
@@ -68,6 +73,8 @@ function render(state) {
 				goal ? "HYPE TRAIN ACTIVE! " : "The cookies are in the oven. ",
 				SPAN({id: "time"})
 			]),
+			P(["Hype conductors: ", state.conductors.map(fmt_contrib).join(", and ")]),
+			P(["Latest contribution: ", fmt_contrib(state.lastcontrib)]),
 			goal && P({id: "goal"}, goal),
 		]);
 		update();
@@ -76,6 +83,7 @@ function render(state) {
 	}
 	else set_content("#status", [
 		P({className: "countdown"}, "Cookies are done!"),
+		//Note that we might not have conductors (or any data). It lasts a few days at most.
 	]);
 }
 let socket;
