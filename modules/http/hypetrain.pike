@@ -109,7 +109,6 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		if (sizeof(websocket_groups[conn->group]) == 1) ; //TODO: Last one - dispose of the webhook (after a short delay?)
 		return;
 	}
-	if (sizeof(websocket_groups[conn->group]) == 1) ; //TODO: First one - establish a webhook
 	write("HYPETRAIN: Got a msg %s from client in group %d\n", msg->cmd, conn->group);
 	if (msg->cmd == "refresh" || msg->cmd == "init")
 	{
