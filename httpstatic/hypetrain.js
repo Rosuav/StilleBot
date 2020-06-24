@@ -53,7 +53,6 @@ function cooldown_ended() {console.log("Cookies are done!");}
 
 let last_rendered = null;
 function render(state) {
-	state.cooldown = +new Date() / 1000 + 100;
 	//Show the emotes that we could win (or could have won last hype train)
 	const lvl = state.cooldown && state.level; //If not active or cooling down, hide 'em all
 	document.querySelectorAll("#emotes li").forEach((li, idx) => li.className =
