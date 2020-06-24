@@ -539,8 +539,8 @@ class channel_notif
 				}
 				case "rewardgift": //Used for special promo messages eg "so-and-so's cheer just gave X people a bonus emote"
 				{
-					write("DEBUG REWARDGIFT: chan %s disp %O user %O params %O\n",
-						name, person->displayname, person->user, params);
+					//write("DEBUG REWARDGIFT: chan %s disp %O user %O params %O\n",
+					//	name, person->displayname, person->user, params);
 					break;
 				}
 				//TODO: Handle sub plans better, esp since "Prime" should count as tier 1
