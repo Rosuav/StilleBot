@@ -47,8 +47,30 @@ function fmt_contrib(c) {
 	return `${c.display_name} with ${c.total / 500} T1 subs (or equivalent)`;
 }
 
-//TODO: Render less aggressively if the basic mode hasn't changed
+//TODO: Play an audio snippet, if configured to do so
+function hypetrain_started() {console.log("Starting a hype train!");}
+function cooldown_ended() {console.log("Cookies are done!");}
+
+let last_rendered = null;
 function render(state) {
+	state.cooldown = +new Date() / 1000 + 100;
+	//Show the emotes that we could win (or could have won last hype train)
+	const lvl = state.cooldown && state.level; //If not active or cooling down, hide 'em all
+	document.querySelectorAll("#emotes li").forEach((li, idx) => li.className =
+		lvl >= idx + 2 || state.total >= state.goal ? "available" :
+		state.expires && lvl === idx + 1 ? "next" : ""); //Only show "next" during active hype trains
+
+	if (!state.expires && !state.cooldown) {
+		//Idle state. If we previously had a cooldown, it's now expired.
+		set_content("#status", [
+			P({className: "countdown"}, "Cookies are done!"),
+			//Note that we might not have conductors (or any data). It lasts a few days at most.
+		]);
+		document.querySelectorAll("#emotes li").forEach(li => li.className = "");
+		if (last_rendered === "cooldown") cooldown_ended();
+		last_rendered = "idle";
+		return;
+	}
 	let goal;
 	if (state.expires)
 	{
@@ -57,35 +79,35 @@ function render(state) {
 		let need = state.goal - state.total;
 		if (need < 0) goal += " TIER FIVE COMPLETE!";
 		else goal += ` Need ${need} more bits or ${subs(need)} more subs.`;
-		document.querySelectorAll("#emotes li").forEach((li, idx) => li.className = 
-			state.level >= idx + 2 || state.total >= state.goal ? "available" :
-			state.level === idx + 1 ? "next" : "locked"
-		);
 		document.getElementById("emotes").classList.toggle("hardmode", state.goal >= hardmode[state.level]);
-		//And then fall through
+		if (last_rendered === "idle") hypetrain_started();
+		last_rendered = "active";
 	}
-	else document.querySelectorAll("#emotes li").forEach(li => li.className = "");
-	if (state.expires || state.cooldown)
+	else
 	{
-		expiry = (state.expires || state.cooldown) * 1000;
-		set_content("#status", [
-			P({className: "countdown"}, [
-				goal ? "HYPE TRAIN ACTIVE! " : "The cookies are in the oven. ",
-				SPAN({id: "time"})
-			]),
-			P(["Hype conductors: ", state.conductors.map(fmt_contrib).join(", and ")]),
-			P(["Latest contribution: ", fmt_contrib(state.lastcontrib)]),
-			goal && P({id: "goal"}, goal),
-		]);
-		update();
-		if (updating) clearInterval(updating);
-		updating = setInterval(update, 1000);
+		if (state.level === 1)
+			goal = `The last hype train reached ${state.total} out of ${state.goal} to complete level 1.`;
+		else if (state.level === 5 && state.total >= state.goal)
+			goal = `The last hype train finished level 5 at ${Math.round(100 * state.total / state.goal)}%!!`;
+		else
+			goal = `The last hype train completed level ${state.level - 1}! Good job!`;
+		last_rendered = "cooldown"; //No audio cue when changing from active to cooldown
 	}
-	else set_content("#status", [
-		P({className: "countdown"}, "Cookies are done!"),
-		//Note that we might not have conductors (or any data). It lasts a few days at most.
+	expiry = (state.expires || state.cooldown) * 1000;
+	set_content("#status", [
+		P({className: "countdown"}, [
+			state.expires ? "HYPE TRAIN ACTIVE! " : "The hype train is on cooldown. Next one can start in ",
+			SPAN({id: "time"})
+		]),
+		P(["Hype conductors: ", state.conductors.map(fmt_contrib).join(", and ")]),
+		P(["Latest contribution: ", fmt_contrib(state.lastcontrib)]),
+		P(goal),
 	]);
+	if (updating) clearInterval(updating);
+	updating = setInterval(update, 1000);
+	update();
 }
+
 let socket;
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 function connect()
