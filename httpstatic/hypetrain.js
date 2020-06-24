@@ -1,26 +1,22 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, DIV, IMG, P, UL, LI, SPAN} = choc;
-/* If no selected channel:
-
-Fill out this form to prepare to monitor hype trains. Once you have the monitor
-page, you can bookmark that exact page, and it'll always come back with the
-correct setup.
-
-* <label>Channel name: <input name=for width=20 required></label>
-* Alert sound:
-	<label><input type=radio name=alert value="" checked>(none)</label>
-	<label><input type=radio name=alert value=ding>Ding</label>
-	<label><input type=radio name=alert value=bipbipbip>Bip bip bip</label>
-* <input type=submit value="Get link">
-
-
-*/
 
 //The threshold for "Super Hard" is this many bits per level (not total).
 //In order to unlock the sixth emote for each level, you need to have a
 //goal that is at least this number of bits for the level (since Insane
 //is even higher - level 1 needs 10,000 bits).
 const hardmode = [0, 5000, 7500, 10600, 14600, 22300];
+
+let config = {};
+try {config = JSON.parse(localStorage.getItem("hypetrain_config"));} catch (e) {}
+const el = DOM("form").elements;
+for (let name in config) {
+	const [type, which] = name.split("_");
+	const audio = DOM("#sfx_" + which);
+	if (type === "use") {el[name].checked = true; audio.preload = "auto";}
+	else if (type === "vol") {el[name].value = config[name]; audio.volume = config[name] / 100;}
+	//That should be all the configs that get saved
+}
 
 //window.channelid has our crucial identifier
 
@@ -47,9 +43,19 @@ function fmt_contrib(c) {
 	return `${c.display_name} with ${c.total / 500} T1 subs (or equivalent)`;
 }
 
-//TODO: Play an audio snippet, if configured to do so
-function hypetrain_started() {console.log("Starting a hype train!");}
-function cooldown_ended() {console.log("Cookies are done!");}
+//Play audio snippets, if configured to do so
+function play(which, force) {
+	const el = DOM("#sfx_" + which);
+	if (el.playing) return; //Don't stack audio
+	if (!config["use_" + which] && !force) return; //Play if configured (or if testing)
+	el.play();
+	if (which === "insistent") {
+		el.loop = true;
+		setTimeout(() => el.loop = false, force ? 2500 : 9500);
+	}
+}
+function hypetrain_started() {play("start");}
+function cooldown_ended() {play("ding"); play("insistent");}
 
 let last_rendered = null;
 function render(state) {
@@ -130,7 +136,6 @@ function connect()
 if (window.channelid) connect();
 else set_content("#status", "Need a channel name (TODO: have a form)");
 
-//TODO: Call this automatically when the timer expires, but don't get stuck in a loop
 //This isn't needed most of the time (the webhook will signal us), but can help if
 //anonymous events happen and are missed by the hook.
 function refresh() {
@@ -139,3 +144,28 @@ function refresh() {
 	window.location.reload();
 };
 DOM("#refresh").onclick = refresh;
+
+DOM("#configure").onclick = () => DOM("#config").showModal();
+
+on("click", ".play", e => {
+	play(e.match.id.split("_")[1], 1);
+});
+on("input", 'input[type="range"]', e => {
+	const which = "#sfx_" + e.match.name.split("_")[1];
+	DOM(which).volume = e.match.value / 100;
+});
+DOM("#savecfg").onclick = e => {
+	config = {}; new FormData(DOM("form")).forEach((v,k) => config[k] = v);
+	localStorage.setItem("hypetrain_config", JSON.stringify(config));
+	DOM("#config").close();
+};
+
+//Compat shim lifted from Mustard Mine
+//For browsers with only partial support for the <dialog> tag, add the barest minimum.
+//On browsers with full support, there are many advantages to using dialog rather than
+//plain old div, but this way, other browsers at least have it pop up and down.
+document.querySelectorAll("dialog").forEach(dlg => {
+	if (!dlg.showModal) dlg.showModal = function() {this.style.display = "block";}
+	if (!dlg.close) dlg.close = function() {this.style.removeProperty("display");}
+});
+on("click", ".dialog_cancel,.dialog_close", e => e.match.closest("dialog").close());
