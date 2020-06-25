@@ -64,6 +64,7 @@ function render(state) {
 	document.querySelectorAll("#emotes li").forEach((li, idx) => li.className =
 		lvl >= idx + 2 || state.total >= state.goal ? "available" :
 		state.expires && lvl === idx + 1 ? "next" : ""); //Only show "next" during active hype trains
+	document.getElementById("emotes").classList.toggle("hardmode", state.goal >= hardmode[state.level]);
 
 	if (!state.expires && !state.cooldown) {
 		//Idle state. If we previously had a cooldown, it's now expired.
@@ -84,7 +85,6 @@ function render(state) {
 		let need = state.goal - state.total;
 		if (need < 0) goal += " TIER FIVE COMPLETE!";
 		else goal += ` Need ${need} more bits or ${subs(need)} more subs.`;
-		document.getElementById("emotes").classList.toggle("hardmode", state.goal >= hardmode[state.level]);
 		if (last_rendered === "idle") hypetrain_started();
 		last_rendered = "active";
 	}
