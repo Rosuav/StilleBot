@@ -26,7 +26,7 @@
   - "/delete msg-id" doesn't remove a sword. However, the bot doesn't see his own message
     IDs. This makes things hard.
 * What happens if there's a long HTTP connection and you update code?
-  - Test with raid finder
+  - Test with hype train tracker
 * Use the "special responses" system to customize texts like shoutouts? Would need a way
   to provide default text, and then explicitly removing it would mean "don't do this".
 * Allow the bot's commands to be individually enabled and disabled for a particular channel
