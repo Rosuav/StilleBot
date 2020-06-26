@@ -104,8 +104,16 @@ Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|vo
 
 Concurrent.Future get_channel_info(string name)
 {
-	return request("https://api.twitch.tv/kraken/channels/{{USER}}", ([]), (["username": name]))
+	return request("https://api.twitch.tv/helix/channels?broadcaster_id={{USER}}", ([]), (["username": name]))
 	->then(lambda(mapping info) {
+		info = info->data[0];
+		//Provide Kraken-like attribute names for convenience
+		//TODO: Find everything that uses the Kraken names and correct them
+		info->game = info->game_name;
+		info->display_name = info->broadcaster_name;
+		info->url = "https://twitch.tv/" + info->broadcaster_name; //Is this reliable??
+		info->_id = info->broadcaster_id;
+		info->status = info->title;
 		if (!G->G->channel_info[name]) G->G->channel_info[name] = info; //Autocache
 		return info;
 		/* Things we make use of:
