@@ -441,7 +441,8 @@ void interactive(mixed info)
 }
 int req(string url, string|void username) //Returns 0 to suppress Hilfe warning.
 {
-	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/kraken/" + url[url[0]=='/'..];
+	//NOTE: You need the helix/ or kraken/ prefix to indicate which API to use.
+	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/" + url[url[0]=='/'..];
 	request(url, 0, (["username": username]))->then(interactive);
 }
 
