@@ -295,7 +295,6 @@ Concurrent.Future check_following(string user, string chan)
 
 void create_webhook(string callback, string topic, int seconds)
 {
-	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
 	string secret = MIME.encode_base64(random_string(15));
 	G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
 	request("https://api.twitch.tv/helix/webhooks/hub", ([
@@ -402,6 +401,7 @@ protected void create()
 	if (!G->G->channel_info) G->G->channel_info = ([]);
 	if (!G->G->category_names) G->G->category_names = ([]);
 	if (!G->G->user_info) G->G->user_info = ([]);
+	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
 	remove_call_out(G->G->poll_call_out);
 	poll();
 	add_constant("get_channel_info", get_channel_info);
