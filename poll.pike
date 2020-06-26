@@ -546,6 +546,8 @@ int main(int argc, array(string) argv)
 			if (user == "transcoding")
 			{
 				write("Checking transcoding history...\n");
+				//Can't use Helix yet, as it doesn't include the resolutions array
+				//request("https://api.twitch.tv/helix/videos?user_id={{USER}}&type=archive&limit=100", ([]), (["username": ch]))
 				request("https://api.twitch.tv/kraken/channels/{{USER}}/videos?broadcast_type=archive&limit=100", ([]), (["username": ch]))
 					->then(transcoding_display);
 				continue;
