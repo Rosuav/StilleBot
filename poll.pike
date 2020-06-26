@@ -508,34 +508,27 @@ void clips_display(string channel)
 	array files = get_dir(dir);
 	multiset unseen;
 	if (files) unseen = (multiset)glob("*.json", files);
-	string endpoint = "https://api.twitch.tv/kraken/clips/top?channel=" + channel + "&period=all&limit=100";
-	Concurrent.Future process(mapping info)
-	{
-		if (info->status == 404 || !info->clips)
-		{
-			write("Error fetching clips: %O\n", info);
-			if (!--requests) exit(0);
-			return 0;
-		}
-		foreach (info->clips, mapping clip)
+	//get_helix_paginated(string url, mapping|void query, mapping|void headers)
+	get_user_id(channel)->then(lambda (int userid) {
+		return get_helix_paginated("https://api.twitch.tv/helix/clips",
+			(["broadcaster_id": (string)userid, "first": "100"]));
+	})->then(lambda (array clips) {
+		foreach (clips, mapping clip)
 		{
 			if (unseen)
 			{
-				unseen[clip->slug + ".json"] = 0;
-				Stdio.write_file(dir + "/" + clip->slug + ".json", Standards.JSON.encode(clip, 7));
+				unseen[clip->id + ".json"] = 0;
+				Stdio.write_file(dir + "/" + clip->id + ".json", Standards.JSON.encode(clip, 7));
 			}
-			write(string_to_utf8(sprintf("[%s] %s %s - %s\n", clip->created_at, clip->slug, clip->curator->display_name, clip->title)));
-		}
-		if (info->_cursor != "")
-		{
-			write("Fetching more... %s %O\n", info->_cursor, MIME.decode_base64(info->_cursor));
-			return request(endpoint + "&cursor=" + info->_cursor)->then(process);
+			write(string_to_utf8(sprintf("[%s] %s %s - %s\n", clip->created_at, clip->id, clip->creator_name, clip->title)));
 		}
 		if (unseen && sizeof(unseen))
 			write("%d deleted clips:\n%{\t%s\n%}", sizeof(unseen), sort((array)unseen));
 		if (!--requests) exit(0);
-	}
-	request(endpoint)->then(process);
+	}, lambda (mapping err) {
+		write("Error fetching clips: %O\n", err);
+		if (!--requests) exit(0);
+	});
 }
 
 int main(int argc, array(string) argv)
