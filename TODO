@@ -18,14 +18,6 @@
     be nice to figure out what's actually wrong and then reap the performance benefits.
 * Add a Logout link (to /logout) to all pages when you're logged in
 * Go through all the web config pages and add user() to any user-defined text
-* Polling:
-  - Get more webhooks that give instant notification
-    - Actually, they aren't always any better - it's SLOWER than polling for
-      stream-live and stream-down notifications
-  - Use the same functions for webhooks as for polling
-    - ergo, use Helix for polling, not Kraken
-    - Some can't be changed. Offline channel info still requires Kraken as of 20191223.
-  - Make sure all callers are happy with the Helix-provided info format
 * Create a variant of !permit where, instead of stopping someone from being timed out,
   it lets them whisper a single link?
   - Would make it functional in channels where they're hard-blocked at the Twitch end.
@@ -34,7 +26,7 @@
   - "/delete msg-id" doesn't remove a sword. However, the bot doesn't see his own message
     IDs. This makes things hard.
 * What happens if there's a long HTTP connection and you update code?
-  - Currently I don't do much with websockets, but it can be tested using songreq.html.
+  - Test with raid finder
 * Use the "special responses" system to customize texts like shoutouts? Would need a way
   to provide default text, and then explicitly removing it would mean "don't do this".
 * Allow the bot's commands to be individually enabled and disabled for a particular channel
