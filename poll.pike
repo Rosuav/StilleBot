@@ -14,17 +14,12 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 		if (stringp(options->username)) usernames = (["{{USER}}": options->username]);
 		else usernames = options->username + ([]);
 		array reqs = ({ });
-		//TODO: Use get_user_id() below (yes, this will then be mutually recursive)
 		foreach (usernames; string tag; string user)
 		{
 			user = lower_case(user);
-			if (int id = G->G->userids[user]) usernames[tag] = (string)id; //Local cache for efficiency
-			else reqs += ({request("https://api.twitch.tv/kraken/users?login=" + user)
-				->then(lambda(mapping data) {
-					if (!sizeof(data->users)) return Concurrent.reject(({"User not found\n", backtrace()}));
-					G->G->userids[data->users[0]->name] = (int)data->users[0]->_id;
-					replace(usernames, data->users[0]->name, data->users[0]->_id);
-				})
+			if (mapping info = G->G->user_info[user]) usernames[tag] = (string)info->id; //Local cache lookup where possible
+			else reqs += ({get_user_info(user, "login")
+				->then(lambda(mapping info) {replace(usernames, info->login, info->id);})
 			});
 		}
 		if (sizeof(reqs) > 1) reqs = ({Concurrent.all(@reqs)});
@@ -63,32 +58,25 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 		});
 }
 
-Concurrent.Future get_user_id(string user)
+//Will return from cache if available. Set type to "login" to look up by name, else uses ID.
+Concurrent.Future get_user_info(int|string user, string|void type)
 {
-	user = lower_case(user);
-	if (int id = G->G->userids[user]) return Concurrent.resolve(id);
-	return request("https://api.twitch.tv/helix/users?login=" + user)
+	if (type != "login") {type = "id"; user = (int)user;}
+	else user = lower_case((string)user);
+	if (mapping info = G->G->user_info[user]) return Concurrent.resolve(info);
+	return request("https://api.twitch.tv/helix/users?" + type + "=" + user)
 		->then(lambda(mapping data) {
 			if (!sizeof(data->data)) return Concurrent.reject(({"User not found\n", backtrace()}));
-			int uid = G->G->userids[data->data[0]->name] = (int)data->data[0]->id;
-			G->G->user_info[uid] = data->data[0];
-			return uid;
+			mapping info = data->data[0];
+			G->G->user_info[info->login] = G->G->user_info[(int)info->id] = info;
+			return info;
 		});
 }
 
-//Will return from cache if available. Cache is always available if this
-//immediately follows get_user_id. (TODO: Dedup?)
-Concurrent.Future get_user_info(int|string userid)
+//Convenience shorthand when all you need is the ID
+Concurrent.Future get_user_id(string user)
 {
-	userid = (int)userid;
-	if (mapping info = G->G->user_info[userid]) return Concurrent.resolve(info);
-	return request("https://api.twitch.tv/helix/users?id=" + userid)
-		->then(lambda(mapping data) {
-			if (!sizeof(data->data)) return Concurrent.reject(({"User not found\n", backtrace()}));
-			int uid = G->G->userids[data->data[0]->name] = (int)data->data[0]->id;
-			G->G->user_info[uid] = data->data[0];
-			return G->G->user_info[uid];
-		});
+	return get_user_info(user, "login")->then(lambda(mapping info) {return info->id;});
 }
 
 Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers)
@@ -413,7 +401,6 @@ protected void create()
 	if (!G->G->stream_online_since) G->G->stream_online_since = ([]);
 	if (!G->G->channel_info) G->G->channel_info = ([]);
 	if (!G->G->category_names) G->G->category_names = ([]);
-	if (!G->G->userids) G->G->userids = ([]);
 	if (!G->G->user_info) G->G->user_info = ([]);
 	remove_call_out(G->G->poll_call_out);
 	poll();
