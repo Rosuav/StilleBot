@@ -283,20 +283,19 @@ void stream_status(string name, mapping info)
 
 Concurrent.Future check_following(string user, string chan)
 {
-	return request("https://api.twitch.tv/kraken/users/{{USER}}/follows/channels/{{CHAN}}", ([]),
+	return request("https://api.twitch.tv/helix/users/follows?from_id={{USER}}&to_id={{CHAN}}", ([]),
 		(["username": (["{{USER}}": user, "{{CHAN}}": chan])]))
 	->then(lambda(mapping info) {
-		mapping foll = G_G_("participants", chan, user);
-		foll->following = "since " + info->created_at;
-		return ({user, chan, foll});
-	}, lambda(mixed err) {
-		if (err[0] == "Error from Twitch: \"Not Found\" (404)") //TODO: Report errors more cleanly
-		{
+		if (!sizeof(info->data)) {
 			//Not following. Explicitly store that info.
 			mapping foll = G_G_("participants", chan, user);
 			foll->following = 0;
 			return ({user, chan, foll});
 		}
+		mapping foll = G_G_("participants", chan, user);
+		foll->following = "since " + info->data[0]->followed_at;
+		return ({user, chan, foll});
+	}, lambda(mixed err) {
 		return ({user, chan, ([])}); //Unknown error. Ignore it (most likely the user will be assumed not to be a follower).
 	});
 }
