@@ -499,13 +499,16 @@ void transcoding_display(mapping info)
 		if (!--requests) exit(0);
 		return;
 	}
+	int total = 0, tc = 0;
 	foreach (info->videos, mapping videoinfo)
 	{
 		mapping res = videoinfo->resolutions;
 		if (!res || !sizeof(res)) return; //Shouldn't happen
 		string dflt = m_delete(res, "chunked") || "?? unknown res ??"; //Not sure if "chunked" can ever be missing
 		write("[%s] %-9s %s - %s\n", videoinfo->created_at, dflt, sizeof(res) ? "TC" : "  ", videoinfo->game);
+		++total; if (sizeof(res)) ++tc;
 	}
+	write("Had transcoding for %d/%d streams (%d%%)\n", tc, total, tc * 100 / total);
 	if (!--requests) exit(0);
 }
 
