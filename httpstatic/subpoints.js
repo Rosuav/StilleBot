@@ -1,3 +1,5 @@
+const ComfyJS = window.ComfyJS;
+
 let socket;
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 function connect()
@@ -20,3 +22,10 @@ function connect()
 	};
 }
 if (window.nonce !== "") connect();
+
+if (ComfyJS && window.channelname !== "") {
+	ComfyJS.onSub = ComfyJS.onResub = ComfyJS.onSubGift = ComfyJS.onSubMysteryGift = function () {
+		socket.send(JSON.stringify({cmd: "refresh"}));
+	};
+	ComfyJS.Init(window.channelname);
+}

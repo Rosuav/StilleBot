@@ -46,8 +46,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		return get_sub_points(cfg)
 			->then(lambda(int points) {
 				return render_template("subpoints.md", ([
-					"nonce": nonce, "viewnonce": nonce,
-					"unpaidpoints": "", "goal": "",
+					"nonce": nonce, "viewnonce": nonce, "channelname": cfg->channelname || "",
+					"unpaidpoints": "", "goal": "", "usecomfy": "",
+					"comfy": cfg->usecomfy ? "<script src=\"https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js\"></script>" : "",
 					"style": "h1,.cfg {display: none;}",
 					"points": sprintf("%d / %d", points, cfg->goal || 1234),
 				]));
@@ -59,11 +60,13 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		replace(MIME.encode_base64(random_string(30)), (["/": "1", "+": "0"]));
 	req->misc->session->nonce = nonce;
 	mapping cfg = persist_status->path("subpoints", nonce);
+	cfg->channelname = req->misc->session->user->login;
 	if (req->request_type == "POST")
 	{
 		write("UPDATING\n");
 		cfg->unpaidpoints = (int)req->variables->unpaidpoints;
 		cfg->goal = (int)req->variables->goal;
+		cfg->usecomfy = !!req->variables->usecomfy;
 		subpoints_updated(nonce);
 	}
 	cfg->uid = (string)req->misc->session->user->id;
@@ -83,10 +86,12 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				tierlist += ({sprintf("Tier %c: %d (%d)<br>\n", tier[0], tiers[tier] * count, count)});
 			}
 			return render_template("subpoints.md", ([
-				"nonce": nonce, "viewnonce": "",
+				"nonce": nonce, "viewnonce": "", "channelname": "",
 				"unpaidpoints": (string)cfg->unpaidpoints,
 				"goal": (string)cfg->goal,
+				"usecomfy": cfg->usecomfy ? " checked" : "",
 				"style": "",
+				"comfy": "",
 				"points": sort(tierlist) * "" + sprintf("Total: %d subs, %d points", tot, pts),
 			]));
 		});
