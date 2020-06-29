@@ -16,7 +16,7 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 		array reqs = ({ });
 		foreach (usernames; string tag; string user)
 		{
-			user = lower_case(user);
+			usernames[tag] = user = lower_case(user);
 			if (mapping info = G->G->user_info[user]) usernames[tag] = (string)info->id; //Local cache lookup where possible
 			else reqs += ({get_user_info(user, "login")
 				->then(lambda(mapping info) {replace(usernames, info->login, info->id);})
