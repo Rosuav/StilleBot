@@ -72,7 +72,7 @@ void reconnect()
 	if (irc && irc == G->G->irc) {irc->close(); if (objectp(irc)) destruct(irc); werror("%% Reconnecting\n");}
 	//TODO: Dodge the synchronous gethostbyname?
 	mapping opt = persist_config["ircsettings"];
-	if (!opt) return; //Not yet configured - can't connect.
+	if (!opt || !opt->pass) return; //Not yet configured - can't connect.
 	opt += (["channel_program": channel_notif, "connection_lost": reconnect,
 		"error_notify": error_notify]);
 	mod_query_delay = 0; //Reset the delay
