@@ -86,6 +86,7 @@ Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|vo
 	query = (query || ([])) + ([]);
 	//NOTE: uri->set_query_variables() doesn't correctly encode query data.
 	uri->query = Protocols.HTTP.http_encode_query(query);
+	int empty = 0;
 	mixed nextpage(mapping raw)
 	{
 		if (!raw->data) return Concurrent.reject(({"Unparseable response\n", backtrace()}));
@@ -95,6 +96,10 @@ Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|vo
 		//it's probably the end of the results. It's come up more than once
 		//in the past, and might well happen again.
 		if (raw->pagination->cursor == "IA") return data;
+		//Another possible Twitch bug: Sometimes the cursor is constantly
+		//changing, but we get no data each time. In case this happens
+		//once by chance, we have a "three strikes and WE'RE out" policy.
+		if (!sizeof(raw->data) && ++empty >= 3) return data;
 		//uri->add_query_variable("after", raw->pagination->cursor);
 		query["after"] = raw->pagination->cursor; uri->query = Protocols.HTTP.http_encode_query(query);
 		return request(uri, headers)->then(nextpage);
@@ -416,6 +421,7 @@ protected void create()
 	add_constant("get_video_info", get_video_info);
 	add_constant("stream_status", stream_status);
 	add_constant("twitch_api_request", request);
+	add_constant("get_helix_paginated", get_helix_paginated);
 	add_constant("get_user_id", get_user_id);
 	add_constant("get_user_info", get_user_info);
 	add_constant("create_webhook", create_webhook);
