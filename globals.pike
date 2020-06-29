@@ -1,3 +1,6 @@
+//TODO: Make globals not reference any globals other than persist_config/persist_status.
+//Would mean we no longer need to worry about lingering state as much.
+
 protected void create(string n)
 {
 	foreach (indices(this),string f) if (f!="create" && f[0]!='_') add_constant(f,this[f]);
@@ -21,7 +24,10 @@ protected void create(string n)
 //- ({"sequential", "messages"})
 //- (["message": "text to send", "attr": "value"])
 //- (["message": ({"sequential", "messages"}), "attr": "value"])
-typedef string|mapping(string:string|echoable_message)|array(echoable_message) echoable_message;
+typedef string|mapping(string:string|_echoable_message)|array(_echoable_message) _echoable_message;
+//To avoid recompilation ambiguities, the added constant is simply a reference to the
+//(private) recursive typedef above.
+typedef _echoable_message echoable_message;
 typedef echoable_message|function(object,object,string:echoable_message) command_handler;
 
 class command
