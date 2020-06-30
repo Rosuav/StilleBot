@@ -75,9 +75,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	return get_sub_points(cfg, 1)
 		->then(lambda(array info) {
 			mapping(string:int) tiercount = ([]);
-				foreach (info, mapping sub)
-					if (sub->user_id != sub->broadcaster_id) //Ignore self
-						tiercount[sub->tier]++;
+			foreach (info, mapping sub)
+				if (sub->user_id != sub->broadcaster_id) //Ignore self
+					tiercount[sub->tier]++;
 			array(string) tierlist = ({ });
 			int tot, pts;
 			foreach (tiercount; string tier; int count)
