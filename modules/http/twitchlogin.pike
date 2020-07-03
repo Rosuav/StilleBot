@@ -9,6 +9,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//anything that could ever have been req->not_query for any legitimate request,
 	//and to deny anything else. Much of this is replicating the routing done by
 	//connection.pike's http_handler.
+	//Note that this will not accept anything with a querystring in it. For now, I'm
+	//fine with that. If it's a problem, split on question mark here and do separate
+	//sanitization of the two halves.
 	string next = req->variables->next;
 	if (!next) ; //No destination? No problem (will use magic at arrival time).
 	else if (!has_prefix(next, "/")) next = 0; //Destination MUST be absolute within the server but with no protocol or host.
