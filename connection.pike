@@ -326,8 +326,21 @@ class channel_notif
 	echoable_message substitute_markers(echoable_message msg, mapping(string:string) markers)
 	{
 		if (stringp(msg)) return replace(msg, markers);
-		if (mappingp(msg)) return msg | (["message": substitute_markers(msg->message, markers),
+		if (mappingp(msg))
+		{
+			if (msg->counter)
+			{
+				mapping counters = persist_status->path("counters", name);
+				string action = msg->action || "";
+				if (sscanf(action, "+%d", int n)) counters[msg->counter] += n;
+				else if (sscanf(action, "=%d", int n)) counters[msg->counter] = n;
+				else if (action == "=%s") counters[msg->counter] = (int)markers["%s"];
+				persist_status->save();
+				markers |= (["%d": (string)counters[msg->counter]]);
+			}
+			return msg | (["message": substitute_markers(msg->message, markers),
 						"dest": msg->dest && replace(msg->dest, markers)]);
+		}
 		if (arrayp(msg)) return substitute_markers(msg[*], markers);
 		return msg;
 	}

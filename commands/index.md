@@ -8,6 +8,7 @@ the channel you want to check.
 Commands in alphabetical order:
 
 * [!addcmd: Add an echo command for this channel](addcmd)
+* [!addcounter: Add a counter command for this channel](addcounter)
 * [!addquote: Add a channel quote](addquote)
 * [!autoban: Keyword-based automatic moderation.](autoban)
 * [!delcmd: Remove an echo command for this channel](delcmd)
