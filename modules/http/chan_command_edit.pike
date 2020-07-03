@@ -19,6 +19,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (cmd == "") return (["error": 400]);
 	cmd += req->misc->channel->name;
 	echoable_message resp = G->G->echocommands[cmd];
+	if (!resp) return (["error": 404]); //This is for tweaking existing commands, not creating new ones.
 	if (mappingp(resp)) resp = resp->message; //Discard any previous flags
 	mapping flags = ([]);
 	foreach (valid_flags; string flag; multiset ok)
