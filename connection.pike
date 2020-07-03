@@ -333,6 +333,7 @@ class channel_notif
 				mapping counters = persist_status->path("counters", name);
 				string action = msg->action || "";
 				if (sscanf(action, "+%d", int n)) counters[msg->counter] += n;
+				else if (action == "=0") m_delete(counters, msg->counter); //Special-case zeroing to allow people to remove junk
 				else if (sscanf(action, "=%d", int n)) counters[msg->counter] = n;
 				else if (action == "=%s") counters[msg->counter] = (int)markers["%s"];
 				persist_status->save();
