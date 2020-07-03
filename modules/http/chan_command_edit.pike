@@ -7,6 +7,7 @@ constant valid_flags = ([
 	"dest": (<"/w $$", "/w %s", "/web %s">),
 	"access": (<"mod">),
 	"visibility": (<"hidden">),
+	"action": (<"+1", "=0">),
 ]);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
@@ -25,6 +26,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (ok[body[flag]]) flags[flag] = body[flag];
 		else if (body[flag] && body[flag] != "") return (["error": 400]); //TODO: Be nicer in the message
 	}
+	//Since counters are named as arbitrary strings, validate that separately.
+	if (body->counter && sscanf(body->counter, "%[a-z]", string c) && c == body->counter)
+		flags->counter = c;
 	if (sizeof(flags)) make_echocommand(cmd, flags | (["message": resp]));
 	else make_echocommand(cmd, resp);
 	return (["error": 204]);

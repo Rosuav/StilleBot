@@ -34,10 +34,6 @@
 * Allow commands to contain spaces. They cannot ever be invoked that way, but some commands
   could look for them, so for instance shoutout.pike could look for "!so someusername" and
   if found, use that text instead. (Thanks Mirror for the idea!)
-* New command type: Counter
-  - !newcounter !death Good job, you died %d times
-  - Typing !death will increment it
-  - Record the stats same as quotes, keyed by the command name
 * New command type: Timer
   - !newtimer !hypetrain 1:0:0 A hype train can happen again!
   - Maybe have a detailed thing in the web allowing customization of initial response, clash

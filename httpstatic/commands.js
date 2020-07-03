@@ -1,6 +1,6 @@
 import choc, {set_content} from "https://rosuav.github.io/shed/chocfactory.js";
 const {BR, INPUT} = choc;
-const all_flags = "mode dest access visibility".split(" ");
+const all_flags = "mode dest access visibility counter action".split(" ");
 
 on("click", "button.addline", e => {
 	let parent = e.match.closest("td").previousElementSibling;

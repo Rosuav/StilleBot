@@ -58,6 +58,8 @@ td:nth-of-type(2n+1) {white-space: nowrap;}
 > <select id="flg_dest"><option value="">Chat</option><option value="/w $$$$">Whisper</option><option value="/w %s">Whisper to target</option><option value="/web %s">Private access</option></select> | Where should the response be sent?
 > <select id="flg_access"><option value="">Anyone</option><option value="mod">Mods only</option></select> | Who should be able to use this command?
 > <select id="flg_visibility"><option value="">Visible</option><option value="hidden">Hidden</option></select> | Should the command be listed in !help and the non-mod commands view?
+> <input id="flg_counter"> | Name of counter to manipulate (see !addcounter)
+> <select id="flg_action"><option value="">Nothing</option><option value="+1">Increment</option><option value="=0">Reset to zero</option></select> | If looking at a counter, what should it do to it?
 >
 > <p><button type=button id=saveopts>Save</button> <button type=button class=dialog_close>Cancel</button></p>
 >
