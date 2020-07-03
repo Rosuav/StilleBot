@@ -28,10 +28,9 @@ string process(object channel, object person, string param)
 		//Largely parallels !addcmd handling
 		cmd = lower_case(cmd);
 		if (has_value(cmd, '!')) return "@$$: Command names cannot include exclamation marks";
-		cmd += channel->name;
-		string newornot = G->G->echocommands[cmd] ? "Updated" : "Created new";
-		make_echocommand(cmd, (["message": response, "counter": cmd, "action": "+1"]));
-		return sprintf("@$$: %s counter !%s", newornot, cmd - channel->name);
+		string newornot = G->G->echocommands[cmd + channel->name] ? "Updated" : "Created new";
+		make_echocommand(cmd + channel->name, (["message": response, "counter": cmd, "action": "+1"]));
+		return sprintf("@$$: %s counter !%s", newornot, cmd);
 	}
 	return "@$$: Try !addcounter !newcmdname response-message";
 }
