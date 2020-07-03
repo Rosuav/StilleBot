@@ -28,8 +28,9 @@
 * Use the "special responses" system to customize texts like shoutouts? Would need a way
   to provide default text, and then explicitly removing it would mean "don't do this".
 * Allow the bot's commands to be individually enabled and disabled for a particular channel
-  using the web interface. Would then largely subsume the active_channels feature, although
-  that way would still be more performant if it's for a very narrow set of channels (eg 1).
+  using the web interface. Would be subordinate to the active_channels feature, which gives
+  a hard restriction and would prevent the command from showing up for enabling if it's not
+  one of the specified channels.
 * On the bot's emote list, allow search/filter by text
 * Allow commands to contain spaces. They cannot ever be invoked that way, but some commands
   could look for them, so for instance shoutout.pike could look for "!so someusername" and
