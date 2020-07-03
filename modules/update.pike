@@ -1,5 +1,4 @@
-//Attempt to debug the laggy updates
-//Or just update a single file, if that would help
+//Update a single file, in case of problems. Shouldn't normally be needed.
 inherit command;
 constant hidden_command = 1;
 constant require_moderator = 1;
