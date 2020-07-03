@@ -11,8 +11,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//connection.pike's http_handler.
 	string next = req->variables->next;
 	if (!next) ; //No destination? No problem (will use magic at arrival time).
-	else if (!has_prefix(req->not_query, "/")) next = 0; //Destination MUST be absolute within the server but with no protocol or host.
-	else if (has_prefix(req->not_query, "/chan_")) next = 0; //These can't be valid (although they wouldn't hurt, they'd just 404).
+	else if (!has_prefix(next, "/")) next = 0; //Destination MUST be absolute within the server but with no protocol or host.
+	else if (has_prefix(next, "/chan_")) next = 0; //These can't be valid (although they wouldn't hurt, they'd just 404).
 	else if (G->G->http_endpoints[next[1..]]) ; //Destination is a simple target, clearly whitelisted
 	else
 	{
