@@ -572,17 +572,17 @@ class channel_notif
 				case "communitypayforward": break; //X is paying forward the Gift they got from Y to the community!
 				case "subgift":
 				{
-					write("DEBUG SUBGIFT: chan %s disp %O user %O mon %O recip %O multi %O or %O\n",
+					write("DEBUG SUBGIFT: chan %s disp %O user %O mon %O recip %O multi %O\n",
 						name, person->displayname, person->user,
 						params->msg_param_months, params->msg_param_recipient_display_name,
-						params->msg_params_gift_months, params->msg_param_gift_months);
+						params->msg_param_gift_months);
 					trigger_special("!subgift", person, ([
 						"{tier}": params->msg_param_sub_plan[0..0],
 						"{months}": params->msg_param_cumulative_months || params->msg_param_months || "1",
 						"{streak}": params->msg_param_streak_months || "",
 						"{recipient}": params->msg_param_recipient_display_name,
 						//TODO: Figure out which one actually happens and drop the other
-						"{multimonth}": params->msg_params_gift_months || params->msg_param_gift_months || "1",
+						"{multimonth}": params->msg_param_gift_months || "1",
 					]));
 					//Other params: login, user_id, msg_param_recipient_user_name, msg_param_recipient_id,
 					//msg_param_sender_count (the total gifts this person has given in this channel)
@@ -591,15 +591,15 @@ class channel_notif
 				}
 				case "submysterygift":
 				{
-					write("DEBUG SUBGIFT: chan %s disp %O user %O gifts %O multi %O or %O\n",
+					write("DEBUG SUBGIFT: chan %s disp %O user %O gifts %O multi %O\n",
 						name, person->displayname, person->user,
 						params->msg_param_mass_gift_count,
-						params->msg_params_gift_months, params->msg_param_gift_months);
+						params->msg_param_gift_months);
 					trigger_special("!subbomb", person, ([
 						"{tier}": params->msg_param_sub_plan[0..0],
 						"{gifts}": params->msg_param_mass_gift_count,
-						//TODO: See if (either of) these can actually happen, and if not, drop it
-						"{multimonth}": params->msg_params_gift_months || params->msg_param_gift_months || "1",
+						//TODO: See if this can actually happen, and if not, drop it
+						"{multimonth}": params->msg_param_gift_months || "1",
 					]));
 					break;
 				}
