@@ -7,6 +7,10 @@ void report_transcoding(mapping videoinfo, string pfx)
 	string channel = videoinfo->channel->name;
 	mapping res = videoinfo->resolutions;
 	if (!res || !sizeof(res)) return; //Shouldn't happen
+	//Would it be better to just use time() instead? LUL
+	int uptime = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", videoinfo->created_at)->distance(Calendar.now())->how_many(Calendar.Second());
+	write("Pinging transcoding status for %s, uptime %ds\n", channel, uptime);
+	if (uptime > 600 && pfx[0] != '@') return; //Hack: If the prefix is the one used by connected(), be silent if well into the stream.
 	string dflt = m_delete(res, "chunked") || "?? unknown res ??"; //Not sure if "chunked" can ever be missing
 	string msg = pfx + " View this stream in glorious " + dflt + "!";
 	if (sizeof(res))
