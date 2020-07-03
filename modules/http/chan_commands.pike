@@ -21,7 +21,7 @@ constant TEMPLATES = ({
 	"!lurk | $$ drops into the realm of lurkdom devicatLurk",
 	"!unlurk | $$ returns from the realm of lurk devicatLurk",
 	"!raid | Let's go raiding! Copy and paste this raid call and be ready when I host our target! >>> /me twitchRaid YOUR RAID CALL HERE twitchRaid",
-	"!save | rosuavSave How long since you last saved? rosuavSave",
+	"!save | rosuavSave How long since you last saved? devicatSave",
 });
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
