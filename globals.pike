@@ -537,7 +537,7 @@ mapping(string:mixed)|Concurrent.Future twitchlogin(Protocols.HTTP.Server.Reques
 			mapping user = Standards.JSON.decode_utf8(res->get())->data[0];
 			//write("Login: %O %O\n", auth->access_token, user);
 			string dest = m_delete(req->misc->session, "redirect_after_login");
-			if (!dest || dest == req->not_query)
+			if (!dest || dest == req->not_query || has_prefix(req->not_query, dest + "?"))
 			{
 				//If no destination was given, try to figure out a plausible default.
 				//For streamers, redirect to the stream's landing page. Doesn't work
@@ -558,7 +558,7 @@ mapping(string:mixed)|Concurrent.Future twitchlogin(Protocols.HTTP.Server.Reques
 	//write("Redirecting to Twitch...\n%s\n", auth->get_auth_uri());
 	mapping resp = redirect(auth->get_auth_uri());
 	ensure_session(req, resp);
-	req->misc->session->redirect_after_login = next || req->not_query;
+	req->misc->session->redirect_after_login = next || req->full_query;
 	return resp;
 }
 
