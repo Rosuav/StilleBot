@@ -258,6 +258,9 @@ class websocket_handler
 	//If msg->cmd is "init", it's a new client and base processing has already been done.
 	//If msg is 0, a client has disconnected and is about to be removed from its group.
 	//Use websocket_groups[conn->group] to find an array of related sockets.
+	//Note that clients are all disconnected when code gets updated. Theoretically this
+	//isn't necessary, but whatevs. The clients have to cope with reconnection logic for
+	//other reasons anyway, so this should be smooth.
 	void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg) { }
 
 	protected void create(string name)
