@@ -567,7 +567,8 @@ class channel_notif
 						"{months}": params->msg_param_cumulative_months || params->msg_param_months || "1",
 						"{streak}": params->msg_param_streak_months || "",
 						"{recipient}": params->msg_param_recipient_display_name,
-						//TODO: {multimonth} for gift_months
+						//TODO: Figure out which one actually happens and drop the other
+						"{multimonth}": params->msg_params_gift_months || params->msg_param_gift_months || "1",
 					]));
 					//Other params: login, user_id, msg_param_recipient_user_name, msg_param_recipient_id,
 					//msg_param_sender_count (the total gifts this person has given in this channel)
@@ -583,6 +584,8 @@ class channel_notif
 					trigger_special("!subbomb", person, ([
 						"{tier}": params->msg_param_sub_plan[0..0],
 						"{gifts}": params->msg_param_mass_gift_count,
+						//TODO: See if (either of) these can actually happen, and if not, drop it
+						"{multimonth}": params->msg_params_gift_months || params->msg_param_gift_months || "1",
 					]));
 					break;
 				}
