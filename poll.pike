@@ -51,8 +51,8 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 			int limit = (int)res->headers["ratelimit-limit"],
 				left = (int)res->headers["ratelimit-remaining"];
 			if (limit) write("Rate limit: %d/%d   \r", limit - left, limit); //Will usually get overwritten
-			mixed data = Standards.JSON.decode_utf8(res->get());
-			if (!mappingp(data)) return Concurrent.reject(({"Unparseable response\n", backtrace()}));
+			mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
+			if (!mappingp(data)) return Concurrent.reject(({sprintf("Unparseable response\n%O\n", res->get()[..64]), backtrace()}));
 			if (data->error) return Concurrent.reject(({sprintf("%s\nError from Twitch: %O (%O)\n%O\n", url, data->error, data->status, data), backtrace()}));
 			return data;
 		});
