@@ -320,7 +320,10 @@ void create_webhook(string callback, string topic, int seconds)
 			"hub.topic": topic,
 			"hub.lease_seconds": seconds,
 			"hub.secret": secret,
-		])]));
+		])]))
+	->then(lambda(mixed data) {
+		write("Webhook response: %O\n", data);
+	});
 }
 
 void webhooks(array data)
