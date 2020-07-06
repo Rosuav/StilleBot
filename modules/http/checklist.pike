@@ -3,19 +3,33 @@ inherit http_endpoint;
 //Markdown; emote names will be replaced with their emotes, but will
 //be greyed out if not available.
 constant hypetrain = replace(#"
-## Set one
+## Hype Train set two
+### Unlockable Apr 2020 to current
+HypeChimp HypeGhost HypeChest HypeFrog HypeCherry HypePeace<br>
+HypeSideeye HypeBrain HypeZap HypeShip HypeSign HypeBug<br>
+HypeYikes HypeRacer HypeCar HypeFirst HypeTrophy HypeBanana<br>
+HypeBlock HypeDaze HypeBounce HypeJewel HypeBlob HypeTeamwork<br>
+HypeLove HypePunk HypeKO HypePunch HypeFire HypePizza<br>
+
+## Hype Train original
+### Unlockable Jan 2020 to Apr 2020
 HypeBigfoot1 HypeBigfoot2 HypeBigfoot3 HypeBigfoot4 HypeBigfoot5 HypeBigfoot6<br>
 HypeGriffin1 HypeGriffin2 HypeGriffin3 HypeGriffin4 HypeGriffin5 HypeGriffin6<br>
 HypeOni1 HypeOni2 HypeOni3 HypeOni4 HypeOni5 HypeOni6<br>
 HypeDragon1 HypeDragon2 HypeDragon3 HypeDragon4 HypeDragon5 HypeDragon6<br>
 HypeUnicorn1 HypeUnicorn2 HypeUnicorn3 HypeUnicorn4 HypeUnicorn5 HypeUnicorn6<br>
 
-## Set two
-HypeChimp HypeGhost HypeChest HypeFrog HypeCherry HypePeace<br>
-HypeSideeye HypeBrain HypeZap HypeShip HypeSign HypeBug<br>
-HypeYikes HypeRacer HypeCar HypeFirst HypeTrophy HypeBanana<br>
-HypeBlock HypeDaze HypeBounce HypeJewel HypeBlob HypeTeamwork<br>
-HypeLove HypePunk HypeKO HypePunch HypeFire HypePizza<br>
+## StreamerLuv
+### Unlockable 30th Jan 2020 to 16th Feb 2020
+LuvBrownL LuvHearts LuvBlondeR LuvUok LuvOops LuvSign LuvPeekL<br>
+LuvPeekR LuvCool LuvSnooze LuvBlush LuvBrownR LuvGift LuvBlondeL<br>
+
+## RPG
+### Unlockable 4th Oct 2019 to 18th Oct 2019
+RPGFireball RPGYonger RPGTreeNua RPGOops RPGStaff<br>
+RPGFei RPGAyaya RPGGhosto RPGHP RPGEmpty<br>
+RPGBukka RPGBukkaNoo RPGEpicSword RPGShihu RPGPhatLoot<br>
+RPGEpicStaff RPGMana RPGSeven<br>
 ", "<br>\n", "<br>"); //Remove the newlines after the line breaks so we don't get superfluous empty paragraphs
 //For emotes that the bot has, we can get their IDs from the API.
 //For others, list them here and they'll work.
