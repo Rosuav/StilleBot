@@ -30,14 +30,15 @@ Concurrent.Future parse_hype_status(mapping data)
 		"cooldown": cooldown, "expires": expires,
 		"level": (int)data->level, "goal": (int)data->goal, "total": (int)data->total,
 	]);
-	return get_user_info(data->last_contribution->user)->then(lambda(mapping lastcontrib) {
+	return get_user_info(data->last_contribution->?user)->then(lambda(mapping lastcontrib) {
 		//Show last contribution (with user name)
-		state->lastcontrib = data->last_contribution;
-		state->lastcontrib->display_name = lastcontrib->display_name;
-		return Concurrent.all(get_user_info(data->top_contributions->user[*]));
+		state->lastcontrib = data->last_contribution || ([]);
+		if (lastcontrib) state->lastcontrib->display_name = lastcontrib->display_name;
+		array users = data->top_contributions->?user || ({ });
+		return Concurrent.all(get_user_info(users[*]));
 	})->then(lambda(array conductors) {
 		//Show hype conductor stats (with user name)
-		state->conductors = data->top_contributions;
+		state->conductors = data->top_contributions || ({ });
 		mapping cond = mkmapping(conductors->id, conductors);
 		foreach (state->conductors, mapping c)
 		{
