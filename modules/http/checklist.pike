@@ -24,18 +24,42 @@ HypeUnicorn1 HypeUnicorn2 HypeUnicorn3 HypeUnicorn4 HypeUnicorn5 HypeUnicorn6<br
 LuvBrownL LuvHearts LuvBlondeR LuvUok LuvOops LuvSign LuvPeekL<br>
 LuvPeekR LuvCool LuvSnooze LuvBlush LuvBrownR LuvGift LuvBlondeL<br>
 
+## HAHAHAlidays
+### Unlockable 3rd Dec 2019 to 3rd Jan 2020
+HahaNutcracker HahaPresent HahaGoose HahaBaby HahaNyandeer<br>
+HahaGingercat HahaPoint HahaElf HahaSnowhal HahaReindeer<br>
+HahaSweat HahaShrugLeft HahaShrugMiddle HahaShrugRight HahaThisisfine<br>
+HahaLean HahaDreidel HahaThink HahaCat HahaTurtledove<br>
+HahaSleep Haha2020 HahaBall HahaDoge HahaHide<br>
+
 ## RPG
 ### Unlockable 4th Oct 2019 to 18th Oct 2019
 RPGFireball RPGYonger RPGTreeNua RPGOops RPGStaff<br>
 RPGFei RPGAyaya RPGGhosto RPGHP RPGEmpty<br>
 RPGBukka RPGBukkaNoo RPGEpicSword RPGShihu RPGPhatLoot<br>
 RPGEpicStaff RPGMana RPGSeven<br>
+
+## Special
+### Unlockable by performing special actions or having special subscriptions. May or may not still be available.
+
+2FA:<br>SirShield SirMad SirPrise SirSword SirSad SirMad<br>
+Turbo:<br>BagOfMemes FlipThis KappaHD MindManners MiniK PartyPopper ScaredyCat TableHere<br>
+Prime:<br>PrimeYouDontSay PrimeUWot PrimeRlyTho<br>
+Clip creation:<br>Clappy ClappyDerp ClappyHype<br>
+
+## Single Survivors
+For a while, Twitch released sets of emotes, but only let us keep the one
+most popular emote from the set. These sole survivors are all that remain
+of their formerly grand sets...
+CupFooty ZombieKappa OWL2019Tracer FightCC<br>
+
+TODO: Check Pok* (Pokemon) emotes
 ", "<br>\n", "<br>"); //Remove the newlines after the line breaks so we don't get superfluous empty paragraphs
 //For emotes that the bot has, we can get their IDs from the API.
 //For others, list them here and they'll work.
 constant emoteids = ([
-	"HypePeace": 301739470, "HypeBug": 301739471, "HypeBanana": 301739487,
-	"HypeTeamwork": 301739494, "HypePizza": 301739502, "HypeOni6": 301205427,
+	"HypeOni6": 301205427, "OWL2019Tracer": 1833318,
+	"PrimeYouDontSay": 134251, "PrimeUWot": 134252, "PrimeRlyTho": 134253,
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
