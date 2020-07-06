@@ -51,8 +51,9 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 			int limit = (int)res->headers["ratelimit-limit"],
 				left = (int)res->headers["ratelimit-remaining"];
 			if (limit) write("Rate limit: %d/%d   \r", limit - left, limit); //Will usually get overwritten
+			if (options->return_status) return res->status; //For requests not expected to have a body, but might have multiple success returns
 			mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
-			if (!mappingp(data)) return Concurrent.reject(({sprintf("Unparseable response\n%O\n", res->get()[..64]), backtrace()}));
+			if (!mappingp(data)) return Concurrent.reject(({sprintf("%s\nUnparseable response\n%O\n", url, res->get()[..64]), backtrace()}));
 			if (data->error) return Concurrent.reject(({sprintf("%s\nError from Twitch: %O (%O)\n%O\n", url, data->error, data->status, data), backtrace()}));
 			return data;
 		});
@@ -61,6 +62,10 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 //Will return from cache if available. Set type to "login" to look up by name, else uses ID.
 Concurrent.Future get_user_info(int|string user, string|void type)
 {
+	//Simplify things elsewhere: 0 yields 0 with no error. (Otherwise you'll
+	//always get a mapping, or a rejection.)
+	if (!user) return Concurrent.resolve(0);
+
 	if (type != "login") {type = "id"; user = (int)user;}
 	else user = lower_case((string)user);
 	if (mapping info = G->G->user_info[user]) return Concurrent.resolve(info);
@@ -320,9 +325,9 @@ void create_webhook(string callback, string topic, int seconds)
 			"hub.topic": topic,
 			"hub.lease_seconds": seconds,
 			"hub.secret": secret,
-		])]))
-	->then(lambda(mixed data) {
-		write("Webhook response: %O\n", data);
+		]), "return_status": 1]))
+	->then(lambda(mixed ret) {
+		if (ret != 202) werror("FAILED TO CREATE WEBHOOK %s\n", callback); //It'll be retried at some point.
 	});
 }
 
