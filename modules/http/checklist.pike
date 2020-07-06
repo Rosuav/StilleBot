@@ -97,7 +97,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			if (string have = have_emotes[w]) {used += ({w}); return have;}
 			//2) Does the bot have the emote?
 			string md = G->G->emote_code_to_markdown[w];
-			if (md) return replace(md, "/1.0", "/3.0");
+			if (md && sscanf(md, "%*s/v1/%d/1.0", int id)) return img(w, id);
 			//3) Is it in the hard-coded list of known emote IDs?
 			int id = emoteids[w];
 			if (id) return img(w, id);
