@@ -14,8 +14,9 @@ inherit http_endpoint;
 //Assign categories to some of the limited-time-unlockable emotes (only if they're kept permanently).
 //The actual emote set IDs change, so we detect them by looking for one of the emotes.
 constant limited_time_emotes = ([
-	"PrideBalloons": "Pride", "LuvHearts": "Streamer Luv", "HypeBigfoot1": "Hype Train (a)",
-	"HypeChest": "Hype Train (b)", "HahaCat": "Hahahalidays", "RPGPhatLoot": "RPG",
+	"PrideBalloons": "Pride", "PrideWorld": "Pride",
+	"HypeBigfoot1": "Hype Train (a)", "HypeChest": "Hype Train (b)",
+	"HahaCat": "Hahahalidays", "RPGPhatLoot": "RPG", "LuvHearts": "Streamer Luv",
 ]);
 
 Concurrent.Future fetch_emotes()
