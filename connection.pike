@@ -751,7 +751,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 		handler->websocket_groups[group] += ({conn->sock});
 	}
 	if (object handler = G->G->websocket_types[conn->type]) handler->websocket_msg(conn, data);
-	write("Message: %O\n", data);
+	else write("Message: %O\n", data);
 }
 
 void ws_close(int reason, mapping conn)
