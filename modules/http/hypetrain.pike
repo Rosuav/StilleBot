@@ -118,6 +118,8 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			//but by the time we get the hype state, it might have been dc'd.
 			state->cmd = "update";
 			if (conn->sock) conn->sock->send_text(Standards.JSON.encode(state));
+			//For debugging, trigger a notification for no reason
+			//call_out(conn->sock->send_text, 10, Standards.JSON.encode((["cmd": "hit-it"])));
 			if (G->G->webhook_active["hypetrain=" + conn->group] < 300)
 			{
 				write("Creating webhook for hype train %O\n", conn->group);
@@ -129,36 +131,13 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			}
 		});
 	}
+	if (msg->cmd == "reporterror")
+	{
+		//The client ran into a problem
+		write("GOT HYPE TRAIN ERROR: %O\n", msg);
+	}
 }
-/*
-Hype train data: [1592560805] ([
-  "broadcaster_id": "96065689",
-  "cooldown_end_time": "2020-06-19T11:59:58Z",
-  "expires_at": "2020-06-19T09:59:58Z",
-  "goal": 1600,
-  "id": "86cda003-7be9-44b9-ac9e-1d7df2d148f5",
-  "last_contribution": ([
-      "total": 300,
-      "type": "BITS",
-      "user": "139300055"
-    ]),
-  "level": 1,
-  "started_at": "2020-06-19T09:54:58Z",
-  "top_contributions": ({
-        ([
-          "total": 300,
-          "type": "BITS",
-          "user": "139300055"
-        ]),
-        ([
-          "total": 500,
-          "type": "SUBS",
-          "user": "139300055"
-        ])
-    }),
-  "total": 1100
-])
-*/
+
 protected void create(string name)
 {
 	::create(name);

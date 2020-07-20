@@ -8,7 +8,7 @@ const {A, DIV, IMG, P, UL, LI, SPAN} = choc;
 const hardmode = [0, 5000, 7500, 10600, 14600, 22300];
 
 let config = {};
-try {config = JSON.parse(localStorage.getItem("hypetrain_config"));} catch (e) {}
+try {config = JSON.parse(localStorage.getItem("hypetrain_config")) || {};} catch (e) {}
 const el = DOM("form").elements;
 for (let name in config) {
 	const [type, which] = name.split("_");
@@ -19,6 +19,8 @@ for (let name in config) {
 }
 
 //window.channelid has our crucial identifier
+
+let socket; //temporarily up here to allow an encapsulation violation
 
 let expiry, updating = null;
 function update() {
@@ -48,7 +50,14 @@ function play(which, force) {
 	const el = DOM("#sfx_" + which);
 	if (el.playing) return; //Don't stack audio
 	if (!config["use_" + which] && !force) return; //Play if configured (or if testing)
-	el.play();
+	const playing = el.play();
+	if (playing) playing.catch(err => {
+		//Autoplay was denied. Notify the server for debugging purposes.
+		//Violates encapsulation. FIXME: Either do this properly or don't.
+		console.error("Unable to autoplay");
+		console.error(err);
+		if (socket) socket.send(JSON.stringify({cmd: "reporterror", context: "autoplay", error: err.name, msg: err.message}));
+	});
 	if (which === "insistent") {
 		el.loop = true;
 		setTimeout(() => el.loop = false, force ? 2500 : 9500);
@@ -113,7 +122,7 @@ function render(state) {
 	update();
 }
 
-let socket;
+//~ let socket;
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 function connect()
 {
@@ -131,6 +140,7 @@ function connect()
 		let data = JSON.parse(ev.data);
 		console.log("Got message from server:", data);
 		if (data.cmd === "update") render(data);
+		if (data.cmd === "hit-it") play("ding", 1);
 	};
 }
 if (window.channelid) connect();
