@@ -66,8 +66,16 @@ function play(which, force) {
 function hypetrain_started() {play("start");}
 function cooldown_ended() {play("ding"); play("insistent");}
 
+let interacted = 0;
+function check_interaction() {
+	DOM("#interact-warning").classList.toggle("hidden",
+		interacted || (!config.use_ding && !config.use_insistent && !config.use_start)
+	);
+}
+
 let last_rendered = null;
 function render(state) {
+	check_interaction();
 	//Show the emotes that we could win (or could have won last hype train)
 	const lvl = state.cooldown && state.level; //If not active or cooling down, hide 'em all
 	document.querySelectorAll("#emotes li").forEach((li, idx) => li.className =
@@ -169,6 +177,7 @@ DOM("#savecfg").onclick = e => {
 	localStorage.setItem("hypetrain_config", JSON.stringify(config));
 	DOM("#config").close();
 };
+document.onclick = () => {interacted = 1; check_interaction();}
 
 //Compat shim lifted from Mustard Mine
 //For browsers with only partial support for the <dialog> tag, add the barest minimum.

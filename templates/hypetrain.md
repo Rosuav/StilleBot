@@ -2,6 +2,10 @@
 
 <div id=status></div>
 
+WARNING: Audio alerts may not play if you have not interacted with the page.
+Click anywhere to enable alerts.
+{:#interact-warning .hidden}
+
 <button type=button id=refresh>Refresh</button>
 
 $$emotes$$
@@ -32,6 +36,13 @@ loophole of anonymity, of course...
 #emotes li:not(.next):not(.available) {display: none;}
 audio {display: none;}
 #config li {margin-bottom: 1.5em;}
+#interact-warning {
+	background: #ffff88;
+	border: 3px solid #ffaa00;
+	width: max-content;
+	padding: 0.5em;
+}
+#interact-warning.hidden {display: none;}
 </style>
 
 <script>window.channelid = $$channelid$$;</script>
