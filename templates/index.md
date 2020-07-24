@@ -10,4 +10,7 @@ it without linking.
 $$yourname$$ $$loglink$$
 
 Additional features and toys available here:
-* TODO: Link to bitsbadges, checklist, emotes, hypetrain??, raidfinder
+* [See who has which bit badges in your channel](/bitsbadges) (needs login)
+* [Emote checklist](/checklist)
+* [The bot's full emote list](/emotes)
+* <form method=get action="/hypetrain">Hype train status for a Twitch channel: <input name=for size=20><input type=submit value="Show"></form>
