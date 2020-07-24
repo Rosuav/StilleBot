@@ -70,11 +70,10 @@ string img(string code, int id)
 		"<figcaption>%[0]s</figcaption></figure>", code, id);
 }
 
-mapping cached_emote_list;
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	object ret = Concurrent.resolve(0);
-	mapping emotelist = req->variables->use_cache && cached_emote_list;
+	mapping emotelist = 0;
 	if (!emotelist) //TODO: Cache this more intelligently (currently it's only good for debugging)
 	{
 		if (mapping resp = ensure_login(req, "user_subscriptions")) return resp;
@@ -84,7 +83,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			})->then(lambda(mapping info) {
 				info->fetchtime = time();
 				emotelist = info;
-				if (req->variables->cache_this) cached_emote_list = info;
 			});
 	}
 	return ret->then(lambda() {
