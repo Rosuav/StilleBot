@@ -49,3 +49,4 @@
   - Have a convenient way to say "this function takes both GET and POST requests", which
     will then also trigger autoform handling, the save_or_login, and maybe ensure_session
     on POST? Or some sort of login validation. Maybe check for mod status.
+  - This might also be a good place to clean up the backlink handling
