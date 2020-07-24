@@ -43,3 +43,9 @@
   - This specific example is better handled by Train Tracker aka modules/http/hypetrain but
     there will be others that can use this.
 * Websockets on SSL are causing noisy failures on disconnect - possible Pike limitation?
+* Clean up the autoform handling
+  - Currently, all Markdown pages get a <form> even if they don't need it
+  - This can be overridden, but that's backwards
+  - Have a convenient way to say "this function takes both GET and POST requests", which
+    will then also trigger autoform handling, the save_or_login, and maybe ensure_session
+    on POST? Or some sort of login validation. Maybe check for mod status.
