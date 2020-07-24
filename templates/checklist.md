@@ -25,4 +25,6 @@ img:hover {filter: saturate(1);}
 img.have, $$emotes$$ {filter: saturate(1); border-color: green;}
 </style>
 
+$$login_link$$
+
 $$text$$

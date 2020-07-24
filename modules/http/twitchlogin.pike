@@ -35,5 +35,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//I'm not sure if I should be stricter here or if that's okay. You won't be
 		//able to redirect outside of the StilleBot environment this way.
 	}
-	return twitchlogin(req, (<>), next);
+	//TODO: Sanity-check this? It's going to be checked for keyword validity.
+	array(string) scopes = (req->variables->scopes || "") / " " - ({""});
+	return twitchlogin(req, (multiset)scopes, next);
 }

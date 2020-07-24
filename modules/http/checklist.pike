@@ -73,22 +73,23 @@ string img(string code, int id)
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	object ret = Concurrent.resolve(0);
-	mapping emotelist = 0;
-	if (!emotelist) //TODO: Cache this more intelligently (currently it's only good for debugging)
+	mapping emotesets = ([]);
+	string login_link = "[Log in to highlight the emotes you have access to](/twitchlogin?next=/checklist&scopes=user_subscriptions)";
+	if (req->misc->session->?scopes->?user_subscriptions)
 	{
-		if (mapping resp = ensure_login(req, "user_subscriptions")) return resp;
+		login_link = "";
 		ret = ret->then(lambda() {return twitch_api_request("https://api.twitch.tv/kraken/users/{{USER}}/emotes",
 			(["Authorization": "OAuth " + req->misc->session->token]),
 			(["username": req->misc->session->user->login]));
 			})->then(lambda(mapping info) {
 				info->fetchtime = time();
-				emotelist = info;
+				emotesets = info->emoticon_sets;
 			});
 	}
 	return ret->then(lambda() {
 		mapping have_emotes = ([]);
 		array(string) used = ({ }); //Emote names that we have AND used
-		foreach (emotelist->emoticon_sets;; array set) foreach (set, mapping em)
+		foreach (emotesets;; array set) foreach (set, mapping em)
 			have_emotes[em->code] = img(em->code, em->id);
 		string text = words->replace(hypetrain, lambda(string w) {
 			//1) Do we (the logged-in user) have the emote?
@@ -102,6 +103,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			return w;
 		});
 		return render_template("checklist.md", ([
+			"login_link": login_link,
 			"text": text, "emotes": sprintf("img[title=\"%s\"]", used[*]) * ", ",
 		]));
 	});
