@@ -42,3 +42,4 @@
   - Just like with permanent autocommands, emit only if online at the time.
   - This specific example is better handled by Train Tracker aka modules/http/hypetrain but
     there will be others that can use this.
+* Websockets on SSL are causing noisy failures on disconnect - possible Pike limitation?
