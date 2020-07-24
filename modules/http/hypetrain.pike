@@ -92,7 +92,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	{
 		avail_emotes += "\n*";
 		foreach (level / " ", string emote)
-			avail_emotes += " " + (emotemd[emote] || emote);
+		{
+			string md = emotemd[emote];
+			if (!md) {avail_emotes += " " + emote; continue;}
+			avail_emotes += sprintf(" %s*%s*", emotemd[emote], replace(emotemd[emote], "/1.0", "/3.0"));
+		}
 	}
 	return (channel ? get_user_id(channel) : Concurrent.resolve(0))
 		->then(lambda(int uid) {

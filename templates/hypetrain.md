@@ -30,11 +30,34 @@ loophole of anonymity, of course...
 #countdown {
 	font-size: 250%;
 }
-#emotes li img:last-of-type {display: none;}
-#emotes.hardmode li img:last-of-type {display: inline-block;}
+#emotes li > img:last-of-type {display: none;}
+#emotes.hardmode li > img:last-of-type {display: inline-block;}
 #emotes li.available:before {content: "Earnable: ";}
 #emotes li.next:before {content: "Next goal: ";}
 #emotes li:not(.next):not(.available) {display: none;}
+
+/* Show a larger version of the emotes on hover */
+#emotes em {
+	position: relative;
+	width: 0; height: 0;
+}
+#emotes em:nth-of-type(0) {left: 0px;} /* Manually do the calculations :( */
+#emotes em:nth-of-type(1) {left: 30px;}
+#emotes em:nth-of-type(2) {left: 60px;}
+#emotes em:nth-of-type(3) {left: 90px;}
+#emotes em:nth-of-type(4) {left: 120px;}
+#emotes em:nth-of-type(5) {left: 150px;}
+#emotes em img {
+	display: none;
+	position: absolute;
+	background: white;
+	border: 2px solid black;
+	box-shadow: 5px 5px 10px 0px cyan;
+	padding: 2px;
+	margin: 2px;
+}
+#emotes img:hover + em img {display: block;}
+
 audio {display: none;}
 #config li {margin-bottom: 1.5em;}
 #interact-warning {
