@@ -126,15 +126,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			continue;
 		}
 		counters += ({sprintf("%s | %s | - | - | -", name, count)});
-		foreach (c->commands || ({ }), mapping cmd)
-		{
-			counters += ({sprintf("&nbsp; | &nbsp; | %s", fmt_cmd(cmd))});
-		}
+		if (c->commands) counters += sort(sprintf("&nbsp; | &nbsp; | %s", fmt_cmd(c->commands[*])[*]));
 	}
 	if (!sizeof(counters)) counters = ({"(none) |"});
-	//if (changes_made) make_echocommand(0, 0); //Trigger a save
 	return render_template("chan_counters.md", ([
-		//"user text": user,
 		"channel": req->misc->channel_name, "counters": counters * "\n",
 		"messages": messages * "\n",
 		"newcounter": req->misc->is_mod ? newcounterform : "",
