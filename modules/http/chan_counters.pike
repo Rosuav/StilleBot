@@ -37,6 +37,31 @@ string fmt_cmd(mapping cmd)
 	);
 }
 
+constant newcommands = ({
+	({"View", ([]),
+		"!deaths",
+		"Streamer has died %d times",
+		"Public command to view the count w/o changing it",
+	}),
+	({"Increment", (["access": "mod", "action": "+1"]),
+		"!adddeath",
+		"Adding another death - now %d!",
+		"Mod-only command to increment the count",
+	}),
+	({"Reset", (["access": "mod", "action": "=0"]),
+		"!cleardeath",
+		"Resetting death counter to zero.",
+		"Mod-only command to reset the count to zero.",
+	}),
+});
+
+constant newcounterform = sprintf(#"- | - | Add a new counter by filling in these details. Anything left blank will be omitted.
+------|---|---
+Keyword: | <input name=newcounter placeholder=\"deaths\"> | Identifying keyword for this counter%{
+%[0]s: | <input name=%[0]scmd placeholder=%[2]q> | <input name=%[0]sresp class=widetext placeholder=%[3]q><br>%[4]s%}
+{:#newcounter}
+", newcommands);
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	string c = req->misc->channel->name;
@@ -44,6 +69,22 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mapping counterdata = persist_status->path("counters", c);
 	//Convert (["x": 1]) into (["x": (["count": 1])]) to allow us to add metadata
 	counterdata = mkmapping(indices(counterdata), (["count": values(counterdata)[*]]));
+	if (req->misc->is_mod && sscanf(req->variables->newcounter || "", "%[a-zA-Z]", string counter) && counter != "")
+	{
+		foreach (newcommands, array info)
+		{
+			string kw = info[0]; mapping attr = info[1]; //Ignore the spare elements in info
+			string cmd = req->variables[kw + "cmd"] || "";
+			string resp = req->variables[kw + "resp"] || "";
+			write("%s: %O %O\n", kw, cmd, resp);
+			if (cmd == "" || resp == "") continue;
+			sscanf(cmd, "%*[!]%[A-Za-z]", cmd);
+			messages += ({sprintf("* Creating %s command !%s", kw, cmd)});
+			make_echocommand(cmd + req->misc->channel->name,
+				attr | (["message": resp, "counter": counter]),
+			);
+		}
+	}
 	foreach (G->G->echocommands; string cmd; echoable_message response) if (!has_prefix(cmd, "!") && has_suffix(cmd, c))
 	{
 		//NOTE: This makes a number of assumptions about the response, including that it
@@ -65,11 +106,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				if ((string)val != String.trim(newval))
 				{
 					//Prevent non-integers or other formats or anything
-					messages += ({sprintf("Invalid number format %s for %s", newval, name)});
+					messages += ({sprintf("* Invalid number format %s for %s", newval, name)});
 				}
 				else if (val != c->count)
 				{
-					messages += ({sprintf("Updated %s from %d to %d (%+d)", name, c->count, val, val-c->count)});
+					messages += ({sprintf("* Updated %s from %d to %d (%+d)", name, c->count, val, val-c->count)});
 					persist_status->path("counters", req->misc->channel->name)[name] = val;
 					count = (string)val;
 					persist_status->save();
@@ -96,6 +137,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//"user text": user,
 		"channel": req->misc->channel_name, "counters": counters * "\n",
 		"messages": messages * "\n",
-		"save_or_login": req->misc->login_link || "<input type=submit value=\"Update counter(s)\">",
+		"newcounter": req->misc->is_mod ? newcounterform : "",
+		"save_or_login": req->misc->login_link || "<input type=submit value=\"Add/update counter(s)\">",
 	]));
 }
