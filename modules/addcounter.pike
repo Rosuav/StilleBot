@@ -12,8 +12,8 @@ do not shoot yourself in the foot :)
 
 Counter commands themselves are currently available to everyone in the
 channel (TODO: support mod-only counters), and will increment the counter and
-display the text they have been given. The marker `%%d` will be replaced with
-the total number of times the command has been run, and `%%s` will be replaced
+display the text they have been given. The marker `%d` will be replaced with
+the total number of times the command has been run, and `%s` will be replaced
 with any words given after the command (not usually needed). Similarly, `$$`
 is replaced with the username of the person who triggered the command.
 
