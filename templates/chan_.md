@@ -6,6 +6,7 @@ StilleBot can do here:
 * [Global commands](https://rosuav.github.io/StilleBot/commands/) - available in
   all supported channels
 * [Channel-specific commands](commands)
+* [Counters](counters)
 * [Special responses](specials)
 * [Repeated/automatic commands](repeats)
 * [Quotes](quotes)
