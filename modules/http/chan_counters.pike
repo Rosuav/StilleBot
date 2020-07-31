@@ -66,9 +66,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	string c = req->misc->channel->name;
 	array counters = ({ }), order = ({ }), messages = ({ });
-	mapping counterdata = persist_status->path("counters", c);
+	mapping rawdata = persist_status->path("counters", c);
 	//Convert (["x": 1]) into (["x": (["count": 1])]) to allow us to add metadata
-	counterdata = mkmapping(indices(counterdata), (["count": values(counterdata)[*]]));
+	mapping counterdata = mkmapping(indices(rawdata), (["count": values(rawdata)[*]]));
 	if (req->misc->is_mod && sscanf(req->variables->newcounter || "", "%[a-zA-Z]", string counter) && counter != "")
 	{
 		foreach (newcommands, array info)
@@ -108,14 +108,19 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 					//Prevent non-integers or other formats or anything
 					messages += ({sprintf("* Invalid number format %s for %s", newval, name)});
 				}
-				else if (val != c->count)
+				else if (val == c->count) ; //No change, be silent
+				else if (val)
 				{
 					messages += ({sprintf("* Updated %s from %d to %d (%+d)", name, c->count, val, val-c->count)});
-					persist_status->path("counters", req->misc->channel->name)[name] = val;
-					count = (string)val;
+					rawdata[name] = val; count = (string)val;
 					persist_status->save();
 				}
-				//Else if it's the same, say nothing.
+				else
+				{
+					messages += ({sprintf("* Wiped %s (was %d)", name, c->count)});
+					m_delete(rawdata, name); count = "0";
+					persist_status->save();
+				}
 			}
 			count = sprintf("<input type=number name=set_%s value=%s>", name, count);
 		}
