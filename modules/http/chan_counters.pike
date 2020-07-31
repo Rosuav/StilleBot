@@ -27,7 +27,12 @@ string fmt_cmd(mapping cmd)
 {
 	return sprintf("!%s | %s | %s",
 		cmd->name,
-		cmd->action,
+		([
+			0: "View", "": "View",
+			"+1": "Increment",
+			"=0": "Reset to zero",
+			"=%s": "Set to specified value",
+		])[cmd->action] || cmd->action,
 		cmd->modonly ? "Mods" : "Anyone",
 	);
 }
