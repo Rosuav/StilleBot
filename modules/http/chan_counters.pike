@@ -56,13 +56,35 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	foreach (sort(indices(counterdata)), string name)
 	{
 		mapping c = counterdata[name];
+		string count = (string)c->count;
+		if (req->misc->is_mod)
+		{
+			if (string newval = req->request_type == "POST" && req->variables["set_" + name])
+			{
+				int val = (int)newval;
+				if ((string)val != String.trim(newval))
+				{
+					//Prevent non-integers or other formats or anything
+					messages += ({sprintf("Invalid number format %s for %s", newval, name)});
+				}
+				else if (val != c->count)
+				{
+					messages += ({sprintf("Updated %s from %d to %d (%+d)", name, c->count, val, val-c->count)});
+					persist_status->path("counters", req->misc->channel->name)[name] = val;
+					count = (string)val;
+					persist_status->save();
+				}
+				//Else if it's the same, say nothing.
+			}
+			count = sprintf("<input type=number name=set_%s value=%s>", name, count);
+		}
 		if (sizeof(c->commands) == 1) //Special-case the common case of exactly one handler
 		{
 			mapping cmd = c->commands[0];
-			counters += ({sprintf("%s | %d | %s", name, c->count, fmt_cmd(c))});
+			counters += ({sprintf("%s | %s | %s", name, count, fmt_cmd(c))});
 			continue;
 		}
-		counters += ({sprintf("%s | %d | - | - | -", name, c->count)});
+		counters += ({sprintf("%s | %s | - | - | -", name, count)});
 		foreach (c->commands || ({ }), mapping cmd)
 		{
 			counters += ({sprintf("&nbsp; | &nbsp; | %s", fmt_cmd(cmd))});
@@ -74,6 +96,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//"user text": user,
 		"channel": req->misc->channel_name, "counters": counters * "\n",
 		"messages": messages * "\n",
-		"save_or_login": req->misc->login_link || "<input type=submit value=\"Save all\">",
+		"save_or_login": req->misc->login_link || "<input type=submit value=\"Update counter(s)\">",
 	]));
 }
