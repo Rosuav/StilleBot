@@ -119,10 +119,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			}
 			count = sprintf("<input type=number name=set_%s value=%s>", name, count);
 		}
-		if (sizeof(c->commands) == 1) //Special-case the common case of exactly one handler
+		if (c->commands && sizeof(c->commands) == 1) //Special-case the common case of exactly one handler
 		{
-			mapping cmd = c->commands[0];
-			counters += ({sprintf("%s | %s | %s", name, count, fmt_cmd(c))});
+			counters += ({sprintf("%s | %s | %s", name, count, fmt_cmd(c->commands[0]))});
 			continue;
 		}
 		counters += ({sprintf("%s | %s | - | - | -", name, count)});
