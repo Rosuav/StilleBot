@@ -45,16 +45,17 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		mapping cfg = persist_status->path("subpoints", nonce);
 		if (!cfg->token) return 0; //shouldn't happen if you got your nonce right
 		cfg->pinged = time();
-		string style = "h1,.cfg {display: none;}";
+		string style = "h1,.cfg {display: none;}main {background-color: inherit;}";
 		if (cfg->font && cfg->font != "")
 			style = sprintf("@import url(\"https://fonts.googleapis.com/css2?family=%s&display=swap\");"
 					"#points {font-family: '%s', sans-serif;}"
 					"%s", Protocols.HTTP.uri_encode(cfg->font), cfg->font, style);
+		if ((int)cfg->fontsize) style += "#points {font-size: " + (int)cfg->fontsize + "px;}";
 		return get_sub_points(cfg)
 			->then(lambda(int points) {
 				return render_template("subpoints.md", ([
 					"nonce": nonce, "viewnonce": nonce, "channelname": cfg->channelname || "",
-					"unpaidpoints": "", "goal": "", "usecomfy": "", "font": "",
+					"unpaidpoints": "", "goal": "", "usecomfy": "", "font": "", "size": "",
 					"comfy": cfg->usecomfy ? "<script src=\"https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js\"></script>" : "",
 					"style": style,
 					"points": sprintf("%d / %d", points, cfg->goal || 1234),
@@ -76,6 +77,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		cfg->goal = (int)req->variables->goal;
 		cfg->usecomfy = !!req->variables->usecomfy;
 		cfg->font = req->variables->font;
+		cfg->fontsize = req->variables->fontsize;
 		subpoints_updated(nonce);
 	}
 	cfg->uid = (string)req->misc->session->user->id;
@@ -84,7 +86,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	return get_sub_points(cfg, 1)
 		->then(lambda(array info) {
 			mapping(string:int) tiercount = ([]), gifts = ([]);
-			Stdio.File("subpoints_" + cfg->channelname, "wct")->write("%O\n", info);
+			//Stdio.File("subpoints_" + cfg->channelname, "wct")->write("%O\n", info);
 			array(string) tierlist = ({ });
 			mapping(string|int:mapping) usersubs = ([]);
 			foreach (info, mapping sub)
@@ -117,7 +119,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				"nonce": nonce, "viewnonce": "", "channelname": "",
 				"unpaidpoints": (string)cfg->unpaidpoints,
 				"goal": (string)cfg->goal,
-				"font": cfg->font || "",
+				"font": cfg->font || "", "size": cfg->fontsize || "16",
 				"usecomfy": cfg->usecomfy ? " checked" : "",
 				"style": "",
 				"comfy": "",
