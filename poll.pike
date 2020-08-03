@@ -84,17 +84,38 @@ Concurrent.Future get_user_id(string user)
 	return get_user_info(user, "login")->then(lambda(mapping info) {return (int)info->id;});
 }
 
-Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers)
+Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers, int|void debug)
 {
 	array data = ({ });
 	Standards.URI uri = Standards.URI(url);
 	query = (query || ([])) + ([]);
+	if (!query->first) query->first = "100"; //Default to the largest page permitted.
 	//NOTE: uri->set_query_variables() doesn't correctly encode query data.
 	uri->query = Protocols.HTTP.http_encode_query(query);
 	int empty = 0;
+	if (debug) werror("get_helix_paginated %O %O\n", url, uri->query);
 	mixed nextpage(mapping raw)
 	{
 		if (!raw->data) return Concurrent.reject(({"Unparseable response\n", backtrace()}));
+		if (debug)
+		{
+			string pg = (raw->pagination && raw->pagination->cursor) || "";
+			catch {pg = MIME.decode_base64(pg);};
+			if (sscanf(pg, "{\"b\":{\"Cursor\":\"%[-0-9.T:Z]\"},\"a\":{\"Cursor\":\"%[-0-9.T:Z]\"}}",
+				string b, string a) && a)
+			{
+				pg = sprintf("FROM %s TO %s", b, a);
+				/*
+				object t = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", a)->add(-10);
+				a = sprintf("%04d-%02d-%02dT%02d:%02d:%02dZ",
+					t->year_no(), t->month_no(), t->month_day(),
+					t->hour_no(), t->minute_no(), t->second_no(),
+				);
+				raw->pagination->cursor = sprintf("{\"b\":{\"Cursor\":\"%s\"},\"a\":{\"Cursor\":\"%s\"}}", b, a);
+				*/
+			}
+			werror("Next page: %d data, pg %s\n", sizeof(raw->data), pg);
+		}
 		data += raw->data;
 		if (!raw->pagination || !raw->pagination->cursor) return data;
 		//Possible Twitch API bug: If the returned cursor is precisely "IA",
@@ -110,6 +131,26 @@ Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|vo
 		return request(uri, headers)->then(nextpage);
 	}
 	return request(uri, headers)->then(nextpage);
+}
+
+//Doesn't help, but it's certainly very interesting.
+//Attempt to probe the Helix pagination issues I've been seeing by paginating on two different
+//numbers and then combining the results. It's possible that there are two page sizes that would
+//catch everything, but at the moment, I haven't managed to find the magic pair. Still, it's been
+//interesting (in the Wash sense) delving into this. Using 100 and 99 is 
+Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|void headers, int|void debug)
+{
+	query = query || ([]);
+	return get_helix_paginated(url, query | (["first": "100"]), headers, debug)->then(lambda(array data1) {
+		return get_helix_paginated(url, query | (["first": "97"]), headers, debug)->then(lambda(array data2) {
+			multiset seen = (<>);
+			foreach (data1, mixed x) seen[sprintf("%O", x)] = 1;
+			array ret = data1;
+			foreach (data2, mixed x) if (!seen[sprintf("%O", x)]) ret += ({x});
+			if (debug) werror("Got %d + %d = %d results\n", sizeof(data1), sizeof(data2), sizeof(ret));
+			return ret;
+		});
+	});
 }
 
 Concurrent.Future get_channel_info(string name)

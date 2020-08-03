@@ -14,7 +14,7 @@ constant tiers = (["1000": 1, "2000": 2, "3000": 6]); //Sub points per tier
 Concurrent.Future get_sub_points(mapping cfg, int|void raw)
 {
 	return get_helix_paginated("https://api.twitch.tv/helix/subscriptions",
-			(["broadcaster_id": cfg->uid]),
+			(["broadcaster_id": cfg->uid, "first": "99"]),
 			(["Authorization": "Bearer " + cfg->token]))
 			->then(lambda(array info) {
 				if (raw) return info;
@@ -84,11 +84,18 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	return get_sub_points(cfg, 1)
 		->then(lambda(array info) {
 			mapping(string:int) tiercount = ([]), gifts = ([]);
-			write("%O\n", info);
+			Stdio.File("subpoints_" + cfg->channelname, "wct")->write("%O\n", info);
 			array(string) tierlist = ({ });
+			mapping(string|int:mapping) usersubs = ([]);
 			foreach (info, mapping sub)
 			{
 				if (sub->user_id == sub->broadcaster_id) continue; //Ignore self
+				if (usersubs[sub->user_id])
+				{
+					//Don't know how this would happen, but maybe a pagination failure???
+					tierlist += ({sprintf("Duplicate! <pre>%O\n%O\n</pre><br>\n", usersubs[sub->user_id], sub)});
+				}
+				usersubs[sub->user_id] = sub;
 				tiercount[sub->tier]++; if (sub->is_gift) gifts[sub->tier]++;
 				if (!tiers[sub->tier]) tierlist += ({sprintf("Unknown sub tier %O<br>\n", sub->tier)});
 				//Try to figure out if we get any extra info
@@ -96,7 +103,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					"broadcaster_id", "broadcaster_name", "gifter_id", "gifter_name", "is_gift",
 					"plan_name", "tier", "user_id", "user_name",
 				>);
-				if (sizeof(unknowns)) tierlist += ({sprintf("Unknown additional info on %s's sub:%{ %O%}", sub->user_name, indices(unknowns))});
+				if (sizeof(unknowns)) tierlist += ({sprintf("Unknown additional info on %s's sub:%{ %O%}<br>\n", sub->user_name, indices(unknowns))});
 			}
 			int tot, pts, totgifts, totgiftpts;
 			foreach (tiercount; string tier; int count)
