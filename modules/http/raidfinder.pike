@@ -27,6 +27,14 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//list, but that streamer's raid history. It's good for making recommendations.
 		//It's NOT the same as the streamer checking the raid finder.
 		//write("On behalf of %O\n", chan);
+		if (chan == "online") //Hack: "for=online" will look at which bot-tracked channels are online.
+		{
+			array online = indices(G->G->stream_online_since);
+			if (!sizeof(online)) return (["data": "Nobody's online that I can see!", "type": "text/plain"]);
+			if (sizeof(online) == 1) return redirect("/raidfinder?for=" + online[0]); //Send you straight there if only one
+			return (["data": sprintf("<ul>%{<li><a href=\"/raidfinder?for=%s\">%<s</a></li>%}</ul>", sort(online)),
+				"type": "text/html"]);
+		}
 		uid = get_user_id(chan);
 	}
 	mapping raids = ([]);
