@@ -45,13 +45,18 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		mapping cfg = persist_status->path("subpoints", nonce);
 		if (!cfg->token) return 0; //shouldn't happen if you got your nonce right
 		cfg->pinged = time();
+		string style = "h1,.cfg {display: none;}";
+		if (cfg->font && cfg->font != "")
+			style = sprintf("@import url(\"https://fonts.googleapis.com/css2?family=%s&display=swap\");"
+					"#points {font-family: '%s', sans-serif;}"
+					"%s", Protocols.HTTP.uri_encode(cfg->font), cfg->font, style);
 		return get_sub_points(cfg)
 			->then(lambda(int points) {
 				return render_template("subpoints.md", ([
 					"nonce": nonce, "viewnonce": nonce, "channelname": cfg->channelname || "",
-					"unpaidpoints": "", "goal": "", "usecomfy": "",
+					"unpaidpoints": "", "goal": "", "usecomfy": "", "font": "",
 					"comfy": cfg->usecomfy ? "<script src=\"https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js\"></script>" : "",
-					"style": "h1,.cfg {display: none;}",
+					"style": style,
 					"points": sprintf("%d / %d", points, cfg->goal || 1234),
 				]));
 			});
@@ -70,6 +75,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		cfg->unpaidpoints = (int)req->variables->unpaidpoints;
 		cfg->goal = (int)req->variables->goal;
 		cfg->usecomfy = !!req->variables->usecomfy;
+		cfg->font = req->variables->font;
 		subpoints_updated(nonce);
 	}
 	cfg->uid = (string)req->misc->session->user->id;
@@ -104,6 +110,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				"nonce": nonce, "viewnonce": "", "channelname": "",
 				"unpaidpoints": (string)cfg->unpaidpoints,
 				"goal": (string)cfg->goal,
+				"font": cfg->font || "",
 				"usecomfy": cfg->usecomfy ? " checked" : "",
 				"style": "",
 				"comfy": "",
