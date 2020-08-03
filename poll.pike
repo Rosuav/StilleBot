@@ -310,12 +310,13 @@ Concurrent.Future check_following(string user, string chan)
 	});
 }
 
-void create_webhook(string callback, string topic, int seconds)
+void create_webhook(string callback, string topic, int seconds, string|void token)
 {
 	string secret = MIME.encode_base64(random_string(15));
 	G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
 	request("https://api.twitch.tv/helix/webhooks/hub", ([
 			"Content-Type": "application/json",
+			"Authorization": token && "Bearer " + token,
 		]), (["json": ([
 			"hub.callback": sprintf("%s/junket?%s",
 				persist_config["ircsettings"]["http_address"],

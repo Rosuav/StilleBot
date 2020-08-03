@@ -115,11 +115,12 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			])));
 			if (G->G->webhook_active["subpoints=" + conn->group] < 300)
 			{
-				write("Creating webhook for sub points %O\n", conn->group);
+				write("Webhooking sub points %O %O %O\n", conn->group, cfg->uid, cfg->channelname);
 				create_webhook(
 					"subpoints=" + conn->group,
 					"https://api.twitch.tv/helix/subscriptions/events?broadcaster_id=" + cfg->uid + "&first=1",
 					1800,
+					cfg->token,
 				);
 			}
 		});
