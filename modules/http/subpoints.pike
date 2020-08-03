@@ -21,7 +21,7 @@ Concurrent.Future get_sub_points(mapping cfg, int|void raw)
 				int points = -cfg->unpaidpoints;
 				foreach (info, mapping sub)
 					if (sub->user_id != sub->broadcaster_id) //Ignore self
-						points += tiers[sub->tier];
+						points += tiers[sub->tier] || 10000; //Hack: Big noisy thing if the tier is broken
 				return points;
 			});
 }
