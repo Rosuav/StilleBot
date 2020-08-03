@@ -44,6 +44,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	{
 		mapping cfg = persist_status->path("subpoints", nonce);
 		if (!cfg->token) return 0; //shouldn't happen if you got your nonce right
+		cfg->pinged = time();
 		return get_sub_points(cfg)
 			->then(lambda(int points) {
 				return render_template("subpoints.md", ([
@@ -62,6 +63,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	req->misc->session->nonce = nonce;
 	mapping cfg = persist_status->path("subpoints", nonce);
 	cfg->channelname = req->misc->session->user->login;
+	cfg->pinged = time();
 	if (req->request_type == "POST")
 	{
 		write("UPDATING\n");
@@ -104,6 +106,7 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (msg->cmd == "refresh" || msg->cmd == "init")
 	{
 		mapping cfg = persist_status->path("subpoints", conn->group);
+		cfg->pinged = time();
 		get_sub_points(cfg)->then(lambda(int points) {
 			//conn->sock will have definitely been a thing when we were called,
 			//but by the time we get the sub points, it might have been dc'd.
