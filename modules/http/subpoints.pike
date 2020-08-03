@@ -77,16 +77,28 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	persist_status->save();
 	return get_sub_points(cfg, 1)
 		->then(lambda(array info) {
-			mapping(string:int) tiercount = ([]);
-			foreach (info, mapping sub)
-				if (sub->user_id != sub->broadcaster_id) //Ignore self
-					tiercount[sub->tier]++;
+			mapping(string:int) tiercount = ([]), gifts = ([]);
+			write("%O\n", info);
 			array(string) tierlist = ({ });
-			int tot, pts;
+			foreach (info, mapping sub)
+			{
+				if (sub->user_id == sub->broadcaster_id) continue; //Ignore self
+				tiercount[sub->tier]++; if (sub->is_gift) gifts[sub->tier]++;
+				if (!tiers[sub->tier]) tierlist += ({sprintf("Unknown sub tier %O<br>\n", sub->tier)});
+				//Try to figure out if we get any extra info
+				mapping unknowns = sub - (<
+					"broadcaster_id", "broadcaster_name", "gifter_id", "gifter_name", "is_gift",
+					"plan_name", "tier", "user_id", "user_name",
+				>);
+				if (sizeof(unknowns)) tierlist += ({sprintf("Unknown additional info on %s's sub:%{ %O%}", sub->user_name, indices(unknowns))});
+			}
+			int tot, pts, totgifts, totgiftpts;
 			foreach (tiercount; string tier; int count)
 			{
 				tot += count; pts += tiers[tier] * count;
-				tierlist += ({sprintf("Tier %c: %d (%d)<br>\n", tier[0], tiers[tier] * count, count)});
+				totgifts += gifts[tier]; totgiftpts += tiers[tier] * gifts[tier];
+				string gift = gifts[tier] ? sprintf(", of which %d (%d) are gifts", tiers[tier] * gifts[tier], gifts[tier]) : "";
+				tierlist += ({sprintf("Tier %c: %d (%d)%s<br>\n", tier[0], tiers[tier] * count, count, gift)});
 			}
 			return render_template("subpoints.md", ([
 				"nonce": nonce, "viewnonce": "", "channelname": "",
@@ -95,7 +107,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				"usecomfy": cfg->usecomfy ? " checked" : "",
 				"style": "",
 				"comfy": "",
-				"points": sort(tierlist) * "" + sprintf("Total: %d subs, %d points", tot, pts),
+				"points": sort(tierlist) * ""
+					+ sprintf("Total: %d subs, %d points", tot, pts)
+					+ (totgifts ? sprintf(", of which %d (%d) are gifts", totgiftpts, totgifts) : ""),
 			]));
 		});
 }
