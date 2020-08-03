@@ -115,7 +115,7 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 				write("Creating webhook for sub points %O\n", conn->group);
 				create_webhook(
 					"subpoints=" + conn->group,
-					"https://api.twitch.tv/helix/subscriptions/events?broadcaster_id=" + conn->group + "&first=1",
+					"https://api.twitch.tv/helix/subscriptions/events?broadcaster_id=" + cfg->uid + "&first=1",
 					1800,
 				);
 			}
