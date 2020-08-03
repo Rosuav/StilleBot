@@ -30,8 +30,9 @@ void subpoints_updated(string nonce, array|void data)
 {
 	mapping cfg = persist_status->path("subpoints", nonce);
 	get_sub_points(cfg)->then(lambda(int points) {
-		write("Pinging %d clients for sub points\n", sizeof(websocket_groups[nonce]));
-		(websocket_groups[nonce] - ({0}))->send_text(Standards.JSON.encode(([
+		array clients = (websocket_groups[nonce] || ({ })) - ({0});
+		write("Pinging %d clients for sub points\n", sizeof(clients));
+		clients->send_text(Standards.JSON.encode(([
 			"cmd": "update", "points": points, "goal": cfg->goal,
 		])));
 	});
