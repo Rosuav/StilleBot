@@ -129,8 +129,9 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 				write("Creating webhook for hype train %O\n", conn->group);
 				create_webhook(
 					"hypetrain=" + conn->group,
-					"https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + conn->group,
+					"https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + conn->group + "&first=1",
 					1800,
+					token,
 				);
 			}
 		});
