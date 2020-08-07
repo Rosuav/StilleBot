@@ -17,12 +17,40 @@ Can only close the connection in both directions simultaneously.
 */
 
 object httpserver;
+constant client = #"<!doctype html>
+<body>
+<div id=rcvd></div><br>
+<form><input id=send></form>
+<script>
+const send = document.getElementById(\"send\"), rcvd = document.getElementById(\"rcvd\");
+let socket = new WebSocket('wss://' + window.location.host + '/ws');
+socket.onopen = () => {
+	console.log('Socket connection established.');
+	socket.send(JSON.stringify({cmd: 'init', type: 'ws_halfclose'}));
+};
+socket.onclose = () => {
+	socket = null;
+	console.log('Socket connection lost.');
+};
+socket.onmessage = (ev) => {
+	let data = JSON.parse(ev.data);
+	console.log('Got message from server:', data);
+	if (data.cmd === 'msg') rcvd.innerText = data.response;
+};
+document.forms[0].onsubmit = e => {
+	e.preventDefault();
+	console.log(\"Send to server: \", send.value);
+	socket.send(JSON.stringify({cmd: 'msg', text: send.value}));
+	send.value = '';
+}
+</script>
+</body>
+";
 
 void http_handler(Protocols.HTTP.Server.Request req)
 {
 	req->response_and_finish(([
-		"data": "Hello, world\n",
-		"type": "text/plain",
+		"data": client, "type": "text/html",
 		"extra_heads": (["Connection": "close"]), //Do I still need this?
 	]));
 }
@@ -32,6 +60,8 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 	mixed data;
 	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
 	write("Message: %O\n", data);
+	if (data->cmd == "msg")
+		conn->sock->send_text(Standards.JSON.encode((["cmd": "msg", "response": "You sent " + sizeof(data->text || "") + " chars."])));
 }
 
 void ws_close(int reason, mapping conn)
