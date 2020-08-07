@@ -86,10 +86,14 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 
 int main()
 {
-	array certs = Standards.PEM.Messages(Stdio.read_file("certificate.pem"))->get_certificates();
-	string pk = Standards.PEM.simple_decode(Stdio.read_file("privkey.pem"));
+	string cert = Stdio.read_file("certificate.pem");
+	array certs = cert && Standards.PEM.Messages(cert)->get_certificates();
+	string pk = Stdio.read_file("privkey.pem");
+	if (pk) pk = Standards.PEM.simple_decode(pk);
+	string host = "127.0.0.1";
+	if (certs) host = Standards.X509.decode_certificate(certs[0])->subject_str();
 	int port = 8808;
 	httpserver = Protocols.WebSocket.SSLPort(http_handler, ws_handler, port, "::", pk, certs);
-	write("Listening on https://%s:%d/\n", Standards.X509.decode_certificate(certs[0])->subject_str(), port);
+	write("Listening on https://%s:%d/\n", host, port);
 	return -1;
 }
