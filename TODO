@@ -18,13 +18,6 @@
     be nice to figure out what's actually wrong and then reap the performance benefits.
 * Add a Logout link (to /logout) to all pages when you're logged in
 * Go through all the web config pages and add user() to any user-defined text
-* Create a variant of !permit where, instead of stopping someone from being timed out,
-  it lets them whisper a single link?
-  - Would make it functional in channels where they're hard-blocked at the Twitch end.
-  - Problem: a bad link can't just be purged by a mod, since it's come from another mod.
-* Can the bot delete one of his own previously-posted messages without losing sword? Test.
-  - "/delete msg-id" doesn't remove a sword. However, the bot doesn't see his own message
-    IDs. This makes things hard.
 * Use the "special responses" system to customize texts like shoutouts? Would need a way
   to provide default text, and then explicitly removing it would mean "don't do this".
 * Allow the bot's commands to be individually enabled and disabled for a particular channel
