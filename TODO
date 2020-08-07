@@ -42,6 +42,7 @@
   - Just like with permanent autocommands, emit only if online at the time.
   - This specific example is better handled by Train Tracker aka modules/http/hypetrain but
     there will be others that can use this.
+  - Would this be best done by adding a (["delay": 3600]) attribute to the echoable_message?
 * Websockets on SSL are causing noisy failures on disconnect - possible Pike limitation?
 * Clean up the autoform handling
   - Currently, all Markdown pages get a <form> even if they don't need it

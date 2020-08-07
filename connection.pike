@@ -380,6 +380,8 @@ class channel_notif
 		//You shouldn't normally have (["message": ([ ... ]) ]) but it's legal.
 		while (mappingp(info->message)) info = info | info->message;
 
+		//TODO: if (info->delay) call_out(); // see TODO file on timers
+
 		echoable_message msg = info->message;
 		if (arrayp(msg))
 		{
