@@ -73,6 +73,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				{
 					string resp = req->variables[sprintf("%s!%d", cmd, i)];
 					if (!resp) break;
+					resp = String.trim(resp);
 					if (i >= sizeof(response)) response += ({""});
 					//Note that this won't correctly handle arrays-in-arrays, but
 					//if you didn't edit it (it'll have had a newline), you should be
