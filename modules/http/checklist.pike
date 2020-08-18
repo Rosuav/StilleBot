@@ -66,11 +66,6 @@ TODO: Check Pok* (Pokemon) emotes
 constant emoteids = ([
 	"HypeOni6": 301205427, "OWL2019Tracer": 1833318,
 	"PrimeYouDontSay": 134251, "PrimeUWot": 134252, "PrimeRlyTho": 134253,
-	"HyperCrown": 303179115, "HyperHex": 303179119, "HyperLost": 303179122,
-	"HyperMine": 303179127, "HyperHaste": 303179118, "HyperCooldown": 303179112,
-	"HyperGravity": 303179116, "HyperJump": 303179121, "HyperSlam": 303179136,
-	"HyperCrate": 303179114, "HyperReveal": 303179133, "HyperParkour": 303179131,
-	"HyperCheese": 303179111, "HyperMayhem": 303179126,
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
