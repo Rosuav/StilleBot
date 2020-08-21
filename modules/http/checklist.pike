@@ -2,6 +2,7 @@ inherit http_endpoint;
 
 //Markdown; emote names will be replaced with their emotes, but will
 //be greyed out if not available.
+//NOTE: The display is aimed at no more than six emotes across.
 constant hypetrain = replace(#"
 ## Hyper Scape
 ### Unlockable 17th Aug 2020 to 31st Aug 2020
@@ -27,8 +28,9 @@ HypeUnicorn1 HypeUnicorn2 HypeUnicorn3 HypeUnicorn4 HypeUnicorn5 HypeUnicorn6<br
 
 ## StreamerLuv
 ### Unlockable 30th Jan 2020 to 16th Feb 2020
-LuvBrownL LuvHearts LuvBlondeR LuvUok LuvOops LuvSign LuvPeekL<br>
-LuvPeekR LuvCool LuvSnooze LuvBlush LuvBrownR LuvGift LuvBlondeL<br>
+LuvBrownL LuvHearts LuvBlondeR LuvUok LuvOops<br>
+LuvSign LuvPeekL LuvPeekR LuvCool LuvSnooze<br>
+LuvBlush LuvBrownR LuvGift LuvBlondeL<br>
 
 ## HAHAHAlidays
 ### Unlockable 3rd Dec 2019 to 3rd Jan 2020
@@ -49,7 +51,7 @@ RPGEpicStaff RPGMana RPGSeven<br>
 ### Unlockable by performing special actions or having special subscriptions. May or may not still be available.
 
 2FA:<br>SirShield SirMad SirPrise SirSword SirSad SirMad<br>
-Turbo:<br>BagOfMemes FlipThis KappaHD MindManners MiniK PartyPopper ScaredyCat TableHere<br>
+Turbo:<br>BagOfMemes FlipThis KappaHD MindManners<br>MiniK PartyPopper ScaredyCat TableHere<br>
 Prime:<br>PrimeYouDontSay PrimeUWot PrimeRlyTho<br>
 Clip creation:<br>Clappy ClappyDerp ClappyHype<br>
 

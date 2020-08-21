@@ -21,6 +21,14 @@ img {
 	/* Some of the HypeUnicorn emotes aren't full size, so force them to 112x112 */
 	width: 116px; height: 116px; /* == 112 plus two borders */
 }
+@media (max-width: 760px)
+{
+	img {
+		border: 1px solid transparent;
+		width: 58px; height: 58px;
+	}
+	figcaption {font-size: 50%;}
+}
 img:hover {filter: saturate(1);}
 img.have, $$emotes$$ {filter: saturate(1); border-color: green;}
 </style>
