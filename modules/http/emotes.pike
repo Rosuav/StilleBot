@@ -17,6 +17,7 @@ constant limited_time_emotes = ([
 	"PrideBalloons": "Pride", "PrideWorld": "Pride",
 	"HypeBigfoot1": "Hype Train (a)", "HypeChest": "Hype Train (b)",
 	"HahaCat": "Hahahalidays", "RPGPhatLoot": "RPG", "LuvHearts": "Streamer Luv",
+	"HyperCrown": "Hyper",
 ]);
 
 Concurrent.Future fetch_emotes()
