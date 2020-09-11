@@ -111,7 +111,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 					usercmd, i, Parser.encode_html_entities(respstr(resp)));
 			}
 			commands += ({sprintf("<code>!%s</code> | %s | "
-					"<button type=button class=options data-cmd=\"%[0]s\" title=\"Set command options\">\u2699</button>"
+					"<button type=button class=advview data-cmd=\"%[0]s\" title=\"Advanced\">\u2699</button>"
 					"<button type=button class=addline data-cmd=\"%[0]s\" data-idx=%d title=\"Add another line\">+</button>",
 				usercmd, inputs[4..], arrayp(response) ? sizeof(response) : 1)});
 		}

@@ -1,5 +1,5 @@
 import choc, {set_content} from "https://rosuav.github.io/shed/chocfactory.js";
-const {BR, INPUT} = choc;
+const {BR, INPUT, DIV, DETAILS, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTION} = choc;
 const all_flags = "mode dest access visibility counter action".split(" ");
 
 on("click", "button.addline", e => {
@@ -11,18 +11,50 @@ on("click", "button.addline", e => {
 	}));
 });
 
-on("click", "button.options", e => {
-	const cmd = commands[e.match.dataset.cmd];
-	//TODO: Handle all forms of recursive echoable-message
-	//Currently handles the top level options only (and Pike is guaranteeing us a top-level object).
-	set_content("#cmdname", "!" + e.match.dataset.cmd);
-	all_flags.forEach(flag => {
-		document.getElementById("flg_" + flag).value = cmd[flag] || "";
+const flags = {
+	mode: {"": "Sequential", random: "Random", "*": "Where multiple responses are available, send them all or pick one at random?"},
+	dest: {"": "Chat", "/w $$": "Whisper", "/w %s": "Whisper to target", "/web %s": "Private access", "/web $$": "(unimplemented)",
+		"*": "Where should the response be sent?"},
+	access: {"": "Anyone", mod: "Mods only", "*": "Who should be able to use this command?"},
+	visibility: {"": "Visible", hidden: "Hidden", "*": "Should the command be listed in !help and the non-mod commands view?"},
+	action: {"": "Leave unchanged", "+1": "Increment", "=0": "Reset to zero", "*": "If looking at a counter, what should it do to it?"},
+};
+
+//Recursively generate DOM elements to allow a command to be edited with full flexibility
+function render_command(cmd) {
+	if (!cmd.message) cmd = {message: cmd};
+	//Handle flags
+	const opts = [TR([TH("Option"), TH("Effect")])];
+	for (let flg in flags) {
+		const opt = [];
+		for (let o in flags[flg]) if (o !== "*")
+			opt.push(OPTION({value: o, selected: cmd[flg] === o ? "1" : undefined}, flags[flg][o]))
+		opts.push(TR([
+			TD(SELECT({"data-flag": flg}, opt)),
+			TD(flags[flg]["*"]),
+		]));
+	}
+	opts.push(TR([INPUT({"data-flag": "counter"}), TD("Name of counter to manipulate (see !addcounter)")]));
+	const info = [
+		DETAILS({className: "flagstable"}, [
+			SUMMARY("Flags"),
+			TABLE({border: 1}, opts),
+		]),
+	];
+	(typeof cmd.message === "string" ? [cmd.message] : cmd.message).forEach(msg => {
+		if (typeof msg === "string") info.push(INPUT({value: msg, className: "widetext"}), BR());
+		else return render_command(msg);
 	});
-	document.getElementById("options").showModal();
+	return DIV({className: "optedmsg"}, info);
+}
+
+on("click", "button.advview", e => {
+	set_content("#command_details", render_command(commands[e.match.dataset.cmd]));
+	set_content("#cmdname", "!" + e.match.dataset.cmd);
+	document.getElementById("advanced_view").showModal();
 });
 
-on("click", "#saveopts", async e => {
+on("click", "#save_advanced", async e => {
 	const flags = {};
 	const cmd = commands[document.getElementById("cmdname").innerText.slice(1)];
 	all_flags.forEach(flag => {
@@ -30,7 +62,7 @@ on("click", "#saveopts", async e => {
 		if (val) flags[flag] = val;
 		cmd[flag] = val; //Yes, this will put empty strings where nulls were. Won't matter, it's only local.
 	});
-	document.getElementById("options").close();
+	document.getElementById("advanced_view").close();
 	flags.cmdname = document.getElementById("cmdname").innerText;
 	const res = await fetch("command_edit", {
 		method: "POST",
