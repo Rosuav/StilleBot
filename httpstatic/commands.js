@@ -19,6 +19,7 @@ const flags = {
 	visibility: {"": "Visible", hidden: "Hidden", "*": "Should the command be listed in !help and the non-mod commands view?"},
 	action: {"": "Leave unchanged", "+1": "Increment", "=0": "Reset to zero", "*": "If looking at a counter, what should it do to it?"},
 };
+const toplevelflags = ["access", "visibility"];
 
 function simple_to_advanced(e) {
 	e.preventDefault();
@@ -40,11 +41,12 @@ function adv_add_elem(e) {
 }
 
 //Recursively generate DOM elements to allow a command to be edited with full flexibility
-function render_command(cmd) {
+function render_command(cmd, toplevel) {
 	if (!cmd.message) cmd = {message: cmd};
 	//Handle flags
 	const opts = [TR([TH("Option"), TH("Effect")])];
 	for (let flg in flags) {
+		if (!toplevel && toplevelflags.includes(flg)) continue;
 		const opt = [];
 		for (let o in flags[flg]) if (o !== "*")
 			opt.push(OPTION({value: o, selected: cmd[flg] === o ? "1" : undefined}, flags[flg][o]))
@@ -69,13 +71,13 @@ function render_command(cmd) {
 }
 
 on("click", "button.advview", e => {
-	set_content("#command_details", render_command(commands[e.match.dataset.cmd]));
+	set_content("#command_details", render_command(commands[e.match.dataset.cmd], 1));
 	set_content("#cmdname", "!" + e.match.dataset.cmd);
 	document.getElementById("advanced_view").showModal();
 });
 
 //Recursively reconstruct the command info from the DOM - the inverse of render_command()
-function get_command_details(elem) {
+function get_command_details(elem, toplevel) {
 	if (elem.classList.contains("simpletext")) {
 		//It's a simple input and can only have one value
 		elem = elem.querySelector("input");
@@ -97,12 +99,12 @@ function get_command_details(elem) {
 	}
 	if (ret.message.length === 1) ret.message = ret.message[0];
 	//We could return ret.message if there are no other attributes, but
-	//at the moment I can't be bothered.
+	//at the moment I can't be bothered. (Also, do it only if !toplevel.)
 	return ret;
 }
 
 on("click", "#save_advanced", async e => {
-	const info = get_command_details(DOM("#command_details").firstChild);
+	const info = get_command_details(DOM("#command_details").firstChild, 1);
 	const flags = {};
 	const cmd = commands[document.getElementById("cmdname").innerText.slice(1)];
 	console.log("WAS:", cmd);
