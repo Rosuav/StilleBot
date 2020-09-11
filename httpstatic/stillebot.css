@@ -35,3 +35,12 @@ h1,h2,h3 {
 }
 
 .flagstable {min-width: 700px;}
+
+.simpletext {display: flex;}
+.simpletext input {flex-grow: 1;}
+.simpletext button {flex-grow: 0;}
+
+.optedmsg {
+	padding: .5em;
+	margin: .5em;
+}

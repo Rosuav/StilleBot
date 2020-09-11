@@ -1,5 +1,5 @@
 import choc, {set_content} from "https://rosuav.github.io/shed/chocfactory.js";
-const {BR, INPUT, DIV, DETAILS, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTION} = choc;
+const {BR, BUTTON, INPUT, DIV, DETAILS, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTION, FIELDSET} = choc;
 const all_flags = "mode dest access visibility counter action".split(" ");
 
 on("click", "button.addline", e => {
@@ -19,6 +19,25 @@ const flags = {
 	visibility: {"": "Visible", hidden: "Hidden", "*": "Should the command be listed in !help and the non-mod commands view?"},
 	action: {"": "Leave unchanged", "+1": "Increment", "=0": "Reset to zero", "*": "If looking at a counter, what should it do to it?"},
 };
+
+function simple_to_advanced(e) {
+	e.preventDefault();
+	const elem = e.target.closest(".simpletext");
+	const txt = elem.querySelector("input").value;
+	elem.replaceWith(render_command(txt));
+}
+
+function simple_text(msg) {
+	return DIV({className: "simpletext"}, [
+		INPUT({value: msg}),
+		BUTTON({onclick: simple_to_advanced}, "\u2699"),
+	]);
+}
+
+function adv_add_elem(e) {
+	e.target.parentNode.insertBefore(simple_text(""), e.target);
+	e.preventDefault();
+}
 
 //Recursively generate DOM elements to allow a command to be edited with full flexibility
 function render_command(cmd) {
@@ -42,10 +61,11 @@ function render_command(cmd) {
 		]),
 	];
 	(typeof cmd.message === "string" ? [cmd.message] : cmd.message).forEach(msg => {
-		if (typeof msg === "string") info.push(INPUT({value: msg, className: "widetext"}), BR());
+		if (typeof msg === "string") info.push(simple_text(msg));
 		else return render_command(msg);
 	});
-	return DIV({className: "optedmsg"}, info);
+	info.push(BUTTON({onclick: adv_add_elem}, "+"));
+	return FIELDSET({className: "optedmsg"}, info);
 }
 
 on("click", "button.advview", e => {
@@ -56,17 +76,18 @@ on("click", "button.advview", e => {
 
 //Recursively reconstruct the command info from the DOM - the inverse of render_command()
 function get_command_details(elem) {
-	if (!elem.classList.contains("optedmsg")) {
+	if (elem.classList.contains("simpletext")) {
 		//It's a simple input and can only have one value
-		//If it isn't actually an input with a value, we'll return undefined
-		return elem.value;
+		elem = elem.querySelector("input");
+		if (elem && elem.value && elem.value !== "") return elem.value;
+		return undefined; //Will suppress this from the resulting array
 	}
+	if (!elem.classList.contains("optedmsg")) return undefined;
 	//Otherwise it's a full options-and-messages setup.
 	const ret = {message: []};
 	for (elem = elem.firstElementChild; elem; elem = elem.nextElementSibling) {
 		if (elem.classList.contains("flagstable"))
 			elem.querySelectorAll("[data-flag]").forEach(flg => {
-				console.log("Flag:", flg.dataset.flag, flg.value);
 				if (flg.value !== "") ret[flg.dataset.flag] = flg.value;
 			});
 		else {
