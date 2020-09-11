@@ -100,6 +100,8 @@ function get_command_details(elem, toplevel) {
 	if (ret.message.length === 1) ret.message = ret.message[0];
 	//We could return ret.message if there are no other attributes, but
 	//at the moment I can't be bothered. (Also, do it only if !toplevel.)
+	//Worst case, we have some junk locally that won't matter; the server
+	//will clean it up before next load anyhow.
 	return ret;
 }
 
