@@ -107,22 +107,18 @@ function get_command_details(elem, toplevel) {
 
 on("click", "#save_advanced", async e => {
 	const info = get_command_details(DOM("#command_details").firstChild, 1);
-	const flags = {};
+	/*
 	const cmd = commands[document.getElementById("cmdname").innerText.slice(1)];
 	console.log("WAS:", cmd);
 	console.log("NOW:", info);
 	return;
-	all_flags.forEach(flag => {
-		const val = document.getElementById("flg_" + flag).value;
-		if (val) flags[flag] = val;
-		cmd[flag] = val; //Yes, this will put empty strings where nulls were. Won't matter, it's only local.
-	});
+	*/
 	document.getElementById("advanced_view").close();
-	flags.cmdname = document.getElementById("cmdname").innerText;
+	info.cmdname = document.getElementById("cmdname").innerText;
 	const res = await fetch("command_edit", {
-		method: "POST",
+		method: "PUT",
 		headers: {"Content-Type": "application/json"},
-		body: JSON.stringify(flags),
+		body: JSON.stringify(info),
 	});
 	if (!res.ok) {console.error("Not okay response", res); return;}
 	console.log("Updated successfully.");
