@@ -581,7 +581,12 @@ mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|voi
 }
 
 //User text will be given to the given user_text object; emotes will be markdowned.
-string emotify_user_text(string text, object user)
+//If autolink is specified, words that look like links will be made links.
+//Note that this is probably a bit too restrictive. Feel free to add more, just as
+//long as nothing abusable can be recognized by this, as it won't be passed through
+//user_text for normal safety.
+Regexp.SimpleRegexp hyperlink = Regexp.SimpleRegexp("^http(s|)://[A-Za-z0-9.]+(/[A-Za-z0-9/.+]*|)(\\?[A-Za-z0-9=&+]*|)(#[A-Za-z0-9]*|)$");
+string emotify_user_text(string text, object user, int|void autolink)
 {
 	mapping emotes = G->G->emote_code_to_markdown;
 	if (!emotes) return user(text);
@@ -590,6 +595,8 @@ string emotify_user_text(string text, object user)
 	//individual word. If this is a problem, consider at least checking for
 	//any emotes at all, and if not, just return user(text) instead.
 	foreach (words; int i; string w)
-		words[i] = emotes[w] || user(w);
+		if (emotes[w]) words[i] = emotes[w];
+		else if (hyperlink->match(w)) words[i] = sprintf("[%s](%<s)", w);
+		else words[i] = user(w);
 	return words * " ";
 }

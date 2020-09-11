@@ -13,7 +13,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	{
 		int tm = (int)times[i];
 		//TODO: Filter out really old ones maybe? Or highlight the most recent?
-		text[i] = "* " + ctime(tm)[..<1] + ":<br>\n" + emotify_user_text(msg, user);
+		text[i] = "* " + ctime(tm)[..<1] + ":<br>\n" + emotify_user_text(msg, user, 1);
 	}
 	if (!sizeof(text)) text = ({"You have no private messages from this channel."});
 	return render_template("chan_private.md", ([
