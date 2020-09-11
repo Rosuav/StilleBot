@@ -64,7 +64,7 @@ function render_command(cmd, toplevel) {
 	];
 	(typeof cmd.message === "string" ? [cmd.message] : cmd.message).forEach(msg => {
 		if (typeof msg === "string") info.push(simple_text(msg));
-		else return render_command(msg);
+		else info.push(render_command(msg));
 	});
 	info.push(BUTTON({onclick: adv_add_elem}, "+"));
 	return FIELDSET({className: "optedmsg"}, info);
@@ -112,7 +112,7 @@ on("click", "#save_advanced", async e => {
 	console.log("WAS:", cmd);
 	console.log("NOW:", info);
 	return;
-	*/
+	// */
 	document.getElementById("advanced_view").close();
 	info.cmdname = document.getElementById("cmdname").innerText;
 	const res = await fetch("command_edit", {
