@@ -4,7 +4,7 @@ inherit http_endpoint;
 //Blank or null is always allowed, and will result in no flag being set.
 constant valid_flags = ([
 	"mode": (<"random">),
-	"dest": (<"/w $$", "/w %s", "/web %s">),
+	"dest": (<"/w $$", "/w %s", "/web $$", "/web %s">),
 	"access": (<"mod">),
 	"visibility": (<"hidden">),
 	"action": (<"+1", "=0">),

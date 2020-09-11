@@ -13,7 +13,7 @@ on("click", "button.addline", e => {
 
 const flags = {
 	mode: {"": "Sequential", random: "Random", "*": "Where multiple responses are available, send them all or pick one at random?"},
-	dest: {"": "Chat", "/w $$": "Whisper", "/w %s": "Whisper to target", "/web %s": "Private access", "/web $$": "(unimplemented)",
+	dest: {"": "Chat", "/w $$": "Whisper", "/w %s": "Whisper to target", "/web $$": "Private message", "/web %s": "Privately to target",
 		"*": "Where should the response be sent?"},
 	access: {"": "Anyone", mod: "Mods only", "*": "Who should be able to use this command?"},
 	visibility: {"": "Visible", hidden: "Hidden", "*": "Should the command be listed in !help and the non-mod commands view?"},
