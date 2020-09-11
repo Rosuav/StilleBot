@@ -54,9 +54,39 @@ on("click", "button.advview", e => {
 	document.getElementById("advanced_view").showModal();
 });
 
+//Recursively reconstruct the command info from the DOM - the inverse of render_command()
+function get_command_details(elem) {
+	if (!elem.classList.contains("optedmsg")) {
+		//It's a simple input and can only have one value
+		//If it isn't actually an input with a value, we'll return undefined
+		return elem.value;
+	}
+	//Otherwise it's a full options-and-messages setup.
+	const ret = {message: []};
+	for (elem = elem.firstElementChild; elem; elem = elem.nextElementSibling) {
+		if (elem.classList.contains("flagstable"))
+			elem.querySelectorAll("[data-flag]").forEach(flg => {
+				console.log("Flag:", flg.dataset.flag, flg.value);
+				if (flg.value !== "") ret[flg.dataset.flag] = flg.value;
+			});
+		else {
+			const msg = get_command_details(elem);
+			if (msg) ret.message.push(msg);
+		}
+	}
+	if (ret.message.length === 1) ret.message = ret.message[0];
+	//We could return ret.message if there are no other attributes, but
+	//at the moment I can't be bothered.
+	return ret;
+}
+
 on("click", "#save_advanced", async e => {
+	const info = get_command_details(DOM("#command_details").firstChild);
 	const flags = {};
 	const cmd = commands[document.getElementById("cmdname").innerText.slice(1)];
+	console.log("WAS:", cmd);
+	console.log("NOW:", info);
+	return;
 	all_flags.forEach(flag => {
 		const val = document.getElementById("flg_" + flag).value;
 		if (val) flags[flag] = val;
