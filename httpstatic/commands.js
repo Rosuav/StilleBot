@@ -18,6 +18,8 @@ const flags = {
 	access: {"": "Anyone", mod: "Mods only", "*": "Who should be able to use this command?"},
 	visibility: {"": "Visible", hidden: "Hidden", "*": "Should the command be listed in !help and the non-mod commands view?"},
 	action: {"": "Leave unchanged", "+1": "Increment", "=0": "Reset to zero", "*": "If looking at a counter, what should it do to it?"},
+	delay: {"": "Immediate", "30": "30 seconds", "60": "1 minute", "120": "2 minutes", "300": "5 minutes", "1800": "Half hour",
+			"3600": "One hour", "7200": "Two hours", "*": "When should this be sent?"},
 };
 const toplevelflags = ["access", "visibility"];
 
@@ -49,7 +51,12 @@ function render_command(cmd, toplevel) {
 		if (!toplevel && toplevelflags.includes(flg)) continue;
 		const opt = [];
 		for (let o in flags[flg]) if (o !== "*")
-			opt.push(OPTION({value: o, selected: cmd[flg] === o ? "1" : undefined}, flags[flg][o]))
+		{
+			const el = OPTION({value: o, selected: cmd[flg]+"" === o ? "1" : undefined}, flags[flg][o]);
+			//Guarantee that the one marked with an empty string will be the first
+			//It usually would be anyway, but make certain.
+			if (o === "") opt.unshift(el); else opt.push(el);
+		}
 		opts.push(TR([
 			TD(SELECT({"data-flag": flg}, opt)),
 			TD(flags[flg]["*"]),

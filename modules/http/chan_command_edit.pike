@@ -32,6 +32,11 @@ echoable_message validate(echoable_message resp)
 	//Since counters are named as arbitrary strings, validate that separately.
 	if (resp->counter && sscanf(resp->counter, "%[a-z]", string c) && c == resp->counter)
 		ret->counter = c;
+	//Delays are integer seconds. We'll permit a string of digits, since that might be
+	//easier for the front end.
+	if (resp->delay && resp->delay != "0" &&
+			(intp(resp->delay) || (sscanf((string)resp->delay, "%[0-9]", string d) && d == resp->delay)))
+		ret->delay = (int)resp->delay;
 	if (sizeof(ret) == 1) return ret->message; //No flags? Just return the message.
 	return ret;
 }
