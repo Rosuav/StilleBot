@@ -10,6 +10,7 @@ $$messages$$
 Command | Output |
 --------|--------|-
 $$commands$$
+{: #commandview}
 
 [Emotes available to the bot](/emotes)
 

@@ -1,5 +1,5 @@
 import choc, {set_content} from "https://rosuav.github.io/shed/chocfactory.js";
-const {BR, BUTTON, INPUT, DIV, DETAILS, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTION, FIELDSET} = choc;
+const {BR, BUTTON, INPUT, DIV, DETAILS, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTION, FIELDSET, CODE} = choc;
 const all_flags = "mode dest access visibility counter action".split(" ");
 
 on("click", "button.addline", e => {
@@ -121,7 +121,8 @@ on("click", "#save_advanced", async e => {
 	return;
 	// */
 	document.getElementById("advanced_view").close();
-	info.cmdname = document.getElementById("cmdname").innerText;
+	const el = document.getElementById("cmdname").firstChild;
+	info.cmdname = el.nodeType === 3 ? el.data : el.value; //Not sure if text nodes' .data attribute is the best way to do this
 	const res = await fetch("command_edit", {
 		method: "PUT",
 		headers: {"Content-Type": "application/json"},
@@ -129,6 +130,45 @@ on("click", "#save_advanced", async e => {
 	});
 	if (!res.ok) {console.error("Not okay response", res); return;}
 	console.log("Updated successfully.");
+	//Scan the main table, find the command (if it existed), and remove it.
+	//Then insert a replacement.
+	for (const tr of DOM("#commandview").querySelectorAll("tr")) {
+		if (tr.firstElementChild.tagName !== "TD") continue; //Header row
+		const cmd = tr.firstElementChild.innerText.trim();
+		if (cmd < info.cmdname) continue;
+		if (cmd === info.cmdname) {tr.remove(); continue;}
+		//We've found something that's further forward than the command
+		//we want. Insert here. (Note that "Add: " is greater than any
+		//command name starting "!", so it'll (correctly) trigger this.)
+		const inputs = [];
+		const cmdname = info.cmdname.slice(1); //w/o the !
+		let idx = 0;
+		function add_inputs(msg) {
+			if (typeof msg === "string")
+				inputs.push(INPUT({
+					name: cmdname + "!" + idx++,
+					value: msg,
+					className: "widetext",
+				}), BR());
+			else if (Array.isArray(msg))
+				msg.forEach(add_inputs);
+			else if (typeof msg === "object") //Should always be true
+				add_inputs(msg.message);
+			//Else ignore it, probably malformed or something
+		}
+		add_inputs(info.message);
+		inputs.pop(); //Ditch the last BR
+		tr.before(TR([
+			TD(CODE(info.cmdname)),
+			TD(inputs),
+			TD([
+				BUTTON({type: "button", className: "advview", "data-cmd": cmdname, title: "Advanced"}, "\u2699"),
+				BUTTON({type: "button", className: "addline", "data-cmd": cmdname, title: "Add another line", "data-idx": idx}, "+"),
+			]),
+		]));
+		commands[cmdname] = info;
+		break; //Only do this once :)
+	}
 });
 
 on("click", 'a[href="/emotes"]', e => {
@@ -148,10 +188,8 @@ on("click", "#templates tbody tr", e => {
 	const template = complex_templates[cmdname];
 	if (template) {
 		set_content("#command_details", render_command(template, 1));
-		set_content("#cmdname", cmdname);
+		set_content("#cmdname", INPUT({value: cmdname}));
 		document.getElementById("advanced_view").showModal();
-		//TODO: Have a "new" mode, where it has an input for the command name, and
-		//on save, will insert the new entry.
 		return;
 	}
 	document.forms[0].newcmd_name.value = cmdname;
