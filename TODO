@@ -45,3 +45,10 @@
     will then also trigger autoform handling, the save_or_login, and maybe ensure_session
     on POST? Or some sort of login validation. Maybe check for mod status.
   - This might also be a good place to clean up the backlink handling
+* Add some example complex commands that can be deployed easily.
+  - Prize winner - "!winner username" for private delivery of prewritten info, plus a public
+    message giving the link. Prewrite the link with the correct channel.
+  - Game joining code - "!join" with public info, edit the "!play" command, and everyone
+    types that in and gets private delivery.
+  - Possibly have both the above whisper as well as web deliver
+  - "Now and later" - one response immediately, another after a preconfigured delay (see above)
