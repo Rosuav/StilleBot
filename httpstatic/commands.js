@@ -141,6 +141,7 @@ on("click", "#examples", e => {
 	document.getElementById("templates").showModal();
 });
 on("click", "#templates tbody tr", e => {
+	e.preventDefault();
 	document.getElementById("templates").close();
 	const [cmd, text] = e.match.children;
 	document.forms[0].newcmd_name.value = cmd.innerText;
