@@ -382,7 +382,7 @@ class channel_notif
 
 		if (info->delay)
 		{
-			call_out(wrap_message, [int]info->delay, person, info | (["delay": 0]), defaults);
+			call_out(wrap_message, (int)info->delay, person, info | (["delay": 0]), defaults);
 			return;
 		}
 
