@@ -380,7 +380,11 @@ class channel_notif
 		//You shouldn't normally have (["message": ([ ... ]) ]) but it's legal.
 		while (mappingp(info->message)) info = info | info->message;
 
-		//TODO: if (info->delay) call_out(); // see TODO file on timers
+		if (info->delay)
+		{
+			call_out(wrap_message, [int]info->delay, person, info | (["delay": 0]), defaults);
+			return;
+		}
 
 		echoable_message msg = info->message;
 		if (arrayp(msg))
@@ -395,6 +399,7 @@ class channel_notif
 		msg = replace(msg, "$$", person->displayname);
 		if (config->noticechat && has_value(msg, "$participant$"))
 		{
+			//Note that $participant$ with a delay will invite people to be active before the timer runs out.
 			array users = ({ });
 			int limit = time() - config->timeout;
 			foreach (G_G_("participants", name[1..]); string name; mapping info)
@@ -402,6 +407,7 @@ class channel_notif
 			//If there are no other chat participants, pick the person speaking.
 			string chosen = sizeof(users) ? random(users) : person->user;
 			msg = replace(msg, "$participant$", chosen);
+			//TODO maybe: Support /w $participant$?
 		}
 		string dest = info->dest || name;
 		if (dest == "/w $$") dest = "/w " + person->user;
