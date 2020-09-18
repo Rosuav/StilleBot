@@ -22,7 +22,14 @@ constant TEMPLATES = ({
 	"!unlurk | $$ returns from the realm of lurk devicatLurk",
 	"!raid | Let's go raiding! Copy and paste this raid call and be ready when I host our target! >>> /me twitchRaid YOUR RAID CALL HERE twitchRaid",
 	"!save | rosuavSave How long since you last saved? devicatSave",
+	"!hello | Hello // World",
 });
+//If a command is listed here, its description above is just the human-readable version, and
+//this is what will actually be used for the command. Selecting such a template will also
+//use the Advanced view in the front end.
+constant COMPLEX_TEMPLATES = ([
+	"!hello": (["delay": 30, "message": ({"Hello", "world!"})]),
+]);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -144,7 +151,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"templates": TEMPLATES * "\n",
 		"save_or_login": req->misc->login_link || ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
 			"<input type=submit value=\"Save all\">"
-			"\n<script>const commands = " + Standards.JSON.encode(cmd_raw) + "</script>" //newline forces it to be treated as HTML not text
+			"\n<script>const commands = " + Standards.JSON.encode(cmd_raw) + //newline forces it to be treated as HTML not text
+			", complex_templates = " + Standards.JSON.encode(COMPLEX_TEMPLATES) + "</script>"
 			"<script type=module src=\"/static/commands.js\"></script>"
 		),
 	]));
