@@ -148,7 +148,7 @@ on("click", "#templates tbody tr", e => {
 	const template = complex_templates[cmdname];
 	if (template) {
 		set_content("#command_details", render_command(template, 1));
-		set_content("#cmdname", "!hello");
+		set_content("#cmdname", cmdname);
 		document.getElementById("advanced_view").showModal();
 		//TODO: Have a "new" mode, where it has an input for the command name, and
 		//on save, will insert the new entry.

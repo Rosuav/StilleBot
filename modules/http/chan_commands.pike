@@ -22,13 +22,25 @@ constant TEMPLATES = ({
 	"!unlurk | $$ returns from the realm of lurk devicatLurk",
 	"!raid | Let's go raiding! Copy and paste this raid call and be ready when I host our target! >>> /me twitchRaid YOUR RAID CALL HERE twitchRaid",
 	"!save | rosuavSave How long since you last saved? devicatSave",
-	"!hello | Hello // World",
+	"!winner | Congratulations, %s! You have won The Thing, see this link for details...",
+	"!join | Join us in Jackbox games! Type !play and go to https://sikorsky.rosuav.com/channels/##CHANNEL##/private",
+	"!play | (Private message) We're over here: https://jackbox.tv/#ABCD",
+	"!hydrate | Drink water! Do it! And then do it again in half an hour.",
 });
 //If a command is listed here, its description above is just the human-readable version, and
 //this is what will actually be used for the command. Selecting such a template will also
 //use the Advanced view in the front end.
 constant COMPLEX_TEMPLATES = ([
-	"!hello": (["delay": 30, "message": ({"Hello", "world!"})]),
+	"!winner": ({
+		//TODO: Populate the actual channel name in the template
+		"Congratulations, %s! You have won The Thing! Details are waiting for you over here: https://sikorsky.rosuav.com/channels/##CHANNEL##/private",
+		(["message": "Your secret code is 0TB54-I3YKG-CNDKV and you can go to https://some.url.example/look-here to redeem it!", "dest": "/web %s"]),
+	}),
+	"!play": (["message": "We're over here: https://jackbox.tv/#ABCD", "dest": "/web $$"]),
+	"!hydrate": ({
+		"devicatSip Don't forget to drink water! devicatSip",
+		(["message": "devicatSip Drink more water! devicatSip", "delay": 1800]),
+	}),
 ]);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)

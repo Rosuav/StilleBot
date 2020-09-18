@@ -33,7 +33,7 @@
     adds another independent one (current behaviour), restarts the timer (cancel existing
     and create new), or errors out with an immediate message of some sort.
   - Optionally emit message only if online at the time.
-* Websockets on SSL are causing noisy failures on disconnect - possible Pike limitation?
+-* Websockets on SSL are causing noisy failures on disconnect - possible Pike limitation?
 * Clean up the autoform handling
   - Currently, all Markdown pages get a <form> even if they don't need it
   - This can be overridden, but that's backwards
@@ -41,10 +41,3 @@
     will then also trigger autoform handling, the save_or_login, and maybe ensure_session
     on POST? Or some sort of login validation. Maybe check for mod status.
   - This might also be a good place to clean up the backlink handling
-* Add some example complex commands that can be deployed easily.
-  - Prize winner - "!winner username" for private delivery of prewritten info, plus a public
-    message giving the link. Prewrite the link with the correct channel.
-  - Game joining code - "!join" with public info, edit the "!play" command, and everyone
-    types that in and gets private delivery.
-  - Possibly have both the above whisper as well as web deliver
-  - "Now and later" - one response immediately, another after a preconfigured delay (see above)
