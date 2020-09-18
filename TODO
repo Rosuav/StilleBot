@@ -28,15 +28,11 @@
 * Allow commands to contain spaces. They cannot ever be invoked that way, but some commands
   could look for them, so for instance shoutout.pike could look for "!so someusername" and
   if found, use that text instead. (Thanks Mirror for the idea!)
-* New command type: Timer
-  - !newtimer !hypetrain 1:0:0 A hype train can happen again!
-  - Maybe have a detailed thing in the web allowing customization of initial response, clash
-    behaviour (reset time or error), and message when it expires
-  - Just like with permanent autocommands, emit only if online at the time.
-  - This specific example is better handled by Train Tracker aka modules/http/hypetrain but
-    there will be others that can use this.
-  - Would this be best done by adding a (["delay": 3600]) attribute to the echoable_message?
-  - Ideally, all attributes should be 100% orthogonal, including delivery methods.
+* Advanced timer functionality
+  - If there's already a timer of this command happening, allow the user to pick whether it
+    adds another independent one (current behaviour), restarts the timer (cancel existing
+    and create new), or errors out with an immediate message of some sort.
+  - Optionally emit message only if online at the time.
 * Websockets on SSL are causing noisy failures on disconnect - possible Pike limitation?
 * Clean up the autoform handling
   - Currently, all Markdown pages get a <form> even if they don't need it
