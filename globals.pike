@@ -585,7 +585,7 @@ mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|voi
 //Note that this is probably a bit too restrictive. Feel free to add more, just as
 //long as nothing abusable can be recognized by this, as it won't be passed through
 //user_text for normal safety.
-Regexp.SimpleRegexp hyperlink = Regexp.SimpleRegexp("^http(s|)://[A-Za-z0-9.]+(/[A-Za-z0-9/.+]*|)(\\?[A-Za-z0-9=&+]*|)(#[A-Za-z0-9]*|)$");
+object hyperlink = Regexp.PCRE("^http(s|)://[A-Za-z0-9.]+(/[A-Za-z0-9/.+]*|)(\\?[A-Za-z0-9=&+]*|)(#[A-Za-z0-9]*|)$");
 string emotify_user_text(string text, object user, int|void autolink)
 {
 	mapping emotes = G->G->emote_code_to_markdown;
