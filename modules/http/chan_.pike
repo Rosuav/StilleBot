@@ -88,10 +88,17 @@ mapping(string:mixed) redirect_no_slash(Protocols.HTTP.Server.Request req, strin
 	return redirect(sprintf("/channels/%s/", chan), 301);
 }
 
+mapping(string:mixed) redirect_no_s(Protocols.HTTP.Server.Request req, string tail)
+{
+	//Redirect /channel/rosuav/ to /channels/rosuav/
+	return redirect(sprintf("/channels/%s", tail), 301);
+}
+
 
 protected void create(string name)
 {
 	::create(name);
 	G->G->http_endpoints["/channels/%[^/]"] = redirect_no_slash;
+	G->G->http_endpoints["/channel/%[^\n]"] = redirect_no_s;
 	G->G->http_endpoints["/channels/%[^/]/%[^/]"] = find_channel;
 }
