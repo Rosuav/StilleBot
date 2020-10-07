@@ -32,7 +32,7 @@
     adds another independent one (current behaviour), restarts the timer (cancel existing
     and create new), or errors out with an immediate message of some sort.
   - Optionally emit message only if online at the time.
--* Websockets on SSL are causing noisy failures on disconnect - possible Pike limitation?
+* Websockets on SSL are causing noisy failures on disconnect - possible Pike limitation?
 * Clean up the autoform handling
   - Currently, all Markdown pages get a <form> even if they don't need it
   - This can be overridden, but that's backwards
