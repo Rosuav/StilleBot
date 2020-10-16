@@ -12,7 +12,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	return render_template("index.md", ([
 		"botname": persist_config["ircsettings"]->nick,
 		"yourname": yourname, "loglink": loglink,
-		"autoform": "", "autoslashform": "",
 	]));
 }
 

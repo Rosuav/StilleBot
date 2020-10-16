@@ -73,13 +73,17 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	string channame = G->G->channel_info[channel->name[1..]]->?display_name || channel->name[1..];
 	req->misc->is_mod = 0; //If is_mod is false, save_or_login will be overridden
 	req->misc->chaninfo = ([ //Additional (or overriding) template variables
-		"autoform": "<form method=post>", "autoslashform": "</form>",
 		"channel": channame,
 		"backlink": "<small><a href=\"./\">StilleBot - " + channame + "</a></small>",
 	]);
 	if (req->misc->session && req->misc->session->user)
 	{
-		if (channel->mods[req->misc->session->user->login]) req->misc->is_mod = 1;
+		if (channel->mods[req->misc->session->user->login])
+		{
+			req->misc->is_mod = 1;
+			req->misc->chaninfo->autoform = "<form method=post>";
+			req->misc->chaninfo->autoslashform = "</form>";
+		}
 		else req->misc->chaninfo->save_or_login = "<i>You're logged in, but not a recognized mod. Before you can make changes, go to the channel and say something, so I can see your mod sword. Thanks!</i>";
 	}
 	else req->misc->chaninfo->save_or_login = "<a href=\"/twitchlogin?next=" + req->not_query + "\">Mods, login to make changes</a>";
