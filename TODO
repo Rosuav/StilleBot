@@ -3,7 +3,11 @@
   - Is there a way to detect channel slow mode on connection? If it changes, there's a NOTICE.
     - Possibly ROOMSTATE, but I'm not receiving those.
 * Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
-* !jackbox ABCD to put the code on screen
+* Alternate response disposition: Retain in named storage. Kinda like a counter.
+  - Tie in with a potential browsersource so "!jackbox ABCD" could put the code on screen
+  - It would also become a valid replacement for other commands in the same channel
+  - Could therefore make a convenient "current project" tool too
+  - Use of this disposition would normally be for mod-only commands only
 * Thank people for hosting (effectively a spam command triggered by a host notice)
   - Currently this is better done with Lisp Whispers, since distinguishing autohosts from
     explicit hosts requires authentication as the broadcaster.
