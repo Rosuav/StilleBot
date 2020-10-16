@@ -10,7 +10,6 @@
 * Pike HTTP, SSL, and keep-alive: what's going on? Is that why Chrome gets confused?
   - It's currently just disabled - we add "Connection: close" to all responses. Would
     be nice to figure out what's actually wrong and then reap the performance benefits.
-* Add a Logout link (to /logout) to all pages when you're logged in
 * Go through all the web config pages and add user() to any user-defined text
 * Use the "special responses" system to customize texts like shoutouts? Would need a way
   to provide default text, and then explicitly removing it would mean "don't do this".
