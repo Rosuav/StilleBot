@@ -1,4 +1,5 @@
 inherit http_endpoint;
+//TODO: Check for multi-response commands and show them better, esp in nonmod view
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -65,6 +66,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"channel": req->misc->channel_name,
 		"repeats": repeats * "\n",
 		"messages": messages * "\n",
-		"login": req->misc->login_link || "",
+		"save_or_login": req->misc->login_link || "",
 	]));
 }
