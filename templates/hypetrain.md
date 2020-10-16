@@ -78,6 +78,7 @@ audio {display: none;}
 >
 > TODO: Default channel?
 >
+> <form>
 > * <label><input type=checkbox name=use_start> Play sound on hype train start</label><br>
 >   Volume <input type=range name=vol_start value=100><br>
 >   <button type=button class="play" id="play_start">&#x25b6;</button>
@@ -92,7 +93,7 @@ audio {display: none;}
 >   CC-0 audio clip from [Freesound](https://freesound.org/people/ccr_fs/sounds/484718/)
 >
 > <p><button type=button id=savecfg>Save</button> <button type=button class=dialog_close>Cancel</button></p>
->
+> </form>
 {: tag=dialog #config}
 
 <audio id=sfx_start controls src="/static/whistle.flac" preload="none"></audio>
