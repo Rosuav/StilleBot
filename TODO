@@ -27,4 +27,3 @@
     adds another independent one (current behaviour), restarts the timer (cancel existing
     and create new), or errors out with an immediate message of some sort.
   - Optionally emit message only if online at the time.
-* Websockets on SSL are causing noisy failures on disconnect - possible Pike limitation?
