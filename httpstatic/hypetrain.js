@@ -172,7 +172,8 @@ on("input", 'input[type="range"]', e => {
 	const which = "#sfx_" + e.match.name.split("_")[1];
 	DOM(which).volume = e.match.value / 100;
 });
-DOM("#savecfg").onclick = e => {
+DOM("form").onsubmit = e => {
+	e.preventDefault();
 	config = {}; new FormData(DOM("form")).forEach((v,k) => config[k] = v);
 	localStorage.setItem("hypetrain_config", JSON.stringify(config));
 	DOM("#config").close();
