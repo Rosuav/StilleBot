@@ -127,10 +127,14 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			"type": "application/json",
 		]);
 		array emoteinfo = values(emotesets); sort(indices(emotesets), emoteinfo);
-		return render_template("emotes.md", ([
-			"emotes": emoteinfo * "",
-			"save": is_bot ? "<input type=submit value=\"Update permanents\">" : "",
-		]));
+		mapping replacements = (["emotes": emoteinfo * "", "save": ""]);
+		if (is_bot)
+		{
+			replacements->autoform = "<form method=post>";
+			replacements->autoslashform = "</form>";
+			replacements->save = "<input type=submit value=\"Update permanents\">";
+		}
+		return render_template("emotes.md", replacements);
 	});
 }
 
