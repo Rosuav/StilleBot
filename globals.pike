@@ -450,7 +450,6 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 		return render_template("markdown.html", ([
 			//Defaults - can be overridden
 			"title": headings[1] || "StilleBot",
-			"backlink": replacements->channel && "<small><a href=\"./\">StilleBot - " + replacements->channel + "</a></small>",
 		]) | replacements | ([
 			//Forced attributes
 			"content": content,

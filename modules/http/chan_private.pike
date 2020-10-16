@@ -20,6 +20,5 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"user text": user,
 		"messages": text * "\n",
 		"recip": req->misc->session->user->display_name,
-		"channel": req->misc->channel_name,
-	]));
+	]) | req->misc->chaninfo);
 }

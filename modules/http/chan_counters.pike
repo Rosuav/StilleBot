@@ -134,9 +134,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	if (!sizeof(counters)) counters = ({"(none) |"});
 	return render_template("chan_counters.md", ([
-		"channel": req->misc->channel_name, "counters": counters * "\n",
+		"counters": counters * "\n",
 		"messages": messages * "\n",
 		"newcounter": req->misc->is_mod ? newcounterform : "",
-		"save_or_login": req->misc->login_link || "<input type=submit value=\"Add/update counter(s)\">",
-	]));
+		"save_or_login": "<input type=submit value=\"Add/update counter(s)\">",
+	]) | req->misc->chaninfo);
 }

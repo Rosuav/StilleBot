@@ -158,14 +158,14 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (changes_made) make_echocommand(0, 0); //Trigger a save
 	return render_template("chan_commands.md", ([
 		"user text": user,
-		"channel": req->misc->channel_name, "commands": commands * "\n",
+		"commands": commands * "\n",
 		"messages": messages * "\n",
 		"templates": TEMPLATES * "\n",
-		"save_or_login": req->misc->login_link || ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
+		"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
 			"<input type=submit value=\"Save all\">"
 			"\n<script>const commands = " + Standards.JSON.encode(cmd_raw) + //newline forces it to be treated as HTML not text
 			", complex_templates = " + Standards.JSON.encode(COMPLEX_TEMPLATES) + "</script>"
 			"<script type=module src=\"/static/commands.js\"></script>"
 		),
-	]));
+	]) | req->misc->chaninfo);
 }

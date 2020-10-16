@@ -3,7 +3,7 @@ inherit http_endpoint;
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	array quotes = req->misc->channel->config->quotes;
-	if (!quotes || !sizeof(quotes)) return render_template("chan_quotes.md", (["channel": req->misc->channel_name, "quotes": "(none)", "editjs": ""]));
+	if (!quotes || !sizeof(quotes)) return render_template("chan_quotes.md", (["quotes": "(none)", "editjs": ""]) | req->misc->chaninfo);
 	string editjs = "";
 	if (req->misc->is_mod)
 	{
@@ -25,9 +25,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		q += ({sprintf("%d. %s [%s, %s]", i + 1, msg, quote->game || "uncategorized", date)});
 	}
 	return render_template("chan_quotes.md", ([
-		"channel": req->misc->channel_name,
 		"quotes": q * "\n",
 		"editjs": editjs,
 		"user text": user,
-	]));
+	]) | req->misc->chaninfo);
 }

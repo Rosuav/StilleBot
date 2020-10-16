@@ -49,7 +49,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		save_config = "<input type=submit value=Save>";
 	}
 	return render_template("chan_.md", ([
-		"channel": req->misc->channel_name,
 		"bot_or_mod": channel->mods[persist_config["ircsettings"]->nick] ? "mod" : "bot",
 		"uptime": uptime ? "Channel has been online for " + uptime : "Channel is currently offline.",
 		"user_is_mod": user_is_mod,
@@ -57,7 +56,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"transcoding": transcoding,
 		"save_config": save_config,
 		"messages": messages * "\n",
-	]));
+	]) | req->misc->chaninfo);
 }
 
 mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string chan, string endpoint)
@@ -71,14 +70,19 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 		"error": 404,
 	]);
 	req->misc->channel = channel;
-	req->misc->channel_name = G->G->channel_info[channel->name[1..]]->?display_name || channel->name[1..];
-	req->misc->is_mod = 0; //If is_mod is false, there will be a login_link.
+	string channame = G->G->channel_info[channel->name[1..]]->?display_name || channel->name[1..];
+	req->misc->is_mod = 0; //If is_mod is false, save_or_login will be overridden
+	req->misc->chaninfo = ([ //Additional (or overriding) template variables
+		"autoform": "<form method=post>", "autoslashform": "</form>",
+		"channel": channame,
+		"backlink": "<small><a href=\"./\">StilleBot - " + channame + "</a></small>",
+	]);
 	if (req->misc->session && req->misc->session->user)
 	{
 		if (channel->mods[req->misc->session->user->login]) req->misc->is_mod = 1;
-		else req->misc->login_link = "<i>You're logged in, but not a recognized mod. Before you can make changes, go to the channel and say something, so I can see your mod sword. Thanks!</i>";
+		else req->misc->chaninfo->save_or_login = "<i>You're logged in, but not a recognized mod. Before you can make changes, go to the channel and say something, so I can see your mod sword. Thanks!</i>";
 	}
-	else req->misc->login_link = "<a href=\"/twitchlogin?next=" + req->not_query + "\">Mods, login to make changes</a>";
+	else req->misc->chaninfo->save_or_login = "<a href=\"/twitchlogin?next=" + req->not_query + "\">Mods, login to make changes</a>";
 	return handler(req);
 }
 
