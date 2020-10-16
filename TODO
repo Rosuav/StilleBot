@@ -5,13 +5,8 @@
 * Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
 * !jackbox ABCD to put the code on screen
 * Thank people for hosting (effectively a spam command triggered by a host notice)
-  - Query currently-hosting channels
-    - https://tmi.twitch.tv/hosts?include_logins=1&target={{USER}}
-  - Compare periodically :( No notification.
-  - To avoid alert spam, record names until the stream goes offline, even if they
-    stop hosting? Or record a timestamp when they disappear?
-  - What about autohosts? Want to avoid spam, again, but it can be nice to acknowledge.
-  - Maaya's interested in seeing autohosts, so that would want to be an option.
+  - Currently this is better done with Lisp Whispers, since distinguishing autohosts from
+    explicit hosts requires authentication as the broadcaster.
 * Pike HTTP, SSL, and keep-alive: what's going on? Is that why Chrome gets confused?
   - It's currently just disabled - we add "Connection: close" to all responses. Would
     be nice to figure out what's actually wrong and then reap the performance benefits.
