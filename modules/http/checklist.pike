@@ -73,9 +73,6 @@ TODO: Check Pok* (Pokemon) emotes
 constant emoteids = ([
 	"HypeOni6": 301205427, "OWL2019Tracer": 1833318,
 	"PrimeYouDontSay": 134251, "PrimeUWot": 134252, "PrimeRlyTho": 134253,
-	"KPOPselfie": 304047404, "KPOPmerch": 304047397, "KPOPTT": 304047269,
-	"KPOPheart": 304047383, "KPOPfan": 304047364, "KPOPglow": 303975379,
-	"KPOPdance": 304047335, "KPOPlove": 303975434,
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
