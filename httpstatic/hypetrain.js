@@ -1,6 +1,17 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, DIV, IMG, P, UL, LI, SPAN} = choc;
 
+/* TODO: Mobile-friendly view, called Train Tracks Express - thanks Mirror!
+- Tiled view, 6 tiles. Optimize for 3x2 or 2x3.
+- One tile for countdown
+- One tile for next level requirements (Next level requires x more bits or y more subs)
+- Bits conductor
+- Subs conductor
+- Latest contribution
+- Earnable emotes? Pop out into overlay
+Disable all notifications, configs, etc. That also means no need for interaction warnings.
+*/
+
 //The threshold for "Super Hard" is this many bits per level (not total).
 //In order to unlock the sixth emote for each level, you need to have a
 //goal that is at least this number of bits for the level (since Insane
