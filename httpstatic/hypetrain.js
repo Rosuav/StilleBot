@@ -190,7 +190,7 @@ function connect()
 	socket.onmessage = (ev) => {
 		let data = JSON.parse(ev.data);
 		console.log("Got message from server:", data);
-		if (data.cmd === "update") render(data);
+		if (data.cmd === "update") render(window.laststate = data);
 		if (data.cmd === "hit-it") play("ding", 1);
 	};
 }
