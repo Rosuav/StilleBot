@@ -26,9 +26,6 @@ start a hype train for yourself, nor can you progress it. Except for the sneaky
 loophole of anonymity, of course...
 
 <style>
-#countdown {
-	font-size: 250%;
-}
 #emotes li > img:last-of-type {display: none;}
 #emotes.hardmode li > img:last-of-type {display: inline-block;}
 #emotes li.available:before {content: "Earnable: ";}
