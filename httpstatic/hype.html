@@ -8,7 +8,7 @@
 <body>
 <main class=mobile>
 <h1>Train Tracks Express</h1>
-<h2>Moonsquidink hype train v1.8</h2>
+<h2>Moonsquidink hype train v1.9</h2>
 <section id=tiles>
 <div id=status class=active>ACTIVE<br>0:45</div>
 <div id=nextlevel class=level3>Level 3:<br>3099 bits<br>or 7 subs</div>
@@ -16,13 +16,6 @@
 <div id=latest>Latest:<br>Rosuav - 1 bits</div>
 <div id=cond_bits>Conductor:<br>Overstarched<br>400 bits</div>
 <div id=cond_subs>Conductor:<br>eliainabox<br>5 subs</div>
-<script>
-let level = 3;
-document.getElementById("nextlevel").onclick = function(e) {
-	if (++level > 6) level = 1;
-	this.className = "level" + level;
-}
-</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
 body {
@@ -53,10 +46,10 @@ main.mobile {
 	font-weight: bold;
 }
 #nextlevel.level1 {background-color: #ffffd0;} /* Progressively more vibrant colours as you go up the levels */
-#nextlevel.level2 {background-color: #ffffa0;}
-#nextlevel.level3 {background-color: #fff870;}
-#nextlevel.level4 {background-color: #fff040;}
-#nextlevel.level5 {background-color: #ffe820;}
+#nextlevel.level2 {background-color: #ffffb0;} /* Or #ffffa0 */
+#nextlevel.level3 {background-color: #ffff90;} /* Or #fff870 for a more 'gold' colour */
+#nextlevel.level4 {background-color: #ffff70;} /* Or #fff040 */
+#nextlevel.level5 {background-color: #ffff50;} /* Or #ffe820 */
 #nextlevel.level6 {background-color: #ffff00;}
 </style>
 
