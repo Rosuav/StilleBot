@@ -23,8 +23,6 @@ if (!ismobile) {
 
 //window.channelid has our crucial identifier
 
-let socket; //temporarily up here to allow an encapsulation violation
-
 let expiry, updating = null;
 function update() {
 	let tm = Math.floor((expiry - +new Date()) / 1000);
@@ -55,11 +53,9 @@ function play(which, force) {
 	if (el.playing) return; //Don't stack audio
 	const playing = el.play();
 	if (playing) playing.catch(err => {
-		//Autoplay was denied. Notify the server for debugging purposes.
-		//Violates encapsulation. FIXME: Either do this properly or don't.
+		//Autoplay was denied. Notify the console for debugging purposes.
 		console.error("Unable to autoplay");
 		console.error(err);
-		if (socket) socket.send(JSON.stringify({cmd: "reporterror", context: "autoplay", error: err.name, msg: err.message}));
 	});
 	if (which === "insistent") {
 		el.loop = true;
@@ -177,7 +173,7 @@ if (ismobile) render = (state) => {
 	update();
 }
 
-//~ let socket;
+let socket;
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 function connect()
 {
