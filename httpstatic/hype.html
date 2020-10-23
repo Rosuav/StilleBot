@@ -1,0 +1,42 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta name="viewport" content="width=device-width; initial-scale=1.0;">
+<title>Hype status: $$channel$$</title>
+<link rel="stylesheet" href="/static/stillebot.css">
+</head>
+<body>
+<main class=mobile>
+<h1>Train Tracks Express</h1>
+<h2>Moonsquidink hype train v1.6</h2>
+<section id=tiles>
+<div id=status>ACTIVE<br>0:45</div>
+<div id=nextlevel>Level 3:<br>3099 bits<br>or 7 subs</div>
+<div id=unknown>Tap for more info??</div>
+<div id=latest>Latest:<br>Rosuav - 1 bits</div>
+<div id=cond_bits>Conductor:<br>Overstarched<br>400 bits</div>
+<div id=cond_subs>Conductor:<br>eliainabox<br>5 subs</div>
+
+<style>
+#tiles {
+	display: flex;
+	flex-wrap: wrap;
+}
+#tiles > div {
+	background-color: #a0a0ff;
+	border: 1px solid blue;
+	width: 150px;
+	height: 100px;
+	margin: 5px;
+}
+main.mobile {
+	max-width: 500px;
+}
+</style>
+
+<script>window.channelid = $$channelid$$;</script>
+<script type=module src="/static/hypetrain.js"></script>
+
+</main>
+</body>
+</html>
