@@ -1,16 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, DIV, IMG, P, UL, LI, SPAN} = choc;
-
-/* TODO: Mobile-friendly view, called Train Tracks Express - thanks Mirror!
-- Tiled view, 6 tiles. Optimize for 3x2 or 2x3.
-- One tile for countdown
-- One tile for next level requirements (Next level requires x more bits or y more subs)
-- Bits conductor
-- Subs conductor
-- Latest contribution
-- Earnable emotes? Pop out into overlay
-Disable all notifications, configs, etc. That also means no need for interaction warnings.
-*/
+const {A, BR, DIV, IMG, P, UL, LI, SPAN} = choc;
 
 //The threshold for "Super Hard" is this many bits per level (not total).
 //In order to unlock the sixth emote for each level, you need to have a
@@ -18,15 +7,18 @@ Disable all notifications, configs, etc. That also means no need for interaction
 //is even higher - level 1 needs 10,000 bits).
 const hardmode = [0, 5000, 7500, 10600, 14600, 22300];
 
+const ismobile = !DOM("form");
 let config = {};
-try {config = JSON.parse(localStorage.getItem("hypetrain_config")) || {};} catch (e) {}
-const el = DOM("form").elements;
-for (let name in config) {
-	const [type, which] = name.split("_");
-	const audio = DOM("#sfx_" + which);
-	if (type === "use") {el[name].checked = true; audio.preload = "auto";}
-	else if (type === "vol") {el[name].value = config[name]; audio.volume = config[name] / 100;}
-	//That should be all the configs that get saved
+if (!ismobile) {
+	try {config = JSON.parse(localStorage.getItem("hypetrain_config")) || {};} catch (e) {}
+	const el = DOM("form").elements;
+	for (let name in config) {
+		const [type, which] = name.split("_");
+		const audio = DOM("#sfx_" + which);
+		if (type === "use") {el[name].checked = true; audio.preload = "auto";}
+		else if (type === "vol") {el[name].value = config[name]; audio.volume = config[name] / 100;}
+		//That should be all the configs that get saved
+	}
 }
 
 //window.channelid has our crucial identifier
@@ -40,7 +32,7 @@ function update() {
 	if (tm <= 0 || !time) {
 		clearInterval(updating); updating = null;
 		if (time) time.innerHTML = "";
-		refresh();
+		//refresh();
 		return;
 	}
 	let t = ":" + ("0" + (tm % 60)).slice(-2);
@@ -58,9 +50,9 @@ function fmt_contrib(c) {
 
 //Play audio snippets, if configured to do so
 function play(which, force) {
+	if (!config["use_" + which] && !force) return; //Play if configured (or if testing)
 	const el = DOM("#sfx_" + which);
 	if (el.playing) return; //Don't stack audio
-	if (!config["use_" + which] && !force) return; //Play if configured (or if testing)
 	const playing = el.play();
 	if (playing) playing.catch(err => {
 		//Autoplay was denied. Notify the server for debugging purposes.
@@ -85,7 +77,7 @@ function check_interaction() {
 }
 
 let last_rendered = null;
-function render(state) {
+let render = (state) => {
 	check_interaction();
 	//Show the emotes that we could win (or could have won last hype train)
 	const lvl = state.cooldown && state.level; //If not active or cooling down, hide 'em all
@@ -140,6 +132,50 @@ function render(state) {
 	updating = setInterval(update, 1000);
 	update();
 }
+if (ismobile) render = (state) => {
+	if (!state.expires && !state.cooldown) {
+		set_content("#status", "Cookies are done!").className = "";
+		//Technically this allows content to linger in the DOM. This is sort of a feature. Almost.
+		return;
+	}
+	if (state.expires)
+	{
+		//Active hype train!
+		set_content("#status", ["ACTIVE", BR(), SPAN({id: "time"})]).className = "active";
+		let need = state.goal - state.total;
+		if (need < 0) set_content("#nextlevel", "TIER FIVE COMPLETE!").className = "level6";
+		else set_content("#nextlevel", [
+			`Level ${state.level}:`, BR(),
+			need + " bits", BR(),
+			subs(need) + " subs",
+		]).className = "level" + state.level;
+	}
+	else
+	{
+		set_content("#status", ["Cooling down", BR(), SPAN({id: "time"})]).className = "active";
+		if (state.level === 1)
+			set_content("#nextlevel", `Reached ${state.total} out of ${state.goal}`).className = "";
+		else if (state.level === 5 && state.total >= state.goal)
+			set_content("#nextlevel", `Finished level 5 at ${Math.round(100 * state.total / state.goal)}%!!`).className = "";
+		else
+			set_content("#nextlevel", `Finished level ${state.level - 1}!`).className = "";
+	}
+	expiry = (state.expires || state.cooldown) * 1000;
+	const contrib = state.lastcontrib.type === "BITS" ? `${state.lastcontrib.total} bits` : `${state.lastcontrib.total / 500} subs`;
+	set_content("#latest", ["Latest:", BR(), `${state.lastcontrib.display_name} - ${contrib}`]);
+	let have_bits = 0, have_subs = 0;
+	state.conductors.forEach(c => {
+		let sel, desc;
+		if (c.type === "BITS") {have_bits = 1; sel = "#cond_bits"; desc = c.total + " bits"}
+		else {have_subs = 1; sel = "#cond_subs"; desc = (c.total/500) + " subs";}
+		set_content(sel, ["Conductor:", BR(), c.display_name, BR(), desc]).className = "present";
+	});
+	if (!have_bits) set_content("#cond_bits", "").className = "";
+	if (!have_subs) set_content("#cond_subs", "").className = "";
+	if (updating) clearInterval(updating);
+	updating = setInterval(update, 1000);
+	update();
+}
 
 //~ let socket;
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
@@ -172,24 +208,24 @@ function refresh() {
 	//Should we try to reconnect the socket w/o reloading?
 	window.location.reload();
 };
-DOM("#refresh").onclick = refresh;
-
-DOM("#configure").onclick = () => DOM("#config").showModal();
-
-on("click", ".play", e => {
-	play(e.match.id.split("_")[1], 1);
-});
-on("input", 'input[type="range"]', e => {
-	const which = "#sfx_" + e.match.name.split("_")[1];
-	DOM(which).volume = e.match.value / 100;
-});
-DOM("form").onsubmit = e => {
-	e.preventDefault();
-	config = {}; new FormData(DOM("form")).forEach((v,k) => config[k] = v);
-	localStorage.setItem("hypetrain_config", JSON.stringify(config));
-	DOM("#config").close();
-};
-document.onclick = () => {interacted = 1; check_interaction();}
+if (!ismobile) {
+	DOM("#refresh").onclick = refresh;
+	DOM("#configure").onclick = () => DOM("#config").showModal();
+	on("click", ".play", e => {
+		play(e.match.id.split("_")[1], 1);
+	});
+	on("input", 'input[type="range"]', e => {
+		const which = "#sfx_" + e.match.name.split("_")[1];
+		DOM(which).volume = e.match.value / 100;
+	});
+	DOM("form").onsubmit = e => {
+		e.preventDefault();
+		config = {}; new FormData(DOM("form")).forEach((v,k) => config[k] = v);
+		localStorage.setItem("hypetrain_config", JSON.stringify(config));
+		DOM("#config").close();
+	};
+	document.onclick = () => {interacted = 1; check_interaction();}
+}
 
 //Compat shim lifted from Mustard Mine
 //For browsers with only partial support for the <dialog> tag, add the barest minimum.
