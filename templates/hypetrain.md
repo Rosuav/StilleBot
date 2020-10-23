@@ -8,7 +8,6 @@ Click anywhere to enable alerts.
 
 <button type=button id=refresh>Refresh</button>
 
-<!-- TODO: Hover emote to enlarge? -->
 $$emotes$$
 {:#emotes}
 
