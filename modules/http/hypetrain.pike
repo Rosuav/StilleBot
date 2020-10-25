@@ -114,7 +114,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	}
 	return (channel ? get_user_id(channel) : Concurrent.resolve(0))
 		->then(lambda(int uid) {
-			if (req->variables->mobile) return render_template("hype.html", ([
+			if (req->variables->mobile) return render_template("hypetrain_mobile.html", ([
 				"channelid": (string)uid,
 				"channel": channel || "",
 			]));
