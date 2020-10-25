@@ -7,11 +7,11 @@ const {A, BR, DIV, IMG, P, UL, LI, SPAN} = choc;
 //is even higher - level 1 needs 10,000 bits).
 const hardmode = [0, 5000, 7500, 10600, 14600, 22300];
 
-const ismobile = !DOM("form");
+const ismobile = !DOM("#configform");
 let config = {};
 if (!ismobile) {
 	try {config = JSON.parse(localStorage.getItem("hypetrain_config")) || {};} catch (e) {}
-	const el = DOM("form").elements;
+	const el = DOM("#configform").elements;
 	for (let name in config) {
 		const [type, which] = name.split("_");
 		const audio = DOM("#sfx_" + which);
@@ -215,9 +215,9 @@ if (!ismobile) {
 		const which = "#sfx_" + e.match.name.split("_")[1];
 		DOM(which).volume = e.match.value / 100;
 	});
-	DOM("form").onsubmit = e => {
+	DOM("#configform").onsubmit = e => {
 		e.preventDefault();
-		config = {}; new FormData(DOM("form")).forEach((v,k) => config[k] = v);
+		config = {}; new FormData(DOM("#configform")).forEach((v,k) => config[k] = v);
 		localStorage.setItem("hypetrain_config", JSON.stringify(config));
 		DOM("#config").close();
 	};
