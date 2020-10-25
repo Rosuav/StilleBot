@@ -4,18 +4,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hype status: $$channelname$$</title>
 <link rel="stylesheet" href="/static/stillebot.css">
-</head>
-<body>
-<main class=mobile>
-<h1>Train Tracks Express</h1>
-<h2>$$channelname$$ hype train</h2>
-<section id=tiles>
-<div id=status>Active/Inactive</div>
-<div id=nextlevel>Requirements to get to next level</div>
-<div id=unknown>TODO: Tap for more info??</div>
-<div id=latest>Latest contribution</div>
-<div id=cond_bits>Bits conductor</div>
-<div id=cond_subs>Subs conductor</div>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
 body {
@@ -56,9 +44,22 @@ main.mobile {
 #cond_bits.present, #cond_subs.present {background-color: #e060e0;}
 </style>
 
+</head>
+<body>
+<main class=mobile>
+<h1>Train Tracks Express</h1>
+<h2>$$channelname$$ hype train</h2>
+<section id=tiles>
+<div id=status>Active/Inactive</div>
+<div id=nextlevel>Requirements to get to next level</div>
+<div id=unknown>TODO: Tap for more info??</div>
+<div id=latest>Latest contribution</div>
+<div id=cond_bits>Bits conductor</div>
+<div id=cond_subs>Subs conductor</div>
+</section>
+</main>
 <script>window.channelid = $$channelid$$;</script>
 <script type=module src="/static/hypetrain.js"></script>
 
-</main>
 </body>
 </html>
