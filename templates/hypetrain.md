@@ -1,4 +1,5 @@
 # Train Tracks
+## $$channelname$$ hype train
 
 <div id=status></div>
 
@@ -71,8 +72,6 @@ audio {display: none;}
 > <button type=button class=dialog_cancel>x</button>
 >
 > Train Track configuration <!-- that sounds like something completely different -->
->
-> TODO: Default channel?
 >
 > <form>
 > * <label><input type=checkbox name=use_start> Play sound on hype train start</label><br>

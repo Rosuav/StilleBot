@@ -114,12 +114,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	}
 	return (channel ? get_user_id(channel) : Concurrent.resolve(0))
 		->then(lambda(int uid) {
-			if (req->variables->mobile) return render_template("hypetrain_mobile.html", ([
+			return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
 				"channelid": (string)uid,
-				"channel": channel || "",
-			]));
-			else return render_template("hypetrain.md", ([
-				"channelid": (string)uid,
+				"channelname": channel || "",
 				"emotes": avail_emotes,
 			]));
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: If auth error, clear the token
