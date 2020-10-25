@@ -30,7 +30,7 @@ function update() {
 	if (tm <= 0 || !time) {
 		clearInterval(updating); updating = null;
 		if (time) time.innerHTML = "";
-		//refresh();
+		refresh();
 		return;
 	}
 	let t = ":" + ("0" + (tm % 60)).slice(-2);
@@ -141,14 +141,14 @@ if (ismobile) render = (state) => {
 		let need = state.goal - state.total;
 		if (need < 0) set_content("#nextlevel", "TIER FIVE COMPLETE!").className = "level6";
 		else set_content("#nextlevel", [
-			`Level ${state.level}:`, BR(),
+			`Level ${state.level} needs`, BR(),
 			need + " bits", BR(),
 			subs(need) + " subs",
 		]).className = "level" + state.level;
 	}
 	else
 	{
-		set_content("#status", ["Cooling down", BR(), SPAN({id: "time"})]).className = "active";
+		set_content("#status", ["Cooling down", BR(), SPAN({id: "time"})]).className = "";
 		if (state.level === 1)
 			set_content("#nextlevel", `Reached ${state.total} out of ${state.goal}`).className = "";
 		else if (state.level === 5 && state.total >= state.goal)
