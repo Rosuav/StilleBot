@@ -13,10 +13,6 @@ inherit websocket_handler;
 
 /*
 
-Quick link to switch btwn mobile and desktop views
-
-Hype Train Mobile - broken with long name
-
 {"goal":2500,"cooldown":1603457704,"cmd":"update","total":1501,"conductors":[{"type":"BITS","display_name":"Overstarched","user":"170557232","total":400},{"type":"SUBS","display_name":"stephenangelico","user":"121823116","total":2500}],"lastcontrib":{"type":"BITS","display_name":"Overstarched","user":"170557232","total":100},"expires":1603454104,"level":2}
 
 
@@ -116,7 +112,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		->then(lambda(int uid) {
 			return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
 				"channelid": (string)uid,
-				"channelname": channel || "",
+				"channelname": channel || "<no channel>",
 				"emotes": avail_emotes,
 				"backlink": !req->variables->mobile && sprintf("<a href=\"hypetrain?for=%s&mobile\">Switch to mobile view</a>", channel || ""),
 			]));

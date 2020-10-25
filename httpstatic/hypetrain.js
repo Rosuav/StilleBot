@@ -30,7 +30,7 @@ function update() {
 	if (tm <= 0 || !time) {
 		clearInterval(updating); updating = null;
 		if (time) time.innerHTML = "";
-		refresh();
+		if (window.channelid) refresh();
 		return;
 	}
 	let t = ":" + ("0" + (tm % 60)).slice(-2);
@@ -172,6 +172,7 @@ if (ismobile) render = (state) => {
 	updating = setInterval(update, 1000);
 	update();
 }
+window.set_state = render; //Allow manual rendering with presaved state
 
 let socket;
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
