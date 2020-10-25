@@ -196,7 +196,7 @@ function connect()
 	};
 }
 if (window.channelid) connect();
-else set_content("#status", "Need a channel name (TODO: have a form)");
+else set_content("#status", "No channel selected");
 
 //This isn't needed most of the time (the webhook will signal us), but can help if
 //anonymous events happen and are missed by the hook.
