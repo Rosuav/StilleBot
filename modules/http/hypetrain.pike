@@ -112,7 +112,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		->then(lambda(int uid) {
 			return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
 				"channelid": (string)uid,
-				"channelname": channel || "<no channel>",
+				"channelname": channel || "(no channel)",
 				"emotes": avail_emotes,
 				"backlink": !req->variables->mobile && sprintf("<a href=\"hypetrain?for=%s&mobile\">Switch to mobile view</a>", channel || ""),
 			]));
