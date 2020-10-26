@@ -39,6 +39,8 @@ Select channel: <input name=for>
 </form>
 
 <style>
+abbr {text-decoration: none;}
+abbr::after {content: "❓";}
 #emotes li > img:last-of-type {display: none;}
 #emotes.hardmode li > img:last-of-type {display: inline-block;}
 #emotes li.available:before {content: "Earnable: ";}

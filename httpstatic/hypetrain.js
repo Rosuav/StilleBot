@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, DIV, IMG, P, UL, LI, SPAN} = choc;
+const {A, ABBR, BR, DIV, IMG, P, UL, LI, SPAN} = choc;
 
 //The threshold for "Super Hard" is this many bits per level (not total).
 //In order to unlock the sixth emote for each level, you need to have a
@@ -85,7 +85,7 @@ let render = (state) => {
 	if (!state.expires && !state.cooldown) {
 		//Idle state. If we previously had a cooldown, it's now expired.
 		set_content("#status", [
-			P({className: "countdown"}, "Cookies are done!"),
+			P({className: "countdown"}, ABBR({"title": "The hype train is awaiting activity. If they're enabled, one can be started!"}, "Cookies are done!")),
 			//Note that we might not have conductors (or any data). It lasts a few days at most.
 		]);
 		document.querySelectorAll("#emotes li").forEach(li => li.className = "");
