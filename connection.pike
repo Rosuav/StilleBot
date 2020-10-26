@@ -40,8 +40,8 @@ class IRCClient
 		{
 			foreach (what[1..]/";", string att)
 			{
-				[string name, string val] = att/"=";
-				attr[replace(name, "-", "_")] = replace(val, "\\s", " ");
+				sscanf(att, "%s=%s", string name, string val);
+				attr[replace(name, "-", "_")] = replace(val || "", "\\s", " ");
 			}
 			//write(">> %O %O <<\n", args[0], attr);
 		}
