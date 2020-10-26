@@ -26,6 +26,13 @@ Note also that broadcaster actions do not affect hype trains at all - you can't
 start a hype train for yourself, nor can you progress it. Except for the sneaky
 loophole of anonymity, of course...
 
+Please note that while this site will advise whether there is a cool down in
+effect (and of course provide useful information when a Hype Train is in process),
+there is currently no way of advising whether a Streamer has disabled Hype Trains
+for their stream, the number of actions required to trigger it, or the difficulty
+level to which it has been set (although this can be deduced during a hype train,
+it cannot be seen outside of one).
+
 <style>
 #emotes li > img:last-of-type {display: none;}
 #emotes.hardmode li > img:last-of-type {display: inline-block;}
