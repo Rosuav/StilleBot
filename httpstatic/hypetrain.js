@@ -241,3 +241,12 @@ if (!ismobile) {
 	};
 	document.onclick = () => {interacted = 1; check_interaction();}
 }
+else
+{
+	DOM("#emotestile").onclick = e => {
+		set_content("#infopopup div", [
+			P("TODO: This would get info about the earnable emotes."),
+		]);
+		DOM("#infopopup").showModal();
+	};
+}
