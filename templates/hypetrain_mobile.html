@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html>
+<html lang=en>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hype status: $$channelname$$</title>
@@ -56,6 +56,13 @@ main.mobile {
 <div id=latest><i>(latest contribution)</i></div>
 <div id=cond_bits><i>(bits conductor)</i></div>
 <div id=cond_subs><i>(subs conductor)</i></div>
+</section>
+<section>
+<form method=get action=hypetrain>
+Select channel: <input name=for>
+<input type=hidden name=mobile value="1">
+<input type=submit value="Go">
+</form>
 </section>
 </main>
 <script>window.channelid = $$channelid$$;</script>

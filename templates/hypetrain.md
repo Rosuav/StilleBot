@@ -33,6 +33,11 @@ for their stream, the number of actions required to trigger it, or the difficult
 level to which it has been set (although this can be deduced during a hype train,
 it cannot be seen outside of one).
 
+<form method=get action=hypetrain>
+Select channel: <input name=for>
+<input type=submit value="Go">
+</form>
+
 <style>
 #emotes li > img:last-of-type {display: none;}
 #emotes.hardmode li > img:last-of-type {display: inline-block;}
