@@ -93,6 +93,8 @@ audio {display: none;}
 	padding: 0.5em;
 }
 #interact-warning.hidden {display: none;}
+
+#infopopup {max-width: 680px;}
 </style>
 
 <script>window.channelid = $$channelid$$;</script>
@@ -120,7 +122,7 @@ audio {display: none;}
 > </form>
 {: tag=dialog #config}
 
-<dialog id=infopopup><button type=button class=dialog_cancel>x</button><p></p></dialog>
+<dialog id=infopopup><button type=button class=dialog_cancel>x</button><div></div></dialog>
 
 <audio id=sfx_start controls src="/static/whistle.flac" preload="none"></audio>
 <audio id=sfx_insistent controls src="/static/insistent.flac" preload="none"></audio>

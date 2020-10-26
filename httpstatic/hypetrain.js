@@ -216,8 +216,17 @@ if (!ismobile) {
 	});
 	on("click", ".countdown a", e => {
 		e.preventDefault();
-		console.log("Moar info");
-		//TODO: Show a popup with more info
+		set_content("#infopopup div", [
+			P("The hype train is not currently active, nor is it cooling down. If hype trains are active, this means" +
+				" that one can be started; there is no easy way to know whether they are active, or how many hype events" +
+				" it will take to start one."),
+			P("The default and most common setting is that three separate people must" +
+				" contribute to start a hype train; however the streamer can increase this number to any value up to" +
+				" twenty-five."),
+			P("Anonymous actions count separately (the 'anonymous user' is its own user). All actions" +
+				" must take place within a five-minute period to trigger a hype train."),
+		]);
+		DOM("#infopopup").showModal();
 	});
 	on("input", 'input[type="range"]', e => {
 		const which = "#sfx_" + e.match.name.split("_")[1];
