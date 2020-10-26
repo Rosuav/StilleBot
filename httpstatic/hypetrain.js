@@ -239,5 +239,11 @@ if (!ismobile) {
 document.querySelectorAll("dialog").forEach(dlg => {
 	if (!dlg.showModal) dlg.showModal = function() {this.style.display = "block";}
 	if (!dlg.close) dlg.close = function() {this.style.removeProperty("display");}
+	dlg.addEventListener("click", e => {
+		let rect = dlg.getBoundingClientRect();
+		if (e.clientY < rect.top || e.clientY > rect.top + rect.height
+				|| e.clientX < rect.left || e.clientX > rect.left + rect.width)
+			dlg.close();
+	});
 });
 on("click", ".dialog_cancel,.dialog_close", e => e.match.closest("dialog").close());

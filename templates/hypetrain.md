@@ -120,6 +120,8 @@ audio {display: none;}
 > </form>
 {: tag=dialog #config}
 
+<dialog id=infopopup><button type=button class=dialog_cancel>x</button><p></p></dialog>
+
 <audio id=sfx_start controls src="/static/whistle.flac" preload="none"></audio>
 <audio id=sfx_insistent controls src="/static/insistent.flac" preload="none"></audio>
 <audio id=sfx_ding controls src="/static/ding.mp3" preload="none"></audio>
