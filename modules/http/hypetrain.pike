@@ -11,16 +11,6 @@ inherit websocket_handler;
 7) [DONE] Show the emotes you could get at this and the next level
 */
 
-/*
-
-{"goal":2500,"cooldown":1603457704,"cmd":"update","total":1501,"conductors":[{"type":"BITS","display_name":"Overstarched","user":"170557232","total":400},{"type":"SUBS","display_name":"stephenangelico","user":"121823116","total":2500}],"lastcontrib":{"type":"BITS","display_name":"Overstarched","user":"170557232","total":100},"expires":1603454104,"level":2}
-
-
-Person_in_the_MIRROR: Hey there. Checked out the Express Train version on my phone. It's definitely nice & clear to see. I wonder, if it wouldn't be too difficult, whether you could add the option of tapping somewhere & typing the channel name to switch it to another channel since URLs are often hard to access & input on phones.
-Person_in_the_MIRROR: Could it be something like a space under the block where one could input the new channel name & program would redirect the person to url site with the channel that was input?
-
-*/
-
 //Parse a timestamp into a valid Unix time. If ts is null, malformed,
 //or in the past, returns 0.
 int until(string ts, int now)
