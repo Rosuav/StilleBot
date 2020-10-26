@@ -39,8 +39,23 @@ Select channel: <input name=for>
 </form>
 
 <style>
-abbr {text-decoration: none;}
-abbr::after {content: "❓";}
+.countdown a {
+	color: black;
+	text-decoration: none;
+}
+.countdown a:after {
+	content: "?";
+	font-family: sans-serif;
+	display: inline-block;
+	text-align: center;
+	font-size: 0.8em;
+	line-height: 0.8em;
+	border-radius: 50%;
+	margin-left: 6px;
+	padding: 0.13em 0.2em 0.09em 0.2em;
+	border: 1px solid;
+}
+
 #emotes li > img:last-of-type {display: none;}
 #emotes.hardmode li > img:last-of-type {display: inline-block;}
 #emotes li.available:before {content: "Earnable: ";}

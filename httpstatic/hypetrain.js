@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, ABBR, BR, DIV, IMG, P, UL, LI, SPAN} = choc;
+const {A, BR, DIV, IMG, P, UL, LI, SPAN} = choc;
 
 //The threshold for "Super Hard" is this many bits per level (not total).
 //In order to unlock the sixth emote for each level, you need to have a
@@ -85,7 +85,10 @@ let render = (state) => {
 	if (!state.expires && !state.cooldown) {
 		//Idle state. If we previously had a cooldown, it's now expired.
 		set_content("#status", [
-			P({className: "countdown"}, ABBR({"title": "The hype train is awaiting activity. If they're enabled, one can be started!"}, "Cookies are done!")),
+			P({className: "countdown"}, A(
+				{"title": "The hype train is awaiting activity. If they're enabled, one can be started!", "href": "",},
+				"Cookies are done!"
+			)),
 			//Note that we might not have conductors (or any data). It lasts a few days at most.
 		]);
 		document.querySelectorAll("#emotes li").forEach(li => li.className = "");
@@ -210,6 +213,11 @@ if (!ismobile) {
 	DOM("#configure").onclick = () => DOM("#config").showModal();
 	on("click", ".play", e => {
 		play(e.match.id.split("_")[1], 1);
+	});
+	on("click", ".countdown a", e => {
+		e.preventDefault();
+		console.log("Moar info");
+		//TODO: Show a popup with more info
 	});
 	on("input", 'input[type="range"]', e => {
 		const which = "#sfx_" + e.match.name.split("_")[1];
