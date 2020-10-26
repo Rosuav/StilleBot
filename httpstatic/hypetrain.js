@@ -1,5 +1,6 @@
-import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, BR, DIV, IMG, P, UL, LI, SPAN} = choc;
+fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 
 //The threshold for "Super Hard" is this many bits per level (not total).
 //In order to unlock the sixth emote for each level, you need to have a
@@ -240,19 +241,3 @@ if (!ismobile) {
 	};
 	document.onclick = () => {interacted = 1; check_interaction();}
 }
-
-//Compat shim lifted from Mustard Mine
-//For browsers with only partial support for the <dialog> tag, add the barest minimum.
-//On browsers with full support, there are many advantages to using dialog rather than
-//plain old div, but this way, other browsers at least have it pop up and down.
-document.querySelectorAll("dialog").forEach(dlg => {
-	if (!dlg.showModal) dlg.showModal = function() {this.style.display = "block";}
-	if (!dlg.close) dlg.close = function() {this.style.removeProperty("display");}
-	dlg.addEventListener("click", e => {
-		let rect = dlg.getBoundingClientRect();
-		if (e.clientY < rect.top || e.clientY > rect.top + rect.height
-				|| e.clientX < rect.left || e.clientX > rect.left + rect.width)
-			dlg.close();
-	});
-});
-on("click", ".dialog_cancel,.dialog_close", e => e.match.closest("dialog").close());
