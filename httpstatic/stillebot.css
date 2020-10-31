@@ -48,3 +48,21 @@ h1,h2,h3 {
 nav a {
 	font-size: smaller;
 }
+
+/* Hype train styles */
+#status {
+	background-color: #a0a0ff;
+	font-size: 125%;
+}
+#status.active {
+	background-color: #a0ffa0;
+	font-weight: bold;
+}
+#nextlevel.level1 {background-color: #ffffd0;} /* Progressively more vibrant colours as you go up the levels */
+#nextlevel.level2 {background-color: #ffffb0;} /* Or #ffffa0 */
+#nextlevel.level3 {background-color: #ffff90;} /* Or #fff870 for a more 'gold' colour */
+#nextlevel.level4 {background-color: #ffff70;} /* Or #fff040 */
+#nextlevel.level5 {background-color: #ffff50;} /* Or #ffe820 */
+#nextlevel.level6 {background-color: #ffff00;}
+/* It'd be really cool to get the conductors' chat colours, but probably impractical */
+#cond_bits.present, #cond_subs.present {background-color: #e060e0;}
