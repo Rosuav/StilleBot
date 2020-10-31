@@ -85,8 +85,8 @@ let render = (state) => {
 
 	if (!state.expires && !state.cooldown) {
 		//Idle state. If we previously had a cooldown, it's now expired.
-		set_content("#status", [
-			P({className: "countdown"}, A(
+		set_content("#hypeinfo", [
+			P({id: "status", className: "countdown"}, A(
 				{"title": "The hype train is awaiting activity. If they're enabled, one can be started!", "href": "",},
 				"Cookies are done!"
 			)),
@@ -97,13 +97,14 @@ let render = (state) => {
 		last_rendered = "idle";
 		return;
 	}
-	let goal;
+	let goal, goalattrs = {id: "nextlevel"};
 	if (state.expires)
 	{
 		//Active hype train!
 		goal = `Level ${state.level} requires ${state.goal} bits or ${subs(state.goal)} tier one subs.`;
+		goalattrs.className = "level" + state.level;
 		let need = state.goal - state.total;
-		if (need < 0) goal += " TIER FIVE COMPLETE!";
+		if (need < 0) {goal += " TIER FIVE COMPLETE!"; goalattrs.className = "level6";}
 		else goal += ` Need ${need} more bits or ${subs(need)} more subs.`;
 		if (last_rendered === "idle") hypetrain_started();
 		last_rendered = "active";
@@ -119,14 +120,20 @@ let render = (state) => {
 		last_rendered = "cooldown"; //No audio cue when changing from active to cooldown
 	}
 	expiry = (state.expires || state.cooldown) * 1000;
-	set_content("#status", [
-		P({className: "countdown"}, [
+	let conduc = { };
+	state.conductors.forEach(c => conduc[c.type] = P(
+		{id: "cond_" + c.type.toLowerCase(), className: "present"},
+		c.type + " conductor: " + fmt_contrib(c)
+	));
+	set_content("#hypeinfo", [
+		P({id: "status", className: state.expires ? "countdown active" : "countdown"}, [
 			state.expires ? "HYPE TRAIN ACTIVE! " : "The hype train is on cooldown. Next one can start in ",
 			SPAN({id: "time"})
 		]),
-		P(["Hype conductors: ", state.conductors.map(fmt_contrib).join(", and ")]),
+		conduc.BITS || P({id: "cond_bits"}, "No hype conductor for bits - cheer any number of bits to claim this spot!"),
+		conduc.SUBS || P({id: "cond_subs"}, "No hype conductor for subs - subscribe/resub/subgift to claim this spot!"),
 		P(["Latest contribution: ", fmt_contrib(state.lastcontrib)]),
-		P(goal),
+		P(goalattrs, goal),
 	]);
 	if (updating) clearInterval(updating);
 	updating = setInterval(update, 1000);

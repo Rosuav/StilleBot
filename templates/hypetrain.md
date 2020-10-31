@@ -1,7 +1,7 @@
 # Train Tracks
 ## $$channelname$$ hype train
 
-<div id=status></div>
+<div id=hypeinfo><p id=status></p></div>
 
 WARNING: Audio alerts may not play if you have not interacted with the page.
 Click anywhere to enable alerts.
@@ -39,6 +39,8 @@ Select channel: <input name=for>
 </form>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+#hypeinfo {font-family: 'Inter', sans-serif;}
 .countdown a {
 	color: black;
 	text-decoration: none;
@@ -95,6 +97,13 @@ audio {display: none;}
 #interact-warning.hidden {display: none;}
 
 #infopopup {max-width: 680px;}
+
+#hypeinfo p {
+	padding: 1em;
+	margin: 0.5em;
+	max-width: 40em;
+	border: 1px dashed blue;
+}
 </style>
 
 <script>window.channelid = $$channelid$$;</script>
