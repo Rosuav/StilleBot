@@ -42,7 +42,7 @@ function build_follow_list() {
 		if (!raids.length) return null;
 		const raiddesc = raids[raids.length - 1];
 		const outgoing = raiddesc.includes("You raided");
-		return LI({
+		return SPAN({
 			className: outgoing ? "raid-outgoing" : "raid-incoming",
 			onclick: () => show_raids(raids),
 		}, [
@@ -61,7 +61,7 @@ function build_follow_list() {
 				LI({className: "streamtitle"}, stream.channel.status),
 				LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
 				LI(stream.tags.map(tag => SPAN({className: "tag"}, tag.name + " "))),
-				describe_raid(stream.raids),
+				LI(describe_raid(stream.raids)),
 			]),
 			//TODO: Make this a link to the category.
 			DIV({className: "img"}, IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.game + "-40x54.jpg"})),
