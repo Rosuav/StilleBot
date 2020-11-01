@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, DIV, IMG, P, UL, LI, SPAN} = choc;
+const {A, BUTTON, DIV, IMG, P, UL, LI, SPAN} = choc;
 
 const sortfunc = {
 	Viewers: (s1, s2) => s1.viewers - s2.viewers,
@@ -51,6 +51,10 @@ function build_follow_list() {
 			outgoing && IMG({className: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v1/62836/1.0"}),
 		]);
 	}
+	function describe_notes(notes) {
+		if (notes) return BUTTON({className: "notes present", title: "Notes about this channel"}, "\u270D \u2709");
+		return BUTTON({className: "notes absent", title: "Notes about this channel"}, "\u270D");
+	}
 	//TODO: Show when stream.viewers is a long way above or below your_viewers
 	set_content("#streams", follows.map(stream => stream.element = DIV([
 		A({href: stream.channel.url}, IMG({src: stream.preview.medium})),
@@ -61,7 +65,7 @@ function build_follow_list() {
 				LI({className: "streamtitle"}, stream.channel.status),
 				LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
 				LI(stream.tags.map(tag => SPAN({className: "tag"}, tag.name + " "))),
-				LI(describe_raid(stream.raids)),
+				LI([describe_notes(stream.notes), describe_raid(stream.raids)]),
 			]),
 			//TODO: Make this a link to the category.
 			DIV({className: "img"}, IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.game + "-40x54.jpg"})),

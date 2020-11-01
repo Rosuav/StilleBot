@@ -94,6 +94,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			return twitch_api_request("https://api.twitch.tv/helix/tags/streams?first=100" + sprintf("%{&tag_id=%s%}", (array)all_tags));
 		})->then(lambda(mapping info) {
 			foreach (info->data, mapping tag) G->G->tagnames[tag->tag_id] = tag->localization_names["en-us"];
+			mapping notes = persist_status->path("raidnotes")[(string)userid];
 			foreach (follows, mapping strm)
 			{
 				array tags = ({ });
@@ -102,6 +103,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				strm->tags = tags;
 				strm->raids = raids[strm->channel->name] || ({ });
 				int otheruid = (int)strm->user_id;
+				if (string n = notes && notes[(string)otheruid]) strm->notes = n;
 				int swap = otheruid < userid;
 				array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[swap ? userid : otheruid];
 				foreach (raids || ({ }), mapping raid)
