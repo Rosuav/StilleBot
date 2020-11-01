@@ -23,7 +23,7 @@ function uptime(startdate) {
 	const ss = ("0" + Math.floor(time % 60)).slice(-2);
 	let ret = mm + ":" + ss;
 	if (time >= 3600) ret = hh + ":" + ret;
-	if (time >= 86400) ret = Math.floor(time / 86400) + "days, " + ret;
+	if (time >= 86400) ret = Math.floor(time / 86400) + " days, " + ret;
 	return ret;
 }
 
