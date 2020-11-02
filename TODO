@@ -30,11 +30,5 @@
     adds another independent one (current behaviour), restarts the timer (cancel existing
     and create new), or errors out with an immediate message of some sort.
   - Optionally emit message only if online at the time.
-* Raid finder: Allow notes to be attached to particular targets.
-  - If there are notes, show some sort of icon below the streamer's avatar
-  - If there are none, have a placeholder of some sort
-  - Either way, clicking it should open a <dialog> allowing notes to be saved.
-  - Would need to retain details somewhere. Which persist - config or status?
-  - What if it's for a channel I don't track?
-  - Also show recent outgoing raids to allow notes to be added?
+* Raid finder: Also show recent outgoing raids to allow notes to be added?
 * Markdown - two dialogs next to each other seem to be merging???
