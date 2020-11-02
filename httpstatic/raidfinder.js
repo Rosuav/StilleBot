@@ -68,7 +68,7 @@ function adornment(type) {
 	}
 	else if (type === "affiliate") {
 		//Return a circle? \u2B24
-		return SPAN({className: "bcasttype affiliate"}, "\xA0\u25CF ");
+		return SPAN({className: "bcasttype affiliate"}, "\xA0 \xA0 \xA0");
 	}
 }
 
