@@ -37,6 +37,30 @@ function show_raids(raids) {
 	ul.scrollTop = ul.scrollHeight;
 }
 
+function edit_notes(stream) {
+	set_content("#notes_about_channel", stream.channel.display_name);
+	DOM("#editnotes textarea").value = stream.notes || "";
+	DOM("#editnotes").returnValue = "close";
+	DOM("#editnotes").stream = stream;
+	DOM("#editnotes").showModal();
+}
+
+DOM("#editnotes").onclose = e => {
+	if (e.currentTarget.returnValue !== "save") return;
+	const stream = e.currentTarget.stream;
+	const newnotes = DOM("#editnotes textarea").value;
+	fetch("/raidfinder", {
+		method: "POST",
+		headers: {"content-type": "application/json"},
+		body: JSON.stringify({id: stream.channel._id, notes: newnotes}),
+	}).then(res => {
+		if (!res.ok) {console.error("ERROR SAVING NOTES"); console.error(res);} //TODO
+		const btn = stream.element.querySelector(".notes");
+		if (newnotes === "") {btn.className = "notes absent"; set_content(btn, "\u270D");}
+		else {btn.className = "notes present"; set_content(btn, "\u270D \u2709");}
+	});
+}
+
 console.log(follows);
 function build_follow_list() {
 	function describe_raid(raids) {
@@ -52,9 +76,18 @@ function build_follow_list() {
 			outgoing && IMG({className: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v1/62836/1.0"}),
 		]);
 	}
-	function describe_notes(notes) {
-		if (notes) return BUTTON({className: "notes present", title: "Notes about this channel"}, "\u270D \u2709");
-		return BUTTON({className: "notes absent", title: "Notes about this channel"}, "\u270D");
+	function describe_notes(stream) {
+		const attr = {
+			className: "notes absent",
+			title: "Notes about this channel",
+			type: "button",
+			onclick: () => edit_notes(stream),
+		};
+		if (stream.notes) {
+			attr.className = "notes present";
+			return BUTTON(attr, "\u270D \u2709");
+		}
+		return BUTTON(attr, "\u270D");
 	}
 	//TODO: Show when stream.viewers is a long way above or below your_viewers
 	set_content("#streams", follows.map(stream => stream.element = DIV([
@@ -66,7 +99,7 @@ function build_follow_list() {
 				LI({className: "streamtitle"}, stream.channel.status),
 				LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
 				LI(stream.tags.map(tag => SPAN({className: "tag"}, tag.name + " "))),
-				LI([describe_notes(stream.notes), describe_raid(stream.raids)]),
+				LI([describe_notes(stream), describe_raid(stream.raids)]),
 			]),
 			//TODO: Make this a link to the category.
 			DIV({className: "img"}, IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.game + "-40x54.jpg"})),

@@ -8,6 +8,16 @@
 
 <div id=streams></div>
 
+> <button type=button class=dialog_cancel>x</button>
+>
+> Channel name: <span id=notes_about_channel></span>
+>
+> <form method=dialog>
+> <textarea rows=8 cols=50></textarea>
+> <button value="save">Save</button> <button value="cancel">Cancel</button>
+> </form>
+{: tag=dialog #editnotes}
+
 <a id=yourcat href="#" target="_blank">Current category: ??</a>
 
 > <button type=button class=dialog_cancel>x</button>

@@ -17,6 +17,18 @@ string cached_follows;
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "user_read")) return resp;
+	if (req->request_type == "POST")
+	{
+		//Update notes
+		mixed body = Standards.JSON.decode(req->body_raw);
+		if (!body || !mappingp(body) || !intp(body->id)) return (["error": 400]);
+		string newnotes = body->notes || "";
+		mapping notes = persist_status->path("raidnotes", (string)req->misc->session->user->id);
+		if (newnotes == "") m_delete(notes, (string)body->id);
+		else notes[(string)body->id] = newnotes;
+		persist_status->save();
+		return (["error": 204]);
+	}
 	if (req->variables->use_cache && cached_follows) return render_template("raidfinder.md", (["follows": cached_follows]));
 	//Legacy data (currently all data): Parse the outgoing raid log
 	//Note that this cannot handle renames, and will 'lose' them.
@@ -94,7 +106,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			return twitch_api_request("https://api.twitch.tv/helix/tags/streams?first=100" + sprintf("%{&tag_id=%s%}", (array)all_tags));
 		})->then(lambda(mapping info) {
 			foreach (info->data, mapping tag) G->G->tagnames[tag->tag_id] = tag->localization_names["en-us"];
-			mapping notes = persist_status->path("raidnotes")[(string)userid];
+			//NOTE: Notes come from your *login* userid, unaffected by any for= annotation.
+			mapping notes = persist_status->path("raidnotes")[(string)req->misc->session->user->id];
 			foreach (follows, mapping strm)
 			{
 				array tags = ({ });
