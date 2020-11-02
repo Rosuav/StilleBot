@@ -102,7 +102,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					if (string tagname = G->G->tagnames[tagid]) tags += ({(["id": tagid, "name": tagname])});
 				strm->tags = tags;
 				strm->raids = raids[strm->channel->name] || ({ });
-				int otheruid = (int)strm->user_id;
+				int otheruid = (int)strm->channel->_id;
 				if (string n = notes && notes[(string)otheruid]) strm->notes = n;
 				int swap = otheruid < userid;
 				array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[swap ? userid : otheruid];
