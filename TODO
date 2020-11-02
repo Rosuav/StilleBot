@@ -31,4 +31,3 @@
     and create new), or errors out with an immediate message of some sort.
   - Optionally emit message only if online at the time.
 * Raid finder: Also show recent outgoing raids to allow notes to be added?
-* Markdown - two dialogs next to each other seem to be merging???
