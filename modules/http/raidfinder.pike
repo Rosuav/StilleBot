@@ -54,6 +54,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	mapping(int:array(string)) channel_tags = ([]);
 	mapping your_stream;
 	int userid;
+	mapping broadcaster_type = ([]);
 	return uid->then(lambda(int u) {
 			userid = u;
 			string login = req->misc->session->user->login, disp = req->misc->session->user->display_name;
@@ -81,12 +82,19 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			channels += ({userid});
 			//TODO: Paginate if >100
 			write("Fetching %d streams...\n", sizeof(channels));
-			return twitch_api_request("https://api.twitch.tv/helix/streams?first=100" + sprintf("%{&user_id=%d%}", channels));
-		})->then(lambda(mapping info) {
+			return Concurrent.all(
+				twitch_api_request("https://api.twitch.tv/helix/streams?first=100" + sprintf("%{&user_id=%d%}", channels)),
+				//The ONLY thing we need /helix/users for is broadcaster_type, which - for
+				//reasons unknown to me - is always blank in the main stream info.
+				twitch_api_request("https://api.twitch.tv/helix/users?first=100" + sprintf("%{&id=%d%}", channels)),
+			);
+		})->then(lambda(array results) {
+			[mapping info, mapping userinfo] = results;
 			if (!G->G->tagnames) G->G->tagnames = ([]);
 			multiset all_tags = (<>);
 			foreach (info->data, mapping strm)
 			{
+				write("user_id: %O\n", strm->user_id);
 				channel_tags[(int)strm->user_id] = strm->tag_ids;
 				if ((int)strm->user_id == userid)
 				{
@@ -100,6 +108,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				foreach (strm->tag_ids || ({ }), string tag)
 					if (!G->G->tagnames[tag]) all_tags[tag] = 1;
 			}
+			foreach (userinfo->data, mapping user) broadcaster_type[(int)user->id] = user->broadcaster_type;
 			if (!sizeof(all_tags)) return Concurrent.resolve((["data": ({ })]));
 			//TODO again: Paginate if >100
 			write("Fetching %d tags...\n", sizeof(all_tags));
@@ -116,6 +125,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				strm->tags = tags;
 				strm->raids = raids[strm->channel->name] || ({ });
 				int otheruid = (int)strm->channel->_id;
+				if (string t = broadcaster_type[otheruid]) strm->channel->broadcaster_type = t;
 				if (string n = notes && notes[(string)otheruid]) strm->notes = n;
 				int swap = otheruid < userid;
 				array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[swap ? userid : otheruid];

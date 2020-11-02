@@ -72,6 +72,12 @@
 main {max-width: none!important;} /* Override the normal StilleBot style */
 
 #raids ul {overflow-y: auto; max-height: 10em;}
+
+.bcasttype {
+	background-color: purple;
+	color: white;
+	border-radius: 50%;
+}
 </style>
 
 <script>

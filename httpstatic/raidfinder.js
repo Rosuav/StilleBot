@@ -61,6 +61,17 @@ DOM("#editnotes").onclose = e => {
 	});
 }
 
+function adornment(type) {
+	if (type === "partner") {
+		//Return a purple check mark \u2705
+		return SPAN({className: "bcasttype partner"}, "\xA0\u2714 ");
+	}
+	else if (type === "affiliate") {
+		//Return a circle? \u2B24
+		return SPAN({className: "bcasttype affiliate"}, "\xA0\u25CF ");
+	}
+}
+
 console.log(follows);
 function build_follow_list() {
 	function describe_raid(raids) {
@@ -95,7 +106,7 @@ function build_follow_list() {
 		DIV({className: "inforow"}, [
 			DIV({className: "img"}, A({href: stream.channel.url}, IMG({className: "avatar", src: stream.channel.logo}))),
 			UL([
-				LI([A({href: stream.channel.url}, stream.channel.display_name), " - ", stream.game]),
+				LI([A({href: stream.channel.url}, [adornment(stream.channel.broadcaster_type), stream.channel.display_name]), " - ", stream.game]),
 				LI({className: "streamtitle"}, stream.channel.status),
 				LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
 				LI(stream.tags.map(tag => SPAN({className: "tag"}, tag.name + " "))),
