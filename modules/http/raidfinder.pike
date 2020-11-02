@@ -94,7 +94,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			multiset all_tags = (<>);
 			foreach (info->data, mapping strm)
 			{
-				write("user_id: %O\n", strm->user_id);
 				channel_tags[(int)strm->user_id] = strm->tag_ids;
 				if ((int)strm->user_id == userid)
 				{
