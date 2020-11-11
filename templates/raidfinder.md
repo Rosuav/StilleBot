@@ -1,5 +1,7 @@
 # Followed streams
 
+<button id=highlights>Edit highlight list</button>
+
 * Viewers
 * Category
 * Uptime
@@ -10,7 +12,7 @@
 
 > <button type=button class=dialog_cancel>x</button>
 >
-> Channel name: <span id=notes_about_channel></span>
+> <span id=notes_about_channel>Channel name: </span>
 >
 > <form method=dialog>
 > <textarea rows=8 cols=50></textarea>
@@ -78,11 +80,17 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	color: white;
 	border-radius: 50%;
 }
+
+.highlighted {
+	background-color: #ffc;
+	border: 1px solid #ff0;
+}
 </style>
 
 <script>
 const follows = $$follows$$;
 const your_stream = $$your_stream$$; //if 0, you're not online
+let highlights = $$highlights$$; //human-readable list of highlight channels (even those not online)
 </script>
 
 <script type=module src="/static/raidfinder.js"></script>

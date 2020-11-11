@@ -24,6 +24,21 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (!body || !mappingp(body) || !intp(body->id)) return (["error": 400]);
 		string newnotes = body->notes || "";
 		mapping notes = persist_status->path("raidnotes", (string)req->misc->session->user->id);
+		if (body->id == 0)
+		{
+			//Special case: List of highlight channels.
+			//Channel names are separated by space or newline or comma or whatever
+			return get_users_info(replace(newnotes, ",;\n"/"", " ") / " " - ({""}), "login")->then(lambda(array users) {
+				notes["0"] = (array(string))users->id * "\n";
+				return ([
+					"data": Standards.JSON.encode(([
+						"highlights": users->login * "\n",
+						"highlightids": users->id,
+					]), 7),
+					"type": "application/json",
+				]);
+			}, lambda(mixed err) {werror("%O\n", err); return (["error": 500]);}); //TODO: If it's "user not found", report it nicely
+		}
 		if (newnotes == "") m_delete(notes, (string)body->id);
 		else notes[(string)body->id] = newnotes;
 		persist_status->save();
@@ -55,6 +70,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	mapping your_stream;
 	int userid;
 	mapping broadcaster_type = ([]);
+	//NOTE: Notes come from your *login* userid, unaffected by any for= annotation.
+	mapping notes = persist_status->path("raidnotes")[(string)req->misc->session->user->id];
+	array highlightids = ({ });
+	if (notes && notes["0"]) highlightids = (array(int))(notes["0"] / "\n");
+	string highlights;
 	return uid->then(lambda(int u) {
 			userid = u;
 			string login = req->misc->session->user->login, disp = req->misc->session->user->display_name;
@@ -73,6 +93,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				if (from == login) raids[lower_case(to)] += ({sprintf("%d-%02d-%02d You raided %s", y, m, d, to)});
 				if (to == disp) raids[from] += ({sprintf("%d-%02d-%02d %s raided you", y, m, d, from)});
 			}
+			return get_users_info(highlightids);
+		})->then(lambda(array users) {
+			highlights = users->login * "\n";
 			return twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
 				(["Authorization": "OAuth " + req->misc->session->token]));
 		})->then(lambda(mapping info) {
@@ -114,8 +137,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			return twitch_api_request("https://api.twitch.tv/helix/tags/streams?first=100" + sprintf("%{&tag_id=%s%}", (array)all_tags));
 		})->then(lambda(mapping info) {
 			foreach (info->data, mapping tag) G->G->tagnames[tag->tag_id] = tag->localization_names["en-us"];
-			//NOTE: Notes come from your *login* userid, unaffected by any for= annotation.
-			mapping notes = persist_status->path("raidnotes")[(string)req->misc->session->user->id];
 			foreach (follows, mapping strm)
 			{
 				array tags = ({ });
@@ -126,6 +147,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				int otheruid = (int)strm->channel->_id;
 				if (string t = broadcaster_type[otheruid]) strm->channel->broadcaster_type = t;
 				if (string n = notes && notes[(string)otheruid]) strm->notes = n;
+				if (has_value(highlightids, otheruid)) strm->highlight = 1;
 				int swap = otheruid < userid;
 				array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[swap ? userid : otheruid];
 				foreach (raids || ({ }), mapping raid)
@@ -143,6 +165,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			return render_template("raidfinder.md", ([
 				"follows": cached_follows = Standards.JSON.encode(follows, Standards.JSON.ASCII_ONLY),
 				"your_stream": Standards.JSON.encode(your_stream, Standards.JSON.ASCII_ONLY),
+				"highlights": Standards.JSON.encode(highlights, Standards.JSON.ASCII_ONLY),
 			]));
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: Return a nice message if for=junk given
 }

@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BUTTON, DIV, IMG, P, UL, LI, SPAN} = choc;
+const {A, BR, BUTTON, DIV, IMG, P, UL, LI, SPAN} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 
 const sortfunc = {
@@ -38,7 +38,7 @@ function show_raids(raids) {
 }
 
 function edit_notes(stream) {
-	set_content("#notes_about_channel", stream.channel.display_name);
+	set_content("#notes_about_channel", "Channel notes: " + stream.channel.display_name);
 	DOM("#editnotes textarea").value = stream.notes || "";
 	DOM("#editnotes").returnValue = "close";
 	DOM("#editnotes").stream = stream;
@@ -55,10 +55,28 @@ DOM("#editnotes").onclose = e => {
 		body: JSON.stringify({id: stream.channel._id, notes: newnotes}),
 	}).then(res => {
 		if (!res.ok) {console.error("ERROR SAVING NOTES"); console.error(res);} //TODO
+		if (!stream.element) return res.json(); //Changing the highlights gets an actual response
 		const btn = stream.element.querySelector(".notes");
 		if (newnotes === "") {btn.className = "notes absent"; set_content(btn, "\u270D");}
 		else {btn.className = "notes present"; set_content(btn, "\u270D \u2709");}
+	}).then(response => {
+		if (!response) return; //Stream-specific notes have no response body.
+		highlights = response.highlights;
+		//The highlight IDs are there too if needed.
+		console.log(response.highlightids);
 	});
+}
+
+DOM("#highlights").onclick = () => {
+	set_content("#notes_about_channel", [
+		"List channels here, separated by spaces or on separate lines. They",
+		BR(),
+		"will be visibly highlighted next time you open this raid finder."
+	]);
+	DOM("#editnotes textarea").value = highlights || "";
+	DOM("#editnotes").returnValue = "close";
+	DOM("#editnotes").stream = {channel: {_id: 0}};
+	DOM("#editnotes").showModal();
 }
 
 function adornment(type) {
@@ -101,7 +119,7 @@ function build_follow_list() {
 		return BUTTON(attr, "\u270D");
 	}
 	//TODO: Show when stream.viewers is a long way above or below your_viewers
-	set_content("#streams", follows.map(stream => stream.element = DIV([
+	set_content("#streams", follows.map(stream => stream.element = DIV({className: stream.highlight ? "highlighted" : ""}, [
 		A({href: stream.channel.url}, IMG({src: stream.preview.medium})),
 		DIV({className: "inforow"}, [
 			DIV({className: "img"}, A({href: stream.channel.url}, IMG({className: "avatar", src: stream.channel.logo}))),
