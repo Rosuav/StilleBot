@@ -60,28 +60,50 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 }
 
 //Will return from cache if available. Set type to "login" to look up by name, else uses ID.
-Concurrent.Future get_user_info(int|string user, string|void type)
+Concurrent.Future get_users_info(array(int|string) users, string|void type)
 {
 	//Simplify things elsewhere: 0 yields 0 with no error. (Otherwise you'll
-	//always get a mapping, or a rejection.)
-	if (!user) return Concurrent.resolve(0);
+	//always get an array of mappings, or a rejection.)
+	if (!users) return Concurrent.resolve(0);
+	users -= ({0});
+	//Similarly, 0 yields 0 within the array too.
+	if (!sizeof(users)) return Concurrent.resolve(({0}));
 
-	if (type != "login") {type = "id"; user = (int)user;}
-	else user = lower_case((string)user);
-	if (mapping info = G->G->user_info[user]) return Concurrent.resolve(info);
-	return request("https://api.twitch.tv/helix/users?" + type + "=" + user)
+	if (type != "login") {type = "id"; users = (array(int))users;}
+	else users = lower_case(((array(string))users)[*]);
+	array results = allocate(sizeof(users));
+	array lookups = ({ });
+	foreach (users; int i; int|string u)
+	{
+		if (mapping info = G->G->user_info[u]) results[i] = info;
+		else lookups += ({(string)u});
+	}
+	if (!sizeof(lookups)) return Concurrent.resolve(results); //Got 'em all from cache.
+	return request(sprintf("https://api.twitch.tv/helix/users?%{" + type + "=%s&%}", Protocols.HTTP.uri_encode(lookups[*])))
 		->then(lambda(mapping data) {
-			if (!sizeof(data->data)) return Concurrent.reject(({"User not found\n", backtrace()}));
-			mapping info = data->data[0];
-			G->G->user_info[info->login] = G->G->user_info[(int)info->id] = info;
-			return info;
+			foreach (data->data, mapping info)
+				G->G->user_info[info->login] = G->G->user_info[(int)info->id] = info;
+			foreach (users; int i; int|string u)
+			{
+				if (mapping info = G->G->user_info[u]) results[i] = info;
+				//Note that the returned error will only ever name a single failed lookup.
+				//It's entirely possible that others failed too, but it probably won't matter.
+				else return Concurrent.reject(({"User not found: " + u + "\n", backtrace()}));
+			}
+			return results;
 		});
+}
+
+//As above but only a single user's info
+Concurrent.Future get_user_info(int|string user, string|void type)
+{
+	return get_users_info(({user}), type)->then(lambda(array(mapping) info) {return info[0];});
 }
 
 //Convenience shorthand when all you need is the ID
 Concurrent.Future get_user_id(string user)
 {
-	return get_user_info(user, "login")->then(lambda(mapping info) {return (int)info->id;});
+	return get_users_info(({user}), "login")->then(lambda(mapping info) {return (int)info[0]->id;});
 }
 
 Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers, int|void debug)
