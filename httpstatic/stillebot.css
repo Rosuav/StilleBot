@@ -11,6 +11,8 @@ table {border-collapse: collapse;}
 input {background: #ffe;}
 input[type=submit] {background: inherit;}
 
+dialog {position: fixed;}
+
 .dialog_cancel {
 	position: absolute;
 	right: 1em; top: 1em;
