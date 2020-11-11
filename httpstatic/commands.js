@@ -1,5 +1,6 @@
-import choc, {set_content} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
 const {BR, BUTTON, INPUT, DIV, DETAILS, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTION, FIELDSET, CODE} = choc;
+fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 const all_flags = "mode dest access visibility counter action".split(" ");
 
 on("click", "button.addline", e => {
@@ -195,13 +196,3 @@ on("click", "#templates tbody tr", e => {
 	document.forms[0].newcmd_name.value = cmdname;
 	document.forms[0].newcmd_resp.value = text.innerText.trim();
 });
-
-//Compat shim lifted from Mustard Mine
-//For browsers with only partial support for the <dialog> tag, add the barest minimum.
-//On browsers with full support, there are many advantages to using dialog rather than
-//plain old div, but this way, other browsers at least have it pop up and down.
-document.querySelectorAll("dialog").forEach(dlg => {
-	if (!dlg.showModal) dlg.showModal = function() {this.style.display = "block";}
-	if (!dlg.close) dlg.close = function() {this.style.removeProperty("display");}
-});
-on("click", ".dialog_cancel,.dialog_close", e => e.match.closest("dialog").close());
