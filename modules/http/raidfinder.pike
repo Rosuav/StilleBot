@@ -28,7 +28,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		{
 			//Special case: List of highlight channels.
 			//Channel names are separated by space or newline or comma or whatever
-			return get_users_info(replace(newnotes, ",;\n"/"", " ") / " " - ({""}), "login")->then(lambda(array users) {
+			array(string) channels = replace(newnotes, ",;\n"/"", " ") / " " - ({""});
+			//Trim URLs down to just the channel name
+			foreach (channels; int i; string c) sscanf(c, "http%*[s]://twitch.tv/%s%*[?/]", channels[i]);
+			return get_users_info(channels, "login")->then(lambda(array users) {
 				notes["0"] = (array(string))users->id * "\n";
 				return ([
 					"data": Standards.JSON.encode(([
