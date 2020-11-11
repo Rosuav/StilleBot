@@ -66,8 +66,6 @@ Concurrent.Future get_users_info(array(int|string) users, string|void type)
 	//always get an array of mappings, or a rejection.)
 	if (!users) return Concurrent.resolve(0);
 	users -= ({0});
-	//Similarly, 0 yields 0 within the array too.
-	if (!sizeof(users)) return Concurrent.resolve(({0}));
 
 	if (type != "login") {type = "id"; users = (array(int))users;}
 	else users = lower_case(((array(string))users)[*]);
@@ -94,16 +92,16 @@ Concurrent.Future get_users_info(array(int|string) users, string|void type)
 		});
 }
 
-//As above but only a single user's info
+//As above but only a single user's info. For convenience, 0 will yield 0 without an error.
 Concurrent.Future get_user_info(int|string user, string|void type)
 {
-	return get_users_info(({user}), type)->then(lambda(array(mapping) info) {return info[0];});
+	return get_users_info(({user}), type)->then(lambda(array(mapping) info) {return sizeof(info) && info[0];});
 }
 
 //Convenience shorthand when all you need is the ID
 Concurrent.Future get_user_id(string user)
 {
-	return get_users_info(({user}), "login")->then(lambda(mapping info) {return (int)info[0]->id;});
+	return get_users_info(({user}), "login")->then(lambda(mapping info) {return sizeof(info) && (int)info[0]->id;});
 }
 
 Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers, int|void debug)
@@ -496,6 +494,7 @@ protected void create()
 	add_constant("get_helix_paginated", get_helix_paginated);
 	add_constant("get_user_id", get_user_id);
 	add_constant("get_user_info", get_user_info);
+	add_constant("get_users_info", get_users_info);
 	add_constant("create_webhook", create_webhook);
 }
 
