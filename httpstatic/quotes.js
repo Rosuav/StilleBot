@@ -1,5 +1,6 @@
-import choc, {set_content} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
 const {OPTION, SELECT, INPUT, LABEL, UL, LI, BUTTON, TR, TH, TD, SPAN} = choc;
+fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 
 const dlg = document.getElementById("editdlg");
 let editing_quote = 0;
@@ -18,8 +19,6 @@ on("click", "li", e => {
 	set_content("#recorder", quote.recorder || "(unknown)");
 	dlg.showModal();
 });
-
-on("click", ".dialog_cancel", e => e.match.parentElement.close());
 
 on("click", "#update", async e => {
 	console.log("Update");
