@@ -31,3 +31,5 @@
     and create new), or errors out with an immediate message of some sort.
   - Optionally emit message only if online at the time.
 * Raid finder: Also show recent outgoing raids to allow notes to be added?
+* Recent raid viewer. To and from any given channel, regardless of who's live.
+  - Will probably need web interface eventually, but start with CLI.
