@@ -629,7 +629,7 @@ void raids_display(string ch)
 				if (raid->outgoing)
 					raiddescs += ({sprintf("RAID>> %s raided %s on %s", raid->from, raid->to, ctime(raid->time))});
 				else
-					raiddescs += ({sprintf("RAID>< %s raided %s on %s", raid->to, raid->from, ctime(raid->time))});
+					raiddescs += ({sprintf("RAID>< %s raided %s on %s", raid->from, raid->to, ctime(raid->time))});
 				times += ({raid->time});
 			}
 		}
@@ -641,7 +641,7 @@ void raids_display(string ch)
 				if (raid->outgoing)
 					raiddescs += ({sprintf("RAID<> %s raided %s on %s", raid->from, raid->to, ctime(raid->time))});
 				else
-					raiddescs += ({sprintf("RAID<< %s raided %s on %s", raid->to, raid->from, ctime(raid->time))});
+					raiddescs += ({sprintf("RAID<< %s raided %s on %s", raid->from, raid->to, ctime(raid->time))});
 				times += ({raid->time});
 			}
 		}
