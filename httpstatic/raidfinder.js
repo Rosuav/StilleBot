@@ -29,7 +29,6 @@ function uptime(startdate) {
 }
 
 function show_raids(raids) {
-	console.log(raids);
 	const ul = set_content("#raids ul", raids.map(desc => LI(
 		{className: desc[0] === '>' ? "raid-outgoing" : "raid-incoming"},
 		desc.slice(1),
