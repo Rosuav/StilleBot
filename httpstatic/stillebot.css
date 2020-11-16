@@ -12,6 +12,11 @@ input {background: #ffe;}
 input[type=submit] {background: inherit;}
 
 dialog {position: fixed;}
+@supports (-moz-appearance:none) {
+	/* Firefox doesn't automatically position dialogs properly. */
+	/* It's a pain to try to center them, so just snap to the top. */
+	dialog {top: 0;}
+}
 
 .dialog_cancel {
 	position: absolute;
