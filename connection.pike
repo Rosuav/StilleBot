@@ -553,8 +553,8 @@ class channel_notif
 					break;
 				case "raid": case "unraid": //Incoming raids already get announced and we don't get any more info
 				{
-					write("Debug incoming raid: chan %s user %O params %O\n",
-						name, person->displayname, params);
+					Stdio.append_file("incoming_raids.log", sprintf("%s Debug incoming raid: chan %s user %O params %O\n",
+						ctime(time())[..<1], name, person->displayname, params));
 					//NOTE: The destination "room ID" might not remain forever.
 					//If it doesn't, we'll need to get the channel's user id instead.
 					record_raid((int)params->user_id, person->displayname,

@@ -3,3 +3,4 @@ song_cache
 pwd
 outgoing_raids.log
 *.pem
+incoming_raids.log
