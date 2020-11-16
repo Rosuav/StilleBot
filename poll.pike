@@ -618,6 +618,42 @@ void clips_display(string channel)
 	});
 }
 
+void raids_display(string ch)
+{
+	get_user_id(ch)->then(lambda (int id) {
+		array raiddescs = ({ }), times = ({ });
+		foreach (persist_status->raids[(string)id] || ([]); int otherid; array raids) {
+			foreach (raids, mapping raid)
+			{
+				if (raid->time > 1000000000000) raid->time /= 1000;
+				if (raid->outgoing)
+					raiddescs += ({sprintf("RAID>> %s raided %s on %s", raid->from, raid->to, ctime(raid->time))});
+				else
+					raiddescs += ({sprintf("RAID>< %s raided %s on %s", raid->to, raid->from, ctime(raid->time))});
+				times += ({raid->time});
+			}
+		}
+		foreach (persist_status->raids; string otherid; mapping allraids) {
+			array raids = allraids[(string)id];
+			foreach (raids || ({ }), mapping raid)
+			{
+				if (raid->time > 1000000000000) raid->time /= 1000;
+				if (raid->outgoing)
+					raiddescs += ({sprintf("RAID<> %s raided %s on %s", raid->from, raid->to, ctime(raid->time))});
+				else
+					raiddescs += ({sprintf("RAID<< %s raided %s on %s", raid->to, raid->from, ctime(raid->time))});
+				times += ({raid->time});
+			}
+		}
+		sort(times, raiddescs);
+		write(raiddescs * "");
+		if (!--requests) exit(0);
+	})->thencatch(lambda (mixed err) {
+		write("Error fetching raids: %s\n", describe_backtrace(err));
+		if (!--requests) exit(0);
+	});
+}
+
 int main(int argc, array(string) argv)
 {
 	if (argc == 1)
@@ -643,6 +679,13 @@ int main(int argc, array(string) argv)
 			{
 				write("Searching for clips...\n");
 				clips_display(ch);
+				continue;
+			}
+			if (user == "raids")
+			{
+				write("Checking raids...\n");
+				if (!sizeof(persist_status)) persist_status = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_status.json"));
+				raids_display(ch);
 				continue;
 			}
 			write("Checking follow status...\n");
