@@ -60,6 +60,7 @@ DOM("#editnotes").onclose = e => {
 		const btn = stream.element.querySelector(".notes");
 		if (newnotes === "") {btn.className = "notes absent"; set_content(btn, "\u270D");}
 		else {btn.className = "notes present"; set_content(btn, "\u270D \u2709");}
+		stream.notes = newnotes;
 	}).then(response => {
 		if (!response) return; //Stream-specific notes have no response body.
 		highlights = response.highlights;
