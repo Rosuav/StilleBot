@@ -29,9 +29,10 @@ function uptime(startdate) {
 }
 
 function show_raids(raids) {
+	console.log(raids);
 	const ul = set_content("#raids ul", raids.map(desc => LI(
-		{className: desc.includes("You raided") ? "raid-outgoing" : "raid-incoming"},
-		desc,
+		{className: desc[0] === '>' ? "raid-outgoing" : "raid-incoming"},
+		desc.slice(1),
 	)));
 	DOM("#raids").showModal();
 	ul.scrollTop = ul.scrollHeight;
@@ -95,13 +96,13 @@ function build_follow_list() {
 	function describe_raid(raids) {
 		if (!raids.length) return null;
 		const raiddesc = raids[raids.length - 1];
-		const outgoing = raiddesc.includes("You raided");
+		const outgoing = raiddesc[0] === '>';
 		return SPAN({
 			className: outgoing ? "raid-outgoing" : "raid-incoming",
 			onclick: () => show_raids(raids),
 		}, [
 			!outgoing && IMG({className: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v1/62836/1.0"}), //twitchRaid
-			/^[-0-9]+/.exec(raiddesc)[0], //Just the date
+			/^[-0-9]+/.exec(raiddesc.slice(1))[0], //Just the date
 			outgoing && IMG({className: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v1/62836/1.0"}),
 		]);
 	}

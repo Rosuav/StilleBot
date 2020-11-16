@@ -448,6 +448,10 @@ class channel_notif
 	{
 		write("DEBUG RECORD RAID: %O %O %O %O %O\n", fromid, fromname, toid, toname, ts);
 		if (!ts) ts = time();
+		//JavaScript timestamps seem to be borked (given in ms instead of seconds).
+		//Real timestamps won't hit this threshold until September 33658. At some
+		//point close to that date (!), adjust this threshold.
+		else if (ts > 1000000000000) ts /= 1000;
 		Concurrent.all(
 			fromid ? Concurrent.resolve(fromid) : get_user_id(fromname),
 			toid ? Concurrent.resolve(toid) : get_user_id(toname),

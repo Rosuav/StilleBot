@@ -93,8 +93,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			{
 				sscanf(raid, "[%d-%d-%d %*d:%*d:%*d] %s => %s", int y, int m, int d, string from, string to);
 				if (!to) continue;
-				if (from == login) raids[lower_case(to)] += ({sprintf("%d-%02d-%02d You raided %s", y, m, d, to)});
-				if (to == disp) raids[from] += ({sprintf("%d-%02d-%02d %s raided you", y, m, d, from)});
+				if (from == login) raids[lower_case(to)] += ({sprintf(">%d-%02d-%02d %s raided %s", y, m, d, from, to)});
+				if (to == disp) raids[from] += ({sprintf("<%d-%02d-%02d %s raided %s", y, m, d, from, to)});
 			}
 			return get_users_info(highlightids);
 		})->then(lambda(array users) {
@@ -152,17 +152,21 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				if (string n = notes && notes[(string)otheruid]) strm->notes = n;
 				if (has_value(highlightids, otheruid)) strm->highlight = 1;
 				int swap = otheruid < userid;
-				array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[swap ? userid : otheruid];
+				array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[(string)(swap ? userid : otheruid)];
 				foreach (raids || ({ }), mapping raid)
 				{
 					write("DEBUG RAID LOG: %O\n", raid);
+					if (raid->time > 1000000000000) {raid->time /= 1000; persist_status->save();}
 					//TODO: Translate these by timezone (if available)
 					object time = Calendar.ISO.Second("unix", raid->time);
 					if (swap != raid->outgoing)
-						strm->raids += ({sprintf("%s You raided %s", time->format_ymd(), raid->to)});
+						strm->raids += ({sprintf(">%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
 					else
-						strm->raids += ({sprintf("%s %s raided you", time->format_ymd(), raid->to)});
+						strm->raids += ({sprintf("<%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
 				}
+				//For some reason, strm->raids[*][1..] doesn't work. ??
+				sort(lambda(string x) {return x[1..];}(strm->raids[*]), strm->raids); //Sort by date, ignoring the </> direction marker
+				strm->raids = Array.uniq2(strm->raids);
 			}
 			//End stream tags work
 			return render_template("raidfinder.md", ([
