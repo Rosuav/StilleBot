@@ -8,11 +8,12 @@ const sortfunc = {
 	Uptime: (s1, s2) => new Date(s2.created_at) - new Date(s1.created_at),
 	Raided: (s1, s2) => (s1.raids[s1.raids.length-1]||"").localeCompare(s2.raids[s2.raids.length-1]||""),
 }
-
+let lastsort = "";
 on("click", "#sort li", e => {
 	const pred = sortfunc[e.match.innerText];
 	if (!pred) {console.error("No predicate function for " + e.match.innerText); return;}
-	follows.sort(pred);
+	if (e.match.innerText === lastsort) follows.reverse(); //Poor man's sort order toggle
+	else {follows.sort(pred); lastsort = e.match.innerText;}
 	follows.forEach((stream, idx) => stream.element.style.order = idx);
 });
 
