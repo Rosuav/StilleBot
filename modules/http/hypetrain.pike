@@ -68,11 +68,11 @@ Concurrent.Future get_hype_state(int channel)
 		});
 }
 
-constant emotes = #"HypeChimp HypeGhost HypeChest HypeFrog HypeCherry HypePeace
-HypeSideeye HypeBrain HypeZap HypeShip HypeSign HypeBug
-HypeYikes HypeRacer HypeCar HypeFirst HypeTrophy HypeBanana
-HypeBlock HypeDaze HypeBounce HypeJewel HypeBlob HypeTeamwork
-HypeLove HypePunk HypeKO HypePunch HypeFire HypePizza";
+constant emotes = #"HypeFighter HypeShield HypeKick HypeSwipe HypeRIP HypeGG
+HypeRanger HypeMiss HypeHit HypeHeart HypeTarget HypeWink
+HypeRogue HypeWut HypeGems HypeCoin HypeSneak HypeCash
+HypeBard HypeTune HypeRun HypeZzz HypeRock HypeJuggle
+HypeMage HypeWho HypeLol HypePotion HypeBook HypeSmoke";
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
@@ -87,15 +87,16 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		token = req->misc->session->token;
 	}
 	mapping emotemd = G->G->emote_code_to_markdown || ([]);
+	mapping emoteids = function_object(G->G->http_endpoints->checklist)->emoteids; //Hack!
 	string avail_emotes = "";
 	foreach (emotes / "\n", string level)
 	{
 		avail_emotes += "\n*";
 		foreach (level / " ", string emote)
 		{
-			string md = emotemd[emote];
+			string md = emotemd[emote] || sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0)", emote, emoteids[emote]);
 			if (!md) {avail_emotes += " " + emote; continue;}
-			avail_emotes += sprintf(" %s*%s*", emotemd[emote], replace(emotemd[emote], "/1.0", "/3.0"));
+			avail_emotes += sprintf(" %s*%s*", md, replace(md, "/1.0", "/3.0"));
 		}
 	}
 	return (channel ? get_user_id(channel) : Concurrent.resolve(0))

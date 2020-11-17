@@ -15,7 +15,7 @@ inherit http_endpoint;
 //The actual emote set IDs change, so we detect them by looking for one of the emotes.
 constant limited_time_emotes = ([
 	"PrideBalloons": "Pride", "PrideWorld": "Pride",
-	"HypeBigfoot1": "Hype Train (a)", "HypeChest": "Hype Train (b)",
+	"HypeBigfoot1": "Hype Train (a)", "HypeChest": "Hype Train (b)", "HypeSwipe": "Hype Train (c)",
 	"HahaCat": "Hahahalidays", "RPGPhatLoot": "RPG", "LuvHearts": "Streamer Luv",
 	"HyperCrown": "Hyper", "KPOPcheer": "KPOP",
 ]);

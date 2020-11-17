@@ -4,6 +4,14 @@ inherit http_endpoint;
 //be greyed out if not available.
 //NOTE: The display is aimed at no more than six emotes across.
 constant hypetrain = replace(#"
+## Hype Train set three
+### Unlockable Nov 2020 to current
+HypeFighter HypeShield HypeKick HypeSwipe HypeRIP HypeGG<br>
+HypeRanger HypeMiss HypeHit HypeHeart HypeTarget HypeWink<br>
+HypeRogue HypeWut HypeGems HypeCoin HypeSneak HypeCash<br>
+HypeBard HypeTune HypeRun HypeZzz HypeRock HypeJuggle<br>
+HypeMage HypeWho HypeLol HypePotion HypeBook HypeSmoke<br>
+
 ## Celebrate KPOP
 ### Unlockable 19th Oct 2020 to 30th Oct 2020
 KPOPvictory KPOPmerch KPOPselfie KPOPTT KPOPlove<br>
@@ -16,7 +24,7 @@ HyperJump HyperHex HyperHaste HyperGravity HyperCrown<br>
 HyperLost HyperCrate HyperCooldown HyperCheese HyperTiger<br>
 
 ## Hype Train set two
-### Unlockable Apr 2020 to current
+### Unlockable Apr 2020 to Nov 2020
 HypeChimp HypeGhost HypeChest HypeFrog HypeCherry HypePeace<br>
 HypeSideeye HypeBrain HypeZap HypeShip HypeSign HypeBug<br>
 HypeYikes HypeRacer HypeCar HypeFirst HypeTrophy HypeBanana<br>
@@ -73,6 +81,21 @@ TODO: Check Pok* (Pokemon) emotes
 constant emoteids = ([
 	"HypeOni6": 301205427, "OWL2019Tracer": 1833318,
 	"PrimeYouDontSay": 134251, "PrimeUWot": 134252, "PrimeRlyTho": 134253,
+	//L1 hype
+	"HypeFighter": 304420773, "HypeShield": 304420921, "HypeKick": 304420811,
+	"HypeRIP": 304420886, "HypeGG": 304420784,
+	//L2 hype
+	"HypeRanger": 304420869, "HypeMiss": 304420830, "HypeHit": 304420797,
+	"HypeHeart": 304420791, "HypeTarget": 304421037, "HypeWink": 304421058,
+	//L3 hype
+	"HypeRogue": 304420899, "HypeWut": 304421062, "HypeGems": 304420779,
+	"HypeCoin": 304420761, "HypeSneak": 304421025, "HypeCash": 304420757,
+	//L4 hype
+	"HypeBard": 304420723, "HypeTune": 304421042, "HypeRun": 304420909,
+	"HypeZzz": 304421067, "HypeRock": 304420892, "HypeJuggle": 304420806,
+	//L5 hype
+	"HypeMage": 304420826, "HypeWho": 304421049, "HypeLol": 304420818,
+	"HypePotion": 304420861, "HypeBook": 304420732, "HypeSmoke": 304420932,
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
