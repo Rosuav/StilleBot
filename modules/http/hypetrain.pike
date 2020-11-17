@@ -77,7 +77,7 @@ HypeMage HypeWho HypeLol HypePotion HypeBook HypeSmoke";
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	string channel = req->variables["for"];
-	if (!token)
+	if (!token || req->variables->reauth)
 	{
 		if (mapping resp = ensure_login(req, "channel:read:hype_train")) return resp;
 		//Weirdly, this seems to work even if the broadcaster_id isn't the one you logged
