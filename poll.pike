@@ -625,7 +625,6 @@ void raids_display(string ch)
 		foreach (persist_status->raids[(string)id] || ([]); int otherid; array raids) {
 			foreach (raids, mapping raid)
 			{
-				if (raid->time > 1000000000000) raid->time /= 1000;
 				if (raid->outgoing)
 					raiddescs += ({sprintf("RAID>> %s raided %s on %s", raid->from, raid->to, ctime(raid->time))});
 				else
@@ -637,7 +636,6 @@ void raids_display(string ch)
 			array raids = allraids[(string)id];
 			foreach (raids || ({ }), mapping raid)
 			{
-				if (raid->time > 1000000000000) raid->time /= 1000;
 				if (raid->outgoing)
 					raiddescs += ({sprintf("RAID<> %s raided %s on %s", raid->from, raid->to, ctime(raid->time))});
 				else

@@ -156,7 +156,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				foreach (raids || ({ }), mapping raid)
 				{
 					write("DEBUG RAID LOG: %O\n", raid);
-					if (raid->time > 1000000000000) {raid->time /= 1000; persist_status->save();}
 					//TODO: Translate these by timezone (if available)
 					object time = Calendar.ISO.Second("unix", raid->time);
 					if (swap != raid->outgoing)
