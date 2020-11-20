@@ -108,7 +108,7 @@ let render = (state) => {
 		else {
 			goal += ` Need ${need} more bits or ${subs(need)} more subs.`;
 			let mark = state.total / state.goal * 100;
-			let delta = 0.5; //Width of the red marker line
+			let delta = 0.375; //Width of the red marker line (each side)
 			goalattrs.style = `background: linear-gradient(.25turn, var(--hype-level${state.level + 1}) ${mark-delta}%, red, var(--hype-level${state.level}) ${mark+delta}%, var(--hype-level${state.level}))`;
 		}
 		if (last_rendered === "idle") hypetrain_started();
