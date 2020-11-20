@@ -113,7 +113,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	string login_link = "[Log in to highlight the emotes you have access to](/twitchlogin?next=/checklist&scopes=user_subscriptions)";
 	if (req->misc->session->?scopes->?user_subscriptions)
 	{
-		login_link = "";
+		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>";
 		ret = ret->then(lambda() {return twitch_api_request("https://api.twitch.tv/kraken/users/{{USER}}/emotes",
 			(["Authorization": "OAuth " + req->misc->session->token]),
 			(["username": req->misc->session->user->login]));

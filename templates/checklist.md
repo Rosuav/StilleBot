@@ -21,6 +21,7 @@ img {
 	/* Some of the HypeUnicorn emotes aren't full size, so force them to 112x112 */
 	width: 116px; height: 116px; /* == 112 plus two borders */
 }
+#showall:checked ~ figure img {filter: saturate(1);}
 @media (max-width: 760px)
 {
 	img {
