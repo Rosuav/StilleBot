@@ -65,11 +65,20 @@ nav a {
 	background-color: #a0ffa0;
 	font-weight: bold;
 }
-#nextlevel.level1 {background-color: #ffffd0;} /* Progressively more vibrant colours as you go up the levels */
-#nextlevel.level2 {background-color: #ffffb0;} /* Or #ffffa0 */
-#nextlevel.level3 {background-color: #ffff90;} /* Or #fff870 for a more 'gold' colour */
-#nextlevel.level4 {background-color: #ffff70;} /* Or #fff040 */
-#nextlevel.level5 {background-color: #ffff50;} /* Or #ffe820 */
-#nextlevel.level6 {background-color: #ffff00;}
+:root {
+	/* Define some colours that can also be used in a gradient */
+	--hype-level1: #ffffd0; /* Progressively more vibrant colours as you go up the levels */
+	--hype-level2: #ffffb0; /* Or #ffffa0 */
+	--hype-level3: #ffff90; /* Or #fff870 for a more 'gold' colour */
+	--hype-level4: #ffff70; /* Or #fff040 */
+	--hype-level5: #ffff50; /* Or #ffe820 */
+	--hype-level6: #ffff00;
+}
+#nextlevel.level1 {background-color: var(--hype-level1);}
+#nextlevel.level2 {background-color: var(--hype-level2);}
+#nextlevel.level3 {background-color: var(--hype-level3);}
+#nextlevel.level4 {background-color: var(--hype-level4);}
+#nextlevel.level5 {background-color: var(--hype-level5);}
+#nextlevel.level6 {background-color: var(--hype-level6);}
 /* It'd be really cool to get the conductors' chat colours, but probably impractical */
 #cond_bits.present, #cond_subs.present {background-color: #e060e0;}

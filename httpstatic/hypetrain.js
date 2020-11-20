@@ -104,8 +104,13 @@ let render = (state) => {
 		goal = `Level ${state.level} requires ${state.goal} bits or ${subs(state.goal)} tier one subs.`;
 		goalattrs.className = "level" + state.level;
 		let need = state.goal - state.total;
-		if (need < 0) {goal += " TIER FIVE COMPLETE!"; goalattrs.className = "level6";}
-		else goal += ` Need ${need} more bits or ${subs(need)} more subs.`;
+		if (need <= 0) {goal += " TIER FIVE COMPLETE!"; goalattrs.className = "level6";}
+		else {
+			goal += ` Need ${need} more bits or ${subs(need)} more subs.`;
+			let mark = state.total / state.goal * 100;
+			let delta = 0.5; //Width of the red marker line
+			goalattrs.style = `background: linear-gradient(.25turn, var(--hype-level${state.level + 1}) ${mark-delta}%, red, var(--hype-level${state.level}) ${mark+delta}%, var(--hype-level${state.level}))`;
+		}
 		if (last_rendered === "idle") hypetrain_started();
 		last_rendered = "active";
 	}
