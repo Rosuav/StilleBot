@@ -39,7 +39,13 @@ function show_raids(raids) {
 }
 
 function edit_notes(stream) {
-	set_content("#notes_about_channel", "Channel notes: " + stream.channel.display_name);
+	set_content("#notes_about_channel", [
+		"Channel notes: ",
+		adornment(stream.channel.broadcaster_type),
+		stream.channel.display_name,
+		BR(),
+		IMG({className: "avatar", src: stream.channel.logo}),
+	]);
 	DOM("#editnotes textarea").value = stream.notes || "";
 	DOM("#editnotes").returnValue = "close";
 	DOM("#editnotes").stream = stream;
