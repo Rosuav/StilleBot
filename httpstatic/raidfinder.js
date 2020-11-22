@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, DIV, IMG, P, UL, LI, SPAN} = choc;
+const {A, B, BR, BUTTON, DIV, IMG, P, UL, LI, SPAN} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 
 const sortfunc = {
@@ -132,7 +132,7 @@ function build_follow_list() {
 		DIV({className: "inforow"}, [
 			DIV({className: "img"}, A({href: stream.channel.url}, IMG({className: "avatar", src: stream.channel.logo}))),
 			UL([
-				LI([A({href: stream.channel.url}, [adornment(stream.channel.broadcaster_type), stream.channel.display_name]), " - ", stream.game]),
+				LI([A({href: stream.channel.url}, [adornment(stream.channel.broadcaster_type), stream.channel.display_name]), " - ", B(stream.game)]),
 				LI({className: "streamtitle"}, stream.channel.status),
 				LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
 				LI(stream.tags.map(tag => SPAN({className: "tag"}, tag.name + " "))),
