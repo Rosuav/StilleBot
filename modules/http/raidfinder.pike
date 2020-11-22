@@ -48,8 +48,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		return (["error": 204]);
 	}
 	if (req->variables->use_cache && cached_follows) return render_template("raidfinder.md", (["follows": cached_follows]));
-	//Legacy data (currently all data): Parse the outgoing raid log
-	//Note that this cannot handle renames, and will 'lose' them.
 	Concurrent.Future uid = Concurrent.resolve((int)req->misc->session->user->id);
 	if (string chan = req->variables["for"])
 	{
@@ -86,6 +84,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				login = user->login || user->name; //helix || kraken
 				disp = user->display_name;
 			}
+			//Legacy data (currently all data): Parse the outgoing raid log
+			//Note that this cannot handle renames, and will 'lose' them.
 			//TODO: Show these in the logged-in user's specified timezone (if we have a
 			//channel for that user), or UTC. Apologize on the page if no TZ available.
 			//TODO: If working on behalf of someone else, which tz should we use?
