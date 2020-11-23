@@ -408,7 +408,7 @@ class Lexer
 	}
 }
 
-mapping(string:mixed) render_template(string template, mapping(string:string) replacements)
+mapping(string:mixed) render_template(string template, mapping(string:string|function(string|void:string)) replacements)
 {
 	string content = utf8_to_string(Stdio.read_file("templates/" + template));
 	if (!content) error("Unable to load templates/" + template + "\n");
@@ -425,12 +425,14 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 		int trim_before = has_prefix(token, ">");
 		int trim_after  = has_suffix(token, "<");
 		token = token[trim_before..<trim_after];
-		if (!replacements[token])
+		string|function repl = replacements[token];
+		if (!repl)
 		{
 			if (dflt) pieces[i] = dflt;
 			else error("Token %O not found in templates/%s\n", "$$" + token + "$$", template);
 		}
-		else pieces[i] = replacements[token];
+		else if (callablep(repl)) pieces[i] = repl(dflt);
+		else pieces[i] = repl;
 		if (pieces[i] == "")
 		{
 			if (trim_before) pieces[i-1] = String.trim("^" + pieces[i-1])[1..];
