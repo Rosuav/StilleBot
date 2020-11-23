@@ -55,6 +55,7 @@
 	font-size: 80%;
 }
 
+#sort::before {content: "Sort: "; margin: 0.5em 1em 0em -1em;}
 #sort {
 	display: flex;
 	list-style-type: none;
@@ -63,7 +64,9 @@
 	cursor: pointer;
 	margin: 0.25em;
 	padding: 0.25em;
+	text-decoration: solid underline;
 }
+#sort li.current {text-decoration: double underline;}
 .raid-incoming {font-weight: bold;}
 .raid-incoming,.raid-outgoing {cursor: pointer;}
 .notes {margin-right: 0.5em;}

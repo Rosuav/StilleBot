@@ -17,6 +17,8 @@ on("click", "#sort li", e => {
 	if (!pred) {console.error("No predicate function for " + e.match.innerText); return;}
 	if (e.match.innerText === lastsort) follows.reverse(); //Poor man's sort order toggle
 	else {follows.sort(pred); lastsort = e.match.innerText;}
+	document.querySelectorAll("#sort li.current").forEach(el => el.classList.remove("current"));
+	e.match.classList.add("current");
 	follows.forEach((stream, idx) => stream.element.style.order = idx);
 });
 
