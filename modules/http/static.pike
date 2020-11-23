@@ -20,8 +20,15 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string fil
 //Handle /favicon.ico as if it were /static/favicon.ico
 mapping(string:mixed) favicon(Protocols.HTTP.Server.Request req) {return http_request(req, "favicon.ico");}
 
+string staticfile(string fn)
+{
+	//TODO: Add a cache marker
+	return "/static/" + fn;
+}
+
 protected void create(string name)
 {
 	::create(name);
 	G->G->http_endpoints["favicon.ico"] = favicon;
+	G->G->template_defaults["static"] = staticfile;
 }

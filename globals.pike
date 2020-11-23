@@ -9,6 +9,7 @@ protected void create(string n)
 	if (!G->G->commands) G->G->commands=([]);
 	if (!G->G->hooks) G->G->hooks=([]);
 	if (!G->G->bouncers) G->G->bouncers = ([]);
+	if (!G->G->template_defaults) G->G->template_defaults = ([]);
 	if (!G->G->http_endpoints) G->G->http_endpoints = ([]);
 	if (!G->G->http_sessions) G->G->http_sessions = ([]);
 	if (!G->G->websocket_types) G->G->websocket_types = ([]);
@@ -425,7 +426,7 @@ mapping(string:mixed) render_template(string template, mapping(string:string|fun
 		int trim_before = has_prefix(token, ">");
 		int trim_after  = has_suffix(token, "<");
 		token = token[trim_before..<trim_after];
-		string|function repl = replacements[token];
+		string|function repl = replacements[token] || G->G->template_defaults[token];
 		if (!repl)
 		{
 			if (dflt) pieces[i] = dflt;
@@ -450,7 +451,7 @@ mapping(string:mixed) render_template(string template, mapping(string:string|fun
 			"attributes": 1, //Ignored if using older Pike (or, as of 2020-04-13, vanilla Pike - it's only on branch rosuav/markdown-attribute-syntax)
 		]));
 		return render_template("markdown.html", ([
-			//Defaults - can be overridden
+			//Dynamic defaults - can be overridden, same as static defaults can
 			"title": headings[1] || "StilleBot",
 		]) | replacements | ([
 			//Forced attributes
