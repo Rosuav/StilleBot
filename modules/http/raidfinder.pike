@@ -105,9 +105,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				return get_users_info(highlightids);
 			})->then(lambda(array users) {
 				highlights = users->login * "\n";
-				foreach (follows, mapping strm) {
+				foreach (follows; int idx; mapping strm) {
 					if (string n = notes && notes[strm->id]) strm->notes = n;
 					if (has_value(highlightids, (int)strm->id)) strm->highlight = 1;
+					strm->order = idx; //Order they were followed. Effectively the same as array order since we don't get actual data.
 					//Make some info available in the same way that it is for the main follow list.
 					//This allows the front end to access it identically for convenience.
 					strm->channel = ([
@@ -121,6 +122,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					"follows": Standards.JSON.encode(follows, Standards.JSON.ASCII_ONLY),
 					"your_stream": "0",
 					"highlights": Standards.JSON.encode(highlights, Standards.JSON.ASCII_ONLY),
+					"sortorders": ({"Channel Creation", "Follow Date", "Name"}) * "\n* ",
 					"mode": "allfollows",
 				]));
 			}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO as below: Return a nice message if for=junk given
@@ -221,6 +223,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				"follows": cached_follows = Standards.JSON.encode(follows, Standards.JSON.ASCII_ONLY),
 				"your_stream": Standards.JSON.encode(your_stream, Standards.JSON.ASCII_ONLY),
 				"highlights": Standards.JSON.encode(highlights, Standards.JSON.ASCII_ONLY),
+				"sortorders": ({"Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
 			]));
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: Return a nice message if for=junk given
 }

@@ -2,10 +2,7 @@
 
 <button id=highlights>Edit highlight list</button>
 
-* Viewers
-* Category
-* Uptime
-* Raided
+* $$sortorders$$
 {: #sort}
 
 <div id=streams></div>

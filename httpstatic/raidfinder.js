@@ -7,6 +7,9 @@ const sortfunc = {
 	Category: (s1, s2) => s1.game.localeCompare(s2.game),
 	Uptime: (s1, s2) => new Date(s2.created_at) - new Date(s1.created_at),
 	Raided: (s1, s2) => (s1.raids[s1.raids.length-1]||"").localeCompare(s2.raids[s2.raids.length-1]||""),
+	"Channel Creation": (s1, s2) => s1.created_at.localeCompare(s2.created_at),
+	"Follow Date": (s1, s2) => s1.order - s2.order,
+	"Name": (s1, s2) => s1.channel.display_name.localeCompare(s2.channel.display_name),
 }
 let lastsort = "";
 on("click", "#sort li", e => {
@@ -16,7 +19,6 @@ on("click", "#sort li", e => {
 	else {follows.sort(pred); lastsort = e.match.innerText;}
 	follows.forEach((stream, idx) => stream.element.style.order = idx);
 });
-if (mode === "allfollows") DOM("#sort").style.display = "none"; //Most of the sorts will be irrelevant, so hide them. TODO: Have "follow date" and "channel name" instead?
 
 function uptime(startdate) {
 	const time = Math.floor((new Date() - new Date(startdate)) / 1000);
