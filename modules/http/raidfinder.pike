@@ -76,6 +76,55 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	array highlightids = ({ });
 	if (notes && notes["0"]) highlightids = (array(int))(notes["0"] / "\n");
 	string highlights;
+	if (req->variables->allfollows)
+	{
+		//Show everyone that you follow (not just those who are live), in an
+		//abbreviated form, mainly for checking notes.
+		return get_helix_paginated("https://api.twitch.tv/helix/users/follows",
+				(["from_id": (string)req->misc->session->user->id]))
+			->then(lambda(array f) {
+				array(array(string)) blocks = f->to_id / 100.0;
+				return Concurrent.all(twitch_api_request(("https://api.twitch.tv/helix/users?first=100" + sprintf("%{&id=%s%}", blocks[*])[*])[*]));
+			})->then(lambda(array f) {
+				/*
+				Each person looks like this:
+				([
+					"broadcaster_type": "partner",
+					"created_at": "2015-07-16T00:57:30.61026Z",
+					"description": "I like cooking.  I like yummy food.  Let me show you how to cook yummy food.",
+					"display_name": "CookingForNoobs",
+					"id": "96253346",
+					"login": "cookingfornoobs",
+					"offline_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/fe6534bb00bbb4cd-channel_offline_image-1920x1080.jpeg",
+					"profile_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/54728b80-cd99-4d03-9cfe-44a59152f7a2-profile_image-300x300.jpg",
+					"type": "",
+					"view_count": 1658855,
+				])
+				*/
+				follows = f->data * ({ });
+				return get_users_info(highlightids);
+			})->then(lambda(array users) {
+				highlights = users->login * "\n";
+				foreach (follows, mapping strm) {
+					if (string n = notes && notes[strm->id]) strm->notes = n;
+					if (has_value(highlightids, (int)strm->id)) strm->highlight = 1;
+					//Make some info available in the same way that it is for the main follow list.
+					//This allows the front end to access it identically for convenience.
+					strm->channel = ([
+						"broadcaster_type": strm->broadcaster_type,
+						"logo": strm->profile_image_url,
+						"display_name": strm->display_name,
+						"_id": (int)strm->id,
+					]);
+				}
+				return render_template("raidfinder.md", ([
+					"follows": Standards.JSON.encode(follows, Standards.JSON.ASCII_ONLY),
+					"your_stream": "0",
+					"highlights": Standards.JSON.encode(highlights, Standards.JSON.ASCII_ONLY),
+					"mode": "allfollows",
+				]));
+			}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO as below: Return a nice message if for=junk given
+	}
 	return uid->then(lambda(int u) {
 			userid = u;
 			string login = req->misc->session->user->login, disp = req->misc->session->user->display_name;
@@ -155,7 +204,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[(string)(swap ? userid : otheruid)];
 				foreach (raids || ({ }), mapping raid)
 				{
-					write("DEBUG RAID LOG: %O\n", raid);
+					//write("DEBUG RAID LOG: %O\n", raid);
 					//TODO: Translate these by timezone (if available)
 					object time = Calendar.ISO.Second("unix", raid->time);
 					if (swap != raid->outgoing)

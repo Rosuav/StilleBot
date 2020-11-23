@@ -16,6 +16,7 @@ on("click", "#sort li", e => {
 	else {follows.sort(pred); lastsort = e.match.innerText;}
 	follows.forEach((stream, idx) => stream.element.style.order = idx);
 });
+if (mode === "allfollows") DOM("#sort").style.display = "none"; //Most of the sorts will be irrelevant, so hide them. TODO: Have "follow date" and "channel name" instead?
 
 function uptime(startdate) {
 	const time = Math.floor((new Date() - new Date(startdate)) / 1000);
@@ -127,21 +128,31 @@ function build_follow_list() {
 		return BUTTON(attr, "\u270D");
 	}
 	//TODO: Show when stream.viewers is a long way above or below your_viewers
-	set_content("#streams", follows.map(stream => stream.element = DIV({className: stream.highlight ? "highlighted" : ""}, [
-		A({href: stream.channel.url}, IMG({src: stream.preview.medium})),
-		DIV({className: "inforow"}, [
-			DIV({className: "img"}, A({href: stream.channel.url}, IMG({className: "avatar", src: stream.channel.logo}))),
-			UL([
-				LI([A({href: stream.channel.url}, [adornment(stream.channel.broadcaster_type), stream.channel.display_name]), " - ", B(stream.game)]),
-				LI({className: "streamtitle"}, stream.channel.status),
-				LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
-				LI(stream.tags.map(tag => SPAN({className: "tag"}, tag.name + " "))),
-				LI([describe_notes(stream), describe_raid(stream.raids)]),
+	set_content("#streams", follows.map(stream => stream.element = DIV({className: stream.highlight ? "highlighted" : ""},
+		mode === "allfollows" ? [
+			//Cut-down view for channels that might be offline. Also, most of this is Helix info not Kraken.
+			A({href: "https://twitch.tv/" + stream.login}, [
+				IMG({className: "avatar", src: stream.channel.logo}),
+				adornment(stream.channel.broadcaster_type),
+				stream.channel.display_name,
 			]),
-			//TODO: Make this a link to the category.
-			DIV({className: "img"}, IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.game + "-40x54.jpg"})),
-		]),
-	])));
+			describe_notes(stream),
+		] : [
+			A({href: stream.channel.url}, IMG({src: stream.preview.medium})),
+			DIV({className: "inforow"}, [
+				DIV({className: "img"}, A({href: stream.channel.url}, IMG({className: "avatar", src: stream.channel.logo}))),
+				UL([
+					LI([A({href: stream.channel.url}, [adornment(stream.channel.broadcaster_type), stream.channel.display_name]), " - ", B(stream.game)]),
+					LI({className: "streamtitle"}, stream.channel.status),
+					LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
+					LI(stream.tags.map(tag => SPAN({className: "tag"}, tag.name + " "))),
+					LI([describe_notes(stream), describe_raid(stream.raids)]),
+				]),
+				//TODO: Make this a link to the category.
+				DIV({className: "img"}, IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.game + "-40x54.jpg"})),
+			]),
+		]
+	)));
 	//TODO maybe: Have this link back to raidfinder with a marker saying "your cat",
 	//and thus get all the recent raid info etc, rather than just linking to the cat.
 	if (your_stream)
