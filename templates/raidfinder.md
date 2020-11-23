@@ -94,4 +94,4 @@ let highlights = $$highlights$$; //human-readable list of highlight channels (ev
 const mode = "$$mode||normal$$"; //defines how the follow list is to be interpreted
 </script>
 
-<script type=module src="/static/raidfinder.js"></script>
+<script type=module src="$$static||raidfinder.js$$"></script>

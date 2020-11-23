@@ -9,7 +9,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	{
 		//All the work is done client-side
 		editjs = "<script>const quotes = " + Standards.JSON.encode(quotes) + "</script>"
-			"<script type=module src=\"/static/quotes.js\"></script>";
+			"<script type=module src=\"" + G->G->template_defaults["static"]("quotes.js") + "\"></script>";
 	}
 	array q = ({ });
 	string tz = req->misc->channel->config->timezone;

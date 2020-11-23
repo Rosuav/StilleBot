@@ -22,7 +22,10 @@ mapping(string:mixed) favicon(Protocols.HTTP.Server.Request req) {return http_re
 
 string staticfile(string fn)
 {
-	//TODO: Add a cache marker
+	//Not perfect but a lot better than nothing: add a cache-break marker
+	//that changes when the file's mtime changes.
+	object stat = file_stat("httpstatic/" + fn);
+	if (stat) return sprintf("/static/%s?mtime=%d", fn, stat->mtime);
 	return "/static/" + fn;
 }
 

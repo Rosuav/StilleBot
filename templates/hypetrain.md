@@ -107,7 +107,7 @@ audio {display: none;}
 </style>
 
 <script>window.channelid = $$channelid$$;</script>
-<script type=module src="/static/hypetrain.js"></script>
+<script type=module src="$$static||hypetrain.js$$"></script>
 
 > <button type=button class=dialog_cancel>x</button>
 >

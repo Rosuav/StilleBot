@@ -165,7 +165,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"<input type=submit value=\"Save all\">"
 			"\n<script>const commands = " + Standards.JSON.encode(cmd_raw) + //newline forces it to be treated as HTML not text
 			", complex_templates = " + Standards.JSON.encode(COMPLEX_TEMPLATES) + "</script>"
-			"<script type=module src=\"/static/commands.js\"></script>"
+			"<script type=module src=\"" + G->G->template_defaults["static"]("commands.js") + "\"></script>"
 		),
 	]) | req->misc->chaninfo);
 }

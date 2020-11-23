@@ -16,4 +16,4 @@ $$style$$
 
 <script>window.nonce = "$$viewnonce$$"; window.channelname = "$$channelname$$";</script>
 $$comfy$$
-<script type=module src="/static/subpoints.js"></script>
+<script type=module src="$$static||subpoints.js$$"></script>
