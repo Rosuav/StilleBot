@@ -451,6 +451,53 @@ void get_lookup_token()
 		});
 }
 
+/* NOT CURRENTLY WORKING.
+This is a stub of how we might use the new EventSub hook system. Unfortunately, the
+available hooks are actually more restricted than the equivalents in the webhooks
+above; for instance, you can use the hype train endpoints as a viewer, but to use
+the channel.hype_train.end EventSub hook, the broadcaster has to have granted the
+bot permission to use the scope channel:read:hype_train - even though we don't use
+an actual user token, we use an app token.
+
+To make this fully work, this is what would be needed:
+1) Find an endpoint that's actually useful to us. https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types
+2) Move the webhook lookup token into request() as a proper way of getting an app
+   token. It'd get the token and then continue on with the request, or use a token
+   from cache (as with G->G->webhook_lookup_token). That would mean that inside
+   check_webhooks would be a simple unconditional call, which might delay the main
+   call until we have credentials.
+3) Enhance modules/http/junket.pike to be able to handle both types of response.
+   The rest of the system should be fine with either, but the signature verification
+   would be different.
+4) Maybe figure out why sig verification isn't working, and then reenable it?
+
+It will then be possible to have callbacks the way hypetrain.pike does them, but
+with EventSub hooks. Maybe.
+*/
+void create_eventsubhook(string callback, string type, string version, mapping condition, string|void token)
+{
+	string secret = MIME.encode_base64(random_string(15));
+	G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
+	request("https://api.twitch.tv/helix/eventsub/subscriptions", ([
+			"Content-Type": "application/json",
+			"Authorization": "Bearer " + G->G->webhook_lookup_token,
+		]), (["json": ([
+			"type": type, "version": version,
+			"condition": condition,
+			"transport": ([
+				"method": "webhook",
+				"callback": sprintf("%s/junket?%s",
+					persist_config["ircsettings"]["http_address"],
+					callback,
+				),
+				"secret": secret,
+			]),
+		])]))
+	->then(lambda(mixed ret) {
+		werror("%O\n", ret);
+	});
+}
+
 void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //Maybe make the poll interval customizable?
@@ -496,6 +543,7 @@ protected void create()
 	add_constant("get_user_info", get_user_info);
 	add_constant("get_users_info", get_users_info);
 	add_constant("create_webhook", create_webhook);
+	add_constant("create_eventsubhook", create_eventsubhook);
 }
 
 #if !constant(G)

@@ -136,6 +136,14 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 					1800,
 					token,
 				);
+				/* Not working. See poll.pike for more info.
+				create_eventsubhook(
+					"hypetrainend=" + conn->group,
+					"channel.hype_train.end", "1",
+					(["broadcaster_user_id": (string)conn->group]),
+					token,
+				);
+				*/
 			}
 		});
 	}
