@@ -460,7 +460,9 @@ bot permission to use the scope channel:read:hype_train - even though we don't u
 an actual user token, we use an app token.
 
 To make this fully work, this is what would be needed:
-1) Find an endpoint that's actually useful to us. https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types
+1) Find an endpoint that's actually useful to us. Maybe "stream.online" might be
+   of value? I'm forever hopeful of faster notifs, and forever disappointed.
+   https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types
 2) Move the webhook lookup token into request() as a proper way of getting an app
    token. It'd get the token and then continue on with the request, or use a token
    from cache (as with G->G->webhook_lookup_token). That would mean that inside
