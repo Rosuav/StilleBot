@@ -486,7 +486,7 @@ class TwitchAuth
 		"analytics:read:extensions", "analytics:read:games", "bits:read",
 		"channel:edit:commercial", "channel:read:subscriptions", "clips:edit",
 		"user:edit", "user:edit:broadcast", "user:edit:follows",
-		"user:read:broadcast", "user:read:email",
+		"user:read:broadcast", "user:read:email", "channel:read:redemptions",
 		//v5 API
 		"channel_check_subscription", "channel_commercial", "channel_editor",
 		"channel_feed_edit", "channel_feed_read", "channel_read", "channel_stream",
@@ -575,6 +575,9 @@ mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|voi
 {
 	multiset havescopes = req->misc->session->?scopes;
 	multiset wantscopes = scopes ? (multiset)(scopes / " ") : (<>);
+	multiset bad = wantscopes - TwitchAuth("", "")->list_valid_scopes();
+	if (sizeof(bad)) return (["error": 500, "type": "text/plain", 
+		"data": sprintf("Internal server error: Unrecognized scope %O being requested", (array)bad * " ")]);
 	wantscopes[""] = 0; //Remove any empty entry, just in case
 	if (!havescopes) return twitchlogin(req, wantscopes); //Even if you aren't requesting any scopes
 	multiset needscopes = havescopes | wantscopes; //Note that we'll keep any that we already have.
