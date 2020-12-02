@@ -4,6 +4,15 @@ inherit http_endpoint;
 //be greyed out if not available.
 //NOTE: The display is aimed at no more than six emotes across.
 constant hypetrain = replace(#"
+## Hindsight 2020
+### Part 1: Unlockable 2nd Dec 2020 to 16th Dec 2020
+(2020OtherPajamas) (2020Princess) 2020Unroll (2020Grumpy)<br>
+2020HomeWork 2020Gift (2020Chess) (2020Present)<br>
+2020Selfie 2020SpeakUp 2020Pajamas 2020Delivery<br>
+
+### Part 2: Unlockable 16th Dec 2020 to 4th Jan 2021
+(not yet seen)
+
 ## Hype Train set three
 ### Unlockable Nov 2020 to current
 HypeFighter HypeShield HypeKick HypeSwipe HypeRIP HypeGG<br>
