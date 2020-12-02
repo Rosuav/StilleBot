@@ -6,8 +6,8 @@ inherit http_endpoint;
 constant hypetrain = replace(#"
 ## Hindsight 2020
 ### Part 1: Unlockable 2nd Dec 2020 to 16th Dec 2020
-(2020OtherPajamas) (2020Princess) 2020Unroll (2020Grumpy)<br>
-2020HomeWork 2020Gift (2020Chess) (2020Present)<br>
+2020Party 2020Rivalry 2020Unroll 2020Suspicious<br>
+2020HomeWork 2020Gift 2020Capture 2020Surprise<br>
 2020Selfie 2020SpeakUp 2020Pajamas 2020Delivery<br>
 
 ### Part 2: Unlockable 16th Dec 2020 to 4th Jan 2021
@@ -105,6 +105,8 @@ constant emoteids = ([
 	//L5 hype
 	"HypeMage": 304420826, "HypeWho": 304421049, "HypeLol": 304420818,
 	"HypePotion": 304420861, "HypeBook": 304420732, "HypeSmoke": 304420932,
+	//2020
+	"2020Rivalry": 304573264, "2020Party": 304573256, "2020SpeakUp": 304573272,
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
