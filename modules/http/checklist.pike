@@ -105,8 +105,6 @@ constant emoteids = ([
 	//L5 hype
 	"HypeMage": 304420826, "HypeWho": 304421049, "HypeLol": 304420818,
 	"HypePotion": 304420861, "HypeBook": 304420732, "HypeSmoke": 304420932,
-	//2020
-	"2020Rivalry": 304573264, "2020Party": 304573256, "2020SpeakUp": 304573272,
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
