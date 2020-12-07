@@ -25,7 +25,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			(["Authorization": "Bearer " + req->misc->session->token])
 		)->then(lambda(mapping info) {
 			return render_template("listrewards.md", ([
-				"rewards": sizeof(info->data) ? custom_reward(info->data[*]) * "" : "<li>No custom rewards found</li>",
+				"rewards": req->variables->raw ? "<pre>" + Standards.JSON.encode(info->data, 7) + "</pre>" :
+					sizeof(info->data) ? custom_reward(info->data[*]) * "" :
+					"<li>No custom rewards found</li>",
 			]));
 		});
 }
