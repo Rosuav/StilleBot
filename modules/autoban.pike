@@ -28,6 +28,7 @@ string process(object channel, object person, string param)
 	else return "@$$: Try !autoban 300 some-bad-word";
 
 	badword = lower_case(badword); //TODO: Switch this out for a proper Unicode casefold
+	if (badword == "***") return "@$$: It looks like that word is blacklisted on Twitch, so I can't see it to autoban for it.";
 	if (!channel->config->autoban) channel->config->autoban = ([]);
 	if (!tm)
 	{
