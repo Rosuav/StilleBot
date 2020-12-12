@@ -446,7 +446,7 @@ class channel_notif
 
 	void record_raid(int fromid, string fromname, int toid, string toname, int|void ts)
 	{
-		write("DEBUG RECORD RAID: %O %O %O %O %O\n", fromid, fromname, toid, toname, ts);
+		write("Detected a raid: %O %O %O %O %O\n", fromid, fromname, toid, toname, ts);
 		if (!ts) ts = time();
 		//JavaScript timestamps seem to be borked (given in ms instead of seconds).
 		//Real timestamps won't hit this threshold until September 33658. At some
@@ -465,7 +465,6 @@ class channel_notif
 			int outgoing = fromid < toid;
 			string base = outgoing ? (string)fromid : (string)toid;
 			string other = outgoing ? (string)toid : (string)fromid;
-			write("DEBUG RAID IDS: %O %O [%O]\n", base, other, outgoing);
 			mapping raids = persist_status->path("raids", base);
 			if (!raids[other]) raids[other] = ({ });
 			else if (raids[other][-1]->time > ts - 60) return; //Ignore duplicate raids within 60s
@@ -475,7 +474,6 @@ class channel_notif
 				"outgoing": outgoing,
 				//TODO: Record the number of raiders??
 			])});
-			write("DEBUG RAID LOG: %O\n", raids[other]);
 			persist_status->save();
 		});
 	}
