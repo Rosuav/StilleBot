@@ -11,7 +11,9 @@ constant hypetrain = replace(#"
 2020Selfie 2020SpeakUp 2020Pajamas 2020Delivery<br>
 
 ### Part 2: Unlockable 16th Dec 2020 to 4th Jan 2021
-(not yet seen)
+2020ByeGuys 2020Drop 2020Glitchy 2020Partnered 2020Shhh<br>
+2020Shred 2020Unity 2020Forward 2020Takeout 2020MaskUp<br>
+2020Victory 2020Celebrate 2020Snacking 2020Wish imGlitch (?)<br>
 
 ## Hype Train set three
 ### Unlockable Nov 2020 to current
@@ -105,6 +107,11 @@ constant emoteids = ([
 	//L5 hype
 	"HypeMage": 304420826, "HypeWho": 304421049, "HypeLol": 304420818,
 	"HypePotion": 304420861, "HypeBook": 304420732, "HypeSmoke": 304420932,
+	//2020 Hindsight, part 2
+	"2020Shred": 304822010, "2020Shhh": 304836436, "2020Takeout": 304822046,
+	"2020Forward": 304821979, "2020Partnered": 304821885,
+	"2020Drop": 304821857, "2020MaskUp": 304822061, "2020ByeGuys": 304822038,
+	"2020Victory": 304836425, "2020Celebrate": 304857015,
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
