@@ -32,3 +32,14 @@
   - Optionally emit message only if online at the time.
 * Raid finder: Also show recent outgoing raids to allow notes to be added?
   - Or just "pick any channel, add notes". Have it show the stream as if in the raid finder.
+* Chat vocalization for the VOD. This is stupid. This is useless. This is nothing more than
+  a silly toy by an insane programmer. So let's do it.
+  - espeak "Hello world" --stdout|paplay /proc/self/fd/0 -d alsa_output.pci-0000_00_1f.3.iec958-stereo --volume 32768
+  - Have a chat command to choose the output rather than hard coding it
+  - Have a chat command to configure volume (65536 == max volume)
+  - Every incoming message, add to a queue, with a minimum delay of (say) 2 seconds (configurable)
+  - When the message comes up, check if it's been deleted (either individually or b/c the
+    person has been banned/timed out), and if so, skip.
+  - If the message is too old and there are too many in the queue, skip (so we catch up).
+  - Ignore all emotes and possibly emoji
+  - Attempt to read the user names?
