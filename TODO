@@ -47,3 +47,6 @@
     TTS for StreamLabs and Google (I think it's a Google service).
   - Is it possible to adjust speech speed? It is with espeak (-s 175 is default, try 250-300).
   - Can the actual text and emotes be encoded in some unobtrusive way???
+    - Would basically require a form of audio steganography that is compression-safe. I'm using
+      48KHz stereo audio, so in theory, very very short 'pips' in the 20KHz range could be used
+      to carry signal. I'm not sure how well that would work though.
