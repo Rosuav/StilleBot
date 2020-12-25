@@ -34,7 +34,25 @@ void talker()
 		if (msg->type == "end") break;
 		int delay = msg->after - time();
 		if (delay > 0) sleep(delay);
-		write("*** TTS demo\n%O\n", msg);
+		//If delay is massively negative and the queue has multiple items in it,
+		//skip this one.
+		if (queue->size() && delay < -60 / queue->size()) continue;
+		if (msg->type == "unsuppress") G->G->tts_suppress[msg->target] = 0; //Someone's purging is now done
+		if (msg->type != "message") continue;
+		//If the person or the message has been suppressed, skip it.
+		//Note that this check must come AFTER the time-delay check.
+		if (G->G->tts_suppress[msg->person->uid] || G->G->tts_suppress[msg->person->msgid]) continue;
+		write("*** TTS: %O\n", msg->msg);
+		Stdio.File pipe = Stdio.File();
+		object espeak = Process.create_process(
+			({"espeak", string_to_utf8(msg->msg), "--stdout", "-s", "250"}),
+			(["stdout": pipe->pipe(Stdio.PROP_IPC)]));
+		object paplay = Process.create_process(
+			({"paplay", "/proc/self/fd/0", "-d", "alsa_output.pci-0000_00_1f.3.iec958-stereo", "--volume", "32768"}),
+			(["stdin": pipe]));
+		espeak->wait();
+		paplay->wait();
+			
 	}
 	G->G->tts_channel = 0;
 	destruct(queue);
@@ -67,24 +85,59 @@ echoable_message process(object channel, object person, string param)
 		if (G->G->tts_queue) msg += sprintf(" (%d waiting)", G->G->tts_queue->size());
 		msg += sprintf(" Thread: %O", G->G->tts_thread);
 		if (G->G->tts_thread) msg += sprintf(" (status %d)", G->G->tts_thread->status());
+		msg += sprintf(" Suppressed: %O", G->G->tts_suppress);
 		return msg;
+	}
+	if (param == "nuke")
+	{
+		string msg = "Nuking... ";
+		if (object t = G->G->tts_thread)
+		{
+			if (t->status() == Thread.THREAD_RUNNING) {msg += "Killing thread... "; t->kill();}
+			else msg += "Disposing of thread... ";
+			G->G->tts_thread = 0;
+		}
+		if (object q = G->G->tts_queue)
+		{
+			msg += "Destroying queue... ";
+			destruct(q);
+		}
+		msg += sprintf("Unsuppressing %d... ", sizeof(G->G->tts_suppress));
+		G->G->tts_suppress = (<>);
+		return msg + "Done.";
 	}
 }
 
 int message(object channel, object person, string msg)
 {
 	if (channel->name != G->G->tts_channel || !G->G->tts_queue) return 0;
-	//HACK: Show only messages from moderators
-	//TODO: Hook all message deletions and channel timeouts/bans, and dequeue those
-	if (!person->badges || !person->badges->_mod) return 0;
 	if (has_prefix(msg, "!")) return 0; //Ignore bot commands
 	//TODO: Remove all emotes from the message, so they don't get read out
 	G->G->tts_queue->write((["type": "message", "person": person, "msg": msg, "after": time() + 3]));
 	return 0;
 }
 
+int delmsg(object channel, object person, string target, string msgid)
+{
+	if (channel->name != G->G->tts_channel || !G->G->tts_queue) return 0;
+	write("TTS hide: %O %O\n", target, msgid);
+	G->G->tts_suppress[msgid] = 1;
+	G->G->tts_queue->write((["type": "unsuppress", "target": msgid]));
+}
+int purge(object channel, object person, string target)
+{
+	if (channel->name != G->G->tts_channel || !G->G->tts_queue) return 0;
+	write("TTS purge: %O\n", target);
+	if (!target) {G->G->tts_queue->try_read_array(); return 0;} //Dump the entire queue
+	G->G->tts_suppress[target] = 1;
+	G->G->tts_queue->write((["type": "unsuppress", "target": target]));
+}
+
 protected void create(string name)
 {
+	G->G->tts_suppress = (<>);
 	register_hook("all-msgs", message);
+	register_hook("delete-msg", delmsg);
+	register_hook("delete-msgs", purge);
 	::create(name);
 }
