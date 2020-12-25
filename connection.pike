@@ -47,7 +47,7 @@ class IRCClient
 		}
 		sscanf(args[0], "%s :%s", string a, string message);
 		array parts = (a || args[0]) / " ";
-		if (sizeof(parts) >= 3 && (<"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE">)[parts[1]])
+		if (sizeof(parts) >= 3 && (<"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT">)[parts[1]])
 		{
 			//Send whispers to a pseudochannel named #!whisper
 			string chan = parts[1] == "WHISPER" ? "#!whisper" : lower_case(parts[2]);
@@ -192,6 +192,7 @@ mapping(string:mixed) gather_person_info(object person, mapping params)
 		if (n2u[person->user] != params->user_id) {n2u[person->user] = params->user_id; persist_status->save();}
 	}
 	ret->displayname = params->display_name || person->nick;
+	ret->msgid = params->id;
 	if (params->badges)
 	{
 		ret->badges = ([]);
@@ -649,6 +650,13 @@ class channel_notif
 					trigger_special("!cheer", person, (["{bits}": params->bits]));
 				break;
 			}
+			//The delete-msg hook has person (the one who triggered it),
+			//target (the login who got purged), and msgid.
+			//The very similar delete-msgs hook has person (ditto) and
+			//target (the *user id* who got purged), which may be null.
+			//(If target is null, all chat got cleared ("/clear").)
+			case "CLEARMSG": runhooks("delete-msg", 0, this, person, params->login, params->target_msg_id); break;
+			case "CLEARCHAT": runhooks("delete-msgs", 0, this, person, params->target_user_id); break;
 			default: werror("Unknown message type %O on channel %s\n", params->_type, name);
 		}
 	}
