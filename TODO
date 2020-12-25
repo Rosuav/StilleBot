@@ -46,3 +46,4 @@
   - Alternatively, can I do the whole thing in a web browser? Call on the same thing that does
     TTS for StreamLabs and Google (I think it's a Google service).
   - Is it possible to adjust speech speed? It is with espeak (-s 175 is default, try 250-300).
+  - Can the actual text and emotes be encoded in some unobtrusive way???
