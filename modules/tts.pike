@@ -48,7 +48,7 @@ void talker()
 			({"espeak", string_to_utf8(msg->msg), "--stdout", "-s", "250"}),
 			(["stdout": pipe->pipe(Stdio.PROP_IPC)]));
 		object paplay = Process.create_process(
-			({"paplay", "/proc/self/fd/0", "-d", "alsa_output.pci-0000_00_1f.3.iec958-stereo", "--volume", "32768"}),
+			({"paplay", "/proc/self/fd/0", "-d", "alsa_output.pci-0000_00_1f.3.iec958-stereo", "--volume", "49152"}),
 			(["stdin": pipe]));
 		espeak->wait();
 		paplay->wait();
