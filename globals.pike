@@ -553,6 +553,8 @@ mapping(string:mixed)|Concurrent.Future twitchlogin(Protocols.HTTP.Server.Reques
 				else dest = "/login_ok";
 			}
 			mapping resp = redirect(dest);
+			resp->extra_heads->Vary = "*"; //Try to stop the redirects from being cached
+			resp->extra_heads["Cache-Control"] = "no-store";
 			ensure_session(req, resp);
 			req->misc->session->user = user;
 			req->misc->session->scopes = (multiset)(req->variables->scope / " ");
