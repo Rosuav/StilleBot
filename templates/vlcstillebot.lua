@@ -1,5 +1,7 @@
 -- Install by symlinking into ~/.local/share/vlc/lua/extensions or equivalent
 
+URL = "$$url$$?auth=$$auth$$&"
+
 function descriptor()
 	return { 
 		title = "&StilleBot integration",
@@ -11,7 +13,7 @@ end
 
 function notify(args)
 	vlc.msg.info(args)
-	local s = vlc.stream("https://sikorsky.rosuav.com/channels/rosuav/vlc?" .. args)
+	local s = vlc.stream(URL .. args)
 	local line = s:readline() -- read a line. Return nil if EOF was reached.
 	vlc.msg.info("[StilleBot] Got line: " .. line)
 end
@@ -36,7 +38,7 @@ function input_changed()
 	end
 	-- Be paranoid. Decode, then encode, don't rely on it not breaking stuff.
 	local fn = vlc.strings.decode_uri(item:uri())
-	notify("new_input=" .. vlc.strings.encode_uri_component(fn))
+	notify("now_playing=" .. vlc.strings.encode_uri_component(fn))
 end
 
 last_status = nil
