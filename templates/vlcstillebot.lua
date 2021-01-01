@@ -38,6 +38,7 @@ function input_changed()
 	end
 	-- Be paranoid. Decode, then encode, don't rely on it not breaking stuff.
 	local fn = vlc.strings.decode_uri(item:uri())
+	-- TODO: Can we get any metadata and send that to StilleBot too?
 	notify("now_playing=" .. vlc.strings.encode_uri_component(fn))
 end
 

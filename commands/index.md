@@ -17,6 +17,7 @@ Commands in alphabetical order:
 * [!repeat: Add a repeated command (autocommand) for this channel](repeat)
 * [!setcmd: Configure an echo command for this channel](setcmd)
 * [!shoutout: Give a shout-out to another streamer](shoutout)
+* [!song: VLC integration](song)
 * [!unrepeat: Cancel a repeated command](repeat)
 * [!uptime: Show channel uptime.](uptime)
 
