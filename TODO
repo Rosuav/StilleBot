@@ -37,6 +37,7 @@
     - Translate path based on a known selection of paths, and if not found, "Unknown"
     - Possibly have some sscanf patterns eg "StreamingMusic/DarkFantasyStudio/%s/%s"
       to be described as "DFS: %1" with track name "%2"
+    - Also emit metadata if available
   - Mod command to skip to next track
   - Mod command to add notes to current track or current set
   - Non-mod command to see current track. Can have tie-in based on set eg copyright/shoutout.
