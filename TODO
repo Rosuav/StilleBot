@@ -42,3 +42,8 @@
   - If possible, have VLC connect to StilleBot, not the other way around. Then it can be
     used by multiple channels. Would need a magic URL seen only via the web or whisper.
   - Have web interface that shows, very compactly, the current set and track. OBS embed.
+    - Tie in with "Retain" disposition per above?
+  - POC:
+    1. Have VLC ping StilleBot w/ hello world. Must be GET request.
+    2. VLC ping StilleBot when track changes
+    3. OBS interface w/ websocket. No "Retain" tie-in.
