@@ -45,6 +45,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			//Possibly have some sscanf patterns eg "StreamingMusic/DarkFantasyStudio/%s/%s"
 			//to be described as "DFS: %1" with track name "%2"
 			block = ([])[block] || "Unknown";
+			array tails = ({".wav", ".mp3", ".ogg"});
+			foreach (tails, string tail) if (has_suffix(fn, tail)) fn = fn[..<sizeof(tail)];
 			string track = sprintf("%s - %s", block, fn);
 			if (channel->config->report_track_changes && track != status->current) {
 				//TODO: Allow the format to be customized

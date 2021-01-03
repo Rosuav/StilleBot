@@ -15,7 +15,7 @@ function notify(args)
 	vlc.msg.info(args)
 	local s = vlc.stream(URL .. args)
 	local line = s:readline() -- read a line. Return nil if EOF was reached.
-	vlc.msg.info("[StilleBot] Got line: " .. line)
+	vlc.msg.dbg("[StilleBot] Got line: " .. line)
 end
 
 function activate()
@@ -31,7 +31,7 @@ function deactivate()
 end
 
 function input_changed()
-	vlc.msg.info("[StilleBot] Seen track change")
+	vlc.msg.dbg("[StilleBot] Seen track change")
 	local item = vlc.input.item()
 	if not item then
 		return
@@ -47,7 +47,7 @@ function playing_changed(status)
 	-- 2 is playing, 3 is paused, 4 is loading?? TODO: Find docs.
 	if status ~= 4 and status ~= last_status then
 		last_status = status
-		vlc.msg.info("[StilleBot] Status is now " .. status)
+		vlc.msg.dbg("[StilleBot] Status is now " .. status)
 		notify("status=" .. vlc.playlist.status())
 	end
 end
