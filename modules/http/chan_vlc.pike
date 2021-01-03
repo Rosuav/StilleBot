@@ -32,6 +32,14 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		resp->extra_heads = (["Content-disposition": "attachment; filename=vlcstillebot.lua"]);
 		return resp;
 	}
+	if (req->misc->is_mod && req->variables->blocks) {
+		array blocks = channel->config->vlcblocks || ({ });
+		array unknowns = G->G->vlc_status[channel->name]->?unknowns || ({ });
+		return render_template("vlc_blocks.md", ([
+			"blocks": Standards.JSON.encode(blocks),
+			"unknowns": Standards.JSON.encode(unknowns),
+		]));
+	}
 	if (req->variables->auth && req->variables->auth == channel->config->vlcauthtoken) {
 		//It could be a valid VLC signal.
 		mapping status = G->G->vlc_status[channel->name];
@@ -41,13 +49,27 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (string uri = req->variables->now_playing) {
 			string block = dirname(uri);
 			string fn = basename(uri);
-			//TODO: Translate the block names via a per-channel mapping.
-			//Possibly have some sscanf patterns eg "StreamingMusic/DarkFantasyStudio/%s/%s"
-			//to be described as "DFS: %1" with track name "%2"
-			block = ([])[block] || "Unknown";
+			//Translate the block names via a per-channel mapping.
+			array blocks = channel->config->vlcblocks || ({ });
+			string blockdesc;
+			foreach (blocks, [string regex, string desc]) {
+				array match = Regexp.PCRE(regex, Regexp.PCRE.OPTION.ANCHORED)->split2(block);
+				if (!match) continue;
+				//Undocumented feature: The description can use regex replacement
+				//markers "\1" etc to incorporate matched substrings from the regex.
+				blockdesc = replace(desc, mkmapping("\\" + enumerate(sizeof(match))[*], match));
+				break;
+			}
+			if (!blockdesc) {
+				block = "Unknown"; //TODO: Allow this to be customized
+				if (!status->unknowns || !has_value(status->unknowns, block))
+					status->unknowns += ({block});
+			}
+			//TODO: Allow filename cleanup to be customized?
+			//TODO: If we get metadata from VLC, use that instead
 			array tails = ({".wav", ".mp3", ".ogg"});
 			foreach (tails, string tail) if (has_suffix(fn, tail)) fn = fn[..<sizeof(tail)];
-			string track = sprintf("%s - %s", block, fn);
+			string track = sprintf("%s - %s", blockdesc, fn);
 			if (channel->config->report_track_changes && track != status->current) {
 				//TODO: Allow the format to be customized
 				//TODO: Have a configurable delay before the message is sent.
@@ -62,7 +84,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			status->playing = s == "playing";
 		return (["data": "Okay, fine\n", "type": "text/plain"]);
 	}
-	return render_template("vlc.md", ([]));
+	return render_template("vlc.md", ([
+		"modlinks": req->misc->is_mod ? "* [Configure music categories/blocks](vlc?blocks)" : "",
+	]));
 }
 
 protected void create(string name) {::create(name); G->G->vlc_status = ([]);}

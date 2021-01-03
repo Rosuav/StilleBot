@@ -26,6 +26,6 @@ echoable_message process(object channel, object person, string param)
 		}
 		//TODO: !song skip, maybe !song notes
 	}
-	if (status?->playing) return "Current song: " + status->current; //Yes, it might say "Current song: 0" if not set up right
+	if (status->?playing) return "Current song: " + status->current; //Yes, it might say "Current song: 0" if not set up right
 	//Otherwise just be silent.
 }
