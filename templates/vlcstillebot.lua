@@ -1,4 +1,4 @@
--- Install by symlinking into ~/.local/share/vlc/lua/extensions or equivalent
+-- Install by downloading into ~/.local/share/vlc/lua/extensions or equivalent
 
 URL = "$$url$$?auth=$$auth$$&"
 
