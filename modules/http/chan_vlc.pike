@@ -40,6 +40,32 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			"unknowns": Standards.JSON.encode(unknowns),
 		]));
 	}
+	if (req->misc->is_mod && req->variables->saveblock && req->request_type == "POST") {
+		mixed body = Standards.JSON.decode(req->body_raw);
+		if (!mappingp(body) || !body->path || !body->desc) return (["error": 400]);
+		//See if we have the exact same input path. If so, overwrite.
+		//TODO: Allow editing of the path, which means retaining an ID or something
+		foreach (channel->config->vlcblocks || ({ }); int i; array b) if (b[0] == body->path) {
+			if (body->desc == "") {
+				//Delete.
+				channel->config->vlcblocks = channel->config->vlcblocks[..i-1] + channel->config->vlcblocks[i+1..];
+				return (["error": 204]);
+			}
+			b[1] = body->desc;
+			return (["error": 204]);
+		}
+		channel->config->vlcblocks += ({({body->path, body->desc})});
+		//It's entirely possible that this will match some of the unknowns.
+		mapping status = G->G->vlc_status[channel->name];
+		if (status->?unknowns) {
+			object re = Regexp.PCRE(body->path, Regexp.PCRE.OPTION.ANCHORED);
+			array stillunknown = ({ });
+			foreach (status->unknowns, string unk)
+				if (!re->split2(unk)) stillunknown += ({unk});
+			status->unknowns = stillunknown;
+		}
+		return (["error": 201]); //TODO: Update the client with new unknowns (and maybe new patterns too)
+	}
 	if (req->variables->auth && req->variables->auth == channel->config->vlcauthtoken) {
 		//It could be a valid VLC signal.
 		mapping status = G->G->vlc_status[channel->name];
