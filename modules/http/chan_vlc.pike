@@ -61,9 +61,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				break;
 			}
 			if (!blockdesc) {
-				block = "Unknown"; //TODO: Allow this to be customized
+				blockdesc = "Unknown"; //TODO: Allow this to be customized
 				if (!status->unknowns || !has_value(status->unknowns, block))
 					status->unknowns += ({block});
+				werror("New unknowns: %O\n", status->unknowns);
 			}
 			//TODO: Allow filename cleanup to be customized?
 			//TODO: If we get metadata from VLC, use that instead
