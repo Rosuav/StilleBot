@@ -124,4 +124,4 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	]));
 }
 
-protected void create(string name) {::create(name); G->G->vlc_status = ([]);}
+protected void create(string name) {::create(name); if (!G->G->vlc_status) G->G->vlc_status = ([]);}
