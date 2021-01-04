@@ -1,8 +1,6 @@
 # VLC integration
 
-TODO: Show a list of current blocks and allow you to add/remove (and maybe reorder)
-
-Each block is a regex to match on, and a description to be displayed.
+Describe your music collection. Edit any entry and save. Blank the description to delete.
 
 Path | Description |
 -----|-------------|-
@@ -34,11 +32,6 @@ function make_block_desc(path, desc) {
 					credentials: "include",
 				}).then(e => console.log(e));
 			}}, "Save"),
-			BUTTON({type: "button", disabled: true, onclick: e => {
-				//TODO: Implement
-				//TODO: Confirm deletion
-				const tr = e.currentTarget.closest("tr");
-			}}, "Delete"),
 		]),
 	]);
 }
