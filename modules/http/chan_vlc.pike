@@ -47,6 +47,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		req->variables->auth = "(correct)"; werror("Got VLC notification: %O\n", req->variables);
 		if (req->variables->shutdown) werror("VLC link shutdown\n");
 		if (string uri = req->variables->now_playing) {
+			catch {uri = utf8_to_string(uri);}; //If it's not UTF-8, pretend it's Latin-1
 			string block = dirname(uri);
 			string fn = basename(uri);
 			//Translate the block names via a per-channel mapping.
