@@ -1,9 +1,6 @@
 inherit http_endpoint;
 
 /*
-TODO: If logged in as a mod, allow a download of the Lua script, with an embedded URL and
-channel authentication token.
-
 TODO: If logged in as a mod, provide a link usable in OBS. Have an auth token in the
 fragment; JS can fetch that and provide it during a WebSocket handshake.
 - Tie in with "Retain" disposition per TODO?
@@ -17,6 +14,17 @@ string auth_token(object channel) {
 	if (string t = channel->config->vlcauthtoken) return t;
 	persist_config->save();
 	return channel->config->vlcauthtoken = String.string2hex(random_string(12));
+}
+
+mapping(string:mixed) json_resp(object channel)
+{
+	mapping status = G->G->vlc_status[channel->name];
+	return (["data": Standards.JSON.encode(([
+			"blocks": channel->config->vlcblocks,
+			"unknowns": status->?unknowns || ({ }),
+		])),
+		"type": "application/json",
+	]);
 }
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -44,18 +52,17 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!mappingp(body) || !body->path || !body->desc) return (["error": 400]);
 		//See if we have the exact same input path. If so, overwrite.
-		//TODO: Allow editing of the path, which means retaining an ID or something
 		foreach (channel->config->vlcblocks || ({ }); int i; array b) if (b[0] == body->path) {
 			if (body->desc == "") {
 				//Delete.
 				channel->config->vlcblocks = channel->config->vlcblocks[..i-1] + channel->config->vlcblocks[i+1..];
-				return (["error": 204]);
+				return json_resp(channel);
 			}
 			b[1] = body->desc;
-			return (["error": 204]);
+			return json_resp(channel);
 		}
 		channel->config->vlcblocks += ({({body->path, body->desc})});
-		//It's entirely possible that this will match some of the unknowns.
+		//It's entirely possible that this will match some of the unknowns. If so, clear 'em out.
 		mapping status = G->G->vlc_status[channel->name];
 		if (status->?unknowns) {
 			object re = Regexp.PCRE(body->path, Regexp.PCRE.OPTION.ANCHORED);
@@ -64,7 +71,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				if (!re->split2(unk)) stillunknown += ({unk});
 			status->unknowns = stillunknown;
 		}
-		return (["error": 201]); //TODO: Update the client with new unknowns (and maybe new patterns too)
+		return json_resp(channel);
 	}
 	if (req->variables->auth && req->variables->auth == channel->config->vlcauthtoken) {
 		//It could be a valid VLC signal.

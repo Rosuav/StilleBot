@@ -12,8 +12,8 @@ Path | Description |
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, BUTTON, INPUT, LI, TR, TD} = choc;
 
-const blocks = $$blocks$$;
-const unknowns = $$unknowns$$;
+let blocks = $$blocks$$;
+let unknowns = $$unknowns$$;
 
 function make_block_desc(path, desc) {
 	return TR([
@@ -30,21 +30,28 @@ function make_block_desc(path, desc) {
 					}),
 					headers: {"content-type": "application/json"},
 					credentials: "include",
-				}).then(e => console.log(e));
+				}).then(r => r.json())
+				.then(data => {
+					blocks = data.blocks;
+					unknowns = data.unknowns;
+					update_blocks_unknowns();
+				});
 			}}, "Save"),
 		]),
 	]);
 }
 
-const tbody = DOM("table tbody");
-blocks.forEach(b => tbody.appendChild(make_block_desc(b[0], b[1])));
+function update_blocks_unknowns() {
+	set_content("table tbody", blocks.map(b => make_block_desc(b[0], b[1])));
 
-set_content("#unknowns", unknowns.map(path => LI(A({href: "", onclick: e => {
-	e.preventDefault();
-	tbody.appendChild(make_block_desc(path, ""));
-}}, path))));
-DOM("#unknowns").appendChild(LI(A({href: "", onclick: e => {
-	e.preventDefault();
-	tbody.appendChild(make_block_desc("", ""));
-}}, "+ Add new")));
+	set_content("#unknowns", unknowns.map(path => LI(A({href: "", onclick: e => {
+		e.preventDefault();
+		DOM("table tbody").appendChild(make_block_desc(path, ""));
+	}}, path))));
+	DOM("#unknowns").appendChild(LI(A({href: "", onclick: e => {
+		e.preventDefault();
+		DOM("table tbody").appendChild(make_block_desc("", ""));
+	}}, "+ Add new")));
+}
+update_blocks_unknowns();
 </script>
