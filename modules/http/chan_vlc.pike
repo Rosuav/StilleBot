@@ -56,12 +56,14 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			if (body->desc == "") {
 				//Delete.
 				channel->config->vlcblocks = channel->config->vlcblocks[..i-1] + channel->config->vlcblocks[i+1..];
+				persist_config->save();
 				return json_resp(channel);
 			}
 			b[1] = body->desc;
 			return json_resp(channel);
 		}
 		channel->config->vlcblocks += ({({body->path, body->desc})});
+		persist_config->save();
 		//It's entirely possible that this will match some of the unknowns. If so, clear 'em out.
 		mapping status = G->G->vlc_status[channel->name];
 		if (status->?unknowns) {
