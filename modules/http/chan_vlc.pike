@@ -30,6 +30,13 @@ mapping(string:mixed) json_resp(object channel)
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	object channel = req->misc->channel;
+	if (req->misc->is_mod && req->variables->authreset) {
+		return render_template("vlc.md", (["modlinks": "* [Confirm auth reset?](vlc?authresetconfirm)"]));
+	}
+	if (req->misc->is_mod && req->variables->authresetconfirm) {
+		channel->config->vlcauthtoken = 0; auth_token(channel);
+		//Fall through and render as normal
+	}
 	if (req->misc->is_mod && req->variables->lua) {
 		mapping cfg = persist_config["ircsettings"];
 		mapping resp = render_template("vlcstillebot.lua", ([
@@ -124,7 +131,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		return (["data": "Okay, fine\n", "type": "text/plain"]);
 	}
 	return render_template("vlc.md", ([
-		"modlinks": req->misc->is_mod ? "* [Configure music categories/blocks](vlc?blocks)" : "",
+		"modlinks": req->misc->is_mod ?
+			"* [Configure music categories/blocks](vlc?blocks)\n"
+			"* [Download Lua script](vlc?lua) - put it into .local/share/vlc/lua/extensions\n"
+			"* [Reset credentials](vlc?authreset) - will deauthenticate any previously-downloaded Lua script\n"
+			: "",
 	]));
 }
 
