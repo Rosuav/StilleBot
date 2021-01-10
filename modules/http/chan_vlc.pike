@@ -62,7 +62,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			b[1] = body->desc;
 			return json_resp(channel);
 		}
-		channel->config->vlcblocks += ({({body->path, body->desc})});
+		if (body->desc != "") channel->config->vlcblocks += ({({body->path, body->desc})});
 		persist_config->save();
 		//It's entirely possible that this will match some of the unknowns. If so, clear 'em out.
 		mapping status = G->G->vlc_status[channel->name];
@@ -84,7 +84,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (string uri = req->variables->now_playing) {
 			catch {uri = utf8_to_string(uri);}; //If it's not UTF-8, pretend it's Latin-1
 			string block = dirname(uri);
-			string fn = basename(uri);
+			string fn = req->variables->name;
+			//If we don't have a playlist entry name, use the filename instead.
+			if (!fn || fn == "") fn = basename(uri);
 			//Translate the block names via a per-channel mapping.
 			array blocks = channel->config->vlcblocks || ({ });
 			string blockdesc;
@@ -97,16 +99,16 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				break;
 			}
 			if (!blockdesc) {
-				blockdesc = "Unknown"; //TODO: Allow this to be customized
+				blockdesc = "";
 				if (!status->unknowns || !has_value(status->unknowns, block))
 					status->unknowns += ({block});
 				werror("New unknowns: %O\n", status->unknowns);
 			}
+			else if (blockdesc != "") blockdesc += " - ";
 			//TODO: Allow filename cleanup to be customized?
-			//TODO: If we get metadata from VLC, use that instead
 			array tails = ({".wav", ".mp3", ".ogg"});
 			foreach (tails, string tail) if (has_suffix(fn, tail)) fn = fn[..<sizeof(tail)];
-			string track = sprintf("%s - %s", blockdesc, fn);
+			string track = blockdesc + fn;
 			if (channel->config->report_track_changes && track != status->current) {
 				//TODO: Allow the format to be customized
 				//TODO: Have a configurable delay before the message is sent.

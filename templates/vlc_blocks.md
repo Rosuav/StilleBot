@@ -1,6 +1,8 @@
 # VLC integration
 
 Describe your music collection. Edit any entry and save. Blank the description to delete.
+When anything from one of these paths is playing, its name will be prefixed with the given
+description; otherwise, it'll be shown with just the name.
 
 Path | Description |
 -----|-------------|-
@@ -14,6 +16,8 @@ const {A, BUTTON, INPUT, LI, TR, TD} = choc;
 
 let blocks = $$blocks$$;
 let unknowns = $$unknowns$$;
+//TODO: Also have an array of tails (or a blank-delimited set), which can then be trimmed off.
+//Default eg ".wav .mp3 .ogg".
 
 function make_block_desc(path, desc) {
 	return TR([
