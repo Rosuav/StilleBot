@@ -331,6 +331,7 @@ class channel_notif
 		{
 			if (msg->counter)
 			{
+				//Deprecated, will be migrated to variables.
 				mapping counters = persist_status->path("counters", name);
 				string action = msg->action || "";
 				if (sscanf(action, "+%d", int n)) counters[msg->counter] += n;
@@ -339,6 +340,17 @@ class channel_notif
 				else if (action == "=%s") counters[msg->counter] = (int)markers["%s"];
 				persist_status->save();
 				markers |= (["%d": (string)counters[msg->counter]]);
+			}
+			if (msg->variable)
+			{
+				mapping vars = persist_status->path("variables", name);
+				string action = msg->action || "";
+				if (sscanf(action, "+%d", int n)) variables[msg->variable] = (string)((int)variables[msg->variable] + n);
+				else if (action == "=%s") variables[msg->variable] = markers["%s"];
+				else if (sscanf(action, "=%s", string val)) variables[msg->variable] = val;
+				if (variables[msg->variable] == "") m_delete(variables, msg->variable);
+				persist_status->save();
+				markers |= ([sprintf("$%s$", msg->variable): variables[msg->variable]]);
 			}
 			return msg | (["message": substitute_markers(msg->message, markers),
 						"dest": msg->dest && replace(msg->dest, markers)]);

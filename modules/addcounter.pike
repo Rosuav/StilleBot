@@ -22,6 +22,14 @@ managed through the bot's web interface for your channel, or by editing the
 bot's commands file.
 ";
 
+//TODO: Turn this into a generalized variables system
+//This would mean that addcounter is now a macro that adds a variable-manipulating
+//echo command, but not all variables have to be counters.
+//A counter would be stored REXX-style, as a string consisting of decimal digits.
+//Incrementing such a counter involves interpreting the characters as digits,
+//performing arithmetic, and then representing the result as a string of digits.
+//Which is a lot easier to do than to describe.
+
 string process(object channel, object person, string param)
 {
 	if (sscanf(param, "!%[^# ] %s", string cmd, string response) == 2)
