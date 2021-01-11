@@ -136,7 +136,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (!status) status = ([]); //but don't save it back, which we would if we're changing stuff
 	return render_template("vlc.md", ([
 		"modlinks": req->misc->is_mod ?
-			"* TODO: OBS link for embedding playback status\n"
+			"* TODO: OBS link for embedding playback status (using variable substitution??)\n"
 			"* [Configure music categories/blocks](vlc?blocks)\n"
 			"* [Download Lua script](vlc?lua) - put it into .local/share/vlc/lua/extensions\n"
 			"* [Reset credentials](vlc?authreset) - will deauthenticate any previously-downloaded Lua script\n"
