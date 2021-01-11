@@ -4,9 +4,6 @@ inherit http_endpoint;
 TODO: If logged in as a mod, provide a link usable in OBS. Have an auth token in the
 fragment; JS can fetch that and provide it during a WebSocket handshake.
 - Tie in with "Retain" disposition per TODO?
-
-TODO: If logged in as a mod, allow reset of the channel token (which will invalidate any
-Lua script or OBS link).
 */
 
 //Create (if necessary) and return the VLC Auth Token
