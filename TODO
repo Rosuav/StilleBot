@@ -5,10 +5,10 @@
 * Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
 * Variables.
   - Tie in with a potential browsersource so "!jackbox ABCD" could put the code on screen
-  - Allow any command to have $varname$ be substituted with current value, or ""
+  - Allow any command to have $varname$ be substituted with current value
   - Could therefore make a convenient "current project" tool too
   - Use of this disposition would normally be for mod-only commands only
-  - Have a mod-only web page listing all variables and permitting changes. Blank to delete.
+  - Have a mod-only web page listing all variables and permitting changes (incl deleting).
 * Thank people for hosting (effectively a spam command triggered by a host notice)
   - Currently this is better done with Lisp Whispers, since distinguishing autohosts from
     explicit hosts requires authentication as the broadcaster.

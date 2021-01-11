@@ -323,7 +323,8 @@ class channel_notif
 		return ({0, ""});
 	}
 
-	//Recursively substitute markers in any echoable message. Non-mutating (will return a new array/mapping as needed).
+	//Recursively substitute markers in any echoable message. Non-mutating on the message
+	//(will return a new array/mapping as needed), but may mutate markers if needed.
 	echoable_message substitute_markers(echoable_message msg, mapping(string:string) markers)
 	{
 		if (stringp(msg)) return replace(msg, markers);
@@ -339,18 +340,22 @@ class channel_notif
 				else if (sscanf(action, "=%d", int n)) counters[msg->counter] = n;
 				else if (action == "=%s") counters[msg->counter] = (int)markers["%s"];
 				persist_status->save();
-				markers |= (["%d": (string)counters[msg->counter]]);
+				markers["%d"] = (string)counters[msg->counter];
 			}
+			//Or perhaps this should be a destination, not an attribute. Hmm.
+			//If a destination, it still needs to be able to modify a variable
+			//and have subsequent messages see the change. That won't work
+			//within the current dest handling code. Hmmmmmm.
 			if (msg->variable)
 			{
 				mapping vars = persist_status->path("variables", name);
 				string action = msg->action || "";
-				if (sscanf(action, "+%d", int n)) variables[msg->variable] = (string)((int)variables[msg->variable] + n);
-				else if (action == "=%s") variables[msg->variable] = markers["%s"];
-				else if (sscanf(action, "=%s", string val)) variables[msg->variable] = val;
-				if (variables[msg->variable] == "") m_delete(variables, msg->variable);
+				if (sscanf(action, "+%d", int n)) vars[msg->variable] = (string)((int)vars[msg->variable] + n);
+				else if (action == "=%s") vars[msg->variable] = markers["%s"];
+				else if (sscanf(action, "=%s", string val)) vars[msg->variable] = val;
 				persist_status->save();
-				markers |= ([sprintf("$%s$", msg->variable): variables[msg->variable]]);
+				//Update the marker to the new replacement value
+				markers[sprintf("$%s$", msg->variable)] = vars[msg->variable];
 			}
 			return msg | (["message": substitute_markers(msg->message, markers),
 						"dest": msg->dest && replace(msg->dest, markers)]);
@@ -381,7 +386,8 @@ class channel_notif
 		//Functions do not get %s handling. If they want it, they can do it themselves,
 		//and if they don't want it, it would mess things up badly to do it here.
 		if (functionp(cmd)) return cmd(this, person, param);
-		return substitute_markers(cmd, (["%s": param]));
+		mapping vars = persist_status->path("variables")[name] || ([]);
+		return substitute_markers(cmd, vars | (["%s": param]));
 	}
 
 	void wrap_message(object|mapping person, echoable_message info, mapping|void defaults)
@@ -694,7 +700,8 @@ class channel_notif
 		echoable_message response = G->G->echocommands[special + name];
 		if (!response) return;
 		if (has_value(info, 0)) werror("DEBUG: Special %O got info %O\n", special, info); //Track down those missing-info errors
-		wrap_message(person, substitute_markers(response, info));
+		mapping vars = persist_status->path("variables")[name] || ([]);
+		wrap_message(person, substitute_markers(response, vars | info));
 	}
 }
 
