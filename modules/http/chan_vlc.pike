@@ -35,7 +35,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	}
 	if (req->misc->is_mod && req->variables->authresetconfirm) {
 		channel->config->vlcauthtoken = 0; auth_token(channel);
-		//Fall through and render as normal
+		return redirect("vlc");
 	}
 	if (req->misc->is_mod && req->variables->lua) {
 		mapping cfg = persist_config["ircsettings"];
@@ -82,9 +82,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		}
 		return json_resp(channel);
 	}
+	mapping status = G->G->vlc_status[channel->name];
 	if (req->variables->auth && req->variables->auth == channel->config->vlcauthtoken) {
 		//It could be a valid VLC signal.
-		mapping status = G->G->vlc_status[channel->name];
 		if (!status) status = G->G->vlc_status[channel->name] = ([]);
 		req->variables->auth = "(correct)"; werror("Got VLC notification: %O\n", req->variables);
 		if (req->variables->shutdown) werror("VLC link shutdown\n");
@@ -116,27 +116,50 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			array tails = ({".wav", ".mp3", ".ogg"});
 			foreach (tails, string tail) if (has_suffix(fn, tail)) fn = fn[..<sizeof(tail)];
 			string track = blockdesc + fn;
-			if (channel->config->report_track_changes && track != status->current) {
-				//TODO: Allow the format to be customized
-				//TODO: Have a configurable delay before the message is sent.
-				//(Helps with synchronization a bit.)
-				channel->wrap_message((["displayname": ""]),
-					"Now playing: " + track,
-				);
+			if (track != status->current) {
+				//Add the previous track to the recent ones (if it isn't there already)
+				//Note that the current track is NOT in the recents.
+				if (!has_value(status->recent, status->current))
+					status->recent = (status->recent + ({status->current}))[<9..];
+				if (channel->config->report_track_changes) {
+					//TODO: Allow the format to be customized
+					//TODO: Have a configurable delay before the message is sent.
+					//(Helps with synchronization a bit.)
+					channel->wrap_message((["displayname": ""]),
+						"Now playing: " + track,
+					);
+				}
+				status->current = track;
 			}
-			status->current = track;
 		}
 		if (string s = req->variables->status)
 			status->playing = s == "playing";
 		return (["data": "Okay, fine\n", "type": "text/plain"]);
 	}
+	if (!status) status = ([]); //but don't save it back, which we would if we're changing stuff
 	return render_template("vlc.md", ([
 		"modlinks": req->misc->is_mod ?
+			"* TODO: OBS link for embedding playback status\n"
 			"* [Configure music categories/blocks](vlc?blocks)\n"
 			"* [Download Lua script](vlc?lua) - put it into .local/share/vlc/lua/extensions\n"
 			"* [Reset credentials](vlc?authreset) - will deauthenticate any previously-downloaded Lua script\n"
 			: "",
+		"nowplaying": status->playing ? "Now playing: " + status->current : "",
+		"recent": arrayp(status->recent) && sizeof(status->recent) ?
+			sprintf("Recently played:\n%{* %s\n%}\n{:#recent}", status->recent)
+			: "",
 	]));
 }
 
-protected void create(string name) {::create(name); if (!G->G->vlc_status) G->G->vlc_status = ([]);}
+int disconnected(string channel) {
+	mapping status = G->G->vlc_status["#" + channel];
+	if (!status) return 0;
+	status->playing = 0;
+	status->recent = ({ });
+}
+
+protected void create(string name) {
+	::create(name);
+	if (!G->G->vlc_status) G->G->vlc_status = ([]);
+	register_hook("channel-online", disconnected);
+}

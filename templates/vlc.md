@@ -1,5 +1,22 @@
 # VLC integration
 
-* TODO: OBS link for embedding playback status
-* TODO: List of recently-played songs (non-mods too)
+$$nowplaying||$$
+{:#nowplaying}
+
+$$recent||$$
+
 $$modlinks$$
+
+<style>
+#nowplaying {
+	background: #ddffdd;
+	border: 1px solid #007700;
+	font-size: larger;
+}
+#recent li:nth-child(even) {
+	background: #ddffee;
+}
+#recent li:nth-child(odd) {
+	background: #eeffdd;
+}
+</style>
