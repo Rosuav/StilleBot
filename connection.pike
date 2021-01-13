@@ -323,48 +323,7 @@ class channel_notif
 		return ({0, ""});
 	}
 
-	//Recursively substitute markers in any echoable message. Non-mutating on the message
-	//(will return a new array/mapping as needed), but may mutate markers if needed.
-	echoable_message substitute_markers(echoable_message msg, mapping(string:string) markers)
-	{
-		if (stringp(msg)) return replace(msg, markers);
-		if (mappingp(msg))
-		{
-			if (msg->counter)
-			{
-				//Deprecated, will be migrated to variables.
-				mapping counters = persist_status->path("counters", name);
-				string action = msg->action || "";
-				if (sscanf(action, "+%d", int n)) counters[msg->counter] += n;
-				else if (action == "=0") m_delete(counters, msg->counter); //Special-case zeroing to allow people to remove junk
-				else if (sscanf(action, "=%d", int n)) counters[msg->counter] = n;
-				else if (action == "=%s") counters[msg->counter] = (int)markers["%s"];
-				persist_status->save();
-				markers["%d"] = (string)counters[msg->counter];
-			}
-			//Or perhaps this should be a destination, not an attribute. Hmm.
-			//If a destination, it still needs to be able to modify a variable
-			//and have subsequent messages see the change. That won't work
-			//within the current dest handling code. Hmmmmmm.
-			if (msg->variable)
-			{
-				mapping vars = persist_status->path("variables", name);
-				string action = msg->action || "";
-				if (sscanf(action, "+%d", int n)) vars[msg->variable] = (string)((int)vars[msg->variable] + n);
-				else if (action == "=%s") vars[msg->variable] = markers["%s"];
-				else if (sscanf(action, "=%s", string val)) vars[msg->variable] = val;
-				persist_status->save();
-				//Update the marker to the new replacement value
-				markers[sprintf("$%s$", msg->variable)] = vars[msg->variable];
-			}
-			return msg | (["message": substitute_markers(msg->message, markers),
-						"dest": msg->dest && replace(msg->dest, markers)]);
-		}
-		if (arrayp(msg)) return substitute_markers(msg[*], markers);
-		return msg;
-	}
-
-	echoable_message handle_command(object|mapping person, string msg)
+	void handle_command(object|mapping person, string msg, mapping defaults)
 	{
 		if (config->noticechat && person->user && has_value(lower_case(msg), config->noticeme||""))
 		{
@@ -385,56 +344,82 @@ class channel_notif
 		person->measurement_offset = offset;
 		//Functions do not get %s handling. If they want it, they can do it themselves,
 		//and if they don't want it, it would mess things up badly to do it here.
-		if (functionp(cmd)) return cmd(this, person, param);
-		mapping vars = persist_status->path("variables")[name] || ([]);
-		return substitute_markers(cmd, vars | (["%s": param]));
+		//(They still get other variable handling.)
+		if (functionp(cmd)) send(person, cmd(this, person, param));
+		else send(person, cmd, (["%s": param]));
 	}
 
-	void wrap_message(object|mapping person, echoable_message info, mapping|void defaults)
+	//For consistency, this is used for all vars substitutions. If, in the future,
+	//we make $UNKNOWN$ into an error, or an empty string, or something, this would
+	//be the place to do it.
+	string _substitute_vars(string text, mapping vars, mapping person)
 	{
-		if (!info) return;
-		if (!mappingp(info)) info = (["message": info]);
-		if (defaults) info = defaults | info;
-
-		//You shouldn't normally have (["message": ([ ... ]) ]) but it's legal.
-		while (mappingp(info->message)) info = info | info->message;
-
-		if (info->delay)
+		if (config->noticechat && !vars->participant && has_value(text, "$participant$") && person->user)
 		{
-			call_out(wrap_message, (int)info->delay, person, info | (["delay": 0]), defaults);
-			return;
-		}
-
-		echoable_message msg = info->message;
-		if (arrayp(msg))
-		{
-			if (info->mode == "random") wrap_message(person, random(msg), info);
-			else wrap_message(person, msg[*], info);
-			return;
-		}
-
-		//And now we have just a single string to send. But it might be too long, so wrap it.
-		string prefix = replace(info->prefix || "", "$$", person->displayname);
-		msg = replace(msg, "$$", person->displayname);
-		if (config->noticechat && has_value(msg, "$participant$"))
-		{
-			//Note that $participant$ with a delay will invite people to be active before the timer runs out.
+			//Note that $participant$ with a delay will invite people to be active
+			//before the timer runs out, but only if there's no $participant$ prior
+			//to the delay.
 			array users = ({ });
 			int limit = time() - config->timeout;
 			foreach (G_G_("participants", name[1..]); string name; mapping info)
 				if (info->lastnotice >= limit && name != person->user) users += ({name});
 			//If there are no other chat participants, pick the person speaking.
 			string chosen = sizeof(users) ? random(users) : person->user;
-			msg = replace(msg, "$participant$", chosen);
-			//TODO maybe: Support /w $participant$?
+			vars->participant = chosen;
 		}
-		string dest = info->dest || name;
-		if (dest == "/w $$") dest = "/w " + person->user;
+		return replace(text, vars);
+	}
+
+	void _send_recursive(mapping person, echoable_message message, mapping vars)
+	{
+		if (!message) return;
+		if (!mappingp(message)) message = (["message": message]);
+		else while (mappingp(message->message)) message = message | message->message;
+
+		if (message->delay)
+		{
+			call_out(_send_recursive, (int)message->delay, person, message | (["delay": 0, "changevars": 1]));
+			return;
+		}
+		if (message->changevars)
+		{
+			//When a delayed message gets sent, override any channel variables
+			//with their new values. There are some bizarre corner cases that
+			//could result from this (eg if you delete a variable, it'll still
+			//exist in the delayed version), but there's no right way to do it.
+			vars = vars | (persist_status->path("variables")[name] || ([]));
+		}
+
+		echoable_message msg = message->message;
+		if (arrayp(msg))
+		{
+			if (message->mode == "random") msg = ({random(msg)});
+			foreach (msg, echoable_message m)
+				_send_recursive(person, message | (["message": m]), vars);
+			return;
+		}
+
+		if (message->counter)
+		{
+			//Deprecated, will be migrated to variables.
+			mapping counters = persist_status->path("counters", name);
+			string action = message->action || "";
+			if (sscanf(action, "+%d", int n)) counters[message->counter] += n;
+			else if (action == "=0") m_delete(counters, message->counter); //Special-case zeroing to allow people to remove junk
+			else if (sscanf(action, "=%d", int n)) counters[message->counter] = n;
+			else if (action == "=%s") counters[message->counter] = (int)vars["%s"];
+			persist_status->save();
+			vars["%d"] = (string)counters[message->counter];
+		}
+
+		//And now we have just a single string to send.
+		string prefix = _substitute_vars(message->prefix || "", vars, person);
+		string dest = _substitute_vars(message->dest || name, vars, person);
+		msg = _substitute_vars(msg, vars, person);
 		if (sscanf(dest, "/web %s", string recip) && recip)
 		{
 			//Stash the text away. Recommendation: Have a public message that informs the
 			//recipient that info is available at https://sikorsky.rosuav.com/channels/%s/private
-			if (recip == "$$") recip = person->user;
 			mapping n2u = persist_status->path("name_to_uid");
 			string uid = n2u[lower_case(recip)]; //Yes, it's a string, even though it's always going to be digits
 			if (!uid)
@@ -454,6 +439,28 @@ class channel_notif
 				return; //Nothing more to send here.
 			}
 		}
+
+		//Variable management. Note that these are silent, so they should normally
+		//be paired with public messages.
+		if (sscanf(dest, "/set %s", string var) && var)
+		{
+			//Save to a variable. Keeps the string exactly as-is.
+			var = "$" + var + "$";
+			persist_status->path("variables", name)[var] = vars[var] = msg;
+			persist_status->save();
+			return;
+		}
+		if (sscanf(dest, "/add %s", string var) && var)
+		{
+			//Add to a variable, REXX-style (decimal digits in strings).
+			//Anything unparseable is considered to be zero.
+			var = "$" + var + "$";
+			msg = (string)((int)vars[var] + (int)msg);
+			persist_status->path("variables", name)[var] = vars[var] = msg;
+			persist_status->save();
+			return;
+		}
+
 		//VERY simplistic form of word wrap.
 		while (sizeof(msg) > 400)
 		{
@@ -461,6 +468,28 @@ class channel_notif
 			send_message(dest, sprintf("%s%s%s ...", prefix, piece, word), mods[bot_nick]);
 		}
 		send_message(dest, prefix + msg, mods[bot_nick]);
+	}
+
+	//Send any sort of echoable message.
+	//The vars will be augmented by channel variables, and can be changed in flight.
+	//NOTE: To specify a default destination but allow it to be overridden, just wrap
+	//the entire message up in another layer: (["message": message, "dest": "..."])
+	//NOTE: Messages are a hybrid of a tree and a sequence. Attributes apply to the
+	//tree (eg setting a dest applies it to that branch, and setting a delay will
+	//defer sending of that entire subtree), but vars apply linearly, EXCEPT that
+	//changes apply at time of sending. This creates a minor wart in the priority of
+	//variables; normally, something in the third arg takes precedence over a channel
+	//var of the same name, but if the message is delayed, the inverse is true. This
+	//should never actually affect anything, though, as vars should contain things
+	//like "%s", and channel variables are like "$foo$".
+	//NOTE: Variables should be able to be used in any user-editable text. This means
+	//that all messages involving user-editable text need to come through send(), and
+	//any that don't should be considered buggy.
+	void send(mapping person, echoable_message message, mapping|void vars)
+	{
+		vars = (persist_status->path("variables")[name] || ([])) | vars;
+		vars["$$"] = person->displayname || person->user;
+		_send_recursive(person, message, vars);
 	}
 
 	void record_raid(int fromid, string fromname, int toid, string toname, int|void ts)
@@ -650,7 +679,7 @@ class channel_notif
 			{
 				if (lower_case(person->nick) == lower_case(bot_nick)) {lastmsgtime = time(1); modmsgs = 0;}
 				if (person->badges) mods[person->user] = person->badges->_mod;
-				wrap_message(person, handle_command(person, msg), responsedefaults);
+				handle_command(person, msg, responsedefaults);
 				if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->displayname+" "+slashme;
 				//For some reason, whispers show up with "/me" at the start, not "ACTION".
 				else if (sscanf(msg, "/me %s", string slashme)) msg = person->displayname+" "+slashme;
@@ -700,8 +729,7 @@ class channel_notif
 		echoable_message response = G->G->echocommands[special + name];
 		if (!response) return;
 		if (has_value(info, 0)) werror("DEBUG: Special %O got info %O\n", special, info); //Track down those missing-info errors
-		mapping vars = persist_status->path("variables")[name] || ([]);
-		wrap_message(person, substitute_markers(response, vars | info));
+		send(person, response, info);
 	}
 }
 
