@@ -402,6 +402,11 @@ class channel_notif
 		if (message->counter)
 		{
 			//Deprecated, will be migrated to variables.
+			//TODO: Keep the action and counter attributes as conveniences
+			//It's much easier to create a counter command that way than to have a
+			//two-response command, one going to the var, one going to the output;
+			//but this form would be defined in terms of the two-response form. The
+			//persist path counters->#channel will be fully deprecated though.
 			mapping counters = persist_status->path("counters", name);
 			string action = message->action || "";
 			if (sscanf(action, "+%d", int n)) counters[message->counter] += n;
