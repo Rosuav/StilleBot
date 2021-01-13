@@ -12,6 +12,23 @@
   - NOTE: As of 2021-01-13, all variables are stored in persist_status->variables->#chan->$var$
     and any that aren't dollar-bracketed are buggy. This may change in the future, with
     the persisted mapping NOT having the dollar signs.
+  - In command management, offer a list of all variables that currently have values, and:
+    - Save this line to this variable (instead of saying it in chat) - number or string
+    - Add this line to this variable (instead of saying it in chat)
+    - Add 1 to this variable (before saying this in chat)
+    - Reset this variable to "0" (before saying this in chat)
+  - In variable management, offer the same list, and:
+    - Manually change the value and save
+    - Delete the variable, with warnings
+      - Scan all commands. If anything sets it, warn that that command would recreate it.
+      - Scan all commands. If anything references it, warn that that won't work.
+      - External access. These will be invalidated even if the variable is recreated.
+    - Create external access link. It'll give you a link and save a nonce for auth.
+    - Revoke exetrnal access link. (There can be multiple.) Should they be describable?
+  - Migration from older counter system
+    - Usage of a counter becomes variable interpolation.
+    - Resetting a counter becomes a reset of the variable (not by destination)
+    - Incrementing a counter becomes an increment (again, not by destination)
 * Thank people for hosting (effectively a spam command triggered by a host notice)
   - Currently this is better done with Lisp Whispers, since distinguishing autohosts from
     explicit hosts requires authentication as the broadcaster.
