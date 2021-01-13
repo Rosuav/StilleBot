@@ -122,9 +122,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					//TODO: Allow the format to be customized
 					//TODO: Have a configurable delay before the message is sent.
 					//(Helps with synchronization a bit.)
-					channel->wrap_message((["displayname": ""]),
-						"Now playing: " + track,
-					);
+					send_message(channel->name, "Now playing: " + track);
 				}
 				status->current = track;
 			}
