@@ -24,7 +24,7 @@
       - Scan all commands. If anything references it, warn that that won't work.
       - External access. These will be invalidated even if the variable is recreated.
     - Create external access link. It'll give you a link and save a nonce for auth.
-    - Revoke exetrnal access link. (There can be multiple.) Should they be describable?
+    - Revoke external access link. (There can be multiple.) Should they be describable?
   - Migration from older counter system
     - Usage of a counter becomes variable interpolation.
     - Resetting a counter becomes a reset of the variable (not by destination)

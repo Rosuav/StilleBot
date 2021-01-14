@@ -1,3 +1,4 @@
+//TODO: Replace this with a redirect to ./variables
 inherit http_endpoint;
 
 void verify_response(string cmdname, echoable_message response, mapping counterdata, int modonly)

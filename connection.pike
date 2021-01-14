@@ -393,10 +393,13 @@ class channel_notif
 		echoable_message msg = message->message;
 		if (arrayp(msg))
 		{
-			if (message->mode == "random") msg = ({random(msg)});
-			foreach (msg, echoable_message m)
-				_send_recursive(person, message | (["message": m]), vars);
-			return;
+			if (message->mode == "random") msg = random(msg);
+			else
+			{
+				foreach (msg, echoable_message m)
+					_send_recursive(person, message | (["message": m]), vars);
+				return;
+			}
 		}
 
 		if (message->counter)
@@ -449,18 +452,14 @@ class channel_notif
 		//be paired with public messages.
 		if (sscanf(dest, "/set %s", string var) && var)
 		{
-			//Save to a variable. Keeps the string exactly as-is.
+			//Save to a variable.
 			var = "$" + var + "$";
-			persist_status->path("variables", name)[var] = vars[var] = msg;
-			persist_status->save();
-			return;
-		}
-		if (sscanf(dest, "/add %s", string var) && var)
-		{
-			//Add to a variable, REXX-style (decimal digits in strings).
-			//Anything unparseable is considered to be zero.
-			var = "$" + var + "$";
-			msg = (string)((int)vars[var] + (int)msg);
+			if (message->action == "add") {
+				//Add to a variable, REXX-style (decimal digits in strings).
+				//Anything unparseable is considered to be zero.
+				msg = (string)((int)vars[var] + (int)msg);
+			}
+			//Otherwise, keep the string exactly as-is.
 			persist_status->path("variables", name)[var] = vars[var] = msg;
 			persist_status->save();
 			return;
