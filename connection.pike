@@ -473,7 +473,7 @@ class channel_notif
 	//any that don't should be considered buggy.
 	void send(mapping person, echoable_message message, mapping|void vars)
 	{
-		vars = (persist_status->path("variables")[name] || ([])) | vars;
+		vars = (persist_status->path("variables")[name] || ([])) | (vars || ([]));
 		vars["$$"] = person->displayname || person->user;
 		_send_recursive(person, message, vars);
 	}
