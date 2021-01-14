@@ -16,6 +16,12 @@
     - Similarly, if it's been set to View, warn that the command won't work right after.
     - External access. These will be invalidated even if the variable is recreated.
     - Allow cascading deletion
+* Conditional messages. Two values with variable substitution, and a comparison. If true,
+  proceed as normal; if false, ignore this message (and thus its subtree if applicable).
+  - Optional data typing - convert to int or float before comparison. Mainly useful for
+    inequalities, since "20" > "100" but 20 < 100.
+  - Is there a good way to give an "else"? I'd rather not force people to replicate the
+    condition and invert it. Perhaps (["message": "yes", "elsemessage": "no"]) ?
 * Thank people for hosting (effectively a spam command triggered by a host notice)
   - Currently this is better done with Lisp Whispers, since distinguishing autohosts from
     explicit hosts requires authentication as the broadcaster.
