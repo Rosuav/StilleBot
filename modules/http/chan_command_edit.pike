@@ -4,7 +4,6 @@ inherit http_endpoint;
 //Blank or null is always allowed, and will result in no flag being set.
 constant valid_flags = ([
 	"mode": (<"random">),
-	"dest": (<"/w $$", "/w %s", "/web $$", "/web %s">),
 	"access": (<"mod">),
 	"visibility": (<"hidden">),
 	"action": (<"+1", "=0">),
@@ -29,9 +28,15 @@ echoable_message validate(echoable_message resp)
 	{
 		if (ok[resp[flag]]) ret[flag] = resp[flag];
 	}
-	//Since counters are named as arbitrary strings, validate that separately.
-	if (resp->counter && sscanf(resp->counter, "%[a-z]", string c) && c == resp->counter)
-		ret->counter = c;
+	//Since destinations can contain variable references and such, validate them separately.
+	if (resp->dest && has_prefix(resp->dest, "/"))
+	{
+		sscanf(resp->dest, "/%[a-z] %[a-zA-Z$%]%s", string dest, string target, string empty);
+		if ((<"w", "web", "set">)[dest] && target != "" && empty == "")
+			ret->dest = sprintf("/%s %s", dest, target);
+		//TODO: Ensure that "%" shows up only as "%s", and that dollar signs are
+		//properly paired and surround legit variables
+	}
 	//Delays are integer seconds. We'll permit a string of digits, since that might be
 	//easier for the front end.
 	if (resp->delay && resp->delay != "0" &&

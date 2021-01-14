@@ -1,7 +1,7 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
 const {BR, BUTTON, INPUT, DIV, DETAILS, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTION, FIELDSET, CODE} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
-const all_flags = "mode dest access visibility counter action".split(" ");
+const all_flags = "mode dest access visibility action".split(" ");
 
 on("click", "button.addline", e => {
 	let parent = e.match.closest("td").previousElementSibling;
@@ -14,11 +14,10 @@ on("click", "button.addline", e => {
 
 const flags = {
 	mode: {"": "Sequential", random: "Random", "*": "Where multiple responses are available, send them all or pick one at random?"},
-	dest: {"": "Chat", "/w $$": "Whisper", "/w %s": "Whisper to target", "/web $$": "Private message", "/web %s": "Privately to target",
+	dest: {"": "Chat", "/w": "Whisper", "/web": "Private message", "/set": "Set a variable",
 		"*": "Where should the response be sent?"},
 	access: {"": "Anyone", mod: "Mods only", "*": "Who should be able to use this command?"},
 	visibility: {"": "Visible", hidden: "Hidden", "*": "Should the command be listed in !help and the non-mod commands view?"},
-	action: {"": "Leave unchanged", "+1": "Increment", "=0": "Reset to zero", "*": "If looking at a counter, what should it do to it?"},
 	delay: {"": "Immediate", "30": "30 seconds", "60": "1 minute", "120": "2 minutes", "300": "5 minutes", "1800": "Half hour",
 			"3600": "One hour", "7200": "Two hours", "*": "When should this be sent?"},
 };
@@ -48,6 +47,8 @@ function render_command(cmd, toplevel) {
 	if (!cmd.message) cmd = {message: cmd};
 	//Handle flags
 	const opts = [TR([TH("Option"), TH("Effect")])];
+	let m = /^(\/[a-z]+) ([a-zA-Z$%]+)$/.exec(cmd.dest);
+	if (m) {cmd.dest = m[1]; cmd.target = m[2];}
 	for (let flg in flags) {
 		if (!toplevel && toplevelflags.includes(flg)) continue;
 		const opt = [];
@@ -63,7 +64,7 @@ function render_command(cmd, toplevel) {
 			TD(flags[flg]["*"]),
 		]));
 	}
-	opts.push(TR([INPUT({"data-flag": "counter"}), TD("Name of counter to manipulate (see !addcounter)")]));
+	opts.push(TR([INPUT({"data-flag": "target", value: cmd.target || ""}), TD("For whisper, web, and variable destinations - who/what should it send to?")]));
 	const info = [
 		DETAILS({className: "flagstable"}, [
 			SUMMARY("Flags"),
@@ -96,10 +97,15 @@ function get_command_details(elem, toplevel) {
 	//Otherwise it's a full options-and-messages setup.
 	const ret = {message: []};
 	for (elem = elem.firstElementChild; elem; elem = elem.nextElementSibling) {
-		if (elem.classList.contains("flagstable"))
+		if (elem.classList.contains("flagstable")) {
 			elem.querySelectorAll("[data-flag]").forEach(flg => {
 				if (flg.value !== "") ret[flg.dataset.flag] = flg.value;
 			});
+			if (ret.target && ret.dest && ret.dest[0] === "/") {
+				ret.dest += " " + ret.target;
+				delete ret.target;
+			}
+		}
 		else {
 			const msg = get_command_details(elem);
 			if (msg) ret.message.push(msg);

@@ -94,8 +94,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string c = req->misc->channel->name;
 	array counters = ({ }), order = ({ }), messages = ({ });
 	mapping rawdata = persist_status->path("variables", c);
-	//Convert (["x": "1"]) into (["x": (["curval": "1"])]) to allow us to add metadata
-	mapping variabledata = mkmapping(indices(rawdata), (["curval": values(rawdata)[*]]));
+	//Prune any bad entries. Shouldn't be needed. We WILL need a manual delete function though.
+	foreach (indices(rawdata), string var) if (sizeof(var) < 3 || var[0] != '$' || var[-1] != '$') {
+		m_delete(rawdata, var);
+		persist_status->save();
+	}
 	if (req->misc->is_mod && sscanf(req->variables->newcounter || "", "%[a-zA-Z]", string counter) && counter != "")
 	{
 		//Create some simple commands. This isn't designed for editing, although
@@ -111,8 +114,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			messages += ({sprintf("* Creating %s command !%s", kw, cmd)});
 			make_echocommand(cmd + c, this["build_" + kw](counter, resp));
 		}
-		if (!rawdata[counter]) {rawdata[counter] = "0"; persist_status->save();}
+		if (!rawdata["$" + counter + "$"]) {rawdata["$" + counter + "$"] = "0"; persist_status->save();}
 	}
+	//Convert (["x": "1"]) into (["x": (["curval": "1"])]) to allow us to add metadata
+	mapping variabledata = mkmapping(indices(rawdata), (["curval": values(rawdata)[*]]));
 	foreach (G->G->echocommands; string cmd; echoable_message response) if (!has_prefix(cmd, "!") && has_suffix(cmd, c))
 	{
 		//NOTE: This makes a number of assumptions about the response. Commands that
