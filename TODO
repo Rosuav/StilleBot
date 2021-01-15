@@ -4,11 +4,9 @@
     - Possibly ROOMSTATE, but I'm not receiving those.
 * Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
 * Variables.
-  - Tie in with a potential browsersource so "!jackbox ABCD" could put the code on screen
   - NOTE: As of 2021-01-13, all variables are stored in persist_status->variables->#chan->$var$
     and any that aren't dollar-bracketed are buggy. This may change in the future, with
     the persisted mapping NOT having the dollar signs.
-  - Create external access link. It'll give you a link and save a nonce for auth.
   - Revoke external access link. (There can be multiple.) Should they be describable?
   - In variable management, allow variables to be deleted.
     - After check_for_variables, if it's been set to anything other than View, warn that
