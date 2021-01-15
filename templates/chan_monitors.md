@@ -7,5 +7,5 @@
 
 The text can (and should!) incorporate variables, eg <code>$foo$</code>. Whenever the variable changes, this will update.
 
-<script>let monitors = $$monitors$$;</script>
+<script>let channame = $$channame$$, monitors = $$monitors$$;</script>
 <script type=module src="$$static||monitors.js$$"></script>

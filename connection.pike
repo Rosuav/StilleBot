@@ -443,12 +443,14 @@ class channel_notif
 			}
 			//Otherwise, keep the string exactly as-is.
 			persist_status->path("variables", name)[var] = vars[var] = msg;
-			//TODO: Notify those that depend on this.
-			//Each dependent will have a nonce, and that nonce will be associated with
-			//a single channel, eg persist_status->path("varusage", name, var) which
-			//would be an array of nonces that depend on this variable. A websocket
-			//group nonce + name (eg "abcdef1234#rosuav") within a type of "varusage"
-			//would then get the notifications.
+			//Notify those that depend on this.
+			//TODO: Defer this until the next tick (with call_out 0), so that multiple
+			//changes can be batched, reducing flicker.
+			foreach (config->monitors || ([]); string nonce; string text) {
+				if (!has_value(text, var)) continue;
+				array group = G->G->websocket_groups->chan_monitors[nonce + name];
+				if (group) (group - ({0}))->send_text(Standards.JSON.encode((["cmd": "update", "text": expand_variables(text)])));
+			}
 			persist_status->save();
 			return;
 		}

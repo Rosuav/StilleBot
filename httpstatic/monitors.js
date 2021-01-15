@@ -6,7 +6,7 @@ function update_monitors() {
 		TD(FORM({id: "upd_" + nonce}, INPUT({size: 40, value: monitors[nonce], name: "text"}))),
 		TD(INPUT({type: "submit", value: "Save", form: "upd_" + nonce})),
 		//TODO: Actual delete button (not just "blank the text to delete")
-		TD(A({href: "..."}, "Drag me to OBS")),
+		TD(A({href: "monitors?view=" + nonce}, "Drag me to OBS")),
 	]));
 	const table = DOM("#monitors tbody");
 	rows.unshift(table.firstChild);

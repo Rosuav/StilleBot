@@ -1,11 +1,20 @@
 inherit http_endpoint;
 inherit websocket_handler;
 
-//(websocket_groups[channel] - ({0}))->send_text(Standards.JSON.encode(state));
-
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping cfg = req->misc->channel->config;
+	if (req->variables->view) {
+		//Unauthenticated viewing endpoint. Depends on an existing nonce.
+		string nonce = req->variables->view;
+		string text;
+		if (!cfg->monitors || !cfg->monitors[nonce]) nonce = 0;
+		else text = cfg->monitors[nonce];
+		return render_template("monitor.html", ([
+			"text": text ? req->misc->channel->expand_variables(text) : "Unknown monitor",
+			"nonce": Standards.JSON.encode(nonce + req->misc->channel->name),
+		]));
+	}
 	if (req->request_type == "PUT") {
 		//API handling.
 		if (!req->misc->is_mod) return (["error": 401]); //JS wants it this way, not a redirect that a human would like
@@ -33,6 +42,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (!req->misc->is_mod) return redirect(".");
 	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render_template("chan_monitors.md", ([
+		"channame": Standards.JSON.encode(req->misc->channel->name[1..]),
 		"monitors": Standards.JSON.encode(cfg->monitors || ([]), 4),
 	]) | req->misc->chaninfo);
 }
@@ -53,7 +63,7 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!msg) return;
 	if (msg->cmd == "refresh" || msg->cmd == "init")
 	{
-		conn->sock->send_text(Standards.JSON.encode((["text": get_text(conn)])));
+		conn->sock->send_text(Standards.JSON.encode((["cmd": "update", "text": get_text(conn)])));
 	}
 }
 
