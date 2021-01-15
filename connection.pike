@@ -443,6 +443,12 @@ class channel_notif
 			}
 			//Otherwise, keep the string exactly as-is.
 			persist_status->path("variables", name)[var] = vars[var] = msg;
+			//TODO: Notify those that depend on this.
+			//Each dependent will have a nonce, and that nonce will be associated with
+			//a single channel, eg persist_status->path("varusage", name, var) which
+			//would be an array of nonces that depend on this variable. A websocket
+			//group nonce + name (eg "abcdef1234#rosuav") within a type of "varusage"
+			//would then get the notifications.
 			persist_status->save();
 			return;
 		}
@@ -476,6 +482,15 @@ class channel_notif
 		vars = (persist_status->path("variables")[name] || ([])) | (vars || ([]));
 		vars["$$"] = person->displayname || person->user;
 		_send_recursive(person, message, vars);
+	}
+
+	//Expand all channel variables, except for $participant$ which usually won't
+	//make sense anyway. If you want $$ or %s or any of those, provide them in the
+	//second parameter; otherwise, just expand_variables("Foo is $foo$.") is enough.
+	string expand_variables(string text, mapping|void vars)
+	{
+		vars = (persist_status->path("variables")[name] || ([])) | (vars || ([]));
+		return _substitute_vars(text, vars, ([]));
 	}
 
 	void record_raid(int fromid, string fromname, int toid, string toname, int|void ts)
