@@ -6,7 +6,7 @@ function update_monitors() {
 		TD(FORM({id: "upd_" + nonce}, INPUT({size: 40, value: monitors[nonce], name: "text"}))),
 		TD(INPUT({type: "submit", value: "Save", form: "upd_" + nonce})),
 		//TODO: Actual delete button (not just "blank the text to delete")
-		TD(A({href: "monitors?view=" + nonce}, "Drag me to OBS")),
+		TD(A({className: "monitorlink", href: "monitors?view=" + nonce}, "Drag me to OBS")),
 	]));
 	const table = DOM("#monitors tbody");
 	rows.unshift(table.firstChild);
@@ -33,4 +33,9 @@ on("submit", "#monitors form", async e => {
 	monitors[res.nonce] = res.text; //May now be null, which will suppress the display
 	//TODO: Display res.sample somewhere
 	update_monitors();
+});
+
+on("dragstart", ".monitorlink", e => {
+	const url = `${e.match.href}&layer-name=StilleBot%20monitor&layer-width=400&layer-height=120`;
+	e.dataTransfer.setData("text/uri-list", url);
 });
