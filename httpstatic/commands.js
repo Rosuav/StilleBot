@@ -16,6 +16,7 @@ const flags = {
 	mode: {"": "Sequential", random: "Random", "*": "Where multiple responses are available, send them all or pick one at random?"},
 	dest: {"": "Chat", "/w": "Whisper", "/web": "Private message", "/set": "Set a variable",
 		"*": "Where should the response be sent?"},
+	action: {"": "Set the value", "add": "Add to the value", "*": "When setting a variable, should it increment or replace?"},
 	access: {"": "Anyone", mod: "Mods only", "*": "Who should be able to use this command?"},
 	visibility: {"": "Visible", hidden: "Hidden", "*": "Should the command be listed in !help and the non-mod commands view?"},
 	delay: {"": "Immediate", "30": "30 seconds", "60": "1 minute", "120": "2 minutes", "300": "5 minutes", "1800": "Half hour",

@@ -31,10 +31,16 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (body->text == "") m_delete(cfg->monitors, nonce);
 		else cfg->monitors[nonce] = body->text;
 		persist_config->save();
+		string sample;
+		if (cfg->monitors[nonce]) {
+			sample = req->misc->channel->expand_variables(cfg->monitors[nonce]);
+			array group = websocket_groups[nonce + req->misc->channel->name];
+			if (group) (group - ({0}))->send_text(Standards.JSON.encode((["cmd": "update", "text": sample])));
+		}
 		return (["data": Standards.JSON.encode(([
 				"nonce": nonce,
 				"text": cfg->monitors[nonce],
-				"sample": cfg->monitors[nonce] && req->misc->channel->expand_variables(cfg->monitors[nonce]),
+				"sample": sample,
 			])),
 			"type": "application/json",
 		]);

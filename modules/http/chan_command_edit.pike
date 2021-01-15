@@ -6,7 +6,7 @@ constant valid_flags = ([
 	"mode": (<"random">),
 	"access": (<"mod">),
 	"visibility": (<"hidden">),
-	"action": (<"+1", "=0">),
+	"action": (<"add">),
 ]);
 
 echoable_message validate(echoable_message resp)
