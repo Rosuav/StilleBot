@@ -45,7 +45,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			"type": "application/json",
 		]);
 	}
-	if (!req->misc->is_mod) return render_template("login.md", ([]));
+	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
 	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render_template("chan_monitors.md", ([
 		"channame": Standards.JSON.encode(req->misc->channel->name[1..]),
