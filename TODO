@@ -7,12 +7,11 @@
   - NOTE: As of 2021-01-13, all variables are stored in persist_status->variables->#chan->$var$
     and any that aren't dollar-bracketed are buggy. This may change in the future, with
     the persisted mapping NOT having the dollar signs.
-  - Revoke external access link. (There can be multiple.) Should they be describable?
   - In variable management, allow variables to be deleted.
     - After check_for_variables, if it's been set to anything other than View, warn that
       it'll recreate the variable on next use.
     - Similarly, if it's been set to View, warn that the command won't work right after.
-    - External access. These will be invalidated even if the variable is recreated.
+    - Scan for monitors too - they're the same as a view command
     - Allow cascading deletion
 * Conditional messages. Two values with variable substitution, and a comparison. If true,
   proceed as normal; if false, ignore this message (and thus its subtree if applicable).
