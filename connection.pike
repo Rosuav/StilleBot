@@ -446,10 +446,10 @@ class channel_notif
 			//Notify those that depend on this.
 			//TODO: Defer this until the next tick (with call_out 0), so that multiple
 			//changes can be batched, reducing flicker.
-			foreach (config->monitors || ([]); string nonce; string text) {
-				if (!has_value(text, var)) continue;
+			foreach (config->monitors || ([]); string nonce; mapping info) {
+				if (!has_value(info->text, var)) continue;
 				array group = G->G->websocket_groups->chan_monitors[nonce + name];
-				if (group) (group - ({0}))->send_text(Standards.JSON.encode((["cmd": "update", "text": expand_variables(text)])));
+				if (group) (group - ({0}))->send_text(Standards.JSON.encode((["cmd": "update", "text": expand_variables(info->text)])));
 			}
 			persist_status->save();
 			return;
