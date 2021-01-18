@@ -19,6 +19,16 @@
     inequalities, since "20" > "100" but 20 < 100.
   - Is there a good way to give an "else"? I'd rather not force people to replicate the
     condition and invert it. Perhaps (["message": "yes", "elsemessage": "no"]) ?
+  - Command cooldowns. If you set a cooldown on a command (at the top level - wouldn't
+    apply to subcommands), it will automatically become conditional, with "not in
+    cooldown" as the condition. You could then add an else that would be the failure
+    message. A few ways to use that:
+    - Short cooldown, no else. A simple squelch effect (command can't be used inside
+      fifteen seconds).
+    - Long cooldown, 'else' has alternate message. Command gives you some actual benefit,
+      and you can only use it once every hour.
+    - Very short cooldown (2 seconds), 'else' adds to variable and has output with a two
+      second delay that emits everything from the variable. Will batch up busy responses.
 * Across an update of connection.pike, retain the mod list, until such time as we get an
   updated list.
 * Thank people for hosting (effectively a spam command triggered by a host notice)
@@ -46,6 +56,9 @@
   one of the specified channels.
   - Would be good for the !hypetrain command, especially, since it could then be activated
     independently to the allcmds status (cf DeviCat).
+  - Maybe have (separate to allcmds) a "web-and-echocommands" status? It'd allow mods to
+    use all the features of the web interface, but wouldn't activate allcmds. Or maybe that
+    would turn out to be identical to "allcmds on, but then disable each command".
 * On the bot's emote list, allow search/filter by text
 * Advanced timer functionality
   - If there's already a timer of this command happening, allow the user to pick whether it
