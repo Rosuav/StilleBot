@@ -30,6 +30,16 @@
 * Go through all the web config pages and add user() to any user-defined text
 * Use the "special responses" system to customize texts like shoutouts? Would need a way
   to provide default text, and then explicitly removing it would mean "don't do this".
+* Allow commands to contain spaces. They cannot ever be invoked that way, but some commands
+  could look for them, so for instance shoutout.pike could look for "!so someusername" and
+  if found, use that text instead. (Thanks Mirror for the idea!)
+* More specials!
+  - Next song (VLC integration), stream now live, incoming raid
+  - Categorize them. The current specials would be "stream support" or something, and
+    there could be categories for other things
+  - Maybe incorporate shoutouts and specific shoutouts into this?
+  - Allow specials to utilize the full power of the command editor. For instance, a special
+    could store something into a variable, thus making it available to the web.
 * Allow the bot's commands to be individually enabled and disabled for a particular channel
   using the web interface. Would be subordinate to the active_channels feature, which gives
   a hard restriction and would prevent the command from showing up for enabling if it's not
@@ -37,9 +47,6 @@
   - Would be good for the !hypetrain command, especially, since it could then be activated
     independently to the allcmds status (cf DeviCat).
 * On the bot's emote list, allow search/filter by text
-* Allow commands to contain spaces. They cannot ever be invoked that way, but some commands
-  could look for them, so for instance shoutout.pike could look for "!so someusername" and
-  if found, use that text instead. (Thanks Mirror for the idea!)
 * Advanced timer functionality
   - If there's already a timer of this command happening, allow the user to pick whether it
     adds another independent one (current behaviour), restarts the timer (cancel existing
