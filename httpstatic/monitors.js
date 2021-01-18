@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, DETAILS, SUMMARY, FORM, INPUT, TABLE, TR, TH, TD} = choc;
+const {A, BR, BUTTON, DETAILS, SUMMARY, FORM, INPUT, TABLE, TR, TH, TD} = choc;
 
 function set_values(info, elem) {
 	if (!info) return 0;
@@ -26,7 +26,10 @@ function update_monitors() {
 			//TODO: Word wrap? (if disabled, "white-space: pre")
 			TR([TD("Custom CSS:"), TD(INPUT({name: "css", size: 40}))]),
 		]))])),
-		TD(INPUT({type: "submit", value: "Save", form: "upd_" + nonce})),
+		TD([
+			INPUT({type: "submit", value: "Save", form: "upd_" + nonce}),
+			BUTTON({type: "button", className: "deletebtn", "data-nonce": nonce}, "Delete?"),
+		]),
 		//TODO: Actual delete button (not just "blank the text to delete")
 		TD(A({className: "monitorlink", href: "monitors?view=" + nonce}, "Drag me to OBS")),
 	])));
@@ -43,10 +46,10 @@ on("submit", "#monitors form", async e => {
 	const nonce = e.match.id.slice(4);
 	const body = {nonce};
 	("text " + css_attributes).split(" ").forEach(attr => {
+		if (!e.match.elements[attr]) return;
 		body[attr] = e.match.elements[attr].value;
 		if (nonce === "") e.match.elements[attr].value = "";
 	});
-	//if (body.text === "") error out, once we have a proper way to delete
 	const res = await (await fetch("monitors", {
 		method: "PUT",
 		headers: {"Content-Type": "application/json"},
@@ -56,6 +59,27 @@ on("submit", "#monitors form", async e => {
 	monitors[res.nonce] = res.text; //May now be null, which will suppress the display
 	//TODO: Display res.sample somewhere
 	update_monitors();
+});
+
+const deleting = { };
+on("click", ".deletebtn", async e => {
+	const nonce = e.match.dataset.nonce;
+	const confirm = deleting[nonce] || 0;
+	if (confirm > +new Date) {
+		//Actually delete
+		console.log("Delete.");
+		await fetch("monitors", {
+			method: "DELETE",
+			headers: {"Content-Type": "application/json"},
+			body: JSON.stringify({nonce}),
+		}); //TODO: Check that it succeeded
+		monitors[nonce] = 0;
+		update_monitors();
+		return;
+	}
+	deleting[nonce] = 10000 + +new Date;
+	e.match.innerHTML = "Confirm?";
+	setTimeout(btn => btn.innerHTML = "Delete?", 10000, e.match);
 });
 
 on("dragstart", ".monitorlink", e => {

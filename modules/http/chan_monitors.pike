@@ -30,19 +30,14 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			//(by 4 base64 characters), to allow them to be distinguished for debugging.
 			nonce = replace(MIME.encode_base64(random_string(27)), (["/": "1", "+": "0"]));
 		}
-		if (body->text == "") m_delete(cfg->monitors, nonce);
-		else {
-			mapping info = cfg->monitors[nonce] = (["text": body->text]);
-			//TODO: Validate the individual values?
-			foreach (css_attributes / " ", string key) if (body[key]) info[key] = body[key];
-		}
+		mapping info = cfg->monitors[nonce] = (["text": body->text]);
+		//TODO: Validate the individual values?
+		foreach (css_attributes / " ", string key) if (body[key]) info[key] = body[key];
 		persist_config->save();
 		string sample;
-		if (cfg->monitors[nonce]) {
-			sample = req->misc->channel->expand_variables(cfg->monitors[nonce]->text);
-			array group = websocket_groups[nonce + req->misc->channel->name];
-			if (group) (group - ({0}))->send_text(Standards.JSON.encode(cfg->monitors[nonce] | (["cmd": "update", "text": sample])));
-		}
+		sample = req->misc->channel->expand_variables(cfg->monitors[nonce]->text);
+		array group = websocket_groups[nonce + req->misc->channel->name];
+		if (group) (group - ({0}))->send_text(Standards.JSON.encode(cfg->monitors[nonce] | (["cmd": "update", "text": sample])));
 		return (["data": Standards.JSON.encode(([
 				"nonce": nonce,
 				"text": cfg->monitors[nonce],
@@ -50,6 +45,16 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			])),
 			"type": "application/json",
 		]);
+	}
+	if (req->request_type == "DELETE") {
+		if (!req->misc->is_mod) return (["error": 401]); //JS wants it this way, not a redirect that a human would like
+		mixed body = Standards.JSON.decode(req->body_raw);
+		if (!body || !mappingp(body) || !stringp(body->nonce)) return (["error": 400]);
+		string nonce = body->nonce;
+		if (!cfg->monitors || !cfg->monitors[nonce]) return (["error": 404]);
+		m_delete(cfg->monitors, nonce);
+		persist_config->save();
+		return (["error": 204]);
 	}
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
 	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
