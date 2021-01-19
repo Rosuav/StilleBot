@@ -1,10 +1,10 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, DETAILS, SUMMARY, FORM, INPUT, TABLE, TR, TH, TD} = choc;
+const {A, BR, BUTTON, DETAILS, SUMMARY, FORM, INPUT, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
 
 function set_values(info, elem) {
 	if (!info) return 0;
 	for (let attr in info) {
-		const el = elem.querySelector("input[name=" + attr + "]");
+		const el = elem.querySelector("[name=" + attr + "]");
 		if (el) el.value = info[attr];
 	}
 	return elem;
@@ -23,7 +23,17 @@ function update_monitors() {
 			//TODO: Gradient?
 			//TODO: Border?
 			//TODO: Drop shadow?
-			//TODO: Word wrap? (if disabled, "white-space: pre")
+			TR([TD("Formatting:"), TD(SELECT({name: "whitespace"}, [
+				OPTGROUP({label: "Single line"}, [
+					OPTION({value: "normal"}, "Wrapped"),
+					OPTION({value: "nowrap"}, "No wrapping"),
+				]),
+				OPTGROUP({label: "Multi-line"}, [
+					OPTION({value: "pre-line"}, "Normal"),
+					OPTION({value: "pre"}, "Keep indents"),
+					OPTION({value: "pre-wrap"}, "No wrapping"),
+				]),
+			]))]),
 			TR([TD("Custom CSS:"), TD(INPUT({name: "css", size: 40}))]),
 		]))])),
 		TD([

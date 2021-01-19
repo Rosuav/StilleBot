@@ -1,7 +1,7 @@
 let socket;
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 //Map the CSS attributes on the server to the names used in element.style
-const css_attribute_names = {color: "color", font: "fontFamily"};
+const css_attribute_names = {color: "color", font: "fontFamily", whitespace: "white-space"};
 function connect()
 {
 	socket = new WebSocket(protocol + window.location.host + "/ws");
