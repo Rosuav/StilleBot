@@ -46,4 +46,4 @@ function connect()
 		}
 	};
 }
-if (window.nonce !== "") connect();
+if (window.nonce) connect();
