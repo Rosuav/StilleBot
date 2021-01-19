@@ -40,7 +40,6 @@ function update_monitors() {
 			INPUT({type: "submit", value: "Save", form: "upd_" + nonce}),
 			BUTTON({type: "button", className: "deletebtn", "data-nonce": nonce}, "Delete?"),
 		]),
-		//TODO: Actual delete button (not just "blank the text to delete")
 		TD(A({className: "monitorlink", href: "monitors?view=" + nonce}, "Drag me to OBS")),
 	])));
 	const table = DOM("#monitors tbody");
