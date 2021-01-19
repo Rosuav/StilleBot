@@ -1,7 +1,7 @@
 inherit http_endpoint;
 inherit websocket_handler;
 
-constant css_attributes = "font fontsize color css whitespace";
+constant css_attributes = "font fontsize color css whitespace previewbg";
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {

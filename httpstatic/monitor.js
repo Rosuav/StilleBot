@@ -3,7 +3,7 @@ const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 //Map the CSS attributes on the server to the names used in element.style
 const css_attribute_names = {color: "color", font: "fontFamily", whitespace: "white-space"};
 
-function update_display(elem, data) {
+function update_display(elem, data) { //Used for the preview as well as the live display
 	while (elem.lastChild) elem.removeChild(elem.lastChild);
 	elem.appendChild(document.createTextNode(data.text));
 	//Update styles. If the arbitrary CSS setting isn't needed, make sure it is "" not null.
