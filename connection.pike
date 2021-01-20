@@ -213,6 +213,7 @@ mapping(string:mixed) gather_person_info(object person, mapping params)
 			ret->emotes += ({({id, start, end})});
 		}
 	}
+	if (int bits = (int)params->bits) ret->bits = bits;
 	//ret->raw = params; //For testing
 	return ret;
 }
