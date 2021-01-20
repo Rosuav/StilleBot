@@ -6,7 +6,7 @@ const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 //Map the CSS attributes on the server to the names used in element.style
 const css_attribute_names = {color: "color", font: "fontFamily", whitespace: "white-space"};
 
-let thresholds = null, fillcolor, barcolor;
+let thresholds = null, fillcolor, barcolor, needlesize = 0.375;
 export default function update_display(elem, data, sample) { //Used for the preview as well as the live display
 	//Update styles. If the arbitrary CSS setting isn't needed, make sure it is "" not null.
 	if (data.css || data.css === "") {
@@ -19,6 +19,7 @@ export default function update_display(elem, data, sample) { //Used for the prev
 			barcolor = data.barcolor; fillcolor = data.fillcolor || data.barcolor;
 			//The rest of the style handling is below, since it depends on the text
 		}
+		if (data.needlesize) needlesize = +data.needlesize;
 		if (data.fontsize) elem.style.fontSize = data.fontsize + "px"; //Special-cased to add the unit
 		if (data.font) {
 			//Attempt to fetch fonts from Google Fonts if they're not installed already
@@ -55,8 +56,7 @@ export default function update_display(elem, data, sample) { //Used for the prev
 			mark = 100;
 			goal = thresholds[thresholds.length - 1];
 		}
-		let delta = 0.375; //Width of the red marker line (each side). TODO: Make configurable.
-		elem.style.background = `linear-gradient(.25turn, ${fillcolor} ${mark-delta}%, red, ${barcolor} ${mark+delta}%, ${barcolor})`;
+		elem.style.background = `linear-gradient(.25turn, ${fillcolor} ${mark-needlesize}%, red, ${barcolor} ${mark+needlesize}%, ${barcolor})`;
 		elem.style.display = "flex";
 		const fmt = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
 		set_content(elem, [DIV(text), DIV(fmt.format(pos / 100)), DIV(fmt.format(goal / 100))]);
