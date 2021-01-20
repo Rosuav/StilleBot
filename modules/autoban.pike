@@ -44,7 +44,7 @@ string process(object channel, object person, string param)
 	return sprintf("@$$: Done. Next time I see that, I'll automatically time out for %d seconds.", tm);
 }
 
-int message(object channel, object person, string msg)
+int message(object channel, mapping person, string msg)
 {
 	mapping autoban = channel->config->autoban;
 	if (!autoban) return 0;

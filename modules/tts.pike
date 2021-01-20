@@ -108,7 +108,7 @@ echoable_message process(object channel, object person, string param)
 	}
 }
 
-int message(object channel, object person, string msg)
+int message(object channel, mapping person, string msg)
 {
 	if (channel->name != G->G->tts_channel || !G->G->tts_queue) return 0;
 	if (has_prefix(msg, "!")) return 0; //Ignore bot commands

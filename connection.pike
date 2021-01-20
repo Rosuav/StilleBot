@@ -323,7 +323,7 @@ class channel_notif
 		return ({0, ""});
 	}
 
-	void handle_command(object|mapping person, string msg, mapping defaults)
+	void handle_command(mapping person, string msg, mapping defaults)
 	{
 		if (config->noticechat && person->user && has_value(lower_case(msg), config->noticeme||""))
 		{
