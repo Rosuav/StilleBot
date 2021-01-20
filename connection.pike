@@ -349,6 +349,29 @@ class channel_notif
 		else send(person, cmd, (["%s": param]));
 	}
 
+	string set_variable(string var, string val, string action)
+	{
+		var = "$" + var + "$";
+		mapping vars = persist_status->path("variables", name);
+		if (action == "add") {
+			//Add to a variable, REXX-style (decimal digits in strings).
+			//Anything unparseable is considered to be zero.
+			val = (string)((int)vars[var] + (int)val);
+		}
+		//Otherwise, keep the string exactly as-is.
+		vars[var] = val;
+		//Notify those that depend on this.
+		//TODO: Defer this until the next tick (with call_out 0), so that multiple
+		//changes can be batched, reducing flicker.
+		foreach (config->monitors || ([]); string nonce; mapping info) {
+			if (!has_value(info->text, var)) continue;
+			array group = G->G->websocket_groups->chan_monitors[nonce + name];
+			if (group) (group - ({0}))->send_text(Standards.JSON.encode((["cmd": "update", "text": expand_variables(info->text)])));
+		}
+		persist_status->save();
+		return val;
+	}
+
 	//For consistency, this is used for all vars substitutions. If, in the future,
 	//we make $UNKNOWN$ into an error, or an empty string, or something, this would
 	//be the place to do it.
@@ -434,24 +457,7 @@ class channel_notif
 		//be paired with public messages.
 		if (sscanf(dest, "/set %s", string var) && var)
 		{
-			//Save to a variable.
-			var = "$" + var + "$";
-			if (message->action == "add") {
-				//Add to a variable, REXX-style (decimal digits in strings).
-				//Anything unparseable is considered to be zero.
-				msg = (string)((int)vars[var] + (int)msg);
-			}
-			//Otherwise, keep the string exactly as-is.
-			persist_status->path("variables", name)[var] = vars[var] = msg;
-			//Notify those that depend on this.
-			//TODO: Defer this until the next tick (with call_out 0), so that multiple
-			//changes can be batched, reducing flicker.
-			foreach (config->monitors || ([]); string nonce; mapping info) {
-				if (!has_value(info->text, var)) continue;
-				array group = G->G->websocket_groups->chan_monitors[nonce + name];
-				if (group) (group - ({0}))->send_text(Standards.JSON.encode((["cmd": "update", "text": expand_variables(info->text)])));
-			}
-			persist_status->save();
+			vars["$" + var + "$"] = set_variable(var, msg, message->action);
 			return;
 		}
 
