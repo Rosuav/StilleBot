@@ -5,6 +5,12 @@
 <title>Channel monitor</title>
 </head>
 <body>
+<style>
+/* Hacks for the bar size */
+#display div {width: 33%;}
+#display div:nth-of-type(2) {text-align: center;}
+#display div:nth-of-type(3) {text-align: right;}
+</style>
 <main>
 <div id=display>$$text$$</div>
 <script>window.nonce = $$nonce$$;</script>

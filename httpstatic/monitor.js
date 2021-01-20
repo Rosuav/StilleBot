@@ -1,16 +1,23 @@
+import choc, {set_content} from "https://rosuav.github.io/shed/chocfactory.js";
+const {DIV} = choc;
+
 let socket;
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 //Map the CSS attributes on the server to the names used in element.style
 const css_attribute_names = {color: "color", font: "fontFamily", whitespace: "white-space"};
 
-function update_display(elem, data) { //Used for the preview as well as the live display
-	while (elem.lastChild) elem.removeChild(elem.lastChild);
-	elem.appendChild(document.createTextNode(data.text));
+let thresholds = null, fillcolor, barcolor;
+export default function update_display(elem, data, sample) { //Used for the preview as well as the live display
 	//Update styles. If the arbitrary CSS setting isn't needed, make sure it is "" not null.
 	if (data.css || data.css === "") {
 		elem.style.cssText = data.css;
 		for (let attr in css_attribute_names) {
 			if (data[attr]) elem.style[css_attribute_names[attr]] = data[attr];
+		}
+		if (data.thresholds && data.barcolor) {
+			thresholds = data.thresholds.split(" ").map(x => x * 100).filter(x => x && x === x); //Suppress any that fail to parse as numbers
+			barcolor = data.barcolor; fillcolor = data.fillcolor || data.barcolor;
+			//The rest of the style handling is below, since it depends on the text
 		}
 		if (data.fontsize) elem.style.fontSize = data.fontsize + "px"; //Special-cased to add the unit
 		if (data.font) {
@@ -28,6 +35,31 @@ function update_display(elem, data) { //Used for the preview as well as the live
 			}
 		}
 	}
+	if (thresholds) {
+		const m = /^([0-9]+):(.*)$/.exec(sample || data.text);
+		if (!m) {console.error("Something's misconfigured (see monitor.js regex)"); return;}
+		let pos = m[1], text, mark;
+		for (let which = 0; which < thresholds.length; ++which) {
+			console.log("Trying:", which, thresholds[which], pos)
+			if (pos < thresholds[which]) {
+				//Found the point to work at.
+				text = m[2].replace("#", which + 1);
+				mark = pos / thresholds[which] * 100;
+				break;
+			}
+			else pos -= thresholds[which];
+		}
+		if (!text) {
+			//We're beyond the last threshold!
+			text = m[2].replace("#", thresholds.length);
+			mark = 100;
+		}
+		let delta = 0.375; //Width of the red marker line (each side). TODO: Make configurable.
+		elem.style.background = `linear-gradient(.25turn, ${fillcolor} ${mark-delta}%, red, ${barcolor} ${mark+delta}%, ${barcolor})`;
+		elem.style.display = "flex";
+		set_content(elem, [DIV(text), DIV("$??"), DIV("$???")]);
+	}
+	else set_content(elem, sample || data.text);
 }
 
 function connect() {

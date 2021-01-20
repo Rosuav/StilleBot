@@ -18,4 +18,3 @@ The text can (and should!) incorporate variables, eg <code>$foo$</code>. Wheneve
 
 <script>let channame = $$channame$$, monitors = $$monitors$$, css_attributes = "$$css_attributes$$";</script>
 <script type=module src="$$static||monitors.js$$"></script>
-<script src="$$static||monitor.js$$"></script>

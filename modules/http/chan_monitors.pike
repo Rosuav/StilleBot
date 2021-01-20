@@ -1,7 +1,10 @@
 inherit http_endpoint;
 inherit websocket_handler;
 
-constant css_attributes = "font fontsize color css whitespace previewbg";
+//Note that this also handles CookingForNoobs's run distance gauge, which may end up
+//turning into a more generic gauge. This has a different set of attributes and a
+//different admin front-end, but the viewing endpoint and API handling are shared.
+constant css_attributes = "font fontsize color css whitespace previewbg barcolor fillcolor height width thresholds";
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
@@ -82,4 +85,4 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (msg->cmd == "refresh" || msg->cmd == "init") update_text(conn);
 }
 
-protected void create(string name) {::create(name);}
+protected void create(string name) {::create(name); G->G->monitor_css_attributes = css_attributes;}

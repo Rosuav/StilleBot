@@ -1,8 +1,10 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, BR, BUTTON, DETAILS, SUMMARY, DIV, FORM, INPUT, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
+import update_display from "./monitor.js";
 
 function set_values(info, elem) {
 	if (!info) return 0;
+	if (info.barcolor) return 0; //HACK: Disable accidental editing of bars. TODO: Link to ./run instead?
 	for (let attr in info) {
 		const el = elem.querySelector("[name=" + attr + "]");
 		if (el) el.value = info[attr];
