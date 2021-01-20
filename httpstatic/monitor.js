@@ -38,13 +38,14 @@ export default function update_display(elem, data, sample) { //Used for the prev
 	if (thresholds) {
 		const m = /^([0-9]+):(.*)$/.exec(sample || data.text);
 		if (!m) {console.error("Something's misconfigured (see monitor.js regex)"); return;}
-		let pos = m[1], text, mark;
+		let pos = m[1], text, mark, goal;
 		for (let which = 0; which < thresholds.length; ++which) {
 			console.log("Trying:", which, thresholds[which], pos)
 			if (pos < thresholds[which]) {
 				//Found the point to work at.
 				text = m[2].replace("#", which + 1);
 				mark = pos / thresholds[which] * 100;
+				goal = thresholds[which];
 				break;
 			}
 			else pos -= thresholds[which];
@@ -53,11 +54,13 @@ export default function update_display(elem, data, sample) { //Used for the prev
 			//We're beyond the last threshold!
 			text = m[2].replace("#", thresholds.length);
 			mark = 100;
+			goal = thresholds[thresholds.length - 1];
 		}
 		let delta = 0.375; //Width of the red marker line (each side). TODO: Make configurable.
 		elem.style.background = `linear-gradient(.25turn, ${fillcolor} ${mark-delta}%, red, ${barcolor} ${mark+delta}%, ${barcolor})`;
 		elem.style.display = "flex";
-		set_content(elem, [DIV(text), DIV("$??"), DIV("$???")]);
+		const fmt = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
+		set_content(elem, [DIV(text), DIV(fmt.format(pos / 100)), DIV(fmt.format(goal / 100))]);
 	}
 	else set_content(elem, sample || data.text);
 }
