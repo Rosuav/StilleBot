@@ -40,7 +40,6 @@ export default function update_display(elem, data, sample) { //Used for the prev
 		if (!m) {console.error("Something's misconfigured (see monitor.js regex)"); return;}
 		let pos = m[1], text, mark, goal;
 		for (let which = 0; which < thresholds.length; ++which) {
-			console.log("Trying:", which, thresholds[which], pos)
 			if (pos < thresholds[which]) {
 				//Found the point to work at.
 				text = m[2].replace("#", which + 1);

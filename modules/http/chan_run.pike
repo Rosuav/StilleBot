@@ -42,7 +42,6 @@ int message(object channel, mapping person, string msg)
 	//gain much anyway - only this first part could change.
 	if (person->bits) channel->set_variable("rundistance", person->bits, "add");
 	//if (person->user != "streamlabs") return 0; //temp hack
-	werror("Got message: %O %O\n", person->user, msg);
 	sscanf(msg, "%*s just tipped $%d.%d!", int dollars, int cents);
 	cents += 100 * dollars;
 	if (!cents) return 0; //Any non-matching lines will just look like $0.00
