@@ -308,7 +308,7 @@ class channel_notif
 		log("%sPart %s: %s\e[0m\n", color, name, who->user);
 	}
 
-	array(command_handler|string) locate_command(object person, string msg)
+	array(command_handler|string) locate_command(mapping person, string msg)
 	{
 		int mod = mods[person->user];
 		if (command_handler f = sscanf(msg, "!%[^# ] %s", string cmd, string param)
