@@ -15,10 +15,12 @@
     - Allow cascading deletion
 * Conditional messages. Two values with variable substitution, and a comparison. If true,
   proceed as normal; if false, ignore this message (and thus its subtree if applicable).
-  - Optional data typing - convert to int or float before comparison. Mainly useful for
-    inequalities, since "20" > "100" but 20 < 100.
+  - Two options: strings or integers. If integers, permit some very basic arithmetic
+    so "$var1$ + 5" will behave as expected. If strings, substitution is simple and all
+    comparisons are strict and lexicographical.
   - Is there a good way to give an "else"? I'd rather not force people to replicate the
-    condition and invert it. Perhaps (["message": "yes", "elsemessage": "no"]) ?
+    condition and invert it. Perhaps (["message": "yes", "elsemessage": "no"]) ? The UI
+    is the most important part here.
   - Command cooldowns. If you set a cooldown on a command (at the top level - wouldn't
     apply to subcommands), it will automatically become conditional, with "not in
     cooldown" as the condition. You could then add an else that would be the failure
