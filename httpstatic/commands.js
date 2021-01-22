@@ -31,10 +31,16 @@ function simple_to_advanced(e) {
 	elem.replaceWith(render_command(txt));
 }
 
+function simple_to_conditional(e) {
+	e.preventDefault();
+	//TODO
+}
+
 function simple_text(msg) {
 	return DIV({className: "simpletext"}, [
 		INPUT({value: msg}),
-		BUTTON({onclick: simple_to_advanced}, "\u2699"),
+		BUTTON({onclick: simple_to_advanced, title: "Customize flags for this line"}, "\u2699"),
+		BUTTON({onclick: simple_to_conditional, title: "Make this conditional"}, "\u2753"),
 	]);
 }
 
@@ -76,7 +82,7 @@ function render_command(cmd, toplevel) {
 		if (typeof msg === "string") info.push(simple_text(msg));
 		else info.push(render_command(msg));
 	});
-	info.push(BUTTON({onclick: adv_add_elem}, "+"));
+	info.push(BUTTON({onclick: adv_add_elem, title: "Add another line of text here"}, "+"));
 	return FIELDSET({className: "optedmsg"}, info);
 }
 
