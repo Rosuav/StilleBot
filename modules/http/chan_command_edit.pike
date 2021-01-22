@@ -9,6 +9,11 @@ constant valid_flags = ([
 	"action": (<"add">),
 ]);
 
+constant condition_parts = ([
+	"string": ({"expr1", "expr2"}),
+	"integer": ({"expression"}),
+]);
+
 echoable_message validate(echoable_message resp)
 {
 	//Filter the response to only that which is valid
@@ -37,6 +42,12 @@ echoable_message validate(echoable_message resp)
 		//TODO: Ensure that "%" shows up only as "%s", and that dollar signs are
 		//properly paired and surround legit variables
 	}
+	//Conditions have their own active ingredients.
+	if (array parts = condition_parts[resp->conditional]) {
+		foreach (parts + ({"conditional"}), string key)
+			if (resp[key]) ret[key] = resp[key];
+		ret->otherwise = validate(resp->otherwise);
+	}
 	//Delays are integer seconds. We'll permit a string of digits, since that might be
 	//easier for the front end.
 	if (resp->delay && resp->delay != "0" &&
@@ -59,6 +70,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	//(eg trying to set access or visibility deep within the response), but they
 	//will be merely useless, not problematic.
 	mapping resp = validate(body);
+	werror("FROM: %O\nTO: %O\n", body, resp);
 	if (resp == "") return (["error": 400]); //Nothing left, probably stuff was invalid
 	make_echocommand(cmd, resp);
 	return (["error": 204]);

@@ -47,6 +47,9 @@ td:nth-of-type(2n+1) {white-space: nowrap;}
 #templates tbody tr:hover {
 	background: #ff0;
 }
+
+.iftrue {border-color: #0bb;}
+.iffalse {border-color: #a08;}
 </style>
 
 > <button type=button class=dialog_cancel>x</button>

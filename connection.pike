@@ -398,11 +398,10 @@ class channel_notif
 	{
 		if (!message) return;
 		if (!mappingp(message)) message = (["message": message]);
-		else while (mappingp(message->message)) message = message | message->message;
 
 		if (message->delay)
 		{
-			call_out(_send_recursive, (int)message->delay, person, message | (["delay": 0, "_changevars": 1]));
+			call_out(_send_recursive, (int)message->delay, person, message | (["delay": 0, "_changevars": 1]), vars);
 			return;
 		}
 		if (message->_changevars)
@@ -422,12 +421,14 @@ class channel_notif
 				string expr1 = _substitute_vars(message->expr1 || "", vars, person);
 				string expr2 = _substitute_vars(message->expr2 || "", vars, person);
 				if (expr1 == expr2) break; //The condition passes!
-				_send_recursive(person, message | (["conditional": 0, "message": message->otherwise]), vars);
-				return;
+				msg = message->otherwise;
+				break;
 			}
 			//case "integer": //Integer expression evaluator. Subst into expr, then evaluate. If nonzero, pass. If non-numeric, error out.
-			default: break; //including UNDEFINED which means unconditional
+			default: break; //including UNDEFINED which means unconditional, and 0 which means "condition already processed"
 		}
+
+		if (mappingp(msg)) {_send_recursive(person, message | (["conditional": 0]) | msg, vars); return;}
 
 		if (arrayp(msg))
 		{
@@ -435,7 +436,7 @@ class channel_notif
 			else
 			{
 				foreach (msg, echoable_message m)
-					_send_recursive(person, message | (["message": m]), vars);
+					_send_recursive(person, message | (["conditional": 0, "message": m]), vars);
 				return;
 			}
 		}

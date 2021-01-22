@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {BR, BUTTON, INPUT, DIV, DETAILS, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTION, FIELDSET, CODE} = choc;
+const {BR, BUTTON, INPUT, DIV, DETAILS, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTION, FIELDSET, LEGEND, CODE} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 const all_flags = "mode dest access visibility action".split(" ");
 
@@ -49,9 +49,53 @@ function adv_add_elem(e) {
 	e.preventDefault();
 }
 
+//Build an array of DOM elements that could include simple_texts. Calling render_command
+//itself is guaranteed to offer the user flag space.
+function text_array(prefix, msg) {
+	const ret = (Array.isArray(msg) ? msg : [msg]).map(m =>
+		(typeof m === "string") ? simple_text(m) : render_command(m)
+	);
+	if (prefix) ret.unshift(prefix);
+	ret.push(BUTTON({onclick: adv_add_elem, title: "Add another line of text here"}, "+"));
+	return ret;
+}
+
+const conditional_types = {
+	string: {
+		expr1: "Expression 1",
+		expr2: "Expression 2",
+		"": "The condition passes if (after variable substitution) the two are equal.",
+	},
+	integer: {"": "Unimplemented"},
+};
+
 //Recursively generate DOM elements to allow a command to be edited with full flexibility
 function render_command(cmd, toplevel) {
 	if (!cmd.message) cmd = {message: cmd};
+	if (cmd.conditional) {
+		//NOTE: This UI currently cannot handle (nor will it create) conditionals
+		//with other flags. Instead, do the flags, and then have the conditional
+		//as its sole message.
+		const cond = conditional_types[cmd.conditional] || {"": "Unrecognized condition type!"};
+		const rows = [TR([TD("Type:"), TD(SELECT({"data-flag": "conditional"}, [
+			OPTION({value: "string"}, "String comparison"),
+			OPTION({value: "integer"}, "Integer expression (unimpl)"),
+		]))])]; //TODO: On change, replace content.
+		rows[0].querySelector("[data-flag=conditional]").value = cmd.conditional;
+		let desc = "";
+		for (let key in cond) {
+			if (key === "") desc = cond[key];
+			else rows.push(TR([TD(cond[key]), INPUT({"data-flag": key, value: cmd[key] || "", className: "widetext"})]));
+		}
+		const td = TD(desc); td.setAttribute("colspan", 2);
+		rows.push(TR(td));
+
+		return FIELDSET({className: "optedmsg"}, [
+			TABLE({border: 1, className: "flagstable"}, rows),
+			FIELDSET({className: "optedmsg iftrue"}, text_array(LEGEND("If true:"), cmd.message || "")),
+			FIELDSET({className: "optedmsg iffalse"}, text_array(LEGEND("If false:"), cmd.otherwise || "")),
+		]);
+	}
 	//Handle flags
 	const opts = [TR([TH("Option"), TH("Effect")])];
 	let m = /^(\/[a-z]+) ([a-zA-Z$%]+)$/.exec(cmd.dest);
@@ -72,18 +116,10 @@ function render_command(cmd, toplevel) {
 		]));
 	}
 	opts.push(TR([INPUT({"data-flag": "target", value: cmd.target || ""}), TD("For whisper, web, and variable destinations - who/what should it send to?")]));
-	const info = [
-		DETAILS({className: "flagstable"}, [
-			SUMMARY("Flags"),
-			TABLE({border: 1}, opts),
-		]),
-	];
-	(typeof cmd.message === "string" ? [cmd.message] : cmd.message).forEach(msg => {
-		if (typeof msg === "string") info.push(simple_text(msg));
-		else info.push(render_command(msg));
-	});
-	info.push(BUTTON({onclick: adv_add_elem, title: "Add another line of text here"}, "+"));
-	return FIELDSET({className: "optedmsg"}, info);
+	return FIELDSET({className: "optedmsg"}, text_array(DETAILS({className: "flagstable"}, [
+		SUMMARY("Flags"),
+		TABLE({border: 1}, opts),
+	]), cmd.message));
 }
 
 on("click", "button.advview", e => {
@@ -113,6 +149,10 @@ function get_command_details(elem, toplevel) {
 				delete ret.target;
 			}
 		}
+		else if (elem.classList.contains("iftrue"))
+			ret.message = get_command_details(elem).message;
+		else if (elem.classList.contains("iffalse"))
+			ret.otherwise = get_command_details(elem).message;
 		else {
 			const msg = get_command_details(elem);
 			if (msg) ret.message.push(msg);
@@ -154,32 +194,30 @@ on("click", "#save_advanced", async e => {
 		//We've found something that's further forward than the command
 		//we want. Insert here. (Note that "Add: " is greater than any
 		//command name starting "!", so it'll (correctly) trigger this.)
-		const inputs = [];
+		//NOTE: It is highly unlikely that, after advanced editing, the
+		//command will be safe for simple editing. So we assume it isn't,
+		//and put just the plain text version.
+		const lines = [];
 		const cmdname = info.cmdname.slice(1); //w/o the !
 		let idx = 0;
-		function add_inputs(msg) {
+		function add_lines(msg) {
 			if (typeof msg === "string")
-				inputs.push(INPUT({
-					name: cmdname + "!" + idx++,
-					value: msg,
-					className: "widetext",
-				}), BR());
+				lines.push(msg, BR());
 			else if (Array.isArray(msg))
-				msg.forEach(add_inputs);
+				msg.forEach(add_lines);
 			else if (typeof msg === "object") //Should always be true
-				add_inputs(msg.message);
+				add_lines(msg.message);
 			//Else ignore it, probably malformed or something
 		}
-		add_inputs(info.message);
-		inputs.pop(); //Ditch the last BR
+		add_lines(info.message);
+		lines.pop(); //Ditch the last BR
 		tr.before(TR([
 			TD(CODE(info.cmdname)),
-			TD(inputs),
-			TD([
-				BUTTON({type: "button", className: "advview", "data-cmd": cmdname, title: "Advanced"}, "\u2699"),
-				BUTTON({type: "button", className: "addline", "data-cmd": cmdname, title: "Add another line", "data-idx": idx}, "+"),
-			]),
+			TD(CODE(lines)),
+			TD(BUTTON({type: "button", className: "advview", "data-cmd": cmdname, title: "Advanced"}, "\u2699")),
 		]));
+		console.log("WAS:", commands[cmdname]);
+		console.log("BECOMING:", info);
 		commands[cmdname] = info;
 		break; //Only do this once :)
 	}
