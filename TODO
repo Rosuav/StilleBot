@@ -13,14 +13,16 @@
     - Similarly, if it's been set to View, warn that the command won't work right after.
     - Scan for monitors too - they're the same as a view command
     - Allow cascading deletion
-* Conditional messages. Two values with variable substitution, and a comparison. If true,
-  proceed as normal; if false, ignore this message (and thus its subtree if applicable).
-  - Two options: strings or integers. If integers, permit some very basic arithmetic
-    so "$var1$ + 5" will behave as expected. If strings, substitution is simple and all
-    comparisons are strict and lexicographical.
-  - Is there a good way to give an "else"? I'd rather not force people to replicate the
-    condition and invert it. Perhaps (["message": "yes", "elsemessage": "no"]) ? The UI
-    is the most important part here.
+* Conditional messages.
+  - Option 1: String comparison. Two values, substitute variables in each, and if they
+    end up the same, the condition passes.
+  - Option 2: Numeric calculation. One string with full substitutions which is then
+    evaluated. Will be similar to !calc, but not quite identical. May need to whip up
+    an expression evaluator rather than risking putting the full power of Pike into
+    this. Will need basic arithmetic (integer only), comparisons (allow "=" and "=="
+    for equality, and a full set of inequalities), and parentheses.
+  - If the condition fails, allow an "elsemessage" which will be processed instead of
+    the "message". It may be absent.
   - Command cooldowns. If you set a cooldown on a command (at the top level - wouldn't
     apply to subcommands), it will automatically become conditional, with "not in
     cooldown" as the condition. You could then add an else that would be the failure
