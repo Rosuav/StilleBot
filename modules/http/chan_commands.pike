@@ -1,14 +1,14 @@
 inherit http_endpoint;
 
-//Simplified stringification. Good for comparisons (ignoring flags), simple text output, etc.
+//Simplistic stringification for read-only display.
 string respstr(echoable_message resp)
 {
 	if (stringp(resp)) return resp;
-	if (arrayp(resp)) return respstr(resp[*]) * "\n";
+	if (arrayp(resp)) return respstr(resp[*]) * "<br>";
 	return respstr(resp->message);
 }
 
-constant MAX_RESPONSES = 10; //Ridiculously large? Probably.
+constant MAX_RESPONSES = 10; //Max pieces of text per command, for simple view. Can be exceeded by advanced editing.
 
 constant TEMPLATES = ({
 	"!discord | Join my Discord server: https://discord.gg/YOUR_URL_HERE",
@@ -68,67 +68,68 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	foreach (G->G->echocommands; string cmd; echoable_message response) if (!has_prefix(cmd, "!") && has_suffix(cmd, c))
 	{
 		cmd -= c;
-		mapping flags = ([]);
-		cmd_raw[cmd] = mappingp(response) ? response : (["message": response]); //To save JS some type-checking trouble
-		while (mappingp(response))
-		{
-			flags |= response ^ (["message": 1]);
-			response = response->message;
-		}
+		//A simple command is:
+		//1) A string
+		//2) A mapping whose response is a string
+		//3) A mapping whose response is an array of strings
+		//4) An array of strings
+		//Anything else is a non-simple command and cannot be edited with this method - it
+		//MUST use advanced editing and the JS popup.
+		cmd_raw[cmd] = response = mappingp(response) ? response : (["message": response]); //To save JS some type-checking trouble
+		//Now the only possible simple commands are #2 and #3.
+		array(string) simple_messages;
+		if (arrayp(response->message) && Array.all(response->message, stringp)) simple_messages = response->message;
+		else if (stringp(response->message)) simple_messages = ({response->message});
 		if (req->misc->is_mod)
 		{
-			if (!arrayp(response)) response = ({response});
 			//NOTE: If you attempt to save an edit for something that's been deleted
 			//elsewhere, this will quietly ignore it. We have no way of knowing that
 			//you changed anything, so it could just as easily be an untouched entry
 			//which we should definitely not resurrect. Slightly unideal in a corner
 			//case, but the wart is worth it for the simplicity of not having double
-			//the form fields just for the sake of detecting differences.
-			if (req->request_type == "POST")
+			//the form fields just for the sake of detecting differences. Note also:
+			//If a command didn't exist when the page was loaded, we *must not* risk
+			//deleting it, even if the user may have wanted to (because it is highly
+			//unlikely, let's be honest). So if there are no form variables starting
+			//with this command name, assume the user didn't want to edit it at all.
+			if (req->request_type == "POST" && simple_messages)
 			{
-				response += ({ }); //anti-mutation for safety/simplicity
-				int edited = 0;
+				array|mapping|string newresp = UNDEFINED;
 				for (int i = 0; i < MAX_RESPONSES; ++i)
 				{
 					string resp = req->variables[sprintf("%s!%d", cmd, i)];
 					if (!resp) break;
 					resp = String.trim(resp);
-					if (i >= sizeof(response)) response += ({""});
-					//Note that this won't correctly handle arrays-in-arrays, but
-					//if you didn't edit it (it'll have had a newline), you should be
-					//fine. Use the popup dialog to edit unusual commands like that.
-					//This also loses any subresponse flags.
-					if (respstr(response[i]) != resp)
-					{
-						edited = 1;
-						if (has_value(resp, '\n')) response[i] = resp / "\n";
-						else response[i] = resp;
-					}
+					newresp += resp / "\n"; //If you paste in a newline, make multiple responses.
 				}
-				response -= ({""});
-
-				if (edited)
+				if (newresp) //See above note re new and deleted commands.
 				{
-					changes_made = 1;
-					if (!sizeof(response))
+					newresp -= ({""});
+					if (newresp * "\n" != simple_messages * "\n")
 					{
-						messages += ({"* Deleted !" + cmd});
-						m_delete(G->G->echocommands, cmd + c);
-						continue; //Don't put anything into the commands array
-					}
-					if (sizeof(response) == 1) response = response[0];
-					messages += ({"* Updated !" + cmd});
-					if (sizeof(flags)) G->G->echocommands[cmd + c] = flags | (["message": response]);
-					else G->G->echocommands[cmd + c] = response;
+						changes_made = 1;
+						if (!sizeof(newresp))
+						{
+							messages += ({"* Deleted !" + cmd});
+							m_delete(G->G->echocommands, cmd + c);
+							continue; //Don't put anything into the commands array
+						}
+						simple_messages = newresp; //Keep the arrayified version for the below
+						if (sizeof(newresp) == 1) newresp = newresp[0];
+						if (sizeof(response) > 1) newresp = response | (["message": newresp]); //Hang onto any top-level flags
+						messages += ({"* Updated !" + cmd});
+						G->G->echocommands[cmd + c] = response = newresp;
+					}	
 				}
 			}
 			string usercmd = Parser.encode_html_entities(cmd);
 			string inputs = "";
-			foreach (Array.arrayify(response); int i; string|mapping resp)
+			if (simple_messages) foreach (simple_messages; int i; string resp)
 			{
 				inputs += sprintf("<br><input name=\"%s!%d\" value=\"%s\" class=widetext>",
-					usercmd, i, Parser.encode_html_entities(respstr(resp)));
+					usercmd, i, Parser.encode_html_entities(resp));
 			}
+			else inputs = "<br><code>" + respstr(response) + "</code>";
 			commands += ({sprintf("<code>!%s</code> | %s | "
 					"<button type=button class=advview data-cmd=\"%[0]s\" title=\"Advanced\">\u2699</button>"
 					"<button type=button class=addline data-cmd=\"%[0]s\" data-idx=%d title=\"Add another line\">+</button>",
@@ -136,8 +137,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		}
 		else
 		{
-			if (flags->visibility == "hidden") continue; //Hide hidden messages, including from the order array below
+			if (response->visibility == "hidden") continue; //Hide hidden messages, including from the order array below
 			//Recursively convert a response into HTML. Ignores submessage flags.
+			//TODO: Respect *some* flags, even if only to suppress a subbranch.
 			string htmlify(echoable_message response) {
 				if (stringp(response)) return user(response);
 				if (arrayp(response)) return htmlify(response[*]) * "</code><br><code>";
@@ -146,7 +148,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			commands += ({sprintf("<code>!%s</code> | <code>%s</code> | %s",
 				user(cmd), htmlify(response),
 				//TODO: Show if a response would be whispered?
-				flags->access == "mod" ? "Mod-only" : "",
+				response->access == "mod" ? "Mod-only" : "",
 			)});
 		}
 		order += ({cmd});
