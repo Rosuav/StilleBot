@@ -402,19 +402,33 @@ class channel_notif
 
 		if (message->delay)
 		{
-			call_out(_send_recursive, (int)message->delay, person, message | (["delay": 0, "changevars": 1]));
+			call_out(_send_recursive, (int)message->delay, person, message | (["delay": 0, "_changevars": 1]));
 			return;
 		}
-		if (message->changevars)
+		if (message->_changevars)
 		{
 			//When a delayed message gets sent, override any channel variables
 			//with their new values. There are some bizarre corner cases that
 			//could result from this (eg if you delete a variable, it'll still
 			//exist in the delayed version), but there's no right way to do it.
 			vars = vars | (persist_status->path("variables")[name] || ([]));
+			message->_changevars = 0; //It's okay to mutate this one, since it'll only ever be a bookkeeping mapping from delay handling.
 		}
 
 		echoable_message msg = message->message;
+		switch (message->conditional) {
+			case "string": //String comparison. If (after variable substitution) expr1 == expr2, continue.
+			{
+				string expr1 = _substitute_vars(message->expr1 || "", vars, person);
+				string expr2 = _substitute_vars(message->expr2 || "", vars, person);
+				if (expr1 == expr2) break; //The condition passes!
+				_send_recursive(person, message | (["conditional": 0, "message": message->otherwise]), vars);
+				return;
+			}
+			//case "integer": //Integer expression evaluator. Subst into expr, then evaluate. If nonzero, pass. If non-numeric, error out.
+			default: break; //including UNDEFINED which means unconditional
+		}
+
 		if (arrayp(msg))
 		{
 			if (message->mode == "random") msg = random(msg);
