@@ -78,8 +78,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		cmd_raw[cmd] = response = mappingp(response) ? response : (["message": response]); //To save JS some type-checking trouble
 		//Now the only possible simple commands are #2 and #3.
 		array(string) simple_messages;
-		if (arrayp(response->message) && Array.all(response->message, stringp)) simple_messages = response->message;
-		else if (stringp(response->message)) simple_messages = ({response->message});
+		if (arrayp(response->message) && Array.all(response->message, stringp) && !response->conditional) simple_messages = response->message;
+		else if (stringp(response->message) && !response->conditional) simple_messages = ({response->message});
 		if (req->misc->is_mod)
 		{
 			//NOTE: If you attempt to save an edit for something that's been deleted
