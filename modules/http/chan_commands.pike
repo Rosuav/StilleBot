@@ -132,7 +132,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			else inputs = "<br><code>" + respstr(response) + "</code>";
 			commands += ({sprintf("<code>!%s</code> | %s | "
 					"<button type=button class=advview data-cmd=\"%[0]s\" title=\"Advanced\">\u2699</button>"
-					"<button type=button class=addline data-cmd=\"%[0]s\" data-idx=%d title=\"Add another line\">+</button>",
+					+ (simple_messages ? "<button type=button class=addline data-cmd=\"%[0]s\" data-idx=%d title=\"Add another line\">+</button>" : ""), 
 				usercmd, inputs[4..], arrayp(response) ? sizeof(response) : 1)});
 		}
 		else
