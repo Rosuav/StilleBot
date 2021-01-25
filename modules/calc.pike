@@ -4,6 +4,7 @@ inherit command;
 //TODO-DOCSTRING
 
 int|float binop(int|float left, string op, int|float right) {
+	werror("binop: %O %s %O\n", left, op, right);
 	switch (op) {
 		#define BINARY(o) case #o: return left o right
 		BINARY(+); BINARY(-); BINARY(*); BINARY(/); BINARY(%);
@@ -15,10 +16,13 @@ int|float binop(int|float left, string op, int|float right) {
 
 string stitch(string l, string r) {return l + r;}
 int makeint(string digits) {return (int)digits;}
+int|float parens(string open, int|float val, string close) {return val;}
 
 int|float evaluate(string formula) {
 	Parser.LR.Parser p = Parser.LR.GrammarParser.make_parser_from_file("modules/calc.grammar");
 	int pos;
+	//TODO: Handle whitespace in the parser or tokenizer
+	formula = replace(formula, ({" ", "\t", "\n"}), "");
 	string next() {return pos < sizeof(formula) ? formula[pos..pos++] : "";}
 	werror("%O\n", p->parse(next, this));
 }

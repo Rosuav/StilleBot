@@ -1,11 +1,28 @@
 /* First entry defines the entire thing parsed */
-expression: add;
+expression: compare;
+
+/* Note that "1 < 2 < 3" is not supported, to allow future expansion
+with possible Python-style semantics */
+compare: add;
+compare: add "<" add {binop};
+compare: add "<=" add {binop};
+compare: add "==" add {binop};
+compare: add "!=" add {binop};
+compare: add ">=" add {binop};
+compare: add ">" add {binop};
+/* These don't short-circuit, partly b/c the expression evaluator ALWAYS
+parses all variables before evaluating anything */
+compare: add "&&" add {binop};
+compare: add "||" add {binop};
+
 add: multiply;
-add: multiply "+" add {binop};
-add: multiply "-" add {binop};
+add: add "+" multiply {binop};
+add: add "-" multiply {binop};
 multiply: number;
-multiply: number "*" multiply {binop};
-multiply: number "/" multiply {binop};
+multiply: multiply "*" number {binop};
+multiply: multiply "/" number {binop};
+multiply: multiply "%" number {binop};
+
 digit: "0";
 digit: "1";
 digit: "2";
@@ -19,4 +36,5 @@ digit: "9";
 integer: digit;
 integer: digit integer {stitch};
 number: integer {makeint};
+number: "(" expression ")" {parens};
 /* number: float {makefloat}; */
