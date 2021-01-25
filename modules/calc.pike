@@ -38,6 +38,7 @@ int|float parens(string open, int|float val, string close) {return val;}
 
 Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file("modules/calc.grammar");
 void throw_errors(int level, string subsystem, string msg, mixed ... args) {if (level >= 2) error(msg, @args);}
+
 int|float evaluate(string formula) {
 	parser->set_error_handler(throw_errors);
 	string next() {
