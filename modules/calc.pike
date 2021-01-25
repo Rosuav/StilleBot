@@ -13,15 +13,16 @@ int|float binop(int|float left, string op, int|float right) {
 	}
 }
 
-string stitch(string l, string r) {return l + r;}
+string stitch(string ... parts) {return parts * "";}
 int makeint(string digits) {return (int)digits;}
+float makefloat(string digits) {return (float)digits;}
 int|float parens(string open, int|float val, string close) {return val;}
 
 int|float evaluate(string formula) {
 	Parser.LR.Parser p = Parser.LR.GrammarParser.make_parser_from_file("modules/calc.grammar");
 	string next() {
 		if (formula == "") return "";
-		sscanf(formula, "%*[ \t\n]%s", formula);
+		sscanf(formula, "%*[ \t\n]%s", formula); //TODO: Handle whitespace in the grammar properly
 		sscanf(formula, "%[*&|<=>!]%s", string token, formula); //All characters that can be part of multi-character tokens
 		if (token == "") sscanf(formula, "%1s%s", token, formula); //Otherwise, grab a single character
 		return token;

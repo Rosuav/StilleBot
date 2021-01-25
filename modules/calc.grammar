@@ -37,6 +37,10 @@ digit: "8";
 digit: "9";
 integer: digit;
 integer: digit integer {stitch};
+float: integer "." {stitch};
+float: "." integer {stitch};
+float: integer "." integer {stitch};
 number: integer {makeint};
+number: float {makefloat};
 number: "(" expression ")" {parens};
 /* number: float {makefloat}; */
