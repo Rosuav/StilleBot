@@ -10,6 +10,7 @@ Commands in alphabetical order:
 * [!addcmd: Add an echo command for this channel](addcmd)
 * [!addquote: Add a channel quote](addquote)
 * [!autoban: Keyword-based automatic moderation.](autoban)
+* [!calc: Calculate something, possibly involving channel variables](calc)
 * [!delcmd: Remove an echo command for this channel](delcmd)
 * [!help: List commands available to you](help)
 * [!quote: View a chosen or randomly-selected quote](quote)
