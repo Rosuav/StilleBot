@@ -66,7 +66,10 @@ const conditional_types = {
 		expr2: "Expression 2",
 		"": "The condition passes if (after variable substitution) the two are equal.",
 	},
-	integer: {"": "Unimplemented"},
+	number: {
+		expr1: "Expression to evaluate",
+		"": "The condition passes if the expression is nonzero. Use comparisons eg '$var$ > 100'.",
+	},
 };
 
 //Recursively generate DOM elements to allow a command to be edited with full flexibility
@@ -79,7 +82,7 @@ function render_command(cmd, toplevel) {
 		const cond = conditional_types[cmd.conditional] || {"": "Unrecognized condition type!"};
 		const rows = [TR([TD("Type:"), TD(SELECT({"data-flag": "conditional"}, [
 			OPTION({value: "string"}, "String comparison"),
-			OPTION({value: "integer"}, "Integer expression (unimpl)"),
+			OPTION({value: "number"}, "Numeric calculation"),
 		]))])]; //TODO: On change, replace content.
 		rows[0].querySelector("[data-flag=conditional]").value = cmd.conditional;
 		let desc = "";

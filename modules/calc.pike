@@ -1,6 +1,4 @@
-#if constant(G)
 inherit command;
-#endif
 constant docstring = #"
 Calculate something, possibly involving channel variables
 
@@ -31,7 +29,7 @@ float makefloat(string digits) {return (float)digits;}
 int|float parens(string open, int|float val, string close) {return val;}
 
 Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file("modules/calc.grammar");
-void throw_errors(mixed level, string subsystem, string msg, mixed ... args) {error(msg, @args);}
+void throw_errors(int level, string subsystem, string msg, mixed ... args) {if (level >= 2) error(msg, @args);}
 int|float evaluate(string formula) {
 	parser->set_error_handler(throw_errors);
 	string next() {
@@ -52,10 +50,4 @@ string process(object channel, object person, string param)
 	return "@$$: Invalid expression [" + (describe_error(ex)/"\n")[0] + "]";
 }
 
-//Stand-alone testing
-int main(int argc, array(string) argv) {
-	string formula = argv[1..] * " ";
-	write("Evaluating: %O\n", formula);
-	if (mixed error = catch {write("Result: %O\n", evaluate(formula));})
-		werror(describe_backtrace(error));
-}
+void create(string name) {::create(name); G->G->evaluate_expr = evaluate;}

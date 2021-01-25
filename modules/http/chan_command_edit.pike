@@ -11,7 +11,7 @@ constant valid_flags = ([
 
 constant condition_parts = ([
 	"string": ({"expr1", "expr2"}),
-	"integer": ({"expression"}),
+	"number": ({"expr1"}), //Yes, expr1 even though there's no others - means you still see it when you switch (when that's implemented)
 ]);
 
 echoable_message validate(echoable_message resp)

@@ -424,7 +424,16 @@ class channel_notif
 				msg = message->otherwise;
 				break;
 			}
-			//case "integer": //Integer expression evaluator. Subst into expr, then evaluate. If nonzero, pass. If non-numeric, error out.
+			case "number": //Integer/float expression evaluator. Subst into expr, then evaluate. If nonzero, pass. If non-numeric, error out.
+			{
+				if (!G->G->evaluate_expr) msg = "ERROR: Expression evaluator unavailable";
+				else if (mixed ex = catch {
+					int|float value = G->G->evaluate_expr(_substitute_vars(message->expr1 || "", vars, person));
+					if (value != 0 && value != 0.0) break; //But I didn't fire an arrow...
+					msg = message->otherwise;
+				}) msg = "ERROR: " + (describe_error(ex)/"\n")[0];
+				break;
+			}
 			default: break; //including UNDEFINED which means unconditional, and 0 which means "condition already processed"
 		}
 
