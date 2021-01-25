@@ -18,10 +18,12 @@ compare: add "||" add {binop};
 add: multiply;
 add: add "+" multiply {binop};
 add: add "-" multiply {binop};
-multiply: number;
-multiply: multiply "*" number {binop};
-multiply: multiply "/" number {binop};
-multiply: multiply "%" number {binop};
+multiply: expon;
+multiply: multiply "*" expon {binop};
+multiply: multiply "/" expon {binop};
+multiply: multiply "%" expon {binop};
+expon: number;
+expon: number "**" expon {binop};
 
 digit: "0";
 digit: "1";

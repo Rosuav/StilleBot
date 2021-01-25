@@ -4,12 +4,11 @@ inherit command;
 //TODO-DOCSTRING
 
 int|float binop(int|float left, string op, int|float right) {
-	werror("binop: %O %s %O\n", left, op, right);
 	switch (op) {
 		#define BINARY(o) case #o: return left o right
 		BINARY(+); BINARY(-); BINARY(*); BINARY(/); BINARY(%);
 		BINARY(<); BINARY(<=); BINARY(==); BINARY(!=); BINARY(>=); BINARY(>);
-		BINARY(&&); BINARY(||);
+		BINARY(&&); BINARY(||); BINARY(**);
 		#undef BINARY
 	}
 }
@@ -20,11 +19,14 @@ int|float parens(string open, int|float val, string close) {return val;}
 
 int|float evaluate(string formula) {
 	Parser.LR.Parser p = Parser.LR.GrammarParser.make_parser_from_file("modules/calc.grammar");
-	int pos;
-	//TODO: Handle whitespace in the parser or tokenizer
-	formula = replace(formula, ({" ", "\t", "\n"}), "");
-	string next() {return pos < sizeof(formula) ? formula[pos..pos++] : "";}
-	werror("%O\n", p->parse(next, this));
+	string next() {
+		if (formula == "") return "";
+		sscanf(formula, "%*[ \t\n]%s", formula);
+		sscanf(formula, "%[*&|<=>!]%s", string token, formula); //All characters that can be part of multi-character tokens
+		if (token == "") sscanf(formula, "%1s%s", token, formula); //Otherwise, grab a single character
+		return token;
+	}
+	return p->parse(next, this);
 }
 
 constant legal = "0123456789+-/*() ."; //For now, permit a VERY few characters, for safety.
