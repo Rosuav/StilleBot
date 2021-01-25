@@ -14,6 +14,11 @@ compare: add ">" add {binop};
 parses all variables before evaluating anything */
 compare: add "&&" add {binop};
 compare: add "||" add {binop};
+/* Convenience aliases */
+compare: add "=" add {binop};
+compare: add "&" add {binop};
+compare: add "|" add {binop};
+compare: add "=>" add {binop};
 
 add: multiply;
 add: add "+" multiply {binop};

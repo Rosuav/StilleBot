@@ -20,6 +20,14 @@ int|float binop(int|float left, string op, int|float right) {
 		BINARY(<); BINARY(<=); BINARY(==); BINARY(!=); BINARY(>=); BINARY(>);
 		BINARY(&&); BINARY(||); BINARY(**);
 		#undef BINARY
+		//Some aliases for the convenience of humans
+		//We won't have assignment here (or if we do, bring on the
+		//walrus operator), nor bitwise operations, so it's nicer
+		//to let people use these in other natural ways.
+		case "=": return left == right;
+		case "&": return left && right;
+		case "|": return left || right;
+		case "=>": return left >= right;
 	}
 }
 
