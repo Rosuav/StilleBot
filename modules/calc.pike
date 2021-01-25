@@ -33,6 +33,7 @@ int|float evaluate(string formula) {
 string process(object channel, object person, string param)
 {
 	if (param == "") return "@$$: Usage: !calc 1+2";
+	param = channel->expand_variables(param);
 	mixed ex = catch {return sprintf("@$$: %O", evaluate(param));};
 	return "@$$: Invalid expression [" + (describe_error(ex)/"\n")[0] + "]";
 }
