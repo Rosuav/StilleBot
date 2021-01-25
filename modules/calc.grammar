@@ -43,4 +43,3 @@ float: integer "." integer {stitch};
 number: integer {makeint};
 number: float {makefloat};
 number: "(" expression ")" {parens};
-/* number: float {makefloat}; */

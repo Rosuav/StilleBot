@@ -15,11 +15,6 @@
     - Allow cascading deletion
 * More types of conditional messages.
   - Other types of string comparison, incl "expr1 in expr2"
-  - Numeric calculation. One string with full substitutions which is then
-    evaluated. Will be similar to !calc, but not quite identical. May need to whip up
-    an expression evaluator rather than risking putting the full power of Pike into
-    this. Will need basic arithmetic (integer only), comparisons (allow "=" and "=="
-    for equality, and a full set of inequalities), and parentheses.
   - Cooldown (global or per person). Set at the top level - wouldn't apply to
     subcommands - would automatically manage the CD and "then" means "not in cooldown",
     with "otherwise" meaning "in cooldown". A few ways to use that:
