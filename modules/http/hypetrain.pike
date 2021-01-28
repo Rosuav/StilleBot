@@ -6,16 +6,7 @@ constant hidden_command = 1;
 constant require_allcmds = 0;
 constant active_channels = ({"devicat", "rosuav"}); //TODO: Choose where to activate this, even when not in allcmds
 
-/* Hype Train. Game plan.
-1) [DONE] Do everything client-side with a single coherent JSON status object. Continue to tick unmanaged.
-2) [DONE] Have a button to request a new JSON status object from the server.
-3) [DONE] Have a websocket and send JSON status periodically or when the time expires.
-   - No initial state. Just establish the websocket and have THAT provide the state. Faster IPL than doing it twice.
-4) [DONE] Manage the web hook
-5) Add optional audio to start and/or end
-6) Have a landing page for configs. Use local storage??
-7) [DONE] Show the emotes you could get at this and the next level
-*/
+//TODO: Add a timer to report on expirations so they happen on the WS too
 
 //Parse a timestamp into a valid Unix time. If ts is null, malformed,
 //or in the past, returns 0.
