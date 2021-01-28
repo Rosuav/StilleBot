@@ -66,3 +66,4 @@
   - Optionally emit message only if online at the time.
 * Raid finder: Also show recent outgoing raids to allow notes to be added?
   - Or just "pick any channel, add notes". Have it show the stream as if in the raid finder.
+* Move "$$autoform||$$" from markdown.html into each of the files that actually wants it
