@@ -159,7 +159,7 @@ echoable_message process(object channel, object person, string param)
 			if (state->total >= state->goal)
 				send_message(channel->name, "HypeUnicorn1 HypeUnicorn2 HypeUnicorn3 HypeUnicorn4 HypeUnicorn5 HypeUnicorn6 LEVEL FIVE COMPLETE!");
 			else send_message(channel->name, sprintf(
-				"/me devicatParty HYPE! Level %d requires %d bits or %d subs!",
+				"/me devicatParty HYPE! Level %d requires %d more bits or %d subs!",
 				state->level, state->goal - state->total, (state->goal - state->total + 499) / 500));
 		} else if (state->cooldown) {
 			int tm = state->cooldown - time();
