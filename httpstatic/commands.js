@@ -34,8 +34,11 @@ function simple_to_advanced(e) {
 function simple_to_conditional(e) {
 	e.preventDefault();
 	const parent = e.currentTarget.closest(".simpletext");
-	const msg = {conditional: "choose", message: parent.querySelector("input").value};
-	parent.replaceWith(render_command(msg));
+	parent.replaceWith(render_command({
+		conditional: "choose",
+		message: parent.querySelector("input").value,
+		otherwise: "",
+	}));
 }
 
 function simple_text(msg) {
@@ -139,7 +142,9 @@ on("click", "button.advview", e => {
 on("change", "select[data-flag=conditional]", e => {
 	//NOTE: Assumes that this does not have additional flags. They will be lost.
 	const parent = e.match.closest(".optedmsg");
-	parent.replaceWith(render_command(get_command_details(parent)));
+	const msg = get_command_details(parent);
+	if (!msg.otherwise.length) msg.otherwise = ""; //Replace empty array with empty string to ensure we always get at least one input
+	parent.replaceWith(render_command(msg));
 });
 
 //Recursively reconstruct the command info from the DOM - the inverse of render_command()
