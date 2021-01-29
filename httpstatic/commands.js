@@ -33,7 +33,9 @@ function simple_to_advanced(e) {
 
 function simple_to_conditional(e) {
 	e.preventDefault();
-	//TODO
+	const parent = e.currentTarget.closest(".simpletext");
+	const msg = {conditional: "choose", message: parent.querySelector("input").value};
+	parent.replaceWith(render_command(msg));
 }
 
 function simple_text(msg) {
@@ -69,6 +71,9 @@ const conditional_types = {
 	number: {
 		expr1: "Expression to evaluate",
 		"": "The condition passes if the expression is nonzero. Use comparisons eg '$var$ > 100'.",
+	},
+	choose: {
+		"": "Choose a type of condition.",
 	},
 };
 
