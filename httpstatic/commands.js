@@ -83,7 +83,7 @@ function render_command(cmd, toplevel) {
 		const rows = [TR([TD("Type:"), TD(SELECT({"data-flag": "conditional"}, [
 			OPTION({value: "string"}, "String comparison"),
 			OPTION({value: "number"}, "Numeric calculation"),
-		]))])]; //TODO: On change, replace content.
+		]))])]; //TODO: Have a way to make something unconditional again
 		rows[0].querySelector("[data-flag=conditional]").value = cmd.conditional;
 		let desc = "";
 		for (let key in cond) {
@@ -131,8 +131,14 @@ on("click", "button.advview", e => {
 	document.getElementById("advanced_view").showModal();
 });
 
+on("change", "select[data-flag=conditional]", e => {
+	//NOTE: Assumes that this does not have additional flags. They will be lost.
+	const parent = e.match.closest(".optedmsg");
+	parent.replaceWith(render_command(get_command_details(parent)));
+});
+
 //Recursively reconstruct the command info from the DOM - the inverse of render_command()
-function get_command_details(elem, toplevel) {
+function get_command_details(elem) {
 	if (elem.classList.contains("simpletext")) {
 		//It's a simple input and can only have one value
 		elem = elem.querySelector("input");
@@ -163,14 +169,14 @@ function get_command_details(elem, toplevel) {
 	}
 	if (ret.message.length === 1) ret.message = ret.message[0];
 	//We could return ret.message if there are no other attributes, but
-	//at the moment I can't be bothered. (Also, do it only if !toplevel.)
+	//at the moment I can't be bothered. (Also, do it only if not toplevel.)
 	//Worst case, we have some junk locally that won't matter; the server
 	//will clean it up before next load anyhow.
 	return ret;
 }
 
 on("click", "#save_advanced", async e => {
-	const info = get_command_details(DOM("#command_details").firstChild, 1);
+	const info = get_command_details(DOM("#command_details").firstChild);
 	/*
 	const cmd = commands[document.getElementById("cmdname").innerText.slice(1)];
 	console.log("WAS:", cmd);
