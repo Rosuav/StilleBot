@@ -50,6 +50,11 @@ td:nth-of-type(2n+1) {white-space: nowrap;}
 
 .iftrue {border-color: #0bb;}
 .iffalse {border-color: #a08;}
+
+#advanced_view {
+	max-height: 100%;
+	overflow-y: auto;
+}
 </style>
 
 > <button type=button class=dialog_cancel>x</button>
