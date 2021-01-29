@@ -16,12 +16,10 @@ string auth_token(object channel) {
 mapping(string:mixed) json_resp(object channel)
 {
 	mapping status = G->G->vlc_status[channel->name];
-	return (["data": Standards.JSON.encode(([
-			"blocks": channel->config->vlcblocks,
-			"unknowns": status->?unknowns || ({ }),
-		])),
-		"type": "application/json",
-	]);
+	return jsonify(([
+		"blocks": channel->config->vlcblocks,
+		"unknowns": status->?unknowns || ({ }),
+	]));
 }
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)

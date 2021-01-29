@@ -122,10 +122,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			else if (emotesets[chan]) emotesets[chan] += sprintf(" %s", set);
 			else emotesets[chan] = sprintf("\n\n**%s**: %s", G->G->channel_info[chan]->?display_name || chan, set);
 		}
-		if (req->variables->format == "json") return ([
-			"data": Standards.JSON.encode(mkmapping(({"permanent", "ephemeral"}), emote_raw), 7),
-			"type": "application/json",
-		]);
+		if (req->variables->format == "json") return jsonify(mkmapping(({"permanent", "ephemeral"}), emote_raw), 7);
 		array emoteinfo = values(emotesets); sort(indices(emotesets), emoteinfo);
 		mapping replacements = (["emotes": emoteinfo * "", "save": ""]);
 		if (is_bot)

@@ -41,13 +41,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		sample = req->misc->channel->expand_variables(cfg->monitors[nonce]->text);
 		array group = websocket_groups[nonce + req->misc->channel->name];
 		if (group) (group - ({0}))->send_text(Standards.JSON.encode(cfg->monitors[nonce] | (["cmd": "update", "text": sample])));
-		return (["data": Standards.JSON.encode(([
-				"nonce": nonce,
-				"text": cfg->monitors[nonce],
-				"sample": sample,
-			])),
-			"type": "application/json",
-		]);
+		return jsonify(([
+			"nonce": nonce,
+			"text": cfg->monitors[nonce],
+			"sample": sample,
+		]));
 	}
 	if (req->request_type == "DELETE") {
 		if (!req->misc->is_mod) return (["error": 401]); //JS wants it this way, not a redirect that a human would like

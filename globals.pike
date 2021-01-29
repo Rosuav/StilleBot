@@ -476,6 +476,11 @@ mapping(string:mixed) redirect(string url, int|void status)
 	return (["error": status||302, "extra_heads": (["Location": url])]);
 }
 
+mapping(string:mixed) jsonify(mixed data, int|void jsonflags)
+{
+	return (["data": Standards.JSON.encode(data, jsonflags), "type": "application/json"]);
+}
+
 class TwitchAuth
 {
 	inherit Web.Auth.OAuth2.Client;

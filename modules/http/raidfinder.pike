@@ -33,13 +33,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			foreach (channels; int i; string c) sscanf(c, "http%*[s]://twitch.tv/%s%*[?/]", channels[i]);
 			return get_users_info(channels, "login")->then(lambda(array users) {
 				notes["0"] = (array(string))users->id * "\n";
-				return ([
-					"data": Standards.JSON.encode(([
-						"highlights": users->login * "\n",
-						"highlightids": users->id,
-					]), 7),
-					"type": "application/json",
-				]);
+				return jsonify(([
+					"highlights": users->login * "\n",
+					"highlightids": users->id,
+				]), 7);
 			}, lambda(mixed err) {werror("%O\n", err); return (["error": 500]);}); //TODO: If it's "user not found", report it nicely
 		}
 		if (newnotes == "") m_delete(notes, (string)body->id);
