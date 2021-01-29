@@ -84,6 +84,11 @@ const conditional_types = {
 		expr2: "Expression 2",
 		"": "The condition passes if (after variable substitution) the two are equal.",
 	},
+	contains: {
+		expr1: "Needle",
+		expr2: "Haystack",
+		"": "The condition passes if (after variable substitution) the needle is in the haystack.",
+	},
 	number: {
 		expr1: "Expression to evaluate",
 		"": "The condition passes if the expression is nonzero. Use comparisons eg '$var$ > 100'.",
@@ -104,6 +109,7 @@ function render_command(cmd, toplevel) {
 		const rows = [TR([TD("Type:"), TD(SELECT({"data-flag": "conditional"}, [
 			OPTION({value: "choose"}, "Unconditional"),
 			OPTION({value: "string"}, "String comparison"),
+			OPTION({value: "contains"}, "Substring search"),
 			OPTION({value: "number"}, "Numeric calculation"),
 		]))])];
 		rows[0].querySelector("[data-flag=conditional]").value = cmd.conditional;

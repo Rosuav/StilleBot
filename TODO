@@ -14,7 +14,6 @@
     - Scan for monitors too - they're the same as a view command
     - Allow cascading deletion
 * More types of conditional messages.
-  - Other types of string comparison, incl "expr1 in expr2"
   - Cooldown (global or per person). Set at the top level - wouldn't apply to
     subcommands - would automatically manage the CD and "then" means "not in cooldown",
     with "otherwise" meaning "in cooldown". A few ways to use that:

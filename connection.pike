@@ -424,6 +424,14 @@ class channel_notif
 				msg = message->otherwise;
 				break;
 			}
+			case "contains": //String containment. Similar.
+			{
+				string expr1 = _substitute_vars(message->expr1 || "", vars, person);
+				string expr2 = _substitute_vars(message->expr2 || "", vars, person);
+				if (has_value(expr2, expr1)) break; //The condition passes!
+				msg = message->otherwise;
+				break;
+			}
 			case "number": //Integer/float expression evaluator. Subst into expr, then evaluate. If nonzero, pass. If non-numeric, error out.
 			{
 				if (!G->G->evaluate_expr) msg = "ERROR: Expression evaluator unavailable";
