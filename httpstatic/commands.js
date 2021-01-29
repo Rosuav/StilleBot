@@ -89,9 +89,10 @@ function render_command(cmd, toplevel) {
 		//as its sole message.
 		const cond = conditional_types[cmd.conditional] || {"": "Unrecognized condition type!"};
 		const rows = [TR([TD("Type:"), TD(SELECT({"data-flag": "conditional"}, [
+			OPTION({value: "choose"}, "Unconditional"),
 			OPTION({value: "string"}, "String comparison"),
 			OPTION({value: "number"}, "Numeric calculation"),
-		]))])]; //TODO: Have a way to make something unconditional again
+		]))])];
 		rows[0].querySelector("[data-flag=conditional]").value = cmd.conditional;
 		let desc = "";
 		for (let key in cond) {
