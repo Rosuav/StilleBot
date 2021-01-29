@@ -24,10 +24,6 @@
       and you can only use it once every hour.
     - Very short cooldown (2 seconds), 'else' adds to variable and has output with a two
       second delay that emits everything from the variable. Will batch up busy responses.
-* Conditional commands, check:
-  - Always have at least one input for both if-true and if-false
-  - Have a way to remove the condition and return it to just a simple command (discarding
-    the if-false section and all condition attributes).
 * Across an update of connection.pike, retain the mod list, until such time as we get an
   updated list.
 * Thank people for hosting (effectively a spam command triggered by a host notice)
