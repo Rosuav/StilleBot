@@ -186,7 +186,7 @@ function get_command_details(elem) {
 }
 
 on("click", "#save_advanced", async e => {
-	const info = get_command_details(DOM("#command_details").firstChild);
+	let info = get_command_details(DOM("#command_details").firstChild);
 	/*
 	const cmd = commands[document.getElementById("cmdname").innerText.slice(1)];
 	console.log("WAS:", cmd);
@@ -195,21 +195,22 @@ on("click", "#save_advanced", async e => {
 	// */
 	document.getElementById("advanced_view").close();
 	const el = document.getElementById("cmdname").firstChild;
-	info.cmdname = el.nodeType === 3 ? el.data : el.value; //Not sure if text nodes' .data attribute is the best way to do this
+	const cmdname = el.nodeType === 3 ? el.data : el.value; //Not sure if text nodes' .data attribute is the best way to do this
+	info.cmdname = cmdname;
 	const res = await fetch("command_edit", {
 		method: "PUT",
 		headers: {"Content-Type": "application/json"},
 		body: JSON.stringify(info),
 	});
 	if (!res.ok) {console.error("Not okay response", res); return;}
-	console.log("Updated successfully.");
+	info = await res.json();
 	//Scan the main table, find the command (if it existed), and remove it.
 	//Then insert a replacement.
 	for (const tr of DOM("#commandview").querySelectorAll("tr")) {
 		if (tr.firstElementChild.tagName !== "TD") continue; //Header row
 		const cmd = tr.firstElementChild.innerText.trim();
-		if (cmd < info.cmdname) continue;
-		if (cmd === info.cmdname) {tr.remove(); continue;}
+		if (cmd < cmdname) continue;
+		if (cmd === cmdname) {tr.remove(); continue;}
 		//We've found something that's further forward than the command
 		//we want. Insert here. (Note that "Add: " is greater than any
 		//command name starting "!", so it'll (correctly) trigger this.)
@@ -217,7 +218,7 @@ on("click", "#save_advanced", async e => {
 		//command will be safe for simple editing. So we assume it isn't,
 		//and put just the plain text version.
 		const lines = [];
-		const cmdname = info.cmdname.slice(1); //w/o the !
+		const cmdnobang = cmdname.slice(1);
 		let idx = 0;
 		function add_lines(msg) {
 			if (typeof msg === "string")
@@ -231,13 +232,11 @@ on("click", "#save_advanced", async e => {
 		add_lines(info.message);
 		lines.pop(); //Ditch the last BR
 		tr.before(TR([
-			TD(CODE(info.cmdname)),
+			TD(CODE(cmdname)),
 			TD(CODE(lines)),
-			TD(BUTTON({type: "button", className: "advview", "data-cmd": cmdname, title: "Advanced"}, "\u2699")),
+			TD(BUTTON({type: "button", className: "advview", "data-cmd": cmdnobang, title: "Advanced"}, "\u2699")),
 		]));
-		console.log("WAS:", commands[cmdname]);
-		console.log("BECOMING:", info);
-		commands[cmdname] = info;
+		commands[cmdnobang] = info;
 		break; //Only do this once :)
 	}
 });

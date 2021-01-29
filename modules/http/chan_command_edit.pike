@@ -73,5 +73,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	werror("FROM: %O\nTO: %O\n", body, resp);
 	if (resp == "") return (["error": 400]); //Nothing left, probably stuff was invalid
 	make_echocommand(cmd, resp);
-	return (["error": 204]);
+	if (!mappingp(resp)) resp = (["message": resp]);
+	return jsonify(resp);
 }
