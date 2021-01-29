@@ -71,7 +71,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	//(eg trying to set access or visibility deep within the response), but they
 	//will be merely useless, not problematic.
 	mapping resp = validate(body);
-	werror("FROM: %O\nTO: %O\n", body, resp);
+	//werror("FROM: %O\nTO: %O\n", body, resp);
 	if (resp == "") return (["error": 400]); //Nothing left, probably stuff was invalid
 	make_echocommand(cmd, resp);
 	if (!mappingp(resp)) resp = (["message": resp]);
