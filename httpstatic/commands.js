@@ -24,11 +24,22 @@ const flags = {
 };
 const toplevelflags = ["access", "visibility"];
 
+function checkpos() {
+	const dlg = DOM("#advanced_view");
+	const html = DOM("html");
+	console.log(html.clientWidth, dlg.clientWidth);
+	console.log(html.clientHeight, dlg.clientHeight);
+	dlg.style.left = Math.max(html.clientWidth - dlg.clientWidth, 0) / 2 + "px";
+	dlg.style.top = Math.max(html.clientHeight - dlg.clientHeight, 0) / 2 + "px";
+	dlg.style.margin = "0";
+}
+
 function simple_to_advanced(e) {
 	e.preventDefault();
 	const elem = e.target.closest(".simpletext");
 	const txt = elem.querySelector("input").value;
 	elem.replaceWith(render_command(txt));
+	checkpos();
 }
 
 function simple_to_conditional(e) {
@@ -39,6 +50,7 @@ function simple_to_conditional(e) {
 		message: parent.querySelector("input").value,
 		otherwise: "",
 	}));
+	checkpos();
 }
 
 function simple_text(msg) {
@@ -145,6 +157,7 @@ on("change", "select[data-flag=conditional]", e => {
 	//NOTE: Assumes that this does not have additional flags. They will be lost.
 	const parent = e.match.closest(".optedmsg");
 	parent.replaceWith(render_command(get_command_details(parent)));
+	checkpos();
 });
 
 //Recursively reconstruct the command info from the DOM - the inverse of render_command()
