@@ -150,7 +150,8 @@ function render_command(cmd, toplevel) {
 on("click", "button.advview", e => {
 	set_content("#command_details", render_command(commands[e.match.dataset.cmd], 1));
 	set_content("#cmdname", "!" + e.match.dataset.cmd);
-	document.getElementById("advanced_view").showModal();
+	DOM("#advanced_view").style.cssText = "";
+	DOM("#advanced_view").showModal();
 });
 
 on("change", "select[data-flag=conditional]", e => {
