@@ -60,6 +60,7 @@ function text_array(prefix, msg) {
 	const ret = (Array.isArray(msg) ? msg : [msg]).map(m =>
 		(typeof m === "string") ? simple_text(m) : render_command(m)
 	);
+	if (!ret.length) ret.push(simple_text("")); //Ensure we always get at least one input even on empty arrays
 	if (prefix) ret.unshift(prefix);
 	ret.push(BUTTON({onclick: adv_add_elem, title: "Add another line of text here"}, "+"));
 	return ret;
@@ -143,9 +144,7 @@ on("click", "button.advview", e => {
 on("change", "select[data-flag=conditional]", e => {
 	//NOTE: Assumes that this does not have additional flags. They will be lost.
 	const parent = e.match.closest(".optedmsg");
-	const msg = get_command_details(parent);
-	if (!msg.otherwise.length) msg.otherwise = ""; //Replace empty array with empty string to ensure we always get at least one input
-	parent.replaceWith(render_command(msg));
+	parent.replaceWith(render_command(get_command_details(parent)));
 });
 
 //Recursively reconstruct the command info from the DOM - the inverse of render_command()
