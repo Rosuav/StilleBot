@@ -13,12 +13,18 @@ input[type=number] {width: 4em;}
 </style>
 
 <table border=1>
+<tr><th>Variable</th><td>(TODO)<input size=20 name=varname></td></tr>
+<tr><th>Current</th><td>(TODO)<input size=10 name=value><button type=button>Set</button> TODO: Mile picker?<br>
+	NOTE: This will override any donations! Be careful!
+	<br> Changes made here are NOT applied with the Save button.
+</td></tr>
 <tr><th>Text</th><td><input size=60 name=text><br>Put a <code>#</code> for the mile count</td></tr>
 <tr><th>Cost per mile</th><td><input size=60 name=thresholds><br>eg "10 10 10 10 20 30 40 50" for slowly ramping up costs</td></tr>
 <tr><th>Font</th><td>
-	<input size=50 name=font><input name=fontsize type=number value=16><br>
-	Pick a font form Google Fonts or<br>
-	one that's already on your PC.
+	<input size=40 name=font><input name=fontsize type=number value=16>
+	<select><option>TODO</option><option>normal</option><option>bold</option></select><br>
+	Pick a font from Google Fonts or one that's<br>
+	already on your PC. (Name is case sensitive.)
 </td></tr>
 <tr><th>Text color</th><td><input type=color name=color></td></tr>
 <tr><th>Bar color</th><td><input type=color name=barcolor></td></tr>
