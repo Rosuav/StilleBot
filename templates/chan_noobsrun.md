@@ -13,7 +13,7 @@ input[type=number] {width: 4em;}
 </style>
 
 <table border=1>
-<tr><th>Variable</th><td>(TODO)<input size=20 name=varname></td></tr>
+<tr><th>Variable</th><td><input size=20 name=varname></td></tr>
 <tr><th>Current</th><td>(TODO)<input size=10 name=value><button type=button>Set</button> TODO: Mile picker?<br>
 	NOTE: This will override any donations! Be careful!
 	<br> Changes made here are NOT applied with the Save button.

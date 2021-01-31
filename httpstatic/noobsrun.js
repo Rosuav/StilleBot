@@ -5,6 +5,13 @@ import update_display from "./monitor.js";
 function set_values(info, elem, sample) {
 	if (!info) return 0;
 	for (let attr in info) {
+		if (attr === "text") {
+			//Fracture this into the variable name and the actual text
+			const m = /^\$([^:$]+)\$:(.*)/.exec(info.text)
+			elem.querySelector("[name=varname]").value = m[1];
+			elem.querySelector("[name=text]").value = m[2];
+			continue;
+		}
 		const el = elem.querySelector("[name=" + attr + "]");
 		if (el) el.value = info[attr];
 	}
@@ -17,10 +24,11 @@ on("submit", "form", async e => {
 	if (!nonce) return; //TODO: Be nicer
 	console.log(e.match.elements);
 	const body = {nonce};
-	("text " + css_attributes).split(" ").forEach(attr => {
+	css_attributes.split(" ").forEach(attr => {
 		if (!e.match.elements[attr]) return;
 		body[attr] = e.match.elements[attr].value;
 	});
+	body.text = `$${e.match.elements.varname.value}$:${e.match.elements.text.value}`;
 	info = await (await fetch("monitors", { //Uses same API backend as the main monitors page does
 		method: "PUT",
 		headers: {"Content-Type": "application/json"},

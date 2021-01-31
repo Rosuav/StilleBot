@@ -12,7 +12,6 @@ inherit http_endpoint;
    - Do everything through the same websocket that monitor.js uses
 
 TODO: Have a quick way to update the variable
-Separate the var name out from the desc, and don't force the user to see it in its magic form
 Maybe govern the cents hiding with an option?
 Options for font weight (drop down) and padding (horiz and vert) so they don't have to be custom CSS
 */
