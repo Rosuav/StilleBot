@@ -13,7 +13,7 @@ inherit http_endpoint;
 
 TODO: Have a quick way to update the variable
 Separate the var name out from the desc, and don't force the user to see it in its magic form
-Option to hide cents if round number so 1000 == "$10" and 1001 == "$10.01"
+Maybe govern the cents hiding with an option?
 Options for font weight (drop down) and padding (horiz and vert) so they don't have to be custom CSS
 */
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)

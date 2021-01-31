@@ -6,6 +6,13 @@ const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 //Map the CSS attributes on the server to the names used in element.style
 const css_attribute_names = {color: "color", font: "fontFamily", whitespace: "white-space"};
 
+const currency_formatter = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
+function currency(cents) {
+	console.log(cents);
+	if (cents >= 0 && !(cents % 100)) return "$" + (cents / 100); //Abbreviate the display to "$5" for 500
+	return currency_formatter.format(cents / 100);
+}
+
 let thresholds = null, fillcolor, barcolor, needlesize = 0.375;
 export default function update_display(elem, data, sample) { //Used for the preview as well as the live display
 	//Update styles. If the arbitrary CSS setting isn't needed, make sure it is "" not null.
@@ -58,8 +65,7 @@ export default function update_display(elem, data, sample) { //Used for the prev
 		}
 		elem.style.background = `linear-gradient(.25turn, ${fillcolor} ${mark-needlesize}%, red, ${barcolor} ${mark+needlesize}%, ${barcolor})`;
 		elem.style.display = "flex";
-		const fmt = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
-		set_content(elem, [DIV(text), DIV(fmt.format(pos / 100)), DIV(fmt.format(goal / 100))]);
+		set_content(elem, [DIV(text), DIV(currency(pos)), DIV(currency(goal))]);
 	}
 	else set_content(elem, sample || data.text);
 }
