@@ -8,7 +8,6 @@ const css_attribute_names = {color: "color", font: "fontFamily", whitespace: "wh
 
 const currency_formatter = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
 function currency(cents) {
-	console.log(cents);
 	if (cents >= 0 && !(cents % 100)) return "$" + (cents / 100); //Abbreviate the display to "$5" for 500
 	return currency_formatter.format(cents / 100);
 }
