@@ -18,7 +18,7 @@ input[type=number] {width: 4em;}
 	NOTE: This will override any donations! Be careful!
 	<br> Changes made here are NOT applied with the Save button.
 </td></tr>
-<tr><th>Text</th><td><input size=60 name=text><br>Put a <code>#</code> for the mile count</td></tr>
+<tr><th>Text</th><td><input size=60 name=text><br>Put a '#' where the mile count should go - it'll be replaced<br>with the actual number.</td></tr>
 <tr><th>Cost per mile</th><td><input size=60 name=thresholds><br>eg "10 10 10 10 20 30 40 50" for slowly ramping up costs</td></tr>
 <tr><th>Font</th><td>
 	<input size=40 name=font><input name=fontsize type=number value=16>
