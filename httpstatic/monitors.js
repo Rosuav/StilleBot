@@ -28,8 +28,11 @@ function update_monitors() {
 			]),
 			TR([TD(), TD(["Pick a font from Google Fonts or", BR(), "one that's already on your PC."])]),
 			TR([TD("Text color:"), TD(INPUT({name: "color", type: "color"}))]),
+			TR([TD("Border:"), TD([
+				"Width (px):", INPUT({name: "borderwidth", type: "number"}),
+				"Color:", INPUT({name: "bordercolor", type: "color"}),
+			])]),
 			//TODO: Gradient?
-			//TODO: Border?
 			//TODO: Drop shadow?
 			//TODO: Padding? Back end already supports padvert and padhoriz.
 			TR([TD("Formatting:"), TD(SELECT({name: "whitespace"}, [

@@ -55,7 +55,6 @@ if (nonce) set_values(info, document, sample);
 on("submit", "form", async e => {
 	e.preventDefault();
 	if (!nonce) return; //TODO: Be nicer
-	console.log(e.match.elements);
 	const body = {nonce};
 	css_attributes.split(" ").forEach(attr => {
 		if (!e.match.elements[attr]) return;

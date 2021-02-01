@@ -4,7 +4,7 @@ const {DIV} = choc;
 let socket;
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 //Map the CSS attributes on the server to the names used in element.style
-const css_attribute_names = {color: "color", font: "fontFamily", fontweight: "fontWeight", whitespace: "white-space"};
+const css_attribute_names = {color: "color", font: "fontFamily", fontweight: "fontWeight", bordercolor: "borderColor", whitespace: "white-space"};
 
 const currency_formatter = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
 function currency(cents) {
@@ -30,6 +30,9 @@ export default function update_display(elem, data, sample) { //Used for the prev
 		//It's more-or-less like saying "padding: {padvert}em {padhoriz}em"
 		if (data.padvert)  elem.style.paddingTop = elem.style.paddingBottom = data.padvert + "em";
 		if (data.padhoriz) elem.style.paddingLeft = elem.style.paddingRight = data.padhoriz + "em";
+		//If you set a border width, assume we want a solid border. (For others, set the
+		//entire border definition in custom CSS.)
+		if (data.borderwidth) {elem.style.borderWidth = data.borderwidth + "px"; elem.style.borderStyle = "solid";}
 		if (data.font) {
 			//Attempt to fetch fonts from Google Fonts if they're not installed already
 			//This will be ignored by the browser if you have the font, so it's no big

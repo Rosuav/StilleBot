@@ -34,6 +34,7 @@ input[type=number] {width: 4em;}
 	<fieldset><legend>Text</legend><input type=color name=color></fieldset>
 	<fieldset><legend>Bar</legend><input type=color name=barcolor></fieldset>
 	<fieldset><legend>Fill</legend><input type=color name=fillcolor></fieldset>
+	<fieldset><legend>Border</legend><input type=color name=bordercolor> <input type=number name=borderwidth>px</fieldset>
 </div></td></tr>
 <tr><th>Padding</th><td><div class=optionset>
 	<fieldset><legend>Vertical</legend><input type=number name=padvert min=0 max=2 step=0.005> em</fieldset>

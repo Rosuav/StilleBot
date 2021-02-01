@@ -4,7 +4,7 @@ inherit websocket_handler;
 //Note that this also handles CookingForNoobs's run distance gauge, which may end up
 //turning into a more generic gauge. This has a different set of attributes and a
 //different admin front-end, but the viewing endpoint and API handling are shared.
-constant css_attributes = "font fontweight fontsize color css whitespace previewbg barcolor fillcolor needlesize thresholds padvert padhoriz";
+constant css_attributes = "font fontweight fontsize color css whitespace previewbg barcolor fillcolor bordercolor borderwidth needlesize thresholds padvert padhoriz";
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
