@@ -20,7 +20,11 @@ function update_monitors() {
 		TD(DETAILS([SUMMARY("Expand"), FORM({id: "upd_" + nonce}, TABLE([
 			TR([
 				TD("Font:"),
-				TD([INPUT({name: "font", size: "30"}), INPUT({name: "fontsize", type: "number", size: "4", value: "16"})])
+				TD([
+					INPUT({name: "font", size: "30"}),
+					SELECT({name: "fontweight"}, [OPTION("normal"), OPTION("bold")]),
+					INPUT({name: "fontsize", type: "number", size: "4", value: "16"}),
+				])
 			]),
 			TR([TD(), TD(["Pick a font from Google Fonts or", BR(), "one that's already on your PC."])]),
 			TR([TD("Text color:"), TD(INPUT({name: "color", type: "color"}))]),

@@ -12,7 +12,6 @@ inherit http_endpoint;
    - Do everything through the same websocket that monitor.js uses
 
 TODO: Maybe govern the cents hiding with an option?
-Options for font weight (drop down) and padding (horiz and vert) so they don't have to be custom CSS
 */
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {

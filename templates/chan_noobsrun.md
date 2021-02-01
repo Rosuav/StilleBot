@@ -24,8 +24,9 @@ input[type=number] {width: 4em;}
 <tr><th>Text</th><td><input size=60 name=text><br>Put a '#' where the mile count should go - it'll be replaced<br>with the actual number.</td></tr>
 <tr><th>Cost per mile</th><td><input size=60 name=thresholds><br>eg "10 10 10 10 20 30 40 50" for slowly ramping up costs</td></tr>
 <tr><th>Font</th><td>
-	<input size=40 name=font><input name=fontsize type=number value=16>
-	<select><option>TODO</option><option>normal</option><option>bold</option></select><br>
+	<input size=40 name=font>
+	<select name=fontweight><option>normal</option><option>bold</option></select>
+	<input name=fontsize type=number value=16><br>
 	Pick a font from Google Fonts or one that's<br>
 	already on your PC. (Name is case sensitive.)
 </td></tr>
