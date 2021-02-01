@@ -2,6 +2,37 @@ import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfact
 const {A, BR, BUTTON, DETAILS, SUMMARY, DIV, FORM, INPUT, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
 import update_display from "./monitor.js";
 
+function update_milepicker() {
+	const thresholds = DOM("[name=thresholds]").value.split(" ");
+	const pos = +DOM("[name=currentval]").value;
+	const opts = [];
+	thresholds.push(Infinity); //Place a known elephant in Cairo
+	let val = -1, total = 0;
+	for (let which = 0; which < thresholds.length; ++which) {
+		//Record the *previous* total as the mark for this mile. If you pick
+		//mile 3, the total should be set to the *start* of mile 3.
+		const desc = which === thresholds.length - 1 ? "And beyond!" : "Mile " + (which + 1);
+		const prevtotal = total;
+		total += 100 * +thresholds[which]; //What if thresholds[which] isn't numeric??
+		opts.push(OPTION({value: prevtotal}, desc));
+		if (val === -1 && pos < total) val = prevtotal;
+	}
+	set_content(DOM("[name=milepicker]"), opts).value = val;
+}
+DOM("[name=thresholds]").onchange = DOM("[name=currentval]").onchange = update_milepicker;
+DOM("[name=milepicker]").onchange = e => DOM("[name=currentval]").value = e.currentTarget.value;
+DOM("#setval").onclick = async e => {
+	const val = +DOM("[name=currentval]").value;
+	if (val !== val) return; //TODO: Be nicer
+	const rc = await fetch("run", {
+		method: "PUT",
+		headers: {"Content-Type": "application/json"},
+		body: JSON.stringify({"var": DOM("[name=varname]").value, val}),
+	});
+	if (!rc.ok) {console.error("Couldn't update (TODO)"); return;}
+	update_display(DOM("#preview"), {}, val + ":" + DOM("[name=text]").value);
+}
+
 function set_values(info, elem, sample) {
 	if (!info) return 0;
 	for (let attr in info) {
@@ -15,6 +46,8 @@ function set_values(info, elem, sample) {
 		const el = elem.querySelector("[name=" + attr + "]");
 		if (el) el.value = info[attr];
 	}
+	elem.querySelector("[name=currentval]").value = sample.split(":")[0];
+	update_milepicker();
 	update_display(DOM("#preview"), info, sample);
 }
 if (nonce) set_values(info, document, sample);

@@ -11,14 +11,27 @@ inherit http_endpoint;
    - Height, width? Or let OBS define that?
    - Do everything through the same websocket that monitor.js uses
 
-TODO: Have a quick way to update the variable
-Maybe govern the cents hiding with an option?
+TODO: Maybe govern the cents hiding with an option?
 Options for font weight (drop down) and padding (horiz and vert) so they don't have to be custom CSS
 */
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
-	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
 	mapping cfg = req->misc->channel->config;
+	if (req->request_type == "PUT") {
+		//API back end to hot-update the value. It's actually a generic variable setter.
+		if (!req->misc->is_mod) return (["error": 401]); //JS wants it this way, not a redirect that a human would like
+		mixed body = Standards.JSON.decode(req->body_raw);
+		if (!body || !mappingp(body) || !stringp(body->var) || undefinedp(body->val)) return (["error": 400]);
+		object chan = req->misc->channel;
+		mapping vars = persist_status->path("variables")[chan->name] || ([]);
+		//Forbid changing a variable that doesn't exist. This saves us the
+		//trouble of making sure that it's a valid variable name too.
+		string prev = vars["$" + body->var + "$"];
+		if (!prev) return (["error": 404]);
+		req->misc->channel->set_variable(body->var, (string)(int)body->val);
+		return jsonify((["prev": prev]));
+	}
+	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
 	string nonce; mapping info;
 	if (!cfg->monitors) ; //TODO: Give a nicer error?
 	else if (mapping i = cfg->monitors[req->variables->nonce]) {
