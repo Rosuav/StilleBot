@@ -102,8 +102,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				if (!tiers[sub->tier]) tierlist += ({sprintf("Unknown sub tier %O<br>\n", sub->tier)});
 				//Try to figure out if we get any extra info
 				mapping unknowns = sub - (<
-					"broadcaster_id", "broadcaster_name", "gifter_id", "gifter_name", "is_gift",
-					"plan_name", "tier", "user_id", "user_name",
+					"broadcaster_id", "broadcaster_name", "broadcaster_login",
+					"gifter_id", "gifter_name", "gifter_login", "is_gift",
+					"plan_name", "tier", "user_id", "user_name", "user_login",
 				>);
 				if (sizeof(unknowns)) tierlist += ({sprintf("Unknown additional info on %s's sub:%{ %O%}<br>\n", sub->user_name, indices(unknowns))});
 			}
