@@ -27,6 +27,7 @@ function update_monitors() {
 			//TODO: Gradient?
 			//TODO: Border?
 			//TODO: Drop shadow?
+			//TODO: Padding? Back end already supports padvert and padhoriz.
 			TR([TD("Formatting:"), TD(SELECT({name: "whitespace"}, [
 				OPTGROUP({label: "Single line"}, [
 					OPTION({value: "normal"}, "Wrapped"),

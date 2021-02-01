@@ -27,6 +27,9 @@ export default function update_display(elem, data, sample) { //Used for the prev
 		}
 		if (data.needlesize) needlesize = +data.needlesize;
 		if (data.fontsize) elem.style.fontSize = data.fontsize + "px"; //Special-cased to add the unit
+		//It's more-or-less like saying "padding: {padvert}em {padhoriz}em"
+		if (data.padvert)  elem.style.paddingTop = elem.style.paddingBottom = data.padvert + "em";
+		if (data.padhoriz) elem.style.paddingLeft = elem.style.paddingRight = data.padhoriz + "em";
 		if (data.font) {
 			//Attempt to fetch fonts from Google Fonts if they're not installed already
 			//This will be ignored by the browser if you have the font, so it's no big

@@ -34,6 +34,10 @@ input[type=number] {width: 4em;}
 	<fieldset><legend>Bar</legend><input type=color name=barcolor></fieldset>
 	<fieldset><legend>Fill</legend><input type=color name=fillcolor></fieldset>
 </div></td></tr>
+<tr><th>Padding</th><td><div class=optionset>
+	<fieldset><legend>Vertical</legend><input type=number name=padvert min=0 max=2 step=0.005> em</fieldset>
+	<fieldset><legend>Horizontal</legend><input type=number name=padhoriz min=0 max=2 step=0.005> em</fieldset>
+</div></td></tr>
 <tr><th>Needle size</th><td><input type=number name=needlesize min=0 max=1 step=0.005 value=0.375> Thickness of the red indicator needle</td></tr>
 <tr><th>Custom CSS</th><td><textarea name=css></textarea></td></tr>
 <tr><th>Preview</th><td><div id=preview></div></td></tr>
