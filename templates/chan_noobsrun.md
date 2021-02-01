@@ -10,6 +10,9 @@ input[type=number] {width: 4em;}
 #preview div {width: 33%;}
 #preview div:nth-of-type(2) {text-align: center;}
 #preview div:nth-of-type(3) {text-align: right;}
+
+.optionset {display: flex; padding: 0.125em 0;}
+.optionset fieldset {padding: 0.25em; margin-left: 1em;}
 </style>
 
 <table border=1>
@@ -26,9 +29,11 @@ input[type=number] {width: 4em;}
 	Pick a font from Google Fonts or one that's<br>
 	already on your PC. (Name is case sensitive.)
 </td></tr>
-<tr><th>Text color</th><td><input type=color name=color></td></tr>
-<tr><th>Bar color</th><td><input type=color name=barcolor></td></tr>
-<tr><th>Fill color</th><td><input type=color name=fillcolor></td></tr>
+<tr><th>Colors</th><td><div class=optionset>
+	<fieldset><legend>Text</legend><input type=color name=color></fieldset>
+	<fieldset><legend>Bar</legend><input type=color name=barcolor></fieldset>
+	<fieldset><legend>Fill</legend><input type=color name=fillcolor></fieldset>
+</div></td></tr>
 <tr><th>Needle size</th><td><input type=number name=needlesize min=0 max=1 step=0.005 value=0.375> Thickness of the red indicator needle</td></tr>
 <tr><th>Custom CSS</th><td><textarea name=css></textarea></td></tr>
 <tr><th>Preview</th><td><div id=preview></div></td></tr>
