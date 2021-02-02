@@ -73,8 +73,7 @@ int message(object channel, mapping person, string msg)
 			//This is the current mile. If we've only barely started it,
 			//then we probably just hit this mile. (If mile is 0, we've
 			//just broken positive after having a negative total.)
-			//TODO: Put this into an echo command.
-			if (total < cents) channel->send(person, "devicatLvlup Mile #%s complete!! noobsGW", (["%s": (string)mile]));
+			if (total < cents) channel->send(person, G->G->echocommands["nextmile" + channel->name], (["%s": (string)mile]));
 			break;
 		}
 		break;
