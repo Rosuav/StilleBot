@@ -52,16 +52,33 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 int message(object channel, mapping person, string msg)
 {
 	if (channel->name != "#cookingfornoobs") return 0;
-	//In theory, this could be done with a !!cheer special command, except that
-	//as of 20210120, specials don't have the full power of echo commands. Also,
-	//the detection of StreamLabs messages has to be custom code, so we wouldn't
-	//gain much anyway - only this first part could change.
-	if (person->bits) channel->set_variable("rundistance", person->bits, "add");
-	if (person->user != "streamlabs") return 0;
-	sscanf(msg, "%*s just tipped $%d.%d!", int dollars, int cents);
-	cents += 100 * dollars;
+	int cents = person->bits;
+	if (person->user == "streamlabs") {
+		sscanf(msg, "%*s just tipped $%d.%d!", int dollars, cents);
+		cents += 100 * dollars;
+	}
 	if (!cents) return 0; //Any non-matching lines will just look like $0.00
-	channel->set_variable("rundistance", cents, "add"); //Both of these abuse the fact that it'll take an int just fine for add :)
+	channel->set_variable("rundistance", cents, "add"); //Abuse the fact that it'll take an int just fine for add :)
+	if (cents < 0) return 0;
+	//See if we've just hit a new mile. TODO: Handle this, and the incrementing
+	//itself, more generically; it's a bit unnecessary to hard-code the variable
+	//name, but I don't know if it'd actually work to have multiple. For instance,
+	//what if there are multiple bars with different configs, but only one active
+	//at a time? So for now, after finding one, we just stop.
+	foreach (channel->config->monitors; ; mapping info) if (info->thresholds) {
+		int total = (int)channel->expand_variables("$rundistance$");
+		foreach (info->thresholds / " "; int mile; string th) {
+			int nextmile = 100 * (int)th;
+			if (total >= nextmile) {total -= nextmile; continue;}
+			//This is the current mile. If we've only barely started it,
+			//then we probably just hit this mile. (If mile is 0, we've
+			//just broken positive after having a negative total.)
+			//TODO: Put this into an echo command.
+			if (total < cents) channel->send(person, "devicatLvlup Mile #%s complete!! noobsGW", (["%s": (string)mile]));
+			break;
+		}
+		break;
+	}
 	return 0;
 }
 
