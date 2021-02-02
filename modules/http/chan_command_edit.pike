@@ -4,7 +4,7 @@ inherit http_endpoint;
 //Blank or null is always allowed, and will result in no flag being set.
 constant valid_flags = ([
 	"mode": (<"random">),
-	"access": (<"mod">),
+	"access": (<"mod", "none">),
 	"visibility": (<"hidden">),
 	"action": (<"add">),
 ]);
@@ -12,7 +12,7 @@ constant valid_flags = ([
 constant condition_parts = ([
 	"string": ({"expr1", "expr2"}),
 	"contains": ({"expr1", "expr2"}),
-	"number": ({"expr1"}), //Yes, expr1 even though there's no others - means you still see it when you switch (when that's implemented)
+	"number": ({"expr1"}), //Yes, expr1 even though there's no others - means you still see it when you switch
 ]);
 
 echoable_message validate(echoable_message resp)

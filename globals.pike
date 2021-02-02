@@ -38,7 +38,7 @@ class command
 	//Command flags, same as can be managed for echocommands with !setcmd
 	//Note that the keywords given here by default should be treated as equivalent
 	//to a 0, as echocommands will normally use 0 for the defaults.
-	constant access = "any"; //Set to "mod" for mod-only commands - others may be available later
+	constant access = "any"; //Set to "mod" for mod-only commands, or "none" for disabled (or internal-only) commands (more useful for echo commands)
 	constant visibility = "visible"; //Set to "hidden" to suppress the command from !help (or set hidden_command to 1, deprecated alternative)
 	constant active_channels = ({ }); //To restrict this to some channels only, set this to a non-empty array.
 	constant docstring = ""; //Override this with your docs
@@ -53,6 +53,7 @@ class command
 	{
 		if (require_allcmds && !channel->config->allcmds) return 0;
 		if ((require_moderator || access == "mod") && !channel->mods[person->user]) return 0;
+		if (access == "none") return 0;
 		return process(channel, person, param);
 	}
 	protected void create(string name)
@@ -71,7 +72,7 @@ class command
 Available to: %s
 
 %s
-", name, summary, require_moderator ? "mods only" : (["mod": "mods only", "any": "all users"])[access], main));
+", name, summary, require_moderator ? "mods only" : (["mod": "mods only", "any": "all users", "none": "nobody (internal only)"])[access], main));
 			string fn = sprintf("commands/%s.md", name);
 			string oldcontent = Stdio.read_file(fn);
 			if (content != oldcontent) Stdio.write_file(fn, content);
@@ -120,6 +121,7 @@ command_handler find_command(object channel, string cmd, int is_mod)
 		object|mapping flags = functionp(f) ? function_object(f) : mappingp(f) ? f : ([]);
 		if (flags->require_allcmds && !channel->config->allcmds) continue;
 		if ((flags->require_moderator || flags->access == "mod") && !is_mod) continue;
+		if (flags->access == "none") continue;
 		//If we get here, the command is acceptable.
 		return f;
 	}

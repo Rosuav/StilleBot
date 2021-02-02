@@ -49,6 +49,7 @@ string process(object channel, object person, string param)
 			case "wtarget": command->dest = "/w %s"; break;
 			case "anyone": m_delete(command, "access"); break;
 			case "modonly": command->access = "mod"; break;
+			case "disabled": command->access = "none"; break;
 			case "visible": m_delete(command, "visibility"); break;
 			case "hidden": command->visibility = "hidden"; break;
 			default: return "@$$: Unknown option " + flag; //Won't update the command

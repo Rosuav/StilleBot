@@ -148,7 +148,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			commands += ({sprintf("<code>!%s</code> | <code>%s</code> | %s",
 				user(cmd), htmlify(response),
 				//TODO: Show if a response would be whispered?
-				response->access == "mod" ? "Mod-only" : "",
+				(["mod": "Mod-only", "none": "Disabled"])[response->access] || "",
 			)});
 		}
 		order += ({cmd});

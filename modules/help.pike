@@ -53,6 +53,7 @@ echoable_message process(object channel, mapping person, string param)
 			if (flags->hidden_command || flags->visibility == "hidden") continue;
 			if (flags->require_allcmds && !channel->config->allcmds) continue;
 			if ((flags->require_moderator || flags->access == "mod") && !is_mod) continue;
+			if (flags->access == "none") continue;
 			if (has_prefix(cmd, "!")) continue; //Special responses aren't commands
 			if (!has_value(cmd, '#') || has_suffix(cmd, channel->name))
 				cmds[cmd - channel->name] = 1;
