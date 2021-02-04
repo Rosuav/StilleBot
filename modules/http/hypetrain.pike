@@ -6,8 +6,6 @@ constant hidden_command = 1;
 constant require_allcmds = 0;
 constant active_channels = ({"devicat", "rosuav"}); //TODO: Choose where to activate this, even when not in allcmds
 
-//TODO: Add a timer to report on expirations so they happen on the WS too
-
 //Parse a timestamp into a valid Unix time. If ts is null, malformed,
 //or in the past, returns 0.
 int until(string ts, int now)
@@ -23,6 +21,17 @@ Concurrent.Future parse_hype_status(mapping data)
 	int now = time();
 	int cooldown = until(data->cooldown_end_time, now);
 	int expires = until(data->expires_at, now);
+	int checktime = expires || cooldown;
+	if (checktime != G->G->hypetrain_checktime[data->broadcaster_id]) {
+		//Schedule a check about when the hype train or cooldown will end.
+		//If something changes before then (eg it goes to a new level),
+		//we'll schedule a duplicate call_out, but otherwise, rechecking
+		//repeatedly won't create a spew of call_outs that spam the API.
+		G->G->hypetrain_checktime[data->broadcaster_id] = checktime;
+		write("Scheduling a check of %s hype train at %d [%ds from now]\n",
+			data->broadcaster_id, checktime, checktime - now + 1);
+		call_out(probe_hype_train, checktime - now + 1, (int)data->broadcaster_id);
+	}
 	mapping state = ([
 		"cooldown": cooldown, "expires": expires,
 		"level": (int)data->level, "goal": (int)data->goal, "total": (int)data->total,
@@ -63,6 +72,15 @@ Concurrent.Future get_hype_state(int channel)
 			mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
 			return parse_hype_status(data);
 		});
+}
+
+void probe_hype_train(int channel)
+{
+	get_hype_state(channel)->then(lambda(mapping state) {
+		state->cmd = "update";
+		write("Clock-pinging %d clients for hype train %d\n", sizeof(websocket_groups[channel]), channel);
+		(websocket_groups[channel] - ({0}))->send_text(Standards.JSON.encode(state));
+	});
 }
 
 constant emotes = #"HypeFighter HypeShield HypeKick HypeSwipe HypeRIP HypeGG
@@ -176,4 +194,5 @@ protected void create(string name)
 	if (G->G->webhook_endpoints->hypetrain)
 		token = function_object(G->G->webhook_endpoints->hypetrain)->token;
 	G->G->webhook_endpoints->hypetrain = hypetrain_progression;
+	if (!G->G->hypetrain_checktime) G->G->hypetrain_checktime = ([]);
 }
