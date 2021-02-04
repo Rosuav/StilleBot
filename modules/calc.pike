@@ -59,4 +59,4 @@ string process(object channel, object person, string param)
 	return "@$$: Invalid expression [" + (describe_error(ex)/"\n")[0] + "]";
 }
 
-void create(string name) {::create(name); G->G->evaluate_expr = evaluate;}
+protected void create(string name) {::create(name); G->G->evaluate_expr = evaluate;}
