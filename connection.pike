@@ -609,8 +609,6 @@ class channel_notif
 						//possible. So it's in a flat file, easily greppable.
 						Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s\n",
 							Calendar.now()->format_time(), name[1..], h));
-						write("Debug outgoing raid: chan %s msg %O params %O\n",
-							name, msg, params);
 						record_raid(0, name[1..], 0, h);
 					}
 					hosting = h;
@@ -657,7 +655,7 @@ class channel_notif
 				}
 				//TODO: Handle sub plans better, esp since "Prime" should count as tier 1
 				case "sub":
-					write("DEBUG RESUB: chan %s person %O params %O\n", name, person->user, params); //Where is the multimonth info?
+					//write("DEBUG RESUB: chan %s person %O params %O\n", name, person->user, params); //Where is the multimonth info?
 					trigger_special("!sub", person, (["{tier}": params->msg_param_sub_plan[0..0]]));
 					break;
 				case "resub": trigger_special("!resub", person, ([
@@ -665,7 +663,7 @@ class channel_notif
 					"{months}": params->msg_param_cumulative_months,
 					"{streak}": params->msg_param_streak_months || "",
 				]));
-				write("DEBUG RESUB: chan %s person %O params %O\n", name, person->user, params); //Where is the multimonth info?
+				//write("DEBUG RESUB: chan %s person %O params %O\n", name, person->user, params); //Where is the multimonth info?
 				break;
 				case "giftpaidupgrade": break; //Pledging to continue a subscription (first introduced for the Subtember special in 2018, and undocumented)
 				case "anongiftpaidupgrade": break; //Ditto but when the original gift was anonymous
@@ -674,10 +672,10 @@ class channel_notif
 				case "communitypayforward": break; //X is paying forward the Gift they got from Y to the community!
 				case "subgift":
 				{
-					write("DEBUG SUBGIFT: chan %s disp %O user %O mon %O recip %O multi %O\n",
+					/*write("DEBUG SUBGIFT: chan %s disp %O user %O mon %O recip %O multi %O\n",
 						name, person->displayname, person->user,
 						params->msg_param_months, params->msg_param_recipient_display_name,
-						params->msg_param_gift_months);
+						params->msg_param_gift_months);*/
 					trigger_special("!subgift", person, ([
 						"{tier}": params->msg_param_sub_plan[0..0],
 						"{months}": params->msg_param_cumulative_months || params->msg_param_months || "1",
@@ -693,10 +691,10 @@ class channel_notif
 				}
 				case "submysterygift":
 				{
-					write("DEBUG SUBGIFT: chan %s disp %O user %O gifts %O multi %O\n",
+					/*write("DEBUG SUBGIFT: chan %s disp %O user %O gifts %O multi %O\n",
 						name, person->displayname, person->user,
 						params->msg_param_mass_gift_count,
-						params->msg_param_gift_months);
+						params->msg_param_gift_months);*/
 					trigger_special("!subbomb", person, ([
 						"{tier}": params->msg_param_sub_plan[0..0],
 						"{gifts}": params->msg_param_mass_gift_count,
@@ -824,8 +822,8 @@ void send_http_response(mapping resp, Protocols.HTTP.Server.Request req) //The o
 {
 	if (!resp)
 	{
-		werror("HTTP request: %s %O %O\n", req->request_type, req->not_query, req->variables);
-		werror("Headers: %O\n", req->request_headers);
+		//werror("HTTP request: %s %O %O\n", req->request_type, req->not_query, req->variables);
+		//werror("Headers: %O\n", req->request_headers);
 		resp = ([
 			"data": "No such page.\n",
 			"type": "text/plain; charset=\"UTF-8\"",
