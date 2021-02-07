@@ -534,7 +534,7 @@ class channel_notif
 		return _substitute_vars(text, vars, ([]));
 	}
 
-	void record_raid(int fromid, string fromname, int toid, string toname, int|void ts)
+	void record_raid(int fromid, string fromname, int toid, string toname, int|void ts, int|void viewers)
 	{
 		write("Detected a raid: %O %O %O %O %O\n", fromid, fromname, toid, toname, ts);
 		if (!ts) ts = time();
@@ -562,7 +562,7 @@ class channel_notif
 				"time": ts,
 				"from": fromname, "to": toname,
 				"outgoing": outgoing,
-				//TODO: Record the number of raiders??
+				"viewers": undefinedp(viewers) ? -1 : (int)viewers,
 			])});
 			persist_status->save();
 		});
@@ -607,9 +607,11 @@ class channel_notif
 						//which channel led to some other channel ("ohh, I met you
 						//when X raided you last week"). Other uses may also be
 						//possible. So it's in a flat file, easily greppable.
-						Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s\n",
-							Calendar.now()->format_time(), name[1..], h));
-						record_raid(0, name[1..], 0, h);
+						mapping info = G->G->channel_info[name[1..]];
+						int viewers = info ? info->viewer_count : -1;
+						Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s with %d\n",
+							Calendar.now()->format_time(), name[1..], h, viewers));
+						record_raid(0, name[1..], 0, h, viewers);
 					}
 					hosting = h;
 				}
@@ -644,7 +646,8 @@ class channel_notif
 					//NOTE: The destination "room ID" might not remain forever.
 					//If it doesn't, we'll need to get the channel's user id instead.
 					record_raid((int)params->user_id, person->displayname,
-						(int)params->room_id, name[1..], (int)params->tmi_sent_ts);
+						(int)params->room_id, name[1..], (int)params->tmi_sent_ts,
+						(int)params->msg_param_viewerCount);
 					break;
 				}
 				case "rewardgift": //Used for special promo messages eg "so-and-so's cheer just gave X people a bonus emote"

@@ -318,6 +318,7 @@ void stream_status(string name, mapping info)
 			G->G->channel_info[name] = 0; //Force an update by clearing the old info
 			get_channel_info(name);
 		}
+		G->G->channel_info[name]->viewer_count = info->viewer_count;
 		//if (synthesized->?status != last_title) write("Old title: %O\nNew title: %O\n", last_title, synthesized->?status); //hack
 		//TODO: Report when the game changes?
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->started_at);
