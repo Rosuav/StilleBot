@@ -62,6 +62,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		}
 		uid = get_user_id(chan);
 	}
+	//TODO: Based on the for= or the logged in user, determine whether raids are tracked.
 	mapping raids = ([]);
 	array follows;
 	mapping(int:array(string)) channel_tags = ([]);
@@ -247,6 +248,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					if (your_stream->category == strm->game) recommend += 100;
 					//Or +70 if both of you are in creative categories
 					else if (creatives[your_stream->category] && creatives[strm->game]) recommend += 70;
+					//Common tags: 25 points apiece
+					//Note that this will include language tags
+					recommend += 25 * sizeof((multiset)your_stream->tag_ids & (multiset)strm->tags->id);
 				}
 				//Up to 100 points for having just started, scaling down to zero at four hours of uptime
 				int uptime = time() - Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", strm->created_at)->unix_time();

@@ -23,6 +23,8 @@ on("click", "#sort li", e => {
 	follows.forEach((stream, idx) => stream.element.style.order = idx);
 });
 
+DOM("#legend").onclick = e => DOM("#infodlg").showModal();
+
 function uptime(startdate) {
 	const time = Math.floor((new Date() - new Date(startdate)) / 1000);
 	if (time < 60) return time + " seconds";

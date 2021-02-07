@@ -1,6 +1,6 @@
 # Followed streams
 
-<button id=highlights>Edit highlight list</button> <button id=allraids>All recent raids</button>
+<button id=legend>Legend/info</button> <button id=highlights>Edit highlight list</button> <button id=allraids>All recent raids</button>
 
 * $$sortorders$$
 {: #sort}
@@ -94,5 +94,21 @@ let highlights = $$highlights$$; //human-readable list of highlight channels (ev
 const mode = "$$mode||normal$$"; //defines how the follow list is to be interpreted
 const all_raids = $$all_raids$$;
 </script>
+
+> <button type=button class=dialog_cancel>x</button>
+>
+> This raid finder shows the people you currently follow, and helps you select someone<br>
+> to raid. Incoming and outgoing raids $$is_tracked||will be shown if StilleBot tracks this channel$$.
+>
+> The recommendations sort order is based upon the following factors:
+>
+> * Incoming raids, especially those more than a month ago
+> * Few or no outgoing raids
+> * Stream has fewer viewers than you or only slightly more
+> * Stream has recently started
+> * Both of you are in the same category, or related categories (currently only Creative)
+> * Tags that both of you are using
+>
+{: tag=dialog #infodlg}
 
 <script type=module src="$$static||raidfinder.js$$"></script>
