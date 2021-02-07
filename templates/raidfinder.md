@@ -85,6 +85,17 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	background-color: #ffc;
 	border: 1px solid #ff0;
 }
+
+.much_smaller     {border: 2px solid #bfe;}
+.smaller          {border: 2px solid #cfe;}
+.slightly_smaller {border: 2px solid #dfe;}
+.samesize         {border: 2px solid #efe;}
+.slightly_larger  {border: 2px solid #efd;}
+.larger           {border: 2px solid #efc;}
+.much_larger      {border: 2px solid #efb;}
+
+#viewerlegend {display: flex;}
+#viewerlegend div {margin-right: 0.5em; padding: 0.25em 0.125em;}
 </style>
 
 <script>
@@ -109,6 +120,16 @@ const all_raids = $$all_raids$$;
 > * Both of you are in the same category, or related categories (currently only Creative)
 > * Tags that both of you are using
 >
+> Followed channels have a subtle border highlight to show viewer count relative to your own.
+> <div id=viewerlegend>
+> <div class=much_larger>Double</div>
+> <div class=larger>50% more</div>
+> <div class=slightly_larger>25% more</div>
+> <div class=samesize>About the same</div>
+> <div class=slightly_smaller>20% fewer</div>
+> <div class=smaller>33% fewer</div>
+> <div class=much_smaller>Half</div>
+> </div>
 {: tag=dialog #infodlg}
 
 <script type=module src="$$static||raidfinder.js$$"></script>

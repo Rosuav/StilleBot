@@ -184,7 +184,7 @@ function build_follow_list() {
 					LI([A({href: stream.channel.url}, [adornment(stream.channel.broadcaster_type), stream.channel.display_name]), " - ", B(stream.game)]),
 					LI({className: "streamtitle"}, stream.channel.status),
 					LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
-					LI("Score: " + stream.recommend),
+					//LI("Score: " + stream.recommend), //For debugging the magic sort
 					LI(stream.tags.map(tag => SPAN({className: "tag"}, tag.name + " "))),
 					LI([describe_notes(stream), describe_raid(stream.raids)]),
 				]),
