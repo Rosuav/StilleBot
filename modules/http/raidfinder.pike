@@ -212,13 +212,15 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					object time = Calendar.ISO.Second("unix", raid->time);
 					if (swap != raid->outgoing) {
 						strm->raids += ({sprintf(">%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
-						if (raid->time > recent) recommend -= 20;
-						else if (raid->time > ancient) recommend -= 5;
+						if (raid->time > recent) recommend -= 200;
+						else if (raid->time > ancient) recommend -= 50;
+						else recommend += 8; //"Oh yeah, I've known this person for years"
 					}
 					else {
 						strm->raids += ({sprintf("<%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
-						if (raid->time > recent) recommend += 10;
-						else if (raid->time > ancient) recommend += 20;
+						if (raid->time > recent) recommend += 100;
+						else if (raid->time > ancient) recommend += 200;
+						else recommend += 10; //VERY old raid data has less impact than current.
 					}
 					if (!undefinedp(raid->viewers) && raid->viewers != -1)
 						strm->raids[-1] += " with " + raid->viewers;
@@ -226,18 +228,30 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				//For some reason, strm->raids[*][1..] doesn't work. ??
 				sort(lambda(string x) {return x[1..];}(strm->raids[*]), strm->raids); //Sort by date, ignoring the </> direction marker
 				strm->raids = Array.uniq2(strm->raids);
-				//Stream recommendation level (which could then be sorted on)
+				//Stream recommendation level (which defines the default sort order)
+				if (your_stream) {
+					int you = your_stream->viewer_count;
+					if (!you) {
+						//If you have no viewers, it's hard to scale things, so we
+						//pick an arbitrary figure to use.
+						if (strm->viewers < 20) recommend += 20 - strm->viewers;
+					}
+					else {
+						int scale = strm->viewers * 100 / you;
+						if (scale >= 140) ; //Large, no bonus
+						else if (scale >= 100) recommend += 70 - scale / 2; //Slightly larger. Give 20 points if same size, diminishing towards 140%.
+						else recommend += scale / 5; //Smaller. Give 20 points if same size, diminishing towards 0%.
+					}
+					multiset(string) creatives = (<"Art", "Science & Technology", "Food & Drink", "Music", "Makers & Crafting", "Beauty & Body Art">);
+					//+100 for being in the same category
+					if (your_stream->category == strm->game) recommend += 100;
+					//Or +70 if both of you are in creative categories
+					else if (creatives[your_stream->category] && creatives[strm->game]) recommend += 70;
+				}
+				//Up to 100 points for having just started, scaling down to zero at four hours of uptime
+				int uptime = time() - Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", strm->created_at)->unix_time();
+				if (uptime < 4 * 3600) recommend += uptime / 4 / 36;
 				strm->recommend = recommend;
-				//Factors that would recommend someone:
-				//+10 for each incoming raid within the last month
-				//+20 for each incoming raid between 1 and 12 months ago
-				//-20 for each outgoing raid within the last month
-				//-5 for each outgoing raid between 1 and 12 months ago
-				//+1 to +2 for having 100% to 125% of your viewers, scaling
-				//+1 to +8 for having 100% to 0% of your viewers
-				//+10 to +1 for having been live for 0-4 hours (above four hours, might be ending soon)
-				//+10 for being in the same category
-				//+7 if both of you are in creative categories but different ones
 			}
 			//End stream tags work
 			//List all recent raids. Actually list ALL raids on the current system.
