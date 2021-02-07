@@ -61,6 +61,9 @@
   - Optionally emit message only if online at the time.
 * Raid finder: Also show recent outgoing raids to allow notes to be added?
   - Or just "pick any channel, add notes". Have it show the stream as if in the raid finder.
+  - The allfollows display could be this, but it's nondiscoverable and could be quite costly
+    for people who follow a lot of people.
+  - Add a legend somewhere showing the viewership size borders
 * Move "$$autoform||$$" from markdown.html into each of the files that actually wants it
 * Giveaways using on-platform channel currency
   - API to create/manage a channel reward

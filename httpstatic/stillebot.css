@@ -82,3 +82,12 @@ nav a {
 #nextlevel.level6 {background-color: var(--hype-level6);}
 /* It'd be really cool to get the conductors' chat colours, but probably impractical */
 #cond_bits.present, #cond_subs.present {background-color: #e060e0;}
+
+/* Subtle highlights for the raid finder */
+.much_smaller     {border: 2px solid #bfe;}
+.smaller          {border: 2px solid #cfe;}
+.slightly_smaller {border: 2px solid #dfe;}
+.samesize         {border: 2px solid #efe;}
+.slightly_larger  {border: 2px solid #efd;}
+.larger           {border: 2px solid #efc;}
+.much_larger      {border: 2px solid #efb;}

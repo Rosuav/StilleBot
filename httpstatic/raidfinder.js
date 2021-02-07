@@ -131,8 +131,25 @@ function build_follow_list() {
 		}
 		return BUTTON(attr, "\u270D");
 	}
-	//TODO: Show when stream.viewers is a long way above or below your_viewers
-	set_content("#streams", follows.map(stream => stream.element = DIV({className: stream.highlight ? "highlighted" : ""},
+	function describe_size(stream) {
+		//Pick a CSS class based on the size of your stream (right now) and this stream (right now).
+		//Would be kinda nice if we could respect ongoing average viewership - particularly for a
+		//stream that started 2 minutes ago, but will later on become way big. Also, if we have our
+		//own viewership stats, it could be useful to have a 25/75 percentile mark and say "anyone
+		//within this range is samesize".
+		if (!your_stream) return ""; //If you're not online, show no size info
+		const you = your_stream.viewer_count, them = stream.viewers;
+		const dir = you > them ? "smaller" : "larger";
+		const abs = you > them ? you - them : them - you;
+		const rel = you > them ? you / them : them / you;
+		if (abs < 2) return "samesize"; //2 viewers and 1 viewer are the same size, not "half my size"
+		//Should these thresholds be tweaked based on the absolute difference?
+		if (rel < 1.25) return "samesize";
+		if (rel < 1.5) return "slightly_" + dir;
+		if (rel < 2) return dir;
+		return "much_" + dir;
+	}
+	set_content("#streams", follows.map(stream => stream.element = DIV({className: describe_size(stream) + " " + (stream.highlight ? "highlighted" : "")},
 		mode === "allfollows" ? [
 			//Cut-down view for channels that might be offline. Also, most of this is Helix info not Kraken.
 			A({href: "https://twitch.tv/" + stream.login}, [
