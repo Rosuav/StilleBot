@@ -219,11 +219,22 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				strm->raids = Array.uniq2(strm->raids);
 			}
 			//End stream tags work
+			//List all recent raids. Actually list ALL raids on the current system.
+			array all_raids = ({ });
+			foreach (persist_status->path("raids"); string id; mapping raids) {
+				if (id == (string)userid)
+					foreach (raids; string otherid; array raids)
+						all_raids += raids;
+				else foreach (raids[(string)userid] || ({ }), mapping r)
+					all_raids += ({r | (["outgoing": !r->outgoing])});
+			}
+			sort(all_raids->time, all_raids);
 			return render_template("raidfinder.md", ([
 				"follows": cached_follows = Standards.JSON.encode(follows, Standards.JSON.ASCII_ONLY),
 				"your_stream": Standards.JSON.encode(your_stream, Standards.JSON.ASCII_ONLY),
 				"highlights": Standards.JSON.encode(highlights, Standards.JSON.ASCII_ONLY),
 				"sortorders": ({"Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
+				"all_raids": Standards.JSON.encode(all_raids[<99..]),
 			]));
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: Return a nice message if for=junk given
 }

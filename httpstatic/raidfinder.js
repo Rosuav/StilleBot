@@ -34,14 +34,29 @@ function uptime(startdate) {
 	return ret;
 }
 
-function show_raids(raids) {
-	const ul = set_content("#raids ul", raids.map(desc => LI(
-		{className: desc[0] === '>' ? "raid-outgoing" : "raid-incoming"},
-		desc.slice(1),
-	)));
+function low_show_raids(raids) {
+	const ul = set_content("#raids ul", raids);
 	DOM("#raids").showModal();
 	ul.scrollTop = ul.scrollHeight;
 }
+
+function show_raids(raids) {
+	low_show_raids(raids.map(desc => LI(
+		{className: desc[0] === '>' ? "raid-outgoing" : "raid-incoming"},
+		desc.slice(1),
+	)));
+}
+
+function show_all_raids() {
+	low_show_raids(all_raids.map(raid => {
+		const tail = [" at ", new Date(raid.time * 1000).toLocaleDateString()];
+		if (raid.viewers > 0) tail.push(` with ${raid.viewers} viewers`);
+		return raid.outgoing
+		? LI({className: "raid-outgoing"}, [raid.from, " raided ", A({href: "https://twitch.tv/" + raid.to}, raid.to), ...tail])
+		: LI({className: "raid-incoming"}, [A({href: "https://twitch.tv/" + raid.from}, raid.from), " raided ", raid.to, ...tail]);
+	}));
+}
+DOM("#allraids").onclick = show_all_raids;
 
 function edit_notes(stream) {
 	set_content("#notes_about_channel", [

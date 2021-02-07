@@ -1,6 +1,6 @@
 # Followed streams
 
-<button id=highlights>Edit highlight list</button>
+<button id=highlights>Edit highlight list</button> <button id=allraids>All recent raids</button>
 
 * $$sortorders$$
 {: #sort}
@@ -92,6 +92,7 @@ const follows = $$follows$$;
 const your_stream = $$your_stream$$; //if 0, you're not online
 let highlights = $$highlights$$; //human-readable list of highlight channels (even those not online)
 const mode = "$$mode||normal$$"; //defines how the follow list is to be interpreted
+const all_raids = $$all_raids$$;
 </script>
 
 <script type=module src="$$static||raidfinder.js$$"></script>
