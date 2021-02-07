@@ -210,6 +210,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 						strm->raids += ({sprintf(">%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
 					else
 						strm->raids += ({sprintf("<%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
+					if (!undefinedp(raid->viewers) && raid->viewers != -1)
+						strm->raids[-1] += " with " + raid->viewers;
 				}
 				//For some reason, strm->raids[*][1..] doesn't work. ??
 				sort(lambda(string x) {return x[1..];}(strm->raids[*]), strm->raids); //Sort by date, ignoring the </> direction marker
