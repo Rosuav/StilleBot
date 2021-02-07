@@ -3,6 +3,7 @@ const {A, B, BR, BUTTON, DIV, IMG, P, UL, LI, SPAN} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 
 const sortfunc = {
+	Magic: (s1, s2) => s2.recommend - s1.recommend,
 	Viewers: (s1, s2) => s1.viewers - s2.viewers,
 	Category: (s1, s2) => s1.game.localeCompare(s2.game),
 	Uptime: (s1, s2) => new Date(s2.created_at) - new Date(s1.created_at),
@@ -181,6 +182,7 @@ function build_follow_list() {
 					LI([A({href: stream.channel.url}, [adornment(stream.channel.broadcaster_type), stream.channel.display_name]), " - ", B(stream.game)]),
 					LI({className: "streamtitle"}, stream.channel.status),
 					LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
+					LI("Score: " + stream.recommend),
 					LI(stream.tags.map(tag => SPAN({className: "tag"}, tag.name + " "))),
 					LI([describe_notes(stream), describe_raid(stream.raids)]),
 				]),

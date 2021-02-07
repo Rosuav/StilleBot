@@ -202,21 +202,42 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				if (has_value(highlightids, otheruid)) strm->highlight = 1;
 				int swap = otheruid < userid;
 				array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[(string)(swap ? userid : otheruid)];
+				int recommend = 0;
+				int recent = time() - 86400 * 30;
+				int ancient = time() - 86400 * 365;
 				foreach (raids || ({ }), mapping raid)
 				{
 					//write("DEBUG RAID LOG: %O\n", raid);
 					//TODO: Translate these by timezone (if available)
 					object time = Calendar.ISO.Second("unix", raid->time);
-					if (swap != raid->outgoing)
+					if (swap != raid->outgoing) {
 						strm->raids += ({sprintf(">%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
-					else
+						if (raid->time > recent) recommend -= 20;
+						else if (raid->time > ancient) recommend -= 5;
+					}
+					else {
 						strm->raids += ({sprintf("<%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
+						if (raid->time > recent) recommend += 10;
+						else if (raid->time > ancient) recommend += 20;
+					}
 					if (!undefinedp(raid->viewers) && raid->viewers != -1)
 						strm->raids[-1] += " with " + raid->viewers;
 				}
 				//For some reason, strm->raids[*][1..] doesn't work. ??
 				sort(lambda(string x) {return x[1..];}(strm->raids[*]), strm->raids); //Sort by date, ignoring the </> direction marker
 				strm->raids = Array.uniq2(strm->raids);
+				//Stream recommendation level (which could then be sorted on)
+				strm->recommend = recommend;
+				//Factors that would recommend someone:
+				//+10 for each incoming raid within the last month
+				//+20 for each incoming raid between 1 and 12 months ago
+				//-20 for each outgoing raid within the last month
+				//-5 for each outgoing raid between 1 and 12 months ago
+				//+1 to +2 for having 100% to 125% of your viewers, scaling
+				//+1 to +8 for having 100% to 0% of your viewers
+				//+10 to +1 for having been live for 0-4 hours (above four hours, might be ending soon)
+				//+10 for being in the same category
+				//+7 if both of you are in creative categories but different ones
 			}
 			//End stream tags work
 			//List all recent raids. Actually list ALL raids on the current system.
@@ -229,11 +250,12 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					all_raids += ({r | (["outgoing": !r->outgoing])});
 			}
 			sort(all_raids->time, all_raids);
+			sort(-follows->recommend[*], follows); //Sort by magic initially
 			return render_template("raidfinder.md", ([
 				"follows": cached_follows = Standards.JSON.encode(follows, Standards.JSON.ASCII_ONLY),
 				"your_stream": Standards.JSON.encode(your_stream, Standards.JSON.ASCII_ONLY),
 				"highlights": Standards.JSON.encode(highlights, Standards.JSON.ASCII_ONLY),
-				"sortorders": ({"Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
+				"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
 				"all_raids": Standards.JSON.encode(all_raids[<99..]),
 			]));
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: Return a nice message if for=junk given
