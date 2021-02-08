@@ -557,6 +557,7 @@ class channel_notif
 			string other = outgoing ? (string)toid : (string)fromid;
 			mapping raids = persist_status->path("raids", base);
 			if (!raids[other]) raids[other] = ({ });
+			else if (raids[other][-1]->time > ts) {write("FUTURE RAID - %d, %O\n", ts, raids[other][-1]); return;} //Bugs happen. If timestamps go weird, report what we can.
 			else if (raids[other][-1]->time > ts - 60) return; //Ignore duplicate raids within 60s
 			raids[other] += ({([
 				"time": ts,
@@ -611,7 +612,7 @@ class channel_notif
 						int viewers = info ? info->viewer_count : -1;
 						Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s with %d\n",
 							Calendar.now()->format_time(), name[1..], h, viewers));
-						record_raid(0, name[1..], 0, h, viewers);
+						record_raid(0, name[1..], 0, h, 0, viewers);
 					}
 					hosting = h;
 				}
