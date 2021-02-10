@@ -17,7 +17,8 @@
 > </form>
 {: tag=dialog #editnotes}
 
-<a id=yourcat href="#" target="_blank">Current category: ??</a>
+<a id=yourcat href="#" target="_blank">Current category: ??</a><br>
+<a href="raidfinder?allfollows" target="_blank">All channels you follow</a>
 
 > <button type=button class=dialog_cancel>x</button>
 >

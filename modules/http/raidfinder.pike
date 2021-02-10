@@ -121,6 +121,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					"your_stream": "0",
 					"highlights": Standards.JSON.encode(highlights, Standards.JSON.ASCII_ONLY),
 					"sortorders": ({"Channel Creation", "Follow Date", "Name"}) * "\n* ",
+					"all_raids": "[]",
 					"mode": "allfollows",
 				]));
 			}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO as below: Return a nice message if for=junk given
