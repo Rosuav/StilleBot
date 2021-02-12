@@ -29,7 +29,11 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 		url = replace(url, usernames);
 		//If we found everything in cache, carry on with a modified URL.
 	}
-	string body = options->json ? Standards.JSON.encode(options->json) : options->data;
+	string body = options->data;
+	if (options->json) {
+		headers["Content-Type"] = "application/json";
+		body = Standards.JSON.encode(options->json);
+	}
 	string method = options->method || (body ? "POST" : "GET");
 	headers["Accept"] = "application/vnd.twitchtv.v5+json"; //Only needed for Kraken but doesn't seem to hurt
 	if (!headers["Authorization"])
@@ -377,7 +381,6 @@ void create_webhook(string callback, string topic, int seconds, string|void toke
 	string secret = MIME.encode_base64(random_string(15));
 	G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
 	request("https://api.twitch.tv/helix/webhooks/hub", ([
-			"Content-Type": "application/json",
 			"Authorization": token && "Bearer " + token,
 		]), (["json": ([
 			"hub.callback": sprintf("%s/junket?%s",
@@ -482,7 +485,6 @@ void create_eventsubhook(string callback, string type, string version, mapping c
 	string secret = MIME.encode_base64(random_string(15));
 	G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
 	request("https://api.twitch.tv/helix/eventsub/subscriptions", ([
-			"Content-Type": "application/json",
 			"Authorization": "Bearer " + G->G->webhook_lookup_token,
 		]), (["json": ([
 			"type": type, "version": version,
