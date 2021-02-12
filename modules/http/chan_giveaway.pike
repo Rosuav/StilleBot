@@ -11,6 +11,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (req->request_type == "PUT") {
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body)) return (["error": 400]);
+		write("Got request: %O\n", body);
 		return jsonify((["ok": 1]));
 	}
 	return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + req->misc->session->user->id,
