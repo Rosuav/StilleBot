@@ -22,32 +22,43 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					mapping existing = cfg->giveaway->rewards;
 					if (!existing) existing = cfg->giveaway->rewards = ([]);
 					array reqs = ({ });
+					Concurrent.Future call(string method, string query, mixed body) {
+						return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + req->misc->session->user->id + "&" + query,
+							(["Authorization": "Bearer " + req->misc->session->token]),
+							(["method": method, "json": body, "return_status": !body]),
+						);
+					}
+					int numcreated = 0, numupdated = 0, numdeleted = 0;
 					//Prune any that we no longer need
 					foreach (existing; string id; int tickets) {
 						if (!has_value(qty, tickets)) {
-							//TODO: Delete the reward with this ID
 							m_delete(existing, id);
+							++numdeleted;
+							reqs += ({call("DELETE", "id=" + id, 0)});
+						}
+						else {
+							++numupdated;
+							reqs += ({call("PATCH", "id=" + id, ([
+								"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
+								"cost": cost * tickets,
+							]))});
 						}
 						qty -= ({tickets});
 					}
 					//Create any that we don't yet have
-					int numcreated = 0;
 					Concurrent.Future make_reward(int tickets) {
-						return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + req->misc->session->user->id,
-							(["Authorization": "Bearer " + req->misc->session->token, "Content-Type": "application/json"]),
-							(["json": ([
-								"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
-								"cost": cost * tickets,
-							])]),
-						)->then(lambda(mapping info) {
+						return call("POST", "", ([
+							"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
+							"cost": cost * tickets,
+						]))->then(lambda(mapping info) {
 							existing[info->data[0]->id] = tickets;
 							++numcreated;
 						});
 					}
 					reqs += make_reward(qty[*]);
 					return Concurrent.all(reqs)->then(lambda() {
-						//TODO: Notify the front end what's been changed
-						return jsonify((["ok": 1, "created": numcreated]));
+						//TODO: Notify the front end what's been changed, not just counts
+						return jsonify((["ok": 1, "created": numcreated, "updated": numupdated, "deleted": numdeleted]));
 					});
 				}
 				return jsonify((["ok": 1]));
