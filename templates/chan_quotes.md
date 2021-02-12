@@ -20,4 +20,4 @@ Twitch Clips, quotes are a great way to remember those fun moments forever.
 > <button type=button id=update>Update</button>
 {: tag=dialog #editdlg}
 
-$$editjs$$
+$$editjs||$$

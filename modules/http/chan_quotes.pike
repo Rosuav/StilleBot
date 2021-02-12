@@ -3,14 +3,7 @@ inherit http_endpoint;
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	array quotes = req->misc->channel->config->quotes;
-	if (!quotes || !sizeof(quotes)) return render_template("chan_quotes.md", (["quotes": "(none)", "editjs": ""]) | req->misc->chaninfo);
-	string editjs = "";
-	if (req->misc->is_mod)
-	{
-		//All the work is done client-side
-		editjs = "<script>const quotes = " + Standards.JSON.encode(quotes) + "</script>"
-			"<script type=module src=\"" + G->G->template_defaults["static"]("quotes.js") + "\"></script>";
-	}
+	if (!quotes || !sizeof(quotes)) return render_template("chan_quotes.md", (["quotes": "(none)"]) | req->misc->chaninfo);
 	array q = ({ });
 	string tz = req->misc->channel->config->timezone;
 	object user = user_text();
@@ -26,7 +19,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	return render_template("chan_quotes.md", ([
 		"quotes": q * "\n",
-		"editjs": editjs,
+		"editjs": req->misc->is_mod ? "<script type=module src=\"" + G->G->template_defaults["static"]("quotes.js") + "\"></script>" : "",
+		"vars": req->misc->is_mod && (["quotes": quotes]),
 		"user text": user,
 	]) | req->misc->chaninfo);
 }
