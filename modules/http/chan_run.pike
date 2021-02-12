@@ -12,6 +12,11 @@ inherit http_endpoint;
    - Do everything through the same websocket that monitor.js uses
 
 TODO: Maybe govern the cents hiding with an option?
+
+TODO: Allow the name of the next-mile command to be configured and selected.
+Would require ALL commands (for this channel) to be sent. Would then be easy
+to have a "None" option. In the drop-down, separately group any that refer to
+the variable being used (but allow others, in case it's a static message).
 */
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
