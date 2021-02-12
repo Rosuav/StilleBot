@@ -40,14 +40,14 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//None specified? Find one that looks like a run bar.
 		foreach (cfg->monitors; string n; mapping i) if (i->barcolor) {nonce = n; info = i; break;}
 	}
-	return render_template("chan_noobsrun.md", ([
-		"channame": Standards.JSON.encode(req->misc->channel->name[1..]),
+	return render_template("chan_noobsrun.md", (["nonce": nonce || "", "vars": ([
+		"channame": req->misc->channel->name[1..],
 		"nonce": nonce || "",
 		"css_attributes": G->G->monitor_css_attributes,
-		"info": Standards.JSON.encode(info),
-		"sample": Standards.JSON.encode(req->misc->channel->expand_variables(info->text)),
-		"commands": Standards.JSON.encode((["nextmile": G->G->echocommands["nextmile" + req->misc->channel->name]])),
-	]) | req->misc->chaninfo);
+		"info": info,
+		"sample": req->misc->channel->expand_variables(info->text),
+		"commands": (["nextmile": G->G->echocommands["nextmile" + req->misc->channel->name]]),
+	])]) | req->misc->chaninfo);
 }
 
 int message(object channel, mapping person, string msg)

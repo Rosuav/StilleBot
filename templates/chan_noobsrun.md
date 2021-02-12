@@ -58,6 +58,5 @@ input[type=number] {width: 4em;}
 </table>
 <input type=submit value=Save>
 
-<script>let channame = $$channame$$, nonce = "$$nonce$$", css_attributes = "$$css_attributes$$", info = $$info$$, sample = $$sample$$, commands=$$commands$$;</script>
 <script type=module src="$$static||noobsrun.js$$"></script>
 <script type=module src="$$static||commands.js$$"></script>
