@@ -78,3 +78,13 @@ on("dragstart", ".monitorlink", e => {
 	const url = `${e.match.href}&layer-name=StilleBot%20monitor&layer-width=120&layer-height=20`;
 	e.dataTransfer.setData("text/uri-list", url);
 });
+
+function textify(cmd) {
+	if (typeof cmd === "string") return cmd;
+	if (Array.isArray(cmd)) return cmd.map(textify); //TODO: Separate 'em with BR() and then make it still look good
+	return cmd.message;
+}
+window.command_updated = cmd => {
+	set_content("#responsetxt", textify(commands[cmd]))
+};
+window.command_updated("nextmile");

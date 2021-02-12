@@ -226,6 +226,7 @@ on("click", "#save_advanced", async e => {
 	info = await res.json();
 	const cmdnobang = cmdname.slice(1);
 	commands[cmdnobang] = info;
+	if (window.command_updated) window.command_updated(cmdnobang);
 	//Scan the main table, find the command (if it existed), and remove it.
 	//Then insert a replacement.
 	if (DOM("#commandview")) for (const tr of DOM("#commandview").querySelectorAll("tr")) {
