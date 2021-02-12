@@ -224,9 +224,11 @@ on("click", "#save_advanced", async e => {
 	});
 	if (!res.ok) {console.error("Not okay response", res); return;}
 	info = await res.json();
+	const cmdnobang = cmdname.slice(1);
+	commands[cmdnobang] = info;
 	//Scan the main table, find the command (if it existed), and remove it.
 	//Then insert a replacement.
-	for (const tr of DOM("#commandview").querySelectorAll("tr")) {
+	if (DOM("#commandview")) for (const tr of DOM("#commandview").querySelectorAll("tr")) {
 		if (tr.firstElementChild.tagName !== "TD") continue; //Header row
 		const cmd = tr.firstElementChild.innerText.trim();
 		if (cmd < cmdname) continue;
@@ -238,7 +240,6 @@ on("click", "#save_advanced", async e => {
 		//command will be safe for simple editing. So we assume it isn't,
 		//and put just the plain text version.
 		const lines = [];
-		const cmdnobang = cmdname.slice(1);
 		let idx = 0;
 		function add_lines(msg) {
 			if (typeof msg === "string")
@@ -256,7 +257,6 @@ on("click", "#save_advanced", async e => {
 			TD(CODE(lines)),
 			TD(BUTTON({type: "button", className: "advview", "data-cmd": cmdnobang, title: "Advanced"}, "\u2699")),
 		]));
-		commands[cmdnobang] = info;
 		break; //Only do this once :)
 	}
 });
