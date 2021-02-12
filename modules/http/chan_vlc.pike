@@ -45,10 +45,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (req->misc->is_mod && req->variables->blocks) {
 		array blocks = channel->config->vlcblocks || ({ });
 		array unknowns = G->G->vlc_status[channel->name]->?unknowns || ({ });
-		return render_template("vlc_blocks.md", ([
-			"blocks": Standards.JSON.encode(blocks),
-			"unknowns": Standards.JSON.encode(unknowns),
-		]));
+		return render_template("vlc_blocks.md", (["vars": ([
+			"blocks": blocks,
+			"unknowns": unknowns,
+		])]));
 	}
 	if (req->misc->is_mod && req->variables->saveblock && req->request_type == "POST") {
 		mixed body = Standards.JSON.decode(req->body_raw);
@@ -120,6 +120,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					//TODO: Allow the format to be customized
 					//TODO: Have a configurable delay before the message is sent.
 					//(Helps with synchronization a bit.)
+					//TODO: Do all of this through the command editor like with noobsrun
 					send_message(channel->name, "Now playing: " + track);
 				}
 				status->current = track;

@@ -411,7 +411,7 @@ class Lexer
 	}
 }
 
-mapping(string:mixed) render_template(string template, mapping(string:string|function(string|void:string)) replacements)
+mapping(string:mixed) render_template(string template, mapping(string:string|function(string|void:string)|mapping) replacements)
 {
 	string content = utf8_to_string(Stdio.read_file("templates/" + template));
 	if (!content) error("Unable to load templates/" + template + "\n");

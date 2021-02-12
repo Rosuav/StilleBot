@@ -14,8 +14,6 @@ Path | Description |
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, BUTTON, INPUT, LI, TR, TD} = choc;
 
-let blocks = $$blocks$$;
-let unknowns = $$unknowns$$;
 //TODO: Also have an array of tails (or a blank-delimited set), which can then be trimmed off.
 //Default eg ".wav .mp3 .ogg".
 
