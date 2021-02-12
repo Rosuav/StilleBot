@@ -22,7 +22,7 @@ Concurrent.Future parse_hype_status(mapping data)
 	int cooldown = until(data->cooldown_end_time, now);
 	int expires = until(data->expires_at, now);
 	int checktime = expires || cooldown;
-	if (checktime != G->G->hypetrain_checktime[data->broadcaster_id]) {
+	if (checktime && checktime != G->G->hypetrain_checktime[data->broadcaster_id]) {
 		//Schedule a check about when the hype train or cooldown will end.
 		//If something changes before then (eg it goes to a new level),
 		//we'll schedule a duplicate call_out, but otherwise, rechecking
