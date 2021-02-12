@@ -6,10 +6,7 @@ set_content("#existing", rewards.map(r => LI([r.id, " ", r.title])));
 set_content("#ticketholders", tickets.map(t => LI([""+t.tickets, " ", t.name])));
 
 /*
-1) Create rewards
-   - Choose points per ticket
-   - Optionally pick some multibuy amounts
-   - PUT request to set all settings. The back end will do the necessary changes.
+1) Create rewards - DONE
 2) Activate rewards
    - PUT request with a single flag. Back end will clear counts and activate.
 3) Notice redemptions - possibly with caps and autorejection?
