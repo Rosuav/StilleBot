@@ -1,5 +1,15 @@
 # How far will $$channel$$ run?
 
+> <button type=button class=dialog_cancel>x</button>
+>
+> Edit mileage response <code id=cmdname></code>
+>
+> <div id=command_details></div>
+>
+> <p><button type=button id=save_advanced>Save</button> <button type=button class=dialog_close>Cancel</button></p>
+>
+{: tag=dialog #advanced_view}
+
 <style>
 input[type=number] {width: 4em;}
 .preview-frame {
@@ -41,11 +51,13 @@ input[type=number] {width: 4em;}
 	<fieldset><legend>Horizontal</legend><input type=number name=padhoriz min=0 max=2 step=0.005> em</fieldset>
 </div></td></tr>
 <tr><th>Needle size</th><td><input type=number name=needlesize min=0 max=1 step=0.005 value=0.375> Thickness of the red indicator needle</td></tr>
+<tr><th>Next mile response</th><td><code>testing testing</code> <button class=advview data-cmd=nextmile>Edit</button></td></tr>
 <tr><th>Custom CSS</th><td><textarea name=css></textarea></td></tr>
 <tr><th>Preview</th><td><div id=preview></div></td></tr>
 <tr><th>Link</th><td><a href="monitors?view=$$nonce$$" class=monitorlink>Drag me to OBS</a></td></tr>
 </table>
 <input type=submit value=Save>
 
-<script>let channame = $$channame$$, nonce = "$$nonce$$", css_attributes = "$$css_attributes$$", info = $$info$$, sample = $$sample$$;</script>
+<script>let channame = $$channame$$, nonce = "$$nonce$$", css_attributes = "$$css_attributes$$", info = $$info$$, sample = $$sample$$, commands=$$commands$$;</script>
 <script type=module src="$$static||noobsrun.js$$"></script>
+<script type=module src="$$static||commands.js$$"></script>

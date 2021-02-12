@@ -46,6 +46,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"css_attributes": G->G->monitor_css_attributes,
 		"info": Standards.JSON.encode(info),
 		"sample": Standards.JSON.encode(req->misc->channel->expand_variables(info->text)),
+		"commands": Standards.JSON.encode((["nextmile": G->G->echocommands["nextmile" + req->misc->channel->name]])),
 	]) | req->misc->chaninfo);
 }
 
