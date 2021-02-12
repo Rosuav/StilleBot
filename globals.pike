@@ -499,7 +499,8 @@ class TwitchAuth
 		"analytics:read:extensions", "analytics:read:games", "bits:read",
 		"channel:edit:commercial", "channel:read:subscriptions", "clips:edit",
 		"user:edit", "user:edit:broadcast", "user:edit:follows",
-		"user:read:broadcast", "user:read:email", "channel:read:redemptions",
+		"user:read:broadcast", "user:read:email",
+		"channel:read:redemptions", "channel:manage:redemptions",
 		//v5 API
 		"channel_check_subscription", "channel_commercial", "channel_editor",
 		"channel_feed_edit", "channel_feed_read", "channel_read", "channel_stream",
