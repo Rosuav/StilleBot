@@ -99,14 +99,6 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 #viewerlegend div {margin-right: 0.5em; padding: 0.25em 0.125em;}
 </style>
 
-<script>
-const follows = $$follows$$;
-const your_stream = $$your_stream$$; //if 0, you're not online
-let highlights = $$highlights$$; //human-readable list of highlight channels (even those not online)
-const mode = "$$mode||normal$$"; //defines how the follow list is to be interpreted
-const all_raids = $$all_raids$$;
-</script>
-
 > <button type=button class=dialog_cancel>x</button>
 >
 > This raid finder shows the people you currently follow, and helps you select someone<br>

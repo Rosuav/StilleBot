@@ -117,12 +117,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					]);
 				}
 				return render_template("raidfinder.md", ([
-					"follows": Standards.JSON.encode(follows, Standards.JSON.ASCII_ONLY),
-					"your_stream": "0",
-					"highlights": Standards.JSON.encode(highlights, Standards.JSON.ASCII_ONLY),
+					"vars": (["follows": follows, "your_stream": 0, "highlights": highlights, "all_raids": ({}), "mode": "allfollows"]),
 					"sortorders": ({"Channel Creation", "Follow Date", "Name"}) * "\n* ",
-					"all_raids": "[]",
-					"mode": "allfollows",
 				]));
 			}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO as below: Return a nice message if for=junk given
 	}
@@ -271,11 +267,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			sort(all_raids->time, all_raids);
 			sort(-follows->recommend[*], follows); //Sort by magic initially
 			return render_template("raidfinder.md", ([
-				"follows": cached_follows = Standards.JSON.encode(follows, Standards.JSON.ASCII_ONLY),
-				"your_stream": Standards.JSON.encode(your_stream, Standards.JSON.ASCII_ONLY),
-				"highlights": Standards.JSON.encode(highlights, Standards.JSON.ASCII_ONLY),
+				"vars": (["follows": follows, "your_stream": your_stream, "highlights": highlights, "all_raids": all_raids[<99..], "mode": "normal"]),
 				"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
-				"all_raids": Standards.JSON.encode(all_raids[<99..]),
 			]));
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: Return a nice message if for=junk given
 }
