@@ -1,5 +1,7 @@
 # Channel points - giveaway manager
 
+<ul id=ticketholders></ul>
+
 > <summary>Set up rewards</summary>
 >
 > <form id=configform>
