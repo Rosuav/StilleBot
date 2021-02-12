@@ -73,3 +73,6 @@
   - The web page will actually be essential, as it will require channel:manage:redemptions from the broadcaster.
   - Can use https://dev.twitch.tv/docs/api/reference#update-redemption-status to refund tickets
   - Would probably require destubbifying the EventSub system - see poll.pike
+* Allow advanced command editing to be embedded into other pages.
+  - In chan_run, allow the "next mile" command to be updated
+  - Rework channel specials to use this
