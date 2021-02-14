@@ -10,6 +10,7 @@ set_content("#ticketholders", tickets.map(t => LI([""+t.tickets, " ", t.name])))
 2) Activate rewards
    - PUT request with a single flag. Back end will clear counts and activate.
 3) Notice redemptions - possibly with caps and autorejection?
+   - Have to retain credentials
 4) Deactivate rewards and pick a winner
 5) Multiple winners?? Will need a way to say "pick another without clearing".
 
