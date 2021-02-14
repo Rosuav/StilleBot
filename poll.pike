@@ -38,12 +38,42 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 	headers["Accept"] = "application/vnd.twitchtv.v5+json"; //Only needed for Kraken but doesn't seem to hurt
 	if (!headers["Authorization"])
 	{
-		//TODO: Under what circumstances do we need to use "OAuth <token>" instead?
-		//In Mustard Mine, the only remaining place is PUT /kraken/channels which we
-		//don't use here, but are there any others?
-		//20200511: It seems emote lookups require "OAuth" instead of "Bearer". Sheesh.
-		sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
-		if (pass) headers["Authorization"] = (options->authtype || "Bearer") + " " + pass;
+		if (options->authtype == "app") {
+			//App authorization token. If we don't have one, get one.
+			if (!G->G->app_access_token || G->G->app_access_token_expiry < time()) {
+				if (!persist_config["ircsettings"]["clientsecret"]) return Concurrent.reject(({sprintf("%s\nUnable to use app auth without a client secret\n", url), backtrace()}));
+				if (G->G->app_access_token_expiry == -1) {
+					//TODO: Wait until the other request returns.
+					//For now we just sleep and try again.
+					return Concurrent.resolve(0)->delay(2)->then(lambda() {return request(url, headers, options);});
+				}
+				G->G->app_access_token_expiry = -1; //Prevent spinning
+				Standards.URI uri = Standards.URI("https://id.twitch.tv/oauth2/token");
+				//As below, uri->set_query_variables() doesn't correctly encode query data.
+				uri->query = Protocols.HTTP.http_encode_query(([
+					"client_id": persist_config["ircsettings"]["clientid"],
+					"client_secret": persist_config["ircsettings"]["clientsecret"],
+					"grant_type": "client_credentials",
+				]));
+				return request(uri, ([]), (["method": "POST"]))
+					->then(lambda (mapping data) {
+						G->G->app_access_token = data->access_token;
+						G->G->app_access_token_expiry = time() + data->expires_in - 120;
+						//If we had async/await, we could just fall through instead
+						//of calling ourselves recursively.
+						return request(url, headers, options);
+					});
+			}
+			headers->Authorization = "Bearer " + G->G->app_access_token;
+		}
+		else {
+			//TODO: Under what circumstances do we need to use "OAuth <token>" instead?
+			//In Mustard Mine, the only remaining place is PUT /kraken/channels which we
+			//don't use here, but are there any others?
+			//20200511: It seems emote lookups require "OAuth" instead of "Bearer". Sheesh.
+			sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
+			if (pass) headers["Authorization"] = (options->authtype || "Bearer") + " " + pass;
+		}
 	}
 	//TODO: Use bearer auth where appropriate (is it exclusively when using Helix?)
 	if (string c=persist_config["ircsettings"]["clientid"])
@@ -108,7 +138,7 @@ Concurrent.Future get_user_id(string user)
 	return get_users_info(({user}), "login")->then(lambda(mapping info) {return sizeof(info) && (int)info[0]->id;});
 }
 
-Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers, int|void debug)
+Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
 {
 	array data = ({ });
 	Standards.URI uri = Standards.URI(url);
@@ -152,9 +182,9 @@ Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|vo
 		if (!sizeof(raw->data) && ++empty >= 3) return data;
 		//uri->add_query_variable("after", raw->pagination->cursor);
 		query["after"] = raw->pagination->cursor; uri->query = Protocols.HTTP.http_encode_query(query);
-		return request(uri, headers)->then(nextpage);
+		return request(uri, headers, options)->then(nextpage);
 	}
-	return request(uri, headers)->then(nextpage);
+	return request(uri, headers, options)->then(nextpage);
 }
 
 //Doesn't help, but it's certainly very interesting.
@@ -426,35 +456,6 @@ void webhooks(array data)
 	}
 }
 
-void check_webhooks()
-{
-	if (!G->G->webhook_lookup_token) return;
-	get_helix_paginated("https://api.twitch.tv/helix/webhooks/subscriptions",
-		(["first": "100"]),
-		(["Authorization": "Bearer " + G->G->webhook_lookup_token]),
-	)->on_success(webhooks);
-}
-
-void get_lookup_token()
-{
-	if (!persist_config["ircsettings"]["clientsecret"]) return;
-	m_delete(G->G, "webhook_lookup_token");
-	G->G->webhook_lookup_token_expiry = time() + 1; //Prevent spinning
-	Standards.URI uri = Standards.URI("https://id.twitch.tv/oauth2/token");
-	//As above, uri->set_query_variables() doesn't correctly encode query data.
-	uri->query = Protocols.HTTP.http_encode_query(([
-		"client_id": persist_config["ircsettings"]["clientid"],
-		"client_secret": persist_config["ircsettings"]["clientsecret"],
-		"grant_type": "client_credentials",
-	]));
-	request(uri, ([]), (["method": "POST"]))
-		->then(lambda (mapping data) {
-			G->G->webhook_lookup_token = data->access_token;
-			G->G->webhook_lookup_token_expiry = time() + data->expires_in - 120;
-			check_webhooks();
-		});
-}
-
 /* NOT CURRENTLY WORKING.
 This is a stub of how we might use the new EventSub hook system. Unfortunately, the
 available hooks are actually more restricted than the equivalents in the webhooks
@@ -471,7 +472,7 @@ To make this fully work, this is what would be needed:
    token. It'd get the token and then continue on with the request, or use a token
    from cache (as with G->G->webhook_lookup_token). That would mean that inside
    check_webhooks would be a simple unconditional call, which might delay the main
-   call until we have credentials.
+   call until we have credentials. -- DONE
 3) Enhance modules/http/junket.pike to be able to handle both types of response.
    The rest of the system should be fine with either, but the signature verification
    would be different.
@@ -523,10 +524,8 @@ void poll()
 	//I hit this sort of problem.
 	string addr = persist_config["ircsettings"]["http_address"];
 	if (addr && addr != "")
-	{
-		if (G->G->webhook_lookup_token_expiry < time()) get_lookup_token();
-		else check_webhooks();
-	}
+		get_helix_paginated("https://api.twitch.tv/helix/webhooks/subscriptions",
+			(["first": "100"]), ([]), (["authtype": "app"]))->on_success(webhooks);
 }
 
 protected void create()
