@@ -29,7 +29,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		write("Got request: %O\n", body);
 		if (int cost = (int)body->cost) {
 			//Master reconfiguration
-			array qty = ({1}) + (array(int))((body->multi || "") / " ") - ({0});
+			array qty = (array(int))((body->multi || "") / " ") - ({0});
 			if (!cfg->giveaway) cfg->giveaway = ([]);
 			mapping existing = cfg->giveaway->rewards;
 			if (!existing) existing = cfg->giveaway->rewards = ([]);
