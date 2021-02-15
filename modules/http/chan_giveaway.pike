@@ -31,6 +31,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			//Master reconfiguration
 			array qty = (array(int))((body->multi || "") / " ") - ({0});
 			if (!cfg->giveaway) cfg->giveaway = ([]);
+			cfg->giveaway->max_tickets = (int)body->max;
 			mapping existing = cfg->giveaway->rewards;
 			if (!existing) existing = cfg->giveaway->rewards = ([]);
 			array reqs = ({ });
@@ -102,11 +103,23 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			array tickets = ({ });
 			mapping people = ([]);
 			mapping values = cfg->giveaway->rewards || ([]);
+			int max = cfg->giveaway->max_tickets;
 			foreach (redemptions * ({ }), mapping redem) {
 				if (!people[redem->user_id]) tickets += ({people[redem->user_id] = ([
 					"name": redem->user_name,
 				])});
-				people[redem->user_id]->tickets += values[redem->reward->id];
+				int now = people[redem->user_id]->tickets + values[redem->reward->id];
+				if (max && now > max) {
+					//Reject the redemption, refunding the points
+					twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions"
+							+ "?broadcaster_id=" + req->misc->session->user->id
+							+ "&reward_id=" + redem->reward->id
+							+ "&id=" + redem->id,
+						(["Authorization": "Bearer " + req->misc->session->token]),
+						(["method": "PATCH", "json": (["status": "CANCELED"])]),
+					);
+				}
+				else people[redem->user_id]->tickets = now;
 			}
 			return render_template("chan_giveaway.md", (["vars": ([
 				"rewards": rewards,
