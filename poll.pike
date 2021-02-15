@@ -427,8 +427,9 @@ void create_webhook(string callback, string topic, int seconds, string|void toke
 	});
 }
 
-void webhooks(array data)
+void webhooks(array results)
 {
+	[array data, array eventhooks] = results;
 	G->G->webhook_active = ([]);
 	multiset(string) follows = (<>), status = (<>);
 	foreach (data, mapping hook)
@@ -453,6 +454,13 @@ void webhooks(array data)
 		create_webhook("follow=" + chan, "https://api.twitch.tv/helix/users/follows?first=1&to_id=" + userid, 864000);
 		//Not currently using this hook. It doesn't actually give us any benefit!
 		//create_webhook("status=" + chan, "https://api.twitch.tv/helix/streams?user_id=" + userid, 864000);
+	}
+	//Check all eventsubs and mark that we have them
+	foreach (eventhooks, mapping hook) {
+		sscanf(hook->transport->callback || "", "http%*[s]://%*s/junket?%s=%s", string type, string arg);
+		if (!arg) continue;
+		if (!G->G->webhook_signer[type + "=" + arg]) ; //TODO: Clean these up??
+		G->G->webhook_active[type + "=" + arg] = 1<<60; //These don't expire automatically.
 	}
 }
 
@@ -509,8 +517,10 @@ void poll()
 	//I hit this sort of problem.
 	string addr = persist_config["ircsettings"]["http_address"];
 	if (addr && addr != "")
-		get_helix_paginated("https://api.twitch.tv/helix/webhooks/subscriptions",
-			(["first": "100"]), ([]), (["authtype": "app"]))->on_success(webhooks);
+		Concurrent.all(({
+			get_helix_paginated("https://api.twitch.tv/helix/webhooks/subscriptions", (["first": "100"]), ([]), (["authtype": "app"])),
+			get_helix_paginated("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([]), (["authtype": "app"])),
+		}))->on_success(webhooks);
 }
 
 protected void create()
