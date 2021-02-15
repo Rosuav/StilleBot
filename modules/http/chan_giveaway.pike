@@ -1,28 +1,53 @@
 inherit http_endpoint;
 
+void update_ticket_count(mapping cfg, mapping redem) {
+	mapping values = cfg->giveaway->rewards || ([]);
+	string chan = redem->broadcaster_login || redem->broadcaster_user_login;
+	mapping people = G->G->giveaway_tickets[chan];
+	if (!people) people = G->G->giveaway_tickets[chan] = ([]);
+	if (!people[redem->user_id]) people[redem->user_id] = ([
+		"name": redem->user_name,
+		"position": sizeof(people) + 1, //First person to buy a ticket gets position 1
+	]);
+	int now = people[redem->user_id]->tickets + values[redem->reward->id];
+	if (cfg->giveaway->max_tickets && now > cfg->giveaway->max_tickets) {
+		//Reject the redemption, refunding the points
+		twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions"
+				+ "?broadcaster_id=" + (redem->broadcaster_id || redem->broadcaster_user_id)
+				+ "&reward_id=" + redem->reward->id
+				+ "&id=" + redem->id,
+			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]),
+			(["method": "PATCH", "json": (["status": "CANCELED"])]),
+		)->then(lambda(mixed resp) {write("Cancelled: %O\n", resp);});
+	}
+	else people[redem->user_id]->tickets = now;
+}
+
 void points_redeemed(string chan, mapping data)
 {
 	write("POINTS REDEEMED ON %O: %O\n", chan, data);
 	string token = persist_status->path("bcaster_token")[chan];
+	update_ticket_count(persist_config->path("channels", chan), data);
 	//POC: Up the price every time it's redeemed
 	//For this to be viable, the reward needs a global cooldown of
 	//at least a few seconds, preferably a few minutes.
-	twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+	/*twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 			+ data->broadcaster_user_id + "&id=" + data->reward->id,
 		(["Authorization": "Bearer " + token]),
 		(["method": "PATCH", "json": (["cost": data->reward->cost * 2])]),
-	);
+	);*/
 }
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "channel:manage:redemptions")) return resp;
 	mapping cfg = req->misc->channel->config;
+	string chan = req->misc->channel->name[1..];
 	//TODO: Allow mods to control some things (if the broadcaster's set it up),
 	//and allow all users to see status. The OAuth token is retained for good reason.
-	if (req->misc->channel->name[1..] != req->misc->session->user->login)
+	if (chan != req->misc->session->user->login)
 		return render_template("login.md", req->misc->chaninfo); //TODO: Change the text to say "not the broadcaster" rather than "not a mod"
-	persist_status->path("bcaster_token")[req->misc->session->user->login] = req->misc->session->token;
+	persist_status->path("bcaster_token")[chan] = req->misc->session->token;
 	if (req->request_type == "PUT") {
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body)) return (["error": 400]);
@@ -77,11 +102,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		return jsonify((["ok": 1]));
 	}
 	array rewards;
-	if (G->G->webhook_active["redemption=" + req->misc->channel->name[1..]] < 300)
+	if (G->G->webhook_active["redemption=" + chan] < 300)
 	{
-		write("Creating eventsub hook for redemptions %O\n", req->misc->channel->name[1..]);
+		write("Creating eventsub hook for redemptions %O\n", chan);
 		create_eventsubhook(
-			"redemption=" + req->misc->channel->name[1..],
+			"redemption=" + chan,
 			"channel.channel_points_custom_reward_redemption.add", "1",
 			(["broadcaster_user_id": (string)req->misc->session->user->id]),
 		);
@@ -100,27 +125,13 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				(["Authorization": "Bearer " + req->misc->session->token]),
 			);}(rewards->id[*]));
 		})->then(lambda(array(array) redemptions) {
+			G->G->giveaway_tickets[chan] = ([]);
+			foreach (redemptions * ({ }), mapping redem) update_ticket_count(cfg, redem);
 			array tickets = ({ });
-			mapping people = ([]);
-			mapping values = cfg->giveaway->rewards || ([]);
-			int max = cfg->giveaway->max_tickets;
-			foreach (redemptions * ({ }), mapping redem) {
-				if (!people[redem->user_id]) tickets += ({people[redem->user_id] = ([
-					"name": redem->user_name,
-				])});
-				int now = people[redem->user_id]->tickets + values[redem->reward->id];
-				if (max && now > max) {
-					//Reject the redemption, refunding the points
-					twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions"
-							+ "?broadcaster_id=" + req->misc->session->user->id
-							+ "&reward_id=" + redem->reward->id
-							+ "&id=" + redem->id,
-						(["Authorization": "Bearer " + req->misc->session->token]),
-						(["method": "PATCH", "json": (["status": "CANCELED"])]),
-					);
-				}
-				else people[redem->user_id]->tickets = now;
-			}
+			foreach (G->G->giveaway_tickets[chan]; ; mapping person)
+				if (person->tickets) tickets += ({person});
+			sort(tickets->position, tickets);
+			//TODO: Retain the configs (eg title template) to prepopulate the form
 			return render_template("chan_giveaway.md", (["vars": ([
 				"rewards": rewards,
 				"tickets": tickets,
@@ -131,5 +142,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 protected void create(string name)
 {
 	::create(name);
+	if (!G->G->giveaway_tickets) G->G->giveaway_tickets = ([]);
 	G->G->webhook_endpoints->redemption = points_redeemed;
 }
