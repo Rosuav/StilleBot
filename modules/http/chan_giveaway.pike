@@ -1,5 +1,19 @@
 inherit http_endpoint;
 
+void points_redeemed(string chan, mapping data)
+{
+	write("POINTS REDEEMED ON %O: %O\n", chan, data);
+	string token = persist_status->path("bcaster_token")[chan];
+	//POC: Up the price every time it's redeemed
+	//For this to be viable, the reward needs a global cooldown of
+	//at least a few seconds, preferably a few minutes.
+	twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+			+ data->broadcaster_user_id + "&id=" + data->reward->id,
+		(["Authorization": "Bearer " + token]),
+		(["method": "PATCH", "json": (["cost": data->reward->cost * 2])]),
+	);
+}
+
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "channel:manage:redemptions")) return resp;
@@ -8,6 +22,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//and allow all users to see status. This MAY require retaining the OAuth.
 	if (req->misc->channel->name[1..] != req->misc->session->user->login)
 		return render_template("login.md", req->misc->chaninfo); //TODO: Change the text to say "not the broadcaster" rather than "not a mod"
+	persist_status->path("bcaster_token")[req->misc->session->user->login] = req->misc->session->token;
 	if (req->request_type == "PUT") {
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body)) return (["error": 400]);
@@ -61,6 +76,15 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		return jsonify((["ok": 1]));
 	}
 	array rewards;
+	if (G->G->webhook_active["redemption=" + req->misc->channel->name[1..]] < 300)
+	{
+		write("Creating eventsub hook for redemptions %O\n", req->misc->channel->name[1..]);
+		create_eventsubhook(
+			"redemption=" + req->misc->channel->name[1..],
+			"channel.channel_points_custom_reward_redemption.add", "1",
+			(["broadcaster_user_id": (string)req->misc->session->user->id]),
+		);
+	}
 	return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + req->misc->session->user->id,
 			(["Authorization": "Bearer " + req->misc->session->token])
 		)->then(lambda(mapping info) {
@@ -89,4 +113,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				"tickets": tickets,
 			])]));
 		});
+}
+
+protected void create(string name)
+{
+	::create(name);
+	G->G->webhook_endpoints->redemption = points_redeemed;
 }

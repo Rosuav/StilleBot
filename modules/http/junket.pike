@@ -29,7 +29,13 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			G->G->webhook_active[endpoint + "=" + channel] = duration;
 		return (["data": c]);
 	}
-	//write("Got junket: %O\n", req->variables);
+	if (req->request_headers["twitch-eventsub-message-type"] == "webhook_callback_verification") { //EventSub confirmation
+		mixed body = Standards.JSON.decode_utf8(req->body_raw);
+		write("EventSub challenge body: %O\n", body);
+		if (!mappingp(body) || !stringp(body->challenge)) return (["error": 400, "data": "Unrecognized body type"]);
+		G->G->webhook_active[endpoint + "=" + channel] = 1<<60;
+		return (["data": body->challenge]);
+	}
 	if (req->body_raw != "" && has_prefix(req->request_headers["content-type"], "application/json"))
 	{
 		//It's probably safe to assume that any message sent by Twitch is in UTF-8.
@@ -46,7 +52,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		}
 		#endif
 		mixed body = Standards.JSON.decode_utf8(req->body_raw);
-		array|mapping data = mappingp(body) && body->data;
+		array|mapping data = mappingp(body) && (body->data || body->event); //Webhooks use data, EventSub uses event
 		if (!data) return (["error": 400, "data": "Unrecognized body type"]);
 		G->G->webhook_endpoints[endpoint](channel, data);
 		//werror("Data: %O\n", data);
