@@ -19,7 +19,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (mapping resp = ensure_login(req, "channel:manage:redemptions")) return resp;
 	mapping cfg = req->misc->channel->config;
 	//TODO: Allow mods to control some things (if the broadcaster's set it up),
-	//and allow all users to see status. This MAY require retaining the OAuth.
+	//and allow all users to see status. The OAuth token is retained for good reason.
 	if (req->misc->channel->name[1..] != req->misc->session->user->login)
 		return render_template("login.md", req->misc->chaninfo); //TODO: Change the text to say "not the broadcaster" rather than "not a mod"
 	persist_status->path("bcaster_token")[req->misc->session->user->login] = req->misc->session->token;
