@@ -76,3 +76,4 @@
 * Allow advanced command editing to be embedded into other pages.
   - In chan_run, allow the "next mile" command to be updated
   - Rework channel specials to use this
+* Use persist_status->path("bcaster_token")[chan] for all need-more-auth calls

@@ -11,10 +11,13 @@ function render(state) {
 1) Create rewards - DONE
 2) Activate rewards
    - PUT request with a single flag. Back end will clear counts and activate.
-3) Notice redemptions - possibly with caps and autorejection?
-   - Have to retain credentials
-4) Deactivate rewards and pick a winner
-5) Multiple winners?? Will need a way to say "pick another without clearing".
+   - Create rewards in a paused state
+3) Notice redemptions - DONE
+4) Deactivate rewards (pause, not disable - has to keep redemptions in their UNFULFILLED status)
+5) Pick a winner and remove (accept) all that person's tickets (so you can pick multiple)
+6) Clear all tickets (accepting redemptions so it makes costs permanent)
+7) Cancel giveaway and refund all tickets
+8) Userspace command to refund all my tickets. No need for partials, probably (too hard to manage)
 
 When no current giveaway, show most recent winner. (Maybe allow that to be cleared??)
 */
