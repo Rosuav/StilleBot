@@ -9,9 +9,6 @@ inherit http_endpoint;
 
 TODO: Expand on chan_giveaway so it can handle most of the work, including the
 JSON API for managing the rewards (the HTML page will be different though).
-
-TODO: Hook stream going online and unpause the rewards and reset to base cost
-TODO: Hook stream going offline and pause the rewards (and reset cost maybe)
 */
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
