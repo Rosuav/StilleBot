@@ -171,6 +171,21 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				return jsonify((["ok": 1, "reward": rwd | (["id": id])]));
 			});
 		}
+		if (string id = body->dynamic_id) {
+			if (!cfg->dynamic_rewards || !cfg->dynamic_rewards[id]) return (["error": 400]);
+			mapping rwd = cfg->dynamic_rewards[id];
+			if (body->title) rwd->title = body->title;
+			if (body->basecost) rwd->basecost = (int)body->basecost || rwd->basecost;
+			if (body->formula) rwd->formula = body->formula;
+			if (body->title || body->curcost) {
+				//Currently fire-and-forget - there's no feedback if you get something wrong.
+				twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + req->misc->session->user->id + "&id=" + id,
+					(["Authorization": "Bearer " + req->misc->session->token]),
+					(["method": "PATCH", "json": (["title": rwd->title, "cost": (int)body->curcost])]),
+				);
+			}
+			return jsonify((["ok": 1]));
+		}
 		return jsonify((["ok": 1]));
 	}
 	//TODO: Retain the configs (eg title template) to prepopulate the form

@@ -32,7 +32,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			foreach (info->data, mapping rew) {
 				unseen[rew->id] = 0;
 				mapping r = cfg->dynamic_rewards[rew->id];
-				if (r) rewards += ({r | (["id": rew->id, "title": r->title = rew->title])});
+				if (r) rewards += ({r | (["id": rew->id, "title": r->title = rew->title, "curcost": rew->cost])});
 			}
 			m_delete(cfg->dynamic_rewards, ((array)unseen)[*]);
 			persist_config->save();
