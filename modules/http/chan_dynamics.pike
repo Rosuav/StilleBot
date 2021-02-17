@@ -19,5 +19,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (chan != req->misc->session->user->login)
 		return render_template("login.md", req->misc->chaninfo); //As with chan_giveaway, would be nice to reword that
 	persist_status->path("bcaster_token")[chan] = req->misc->session->token;
-	return render_template("chan_giveaway.md", (["vars": (["rewards": cfg->dynamic_rewards || ([])])]));
+	array rewards = ({ });
+	foreach (cfg->dynamic_rewards || ([]); string id; mapping info) rewards += ({info | (["id": id])});
+	sort(rewards->title, rewards);
+	return render_template("chan_dynamics.md", (["vars": (["rewards": rewards])]));
 }

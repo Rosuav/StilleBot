@@ -145,9 +145,29 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			}
 			reqs += make_reward(qty[*]);
 			make_hooks(chan, req->misc->session->user->id);
+			persist_config->save();
 			return Concurrent.all(reqs)->then(lambda() {
 				//TODO: Notify the front end what's been changed, not just counts
 				return jsonify((["ok": 1, "created": numcreated, "updated": numupdated, "deleted": numdeleted]));
+			});
+		}
+		if (body->new_dynamic) { //This kinda should be a POST request, but whatever.
+			if (!cfg->dynamic_rewards) cfg->dynamic_rewards = ([]);
+			//Titles must be unique (among all rewards). To simplify rapid creation of
+			//multiple rewards, add a numeric disambiguator on conflict.
+			string deftitle = "Example Dynamic Reward";
+			mapping rwd = (["title": deftitle, "basecost": 1000, "formula": "PREV * 2"]);
+			array have = filter(values(cfg->dynamic_rewards)->title, has_prefix, deftitle);
+			if (has_value(have, deftitle)) rwd->title += " #" + (sizeof(have) + 1);
+			return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + req->misc->session->user->id,
+				(["Authorization": "Bearer " + req->misc->session->token]),
+				(["method": "POST", "json": (["title": rwd->title, "cost": rwd->basecost])]),
+			)->then(lambda(mapping info) {
+				string id = info->data[0]->id;
+				//write("Created new dynamic: %O\n", info->data[0]);
+				cfg->dynamic_rewards[id] = rwd;
+				persist_config->save();
+				return jsonify((["ok": 1, "reward": rwd | (["id": id])]));
 			});
 		}
 		return jsonify((["ok": 1]));
