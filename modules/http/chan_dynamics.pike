@@ -25,13 +25,14 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			(["Authorization": "Bearer " + req->misc->session->token]))
 		->then(lambda(mapping info) {
 			array rewards = ({ });
-			multiset unseen = (multiset)indices(cfg->dynamic_rewards);
+			mapping current = cfg->dynamic_rewards || ([]);
+			multiset unseen = (multiset)indices(current);
 			foreach (info->data, mapping rew) {
 				unseen[rew->id] = 0;
-				mapping r = cfg->dynamic_rewards[rew->id];
+				mapping r = current[rew->id];
 				if (r) rewards += ({r | (["id": rew->id, "title": r->title = rew->title, "curcost": rew->cost])});
 			}
-			m_delete(cfg->dynamic_rewards, ((array)unseen)[*]);
+			if (cfg->dynamic_rewards) m_delete(cfg->dynamic_rewards, ((array)unseen)[*]);
 			persist_config->save();
 			return render_template("chan_dynamics.md", (["vars": (["rewards": rewards, "allrewards": info->data])]));
 		});
