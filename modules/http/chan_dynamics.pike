@@ -19,8 +19,23 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (chan != req->misc->session->user->login)
 		return render_template("login.md", req->misc->chaninfo); //As with chan_giveaway, would be nice to reword that
 	persist_status->path("bcaster_token")[chan] = req->misc->session->token;
-	array rewards = ({ });
-	foreach (cfg->dynamic_rewards || ([]); string id; mapping info) rewards += ({info | (["id": id])});
-	sort(rewards->title, rewards);
-	return render_template("chan_dynamics.md", (["vars": (["rewards": rewards])]));
+	persist_status->save();
+	//If there are no rewards currently, save some trouble.
+	if (!cfg->dynamic_rewards || !sizeof(cfg->dynamic_rewards))
+		return render_template("chan_dynamics.md", (["vars": (["rewards": ({ })])]));
+	//Prune the list of any deleted ones, and get titles for the others
+	return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + req->misc->session->user->id,
+			(["Authorization": "Bearer " + req->misc->session->token]))
+		->then(lambda(mapping info) {
+			array rewards = ({ });
+			multiset unseen = (multiset)indices(cfg->dynamic_rewards);
+			foreach (info->data, mapping rew) {
+				unseen[rew->id] = 0;
+				mapping r = cfg->dynamic_rewards[rew->id];
+				if (r) rewards += ({r | (["id": rew->id, "title": r->title = rew->title])});
+			}
+			m_delete(cfg->dynamic_rewards, ((array)unseen)[*]);
+			persist_config->save();
+			return render_template("chan_dynamics.md", (["vars": (["rewards": rewards])]));
+		});
 }
