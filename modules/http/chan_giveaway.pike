@@ -169,6 +169,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				string id = info->data[0]->id;
 				//write("Created new dynamic: %O\n", info->data[0]);
 				cfg->dynamic_rewards[id] = rwd;
+				make_hooks(chan, req->misc->session->user->id);
 				persist_config->save();
 				return jsonify((["ok": 1, "reward": rwd | (["id": id])]));
 			});
@@ -186,6 +187,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					(["method": "PATCH", "json": (["title": rwd->title, "cost": (int)body->curcost])]),
 				);
 			}
+			make_hooks(chan, req->misc->session->user->id);
+			persist_config->save();
 			return jsonify((["ok": 1]));
 		}
 		return jsonify((["ok": 1]));
