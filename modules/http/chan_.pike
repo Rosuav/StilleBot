@@ -64,7 +64,7 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	function handler = G->G->http_endpoints["chan_" + endpoint];
 	if (!handler) return (["error": 404]);
 	object channel = G->G->irc->channels["#" + chan];
-	if (!channel || !channel->config->allcmds) return ([
+	if (!channel || (!channel->config->allcmds && !channel->config->httponly)) return ([
 		"data": "No such page.\n",
 		"type": "text/plain; charset=\"UTF-8\"",
 		"error": 404,
