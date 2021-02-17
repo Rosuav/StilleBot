@@ -135,6 +135,26 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	return render_template("chan_giveaway.md", (["vars": (["channelname": chan])]));
 }
 
+void make_hooks(string chan, int broadcaster_id) {
+	if (G->G->webhook_active["redemption=" + chan] < 300)
+	{
+		write("Creating eventsub hook for redemptions %O\n", chan);
+		create_eventsubhook(
+			"redemption=" + chan,
+			"channel.channel_points_custom_reward_redemption.add", "1",
+			(["broadcaster_user_id": (string)broadcaster_id]),
+		);
+	}
+	if (G->G->webhook_active["redemptiongone=" + chan] < 300)
+	{
+		create_eventsubhook(
+			"redemptiongone=" + chan,
+			"channel.channel_points_custom_reward_redemption.update", "1",
+			(["broadcaster_user_id": (string)broadcaster_id]),
+		);
+	}
+}
+
 void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 {
 	if (!msg) return;
@@ -146,24 +166,7 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		array rewards;
 		int broadcaster_id;
 		get_user_id(chan)->then(lambda(int id) {
-			broadcaster_id = id;
-			if (G->G->webhook_active["redemption=" + chan] < 300)
-			{
-				write("Creating eventsub hook for redemptions %O\n", chan);
-				create_eventsubhook(
-					"redemption=" + chan,
-					"channel.channel_points_custom_reward_redemption.add", "1",
-					(["broadcaster_user_id": (string)broadcaster_id]),
-				);
-			}
-			if (G->G->webhook_active["redemptiongone=" + chan] < 300)
-			{
-				create_eventsubhook(
-					"redemptiongone=" + chan,
-					"channel.channel_points_custom_reward_redemption.update", "1",
-					(["broadcaster_user_id": (string)broadcaster_id]),
-				);
-			}
+			make_hooks(chan, broadcaster_id = id);
 			return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + broadcaster_id,
 				(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]));
 		})->then(lambda(mapping info) {
