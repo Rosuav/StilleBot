@@ -46,15 +46,21 @@ void points_redeemed(string chan, mapping data, int|void removal)
 {
 	write("POINTS %s ON %O: %O\n", removal ? "REFUNDED" : "REDEEMED", chan, data);
 	string token = persist_status->path("bcaster_token")[chan];
-	update_ticket_count(persist_config->path("channels", chan), data, removal);
-	//POC: Up the price every time it's redeemed
-	//For this to be viable, the reward needs a global cooldown of
-	//at least a few seconds, preferably a few minutes.
-	/*twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
-			+ data->broadcaster_user_id + "&id=" + data->reward->id,
-		(["Authorization": "Bearer " + token]),
-		(["method": "PATCH", "json": (["cost": data->reward->cost * 2])]),
-	);*/
+	mapping cfg = persist_config->path("channels", chan);
+	update_ticket_count(cfg, data, removal);
+
+	if (mapping dyn = cfg->dynamic_rewards && cfg->dynamic_rewards[data->reward->id]) {
+		//Up the price every time it's redeemed
+		//For this to be viable, the reward needs a global cooldown of
+		//at least a few seconds, preferably a few minutes.
+		int newcost = G->G->evaluate_expr(replace("PREV * 2", "PREV", (string)data->reward->cost));
+		twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+				+ data->broadcaster_user_id + "&id=" + data->reward->id,
+			(["Authorization": "Bearer " + token]),
+			(["method": "PATCH", "json": (["cost": newcost])]),
+		);
+	}
+
 	write("Pinging %d clients for hype train %s\n", sizeof(websocket_groups[chan]), chan);
 	(websocket_groups[chan] - ({0}))->send_text(Standards.JSON.encode(([
 		"cmd": "update", "tickets": tickets_in_order(chan),
