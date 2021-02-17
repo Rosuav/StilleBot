@@ -2,6 +2,7 @@ inherit http_endpoint;
 inherit websocket_handler;
 
 void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
+	if (!cfg->giveaway) return;
 	mapping values = cfg->giveaway->rewards || ([]);
 	string chan = redem->broadcaster_login || redem->broadcaster_user_login;
 	mapping people = G->G->giveaway_tickets[chan];
@@ -62,10 +63,12 @@ void points_redeemed(string chan, mapping data, int|void removal)
 		);
 	}
 
-	write("Pinging %d clients for hype train %s\n", sizeof(websocket_groups[chan]), chan);
-	(websocket_groups[chan] - ({0}))->send_text(Standards.JSON.encode(([
-		"cmd": "update", "tickets": tickets_in_order(chan),
-	])));
+	if (websocket_groups[chan]) {
+		write("Pinging %d clients for hype train %s\n", sizeof(websocket_groups[chan]), chan);
+		(websocket_groups[chan] - ({0}))->send_text(Standards.JSON.encode(([
+			"cmd": "update", "tickets": tickets_in_order(chan),
+		])));
+	}
 }
 void remove_tickets(string chan, mapping data) {points_redeemed(chan, data, 1);}
 
@@ -237,7 +240,7 @@ void channel_on_off(string channel, int online)
 {
 	mapping cfg = persist_config["channels"][channel];
 	mapping dyn = cfg->dynamic_rewards || ([]);
-	mapping rewards = cfg->giveaway->rewards || ([]);
+	mapping rewards = (cfg->giveaway && cfg->giveaway->rewards) || ([]);
 	if (!sizeof(dyn) && !sizeof(rewards)) return; //Nothing to do
 	get_user_id(channel)->then(lambda(int broadcaster_id) {
 		if (online) make_hooks(channel, broadcaster_id);
