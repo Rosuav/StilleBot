@@ -49,7 +49,7 @@ void points_redeemed(string chan, mapping data, int|void removal)
 	mapping cfg = persist_config->path("channels", chan);
 	update_ticket_count(cfg, data, removal);
 
-	if (mapping dyn = cfg->dynamic_rewards && cfg->dynamic_rewards[data->reward->id]) {
+	if (mapping dyn = !removal && cfg->dynamic_rewards && cfg->dynamic_rewards[data->reward->id]) {
 		//Up the price every time it's redeemed
 		//For this to be viable, the reward needs a global cooldown of
 		//at least a few seconds, preferably a few minutes.
@@ -191,10 +191,32 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	}
 }
 
+void channel_on_off(string channel, int online)
+{
+	mapping cfg = persist_config["channels"][channel];
+	mapping dyn = cfg->dynamic_rewards || ([]);
+	mapping rewards = cfg->giveaway->rewards || ([]);
+	if (!sizeof(dyn) && !sizeof(rewards)) return; //Nothing to do
+	get_user_id(channel)->then(lambda(int broadcaster_id) {
+		if (online) make_hooks(channel, broadcaster_id);
+		string token = persist_status->path("bcaster_token")[channel];
+		if (token) foreach (dyn; string reward_id; mapping info)
+			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+					+ broadcaster_id + "&id=" + reward_id,
+				(["Authorization": "Bearer " + token]),
+				(["method": "PATCH", "json": (["cost": info->basecost, "is_paused": online ? Val.false : Val.true])]),
+			);
+	});
+}
+int channel_online(string channel) {channel_on_off(channel, 1);}
+int channel_offline(string channel) {channel_on_off(channel, 0);}
+
 protected void create(string name)
 {
 	::create(name);
 	if (!G->G->giveaway_tickets) G->G->giveaway_tickets = ([]);
 	G->G->webhook_endpoints->redemption = points_redeemed;
 	G->G->webhook_endpoints->redemptiongone = remove_tickets;
+	register_hook("channel-online", channel_online);
+	register_hook("channel-offline", channel_offline);
 }
