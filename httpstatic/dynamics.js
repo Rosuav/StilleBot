@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {TR, TD, FORM, INPUT} = choc;
+const {TR, TD, FORM, INPUT, OPTION} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 
 function render() {
@@ -16,11 +16,15 @@ function render() {
 }
 render();
 
+const copiables = allrewards.map((r, i) => OPTION({value: i}, r.title));
+copiables.unshift(DOM("#copyfrom").firstElementChild);
+set_content("#copyfrom", copiables);
+
 DOM("#add").onclick = async e => {
 	const res = await fetch("giveaway", {
-		method: "PUT",
+		method: "PUT", //Yeah, I know, this probably ought to be a POST request instead
 		headers: {"Content-Type": "application/json"},
-		body: JSON.stringify({new_dynamic: 1}), //Yeah, I know, this probably ought to be a POST request instead
+		body: JSON.stringify({new_dynamic: 1, copy_from: allrewards[DOM("#copyfrom").value]}),
 	});
 	if (!res.ok) {console.error("Not okay response", res); return;}
 	const body = await res.json();

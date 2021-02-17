@@ -5,7 +5,7 @@ Title | Base cost | Formula | Current cost | Actions
 -     | -         | -       | -            | (loading...)
 {: #rewards}
 
-<button type=button id=add>Add dynamic reward</button>
+<button type=button id=add>Add dynamic reward</button> Copy from: <select id=copyfrom><option value="-1">(none)</option></select>
 
 Choose how the price grows by setting a formula, for example:
 * `PREV * 2` (double the price every time)

@@ -154,15 +154,17 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		}
 		if (body->new_dynamic) { //This kinda should be a POST request, but whatever.
 			if (!cfg->dynamic_rewards) cfg->dynamic_rewards = ([]);
+			mapping copyfrom = body->copy_from || ([]); //Whatever we get from the front end, pass to Twitch. Good idea? Not sure.
 			//Titles must be unique (among all rewards). To simplify rapid creation of
 			//multiple rewards, add a numeric disambiguator on conflict.
-			string deftitle = "Example Dynamic Reward";
-			mapping rwd = (["title": deftitle, "basecost": 1000, "formula": "PREV * 2"]);
+			string deftitle = copyfrom->title || "Example Dynamic Reward";
+			mapping rwd = (["basecost": copyfrom->cost || 1000, "formula": "PREV * 2"]);
 			array have = filter(values(cfg->dynamic_rewards)->title, has_prefix, deftitle);
-			if (has_value(have, deftitle)) rwd->title += " #" + (sizeof(have) + 1);
+			rwd->title = deftitle + " #" + (sizeof(have) + 1);
+			copyfrom |= (["title": rwd->title, "cost": rwd->basecost]);
 			return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + req->misc->session->user->id,
 				(["Authorization": "Bearer " + req->misc->session->token]),
-				(["method": "POST", "json": (["title": rwd->title, "cost": rwd->basecost])]),
+				(["method": "POST", "json": copyfrom]),
 			)->then(lambda(mapping info) {
 				string id = info->data[0]->id;
 				//write("Created new dynamic: %O\n", info->data[0]);
