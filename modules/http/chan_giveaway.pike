@@ -68,6 +68,26 @@ void points_redeemed(string chan, mapping data, int|void removal)
 }
 void remove_tickets(string chan, mapping data) {points_redeemed(chan, data, 1);}
 
+void make_hooks(string chan, int broadcaster_id) {
+	if (G->G->webhook_active["redemption=" + chan] < 300)
+	{
+		write("Creating eventsub hook for redemptions %O\n", chan);
+		create_eventsubhook(
+			"redemption=" + chan,
+			"channel.channel_points_custom_reward_redemption.add", "1",
+			(["broadcaster_user_id": (string)broadcaster_id]),
+		);
+	}
+	if (G->G->webhook_active["redemptiongone=" + chan] < 300)
+	{
+		create_eventsubhook(
+			"redemptiongone=" + chan,
+			"channel.channel_points_custom_reward_redemption.update", "1",
+			(["broadcaster_user_id": (string)broadcaster_id]),
+		);
+	}
+}
+
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "channel:manage:redemptions")) return resp;
@@ -124,6 +144,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				});
 			}
 			reqs += make_reward(qty[*]);
+			make_hooks(chan, req->misc->session->user->id);
 			return Concurrent.all(reqs)->then(lambda() {
 				//TODO: Notify the front end what's been changed, not just counts
 				return jsonify((["ok": 1, "created": numcreated, "updated": numupdated, "deleted": numdeleted]));
@@ -133,26 +154,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	}
 	//TODO: Retain the configs (eg title template) to prepopulate the form
 	return render_template("chan_giveaway.md", (["vars": (["channelname": chan])]));
-}
-
-void make_hooks(string chan, int broadcaster_id) {
-	if (G->G->webhook_active["redemption=" + chan] < 300)
-	{
-		write("Creating eventsub hook for redemptions %O\n", chan);
-		create_eventsubhook(
-			"redemption=" + chan,
-			"channel.channel_points_custom_reward_redemption.add", "1",
-			(["broadcaster_user_id": (string)broadcaster_id]),
-		);
-	}
-	if (G->G->webhook_active["redemptiongone=" + chan] < 300)
-	{
-		create_eventsubhook(
-			"redemptiongone=" + chan,
-			"channel.channel_points_custom_reward_redemption.update", "1",
-			(["broadcaster_user_id": (string)broadcaster_id]),
-		);
-	}
 }
 
 void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
