@@ -182,7 +182,7 @@ echoable_message process(object channel, object person, string param)
 		} else if (state->cooldown) {
 			int tm = state->cooldown - time();
 			send_message(channel->name, sprintf(
-				"/me devicatTime The hype train is on cooldown for %02d:%02d. kittenzSleep",
+				"/me devicatCozy The hype train is on cooldown for %02d:%02d. kittenzSleep",
 				tm / 60, tm % 60));
 		} else send_message(channel->name, "/me NomNom Cookies are done! NomNom");
 	});
