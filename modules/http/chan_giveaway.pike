@@ -228,17 +228,17 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				return jsonify((["ok": 0])); //unimpl
 			case "master pick":
 				return jsonify((["ok": 0])); //unimpl
-			case "master cancel": {
+			case "master cancel":
+			case "master end": {
 				mapping existing = cfg->giveaway->rewards;
 				if (!existing) return jsonify((["ok": 1])); //No rewards, nothing to cancel
 				return Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*]))
 					->then(lambda(array(array) redemptions) {
-						foreach (redemptions * ({ }), mapping redem) set_redemption_status(redem, "CANCELED");
+						foreach (redemptions * ({ }), mapping redem)
+							set_redemption_status(redem, body->action == "master cancel" ? "CANCELED" : "FULFILLED");
 						return jsonify((["ok": 1]));
 					});
 			}
-			case "master end":
-				return jsonify((["ok": 0])); //unimpl
 		}
 		return jsonify((["ok": 1]));
 	}
