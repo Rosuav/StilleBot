@@ -111,6 +111,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			array qty = (array(int))((body->multi || "") / " ") - ({0});
 			if (!cfg->giveaway) cfg->giveaway = ([]);
 			cfg->giveaway->max_tickets = (int)body->max;
+			cfg->giveaway->desc_template = body->desc;
+			cfg->giveaway->cost = cost;
 			mapping existing = cfg->giveaway->rewards;
 			if (!existing) existing = cfg->giveaway->rewards = ([]);
 			array reqs = ({ });
@@ -196,8 +198,15 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		}
 		return jsonify((["ok": 1]));
 	}
-	//TODO: Retain the configs (eg title template) to prepopulate the form
-	return render_template("chan_giveaway.md", (["vars": (["channelname": chan])]));
+	mapping config = ([]);
+	mapping g = cfg->giveaway || ([]);
+	config->cost = g->cost || 1;
+	config->max = g->max_tickets || 1;
+	config->desc = g->desc_template || "";
+	if (mapping existing = g->rewards)
+		config->multi = ((array(string))sort(values(existing))) * " ";
+	else config->multi = "";
+	return render_template("chan_giveaway.md", (["vars": (["channelname": chan, "config": config])]));
 }
 
 void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)

@@ -2,11 +2,16 @@ import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed
 const {DIV, LI} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 
+const fields = "cost desc max multi".split(" ");
+
 function render(state) {
 	if (state.rewards) set_content("#existing", state.rewards.map(r => LI([r.id, " ", r.title])));
 	set_content("#ticketholders", state.tickets.map(t => LI([""+t.tickets, " ", t.name])));
 }
-
+if (config.cost) {
+	const el = DOM("#configform").elements;
+	fields.forEach(f => el[f].value = "" + config[f]);
+}
 /*
 1) Create rewards - DONE
 2) Activate rewards
@@ -25,7 +30,8 @@ When no current giveaway, show most recent winner. (Maybe allow that to be clear
 on("submit", "#configform", async e => {
 	e.preventDefault();
 	const el = e.match.elements;
-	const body = {cost: el.cost.value, desc: el.desc.value, multi: el.multi.value, max: el.max.value};
+	const body = { };
+	fields.forEach(f => body[f] = el[f].value);
 	const info = await (await fetch("giveaway", {
 		method: "PUT",
 		headers: {"Content-Type": "application/json"},
