@@ -26,6 +26,8 @@ if (config.cost) {
 3) Notice redemptions - DONE
 4) Deactivate rewards - DONE
 5) Pick a winner and remove (accept) all that person's tickets (so you can pick multiple)
+   - Picking is done, removing tickets isn't (partly for debugging)
+   - Needs an in-chat notification. Need a good system for these. Use for noobs run too. Pick command from dropdown, can edit.
 6) Clear all tickets - DONE
 7) Cancel giveaway and refund all tickets - DONE
 8) Userspace command to refund all my tickets. No need for partials, probably (too hard to manage)
