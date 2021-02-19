@@ -17,15 +17,14 @@ if (config.cost) {
 }
 /*
 1) Create rewards - DONE
-2) Activate rewards
-   - PUT request with a single flag. Back end will clear counts and activate.
-   - Create rewards in a paused state
+2) Activate rewards - DONE
 3) Notice redemptions - DONE
-4) Deactivate rewards (pause, not disable - has to keep redemptions in their UNFULFILLED status)
+4) Deactivate rewards - DONE
 5) Pick a winner and remove (accept) all that person's tickets (so you can pick multiple)
-6) Clear all tickets (accepting redemptions so it makes costs permanent)
-7) Cancel giveaway and refund all tickets
+6) Clear all tickets - DONE
+7) Cancel giveaway and refund all tickets - DONE
 8) Userspace command to refund all my tickets. No need for partials, probably (too hard to manage)
+   - Allow this only while the giveaway is open.
 
 When no current giveaway, show most recent winner. (Maybe allow that to be cleared??)
 */
