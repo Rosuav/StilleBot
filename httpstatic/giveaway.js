@@ -40,6 +40,17 @@ on("submit", "#configform", async e => {
 	console.log("Got response:", info);
 });
 
+DOM("#showmaster").onclick = e => DOM("#master").showModal();
+on("click", ".master", async e => {
+	const action = e.match.className; //TODO: Whitelist
+	const info = await (await fetch("giveaway", {
+		method: "PUT",
+		headers: {"Content-Type": "application/json"},
+		body: JSON.stringify({action}),
+	})).json();
+	console.log("Got response:", info);
+});
+
 let socket;
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 function connect()

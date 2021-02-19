@@ -1,6 +1,16 @@
 inherit http_endpoint;
 inherit websocket_handler;
 
+Concurrent.Future set_redemption_status(mapping redem, string status) {
+	//Reject the redemption, refunding the points
+	return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions"
+			+ "?broadcaster_id=" + (redem->broadcaster_id || redem->broadcaster_user_id)
+			+ "&reward_id=" + redem->reward->id
+			+ "&id=" + redem->id,
+		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[redem->broadcaster_login || redem->broadcaster_user_login]]),
+		(["method": "PATCH", "json": (["status": status])]),
+	);
+}
 void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 	if (!cfg->giveaway) return;
 	mapping values = cfg->giveaway->rewards || ([]);
@@ -22,14 +32,7 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 	else {
 		int now = person->tickets + values[redem->reward->id];
 		if (cfg->giveaway->max_tickets && now > cfg->giveaway->max_tickets) {
-			//Reject the redemption, refunding the points
-			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions"
-					+ "?broadcaster_id=" + (redem->broadcaster_id || redem->broadcaster_user_id)
-					+ "&reward_id=" + redem->reward->id
-					+ "&id=" + redem->id,
-				(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]),
-				(["method": "PATCH", "json": (["status": "CANCELED"])]),
-			)->then(lambda(mixed resp) {write("Cancelled: %O\n", resp);});
+			set_redemption_status(redem, "CANCELED")->then(lambda(mixed resp) {write("Cancelled: %O\n", resp);});
 		}
 		else {person->tickets = now; person->redemptions[redem->id] = redem;}
 	}
@@ -92,6 +95,19 @@ void make_hooks(string chan, int broadcaster_id) {
 	}
 }
 
+//List all redemptions for a particular reward ID
+Concurrent.Future list_redemptions(int broadcaster_id, string chan, string id) {
+	return get_helix_paginated("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions",
+		([
+			"broadcaster_id": (string)broadcaster_id,
+			"reward_id": id,
+			"status": "UNFULFILLED",
+			"first": "50",
+		]),
+		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]),
+	);
+}
+
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "channel:manage:redemptions")) return resp;
@@ -101,6 +117,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//and allow all users to see status. The OAuth token is retained for good reason.
 	if (chan != req->misc->session->user->login)
 		return render_template("login.md", req->misc->chaninfo); //TODO: Change the text to say "not the broadcaster" rather than "not a mod"
+	int broadcaster_id = req->misc->session->user->id;
 	persist_status->path("bcaster_token")[chan] = req->misc->session->token;
 	if (req->request_type == "PUT") {
 		mixed body = Standards.JSON.decode(req->body_raw);
@@ -119,7 +136,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			if (!existing) existing = cfg->giveaway->rewards = ([]);
 			array reqs = ({ });
 			Concurrent.Future call(string method, string query, mixed body) {
-				return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + req->misc->session->user->id + "&" + query,
+				return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&" + query,
 					(["Authorization": "Bearer " + req->misc->session->token]),
 					(["method": method, "json": body, "return_status": !body]),
 				);
@@ -156,7 +173,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				});
 			}
 			reqs += make_reward(qty[*]);
-			make_hooks(chan, req->misc->session->user->id);
+			make_hooks(chan, broadcaster_id);
 			persist_config->save();
 			return Concurrent.all(reqs)->then(lambda() {
 				//TODO: Notify the front end what's been changed, not just counts
@@ -173,14 +190,14 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			array have = filter(values(cfg->dynamic_rewards)->title, has_prefix, deftitle);
 			rwd->title = deftitle + " #" + (sizeof(have) + 1);
 			copyfrom |= (["title": rwd->title, "cost": rwd->basecost]);
-			return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + req->misc->session->user->id,
+			return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
 				(["Authorization": "Bearer " + req->misc->session->token]),
 				(["method": "POST", "json": copyfrom]),
 			)->then(lambda(mapping info) {
 				string id = info->data[0]->id;
 				//write("Created new dynamic: %O\n", info->data[0]);
 				cfg->dynamic_rewards[id] = rwd;
-				make_hooks(chan, req->misc->session->user->id);
+				make_hooks(chan, broadcaster_id);
 				persist_config->save();
 				return jsonify((["ok": 1, "reward": rwd | (["id": id])]));
 			});
@@ -193,14 +210,35 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			if (body->formula) rwd->formula = body->formula;
 			if (body->title || body->curcost) {
 				//Currently fire-and-forget - there's no feedback if you get something wrong.
-				twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + req->misc->session->user->id + "&id=" + id,
+				twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&id=" + id,
 					(["Authorization": "Bearer " + req->misc->session->token]),
 					(["method": "PATCH", "json": (["title": rwd->title, "cost": (int)body->curcost])]),
 				);
 			}
-			make_hooks(chan, req->misc->session->user->id);
+			make_hooks(chan, broadcaster_id);
 			persist_config->save();
 			return jsonify((["ok": 1]));
+		}
+		//Master control
+		if (body->action && !cfg->giveaway) return jsonify((["ok": 1])); //No rewards, nothing to activate or anything
+		switch (body->action) {
+			case "master open":
+				return jsonify((["ok": 0])); //unimpl
+			case "master close":
+				return jsonify((["ok": 0])); //unimpl
+			case "master pick":
+				return jsonify((["ok": 0])); //unimpl
+			case "master cancel": {
+				mapping existing = cfg->giveaway->rewards;
+				if (!existing) return jsonify((["ok": 1])); //No rewards, nothing to cancel
+				return Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*]))
+					->then(lambda(array(array) redemptions) {
+						foreach (redemptions * ({ }), mapping redem) set_redemption_status(redem, "CANCELED");
+						return jsonify((["ok": 1]));
+					});
+			}
+			case "master end":
+				return jsonify((["ok": 0])); //unimpl
 		}
 		return jsonify((["ok": 1]));
 	}
@@ -232,15 +270,7 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 				(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]));
 		})->then(lambda(mapping info) {
 			rewards = info->data;
-			return Concurrent.all(lambda(string id) {return get_helix_paginated("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions",
-				([
-					"broadcaster_id": (string)broadcaster_id,
-					"reward_id": id,
-					"status": "UNFULFILLED",
-					"first": "50",
-				]),
-				(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]),
-			);}(rewards->id[*]));
+			return Concurrent.all(list_redemptions(broadcaster_id, chan, rewards->id[*]));
 		})->then(lambda(array(array) redemptions) {
 			//Every time a new websocket is established, fully recalculate. Guarantee fresh data.
 			G->G->giveaway_tickets[chan] = ([]);

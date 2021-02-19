@@ -18,10 +18,28 @@
 > </form>
 {: tag=details}
 
-<div id=existing></div>
+<button type=button id=showmaster>Master Control</button>
+
+> <h3>Master Control</h3>
+>
+> * <button type=button class="master open">Open giveaway</button> and allow people to buy tickets
+> * <button type=button class="master close">Close giveaway</button> so no more tickets will be bought
+> * TODO: Timed giveaways where it automatically closes after X seconds/minutes
+> * <button type=button class="master pick">Choose winner</button> and remove that person's tickets
+> * <button type=button class="master cancel">Cancel and refund</button> all points spent on tickets
+> * <button type=button class="master end">End giveaway</button> clearing out tickets
+>
+{: tag=dialog #master}
 
 <script type=module src="$$static||giveaway.js$$"></script>
 
+<div id=existing></div>
+
 <style>
 details {border: 1px solid black; padding: 0.5em; margin: 0.5em;}
+#master li {
+	margin-top: 0.5em;
+	margin-right: 40px;
+	list-style-type: none;
+}
 </style>
