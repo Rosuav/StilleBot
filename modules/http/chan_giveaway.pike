@@ -46,6 +46,16 @@ array tickets_in_order(string chan) {
 	return tickets;
 }
 
+void notify_websockets(string chan) {
+	if (!websocket_groups[chan]) return;
+	mapping status = persist_status->path("giveaways")[chan] || ([]);
+	write("Pinging %d clients for giveaway tickets %s\n", sizeof(websocket_groups[chan]), chan);
+	(websocket_groups[chan] - ({0}))->send_text(Standards.JSON.encode(([
+		"cmd": "update", "tickets": tickets_in_order(chan),
+		"is_open": status->is_open, "last_winner": status->last_winner,
+	])));
+}
+
 void points_redeemed(string chan, mapping data, int|void removal)
 {
 	write("POINTS %s ON %O: %O\n", removal ? "REFUNDED" : "REDEEMED", chan, data);
@@ -65,13 +75,7 @@ void points_redeemed(string chan, mapping data, int|void removal)
 			(["method": "PATCH", "json": (["cost": newcost])]),
 		);
 	}
-
-	if (websocket_groups[chan]) {
-		write("Pinging %d clients for giveaway tickets %s\n", sizeof(websocket_groups[chan]), chan);
-		(websocket_groups[chan] - ({0}))->send_text(Standards.JSON.encode(([
-			"cmd": "update", "tickets": tickets_in_order(chan),
-		])));
-	}
+	notify_websockets(chan);
 }
 void remove_tickets(string chan, mapping data) {points_redeemed(chan, data, 1);}
 
@@ -119,6 +123,12 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		return render_template("login.md", req->misc->chaninfo); //TODO: Change the text to say "not the broadcaster" rather than "not a mod"
 	int broadcaster_id = req->misc->session->user->id;
 	persist_status->path("bcaster_token")[chan] = req->misc->session->token;
+	Concurrent.Future call(string method, string query, mixed body) {
+		return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&" + query,
+			(["Authorization": "Bearer " + req->misc->session->token]),
+			(["method": method, "json": body, "return_status": !body]),
+		);
+	}
 	if (req->request_type == "PUT") {
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body)) return (["error": 400]);
@@ -135,12 +145,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			mapping existing = cfg->giveaway->rewards;
 			if (!existing) existing = cfg->giveaway->rewards = ([]);
 			array reqs = ({ });
-			Concurrent.Future call(string method, string query, mixed body) {
-				return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&" + query,
-					(["Authorization": "Bearer " + req->misc->session->token]),
-					(["method": method, "json": body, "return_status": !body]),
-				);
-			}
 			int numcreated = 0, numupdated = 0, numdeleted = 0;
 			//Prune any that we no longer need
 			foreach (existing; string id; int tickets) {
@@ -223,9 +227,20 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (body->action && !cfg->giveaway) return jsonify((["ok": 1])); //No rewards, nothing to activate or anything
 		switch (body->action) {
 			case "master open":
-				return jsonify((["ok": 0])); //unimpl
-			case "master close":
-				return jsonify((["ok": 0])); //unimpl
+			case "master close": {
+				int want_open = body->action == "master open";
+				mapping status = persist_status->path("giveaways", chan);
+				if (want_open == status->is_open) return jsonify((["ok": 0, "reason": "Giveaway is already " + want_open ? "open" : "closed"]));
+				status->is_open = want_open;
+				//Note: Updates reward status in fire and forget mode.
+				foreach (cfg->giveaway->rewards || ([]); string id;) call("PATCH", "id=" + id, ([
+					"is_enabled": want_open || cfg->giveaway->pausemode,
+					"is_paused": !want_open && cfg->giveaway->pausemode,
+				]));
+				persist_status->save();
+				notify_websockets(chan);
+				return jsonify((["ok": 1]));
+			}
 			case "master pick":
 				return jsonify((["ok": 0])); //unimpl
 			case "master cancel":
@@ -274,9 +289,11 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		})->then(lambda(array(array) redemptions) {
 			//Every time a new websocket is established, fully recalculate. Guarantee fresh data.
 			G->G->giveaway_tickets[chan] = ([]);
+			mapping status = persist_status->path("giveaways")[chan] || ([]);
 			foreach (redemptions * ({ }), mapping redem) update_ticket_count(cfg, redem);
 			if (conn->sock) conn->sock->send_text(Standards.JSON.encode(([
 				"cmd": "update", "rewards": rewards, "tickets": tickets_in_order(chan),
+				"is_open": status->is_open, "last_winner": status->last_winner,
 			])));
 		});
 	}

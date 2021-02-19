@@ -1,5 +1,7 @@
 # Channel points - giveaway manager
 
+<div id=master_status>Loading giveaway status...</div>
+
 <ul id=ticketholders></ul>
 
 > <summary>Set up rewards</summary>
@@ -41,5 +43,17 @@ details {border: 1px solid black; padding: 0.5em; margin: 0.5em;}
 	margin-top: 0.5em;
 	margin-right: 40px;
 	list-style-type: none;
+}
+#master_status {
+	width: 350px;
+	background: aliceblue;
+	border: 3px solid blue;
+	font-size: 150%;
+	margin: auto;
+	padding: 1em;
+}
+#master_status.is_open {
+	background: #a0f0c0;
+	border-color: green;
 }
 </style>

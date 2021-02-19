@@ -7,6 +7,9 @@ const fields = "cost desc max multi pausemode".split(" ");
 function render(state) {
 	if (state.rewards) set_content("#existing", state.rewards.map(r => LI([r.id, " ", r.title])));
 	set_content("#ticketholders", state.tickets.map(t => LI([""+t.tickets, " ", t.name])));
+	set_content("#master_status", [
+		"Giveaway is " + (state.is_open ? "OPEN" : "CLOSED"),
+	]).classList.toggle("is_open", !!state.is_open); //ensure that undefined becomes false :|
 }
 if (config.cost) {
 	const el = DOM("#configform").elements;
