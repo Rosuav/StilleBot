@@ -630,6 +630,7 @@ class channel_notif
 				break;
 				case "slow_on": case "slow_off": break; //Channel is now/no longer in slow mode
 				case "emote_only_on": case "emote_only_off": break; //Channel is now/no longer in emote-only mode
+				case "subs_on": case "subs_off": break; //Channel is now/no longer in sub-only mode
 				case "followers_on": case "followers_off": break; //Channel is now/no longer in follower-only mode (regardless of minimum time)
 				case "followers_on_zero": break; //Regardless? Not quite; if it's zero-second followers-only mode, it's separate.
 				case "msg_duplicate": case "msg_slowmode": case "msg_timedout": case "msg_banned":
