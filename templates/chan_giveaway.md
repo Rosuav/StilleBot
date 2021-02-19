@@ -9,6 +9,10 @@
 > * <label>Description: <input name=desc size=40 placeholder="Buy # tickets"> Put a <code>#</code> symbol for multibuy count</label>
 > * <label>Multibuy options: <input name=multi size=40 placeholder="1 5 10 25 50"> List quantities that can be purchased (always include 1!)</label>
 > * <label>Max tickets: <input name=max type=number value=1> Purchases that would put you over this limit will be cancelled</label>
+> * <label>Redemption hiding:
+>   <select name=pausemode><option value="disable">Disable, hiding them from users</option><option value="pause">Pause and leave visible</option></select>
+>   When there's no current giveaway, should redemptions remain visible (but unpurchaseable), or vanish entirely?
+>   </label>
 >
 > <button>Save/reconfigure</button>
 > </form>

@@ -110,9 +110,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			//Master reconfiguration
 			array qty = (array(int))((body->multi || "") / " ") - ({0});
 			if (!cfg->giveaway) cfg->giveaway = ([]);
+			mapping status = persist_status->path("giveaways", chan);
 			cfg->giveaway->max_tickets = (int)body->max;
 			cfg->giveaway->desc_template = body->desc;
 			cfg->giveaway->cost = cost;
+			cfg->giveaway->pausemode = body->pausemode == "pause";
 			mapping existing = cfg->giveaway->rewards;
 			if (!existing) existing = cfg->giveaway->rewards = ([]);
 			array reqs = ({ });
@@ -135,6 +137,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					reqs += ({call("PATCH", "id=" + id, ([
 						"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
 						"cost": cost * tickets,
+						"is_enabled": status->is_open || cfg->giveaway->pausemode,
+						"is_paused": !status->is_open && cfg->giveaway->pausemode,
 					]))});
 				}
 				qty -= ({tickets});
@@ -144,6 +148,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				return call("POST", "", ([
 					"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
 					"cost": cost * tickets,
+					"is_enabled": status->is_open || cfg->giveaway->pausemode,
+					"is_paused": !status->is_open && cfg->giveaway->pausemode,
 				]))->then(lambda(mapping info) {
 					existing[info->data[0]->id] = tickets;
 					++numcreated;
@@ -203,6 +209,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	config->cost = g->cost || 1;
 	config->max = g->max_tickets || 1;
 	config->desc = g->desc_template || "";
+	config->pausemode = g->pausemode ? "pause" : "disable";
 	if (mapping existing = g->rewards)
 		config->multi = ((array(string))sort(values(existing))) * " ";
 	else config->multi = "";

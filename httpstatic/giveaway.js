@@ -2,7 +2,7 @@ import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed
 const {DIV, LI} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 
-const fields = "cost desc max multi".split(" ");
+const fields = "cost desc max multi pausemode".split(" ");
 
 function render(state) {
 	if (state.rewards) set_content("#existing", state.rewards.map(r => LI([r.id, " ", r.title])));
