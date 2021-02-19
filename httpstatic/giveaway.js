@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {DIV, LI} = choc;
+const {DIV, H3, LI, SPAN} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 
 const fields = "cost desc max multi pausemode".split(" ");
@@ -8,7 +8,12 @@ function render(state) {
 	if (state.rewards) set_content("#existing", state.rewards.map(r => LI([r.id, " ", r.title])));
 	set_content("#ticketholders", state.tickets.map(t => LI([""+t.tickets, " ", t.name])));
 	set_content("#master_status", [
-		"Giveaway is " + (state.is_open ? "OPEN" : "CLOSED"),
+		H3("Giveaway is " + (state.is_open ? "OPEN" : "CLOSED")),
+		state.last_winner ? DIV([
+			"Winner: ",
+			SPAN({className: "winner_name"}, state.last_winner[1]),
+			` with ${state.last_winner[2]} tickets and a ${state.last_winner[2]*100/state.last_winner[3]}% chance to win!`,
+		]) : "",
 	]).classList.toggle("is_open", !!state.is_open); //ensure that undefined becomes false :|
 }
 if (config.cost) {

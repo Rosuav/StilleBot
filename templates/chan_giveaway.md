@@ -48,12 +48,20 @@ details {border: 1px solid black; padding: 0.5em; margin: 0.5em;}
 	width: 350px;
 	background: aliceblue;
 	border: 3px solid blue;
-	font-size: 150%;
 	margin: auto;
 	padding: 1em;
+	font-size: 125%;
 }
 #master_status.is_open {
 	background: #a0f0c0;
 	border-color: green;
+}
+#master_status h3 {
+	font-size: 125%;
+	margin: 0 auto 0.5em;
+}
+.winner_name {
+	background-color: #ffe;
+	font-weight: bold;
 }
 </style>

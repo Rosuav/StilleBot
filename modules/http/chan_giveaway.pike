@@ -241,8 +241,23 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				notify_websockets(chan);
 				return jsonify((["ok": 1]));
 			}
-			case "master pick":
-				return jsonify((["ok": 0])); //unimpl
+			case "master pick": {
+				//NOTE: This is subject to race conditions if the giveaway is open
+				//at the time of drawing. Close the giveaway first.
+				array people = (array)(G->G->giveaway_tickets[chan] || ([]));
+				int tot = 0;
+				array partials = ({ });
+				foreach (people, [mixed id, mapping person]) partials += ({tot += person->tickets});
+				if (!tot) return jsonify((["ok": 0, "reason": "No tickets bought!"]));
+				int ticket = random(tot);
+				//I could binary search but I doubt there'll be enough entrants to make a difference.
+				array winner;
+				foreach (partials; int i; int last) if (ticket < last) {winner = people[i]; break;}
+				mapping status = persist_status->path("giveaways", chan);
+				status->last_winner = ({winner[0], winner[1]->name, winner[1]->tickets, tot}); //ID, name, ticket count, out of total
+				notify_websockets(chan);
+				return jsonify((["ok": 1]));
+			}
 			case "master cancel":
 			case "master end": {
 				mapping existing = cfg->giveaway->rewards;
