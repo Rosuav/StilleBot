@@ -64,7 +64,7 @@ void points_redeemed(string chan, mapping data, int|void removal)
 	}
 
 	if (websocket_groups[chan]) {
-		write("Pinging %d clients for hype train %s\n", sizeof(websocket_groups[chan]), chan);
+		write("Pinging %d clients for giveaway tickets %s\n", sizeof(websocket_groups[chan]), chan);
 		(websocket_groups[chan] - ({0}))->send_text(Standards.JSON.encode(([
 			"cmd": "update", "tickets": tickets_in_order(chan),
 		])));
