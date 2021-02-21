@@ -10,7 +10,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				Protocols.HTTP.http_encode_query(([
 					"channelid": (string)info->id,
 					"channelname": info->display_name,
-				])));
+				])), 301);
 		});
 	}
 	if (req->variables->target)

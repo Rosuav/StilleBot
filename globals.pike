@@ -481,7 +481,11 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 
 mapping(string:mixed) redirect(string url, int|void status)
 {
-	return (["error": status||302, "extra_heads": (["Location": url])]);
+	mapping resp = (["error": status||302, "extra_heads": (["Location": url])]);
+	if (status == 301) return resp; //301 redirects are allowed to be cached.
+	resp->extra_heads->Vary = "*"; //Try to stop 302 redirects from being cached
+	resp->extra_heads["Cache-Control"] = "no-store";
+	return resp;
 }
 
 mapping(string:mixed) jsonify(mixed data, int|void jsonflags)
@@ -567,8 +571,6 @@ mapping(string:mixed)|Concurrent.Future twitchlogin(Protocols.HTTP.Server.Reques
 				else dest = "/login_ok";
 			}
 			mapping resp = redirect(dest);
-			resp->extra_heads->Vary = "*"; //Try to stop the redirects from being cached
-			resp->extra_heads["Cache-Control"] = "no-store";
 			ensure_session(req, resp);
 			req->misc->session->user = user;
 			req->misc->session->scopes = (multiset)(req->variables->scope / " ");
