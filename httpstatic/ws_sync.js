@@ -2,17 +2,18 @@
 //Relies on globals ws_type and ws_group
 
 let handler = null;
-let socket;
+let send_socket; //If present, send() is functional.
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 function connect()
 {
-	socket = new WebSocket(protocol + window.location.host + "/ws");
+	let socket = new WebSocket(protocol + window.location.host + "/ws");
 	socket.onopen = () => {
 		console.log("Socket connection established.");
 		socket.send(JSON.stringify({cmd: "init", type: ws_type, group: ws_group}));
+		send_socket = socket; //Don't activate send() until we're initialized
 	};
 	socket.onclose = () => {
-		socket = null;
+		send_socket = null;
 		console.log("Socket connection lost.");
 		setTimeout(connect, 250);
 	};
@@ -28,4 +29,4 @@ async function init() {handler = await import(ws_code); connect();}
 if (document.readyState !== "loading") init();
 else window.addEventListener("DOMContentLoaded", init);
 
-export function send(msg) {if (socket) socket.send(JSON.stringify(msg));}
+export function send(msg) {if (send_socket) send_socket.send(JSON.stringify(msg));}
