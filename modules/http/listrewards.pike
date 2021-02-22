@@ -29,5 +29,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					sizeof(info->data) ? custom_reward(info->data[*]) * "" :
 					"<li>No custom rewards found</li>",
 			]));
+		}, lambda(array error) {
+			if (has_value(error[0], "channel points are not available for the broadcaster"))
+				return render_template("listrewards.md", ([
+					"rewards": "<li>Channel points are available to Twitch affiliates and partners only, sorry!</li>",
+				]));
+			return Concurrent.reject(error);
 		});
 }
