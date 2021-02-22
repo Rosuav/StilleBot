@@ -35,7 +35,12 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//I'm not sure if I should be stricter here or if that's okay. You won't be
 		//able to redirect outside of the StilleBot environment this way.
 	}
-	//TODO: Sanity-check this? It's going to be checked for keyword validity.
-	array(string) scopes = (req->variables->scopes || "") / " " - ({""});
-	return twitchlogin(req, (multiset)scopes, next);
+	//Merge scopes, similarly to ensure_login()
+	multiset havescopes = req->misc->session->?scopes || (<>);
+	multiset wantscopes = (multiset)((req->variables->scopes || "") / " " - ({""}));
+	multiset bad = wantscopes - TwitchAuth("", "")->list_valid_scopes();
+	if (sizeof(bad)) return (["error": 400, "type": "text/plain", //Note that this is a 400, as opposed to a 500 in ensure_login
+		"data": sprintf("Unrecognized scope %O being requested", (array)bad * " ")]);
+	multiset needscopes = havescopes | wantscopes; //Note that we'll keep any that we already have.
+	return twitchlogin(req, needscopes, next);
 }
