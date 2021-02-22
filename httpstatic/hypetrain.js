@@ -22,8 +22,6 @@ if (!ismobile) {
 	}
 }
 
-//window.channelid has our crucial identifier
-
 let expiry, updating = null;
 function update() {
 	let tm = Math.floor((expiry - +new Date()) / 1000);
@@ -31,7 +29,6 @@ function update() {
 	if (tm <= 0 || !time) {
 		clearInterval(updating); updating = null;
 		if (time) time.innerHTML = "";
-		if (window.channelid) refresh();
 		return;
 	}
 	let t = ":" + ("0" + (tm % 60)).slice(-2);
@@ -74,7 +71,7 @@ function check_interaction() {
 }
 
 let last_rendered = null;
-let render = (state) => {
+export let render = (state) => {
 	check_interaction();
 	//Show the emotes that we could win (or could have won last hype train)
 	const lvl = state.cooldown && state.level; //If not active or cooling down, hide 'em all
@@ -188,39 +185,10 @@ if (ismobile) render = (state) => {
 	updating = setInterval(update, 1000);
 	update();
 }
-window.set_state = render; //Allow manual rendering with presaved state
-
-let socket;
-const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
-function connect()
-{
-	socket = new WebSocket(protocol + window.location.host + "/ws");
-	socket.onopen = () => {
-		console.log("Socket connection established.");
-		socket.send(JSON.stringify({cmd: "init", type: "hypetrain", group: window.channelid}));
-	};
-	socket.onclose = () => {
-		socket = null;
-		console.log("Socket connection lost.");
-		setTimeout(connect, 250);
-	};
-	socket.onmessage = (ev) => {
-		let data = JSON.parse(ev.data);
-		console.log("Got message from server:", data);
-		if (data.cmd === "update") render(window.laststate = data);
-		if (data.cmd === "hit-it") play("ding", 1);
-	};
-}
-if (window.channelid) connect();
-else set_content("#status", "No channel selected");
 
 //This isn't needed most of the time (the webhook will signal us), but can help if
 //anonymous events happen and are missed by the hook.
-function refresh() {
-	if (socket) return socket.send(JSON.stringify({cmd: "refresh"}));
-	//Should we try to reconnect the socket w/o reloading?
-	window.location.reload();
-};
+function refresh() {ws_sync.send({cmd: "refresh"});}
 if (!ismobile) {
 	DOM("#refresh").onclick = refresh;
 	DOM("#configure").onclick = () => DOM("#config").showModal();

@@ -117,7 +117,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	return (channel ? get_user_id(channel) : Concurrent.resolve(0))
 		->then(lambda(int uid) {
 			return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
-				"channelid": (string)uid,
+				"vars": (["ws_type": uid && "hypetrain", "ws_group": uid]),
+				"loading": uid ? "Loading hype status..." : "(no channel selected)",
 				"channelname": channel || "(no channel)",
 				"emotes": avail_emotes,
 				"backlink": !req->variables->mobile && sprintf("<a href=\"hypetrain?for=%s&mobile\">Switch to mobile view</a>", channel || ""),
@@ -140,8 +141,6 @@ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			//but by the time we get the hype state, it might have been dc'd.
 			state->cmd = "update";
 			if (conn->sock) conn->sock->send_text(Standards.JSON.encode(state));
-			//For debugging, trigger a notification for no reason
-			//call_out(conn->sock->send_text, 10, Standards.JSON.encode((["cmd": "hit-it"])));
 			if (G->G->webhook_active["hypetrain=" + conn->group] < 300)
 			{
 				write("Creating webhook for hype train %O\n", conn->group);

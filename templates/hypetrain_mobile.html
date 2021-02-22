@@ -30,11 +30,12 @@ main.mobile {
 
 </head>
 <body>
+$$js_variables||$$
 <main class=mobile>
 <h1>Train Tracks Express</h1>
 <h2>$$channelname$$ hype train</h2>
 <section id=tiles>
-<div id=status>Active/Inactive</div>
+<div id=status>$$loading$$</div>
 <div id=nextlevel><i>(requirements to get to next level)</i></div>
 <div id=emotestile>Tap for more info</div>
 <div id=latest><i>(latest contribution)</i></div>
@@ -50,8 +51,6 @@ Select channel: <input name=for>
 </section>
 </main>
 <dialog id=infopopup><button type=button class=dialog_cancel>x</button><div></div></dialog>
-<script>window.channelid = $$channelid$$;</script>
-<script type=module src="$$static||hypetrain.js$$"></script>
 
 </body>
 </html>

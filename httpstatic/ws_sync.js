@@ -23,7 +23,7 @@ function connect()
 		if (data.cmd === "update") handler.render(data);
 	};
 }
-//Import the handler code. It'll be eg "/subpoints.js" but with automatic mtime handling.
-import(ws_code).then(module => {handler = module; connect();});
+//When ready, import the handler code. It'll be eg "/subpoints.js" but with automatic mtime handling.
+window.addEventListener("DOMContentLoaded", e => import(ws_code).then(module => {handler = module; connect();}));
 
 export function send(msg) {if (socket) socket.send(JSON.stringify(msg));}

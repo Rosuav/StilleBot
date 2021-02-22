@@ -1,7 +1,7 @@
 # Train Tracks
 ## $$channelname$$ hype train
 
-<div id=hypeinfo><p id=status></p></div>
+<div id=hypeinfo><p id=status>$$loading$$</p></div>
 
 WARNING: Audio alerts may not play if you have not interacted with the page.
 Click anywhere to enable alerts.
@@ -105,9 +105,6 @@ audio {display: none;}
 	border: 1px dashed blue;
 }
 </style>
-
-<script>window.channelid = $$channelid$$;</script>
-<script type=module src="$$static||hypetrain.js$$"></script>
 
 > <button type=button class=dialog_cancel>x</button>
 >
