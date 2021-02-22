@@ -54,6 +54,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		return get_sub_points(cfg)
 			->then(lambda(int points) {
 				return render_template("subpoints.md", ([
+					"vars": (["ws_type": "subpoints", "ws_group": nonce]),
 					"nonce": nonce, "viewnonce": nonce, "channelname": cfg->channelname || "",
 					"unpaidpoints": "", "goal": "", "usecomfy": "", "font": "", "size": "",
 					"comfy": cfg->usecomfy ? "<script src=\"https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js\"></script>" : "",

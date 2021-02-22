@@ -419,8 +419,14 @@ mapping(string:mixed) render_template(string template, mapping(string:string|fun
 	if (!(sizeof(pieces) & 1)) error("Mismatched $$ in templates/" + template + "\n");
 	if (replacements->vars) {
 		//Set vars to a mapping of variable name to value and they'll be made available to JS.
+		if (replacements->vars->ws_type) replacements->vars->ws_code = G->G->template_defaults["static"](replacements->vars->ws_type + ".js");
 		string jsonvar(array nv) {return sprintf("let %s = %s;", nv[0], Standards.JSON.encode(nv[1], 5));}
 		array vars = jsonvar(sort((array)replacements->vars)[*]);
+		//To trigger automatic synchronization, set ws_type to a keyword, and ws_group to a string or int.
+		//Provide a static file that exports render(state).
+		if (replacements->vars->ws_type) vars += ({
+			"let ws_sync = null; import('" + G->G->template_defaults["static"]("ws_sync.js") + "').then(m => ws_sync = m);",
+		});
 		replacements->js_variables = "<script>" + vars * "\n" + "</script>";
 	}
 	for (int i = 1; i < sizeof(pieces); i += 2)

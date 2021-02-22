@@ -14,6 +14,5 @@ Goal (eg points for next emote): <input name=goal type=number value="$$goal$$"><
 $$style$$
 </style>
 
-<script>window.nonce = "$$viewnonce$$"; window.channelname = "$$channelname$$";</script>
+<script>window.channelname = "$$channelname$$";</script>
 $$comfy$$
-<script type=module src="$$static||subpoints.js$$"></script>
