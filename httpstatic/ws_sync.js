@@ -4,7 +4,7 @@
 let handler = null;
 let send_socket; //If present, send() is functional.
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
-function connect(group)
+export function connect(group)
 {
 	let socket = new WebSocket(protocol + window.location.host + "/ws");
 	socket.onopen = () => {
