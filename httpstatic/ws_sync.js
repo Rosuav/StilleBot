@@ -24,6 +24,8 @@ function connect()
 	};
 }
 //When ready, import the handler code. It'll be eg "/subpoints.js" but with automatic mtime handling.
-window.addEventListener("DOMContentLoaded", e => import(ws_code).then(module => {handler = module; connect();}));
+async function init() {handler = await import(ws_code); connect();}
+if (document.readyState !== "loading") init();
+else window.addEventListener("DOMContentLoaded", init);
 
 export function send(msg) {if (socket) socket.send(JSON.stringify(msg));}
