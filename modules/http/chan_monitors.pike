@@ -22,6 +22,9 @@ display and the config for its corresponding element.
 In noobsrun config, it should probably continue to support just one (for now, at least), but it needs to do the
 config as well as the display. Shouldn't be too hard but will need to cope with different config. May actually
 end up being folded right into the same code and handled as a plain monitors config.
+
+Ultimate advantage: config changes will be instantly synchronized across multiple pages. Great if you're helping
+someone set things up. Also, the preview will actually work, instead of mostly working with a few exceptions.
 */
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
