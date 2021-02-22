@@ -4,7 +4,7 @@ fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true
 
 const fields = "cost desc max multi pausemode".split(" ");
 
-function render(state) {
+export function render(state) {
 	if (state.rewards) set_content("#existing", state.rewards.map(r => LI([r.id, " ", r.title])));
 	set_content("#ticketholders", state.tickets.map(t => LI([""+t.tickets, " ", t.name])));
 	set_content("#master_status", [
@@ -59,25 +59,3 @@ on("click", ".master", async e => {
 	})).json();
 	console.log("Got response:", info);
 });
-
-let socket;
-const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
-function connect()
-{
-	socket = new WebSocket(protocol + window.location.host + "/ws");
-	socket.onopen = () => {
-		console.log("Socket connection established.");
-		socket.send(JSON.stringify({cmd: "init", type: "chan_giveaway", group: channelname}));
-	};
-	socket.onclose = () => {
-		socket = null;
-		console.log("Socket connection lost.");
-		setTimeout(connect, 250);
-	};
-	socket.onmessage = (ev) => {
-		let data = JSON.parse(ev.data);
-		console.log("Got message from server:", data);
-		if (data.cmd === "update") render(window.laststate = data);
-	};
-}
-if (channelname) connect();

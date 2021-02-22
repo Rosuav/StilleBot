@@ -33,8 +33,6 @@
 >
 {: tag=dialog #master}
 
-<script type=module src="$$static||giveaway.js$$"></script>
-
 <div id=existing></div>
 
 <style>

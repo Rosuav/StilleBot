@@ -281,7 +281,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (mapping existing = g->rewards)
 		config->multi = ((array(string))sort(values(existing))) * " ";
 	else config->multi = "";
-	return render_template("chan_giveaway.md", (["vars": (["channelname": chan, "config": config])]));
+	return render_template("chan_giveaway.md", (["vars": (["ws_type": "chan_giveaway", "ws_group": chan, "config": config])]));
 }
 
 void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
