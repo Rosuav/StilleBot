@@ -64,8 +64,26 @@ void hypetrain_progression(string chan, array data)
 	});
 }
 
-Concurrent.Future get_hype_state(int channel)
+Concurrent.Future get_state(int channel)
 {
+	if (G->G->webhook_active["hypetrain=" + channel] < 300)
+	{
+		write("Creating webhook for hype train %O\n", channel);
+		create_webhook(
+			"hypetrain=" + channel,
+			"https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + channel + "&first=1",
+			1800,
+			token,
+		);
+		/* Not working. See poll.pike for more info.
+		create_eventsubhook(
+			"hypetrainend=" + conn->group,
+			"channel.hype_train.end", "1",
+			(["broadcaster_user_id": (string)conn->group]),
+			token,
+		);
+		*/
+	}
 	return twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + (string)channel,
 			(["Authorization": "Bearer " + token]))
 		->then(lambda(mapping info) {
@@ -76,11 +94,8 @@ Concurrent.Future get_hype_state(int channel)
 
 void probe_hype_train(int channel)
 {
-	get_hype_state(channel)->then(lambda(mapping state) {
-		state->cmd = "update";
-		write("Clock-pinging %d clients for hype train %d\n", sizeof(websocket_groups[channel]), channel);
-		(websocket_groups[channel] - ({0}))->send_text(Standards.JSON.encode(state));
-	});
+	write("Clock-pinging %d clients for hype train %d\n", sizeof(websocket_groups[channel]), channel);
+	send_updates_all(channel);
 }
 
 constant emotes = #"HypeFighter HypeShield HypeKick HypeSwipe HypeRIP HypeGG
@@ -126,51 +141,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: If auth error, clear the token
 }
 
-void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
-{
-	if (!msg)
-	{
-		if (sizeof(websocket_groups[conn->group]) == 1) ; //TODO: Last one - dispose of the webhook (after a short delay?)
-		return;
-	}
-	write("HYPETRAIN: Got a msg %s from client in group %d\n", msg->cmd, conn->group);
-	if (msg->cmd == "refresh" || msg->cmd == "init")
-	{
-		get_hype_state(conn->group)->then(lambda(mapping state) {
-			//conn->sock will have definitely been a thing when we were called,
-			//but by the time we get the hype state, it might have been dc'd.
-			state->cmd = "update";
-			if (conn->sock) conn->sock->send_text(Standards.JSON.encode(state));
-			if (G->G->webhook_active["hypetrain=" + conn->group] < 300)
-			{
-				write("Creating webhook for hype train %O\n", conn->group);
-				create_webhook(
-					"hypetrain=" + conn->group,
-					"https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + conn->group + "&first=1",
-					1800,
-					token,
-				);
-				/* Not working. See poll.pike for more info.
-				create_eventsubhook(
-					"hypetrainend=" + conn->group,
-					"channel.hype_train.end", "1",
-					(["broadcaster_user_id": (string)conn->group]),
-					token,
-				);
-				*/
-			}
-		});
-	}
-	if (msg->cmd == "reporterror")
-	{
-		//The client ran into a problem
-		write("GOT HYPE TRAIN ERROR: %O\n", msg);
-	}
-}
-
 echoable_message process(object channel, object person, string param)
 {
-	get_user_id(channel->name[1..])->then(lambda(int id) {return get_hype_state(id);})->then(lambda(mapping state) {
+	get_user_id(channel->name[1..])->then(lambda(int id) {return get_state(id);})->then(lambda(mapping state) {
 		if (state->expires) {
 			//Active hype train!
 			if (state->total >= state->goal)
