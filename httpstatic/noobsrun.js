@@ -19,6 +19,7 @@ function update_milepicker() {
 	}
 	set_content(DOM("[name=milepicker]"), opts).value = val;
 }
+window.update_milepicker = update_milepicker; //Not clean but whatever. Allow chan_monitors to trigger this.
 DOM("[name=thresholds]").onchange = DOM("[name=currentval]").onchange = update_milepicker;
 DOM("[name=milepicker]").onchange = e => DOM("[name=currentval]").value = e.currentTarget.value;
 DOM("#setval").onclick = async e => {
@@ -30,27 +31,7 @@ DOM("#setval").onclick = async e => {
 		body: JSON.stringify({"var": DOM("[name=varname]").value, val}),
 	});
 	if (!rc.ok) {console.error("Couldn't update (TODO)"); return;}
-	update_display(DOM("#preview"), {}, val + ":" + DOM("[name=text]").value);
 }
-
-function set_values(info, elem, display) {
-	if (!info) return 0;
-	for (let attr in info) {
-		if (attr === "text") {
-			//Fracture this into the variable name and the actual text
-			const m = /^\$([^:$]+)\$:(.*)/.exec(info.text)
-			elem.querySelector("[name=varname]").value = m[1];
-			elem.querySelector("[name=text]").value = m[2];
-			continue;
-		}
-		const el = elem.querySelector("[name=" + attr + "]");
-		if (el) el.value = info[attr];
-	}
-	elem.querySelector("[name=currentval]").value = display.split(":")[0];
-	update_milepicker();
-	update_display(DOM("#preview"), info, display);
-}
-if (nonce) set_values(info, document, display);
 
 on("submit", "form", async e => {
 	e.preventDefault();
@@ -61,17 +42,11 @@ on("submit", "form", async e => {
 		body[attr] = e.match.elements[attr].value;
 	});
 	body.text = `$${e.match.elements.varname.value}$:${e.match.elements.text.value}`;
-	info = await (await fetch("monitors", { //Uses same API backend as the main monitors page does
+	fetch("monitors", { //Uses same API backend as the main monitors page does
 		method: "PUT",
 		headers: {"Content-Type": "application/json"},
 		body: JSON.stringify(body),
-	})).json();
-	set_values(info.text, document, info.display);
-});
-
-on("change", "input,select", e => {
-	//TODO: Map names the same way that update_display() does (see monitor.js)
-	DOM("#preview").style[e.match.name] = e.match.value;
+	})
 });
 
 on("dragstart", ".monitorlink", e => {

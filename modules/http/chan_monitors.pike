@@ -63,11 +63,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//then just call a vanilla send_updates_all(), relying on get_state().
 		string display = req->misc->channel->expand_variables(cfg->monitors[nonce]->text);
 		send_updates_all(nonce + req->misc->channel->name, cfg->monitors[nonce] | (["display": display]));
-		return jsonify(([
-			"nonce": nonce,
-			"text": cfg->monitors[nonce],
-			"display": display,
-		]));
+		return jsonify((["ok": 1]));
 	}
 	if (req->request_type == "DELETE") {
 		if (!req->misc->is_mod) return (["error": 401]); //JS wants it this way, not a redirect that a human would like

@@ -7,14 +7,31 @@ import update_display from "./monitor.js";
 const have_sockets = { };
 function set_values(nonce, info, elem) {
 	if (!info) return 0;
-	if (info.barcolor) return 0; //HACK: Disable accidental editing of bars. TODO: Link to ./run instead?
-	if (!have_sockets[nonce]) {
+	const runmode = !elem.dataset.nonce;
+	if (info.text && !info.display && runmode) {
+		//Data-only update. Should these push display instead of text??
+		info = {display: info.text}; //HACK
+	}
+	if (runmode && !have_sockets[nonce]) { //HACK: Disable secondary sockets on noobsrun mode
 		ws_sync.connect(nonce + ws_group);
 		have_sockets[nonce] = 1;
 	}
 	for (let attr in info) {
+		if (attr === "text" && runmode) {
+			//For run distance, fracture this into the variable name and the actual text.
+			const m = /^\$([^:$]+)\$:(.*)/.exec(info.text);
+			console.log(info.text);
+			console.log(m);
+			elem.querySelector("[name=varname]").value = m[1];
+			elem.querySelector("[name=text]").value = m[2];
+			continue;
+		}
 		const el = elem.querySelector("[name=" + attr + "]");
 		if (el) el.value = info[attr];
+	}
+	if (runmode) {
+		elem.querySelector("[name=currentval]").value = info.display.split(":")[0];
+		window.update_milepicker();
 	}
 	update_display(elem.querySelector(".preview"), info);
 	if (info.previewbg) elem.querySelector(".preview-bg").style.backgroundColor = info.previewbg;
@@ -23,7 +40,7 @@ function set_values(nonce, info, elem) {
 
 let monitors = { };
 function update_monitors() {
-	const rows = Object.keys(monitors).map(nonce => set_values(nonce, monitors[nonce], TR({"data-nonce": nonce}, [
+	const rows = Object.keys(monitors).map(nonce => !monitors[nonce].barcolor && set_values(nonce, monitors[nonce], TR({"data-nonce": nonce}, [
 		TD(INPUT({size: 40, name: "text", form: "upd_" + nonce})),
 		TD(DETAILS([SUMMARY("Expand"), FORM({id: "upd_" + nonce}, TABLE([
 			TR([
@@ -79,7 +96,7 @@ function update_monitors() {
 
 export function render(data, group) {
 	const [nonce, chan] = group.split("#");
-	if (nonce) set_values(nonce, monitors[nonce] = data, DOM(`tr[data-nonce="${nonce}"]`));
+	if (nonce) set_values(nonce, monitors[nonce] = data, DOM(`tr[data-nonce="${nonce}"]`) || document.body);
 	else {monitors = data.monitors; update_monitors();}
 }
 
