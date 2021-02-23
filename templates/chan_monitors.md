@@ -15,5 +15,3 @@ input[type=number] {width: 4em;}
 </table>
 
 The text can (and should!) incorporate variables, eg <code>$foo$</code>. Whenever the variable changes, this will update.
-
-<script type=module src="$$static||chan_monitors.js$$"></script>

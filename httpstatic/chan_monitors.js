@@ -14,6 +14,7 @@ function set_values(info, elem) {
 	return elem;
 }
 
+let monitors = { };
 function update_monitors() {
 	const rows = Object.keys(monitors).map(nonce => set_values(monitors[nonce], TR({"data-nonce": nonce}, [
 		TD(INPUT({size: 40, name: "text", form: "upd_" + nonce})),
@@ -68,7 +69,8 @@ function update_monitors() {
 	rows.push(table.lastElementChild);
 	set_content(table, rows);
 }
-update_monitors();
+//When more websockets are in use, this will also trigger updates of individual monitors.
+export function render(data, group) {if (group[0] === '#') {monitors = data.monitors; update_monitors();}}
 
 on("submit", "#monitors form", async e => {
 	e.preventDefault();
