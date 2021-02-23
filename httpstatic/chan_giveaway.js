@@ -7,12 +7,14 @@ const fields = "cost desc max multi pausemode".split(" ");
 export function render(state) {
 	if (state.rewards) set_content("#existing", state.rewards.map(r => LI([r.id, " ", r.title])));
 	set_content("#ticketholders", state.tickets.map(t => LI([""+t.tickets, " ", t.name])));
+	let tickets = `${state.last_winner[2]} tickets`;
+	if (state.last_winner[2] === 1) tickets = "one ticket";
 	set_content("#master_status", [
 		H3("Giveaway is " + (state.is_open ? "OPEN" : "CLOSED")),
 		state.last_winner ? DIV([
 			"Winner: ",
 			SPAN({className: "winner_name"}, state.last_winner[1]),
-			` with ${state.last_winner[2]} tickets and a ${state.last_winner[2]*100/state.last_winner[3]}% chance to win!`,
+			` with ${tickets} and a ${state.last_winner[2]*100/state.last_winner[3]}% chance to win!`,
 		]) : "",
 	]).classList.toggle("is_open", !!state.is_open); //ensure that undefined becomes false :|
 }
