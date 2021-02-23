@@ -57,11 +57,7 @@ Concurrent.Future parse_hype_status(mapping data)
 void hypetrain_progression(string chan, array data)
 {
 	int channel = (int)chan;
-	parse_hype_status(data[0]->event_data)->then(lambda(mapping state) {
-		state->cmd = "update";
-		write("Pinging %d clients for hype train %d\n", sizeof(websocket_groups[channel]), channel);
-		(websocket_groups[channel] - ({0}))->send_text(Standards.JSON.encode(state));
-	});
+	parse_hype_status(data[0]->event_data)->then(lambda(mapping state) {send_updates_all(channel, state);});
 }
 
 Concurrent.Future get_state(int channel)
