@@ -58,10 +58,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//TODO: Validate the individual values?
 		foreach (css_attributes / " ", string key) if (body[key]) info[key] = body[key];
 		persist_config->save();
+		//TODO: Move this all onto a websocket message rather than a PUT request, and
+		//then just call a vanilla send_updates_all(), relying on get_state().
 		string sample;
 		sample = req->misc->channel->expand_variables(cfg->monitors[nonce]->text);
-		array group = websocket_groups[nonce + req->misc->channel->name];
-		if (group) (group - ({0}))->send_text(Standards.JSON.encode(cfg->monitors[nonce] | (["cmd": "update", "text": sample])));
+		send_updates_all(nonce + req->misc->channel->name, cfg->monitors[nonce] | (["text": sample]));
 		return jsonify(([
 			"nonce": nonce,
 			"text": cfg->monitors[nonce],
@@ -87,21 +88,15 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	])]) | req->misc->chaninfo);
 }
 
-void update_text(mapping(string:mixed) conn)
-{
-	sscanf(conn->group || "", "%s#%s", string nonce, string chan);
-	if (!nonce || !chan) return;
+mapping get_state(string group) {
+	if (!stringp(group)) return 0;
+	sscanf(group, "%s#%s", string nonce, string chan);
+	if (!nonce || !chan) return 0;
 	object channel = G->G->irc->channels["#" + chan];
-	if (!channel || !channel->config->monitors) return;
+	if (!channel || !channel->config->monitors) return 0;
 	mapping text = channel->config->monitors[nonce];
-	if (!text) return;
-	conn->sock->send_text(Standards.JSON.encode(text | (["cmd": "update", "text": channel->expand_variables(text->text)])));
-}
-
-void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
-{
-	if (!msg) return;
-	if (msg->cmd == "refresh" || msg->cmd == "init") update_text(conn);
+	if (!text) return 0;
+	return text | (["text": channel->expand_variables(text->text)]);
 }
 
 protected void create(string name) {::create(name); G->G->monitor_css_attributes = css_attributes;}
