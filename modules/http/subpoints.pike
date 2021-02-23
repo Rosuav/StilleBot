@@ -26,17 +26,7 @@ Concurrent.Future get_sub_points(mapping cfg, int|void raw)
 			});
 }
 
-void subpoints_updated(string nonce, array|void data)
-{
-	mapping cfg = persist_status->path("subpoints", nonce);
-	get_sub_points(cfg)->then(lambda(int points) {
-		array clients = (websocket_groups[nonce] || ({ })) - ({0});
-		write("Pinging %d clients for sub points\n", sizeof(clients));
-		clients->send_text(Standards.JSON.encode(([
-			"cmd": "update", "points": points, "goal": cfg->goal,
-		])));
-	});
-}
+void subpoints_updated(string nonce, array|void data) {send_updates_all(nonce);}
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
@@ -79,7 +69,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		cfg->usecomfy = !!req->variables->usecomfy;
 		cfg->font = req->variables->font;
 		cfg->fontsize = req->variables->fontsize;
-		subpoints_updated(nonce);
+		send_updates_all(nonce);
 	}
 	cfg->uid = (string)req->misc->session->user->id;
 	cfg->token = req->misc->session->token;
@@ -132,33 +122,21 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		});
 }
 
-void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg)
-{
-	if (!msg) return;
-	if (msg->cmd == "refresh" || msg->cmd == "init")
+mapping|Concurrent.Future get_state(string|int group) {
+	mapping cfg = persist_status->path("subpoints", group);
+	cfg->pinged = time();
+	if (G->G->webhook_active["subpoints=" + group] < 300)
 	{
-		mapping cfg = persist_status->path("subpoints", conn->group);
-		cfg->pinged = time();
-		get_sub_points(cfg)->then(lambda(int points) {
-			//conn->sock will have definitely been a thing when we were called,
-			//but by the time we get the sub points, it might have been dc'd.
-			if (conn->sock) conn->sock->send_text(Standards.JSON.encode(([
-				"cmd": "update", "points": points, "goal": cfg->goal,
-			])));
-			if (G->G->webhook_active["subpoints=" + conn->group] < 300)
-			{
-				write("Webhooking sub points %O %O %O\n", conn->group, cfg->uid, cfg->channelname);
-				create_webhook(
-					"subpoints=" + conn->group,
-					"https://api.twitch.tv/helix/subscriptions/events?broadcaster_id=" + cfg->uid + "&first=1",
-					1800,
-					cfg->token,
-				);
-			}
-		});
+		write("Webhooking sub points %O %O %O\n", group, cfg->uid, cfg->channelname);
+		create_webhook(
+			"subpoints=" + group,
+			"https://api.twitch.tv/helix/subscriptions/events?broadcaster_id=" + cfg->uid + "&first=1",
+			1800,
+			cfg->token,
+		);
 	}
+	get_sub_points(cfg)->then(lambda(int points) {return (["points": points, "goal": cfg->goal]);});
 }
-
 
 protected void create(string name)
 {
