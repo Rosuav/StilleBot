@@ -16,4 +16,4 @@ input[type=number] {width: 4em;}
 
 The text can (and should!) incorporate variables, eg <code>$foo$</code>. Whenever the variable changes, this will update.
 
-<script type=module src="$$static||monitors.js$$"></script>
+<script type=module src="$$static||chan_monitors.js$$"></script>
