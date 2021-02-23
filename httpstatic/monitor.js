@@ -72,7 +72,7 @@ export default function update_display(elem, data, display) { //Used for the pre
 		elem.style.display = "flex";
 		set_content(elem, [DIV(text), DIV(currency(pos)), DIV(currency(goal))]);
 	}
-	else set_content(elem, display || data.text);
+	else set_content(elem, data.display || data.text);
 }
 
 function connect() {
