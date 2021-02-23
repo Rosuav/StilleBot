@@ -13,7 +13,7 @@ function currency(cents) {
 }
 
 let thresholds = null, fillcolor, barcolor, needlesize = 0.375;
-export default function update_display(elem, data, sample) { //Used for the preview as well as the live display
+export default function update_display(elem, data, display) { //Used for the preview as well as the live display
 	//Update styles. If the arbitrary CSS setting isn't needed, make sure it is "" not null.
 	if (data.css || data.css === "") {
 		elem.style.cssText = data.css;
@@ -49,7 +49,7 @@ export default function update_display(elem, data, sample) { //Used for the prev
 		}
 	}
 	if (thresholds) {
-		const m = /^([0-9]+):(.*)$/.exec(sample || data.text);
+		const m = /^([0-9]+):(.*)$/.exec(display || data.display || data.text);
 		if (!m) {console.error("Something's misconfigured (see monitor.js regex)"); return;}
 		let pos = m[1], text, mark, goal;
 		for (let which = 0; which < thresholds.length; ++which) {
@@ -72,7 +72,7 @@ export default function update_display(elem, data, sample) { //Used for the prev
 		elem.style.display = "flex";
 		set_content(elem, [DIV(text), DIV(currency(pos)), DIV(currency(goal))]);
 	}
-	else set_content(elem, sample || data.text);
+	else set_content(elem, display || data.text);
 }
 
 function connect() {

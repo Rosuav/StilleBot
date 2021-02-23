@@ -90,7 +90,7 @@ on("submit", "#monitors form", async e => {
 	monitors[res.nonce] = res.text; //May now be null, which will suppress the display
 	//TODO: Update with less flicker in the common cases (eg not a deletion)
 	update_monitors();
-	update_display(DOM("#preview_" + nonce), {text: res.sample});
+	update_display(DOM("#preview_" + nonce), {text: res.display});
 });
 
 on("change", "[name=previewbg]", e => {

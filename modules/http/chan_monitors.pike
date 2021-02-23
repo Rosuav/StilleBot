@@ -37,7 +37,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (!cfg->monitors || !cfg->monitors[nonce]) nonce = 0;
 		else info = cfg->monitors[nonce];
 		return render_template("monitor.html", ([
-			"text": info ? req->misc->channel->expand_variables(info->text) : "Unknown monitor",
+			"display": info ? req->misc->channel->expand_variables(info->text) : "Unknown monitor",
 			"nonce": Standards.JSON.encode(nonce + req->misc->channel->name),
 		]));
 	}
@@ -61,13 +61,12 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		persist_config->save();
 		//TODO: Move this all onto a websocket message rather than a PUT request, and
 		//then just call a vanilla send_updates_all(), relying on get_state().
-		string sample;
-		sample = req->misc->channel->expand_variables(cfg->monitors[nonce]->text);
-		send_updates_all(nonce + req->misc->channel->name, cfg->monitors[nonce] | (["text": sample]));
+		string display = req->misc->channel->expand_variables(cfg->monitors[nonce]->text);
+		send_updates_all(nonce + req->misc->channel->name, cfg->monitors[nonce] | (["display": display]));
 		return jsonify(([
 			"nonce": nonce,
 			"text": cfg->monitors[nonce],
-			"sample": sample,
+			"display": display,
 		]));
 	}
 	if (req->request_type == "DELETE") {
@@ -99,7 +98,7 @@ mapping get_state(string group) {
 	if (nonce == "") return (["monitors": monitors]); //Master group - lists all monitors. Gives details for convenience ONLY, is not guaranteed.
 	mapping text = monitors[nonce];
 	if (!text) return 0;
-	return text | (["text": channel->expand_variables(text->text)]);
+	return text | (["display": channel->expand_variables(text->text)]);
 }
 
 protected void create(string name) {::create(name); G->G->monitor_css_attributes = css_attributes;}

@@ -33,7 +33,7 @@ DOM("#setval").onclick = async e => {
 	update_display(DOM("#preview"), {}, val + ":" + DOM("[name=text]").value);
 }
 
-function set_values(info, elem, sample) {
+function set_values(info, elem, display) {
 	if (!info) return 0;
 	for (let attr in info) {
 		if (attr === "text") {
@@ -46,11 +46,11 @@ function set_values(info, elem, sample) {
 		const el = elem.querySelector("[name=" + attr + "]");
 		if (el) el.value = info[attr];
 	}
-	elem.querySelector("[name=currentval]").value = sample.split(":")[0];
+	elem.querySelector("[name=currentval]").value = display.split(":")[0];
 	update_milepicker();
-	update_display(DOM("#preview"), info, sample);
+	update_display(DOM("#preview"), info, display);
 }
-if (nonce) set_values(info, document, sample);
+if (nonce) set_values(info, document, display);
 
 on("submit", "form", async e => {
 	e.preventDefault();
@@ -66,7 +66,7 @@ on("submit", "form", async e => {
 		headers: {"Content-Type": "application/json"},
 		body: JSON.stringify(body),
 	})).json();
-	set_values(info.text, document, info.sample);
+	set_values(info.text, document, info.display);
 });
 
 on("change", "input,select", e => {

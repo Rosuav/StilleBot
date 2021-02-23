@@ -50,7 +50,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"nonce": nonce || "",
 		"css_attributes": G->G->monitor_css_attributes,
 		"info": info,
-		"sample": req->misc->channel->expand_variables(info->text),
+		"display": req->misc->channel->expand_variables(info->text),
 		"commands": (["nextmile": G->G->echocommands["nextmile" + req->misc->channel->name]]),
 	])]) | req->misc->chaninfo);
 }
