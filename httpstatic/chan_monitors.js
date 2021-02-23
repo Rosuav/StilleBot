@@ -2,9 +2,16 @@ import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfact
 const {A, BR, BUTTON, DETAILS, SUMMARY, DIV, FORM, INPUT, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
 import update_display from "./monitor.js";
 
-function set_values(info, elem) {
+//NOTE: If any monitors get deleted, we'll hang onto the now-useless websockets
+//until page refresh. A bit unideal but shouldn't be too common.
+const have_sockets = { };
+function set_values(nonce, info, elem) {
 	if (!info) return 0;
 	if (info.barcolor) return 0; //HACK: Disable accidental editing of bars. TODO: Link to ./run instead?
+	if (!have_sockets[nonce]) {
+		ws_sync.connect(nonce + ws_group);
+		have_sockets[nonce] = 1;
+	}
 	for (let attr in info) {
 		const el = elem.querySelector("[name=" + attr + "]");
 		if (el) el.value = info[attr];
@@ -16,7 +23,7 @@ function set_values(info, elem) {
 
 let monitors = { };
 function update_monitors() {
-	const rows = Object.keys(monitors).map(nonce => set_values(monitors[nonce], TR({"data-nonce": nonce}, [
+	const rows = Object.keys(monitors).map(nonce => set_values(nonce, monitors[nonce], TR({"data-nonce": nonce}, [
 		TD(INPUT({size: 40, name: "text", form: "upd_" + nonce})),
 		TD(DETAILS([SUMMARY("Expand"), FORM({id: "upd_" + nonce}, TABLE([
 			TR([
@@ -69,8 +76,12 @@ function update_monitors() {
 	rows.push(table.lastElementChild);
 	set_content(table, rows);
 }
-//When more websockets are in use, this will also trigger updates of individual monitors.
-export function render(data, group) {if (group[0] === '#') {monitors = data.monitors; update_monitors();}}
+
+export function render(data, group) {
+	const [nonce, chan] = group.split("#");
+	if (nonce) set_values(nonce, monitors[nonce] = data, DOM(`tr[data-nonce="${nonce}"]`));
+	else {monitors = data.monitors; update_monitors();}
+}
 
 on("submit", "#monitors form", async e => {
 	e.preventDefault();
@@ -82,23 +93,16 @@ on("submit", "#monitors form", async e => {
 		body[attr] = e.match.elements[attr].value;
 		if (nonce === "") e.match.elements[attr].value = "";
 	});
-	const res = await (await fetch("monitors", {
+	const res = await fetch("monitors", {
 		method: "PUT",
 		headers: {"Content-Type": "application/json"},
 		body: JSON.stringify(body),
-	})).json();
-	monitors[res.nonce] = res.text; //May now be null, which will suppress the display
-	//TODO: Update with less flicker in the common cases (eg not a deletion)
-	update_monitors();
-	update_display(DOM("#preview_" + nonce), {text: res.display});
+	});
+	if (!res.ok) console.error("Something went wrong in the save, check console"); //TODO: Report errors properly
 });
 
 on("change", "[name=previewbg]", e => {
 	e.match.closest("tr").querySelector(".preview-bg").style.backgroundColor = e.match.value;
-});
-on("change", "input,select", e => {
-	//TODO: Map names the same way that update_display() does (see monitor.js)
-	e.match.closest("tr[data-nonce]").querySelector(".preview").style[e.match.name] = e.match.value;
 });
 document.addEventListener("toggle", e => {
 	if (!e.target.matches(".preview-expander")) return;
@@ -113,13 +117,12 @@ on("click", ".deletebtn", async e => {
 	if (confirm > +new Date) {
 		//Actually delete
 		console.log("Delete.");
-		await fetch("monitors", {
+		const res = await fetch("monitors", {
 			method: "DELETE",
 			headers: {"Content-Type": "application/json"},
 			body: JSON.stringify({nonce}),
-		}); //TODO: Check that it succeeded
-		monitors[nonce] = 0;
-		update_monitors();
+		});
+		if (!res.ok) console.error("Something went wrong in the save, check console"); //TODO: Report errors properly
 		return;
 	}
 	deleting[nonce] = 10000 + +new Date;
