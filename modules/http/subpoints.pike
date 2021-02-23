@@ -135,7 +135,7 @@ mapping|Concurrent.Future get_state(string|int group) {
 			cfg->token,
 		);
 	}
-	get_sub_points(cfg)->then(lambda(int points) {return (["points": points, "goal": cfg->goal]);});
+	return get_sub_points(cfg)->then(lambda(int points) {return (["points": points, "goal": cfg->goal]);});
 }
 
 protected void create(string name)
