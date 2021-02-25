@@ -1,5 +1,14 @@
 inherit http_endpoint;
 
+/* TODO:
+* CitizenPrayer: Great :) To save space, maybe we can have the [message text] and the time stamp on the same line?
+* Add a Delete button
+* Maybe have a concept of Unread, and consequently, have a Mark as Read button?
+* Add a websocket for live updates
+* Retain emote IDs from incoming text somehow?? If the private text came from a chat command, it should in theory
+  be possible to render the emotes from the command, rather than looking at the text for keywords.
+*/
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req)) return resp;
