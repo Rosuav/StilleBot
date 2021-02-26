@@ -320,7 +320,7 @@ class user_text
 	protected string `()(string text)
 	{
 		texts += ({text});
-		return sprintf("\uFFFA%d\uFFFB", sizeof(texts) - 1);
+		return sprintf("\uFFFAu%d\uFFFB", sizeof(texts) - 1);
 	}
 }
 
@@ -355,9 +355,17 @@ class Renderer
 		if (!options->user_text) return t;
 		array texts = options->user_text->texts;
 		string output = "";
-		while (sscanf(t, "%s\uFFFA%d\uFFFB%s", string before, int idx, string after))
-		{
-			output += before + replace(texts[idx], (["<": "&lt;", "&": "&amp;"]));
+		while (sscanf(t, "%s\uFFFA%c%s\uFFFB%s", string before, int type, string info, string after)) {
+			output += before;
+			switch (type)
+			{
+				case 'u': output += replace(texts[(int)info], (["<": "&lt;", "&": "&amp;"])); break;
+				case 'e': {
+					sscanf(info, "%d:%s", int id, string text);
+					output += sprintf("<img src=\"https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0\" title=%q alt=%<q>", id, text);
+				}
+				default: break; //Should this put a noisy error in?
+			}
 			t = after;
 		}
 		return output + t;

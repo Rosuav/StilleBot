@@ -212,6 +212,7 @@ mapping(string:mixed) gather_person_info(object person, mapping params)
 			if (end < start) continue; //Shouldn't happen (probably a parse failure)
 			ret->emotes += ({({id, start, end})});
 		}
+		sort(ret->emotes[*][1], ret->emotes); //Sort the emotes by start position
 	}
 	if (int bits = (int)params->bits) ret->bits = bits;
 	//ret->raw = params; //For testing
@@ -343,11 +344,21 @@ class channel_notif
 		int offset = sizeof(msg) - sizeof(param);
 		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
 		person->measurement_offset = offset;
+		string emoted = "", residue = param;
+		foreach (person->emotes, [int id, int start, int end]) {
+			emoted += sprintf("%s\uFFFAe%d:%s\uFFFB",
+				residue[..start - offset - 1], //Text before the emote
+				id, residue[start-offset..end-offset], //Emote ID and name
+			);
+			residue = residue[end - offset + 1..];
+			offset = end + 1;
+		}
+		person->param_emoted = emoted + residue;
 		//Functions do not get %s handling. If they want it, they can do it themselves,
 		//and if they don't want it, it would mess things up badly to do it here.
 		//(They still get other variable handling.)
 		if (functionp(cmd)) send(person, cmd(this, person, param));
-		else send(person, cmd, (["%s": param]));
+		else send(person, cmd, (["%s": param, "%e": person->param_emoted]));
 	}
 
 	string set_variable(string var, string val, string action)

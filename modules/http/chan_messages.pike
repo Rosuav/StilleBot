@@ -33,7 +33,9 @@ mapping get_state(string group) {
 		if (!msg->parts && emotes) {
 			array parts = ({""});
 			foreach (msg->message / " "; int i; string w)
-				if (emotes[w] && sscanf(emotes[w], "![%s](%s)", string alt, string url))
+				if (sscanf(w, "\uFFFAe%d:%s\uFFFB", int id, string alt)) //Assumes that emotes are always entire words, for simplicity
+					parts += ({(["type": "image", "url": "https://static-cdn.jtvnw.net/emoticons/v1/" + id + "/1.0", "text": alt]), " "});
+				else if (emotes[w] && sscanf(emotes[w], "![%s](%s)", string alt, string url))
 					parts += ({(["type": "image", "url": url, "text": alt]), " "});
 				else if (hyperlink->match(w))
 					parts += ({(["type": "link", "text": w]), " "});
