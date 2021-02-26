@@ -282,7 +282,8 @@ class websocket_handler
 			resp->then(lambda(mapping d) {_send_updates(socks, group, d);});
 		else {
 			resp->cmd = "update";
-			(socks - ({0}))->send_text(Standards.JSON.encode(resp));
+			foreach (socks, object sock)
+				if (sock && sock->state == 1) sock->send_text(Standards.JSON.encode(resp));
 		}
 	}
 
