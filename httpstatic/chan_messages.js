@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, IMG, LI, SPAN} = choc;
+const {A, BUTTON, IMG, LI, SPAN} = choc;
 
 const date_format = new Intl.DateTimeFormat('default', {
 	weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
@@ -9,7 +9,8 @@ const date_format = new Intl.DateTimeFormat('default', {
 export function render(data) {
 	if (!data.messages.length) return set_content("#messages", LI("You have no messages from this channel."));
 	set_content("#messages", data.messages.map(msg => LI([
-		SPAN({className: "date"}, "[" + date_format.format(new Date(msg.received * 1000)) + "] "),
+		BUTTON({className: "confirmdelete"}),
+		SPAN({className: "date"}, " [" + date_format.format(new Date(msg.received * 1000)) + "] "),
 		msg.parts ? SPAN(msg.parts.map(p =>
 			typeof(p) === "string" ? p :
 			p.type === "link" ? A({href: p.href || p.text}, p.text) :
@@ -18,3 +19,8 @@ export function render(data) {
 		)) : msg.message,
 	])));
 }
+
+on("click", ".confirmdelete", e => {
+	e.preventDefault();
+	e.match.classList.toggle("pending");
+});
