@@ -24,11 +24,10 @@ on("click", ".confirmdelete", e => {
 	const btn = e.match; //Snapshot for closure
 	e.preventDefault();
 	if (btn.classList.toggle("pending")) {
-		set_content(btn, "Confirm?");
+		set_content(btn, "Delete?");
 		setTimeout(() => btn.classList.remove("pending"), 5000);
 	} else {
 		set_content(btn, "🗑");
-		console.log("Actually delete", btn.closest("li").dataset.received);
 		ws_sync.send({cmd: "delete", received: +btn.closest("li").dataset.received});
 	}
 });
