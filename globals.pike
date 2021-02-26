@@ -658,7 +658,7 @@ string emotify_user_text(string text, object user, int|void autolink)
 	//any emotes at all, and if not, just return user(text) instead.
 	foreach (words; int i; string w)
 		if (emotes[w]) words[i] = emotes[w];
-		else if (hyperlink->match(w)) words[i] = sprintf("[%s](%<s)", w);
+		else if (autolink && hyperlink->match(w)) words[i] = sprintf("[%s](%<s)", w);
 		else words[i] = user(w);
 	return words * " ";
 }
