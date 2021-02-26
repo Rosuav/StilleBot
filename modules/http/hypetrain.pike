@@ -143,16 +143,16 @@ echoable_message process(object channel, object person, string param)
 		if (state->expires) {
 			//Active hype train!
 			if (state->total >= state->goal)
-				send_message(channel->name, "HypeUnicorn1 HypeUnicorn2 HypeUnicorn3 HypeUnicorn4 HypeUnicorn5 HypeUnicorn6 LEVEL FIVE COMPLETE!");
+				send_message(channel->name, "MrDestructoid Hype Train status: HypeUnicorn1 HypeUnicorn2 HypeUnicorn3 HypeUnicorn4 HypeUnicorn5 HypeUnicorn6 LEVEL FIVE COMPLETE!");
 			else send_message(channel->name, sprintf(
-				"/me devicatParty HYPE! Level %d requires %d more bits or %d subs!",
+				"/me MrDestructoid Hype Train status: devicatParty HYPE! Level %d requires %d more bits or %d subs!",
 				state->level, state->goal - state->total, (state->goal - state->total + 499) / 500));
 		} else if (state->cooldown) {
 			int tm = state->cooldown - time();
 			send_message(channel->name, sprintf(
-				"/me devicatCozy The hype train is on cooldown for %02d:%02d. kittenzSleep",
+				"/me MrDestructoid Hype Train status: devicatCozy The hype train is on cooldown for %02d:%02d. kittenzSleep",
 				tm / 60, tm % 60));
-		} else send_message(channel->name, "/me NomNom Cookies are done! NomNom");
+		} else send_message(channel->name, "/me MrDestructoid Hype Train status: NomNom Cookies are done! NomNom");
 	});
 }
 
