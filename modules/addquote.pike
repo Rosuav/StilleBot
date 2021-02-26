@@ -13,6 +13,11 @@ automatically timestamped and gets the current stream category recorded.
 Anyone can view these quotes with the [!quote](quote) command.
 ";
 
+//TODO: Make use of person->param_emoted to retain the original set of emotes.
+//These would be ignored for the chat output, but could be made use of in the
+//web. (Would still need to include emotes that the bot has even if the adder
+//does not, but this would be a neat addition.)
+
 string process(object channel, object person, string param)
 {
 	if (channel->config->disable_quotes) return 0;
