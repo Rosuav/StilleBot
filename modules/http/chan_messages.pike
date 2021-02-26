@@ -2,9 +2,11 @@ inherit http_endpoint;
 inherit websocket_handler;
 
 /* TODO:
-* Add a Delete button
 * Maybe have a concept of Unread, and consequently, have a Mark as Read button?
 * Play around with formatting. Currently, emotes add a lot of height to a line.
+* Maybe make the title customizable?? UI problem - what's a good non-annoying way to do it?
+* Abbreviate the timestamp and put the whole detail into hover text?
+* Sort/group messages by month, or week, or by user?
 */
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
