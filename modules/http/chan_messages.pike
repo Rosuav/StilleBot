@@ -22,7 +22,7 @@ mapping get_state(string group) {
 	mapping msgs = persist_status->path("private", "#" + chan)[uid];
 	if (!msgs) return (["messages": ({ })]);
 	array text = values(msgs), times = indices(msgs);
-	sort(times, text); //FIXME: Is this sorting by the string representations of Unix time? Would become a problem in 2286 AD.
+	sort(times, text);
 	array ret = ({ });
 	mapping emotes = G->G->emote_code_to_markdown;
 	foreach (text; int i; string|mapping msg) {
@@ -44,6 +44,18 @@ mapping get_state(string group) {
 		ret += ({msg});
 	}
 	return (["messages": ret]);
+}
+
+void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	::websocket_msg(conn, msg);
+	if (msg && msg->cmd == "delete") {
+		sscanf(conn->group, "%s#%s", string uid, string chan);
+		if (!G->G->irc->channels["#" + chan]) return;
+		mapping msgs = persist_status->path("private", "#" + chan)[uid];
+		if (!msgs) return;
+		if (m_delete(msgs, msg->received)) send_updates_all(conn->group);
+		else conn->sock->send_text(Standards.JSON.encode((["cmd": "notify", "msg": "Deletion failed (already gone)"])));
+	}
 }
 
 protected void create(string name) {::create(name);}

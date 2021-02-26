@@ -8,11 +8,9 @@ li {line-height: 2.25;}
 	padding-right: 0.25em;
 }
 .confirmdelete {
-	width: 1.75em; height: 1.75em;
+	min-width: 1.75em; height: 1.75em;
 	padding: 0;
 	margin-right: 0.25em;
 }
-.confirmdelete:before {content: "🗑";}
-.confirmdelete.pending:before {content: "🗑?";}
-.confirmdelete.pending {margin-left: 3em;}
+.confirmdelete.pending {margin-left: 2em;} /* Jump the button away to avoid double-click */
 </style>
