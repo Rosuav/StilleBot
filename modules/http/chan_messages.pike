@@ -27,8 +27,20 @@ mapping get_state(string group) {
 	array text = values(msgs), times = indices(msgs);
 	sort(times, text); //FIXME: Is this sorting by the string representations of Unix time? Would become a problem in 2286 AD.
 	array ret = ({ });
+	mapping emotes = G->G->emote_code_to_markdown;
 	foreach (text; int i; string|mapping msg) {
-		if (stringp(msg)) msg = (["message": msg]);
+		if (stringp(msg)) msg = (["message": msg]); else msg = ([]) | msg;
+		if (!msg->parts && emotes) {
+			array parts = ({""});
+			foreach (msg->message / " "; int i; string w)
+				if (emotes[w] && sscanf(emotes[w], "![%s](%s)", string alt, string url))
+					parts += ({(["type": "image", "url": url, "text": alt]), " "});
+				else if (hyperlink->match(w))
+					parts += ({(["type": "link", "text": w]), " "});
+				else parts[-1] += w + " ";
+			parts[-1] = parts[-1][..<1]; //The last part will always end with a space.
+			msg->parts = parts - ({""}); //The first and last entries could end up as empty strings.
+		}
 		msg->received = times[i];
 		ret += ({msg});
 	}
