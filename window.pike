@@ -910,7 +910,7 @@ class _mainwindow
 {
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
-	constant elements=({"kwd:Channel", "?allcmds:All commands active", "+notes:Notes", "'uptime:", ([
+	constant elements=({"kwd:Channel", "?allcmds:All commands active", "?httponly:Web-only", "+notes:Notes", "'uptime:", ([
 		"\"Notice Me!\"": ({
 			"'Let chat participants get your attention.",
 			"?noticechat:Enabled",
