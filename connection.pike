@@ -366,8 +366,7 @@ class channel_notif
 		//changes can be batched, reducing flicker.
 		foreach (config->monitors || ([]); string nonce; mapping info) {
 			if (!has_value(info->text, var)) continue;
-			array group = G->G->websocket_groups->chan_monitors[nonce + name];
-			if (group) (group - ({0}))->send_text(Standards.JSON.encode((["cmd": "update", "text": expand_variables(info->text)])));
+			G->G->websocket_types->chan_monitors->send_updates_all(nonce + name);
 		}
 		persist_status->save();
 		return val;
@@ -482,6 +481,7 @@ class channel_notif
 				mapping msgs = persist_status->path("private", name, uid);
 				msgs[time()] = msg;
 				persist_status->save();
+				G->G->websocket_types->chan_messages->send_updates_all(uid + name);
 				return; //Nothing more to send here.
 			}
 		}
