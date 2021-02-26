@@ -345,7 +345,7 @@ class channel_notif
 		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
 		person->measurement_offset = offset;
 		string emoted = "", residue = param;
-		foreach (person->emotes, [int id, int start, int end]) {
+		foreach (person->emotes || ({ }), [int id, int start, int end]) {
 			emoted += sprintf("%s\uFFFAe%d:%s\uFFFB",
 				residue[..start - offset - 1], //Text before the emote
 				id, residue[start-offset..end-offset], //Emote ID and name
