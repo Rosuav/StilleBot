@@ -4,6 +4,7 @@ inherit websocket_handler;
 /* TODO:
 * Add a Delete button
 * Maybe have a concept of Unread, and consequently, have a Mark as Read button?
+* Play around with formatting. Currently, emotes add a lot of height to a line.
 */
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
