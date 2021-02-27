@@ -1,12 +1,25 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, BUTTON, IMG, LI, SPAN} = choc;
 
-const date_format = new Intl.DateTimeFormat('default', {
+const full_date_format = new Intl.DateTimeFormat('default', {
 	weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
 	hour: 'numeric', minute: 'numeric', second: 'numeric',
 });
+const date_format = new Intl.DateTimeFormat('default', {
+	weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+});
+const time_format = new Intl.DateTimeFormat('default', {
+	hour: 'numeric', minute: 'numeric', second: 'numeric',
+});
 function date_display(date) {
-	return SPAN({className: "date"}, " [" + date_format.format(date) + "] ");
+	let shortdate;
+	if (date.toLocaleDateString() === new Date().toLocaleDateString())
+		//Message is from today. Show the timestamp only.
+		shortdate = time_format.format(date);
+	else
+		//Older message. Show the date only. Either way, hover for full timestamp.
+		shortdate = date_format.format(date);
+	return SPAN({className: "date", title: full_date_format.format(date)}, " [" + shortdate + "] ");
 }
 
 export function render(data) {
