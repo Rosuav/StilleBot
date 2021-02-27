@@ -5,12 +5,15 @@ const date_format = new Intl.DateTimeFormat('default', {
 	weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
 	hour: 'numeric', minute: 'numeric', second: 'numeric',
 });
+function date_display(date) {
+	return SPAN({className: "date"}, " [" + date_format.format(date) + "] ");
+}
 
 export function render(data) {
 	if (!data.messages.length) return set_content("#messages", LI("You have no messages from this channel."));
 	set_content("#messages", data.messages.map(msg => LI({"data-received": msg.received}, [
 		BUTTON({className: "confirmdelete"}, "🗑"),
-		SPAN({className: "date"}, " [" + date_format.format(new Date(msg.received * 1000)) + "] "),
+		date_display(new Date(msg.received * 1000)),
 		msg.parts ? SPAN(msg.parts.map(p =>
 			typeof(p) === "string" ? p :
 			p.type === "link" ? A({href: p.href || p.text}, p.text) :
