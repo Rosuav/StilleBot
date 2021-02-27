@@ -163,4 +163,5 @@ protected void create(string name)
 		token = function_object(G->G->webhook_endpoints->hypetrain)->token;
 	G->G->webhook_endpoints->hypetrain = hypetrain_progression;
 	if (!G->G->hypetrain_checktime) G->G->hypetrain_checktime = ([]);
+	G->G->commands["trainstatus"] = check_perms;
 }
