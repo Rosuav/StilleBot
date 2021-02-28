@@ -44,8 +44,8 @@ export function render(data) {
 		//else it's currently absent, needs to be absent, nothing to do
 		return;
 	}
-	if (!data.messages.length) return set_content("#messages", LI("You have no messages from this channel."));
-	set_content("#messages", data.messages.map(render_item));
+	if (!data.items.length) return set_content("#messages", LI("You have no messages from this channel."));
+	set_content("#messages", data.items.map(render_item));
 }
 
 on("click", ".confirmdelete", e => {

@@ -44,9 +44,9 @@ mapping get_state(string group, string|void id) {
 	sscanf(group, "%s#%s", string uid, string chan);
 	if (!G->G->irc->channels["#" + chan]) return 0;
 	mapping msgs = persist_status->path("private", "#" + chan)[uid];
-	if (!msgs) return (["messages": ({ })]);
+	if (!msgs) return (["items": ({ })]);
 	if (id) return _get_message(id, msgs);
-	return (["messages": _get_message(sort(indices(msgs))[*], msgs)]);
+	return (["items": _get_message(sort(indices(msgs))[*], msgs)]);
 }
 
 void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
