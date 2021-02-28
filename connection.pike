@@ -490,9 +490,11 @@ class channel_notif
 			{
 				//Normally, you'll be sending something to someone who was recently in chat.
 				mapping msgs = persist_status->path("private", name, uid);
-				msgs[time()] = msg;
+				int id = time();
+				while (msgs[id]) ++id; //Hack to avoid collisions
+				msgs[id] = (["received": time(), "message": msg]);
 				persist_status->save();
-				G->G->websocket_types->chan_messages->send_updates_all(uid + name);
+				G->G->websocket_types->chan_messages->update_one(uid + name, (string)id);
 				return; //Nothing more to send here.
 			}
 		}

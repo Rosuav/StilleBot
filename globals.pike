@@ -260,8 +260,9 @@ class websocket_handler
 	mapping(string|int:array(object)) websocket_groups;
 
 	//Generate a state mapping for a particular connection group. If state is 0, no
-	//information is sent; otherwise it must be a JSON-compatible mapping.
-	mapping|Concurrent.Future get_state(string|int group) { }
+	//information is sent; otherwise it must be a JSON-compatible mapping. An ID will
+	//be given if update_one was called, otherwise it will be 0.
+	mapping|Concurrent.Future get_state(string|int group, string|void id) { }
 
 	//If msg->cmd is "init", it's a new client and base processing has already been done.
 	//If msg is 0, a client has disconnected and is about to be removed from its group.
@@ -299,6 +300,8 @@ class websocket_handler
 		array dest = websocket_groups[group];
 		if (dest && sizeof(dest)) _send_updates(dest, group, data);
 	}
+
+	void update_one(string|int group, string id) {send_updates_all(group, (["id": id, "data": get_state(group, id)]));}
 
 	protected void create(string name)
 	{

@@ -22,9 +22,8 @@ function date_display(date) {
 	return SPAN({className: "date", title: full_date_format.format(date)}, " [" + shortdate + "] ");
 }
 
-export function render(data) {
-	if (!data.messages.length) return set_content("#messages", LI("You have no messages from this channel."));
-	set_content("#messages", data.messages.map(msg => LI({"data-received": msg.received}, [
+function render_item(msg) {
+	return LI({"data-id": msg.id}, [
 		BUTTON({className: "confirmdelete"}, "🗑"),
 		date_display(new Date(msg.received * 1000)),
 		msg.parts ? SPAN(msg.parts.map(p =>
@@ -33,7 +32,20 @@ export function render(data) {
 			p.type === "image" ? IMG({src: p.url, title: p.text, alt: p.text}) :
 			p.text //Shouldn't happen, but if we get an unknown type, just emit the text
 		)) : msg.message,
-	])));
+	]);
+}
+
+export function render(data) {
+	if (data.id) {
+		const obj = DOM(`#messages > [data-id="${data.id}"]`);
+		if (obj && data.data) obj.replaceWith(render_item(data.data));
+		else if (obj) obj.replaceWith();
+		else if (data.data) DOM("#messages").appendChild(render_item(data.data));
+		//else it's currently absent, needs to be absent, nothing to do
+		return;
+	}
+	if (!data.messages.length) return set_content("#messages", LI("You have no messages from this channel."));
+	set_content("#messages", data.messages.map(render_item));
 }
 
 on("click", ".confirmdelete", e => {
@@ -41,9 +53,9 @@ on("click", ".confirmdelete", e => {
 	e.preventDefault();
 	if (btn.classList.toggle("pending")) {
 		set_content(btn, "Delete?");
-		setTimeout(() => btn.classList.remove("pending"), 5000);
+		setTimeout(() => set_content(btn, "🗑").classList.remove("pending"), 5000);
 	} else {
 		set_content(btn, "🗑");
-		ws_sync.send({cmd: "delete", received: +btn.closest("li").dataset.received});
+		ws_sync.send({cmd: "delete", id: btn.closest("li").dataset.id});
 	}
 });
