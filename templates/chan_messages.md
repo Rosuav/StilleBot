@@ -1,6 +1,7 @@
 # Messages for $$recip$$ from channel $$channel$$
 
-<ul id=messages><li>Loading...</li></ul>
+<div id=loading>Loading...</div>
+<ul id=messages></ul>
 
 <style>
 li {line-height: 2.25;}

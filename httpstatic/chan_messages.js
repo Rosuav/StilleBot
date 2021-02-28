@@ -23,6 +23,7 @@ function date_display(date) {
 }
 
 function render_item(msg) {
+	set_content("#loading", "");
 	return LI({"data-id": msg.id}, [
 		BUTTON({className: "confirmdelete"}, "🗑"),
 		date_display(new Date(msg.received * 1000)),
@@ -44,7 +45,8 @@ export function render(data) {
 		//else it's currently absent, needs to be absent, nothing to do
 		return;
 	}
-	if (!data.items.length) return set_content("#messages", LI("You have no messages from this channel."));
+	//TODO: Show the "no messages" note any time we have none
+	if (!data.items.length) return set_content("#loading", "You have no messages from this channel.");
 	set_content("#messages", data.items.map(render_item));
 }
 
