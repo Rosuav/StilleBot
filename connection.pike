@@ -898,11 +898,17 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 		req->response_and_finish((["error": 404, "type": "text/plain", "data": "Not found"]));
 		return;
 	}
+	//Lifted from Protocols.HTTP.Server.Request since, for some reason,
+	//this isn't done for WebSocket requests.
+	if (req->request_headers->cookie)
+		foreach (MIME.decode_headerfield_params(req->request_headers->cookie); ; ADT.OrderedMapping m)
+			foreach (m; string key; string value)
+				if (value) req->cookies[key] = value;
+	//End lifted from Pike's sources
 	Protocols.WebSocket.Connection sock = req->websocket_accept(0);
-	sock->set_id((["sock": sock])); //Minstrel Hall style floop
+	sock->set_id((["sock": sock, "session": G->G->http_sessions[req->cookies->session]])); //Minstrel Hall style floop
 	sock->onmessage = ws_msg;
 	sock->onclose = ws_close;
-	write("Conn: %O\n", sock);
 }
 
 protected void create()
