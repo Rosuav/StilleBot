@@ -47,7 +47,7 @@ if (config.cost) {
 8) Userspace command to refund all my tickets. No need for partials, probably (too hard to manage)
    - Allow this only while the giveaway is open.
 
-When no current giveaway, show most recent winner. (Maybe allow that to be cleared??)
+When no current giveaway, show most recent winner - DONE
 */
 
 on("submit", "#configform", async e => {
