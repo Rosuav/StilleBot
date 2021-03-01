@@ -24,12 +24,12 @@
 
 > <h3>Master Control</h3>
 >
-> * <button type=button class="master open">Open giveaway</button> and allow people to buy tickets
-> * <button type=button class="master close">Close giveaway</button> so no more tickets will be bought
+> * <button type=button class=master id=open>Open giveaway</button> and allow people to buy tickets
+> * <button type=button class=master id=close>Close giveaway</button> so no more tickets will be bought
 > * TODO: Timed giveaways where it automatically closes after X seconds/minutes
-> * <button type=button class="master pick">Choose winner</button> and remove that person's tickets
-> * <button type=button class="master cancel">Cancel and refund</button> all points spent on tickets
-> * <button type=button class="master end">End giveaway</button> clearing out tickets
+> * <button type=button class=master id=pick>Choose winner</button> and remove that person's tickets
+> * <button type=button class=master id=cancel>Cancel and refund</button> all points spent on tickets
+> * <button type=button class=master id=end>End giveaway</button> clearing out tickets
 >
 {: tag=dialog #master}
 

@@ -58,7 +58,7 @@ void notify_websockets(string chan) {
 
 void points_redeemed(string chan, mapping data, int|void removal)
 {
-	write("POINTS %s ON %O: %O\n", removal ? "REFUNDED" : "REDEEMED", chan, data);
+	//write("POINTS %s ON %O: %O\n", removal ? "REFUNDED" : "REDEEMED", chan, data);
 	string token = persist_status->path("bcaster_token")[chan];
 	mapping cfg = persist_config->path("channels", chan);
 	update_ticket_count(cfg, data, removal);
@@ -223,53 +223,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			persist_config->save();
 			return jsonify((["ok": 1]));
 		}
-		//Master control
-		if (body->action && !cfg->giveaway) return jsonify((["ok": 1])); //No rewards, nothing to activate or anything
-		switch (body->action) {
-			case "master open":
-			case "master close": {
-				int want_open = body->action == "master open";
-				mapping status = persist_status->path("giveaways", chan);
-				if (want_open == status->is_open) return jsonify((["ok": 0, "reason": "Giveaway is already " + want_open ? "open" : "closed"]));
-				status->is_open = want_open;
-				//Note: Updates reward status in fire and forget mode.
-				foreach (cfg->giveaway->rewards || ([]); string id;) call("PATCH", "id=" + id, ([
-					"is_enabled": want_open || cfg->giveaway->pausemode,
-					"is_paused": !want_open && cfg->giveaway->pausemode,
-				]));
-				persist_status->save();
-				notify_websockets(chan);
-				return jsonify((["ok": 1]));
-			}
-			case "master pick": {
-				//NOTE: This is subject to race conditions if the giveaway is open
-				//at the time of drawing. Close the giveaway first.
-				array people = (array)(G->G->giveaway_tickets[chan] || ([]));
-				int tot = 0;
-				array partials = ({ });
-				foreach (people, [mixed id, mapping person]) partials += ({tot += person->tickets});
-				if (!tot) return jsonify((["ok": 0, "reason": "No tickets bought!"]));
-				int ticket = random(tot);
-				//I could binary search but I doubt there'll be enough entrants to make a difference.
-				array winner;
-				foreach (partials; int i; int last) if (ticket < last) {winner = people[i]; break;}
-				mapping status = persist_status->path("giveaways", chan);
-				status->last_winner = ({winner[0], winner[1]->name, winner[1]->tickets, tot}); //ID, name, ticket count, out of total
-				notify_websockets(chan);
-				return jsonify((["ok": 1]));
-			}
-			case "master cancel":
-			case "master end": {
-				mapping existing = cfg->giveaway->rewards;
-				if (!existing) return jsonify((["ok": 1])); //No rewards, nothing to cancel
-				return Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*]))
-					->then(lambda(array(array) redemptions) {
-						foreach (redemptions * ({ }), mapping redem)
-							set_redemption_status(redem, body->action == "master cancel" ? "CANCELED" : "FULFILLED");
-						return jsonify((["ok": 1]));
-					});
-			}
-		}
 		return jsonify((["ok": 1]));
 	}
 	mapping config = ([]);
@@ -306,6 +259,70 @@ mapping|Concurrent.Future get_state(string|int chan)
 			"is_open": status->is_open, "last_winner": status->last_winner,
 		]);
 	});
+}
+
+void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string chan = conn->group;
+	mapping cfg = persist_config->path("channels", chan);
+	if (!cfg->giveaway) return; //No rewards, nothing to activate or anything
+	write("session %O\n", conn->session);
+	int broadcaster_id = conn->session->user->id;
+	Concurrent.Future call(string method, string query, mixed body) {
+		return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&" + query,
+			(["Authorization": "Bearer " + conn->session->token]),
+			(["method": method, "json": body, "return_status": !body]),
+		);
+	}
+	switch (msg->action) {
+		case "open":
+		case "close": {
+			int want_open = msg->action == "open";
+			mapping status = persist_status->path("giveaways", chan);
+			if (want_open == status->is_open) {
+				send_update(conn, (["message": "Giveaway is already " + (want_open ? "open" : "closed")]));
+				return;
+			}
+			status->is_open = want_open;
+			//Note: Updates reward status in fire and forget mode.
+			foreach (cfg->giveaway->rewards || ([]); string id;) call("PATCH", "id=" + id, ([
+				"is_enabled": want_open || cfg->giveaway->pausemode,
+				"is_paused": !want_open && cfg->giveaway->pausemode,
+			]));
+			persist_status->save();
+			notify_websockets(chan);
+			break;
+		}
+		case "pick": {
+			//NOTE: This is subject to race conditions if the giveaway is open
+			//at the time of drawing. Close the giveaway first.
+			array people = (array)(G->G->giveaway_tickets[chan] || ([]));
+			int tot = 0;
+			array partials = ({ });
+			foreach (people, [mixed id, mapping person]) partials += ({tot += person->tickets});
+			if (!tot) {
+				send_update(conn, (["message": "No tickets bought!"]));
+				return;
+			}
+			int ticket = random(tot);
+			//I could binary search but I doubt there'll be enough entrants to make a difference.
+			array winner;
+			foreach (partials; int i; int last) if (ticket < last) {winner = people[i]; break;}
+			mapping status = persist_status->path("giveaways", chan);
+			status->last_winner = ({winner[0], winner[1]->name, winner[1]->tickets, tot}); //ID, name, ticket count, out of total
+			notify_websockets(chan);
+			break;
+		}
+		case "cancel":
+		case "end": {
+			mapping existing = cfg->giveaway->rewards;
+			if (!existing) break; //No rewards, nothing to cancel
+			Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*]))
+				->then(lambda(array(array) redemptions) {
+					foreach (redemptions * ({ }), mapping redem)
+						set_redemption_status(redem, msg->action == "cancel" ? "CANCELED" : "FULFILLED");
+				});
+		}
+	}
 }
 
 void channel_on_off(string channel, int online)

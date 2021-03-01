@@ -5,6 +5,7 @@ fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true
 const fields = "cost desc max multi pausemode".split(" ");
 
 export function render(state) {
+	if (state.message) {console.warn(state.message); return;} //TODO: Handle info/warn/error, and put in the DOM, kthx
 	if (state.rewards) set_content("#existing", state.rewards.map(r => LI([r.id, " ", r.title])));
 	set_content("#ticketholders", state.tickets.map(t => LI([""+t.tickets, " ", t.name])));
 	let tickets = `${state.last_winner[2]} tickets`;
@@ -53,11 +54,5 @@ on("submit", "#configform", async e => {
 
 DOM("#showmaster").onclick = e => DOM("#master").showModal();
 on("click", ".master", async e => {
-	const action = e.match.className; //TODO: Whitelist
-	const info = await (await fetch("giveaway", {
-		method: "PUT",
-		headers: {"Content-Type": "application/json"},
-		body: JSON.stringify({action}),
-	})).json();
-	console.log("Got response:", info);
+	ws_sync.send({cmd: "master", action: e.match.id})
 });
