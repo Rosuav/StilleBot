@@ -2,14 +2,26 @@ import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed
 const {DIV, H3, LI, SPAN} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 
-const fields = "cost desc max multi pausemode".split(" ");
+const fields = "cost desc max multi pausemode duration".split(" ");
 
+let ticker = null;
+function show_end_time(end_time, el, init) {
+	//NOTE: We assume that the server and client have mostly-synchronized clocks.
+	//If not, the countdown may be wrong. It's the server's clock that will auto-close.
+	let end = Math.ceil(end_time - (+new Date()) / 1000);
+	if (end < 0) end = "Ending SOON";
+	else end = "Ending in " + Math.floor(end / 60) + ":" + ("0" + end % 60).slice(-2);
+	set_content(el, end);
+	if (init) {ticker = setInterval(show_end_time, 1000, end_time, el); return el;}
+}
 export function render(state) {
 	if (state.message) {console.warn(state.message); return;} //TODO: Handle info/warn/error, and put in the DOM, kthx
 	if (state.rewards) set_content("#existing", state.rewards.map(r => LI([r.id, " ", r.title])));
 	set_content("#ticketholders", state.tickets.map(t => LI([""+t.tickets, " ", t.name])));
+	if (ticker) {clearInterval(ticker); ticker = null;}
 	set_content("#master_status", [
 		H3("Giveaway is " + (state.is_open ? "OPEN" : "CLOSED")),
+		state.is_open && state.end_time && show_end_time(state.end_time, H3(), 1),
 		state.last_winner ? DIV([
 			"Winner: ",
 			SPAN({className: "winner_name"}, state.last_winner[1]),

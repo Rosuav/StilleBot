@@ -7,15 +7,16 @@
 > <summary>Set up rewards</summary>
 >
 > <form id=configform>
-> * <label>Cost per ticket: <input name=cost type=number value=1></label>
+> * <label>Cost per ticket: <input name=cost type=number min=1 value=1></label>
 > * <label>Description: <input name=desc size=40 placeholder="Buy # tickets"> Put a <code>#</code> symbol for multibuy count</label>
 > * <label>Multibuy options: <input name=multi size=40 placeholder="1 5 10 25 50"> List quantities that can be purchased (always include 1!)</label>
-> * <label>Max tickets: <input name=max type=number value=1> Purchases that would put you over this limit will be cancelled</label>
+> * <label>Max tickets: <input name=max type=number min=0 value=1> Purchases that would put you over this limit will be cancelled</label>
 > * <label>Redemption hiding:
 >   <select name=pausemode><option value="disable">Disable, hiding them from users</option><option value="pause">Pause and leave visible</option></select>
 >   When there's no current giveaway, should redemptions remain visible (but unpurchaseable), or vanish entirely?
 >   </label>
 > * <label><input type=checkbox name=allow_multiwin value=yes> Allow multiple wins with the same tickets? If not, the winner's tickets will be automatically removed.</label>
+> * <label>Time before giveaway closes: <input name=duration type=number min=0 max=3600> (seconds) How long should the giveaway be open? 0 leaves it until explicitly closed.</label>
 >
 > <button>Save/reconfigure</button>
 > </form>
@@ -27,7 +28,6 @@
 >
 > * <button type=button class=master id=open>Open giveaway</button> and allow people to buy tickets
 > * <button type=button class=master id=close>Close giveaway</button> so no more tickets will be bought
-> * TODO: Timed giveaways where it automatically closes after X seconds/minutes
 > * <button type=button class=master id=pick>Choose winner</button> and remove that person's tickets
 > * <button type=button class=master id=cancel>Cancel and refund</button> all points spent on tickets
 > * <button type=button class=master id=end>End giveaway</button> clearing out tickets

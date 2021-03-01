@@ -52,7 +52,8 @@ void notify_websockets(string chan) {
 	mapping status = persist_status->path("giveaways")[chan] || ([]);
 	send_updates_all(chan, ([
 		"tickets": tickets_in_order(chan),
-		"is_open": status->is_open, "last_winner": status->last_winner,
+		"is_open": status->is_open, "end_time": status->end_time,
+		"last_winner": status->last_winner,
 	]));
 }
 
@@ -143,6 +144,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			cfg->giveaway->cost = cost;
 			cfg->giveaway->pausemode = body->pausemode == "pause";
 			cfg->giveaway->allow_multiwin = body->allow_multiwin == "yes";
+			cfg->giveaway->duration = min(max((int)body->duration, 0), 3600);
 			mapping existing = cfg->giveaway->rewards;
 			if (!existing) existing = cfg->giveaway->rewards = ([]);
 			array reqs = ({ });
@@ -233,6 +235,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	config->desc = g->desc_template || "";
 	config->pausemode = g->pausemode ? "pause" : "disable";
 	config->allow_multiwin = g->allow_multiwin ? "yes" : "no";
+	config->duration = g->duration;
 	if (mapping existing = g->rewards)
 		config->multi = ((array(string))sort(values(existing))) * " ";
 	else config->multi = "";
@@ -258,16 +261,40 @@ mapping|Concurrent.Future get_state(string|int chan)
 		foreach (redemptions * ({ }), mapping redem) update_ticket_count(cfg, redem);
 		return ([
 			"rewards": rewards, "tickets": tickets_in_order(chan),
-			"is_open": status->is_open, "last_winner": status->last_winner,
+			"is_open": status->is_open, "end_time": status->end_time,
+			"last_winner": status->last_winner,
 		]);
 	});
+}
+
+void open_close(string chan, int broadcaster_id, string token, int want_open) {
+	mapping cfg = persist_config->path("channels", chan);
+	if (!cfg->giveaway) return; //No rewards, nothing to open/close
+	mapping status = persist_status->path("giveaways", chan);
+	status->is_open = want_open;
+	if (mixed id = m_delete(status, "autoclose")) remove_call_out(id);
+	if (int d = want_open && cfg->giveaway->duration) {
+		status->end_time = time() + d;
+		status->autoclose = call_out(open_close, d, chan, broadcaster_id, token, 0);
+	}
+	else m_delete(status, "end_time");
+	//Note: Updates reward status in fire and forget mode.
+	foreach (cfg->giveaway->rewards || ([]); string id;)
+		twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&id=" + id,
+			(["Authorization": "Bearer " + token]),
+			(["method": "PATCH", "json": ([
+				"is_enabled": want_open || cfg->giveaway->pausemode,
+				"is_paused": !want_open && cfg->giveaway->pausemode,
+			])]),
+		);
+	persist_status->save();
+	notify_websockets(chan);
 }
 
 void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	string chan = conn->group;
 	mapping cfg = persist_config->path("channels", chan);
 	if (!cfg->giveaway) return; //No rewards, nothing to activate or anything
-	write("session %O\n", conn->session);
 	int broadcaster_id = conn->session->user->id;
 	Concurrent.Future call(string method, string query, mixed body) {
 		return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&" + query,
@@ -284,14 +311,7 @@ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg)
 				send_update(conn, (["message": "Giveaway is already " + (want_open ? "open" : "closed")]));
 				return;
 			}
-			status->is_open = want_open;
-			//Note: Updates reward status in fire and forget mode.
-			foreach (cfg->giveaway->rewards || ([]); string id;) call("PATCH", "id=" + id, ([
-				"is_enabled": want_open || cfg->giveaway->pausemode,
-				"is_paused": !want_open && cfg->giveaway->pausemode,
-			]));
-			persist_status->save();
-			notify_websockets(chan);
+			open_close(chan, broadcaster_id, conn->session->token, want_open);
 			break;
 		}
 		case "pick": {
