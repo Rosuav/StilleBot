@@ -274,6 +274,7 @@ class websocket_handler
 	void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 		if (!msg) return;
 		if (msg->cmd == "refresh" || msg->cmd == "init") send_update(conn);
+		if (function f = this["websocket_cmd_" + msg->cmd]) f(conn, msg);
 	}
 
 	void _send_updates(array(object) socks, string|int group, mapping|void data) {

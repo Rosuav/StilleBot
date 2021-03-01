@@ -49,16 +49,13 @@ mapping get_state(string group, string|void id) {
 	return (["items": _get_message(sort(indices(msgs))[*], msgs)]);
 }
 
-void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	::websocket_msg(conn, msg);
-	if (msg && msg->cmd == "delete") {
-		sscanf(conn->group, "%s#%s", string uid, string chan);
-		if (!G->G->irc->channels["#" + chan]) return;
-		mapping msgs = persist_status->path("private", "#" + chan)[uid];
-		if (!msgs) return;
-		if (m_delete(msgs, (int)msg->id)) update_one(conn->group, msg->id);
-		else conn->sock->send_text(Standards.JSON.encode((["cmd": "notify", "msg": "Deletion failed (already gone)"])));
-	}
+void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%s#%s", string uid, string chan);
+	if (!G->G->irc->channels["#" + chan]) return;
+	mapping msgs = persist_status->path("private", "#" + chan)[uid];
+	if (!msgs) return;
+	if (m_delete(msgs, (int)msg->id)) update_one(conn->group, msg->id);
+	else conn->sock->send_text(Standards.JSON.encode((["cmd": "notify", "msg": "Deletion failed (already gone)"])));
 }
 
 protected void create(string name) {::create(name);}
