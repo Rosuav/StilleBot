@@ -328,6 +328,10 @@ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		case "end": {
 			mapping existing = cfg->giveaway->rewards;
 			if (!existing) break; //No rewards, nothing to cancel
+			mapping status = persist_status->path("giveaways", chan);
+			m_delete(status, "last_winner");
+			notify_websockets(chan);
+			persist_status->save();
 			Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*]))
 				->then(lambda(array(array) redemptions) {
 					foreach (redemptions * ({ }), mapping redem)
