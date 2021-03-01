@@ -27,10 +27,11 @@ export function connect(group)
 				//optionally render_empty() to special-case the "no items" display.
 				if (data.id) {
 					const obj = handler.render_parent.querySelector(`[data-id="${data.id}"]`);
-					if (obj && data.data) obj.replaceWith(handler.render_item(data.data));
-					else if (data.data) handler.render_parent.appendChild(handler.render_item(data.data));
+					const newobj = data.data && handler.render_item(data.data, obj);
+					if (obj && newobj) obj.replaceWith(newobj); //They might be the same
+					else if (newobj) handler.render_parent.appendChild(newobj);
 					else if (obj) {
-						//Delete this item.
+						//Delete this item. That might leave the render_parent empty.
 						obj.replaceWith();
 						if (handler.render_empty && !handler.render_parent.querySelectorAll("[data-id]").length)
 							handler.render_empty();
