@@ -142,6 +142,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			cfg->giveaway->desc_template = body->desc;
 			cfg->giveaway->cost = cost;
 			cfg->giveaway->pausemode = body->pausemode == "pause";
+			cfg->giveaway->allow_multiwin = body->allow_multiwin == "yes";
 			mapping existing = cfg->giveaway->rewards;
 			if (!existing) existing = cfg->giveaway->rewards = ([]);
 			array reqs = ({ });
@@ -231,6 +232,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	config->max = g->max_tickets || 1;
 	config->desc = g->desc_template || "";
 	config->pausemode = g->pausemode ? "pause" : "disable";
+	config->allow_multiwin = g->allow_multiwin ? "yes" : "no";
 	if (mapping existing = g->rewards)
 		config->multi = ((array(string))sort(values(existing))) * " ";
 	else config->multi = "";
@@ -309,7 +311,17 @@ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			foreach (partials; int i; int last) if (ticket < last) {winner = people[i]; break;}
 			mapping status = persist_status->path("giveaways", chan);
 			status->last_winner = ({winner[0], winner[1]->name, winner[1]->tickets, tot}); //ID, name, ticket count, out of total
+			if (!cfg->giveaway->allow_multiwin)
+			{
+				foreach (values(winner[1]->redemptions), mapping redem)
+					set_redemption_status(redem, "FULFILLED");
+				//This will eventually be done by the webhook, but the
+				//front end updates faster if we force it immediately.
+				winner[1]->redemptions = ([]);
+				winner[1]->tickets = 0;
+			}
 			notify_websockets(chan);
+			persist_status->save();
 			break;
 		}
 		case "cancel":

@@ -22,14 +22,14 @@ export function render(state) {
 if (config.cost) {
 	const el = DOM("#configform").elements;
 	fields.forEach(f => el[f].value = "" + config[f]);
+	el.allow_multiwin.checked = config.allow_multiwin === "yes";
 }
 /*
 1) Create rewards - DONE
 2) Activate rewards - DONE
 3) Notice redemptions - DONE
 4) Deactivate rewards - DONE
-5) Pick a winner and remove (accept) all that person's tickets (so you can pick multiple)
-   - Picking is done, removing tickets isn't (partly for debugging)
+5) Pick a winner and remove (accept) all that person's tickets (so you can pick multiple winners) - DONE
    - Needs an in-chat notification. Need a good system for these. Use for noobs run too. Pick command from dropdown, can edit.
 6) Clear all tickets - DONE
 7) Cancel giveaway and refund all tickets - DONE
@@ -44,6 +44,7 @@ on("submit", "#configform", async e => {
 	const el = e.match.elements;
 	const body = { };
 	fields.forEach(f => body[f] = el[f].value);
+	body.allow_multiwin = el.allow_multiwin.checked ? "yes" : "no";
 	const info = await (await fetch("giveaway", {
 		method: "PUT",
 		headers: {"Content-Type": "application/json"},
