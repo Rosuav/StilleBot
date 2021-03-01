@@ -21,7 +21,29 @@ export function connect(group)
 		let data = JSON.parse(ev.data);
 		console.log("Got message from server:", data);
 		if (!handler) return;
-		if (data.cmd === "update") handler.render(data, group);
+		if (data.cmd === "update") {
+			if (handler.render_item) {
+				//If partial rendering is possible, we need render_item() and render_parent, and
+				//optionally render_empty() to special-case the "no items" display.
+				if (data.id) {
+					const obj = handler.render_parent.querySelector(`[data-id="${data.id}"]`);
+					if (obj && data.data) obj.replaceWith(handler.render_item(data.data));
+					else if (data.data) handler.render_parent.appendChild(handler.render_item(data.data));
+					else if (obj) {
+						//Delete this item.
+						obj.replaceWith();
+						if (handler.render_empty && !handler.render_parent.querySelectorAll("[data-id]").length)
+							handler.render_empty();
+					}
+					//else it's currently absent, needs to be absent, nothing to do
+				} else {
+					if (!data.items.length && handler.render_empty) handler.render_empty();
+					set_content(handler.render_parent, data.items.map(handler.render_item));
+				}
+			}
+			//Note that render() is called *after* render_item in all cases.
+			handler.render(data, group);
+		}
 	};
 }
 //When ready, import the handler code. It'll be eg "/subpoints.js" but with automatic mtime handling.
