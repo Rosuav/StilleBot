@@ -15,7 +15,7 @@
 >   <select name=pausemode><option value="disable">Disable, hiding them from users</option><option value="pause">Pause and leave visible</option></select>
 >   When there's no current giveaway, should redemptions remain visible (but unpurchaseable), or vanish entirely?
 >   </label>
-> * <label><input type=checkbox name=allow_multiwin value=yes> Allow multiple wins with the same tickets? If not, the winner's tickets will be automatically removed.</label>
+> * <label><input type=checkbox name=allow_multiwin value=yes> Allow òne person to win multiple times? If not, the winner's tickets will be automatically removed.</label>
 > * <label>Time before giveaway closes: <input name=duration type=number min=0 max=3600> (seconds) How long should the giveaway be open? 0 leaves it until explicitly closed.</label>
 >
 > <button>Save/reconfigure</button>
