@@ -41,6 +41,11 @@ constant COMPLEX_TEMPLATES = ([
 		"devicatSip Don't forget to drink water! devicatSip",
 		(["message": "devicatSip Drink more water! devicatSip", "delay": 1800]),
 	}),
+	"!hug": ([
+		"conditional": "string", "expr1": "%s",
+		"message": "/me devicatHug $$ warmly hugs everyone maayaHug",
+		"otherwise": "/me devicatHug $$ warmly hugs %s maayaHug",
+	]),
 ]);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
