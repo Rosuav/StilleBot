@@ -15,7 +15,7 @@ constant TEMPLATES = ({
 	"!shop | stephe21LOOT Get some phat lewt at https://www.redbubble.com/people/YOUR_REDBUBBLE_NAME/portfolio iimdprLoot",
 	"!twitter | Follow my Twitter for updates, notifications, and other whatever-it-is-I-post: https://twitter.com/YOUR_TWITTER_NAME",
 	"!love | rosuavLove maayaHeart fxnLove devicatLove devicatHug noobsLove stephe21Heart beauatLOVE hypeHeart",
-	"!hype | maayaHype devicatHypu noobsHype maayaHype devicatHypu noobsHype maayaHype devicatHypu noobsHype",
+	"!hype | maayaHype silent5HYPU noobsHype maayaHype silent5HYPU noobsHype maayaHype silent5HYPU noobsHype",
 	"!hug | /me devicatHug $$ warmly hugs %s maayaHug",
 	"!loot | HypeChest RPGPhatLoot Loot ALL THE THINGS!! stephe21LOOT iimdprLoot",
 	"!lurk | $$ drops into the realm of lurkdom devicatLurk",
