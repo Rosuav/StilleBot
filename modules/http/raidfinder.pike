@@ -146,6 +146,21 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			return get_users_info(highlightids);
 		})->then(lambda(array users) {
 			highlights = users->login * "\n";
+			/*
+			https://api.twitch.tv/kraken/users/49497888/follows/games
+			https://api.twitch.tv/helix/tags/streams - all tags, to allow filtering
+			https://api.twitch.tv/helix/streams?" + sprintf("%{game_id=%d&%}", info->follows->game->_id)
+			*/
+			//Category search - show all streams in the categories you follow
+			if (req->variables->categories) return twitch_api_request("https://api.twitch.tv/kraken/users/" + req->misc->session->user->id + "/follows/games")
+				->then(lambda(mapping info) {
+					return twitch_api_request("https://api.twitch.tv/helix/streams?" + sprintf("%{game_id=%d&%}", info->follows->game->_id));
+				})->then(lambda(mapping info) {
+					//HACK: Map channel list to Kraken.
+					//TODO: Make everything compatible with both Kraken and Helix
+					write("%O\n", info);
+					return twitch_api_request("https://api.twitch.tv/kraken/streams/?channel=" + info->data->user_id * ",");
+				});
 			return twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
 				(["Authorization": "OAuth " + req->misc->session->token]));
 		})->then(lambda(mapping info) {
