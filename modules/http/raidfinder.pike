@@ -213,7 +213,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				int otheruid = (int)strm->user_id;
 				if (otheruid == userid) {your_stream = strm; follows_helix[i] = 0; continue;}
 				if (mapping k = extra_kraken_info[otheruid]) follows_helix[i] = strm = k | strm;
-				if (!strm->got_kraken) write("No kraken: %O\n", strm);
 				if (string t = broadcaster_type[otheruid]) strm->broadcaster_type = t;
 				if (string n = notes && notes[(string)otheruid]) strm->notes = n;
 				if (has_value(highlightids, otheruid)) strm->highlight = 1;
