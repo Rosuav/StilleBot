@@ -296,12 +296,6 @@ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	mapping cfg = persist_config->path("channels", chan);
 	if (!cfg->giveaway) return; //No rewards, nothing to activate or anything
 	int broadcaster_id = conn->session->user->id;
-	Concurrent.Future call(string method, string query, mixed body) {
-		return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&" + query,
-			(["Authorization": "Bearer " + conn->session->token]),
-			(["method": method, "json": body, "return_status": !body]),
-		);
-	}
 	switch (msg->action) {
 		case "open":
 		case "close": {
