@@ -158,25 +158,30 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				})->then(lambda(array streams) {
 					//HACK: Map channel list to Kraken.
 					//TODO: Make everything compatible with both Kraken and Helix
-					write("%O\n", streams);
-					return twitch_api_request("https://api.twitch.tv/kraken/streams/?channel=" + streams->user_id * ",");
+					return Concurrent.all(
+						twitch_api_request("https://api.twitch.tv/kraken/streams/?channel=" + streams->user_id * ",")
+							->then(lambda(mapping info) {return info->streams;}),
+						Concurrent.resolve(streams),
+						get_helix_paginated("https://api.twitch.tv/helix/users", (["id": streams->user_id])),
+					);
 				});
-			return twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
-				(["Authorization": "OAuth " + req->misc->session->token]));
-		})->then(lambda(mapping info) {
-			follows = info->streams;
-			//All this work is just to get the stream tags (and some info about your own stream)
-			array(int) channels = follows->channel->_id;
-			channels += ({userid});
-			write("Fetching %d streams...\n", sizeof(channels));
-			return Concurrent.all(
-				get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))channels])),
-				//The ONLY thing we need /helix/users for is broadcaster_type, which - for
-				//reasons unknown to me - is always blank in the main stream info.
-				get_helix_paginated("https://api.twitch.tv/helix/users", (["id": (array(string))channels])),
-			);
+			else return twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
+					(["Authorization": "OAuth " + req->misc->session->token])
+				)->then(lambda(mapping info) {
+					array(int) channels = info->streams->channel->_id;
+					channels += ({userid});
+					write("Fetching %d streams...\n", sizeof(channels));
+					return Concurrent.all(
+						Concurrent.resolve(info->streams),
+						get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))channels])),
+						//The ONLY thing we need /helix/users for is broadcaster_type, which - for
+						//reasons unknown to me - is always blank in the main stream info.
+						get_helix_paginated("https://api.twitch.tv/helix/users", (["id": (array(string))channels])),
+					);
+				});
 		})->then(lambda(array results) {
-			[array streams, array users] = results;
+			[follows, array streams, array users] = results;
+			//write("Follows: %O\nStreams: %O\nUsers: %O\n", follows[..3], streams[..3], users[..3]);
 			if (!G->G->tagnames) G->G->tagnames = ([]);
 			multiset all_tags = (<>);
 			foreach (streams, mapping strm)
@@ -267,7 +272,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				if (uptime < 4 * 3600) recommend += uptime / 4 / 36;
 				strm->recommend = recommend;
 			}
-			//End stream tags work
 			//List all recent raids. Actually list ALL raids on the current system.
 			array all_raids = ({ });
 			foreach (persist_status->path("raids"); string id; mapping raids) {
