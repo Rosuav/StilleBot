@@ -64,7 +64,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	}
 	//TODO: Based on the for= or the logged in user, determine whether raids are tracked.
 	mapping raids = ([]);
-	array follows;
+	array follows_kraken, follows_helix;
 	mapping(int:array(string)) channel_tags = ([]);
 	mapping your_stream;
 	int userid;
@@ -99,11 +99,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					"view_count": 1658855,
 				])
 				*/
-				follows = f->data * ({ });
+				follows_helix = f->data * ({ });
 				return get_users_info(highlightids);
 			})->then(lambda(array users) {
 				highlights = users->login * "\n";
-				foreach (follows; int idx; mapping strm) {
+				foreach (follows_helix; int idx; mapping strm) {
 					if (string n = notes && notes[strm->id]) strm->notes = n;
 					if (has_value(highlightids, (int)strm->id)) strm->highlight = 1;
 					strm->order = idx; //Order they were followed. Effectively the same as array order since we don't get actual data.
@@ -117,7 +117,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					]);
 				}
 				return render_template("raidfinder.md", ([
-					"vars": (["follows": follows, "your_stream": 0, "highlights": highlights, "all_raids": ({}), "mode": "allfollows"]),
+					"vars": (["follows": follows_helix, "your_stream": 0, "highlights": highlights, "all_raids": ({}), "mode": "allfollows"]),
 					"sortorders": ({"Channel Creation", "Follow Date", "Name"}) * "\n* ",
 				]));
 			}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO as below: Return a nice message if for=junk given
@@ -180,11 +180,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					);
 				});
 		})->then(lambda(array results) {
-			[follows, array streams, array users] = results;
+			[follows_kraken, follows_helix, array users] = results;
 			//write("Follows: %O\nStreams: %O\nUsers: %O\n", follows[..3], streams[..3], users[..3]);
 			if (!G->G->tagnames) G->G->tagnames = ([]);
 			multiset all_tags = (<>);
-			foreach (streams, mapping strm)
+			foreach (follows_helix, mapping strm)
 			{
 				channel_tags[(int)strm->user_id] = strm->tag_ids;
 				if ((int)strm->user_id == userid)
@@ -205,7 +205,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			return get_helix_paginated("https://api.twitch.tv/helix/tags/streams", (["tag_id": (array)all_tags]));
 		})->then(lambda(array alltags) {
 			foreach (alltags, mapping tag) G->G->tagnames[tag->tag_id] = tag->localization_names["en-us"];
-			foreach (follows, mapping strm)
+			foreach (follows_kraken, mapping strm)
 			{
 				array tags = ({ });
 				foreach (channel_tags[strm->channel->_id] || ({ }), string tagid)
@@ -282,9 +282,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					all_raids += ({r | (["outgoing": !r->outgoing])});
 			}
 			sort(all_raids->time, all_raids);
-			sort(-follows->recommend[*], follows); //Sort by magic initially
+			sort(-follows_kraken->recommend[*], follows_kraken); //Sort by magic initially
 			return render_template("raidfinder.md", ([
-				"vars": (["follows": follows, "your_stream": your_stream, "highlights": highlights, "all_raids": all_raids[<99..], "mode": "normal"]),
+				"vars": (["follows": follows_kraken, "your_stream": your_stream, "highlights": highlights, "all_raids": all_raids[<99..], "mode": "normal"]),
 				"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
 			]));
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: Return a nice message if for=junk given
