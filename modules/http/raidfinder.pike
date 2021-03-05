@@ -3,13 +3,18 @@ inherit http_endpoint;
   - Raid tracking works only for channels that I track, but I don't have to bot for them.
   - There's not going to be any easy UI for it, but it'd be great to have a "raided my friend"
     feature, where we can see any time that X raided Y where Y is one of my friends... hard.
-  - Might also be worth showing anyone in the same category you're currently in.
-  - Also show your followed categories, if possible. Both these would be shown separately.
-  - Undocumented https://api.twitch.tv/kraken/users/<userid>/follows/games
-    - Lists followed categories. Format is a bit odd but they do seem to include an _id
-      (which corresponds to G->G->category_names).
-    - Can then use /helix/streams (#get-streams) with game_id (up to ten of them).
-    - Scopes required: probably user_read?
+
+Possible enhancement: Tag filtering or recommendations.
+- For filtering, allow both positive and negative
+  - Require tag "English"
+  - Exclude any with tag "Speedrun"
+- For recommendations, allow the strength to be set??
+  - Will affect Magic sort, and may also be a separate sort option
+  - For calibration, "same category" is worth 100 points, and each tag in common with you is 25 points.
+  - Default strength of tag recommendation should probably be 100 +/- 50
+  - Tag recommendations can be negative, penalizing those streams. It's probably best to keep
+    most tag usage positive though.
+  - https://api.twitch.tv/helix/tags/streams - all tags - about 500ish, of which about 250 are automatic
 */
 
 string cached_follows;
