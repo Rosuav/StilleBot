@@ -134,7 +134,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				"emotes": avail_emotes,
 				"backlink": !req->variables->mobile && sprintf("<a href=\"hypetrain?for=%s&mobile\">Switch to mobile view</a>", channel || ""),
 			]));
-		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: If auth error, clear the token
+		}); //TODO: If auth error, clear the token
 }
 
 echoable_message process(object channel, object person, string param)

@@ -120,7 +120,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					"vars": (["follows": follows_helix, "your_stream": 0, "highlights": highlights, "all_raids": ({}), "mode": "allfollows"]),
 					"sortorders": ({"Channel Creation", "Follow Date", "Name"}) * "\n* ",
 				]));
-			}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO as below: Return a nice message if for=junk given
+			}); //TODO as below: Return a nice message if for=junk given
 	}
 	return uid->then(lambda(int u) {
 			userid = u;
@@ -288,5 +288,5 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				"vars": (["follows": follows_helix, "your_stream": your_stream, "highlights": highlights, "all_raids": all_raids[<99..], "mode": "normal"]),
 				"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
 			]));
-		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: Return a nice message if for=junk given
+		}); //TODO: Return a nice message if for=junk given
 }
