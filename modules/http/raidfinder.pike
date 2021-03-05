@@ -168,7 +168,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			//All this work is just to get the stream tags (and some info about your own stream)
 			array(int) channels = follows->channel->_id;
 			channels += ({userid});
-			//TODO: Paginate if >100
 			write("Fetching %d streams...\n", sizeof(channels));
 			return Concurrent.all(
 				get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))channels])),
