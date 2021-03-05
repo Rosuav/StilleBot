@@ -65,7 +65,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//TODO: Based on the for= or the logged in user, determine whether raids are tracked.
 	mapping raids = ([]);
 	array follows_kraken, follows_helix;
-	mapping(int:array(string)) channel_tags = ([]);
+	mapping(int:mapping(string:mixed)) extra_kraken_info = ([]);
 	mapping your_stream;
 	int userid;
 	mapping broadcaster_type = ([]);
@@ -109,12 +109,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					strm->order = idx; //Order they were followed. Effectively the same as array order since we don't get actual data.
 					//Make some info available in the same way that it is for the main follow list.
 					//This allows the front end to access it identically for convenience.
-					strm->channel = ([
-						"broadcaster_type": strm->broadcaster_type,
-						"logo": strm->profile_image_url,
-						"display_name": strm->display_name,
-						"_id": (int)strm->id,
-					]);
+					strm->user_name = strm->display_name;
 				}
 				return render_template("raidfinder.md", ([
 					"vars": (["follows": follows_helix, "your_stream": 0, "highlights": highlights, "all_raids": ({}), "mode": "allfollows"]),
@@ -186,34 +181,35 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			multiset all_tags = (<>);
 			foreach (follows_helix, mapping strm)
 			{
-				channel_tags[(int)strm->user_id] = strm->tag_ids;
-				if ((int)strm->user_id == userid)
-				{
-					//Info about your own stream. Handy but doesn't go in the main display.
-					//write("Your tags: %O\n", strm->tag_ids); //Is it worth trying to find people with similar tags?
-					your_stream = strm;
-					your_stream->category = G->G->category_names[strm->game_id];
-					continue;
-				}
 				//all_tags |= (tag_ids &~ G->G->tagnames); //sorta kinda
 				foreach (strm->tag_ids || ({ }), string tag)
 					if (!G->G->tagnames[tag]) all_tags[tag] = 1;
 			}
+			foreach (follows_kraken, mapping strm)
+				extra_kraken_info[strm->channel->_id] = ([
+					"profile_image_url": strm->channel->logo,
+					"url": strm->channel->url,
+					//strm->video_height and strm->average_fps might be of interest
+				]);
 			foreach (users, mapping user) broadcaster_type[(int)user->id] = user->broadcaster_type;
 			if (!sizeof(all_tags)) return Concurrent.resolve(({ }));
 			write("Fetching %d tags...\n", sizeof(all_tags));
 			return get_helix_paginated("https://api.twitch.tv/helix/tags/streams", (["tag_id": (array)all_tags]));
 		})->then(lambda(array alltags) {
 			foreach (alltags, mapping tag) G->G->tagnames[tag->tag_id] = tag->localization_names["en-us"];
-			foreach (follows_kraken, mapping strm)
+			foreach (follows_helix; int i; mapping strm)
 			{
 				array tags = ({ });
-				foreach (channel_tags[strm->channel->_id] || ({ }), string tagid)
+				foreach (strm->tag_ids || ({ }), string tagid)
 					if (string tagname = G->G->tagnames[tagid]) tags += ({(["id": tagid, "name": tagname])});
 				strm->tags = tags;
-				strm->raids = raids[strm->channel->name] || ({ });
-				int otheruid = (int)strm->channel->_id;
-				if (string t = broadcaster_type[otheruid]) strm->channel->broadcaster_type = t;
+				strm->category = G->G->category_names[strm->game_id];
+				strm->raids = raids[strm->user_login] || ({ });
+				int otheruid = (int)strm->user_id;
+				if (otheruid == userid) {your_stream = strm; follows_helix[i] = 0; continue;}
+				if (mapping k = extra_kraken_info[otheruid]) follows_helix[i] = strm = k | strm;
+				if (!strm->got_kraken) write("No kraken: %O\n", strm);
+				if (string t = broadcaster_type[otheruid]) strm->broadcaster_type = t;
 				if (string n = notes && notes[(string)otheruid]) strm->notes = n;
 				if (has_value(highlightids, otheruid)) strm->highlight = 1;
 				int swap = otheruid < userid;
@@ -265,10 +261,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					else if (creatives[your_stream->category] && creatives[strm->game]) recommend += 70;
 					//Common tags: 25 points apiece
 					//Note that this will include language tags
-					recommend += 25 * sizeof((multiset)your_stream->tag_ids & (multiset)strm->tags->id);
+					recommend += 25 * sizeof((multiset)your_stream->tag_ids & (multiset)strm->tag_ids);
 				}
 				//Up to 100 points for having just started, scaling down to zero at four hours of uptime
-				int uptime = time() - Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", strm->created_at)->unix_time();
+				int uptime = time() - Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", strm->started_at)->unix_time();
 				if (uptime < 4 * 3600) recommend += uptime / 4 / 36;
 				strm->recommend = recommend;
 			}
@@ -282,9 +278,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					all_raids += ({r | (["outgoing": !r->outgoing])});
 			}
 			sort(all_raids->time, all_raids);
-			sort(-follows_kraken->recommend[*], follows_kraken); //Sort by magic initially
+			follows_helix -= ({0}); //Remove self (already nulled out)
+			sort(-follows_helix->recommend[*], follows_helix); //Sort by magic initially
 			return render_template("raidfinder.md", ([
-				"vars": (["follows": follows_kraken, "your_stream": your_stream, "highlights": highlights, "all_raids": all_raids[<99..], "mode": "normal"]),
+				"vars": (["follows": follows_helix, "your_stream": your_stream, "highlights": highlights, "all_raids": all_raids[<99..], "mode": "normal"]),
 				"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
 			]));
 		}, lambda(mixed err) {werror("GOT ERROR\n%O\n", err);}); //TODO: Return a nice message if for=junk given

@@ -4,13 +4,13 @@ fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true
 
 const sortfunc = {
 	Magic: (s1, s2) => s2.recommend - s1.recommend,
-	Viewers: (s1, s2) => s1.viewers - s2.viewers,
-	Category: (s1, s2) => s1.game.localeCompare(s2.game),
+	Viewers: (s1, s2) => s1.viewer_count - s2.viewer_count,
+	Category: (s1, s2) => s1.category.localeCompare(s2.category),
 	Uptime: (s1, s2) => new Date(s2.created_at) - new Date(s1.created_at),
 	Raided: (s1, s2) => (s1.raids[s1.raids.length-1]||"").localeCompare(s2.raids[s2.raids.length-1]||""),
 	"Channel Creation": (s1, s2) => s1.created_at.localeCompare(s2.created_at),
 	"Follow Date": (s1, s2) => s1.order - s2.order,
-	"Name": (s1, s2) => s1.channel.display_name.localeCompare(s2.channel.display_name),
+	"Name": (s1, s2) => s1.user_name.localeCompare(s2.user_name),
 }
 let lastsort = "";
 on("click", "#sort li", e => {
@@ -64,10 +64,10 @@ DOM("#allraids").onclick = show_all_raids;
 function edit_notes(stream) {
 	set_content("#notes_about_channel", [
 		"Channel notes: ",
-		adornment(stream.channel.broadcaster_type),
-		stream.channel.display_name,
+		adornment(stream.broadcaster_type),
+		stream.user_name,
 		BR(),
-		IMG({className: "avatar", src: stream.channel.logo}),
+		IMG({className: "avatar", src: stream.profile_image_url}),
 	]);
 	DOM("#editnotes textarea").value = stream.notes || "";
 	DOM("#editnotes").returnValue = "close";
@@ -82,7 +82,7 @@ DOM("#editnotes").onclose = e => {
 	fetch("/raidfinder", {
 		method: "POST",
 		headers: {"content-type": "application/json"},
-		body: JSON.stringify({id: stream.channel._id, notes: newnotes}),
+		body: JSON.stringify({id: +stream.user_id, notes: newnotes}),
 	}).then(res => {
 		if (!res.ok) {console.error("ERROR SAVING NOTES"); console.error(res);} //TODO
 		if (!stream.element) return res.json(); //Changing the highlights gets an actual response
@@ -106,7 +106,7 @@ DOM("#highlights").onclick = () => {
 	]);
 	DOM("#editnotes textarea").value = highlights || "";
 	DOM("#editnotes").returnValue = "close";
-	DOM("#editnotes").stream = {channel: {_id: 0}};
+	DOM("#editnotes").stream = {user_id: 0};
 	DOM("#editnotes").showModal();
 }
 
@@ -156,7 +156,7 @@ function build_follow_list() {
 		//own viewership stats, it could be useful to have a 25/75 percentile mark and say "anyone
 		//within this range is samesize".
 		if (!your_stream) return ""; //If you're not online, show no size info
-		const you = your_stream.viewer_count, them = stream.viewers;
+		const you = your_stream.viewer_count, them = stream.viewer_count;
 		const dir = you > them ? "smaller" : "larger";
 		const abs = you > them ? you - them : them - you;
 		const rel = you > them ? you / them : them / you;
@@ -169,27 +169,27 @@ function build_follow_list() {
 	}
 	set_content("#streams", follows.map(stream => stream.element = DIV({className: describe_size(stream) + " " + (stream.highlight ? "highlighted" : "")},
 		mode === "allfollows" ? [
-			//Cut-down view for channels that might be offline. Also, most of this is Helix info not Kraken.
+			//Cut-down view for channels that might be offline.
 			A({href: "https://twitch.tv/" + stream.login}, [
-				IMG({className: "avatar", src: stream.channel.logo}),
-				adornment(stream.channel.broadcaster_type),
-				stream.channel.display_name,
+				IMG({className: "avatar", src: stream.profile_image_url}),
+				adornment(stream.broadcaster_type),
+				stream.user_name,
 			]),
 			describe_notes(stream),
 		] : [
-			A({href: stream.channel.url}, IMG({src: stream.preview.medium})),
+			A({href: stream.url}, IMG({src: stream.thumbnail_url.replace("{width}", 320).replace("{height}", 180)})),
 			DIV({className: "inforow"}, [
-				DIV({className: "img"}, A({href: stream.channel.url}, IMG({className: "avatar", src: stream.channel.logo}))),
+				DIV({className: "img"}, A({href: stream.url}, IMG({className: "avatar", src: stream.profile_image_url}))),
 				UL([
-					LI([A({href: stream.channel.url}, [adornment(stream.channel.broadcaster_type), stream.channel.display_name]), " - ", B(stream.game)]),
-					LI({className: "streamtitle"}, stream.channel.status),
-					LI("Uptime " + uptime(stream.created_at) + ", " + stream.viewers + " viewers"),
+					LI([A({href: stream.url}, [adornment(stream.broadcaster_type), stream.user_name]), " - ", B(stream.category)]),
+					LI({className: "streamtitle"}, stream.title),
+					LI("Uptime " + uptime(stream.started_at) + ", " + stream.viewer_count + " viewers"),
 					//LI("Score: " + stream.recommend), //For debugging the magic sort
 					LI(stream.tags.map(tag => SPAN({className: "tag"}, tag.name + " "))),
 					LI([describe_notes(stream), describe_raid(stream.raids)]),
 				]),
 				//TODO: Make this a link to the category.
-				DIV({className: "img"}, IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.game + "-40x54.jpg"})),
+				DIV({className: "img"}, IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.category + "-40x54.jpg"})),
 			]),
 		]
 	)));
