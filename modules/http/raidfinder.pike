@@ -196,12 +196,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					if (!G->G->tagnames[tag]) all_tags[tag] = 1;
 			}
 			foreach (users, mapping user) broadcaster_type[(int)user->id] = user->broadcaster_type;
-			if (!sizeof(all_tags)) return Concurrent.resolve((["data": ({ })]));
-			//TODO again: Paginate if >100
+			if (!sizeof(all_tags)) return Concurrent.resolve(({ }));
 			write("Fetching %d tags...\n", sizeof(all_tags));
-			return twitch_api_request("https://api.twitch.tv/helix/tags/streams?first=100" + sprintf("%{&tag_id=%s%}", (array)all_tags));
-		})->then(lambda(mapping info) {
-			foreach (info->data, mapping tag) G->G->tagnames[tag->tag_id] = tag->localization_names["en-us"];
+			return get_helix_paginated("https://api.twitch.tv/helix/tags/streams", (["tag_id": (array)all_tags]));
+		})->then(lambda(array alltags) {
+			foreach (alltags, mapping tag) G->G->tagnames[tag->tag_id] = tag->localization_names["en-us"];
 			foreach (follows, mapping strm)
 			{
 				array tags = ({ });
