@@ -171,16 +171,16 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			//TODO: Paginate if >100
 			write("Fetching %d streams...\n", sizeof(channels));
 			return Concurrent.all(
-				twitch_api_request("https://api.twitch.tv/helix/streams?first=100" + sprintf("%{&user_id=%d%}", channels)),
+				get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))channels])),
 				//The ONLY thing we need /helix/users for is broadcaster_type, which - for
 				//reasons unknown to me - is always blank in the main stream info.
-				twitch_api_request("https://api.twitch.tv/helix/users?first=100" + sprintf("%{&id=%d%}", channels)),
+				get_helix_paginated("https://api.twitch.tv/helix/users", (["id": (array(string))channels])),
 			);
 		})->then(lambda(array results) {
-			[mapping info, mapping userinfo] = results;
+			[array streams, array users] = results;
 			if (!G->G->tagnames) G->G->tagnames = ([]);
 			multiset all_tags = (<>);
-			foreach (info->data, mapping strm)
+			foreach (streams, mapping strm)
 			{
 				channel_tags[(int)strm->user_id] = strm->tag_ids;
 				if ((int)strm->user_id == userid)
@@ -195,7 +195,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				foreach (strm->tag_ids || ({ }), string tag)
 					if (!G->G->tagnames[tag]) all_tags[tag] = 1;
 			}
-			foreach (userinfo->data, mapping user) broadcaster_type[(int)user->id] = user->broadcaster_type;
+			foreach (users, mapping user) broadcaster_type[(int)user->id] = user->broadcaster_type;
 			if (!sizeof(all_tags)) return Concurrent.resolve((["data": ({ })]));
 			//TODO again: Paginate if >100
 			write("Fetching %d tags...\n", sizeof(all_tags));
