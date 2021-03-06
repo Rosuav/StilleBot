@@ -16,7 +16,7 @@ int until(string ts, int now)
 mapping cached = 0; int cache_time = 0;
 string token;
 
-Concurrent.Future parse_hype_status(mapping data)
+continue mapping|Concurrent.Future parse_hype_status(mapping data)
 {
 	int now = time();
 	int cooldown = until(data->cooldown_end_time, now);
@@ -36,31 +36,29 @@ Concurrent.Future parse_hype_status(mapping data)
 		"cooldown": cooldown, "expires": expires,
 		"level": (int)data->level, "goal": (int)data->goal, "total": (int)data->total,
 	]);
-	return get_user_info(data->last_contribution->?user)->then(lambda(mapping lastcontrib) {
-		//Show last contribution (with user name)
-		state->lastcontrib = data->last_contribution || ([]);
-		if (lastcontrib) state->lastcontrib->display_name = lastcontrib->display_name;
-		array users = data->top_contributions->?user || ({ });
-		return Concurrent.all(get_user_info(users[*]));
-	})->then(lambda(array conductors) {
-		//Show hype conductor stats (with user name)
-		state->conductors = data->top_contributions || ({ });
-		mapping cond = mkmapping(conductors->id, conductors);
-		foreach (state->conductors, mapping c)
-		{
-			if (cond[c->user]) c->display_name = cond[c->user]->display_name;
-		}
-		return state;
-	});
+	mapping lastcontrib = yield(get_user_info(data->last_contribution->?user));
+	//Show last contribution (with user name)
+	state->lastcontrib = data->last_contribution || ([]);
+	if (lastcontrib) state->lastcontrib->display_name = lastcontrib->display_name;
+	array users = data->top_contributions->?user || ({ });
+	array conductors = yield(Concurrent.all(get_user_info(users[*])));
+	//Show hype conductor stats (with user name)
+	state->conductors = data->top_contributions || ({ });
+	mapping cond = mkmapping(conductors->id, conductors);
+	foreach (state->conductors, mapping c)
+	{
+		if (cond[c->user]) c->display_name = cond[c->user]->display_name;
+	}
+	return state;
 }
 
 void hypetrain_progression(string chan, array data)
 {
 	int channel = (int)chan;
-	parse_hype_status(data[0]->event_data)->then(lambda(mapping state) {send_updates_all(channel, state);});
+	handle_async(parse_hype_status(data[0]->event_data)) {send_updates_all(channel, @__ARGS__);};
 }
 
-Concurrent.Future get_state(int channel)
+continue mapping|Concurrent.Future get_state(int channel)
 {
 	if (G->G->webhook_active["hypetrain=" + channel] < 300)
 	{
@@ -80,12 +78,10 @@ Concurrent.Future get_state(int channel)
 		);
 		*/
 	}
-	return twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + (string)channel,
-			(["Authorization": "Bearer " + token]))
-		->then(lambda(mapping info) {
-			mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
-			return parse_hype_status(data);
-		});
+	mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + (string)channel,
+			(["Authorization": "Bearer " + token])));
+	mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
+	return parse_hype_status(data);
 }
 
 void probe_hype_train(int channel)
