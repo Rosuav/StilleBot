@@ -807,7 +807,7 @@ void _handle_async_function(function gen, mixed last, function got_result, funct
 	if (undefinedp(resp)) got_result(last, @extra);
 	else if (objectp(resp) && resp->then) resp->then(lambda(mixed resp) {
 		_handle_async_function(gen, resp, got_result, got_error, @extra);
-	}, got_error, @extra);
+	}, got_error, @extra); //TODO: Catch errors and inject them back into gen()
 	else _handle_async_function(gen, resp, got_result, got_error, @extra);
 }
 
