@@ -798,12 +798,21 @@ void handle_http_error(mixed ex, Protocols.HTTP.Server.Request req)
 	send_http_response((["error": 500, "data": "Internal server error\n", "type": "text/plain; charset=\"UTF-8\""]), req);
 }
 
+//Handle asynchronous results. Will either call the callback immediately
+//(before returning), or will call it when the asynchronous results are
+//made available. Result and error callbacks get called with value and
+//any extra args appended.
+void handle_async(mixed resp, function got_result, function got_error, mixed ... extra) {
+	if (objectp(resp) && resp->then)
+		resp->then(got_result, got_error, @extra);
+	else send_http_response(resp, @extra);
+}
+
 void http_handler(Protocols.HTTP.Server.Request req)
 {
 	req->misc->session = G->G->http_sessions[req->cookies->session];
 	function handler = !has_prefix(req->not_query, "/chan_") && G->G->http_endpoints[req->not_query[1..]];
 	array args = ({ });
-	mapping|Concurrent.Future resp;
 	if (!handler)
 	{
 		//Try all the sscanf-based handlers
@@ -827,13 +836,11 @@ void http_handler(Protocols.HTTP.Server.Request req)
 			if (stringp(value)) req->variables[key] = utf8_to_string(value);
 		};
 	}
-	if (handler)
-	{
-		if (mixed ex = catch {resp = handler(req, @args);}) {handle_http_error(ex, req); return;}
-	}
-	if (resp && resp->on_success && resp->on_failure) //Duck-typed Future/Promise recognition
-		resp->on_success(send_http_response, req)->on_failure(handle_http_error, req);
-	else send_http_response(resp, req);
+	if (!handler) {send_http_response(0, req); return;}
+	if (mixed ex = catch {
+		mapping|Concurrent.Future|function resp = handler(req, @args);
+		handle_async(resp, send_http_response, handle_http_error, req);
+	}) handle_http_error(ex, req);
 }
 
 void send_http_response(mapping resp, Protocols.HTTP.Server.Request req) //The odd argument order simplifies Future handling.
