@@ -155,5 +155,5 @@ int disconnected(string channel) {
 protected void create(string name) {
 	::create(name);
 	if (!G->G->vlc_status) G->G->vlc_status = ([]);
-	register_hook("channel-online", disconnected);
+	register_hook("channel-online", disconnected); //CJA 2021-03-07: Was this supposed to be OFFline?
 }
