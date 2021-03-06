@@ -145,14 +145,18 @@ void _handle_async_function(function gen, mixed last, mixed err, function got_re
 	else _handle_async_function(gen, resp, 0, got_result, got_error, @extra);
 }
 
+void _unhandled_error(mixed err) {
+	werror("Unhandled asynchronous exception\n%s\n", describe_backtrace(err));
+}
+
 //Handle asynchronous results. Will either call the callback immediately
 //(before returning), or will call it when the asynchronous results are
 //made available. Result and error callbacks get called with value and
 //any extra args appended.
 void handle_async(mixed resp, function got_result, function got_error, mixed ... extra) {
-	if (functionp(resp)) _handle_async_function(resp, 0, 0, got_result, got_error, @extra);
+	if (functionp(resp)) _handle_async_function(resp, 0, 0, got_result, got_error || _unhandled_error, @extra);
 	else if (objectp(resp) && resp->then)
-		resp->then(got_result, got_error, @extra);
+		resp->then(got_result, got_error || _unhandled_error, @extra);
 	else got_result(resp, @extra);
 }
 
