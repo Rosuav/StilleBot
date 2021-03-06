@@ -20,9 +20,8 @@ constant limited_time_emotes = ([
 	"HyperCrown": "Hyper", "KPOPcheer": "KPOP",
 ]);
 
-Concurrent.Future fetch_emotes()
+continue Concurrent.Future|mapping fetch_emotes()
 {
-	object ret = Concurrent.resolve(0);
 	if (!G->G->bot_emote_list || G->G->bot_emote_list->fetchtime < time() - 600)
 	{
 		mapping cfg = persist_config["ircsettings"];
@@ -30,16 +29,13 @@ Concurrent.Future fetch_emotes()
 		if (!cfg->nick || cfg->nick == "") return Concurrent.reject("Oops, shouldn't happen");
 		sscanf(cfg["pass"] || "", "oauth:%s", string pass);
 		write("Fetching emote list\n");
-		ret = ret->then(lambda() {return twitch_api_request("https://api.twitch.tv/kraken/users/{{USER}}/emotes",
-			0, (["username": cfg->nick, "authtype": "OAuth"]));
-		})->then(lambda(mapping info) {
-			info->fetchtime = time();
-			G->G->bot_emote_list = info;
-		});
+		mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/users/{{USER}}/emotes",
+			0, (["username": cfg->nick, "authtype": "OAuth"])));
+		info->fetchtime = time();
+		G->G->bot_emote_list = info;
 	}
 	//TODO: Always update if the sets have changed
-	if (!G->G->emote_set_mapping) ret = ret->then(lambda()
-	{
+	if (!G->G->emote_set_mapping) {
 		//NOTE: This fetches only the sets that the bot is able to use. This is
 		//a LOT faster than fetching them all (which could take up to 90 secs),
 		//but if more sets are added - eg a gift sub is dropped on the bot - then
@@ -48,24 +44,22 @@ Concurrent.Future fetch_emotes()
 		//happens, go back to 9da66622 and consider reversion.
 		write("Fetching emote set info...\n");
 		string sets = indices(G->G->bot_emote_list->emoticon_sets) * ",";
-		return Protocols.HTTP.Promise.get_url("https://api.twitchemotes.com/api/v4/sets?id=" + sets)
-			->then(lambda(object result) {
-				write("Emote set info fetched.\n");
-				mapping info = (["fetchtime": time(), "sets": sets]);
-				foreach (Standards.JSON.decode(result->get()), mapping setinfo)
-					info[setinfo->set_id] = setinfo;
-				G->G->emote_set_mapping = info;
-				mapping emotes = ([]);
-				//What if there's a collision? Should we prioritize?
-				foreach (G->G->bot_emote_list->emoticon_sets;; array set) foreach (set, mapping em)
-					emotes[em->code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0)", em->code, em->id);
-				G->G->emote_code_to_markdown = emotes;
-			});
-	});
-	return ret;
+		object result = yield(Protocols.HTTP.Promise.get_url("https://api.twitchemotes.com/api/v4/sets?id=" + sets));
+		write("Emote set info fetched.\n");
+		mapping info = (["fetchtime": time(), "sets": sets]);
+		foreach (Standards.JSON.decode(result->get()), mapping setinfo)
+			info[setinfo->set_id] = setinfo;
+		G->G->emote_set_mapping = info;
+		mapping emotes = ([]);
+		//What if there's a collision? Should we prioritize?
+		foreach (G->G->bot_emote_list->emoticon_sets;; array set) foreach (set, mapping em)
+			emotes[em->code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0)", em->code, em->id);
+		G->G->emote_code_to_markdown = emotes;
+	}
+	return G->G->bot_emote_list;
 }
 
-mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->variables->flushcache)
 	{
@@ -75,64 +69,63 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (G->G->emote_set_mapping->fetchtime < time() - 1800) G->G->emote_set_mapping = 0;
 		return redirect("/emotes");
 	}
-	return fetch_emotes()->then(lambda() {
-		mapping highlight = persist_config["permanently_available_emotes"];
-		if (!highlight) persist_config["permanently_available_emotes"] = highlight = ([]);
-		mapping(string:string) emotesets = ([]);
-		array(mapping(string:array(mapping(string:string)))) emote_raw = ({([]), ([])});
-		mapping session = G->G->http_sessions[req->cookies->session];
-		int is_bot = session->?user->?login == persist_config["ircsettings"]->nick;
-		if (!G->G->bot_emote_list->emoticon_sets) return render_template("emotes.md", ([
-			"emotes": "Unable to fetch emotes from Twitch - check again later",
-			"save": "",
-		]));
-		foreach (G->G->bot_emote_list->emoticon_sets; string setid; array emotes)
+	mapping bot_emote_list = yield(fetch_emotes());
+	mapping highlight = persist_config["permanently_available_emotes"];
+	if (!highlight) persist_config["permanently_available_emotes"] = highlight = ([]);
+	mapping(string:string) emotesets = ([]);
+	array(mapping(string:array(mapping(string:string)))) emote_raw = ({([]), ([])});
+	mapping session = G->G->http_sessions[req->cookies->session];
+	int is_bot = session->?user->?login == persist_config["ircsettings"]->nick;
+	if (!bot_emote_list->emoticon_sets) return render_template("emotes.md", ([
+		"emotes": "Unable to fetch emotes from Twitch - check again later",
+		"save": "",
+	]));
+	foreach (bot_emote_list->emoticon_sets; string setid; array emotes)
+	{
+		mapping setinfo = G->G->emote_set_mapping[setid] //Ideally get info from the API
+			|| (["channel_name": "Special unlocks - " + (
+				//sprintf("Other (%s)", setid) || //For debugging, uncomment to see the set IDs
+				"other" //Otherwise lump them together as "other".
+			)]);
+		string chan = setinfo->channel_name;
+		array|string set = ({ });
+		foreach (emotes, mapping em)
 		{
-			mapping setinfo = G->G->emote_set_mapping[setid] //Ideally get info from the API
-				|| (["channel_name": "Special unlocks - " + (
-					//sprintf("Other (%s)", setid) || //For debugging, uncomment to see the set IDs
-					"other" //Otherwise lump them together as "other".
-				)]);
-			string chan = setinfo->channel_name;
-			array|string set = ({ });
-			foreach (emotes, mapping em)
-			{
-				if (string set = limited_time_emotes[em->code])
-					//Patch in set names if we recognize an iconic emote from the set
-					chan = "Special unlocks - " + set;
-				set += ({sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0) ", em->code, em->id)});
-			}
-			set = sort(set) * "";
-			if (setid == "0") chan = "Global emotes";
-			emote_raw[!highlight[chan]][chan] += emotes;
-			if (is_bot)
-			{
-				if (req->request_type == "POST")
-				{
-					if (!req->variables[chan]) m_delete(highlight, chan);
-					else if (req->variables[chan] && !highlight[chan]) highlight[chan] = time();
-					persist_config->save();
-					//Fall through using the *new* highlight status
-				}
-				emotesets[chan + "-Y"] = sprintf("<br><label><input type=checkbox %s name=\"%s\">Permanent</label>",
-					"checked" * !!highlight[chan], chan);
-			}
-			if (highlight[chan]) emotesets[chan + "-Z"] = "\n{: .highlight}";
-			if (setinfo->tier > 1) emotesets[chan + "-T" + setinfo->tier] = sprintf(" T%d: %s", setinfo->tier, set);
-			else if (emotesets[chan]) emotesets[chan] += sprintf(" %s", set);
-			else emotesets[chan] = sprintf("\n\n**%s**: %s", G->G->channel_info[chan]->?display_name || chan, set);
+			if (string set = limited_time_emotes[em->code])
+				//Patch in set names if we recognize an iconic emote from the set
+				chan = "Special unlocks - " + set;
+			set += ({sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0) ", em->code, em->id)});
 		}
-		if (req->variables->format == "json") return jsonify(mkmapping(({"permanent", "ephemeral"}), emote_raw), 7);
-		array emoteinfo = values(emotesets); sort(indices(emotesets), emoteinfo);
-		mapping replacements = (["emotes": emoteinfo * "", "save": ""]);
+		set = sort(set) * "";
+		if (setid == "0") chan = "Global emotes";
+		emote_raw[!highlight[chan]][chan] += emotes;
 		if (is_bot)
 		{
-			replacements->autoform = "<form method=post>";
-			replacements->autoslashform = "</form>";
-			replacements->save = "<input type=submit value=\"Update permanents\">";
+			if (req->request_type == "POST")
+			{
+				if (!req->variables[chan]) m_delete(highlight, chan);
+				else if (req->variables[chan] && !highlight[chan]) highlight[chan] = time();
+				persist_config->save();
+				//Fall through using the *new* highlight status
+			}
+			emotesets[chan + "-Y"] = sprintf("<br><label><input type=checkbox %s name=\"%s\">Permanent</label>",
+				"checked" * !!highlight[chan], chan);
 		}
-		return render_template("emotes.md", replacements);
-	});
+		if (highlight[chan]) emotesets[chan + "-Z"] = "\n{: .highlight}";
+		if (setinfo->tier > 1) emotesets[chan + "-T" + setinfo->tier] = sprintf(" T%d: %s", setinfo->tier, set);
+		else if (emotesets[chan]) emotesets[chan] += sprintf(" %s", set);
+		else emotesets[chan] = sprintf("\n\n**%s**: %s", G->G->channel_info[chan]->?display_name || chan, set);
+	}
+	if (req->variables->format == "json") return jsonify(mkmapping(({"permanent", "ephemeral"}), emote_raw), 7);
+	array emoteinfo = values(emotesets); sort(indices(emotesets), emoteinfo);
+	mapping replacements = (["emotes": emoteinfo * "", "save": ""]);
+	if (is_bot)
+	{
+		replacements->autoform = "<form method=post>";
+		replacements->autoslashform = "</form>";
+		replacements->save = "<input type=submit value=\"Update permanents\">";
+	}
+	return render_template("emotes.md", replacements);
 }
 
 protected void create(string name)
