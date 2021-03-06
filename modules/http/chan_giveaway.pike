@@ -242,29 +242,23 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	return render_template("chan_giveaway.md", (["vars": (["ws_type": "chan_giveaway", "ws_group": chan, "config": config])]));
 }
 
-mapping|Concurrent.Future get_state(string|int chan)
+continue mapping|Concurrent.Future get_state(string|int chan)
 {
 	mapping cfg = persist_config->path("channels", chan);
-	array rewards;
-	int broadcaster_id;
-	return get_user_id(chan)->then(lambda(int id) {
-		make_hooks(chan, broadcaster_id = id);
-		return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + broadcaster_id,
-			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]));
-	})->then(lambda(mapping info) {
-		rewards = info->data;
-		return Concurrent.all(list_redemptions(broadcaster_id, chan, rewards->id[*]));
-	})->then(lambda(array(array) redemptions) {
-		//Every time a new websocket is established, fully recalculate. Guarantee fresh data.
-		G->G->giveaway_tickets[chan] = ([]);
-		mapping status = persist_status->path("giveaways")[chan] || ([]);
-		foreach (redemptions * ({ }), mapping redem) update_ticket_count(cfg, redem);
-		return ([
-			"rewards": rewards, "tickets": tickets_in_order(chan),
-			"is_open": status->is_open, "end_time": status->end_time,
-			"last_winner": status->last_winner,
-		]);
-	});
+	int broadcaster_id = yield(get_user_id(chan));
+	make_hooks(chan, broadcaster_id);
+	array rewards = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + broadcaster_id,
+		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])))->data;
+	array(array) redemptions = yield(Concurrent.all(list_redemptions(broadcaster_id, chan, rewards->id[*])));
+	//Every time a new websocket is established, fully recalculate. Guarantee fresh data.
+	G->G->giveaway_tickets[chan] = ([]);
+	mapping status = persist_status->path("giveaways")[chan] || ([]);
+	foreach (redemptions * ({ }), mapping redem) update_ticket_count(cfg, redem);
+	return ([
+		"rewards": rewards, "tickets": tickets_in_order(chan),
+		"is_open": status->is_open, "end_time": status->end_time,
+		"last_winner": status->last_winner,
+	]);
 }
 
 void open_close(string chan, int broadcaster_id, string token, int want_open) {
