@@ -308,15 +308,13 @@ class websocket_handler
 	}
 
 	void _send_updates(array(object) socks, string|int group, mapping|void data) {
-		mapping|Concurrent.Future resp = data || get_state(group);
+		handle_async(data || get_state(group), _low_send_updates, 0, socks);
+	}
+	void _low_send_updates(mapping resp, array(object) socks) {
 		if (!resp) return;
-		if (resp && resp->on_success && resp->on_failure)
-			resp->then(lambda(mapping d) {_send_updates(socks, group, d);});
-		else {
-			resp->cmd = "update";
-			foreach (socks, object sock)
-				if (sock && sock->state == 1) sock->send_text(Standards.JSON.encode(resp));
-		}
+		resp->cmd = "update";
+		foreach (socks, object sock)
+			if (sock && sock->state == 1) sock->send_text(Standards.JSON.encode(resp));
 	}
 
 	//Send an update to a specific connection. If not provided, data will
