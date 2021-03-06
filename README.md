@@ -6,7 +6,7 @@ Installation information and tips for Windows and for Mac OS X can be found in
 README.WIN and README.OSX respectively. Installation on Linux depends on your
 distribution; search your package manager for "pike" or see the above web site.
 Compiling Pike from source is best, if you're comfortable with that; Pike 8.1
-has a number of improvements over Pike 7.8.
+is the only version tested on, although 8.0 may be sufficient.
 
 For a list of available in-chat commands, check [these pages](https://rosuav.github.io/StilleBot/commands/).
 
