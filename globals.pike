@@ -138,12 +138,12 @@ void _unhandled_error(mixed err) {
 //(before returning), or will call it when the asynchronous results are
 //made available. Result and error callbacks get called with value and
 //any extra args appended.
-class handle_async(mixed gen, function got_result, function got_error) {
+class handle_async(mixed gen, function got_result, function|void got_error) {
 	mixed extra;
 	protected void create(mixed ... args) {
 		extra = args;
 		if (!got_error) got_error = _unhandled_error;
-		if (functionp(gen)) pump(0, 0);
+		if (functionp(gen)) pump(0, 0); //TODO: Recognize generator state functions only??
 		else if (objectp(gen) && gen->then)
 			gen->then(got_result, got_error, @extra);
 		else got_result(gen, @extra);
@@ -155,6 +155,7 @@ class handle_async(mixed gen, function got_result, function got_error) {
 		mixed resp;
 		if (mixed ex = catch {resp = gen(last){if (err) throw(err);};}) {got_error(ex, @extra); return;}
 		if (undefinedp(resp)) got_result(last, @extra);
+		else if (functionp(resp)) handle_async(resp, pump, propagate_error); //As above
 		else if (objectp(resp) && resp->then) resp->then(pump, propagate_error);
 		else pump(resp, 0);
 	}
