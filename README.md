@@ -5,8 +5,8 @@ I needed to figure out a name. (On such thin threads...)
 Installation information and tips for Windows and for Mac OS X can be found in
 README.WIN and README.OSX respectively. Installation on Linux depends on your
 distribution; search your package manager for "pike" or see the above web site.
-Compiling Pike from source is best, if you're comfortable with that; Pike 8.1
-is the only version tested on, although 8.0 may be sufficient.
+Compiling Pike from source may be necessary; as of 2021-03-07, Pike 8.1 is
+required in order to run StilleBot.
 
 For a list of available in-chat commands, check [these pages](https://rosuav.github.io/StilleBot/commands/).
 

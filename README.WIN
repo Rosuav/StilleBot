@@ -1,16 +1,9 @@
-StilleBot should be fully functional on Microsoft Windows. It is most easily
+StilleBot is unsupported on Microsoft Windows but may work. It is most easily
 installed using the GitHub zip archive distribution, and can be kept up-to-date
 the same way.
 
-On recent-enough Windowses, this installer should be able to do everything:
-https://rosuav.github.io/StilleBot/get_stillebot.bat
-
-If it doesn't, for any reason, you will need to install manually.
-
-Start with this installer for the Pike interpreter:
-http://pike.lysator.liu.se/pub/pike/latest-stable/Pike-v8.0.358-win32-oldlibs.msi
-
-Then download a ZIP file of the latest StilleBot:
+You will need to obtain a build of Pike 8.1 or newer. This may require building
+from source. Then download a ZIP file of the latest StilleBot:
 https://github.com/Rosuav/StilleBot/archive/master.zip
 
 Unzip this file into a convenient location, such as C:\StilleBot, and double-click
