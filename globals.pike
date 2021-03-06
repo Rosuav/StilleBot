@@ -130,21 +130,6 @@ command_handler find_command(object channel, string cmd, int is_mod)
 //Shorthand for a common targeting style
 echoable_message targeted(string text) {return (["message": text, "prefix": "@$$: "]);}
 
-//Pump a generator function. It should yield Futures until it returns a
-//final result. If it yields a non-Future, it will be passed back
-//immediately, but don't do that.
-void _handle_async_function(function gen, mixed last, mixed err, function got_result, function got_error, mixed ... extra) {
-	mixed resp;
-	if (mixed ex = catch {resp = gen(last){if (err) throw(err);};}) {got_error(ex, @extra); return;}
-	if (undefinedp(resp)) got_result(last, @extra);
-	else if (objectp(resp) && resp->then) resp->then(lambda(mixed resp) {
-		_handle_async_function(gen, resp, 0, got_result, got_error, @extra);
-	}, lambda(mixed boom) {
-		_handle_async_function(gen, 0, boom, got_result, got_error, @extra);
-	});
-	else _handle_async_function(gen, resp, 0, got_result, got_error, @extra);
-}
-
 void _unhandled_error(mixed err) {
 	werror("Unhandled asynchronous exception\n%s\n", describe_backtrace(err));
 }
@@ -153,11 +138,27 @@ void _unhandled_error(mixed err) {
 //(before returning), or will call it when the asynchronous results are
 //made available. Result and error callbacks get called with value and
 //any extra args appended.
-void handle_async(mixed resp, function got_result, function got_error, mixed ... extra) {
-	if (functionp(resp)) _handle_async_function(resp, 0, 0, got_result, got_error || _unhandled_error, @extra);
-	else if (objectp(resp) && resp->then)
-		resp->then(got_result, got_error || _unhandled_error, @extra);
-	else got_result(resp, @extra);
+class handle_async(mixed gen, function got_result, function got_error) {
+	mixed extra;
+	protected void create(mixed ... args) {
+		extra = args;
+		if (!got_error) got_error = _unhandled_error;
+		if (functionp(gen)) pump(0, 0);
+		else if (objectp(gen) && gen->then)
+			gen->then(got_result, got_error, @extra);
+		else got_result(gen, @extra);
+	}
+	//Pump a generator function. It should yield Futures until it returns a
+	//final result. If it yields a non-Future, it will be passed back
+	//immediately, but don't do that.
+	void pump(mixed last, mixed err) {
+		mixed resp;
+		if (mixed ex = catch {resp = gen(last){if (err) throw(err);};}) {got_error(ex, @extra); return;}
+		if (undefinedp(resp)) got_result(last, @extra);
+		else if (objectp(resp) && resp->then) resp->then(pump, propagate_error);
+		else pump(resp, 0);
+	}
+	void propagate_error(mixed err) {pump(0, err);}
 }
 
 string describe_time_short(int tm)
