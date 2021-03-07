@@ -35,7 +35,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			//Trim URLs down to just the channel name
 			foreach (channels; int i; string c) sscanf(c, "http%*[s]://twitch.tv/%s%*[?/]", channels[i]);
 			return get_users_info(channels, "login")->then(lambda(array users) {
-				notes["0"] = (array(string))users->id * "\n";
+				notes->highlight = (array(string))users->id * "\n";
 				return jsonify(([
 					"highlights": users->login * "\n",
 					"highlightids": users->id,
@@ -71,10 +71,14 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	mapping your_stream;
 	int userid;
 	mapping broadcaster_type = ([]);
-	//NOTE: Notes come from your *login* userid, unaffected by any for= annotation.
-	mapping notes = persist_status->path("raidnotes")[(string)req->misc->session->user->id];
+	//NOTE: Notes come from your *login* userid, unaffected by any for=
+	//annotation. For notes attached to a channel, that channel's ID is
+	//used; other forms of notes are attached to specific keywords. In a
+	//previous iteration of this, notes ID 0 was used for "highlight".
+	mapping notes = persist_status->path("raidnotes")[(string)req->misc->session->user->id] || ([]);
 	array highlightids = ({ });
-	if (notes && notes["0"]) highlightids = (array(int))(notes["0"] / "\n");
+	if (notes["0"]) notes->highlight = m_delete(notes, "0"); //Migrate
+	if (notes->highlight) highlightids = (array(int))(notes->highlight / "\n");
 	string highlights;
 	if (req->variables->allfollows)
 	{
@@ -106,7 +110,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			})->then(lambda(array users) {
 				highlights = users->login * "\n";
 				foreach (follows_helix; int idx; mapping strm) {
-					if (string n = notes && notes[strm->id]) strm->notes = n;
+					if (string n = notes[strm->id]) strm->notes = n;
 					if (has_value(highlightids, (int)strm->id)) strm->highlight = 1;
 					strm->order = idx; //Order they were followed. Effectively the same as array order since we don't get actual data.
 					//Make some info available in the same way that it is for the main follow list.
@@ -211,7 +215,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				if (otheruid == userid) {your_stream = strm; follows_helix[i] = 0; continue;}
 				if (mapping k = extra_kraken_info[otheruid]) follows_helix[i] = strm = k | strm;
 				if (string t = broadcaster_type[otheruid]) strm->broadcaster_type = t;
-				if (string n = notes && notes[(string)otheruid]) strm->notes = n;
+				if (string n = notes[(string)otheruid]) strm->notes = n;
 				if (has_value(highlightids, otheruid)) strm->highlight = 1;
 				int swap = otheruid < userid;
 				array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[(string)(swap ? userid : otheruid)];
