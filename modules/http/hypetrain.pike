@@ -58,8 +58,9 @@ void hypetrain_progression(string chan, array data)
 	handle_async(parse_hype_status(data[0]->event_data)) {send_updates_all(channel, @__ARGS__);};
 }
 
-continue mapping|Concurrent.Future get_state(int channel)
+continue mapping|Concurrent.Future get_state(int|string channel)
 {
+	if (stringp(channel)) channel = yield(get_user_id(channel)); //Simplify usage for channel mode
 	if (G->G->webhook_active["hypetrain=" + channel] < 300)
 	{
 		write("Creating webhook for hype train %O\n", channel);
@@ -135,7 +136,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 
 echoable_message process(object channel, object person, string param)
 {
-	get_user_id(channel->name[1..])->then(lambda(int id) {return get_state(id);})->then(lambda(mapping state) {
+	handle_async(get_state(channel->name[1..])) {
+		[mapping state] = __ARGS__;
 		if (state->expires) {
 			//Active hype train!
 			if (state->total >= state->goal)
@@ -149,7 +151,7 @@ echoable_message process(object channel, object person, string param)
 				"/me MrDestructoid Hype Train status: devicatCozy The hype train is on cooldown for %02d:%02d. kittenzSleep",
 				tm / 60, tm % 60));
 		} else send_message(channel->name, "/me MrDestructoid Hype Train status: NomNom Cookies are done! NomNom");
-	});
+	};
 }
 
 protected void create(string name)
