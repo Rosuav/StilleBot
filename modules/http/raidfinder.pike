@@ -158,23 +158,28 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			//Category search - show all streams in the categories you follow
 			if (req->variables->categories) return twitch_api_request("https://api.twitch.tv/kraken/users/" + req->misc->session->user->id + "/follows/games")
 				->then(lambda(mapping info) {
-					return get_helix_paginated("https://api.twitch.tv/helix/streams", (["game_id": (array(string))info->follows->game->_id]));
-				})->then(lambda(array streams) {
-					//HACK: Map channel list to Kraken.
-					//TODO: Make everything compatible with both Kraken and Helix
 					return Concurrent.all(
-						twitch_api_request("https://api.twitch.tv/kraken/streams/?channel=" + streams->user_id * ",")
-							->then(lambda(mapping info) {return info->streams;}),
-						Concurrent.resolve(streams),
-						get_helix_paginated("https://api.twitch.tv/helix/users", (["id": streams->user_id])),
+						get_helix_paginated("https://api.twitch.tv/helix/streams", (["game_id": (array(string))info->follows->game->_id])),
+						twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + userid),
 					);
-				});
+				})->then() {
+					[array streams, mapping self] = __ARGS__[0];
+					array(string) ids = streams->user_id + ({(string)userid});
+					//Map channel list to Kraken so we get both sets of info
+					return Concurrent.all(
+						twitch_api_request("https://api.twitch.tv/kraken/streams/?channel=" + ids * ",")
+							->then(lambda(mapping info) {return info->streams;}),
+						Concurrent.resolve(streams + ({self->data[0]})),
+						get_helix_paginated("https://api.twitch.tv/helix/users", (["id": ids])),
+					);
+				};
 			else return twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
 					(["Authorization": "OAuth " + req->misc->session->token])
 				)->then(lambda(mapping info) {
 					array(int) channels = info->streams->channel->_id;
 					channels += ({userid});
 					write("Fetching %d streams...\n", sizeof(channels));
+					//Map channel list to Helix so we get both sets of info
 					return Concurrent.all(
 						Concurrent.resolve(info->streams),
 						get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))channels])),
@@ -185,7 +190,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				});
 		})->then(lambda(array results) {
 			[follows_kraken, follows_helix, array users] = results;
-			//write("Follows: %O\nStreams: %O\nUsers: %O\n", follows[..3], streams[..3], users[..3]);
+			//write("Kraken: %O\nHelix: %O\nUsers: %O\n", follows_kraken[..3], follows_helix[..3], users[..3]);
 			if (!G->G->tagnames) G->G->tagnames = ([]);
 			multiset all_tags = (<>);
 			foreach (follows_helix, mapping strm)
@@ -276,8 +281,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 						recommend += 25 * sizeof((multiset)your_stream->tag_ids & (multiset)strm->tag_ids);
 				}
 				//Up to 100 points for having just started, scaling down to zero at four hours of uptime
-				int uptime = time() - Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", strm->started_at)->unix_time();
-				if (uptime < 4 * 3600) recommend += uptime / 4 / 36;
+				if (strm->started_at) {
+					int uptime = time() - Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", strm->started_at)->unix_time();
+					if (uptime < 4 * 3600) recommend += uptime / 4 / 36;
+				}
 				strm->recommend = recommend;
 			}
 			//List all recent raids. Actually list ALL raids on the current system.
