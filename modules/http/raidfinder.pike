@@ -18,6 +18,7 @@ Possible enhancement: Tag filtering or recommendations.
 
 
 TODO: Put a real space between tags so highlighting works correctly.
+-- The browser seems to be ditching it for me. Not sure why, or how to stop it.
 */
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
