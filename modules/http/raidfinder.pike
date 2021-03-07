@@ -17,8 +17,6 @@ Possible enhancement: Tag filtering or recommendations.
   - https://api.twitch.tv/helix/tags/streams - all tags - about 500ish, of which about 250 are automatic
 */
 
-string cached_follows;
-
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "user_read")) return resp;
@@ -49,7 +47,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		persist_status->save();
 		return (["error": 204]);
 	}
-	if (req->variables->use_cache && cached_follows) return render_template("raidfinder.md", (["follows": cached_follows]));
 	Concurrent.Future uid = Concurrent.resolve((int)req->misc->session->user->id);
 	if (string chan = req->variables["for"])
 	{
