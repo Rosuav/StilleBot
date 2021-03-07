@@ -15,6 +15,9 @@ Possible enhancement: Tag filtering or recommendations.
   - Tag recommendations can be negative, penalizing those streams. It's probably best to keep
     most tag usage positive though.
   - https://api.twitch.tv/helix/tags/streams - all tags - about 500ish, of which about 250 are automatic
+
+
+TODO: Put a real space between tags so highlighting works correctly.
 */
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
