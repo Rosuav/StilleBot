@@ -138,6 +138,12 @@ void _unhandled_error(mixed err) {
 //(before returning), or will call it when the asynchronous results are
 //made available. Result and error callbacks get called with value and
 //any extra args appended.
+//TODO: If/when a Pike function is available to unambiguously identify
+//whether a generator has finished or not, permit more types of yields:
+//1) Concurrent.Future, as now
+//2) Generator state function (currently allows any function)
+//3) Array of the above. Use Concurrent.all implicitly, and return an array.
+//4) Anything else?
 class handle_async(mixed gen, function got_result, function|void got_error) {
 	mixed extra;
 	protected void create(mixed ... args) {
