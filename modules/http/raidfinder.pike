@@ -266,7 +266,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					else if (creatives[your_stream->category] && creatives[strm->game]) recommend += 70;
 					//Common tags: 25 points apiece
 					//Note that this will include language tags
-					recommend += 25 * sizeof((multiset)your_stream->tag_ids & (multiset)strm->tag_ids);
+					//Been seeing some 500 crashes that have been hard to track down. Is it b/c
+					//one of the streams has no tags?? Maybe just gone live?? In any case, if
+					//you don't have any tags, there won't be any common tags, so we're fine.
+					if (your_stream->tag_ids && strm->tag_ids)
+						recommend += 25 * sizeof((multiset)your_stream->tag_ids & (multiset)strm->tag_ids);
 				}
 				//Up to 100 points for having just started, scaling down to zero at four hours of uptime
 				int uptime = time() - Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", strm->started_at)->unix_time();
