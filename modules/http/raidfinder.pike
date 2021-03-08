@@ -31,6 +31,14 @@ void update_tags(array alltags) {
 	]);
 }
 
+constant MAX_PREF = 3, MIN_PREF = -3;
+constant PREFERENCE_MAGIC_SCORES = ({
+	0, //Must have 0 for score 0
+	50, 250, 1000, //Positive ratings
+	0, 0, 0, 0, //Shims, just in case (shouldn't be necessary)
+	-1000, -250, -50, //Negative ratings
+});
+
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "user_read")) return resp;
@@ -50,11 +58,26 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			foreach (channels; int i; string c) sscanf(c, "http%*[s]://twitch.tv/%s%*[?/]", channels[i]);
 			return get_users_info(channels, "login")->then(lambda(array users) {
 				notes->highlight = (array(string))users->id * "\n";
+				persist_status->save();
 				return jsonify(([
 					"highlights": users->login * "\n",
 					"highlightids": users->id,
 				]), 7);
 			}, lambda(mixed err) {werror("%O\n", err); return (["error": 500]);}); //TODO: If it's "user not found", report it nicely
+		}
+		if (body->id == -1) { //Should the front end use the same keywords??
+			//Update tag preferences. Note that this does NOT fully replace
+			//existing tag prefs; it changes only those which are listed.
+			//Note also that tag prefs, unlike other raid notes, are stored
+			//as a mapping.
+			if (!notes->tags) notes->tags = ([]);
+			foreach (newnotes / "\n", string line) 
+				if (sscanf(line, "%s %d", string id, int pref) == 2) {
+					if (!pref || pref > MAX_PREF || pref < MIN_PREF) m_delete(notes->tags, id);
+					else notes->tags[id] = pref;
+				}
+			persist_status->save();
+			return jsonify((["ok": 1, "prefs": notes->tags]));
 		}
 		if (newnotes == "") m_delete(notes, (string)body->id);
 		else notes[(string)body->id] = newnotes;
@@ -233,23 +256,29 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			return get_helix_paginated("https://api.twitch.tv/helix/tags/streams", (["tag_id": (array)need_tags]));
 		})->then(lambda(array alltags) {
 			update_tags(alltags);
+			mapping tagprefs = notes->tags || ([]);
 			foreach (follows_helix; int i; mapping strm)
 			{
+				int recommend = 0;
 				array tags = ({ });
-				foreach (strm->tag_ids || ({ }), string tagid)
+				foreach (strm->tag_ids || ({ }), string tagid) {
 					if (mapping tag = G->G->all_stream_tags[tagid]) tags += ({tag});
+					if (int pref = tagprefs[tagid]) recommend += PREFERENCE_MAGIC_SCORES[pref];
+				}
 				strm->tags = tags;
 				strm->category = G->G->category_names[strm->game_id];
 				strm->raids = raids[strm->user_login] || ({ });
 				int otheruid = (int)strm->user_id;
 				if (otheruid == userid) {your_stream = strm; follows_helix[i] = 0; continue;}
+				//TODO: Configurable hard tag requirements
+				//if (recommend <= -1000 && filter out strong dislikes) {follows_helix[i] = 0; continue;}
+				//if (recommend < 1000 && require at least one mandatory tag) {follows_helix[i] = 0; continue;}
 				if (mapping k = extra_kraken_info[otheruid]) follows_helix[i] = strm = k | strm;
 				if (string t = broadcaster_type[otheruid]) strm->broadcaster_type = t;
 				if (string n = notes[(string)otheruid]) strm->notes = n;
 				if (has_value(highlightids, otheruid)) strm->highlight = 1;
 				int swap = otheruid < userid;
 				array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[(string)(swap ? userid : otheruid)];
-				int recommend = 0;
 				int recent = time() - 86400 * 30;
 				int ancient = time() - 86400 * 365;
 				foreach (raids || ({ }), mapping raid)
