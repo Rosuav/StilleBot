@@ -63,13 +63,13 @@
 .tag.autotag {
 	font-style: italic;
 }
-.tagpref-3 {background-color: #d99;}
-.tagpref-2 {background-color: #ecc;}
-.tagpref-1 {background-color: #fee;}
-.tagpref0 { }
-.tagpref1 {background-color: #dfd;}
-.tagpref2 {background-color: #beb;}
-.tagpref3 {background-color: #9d9;}
+.tagpref-3 {background-color: #d99; border: 1px solid red;}
+.tagpref-2 {background-color: #ecc; border: 1px solid red;}
+.tagpref-1 {background-color: #fee; border: 1px solid red;}
+.tagpref0 {border: 1px solid transparent;}
+.tagpref1 {background-color: #dfd; border: 1px solid green;}
+.tagpref2 {background-color: #beb; border: 1px solid green;}
+.tagpref3 {background-color: #9d9; border: 1px solid green;}
 
 #sort::before {content: "Sort: "; margin: 0.5em 1em 0em -1em;}
 #sort {
