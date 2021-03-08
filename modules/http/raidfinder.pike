@@ -21,6 +21,16 @@ TODO: Put a real space between tags so highlighting works correctly.
 -- The browser seems to be ditching it for me. Not sure why, or how to stop it.
 */
 
+void update_tags(array alltags) {
+	mapping tags = G->G->all_stream_tags;
+	foreach (alltags, mapping tag) tags[tag->tag_id] = ([
+		"id": tag->tag_id,
+		"name": tag->localization_names["en-us"],
+		"desc": tag->localization_descriptions["en-us"],
+		"auto": tag->is_auto,
+	]);
+}
+
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "user_read")) return resp;
@@ -127,6 +137,18 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				]));
 			}); //TODO as below: Return a nice message if for=junk given
 	}
+	if (!G->G->all_stream_tags) uid = uid->then(lambda(int u) {
+		//This is getting pretty messy... time to turn this into a generator.
+		return get_helix_paginated("https://api.twitch.tv/helix/tags/streams")->then() {
+			//This will normally catch every tag, but in the event that we have
+			//an incomplete cached set of tags (eg if Twitch creates new tags),
+			//the check below will notice this as soon as we spot a stream using
+			//the new tag.
+			G->G->all_stream_tags = ([]);
+			update_tags(__ARGS__[0]);
+			return u; //Pass the same user ID along to the next promise handler
+		};
+	});
 	return uid->then(lambda(int u) {
 			userid = u;
 			string login = req->misc->session->user->login, disp = req->misc->session->user->display_name;
@@ -192,13 +214,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		})->then(lambda(array results) {
 			[follows_kraken, follows_helix, array users] = results;
 			//write("Kraken: %O\nHelix: %O\nUsers: %O\n", follows_kraken[..3], follows_helix[..3], users[..3]);
-			if (!G->G->tagnames) G->G->tagnames = ([]);
-			multiset all_tags = (<>);
+			multiset need_tags = (<>);
 			foreach (follows_helix, mapping strm)
 			{
-				//all_tags |= (tag_ids &~ G->G->tagnames); //sorta kinda
 				foreach (strm->tag_ids || ({ }), string tag)
-					if (!G->G->tagnames[tag]) all_tags[tag] = 1;
+					if (!G->G->all_stream_tags[tag]) need_tags[tag] = 1;
 			}
 			foreach (follows_kraken, mapping strm)
 				extra_kraken_info[strm->channel->_id] = ([
@@ -207,16 +227,17 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					//strm->video_height and strm->average_fps might be of interest
 				]);
 			foreach (users, mapping user) broadcaster_type[(int)user->id] = user->broadcaster_type;
-			if (!sizeof(all_tags)) return Concurrent.resolve(({ }));
-			write("Fetching %d tags...\n", sizeof(all_tags));
-			return get_helix_paginated("https://api.twitch.tv/helix/tags/streams", (["tag_id": (array)all_tags]));
+			if (!sizeof(need_tags)) return Concurrent.resolve(({ }));
+			//Normally we'll have all the tags from the check up above, but in case, we catch more here.
+			write("Fetching %d tags...\n", sizeof(need_tags));
+			return get_helix_paginated("https://api.twitch.tv/helix/tags/streams", (["tag_id": (array)need_tags]));
 		})->then(lambda(array alltags) {
-			foreach (alltags, mapping tag) G->G->tagnames[tag->tag_id] = tag->localization_names["en-us"];
+			update_tags(alltags);
 			foreach (follows_helix; int i; mapping strm)
 			{
 				array tags = ({ });
 				foreach (strm->tag_ids || ({ }), string tagid)
-					if (string tagname = G->G->tagnames[tagid]) tags += ({(["id": tagid, "name": tagname])});
+					if (mapping tag = G->G->all_stream_tags[tagid]) tags += ({tag});
 				strm->tags = tags;
 				strm->category = G->G->category_names[strm->game_id];
 				strm->raids = raids[strm->user_login] || ({ });
