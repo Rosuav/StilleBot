@@ -1,6 +1,15 @@
 # Followed streams
 
-<button id=legend>Legend/info</button> <button id=highlights>Edit highlight list</button> <button id=allraids>All recent raids</button>
+> <button type=button class=dialog_cancel>x</button>
+>
+> Choose which tags you like or dislike. Liked tags will be promoted among
+> followed streams; disliked tags will be correspondingly demoted.
+>
+> <ul></ul>
+{: tag=dialog #tags}
+
+<button id=legend>Legend/info</button> <button id=highlights>Edit highlight list</button>
+<button id=allraids>All recent raids</button> <button id=tagprefs>Tag preferences</button>
 
 * $$sortorders$$
 {: #sort}

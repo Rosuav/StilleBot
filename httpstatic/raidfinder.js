@@ -110,6 +110,13 @@ DOM("#highlights").onclick = () => {
 	DOM("#editnotes").showModal();
 }
 
+DOM("#tagprefs").onclick = () => {
+	set_content("#tags ul", all_tags.map(tag => LI([
+		tag.name, " - ", tag.desc,
+	])));
+	DOM("#tags").showModal();
+}
+
 function adornment(type) {
 	if (type === "partner") {
 		//Return a purple check mark \u2705

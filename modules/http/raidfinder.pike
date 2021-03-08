@@ -321,8 +321,13 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			sort(all_raids->time, all_raids);
 			follows_helix -= ({0}); //Remove self (already nulled out)
 			sort(-follows_helix->recommend[*], follows_helix); //Sort by magic initially
+			array tags = values(G->G->all_stream_tags); sort(tags->name, tags);
 			return render_template("raidfinder.md", ([
-				"vars": (["follows": follows_helix, "your_stream": your_stream, "highlights": highlights, "all_raids": all_raids[<99..], "mode": "normal"]),
+				"vars": ([
+					"follows": follows_helix, "all_tags": tags,
+					"your_stream": your_stream, "highlights": highlights, /*"tag_prefs": tag_prefs,*/
+					"all_raids": all_raids[<99..], "mode": "normal",
+				]),
 				"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
 			]));
 		}); //TODO: Return a nice message if for=junk given
