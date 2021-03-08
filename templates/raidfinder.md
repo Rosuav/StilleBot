@@ -89,8 +89,6 @@
 .notes.absent {filter: grayscale(1);}
 main {max-width: none!important;} /* Override the normal StilleBot style */
 
-#raids ul {overflow-y: auto; max-height: 10em;}
-
 .bcasttype {
 	background-color: purple;
 	color: white;
