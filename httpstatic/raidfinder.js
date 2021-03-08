@@ -111,8 +111,12 @@ DOM("#highlights").onclick = () => {
 }
 
 DOM("#tagprefs").onclick = () => {
-	set_content("#tags ul", all_tags.map(tag => LI([
-		tag.name, " - ", tag.desc,
+	set_content("#tags ul", all_tags.map(tag => LI({"data-tagid": tag.id}, [
+		BUTTON({className: "disliketag"}, "-"),
+		BUTTON({className: "liketag"}, "+"),
+		" ",
+		SPAN({className: tag.auto ? "tag autotag": "tag"}, tag.name),
+		tag.desc,
 	])));
 	DOM("#tags").showModal();
 }
