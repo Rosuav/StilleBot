@@ -65,6 +65,9 @@
 	margin-right: 0.5em;
 	font-size: 80%;
 }
+.tag.autotag {
+	font-style: italic;
+}
 
 #sort::before {content: "Sort: "; margin: 0.5em 1em 0em -1em;}
 #sort {
