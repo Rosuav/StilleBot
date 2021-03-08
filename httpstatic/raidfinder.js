@@ -185,7 +185,7 @@ function build_follow_list() {
 					LI({className: "streamtitle"}, stream.title),
 					LI("Uptime " + uptime(stream.started_at) + ", " + stream.viewer_count + " viewers"),
 					//LI("Score: " + stream.recommend), //For debugging the magic sort
-					LI(stream.tags.map(tag => SPAN({className: "tag"}, tag.name + " "))),
+					LI(stream.tags.map(tag => SPAN({className: "tag", "title": tag.desc}, tag.name + " "))),
 					LI([describe_notes(stream), describe_raid(stream.raids)]),
 				]),
 				//TODO: Make this a link to the category.
