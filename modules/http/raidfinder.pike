@@ -39,7 +39,7 @@ constant PREFERENCE_MAGIC_SCORES = ({
 	-1000, -250, -50, //Negative ratings
 });
 
-mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "user_read")) return resp;
 	if (req->request_type == "POST")
@@ -56,14 +56,13 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			array(string) channels = replace(newnotes, ",;\n"/"", " ") / " " - ({""});
 			//Trim URLs down to just the channel name
 			foreach (channels; int i; string c) sscanf(c, "http%*[s]://twitch.tv/%s%*[?/]", channels[i]);
-			return get_users_info(channels, "login")->then(lambda(array users) {
-				notes->highlight = (array(string))users->id * "\n";
-				persist_status->save();
-				return jsonify(([
-					"highlights": users->login * "\n",
-					"highlightids": users->id,
-				]), 7);
-			}, lambda(mixed err) {werror("%O\n", err); return (["error": 500]);}); //TODO: If it's "user not found", report it nicely
+			array users = yield(get_users_info(channels, "login")); //TODO: If this throws "user not found", report it nicely
+			notes->highlight = (array(string))users->id * "\n";
+			persist_status->save();
+			return jsonify(([
+				"highlights": users->login * "\n",
+				"highlightids": users->id,
+			]), 7);
 		}
 		if (body->id == -1) { //Should the front end use the same keywords??
 			//Update tag preferences. Note that this does NOT fully replace
@@ -84,7 +83,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		persist_status->save();
 		return (["error": 204]);
 	}
-	Concurrent.Future uid = Concurrent.resolve((int)req->misc->session->user->id);
+	int userid = (int)req->misc->session->user->id;
 	if (string chan = req->variables["for"])
 	{
 		//When fetching raid info on behalf of another streamer, you see your own follow
@@ -99,14 +98,13 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			return (["data": sprintf("<ul>%{<li><a href=\"/raidfinder?for=%s\">%<s</a></li>%}</ul>", sort(online)),
 				"type": "text/html"]);
 		}
-		uid = get_user_id(chan);
+		userid = yield(get_user_id(chan));
 	}
 	//TODO: Based on the for= or the logged in user, determine whether raids are tracked.
 	mapping raids = ([]);
 	array follows_kraken, follows_helix;
 	mapping(int:mapping(string:mixed)) extra_kraken_info = ([]);
 	mapping your_stream;
-	int userid;
 	mapping broadcaster_type = ([]);
 	//NOTE: Notes come from your *login* userid, unaffected by any for=
 	//annotation. For notes attached to a channel, that channel's ID is
@@ -121,239 +119,205 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	{
 		//Show everyone that you follow (not just those who are live), in an
 		//abbreviated form, mainly for checking notes.
-		return get_helix_paginated("https://api.twitch.tv/helix/users/follows",
-				(["from_id": (string)req->misc->session->user->id]))
-			->then(lambda(array f) {
-				array(array(string)) blocks = f->to_id / 100.0;
-				return Concurrent.all(twitch_api_request(("https://api.twitch.tv/helix/users?first=100" + sprintf("%{&id=%s%}", blocks[*])[*])[*]));
-			})->then(lambda(array f) {
-				/*
-				Each person looks like this:
-				([
-					"broadcaster_type": "partner",
-					"created_at": "2015-07-16T00:57:30.61026Z",
-					"description": "I like cooking.  I like yummy food.  Let me show you how to cook yummy food.",
-					"display_name": "CookingForNoobs",
-					"id": "96253346",
-					"login": "cookingfornoobs",
-					"offline_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/fe6534bb00bbb4cd-channel_offline_image-1920x1080.jpeg",
-					"profile_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/54728b80-cd99-4d03-9cfe-44a59152f7a2-profile_image-300x300.jpg",
-					"type": "",
-					"view_count": 1658855,
-				])
-				*/
-				follows_helix = f->data * ({ });
-				return get_users_info(highlightids);
-			})->then(lambda(array users) {
-				highlights = users->login * "\n";
-				foreach (follows_helix; int idx; mapping strm) {
-					if (string n = notes[strm->id]) strm->notes = n;
-					if (has_value(highlightids, (int)strm->id)) strm->highlight = 1;
-					strm->order = idx; //Order they were followed. Effectively the same as array order since we don't get actual data.
-					//Make some info available in the same way that it is for the main follow list.
-					//This allows the front end to access it identically for convenience.
-					strm->user_name = strm->display_name;
-				}
-				return render_template("raidfinder.md", ([
-					"vars": (["follows": follows_helix, "your_stream": 0, "highlights": highlights, "all_raids": ({}), "mode": "allfollows"]),
-					"sortorders": ({"Channel Creation", "Follow Date", "Name"}) * "\n* ",
-				]));
-			}); //TODO as below: Return a nice message if for=junk given
+		array f = yield(get_helix_paginated("https://api.twitch.tv/helix/users/follows",
+				(["from_id": (string)req->misc->session->user->id])));
+		//TODO: Make a cleaner way to fragment requests - we're gonna need it.
+		array(array(string)) blocks = f->to_id / 100.0;
+		follows_helix = yield(Concurrent.all(twitch_api_request(("https://api.twitch.tv/helix/users?first=100" + sprintf("%{&id=%s%}", blocks[*])[*])[*])))->data * ({ });
+		array users = yield(get_users_info(highlightids));
+		highlights = users->login * "\n";
+		foreach (follows_helix; int idx; mapping strm) {
+			if (string n = notes[strm->id]) strm->notes = n;
+			if (has_value(highlightids, (int)strm->id)) strm->highlight = 1;
+			strm->order = idx; //Order they were followed. Effectively the same as array order since we don't get actual data.
+			//Make some info available in the same way that it is for the main follow list.
+			//This allows the front end to access it identically for convenience.
+			strm->user_name = strm->display_name;
+		}
+		return render_template("raidfinder.md", ([
+			"vars": (["follows": follows_helix, "your_stream": 0, "highlights": highlights, "all_raids": ({}), "mode": "allfollows"]),
+			"sortorders": ({"Channel Creation", "Follow Date", "Name"}) * "\n* ",
+		]));
 	}
-	if (!G->G->all_stream_tags) uid = uid->then(lambda(int u) {
-		//This is getting pretty messy... time to turn this into a generator.
-		return get_helix_paginated("https://api.twitch.tv/helix/tags/streams")->then() {
-			//This will normally catch every tag, but in the event that we have
-			//an incomplete cached set of tags (eg if Twitch creates new tags),
-			//the check below will notice this as soon as we spot a stream using
-			//the new tag.
-			G->G->all_stream_tags = ([]);
-			update_tags(__ARGS__[0]);
-			return u; //Pass the same user ID along to the next promise handler
-		};
-	});
-	return uid->then(lambda(int u) {
-			userid = u;
-			string login = req->misc->session->user->login, disp = req->misc->session->user->display_name;
-			if (mapping user = u != (int)req->misc->session->user->id && G->G->user_info[u])
-			{
-				login = user->login || user->name; //helix || kraken
-				disp = user->display_name;
+	if (!G->G->all_stream_tags) {
+		array tags = yield(get_helix_paginated("https://api.twitch.tv/helix/tags/streams"));
+		//This will normally catch every tag, but in the event that we have
+		//an incomplete cached set of tags (eg if Twitch creates new tags),
+		//the check below will notice this as soon as we spot a stream using
+		//the new tag.
+		G->G->all_stream_tags = ([]);
+		update_tags(tags);
+	}
+	string login = req->misc->session->user->login, disp = req->misc->session->user->display_name;
+	if (mapping user = userid != (int)req->misc->session->user->id && G->G->user_info[userid])
+	{
+		login = user->login || user->name; //helix || kraken
+		disp = user->display_name;
+	}
+	foreach ((Stdio.read_file("outgoing_raids.log") || "") / "\n", string raid)
+	{
+		sscanf(raid, "[%d-%d-%d %*d:%*d:%*d] %s => %s", int y, int m, int d, string from, string to);
+		if (!to) continue;
+		if (y >= 2021) break; //Ignore newer entries and rely on the proper format (when should the cutoff be?)
+		if (from == login) raids[lower_case(to)] += ({sprintf(">%d-%02d-%02d %s raided %s", y, m, d, from, to)});
+		if (to == disp) raids[from] += ({sprintf("<%d-%02d-%02d %s raided %s", y, m, d, from, to)});
+	}
+	array users = yield(get_users_info(highlightids));
+	highlights = users->login * "\n";
+	//Category search - show all streams in the categories you follow
+	if (req->variables->categories) {
+		mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/users/" + req->misc->session->user->id + "/follows/games"));
+		[array streams, mapping self] = yield(Concurrent.all(
+			get_helix_paginated("https://api.twitch.tv/helix/streams", (["game_id": (array(string))info->follows->game->_id])),
+			twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + userid),
+		));
+		array(string) ids = streams->user_id + ({(string)userid});
+		//Map channel list to Kraken so we get both sets of info
+		follows_helix = streams + self->data;
+		[follows_kraken, users] = yield(Concurrent.all(
+			twitch_api_request("https://api.twitch.tv/kraken/streams/?channel=" + ids * ",")
+				->then(lambda(mapping info) {return info->streams;}),
+			get_helix_paginated("https://api.twitch.tv/helix/users", (["id": ids])),
+		));
+	}
+	else {
+		mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
+			(["Authorization": "OAuth " + req->misc->session->token])));
+		array(int) channels = info->streams->channel->_id;
+		channels += ({userid});
+		write("Fetching %d streams...\n", sizeof(channels));
+		//Map channel list to Helix so we get both sets of info
+		follows_kraken = info->streams;
+		[follows_helix, users] = yield(Concurrent.all(
+			get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))channels])),
+			//The ONLY thing we need /helix/users for is broadcaster_type, which - for
+			//reasons unknown to me - is always blank in the main stream info.
+			get_helix_paginated("https://api.twitch.tv/helix/users", (["id": (array(string))channels])),
+		));
+	}
+	//write("Kraken: %O\nHelix: %O\nUsers: %O\n", follows_kraken[..3], follows_helix[..3], users[..3]);
+	multiset need_tags = (<>);
+	foreach (follows_helix, mapping strm)
+	{
+		foreach (strm->tag_ids || ({ }), string tag)
+			if (!G->G->all_stream_tags[tag]) need_tags[tag] = 1;
+	}
+	if (sizeof(need_tags)) {
+		//Normally we'll have all the tags from the check up above, but in case, we catch more here.
+		write("Fetching %d tags...\n", sizeof(need_tags));
+		update_tags(yield(get_helix_paginated("https://api.twitch.tv/helix/tags/streams", (["tag_id": (array)need_tags]))));
+	}
+	foreach (follows_kraken, mapping strm)
+		extra_kraken_info[strm->channel->_id] = ([
+			"profile_image_url": strm->channel->logo,
+			"url": strm->channel->url,
+			//strm->video_height and strm->average_fps might be of interest
+		]);
+	foreach (users, mapping user) broadcaster_type[(int)user->id] = user->broadcaster_type;
+	//Okay! Preliminaries done. Let's look through the Helix-provided info and
+	//build up a final result.
+	mapping tag_prefs = notes->tags || ([]);
+	foreach (follows_helix; int i; mapping strm)
+	{
+		int recommend = 0;
+		array tags = ({ });
+		foreach (strm->tag_ids || ({ }), string tagid) {
+			if (mapping tag = G->G->all_stream_tags[tagid]) tags += ({tag});
+			if (int pref = tag_prefs[tagid]) recommend += PREFERENCE_MAGIC_SCORES[pref];
+		}
+		strm->tags = tags;
+		strm->category = G->G->category_names[strm->game_id];
+		strm->raids = raids[strm->user_login] || ({ });
+		int otheruid = (int)strm->user_id;
+		if (otheruid == userid) {your_stream = strm; follows_helix[i] = 0; continue;}
+		//TODO: Configurable hard tag requirements
+		//if (recommend <= -1000 && filter out strong dislikes) {follows_helix[i] = 0; continue;}
+		//if (recommend < 1000 && require at least one mandatory tag) {follows_helix[i] = 0; continue;}
+		if (mapping k = extra_kraken_info[otheruid]) follows_helix[i] = strm = k | strm;
+		if (string t = broadcaster_type[otheruid]) strm->broadcaster_type = t;
+		if (string n = notes[(string)otheruid]) strm->notes = n;
+		if (has_value(highlightids, otheruid)) strm->highlight = 1;
+		int swap = otheruid < userid;
+		array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[(string)(swap ? userid : otheruid)];
+		int recent = time() - 86400 * 30;
+		int ancient = time() - 86400 * 365;
+		foreach (raids || ({ }), mapping raid)
+		{
+			//write("DEBUG RAID LOG: %O\n", raid);
+			//TODO: Translate these by timezone (if available)
+			object time = Calendar.ISO.Second("unix", raid->time);
+			if (swap != raid->outgoing) {
+				strm->raids += ({sprintf(">%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
+				if (raid->time > recent) recommend -= 200;
+				else if (raid->time > ancient) recommend -= 50;
+				else recommend += 8; //"Oh yeah, I've known this person for years"
 			}
-			//Legacy data (currently all data): Parse the outgoing raid log
-			//Note that this cannot handle renames, and will 'lose' them.
-			//TODO: Show these in the logged-in user's specified timezone (if we have a
-			//channel for that user), or UTC. Apologize on the page if no TZ available.
-			//TODO: If working on behalf of someone else, which tz should we use?
-			foreach ((Stdio.read_file("outgoing_raids.log") || "") / "\n", string raid)
-			{
-				sscanf(raid, "[%d-%d-%d %*d:%*d:%*d] %s => %s", int y, int m, int d, string from, string to);
-				if (!to) continue;
-				if (y >= 2021) break; //Ignore newer entries and rely on the proper format (when should the cutoff be?)
-				if (from == login) raids[lower_case(to)] += ({sprintf(">%d-%02d-%02d %s raided %s", y, m, d, from, to)});
-				if (to == disp) raids[from] += ({sprintf("<%d-%02d-%02d %s raided %s", y, m, d, from, to)});
+			else {
+				strm->raids += ({sprintf("<%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
+				if (raid->time > recent) recommend += 100;
+				else if (raid->time > ancient) recommend += 200;
+				else recommend += 10; //VERY old raid data has less impact than current.
 			}
-			return get_users_info(highlightids);
-		})->then(lambda(array users) {
-			highlights = users->login * "\n";
-			//Category search - show all streams in the categories you follow
-			if (req->variables->categories) return twitch_api_request("https://api.twitch.tv/kraken/users/" + req->misc->session->user->id + "/follows/games")
-				->then(lambda(mapping info) {
-					return Concurrent.all(
-						get_helix_paginated("https://api.twitch.tv/helix/streams", (["game_id": (array(string))info->follows->game->_id])),
-						twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + userid),
-					);
-				})->then() {
-					[array streams, mapping self] = __ARGS__[0];
-					array(string) ids = streams->user_id + ({(string)userid});
-					//Map channel list to Kraken so we get both sets of info
-					return Concurrent.all(
-						twitch_api_request("https://api.twitch.tv/kraken/streams/?channel=" + ids * ",")
-							->then(lambda(mapping info) {return info->streams;}),
-						Concurrent.resolve(streams + self->data),
-						get_helix_paginated("https://api.twitch.tv/helix/users", (["id": ids])),
-					);
-				};
-			else return twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
-					(["Authorization": "OAuth " + req->misc->session->token])
-				)->then(lambda(mapping info) {
-					array(int) channels = info->streams->channel->_id;
-					channels += ({userid});
-					write("Fetching %d streams...\n", sizeof(channels));
-					//Map channel list to Helix so we get both sets of info
-					return Concurrent.all(
-						Concurrent.resolve(info->streams),
-						get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))channels])),
-						//The ONLY thing we need /helix/users for is broadcaster_type, which - for
-						//reasons unknown to me - is always blank in the main stream info.
-						get_helix_paginated("https://api.twitch.tv/helix/users", (["id": (array(string))channels])),
-					);
-				});
-		})->then(lambda(array results) {
-			[follows_kraken, follows_helix, array users] = results;
-			//write("Kraken: %O\nHelix: %O\nUsers: %O\n", follows_kraken[..3], follows_helix[..3], users[..3]);
-			multiset need_tags = (<>);
-			foreach (follows_helix, mapping strm)
-			{
-				foreach (strm->tag_ids || ({ }), string tag)
-					if (!G->G->all_stream_tags[tag]) need_tags[tag] = 1;
+			if (!undefinedp(raid->viewers) && raid->viewers != -1)
+				strm->raids[-1] += " with " + raid->viewers;
+		}
+		//For some reason, strm->raids[*][1..] doesn't work. ??
+		sort(lambda(string x) {return x[1..];}(strm->raids[*]), strm->raids); //Sort by date, ignoring the </> direction marker
+		strm->raids = Array.uniq2(strm->raids);
+		//Stream recommendation level (which defines the default sort order)
+		if (your_stream) {
+			int you = your_stream->viewer_count;
+			if (!you) {
+				//If you have no viewers, it's hard to scale things, so we
+				//pick an arbitrary figure to use.
+				if (strm->viewers < 20) recommend += 20 - strm->viewers;
 			}
-			foreach (follows_kraken, mapping strm)
-				extra_kraken_info[strm->channel->_id] = ([
-					"profile_image_url": strm->channel->logo,
-					"url": strm->channel->url,
-					//strm->video_height and strm->average_fps might be of interest
-				]);
-			foreach (users, mapping user) broadcaster_type[(int)user->id] = user->broadcaster_type;
-			if (!sizeof(need_tags)) return Concurrent.resolve(({ }));
-			//Normally we'll have all the tags from the check up above, but in case, we catch more here.
-			write("Fetching %d tags...\n", sizeof(need_tags));
-			return get_helix_paginated("https://api.twitch.tv/helix/tags/streams", (["tag_id": (array)need_tags]));
-		})->then(lambda(array alltags) {
-			update_tags(alltags);
-			mapping tag_prefs = notes->tags || ([]);
-			foreach (follows_helix; int i; mapping strm)
-			{
-				int recommend = 0;
-				array tags = ({ });
-				foreach (strm->tag_ids || ({ }), string tagid) {
-					if (mapping tag = G->G->all_stream_tags[tagid]) tags += ({tag});
-					if (int pref = tag_prefs[tagid]) recommend += PREFERENCE_MAGIC_SCORES[pref];
-				}
-				strm->tags = tags;
-				strm->category = G->G->category_names[strm->game_id];
-				strm->raids = raids[strm->user_login] || ({ });
-				int otheruid = (int)strm->user_id;
-				if (otheruid == userid) {your_stream = strm; follows_helix[i] = 0; continue;}
-				//TODO: Configurable hard tag requirements
-				//if (recommend <= -1000 && filter out strong dislikes) {follows_helix[i] = 0; continue;}
-				//if (recommend < 1000 && require at least one mandatory tag) {follows_helix[i] = 0; continue;}
-				if (mapping k = extra_kraken_info[otheruid]) follows_helix[i] = strm = k | strm;
-				if (string t = broadcaster_type[otheruid]) strm->broadcaster_type = t;
-				if (string n = notes[(string)otheruid]) strm->notes = n;
-				if (has_value(highlightids, otheruid)) strm->highlight = 1;
-				int swap = otheruid < userid;
-				array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[(string)(swap ? userid : otheruid)];
-				int recent = time() - 86400 * 30;
-				int ancient = time() - 86400 * 365;
-				foreach (raids || ({ }), mapping raid)
-				{
-					//write("DEBUG RAID LOG: %O\n", raid);
-					//TODO: Translate these by timezone (if available)
-					object time = Calendar.ISO.Second("unix", raid->time);
-					if (swap != raid->outgoing) {
-						strm->raids += ({sprintf(">%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
-						if (raid->time > recent) recommend -= 200;
-						else if (raid->time > ancient) recommend -= 50;
-						else recommend += 8; //"Oh yeah, I've known this person for years"
-					}
-					else {
-						strm->raids += ({sprintf("<%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
-						if (raid->time > recent) recommend += 100;
-						else if (raid->time > ancient) recommend += 200;
-						else recommend += 10; //VERY old raid data has less impact than current.
-					}
-					if (!undefinedp(raid->viewers) && raid->viewers != -1)
-						strm->raids[-1] += " with " + raid->viewers;
-				}
-				//For some reason, strm->raids[*][1..] doesn't work. ??
-				sort(lambda(string x) {return x[1..];}(strm->raids[*]), strm->raids); //Sort by date, ignoring the </> direction marker
-				strm->raids = Array.uniq2(strm->raids);
-				//Stream recommendation level (which defines the default sort order)
-				if (your_stream) {
-					int you = your_stream->viewer_count;
-					if (!you) {
-						//If you have no viewers, it's hard to scale things, so we
-						//pick an arbitrary figure to use.
-						if (strm->viewers < 20) recommend += 20 - strm->viewers;
-					}
-					else {
-						int scale = strm->viewers * 100 / you;
-						if (scale >= 140) ; //Large, no bonus
-						else if (scale >= 100) recommend += 70 - scale / 2; //Slightly larger. Give 20 points if same size, diminishing towards 140%.
-						else recommend += scale / 5; //Smaller. Give 20 points if same size, diminishing towards 0%.
-					}
-					multiset(string) creatives = (<"Art", "Science & Technology", "Food & Drink", "Music", "Makers & Crafting", "Beauty & Body Art">);
-					//+100 for being in the same category
-					if (your_stream->category == strm->game) recommend += 100;
-					//Or +70 if both of you are in creative categories
-					else if (creatives[your_stream->category] && creatives[strm->game]) recommend += 70;
-					//Common tags: 25 points apiece
-					//Note that this will include language tags
-					//Been seeing some 500 crashes that have been hard to track down. Is it b/c
-					//one of the streams has no tags?? Maybe just gone live?? In any case, if
-					//you don't have any tags, there won't be any common tags, so we're fine.
-					if (your_stream->tag_ids && strm->tag_ids)
-						recommend += 25 * sizeof((multiset)your_stream->tag_ids & (multiset)strm->tag_ids);
-				}
-				//Up to 100 points for having just started, scaling down to zero at four hours of uptime
-				if (strm->started_at) {
-					int uptime = time() - Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", strm->started_at)->unix_time();
-					if (uptime < 4 * 3600) recommend += uptime / 4 / 36;
-				}
-				strm->recommend = recommend;
+			else {
+				int scale = strm->viewers * 100 / you;
+				if (scale >= 140) ; //Large, no bonus
+				else if (scale >= 100) recommend += 70 - scale / 2; //Slightly larger. Give 20 points if same size, diminishing towards 140%.
+				else recommend += scale / 5; //Smaller. Give 20 points if same size, diminishing towards 0%.
 			}
-			//List all recent raids. Actually list ALL raids on the current system.
-			array all_raids = ({ });
-			foreach (persist_status->path("raids"); string id; mapping raids) {
-				if (id == (string)userid)
-					foreach (raids; string otherid; array raids)
-						all_raids += raids;
-				else foreach (raids[(string)userid] || ({ }), mapping r)
-					all_raids += ({r | (["outgoing": !r->outgoing])});
-			}
-			sort(all_raids->time, all_raids);
-			follows_helix -= ({0}); //Remove self (already nulled out)
-			sort(-follows_helix->recommend[*], follows_helix); //Sort by magic initially
-			array tags = values(G->G->all_stream_tags); sort(tags->name, tags);
-			return render_template("raidfinder.md", ([
-				"vars": ([
-					"follows": follows_helix, "all_tags": tags,
-					"your_stream": your_stream, "highlights": highlights,
-					"tag_prefs": tag_prefs, "MAX_PREF": MAX_PREF, "MIN_PREF": MIN_PREF,
-					"all_raids": all_raids[<99..], "mode": "normal",
-				]),
-				"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
-			]));
-		}); //TODO: Return a nice message if for=junk given
+			multiset(string) creatives = (<"Art", "Science & Technology", "Food & Drink", "Music", "Makers & Crafting", "Beauty & Body Art">);
+			//+100 for being in the same category
+			if (your_stream->category == strm->game) recommend += 100;
+			//Or +70 if both of you are in creative categories
+			else if (creatives[your_stream->category] && creatives[strm->game]) recommend += 70;
+			//Common tags: 25 points apiece
+			//Note that this will include language tags
+			//Been seeing some 500 crashes that have been hard to track down. Is it b/c
+			//one of the streams has no tags?? Maybe just gone live?? In any case, if
+			//you don't have any tags, there won't be any common tags, so we're fine.
+			if (your_stream->tag_ids && strm->tag_ids)
+				recommend += 25 * sizeof((multiset)your_stream->tag_ids & (multiset)strm->tag_ids);
+		}
+		//Up to 100 points for having just started, scaling down to zero at four hours of uptime
+		if (strm->started_at) {
+			int uptime = time() - Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", strm->started_at)->unix_time();
+			if (uptime < 4 * 3600) recommend += uptime / 4 / 36;
+		}
+		strm->recommend = recommend;
+	}
+	//List all recent raids. Actually list ALL raids on the current system.
+	array all_raids = ({ });
+	foreach (persist_status->path("raids"); string id; mapping raids) {
+		if (id == (string)userid)
+			foreach (raids; string otherid; array raids)
+				all_raids += raids;
+		else foreach (raids[(string)userid] || ({ }), mapping r)
+			all_raids += ({r | (["outgoing": !r->outgoing])});
+	}
+	sort(all_raids->time, all_raids);
+	follows_helix -= ({0}); //Remove self (already nulled out)
+	sort(-follows_helix->recommend[*], follows_helix); //Sort by magic initially
+	array tags = values(G->G->all_stream_tags); sort(tags->name, tags);
+	return render_template("raidfinder.md", ([
+		"vars": ([
+			"follows": follows_helix, "all_tags": tags,
+			"your_stream": your_stream, "highlights": highlights,
+			"tag_prefs": tag_prefs, "MAX_PREF": MAX_PREF, "MIN_PREF": MIN_PREF,
+			"all_raids": all_raids[<99..], "mode": "normal",
+		]),
+		"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
+	]));
 }
