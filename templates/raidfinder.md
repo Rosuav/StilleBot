@@ -3,7 +3,8 @@
 > <button type=button class=dialog_cancel>x</button>
 >
 > Choose which tags you like or dislike. Liked tags will be promoted among
-> followed streams; disliked tags will be correspondingly demoted.
+> followed streams; disliked tags will be correspondingly demoted. Preferences
+> will affect Magic sort, beginning the next time you load the page.
 >
 > <ul></ul>
 {: tag=dialog #tags}
