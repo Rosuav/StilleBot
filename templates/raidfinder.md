@@ -68,6 +68,13 @@
 .tag.autotag {
 	font-style: italic;
 }
+.tagpref-3 {background-color: #d99;}
+.tagpref-2 {background-color: #ecc;}
+.tagpref-1 {background-color: #fee;}
+.tagpref0 { }
+.tagpref1 {background-color: #dfd;}
+.tagpref2 {background-color: #beb;}
+.tagpref3 {background-color: #9d9;}
 
 #sort::before {content: "Sort: "; margin: 0.5em 1em 0em -1em;}
 #sort {

@@ -256,14 +256,14 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			return get_helix_paginated("https://api.twitch.tv/helix/tags/streams", (["tag_id": (array)need_tags]));
 		})->then(lambda(array alltags) {
 			update_tags(alltags);
-			mapping tagprefs = notes->tags || ([]);
+			mapping tag_prefs = notes->tags || ([]);
 			foreach (follows_helix; int i; mapping strm)
 			{
 				int recommend = 0;
 				array tags = ({ });
 				foreach (strm->tag_ids || ({ }), string tagid) {
 					if (mapping tag = G->G->all_stream_tags[tagid]) tags += ({tag});
-					if (int pref = tagprefs[tagid]) recommend += PREFERENCE_MAGIC_SCORES[pref];
+					if (int pref = tag_prefs[tagid]) recommend += PREFERENCE_MAGIC_SCORES[pref];
 				}
 				strm->tags = tags;
 				strm->category = G->G->category_names[strm->game_id];
@@ -354,7 +354,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			return render_template("raidfinder.md", ([
 				"vars": ([
 					"follows": follows_helix, "all_tags": tags,
-					"your_stream": your_stream, "highlights": highlights, /*"tag_prefs": tag_prefs,*/
+					"your_stream": your_stream, "highlights": highlights,
+					"tag_prefs": tag_prefs, "MAX_PREF": MAX_PREF, "MIN_PREF": MIN_PREF,
 					"all_raids": all_raids[<99..], "mode": "normal",
 				]),
 				"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",

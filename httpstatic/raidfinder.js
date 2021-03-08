@@ -110,14 +110,39 @@ DOM("#highlights").onclick = () => {
 	DOM("#editnotes").showModal();
 }
 
+const tag_element = { };
+function update_tagpref(e, delta) {
+	const tagid = e.match.closest("li").dataset.tagid;
+	console.log(tagid);
+	const newpref = (tag_prefs[tagid]|0) + delta;
+	console.log("New pref:", tag_prefs[tagid], " + ", delta, " = ", newpref);
+	if (newpref > MAX_PREF || newpref < MIN_PREF) return;
+	fetch("/raidfinder", {
+		method: "POST",
+		headers: {"content-type": "application/json"},
+		body: JSON.stringify({id: -1, notes: tagid + " " + newpref}),
+	}).then(res => res.json()).then(resp => {
+		//Update ALL prefs on any change. Helps to minimize desyncs.
+		tag_prefs = resp.prefs;
+		console.log("New prefs:", tag_prefs);
+		all_tags.forEach(tag => tag_element[tag.id].className = "tagpref" + (tag_prefs[tag.id] || 0));
+	});
+}
+on("click", ".liketag", e => update_tagpref(e, 1));
+on("click", ".disliketag", e => update_tagpref(e, -1));
+
 DOM("#tagprefs").onclick = () => {
-	set_content("#tags ul", all_tags.map(tag => LI({"data-tagid": tag.id}, [
-		BUTTON({className: "disliketag"}, "-"),
-		BUTTON({className: "liketag"}, "+"),
-		" ",
-		SPAN({className: tag.auto ? "tag autotag": "tag"}, tag.name),
-		tag.desc,
-	])));
+	set_content("#tags ul", all_tags.map(tag => tag_element[tag.id] = LI({
+			"data-tagid": tag.id,
+			className: "tagpref" + (tag_prefs[tag.id] || 0)
+		}, [
+			BUTTON({className: "disliketag"}, "-"),
+			BUTTON({className: "liketag"}, "+"),
+			" ",
+			SPAN({className: tag.auto ? "tag autotag": "tag"}, tag.name),
+			tag.desc,
+		]
+	)));
 	DOM("#tags").showModal();
 }
 
