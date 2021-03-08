@@ -106,8 +106,6 @@ audio {display: none;}
 }
 </style>
 
-> <button type=button class=dialog_cancel>x</button>
->
 > Train Track configuration <!-- that sounds like something completely different -->
 >
 > <form id=configform>

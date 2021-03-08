@@ -1,7 +1,5 @@
 # How far will $$channel$$ run?
 
-> <button type=button class=dialog_cancel>x</button>
->
 > Edit mileage response <code id=cmdname></code>
 >
 > <div id=command_details></div>

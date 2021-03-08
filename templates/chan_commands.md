@@ -16,8 +16,6 @@ $$commands$$
 
 $$save_or_login$$
 
-> <button type=button class=dialog_cancel>x</button>
->
 > Some handy commands that your channel may want to use:
 >
 > Command | Text
@@ -52,8 +50,6 @@ td:nth-of-type(2n+1) {white-space: nowrap;}
 .iffalse {border-color: #a08;}
 </style>
 
-> <button type=button class=dialog_cancel>x</button>
->
 > Edit command <code id=cmdname></code>
 >
 > <div id=command_details></div>

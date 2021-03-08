@@ -13,18 +13,27 @@ input[type=submit] {background: inherit;}
 
 dialog {
 	position: fixed;
-	max-height: 75%;
-	overflow-y: auto;
 }
 @supports (-moz-appearance:none) {
 	/* Firefox doesn't automatically position dialogs properly. */
 	/* It's a pain to try to center them, so just snap to the top. */
 	dialog {top: 0;}
 }
-
+dialog > section {
+	display: flex;
+	flex-direction: column;
+}
+dialog > section > header {
+	display: flex;
+	flex-direction: row-reverse;
+}
+dialog > section > div {
+	overflow-y: auto;
+	max-height: 70vh;
+}
 .dialog_cancel {
-	position: absolute;
-	right: 1em; top: 1em;
+	position: relative;
+	right: -8px; top: -8px;
 }
 
 .emotedtext {

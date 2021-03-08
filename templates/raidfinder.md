@@ -1,7 +1,5 @@
 # Followed streams
 
-> <button type=button class=dialog_cancel>x</button>
->
 > Choose which tags you like or dislike. Liked tags will be promoted among
 > followed streams; disliked tags will be correspondingly demoted. Preferences
 > will affect Magic sort, beginning the next time you load the page.
@@ -17,8 +15,6 @@
 
 <div id=streams></div>
 
-> <button type=button class=dialog_cancel>x</button>
->
 > <span id=notes_about_channel>Channel name: </span>
 >
 > <form method=dialog>
@@ -31,8 +27,6 @@
 <a href="raidfinder?categories" target="_blank">Categories you follow</a><br>
 <a href="raidfinder?allfollows" target="_blank">All channels you follow</a>
 
-> <button type=button class=dialog_cancel>x</button>
->
 > Raids to or from this channel:
 >
 > <ul></ul>
@@ -120,8 +114,6 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 #viewerlegend div {margin-right: 0.5em; padding: 0.25em 0.125em;}
 </style>
 
-> <button type=button class=dialog_cancel>x</button>
->
 > This raid finder shows the people you currently follow, and helps you select someone<br>
 > to raid. Incoming and outgoing raids $$is_tracked||will be shown if StilleBot tracks this channel$$.
 >

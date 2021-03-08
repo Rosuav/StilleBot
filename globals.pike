@@ -414,8 +414,11 @@ class Renderer
 	//Allow a blockquote to become a dialog
 	string blockquote(string text, mapping token)
 	{
-		if (string tag = m_delete(token, "attr_tag"))
-			return sprintf("<%s%s>%s</%[0]s>", tag, attrs(token), text);
+		if (string tag = m_delete(token, "attr_tag")) {
+			if (tag != "dialog") return sprintf("<%s%s>%s</%[0]s>", tag, attrs(token), text); //Arbitrary tag selection if necessary.
+			//TODO: Put the first bit of text into the header as, well, a heading?
+			return sprintf("<dialog%s><section><header><button type=button class=dialog_cancel>x</button></header><div>%s</div></section></dialog>", attrs(token), text);
+		}
 		return ::blockquote(text, token);
 	}
 	string heading(string text, int level, string raw, mapping token)
