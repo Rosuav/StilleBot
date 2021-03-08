@@ -215,7 +215,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					return Concurrent.all(
 						twitch_api_request("https://api.twitch.tv/kraken/streams/?channel=" + ids * ",")
 							->then(lambda(mapping info) {return info->streams;}),
-						Concurrent.resolve(streams + ({self->data[0]})),
+						Concurrent.resolve(streams + self->data),
 						get_helix_paginated("https://api.twitch.tv/helix/users", (["id": ids])),
 					);
 				};
