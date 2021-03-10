@@ -168,8 +168,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//Category search - show all streams in the categories you follow
 	if (req->variables->categories) {
 		mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/users/" + req->misc->session->user->id + "/follows/games"));
+		array(int) gameids = info->follows->game->_id;
 		[array streams, mapping self] = yield(Concurrent.all(
-			get_helix_paginated("https://api.twitch.tv/helix/streams", (["game_id": (array(string))info->follows->game->_id])),
+			get_helix_paginated("https://api.twitch.tv/helix/streams", (["game_id": (array(string))gameids])),
 			twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + userid),
 		));
 		array(string) ids = streams->user_id + ({(string)userid});
