@@ -165,10 +165,19 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	}
 	array users = yield(get_users_info(highlightids));
 	highlights = users->login * "\n";
+	string title = "Followed streams";
 	//Category search - show all streams in the categories you follow
 	if (req->variables->categories) {
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/users/" + req->misc->session->user->id + "/follows/games"));
-		array(int) gameids = info->follows->game->_id;
+		array gameids;
+		if (!(<"", "categories">)[req->variables->categories]) {
+			array cats = yield(get_helix_paginated("https://api.twitch.tv/helix/games", (["name": req->variables->categories / ","])));
+			if (sizeof(cats)) {gameids = cats->id; title = cats->name * ", " + " streams";}
+		}
+		if (!gameids) {
+			mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/users/" + req->misc->session->user->id + "/follows/games"));
+			gameids = (array(string))info->follows->game->_id;
+			title = "Followed categories";
+		}
 		[array streams, mapping self] = yield(Concurrent.all(
 			get_helix_paginated("https://api.twitch.tv/helix/streams", (["game_id": (array(string))gameids])),
 			twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + userid),
@@ -176,6 +185,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		array(string) ids = streams->user_id + ({(string)userid});
 		//Map channel list to Kraken so we get both sets of info
 		follows_helix = streams + self->data;
+		//If you follow a large number of categories, or a single large category,
+		//there could be rather a lot of IDs.
+		ids = ids[..99]; //TODO: Paginate instead of arbitrarily truncating.
 		[follows_kraken, users] = yield(Concurrent.all(
 			twitch_api_request("https://api.twitch.tv/kraken/streams/?channel=" + ids * ",")
 				->then(lambda(mapping info) {return info->streams;}),
@@ -321,5 +333,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			"all_raids": all_raids[<99..], "mode": "normal",
 		]),
 		"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
+		"title": title,
 	]));
 }

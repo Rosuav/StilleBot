@@ -1,4 +1,4 @@
-# Followed streams
+# $$title||Followed streams$$
 
 > ### Tag preferences
 > Choose which tags you like or dislike. Liked tags will be promoted among
