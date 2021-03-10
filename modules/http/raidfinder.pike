@@ -186,13 +186,18 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		//Map channel list to Kraken so we get both sets of info
 		follows_helix = streams + self->data;
 		//If you follow a large number of categories, or a single large category,
-		//there could be rather a lot of IDs.
-		ids = ids[..99]; //TODO: Paginate instead of arbitrarily truncating.
-		[follows_kraken, users] = yield(Concurrent.all(
-			twitch_api_request("https://api.twitch.tv/kraken/streams/?channel=" + ids * ",")
-				->then(lambda(mapping info) {return info->streams;}),
-			get_helix_paginated("https://api.twitch.tv/helix/users", (["id": ids])),
-		));
+		//there could be rather a lot of IDs. Note that, in theory, this could
+		//ALL be done with Concurrent.all(), but I don't want to risk having an
+		//arbitrary number of simultaneous requests; it's very hard to predict
+		//the impact of rate-limiting.
+		follows_kraken = ({ }); users = ({ });
+		foreach (ids / 100.0, array block) {
+			mapping ret = yield(Concurrent.all(
+				twitch_api_request("https://api.twitch.tv/kraken/streams/?channel=" + block * ","),
+				get_helix_paginated("https://api.twitch.tv/helix/users", (["id": block])),
+			));
+			follows_kraken += ret[0]->streams; users += ret[1];
+		}
 	}
 	else {
 		mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
