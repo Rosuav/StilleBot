@@ -699,6 +699,35 @@ void raids_display(string ch)
 	});
 }
 
+void subpoints_display(string ch) {
+	if (!sizeof(persist_status)) persist_status = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_status.json"));
+	array scanme = ({ });
+	Concurrent.Future pump(array prev) {
+		if (prev) {
+			mapping counts = ([]);
+			foreach (prev, mapping sub) counts[sub->tier]++;
+			write("%d subs: %O\n", sizeof(prev), counts);
+		}
+		if (!sizeof(scanme)) {if (!--requests) exit(0); return 0;} //All done!
+		[mapping cfg, scanme] = Array.shift(scanme);
+		return get_helix_paginated("https://api.twitch.tv/helix/subscriptions",
+			(["broadcaster_id": cfg->uid, "first": "99"]),
+			(["Authorization": "Bearer " + cfg->token]))->then(pump) {
+				//TODO: Report errors but skip any invalid tokens
+				//write("%s\n", describe_backtrace(__ARGS__[0]));
+				pump(0);
+			};
+	}
+	get_user_id(ch)->then() { [int uid] = __ARGS__;
+		foreach (persist_status->subpoints; string nonce; mapping info) {
+			if ((int)info->uid != uid) continue;
+			scanme += ({info});
+		}
+		if (!sizeof(scanme)) write("No subpoints tokens for %d\n", uid);
+		return pump(0);
+	};
+}
+
 int main(int argc, array(string) argv)
 {
 	if (argc == 1)
@@ -733,6 +762,7 @@ int main(int argc, array(string) argv)
 				raids_display(ch);
 				continue;
 			}
+			if (user == "subpoints") {subpoints_display(ch); continue;}
 			write("Checking follow status...\n");
 			check_following(user, ch)->then(followinfo_display);
 		}
