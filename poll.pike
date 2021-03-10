@@ -702,16 +702,18 @@ void raids_display(string ch)
 void subpoints_display(string ch) {
 	if (!sizeof(persist_status)) persist_status = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_status.json"));
 	array scanme = ({ });
+	int pagesize = 100;
 	Concurrent.Future pump(array prev) {
 		if (prev) {
 			mapping counts = ([]);
 			foreach (prev, mapping sub) counts[sub->tier]++;
-			write("%d subs: %O\n", sizeof(prev), counts);
+			write("Page size %d - %d subs: %O\n", pagesize, sizeof(prev), counts);
+			--pagesize;
 		}
 		if (!sizeof(scanme)) {if (!--requests) exit(0); return 0;} //All done!
 		[mapping cfg, scanme] = Array.shift(scanme);
 		return get_helix_paginated("https://api.twitch.tv/helix/subscriptions",
-			(["broadcaster_id": cfg->uid, "first": "99"]),
+			(["broadcaster_id": cfg->uid, "first": (string)pagesize]),
 			(["Authorization": "Bearer " + cfg->token]))->then(pump) {
 				//TODO: Report errors but skip any invalid tokens
 				//write("%s\n", describe_backtrace(__ARGS__[0]));
