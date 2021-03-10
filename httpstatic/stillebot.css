@@ -19,13 +19,17 @@ dialog {
 	/* It's a pain to try to center them, so just snap to the top. */
 	dialog {top: 0;}
 }
+/* Create a scroll context inside dialogs */
 dialog > section {
 	display: flex;
 	flex-direction: column;
 }
 dialog > section > header {
 	display: flex;
-	flex-direction: row-reverse;
+	justify-content: space-between;
+}
+dialog > section > header > h3 {
+	margin: 0.5em 0;
 }
 dialog > section > div {
 	overflow-y: auto;

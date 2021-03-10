@@ -416,8 +416,8 @@ class Renderer
 	{
 		if (string tag = m_delete(token, "attr_tag")) {
 			if (tag != "dialog") return sprintf("<%s%s>%s</%[0]s>", tag, attrs(token), text); //Arbitrary tag selection if necessary.
-			//TODO: Put the first bit of text into the header as, well, a heading?
-			return sprintf("<dialog%s><section><header><button type=button class=dialog_cancel>x</button></header><div>%s</div></section></dialog>", attrs(token), text);
+			string title = ""; //TODO: Grab the first bit of text, or an attribute, or something. This title is outside the scroll context.
+			return sprintf("<dialog%s><section><header><h3>%s</h3><div><button type=button class=dialog_cancel>x</button></div></header><div>%s</div></section></dialog>", attrs(token), title, text);
 		}
 		return ::blockquote(text, token);
 	}
