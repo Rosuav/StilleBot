@@ -106,8 +106,7 @@ audio {display: none;}
 }
 </style>
 
-> Train Track configuration <!-- that sounds like something completely different -->
->
+> ### Train Track configuration <!-- that sounds like something completely different -->
 > <form id=configform>
 > * <label><input type=checkbox name=use_start> Play sound on hype train start</label><br>
 >   Volume <input type=range name=vol_start value=100><br>

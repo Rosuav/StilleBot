@@ -16,8 +16,7 @@ $$commands$$
 
 $$save_or_login$$
 
-> Some handy commands that your channel may want to use:
->
+> ### Some handy commands that your channel may want to use:
 > Command | Text
 > --------|------
 > $$templates$$
@@ -50,8 +49,7 @@ td:nth-of-type(2n+1) {white-space: nowrap;}
 .iffalse {border-color: #a08;}
 </style>
 
-> Edit command <code id=cmdname></code>
->
+> ### Edit command <code id=cmdname></code>
 > <div id=command_details></div>
 >
 > <p><button type=button id=save_advanced>Save</button> <button type=button class=dialog_close>Cancel</button></p>

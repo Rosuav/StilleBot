@@ -416,8 +416,13 @@ class Renderer
 	{
 		if (string tag = m_delete(token, "attr_tag")) {
 			if (tag != "dialog") return sprintf("<%s%s>%s</%[0]s>", tag, attrs(token), text); //Arbitrary tag selection if necessary.
-			string title = ""; //TODO: Grab the first bit of text, or an attribute, or something. This title is outside the scroll context.
-			return sprintf("<dialog%s><section><header><h3>%s</h3><div><button type=button class=dialog_cancel>x</button></div></header><div>%s</div></section></dialog>", attrs(token), title, text);
+			//If the dialog starts with an H3, retain it as a title, outside the scroll context.
+			sscanf(text, "<h3%*[^>]>%s</h3>%s", string title, text);
+			return sprintf("<dialog%s><section>"
+					"<header><h3>%s</h3><div><button type=button class=dialog_cancel>x</button></div></header>"
+					"<div>%s</div>"
+					"</section></dialog>",
+				attrs(token), title || "", text);
 		}
 		return ::blockquote(text, token);
 	}

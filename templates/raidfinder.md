@@ -1,5 +1,6 @@
 # Followed streams
 
+> ### Tag preferences
 > Choose which tags you like or dislike. Liked tags will be promoted among
 > followed streams; disliked tags will be correspondingly demoted. Preferences
 > will affect Magic sort, beginning the next time you load the page.
@@ -27,8 +28,7 @@
 <a href="raidfinder?categories" target="_blank">Categories you follow</a><br>
 <a href="raidfinder?allfollows" target="_blank">All channels you follow</a>
 
-> Raids to or from this channel:
->
+> ### Raids to or from this channel:
 > <ul></ul>
 {: tag=dialog #raids}
 

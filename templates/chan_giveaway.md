@@ -24,8 +24,7 @@
 
 <button type=button id=showmaster>Master Control</button>
 
-> <h3>Master Control</h3>
->
+> ### Master Control
 > * <button type=button class=master id=open>Open giveaway</button> and allow people to buy tickets
 > * <button type=button class=master id=close>Close giveaway</button> so no more tickets will be bought
 > * <button type=button class=master id=pick>Choose winner</button> and remove that person's tickets

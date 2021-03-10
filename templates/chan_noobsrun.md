@@ -1,7 +1,6 @@
 # How far will $$channel$$ run?
 
-> Edit mileage response <code id=cmdname></code>
->
+> ### Edit mileage response <code id=cmdname></code>
 > <div id=command_details></div>
 >
 > <p><button type=button id=save_advanced>Save</button> <button type=button class=dialog_close>Cancel</button></p>
