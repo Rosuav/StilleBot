@@ -22,6 +22,7 @@ TODO: Put a real space between tags so highlighting works correctly.
 */
 
 void update_tags(array alltags) {
+	if (!alltags) return; //Shouldn't happen
 	mapping tags = G->G->all_stream_tags;
 	foreach (alltags, mapping tag) tags[tag->tag_id] = ([
 		"id": tag->tag_id,
