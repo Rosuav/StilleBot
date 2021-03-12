@@ -293,26 +293,29 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[(string)(swap ? userid : otheruid)];
 		int recent = time() - 86400 * 30;
 		int ancient = time() - 86400 * 365;
+		float raidscore = 0.0;
 		foreach (raids || ({ }), mapping raid)
 		{
 			//write("DEBUG RAID LOG: %O\n", raid);
 			//TODO: Translate these by timezone (if available)
 			object time = Calendar.ISO.Second("unix", raid->time);
+			raidscore *= 0.9; //If there are tons of raids, factor the most recent ones strongly, and weaken it into the past.
 			if (swap != raid->outgoing) {
 				strm->raids += ({sprintf(">%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
-				if (raid->time > recent) recommend -= 200;
-				else if (raid->time > ancient) recommend -= 50;
-				else recommend += 8; //"Oh yeah, I've known this person for years"
+				if (raid->time > recent) raidscore -= 200;
+				else if (raid->time > ancient) raidscore -= 50;
+				else raidscore += 8; //"Oh yeah, I've known this person for years"
 			}
 			else {
 				strm->raids += ({sprintf("<%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
-				if (raid->time > recent) recommend += 100;
-				else if (raid->time > ancient) recommend += 200;
-				else recommend += 10; //VERY old raid data has less impact than current.
+				if (raid->time > recent) raidscore += 100;
+				else if (raid->time > ancient) raidscore += 200;
+				else raidscore += 10; //VERY old raid data has less impact than current.
 			}
 			if (!undefinedp(raid->viewers) && raid->viewers != -1)
 				strm->raids[-1] += " with " + raid->viewers;
 		}
+		recommend += (int)raidscore;
 		//For some reason, strm->raids[*][1..] doesn't work. ??
 		sort(lambda(string x) {return x[1..];}(strm->raids[*]), strm->raids); //Sort by date, ignoring the </> direction marker
 		strm->raids = Array.uniq2(strm->raids);
