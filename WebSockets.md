@@ -17,6 +17,7 @@ hypetrain     | Twitch channel ID (integer)
 subpoints     | Display nonce
 chan_giveaway | Twitch channel name (string)
 chan_monitors | Either "#channel" or "nonce#channel"
+chan_commands | Either "#channel" or "!cmdname#channel"
 
 Simplified usage for common cases
 ---------------------------------

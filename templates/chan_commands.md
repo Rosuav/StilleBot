@@ -9,7 +9,7 @@ $$messages$$
 
 Command | Output |
 --------|--------|-
-$$commands$$
+$$commands||- | Loading....$$
 {: #commandview}
 
 [Emotes available to the bot](/emotes)

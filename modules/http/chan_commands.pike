@@ -1,4 +1,5 @@
 inherit http_endpoint;
+inherit websocket_handler;
 
 //Simplistic stringification for read-only display.
 string respstr(echoable_message resp)
@@ -68,6 +69,15 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			}
 			else messages += ({"* Did not create !" + name + " - already exists"});
 		}
+	}
+	if (req->misc->is_mod && req->variables->webapp) { //Temporarily guard with a query parameter for compat
+		return render_template("chan_commands.md", ([
+			"vars": (["ws_type": "chan_commands", "ws_group": req->misc->channel->name]),
+			"templates": TEMPLATES * "\n", "messages": "",
+			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
+				"<input type=submit value=\"Save all\">"
+			),
+		]) | req->misc->chaninfo);
 	}
 	mapping cmd_raw = ([]); //Only used if not is_mod
 	foreach (G->G->echocommands; string cmd; echoable_message response) if (!has_prefix(cmd, "!") && has_suffix(cmd, c))
@@ -176,3 +186,37 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		),
 	]) | req->misc->chaninfo);
 }
+
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->session || !conn->session->user) return "Not logged in";
+	sscanf(msg->group, "%s#%s", string command, string chan);
+	object channel = G->G->irc->channels["#" + chan];
+	if (!channel) return "Bad channel";
+	if (!channel->mods[conn->session->user->login]) return "Not logged in"; //Most likely this will result from some other issue, but whatever
+	if (command != "") return "UNIMPL"; //TODO: Check that there actually is a command of that name
+}
+
+mapping _get_command(string cmd) {
+	echoable_message response = G->G->echocommands[cmd];
+	if (!response) return 0;
+	if (mappingp(response)) return response | (["id": cmd]);
+	return (["message": response, "id": cmd]);
+}
+
+mapping get_state(string group, string|void id) {
+	sscanf(group, "%s#%s", string command, string chan);
+	if (!G->G->irc->channels["#" + chan]) return 0;
+	if (command != "") return 0; //Single-command usage not yet implemented
+	if (id) return _get_command(id); //Partial update of a single command. This will only happen if signalled from the back end.
+	array commands = ({ });
+	foreach (G->G->echocommands; string cmd; echoable_message response) if (!has_prefix(cmd, "!") && has_suffix(cmd, "#" + chan))
+		commands += ({_get_command(cmd)});
+	sort(commands->id, commands);
+	return (["items": commands]);
+}
+
+void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//TODO
+}
+
+protected void create(string name) {::create(name);}
