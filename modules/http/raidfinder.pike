@@ -40,6 +40,12 @@ constant PREFERENCE_MAGIC_SCORES = ({
 	-1000, -250, -50, //Negative ratings
 });
 
+//Fracture a big array into a set of smaller ones and await them all
+//Should get_helix_paginated handle this automatically??
+Concurrent.Future fracture(array stuff, int max, function cb) {
+	return Concurrent.all(cb((stuff / (float)max)[*]))->then() {return __ARGS__[0] * ({ });};
+}
+
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "user_read")) return resp;
@@ -104,7 +110,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//TODO: Based on the for= or the logged in user, determine whether raids are tracked.
 	mapping raids = ([]);
 	array follows_kraken, follows_helix;
-	mapping(int:mapping(string:mixed)) extra_kraken_info = ([]);
 	mapping your_stream;
 	mapping broadcaster_type = ([]);
 	//NOTE: Notes come from your *login* userid, unaffected by any for=
@@ -214,18 +219,13 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		//Map channel list to Kraken so we get both sets of info
 		follows_helix = streams + self->data;
 		//If you follow a large number of categories, or a single large category,
-		//there could be rather a lot of IDs. Note that, in theory, this could
-		//ALL be done with Concurrent.all(), but I don't want to risk having an
-		//arbitrary number of simultaneous requests; it's very hard to predict
-		//the impact of rate-limiting.
-		follows_kraken = ({ }); users = ({ });
-		foreach (ids / 100.0, array block) {
-			mapping ret = yield(Concurrent.all(
-				twitch_api_request("https://api.twitch.tv/kraken/streams/?channel=" + block * ","),
-				get_helix_paginated("https://api.twitch.tv/helix/users", (["id": block])),
-			));
-			follows_kraken += ret[0]->streams; users += ret[1];
-		}
+		//there could be rather a lot of IDs. Fetch in blocks.
+		follows_kraken = ({ }); //Not currently using any Kraken info (yay!), so skip fetching it.
+		/*follows_kraken = yield(fracture(ids, 25) {
+			return twitch_api_request("https://api.twitch.tv/kraken/streams/?channel=" + __ARGS__[0] * ",")
+				->then() {return __ARGS__[0]->streams;};
+		});*/
+		users = yield(fracture(ids, 100) {return get_helix_paginated("https://api.twitch.tv/helix/users", (["id": __ARGS__[0]]));});
 	}
 	else {
 		mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
@@ -254,13 +254,18 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		write("Fetching %d tags...\n", sizeof(need_tags));
 		update_tags(yield(get_helix_paginated("https://api.twitch.tv/helix/tags/streams", (["tag_id": (array)need_tags]))));
 	}
-	foreach (follows_kraken, mapping strm)
-		extra_kraken_info[strm->channel->_id] = ([
+	mapping(int:mapping(string:mixed)) extra_info = ([]);
+	foreach (follows_kraken, mapping strm) //NOTE: As of 2021-03-13, this isn't actually needed. Keeping in case I lift more info.
+		extra_info[strm->channel->_id] = ([
 			"profile_image_url": strm->channel->logo,
 			"url": strm->channel->url,
 			//strm->video_height and strm->average_fps might be of interest
 		]);
-	foreach (users, mapping user) broadcaster_type[(int)user->id] = user->broadcaster_type;
+	foreach (users, mapping user)
+		extra_info[(int)user->id] = ([
+			"broadcaster_type": user->broadcaster_type,
+			"profile_image_url": user->profile_image_url,
+		]) | (extra_info[(int)user->id] || ([]));
 	//Okay! Preliminaries done. Let's look through the Helix-provided info and
 	//build up a final result.
 	mapping tag_prefs = notes->tags || ([]);
@@ -280,10 +285,10 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		//TODO: Configurable hard tag requirements
 		//if (recommend <= -1000 && filter out strong dislikes) {follows_helix[i] = 0; continue;}
 		//if (recommend < 1000 && require at least one mandatory tag) {follows_helix[i] = 0; continue;}
-		if (mapping k = extra_kraken_info[otheruid]) follows_helix[i] = strm = k | strm;
-		if (string t = broadcaster_type[otheruid]) strm->broadcaster_type = t;
+		if (mapping k = extra_info[otheruid]) follows_helix[i] = strm = k | strm;
 		if (string n = notes[(string)otheruid]) strm->notes = n;
 		if (has_value(highlightids, otheruid)) strm->highlight = 1;
+		if (!strm->url) strm->url = "https://twitch.tv/" + strm->user_login; //Is this always correct?
 		int swap = otheruid < userid;
 		array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[(string)(swap ? userid : otheruid)];
 		int recent = time() - 86400 * 30;
