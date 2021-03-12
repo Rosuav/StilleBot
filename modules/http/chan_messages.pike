@@ -41,6 +41,8 @@ mapping _get_message(string|int id, mapping msgs) {
 }
 
 mapping get_state(string group, string|void id) {
+	//FIXME: Check auth! I think I left this for "later" but it's currently wide open!!
+	//Good for testing but do not publish.
 	sscanf(group, "%s#%s", string uid, string chan);
 	if (!G->G->irc->channels["#" + chan]) return 0;
 	mapping msgs = persist_status->path("private", "#" + chan)[uid];
