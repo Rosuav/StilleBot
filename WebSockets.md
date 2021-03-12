@@ -29,6 +29,15 @@ data is available. To provide this data, define a function on the back end,
 `mapping get_state(string|int group)`. Signal updates with send_updates_all,
 and the rest should take care of itself.
 
+For groups that involve a collection of items, partial updates can be sent.
+The front end will initially receive a data mapping with an array of items,
+where each item has an id; subsequently, it can receive a partial update with
+an id and, unless the item has been deleted, a new data mapping.
+
+    Initial: {"items": [{"id": "foo", ...}, ...]}
+    Update: {"id": "foo", "data": {"id": "foo", ...}}
+    Delete: {"id": "foo"} or {"id": "foo", "data": 0}
+
 Using these sockets outside of StilleBot
 ----------------------------------------
 
