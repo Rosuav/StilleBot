@@ -225,10 +225,6 @@ on("click", "#save_advanced", async e => {
 		body: JSON.stringify(info),
 	});
 	if (!res.ok) {console.error("Not okay response", res); return;}
-	info = await res.json();
-	const cmdnobang = cmdname.slice(1);
-	commands[cmdnobang] = info;
-	if (window.command_updated) window.command_updated(cmdnobang);
 });
 
 on("click", 'a[href="/emotes"]', e => {
@@ -252,8 +248,8 @@ on("click", "#templates tbody tr", e => {
 		document.getElementById("advanced_view").showModal();
 		return;
 	}
-	document.forms[0].newcmd_name.value = cmdname;
-	document.forms[0].newcmd_resp.value = text.innerText.trim();
+	DOM("#newcmd_name").value = cmdname;
+	DOM("#newcmd_resp").value = text.innerText.trim();
 });
 
 export const render_parent = DOM("#commandview tbody");

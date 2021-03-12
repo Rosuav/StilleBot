@@ -59,6 +59,10 @@ function textify(cmd) {
 	if (Array.isArray(cmd)) return cmd.map(textify); //TODO: Separate 'em with BR() and then make it still look good
 	return cmd.message;
 }
+//TODO: Replace this with a websocket, hooking just that one command
+//Note that this will require having multiple websockets with different
+//types, which currently isn't supported by ws_sync. This currently is
+//broken anyway, and I don't know what even broke it.
 window.command_updated = cmd => {
 	set_content("#responsetxt", textify(commands[cmd]))
 };
