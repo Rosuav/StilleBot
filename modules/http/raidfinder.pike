@@ -167,19 +167,47 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	highlights = users->login * "\n";
 	string title = "Followed streams";
 	//Category search - show all streams in the categories you follow
-	if (req->variables->categories) {
-		array gameids;
-		if (!(<"", "categories">)[req->variables->categories]) {
-			array cats = yield(get_helix_paginated("https://api.twitch.tv/helix/games", (["name": req->variables->categories / ","])));
-			if (sizeof(cats)) {gameids = cats->id; title = cats->name * ", " + " streams";}
-		}
-		if (!gameids) {
-			mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/users/" + req->misc->session->user->id + "/follows/games"));
-			gameids = (array(string))info->follows->game->_id;
-			title = "Followed categories";
+	if (req->variables->raiders || req->variables->categories) {
+		mapping args = ([]);
+		switch (req->variables->categories) {
+			case 0: { //Raiders mode (categories omitted but "?raiders" specified). Particularly useful with a for= search.
+				//List everyone who's raided you, including their timestamps
+				//Assume that the last entry in each array is the latest.
+				//The result is that raiders will contain one entry for each
+				//unique user ID that has ever been raided, and raidtimes will
+				//have the corresponding timestamps.
+				array raiders = ({ }), raidtimes = ({ });
+				foreach (persist_status->path("raids"); string id; mapping raids) {
+					if (id == (string)userid)
+						foreach (raids; string otherid; array raids) {
+							foreach (reverse(raids), mapping r)
+								if (!r->outgoing) {raiders += ({otherid}); raidtimes += ({r->timestamp}); break;}
+						}
+					else foreach (reverse(raids[(string)userid] || ({ })), mapping r)
+						if (r->outgoing) {raiders += ({(string)userid}); raidtimes += ({r->timestamp}); break;}
+				}
+				sort(raidtimes, raiders);
+				args->user_id = raiders[<99..]; //Is it worth trying to support more than 100 raiders? Would need to paginate.
+				break;
+			}
+			default: { //For ?categories=Art,Food%20%26%20Drink - explicit categories
+				array cats = yield(get_helix_paginated("https://api.twitch.tv/helix/games", (["name": req->variables->categories / ","])));
+				if (sizeof(cats)) {
+					args->game_id = (array(string))cats->id;
+					title = cats->name * ", " + " streams";
+					break;
+				}
+				//Else fall through. Any sort of junk category name, treat it as if it's "?categories"
+			}
+			case "": case "categories": { //For ?categories and ?categories= modes, show those you follow
+				mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/users/" + req->misc->session->user->id + "/follows/games"));
+				args->game_id = (array(string))info->follows->game->_id;
+				title = "Followed categories";
+				break;
+			}
 		}
 		[array streams, mapping self] = yield(Concurrent.all(
-			get_helix_paginated("https://api.twitch.tv/helix/streams", (["game_id": (array(string))gameids])),
+			get_helix_paginated("https://api.twitch.tv/helix/streams", args),
 			twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + userid),
 		));
 		array(string) ids = streams->user_id + ({(string)userid});
