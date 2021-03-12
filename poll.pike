@@ -704,11 +704,29 @@ void subpoints_display(string ch) {
 	array scanme = ({ });
 	int pagesize = 100;
 	mapping cfg;
+	array base;
 	Concurrent.Future pump(array prev) {
 		if (prev) {
+			//Deduplicate the results before continuing
+			int total = sizeof(prev);
+			multiset seen = (<>);
+			foreach (prev; int i; mapping sub)
+				if (seen[sub->user_id]) prev[i] = 0;
+				else seen[sub->user_id] = 1;
+			prev -= ({0});
 			mapping counts = ([]);
 			foreach (prev, mapping sub) counts[sub->tier]++;
-			write("Page size %d - %d/%d subs: %O\n", pagesize, sizeof(prev), cfg->goal, counts);
+			write("Page size %d - %d (%d) subs, %d/%d points\n", pagesize, total, sizeof(prev),
+				counts["1000"] + counts["2000"]*2 + counts["3000"]*6, cfg->goal);
+			array subs = sprintf("%s at T%1.1s", prev->user_name[*], prev->tier[*]);
+			if (base) {
+				mapping seen = mkmapping(base, enumerate(sizeof(base)));
+				foreach (subs; int i; string s)
+					if (!m_delete(seen, s)) //Delete if present
+						write("+%d: %s\n", i, s); //Else it's a new one
+				write("%{%s\n%}", sprintf("-%d: %s", values(seen)[*], indices(seen)[*]));
+			}
+			else base = subs;
 			--pagesize;
 			//if (pagesize > 90) scanme += ({cfg}); //Hack to see more page sizes
 		}
