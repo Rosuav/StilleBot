@@ -234,7 +234,7 @@ function build_follow_list() {
 	if (your_stream)
 		set_content("#yourcat", [
 			your_stream.user_name + " has " + your_stream.viewer_count + " viewers in " + your_stream.category,
-		]).href = "https://www.twitch.tv/directory/game/" + your_stream.category;
+		]).href = "raidfinder?categories=" + your_stream.category;
 	else set_content("#yourcat", "");
 }
 build_follow_list();

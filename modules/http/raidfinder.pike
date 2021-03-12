@@ -317,7 +317,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		}
 		strm->recommend = recommend;
 	}
-	//List all recent raids. Actually list ALL raids on the current system.
+	//List 100 most recent raids.
 	array all_raids = ({ });
 	foreach (persist_status->path("raids"); string id; mapping raids) {
 		if (id == (string)userid)
