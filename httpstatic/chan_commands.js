@@ -289,8 +289,8 @@ export function render_item(msg) {
 	]);
 }
 export function render(data) {
-	if (DOM("#addcmd")) return;
-	render_parent.appendChild(TR([
+	if (DOM("#addcmd")) render_parent.appendChild(DOM("#addcmd").closest("TR")); //Move to end w/o disrupting anything
+	else render_parent.appendChild(TR([
 		TD(["Add: ", INPUT({id: "newcmd_name", size: 10, placeholder: "!hype"})]),
 		TD(INPUT({id: "newcmd_resp", className: "widetext"})),
 		TD(BUTTON({type: "button", id: "addcmd"}, "Add")),

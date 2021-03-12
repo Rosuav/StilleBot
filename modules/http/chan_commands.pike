@@ -54,7 +54,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string c = req->misc->channel->name;
 	array commands = ({ }), order = ({ }), messages = ({ });
 	object user = user_text();
-	int changes_made = 0;
 	if (req->misc->is_mod && req->request_type == "POST")
 	{
 		string name = String.trim(lower_case(req->variables->newcmd_name || "") - "!" - "#");
@@ -63,8 +62,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		{
 			if (!G->G->echocommands[name + c])
 			{
-				changes_made = 1;
-				G->G->echocommands[name + c] = resp;
+				make_echocommand(name + c, resp);
 				messages += ({"* Created !" + name});
 			}
 			else messages += ({"* Did not create !" + name + " - already exists"});
@@ -72,7 +70,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	if (req->misc->is_mod && req->variables->webapp) { //Temporarily guard with a query parameter for compat
 		return render_template("chan_commands.md", ([
-			"vars": (["ws_type": "chan_commands", "ws_group": req->misc->channel->name]),
+			"vars": (["ws_type": "chan_commands", "ws_group": req->misc->channel->name, "complex_templates": COMPLEX_TEMPLATES]),
 			"templates": TEMPLATES * "\n", "messages": "",
 			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
 				"<input type=submit value=\"Save all\">"
@@ -122,18 +120,17 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 					newresp -= ({""});
 					if (newresp * "\n" != simple_messages * "\n")
 					{
-						changes_made = 1;
 						if (!sizeof(newresp))
 						{
 							messages += ({"* Deleted !" + cmd});
-							m_delete(G->G->echocommands, cmd + c);
+							make_echocommand(cmd + c, 0);
 							continue; //Don't put anything into the commands array
 						}
 						simple_messages = newresp; //Keep the arrayified version for the below
 						if (sizeof(newresp) == 1) newresp = newresp[0];
 						if (sizeof(response) > 1) newresp = response | (["message": newresp]); //Hang onto any top-level flags
 						messages += ({"* Updated !" + cmd});
-						G->G->echocommands[cmd + c] = response = newresp;
+						make_echocommand(cmd + c, response = newresp);
 					}	
 				}
 			}
@@ -172,7 +169,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (!sizeof(commands)) commands = ({"(none) |"});
 	//TODO: Put an addline button on this too
 	if (req->misc->is_mod) commands += ({"Add: <input name=newcmd_name size=10 placeholder=\"!hype\"> | <input name=newcmd_resp class=widetext>"});
-	if (changes_made) make_echocommand(0, 0); //Trigger a save
 	return render_template("chan_commands.md", ([
 		"user text": user,
 		"commands": commands * "\n",
