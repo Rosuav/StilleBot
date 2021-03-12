@@ -46,6 +46,11 @@ void make_echocommand(string cmd, echoable_message response)
 	if (!response) m_delete(G->G->echocommands, cmd);
 	string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 	Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
+	sscanf(cmd, "%*s#%s", string chan);
+	if (object handler = chan && G->G->websocket_types->chan_commands) {
+		handler->update_one("#" + chan, cmd);
+		handler->update_all(cmd);
+	}
 }
 
 string process(object channel, object person, string param)
