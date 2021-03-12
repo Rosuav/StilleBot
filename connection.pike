@@ -864,10 +864,14 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 	{
 		//Initialization is done with a type and a group.
 		//The type has to match a module ("inherit websocket_handler")
-		//The group has to be a string.
+		//The group has to be a string or integer.
 		if (conn->type) return; //Can't init twice
 		object handler = G->G->websocket_types[data->type];
 		if (!handler) return; //Ignore any unknown types.
+		if (string err = handler->websocket_validate(conn, data)) {
+			conn->sock->send_text(Standards.JSON.encode((["error": err])));
+			return;
+		}
 		string group = (stringp(data->group) || intp(data->group)) ? data->group : "";
 		conn->type = data->type; conn->group = group;
 		handler->websocket_groups[group] += ({conn->sock});

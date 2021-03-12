@@ -40,9 +40,14 @@ mapping _get_message(string|int id, mapping msgs) {
 	return msg;
 }
 
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->session || !conn->session->user) return "Not logged in";
+	sscanf(msg->group, "%s#%s", string uid, string chan);
+	if (!G->G->irc->channels["#" + chan]) return "Bad channel";
+	if (conn->session->user->id != uid) return "Bad group ID"; //Shouldn't happen, but maybe if you refresh the page after logging in as a different user???
+}
+
 mapping get_state(string group, string|void id) {
-	//FIXME: Check auth! I think I left this for "later" but it's currently wide open!!
-	//Good for testing but do not publish.
 	sscanf(group, "%s#%s", string uid, string chan);
 	if (!G->G->irc->channels["#" + chan]) return 0;
 	mapping msgs = persist_status->path("private", "#" + chan)[uid];

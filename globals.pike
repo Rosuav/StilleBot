@@ -302,6 +302,10 @@ class websocket_handler
 	//be given if update_one was called, otherwise it will be 0.
 	mapping|Concurrent.Future get_state(string|int group, string|void id) { }
 
+	//Override to validate any init requests. Return 0 to allow the socket
+	//establishment, or an error message.
+	string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) { }
+
 	//If msg->cmd is "init", it's a new client and base processing has already been done.
 	//If msg is 0, a client has disconnected and is about to be removed from its group.
 	//Use websocket_groups[conn->group] to find an array of related sockets.
