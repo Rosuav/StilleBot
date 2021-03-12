@@ -2,6 +2,7 @@ import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed
 const {BR, BUTTON, INPUT, DIV, DETAILS, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTION, FIELDSET, LEGEND, CODE} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 const all_flags = "mode dest access visibility action".split(" ");
+const commands = { };
 
 on("click", "button.addline", e => {
 	let parent = e.match.closest("td").previousElementSibling;
@@ -281,6 +282,7 @@ export function render_item(msg) {
 		collect_messages(msg.message, m => response.push(CODE(m), BR()));
 	}
 	response.pop(); //There should be a BR at the end.
+	commands[cmd] = msg;
 	return TR({"data-id": msg.id}, [
 		TD(CODE("!" + cmd)),
 		TD(response),
