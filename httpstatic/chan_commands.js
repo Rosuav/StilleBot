@@ -217,18 +217,7 @@ on("click", "#save_advanced", async e => {
 	document.getElementById("advanced_view").close();
 	const el = document.getElementById("cmdname").firstChild;
 	const cmdname = el.nodeType === 3 ? el.data : el.value; //Not sure if text nodes' .data attribute is the best way to do this
-	try { //When webapp mode is the only mode, drop the try/catch and just use the socket.
-		console.log("Sending update via websocket...");
-		ws_sync.send({cmd: "update", cmdname, response: info});
-		return;
-	} catch (e) {console.log("Unable to send via websocket, falling back to PUT.");}
-	info.cmdname = cmdname;
-	const res = await fetch("command_edit", {
-		method: "PUT",
-		headers: {"Content-Type": "application/json"},
-		body: JSON.stringify(info),
-	});
-	if (!res.ok) {console.error("Not okay response", res); return;}
+	ws_sync.send({cmd: "update", cmdname, response: info});
 });
 
 on("click", 'a[href="/emotes"]', e => {
@@ -258,7 +247,7 @@ on("click", "#templates tbody tr", e => {
 
 export const render_parent = DOM("#commandview tbody");
 function collect_messages(msg, cb) {
-	if (typeof msg === "string") cb(msg)
+	if (typeof msg === "string") cb(msg);
 	else if (Array.isArray(msg)) msg.forEach(line => collect_messages(line, cb));
 	else if (typeof msg === "object") collect_messages(msg.message, cb);
 }
