@@ -219,7 +219,9 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!G->G->irc->channels["#" + chan]) return;
 	if (command == "") {
 		if (!stringp(msg->cmdname)) return;
-		command = String.trim(lower_case(msg->cmdname) - "!");
+		sscanf(msg->cmdname, "%*[!]%s%*[#]%s", command, string c);
+		if (c != "" && c != chan) return; //If you specify the command name as "!demo#rosuav", that's fine if and only if you're working with channel "#rosuav".
+		command = String.trim(lower_case(command));
 		if (command == "") return;
 	}
 	command += "#" + chan; //Potentially getting us right back to conn->group, but more likely the group is just the channel
@@ -229,6 +231,18 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	mapping resp = validate(msg->response);
 	if (resp == "") return; //Message failed validation. TODO: Send a response on the socket.
 	make_echocommand(command, resp); //Will trigger an update automatically
+}
+
+void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%s#%s", string command, string chan);
+	if (!G->G->irc->channels["#" + chan]) return;
+	if (!stringp(msg->cmdname)) return;
+	sscanf(msg->cmdname, "%*[!]%s#%s", command, string c);
+	if (c && c != "" && c != chan) return;
+	command = String.trim(lower_case(command));
+	if (command == "") return;
+	command += "#" + chan;
+	make_echocommand(command, 0); //Will trigger an update automatically
 }
 
 protected void create(string name) {::create(name);}
