@@ -7,10 +7,7 @@ const commands = { };
 on("click", "button.addline", e => {
 	let parent = e.match.closest("td").previousElementSibling;
 	parent.appendChild(BR());
-	parent.appendChild(INPUT({
-		name: e.match.dataset.cmd + "!" + e.match.dataset.idx++,
-		className: "widetext"
-	}));
+	parent.appendChild(INPUT({className: "widetext"}));
 });
 
 const flags = {
@@ -155,8 +152,9 @@ function render_command(cmd, toplevel) {
 }
 
 on("click", "button.advview", e => {
-	set_content("#command_details", render_command(commands[e.match.dataset.cmd], 1));
-	set_content("#cmdname", "!" + e.match.dataset.cmd);
+	const id = e.match.closest("tr").dataset.id;
+	set_content("#command_details", render_command(commands[id], 1));
+	set_content("#cmdname", "!" + id.split("#")[0]);
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
 });
@@ -264,19 +262,19 @@ export function render_item(msg) {
 	)) {
 		//Simple message. Return an editable row.
 		collect_messages(msg.message, m => response.push(INPUT({value: m, className: "widetext"}), BR()));
-		addbtn = BUTTON({type: "button", className: "addline", "data-cmd": cmd, title: "Add another line"}, "+");
+		addbtn = BUTTON({type: "button", className: "addline", title: "Add another line"}, "+");
 	}
 	else {
 		//Complex message. Return a non-editable row.
 		collect_messages(msg.message, m => response.push(CODE(m), BR()));
 	}
 	response.pop(); //There should be a BR at the end.
-	commands[cmd] = msg;
+	commands[msg.id] = msg;
 	return TR({"data-id": msg.id}, [
 		TD(CODE("!" + cmd)),
 		TD(response),
 		TD([
-			BUTTON({type: "button", className: "advview", "data-cmd": cmd, title: "Advanced"}, "\u2699"),
+			BUTTON({type: "button", className: "advview", title: "Advanced"}, "\u2699"),
 			addbtn,
 		]),
 	]);
