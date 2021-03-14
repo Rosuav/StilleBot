@@ -19,13 +19,13 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				{
 					if (text)
 					{
-						G->G->echocommands[cmdname] = text;
-						updates += ({sprintf("<li>%s %sated.</li>", spec, response ? "upd" : "cre")});
+						make_echocommand(cmdname, text);
+						updates += ({sprintf("* %s %sated.", spec, response ? "upd" : "cre")});
 					}
 					else
 					{
-						m_delete(G->G->echocommands, cmdname);
-						updates += ({sprintf("<li>%s deleted.</li>", spec)});
+						make_echocommand(cmdname, 0);
+						updates += ({sprintf("* %s deleted.", spec)});
 					}
 					response = text;
 					
@@ -39,18 +39,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		else if (!response) commands += ({"<tr><td colspan=4>Not active</td></tr>"});
 		else commands += sprintf("<tr><td colspan=4>Response:<span class=gap></span><code>%s</code></td></tr>", respstr(Array.arrayify(response)[*])[*]);
 	}
-	string messages = "";
-	if (sizeof(updates))
-	{
-		messages = "<ul>" + updates * "\n" + "</ul>";
-		make_echocommand(0, 0); //Trigger a save without adding a command
-	}
-	mapping replacements = ([
+	return render_template("chan_specials.md", ([
 		"commands": commands * "\n",
 		"title": "Special responses for " + req->misc->chaninfo->channel,
-		"messages": messages,
+		"messages": updates * "\n",
 		"save_or_login": "<input type=submit value=\"Save all\">",
-	]) | req->misc->chaninfo;
-	//Double-parse the same way Markdown files are, but without actually using Markdown
-	return render_template("markdown.html", replacements | (["content": render_template("chan_specials.html", replacements)->data]));
+	]) | req->misc->chaninfo);
 }

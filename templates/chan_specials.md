@@ -1,17 +1,18 @@
-<h1>Special responses for $$channel$$</h1>
+# Special responses for $$channel$$
 
-<p>When certain events happen, StilleBot can automatically react, to thank a
+When certain events happen, StilleBot can automatically react, to thank a
 person or celebrate an activity etc. Every event is triggered by somebody -
 the initiator of the special action - and many events have additional information
-available. For example, when someone <a href="https://help.twitch.tv/customer/portal/articles/2449458">cheers</a>
-in your channel, StilleBot can thank the person with a message such as:</p>
+available. For example, when someone [cheers](https://help.twitch.tv/customer/portal/articles/2449458)
+in your channel, StilleBot can thank the person with a message such as:
+
 <pre>Thank you for the {bits} bits, $$$$!
 
 MustardMine: This is a test cheer cheer100
 StilleBot: Thank you for the 100 bits, MustardMine!
 </pre>
 
-<p>Channel moderators may add and edit these responses below.</p>
+Channel moderators may add and edit these responses below.
 
 $$messages$$
 
@@ -19,4 +20,5 @@ $$messages$$
 <tr><th>Special name</th><th>When it happens</th><th>Initiator (<code>$$$$</code>)</th><th>Other info</th></tr>
 $$commands$$
 </table>
-<p>$$save_or_login$$</p>
+
+$$save_or_login$$
