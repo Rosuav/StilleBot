@@ -212,7 +212,23 @@ mapping get_state(string group, string|void id) {
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	//TODO
+	//When CGI mode is deprecated, move the code into this module and have the
+	//weird handler over in command_edit instead.
+	function validate = function_object(G->G->http_endpoints->chan_command_edit)->validate;
+	sscanf(conn->group, "%s#%s", string command, string chan);
+	if (!G->G->irc->channels["#" + chan]) return;
+	if (command == "") {
+		if (!stringp(msg->cmdname)) return;
+		command = String.trim(lower_case(msg->cmdname) - "!");
+		if (command == "") return;
+	}
+	command += "#" + chan; //Potentially getting us right back to conn->group, but more likely the group is just the channel
+	//Validate the message. Note that there will be some things not caught by this
+	//(eg trying to set access or visibility deep within the response), but they
+	//will be merely useless, not problematic.
+	mapping resp = validate(msg->response);
+	if (resp == "") return; //Message failed validation. TODO: Send a response on the socket.
+	make_echocommand(command, resp); //Will trigger an update automatically
 }
 
 protected void create(string name) {::create(name);}
