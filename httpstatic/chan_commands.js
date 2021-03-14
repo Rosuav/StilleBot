@@ -310,7 +310,6 @@ on("submit", "main > form", e => {
 	});
 	const cmdname = DOM("#newcmd_name").value, response = DOM("#newcmd_resp").value;
 	if (cmdname !== "" && response !== "") {
-		console.log("Adding");
 		ws_sync.send({cmd: "update", cmdname, response});
 		DOM("#newcmd_name").value = DOM("#newcmd_resp").value = "";
 		DOM("#newcmd_name").closest("tr").classList.remove("dirty");
