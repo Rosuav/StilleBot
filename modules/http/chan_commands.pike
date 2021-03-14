@@ -68,10 +68,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			else messages += ({"* Did not create !" + name + " - already exists"});
 		}
 	}
-	if (req->misc->is_mod && req->variables->webapp) { //Temporarily guard with a query parameter for compat
+	if (req->misc->is_mod && !req->variables->legacy) { //Legacy mode will eventually be removed.
 		return render_template("chan_commands.md", ([
 			"vars": (["ws_type": "chan_commands", "ws_group": req->misc->channel->name, "complex_templates": COMPLEX_TEMPLATES]),
 			"templates": TEMPLATES * "\n", "messages": "",
+			"messages": "**Is stuff broken? Please let me know. [Return to legacy mode](commands?legacy) if that helps.**",
 			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
 				"<input type=submit value=\"Save all\">"
 			),
