@@ -190,7 +190,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	object channel = G->G->irc->channels["#" + chan];
 	if (!channel) return "Bad channel";
 	if (!channel->mods[conn->session->user->login]) return "Not logged in"; //Most likely this will result from some other issue, but whatever
-	if (command != "") return "UNIMPL"; //TODO: Check that there actually is a command of that name
+	if (command != "" && command != "!!") return "UNIMPL"; //TODO: Check that there actually is a command of that name
 }
 
 mapping _get_command(string cmd) {
@@ -203,11 +203,14 @@ mapping _get_command(string cmd) {
 mapping get_state(string group, string|void id) {
 	sscanf(group, "%s#%s", string command, string chan);
 	if (!G->G->irc->channels["#" + chan]) return 0;
-	if (command != "") return 0; //Single-command usage not yet implemented
 	if (id) return _get_command(id); //Partial update of a single command. This will only happen if signalled from the back end.
+	if (command != "" && command != "!!") return 0; //Single-command usage not yet implemented
 	array commands = ({ });
-	foreach (G->G->echocommands; string cmd; echoable_message response) if (!has_prefix(cmd, "!") && has_suffix(cmd, "#" + chan))
-		commands += ({_get_command(cmd)});
+	foreach (G->G->echocommands; string cmd; echoable_message response) if (has_suffix(cmd, "#" + chan))
+	{
+		if (command == "!!" && has_prefix(cmd, "!")) commands += ({_get_command(cmd)});
+		else if (command == "" && !has_prefix(cmd, "!")) commands += ({_get_command(cmd)});
+	}
 	sort(commands->id, commands);
 	return (["items": commands]);
 }
@@ -218,12 +221,14 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	function validate = function_object(G->G->http_endpoints->chan_command_edit)->validate;
 	sscanf(conn->group, "%s#%s", string command, string chan);
 	if (!G->G->irc->channels["#" + chan]) return;
-	if (command == "") {
+	if (command == "" || command == "!!") {
+		string pfx = command[..1]; //"!" for specials, "" for normals
 		if (!stringp(msg->cmdname)) return;
 		sscanf(msg->cmdname, "%*[!]%s%*[#]%s", command, string c);
 		if (c != "" && c != chan) return; //If you specify the command name as "!demo#rosuav", that's fine if and only if you're working with channel "#rosuav".
 		command = String.trim(lower_case(command));
 		if (command == "") return;
+		command = pfx + command;
 	}
 	command += "#" + chan; //Potentially getting us right back to conn->group, but more likely the group is just the channel
 	//Validate the message. Note that there will be some things not caught by this

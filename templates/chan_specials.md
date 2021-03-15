@@ -14,11 +14,7 @@ StilleBot: Thank you for the 100 bits, MustardMine!
 
 Channel moderators may add and edit these responses below.
 
-$$messages$$
-
-<table border>
-<tr><th>Special name</th><th>When it happens</th><th>Initiator (<code>$$$$</code>)</th><th>Other info</th></tr>
-$$commands$$
-</table>
-
-$$save_or_login$$
+Special name | When it happens | Initiator (<code>$$$$</code>) | Other info
+-------------|-----------------|-------------------------------|------------
+-  | -  | -  | Loading...
+{: #commands}
