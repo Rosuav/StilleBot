@@ -469,7 +469,7 @@ class Lexer
 			{
 				mapping target = tok;
 				array(string) lines = tok->text / "\n";
-				if (tokens[i + 1]->type == "blockquote_end") target = tokens[i + 1];
+				if (i + 1 < sizeof(tokens) && tokens[i + 1]->type == "blockquote_end") target = tokens[i + 1];
 				else if (sizeof(lines) == 1 && i > 0)
 				{
 					//It's a paragraph consisting ONLY of attributes.
