@@ -308,10 +308,13 @@ on("submit", "main > form", e => {
 		//a broadcast message which, when it reaches us, will rerender the command
 		//completely, thus effectively resetting dirty.
 	});
-	const cmdname = DOM("#newcmd_name").value, response = DOM("#newcmd_resp").value;
-	if (cmdname !== "" && response !== "") {
-		ws_sync.send({cmd: "update", cmdname, response});
-		DOM("#newcmd_name").value = DOM("#newcmd_resp").value = "";
-		DOM("#newcmd_name").closest("tr").classList.remove("dirty");
+	const newcmd = DOM("#newcmd_name");
+	if (newcmd) { //Applicable only to the main command editor
+		const cmdname = newcmd.value, response = DOM("#newcmd_resp").value;
+		if (cmdname !== "" && response !== "") {
+			ws_sync.send({cmd: "update", cmdname, response});
+			newcmd.value = DOM("#newcmd_resp").value = "";
+			newcmd.closest("tr").classList.remove("dirty");
+		}
 	}
 });
