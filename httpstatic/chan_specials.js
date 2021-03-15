@@ -2,7 +2,6 @@ import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfact
 const {CODE, BR, TR, TD, SPAN, INPUT} = choc;
 import {render_item as render_command} from "./chan_commands.js"; //TODO: Can I hook the static updates handling?
 
-let resp = { };
 export function render(data) {
 	if (data.id) {
 		const obj = DOM("#commands tbody").querySelector(`[data-id="${data.id}"]`);
@@ -11,7 +10,7 @@ export function render(data) {
 	}
 	else {
 		//Remap the data to be a lookup, then loop through the expected commands
-		resp = { };
+		const resp = { };
 		data.items.forEach(c => resp[c.id] = c);
 		const rows = []; //Map the commands to two TRs each
 		commands.forEach(cmd => rows.push(
