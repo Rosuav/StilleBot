@@ -1,9 +1,14 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {CODE, TR, TD, SPAN, INPUT} = choc;
+import {render_item as render_command} from "./chan_commands.js"; //TODO: Can I hook the static updates handling?
 
 let resp = { };
 export function render(data) {
-	if (data.id) resp[data.id] = data.data; //TODO: Properly handle partial updates
+	if (data.id) {
+		const obj = DOM("#commands tbody").querySelector(`[data-id="${data.id}"]`);
+		if (!obj) return; //All objects should be created by the initial pass (see below)
+		obj.replaceWith(render_command(data.data || {id: cmd.id, message: ""}, obj));
+	}
 	else {
 		//Remap the data to be a lookup, then loop through the expected commands
 		resp = { };
@@ -14,11 +19,7 @@ export function render(data) {
 			TD(cmd.desc),
 			TD(cmd.originator),
 			TD(cmd.params),
-		]), TR({"data-id": cmd.id}, TD({colSpan: "4"}, [
-			//TODO: Embed a command editor, including its Advanced button
-			"Response:", SPAN({className: "gap"}), //Do I need this span still?
-			INPUT({value: resp[cmd.id] ? resp[cmd.id].message : "", className: "widetext"}),
-		]))));
+		]), render_command(resp[cmd.id] || {id: cmd.id, message: ""})));
 		set_content("#commands tbody", rows);
 	}
 	return;

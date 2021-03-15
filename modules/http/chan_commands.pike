@@ -222,7 +222,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	sscanf(conn->group, "%s#%s", string command, string chan);
 	if (!G->G->irc->channels["#" + chan]) return;
 	if (command == "" || command == "!!") {
-		string pfx = command[..1]; //"!" for specials, "" for normals
+		string pfx = command[..0]; //"!" for specials, "" for normals
 		if (!stringp(msg->cmdname)) return;
 		sscanf(msg->cmdname, "%*[!]%s%*[#]%s", command, string c);
 		if (c != "" && c != chan) return; //If you specify the command name as "!demo#rosuav", that's fine if and only if you're working with channel "#rosuav".

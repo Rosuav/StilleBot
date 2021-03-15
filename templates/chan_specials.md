@@ -20,3 +20,10 @@ Special name | When it happens | Initiator (<code>$$$$</code>) | Other info
 {: #commands}
 
 $$save_or_login$$
+
+> ### Edit special response <code id=cmdname></code>
+> <div id=command_details></div>
+>
+> <p><button type=button id=save_advanced>Save</button> <button type=button class=dialog_close>Cancel</button></p>
+>
+{: tag=dialog #advanced_view}
