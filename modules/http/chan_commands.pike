@@ -215,40 +215,39 @@ mapping get_state(string group, string|void id) {
 	return (["items": commands]);
 }
 
-void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//When CGI mode is deprecated, move the code into this module and have the
 	//weird handler over in command_edit instead.
 	function validate = function_object(G->G->http_endpoints->chan_command_edit)->validate;
 	sscanf(conn->group, "%s#%s", string command, string chan);
-	if (!G->G->irc->channels["#" + chan]) return;
+	if (!G->G->irc->channels["#" + chan]) return 0;
 	if (command == "" || command == "!!") {
 		string pfx = command[..0]; //"!" for specials, "" for normals
-		if (!stringp(msg->cmdname)) return;
+		if (!stringp(msg->cmdname)) return 0;
 		sscanf(msg->cmdname, "%*[!]%s%*[#]%s", command, string c);
-		if (c != "" && c != chan) return; //If you specify the command name as "!demo#rosuav", that's fine if and only if you're working with channel "#rosuav".
+		if (c != "" && c != chan) return 0; //If you specify the command name as "!demo#rosuav", that's fine if and only if you're working with channel "#rosuav".
 		command = String.trim(lower_case(command));
-		if (command == "") return;
+		if (command == "") return 0;
 		command = pfx + command;
 	}
 	command += "#" + chan; //Potentially getting us right back to conn->group, but more likely the group is just the channel
 	//Validate the message. Note that there will be some things not caught by this
 	//(eg trying to set access or visibility deep within the response), but they
 	//will be merely useless, not problematic.
-	mapping resp = validate(msg->response);
-	if (resp == "") return; //Message failed validation. TODO: Send a response on the socket.
-	make_echocommand(command, resp); //Will trigger an update automatically
+	return ({command, validate(msg->response)});
 }
 
+void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	array valid = _validate_update(conn, msg);
+	if (!valid) return;
+	if (valid[1] != "") make_echocommand(@valid);
+	//Else message failed validation. TODO: Send a response on the socket.
+}
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	sscanf(conn->group, "%s#%s", string command, string chan);
-	if (!G->G->irc->channels["#" + chan]) return;
-	if (!stringp(msg->cmdname)) return;
-	sscanf(msg->cmdname, "%*[!]%s#%s", command, string c);
-	if (c && c != "" && c != chan) return;
-	command = String.trim(lower_case(command));
-	if (command == "") return;
-	command += "#" + chan;
-	make_echocommand(command, 0); //Will trigger an update automatically
+	array valid = _validate_update(conn, msg | (["response": ""]));
+	if (!valid) return;
+	if (valid[1] == "") make_echocommand(valid[0], 0);
+	//Else something went wrong. Does it need a response?
 }
 
 protected void create(string name) {::create(name);}
