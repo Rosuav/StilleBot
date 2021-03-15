@@ -98,7 +98,7 @@ const conditional_types = {
 
 //Recursively generate DOM elements to allow a command to be edited with full flexibility
 function render_command(cmd, toplevel) {
-	if (!cmd.message) cmd = {message: cmd};
+	if (typeof cmd.message === "undefined") cmd = {message: cmd};
 	if (cmd.conditional) {
 		//NOTE: This UI currently cannot handle (nor will it create) conditionals
 		//with other flags. Instead, do the flags, and then have the conditional
