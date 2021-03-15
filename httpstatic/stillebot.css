@@ -99,3 +99,7 @@ nav a {
 #nextlevel.level6 {background-color: var(--hype-level6);}
 /* It'd be really cool to get the conductors' chat colours, but probably impractical */
 #cond_bits.present, #cond_subs.present {background-color: #e060e0;}
+
+tr.dirty {
+	background-color: #ffeeee;
+}

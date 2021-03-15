@@ -47,10 +47,6 @@ td:nth-of-type(2n+1) {white-space: nowrap;}
 
 .iftrue {border-color: #0bb;}
 .iffalse {border-color: #a08;}
-
-tr.dirty {
-	background-color: #ffeeee;
-}
 </style>
 
 > ### Edit command <code id=cmdname></code>
