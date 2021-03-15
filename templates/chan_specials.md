@@ -14,9 +14,9 @@ StilleBot: Thank you for the 100 bits, MustardMine!
 
 Channel moderators may add and edit these responses below.
 
-Special name | When it happens | Initiator (<code>$$$$</code>) | Other info
--------------|-----------------|-------------------------------|------------
--  | -  | -  | Loading...
+Special name | Response | -
+-------------|----------|----
+-            | Loading...
 {: #commands}
 
 $$save_or_login$$
@@ -27,3 +27,10 @@ $$save_or_login$$
 > <p><button type=button id=save_advanced>Save</button> <button type=button class=dialog_close>Cancel</button></p>
 >
 {: tag=dialog #advanced_view}
+
+<style>
+table {width: 100%;}
+th, td {width: 100%;}
+th:first-of-type, th:last-of-type, td:first-of-type, td:last-of-type {width: max-content;}
+td:nth-of-type(2n+1) {white-space: nowrap;}
+</style>

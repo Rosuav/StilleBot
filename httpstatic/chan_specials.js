@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {CODE, TR, TD, SPAN, INPUT} = choc;
+const {CODE, BR, TR, TD, SPAN, INPUT} = choc;
 import {render_item as render_command} from "./chan_commands.js"; //TODO: Can I hook the static updates handling?
 
 let resp = { };
@@ -14,12 +14,14 @@ export function render(data) {
 		resp = { };
 		data.items.forEach(c => resp[c.id] = c);
 		const rows = []; //Map the commands to two TRs each
-		commands.forEach(cmd => rows.push(TR({className: "gap"}, [
-			TD(CODE("!" + cmd.id.split("#")[0])),
-			TD(cmd.desc),
-			TD(cmd.originator),
-			TD(cmd.params),
-		]), render_command(resp[cmd.id] || {id: cmd.id, message: ""})));
+		commands.forEach(cmd => rows.push(
+			render_command(resp[cmd.id] || {id: cmd.id, message: ""}),
+			TR(TD({colSpan: 3}, [
+				"Happens when: " + cmd.desc, BR(),
+				CODE("$$"), ": ", cmd.originator, BR(),
+				"Other parameters: " + cmd.params,
+			])),
+		));
 		set_content("#commands tbody", rows);
 	}
 	return;

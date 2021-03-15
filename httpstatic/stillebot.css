@@ -3,9 +3,6 @@
 
 td {padding: 0.25em 0.5em;}
 
-tr.gap {height: 1em;}
-span.gap {display: inline-block; width: .75em;}
-
 table {border-collapse: collapse;}
 
 input {background: #ffe;}
