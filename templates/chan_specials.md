@@ -18,3 +18,5 @@ Special name | When it happens | Initiator (<code>$$$$</code>) | Other info
 -------------|-----------------|-------------------------------|------------
 -  | -  | -  | Loading...
 {: #commands}
+
+$$save_or_login$$
