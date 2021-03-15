@@ -7,7 +7,7 @@ export function render(data) {
 	if (data.id) {
 		const obj = DOM("#commands tbody").querySelector(`[data-id="${data.id}"]`);
 		if (!obj) return; //All objects should be created by the initial pass (see below)
-		obj.replaceWith(render_command(data.data || {id: cmd.id, message: ""}, obj));
+		obj.replaceWith(render_command(data.data || {id: data.id, message: ""}, obj));
 	}
 	else {
 		//Remap the data to be a lookup, then loop through the expected commands
