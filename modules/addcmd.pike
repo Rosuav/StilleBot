@@ -1,5 +1,7 @@
 inherit command;
 constant require_moderator = 1;
+//TODO: Reword these, or maybe change the layout of the docstring. The web interface
+//now has a very different layout, which makes the current content look ugly.
 constant SPECIALS = ({
 	({"!follower", ({"Someone follows the channel", "The new follower", ""})}),
 	({"!sub", ({"Brand new subscription", "The subscriber", "{tier} (1, 2, or 3)"})}),
