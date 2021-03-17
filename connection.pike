@@ -492,7 +492,7 @@ class channel_notif
 				mapping msgs = persist_status->path("private", name, uid);
 				int id = time();
 				while (msgs[id]) ++id; //Hack to avoid collisions
-				msgs[id] = (["received": time(), "message": msg]);
+				msgs[(string)id] = (["received": time(), "message": msg]);
 				persist_status->save();
 				G->G->websocket_types->chan_messages->update_one(uid + name, (string)id);
 				return; //Nothing more to send here.
