@@ -25,8 +25,6 @@ const toplevelflags = ["access", "visibility"];
 function checkpos() {
 	const dlg = DOM("#advanced_view");
 	const html = DOM("html");
-	console.log(html.clientWidth, dlg.clientWidth);
-	console.log(html.clientHeight, dlg.clientHeight);
 	dlg.style.left = Math.max(html.clientWidth - dlg.clientWidth, 0) / 2 + "px";
 	dlg.style.top = Math.max(html.clientHeight - dlg.clientHeight, 0) / 2 + "px";
 	dlg.style.margin = "0";
