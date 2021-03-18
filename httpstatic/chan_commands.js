@@ -306,6 +306,9 @@ on("submit", "main > form", e => {
 		//a broadcast message which, when it reaches us, will rerender the command
 		//completely, thus effectively resetting dirty.
 	});
+	addcmd();
+});
+function addcmd() {
 	const newcmd = DOM("#newcmd_name");
 	if (newcmd) { //Applicable only to the main command editor
 		const cmdname = newcmd.value, response = DOM("#newcmd_resp").value;
@@ -315,4 +318,5 @@ on("submit", "main > form", e => {
 			newcmd.closest("tr").classList.remove("dirty");
 		}
 	}
-});
+}
+on("click", "#addcmd", addcmd); //Note that there'll never be more than one add button at the moment, but might be zero.
