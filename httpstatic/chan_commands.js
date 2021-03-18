@@ -285,7 +285,7 @@ export function render(data) {
 		TD(BUTTON({type: "button", id: "addcmd"}, "Add")),
 	]));
 }
-on("input", "tr input", e => e.match.closest("tr").classList.add("dirty"));
+on("input", "tr[data-id] input", e => e.match.closest("tr").classList.add("dirty"));
 
 on("submit", "main > form", e => {
 	e.preventDefault();
