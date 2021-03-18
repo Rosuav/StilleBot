@@ -77,3 +77,5 @@
   - In chan_run, allow the "next mile" command to be updated
   - Rework channel specials to use this
 * Use persist_status->path("bcaster_token")[chan] for all need-more-auth calls
+* Import from outgoing_raids into the modern system. Cope with the early-2021
+  data loss event the same way.
