@@ -4,19 +4,6 @@ inherit http_endpoint;
   - There's not going to be any easy UI for it, but it'd be great to have a "raided my friend"
     feature, where we can see any time that X raided Y where Y is one of my friends... hard.
 
-Possible enhancement: Tag filtering or recommendations.
-- For filtering, allow both positive and negative
-  - Require tag "English"
-  - Exclude any with tag "Speedrun"
-- For recommendations, allow the strength to be set??
-  - Will affect Magic sort, and may also be a separate sort option
-  - For calibration, "same category" is worth 100 points, and each tag in common with you is 25 points.
-  - Default strength of tag recommendation should probably be 100 +/- 50
-  - Tag recommendations can be negative, penalizing those streams. It's probably best to keep
-    most tag usage positive though.
-  - https://api.twitch.tv/helix/tags/streams - all tags - about 500ish, of which about 250 are automatic
-
-
 TODO: Put a real space between tags so highlighting works correctly.
 -- The browser seems to be ditching it for me. Not sure why, or how to stop it.
 */
