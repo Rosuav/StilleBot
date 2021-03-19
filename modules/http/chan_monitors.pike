@@ -4,7 +4,7 @@ inherit websocket_handler;
 //Note that this also handles CookingForNoobs's run distance gauge, which may end up
 //turning into a more generic gauge. This has a different set of attributes and a
 //different admin front-end, but the viewing endpoint and API handling are shared.
-constant css_attributes = "font fontweight fontsize color css whitespace previewbg barcolor fillcolor bordercolor borderwidth needlesize thresholds padvert padhoriz";
+constant css_attributes = "font fontweight fontsize color css whitespace previewbg barcolor fillcolor bordercolor borderwidth needlesize thresholds padvert padhoriz lvlupcmd";
 
 /* TODO: Join up three things and make them all behave more similarly.
 1) The monitors page where things get configured

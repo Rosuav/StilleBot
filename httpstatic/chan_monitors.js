@@ -28,6 +28,8 @@ function set_values(nonce, info, elem) {
 		}
 		const el = elem.querySelector("[name=" + attr + "]");
 		if (el) el.value = info[attr];
+		if (attr === "lvlupcmd" && el) //Special case: the value might not work if stuff isn't loaded yet.
+			el.dataset.wantvalue = info[attr]
 	}
 	if (runmode) {
 		elem.querySelector("[name=currentval]").value = info.display.split(":")[0];

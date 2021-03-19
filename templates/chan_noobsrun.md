@@ -48,7 +48,7 @@ input[type=number] {width: 4em;}
 	<fieldset><legend>Horizontal</legend><input type=number name=padhoriz min=0 max=2 step=0.005> em</fieldset>
 </div></td></tr>
 <tr><th>Needle size</th><td><input type=number name=needlesize min=0 max=1 step=0.005 value=0.375> Thickness of the red indicator needle</td></tr>
-<tr><th>Next mile response</th><td><code id=responsetxt></code> <button class=advview data-cmd=nextmile>Edit</button></td></tr>
+<tr><th>Level up response</th><td><select id=cmdpicker name=lvlupcmd><option>Loading...</option></select> <button id=editlvlup>Edit</button></td></tr>
 <tr><th>Custom CSS</th><td><textarea name=css></textarea></td></tr>
 <tr><th>Preview</th><td><div id=preview class=preview></div></td></tr>
 <tr><th>Link</th><td><a href="monitors?view=$$nonce$$" class=monitorlink>Drag me to OBS</a></td></tr>
@@ -56,4 +56,3 @@ input[type=number] {width: 4em;}
 <input type=submit value=Save>
 
 <script type=module src="$$static||noobsrun.js$$"></script>
-<script type=module src="$$static||commands.js$$"></script>

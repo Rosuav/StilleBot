@@ -1,6 +1,7 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, DETAILS, SUMMARY, DIV, FORM, INPUT, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
+const {A, BR, BUTTON, CODE, DETAILS, SUMMARY, DIV, FORM, INPUT, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
 import update_display from "./monitor.js";
+import {open_advanced_view} from "./chan_commands.js";
 
 function update_milepicker() {
 	const thresholds = DOM("[name=thresholds]").value.split(" ");
@@ -56,14 +57,40 @@ on("dragstart", ".monitorlink", e => {
 
 function textify(cmd) {
 	if (typeof cmd === "string") return cmd;
-	if (Array.isArray(cmd)) return cmd.map(textify); //TODO: Separate 'em with BR() and then make it still look good
+	if (Array.isArray(cmd)) return cmd.map(textify).filter(x => x).join(" // ");
+	if (cmd.dest) return null; //Suppress special-destination sections
 	return cmd.message;
 }
-//TODO: Replace this with a websocket, hooking just that one command
-//Note that this will require having multiple websockets with different
-//types, which currently isn't supported by ws_sync. This currently is
-//broken anyway, and I don't know what even broke it.
-window.command_updated = cmd => {
-	set_content("#responsetxt", textify(commands[cmd]))
-};
-window.command_updated("nextmile");
+const commands = { };
+ws_sync.connect("#" + channame, {
+	ws_type: "chan_commands",
+	select: DOM("#cmdpicker"),
+	make_option: cmd => OPTION({"data-id": cmd.id, value: cmd.id.split("#")[0]}, "!" + cmd.id.split("#")[0] + " -- " + textify(cmd.message)),
+	is_recommended: cmd => cmd.access === "none" && cmd.visibility === "hidden",
+	render: function(data) {
+		if (data.id) {
+			const opt = select.querySelector(`[data-id="${data.id}"]`);
+			//Note that a partial update (currently) won't move a command between groups.
+			if (opt) set_content(opt, "!" + cmd.id.split("#")[0] + " -- " + textify(cmd.message)); //TODO: dedup
+			else this.groups[this.is_recommended(cmd) ? 1 : 2].appendChild(this.make_option(cmd));
+			commands[data.id] = data;
+			return;
+		}
+		if (!this.groups) set_content(this.select, this.groups = [
+			OPTGROUP({label: "None"}, OPTION({value: ""}, "No response - levels will pass silently")),
+			OPTGROUP({label: "Recommended"}),
+			OPTGROUP({label: "Other"}),
+		]);
+		const blocks = [[], []];
+		data.items.forEach(cmd => blocks[this.is_recommended(cmd) ? 0 : 1].push(this.make_option(commands[cmd.id] = cmd)));
+		set_content(this.groups[1], blocks[0]);
+		set_content(this.groups[2], blocks[1]);
+		const want = this.select.dataset.wantvalue;
+		if (want) this.select.value = want;
+	},
+});
+
+DOM("#editlvlup").onclick = e => {
+	const id = DOM("#cmdpicker").selectedOptions[0].dataset.id;
+	if (commands[id]) open_advanced_view(commands[id]);
+}

@@ -49,7 +49,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"ws_type": nonce && "chan_monitors", "ws_group": nonce && (nonce + req->misc->channel->name),
 		"nonce": nonce || "",
 		"css_attributes": G->G->monitor_css_attributes,
-		"commands": (["nextmile": G->G->echocommands["nextmile" + req->misc->channel->name]]),
 	])]) | req->misc->chaninfo);
 }
 
@@ -77,7 +76,7 @@ int message(object channel, mapping person, string msg)
 			//This is the current mile. If we've only barely started it,
 			//then we probably just hit this mile. (If mile is 0, we've
 			//just broken positive after having a negative total.)
-			if (total < cents) channel->send(person, G->G->echocommands["nextmile" + channel->name], (["%s": (string)mile]));
+			if (total < cents) channel->send(person, G->G->echocommands[info->lvlupcmd + channel->name], (["%s": (string)mile]));
 			break;
 		}
 		break;
