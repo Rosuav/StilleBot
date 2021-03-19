@@ -5,8 +5,6 @@ command, and `%s` will take whatever text was added after the command name.
 
 To remove a command or part of a command's output, just blank it.
 
-$$messages$$
-
 Command | Output |
 --------|--------|-
 $$commands||- | Loading....$$
