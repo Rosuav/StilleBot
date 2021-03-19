@@ -149,13 +149,13 @@ function render_command(cmd, toplevel) {
 	]), cmd.message));
 }
 
-on("click", "button.advview", e => {
-	const id = e.match.closest("tr").dataset.id;
-	set_content("#command_details", render_command(commands[id], 1));
-	set_content("#cmdname", "!" + id.split("#")[0]);
+export function open_advanced_view(cmd) {
+	set_content("#command_details", render_command(cmd, 1));
+	set_content("#cmdname", "!" + cmd.id.split("#")[0]);
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
-});
+}
+on("click", "button.advview", e => open_advanced_view(commands[e.match.closest("tr").dataset.id]));
 
 on("change", "select[data-flag=conditional]", e => {
 	//NOTE: Assumes that this does not have additional flags. They will be lost.
