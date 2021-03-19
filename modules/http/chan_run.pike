@@ -36,22 +36,19 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		return jsonify((["prev": prev]));
 	}
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
-	string nonce; mapping info;
+	string nonce;
 	if (!cfg->monitors) ; //TODO: Give a nicer error?
-	else if (mapping i = cfg->monitors[req->variables->nonce]) {
+	else if (cfg->monitors[req->variables->nonce]) {
 		nonce = req->variables->nonce;
-		info = i;
 	} else {
 		//None specified? Find one that looks like a run bar.
-		foreach (cfg->monitors; string n; mapping i) if (i->barcolor) {nonce = n; info = i; break;}
+		foreach (cfg->monitors; string n; mapping i) if (i->barcolor) {nonce = n; break;}
 	}
 	return render_template("chan_noobsrun.md", (["nonce": nonce || "", "vars": ([
 		"channame": req->misc->channel->name[1..],
 		"ws_type": nonce && "chan_monitors", "ws_group": nonce && (nonce + req->misc->channel->name),
 		"nonce": nonce || "",
 		"css_attributes": G->G->monitor_css_attributes,
-		"info": info,
-		"display": req->misc->channel->expand_variables(info->text),
 		"commands": (["nextmile": G->G->echocommands["nextmile" + req->misc->channel->name]]),
 	])]) | req->misc->chaninfo);
 }
