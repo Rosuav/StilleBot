@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {CODE, BR, TR, TD, SPAN, INPUT} = choc;
-import {render_item as render_command} from "./chan_commands.js"; //TODO: Can I hook the static updates handling?
+import {render_item as render_command} from "$$static||chan_commands.js$$";
 
 export function render(data) {
 	if (data.id) {
