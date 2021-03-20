@@ -79,3 +79,4 @@
 * Use persist_status->path("bcaster_token")[chan] for all need-more-auth calls
 * Import from outgoing_raids into the modern system. Cope with the early-2021
   data loss event the same way.
+* Raid finder: Have a "magic debugging" mode that gives the full breakdown of components
