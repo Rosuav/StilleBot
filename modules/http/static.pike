@@ -5,7 +5,6 @@ int _get_mtime(string filename, multiset|void ignore) {
 	object stat = file_stat("httpstatic/" + filename);
 	if (!stat) return 0;
 	multiset deps = G->G->httpstatic_deps[filename];
-	write("fn %O deps %O\n", filename, deps);
 	if (!deps) return stat->mtime;
 	if (!ignore) ignore = (<>);
 	int mtime = stat->mtime;
