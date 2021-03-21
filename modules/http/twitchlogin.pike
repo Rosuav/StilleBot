@@ -25,7 +25,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			//Match against an sscanf pattern, and require that the entire
 			//string be consumed. If there's any left (the last piece is
 			//non-empty), it's not a match - look for a deeper pattern.
-			array pieces = array_sscanf(req->not_query, pat + "%s");
+			array pieces = array_sscanf(next, pat + "%s");
 			if (!pieces || !sizeof(pieces) || pieces[-1] != "") continue;
 			handler = h;
 			break;
