@@ -16,7 +16,7 @@ Channel moderators may add and edit these responses below.
 
 Special name | Response | -
 -------------|----------|----
--            | Loading...
+-            | $$loadingmsg$$
 {: #commands}
 
 $$save_or_login$$
