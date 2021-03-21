@@ -258,11 +258,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	mapping tag_prefs = notes->tags || ([]);
 	foreach (follows_helix; int i; mapping strm)
 	{
-		int recommend = 0;
+		mapping(string:int) recommend = ([]);
 		array tags = ({ });
 		foreach (strm->tag_ids || ({ }), string tagid) {
 			if (mapping tag = G->G->all_stream_tags[tagid]) tags += ({tag});
-			if (int pref = tag_prefs[tagid]) recommend += PREFERENCE_MAGIC_SCORES[pref];
+			if (int pref = tag_prefs[tagid]) recommend["Tag prefs"] += PREFERENCE_MAGIC_SCORES[pref];
 		}
 		strm->tags = tags;
 		strm->category = G->G->category_names[strm->game_id];
@@ -270,8 +270,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		int otheruid = (int)strm->user_id;
 		if (otheruid == userid) {your_stream = strm; follows_helix[i] = 0; continue;}
 		//TODO: Configurable hard tag requirements
-		//if (recommend <= -1000 && filter out strong dislikes) {follows_helix[i] = 0; continue;}
-		//if (recommend < 1000 && require at least one mandatory tag) {follows_helix[i] = 0; continue;}
+		//if (recommend["Tag prefs"] <= -1000 && filter out strong dislikes) {follows_helix[i] = 0; continue;}
+		//if (recommend["Tag prefs"] < 1000 && require at least one mandatory tag) {follows_helix[i] = 0; continue;}
 		if (mapping k = extra_info[otheruid]) follows_helix[i] = strm = k | strm;
 		if (string n = notes[(string)otheruid]) strm->notes = n;
 		if (has_value(highlightids, otheruid)) strm->highlight = 1;
@@ -302,7 +302,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			if (!undefinedp(raid->viewers) && raid->viewers != -1)
 				strm->raids[-1] += " with " + raid->viewers;
 		}
-		recommend += (int)raidscore;
+		recommend["Recent raids"] = (int)raidscore;
 		//For some reason, strm->raids[*][1..] doesn't work. ??
 		sort(lambda(string x) {return x[1..];}(strm->raids[*]), strm->raids); //Sort by date, ignoring the </> direction marker
 		strm->raids = Array.uniq2(strm->raids);
@@ -312,33 +312,34 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			if (!you) {
 				//If you have no viewers, it's hard to scale things, so we
 				//pick an arbitrary figure to use.
-				if (strm->viewers < 20) recommend += 20 - strm->viewers;
+				if (strm->viewers < 20) recommend["Viewership"] = 20 - strm->viewers;
 			}
 			else {
 				int scale = strm->viewers * 100 / you;
 				if (scale >= 140) ; //Large, no bonus
-				else if (scale >= 100) recommend += 70 - scale / 2; //Slightly larger. Give 20 points if same size, diminishing towards 140%.
-				else recommend += scale / 5; //Smaller. Give 20 points if same size, diminishing towards 0%.
+				else if (scale >= 100) recommend["Viewership"] = 70 - scale / 2; //Slightly larger. Give 20 points if same size, diminishing towards 140%.
+				else recommend["Viewership"] = scale / 5; //Smaller. Give 20 points if same size, diminishing towards 0%.
 			}
 			multiset(string) creatives = (<"Art", "Science & Technology", "Food & Drink", "Music", "Makers & Crafting", "Beauty & Body Art">);
 			//+100 for being in the same category
-			if (your_stream->category == strm->game) recommend += 100;
+			if (your_stream->category == strm->game) recommend["Same category"] = 100;
 			//Or +70 if both of you are in creative categories
-			else if (creatives[your_stream->category] && creatives[strm->game]) recommend += 70;
+			else if (creatives[your_stream->category] && creatives[strm->game]) recommend["Both in Creative"] = 70;
 			//Common tags: 25 points apiece
 			//Note that this will include language tags
 			//Been seeing some 500 crashes that have been hard to track down. Is it b/c
 			//one of the streams has no tags?? Maybe just gone live?? In any case, if
 			//you don't have any tags, there won't be any common tags, so we're fine.
 			if (your_stream->tag_ids && strm->tag_ids)
-				recommend += 25 * sizeof((multiset)your_stream->tag_ids & (multiset)strm->tag_ids);
+				recommend["Tags in common"] = 25 * sizeof((multiset)your_stream->tag_ids & (multiset)strm->tag_ids);
 		}
 		//Up to 100 points for having just started, scaling down to zero at four hours of uptime
 		if (strm->started_at) {
 			int uptime = time() - Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", strm->started_at)->unix_time();
-			if (uptime < 4 * 3600) recommend += uptime / 4 / 36;
+			if (uptime < 4 * 3600) recommend["Uptime"] = uptime / 4 / 36;
 		}
-		strm->recommend = recommend;
+		strm->recommend = `+(@values(recommend));
+		if (req->variables->show_magic) strm->magic_breakdown = recommend; //Hidden query variable to debug the magic
 	}
 	//List 100 most recent raids.
 	array all_raids = ({ });

@@ -203,6 +203,17 @@ function build_follow_list() {
 		if (rel < 2) return dir;
 		return "much_" + dir;
 	}
+	function show_magic(magic) {
+		const parts = [];
+		for (let id in magic) {
+			parts.push({score: Math.abs(magic[id]) * 2 + (magic[id] > 0), elem: LI([
+				SPAN({className: "magic-score"}, ""+magic[id]),
+				SPAN(" " + id),
+			])});
+		}
+		parts.sort((a, b) => b.score - a.score);
+		return UL(parts.map(p => p.elem));
+	}
 	set_content("#streams", follows.map(stream => stream.element = DIV({className: describe_size(stream) + " " + (stream.highlight ? "highlighted" : "")},
 		mode === "allfollows" ? [
 			//Cut-down view for channels that might be offline.
@@ -227,6 +238,7 @@ function build_follow_list() {
 				//TODO: Make this a link to the category.
 				DIV({className: "img"}, IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.category + "-40x54.jpg"})),
 			]),
+			stream.magic_breakdown && show_magic(stream.magic_breakdown),
 		]
 	)));
 	//TODO maybe: Have this link back to raidfinder with a marker saying "your cat",
