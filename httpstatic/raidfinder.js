@@ -234,8 +234,9 @@ function build_follow_list() {
 					LI(stream.tags.map(tag => SPAN({className: tag.auto ? "tag autotag" : "tag", "title": tag.desc}, tag.name + " "))),
 					LI([describe_notes(stream), describe_raid(stream.raids)]),
 				]),
-				//TODO: Make this a link to the category.
-				DIV({className: "img"}, IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.category + "-40x54.jpg"})),
+				DIV({className: "img"}, A({href: "raidfinder?categories=" + encodeURIComponent(stream.category)},
+					IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.category + "-40x54.jpg"})
+				)),
 			]),
 			stream.magic_breakdown && show_magic(stream.magic_breakdown), //Will only exist if the back end decides to send it.
 		]
@@ -245,7 +246,7 @@ function build_follow_list() {
 	if (your_stream)
 		set_content("#yourcat", [
 			your_stream.user_name + " has " + your_stream.viewer_count + " viewers in " + your_stream.category,
-		]).href = "raidfinder?categories=" + your_stream.category;
+		]).href = "raidfinder?categories=" + encodeURIComponent(your_stream.category);
 	else set_content("#yourcat", "");
 }
 build_follow_list();
