@@ -61,7 +61,6 @@
   - Or just "pick any channel, add notes". Have it show the stream as if in the raid finder.
   - The allfollows display could be this, but it's nondiscoverable and could be quite costly
     for people who follow a lot of people.
-  - Add a legend somewhere showing the viewership size borders
 * Move "$$autoform||$$" from markdown.html into each of the files that actually wants it
 * Giveaways using on-platform channel currency
   - API to create/manage a channel reward
@@ -71,9 +70,7 @@
   - The web page will actually be essential, as it will require channel:manage:redemptions from the broadcaster.
   - Can use https://dev.twitch.tv/docs/api/reference#update-redemption-status to refund tickets
   - Would probably require destubbifying the EventSub system - see poll.pike
-* Allow advanced command editing to be embedded into other pages.
-  - In chan_run, allow the "next mile" command to be updated
-  - Rework channel specials to use this
 * Use persist_status->path("bcaster_token")[chan] for all need-more-auth calls
+  - May need to track the scopes used in case they need to be enhanced
 * Import from outgoing_raids into the modern system. Cope with the early-2021
   data loss event the same way.
