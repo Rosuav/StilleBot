@@ -231,14 +231,13 @@ function build_follow_list() {
 					LI([A({href: stream.url}, [adornment(stream.broadcaster_type), stream.user_name]), " - ", B(stream.category)]),
 					LI({className: "streamtitle"}, stream.title),
 					LI("Uptime " + uptime(stream.started_at) + ", " + stream.viewer_count + " viewers"),
-					//LI("Score: " + stream.recommend), //For debugging the magic sort
 					LI(stream.tags.map(tag => SPAN({className: tag.auto ? "tag autotag" : "tag", "title": tag.desc}, tag.name + " "))),
 					LI([describe_notes(stream), describe_raid(stream.raids)]),
 				]),
 				//TODO: Make this a link to the category.
 				DIV({className: "img"}, IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.category + "-40x54.jpg"})),
 			]),
-			stream.magic_breakdown && show_magic(stream.magic_breakdown),
+			stream.magic_breakdown && show_magic(stream.magic_breakdown), //Will only exist if the back end decides to send it.
 		]
 	)));
 	//TODO maybe: Have this link back to raidfinder with a marker saying "your cat",
