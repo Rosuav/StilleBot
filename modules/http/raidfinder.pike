@@ -33,9 +33,18 @@ Concurrent.Future fracture(array stuff, int max, function cb) {
 	return Concurrent.all(cb((stuff / (float)max)[*]))->then() {return __ARGS__[0] * ({ });};
 }
 
+multiset(string) creative_names = (<"Art", "Science & Technology", "Food & Drink", "Music", "Makers & Crafting", "Beauty & Body Art">);
+multiset(int) creatives = (<>);
+
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "user_read")) return resp;
+	//Try to find all creative categories and get their IDs. Is there a better way to do this?
+	if (sizeof(creatives) < sizeof(creative_names)) {
+		//If any aren't found, we'll scan this list repeatedly every time a page is loaded.
+		foreach (G->G->category_names; int id; string name)
+			if (creative_names[name]) creatives[id] = 1;
+	}
 	if (req->request_type == "POST")
 	{
 		//Update notes
@@ -97,7 +106,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//TODO: Based on the for= or the logged in user, determine whether raids are tracked.
 	mapping raids = ([]);
 	array follows_kraken, follows_helix;
-	mapping your_stream;
 	mapping broadcaster_type = ([]);
 	//NOTE: Notes come from your *login* userid, unaffected by any for=
 	//annotation. For notes attached to a channel, that channel's ID is
@@ -230,11 +238,13 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		));
 	}
 	//write("Kraken: %O\nHelix: %O\nUsers: %O\n", follows_kraken[..3], follows_helix[..3], users[..3]);
+	mapping your_stream;
 	multiset need_tags = (<>);
 	foreach (follows_helix, mapping strm)
 	{
 		foreach (strm->tag_ids || ({ }), string tag)
 			if (!G->G->all_stream_tags[tag]) need_tags[tag] = 1;
+		if ((int)strm->user_id == userid) your_stream = strm;
 	}
 	if (sizeof(need_tags)) {
 		//Normally we'll have all the tags from the check up above, but in case, we catch more here.
@@ -268,7 +278,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		strm->category = G->G->category_names[strm->game_id];
 		strm->raids = raids[strm->user_login] || ({ });
 		int otheruid = (int)strm->user_id;
-		if (otheruid == userid) {your_stream = strm; follows_helix[i] = 0; continue;}
+		if (otheruid == userid) {follows_helix[i] = 0; continue;}
 		//TODO: Configurable hard tag requirements
 		//if (recommend["Tag prefs"] <= -1000 && filter out strong dislikes) {follows_helix[i] = 0; continue;}
 		//if (recommend["Tag prefs"] < 1000 && require at least one mandatory tag) {follows_helix[i] = 0; continue;}
@@ -281,7 +291,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		int recent = time() - 86400 * 30;
 		int ancient = time() - 86400 * 365;
 		float raidscore = 0.0;
-		foreach (raids || ({ }), mapping raid)
+		int have_recent_outgoing = 0, have_old_incoming = 0;
+		foreach (raids || ({ }), mapping raid) //Note that these may not be sorted correctly. Should we sort explicitly?
 		{
 			//write("DEBUG RAID LOG: %O\n", raid);
 			//TODO: Translate these by timezone (if available)
@@ -289,54 +300,63 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			raidscore *= 0.75; //If there are tons of raids, factor the most recent ones strongly, and weaken it into the past.
 			if (swap != raid->outgoing) {
 				strm->raids += ({sprintf(">%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
-				if (raid->time > recent) raidscore -= 200;
+				if (raid->time > recent) {have_recent_outgoing = 1; raidscore -= 200;}
 				else if (raid->time > ancient) raidscore -= 50;
 				else raidscore += 8; //"Oh yeah, I've known this person for years"
 			}
 			else {
 				strm->raids += ({sprintf("<%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
 				if (raid->time > recent) raidscore += 100;
-				else if (raid->time > ancient) raidscore += 200;
+				else if (raid->time > ancient) {have_old_incoming = 1; raidscore += 100;}
 				else raidscore += 10; //VERY old raid data has less impact than current.
 			}
 			if (!undefinedp(raid->viewers) && raid->viewers != -1)
 				strm->raids[-1] += " with " + raid->viewers;
 		}
-		recommend["Recent raids"] = (int)raidscore;
+		if (have_old_incoming && !have_recent_outgoing) raidscore += 100;
+		if (raidscore != 0.0) recommend["Recent raids"] = (int)raidscore; //It's possible to get "Recent raids: 0" if it rounds to that, but it's unlikely.
 		//For some reason, strm->raids[*][1..] doesn't work. ??
 		sort(lambda(string x) {return x[1..];}(strm->raids[*]), strm->raids); //Sort by date, ignoring the </> direction marker
 		strm->raids = Array.uniq2(strm->raids);
-		//Stream recommendation level (which defines the default sort order)
+		//Make recommendations based on similarity to your stream
 		if (your_stream) {
-			int you = your_stream->viewer_count;
-			if (!you) {
-				//If you have no viewers, it's hard to scale things, so we
-				//pick an arbitrary figure to use.
-				if (strm->viewers < 20) recommend["Viewership"] = 20 - strm->viewers;
-			}
-			else {
-				int scale = strm->viewers * 100 / you;
-				if (scale >= 140) ; //Large, no bonus
-				else if (scale >= 100) recommend["Viewership"] = 70 - scale / 2; //Slightly larger. Give 20 points if same size, diminishing towards 140%.
-				else recommend["Viewership"] = scale / 5; //Smaller. Give 20 points if same size, diminishing towards 0%.
-			}
-			multiset(string) creatives = (<"Art", "Science & Technology", "Food & Drink", "Music", "Makers & Crafting", "Beauty & Body Art">);
+			int you = your_stream->viewer_count, them = strm->viewer_count;
+			//With small viewer counts, percentages are over-emphasized. Bound to a group size.
+			if (you < 10) you = 10;
+			if (them < 10) them = 10;
+			int scale = them * 100 / you;
+			//Music streamers tend to have larger viewership. Rate their viewers
+			//at 80% of what they actually are, as long as that would still leave
+			//them showing more viewers than you, and as long as you're not also
+			//streaming in Music (which would cancel out the effect).
+			if (your_stream->game_id != strm->game_id && strm->category == "Music" && scale > 111)
+				scale = scale * 8 / 10;
+			if (scale >= 1000) recommend["Viewership (huge)"] = -50;
+			if (scale >= 200) ; //Large, no bonus
+			else if (scale > 100) recommend["Viewership (larger)"] = 100 - scale / 2; //Somewhat larger. Give 50 points if same size, diminishing towards 200%.
+			else if (scale == 100) recommend["Viewership (same)"] = 50; //Either of the surrounding would give 50 points too, but we describe it differently.
+			else recommend["Viewership (smaller)"] = scale / 2; //Smaller. Give 50 points if same size, diminishing towards 0%.
 			//+100 for being in the same category
-			if (your_stream->category == strm->game) recommend["Same category"] = 100;
+			if (your_stream->game_id == strm->game_id) recommend["Same category"] = 100;
 			//Or +70 if both of you are in creative categories
-			else if (creatives[your_stream->category] && creatives[strm->game]) recommend["Both in Creative"] = 70;
+			else if (creatives[your_stream->game_id] && creatives[strm->game_id]) recommend["Both in Creative"] = 70;
 			//Common tags: 25 points apiece
 			//Note that this will include language tags
 			//Been seeing some 500 crashes that have been hard to track down. Is it b/c
 			//one of the streams has no tags?? Maybe just gone live?? In any case, if
 			//you don't have any tags, there won't be any common tags, so we're fine.
-			if (your_stream->tag_ids && strm->tag_ids)
-				recommend["Tags in common"] = 25 * sizeof((multiset)your_stream->tag_ids & (multiset)strm->tag_ids);
+			if (your_stream->tag_ids && strm->tag_ids) {
+				multiset common = (multiset)your_stream->tag_ids & (multiset)strm->tag_ids;
+				if (sizeof(common)) {
+					string desc = "Tags in common: " + G->G->all_stream_tags[((array)common)[*]]->name * ", ";
+					recommend[desc] = 25 * sizeof(common);
+				}
+			}
 		}
 		//Up to 100 points for having just started, scaling down to zero at four hours of uptime
 		if (strm->started_at) {
 			int uptime = time() - Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", strm->started_at)->unix_time();
-			if (uptime < 4 * 3600) recommend["Uptime"] = uptime / 4 / 36;
+			recommend["Uptime"] = max(100 - uptime / 4 / 36, 0);
 		}
 		strm->recommend = `+(@values(recommend));
 		if (req->variables->show_magic) strm->magic_breakdown = recommend; //Hidden query variable to debug the magic
