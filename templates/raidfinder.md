@@ -110,6 +110,12 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 
 #viewerlegend {display: flex;}
 #viewerlegend div {margin-right: 0.5em; padding: 0.25em 0.125em;}
+
+.magic-score {
+	display: inline-block;
+	min-width: 2em;
+	text-align: end;
+}
 </style>
 
 > This raid finder shows the people you currently follow, and helps you select someone<br>
