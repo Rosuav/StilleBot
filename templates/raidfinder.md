@@ -39,7 +39,8 @@
 	justify-content: space-around;
 }
 #streams > div {
-	width: 320px; /* the width of the preview image */
+	width: 324px; /* the width of the preview image plus border size */
+	border: 2px solid;
 	margin-bottom: 1em;
 }
 #streams ul {list-style-type: none; margin: 0; padding: 0; flex-grow: 1;}
@@ -100,13 +101,13 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	border: 1px solid #ff0;
 }
 
-.much_smaller     {border: 2px solid #bfe;}
-.smaller          {border: 2px solid #cfe;}
-.slightly_smaller {border: 2px solid #dfe;}
-.samesize         {border: 2px solid #efe;}
-.slightly_larger  {border: 2px solid #efd;}
-.larger           {border: 2px solid #efc;}
-.much_larger      {border: 2px solid #efb;}
+#streams > div.much_smaller     {border-color: #bfe;}
+#streams > div.smaller          {border-color: #cfe;}
+#streams > div.slightly_smaller {border-color: #dfe;}
+#streams > div.samesize         {border-color: #efe;}
+#streams > div.slightly_larger  {border-color: #efd;}
+#streams > div.larger           {border-color: #efc;}
+#streams > div.much_larger      {border-color: #efb;}
 
 #viewerlegend {display: flex;}
 #viewerlegend div {margin-right: 0.5em; padding: 0.25em 0.125em;}
