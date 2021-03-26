@@ -295,6 +295,18 @@ mapping build_channel_info(mapping stream)
 	return ret;
 }
 
+continue Concurrent.Future|mapping save_channel_info(string name, mapping info) {
+	//Attempt to gather channel info from the stream info. If we
+	//can't, we'll get that info via Kraken.
+	mapping synthesized = build_channel_info(info);
+	if (!synthesized) {
+		if (info->game_id != "") write("SYNTHESIS FAILED - maybe bad game? %O\n", info->game_id);
+		synthesized = yield(get_channel_info(name));
+	}
+	G->G->channel_info[name] = synthesized;
+	G->G->channel_info[name]->viewer_count = info->viewer_count;
+}
+
 //Receive stream status, either polled or by notification
 void stream_status(string name, mapping info)
 {
@@ -340,21 +352,7 @@ void stream_status(string name, mapping info)
 	}
 	else
 	{
-		//Attempt to gather channel info from the stream info. If we
-		//can't, we'll get that info via Kraken.
-		//string last_title = G->G->channel_info[name]->?status; //hack
-		mapping synthesized = build_channel_info(info);
-		if (synthesized) G->G->channel_info[name] = synthesized;
-		else
-		{
-			//Suppress the message if there's no game selected
-			if (info->game_id != "") write("SYNTHESIS FAILED - maybe bad game? %O\n", info->game_id);
-			G->G->channel_info[name] = 0; //Force an update by clearing the old info
-			get_channel_info(name);
-		}
-		G->G->channel_info[name]->viewer_count = info->viewer_count;
-		//if (synthesized->?status != last_title) write("Old title: %O\nNew title: %O\n", last_title, synthesized->?status); //hack
-		//TODO: Report when the game changes?
+		handle_async(save_channel_info(name, info)) { };
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->started_at);
 		if (!G->G->stream_online_since[name])
 		{
