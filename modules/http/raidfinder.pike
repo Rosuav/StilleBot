@@ -86,8 +86,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		persist_status->save();
 		return (["error": 204]);
 	}
-	if (mapping resp = ensure_login(req, "user_read")) return resp;
-	int userid = (int)req->misc->session->user->id;
+	mapping logged_in = req->misc->session && req->misc->session->user;
+	int userid = 0;
 	if (string chan = req->variables["for"])
 	{
 		//When fetching raid info on behalf of another streamer, you see your own follow
@@ -104,6 +104,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		}
 		userid = yield(get_user_id(chan));
 	}
+	else if (logged_in) userid = (int)logged_in->id; //Raidfind for self if logged in.
 	//TODO: Based on the for= or the logged in user, determine whether raids are tracked.
 	mapping raids = ([]);
 	array follows_kraken, follows_helix;
@@ -112,7 +113,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//annotation. For notes attached to a channel, that channel's ID is
 	//used; other forms of notes are attached to specific keywords. In a
 	//previous iteration of this, notes ID 0 was used for "highlight".
-	mapping notes = persist_status->path("raidnotes")[(string)req->misc->session->user->id] || ([]);
+	mapping notes = persist_status->path("raidnotes")[(string)logged_in?->id] || ([]);
 	array highlightids = ({ });
 	if (notes["0"]) notes->highlight = m_delete(notes, "0"); //Migrate
 	if (notes->highlight) highlightids = (array(int))(notes->highlight / "\n");
@@ -121,6 +122,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	{
 		//Show everyone that you follow (not just those who are live), in an
 		//abbreviated form, mainly for checking notes.
+		if (mapping resp = ensure_login(req, "user_read")) return resp;
 		array f = yield(get_helix_paginated("https://api.twitch.tv/helix/users/follows",
 				(["from_id": (string)req->misc->session->user->id])));
 		//TODO: Make a cleaner way to fragment requests - we're gonna need it.
@@ -150,13 +152,14 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		G->G->all_stream_tags = ([]);
 		update_tags(tags);
 	}
-	string login = req->misc->session->user->login, disp = req->misc->session->user->display_name;
-	if (mapping user = userid != (int)req->misc->session->user->id && G->G->user_info[userid])
+	string login, disp;
+	if (logged_in && (int)logged_in->id == userid) {login = logged_in->login; disp = logged_in->display_name;}
+	else if (mapping user = userid && G->G->user_info[userid])
 	{
 		login = user->login || user->name; //helix || kraken
 		disp = user->display_name;
 	}
-	foreach ((Stdio.read_file("outgoing_raids.log") || "") / "\n", string raid)
+	if (login) foreach ((Stdio.read_file("outgoing_raids.log") || "") / "\n", string raid)
 	{
 		sscanf(raid, "[%d-%d-%d %*d:%*d:%*d] %s => %s", int y, int m, int d, string from, string to);
 		if (!to) continue;
@@ -201,6 +204,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				//Else fall through. Any sort of junk category name, treat it as if it's "?categories"
 			}
 			case "": case "categories": { //For ?categories and ?categories= modes, show those you follow
+				if (mapping resp = ensure_login(req, "user_read")) return resp;
 				mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/users/" + req->misc->session->user->id + "/follows/games"));
 				args->game_id = (array(string))info->follows->game->_id;
 				title = "Followed categories";
@@ -224,6 +228,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		users = yield(fracture(ids, 100) {return get_helix_paginated("https://api.twitch.tv/helix/users", (["id": __ARGS__[0]]));});
 	}
 	else {
+		if (mapping resp = ensure_login(req, "user_read")) return resp;
 		mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
 			(["Authorization": "OAuth " + req->misc->session->token])));
 		array(int) channels = info->streams->channel->_id;
@@ -279,7 +284,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		strm->category = G->G->category_names[strm->game_id];
 		strm->raids = raids[strm->user_login] || ({ });
 		int otheruid = (int)strm->user_id;
-		if (otheruid == userid) {follows_helix[i] = 0; continue;}
+		if (otheruid == userid) {follows_helix[i] = 0; continue;} //Exclude self. There's no easy way to know if you should have shown up, so just always exclude.
 		//TODO: Configurable hard tag requirements
 		//if (recommend["Tag prefs"] <= -1000 && filter out strong dislikes) {follows_helix[i] = 0; continue;}
 		//if (recommend["Tag prefs"] < 1000 && require at least one mandatory tag) {follows_helix[i] = 0; continue;}
