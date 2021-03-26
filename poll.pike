@@ -249,20 +249,25 @@ void streaminfo(array data)
 		stream_status(chan, channels[chan]);
 }
 
-int fetching_game_names = 0;
-void cache_game_names()
+continue Concurrent.Future cache_game_names(string game_id)
 {
-	get_helix_paginated("https://api.twitch.tv/helix/games/top", (["first":"100"]))
-	->then(lambda(array games) {
+	if (mixed ex = catch {
+		array games = yield(get_helix_paginated("https://api.twitch.tv/helix/games/top", (["first":"100"])));
 		foreach (games, mapping game) G->G->category_names[game->id] = game->name;
 		write("Fetched %d games, total %d\n", sizeof(games), sizeof(G->G->category_names));
-		fetching_game_names = 0;
-	})->thencatch(lambda(mixed err) {
-		werror("Error fetching games:\n%s\n", describe_backtrace(err));
-		fetching_game_names = 0;
-	});
+		if (!G->G->category_names[game_id]) {
+			//We were specifically asked for this game ID. Explicitly ask Twitch for it.
+			mapping info = yield(request("https://api.twitch.tv/helix/games?id=" + game_id));
+			if (!sizeof(info->data)) werror("Unable to fetch game info for ID %O\n", game_id);
+			else if (info->data[0]->id != game_id) werror("???? Asked for game %O but got %O ????\n", game_id, info->data[0]->id);
+			else G->G->category_names[game_id] = info->data[0]->name;
+		}
+	}) {
+		werror("Error fetching games:\n%s\n", describe_backtrace(ex));
+	}
 }
 
+int fetching_game_names = 0;
 //Attempt to construct a channel info mapping from the stream info
 //May use other caches of information. If unable to build the full
 //channel info, returns 0 (recommendation: fetch info via Kraken).
@@ -283,7 +288,7 @@ mapping build_channel_info(mapping stream)
 			//in the ordering of the "top 100" and "next 100". It should be safe
 			//to retain any previous ones seen this run.
 			fetching_game_names = 1;
-			cache_game_names();
+			handle_async(cache_game_names(stream->game_id)) {fetching_game_names = 0;};
 		}
 		return 0;
 	}
