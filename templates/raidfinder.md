@@ -40,7 +40,7 @@
 }
 #streams > div {
 	width: 324px; /* the width of the preview image plus border size */
-	border: 2px solid;
+	border: 2px solid transparent;
 	margin-bottom: 1em;
 }
 #streams ul {list-style-type: none; margin: 0; padding: 0; flex-grow: 1;}
