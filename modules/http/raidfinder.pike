@@ -38,7 +38,6 @@ multiset(int) creatives = (<>);
 
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	if (mapping resp = ensure_login(req, "user_read")) return resp;
 	//Try to find all creative categories and get their IDs. Is there a better way to do this?
 	if (sizeof(creatives) < sizeof(creative_names)) {
 		//If any aren't found, we'll scan this list repeatedly every time a page is loaded.
@@ -48,6 +47,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	if (req->request_type == "POST")
 	{
 		//Update notes
+		if (mapping resp = ensure_login(req, "user_read")) return (["error": 401]);
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body) || !intp(body->id)) return (["error": 400]);
 		string newnotes = body->notes || "";
@@ -86,6 +86,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		persist_status->save();
 		return (["error": 204]);
 	}
+	if (mapping resp = ensure_login(req, "user_read")) return resp;
 	int userid = (int)req->misc->session->user->id;
 	if (string chan = req->variables["for"])
 	{

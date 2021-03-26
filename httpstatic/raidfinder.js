@@ -84,7 +84,7 @@ DOM("#editnotes").onclose = e => {
 		headers: {"content-type": "application/json"},
 		body: JSON.stringify({id: +stream.user_id, notes: newnotes}),
 	}).then(res => {
-		if (!res.ok) {console.error("ERROR SAVING NOTES"); console.error(res);} //TODO
+		if (!res.ok) {console.error("ERROR SAVING NOTES"); console.error(res);} //TODO: This could include a 401 if the login has expired
 		if (!stream.element) return res.json(); //Changing the highlights gets an actual response
 		const btn = stream.element.querySelector(".notes");
 		if (newnotes === "") {btn.className = "notes absent"; set_content(btn, "\u270D");}
