@@ -557,6 +557,7 @@ mapping persist_config = (["channels": ({ }), "ircsettings": Standards.JSON.deco
 mapping persist_status = ([]);
 void runhooks(mixed ... args) { }
 mapping G_G_(mixed ... args) {return ([]);}
+mixed handle_async(mixed ... args) {error("handle_async is not currently supported in CLI mode\n");}
 
 int requests;
 
