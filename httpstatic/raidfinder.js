@@ -38,9 +38,9 @@ function uptime(startdate) {
 }
 
 function low_show_raids(raids) {
-	const ul = set_content("#raids ul", raids);
+	const scrollme = set_content("#raids ul", raids).parentElement;
 	DOM("#raids").showModal();
-	ul.scrollTop = ul.scrollHeight;
+	scrollme.scrollTop = scrollme.scrollHeight;
 }
 
 function show_raids(raids) {
