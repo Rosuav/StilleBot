@@ -57,6 +57,7 @@ function show_all_raids() {
 		return raid.outgoing
 		? LI({className: "raid-outgoing"}, [raid.from, " raided ", A({href: "https://twitch.tv/" + raid.to}, raid.to), ...tail])
 		: LI({className: "raid-incoming"}, [A({href: "https://twitch.tv/" + raid.from}, raid.from), " raided ", raid.to, ...tail]);
+		//TODO: Change to URLs of "raidfinder?login=" + raid.{from|to}
 	}));
 }
 DOM("#allraids").onclick = show_all_raids;

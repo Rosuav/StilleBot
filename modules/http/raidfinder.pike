@@ -113,7 +113,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//annotation. For notes attached to a channel, that channel's ID is
 	//used; other forms of notes are attached to specific keywords. In a
 	//previous iteration of this, notes ID 0 was used for "highlight".
-	mapping notes = persist_status->path("raidnotes")[(string)logged_in?->id] || ([]);
+	mapping notes = persist_status->path("raidnotes")[(string)logged_in->?id] || ([]);
 	array highlightids = ({ });
 	if (notes["0"]) notes->highlight = m_delete(notes, "0"); //Migrate
 	if (notes->highlight) highlightids = (array(int))(notes->highlight / "\n");
@@ -171,29 +171,41 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	highlights = users->login * "\n";
 	string title = "Followed streams";
 	//Category search - show all streams in the categories you follow
-	if (req->variables->raiders || req->variables->categories) {
+	if (req->variables->raiders || req->variables->categories || req->variables->login) {
 		mapping args = ([]);
-		switch (req->variables->categories) {
-			case 0: { //Raiders mode (categories omitted but "?raiders" specified). Particularly useful with a for= search.
-				//List everyone who's raided you, including their timestamps
-				//Assume that the last entry in each array is the latest.
-				//The result is that raiders will contain one entry for each
-				//unique user ID that has ever been raided, and raidtimes will
-				//have the corresponding timestamps.
-				array raiders = ({ }), raidtimes = ({ });
-				foreach (persist_status->path("raids"); string id; mapping raids) {
-					if (id == (string)userid)
-						foreach (raids; string otherid; array raids) {
-							foreach (reverse(raids), mapping r)
-								if (!r->outgoing) {raiders += ({otherid}); raidtimes += ({r->timestamp}); break;}
-						}
-					else foreach (reverse(raids[(string)userid] || ({ })), mapping r)
-						if (r->outgoing) {raiders += ({(string)userid}); raidtimes += ({r->timestamp}); break;}
-				}
-				sort(raidtimes, raiders);
-				args->user_id = raiders[<99..]; //Is it worth trying to support more than 100 raiders? Would need to paginate.
-				break;
+		if (req->variables->raiders) {
+			//Raiders mode (categories omitted but "?raiders" specified). Particularly useful with a for= search.
+			//List everyone who's raided you, including their timestamps
+			//Assume that the last entry in each array is the latest.
+			//The result is that raiders will contain one entry for each
+			//unique user ID that has ever been raided, and raidtimes will
+			//have the corresponding timestamps.
+			array raiders = ({ }), raidtimes = ({ });
+			foreach (persist_status->path("raids"); string id; mapping raids) {
+				if (id == (string)userid)
+					foreach (raids; string otherid; array raids) {
+						foreach (reverse(raids), mapping r)
+							if (!r->outgoing) {raiders += ({otherid}); raidtimes += ({r->timestamp}); break;}
+					}
+				else foreach (reverse(raids[(string)userid] || ({ })), mapping r)
+					if (r->outgoing) {raiders += ({(string)userid}); raidtimes += ({r->timestamp}); break;}
 			}
+			sort(raidtimes, raiders);
+			args->user_id = raiders[<99..]; //Is it worth trying to support more than 100 raiders? Would need to paginate.
+		}
+		else if (req->variables->login) {
+			//TODO: Load up the specified users even if they're not currently online.
+			//This may involve stubbing out things like the thumbnail and viewership,
+			//and might require use of Kraken rather than Helix to get channel info.
+			//Once done, though, this could be used for various things incl adding a
+			//note to a stream, or incorporated into the above raiders code, giving
+			//options of "raiders currently online" and "all raiders".
+			args->user_login = req->variables->login;
+			//Specify ?login=X&login=Y or ?login=X,Y for multiples
+			if (stringp(args->user_login) && has_value(args->user_login, ",")) args->user_login /= ",";
+			title = "Detailed stream info";
+		}
+		else switch (req->variables->categories) {
 			default: { //For ?categories=Art,Food%20%26%20Drink - explicit categories
 				array cats = yield(get_helix_paginated("https://api.twitch.tv/helix/games", (["name": req->variables->categories / ","])));
 				if (sizeof(cats)) {
