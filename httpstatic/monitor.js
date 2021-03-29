@@ -4,7 +4,7 @@ const {DIV} = choc;
 let socket;
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 //Map the CSS attributes on the server to the names used in element.style
-const css_attribute_names = {color: "color", font: "fontFamily", fontweight: "fontWeight", bordercolor: "borderColor", whitespace: "white-space"};
+const css_attribute_names = {color: "color", font: "fontFamily", fontweight: "fontWeight", fontstyle: "fontStyle", bordercolor: "borderColor", whitespace: "white-space"};
 
 const currency_formatter = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
 function currency(cents) {

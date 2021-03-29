@@ -48,9 +48,10 @@ function update_monitors() {
 			TR([
 				TD("Font:"),
 				TD([
-					INPUT({name: "font", size: "30"}),
+					INPUT({name: "font", size: "28"}),
 					SELECT({name: "fontweight"}, [OPTION("normal"), OPTION("bold")]),
-					INPUT({name: "fontsize", type: "number", size: "4", value: "16"}),
+					SELECT({name: "fontstyle"}, [OPTION("normal"), OPTION("italic")]),
+					INPUT({name: "fontsize", type: "number", size: "3", value: "16"}),
 				])
 			]),
 			TR([TD(), TD(["Pick a font from Google Fonts or", BR(), "one that's already on your PC."])]),
