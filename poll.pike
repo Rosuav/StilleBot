@@ -97,7 +97,7 @@ void notice_user_name(string login, string id) {
 	//uid_to_name[(string)userid] maps the user names seen to the timestamps.
 	//To detect renames, sort the keys and values in parallel; the most recent
 	//change is represented by the last two keys.
-	if (!login) return;
+	if (!login || !persist_status->path) return; //The latter check stops us from bombing in CLI usage
 	id = (string)id; login = lower_case((string)login);
 	mapping u2n = persist_status->path("uid_to_name", id);
 	if (!u2n[login]) {u2n[login] = time(); persist_status->save();}
