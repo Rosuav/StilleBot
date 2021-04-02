@@ -47,7 +47,7 @@ class Persist(string savefn, int flip_save)
 
 	//Call this after any "deep update" that doesn't directly mutate persist[]
 	void save() {if (!saving) {saving=1; call_out(dosave,0);}}
-	
+
 	void dosave()
 	{
 		//TODO: Is this costly? I've been noticing that an otherwise-idle StilleBot is

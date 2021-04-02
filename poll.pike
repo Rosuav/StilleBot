@@ -93,6 +93,19 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 		});
 }
 
+void notice_user_name(string login, string id) {
+	//uid_to_name[(string)userid] maps the user names seen to the timestamps.
+	//To detect renames, sort the keys and values in parallel; the most recent
+	//change is represented by the last two keys.
+	if (!login) return;
+	id = (string)id; login = lower_case((string)login);
+	mapping u2n = persist_status->path("uid_to_name", id);
+	if (!u2n[login]) {u2n[login] = time(); persist_status->save();}
+	//The name-to-UID mapping should be considered advisory, and useful mainly for recent ones.
+	mapping n2u = persist_status->path("name_to_uid");
+	if (n2u[login] != id) {n2u[login] = id; persist_status->save();}
+}
+
 //Will return from cache if available. Set type to "login" to look up by name, else uses ID.
 Concurrent.Future get_users_info(array(int|string) users, string|void type)
 {
@@ -113,8 +126,10 @@ Concurrent.Future get_users_info(array(int|string) users, string|void type)
 	if (!sizeof(lookups)) return Concurrent.resolve(results); //Got 'em all from cache.
 	return request(sprintf("https://api.twitch.tv/helix/users?%{" + type + "=%s&%}", Protocols.HTTP.uri_encode(lookups[*])))
 		->then(lambda(mapping data) {
-			foreach (data->data, mapping info)
+			foreach (data->data, mapping info) {
 				G->G->user_info[info->login] = G->G->user_info[(int)info->id] = info;
+				notice_user_name(info->login, info->id);
+			}
 			foreach (users; int i; int|string u)
 			{
 				if (mapping info = G->G->user_info[u]) results[i] = info;
@@ -547,6 +562,7 @@ protected void create()
 	add_constant("get_user_id", get_user_id);
 	add_constant("get_user_info", get_user_info);
 	add_constant("get_users_info", get_users_info);
+	add_constant("notice_user_name", notice_user_name);
 	add_constant("create_webhook", create_webhook);
 	add_constant("create_eventsubhook", create_eventsubhook);
 }
