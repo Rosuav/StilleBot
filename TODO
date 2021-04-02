@@ -65,4 +65,3 @@
 * Move "$$autoform||$$" from markdown.html into each of the files that actually wants it
 * Use persist_status->path("bcaster_token")[chan] for all need-more-auth calls
   - May need to track the scopes used in case they need to be enhanced
-* Import from outgoing_raids into the modern system.

@@ -159,14 +159,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		login = user->login || user->name; //helix || kraken
 		disp = user->display_name;
 	}
-	if (login) foreach ((Stdio.read_file("outgoing_raids.log") || "") / "\n", string raid)
-	{
-		sscanf(raid, "[%d-%d-%d %*d:%*d:%*d] %s => %s", int y, int m, int d, string from, string to);
-		if (!to) continue;
-		if (y >= 2021 && m > 3) break; //Ignore newer entries and rely on the proper format (when should the cutoff be?)
-		if (from == login) raids[lower_case(to)] += ({sprintf(">%d-%02d-%02d %s raided %s", y, m, d, from, to)});
-		if (to == disp) raids[from] += ({sprintf("<%d-%02d-%02d %s raided %s", y, m, d, from, to)});
-	}
 	array users = yield(get_users_info(highlightids));
 	highlights = users->login * "\n";
 	string title = "Followed streams";
@@ -402,4 +394,104 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
 		"title": title,
 	]));
+}
+
+continue Concurrent.Future|int guess_user_id(string name, int|void fastonly) {
+	//There are a few that I know have renamed.
+	string newname = ([
+		"ratpixie": "pixalicious_",
+		"jib410_": "jib410",
+		"zladyluthien": "sarahburnsstudio",
+		"sezzadactyl": "sezza",
+		"caneofbyrna": "byrna",
+		"imperialgrrl": "imperial",
+		"btnfoxtv": "buttonfox",
+		"magicalmooniecosplay": "magicalmoonie",
+		"mrcortus": "sircort",
+		"silverjd14": "silverjd",
+		"cascadiaqueen": "cascadiastudio",
+		"terrielynn": "tinymamafox",
+		"lizabelleac": "lizabelle",
+		"thatlapres": "lapres",
+		"movermedia": "movercwl",
+		"kuri0uskitteh": "kuri0uskreations",
+		"vivscute": "vivyaong",
+		"sannimaya": "sannihalla", "sanni_maya": "sannihalla",
+		"blipsqueektheclown": "blipsqueek",
+		"xtzharkz": "xtzshark",
+		"rik_leah": "rikonair",
+	])[lower_case(name)];
+	if (newname) name = newname;
+	else if (fastonly) return 0;
+	catch {
+		int id = yield(get_user_id(name));
+		if (id) return id; //If the name currently exists, hope that it is the right person.
+	};
+	//Otherwise, try to look up our history of old names
+	mapping n2u = persist_status->path("name_to_uid");
+	if (n2u[name]) return (int)n2u[name];
+	//Otherwise, bail.
+	return 0;
+}
+
+continue Concurrent.Future|int retrofit_raids(int|void fastlookups) {
+	mapping failed_lookups = ([]), sources = ([]);
+	foreach ((Stdio.read_file("outgoing_raids.log") || "") / "\n"; int i; string raid)
+	{
+		sscanf(raid, "[%d-%d-%d %d:%d:%d] %s => %s", int y, int m, int d, int h, int mm, int s, string from, string to);
+		if (!to) continue;
+		int have_viewers = sscanf(to, "%s with %d", to, int viewers) > 1;
+		if (failed_lookups[lower_case(from)] || failed_lookups[lower_case(to)]) continue;
+		//First up, figure out the IDs for the channels.
+		//If anyone has renamed, this will be hard.
+		int fromid = yield(guess_user_id(from));
+		if (!fromid) {
+			//Maybe the channel I track renamed, or maybe the line failed to parse
+			write("UNKNOWN SOURCE: %s\n", raid);
+			continue;
+		}
+		int toid = yield(guess_user_id(to, fastlookups));
+		int ts = mktime(s, mm, h, d, m - 1, y - 1900);
+		if (!toid) {
+			if (fastlookups) continue;
+			write("%s %s [%d] => %s [%d]\n", ctime(ts)[..<1], from, fromid, to, toid);
+			write("--- User ids not found ---\n");
+			failed_lookups[lower_case(to)] = from;
+			sources[from] += ({to});
+			continue;
+		}
+		int outgoing = fromid < toid;
+		string base = outgoing ? (string)fromid : (string)toid;
+		string other = outgoing ? (string)toid : (string)fromid;
+		mapping raids = persist_status->path("raids", base);
+		int found = 0;
+		foreach (raids[other] || ({ }), mapping r) {
+			if (r->outgoing != outgoing) continue;
+			if (r->time < ts - 60 || r->time > ts + 60) continue;
+			found = 1;
+			break;
+		}
+		if (found) continue;
+		//Not found! Add it to the pile.
+		write("%s %s [%d] => %s [%d] -- not found -- adding\n", ctime(ts)[..<1], from, fromid, to, toid);
+		if (!raids[other]) raids[other] = ({ });
+		raids[other] += ({([
+			"time": ts,
+			"from": from, "to": to,
+			"outgoing": outgoing,
+			"viewers": have_viewers ? -1 : (int)viewers,
+			"reconstructed": 1, //Flag these as having been built from the text file.
+		])});
+		sort(raids[other]->time, raids[other]);
+	}
+	write("Migration complete. %O\n", sources);
+	m_delete(persist_status->path("raids"), "0");
+	persist_status->save();
+	return 0;
+}
+
+protected void create(string name) {
+	::create(name);
+	//handle_async(retrofit_raids()) { }; //Uncomment to do a full migration pass. CAUTION: Takes a while.
+	//handle_async(retrofit_raids(1)) { }; //Uncomment to do a fast(ish) migration pass, just getting renames.
 }
