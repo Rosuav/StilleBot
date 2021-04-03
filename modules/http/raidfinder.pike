@@ -420,6 +420,10 @@ continue Concurrent.Future|int guess_user_id(string name, int|void fastonly) {
 		"blipsqueektheclown": "blipsqueek",
 		"xtzharkz": "xtzshark",
 		"rik_leah": "rikonair",
+		"tijka_": "tijka",
+		"getinmymailbox": "freckledfiberworks",
+		"behindthescenes": "moosedoesstuff",
+		"denaemoon": "fiyunae",
 	])[lower_case(name)];
 	if (newname) name = newname;
 	else if (fastonly) return 0;
