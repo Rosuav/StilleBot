@@ -424,6 +424,7 @@ continue Concurrent.Future|int guess_user_id(string name, int|void fastonly) {
 		"getinmymailbox": "freckledfiberworks",
 		"behindthescenes": "moosedoesstuff",
 		"denaemoon": "fiyunae",
+		"lady_goggles": "ladygoggles",
 	])[lower_case(name)];
 	if (newname) name = newname;
 	else if (fastonly) return 0;
