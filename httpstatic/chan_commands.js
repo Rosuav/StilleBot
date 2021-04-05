@@ -246,10 +246,15 @@ on("click", "#templates tbody tr", e => {
 });
 
 export const render_parent = DOM("#commandview tbody");
-function collect_messages(msg, cb) {
-	if (typeof msg === "string") cb(msg);
-	else if (Array.isArray(msg)) msg.forEach(line => collect_messages(line, cb));
-	else if (typeof msg === "object") collect_messages(msg.message, cb);
+function collect_messages(msg, cb, pfx) {
+	if (typeof msg === "string") cb(pfx + msg);
+	else if (Array.isArray(msg)) msg.forEach(line => collect_messages(line, cb, pfx));
+	else if (typeof msg !== "object") return; //Not sure what this could mean, but we can't handle it. Probably a null entry or something.
+	else if (msg.conditional) {
+		collect_messages(msg.message, cb, pfx + "?) ");
+		collect_messages(msg.otherwise, cb, pfx + "!) ");
+	}
+	else collect_messages(msg.message, cb, pfx);
 }
 export function render_item(msg) {
 	//All commands are objects with (at a minimum) an id and a message.
@@ -263,12 +268,12 @@ export function render_item(msg) {
 		(Array.isArray(msg.message) && !msg.message.find(r => typeof r !== "string"))
 	)) {
 		//Simple message. Return an editable row.
-		collect_messages(msg.message, m => response.push(INPUT({value: m, className: "widetext"}), BR()));
+		collect_messages(msg.message, m => response.push(INPUT({value: m, className: "widetext"}), BR()), "");
 		addbtn = BUTTON({type: "button", className: "addline", title: "Add another line"}, "+");
 	}
 	else {
 		//Complex message. Return a non-editable row.
-		collect_messages(msg.message, m => response.push(CODE(m), BR()));
+		collect_messages(msg, m => response.push(CODE(m), BR()), "");
 	}
 	response.pop(); //There should be a BR at the end.
 	commands[msg.id] = msg;
