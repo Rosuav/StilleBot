@@ -189,6 +189,7 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 		command = String.trim(lower_case(command));
 		if (command == "") return 0;
 		command = pfx + command;
+		if (pfx == "!" && !function_object(G->G->commands->addcmd)->SPECIAL_NAMES[command]) return 0; //Only specific specials are valid
 	}
 	command += "#" + chan; //Potentially getting us right back to conn->group, but more likely the group is just the channel
 	//Validate the message. Note that there will be some things not caught by this
