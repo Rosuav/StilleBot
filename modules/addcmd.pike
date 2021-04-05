@@ -8,14 +8,24 @@ constant require_moderator = 1;
 //I think, given that it'd be confusing for humans to do otherwise anyway.
 constant SPECIALS = ({
 	({"!follower", ({"Someone follows the channel", "The new follower", ""})}),
-	({"!sub", ({"Brand new subscription", "The subscriber", "{tier} (1, 2, or 3)"})}),
-	({"!resub", ({"Resub is announced", "The subscriber", "{tier}, {months}, {streak}"})}),
-	({"!subgift", ({"Someone gives a sub", "The giver", "{tier}, {months}, {streak}, {recipient}, {multi}"})}),
-	({"!subbomb", ({"Someone gives many subgifts", "The giver", "{tier}, {gifts}"})}),
-	({"!cheer", ({"Any bits are cheered (including anonymously)", "The giver", "{bits}"})}),
-	({"!cheerbadge", ({"A viewer attains a new cheer badge", "The cheerer", "{level} - badge for N bits"})}),
+	({"!sub", ({"Brand new subscription", "The subscriber", "tier"})}),
+	({"!resub", ({"Resub is announced", "The subscriber", "tier, months, streak"})}),
+	({"!subgift", ({"Someone gives a sub", "The giver", "tier, months, streak, recipient, multimonth"})}),
+	({"!subbomb", ({"Someone gives many subgifts", "The giver", "tier, gifts"})}),
+	({"!cheer", ({"Any bits are cheered (including anonymously)", "The giver", "bits"})}),
+	({"!cheerbadge", ({"A viewer attains a new cheer badge", "The cheerer", "level"})}),
 });
 constant SPECIAL_NAMES = (multiset)SPECIALS[*][0];
+constant SPECIAL_PARAMS = ({
+	({"tier", "Subscription tier - 1, 2, or 3 (Prime subs show as tier 1)"}),
+	({"months", "Cumulative months of subscription"}), //TODO: Check interaction with multimonth
+	({"streak", "Consecutive months of subscription. If a sub is restarted after a delay, {months} continues, {streak} resets."}),
+	({"recipient", "Display name of the gift sub recipient"}),
+	({"multimonth", "Number of consecutive months of subscription given"}),
+	({"gifts", "Number of randomly-assigned gifts. Can be 1."}),
+	({"bits", "Total number of bits cheered in this message"}),
+	({"level", "New badge level, eg 1000 if the 1K bits badge has just been attained"}),
+});
 constant docstring = sprintf(#"
 Add an echo command for this channel
 
@@ -41,9 +51,18 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 %{!%s%{ | %s%}
 %}
 
+Each special action has its own set of available parameters, which can be
+inserted into the message, used in conditionals, etc. They are always enclosed
+in braces, and have meanings as follows:
+
+Parameter    | Meaning
+-------------|------------------
+%{{%s} | %s
+%}
+
 Editing these special commands can also be done via the bot's web browser
 configuration pages, where available.
-", SPECIALS);
+", SPECIALS, SPECIAL_PARAMS);
 
 //Update (or delete) an echo command and save them to disk
 void make_echocommand(string cmd, echoable_message response)

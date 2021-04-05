@@ -22,12 +22,28 @@ certain events. The special action must be one of the following:
 Special name | When it happens             | Initiator (`$$`) | Other info
 -------------|-----------------------------|------------------|-------------
 !!follower | Someone follows the channel | The new follower | 
-!!sub | Brand new subscription | The subscriber | {tier} (1, 2, or 3)
-!!resub | Resub is announced | The subscriber | {tier}, {months}, {streak}
-!!subgift | Someone gives a sub | The giver | {tier}, {months}, {streak}, {recipient}, {multi}
-!!subbomb | Someone gives many subgifts | The giver | {tier}, {gifts}
-!!cheer | Any bits are cheered (including anonymously) | The giver | {bits}
-!!cheerbadge | A viewer attains a new cheer badge | The cheerer | {level} - badge for N bits
+!!sub | Brand new subscription | The subscriber | tier
+!!resub | Resub is announced | The subscriber | tier, months, streak
+!!subgift | Someone gives a sub | The giver | tier, months, streak, recipient, multimonth
+!!subbomb | Someone gives many subgifts | The giver | tier, gifts
+!!cheer | Any bits are cheered (including anonymously) | The giver | bits
+!!cheerbadge | A viewer attains a new cheer badge | The cheerer | level
+
+
+Each special action has its own set of available parameters, which can be
+inserted into the message, used in conditionals, etc. They are always enclosed
+in braces, and have meanings as follows:
+
+Parameter    | Meaning
+-------------|------------------
+{tier} | Subscription tier - 1, 2, or 3 (Prime subs show as tier 1)
+{months} | Cumulative months of subscription
+{streak} | Consecutive months of subscription. If a sub is restarted after a delay, {months} continues, {streak} resets.
+{recipient} | Display name of the gift sub recipient
+{multimonth} | Number of consecutive months of subscription given
+{gifts} | Number of randomly-assigned gifts. Can be 1.
+{bits} | Total number of bits cheered in this message
+{level} | New badge level, eg 1000 if the 1K bits badge has just been attained
 
 
 Editing these special commands can also be done via the bot's web browser

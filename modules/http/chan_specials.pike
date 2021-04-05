@@ -12,11 +12,13 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"save_or_login": "",
 		]) | req->misc->chaninfo);
 	}
-	foreach (function_object(G->G->commands->addcmd)->SPECIALS, [string spec, [string desc, string originator, string params]])
+	object addcmd = function_object(G->G->commands->addcmd);
+	foreach (addcmd->SPECIALS, [string spec, [string desc, string originator, string params]])
 		commands += ({(["id": spec + req->misc->channel->name, "desc": desc, "originator": originator, "params": params])});
 	return render_template("chan_specials.md", ([
 		"vars": ([
 			"commands": commands,
+			"SPECIAL_PARAMS": mkmapping(@Array.transpose(addcmd->SPECIAL_PARAMS)),
 			"ws_type": "chan_commands", "ws_group": "!!" + req->misc->channel->name, "ws_code": "chan_specials",
 		]),
 		"loadingmsg": "Loading...",
