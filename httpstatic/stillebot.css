@@ -66,6 +66,9 @@ h1,h2,h3 {
 	margin: .5em;
 }
 
+.iftrue {border-color: #0bb;}
+.iffalse {border-color: #a08;}
+
 nav a {
 	font-size: smaller;
 }
