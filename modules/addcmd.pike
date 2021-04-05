@@ -19,7 +19,7 @@ constant SPECIAL_NAMES = (multiset)SPECIALS[*][0];
 constant SPECIAL_PARAMS = ({
 	({"tier", "Subscription tier - 1, 2, or 3 (Prime subs show as tier 1)"}),
 	({"months", "Cumulative months of subscription"}), //TODO: Check interaction with multimonth
-	({"streak", "Consecutive months of subscription. If a sub is restarted after a delay, {months} continues, {streak} resets."}),
+	({"streak", "Consecutive months of subscription. If a sub is restarted after a delay, {months} continues, but {streak} resets."}),
 	({"recipient", "Display name of the gift sub recipient"}),
 	({"multimonth", "Number of consecutive months of subscription given"}),
 	({"gifts", "Number of randomly-assigned gifts. Can be 1."}),
