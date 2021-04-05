@@ -1,11 +1,8 @@
 inherit command;
 constant require_moderator = 1;
-//TODO: Reword these, or maybe change the layout of the docstring. The web interface
-//now has a very different layout, which makes the current content look ugly.
-//Maybe separate the names from their meanings, and in the text version, put all the
-//meanings down below, separately, but in the web, have them together? Would require
-//each name to mean the same thing if it's used in multiple specials, but that's OK,
-//I think, given that it'd be confusing for humans to do otherwise anyway.
+//Note: Each special with the same-named parameter is assumed to use it in the same way.
+//It's good to maintain this for the sake of humans anyway, but also the display makes
+//this assumption, and has only a single description for any given name.
 constant SPECIALS = ({
 	({"!follower", ({"Someone follows the channel", "The new follower", ""})}),
 	({"!sub", ({"Someone subscribes for the first time", "The subscriber", "tier"})}),
