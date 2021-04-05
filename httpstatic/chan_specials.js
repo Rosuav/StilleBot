@@ -1,10 +1,15 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {CODE, BR, TR, TD, SPAN, DIV, UL, LI, INPUT} = choc;
-import {render_item as render_command} from "$$static||chan_commands.js$$";
+import {render_item as render_command, add_hook} from "$$static||chan_commands.js$$";
 
+let command_lookup = { };
 function describe_param(p, desc) {
 	if (!p) return 0;
 	return LI([CODE("{" + p + "}"), " - " + (SPECIAL_PARAMS[p] || desc)]);
+}
+
+function describe_all_params(cmd) {
+	return [describe_param("$$", cmd.originator)].concat(cmd.params.split(", ").map(describe_param));
 }
 
 export function render(data) {
@@ -23,7 +28,7 @@ export function render(data) {
 			TR(TD({colSpan: 3}, [
 				"Happens when: " + cmd.desc, BR(),
 				"Parameters: ",
-				UL([describe_param("$$", cmd.originator)].concat(cmd.params.split(", ").map(describe_param))),
+				UL(describe_all_params(command_lookup[cmd.id] = cmd)),
 			])),
 			TR({className: "gap"}, []),
 		));
@@ -32,3 +37,4 @@ export function render(data) {
 	return;
 }
 
+add_hook("open_advanced", cmd => set_content("#parameters", describe_all_params(command_lookup[cmd.id])));

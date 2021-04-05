@@ -3,6 +3,9 @@ const {BR, BUTTON, INPUT, DIV, DETAILS, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTI
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 const all_flags = "mode dest access visibility action".split(" ");
 const commands = { };
+const hooks = {
+	open_advanced: [], //Called with a command mapping when Advanced View is about to be opened
+};
 
 on("click", "button.addline", e => {
 	let parent = e.match.closest("td").previousElementSibling;
@@ -152,6 +155,7 @@ function render_command(cmd, toplevel) {
 export function open_advanced_view(cmd) {
 	set_content("#command_details", render_command(cmd, 1));
 	set_content("#cmdname", "!" + cmd.id.split("#")[0]);
+	hooks.open_advanced.forEach(f => f(cmd));
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
 }
@@ -320,3 +324,8 @@ function addcmd() {
 	}
 }
 on("click", "#addcmd", addcmd); //Note that there'll never be more than one add button at the moment, but might be zero.
+
+export function add_hook(name, func) {
+	if (!hooks[name]) return false;
+	return hooks[name].push(func);
+}

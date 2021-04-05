@@ -22,6 +22,7 @@ Special name | Response | -
 $$save_or_login$$
 
 > ### Edit special response <code id=cmdname></code>
+> <ul id=parameters></ul>
 > <div id=command_details></div>
 >
 > <p><button type=button id=save_advanced>Save</button> <button type=button class=dialog_close>Cancel</button></p>
