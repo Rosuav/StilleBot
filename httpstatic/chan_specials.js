@@ -20,6 +20,7 @@ export function render(data) {
 				CODE("$$"), ": ", cmd.originator, BR(),
 				"Other parameters: " + cmd.params,
 			])),
+			TR({className: "gap"}, []),
 		));
 		set_content("#commands tbody", rows);
 	}
