@@ -1,6 +1,11 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {CODE, BR, TR, TD, SPAN, INPUT} = choc;
+const {CODE, BR, TR, TD, SPAN, DIV, UL, LI, INPUT} = choc;
 import {render_item as render_command} from "$$static||chan_commands.js$$";
+
+function describe_param(p, desc) {
+	if (!p) return 0;
+	return LI([CODE("{" + p + "}"), " - " + (SPECIAL_PARAMS[p] || desc)]);
+}
 
 export function render(data) {
 	if (data.id) {
@@ -17,8 +22,8 @@ export function render(data) {
 			render_command(resp[cmd.id] || {id: cmd.id, message: ""}),
 			TR(TD({colSpan: 3}, [
 				"Happens when: " + cmd.desc, BR(),
-				CODE("$$"), ": ", cmd.originator, BR(),
-				"Other parameters: " + (cmd.params || "(none)"),
+				"Parameters: ",
+				UL([describe_param("$$", cmd.originator)].concat(cmd.params.split(", ").map(describe_param))),
 			])),
 			TR({className: "gap"}, []),
 		));

@@ -32,6 +32,7 @@ $$save_or_login$$
 table {width: 100%;}
 th, td {width: 100%;}
 th:first-of-type, th:last-of-type, td:first-of-type, td:last-of-type {width: max-content;}
-td:nth-of-type(2n+1) {white-space: nowrap;}
+td:nth-of-type(2n+1):not([colspan]) {white-space: nowrap;}
 .gap {height: 1em;}
+td ul {margin: 0;}
 </style>
