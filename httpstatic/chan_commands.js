@@ -153,7 +153,7 @@ function render_command(cmd, toplevel) {
 }
 
 export function open_advanced_view(cmd) {
-	set_content("#command_details", render_command(cmd, 1));
+	set_content("#command_details", render_command(cmd, cmd.id[0] !== '!'));
 	set_content("#cmdname", "!" + cmd.id.split("#")[0]);
 	hooks.open_advanced.forEach(f => f(cmd));
 	DOM("#advanced_view").style.cssText = "";
