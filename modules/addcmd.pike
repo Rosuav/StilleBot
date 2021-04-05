@@ -8,10 +8,10 @@ constant require_moderator = 1;
 //I think, given that it'd be confusing for humans to do otherwise anyway.
 constant SPECIALS = ({
 	({"!follower", ({"Someone follows the channel", "The new follower", ""})}),
-	({"!sub", ({"Brand new subscription", "The subscriber", "tier"})}),
-	({"!resub", ({"Resub is announced", "The subscriber", "tier, months, streak"})}),
+	({"!sub", ({"Someone subscribes for the first time", "The subscriber", "tier"})}),
+	({"!resub", ({"Someone announces a resubscription", "The subscriber", "tier, months, streak"})}),
 	({"!subgift", ({"Someone gives a sub", "The giver", "tier, months, streak, recipient, multimonth"})}),
-	({"!subbomb", ({"Someone gives many subgifts", "The giver", "tier, gifts"})}),
+	({"!subbomb", ({"Someone gives random subgifts", "The giver", "tier, gifts"})}),
 	({"!cheer", ({"Any bits are cheered (including anonymously)", "The giver", "bits"})}),
 	({"!cheerbadge", ({"A viewer attains a new cheer badge", "The cheerer", "level"})}),
 });
