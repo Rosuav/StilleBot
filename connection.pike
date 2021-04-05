@@ -692,7 +692,6 @@ class channel_notif
 						"{months}": params->msg_param_cumulative_months || params->msg_param_months || "1",
 						"{streak}": params->msg_param_streak_months || "",
 						"{recipient}": params->msg_param_recipient_display_name,
-						//TODO: Figure out which one actually happens and drop the other
 						"{multimonth}": params->msg_param_gift_months || "1",
 					]));
 					//Other params: login, user_id, msg_param_recipient_user_name, msg_param_recipient_id,
