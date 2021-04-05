@@ -18,7 +18,7 @@ export function render(data) {
 			TR(TD({colSpan: 3}, [
 				"Happens when: " + cmd.desc, BR(),
 				CODE("$$"), ": ", cmd.originator, BR(),
-				"Other parameters: " + cmd.params,
+				"Other parameters: " + (cmd.params || "(none)"),
 			])),
 			TR({className: "gap"}, []),
 		));
