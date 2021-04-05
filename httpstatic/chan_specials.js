@@ -4,12 +4,14 @@ import {render_item as render_command, add_hook} from "$$static||chan_commands.j
 
 let command_lookup = { };
 function describe_param(p, desc) {
-	if (!p) return 0;
-	return LI([CODE("{" + p + "}"), " - " + (SPECIAL_PARAMS[p] || desc)]);
+	//TODO: Make them clickable to insert that token in the current EF??
+	return LI([CODE(p), " - " + desc]);
 }
 
 function describe_all_params(cmd) {
-	return [describe_param("$$", cmd.originator)].concat(cmd.params.split(", ").map(describe_param));
+	return [describe_param("$$", cmd.originator)].concat(
+		cmd.params.split(", ").map(p => p && describe_param("{" + p + "}", SPECIAL_PARAMS[p]))
+	);
 }
 
 export function render(data) {
