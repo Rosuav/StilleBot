@@ -81,14 +81,8 @@
      triggers are actually stored in a single command with an array of messages, under the
      special "!!trigger". So they're still "special commands" on the inside, but "special
      triggers" on the outside. Go figure.
+  - Each trigger needs a unique ID, allowing them to be deleted.
 * Inside person[], have a vars mapping, initially empty. Move %s and %e handling into
   there. A hook like all-cmds can add flags to it. Any conditional can check those. Maybe
   use that for noobsrun too. Would then allow triggers (and echo commands, if applicable)
   to get information from code.
-* Have a "Delete" button on command editor advanced view
-  - For specials, this would need to blank it in the main UI rather than deleting, but on
-    the back end, it's the same.
-  - For triggers (see above), this would delete just the one trigger entry.
-  - No delete button in the brief view. It'd need to have confirmation and such, and it'd
-    end up being UI-ugly. You can always click the gear and then delete, or use the blank
-    technique that has always been available.
