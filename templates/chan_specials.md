@@ -3,7 +3,7 @@
 When certain events happen, StilleBot can automatically react, to thank a
 person or celebrate an activity etc. Every event is triggered by somebody -
 the initiator of the special action - and many events have additional information
-available. For example, when someone [cheers](https://help.twitch.tv/customer/portal/articles/2449458)
+available. For example, when someone [cheers](https://help.twitch.tv/s/article/guide-to-cheering-with-bits)
 in your channel, StilleBot can thank the person with a message such as:
 
 <pre>Thank you for the {bits} bits, $$$$!
