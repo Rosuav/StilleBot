@@ -164,6 +164,7 @@ echoable_message validate(echoable_message resp)
 		//properly paired and surround legit variables. Might not be possible
 		//unless we mandate some things surrounding substitutions; for instance,
 		//there's "%e" as well as "%s", and no telling what else could happen.
+		//(Not that %e is likely in a destination, but still.)
 	}
 	//Conditions have their own active ingredients.
 	if (array parts = condition_parts[resp->conditional]) {
