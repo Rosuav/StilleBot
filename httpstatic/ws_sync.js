@@ -39,13 +39,15 @@ export function connect(group, handler)
 					}
 					//else it's currently absent, needs to be absent, nothing to do
 				} else {
-					if (!data.items.length && handler.render_empty) handler.render_empty();
 					set_content(handler.render_parent, data.items.map(handler.render_item));
+					if (!data.items.length && handler.render_empty) handler.render_empty();
 				}
 			}
 			//Note that render() is called *after* render_item in all cases.
 			handler.render(data, group);
 		}
+		const f = handler["sockmsg_" + data.cmd];
+		if (f) f(data);
 	};
 }
 //When ready, import the handler code. It'll be eg "/subpoints.js" but with automatic mtime handling.
