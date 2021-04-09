@@ -95,7 +95,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	object channel = G->G->irc->channels["#" + chan];
 	if (!channel) return "Bad channel";
 	if (!channel->mods[conn->session->user->login]) return "Not logged in"; //Most likely this will result from some other issue, but whatever
-	if (command != "" && command != "!!") return "UNIMPL"; //TODO: Check that there actually is a command of that name
+	if (!(<"", "!!", "!!trigger">)[command]) return "UNIMPL"; //TODO: Check that there actually is a command of that name
 }
 
 mapping _get_command(string cmd) {
@@ -108,12 +108,19 @@ mapping _get_command(string cmd) {
 mapping get_state(string group, string|void id) {
 	sscanf(group, "%s#%s", string command, string chan);
 	if (!G->G->irc->channels["#" + chan]) return 0;
+	if (command == "!!trigger") {
+		//For the front end, we pretend that there are multiple triggers with distinct IDs.
+		//But here on the back end, they're a single array inside one command.
+		echoable_message response = G->G->echocommands["!trigger#" + chan];
+		if (id) return 0; //Partial updates of triggers not currently supported. If there are enough that this matters, consider implementing.
+		return (["items": arrayp(response) ? response : ({ })]);
+	}
 	if (id) return _get_command(id); //Partial update of a single command. This will only happen if signalled from the back end.
 	if (command != "" && command != "!!") return 0; //Single-command usage not yet implemented
 	array commands = ({ });
 	foreach (G->G->echocommands; string cmd; echoable_message response) if (has_suffix(cmd, "#" + chan))
 	{
-		if (command == "!!" && has_prefix(cmd, "!")) commands += ({_get_command(cmd)});
+		if (command == "!!" && has_prefix(cmd, "!") && !has_prefix(cmd, "!!trigger#")) commands += ({_get_command(cmd)});
 		else if (command == "" && !has_prefix(cmd, "!")) commands += ({_get_command(cmd)});
 	}
 	sort(commands->id, commands);
@@ -184,6 +191,32 @@ echoable_message validate(echoable_message resp)
 array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string command, string chan);
 	if (!G->G->irc->channels["#" + chan]) return 0;
+	if (command == "!!trigger") {
+		echoable_message response = G->G->echocommands["!trigger#" + chan];
+		response += ({ }); //Force array, and disconnect it for mutation's sake
+		string id = msg->cmdname - "!";
+		if (id == "") {
+			//Blank command name? Create a new one.
+			if (!sizeof(response)) id = "1";
+			else id = (string)((int)response[-1]->id + 1);
+		}
+		else if (!(int)id) return 0; //Invalid ID
+		echoable_message trigger = validate(msg->response);
+		if (trigger != "") { //Empty string will cause a deletion
+			if (!mappingp(trigger)) trigger = (["message": trigger]);
+			trigger->id = id;
+		}
+		if (msg->cmdname == "") response += ({trigger});
+		else foreach (response; int i; mapping r) {
+			if (r->id == id) {
+				response[i] = trigger;
+				break;
+			}
+		}
+		response -= ({""});
+		if (!sizeof(response)) response = ""; //No triggers left? Delete the special altogether.
+		return ({"!trigger#" + chan, response});
+	}
 	if (command == "" || command == "!!") {
 		string pfx = command[..0]; //"!" for specials, "" for normals
 		if (!stringp(msg->cmdname)) return 0;
@@ -204,13 +237,20 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, msg);
 	if (!valid) return;
-	if (valid[1] != "") make_echocommand(@valid);
+	if (valid[1] != "") {
+		make_echocommand(@valid);
+		if (msg->cmdname == "" && has_prefix(conn->group, "!!trigger#")) {
+			//Newly added command. The client needs to know the ID so it can pop it up.
+			conn->sock->send_text(Standards.JSON.encode((["cmd": "newtrigger", "response": valid[1][-1]])));
+		}
+	}
 	//Else message failed validation. TODO: Send a response on the socket.
 }
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, msg | (["response": ""]));
 	if (!valid) return;
 	if (valid[1] == "") make_echocommand(valid[0], 0);
+	else if (has_prefix(conn->group, "!!trigger#")) make_echocommand(@valid);
 	//Else something went wrong. Does it need a response?
 }
 

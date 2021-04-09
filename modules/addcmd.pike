@@ -72,7 +72,8 @@ void make_echocommand(string cmd, echoable_message response)
 	if (object handler = chan && G->G->websocket_types->chan_commands) {
 		//If the command name starts with "!", it's a special, to be
 		//sent out to "!!#channel" and not to "#channel".
-		handler->update_one(pfx + pfx + "#" + chan, cmd);
+		if (has_prefix(cmd, "!trigger#")) handler->send_updates_all("!" + cmd);
+		else handler->update_one(pfx + pfx + "#" + chan, cmd);
 		handler->send_updates_all(cmd);
 	}
 }
