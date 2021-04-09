@@ -224,6 +224,7 @@ let confirm_delete_wait = 0, confirm_delete_late = 0, confirm_delete_timeout = 0
 function reset_confirm_delete() {
 	clearTimeout(confirm_delete_timeout);
 	set_content("#delete_advanced", "Delete?").disabled = false;
+	confirm_delete_wait = confirm_delete_late = confirm_delete_timeout = 0;
 }
 on("click", "#delete_advanced", e => {
 	const t = +new Date;
