@@ -349,7 +349,11 @@ class channel_notif
 		person->param_emoted = emoted + residue;
 		//Functions do not get %s handling. If they want it, they can do it themselves,
 		//and if they don't want it, it would mess things up badly to do it here.
-		//(They still get other variable handling.)
+		//(They still get other variable handling.) NOTE: This may change in the future.
+		//If a function specifically does not want %s handling, it should:
+		//m_delete(person->vars, "%s"); m_delete(person->vars, "%e");
+		//Although since %e is undocumented, I may rename that, which would also reduce
+		//the likelihood of collision.
 		if (functionp(cmd)) send(person, cmd(this, person, param));
 		else send(person, cmd, (["%s": param, "%e": person->param_emoted]));
 	}
