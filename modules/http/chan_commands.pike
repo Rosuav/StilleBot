@@ -170,9 +170,7 @@ echoable_message validate(echoable_message resp)
 			ret->dest = sprintf("/%s %s", dest, target);
 		//TODO: Ensure that "%" shows up only as "%s", and that dollar signs are
 		//properly paired and surround legit variables. Might not be possible
-		//unless we mandate some things surrounding substitutions; for instance,
-		//there's "%e" as well as "%s", and no telling what else could happen.
-		//(Not that %e is likely in a destination, but still.)
+		//unless we mandate some things surrounding substitutions.
 	}
 	//Conditions have their own active ingredients.
 	if (array parts = condition_parts[resp->conditional]) {

@@ -1,6 +1,12 @@
 # Triggered responses for $$channel$$
 
-TODO: Describe triggers here.
+Every chat message is checked against these triggers (in order). All matching
+responses will be sent. Unlike [commands](commands), triggers do not require
+that the command name be at the start of the message; they can react to any
+word or phrase anywhere in the message. They can also react to a variety of
+other aspects of the message, including checking whether the person is a mod,
+by using appropriate conditionals. Any response can be given, as per command
+handling.
 
 Channel moderators may add and edit these responses below.
 

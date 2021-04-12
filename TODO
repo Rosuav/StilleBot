@@ -82,10 +82,6 @@
      special "!!trigger". So they're still "special commands" on the inside, but "special
      triggers" on the outside. Go figure.
   - Each trigger needs a unique ID, allowing them to be deleted.
-* Inside person[], have a vars mapping, initially empty. Move %s and %e handling into
-  there. A hook like all-cmds can add flags to it. Any conditional can check those. Maybe
-  use that for noobsrun too. Would then allow triggers (and echo commands, if applicable)
-  to get information from code.
 * Synchronize all deletion confirmation prompts. At the moment, I'm liking the wait/late
   system used in commands.js - keep the button about the same size, but disable it for a
   short timeout, after which it becomes enabled, after which it reverts to ground state.

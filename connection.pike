@@ -333,8 +333,9 @@ class channel_notif
 			}
 			user->lastnotice = time();
 		}
+		person->vars = (["%s": msg, "{@mod}": person->_mod ? "1" : "0"]);
 		runhooks("all-msgs", 0, this, person, msg);
-		trigger_special("!trigger", person, (["%s": msg]));
+		trigger_special("!trigger", person, person->vars);
 		[command_handler cmd, string param] = locate_command(person, msg);
 		int offset = sizeof(msg) - sizeof(param);
 		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
@@ -348,16 +349,14 @@ class channel_notif
 			residue = residue[end - offset + 1..];
 			offset = end + 1;
 		}
-		person->param_emoted = emoted + residue;
+		person->vars["{@emoted}"] = emoted + residue;
 		//Functions do not get %s handling. If they want it, they can do it themselves,
 		//and if they don't want it, it would mess things up badly to do it here.
 		//(They still get other variable handling.) NOTE: This may change in the future.
 		//If a function specifically does not want %s handling, it should:
-		//m_delete(person->vars, "%s"); m_delete(person->vars, "%e");
-		//Although since %e is undocumented, I may rename that, which would also reduce
-		//the likelihood of collision.
+		//m_delete(person->vars, "%s");
 		if (functionp(cmd)) send(person, cmd(this, person, param));
-		else send(person, cmd, (["%s": param, "%e": person->param_emoted]));
+		else send(person, cmd, person->vars);
 	}
 
 	string set_variable(string var, string val, string action)
