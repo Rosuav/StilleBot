@@ -424,20 +424,22 @@ class channel_notif
 		}
 
 		echoable_message msg = message->message;
+		string expr(string input) {
+			if (!input) return "";
+			string ret = _substitute_vars(input, vars, person);
+			if (message->casefold) return lower_case(ret); //Would be nice to have a real Unicode casefold.
+			return ret;
+		}
 		switch (message->conditional) {
 			case "string": //String comparison. If (after variable substitution) expr1 == expr2, continue.
 			{
-				string expr1 = _substitute_vars(message->expr1 || "", vars, person);
-				string expr2 = _substitute_vars(message->expr2 || "", vars, person);
-				if (expr1 == expr2) break; //The condition passes!
+				if (expr(message->expr1) == expr(message->expr2)) break; //The condition passes!
 				msg = message->otherwise;
 				break;
 			}
 			case "contains": //String containment. Similar.
 			{
-				string expr1 = _substitute_vars(message->expr1 || "", vars, person);
-				string expr2 = _substitute_vars(message->expr2 || "", vars, person);
-				if (has_value(expr2, expr1)) break; //The condition passes!
+				if (has_value(expr(message->expr2), expr(message->expr1))) break; //The condition passes!
 				msg = message->otherwise;
 				break;
 			}
@@ -450,8 +452,7 @@ class channel_notif
 				//regexp's own syntax.
 				object re = simple_regex_cache[message->expr1];
 				if (!re) re = simple_regex_cache[message->expr1] = Regexp.SimpleRegexp(message->expr1);
-				string expr2 = _substitute_vars(message->expr2 || "", vars, person);
-				if (re->match(expr2)) break; //The regexp passes!
+				if (re->match(expr(message->expr2))) break; //The regexp passes!
 				msg = message->otherwise;
 				break;
 			}
@@ -459,7 +460,7 @@ class channel_notif
 			{
 				if (!G->G->evaluate_expr) msg = "ERROR: Expression evaluator unavailable";
 				else if (mixed ex = catch {
-					int|float value = G->G->evaluate_expr(_substitute_vars(message->expr1 || "", vars, person));
+					int|float value = G->G->evaluate_expr(expr(message->expr1));
 					if (value != 0 && value != 0.0) break; //But I didn't fire an arrow...
 					msg = message->otherwise;
 				}) msg = "ERROR: " + (describe_error(ex)/"\n")[0];

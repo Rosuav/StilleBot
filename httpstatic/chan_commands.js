@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, INPUT, DIV, DETAILS, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTION, FIELDSET, LEGEND, CODE} = choc;
+const {A, BR, BUTTON, INPUT, DIV, DETAILS, LABEL, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTION, FIELDSET, LEGEND, CODE} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 const all_flags = "mode dest access visibility action".split(" ");
 const commands = { };
@@ -81,11 +81,13 @@ const conditional_types = {
 	string: {
 		expr1: "Expression 1",
 		expr2: "Expression 2",
+		casefold: "?Case insensitive",
 		"": "The condition passes if (after variable substitution) the two are equal.",
 	},
 	contains: {
 		expr1: "Needle",
 		expr2: "Haystack",
+		casefold: "?Case insensitive",
 		"": "The condition passes if (after variable substitution) the needle is in the haystack.",
 	},
 	number: {
@@ -95,13 +97,14 @@ const conditional_types = {
 	regexp: {
 		expr1: "Regular expression",
 		expr2: "Search target (use %s for the message)",
+		casefold: "?Case insensitive",
 		"": () => [
 			"The condition passes if the ",
 			A({href: "https://pike.lysator.liu.se/generated/manual/modref/ex/predef_3A_3A/Regexp/SimpleRegexp.html"},
 				"regular expression"
 			),
 			" matches.", BR(),
-			"NOTE: Variable substitution is not done in the regexp, only the target.",
+			"NOTE: Variable substitution and case folding are not done in the regexp, only the target.",
 		],
 	},
 	choose: {
@@ -128,7 +131,12 @@ function render_command(cmd, toplevel) {
 		let desc = "";
 		for (let key in cond) {
 			if (key === "") desc = cond[key];
-			else rows.push(TR([TD(cond[key]), INPUT({"data-flag": key, value: cmd[key] || "", className: "widetext"})]));
+			else if (cond[key][0] === '?')
+				rows.push(TR([TD(), TD(LABEL([
+					INPUT({"data-flag": key, type: "checkbox", checked: cmd[key] === "on"}),
+					" " + cond[key].slice(1)
+				]))]));
+			else rows.push(TR([TD(cond[key]), TD(INPUT({"data-flag": key, value: cmd[key] || "", className: "widetext"}))]));
 		}
 		if (typeof desc === "function") desc = desc();
 		const td = TD(desc); td.setAttribute("colspan", 2);
@@ -198,7 +206,10 @@ function get_command_details(elem) {
 	for (elem = elem.firstElementChild; elem; elem = elem.nextElementSibling) {
 		if (elem.classList.contains("flagstable")) {
 			elem.querySelectorAll("[data-flag]").forEach(flg => {
-				if (flg.value !== "") ret[flg.dataset.flag] = flg.value;
+				if (flg.type === "checkbox") {
+					if (flg.checked) ret[flg.dataset.flag] = "on";
+				}
+				else if (flg.value !== "") ret[flg.dataset.flag] = flg.value;
 			});
 			if (ret.target && ret.dest && ret.dest[0] === "/") {
 				ret.dest += " " + ret.target;
