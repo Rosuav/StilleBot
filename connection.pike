@@ -333,7 +333,7 @@ class channel_notif
 			}
 			user->lastnotice = time();
 		}
-		person->vars = (["%s": msg, "{@mod}": person->_mod ? "1" : "0"]);
+		person->vars = (["%s": msg, "{@mod}": person->badges->_mod ? "1" : "0"]);
 		runhooks("all-msgs", 0, this, person, msg);
 		trigger_special("!trigger", person, person->vars);
 		[command_handler cmd, string param] = locate_command(person, msg);
