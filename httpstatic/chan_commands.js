@@ -277,7 +277,7 @@ function collect_messages(msg, cb, pfx) {
 	if (typeof msg === "string") cb(pfx + msg);
 	else if (Array.isArray(msg)) msg.forEach(line => collect_messages(line, cb, pfx));
 	else if (typeof msg !== "object") return; //Not sure what this could mean, but we can't handle it. Probably a null entry or something.
-	else if (msg.conditional) {
+	else if (msg.conditional && msg.otherwise) { //Hide the Otherwise if there isn't any (either a normal command with "" or a trigger with undefined)
 		collect_messages(msg.message, cb, pfx + "?) ");
 		collect_messages(msg.otherwise, cb, pfx + "!) ");
 	}
