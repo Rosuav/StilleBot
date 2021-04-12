@@ -333,6 +333,7 @@ class channel_notif
 			user->lastnotice = time();
 		}
 		runhooks("all-msgs", 0, this, person, msg);
+		trigger_special("!trigger", person, (["%s": msg]));
 		[command_handler cmd, string param] = locate_command(person, msg);
 		int offset = sizeof(msg) - sizeof(param);
 		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
@@ -451,6 +452,7 @@ class channel_notif
 			}
 			default: break; //including UNDEFINED which means unconditional, and 0 which means "condition already processed"
 		}
+		if (!msg) return; //If a message doesn't have an Otherwise, it'll end up null.
 
 		if (mappingp(msg)) {_send_recursive(person, message | (["conditional": 0]) | msg, vars); return;}
 
