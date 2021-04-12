@@ -27,7 +27,7 @@ constant buyfollows = ({"addviewers.com", "bigfollows . com", "bigfollows .com",
 
 string process(object channel, object person, string param)
 {
-	if (param == "migrate" && person->user == "rosuav") { //Temporary until checked with EclecticScribbles, Lapres, and ShotsyCreates
+	if (param == "migrate" && person->user == "rosuav") { //Temporary until checked with Lapres and ShotsyCreates
 		process(channel, person, ("0 " + buyfollows[*])[*]);
 		echoable_message response = G->G->echocommands["!trigger" + channel->name];
 		response += ({(["conditional": "number", "expr1": "{@buyfollows} && {@mod} == 0", "id": "buyfollows", "message": "/ban $$"])});
