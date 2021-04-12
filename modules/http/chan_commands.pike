@@ -152,7 +152,7 @@ echoable_message validate(echoable_message resp)
 		case 1: return validate(resp[0]); //Collapse single element arrays to their sole element
 		default: return validate(resp[*]) - ({""}); //Suppress any empty entries
 	}
-	if (!mappingp(resp)) return ""; //You can't really do much else, frankly. What are you trying to do, echo a float?
+	if (!mappingp(resp)) return ""; //Ensure that nulls become empty strings, for safety and UI simplicity.
 	mapping ret = (["message": validate(resp->message)]);
 	if (ret->message == "") return ""; //No message? Nothing to do.
 	//Whitelist the valid flags. Note that this will quietly suppress any empty
@@ -205,6 +205,7 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 		if (trigger != "") { //Empty string will cause a deletion
 			if (!mappingp(trigger)) trigger = (["message": trigger]);
 			trigger->id = id;
+			m_delete(trigger, "otherwise"); //Triggers don't have an Else clause
 		}
 		if (msg->cmdname == "") response += ({trigger});
 		else foreach (response; int i; mapping r) {
