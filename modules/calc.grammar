@@ -1,5 +1,14 @@
 /* First entry defines the entire thing parsed */
-expression: compare;
+expression: multicompare;
+
+/* These don't short-circuit, partly b/c the expression evaluator ALWAYS
+parses all variables before evaluating anything */
+multicompare: compare;
+multicompare: compare "&&" compare {binop};
+multicompare: compare "||" compare {binop};
+/* Convenience aliases */
+multicompare: compare "&" compare {binop};
+multicompare: compare "|" compare {binop};
 
 /* Note that "1 < 2 < 3" is not supported, to allow future expansion
 with possible Python-style semantics */
@@ -10,14 +19,8 @@ compare: add "==" add {binop};
 compare: add "!=" add {binop};
 compare: add ">=" add {binop};
 compare: add ">" add {binop};
-/* These don't short-circuit, partly b/c the expression evaluator ALWAYS
-parses all variables before evaluating anything */
-compare: add "&&" add {binop};
-compare: add "||" add {binop};
 /* Convenience aliases */
 compare: add "=" add {binop};
-compare: add "&" add {binop};
-compare: add "|" add {binop};
 compare: add "=>" add {binop};
 
 add: multiply;
