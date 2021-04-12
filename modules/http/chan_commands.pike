@@ -139,6 +139,7 @@ constant valid_flags = ([
 constant condition_parts = ([
 	"string": ({"expr1", "expr2"}),
 	"contains": ({"expr1", "expr2"}),
+	"regexp": ({"expr1", "expr2"}), //TODO: Allow flags on this - casefold, PCRE?
 	"number": ({"expr1"}), //Yes, expr1 even though there's no others - means you still see it when you switch
 ]);
 

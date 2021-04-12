@@ -1,5 +1,6 @@
 object irc;
 string bot_nick;
+mapping simple_regex_cache = ([]); //Emptied on code reload.
 
 class IRCClient
 {
@@ -437,6 +438,20 @@ class channel_notif
 				string expr1 = _substitute_vars(message->expr1 || "", vars, person);
 				string expr2 = _substitute_vars(message->expr2 || "", vars, person);
 				if (has_value(expr2, expr1)) break; //The condition passes!
+				msg = message->otherwise;
+				break;
+			}
+			case "regexp":
+			{
+				//TODO: Support PCRE as an alternative
+				if (!message->expr1) break; //A null regexp matches everything
+				//Note that expr1 does not get variable substitution done. The
+				//notation for variables would potentially conflict with the
+				//regexp's own syntax.
+				object re = simple_regex_cache[message->expr1];
+				if (!re) re = simple_regex_cache[message->expr1] = Regexp.SimpleRegexp(message->expr1);
+				string expr2 = _substitute_vars(message->expr2 || "", vars, person);
+				if (re->match(expr2)) break; //The regexp passes!
 				msg = message->otherwise;
 				break;
 			}
