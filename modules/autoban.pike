@@ -20,8 +20,20 @@ substring within the person's message. It does not actually have to be a
 word per se.
 ";
 
+//Keyword checks to see if someone's trying to sell us followers. Will be
+//added to as necessary, and all users of this blacklist will automatically
+//start noticing the new ones.
+constant buyfollows = ({"addviewers.com", "bigfollows . com", "bigfollows .com", "bigfollows*com"});
+
 string process(object channel, object person, string param)
 {
+	if (param == "migrate" && person->user == "rosuav") { //Temporary until checked with EclecticScribbles, Lapres, and ShotsyCreates
+		process(channel, person, ("0 " + buyfollows[*])[*]);
+		echoable_message response = G->G->echocommands["!trigger" + channel->name];
+		response += ({(["conditional": "number", "expr1": "{@buyfollows} && {@mod} == 0", "id": "buyfollows", "message": "/ban $$"])});
+		make_echocommand("!trigger" + channel->name, response);
+		return "@$$: Migrated.";
+	}
 	int tm; string badword;
 	if (sscanf(param, "ban %s", badword) && badword) tm = -1;
 	else if (sscanf(param, "%d %s", int t, badword) && badword) tm = t;
@@ -46,10 +58,13 @@ string process(object channel, object person, string param)
 
 int message(object channel, mapping person, string msg)
 {
+	msg = lower_case(msg);
+	//Detect the follower-selling bots and provide a flag that a trigger can examine.
+	person->vars["{@buyfollows}"] = "0";
+	foreach (buyfollows, string badword) if (has_value(msg, badword)) person->vars["{@buyfollows}"] = "1";
 	mapping autoban = channel->config->autoban;
 	if (!autoban) return 0;
 	if (person->badges->_mod) return 0; //Don't time out mods. It usually won't work anyway, but don't try.
-	msg = lower_case(msg);
 	foreach (autoban; string badword; int tm) if (has_value(msg, badword))
 	{
 		if (tm == -1) send_message(channel->name, "/ban " + person->user);

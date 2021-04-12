@@ -65,11 +65,6 @@
 * Move "$$autoform||$$" from markdown.html into each of the files that actually wants it
 * Use persist_status->path("bcaster_token")[chan] for all need-more-auth calls
   - May need to track the scopes used in case they need to be enhanced
-* Make autoban able to handle morphs. Separate the code from the resulting behaviour. I can
-  then update the code to handle a new morph, and everyone who has a trigger will see the
-  new things get smacked - whether the chosen trigger is a timeout or a ban. Check with all
-  current users of autoban to see if they want to switch to the new system (old one won't
-  be going away soon, although I may deprecate it).
 * New feature: Triggers
   - A trigger is a command with no top-level flags and no "Otherwise". It is invoked
     automatically against any command.
