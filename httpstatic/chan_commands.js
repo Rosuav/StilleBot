@@ -147,7 +147,7 @@ function render_command(cmd, toplevel) {
 			FIELDSET({className: "optedmsg iftrue"}, text_array(LEGEND("If true:"), cmd.message || "")),
 			//The "Otherwise" clause is omitted entirely for a trigger's top-level.
 			//(If ever this gets tripped by something else, ensure that otherwise:"" is added somewhere.)
-			cmd.otherwise && FIELDSET({className: "optedmsg iffalse"}, text_array(LEGEND("If false:"), cmd.otherwise)),
+			cmd.otherwise !== undefined && FIELDSET({className: "optedmsg iffalse"}, text_array(LEGEND("If false:"), cmd.otherwise)),
 		]);
 	}
 	//Handle flags
