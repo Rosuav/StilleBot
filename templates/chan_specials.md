@@ -1,4 +1,4 @@
-# Special responses for $$channel$$
+# Special triggers for $$channel$$
 
 When certain events happen, StilleBot can automatically react, to thank a
 person or celebrate an activity etc. Every event is triggered by somebody -
@@ -11,6 +11,8 @@ in your channel, StilleBot can thank the person with a message such as:
 MustardMine: This is a test cheer cheer100
 StilleBot: Thank you for the 100 bits, MustardMine!
 </pre>
+
+To respond to the contents of regular messages, see [Triggers](triggers).
 
 Channel moderators may add and edit these responses below.
 

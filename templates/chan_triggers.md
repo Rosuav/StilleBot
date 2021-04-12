@@ -8,6 +8,8 @@ other aspects of the message, including checking whether the person is a mod,
 by using appropriate conditionals. Any response can be given, as per command
 handling.
 
+To respond to special events such as subscriptions, see [Special Triggers](specials).
+
 Channel moderators may add and edit these responses below.
 
 ID          | Response | -

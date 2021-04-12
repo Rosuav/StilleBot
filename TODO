@@ -65,18 +65,6 @@
 * Move "$$autoform||$$" from markdown.html into each of the files that actually wants it
 * Use persist_status->path("bcaster_token")[chan] for all need-more-auth calls
   - May need to track the scopes used in case they need to be enhanced
-* New feature: Triggers
-  - A trigger is a command with no top-level flags and no "Otherwise". It is invoked
-    automatically against any command.
-  - When a trigger is created, it will default to a string containment conditional with
-    "%s" and a blank.
-     - If you set it to "Unconditional", that's your business. It'll trigger on everything.
-  - "Specials" wouldn't be "special commands" any more, but "special triggers". Instead of
-     triggering off typed text, they trigger off special events. Internally, though, all
-     triggers are actually stored in a single command with an array of messages, under the
-     special "!!trigger". So they're still "special commands" on the inside, but "special
-     triggers" on the outside. Go figure.
-  - Each trigger needs a unique ID, allowing them to be deleted.
 * Synchronize all deletion confirmation prompts. At the moment, I'm liking the wait/late
   system used in commands.js - keep the button about the same size, but disable it for a
   short timeout, after which it becomes enabled, after which it reverts to ground state.
