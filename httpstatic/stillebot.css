@@ -103,3 +103,17 @@ nav a {
 tr.dirty {
 	background-color: #ffeeee;
 }
+
+#templates tbody tr:nth-child(odd) {
+	background: #eef;
+	cursor: pointer;
+}
+
+#templates tbody tr:nth-child(even) {
+	background: #eff;
+	cursor: pointer;
+}
+
+#templates tbody tr:hover {
+	background: #ff0;
+}

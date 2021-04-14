@@ -243,7 +243,7 @@ on("click", "#save_advanced", async e => {
 	// */
 	document.getElementById("advanced_view").close();
 	const el = document.getElementById("cmdname").firstChild;
-	const cmdname = el.nodeType === 3 ? el.data : el.value; //Not sure if text nodes' .data attribute is the best way to do this
+	const cmdname = !el ? "" : el.nodeType === 3 ? el.data : el.value; //Not sure if text nodes' .data attribute is the best way to do this
 	ws_sync.send({cmd: "update", cmdname, response: info});
 });
 
@@ -289,7 +289,8 @@ on("click", "#templates tbody tr", e => {
 	const template = complex_templates[cmdname];
 	if (template) {
 		set_content("#command_details", render_command(template, 1));
-		set_content("#cmdname", INPUT({value: cmdname}));
+		if (cmdname[0] === '!') set_content("#cmdname", INPUT({value: cmdname}));
+		else set_content("#cmdname", ""); //Triggers don't have actual command names
 		document.getElementById("advanced_view").showModal();
 		return;
 	}

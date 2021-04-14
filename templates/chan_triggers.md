@@ -19,12 +19,13 @@ ID          | Response | -
 
 $$save_or_login$$
 
-> ### Edit trigger response <code id=cmdname></code>
-> <div id=command_details></div>
+> ### Available trigger types:
+> Trigger | Text
+> --------|------
+> $$templates$$
 >
-> <p><button type=button id=save_advanced>Save</button> <button type=button class=dialog_close>Cancel</button> <button type=button id=delete_advanced>Delete?</button></p>
->
-{: tag=dialog #advanced_view}
+> Customize as desired, or use as-is.
+{: tag=dialog #templates}
 
 <style>
 table {width: 100%;}
@@ -35,3 +36,10 @@ td:nth-of-type(2n+1):not([colspan]) {white-space: nowrap;}
 .gap {height: 1em;}
 td ul {margin: 0;}
 </style>
+
+> ### Edit trigger response <code id=cmdname></code>
+> <div id=command_details></div>
+>
+> <p><button type=button id=save_advanced>Save</button> <button type=button class=dialog_close>Cancel</button> <button type=button id=delete_advanced>Delete?</button></p>
+>
+{: tag=dialog #advanced_view}
