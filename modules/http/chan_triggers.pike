@@ -35,7 +35,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//Read-only view is a bit of a hack - it just doesn't say it's loading.
 		return render_template("chan_triggers.md", ([
 			"loadingmsg": "Restricted to moderators only",
-			"save_or_login": "", "templates": "",
+			"save_or_login": "", "templates": "- | -",
 		]) | req->misc->chaninfo);
 	}
 	return render_template("chan_triggers.md", ([
