@@ -426,10 +426,9 @@ class channel_notif
 		if (message->dest == "/builtin") {
 			string target = _substitute_vars(message->target || "", vars, person);
 			sscanf(target, "!%[^ ]%*[ ]%s", string cmd, string param);
-			if (G->G->commands[cmd]) {
-				if (cmd != "so" && cmd != "shoutout") {werror("Nope. connection.pike:%d\n", __LINE__); return;}
+			if (object handler = G->G->builtins[cmd]) {
 				person->outputfmt = message->message;
-				_send_recursive(person, G->G->commands[cmd](this, person, param), vars);
+				_send_recursive(person, handler->process(this, person, param), vars);
 				return;
 			}
 			else message = (["message": sprintf("Bad destination %O %O", message->dest, message->target)]);

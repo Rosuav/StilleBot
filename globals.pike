@@ -7,6 +7,7 @@ protected void create(string n)
 	//TODO: Have some way to 'declare' these down below, rather than
 	//coding them here.
 	if (!G->G->commands) G->G->commands=([]);
+	if (!G->G->builtins) G->G->builtins=([]);
 	if (!G->G->hooks) G->G->hooks=([]);
 	if (!G->G->bouncers) G->G->bouncers = ([]);
 	if (!G->G->template_defaults) G->G->template_defaults = ([]);
@@ -166,6 +167,30 @@ class handle_async(mixed gen, function got_result, function|void got_error) {
 		else pump(resp, 0);
 	}
 	void propagate_error(mixed err) {pump(0, err);}
+}
+
+//Some commands are available for echocommands to call on.
+class builtin_command {
+	inherit command;
+	constant default_response = "Example response";
+	//Meaning that a perfect shadow is:
+	//"!" + name: (["dest": "/builtin", "target": "!" + name + " %s", "message": default_response]);
+	//Override this either as-is or as a continue function to return the useful params.
+	mapping|function|Concurrent.Future message_params(object channel, object person, string param) { }
+
+	protected void create(string name)
+	{
+		::create(name);
+		sscanf(explode_path(name)[-1],"%s.pike",name);
+		if (!name) return;
+		G->G->builtins[name] = this;
+	}
+	echoable_message process(object channel, object person, string param) {
+		//TODO: Should this function synchronously if params can be obtained easily?
+		handle_async(message_params(channel, person, param)) {
+			channel->send(person, m_delete(person, "outputfmt") || default_response, __ARGS__[0]);
+		};
+	}
 }
 
 string describe_time_short(int tm)
