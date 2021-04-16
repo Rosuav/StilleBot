@@ -58,7 +58,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		object handler = G->G->builtins[name];
 		if (seen[handler]) continue; seen[handler] = 1; //If there are multiple, keep the alphabetically-earliest.
 		templates += ({sprintf("!%s | Duplicate, replace, or adjust the normal handling of the !%<s command", name)});
-		complex_templates["!" + name] = (["dest": "/builtin", "target": "!" + name + " %s", "message": handler->default_response]);
+		complex_templates["!" + name] = ([
+			"dest": "/builtin", "target": "!" + name + " %s",
+			"access": handler->require_moderator ? "mod" : handler->access,
+			"message": handler->default_response,
+		]);
 	}
 	if (req->misc->is_mod) {
 		return render_template("chan_commands.md", ([
