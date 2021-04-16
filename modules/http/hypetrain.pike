@@ -137,7 +137,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 constant default_response = ([
 	"conditional": "string", "expr1": "{state}", "expr2": "active",
 	"message": ([
-		"conditional": "number", "expr1": "{need} <= 0",
+		"conditional": "number", "expr1": "{needbits} <= 0",
 		"message": "/me MrDestructoid Hype Train status: HypeUnicorn1 HypeUnicorn2 HypeUnicorn3 HypeUnicorn4 HypeUnicorn5 HypeUnicorn6 LEVEL FIVE COMPLETE!",
 		"otherwise": "/me MrDestructoid Hype Train status: devicatParty HYPE! Level {level} requires {needbits} more bits or {needsubs} subs!"
 	]),
