@@ -4,7 +4,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	string user_is_mod = "";
 	object channel = req->misc->channel;
-	string uptime = channel_uptime(req->misc->channel->name[1..]);
+	int uptime = channel_uptime(req->misc->channel->name[1..]);
 	string timezone = channel->config->timezone;
 	if (!timezone || timezone == "") timezone = "UTC";
 	string transcoding = channel->config->reporttrans ? "Announced on startup" : "Not announced";
@@ -50,7 +50,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	return render_template("chan_.md", ([
 		"bot_or_mod": channel->mods[persist_config["ircsettings"]->nick] ? "mod" : "bot",
-		"uptime": uptime ? "Channel has been online for " + uptime : "Channel is currently offline.",
+		"uptime": uptime ? "Channel has been online for " + describe_time(uptime) : "Channel is currently offline.",
 		"user_is_mod": user_is_mod,
 		"timezone": timezone,
 		"transcoding": transcoding,
