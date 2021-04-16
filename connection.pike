@@ -423,6 +423,18 @@ class channel_notif
 			message->_changevars = 0; //It's okay to mutate this one, since it'll only ever be a bookkeeping mapping from delay handling.
 		}
 
+		if (message->dest == "/builtin") {
+			string target = _substitute_vars(message->target || "", vars, person);
+			sscanf(target, "!%[^ ]%*[ ]%s", string cmd, string param);
+			if (G->G->commands[cmd]) {
+				if (cmd != "so" && cmd != "shoutout") {werror("Nope. connection.pike:%d\n", __LINE__); return;}
+				person->outputfmt = message->message;
+				_send_recursive(person, G->G->commands[cmd](this, person, param), vars);
+				return;
+			}
+			else message = (["message": sprintf("Bad destination %O %O", message->dest, message->target)]);
+		}
+
 		echoable_message msg = message->message;
 		string expr(string input) {
 			if (!input) return "";
@@ -527,7 +539,7 @@ class channel_notif
 		}
 
 		if (dest == "/w") dest += " " + target;
-		if (dest == "") dest = name; //By default, send to the channel.
+		else dest = name; //Everything other than whispers and open chat has been handled elsewhere.
 
 		//VERY simplistic form of word wrap.
 		while (sizeof(msg) > 400)

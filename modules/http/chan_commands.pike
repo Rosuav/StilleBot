@@ -134,7 +134,7 @@ constant valid_flags = ([
 	"access": (<"mod", "none">),
 	"visibility": (<"hidden">),
 	"action": (<"add">),
-	"dest": (<"/w", "/web", "/set">),
+	"dest": (<"/w", "/web", "/set", "/builtin">),
 ]);
 
 constant condition_parts = ([
