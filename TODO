@@ -68,9 +68,6 @@
 * Synchronize all deletion confirmation prompts. At the moment, I'm liking the wait/late
   system used in commands.js - keep the button about the same size, but disable it for a
   short timeout, after which it becomes enabled, after which it reverts to ground state.
-* Support "target" as an actual field in commands. Eventually deprecate the hybrid form,
-  so that "dest" becomes an enumeration (with "" meaning "current channel" and all other
-  destinations supporting a target).
 * Additional command destination: "/builtin"
   - Needs a target such as "!so %s"
   - Will hand this branch of command to the corresponding builtin by setting it into
