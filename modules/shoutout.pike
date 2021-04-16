@@ -27,41 +27,27 @@ constant game_desc = ([
 	//"Sports & Fitness"
 ]);
 
-void shoutout(mapping info, string channel)
+constant default_response = ([
+	"conditional": "string",
+	"expr1": "{url}",
+	"message": "No channel found (do you have the Twitch time machine?)",
+	"otherwise": "{name} was last seen {catdesc}, at {url} - go check that stream out, maybe drop a follow! The last thing done was: {title}"
+]);
+
+continue Concurrent.Future _shoutout(object channel, mapping person, string param)
 {
-	if (!info || !info->url) {send_message(channel, "No channel found (do you have the Twitch time machine?)"); return;}
-	string game = replace(game_desc[info->game] || "playing %s", "%s", info->game || "(null)");
-	string chron = "was last seen";
-	//Note that the Kraken info - which is what we get if the channel isn't polled -
-	//doesn't include info about whether the stream is live. That would require a
-	//second API call, which would increase the shoutout latency, all for the sake
-	//of saying "is now playing" instead of "was last seen playing".
-	//If we can get last-known Helix info on call, that will be WAY better.
-	if (info->online_type == "live") chron = "is now";
-	//TODO: If the channel is currently hosting, override with "was last seen".
-	//Is there any way, in either Helix or Kraken, to get that info? For the GUI,
-	//we get the info via IRC. Ah, what fun - getting info from IRC, Kraken, Helix,
-	//push notifications (which are heavily derived from Helix), and maybe one day
-	//the websocket pubsub...
-	else if (info->online_type) write("Shouting out channel %s which is online_type %O\n", channel, info->online_type);
-	send_message(channel, sprintf(
-		"%s %s %s, at %s - go check that stream out, maybe drop a follow! The last thing done was: %s",
-		info->display_name, chron, game, info->url, info->status || "(null)"
-	));
+	mapping info = ([]);
+	catch {info = yield(get_channel_info(replace(param, ({"@", " "}), "")));}; //If error, leave it an empty mapping
+	channel->send(person, m_delete(person, "outputfmt") || default_response, ([
+		"{name}": info->display_name || "That person",
+		"{url}": info->url || "",
+		"{catdesc}": replace(game_desc[info->game] || "playing %s", "%s", info->game || "(null)"),
+		"{category}": info->game || "(null)",
+		"{title}": info->status,
+	]));
 }
 
-string process(object channel, object person, string param)
-{
-	param = replace(param, ({"@", " "}), "");
-	//Hack: Always fetch the live info
-	mapping info = 0;//G->G->channel_info[lower_case(param)];
-	if (!info)
-	{
-		write("... fetching channel info to give shout-out to %s...\n", param);
-		get_channel_info(param)->then(lambda(mapping info) {shoutout(info, channel->name);}, lambda() {shoutout(0, channel->name);});
-	}
-	else shoutout(info, channel->name);
-}
+string process(object channel, mapping person, string param) {handle_async(_shoutout(channel, person, param)) { };}
 
 protected void create(string name)
 {
