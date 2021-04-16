@@ -68,3 +68,38 @@
 * Synchronize all deletion confirmation prompts. At the moment, I'm liking the wait/late
   system used in commands.js - keep the button about the same size, but disable it for a
   short timeout, after which it becomes enabled, after which it reverts to ground state.
+* Command advanced view - CSS hack for destination type/subtype
+  - Currently it has three fields, all always visible: dest, target, action
+  - action is meaningful only if dest is "/set". Hide it otherwise.
+  - target is meaningful for any dest that begins with a slash.
+  - CSS can do this for us if we set appropriate attributes on the <tr>
+* Support "target" as an actual field in commands. Eventually deprecate the hybrid form,
+  so that "dest" becomes an enumeration (with "" meaning "current channel" and all other
+  destinations supporting a target).
+* Additional command destination: "/builtin"
+  - Needs a target such as "!so %s"
+  - Will hand this branch of command to the corresponding builtin by setting it into
+    person->outputfmt or something
+  - Not all commands will support this. That's fine. Those that don't will simply do
+    their own thing, regardless of the provided outputfmt.
+  - ONLY built-in commands are supported, and ONLY those that have no active_channels
+    flag. This means they will be found in G->G->commands[cmdname] with no punctuation.
+  - If person->outputfmt is set, check_perms will bypass all checks and go straight
+    to process(). This allows aliases to be used for mod-only commands. It's up to the
+    mods to choose what aliases exist, so you can make a mod-only alias, or you can
+    choose to make this available to everyone.
+    - Don't shortcut with function_object(cmd)->process - it would break things like
+      !unrepeat that insert alternate functions into commands[].
+    - If anything ever recreates the checks in check_perms, it'll need to be checked.
+  - Supported commands will have a default execution format that is used if outputfmt
+    isn't set. It will likely be parameterized. (Those parameters will therefore be
+    available to the outputfmt one as well.) This default format will be made visible
+    somewhere so that it can be added to the complex template list, eg:
+    - !so ==> (["dest": "/builtin", "target": "!so %s", "access": "mod", "message": ...])
+    - Can this be fully generated from the command itself? Maybe have a separate
+      inherit for "builtin_command" or a "constant builtin_command = 1;" that adds it
+      to the list.
+    - Probably an inherit (which will itself inherit command, of course). It'll add a
+      function to be called with the appropriate parameters, and will use the default
+      format or the specified one.
+    - Anything not in this list is unavailable. Maybe just not worth handling !unrepeat?
