@@ -752,7 +752,7 @@ class channel_notif
 					params->_type, params->msg_id, name, params, msg);
 			}
 			break;
-			case "WHISPER": responsedefaults = (["dest": "/w $$"]); //fallthrough
+			case "WHISPER": responsedefaults = (["dest": "/w", "target": "$$"]); //fallthrough
 			case "PRIVMSG": case 0: //If there's no params block, assume it's a PRIVMSG
 			{
 				if (lower_case(person->nick) == lower_case(bot_nick)) {lastmsgtime = time(1); modmsgs = 0;}

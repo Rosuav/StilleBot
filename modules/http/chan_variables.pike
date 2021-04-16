@@ -24,7 +24,9 @@ void check_for_variables(string cmdname, echoable_message response, mapping vari
 	if (mappingp(response))
 	{
 		string d = response->dest || "";
-		if (sscanf(d, "/set %s", string var) && var && var != "") {
+		string var = response->target || "";
+		if (sscanf(d, "/set %s", string v) && v && v != "") var = v;
+		if (var != "") {
 			var = "$" + var + "$";
 			if (!variabledata[var])
 				variabledata[var] = (["curval": ""]);
@@ -48,7 +50,7 @@ echoable_message build_View(string var, string msg) {
 echoable_message build_Increment(string var, string msg) {
 	return ([
 		"access": "mod", "message": ({
-			(["dest": "/set " + var, "message": "1", "action": "add"]),
+			(["dest": "/set", "target": var, "message": "1", "action": "add"]),
 			msg,
 		}),
 	]);
@@ -57,7 +59,7 @@ echoable_message build_Increment(string var, string msg) {
 echoable_message build_Reset(string var, string msg) {
 	return ([
 		"access": "mod", "message": ({
-			(["dest": "/set " + var, "message": "0"]),
+			(["dest": "/set", "target": var, "message": "0"]),
 			msg,
 		}),
 	]);

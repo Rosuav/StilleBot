@@ -44,9 +44,9 @@ string process(object channel, object person, string param)
 		{
 			case "sequential": m_delete(command, "mode"); break;
 			case "random": command->mode = "random"; break;
-			case "chat": m_delete(command, "dest"); break;
-			case "whisper": command->dest = "/w $$"; break;
-			case "wtarget": command->dest = "/w %s"; break;
+			case "chat": m_delete(command, "dest"); m_delete(command, "target"); break;
+			case "whisper": command->dest = "/w"; command->target = "$$"; break;
+			case "wtarget": command->dest = "/w"; command->target = "%s"; break;
 			case "anyone": m_delete(command, "access"); break;
 			case "modonly": command->access = "mod"; break;
 			case "disabled": command->access = "none"; break;

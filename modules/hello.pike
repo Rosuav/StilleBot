@@ -15,9 +15,9 @@ echoable_message process(object channel, object person, string param)
 		validate_keys(persist_config->data, "persist_config");
 	}
 	//Respond by whisper:
-	//return (["message": "Hello $$ in a whisper", "dest": "/w $$"]);
+	//return (["message": "Hello $$ in a whisper", "dest": "/w", "target": "$$"]);
 	//Send someone else a whisper, even if !hello was whispered to the bot:
-	//return (["message": "Hello from $$!", "dest": "/w " + param]);
+	//return (["message": "Hello from $$!", "dest": "/w", "target": param]);
 	//Respond with multiple messages:
 	//return ({"Hello, world!", "And hello $$ too."});
 	//Respond normally in chat:
