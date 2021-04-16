@@ -152,11 +152,15 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 {
 	mapping state = yield(get_state(channel->name[1..]));
 	if (state->expires) {
+		int tm = state->expires - time();
 		return ([
 			"{state}": "active",
 			"{level}": (string)state->level,
+			"{total}": (string)state->total,
+			"{goal}": (string)state->goal,
 			"{needbits}": (string)(state->goal - state->total),
 			"{needsubs}": (string)((state->goal - state->total + 499) / 500),
+			"{expires}": sprintf("%02d:%02d", tm / 60, tm % 60),
 		]);
 	} else if (state->cooldown) {
 		int tm = state->cooldown - time();
