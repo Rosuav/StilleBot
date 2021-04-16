@@ -60,6 +60,3 @@
 * Synchronize all deletion confirmation prompts. At the moment, I'm liking the wait/late
   system used in commands.js - keep the button about the same size, but disable it for a
   short timeout, after which it becomes enabled, after which it reverts to ground state.
-* Add all of G->G->builtins as template/example commands in the main editor view. This will
-  allow any channel to quickly create a "perfect shadow", aka a shadowing command with the
-  exact same behaviour as the original, and then proceed to mutate it.

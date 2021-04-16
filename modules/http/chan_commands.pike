@@ -51,10 +51,19 @@ constant COMPLEX_TEMPLATES = ([
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
+	array templates = TEMPLATES + ({ });
+	mapping complex_templates = COMPLEX_TEMPLATES | ([]);
+	multiset seen = (<>);
+	foreach (sort(indices(G->G->builtins)), string name) {
+		object handler = G->G->builtins[name];
+		if (seen[handler]) continue; seen[handler] = 1; //If there are multiple, keep the alphabetically-earliest.
+		templates += ({sprintf("!%s | Duplicate, replace, or adjust the normal handling of the !%<s command", name)});
+		complex_templates["!" + name] = (["dest": "/builtin", "target": "!" + name + " %s", "message": handler->default_response]);
+	}
 	if (req->misc->is_mod) {
 		return render_template("chan_commands.md", ([
-			"vars": (["ws_type": "chan_commands", "ws_group": req->misc->channel->name, "complex_templates": COMPLEX_TEMPLATES]),
-			"templates": TEMPLATES * "\n",
+			"vars": (["ws_type": "chan_commands", "ws_group": req->misc->channel->name, "complex_templates": complex_templates]),
+			"templates": templates * "\n",
 			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
 				"<input type=submit value=\"Save all\">"
 			),
@@ -85,7 +94,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	return render_template("chan_commands.md", ([
 		"user text": user,
 		"commands": commands * "\n",
-		"templates": TEMPLATES * "\n",
+		"templates": templates * "\n",
 	]) | req->misc->chaninfo);
 }
 

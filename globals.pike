@@ -173,8 +173,6 @@ class handle_async(mixed gen, function got_result, function|void got_error) {
 class builtin_command {
 	inherit command;
 	constant default_response = "Example response";
-	//Meaning that a perfect shadow is:
-	//"!" + name: (["dest": "/builtin", "target": "!" + name + " %s", "message": default_response]);
 	//Override this either as-is or as a continue function to return the useful params.
 	mapping|function|Concurrent.Future message_params(object channel, object person, string param) { }
 
