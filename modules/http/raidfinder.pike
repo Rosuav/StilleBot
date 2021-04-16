@@ -99,8 +99,15 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			array online = indices(G->G->stream_online_since);
 			if (!sizeof(online)) return (["data": "Nobody's online that I can see!", "type": "text/plain"]);
 			if (sizeof(online) == 1) return redirect("/raidfinder?for=" + online[0]); //Send you straight there if only one
-			return (["data": sprintf("<ul>%{<li><a href=\"/raidfinder?for=%s\">%<s</a></li>%}</ul>", sort(online)),
-				"type": "text/html"]);
+			array lines = ({ });
+			foreach (sort(online), string name) {
+				object chan = G->G->irc->channels["#" + name];
+				lines += ({sprintf("<li class=%s><a href=\"/raidfinder?for=%s\">%<s</a></li>",
+					chan->config->allcmds ? "allcmds": "monitor",
+					name,
+				)});
+			}
+			return (["data": "<style>.allcmds::marker{color:green}.monitor::marker{color:orange}body{font-size:16pt}</style><ul>" + lines * "\n" + "</ul>", "type": "text/html"]);
 		}
 		userid = yield(get_user_id(chan));
 	}
