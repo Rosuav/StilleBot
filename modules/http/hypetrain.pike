@@ -3,8 +3,7 @@ inherit websocket_handler;
 
 inherit builtin_command;
 constant hidden_command = 1;
-constant require_allcmds = 0;
-constant active_channels = ({"devicat", "rosuav"}); //TODO: Choose where to activate this, even when not in allcmds
+constant require_allcmds = 1;
 
 //Parse a timestamp into a valid Unix time. If ts is null, malformed,
 //or in the past, returns 0.
@@ -178,5 +177,4 @@ protected void create(string name)
 		token = function_object(G->G->webhook_endpoints->hypetrain)->token;
 	G->G->webhook_endpoints->hypetrain = hypetrain_progression;
 	if (!G->G->hypetrain_checktime) G->G->hypetrain_checktime = ([]);
-	G->G->commands["trainstatus"] = check_perms;
 }
