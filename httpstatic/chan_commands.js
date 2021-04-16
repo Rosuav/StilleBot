@@ -164,17 +164,21 @@ function render_command(cmd, toplevel) {
 			//It usually would be anyway, but make certain.
 			if (o === "") opt.unshift(el); else opt.push(el);
 		}
-		opts.push(TR([
+		opts.push(TR({"data-flag": flg}, [
 			TD(SELECT({"data-flag": flg}, opt)),
 			TD(flags[flg]["*"]),
 		]));
 	}
-	opts.push(TR([TD(INPUT({"data-flag": "target", value: cmd.target || ""})), TD("For whisper, web, and variable destinations - who/what should it send to?")]));
+	opts.push(TR({className: "targetrow"}, [TD(INPUT({"data-flag": "target", value: cmd.target || ""})), TD("Who/what should it send to? User or variable name.")]));
 	return FIELDSET({className: "optedmsg"}, text_array(DETAILS({className: "flagstable"}, [
 		SUMMARY("Flags"),
-		TABLE({border: 1}, opts),
+		TABLE({border: 1, "data-dest": cmd.dest || ""}, opts),
 	]), cmd.message));
 }
+
+on("change", 'select[data-flag="dest"]', e => {
+	e.match.closest("table").dataset.dest = e.match.value;
+});
 
 export function open_advanced_view(cmd) {
 	set_content("#command_details", render_command(cmd, cmd.id[0] !== '!'));

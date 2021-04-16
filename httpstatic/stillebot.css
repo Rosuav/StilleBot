@@ -117,3 +117,11 @@ tr.dirty {
 #templates tbody tr:hover {
 	background: #ff0;
 }
+
+table[data-dest=""] > tr.targetrow {
+	display: none;
+}
+
+table[data-dest]:not([data-dest="/set"]) > tr[data-flag="action"] {
+	display: none;
+}
