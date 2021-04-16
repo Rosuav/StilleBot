@@ -68,11 +68,6 @@
 * Synchronize all deletion confirmation prompts. At the moment, I'm liking the wait/late
   system used in commands.js - keep the button about the same size, but disable it for a
   short timeout, after which it becomes enabled, after which it reverts to ground state.
-* Command advanced view - CSS hack for destination type/subtype
-  - Currently it has three fields, all always visible: dest, target, action
-  - action is meaningful only if dest is "/set". Hide it otherwise.
-  - target is meaningful for any dest that begins with a slash.
-  - CSS can do this for us if we set appropriate attributes on the <tr>
 * Support "target" as an actual field in commands. Eventually deprecate the hybrid form,
   so that "dest" becomes an enumeration (with "" meaning "current channel" and all other
   destinations supporting a target).
