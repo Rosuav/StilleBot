@@ -152,7 +152,7 @@ function render_command(cmd, toplevel) {
 	}
 	//Handle flags
 	const opts = [TR([TH("Option"), TH("Effect")])];
-	let m = /^(\/[a-z]+) ([a-zA-Z$%]+)$/.exec(cmd.dest);
+	let m = !cmd.target && /^(\/[a-z]+) ([a-zA-Z$%]+)$/.exec(cmd.dest);
 	if (m) {cmd.dest = m[1]; cmd.target = m[2];}
 	for (let flg in flags) {
 		if (!toplevel && toplevelflags.includes(flg)) continue;

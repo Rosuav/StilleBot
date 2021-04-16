@@ -134,6 +134,7 @@ constant valid_flags = ([
 	"access": (<"mod", "none">),
 	"visibility": (<"hidden">),
 	"action": (<"add">),
+	"dest": (<"/w", "/web", "/set">),
 ]);
 
 constant condition_parts = ([
@@ -162,15 +163,19 @@ echoable_message validate(echoable_message resp)
 	{
 		if (ok[resp[flag]]) ret[flag] = resp[flag];
 	}
-	//Since destinations can contain variable references and such, validate them separately.
-	if (resp->dest && has_prefix(resp->dest, "/"))
+	if (ret->dest) {
+		//If there's any dest other than "" (aka "open chat"), it should
+		//have a target. Failing to have a target breaks other destinations,
+		//so remove that if this is missing; otherwise, any target works.
+		if (!resp->target) m_delete(ret, "dest");
+		else ret->target = resp->target;
+	}
+	else if (resp->dest && has_prefix(resp->dest, "/"))
 	{
+		//Legacy mode. Fracture the dest into dest and target.
 		sscanf(resp->dest, "/%[a-z] %[a-zA-Z$%]%s", string dest, string target, string empty);
 		if ((<"w", "web", "set">)[dest] && target != "" && empty == "")
-			ret->dest = sprintf("/%s %s", dest, target);
-		//TODO: Ensure that "%" shows up only as "%s", and that dollar signs are
-		//properly paired and surround legit variables. Might not be possible
-		//unless we mandate some things surrounding substitutions.
+			[ret->dest, ret->target] = ({"/" + dest, target});
 	}
 	//Conditions have their own active ingredients.
 	if (array parts = condition_parts[resp->conditional]) {

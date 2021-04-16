@@ -484,20 +484,23 @@ class channel_notif
 
 		//And now we have just a single string to send.
 		string prefix = _substitute_vars(message->prefix || "", vars, person);
-		string dest = _substitute_vars(message->dest || name, vars, person);
 		msg = _substitute_vars(msg, vars, person);
-		if (sscanf(dest, "/web %s", string recip) && recip)
+		string dest = message->dest || "", target = message->target || "";
+		//Legacy mode: dest is dest + " " + target, target doesn't exist
+		if (has_value(dest, ' ') && target == "") sscanf(dest, "%s %s", dest, target);
+		target = _substitute_vars(target, vars, person);
+		if (dest == "/web")
 		{
 			//Stash the text away. Recommendation: Have a public message that informs the
 			//recipient that info is available at https://sikorsky.rosuav.com/channels/%s/private
 			mapping n2u = persist_status->path("name_to_uid");
-			string uid = n2u[lower_case(recip)]; //Yes, it's a string, even though it's always going to be digits
+			string uid = n2u[lower_case(target)]; //Yes, it's a string, even though it's always going to be digits
 			if (!uid)
 			{
 				//TODO: Look the person up, delay the message, and then if
 				//still not found, give a different error. For now, it depends
 				//on the person having said something at some point.
-				msg = sprintf("%s: User %s not found, has s/he said anything in chat?", person->user, recip);
+				msg = sprintf("%s: User %s not found, has s/he said anything in chat?", person->user, target);
 				dest = name; //Send it to the default, the channel.
 			}
 			else
@@ -515,11 +518,15 @@ class channel_notif
 
 		//Variable management. Note that these are silent, so they should normally
 		//be paired with public messages.
-		if (sscanf(dest, "/set %s", string var) && var)
+		if (dest == "/set" && sscanf(target, "%[A-Za-z]", string var) && var && var != "")
 		{
+			
 			vars["$" + var + "$"] = set_variable(var, msg, message->action);
 			return;
 		}
+
+		if (dest == "/w") dest += " " + target;
+		if (dest == "") dest = name; //By default, send to the channel.
 
 		//VERY simplistic form of word wrap.
 		while (sizeof(msg) > 400)
