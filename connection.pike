@@ -349,6 +349,7 @@ class channel_notif
 			residue = residue[end - offset + 1..];
 			offset = end + 1;
 		}
+		person->vars["%s"] = param;
 		person->vars["{@emoted}"] = emoted + residue;
 		//Functions do not get %s handling. If they want it, they can do it themselves,
 		//and if they don't want it, it would mess things up badly to do it here.
