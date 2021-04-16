@@ -1,7 +1,7 @@
 inherit http_endpoint;
 inherit websocket_handler;
 
-inherit command;
+inherit builtin_command;
 constant hidden_command = 1;
 constant require_allcmds = 0;
 constant active_channels = ({"devicat", "rosuav"}); //TODO: Choose where to activate this, even when not in allcmds
@@ -134,24 +134,37 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		}); //TODO: If auth error, clear the token
 }
 
-echoable_message process(object channel, object person, string param)
+constant default_response = ([
+	"conditional": "string", "expr1": "{state}", "expr2": "active",
+	"message": ([
+		"conditional": "number", "expr1": "{need} <= 0",
+		"message": "/me MrDestructoid Hype Train status: HypeUnicorn1 HypeUnicorn2 HypeUnicorn3 HypeUnicorn4 HypeUnicorn5 HypeUnicorn6 LEVEL FIVE COMPLETE!",
+		"otherwise": "/me MrDestructoid Hype Train status: devicatParty HYPE! Level {level} requires {needbits} more bits or {needsubs} subs!"
+	]),
+	"otherwise": ([
+		"conditional": "string", "expr1": "{state}", "expr2": "cooldown",
+		"message": "/me MrDestructoid Hype Train status: devicatCozy The hype train is on cooldown for {cooldown}. kittenzSleep",
+		"otherwise": "/me MrDestructoid Hype Train status: NomNom Cookies are done! NomNom"
+	])
+]);
+
+continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
-	handle_async(get_state(channel->name[1..])) {
-		[mapping state] = __ARGS__;
-		if (state->expires) {
-			//Active hype train!
-			if (state->total >= state->goal)
-				send_message(channel->name, "MrDestructoid Hype Train status: HypeUnicorn1 HypeUnicorn2 HypeUnicorn3 HypeUnicorn4 HypeUnicorn5 HypeUnicorn6 LEVEL FIVE COMPLETE!");
-			else send_message(channel->name, sprintf(
-				"/me MrDestructoid Hype Train status: devicatParty HYPE! Level %d requires %d more bits or %d subs!",
-				state->level, state->goal - state->total, (state->goal - state->total + 499) / 500));
-		} else if (state->cooldown) {
-			int tm = state->cooldown - time();
-			send_message(channel->name, sprintf(
-				"/me MrDestructoid Hype Train status: devicatCozy The hype train is on cooldown for %02d:%02d. kittenzSleep",
-				tm / 60, tm % 60));
-		} else send_message(channel->name, "/me MrDestructoid Hype Train status: NomNom Cookies are done! NomNom");
-	};
+	mapping state = yield(get_state(channel->name[1..]));
+	if (state->expires) {
+		return ([
+			"{state}": "active",
+			"{level}": (string)state->level,
+			"{needbits}": (string)(state->goal - state->total),
+			"{needsubs}": (string)((state->goal - state->total + 499) / 500),
+		]);
+	} else if (state->cooldown) {
+		int tm = state->cooldown - time();
+		return ([
+			"{state}": "cooldown",
+			"{cooldown}": sprintf("%02d:%02d", tm / 60, tm % 60),
+		]);
+	} else return (["{state}": "idle"]);
 }
 
 protected void create(string name)
