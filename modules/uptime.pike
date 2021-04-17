@@ -1,4 +1,4 @@
-inherit command;
+inherit builtin_command;
 constant docstring = #"
 Show channel uptime.
 
@@ -7,10 +7,18 @@ that the channel is offline if it's just started, and/or still showing
 the uptime just after it goes offline.
 ";
 
-string process(object channel, object person, string param)
-{
-	if (int t = channel_uptime(channel->name[1..]))
-		return "@$$: Channel " + channel->name[1..] + " has been online for " + describe_time(t);
-	return "Channel is currently offline.";
-}
+constant default_response = ([
+	"conditional": "string", "expr1": "{uptime}", "expr2": "0",
+	"message": "Channel is currently offline.",
+	"otherwise": "@$$: Channel {channel} has been online for {uptime_english}",
+]);
 
+mapping message_params(object channel, mapping person, string param) {
+	int t = channel_uptime(channel->name[1..]);
+	return ([
+		"{channel}": channel->name[1..], //TODO: Show the display name instead
+		"{uptime}": (string)t,
+		"{uptime_english}": t ? describe_time(t) : "",
+		"{uptime_hms}": t ? describe_time_short(t) : "",
+	]);
+}
