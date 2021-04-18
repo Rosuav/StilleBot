@@ -1,36 +1,46 @@
-inherit command;
+inherit builtin_command;
 constant hidden_command = 1;
 constant require_moderator = 1;
 
-void report_transcoding(mapping videoinfo, string pfx)
-{
-	string channel = videoinfo->channel->name;
+constant default_response = ([
+	"conditional": "string", "expr1": "qualities",
+	"message": "@$$: View this stream in glorious {resolution}!",
+	"otherwise": "@$$: View this stream in glorious {resolution}! Or any of its other resolutions: {qualities}",
+]);
+
+constant altfmt = ([
+	"conditional": "number", "expr1": "{uptime} > 600",
+	"message": "<temp test hack, will be silent>",
+	"otherwise": ([
+		"conditional": "string", "expr1": "qualities",
+		"message": "Welcome to the stream! View this stream in glorious {resolution}!",
+		"otherwise": "Welcome to the stream! View this stream in glorious {resolution}! Or any of its other resolutions: {qualities}",
+	]),
+]);
+
+continue Concurrent.Future|mapping message_params(object channel, mapping person, string param) {
+	mapping videoinfo = yield(get_video_info(channel->name[1..]));
 	mapping res = videoinfo->resolutions;
-	if (!res || !sizeof(res)) return; //Shouldn't happen
+	if (!res || !sizeof(res)) return ([]); //Shouldn't happen
 	//Would it be better to just use time() instead? LUL
 	int uptime = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", videoinfo->created_at)->distance(Calendar.now())->how_many(Calendar.Second());
-	write("Pinging transcoding status for %s, uptime %ds\n", channel, uptime);
-	if (uptime > 600 && pfx[0] != '@') return; //Hack: If the prefix is the one used by connected(), be silent if well into the stream.
-	string dflt = m_delete(res, "chunked") || "?? unknown res ??"; //Not sure if "chunked" can ever be missing
-	string msg = pfx + " View this stream in glorious " + dflt + "!";
-	if (sizeof(res))
-	{
-		array text = values(res), num = -((array(int))text)[*];
-		sort(num, text); //Sort by the intifications, descending
-		msg += " Or any of its other resolutions: " + text * ", ";
-	}
-	send_message("#" + channel, msg);
+	write("Pinging transcoding status for %s, uptime %ds\n", videoinfo->channel->name, uptime);
+	string resolution = m_delete(res, "chunked") || "?? unknown res ??"; //Not sure if "chunked" can ever be missing
+	string qualities = "";
+	array text = values(res), num = -((array(int))text)[*];
+	sort(num, text); //Sort by the intifications, descending
+	return ([
+		"resolution": resolution,
+		"qualities": text * ", ",
+		"uptime": (string)uptime,
+	]);
 }
 
+//TODO: Replace this with a channel-online special that calls on !transcoding
 int connected(string channel)
 {
 	if (persist_config["channels"][channel]->reporttrans)
-		get_video_info(channel)->then(lambda(mapping info) {report_transcoding(info, "Welcome to the stream!");});
-}
-
-string process(object channel, object person, string param)
-{
-	get_video_info(channel->name[1..])->then(lambda(mapping info) {report_transcoding(info, "@" + person->user + ":");});
+		process(G->G->irc->channels["#" + channel], (["outputfmt": altfmt]), "");
 }
 
 protected void create(string name)
