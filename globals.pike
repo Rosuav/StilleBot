@@ -45,12 +45,12 @@ class command
 	constant docstring = ""; //Override this with your docs
 	//Override this to do the command's actual functionality, after permission checks.
 	//Return a string to send that string, with "@$$" to @-notify the user.
-	echoable_message process(object channel, object person, string param) { }
+	echoable_message process(object channel, mapping person, string param) { }
 
 	//Make sure that inappropriate commands aren't called. Normally these
 	//checks are done in find_command below, but it's cheap to re-check.
 	//(Maybe remove this and depend on find_command??)
-	echoable_message check_perms(object channel, object person, string param)
+	echoable_message check_perms(object channel, mapping person, string param)
 	{
 		if (require_allcmds && !channel->config->allcmds) return 0;
 		if ((require_moderator || access == "mod") && !channel->mods[person->user]) return 0;
@@ -174,7 +174,7 @@ class builtin_command {
 	inherit command;
 	constant default_response = "Example response";
 	//Override this either as-is or as a continue function to return the useful params.
-	mapping|function|Concurrent.Future message_params(object channel, object person, string param) { }
+	mapping|function|Concurrent.Future message_params(object channel, mapping person, string param) { }
 
 	protected void create(string name)
 	{
@@ -183,7 +183,7 @@ class builtin_command {
 		if (!name) return;
 		G->G->builtins[name] = this;
 	}
-	echoable_message process(object channel, object person, string param) {
+	echoable_message process(object channel, mapping person, string param) {
 		//TODO: Should this function synchronously if params can be obtained easily?
 		handle_async(message_params(channel, person, param)) {
 			channel->send(person, m_delete(person, "outputfmt") || default_response, __ARGS__[0]);

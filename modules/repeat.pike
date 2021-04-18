@@ -85,7 +85,7 @@ void autospam(string channel, string msg)
 	send_message(channel, msg);
 }
 
-echoable_message process(object channel, object person, string param)
+echoable_message process(object channel, mapping person, string param)
 {
 	if (param == "")
 	{
@@ -135,7 +135,7 @@ echoable_message process(object channel, object person, string param)
 	return "Added to the repetition table.";
 }
 
-echoable_message unrepeat(object channel, object person, string param)
+echoable_message unrepeat(object channel, mapping person, string param)
 {
 	return check_perms(channel, person, "-1 " + param);
 }

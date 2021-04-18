@@ -67,13 +67,13 @@ string timezone_info(string tz)
 	}) return "Unable to figure out the time in that location, sorry.";
 }
 
-string process(object channel, object person, string param)
+string process(object channel, mapping person, string param)
 {
 	if (channel->config->allcmds)
 		return targeted(timezone_info(param));
 }
 
-string default_time(object channel, object person, string param)
+string default_time(object channel, mapping person, string param)
 {
 	return check_perms(channel, person, "America/Los_Angeles");
 }
