@@ -928,7 +928,6 @@ class _mainwindow
 		"Logging": ({
 			"?chatlog:Log chat to console",
 			"?countactive:Count participant activity",
-			"?reporttrans:Report transcoding availability",
 		}),
 		"Perms": ({ //TODO: Find a better name for this tab
 			"?disable_quotes:Disable quotes",

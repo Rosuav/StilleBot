@@ -8,16 +8,6 @@ constant default_response = ([
 	"otherwise": "@$$: View this stream in glorious {resolution}! Or any of its other resolutions: {qualities}",
 ]);
 
-constant altfmt = ([
-	"conditional": "number", "expr1": "{uptime} > 600",
-	"message": "<temp test hack, will be silent>",
-	"otherwise": ([
-		"conditional": "string", "expr1": "qualities",
-		"message": "Welcome to the stream! View this stream in glorious {resolution}!",
-		"otherwise": "Welcome to the stream! View this stream in glorious {resolution}! Or any of its other resolutions: {qualities}",
-	]),
-]);
-
 continue Concurrent.Future|mapping message_params(object channel, mapping person, string param) {
 	mapping videoinfo = yield(get_video_info(channel->name[1..]));
 	mapping res = videoinfo->resolutions;
@@ -34,17 +24,4 @@ continue Concurrent.Future|mapping message_params(object channel, mapping person
 		"{qualities}": text * ", ",
 		"{uptime}": (string)uptime,
 	]);
-}
-
-//TODO: Replace this with a channel-online special that calls on !transcoding
-int connected(string channel)
-{
-	if (persist_config["channels"][channel]->reporttrans)
-		process(G->G->irc->channels["#" + channel], (["outputfmt": altfmt]), "");
-}
-
-protected void create(string name)
-{
-	register_hook("channel-online", connected);
-	::create(name);
 }

@@ -258,7 +258,7 @@ void streaminfo(array data)
 	//First, quickly remap the array into a lookup mapping
 	//This helps us ensure that we look up those we care about, and no others.
 	mapping channels = ([]);
-	foreach (data, mapping chan) channels[lower_case(chan->user_name)] = chan; //TODO: Figure out if user_name is login or display name
+	foreach (data, mapping chan) channels[lower_case(chan->user_login)] = chan;
 	//Now we check over our own list of channels. Anything absent is assumed offline.
 	foreach (indices(persist_config["channels"]), string chan) if (chan != "!whisper")
 		stream_status(chan, channels[chan]);
@@ -342,12 +342,23 @@ void stream_status(string name, mapping info)
 			get_channel_info(name);
 		}
 		else m_delete(G->G->channel_info[name], "online_type");
-		if (m_delete(G->G->stream_online_since, name))
+		if (object started = m_delete(G->G->stream_online_since, name))
 		{
 			write("** Channel %s noticed offline at %s **\n", name, Calendar.now()->format_nice());
-			if (object chan = G->G->irc->channels["#"+name])
-				chan->save(); //We don't get the offline time, so we'll pretend it was online right up until the time we noticed.
+			object chan = G->G->irc->channels["#"+name];
+			if (chan) chan->save(); //We don't get the offline time, so we'll pretend it was online right up until the time we noticed.
 			runhooks("channel-offline", 0, name);
+			int uptime = time() - started->unix_time();
+			if (chan) chan->trigger_special("!channeloffline", ([
+				//Synthesize a basic person mapping
+				"user": name,
+				"displayname": name, //Might not have the actual display name handy (get_channel_info is async)
+				"uid": persist_status->path("name_to_uid")[name] || "0", //It should always be there, but if someone renames while live, who knows.
+			]), ([
+				"{uptime}": (string)uptime,
+				"{uptime_hms}": describe_time_short(uptime),
+				"{uptime_english}": describe_time(uptime),
+			]));
 			mapping vstat = m_delete(G->G->viewer_stats, name);
 			if (sizeof(vstat->half_hour) == 30)
 			{
@@ -382,10 +393,22 @@ void stream_status(string name, mapping info)
 			//Is there a cleaner way to say "convert to local time"?
 			object started_here = started->set_timezone(Calendar.now()->timezone());
 			write("** Channel %s went online at %s **\n", name, started_here->format_nice());
-			if (object chan = G->G->irc->channels["#"+name])
-				chan->save(started->unix_time());
+			object chan = G->G->irc->channels["#"+name];
+			if (chan) chan->save(started->unix_time()); //Not sure why this is before the hook - is it important?
 			runhooks("channel-online", 0, name);
+			int uptime = time() - started->unix_time();
+			if (chan) chan->trigger_special("!channelonline", ([
+				//Synthesize a basic person mapping
+				"user": name,
+				"displayname": info->user_name,
+				"uid": (string)info->user_id,
+			]), ([
+				"{uptime}": (string)uptime,
+				"{uptime_hms}": describe_time_short(uptime),
+				"{uptime_english}": describe_time(uptime),
+			]));
 		}
+		notice_user_name(name, info->user_id);
 		G->G->stream_online_since[name] = started;
 		int viewers = info->viewer_count;
 		//Calculate half-hour rolling average, and then do stats on that
@@ -610,6 +633,15 @@ string describe_time_short(int tm)
 	else if (tm >= 60) msg += sprintf("%02d:%02d", secs/60, secs%60);
 	else msg += sprintf("%02d", tm);
 	return msg;
+}
+string describe_time(int tm)
+{
+	string msg = "";
+	if (int t = tm/86400) {msg += sprintf(", %d day%s", t, t>1?"s":""); tm %= 86400;}
+	if (int t = tm/3600) {msg += sprintf(", %d hour%s", t, t>1?"s":""); tm %= 3600;}
+	if (int t = tm/60) {msg += sprintf(", %d minute%s", t, t>1?"s":""); tm %= 60;}
+	if (tm) msg += sprintf(", %d second%s", tm, tm>1?"s":"");
+	return msg[2..];
 }
 
 void streaminfo_display(mapping info)

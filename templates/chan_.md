@@ -23,7 +23,6 @@ $$messages$$
 - | -
 -------------|---------
 Timezone     | $$timezone$$
-Transcoding  | $$transcoding$$
 - | $$save_config$$
 
 <!-- TODO: Configs
