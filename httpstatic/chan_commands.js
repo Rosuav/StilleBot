@@ -147,7 +147,7 @@ function render_command(cmd, toplevel) {
 		//with other flags. Instead, do the flags, and then have the conditional
 		//as its sole message. In fact, if we DON'T have flags, make sure there's
 		//room to add them around the outside (at top level, at least).
-		if (toplevel) return render_command({message: cmd}, toplevel);
+		if (toplevel && cmd.otherwise !== undefined) return render_command({message: cmd}, toplevel);
 		const cond = conditional_types[cmd.conditional] || {"": "Unrecognized condition type!"};
 		const rows = [TR([TD("Type:"), TD(SELECT({"data-flag": "conditional"}, [
 			OPTION({value: "choose"}, "Unconditional"),
