@@ -18,7 +18,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 }
 
 mapping _get_message(string|int id, mapping msgs) {
-	string|mapping msg = msgs[(int)id];
+	string|mapping msg = msgs[(string)id];
 	if (!msg) return 0;
 	if (stringp(msg)) msg = (["message": msg]); else msg = ([]) | msg;
 	mapping emotes = G->G->emote_code_to_markdown;
@@ -61,7 +61,7 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!G->G->irc->channels["#" + chan]) return;
 	mapping msgs = persist_status->path("private", "#" + chan)[uid];
 	if (!msgs) return;
-	if (m_delete(msgs, (int)msg->id)) update_one(conn->group, msg->id);
+	if (m_delete(msgs, (string)msg->id)) update_one(conn->group, msg->id);
 	else conn->sock->send_text(Standards.JSON.encode((["cmd": "notify", "msg": "Deletion failed (already gone)"])));
 }
 
