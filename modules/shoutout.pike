@@ -44,6 +44,6 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 		"{url}": info->url || "",
 		"{catdesc}": replace(game_desc[info->game] || "playing %s", "%s", info->game || "(null)"),
 		"{category}": info->game || "(null)",
-		"{title}": info->status,
+		"{title}": info->status || "(null)",
 	]);
 }
