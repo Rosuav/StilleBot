@@ -30,9 +30,9 @@ continue Concurrent.Future|mapping message_params(object channel, mapping person
 	array text = values(res), num = -((array(int))text)[*];
 	sort(num, text); //Sort by the intifications, descending
 	return ([
-		"resolution": resolution,
-		"qualities": text * ", ",
-		"uptime": (string)uptime,
+		"{resolution}": resolution,
+		"{qualities}": text * ", ",
+		"{uptime}": (string)uptime,
 	]);
 }
 
