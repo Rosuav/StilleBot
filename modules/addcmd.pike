@@ -66,20 +66,42 @@ Editing these special commands can also be done via the bot's web browser
 configuration pages, where available.
 ", SPECIALS, SPECIAL_PARAMS);
 
+multiset(string) update_aliases(string chan, string aliases, echoable_message response) {
+	multiset updates = (<>);
+	foreach (aliases / " ", string alias) {
+		sscanf(alias, "%*[!]%[^#\n]", string safealias);
+		if (safealias && safealias != "") {
+			string cmd = safealias + "#" + chan;
+			if (response) G->G->echocommands[cmd] = response;
+			else m_delete(G->G->echocommands, cmd);
+			updates[cmd] = 1;
+		}
+	}
+	return updates;
+}
+
 //Update (or delete) an echo command and save them to disk
 void make_echocommand(string cmd, echoable_message response)
 {
+	sscanf(cmd || "", "%[!]%s#%s", string pfx, string basename, string chan);
+	multiset updates = (<cmd>);
+	if (echoable_message prev = G->G->echocommands[cmd]) {
+		//See if there are any aliases to be purged
+		if (mappingp(prev) && prev->aliases) updates |= update_aliases(chan, prev->aliases, 0);
+	}
 	G->G->echocommands[cmd] = response;
 	if (!response) m_delete(G->G->echocommands, cmd);
+	if (mappingp(response) && response->aliases) updates |= update_aliases(chan, response->aliases, (response - (<"aliases">)) | (["alias_of": basename]));
 	string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 	Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
-	sscanf(cmd || "", "%[!]%*s#%s", string pfx, string chan);
 	if (object handler = chan && G->G->websocket_types->chan_commands) {
 		//If the command name starts with "!", it's a special, to be
 		//sent out to "!!#channel" and not to "#channel".
-		if (has_prefix(cmd, "!trigger#")) handler->send_updates_all("!" + cmd);
-		else handler->update_one(pfx + pfx + "#" + chan, cmd);
-		handler->send_updates_all(cmd);
+		foreach (updates; cmd;) {
+			if (has_prefix(cmd, "!trigger#")) handler->send_updates_all("!" + cmd);
+			else handler->update_one(pfx + pfx + "#" + chan, cmd);
+			handler->send_updates_all(cmd);
+		}
 	}
 }
 

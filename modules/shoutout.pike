@@ -33,6 +33,7 @@ constant default_response = ([
 	"message": "No channel found (do you have the Twitch time machine?)",
 	"otherwise": "{name} was last seen {catdesc}, at {url} - go check that stream out, maybe drop a follow! The last thing done was: {title}"
 ]);
+constant aliases = ({"so"});
 
 continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
@@ -45,11 +46,4 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 		"{category}": info->game || "(null)",
 		"{title}": info->status,
 	]);
-}
-
-protected void create(string name)
-{
-	::create(name);
-	G->G->commands["so"] = check_perms;
-	G->G->builtins["so"] = this;
 }

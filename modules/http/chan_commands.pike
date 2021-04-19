@@ -62,6 +62,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"dest": "/builtin", "target": "!" + name + " %s",
 			"access": handler->require_moderator ? "mod" : handler->access,
 			"message": handler->default_response,
+			"aliases": handler->aliases * " ",
 		]);
 	}
 	if (req->misc->is_mod) {
@@ -201,6 +202,13 @@ echoable_message validate(echoable_message resp)
 	if (resp->delay && resp->delay != "0" &&
 			(intp(resp->delay) || (sscanf((string)resp->delay, "%[0-9]", string d) && d == resp->delay)))
 		ret->delay = (int)resp->delay;
+
+	//Aliases are blank-separated, and might be entered in the UI with bangs.
+	//But internally, we'd rather have them without.
+	array(string) aliases = (resp->aliases || "") / " " - ({""});
+	aliases = aliases[*] - "!";
+	if (sizeof(aliases)) ret->aliases = aliases * " ";
+
 	if (sizeof(ret) == 1) return ret->message; //No flags? Just return the message.
 	return ret;
 }

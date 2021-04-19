@@ -173,6 +173,7 @@ class handle_async(mixed gen, function got_result, function|void got_error) {
 class builtin_command {
 	inherit command;
 	constant default_response = "Example response";
+	constant aliases = ({ }); //Add aliases here and they'll be defaultly aliased if shadowed too
 	//Override this either as-is or as a continue function to return the useful params.
 	mapping|function|Concurrent.Future message_params(object channel, mapping person, string param) { }
 
@@ -182,6 +183,10 @@ class builtin_command {
 		sscanf(explode_path(name)[-1],"%s.pike",name);
 		if (!name) return;
 		G->G->builtins[name] = this;
+		foreach (aliases, string alias) {
+			G->G->commands[alias] = check_perms;
+			G->G->builtins[alias] = this;
+		}
 	}
 	echoable_message process(object channel, mapping person, string param) {
 		//TODO: Should this function synchronously if params can be obtained easily?

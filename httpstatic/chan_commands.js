@@ -185,6 +185,9 @@ function render_command(cmd, toplevel) {
 	}
 	//Handle flags
 	const opts = [TR([TH("Option"), TH("Effect")])];
+	//Note that specials could technically alias to commands (but not vice versa),
+	//but this UI will never let you do it.
+	if (toplevel) opts.push(TR([TD(INPUT({"data-flag": "aliases", value: cmd.aliases || ""})), TD("List other command names that should do the same as this one")]));
 	let m = !cmd.target && /^(\/[a-z]+) ([a-zA-Z$%]+)$/.exec(cmd.dest);
 	if (m) {cmd.dest = m[1]; cmd.target = m[2];}
 	for (let flg in flags) {
@@ -220,7 +223,10 @@ export function open_advanced_view(cmd) {
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
 }
-on("click", "button.advview", e => open_advanced_view(commands[e.match.closest("tr").dataset.id]));
+on("click", "button.advview", e => {
+	const tr = e.match.closest("tr");
+	open_advanced_view(commands[tr.dataset.editid || tr.dataset.id]);
+});
 
 on("change", "select[data-flag=conditional]", e => {
 	//NOTE: Assumes that this does not have additional flags. They will be lost.
@@ -349,7 +355,12 @@ export function render_item(msg) {
 	//be non-editable in the table - it can only be edited using the Advanced View popup.
 	const response = [], cmd = msg.id.split("#")[0];
 	let addbtn = "";
-	if (!msg.conditional && (
+	let editid = msg.id;
+	if (msg.alias_of) {
+		response.push(CODE("Alias of !" + msg.alias_of), BR());
+		editid = msg.alias_of + "#" + msg.id.split("#")[1];
+	}
+	else if (!msg.conditional && (
 		typeof msg.message === "string" ||
 		(Array.isArray(msg.message) && !msg.message.find(r => typeof r !== "string"))
 	)) {
@@ -363,7 +374,7 @@ export function render_item(msg) {
 	}
 	response.pop(); //There should be a BR at the end.
 	commands[msg.id] = msg;
-	return TR({"data-id": msg.id}, [
+	return TR({"data-id": msg.id, "data-editid": editid}, [
 		TD(CODE("!" + cmd)),
 		TD(response),
 		TD([
