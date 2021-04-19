@@ -64,6 +64,34 @@ function adv_add_elem(e) {
 	e.preventDefault();
 }
 
+function make_conditional(e) {
+	const parent = e.currentTarget.closest(".optedmsg");
+	const cmd = get_command_details(parent);
+	const keys = "conditional message otherwise expr1 expr2 casefold".split(" ");
+	const msg = { };
+	for (let key of keys) {
+		if (cmd[key] !== undefined) {
+			msg[key] = cmd[key];
+			delete cmd[key];
+		}
+	}
+	cmd.conditional = "choose";
+	cmd.message = msg;
+	cmd.otherwise = "";
+	parent.replaceWith(render_command(cmd));
+	console.log(cmd);
+	checkpos();
+}
+
+function swap_true_false(e) {
+	const parent = e.currentTarget.closest(".optedmsg");
+	const cmd = get_command_details(parent);
+	const {message, otherwise} = cmd;
+	cmd.message = otherwise; cmd.otherwise = message;
+	parent.replaceWith(render_command(cmd));
+	checkpos();
+}
+
 //Build an array of DOM elements that could include simple_texts. Calling render_command
 //itself is guaranteed to offer the user flag space.
 function text_array(prefix, msg) {
@@ -142,6 +170,10 @@ function render_command(cmd, toplevel) {
 		rows.push(TR(td));
 
 		return FIELDSET({className: "optedmsg"}, [
+			DIV([
+				BUTTON({onclick: make_conditional, title: "Add condition around this"}, "\u2753"),
+				BUTTON({onclick: swap_true_false, title: "Swap true and false"}, "\u21c5"),
+			]),
 			TABLE({border: 1, className: "flagstable"}, rows),
 			FIELDSET({className: "optedmsg iftrue"}, text_array(LEGEND("If true:"), cmd.message || "")),
 			//The "Otherwise" clause is omitted entirely for a trigger's top-level.
