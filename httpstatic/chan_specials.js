@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {CODE, BR, TR, TD, SPAN, DIV, UL, LI, INPUT} = choc;
+const {CODE, BR, TR, TD, SPAN, DIV, DETAILS, SUMMARY, UL, LI, INPUT} = choc;
 import {render_item as render_command, add_hook} from "$$static||chan_commands.js$$";
 
 let command_lookup = { };
@@ -27,11 +27,11 @@ export function render(data) {
 		const rows = []; //Map the commands to two TRs each
 		commands.forEach(cmd => rows.push(
 			render_command(resp[cmd.id] || {id: cmd.id, message: ""}),
-			TR(TD({colSpan: 3}, [
-				"Happens when: " + cmd.desc, BR(),
+			TR(TD({colSpan: 3}, DETAILS([
+				SUMMARY("Happens when: " + cmd.desc),
 				"Parameters: ",
 				UL(describe_all_params(command_lookup[cmd.id] = cmd)),
-			])),
+			]))),
 			TR({className: "gap"}, []),
 		));
 		set_content("#commands tbody", rows);
