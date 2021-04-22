@@ -706,7 +706,7 @@ class channel_notif
 				}
 				//TODO: Handle sub plans better, esp since "Prime" should count as tier 1
 				case "sub":
-					//write("DEBUG RESUB: chan %s person %O params %O\n", name, person->user, params); //Where is the multimonth info?
+					Stdio.append_file("subs.log", sprintf("\n%sDEBUG RESUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
 					trigger_special("!sub", person, (["{tier}": params->msg_param_sub_plan[0..0]]));
 					break;
 				case "resub": trigger_special("!resub", person, ([
@@ -714,7 +714,7 @@ class channel_notif
 					"{months}": params->msg_param_cumulative_months,
 					"{streak}": params->msg_param_streak_months || "",
 				]));
-				//write("DEBUG RESUB: chan %s person %O params %O\n", name, person->user, params); //Where is the multimonth info?
+				Stdio.append_file("subs.log", sprintf("\n%sDEBUG RESUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
 				break;
 				case "giftpaidupgrade": break; //Pledging to continue a subscription (first introduced for the Subtember special in 2018, and undocumented)
 				case "anongiftpaidupgrade": break; //Ditto but when the original gift was anonymous
