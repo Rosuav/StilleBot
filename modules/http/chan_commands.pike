@@ -279,5 +279,11 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	else if (has_prefix(conn->group, "!!trigger#")) make_echocommand(@valid);
 	//Else something went wrong. Does it need a response?
 }
+void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	array valid = _validate_update(conn, (["cmdname": "validateme"]) | msg);
+	if (!valid) return;
+	sscanf(valid[0], "%s#", string cmdname);
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[1]])));
+}
 
 protected void create(string name) {::create(name);}

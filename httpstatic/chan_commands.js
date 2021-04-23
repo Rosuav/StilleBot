@@ -311,6 +311,42 @@ on("click", "#delete_advanced", e => {
 	set_content(btn, "Really delete?").disabled = true;
 });
 
+function get_raw() {
+	let response;
+	try {response = JSON.parse(DOM("#raw_text").value);}
+	catch (e) {set_content("#raw_error", "JSON format error: " + e.message); return null;}
+	set_content("#raw_error", "");
+	return response;
+}
+on("click", "#view_raw", e => {
+	//Technically we could just give the user response as is, but it tends to
+	//be very noisy, so we'll ask the server to clean it up as per a normal
+	//save operation.
+	let response = get_command_details(DOM("#command_details").firstChild);
+	ws_sync.send({cmd: "validate", cmdname: "viewraw", response});
+});
+on("click", "#update_raw", e => {
+	//This one DEFINITELY needs to go via a validation step. There's no
+	//knowing what mess could be in that JSON blob.
+	let response = get_raw();
+	if (response) ws_sync.send({cmd: "validate", cmdname: "updateraw", response});
+});
+on("click", ".raw_view", e => {
+	let response = get_raw();
+	if (response) DOM("#raw_text").value = JSON.stringify(response, null, e.match.classList.contains("pretty") ? 4 : 0);
+});
+export function sockmsg_validated(data) {
+	if (data.cmdname === "viewraw") {
+		DOM("#raw_text").value = JSON.stringify(data.response);
+		DOM("#rawdlg").showModal();
+	}
+	else if (data.cmdname === "updateraw") {
+		DOM("#command_details").firstChild.replaceWith(render_command(data.response));
+		checkpos();
+		DOM("#rawdlg").close();
+	}
+}
+
 on("click", 'a[href="/emotes"]', e => {
 	e.preventDefault();
 	window.open("/emotes", "emotes", "width=900, height=700");
