@@ -33,6 +33,6 @@ td:nth-of-type(2n+1) {white-space: nowrap;}
 > ### Edit command <code id=cmdname></code>
 > <div id=command_details></div>
 >
-> <p><button type=button id=save_advanced>Save</button> <button type=button class=dialog_close>Cancel</button> <button type=button id=delete_advanced>Delete?</button></p>
+> [Save](:#save_advanced) [Cancel](:.dialog_close) [Delete?](:#delete_advanced)
 >
 {: tag=dialog #advanced_view}

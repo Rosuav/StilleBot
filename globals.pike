@@ -398,6 +398,25 @@ class user_text
 }
 
 #if constant(Parser.Markdown)
+bool _parse_attrs(string text, mapping tok) //Used in renderer and lexer - ideally would be just lexer, but whatevs
+{
+	if (sscanf(text, "{:%[^{}\n]}%s", string attrs, string empty) && empty == "")
+	{
+		foreach (attrs / " ", string att)
+		{
+			if (sscanf(att, ".%s", string cls) && cls && cls != "")
+			{
+				if (tok["attr_class"]) tok["attr_class"] += " " + cls;
+				else tok["attr_class"] = cls;
+			}
+			else if (sscanf(att, "#%s", string id) && id && id != "")
+				tok["attr_id"] = id;
+			else if (sscanf(att, "%s=%s", string a, string v) && a != "" && v)
+				tok["attr_" + a] = v;
+		}
+		return 1;
+	}
+}
 class Renderer
 {
 	inherit Parser.Markdown.Renderer;
@@ -465,29 +484,21 @@ class Renderer
 			options->headings[level] = text;
 		return ::heading(text, level, raw, token);
 	}
+	//Allow a link to be a button (or anything else)
+	string link(string href, string title, string text, mapping token)
+	{
+		if (_parse_attrs("{" + href + "}", token)) {
+			//Usage: [Text](: attr=value)
+			string tag = m_delete(token, "attr_tag") || "button";
+			if (tag == "button" && !token->attr_type) token->attr_type = "button";
+			return sprintf("<%s%s>%s</%[0]s>", tag, attrs(token, ([])), text);
+		}
+		return ::link(href, title, text, token);
+	}
 }
 class Lexer
 {
 	inherit Parser.Markdown.Lexer;
-	bool parse_attrs(string text, mapping tok)
-	{
-		if (sscanf(text, "{:%[^{}\n]}%s", string attrs, string empty) && empty == "")
-		{
-			foreach (attrs / " ", string att)
-			{
-				if (sscanf(att, ".%s", string cls) && cls && cls != "")
-				{
-					if (tok["attr_class"]) tok["attr_class"] += " " + cls;
-					else tok["attr_class"] = cls;
-				}
-				else if (sscanf(att, "#%s", string id) && id && id != "")
-					tok["attr_id"] = id;
-				else if (sscanf(att, "%s=%s", string a, string v) && a != "" && v)
-					tok["attr_" + a] = v;
-			}
-			return 1;
-		}
-	}
 	object_program lex(string src)
 	{
 		::lex(src);
@@ -506,7 +517,7 @@ class Lexer
 					//type that can take attributes.
 					target = tokens[i - 1];
 				}
-				if (parse_attrs(lines[-1], target))
+				if (_parse_attrs(lines[-1], target))
 				{
 					if (sizeof(lines) > 1) tok->text = lines[..<1] * "\n";
 					else tok->type = "space"; //Suppress the text altogether.
@@ -521,7 +532,7 @@ class Lexer
 				{
 					if (tokens[j]->type == "text")
 					{
-						if (parse_attrs(tokens[j]->text, tok))
+						if (_parse_attrs(tokens[j]->text, tok))
 							tokens[j]->type = "space";
 						break;
 					}
