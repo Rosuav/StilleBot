@@ -13,6 +13,37 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	{
 		if (req->request_type == "POST")
 		{
+			if (req->variables->export && req->misc->session->user->login == channel->name[1..])
+			{
+				//Standard rule: Everything in this export comes from persist_config and the commands list.
+				//(Which ultimately may end up being merged anyway.)
+				//Anything in persist_status does not belong here; there may eventually be
+				//a separate export of that sort of ephemeral data.
+				//Config attributes deprecated or for my own use only are not included.
+				//(That includes channel currency; nobody has used it, I just never deleted it.)
+				mapping cfg = channel->config;
+				mapping ret = ([]);
+				foreach ("quotes timezone" / " ", string key)
+					ret[key] = cfg[key];
+				if (cfg->allcmds) ret->active = "all";
+				else if (cfg->httponly) ret->active = "httponly";
+				mapping commands = ([]), specials = ([]);
+				string chan = channel->name[1..];
+				foreach (G->G->echocommands; string cmd; echoable_message response) {
+					sscanf(cmd, "%s#%s", cmd, string c);
+					if (c != chan) continue;
+					if (has_prefix(cmd, "!")) specials[cmd] = response;
+					else commands[cmd] = response;
+				}
+				ret->commands = commands;
+				if (array t = m_delete(specials, "!trigger"))
+					if (arrayp(t)) ret->triggers = t;
+				ret->specials = specials;
+				mapping resp = jsonify(ret, 5);
+				string fn = "stillebot-" + channel->name[1..] + ".json";
+				resp->extra_heads = (["Content-disposition": sprintf("attachment; filename=%q", fn)]);
+				return resp;
+			}
 			if (req->variables->timezone != channel->config->timezone)
 			{
 				if (!has_value(Calendar.TZnames.zonenames(), req->variables->timezone))
@@ -32,6 +63,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//TODO: Have a way to grab the client's timezone (see Mustard Mine)
 		timezone = sprintf("<input name=timezone size=30 value=\"%s\">", Parser.encode_html_entities(timezone));
 		save_config = "<input type=submit value=Save>";
+		if (req->misc->session->user->login == channel->name[1..])
+			//You're the broadcaster. Permit saving of all data.
+			save_config += " <input type=submit name=export value='Export all configs'>";
 	}
 	return render_template("chan_.md", ([
 		"bot_or_mod": channel->mods[persist_config["ircsettings"]->nick] ? "mod" : "bot",
