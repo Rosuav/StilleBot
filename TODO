@@ -2,7 +2,6 @@
   - Where the bot is a mod, the limit is three per sec. In other channels, must respect slow mode.
   - Is there a way to detect channel slow mode on connection? If it changes, there's a NOTICE.
     - Possibly ROOMSTATE, but I'm not receiving those.
-* Song request by search??? (eg "!songrequest blargh" to search Youtube for "blargh")
 * Variables.
   - NOTE: As of 2021-01-13, all variables are stored in persist_status->variables->#chan->$var$
     and any that aren't dollar-bracketed are buggy. This may change in the future, with
@@ -69,3 +68,8 @@
   - Update timezone if specified.
   - What about quotes??? How do we validate their format?
     - Hand each one, individually, to the updater from the front end??
+* Deprecate song requests, channel currency, and notice me
+  - Ensure that there's no end-user-facing way to see any of them unless they're already
+    active. Put warnings that they're on the way out.
+  - Do I track viewership hours? That might be worth keeping even w/o currency.
+  - This does not affect VLC integration, just song requests.

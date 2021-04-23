@@ -18,13 +18,14 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				//Standard rule: Everything in this export comes from persist_config and the commands list.
 				//(Which ultimately may end up being merged anyway.)
 				//Anything in persist_status does not belong here; there may eventually be
-				//a separate export of that sort of ephemeral data.
+				//a separate export of that sort of ephemeral data, eg variables.
 				//Config attributes deprecated or for my own use only are not included.
 				//(That includes channel currency; nobody has used it, I just never deleted it.)
 				mapping cfg = channel->config;
 				mapping ret = ([]);
-				foreach ("quotes timezone" / " ", string key)
-					ret[key] = cfg[key];
+				foreach ("autoban autocommands dynamic_rewards giveaway monitors quotes timezone vlcblocks" / " ", string key)
+					if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
+				if (cfg->report_track_changes) ret->report_track_changes = 1;
 				if (cfg->allcmds) ret->active = "all";
 				else if (cfg->httponly) ret->active = "httponly";
 				mapping commands = ([]), specials = ([]);
