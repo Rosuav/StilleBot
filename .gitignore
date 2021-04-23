@@ -1,6 +1,5 @@
 twitchbot_*.json
 song_cache
 pwd
-outgoing_raids.log
+*.log
 *.pem
-incoming_raids.log
