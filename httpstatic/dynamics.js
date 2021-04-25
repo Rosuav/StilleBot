@@ -6,6 +6,7 @@ function render() {
 	set_content("#rewards tbody", rewards.map(r => TR([
 		TD(FORM({id: r.id, className: "editreward"}, INPUT({name: "title", value: r.title, "size": 40}))),
 		TD(INPUT({name: "basecost", form: r.id, type: "number", value: r.basecost})),
+		TD(INPUT({name: "availability", form: r.id, value: r.availability || "{online}"})),
 		TD(INPUT({name: "formula", form: r.id, value: r.formula})),
 		TD(INPUT({name: "curcost", form: r.id, type: "number", value: r.curcost})),
 		TD([
@@ -35,7 +36,8 @@ DOM("#add").onclick = async e => {
 on("submit", "form.editreward", async e => {
 	e.preventDefault();
 	const el = e.match.elements;
-	const body = {dynamic_id: el.id.value, title: el.title.value, basecost: el.basecost.value, formula: el.formula.value, curcost: el.curcost.value};
+	const body = {dynamic_id: el.id.value, title: el.title.value, basecost: el.basecost.value,
+		availability: el.availability.value, formula: el.formula.value, curcost: el.curcost.value};
 	const info = await (await fetch("giveaway", {
 		method: "PUT",
 		headers: {"Content-Type": "application/json"},

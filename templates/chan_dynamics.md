@@ -1,8 +1,8 @@
 # Channel points - dynamic rewards
 
-Title | Base cost | Formula | Current cost | Actions
-------|-----------|---------|--------------|--------
--     | -         | -       | -            | (loading...)
+Title | Base cost | Activation condition | Growth Formula | Current cost | Actions
+------|-----------|----------------------|----------------|--------------|--------
+-     | -         | -                    | -              | -            | (loading...)
 {: #rewards}
 
 <button type=button id=add>Add dynamic reward</button> Copy from: <select id=copyfrom><option value="-1">(none)</option></select>

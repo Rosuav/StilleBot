@@ -193,7 +193,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			//Titles must be unique (among all rewards). To simplify rapid creation of
 			//multiple rewards, add a numeric disambiguator on conflict.
 			string deftitle = copyfrom->title || "Example Dynamic Reward";
-			mapping rwd = (["basecost": copyfrom->cost || 1000, "formula": "PREV * 2"]);
+			mapping rwd = (["basecost": copyfrom->cost || 1000, "availability": "{online}", "formula": "PREV * 2"]);
 			array have = filter(values(cfg->dynamic_rewards)->title, has_prefix, deftitle);
 			rwd->title = deftitle + " #" + (sizeof(have) + 1);
 			copyfrom |= (["title": rwd->title, "cost": rwd->basecost]);
@@ -215,6 +215,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			if (body->title) rwd->title = body->title;
 			if (body->basecost) rwd->basecost = (int)body->basecost || rwd->basecost;
 			if (body->formula) rwd->formula = body->formula;
+			if (body->availability) rwd->availability = body->availability;
 			if (body->title || body->curcost) {
 				//Currently fire-and-forget - there's no feedback if you get something wrong.
 				twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&id=" + id,
@@ -355,15 +356,34 @@ void channel_on_off(string channel, int online)
 	mapping dyn = cfg->dynamic_rewards || ([]);
 	mapping rewards = (cfg->giveaway && cfg->giveaway->rewards) || ([]);
 	if (!sizeof(dyn) && !sizeof(rewards)) return; //Nothing to do
+	object chan = G->G->irc->channels["#" + channel]; if (!chan) return;
+	object ts = G->G->stream_online_since[channel] || Calendar.now();
+	if (cfg->timezone && cfg->timezone != "") ts = ts->set_timezone(cfg->timezone) || ts;
+	string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
+	mapping args = ([
+		"{online}": (string)online, //1 or 0
+		//Date/time info is in your timezone or UTC if not set, and is the time the stream went online
+		//or (approximately) offline.
+		"{year}": (string)ts->year_no(), "{month}": (string)ts->month_no(), "{day}": (string)ts->month_day(),
+		"{hour}": (string)ts->hour_no(), "{min}": (string)ts->minute_no(), "{sec}": (string)ts->second_no(),
+		"{dow}": (string)ts->week_day(), //1 = Sunday, 7 = Saturday
+	]);
 	get_user_id(channel)->then(lambda(int broadcaster_id) {
 		if (online) make_hooks(channel, broadcaster_id);
 		string token = persist_status->path("bcaster_token")[channel];
-		if (token) foreach (dyn; string reward_id; mapping info)
+		if (token) foreach (dyn; string reward_id; mapping info) {
+			int active = 0;
+			if (mixed ex = catch {
+				write("Evaluating: %O\n", info->availability);
+				active = G->G->evaluate_expr(chan->expand_variables(info->availability || "{online}", args));
+				write("Result: %O\n", active);
+			}) werror("ERROR ACTIVATING REWARD:\n%s\n", describe_backtrace(ex)); //TODO: Report to the streamer
 			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 					+ broadcaster_id + "&id=" + reward_id,
 				(["Authorization": "Bearer " + token]),
-				(["method": "PATCH", "json": (["cost": info->basecost, "is_paused": online ? Val.false : Val.true])]),
+				(["method": "PATCH", "json": (["cost": info->basecost, "is_enabled": active ? Val.true : Val.false])]),
 			);
+		}
 	});
 }
 int channel_online(string channel) {channel_on_off(channel, 1);}
