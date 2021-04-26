@@ -373,15 +373,17 @@ void channel_on_off(string channel, int online)
 		string token = persist_status->path("bcaster_token")[channel];
 		if (token) foreach (dyn; string reward_id; mapping info) {
 			int active = 0;
-			if (mixed ex = catch {
+			mapping params = (["cost": info->basecost]);
+			if (mixed ex = info->availability && catch {
 				write("Evaluating: %O\n", info->availability);
-				active = G->G->evaluate_expr(chan->expand_variables(info->availability || "{online}", args));
+				active = G->G->evaluate_expr(chan->expand_variables(info->availability, args));
 				write("Result: %O\n", active);
+				params->is_enabled = active ? Val.true : Val.false;
 			}) werror("ERROR ACTIVATING REWARD:\n%s\n", describe_backtrace(ex)); //TODO: Report to the streamer
 			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 					+ broadcaster_id + "&id=" + reward_id,
 				(["Authorization": "Bearer " + token]),
-				(["method": "PATCH", "json": (["cost": info->basecost, "is_enabled": active ? Val.true : Val.false])]),
+				(["method": "PATCH", "json": params]),
 			);
 		}
 	});
