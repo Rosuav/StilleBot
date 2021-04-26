@@ -753,6 +753,14 @@ class channel_notif
 					]));
 					break;
 				}
+				case "extendsub":
+				{
+					//Person has pledged to continue a subscription? Not sure.
+					//"msg_param_cumulative_months": "7",
+					//"msg_param_sub_benefit_end_month": "5",
+					//"msg_param_sub_plan": "1000",
+					break;
+				}
 				case "bitsbadgetier":
 				{
 					trigger_special("!cheerbadge", person, ([
