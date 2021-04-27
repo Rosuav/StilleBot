@@ -1,0 +1,11 @@
+/* Trigger with:
+@import "https://sikorsky.rosuav.com/static/demo.css";
+Will change the colour of your Kappamon pet without affecting the speech bubble.
+The exact colour can be adjusted by changing the hue rotation angle, but alas,
+there's no easy way to make this update in realtime, since this is CSS-only, no
+JavaScript (and therefore no option for a websocket).
+*/
+#scene canvas {
+	filter: brightness(0.5) sepia(1) hue-rotate(270deg) saturate(5);
+}
+
