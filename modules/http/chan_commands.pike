@@ -170,7 +170,6 @@ echoable_message validate(echoable_message resp)
 	}
 	if (!mappingp(resp)) return ""; //Ensure that nulls become empty strings, for safety and UI simplicity.
 	mapping ret = (["message": validate(resp->message)]);
-	if (ret->message == "") return ""; //No message? Nothing to do.
 	//Whitelist the valid flags. Note that this will quietly suppress any empty
 	//strings, which would be stating the default behaviour.
 	foreach (valid_flags; string flag; multiset ok)
@@ -196,7 +195,9 @@ echoable_message validate(echoable_message resp)
 		foreach (parts + ({"conditional"}), string key)
 			if (resp[key]) ret[key] = resp[key];
 		ret->otherwise = validate(resp->otherwise);
+		if (ret->message == "" && ret->otherwise == "") return ""; //Conditionals can omit either message or otherwise, but not both
 	}
+	else if (ret->message == "") return ""; //No message? Nothing to do.
 	//Delays are integer seconds. We'll permit a string of digits, since that might be
 	//easier for the front end.
 	if (resp->delay && resp->delay != "0" &&
