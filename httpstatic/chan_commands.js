@@ -23,6 +23,7 @@ const flags = {
 	action: {"": "Set the value", "add": "Add to the value", "*": "When setting a variable, should it increment or replace?"},
 };
 const toplevelflags = ["access", "visibility"];
+const conditionalkeys = "expr1 expr2 casefold".split(" "); //Include every key used by every conditional type
 
 function checkpos() {
 	const dlg = DOM("#advanced_view");
@@ -67,9 +68,8 @@ function adv_add_elem(e) {
 function make_conditional(e) {
 	const parent = e.currentTarget.closest(".optedmsg");
 	const cmd = get_command_details(parent);
-	const keys = "conditional message otherwise expr1 expr2 casefold".split(" ");
 	const msg = { };
-	for (let key of keys) {
+	for (let key of ["conditional", "message", "otherwise", ...conditionalkeys]) {
 		if (cmd[key] !== undefined) {
 			msg[key] = cmd[key];
 			delete cmd[key];
@@ -149,14 +149,14 @@ function render_command(cmd, toplevel) {
 		//room to add them around the outside (at top level, at least).
 		if (toplevel && cmd.otherwise !== undefined) return render_command({message: cmd}, toplevel);
 		const cond = conditional_types[cmd.conditional] || {"": "Unrecognized condition type!"};
-		const rows = [TR([TD("Type:"), TD(SELECT({"data-flag": "conditional"}, [
+		const conditions = [SELECT({"data-flag": "conditional"}, [
 			OPTION({value: "choose"}, "Unconditional"),
 			OPTION({value: "string"}, "String comparison"),
 			OPTION({value: "contains"}, "Substring search"),
 			OPTION({value: "regexp"}, "Regular expression"),
 			OPTION({value: "number"}, "Numeric calculation"),
-		]))])];
-		rows[0].querySelector("[data-flag=conditional]").value = cmd.conditional;
+		])];
+		const rows = [];
 		let desc = "";
 		for (let key in cond) {
 			if (key === "") desc = cond[key];
@@ -167,6 +167,11 @@ function render_command(cmd, toplevel) {
 				]))]));
 			else rows.push(TR([TD(cond[key]), TD(INPUT({"data-flag": key, value: cmd[key] || "", className: "widetext"}))]));
 		}
+		for (let key of conditionalkeys) {
+			if (cmd[key] && !cond[key]) conditions.push(INPUT({type: "hidden", "data-flag": key, value: cmd[key]}));
+		}
+		rows.unshift(TR([TD("Type:"), TD(conditions)]));
+		rows[0].querySelector("[data-flag=conditional]").value = cmd.conditional;
 		if (typeof desc === "function") desc = desc();
 		const td = TD(desc); td.setAttribute("colspan", 2);
 		rows.push(TR(td));
