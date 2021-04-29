@@ -81,7 +81,7 @@ multiset(string) update_aliases(string chan, string aliases, echoable_message re
 }
 
 //Update (or delete) an echo command and save them to disk
-void make_echocommand(string cmd, echoable_message response)
+void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 {
 	sscanf(cmd || "", "%[!]%s#%s", string pfx, string basename, string chan);
 	multiset updates = (<cmd>);
@@ -92,6 +92,16 @@ void make_echocommand(string cmd, echoable_message response)
 	G->G->echocommands[cmd] = response;
 	if (!response) m_delete(G->G->echocommands, cmd);
 	if (mappingp(response) && response->aliases) updates |= update_aliases(chan, response->aliases, (response - (<"aliases">)) | (["alias_of": basename]));
+	foreach (extra->?cooldowns || ([]); string cdname; int cdlength) {
+		//If the cooldown delay is shorter than the cooldown timeout,
+		//reset the timeout. That way, if you accidentally set a command
+		//to have a really long timeout (eg an hour when you wanted a
+		//minute), lowering the timeout will fix it. Note that any
+		//cooldowns no longer part of the command won't be purged; at
+		//worst, they'll linger in G->G until restart - no big deal.
+		int timeout = G->G->cooldown_timeout[cdname + "#" + chan] - time();
+		if (cdlength && timeout > cdlength) G->G->cooldown_timeout[cdname + "#" + chan] = cdlength + time();
+	}
 	string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 	Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
 	if (object handler = chan && G->G->websocket_types->chan_commands) {

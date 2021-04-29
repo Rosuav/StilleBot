@@ -477,9 +477,31 @@ class channel_notif
 				}) msg = "ERROR: " + (describe_error(ex)/"\n")[0];
 				break;
 			}
+			case "cooldown": //Timeout (defined in seconds, although the front end may show it as mm:ss or hh:mm:ss)
+			{
+				string key = message->cdname + "#" + name;
+				int delay = G->G->cooldown_timeout[key] - time();
+				if (delay < 0) { //The time has passed!
+					G->G->cooldown_timeout[key] = time() + message->cdlength; //But reset it.
+					vars["{cooldown}"] = vars["{cooldown_hms}"] = "0";
+					break;
+				}
+				//Yes, it's possible for the timeout to be 0 seconds.
+				msg = message->otherwise;
+				vars["{cooldown}"] = (string)delay;
+				//Note that the hms format is defined by the span of the cooldown in total,
+				//not the remaining time. A ten minute timeout, down to its last seconds,
+				//will still show "00:15". If you want conditional rendering based on the
+				//remaining time, use {cooldown} in a numeric condition.
+				vars["{cooldown_hms}"] =
+					(int)message->cdlength < 60 ? (string)delay :
+					(int)message->cdlength < 3600 ? sprintf("%d:%02d", delay / 60, delay % 60) :
+					sprintf("%d:%02d:%02d", delay / 3600, (delay / 60) % 60, delay % 60);
+				break;
+			}
 			default: break; //including UNDEFINED which means unconditional, and 0 which means "condition already processed"
 		}
-		if (!msg) return; //If a message doesn't have an Otherwise, it'll end up null.
+		if (!msg || msg == "") return; //If a message doesn't have an Otherwise, it'll end up null.
 
 		if (mappingp(msg)) {_send_recursive(person, message | (["conditional": 0]) | msg, vars); return;}
 
@@ -955,6 +977,7 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 protected void create()
 {
 	if (!G->G->channelcolor) G->G->channelcolor = ([]);
+	if (!G->G->cooldown_timeout) G->G->cooldown_timeout = ([]);
 	irc = G->G->irc;
 	//if (!irc) //HACK: Force reconnection every time
 		reconnect();

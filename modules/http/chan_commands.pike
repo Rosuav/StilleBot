@@ -156,20 +156,22 @@ constant condition_parts = ([
 	"contains": ({"expr1", "expr2", "casefold"}),
 	"regexp": ({"expr1", "expr2", "casefold"}),
 	"number": ({"expr1"}), //Yes, expr1 even though there's no others - means you still see it when you switch
+	"cooldown": ({"cdname", "cdlength"}),
 ]);
 
-echoable_message validate(echoable_message resp)
+//state array is for purely-linear state that continues past subtrees
+echoable_message validate(echoable_message resp, mapping state)
 {
 	//Filter the response to only that which is valid
 	if (stringp(resp)) return resp;
 	if (arrayp(resp)) switch (sizeof(resp))
 	{
 		case 0: return ""; //This should be dealt with at a higher level (and suppressed).
-		case 1: return validate(resp[0]); //Collapse single element arrays to their sole element
-		default: return validate(resp[*]) - ({""}); //Suppress any empty entries
+		case 1: return validate(resp[0], state); //Collapse single element arrays to their sole element
+		default: return validate(resp[*], state) - ({""}); //Suppress any empty entries
 	}
 	if (!mappingp(resp)) return ""; //Ensure that nulls become empty strings, for safety and UI simplicity.
-	mapping ret = (["message": validate(resp->message)]);
+	mapping ret = (["message": validate(resp->message, state)]);
 	//Whitelist the valid flags. Note that this will quietly suppress any empty
 	//strings, which would be stating the default behaviour.
 	foreach (valid_flags; string flag; multiset ok)
@@ -194,8 +196,18 @@ echoable_message validate(echoable_message resp)
 	if (array parts = condition_parts[resp->conditional]) {
 		foreach (parts + ({"conditional"}), string key)
 			if (resp[key]) ret[key] = resp[key];
-		ret->otherwise = validate(resp->otherwise);
+		ret->otherwise = validate(resp->otherwise, state);
 		if (ret->message == "" && ret->otherwise == "") return ""; //Conditionals can omit either message or otherwise, but not both
+		if (ret->conditional == "cooldown") {
+			string name = ret->cdname || "";
+			//Anonymous cooldowns get named for the back end, but the front end will blank this.
+			//If the front end happens to return something with a dot name in it, ignore it.
+			if (name == "" || name[0] == '.') ret->cdname = name = sprintf(".%s:%d", state->cmd, ++state->cdanon);
+			ret->cdlength = (int)ret->cdlength;
+			if (ret->cdlength) state->cooldowns[name] = ret->cdlength;
+			else m_delete(ret, (({"conditional", "otherwise"}) + parts)[*]); //Not a valid cooldown.
+			//TODO: Keyword-synchronized cooldowns should synchronize their cdlengths too
+		}
 	}
 	else if (ret->message == "") return ""; //No message? Nothing to do.
 	//Delays are integer seconds. We'll permit a string of digits, since that might be
@@ -217,6 +229,8 @@ echoable_message validate(echoable_message resp)
 array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string command, string chan);
 	if (!G->G->irc->channels["#" + chan]) return 0;
+	mapping state = (["cmd": command, "cdanon": 0, "cooldowns": ([])]);
+	write("Initial state: %O\n", state);
 	if (command == "!!trigger") {
 		echoable_message response = G->G->echocommands["!trigger#" + chan];
 		response += ({ }); //Force array, and disconnect it for mutation's sake
@@ -227,7 +241,8 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 			else id = (string)((int)response[-1]->id + 1);
 		}
 		else if (!(int)id) return 0; //Invalid ID
-		echoable_message trigger = validate(msg->response);
+		state->cmd += "-" + id;
+		echoable_message trigger = validate(msg->response, state);
 		if (trigger != "") { //Empty string will cause a deletion
 			if (!mappingp(trigger)) trigger = (["message": trigger]);
 			trigger->id = id;
@@ -251,14 +266,14 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 		if (c != "" && c != chan) return 0; //If you specify the command name as "!demo#rosuav", that's fine if and only if you're working with channel "#rosuav".
 		command = String.trim(lower_case(command));
 		if (command == "") return 0;
-		command = pfx + command;
+		state->cmd = command = pfx + command;
 		if (pfx == "!" && !function_object(G->G->commands->addcmd)->SPECIAL_NAMES[command]) return 0; //Only specific specials are valid
 	}
 	command += "#" + chan; //Potentially getting us right back to conn->group, but more likely the group is just the channel
 	//Validate the message. Note that there will be some things not caught by this
 	//(eg trying to set access or visibility deep within the response), but they
 	//will be merely useless, not problematic.
-	return ({command, validate(msg->response)});
+	return ({command, validate(msg->response, state), state});
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {

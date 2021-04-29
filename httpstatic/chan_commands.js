@@ -134,6 +134,15 @@ const conditional_types = {
 			"NOTE: Variable substitution and case folding are not done in the regexp, only the target.",
 		],
 	},
+	cooldown: {
+		cdname: "(optional) Synchronization name",
+		cdlength: "Cooldown (seconds)", //TODO: Support hh:mm:ss and show it that way for display
+		"": () => ["The condition passes if the time has passed.", BR(),
+			"Use ", CODE("{cooldown}"), " for the remaining time, or ",
+			CODE("{cooldown_hms}"), " in hh:mm:ss format.", BR(),
+			"All commands with the same sync name share the same cooldown.",
+		],
+	},
 	choose: {
 		"": "Choose a type of condition.",
 	},
@@ -155,9 +164,11 @@ function render_command(cmd, toplevel) {
 			OPTION({value: "contains"}, "Substring search"),
 			OPTION({value: "regexp"}, "Regular expression"),
 			OPTION({value: "number"}, "Numeric calculation"),
+			OPTION({value: "cooldown"}, "Cooldown/rate limit"),
 		])];
 		const rows = [];
 		let desc = "";
+		if (cmd.cdname && cmd.cdname[0] === '.') cmd.cdname = ""; //It's not worth showing the anonymous ones' internal names
 		for (let key in cond) {
 			if (key === "") desc = cond[key];
 			else if (cond[key][0] === '?')
