@@ -12,16 +12,24 @@
     - Similarly, if it's been set to View, warn that the command won't work right after.
     - Scan for monitors too - they're the same as a view command
     - Allow cascading deletion
-* More types of conditional messages.
-  - Cooldown (global or per person). Set at the top level - wouldn't apply to
-    subcommands - would automatically manage the CD and "then" means "not in cooldown",
-    with "otherwise" meaning "in cooldown". A few ways to use that:
+* Add some example/template commands that use cooldowns.
+  - The functionality exists, but it can be used in a variety of ways. Good examples:
     - Short cooldown, no else. A simple squelch effect (command can't be used inside
       fifteen seconds).
     - Long cooldown, 'else' has alternate message. Command gives you some actual benefit,
       and you can only use it once every hour.
     - Very short cooldown (2 seconds), 'else' adds to variable and has output with a two
       second delay that emits everything from the variable. Will batch up busy responses.
+  - And then there are the insane things that shouldn't clutter up the UI.
+    - Attach event to !!cheer, !!sub, !!resub, !!subgift - ideally aliased
+    - Send to !hypetrain. If {state} is not "idle", do nothing
+    - Have five-minute timer on command
+      - If command not on cooldown, keep silent
+      - Else say "To start a hype train, we need just one more event within <time>"
+    - Ideally, should stack the timeouts - each one starts an independent 5-min timer,
+      and if any current timer is running, give the "else" message.
+    - Can we recognize distinct people and ignore any doubled-up events?
+    - This might require dedicated code. But it's fun to see how far we can go without.
 * Across an update of connection.pike, retain the mod list, until such time as we get an
   updated list.
 * Thank people for hosting (effectively a spam command triggered by a host notice)
