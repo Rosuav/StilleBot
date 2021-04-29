@@ -366,7 +366,7 @@ void channel_on_off(string channel, int online)
 		//or (approximately) offline.
 		"{year}": (string)ts->year_no(), "{month}": (string)ts->month_no(), "{day}": (string)ts->month_day(),
 		"{hour}": (string)ts->hour_no(), "{min}": (string)ts->minute_no(), "{sec}": (string)ts->second_no(),
-		"{dow}": (string)ts->week_day(), //1 = Sunday, 7 = Saturday
+		"{dow}": (string)ts->week_day(), //1 = Monday, 7 = Sunday
 	]);
 	get_user_id(channel)->then(lambda(int broadcaster_id) {
 		if (online) make_hooks(channel, broadcaster_id);
