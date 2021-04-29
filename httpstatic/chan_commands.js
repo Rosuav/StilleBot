@@ -127,6 +127,7 @@ const conditional_types = {
 		casefold: "?Case insensitive",
 		"": () => [
 			"The condition passes if the ",
+			//TODO: Find a useful link for PCRE, which is what we actually use
 			A({href: "https://pike.lysator.liu.se/generated/manual/modref/ex/predef_3A_3A/Regexp/SimpleRegexp.html"},
 				"regular expression"
 			),

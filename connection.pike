@@ -456,13 +456,12 @@ class channel_notif
 			}
 			case "regexp":
 			{
-				//TODO: Support PCRE as an alternative
 				if (!message->expr1) break; //A null regexp matches everything
 				//Note that expr1 does not get variable substitution done. The
 				//notation for variables would potentially conflict with the
 				//regexp's own syntax.
 				object re = simple_regex_cache[message->expr1];
-				if (!re) re = simple_regex_cache[message->expr1] = Regexp.SimpleRegexp(message->expr1);
+				if (!re) re = simple_regex_cache[message->expr1] = Regexp.PCRE(message->expr1);
 				if (re->match(expr(message->expr2))) break; //The regexp passes!
 				msg = message->otherwise;
 				break;
