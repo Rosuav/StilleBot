@@ -11,24 +11,7 @@ string respstr(echoable_message resp)
 
 constant MAX_RESPONSES = 10; //Max pieces of text per command, for simple view. Can be exceeded by advanced editing.
 
-constant TEMPLATES = ({
-	"!discord | Join my Discord server: https://discord.gg/YOUR_URL_HERE",
-	"!shop | stephe21LOOT Get some phat lewt at https://www.redbubble.com/people/YOUR_REDBUBBLE_NAME/portfolio iimdprLoot",
-	"!twitter | Follow my Twitter for updates, notifications, and other whatever-it-is-I-post: https://twitter.com/YOUR_TWITTER_NAME",
-	"!love | rosuavLove maayaHeart fxnLove devicatLove devicatHug noobsLove stephe21Heart beauatLOVE hypeHeart",
-	"!hype | maayaHype silent5HYPU noobsHype maayaHype silent5HYPU noobsHype maayaHype silent5HYPU noobsHype",
-	"!hug | /me devicatHug $$ warmly hugs %s maayaHug",
-	"!loot | HypeChest RPGPhatLoot Loot ALL THE THINGS!! stephe21LOOT iimdprLoot",
-	"!lurk | $$ drops into the realm of lurkdom devicatLurk",
-	"!unlurk | $$ returns from the realm of lurk devicatLurk",
-	"!raid | Let's go raiding! Copy and paste this raid call and be ready when I host our target! >>> /me twitchRaid YOUR RAID CALL HERE twitchRaid",
-	"!save | rosuavSave How long since you last saved? devicatSave",
-	"!winner | Congratulations, %s! You have won The Thing, see this link for details...",
-	"!join | Join us in Jackbox games! Type !play and go to https://sikorsky.rosuav.com/channels/##CHANNEL##/private",
-	"!play | (Private message) We're over here: https://jackbox.tv/#ABCD",
-	"!hydrate | Drink water! Do it! And then do it again in half an hour.",
-});
-//If a command is listed here, its description above is just the human-readable version, and
+//If a command is listed here, its base description is just the human-readable version, and
 //this is what will actually be used for the command. Selecting such a template will also
 //use the Advanced view in the front end.
 constant COMPLEX_TEMPLATES = ([
@@ -51,7 +34,7 @@ constant COMPLEX_TEMPLATES = ([
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
-	array templates = TEMPLATES + ({ });
+	array templates = ({ });
 	mapping complex_templates = COMPLEX_TEMPLATES | ([]);
 	multiset seen = (<>);
 	foreach (sort(indices(G->G->builtins)), string name) {
