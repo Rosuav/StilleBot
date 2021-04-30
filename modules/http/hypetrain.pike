@@ -148,9 +148,19 @@ constant default_response = ([
 	])
 ]);
 
+string fmt_contrib(mapping c) {
+	if (c->type == "BITS") return sprintf("%s with %d bits", c->display_name, c->total);
+	return sprintf("%s with %d subs", c->display_name, c->total / 500);
+}
+
 continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
 	mapping state = yield(get_state(channel->name[1..]));
+	mapping conductors = (["SUBS": "Nobody", "BITS": "Nobody"]);
+	string|array allcond = ({ });
+	foreach (state->conductors || ({ }), mapping c)
+		allcond += ({conductors[c->type] = fmt_contrib(c)});
+	allcond = sizeof(allcond) ? allcond * ", and " : "None";
 	if (state->expires) {
 		int tm = state->expires - time();
 		return ([
@@ -161,12 +171,17 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 			"{needbits}": (string)(state->goal - state->total),
 			"{needsubs}": (string)((state->goal - state->total + 499) / 500),
 			"{expires}": sprintf("%02d:%02d", tm / 60, tm % 60),
+			"{conductors}": allcond, "{subs_conduct}": conductors->SUBS, "{bits_conduct}": conductors->BITS,
 		]);
 	} else if (state->cooldown) {
 		int tm = state->cooldown - time();
 		return ([
 			"{state}": "cooldown",
+			"{level}": (string)state->level,
+			"{total}": (string)state->total,
+			"{goal}": (string)state->goal,
 			"{cooldown}": sprintf("%02d:%02d", tm / 60, tm % 60),
+			"{conductors}": allcond, "{subs_conduct}": conductors->SUBS, "{bits_conduct}": conductors->BITS,
 		]);
 	} else return (["{state}": "idle"]);
 }
