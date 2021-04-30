@@ -467,14 +467,19 @@ class Renderer
 	string blockquote(string text, mapping token)
 	{
 		if (string tag = m_delete(token, "attr_tag")) {
-			if (tag != "dialog") return sprintf("<%s%s>%s</%[0]s>", tag, attrs(token), text); //Arbitrary tag selection if necessary.
-			//If the dialog starts with an H3, retain it as a title, outside the scroll context.
-			sscanf(text, "<h3%*[^>]>%s</h3>%s", string title, text);
-			return sprintf("<dialog%s><section>"
+			//If the blockquote starts with an H3, it is some form of title.
+			if (sscanf(text, "<h3%*[^>]>%s</h3>%s", string title, string main)) switch (tag) {
+				//For dialogs, the title is outside the scroll context, and also gets a close button added.
+				case "dialog": return sprintf("<dialog%s><section>"
 					"<header><h3>%s</h3><div><button type=button class=dialog_cancel>x</button></div></header>"
 					"<div>%s</div>"
 					"</section></dialog>",
-				attrs(token), title || "", text);
+				attrs(token), title || "", main);
+				case "details": return sprintf("<details%s><summary>%s</summary>%s</details>",
+					attrs(token), title || "Details", main);
+				default: break; //No special title handling
+			}
+			return sprintf("<%s%s>%s</%[0]s>", tag, attrs(token), text);
 		}
 		return ::blockquote(text, token);
 	}

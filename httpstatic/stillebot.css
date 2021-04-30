@@ -104,6 +104,10 @@ tr.dirty {
 	background-color: #ffeeee;
 }
 
+#templates {
+	min-height: 30em;
+}
+
 #templates tbody tr:nth-child(odd) {
 	background: #eef;
 	cursor: pointer;
