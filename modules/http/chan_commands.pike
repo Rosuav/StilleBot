@@ -57,7 +57,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	foreach (sort(indices(G->G->builtins)), string name) {
 		object handler = G->G->builtins[name];
 		if (seen[handler]) continue; seen[handler] = 1; //If there are multiple, keep the alphabetically-earliest.
-		templates += ({sprintf("!%s | Duplicate, replace, or adjust the normal handling of the !%<s command", name)});
+		templates += ({sprintf("!%s | %s", name, handler->command_description)});
 		complex_templates["!" + name] = ([
 			"dest": "/builtin", "target": "!" + name + " %s",
 			"access": handler->require_moderator ? "mod" : handler->access,

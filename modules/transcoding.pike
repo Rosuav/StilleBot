@@ -2,6 +2,7 @@ inherit builtin_command;
 constant hidden_command = 1;
 constant require_moderator = 1;
 
+constant command_description = "Report on which video resolutions (quality options) the stream is available in";
 constant default_response = ([
 	"conditional": "string", "expr1": "qualities",
 	"message": "@$$: View this stream in glorious {resolution}!",

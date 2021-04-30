@@ -172,6 +172,7 @@ class handle_async(mixed gen, function got_result, function|void got_error) {
 //Some commands are available for echocommands to call on.
 class builtin_command {
 	inherit command;
+	constant command_description = "Duplicate, replace, or adjust the normal handling of the !<> command";
 	constant default_response = "Example response";
 	constant aliases = ({ }); //Add aliases here and they'll be defaultly aliased if shadowed too
 	//Override this either as-is or as a continue function to return the useful params.

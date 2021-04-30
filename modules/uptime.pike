@@ -7,6 +7,7 @@ that the channel is offline if it's just started, and/or still showing
 the uptime just after it goes offline.
 ";
 
+constant command_description = "Show how long the channel has been online (can also be used in a conditional)";
 constant default_response = ([
 	"conditional": "string", "expr1": "{uptime}", "expr2": "0",
 	"message": "Channel is currently offline.",

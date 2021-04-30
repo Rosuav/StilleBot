@@ -133,6 +133,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		}); //TODO: If auth error, clear the token
 }
 
+constant command_description = "Show the status of a hype train in this channel, or the cooldown before the next can start";
 constant default_response = ([
 	"conditional": "string", "expr1": "{state}", "expr2": "active",
 	"message": ([
