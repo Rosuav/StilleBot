@@ -219,10 +219,6 @@ class channel_notif
 	string color;
 	mapping config = ([]);
 	multiset mods=(<>);
-	mapping(string:int) viewers = ([]);
-	mapping(string:array(int)) viewertime; //({while online, while offline})
-	mapping(string:array(int)) wealth; //({actual currency, fractional currency})
-	mixed save_call_out;
 	string hosting;
 
 	protected void create() {call_out(configure,0);}
@@ -235,15 +231,6 @@ class channel_notif
 			color = sprintf("\e[1;3%dm", G->G->channelcolor[name]);
 		}
 		else color = "\e[0m"; //Nothing will normally be logged, so don't allocate a color. If logging gets enabled, it'll take a reset to assign one.
-		if (config->currency && config->currency!="") wealth = persist_status->path("wealth", name);
-		if (config->countactive || wealth) //Note that having channel currency implies counting activity time.
-		{
-			viewertime = persist_status->path("viewertime", name);
-			foreach (viewertime; string user; int|array val) if (intp(val)) m_delete(viewertime, user);
-		}
-		else if (persist_status["viewertime"]) m_delete(persist_status["viewertime"], name);
-		persist_status->save();
-		save_call_out = call_out(save, 300);
 		//Twitch will (eventually) notify us of who has "ops" privilege, which
 		//corresponds to mods and other people with equivalent powers. But on
 		//startup, it's quicker to (a) grant mod powers to the streamer, and
@@ -261,49 +248,10 @@ class channel_notif
 		//chat, with the mod badge or equivalent.
 	}
 
-	protected void destroy() {save(); remove_call_out(save_call_out);}
-	protected void _destruct() {save(); remove_call_out(save_call_out);}
-	void save(int|void as_at)
-	{
-		//Save everyone's online time on code reload and periodically
-		remove_call_out(save_call_out);
-		if (G->G->irc == irc) save_call_out = call_out(save, 300); //Requeue the save only if we're the current one
-		if (!as_at) as_at = time();
-		int count = 0;
-		int offline = !G->G->stream_online_since[name[1..]];
-		int payout_div = wealth && (offline ? config->payout_offline : 1);
-		foreach (viewers; string user; int start) if (start && as_at > start)
-		{
-			int t = as_at-start;
-			if (viewertime)
-			{
-				if (!viewertime[user]) viewertime[user] = ({0,0});
-				viewertime[user][offline] += t;
-			}
-			viewers[user] = as_at;
-			if (payout_div)
-			{
-				if (!wealth[user]) wealth[user] = ({0, 0});
-				if (int mul = mods[user] && config->payout_mod) t *= mul;
-				t /= payout_div; //If offline payout is 1:3, divide the time spent by 3 and discard the loose seconds.
-				t += wealth[user][1];
-				wealth[user][0] += t / config->payout;
-				wealth[user][1] = t % config->payout;
-			}
-			++count;
-		}
-		//write("[Saved %d viewer times for channel %s]\n", count, name);
-		persist_status->save();
-	}
 	//NOTE: Without not_join and its friends, Pike 8.0 will spam noisy failure
 	//messages. Everything seems to still work, though.
-	void not_join(object who) {log("%sJoin %s: %s\e[0m\n",color,name,who->user); viewers[who->user] = time(1);}
-	void not_part(object who,string message,object executor)
-	{
-		save(); //TODO, maybe: Save just this viewer's data
-		m_delete(viewers, who->user);
-		log("%sPart %s: %s\e[0m\n", color, name, who->user);
-	}
+	void not_join(object who) {log("%sJoin %s: %s\e[0m\n",color,name,who->user);}
+	void not_part(object who,string message,object executor) {log("%sPart %s: %s\e[0m\n", color, name, who->user);}
 
 	array(command_handler|string) locate_command(mapping person, string msg)
 	{

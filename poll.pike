@@ -352,7 +352,6 @@ void stream_status(string name, mapping info)
 		{
 			write("** Channel %s noticed offline at %s **\n", name, Calendar.now()->format_nice());
 			object chan = G->G->irc->channels["#"+name];
-			if (chan) chan->save(); //We don't get the offline time, so we'll pretend it was online right up until the time we noticed.
 			runhooks("channel-offline", 0, name);
 			int uptime = time() - started->unix_time();
 			if (chan) chan->trigger_special("!channeloffline", ([
@@ -400,7 +399,6 @@ void stream_status(string name, mapping info)
 			object started_here = started->set_timezone(Calendar.now()->timezone());
 			write("** Channel %s went online at %s **\n", name, started_here->format_nice());
 			object chan = G->G->irc->channels["#"+name];
-			if (chan) chan->save(started->unix_time()); //Not sure why this is before the hook - is it important?
 			runhooks("channel-online", 0, name);
 			int uptime = time() - started->unix_time();
 			if (chan) chan->trigger_special("!channelonline", ([

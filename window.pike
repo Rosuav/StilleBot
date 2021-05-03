@@ -920,6 +920,7 @@ class _mainwindow
 			"!Notify participants",
 		}),
 		"Currency": ({
+			"'DEPRECATED and no longer supported",
 			"Currency name",
 			"#Payout interval",
 			"#payout_offline:Offline divisor [0 for none]",
@@ -927,7 +928,6 @@ class _mainwindow
 		}),
 		"Logging": ({
 			"?chatlog:Log chat to console",
-			"?countactive:Count participant activity",
 		}),
 		"Perms": ({ //TODO: Find a better name for this tab
 			"?disable_quotes:Disable quotes",
