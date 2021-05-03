@@ -266,7 +266,8 @@ class channel_notif
 	void save(int|void as_at)
 	{
 		//Save everyone's online time on code reload and periodically
-		remove_call_out(save_call_out); save_call_out = call_out(save, 300);
+		remove_call_out(save_call_out);
+		if (G->G->irc == irc) save_call_out = call_out(save, 300); //Requeue the save only if we're the current one
 		if (!as_at) as_at = time();
 		int count = 0;
 		int offline = !G->G->stream_online_since[name[1..]];
