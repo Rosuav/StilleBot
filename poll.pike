@@ -244,6 +244,12 @@ Concurrent.Future get_channel_info(string name)
 		 * status => stream title
 		 * _id => numeric user ID
 		 */
+	}, lambda(mixed err) {
+		if (has_prefix(err[0], "User not found: ")) {
+			werror(err[0]);
+			if (!G->G->channel_info[name]) G->G->channel_info[name] = ([ ]);
+		}
+		else return Concurrent.reject(err);
 	});
 }
 
