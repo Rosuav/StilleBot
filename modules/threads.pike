@@ -21,8 +21,12 @@ void thread_watch(object ls) {
 			string location;
 			//Find the last plausible backtrace entry
 			foreach (t->backtrace(), object f) {
-				if (f->filename && f->filename != "-" && f->filename[0] != '/')
+				if (f->filename && f->filename != "-" && f->filename[0] != '/') {
 					location = sprintf("%s:%d", f->filename, f->line);
+					if (location == "persist.pike:62") {
+						location += " - " + function_object(f->fun)->savefn;
+					}
+				}
 			}
 			if (location) hotspots[location]++;
 			ls->set_value(iter, 2, location || "(unknown)");
@@ -35,6 +39,14 @@ void thread_watch(object ls) {
 		foreach (reverse(hotspots)[..16], string loc)
 			write("\t%4d %s\n", info[2][loc], loc);
 	}
+	mapping func_hotspots = ([]);
+	write("Total pending call_outs: %d\n", sizeof(call_out_info()));
+	foreach (call_out_info(), array info) {
+		func_hotspots[sprintf("%O", info[2])]++;
+	}
+	array hotspots = indices(func_hotspots); sort(values(func_hotspots), hotspots);
+	foreach (reverse(hotspots), string loc)
+		write("\t%4d %s\n", func_hotspots[loc], loc);
 }
 
 constant menu_label = "Show threads";
