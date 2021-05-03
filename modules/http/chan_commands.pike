@@ -213,7 +213,6 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string command, string chan);
 	if (!G->G->irc->channels["#" + chan]) return 0;
 	mapping state = (["cmd": command, "cdanon": 0, "cooldowns": ([])]);
-	write("Initial state: %O\n", state);
 	if (command == "!!trigger") {
 		echoable_message response = G->G->echocommands["!trigger#" + chan];
 		response += ({ }); //Force array, and disconnect it for mutation's sake
