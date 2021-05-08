@@ -90,11 +90,16 @@ void probe_hype_train(int channel)
 	send_updates_all(channel);
 }
 
-constant emotes = #"HypeFighter HypeShield HypeKick HypeSwipe HypeRIP HypeGG
-HypeRanger HypeMiss HypeHit HypeHeart HypeTarget HypeWink
-HypeRogue HypeWut HypeGems HypeCoin HypeSneak HypeCash
-HypeBard HypeTune HypeRun HypeZzz HypeRock HypeJuggle
-HypeMage HypeWho HypeLol HypePotion HypeBook HypeSmoke";
+constant emotes = #"HypeHeh HypeDoh HypeYum HypeShame HypeHide HypeWow
+HypeTongue HypePurr HypeOoh HypeBeard HypeEyes HypeHay
+HypeYesPlease HypeDerp HypeJudge HypeEars HypeCozy HypeYas
+HypeWant HypeStahp HypeYawn HypeCreep HypeDisguise HypeAttack
+HypeScream HypeSquawk HypeSus HypeHeyFriends HypeMine HypeShy";
+
+string url(int|string id) { //TODO: Dedup with the one in checklist
+	if (intp(id)) return sprintf("https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0", id);
+	return sprintf("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_%s/default/light/1.0", id);
+}
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
@@ -116,7 +121,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		avail_emotes += "\n*";
 		foreach (level / " ", string emote)
 		{
-			string md = emotemd[emote] || sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0)", emote, emoteids[emote]);
+			string md = emotemd[emote] || sprintf("![%s](%s)", emote, url(emoteids[emote]));
 			if (!md) {avail_emotes += " " + emote; continue;}
 			avail_emotes += sprintf(" %s*%s*", md, replace(md, "/1.0", "/3.0"));
 		}
