@@ -30,7 +30,7 @@ string process(object channel, object person, string param)
 	//If you type "!addquote personname text", transform it.
 	if (sscanf(param, "%*[@]%s %s", string who, string what) && what)
 	{
-		if (lower_case(who) == channel->name[1..] || channel->viewers[lower_case(who)])
+		if (lower_case(who) == channel->name[1..] || channel->recent_viewers[lower_case(who)])
 		{
 			//Seems to be a person's name at the start. Flip it to the end.
 			//Note that this isn't perfect; if the person happens to not be in

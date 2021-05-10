@@ -219,6 +219,7 @@ class channel_notif
 	string color;
 	mapping config = ([]);
 	multiset mods=(<>);
+	mapping(string:int) recent_viewers = ([]);
 	string hosting;
 
 	protected void create() {call_out(configure,0);}
@@ -250,7 +251,7 @@ class channel_notif
 
 	//NOTE: Without not_join and its friends, Pike 8.0 will spam noisy failure
 	//messages. Everything seems to still work, though.
-	void not_join(object who) {log("%sJoin %s: %s\e[0m\n",color,name,who->user);}
+	void not_join(object who) {log("%sJoin %s: %s\e[0m\n",color,name,who->user); recent_viewers[who->user] = 1;}
 	void not_part(object who,string message,object executor) {log("%sPart %s: %s\e[0m\n", color, name, who->user);}
 
 	array(command_handler|string) locate_command(mapping person, string msg)
