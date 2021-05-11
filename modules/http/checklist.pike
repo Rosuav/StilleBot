@@ -6,6 +6,7 @@ inherit http_endpoint;
 constant hypetrain = replace(#"
 ## Hype Train set four
 ### Unlockable May 2021 to current
+### (Won't be highlighted due to Twitch limitations)
 HypeHeh HypeDoh HypeYum HypeShame HypeHide HypeWow<br>
 HypeTongue HypePurr HypeOoh HypeBeard HypeEyes HypeHay<br>
 HypeYesPlease HypeDerp HypeJudge HypeEars HypeCozy HypeYas<br>
