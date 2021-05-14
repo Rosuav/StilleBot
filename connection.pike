@@ -839,12 +839,12 @@ void http_handler(Protocols.HTTP.Server.Request req)
 	}
 	if (!handler) {send_http_response(0, req); return;}
 	if (mixed ex = catch {
-		mapping|Concurrent.Future|function resp = handler(req, @args);
+		mapping|string|Concurrent.Future|function resp = handler(req, @args);
 		handle_async(resp, send_http_response, handle_http_error, req);
 	}) handle_http_error(ex, req);
 }
 
-void send_http_response(mapping resp, Protocols.HTTP.Server.Request req) //The odd argument order simplifies Future handling.
+void send_http_response(mapping|string resp, Protocols.HTTP.Server.Request req) //The odd argument order simplifies Future handling.
 {
 	if (!resp)
 	{
@@ -856,6 +856,7 @@ void send_http_response(mapping resp, Protocols.HTTP.Server.Request req) //The o
 			"error": 404,
 		]);
 	}
+	if (stringp(resp)) resp = (["data": resp, "type": "text/plain; charset=\"UTF-8\""]);
 	//All requests should get to this point with a response.
 
 	//As of 20190122, the Pike HTTP server doesn't seem to handle keep-alive.
