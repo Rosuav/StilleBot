@@ -126,7 +126,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			avail_emotes += sprintf(" %s*%s*", md, replace(md, "/1.0", "/3.0"));
 		}
 	}
-	return (channel ? get_user_id(channel) : Concurrent.resolve(0))
+	return (channel ? get_user_id(channel) : Concurrent.resolve(0)) //TODO: Make this a continue function
 		->then(lambda(int uid) {
 			return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
 				"vars": (["ws_type": uid && "hypetrain", "ws_group": uid]),
