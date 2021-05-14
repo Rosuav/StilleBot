@@ -101,6 +101,7 @@
     - Need cake, for which we need fondue (have cheese, have foil)
     - Need light in order to get to leprechaun
     - Coffee for guard?
+    - Find jokes
   - Compared to MH MPN, big advantages:
     - Doesn't die on server restart (retain in persist_status)
     - Actual real permissions checking
