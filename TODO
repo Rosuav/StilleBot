@@ -96,7 +96,7 @@
   - Markdown parsing and variable interpolation
     - Could allow mods to make full changes, but also non-mod commands can affect variables
     - A published version could be a browser source. Would allow more flexibility than the
-      standard Monitor system.
+      standard Monitor system. Maybe a separate "embed" option to eliminate the surrounds.
   - Example for development: Current goals in Night of the Rabbit
     - Need cake, for which we need fondue (have cheese, have foil)
     - Need light in order to get to leprechaun
