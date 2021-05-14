@@ -379,6 +379,14 @@ class websocket_handler
 
 	void update_one(string|int group, string id) {send_updates_all(group, (["id": id, "data": get_state(group, id)]));}
 
+	//Returns ({channel, subgroup}) - if channel is 0, it's not valid
+	array(object|string) split_channel(string|void group) {
+		if (!stringp(group) || !has_value(group, '#')) return ({0, ""}); //Including if we don't have a group set yet
+		sscanf(group, "%s#%s", string subgroup, string chan);
+		object channel = G->G->irc->channels["#" + chan];
+		return ({channel, subgroup});
+	}
+
 	protected void create(string name)
 	{
 		sscanf(explode_path(name)[-1],"%s.pike",name);
