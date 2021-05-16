@@ -373,15 +373,23 @@ class channel_notif
 			message->_changevars = 0; //It's okay to mutate this one, since it'll only ever be a bookkeeping mapping from delay handling.
 		}
 
-		if (message->dest == "/builtin") {
-			string target = _substitute_vars(message->target || "", vars, person);
-			sscanf(target, "!%[^ ]%*[ ]%s", string cmd, string param);
-			if (object handler = G->G->builtins[cmd]) {
-				person->outputfmt = message->message;
-				_send_recursive(person, handler->process(this, person, param), vars);
+		if (message->dest == "/builtin") { //Deprecated way to call on a builtin
+			//NOTE: Prior to 2021-05-16, variable substitution was done on the entire
+			//target. It's now done only on the builtin_param (below).
+			sscanf(message->target, "!%[^ ]%*[ ]%s", string cmd, string param);
+			message = (message - (<"dest", "target">)) | (["builtin": cmd, "builtin_param": param]);
+		}
+		if (message->builtin) {
+			object handler = G->G->builtins[message->builtin] || message->builtin; //Chaining can be done by putting the object itself in the mapping
+			if (objectp(handler)) {
+				string param = _substitute_vars(message->builtin_param || "", vars, person);
+				handle_async(handler->message_params(this, person, param)) {
+					if (!__ARGS__[0]) return; //No params? No output.
+					_send_recursive(person, message->message, vars | __ARGS__[0]);
+				};
 				return;
 			}
-			else message = (["message": sprintf("Bad destination %O %O", message->dest, message->target)]);
+			else message = (["message": sprintf("Bad builtin name %O", message->builtin)]);
 		}
 
 		echoable_message msg = message->message;

@@ -190,14 +190,7 @@ class builtin_command {
 		}
 	}
 	echoable_message process(object channel, mapping person, string param) {
-		//This cannot function synchronously even if params can be obtained easily,
-		//because the return value from process() isn't allowed to contain variable
-		//references. So we're going to have to call channel->send, which in turn
-		//means we may as well work asynchronously.
-		handle_async(message_params(channel, person, param)) {
-			if (!__ARGS__[0]) return; //No params? No output.
-			channel->send(person, m_delete(person, "outputfmt") || default_response, __ARGS__[0]);
-		};
+		return (["builtin": this, "builtin_param": param, "message": default_response]);
 	}
 }
 
