@@ -52,6 +52,11 @@ constant access = "mod";
 
 */
 
+void rebuild_lines(mapping(string:mixed) doc) {
+	if (!doc->lines) doc->lines = mkmapping(doc->sequence->id, doc->sequence);
+	foreach (doc->sequence; int i; mapping line) line->position = i;
+}
+
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string document] = split_channel(msg->group);
 	if (!channel) return "Bad channel";
@@ -65,10 +70,10 @@ mapping get_state(string group, string|void id)
 	mapping doc = persist_status->path("mpn", channel->name)[document];
 	if (!doc) return 0; //Can't create implicitly. Create with the command first.
 	write("%O\n", doc);
-	array items = values(doc->lines); sort(items, items->id);
-	return (["items": items]);
+	return (["items": doc->sequence]);
 }
 
+//TODO: Have a "delete line", and maybe a "rewrite document" that fully starts over
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string document] = split_channel(conn->group); if (!channel) return;
 	if (!conn->is_mod) return;
@@ -76,13 +81,18 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!doc) return;
 	if (!doc->lines[msg->id]) {
 		//New!
-		string newid = "0";
-		//TODO: Respect msg->before and construct an ID that will be immediately before
-		//that ID. If no msg->before, construct an ID greater than all current IDs.
-		doc->lines[msg->id = newid] = (["id": newid]);
+		string newid = (string)++doc->lastid;
+		mapping line = doc->lines[newid] = (["id": newid, "content": msg->content]);
+		//If a "before" ID is given, insert the line before that one. Otherwise, append.
+		mapping before = doc->lines[msg->before];
+		int pos = before ? before->pos : sizeof(doc->sequence);
+		doc->sequence = doc->sequence[..pos - 1] + ({line}) + doc->sequence[pos..];
+		rebuild_lines(doc);
+		send_updates_all(conn->group);
+		return;
 	}
 	doc->lines[msg->id]->content = msg->content;
-	send_updates_all(conn->group);
+	send_updates_all(conn->group); //TODO: Just update this one line
 }
 
 mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -116,15 +126,16 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string 
 	write("message_params(channel %O, person %O, %O)\n", channel->name, person->user, param);
 	if (param == "") return (["{url}": ""]); //TODO: Give a help message?
 	sscanf(param, "%s %s", string cmd, string arg);
-	mapping document;
+	mapping doc;
 	if (cmd == "create" && arg && arg != "") {
-		document = persist_status->path("mpn", channel->name, arg);
-		if (!document->lines) document->lines = ([]);
+		doc = persist_status->path("mpn", channel->name, arg);
+		if (!doc->sequence) doc->sequence = ({ });
+		rebuild_lines(doc);
 		persist_status->save();
 	}
 	else {
-		document = persist_status->path("mpn", channel->name)[arg];
-		if (!document) return (["{url}": ""]); //TODO: Error message?
+		doc = persist_status->path("mpn", channel->name)[arg];
+		if (!doc) return (["{url}": ""]); //TODO: Error message?
 	}
 	return ([
 		"{url}": "https://......./",
