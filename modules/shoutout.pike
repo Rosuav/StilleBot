@@ -28,6 +28,7 @@ constant game_desc = ([
 ]);
 
 constant command_description = "Shout out another streamer, providing a link and some info about them";
+constant builtin_name = "Shoutout";
 constant default_response = ([
 	"conditional": "string",
 	"expr1": "{url}",
@@ -35,6 +36,13 @@ constant default_response = ([
 	"otherwise": "{name} was last seen {catdesc}, at {url} - go check that stream out, maybe drop a follow! The last thing done was: {title}"
 ]);
 constant aliases = ({"so"});
+constant vars_provided = ([
+	"{url}": "Channel URL, or blank if the user wasn't found",
+	"{name}": "Display name of the user",
+	"{category}": "Current or last-seen category (game)",
+	"{catdesc}": "Category in a human-readable form, eg 'playing X' or 'creating Art'",
+	"{title}": "Current or last-seen stream title",
+]);
 
 continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {

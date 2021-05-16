@@ -101,10 +101,15 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 }
 
 constant command_description = "Create, manage, or link to an MPN document";
+constant builtin_name = "MPN document";
 constant default_response = ([
 	"conditional": "string", "expr1": "{url}", "expr2": "",
 	"message": "No such document.",
 	"otherwise": "{action} Document can be found at: {url}",
+]);
+constant vars_provided = ([
+	"{action}": "Action performed (if any)",
+	"{url}": "URL to the manipulated document, blank if error",
 ]);
 
 mapping|Concurrent.Future message_params(object channel, mapping person, string param)

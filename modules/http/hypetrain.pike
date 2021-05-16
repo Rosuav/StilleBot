@@ -139,6 +139,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 }
 
 constant command_description = "Show the status of a hype train in this channel, or the cooldown before the next can start";
+constant builtin_description = "Get hype train status for this channel";
+constant builtin_name = "Hype Train";
 constant default_response = ([
 	"conditional": "string", "expr1": "{state}", "expr2": "active",
 	"message": ([
