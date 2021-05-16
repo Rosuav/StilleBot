@@ -10,6 +10,7 @@ input[type=submit] {background: inherit;}
 
 dialog {
 	position: fixed;
+	resize: both; overflow: auto; /* TODO: Should only some dialogs support resizing? */
 }
 @supports (-moz-appearance:none) {
 	/* Firefox doesn't automatically position dialogs properly. */
