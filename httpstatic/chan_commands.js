@@ -18,9 +18,9 @@ const flags = {
 	visibility: {"": "Visible", hidden: "Hidden", "*": "Should the command be listed in !help and the non-mod commands view?"},
 	delay: {"": "Immediate", "30": "30 seconds", "60": "1 minute", "120": "2 minutes", "300": "5 minutes", "1800": "Half hour",
 			"3600": "One hour", "7200": "Two hours", "*": "When should this be sent?"},
-	dest: {"": "Chat", "/w": "Whisper", "/web": "Private message", "/set": "Set a variable", "/builtin": "Built-in command",
+	dest: {"": "Chat", "/w": "Whisper", "/web": "Private message", "/set": "Set a variable", /**/"/builtin": "Built-in command",/**/
 		"*": "Where should the response be sent?"},
-	action: {"": "Set the value", "add": "Add to the value", "*": "When setting a variable, should it increment or replace?"},
+	action: {"": "Set the value", "add": "Add to the value", "*": "When setting a variable, should it increment or replace?"}, //TODO: Deprecate
 };
 const toplevelflags = ["access", "visibility"];
 const conditionalkeys = "expr1 expr2 casefold".split(" "); //Include every key used by every conditional type

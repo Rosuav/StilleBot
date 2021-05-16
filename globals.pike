@@ -173,6 +173,7 @@ class handle_async(mixed gen, function got_result, function|void got_error) {
 class builtin_command {
 	inherit command;
 	constant command_description = "Duplicate, replace, or adjust the normal handling of the !<> command";
+	constant builtin_description = ""; //If omitted, uses command_description
 	constant default_response = "Example response";
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
 	constant aliases = ({ }); //Add aliases here and they'll be defaultly aliased if shadowed too
@@ -187,7 +188,7 @@ class builtin_command {
 		G->G->builtins[name] = this;
 		foreach (aliases, string alias) {
 			G->G->commands[alias] = check_perms;
-			G->G->builtins[alias] = this;
+			G->G->builtins[alias] = this; //Once builtin selection is all by drop-down, it'll be okay to remove this and just have the base name in the mapping.
 		}
 	}
 	echoable_message process(object channel, mapping person, string param) {

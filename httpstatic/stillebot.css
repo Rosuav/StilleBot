@@ -126,6 +126,7 @@ table[data-dest=""] > tr.targetrow {
 	display: none;
 }
 
+/* Will be deprecated once there's a nice UI for the new way to add to a var */
 table[data-dest]:not([data-dest="/set"]) > tr[data-flag="action"] {
 	display: none;
 }
