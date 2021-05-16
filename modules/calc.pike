@@ -52,6 +52,7 @@ int|float evaluate(string formula) {
 }
 
 constant command_description = "Calculate a simple numeric expression/formula";
+constant builtin_name = "Calculator";
 constant default_response = ([
 	"conditional": "string", "expr1": "{error}", "expr2": "",
 	"message": "@$$: {result}",

@@ -48,7 +48,7 @@
   a hard restriction and would prevent the command from showing up for enabling if it's not
   one of the specified channels.
   - For some commands (eg hypetrain), this can be done by shadowing with your own to disable,
-    or to enable a hidden one, create one with a dest of "/builtin".
+    or to enable a hidden one, create one with the appropriate builtin.
 * On the bot's emote list, allow search/filter by text
 * Advanced timer functionality
   - If there's already a timer of this command happening, allow the user to pick whether it

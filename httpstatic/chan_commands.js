@@ -18,10 +18,14 @@ const flags = {
 	visibility: {"": "Visible", hidden: "Hidden", "*": "Should the command be listed in !help and the non-mod commands view?"},
 	delay: {"": "Immediate", "30": "30 seconds", "60": "1 minute", "120": "2 minutes", "300": "5 minutes", "1800": "Half hour",
 			"3600": "One hour", "7200": "Two hours", "*": "When should this be sent?"},
+	builtin: {"": "None", "*": "Call on extra information from a built-in function or action"},
 	dest: {"": "Chat", "/w": "Whisper", "/web": "Private message", "/set": "Set a variable", /**/"/builtin": "Built-in command",/**/
 		"*": "Where should the response be sent?"},
 	action: {"": "Set the value", "add": "Add to the value", "*": "When setting a variable, should it increment or replace?"}, //TODO: Deprecate
 };
+for (let name in builtins) {
+	flags.builtin[name] = builtins[name][""];
+}
 const toplevelflags = ["access", "visibility"];
 const conditionalkeys = "expr1 expr2 casefold".split(" "); //Include every key used by every conditional type
 
@@ -221,17 +225,24 @@ function render_command(cmd, toplevel) {
 			TD(SELECT({"data-flag": flg}, opt)),
 			TD(flags[flg]["*"]),
 		]));
+		//Can these (builtin ==> builtin_param, dest ==> target) be made more generic?
+		if (flg === "builtin") opts.push(TR({className: "paramrow"}, [
+			TD(INPUT({"data-flag": "builtin_param", value: cmd.builtin_param || ""})),
+			TD(["Parameter (extra info) for the built-in", BR(), DETAILS({className: "builtininfo"}, [
+				SUMMARY("Information provided"),
+				TABLE(TR(TD("TODO"))), //TODO: Fill in the vars provided
+			])]),
+		]));
 	}
 	opts.push(TR({className: "targetrow"}, [TD(INPUT({"data-flag": "target", value: cmd.target || ""})), TD("Who/what should it send to? User or variable name.")]));
 	return FIELDSET({className: "optedmsg"}, text_array(DETAILS({className: "flagstable"}, [
 		SUMMARY("Flags"),
-		TABLE({border: 1, "data-dest": cmd.dest || ""}, opts),
+		TABLE({border: 1, "data-dest": cmd.dest || "", "data-builtin": cmd.builtin || ""}, opts),
 	]), cmd.message));
 }
 
-on("change", 'select[data-flag="dest"]', e => {
-	e.match.closest("table").dataset.dest = e.match.value;
-});
+on("change", 'select[data-flag="dest"]', e => e.match.closest("table").dataset.dest = e.match.value);
+on("change", 'select[data-flag="builtin"]', e => e.match.closest("table").dataset.builtin = e.match.value);
 
 export function open_advanced_view(cmd) {
 	set_content("#command_details", render_command(cmd, cmd.id[0] !== '!'));

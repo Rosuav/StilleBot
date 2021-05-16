@@ -174,6 +174,7 @@ class builtin_command {
 	inherit command;
 	constant command_description = "Duplicate, replace, or adjust the normal handling of the !<> command";
 	constant builtin_description = ""; //If omitted, uses command_description
+	constant builtin_name = ""; //Short human-readable name for the drop-down
 	constant default_response = "Example response";
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
 	constant aliases = ({ }); //Add aliases here and they'll be defaultly aliased if shadowed too

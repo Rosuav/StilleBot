@@ -43,14 +43,14 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (seen[handler]) continue; seen[handler] = 1; //If there are multiple, keep the alphabetically-earliest.
 		templates += ({sprintf("!%s | %s", name, handler->command_description)});
 		complex_templates["!" + name] = ([
-			"dest": "/builtin", "target": "!" + name + " %s",
-			//"builtin": name, "builtin_param": "%s",
+			"builtin": name, "builtin_param": "%s",
 			"access": handler->require_moderator ? "mod" : handler->access,
 			"message": handler->default_response,
 			"aliases": handler->aliases * " ",
 		]);
-		builtins[name] = (["": handler->builtin_description]) | handler->vars_provided;
-		if (builtins[name][""] == "") builtins[name][""] = handler->command_description;
+		builtins[name] = (["*": handler->builtin_description, "": handler->builtin_name]) | handler->vars_provided;
+		if (builtins[name]["*"] == "") builtins[name]["*"] = handler->command_description;
+		if (builtins[name][""] == "") builtins[name][""] = "!" + name; //Best not to rely on this
 	}
 	if (req->misc->is_mod) {
 		return render_template("chan_commands.md", ([
@@ -136,7 +136,7 @@ constant valid_flags = ([
 	"access": (<"mod", "none">),
 	"visibility": (<"hidden">),
 	"action": (<"add">),
-	"dest": (<"/w", "/web", "/set", "/builtin">),
+	"dest": (<"/w", "/web", "/set">),
 ]);
 
 constant condition_parts = ([
@@ -173,12 +173,21 @@ echoable_message validate(echoable_message resp, mapping state)
 		if (!resp->target) m_delete(ret, "dest");
 		else ret->target = resp->target;
 	}
+	if (resp->dest == "/builtin" && resp->target) {
+		//A dest of "/builtin" is really a builtin. What a surprise :)
+		sscanf(resp->target, "!%[^ ]%*[ ]%s", resp->builtin, resp->builtin_param);
+	}
 	else if (resp->dest && has_prefix(resp->dest, "/"))
 	{
 		//Legacy mode. Fracture the dest into dest and target.
 		sscanf(resp->dest, "/%[a-z] %[a-zA-Z$%]%s", string dest, string target, string empty);
 		if ((<"w", "web", "set">)[dest] && target != "" && empty == "")
 			[ret->dest, ret->target] = ({"/" + dest, target});
+	}
+	if (resp->builtin && G->G->builtins[resp->builtin]) {
+		//Validated separately as the builtins aren't a constant
+		ret->builtin = resp->builtin;
+		if (resp->builtin_param && resp->builtin_param != "") ret->builtin_param = resp->builtin_param;
 	}
 	//Conditions have their own active ingredients.
 	if (array parts = condition_parts[resp->conditional]) {
@@ -286,7 +295,7 @@ void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) ms
 	array valid = _validate_update(conn, (["cmdname": "validateme"]) | msg);
 	if (!valid) return;
 	sscanf(valid[0], "%s#", string cmdname);
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[1]])));
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[1]]), 4));
 }
 
 protected void create(string name) {::create(name);}
