@@ -94,7 +94,6 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 	if (!persist_status->path("mpn", req->misc->channel->name)[document]) {
 		return "TODO: No such document, maybe suggest how to create it";
 	}
-	//TODO: Ensure that the document exists
 	return render_template("chan_mpn.md", ([
 		"vars": (["ws_type": "chan_mpn", "ws_group": document + req->misc->channel->name]),
 	]) | req->misc->chaninfo);
