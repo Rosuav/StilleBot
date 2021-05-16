@@ -152,6 +152,19 @@ constant default_response = ([
 		"otherwise": "/me MrDestructoid Hype Train status: NomNom Cookies are done! NomNom"
 	])
 ]);
+constant vars_provided = ([
+	"{state}": "A keyword (idle, active, cooldown). If idle, there's no other info; if cooldown, info pertains to the last hype train.",
+	"{level}": "The level that we're currently in (1-5)",
+	"{total}": "The total number of bits or bits-equivalent contributed towards this level",
+	"{goal}": "The number of bits or bits-equivalent to complete this level",
+	"{needbits}": "The number of additional bits required to complete this level (== goal minus total)",
+	"{needsubs}": "The number of Tier 1 subs that would complete this level",
+	"{conductors}": "Either None or a list of the current conductors",
+	"{subs_conduct}": "Either Nobody or the name of the current conductor for subs",
+	"{bits_conduct}": "Either Nobody or the name of the current conductor for bits",
+	"{expires}": "Minutes:Seconds until the hype train runs out of time (only if Active)",
+	"{cooldown}": "Minutes:Seconds until the next hype train can start (only if Cooldown)",
+]);
 
 string fmt_contrib(mapping c) {
 	if (c->type == "BITS") return sprintf("%s with %d bits", c->display_name, c->total);
@@ -185,7 +198,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 			"{level}": (string)state->level,
 			"{total}": (string)state->total,
 			"{goal}": (string)state->goal,
-			"{cooldown}": sprintf("%02d:%02d", tm / 60, tm % 60),
+			"{cooldown}": sprintf("%02d:%02d", tm / 60, tm % 60), //TODO: H:M:S ?
 			"{conductors}": allcond, "{subs_conduct}": conductors->SUBS, "{bits_conduct}": conductors->BITS,
 		]);
 	} else return (["{state}": "idle"]);
