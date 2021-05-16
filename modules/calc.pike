@@ -1,4 +1,4 @@
-inherit command;
+inherit builtin_command;
 constant docstring = #"
 Calculate something, possibly involving channel variables
 
@@ -51,12 +51,21 @@ int|float evaluate(string formula) {
 	return parser->parse(next, this);
 }
 
-string process(object channel, object person, string param)
-{
-	if (param == "") return "@$$: Usage: !calc 1+2";
+constant command_description = "Calculate a simple numeric expression/formula";
+constant default_response = ([
+	"conditional": "string", "expr1": "{error}", "expr2": "",
+	"message": "@$$: {result}",
+	"otherwise": "@$$: {error}",
+]);
+constant vars_provided = ([
+	"{error}": "Blank if all is well, otherwise an error message",
+	"{result}": "The result of the calculation",
+]);
+mapping message_params(object channel, mapping person, string param) {
+	if (param == "") return (["{error}": "Usage: !calc 1+2", "{result}": ""]);
 	if (person->badges->_mod) param = channel->expand_variables(param);
-	mixed ex = catch {return sprintf("@$$: %O", evaluate(param));};
-	return "@$$: Invalid expression [" + (describe_error(ex)/"\n")[0] + "]";
+	mixed ex = catch {return (["{error}": "", "{result}": sprintf("%O", evaluate(param))]);};
+	return (["{error}": "Invalid expression [" + (describe_error(ex)/"\n")[0] + "]", "{result}": ""]);
 }
 
 protected void create(string name) {::create(name); G->G->evaluate_expr = evaluate;}
