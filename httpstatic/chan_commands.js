@@ -19,7 +19,7 @@ const flags = {
 	delay: {"": "Immediate", "30": "30 seconds", "60": "1 minute", "120": "2 minutes", "300": "5 minutes", "1800": "Half hour",
 			"3600": "One hour", "7200": "Two hours", "*": "When should this be sent?"},
 	builtin: {"": "None", "*": "Call on extra information from a built-in function or action"},
-	dest: {"": "Chat", "/w": "Whisper", "/web": "Private message", "/set": "Set a variable", /**/"/builtin": "Built-in command",/**/
+	dest: {"": "Chat", "/w": "Whisper", "/web": "Private message", "/set": "Set a variable",
 		"*": "Where should the response be sent?"},
 	action: {"": "Set the value", "add": "Add to the value", "*": "When setting a variable, should it increment or replace?"}, //TODO: Deprecate
 };
@@ -211,6 +211,14 @@ function render_command(cmd, toplevel) {
 	if (toplevel) opts.push(TR([TD(INPUT({"data-flag": "aliases", value: cmd.aliases || ""})), TD("List other command names that should do the same as this one")]));
 	let m = !cmd.target && /^(\/[a-z]+) ([a-zA-Z$%]+)$/.exec(cmd.dest);
 	if (m) {cmd.dest = m[1]; cmd.target = m[2];}
+	//Replace deprecated "/builtin" with the new way of doing builtins.
+	//It's still supported on the back end but is now hidden in the front end.
+	if (cmd.dest === "/builtin" && cmd.target) {
+		const words = cmd.target.split(" ");
+		cmd.dest = cmd.target = "";
+		cmd.builtin = words.shift().replace("!", "");
+		cmd.builtin_param = words.join(" "); //b/c JS doesn't sanely handle split(" ", 1)
+	}
 	for (let flg in flags) {
 		if (!toplevel && toplevelflags.includes(flg)) continue;
 		const opt = [];
