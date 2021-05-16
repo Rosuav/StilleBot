@@ -32,8 +32,10 @@ constant COMPLEX_TEMPLATES = ([
 	]),
 ]);
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
-{
+//Cache the set of available builtins. Needs to be called after any changes to any
+//builtin; currently, is call_out zero'd any time this file gets updated. Note that
+//this info can also be used by other things that call on the commands front end.
+void find_builtins() {
 	array templates = ({ });
 	mapping complex_templates = COMPLEX_TEMPLATES | ([]);
 	multiset seen = (<>);
@@ -52,11 +54,18 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (builtins[name]["*"] == "") builtins[name]["*"] = handler->command_description;
 		if (builtins[name][""] == "") builtins[name][""] = "!" + name; //Best not to rely on this
 	}
+	G->G->commands_templates = templates;
+	G->G->commands_complex_templates = complex_templates;
+	G->G->commands_builtins = builtins;
+}
+
+mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
+{
 	if (req->misc->is_mod) {
 		return render_template("chan_commands.md", ([
 			"vars": (["ws_type": "chan_commands", "ws_group": req->misc->channel->name,
-				"complex_templates": complex_templates, "builtins": builtins]),
-			"templates": templates * "\n",
+				"complex_templates": G->G->commands_complex_templates, "builtins": G->G->commands_builtins]),
+			"templates": G->G->commands_templates * "\n",
 			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
 				"<input type=submit value=\"Save all\">"
 			),
@@ -87,7 +96,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	return render_template("chan_commands.md", ([
 		"user text": user,
 		"commands": commands * "\n",
-		"templates": templates * "\n",
+		"templates": G->G->commands_templates * "\n",
 	]) | req->misc->chaninfo);
 }
 
@@ -298,4 +307,4 @@ void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) ms
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[1]]), 4));
 }
 
-protected void create(string name) {::create(name);}
+protected void create(string name) {::create(name); call_out(find_builtins, 0);}

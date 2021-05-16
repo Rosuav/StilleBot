@@ -42,6 +42,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"vars": ([
 			"ws_type": "chan_commands", "ws_group": "!!trigger" + req->misc->channel->name,
 			"ws_code": "chan_triggers", "complex_templates": COMPLEX_TEMPLATES,
+			"builtins": G->G->commands_builtins,
 		]),
 		"loadingmsg": "Loading...",
 		"templates": TEMPLATES * "\n",

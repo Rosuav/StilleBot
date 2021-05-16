@@ -49,6 +49,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"ws_type": nonce && "chan_monitors", "ws_group": nonce && (nonce + req->misc->channel->name),
 		"nonce": nonce || "",
 		"css_attributes": G->G->monitor_css_attributes,
+		"builtins": G->G->commands_builtins,
 	])]) | req->misc->chaninfo);
 }
 

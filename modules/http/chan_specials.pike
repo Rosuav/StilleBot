@@ -20,6 +20,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"commands": commands,
 			"SPECIAL_PARAMS": mkmapping(@Array.transpose(addcmd->SPECIAL_PARAMS)),
 			"ws_type": "chan_commands", "ws_group": "!!" + req->misc->channel->name, "ws_code": "chan_specials",
+			"builtins": G->G->commands_builtins,
 		]),
 		"loadingmsg": "Loading...",
 		"save_or_login": "<input type=submit value=\"Save all\">",
