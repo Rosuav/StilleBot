@@ -23,6 +23,11 @@ void rebuild_lines(mapping(string:mixed) doc) {
 	foreach (doc->sequence; int i; mapping line) line->position = i;
 }
 
+void update_rendered(string group) {
+	//TODO: Squelch repeated updates
+	send_updates_all(replace(group, "#", " html#"));
+}
+
 void add_line(string group, mapping(string:mixed) doc, string addme, string|void beforeid) {
 	string newid = (string)++doc->lastid;
 	mapping line = doc->lines[newid] = (["id": newid, "content": addme]);
@@ -32,32 +37,50 @@ void add_line(string group, mapping(string:mixed) doc, string addme, string|void
 	doc->sequence = doc->sequence[..pos - 1] + ({line}) + doc->sequence[pos..];
 	rebuild_lines(doc);
 	send_updates_all(group);
+	update_rendered(group);
 }
 
+array(object|mapping|string) split_channel(string|void group) {
+	[object channel, string document] = ::split_channel(group);
+	sscanf(document, "%s %s", document, string mode);
+	return ({channel, persist_status->path("mpn", channel->name)[document], mode || ""});
+}
+
+constant valid_modes = (["": 1, "html": 2, "embed": 2]); //Map to 2 if anyone can, or 1 if mods only
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string document] = split_channel(msg->group);
+	[object channel, mapping doc, string mode] = split_channel(msg->group);
+	write("Validate: %O %O %O\n", channel->name, doc, mode);
 	if (!channel) return "Bad channel";
-	mapping doc = persist_status->path("mpn", channel->name)[document];
+	conn->is_mod = channel->mods[conn->session->?user->?login];
+	write("Mod? %O\n", conn->is_mod);
+	if (valid_modes[mode] - !conn->is_mod <= 0) return "Bad mode flag"; //No default-to-HTML here - keep it dependable
 	if (!doc) return "Bad document name"; //Allowed to be ugly as it'll normally be trapped at the HTTP request end
-	conn->is_mod = channel->mods[conn->session->user->login];
 }
 
-mapping get_state(string group, string|void id)
-{
-	[object channel, string document] = split_channel(group);
+mapping get_state(string group, string|void id) {
+	[object channel, mapping doc, string mode] = split_channel(group);
 	if (!channel) return 0;
-	mapping doc = persist_status->path("mpn", channel->name)[document];
 	if (!doc) return 0; //Can't create implicitly. Create with the command first.
+	if (mode == "html") {
+		string content = doc->sequence->content * "\n";
+		content = channel->expand_variables(content);
+		#if constant(Parser.Markdown)
+		//If we don't have a Markdown parser, just keep the text as-is (assume it's HTML).
+		content = Tools.Markdown.parse(content, ([
+			"renderer": Renderer, "lexer": Lexer,
+			"attributes": 1, //Ignored if using older Pike (or, as of 2020-04-13, vanilla Pike - it's only on branch rosuav/markdown-attribute-syntax)
+		]));
+		#endif
+		return (["html": content]);
+	}
 	if (doc->lines[id]) return doc->lines[id];
 	return (["items": doc->sequence]);
 }
 
 //TODO maybe: Have a "rewrite document" message that fully starts over?
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string document] = split_channel(conn->group); if (!channel) return;
-	if (!conn->is_mod) return;
-	mapping doc = persist_status->path("mpn", channel->name)[document];
-	if (!doc) return;
+	[object channel, mapping doc, string mode] = split_channel(conn->group); if (!channel) return;
+	if (!conn->is_mod || !doc || mode != "") return;
 	if (!doc->lines[msg->id]) {add_line(conn->group, doc, (string)msg->content, msg->before); return;}
 	mapping l = doc->lines[msg->id];
 	if (!msg->content) { //Delete line
@@ -65,10 +88,12 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		m_delete(doc->lines, msg->id);
 		rebuild_lines(doc);
 		send_updates_all(conn->group);
+		update_rendered(conn->group);
 		return;
 	}
 	l->content = (string)msg->content;
 	update_one(conn->group, l->id);
+	update_rendered(conn->group);
 }
 
 mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -80,8 +105,15 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 	if (!persist_status->path("mpn", req->misc->channel->name)[document]) {
 		return "TODO: No such document, maybe suggest how to create it";
 	}
+	string mode = req->variables->mode || "";
+	if (valid_modes[mode] - !req->misc->is_mod <= 0) {
+		if (mode == "") mode = "html"; //Not logged in, didn't specify mode? Default to a simple view-only.
+		else return "TODO: Not logged in or mode not valid";
+	}
+	if (mode != "") document += " " + mode;
 	return render_template("chan_mpn.md", ([
 		"vars": (["ws_type": "chan_mpn", "ws_group": document + req->misc->channel->name]),
+		"contenttag": (["html": "div"])[mode] || "textarea",
 	]) | req->misc->chaninfo);
 }
 

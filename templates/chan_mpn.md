@@ -1,5 +1,5 @@
 # MPN - $$channel$$
 
-<textarea id=content rows=25 cols=80></textarea>
+<$$contenttag$$ id=content rows=25 cols=80></$$contenttag$$>
 
 $$save_or_login||Changes made above will be automatically saved.$$

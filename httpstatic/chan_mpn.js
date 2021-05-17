@@ -36,6 +36,11 @@ on("input", "#content", e => {
 
 const mle = DOM("#content");
 export function render(data) {
+	if (data.html) {
+		//Rendered version, not editable
+		mle.innerHTML = data.html;
+		return;
+	}
 	const l = mle.value.split("\n");
 	let startrow = 0, startcol = mle.selectionStart, endrow = 0, endcol = mle.selectionEnd;
 	let starttail = "", endtail = "", startrowlen = 0, endrowlen = 0;
