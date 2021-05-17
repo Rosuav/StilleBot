@@ -6,18 +6,6 @@ constant hidden_command = 1;
 constant require_allcmds = 1;
 constant access = "mod";
 
-/* MPN - Multi-Part Notes
-  - Permissions based on Twitch channel ownership
-    - By default, mods can edit, anybody can view. Do we need to be able to unpublish?
-  - View-only interface.
-    - Render the entire document as Markdown, with variable substitution
-    - A published version could be a browser source. Would allow more flexibility than the
-      standard Monitor system. Maybe a separate "embed" option to eliminate the surrounds.
-    - Needs to update promptly, but maybe not absolutely instantly. Have a 2s cooldown on
-      updates to the Markdown content, maybe??
-    - Should the rendered version be a separate socket group???
-*/
-
 void rebuild_lines(mapping(string:mixed) doc) {
 	if (!doc->lines) doc->lines = mkmapping(doc->sequence->id, doc->sequence);
 	foreach (doc->sequence; int i; mapping line) line->position = i;
@@ -106,6 +94,7 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 		return "TODO: No such document, maybe suggest how to create it";
 	}
 	string mode = req->variables->mode || "";
+	//TODO: mode == "embed", render like "html" but with no boilerplate
 	if (valid_modes[mode] - !req->misc->is_mod <= 0) {
 		if (mode == "") mode = "html"; //Not logged in, didn't specify mode? Default to a simple view-only.
 		else return "TODO: Not logged in or mode not valid";
