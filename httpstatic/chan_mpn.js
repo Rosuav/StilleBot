@@ -5,7 +5,6 @@ fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true
 let lines = [];
 
 on("input", "#content", e => {
-	console.log("Change!");
 	const l = e.match.value.split("\n");
 	//Scan backwards to find the trailing matches
 	let last_old = lines.length, last_new = l.length;
@@ -35,9 +34,24 @@ on("input", "#content", e => {
 	}
 });
 
+const mle = DOM("#content");
 export function render(data) {
+	const l = mle.value.split("\n");
+	let startrow = 0, startcol = mle.selectionStart, endrow = 0, endcol = mle.selectionEnd;
+	let starttail = "", endtail = "", startrowlen = 0, endrowlen = 0;
+	const dir = mle.selectionDirection;
+	for (let old of l) {
+		if (startcol > old.length + 1) {++startrow; startcol -= old.length + 1;}
+		else {starttail = old.slice(startcol); startrowlen = old.length; break;}
+	}
+	startrow = lines[startrow] ? lines[startrow].id : "";
+	for (let old of l) {
+		if (endcol > old.length + 1) {++endrow; endcol -= old.length + 1;}
+		else {endtail = old.slice(endcol); endrowlen = old.length; break;}
+	}
+	endrow = lines[endrow] ? lines[endrow].id : "";
 	if (data.id) {
-		console.log("Partial update");
+		//Partial update
 		const srv = data.data;
 		if (srv.position < 0 || srv.position >= lines.length) {
 			//Something's desynchronized. I don't care what, why, or how; just
@@ -45,14 +59,26 @@ export function render(data) {
 			ws_sync.send({cmd: "refresh"});
 			return;
 		}
-		//TODO: Get cursor position and restore it after
 		lines[srv.position] = srv;
-		DOM("#content").value = lines.map(item => item.content).join("\n");
 	}
 	else {
-		console.log("Full/initial update");
-		//TODO: Get cursor position as line,col and restore it after
+		//Full/initial update
 		lines = data.items;
-		DOM("#content").value = lines.map(item => item.content).join("\n");
 	}
+	mle.value = lines.map(item => item.content).join("\n");
+	for (let now of lines) {
+		if (now.id === startrow) {
+			if (now.content.endsWith(starttail)) startcol += now.content.length - startrowlen;
+			break;
+		}
+		startcol += now.content.length + 1;
+	}
+	for (let now of lines) {
+		if (now.id === endrow) {
+			if (now.content.endsWith(endtail)) endcol += now.content.length - endrowlen;
+			break;
+		}
+		endcol += now.content.length + 1;
+	}
+	mle.setSelectionRange(startcol, endcol, dir);
 }
