@@ -32,6 +32,17 @@ void rebuild_lines(mapping(string:mixed) doc) {
 	foreach (doc->sequence; int i; mapping line) line->position = i;
 }
 
+void add_line(string group, mapping(string:mixed) doc, string addme, string|void beforeid) {
+	string newid = (string)++doc->lastid;
+	mapping line = doc->lines[newid] = (["id": newid, "content": addme]);
+	//If a valid "before" ID is given, insert the line before that one. Otherwise, append.
+	mapping before = doc->lines[beforeid];
+	int pos = before ? before->position : sizeof(doc->sequence);
+	doc->sequence = doc->sequence[..pos - 1] + ({line}) + doc->sequence[pos..];
+	rebuild_lines(doc);
+	send_updates_all(group);
+}
+
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string document] = split_channel(msg->group);
 	if (!channel) return "Bad channel";
@@ -54,18 +65,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!conn->is_mod) return;
 	mapping doc = persist_status->path("mpn", channel->name)[document];
 	if (!doc) return;
-	if (!doc->lines[msg->id]) {
-		//New!
-		string newid = (string)++doc->lastid;
-		mapping line = doc->lines[newid] = (["id": newid, "content": (string)msg->content]);
-		//If a "before" ID is given, insert the line before that one. Otherwise, append.
-		mapping before = doc->lines[msg->before];
-		int pos = before ? before->position : sizeof(doc->sequence);
-		doc->sequence = doc->sequence[..pos - 1] + ({line}) + doc->sequence[pos..];
-		rebuild_lines(doc);
-		send_updates_all(conn->group);
-		return;
-	}
+	if (!doc->lines[msg->id]) {add_line(conn->group, doc, (string)msg->content, msg->before); return;}
 	mapping l = doc->lines[msg->id];
 	if (!msg->content) { //Delete line
 		doc->sequence = doc->sequence[..l->position - 1] + doc->sequence[l->position + 1..];
@@ -112,7 +112,7 @@ constant vars_provided = ([
 mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
 	write("message_params(channel %O, person %O, %O)\n", channel->name, person->user, param);
-	if (param == "") return (["{url}": ""]); //TODO: Give a help message?
+	if (param == "") return (["{error}": "Need a subcommand"]);
 	sscanf(param, "%s %[^ ]%*[ ]%s", string cmd, string document, string arg);
 	mapping doc;
 	string action = "";
@@ -127,10 +127,18 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string 
 		doc = persist_status->path("mpn", channel->name)[document];
 		if (!doc) return (["{error}": "Document does not exist."]);
 	}
-	if (cmd == "delete") {
-		m_delete(persist_status->path("mpn", channel->name), document);
-		persist_status->save();
-		action = "Deleted " + document + ".";
+	switch (cmd) {
+		case "delete":
+			m_delete(persist_status->path("mpn", channel->name), document);
+			persist_status->save();
+			action = "Deleted " + document + ".";
+			break;
+		case "append":
+			add_line(document + channel->name, doc, arg);
+			action = "Added line.";
+			break;
+		default:
+			return (["{error}": "Invalid subcommand " + cmd]);
 	}
 	return ([
 		"{url}": sprintf("%s/channels/%s/mpn?document=%s",
