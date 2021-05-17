@@ -11,9 +11,15 @@ void rebuild_lines(mapping(string:mixed) doc) {
 	foreach (doc->sequence; int i; mapping line) line->position = i;
 }
 
+mapping(string:int) render_squelch = ([]);
+void unsquelch(string group) {
+	if (m_delete(render_squelch, group) > 1) update_rendered(group);
+}
 void update_rendered(string group) {
-	//TODO: Squelch repeated updates
+	if (render_squelch[group]) {++render_squelch[group]; return;}
 	send_updates_all(replace(group, "#", " html#"));
+	render_squelch[group] = 1;
+	call_out(unsquelch, 1, group);
 }
 
 void add_line(string group, mapping(string:mixed) doc, string addme, string|void beforeid) {
