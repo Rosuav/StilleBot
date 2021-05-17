@@ -38,6 +38,16 @@ on("input", "#content", e => {
 export function render(data) {
 	if (data.id) {
 		console.log("Partial update");
+		const srv = data.data;
+		if (srv.position < 0 || srv.position >= lines.length) {
+			//Something's desynchronized. I don't care what, why, or how; just
+			//request a full update.
+			ws_sync.send({cmd: "refresh"});
+			return;
+		}
+		//TODO: Get cursor position and restore it after
+		lines[srv.position] = srv;
+		DOM("#content").value = lines.map(item => item.content).join("\n");
 	}
 	else {
 		console.log("Full/initial update");

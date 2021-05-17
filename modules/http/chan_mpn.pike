@@ -69,6 +69,7 @@ mapping get_state(string group, string|void id)
 	if (!channel) return 0;
 	mapping doc = persist_status->path("mpn", channel->name)[document];
 	if (!doc) return 0; //Can't create implicitly. Create with the command first.
+	if (doc->lines[id]) return doc->lines[id];
 	return (["items": doc->sequence]);
 }
 
@@ -94,9 +95,12 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!msg->content) { //Delete line
 		doc->sequence = doc->sequence[..l->position - 1] + doc->sequence[l->position + 1..];
 		m_delete(doc->lines, msg->id);
+		rebuild_lines(doc);
+		send_updates_all(conn->group);
+		return;
 	}
-	else l->content = (string)msg->content;
-	send_updates_all(conn->group); //TODO: Just update this one line
+	l->content = (string)msg->content;
+	update_one(conn->group, l->id);
 }
 
 mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
