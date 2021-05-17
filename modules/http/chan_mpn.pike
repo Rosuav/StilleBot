@@ -73,7 +73,7 @@ mapping get_state(string group, string|void id)
 	return (["items": doc->sequence]);
 }
 
-//TODO: Have a "delete line", and maybe a "rewrite document" that fully starts over
+//TODO maybe: Have a "rewrite document" message that fully starts over?
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string document] = split_channel(conn->group); if (!channel) return;
 	if (!conn->is_mod) return;
