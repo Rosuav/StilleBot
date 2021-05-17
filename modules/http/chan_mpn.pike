@@ -17,6 +17,7 @@ constant access = "mod";
       standard Monitor system. Maybe a separate "embed" option to eliminate the surrounds.
     - Needs to update promptly, but maybe not absolutely instantly. Have a 2s cooldown on
       updates to the Markdown content, maybe??
+    - Should the rendered version be a separate socket group???
   - Example for development: Current goals in Night of the Rabbit
     - Need cake, for which we need fondue (have cheese, have foil)
     - Need light in order to get to leprechaun
