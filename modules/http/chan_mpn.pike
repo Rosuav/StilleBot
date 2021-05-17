@@ -6,50 +6,24 @@ constant hidden_command = 1;
 constant require_allcmds = 1;
 constant access = "mod";
 
-/*
-
-* MPN - Multi-Part Notes
+/* MPN - Multi-Part Notes
   - Permissions based on Twitch channel ownership
-    - By default, mods can edit, nobody can view. Can "publish" to allow viewing w/o login.
+    - By default, mods can edit, anybody can view. Do we need to be able to unpublish?
   - Websocket synchronization.
-    - Cursor synchronization is going to have to be a thing.
-    - Each newline-separated block of text is a separate syncable, like triggers?
+    - Editing sync is working. Need view-only sync.
   - Markdown parsing and variable interpolation
     - Could allow mods to make full changes, but also non-mod commands can affect variables
     - A published version could be a browser source. Would allow more flexibility than the
       standard Monitor system. Maybe a separate "embed" option to eliminate the surrounds.
+    - Needs to update promptly, but maybe not absolutely instantly. Have a 2s cooldown on
+      updates to the Markdown content, maybe??
   - Example for development: Current goals in Night of the Rabbit
     - Need cake, for which we need fondue (have cheese, have foil)
     - Need light in order to get to leprechaun
     - Coffee for guard?
     - Find jokes
-  - Maintain a client-side array of lines with IDs
-  - On change:
-    - Take textarea value, split into lines
-    - If line count > array length:
-      - Iterate backwards across both. Count number of trailing matches.
-      - Insert null entries into cache array to pad to line count
-    - Else if line count < array length:
-      - Iterate backwards as above. If matching pair, keep. If nonmatching,
-        issue a Delete request for that line ID, decrement difference, and
-        carry on, until difference reaches zero.
-    - Iterate forwards, issuing Update requests for all that aren't same
-    - Server will see an Update w/o an ID and will create a new one
-    - Creation of new entries will require a Position marker ("before X"),
-      and if omitted, will result in append
-    - Make local changes to the lines array immediately.
-  - On receipt of change:
-    - Ignore textarea value and assume that all changes have gone through
-      the onchange already
-    - Get textarea cursor position as (lineID, col)
-    - Go through all server-provided line changes. If we don't have the ID,
-      insert it at the given position, or append.
-    - Recalculate desired cursor position based on line ID and column. If
-      that line has been deleted, take the next line and column 0. If it's
-      been shortened, use end of that line (before the newline).
   - Built-in !chan_mpn that has the ability to create documents (no implicits),
     append lines, and maybe change lines (if only for debugging).
-
 */
 
 void rebuild_lines(mapping(string:mixed) doc) {
