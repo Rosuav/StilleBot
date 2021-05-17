@@ -95,38 +95,51 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 constant command_description = "Create, manage, or link to an MPN document";
 constant builtin_name = "MPN document";
 constant default_response = ([
-	"conditional": "string", "expr1": "{url}", "expr2": "",
-	"message": "No such document.",
-	"otherwise": "{action} Document can be found at: {url}",
+	"conditional": "string", "expr1": "{error}", "expr2": "",
+	"message": ([
+		"conditional": "string", "expr1": "{url}", "expr2": "",
+		"message": "{action} Document does not exist.",
+		"otherwise": "{action} Document can be found at: {url}",
+	]),
+	"otherwise": "{error}",
 ]);
 constant vars_provided = ([
+	"{error}": "Error message, if any",
 	"{action}": "Action performed (if any)",
-	"{url}": "URL to the manipulated document, blank if error",
+	"{url}": "URL to the manipulated document, blank if no such document",
 ]);
 
 mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
 	write("message_params(channel %O, person %O, %O)\n", channel->name, person->user, param);
 	if (param == "") return (["{url}": ""]); //TODO: Give a help message?
-	sscanf(param, "%s %s", string cmd, string arg);
+	sscanf(param, "%s %[^ ]%*[ ]%s", string cmd, string document, string arg);
 	mapping doc;
-	if (cmd == "create" && arg && arg != "") {
-		doc = persist_status->path("mpn", channel->name, arg);
+	string action = "";
+	if (cmd == "create" && document && document != "") {
+		doc = persist_status->path("mpn", channel->name, document);
 		if (!doc->sequence) doc->sequence = ({ });
 		m_delete(doc, "lines"); rebuild_lines(doc);
 		persist_status->save();
-	}
-	else if (cmd == "delete" && arg && arg != "") {
-		m_delete(persist_status->path("mpn", channel->name), arg);
-		persist_status->save();
+		action = "Created " + document + ".";
 	}
 	else {
-		doc = persist_status->path("mpn", channel->name)[arg];
-		if (!doc) return (["{url}": ""]); //TODO: Error message?
+		doc = persist_status->path("mpn", channel->name)[document];
+		if (!doc) return (["{error}": "Document does not exist."]);
+	}
+	if (cmd == "delete") {
+		m_delete(persist_status->path("mpn", channel->name), document);
+		persist_status->save();
+		action = "Deleted " + document + ".";
 	}
 	return ([
-		"{url}": "https://......./",
-		"{action}": "",
+		"{url}": sprintf("%s/channels/%s/mpn?document=%s",
+			persist_config["ircsettings"]->http_address || "http://BOT_ADDRESS",
+			channel->name[1..],
+			Protocols.HTTP.uri_encode(document),
+		),
+		"{action}": action,
+		"{error}": "",
 	]);
 }
 
