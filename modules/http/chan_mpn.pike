@@ -9,22 +9,13 @@ constant access = "mod";
 /* MPN - Multi-Part Notes
   - Permissions based on Twitch channel ownership
     - By default, mods can edit, anybody can view. Do we need to be able to unpublish?
-  - Websocket synchronization.
-    - Editing sync is working. Need view-only sync.
-  - Markdown parsing and variable interpolation
-    - Could allow mods to make full changes, but also non-mod commands can affect variables
+  - View-only interface.
+    - Render the entire document as Markdown, with variable substitution
     - A published version could be a browser source. Would allow more flexibility than the
       standard Monitor system. Maybe a separate "embed" option to eliminate the surrounds.
     - Needs to update promptly, but maybe not absolutely instantly. Have a 2s cooldown on
       updates to the Markdown content, maybe??
     - Should the rendered version be a separate socket group???
-  - Example for development: Current goals in Night of the Rabbit
-    - Need cake, for which we need fondue (have cheese, have foil)
-    - Need light in order to get to leprechaun
-    - Coffee for guard?
-    - Find jokes
-  - Built-in !chan_mpn that has the ability to create documents (no implicits),
-    append lines, and maybe change lines (if only for debugging).
 */
 
 void rebuild_lines(mapping(string:mixed) doc) {
@@ -46,6 +37,8 @@ void add_line(string group, mapping(string:mixed) doc, string addme, string|void
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string document] = split_channel(msg->group);
 	if (!channel) return "Bad channel";
+	mapping doc = persist_status->path("mpn", channel->name)[document];
+	if (!doc) return "Bad document name"; //Allowed to be ugly as it'll normally be trapped at the HTTP request end
 	conn->is_mod = channel->mods[conn->session->user->login];
 }
 
