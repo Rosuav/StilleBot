@@ -9,13 +9,13 @@ on("input", "#content", e => {
 	const l = e.match.value.split("\n");
 	//Scan backwards to find the trailing matches
 	let last_old = lines.length, last_new = l.length;
-	while (last_old > 0 && last_new > 0 && lines[last_old - 1] == l[last_new - 1]) {
+	while (last_old > 0 && last_new > 0 && lines[last_old - 1].content == l[last_new - 1]) {
 		--last_old; --last_new;
 	}
 	if (!last_old && !last_new) return; //This change apparently did nothing - the trailing matches are the whole document.
 	//Scan forwards to find the leading matches
 	let i = 0;
-	while (i < last_old && i < last_new && lines[i] == l[i]) ++i;
+	while (i < last_old && i < last_new && lines[i].content == l[i]) ++i;
 	//Okay, we now have the changes.
 	while (i < last_old && i < last_new) {
 		//Consider this to be a changed line

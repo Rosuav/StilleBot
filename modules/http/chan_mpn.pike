@@ -69,7 +69,6 @@ mapping get_state(string group, string|void id)
 	if (!channel) return 0;
 	mapping doc = persist_status->path("mpn", channel->name)[document];
 	if (!doc) return 0; //Can't create implicitly. Create with the command first.
-	write("%O\n", doc);
 	return (["items": doc->sequence]);
 }
 
@@ -82,16 +81,21 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!doc->lines[msg->id]) {
 		//New!
 		string newid = (string)++doc->lastid;
-		mapping line = doc->lines[newid] = (["id": newid, "content": msg->content]);
+		mapping line = doc->lines[newid] = (["id": newid, "content": (string)msg->content]);
 		//If a "before" ID is given, insert the line before that one. Otherwise, append.
 		mapping before = doc->lines[msg->before];
-		int pos = before ? before->pos : sizeof(doc->sequence);
+		int pos = before ? before->position : sizeof(doc->sequence);
 		doc->sequence = doc->sequence[..pos - 1] + ({line}) + doc->sequence[pos..];
 		rebuild_lines(doc);
 		send_updates_all(conn->group);
 		return;
 	}
-	doc->lines[msg->id]->content = msg->content;
+	mapping l = doc->lines[msg->id];
+	if (!msg->content) { //Delete line
+		doc->sequence = doc->sequence[..l->position - 1] + doc->sequence[l->position + 1..];
+		m_delete(doc->lines, msg->id);
+	}
+	else l->content = (string)msg->content;
 	send_updates_all(conn->group); //TODO: Just update this one line
 }
 
@@ -130,7 +134,11 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string 
 	if (cmd == "create" && arg && arg != "") {
 		doc = persist_status->path("mpn", channel->name, arg);
 		if (!doc->sequence) doc->sequence = ({ });
-		rebuild_lines(doc);
+		m_delete(doc, "lines"); rebuild_lines(doc);
+		persist_status->save();
+	}
+	else if (cmd == "delete" && arg && arg != "") {
+		m_delete(persist_status->path("mpn", channel->name), arg);
 		persist_status->save();
 	}
 	else {
