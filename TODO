@@ -89,3 +89,4 @@
   - The URLs seem to be the same, as long as you include the prefix.
 * Allow dialogs to be dragged around??
 * Channel point redemptions triggering command-like responses
+* Modules providing more specials - VLC integration can then trigger anything
