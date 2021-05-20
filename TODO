@@ -98,3 +98,5 @@
     !song command to create, enable, or disable the special. Or maybe on first use, it
     creates a special with a condition based on a variable??
 * MPN don't say changes saved if view HTML
+* Is it possible to get a "recent messages" timeout? Would allow squishing of spam if the
+  channel is too quiet. Might not be worth it though.
