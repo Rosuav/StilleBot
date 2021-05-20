@@ -97,3 +97,4 @@
   - Don't bother deprecating report_track_changes as a config var. Just change the
     !song command to create, enable, or disable the special. Or maybe on first use, it
     creates a special with a condition based on a variable??
+* MPN don't say changes saved if view HTML
