@@ -90,3 +90,5 @@
 * Allow dialogs to be dragged around??
 * Channel point redemptions triggering command-like responses
 * Modules providing more specials - VLC integration can then trigger anything
+  - Might be best to just code them all in addcmd still, but have them named usefully
+  - Is the page getting too big? Does it need to be categorized?
