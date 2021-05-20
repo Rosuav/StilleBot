@@ -107,7 +107,7 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 	return render_template("chan_mpn.md", ([
 		"vars": (["ws_type": "chan_mpn", "ws_group": document + req->misc->channel->name]),
 		"contenttag": (["html": "div"])[mode] || "textarea",
-		"save_or_login": mode == "html" && "Changes will appear above as they are made.",
+		"save_or_login": (["html": "Changes will appear above as they are made.", "embed": ""])[mode],
 	]) | req->misc->chaninfo);
 }
 
