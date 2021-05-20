@@ -94,3 +94,6 @@
   - Is the page getting too big? Does it need to be categorized?
   - What should 'person' be? What's the absolute minimum needed? If it's hard-coded, the
     value of $$ will be arbitrary, and that's fine; but what else might be looked for?
+  - Don't bother deprecating report_track_changes as a config var. Just change the
+    !song command to create, enable, or disable the special. Or maybe on first use, it
+    creates a special with a condition based on a variable??
