@@ -20,10 +20,10 @@ void sendstatus(object channel) {
 	mapping status = G->G->vlc_status[channel->name] || ([]);
 	channel->trigger_special("!musictrack", (["user": "VLC"]), ([
 		"{playing}": (string)status->playing,
-		"{desc}": status->current,
-		"{blockpath}": status->curblock,
-		"{block}": status->curblockdesc,
-		"{track}": status->curtrack,
+		"{desc}": status->current || "",
+		"{blockpath}": status->curblock || "",
+		"{block}": status->curblockdesc || "",
+		"{track}": status->curtrack || "",
 	]));
 }
 
@@ -118,7 +118,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				if (!status->recent) status->recent = ({ });
 				if (!has_value(status->recent, status->current))
 					status->recent = (status->recent + ({status->current}))[<9..];
-				status |= (["current": desc, "curblock": block, "curblockdesc": blockdesc, "curtrack": fn]);
+				status->current = desc; status->curtrack = fn;
+				status->curblock = block; status->curblockdesc = blockdesc;
 				if (!req->variables->status) sendstatus(channel); //If there's also a status set, make both changes atomically before invoking the special.
 			}
 		}
