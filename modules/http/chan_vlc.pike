@@ -173,7 +173,7 @@ mapping get_state(string group, string|void id) {
 	[object channel, string grp] = split_channel(group);
 	if (!channel) return 0;
 	mapping status = G->G->vlc_status[channel->name];
-	if (!status) return 0;
+	if (!status) return (["playing": 0, "current": "", "recent": ({ })]);
 	if (grp == "blocks") ; // TODO
 	return (["playing": status->playing, "current": status->current, "recent": status->recent || ({ })]);
 }

@@ -3,6 +3,6 @@ const {LI} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 
 export function render(data) {
-	set_content("#nowplaying", data.playing ? "Now playing: " + data.current : "");
+	set_content("#nowplaying", data.playing ? "Now playing: " + data.current : "Not playing or integration not active");
 	set_content("#recent", data.recent.map(track => LI(track)))
 }
