@@ -64,7 +64,7 @@ constant vars_provided = ([
 ]);
 mapping message_params(object channel, mapping person, string param) {
 	if (param == "") return (["{error}": "Usage: !calc 1+2", "{result}": ""]);
-	if (person->badges->_mod) param = channel->expand_variables(param);
+	if (person->badges->?_mod) param = channel->expand_variables(param);
 	mixed ex = catch {return (["{error}": "", "{result}": sprintf("%O", evaluate(param))]);};
 	return (["{error}": "Invalid expression [" + (describe_error(ex)/"\n")[0] + "]", "{result}": ""]);
 }

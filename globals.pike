@@ -179,6 +179,8 @@ class builtin_command {
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
 	constant aliases = ({ }); //Add aliases here and they'll be defaultly aliased if shadowed too
 	//Override this either as-is or as a continue function to return the useful params.
+	//Note that the person mapping may be as skeletal as (["user": "Nobody"]) - all
+	//other keys are optional.
 	mapping|function|Concurrent.Future message_params(object channel, mapping person, string param) { }
 
 	protected void create(string name)
