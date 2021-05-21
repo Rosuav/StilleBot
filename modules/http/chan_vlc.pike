@@ -1,4 +1,5 @@
 inherit http_endpoint;
+inherit websocket_handler;
 
 //Create (if necessary) and return the VLC Auth Token
 string auth_token(object channel) {
@@ -25,6 +26,7 @@ void sendstatus(object channel) {
 		"{block}": status->curblockdesc || "",
 		"{track}": status->curtrack || "",
 	]));
+	send_updates_all(channel->name);
 }
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -144,18 +146,36 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		return (["data": "Okay, fine\n", "type": "text/plain"]);
 	}
 	if (!status) status = ([]); //but don't save it back, which we would if we're changing stuff
+	string chatnotif = "* [Enable in-chat notifications](vlc?makespecial)\n";
+	if (G->G->echocommands["!musictrack" + req->misc->channel->name]) {
+		//TODO: Show a summary of how it'll look, somehow
+		chatnotif = "* In-chat notifications active. [Configure details](specials)";
+	}
 	return render_template("vlc.md", ([
+		"vars": (["ws_type": "chan_vlc", "ws_group": req->misc->channel->name]), //TODO: "blocks" + channelname for mod view
 		"modlinks": req->misc->is_mod ?
 			"* [Configure music categories/blocks](vlc?blocks)\n"
 			"* [Download Lua script](vlc?lua) - put it into .local/share/vlc/lua/extensions\n"
 			"* [Reset credentials](vlc?authreset) - will deauthenticate any previously-downloaded Lua script\n"
-			+ (G->G->echocommands["!musictrack" + req->misc->channel->name] ? "" : "* [Enable in-chat notifications](vlc?makespecial)\n")
-			: "",
-		"nowplaying": status->playing ? "Now playing: " + status->current : "",
-		"recent": arrayp(status->recent) && sizeof(status->recent) ?
-			sprintf("Recently played:\n%{* %s\n%}\n{:#recent}", status->recent)
+			+ chatnotif
 			: "",
 	]));
+}
+
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(msg->group);
+	if (!channel) return "Bad channel";
+	conn->is_mod = channel->mods[conn->session->?user->?login];
+	if (grp == "blocks" && !conn->is_mod) return "Not logged in";
+}
+
+mapping get_state(string group, string|void id) {
+	[object channel, string grp] = split_channel(group);
+	if (!channel) return 0;
+	mapping status = G->G->vlc_status[channel->name];
+	if (!status) return 0;
+	if (grp == "blocks") ; // TODO
+	return (["playing": status->playing, "current": status->current, "recent": status->recent || ({ })]);
 }
 
 int disconnected(string channel) {

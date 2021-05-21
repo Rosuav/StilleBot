@@ -1,11 +1,11 @@
 # VLC integration
 
-$$nowplaying||$$
+(loading...)
 {:#nowplaying}
 
-$$recent||$$
-
-$$modlinks$$
+Recently played:
+* loading...
+{:#recent}
 
 <style>
 #nowplaying {
@@ -20,3 +20,5 @@ $$modlinks$$
 	background: #eeffdd;
 }
 </style>
+
+$$modlinks$$
