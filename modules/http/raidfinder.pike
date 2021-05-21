@@ -314,7 +314,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//write("DEBUG RAID LOG: %O\n", raid);
 			//TODO: Translate these by timezone (if available)
 			object time = Calendar.ISO.Second("unix", raid->time);
-			raidscore *= 0.5; //If there are tons of raids, factor the most recent ones strongly, and weaken it into the past.
+			raidscore *= 0.85; //If there are tons of raids, factor the most recent ones strongly, and weaken it into the past.
 			if (swap != raid->outgoing) {
 				strm->raids += ({sprintf(">%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
 				if (raid->time > recent) {have_recent_outgoing = 1; raidscore -= 200;}
