@@ -124,7 +124,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			}
 		}
 		if (string s = req->variables->status)
-			status->playing = s == "playing";
+			status->playing = s == "playing"; //TODO: What happens if the extension is added while we're playing already?
 		return (["data": "Okay, fine\n", "type": "text/plain"]);
 	}
 	if (!status) status = ([]); //but don't save it back, which we would if we're changing stuff
