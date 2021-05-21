@@ -272,9 +272,9 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 		command = String.trim(lower_case(command));
 		if (command == "") return 0;
 		state->cmd = command = pfx + command;
-		if (pfx == "!" && !function_object(G->G->commands->addcmd)->SPECIAL_NAMES[command]) return 0; //Only specific specials are valid
+		if (pfx == "!" && !function_object(G->G->commands->addcmd)->SPECIAL_NAMES[command]) command = 0; //Only specific specials are valid
 	}
-	command += "#" + chan; //Potentially getting us right back to conn->group, but more likely the group is just the channel
+	if (command) command += "#" + chan; //Potentially getting us right back to conn->group, but more likely the group is just the channel
 	//Validate the message. Note that there will be some things not caught by this
 	//(eg trying to set access or visibility deep within the response), but they
 	//will be merely useless, not problematic.
@@ -283,7 +283,7 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, msg);
-	if (!valid) return;
+	if (!valid || !valid[0]) return;
 	if (valid[1] != "") {
 		make_echocommand(@valid);
 		if (msg->cmdname == "" && has_prefix(conn->group, "!!trigger#")) {
@@ -295,15 +295,15 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, msg | (["response": ""]));
-	if (!valid) return;
+	if (!valid || !valid[0]) return;
 	if (valid[1] == "") make_echocommand(valid[0], 0);
 	else if (has_prefix(conn->group, "!!trigger#")) make_echocommand(@valid);
 	//Else something went wrong. Does it need a response?
 }
 void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, (["cmdname": "validateme"]) | msg);
-	if (!valid) return;
-	sscanf(valid[0], "%s#", string cmdname);
+	if (!valid) return; //But it's okay if the name is invalid.
+	string cmdname = ((valid[0] || msg->cmdname) / "#")[0];
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[1]]), 4));
 }
 

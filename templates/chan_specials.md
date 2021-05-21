@@ -27,7 +27,7 @@ $$save_or_login$$
 > <ul id=parameters></ul>
 > <div id=command_details></div>
 >
-> <p><button type=button id=save_advanced>Save</button> <button type=button class=dialog_close>Cancel</button> <button type=button id=delete_advanced>Delete?</button></p>
+> [Save](:#save_advanced) [Cancel](:.dialog_close) [Delete?](:#delete_advanced) [Raw view](:#view_raw)
 >
 {: tag=dialog #advanced_view}
 
@@ -39,3 +39,11 @@ td:nth-of-type(2n+1):not([colspan]) {white-space: nowrap;}
 .gap {height: 1em;}
 td ul {margin: 0;}
 </style>
+
+> ### Raw command view
+> Copy and paste entire commands in JSON format. Make changes as desired!
+> <div class="error" id="raw_error"></div>
+> [Compact](:.raw_view .compact) [Pretty-print](:.raw_view .pretty)
+> <textarea id=raw_text rows=10 cols=80></textarea><br>
+> [Apply changes](:#update_raw) [Close](:.dialog_close)
+{: tag=dialog #rawdlg}
