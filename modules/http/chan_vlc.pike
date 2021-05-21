@@ -37,6 +37,20 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		channel->config->vlcauthtoken = 0; auth_token(channel);
 		return redirect("vlc");
 	}
+	if (req->misc->is_mod && req->variables->makespecial) {
+		//Note that this option isn't made obvious if you already have the command,
+		//but we won't stop you from using it if you do so manually. It'll overwrite.
+		make_echocommand("!musictrack" + req->misc->channel->name, ({
+			(["dest": "/set", "message": "{playing}", "target": "vlcplaying"]),
+			(["dest": "/set", "message": "{desc}", "target": "vlccurtrack"]),
+			(["delay": 2, "message": ([
+				"conditional": "string", "expr1": "$vlcplaying$", "expr2": "1",
+				"message": "Now playing: {track} ({block})",
+				"otherwise": ""
+			])]),
+		}));
+		return redirect("vlc");
+	}
 	if (req->misc->is_mod && req->variables->lua) {
 		mapping cfg = persist_config["ircsettings"];
 		mapping resp = render_template("vlcstillebot.lua", ([
@@ -132,10 +146,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (!status) status = ([]); //but don't save it back, which we would if we're changing stuff
 	return render_template("vlc.md", ([
 		"modlinks": req->misc->is_mod ?
-			"* TODO: OBS link for embedding playback status (using variable substitution??)\n"
 			"* [Configure music categories/blocks](vlc?blocks)\n"
 			"* [Download Lua script](vlc?lua) - put it into .local/share/vlc/lua/extensions\n"
 			"* [Reset credentials](vlc?authreset) - will deauthenticate any previously-downloaded Lua script\n"
+			+ (G->G->echocommands["!musictrack" + req->misc->channel->name] ? "" : "* [Enable in-chat notifications](vlc?makespecial)\n")
 			: "",
 		"nowplaying": status->playing ? "Now playing: " + status->current : "",
 		"recent": arrayp(status->recent) && sizeof(status->recent) ?
