@@ -16,14 +16,6 @@ echoable_message process(object channel, object person, string param)
 {
 	mapping status = G->G->vlc_status[channel->name]; //May be UNDEFINED
 	if (person->badges->_mod) {
-		if (param == "report") {
-			channel->config->report_track_changes = 1;
-			return "@$$: Will report track changes as they happen.";
-		}
-		if (param == "unreport") {
-			channel->config->report_track_changes = 0;
-			return "@$$: Will no longer report track changes.";
-		}
 		//TODO: !song skip, maybe !song notes
 	}
 	if (status->?playing) return "Current song: " + status->current; //Yes, it might say "Current song: 0" if not set up right

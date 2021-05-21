@@ -25,7 +25,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				mapping ret = ([]);
 				foreach ("autoban autocommands dynamic_rewards giveaway monitors quotes timezone vlcblocks" / " ", string key)
 					if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
-				if (cfg->report_track_changes) ret->report_track_changes = 1;
 				if (cfg->allcmds) ret->active = "all";
 				else if (cfg->httponly) ret->active = "httponly";
 				mapping commands = ([]), specials = ([]);

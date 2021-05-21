@@ -117,13 +117,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				if (!status->recent) status->recent = ({ });
 				if (!has_value(status->recent, status->current))
 					status->recent = (status->recent + ({status->current}))[<9..];
-				if (channel->config->report_track_changes) {
-					//TODO: Allow the format to be customized
-					//TODO: Have a configurable delay before the message is sent.
-					//(Helps with synchronization a bit.)
-					//TODO: Do all of this through the command editor like with noobsrun
-					send_message(channel->name, "Now playing: " + track);
-				}
+				channel->trigger_special("!musictrack", (["user": "VLC"]), ([
+					"{track}": track,
+				]));
 				status->current = track;
 			}
 		}

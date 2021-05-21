@@ -13,6 +13,7 @@ constant SPECIALS = ({
 	({"!cheerbadge", ({"A viewer attains a new cheer badge", "The cheerer", "level"})}),
 	({"!channelonline", ({"The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"})}),
 	({"!channeloffline", ({"The channel has recently gone offline (stopped streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"})}),
+	({"!musictrack", ({"A track just started playing (see VLC integration)", "VLC", "track"})}),
 });
 constant SPECIAL_NAMES = (multiset)SPECIALS[*][0];
 constant SPECIAL_PARAMS = ({
@@ -27,6 +28,7 @@ constant SPECIAL_PARAMS = ({
 	({"uptime", "Number of seconds the stream has been online"}),
 	({"uptime_hms", "Time the stream has been online in hh:mm:ss format"}),
 	({"uptime_english", "Time the stream has been online in words"}),
+	({"track", "Name of the audio file that's just started"}),
 });
 constant docstring = sprintf(#"
 Add an echo command for this channel
