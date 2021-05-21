@@ -75,10 +75,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		mapping status = G->G->vlc_status[channel->name];
 		if (status->?unknowns) {
 			object re = Regexp.PCRE(body->path, Regexp.PCRE.OPTION.ANCHORED);
-			array stillunknown = ({ });
-			foreach (status->unknowns, string unk)
-				if (!re->split2(unk)) stillunknown += ({unk});
-			status->unknowns = stillunknown;
+			status->unknowns = filter(status->unknowns) {return !re->split2(__ARGS__[0]);};
 		}
 		return json_resp(channel);
 	}
