@@ -1,6 +1,29 @@
 inherit http_endpoint;
 inherit websocket_handler;
 
+/* TODO: Merge block management into the main page.
+
+This will also make it worth having a standard "Mods, log in" link on that same page.
+
+Use websocket with group "blocks#channelname" to get the blocks and the ability to edit.
+
+This group should get all regular notifications as well as changes to blocks. On the front
+end, show everything based on the incoming render message, but on the back end, don't offer
+the "blocks" group unless you're a mod.
+*/
+
+/* Am getting some duplicated messages, sometimes with "paused" followed by "playing".
+Theory: VLC is announcing status of "loading", the Lua script is announcing that as "not
+playing", and Pike is interpreting that as "paused". Then when the file finishes loading,
+it gets the "playing" status, and pushes the notif through.
+
+Solution #1: If "loading", ignore the status change; but that's supposed to be already
+happening. Check what the actual values are, and see if the "4" needs changing.
+
+Solution #2: If we change from playing to paused to playing inside 2s, suppress text. This
+would be done in the default command, NOT here in the code.
+*/
+
 //Create (if necessary) and return the VLC Auth Token
 string auth_token(object channel) {
 	if (string t = channel->config->vlcauthtoken) return t;
@@ -155,7 +178,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		"vars": (["ws_type": "chan_vlc", "ws_group": req->misc->channel->name]), //TODO: "blocks" + channelname for mod view
 		"modlinks": req->misc->is_mod ?
 			"* [Configure music categories/blocks](vlc?blocks)\n"
-			"* [Download Lua script](vlc?lua) - put it into .local/share/vlc/lua/extensions\n"
+			"* [Download Lua script](vlc?lua) - put it into .local/share/vlc/lua/extensions (create that dir if needed)\n"
 			"* [Reset credentials](vlc?authreset) - will deauthenticate any previously-downloaded Lua script\n"
 			+ chatnotif
 			: "",
