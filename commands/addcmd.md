@@ -30,7 +30,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!cheerbadge | A viewer attains a new cheer badge | The cheerer | level
 !!channelonline | The channel has recently gone online (started streaming) | The broadcaster | uptime, uptime_hms, uptime_english
 !!channeloffline | The channel has recently gone offline (stopped streaming) | The broadcaster | uptime, uptime_hms, uptime_english
-!!musictrack | A track just started playing (see VLC integration) | VLC | track
+!!musictrack | A track just started playing (see VLC integration) | VLC | desc, blockpath, block, track, playing
 
 
 Each special action has its own set of available parameters, which can be
@@ -50,7 +50,11 @@ Parameter    | Meaning
 {uptime} | Number of seconds the stream has been online
 {uptime_hms} | Time the stream has been online in hh:mm:ss format
 {uptime_english} | Time the stream has been online in words
-{track} | Name of the audio file that's just started
+{track} | Name of the audio file that's currently playing
+{block} | Name of the section/album/block of tracks currently playing, if any
+{blockpath} | Full path to the current block
+{desc} | Human-readable description of what's playing (block and track names)
+{playing} | 1 if music is playing, or 0 if paused, stopped, disconnected, etc
 
 
 Editing these special commands can also be done via the bot's web browser

@@ -1,6 +1,7 @@
 -- Install by downloading into ~/.local/share/vlc/lua/extensions or equivalent
 
 URL = "$$url$$?auth=$$auth$$&"
+nextnotif = ""
 
 function descriptor()
 	return { 
@@ -13,13 +14,15 @@ end
 
 function notify(args)
 	vlc.msg.info(args)
-	local s = vlc.stream(URL .. args)
+	local s = vlc.stream(URL .. args .. nextnotif)
+	nextnotif = ""
 	local line = s:readline() -- read a line. Return nil if EOF was reached.
 	vlc.msg.dbg("[StilleBot] Got line: " .. line)
 end
 
 function activate()
 	vlc.msg.info("[StilleBot] Activating")
+	nextnotif = "&status=" .. vlc.playlist.status() -- On first viable track message, also say whether we're playing or not
 	input_changed() -- Notify the bot with the current track name
 end
 
@@ -50,6 +53,7 @@ function playing_changed(status)
 	if status ~= 4 and status ~= last_status then
 		last_status = status
 		vlc.msg.dbg("[StilleBot] Status is now " .. status)
+		nextnotif = "" -- Shouldn't happen, but just in case, don't say status twice
 		notify("status=" .. vlc.playlist.status())
 	end
 end

@@ -1,11 +1,5 @@
 inherit http_endpoint;
 
-/*
-TODO: If logged in as a mod, provide a link usable in OBS. Have an auth token in the
-fragment; JS can fetch that and provide it during a WebSocket handshake.
-- Tie in with "Retain" disposition per TODO?
-*/
-
 //Create (if necessary) and return the VLC Auth Token
 string auth_token(object channel) {
 	if (string t = channel->config->vlcauthtoken) return t;
@@ -19,6 +13,17 @@ mapping(string:mixed) json_resp(object channel)
 	return jsonify(([
 		"blocks": channel->config->vlcblocks,
 		"unknowns": status->?unknowns || ({ }),
+	]));
+}
+
+void sendstatus(object channel) {
+	mapping status = G->G->vlc_status[channel->name] || ([]);
+	channel->trigger_special("!musictrack", (["user": "VLC"]), ([
+		"{playing}": (string)status->playing,
+		"{desc}": status->current,
+		"{blockpath}": status->curblock,
+		"{block}": status->curblockdesc,
+		"{track}": status->curtrack,
 	]));
 }
 
@@ -82,7 +87,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//It could be a valid VLC signal.
 		if (!status) status = G->G->vlc_status[channel->name] = ([]);
 		req->variables->auth = "(correct)"; werror("Got VLC notification: %O\n", req->variables);
-		if (req->variables->shutdown) werror("VLC link shutdown\n");
+		if (req->variables->shutdown) {req->variables->status = "shutdown"; werror("VLC link shutdown\n");}
 		if (string uri = req->variables->now_playing) {
 			catch {uri = utf8_to_string(uri);}; //If it's not UTF-8, pretend it's Latin-1
 			string block = dirname(uri);
@@ -106,25 +111,24 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					status->unknowns += ({block});
 				werror("New unknowns: %O\n", status->unknowns);
 			}
-			else if (blockdesc != "") blockdesc += " - ";
 			//TODO: Allow filename cleanup to be customized?
 			array tails = ({".wav", ".mp3", ".ogg"});
 			foreach (tails, string tail) if (has_suffix(fn, tail)) fn = fn[..<sizeof(tail)];
-			string track = blockdesc + fn;
-			if (track != status->current) {
+			string desc = fn; if (blockdesc != "") desc = blockdesc + " - " + desc;
+			if (desc != status->current) {
 				//Add the previous track to the recent ones (if it isn't there already)
 				//Note that the current track is NOT in the recents.
 				if (!status->recent) status->recent = ({ });
 				if (!has_value(status->recent, status->current))
 					status->recent = (status->recent + ({status->current}))[<9..];
-				channel->trigger_special("!musictrack", (["user": "VLC"]), ([
-					"{track}": track,
-				]));
-				status->current = track;
+				status |= (["current": desc, "curblock": block, "curblockdesc": blockdesc, "curtrack": fn]);
+				if (!req->variables->status) sendstatus(channel); //If there's also a status set, make both changes atomically before invoking the special.
 			}
 		}
-		if (string s = req->variables->status)
-			status->playing = s == "playing"; //TODO: What happens if the extension is added while we're playing already?
+		if (string s = req->variables->status) {
+			status->playing = s == "playing";
+			sendstatus(channel);
+		}
 		return (["data": "Okay, fine\n", "type": "text/plain"]);
 	}
 	if (!status) status = ([]); //but don't save it back, which we would if we're changing stuff
