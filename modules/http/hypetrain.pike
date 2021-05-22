@@ -14,6 +14,7 @@ int until(string ts, int now)
 }
 mapping cached = 0; int cache_time = 0;
 string token;
+mapping(string:string) bcastertoken = ([]);
 
 continue mapping|Concurrent.Future parse_hype_status(mapping data)
 {
@@ -59,29 +60,35 @@ void hypetrain_progression(string chan, array data)
 
 continue mapping|Concurrent.Future get_state(int|string channel)
 {
-	if (stringp(channel)) channel = yield(get_user_id(channel)); //Simplify usage for channel mode
-	if (G->G->webhook_active["hypetrain=" + channel] < 300)
-	{
-		write("Creating webhook for hype train %O\n", channel);
-		create_webhook(
-			"hypetrain=" + channel,
-			"https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + channel + "&first=1",
-			1800,
-			token,
-		);
-		/* Not working. See poll.pike for more info.
-		create_eventsubhook(
-			"hypetrainend=" + conn->group,
-			"channel.hype_train.end", "1",
-			(["broadcaster_user_id": (string)conn->group]),
-			token,
-		);
-		*/
+	mixed ex = catch {
+		if (stringp(channel)) channel = yield(get_user_id(channel)); //Simplify usage for channel mode
+		if (G->G->webhook_active["hypetrain=" + channel] < 300)
+		{
+			write("Creating webhook for hype train %O\n", channel);
+			create_webhook(
+				"hypetrain=" + channel,
+				"https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + channel + "&first=1",
+				1800,
+				bcastertoken[(string)channel] || token,
+			);
+			/* Not working. See poll.pike for more info.
+			create_eventsubhook(
+				"hypetrainend=" + conn->group,
+				"channel.hype_train.end", "1",
+				(["broadcaster_user_id": (string)conn->group]),
+				token,
+			);
+			*/
+		}
+		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + (string)channel,
+				(["Authorization": "Bearer " + (bcastertoken[(string)channel] || token)])));
+		mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
+		return parse_hype_status(data);
+	};
+	if (ex && arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401")) {
+		return (["error": "Authentication problem. It may help to ask the broadcaster to open this page."]);
 	}
-	mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + (string)channel,
-			(["Authorization": "Bearer " + token])));
-	mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
-	return parse_hype_status(data);
+	throw(ex);
 }
 
 void probe_hype_train(int channel)
@@ -110,8 +117,14 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//Weirdly, this seems to work even if the broadcaster_id isn't the one you logged
 		//in as, but you need to have the appropriate scope. So once we see a token that
 		//works, save it, until it doesn't. (TODO: actually discard that token once it's
-		//no longer valid.)
+		//no longer valid.) 20210523: No longer the case. Now only the broadcaster token
+		//will work. This sucks. It's no longer possible to track as a viewer. WHY NOT?!?
 		token = req->misc->session->token;
+	}
+	if (!channel) {
+		if (mapping resp = ensure_login(req, "channel:read:hype_train")) return resp;
+		bcastertoken[req->misc->session->id] = req->misc->session->token;
+		channel = req->misc->session->login;
 	}
 	mapping emotemd = G->G->emote_code_to_markdown || ([]);
 	mapping emoteids = function_object(G->G->http_endpoints->checklist)->emoteids; //Hack!
@@ -209,8 +222,10 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 protected void create(string name)
 {
 	::create(name);
-	if (G->G->webhook_endpoints->hypetrain)
+	if (G->G->webhook_endpoints->hypetrain) {
 		token = function_object(G->G->webhook_endpoints->hypetrain)->token;
+		bcastertoken = function_object(G->G->webhook_endpoints->hypetrain)->bcastertoken || ([]);
+	}
 	G->G->webhook_endpoints->hypetrain = hypetrain_progression;
 	if (!G->G->hypetrain_checktime) G->G->hypetrain_checktime = ([]);
 }

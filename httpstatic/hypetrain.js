@@ -72,6 +72,7 @@ function check_interaction() {
 
 let last_rendered = null;
 export let render = (state) => {
+	if (state.error) {set_content("#hypeinfo", P({id: "status"}, state.error)); return;}
 	check_interaction();
 	//Show the emotes that we could win (or could have won last hype train)
 	const lvl = state.cooldown && state.level; //If not active or cooling down, hide 'em all
@@ -142,6 +143,7 @@ export let render = (state) => {
 	update();
 }
 if (ismobile) render = (state) => {
+	if (state.error) {set_content("#hypeinfo", state.error); return;}
 	if (!state.expires && !state.cooldown) {
 		set_content("#status", "Cookies are done!").className = "";
 		//Technically this allows content to linger in the DOM. This is sort of a feature. Almost.
