@@ -86,7 +86,7 @@ continue mapping|Concurrent.Future get_state(int|string channel)
 		return parse_hype_status(data);
 	};
 	if (ex && arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401")) {
-		return (["error": "Authentication problem. It may help to ask the broadcaster to open this page."]);
+		return (["error": "Authentication problem. It may help to ask the broadcaster to open this page: ", "errorlink": "https://sikorsky.rosuav.com/hypetrain?reauth"]);
 	}
 	throw(ex);
 }

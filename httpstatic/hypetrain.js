@@ -72,7 +72,7 @@ function check_interaction() {
 
 let last_rendered = null;
 export let render = (state) => {
-	if (state.error) {set_content("#hypeinfo", P({id: "status"}, state.error)); return;}
+	if (state.error) {set_content("#hypeinfo", P({id: "status"}, [state.error, A({href: state.errorlink}, state.errorlink)])); return;}
 	check_interaction();
 	//Show the emotes that we could win (or could have won last hype train)
 	const lvl = state.cooldown && state.level; //If not active or cooling down, hide 'em all
