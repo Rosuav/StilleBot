@@ -70,7 +70,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			(["dest": "/set", "message": "{desc}", "target": "vlccurtrack"]),
 			(["delay": 2, "message": ([
 				"conditional": "string", "expr1": "$vlcplaying$", "expr2": "1",
-				"message": "Now playing: {track} ({block})",
+				"message": "SingsNote Now playing: {track} ({block}) SingsNote",
 				"otherwise": ""
 			])]),
 		}));
