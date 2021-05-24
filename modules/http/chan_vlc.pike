@@ -24,6 +24,12 @@ Solution #2: If we change from playing to paused to playing inside 2s, suppress 
 would be done in the default command, NOT here in the code.
 */
 
+/*
+* Hide recent tracks behind details/summary in mod view
+* Hide setup behind details/summary. Have full instructions.
+  - Have it start open if no token?
+*/
+
 //Create (if necessary) and return the VLC Auth Token
 string auth_token(object channel) {
 	if (string t = channel->config->vlcauthtoken) return t;
