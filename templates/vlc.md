@@ -32,3 +32,5 @@ details#config {
 </style>
 
 $$modconfig||$$
+
+$$save_or_login$$

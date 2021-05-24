@@ -1,17 +1,6 @@
 inherit http_endpoint;
 inherit websocket_handler;
 
-/* TODO: Merge block management into the main page.
-
-This will also make it worth having a standard "Mods, log in" link on that same page.
-
-Use websocket with group "blocks#channelname" to get the blocks and the ability to edit.
-
-This group should get all regular notifications as well as changes to blocks. On the front
-end, show everything based on the incoming render message, but on the back end, don't offer
-the "blocks" group unless you're a mod.
-*/
-
 /* Am getting some duplicated messages, sometimes with "paused" followed by "playing".
 Theory: VLC is announcing status of "loading", the Lua script is announcing that as "not
 playing", and Pike is interpreting that as "paused". Then when the file finishes loading,
@@ -160,8 +149,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	return render_template("vlc.md", ([
 		"vars": (["ws_type": "chan_vlc", "ws_group": "blocks" * req->misc->is_mod + req->misc->channel->name]),
 		"showrecents": req->misc->is_mod ? "" : "open=1",
-		"modconfig": req->misc->is_mod ? replace(MODCONFIG, "<chatnotif>", chatnotif) : "",
-	]));
+		"save_or_login": replace(MODCONFIG, "<chatnotif>", chatnotif),
+	]) | req->misc->chaninfo);
 }
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
