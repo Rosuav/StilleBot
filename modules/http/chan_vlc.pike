@@ -62,7 +62,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 {
 	object channel = req->misc->channel;
 	if (req->misc->is_mod && req->variables->authreset) {
-		return render_template("vlc.md", (["modlinks": "* [Confirm auth reset?](vlc?authresetconfirm)"]));
+		return render_template("vlc.md", (["modlinks": "* [Confirm auth reset?](vlc?authresetconfirm)", "showrecents": ""]));
 	}
 	if (req->misc->is_mod && req->variables->authresetconfirm) {
 		channel->config->vlcauthtoken = 0; auth_token(channel);
@@ -188,6 +188,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			"* [Reset credentials](vlc?authreset) - will deauthenticate any previously-downloaded Lua script\n"
 			+ chatnotif
 			: "",
+		"showrecents": req->misc->is_mod ? "" : "open=1",
 	]));
 }
 

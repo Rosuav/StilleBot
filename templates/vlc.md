@@ -3,9 +3,11 @@
 (loading...)
 {:#nowplaying}
 
-Recently played:
-* loading...
-{:#recent}
+> ### Recently played
+> * loading...
+> {:#recent}
+>
+{: tag=details $$showrecents$$}
 
 <style>
 #nowplaying {
