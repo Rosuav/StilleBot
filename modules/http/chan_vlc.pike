@@ -24,17 +24,11 @@ Solution #2: If we change from playing to paused to playing inside 2s, suppress 
 would be done in the default command, NOT here in the code.
 */
 
-/*
-* Hide recent tracks behind details/summary in mod view
-* Hide setup behind details/summary. Have full instructions.
-  - Have it start open if no token?
-*/
-
 //Additional Markdown code added if, and only if, you're logged in as a mod
 constant MODCONFIG = #"> ### Configuration
 > * <chatnotif>
 > * [Download Lua script](vlc?lua) - put it into .local/share/vlc/lua/extensions (create that dir if needed)
-> * [Reset credentials](vlc?authreset) - will deauthenticate any previously-downloaded Lua script
+> * [Reset credentials](:#authreset) - will deauthenticate any previously-downloaded Lua script
 >
 > Describe a collection of music based on its directory to have a \"block\"
 > in the special trigger.
@@ -81,10 +75,6 @@ void sendstatus(object channel) {
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	object channel = req->misc->channel;
-	if (req->misc->is_mod && req->variables->authreset) {
-		channel->config->vlcauthtoken = 0; auth_token(channel);
-		return redirect("vlc");
-	}
 	if (req->misc->is_mod && req->variables->makespecial) {
 		//Note that this option isn't made obvious if you already have the command,
 		//but we won't stop you from using it if you do so manually. It'll overwrite.
@@ -198,6 +188,13 @@ mapping get_state(string group, string|void id) {
 		if (status->unknowns) ret->items += (["id": status->unknowns[*], "desc": ""]);
 	}
 	return ret;
+}
+
+void websocket_cmd_authreset(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (grp != "blocks") return; //Not mod view? No edits.
+	channel->config->vlcauthtoken = 0;
+	auth_token(channel);
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {

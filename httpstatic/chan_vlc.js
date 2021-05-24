@@ -26,4 +26,25 @@ on("click", "button.save", e => {
 	});
 });
 
-
+//Can I turn this wait/late system into a library function somewhere?
+let confirm_authreset_wait = 0, confirm_authreset_late = 0, confirm_authreset_timeout = 0;
+function reset_confirm_authreset() {
+	clearTimeout(confirm_authreset_timeout);
+	set_content("#authreset", "Reset credentials").disabled = false;
+	confirm_authreset_wait = confirm_authreset_late = confirm_authreset_timeout = 0;
+}
+on("click", "#authreset", e => {
+	const t = +new Date;
+	if (t > confirm_authreset_wait && t < confirm_authreset_late) {
+		reset_confirm_authreset();
+		ws_sync.send({cmd: "authreset"});
+		return;
+	}
+	const WAIT_TIME = 2000, LATE_TIME = 10000;
+	confirm_authreset_wait = t + WAIT_TIME;
+	confirm_authreset_late = t + LATE_TIME;
+	const btn = e.match;
+	setTimeout(() => btn.disabled = false, WAIT_TIME);
+	confirm_authreset_timeout = setTimeout(reset_confirm_authreset, LATE_TIME);
+	set_content(btn, "Really reset credentials?").disabled = true;
+});
