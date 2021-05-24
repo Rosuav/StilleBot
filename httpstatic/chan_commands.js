@@ -1,6 +1,7 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, BR, BUTTON, INPUT, DIV, DETAILS, LABEL, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTION, FIELDSET, LEGEND, CODE} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
+import {waitlate} from "$$static||utils.js$$";
 const commands = { };
 const hooks = {
 	open_advanced: [], //Called with a command mapping when Advanced View is about to be opened
@@ -322,30 +323,13 @@ on("click", "#save_advanced", async e => {
 	ws_sync.send({cmd: "update", cmdname, response: info});
 });
 
-let confirm_delete_wait = 0, confirm_delete_late = 0, confirm_delete_timeout = 0;
-function reset_confirm_delete() {
-	clearTimeout(confirm_delete_timeout);
-	set_content("#delete_advanced", "Delete?").disabled = false;
-	confirm_delete_wait = confirm_delete_late = confirm_delete_timeout = 0;
-}
-on("click", "#delete_advanced", e => {
-	const t = +new Date;
-	if (t > confirm_delete_wait && t < confirm_delete_late) {
-		const el = document.getElementById("cmdname").firstChild;
-		const cmdname = el.nodeType === 3 ? el.data : el.value; //Duplicated from above
-		reset_confirm_delete();
-		ws_sync.send({cmd: "delete", cmdname});
-		DOM("#advanced_view").close();
-		return;
-	}
-	const WAIT_TIME = 750, LATE_TIME = 5000;
-	confirm_delete_wait = t + WAIT_TIME;
-	confirm_delete_late = t + LATE_TIME;
-	const btn = e.match;
-	setTimeout(() => btn.disabled = false, WAIT_TIME);
-	confirm_delete_timeout = setTimeout(reset_confirm_delete, LATE_TIME);
-	set_content(btn, "Really delete?").disabled = true;
-});
+on("click", "#delete_advanced", waitlate(750, 5000, "Really delete?", e => {
+	const el = document.getElementById("cmdname").firstChild;
+	const cmdname = el.nodeType === 3 ? el.data : el.value; //Duplicated from above
+	reset_confirm_delete();
+	ws_sync.send({cmd: "delete", cmdname});
+	DOM("#advanced_view").close();
+}));
 
 function get_raw() {
 	let response;
