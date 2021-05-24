@@ -23,7 +23,7 @@ export function connect(group, handler)
 		console.log("Got message from server:", data);
 		if (!handler) return;
 		if (data.cmd === "update") {
-			if (handler.render_item) {
+			if (handler.render_item && handler.render_parent) {
 				//If partial rendering is possible, we need render_item() and render_parent, and
 				//optionally render_empty() to special-case the "no items" display.
 				if (data.id) {
