@@ -75,6 +75,7 @@ void sendstatus(object channel) {
 		"{track}": status->curtrack || "",
 	]));
 	send_updates_all(channel->name);
+	send_updates_all("blocks" + channel->name);
 }
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -117,9 +118,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				//Delete.
 				channel->config->vlcblocks = channel->config->vlcblocks[..i-1] + channel->config->vlcblocks[i+1..];
 				persist_config->save();
+				send_updates_all("blocks" + channel->name);
 				return json_resp(channel);
 			}
 			b[1] = body->desc;
+			send_updates_all("blocks" + channel->name);
 			return json_resp(channel);
 		}
 		if (body->desc != "") channel->config->vlcblocks += ({({body->path, body->desc})});
@@ -130,6 +133,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			object re = Regexp.PCRE(body->path, Regexp.PCRE.OPTION.ANCHORED);
 			status->unknowns = filter(status->unknowns) {return !re->split2(__ARGS__[0]);};
 		}
+		send_updates_all("blocks" + channel->name);
 		return json_resp(channel);
 	}
 	mapping status = G->G->vlc_status[channel->name];
@@ -157,9 +161,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			}
 			if (!blockdesc) {
 				blockdesc = "";
-				if (!status->unknowns || !has_value(status->unknowns, block))
+				if (!status->unknowns || !has_value(status->unknowns, block)) {
 					status->unknowns += ({block});
-				werror("New unknowns: %O\n", status->unknowns);
+					werror("New unknowns: %O\n", status->unknowns);
+					send_updates_all("blocks" + channel->name);
+				}
 			}
 			//TODO: Allow filename cleanup to be customized?
 			array tails = ({".wav", ".mp3", ".ogg"});
