@@ -63,9 +63,7 @@
 * Move "$$autoform||$$" from markdown.html into each of the files that actually wants it
 * Use persist_status->path("bcaster_token")[chan] for all need-more-auth calls
   - May need to track the scopes used in case they need to be enhanced
-* Synchronize all deletion confirmation prompts. At the moment, I'm liking the wait/late
-  system used in commands.js - keep the button about the same size, but disable it for a
-  short timeout, after which it becomes enabled, after which it reverts to ground state.
+* Synchronize all deletion confirmation prompts to use waitlate() from utils.js
 * Importing of config export files
   - Ignore the active flag ("all" or "httponly")?
   - Create all listed commands, but don't destroy unmentioned ones (overwrite any with
