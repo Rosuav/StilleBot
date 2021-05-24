@@ -109,33 +109,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		resp->extra_heads = (["Content-disposition": "attachment; filename=vlcstillebot.lua"]);
 		return resp;
 	}
-	if (req->misc->is_mod && req->variables->saveblock && req->request_type == "POST") {
-		mixed body = Standards.JSON.decode(req->body_raw);
-		if (!mappingp(body) || !body->path || !body->desc) return (["error": 400]);
-		//See if we have the exact same input path. If so, overwrite.
-		foreach (channel->config->vlcblocks || ({ }); int i; array b) if (b[0] == body->path) {
-			if (body->desc == "") {
-				//Delete.
-				channel->config->vlcblocks = channel->config->vlcblocks[..i-1] + channel->config->vlcblocks[i+1..];
-				persist_config->save();
-				send_updates_all("blocks" + channel->name);
-				return json_resp(channel);
-			}
-			b[1] = body->desc;
-			send_updates_all("blocks" + channel->name);
-			return json_resp(channel);
-		}
-		if (body->desc != "") channel->config->vlcblocks += ({({body->path, body->desc})});
-		persist_config->save();
-		//It's entirely possible that this will match some of the unknowns. If so, clear 'em out.
-		mapping status = G->G->vlc_status[channel->name];
-		if (status->?unknowns) {
-			object re = Regexp.PCRE(body->path, Regexp.PCRE.OPTION.ANCHORED);
-			status->unknowns = filter(status->unknowns) {return !re->split2(__ARGS__[0]);};
-		}
-		send_updates_all("blocks" + channel->name);
-		return json_resp(channel);
-	}
 	mapping status = G->G->vlc_status[channel->name];
 	if (req->variables->auth && req->variables->auth == channel->config->vlcauthtoken) {
 		//It could be a valid VLC signal.
@@ -211,6 +184,11 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 mapping get_state(string group, string|void id) {
 	[object channel, string grp] = split_channel(group);
 	if (!channel) return 0;
+	if (grp == "blocks" && id) {
+		foreach (channel->config->vlcblocks || ({ }), array b)
+			if (b[0] == id) return (["id": id, "desc": b[1]]);
+		return (["id": id, "desc": ""]);
+	}
 	mapping status = G->G->vlc_status[channel->name];
 	if (!status) return (["playing": 0, "current": "", "recent": ({ })]);
 	mapping ret = (["playing": status->playing, "current": status->current, "recent": status->recent || ({ })]);
@@ -220,6 +198,41 @@ mapping get_state(string group, string|void id) {
 		if (status->unknowns) ret->items += (["id": status->unknowns[*], "desc": ""]);
 	}
 	return ret;
+}
+
+void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (grp != "blocks") return; //Not mod view? No edits.
+	//Match based on the provided ID to recognize overwrites.
+	foreach (channel->config->vlcblocks || ({ }); int i; array b) if (b[0] == msg->id) {
+		if (msg->desc == "") {
+			//Delete.
+			channel->config->vlcblocks = channel->config->vlcblocks[..i-1] + channel->config->vlcblocks[i+1..];
+		}
+		else {
+			//Update. It's perfectly valid to update the path - for instance,
+			//adjusting a regex - and it should naturally overwrite. But if not,
+			//we can do a narrow update; no other things will change.
+			b[1] = msg->desc;
+			if (msg->path == msg->id) {
+				persist_config->save();
+				update_one("blocks" + channel->name, msg->id);
+				return;
+			}
+			b[0] = msg->path;
+		}
+		msg->desc = "";
+		break;
+	}
+	if (msg->desc != "") channel->config->vlcblocks += ({({msg->path, msg->desc})});
+	persist_config->save();
+	//It's entirely possible that this will match some of the unknowns. If so, clear 'em out.
+	mapping status = G->G->vlc_status[channel->name];
+	if (status->?unknowns) {
+		object re = Regexp.PCRE(msg->path, Regexp.PCRE.OPTION.ANCHORED);
+		status->unknowns = filter(status->unknowns) {return !re->split2(__ARGS__[0]);};
+	}
+	send_updates_all("blocks" + channel->name);
 }
 
 int disconnected(string channel) {
