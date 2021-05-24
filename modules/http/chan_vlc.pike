@@ -30,6 +30,25 @@ would be done in the default command, NOT here in the code.
   - Have it start open if no token?
 */
 
+//Additional Markdown code added if, and only if, you're logged in as a mod
+constant MODCONFIG = #"> ### Configuration
+> * <chatnotif>
+> * [Download Lua script](vlc?lua) - put it into .local/share/vlc/lua/extensions (create that dir if needed)
+> * [Reset credentials](vlc?authreset) - will deauthenticate any previously-downloaded Lua script
+>
+> Describe a collection of music based on its directory to have a \"block\"
+> in the special trigger.
+>
+> Path | Description |
+> -----|-------------|-
+> -    | -
+> {:#blocks}
+>
+> Directory names will appear above when they are first played.
+>
+{: #config tag=details open=1}
+";
+
 //Create (if necessary) and return the VLC Auth Token
 string auth_token(object channel) {
 	if (string t = channel->config->vlcauthtoken) return t;
@@ -62,9 +81,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 {
 	object channel = req->misc->channel;
 	if (req->misc->is_mod && req->variables->authreset) {
-		return render_template("vlc.md", (["modlinks": "* [Confirm auth reset?](vlc?authresetconfirm)", "showrecents": ""]));
-	}
-	if (req->misc->is_mod && req->variables->authresetconfirm) {
 		channel->config->vlcauthtoken = 0; auth_token(channel);
 		return redirect("vlc");
 	}
@@ -91,14 +107,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		resp->type = "application/x-lua";
 		resp->extra_heads = (["Content-disposition": "attachment; filename=vlcstillebot.lua"]);
 		return resp;
-	}
-	if (req->misc->is_mod && req->variables->blocks) {
-		array blocks = channel->config->vlcblocks || ({ });
-		array unknowns = G->G->vlc_status[channel->name]->?unknowns || ({ });
-		return render_template("vlc_blocks.md", (["vars": ([
-			"blocks": blocks,
-			"unknowns": unknowns,
-		])]));
 	}
 	if (req->misc->is_mod && req->variables->saveblock && req->request_type == "POST") {
 		mixed body = Standards.JSON.decode(req->body_raw);
@@ -175,20 +183,15 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		return (["data": "Okay, fine\n", "type": "text/plain"]);
 	}
 	if (!status) status = ([]); //but don't save it back, which we would if we're changing stuff
-	string chatnotif = "* [Enable in-chat notifications](vlc?makespecial)\n";
+	string chatnotif = "[Enable in-chat notifications](vlc?makespecial)";
 	if (G->G->echocommands["!musictrack" + req->misc->channel->name]) {
 		//TODO: Show a summary of how it'll look, somehow
-		chatnotif = "* In-chat notifications active. [Configure details](specials)";
+		chatnotif = "In-chat notifications active. [Configure details](specials)";
 	}
 	return render_template("vlc.md", ([
 		"vars": (["ws_type": "chan_vlc", "ws_group": "blocks" * req->misc->is_mod + req->misc->channel->name]),
-		"modlinks": req->misc->is_mod ?
-			"* [Configure music categories/blocks](vlc?blocks)\n"
-			"* [Download Lua script](vlc?lua) - put it into .local/share/vlc/lua/extensions (create that dir if needed)\n"
-			"* [Reset credentials](vlc?authreset) - will deauthenticate any previously-downloaded Lua script\n"
-			+ chatnotif
-			: "",
 		"showrecents": req->misc->is_mod ? "" : "open=1",
+		"modconfig": req->misc->is_mod ? replace(MODCONFIG, "<chatnotif>", chatnotif) : "",
 	]));
 }
 
@@ -204,8 +207,13 @@ mapping get_state(string group, string|void id) {
 	if (!channel) return 0;
 	mapping status = G->G->vlc_status[channel->name];
 	if (!status) return (["playing": 0, "current": "", "recent": ({ })]);
-	if (grp == "blocks") ; // TODO
-	return (["playing": status->playing, "current": status->current, "recent": status->recent || ({ })]);
+	mapping ret = (["playing": status->playing, "current": status->current, "recent": status->recent || ({ })]);
+	if (grp == "blocks") {
+		ret->items = map(channel->config->vlcblocks || ({ }),
+			lambda(array b) {return (["id": b[0], "desc": b[1]]);});
+		if (status->unknowns) ret->items += (["id": status->unknowns[*], "desc": ""]);
+	}
+	return ret;
 }
 
 int disconnected(string channel) {

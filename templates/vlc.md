@@ -7,7 +7,7 @@
 > * loading...
 > {:#recent}
 >
-{: tag=details $$showrecents$$}
+{: tag=details $$showrecents||$$}
 
 <style>
 #nowplaying {
@@ -21,6 +21,14 @@
 #recent li:nth-child(odd) {
 	background: #eeffdd;
 }
+details {border: 1px solid transparent;} /* I love "solid transparent", ngl */
+details#config {
+	padding: 0 1.5em;
+	border: 1px solid rebeccapurple;
+}
+#config summary {
+	margin: 0 -1.5em;
+}
 </style>
 
-$$modlinks$$
+$$modconfig||$$
