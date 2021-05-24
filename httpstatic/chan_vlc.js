@@ -26,25 +26,27 @@ on("click", "button.save", e => {
 	});
 });
 
-//Can I turn this wait/late system into a library function somewhere?
-let confirm_authreset_wait = 0, confirm_authreset_late = 0, confirm_authreset_timeout = 0;
-function reset_confirm_authreset() {
-	clearTimeout(confirm_authreset_timeout);
-	set_content("#authreset", "Reset credentials").disabled = false;
-	confirm_authreset_wait = confirm_authreset_late = confirm_authreset_timeout = 0;
-}
-on("click", "#authreset", e => {
-	const t = +new Date;
-	if (t > confirm_authreset_wait && t < confirm_authreset_late) {
-		reset_confirm_authreset();
-		ws_sync.send({cmd: "authreset"});
-		return;
+function waitlate(wait_time, late_time, confirmdesc, callback) {
+	//Assumes that this is attached to a button click. Other objects
+	//and other events may work but are not guaranteed.
+	let wait = 0, late = 0, timeout = 0, btn, orig;
+	function reset() {
+		clearTimeout(timeout);
+		set_content(btn, orig).disabled = false;
+		wait = late = timeout = 0;
 	}
-	const WAIT_TIME = 2000, LATE_TIME = 10000;
-	confirm_authreset_wait = t + WAIT_TIME;
-	confirm_authreset_late = t + LATE_TIME;
-	const btn = e.match;
-	setTimeout(() => btn.disabled = false, WAIT_TIME);
-	confirm_authreset_timeout = setTimeout(reset_confirm_authreset, LATE_TIME);
-	set_content(btn, "Really reset credentials?").disabled = true;
-});
+	return e => {
+		const t = +new Date;
+		if (t > wait && t < late) {
+			reset();
+			callback(e);
+			return;
+		}
+		wait = t + wait_time; late = t + late_time;
+		btn = e.match; orig = btn.innerText;
+		setTimeout(() => btn.disabled = false, wait_time);
+		timeout = setTimeout(reset, late_time);
+		set_content(btn, confirmdesc).disabled = true;
+	};
+}
+on("click", "#authreset", waitlate(2000, 10000, "Really reset credentials?", e => ws_sync.send({cmd: "authreset"})));
