@@ -181,7 +181,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		chatnotif = "* In-chat notifications active. [Configure details](specials)";
 	}
 	return render_template("vlc.md", ([
-		"vars": (["ws_type": "chan_vlc", "ws_group": req->misc->channel->name]), //TODO: "blocks" + channelname for mod view
+		"vars": (["ws_type": "chan_vlc", "ws_group": "blocks" * req->misc->is_mod + req->misc->channel->name]),
 		"modlinks": req->misc->is_mod ?
 			"* [Configure music categories/blocks](vlc?blocks)\n"
 			"* [Download Lua script](vlc?lua) - put it into .local/share/vlc/lua/extensions (create that dir if needed)\n"
