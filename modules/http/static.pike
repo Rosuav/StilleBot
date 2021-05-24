@@ -6,7 +6,7 @@ int _get_mtime(string filename, multiset|void ignore) {
 	if (!stat) return 0;
 	multiset deps = G->G->httpstatic_deps[filename];
 	if (!deps) return stat->mtime;
-	if (!ignore) ignore = (<>);
+	if (!ignore) ignore = (<filename>);
 	int mtime = stat->mtime;
 	foreach (deps; string dep;) if (!ignore[dep]) {
 		ignore[dep] = 1;
