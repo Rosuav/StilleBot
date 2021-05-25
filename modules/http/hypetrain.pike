@@ -121,9 +121,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//will work. This sucks. It's no longer possible to track as a viewer. WHY NOT?!?
 		token = req->misc->session->token;
 	}
+	int push_updates = 0;
 	if (!channel) {
 		if (mapping resp = ensure_login(req, "channel:read:hype_train")) return resp;
 		bcastertoken[req->misc->session->id] = req->misc->session->token;
+		push_updates = 1;
 		channel = req->misc->session->login;
 	}
 	mapping emotemd = G->G->emote_code_to_markdown || ([]);
@@ -141,6 +143,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	}
 	return (channel ? get_user_id(channel) : Concurrent.resolve(0)) //TODO: Make this a continue function
 		->then(lambda(int uid) {
+			if (push_updates) send_updates_all(uid);
 			return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
 				"vars": (["ws_type": uid && "hypetrain", "ws_group": uid]),
 				"loading": uid ? "Loading hype status..." : "(no channel selected)",
