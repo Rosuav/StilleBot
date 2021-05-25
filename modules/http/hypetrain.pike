@@ -155,19 +155,24 @@ constant command_description = "Show the status of a hype train in this channel,
 constant builtin_description = "Get hype train status for this channel";
 constant builtin_name = "Hype Train";
 constant default_response = ([
-	"conditional": "string", "expr1": "{state}", "expr2": "active",
+	"conditional": "string", "expr1": "{error}", "expr2": "",
 	"message": ([
-		"conditional": "number", "expr1": "{needbits} <= 0",
-		"message": "/me MrDestructoid Hype Train status: HypeUnicorn1 HypeUnicorn2 HypeUnicorn3 HypeUnicorn4 HypeUnicorn5 HypeUnicorn6 LEVEL FIVE COMPLETE!",
-		"otherwise": "/me MrDestructoid Hype Train status: devicatParty HYPE! Level {level} requires {needbits} more bits or {needsubs} subs!"
+		"conditional": "string", "expr1": "{state}", "expr2": "active",
+		"message": ([
+			"conditional": "number", "expr1": "{needbits} <= 0",
+			"message": "/me MrDestructoid Hype Train status: HypeUnicorn1 HypeUnicorn2 HypeUnicorn3 HypeUnicorn4 HypeUnicorn5 HypeUnicorn6 LEVEL FIVE COMPLETE!",
+			"otherwise": "/me MrDestructoid Hype Train status: devicatParty HYPE! Level {level} requires {needbits} more bits or {needsubs} subs!"
+		]),
+		"otherwise": ([
+			"conditional": "string", "expr1": "{state}", "expr2": "cooldown",
+			"message": "/me MrDestructoid Hype Train status: devicatCozy The hype train is on cooldown for {cooldown}. kittenzSleep",
+			"otherwise": "/me MrDestructoid Hype Train status: NomNom Cookies are done! NomNom"
+		])
 	]),
-	"otherwise": ([
-		"conditional": "string", "expr1": "{state}", "expr2": "cooldown",
-		"message": "/me MrDestructoid Hype Train status: devicatCozy The hype train is on cooldown for {cooldown}. kittenzSleep",
-		"otherwise": "/me MrDestructoid Hype Train status: NomNom Cookies are done! NomNom"
-	])
+	"otherwise": "{error}",
 ]);
 constant vars_provided = ([
+	"{error}": "Normally blank, but can have an error message",
 	"{state}": "A keyword (idle, active, cooldown). If idle, there's no other info; if cooldown, info pertains to the last hype train.",
 	"{level}": "The level that we're currently in (1-5)",
 	"{total}": "The total number of bits or bits-equivalent contributed towards this level",
@@ -189,6 +194,7 @@ string fmt_contrib(mapping c) {
 continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
 	mapping state = yield(get_state(channel->name[1..]));
+	if (state->error) return (["{error}": state->error]);
 	mapping conductors = (["SUBS": "Nobody", "BITS": "Nobody"]);
 	string|array allcond = ({ });
 	foreach (state->conductors || ({ }), mapping c)
@@ -197,6 +203,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	if (state->expires) {
 		int tm = state->expires - time();
 		return ([
+			"{error}": "",
 			"{state}": "active",
 			"{level}": (string)state->level,
 			"{total}": (string)state->total,
@@ -209,6 +216,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	} else if (state->cooldown) {
 		int tm = state->cooldown - time();
 		return ([
+			"{error}": "",
 			"{state}": "cooldown",
 			"{level}": (string)state->level,
 			"{total}": (string)state->total,
@@ -216,7 +224,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 			"{cooldown}": sprintf("%02d:%02d", tm / 60, tm % 60), //TODO: H:M:S ?
 			"{conductors}": allcond, "{subs_conduct}": conductors->SUBS, "{bits_conduct}": conductors->BITS,
 		]);
-	} else return (["{state}": "idle"]);
+	} else return (["{error}": "", "{state}": "idle"]);
 }
 
 protected void create(string name)
