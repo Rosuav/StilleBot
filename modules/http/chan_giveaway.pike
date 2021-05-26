@@ -281,7 +281,7 @@ continue mapping|Concurrent.Future get_state(string group)
 	string chan = channel->name[1..];
 	mapping status = persist_status->path("giveaways")[chan] || ([]);
 	if (grp == "view") return ([
-		"title": channel->config->giveaway->title,
+		"title": channel->config->giveaway->?title,
 		"is_open": status->is_open, "end_time": status->end_time,
 		"last_winner": status->last_winner,
 	]);
@@ -295,7 +295,7 @@ continue mapping|Concurrent.Future get_state(string group)
 	G->G->giveaway_tickets[chan] = ([]);
 	foreach (redemptions * ({ }), mapping redem) update_ticket_count(channel->config, redem);
 	return ([
-		"title": channel->config->giveaway->title,
+		"title": channel->config->giveaway->?title,
 		"rewards": rewards, "tickets": tickets_in_order(chan),
 		"is_open": status->is_open, "end_time": status->end_time,
 		"last_winner": status->last_winner,
