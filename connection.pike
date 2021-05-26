@@ -202,8 +202,9 @@ mapping(string:mixed) gather_person_info(object person, mapping params)
 		ret->emotes = ({ });
 		foreach (params->emotes / "/", string emote) if (emote != "")
 		{
-			sscanf(emote, "%d:%d-%d", int id, int start, int end);
+			sscanf(emote, "%s:%d-%d", string|int id, int start, int end);
 			if (end < start) continue; //Shouldn't happen (probably a parse failure)
+			if (!has_prefix(id, "emotesv2")) id = (int)id;
 			ret->emotes += ({({id, start, end})});
 		}
 		sort(ret->emotes[*][1], ret->emotes); //Sort the emotes by start position
@@ -291,10 +292,10 @@ class channel_notif
 		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
 		person->measurement_offset = offset;
 		string emoted = "", residue = param;
-		foreach (person->emotes || ({ }), [int id, int start, int end]) {
-			emoted += sprintf("%s\uFFFAe%d:%s\uFFFB",
+		foreach (person->emotes || ({ }), [int|string id, int start, int end]) {
+			emoted += sprintf("%s\uFFFAe%s:%s\uFFFB",
 				residue[..start - offset - 1], //Text before the emote
-				id, residue[start-offset..end-offset], //Emote ID and name
+				(string)id, residue[start-offset..end-offset], //Emote ID and name
 			);
 			residue = residue[end - offset + 1..];
 			offset = end + 1;

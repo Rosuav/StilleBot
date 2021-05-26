@@ -42,7 +42,7 @@ string process(object channel, object person, string param)
 				//Check the emotes to see if any of them covers the beginning or end
 				//of the quoted text.
 				int startswith = 0, endswith = 0;
-				foreach (person->emotes, [int id, int start, int end])
+				foreach (person->emotes, [int|string id, int start, int end])
 				{
 					if (start - ofs <= 0) startswith = 1;
 					if (end - ofs >= sizeof(what) - 1) endswith = 1;
