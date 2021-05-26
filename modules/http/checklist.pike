@@ -6,7 +6,7 @@ inherit http_endpoint;
 constant hypetrain = replace(#"
 ## Hype Train set four
 ### Unlockable May 2021 to current
-### (Won't be highlighted due to Twitch limitations)
+### (Highlighting is unreliable due to Twitch limitations)
 HypeHeh HypeDoh HypeYum HypeShame HypeHide HypeWow<br>
 HypeTongue HypePurr HypeOoh HypeBeard HypeEyes HypeHay<br>
 HypeYesPlease HypeDerp HypeJudge HypeEars HypeCozy HypeYas<br>
@@ -169,7 +169,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			(["username": req->misc->session->user->login])))->emoticon_sets;
 	}
 	mapping have_emotes = ([]);
-	array(string) used = ({ }); //Emote names that we have AND used
+	mapping v2_have = persist_status->path("seen_emotes")[(string)req->misc->session->?user->?id] || ([]);
+	array(string) used = indices(v2_have); //Emote names that we have AND used. If they're in that mapping, they're in the checklist (by definition).
 	foreach (emotesets;; array set) foreach (set, mapping em)
 		have_emotes[em->code] = img(em->code, em->id);
 	string text = words->replace(hypetrain, lambda(string w) {
@@ -179,7 +180,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		string md = G->G->emote_code_to_markdown[w];
 		if (md && sscanf(md, "%*s/v1/%d/1.0", int id)) return img(w, id);
 		//3) Is it in the hard-coded list of known emote IDs?
-		int id = emoteids[w];
+		int|string id = emoteids[w];
 		if (id) return img(w, id);
 		return w;
 	});
