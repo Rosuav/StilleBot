@@ -105,7 +105,7 @@ HypeScream HypeSquawk HypeSus HypeHeyFriends HypeMine HypeShy";
 
 string url(int|string id) { //TODO: Dedup with the one in checklist
 	if (intp(id)) return sprintf("https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0", id);
-	return sprintf("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_%s/default/light/1.0", id);
+	return sprintf("https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0", id);
 }
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)

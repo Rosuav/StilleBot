@@ -96,57 +96,59 @@ CupFooty ZombieKappa OWL2019Tracer FightCC<br>
 
 TODO: Check Pok* (Pokemon) emotes
 ", "<br>\n", "<br>"); //Remove the newlines after the line breaks so we don't get superfluous empty paragraphs
-//For emotes that the bot has, we can get their IDs from the API.
-//For others, list them here and they'll work.
+//For V1 emotes that the bot has, we can get their IDs from the API.
+//For others, list them here and they'll work. This means that all v2 emotes have to be
+//kept here permanently, even if the bot has them. This may entail a maintenance cost
+//if the emote IDs ever change. Hopefully they won't.
 constant emoteids = ([
 	"HypeOni6": 301205427, "OWL2019Tracer": 1833318,
 	"PrimeYouDontSay": 134251, "PrimeUWot": 134252, "PrimeRlyTho": 134253,
 	//Hype Train v4: level 1
-	"HypeHeh": "62199faa2ca34ea8a0f3567990a72a14",
-	"HypeDoh": "69a7806c6837428f82475e99677d2f78",
-	"HypeYum": "a964a0cbae9348e6bd981bc714eec71d",
-	"HypeShame": "680c3aae688947d8b6067cff1a8bcdbe",
-	"HypeHide": "6a99bc2baae743099b23ed6ab07bc5c4",
-	"HypeWow": "d20a5e514e534288a1104b92c4f87834",
+	"HypeHeh": "emotesv2_62199faa2ca34ea8a0f3567990a72a14",
+	"HypeDoh": "emotesv2_69a7806c6837428f82475e99677d2f78",
+	"HypeYum": "emotesv2_a964a0cbae9348e6bd981bc714eec71d",
+	"HypeShame": "emotesv2_680c3aae688947d8b6067cff1a8bcdbe",
+	"HypeHide": "emotesv2_6a99bc2baae743099b23ed6ab07bc5c4",
+	"HypeWow": "emotesv2_d20a5e514e534288a1104b92c4f87834",
 
 	//Level 2
-	"HypeTongue": "ea658eb2e9d54833a4518c6dcc196dc6",
-	"HypePurr": "69a7806c6837428f82475e99677d2f78",
-	"HypeOoh": "994d515930a14e5396fd36d45e785d48",
-	"HypeBeard": "f045d9aa07d54961ab2ba77174305278",
-	"HypeEyes": "23f63a570f724822bb976f36572a0785",
-	"HypeHay": "50e775355dbe4992a086f24ffaa73676",
+	"HypeTongue": "emotesv2_ea658eb2e9d54833a4518c6dcc196dc6",
+	"HypePurr": "emotesv2_69a7806c6837428f82475e99677d2f78",
+	"HypeOoh": "emotesv2_994d515930a14e5396fd36d45e785d48",
+	"HypeBeard": "emotesv2_f045d9aa07d54961ab2ba77174305278",
+	"HypeEyes": "emotesv2_23f63a570f724822bb976f36572a0785",
+	"HypeHay": "emotesv2_50e775355dbe4992a086f24ffaa73676",
 
 	//Level 3
-	"HypeYesPlease": "fa2dad1f526b4c0a843d2cc4d12a7e06",
-	"HypeDerp": "22683be90477418fbc8e76e0cd91a4bd",
-	"HypeJudge": "164b5a252ea94201b7fcfcb7113fe621",
-	"HypeEars": "5ade9654471d406994040073d80c78ac",
-	"HypeCozy": "031719611d64458fb76982679a2d492a",
-	"HypeYas": "d8271fc8f0264fdc9b1ac79051f75349",
+	"HypeYesPlease": "emotesv2_fa2dad1f526b4c0a843d2cc4d12a7e06",
+	"HypeDerp": "emotesv2_22683be90477418fbc8e76e0cd91a4bd",
+	"HypeJudge": "emotesv2_164b5a252ea94201b7fcfcb7113fe621",
+	"HypeEars": "emotesv2_5ade9654471d406994040073d80c78ac",
+	"HypeCozy": "emotesv2_031719611d64458fb76982679a2d492a",
+	"HypeYas": "emotesv2_d8271fc8f0264fdc9b1ac79051f75349",
 
 	//Level 4
-	"HypeWant": "2a3cd0373fe349cf853c058f10fae0be",
-	"HypeStahp": "661e2889e5b0420a8bb0766dd6cf8010",
-	"HypeYawn": "0f5d26b991a44ffbb88188495a8dd689",
-	"HypeCreep": "19e3d6baefa5477caeaa238bf1b31fb1",
-	"HypeDisguise": "dc24652ada1e4c84a5e3ceebae4de709",
-	"HypeAttack": "f35caa0f5f3243b88cfbd85a3c9e69ff",
+	"HypeWant": "emotesv2_2a3cd0373fe349cf853c058f10fae0be",
+	"HypeStahp": "emotesv2_661e2889e5b0420a8bb0766dd6cf8010",
+	"HypeYawn": "emotesv2_0f5d26b991a44ffbb88188495a8dd689",
+	"HypeCreep": "emotesv2_19e3d6baefa5477caeaa238bf1b31fb1",
+	"HypeDisguise": "emotesv2_dc24652ada1e4c84a5e3ceebae4de709",
+	"HypeAttack": "emotesv2_f35caa0f5f3243b88cfbd85a3c9e69ff",
 
 	//Level 5
-	"HypeScream": "a05d626acce9485d83fdfb02b6553826",
-	"HypeSquawk": "07dfbc3be2af4edea09217f6f9292b40",
-	"HypeSus": "e0d949b6afb94b01b608fb3ad3e08348",
-	"HypeHeyFriends": "be2e7ac3e077421da3526633fbbb9176",
-	"HypeMine": "ebc2e7675cdd4f4f9871557cfed4b28e",
-	"HypeShy": "d4a50cfaa51f46e99e5228ce8ef953c4",
+	"HypeScream": "emotesv2_a05d626acce9485d83fdfb02b6553826",
+	"HypeSquawk": "emotesv2_07dfbc3be2af4edea09217f6f9292b40",
+	"HypeSus": "emotesv2_e0d949b6afb94b01b608fb3ad3e08348",
+	"HypeHeyFriends": "emotesv2_be2e7ac3e077421da3526633fbbb9176",
+	"HypeMine": "emotesv2_ebc2e7675cdd4f4f9871557cfed4b28e",
+	"HypeShy": "emotesv2_d4a50cfaa51f46e99e5228ce8ef953c4",
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
 
 string url(int|string id) {
 	if (intp(id)) return sprintf("https://static-cdn.jtvnw.net/emoticons/v1/%d/3.0", id);
-	return sprintf("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_%s/default/light/3.0", id);
+	return sprintf("https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/3.0", id);
 }
 
 string img(string code, int|string id)
