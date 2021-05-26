@@ -55,10 +55,13 @@ array tickets_in_order(string chan) {
 
 //Send an update based on cached data rather than forcing a full recalc every time
 void notify_websockets(string chan) {
-	if (!websocket_groups[chan]) return;
 	mapping status = persist_status->path("giveaways")[chan] || ([]);
-	send_updates_all(chan, ([
+	send_updates_all("control#" + chan, ([
 		"tickets": tickets_in_order(chan),
+		"is_open": status->is_open, "end_time": status->end_time,
+		"last_winner": status->last_winner,
+	]));
+	send_updates_all("view#" + chan, ([
 		"is_open": status->is_open, "end_time": status->end_time,
 		"last_winner": status->last_winner,
 	]));
@@ -129,7 +132,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//Logged in as the broadcaster, with sufficient perms. Give full power, and retain the token for later.
 		persist_status->path("bcaster_token")[chan] = req->misc->session->token;
 		persist_status->save();
-		login = "";
 	}
 	string token = persist_status->path("bcaster_token")[chan];
 	//TODO: Validate the token. If it's not valid, clear it and give this same error.
@@ -264,7 +266,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		"vars": (["ws_type": "chan_giveaway", "ws_group": (req->misc->is_mod ? "control" : "view") + req->misc->channel->name, "config": config]),
 		"giveaway_title": g->title, //Prepopulate the heading and the page title so it doesn't have to load and redraw
 		"modonly": req->misc->is_mod && "",
-		"login": login,
+		"login": req->misc->is_mod ? "" : login,
 	]));
 }
 
