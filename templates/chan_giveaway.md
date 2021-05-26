@@ -21,9 +21,10 @@
 >
 > <button>Save/reconfigure</button>
 > </form>
-{: tag=details}
+{: tag=details .modonly}
 
 [Master Control](:#showmaster)
+{: .modonly}
 
 > ### Master Control
 > * [Open giveaway](:.master #open) and allow people to buy tickets
@@ -34,7 +35,7 @@
 >
 {: tag=dialog #master}
 
-<div id=existing></div>
+<div id=existing class=modonly></div>
 
 <style>
 details {border: 1px solid black; padding: 0.5em; margin: 0.5em;}
@@ -63,4 +64,5 @@ details {border: 1px solid black; padding: 0.5em; margin: 0.5em;}
 	background-color: #ffe;
 	font-weight: bold;
 }
+.modonly {$$modonly||display: none$$;}
 </style>

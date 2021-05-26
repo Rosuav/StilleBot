@@ -253,6 +253,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	return render_template("chan_giveaway.md", ([
 		"vars": (["ws_type": "chan_giveaway", "ws_group": chan, "config": config]),
 		"giveaway_title": g->title,
+		"modonly": "",
 	]));
 }
 
