@@ -1,4 +1,4 @@
-# Channel points - giveaway manager
+# $$giveaway_title||Channel points - giveaway manager$$
 
 <div id=master_status>Loading giveaway status...</div>
 
@@ -7,6 +7,7 @@
 > <summary>Set up rewards</summary>
 >
 > <form id=configform>
+> * <label>Giveaway title: <input name=title size=40 placeholder="Win an awesome thing!"></label>
 > * <label>Cost per ticket: <input name=cost type=number min=1 value=1></label>
 > * <label>Description: <input name=desc size=40 placeholder="Buy # tickets"> Put a <code>#</code> symbol for multibuy count</label>
 > * <label>Multibuy options: <input name=multi size=40 placeholder="1 5 10 25 50"> List quantities that can be purchased (always include 1!)</label>

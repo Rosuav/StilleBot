@@ -2,7 +2,7 @@ import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed
 const {DIV, H3, LI, SPAN} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 
-const fields = "cost desc max multi pausemode duration".split(" ");
+const fields = "title cost desc max multi pausemode duration".split(" ");
 
 let ticker = null;
 function show_end_time(end_time, el, init) {
@@ -17,18 +17,21 @@ function show_end_time(end_time, el, init) {
 export function render(state) {
 	if (state.message) {console.warn(state.message); return;} //TODO: Handle info/warn/error, and put in the DOM, kthx
 	if (state.rewards) set_content("#existing", state.rewards.map(r => LI([r.id, " ", r.title])));
-	set_content("#ticketholders", state.tickets.map(t => LI([""+t.tickets, " ", t.name])));
-	if (ticker) {clearInterval(ticker); ticker = null;}
-	set_content("#master_status", [
-		H3("Giveaway is " + (state.is_open ? "OPEN" : "CLOSED")),
-		state.is_open && state.end_time && show_end_time(state.end_time, H3(), 1),
-		state.last_winner ? DIV([
-			"Winner: ",
-			SPAN({className: "winner_name"}, state.last_winner[1]),
-			` with ${state.last_winner[2] === 1 ? "one ticket" : state.last_winner[2] + " tickets"}` +
-			` and a ${state.last_winner[2]*100/state.last_winner[3]}% chance to win!`,
-		]) : "",
-	]).classList.toggle("is_open", !!state.is_open); //ensure that undefined becomes false :|
+	if (state.title) set_content("h1", state.title);
+	if (state.tickets) {
+		set_content("#ticketholders", state.tickets.map(t => LI([""+t.tickets, " ", t.name])));
+		if (ticker) {clearInterval(ticker); ticker = null;}
+		set_content("#master_status", [
+			H3("Giveaway is " + (state.is_open ? "OPEN" : "CLOSED")),
+			state.is_open && state.end_time && show_end_time(state.end_time, H3(), 1),
+			state.last_winner ? DIV([
+				"Winner: ",
+				SPAN({className: "winner_name"}, state.last_winner[1]),
+				` with ${state.last_winner[2] === 1 ? "one ticket" : state.last_winner[2] + " tickets"}` +
+				` and a ${state.last_winner[2]*100/state.last_winner[3]}% chance to win!`,
+			]) : "",
+		]).classList.toggle("is_open", !!state.is_open); //ensure that undefined becomes false :|
+	}
 }
 if (config.cost) {
 	const el = DOM("#configform").elements;

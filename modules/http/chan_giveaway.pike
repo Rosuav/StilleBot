@@ -1,6 +1,13 @@
 inherit http_endpoint;
 inherit websocket_handler;
 
+//TODO: Create some specials relating to giveaways:
+//- !!giveaway_started (include the title)
+//- !!giveaway_ticket (say who bought the ticket(s))
+//- !!giveaway_closed (have stats)
+//- !!giveaway_winner (will need special handling for "no tickets purchased")
+//- !!giveaway_ended (empty by default)
+
 Concurrent.Future set_redemption_status(mapping redem, string status) {
 	//Reject the redemption, refunding the points
 	return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions"
@@ -121,7 +128,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//TODO: Allow mods to control some things (if the broadcaster's set it up),
 	//and allow all users to see status. The OAuth token is retained for good reason.
 	if (chan != req->misc->session->user->login)
-		return render_template("login.md", req->misc->chaninfo); //TODO: Change the text to say "not the broadcaster" rather than "not a mod"
+		return render_template("login.md", (["save_or_login": "Logged in but not b/caster"]) | req->misc->chaninfo); //TODO: Change the text to say "not the broadcaster" rather than "not a mod"
 	int broadcaster_id = req->misc->session->user->id;
 	persist_status->path("bcaster_token")[chan] = req->misc->session->token;
 	Concurrent.Future call(string method, string query, mixed body) {
@@ -139,6 +146,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			array qty = (array(int))((body->multi || "") / " ") - ({0});
 			if (!cfg->giveaway) cfg->giveaway = ([]);
 			mapping status = persist_status->path("giveaways", chan);
+			cfg->giveaway->title = body->title;
 			cfg->giveaway->max_tickets = (int)body->max;
 			cfg->giveaway->desc_template = body->desc;
 			cfg->giveaway->cost = cost;
@@ -183,7 +191,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			make_hooks(chan, broadcaster_id);
 			persist_config->save();
 			return Concurrent.all(reqs)->then(lambda() {
-				//TODO: Notify the front end what's been changed, not just counts
+				//TODO: Notify the front end what's been changed, not just counts. What else needs to be pushed out?
+				send_updates_all(chan, (["title": cfg->giveaway->title]));
 				return jsonify((["ok": 1, "created": numcreated, "updated": numupdated, "deleted": numdeleted]));
 			});
 		}
@@ -231,6 +240,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	}
 	mapping config = ([]);
 	mapping g = cfg->giveaway || ([]);
+	config->title = g->title || "";
 	config->cost = g->cost || 1;
 	config->max = g->max_tickets || 1;
 	config->desc = g->desc_template || "";
@@ -240,7 +250,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (mapping existing = g->rewards)
 		config->multi = ((array(string))sort(values(existing))) * " ";
 	else config->multi = "";
-	return render_template("chan_giveaway.md", (["vars": (["ws_type": "chan_giveaway", "ws_group": chan, "config": config])]));
+	return render_template("chan_giveaway.md", ([
+		"vars": (["ws_type": "chan_giveaway", "ws_group": chan, "config": config]),
+		"giveaway_title": g->title,
+	]));
 }
 
 continue mapping|Concurrent.Future get_state(string|int chan)
@@ -256,6 +269,7 @@ continue mapping|Concurrent.Future get_state(string|int chan)
 	mapping status = persist_status->path("giveaways")[chan] || ([]);
 	foreach (redemptions * ({ }), mapping redem) update_ticket_count(cfg, redem);
 	return ([
+		"title": cfg->giveaway->title,
 		"rewards": rewards, "tickets": tickets_in_order(chan),
 		"is_open": status->is_open, "end_time": status->end_time,
 		"last_winner": status->last_winner,
