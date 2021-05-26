@@ -193,7 +193,7 @@ string fmt_contrib(mapping c) {
 continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
 	mapping state = yield(get_state(channel->name[1..]));
-	if (state->error) return (["{error}": state->error]);
+	if (state->error) return (["{error}": state->error + " " + state->errorlink]);
 	mapping conductors = (["SUBS": "Nobody", "BITS": "Nobody"]);
 	string|array allcond = ({ });
 	foreach (state->conductors || ({ }), mapping c)
