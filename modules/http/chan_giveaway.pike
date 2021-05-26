@@ -122,22 +122,30 @@ Concurrent.Future list_redemptions(int broadcaster_id, string chan, string id) {
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	if (mapping resp = ensure_login(req, "channel:manage:redemptions")) return resp;
 	mapping cfg = req->misc->channel->config;
 	string chan = req->misc->channel->name[1..];
-	//TODO: Allow mods to control some things (if the broadcaster's set it up),
-	//and allow all users to see status. The OAuth token is retained for good reason.
-	if (chan != req->misc->session->user->login)
-		return render_template("login.md", (["save_or_login": "Logged in but not b/caster"]) | req->misc->chaninfo); //TODO: Change the text to say "not the broadcaster" rather than "not a mod"
-	int broadcaster_id = req->misc->session->user->id;
-	persist_status->path("bcaster_token")[chan] = req->misc->session->token;
+	string login = "<a href=\"/twitchlogin?scopes=channel:manage:redemptions&next=" + req->not_query + "\">Broadcaster login</a>";
+	if (req->misc->session->?user->?login == chan && (req->misc->session->?scopes || (<>))["channel:manage:redemptions"]) {
+		//Logged in as the broadcaster, with sufficient perms. Give full power, and retain the token for later.
+		persist_status->path("bcaster_token")[chan] = req->misc->session->token;
+		persist_status->save();
+		login = "";
+	}
+	string token = persist_status->path("bcaster_token")[chan];
+	//TODO: Validate the token. If it's not valid, clear it and give this same error.
+	if (!token) return render_template("chan_giveaway.md", ([
+		"error": "This page will become available once the broadcaster has logged in and configured redemptions.",
+		"login": login,
+	]));
+	login += " | <a href=\"/twitchlogin?next=" + req->not_query + "\">Mod login</a>";
+	int broadcaster_id = (int)G->G->user_info[chan]->id; //TODO: Make this a continue function and use get_user_id() properly, don't assume it'll be in cache
 	Concurrent.Future call(string method, string query, mixed body) {
 		return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&" + query,
-			(["Authorization": "Bearer " + req->misc->session->token]),
+			(["Authorization": "Bearer " + token]),
 			(["method": method, "json": body, "return_status": !body]),
 		);
 	}
-	if (req->request_type == "PUT") {
+	if (req->misc->is_mod && req->request_type == "PUT") {
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body)) return (["error": 400]);
 		write("Got request: %O\n", body);
@@ -207,7 +215,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			rwd->title = deftitle + " #" + (sizeof(have) + 1);
 			copyfrom |= (["title": rwd->title, "cost": rwd->basecost]);
 			return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
-				(["Authorization": "Bearer " + req->misc->session->token]),
+				(["Authorization": "Bearer " + token]),
 				(["method": "POST", "json": copyfrom]),
 			)->then(lambda(mapping info) {
 				string id = info->data[0]->id;
@@ -228,7 +236,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			if (body->title || body->curcost) {
 				//Currently fire-and-forget - there's no feedback if you get something wrong.
 				twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&id=" + id,
-					(["Authorization": "Bearer " + req->misc->session->token]),
+					(["Authorization": "Bearer " + token]),
 					(["method": "PATCH", "json": (["title": rwd->title, "cost": (int)body->curcost])]),
 				);
 			}
@@ -240,26 +248,44 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	}
 	mapping config = ([]);
 	mapping g = cfg->giveaway || ([]);
-	config->title = g->title || "";
-	config->cost = g->cost || 1;
-	config->max = g->max_tickets || 1;
-	config->desc = g->desc_template || "";
-	config->pausemode = g->pausemode ? "pause" : "disable";
-	config->allow_multiwin = g->allow_multiwin ? "yes" : "no";
-	config->duration = g->duration;
-	if (mapping existing = g->rewards)
-		config->multi = ((array(string))sort(values(existing))) * " ";
-	else config->multi = "";
+	config->title = g->title || ""; //Give this one even to non-mods
+	if (req->misc->is_mod) {
+		config->cost = g->cost || 1;
+		config->max = g->max_tickets || 1;
+		config->desc = g->desc_template || "";
+		config->pausemode = g->pausemode ? "pause" : "disable";
+		config->allow_multiwin = g->allow_multiwin ? "yes" : "no";
+		config->duration = g->duration;
+		if (mapping existing = g->rewards)
+			config->multi = ((array(string))sort(values(existing))) * " ";
+		else config->multi = "";
+	}
 	return render_template("chan_giveaway.md", ([
-		"vars": (["ws_type": "chan_giveaway", "ws_group": chan, "config": config]),
-		"giveaway_title": g->title,
-		"modonly": "",
+		"vars": (["ws_type": "chan_giveaway", "ws_group": (req->misc->is_mod ? "control" : "view") + req->misc->channel->name, "config": config]),
+		"giveaway_title": g->title, //Prepopulate the heading and the page title so it doesn't have to load and redraw
+		"modonly": req->misc->is_mod && "",
+		"login": login,
 	]));
 }
 
-continue mapping|Concurrent.Future get_state(string|int chan)
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(msg->group);
+	if (!channel) return "Bad channel";
+	conn->is_mod = channel->mods[conn->session->?user->?login];
+	if (grp == "control" && !conn->is_mod) return "Not logged in";
+}
+
+continue mapping|Concurrent.Future get_state(string group)
 {
-	mapping cfg = persist_config->path("channels", chan);
+	[object channel, string grp] = split_channel(group);
+	string chan = channel->name[1..];
+	mapping status = persist_status->path("giveaways")[chan] || ([]);
+	if (grp == "view") return ([
+		"title": channel->config->giveaway->title,
+		"is_open": status->is_open, "end_time": status->end_time,
+		"last_winner": status->last_winner,
+	]);
+	if (grp != "control") return 0;
 	int broadcaster_id = yield(get_user_id(chan));
 	make_hooks(chan, broadcaster_id);
 	array rewards = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + broadcaster_id,
@@ -267,10 +293,9 @@ continue mapping|Concurrent.Future get_state(string|int chan)
 	array(array) redemptions = yield(Concurrent.all(list_redemptions(broadcaster_id, chan, rewards->id[*])));
 	//Every time a new websocket is established, fully recalculate. Guarantee fresh data.
 	G->G->giveaway_tickets[chan] = ([]);
-	mapping status = persist_status->path("giveaways")[chan] || ([]);
-	foreach (redemptions * ({ }), mapping redem) update_ticket_count(cfg, redem);
+	foreach (redemptions * ({ }), mapping redem) update_ticket_count(channel->config, redem);
 	return ([
-		"title": cfg->giveaway->title,
+		"title": channel->config->giveaway->title,
 		"rewards": rewards, "tickets": tickets_in_order(chan),
 		"is_open": status->is_open, "end_time": status->end_time,
 		"last_winner": status->last_winner,
@@ -302,7 +327,9 @@ void open_close(string chan, int broadcaster_id, string token, int want_open) {
 }
 
 void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	string chan = conn->group;
+	[object channel, string grp] = split_channel(conn->group);
+	if (grp != "control") return;
+	string chan = channel->name[1..];
 	mapping cfg = persist_config->path("channels", chan);
 	if (!cfg->giveaway) return; //No rewards, nothing to activate or anything
 	int broadcaster_id = conn->session->user->id;

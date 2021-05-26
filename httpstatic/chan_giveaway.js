@@ -18,8 +18,8 @@ export function render(state) {
 	if (state.message) {console.warn(state.message); return;} //TODO: Handle info/warn/error, and put in the DOM, kthx
 	if (state.rewards) set_content("#existing", state.rewards.map(r => LI([r.id, " ", r.title])));
 	if (state.title) set_content("h1", state.title);
-	if (state.tickets) {
-		set_content("#ticketholders", state.tickets.map(t => LI([""+t.tickets, " ", t.name])));
+	if (state.tickets) set_content("#ticketholders", state.tickets.map(t => LI([""+t.tickets, " ", t.name])));
+	if ("is_open" in state) {
 		if (ticker) {clearInterval(ticker); ticker = null;}
 		set_content("#master_status", [
 			H3("Giveaway is " + (state.is_open ? "OPEN" : "CLOSED")),

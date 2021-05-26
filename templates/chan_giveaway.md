@@ -1,8 +1,10 @@
 # $$giveaway_title||Channel points - giveaway manager$$
 
-<div id=master_status>Loading giveaway status...</div>
+<div id=master_status>$$error||Loading giveaway status...$$</div>
 
 <ul id=ticketholders></ul>
+
+$$login$$
 
 > <summary>Set up rewards</summary>
 >
