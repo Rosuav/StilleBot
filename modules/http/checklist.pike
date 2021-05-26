@@ -188,3 +188,27 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		"text": text, "emotes": sprintf("img[title=\"%s\"]", used[*]) * ", ",
 	]));
 }
+
+int message(object channel, mapping person, string msg) {
+	if (!person->uid || !person->emotes || !sizeof(person->emotes)) return 0;
+	mapping v2 = G->G->emotes_v2;
+	mapping seen = persist_status->path("seen_emotes")[(string)person->uid];
+	foreach (person->emotes, [int|string id, int start, int end]) {
+		string emotename = v2[id];
+		if (!emotename) continue;
+		if (!seen) seen = persist_status->path("seen_emotes", (string)person->uid);
+		seen[emotename] = time();
+		persist_status->save();
+	}
+}
+
+protected void create(string name) {
+	::create(name);
+	//List of emotes to track - specifically, all the v2 emote IDs shown in the checklist.
+	//No other emotes will be tracked, and we assume in general that these emotes will not
+	//ever be lost. If they are, there'll need to be some way to say "purge those I haven't
+	//used in X seconds", which will be possible, since they're stored with their timestamps.
+	mapping v2 = filter(emoteids, stringp);
+	G->G->emotes_v2 = mkmapping(values(v2), indices(v2));
+	register_hook("all-msgs", message);
+}
