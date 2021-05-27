@@ -79,12 +79,6 @@
     active. Put warnings that they're on the way out.
   - Do I track viewership hours? That might be worth keeping even w/o currency.
   - This does not affect VLC integration, just song requests.
-* Emote IDs must be strings
-  - Existing code needs to switch from numbers to strings of digits
-  - eg HypeTongue: emotesv2_ea658eb2e9d54833a4518c6dcc196dc6
-  - rosuavLove: 390023
-  - rosuavBarrel: emotesv2_e4ae2eaba06049e396e15e99a2554ccd
-  - The URLs seem to be the same, as long as you include the prefix.
 * Allow dialogs to be dragged around??
 * Channel point redemptions triggering command-like responses
 * Is it possible to get a "recent messages" timeout? Would allow squishing of spam if the
