@@ -41,8 +41,6 @@
 * Go through all the web config pages and add user() to any user-defined text
 * More specials!
   - Next song (VLC integration), incoming raid
-  - Categorize them. The current specials would be "stream support" or something, and
-    there could be categories for other things
 * Allow the bot's commands to be individually enabled and disabled for a particular channel
   using the web interface. Would be subordinate to the active_channels feature, which gives
   a hard restriction and would prevent the command from showing up for enabling if it's not

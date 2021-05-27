@@ -4,16 +4,17 @@ constant require_moderator = 1;
 //It's good to maintain this for the sake of humans anyway, but also the display makes
 //this assumption, and has only a single description for any given name.
 constant SPECIALS = ({
-	({"!follower", ({"Someone follows the channel", "The new follower", ""})}),
-	({"!sub", ({"Someone subscribes for the first time", "The subscriber", "tier"})}),
-	({"!resub", ({"Someone announces a resubscription", "The subscriber", "tier, months, streak"})}),
-	({"!subgift", ({"Someone gives a sub", "The giver", "tier, months, streak, recipient, multimonth"})}),
-	({"!subbomb", ({"Someone gives random subgifts", "The giver", "tier, gifts"})}),
-	({"!cheer", ({"Any bits are cheered (including anonymously)", "The giver", "bits"})}),
-	({"!cheerbadge", ({"A viewer attains a new cheer badge", "The cheerer", "level"})}),
-	({"!channelonline", ({"The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"})}),
-	({"!channeloffline", ({"The channel has recently gone offline (stopped streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"})}),
-	({"!musictrack", ({"A track just started playing (see VLC integration)", "VLC", "desc, blockpath, block, track, playing"})}),
+	({"!follower", ({"Someone follows the channel", "The new follower", ""}), "Stream support"}),
+	({"!sub", ({"Someone subscribes for the first time", "The subscriber", "tier"}), "Stream support"}),
+	({"!resub", ({"Someone announces a resubscription", "The subscriber", "tier, months, streak"}), "Stream support"}),
+	({"!subgift", ({"Someone gives a sub", "The giver", "tier, months, streak, recipient, multimonth"}), "Stream support"}),
+	({"!subbomb", ({"Someone gives random subgifts", "The giver", "tier, gifts"}), "Stream support"}),
+	({"!cheer", ({"Any bits are cheered (including anonymously)", "The giver", "bits"}), "Stream support"}),
+	({"!cheerbadge", ({"A viewer attains a new cheer badge", "The cheerer", "level"}), "Stream support"}),
+
+	({"!channelonline", ({"The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
+	({"!channeloffline", ({"The channel has recently gone offline (stopped streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
+	({"!musictrack", ({"A track just started playing (see VLC integration)", "VLC", "desc, blockpath, block, track, playing"}), "Status"}),
 });
 constant SPECIAL_NAMES = (multiset)SPECIALS[*][0];
 constant SPECIAL_PARAMS = ({

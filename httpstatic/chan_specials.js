@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {CODE, BR, TR, TD, SPAN, DIV, DETAILS, SUMMARY, UL, LI, INPUT} = choc;
+const {CODE, BR, TABLE, TR, TH, TD, SPAN, DIV, DETAILS, SUMMARY, UL, LI, INPUT, LABEL, STYLE} = choc;
 import {render_item as render_command, add_hook, sockmsg_validated} from "$$static||chan_commands.js$$";
 export {sockmsg_validated};
 
@@ -25,19 +25,36 @@ export function render(data) {
 		//Remap the data to be a lookup, then loop through the expected commands
 		const resp = { };
 		data.items.forEach(c => resp[c.id] = c);
-		const rows = []; //Map the commands to two TRs each
-		commands.forEach(cmd => rows.push(
-			render_command(resp[cmd.id] || {id: cmd.id, message: ""}),
-			TR(TD({colSpan: 3}, DETAILS([
-				SUMMARY("Happens when: " + cmd.desc),
-				"Parameters: ",
-				UL(describe_all_params(command_lookup[cmd.id] = cmd)),
-			]))),
-			TR({className: "gap"}, []),
-		));
+		const rows = []; //Map each command to multiple TRs
+		const tabs = [];
+		commands.forEach(cmd => {
+			const tab = cmd.tab.replace(" ", "-");
+			if (!tabs[tab]) {tabs.push(tab); tabs[tab] = cmd.tab;}
+			const row = render_command(resp[cmd.id] || {id: cmd.id, message: ""});
+			row.dataset.tabid = tab;
+			rows.push(
+				row,
+				TR({"data-tabid": tab}, TD({colSpan: 3}, DETAILS([
+					SUMMARY("Happens when: " + cmd.desc),
+					"Parameters: ",
+					UL(describe_all_params(command_lookup[cmd.id] = cmd)),
+				]))),
+				TR({className: "gap", "data-tabid": tab}, []),
+			);
+		});
 		set_content("#commands tbody", rows);
+		set_content("#tabset", tabs.map(tab => {
+			return DIV({className: "tab"}, [
+				STYLE(`#commands[data-rb="tab-${tab}"] tr[data-tabid="${tab}"] {display: table-row;}`), //Who needs a medical degree when you can do this?
+				INPUT({type: "radio", name: "tabselect", className: "tabradio", id: "tab-" + tab}),
+				LABEL({htmlFor: "tab-" + tab, className: "tablabel"}, tabs[tab]),
+			]);
+		}));
+		DOM("#commands").dataset.rb = "tab-" + tabs[0];
+		DOM("#tab-" + tabs[0]).checked = true;
 	}
 	return;
 }
+on("click", ".tabradio", e => DOM("#commands").dataset.rb = e.match.id);
 
 add_hook("open_advanced", cmd => set_content("#parameters", describe_all_params(command_lookup[cmd.id])));

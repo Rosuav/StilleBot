@@ -16,9 +16,11 @@ To respond to the contents of regular messages, see [Triggers](triggers).
 
 Channel moderators may add and edit these responses below.
 
-Special name | Response | -
--------------|----------|----
--            | $$loadingmsg$$
+<div id=tabset></div>
+
+Special&nbsp;name | Response | -
+------------------|----------|----
+-                 | $$loadingmsg$$
 {: #commands}
 
 $$save_or_login$$
@@ -38,6 +40,22 @@ th:first-of-type, th:last-of-type, td:first-of-type, td:last-of-type {width: max
 td:nth-of-type(2n+1):not([colspan]) {white-space: nowrap;}
 .gap {height: 1em;}
 td ul {margin: 0;}
+
+#tabset {display: flex;}
+.tabradio {display: none;}
+.tablabel {
+	display: inline-block;
+	cursor: pointer;
+	padding: 0.4em;
+	margin: 0 1px;
+	font-weight: bold;
+	border: 1px solid black;
+	border-radius: 0.5em 0.5em 0 0;
+	height: 2em; width: 8em;
+	text-align: center;
+}
+tr[data-tabid] {display: none;}
+.tabradio:checked + label {background: #efd;}
 </style>
 
 > ### Raw command view

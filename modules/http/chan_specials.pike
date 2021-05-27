@@ -13,8 +13,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		]) | req->misc->chaninfo);
 	}
 	object addcmd = function_object(G->G->commands->addcmd);
-	foreach (addcmd->SPECIALS, [string spec, [string desc, string originator, string params]])
-		commands += ({(["id": spec + req->misc->channel->name, "desc": desc, "originator": originator, "params": params])});
+	foreach (addcmd->SPECIALS, [string spec, [string desc, string originator, string params], string tab])
+		commands += ({(["id": spec + req->misc->channel->name, "desc": desc, "originator": originator, "params": params, "tab": tab])});
 	return render_template("chan_specials.md", ([
 		"vars": ([
 			"commands": commands,
