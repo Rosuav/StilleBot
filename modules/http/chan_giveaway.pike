@@ -2,9 +2,7 @@ inherit http_endpoint;
 inherit websocket_handler;
 
 //TODO: Create some specials relating to giveaways:
-//- !!giveaway_started (include the title)
 //- !!giveaway_ticket (say who bought the ticket(s))
-//- !!giveaway_closed (have stats)
 //- !!giveaway_winner (will need special handling for "no tickets purchased")
 //- !!giveaway_ended (empty by default)
 
@@ -304,15 +302,16 @@ continue mapping|Concurrent.Future get_state(string group)
 	]);
 }
 
+mapping(string:mixed) autoclose = ([]);
 void open_close(string chan, int broadcaster_id, string token, int want_open) {
 	mapping cfg = persist_config->path("channels", chan);
 	if (!cfg->giveaway) return; //No rewards, nothing to open/close
 	mapping status = persist_status->path("giveaways", chan);
 	status->is_open = want_open;
-	if (mixed id = m_delete(status, "autoclose")) remove_call_out(id);
+	if (mixed id = m_delete(autoclose, chan)) remove_call_out(id);
 	if (int d = want_open && cfg->giveaway->duration) {
 		status->end_time = time() + d;
-		status->autoclose = call_out(open_close, d, chan, broadcaster_id, token, 0);
+		autoclose[chan] = call_out(open_close, d, chan, broadcaster_id, token, 0);
 	}
 	else m_delete(status, "end_time");
 	//Note: Updates reward status in fire and forget mode.
@@ -326,6 +325,17 @@ void open_close(string chan, int broadcaster_id, string token, int want_open) {
 		);
 	persist_status->save();
 	notify_websockets(chan);
+	object channel = G->G->irc->channels["#" + chan];
+	if (status->is_open) channel->trigger_special("!giveaway_started", (["user": chan]), ([
+		"{title}": cfg->giveaway->title || "",
+		"{duration}": (string)cfg->giveaway->duration,
+		"{duration_hms}": describe_time_short(cfg->giveaway->duration),
+		"{duration_english}": describe_time(cfg->giveaway->duration),
+	]));
+	else channel->trigger_special("!giveaway_ended", (["user": chan]), ([
+		"{title}": cfg->giveaway->title || "",
+		//TODO: tickets_total, entries_total
+	]));
 }
 
 void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {

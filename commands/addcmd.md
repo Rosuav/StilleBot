@@ -31,6 +31,8 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!channelonline | The channel has recently gone online (started streaming) | The broadcaster | uptime, uptime_hms, uptime_english
 !!channeloffline | The channel has recently gone offline (stopped streaming) | The broadcaster | uptime, uptime_hms, uptime_english
 !!musictrack | A track just started playing (see VLC integration) | VLC | desc, blockpath, block, track, playing
+!!giveaway_started | A giveaway just opened, and people can buy tickets | The broadcaster | title, duration, duration_hms, duration_english
+!!giveaway_ended | The giveaway just ended; people can no longer buy tickets | The broadcaster | title, tickets_total, entries_total
 
 
 Each special action has its own set of available parameters, which can be
@@ -55,6 +57,12 @@ Parameter    | Meaning
 {blockpath} | Full path to the current block
 {desc} | Human-readable description of what's playing (block and track names)
 {playing} | 1 if music is playing, or 0 if paused, stopped, disconnected, etc
+{title} | Title of the giveaway (eg the thing that can be won)
+{duration} | How long the giveaway will be open (seconds; 0 means open until explicitly closed)
+{duration_hms} | Giveaway duration in hh:mm:ss format
+{duration_english} | Giveaway duration in words
+{tickets_total} | Total number of tickets bought
+{entries_total} | Total number of unique people who entered
 
 
 Editing these special commands can also be done via the bot's web browser
