@@ -36,7 +36,11 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 	}
 	else {
 		int now = person->tickets + values[redem->reward->id];
-		if (cfg->giveaway->max_tickets && now > cfg->giveaway->max_tickets) {
+		mapping status = persist_status->path("giveaways", chan);
+		int max = cfg->giveaway->max_tickets;
+		if (!status->is_open) max = 0; //If anything snuck in while we were closing the giveaway, refund it as soon as we notice.
+		else if (!max) max = now; //No maximum :)
+		if (now > max) {
 			set_redemption_status(redem, "CANCELED")->then(lambda(mixed resp) {write("Cancelled: %O\n", resp);});
 		}
 		else {
