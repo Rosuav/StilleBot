@@ -123,7 +123,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	int push_updates = 0;
 	if (!channel) channel = req->misc->session->user->login;
 	//If we get a fresh token, push updates out, in case they had errors
-	if (channel == req->misc->session->user->login && req->misc->session->token)
+	if (channel == req->misc->session->?user->?login && req->misc->session->token)
 		send_updates_all((int)req->misc->session->user->id);
 	mapping emotemd = G->G->emote_code_to_markdown || ([]);
 	mapping emoteids = function_object(G->G->http_endpoints->checklist)->emoteids; //Hack!
