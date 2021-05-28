@@ -2,9 +2,12 @@ inherit http_endpoint;
 inherit websocket_handler;
 
 //TODO: Create some specials relating to giveaways:
-//- !!giveaway_ticket (say who bought the ticket(s))
 //- !!giveaway_winner (will need special handling for "no tickets purchased")
-//- !!giveaway_ended (empty by default)
+//- !!giveaway_ended (empty by default) -- oops, rename ended to closed, then make new ended
+//TODO: Create some example specials
+//- !!giveaway_started with some simple info
+//- !!giveaway_ticket that only announces if {tickets_bought} == {tickets_total} (ie the first purchase for any user)
+//- !!giveaway_winner
 
 Concurrent.Future set_redemption_status(mapping redem, string status) {
 	//Reject the redemption, refunding the points
@@ -405,6 +408,13 @@ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			}
 			notify_websockets(chan);
 			persist_status->save();
+			channel->trigger_special("!giveaway_winner", (["user": chan]), ([
+				"{title}": cfg->giveaway->title || "",
+				"{winner_name}": status->last_winner[1],
+				"{winner_tickets}": (string)status->last_winner[2],
+				"{tickets_total}": (string)status->last_winner[3],
+				"{entries_total}": (string)sizeof(people[*][1]->tickets - ({0})),
+			]));
 			break;
 		}
 		case "cancel":

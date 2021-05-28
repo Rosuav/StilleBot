@@ -34,6 +34,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!giveaway_started | A giveaway just opened, and people can buy tickets | The broadcaster | title, duration, duration_hms, duration_english
 !!giveaway_ticket | Someone bought ticket(s) in the giveaway | Ticket buyer | title, tickets_bought, tickets_total
 !!giveaway_ended | The giveaway just ended; people can no longer buy tickets | The broadcaster | title, tickets_total, entries_total
+!!giveaway_winner | A giveaway winner has been chosen! | The broadcaster | title, winner_name, winner_tickets, tickets_total, entries_total
 
 
 Each special action has its own set of available parameters, which can be
@@ -65,6 +66,8 @@ Parameter    | Meaning
 {tickets_bought} | Number of tickets just bought
 {tickets_total} | Total number of tickets bought
 {entries_total} | Total number of unique people who entered
+{winner_name} | Name of the person who won - blank if no tickets purchased
+{winner_tickets} | Number of tickets the winner had purchased
 
 
 Editing these special commands can also be done via the bot's web browser
