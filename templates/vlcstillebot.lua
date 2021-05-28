@@ -50,7 +50,8 @@ end
 last_status = nil
 function playing_changed(status)
 	-- 2 is playing, 3 is paused, 4 is loading?? TODO: Find docs.
-	if status ~= 4 and status ~= last_status then
+	-- Not sure what 1 is, but it seems to contribute to the doubled-announcement problem.
+	if status ~= 1 and status ~= 4 and status ~= last_status then
 		last_status = status
 		vlc.msg.dbg("[StilleBot] Status is now " .. status)
 		nextnotif = "" -- Shouldn't happen, but just in case, don't say status twice
