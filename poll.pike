@@ -507,7 +507,7 @@ void webhooks(array results)
 	foreach (eventhooks, mapping hook) {
 		sscanf(hook->transport->callback || "", "http%*[s]://%*s/junket?%s=%s", string type, string arg);
 		if (!arg) continue;
-		if (!G->G->webhook_signer[type + "=" + arg]) ; //TODO: Clean these up??
+		if (!G->G->webhook_signer[type + "=" + arg]) continue; //TODO: Clean these up?? Currently we just pretend they don't exist. Not tidy.
 		G->G->webhook_active[type + "=" + arg] = 1<<60; //These don't expire automatically.
 	}
 }
