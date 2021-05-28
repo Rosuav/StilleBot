@@ -83,3 +83,5 @@
 * Channel point redemptions triggering command-like responses
 * Is it possible to get a "recent messages" timeout? Would allow squishing of spam if the
   channel is too quiet. Might not be worth it though.
+* Separate builtins from their suggested commands. It's ugly to have chan_mpn there, and
+  chan_giveaway needs to have two examples (status and refund).

@@ -6,6 +6,10 @@ inherit websocket_handler;
 //- !!giveaway_ticket that only announces if {tickets_bought} == {tickets_total} (ie the first purchase for any user)
 //- !!giveaway_winner
 
+inherit builtin_command;
+constant visibility = "hidden";
+constant access = "none";
+
 Concurrent.Future set_redemption_status(mapping redem, string status) {
 	//Reject the redemption, refunding the points
 	return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions"
@@ -479,6 +483,38 @@ void channel_on_off(string channel, int online)
 }
 int channel_online(string channel) {channel_on_off(channel, 1);}
 int channel_offline(string channel) {channel_on_off(channel, 0);}
+
+constant command_description = "Giveaway tools. Use subcommand 'status' or 'refund'.";
+constant builtin_name = "Giveaway tools";
+constant default_response = "";
+constant vars_provided = ([
+	"{error}": "Error message, if any",
+	"{action}": "Action taken - same as subcommand, or 'none' if there was nothing to do",
+	"{tickets}": "Number of tickets you have (or had)",
+]);
+
+mapping|Concurrent.Future message_params(object channel, mapping person, string param)
+{
+	if (param == "") return (["{error}": "Need a subcommand"]);
+	sscanf(param, "%[^ ]%*[ ]%s", string cmd, string arg);
+	if (cmd != "refund" && cmd != "status") return (["{error}": "Invalid subcommand"]);
+	if (!channel->config->giveaway) return (["{error}": "Giveaways not active"]); //Not the same as "giveaway not open", this one will not normally be seen
+	string chan = channel->name[1..];
+	mapping people = G->G->giveaway_tickets[chan] || ([]);
+	mapping you = people[(string)person->uid] || ([]);
+	if (cmd == "refund") {
+		mapping status = persist_status->path("giveaways", chan);
+		if (!you->tickets) return (["{error}": "", "{action}": "none", "{tickets}": "0"]);
+		if (!status->is_open) return (["{error}": "The giveaway is closed and you can't refund tickets, sorry!"]);
+		foreach (values(you->redemptions), mapping redem)
+			set_redemption_status(redem, "CANCELED");
+	}
+	return ([
+		"{tickets}": (string)you->tickets,
+		"{action}": cmd,
+		"{error}": "",
+	]);
+}
 
 protected void create(string name)
 {
