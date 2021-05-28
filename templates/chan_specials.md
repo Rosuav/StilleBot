@@ -40,7 +40,7 @@ table {width: 100%;}
 th, td {width: 100%;}
 th:first-of-type, th:last-of-type, td:first-of-type, td:last-of-type {width: max-content;}
 td:nth-of-type(2n+1):not([colspan]) {white-space: nowrap;}
-.gap {height: 1em;}
+.gap {height: 1em; background: inherit;}
 td ul {margin: 0;}
 
 #tabset {display: flex;}
@@ -56,7 +56,7 @@ td ul {margin: 0;}
 	height: 2em; width: 8em;
 	text-align: center;
 }
-tr[data-tabid] {display: none;}
+tr[data-tabid] {display: none; background: #e1e1e1;}
 .tabradio:checked + label {background: #efd;}
 </style>
 
