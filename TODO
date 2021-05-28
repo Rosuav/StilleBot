@@ -20,6 +20,8 @@
       and you can only use it once every hour.
     - Very short cooldown (2 seconds), 'else' adds to variable and has output with a two
       second delay that emits everything from the variable. Will batch up busy responses.
+      - Would be perfect in a !!giveaway_ticket special, or anything where it's normal
+        for lots of people to use it all at once.
   - And then there are the insane things that shouldn't clutter up the UI.
     - Attach event to !!cheer, !!sub, !!resub, !!subgift - ideally aliased
     - Send to !hypetrain. If {state} is not "idle", do nothing
