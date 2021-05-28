@@ -23,6 +23,8 @@ Special&nbsp;name | Response | -
 -                 | $$loadingmsg$$
 {: #commands}
 
+<p></p>
+
 $$save_or_login$$
 
 > ### Edit special response <code id=cmdname></code>

@@ -33,13 +33,13 @@ export function render(data) {
 			const row = render_command(resp[cmd.id] || {id: cmd.id, message: ""});
 			row.dataset.tabid = tab;
 			rows.push(
+				TR({className: "gap", "data-tabid": tab}, []),
 				row,
 				TR({"data-tabid": tab}, TD({colSpan: 3}, DETAILS([
 					SUMMARY("Happens when: " + cmd.desc),
 					"Parameters: ",
 					UL(describe_all_params(command_lookup[cmd.id] = cmd)),
 				]))),
-				TR({className: "gap", "data-tabid": tab}, []),
 			);
 		});
 		set_content("#commands tbody", rows);
