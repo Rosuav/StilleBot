@@ -326,6 +326,8 @@ void open_close(string chan, int broadcaster_id, string token, int want_open) {
 	persist_status->save();
 	notify_websockets(chan);
 	object channel = G->G->irc->channels["#" + chan];
+	array people = values(G->G->giveaway_tickets[chan]);
+	int tickets = `+(@people->tickets), entrants = sizeof(people->tickets - ({0}));
 	if (status->is_open) channel->trigger_special("!giveaway_started", (["user": chan]), ([
 		"{title}": cfg->giveaway->title || "",
 		"{duration}": (string)cfg->giveaway->duration,
@@ -334,7 +336,8 @@ void open_close(string chan, int broadcaster_id, string token, int want_open) {
 	]));
 	else channel->trigger_special("!giveaway_ended", (["user": chan]), ([
 		"{title}": cfg->giveaway->title || "",
-		//TODO: tickets_total, entries_total
+		"{tickets_total}": (string)tickets,
+		"{entries_total}": (string)entrants,
 	]));
 }
 
