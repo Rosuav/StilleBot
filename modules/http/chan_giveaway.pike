@@ -1,9 +1,6 @@
 inherit http_endpoint;
 inherit websocket_handler;
 
-//TODO: Create some specials relating to giveaways:
-//- !!giveaway_winner (will need special handling for "no tickets purchased")
-//- !!giveaway_ended (empty by default) -- oops, rename ended to closed, then make new ended
 //TODO: Create some example specials
 //- !!giveaway_started with some simple info
 //- !!giveaway_ticket that only announces if {tickets_bought} == {tickets_total} (ie the first purchase for any user)
@@ -354,7 +351,7 @@ void open_close(string chan, int broadcaster_id, string token, int want_open) {
 		"{duration_hms}": describe_time_short(cfg->giveaway->duration),
 		"{duration_english}": describe_time(cfg->giveaway->duration),
 	]));
-	else channel->trigger_special("!giveaway_ended", (["user": chan]), ([
+	else channel->trigger_special("!giveaway_closed", (["user": chan]), ([
 		"{title}": cfg->giveaway->title || "",
 		"{tickets_total}": (string)tickets,
 		"{entries_total}": (string)entrants,
@@ -430,6 +427,14 @@ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg)
 					foreach (redemptions * ({ }), mapping redem)
 						set_redemption_status(redem, msg->action == "cancel" ? "CANCELED" : "FULFILLED");
 				});
+			array people = values(G->G->giveaway_tickets[chan]);
+			int tickets = `+(@people->tickets), entrants = sizeof(people->tickets - ({0}));
+			channel->trigger_special("!giveaway_ended", (["user": chan]), ([
+				"{title}": cfg->giveaway->title || "",
+				"{tickets_total}": (string)tickets,
+				"{entries_total}": (string)entrants,
+				"{giveaway_cancelled}": (string)(msg->action == "cancel"),
+			]));
 		}
 	}
 }

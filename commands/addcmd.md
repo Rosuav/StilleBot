@@ -33,8 +33,9 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!musictrack | A track just started playing (see VLC integration) | VLC | desc, blockpath, block, track, playing
 !!giveaway_started | A giveaway just opened, and people can buy tickets | The broadcaster | title, duration, duration_hms, duration_english
 !!giveaway_ticket | Someone bought ticket(s) in the giveaway | Ticket buyer | title, tickets_bought, tickets_total
-!!giveaway_ended | The giveaway just ended; people can no longer buy tickets | The broadcaster | title, tickets_total, entries_total
+!!giveaway_closed | The giveaway just closed; people can no longer buy tickets | The broadcaster | title, tickets_total, entries_total
 !!giveaway_winner | A giveaway winner has been chosen! | The broadcaster | title, winner_name, winner_tickets, tickets_total, entries_total
+!!giveaway_ended | The giveaway is fully concluded and all ticket purchases are nonrefundable. | The broadcaster | title, tickets_total, entries_total, giveaway_cancelled
 
 
 Each special action has its own set of available parameters, which can be
@@ -68,6 +69,7 @@ Parameter    | Meaning
 {entries_total} | Total number of unique people who entered
 {winner_name} | Name of the person who won - blank if no tickets purchased
 {winner_tickets} | Number of tickets the winner had purchased
+{giveaway_cancelled} | 1 if the giveaway was cancelled (refunding all tickets), 0 if not (normal ending)
 
 
 Editing these special commands can also be done via the bot's web browser
