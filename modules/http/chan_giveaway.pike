@@ -39,7 +39,20 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 		if (cfg->giveaway->max_tickets && now > cfg->giveaway->max_tickets) {
 			set_redemption_status(redem, "CANCELED")->then(lambda(mixed resp) {write("Cancelled: %O\n", resp);});
 		}
-		else {person->tickets = now; person->redemptions[redem->id] = redem;}
+		else {
+			person->tickets = now;
+			person->redemptions[redem->id] = redem;
+			if (!G->G->giveaway_purchases[redem->id]) {
+				//Only announce a given purchase once, even if we do a full recalc of giveaway_tickets
+				G->G->giveaway_purchases[redem->id] = 1;
+				object channel = G->G->irc->channels["#" + chan];
+				channel->trigger_special("!giveaway_ticket", (["user": redem->user_name]), ([
+					"{title}": cfg->giveaway->title || "",
+					"{tickets_bought}": (string)values[redem->reward->id],
+					"{tickets_total}": (string)now,
+				]));
+			}
+		}
 	}
 }
 
@@ -452,6 +465,7 @@ protected void create(string name)
 {
 	::create(name);
 	if (!G->G->giveaway_tickets) G->G->giveaway_tickets = ([]);
+	if (!G->G->giveaway_purchases) G->G->giveaway_purchases = (<>);
 	G->G->webhook_endpoints->redemption = points_redeemed;
 	G->G->webhook_endpoints->redemptiongone = remove_tickets;
 	register_hook("channel-online", channel_online);

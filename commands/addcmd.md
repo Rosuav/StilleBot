@@ -32,6 +32,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!channeloffline | The channel has recently gone offline (stopped streaming) | The broadcaster | uptime, uptime_hms, uptime_english
 !!musictrack | A track just started playing (see VLC integration) | VLC | desc, blockpath, block, track, playing
 !!giveaway_started | A giveaway just opened, and people can buy tickets | The broadcaster | title, duration, duration_hms, duration_english
+!!giveaway_ticket | Someone bought ticket(s) in the giveaway | Ticket buyer | title, tickets_bought, tickets_total
 !!giveaway_ended | The giveaway just ended; people can no longer buy tickets | The broadcaster | title, tickets_total, entries_total
 
 
@@ -61,6 +62,7 @@ Parameter    | Meaning
 {duration} | How long the giveaway will be open (seconds; 0 means open until explicitly closed)
 {duration_hms} | Giveaway duration in hh:mm:ss format
 {duration_english} | Giveaway duration in words
+{tickets_bought} | Number of tickets just bought
 {tickets_total} | Total number of tickets bought
 {entries_total} | Total number of unique people who entered
 
