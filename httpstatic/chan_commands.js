@@ -326,7 +326,6 @@ on("click", "#save_advanced", async e => {
 on("click", "#delete_advanced", waitlate(750, 5000, "Really delete?", e => {
 	const el = document.getElementById("cmdname").firstChild;
 	const cmdname = el.nodeType === 3 ? el.data : el.value; //Duplicated from above
-	reset_confirm_delete();
 	ws_sync.send({cmd: "delete", cmdname});
 	DOM("#advanced_view").close();
 }));
