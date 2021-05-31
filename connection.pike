@@ -202,10 +202,13 @@ mapping(string:mixed) gather_person_info(object person, mapping params)
 		ret->emotes = ({ });
 		foreach (params->emotes / "/", string emote) if (emote != "")
 		{
-			sscanf(emote, "%s:%d-%d", string|int id, int start, int end);
-			if (end < start) continue; //Shouldn't happen (probably a parse failure)
+			sscanf(emote, "%s:%s", string|int id, string pos);
 			if (!has_prefix(id, "emotesv2")) id = (int)id;
-			ret->emotes += ({({id, start, end})});
+			foreach (pos / ",", string p) {
+				sscanf(p, "%d-%d", int start, int end);
+				if (end < start) continue; //Shouldn't happen (probably a parse failure)
+				ret->emotes += ({({id, start, end})});
+			}
 		}
 		sort(ret->emotes[*][1], ret->emotes); //Sort the emotes by start position
 	}
