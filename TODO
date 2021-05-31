@@ -98,3 +98,5 @@
     ever done, as it would reenable a feature, effectively.
   - This is orthogonal to the "Destination" of a message, although for some destinations,
     the chat login would be irrelevant.
+  - Have a page within the channel where the bot can be logged in. Have a "Login" button
+    that doesn't change your session token, it just authorizes the bot for that channel.
