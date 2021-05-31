@@ -88,3 +88,13 @@
 * If you're timed out, can you buy giveaway tickets? What about emote-only mode?
 * Have a "can't buy, too many tickets" response in !!giveaway_ticket (including the number
   of tickets that you DO have)
+* Support multiple chat logins.
+  - This would allow the bot to see its own messages, but only if sent by a non-primary
+    account.
+  - Would we need more than one login for a given channel?
+  - Could take advantage of a different set of emotes. Would possibly need a different
+    emote availability page.
+  - Would allow CookingForNooBot to announce run achievements. Let CFN know if this is
+    ever done, as it would reenable a feature, effectively.
+  - This is orthogonal to the "Destination" of a message, although for some destinations,
+    the chat login would be irrelevant.
