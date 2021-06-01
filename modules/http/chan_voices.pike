@@ -1,6 +1,5 @@
 inherit http_websocket;
-constant markdown = #"
-# Available voices for $$channel$$
+constant markdown = #"# Available voices for $$channel$$
 
 Normally the channel bot will speak using its own voice, as defined by the
 bot's login. However, for certain situations, it is preferable to allow the bot

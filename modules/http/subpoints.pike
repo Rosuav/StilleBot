@@ -1,5 +1,23 @@
-inherit http_endpoint;
-inherit websocket_handler;
+inherit http_websocket;
+constant markdown = #"# Sub points counter
+
+$$points$$
+{:#points}
+
+<form method=post class=cfg>
+[Add this link to OBS to show this counter](/subpoints?view=$$nonce$$)<input type=hidden name=nonce value=\"$$nonce$$\"><br>
+Unpaid sub points (eg bot): <input name=unpaidpoints type=number value=\"$$unpaidpoints$$\"><br>
+Font (from Google Fonts): <input name=font value=\"$$font$$\"> <input type=number name=fontsize value=\"$$size$$\"> (changing this requires a refresh of the in-OBS page)<br>
+Goal (eg points for next emote): <input name=goal type=number value=\"$$goal$$\"><br><label>Use chat notifications (more reliable but might take a little CPU and bandwidth) <input type=checkbox name=usecomfy$$usecomfy$$></label><br><input type=submit value=\"Save\">
+</form>
+
+<style>
+$$style$$
+</style>
+
+<script>window.channelname = \"$$channelname$$\";</script>
+$$comfy$$
+";
 /* Sub point counter
 1) API call on load to query sub points
    https://api.twitch.tv/helix/subscriptions
@@ -43,8 +61,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if ((int)cfg->fontsize) style += "#points {font-size: " + (int)cfg->fontsize + "px;}";
 		return get_sub_points(cfg)
 			->then(lambda(int points) {
-				return render_template("subpoints.md", ([
-					"vars": (["ws_type": "subpoints", "ws_group": nonce]),
+				return render(req, ([
+					"vars": (["ws_group": nonce]),
 					"nonce": nonce, "viewnonce": nonce, "channelname": cfg->channelname || "",
 					"unpaidpoints": "", "goal": "", "usecomfy": "", "font": "", "size": "",
 					"comfy": cfg->usecomfy ? "<script src=\"https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js\"></script>" : "",
@@ -107,7 +125,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				string gift = gifts[tier] ? sprintf(", of which %d (%d) are gifts", tiers[tier] * gifts[tier], gifts[tier]) : "";
 				tierlist += ({sprintf("Tier %c: %d (%d)%s<br>\n", tier[0], tiers[tier] * count, count, gift)});
 			}
-			return render_template("subpoints.md", ([
+			return render(req, ([
 				"nonce": nonce, "viewnonce": "", "channelname": "",
 				"unpaidpoints": (string)cfg->unpaidpoints,
 				"goal": (string)cfg->goal,
