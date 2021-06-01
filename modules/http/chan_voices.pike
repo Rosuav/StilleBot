@@ -10,10 +10,9 @@ inherit websocket_handler;
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping cfg = req->misc->channel->config;
-	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo); //Show login page? Or show non-mod version of main page?
+	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
 	return render_template("chan_voices.md", ([
 		"vars": (["ws_type": "chan_monitors", "ws_group": req->misc->channel->name]),
-		"loading": req->misc->is_mod ? "Loading..." : "You must be a moderator to manage voices.",
 	]) | req->misc->chaninfo);
 }
 

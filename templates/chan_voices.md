@@ -11,7 +11,7 @@ dedicated bot account).
 
 Name        | Description/purpose | -
 ------------|---------------------|----
--           | $$loadingmsg$$
+-           | Loading...
 {: #voices}
 
-$$save_or_login$$
+[Add new voice](:#addvoice)
