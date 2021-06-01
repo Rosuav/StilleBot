@@ -1,5 +1,4 @@
-inherit http_endpoint;
-inherit websocket_handler;
+inherit http_websocket;
 
 //Simplistic stringification for read-only display.
 string respstr(echoable_message resp)
@@ -62,9 +61,8 @@ void find_builtins() {
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->misc->is_mod) {
-		return render_template("chan_commands.md", ([
-			"vars": (["ws_type": "chan_commands", "ws_group": req->misc->channel->name,
-				"complex_templates": G->G->commands_complex_templates, "builtins": G->G->commands_builtins]),
+		return render(req, ([
+			"vars": (["ws_group": "", "complex_templates": G->G->commands_complex_templates, "builtins": G->G->commands_builtins]),
 			"templates": G->G->commands_templates * "\n",
 			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
 				"<input type=submit value=\"Save all\">"
@@ -93,19 +91,17 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	sort(order, commands);
 	if (!sizeof(commands)) commands = ({"(none) |"});
-	return render_template("chan_commands.md", ([
+	return render(req, ([
 		"user text": user,
 		"commands": commands * "\n",
 		"templates": G->G->commands_templates * "\n",
 	]) | req->misc->chaninfo);
 }
 
+bool need_mod(string grp) {return 1;}
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!conn->session || !conn->session->user) return "Not logged in";
+	if (string err = ::websocket_validate(conn, msg)) return err;
 	sscanf(msg->group, "%s#%s", string command, string chan);
-	object channel = G->G->irc->channels["#" + chan];
-	if (!channel) return "Bad channel";
-	if (!channel->mods[conn->session->user->login]) return "Not logged in"; //Most likely this will result from some other issue, but whatever
 	if (!(<"", "!!", "!!trigger">)[command]) return "UNIMPL"; //TODO: Check that there actually is a command of that name
 }
 
