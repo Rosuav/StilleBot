@@ -642,6 +642,48 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 }
 #endif
 
+//An HTTP handler, a websocket handler, and Markdown
+class http_websocket
+{
+	inherit http_endpoint;
+	inherit websocket_handler;
+
+	string ws_type; //Will be set in create(), but can be overridden (also in create) if necessary
+
+	//Override to signal if a group name (the part without the channel name) requires
+	//mod privileges. If not overridden, all groups are open to non-mods.
+	bool need_mod(string grp) { }
+	//Provide channel state this way, or override get_state and do everything
+	mapping get_chan_state(object channel, string grp, string|void id) { }
+
+	protected void create(string name) {
+		::create(name);
+		sscanf(explode_path(name)[-1],"%s.pike",name);
+		if (!name) return;
+		if (!ws_type) ws_type = name;
+	}
+	mapping(string:mixed) render(Protocols.HTTP.Server.Request req, mapping replacements) {
+		if (replacements->vars->?ws_group) {
+			if (!replacements->vars->ws_type) replacements->vars->ws_type = ws_type;
+			if (req->misc->channel) replacements->vars->ws_group += req->misc->channel->name;
+		}
+		return render_template(ws_type + ".md", replacements);
+	}
+
+	string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+		[object channel, string grp] = split_channel(msg->group);
+		if (!channel) return "Bad channel";
+		conn->is_mod = channel->mods[conn->session->?user->?login];
+		if (!conn->is_mod && need_mod(grp)) return "Not logged in";
+	}
+
+	mapping get_state(string group, string|void id) {
+		[object channel, string grp] = split_channel(group);
+		if (!channel) return 0;
+		return get_chan_state(channel, grp, id);
+	}
+}
+
 mapping(string:mixed) redirect(string url, int|void status)
 {
 	mapping resp = (["error": status||302, "extra_heads": (["Location": url])]);

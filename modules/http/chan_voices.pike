@@ -1,5 +1,4 @@
-inherit http_endpoint;
-inherit websocket_handler;
+inherit http_websocket;
 
 //Note that, in theory, multiple voice support could be done without an HTTP interface.
 //It would be fiddly to set up, though, so I'm not going to try to support it at this
@@ -11,22 +10,13 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 {
 	mapping cfg = req->misc->channel->config;
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
-	return render_template("chan_voices.md", ([
-		"vars": (["ws_type": "chan_voices", "ws_group": req->misc->channel->name]),
+	return render(req, ([
+		"vars": (["ws_group": ""]),
 	]) | req->misc->chaninfo);
 }
 
-string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(msg->group);
-	if (!channel) return "Bad channel";
-	conn->is_mod = channel->mods[conn->session->?user->?login];
-	if (!conn->is_mod) return "Not logged in";
-}
+bool need_mod(string grp) {return 1;}
 
-mapping get_state(string group, string|void id) {
-	[object channel, string grp] = split_channel(group);
-	if (!channel) return 0;
+mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["items": ({ })]);
 }
-
-protected void create(string name) {::create(name);}
