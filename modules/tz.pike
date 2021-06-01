@@ -93,5 +93,5 @@ protected void create(string name)
 		else tzleaf[parts[-1]] = zone;
 	}
 	::create(name);
-	G->G->commands["time"] = default_time;
+	foreach (active_channels, string chan) if (chan != "") G->G->commands["time#" + chan] = default_time;
 }
