@@ -100,3 +100,8 @@
     the chat login would be irrelevant.
   - Have a page within the channel where the bot can be logged in. Have a "Login" button
     that doesn't change your session token, it just authorizes the bot for that channel.
+  - Alternate Voices would be retained only within the connection.pike instance, and
+    would be silently duplicated across code reload. Each Voice has a separate five-min
+    activity check, and after two checks w/o activity, will shut itself down.
+    - Note that _send_recursive already doesn't handle code reloads, and will continue
+      to use old code after any delay.
