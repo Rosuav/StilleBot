@@ -105,3 +105,9 @@
     activity check, and after two checks w/o activity, will shut itself down.
     - Note that _send_recursive already doesn't handle code reloads, and will continue
       to use old code after any delay.
+  - Channel config -> voices: retain the user ID and login of the voice, and a desc
+  - Status -> voices: retain the user ID, login, and token for each voice, but not the
+    channel(s) used
+  - There currently won't be any way to use the same custom voice for multiple channels,
+    other than a completely independent login for each one. But if you do, it'll use the
+    same connection regardless of channel (that's keyed only on the voice).
