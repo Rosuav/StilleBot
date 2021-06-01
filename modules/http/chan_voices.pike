@@ -35,5 +35,35 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 bool need_mod(string grp) {return 1;}
 
 mapping get_chan_state(object channel, string grp, string|void id) {
-	return (["items": ({ })]);
+	mapping vox = channel->config->voices;
+	if (!vox) return !id && (["items": ({ })]);
+	if (id) return vox[id];
+	array voices = values(vox); sort(indices(vox), voices);
+	return (["items": voices]);
+}
+
+void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	mapping v = channel->config->voices[?msg->id];
+	if (!v) return;
+	if (msg->desc) v->desc = msg->desc;
+	if (msg->notes) v->notes = msg->notes;
+	update_one(conn->group, msg->id);
+	persist_config->save();
+}
+
+void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	mapping vox = channel->config->voices;
+	if (!vox) return; //Nothing to delete.
+	if (m_delete(vox, msg->id)) {update_one(conn->group, msg->id); persist_config->save();}
+}
+
+void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel) return;
+	mapping cfg = persist_config["ircsettings"];
+	object auth = TwitchAuth(cfg->clientid, cfg->clientsecret, cfg->http_address + "/twitchlogin",
+		(<"chat_login", "user_read", "whispers:edit", "user_subscriptions">));
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "login", "uri": auth->get_auth_uri()])));
 }
