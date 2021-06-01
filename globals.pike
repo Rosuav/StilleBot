@@ -675,6 +675,7 @@ class http_websocket
 	}
 
 	string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+		if (!has_prefix(ws_type, "chan_")) return 0;
 		[object channel, string grp] = split_channel(msg->group);
 		if (!channel) return "Bad channel";
 		conn->is_mod = channel->mods[conn->session->?user->?login];
