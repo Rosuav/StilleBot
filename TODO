@@ -112,3 +112,5 @@
   - There currently won't be any way to use the same custom voice for multiple channels,
     other than a completely independent login for each one. But if you do, it'll use the
     same connection regardless of channel (that's keyed only on the voice).
+* Allow login responses to redirect to something with a query parameter
+  - For safety, whitelist the valid query parameters?
