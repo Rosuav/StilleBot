@@ -65,5 +65,5 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	mapping cfg = persist_config["ircsettings"];
 	object auth = TwitchAuth(cfg->clientid, cfg->clientsecret, cfg->http_address + "/twitchlogin",
 		(<"chat_login", "user_read", "whispers:edit", "user_subscriptions">));
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "login", "uri": auth->get_auth_uri()])));
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "login", "uri": auth->get_auth_uri((["force_verify": "true"]))])));
 }

@@ -11,3 +11,11 @@ export function render_empty() {
 	]));
 }
 export function render(data) { }
+
+on("click", "#addvoice", e => {
+	ws_sync.send({cmd: "login"});
+});
+
+export function sockmsg_login(data) {
+	console.log("Login!", data);
+}
