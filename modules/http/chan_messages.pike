@@ -1,5 +1,23 @@
-inherit http_endpoint;
-inherit websocket_handler;
+inherit http_websocket;
+constant markdown = #"# Messages for $$recip$$ from channel $$channel$$
+
+<div id=loading>Loading...</div>
+<ul id=messages></ul>
+
+<style>
+li {line-height: 2.25;}
+.date {
+	padding-right: 0.25em;
+}
+.confirmdelete {
+	min-width: 1.75em; height: 1.75em;
+	padding: 0;
+	margin-right: 0.25em;
+}
+.confirmdelete:hover {background: #f33;}
+.confirmdelete.pending {margin-left: 2em;} /* Jump the button away to avoid double-click */
+</style>
+";
 
 /* TODO:
 * Maybe have a concept of Unread, and consequently, have a Mark as Read button?
@@ -11,8 +29,8 @@ inherit websocket_handler;
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req)) return resp;
-	return render_template("chan_messages.md", ([
-		"vars": (["ws_type": "chan_messages", "ws_group": req->misc->session->user->id + req->misc->channel->name]),
+	return render(req, ([
+		"vars": (["ws_group": req->misc->session->user->id]),
 		"recip": req->misc->session->user->display_name,
 	]) | req->misc->chaninfo);
 }
@@ -41,16 +59,13 @@ mapping _get_message(string|int id, mapping msgs) {
 }
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!conn->session || !conn->session->user) return "Not logged in";
+	if (string err = ::websocket_validate(conn, msg)) return err;
 	sscanf(msg->group, "%s#%s", string uid, string chan);
-	if (!G->G->irc->channels["#" + chan]) return "Bad channel";
 	if (conn->session->user->id != uid) return "Bad group ID"; //Shouldn't happen, but maybe if you refresh the page after logging in as a different user???
 }
 
-mapping get_state(string group, string|void id) {
-	sscanf(group, "%s#%s", string uid, string chan);
-	if (!G->G->irc->channels["#" + chan]) return 0;
-	mapping msgs = persist_status->path("private", "#" + chan)[uid];
+mapping get_chan_state(object channel, string grp, string|void id) {
+	mapping msgs = persist_status->path("private", channel->name)[grp];
 	if (!msgs) return (["items": ({ })]);
 	if (id) return _get_message(id, msgs);
 	return (["items": _get_message(sort(indices(msgs))[*], msgs)]);
@@ -64,5 +79,3 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (m_delete(msgs, (string)msg->id)) update_one(conn->group, msg->id);
 	else conn->sock->send_text(Standards.JSON.encode((["cmd": "notify", "msg": "Deletion failed (already gone)"])));
 }
-
-protected void create(string name) {::create(name);}
