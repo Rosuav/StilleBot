@@ -97,7 +97,8 @@
   - Would allow CookingForNooBot to announce run achievements. Let CFN know if this is
     ever done, as it would reenable a feature, effectively.
   - This is orthogonal to the "Destination" of a message, although for some destinations,
-    the chat login would be irrelevant.
+    the chat login would be irrelevant. Note that the drop-down would need to be visible
+    if there's a voice selected OR if multiple are available, but otherwise not.
   - Have a page within the channel where the bot can be logged in. Have a "Login" button
     that doesn't change your session token, it just authorizes the bot for that channel.
   - Alternate Voices would be retained only within the connection.pike instance, and
