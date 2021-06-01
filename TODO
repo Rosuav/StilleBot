@@ -84,7 +84,9 @@
 * Is it possible to get a "recent messages" timeout? Would allow squishing of spam if the
   channel is too quiet. Might not be worth it though.
 * Separate builtins from their suggested commands. It's ugly to have chan_mpn there, and
-  chan_giveaway needs to have two examples (status and refund).
+  chan_giveaway needs to have two examples (status and refund). Also, this will allow a
+  builtin that doesn't have a defaultly-active command, which is definitely a good thing
+  with the chan_* ones.
 * If you're timed out, can you buy giveaway tickets? What about emote-only mode?
 * Have a "can't buy, too many tickets" response in !!giveaway_ticket (including the number
   of tickets that you DO have)
