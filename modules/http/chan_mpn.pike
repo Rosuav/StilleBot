@@ -1,10 +1,14 @@
-inherit http_endpoint;
-inherit websocket_handler;
-
+inherit http_websocket;
 inherit builtin_command;
 constant hidden_command = 1;
 constant require_allcmds = 1;
 constant access = "mod";
+constant markdown = #"# MPN - $$channel$$
+
+<$$contenttag$$ id=content rows=25 cols=80></$$contenttag$$>
+
+$$save_or_login||Changes made above will be automatically saved.$$
+";
 
 void rebuild_lines(mapping(string:mixed) doc) {
 	if (!doc->lines) doc->lines = mkmapping(doc->sequence->id, doc->sequence);
@@ -104,8 +108,8 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 		else return "TODO: Not logged in or mode not valid";
 	}
 	if (mode != "") document += " " + mode;
-	return render_template("chan_mpn.md", ([
-		"vars": (["ws_type": "chan_mpn", "ws_group": document + req->misc->channel->name]),
+	return render(req, ([
+		"vars": (["ws_group": document]),
 		"contenttag": (["html": "div"])[mode] || "textarea",
 		"save_or_login": (["html": "Changes will appear above as they are made.", "embed": ""])[mode],
 	]) | req->misc->chaninfo);
