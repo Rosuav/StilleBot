@@ -1,5 +1,41 @@
-inherit http_endpoint;
-inherit websocket_handler;
+inherit http_websocket;
+constant markdown = #"# VLC integration
+
+(loading...)
+{:#nowplaying}
+
+> ### Recently played
+> * loading...
+> {:#recent}
+>
+{: tag=details $$showrecents||$$}
+
+<style>
+#nowplaying {
+	background: #ddffdd;
+	border: 1px solid #007700;
+	font-size: larger;
+}
+#recent li:nth-child(even) {
+	background: #ddffee;
+}
+#recent li:nth-child(odd) {
+	background: #eeffdd;
+}
+details {border: 1px solid transparent;} /* I love 'solid transparent', ngl */
+details#config {
+	padding: 0 1.5em;
+	border: 1px solid rebeccapurple;
+}
+#config summary {
+	margin: 0 -1.5em;
+}
+</style>
+
+$$modconfig||$$
+
+$$save_or_login$$
+";
 
 /* Am getting some duplicated messages, sometimes with "paused" followed by "playing".
 Theory: VLC is announcing status of "loading", the Lua script is announcing that as "not
@@ -146,23 +182,15 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//TODO: Show a summary of how it'll look, somehow
 		chatnotif = "In-chat notifications active. [Configure details](specials)";
 	}
-	return render_template("vlc.md", ([
-		"vars": (["ws_type": "chan_vlc", "ws_group": "blocks" * req->misc->is_mod + req->misc->channel->name]),
+	return render(req, ([
+		"vars": (["ws_group": "blocks" * req->misc->is_mod]),
 		"showrecents": req->misc->is_mod ? "" : "open=1",
 		"save_or_login": replace(MODCONFIG, "<chatnotif>", chatnotif),
 	]) | req->misc->chaninfo);
 }
 
-string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(msg->group);
-	if (!channel) return "Bad channel";
-	conn->is_mod = channel->mods[conn->session->?user->?login];
-	if (grp == "blocks" && !conn->is_mod) return "Not logged in";
-}
-
-mapping get_state(string group, string|void id) {
-	[object channel, string grp] = split_channel(group);
-	if (!channel) return 0;
+bool need_mod(string grp) {return grp == "blocks";}
+mapping get_chan_state(object channel, string grp, string|void id) {
 	if (grp == "blocks" && id) {
 		foreach (channel->config->vlcblocks || ({ }), array b)
 			if (b[0] == id) return (["id": id, "desc": b[1]]);
