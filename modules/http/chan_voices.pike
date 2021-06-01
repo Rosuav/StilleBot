@@ -12,7 +12,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	mapping cfg = req->misc->channel->config;
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
 	return render_template("chan_voices.md", ([
-		"vars": (["ws_type": "chan_monitors", "ws_group": req->misc->channel->name]),
+		"vars": (["ws_type": "chan_voices", "ws_group": req->misc->channel->name]),
 	]) | req->misc->chaninfo);
 }
 
