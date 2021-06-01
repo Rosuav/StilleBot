@@ -564,7 +564,9 @@ class Lexer
 
 mapping(string:mixed) render_template(string template, mapping(string:string|function(string|void:string)|mapping) replacements)
 {
-	string content = utf8_to_string(Stdio.read_file("templates/" + template));
+	string content;
+	if (has_value(template, '\n')) {content = template; template = "<inline>.md";}
+	else content = utf8_to_string(Stdio.read_file("templates/" + template));
 	if (!content) error("Unable to load templates/" + template + "\n");
 	array pieces = content / "$$";
 	if (!(sizeof(pieces) & 1)) error("Mismatched $$ in templates/" + template + "\n");
@@ -649,6 +651,7 @@ class http_websocket
 	inherit websocket_handler;
 
 	string ws_type; //Will be set in create(), but can be overridden (also in create) if necessary
+	constant markdown = ""; //Override this with a hash-quoted inline Markdown file
 
 	//Override to signal if a group name (the part without the channel name) requires
 	//mod privileges. If not overridden, all groups are open to non-mods.
@@ -667,6 +670,7 @@ class http_websocket
 			if (!replacements->vars->ws_type) replacements->vars->ws_type = ws_type;
 			if (req->misc->channel) replacements->vars->ws_group += req->misc->channel->name;
 		}
+		if (markdown != "") return render_template(markdown, replacements);
 		return render_template(ws_type + ".md", replacements);
 	}
 
