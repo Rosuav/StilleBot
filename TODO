@@ -90,30 +90,11 @@
 * If you're timed out, can you buy giveaway tickets? What about emote-only mode?
 * Have a "can't buy, too many tickets" response in !!giveaway_ticket (including the number
   of tickets that you DO have)
-* Support multiple chat logins.
+* Polish multi-voice.
   - This would allow the bot to see its own messages, but only if sent by a non-primary
     account.
-  - Would we need more than one login for a given channel?
   - Could take advantage of a different set of emotes. Would possibly need a different
     emote availability page.
-  - Would allow CookingForNooBot to announce run achievements. Let CFN know if this is
-    ever done, as it would reenable a feature, effectively.
-  - This is orthogonal to the "Destination" of a message, although for some destinations,
-    the chat login would be irrelevant. Note that the drop-down would need to be visible
-    if there's a voice selected OR if multiple are available, but otherwise not.
-  - Have a page within the channel where the bot can be logged in. Have a "Login" button
-    that doesn't change your session token, it just authorizes the bot for that channel.
-  - Alternate Voices would be retained only within the connection.pike instance, and
-    would be silently duplicated across code reload. Each Voice has a separate five-min
-    activity check, and after two checks w/o activity, will shut itself down.
-    - Note that _send_recursive already doesn't handle code reloads, and will continue
-      to use old code after any delay.
-  - Channel config -> voices: retain the user ID and login of the voice, and a desc
-  - Status -> voices: retain the user ID, login, and token for each voice, but not the
-    channel(s) used
-  - There currently won't be any way to use the same custom voice for multiple channels,
-    other than a completely independent login for each one. But if you do, it'll use the
-    same connection regardless of channel (that's keyed only on the voice).
   - Can this kind of auth be used to get host notifications??
 * Login responses can now redirect to queried URLs. Check for all where this is crucial
   (cf MPN with ?document=) and ensure that the appropriate query vars are whitelisted.
