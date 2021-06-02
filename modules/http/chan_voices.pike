@@ -80,6 +80,7 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 		persist_config->save();
 		mapping tok = persist_status->path("voices", v->id);
 		tok->token = token;
+		tok->login = user->login;
 		tok->last_auth_time = v->last_auth_time;
 		persist_status->save();
 		update_one(conn->group, v->id);

@@ -114,61 +114,99 @@ void reconnect()
 	}
 }
 
-//NOTE: When this file gets updated, the queue will not be migrated.
-//The old queue will be pumped by the old code, and the new code will
-//have a new (empty) queue.
-int lastmsgtime = time();
-int modmsgs = 0;
-array msgqueue = ({ });
-void pump_queue()
-{
-	int tm = time(1);
-	if (tm == lastmsgtime) {call_out(pump_queue, 1); return;}
-	lastmsgtime = tm; modmsgs = 0;
-	[[string|array to, string msg], msgqueue] = Array.shift(msgqueue);
-	irc->send_message(to, string_to_utf8(msg));
-}
-void send_message(string to, string msg, int|void is_mod)
-{
-	//20200410: Changed function signature from "string|array to" to just "string to".
-	//I don't *think* anything ever calls this with an array??? So this check should
-	//be able to be dropped.
-	if (arrayp(to)) to = [array](mixed)to * ",";
-	if (has_prefix(to, "/"))
-	{
-		if (to == "/w " + bot_nick)
-		{
-			//Hack: Instead of whispering to ourselves, write to the console.
-			write("<self-whisper> %s\n", msg);
+//NOTE: When this file gets updated, the queues will not be migrated.
+//The old queues will be pumped by the old code, and the new code will
+//have a single empty queue for the default voice.
+mapping(string:object) sendqueues = ([]);
+class SendQueue(string id) {
+	int lastmsgtime;
+	int modmsgs = 0;
+	object client;
+	array msgqueue = ({ });
+	int active = 1;
+	string my_nick;
+	protected void create() {
+		lastmsgtime = time(); //TODO: Subsecond resolution? Have had problems sometimes with triggering my own commands if non-mod.
+		if (!id) {my_nick = bot_nick; return;} //The default queue uses the primary connection
+		sendqueues[id] = this;
+		mapping tok = persist_status["voices"][?id];
+		write("Creating queue for %O --> %O\n", id, tok);
+		if (!tok) {destruct(); return;}
+		mixed ex = catch (client = IRCClient("irc.chat.twitch.tv", ([
+			"nick": my_nick = tok->login,
+			"pass": "oauth:" + tok->token,
+			"connection_lost": disconnected,
+			"error_notify": error_notify,
+		])));
+		if (ex) {
+			tok->last_error_time = time();
+			werror("%% Error connecting to voice %s:\n%s\n", my_nick, describe_error(ex));
+			destruct();
+		}
+		else call_out(check_active, 300);
+		write("Connected to voice %O\n", my_nick);
+	}
+	void check_active() {
+		if (!active) {
+			write("Voice %s idle, disconnecting\n", my_nick);
+			if (client) client->close();
+			destruct();
 			return;
 		}
-		msg = to + " " + msg; //eg "/w target message"
-		to = "#" + bot_nick; //Shouldn't matter what the dest is with these.
+		active = 0;
+		call_out(check_active, 300);
 	}
-	int tm = time(1);
-	if (is_mod)
-	{
-		//Mods can always ignore slow-mode. But they should still keep it to
-		//a max of 100 messages in 30 seconds (which I simplify down to 3/sec)
-		//to avoid getting globalled.
-		if (tm != lastmsgtime) {lastmsgtime = tm; modmsgs = 0;}
-		if (++modmsgs < 3)
-		{
-			irc->send_message(to, string_to_utf8(msg));
-			return;
-		}
+	void disconnected() {
+		destruct();
 	}
-	if (sizeof(msgqueue) || tm == lastmsgtime)
-	{
-		msgqueue += ({({to, msg})});
-		call_out(pump_queue, 1);
-	}
-	else
-	{
+
+	void pump_queue() {
+		int tm = time(1);
+		if (tm == lastmsgtime) {call_out(pump_queue, 1); return;}
 		lastmsgtime = tm; modmsgs = 0;
-		irc->send_message(to, string_to_utf8(msg));
+		[[string|array to, string msg], msgqueue] = Array.shift(msgqueue);
+		write("Pumping v %O: %O\n", my_nick, msg);
+		(client || irc)->send_message(to, string_to_utf8(msg));
+	}
+	void send_message(string to, string msg, int|void is_mod) {
+		if (has_prefix(to, "/"))
+		{
+			if (to == "/w " + my_nick)
+			{
+				//Hack: Instead of whispering to ourselves, write to the console.
+				write("<%s> %s\n", to, msg);
+				return;
+			}
+			msg = to + " " + msg; //eg "/w target message"
+			to = "#" + my_nick; //Shouldn't matter what the dest is with these.
+		}
+		int tm = time(1);
+		if (is_mod)
+		{
+			//Mods can always ignore slow-mode. But they should still keep it to
+			//a max of 100 messages in 30 seconds (which I simplify down to 3/sec)
+			//to avoid getting globalled.
+			if (tm != lastmsgtime) {lastmsgtime = tm; modmsgs = 0;}
+			if (++modmsgs < 3)
+			{
+				(client || irc)->send_message(to, string_to_utf8(msg));
+				return;
+			}
+		}
+		if (sizeof(msgqueue) || tm == lastmsgtime)
+		{
+			msgqueue += ({({to, msg})});
+			call_out(pump_queue, 1);
+		}
+		else
+		{
+			write("Sending v %O: %O\n", my_nick, msg);
+			lastmsgtime = tm; modmsgs = 0;
+			(client || irc)->send_message(to, string_to_utf8(msg));
+		}
 	}
 }
+object default_queue = SendQueue(0);
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
 	"broadcaster": "_mod", "moderator": "_mod", "staff": "_mod",
@@ -523,6 +561,14 @@ class channel_notif
 		if (dest == "/w") dest += " " + target;
 		else dest = name; //Everything other than whispers and open chat has been handled elsewhere.
 
+		//Note that the voice doesn't apply to a subtree, only to a single message. This may change in future.
+		function send_message = default_queue->send_message;
+		if (message->voice && message->voice != "") {
+			if (!sendqueues[message->voice]) SendQueue(message->voice);
+			send_message = sendqueues[message->voice]->send_message;
+			write("Selecting voice for %O --> %O\n", message->voice, send_message);
+		}
+
 		//VERY simplistic form of word wrap.
 		while (sizeof(msg) > 400)
 		{
@@ -758,7 +804,8 @@ class channel_notif
 			case "WHISPER": responsedefaults = (["dest": "/w", "target": "$$"]); //fallthrough
 			case "PRIVMSG": case 0: //If there's no params block, assume it's a PRIVMSG
 			{
-				if (lower_case(person->nick) == lower_case(bot_nick)) {lastmsgtime = time(1); modmsgs = 0;}
+				//TODO: Check message times for other voices too
+				if (lower_case(person->nick) == lower_case(bot_nick)) {default_queue->lastmsgtime = time(1); default_queue->modmsgs = 0;}
 				if (person->badges) mods[person->user] = person->badges->_mod;
 				handle_command(person, msg, responsedefaults);
 				if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->displayname+" "+slashme;
@@ -965,5 +1012,5 @@ protected void create()
 			}
 		}
 	}
-	add_constant("send_message", send_message);
+	add_constant("send_message", default_queue->send_message);
 }
