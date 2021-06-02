@@ -18,7 +18,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		Protocols.HTTP.Promise.Result res = yield(Protocols.HTTP.Promise.get_url("https://api.twitch.tv/helix/users",
 			Protocols.HTTP.Promise.Arguments((["headers": ([
 				"Authorization": "Bearer " + auth->access_token,
-				"Client-ID": cfg->clientid,
+				"Client-ID": persist_config["ircsettings"]->clientid,
 			])]))));
 		mapping user = Standards.JSON.decode_utf8(res->get())->data[0];
 		//write("Login: %O %O\n", auth->access_token, user);
