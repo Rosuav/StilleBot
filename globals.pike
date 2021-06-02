@@ -752,43 +752,10 @@ void ensure_session(Protocols.HTTP.Server.Request req, mapping(string:mixed) res
 	call_out(session_cleanup, 86401); //TODO: Don't have too many of these queued.
 }
 
-mapping(string:mixed)|Concurrent.Future twitchlogin(Protocols.HTTP.Server.Request req, multiset(string) scopes, string|void next)
+mapping(string:mixed) twitchlogin(Protocols.HTTP.Server.Request req, multiset(string) scopes, string|void next)
 {
 	mapping cfg = persist_config["ircsettings"];
 	object auth = TwitchAuth(cfg->clientid, cfg->clientsecret, cfg->http_address + "/twitchlogin", scopes);
-	if (req->variables->code)
-	{
-		//It's a positive response from Twitch
-		//write("Login response %O\n", req->variables);
-		write("Requesting access token for %O...\n", req->variables->code); //Does this show up twice when those crashes happen?
-		auth->set_from_cookie(auth->request_access_token(req->variables->code)); //TODO: Go async with this, maybe turn this into a continue function
-		return Protocols.HTTP.Promise.get_url("https://api.twitch.tv/helix/users",
-			Protocols.HTTP.Promise.Arguments((["headers": ([
-				"Authorization": "Bearer " + auth->access_token,
-				"Client-ID": cfg->clientid,
-			])])))->then(lambda(Protocols.HTTP.Promise.Result res)
-		{
-			mapping user = Standards.JSON.decode_utf8(res->get())->data[0];
-			//write("Login: %O %O\n", auth->access_token, user);
-			string dest = m_delete(req->misc->session, "redirect_after_login");
-			if (!dest || dest == req->not_query || has_prefix(dest + "?", req->not_query))
-			{
-				//If no destination was given, try to figure out a plausible default.
-				//For streamers, redirect to the stream's landing page. Doesn't work
-				//for mods, as we have no easy way to check which channel(s).
-				object channel = G->G->irc->channels["#" + user->login];
-				if (channel && channel->config->allcmds)
-					dest = "/channels/" + user->login + "/";
-				else dest = "/login_ok";
-			}
-			mapping resp = redirect(dest);
-			ensure_session(req, resp);
-			req->misc->session->user = user;
-			req->misc->session->scopes = (multiset)(req->variables->scope / " ");
-			req->misc->session->token = auth->access_token;
-			return resp;
-		});
-	}
 	//write("Redirecting to Twitch...\n%s\n", auth->get_auth_uri());
 	mapping resp = redirect(auth->get_auth_uri());
 	ensure_session(req, resp);
