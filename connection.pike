@@ -824,23 +824,7 @@ void handle_http_error(mixed ex, Protocols.HTTP.Server.Request req)
 void http_handler(Protocols.HTTP.Server.Request req)
 {
 	req->misc->session = G->G->http_sessions[req->cookies->session];
-	function handler = !has_prefix(req->not_query, "/chan_") && G->G->http_endpoints[req->not_query[1..]];
-	array args = ({ });
-	if (!handler)
-	{
-		//Try all the sscanf-based handlers
-		//TODO: Look these up more efficiently (and deterministically)
-		foreach (G->G->http_endpoints; string pat; function h)
-		{
-			//Match against an sscanf pattern, and require that the entire
-			//string be consumed. If there's any left (the last piece is
-			//non-empty), it's not a match - look for a deeper pattern.
-			array pieces = array_sscanf(req->not_query, pat + "%s");
-			if (!pieces || !sizeof(pieces) || pieces[-1] != "") continue;
-			handler = h; args = pieces[..<1];
-			break;
-		}
-	}
+	[function handler, array args] = find_http_handler(req->not_query);
 	//If we receive URL-encoded form data, assume it's UTF-8.
 	if (req->request_headers["content-type"] == "application/x-www-form-urlencoded" && mappingp(req->variables))
 	{

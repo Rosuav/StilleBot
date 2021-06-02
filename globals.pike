@@ -326,6 +326,22 @@ class http_endpoint
 	}
 }
 
+array(function|array) find_http_handler(string not_query) {
+	if (function handler = !has_prefix(not_query, "/chan_") && G->G->http_endpoints[not_query[1..]])
+		return ({handler, ({ })});
+	//Try all the sscanf-based handlers
+	//TODO: Look these up more efficiently (and deterministically)
+	foreach (G->G->http_endpoints; string pat; function handler)
+	{
+		//Match against an sscanf pattern, and require that the entire
+		//string be consumed. If there's any left (the last piece is
+		//non-empty), it's not a match - look for a deeper pattern.
+		array pieces = array_sscanf(not_query, pat + "%s");
+		if (pieces && sizeof(pieces) && pieces[-1] == "") return ({handler, pieces[..<1]});
+	}
+	return ({0, ({ })});
+}
+
 class websocket_handler
 {
 	mapping(string|int:array(object)) websocket_groups;
