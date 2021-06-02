@@ -121,6 +121,12 @@ mapping(string:mixed) redirect_no_s(Protocols.HTTP.Server.Request req, string ta
 	return redirect(sprintf("/channels/%s", tail), 301);
 }
 
+mapping(string:string|array) safe_query_vars(mapping(string:string|array) vars, mixed ... args) {
+	if (sizeof(args) != 2) return 0;
+	function handler = G->G->http_endpoints["chan_" + args[1]];
+	if (!handler) return 0;
+	return function_object(handler)->safe_query_vars(vars);
+}
 
 protected void create(string name)
 {

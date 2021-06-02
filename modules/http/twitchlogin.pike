@@ -43,19 +43,18 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//Attempt to sanitize or whitelist-check the destination. The goal is to permit
 	//anything that could ever have been req->not_query for any legitimate request,
 	//and to deny anything else.
-	//Note that this will not accept anything with a querystring in it. This will
-	//soon change.
 	string next = req->variables->next || "";
 	sscanf(next, "%s?%s", next, string query);
-	if (query && query != "") next = 0; //For now. (CJA 20210621)
-	else if (!has_prefix(next, "/")) next = 0; //Destination MUST be absolute within the server but with no protocol or host.
+	if (!has_prefix(next, "/")) next = 0; //Destination MUST be absolute within the server but with no protocol or host.
 	else {
 		//Look up a handler. If we find one, then it's valid.
 		[function handler, array args] = find_http_handler(next);
 		if (!handler) next = 0;
-		//Note that this will permit a lot of things that aren't actually valid, like /channels/SPAM/HAM
-		//I'm not sure if I should be stricter here or if that's okay. You won't be
-		//able to redirect outside of the StilleBot environment this way.
+		if (query) {
+			mapping vars = function_object(handler)->safe_query_vars(Protocols.HTTP.Server.http_decode_urlencoded_query(query), @args);
+			if (!vars) next = 0;
+			else next += "?" + Protocols.HTTP.http_encode_query(vars);
+		}
 	}
 	//Merge scopes, similarly to ensure_login()
 	multiset havescopes = req->misc->session->?scopes || (<>);

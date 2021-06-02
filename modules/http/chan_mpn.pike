@@ -92,6 +92,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	update_rendered(conn->group);
 }
 
+mapping(string:string|array) safe_query_vars(mapping(string:string|array) vars) {return vars & (<"document", "mode">);}
 mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	string document = req->variables->document;

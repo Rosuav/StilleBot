@@ -312,6 +312,10 @@ class http_endpoint
 	//May be a continue function or may return a Future. May also return a string (recommended for
 	//debugging only, as it'll be an ugly text/plain document).
 	mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) { }
+	//Whitelist query variables for redirects. Three options: 0 means error, don't allow the
+	//redirect at all; ([]) to allow redirect but suppress query vars; or vars&(<"...","...">)
+	//to filter the variables to a specific set of keys.
+	mapping(string:string|array) safe_query_vars(mapping(string:string|array) vars) {return ([]);}
 
 	protected void create(string name)
 	{
