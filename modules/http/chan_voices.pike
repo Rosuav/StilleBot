@@ -64,6 +64,9 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	if (!channel) return;
 	string url = function_object(G->G->http_endpoints->twitchlogin)->get_redirect_url(
 		(<"chat_login", "user_read", "whispers:edit", "user_subscriptions">), (["force_verify": "true"])
-	) {return sprintf("Channel %O\n%O", channel->name, __ARGS__);};
+	) {
+		write("Channel %O\n%O", channel->name, __ARGS__);
+		return (["data": "<script>window.close()</script>", "type": "text/html"]);
+	};
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "login", "uri": url])));
 }

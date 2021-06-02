@@ -18,4 +18,5 @@ on("click", "#addvoice", e => {
 
 export function sockmsg_login(data) {
 	console.log("Login!", data);
+	window.open(data.uri, "login", "width=525, height=900")
 }
