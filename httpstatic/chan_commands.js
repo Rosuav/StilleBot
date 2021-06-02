@@ -244,6 +244,19 @@ function render_command(cmd, toplevel) {
 		]));
 	}
 	opts.push(TR({className: "targetrow"}, [TD(INPUT({"data-flag": "target", value: cmd.target || ""})), TD("Who/what should it send to? User or variable name.")]));
+	const voiceids = Object.keys(voices);
+	if (voiceids.length > 0 || cmd.voice) {
+		const v = voiceids.map(id => OPTION({value: id, selected: cmd.voice+"" === id ? "1" : undefined}, voices[id].desc));
+		v.unshift(OPTION({value: "", selected: cmd.voice ? "1" : undefined}, "Default voice"));
+		if (cmd.voice && !voices[cmd.voice]) {
+			//TODO: Show the name somehow?
+			v.push(OPTION({value: "", selected: "1", style: "color: red"}, "Deauthenticated"));
+		}
+		opts.push(TR({"data-flag": "voice"}, [
+			TD(SELECT({"data-flag": "voice"}, v)),
+			TD("In what voice should the bot speak?"),
+		]));
+	}
 	return FIELDSET({className: "optedmsg"}, text_array(DETAILS({className: "flagstable"}, [
 		SUMMARY("Flags"),
 		TABLE({border: 1, "data-dest": cmd.dest || "", "data-builtin": cmd.builtin || ""}, opts),

@@ -50,6 +50,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"nonce": nonce || "",
 		"css_attributes": G->G->monitor_css_attributes,
 		"builtins": G->G->commands_builtins,
+		"voices": req->misc->channel->config->voices || ([]),
 	])]) | req->misc->chaninfo);
 }
 

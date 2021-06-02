@@ -62,7 +62,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->misc->is_mod) {
 		return render(req, ([
-			"vars": (["ws_group": "", "complex_templates": G->G->commands_complex_templates, "builtins": G->G->commands_builtins]),
+			"vars": (["ws_group": "", "complex_templates": G->G->commands_complex_templates, "builtins": G->G->commands_builtins,
+				"voices": req->misc->channel->config->voices || ([])]),
 			"templates": G->G->commands_templates * "\n",
 			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
 				"<input type=submit value=\"Save all\">"
@@ -224,14 +225,17 @@ echoable_message validate(echoable_message resp, mapping state)
 	aliases = aliases[*] - "!";
 	if (sizeof(aliases)) ret->aliases = aliases * " ";
 
+	//Voice ID validity depends on the channel we're working with.
+	if (state->voices[resp->voice]) ret->voice = resp->voice;
+
 	if (sizeof(ret) == 1) return ret->message; //No flags? Just return the message.
 	return ret;
 }
 
 array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string command, string chan);
-	if (!G->G->irc->channels["#" + chan]) return 0;
-	mapping state = (["cmd": command, "cdanon": 0, "cooldowns": ([])]);
+	object channel = G->G->irc->channels["#" + chan]; if (!channel) return 0;
+	mapping state = (["cmd": command, "cdanon": 0, "cooldowns": ([]), "voices": channel->config->voices || ([])]);
 	if (command == "!!trigger") {
 		echoable_message response = G->G->echocommands["!trigger#" + chan];
 		response += ({ }); //Force array, and disconnect it for mutation's sake
