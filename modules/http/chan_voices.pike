@@ -10,12 +10,16 @@ You must first be a channel moderator to enable this, and then must also have
 the credentials for the voice you plan to use (be it the broadcaster or some
 dedicated bot account).
 
-Name        | Description/purpose | -
-------------|---------------------|----
--           | Loading...
+Name        | Mnemonic | Description/purpose | -
+------------|----------|---------------------|----
+-           | -        | Loading...
 {: #voices}
 
 [Add new voice](:#addvoice)
+
+<style>
+.avatar {max-width: 40px; vertical-align: middle;}
+</style>
 ";
 //Note that, in theory, multiple voice support could be done without an HTTP interface.
 //It would be fiddly to set up, though, so I'm not going to try to support it at this
@@ -65,7 +69,20 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	string url = function_object(G->G->http_endpoints->twitchlogin)->get_redirect_url(
 		(<"chat_login", "user_read", "whispers:edit", "user_subscriptions">), (["force_verify": "true"])
 	) {
-		write("Channel %O\n%O", channel->name, __ARGS__);
+		[object req, mapping user, multiset scopes, string token] = __ARGS__;
+		mapping v = persist_config->path("channels", channel->name[1..], "voices", (string)user->id);
+		v->id = (string)user->id;
+		v->name = user->display_name;
+		if (lower_case(user->display_name) != user->login) v->name += " (" + user->login + ")";
+		if (!v->desc) v->desc = v->name;
+		v->profile_image_url = user->profile_image_url;
+		v->last_auth_time = time();
+		persist_config->save();
+		mapping tok = persist_status->path("voices", v->id);
+		tok->token = token;
+		tok->last_auth_time = v->last_auth_time;
+		persist_status->save();
+		update_one(conn->group, v->id);
 		return (["data": "<script>window.close()</script>", "type": "text/html"]);
 	};
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "login", "uri": url])));
