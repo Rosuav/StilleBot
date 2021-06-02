@@ -62,8 +62,6 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel) return;
-	mapping cfg = persist_config["ircsettings"];
-	object auth = TwitchAuth(cfg->clientid, cfg->clientsecret, cfg->http_address + "/twitchlogin",
-		(<"chat_login", "user_read", "whispers:edit", "user_subscriptions">));
+	object auth = TwitchAuth((<"chat_login", "user_read", "whispers:edit", "user_subscriptions">));
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "login", "uri": auth->get_auth_uri((["force_verify": "true"]))])));
 }

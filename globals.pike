@@ -728,6 +728,10 @@ class TwitchAuth
 		//Insufficiently documented. Dunno if we need it or not.
 		"moderation:read",
 	>);
+	protected void create(multiset(string)|void scopes) {
+		mapping cfg = persist_config["ircsettings"];
+		::create(cfg->clientid, cfg->clientsecret, cfg->http_address + "/twitchlogin", scopes);
+	}
 }
 
 void session_cleanup()
@@ -754,8 +758,7 @@ void ensure_session(Protocols.HTTP.Server.Request req, mapping(string:mixed) res
 
 mapping(string:mixed) twitchlogin(Protocols.HTTP.Server.Request req, multiset(string) scopes, string|void next)
 {
-	mapping cfg = persist_config["ircsettings"];
-	object auth = TwitchAuth(cfg->clientid, cfg->clientsecret, cfg->http_address + "/twitchlogin", scopes);
+	object auth = TwitchAuth(scopes);
 	//write("Redirecting to Twitch...\n%s\n", auth->get_auth_uri());
 	mapping resp = redirect(auth->get_auth_uri());
 	ensure_session(req, resp);
@@ -771,7 +774,7 @@ mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|voi
 {
 	multiset havescopes = req->misc->session->?scopes;
 	multiset wantscopes = scopes ? (multiset)(scopes / " ") : (<>);
-	multiset bad = wantscopes - TwitchAuth("", "")->list_valid_scopes();
+	multiset bad = wantscopes - TwitchAuth()->list_valid_scopes();
 	if (sizeof(bad)) return (["error": 500, "type": "text/plain", 
 		"data": sprintf("Internal server error: Unrecognized scope %O being requested", (array)bad * " ")]);
 	wantscopes[""] = 0; //Remove any empty entry, just in case

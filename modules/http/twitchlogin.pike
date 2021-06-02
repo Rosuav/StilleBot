@@ -9,8 +9,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	{
 		//It's a positive response from Twitch
 		//write("Login response %O\n", req->variables);
-		mapping cfg = persist_config["ircsettings"];
-		object auth = TwitchAuth(cfg->clientid, cfg->clientsecret, cfg->http_address + "/twitchlogin");
+		object auth = TwitchAuth();
 		write("Requesting access token for %O...\n", req->variables->code); //Does this show up twice when those crashes happen?
 		string cookie = yield(Concurrent.Promise(lambda(function ... cb) {
 			auth->request_access_token(req->variables->code) {cb[!__ARGS__[0]](__ARGS__[1]);};
@@ -74,7 +73,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//Merge scopes, similarly to ensure_login()
 	multiset havescopes = req->misc->session->?scopes || (<>);
 	multiset wantscopes = (multiset)((req->variables->scopes || "") / " " - ({""}));
-	multiset bad = wantscopes - TwitchAuth("", "")->list_valid_scopes();
+	multiset bad = wantscopes - TwitchAuth()->list_valid_scopes();
 	if (sizeof(bad)) return (["error": 400, "type": "text/plain", //Note that this is a 400, as opposed to a 500 in ensure_login
 		"data": sprintf("Unrecognized scope %O being requested", (array)bad * " ")]);
 	multiset needscopes = havescopes | wantscopes; //Note that we'll keep any that we already have.
