@@ -761,7 +761,7 @@ mapping(string:mixed)|Concurrent.Future twitchlogin(Protocols.HTTP.Server.Reques
 		//It's a positive response from Twitch
 		//write("Login response %O\n", req->variables);
 		write("Requesting access token for %O...\n", req->variables->code); //Does this show up twice when those crashes happen?
-		auth->set_from_cookie(auth->request_access_token(req->variables->code));
+		auth->set_from_cookie(auth->request_access_token(req->variables->code)); //TODO: Go async with this, maybe turn this into a continue function
 		return Protocols.HTTP.Promise.get_url("https://api.twitch.tv/helix/users",
 			Protocols.HTTP.Promise.Arguments((["headers": ([
 				"Authorization": "Bearer " + auth->access_token,
