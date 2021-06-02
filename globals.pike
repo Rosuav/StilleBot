@@ -327,11 +327,13 @@ class http_endpoint
 }
 
 array(function|array) find_http_handler(string not_query) {
+	//Simple lookups are like http_endpoints["listrewards"], without the slash.
+	//Exclude eg http_endpoints["chan_vlc"] which are handled elsewhere.
 	if (function handler = !has_prefix(not_query, "/chan_") && G->G->http_endpoints[not_query[1..]])
 		return ({handler, ({ })});
-	//Try all the sscanf-based handlers
+	//Try all the sscanf-based handlers, eg http_endpoints["/channels/%[^/]/%[^/]"], with the slash
 	//TODO: Look these up more efficiently (and deterministically)
-	foreach (G->G->http_endpoints; string pat; function handler)
+	foreach (G->G->http_endpoints; string pat; function handler) if (has_prefix(pat, "/"))
 	{
 		//Match against an sscanf pattern, and require that the entire
 		//string be consumed. If there's any left (the last piece is
