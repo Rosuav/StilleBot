@@ -42,29 +42,16 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	}
 	//Attempt to sanitize or whitelist-check the destination. The goal is to permit
 	//anything that could ever have been req->not_query for any legitimate request,
-	//and to deny anything else. Much of this is replicating the routing done by
-	//connection.pike's http_handler.
-	//Note that this will not accept anything with a querystring in it. For now, I'm
-	//fine with that. If it's a problem, split on question mark here and do separate
-	//sanitization of the two halves.
-	string next = req->variables->next;
-	if (!next) ; //No destination? No problem (will use magic at arrival time).
+	//and to deny anything else.
+	//Note that this will not accept anything with a querystring in it. This will
+	//soon change.
+	string next = req->variables->next || "";
+	sscanf(next, "%s?%s", next, string query);
+	if (query && query != "") next = 0; //For now. (CJA 20210621)
 	else if (!has_prefix(next, "/")) next = 0; //Destination MUST be absolute within the server but with no protocol or host.
-	else if (has_prefix(next, "/chan_")) next = 0; //These can't be valid (although they wouldn't hurt, they'd just 404).
-	else if (G->G->http_endpoints[next[1..]]) ; //Destination is a simple target, clearly whitelisted
-	else
-	{
-		function handler;
-		foreach (G->G->http_endpoints; string pat; function h)
-		{
-			//Match against an sscanf pattern, and require that the entire
-			//string be consumed. If there's any left (the last piece is
-			//non-empty), it's not a match - look for a deeper pattern.
-			array pieces = array_sscanf(next, pat + "%s");
-			if (!pieces || !sizeof(pieces) || pieces[-1] != "") continue;
-			handler = h;
-			break;
-		}
+	else {
+		//Look up a handler. If we find one, then it's valid.
+		[function handler, array args] = find_http_handler(next);
 		if (!handler) next = 0;
 		//Note that this will permit a lot of things that aren't actually valid, like /channels/SPAM/HAM
 		//I'm not sure if I should be stricter here or if that's okay. You won't be
