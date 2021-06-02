@@ -290,8 +290,8 @@ class channel_notif
 
 	//NOTE: Without not_join and its friends, Pike 8.0 will spam noisy failure
 	//messages. Everything seems to still work, though.
-	void not_join(object who) {log("%sJoin %s: %s\e[0m\n",color,name,who->user); recent_viewers[who->user] = 1;}
-	void not_part(object who,string message,object executor) {log("%sPart %s: %s\e[0m\n", color, name, who->user);}
+	void not_join(object who) {/*log("%sJoin %s: %s\e[0m\n",color,name,who->user);*/ recent_viewers[who->user] = 1;}
+	void not_part(object who,string message,object executor) {/*log("%sPart %s: %s\e[0m\n", color, name, who->user);*/}
 
 	array(command_handler|string) locate_command(mapping person, string msg)
 	{
@@ -833,15 +833,8 @@ class channel_notif
 		}
 	}
 
-	//As of 20200615, this is going to be inapplicable (they won't send it). This will
-	//basically just mean that it becomes more necessary to have the full badge-based
-	//recognition active, so that's effectively now a requirement.
-	void not_mode(object who,string mode)
-	{
-		if (sscanf(mode, "+o %s", string newmod)) mods[newmod] = 1;
-		if (sscanf(mode, "-o %s", string outmod)) mods[outmod] = 1;
-		log("%sMode %s: %s %O\e[0m\n",color,name,who->nick,mode);
-	}
+	//Not sent by Twitch, so not very useful.
+	void not_mode(object who,string mode) { }
 
 	//Requires a UTF-8 encoded byte string (not Unicode text). May contain colour codes.
 	void log(strict_sprintf_format fmt, sprintf_args ... args)
