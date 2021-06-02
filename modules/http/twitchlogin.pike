@@ -3,6 +3,7 @@ inherit http_endpoint;
 //constant scopes = "chat:read chat:edit whispers:read whispers:edit user_subscriptions"; //For authenticating the bot itself
 //constant scopes = ""; //no scopes currently needed
 
+mapping(string:function) login_callback = ([]);
 mapping(string:string) resend_redirect = ([]);
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
@@ -23,6 +24,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				"Client-ID": persist_config["ircsettings"]->clientid,
 			])]))));
 		mapping user = Standards.JSON.decode_utf8(res->get())->data[0];
+		if (function f = login_callback[req->variables->state])
+			return f(req, user, (multiset)(req->variables->scope / " "), auth->access_token);
 		//write("Login: %O %O\n", auth->access_token, user);
 		string dest = m_delete(req->misc->session, "redirect_after_login");
 		if (!dest || dest == req->not_query || has_prefix(dest + "?", req->not_query))
@@ -68,4 +71,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		"data": sprintf("Unrecognized scope %O being requested", (array)bad * " ")]);
 	multiset needscopes = havescopes | wantscopes; //Note that we'll keep any that we already have.
 	return twitchlogin(req, needscopes, next);
+}
+
+string get_redirect_url(multiset scopes, mapping extra, function callback) {
+	string state = replace(MIME.encode_base64(random_string(15)), (["/": "1", "+": "0"]));
+	login_callback[state] = callback;
+	call_out(m_delete, 600, login_callback, state);
+	return TwitchAuth(scopes)->get_auth_uri(extra | (["state": state]));
 }

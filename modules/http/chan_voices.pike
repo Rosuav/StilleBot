@@ -62,6 +62,8 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel) return;
-	object auth = TwitchAuth((<"chat_login", "user_read", "whispers:edit", "user_subscriptions">));
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "login", "uri": auth->get_auth_uri((["force_verify": "true"]))])));
+	string url = function_object(G->G->http_endpoints->twitchlogin)->get_redirect_url(
+		(<"chat_login", "user_read", "whispers:edit", "user_subscriptions">), (["force_verify": "true"])
+	) {return sprintf("Channel %O\n%O", channel->name, __ARGS__);};
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "login", "uri": url])));
 }
