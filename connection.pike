@@ -130,7 +130,6 @@ class SendQueue(string id) {
 		if (!id) {my_nick = bot_nick; return;} //The default queue uses the primary connection
 		sendqueues[id] = this;
 		mapping tok = persist_status["voices"][?id];
-		write("Creating queue for %O --> %O\n", id, tok);
 		if (!tok) {destruct(); return;}
 		mixed ex = catch (client = IRCClient("irc.chat.twitch.tv", ([
 			"nick": my_nick = tok->login,
@@ -141,9 +140,9 @@ class SendQueue(string id) {
 		if (ex) {
 			tok->last_error_time = time();
 			werror("%% Error connecting to voice %s:\n%s\n", my_nick, describe_error(ex));
-			destruct();
+			destruct(); return;
 		}
-		else call_out(check_active, 300);
+		call_out(check_active, 300);
 		write("Connected to voice %O\n", my_nick);
 	}
 	void check_active() {
@@ -165,7 +164,6 @@ class SendQueue(string id) {
 		if (tm == lastmsgtime) {call_out(pump_queue, 1); return;}
 		lastmsgtime = tm; modmsgs = 0;
 		[[string|array to, string msg], msgqueue] = Array.shift(msgqueue);
-		write("Pumping v %O: %O\n", my_nick, msg);
 		(client || irc)->send_message(to, string_to_utf8(msg));
 	}
 	void send_message(string to, string msg, int|void is_mod) {
@@ -200,7 +198,6 @@ class SendQueue(string id) {
 		}
 		else
 		{
-			write("Sending v %O: %O\n", my_nick, msg);
 			lastmsgtime = tm; modmsgs = 0;
 			(client || irc)->send_message(to, string_to_utf8(msg));
 		}
