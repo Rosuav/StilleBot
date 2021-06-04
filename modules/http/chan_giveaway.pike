@@ -115,7 +115,16 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 		if (!status->is_open) max = 0; //If anything snuck in while we were closing the giveaway, refund it as soon as we notice.
 		else if (!max) max = now; //No maximum :)
 		if (now > max) {
-			set_redemption_status(redem, "CANCELED")->then(lambda(mixed resp) {write("Cancelled: %O\n", resp);});
+			set_redemption_status(redem, "CANCELED")->then(lambda(mixed resp) {
+				write("Cancelled: %O\n", resp);
+				object channel = G->G->irc->channels["#" + chan];
+				channel->trigger_special("!giveaway_toomany", (["user": redem->user_name]), ([
+					"{title}": cfg->giveaway->title || "",
+					"{tickets_bought}": (string)values[redem->reward->id],
+					"{tickets_total}": (string)person->tickets,
+					"{tickets_max}": (string)cfg->giveaway->max_tickets,
+				]));
+			});
 		}
 		else {
 			person->tickets = now;
@@ -128,6 +137,7 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 					"{title}": cfg->giveaway->title || "",
 					"{tickets_bought}": (string)values[redem->reward->id],
 					"{tickets_total}": (string)now,
+					"{tickets_max}": (string)cfg->giveaway->max_tickets,
 				]));
 			}
 		}
