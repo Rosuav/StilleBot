@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, INPUT, DIV, DETAILS, LABEL, SUMMARY, TABLE, TR, TH, TD, SELECT, OPTION, FIELDSET, LEGEND, CODE} = choc;
+const {A, BR, BUTTON, INPUT, DIV, DETAILS, LABEL, SUMMARY, TABLE, TBODY, TR, TH, TD, SELECT, OPTION, FIELDSET, LEGEND, CODE} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 import {waitlate} from "$$static||utils.js$$";
 const commands = { };
@@ -154,6 +154,16 @@ const conditional_types = {
 	},
 };
 
+function describe_builtin_vars(name) {
+	const builtin = builtins[name]; if (!builtin) return [];
+	const rows = [];
+	for (let v in builtin) {
+		if (v === "" || v === "*") continue;
+		rows.push(TR([TD(CODE(v)), TD(builtin[v])]));
+	}
+	return rows;
+}
+
 //Recursively generate DOM elements to allow a command to be edited with full flexibility
 function render_command(cmd, toplevel) {
 	if (typeof cmd.message === "undefined") cmd = {message: cmd};
@@ -239,7 +249,7 @@ function render_command(cmd, toplevel) {
 			TD(INPUT({"data-flag": "builtin_param", value: cmd.builtin_param || ""})),
 			TD(["Parameter (extra info) for the built-in", BR(), DETAILS({className: "builtininfo"}, [
 				SUMMARY("Information provided"),
-				TABLE(TR(TD("TODO"))), //TODO: Fill in the vars provided
+				TABLE([TR([TH("Var"), TH("Value")]), TBODY(describe_builtin_vars(cmd.builtin))]),
 			])]),
 		]));
 	}
@@ -264,7 +274,10 @@ function render_command(cmd, toplevel) {
 }
 
 on("change", 'select[data-flag="dest"]', e => e.match.closest("table").dataset.dest = e.match.value);
-on("change", 'select[data-flag="builtin"]', e => e.match.closest("table").dataset.builtin = e.match.value);
+on("change", 'select[data-flag="builtin"]', e => {
+	const builtin = e.match.closest("table").dataset.builtin = e.match.value;
+	set_content(e.match.closest("table").querySelector(".paramrow tbody"), describe_builtin_vars(builtin));
+});
 
 export function open_advanced_view(cmd) {
 	set_content("#command_details", render_command(cmd, cmd.id[0] !== '!'));
