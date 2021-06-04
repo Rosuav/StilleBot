@@ -100,3 +100,4 @@
   - A bit is always worth 1. Allow custom values for T1/Prime subs, T2, T3.
   - Custom goal, and optionally a roll-up per mileage
   - Continue to tie it to a variable, allowing a reset based on stream start or month
+  - Optionally don't show the numbers, just the bar
