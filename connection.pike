@@ -149,14 +149,16 @@ class SendQueue(string id) {
 		if (!active) {
 			write("Voice %s idle, disconnecting\n", my_nick);
 			if (client) client->close();
-			destruct();
+			m_delete(sendqueues, id);
+			call_out(destruct, 1, this);
 			return;
 		}
 		active = 0;
 		call_out(check_active, 300);
 	}
 	void disconnected() {
-		destruct();
+		m_delete(sendqueues, id);
+		call_out(destruct, 1, this);
 	}
 
 	void pump_queue() {
