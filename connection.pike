@@ -130,35 +130,34 @@ class SendQueue(string id) {
 		if (!id) {my_nick = bot_nick; return;} //The default queue uses the primary connection
 		sendqueues[id] = this;
 		mapping tok = persist_status["voices"][?id];
-		if (!tok) {destruct(); return;}
+		if (!tok) {werror("Unable to get auth token for voice %O\n", id); finalize(); return;}
 		mixed ex = catch (client = IRCClient("irc.chat.twitch.tv", ([
 			"nick": my_nick = tok->login,
 			"pass": "oauth:" + tok->token,
-			"connection_lost": disconnected,
+			"connection_lost": finalize,
 			"error_notify": error_notify,
 		])));
 		if (ex) {
 			tok->last_error_time = time();
 			werror("%% Error connecting to voice %s:\n%s\n", my_nick, describe_error(ex));
-			destruct(); return;
+			finalize(); return;
 		}
 		call_out(check_active, 300);
 		write("Connected to voice %O\n", my_nick);
 	}
+	void finalize() {
+		if (client) client->close();
+		m_delete(sendqueues, id);
+		call_out(destruct, 1, this);
+	}
 	void check_active() {
 		if (!active) {
 			write("Voice %s idle, disconnecting\n", my_nick);
-			if (client) client->close();
-			m_delete(sendqueues, id);
-			call_out(destruct, 1, this);
+			finalize();
 			return;
 		}
 		active = 0;
 		call_out(check_active, 300);
-	}
-	void disconnected() {
-		m_delete(sendqueues, id);
-		call_out(destruct, 1, this);
 	}
 
 	void pump_queue() {
