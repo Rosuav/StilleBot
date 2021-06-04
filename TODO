@@ -88,7 +88,6 @@
   chan_giveaway needs to have two examples (status and refund). Also, this will allow a
   builtin that doesn't have a defaultly-active command, which is definitely a good thing
   with the chan_* ones.
-* If you're timed out, can you buy giveaway tickets? What about emote-only mode?
 * Have a "can't buy, too many tickets" response in !!giveaway_ticket (including the number
   of tickets that you DO have)
 * Polish multi-voice.
@@ -103,4 +102,4 @@
   - Replace {uptime_hms} with {uptime|hms} where hms is a generic formatter that takes
     the numeric uptime and returns the H:M:S
   - Would need a significant rework of the last line of _substitute_vars, and no others.
-  - Can also handle $varname|hms$ the same way
+  - Can also handle $pinafore|hms$ the same way
