@@ -561,11 +561,23 @@ int channel_offline(string channel) {channel_on_off(channel, 0);}
 
 constant command_description = "Giveaway tools. Use subcommand 'status' or 'refund'.";
 constant builtin_name = "Giveaway tools";
-constant default_response = "";
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{action}": "Action taken - same as subcommand, or 'none' if there was nothing to do",
 	"{tickets}": "Number of tickets you have (or had)",
+]);
+constant command_suggestions = ([
+	"!tickets": ([
+		"_description": "Giveaways - show number of tickets you have (any user)",
+		"builtin_param": "status",
+		"message": "Example response",
+	]),
+	"!refund": ([
+		"_description": "Giveaways - refund all your tickets (any user)",
+		"builtin_param": "refund",
+		"message": "Another example response",
+	]),
+	//TODO: Mod-only refund command (maybe the same one??) to refund other person's tickets
 ]);
 
 mapping|Concurrent.Future message_params(object channel, mapping person, string param)

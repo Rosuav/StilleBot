@@ -175,9 +175,10 @@ class builtin_command {
 	constant command_description = "Duplicate, replace, or adjust the normal handling of the !<> command";
 	constant builtin_description = ""; //If omitted, uses command_description
 	constant builtin_name = ""; //Short human-readable name for the drop-down
-	constant default_response = "Example response";
+	constant default_response = ""; //The response to the default command, and also the default suggestion
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
 	constant aliases = ({ }); //Add aliases here and they'll be defaultly aliased if shadowed too
+	constant command_suggestions = 0; //If unset, will use builtin_name and default_response
 	//Override this either as-is or as a continue function to return the useful params.
 	//Note that the person mapping may be as skeletal as (["user": "Nobody"]) - all
 	//other keys are optional.
@@ -192,7 +193,7 @@ class builtin_command {
 		foreach (aliases, string alias) G->G->commands[alias] = check_perms;
 	}
 	echoable_message process(object channel, mapping person, string param) {
-		return (["builtin": this, "builtin_param": param, "message": default_response]);
+		return default_response != "" && (["builtin": this, "builtin_param": param, "message": default_response]);
 	}
 }
 

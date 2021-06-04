@@ -2,7 +2,7 @@ inherit http_websocket;
 inherit builtin_command;
 constant hidden_command = 1;
 constant require_allcmds = 1;
-constant access = "mod";
+constant access = "none";
 constant markdown = #"# MPN - $$channel$$
 
 <$$contenttag$$ id=content rows=25 cols=80></$$contenttag$$>
@@ -132,6 +132,7 @@ constant vars_provided = ([
 	"{action}": "Action performed (if any)",
 	"{url}": "URL to the manipulated document, blank if no such document",
 ]);
+constant command_suggestions = ([]); //No default command suggestions as yet. Maybe I'll figure out some later.
 
 mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {

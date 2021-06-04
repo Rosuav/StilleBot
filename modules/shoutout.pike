@@ -27,7 +27,7 @@ constant game_desc = ([
 	//"Sports & Fitness"
 ]);
 
-constant command_description = "Shout out another streamer, providing a link and some info about them";
+constant command_description = "Shout out another streamer, providing a link and some info about them (alias !so)";
 constant builtin_name = "Shoutout";
 constant default_response = ([
 	"conditional": "string",
