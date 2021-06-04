@@ -19,7 +19,7 @@ $$login$$
 >   <select name=pausemode><option value=disable>Disable, hiding them from users</option><option value=pause>Pause and leave visible</option></select>
 >   When there's no current giveaway, should redemptions remain visible (but unpurchaseable), or vanish entirely?
 >   </label>
-> * <label><input type=checkbox name=allow_multiwin value=yes> Allow òne person to win multiple times? If not, the winner's tickets will be automatically removed.</label>
+> * <label><input type=checkbox name=allow_multiwin value=yes> Allow one person to win multiple times? If not, the winner's tickets will be automatically removed.</label>
 > * <label>Time before giveaway closes: <input name=duration type=number min=0 max=3600> (seconds) How long should the giveaway be open? 0 leaves it until explicitly closed.</label>
 >
 > <button>Save/reconfigure</button>
@@ -224,6 +224,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	}
 	string token = persist_status->path("bcaster_token")[chan];
 	//TODO: Validate the token. If it's not valid, clear it and give this same error.
+	//Currently tokens get validated only when the websocket connection is established.
 	if (!token) return render(req, ([
 		"error": "This page will become available once the broadcaster has logged in and configured redemptions.",
 		"login": login,
@@ -372,8 +373,19 @@ continue mapping|Concurrent.Future get_chan_state(object channel, string grp)
 	if (grp != "control") return 0;
 	int broadcaster_id = yield(get_user_id(chan));
 	make_hooks(chan, broadcaster_id);
-	array rewards = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + broadcaster_id,
+	array rewards;
+	if (mixed ex = catch {rewards = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + broadcaster_id,
 		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])))->data;
+	}) {
+		if (arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401")) {
+			m_delete(persist_status->path("bcaster_token"), chan);
+			//TODO: Return a message informing the user
+			//TODO: Notify the broadcaster of the need to re-login
+			return 0;
+		}
+		werror("Unexpected error listing channel rewards: %s\n", describe_backtrace(ex));
+		return 0;
+	}
 	array(array) redemptions = yield(Concurrent.all(list_redemptions(broadcaster_id, chan, rewards->id[*])));
 	//Every time a new websocket is established, fully recalculate. Guarantee fresh data.
 	G->G->giveaway_tickets[chan] = ([]);
