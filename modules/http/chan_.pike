@@ -105,7 +105,12 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 		else req->misc->chaninfo->save_or_login = "<i>You're logged in, but not a recognized mod. Before you can make changes, go to the channel and say something, so I can see your mod sword. Thanks!</i>";
 		req->misc->chaninfo->logout = "| <a href=\"/logout\">Log out</a>";
 	}
-	else req->misc->chaninfo->save_or_login = "<a href=\"/twitchlogin?next=" + req->not_query + "\">Mods, login to make changes</a>";
+	else {
+		string url = "/twitchlogin";
+		mapping vars = function_object(handler)->safe_query_vars(req->variables);
+		if (vars) url += "?" + Protocols.HTTP.http_encode_query((["next": req->not_query + "?" + Protocols.HTTP.http_encode_query(vars)]));
+		req->misc->chaninfo->save_or_login = "<a href=\"" + url + "\">Mods, login to make changes</a>";
+	}
 	return handler(req);
 }
 
