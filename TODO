@@ -82,8 +82,6 @@
 * Channel point redemptions triggering command-like responses
 * Is it possible to get a "recent messages" timeout? Would allow squishing of spam if the
   channel is too quiet. Might not be worth it though.
-* Have a "can't buy, too many tickets" response in !!giveaway_ticket (including the number
-  of tickets that you DO have)
 * Polish multi-voice.
   - This would allow the bot to see its own messages, but only if sent by a non-primary
     account.
