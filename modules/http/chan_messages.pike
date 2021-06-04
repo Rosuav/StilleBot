@@ -14,8 +14,6 @@ li {line-height: 2.25;}
 	padding: 0;
 	margin-right: 0.25em;
 }
-.confirmdelete:hover {background: #f33;}
-.confirmdelete.pending {margin-left: 2em;} /* Jump the button away to avoid double-click */
 </style>
 ";
 

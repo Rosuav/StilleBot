@@ -1,5 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, BUTTON, IMG, LI, SPAN} = choc;
+import {waitlate} from "$$static||utils.js$$";
 
 const full_date_format = new Intl.DateTimeFormat('default', {
 	weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
@@ -26,7 +27,7 @@ export const render_parent = DOM("#messages");
 export function render_item(msg) {
 	set_content("#loading", "");
 	return LI({"data-id": msg.id}, [
-		BUTTON({className: "confirmdelete"}, "🗑"),
+		BUTTON({type: "button", className: "confirmdelete"}, "🗑"),
 		date_display(new Date(msg.received * 1000)),
 		msg.parts ? SPAN(msg.parts.map(p =>
 			typeof(p) === "string" ? p :
@@ -40,14 +41,6 @@ export function render_item(msg) {
 export function render_empty() {set_content("#loading", "You have no messages from this channel.");}
 export function render(data) { }
 
-on("click", ".confirmdelete", e => {
-	const btn = e.match; //Snapshot for closure
-	e.preventDefault();
-	if (btn.classList.toggle("pending")) {
-		set_content(btn, "Delete?");
-		setTimeout(() => set_content(btn, "🗑").classList.remove("pending"), 5000);
-	} else {
-		set_content(btn, "🗑");
-		ws_sync.send({cmd: "delete", id: btn.closest("li").dataset.id});
-	}
-});
+on("click", ".confirmdelete", waitlate(750, 5000, "Delete?", e => {
+	ws_sync.send({cmd: "delete", id: e.match.closest("li").dataset.id});
+}));
