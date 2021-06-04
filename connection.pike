@@ -392,14 +392,16 @@ class channel_notif
 		return replace(text, vars);
 	}
 
-	void _send_recursive(mapping person, echoable_message message, mapping vars)
+	//Changes to vars[] will propagate linearly. Changes to cfg[] will propagate
+	//within a subtree only. Change it only with |=.
+	void _send_recursive(mapping person, echoable_message message, mapping vars, mapping cfg)
 	{
 		if (!message) return;
 		if (!mappingp(message)) message = (["message": message]);
 
 		if (message->delay)
 		{
-			call_out(_send_recursive, (int)message->delay, person, message | (["delay": 0, "_changevars": 1]), vars);
+			call_out(_send_recursive, (int)message->delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg);
 			return;
 		}
 		if (message->_changevars)
@@ -424,12 +426,21 @@ class channel_notif
 				string param = _substitute_vars(message->builtin_param || "", vars, person);
 				handle_async(handler->message_params(this, person, param)) {
 					if (!__ARGS__[0]) return; //No params? No output.
-					_send_recursive(person, message->message, vars | __ARGS__[0]);
+					_send_recursive(person, message->message, vars | __ARGS__[0], cfg);
 				};
 				return;
 			}
 			else message = (["message": sprintf("Bad builtin name %O", message->builtin)]);
 		}
+
+		if (message->voice) cfg |= (["voice": message->voice]);
+		//Legacy mode: dest is dest + " " + target, target doesn't exist
+		if (has_value(message->dest || "", ' ') && !message->target) {
+			sscanf(message->dest, "%s %s", string d, string t);
+			cfg |= (["dest": d, "target": _substitute_vars(t, vars, person)]);
+		}
+		//Normal mode: Destination and target are separate fields
+		else if (message->dest) cfg |= (["dest": message->dest, "target": _substitute_vars(message->target || "", vars, person)]);
 
 		echoable_message msg = message->message;
 		string expr(string input) {
@@ -499,7 +510,7 @@ class channel_notif
 		}
 		if (!msg || msg == "") return; //If a message doesn't have an Otherwise, it'll end up null.
 
-		if (mappingp(msg)) {_send_recursive(person, message | (["conditional": 0]) | msg, vars); return;}
+		if (mappingp(msg)) {_send_recursive(person, message | (["conditional": 0]) | msg, vars, cfg); return;}
 
 		if (arrayp(msg))
 		{
@@ -507,7 +518,7 @@ class channel_notif
 			else
 			{
 				foreach (msg, echoable_message m)
-					_send_recursive(person, message | (["conditional": 0, "message": m]), vars);
+					_send_recursive(person, message | (["conditional": 0, "message": m]), vars, cfg);
 				return;
 			}
 		}
@@ -515,10 +526,7 @@ class channel_notif
 		//And now we have just a single string to send.
 		string prefix = _substitute_vars(message->prefix || "", vars, person);
 		msg = _substitute_vars(msg, vars, person);
-		string dest = message->dest || "", target = message->target || "";
-		//Legacy mode: dest is dest + " " + target, target doesn't exist
-		if (has_value(dest, ' ') && target == "") sscanf(dest, "%s %s", dest, target);
-		target = _substitute_vars(target, vars, person);
+		string dest = cfg->dest || "", target = cfg->target || "";
 		if (dest == "/web")
 		{
 			//Stash the text away. Recommendation: Have a public message that informs the
@@ -546,8 +554,8 @@ class channel_notif
 			}
 		}
 
-		//Variable management. Note that these are silent, so they should normally
-		//be paired with public messages.
+		//Variable management. Note that these are silent, so commands may want to pair
+		//these with public messages. (Silence is perfectly acceptable for triggers.)
 		if (dest == "/set" && sscanf(target, "%[A-Za-z]", string var) && var && var != "")
 		{
 			
@@ -594,7 +602,7 @@ class channel_notif
 	{
 		vars = (persist_status->path("variables")[name] || ([])) | (vars || ([]));
 		vars["$$"] = person->displayname || person->user;
-		_send_recursive(person, message, vars);
+		_send_recursive(person, message, vars, ([]));
 	}
 
 	//Expand all channel variables, except for $participant$ which usually won't
