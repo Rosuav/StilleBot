@@ -189,10 +189,7 @@ class builtin_command {
 		sscanf(explode_path(name)[-1],"%s.pike",name);
 		if (!name) return;
 		G->G->builtins[name] = this;
-		foreach (aliases, string alias) {
-			G->G->commands[alias] = check_perms;
-			G->G->builtins[alias] = this; //Once builtin selection is all by drop-down, it'll be okay to remove this and just have the base name in the mapping.
-		}
+		foreach (aliases, string alias) G->G->commands[alias] = check_perms;
 	}
 	echoable_message process(object channel, mapping person, string param) {
 		return (["builtin": this, "builtin_param": param, "message": default_response]);
