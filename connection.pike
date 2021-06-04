@@ -421,6 +421,16 @@ class channel_notif
 			sscanf(message->target, "!%[^ ]%*[ ]%s", string cmd, string param);
 			message = (message - (<"dest", "target">)) | (["builtin": cmd, "builtin_param": param]);
 		}
+
+		if (message->voice) cfg |= (["voice": message->voice]);
+		//Legacy mode: dest is dest + " " + target, target doesn't exist
+		if (has_value(message->dest || "", ' ') && !message->target) {
+			sscanf(message->dest, "%s %s", string d, string t);
+			cfg |= (["dest": d, "target": _substitute_vars(t, vars, person)]);
+		}
+		//Normal mode: Destination and target are separate fields
+		else if (message->dest) cfg |= (["dest": message->dest, "target": _substitute_vars(message->target || "", vars, person)]);
+
 		if (message->builtin) {
 			object handler = G->G->builtins[message->builtin] || message->builtin; //Chaining can be done by putting the object itself in the mapping
 			if (objectp(handler)) {
@@ -433,15 +443,6 @@ class channel_notif
 			}
 			else message = (["message": sprintf("Bad builtin name %O", message->builtin)]);
 		}
-
-		if (message->voice) cfg |= (["voice": message->voice]);
-		//Legacy mode: dest is dest + " " + target, target doesn't exist
-		if (has_value(message->dest || "", ' ') && !message->target) {
-			sscanf(message->dest, "%s %s", string d, string t);
-			cfg |= (["dest": d, "target": _substitute_vars(t, vars, person)]);
-		}
-		//Normal mode: Destination and target are separate fields
-		else if (message->dest) cfg |= (["dest": message->dest, "target": _substitute_vars(message->target || "", vars, person)]);
 
 		echoable_message msg = message->message;
 		string expr(string input) {
