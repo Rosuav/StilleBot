@@ -1,6 +1,7 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, BR, BUTTON, DETAILS, SUMMARY, DIV, FORM, INPUT, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
 import update_display from "$$static||monitor.js$$";
+import {waitlate} from "$$static||utils.js$$";
 
 //NOTE: If any monitors get deleted, we'll hang onto the now-useless websockets
 //until page refresh. A bit unideal but shouldn't be too common.
@@ -131,24 +132,16 @@ document.addEventListener("toggle", e => {
 }, true); //Capturing phase only - event does not bubble.
 
 const deleting = { };
-on("click", ".deletebtn", async e => {
+on("click", ".deletebtn", waitlate(1000, 7500, "Really delete?", async e => {
 	const nonce = e.match.dataset.nonce;
-	const confirm = deleting[nonce] || 0;
-	if (confirm > +new Date) {
-		//Actually delete
-		console.log("Delete.");
-		const res = await fetch("monitors", {
-			method: "DELETE",
-			headers: {"Content-Type": "application/json"},
-			body: JSON.stringify({nonce}),
-		});
-		if (!res.ok) console.error("Something went wrong in the save, check console"); //TODO: Report errors properly
-		return;
-	}
-	deleting[nonce] = 10000 + +new Date;
-	e.match.innerHTML = "Confirm?";
-	setTimeout(btn => btn.innerHTML = "Delete?", 10000, e.match);
-});
+	console.log("Delete.");
+	const res = await fetch("monitors", {
+		method: "DELETE",
+		headers: {"Content-Type": "application/json"},
+		body: JSON.stringify({nonce}),
+	});
+	if (!res.ok) console.error("Something went wrong in the save, check console"); //TODO: Report errors properly
+}));
 
 on("dragstart", ".monitorlink", e => {
 	const url = `${e.match.href}&layer-name=StilleBot%20monitor&layer-width=400&layer-height=120`;
