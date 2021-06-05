@@ -11,7 +11,9 @@ input[type=number] {width: 4em;}
 
 Text | Style | Actions | Preview | Link
 -----|-------|---------|---------|------
-<form id=add><input size=40 name=text></form> | <input type=submit form=add value="Add"> | &nbsp; | &nbsp; |
+loading... | - | - | - | -
 {:#monitors}
+
+[Add text monitor](:#add_text)
 
 The text can (and should!) incorporate variables, eg <code>$foo$</code>. Whenever the variable changes, this will update.

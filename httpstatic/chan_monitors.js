@@ -104,9 +104,7 @@ function update_monitors() {
 		])),
 		TD(A({className: "monitorlink", href: "monitors?view=" + nonce}, "Drag me to OBS")),
 	])));
-	const table = DOM("#monitors tbody");
-	rows.push(table.lastElementChild);
-	set_content(table, rows);
+	set_content("#monitors tbody", rows);
 }
 
 export function render(data, group) {
@@ -131,6 +129,11 @@ on("submit", "#monitors form", async e => {
 		body: JSON.stringify(body),
 	});
 	if (!res.ok) console.error("Something went wrong in the save, check console"); //TODO: Report errors properly
+});
+
+on("click", "#add_text", e => {
+	//TODO: Replace this with a ws message
+	fetch("monitors", {method: "PUT", headers: {"Content-Type": "application/json"}, body: '{"text": ""}'});
 });
 
 on("change", "[name=previewbg]", e => {
