@@ -85,10 +85,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping monitors = channel->config->monitors || ([]);
-	if (grp == "") return (["monitors": monitors]); //Master group - lists all monitors. Gives details for convenience ONLY, is not guaranteed.
-	mapping text = monitors[grp];
-	if (!text) return 0;
-	return text | (["display": channel->expand_variables(text->text)]);
+	if (grp != "") {
+		mapping text = monitors[grp];
+		return text && text | (["display": channel->expand_variables(text->text)]);
+	}
+	return (["monitors": monitors]);
 }
 
 protected void create(string name) {::create(name); G->G->monitor_css_attributes = css_attributes;}
