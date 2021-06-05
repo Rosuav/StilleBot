@@ -1,5 +1,4 @@
-inherit http_endpoint;
-inherit websocket_handler;
+inherit http_websocket;
 
 //Note that this also handles CookingForNoobs's run distance gauge, which may end up
 //turning into a more generic gauge. This has a different set of attributes and a
@@ -78,21 +77,16 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	}
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
 	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
-	return render_template("chan_monitors.md", (["vars": ([
-		"ws_type": "chan_monitors", "ws_group": req->misc->channel->name,
+	return render(req, (["vars": ([
+		"ws_group": "",
 		"css_attributes": css_attributes,
 	])]) | req->misc->chaninfo);
 }
 
-mapping get_state(string group) {
-	if (!stringp(group)) return 0;
-	sscanf(group, "%s#%s", string nonce, string chan);
-	if (!nonce || !chan) return 0;
-	object channel = G->G->irc->channels["#" + chan];
-	if (!channel) return 0;
+mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping monitors = channel->config->monitors || ([]);
-	if (nonce == "") return (["monitors": monitors]); //Master group - lists all monitors. Gives details for convenience ONLY, is not guaranteed.
-	mapping text = monitors[nonce];
+	if (grp == "") return (["monitors": monitors]); //Master group - lists all monitors. Gives details for convenience ONLY, is not guaranteed.
+	mapping text = monitors[grp];
 	if (!text) return 0;
 	return text | (["display": channel->expand_variables(text->text)]);
 }
