@@ -105,7 +105,6 @@ function update_monitors() {
 		TD(A({className: "monitorlink", href: "monitors?view=" + nonce}, "Drag me to OBS")),
 	])));
 	const table = DOM("#monitors tbody");
-	rows.unshift(table.firstChild);
 	rows.push(table.lastElementChild);
 	set_content(table, rows);
 }

@@ -9,9 +9,9 @@ input[type=number] {width: 4em;}
 .preview-bg {padding: 6px;}
 </style>
 
-<table border=1 id=monitors>
-<tr><th>Text</th><th>Style</th><th>Actions</th><th>Preview</th><th>Link</th></tr>
-<tr><td><form id=add><input size=40 name=text></form></td><td><input type=submit form=add value="Add"></td><td></td><td></td><td></td></tr>
-</table>
+Text | Style | Actions | Preview | Link
+-----|-------|---------|---------|------
+<form id=add><input size=40 name=text></form> | <input type=submit form=add value="Add"> | &nbsp; | &nbsp; |
+{:#monitors}
 
 The text can (and should!) incorporate variables, eg <code>$foo$</code>. Whenever the variable changes, this will update.
