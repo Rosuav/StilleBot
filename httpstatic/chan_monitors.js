@@ -3,6 +3,18 @@ const {A, BR, BUTTON, DETAILS, SUMMARY, DIV, FORM, INPUT, OPTION, OPTGROUP, SELE
 import update_display from "$$static||monitor.js$$";
 import {waitlate} from "$$static||utils.js$$";
 
+/*
+New plan: Bring graphical monitors into this module where they belong.
+The main display will have:
+* ID, invisible
+* Preview (currently hidden)
+* Edit button
+* Delete button
+* OBS-draggable link
+
+All editing will be in a dialog.
+*/
+
 //NOTE: If any monitors get deleted, we'll hang onto the now-useless websockets
 //until page refresh. A bit unideal but shouldn't be too common.
 const have_sockets = { };

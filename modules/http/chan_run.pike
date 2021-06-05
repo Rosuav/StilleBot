@@ -1,5 +1,5 @@
 inherit http_endpoint;
-
+//May end up getting deprecated in favour of chan_monitors doing it all
 /*
 1) Maintain a counter. Zero it at start of stream? If not, have a command to force it. May also be necessary for other situations.
 2) On seeing a chat message from Streamlabs "Tchaikovsky just tipped $9.50!", add 950 to the counter.
