@@ -80,6 +80,7 @@ set_content("#edittext form div", TABLE({border: 1}, [
 		BR(), "one that's already on your PC.",
 	])]),
 	TR([TH("Text color"), TD(INPUT({name: "color", type: "color"}))]),
+	TR([TH("Preview bg"), TD(INPUT({name: "previewbg", type: "color"}))]),
 	TR([TH("Border"), TD([
 		"Width (px):", INPUT({name: "borderwidth", type: "number"}),
 		"Color:", INPUT({name: "bordercolor", type: "color"}),
@@ -145,7 +146,7 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 	])]),
 	TR([TH("Format"), TD([
 		SELECT({name: "format"}, [OPTION("plain"), OPTION("currency")]),
-		"Display format for the numeric value",
+		"Display format for numbers. Currency uses cents - 2718 is $27.18.",
 	])]),
 	TR([TH("Level up response"), TD([
 		SELECT({name: "lvlupcmd", id: "cmdpicker"}, [OPTION("Loading...")]),
