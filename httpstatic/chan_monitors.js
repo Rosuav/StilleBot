@@ -15,11 +15,13 @@ The main display will have:
 All editing will be in a dialog.
 */
 
+const editables = { };
 function set_values(nonce, info, elem) {
 	if (!info) return 0;
 	const runmode = !elem.dataset || !elem.dataset.nonce;
 	for (let attr in info) {
-		if (attr === "text" && runmode) { //FIXME: Probably broken after some other changes
+		editables[nonce][attr] = info[attr];
+		if (attr === "text" && info.type === "goalbar" && runmode) { //FIXME: Probably broken after some other changes
 			//For run distance, fracture this into the variable name and the actual text.
 			const m = /^\$([^:$]+)\$:(.*)/.exec(info.text);
 			console.log(info.text);
@@ -33,65 +35,28 @@ function set_values(nonce, info, elem) {
 		if (attr === "lvlupcmd" && el) //Special case: the value might not work if stuff isn't loaded yet.
 			el.dataset.wantvalue = info[attr]
 	}
-	if (runmode) {
+	if (runmode && info.type === "goalbar") {
 		elem.querySelector("[name=currentval]").value = info.display.split(":")[0];
 		window.update_milepicker();
 	}
-	update_display(elem.querySelector(".preview"), info);
-	if (info.previewbg) elem.querySelector(".preview-bg").style.backgroundColor = info.previewbg;
+	const preview = elem.querySelector(".preview");
+	if (preview) {
+		update_display(preview, info);
+		if (info.previewbg) elem.querySelector(".preview-bg").style.backgroundColor = info.previewbg;
+	}
 	return elem;
 }
 
 export const render_parent = DOM("#monitors tbody");
 export function render_item(msg, obj) {
 	const nonce = msg.id;
+	if (!editables[nonce]) editables[nonce] = { };
 	return set_values(nonce, msg, obj || TR({"data-nonce": nonce, "data-id": nonce}, [
-		TD(INPUT({size: 40, name: "text", form: "upd_" + nonce})),
-		TD(DETAILS([SUMMARY("Expand"), FORM({id: "upd_" + nonce}, TABLE([
-			TR([
-				TD("Font:"),
-				TD([
-					INPUT({name: "font", size: "28"}),
-					SELECT({name: "fontweight"}, [OPTION("normal"), OPTION("bold")]),
-					SELECT({name: "fontstyle"}, [OPTION("normal"), OPTION("italic")]),
-					INPUT({name: "fontsize", type: "number", size: "3", value: "16"}),
-				])
-			]),
-			TR([TD(), TD(["Pick a font from Google Fonts or", BR(), "one that's already on your PC."])]),
-			TR([TD("Text color:"), TD(INPUT({name: "color", type: "color"}))]),
-			TR([TD("Border:"), TD([
-				"Width (px):", INPUT({name: "borderwidth", type: "number"}),
-				"Color:", INPUT({name: "bordercolor", type: "color"}),
-			])]),
-			//TODO: Gradient?
-			//TODO: Drop shadow?
-			//TODO: Padding? Back end already supports padvert and padhoriz.
-			TR([TD("Formatting:"), TD(SELECT({name: "whitespace"}, [
-				OPTGROUP({label: "Single line"}, [
-					OPTION({value: "normal"}, "Wrapped"),
-					OPTION({value: "nowrap"}, "No wrapping"),
-				]),
-				OPTGROUP({label: "Multi-line"}, [
-					OPTION({value: "pre-line"}, "Normal"),
-					OPTION({value: "pre"}, "Keep indents"),
-					OPTION({value: "pre-wrap"}, "No wrapping"),
-				]),
-			]))]),
-			TR([TD("Custom CSS:"), TD(INPUT({name: "css", size: 40}))]),
-		]))])),
+		TD(DIV({className: "preview-frame"}, DIV({className: "preview-bg"}, DIV({className: "preview"})))),
 		TD([
-			INPUT({type: "submit", value: "Save", form: "upd_" + nonce}),
+			BUTTON({type: "button", className: "editbtn"}, "Edit"),
 			BUTTON({type: "button", className: "deletebtn", "data-nonce": nonce}, "Delete?"),
 		]),
-		TD(DETAILS({className: "preview-expander"}, [SUMMARY("Expand"),
-			DIV([
-				"Background color:",
-				INPUT({name: "previewbg", form: "upd_" + nonce, type: "color"}),
-				"(preview only)",
-			]),
-			DIV({className: "preview-frame"}, DIV({className: "preview-bg"}, DIV({className: "preview", id: "preview_" + nonce}))),
-			DIV({className: "size"}, "Estimated size: (unknown)"),
-		])),
 		TD(A({className: "monitorlink", href: "monitors?view=" + nonce}, "Drag me to OBS")),
 	]));
 }
@@ -102,10 +67,43 @@ export function render_empty() {
 }
 export function render(data) { }
 
-on("submit", "#monitors form", async e => {
-	e.preventDefault();
+set_content("#edittext form div", TABLE({border: 1}, [
+	TR([TD("Text:"), TD(INPUT({size: 40, name: "text"}))]),
+	TR([
+		TD("Font:"),
+		TD([
+			INPUT({name: "font", size: "28"}),
+			SELECT({name: "fontweight"}, [OPTION("normal"), OPTION("bold")]),
+			SELECT({name: "fontstyle"}, [OPTION("normal"), OPTION("italic")]),
+			INPUT({name: "fontsize", type: "number", size: "3", value: "16"}),
+		])
+	]),
+	TR([TD(), TD(["Pick a font from Google Fonts or", BR(), "one that's already on your PC."])]),
+	TR([TD("Text color:"), TD(INPUT({name: "color", type: "color"}))]),
+	TR([TD("Border:"), TD([
+		"Width (px):", INPUT({name: "borderwidth", type: "number"}),
+		"Color:", INPUT({name: "bordercolor", type: "color"}),
+	])]),
+	//TODO: Gradient?
+	//TODO: Drop shadow?
+	//TODO: Padding? Back end already supports padvert and padhoriz.
+	TR([TD("Formatting:"), TD(SELECT({name: "whitespace"}, [
+		OPTGROUP({label: "Single line"}, [
+			OPTION({value: "normal"}, "Wrapped"),
+			OPTION({value: "nowrap"}, "No wrapping"),
+		]),
+		OPTGROUP({label: "Multi-line"}, [
+			OPTION({value: "pre-line"}, "Normal"),
+			OPTION({value: "pre"}, "Keep indents"),
+			OPTION({value: "pre-wrap"}, "No wrapping"),
+		]),
+	]))]),
+	TR([TD("Custom CSS:"), TD(INPUT({name: "css", size: 40}))]),
+]));
+
+on("submit", "#edittext form", async e => {
 	console.log(e.match.elements);
-	const nonce = e.match.id.slice(4);
+	const nonce = e.match.dataset.nonce;
 	const body = {nonce};
 	("text " + css_attributes).split(" ").forEach(attr => {
 		if (!e.match.elements[attr]) return;
@@ -128,13 +126,17 @@ on("click", "#add_text", e => {
 on("change", "[name=previewbg]", e => {
 	e.match.closest("tr").querySelector(".preview-bg").style.backgroundColor = e.match.value;
 });
-document.addEventListener("toggle", e => {
-	if (!e.target.matches(".preview-expander")) return;
-	const preview = e.target.querySelector(".preview");
-	e.target.querySelector(".size").innerHTML = "Estimated size: " + preview.offsetWidth + " x " + preview.offsetHeight;
-}, true); //Capturing phase only - event does not bubble.
 
-const deleting = { };
+on("click", ".editbtn", e => {
+	const nonce = e.match.closest("tr").dataset.id;
+	const mon = editables[nonce];
+	const dlg = DOM("#edittext"); //TODO: Change this based on mon.type
+	set_values(nonce, mon, dlg); //TODO: Break set_values into the part done on update and the part done here
+	DOM("#edittext form").dataset.nonce = nonce;
+	dlg.returnValue = "close";
+	dlg.showModal();
+});
+
 on("click", ".deletebtn", waitlate(1000, 7500, "Really delete?", async e => {
 	const nonce = e.match.dataset.nonce;
 	console.log("Delete.");
