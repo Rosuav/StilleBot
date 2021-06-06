@@ -1,6 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, BR, BUTTON, CODE, DETAILS, SUMMARY, DIV, FORM, INPUT, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
-import update_display from "$$static||monitor.js$$";
 import {open_advanced_view} from "$$static||chan_commands.js$$";
 
 function update_milepicker() {
