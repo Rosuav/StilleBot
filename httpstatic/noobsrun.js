@@ -60,11 +60,15 @@ function textify(cmd) {
 	if (cmd.dest) return null; //Suppress special-destination sections
 	return cmd.message;
 }
+function shorten(txt, len) {
+	if (txt.length <= len) return txt;
+	return txt.slice(0, len - 1) + "..."; //I really want a width-based shorten, but CSS won't max-width an option
+}
 const commands = { };
 ws_sync.connect("#" + channame, {
 	ws_type: "chan_commands",
 	select: DOM("#cmdpicker"),
-	make_option: cmd => OPTION({"data-id": cmd.id, value: cmd.id.split("#")[0]}, "!" + cmd.id.split("#")[0] + " -- " + textify(cmd.message)),
+	make_option: cmd => OPTION({"data-id": cmd.id, value: cmd.id.split("#")[0]}, "!" + cmd.id.split("#")[0] + " -- " + shorten(textify(cmd.message), 75)),
 	is_recommended: cmd => cmd.access === "none" && cmd.visibility === "hidden",
 	render: function(data) {
 		if (data.id) {

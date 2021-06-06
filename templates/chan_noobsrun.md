@@ -20,6 +20,7 @@ input[type=number] {width: 4em;}
 
 .optionset {display: flex; padding: 0.125em 0;}
 .optionset fieldset {padding: 0.25em; margin-left: 1em;}
+#cmdpicker option {max-width: 40em;}
 </style>
 
 <table border=1>
