@@ -16,7 +16,7 @@ function currency(cents) {
 //it must remain so forever (or at least until you refresh the page).
 const thresholdinfo = { };
 export function render(data) {update_display(DOM("#display"), data.data);}
-export default function update_display(elem, data, display) { //Used for the preview as well as the live display
+export default function update_display(elem, data) { //Used for the preview as well as the live display
 	//Update styles. If the arbitrary CSS setting isn't needed, make sure it is "" not null.
 	let t = thresholdinfo[data.id];
 	if (data.css || data.css === "") {
@@ -54,7 +54,7 @@ export default function update_display(elem, data, display) { //Used for the pre
 	}
 	if (t) {
 		const thresholds = t.t;
-		const m = /^([0-9]+):(.*)$/.exec(display || data.display || data.text);
+		const m = /^([0-9]+):(.*)$/.exec(data.display);
 		if (!m) {console.error("Something's misconfigured (see monitor.js regex)"); return;}
 		let pos = m[1], text, mark, goal;
 		for (let which = 0; which < thresholds.length; ++which) {
@@ -77,5 +77,5 @@ export default function update_display(elem, data, display) { //Used for the pre
 		elem.style.display = "flex";
 		set_content(elem, [DIV(text), DIV(currency(pos)), DIV(currency(goal))]);
 	}
-	else set_content(elem, data.display || data.text);
+	else set_content(elem, data.display);
 }
