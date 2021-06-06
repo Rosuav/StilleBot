@@ -12,21 +12,24 @@ function currency(cents) {
 	return currency_formatter.format(cents / 100);
 }
 
-let thresholds = null, fillcolor, barcolor, needlesize = 0.375;
-export function render(data) {update_display(DOM("#display"), data);}
+//NOTE: These values persist. If ever a particular ID is used in thresholds mode,
+//it must remain so forever (or at least until you refresh the page).
+const thresholdinfo = { };
+export function render(data) {update_display(DOM("#display"), data.data);}
 export default function update_display(elem, data, display) { //Used for the preview as well as the live display
 	//Update styles. If the arbitrary CSS setting isn't needed, make sure it is "" not null.
+	let t = thresholdinfo[data.id];
 	if (data.css || data.css === "") {
 		elem.style.cssText = data.css;
 		for (let attr in css_attribute_names) {
 			if (data[attr]) elem.style[css_attribute_names[attr]] = data[attr];
 		}
 		if (data.thresholds && data.barcolor) {
-			thresholds = data.thresholds.split(" ").map(x => x * 100).filter(x => x && x === x); //Suppress any that fail to parse as numbers
-			barcolor = data.barcolor; fillcolor = data.fillcolor || data.barcolor;
+			t = thresholdinfo[data.id] = {t: data.thresholds.split(" ").map(x => x * 100).filter(x => x && x === x)}; //Suppress any that fail to parse as numbers
+			t.barcolor = data.barcolor; t.fillcolor = data.fillcolor || data.barcolor;
 			//The rest of the style handling is below, since it depends on the text
 		}
-		if (data.needlesize) needlesize = +data.needlesize;
+		if (data.needlesize) t.needlesize = +data.needlesize;
 		if (data.fontsize) elem.style.fontSize = data.fontsize + "px"; //Special-cased to add the unit
 		//It's more-or-less like saying "padding: {padvert}em {padhoriz}em"
 		if (data.padvert)  elem.style.paddingTop = elem.style.paddingBottom = data.padvert + "em";
@@ -49,7 +52,8 @@ export default function update_display(elem, data, display) { //Used for the pre
 			}
 		}
 	}
-	if (thresholds) {
+	if (t) {
+		const thresholds = t.t;
 		const m = /^([0-9]+):(.*)$/.exec(display || data.display || data.text);
 		if (!m) {console.error("Something's misconfigured (see monitor.js regex)"); return;}
 		let pos = m[1], text, mark, goal;
@@ -69,7 +73,7 @@ export default function update_display(elem, data, display) { //Used for the pre
 			mark = 100;
 			goal = thresholds[thresholds.length - 1];
 		}
-		elem.style.background = `linear-gradient(.25turn, ${fillcolor} ${mark-needlesize}%, red, ${barcolor} ${mark+needlesize}%, ${barcolor})`;
+		elem.style.background = `linear-gradient(.25turn, ${t.fillcolor} ${mark-t.needlesize}%, red, ${t.barcolor} ${mark+t.needlesize}%, ${t.barcolor})`;
 		elem.style.display = "flex";
 		set_content(elem, [DIV(text), DIV(currency(pos)), DIV(currency(goal))]);
 	}

@@ -87,7 +87,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping monitors = channel->config->monitors || ([]);
 	if (grp != "") {
 		mapping text = monitors[grp];
-		return text && text | (["id": grp, "display": channel->expand_variables(text->text)]);
+		return (["data": text && text | (["id": grp, "display": channel->expand_variables(text->text)])]);
 	}
 	return ([
 		"monitors": monitors, //Compatibility
