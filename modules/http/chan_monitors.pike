@@ -3,7 +3,7 @@ inherit http_websocket;
 //Note that this also handles CookingForNoobs's run distance gauge, which may end up
 //turning into a more generic gauge. This has a different set of attributes and a
 //different admin front-end, but the viewing endpoint and API handling are shared.
-constant css_attributes = "font fontweight fontstyle fontsize color css whitespace previewbg barcolor fillcolor bordercolor borderwidth needlesize thresholds padvert padhoriz lvlupcmd format";
+constant css_attributes = "font fontweight fontstyle fontsize color css whitespace previewbg barcolor fillcolor bordercolor borderwidth needlesize thresholds padvert padhoriz lvlupcmd format width height";
 constant valid_types = (<"text", "goalbar">);
 
 /* TODO: Join up three things and make them all behave more similarly.
@@ -58,6 +58,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (valid_types[body->type]) info->type = body->type;
 		//TODO: Validate the individual values?
 		foreach (css_attributes / " ", string key) if (body[key]) info[key] = body[key];
+		if (body->varname) info->text = sprintf("$%s$:%s", body->varname, info->text);
 		persist_config->save();
 		send_updates_all(nonce + req->misc->channel->name);
 		update_one(req->misc->channel->name, nonce);

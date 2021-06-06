@@ -1,5 +1,6 @@
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, DETAILS, SUMMARY, DIV, FORM, INPUT, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
+import choc, {set_content, DOM, on, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
+const {A, BR, BUTTON, DETAILS, SUMMARY, DIV, FORM, FIELDSET, LEGEND, INPUT, TEXTAREA, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
+fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 import update_display from "$$static||monitor.js$$";
 import {waitlate} from "$$static||utils.js$$";
 
@@ -37,7 +38,7 @@ function set_values(nonce, info, elem) {
 	}
 	if (runmode && info.type === "goalbar") {
 		elem.querySelector("[name=currentval]").value = info.display.split(":")[0];
-		window.update_milepicker();
+		//window.update_milepicker();
 	}
 	const preview = elem.querySelector(".preview");
 	if (preview) {
@@ -67,6 +68,7 @@ export function render_empty() {
 }
 export function render(data) { }
 
+//TODO: Build these from data in some much more maintainable way (cf commands advanced edit)
 set_content("#edittext form div", TABLE({border: 1}, [
 	TR([TD("Text:"), TD(INPUT({size: 40, name: "text"}))]),
 	TR([
@@ -101,15 +103,68 @@ set_content("#edittext form div", TABLE({border: 1}, [
 	TR([TD("Custom CSS:"), TD(INPUT({name: "css", size: 40}))]),
 ]));
 
-on("submit", "#edittext form", async e => {
+set_content("#editgoalbar form div", TABLE({border: 1}, [
+	TR([TH("Variable"), TD(INPUT({name: "varname", size: 20}))]),
+	TR([TH("Current"), TD([
+		INPUT({name: "currentval", size: 10}),
+		SELECT({name: "tierpicker"}),
+		BUTTON({type: "button", id: "setval"}, "Set"),
+		BR(), "NOTE: This will override any donations! Be careful!",
+		BR(), "Changes made here are NOT applied with the Save button.",
+	])]),
+	TR([TH("Text"), TD([
+		INPUT({name: "text", size: 60}),
+		BR(), "Put a '#' where the current tier should go - it'll be replaced",
+		BR(), "with the actual number.",
+	])]),
+	TR([TH("Goal(s)"), TD([
+		INPUT({name: "thresholds", size: 60}),
+		BR(), "For a tiered goal bar, set multiple goals eg '10 10 10 10 20 30 40 50'",
+	])]),
+	TR([TH("Font"), TD([
+		INPUT({name: "font", size: 40}),
+		SELECT({name: "fontweight"}, [OPTION("normal"), OPTION("bold")]),
+		INPUT({name: "fontsize", type: "number", value: 16}),
+		BR(), "Pick a font from Google Fonts or one that's",
+		BR(), "already on your PC. (Name is case sensitive.)",
+	])]),
+	TR([TH("Colors"), TD(DIV({className: "optionset"}, [
+		FIELDSET([LEGEND("Text"), INPUT({type: "color", name: "color"})]),
+		FIELDSET([LEGEND("Bar"), INPUT({type: "color", name: "barcolor"})]),
+		FIELDSET([LEGEND("Fill"), INPUT({type: "color", name: "fillcolor"})]),
+		FIELDSET([LEGEND("Border"), INPUT({type: "color", name: "bordercolor"})]),
+		FIELDSET([LEGEND("Preview bg"), INPUT({type: "color", name: "previewbg"})]),
+	]))]),
+	TR([TH("Bar size"), TD(DIV({className: "optionset"}, [
+		FIELDSET([LEGEND("Width"), INPUT({type: "number", name: "width"})]),
+		FIELDSET([LEGEND("H padding"), INPUT({type: "number", name: "padhoriz", min: 0, max: 2, step: "0.005"})]),
+		FIELDSET([LEGEND("Height"), INPUT({type: "number", name: "height"})]),
+		FIELDSET([LEGEND("V padding"), INPUT({type: "number", name: "padvert", min: 0, max: 2, step: "0.005"})]),
+	]))]),
+	TR([TH("Needle size"), TD([
+		INPUT({name: "needlesize", type: "number", min: 0, max: 1, step: "0.005", value: 0.375}),
+		"Thickness of the red indicator needle",
+	])]),
+	TR([TH("Format"), TD([
+		SELECT({name: "format"}, [OPTION("plain"), OPTION("currency")]),
+		"Display format for the numeric value",
+	])]),
+	TR([TH("Level up response"), TD([
+		SELECT({name: "lvlupcmd", id: "cmdpicker"}, [OPTION("Loading...")]),
+		BUTTON({id: "editlvlup"}, "Edit"),
+	])]),
+	TR([TH("Custom CSS"), TD(TEXTAREA({name: "css"}))]),
+]));
+
+on("submit", "dialog form", async e => {
 	console.log(e.match.elements);
-	const nonce = e.match.dataset.nonce;
-	const body = {nonce};
-	("text " + css_attributes).split(" ").forEach(attr => {
+	const dlg = e.match.closest("dialog");
+	const body = {nonce: dlg.dataset.nonce, type: dlg.id.slice(4)};
+	("text varname " + css_attributes).split(" ").forEach(attr => {
 		if (!e.match.elements[attr]) return;
 		body[attr] = e.match.elements[attr].value;
-		if (nonce === "") e.match.elements[attr].value = "";
 	});
+	console.log("Saving", body);
 	const res = await fetch("monitors", {
 		method: "PUT",
 		headers: {"Content-Type": "application/json"},
@@ -123,16 +178,16 @@ on("click", "#add_text", e => {
 	fetch("monitors", {method: "PUT", headers: {"Content-Type": "application/json"}, body: '{"text": ""}'});
 });
 
-on("change", "[name=previewbg]", e => {
-	e.match.closest("tr").querySelector(".preview-bg").style.backgroundColor = e.match.value;
+on("click", "#add_goalbar", e => {
+	fetch("monitors", {method: "PUT", headers: {"Content-Type": "application/json"}, body: '{"text": "$var$:...", "type": "goalbar"}'});
 });
 
 on("click", ".editbtn", e => {
 	const nonce = e.match.closest("tr").dataset.id;
 	const mon = editables[nonce];
-	const dlg = DOM("#edittext"); //TODO: Change this based on mon.type
+	const dlg = DOM("#edit" + mon.type); if (!dlg) {console.error("Bad type", mon.type); return;}
 	set_values(nonce, mon, dlg); //TODO: Break set_values into the part done on update and the part done here
-	DOM("#edittext form").dataset.nonce = nonce;
+	dlg.dataset.nonce = nonce;
 	dlg.returnValue = "close";
 	dlg.showModal();
 });

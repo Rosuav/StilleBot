@@ -33,6 +33,8 @@ export default function update_display(elem, data) { //Used for the preview as w
 		//It's more-or-less like saying "padding: {padvert}em {padhoriz}em"
 		if (data.padvert)  elem.style.paddingTop = elem.style.paddingBottom = data.padvert + "em";
 		if (data.padhoriz) elem.style.paddingLeft = elem.style.paddingRight = data.padhoriz + "em";
+		if (data.width)  elem.style.width = data.width + "px";
+		if (data.height) elem.style.height = data.height + "px";
 		//If you set a border width, assume we want a solid border. (For others, set the
 		//entire border definition in custom CSS.)
 		if (data.borderwidth) {elem.style.borderWidth = data.borderwidth + "px"; elem.style.borderStyle = "solid";}
