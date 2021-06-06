@@ -57,10 +57,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//TODO: Validate the individual values?
 		foreach (css_attributes / " ", string key) if (body[key]) info[key] = body[key];
 		persist_config->save();
-		//TODO: Move this all onto a websocket message rather than a PUT request, and
-		//then just call a vanilla send_updates_all(), relying on get_state().
-		string display = req->misc->channel->expand_variables(cfg->monitors[nonce]->text);
-		send_updates_all(nonce + req->misc->channel->name, cfg->monitors[nonce] | (["display": display]));
+		send_updates_all(nonce + req->misc->channel->name);
+		update_one(req->misc->channel->name, nonce);
 		return jsonify((["ok": 1]));
 	}
 	if (req->request_type == "DELETE") {
@@ -82,17 +80,16 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	])]) | req->misc->chaninfo);
 }
 
-bool need_mod(string grp) {return grp == "";}
+mapping _get_monitor(object channel, mapping monitors, string id) {
+	mapping text = monitors[id];
+	return text && text | (["id": id, "display": channel->expand_variables(text->text)]);
+}
+bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket - it's going to get write perms at some point
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping monitors = channel->config->monitors || ([]);
-	if (grp != "") {
-		mapping text = monitors[grp];
-		return (["data": text && text | (["id": grp, "display": channel->expand_variables(text->text)])]);
-	}
-	return ([
-		"monitors": monitors, //Compatibility
-		"items": (["id": indices(monitors)[*]])[*] | values(monitors)[*],
-	]);
+	if (grp != "") return (["data": _get_monitor(channel, monitors, grp)]);
+	if (id) return _get_monitor(channel, monitors, id);
+	return (["items": _get_monitor(channel, monitors, sort(indices(monitors))[*])]);
 }
 
 protected void create(string name) {::create(name); G->G->monitor_css_attributes = css_attributes;}

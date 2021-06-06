@@ -367,6 +367,7 @@ class channel_notif
 		foreach (config->monitors || ([]); string nonce; mapping info) {
 			if (!has_value(info->text, var)) continue;
 			G->G->websocket_types->chan_monitors->send_updates_all(nonce + name);
+			G->G->websocket_types->chan_monitors->update_one(name, nonce);
 		}
 		persist_status->save();
 		return val;

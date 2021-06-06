@@ -15,19 +15,12 @@ The main display will have:
 All editing will be in a dialog.
 */
 
-//NOTE: If any monitors get deleted, we'll hang onto the now-useless websockets
-//until page refresh. A bit unideal but shouldn't be too common.
-const have_sockets = { };
 function set_values(nonce, info, elem) {
 	if (!info) return 0;
 	const runmode = !elem.dataset.nonce;
 	if (info.text && !info.display && runmode) {
 		//Data-only update. Should these push display instead of text??
 		info = {display: info.text}; //HACK
-	}
-	if (runmode && !have_sockets[nonce]) { //HACK: Disable secondary sockets on noobsrun mode
-		ws_sync.connect(nonce + ws_group);
-		have_sockets[nonce] = 1;
 	}
 	for (let attr in info) {
 		if (attr === "text" && runmode) {
@@ -53,9 +46,10 @@ function set_values(nonce, info, elem) {
 	return elem;
 }
 
-let monitors = { };
-function update_monitors() {
-	const rows = Object.keys(monitors).map(nonce => !monitors[nonce].barcolor && set_values(nonce, monitors[nonce], TR({"data-nonce": nonce}, [
+export const render_parent = DOM("#monitors tbody");
+export function render_item(msg) {
+	const nonce = msg.id;
+	return set_values(nonce, msg, TR({"data-nonce": nonce, "data-id": nonce}, [
 		TD(INPUT({size: 40, name: "text", form: "upd_" + nonce})),
 		TD(DETAILS([SUMMARY("Expand"), FORM({id: "upd_" + nonce}, TABLE([
 			TR([
@@ -103,15 +97,14 @@ function update_monitors() {
 			DIV({className: "size"}, "Estimated size: (unknown)"),
 		])),
 		TD(A({className: "monitorlink", href: "monitors?view=" + nonce}, "Drag me to OBS")),
-	])));
-	set_content("#monitors tbody", rows);
+	]));
 }
-
-export function render(data, group) {
-	const [nonce, chan] = group.split("#");
-	if (nonce) set_values(nonce, monitors[nonce] = data, DOM(`tr[data-nonce="${nonce}"]`) || document.body);
-	else {monitors = data.monitors; update_monitors();}
+export function render_empty() {
+	render_parent.appendChild(TR([
+		TD({colSpan: 4}, "No monitors defined. Create one!"),
+	]));
 }
+export function render(data) { }
 
 on("submit", "#monitors form", async e => {
 	e.preventDefault();
