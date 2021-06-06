@@ -3,7 +3,7 @@ inherit http_websocket;
 //Note that this also handles CookingForNoobs's run distance gauge, which may end up
 //turning into a more generic gauge. This has a different set of attributes and a
 //different admin front-end, but the viewing endpoint and API handling are shared.
-constant css_attributes = "font fontweight fontstyle fontsize color css whitespace previewbg barcolor fillcolor bordercolor borderwidth needlesize thresholds padvert padhoriz lvlupcmd";
+constant css_attributes = "font fontweight fontstyle fontsize color css whitespace previewbg barcolor fillcolor bordercolor borderwidth needlesize thresholds padvert padhoriz lvlupcmd format";
 constant valid_types = (<"text", "goalbar">);
 
 /* TODO: Join up three things and make them all behave more similarly.

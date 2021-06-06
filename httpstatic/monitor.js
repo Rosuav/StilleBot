@@ -7,9 +7,11 @@ const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 const css_attribute_names = {color: "color", font: "fontFamily", fontweight: "fontWeight", fontstyle: "fontStyle", bordercolor: "borderColor", whitespace: "white-space"};
 
 const currency_formatter = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
-function currency(cents) {
-	if (cents >= 0 && !(cents % 100)) return "$" + (cents / 100); //Abbreviate the display to "$5" for 500
-	return currency_formatter.format(cents / 100);
+const formatters = {
+	currency: cents => {
+		if (cents >= 0 && !(cents % 100)) return "$" + (cents / 100); //Abbreviate the display to "$5" for 500
+		return currency_formatter.format(cents / 100);
+	},
 }
 
 const styleinfo = { }; //Retained info for when the styles need to change based on data (for goal bars)
@@ -25,6 +27,7 @@ export default function update_display(elem, data) { //Used for the preview as w
 		if (data.thresholds) styleinfo[data.id].t = data.thresholds.split(" ").map(x => x * 100).filter(x => x && x === x); //Suppress any that fail to parse as numbers
 		if (data.barcolor) styleinfo[data.id].barcolor = data.barcolor;
 		if (data.fillcolor) styleinfo[data.id].fillcolor = data.fillcolor;
+		if (data.format) styleinfo[data.id].format = data.format;
 		if (data.needlesize) styleinfo[data.id].needlesize = +data.needlesize;
 		if (data.fontsize) elem.style.fontSize = data.fontsize + "px"; //Special-cased to add the unit
 		//It's more-or-less like saying "padding: {padvert}em {padhoriz}em"
@@ -73,7 +76,8 @@ export default function update_display(elem, data) { //Used for the preview as w
 		}
 		elem.style.background = `linear-gradient(.25turn, ${t.fillcolor} ${mark-t.needlesize}%, red, ${t.barcolor} ${mark+t.needlesize}%, ${t.barcolor})`;
 		elem.style.display = "flex";
-		set_content(elem, [DIV(text), DIV(currency(pos)), DIV(currency(goal))]);
+		const f = formatters[t.format] || (x => ""+x);
+		set_content(elem, [DIV(text), DIV(f(pos)), DIV(f(goal))]);
 	}
 	else set_content(elem, data.display);
 }
