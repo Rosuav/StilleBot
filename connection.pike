@@ -364,10 +364,12 @@ class channel_notif
 		//Notify those that depend on this.
 		//TODO: Defer this until the next tick (with call_out 0), so that multiple
 		//changes can be batched, reducing flicker.
+		function send_updates_all = G->G->websocket_types->chan_monitors->send_updates_all;
 		foreach (config->monitors || ([]); string nonce; mapping info) {
 			if (!has_value(info->text, var)) continue;
-			G->G->websocket_types->chan_monitors->send_updates_all(nonce + name);
-			G->G->websocket_types->chan_monitors->update_one(name, nonce);
+			mapping info = (["data": (["id": nonce, "display": expand_variables(info->text)])]);
+			send_updates_all(nonce + name, info); //Send to the group for just that nonce
+			info->id = nonce; send_updates_all(name, info); //Send to the master group as a single-item update
 		}
 		persist_status->save();
 		return val;

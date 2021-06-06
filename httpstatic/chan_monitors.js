@@ -17,13 +17,9 @@ All editing will be in a dialog.
 
 function set_values(nonce, info, elem) {
 	if (!info) return 0;
-	const runmode = !elem.dataset.nonce;
-	if (info.text && !info.display && runmode) {
-		//Data-only update. Should these push display instead of text??
-		info = {display: info.text}; //HACK
-	}
+	const runmode = !elem.dataset || !elem.dataset.nonce;
 	for (let attr in info) {
-		if (attr === "text" && runmode) {
+		if (attr === "text" && runmode) { //FIXME: Probably broken after some other changes
 			//For run distance, fracture this into the variable name and the actual text.
 			const m = /^\$([^:$]+)\$:(.*)/.exec(info.text);
 			console.log(info.text);
@@ -47,9 +43,9 @@ function set_values(nonce, info, elem) {
 }
 
 export const render_parent = DOM("#monitors tbody");
-export function render_item(msg) {
+export function render_item(msg, obj) {
 	const nonce = msg.id;
-	return set_values(nonce, msg, TR({"data-nonce": nonce, "data-id": nonce}, [
+	return set_values(nonce, msg, obj || TR({"data-nonce": nonce, "data-id": nonce}, [
 		TD(INPUT({size: 40, name: "text", form: "upd_" + nonce})),
 		TD(DETAILS([SUMMARY("Expand"), FORM({id: "upd_" + nonce}, TABLE([
 			TR([
