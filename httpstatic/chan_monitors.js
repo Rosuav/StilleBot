@@ -70,26 +70,24 @@ export function render(data) { }
 
 //TODO: Build these from data in some much more maintainable way (cf commands advanced edit)
 set_content("#edittext form div", TABLE({border: 1}, [
-	TR([TD("Text:"), TD(INPUT({size: 40, name: "text"}))]),
-	TR([
-		TD("Font:"),
-		TD([
-			INPUT({name: "font", size: "28"}),
-			SELECT({name: "fontweight"}, [OPTION("normal"), OPTION("bold")]),
-			SELECT({name: "fontstyle"}, [OPTION("normal"), OPTION("italic")]),
-			INPUT({name: "fontsize", type: "number", size: "3", value: "16"}),
-		])
-	]),
-	TR([TD(), TD(["Pick a font from Google Fonts or", BR(), "one that's already on your PC."])]),
-	TR([TD("Text color:"), TD(INPUT({name: "color", type: "color"}))]),
-	TR([TD("Border:"), TD([
+	TR([TH("Text"), TD(INPUT({size: 40, name: "text"}))]),
+	TR([TH("Font"), TD([
+		INPUT({name: "font", size: "28"}),
+		SELECT({name: "fontweight"}, [OPTION("normal"), OPTION("bold")]),
+		SELECT({name: "fontstyle"}, [OPTION("normal"), OPTION("italic")]),
+		INPUT({name: "fontsize", type: "number", size: "3", value: "16"}),
+		BR(), "Pick a font from Google Fonts or",
+		BR(), "one that's already on your PC.",
+	])]),
+	TR([TH("Text color"), TD(INPUT({name: "color", type: "color"}))]),
+	TR([TH("Border"), TD([
 		"Width (px):", INPUT({name: "borderwidth", type: "number"}),
 		"Color:", INPUT({name: "bordercolor", type: "color"}),
 	])]),
 	//TODO: Gradient?
 	//TODO: Drop shadow?
 	//TODO: Padding? Back end already supports padvert and padhoriz.
-	TR([TD("Formatting:"), TD(SELECT({name: "whitespace"}, [
+	TR([TH("Formatting"), TD(SELECT({name: "whitespace"}, [
 		OPTGROUP({label: "Single line"}, [
 			OPTION({value: "normal"}, "Wrapped"),
 			OPTION({value: "nowrap"}, "No wrapping"),
@@ -100,7 +98,7 @@ set_content("#edittext form div", TABLE({border: 1}, [
 			OPTION({value: "pre-wrap"}, "No wrapping"),
 		]),
 	]))]),
-	TR([TD("Custom CSS:"), TD(INPUT({name: "css", size: 40}))]),
+	TR([TH("Custom CSS"), TD(INPUT({name: "css", size: 40}))]),
 ]));
 
 set_content("#editgoalbar form div", TABLE({border: 1}, [
