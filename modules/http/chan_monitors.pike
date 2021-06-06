@@ -4,6 +4,7 @@ inherit http_websocket;
 //turning into a more generic gauge. This has a different set of attributes and a
 //different admin front-end, but the viewing endpoint and API handling are shared.
 constant css_attributes = "font fontweight fontstyle fontsize color css whitespace previewbg barcolor fillcolor bordercolor borderwidth needlesize thresholds padvert padhoriz lvlupcmd";
+constant valid_types = (<"text", "goalbar">);
 
 /* TODO: Join up three things and make them all behave more similarly.
 1) The monitors page where things get configured
@@ -53,7 +54,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			nonce = replace(MIME.encode_base64(random_string(27)), (["/": "1", "+": "0"]));
 			call_out(send_updates_all, 0, req->misc->channel->name); //When we're done, tell everyone there's a new monitor
 		}
-		mapping info = cfg->monitors[nonce] = (["text": body->text]);
+		mapping info = cfg->monitors[nonce] = (["type": "text", "text": body->text]);
+		if (valid_types[body->type]) info->type = body->type;
 		//TODO: Validate the individual values?
 		foreach (css_attributes / " ", string key) if (body[key]) info[key] = body[key];
 		persist_config->save();
