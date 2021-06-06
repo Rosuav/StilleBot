@@ -36,7 +36,7 @@ DOM("#setval").onclick = async e => {
 on("submit", "form", async e => {
 	e.preventDefault();
 	if (!nonce) return; //TODO: Be nicer
-	const body = {nonce};
+	const body = {nonce, type: "goalbar"};
 	css_attributes.split(" ").forEach(attr => {
 		if (!e.match.elements[attr]) return;
 		body[attr] = e.match.elements[attr].value;

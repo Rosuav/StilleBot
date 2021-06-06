@@ -42,7 +42,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		nonce = req->variables->nonce;
 	} else {
 		//None specified? Find one that looks like a run bar.
-		foreach (cfg->monitors; string n; mapping i) if (i->barcolor) {nonce = n; break;}
+		foreach (cfg->monitors; string n; mapping i) if (i->type == "goalbar") {nonce = n; break;}
 	}
 	return render_template("chan_noobsrun.md", (["nonce": nonce || "", "vars": ([
 		"channame": req->misc->channel->name[1..],

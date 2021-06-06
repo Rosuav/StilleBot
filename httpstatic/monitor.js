@@ -12,24 +12,20 @@ function currency(cents) {
 	return currency_formatter.format(cents / 100);
 }
 
-//NOTE: These values persist. If ever a particular ID is used in thresholds mode,
-//it must remain so forever (or at least until you refresh the page).
-const thresholdinfo = { };
+const styleinfo = { }; //Retained info for when the styles need to change based on data (for goal bars)
 export function render(data) {update_display(DOM("#display"), data.data);}
 export default function update_display(elem, data) { //Used for the preview as well as the live display
 	//Update styles. If the arbitrary CSS setting isn't needed, make sure it is "" not null.
-	let t = thresholdinfo[data.id];
 	if (data.css || data.css === "") {
 		elem.style.cssText = data.css;
 		for (let attr in css_attribute_names) {
 			if (data[attr]) elem.style[css_attribute_names[attr]] = data[attr];
 		}
-		if (data.thresholds && data.barcolor) {
-			t = thresholdinfo[data.id] = {t: data.thresholds.split(" ").map(x => x * 100).filter(x => x && x === x)}; //Suppress any that fail to parse as numbers
-			t.barcolor = data.barcolor; t.fillcolor = data.fillcolor || data.barcolor;
-			//The rest of the style handling is below, since it depends on the text
-		}
-		if (data.needlesize) t.needlesize = +data.needlesize;
+		if (data.type) styleinfo[data.id] = {type: data.type}; //Reset all type-specific info when type is sent
+		if (data.thresholds) styleinfo[data.id].t = data.thresholds.split(" ").map(x => x * 100).filter(x => x && x === x); //Suppress any that fail to parse as numbers
+		if (data.barcolor) styleinfo[data.id].barcolor = data.barcolor;
+		if (data.fillcolor) styleinfo[data.id].fillcolor = data.fillcolor;
+		if (data.needlesize) styleinfo[data.id].needlesize = +data.needlesize;
 		if (data.fontsize) elem.style.fontSize = data.fontsize + "px"; //Special-cased to add the unit
 		//It's more-or-less like saying "padding: {padvert}em {padhoriz}em"
 		if (data.padvert)  elem.style.paddingTop = elem.style.paddingBottom = data.padvert + "em";
@@ -52,7 +48,9 @@ export default function update_display(elem, data) { //Used for the preview as w
 			}
 		}
 	}
-	if (t) {
+	const type = styleinfo[data.id] && styleinfo[data.id].type;
+	if (type === "goalbar") {
+		const t = styleinfo[data.id];
 		const thresholds = t.t;
 		const m = /^([0-9]+):(.*)$/.exec(data.display);
 		if (!m) {console.error("Something's misconfigured (see monitor.js regex)"); return;}
