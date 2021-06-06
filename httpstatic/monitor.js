@@ -1,4 +1,4 @@
-import choc, {set_content} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {DIV} = choc;
 
 let socket;
@@ -13,6 +13,7 @@ function currency(cents) {
 }
 
 let thresholds = null, fillcolor, barcolor, needlesize = 0.375;
+export function render(data) {update_display(DOM("#display"), data);}
 export default function update_display(elem, data, display) { //Used for the preview as well as the live display
 	//Update styles. If the arbitrary CSS setting isn't needed, make sure it is "" not null.
 	if (data.css || data.css === "") {
@@ -74,22 +75,3 @@ export default function update_display(elem, data, display) { //Used for the pre
 	}
 	else set_content(elem, data.display || data.text);
 }
-
-function connect() {
-	socket = new WebSocket(protocol + window.location.host + "/ws");
-	socket.onopen = () => {
-		console.log("Socket connection established.");
-		socket.send(JSON.stringify({cmd: "init", type: "chan_monitors", group: window.nonce}));
-	};
-	socket.onclose = () => {
-		socket = null;
-		console.log("Socket connection lost.");
-		setTimeout(connect, 250);
-	};
-	socket.onmessage = (ev) => {
-		let data = JSON.parse(ev.data);
-		console.log("Got message from server:", data);
-		if (data.cmd === "update") update_display(document.getElementById("display"), data);
-	};
-}
-if (window.nonce) connect();

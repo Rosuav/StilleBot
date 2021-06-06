@@ -36,8 +36,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (!cfg->monitors || !cfg->monitors[nonce]) nonce = 0;
 		else info = cfg->monitors[nonce];
 		return render_template("monitor.html", ([
-			"display": info ? req->misc->channel->expand_variables(info->text) : "Unknown monitor",
-			"nonce": Standards.JSON.encode(nonce + req->misc->channel->name),
+			"vars": (["ws_type": ws_type, "ws_group": nonce + req->misc->channel->name, "ws_code": "monitor"]),
 		]));
 	}
 	if (req->request_type == "PUT") {
@@ -83,6 +82,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	])]) | req->misc->chaninfo);
 }
 
+bool need_mod(string grp) {return grp == "";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping monitors = channel->config->monitors || ([]);
 	if (grp != "") {
