@@ -95,9 +95,3 @@
     the numeric uptime and returns the H:M:S
   - Would need a significant rework of the last line of _substitute_vars, and no others.
   - Can also handle $pinafore|hms$ the same way
-* Make noobsrun into a more generic goal bar
-  - lovelylibbysart_ wants to be able to track payouts across the month
-  - A bit is always worth 1. Allow custom values for T1/Prime subs, T2, T3.
-  - Custom goal, and optionally a roll-up per mileage
-  - Continue to tie it to a variable, allowing a reset based on stream start or month
-  - Optionally don't show the numbers, just the bar
