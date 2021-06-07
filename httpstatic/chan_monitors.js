@@ -58,6 +58,9 @@ export function render_item(msg, obj) {
 	]);
 	update_display(el.querySelector(".preview"), editables[nonce]);
 	el.querySelector(".preview-bg").style.backgroundColor = editables[nonce].previewbg;
+	const link = el.querySelector(".monitorlink");
+	link.dataset.width = editables[nonce].width;
+	link.dataset.height = editables[nonce].height;
 	return el;
 }
 export function render_empty() {
@@ -204,7 +207,7 @@ on("click", ".deletebtn", waitlate(1000, 7500, "Really delete?", async e => {
 }));
 
 on("dragstart", ".monitorlink", e => {
-	const url = `${e.match.href}&layer-name=StilleBot%20monitor&layer-width=400&layer-height=120`;
+	const url = `${e.match.href}&layer-name=StilleBot%20monitor&layer-width=${e.match.dataset.width||400}&layer-height=${e.match.dataset.height||120}`;
 	e.dataTransfer.setData("text/uri-list", url);
 });
 
