@@ -104,22 +104,21 @@ int message(object channel, mapping person, string msg)
 	//TODO: Support other ways of recognizing donations
 	if (person->user == "streamlabs") {
 		sscanf(msg, "%*s just tipped $%d.%d!", int dollars, int cents);
-		autoadvance(channel, person, (["tip": 100 * dollars + cents]));
+		autoadvance(channel, person, "tip", 100 * dollars + cents);
 	}
-	if (person->bits) autoadvance(channel, person, (["bit": person->bits]));
+	if (person->bits) autoadvance(channel, person, "bit", person->bits);
 }
 
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
-	autoadvance(channel, person, (["sub_t" + tier: qty]));
+	autoadvance(channel, person, "sub_t" + tier, qty);
 }
 
 //TODO: Have a builtin that allows any command/trigger/special to advance bars
 //Otherwise, changing the variable won't trigger the level-up command.
-void autoadvance(object channel, mapping person, mapping(string:int) weights) {
+void autoadvance(object channel, mapping person, string key, int weight) {
 	foreach (channel->config->monitors; ; mapping info) {
 		if (info->type != "goalbar") continue;
-		int advance = weights[""]; //Unconditional advancement is with (["": n])
-		foreach (weights; string key; int weight) advance += info[key] * weight;
+		int advance = key == "" ? weight : weight * (int)info[key];
 		if (!advance) continue;
 		sscanf(info->text, "$%s$:%s", string varname, string txt);
 		if (!txt) continue;

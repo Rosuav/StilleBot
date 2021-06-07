@@ -20,12 +20,9 @@ const editables = { };
 function set_values(nonce, info, elem) {
 	if (!info) return 0;
 	for (let attr in info) {
-		editables[nonce][attr] = info[attr];
-		if (attr === "text" && info.type === "goalbar") { //FIXME: Probably broken after some other changes
-			//For run distance, fracture this into the variable name and the actual text.
+		if (attr === "text" && info.type === "goalbar") {
+			//Fracture text into the variable name and the actual text.
 			const m = /^\$([^:$]+)\$:(.*)/.exec(info.text);
-			console.log(info.text);
-			console.log(m);
 			const v = elem.querySelector("[name=varname]"); if (v) v.value = m[1];
 			const t = elem.querySelector("[name=text]");    if (t) t.value = m[2];
 			continue;
@@ -33,7 +30,7 @@ function set_values(nonce, info, elem) {
 		const el = elem.querySelector("[name=" + attr + "]");
 		if (el) el.value = info[attr];
 		if (attr === "lvlupcmd" && el) //Special case: the value might not work if stuff isn't loaded yet.
-			el.dataset.wantvalue = info[attr]
+			el.dataset.wantvalue = info[attr];
 	}
 	if (info.type === "goalbar") {
 		const el = elem.querySelector("[name=currentval]"); if (el) el.value = info.display.split(":")[0];
@@ -121,6 +118,7 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 	TR([TH("Goal(s)"), TD([
 		INPUT({name: "thresholds", size: 60}),
 		BR(), "For a tiered goal bar, set multiple goals eg '10 10 10 10 20 30 40 50'",
+		BR(), "For currency, use values in cents (eg 1000 for $10)",
 	])]),
 	TR([TH("Font"), TD([
 		INPUT({name: "font", size: 40}),
@@ -201,7 +199,7 @@ on("click", ".editbtn", e => {
 	const mon = editables[nonce];
 	const dlg = DOM("#edit" + mon.type); if (!dlg) {console.error("Bad type", mon.type); return;}
 	dlg.querySelector("form").reset();
-	set_values(nonce, mon, dlg); //TODO: Break set_values into the part done on update and the part done here
+	set_values(nonce, mon, dlg);
 	dlg.dataset.nonce = nonce;
 	dlg.returnValue = "close";
 	dlg.showModal();
@@ -234,10 +232,7 @@ function update_tierpicker() {
 		//tier 3, the total should be set to the *start* of tier 3.
 		const desc = which === thresholds.length - 1 ? "And beyond!" : "Tier " + (which + 1);
 		const prevtotal = total;
-		//TODO: Multiply by 100 only if working in currency
-		//TODO: Do the multiplication by 100 only in the front end, as a visual thing,
-		//and maybe even base it on the current locale's currency settings???
-		total += 100 * +thresholds[which]; //What if thresholds[which] isn't numeric??
+		total += +thresholds[which]; //What if thresholds[which] isn't numeric??
 		opts.push(OPTION({value: prevtotal}, desc));
 		if (val === -1 && pos < total) val = prevtotal;
 	}
