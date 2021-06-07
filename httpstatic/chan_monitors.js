@@ -39,26 +39,26 @@ function set_values(nonce, info, elem) {
 		const el = elem.querySelector("[name=currentval]"); if (el) el.value = info.display.split(":")[0];
 		update_tierpicker();
 	}
-	const preview = elem.querySelector(".preview");
-	if (preview) {
-		update_display(preview, info);
-		if (info.previewbg) elem.querySelector(".preview-bg").style.backgroundColor = info.previewbg;
-	}
 	return elem;
 }
 
 export const render_parent = DOM("#monitors tbody");
 export function render_item(msg, obj) {
+	if (!msg) return 0;
 	const nonce = msg.id;
-	if (!editables[nonce]) editables[nonce] = { };
-	return set_values(nonce, msg, obj || TR({"data-nonce": nonce, "data-id": nonce}, [
+	if (!editables[nonce] || msg.type) editables[nonce] = msg;
+	else for (let attr in msg) editables[nonce][attr] = msg[attr]; //Partial update, keep the info we have
+	const el = obj || TR({"data-nonce": nonce, "data-id": nonce}, [
 		TD(DIV({className: "preview-frame"}, DIV({className: "preview-bg"}, DIV({className: "preview"})))),
 		TD([
 			BUTTON({type: "button", className: "editbtn"}, "Edit"),
 			BUTTON({type: "button", className: "deletebtn", "data-nonce": nonce}, "Delete?"),
 		]),
 		TD(A({className: "monitorlink", href: "monitors?view=" + nonce}, "Drag me to OBS")),
-	]));
+	]);
+	update_display(el.querySelector(".preview"), editables[nonce]);
+	el.querySelector(".preview-bg").style.backgroundColor = editables[nonce].previewbg;
+	return el;
 }
 export function render_empty() {
 	render_parent.appendChild(TR([
