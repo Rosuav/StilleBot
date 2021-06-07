@@ -5,7 +5,7 @@ inherit http_websocket;
 //different admin front-end, but the viewing endpoint and API handling are shared.
 constant css_attributes = "font fontweight fontstyle fontsize color css whitespace previewbg barcolor "
 	"fillcolor bordercolor borderwidth needlesize thresholds padvert padhoriz lvlupcmd format width height "
-	"active bit sub_t1 sub_t2 sub_t3 follow";
+	"active bit sub_t1 sub_t2 sub_t3 tip follow";
 constant valid_types = (<"text", "goalbar">);
 
 /* TODO: Join up three things and make them all behave more similarly.

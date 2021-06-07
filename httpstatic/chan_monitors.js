@@ -164,6 +164,7 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 			FIELDSET([LEGEND("T1 sub"), INPUT({type: "number", name: "sub_t1"})]),
 			FIELDSET([LEGEND("T2 sub"), INPUT({type: "number", name: "sub_t2"})]),
 			FIELDSET([LEGEND("T3 sub"), INPUT({type: "number", name: "sub_t3"})]),
+			FIELDSET([LEGEND("Tip (each cent)"), INPUT({type: "number", name: "tip"})]), //TODO: Show somewhere what it takes to make this work
 			FIELDSET([LEGEND("Follow"), INPUT({type: "number", name: "follow"})]),
 			//FIELDSET([LEGEND("Raid"), INPUT({type: "number", name: "raid"})]), //Maybe have a tiered system for size of raid???
 		]),
