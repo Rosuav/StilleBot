@@ -19,16 +19,15 @@ All editing will be in a dialog.
 const editables = { };
 function set_values(nonce, info, elem) {
 	if (!info) return 0;
-	const runmode = !elem.dataset || !elem.dataset.nonce;
 	for (let attr in info) {
 		editables[nonce][attr] = info[attr];
-		if (attr === "text" && info.type === "goalbar" && runmode) { //FIXME: Probably broken after some other changes
+		if (attr === "text" && info.type === "goalbar") { //FIXME: Probably broken after some other changes
 			//For run distance, fracture this into the variable name and the actual text.
 			const m = /^\$([^:$]+)\$:(.*)/.exec(info.text);
 			console.log(info.text);
 			console.log(m);
-			elem.querySelector("[name=varname]").value = m[1];
-			elem.querySelector("[name=text]").value = m[2];
+			const v = elem.querySelector("[name=varname]"); if (v) v.value = m[1];
+			const t = elem.querySelector("[name=text]");    if (t) t.value = m[2];
 			continue;
 		}
 		const el = elem.querySelector("[name=" + attr + "]");
@@ -36,9 +35,9 @@ function set_values(nonce, info, elem) {
 		if (attr === "lvlupcmd" && el) //Special case: the value might not work if stuff isn't loaded yet.
 			el.dataset.wantvalue = info[attr]
 	}
-	if (runmode && info.type === "goalbar") {
-		elem.querySelector("[name=currentval]").value = info.display.split(":")[0];
-		//window.update_milepicker();
+	if (info.type === "goalbar") {
+		const el = elem.querySelector("[name=currentval]"); if (el) el.value = info.display.split(":")[0];
+		update_tierpicker();
 	}
 	const preview = elem.querySelector(".preview");
 	if (preview) {
@@ -207,6 +206,39 @@ on("dragstart", ".monitorlink", e => {
 	const url = `${e.match.href}&layer-name=StilleBot%20monitor&layer-width=400&layer-height=120`;
 	e.dataTransfer.setData("text/uri-list", url);
 });
+
+function update_tierpicker() {
+	const thresholds = DOM("[name=thresholds]").value.split(" ");
+	const pos = +DOM("[name=currentval]").value;
+	const opts = [];
+	thresholds.push(Infinity); //Place a known elephant in Cairo
+	let val = -1, total = 0;
+	for (let which = 0; which < thresholds.length; ++which) {
+		//Record the *previous* total as the mark for this tier. If you pick
+		//tier 3, the total should be set to the *start* of tier 3.
+		const desc = which === thresholds.length - 1 ? "And beyond!" : "Tier " + (which + 1);
+		const prevtotal = total;
+		//TODO: Multiply by 100 only if working in currency
+		//TODO: Do the multiplication by 100 only in the front end, as a visual thing,
+		//and maybe even base it on the current locale's currency settings???
+		total += 100 * +thresholds[which]; //What if thresholds[which] isn't numeric??
+		opts.push(OPTION({value: prevtotal}, desc));
+		if (val === -1 && pos < total) val = prevtotal;
+	}
+	set_content(DOM("[name=tierpicker]"), opts).value = val;
+}
+DOM("[name=thresholds]").onchange = DOM("[name=currentval]").onchange = update_tierpicker;
+DOM("[name=tierpicker]").onchange = e => DOM("[name=currentval]").value = e.currentTarget.value;
+DOM("#setval").onclick = async e => {
+	const val = +DOM("[name=currentval]").value;
+	if (val !== val) return; //TODO: Be nicer
+	const rc = await fetch("run", {
+		method: "PUT",
+		headers: {"Content-Type": "application/json"},
+		body: JSON.stringify({"var": DOM("[name=varname]").value, val}),
+	});
+	if (!rc.ok) {console.error("Couldn't update (TODO)"); return;}
+}
 
 function textify(cmd) {
 	if (typeof cmd === "string") return cmd;
