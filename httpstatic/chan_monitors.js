@@ -151,6 +151,18 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 		SELECT({name: "format"}, [OPTION("plain"), OPTION("currency")]),
 		"Display format for numbers. Currency uses cents - 2718 is $27.18.",
 	])]),
+	TR([TH("Auto-count"), TD([
+		"Automatically advance the goal bar based on stream support",
+		DIV({className: "optionset"}, [
+			FIELDSET([LEGEND("Bits"), INPUT({type: "number", name: "bit"}), "per bit"]),
+			FIELDSET([LEGEND("T1 sub"), INPUT({type: "number", name: "sub_t1"})]),
+			FIELDSET([LEGEND("T2 sub"), INPUT({type: "number", name: "sub_t2"})]),
+			FIELDSET([LEGEND("T3 sub"), INPUT({type: "number", name: "sub_t3"})]),
+			FIELDSET([LEGEND("Follow"), INPUT({type: "number", name: "follow"})]),
+			//FIELDSET([LEGEND("Raid"), INPUT({type: "number", name: "raid"})]), //Maybe have a tiered system for size of raid???
+		]),
+		"For events not listed, create a command or trigger (TODO - example)",
+	])]),
 	TR([TH("On level up"), TD([
 		SELECT({name: "lvlupcmd", id: "cmdpicker"}, [OPTION("Loading...")]),
 		BR(), "Add and edit commands ", A({href: "commands"}, "on the Commands page"),

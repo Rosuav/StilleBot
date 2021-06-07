@@ -3,7 +3,9 @@ inherit http_websocket;
 //Note that this also handles CookingForNoobs's run distance gauge, which may end up
 //turning into a more generic gauge. This has a different set of attributes and a
 //different admin front-end, but the viewing endpoint and API handling are shared.
-constant css_attributes = "font fontweight fontstyle fontsize color css whitespace previewbg barcolor fillcolor bordercolor borderwidth needlesize thresholds padvert padhoriz lvlupcmd format width height";
+constant css_attributes = "font fontweight fontstyle fontsize color css whitespace previewbg barcolor "
+	"fillcolor bordercolor borderwidth needlesize thresholds padvert padhoriz lvlupcmd format width height "
+	"bit sub_t1 sub_t2 sub_t3 follow";
 constant valid_types = (<"text", "goalbar">);
 
 /* TODO: Join up three things and make them all behave more similarly.
@@ -95,4 +97,50 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["items": _get_monitor(channel, monitors, sort(indices(monitors))[*])]);
 }
 
-protected void create(string name) {::create(name); G->G->monitor_css_attributes = css_attributes;}
+int message(object channel, mapping person, string msg)
+{
+	mapping mon = channel->config->monitors;
+	if (!mon || !sizeof(mon)) return 0;
+	//TODO: Support other ways of recognizing donations
+	if (person->user == "streamlabs") {
+		sscanf(msg, "%*s just tipped $%d.%d!", int dollars, int cents);
+		autoadvance(channel, person, (["tip": 100 * dollars + cents]));
+	}
+	if (person->bits) autoadvance(channel, person, (["bit": person->bits]));
+}
+
+int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
+	autoadvance(channel, person, (["sub_t" + tier: qty]));
+}
+
+//TODO: Have a builtin that allows any command/trigger/special to advance bars
+//Otherwise, changing the variable won't trigger the level-up command.
+void autoadvance(object channel, mapping person, mapping(string:int) weights) {
+	foreach (channel->config->monitors; ; mapping info) {
+		if (info->type != "goalbar") continue;
+		int advance = weights[""]; //Unconditional advancement is with (["": n])
+		foreach (weights; string key; int weight) advance += info[key] * weight;
+		if (!advance) continue;
+		sscanf(info->text, "$%s$:%s", string varname, string txt);
+		if (!txt) continue;
+		int total = (int)channel->set_variable(varname, advance, "add"); //Abuse the fact that it'll take an int just fine for add :)
+		if (advance < 0) continue;
+		//See if we've just hit a new tier.
+		foreach (info->thresholds / " "; int tier; string th) {
+			int nexttier = 100 * (int)th; //TODO: Don't offset if not currency
+			if (total >= nexttier) {total -= nexttier; continue;}
+			//This is the current tier. If we've only barely started it,
+			//then we probably just hit this tier. (If tier is 0, we've
+			//just broken positive after having a negative total.)
+			if (total < advance) channel->send(person, G->G->echocommands[info->lvlupcmd + channel->name], (["%s": (string)tier]));
+			break;
+		}
+	}
+}
+
+protected void create(string name)
+{
+	register_hook("all-msgs", message);
+	register_hook("subscription", subscription);
+	::create(name);
+}
