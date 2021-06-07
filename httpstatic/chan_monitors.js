@@ -185,6 +185,7 @@ on("click", ".editbtn", e => {
 	const nonce = e.match.closest("tr").dataset.id;
 	const mon = editables[nonce];
 	const dlg = DOM("#edit" + mon.type); if (!dlg) {console.error("Bad type", mon.type); return;}
+	dlg.querySelector("form").reset();
 	set_values(nonce, mon, dlg); //TODO: Break set_values into the part done on update and the part done here
 	dlg.dataset.nonce = nonce;
 	dlg.returnValue = "close";
