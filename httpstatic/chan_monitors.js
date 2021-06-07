@@ -105,7 +105,12 @@ set_content("#edittext form div", TABLE({border: 1}, [
 
 set_content("#editgoalbar form div", TABLE({border: 1}, [
 	TR([TH("Active"), TD(LABEL([INPUT({name: "active", type: "checkbox"}), "Enable auto-advance and level up messages"]))]),
-	TR([TH("Variable"), TD(INPUT({name: "varname", size: 20}))]),
+	TR([TH("Variable"), TD([
+		SELECT({name: "varname"}, Object.keys(variables).map(v => OPTION(v.slice(1, -1)))),
+		" Or create a new one: ",
+		INPUT({id: "newvarname", size: 20}),
+		BUTTON({type: "button", id: "createvar"}, "Create"),
+	])]),
 	TR([TH("Current"), TD([
 		INPUT({name: "currentval", size: 10}),
 		SELECT({name: "tierpicker"}),
@@ -170,6 +175,14 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 	])]),
 	TR([TH("Custom CSS"), TD(TEXTAREA({name: "css"}))]),
 ]));
+
+on("click", "#createvar", e => {
+	const varname = /^[A-Za-z]*/.exec(DOM("#newvarname").value);
+	if (!varname || varname[0] === "") return;
+	DOM("[name=varname]").appendChild(OPTION(varname[0]));
+	DOM("[name=varname]").value = varname[0];
+	ws_sync.send({cmd: "createvar", varname: varname[0]});
+});
 
 on("submit", "dialog form", async e => {
 	console.log(e.match.elements);

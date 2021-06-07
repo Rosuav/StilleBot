@@ -562,7 +562,6 @@ class channel_notif
 		//these with public messages. (Silence is perfectly acceptable for triggers.)
 		if (dest == "/set" && sscanf(target, "%[A-Za-z]", string var) && var && var != "")
 		{
-			
 			vars["$" + var + "$"] = set_variable(var, msg, message->action);
 			return;
 		}

@@ -82,6 +82,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	return render(req, (["vars": ([
 		"ws_group": "",
 		"css_attributes": css_attributes,
+		"variables": persist_status->path("variables")[req->misc->channel->name] || ([]),
 	])]) | req->misc->chaninfo);
 }
 
@@ -95,6 +96,13 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	if (grp != "") return (["data": _get_monitor(channel, monitors, grp)]);
 	if (id) return _get_monitor(channel, monitors, id);
 	return (["items": _get_monitor(channel, monitors, sort(indices(monitors))[*])]);
+}
+
+void websocket_cmd_createvar(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (grp != "") return;
+	sscanf(msg->varname || "", "%[A-Za-z]", string var);
+	if (var != "") channel->set_variable(var, "0", "set");
 }
 
 int message(object channel, mapping person, string msg)
