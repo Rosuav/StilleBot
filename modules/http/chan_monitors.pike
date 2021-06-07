@@ -98,11 +98,22 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["items": _get_monitor(channel, monitors, sort(indices(monitors))[*])]);
 }
 
+//Can overwrite an existing variable
 void websocket_cmd_createvar(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "") return;
 	sscanf(msg->varname || "", "%[A-Za-z]", string var);
 	if (var != "") channel->set_variable(var, "0", "set");
+}
+
+//Requires that the variable exist
+void websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (grp != "") return;
+	mapping vars = persist_status->path("variables")[channel->name] || ([]);
+	string prev = vars["$" + msg->varname + "$"];
+	if (!prev) return;
+	channel->set_variable(msg->varname, (string)(int)msg->val, "set");
 }
 
 int message(object channel, mapping person, string msg)

@@ -257,15 +257,10 @@ function update_tierpicker() {
 }
 DOM("[name=thresholds]").onchange = DOM("[name=currentval]").onchange = update_tierpicker;
 DOM("[name=tierpicker]").onchange = e => DOM("[name=currentval]").value = e.currentTarget.value;
-DOM("#setval").onclick = async e => {
+DOM("#setval").onclick = e => {
 	const val = +DOM("[name=currentval]").value;
 	if (val !== val) return; //TODO: Be nicer
-	const rc = await fetch("run", {
-		method: "PUT",
-		headers: {"Content-Type": "application/json"},
-		body: JSON.stringify({"var": DOM("[name=varname]").value, val}),
-	});
-	if (!rc.ok) {console.error("Couldn't update (TODO)"); return;}
+	ws_sync.send({cmd: "setvar", varname: DOM("[name=varname]").value, val});
 }
 
 function textify(cmd) {
