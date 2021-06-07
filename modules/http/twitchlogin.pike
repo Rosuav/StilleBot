@@ -60,7 +60,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (query) {
 			mapping vars = function_object(handler)->safe_query_vars(Protocols.HTTP.Server.http_decode_urlencoded_query(query), @args);
 			if (!vars) next = 0;
-			else next += "?" + Protocols.HTTP.http_encode_query(vars);
+			else if (sizeof(vars)) next += "?" + Protocols.HTTP.http_encode_query(vars);
 		}
 	}
 	//Merge scopes, similarly to ensure_login()
