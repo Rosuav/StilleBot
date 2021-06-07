@@ -123,6 +123,7 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 	TR([TH("Font"), TD([
 		INPUT({name: "font", size: 40}),
 		SELECT({name: "fontweight"}, [OPTION("normal"), OPTION("bold")]),
+		SELECT({name: "fontstyle"}, [OPTION("normal"), OPTION("italic")]),
 		INPUT({name: "fontsize", type: "number", value: 16}),
 		BR(), "Pick a font from Google Fonts or one that's",
 		BR(), "already on your PC. (Name is case sensitive.)",
@@ -148,9 +149,9 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 		SELECT({name: "format"}, [OPTION("plain"), OPTION("currency")]),
 		"Display format for numbers. Currency uses cents - 2718 is $27.18.",
 	])]),
-	TR([TH("Level up response"), TD([
+	TR([TH("On level up"), TD([
 		SELECT({name: "lvlupcmd", id: "cmdpicker"}, [OPTION("Loading...")]),
-		BUTTON({id: "editlvlup"}, "Edit"),
+		BR(), "Add and edit commands ", A({href: "commands"}, "on the Commands page"),
 	])]),
 	TR([TH("Custom CSS"), TD(TEXTAREA({name: "css"}))]),
 ]));
@@ -205,4 +206,43 @@ on("click", ".deletebtn", waitlate(1000, 7500, "Really delete?", async e => {
 on("dragstart", ".monitorlink", e => {
 	const url = `${e.match.href}&layer-name=StilleBot%20monitor&layer-width=400&layer-height=120`;
 	e.dataTransfer.setData("text/uri-list", url);
+});
+
+function textify(cmd) {
+	if (typeof cmd === "string") return cmd;
+	if (Array.isArray(cmd)) return cmd.map(textify).filter(x => x).join(" // ");
+	if (cmd.dest) return null; //Suppress special-destination sections
+	return cmd.message;
+}
+function shorten(txt, len) {
+	if (txt.length <= len) return txt;
+	return txt.slice(0, len - 1) + "..."; //I really want a width-based shorten, but CSS won't max-width an option
+}
+const commands = { };
+ws_sync.connect(ws_group, {
+	ws_type: "chan_commands",
+	select: DOM("#cmdpicker"),
+	make_option: cmd => OPTION({"data-id": cmd.id, value: cmd.id.split("#")[0]}, "!" + cmd.id.split("#")[0] + " -- " + shorten(textify(cmd.message), 75)),
+	is_recommended: cmd => cmd.access === "none" && cmd.visibility === "hidden",
+	render: function(data) {
+		if (data.id) {
+			const opt = select.querySelector(`[data-id="${data.id}"]`);
+			//Note that a partial update (currently) won't move a command between groups.
+			if (opt) set_content(opt, "!" + cmd.id.split("#")[0] + " -- " + textify(cmd.message)); //TODO: dedup
+			else this.groups[this.is_recommended(cmd) ? 1 : 2].appendChild(this.make_option(cmd));
+			commands[data.id] = data;
+			return;
+		}
+		if (!this.groups) set_content(this.select, this.groups = [
+			OPTGROUP({label: "None"}, OPTION({value: ""}, "No response - levels will pass silently")),
+			OPTGROUP({label: "Recommended"}),
+			OPTGROUP({label: "Other"}),
+		]);
+		const blocks = [[], []];
+		data.items.forEach(cmd => blocks[this.is_recommended(cmd) ? 0 : 1].push(this.make_option(commands[cmd.id] = cmd)));
+		set_content(this.groups[1], blocks[0]);
+		set_content(this.groups[2], blocks[1]);
+		const want = this.select.dataset.wantvalue;
+		if (want) this.select.value = want;
+	},
 });
