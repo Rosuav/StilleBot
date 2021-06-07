@@ -5,7 +5,7 @@ inherit http_websocket;
 //different admin front-end, but the viewing endpoint and API handling are shared.
 constant css_attributes = "font fontweight fontstyle fontsize color css whitespace previewbg barcolor "
 	"fillcolor bordercolor borderwidth needlesize thresholds padvert padhoriz lvlupcmd format width height "
-	"bit sub_t1 sub_t2 sub_t3 follow";
+	"active bit sub_t1 sub_t2 sub_t3 follow";
 constant valid_types = (<"text", "goalbar">);
 
 /* TODO: Join up three things and make them all behave more similarly.
@@ -117,7 +117,7 @@ int subscription(object channel, string type, mapping person, string tier, int q
 //Otherwise, changing the variable won't trigger the level-up command.
 void autoadvance(object channel, mapping person, string key, int weight) {
 	foreach (channel->config->monitors; ; mapping info) {
-		if (info->type != "goalbar") continue;
+		if (info->type != "goalbar" || !info->active) continue;
 		int advance = key == "" ? weight : weight * (int)info[key];
 		if (!advance) continue;
 		sscanf(info->text, "$%s$:%s", string varname, string txt);

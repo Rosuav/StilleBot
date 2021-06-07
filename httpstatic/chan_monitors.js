@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, DETAILS, SUMMARY, DIV, FORM, FIELDSET, LEGEND, INPUT, TEXTAREA, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
+const {A, BR, BUTTON, DETAILS, SUMMARY, DIV, FORM, FIELDSET, LEGEND, LABEL, INPUT, TEXTAREA, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 import update_display from "$$static||monitor.js$$";
 import {waitlate} from "$$static||utils.js$$";
@@ -28,8 +28,10 @@ function set_values(nonce, info, elem) {
 			continue;
 		}
 		const el = elem.querySelector("[name=" + attr + "]");
-		if (el) el.value = info[attr];
-		if (attr === "lvlupcmd" && el) //Special case: the value might not work if stuff isn't loaded yet.
+		if (!el) continue;
+		if (el.type === "checkbox") el.checked = info[attr];
+		else el.value = info[attr];
+		if (attr === "lvlupcmd") //Special case: the value might not work if stuff isn't loaded yet.
 			el.dataset.wantvalue = info[attr];
 	}
 	if (info.type === "goalbar") {
@@ -102,6 +104,7 @@ set_content("#edittext form div", TABLE({border: 1}, [
 ]));
 
 set_content("#editgoalbar form div", TABLE({border: 1}, [
+	TR([TH("Active"), TD(LABEL([INPUT({name: "active", type: "checkbox"}), "Enable auto-advance and level up messages"]))]),
 	TR([TH("Variable"), TD(INPUT({name: "varname", size: 20}))]),
 	TR([TH("Current"), TD([
 		INPUT({name: "currentval", size: 10}),
@@ -173,8 +176,8 @@ on("submit", "dialog form", async e => {
 	const dlg = e.match.closest("dialog");
 	const body = {nonce: dlg.dataset.nonce, type: dlg.id.slice(4)};
 	("text varname " + css_attributes).split(" ").forEach(attr => {
-		if (!e.match.elements[attr]) return;
-		body[attr] = e.match.elements[attr].value;
+		const el = e.match.elements[attr]; if (!el) return;
+		body[attr] = el.type === "checkbox" ? el.checked : el.value;
 	});
 	console.log("Saving", body);
 	const res = await fetch("monitors", {
