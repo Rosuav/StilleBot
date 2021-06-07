@@ -161,15 +161,16 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 {
 	mapping emotesets = ([]);
 	string login_link = "[Log in to highlight the emotes you have access to](/twitchlogin?next=/checklist&scopes=user_subscriptions)";
+	mapping v2_have = ([]);
 	if (req->misc->session->?scopes->?user_subscriptions)
 	{
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>";
 		emotesets = yield(twitch_api_request("https://api.twitch.tv/kraken/users/{{USER}}/emotes",
 			(["Authorization": "OAuth " + req->misc->session->token]),
 			(["username": req->misc->session->user->login])))->emoticon_sets;
+		v2_have = persist_status->path("seen_emotes")[(string)req->misc->session->?user->?id] || ([]);
 	}
 	mapping have_emotes = ([]);
-	mapping v2_have = persist_status->path("seen_emotes")[(string)req->misc->session->?user->?id] || ([]);
 	array(string) used = indices(v2_have); //Emote names that we have AND used. If they're in that mapping, they're in the checklist (by definition).
 	foreach (emotesets;; array set) foreach (set, mapping em)
 		have_emotes[em->code] = img(em->code, em->id);
