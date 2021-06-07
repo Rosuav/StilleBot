@@ -53,9 +53,9 @@ class Persist(string savefn, int flip_save)
 		//TODO: Is this costly? I've been noticing that an otherwise-idle StilleBot is
 		//showing up in 'top'; check where the actual load is (eg by testing on a slow
 		//VM, so the load actually makes a difference).
-		string enc = Standards.JSON.encode(data, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 		if (mixed ex=catch
 		{
+			string enc = Standards.JSON.encode(data, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 			if (flip_save)
 			{
 				//Safer against breakage
