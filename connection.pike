@@ -746,12 +746,14 @@ class channel_notif
 				case "sub":
 					Stdio.append_file("subs.log", sprintf("\n%sDEBUG RESUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
 					trigger_special("!sub", person, (["{tier}": params->msg_param_sub_plan[0..0]]));
+					runhooks("subscription", 0, this, "sub", person, params->msg_param_sub_plan[0..0], 1, params);
 					break;
 				case "resub": trigger_special("!resub", person, ([
 					"{tier}": params->msg_param_sub_plan[0..0],
 					"{months}": params->msg_param_cumulative_months,
 					"{streak}": params->msg_param_streak_months || "",
 				]));
+				runhooks("subscription", 0, this, "resub", person, params->msg_param_sub_plan[0..0], 1, params);
 				Stdio.append_file("subs.log", sprintf("\n%sDEBUG RESUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
 				break;
 				case "giftpaidupgrade": break; //Pledging to continue a subscription (first introduced for the Subtember special in 2018, and undocumented)
@@ -775,6 +777,7 @@ class channel_notif
 					//Other params: login, user_id, msg_param_recipient_user_name, msg_param_recipient_id,
 					//msg_param_sender_count (the total gifts this person has given in this channel)
 					//Remember that all params are strings, even those that look like numbers
+					runhooks("subscription", 0, this, "subgift", person, params->msg_param_sub_plan[0..0], 1, params);
 					break;
 				}
 				case "submysterygift":
@@ -789,6 +792,8 @@ class channel_notif
 						//TODO: See if this can actually happen, and if not, drop it
 						"{multimonth}": params->msg_param_gift_months || "1",
 					]));
+					runhooks("subscription", 0, this, "subbomb", person, params->msg_param_sub_plan[0..0],
+						(int)params->msg_param_mass_gift_count, params);
 					break;
 				}
 				case "extendsub":
