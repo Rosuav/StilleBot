@@ -146,9 +146,8 @@ class SendQueue(string id) {
 		write("Connected to voice %O\n", my_nick);
 	}
 	void finalize() {
-		if (client) client->close();
 		m_delete(sendqueues, id);
-		call_out(destruct, 1, this);
+		if (client) client->close();
 	}
 	void check_active() {
 		if (!active) {
