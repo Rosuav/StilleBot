@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, BR, BUTTON, INPUT, DIV, DETAILS, LABEL, SUMMARY, TABLE, TBODY, TR, TH, TD, SELECT, OPTION, FIELDSET, LEGEND, CODE} = choc;
-fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
+fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
 import {waitlate} from "$$static||utils.js$$";
 const commands = { };
 const hooks = {
