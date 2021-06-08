@@ -95,3 +95,5 @@
     the numeric uptime and returns the H:M:S
   - Would need a significant rework of the last line of _substitute_vars, and no others.
   - Can also handle $pinafore|hms$ the same way
+* Dialogs now autoclose only if formless. Ensure that the annoying cases get forms
+  added or removed as appropriate.
