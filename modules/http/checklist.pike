@@ -177,6 +177,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	string text = words->replace(hypetrain, lambda(string w) {
 		//1) Do we (the logged-in user) have the emote?
 		if (string have = have_emotes[w]) {used += ({w}); return have;}
+		if (!G->G->emote_code_to_markdown) return w;
 		//2) Does the bot have the emote?
 		string md = G->G->emote_code_to_markdown[w];
 		if (md && sscanf(md, "%*s/v1/%d/1.0", int id)) return img(w, id);

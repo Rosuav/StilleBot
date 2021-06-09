@@ -44,7 +44,14 @@ continue Concurrent.Future|mapping fetch_emotes()
 		//happens, go back to 9da66622 and consider reversion.
 		write("Fetching emote set info...\n");
 		string sets = indices(G->G->bot_emote_list->emoticon_sets) * ",";
-		object result = yield(Protocols.HTTP.Promise.get_url("https://api.twitchemotes.com/api/v4/sets?id=" + sets));
+		object result = yield(Protocols.HTTP.Promise.get_url("https://api.twitchemotes.com/api/v4/sets?id=" + sets)
+			->thencatch() {return __ARGS__[0];}); //Send failures through as results, not exceptions
+		if (result->status != 200) {
+			write("NOT FETCHED: %O %O\n", result->status, result->status_description);
+			G->G->emote_set_mapping = ([]);
+			G->G->emote_code_to_markdown = ([]);
+			return G->G->bot_emote_list;
+		}
 		write("Emote set info fetched.\n");
 		mapping info = (["fetchtime": time(), "sets": sets]);
 		foreach (Standards.JSON.decode(result->get()), mapping setinfo)
