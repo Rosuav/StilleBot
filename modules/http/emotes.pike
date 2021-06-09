@@ -71,9 +71,9 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 	if (req->variables->flushcache)
 	{
 		//Flush the list of the bot's emotes
-		G->G->bot_emote_list->fetchtime = 0;
+		if (G->G->bot_emote_list) G->G->bot_emote_list->fetchtime = 0;
 		//Also flush the emote set mapping but ONLY if it's at least half an hour old.
-		if (G->G->emote_set_mapping->fetchtime < time() - 1800) G->G->emote_set_mapping = 0;
+		if (G->G->emote_set_mapping->?fetchtime < time() - 1800) G->G->emote_set_mapping = 0;
 		return redirect("/emotes");
 	}
 	mapping bot_emote_list = yield(fetch_emotes());
