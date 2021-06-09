@@ -282,7 +282,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		]) | (extra_info[(int)user->id] || ([]));
 	//Okay! Preliminaries done. Let's look through the Helix-provided info and
 	//build up a final result.
-	mapping tag_prefs = notes->tags || ([]);
+	mapping(string:int) tag_prefs = notes->tags || ([]);
 	foreach (follows_helix; int i; mapping strm)
 	{
 		mapping(string:int) recommend = ([]);

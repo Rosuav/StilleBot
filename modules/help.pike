@@ -27,7 +27,7 @@ echoable_message process(object channel, mapping person, string param)
 			//Do I need any more info? Maybe check if it's a mapping to see if it has a dest?
 			return sprintf("@$$: !%s is an echo command - see https://rosuav.github.io/StilleBot/commands/addcmd", param);
 		}
-		object obj = function_object([function]cmd);
+		object obj = function_object(cmd);
 		string pgm = sprintf("%O", object_program(obj)) - ".pike"; //For some reason function_name isn't giving me the right result (??)
 		int hidden = obj->hidden_command || obj->visibility == "hidden";
 		return sprintf("@$$: !%s is a%s%s%s command.%s", param,
