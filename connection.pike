@@ -984,7 +984,7 @@ protected void create()
 	if (mapping irc = persist_config["ircsettings"])
 	{
 		bot_nick = persist_config["ircsettings"]->nick || "";
-		if (irc->http_address && irc->http_address != "")
+		if (mixed ex = irc->http_address && irc->http_address != "" && catch
 		{
 			int use_https = has_prefix(irc->http_address, "https://");
 			string listen_addr = "::"; //By default, listen on IPv4 and IPv6
@@ -1016,6 +1016,12 @@ protected void create()
 				//permanently. Currently it'll be regenned each startup.
 				G->G->httpserver = Protocols.WebSocket.SSLPort(http_handler, ws_handler, listen_port, listen_addr, pk, certs);
 			}
+		})
+		{
+			werror("NO HTTP SERVER AVAILABLE\n%s\n", describe_backtrace(ex));
+			werror("Continuing without.\n");
+			//Ensure that we don't accidentally use something unsafe (eg if it's an SSL issue)
+			if (object http = m_delete(G->G, "httpserver")) catch {http->close();};
 		}
 	}
 	add_constant("send_message", default_queue->send_message);
