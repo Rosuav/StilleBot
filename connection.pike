@@ -724,6 +724,7 @@ class channel_notif
 					All of these indicate that the most recent message wasn't sent. Is it worth trying to retrieve that message?
 					*/
 					break;
+				case "ban_success": break; //Just banned someone. Probably only a response to an autoban.
 				case "raid": case "unraid": //Incoming raids already get announced and we don't get any more info
 				{
 					Stdio.append_file("incoming_raids.log", sprintf("%s Debug incoming raid: chan %s user %O params %O\n",
