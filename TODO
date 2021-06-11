@@ -85,8 +85,6 @@
 * Polish multi-voice.
   - This would allow the bot to see its own messages, but only if sent by a non-primary
     account.
-  - Could take advantage of a different set of emotes. Would possibly need a different
-    emote availability page.
   - Can this kind of auth be used to get host notifications??
 * Login responses can now redirect to queried URLs. Check for all where this is crucial
   (cf MPN with ?document=) and ensure that the appropriate query vars are whitelisted.

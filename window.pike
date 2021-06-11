@@ -935,10 +935,6 @@ class _mainwindow
 			"Timezone",
 			"'Scheduled commands (!repeat) will use this timezone", //And so might other things in the future
 		}),
-		"Song requests": ({
-			"?songreq:Active",
-			"#songreq_length:Max length (seconds)",
-		}),
 	])});
 	constant persist_key = "channels";
 	constant is_subwindow = 0;
