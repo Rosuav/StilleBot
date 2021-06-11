@@ -16,7 +16,7 @@ export function connect(group, handler)
 	socket.onclose = () => {
 		send_socket = null;
 		console.log("Socket connection lost.");
-		setTimeout(connect, 250, group);
+		setTimeout(connect, 250, group, handler);
 	};
 	socket.onmessage = (ev) => {
 		let data = JSON.parse(ev.data);
