@@ -157,6 +157,7 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string 
 		if (!doc) return (["{error}": "Document does not exist."]);
 	}
 	switch (cmd) {
+		case "create": break; //Handled above
 		case "delete":
 			m_delete(persist_status->path("mpn", channel->name), document);
 			persist_status->save();
