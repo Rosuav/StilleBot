@@ -1016,12 +1016,7 @@ class _mainwindow
 	void save_content(mapping(string:mixed) info)
 	{
 		string kwd = win->kwd->get_text();
-		if (object chan=G->G->irc->channels["#"+kwd])
-		{
-			write("%%% Saving data for #"+kwd+"\n");
-			chan->save();
-		}
-		else
+		if (!G->G->irc->channels["#"+kwd])
 		{
 			write("%%% Joining #"+kwd+"\n");
 			G->G->irc->join_channel("#"+kwd);
