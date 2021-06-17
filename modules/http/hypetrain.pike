@@ -57,6 +57,10 @@ void hypetrain_progression(string chan, array data)
 	handle_async(parse_hype_status(data[0]->event_data)) {send_updates_all(channel, @__ARGS__);};
 }
 
+void hypetrain_begin(string chan, array data) {write("EVENT: Hype Begin %O %O\n", chan, data);}
+void hypetrain_progress(string chan, array data) {write("EVENT: Hype Progress %O %O\n", chan, data);}
+void hypetrain_end(string chan, array data) {write("EVENT: Hype End %O %O\n", chan, data);}
+
 continue mapping|Concurrent.Future get_state(int|string channel)
 {
 	mixed ex = catch {
@@ -70,14 +74,14 @@ continue mapping|Concurrent.Future get_state(int|string channel)
 				1800,
 				G->G->hypetrain_token[channel] || defaulttoken,
 			);
-			/* Not working. See poll.pike for more info.
-			create_eventsubhook(
-				"hypetrainend=" + conn->group,
-				"channel.hype_train.end", "1",
-				(["broadcaster_user_id": (string)conn->group]),
-				token,
-			);
-			*/
+		}
+		if (!G->G->webhook_active["hypetrainbegin=" + channel]) {
+			foreach ("begin progress end" / " ", string hook)
+				create_eventsubhook(
+					sprintf("hypetrain%s=%d", hook, channel),
+					"channel.hype_train." + hook, "1",
+					(["broadcaster_user_id": (string)channel]),
+				);
 		}
 		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + (string)channel,
 				(["Authorization": "Bearer " + (G->G->hypetrain_token[channel] || defaulttoken)])));
@@ -233,6 +237,9 @@ protected void create(string name)
 		defaulttoken = function_object(G->G->webhook_endpoints->hypetrain)->defaulttoken;
 	}
 	G->G->webhook_endpoints->hypetrain = hypetrain_progression;
+	G->G->webhook_endpoints->hypetrainbegin = hypetrain_begin;
+	G->G->webhook_endpoints->hypetrainprogress = hypetrain_progress;
+	G->G->webhook_endpoints->hypetrainend = hypetrain_end;
 	if (!G->G->hypetrain_checktime) G->G->hypetrain_checktime = ([]);
 	if (!G->G->hypetrain_token) G->G->hypetrain_token = ([]);
 }
