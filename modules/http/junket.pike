@@ -42,6 +42,23 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//So we verify the signature, and then trust the rest. Also, we assume that
 		//Twitch is using a sha256 HMAC; if they ever change that (eg sha512 etc),
 		//the signatures will just start failing.
+		string msgid = req->request_headers["twitch-eventsub-message-id"];
+		if (msgid) {
+			string ts = req->request_headers["twitch-eventsub-message-timestamp"];
+			string sig = req->request_headers["twitch-eventsub-message-signature"];
+			write("Junket E message: %O = %O, ID %O, ts %O, len %O (%O)\nhdr %O\nevt %O\n",
+				endpoint, channel, msgid, ts,
+				sizeof(req->body_raw), req->request_headers["content-length"],
+				sig - "sha256=", String.string2hex(signer(msgid + ts + req->body_raw)),
+			);
+		}
+		else {
+			string sig = req->request_headers["x-hub-signature"];
+			write("Junket W message: %O = %O, len %O (%O)\nhdr %O\nweb %O\n",
+				endpoint, channel, sizeof(req->body_raw), req->request_headers["content-length"],
+				sig - "sha256=", String.string2hex(signer(req->body_raw)),
+			);
+		}
 		#if 0
 		//Hacking this out for now. I don't know why they're failing.
 		if (req->request_headers["x-hub-signature"] != "sha256=" + String.string2hex(signer(req->body_raw)))
