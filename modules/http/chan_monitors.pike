@@ -67,7 +67,7 @@ mapping _get_monitor(object channel, mapping monitors, string id) {
 	mapping text = monitors[id];
 	return text && text | (["id": id, "display": channel->expand_variables(text->text)]);
 }
-bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket - it's going to get write perms at some point
+bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping monitors = channel->config->monitors || ([]);
 	if (grp != "") return (["data": _get_monitor(channel, monitors, grp)]);
