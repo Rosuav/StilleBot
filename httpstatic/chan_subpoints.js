@@ -10,8 +10,8 @@ export function render_item(msg, obj) {
 		//Unpaid | Font | Goal | Options | Actions | Link
 		TD(INPUT({name: "unpaidpoints", type: "number", value: msg.unpaidpoints || 0})),
 		TD([
-			INPUT({name: "font", value: msg.font}),
-			INPUT({name: "fontsize", type: "number", value: msg.fontsize || 0}),
+			INPUT({name: "font", value: msg.font || ""}),
+			INPUT({name: "fontsize", type: "number", value: msg.fontsize || 18}),
 		]),
 		TD(INPUT({name: "goal", type: "number", value: msg.goal || 0})),
 		TD([
@@ -19,9 +19,9 @@ export function render_item(msg, obj) {
 		]),
 		TD([
 			BUTTON({type: "button", className: "savebtn"}, "Save"),
-			BUTTON({type: "button", className: "deletebtn", "data-nonce": nonce}, "Delete?"),
+			BUTTON({type: "button", className: "deletebtn"}, "Delete?"),
 		]),
-		TD(A({className: "monitorlink", href: "subpoints?view=" + nonce}, "Drag me to OBS")),
+		TD(A({className: "monitorlink", href: "subpoints?view=" + msg.id}, "Drag me to OBS")),
 	]);
 }
 export function render_empty() {

@@ -2,6 +2,8 @@ inherit http_websocket;
 
 constant markdown = #"# Subpoints trackers for $$channel$$
 
+<style>input[type=number] {width: 4em;}</style>
+
 Unpaid | Font | Goal | Options | Actions | Link
 -------|------|------|---------|---------|--------
 loading... | - | - | - | - | -
@@ -41,23 +43,43 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 
 bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
 mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping monitors = channel->config->monitors || ([]);
-	if (grp != "") return (["data": 0]);
-	if (id) return 0;
-	return (["items": ({ })]);
+	mapping trackers = channel->config->subpoints || ([]);
+	//TODO: Ensure event hooks exist
+	if (grp != "") return (["data": 0]); //TODO: Count the actual subpoints
+	if (id) return trackers[id];
+	array t = values(trackers); sort(t->created, t);
+	return (["items": t]);
 }
 
 void websocket_cmd_create(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "") return;
+	if (!channel->config->subpoints) channel->config->subpoints = ([]);
+	string nonce = replace(MIME.encode_base64(random_string(30)), (["/": "1", "+": "0"]));
+	channel->config->subpoints[nonce] = (["id": nonce, "created": time()]);
+	persist_config->save();
+	send_updates_all(conn->group);
 }
 
 void websocket_cmd_save(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "") return;
+	//TODO
+}
+
+void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (grp != "") return;
+	mapping cfg = channel->config->subpoints;
+	if (cfg[?msg->id]) {
+		m_delete(cfg, msg->id);
+		persist_config->save();
+		send_updates_all(conn->group);
+	}
 }
 
 protected void create(string name)
 {
 	::create(name);
+	//TODO: Set up event hooks
 }
