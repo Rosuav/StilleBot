@@ -75,7 +75,7 @@ continue mapping|Concurrent.Future get_state(int|string channel)
 				G->G->hypetrain_token[channel] || defaulttoken,
 			);
 		}
-		if (!G->G->webhook_active["hypetrainbegin=" + channel]) {
+		if (!G->G->webhook_signer["hypetrainbegin=" + channel]) {
 			foreach ("begin progress end" / " ", string hook)
 				create_eventsubhook(
 					sprintf("hypetrain%s=%d", hook, channel),

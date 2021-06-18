@@ -479,6 +479,23 @@ void webhooks(array results)
 {
 	[array data, array eventhooks] = results;
 	G->G->webhook_active = ([]);
+	//Check all eventsubs and mark that we have them
+	//Note that, for hysterical raisins, several things say "webhook" even
+	//though they serve event hooks.
+	multiset(string) have_hook = (<>);
+	foreach (eventhooks, mapping hook) {
+		sscanf(hook->transport->callback || "", "http%*[s]://%*s/junket?%s=%s", string type, string arg);
+		if (!arg) continue;
+		if (!G->G->webhook_endpoints[type] || !G->G->webhook_signer[type + "=" + arg]) {
+			write("Deleting eventhook %s=%s with ID %s - %s\n", type, arg, hook->id,
+				!G->G->webhook_endpoints[type] ? "bad type" : "no signer");
+			request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
+				([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
+		}
+		have_hook[type + "=" + arg] = 1;
+		G->G->webhook_active[type + "=" + arg] = 1<<60; //These don't expire automatically.
+	}
+
 	multiset(string) follows = (<>), status = (<>);
 	foreach (data, mapping hook)
 	{
@@ -487,10 +504,19 @@ void webhooks(array results)
 		sscanf(hook->callback, "http%*[s]://%*s/junket?%s=%s", string type, string channel);
 		if (!G->G->webhook_signer[type + "=" + channel]) continue; //Probably means the bot's been restarted
 		G->G->webhook_active[type + "=" + channel] = time_left;
+		have_hook[type + "=" + channel] = 1;
 		if (type == "follow") follows[channel] = 1;
 		else if (type == "status") status[channel] = 1;
 	}
-	//write("Already got webhooks for %s\n", indices(watching) * ", ");
+
+	G->G->webhook_signer &= have_hook;
+	mapping secrets = persist_status->path("eventhook_secret");
+	if (sizeof(secrets - have_hook)) {
+		//This could be done unconditionally, but there's no point doing an unnecessary save
+		secrets &= have_hook;
+		persist_status->save();
+	}
+
 	foreach (persist_config["channels"] || ([]); string chan; mapping cfg)
 	{
 		if (follows[chan] /*&& status[chan]*/) continue; //Already got all hooks
@@ -503,19 +529,6 @@ void webhooks(array results)
 		//Not currently using this hook. It doesn't actually give us any benefit!
 		//create_webhook("status=" + chan, "https://api.twitch.tv/helix/streams?user_id=" + userid, 864000);
 	}
-	//Check all eventsubs and mark that we have them
-	//Note that, for hysterical raisins, several things say "webhook" even
-	//though they serve event hooks.
-	foreach (eventhooks, mapping hook) {
-		sscanf(hook->transport->callback || "", "http%*[s]://%*s/junket?%s=%s", string type, string arg);
-		if (!arg) continue;
-		if (!G->G->webhook_signer[type + "=" + arg]) {
-			write("Deleting eventhook %s=%s with ID %s - no signer\n", type, arg, hook->id);
-			request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
-				([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
-		}
-		G->G->webhook_active[type + "=" + arg] = 1<<60; //These don't expire automatically.
-	}
 }
 
 void create_eventsubhook(string callback, string type, string version, mapping condition)
@@ -526,7 +539,7 @@ void create_eventsubhook(string callback, string type, string version, mapping c
 	//could forge a notification from Twitch, causing us to... whatever the
 	//event hook triggers, probably some sort of API call. I guess you could
 	//disrupt the hype train tracker's display or something. Congrats.
-	persist_status->path("eventhook_signer")[callback] = secret;
+	persist_status->path("eventhook_secret")[callback] = secret;
 	persist_status->save();
 	G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
 	request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
@@ -591,7 +604,7 @@ protected void create()
 	if (!G->G->category_names) G->G->category_names = ([]);
 	if (!G->G->user_info) G->G->user_info = ([]);
 	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
-	foreach (persist_status->path("eventhook_signer"); string callback; string secret)
+	foreach (persist_status->path("eventhook_secret"); string callback; string secret)
 		G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
 
 	remove_call_out(G->G->poll_call_out);
