@@ -561,12 +561,7 @@ void create_eventsubhook(string callback, string type, string version, mapping c
 		//werror("EventSub response: %O\n", ret);
 	}, lambda(mixed ret) {
 		//Could be 409 Conflict if we already have one. What should we do if
-		//we want to change the signer??? I don't retain the secrets across
-		//app restarts, so eventually that's going to happen. May be best to
-		//list all subscriptions on startup and delete them all (or delete
-		//any that don't have corresponding signers, or something). Or maybe
-		//let Twitch do that when we return failure responses on checking
-		//their signatures (which we need to start doing).
+		//we want to change the signer???
 		werror("EventSub error response: %s\n", describe_error(ret));
 	});
 }
