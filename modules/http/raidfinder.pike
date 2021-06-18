@@ -102,7 +102,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			array lines = ({ });
 			foreach (sort(online), string name) {
 				object chan = G->G->irc->channels["#" + name];
-				lines += ({sprintf("<li class=%s><a href=\"/raidfinder?for=%s\">%<s</a></li>",
+				if (chan) lines += ({sprintf("<li class=%s><a href=\"/raidfinder?for=%s\">%<s</a></li>",
 					chan->config->allcmds ? "allcmds": "monitor",
 					name,
 				)});
