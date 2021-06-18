@@ -31,7 +31,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	if (req->request_headers["twitch-eventsub-message-type"] == "webhook_callback_verification") { //EventSub confirmation
 		mixed body = Standards.JSON.decode_utf8(req->body_raw);
-		write("EventSub challenge body: %O\n", body);
+		//write("EventSub challenge body: %O\n", body);
 		if (!mappingp(body) || !stringp(body->challenge)) return (["error": 400, "data": "Unrecognized body type"]);
 		G->G->webhook_active[endpoint + "=" + channel] = 1<<60;
 		return (["data": body->challenge]);

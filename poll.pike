@@ -532,7 +532,7 @@ void create_eventsubhook(string callback, string type, string version, mapping c
 		]),
 	]))
 	->then(lambda(mixed ret) {
-		werror("EventSub response: %O\n", ret);
+		//werror("EventSub response: %O\n", ret);
 	}, lambda(mixed ret) {
 		//Could be 409 Conflict if we already have one. What should we do if
 		//we want to change the signer??? I don't retain the secrets across
