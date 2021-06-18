@@ -144,7 +144,7 @@ void websocket_cmd_save(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (grp != "") return;
 	mapping tracker = channel->config->subpoints[?msg->id];
 	if (!tracker) return;
-	foreach ("unpaidpoints font fontsize usecomfy" / " ", string k)
+	foreach ("unpaidpoints font fontsize goal usecomfy" / " ", string k)
 		if (!undefinedp(msg[k])) tracker[k] = msg[k];
 	persist_config->save();
 	send_updates_all(conn->group);
