@@ -454,22 +454,8 @@ Concurrent.Future check_following(string user, string chan)
 	});
 }
 
-void got_followers(string chan, array data)
-{
-	foreach (data, mapping follower)
-	{
-		write("Webhook got follower [%d]: %O\n", time(), follower);
-		if (object chan = G->G->irc->channels["#" + chan])
-			chan->trigger_special("!follower", ([
-				"user": follower->from_name,
-				"displayname": follower->from_name,
-			]), ([]));
-	}
-}
-
 void new_follower(string chan, mapping follower)
 {
-	write("Evthook got follower [%d]: %O\n", time(), follower);
 	notice_user_name(follower->user_login, follower->user_id);
 	if (object chan = G->G->irc->channels["#" + chan])
 		chan->trigger_special("!follower", ([
@@ -579,8 +565,6 @@ void webhooks(array results)
 		mapping c = G->G->channel_info[chan];
 		int userid = c->?_id;
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses !whisper.)
-		if (!have_hook["follow=" + chan])
-			create_webhook("follow=" + chan, "https://api.twitch.tv/helix/users/follows?first=1&to_id=" + userid, 864000);
 		//Not currently using this hook. It doesn't actually give us any benefit!
 		//if (!have_hook["status=" + chan])
 			//create_webhook("status=" + chan, "https://api.twitch.tv/helix/streams?user_id=" + userid, 864000);
@@ -624,7 +608,6 @@ protected void create()
 	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
 	foreach (persist_status->path("eventhook_secret"); string callback; string secret)
 		G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
-	G->G->webhook_endpoints->follow = got_followers;
 	G->G->webhook_endpoints->follower = new_follower;
 
 	remove_call_out(G->G->poll_call_out);
