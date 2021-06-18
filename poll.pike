@@ -467,6 +467,17 @@ void got_followers(string chan, array data)
 	}
 }
 
+void new_follower(string chan, mapping follower)
+{
+	write("Evthook got follower [%d]: %O\n", time(), follower);
+	notice_user_name(follower->user_login, follower->user_id);
+	if (object chan = G->G->irc->channels["#" + chan])
+		chan->trigger_special("!follower", ([
+			"user": follower->user_login,
+			"displayname": follower->user_name,
+		]), ([]));
+}
+
 void create_webhook(string callback, string topic, int seconds, string|void token)
 {
 	string secret = MIME.encode_base64(random_string(15));
@@ -544,7 +555,6 @@ void webhooks(array results)
 		G->G->webhook_active[type + "=" + arg] = 1<<60; //These don't expire automatically.
 	}
 
-	multiset(string) follows = (<>), status = (<>);
 	foreach (data, mapping hook)
 	{
 		int time_left = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", hook->expires_at)->unix_time() - time();
@@ -553,8 +563,6 @@ void webhooks(array results)
 		if (!G->G->webhook_signer[type + "=" + channel]) continue; //Probably means the bot's been restarted
 		G->G->webhook_active[type + "=" + channel] = time_left;
 		have_hook[type + "=" + channel] = 1;
-		if (type == "follow") follows[channel] = 1;
-		else if (type == "status") status[channel] = 1;
 	}
 
 	G->G->webhook_signer &= have_hook;
@@ -567,15 +575,17 @@ void webhooks(array results)
 
 	foreach (persist_config["channels"] || ([]); string chan; mapping cfg)
 	{
-		if (follows[chan] /*&& status[chan]*/) continue; //Already got all hooks
 		if (!cfg->allcmds) continue; //Show only for channels we're fully active in
 		mapping c = G->G->channel_info[chan];
 		int userid = c->?_id;
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses !whisper.)
-		write("Creating webhooks for %s\n", chan);
-		create_webhook("follow=" + chan, "https://api.twitch.tv/helix/users/follows?first=1&to_id=" + userid, 864000);
+		if (!have_hook["follow=" + chan])
+			create_webhook("follow=" + chan, "https://api.twitch.tv/helix/users/follows?first=1&to_id=" + userid, 864000);
 		//Not currently using this hook. It doesn't actually give us any benefit!
-		//create_webhook("status=" + chan, "https://api.twitch.tv/helix/streams?user_id=" + userid, 864000);
+		//if (!have_hook["status=" + chan])
+			//create_webhook("status=" + chan, "https://api.twitch.tv/helix/streams?user_id=" + userid, 864000);
+		if (!have_hook["follower=" + chan])
+			create_eventsubhook("follower=" + chan, "channel.follow", "1", (["broadcaster_user_id": (string)userid]));
 	}
 }
 
@@ -615,6 +625,7 @@ protected void create()
 	foreach (persist_status->path("eventhook_secret"); string callback; string secret)
 		G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
 	G->G->webhook_endpoints->follow = got_followers;
+	G->G->webhook_endpoints->follower = new_follower;
 
 	remove_call_out(G->G->poll_call_out);
 	poll();
