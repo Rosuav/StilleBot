@@ -122,6 +122,7 @@ continue mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	if (grp != "") {
 		if (!trackers[grp]) return (["data": 0]); //If you delete the tracker with the page open, it'll be a bit ugly.
 		int points = yield(get_sub_points(channel->name[1..]));
+		Stdio.append_file("evt_subpoints.log", sprintf("Fresh load, subpoint count: %d\n", points));
 		return trackers[grp] | (["points": points - (int)trackers[grp]->unpaidpoints]);
 	}
 	if (id) return trackers[id];
@@ -163,12 +164,13 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 
 void subpoints_updated(string hook, string chan, mapping info) {
 	//TODO: If it's reliable, maintain the subpoint figure and adjust it, instead of re-fetching.
-	Stdio.append_file("evthook.log", sprintf("EVENT: Subpoints %s [%O, %d]: %O\n", hook, chan, time(), info));
+	Stdio.append_file("evt_subpoints.log", sprintf("EVENT: Subpoints %s [%O, %d]: %O\n", hook, chan, time(), info));
 	object channel = G->G->irc->channels["#" + chan];
 	mapping cfg = channel->config->subpoints;
 	if (!cfg || !sizeof(cfg)) return;
 	handle_async(get_sub_points(chan)) {
 		int points = __ARGS__[0];
+		Stdio.append_file("evt_subpoints.log", sprintf("Updated subpoint count: %d\n", points));
 		foreach (cfg; string nonce; mapping tracker)
 			send_updates_all(nonce + "#" + chan, tracker | (["points": points - (int)tracker->unpaidpoints]));
 	};
