@@ -101,3 +101,4 @@
   - Need to heavily rework subpoints probably.
   - With webhooks, the status event wasn't worth it. Reconsider with evthook? Probably
     not any better.
+* Monitors - new goal bar should just create a variable for it eg "goalbarXYZ"
