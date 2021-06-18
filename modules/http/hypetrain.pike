@@ -57,9 +57,9 @@ void hypetrain_progression(string chan, array data)
 	handle_async(parse_hype_status(data[0]->event_data)) {send_updates_all(channel, @__ARGS__);};
 }
 
-void hypetrain_begin(string chan, array data) {write("EVENT: Hype Begin %O %O\n", chan, data);}
-void hypetrain_progress(string chan, array data) {write("EVENT: Hype Progress %O %O\n", chan, data);}
-void hypetrain_end(string chan, array data) {write("EVENT: Hype End %O %O\n", chan, data);}
+void hypetrain_begin(string chan, mixed info) {Stdio.append_file("evthook.log", sprintf("EVENT: Hype Begin [%O, %d]: %O\n", chan, time(), info));}
+void hypetrain_progress(string chan, mixed info) {Stdio.append_file("evthook.log", sprintf("EVENT: Hype Progress [%O, %d]: %O\n", chan, time(), info));}
+void hypetrain_end(string chan, mixed info) {Stdio.append_file("evthook.log", sprintf("EVENT: Hype End [%O, %d]: %O\n", chan, time(), info));}
 
 continue mapping|Concurrent.Future get_state(int|string channel)
 {
