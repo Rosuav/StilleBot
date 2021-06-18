@@ -618,7 +618,7 @@ protected void create()
 	if (!G->G->category_names) G->G->category_names = ([]);
 	if (!G->G->user_info) G->G->user_info = ([]);
 	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
-	foreach (persist_status->path("eventhook_secret"); string callback; string secret)
+	if (persist_status->?path) foreach (persist_status->path("eventhook_secret"); string callback; string secret)
 		G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
 	G->G->webhook_endpoints->follower = new_follower;
 	G->G->webhook_endpoints->online = evt_stream_online;
@@ -644,7 +644,7 @@ protected void create()
 }
 
 #if !constant(G)
-mapping G = (["G":([])]);
+mapping G = (["G":(["webhook_endpoints": ([])])]);
 mapping persist_config = (["channels": ({ }), "ircsettings": Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"))["ircsettings"] || ([])]);
 mapping persist_status = ([]);
 void runhooks(mixed ... args) { }
