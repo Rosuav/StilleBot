@@ -34,28 +34,25 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (msgid) {
 			string ts = req->request_headers["twitch-eventsub-message-timestamp"];
 			string sig = req->request_headers["twitch-eventsub-message-signature"];
-			write("Junket E message: %O = %O, ID %O, ts %O, len %O (%O)\nhdr %O\nevt %O\n",
-				endpoint, channel, msgid, ts,
-				sizeof(req->body_raw), req->request_headers["content-length"],
-				sig - "sha256=", String.string2hex(signer(msgid + ts + req->body_raw)),
-			);
+			if (sig != "sha256=" + String.string2hex(signer(msgid + ts + req->body_raw))) {
+				write("Junket E message: %O = %O, ID %O, ts %O, len %O (%O)\nhdr %O\nevt %O\n",
+					endpoint, channel, msgid, ts,
+					sizeof(req->body_raw), req->request_headers["content-length"],
+					sig - "sha256=", String.string2hex(signer(msgid + ts + req->body_raw)),
+				);
+				return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
+			}
 		}
 		else {
 			string sig = req->request_headers["x-hub-signature"];
-			write("Junket W message: %O = %O, len %O (%O)\nhdr %O\nweb %O\n",
-				endpoint, channel, sizeof(req->body_raw), req->request_headers["content-length"],
-				sig - "sha256=", String.string2hex(signer(req->body_raw)),
-			);
+			if (sig != "sha256=" + String.string2hex(signer(req->body_raw))) {
+				write("Junket W message: %O = %O, len %O (%O)\nhdr %O\nweb %O\n",
+					endpoint, channel, sizeof(req->body_raw), req->request_headers["content-length"],
+					sig - "sha256=", String.string2hex(signer(req->body_raw)),
+				);
+				return (["error": 418, "data": "That tea's cold by now."]); //Most likely we've changed the signer.
+			}
 		}
-		#if 0
-		//Hacking this out for now. I don't know why they're failing.
-		if (req->request_headers["x-hub-signature"] != "sha256=" + String.string2hex(signer(req->body_raw)))
-		{
-			werror("Signature failed! Message discarded. Body:\n%O\nSig: %O\n",
-				req->body_raw, req->request_headers["x-hub-signature"]);
-			return (["data": "Signature mismatch"]); //HTTP 200 because it might just mean we created a replacement for a soon-to-expire.
-		}
-		#endif
 		mixed body = Standards.JSON.decode_utf8(req->body_raw);
 		array|mapping data = mappingp(body) && (body->data || body->event); //Webhooks use data, EventSub uses event
 		if (!data) return (["error": 400, "data": "Unrecognized body type"]);
