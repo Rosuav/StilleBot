@@ -575,7 +575,7 @@ void webhooks(array results)
 
 	foreach (persist_config["channels"] || ([]); string chan; mapping cfg)
 	{
-		if (!cfg->allcmds) continue; //Show only for channels we're fully active in
+		if (!cfg->allcmds && !cfg->httponly) continue; //Have hooks only for channels we're active in
 		mapping c = G->G->channel_info[chan];
 		int userid = c->?_id;
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses !whisper.)
