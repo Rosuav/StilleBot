@@ -568,8 +568,10 @@ void webhooks(array results)
 		//Not currently using this hook. It doesn't actually give us any benefit!
 		//if (!have_hook["status=" + chan])
 			//create_webhook("status=" + chan, "https://api.twitch.tv/helix/streams?user_id=" + userid, 864000);
-		if (!have_hook["follower=" + chan])
-			create_eventsubhook("follower=" + chan, "channel.follow", "1", (["broadcaster_user_id": (string)userid]));
+		foreach (([
+			"follower=": ({"channel.follow", "1", (["broadcaster_user_id": (string)userid])}),
+		]); string hook; array info) if (!have_hook[hook + chan])
+			create_eventsubhook(hook + chan, @info);
 	}
 }
 
