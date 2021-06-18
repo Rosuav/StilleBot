@@ -515,6 +515,13 @@ void webhooks(array results)
 void create_eventsubhook(string callback, string type, string version, mapping condition)
 {
 	string secret = MIME.encode_base64(random_string(15));
+	//Save the secret. This is unencrypted and potentially could be leaked.
+	//The attack surface is fairly small, though - at worst, an attacker
+	//could forge a notification from Twitch, causing us to... whatever the
+	//event hook triggers, probably some sort of API call. I guess you could
+	//disrupt the hype train tracker's display or something. Congrats.
+	persist_status->path("eventhook_signer")[callback] = secret;
+	persist_status->save();
 	G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
 	request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
 		"authtype": "app",
@@ -578,6 +585,9 @@ protected void create()
 	if (!G->G->category_names) G->G->category_names = ([]);
 	if (!G->G->user_info) G->G->user_info = ([]);
 	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
+	foreach (persist_status->path("eventhook_signer"); string callback; string secret)
+		G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
+
 	remove_call_out(G->G->poll_call_out);
 	poll();
 	add_constant("get_channel_info", get_channel_info);
