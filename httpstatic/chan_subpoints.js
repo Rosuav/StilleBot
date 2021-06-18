@@ -1,13 +1,11 @@
 import choc, {set_content, DOM, on, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, BR, BUTTON, DETAILS, SUMMARY, DIV, FORM, FIELDSET, LEGEND, LABEL, INPUT, TEXTAREA, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
-fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
 import {waitlate} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#trackers tbody");
 export function render_item(msg, obj) {
 	if (!msg) return 0;
 	return TR({"data-id": msg.id}, [
-		//Unpaid | Font | Goal | Options | Actions | Link
 		TD(INPUT({name: "unpaidpoints", type: "number", value: msg.unpaidpoints || 0})),
 		TD([
 			INPUT({name: "font", value: msg.font || ""}),
@@ -15,7 +13,7 @@ export function render_item(msg, obj) {
 		]),
 		TD(INPUT({name: "goal", type: "number", value: msg.goal || 0})),
 		TD([
-			LABEL([INPUT({name: "usecomfy", type: "checkbox"}), "Use chat notifications"]),
+			LABEL([INPUT({name: "usecomfy", type: "checkbox", checked: msg.usecomfy}), "Use chat notifications"]),
 		]),
 		TD([
 			BUTTON({type: "button", className: "savebtn"}, "Save"),
@@ -38,8 +36,8 @@ on("click", "#add_tracker", e => {
 on("click", ".savebtn", e => {
 	const tr = e.match.closest("tr");
 	const msg = {cmd: "save", id: tr.dataset.id};
-	tr.querySelectorAll("input").forEach(inp => msg[inp.name] = inp.value);
-	console.log("Will save:", body);
+	tr.querySelectorAll("input").forEach(inp => msg[inp.name] = inp.type == "checkbox" ? inp.checked : inp.value);
+	ws_sync.send(msg);
 });
 
 on("click", ".deletebtn", waitlate(1000, 7500, "Really delete?", e => {

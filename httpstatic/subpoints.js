@@ -1,7 +1,8 @@
 const ComfyJS = window.ComfyJS;
 
+const target = document.getElementById("display") || document.getElementById("points"); //#points only for compatibility
 export function render(data) {
-	document.getElementById("points").innerHTML = data.points + " / " + (data.goal || "1234");
+	target.innerHTML = data.points + " / " + (data.goal || "1234");
 }
 
 if (ComfyJS && window.channelname !== "") {
