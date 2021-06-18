@@ -26,12 +26,12 @@ export function render_item(msg, obj) {
 }
 export function render_empty() {
 	render_parent.appendChild(TR([
-		TD({colSpan: 6}, "No subpoint counters active. Create one!"),
+		TD({colSpan: 6}, "No subpoint trackers active. Create one!"),
 	]));
 }
 export function render(data) { }
 
-on("click", "#add_text", e => {
+on("click", "#add_tracker", e => {
 	ws_sync.send({cmd: "create"});
 });
 
@@ -47,6 +47,6 @@ on("click", ".deletebtn", waitlate(1000, 7500, "Really delete?", e => {
 }));
 
 on("dragstart", ".monitorlink", e => {
-	const url = `${e.match.href}&layer-name=StilleBot%20subpoint%20counter&layer-width=200&layer-height=120`;
+	const url = `${e.match.href}&layer-name=StilleBot%20subpoint%20tracker&layer-width=200&layer-height=120`;
 	e.dataTransfer.setData("text/uri-list", url);
 });

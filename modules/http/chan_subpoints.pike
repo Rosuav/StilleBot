@@ -1,6 +1,6 @@
 inherit http_websocket;
 
-constant markdown = #"# Subpoints counter for $$channel$$
+constant markdown = #"# Subpoints trackers for $$channel$$
 
 Unpaid | Font | Goal | Options | Actions | Link
 -------|------|------|---------|---------|--------
