@@ -454,6 +454,18 @@ Concurrent.Future check_following(string user, string chan)
 	});
 }
 
+void got_followers(string chan, array data)
+{
+	foreach (data, mapping follower)
+	{
+		if (object chan = G->G->irc->channels["#" + chan])
+			chan->trigger_special("!follower", ([
+				"user": follower->from_name,
+				"displayname": follower->from_name,
+			]), ([]));
+	}
+}
+
 void create_webhook(string callback, string topic, int seconds, string|void token)
 {
 	string secret = MIME.encode_base64(random_string(15));
@@ -601,6 +613,7 @@ protected void create()
 	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
 	foreach (persist_status->path("eventhook_secret"); string callback; string secret)
 		G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
+	G->G->webhook_endpoints->follow = got_followers;
 
 	remove_call_out(G->G->poll_call_out);
 	poll();

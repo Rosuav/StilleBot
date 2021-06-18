@@ -1,17 +1,5 @@
 inherit http_endpoint;
 
-void got_followers(string chan, array data)
-{
-	foreach (data, mapping follower)
-	{
-		if (object chan = G->G->irc->channels["#" + chan])
-			chan->trigger_special("!follower", ([
-				"user": follower->from_name,
-				"displayname": follower->from_name,
-			]), ([]));
-	}
-}
-
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	string endpoint, channel;
@@ -76,5 +64,3 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		return (["data": "PRAD"]);
 	}
 }
-
-protected void create(string name) {::create(name); G->G->webhook_endpoints->follow = got_followers;}
