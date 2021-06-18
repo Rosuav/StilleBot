@@ -95,7 +95,6 @@
   - Can also handle $pinafore|hms$ the same way
 * Dialogs now autoclose only if formless. Ensure that the annoying cases get forms
   added or removed as appropriate.
-* Drag and drop of text monitors has 'undefined' width/height
 * Webhooks are deprecated in favour of event hooks.
   - Currently using them for hype train tracking and subpoints
   - Have deployed debug-only evthook for hype train, need to observe one in progress.

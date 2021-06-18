@@ -57,9 +57,12 @@ export function render_item(msg, obj) {
 	]);
 	update_display(el.querySelector(".preview"), editables[nonce]);
 	el.querySelector(".preview-bg").style.backgroundColor = editables[nonce].previewbg;
-	const link = el.querySelector(".monitorlink");
-	link.dataset.width = editables[nonce].width;
-	link.dataset.height = editables[nonce].height;
+	setTimeout(() => { //Wait till the preview has rendered, then measure it for the link
+		const box = el.querySelector(".preview").getBoundingClientRect();
+		const link = el.querySelector(".monitorlink");
+		link.dataset.width = Math.round(box.width);
+		link.dataset.height = Math.round(box.height);
+	}, 50);
 	return el;
 }
 export function render_empty() {
