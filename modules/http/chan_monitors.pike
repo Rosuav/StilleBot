@@ -17,6 +17,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		else info = cfg->monitors[nonce];
 		return render_template("monitor.html", ([
 			"vars": (["ws_type": ws_type, "ws_group": nonce + req->misc->channel->name, "ws_code": "monitor"]),
+			"styles": "#display div {width: 33%;}#display div:nth-of-type(2) {text-align: center;}#display div:nth-of-type(3) {text-align: right;}",
 		]));
 	}
 	if (req->request_type == "PUT") {
