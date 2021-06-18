@@ -1,3 +1,4 @@
+//Deprecated in favour of chan_subpoints.pike
 inherit http_websocket;
 constant markdown = #"# Sub points counter
 
