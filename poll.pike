@@ -458,6 +458,7 @@ void got_followers(string chan, array data)
 {
 	foreach (data, mapping follower)
 	{
+		write("Webhook got follower [%d]: %O\n", time(), follower);
 		if (object chan = G->G->irc->channels["#" + chan])
 			chan->trigger_special("!follower", ([
 				"user": follower->from_name,
@@ -484,6 +485,41 @@ void create_webhook(string callback, string topic, int seconds, string|void toke
 		]), "return_status": 1]))
 	->then(lambda(mixed ret) {
 		if (ret != 202) werror("FAILED TO CREATE WEBHOOK %s\n", callback); //It'll be retried at some point.
+	});
+}
+
+void create_eventsubhook(string callback, string type, string version, mapping condition)
+{
+	string secret = MIME.encode_base64(random_string(15));
+	//Save the secret. This is unencrypted and potentially could be leaked.
+	//The attack surface is fairly small, though - at worst, an attacker
+	//could forge a notification from Twitch, causing us to... whatever the
+	//event hook triggers, probably some sort of API call. I guess you could
+	//disrupt the hype train tracker's display or something. Congrats.
+	persist_status->path("eventhook_secret")[callback] = secret;
+	persist_status->save();
+	G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
+	request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
+		"authtype": "app",
+		"json": ([
+			"type": type, "version": version,
+			"condition": condition,
+			"transport": ([
+				"method": "webhook",
+				"callback": sprintf("%s/junket?%s",
+					persist_config["ircsettings"]["http_address"],
+					callback,
+				),
+				"secret": secret,
+			]),
+		]),
+	]))
+	->then(lambda(mixed ret) {
+		//werror("EventSub response: %O\n", ret);
+	}, lambda(mixed ret) {
+		//Could be 409 Conflict if we already have one. What should we do if
+		//we want to change the signer???
+		werror("EventSub error response: %s\n", describe_error(ret));
 	});
 }
 
@@ -541,41 +577,6 @@ void webhooks(array results)
 		//Not currently using this hook. It doesn't actually give us any benefit!
 		//create_webhook("status=" + chan, "https://api.twitch.tv/helix/streams?user_id=" + userid, 864000);
 	}
-}
-
-void create_eventsubhook(string callback, string type, string version, mapping condition)
-{
-	string secret = MIME.encode_base64(random_string(15));
-	//Save the secret. This is unencrypted and potentially could be leaked.
-	//The attack surface is fairly small, though - at worst, an attacker
-	//could forge a notification from Twitch, causing us to... whatever the
-	//event hook triggers, probably some sort of API call. I guess you could
-	//disrupt the hype train tracker's display or something. Congrats.
-	persist_status->path("eventhook_secret")[callback] = secret;
-	persist_status->save();
-	G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
-	request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
-		"authtype": "app",
-		"json": ([
-			"type": type, "version": version,
-			"condition": condition,
-			"transport": ([
-				"method": "webhook",
-				"callback": sprintf("%s/junket?%s",
-					persist_config["ircsettings"]["http_address"],
-					callback,
-				),
-				"secret": secret,
-			]),
-		]),
-	]))
-	->then(lambda(mixed ret) {
-		//werror("EventSub response: %O\n", ret);
-	}, lambda(mixed ret) {
-		//Could be 409 Conflict if we already have one. What should we do if
-		//we want to change the signer???
-		werror("EventSub error response: %s\n", describe_error(ret));
-	});
 }
 
 void poll()
