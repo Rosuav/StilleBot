@@ -504,10 +504,16 @@ void webhooks(array results)
 		//create_webhook("status=" + chan, "https://api.twitch.tv/helix/streams?user_id=" + userid, 864000);
 	}
 	//Check all eventsubs and mark that we have them
+	//Note that, for hysterical raisins, several things say "webhook" even
+	//though they serve event hooks.
 	foreach (eventhooks, mapping hook) {
 		sscanf(hook->transport->callback || "", "http%*[s]://%*s/junket?%s=%s", string type, string arg);
 		if (!arg) continue;
-		if (!G->G->webhook_signer[type + "=" + arg]) continue; //TODO: Clean these up?? Currently we just pretend they don't exist. Not tidy.
+		if (!G->G->webhook_signer[type + "=" + arg]) {
+			write("Deleting eventhook %s=%s with ID %s - no signer\n", type, arg, hook->id);
+			request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
+				([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
+		}
 		G->G->webhook_active[type + "=" + arg] = 1<<60; //These don't expire automatically.
 	}
 }
