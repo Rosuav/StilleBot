@@ -129,11 +129,11 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	margin-left: 1.5em;
 	padding: 2px;
 	cursor: default;
-	transition: opacity 3s 1.5s;
+	transition: opacity 2s 0.5s;
 }
 #copied.shown {
 	opacity: 1;
-	transition: opacity 1s 0s;
+	transition: opacity .5s 0s;
 }
 </style>
 
