@@ -188,7 +188,7 @@ if (ismobile) render = (state) => {
 	update();
 }
 
-//This isn't needed most of the time (the webhook will signal us), but can help if
+//This isn't needed most of the time (the hook will signal us), but can help if
 //anonymous events happen and are missed by the hook.
 function refresh() {ws_sync.send({cmd: "refresh"});}
 if (!ismobile) {

@@ -473,7 +473,7 @@ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			{
 				foreach (values(winner[1]->redemptions), mapping redem)
 					set_redemption_status(redem, "FULFILLED");
-				//This will eventually be done by the webhook, but the
+				//This will eventually be done by the event hook, but the
 				//front end updates faster if we force it immediately.
 				winner[1]->redemptions = ([]);
 				winner[1]->tickets = 0;

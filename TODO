@@ -95,12 +95,6 @@
   - Can also handle $pinafore|hms$ the same way
 * Dialogs now autoclose only if formless. Ensure that the annoying cases get forms
   added or removed as appropriate.
-* Webhooks are deprecated in favour of event hooks.
-  - Currently using them for hype train tracking and subpoints
-  - Have deployed debug-only evthook for hype train, need to observe one in progress.
-  - Need to heavily rework subpoints probably.
-  - With webhooks, the status event wasn't worth it. Reconsider with evthook? Probably
-    not any better.
 * Monitors - new goal bar should just create a variable for it eg "goalbarXYZ"
 * Giveaway is sometimes cancelling all tickets. Possibly b/c it's closed and it's lost
   track of the tickets?? Make sure a refresh at the wrong time won't inexplicably refund
