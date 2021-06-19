@@ -130,6 +130,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (!status) status = G->G->vlc_status[channel->name] = ([]);
 		req->variables->auth = "(correct)"; werror("Got VLC notification: %O\n", req->variables);
 		if (req->variables->shutdown) {req->variables->status = "shutdown"; werror("VLC link shutdown\n");}
+		int send = 0;
 		if (string uri = req->variables->now_playing) {
 			catch {uri = utf8_to_string(uri);}; //If it's not UTF-8, pretend it's Latin-1
 			string block = dirname(uri);
@@ -167,13 +168,15 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					status->recent = (status->recent + ({status->current}))[<9..];
 				status->current = desc; status->curtrack = fn;
 				status->curblock = block; status->curblockdesc = blockdesc;
-				if (!req->variables->status) sendstatus(channel); //If there's also a status set, make both changes atomically before invoking the special.
+				send = 1;
 			}
 		}
 		if (string s = req->variables->status) {
-			status->playing = s == "playing";
-			sendstatus(channel);
+			int playing = s == "playing";
+			send += playing != status->playing;
+			status->playing = playing;
 		}
+		if (send) sendstatus(channel); //If multiple changes, only send once
 		return (["data": "Okay, fine\n", "type": "text/plain"]);
 	}
 	if (!status) status = ([]); //but don't save it back, which we would if we're changing stuff
