@@ -271,21 +271,11 @@ class channel_notif
 			color = sprintf("\e[1;3%dm", G->G->channelcolor[name]);
 		}
 		else color = "\e[0m"; //Nothing will normally be logged, so don't allocate a color. If logging gets enabled, it'll take a reset to assign one.
-		//Twitch will (eventually) notify us of who has "ops" privilege, which
-		//corresponds to mods and other people with equivalent powers. But on
-		//startup, it's quicker to (a) grant mod powers to the streamer, and
-		//(b) ask Twitch who the other mods are. This won't catch people with
-		//special powers (Twitch staff etc), so they may not be able to run
-		//mod-only commands until the "MODE" lines come through.
+		//The streamer counts as a mod. Everyone else has to speak in chat to
+		//show us the badge, after which we'll acknowledge mod status. (For a
+		//mod-only command, that's trivially easy; for web access, just "poke
+		//the bot" in chat first.)
 		mods[name[1..]] = 1;
-		//For some reason, this one line of code triggers the reconnect loop
-		//bug. I have no idea what the actual cause is, but the issue seems
-		//to be less common if the commands get spaced out a bit - delay the
-		//first one by 1 second, the second by 2, etc.
-		//call_out(irc->send_message, ++mod_query_delay, name, "/mods");
-		//20181221: Instead of asking about all mods, we instead wait for one
-		//of two events - either the MODE lines, or the person speaking in
-		//chat, with the mod badge or equivalent.
 	}
 
 	//NOTE: Without not_join and its friends, Pike 8.0 will spam noisy failure
