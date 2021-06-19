@@ -17,7 +17,7 @@ mapping cached = 0; int cache_time = 0;
 continue mapping|Concurrent.Future parse_hype_status(mapping data)
 {
 	int now = time();
-	int cooldown = until(data->cooldown_end_time, now);
+	int cooldown = until(data->cooldown_end_time || data->cooldown_ends_at, now);
 	int expires = until(data->expires_at, now);
 	int checktime = expires || cooldown;
 	if (checktime && checktime != G->G->hypetrain_checktime[data->broadcaster_id]) {
@@ -34,19 +34,14 @@ continue mapping|Concurrent.Future parse_hype_status(mapping data)
 		"cooldown": cooldown, "expires": expires,
 		"level": (int)data->level, "goal": (int)data->goal, "total": (int)data->total,
 	]);
-	mapping lastcontrib = yield(get_user_info(data->last_contribution->?user));
-	//Show last contribution (with user name)
-	state->lastcontrib = data->last_contribution || ([]);
-	if (lastcontrib) state->lastcontrib->display_name = lastcontrib->display_name;
-	array users = data->top_contributions->?user || ({ });
-	array conductors = yield(Concurrent.all(get_user_info(users[*])));
-	//Show hype conductor stats (with user name)
-	state->conductors = data->top_contributions || ({ });
-	mapping cond = mkmapping(conductors->id, conductors);
-	foreach (state->conductors, mapping c)
-	{
-		if (cond[c->user]) c->display_name = cond[c->user]->display_name;
+	//The API has one format, the eventsub notification has another. Sigh. Synchronize manually.
+	foreach (data->top_contributions + ({data->last_contribution}) - ({0}), mapping user) {
+		if (user->user_id) user->user = user->user_id;
+		if (user->user_name) user->display_name = user->user_name;
+		else user->display_name = yield(get_user_info(data->last_contribution->user))->display_name;
 	}
+	state->lastcontrib = data->last_contribution || ([]);
+	state->conductors = data->top_contributions || ({ });
 	return state;
 }
 
@@ -54,9 +49,7 @@ void hypetrain_progression(string status, string chan, mapping info)
 {
 	Stdio.append_file("evthook.log", sprintf("EVENT: Hype %s [%O, %d]: %O\n", status, chan, time(), info));
 	int channel = (int)chan;
-	//TODO: Get the actual status (figure it out from the log) and send it directly
-	//handle_async(parse_hype_status(data[0]->event_data)) {send_updates_all(channel, @__ARGS__);};
-	send_updates_all(channel);
+	handle_async(parse_hype_status(info)) {send_updates_all(channel, @__ARGS__);};
 }
 
 EventSub hypetrain_begin = EventSub("hypetrain_begin", "channel.hype_train.begin", "1") {hypetrain_progression("begin", @__ARGS__);};
