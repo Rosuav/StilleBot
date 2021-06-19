@@ -51,38 +51,26 @@ continue mapping|Concurrent.Future parse_hype_status(mapping data)
 	return state;
 }
 
-void hypetrain_progression(string chan, array data)
+void hypetrain_progression(string status, string chan, mapping info)
 {
+	Stdio.append_file("evthook.log", sprintf("EVENT: Hype %s [%O, %d]: %O\n", status, chan, time(), info));
 	int channel = (int)chan;
-	handle_async(parse_hype_status(data[0]->event_data)) {send_updates_all(channel, @__ARGS__);};
+	//TODO: Get the actual status (figure it out from the log) and send it directly
+	//handle_async(parse_hype_status(data[0]->event_data)) {send_updates_all(channel, @__ARGS__);};
+	send_updates_all(channel);
 }
 
-void hypetrain_begin(string chan, mixed info) {Stdio.append_file("evthook.log", sprintf("EVENT: Hype Begin [%O, %d]: %O\n", chan, time(), info));}
-void hypetrain_progress(string chan, mixed info) {Stdio.append_file("evthook.log", sprintf("EVENT: Hype Progress [%O, %d]: %O\n", chan, time(), info));}
-void hypetrain_end(string chan, mixed info) {Stdio.append_file("evthook.log", sprintf("EVENT: Hype End [%O, %d]: %O\n", chan, time(), info));}
+EventSub hypetrain_begin = EventSub("hypetrain_begin", "channel.hype_train.begin", "1") {hypetrain_progression("begin", @__ARGS__);};
+EventSub hypetrain_progress = EventSub("hypetrain_progress", "channel.hype_train.progress", "1") {hypetrain_progression("progress", @__ARGS__);};
+EventSub hypetrain_end = EventSub("hypetrain_end", "channel.hype_train.end", "1") {hypetrain_progression("end", @__ARGS__);};
 
 continue mapping|Concurrent.Future get_state(int|string channel)
 {
 	mixed ex = catch {
 		if (stringp(channel)) channel = yield(get_user_id(channel)); //Simplify usage for channel mode
-		if (G->G->webhook_active["hypetrain=" + channel] < 300)
-		{
-			write("Creating webhook for hype train %O\n", channel);
-			create_webhook(
-				"hypetrain=" + channel,
-				"https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + channel + "&first=1",
-				1800,
-				G->G->hypetrain_token[channel] || defaulttoken,
-			);
-		}
-		if (!G->G->webhook_signer["hypetrainbegin=" + channel]) {
-			foreach ("begin progress end" / " ", string hook)
-				create_eventsubhook(
-					sprintf("hypetrain%s=%d", hook, channel),
-					"channel.hype_train." + hook, "1",
-					(["broadcaster_user_id": (string)channel]),
-				);
-		}
+		hypetrain_begin((string)channel, (["broadcaster_user_id": (string)channel]));
+		hypetrain_progress((string)channel, (["broadcaster_user_id": (string)channel]));
+		hypetrain_end((string)channel, (["broadcaster_user_id": (string)channel]));
 		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + (string)channel,
 				(["Authorization": "Bearer " + (G->G->hypetrain_token[channel] || defaulttoken)])));
 		mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
@@ -236,10 +224,6 @@ protected void create(string name)
 	if (G->G->webhook_endpoints->hypetrain) {
 		defaulttoken = function_object(G->G->webhook_endpoints->hypetrain)->defaulttoken;
 	}
-	G->G->webhook_endpoints->hypetrain = hypetrain_progression;
-	G->G->webhook_endpoints->hypetrainbegin = hypetrain_begin;
-	G->G->webhook_endpoints->hypetrainprogress = hypetrain_progress;
-	G->G->webhook_endpoints->hypetrainend = hypetrain_end;
 	if (!G->G->hypetrain_checktime) G->G->hypetrain_checktime = ([]);
 	if (!G->G->hypetrain_token) G->G->hypetrain_token = ([]);
 }

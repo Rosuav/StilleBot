@@ -2,6 +2,11 @@
 inherit http_websocket;
 constant markdown = #"# Sub points counter
 
+## Deprecated
+
+This will be going away at some point. It uses deprecated Twitch APIs and cannot be relied upon.
+Instead, use channel-linked subpoint trackers, if you have this facility enabled (/channels/YOURNAME/subpoints).
+
 $$points$$
 {:#points}
 

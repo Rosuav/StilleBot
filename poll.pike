@@ -454,22 +454,7 @@ Concurrent.Future check_following(string user, string chan)
 	});
 }
 
-void new_follower(string chan, mapping follower)
-{
-	notice_user_name(follower->user_login, follower->user_id);
-	if (object chan = G->G->irc->channels["#" + chan])
-		chan->trigger_special("!follower", ([
-			"user": follower->user_login,
-			"displayname": follower->user_name,
-		]), ([]));
-}
-
-void evt_stream_online(string chan, mixed info) {Stdio.append_file("evthook.log", sprintf("EVENT: Stream online [%O, %d]: %O\n", chan, time(), info));}
-void evt_stream_offline(string chan, mixed info) {Stdio.append_file("evthook.log", sprintf("EVENT: Stream offline [%O, %d]: %O\n", chan, time(), info));}
-void evt_raid_incoming(string chan, mixed info) {Stdio.append_file("evthook.log", sprintf("EVENT: Raid incoming [%O, %d]: %O\n", chan, time(), info));}
-void evt_raid_outgoing(string chan, mixed info) {Stdio.append_file("evthook.log", sprintf("EVENT: Raid outgoing [%O, %d]: %O\n", chan, time(), info));}
-void webhook_status(string chan, mixed info) {Stdio.append_file("evthook.log", sprintf("WEBHOOK: Stream status [%O, %d]: %O\n", chan, time(), info));}
-
+//Fully deprecated - now used only by /subpoints, nothing else
 void create_webhook(string callback, string topic, int seconds, string|void token)
 {
 	string secret = MIME.encode_base64(random_string(15));
@@ -491,63 +476,85 @@ void create_webhook(string callback, string topic, int seconds, string|void toke
 	});
 }
 
-void create_eventsubhook(string callback, string type, string version, mapping condition)
-{
-	string secret = MIME.encode_base64(random_string(15));
-	//Save the secret. This is unencrypted and potentially could be leaked.
-	//The attack surface is fairly small, though - at worst, an attacker
-	//could forge a notification from Twitch, causing us to... whatever the
-	//event hook triggers, probably some sort of API call. I guess you could
-	//disrupt the hype train tracker's display or something. Congrats.
-	persist_status->path("eventhook_secret")[callback] = secret;
-	persist_status->save();
-	G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
-	request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
-		"authtype": "app",
-		"json": ([
-			"type": type, "version": version,
-			"condition": condition,
-			"transport": ([
-				"method": "webhook",
-				"callback": sprintf("%s/junket?%s",
-					persist_config["ircsettings"]["http_address"],
-					callback,
-				),
-				"secret": secret,
+class EventSub(string hookname, string type, string version, function callback) {
+	Crypto.SHA256.HMAC signer;
+	multiset(string) have_subs = (<>);
+	protected void create() {
+		mapping secrets = persist_status->path("eventhook_secret");
+		if (!secrets[hookname]) {
+			secrets[hookname] = MIME.encode_base64(random_string(15));
+			//Save the secret. This is unencrypted and potentially could be leaked.
+			//The attack surface is fairly small, though - at worst, an attacker
+			//could forge a notification from Twitch, causing us to... whatever the
+			//event hook triggers, probably some sort of API call. I guess you could
+			//disrupt the hype train tracker's display or something. Congrats.
+			persist_status->save();
+		}
+		signer = Crypto.SHA256.HMAC(secrets[hookname]);
+		if (!G->G->eventhook_types) G->G->eventhook_types = ([]);
+		if (object other = G->G->eventhook_types[hookname]) have_subs = other->have_subs;
+		G->G->eventhook_types[hookname] = this;
+	}
+	protected void `()(string arg, mapping condition) {
+		if (have_subs[arg]) return;
+		request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
+			"authtype": "app",
+			"json": ([
+				"type": type, "version": version,
+				"condition": condition,
+				"transport": ([
+					"method": "webhook",
+					"callback": sprintf("%s/junket?%s",
+						persist_config["ircsettings"]["http_address"],
+						hookname,
+					),
+					"secret": persist_status->path("eventhook_secret")[hookname],
+				]),
 			]),
-		]),
-	]))
-	->then(lambda(mixed ret) {
-		//werror("EventSub response: %O\n", ret);
-	}, lambda(mixed ret) {
-		//Could be 409 Conflict if we already have one. What should we do if
-		//we want to change the signer???
-		werror("EventSub error response: %s\n", describe_error(ret));
-	});
+		]))
+		->then(lambda(mixed ret) {
+			//werror("EventSub response: %O\n", ret);
+		}, lambda(mixed ret) {
+			//Could be 409 Conflict if we already have one. What should we do if
+			//we want to change the signer???
+			werror("EventSub error response: %s\n", describe_error(ret));
+		});
+	}
 }
+
+EventSub new_follower = EventSub("follower", "channel.follow", "1") { [string chan, mapping follower] = __ARGS__;
+	notice_user_name(follower->user_login, follower->user_id);
+	if (object chan = G->G->irc->channels["#" + chan])
+		chan->trigger_special("!follower", ([
+			"user": follower->user_login,
+			"displayname": follower->user_name,
+		]), ([]));
+};
+//EventSub stream_online = EventSub("online", "stream.online", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Stream online [%d, %O]: %O\n", time(), @__ARGS__));};
+//EventSub stream_offline = EventSub("offline", "stream.offline", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Stream offline [%d, %O]: %O\n", time(), @__ARGS__));};
+EventSub raidin = EventSub("raidin", "channel.raid", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Raid incoming [%d, %O]: %O\n", time(), @__ARGS__));};
+EventSub raidout = EventSub("raidout", "channel.raid", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Raid outgoing [%d, %O]: %O\n", time(), @__ARGS__));};
 
 void webhooks(array results)
 {
 	[array data, array eventhooks] = results;
-	G->G->webhook_active = ([]);
-	//Check all eventsubs and mark that we have them
-	//Note that, for hysterical raisins, several things say "webhook" even
-	//though they serve event hooks.
-	multiset(string) have_hook = (<>);
+	foreach (G->G->eventhook_types;; object handler) handler->have_subs = (<>);
 	foreach (eventhooks, mapping hook) {
 		sscanf(hook->transport->callback || "", "http%*[s]://%*s/junket?%s=%s", string type, string arg);
 		if (!arg) continue;
-		if (!G->G->webhook_endpoints[type] || !G->G->webhook_signer[type + "=" + arg]) {
+		object handler = G->G->eventhook_types[type];
+		if (!handler) {
 			write("Deleting eventhook %s=%s with ID %s - %s\n", type, arg, hook->id,
 				!G->G->webhook_endpoints[type] ? "bad type" : "no signer");
 			request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
 				([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
 		}
-		have_hook[type + "=" + arg] = 1;
-		G->G->webhook_active[type + "=" + arg] = 1<<60; //These don't expire automatically.
+		else handler->have_subs[arg] = 1;
 	}
 
-	foreach (data, mapping hook)
+	G->G->webhook_active = ([]);
+	multiset(string) have_hook = (<>);
+	foreach (data, mapping hook) //Legacy
 	{
 		int time_left = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", hook->expires_at)->unix_time() - time();
 		if (time_left < 300) continue;
@@ -556,12 +563,12 @@ void webhooks(array results)
 		G->G->webhook_active[type + "=" + channel] = time_left;
 		have_hook[type + "=" + channel] = 1;
 	}
-
 	G->G->webhook_signer &= have_hook;
+
 	mapping secrets = persist_status->path("eventhook_secret");
-	if (sizeof(secrets - have_hook)) {
+	if (sizeof(secrets - G->G->eventhook_types)) {
 		//This could be done unconditionally, but there's no point doing an unnecessary save
-		secrets &= have_hook;
+		secrets = G->G->eventhook_types & secrets;
 		persist_status->save();
 	}
 
@@ -571,14 +578,11 @@ void webhooks(array results)
 		mapping c = G->G->channel_info[chan];
 		int userid = c->?_id;
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses !whisper.)
-		foreach (([
-			"follower=": ({"channel.follow", "1", (["broadcaster_user_id": (string)userid])}),
-			//"online=": ({"stream.online", "1", (["broadcaster_user_id": (string)userid])}), //These two don't actually give us any benefit.
-			//"offline=": ({"stream.offline", "1", (["broadcaster_user_id": (string)userid])}),
-			"raidin=": ({"channel.raid", "1", (["to_broadcaster_user_id": (string)userid])}),
-			"raidout=": ({"channel.raid", "1", (["from_broadcaster_user_id": (string)userid])}),
-		]); string hook; array info) if (!have_hook[hook + chan])
-			create_eventsubhook(hook + chan, @info);
+		new_follower(chan, (["broadcaster_user_id": (string)userid]));
+		//stream_online(chan, (["broadcaster_user_id": (string)userid])); //These two don't actually give us any benefit.
+		//stream_offline(chan, (["broadcaster_user_id": (string)userid]));
+		raidin(chan, (["to_broadcaster_user_id": (string)userid]));
+		raidout(chan, (["from_broadcaster_user_id": (string)userid]));
 	}
 }
 
@@ -618,10 +622,6 @@ protected void create()
 	if (persist_status->?path) foreach (persist_status->path("eventhook_secret"); string callback; string secret)
 		G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
 	G->G->webhook_endpoints->follower = new_follower;
-	//G->G->webhook_endpoints->online = evt_stream_online; //No benefit to using these hooks at the moment
-	//G->G->webhook_endpoints->offline = evt_stream_offline;
-	G->G->webhook_endpoints->raidin = evt_raid_incoming;
-	G->G->webhook_endpoints->raidout = evt_raid_outgoing;
 
 	remove_call_out(G->G->poll_call_out);
 	poll();
@@ -636,7 +636,7 @@ protected void create()
 	add_constant("get_users_info", get_users_info);
 	add_constant("notice_user_name", notice_user_name);
 	add_constant("create_webhook", create_webhook);
-	add_constant("create_eventsubhook", create_eventsubhook);
+	add_constant("EventSub", EventSub);
 }
 
 #if !constant(G)

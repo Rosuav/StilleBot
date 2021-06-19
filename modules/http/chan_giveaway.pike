@@ -187,26 +187,12 @@ void points_redeemed(string chan, mapping data, int|void removal)
 	}
 	notify_websockets(chan);
 }
-void remove_tickets(string chan, mapping data) {points_redeemed(chan, data, 1);}
+EventSub redemption = EventSub("redemption", "channel.channel_points_custom_reward_redemption.add", "1", points_redeemed);
+EventSub redemptiongone = EventSub("redemptiongone", "channel.channel_points_custom_reward_redemption.update", "1") {points_redeemed(@__ARGS__, 1);};
 
 void make_hooks(string chan, int broadcaster_id) {
-	if (G->G->webhook_active["redemption=" + chan] < 300)
-	{
-		write("Creating eventsub hook for redemptions %O\n", chan);
-		create_eventsubhook(
-			"redemption=" + chan,
-			"channel.channel_points_custom_reward_redemption.add", "1",
-			(["broadcaster_user_id": (string)broadcaster_id]),
-		);
-	}
-	if (G->G->webhook_active["redemptiongone=" + chan] < 300)
-	{
-		create_eventsubhook(
-			"redemptiongone=" + chan,
-			"channel.channel_points_custom_reward_redemption.update", "1",
-			(["broadcaster_user_id": (string)broadcaster_id]),
-		);
-	}
+	redemption(chan, (["broadcaster_user_id": (string)broadcaster_id]));
+	redemptiongone(chan, (["broadcaster_user_id": (string)broadcaster_id]));
 }
 
 //List all redemptions for a particular reward ID
@@ -618,8 +604,6 @@ protected void create(string name)
 	::create(name);
 	if (!G->G->giveaway_tickets) G->G->giveaway_tickets = ([]);
 	if (!G->G->giveaway_purchases) G->G->giveaway_purchases = (<>);
-	G->G->webhook_endpoints->redemption = points_redeemed;
-	G->G->webhook_endpoints->redemptiongone = remove_tickets;
 	register_hook("channel-online", channel_online);
 	register_hook("channel-offline", channel_offline);
 }

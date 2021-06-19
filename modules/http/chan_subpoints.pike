@@ -99,26 +99,35 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]) | req->misc->chaninfo);
 }
 
+void subpoints_updated(string hook, string chan, mapping info) {
+	//TODO: If it's reliable, maintain the subpoint figure and adjust it, instead of re-fetching.
+	Stdio.append_file("evt_subpoints.log", sprintf("EVENT: Subpoints %s [%O, %d]: %O\n", hook, chan, time(), info));
+	object channel = G->G->irc->channels["#" + chan];
+	mapping cfg = channel->config->subpoints;
+	if (!cfg || !sizeof(cfg)) return;
+	handle_async(get_sub_points(chan)) {
+		int points = __ARGS__[0];
+		Stdio.append_file("evt_subpoints.log", sprintf("Updated subpoint count: %d\n", points));
+		foreach (cfg; string nonce; mapping tracker)
+			send_updates_all(nonce + "#" + chan, tracker | (["points": points - (int)tracker->unpaidpoints]));
+	};
+}
+EventSub hook_sub = EventSub("sub", "channel.subscribe", "1") {subpoints_updated("sub", @__ARGS__);};
+EventSub hook_subend = EventSub("subend", "channel.subscription.subend", "1") {subpoints_updated("subend", @__ARGS__);};
+EventSub hook_subgift = EventSub("subgift", "channel.subscription.subend", "1") {subpoints_updated("subgift", @__ARGS__);};
+EventSub hook_submessage = EventSub("submessage", "channel.subscription.subend", "1") {subpoints_updated("submessage", @__ARGS__);};
+
 //bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
 continue mapping|Concurrent.Future get_state(string|int group, string|void id) { //get_chan_state isn't asynchronous-compatible
 	[object channel, string grp] = split_channel(group);
 	if (!channel) return 0;
 	mapping trackers = channel->config->subpoints || ([]);
 	string chan = channel->name[1..];
-	if (!G->G->webhook_signer["sub=" + chan]) {
-		int uid = yield(get_user_id(chan));
-		create_eventsubhook(
-			"sub=" + chan,
-			"channel.subscribe", "1",
-			(["broadcaster_user_id": (string)uid]),
-		);
-		foreach ("end gift message" / " ", string hook)
-			create_eventsubhook(
-				sprintf("sub%s=%s", hook, chan),
-				"channel.subscription." + hook, "1",
-				(["broadcaster_user_id": (string)uid]),
-			);
-	}
+	int uid = yield(get_user_id(chan));
+	hook_sub(chan, (["broadcaster_user_id": (string)uid]));
+	hook_subend(chan, (["broadcaster_user_id": (string)uid]));
+	hook_subgift(chan, (["broadcaster_user_id": (string)uid]));
+	hook_submessage(chan, (["broadcaster_user_id": (string)uid]));
 	if (grp != "") {
 		if (!trackers[grp]) return (["data": 0]); //If you delete the tracker with the page open, it'll be a bit ugly.
 		int points = yield(get_sub_points(channel->name[1..]));
@@ -160,24 +169,4 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		persist_config->save();
 		send_updates_all(conn->group);
 	}
-}
-
-void subpoints_updated(string hook, string chan, mapping info) {
-	//TODO: If it's reliable, maintain the subpoint figure and adjust it, instead of re-fetching.
-	Stdio.append_file("evt_subpoints.log", sprintf("EVENT: Subpoints %s [%O, %d]: %O\n", hook, chan, time(), info));
-	object channel = G->G->irc->channels["#" + chan];
-	mapping cfg = channel->config->subpoints;
-	if (!cfg || !sizeof(cfg)) return;
-	handle_async(get_sub_points(chan)) {
-		int points = __ARGS__[0];
-		Stdio.append_file("evt_subpoints.log", sprintf("Updated subpoint count: %d\n", points));
-		foreach (cfg; string nonce; mapping tracker)
-			send_updates_all(nonce + "#" + chan, tracker | (["points": points - (int)tracker->unpaidpoints]));
-	};
-}
-
-protected void create(string name)
-{
-	::create(name);
-	foreach ("sub subend subgift submessage" / " ", string hook) G->G->webhook_endpoints[hook] = Function.curry(subpoints_updated)(hook);
 }
