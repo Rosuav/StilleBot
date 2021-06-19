@@ -13,7 +13,6 @@ int until(string ts, int now)
 	return tm && tm->unix_time() > now && tm->unix_time();
 }
 mapping cached = 0; int cache_time = 0;
-string defaulttoken;
 
 continue mapping|Concurrent.Future parse_hype_status(mapping data)
 {
@@ -72,7 +71,7 @@ continue mapping|Concurrent.Future get_state(int|string channel)
 		hypetrain_progress((string)channel, (["broadcaster_user_id": (string)channel]));
 		hypetrain_end((string)channel, (["broadcaster_user_id": (string)channel]));
 		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + (string)channel,
-				(["Authorization": "Bearer " + (G->G->hypetrain_token[channel] || defaulttoken)])));
+				(["Authorization": "Bearer " + G->G->hypetrain_token[channel]])));
 		mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
 		return parse_hype_status(data);
 	};
@@ -102,7 +101,7 @@ string url(int|string id) { //TODO: Dedup with the one in checklist
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	string channel = req->variables["for"];
-	if (!defaulttoken || req->variables->reauth)
+	if (req->variables->reauth)
 	{
 		if (mapping resp = ensure_login(req, "channel:read:hype_train")) return resp;
 		//Weirdly, this seems to work even if the broadcaster_id isn't the one you logged
@@ -110,7 +109,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//works, save it, until it doesn't. (TODO: actually discard that token once it's
 		//no longer valid.) 20210523: No longer the case. Now only the broadcaster token
 		//will work. This sucks. It's no longer possible to track as a viewer. WHY NOT?!?
-		G->G->hypetrain_token[(int)req->misc->session->user->id] = defaulttoken = req->misc->session->token;
+		G->G->hypetrain_token[(int)req->misc->session->user->id] = req->misc->session->token;
 	}
 	int push_updates = 0;
 	if (!channel || channel == "") channel = req->misc->session->?user->?login;
@@ -221,9 +220,6 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 protected void create(string name)
 {
 	::create(name);
-	if (G->G->webhook_endpoints->hypetrain) {
-		defaulttoken = function_object(G->G->webhook_endpoints->hypetrain)->defaulttoken;
-	}
 	if (!G->G->hypetrain_checktime) G->G->hypetrain_checktime = ([]);
 	if (!G->G->hypetrain_token) G->G->hypetrain_token = ([]);
 }
