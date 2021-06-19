@@ -299,12 +299,6 @@ class channel_notif
 		if (command_handler f = sscanf(msg, "!%[^# ] %s", string cmd, string param)
 			&& find_command(this, cmd, mod))
 				return ({f, param||""});
-		if (string cur = config->currency!="" && config->currency)
-		{
-			//Note that !currency will work (cf the above code), but !<currency-name> is the recommended way.
-			if (msg == "!"+cur) return ({G->G->commands->currency, ""});
-			if (sscanf(msg, "!"+cur+" %s", string param) == 1) return ({G->G->commands->currency, param||""});
-		}
 		return ({0, ""});
 	}
 
