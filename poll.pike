@@ -495,7 +495,8 @@ class EventSub(string hookname, string type, string version, function callback) 
 		if (object other = G->G->eventhook_types[hookname]) have_subs = other->have_subs;
 		G->G->eventhook_types[hookname] = this;
 	}
-	protected void `()(string arg, mapping condition) {
+	protected void `()(string|mixed arg, mapping condition) {
+		if (!stringp(arg)) arg = (string)arg; //It really should be a string
 		if (have_subs[arg]) return;
 		request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
 			"authtype": "app",
@@ -504,9 +505,9 @@ class EventSub(string hookname, string type, string version, function callback) 
 				"condition": condition,
 				"transport": ([
 					"method": "webhook",
-					"callback": sprintf("%s/junket?%s",
+					"callback": sprintf("%s/junket?%s=%s",
 						persist_config["ircsettings"]["http_address"],
-						hookname,
+						hookname, arg,
 					),
 					"secret": persist_status->path("eventhook_secret")[hookname],
 				]),
@@ -541,11 +542,9 @@ void webhooks(array results)
 	foreach (G->G->eventhook_types;; object handler) handler->have_subs = (<>);
 	foreach (eventhooks, mapping hook) {
 		sscanf(hook->transport->callback || "", "http%*[s]://%*s/junket?%s=%s", string type, string arg);
-		if (!arg) continue;
 		object handler = G->G->eventhook_types[type];
 		if (!handler) {
-			write("Deleting eventhook %s=%s with ID %s - %s\n", type, arg, hook->id,
-				!G->G->webhook_endpoints[type] ? "bad type" : "no signer");
+			write("Deleting eventhook: %O\n", hook);
 			request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
 				([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
 		}
