@@ -1,6 +1,6 @@
 const ComfyJS = window.ComfyJS;
 
-const target = document.getElementById("display") || document.getElementById("points"); //#points only for compatibility
+const target = document.getElementById("display");
 export function render(data) {
 	target.innerHTML = data.points + " / " + (data.goal || "1234");
 }
