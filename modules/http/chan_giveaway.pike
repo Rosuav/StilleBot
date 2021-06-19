@@ -146,7 +146,7 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 
 array tickets_in_order(string chan) {
 	array tickets = ({ });
-	foreach (G->G->giveaway_tickets[chan]; ; mapping person)
+	foreach (G->G->giveaway_tickets[chan] || ([]); ; mapping person)
 		if (person->tickets) tickets += ({person});
 	sort(tickets->position, tickets);
 	return tickets;
