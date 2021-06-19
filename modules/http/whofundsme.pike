@@ -1,4 +1,5 @@
 inherit http_websocket;
+constant IS_ACTIVE = 1; //If 0, everything should be turned off. If 1, will run. Will need to be reverified each year (until they start using Tiltify).
 constant markdown = #"# Who Funds Me?
 
 <div id=error></div>
@@ -62,8 +63,8 @@ void check() {
 mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
 	if (!G->G->whofundsme_announce) G->G->whofundsme_announce = ([]);
 	string username = req->misc->session->?user->?login;
-	G->G->whofundsme_active = 1; check();
-	return render(req, ([
+	G->G->whofundsme_active = IS_ACTIVE; check();
+	return G->G->whofundsme_active && render(req, ([
 		"vars": (["ws_group": ""]),
 		"chattoggle": !username ? "[Log in to enable chat](/twitchlogin?next=/whofundsme)" :
 			G->G->whofundsme_announce[username] ? "[Disable announcements in " + username + " chat](:#chattoggle)" :
