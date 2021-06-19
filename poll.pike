@@ -459,28 +459,6 @@ Concurrent.Future check_following(string user, string chan)
 	});
 }
 
-//Fully deprecated - now used only by /subpoints, nothing else
-void create_webhook(string callback, string topic, int seconds, string|void token)
-{
-	string secret = MIME.encode_base64(random_string(15));
-	G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
-	request("https://api.twitch.tv/helix/webhooks/hub", ([
-			"Authorization": token && "Bearer " + token,
-		]), (["json": ([
-			"hub.callback": sprintf("%s/junket?%s",
-				persist_config["ircsettings"]["http_address"],
-				callback,
-			),
-			"hub.mode": "subscribe",
-			"hub.topic": topic,
-			"hub.lease_seconds": seconds,
-			"hub.secret": secret,
-		]), "return_status": 1]))
-	->then(lambda(mixed ret) {
-		if (ret != 202) werror("FAILED TO CREATE WEBHOOK %s\n", callback); //It'll be retried at some point.
-	});
-}
-
 class EventSub(string hookname, string type, string version, function callback) {
 	Crypto.SHA256.HMAC signer;
 	multiset(string) have_subs = (<>);
@@ -639,7 +617,6 @@ protected void create()
 	add_constant("get_user_info", get_user_info);
 	add_constant("get_users_info", get_users_info);
 	add_constant("notice_user_name", notice_user_name);
-	add_constant("create_webhook", create_webhook);
 	add_constant("EventSub", EventSub);
 }
 
