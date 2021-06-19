@@ -73,11 +73,10 @@
   - Update timezone if specified.
   - What about quotes??? How do we validate their format?
     - Hand each one, individually, to the updater from the front end??
-* Deprecate song requests, channel currency, and notice me
+* Deprecate channel currency, and notice me
   - Ensure that there's no end-user-facing way to see any of them unless they're already
     active. Put warnings that they're on the way out.
   - Do I track viewership hours? That might be worth keeping even w/o currency.
-  - This does not affect VLC integration, just song requests.
 * Allow dialogs to be dragged around??
 * Channel point redemptions triggering command-like responses
 * Is it possible to get a "recent messages" timeout? Would allow squishing of spam if the
