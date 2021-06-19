@@ -571,13 +571,10 @@ void webhooks(array results)
 		mapping c = G->G->channel_info[chan];
 		int userid = c->?_id;
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses !whisper.)
-		//Not currently using this hook. It doesn't actually give us any benefit!
-		if (!have_hook["status=" + chan])
-			create_webhook("status=" + chan, "https://api.twitch.tv/helix/streams?user_id=" + userid, 864000);
 		foreach (([
 			"follower=": ({"channel.follow", "1", (["broadcaster_user_id": (string)userid])}),
-			"online=": ({"stream.online", "1", (["broadcaster_user_id": (string)userid])}),
-			"offline=": ({"stream.offline", "1", (["broadcaster_user_id": (string)userid])}),
+			//"online=": ({"stream.online", "1", (["broadcaster_user_id": (string)userid])}), //These two don't actually give us any benefit.
+			//"offline=": ({"stream.offline", "1", (["broadcaster_user_id": (string)userid])}),
 			"raidin=": ({"channel.raid", "1", (["to_broadcaster_user_id": (string)userid])}),
 			"raidout=": ({"channel.raid", "1", (["from_broadcaster_user_id": (string)userid])}),
 		]); string hook; array info) if (!have_hook[hook + chan])
@@ -621,11 +618,10 @@ protected void create()
 	if (persist_status->?path) foreach (persist_status->path("eventhook_secret"); string callback; string secret)
 		G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
 	G->G->webhook_endpoints->follower = new_follower;
-	G->G->webhook_endpoints->online = evt_stream_online;
-	G->G->webhook_endpoints->offline = evt_stream_offline;
+	//G->G->webhook_endpoints->online = evt_stream_online; //No benefit to using these hooks at the moment
+	//G->G->webhook_endpoints->offline = evt_stream_offline;
 	G->G->webhook_endpoints->raidin = evt_raid_incoming;
 	G->G->webhook_endpoints->raidout = evt_raid_outgoing;
-	G->G->webhook_endpoints->status = webhook_status;
 
 	remove_call_out(G->G->poll_call_out);
 	poll();
