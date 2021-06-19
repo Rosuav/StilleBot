@@ -1,4 +1,9 @@
 //Can be invoked from the command line for tools or interactive API inspection.
+#if !constant(G)
+mapping G = (["G":([])]);
+mapping persist_config = (["channels": ({ }), "ircsettings": Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"))["ircsettings"] || ([])]);
+mapping persist_status = ([]);
+#endif
 
 //Place a request to the API. Returns a Future that will be resolved with a fully
 //decoded result (a mapping of Unicode text, generally), or rejects if Twitch or
@@ -480,6 +485,7 @@ class EventSub(string hookname, string type, string version, function callback) 
 	Crypto.SHA256.HMAC signer;
 	multiset(string) have_subs = (<>);
 	protected void create() {
+		if (!persist_status->path) return;
 		mapping secrets = persist_status->path("eventhook_secret");
 		if (!secrets[hookname]) {
 			secrets[hookname] = MIME.encode_base64(random_string(15));
@@ -620,7 +626,6 @@ protected void create()
 	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
 	if (persist_status->?path) foreach (persist_status->path("eventhook_secret"); string callback; string secret)
 		G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
-	G->G->webhook_endpoints->follower = new_follower;
 
 	remove_call_out(G->G->poll_call_out);
 	poll();
@@ -639,9 +644,6 @@ protected void create()
 }
 
 #if !constant(G)
-mapping G = (["G":(["webhook_endpoints": ([])])]);
-mapping persist_config = (["channels": ({ }), "ircsettings": Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"))["ircsettings"] || ([])]);
-mapping persist_status = ([]);
 void runhooks(mixed ... args) { }
 mapping G_G_(mixed ... args) {return ([]);}
 mixed handle_async(mixed ... args) {error("handle_async is not currently supported in CLI mode\n");}
