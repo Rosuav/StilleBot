@@ -233,7 +233,7 @@ function build_follow_list() {
 					LI({className: "streamtitle"}, stream.title),
 					LI("Uptime " + uptime(stream.started_at) + ", " + stream.viewer_count + " viewers"),
 					LI(stream.tags.map(tag => SPAN({className: tag.auto ? "tag autotag" : "tag", "title": tag.desc}, tag.name + " "))),
-					LI([describe_notes(stream), describe_raid(stream.raids)]),
+					LI([describe_notes(stream), describe_raid(stream.raids), /*BUTTON("📋")*/]),
 				]),
 				DIV({className: "img"}, A({href: "raidfinder?categories=" + encodeURIComponent(stream.category)},
 					IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.category + "-40x54.jpg"})
