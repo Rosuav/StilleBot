@@ -25,13 +25,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		}
 		if (req->body_raw == "" || !has_prefix(req->request_headers["content-type"], "application/json")) return 0;
 		string sig = req->request_headers["x-hub-signature"];
-		if (sig != "sha256=" + String.string2hex(signer(req->body_raw))) {
-			write("Junket W message: %O = %O, len %O (%O)\nhdr %O\nweb %O\n",
-				endpoint, channel, sizeof(req->body_raw), req->request_headers["content-length"],
-				sig - "sha256=", String.string2hex(signer(req->body_raw)),
-			);
+		if (sig != "sha256=" + String.string2hex(signer(req->body_raw)))
 			return (["error": 418, "data": "That tea's cold by now."]); //Most likely we've changed the signer.
-		}
 		mixed body = Standards.JSON.decode_utf8(req->body_raw);
 		array|mapping data = mappingp(body) && body->data;
 		if (!data) return (["error": 400, "data": "Unrecognized body type"]);
@@ -52,14 +47,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string msgid = req->request_headers["twitch-eventsub-message-id"];
 	string ts = req->request_headers["twitch-eventsub-message-timestamp"];
 	string sig = req->request_headers["twitch-eventsub-message-signature"];
-	if (sig != "sha256=" + String.string2hex(handler->signer(msgid + ts + req->body_raw))) {
-		write("Junket E message: %O = %O, ID %O, ts %O, len %O (%O)\nhdr %O\nevt %O\n",
-			endpoint, arg, msgid, ts,
-			sizeof(req->body_raw), req->request_headers["content-length"],
-			sig - "sha256=", String.string2hex(handler->signer(msgid + ts + req->body_raw)),
-		);
+	if (sig != "sha256=" + String.string2hex(handler->signer(msgid + ts + req->body_raw)))
 		return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
-	}
 	mixed body = Standards.JSON.decode_utf8(req->body_raw);
 	array|mapping data = mappingp(body) && body->event;
 	if (!data) return (["error": 400, "data": "Unrecognized body type"]);
