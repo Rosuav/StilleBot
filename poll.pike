@@ -520,9 +520,8 @@ EventSub new_follower = EventSub("follower", "channel.follow", "1") { [string ch
 EventSub raidin = EventSub("raidin", "channel.raid", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Raid incoming [%d, %O]: %O\n", time(), @__ARGS__));};
 EventSub raidout = EventSub("raidout", "channel.raid", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Raid outgoing [%d, %O]: %O\n", time(), @__ARGS__));};
 
-void webhooks(array results)
+void check_hooks(array eventhooks)
 {
-	[array data, array eventhooks] = results;
 	foreach (G->G->eventhook_types;; object handler) handler->have_subs = (<>);
 	foreach (eventhooks, mapping hook) {
 		sscanf(hook->transport->callback || "", "http%*[s]://%*s/junket?%s=%s", string type, string arg);
@@ -534,19 +533,6 @@ void webhooks(array results)
 		}
 		else handler->have_subs[arg] = 1;
 	}
-
-	G->G->webhook_active = ([]);
-	multiset(string) have_hook = (<>);
-	foreach (data, mapping hook) //Legacy
-	{
-		int time_left = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", hook->expires_at)->unix_time() - time();
-		if (time_left < 300) continue;
-		sscanf(hook->callback, "http%*[s]://%*s/junket?%s=%s", string type, string channel);
-		if (!G->G->webhook_signer[type + "=" + channel]) continue; //Probably means the bot's been restarted
-		G->G->webhook_active[type + "=" + channel] = time_left;
-		have_hook[type + "=" + channel] = 1;
-	}
-	G->G->webhook_signer &= have_hook;
 
 	mapping secrets = persist_status->path("eventhook_secret");
 	if (sizeof(secrets - G->G->eventhook_types)) {
@@ -589,10 +575,8 @@ void poll()
 	//I hit this sort of problem.
 	string addr = persist_config["ircsettings"]["http_address"];
 	if (addr && addr != "")
-		Concurrent.all(({
-			get_helix_paginated("https://api.twitch.tv/helix/webhooks/subscriptions", (["first": "100"]), ([]), (["authtype": "app"])),
-			get_helix_paginated("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([]), (["authtype": "app"])),
-		}))->on_success(webhooks);
+		get_helix_paginated("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([]), (["authtype": "app"]))
+			->on_success(check_hooks);
 }
 
 protected void create()
@@ -601,9 +585,6 @@ protected void create()
 	if (!G->G->channel_info) G->G->channel_info = ([]);
 	if (!G->G->category_names) G->G->category_names = ([]);
 	if (!G->G->user_info) G->G->user_info = ([]);
-	if (!G->G->webhook_signer) G->G->webhook_signer = ([]);
-	if (persist_status->?path) foreach (persist_status->path("eventhook_secret"); string callback; string secret)
-		G->G->webhook_signer[callback] = Crypto.SHA256.HMAC(secret);
 
 	remove_call_out(G->G->poll_call_out);
 	poll();
