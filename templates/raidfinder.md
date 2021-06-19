@@ -15,6 +15,7 @@
 {: #sort}
 
 <div id=streams></div>
+<div id=copied>Copied!</div>
 
 > <span id=notes_about_channel>Channel name: </span>
 >
@@ -116,6 +117,23 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	display: inline-block;
 	min-width: 2em;
 	text-align: end;
+}
+
+.clipbtn {cursor: copy;}
+#copied {
+	opacity: 0;
+	position: absolute;
+	background: black;
+	color: white;
+	border: 1px solid green;
+	margin-left: 1.5em;
+	padding: 2px;
+	cursor: default;
+	transition: opacity 3s 1.5s;
+}
+#copied.shown {
+	opacity: 1;
+	transition: opacity 1s 0s;
 }
 </style>
 
