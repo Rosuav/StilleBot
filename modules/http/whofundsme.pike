@@ -20,7 +20,7 @@ mapping state = (["donations": ({ })]);
 mapping get_state(string group, string|void id) {return state;}
 
 continue Concurrent.Future do_check() {
-	werror("Checking whofundsme...\n");
+	werror("Checking whofundsme [%d clients]...\n", sizeof(websocket_groups[""]));
 	multiset seen_ids = G->G->whofundsme_seen_ids; if (!seen_ids) seen_ids = G->G->whofundsme_seen_ids = (<>);
 	object result = yield(Protocols.HTTP.Promise.get_url(URL)->thencatch() {return __ARGS__[0];}); //Send failures through as results, not exceptions
 	if (result->status != 200) {
@@ -57,7 +57,7 @@ continue Concurrent.Future do_check() {
 void check() {
 	if (mixed id = G->G->whofundsme_callout) remove_call_out(id);
 	if (!sizeof(websocket_groups[""])) return;
-	G->G->whofundsme_callout = call_out(check, 60);
+	G->G->whofundsme_callout = call_out(check, 1800);
 	handle_async(do_check()) { };
 }
 
