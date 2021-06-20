@@ -4,18 +4,6 @@ fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "for
 import update_display from "$$static||monitor.js$$";
 import {waitlate} from "$$static||utils.js$$";
 
-/*
-New plan: Bring graphical monitors into this module where they belong.
-The main display will have:
-* ID, invisible
-* Preview (currently hidden)
-* Edit button
-* Delete button
-* OBS-draggable link
-
-All editing will be in a dialog.
-*/
-
 const editables = { };
 function set_values(nonce, info, elem) {
 	if (!info) return 0;
