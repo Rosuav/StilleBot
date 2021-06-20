@@ -1,5 +1,4 @@
 inherit http_websocket;
-constant IS_ACTIVE = 1; //If 0, everything should be turned off. If 1, will run. Will need to be reverified each year (until they start using Tiltify).
 constant markdown = #"# Who Funds Me?
 
 <div id=error></div>
@@ -12,7 +11,7 @@ constant markdown = #"# Who Funds Me?
 
 $$chattoggle$$
 
-[Drag this to OBS](/whofundsme?summarycolor=rebeccapurple)
+[Drag to OBS as a browser source for an onscreen dono total](/whofundsme?summarycolor=rebeccapurple)
 ";
 
 constant URL = "https://www.gofundme.com/f/marvincharitystream2021";
@@ -57,7 +56,7 @@ continue Concurrent.Future do_check() {
 
 void check() {
 	if (mixed id = G->G->whofundsme_callout) remove_call_out(id);
-	if (!G->G->whofundsme_active) return;
+	if (!sizeof(websocket_groups[""])) return;
 	G->G->whofundsme_callout = call_out(check, 60);
 	handle_async(do_check()) { };
 }
@@ -65,12 +64,12 @@ void check() {
 mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
 	if (!G->G->whofundsme_announce) G->G->whofundsme_announce = ([]);
 	string username = req->misc->session->?user->?login;
-	G->G->whofundsme_active = IS_ACTIVE; check();
-	if (req->variables->summarycolor) return G->G->whofundsme_active && render_template("monitor.html", ([
+	check();
+	if (req->variables->summarycolor) return render_template("monitor.html", ([
 		"styles": "#display {font-size: 72px; color: " + req->variables->summarycolor + "}",
 		"vars": (["ws_type": ws_type, "ws_group": "", "ws_code": "whofundsme"]),
 	]));
-	return G->G->whofundsme_active && render(req, ([
+	return render(req, ([
 		"vars": (["ws_group": ""]),
 		"chattoggle": !username ? "[Log in to enable chat](/twitchlogin?next=/whofundsme)" :
 			G->G->whofundsme_announce[username] ? "[Disable announcements in " + username + " chat](:#chattoggle)" :
