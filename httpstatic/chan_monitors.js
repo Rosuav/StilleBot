@@ -58,7 +58,9 @@ export function render_empty() {
 		TD({colSpan: 4}, "No monitors defined. Create one!"),
 	]));
 }
-export function render(data) { }
+export function render(data) {
+	if (data.variables) set_content("[name=varname]", data.variables.map(v => OPTION(v.slice(1, -1))));
+}
 
 //TODO: Build these from data in some much more maintainable way (cf commands advanced edit)
 set_content("#edittext form div", TABLE({border: 1}, [
@@ -97,7 +99,7 @@ set_content("#edittext form div", TABLE({border: 1}, [
 set_content("#editgoalbar form div", TABLE({border: 1}, [
 	TR([TH("Active"), TD(LABEL([INPUT({name: "active", type: "checkbox"}), "Enable auto-advance and level up messages"]))]),
 	TR([TH("Variable"), TD([
-		SELECT({name: "varname"}, Object.keys(variables).map(v => OPTION(v.slice(1, -1)))),
+		SELECT({name: "varname"}, OPTION("loading...")),
 		" Or create a new one: ",
 		INPUT({id: "newvarname", size: 20}),
 		BUTTON({type: "button", id: "createvar"}, "Create"),
@@ -199,7 +201,7 @@ on("click", "#add_text", e => {
 });
 
 on("click", "#add_goalbar", e => {
-	fetch("monitors", {method: "PUT", headers: {"Content-Type": "application/json"}, body: '{"text": "$var$:...", "type": "goalbar"}'});
+	fetch("monitors", {method: "PUT", headers: {"Content-Type": "application/json"}, body: '{"text": "Achieve a goal!", "type": "goalbar"}'});
 });
 
 on("click", ".editbtn", e => {

@@ -33,6 +33,16 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			//(by 4 base64 characters), to allow them to be distinguished for debugging.
 			nonce = replace(MIME.encode_base64(random_string(27)), (["/": "1", "+": "0"]));
 			call_out(send_updates_all, 0, req->misc->channel->name); //When we're done, tell everyone there's a new monitor
+			//Hack: Create a new variable for a new goal bar.
+			if (body->type == "goalbar" && !body->varname) {
+				mapping vars = persist_status->path("variables")[req->misc->channel->name] || ([]);
+				void tryvar(string v) {if (!vars["$"+v+"$"]) body->varname = v;}
+				for (int i = 0; i < 26 && !body->varname; ++i) tryvar(sprintf("goalbar%c", 'A' + i));
+				for (int i = 0; i < 26*26 && !body->varname; ++i) tryvar(sprintf("goalbar%c%c", 'A' + i / 26, 'A' + i % 26));
+				//Do I need to attempt goalbarAAA ? We get 700 options without, or 18K with.
+				req->misc->channel->set_variable(body->varname, "0", "set");
+			}
+			if (body->type == "goalbar" && !body->thresholds) body->thresholds = "100";
 		}
 		mapping info = cfg->monitors[nonce] = (["type": "text", "text": body->text]);
 		if (valid_types[body->type]) info->type = body->type;
@@ -60,20 +70,22 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	return render(req, (["vars": ([
 		"ws_group": "",
 		"css_attributes": css_attributes,
-		"variables": persist_status->path("variables")[req->misc->channel->name] || ([]),
 	])]) | req->misc->chaninfo);
 }
 
 mapping _get_monitor(object channel, mapping monitors, string id) {
 	mapping text = monitors[id];
-	return text && text | (["id": id, "display": channel->expand_variables(text->text)]);
+	return text && (["css": ""]) | text | (["id": id, "display": channel->expand_variables(text->text)]);
 }
 bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping monitors = channel->config->monitors || ([]);
 	if (grp != "") return (["data": _get_monitor(channel, monitors, grp)]);
 	if (id) return _get_monitor(channel, monitors, id);
-	return (["items": _get_monitor(channel, monitors, sort(indices(monitors))[*])]);
+	return ([
+		"items": _get_monitor(channel, monitors, sort(indices(monitors))[*]),
+		"variables": sort(indices(persist_status->path("variables")[channel->name] || ([]))),
+	]);
 }
 
 //Can overwrite an existing variable

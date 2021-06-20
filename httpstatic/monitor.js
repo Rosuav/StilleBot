@@ -56,7 +56,7 @@ export default function update_display(elem, data) { //Used for the preview as w
 		const t = styleinfo[data.id];
 		const thresholds = t.t;
 		const m = /^([0-9]+):(.*)$/.exec(data.display);
-		if (!m) {console.error("Something's misconfigured (see monitor.js regex)"); return;}
+		if (!m) {console.error("Something's misconfigured (see monitor.js regex) -- display", data.display); return;}
 		let pos = m[1], text, mark, goal;
 		for (let which = 0; which < thresholds.length; ++which) {
 			if (pos < thresholds[which]) {
