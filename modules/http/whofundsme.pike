@@ -11,6 +11,8 @@ constant markdown = #"# Who Funds Me?
 {:#donos}
 
 $$chattoggle$$
+
+[Drag this to OBS](/whofundsme?summarycolor=rebeccapurple)
 ";
 
 constant URL = "https://www.gofundme.com/f/marvincharitystream2021";
@@ -64,6 +66,10 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 	if (!G->G->whofundsme_announce) G->G->whofundsme_announce = ([]);
 	string username = req->misc->session->?user->?login;
 	G->G->whofundsme_active = IS_ACTIVE; check();
+	if (req->variables->summarycolor) return G->G->whofundsme_active && render_template("monitor.html", ([
+		"styles": "#display {font-size: 72px; color: " + req->variables->summarycolor + "}",
+		"vars": (["ws_type": ws_type, "ws_group": "", "ws_code": "whofundsme"]),
+	]));
 	return G->G->whofundsme_active && render(req, ([
 		"vars": (["ws_group": ""]),
 		"chattoggle": !username ? "[Log in to enable chat](/twitchlogin?next=/whofundsme)" :
