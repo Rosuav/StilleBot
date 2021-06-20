@@ -502,7 +502,7 @@ class EventSub(string hookname, string type, string version, function callback) 
 		}, lambda(mixed ret) {
 			//Could be 409 Conflict if we already have one. What should we do if
 			//we want to change the signer???
-			werror("EventSub error response: %s\n", describe_error(ret));
+			werror("EventSub error response - %s=%s\n%s\n", hookname, arg, describe_error(ret));
 		});
 	}
 }
