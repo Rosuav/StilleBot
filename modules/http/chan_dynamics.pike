@@ -13,13 +13,8 @@ JSON API for managing the rewards (the HTML page will be different though).
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	if (mapping resp = ensure_login(req, "channel:manage:redemptions")) return resp;
+	if (mapping resp = ensure_bcaster_login(req, "channel:manage:redemptions")) return resp;
 	mapping cfg = req->misc->channel->config;
-	string chan = req->misc->channel->name[1..];
-	if (chan != req->misc->session->user->login)
-		return render_template("login.md", req->misc->chaninfo); //As with chan_giveaway, would be nice to reword that
-	persist_status->path("bcaster_token")[chan] = req->misc->session->token;
-	persist_status->save();
 	//Prune the list of any deleted ones, and get titles for the others
 	return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + req->misc->session->user->id,
 			(["Authorization": "Bearer " + req->misc->session->token]))

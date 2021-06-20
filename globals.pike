@@ -803,6 +803,19 @@ mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|voi
 	//If we get here, it's all good, carry on.
 }
 
+//As with ensure_login, but requires that the user be the channel, and will retain the token and scopes.
+mapping(string:mixed) ensure_bcaster_login(Protocols.HTTP.Server.Request req, string scopes, string|void chan) {
+	if (!chan) chan = req->misc->channel->name[1..];
+	array havescopes = (persist_status->path("bcaster_token_scopes")[chan]||"") / " " - ({""});
+	multiset wantscopes = (multiset)havescopes | (multiset)(scopes / " ");
+	if (mapping|string resp = ensure_login(req, indices(wantscopes) * " ")) return resp;
+	if (chan != req->misc->session->user->login)
+		return render_template("login.md", req->misc->chaninfo); //Would be nice to reword this, saying that you're logged in but not the broadcaster
+	persist_status->path("bcaster_token")[chan] = req->misc->session->token;
+	persist_status->path("bcaster_token_scopes")[chan] = sort(indices(req->misc->session->scopes)) * " ";
+	persist_status->save();
+}
+
 //User text will be given to the given user_text object; emotes will be markdowned.
 //If autolink is specified, words that look like links will be made links.
 //Note that this is probably a bit too restrictive. Feel free to add more, just as

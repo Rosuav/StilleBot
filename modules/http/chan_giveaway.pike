@@ -212,11 +212,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 {
 	mapping cfg = req->misc->channel->config;
 	string chan = req->misc->channel->name[1..];
-	string login = "<a href=\"/twitchlogin?scopes=channel:manage:redemptions&next=" + req->not_query + "\">Broadcaster login</a>";
-	if (req->misc->session->?user->?login == chan && (req->misc->session->?scopes || (<>))["channel:manage:redemptions"]) {
-		//Logged in as the broadcaster, with sufficient perms. Give full power, and retain the token for later.
-		persist_status->path("bcaster_token")[chan] = req->misc->session->token;
-		persist_status->save();
+	string login = "<a href=\"" + req->not_query + "?login=bcaster\">Broadcaster login</a>";
+	if (req->variables->login == "bcaster") {
+		if (mapping resp = ensure_bcaster_login(req, "channel:manage:redemptions")) return resp;
+		return redirect(req->not_query);
 	}
 	string token = persist_status->path("bcaster_token")[chan];
 	//TODO: Validate the token. If it's not valid, clear it and give this same error.
@@ -599,6 +598,17 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string 
 	]);
 }
 
+//This really doesn't belong here. But where DOES it belong? (I can't send it back to Dr Bumby either.)
+continue Concurrent.Future check_bcaster_tokens() {
+	mapping tokscopes = persist_status->path("bcaster_token_scopes");
+	foreach (persist_status->path("bcaster_token"); string chan; string token) {
+		mixed resp = yield(twitch_api_request("https://id.twitch.tv/oauth2/validate",
+			(["Authorization": "Bearer " + token])));
+		string scopes = sort(resp->scopes) * " ";
+		if (tokscopes[chan] != scopes) {tokscopes[chan] = scopes; persist_status->save();}
+	}
+}
+
 protected void create(string name)
 {
 	::create(name);
@@ -606,4 +616,5 @@ protected void create(string name)
 	if (!G->G->giveaway_purchases) G->G->giveaway_purchases = (<>);
 	register_hook("channel-online", channel_online);
 	register_hook("channel-offline", channel_offline);
+	handle_async(check_bcaster_tokens()) { };
 }

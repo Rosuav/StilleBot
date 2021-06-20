@@ -53,12 +53,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			"styles": style,
 		]));
 	}
-	if (mapping resp = ensure_login(req, "channel:read:subscriptions")) return resp;
+	if (mapping resp = ensure_bcaster_login(req, "channel:read:subscriptions")) return resp;
 	string chan = req->misc->channel->name[1..];
-	if (chan != req->misc->session->user->login)
-		return render_template("login.md", req->misc->chaninfo); //As with chan_giveaway, would be nice to reword that
-	persist_status->path("bcaster_token")[chan] = req->misc->session->token;
-	persist_status->save();
 	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	array info = yield(get_sub_points(chan, 1));
 	mapping(string:int) tiercount = ([]), gifts = ([]);

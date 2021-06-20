@@ -62,7 +62,7 @@
   - Adding ?raiders will show incoming, but not outgoing, raids.
 * Move "$$autoform||$$" from markdown.html into each of the files that actually wants it
 * Use persist_status->path("bcaster_token")[chan] for all need-more-auth calls
-  - May need to track the scopes used in case they need to be enhanced
+  - Use ensure_bcaster_login rather than ensure_login for the retention of scopes.
 * Importing of config export files
   - Ignore the active flag ("all" or "httponly")?
   - Create all listed commands, but don't destroy unmentioned ones (overwrite any with
