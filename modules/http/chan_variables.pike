@@ -2,42 +2,41 @@ inherit http_websocket;
 
 void add_command(mapping info, string cmdname, string desc, int overwrite)
 {
-	foreach (info->commands || ({ }), mapping c) if (c->name == cmdname) {
+	foreach (info->usage || ({ }), mapping c) if (c->name == cmdname) {
 		if (overwrite) c->action = desc;
 		return;
 	}
-	info->commands += ({([
+	info->usage += ({([
+		"type": cmdname[0] == '!' ? "special" : "command",
 		"name": cmdname,
 		"action": desc,
 	])});
 }
 
-void check_for_variables(string cmdname, echoable_message response, mapping variabledata)
+//NOTE: This makes a number of assumptions about the response. Commands that
+//don't fit those assumptions won't be displayed here. In general, complicated
+//stuff needs to be seen in the commands list, not here.
+void check_for_variables(string cmdname, echoable_message response, string varname, mapping info)
 {
 	if (stringp(response)) {
-		foreach (variabledata; string var; mapping info) {
-			if (has_value(response, var)) add_command(info, cmdname, "View", 0);
-		}
+		if (has_value(response, varname)) add_command(info, cmdname, "View", 0);
 		return;
 	}
-	if (arrayp(response)) check_for_variables(cmdname, response[*], variabledata);
+	if (arrayp(response)) check_for_variables(cmdname, response[*], varname, info);
 	if (mappingp(response))
 	{
 		string d = response->dest || "";
 		string var = response->target || "";
-		if (sscanf(d, "/set %s", string v) && v && v != "") var = v;
-		if (var != "") {
-			var = "$" + var + "$";
-			if (!variabledata[var])
-				variabledata[var] = (["curval": ""]);
+		if (sscanf(d, "/set %s", string v) && v && v != "") var = v; //Compat with old way of combining dest and target
+		if (var == varname - "$") {
 			//Normally the /set or /add will have a simple string. If it doesn't,
 			//people can go look on the main commands page for the details.
 			string delta = stringp(response->message) ? response->message : "something";
-			add_command(variabledata[var], cmdname,
+			add_command(info, cmdname,
 				response->action == "add" ? "Add " + delta : "Set to " + delta,
 				1);
 		}
-		check_for_variables(cmdname, response->message, variabledata);
+		check_for_variables(cmdname, response->message, varname, info);
 	}
 }
 
@@ -98,7 +97,7 @@ Variable name: | <input name=newcounter placeholder=\"deaths\"> | Identifying ke
 %[0]s: | <input name=%[0]scmd placeholder=%[1]q> | <input name=%[0]sresp class=widetext placeholder=%[2]q><br>%[3]s%}
 {:#newcounter}
 
-$$save_or_login$$
+<input type=submit value=\"Add counter commands\">
 
 To customize the commands, [use the gear button on the Commands page](commands).
 
@@ -139,31 +138,24 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	//Convert (["x": "1"]) into (["x": (["curval": "1"])]) to allow us to add metadata
 	mapping variabledata = mkmapping(indices(rawdata), (["curval": values(rawdata)[*]]));
-	foreach (G->G->echocommands; string cmd; echoable_message response) if (!has_prefix(cmd, "!") && has_suffix(cmd, c))
-	{
-		//NOTE: This makes a number of assumptions about the response. Commands that
-		//don't fit those assumptions won't be displayed here. In general, complicated
-		//stuff needs to be seen in the commands list, not here.
-		check_for_variables(cmd - c, response, variabledata);
-	}
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 		"messages": messages * "\n",
-		"save_or_login": "<input type=submit value=\"Add counter commands\">",
 	]) | req->misc->chaninfo);
 }
 
-mapping _get_variable(mapping vars, string varname) {
+mapping _get_variable(mapping vars, string c, string varname) {
 	if (undefinedp(vars[varname])) return 0;
-	mapping ret = (["id": varname, "curval": vars[varname]]);
-	//TODO: Add usage
+	mapping ret = (["id": varname, "curval": vars[varname], "usage": ({ })]);
+	foreach (G->G->echocommands; string cmd; echoable_message response) if (has_suffix(cmd, c))
+		check_for_variables(cmd - c, response, varname, ret);
 	return ret;
 }
 bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping vars = persist_status->path("variables", channel->name);
-	if (id) return _get_variable(vars, id);
-	array variabledata = _get_variable(vars, sort(indices(vars))[*]);
+	if (id) return _get_variable(vars, channel->name, id);
+	array variabledata = _get_variable(vars, channel->name, sort(indices(vars))[*]);
 	return (["items": variabledata]);
 }
 
