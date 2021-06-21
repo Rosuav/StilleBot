@@ -87,9 +87,10 @@ constant markdown = sprintf(#"# Variables for $$channel$$
 
 $$messages$$
 
-Name | Value | Command | Action
------|-------|---------|--------
-$$variables$$
+Name | Value | Usage
+-----|-------|------
+loading... | - | -
+{:#variables}
 
 - | - | Add commands for a counter variable by filling in these details. Anything left blank will be omitted.
 ------|---|---
@@ -112,7 +113,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (!req->misc->is_mod) return redirect("commands");
 	string c = req->misc->channel->name;
-	array counters = ({ }), order = ({ }), messages = ({ });
+	array messages = ({ });
 	mapping rawdata = persist_status->path("variables", c);
 	//Prune any bad entries. Shouldn't be needed. Good guard against bugs in other places though (goalbars, I'm looking at you)
 	foreach (indices(rawdata), string var) if (sizeof(var) < 3 || var[0] != '$' || var[-1] != '$') {
@@ -163,25 +164,25 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			//TODO: Have a way to delete a variable. Give warnings if
 			//it has any commands recorded (see check_for_variables).
 		}
-		counters += ({sprintf("%s | <input name=set_%<s value=%s> | - | - ", name, Standards.JSON.encode(val))});
-		if (v->commands) counters += sort(sprintf("&nbsp; | &nbsp; | %s", fmt_cmd(v->commands[*])[*]));
 	}
-	if (!sizeof(counters)) counters = ({"(none) |"});
 	return render(req, ([
 		"vars": (["ws_group": ""]),
-		"variables": counters * "\n",
 		"messages": messages * "\n",
 		"save_or_login": "<input type=submit value=\"Add counter commands\">",
 	]) | req->misc->chaninfo);
 }
 
+mapping _get_variable(mapping vars, string varname) {
+	if (undefinedp(vars[varname])) return 0;
+	mapping ret = (["id": varname, "curval": vars[varname]]);
+	//TODO: Add usage
+	return ret;
+}
 bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping vars = persist_status->path("variables", channel->name);
-	if (id) return vars[id];
-	//Convert (["x": "1"]) into (["id": "x", "curval": "1"]) to allow us to add metadata
-	array variabledata = (["id": indices(vars)[*], "curval": values(vars)[*]]);
-	sort(variabledata->id, variabledata);
+	if (id) return _get_variable(vars, id);
+	array variabledata = _get_variable(vars, sort(indices(vars))[*]);
 	return (["items": variabledata]);
 }
 

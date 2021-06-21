@@ -5,7 +5,9 @@ import {waitlate} from "$$static||utils.js$$";
 export const render_parent = DOM("#variables tbody");
 export function render_item(item) {
 	return TR({"data-id": item.id}, [
-		TD(item.name),
+		TD(item.id),
+		TD(INPUT({name: "set_" + item.id, value: item.curval})),
+		TD(""),
 	]);
 }
 export function render_empty() {
