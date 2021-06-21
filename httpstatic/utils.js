@@ -11,6 +11,7 @@ export function waitlate(wait_time, late_time, confirmdesc, callback) {
 		wait = late = timeout = 0;
 	}
 	return e => {
+		if (btn && btn !== e.match) reset();
 		const t = +new Date;
 		if (t > wait && t < late) {
 			reset();
