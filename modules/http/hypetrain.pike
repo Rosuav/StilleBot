@@ -21,6 +21,7 @@ continue mapping|Concurrent.Future parse_hype_status(mapping data)
 	int cooldown = until(data->cooldown_end_time || data->cooldown_ends_at, now);
 	int expires = until(data->expires_at, now);
 	int checktime = expires || cooldown;
+	string channelid = data->broadcaster_id || data->broadcaster_user_id;
 	if (checktime && checktime != G->G->hypetrain_checktime[data->broadcaster_id]) {
 		//Schedule a check about when the hype train or cooldown will end.
 		//If something changes before then (eg it goes to a new level),
@@ -28,8 +29,8 @@ continue mapping|Concurrent.Future parse_hype_status(mapping data)
 		//repeatedly won't create a spew of call_outs that spam the API.
 		G->G->hypetrain_checktime[data->broadcaster_id] = checktime;
 		write("Scheduling a check of %s hype train at %d [%ds from now]\n",
-			data->broadcaster_id, checktime, checktime - now + 1);
-		call_out(probe_hype_train, checktime - now + 1, (int)data->broadcaster_id);
+			channelid, checktime, checktime - now + 1);
+		call_out(probe_hype_train, checktime - now + 1, (int)channelid);
 	}
 	mapping state = ([
 		"cooldown": cooldown, "expires": expires,
