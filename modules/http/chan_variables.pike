@@ -146,25 +146,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//stuff needs to be seen in the commands list, not here.
 		check_for_variables(cmd - c, response, variabledata);
 	}
-	foreach (sort(indices(variabledata)), string name)
-	{
-		mapping v = variabledata[name];
-		string val = v->curval; //Note that rawdata[name] might be UNDEFINED
-		//This method of changing a variable is highly obscure. There's currently no button,
-		//so it can only be done by hitting Enter in one of the form fields, which give no
-		//indication that such can be done. Will need a proper socket-triggered edit.
-		if (string newval = req->request_type == "POST" && req->variables["set_" + name])
-		{
-			if (newval != v->curval)
-			{
-				messages += ({sprintf("* Updated %s from %s to %s", name, val, newval)});
-				rawdata[name] = val = newval;
-				persist_status->save();
-			}
-			//TODO: Have a way to delete a variable. Give warnings if
-			//it has any commands recorded (see check_for_variables).
-		}
-	}
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 		"messages": messages * "\n",
