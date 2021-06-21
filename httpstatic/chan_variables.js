@@ -6,7 +6,7 @@ export const render_parent = DOM("#variables tbody");
 export function render_item(item) {
 	return TR({"data-id": item.id}, [
 		TD(item.id),
-		TD(INPUT({name: "set_" + item.id, value: item.curval})),
+		TD(INPUT({className: "value", value: item.curval})),
 		TD([BUTTON({type: "button", className: "setvalue"}, "Set value"), BUTTON({type: "button", className: "delete"}, "Delete")]),
 		TD(UL(item.usage.map(u => LI([B(u.name), " " + u.action])))),
 	]);
@@ -18,10 +18,9 @@ export function render_empty() {
 }
 export function render(data) { }
 
-on("click", ".save", e => {
+on("click", ".setvalue", e => {
 	const tr = e.match.closest("tr");
-	const msg = {cmd: "update", id: tr.dataset.id};
-	ws_sync.send(msg);
+	ws_sync.send({cmd: "update", id: tr.dataset.id, value: tr.querySelector(".value").value});
 });
 
 on("click", ".delete", waitlate(750, 5000, "Really delete?", e => {

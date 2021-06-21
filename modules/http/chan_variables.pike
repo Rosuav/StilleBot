@@ -166,3 +166,11 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	mapping vars = persist_status->path("variables", channel->name);
 	if (m_delete(vars, msg->id)) update_one(conn->group, msg->id);
 }
+
+void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	mapping vars = persist_status->path("variables", channel->name);
+	if (undefinedp(vars[msg->id])) return; //Only update existing vars this way.
+	vars[msg->id] = msg->value || "";
+	update_one(conn->group, msg->id);
+}
