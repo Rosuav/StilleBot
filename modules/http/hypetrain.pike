@@ -10,6 +10,7 @@ constant require_allcmds = 1;
 int until(string ts, int now)
 {
 	object tm = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", ts || "");
+	if (!tm) tm = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s.%f%z", ts || "");
 	return tm && tm->unix_time() > now && tm->unix_time();
 }
 mapping cached = 0; int cache_time = 0;
