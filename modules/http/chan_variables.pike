@@ -114,7 +114,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string c = req->misc->channel->name;
 	array counters = ({ }), order = ({ }), messages = ({ });
 	mapping rawdata = persist_status->path("variables", c);
-	//Prune any bad entries. Shouldn't be needed. We WILL need a manual delete function though.
+	//Prune any bad entries. Shouldn't be needed. Good guard against bugs in other places though (goalbars, I'm looking at you)
 	foreach (indices(rawdata), string var) if (sizeof(var) < 3 || var[0] != '$' || var[-1] != '$') {
 		m_delete(rawdata, var);
 		persist_status->save();
@@ -149,6 +149,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	{
 		mapping v = variabledata[name];
 		string val = v->curval; //Note that rawdata[name] might be UNDEFINED
+		//This method of changing a variable is highly obscure. There's currently no button,
+		//so it can only be done by hitting Enter in one of the form fields, which give no
+		//indication that such can be done. Will need a proper socket-triggered edit.
 		if (string newval = req->request_type == "POST" && req->variables["set_" + name])
 		{
 			if (newval != v->curval)
@@ -165,8 +168,21 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	if (!sizeof(counters)) counters = ({"(none) |"});
 	return render(req, ([
+		"vars": (["ws_group": ""]),
 		"variables": counters * "\n",
 		"messages": messages * "\n",
 		"save_or_login": "<input type=submit value=\"Add counter commands\">",
 	]) | req->misc->chaninfo);
 }
+
+bool need_mod(string grp) {return 1;}
+mapping get_chan_state(object channel, string grp, string|void id) {
+	mapping vars = persist_status->path("variables", channel->name);
+	if (id) return vars[id];
+	//Convert (["x": "1"]) into (["id": "x", "curval": "1"]) to allow us to add metadata
+	array variabledata = (["id": indices(vars)[*], "curval": values(vars)[*]]);
+	sort(variabledata->id, variabledata);
+	return (["items": variabledata]);
+}
+
+void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) { } //Gonna need this
