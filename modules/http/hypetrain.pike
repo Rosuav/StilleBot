@@ -40,6 +40,7 @@ continue mapping|Concurrent.Future parse_hype_status(mapping data)
 		if (user->user_id) user->user = user->user_id;
 		if (user->user_name) user->display_name = user->user_name;
 		else user->display_name = yield(get_user_info(data->last_contribution->user))->display_name;
+		user->type = (["bits": "BITS", "subscription": "SUBS"])[user->type] || user->type; //Events say "bits", API says "BITS".
 	}
 	state->lastcontrib = data->last_contribution || ([]);
 	state->conductors = data->top_contributions || ({ });
