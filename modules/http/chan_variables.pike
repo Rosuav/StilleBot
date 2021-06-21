@@ -1,4 +1,4 @@
-inherit http_endpoint;
+inherit http_websocket;
 
 void add_command(mapping info, string cmdname, string desc, int overwrite)
 {
@@ -83,11 +83,29 @@ constant newcommands = ({
 	}),
 });
 
-constant newcounterform = sprintf(#"- | - | Add commands for a counter variable by filling in these details. Anything left blank will be omitted.
+constant markdown = sprintf(#"# Variables for $$channel$$
+
+$$messages$$
+
+Name | Value | Command | Action
+-----|-------|---------|--------
+$$variables$$
+
+- | - | Add commands for a counter variable by filling in these details. Anything left blank will be omitted.
 ------|---|---
 Variable name: | <input name=newcounter placeholder=\"deaths\"> | Identifying keyword for this counter%{
 %[0]s: | <input name=%[0]scmd placeholder=%[1]q> | <input name=%[0]sresp class=widetext placeholder=%[2]q><br>%[3]s%}
 {:#newcounter}
+
+$$save_or_login$$
+
+To customize the commands, [use the gear button on the Commands page](commands).
+
+<style>
+table {width: 100%%;}
+#newcounter tr td {width: max-content;}
+#newcounter tr td:nth-of-type(3) {width: 100%%;}
+</style>
 ", newcommands);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
@@ -146,10 +164,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (v->commands) counters += sort(sprintf("&nbsp; | &nbsp; | %s", fmt_cmd(v->commands[*])[*]));
 	}
 	if (!sizeof(counters)) counters = ({"(none) |"});
-	return render_template("chan_variables.md", ([
+	return render(req, ([
 		"variables": counters * "\n",
 		"messages": messages * "\n",
-		"newcounter": newcounterform,
 		"save_or_login": "<input type=submit value=\"Add counter commands\">",
 	]) | req->misc->chaninfo);
 }
