@@ -2,13 +2,13 @@ inherit http_websocket;
 
 void add_command(mapping info, string cmdname, string desc, int overwrite)
 {
-	foreach (info->usage || ({ }), mapping c) if (c->name == cmdname) {
+	foreach (info->usage || ({ }), mapping c) if (c->name == "!" + cmdname) {
 		if (overwrite) c->action = desc;
 		return;
 	}
 	info->usage += ({([
 		"type": cmdname[0] == '!' ? "special" : "command",
-		"name": cmdname,
+		"name": "!" + cmdname,
 		"action": desc,
 	])});
 }
@@ -105,6 +105,8 @@ To customize the commands, [use the gear button on the Commands page](commands).
 table {width: 100%%;}
 #newcounter tr td {width: max-content;}
 #newcounter tr td:nth-of-type(3) {width: 100%%;}
+ul {margin: 0;}
+td {vertical-align: top;}
 </style>
 ", newcommands);
 

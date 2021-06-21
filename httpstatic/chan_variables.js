@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {DIV, TR, TD, IMG, INPUT, TEXTAREA, BUTTON} = choc;
+const {DIV, TR, TD, UL, LI, B, INPUT, TEXTAREA, BUTTON} = choc;
 import {waitlate} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#variables tbody");
@@ -7,7 +7,7 @@ export function render_item(item) {
 	return TR({"data-id": item.id}, [
 		TD(item.id),
 		TD(INPUT({name: "set_" + item.id, value: item.curval})),
-		TD(""),
+		TD(UL(item.usage.map(u => LI([B(u.name), " " + u.action])))),
 	]);
 }
 export function render_empty() {
