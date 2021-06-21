@@ -86,9 +86,9 @@ constant markdown = sprintf(#"# Variables for $$channel$$
 
 $$messages$$
 
-Name | Value | Usage
------|-------|------
-loading... | - | -
+Name | Value | Actions | Usage
+-----|-------|---------|-------
+loading... | - | - | -
 {:#variables}
 
 - | - | Add commands for a counter variable by filling in these details. Anything left blank will be omitted.
@@ -161,4 +161,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["items": variabledata]);
 }
 
-void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) { } //Gonna need this
+void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	mapping vars = persist_status->path("variables", channel->name);
+	if (m_delete(vars, msg->id)) update_one(conn->group, msg->id);
+}

@@ -7,6 +7,7 @@ export function render_item(item) {
 	return TR({"data-id": item.id}, [
 		TD(item.id),
 		TD(INPUT({name: "set_" + item.id, value: item.curval})),
+		TD([BUTTON({type: "button", className: "setvalue"}, "Set value"), BUTTON({type: "button", className: "delete"}, "Delete")]),
 		TD(UL(item.usage.map(u => LI([B(u.name), " " + u.action])))),
 	]);
 }
