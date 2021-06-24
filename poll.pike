@@ -561,6 +561,7 @@ void poll()
 	array chan = indices(persist_config["channels"] || ({ }));
 	chan -= ({"!whisper"});
 	if (!sizeof(chan)) return; //Nothing to check.
+	G->G->stream_online_since &= (multiset)chan; //Prune any "channel online" statuses for channels we don't track any more
 	//Note: There's a slight TOCTOU here - the list of channel names will be
 	//re-checked from persist_config when the response comes in. If there are
 	//channels that we get info for and don't need, ignore them; if there are
