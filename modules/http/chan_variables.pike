@@ -151,6 +151,7 @@ mapping _get_variable(mapping vars, string c, string varname) {
 	mapping ret = (["id": varname, "curval": vars[varname], "usage": ({ })]);
 	foreach (G->G->echocommands; string cmd; echoable_message response) if (has_suffix(cmd, c))
 		check_for_variables(cmd - c, response, varname, ret);
+	//TODO: Also report monitors and goal bars
 	return ret;
 }
 bool need_mod(string grp) {return 1;}
