@@ -58,9 +58,7 @@ export function render_empty() {
 		TD({colSpan: 4}, "No monitors defined. Create one!"),
 	]));
 }
-export function render(data) {
-	if (data.variables) set_content("[name=varname]", data.variables.map(v => OPTION(v.slice(1, -1))));
-}
+export function render(data) { }
 
 //TODO: Build these from data in some much more maintainable way (cf commands advanced edit)
 set_content("#edittext form div", TABLE({border: 1}, [
@@ -293,4 +291,11 @@ ws_sync.connect(ws_group, {
 		const want = this.select.dataset.wantvalue;
 		if (want) this.select.value = want;
 	},
+});
+const variables = { };
+ws_sync.connect(ws_group, {
+	ws_type: "chan_variables",
+	render_parent: DOM("[name=varname]"),
+	render_item: (v, obj) => {console.log("render var", v, obj); return obj || OPTION({"data-id": v.id}, v.id)},
+	render: function(data) {console.log("Got variables", data);},
 });

@@ -82,10 +82,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping monitors = channel->config->monitors || ([]);
 	if (grp != "") return (["data": _get_monitor(channel, monitors, grp)]);
 	if (id) return _get_monitor(channel, monitors, id);
-	return ([
-		"items": _get_monitor(channel, monitors, sort(indices(monitors))[*]),
-		"variables": sort(indices(persist_status->path("variables")[channel->name] || ([]))),
-	]);
+	return (["items": _get_monitor(channel, monitors, sort(indices(monitors))[*])]);
 }
 
 //Can overwrite an existing variable

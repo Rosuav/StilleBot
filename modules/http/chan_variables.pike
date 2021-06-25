@@ -149,7 +149,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 mapping _get_variable(mapping vars, object channel, string varname) {
 	if (undefinedp(vars[varname])) return 0;
 	string c = channel->name;
-	mapping ret = (["id": varname, "curval": vars[varname], "usage": ({ })]);
+	mapping ret = (["id": varname - "$", "curval": vars[varname], "usage": ({ })]);
 	foreach (G->G->echocommands; string cmd; echoable_message response) if (has_suffix(cmd, c))
 		check_for_variables(cmd[0] == '!' ? "special" : "command", "!" + cmd - c, response, varname, ret);
 	foreach (channel->config->monitors || ([]); string nonce; mapping info)
@@ -159,7 +159,7 @@ mapping _get_variable(mapping vars, object channel, string varname) {
 bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping vars = persist_status->path("variables", channel->name);
-	if (id) return _get_variable(vars, channel, id);
+	if (id) return _get_variable(vars, channel, "$" + id + "$");
 	array variabledata = _get_variable(vars, channel, sort(indices(vars))[*]);
 	return (["items": variabledata]);
 }
@@ -167,13 +167,14 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	mapping vars = persist_status->path("variables", channel->name);
-	if (m_delete(vars, msg->id)) update_one(conn->group, msg->id);
+	if (m_delete(vars, "$" + msg->id + "$")) update_one(conn->group, msg->id);
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	mapping vars = persist_status->path("variables", channel->name);
-	if (undefinedp(vars[msg->id])) return; //Only update existing vars this way.
-	vars[msg->id] = msg->value || "";
+	string id = "$" + msg->id + "$";
+	if (undefinedp(vars[id])) return; //Only update existing vars this way.
+	vars[id] = msg->value || "";
 	update_one(conn->group, msg->id);
 }

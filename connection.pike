@@ -346,6 +346,7 @@ class channel_notif
 		//Otherwise, keep the string exactly as-is.
 		vars[var] = val;
 		//Notify those that depend on this.
+		G->G->websocket_types->chan_variables->update_one(name, var - "$");
 		//TODO: Defer this until the next tick (with call_out 0), so that multiple
 		//changes can be batched, reducing flicker.
 		function send_updates_all = G->G->websocket_types->chan_monitors->send_updates_all;
