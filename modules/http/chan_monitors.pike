@@ -46,9 +46,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				//Apply some defaults where not provided.
 				body = ([
 					"thresholds": "100",
-					"color": "#000000",
-					"barcolor": "#00007F",
-					"fillcolor": "#FFFF00",
+					"color": "#005500",
+					"barcolor": "#DDDDFF",
+					"fillcolor": "#FFFF55",
 					"previewbg": "#BBFFFF",
 					"needlesize": "0.375",
 				]) | body;
