@@ -135,10 +135,10 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 		FIELDSET([LEGEND("Preview bg"), INPUT({type: "color", name: "previewbg"})]),
 	]))]),
 	TR([TH("Bar size"), TD(DIV({className: "optionset"}, [
-		FIELDSET([LEGEND("Width"), INPUT({type: "number", name: "width"})]),
-		FIELDSET([LEGEND("H padding"), INPUT({type: "number", name: "padhoriz", min: 0, max: 2, step: "0.005"})]),
-		FIELDSET([LEGEND("Height"), INPUT({type: "number", name: "height"})]),
-		FIELDSET([LEGEND("V padding"), INPUT({type: "number", name: "padvert", min: 0, max: 2, step: "0.005"})]),
+		FIELDSET([LEGEND("Width"), INPUT({type: "number", name: "width"}), "px"]),
+		FIELDSET([LEGEND("H padding"), INPUT({type: "number", name: "padhoriz", min: 0, max: 2, step: "0.005"}), "em"]),
+		FIELDSET([LEGEND("Height"), INPUT({type: "number", name: "height"}), "px"]),
+		FIELDSET([LEGEND("V padding"), INPUT({type: "number", name: "padvert", min: 0, max: 2, step: "0.005"}), "em"]),
 	]))]),
 	TR([TH("Needle size"), TD([
 		INPUT({name: "needlesize", type: "number", min: 0, max: 1, step: "0.005", value: 0.375}),
