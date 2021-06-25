@@ -34,7 +34,6 @@
 * Pike HTTP, SSL, and keep-alive: what's going on? Is that why Chrome gets confused?
   - It's currently just disabled - we add "Connection: close" to all responses. Would
     be nice to figure out what's actually wrong and then reap the performance benefits.
-* Go through all the web config pages and add user() to any user-defined text
 * Allow the bot's commands to be individually enabled and disabled for a particular channel
   using the web interface. Would be subordinate to the active_channels feature, which gives
   a hard restriction and would prevent the command from showing up for enabling if it's not
