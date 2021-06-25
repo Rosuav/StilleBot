@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, DETAILS, SUMMARY, DIV, FORM, FIELDSET, LEGEND, LABEL, INPUT, TEXTAREA, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
+const {A, BR, BUTTON, CODE, DETAILS, SUMMARY, DIV, FORM, FIELDSET, LEGEND, LABEL, INPUT, TEXTAREA, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
 import update_display from "$$static||monitor.js$$";
 import {waitlate} from "$$static||utils.js$$";
@@ -103,10 +103,10 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 		BUTTON({type: "button", id: "createvar"}, "Create"),
 	])]),
 	TR([TH("Current"), TD([
-		INPUT({name: "currentval", size: 10}),
-		SELECT({name: "tierpicker"}),
+		"Value:", INPUT({name: "currentval", size: 10}),
+		"Or tier:", SELECT({name: "tierpicker"}),
 		BUTTON({type: "button", id: "setval"}, "Set"),
-		BR(), "NOTE: This will override any donations! Be careful!",
+		BR(), "NOTE: This will override any automatic advancement! Be careful!",
 		BR(), "Changes made here are NOT applied with the Save button.",
 	])]),
 	TR([TH("Text"), TD([
@@ -116,7 +116,7 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 	])]),
 	TR([TH("Goal(s)"), TD([
 		INPUT({name: "thresholds", size: 60}),
-		BR(), "For a tiered goal bar, set multiple goals eg '10 10 10 10 20 30 40 50'",
+		BR(), "To make a tiered goal bar, set multiple goals eg '", CODE("10 10 10 10 20 30 40 50"), "'",
 		BR(), "For currency, use values in cents (eg 1000 for $10)",
 	])]),
 	TR([TH("Font"), TD([
@@ -147,6 +147,7 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 	TR([TH("Format"), TD([
 		SELECT({name: "format"}, [OPTION("plain"), OPTION("currency")]),
 		"Display format for numbers. Currency uses cents - 2718 is $27.18.",
+		BR(), "TODO: Allow selection of currency eg GBP to change the displayed unit",
 	])]),
 	TR([TH("Auto-count"), TD([
 		"Automatically advance the goal bar based on stream support",
