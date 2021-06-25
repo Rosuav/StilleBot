@@ -50,7 +50,7 @@ continue mapping|Concurrent.Future parse_hype_status(mapping data)
 
 void hypetrain_progression(string status, string chan, mapping info)
 {
-	Stdio.append_file("evthook.log", sprintf("EVENT: Hype %s [%O, %d]: %O\n", status, chan, time(), info));
+	//Stdio.append_file("evthook.log", sprintf("EVENT: Hype %s [%O, %d]: %O\n", status, chan, time(), info));
 	int channel = (int)chan;
 	handle_async(parse_hype_status(info)) {send_updates_all(channel, @__ARGS__);};
 }
