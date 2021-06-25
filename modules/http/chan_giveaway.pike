@@ -114,11 +114,15 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 		int max = cfg->giveaway->max_tickets;
 		if (!status->is_open) max = 0; //If anything snuck in while we were closing the giveaway, refund it as soon as we notice.
 		else if (!max) max = now; //No maximum :)
-		if (now > max) {
+		if (now > max && !G->G->giveaway_purchases[redem->id]) {
+			//If we previously saw this as acceptable, don't refund it.
+			//This means that if you change the max tickets during a giveaway, any excess will
+			//still be kept, unless/until they get explicitly refunded.
 			set_redemption_status(redem, "CANCELED")->then(lambda(mixed resp) {
 				write("Cancelled: %O\n", resp);
 				object channel = G->G->irc->channels["#" + chan];
-				channel->trigger_special("!giveaway_toomany", (["user": redem->user_name]), ([
+				//If max is zero, you were probably too late. Should there be a different message?
+				if (max) channel->trigger_special("!giveaway_toomany", (["user": redem->user_name]), ([
 					"{title}": cfg->giveaway->title || "",
 					"{tickets_bought}": (string)values[redem->reward->id],
 					"{tickets_total}": (string)person->tickets,
