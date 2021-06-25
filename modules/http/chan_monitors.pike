@@ -33,16 +33,18 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			//(by 4 base64 characters), to allow them to be distinguished for debugging.
 			nonce = replace(MIME.encode_base64(random_string(27)), (["/": "1", "+": "0"]));
 			call_out(send_updates_all, 0, req->misc->channel->name); //When we're done, tell everyone there's a new monitor
-			//Hack: Create a new variable for a new goal bar.
-			if (body->type == "goalbar" && !body->varname) {
-				mapping vars = persist_status->path("variables")[req->misc->channel->name] || ([]);
-				void tryvar(string v) {if (!vars["$"+v+"$"]) body->varname = v;}
-				for (int i = 0; i < 26 && !body->varname; ++i) tryvar(sprintf("goalbar%c", 'A' + i));
-				for (int i = 0; i < 26*26 && !body->varname; ++i) tryvar(sprintf("goalbar%c%c", 'A' + i / 26, 'A' + i % 26));
-				//Do I need to attempt goalbarAAA ? We get 700 options without, or 18K with.
-				req->misc->channel->set_variable(body->varname, "0", "set");
+			if (body->type == "goalbar") {
+				//Hack: Create a new variable for a new goal bar.
+				if (!body->varname) {
+					mapping vars = persist_status->path("variables")[req->misc->channel->name] || ([]);
+					void tryvar(string v) {if (!vars["$"+v+"$"]) body->varname = v;}
+					for (int i = 0; i < 26 && !body->varname; ++i) tryvar(sprintf("goalbar%c", 'A' + i));
+					for (int i = 0; i < 26*26 && !body->varname; ++i) tryvar(sprintf("goalbar%c%c", 'A' + i / 26, 'A' + i % 26));
+					//Do I need to attempt goalbarAAA ? We get 700 options without, or 18K with.
+					req->misc->channel->set_variable(body->varname, "0", "set");
+				}
+				body = (["thresholds": "100"]) | body; //Apply some defaults where not provided.
 			}
-			if (body->type == "goalbar" && !body->thresholds) body->thresholds = "100";
 		}
 		mapping info = cfg->monitors[nonce] = (["type": "text", "text": body->text]);
 		if (valid_types[body->type]) info->type = body->type;
