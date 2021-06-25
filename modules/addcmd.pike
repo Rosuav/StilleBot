@@ -9,8 +9,9 @@ constant SPECIALS = ({
 	({"!resub", ({"Someone announces a resubscription", "The subscriber", "tier, months, streak"}), "Stream support"}),
 	({"!subgift", ({"Someone gives a sub", "The giver", "tier, months, streak, recipient, multimonth"}), "Stream support"}),
 	({"!subbomb", ({"Someone gives random subgifts", "The giver", "tier, gifts"}), "Stream support"}),
-	({"!cheer", ({"Any bits are cheered (including anonymously)", "The giver", "bits"}), "Stream support"}),
+	({"!cheer", ({"Any bits are cheered (including anonymously)", "The cheerer", "bits"}), "Stream support"}),
 	({"!cheerbadge", ({"A viewer attains a new cheer badge", "The cheerer", "level"}), "Stream support"}),
+	({"!raided", ({"Another broadcaster raided you", "The raiding broadcaster", "viewers"}), "Stream support"}),
 
 	({"!channelonline", ({"The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
 	({"!channeloffline", ({"The channel has recently gone offline (stopped streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
@@ -33,6 +34,7 @@ constant SPECIAL_PARAMS = ({
 	({"gifts", "Number of randomly-assigned gifts. Can be 1."}),
 	({"bits", "Total number of bits cheered in this message"}),
 	({"level", "New badge level, eg 1000 if the 1K bits badge has just been attained"}),
+	({"viewers", "Number of viewers arriving on the raid"}),
 	({"uptime", "Number of seconds the stream has been online"}),
 	({"uptime_hms", "Time the stream has been online in hh:mm:ss format"}),
 	({"uptime_english", "Time the stream has been online in words"}),

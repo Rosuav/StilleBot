@@ -721,6 +721,7 @@ class channel_notif
 					record_raid((int)params->user_id, person->displayname,
 						(int)params->room_id, name[1..], (int)params->tmi_sent_ts,
 						(int)params->msg_param_viewerCount);
+					trigger_special("!raided", person, (["{viewers}": params->msg_param_viewerCount]));
 					break;
 				}
 				case "rewardgift": //Used for special promo messages eg "so-and-so's cheer just gave X people a bonus emote"
