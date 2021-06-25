@@ -111,7 +111,7 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 	])]),
 	TR([TH("Text"), TD([
 		INPUT({name: "text", size: 60}),
-		BR(), "Put a '#' where the current tier should go - it'll be replaced",
+		BR(), "For tiered goals, put a '#' for the current tier - it'll be replaced",
 		BR(), "with the actual number.",
 	])]),
 	TR([TH("Goal(s)"), TD([

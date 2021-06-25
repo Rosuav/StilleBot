@@ -43,13 +43,22 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					//Do I need to attempt goalbarAAA ? We get 700 options without, or 18K with.
 					req->misc->channel->set_variable(body->varname, "0", "set");
 				}
-				body = (["thresholds": "100"]) | body; //Apply some defaults where not provided.
+				//Apply some defaults where not provided.
+				body = ([
+					"thresholds": "100",
+					"color": "#000000",
+					"barcolor": "#00007F",
+					"fillcolor": "#FFFF00",
+					"previewbg": "#BBFFFF",
+					"needlesize": "0.375",
+				]) | body;
 			}
 		}
 		mapping info = cfg->monitors[nonce] = (["type": "text", "text": body->text]);
 		if (valid_types[body->type]) info->type = body->type;
 		//TODO: Validate the individual values?
 		foreach (css_attributes / " ", string key) if (body[key]) info[key] = body[key];
+		if (info->needlesize == "") info->needlesize = "0";
 		if (body->varname) info->text = sprintf("$%s$:%s", body->varname, info->text);
 		persist_config->save();
 		send_updates_all(nonce + req->misc->channel->name);
