@@ -832,6 +832,8 @@ class channel_notif
 			//The very similar delete-msgs hook has person (ditto) and
 			//target (the *user id* who got purged), which may be null.
 			//(If target is null, all chat got cleared ("/clear").)
+			//TODO: Remove someone from participants when their messages
+			//get purged. This can remain even when notice-me dies.
 			case "CLEARMSG": runhooks("delete-msg", 0, this, person, params->login, params->target_msg_id); break;
 			case "CLEARCHAT": runhooks("delete-msgs", 0, this, person, params->target_user_id); break;
 			default: werror("Unknown message type %O on channel %s\n", params->_type, name);
