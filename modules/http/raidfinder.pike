@@ -36,6 +36,8 @@ Concurrent.Future fracture(array stuff, int max, function cb) {
 multiset(string) creative_names = (<"Art", "Science & Technology", "Food & Drink", "Music", "Makers & Crafting", "Beauty & Body Art">);
 multiset(int) creatives = (<>);
 
+mapping(string:string|array) safe_query_vars(mapping(string:string|array) vars) {return vars & (<"for">);}
+	
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	//Try to find all creative categories and get their IDs. Is there a better way to do this?
