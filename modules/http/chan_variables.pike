@@ -151,7 +151,8 @@ mapping _get_variable(mapping vars, object channel, string varname) {
 	string c = channel->name;
 	mapping ret = (["id": varname - "$", "curval": vars[varname], "usage": ({ })]);
 	foreach (G->G->echocommands; string cmd; echoable_message response) if (has_suffix(cmd, c))
-		check_for_variables(cmd[0] == '!' ? "special" : "command", "!" + cmd - c, response, varname, ret);
+		check_for_variables(has_prefix(cmd, "!trigger#") ? "trigger" : cmd[0] == '!' ? "special" : "command",
+			"!" + cmd - c, response, varname, ret);
 	foreach (channel->config->monitors || ([]); string nonce; mapping info)
 		check_for_variables(info->type == "goalbar" ? "goalbar" : "monitor", nonce, info->text, varname, ret);
 	return ret;

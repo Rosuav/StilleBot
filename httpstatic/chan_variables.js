@@ -6,6 +6,7 @@ function describe_usage(u) {
 	switch (u.type) {
 		case "command": return A({href: "commands"}, [B(u.name), " " + u.action]);
 		case "special": return A({href: "specials"}, [B(u.name), " " + u.action]);
+		case "trigger": return A({href: "triggers"}, ["Trigger: " + u.action]);
 		case "goalbar": return A({href: "monitors"}, "Goal bar - " + u.name);
 		case "monitor": return A({href: "monitors"}, "Monitor - " + u.name);
 	}
