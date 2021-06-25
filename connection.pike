@@ -146,6 +146,7 @@ class SendQueue(string id) {
 		write("Connected to voice %O\n", my_nick);
 	}
 	void finalize() {
+		write("Finalizing voice queue for %O -> %O\n", my_nick, msgqueue);
 		m_delete(sendqueues, id);
 		if (client) client->close();
 	}
@@ -556,9 +557,10 @@ class channel_notif
 		//Note that the voice doesn't apply to a subtree, only to a single message. This may change in future.
 		function send_message = default_queue->send_message;
 		if (cfg->voice && cfg->voice != "") {
-			write("Selecting voice for %O --> %O\n", cfg->voice, send_message);
+			write("Selecting voice for %O\n", cfg->voice);
 			if (!sendqueues[cfg->voice]) SendQueue(cfg->voice);
 			send_message = sendqueues[cfg->voice]->send_message;
+			write("Selected voice: %O\n", send_message);
 		}
 
 		//VERY simplistic form of word wrap.
