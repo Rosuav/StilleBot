@@ -1,14 +1,14 @@
 inherit http_websocket;
 
-void add_command(mapping info, string cmdname, string desc, int overwrite)
+void add_command(mapping info, string type, string name, string desc, int overwrite)
 {
-	foreach (info->usage || ({ }), mapping c) if (c->name == "!" + cmdname) {
+	foreach (info->usage || ({ }), mapping c) if (c->name == name) {
 		if (overwrite) c->action = desc;
 		return;
 	}
 	info->usage += ({([
-		"type": cmdname[0] == '!' ? "special" : "command",
-		"name": "!" + cmdname,
+		"type": type,
+		"name": name,
 		"action": desc,
 	])});
 }
@@ -16,13 +16,13 @@ void add_command(mapping info, string cmdname, string desc, int overwrite)
 //NOTE: This makes a number of assumptions about the response. Commands that
 //don't fit those assumptions won't be displayed here. In general, complicated
 //stuff needs to be seen in the commands list, not here.
-void check_for_variables(string cmdname, echoable_message response, string varname, mapping info)
+void check_for_variables(string type, string name, echoable_message response, string varname, mapping info)
 {
 	if (stringp(response)) {
-		if (has_value(response, varname)) add_command(info, cmdname, "View", 0);
+		if (has_value(response, varname)) add_command(info, type, name, "View", 0);
 		return;
 	}
-	if (arrayp(response)) check_for_variables(cmdname, response[*], varname, info);
+	if (arrayp(response)) check_for_variables(type, name, response[*], varname, info);
 	if (mappingp(response))
 	{
 		string d = response->dest || "";
@@ -32,11 +32,11 @@ void check_for_variables(string cmdname, echoable_message response, string varna
 			//Normally the /set or /add will have a simple string. If it doesn't,
 			//people can go look on the main commands page for the details.
 			string delta = stringp(response->message) ? response->message : "something";
-			add_command(info, cmdname,
+			add_command(info, type, name,
 				response->action == "add" ? "Add " + delta : "Set to " + delta,
 				1);
 		}
-		check_for_variables(cmdname, response->message, varname, info);
+		check_for_variables(type, name, response->message, varname, info);
 	}
 }
 
@@ -146,19 +146,21 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
-mapping _get_variable(mapping vars, string c, string varname) {
+mapping _get_variable(mapping vars, object channel, string varname) {
 	if (undefinedp(vars[varname])) return 0;
+	string c = channel->name;
 	mapping ret = (["id": varname, "curval": vars[varname], "usage": ({ })]);
 	foreach (G->G->echocommands; string cmd; echoable_message response) if (has_suffix(cmd, c))
-		check_for_variables(cmd - c, response, varname, ret);
-	//TODO: Also report monitors and goal bars
+		check_for_variables(cmd[0] == '!' ? "special" : "command", "!" + cmd - c, response, varname, ret);
+	foreach (channel->config->monitors || ([]); string nonce; mapping info)
+		check_for_variables(info->type == "goalbar" ? "goalbar" : "monitor", nonce, info->text, varname, ret);
 	return ret;
 }
 bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping vars = persist_status->path("variables", channel->name);
-	if (id) return _get_variable(vars, channel->name, id);
-	array variabledata = _get_variable(vars, channel->name, sort(indices(vars))[*]);
+	if (id) return _get_variable(vars, channel, id);
+	array variabledata = _get_variable(vars, channel, sort(indices(vars))[*]);
 	return (["items": variabledata]);
 }
 

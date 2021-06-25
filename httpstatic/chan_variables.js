@@ -1,6 +1,15 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {DIV, TR, TD, UL, LI, B, INPUT, TEXTAREA, BUTTON} = choc;
+const {A, DIV, TR, TD, UL, LI, B, INPUT, TEXTAREA, BUTTON} = choc;
 import {waitlate} from "$$static||utils.js$$";
+
+function describe_usage(u) {
+	switch (u.type) {
+		case "command": return A({href: "commands"}, [B(u.name), " " + u.action]);
+		case "special": return A({href: "specials"}, [B(u.name), " " + u.action]);
+		case "goalbar": return A({href: "monitors"}, "Goal bar - " + u.name);
+		case "monitor": return A({href: "monitors"}, "Monitor - " + u.name);
+	}
+}
 
 export const render_parent = DOM("#variables tbody");
 export function render_item(item) {
@@ -9,7 +18,7 @@ export function render_item(item) {
 		TD(INPUT({className: "value", value: item.curval})),
 		TD([BUTTON({type: "button", className: "setvalue"}, "Set value"),
 			BUTTON({type: "button", className: "delete"}, "Delete variable")]),
-		TD(UL(item.usage.map(u => LI([B(u.name), " " + u.action])))),
+		TD(UL(item.usage.map(u => LI(describe_usage(u))))),
 	]);
 }
 export function render_empty() {
