@@ -69,6 +69,8 @@
     active. Put warnings that they're on the way out.
   - Keep $participant$ but no keyword and a fixed timeout (say, 600 seconds). Could be
     used for fun commands - it won't (usually) drag lurkers out but can pick a person.
+  - Rename it to something else - maybe {participant} ? It doesn't behave like a variable
+    and shouldn't override an actual variable of that name.
 * Allow dialogs to be dragged around??
 * Channel point redemptions triggering command-like responses
 * Is it possible to get a "recent messages" timeout? Would allow squishing of spam if the
