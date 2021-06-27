@@ -76,6 +76,10 @@
     advanced view, (b) window resizes, and (c) closing and opening a dialog. Especially if
     it isn't obvious what's the same dialog and what's not.
 * Channel point redemptions triggering command-like responses
+  - On page load, spawn an async fetch of all available redemptions
+  - Use bcaster login, make eventsubs, update websocket on redemption update
+  - Will then tie in with dynamics. Rename dynamics to redemptions? Collides with repeats.
+    Maybe pointsrewards?
 * Is it possible to get a "recent messages" timeout? Would allow squishing of spam if the
   channel is too quiet. Might not be worth it though.
 * Polish multi-voice.
