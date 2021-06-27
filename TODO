@@ -72,6 +72,9 @@
   - Rename it to something else - maybe {participant} ? It doesn't behave like a variable
     and shouldn't override an actual variable of that name.
 * Allow dialogs to be dragged around??
+  - May have some awkward interactions with (a) dialogs that resize themselves eg commands
+    advanced view, (b) window resizes, and (c) closing and opening a dialog. Especially if
+    it isn't obvious what's the same dialog and what's not.
 * Channel point redemptions triggering command-like responses
 * Is it possible to get a "recent messages" timeout? Would allow squishing of spam if the
   channel is too quiet. Might not be worth it though.
