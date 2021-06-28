@@ -2,8 +2,11 @@ import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed
 const {TR, TD, FORM, INPUT, OPTION} = choc;
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
 
-function render() {
-	set_content("#rewards tbody", rewards.map(r => TR([
+let allrewards = { };
+
+export const render_parent = DOM("#rewards tbody");
+export function render_item(r) {
+	return TR({"data-id": r.id}, [
 		TD(FORM({id: r.id, className: "editreward"}, INPUT({name: "title", value: r.title, "size": 40}))),
 		TD(INPUT({name: "basecost", form: r.id, type: "number", value: r.basecost})),
 		TD(INPUT({name: "availability", form: r.id, value: r.availability || "{online}"})),
@@ -13,24 +16,28 @@ function render() {
 			INPUT({name: "id", form: r.id, type: "hidden", value: r.id}),
 			INPUT({form: r.id, type: "submit", value: "Save"}),
 		]),
-	])));
+	]);
 }
-render();
-
-const copiables = allrewards.map((r, i) => OPTION({value: i}, r.title));
-copiables.unshift(DOM("#copyfrom").firstElementChild);
-set_content("#copyfrom", copiables);
+export function render_empty() {
+	render_parent.appendChild(TR([
+		TD({colSpan: 6}, "No redemptions (add one!)"),
+	]));
+}
+export function render(data) {
+	allrewards = data.allrewards;
+	const copiables = allrewards.map((r, i) => OPTION({value: i}, r.title));
+	copiables.unshift(DOM("#copyfrom").firstElementChild);
+	set_content("#copyfrom", copiables);
+}
 
 DOM("#add").onclick = async e => {
+	//TODO: Put this on the websocket
 	const res = await fetch("giveaway", {
 		method: "PUT", //Yeah, I know, this probably ought to be a POST request instead
 		headers: {"Content-Type": "application/json"},
 		body: JSON.stringify({new_dynamic: 1, copy_from: allrewards[DOM("#copyfrom").value]}),
 	});
 	if (!res.ok) {console.error("Not okay response", res); return;}
-	const body = await res.json();
-	rewards.push(body.reward);
-	render();
 };
 
 on("submit", "form.editreward", async e => {
