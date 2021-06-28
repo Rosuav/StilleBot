@@ -47,6 +47,12 @@ continue Concurrent.Future fetch_rewards(string chan, string uid) {
 		multiset unseen = (multiset)indices(current) - (multiset)info->data->id;
 		if (sizeof(unseen)) {m_delete(current, ((array)unseen)[*]); persist_config->save();}
 	}
+	mapping manageable = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + uid + "&only_manageable_rewards=true",
+			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
+	multiset can_manage = (multiset)manageable->data->id;
+	multiset cannot_manage = (multiset)info->data->id - can_manage;
+	G->G->channel_reward_manageable = G->G->channel_reward_manageable | can_manage - cannot_manage;
+	foreach (G->G->channel_reward_list[chan], mapping rew) if (can_manage[rew->id]) rew->can_manage = 1;
 	send_updates_all("#" + chan);
 }
 
@@ -85,6 +91,7 @@ EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward
 };
 EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward.remove", "1") {
 	[string chan, mapping info] = __ARGS__;
+	G->G->channel_reward_manageable[info->id] = 0; //Prune the multiset, no big deal
 	array rew = G->G->channel_reward_list[chan];
 	if (!rew) return;
 	G->G->channel_reward_list[chan] = filter(rew) {return __ARGS__[0]->id != info->id;};
@@ -126,4 +133,5 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 protected void create(string name) {
 	::create(name);
 	if (!G->G->channel_reward_list) G->G->channel_reward_list = ([]);
+	if (!G->G->channel_reward_manageable) G->G->channel_reward_manageable = (<>);
 }

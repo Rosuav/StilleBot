@@ -283,6 +283,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					"is_paused": !status->is_open && cfg->giveaway->pausemode,
 				]))->then(lambda(mapping info) {
 					existing[info->data[0]->id] = tickets;
+					G->G->channel_reward_manageable[info->data[0]->id] = 1;
 					++numcreated;
 				});
 			}
@@ -312,6 +313,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				string id = info->data[0]->id;
 				//write("Created new dynamic: %O\n", info->data[0]);
 				cfg->dynamic_rewards[id] = rwd;
+				G->G->channel_reward_manageable[id] = 1;
 				make_hooks(chan, broadcaster_id);
 				persist_config->save();
 				return jsonify((["ok": 1, "reward": rwd | (["id": id])]));
