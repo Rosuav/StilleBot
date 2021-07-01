@@ -68,6 +68,34 @@ continue Concurrent.Future|mapping fetch_emotes()
 
 continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP.Server.Request req)
 {
+	if (req->variables->broadcaster) {
+		//Show emotes for a specific broadcaster
+		//Nothing to do with the main page, other than that it's all about emotes.
+		array emotes = yield(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id={{USER}}",
+			0, (["username": req->variables->broadcaster])))->data;
+		mapping sets = ([]);
+		foreach (emotes, mapping em) {
+			if (!sets[em->emote_set_id]) {
+				string desc = "Unknown";
+				switch (em->emote_type) {
+					case "subscriptions": desc = "Tier " + em->tier[..0]; break;
+					case "follower": desc = "Follower"; break;
+					case "bitstier": desc = "Bits"; break; //The actual unlock level is missing.
+					default: break;
+				}
+				sets[em->emote_set_id] = ({desc, ({ })});
+			}
+			sets[em->emote_set_id][1] += ({
+				sprintf("<figure>![%s](%s)"
+					"<figcaption>%[0]s</figcaption></figure>", em->name, em->images->url_4x)
+			});
+		}
+		array emotesets = values(sets); sort((array(int))indices(sets), emotesets);
+		return render_template("checklist.md", ([
+			"login_link": "", "emotes": "img",
+			"text": sprintf("%{\n## %s\n%{%s %}\n%}", emotesets),
+		]));
+	}
 	if (req->variables->flushcache)
 	{
 		//Flush the list of the bot's emotes
