@@ -1,4 +1,4 @@
-# Emote checklist
+# $$title||Emote checklist$$
 
 <style>
 * {box-sizing: border-box;}

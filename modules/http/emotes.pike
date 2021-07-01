@@ -75,6 +75,7 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 			0, (["username": req->variables->broadcaster])))->data;
 		mapping sets = ([]);
 		foreach (emotes, mapping em) {
+			if (em->emote_type == "bitstier") em->emote_set_id = "Bits"; //Hack - we don't get the bits levels anyway, so just group 'em.
 			if (!sets[em->emote_set_id]) {
 				string desc = "Unknown";
 				switch (em->emote_type) {
@@ -92,7 +93,7 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 		}
 		array emotesets = values(sets); sort((array(int))indices(sets), emotesets);
 		return render_template("checklist.md", ([
-			"login_link": "", "emotes": "img",
+			"login_link": "", "emotes": "img", "title": "Channel emotes: " + req->variables->broadcaster,
 			"text": sprintf("%{\n## %s\n%{%s %}\n%}", emotesets),
 		]));
 	}
