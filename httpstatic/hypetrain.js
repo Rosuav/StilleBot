@@ -40,6 +40,7 @@ function update() {
 function subs(n) {return Math.floor((n + 499) / 500);} //Calculate how many T1 subs are needed
 
 function fmt_contrib(c) {
+	if (!c.display_name) return ""; //No data available (can happen after a hype train ends)
 	if (c.type === "BITS") return `${c.display_name} with ${c.total} bits`;
 	return `${c.display_name} with ${c.total / 500} T1 subs (or equivalent)`;
 }
