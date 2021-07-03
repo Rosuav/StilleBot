@@ -75,6 +75,10 @@ details {border: 1px solid black; padding: 0.5em; margin: 0.5em;}
 //- !!giveaway_started with some simple info
 //- !!giveaway_ticket that only announces if {tickets_bought} == {tickets_total} (ie the first purchase for any user)
 //- !!giveaway_winner
+//  "!giveaway_started#beauation": "A giveaway for {title} is now open - use your channel points to purchase tickets!",
+//  "!giveaway_toomany#beauation": "$$: Can't buy another ticket as you already have the maximum of {tickets_max}",
+//  "!giveaway_toomany#rosuav": "$$: Can't buy {tickets_bought} tickets as you already have {tickets_total} (max {tickets_max}) test",
+//  "!giveaway_winner#beauation": "Congratulations to {winner_name} for winning the {title}!",
 
 inherit builtin_command;
 constant visibility = "hidden";
@@ -401,15 +405,17 @@ continue mapping|Concurrent.Future get_chan_state(object channel, string grp)
 }
 
 mapping(string:mixed) autoclose = ([]);
-void open_close(string chan, int broadcaster_id, string token, int want_open) {
+void open_close(string chan, int broadcaster_id, int want_open) {
 	mapping cfg = persist_config->path("channels", chan);
 	if (!cfg->giveaway) return; //No rewards, nothing to open/close
 	mapping status = persist_status->path("giveaways", chan);
+	string token = persist_status->path("bcaster_token")[chan];
+	if (!token) {werror("Can't open/close giveaway w/o bcaster token\n"); return;}
 	status->is_open = want_open;
 	if (mixed id = m_delete(autoclose, chan)) remove_call_out(id);
 	if (int d = want_open && cfg->giveaway->duration) {
 		status->end_time = time() + d;
-		autoclose[chan] = call_out(open_close, d, chan, broadcaster_id, token, 0);
+		autoclose[chan] = call_out(open_close, d, chan, broadcaster_id, 0);
 	}
 	else m_delete(status, "end_time");
 	//Note: Updates reward status in fire and forget mode.
@@ -445,7 +451,7 @@ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	string chan = channel->name[1..];
 	mapping cfg = persist_config->path("channels", chan);
 	if (!cfg->giveaway) return; //No rewards, nothing to activate or anything
-	int broadcaster_id = conn->session->user->id;
+	int broadcaster_id = (int)G->G->user_info[chan]->id; //TODO: As above, use get_user_id() properly, don't assume it'll be in cache
 	switch (msg->action) {
 		case "open":
 		case "close": {
@@ -455,7 +461,7 @@ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg)
 				send_update(conn, (["message": "Giveaway is already " + (want_open ? "open" : "closed")]));
 				return;
 			}
-			open_close(chan, broadcaster_id, conn->session->token, want_open);
+			open_close(chan, broadcaster_id, want_open);
 			break;
 		}
 		case "pick": {
