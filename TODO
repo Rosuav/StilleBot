@@ -97,3 +97,4 @@
   - Can also handle $pinafore|hms$ the same way
 * Dialogs now autoclose only if formless. Ensure that the annoying cases get forms
   added or removed as appropriate.
+* Look into authentication on Firefox. Users have reported issues.
