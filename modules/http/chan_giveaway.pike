@@ -13,7 +13,7 @@ $$login$$
 > * <label>Giveaway title: <input name=title size=40 placeholder=\"Win an awesome thing!\"></label>
 > * <label>Cost per ticket: <input name=cost type=number min=1 value=1></label>
 > * <label>Description: <input name=desc size=40 placeholder=\"Buy # tickets\"> Put a <code>#</code> symbol for multibuy count</label>
-> * <label>Multibuy options: <input name=multi size=40 placeholder=\"1 5 10 25 50\"> List quantities that can be purchased (always include 1!)</label>
+> * <label>Multibuy options: <input name=multi size=40 placeholder=\"1 5 10 25 50\"> Allow people to buy tickets in bulk</label>
 > * <label>Max tickets: <input name=max type=number min=0 value=1> Purchases that would put you over this limit will be cancelled</label>
 > * <label>Redemption hiding:
 >   <select name=pausemode><option value=disable>Disable, hiding them from users</option><option value=pause>Pause and leave visible</option></select>
@@ -243,6 +243,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (int cost = (int)body->cost) {
 			//Master reconfiguration
 			array qty = (array(int))((body->multi || "") / " ") - ({0});
+			if (!has_value(qty, 1)) qty = ({1}) + qty;
 			if (!cfg->giveaway) cfg->giveaway = ([]);
 			mapping status = persist_status->path("giveaways", chan);
 			cfg->giveaway->title = body->title;
