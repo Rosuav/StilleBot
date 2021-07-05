@@ -777,11 +777,9 @@ void ensure_session(Protocols.HTTP.Server.Request req, mapping(string:mixed) res
 
 mapping(string:mixed) twitchlogin(Protocols.HTTP.Server.Request req, multiset(string) scopes, string|void next)
 {
-	object auth = TwitchAuth(scopes);
-	//write("Redirecting to Twitch...\n%s\n", auth->get_auth_uri());
-	mapping resp = redirect(auth->get_auth_uri());
+	mapping resp = render_template("login.md", (["scopes": (array)scopes * " "]));
 	ensure_session(req, resp);
-	req->misc->session->redirect_after_login = next || req->full_query;
+	req->misc->session->redirect_after_login = next || req->full_query; //Shouldn't usually be necessary
 	return resp;
 }
 

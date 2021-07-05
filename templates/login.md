@@ -1,6 +1,12 @@
 # Please log in
 
-TODO: Have a link to do so, and some blurb about how this is a mod-only page
-or something.
+This page requires Twitch authentication. Click the button below to do that!
 
-$$save_or_login$$
+[Log in with Twitch](: #twitchlogin)
+
+<script>
+document.getElementById("twitchlogin").onclick = async e => {
+	const data = await (await fetch("/twitchlogin?urlonly=true&scope=" + encodeURIComponent("$$scopes||$$"))).json();
+	window.open(data.uri, "login", "width=525, height=900");
+}
+</script>

@@ -3,6 +3,15 @@ inherit http_endpoint;
 //constant scopes = "chat:read chat:edit whispers:read whispers:edit user_subscriptions"; //For authenticating the bot itself
 //constant scopes = ""; //no scopes currently needed
 
+mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mapping user, multiset scopes, string token) {
+	mapping resp = (["data": "<script>window.close(); window.opener.location.reload();</script>", "type": "text/html"]);
+	ensure_session(req, resp);
+	req->misc->session->user = user;
+	req->misc->session->scopes = (multiset)(req->variables->scope / " ");
+	req->misc->session->token = token;
+	return resp;
+}
+
 mapping(string:function) login_callback = ([]);
 mapping(string:string) resend_redirect = ([]);
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -47,6 +56,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		req->misc->session->token = auth->access_token;
 		return resp;
 	}
+	if (req->variables->urlonly) return jsonify((["uri": get_redirect_url((multiset)((req->variables->scope||"") / " "), ([]), login_popup_done)]));
 	//Attempt to sanitize or whitelist-check the destination. The goal is to permit
 	//anything that could ever have been req->not_query for any legitimate request,
 	//and to deny anything else.
