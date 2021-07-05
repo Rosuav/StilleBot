@@ -1,5 +1,5 @@
 inherit http_websocket;
-constant markdown = #"# $$giveaway_title||Channel points - giveaway manager$$
+constant markdown = #"# Giveaway - $$giveaway_title||win things with channel points$$
 
 <div id=master_status>$$error||Loading giveaway status...$$</div>
 
@@ -10,7 +10,7 @@ $$login$$
 > <summary>Set up rewards</summary>
 >
 > <form id=configform>
-> * <label>Giveaway title: <input name=title size=40 placeholder=\"Win an awesome thing!\"></label>
+> * <label>Giveaway title: <input name=title size=40 placeholder=\"an awesome thing\"></label> What are people winning?
 > * <label>Cost per ticket: <input name=cost type=number min=1 value=1></label>
 > * <label>Description: <input name=desc size=40 placeholder=\"Buy # tickets\"> Put a <code>#</code> symbol for multibuy count</label>
 > * <label>Multibuy options: <input name=multi size=40 placeholder=\"1 5 10 25 50\"> Allow people to buy tickets in bulk</label>
