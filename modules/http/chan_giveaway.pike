@@ -444,7 +444,7 @@ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	string chan = channel->name[1..];
 	mapping cfg = persist_config->path("channels", chan);
 	if (!cfg->giveaway) return; //No rewards, nothing to activate or anything
-	int broadcaster_id = (int)G->G->user_info[chan]->id; //TODO: As above, use get_user_id() properly, don't assume it'll be in cache
+	int broadcaster_id = (int)G->G->user_info[chan]->id; //TODO: Use get_user_id() properly, don't assume it'll be in cache
 	switch (msg->action) {
 		case "open":
 		case "close": {
