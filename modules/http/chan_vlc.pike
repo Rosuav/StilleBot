@@ -164,7 +164,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				//Add the previous track to the recent ones (if it isn't there already)
 				//Note that the current track is NOT in the recents.
 				if (!status->recent) status->recent = ({ });
-				if (!has_value(status->recent, status->current))
+				if (status->current && !has_value(status->recent, status->current))
 					status->recent = (status->recent + ({status->current}))[<9..];
 				status->current = desc; status->curtrack = fn;
 				status->curblock = block; status->curblockdesc = blockdesc;
