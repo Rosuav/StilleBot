@@ -216,7 +216,7 @@ Concurrent.Future list_redemptions(int broadcaster_id, string chan, string id) {
 	);
 }
 
-mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping cfg = req->misc->channel->config;
 	string chan = req->misc->channel->name[1..];
@@ -233,7 +233,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		"login": login,
 	]));
 	login += " | <a href=\"/twitchlogin?next=" + req->not_query + "\">Mod login</a>";
-	int broadcaster_id = (int)G->G->user_info[chan]->id; //TODO: Make this a continue function and use get_user_id() properly, don't assume it'll be in cache
+	int broadcaster_id = yield(get_user_id(chan));
 	Concurrent.Future call(string method, string query, mixed body) {
 		return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&" + query,
 			(["Authorization": "Bearer " + token]),
@@ -259,47 +259,42 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			cfg->giveaway->duration = min(max((int)body->duration, 0), 3600);
 			mapping existing = cfg->giveaway->rewards;
 			if (!existing) existing = cfg->giveaway->rewards = ([]);
-			array reqs = ({ });
 			int numcreated = 0, numupdated = 0, numdeleted = 0;
 			//Prune any that we no longer need
 			foreach (existing; string id; int tickets) {
 				if (!has_value(qty, tickets)) {
 					m_delete(existing, id);
 					++numdeleted;
-					reqs += ({call("DELETE", "id=" + id, 0)});
+					yield(call("DELETE", "id=" + id, 0));
 				}
 				else {
 					++numupdated;
-					reqs += ({call("PATCH", "id=" + id, ([
+					yield(call("PATCH", "id=" + id, ([
 						"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
 						"cost": cost * tickets,
 						"is_enabled": status->is_open || cfg->giveaway->pausemode,
 						"is_paused": !status->is_open && cfg->giveaway->pausemode,
-					]))});
+					])));
 				}
 				qty -= ({tickets});
 			}
 			//Create any that we don't yet have
-			Concurrent.Future make_reward(int tickets) {
-				return call("POST", "", ([
+			foreach (qty, int tickets) {
+				mapping info = yield(call("POST", "", ([
 					"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
 					"cost": cost * tickets,
 					"is_enabled": status->is_open || cfg->giveaway->pausemode,
 					"is_paused": !status->is_open && cfg->giveaway->pausemode,
-				]))->then(lambda(mapping info) {
-					existing[info->data[0]->id] = tickets;
-					G->G->channel_reward_manageable[info->data[0]->id] = 1;
-					++numcreated;
-				});
+				])));
+				existing[info->data[0]->id] = tickets;
+				G->G->channel_reward_manageable[info->data[0]->id] = 1;
+				++numcreated;
 			}
-			reqs += make_reward(qty[*]);
 			make_hooks(chan, broadcaster_id);
 			persist_config->save();
-			return Concurrent.all(reqs)->then(lambda() {
-				//TODO: Notify the front end what's been changed, not just counts. What else needs to be pushed out?
-				send_updates_all(chan, (["title": cfg->giveaway->title]));
-				return jsonify((["ok": 1, "created": numcreated, "updated": numupdated, "deleted": numdeleted]));
-			});
+			//TODO: Notify the front end what's been changed, not just counts. What else needs to be pushed out?
+			send_updates_all(chan, (["title": cfg->giveaway->title]));
+			return jsonify((["ok": 1, "created": numcreated, "updated": numupdated, "deleted": numdeleted]));
 		}
 		if (body->new_dynamic) { //This kinda should be a POST request, but whatever.
 			if (!cfg->dynamic_rewards) cfg->dynamic_rewards = ([]);
@@ -311,18 +306,16 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			array have = filter(values(cfg->dynamic_rewards)->title, has_prefix, deftitle);
 			rwd->title = deftitle + " #" + (sizeof(have) + 1);
 			copyfrom |= (["title": rwd->title, "cost": rwd->basecost]);
-			return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
+			string id = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
 				(["Authorization": "Bearer " + token]),
 				(["method": "POST", "json": copyfrom]),
-			)->then(lambda(mapping info) {
-				string id = info->data[0]->id;
-				//write("Created new dynamic: %O\n", info->data[0]);
-				cfg->dynamic_rewards[id] = rwd;
-				G->G->channel_reward_manageable[id] = 1;
-				make_hooks(chan, broadcaster_id);
-				persist_config->save();
-				return jsonify((["ok": 1, "reward": rwd | (["id": id])]));
-			});
+			))->data[0]->id;
+			//write("Created new dynamic: %O\n", info->data[0]);
+			cfg->dynamic_rewards[id] = rwd;
+			G->G->channel_reward_manageable[id] = 1;
+			make_hooks(chan, broadcaster_id);
+			persist_config->save();
+			return jsonify((["ok": 1, "reward": rwd | (["id": id])]));
 		}
 		if (string id = body->dynamic_id) {
 			if (!cfg->dynamic_rewards || !cfg->dynamic_rewards[id]) return (["error": 400]);
