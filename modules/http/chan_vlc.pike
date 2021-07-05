@@ -137,6 +137,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			string fn = req->variables->name;
 			//If we don't have a playlist entry name, use the filename instead.
 			if (!fn || fn == "") fn = basename(uri);
+			else catch {fn = utf8_to_string(fn);}; //Ditto - UTF-8 with Latin-1 fallback
 			//Translate the block names via a per-channel mapping.
 			array blocks = channel->config->vlcblocks || ({ });
 			string blockdesc;
