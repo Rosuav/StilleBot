@@ -38,7 +38,7 @@ export function connect(group, handler)
 							handler.render_empty();
 					}
 					//else it's currently absent, needs to be absent, nothing to do
-				} else {
+				} else if (data.items) {
 					set_content(handler.render_parent, data.items.map(i => handler.render_item(i)));
 					if (!data.items.length && handler.render_empty) handler.render_empty();
 				}
