@@ -97,4 +97,5 @@
   - Can also handle $pinafore|hms$ the same way
 * Dialogs now autoclose only if formless. Ensure that the annoying cases get forms
   added or removed as appropriate.
-* Look into authentication on Firefox. Users have reported issues.
+* Authentication on Firefox may now have issues with the default popup blocker. Can we
+  comply with normal "click for popup" expectations somehow?
