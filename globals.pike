@@ -808,7 +808,7 @@ mapping(string:mixed) ensure_bcaster_login(Protocols.HTTP.Server.Request req, st
 	multiset wantscopes = (multiset)havescopes | (multiset)(scopes / " ");
 	if (mapping|string resp = ensure_login(req, indices(wantscopes) * " ")) return resp;
 	if (chan != req->misc->session->user->login)
-		return render_template("login.md", req->misc->chaninfo); //Would be nice to reword this, saying that you're logged in but not the broadcaster
+		return render_template("login.md", (["scopes": (array)wantscopes * " ", "msg": "authentication as the broadcaster"]));
 	persist_status->path("bcaster_token")[chan] = req->misc->session->token;
 	persist_status->path("bcaster_token_scopes")[chan] = sort(indices(req->misc->session->scopes)) * " ";
 	persist_status->save();

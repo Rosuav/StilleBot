@@ -76,7 +76,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		send_updates_all(req->misc->channel->name);
 		return (["error": 204]);
 	}
-	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
+	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
 	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render(req, (["vars": ([
 		"ws_group": "",

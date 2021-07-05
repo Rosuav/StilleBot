@@ -30,7 +30,7 @@ Name        | Mnemonic | Description/purpose | -
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping cfg = req->misc->channel->config;
-	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
+	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 	]) | req->misc->chaninfo);
