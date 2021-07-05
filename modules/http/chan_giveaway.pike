@@ -23,6 +23,10 @@ $$login$$
 > * <label>Time before giveaway closes: <input name=duration type=number min=0 max=3600> (seconds) How long should the giveaway be open? 0 leaves it until explicitly closed.</label>
 >
 > <button>Save/reconfigure</button>
+>
+> Giveaway notifications are handled through [special triggers](specials) and can be customized there.<br>
+> [Create default notifications (replacing existing ones)](: #makenotifs)
+>
 > </form>
 {: tag=details .modonly}
 
@@ -71,18 +75,27 @@ details {border: 1px solid black; padding: 0.5em; margin: 0.5em;}
 </style>
 ";
 
-//TODO: Create some example specials
-//- !!giveaway_started with some simple info
-//- !!giveaway_ticket that only announces if {tickets_bought} == {tickets_total} (ie the first purchase for any user)
-//- !!giveaway_winner
-//  "!giveaway_started#beauation": "A giveaway for {title} is now open - use your channel points to purchase tickets!",
-//  "!giveaway_toomany#beauation": "$$: Can't buy another ticket as you already have the maximum of {tickets_max}",
-//  "!giveaway_toomany#rosuav": "$$: Can't buy {tickets_bought} tickets as you already have {tickets_total} (max {tickets_max}) test",
-//  "!giveaway_winner#beauation": "Congratulations to {winner_name} for winning the {title}!",
-
 inherit builtin_command;
 constant visibility = "hidden";
 constant access = "none";
+
+constant NOTIFICATION_SPECIALS = ([
+	"started": "A giveaway for {title} is now open - use your channel points to purchase tickets!",
+	"toomany": ([
+		"conditional": "string", "expr1": "{tickets_max}", "expr2": "1",
+		"message": ([
+			"conditional": "string", "expr1": "{tickets_total}", "expr2": "0",
+			"message": "$$: You can't buy {tickets_bought} tickets - maximum is 1.",
+			"otherwise": "$$: You already have a ticket and your points have been refunded.",
+		]),
+		"otherwise": ([
+			"conditional": "string", "expr1": "{tickets_total}", "expr2": "0",
+			"message": "$$: Can't buy {tickets_bought} tickets - the maximum is {tickets_max}",
+			"otherwise": "$$: Can't buy {tickets_bought} tickets as you already have {tickets_total} (max {tickets_max})",
+		])
+	]),
+	"winner": "Congratulations to {winner_name} for winning the {title}!",
+]);
 
 Concurrent.Future set_redemption_status(mapping redem, string status) {
 	//Reject the redemption, refunding the points
@@ -436,6 +449,13 @@ void open_close(string chan, int broadcaster_id, int want_open) {
 		"{tickets_total}": (string)tickets,
 		"{entries_total}": (string)entrants,
 	]));
+}
+
+void websocket_cmd_makenotifs(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (grp != "control") return 0;
+	foreach (NOTIFICATION_SPECIALS; string kwd; mapping resp)
+		make_echocommand(sprintf("!giveaway_%s%s", kwd, channel->name), resp);
 }
 
 void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {handle_async(master_control(conn, msg)) { };}
