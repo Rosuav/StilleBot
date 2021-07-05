@@ -438,13 +438,14 @@ void open_close(string chan, int broadcaster_id, int want_open) {
 	]));
 }
 
-void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {handle_async(master_control(conn, msg)) { };}
+continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
-	if (grp != "control") return;
+	if (grp != "control") return 0;
 	string chan = channel->name[1..];
 	mapping cfg = persist_config->path("channels", chan);
-	if (!cfg->giveaway) return; //No rewards, nothing to activate or anything
-	int broadcaster_id = (int)G->G->user_info[chan]->id; //TODO: Use get_user_id() properly, don't assume it'll be in cache
+	if (!cfg->giveaway) return 0; //No rewards, nothing to activate or anything
+	int broadcaster_id = yield(get_user_id(chan));
 	switch (msg->action) {
 		case "open":
 		case "close": {
@@ -452,7 +453,7 @@ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			mapping status = persist_status->path("giveaways", chan);
 			if (want_open == status->is_open) {
 				send_update(conn, (["message": "Giveaway is already " + (want_open ? "open" : "closed")]));
-				return;
+				return 0;
 			}
 			open_close(chan, broadcaster_id, want_open);
 			break;
@@ -466,7 +467,7 @@ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			foreach (people, [mixed id, mapping person]) partials += ({tot += person->tickets});
 			if (!tot) {
 				send_update(conn, (["message": "No tickets bought!"]));
-				return;
+				return 0;
 			}
 			int ticket = random(tot);
 			//I could binary search but I doubt there'll be enough entrants to make a difference.
@@ -502,11 +503,9 @@ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			m_delete(status, "last_winner");
 			notify_websockets(chan);
 			persist_status->save();
-			Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*]))
-				->then(lambda(array(array) redemptions) {
-					foreach (redemptions * ({ }), mapping redem)
-						set_redemption_status(redem, msg->action == "cancel" ? "CANCELED" : "FULFILLED");
-				});
+			array(array) redemptions = yield(Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*])));
+			foreach (redemptions * ({ }), mapping redem)
+				set_redemption_status(redem, msg->action == "cancel" ? "CANCELED" : "FULFILLED");
 			array people = values(G->G->giveaway_tickets[chan]);
 			int tickets = `+(@people->tickets), entrants = sizeof(people->tickets - ({0}));
 			channel->trigger_special("!giveaway_ended", (["user": chan]), ([
