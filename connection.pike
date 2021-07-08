@@ -858,14 +858,7 @@ class channel_notif
 	}
 }
 
-void handle_http_error(mixed ex, Protocols.HTTP.Server.Request req)
-{
-	werror("HTTP handler crash: %O\n", req->not_query);
-	werror(describe_backtrace(ex));
-	send_http_response((["error": 500, "data": "Internal server error\n", "type": "text/plain; charset=\"UTF-8\""]), req);
-}
-
-void http_handler(Protocols.HTTP.Server.Request req)
+continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	req->misc->session = G->G->http_sessions[req->cookies->session];
 	[function handler, array args] = find_http_handler(req->not_query);
@@ -877,15 +870,12 @@ void http_handler(Protocols.HTTP.Server.Request req)
 			if (stringp(value)) req->variables[key] = utf8_to_string(value);
 		};
 	}
-	if (!handler) {send_http_response(0, req); return;}
-	if (mixed ex = catch {
-		mapping|string|Concurrent.Future|function resp = handler(req, @args);
-		handle_async(resp, send_http_response, handle_http_error, req);
-	}) handle_http_error(ex, req);
-}
-
-void send_http_response(mapping|string resp, Protocols.HTTP.Server.Request req) //The odd argument order simplifies Future handling.
-{
+	mapping|string resp;
+	if (mixed ex = handler && catch (resp = yield(handler(req, @args)))) {
+		werror("HTTP handler crash: %O\n", req->not_query);
+		werror(describe_backtrace(ex));
+		resp = (["error": 500, "data": "Internal server error\n", "type": "text/plain; charset=\"UTF-8\""]);
+	}
 	if (!resp)
 	{
 		//werror("HTTP request: %s %O %O\n", req->request_type, req->not_query, req->variables);
@@ -905,6 +895,8 @@ void send_http_response(mapping|string resp, Protocols.HTTP.Server.Request req) 
 	resp->extra_heads->Connection = "close";
 	req->response_and_finish(resp);
 }
+
+void http_handler(Protocols.HTTP.Server.Request req) {handle_async(http_request(req)) { };}
 
 void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 {
