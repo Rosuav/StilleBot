@@ -109,9 +109,9 @@ void subpoints_updated(string hook, string chan, mapping info) {
 	};
 }
 EventSub hook_sub = EventSub("sub", "channel.subscribe", "1") {subpoints_updated("sub", @__ARGS__);};
-EventSub hook_subend = EventSub("subend", "channel.subscription.subend", "1") {subpoints_updated("subend", @__ARGS__);};
-EventSub hook_subgift = EventSub("subgift", "channel.subscription.subend", "1") {subpoints_updated("subgift", @__ARGS__);};
-EventSub hook_submessage = EventSub("submessage", "channel.subscription.subend", "1") {subpoints_updated("submessage", @__ARGS__);};
+EventSub hook_subend = EventSub("subend", "channel.subscription.end", "1") {subpoints_updated("subend", @__ARGS__);};
+EventSub hook_subgift = EventSub("subgift", "channel.subscription.gift", "1") {subpoints_updated("subgift", @__ARGS__);};
+EventSub hook_submessage = EventSub("submessage", "channel.subscription.message", "1") {subpoints_updated("submessage", @__ARGS__);};
 
 //bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
 continue mapping|Concurrent.Future get_state(string|int group, string|void id) { //get_chan_state isn't asynchronous-compatible
