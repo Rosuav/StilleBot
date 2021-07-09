@@ -979,6 +979,7 @@ protected void create()
 	if (!G->G->channelcolor) G->G->channelcolor = ([]);
 	if (!G->G->cooldown_timeout) G->G->cooldown_timeout = ([]);
 	if (!G->G->http_sessions) G->G->http_sessions = ([]);
+	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
 	irc = G->G->irc;
 	//if (!irc) //HACK: Force reconnection every time
 		reconnect();
