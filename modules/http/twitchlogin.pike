@@ -31,9 +31,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				"Client-ID": persist_config["ircsettings"]->clientid,
 			])]))));
 		mapping user = Standards.JSON.decode_utf8(res->get())->data[0];
+		//write("Login: %O %O\n", auth->access_token, user);
 		if (function f = login_callback[req->variables->state])
 			return f(req, user, (multiset)(req->variables->scope / " "), auth->access_token);
-		//write("Login: %O %O\n", auth->access_token, user);
 		string dest = m_delete(req->misc->session, "redirect_after_login");
 		if (!dest || dest == req->not_query || has_prefix(dest + "?", req->not_query))
 		{
