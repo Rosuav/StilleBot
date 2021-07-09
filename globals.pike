@@ -12,7 +12,6 @@ protected void create(string n)
 	if (!G->G->bouncers) G->G->bouncers = ([]);
 	if (!G->G->template_defaults) G->G->template_defaults = ([]);
 	if (!G->G->http_endpoints) G->G->http_endpoints = ([]);
-	if (!G->G->http_sessions) G->G->http_sessions = ([]);
 	if (!G->G->websocket_types) G->G->websocket_types = ([]);
 	if (!G->G->websocket_groups) G->G->websocket_groups = ([]);
 }
@@ -753,32 +752,9 @@ class TwitchAuth
 	}
 }
 
-void session_cleanup()
-{
-	//Go through all HTTP sessions and dispose of old ones
-	mapping sess = G->G->http_sessions;
-	int limit = time();
-	foreach (sess; string cookie; mapping info)
-		if (info->expires <= limit) m_delete(sess, cookie);
-}
-
-//Make sure we have a session and cookie active. The given response will have
-//a Set-Cookie added if necessary, otherwise no changes are made.
-void ensure_session(Protocols.HTTP.Server.Request req, mapping(string:mixed) resp)
-{
-	if (req->misc->session) return 0;
-	string cookie;
-	do {cookie = random(1<<64)->digits(36);} while (G->G->http_sessions[cookie]);
-	req->misc->session = G->G->http_sessions[cookie] = (["cookie": cookie, "expires": time() + 86400]);
-	if (!resp->extra_heads) resp->extra_heads = ([]);
-	resp->extra_heads["Set-Cookie"] = "session=" + cookie + "; Path=/";
-	call_out(session_cleanup, 86401); //TODO: Don't have too many of these queued.
-}
-
 mapping(string:mixed) twitchlogin(Protocols.HTTP.Server.Request req, multiset(string) scopes, string|void next)
 {
 	mapping resp = render_template("login.md", (["scopes": (array)scopes * " "]));
-	ensure_session(req, resp);
 	req->misc->session->redirect_after_login = next || req->full_query; //Shouldn't usually be necessary
 	return resp;
 }

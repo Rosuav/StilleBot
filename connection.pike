@@ -858,9 +858,20 @@ class channel_notif
 	}
 }
 
+void session_cleanup()
+{
+	//Go through all HTTP sessions and dispose of old ones
+	G->G->http_session_cleanup = 0;
+	mapping sess = G->G->http_sessions;
+	int limit = time();
+	foreach (sess; string cookie; mapping info)
+		if (info->expires <= limit) m_delete(sess, cookie);
+	if (sizeof(sess)) G->G->http_session_cleanup = call_out(session_cleanup, 86400);
+}
+
 continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	req->misc->session = G->G->http_sessions[req->cookies->session];
+	mapping sess = req->misc->session = G->G->http_sessions[req->cookies->session] || ([]);
 	[function handler, array args] = find_http_handler(req->not_query);
 	//If we receive URL-encoded form data, assume it's UTF-8.
 	if (req->request_headers["content-type"] == "application/x-www-form-urlencoded" && mappingp(req->variables))
@@ -893,6 +904,13 @@ continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 	//The simplest fix is to just add "Connection: close" to all responses.
 	if (!resp->extra_heads) resp->extra_heads = ([]);
 	resp->extra_heads->Connection = "close";
+	if (sizeof(sess)) {
+		if (!sess->cookie) do {sess->cookie = random(1<<64)->digits(36);} while (G->G->http_sessions[sess->cookie]);
+		sess->expires = time() + 604800; //Overwrite expiry time every request
+		resp->extra_heads["Set-Cookie"] = "session=" + sess->cookie + "; Path=/; Max-Age=604800";
+		G->G->http_sessions[sess->cookie] = sess;
+		if (!G->G->http_session_cleanup) session_cleanup();
+	}
 	req->response_and_finish(resp);
 }
 
@@ -951,7 +969,7 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 				if (value) req->cookies[key] = value;
 	//End lifted from Pike's sources
 	Protocols.WebSocket.Connection sock = req->websocket_accept(0);
-	sock->set_id((["sock": sock, "session": G->G->http_sessions[req->cookies->session]])); //Minstrel Hall style floop
+	sock->set_id((["sock": sock, "session": G->G->http_sessions[req->cookies->session] || ([])])); //Minstrel Hall style floop
 	sock->onmessage = ws_msg;
 	sock->onclose = ws_close;
 }
@@ -960,6 +978,7 @@ protected void create()
 {
 	if (!G->G->channelcolor) G->G->channelcolor = ([]);
 	if (!G->G->cooldown_timeout) G->G->cooldown_timeout = ([]);
+	if (!G->G->http_sessions) G->G->http_sessions = ([]);
 	irc = G->G->irc;
 	//if (!irc) //HACK: Force reconnection every time
 		reconnect();
