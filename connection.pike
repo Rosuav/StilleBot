@@ -568,7 +568,6 @@ class channel_notif
 		if (dest == "/w") dest += " " + target;
 		else dest = name; //Everything other than whispers and open chat has been handled elsewhere.
 
-		//Note that the voice doesn't apply to a subtree, only to a single message. This may change in future.
 		function send_message = default_queue->send_message;
 		if (cfg->voice && cfg->voice != "") {
 			write("Selecting voice for %O\n", cfg->voice);
