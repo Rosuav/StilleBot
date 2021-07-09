@@ -1,6 +1,7 @@
 object irc;
 string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
+object substitutions = Regexp.SimpleRegexp("(\\$[A-Za-z]+\\$)|({[a-z_@]+})");
 
 class IRCClient
 {
@@ -367,7 +368,16 @@ class channel_notif
 			string chosen = sizeof(users) ? random(users) : person->user;
 			vars["$participant$"] = chosen;
 		}
-		return replace(text, vars);
+		//Replace shorthands with their long forms. They are exactly equivalent, but the
+		//long form can be enhanced with filters and/or defaults.
+		text = replace(text, (["%s": "{param}", "%e": "{emotedparam}", "$$": "{username}"]));
+		//TODO: Don't use the shortforms internally anywhere
+		vars["{param}"] = vars["%s"]; vars["{emotedparam}"] = vars["%e"]; vars["{username}"] = vars["$$"];
+		//Scan for two types of substitution - variables and parameters
+		return substitutions->replace(text) {[string pat] = __ARGS__;
+			if (pat[0] == '$') return vars[pat] || "UNKNOWN VAR";
+			else return vars[pat] || "UNKNOWN PARAM";
+		};
 	}
 
 	//Changes to vars[] will propagate linearly. Changes to cfg[] will propagate
