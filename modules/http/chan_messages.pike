@@ -41,8 +41,11 @@ mapping _get_message(string|int id, mapping msgs) {
 	if (!msg->parts && emotes) {
 		array parts = ({""});
 		foreach (msg->message / " "; int i; string w)
-			if (sscanf(w, "\uFFFAe%d:%s\uFFFB", int emoteid, string alt)) //Assumes that emotes are always entire words, for simplicity
-				parts += ({(["type": "image", "url": "https://static-cdn.jtvnw.net/emoticons/v1/" + emoteid + "/1.0", "text": alt]), " "});
+			if (sscanf(w, "\uFFFAe%s:%s\uFFFB", string emoteid, string alt)) { //Assumes that emotes are always entire words, for simplicity
+				string url = (int)emoteid ? "https://static-cdn.jtvnw.net/emoticons/v1/%s/1.0"
+					: "https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0";
+				parts += ({(["type": "image", "url": sprintf(url, emoteid), "text": alt]), " "});
+			}
 			else if (emotes[w] && sscanf(emotes[w], "![%s](%s)", string alt, string url))
 				parts += ({(["type": "image", "url": url, "text": alt]), " "});
 			else if (hyperlink->match(w))

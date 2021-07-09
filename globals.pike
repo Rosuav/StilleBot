@@ -484,8 +484,9 @@ class Renderer
 			{
 				case 'u': output += replace(texts[(int)info], (["<": "&lt;", "&": "&amp;"])); break;
 				case 'e': {
-					sscanf(info, "%d:%s", int id, string text);
-					output += sprintf("<img src=\"https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0\" title=%q alt=%<q>", id, text);
+					sscanf(info, "%s:%s", string id, string text);
+					if ((int)id) output += sprintf("<img src=\"https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0\" title=%q alt=%<q>", (int)id, text);
+					else output += sprintf("<img src=\"https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0\" title=%q alt=%<q>", id, text);
 				}
 				default: break; //Should this put a noisy error in?
 			}
