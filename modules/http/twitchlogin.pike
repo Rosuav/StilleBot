@@ -4,12 +4,10 @@ inherit http_endpoint;
 //constant scopes = ""; //no scopes currently needed
 
 mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mapping user, multiset scopes, string token) {
-	mapping resp = (["data": "<script>window.close(); window.opener.location.reload();</script>", "type": "text/html"]);
-	ensure_session(req, resp);
 	req->misc->session->user = user;
 	req->misc->session->scopes = (multiset)(req->variables->scope / " ");
 	req->misc->session->token = token;
-	return resp;
+	return (["data": "<script>window.close(); window.opener.location.reload();</script>", "type": "text/html"]);
 }
 
 mapping(string:function) login_callback = ([]);
@@ -49,12 +47,10 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		}
 		resend_redirect[req->variables->code] = dest;
 		call_out(m_delete, 30, resend_redirect, req->variables->code);
-		mapping resp = redirect(dest);
-		ensure_session(req, resp);
 		req->misc->session->user = user;
 		req->misc->session->scopes = (multiset)(req->variables->scope / " ");
 		req->misc->session->token = auth->access_token;
-		return resp;
+		return redirect(dest);
 	}
 	if (req->variables->urlonly) return jsonify((["uri": get_redirect_url((multiset)((req->variables->scope||"") / " "), ([]), login_popup_done)]));
 	//Attempt to sanitize or whitelist-check the destination. The goal is to permit
