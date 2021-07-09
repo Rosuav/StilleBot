@@ -750,6 +750,12 @@ class TwitchAuth
 		mapping cfg = persist_config["ircsettings"];
 		::create(cfg->clientid, cfg->clientsecret, cfg->http_address + "/twitchlogin", scopes);
 	}
+	Concurrent.Future request_access_token_promise(string code) {
+		return Concurrent.Promise(lambda(function ... cb) {
+			request_access_token(code) {cb[!__ARGS__[0]](__ARGS__[1]);};
+		});
+	}
+	//TODO: Promisified version of refresh_access_token if we start using that
 }
 
 mapping(string:mixed) twitchlogin(Protocols.HTTP.Server.Request req, multiset(string) scopes, string|void next)

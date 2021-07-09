@@ -3,10 +3,11 @@ inherit http_endpoint;
 //constant scopes = "chat:read chat:edit whispers:read whispers:edit user_subscriptions"; //For authenticating the bot itself
 //constant scopes = ""; //no scopes currently needed
 
-mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mapping user, multiset scopes, string token) {
+mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mapping user, multiset scopes, string token, string cookie) {
 	req->misc->session->user = user;
 	req->misc->session->scopes = (multiset)(req->variables->scope / " ");
 	req->misc->session->token = token;
+	req->misc->session->authcookie = cookie;
 	return (["data": "<script>window.close(); window.opener.location.reload();</script>", "type": "text/html"]);
 }
 
@@ -21,16 +22,14 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		//write("Login response %O\n", req->variables);
 		object auth = TwitchAuth();
 		write("Requesting access token for %O...\n", req->variables->code); //This shows up twice when those crashes happen. Maybe caching the redirect will help?
-		string cookie = yield(Concurrent.Promise(lambda(function ... cb) {
-			auth->request_access_token(req->variables->code) {cb[!__ARGS__[0]](__ARGS__[1]);};
-		}));
+		string cookie = yield(auth->request_access_token_promise(req->variables->code));
 		auth->set_from_cookie(cookie);
 		mapping user = yield(twitch_api_request("https://api.twitch.tv/helix/users",
 			(["Authorization": "Bearer " + auth->access_token])))
 				->data[0];
 		//write("Login: %O %O\n", auth->access_token, user);
 		if (function f = login_callback[req->variables->state])
-			return f(req, user, (multiset)(req->variables->scope / " "), auth->access_token);
+			return f(req, user, (multiset)(req->variables->scope / " "), auth->access_token, cookie);
 		string dest = m_delete(req->misc->session, "redirect_after_login");
 		if (!dest || dest == req->not_query || has_prefix(dest + "?", req->not_query))
 		{
@@ -47,6 +46,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		req->misc->session->user = user;
 		req->misc->session->scopes = (multiset)(req->variables->scope / " ");
 		req->misc->session->token = auth->access_token;
+		req->misc->session->authcookie = cookie;
 		return redirect(dest);
 	}
 	if (req->variables->urlonly) return jsonify((["uri": get_redirect_url((multiset)((req->variables->scope||"") / " "), ([]), login_popup_done)]));

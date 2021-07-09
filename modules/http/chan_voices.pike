@@ -69,7 +69,7 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	string url = function_object(G->G->http_endpoints->twitchlogin)->get_redirect_url(
 		(<"chat_login", "user_read", "whispers:edit", "user_subscriptions">), (["force_verify": "true"])
 	) {
-		[object req, mapping user, multiset scopes, string token] = __ARGS__;
+		[object req, mapping user, multiset scopes, string token, string cookie] = __ARGS__;
 		mapping v = persist_config->path("channels", channel->name[1..], "voices", (string)user->id);
 		v->id = (string)user->id;
 		v->name = user->display_name;
@@ -80,6 +80,7 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 		persist_config->save();
 		mapping tok = persist_status->path("voices", v->id);
 		tok->token = token;
+		tok->authcookie = cookie;
 		tok->login = user->login;
 		tok->last_auth_time = v->last_auth_time;
 		persist_status->save();
