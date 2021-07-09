@@ -1,7 +1,7 @@
 object irc;
 string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
-object substitutions = Regexp.SimpleRegexp("(\\$[A-Za-z]+\\$)|({[a-z_@]+})");
+object substitutions = Regexp.SimpleRegexp("(\\$[A-Za-z|]+\\$)|({[a-z_@|]+})");
 
 class IRCClient
 {
@@ -374,9 +374,17 @@ class channel_notif
 		//TODO: Don't use the shortforms internally anywhere
 		vars["{param}"] = vars["%s"]; vars["{emotedparam}"] = vars["%e"]; vars["{username}"] = vars["$$"];
 		//Scan for two types of substitution - variables and parameters
-		return substitutions->replace(text) {[string pat] = __ARGS__;
-			if (pat[0] == '$') return vars[pat] || "UNKNOWN VAR";
-			else return vars[pat] || "UNKNOWN PARAM";
+		return substitutions->replace(text) {
+			sscanf(__ARGS__[0], "%[${]%[^|$}]%[^$}]%[$}]", string type, string kwd, string filterdflt, string tail);
+			//TODO: Have the absence of a default be actually different from an empty one
+			//So $var||$ would give an empty string if var doesn't exist, but $var$ might
+			//throw an error or something. For now, they're equivalent, and $var$ will be
+			//an empty string if the var isn't found.
+			[string _, string filter, string dflt] = ((filterdflt + "||") / "|")[..2];
+			string value = vars[type + kwd + tail];
+			if (!value || value == "") return dflt;
+			//TODO: return filters[filter](value) if one is specified
+			return value;
 		};
 	}
 
