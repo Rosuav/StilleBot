@@ -83,11 +83,6 @@
   - Can this kind of auth be used to get host notifications??
 * Login responses can now redirect to queried URLs. Check for all where this is crucial
   (cf MPN with ?document=) and ensure that the appropriate query vars are whitelisted.
-* Interpolation formatters.
-  - Replace {uptime_hms} with {uptime|hms} where hms is a generic formatter that takes
-    the numeric uptime and returns the H:M:S
-  - Would need a significant rework of the last line of _substitute_vars, and no others.
-  - Can also handle $pinafore|hms$ the same way
 * Dialogs now autoclose only if formless. Ensure that the annoying cases get forms
   added or removed as appropriate.
 * Authentication on Firefox may now have issues with the default popup blocker. Can we

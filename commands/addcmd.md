@@ -55,9 +55,9 @@ Parameter    | Meaning
 {bits} | Total number of bits cheered in this message
 {level} | New badge level, eg 1000 if the 1K bits badge has just been attained
 {viewers} | Number of viewers arriving on the raid
-{uptime} | Number of seconds the stream has been online
-{uptime_hms} | Time the stream has been online in hh:mm:ss format
-{uptime_english} | Time the stream has been online in words
+{uptime} | Stream broadcast duration - use {uptime|time_hms} or {uptime|time_english} for readable form
+{uptime_hms} | (deprecated) Equivalent to {uptime|time_hms}
+{uptime_english} | (deprecated) Equivalent to {uptime|time_english}
 {track} | Name of the audio file that's currently playing
 {block} | Name of the section/album/block of tracks currently playing, if any
 {blockpath} | Full path to the current block
@@ -65,8 +65,8 @@ Parameter    | Meaning
 {playing} | 1 if music is playing, or 0 if paused, stopped, disconnected, etc
 {title} | Title of the giveaway (eg the thing that can be won)
 {duration} | How long the giveaway will be open (seconds; 0 means open until explicitly closed)
-{duration_hms} | Giveaway duration in hh:mm:ss format
-{duration_english} | Giveaway duration in words
+{duration_hms} | (deprecated) Equivalent to {duration|time_hms}
+{duration_english} | (deprecated) Equivalent to {duration|time_english}
 {tickets_bought} | Number of tickets just bought (or tried to)
 {tickets_total} | Total number of tickets bought
 {tickets_max} | Maximum number of tickets any single user may purchase
