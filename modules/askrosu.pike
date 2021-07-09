@@ -19,7 +19,7 @@ constant responses = ({
 	"$$: My sources say no.",
 	"$$: Who, me? I think you want to ask CutieCakeBot that. devicatCCB",
 	"$$: Honestly, there is no polite way to answer that question. devicatSPOOK",
-	"$$: You may want to ask $participant$ instead. devicatZZZ",
+	"$$: You may want to ask {participant} instead. devicatZZZ",
 	"$$: Hmm.... nope, my programming does not cover that. maayaThink",
 	"$$: That makes sense to me! devicatLOL",
 	"$$: I could tell you, but then I'd have to time you out. rosuavMuted",

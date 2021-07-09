@@ -361,10 +361,13 @@ class channel_notif
 	//be the place to do it.
 	string _substitute_vars(string text, mapping vars, mapping person)
 	{
-		if (!vars["$participant$"] && has_value(text, "$participant$") && person->user)
+		//Replace shorthands with their long forms. They are exactly equivalent, but the
+		//long form can be enhanced with filters and/or defaults.
+		text = replace(text, (["%s": "{param}", "%e": "{emotedparam}", "$$": "{username}", "$participant$": "{participant}"]));
+		if (!vars["{participant}"] && has_value(text, "{participant}") && person->user)
 		{
-			//Note that $participant$ with a delay will invite people to be active
-			//before the timer runs out, but only if there's no $participant$ prior
+			//Note that {participant} with a delay will invite people to be active
+			//before the timer runs out, but only if there's no {participant} prior
 			//to the delay.
 			array users = ({ });
 			int limit = time() - 300; //Find people active within the last five minutes
@@ -372,11 +375,8 @@ class channel_notif
 				if (info->lastnotice >= limit && name != person->user) users += ({name});
 			//If there are no other chat participants, pick the person speaking.
 			string chosen = sizeof(users) ? random(users) : person->user;
-			vars["$participant$"] = chosen;
+			vars["{participant}"] = chosen;
 		}
-		//Replace shorthands with their long forms. They are exactly equivalent, but the
-		//long form can be enhanced with filters and/or defaults.
-		text = replace(text, (["%s": "{param}", "%e": "{emotedparam}", "$$": "{username}"]));
 		//TODO: Don't use the shortforms internally anywhere
 		vars["{param}"] = vars["%s"]; vars["{emotedparam}"] = vars["%e"]; vars["{username}"] = vars["$$"];
 		//Scan for two types of substitution - variables and parameters
@@ -607,7 +607,7 @@ class channel_notif
 		_send_recursive(person, message, vars, ([]));
 	}
 
-	//Expand all channel variables, except for $participant$ which usually won't
+	//Expand all channel variables, except for {participant} which usually won't
 	//make sense anyway. If you want $$ or %s or any of those, provide them in the
 	//second parameter; otherwise, just expand_variables("Foo is $foo$.") is enough.
 	string expand_variables(string text, mapping|void vars)

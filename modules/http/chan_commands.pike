@@ -26,7 +26,7 @@ constant COMPLEX_TEMPLATES = ([
 	}),
 	"!hug": ([
 		"conditional": "string", "expr1": "%s",
-		"message": "/me devicatHug $$ warmly hugs $participant$ maayaHug",
+		"message": "/me devicatHug $$ warmly hugs {participant} maayaHug",
 		"otherwise": "/me devicatHug $$ warmly hugs %s maayaHug",
 	]),
 ]);
