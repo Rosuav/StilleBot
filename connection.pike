@@ -363,7 +363,7 @@ class channel_notif
 	{
 		//Replace shorthands with their long forms. They are exactly equivalent, but the
 		//long form can be enhanced with filters and/or defaults.
-		text = replace(text, (["%s": "{param}", "%e": "{emotedparam}", "$$": "{username}", "$participant$": "{participant}"]));
+		text = replace(text, (["%s": "{param}", "$$": "{username}", "$participant$": "{participant}"]));
 		if (!vars["{participant}"] && has_value(text, "{participant}") && person->user)
 		{
 			//Note that {participant} with a delay will invite people to be active
@@ -378,7 +378,7 @@ class channel_notif
 			vars["{participant}"] = chosen;
 		}
 		//TODO: Don't use the shortforms internally anywhere
-		vars["{param}"] = vars["%s"]; vars["{emotedparam}"] = vars["%e"]; vars["{username}"] = vars["$$"];
+		vars["{param}"] = vars["%s"]; vars["{username}"] = vars["$$"];
 		//Scan for two types of substitution - variables and parameters
 		return substitutions->replace(text) {
 			sscanf(__ARGS__[0], "%[${]%[^|$}]%[^$}]%[$}]", string type, string kwd, string filterdflt, string tail);
