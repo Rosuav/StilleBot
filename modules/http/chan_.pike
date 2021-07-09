@@ -20,7 +20,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				//Anything in persist_status does not belong here; there may eventually be
 				//a separate export of that sort of ephemeral data, eg variables.
 				//Config attributes deprecated or for my own use only are not included.
-				//(That includes channel currency; nobody has used it, I just never deleted it.)
 				mapping cfg = channel->config;
 				mapping ret = ([]);
 				foreach ("autoban autocommands dynamic_rewards giveaway monitors quotes timezone vlcblocks" / " ", string key)

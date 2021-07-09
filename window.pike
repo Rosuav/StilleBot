@@ -846,96 +846,18 @@ class easy_auth
 	}
 }
 
-class whisper_participants(string chan, int limit, int followersonly)
-{
-	inherit window;
-	protected void create() {::create();}
-
-	void makewindow()
-	{
-		win->mainwindow = GTK2.Window((["title": "Whisper to chat participants"]))->add(GTK2.Vbox(0, 10)
-			->add(GTK2.Label("Whisper to participants for " + chan))
-			->add(GTK2.Hbox(0, 10)
-				->pack_start(GTK2.Label("Message:"), 0, 0, 0)
-				->add(win->msg = GTK2.Entry())
-			)
-			->add(win->people = GTK2.Table(1, 1, 0))
-			->add(GTK2.HbuttonBox()
-				->add(win->refresh = GTK2.Button("Refresh"))
-				->add(win->shuffle = GTK2.Button("Shuffle"))
-				->add(stock_close())
-			)
-		);
-		sig_refresh_clicked();
-	}
-
-	void sig_refresh_clicked() {redraw(0);}
-	void sig_shuffle_clicked() {redraw(1);}
-	void redraw(int sortmode)
-	{
-		mapping userinfo = G_G_("participants", chan);
-		array prev = win->people->get_children();
-		prev->destroy(); destruct(prev[*]);
-		array(string) users = indices(userinfo);
-		if (sortmode) Array.shuffle(users);
-		//TODO: Sort them by earliest comment/notice for sortmode 2?
-		int pos = 0;
-		foreach (users, string user)
-		{
-			mapping info = userinfo[user];
-			int since = time() - info->lastnotice;
-			if (since > limit) continue;
-			string msg;
-			if (!info->following)
-			{
-				if (followersonly) continue;
-				msg = user;
-			}
-			else msg = sprintf("%s (following %s)", user, (info->following/"T")[0]);
-			object btn = GTK2.Button(msg)->show();
-			int row = pos/4, col = pos%4; ++pos;
-			win->people->attach(btn, col, col+1, row, row+1, 0, 0, 1, 1);
-			btn->signal_connect("clicked", send_whisper, user);
-		}
-	}
-
-	void send_whisper(object self, string user)
-	{
-		send_message("#" + chan, "/w " + user + " " + win->msg->get_text());
-	}
-}
-
 object mainwindow;
 class _mainwindow
 {
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
-	constant elements=({"kwd:Channel", "?allcmds:All commands active", "?httponly:Web-only", "+notes:Notes", "'uptime:", ([
-		"\"Notice Me!\"": ({
-			"'Let chat participants get your attention.",
-			"?noticechat:Enabled",
-			"?Followers only",
-			"NoticeMe keyword",
-			"#Timeout (within X sec)=600",
-			"!Notify participants",
-		}),
-		"Currency": ({
-			"'DEPRECATED and no longer supported",
-			"Currency name",
-			"#Payout interval",
-			"#payout_offline:Offline divisor [0 for none]",
-			"#payout_mod:Mod multiplier",
-		}),
-		"Logging": ({
-			"?chatlog:Log chat to console",
-		}),
-		"Perms": ({ //TODO: Find a better name for this tab
-			"?disable_quotes:Disable quotes",
-			"'TODO: Have a way here to allow non-mods to create pending quotes",
-			"Timezone",
-			"'Scheduled commands (!repeat) will use this timezone", //And so might other things in the future
-		}),
-	])});
+	constant elements=({"kwd:Channel", "?allcmds:All commands active", "?httponly:Web-only",
+		"?chatlog:Log chat to console",
+		"?disable_quotes:Disable quotes",
+		"Timezone", "'Scheduled commands (!repeat) will use this timezone", //And so might other things in the future
+		"'uptime:",
+		"+notes:Notes",
+	});
 	constant persist_key = "channels";
 	constant is_subwindow = 0;
 	protected void create() {::create("mainwindow"); remake_content(); mainwindow = win->mainwindow;}
@@ -965,7 +887,6 @@ class _mainwindow
 		string lc = lower_case(txt);
 		if (lc != txt) self->set_text(lc);
 	}
-	function sig_noticeme_changed = sig_kwd_changed;
 
 	//This allows updating of the content block in a live configdlg.
 	//Downside: It probably *only* works (reliably) with the new 'elements'
@@ -1037,13 +958,6 @@ class _mainwindow
 	{
 		write("%%% Parting #"+kwd+"\n");
 		G->G->irc->part_channel("#"+kwd);
-	}
-
-	void sig_notify_clicked()
-	{
-		string chan = selecteditem();
-		if (!chan) return;
-		whisper_participants(chan, (int)win->timeout->get_text() || 600, win->followers->get_active());
 	}
 
 	void closewindow() {exit(0);}

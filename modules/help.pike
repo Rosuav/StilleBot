@@ -58,12 +58,6 @@ echoable_message process(object channel, mapping person, string param)
 			if (!has_value(cmd, '#') || has_suffix(cmd, channel->name))
 				cmds[cmd - channel->name] = 1;
 		}
-	//Hack: !currency is invoked as !chocolates when the currency name
-	//is "chocolates", and shouldn't be invoked at all if there's no
-	//channel currency here.
-	cmds["currency"] = 0;
-	string cur = channel->config->currency;
-	if (cur && cur != "") cmds[cur] = 1;
 	string local_info = "";
 	if (string addr = persist_config["ircsettings"]->http_address)
 		local_info = " You can also view further information about this specific channel at " + addr + "/channels/" + channel->name[1..];

@@ -64,13 +64,6 @@
   - Update timezone if specified.
   - What about quotes??? How do we validate their format?
     - Hand each one, individually, to the updater from the front end??
-* Deprecate channel currency, and notice me
-  - Ensure that there's no end-user-facing way to see any of them unless they're already
-    active. Put warnings that they're on the way out.
-  - Keep $participant$ but no keyword and a fixed timeout (say, 600 seconds). Could be
-    used for fun commands - it won't (usually) drag lurkers out but can pick a person.
-  - Rename it to something else - maybe {participant} ? It doesn't behave like a variable
-    and shouldn't override an actual variable of that name.
 * Allow dialogs to be dragged around??
   - May have some awkward interactions with (a) dialogs that resize themselves eg commands
     advanced view, (b) window resizes, and (c) closing and opening a dialog. Especially if

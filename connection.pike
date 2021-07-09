@@ -295,18 +295,7 @@ class channel_notif
 
 	void handle_command(mapping person, string msg, mapping defaults)
 	{
-		if (config->noticechat && person->user && has_value(lower_case(msg), config->noticeme||""))
-		{
-			mapping user = G_G_("participants", name[1..], person->user);
-			//Re-check every five minutes, max. We assume that people don't
-			//generally unfollow, so just recheck those every day.
-			if (config->followers && user->lastfollowcheck <= time() - (user->following ? 86400 : 300))
-			{
-				user->lastfollowcheck = time();
-				check_following(person->user, name[1..]);
-			}
-			user->lastnotice = time();
-		}
+		if (person->user) G_G_("participants", name[1..], person->user)->lastnotice = time();
 		person->vars = (["%s": msg, "{@mod}": person->badges->?_mod ? "1" : "0"]);
 		runhooks("all-msgs", 0, this, person, msg);
 		trigger_special("!trigger", person, person->vars);
@@ -365,18 +354,18 @@ class channel_notif
 	//be the place to do it.
 	string _substitute_vars(string text, mapping vars, mapping person)
 	{
-		if (config->noticechat && !vars->participant && has_value(text, "$participant$") && person->user)
+		if (!vars["$participant$"] && has_value(text, "$participant$") && person->user)
 		{
 			//Note that $participant$ with a delay will invite people to be active
 			//before the timer runs out, but only if there's no $participant$ prior
 			//to the delay.
 			array users = ({ });
-			int limit = time() - config->timeout;
+			int limit = time() - 300; //Find people active within the last five minutes
 			foreach (G_G_("participants", name[1..]); string name; mapping info)
 				if (info->lastnotice >= limit && name != person->user) users += ({name});
 			//If there are no other chat participants, pick the person speaking.
 			string chosen = sizeof(users) ? random(users) : person->user;
-			vars->participant = chosen;
+			vars["$participant$"] = chosen;
 		}
 		return replace(text, vars);
 	}
@@ -832,10 +821,19 @@ class channel_notif
 			//The very similar delete-msgs hook has person (ditto) and
 			//target (the *user id* who got purged), which may be null.
 			//(If target is null, all chat got cleared ("/clear").)
-			//TODO: Remove someone from participants when their messages
-			//get purged. This can remain even when notice-me dies.
-			case "CLEARMSG": runhooks("delete-msg", 0, this, person, params->login, params->target_msg_id); break;
-			case "CLEARCHAT": runhooks("delete-msgs", 0, this, person, params->target_user_id); break;
+			//When anyone's chat gets deleted, that user gets removed from
+			//the participant list, so autobanned people won't ever get
+			//acknowledged accidentally.
+			case "CLEARMSG":
+				runhooks("delete-msg", 0, this, person, params->login, params->target_msg_id);
+				G_G_("participants", name[1..], params->login)->lastnotice = 0;
+				break;
+			case "CLEARCHAT":
+				runhooks("delete-msgs", 0, this, person, params->target_user_id);
+				if (params->target_user_id) get_user_info(params->target_user_id)->then() {
+					G_G_("participants", name[1..], __ARGS__[0]->login)->lastnotice = 0;
+				};
+				break;
 			default: werror("Unknown message type %O on channel %s\n", params->_type, name);
 		}
 	}
