@@ -254,6 +254,12 @@ mapping(string:mixed) gather_person_info(object person, mapping params)
 	return ret;
 }
 
+mapping(string:function(string:string)) text_filters = ([
+	"time_hms": lambda(string tm) {return describe_time_short((int)tm);},
+	"time_english": lambda(string tm) {return describe_time((int)tm);},
+	"upper": upper_case, "lower": lower_case,
+]);
+
 class channel_notif
 {
 	inherit Protocols.IRC.Channel;
@@ -383,7 +389,7 @@ class channel_notif
 			[string _, string filter, string dflt] = ((filterdflt + "||") / "|")[..2];
 			string value = vars[type + kwd + tail];
 			if (!value || value == "") return dflt;
-			//TODO: return filters[filter](value) if one is specified
+			if (function f = filter != "" && text_filters[filter]) return f(value);
 			return value;
 		};
 	}
