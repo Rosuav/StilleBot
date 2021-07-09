@@ -25,12 +25,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			auth->request_access_token(req->variables->code) {cb[!__ARGS__[0]](__ARGS__[1]);};
 		}));
 		auth->set_from_cookie(cookie);
-		Protocols.HTTP.Promise.Result res = yield(Protocols.HTTP.Promise.get_url("https://api.twitch.tv/helix/users",
-			Protocols.HTTP.Promise.Arguments((["headers": ([
-				"Authorization": "Bearer " + auth->access_token,
-				"Client-ID": persist_config["ircsettings"]->clientid,
-			])]))));
-		mapping user = Standards.JSON.decode_utf8(res->get())->data[0];
+		mapping user = yield(twitch_api_request("https://api.twitch.tv/helix/users",
+			(["Authorization": "Bearer " + auth->access_token])))
+				->data[0];
 		//write("Login: %O %O\n", auth->access_token, user);
 		if (function f = login_callback[req->variables->state])
 			return f(req, user, (multiset)(req->variables->scope / " "), auth->access_token);
