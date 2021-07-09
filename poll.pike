@@ -64,8 +64,8 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 					->then(lambda (mapping data) {
 						G->G->app_access_token = data->access_token;
 						G->G->app_access_token_expiry = time() + data->expires_in - 120;
-						//If we had async/await, we could just fall through instead
-						//of calling ourselves recursively.
+						//If this becomes a continue function, we could just fall through
+						//instead of calling ourselves recursively.
 						return request(url, headers, options);
 					});
 			}
