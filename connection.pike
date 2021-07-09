@@ -872,6 +872,8 @@ void session_cleanup()
 continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping sess = req->misc->session = G->G->http_sessions[req->cookies->session] || ([]);
+	//TODO maybe: Refresh the login token. Currently the tokens don't seem to expire,
+	//but if they do, we can get the refresh token via authcookie (if present).
 	[function handler, array args] = find_http_handler(req->not_query);
 	//If we receive URL-encoded form data, assume it's UTF-8.
 	if (req->request_headers["content-type"] == "application/x-www-form-urlencoded" && mappingp(req->variables))
