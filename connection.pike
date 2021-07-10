@@ -1,7 +1,7 @@
 object irc;
 string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
-object substitutions = Regexp.SimpleRegexp("(\\$[A-Za-z|]+\\$)|({[a-z_@|]+})");
+object substitutions = Regexp.PCRE("(\\$[A-Za-z|]+\\$)|({[a-z_@|]+})");
 
 class IRCClient
 {
