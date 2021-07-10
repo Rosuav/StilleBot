@@ -56,7 +56,7 @@ continue Concurrent.Future do_check() {
 
 void check() {
 	if (mixed id = G->G->whofundsme_callout) remove_call_out(id);
-	if (!sizeof(websocket_groups[""])) return;
+	if (!sizeof(websocket_groups[""]||([]))) return;
 	G->G->whofundsme_callout = call_out(check, 1800);
 	handle_async(do_check()) { };
 }
