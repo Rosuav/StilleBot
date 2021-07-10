@@ -128,7 +128,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (req->variables->auth && req->variables->auth == channel->config->vlcauthtoken) {
 		//It could be a valid VLC signal.
 		if (!status) status = G->G->vlc_status[channel->name] = ([]);
-		req->variables->auth = "(correct)"; werror("Got VLC notification: %O\n", req->variables);
+		req->variables->auth = "(correct)"; werror("%sGot VLC notification: %O\n", ctime(time()), req->variables);
 		if (req->variables->shutdown) {req->variables->status = "shutdown"; werror("VLC link shutdown\n");}
 		int send = 0;
 		if (string uri = req->variables->now_playing) {
@@ -171,6 +171,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				status->curblock = block; status->curblockdesc = blockdesc;
 				send = 1;
 			}
+			else write("Unchanged desc, no report:\n%O\n", desc);
 		}
 		if (string s = req->variables->status) {
 			int playing = s == "playing";
@@ -180,7 +181,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (send) sendstatus(channel); //If multiple changes, only send once
 		return (["data": "Okay, fine\n", "type": "text/plain"]);
 	}
-	if (!status) status = ([]); //but don't save it back, which we would if we're changing stuff
 	string chatnotif = "[Enable in-chat notifications](vlc?makespecial)";
 	if (G->G->echocommands["!musictrack" + req->misc->channel->name]) {
 		//TODO: Show a summary of how it'll look, somehow
@@ -263,5 +263,5 @@ int disconnected(string channel) {
 protected void create(string name) {
 	::create(name);
 	if (!G->G->vlc_status) G->G->vlc_status = ([]);
-	register_hook("channel-online", disconnected); //CJA 2021-03-07: Was this supposed to be OFFline?
+	register_hook("channel-offline", disconnected); //CJA 20210710: This was previously an ONline check. Was there supposed to be an initialization?
 }
