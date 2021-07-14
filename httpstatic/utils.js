@@ -25,3 +25,9 @@ export function waitlate(wait_time, late_time, confirmdesc, callback) {
 		set_content(btn, confirmdesc).disabled = true;
 	};
 }
+
+const login = document.getElementById("twitchlogin");
+if (login) login.onclick = async e => {
+	const data = await (await fetch("/twitchlogin?urlonly=true&scope=" + login_scope)).json();
+	window.open(data.uri, "login", "width=525, height=900");
+}

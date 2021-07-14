@@ -67,6 +67,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		}
 	}
 	//Merge scopes, similarly to ensure_login()
+	//NOTE: THIS IS INCONSISTENT. This uses variable "scopes" but others use "scope".
+	//CHECK TO SEE WHAT WE NEED. Or just deprecate this completely in favour of the
+	//login button, which definitely uses "scope" (and the urlonly flag).
 	multiset havescopes = req->misc->session->?scopes || (<>);
 	multiset wantscopes = (multiset)((req->variables->scopes || "") / " " - ({""}));
 	multiset bad = wantscopes - TwitchAuth()->list_valid_scopes();
