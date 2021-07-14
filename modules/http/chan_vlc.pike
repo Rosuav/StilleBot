@@ -170,6 +170,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				status->current = desc; status->curtrack = fn;
 				status->curblock = block; status->curblockdesc = blockdesc;
 				send = 1;
+				write("Changed desc, will report; playing is %O\n%O\n", status->playing, desc);
 			}
 			else write("Unchanged desc, no report:\n%O\n", desc);
 		}
