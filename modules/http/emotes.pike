@@ -88,7 +88,8 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 			}
 			sets[em->emote_set_id][1] += ({
 				sprintf("<figure>![%s](%s)"
-					"<figcaption>%[0]s</figcaption></figure>", em->name, em->images->url_4x)
+					"<figcaption>%[0]s</figcaption></figure>", em->name,
+					replace(em->images->url_4x, "/static/", "/default/")) //Most emotes have the same image for static and default. Anims get a one-frame for static, and the animated for default.
 			});
 		}
 		array emotesets = values(sets); sort((array(int))indices(sets), emotesets);
