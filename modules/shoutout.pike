@@ -47,7 +47,7 @@ constant vars_provided = ([
 continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
 	mapping info = ([]);
-	catch {info = yield(get_channel_info(replace(param, ({"@", " "}), "")));}; //If error, leave it an empty mapping
+	catch {info = yield(get_channel_info(replace(param, ({"@", " "}), ""))) || ([]);}; //If error, leave it an empty mapping
 	return ([
 		"{name}": info->display_name || "That person",
 		"{url}": info->url || "",
