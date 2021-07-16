@@ -116,7 +116,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	else if (logged_in) userid = (int)logged_in->id; //Raidfind for self if logged in.
 	//TODO: Based on the for= or the logged in user, determine whether raids are tracked.
 	mapping raids = ([]);
-	array follows_kraken, follows_helix;
+	array follows_helix;
 	mapping broadcaster_type = ([]);
 	//NOTE: Notes come from your *login* userid, unaffected by any for=
 	//annotation. For notes attached to a channel, that channel's ID is
@@ -218,6 +218,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			}
 			case "": case "categories": { //For ?categories and ?categories= modes, show those you follow
 				if (mapping resp = ensure_login(req, "user_read")) return resp;
+				//20210716: Kraken API, information not available in Helix.
 				mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/users/" + req->misc->session->user->id + "/follows/games"));
 				args->game_id = (array(string))info->follows->game->_id;
 				title = "Followed categories";
@@ -229,34 +230,22 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + userid),
 		));
 		array(string) ids = streams->user_id + ({(string)userid});
-		//Map channel list to Kraken so we get both sets of info
 		follows_helix = streams + self->data;
 		//If you follow a large number of categories, or a single large category,
 		//there could be rather a lot of IDs. Fetch in blocks.
-		follows_kraken = ({ }); //Not currently using any Kraken info (yay!), so skip fetching it.
-		/*follows_kraken = yield(fracture(ids, 25) {
-			return twitch_api_request("https://api.twitch.tv/kraken/streams/?channel=" + __ARGS__[0] * ",")
-				->then() {return __ARGS__[0]->streams;};
-		});*/
 		users = yield(fracture(ids, 100) {return get_helix_paginated("https://api.twitch.tv/helix/users", (["id": __ARGS__[0]]));});
 	}
 	else {
-		if (mapping resp = ensure_login(req, "user_read")) return resp;
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/streams/followed?limit=100",
-			(["Authorization": "OAuth " + req->misc->session->token])));
-		array(int) channels = info->streams->channel->_id;
-		channels += ({userid});
-		write("Fetching %d streams...\n", sizeof(channels));
-		//Map channel list to Helix so we get both sets of info
-		follows_kraken = info->streams;
-		[follows_helix, users] = yield(Concurrent.all(
-			get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))channels])),
-			//The ONLY thing we need /helix/users for is broadcaster_type, which - for
-			//reasons unknown to me - is always blank in the main stream info.
-			get_helix_paginated("https://api.twitch.tv/helix/users", (["id": (array(string))channels])),
-		));
+		if (mapping resp = ensure_login(req, "user:read:follows")) return resp;
+		follows_helix = yield(get_helix_paginated("https://api.twitch.tv/helix/streams/followed",
+			(["user_id": (string)req->misc->session->user->id]),
+			(["Authorization": "Bearer " + req->misc->session->token])));
+		//Ensure that we have the user we're looking up (yourself, unless it's a for=USERNAME raidfind)
+		follows_helix += yield(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (string)userid])));
+		//Grab some additional info from the Users API, including profile image and
+		//whether the person is partnered or affiliated.
+		users = yield(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": follows_helix->user_id + ({(string)userid})])));
 	}
-	//write("Kraken: %O\nHelix: %O\nUsers: %O\n", follows_kraken[..3], follows_helix[..3], users[..3]);
 	mapping your_stream;
 	multiset need_tags = (<>);
 	foreach (follows_helix, mapping strm)
@@ -271,12 +260,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		update_tags(yield(get_helix_paginated("https://api.twitch.tv/helix/tags/streams", (["tag_id": (array)need_tags]))));
 	}
 	mapping(int:mapping(string:mixed)) extra_info = ([]);
-	foreach (follows_kraken, mapping strm) //NOTE: As of 2021-03-13, this isn't actually needed. Keeping in case I lift more info.
-		extra_info[strm->channel->_id] = ([
-			"profile_image_url": strm->channel->logo,
-			"url": strm->channel->url,
-			//strm->video_height and strm->average_fps might be of interest
-		]);
 	foreach (users, mapping user)
 		extra_info[(int)user->id] = ([
 			"broadcaster_type": user->broadcaster_type,

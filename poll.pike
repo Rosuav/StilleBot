@@ -259,6 +259,7 @@ Concurrent.Future get_channel_info(string name)
 
 Concurrent.Future get_video_info(string name)
 {
+	//20210716: Requires Kraken functionality not available in Helix, incl list of resolutions.
 	return request("https://api.twitch.tv/kraken/channels/{{USER}}/videos?broadcast_type=archive&limit=1", ([]), (["username": name]))
 		->then(lambda(mapping info) {return info->videos[0];});
 }

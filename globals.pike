@@ -731,7 +731,7 @@ class TwitchAuth
 		//Helix API:
 		"analytics:read:extensions", "analytics:read:games", "bits:read",
 		"channel:edit:commercial", "channel:read:subscriptions", "clips:edit",
-		"user:edit", "user:edit:broadcast", "user:edit:follows",
+		"user:edit", "user:edit:broadcast", "user:read:follows", "user:edit:follows",
 		"user:read:broadcast", "user:read:email",
 		"channel:read:redemptions", "channel:manage:redemptions",
 		//v5 API
