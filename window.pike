@@ -783,7 +783,7 @@ class easy_auth
 	inherit window;
 	mapping config = persist->path("ircsettings");
 	//TODO: Generate our own, probably using a github.io redirect URI
-	constant url = "https://api.twitch.tv/kraken/oauth2/authorize?response_type=token&client_id=q6batx0epp608isickayubi39itsckt&redirect_uri=https://twitchapps.com/tmi/&scope=chat_login+user_read+whispers:edit+user_subscriptions";
+	constant url = "https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=q6batx0epp608isickayubi39itsckt&redirect_uri=https://twitchapps.com/tmi/&scope=chat:read+chat:edit+channel:moderate+whispers:read+whispers:edit+channel_editor";
 
 	void makewindow()
 	{
@@ -810,26 +810,20 @@ class easy_auth
 		else win->check->set_sensitive(1)->set_label("Check key");
 	}
 
-	void data_available(object q, string pass)
-	{
-		mixed data = Standards.JSON.decode(q->unicode_data());
-		if (data->error || !data->name) {win->check->set_label("Error checking key"); return;}
-		win->check->set_label("Checked OK");
-		win->nick = data->name; win->realname = data->display_name; win->oauth = "oauth:" + pass;
-		win->save->set_sensitive(1)->set_label("Save: "+data->display_name);
-	}
-	void request_ok(object q, string pass) {q->async_fetch(data_available, pass);}
-	void request_fail(object q, string pass) { }
-
 	void sig_check_clicked()
 	{
 		win->check->set_sensitive(0)->set_label("Checking...");
 		sscanf(win->pass->get_text(), "oauth:%s", string pass);
 		if (!pass) return;
-		Protocols.HTTP.do_async_method("GET", "https://api.twitch.tv/kraken/user", 0,
-			(["Authorization": "OAuth " + pass,
-			"Accept": "application/vnd.twitchtv.v5+json"]),
-			Protocols.HTTP.Query()->set_callbacks(request_ok, request_fail, pass));
+		twitch_api_request("https://api.twitch.tv/helix/users", (["Authorization": "Bearer " + pass, "Client-ID": "q6batx0epp608isickayubi39itsckt"]))
+		->then() {
+			mapping data = __ARGS__[0]->data[0];
+			win->check->set_label("Checked OK");
+			win->nick = data->login; win->realname = data->display_name; win->oauth = "oauth:" + pass;
+			win->save->set_sensitive(1)->set_label("Save: " + data->display_name);
+		}->thencatch() {
+			win->check->set_label("Error checking key");
+		};
 	}
 
 	void sig_save_clicked()

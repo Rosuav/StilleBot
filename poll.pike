@@ -80,9 +80,8 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 			if (pass) headers["Authorization"] = (options->authtype || "Bearer") + " " + pass;
 		}
 	}
-	//TODO: Use bearer auth where appropriate (is it exclusively when using Helix?)
-	if (string c=persist_config["ircsettings"]["clientid"])
-		//Some requests require a Client ID. Not sure which or why.
+	if (string c = !headers["Client-ID"] && persist_config["ircsettings"]["clientid"])
+		//Most requests require a Client ID. Not sure which don't, so just provide it (if not already set).
 		headers["Client-ID"] = c;
 	return Protocols.HTTP.Promise.do_method(method, url,
 			Protocols.HTTP.Promise.Arguments((["headers": headers, "data": body])))
