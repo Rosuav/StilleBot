@@ -40,6 +40,9 @@
   one of the specified channels.
   - For some commands (eg hypetrain), this can be done by shadowing with your own to disable,
     or to enable a hidden one, create one with the appropriate builtin.
+  - There's now a !features command; needs a web UI. Shadowing will still be possible, and
+    will be the only way to rename such commands, but activation and deactivation should be
+    fully-supported features.
 * On the bot's emote list, allow search/filter by text
 * Advanced timer functionality
   - If there's already a timer of this command happening, allow the user to pick whether it
