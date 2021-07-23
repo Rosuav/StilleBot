@@ -28,6 +28,7 @@ export function waitlate(wait_time, late_time, confirmdesc, callback) {
 
 const login = document.getElementById("twitchlogin");
 if (login) login.onclick = async e => {
-	const data = await (await fetch("/twitchlogin?urlonly=true&scope=" + login_scope)).json();
+	let scope = ""; try {scope = login_scope;} catch (e) { } //Grab a variable if one is set, otherwise no scopes needed
+	const data = await (await fetch("/twitchlogin?urlonly=true&scope=" + scope)).json();
 	window.open(data.uri, "login", "width=525, height=900");
 }
