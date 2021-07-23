@@ -11,7 +11,6 @@ command to save it for posterity!
 
 echoable_message process(object channel, object person, string param)
 {
-	if (channel->config->disable_quotes) return 0;
 	array quotes = channel->config->quotes;
 	if (!quotes) return 0; //Ignore !quote when there are no quotes saved
 	if (param == "re-encode")
@@ -59,3 +58,14 @@ echoable_message process(object channel, object person, string param)
 	return sprintf("@$$: Quote #%d: %s [%s, %s]", idx, quote->msg, quote->game || "uncategorized", date);
 }
 
+protected void create(string name) {
+	::create(name);
+	//Migrate the disable_quotes flag into the new features flag
+	foreach (persist_config->path("channels"); string name; mapping config) {
+		if (m_delete(config, "disable_quotes")) {
+			if (!config->features) config->features = (["quotes": -1]);
+			else config->features->quotes = -1;
+			persist_config->save();
+		}
+	}
+}

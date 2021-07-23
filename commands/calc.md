@@ -2,6 +2,8 @@
 
 Available to: all users
 
+Part of manageable feature: allcmds
+
 Usage: `!calc 1 + 2 * 3`
 
 If you are a moderator, this will expand variables. This is therefore

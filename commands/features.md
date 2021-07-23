@@ -2,6 +2,8 @@
 
 Available to: mods only
 
+Part of manageable feature: allcmds
+
 Usage: `!features featurename {enable|disable|default}`
 
 Setting a feature to 'default' state will enable it if all-cmds, disable if

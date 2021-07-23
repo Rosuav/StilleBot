@@ -2,6 +2,8 @@
 
 Available to: mods only
 
+Part of manageable feature: allcmds
+
 Usage: `!delcmd !commandname`
 
 Remove a command created with [!addcmd](addcmd).

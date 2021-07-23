@@ -39,14 +39,13 @@ Available to: %s
 
 class command
 {
-	constant require_allcmds = 1; //Set to 0 if the command should be available even if allcmds is not set for the channel
 	constant require_moderator = 0; //(deprecated) Set to 1 if the command is mods-only (equivalent to access="mod")
 	//Command flags, same as can be managed for echocommands with !setcmd
 	//Note that the keywords given here by default should be treated as equivalent
 	//to a 0, as echocommands will normally use 0 for the defaults.
 	constant access = "any"; //Set to "mod" for mod-only commands, or "none" for disabled (or internal-only) commands (more useful for echo commands)
 	constant visibility = "visible"; //Set to "hidden" to suppress the command from !help (or set hidden_command to 1, deprecated alternative)
-	constant featurename = 0; //Set to a feature flag to allow this command to be governed by !features (not usually appropriate for echocommands)
+	constant featurename = "allcmds"; //Set to a feature flag to allow this command to be governed by !features (not usually appropriate for echocommands)
 	constant active_channels = ({ }); //To restrict this to some channels only, set this to a non-empty array.
 	constant docstring = ""; //Override this with your docs
 	//Override this to do the command's actual functionality, after permission checks.
@@ -58,10 +57,9 @@ class command
 	//(Maybe remove this and depend on find_command??)
 	echoable_message check_perms(object channel, mapping person, string param)
 	{
-		if (require_allcmds && !channel->config->allcmds) return 0;
+		if (featurename && (channel->config->features[?featurename] || channel->config->allcmds) <= 0) return 0;
 		if ((require_moderator || access == "mod") && !channel->mods[person->user]) return 0;
 		if (access == "none") return 0;
-		if (featurename && (channel->config->features[?featurename] || channel->config->allcmds) <= 0) return 0;
 		return process(channel, person, param);
 	}
 	protected void create(string name)
@@ -125,10 +123,9 @@ command_handler find_command(object channel, string cmd, int is_mod)
 		command_handler f = G->G->commands[tryme] || G->G->echocommands[tryme];
 		if (!f) continue;
 		object|mapping flags = functionp(f) ? function_object(f) : mappingp(f) ? f : ([]);
-		if (flags->require_allcmds && !channel->config->allcmds) continue;
+		if (flags->featurename && (channel->config->features[?flags->featurename] || channel->config->allcmds) <= 0) continue;
 		if ((flags->require_moderator || flags->access == "mod") && !is_mod) continue;
 		if (flags->access == "none") continue;
-		if (flags->featurename && (channel->config->features[?flags->featurename] || channel->config->allcmds) <= 0) continue;
 		//If we get here, the command is acceptable.
 		return f;
 	}

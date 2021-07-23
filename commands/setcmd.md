@@ -2,6 +2,8 @@
 
 Available to: mods only
 
+Part of manageable feature: allcmds
+
 Usage: `!setcmd !commandname option [option [option...]]`
 
 Options not specified remain as they are. Newly-created commands have the

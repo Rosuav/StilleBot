@@ -2,6 +2,8 @@
 
 Available to: mods only
 
+Part of manageable feature: allcmds
+
 Usage: `!addcmd !newcommandname text-to-echo`
 
 If the command already exists as an echo command, it will be updated. If it

@@ -845,9 +845,8 @@ class _mainwindow
 {
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
-	constant elements=({"kwd:Channel", "?allcmds:All commands active", "?httponly:Web-only",
+	constant elements=({"kwd:Channel", "?allcmds:All commands active", "?httponly:Web plus explicit activations",
 		"?chatlog:Log chat to console",
-		"?disable_quotes:Disable quotes",
 		"Timezone", "'Scheduled commands (!repeat) will use this timezone", //And so might other things in the future
 		"'uptime:",
 		"+notes:Notes",

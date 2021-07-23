@@ -2,6 +2,8 @@
 
 Available to: mods only
 
+Part of manageable feature: allcmds
+
 Usage: `!autoban time badword`
 
 If that word is seen by any non-moderator, and if the bot is a mod in your

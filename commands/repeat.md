@@ -2,6 +2,8 @@
 
 Available to: mods only
 
+Part of manageable feature: allcmds
+
 Usage: `!repeat minutes text-to-send` or `!repeat minutes !command`
 
 Creates an automated command for this channel. Every N minutes (randomized

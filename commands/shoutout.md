@@ -2,6 +2,8 @@
 
 Available to: mods only
 
+Part of manageable feature: allcmds
+
 Among Twitch streamers, it's common to say "that's a great person, you should
 definitely check him/her out". Give shout-outs to people who deserve them!
 
