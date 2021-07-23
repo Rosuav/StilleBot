@@ -30,6 +30,13 @@ typedef string|mapping(string:string|_echoable_message)|array(_echoable_message)
 typedef _echoable_message echoable_message;
 typedef echoable_message|function(object,object,string:echoable_message) command_handler;
 
+constant _COMMAND_DOCS = #"# !%s: %s
+
+Available to: %s
+
+%s
+";
+
 class command
 {
 	constant require_allcmds = 1; //Set to 0 if the command should be available even if allcmds is not set for the channel
@@ -66,12 +73,9 @@ class command
 		//remove docs for a defunct command. Do this manually.
 		if (sscanf(docstring, "%*[\n]%s\n\n%s", string summary, string main) && main)
 		{
-			string content = string_to_utf8(sprintf(#"# !%s: %s
-
-Available to: %s
-
-%s
-", name, summary, require_moderator ? "mods only" : (["mod": "mods only", "any": "all users", "none": "nobody (internal only)"])[access], main));
+			string content = string_to_utf8(sprintf(_COMMAND_DOCS, name, summary,
+				require_moderator ? "mods only" : (["mod": "mods only", "any": "all users", "none": "nobody (internal only)"])[access],
+				main));
 			string fn = sprintf("commands/%s.md", name);
 			string oldcontent = Stdio.read_file(fn);
 			if (content != oldcontent) Stdio.write_file(fn, content);
