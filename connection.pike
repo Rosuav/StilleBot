@@ -892,7 +892,7 @@ void session_cleanup()
 
 continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	mapping sess = req->misc->session = G->G->http_sessions[req->cookies->session] || ([]);
+	req->misc->session = G->G->http_sessions[req->cookies->session] || ([]);
 	//TODO maybe: Refresh the login token. Currently the tokens don't seem to expire,
 	//but if they do, we can get the refresh token via authcookie (if present).
 	[function handler, array args] = find_http_handler(req->not_query);
@@ -927,6 +927,7 @@ continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 	//The simplest fix is to just add "Connection: close" to all responses.
 	if (!resp->extra_heads) resp->extra_heads = ([]);
 	resp->extra_heads->Connection = "close";
+	mapping sess = req->misc->session;
 	if (sizeof(sess)) {
 		if (!sess->cookie) do {sess->cookie = random(1<<64)->digits(36);} while (G->G->http_sessions[sess->cookie]);
 		sess->expires = time() + 604800; //Overwrite expiry time every request
