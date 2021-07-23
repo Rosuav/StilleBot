@@ -1,6 +1,5 @@
-import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, BR, DIV, IMG, P, UL, LI, SPAN} = choc;
-fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
 
 //The threshold for "Super Hard" is this many bits per level (not total).
 //In order to unlock the sixth emote for each level, you need to have a

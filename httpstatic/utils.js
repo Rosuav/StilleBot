@@ -1,6 +1,9 @@
 //Usage:
 //import {...} from "$$static||utils.js$$";
 
+import {on, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
+fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
+
 export function waitlate(wait_time, late_time, confirmdesc, callback) {
 	//Assumes that this is attached to a button click. Other objects
 	//and other events may work but are not guaranteed.
@@ -26,9 +29,8 @@ export function waitlate(wait_time, late_time, confirmdesc, callback) {
 	};
 }
 
-const login = document.getElementById("twitchlogin");
-if (login) login.onclick = async e => {
+on("click", "button#twitchlogin", async e => {
 	let scope = ""; try {scope = login_scope;} catch (e) { } //Grab a variable if one is set, otherwise no scopes needed
 	const data = await (await fetch("/twitchlogin?urlonly=true&scope=" + scope)).json();
 	window.open(data.uri, "login", "width=525, height=900");
-}
+});

@@ -1,6 +1,5 @@
-import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {TR, TD, FORM, INPUT, OPTION} = choc;
-fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
 
 let allrewards = { };
 

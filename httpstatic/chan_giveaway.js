@@ -1,6 +1,5 @@
-import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {DIV, H3, LI, SPAN} = choc;
-fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
 import {waitlate} from "$$static||utils.js$$";
 
 const fields = "title cost desc max multi pausemode duration".split(" ");
