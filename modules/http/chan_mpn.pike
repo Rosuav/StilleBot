@@ -1,7 +1,6 @@
 inherit http_websocket;
 inherit builtin_command;
 constant hidden_command = 1;
-constant require_allcmds = 1;
 constant access = "none";
 constant markdown = #"# MPN - $$channel$$
 

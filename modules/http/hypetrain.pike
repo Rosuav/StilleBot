@@ -3,7 +3,6 @@ inherit websocket_handler;
 
 inherit builtin_command;
 constant hidden_command = 1;
-constant require_allcmds = 1;
 
 //Parse a timestamp into a valid Unix time. If ts is null, malformed,
 //or in the past, returns 0.

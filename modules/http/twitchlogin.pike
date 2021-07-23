@@ -37,7 +37,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//For streamers, redirect to the stream's landing page. Doesn't work
 			//for mods, as we have no easy way to check which channel(s).
 			object channel = G->G->irc->channels["#" + user->login];
-			if (channel && channel->config->allcmds)
+			if (channel && (channel->config->allcmds || channel->config->httponly))
 				dest = "/channels/" + user->login + "/";
 			else dest = "/login_ok";
 		}

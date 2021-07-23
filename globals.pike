@@ -61,6 +61,7 @@ class command
 		if (require_allcmds && !channel->config->allcmds) return 0;
 		if ((require_moderator || access == "mod") && !channel->mods[person->user]) return 0;
 		if (access == "none") return 0;
+		if (featurename && (channel->config->features[?featurename] || channel->config->allcmds) <= 0) return 0;
 		return process(channel, person, param);
 	}
 	protected void create(string name)
@@ -127,6 +128,7 @@ command_handler find_command(object channel, string cmd, int is_mod)
 		if (flags->require_allcmds && !channel->config->allcmds) continue;
 		if ((flags->require_moderator || flags->access == "mod") && !is_mod) continue;
 		if (flags->access == "none") continue;
+		if (flags->featurename && (channel->config->features[?flags->featurename] || channel->config->allcmds) <= 0) continue;
 		//If we get here, the command is acceptable.
 		return f;
 	}

@@ -40,11 +40,6 @@ echoable_message process(object channel, mapping person, string param)
 	foreach (({G->G->commands, G->G->echocommands}), mapping commands)
 		foreach (commands; string cmd; command_handler handler)
 		{
-			//Note that we support strings and functions in both mappings.
-			//Actual command execution isn't currently quite this flexible,
-			//assuming that functions are in G->G->commands and strings are
-			//in G->G->echocommands. It may be worth making execution more
-			//flexible, which might simplify some multi-command modules.
 			object|mapping flags =
 				//Availability flags come from the providing object for coded functions.
 				functionp(handler) ? function_object(handler) :
@@ -54,6 +49,7 @@ echoable_message process(object channel, mapping person, string param)
 			if (flags->require_allcmds && !channel->config->allcmds) continue;
 			if ((flags->require_moderator || flags->access == "mod") && !is_mod) continue;
 			if (flags->access == "none") continue;
+			if (flags->featurename && (channel->config->features[?flags->featurename] || channel->config->allcmds) <= 0) return 0;
 			if (has_prefix(cmd, "!")) continue; //Special responses aren't commands
 			if (!has_value(cmd, '#') || has_suffix(cmd, channel->name))
 				cmds[cmd - channel->name] = 1;
