@@ -109,6 +109,7 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 		mapping vars = function_object(handler)->safe_query_vars(req->variables);
 		if (vars) url += "?" + Protocols.HTTP.http_encode_query((["next": req->not_query + "?" + Protocols.HTTP.http_encode_query(vars)]));
 		req->misc->chaninfo->save_or_login = "<a href=\"" + url + "\">Mods, login to make changes</a>";
+		//TODO: req->misc->chaninfo->save_or_login = #"[Mods, login to make changes](:#twitchlogin)";
 	}
 	return handler(req);
 }
