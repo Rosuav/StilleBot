@@ -1,4 +1,5 @@
 inherit command;
+constant featurename = "quotes";
 constant require_moderator = 1;
 //TODO-DOCSTRING
 

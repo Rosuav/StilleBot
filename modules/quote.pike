@@ -1,4 +1,5 @@
 inherit command;
+constant featurename = "quotes";
 constant docstring = #"
 View a chosen or randomly-selected quote
 

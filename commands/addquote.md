@@ -2,6 +2,8 @@
 
 Available to: mods only
 
+Part of manageable feature: quotes
+
 Usage: `!addquote "Something funny" -- person` or 
 `!addquote person Something funny`
 

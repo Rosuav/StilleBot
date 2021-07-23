@@ -33,7 +33,7 @@ typedef echoable_message|function(object,object,string:echoable_message) command
 constant _COMMAND_DOCS = #"# !%s: %s
 
 Available to: %s
-
+%s
 %s
 ";
 
@@ -46,6 +46,7 @@ class command
 	//to a 0, as echocommands will normally use 0 for the defaults.
 	constant access = "any"; //Set to "mod" for mod-only commands, or "none" for disabled (or internal-only) commands (more useful for echo commands)
 	constant visibility = "visible"; //Set to "hidden" to suppress the command from !help (or set hidden_command to 1, deprecated alternative)
+	constant featurename = 0; //Set to a feature flag to allow this command to be governed by !features (not usually appropriate for echocommands)
 	constant active_channels = ({ }); //To restrict this to some channels only, set this to a non-empty array.
 	constant docstring = ""; //Override this with your docs
 	//Override this to do the command's actual functionality, after permission checks.
@@ -75,6 +76,7 @@ class command
 		{
 			string content = string_to_utf8(sprintf(_COMMAND_DOCS, name, summary,
 				require_moderator ? "mods only" : (["mod": "mods only", "any": "all users", "none": "nobody (internal only)"])[access],
+				featurename ? "\nPart of manageable feature: " + featurename + "\n" : "", //TODO: Grab the description from modules/features.pike?
 				main));
 			string fn = sprintf("commands/%s.md", name);
 			string oldcontent = Stdio.read_file(fn);
