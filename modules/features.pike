@@ -25,7 +25,7 @@ constant FEATURES = ({
 	({"debug", "Tools for debugging the bot itself"}),
 	({"info", "General information and status commands"}),
 });
-mapping FEATUREDESC = mkmapping(FEATURES[*][0], FEATURES[*][1]); //For some reason, mkmapping doesn't count as constant. Whatever.
+constant FEATUREDESC = (mapping)FEATURES;
 
 constant docstring = sprintf(#"
 Enable or disable bot features.
@@ -47,6 +47,7 @@ Feature name | Effect
 echoable_message process(object channel, mapping person, string param) {
 	mapping feat = persist_config->path("channels", channel->name[1..], "features");
 	sscanf(param, "%s %s", string feature, string active);
+	if (FEATUREDESC[param]) {feature = param; active = "";}
 	if (!FEATUREDESC[feature]) return "@$$: Valid feature names are: " + FEATURES[*][0] * ", ";
 	switch (active) {
 		case "": {
