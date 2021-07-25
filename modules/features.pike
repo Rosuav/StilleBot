@@ -14,6 +14,10 @@ constant access = "mod";
 //Note that these will not necessarily report whether they're active; they'll just have a "Create" button.
 //Maybe also a "Delete" button for some, where plausible.
 
+//In the web interface, it may be useful to list all commands under each feature.
+//If, and only if, you're logged in as the bot, also list everything in allcmds, and
+//everything with no featurename but which is a function.
+
 constant FEATURES = ({
 	({"quotes", "Adding, deleting, and removing quotes"}),
 	({"commands", "Chat commands for managing chat commands"}),
