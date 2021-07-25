@@ -2,7 +2,7 @@
 
 Available to: mods only
 
-Part of manageable feature: allcmds
+Part of manageable feature: commands
 
 Usage: `!setcmd !commandname option [option [option...]]`
 

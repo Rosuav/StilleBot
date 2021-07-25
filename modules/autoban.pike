@@ -1,4 +1,5 @@
 inherit command;
+constant featurename = "info";
 constant require_moderator = 1;
 constant docstring = #"
 Keyword-based automatic moderation.

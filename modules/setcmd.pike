@@ -1,4 +1,5 @@
 inherit command;
+constant featurename = "commands";
 constant require_moderator = 1;
 constant docstring = #"
 Configure an echo command for this channel

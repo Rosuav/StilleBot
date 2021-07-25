@@ -1,4 +1,5 @@
 inherit builtin_command;
+constant featurename = "info";
 constant hidden_command = 1;
 constant require_moderator = 1;
 

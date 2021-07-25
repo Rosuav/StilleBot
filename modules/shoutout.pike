@@ -1,4 +1,5 @@
 inherit builtin_command;
+constant featurename = "info";
 constant require_moderator = 1;
 constant docstring = #"
 Give a shout-out to another streamer

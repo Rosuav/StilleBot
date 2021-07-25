@@ -1,4 +1,5 @@
 inherit builtin_command;
+constant featurename = "info";
 constant docstring = #"
 Calculate something, possibly involving channel variables
 

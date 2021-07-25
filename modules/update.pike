@@ -1,5 +1,6 @@
 //Update a single file, in case of problems. Shouldn't normally be needed.
 inherit command;
+constant featurename = "debug";
 constant hidden_command = 1;
 constant require_moderator = 1;
 constant active_channels = ({"rosuav"});

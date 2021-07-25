@@ -2,7 +2,7 @@
 
 Available to: mods only
 
-Part of manageable feature: allcmds
+Part of manageable feature: info
 
 Usage: `!autoban time badword`
 

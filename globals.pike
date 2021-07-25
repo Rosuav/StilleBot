@@ -75,7 +75,7 @@ class command
 		{
 			string content = string_to_utf8(sprintf(_COMMAND_DOCS, name, summary,
 				require_moderator ? "mods only" : (["mod": "mods only", "any": "all users", "none": "nobody (internal only)"])[access],
-				featurename ? "\nPart of manageable feature: " + featurename + "\n" : "", //TODO: Grab the description from modules/features.pike?
+				featurename && featurename != "allcmds" ? "\nPart of manageable feature: " + featurename + "\n" : "", //TODO: Grab the description from modules/features.pike?
 				main));
 			string fn = sprintf("commands/%s.md", name);
 			string oldcontent = Stdio.read_file(fn);

@@ -1,4 +1,5 @@
 inherit command;
+constant featurename = "info";
 constant require_moderator = 1; //In theory, non-mods could be allowed to check their own status
 constant hidden_command = 1; //Made unnecessary by Twitch changes, but kept in case it's wanted eg for mobile
 

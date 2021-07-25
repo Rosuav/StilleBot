@@ -1,4 +1,5 @@
 inherit command;
+constant featurename = "debug";
 constant hidden_command = 1;
 
 void validate_keys(mapping data, string path) {

@@ -1,4 +1,5 @@
 inherit builtin_command;
+constant featurename = "info";
 constant docstring = #"
 Show channel uptime.
 

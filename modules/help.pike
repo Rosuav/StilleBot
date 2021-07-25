@@ -1,4 +1,5 @@
 inherit command;
+constant featurename = "info";
 constant docstring = #"
 List commands available to you
 

@@ -1,4 +1,5 @@
 inherit command;
+constant featurename = "commands";
 constant require_moderator = 1;
 //Note: Each special with the same-named parameter is assumed to use it in the same way.
 //It's good to maintain this for the sake of humans anyway, but also the display makes

@@ -2,7 +2,7 @@
 
 Available to: all users
 
-Part of manageable feature: allcmds
+Part of manageable feature: info
 
 Usage: `!calc 1 + 2 * 3`
 

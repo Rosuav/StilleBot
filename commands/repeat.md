@@ -2,7 +2,7 @@
 
 Available to: mods only
 
-Part of manageable feature: allcmds
+Part of manageable feature: commands
 
 Usage: `!repeat minutes text-to-send` or `!repeat minutes !command`
 
