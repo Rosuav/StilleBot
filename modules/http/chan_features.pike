@@ -20,10 +20,6 @@ $$save_or_login||$$
 //Note that these will not necessarily report whether they're active; they'll just have a "Create" button.
 //Maybe also a "Delete" button for some, where plausible.
 
-//In the web interface, it may be useful to list all commands under each feature.
-//If, and only if, you're logged in as the bot, also list everything in allcmds, and
-//everything with no featurename but which is a function.
-
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	//Assume that the list of commands for each feature isn't going to change often.
