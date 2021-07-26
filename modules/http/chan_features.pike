@@ -3,9 +3,9 @@ constant markdown = #"# Feature management for channel $$channel$$
 
 Features not enabled or disabled will be: <b id=defaultstate>(checking...)</b>
 
-Feature name | Effect | Active?
--------------|--------|--------
-(loading...) | - | -
+Feature | Controls | Affected commands | Active?
+--------|----------|-------------------|---------
+(loading...) | - | - | -
 {: #features}
 
 $$save_or_login||$$
@@ -28,8 +28,17 @@ $$save_or_login||$$
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
+	//Assume that the list of commands for each feature isn't going to change often.
+	//If it does, refresh the page to see the change.
+	mapping featurecmds = ([]);
+	foreach (G->G->commands; string cmd; command_handler f) {
+		if (has_value(cmd, '#')) continue; //Ignore channel-specific commands
+		object|mapping flags = functionp(f) ? function_object(f) : mappingp(f) ? f : ([]);
+		if (flags->aliases && has_value(flags->aliases, cmd)) continue; //It's an alias, not the primary
+		featurecmds[flags->featurename || "ungoverned"] += ({cmd});
+	}
 	return render(req, ([
-		"vars": (["ws_group": req->misc->is_mod ? "control" : "view"]),
+		"vars": (["ws_group": req->misc->is_mod ? "control" : "view", "featurecmds": featurecmds]),
 	]) | req->misc->chaninfo);
 }
 

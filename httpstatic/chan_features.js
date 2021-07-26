@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {TR, TD, LABEL, INPUT} = choc;
+const {CODE, TR, TD, LABEL, INPUT} = choc;
 
 export const render_parent = DOM("#features tbody");
 export function render_item(msg, obj) {
@@ -10,6 +10,7 @@ export function render_item(msg, obj) {
 	return TR({"data-id": msg.id}, [
 		TD(msg.id),
 		TD({className: "desc"}, msg.desc),
+		TD((featurecmds[msg.id] || []).map(cmd => CODE("!" + cmd + " "))),
 		TD(["Active", "Inactive", "Default"].map(s =>
 			LABEL([INPUT({
 				type: "radio", className: "featurestate",
