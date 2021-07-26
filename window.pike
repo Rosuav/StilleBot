@@ -845,7 +845,7 @@ class _mainwindow
 {
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
-	constant elements=({"kwd:Channel", "?allcmds:All commands active", "?httponly:Web plus explicit activations",
+	constant elements=({"kwd:Channel", "?active:Active as a bot", "?allcmds:Commands default to active",
 		"?chatlog:Log chat to console",
 		"Timezone", "'Scheduled commands (!repeat) will use this timezone", //And so might other things in the future
 		"'uptime:",
@@ -961,6 +961,7 @@ class _mainwindow
 		if (persist["channels"][chan]) return; //Already active
 		if (selecteditem()) select_keyword("-- New --");
 		win->kwd->set_text(chan);
+		win->active->set_active(1);
 		win->allcmds->set_active(1);
 		sig_pb_save_clicked();
 	}

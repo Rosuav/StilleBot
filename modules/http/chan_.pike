@@ -24,8 +24,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				mapping ret = ([]);
 				foreach ("autoban autocommands dynamic_rewards giveaway monitors quotes timezone vlcblocks" / " ", string key)
 					if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
-				if (cfg->allcmds) ret->active = "all";
-				else if (cfg->httponly) ret->active = "httponly";
+				if (cfg->allcmds) ret->active = "all"; //TODO: Figure out better keywords for these
+				else ret->active = "httponly";
 				mapping commands = ([]), specials = ([]);
 				string chan = channel->name[1..];
 				foreach (G->G->echocommands; string cmd; echoable_message response) {
@@ -81,7 +81,7 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	function handler = G->G->http_endpoints["chan_" + endpoint];
 	if (!handler) return (["error": 404]);
 	object channel = G->G->irc->channels["#" + chan];
-	if (!channel || (!channel->config->allcmds && !channel->config->httponly)) return ([
+	if (!channel || !channel->config->active) return ([
 		"data": "No such page.\n",
 		"type": "text/plain; charset=\"UTF-8\"",
 		"error": 404,

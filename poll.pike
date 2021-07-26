@@ -543,7 +543,7 @@ void check_hooks(array eventhooks)
 
 	foreach (persist_config["channels"] || ([]); string chan; mapping cfg)
 	{
-		if (!cfg->allcmds && !cfg->httponly) continue; //Have hooks only for channels we're active in
+		if (!cfg->active) continue;
 		mapping c = G->G->channel_info[chan];
 		int userid = c->?_id;
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses !whisper.)
@@ -586,6 +586,17 @@ protected void create()
 	if (!G->G->channel_info) G->G->channel_info = ([]);
 	if (!G->G->category_names) G->G->category_names = ([]);
 	if (!G->G->user_info) G->G->user_info = ([]);
+
+	if (!persist_config["allcmds_migrated"]) {
+		//CJA 20210726: Formerly, "allcmds" meant active and allcmds, and "httponly"
+		//meant active and (presumably) not allcmds. Now, active is independent of
+		//allcmds, so it needs to be migrated (but only once - don't have allcmds
+		//permanently imply active, as that would be v confusing).
+		foreach (persist_config["channels"] || ([]); string chan; mapping cfg) {
+			if (m_delete(cfg, "httponly") || cfg->allcmds) cfg->active = 1;
+		}
+		persist_config["allcmds_migrated"] = 1;
+	}
 
 	remove_call_out(G->G->poll_call_out);
 	poll();

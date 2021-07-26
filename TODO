@@ -58,7 +58,7 @@
 * Use persist_status->path("bcaster_token")[chan] for all need-more-auth calls
   - Use ensure_bcaster_login rather than ensure_login for the retention of scopes.
 * Importing of config export files
-  - Ignore the active flag ("all" or "httponly")?
+  - Ignore the active flag but keep the allcmds flag?
   - Create all listed commands, but don't destroy unmentioned ones (overwrite any with
     the same name, of course). Ditto specials, but whitelist the names, of course.
   - Identify triggers by their IDs, and merge accordingly.

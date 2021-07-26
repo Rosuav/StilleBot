@@ -105,11 +105,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			foreach (sort(online), string name) {
 				object chan = G->G->irc->channels["#" + name];
 				if (chan) lines += ({sprintf("<li class=%s><a href=\"/raidfinder?for=%s\">%<s</a></li>",
-					chan->config->allcmds ? "allcmds": "monitor",
+					chan->config->active ? "bot": "monitor",
 					name,
 				)});
 			}
-			return (["data": "<style>.allcmds::marker{color:green}.monitor::marker{color:orange}body{font-size:16pt}</style><ul>" + lines * "\n" + "</ul>", "type": "text/html"]);
+			return (["data": "<style>.bot::marker{color:green}.monitor::marker{color:orange}body{font-size:16pt}</style><ul>" + lines * "\n" + "</ul>", "type": "text/html"]);
 		}
 		userid = yield(get_user_id(chan));
 	}
