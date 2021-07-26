@@ -194,6 +194,7 @@ class builtin_command {
 		if (!name) return;
 		G->G->builtins[name] = this;
 		foreach (aliases, string alias) G->G->commands[alias] = check_perms;
+		if (default_response == "") m_delete(G->G->commands, name); //Builtins with no default response shouldn't show up in a search
 	}
 	echoable_message process(object channel, mapping person, string param) {
 		return default_response != "" && (["builtin": this, "builtin_param": param, "message": default_response]);
