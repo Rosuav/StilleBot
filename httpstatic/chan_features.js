@@ -16,6 +16,7 @@ export function render_item(msg, obj) {
 				type: "radio", className: "featurestate",
 				name: msg.id, value: s.toLowerCase(),
 				checked: msg.state == s.toLowerCase(),
+				disabled: !ws_group.startsWith("control#"),
 			}), s]),
 		)),
 	]);
