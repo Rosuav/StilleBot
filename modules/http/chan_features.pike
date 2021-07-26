@@ -7,6 +7,8 @@ Feature | Controls | Affected commands | Active?
 {: #features}
 
 $$save_or_login||$$
+
+<style>:checked + span {background-color: #a0f0c0;}</style>
 ";
 
 //TODO: Also have some shorthands for creating other features:

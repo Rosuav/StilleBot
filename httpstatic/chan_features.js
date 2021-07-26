@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {CODE, TR, TD, LABEL, INPUT} = choc;
+const {CODE, TR, TD, LABEL, INPUT, SPAN} = choc;
 
 export const render_parent = DOM("#features tbody");
 export function render_item(msg, obj) {
@@ -17,7 +17,7 @@ export function render_item(msg, obj) {
 				name: msg.id, value: s.toLowerCase(),
 				checked: msg.state == s.toLowerCase(),
 				disabled: !ws_group.startsWith("control#"),
-			}), s]),
+			}), SPAN(s)]),
 		)),
 	]);
 }
