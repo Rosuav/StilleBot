@@ -5,6 +5,7 @@ StilleBot can do here:
 
 * [Global commands](https://rosuav.github.io/StilleBot/commands/) - available in
   all supported channels
+* [Enable and disable bot features](features)
 * [Channel-specific commands](commands)
 * [Triggers](triggers)
 * [Special triggered responses](specials)
@@ -24,8 +25,3 @@ $$messages$$
 -------------|---------
 Timezone     | $$timezone$$
 - | $$save_config$$
-
-<!-- TODO: Configs
-* Notice Me (only if useful remotely) - enabled, followers-only, keyword, and timeout
-* Enable/Disable quotes?
--->

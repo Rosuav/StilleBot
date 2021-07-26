@@ -3,6 +3,7 @@ constant featurename = "features";
 constant access = "mod";
 
 constant FEATURES = ({
+	({"allcmds", "Default for features not specified"}),
 	({"quotes", "Adding, deleting, and removing quotes"}),
 	({"commands", "Chat commands for managing chat commands"}),
 	({"features", "Feature management via chat"}),

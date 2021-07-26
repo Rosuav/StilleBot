@@ -12,7 +12,7 @@ export function render_item(msg, obj) {
 		TD({className: "desc"}, msg.desc),
 		TD((featurecmds[msg.id] || []).map(cmd => CODE("!" + cmd + " "))),
 		TD(["Active", "Inactive", "Default"].map(s =>
-			LABEL([INPUT({
+			(s !== "Default" || msg.id != "allcmds") && LABEL([INPUT({
 				type: "radio", className: "featurestate",
 				name: msg.id, value: s.toLowerCase(),
 				checked: msg.state == s.toLowerCase(),
@@ -21,9 +21,7 @@ export function render_item(msg, obj) {
 	]);
 }
 
-export function render(data) {
-	if (data.defaultstate) set_content("#defaultstate", data.defaultstate);
-}
+export function render(data) { }
 
 on("change", ".featurestate", e => {
 	ws_sync.send({cmd: "update", id: e.match.name, "state": e.match.value});
