@@ -2,6 +2,7 @@ inherit http_endpoint;
 inherit websocket_handler;
 
 inherit builtin_command;
+constant featurename = "info";
 constant hidden_command = 1;
 
 //Parse a timestamp into a valid Unix time. If ts is null, malformed,
