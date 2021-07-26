@@ -91,3 +91,4 @@
 * Authentication on Firefox may now have issues with the default popup blocker. Can we
   comply with normal "click for popup" expectations somehow?
 * Giveaway: Replace login links with buttons
+* Make an access level for commands "VIP or mod" (cf Tina)
