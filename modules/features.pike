@@ -2,22 +2,6 @@ inherit command;
 constant featurename = "features";
 constant access = "mod";
 
-//TODO: Make a web interface to this
-//In the web UI, also have some shorthands for creating other features:
-//- Autoban buy-follows
-//- Giveaway triggers?? Maybe?
-//- Transcoding on stream start
-//- VLC track reporting
-//- VLC !song command (and link to the VLC page, of course)
-//- Shoutout command, and link to the main commands page ("others here")
-//- Hype train status?
-//Note that these will not necessarily report whether they're active; they'll just have a "Create" button.
-//Maybe also a "Delete" button for some, where plausible.
-
-//In the web interface, it may be useful to list all commands under each feature.
-//If, and only if, you're logged in as the bot, also list everything in allcmds, and
-//everything with no featurename but which is a function.
-
 constant FEATURES = ({
 	({"quotes", "Adding, deleting, and removing quotes"}),
 	({"commands", "Chat commands for managing chat commands"}),
