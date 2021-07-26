@@ -49,17 +49,18 @@ echoable_message process(object channel, mapping person, string param) {
 	sscanf(param, "%s %s", string feature, string active);
 	if (FEATUREDESC[param]) {feature = param; active = "";}
 	if (!FEATUREDESC[feature]) return "@$$: Valid feature names are: " + FEATURES[*][0] * ", ";
+	int send = 1;
 	switch (active) {
-		case "": {
-			if (feat[feature]) return sprintf("@$$: Feature is %sabled -- %s", feature > 0 ? "en" : "dis", FEATUREDESC[feature]);
-			return sprintf("@$$: Feature is %sabled by default -- %s", channel->config->allcmds ? "en" : "dis", FEATUREDESC[feature]);
-		}
-		case "default": {
-			m_delete(feat, feature);
-			return sprintf("@$$: %sabled by default -- %s", channel->config->allcmds ? "En" : "Dis", FEATUREDESC[feature]);
-		}
-		case "enable": feat[feature] = 1; return "@$$: Enabled feature -- " + FEATUREDESC[feature];
-		case "disable": feat[feature] = -1; return "@$$: Disabled feature -- " + FEATUREDESC[feature];
+		case "": send = 0; break;
+		case "default": m_delete(feat, feature); break;
+		case "enable": feat[feature] = 1; break;
+		case "disable": feat[feature] = -1; break;
 		default: return "@$$: Usage: !features " + feature + " enable/disable";
 	}
+	if (object handler = send && G->G->websocket_types->chan_features) {
+		handler->update_one("control" + channel->name, feature);
+		handler->update_one("view" + channel->name, feature);
+	}
+	if (feat[feature]) return sprintf("@$$: Feature is %sabled -- %s", feat[feature] > 0 ? "en" : "dis", FEATUREDESC[feature]);
+	return sprintf("@$$: Feature is %sabled by default -- %s", channel->config->allcmds ? "en" : "dis", FEATUREDESC[feature]);
 }
