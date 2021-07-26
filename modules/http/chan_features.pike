@@ -35,6 +35,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (has_value(cmd, '#')) continue; //Ignore channel-specific commands
 		object|mapping flags = functionp(f) ? function_object(f) : mappingp(f) ? f : ([]);
 		if (flags->aliases && has_value(flags->aliases, cmd)) continue; //It's an alias, not the primary
+		if (flags->hidden_command) continue;
 		featurecmds[flags->featurename || "ungoverned"] += ({cmd});
 	}
 	return render(req, ([
