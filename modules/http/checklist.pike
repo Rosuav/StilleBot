@@ -113,7 +113,7 @@ constant emoteids = ([
 
 	//Level 2
 	"HypeTongue": "emotesv2_ea658eb2e9d54833a4518c6dcc196dc6",
-	"HypePurr": "emotesv2_69a7806c6837428f82475e99677d2f78",
+	"HypePurr": "emotesv2_811afb48bceb4ccdbd3281c602d3e3cb",
 	"HypeOoh": "emotesv2_994d515930a14e5396fd36d45e785d48",
 	"HypeBeard": "emotesv2_f045d9aa07d54961ab2ba77174305278",
 	"HypeEyes": "emotesv2_23f63a570f724822bb976f36572a0785",
