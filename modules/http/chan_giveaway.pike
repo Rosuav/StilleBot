@@ -590,12 +590,12 @@ constant command_suggestions = ([
 	"!tickets": ([
 		"_description": "Giveaways - show number of tickets you have (any user)",
 		"builtin_param": "status",
-		"message": "Example response",
+		"message": "@$$: You have {tickets} tickets.",
 	]),
 	"!refund": ([
 		"_description": "Giveaways - refund all your tickets (any user)",
 		"builtin_param": "refund",
-		"message": "Another example response",
+		"message": "@$$: All your tickets have been refunded.",
 	]),
 	//TODO: Mod-only refund command (maybe the same one??) to refund other person's tickets
 ]);
