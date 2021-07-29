@@ -363,8 +363,27 @@ continue Concurrent.Future|mapping save_channel_info(string name, mapping info) 
 		if (info->game_id != "") write("SYNTHESIS FAILED - maybe bad game? %O\n", info->game_id);
 		synthesized = yield(get_channel_info(name));
 	}
+	synthesized->viewer_count = info->viewer_count;
+	synthesized->tags = yield(translate_tag_ids(info->tag_ids));
+	synthesized->tag_names = sprintf("[%s]", synthesized->tags->name[*]) * ", ";
+	int changed = 0;
+	foreach ("game status tag_names" / " ", string attr)
+		changed += synthesized[attr] != G->G->channel_info[attr];
 	G->G->channel_info[name] = synthesized;
-	G->G->channel_info[name]->viewer_count = info->viewer_count;
+	if (changed) {
+		object chan = G->G->irc->channels["#"+name];
+		if (chan) chan->trigger_special("!channelsetup", ([
+			//Synthesize a basic person mapping
+			"user": name,
+			"displayname": info->user_name,
+			"uid": (string)info->user_id,
+		]), ([
+			"{category}": synthesized->game,
+			"{title}": synthesized->status,
+			"{tag_names}": synthesized->tag_names,
+			"{tag_ids}": synthesized->tags->id * ", ",
+		]));
+	}
 }
 
 //Receive stream status, either polled or by notification
@@ -422,7 +441,6 @@ void stream_status(string name, mapping info)
 	}
 	else
 	{
-		handle_async(save_channel_info(name, info)) { };
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->started_at);
 		if (!G->G->stream_online_since[name])
 		{
@@ -443,6 +461,7 @@ void stream_status(string name, mapping info)
 				"{uptime_english}": describe_time(uptime),
 			]));
 		}
+		handle_async(save_channel_info(name, info)) { };
 		notice_user_name(name, info->user_id);
 		G->G->stream_online_since[name] = started;
 		int viewers = info->viewer_count;

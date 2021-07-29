@@ -32,6 +32,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!cheerbadge | A viewer attains a new cheer badge | The cheerer | level
 !!raided | Another broadcaster raided you | The raiding broadcaster | viewers
 !!channelonline | The channel has recently gone online (started streaming) | The broadcaster | uptime, uptime_hms, uptime_english
+!!channelsetup | The channel is online and has recently changed its category/title/tags | The broadcaster | category, title, tag_ids, tag_names
 !!channeloffline | The channel has recently gone offline (stopped streaming) | The broadcaster | uptime, uptime_hms, uptime_english
 !!musictrack | A track just started playing (see VLC integration) | VLC | desc, blockpath, block, track, playing
 !!giveaway_started | A giveaway just opened, and people can buy tickets | The broadcaster | title, duration, duration_hms, duration_english
@@ -60,12 +61,15 @@ Parameter    | Meaning
 {uptime} | Stream broadcast duration - use {uptime|time_hms} or {uptime|time_english} for readable form
 {uptime_hms} | (deprecated) Equivalent to {uptime|time_hms}
 {uptime_english} | (deprecated) Equivalent to {uptime|time_english}
+{category} | English name of the game or category being streamed in
+{tag_ids} | Stream tag IDs eg '6ea6bca4-4712-4ab9-a906-e3336a9d8039, e90b5f6e-4c6e-4003-885b-4d0d5adeb580'
+{tag_names} | Stream tag names eg '[English], [Family Friendly]'
 {track} | Name of the audio file that's currently playing
 {block} | Name of the section/album/block of tracks currently playing, if any
 {blockpath} | Full path to the current block
 {desc} | Human-readable description of what's playing (block and track names)
 {playing} | 1 if music is playing, or 0 if paused, stopped, disconnected, etc
-{title} | Title of the giveaway (eg the thing that can be won)
+{title} | Title of the stream or giveaway (eg the thing that can be won)
 {duration} | How long the giveaway will be open (seconds; 0 means open until explicitly closed)
 {duration_hms} | (deprecated) Equivalent to {duration|time_hms}
 {duration_english} | (deprecated) Equivalent to {duration|time_english}
