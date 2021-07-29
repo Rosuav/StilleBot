@@ -603,7 +603,6 @@ protected void create()
 	add_constant("get_channel_info", get_channel_info);
 	add_constant("check_following", check_following);
 	add_constant("get_video_info", get_video_info);
-	add_constant("stream_status", stream_status);
 	add_constant("twitch_api_request", request);
 	add_constant("get_helix_paginated", get_helix_paginated);
 	add_constant("get_user_id", get_user_id);
