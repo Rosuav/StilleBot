@@ -293,6 +293,32 @@ continue Concurrent.Future cache_game_names(string game_id)
 	}
 }
 
+continue Concurrent.Future|array translate_tag_ids(array tag_ids) {
+	array got_tags = ({ });
+	if (!G->G->all_stream_tags) {
+		G->G->all_stream_tags = ([]);
+		got_tags = yield(get_helix_paginated("https://api.twitch.tv/helix/tags/streams"));
+	}
+	else {
+		multiset need_tags = (<>);
+		foreach (tag_ids || ({ }), string tag)
+			if (!G->G->all_stream_tags[tag]) need_tags[tag] = 1;
+		if (sizeof(need_tags)) {
+			//Normally we'll have all the tags from the check up above, but in case, we catch more here.
+			write("Fetching %d tags...\n", sizeof(need_tags));
+			got_tags = yield(get_helix_paginated("https://api.twitch.tv/helix/tags/streams", (["tag_id": (array)need_tags])));
+		}
+	}
+	foreach (got_tags, mapping tag) G->G->all_stream_tags[tag->tag_id] = ([
+		"id": tag->tag_id,
+		"name": tag->localization_names["en-us"],
+		"desc": tag->localization_descriptions["en-us"],
+		"auto": tag->is_auto,
+	]);
+	//Every tag ID should now be in the cache, unless there's a bad ID or something.
+	return G->G->all_stream_tags[tag_ids[*]];
+}
+
 int fetching_game_names = 0;
 //Attempt to construct a channel info mapping from the stream info
 //May use other caches of information. If unable to build the full
@@ -609,6 +635,7 @@ protected void create()
 	add_constant("get_user_info", get_user_info);
 	add_constant("get_users_info", get_users_info);
 	add_constant("notice_user_name", notice_user_name);
+	add_constant("translate_tag_ids", translate_tag_ids);
 	add_constant("EventSub", EventSub);
 }
 

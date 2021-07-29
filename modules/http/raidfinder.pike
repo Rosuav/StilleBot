@@ -8,17 +8,6 @@ TODO: Put a real space between tags so highlighting works correctly.
 -- The browser seems to be ditching it for me. Not sure why, or how to stop it.
 */
 
-void update_tags(array alltags) {
-	if (!alltags) return; //Shouldn't happen
-	mapping tags = G->G->all_stream_tags;
-	foreach (alltags, mapping tag) tags[tag->tag_id] = ([
-		"id": tag->tag_id,
-		"name": tag->localization_names["en-us"],
-		"desc": tag->localization_descriptions["en-us"],
-		"auto": tag->is_auto,
-	]);
-}
-
 constant MAX_PREF = 3, MIN_PREF = -3;
 constant PREFERENCE_MAGIC_SCORES = ({
 	0, //Must have 0 for score 0
@@ -152,15 +141,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			"sortorders": ({"Channel Creation", "Follow Date", "Name"}) * "\n* ",
 		]));
 	}
-	if (!G->G->all_stream_tags) {
-		array tags = yield(get_helix_paginated("https://api.twitch.tv/helix/tags/streams"));
-		//This will normally catch every tag, but in the event that we have
-		//an incomplete cached set of tags (eg if Twitch creates new tags),
-		//the check below will notice this as soon as we spot a stream using
-		//the new tag.
-		G->G->all_stream_tags = ([]);
-		update_tags(tags);
-	}
 	string login, disp;
 	if (logged_in && (int)logged_in->id == userid) {login = logged_in->login; disp = logged_in->display_name;}
 	else if (mapping user = userid && G->G->user_info[userid])
@@ -247,18 +227,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		users = yield(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": follows_helix->user_id + ({(string)userid})])));
 	}
 	mapping your_stream;
-	multiset need_tags = (<>);
 	foreach (follows_helix, mapping strm)
-	{
-		foreach (strm->tag_ids || ({ }), string tag)
-			if (!G->G->all_stream_tags[tag]) need_tags[tag] = 1;
 		if ((int)strm->user_id == userid) your_stream = strm;
-	}
-	if (sizeof(need_tags)) {
-		//Normally we'll have all the tags from the check up above, but in case, we catch more here.
-		write("Fetching %d tags...\n", sizeof(need_tags));
-		update_tags(yield(get_helix_paginated("https://api.twitch.tv/helix/tags/streams", (["tag_id": (array)need_tags]))));
-	}
+	array all_tags = yield(translate_tag_ids(Array.flatten(follows_helix->tag_ids) - ({0}))); //Force all tags into the cache
+	//We don't actually need the all_tags array, but it prevents an over-aggressive optimization
+	//that results in the function prematurely returning zero.
 	mapping(int:mapping(string:mixed)) extra_info = ([]);
 	foreach (users, mapping user)
 		extra_info[(int)user->id] = ([
