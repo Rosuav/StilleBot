@@ -703,7 +703,12 @@ class http_websocket
 		if (!has_prefix(ws_type, "chan_")) return 0;
 		[object channel, string grp] = split_channel(msg->group);
 		if (!channel) return "Bad channel";
-		conn->is_mod = channel->mods[conn->session->?user->?login];
+		string login = conn->session->user->?login;
+		conn->is_mod = channel->mods[login] || ( //You're a mod if we've seen your sword...
+			login && login == persist_config["ircsettings"]->nick && //or if you're me,
+			NetUtils.is_local_host(conn->remote_ip) && //from here,
+			G->G->menuitems->chan_->get_active() //and we're allowing me to pretend to be a mod
+		);
 		if (!conn->is_mod && need_mod(grp)) return "Not logged in";
 	}
 

@@ -1,4 +1,7 @@
 inherit http_endpoint;
+inherit menu_item;
+constant menu_label = "Localhost Mod Override";
+GTK2.MenuItem make_menu_item() {return GTK2.CheckMenuItem(menu_label);}
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -93,10 +96,13 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 		"channel": channame,
 		"backlink": "<a href=\"./\">StilleBot - " + channame + "</a>",
 	]);
-	if (req->misc->session && req->misc->session->user)
+	if (mapping user = req->misc->session->?user)
 	{
-		if (channel->mods[req->misc->session->user->login])
-		{
+		if (channel->mods[user->login] || ( //You're a mod if we've seen your sword...
+			user->login == persist_config["ircsettings"]->nick && //or if you're me,
+			NetUtils.is_local_host(req->get_ip()) && //from here,
+			G->G->menuitems->chan_->get_active() //and we're allowing me to pretend to be a mod
+		)) {
 			req->misc->is_mod = 1;
 			req->misc->chaninfo->autoform = "<form method=post>";
 			req->misc->chaninfo->autoslashform = "</form>";

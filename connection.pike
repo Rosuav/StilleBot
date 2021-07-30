@@ -992,8 +992,12 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 			foreach (m; string key; string value)
 				if (value) req->cookies[key] = value;
 	//End lifted from Pike's sources
+	string remote_ip = req->get_ip(); //Not available after accepting the socket for some reason
 	Protocols.WebSocket.Connection sock = req->websocket_accept(0);
-	sock->set_id((["sock": sock, "session": G->G->http_sessions[req->cookies->session] || ([])])); //Minstrel Hall style floop
+	sock->set_id((["sock": sock, //Minstrel Hall style floop
+		"session": G->G->http_sessions[req->cookies->session] || ([]),
+		"remote_ip": remote_ip,
+	]));
 	sock->onmessage = ws_msg;
 	sock->onclose = ws_close;
 }

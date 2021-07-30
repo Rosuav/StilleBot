@@ -41,6 +41,11 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 
 mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
+	//TODO: Check if we have broadcaster perms. Possibly deny altogether if not mod, too.
+	//string chan = req->misc->channel->name[1..];
+	//int broadcaster_id = yield(get_user_id(chan));
+	//array rewards = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
+	//	(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])))->data;
 	return render(req, ([
 		"vars": (["ws_group": req->misc->is_mod ? "control" : "view"]),
 	]) | req->misc->chaninfo);
