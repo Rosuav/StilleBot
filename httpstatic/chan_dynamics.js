@@ -50,4 +50,4 @@ on("submit", "form.editreward", async e => {
 		body: JSON.stringify(body),
 	})).json();
 	console.log("Got response:", info);
-});
+}, true);
