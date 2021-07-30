@@ -368,7 +368,7 @@ continue Concurrent.Future|mapping save_channel_info(string name, mapping info) 
 	synthesized->tag_names = sprintf("[%s]", synthesized->tags->name[*]) * ", ";
 	int changed = 0;
 	foreach ("game status tag_names" / " ", string attr)
-		changed += synthesized[attr] != G->G->channel_info[attr];
+		changed += synthesized[attr] != G->G->channel_info[name][?attr];
 	G->G->channel_info[name] = synthesized;
 	if (changed) {
 		object chan = G->G->irc->channels["#"+name];
