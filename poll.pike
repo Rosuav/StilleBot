@@ -92,7 +92,7 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 			if (options->return_status) return res->status; //For requests not expected to have a body, but might have multiple success returns
 			mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
 			if (!mappingp(data)) return Concurrent.reject(({sprintf("%s\nUnparseable response\n%O\n", url, res->get()[..64]), backtrace()}));
-			if (data->error) return Concurrent.reject(({sprintf("%s\nError from Twitch: %O (%O)\n%O\n", url, data->error, data->status, data), backtrace()}));
+			if (data->error && !options->return_errors) return Concurrent.reject(({sprintf("%s\nError from Twitch: %O (%O)\n%O\n", url, data->error, data->status, data), backtrace()}));
 			return data;
 		});
 }
