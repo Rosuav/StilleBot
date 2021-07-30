@@ -364,7 +364,7 @@ continue Concurrent.Future|mapping save_channel_info(string name, mapping info) 
 		synthesized = yield(get_channel_info(name));
 	}
 	synthesized->viewer_count = info->viewer_count;
-	synthesized->tags = yield(translate_tag_ids(info->tag_ids));
+	synthesized->tags = yield(translate_tag_ids(info->tag_ids || ({ })));
 	synthesized->tag_names = sprintf("[%s]", synthesized->tags->name[*]) * ", ";
 	int changed = 0;
 	foreach ("game status tag_names" / " ", string attr)
