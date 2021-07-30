@@ -11,6 +11,24 @@ by StilleBot, and a place to attach behaviour to them. Coupled with appropriate 
 channel voices, this can allow a wide variety of interactions with other bots.
 ";
 
+/* Ultimately this should be the master management for all points rewards. All shared code for
+dynamics, giveaway, etc should migrate into here.
+
+Dynamic pricing will now be implemented with a trigger on redemption that updates price. The
+chan_dynamics page will set these up for you.
+
+Dynamic activation will be implemented with a trigger on channel online/offline, or on setup,
+that enables or disables a reward. Ditto, chan_dynamics will set these up for you.
+
+Creating rewards (or duplicating existing) can be done here.
+
+Will need to report ALL rewards, not just for copying; the table will need to list every
+reward and allow it to have a command attached.
+
+Dynamic management of rewards that weren't created by my client_id has to be rejected. (See
+the can_manage flag in the front end; it's 1 if editable, absent if not.)
+*/
+
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	return 0; //Stub
