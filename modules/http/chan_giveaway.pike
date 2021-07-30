@@ -337,6 +337,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			if (body->basecost) rwd->basecost = (int)body->basecost || rwd->basecost;
 			if (body->formula) rwd->formula = body->formula;
 			if (body->availability) rwd->availability = body->availability;
+			if (rwd->availability == "" && rwd->formula == "") m_delete(cfg->dynamic_rewards, id); //Hack: Delete by blanking the values. Will be replaced later.
 			if (body->title || body->curcost) {
 				//Currently fire-and-forget - there's no feedback if you get something wrong.
 				twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&id=" + id,
