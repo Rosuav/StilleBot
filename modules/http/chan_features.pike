@@ -21,6 +21,7 @@ $$save_or_login||$$
 //- Hype train status?
 //Note that these will not necessarily report whether they're active; they'll just have a "Create" button.
 //Maybe also a "Delete" button for some, where plausible.
+//Also list some permanently-available features
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
