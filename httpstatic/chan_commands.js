@@ -14,7 +14,7 @@ on("click", "button.addline", e => {
 
 const flags = {
 	mode: {"": "Sequential", random: "Random", "*": "Where multiple responses are available, send them all or pick one at random?"},
-	access: {"": "Anyone", mod: "Mods only", none: "Nobody", "*": "Who should be able to use this command? Disable a command with 'Nobody'."},
+	access: {"": "Anyone", mod: "Mods only", vip: "Mods/VIPs", none: "Nobody", "*": "Who should be able to use this command? Disable a command with 'Nobody'."},
 	visibility: {"": "Visible", hidden: "Hidden", "*": "Should the command be listed in !help and the non-mod commands view?"},
 	delay: {"": "Immediate", "2": "2 seconds", "30": "30 seconds", "60": "1 minute", "120": "2 minutes", "300": "5 minutes",
 			"1800": "Half hour", "3600": "One hour", "7200": "Two hours", "*": "When should this be sent?"},

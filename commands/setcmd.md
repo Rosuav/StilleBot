@@ -18,6 +18,7 @@ Destination | chat       | Send the response in the chat channel that the comman
             | wtarget    | Whisper the response to the target named in the command.
 Access      | anyone     | Anyone can use the command
             | modonly    | Only moderators (and broadcaster) may use the command.
+            | vipmod     | Only mods/VIPs (and broadcaster) may use the command.
 Visibility  | visible    | Command will be listed in !help
             | hidden     | Command will be unlisted
 

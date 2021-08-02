@@ -18,6 +18,7 @@ Destination | chat       | Send the response in the chat channel that the comman
             | wtarget    | Whisper the response to the target named in the command.
 Access      | anyone     | Anyone can use the command
             | modonly    | Only moderators (and broadcaster) may use the command.
+            | vipmod     | Only mods/VIPs (and broadcaster) may use the command.
 Visibility  | visible    | Command will be listed in !help
             | hidden     | Command will be unlisted
 
@@ -50,6 +51,7 @@ string process(object channel, object person, string param)
 			case "wtarget": command->dest = "/w"; command->target = "%s"; break;
 			case "anyone": m_delete(command, "access"); break;
 			case "modonly": command->access = "mod"; break;
+			case "vipmod": command->access = "vip"; break;
 			case "disabled": command->access = "none"; break;
 			case "visible": m_delete(command, "visibility"); break;
 			case "hidden": command->visibility = "hidden"; break;

@@ -119,7 +119,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		commands += ({sprintf("<code>!%s</code> | <code>%s</code> | %s",
 			user(cmd - c), htmlify(response),
 			//TODO: Show if a response would be whispered?
-			(["mod": "Mod-only", "none": "Disabled"])[mappingp(response) && response->access] || "",
+			(["mod": "Mod-only", "vip": "Mods/VIPs", "none": "Disabled"])[mappingp(response) && response->access] || "",
 		)});
 		order += ({cmd});
 	}
@@ -172,7 +172,7 @@ mapping get_state(string group, string|void id) {
 //Blank or null is always allowed, and will result in no flag being set.
 constant valid_flags = ([
 	"mode": (<"random">),
-	"access": (<"mod", "none">),
+	"access": (<"mod", "vip", "none">),
 	"visibility": (<"hidden">),
 	"action": (<"add">),
 	"dest": (<"/w", "/web", "/set">),

@@ -44,7 +44,7 @@ class command
 	//Command flags, same as can be managed for echocommands with !setcmd
 	//Note that the keywords given here by default should be treated as equivalent
 	//to a 0, as echocommands will normally use 0 for the defaults.
-	constant access = "any"; //Set to "mod" for mod-only commands, or "none" for disabled (or internal-only) commands (more useful for echo commands)
+	constant access = "any"; //Set to "mod" for mod-only, "vip" for VIPs and mods, or "none" for disabled/internal-only commands (more useful for echo commands)
 	constant visibility = "visible"; //Set to "hidden" to suppress the command from !help (or set hidden_command to 1, deprecated alternative)
 	constant featurename = "allcmds"; //Set to a feature flag to allow this command to be governed by !features (not usually appropriate for echocommands)
 	constant active_channels = ({ }); //To restrict this to some channels only, set this to a non-empty array.
@@ -55,11 +55,14 @@ class command
 
 	//Make sure that inappropriate commands aren't called. Normally these
 	//checks are done in find_command below, but it's cheap to re-check.
-	//(Maybe remove this and depend on find_command??)
+	//(Maybe remove this and depend on find_command??) EXCEPTION: VIPs are
+	//not recognized by find_command currently, so non-VIPs will see those
+	//commands, and they'll get caught here. This makes !help less helpful.
 	echoable_message check_perms(object channel, mapping person, string param)
 	{
 		if (featurename && (channel->config->features[?featurename] || channel->config->allcmds) <= 0) return 0;
 		if ((require_moderator || access == "mod") && !channel->mods[person->user]) return 0;
+		if (access == "vip" && !channel->mods[person->user] && !person->badges->?vip) return 0;
 		if (access == "none") return 0;
 		return process(channel, person, param);
 	}
@@ -75,7 +78,7 @@ class command
 		if (sscanf(docstring, "%*[\n]%s\n\n%s", string summary, string main) && main)
 		{
 			string content = string_to_utf8(sprintf(_COMMAND_DOCS, name, summary,
-				require_moderator ? "mods only" : (["mod": "mods only", "any": "all users", "none": "nobody (internal only)"])[access],
+				require_moderator ? "mods only" : (["mod": "mods only", "vip": "mods/VIPs", "any": "all users", "none": "nobody (internal only)"])[access],
 				featurename && featurename != "allcmds" ? "\nPart of manageable feature: " + featurename + "\n" : "", //TODO: Grab the description from modules/features.pike?
 				main));
 			string fn = sprintf("commands/%s.md", name);
@@ -126,6 +129,7 @@ command_handler find_command(object channel, string cmd, int is_mod)
 		object|mapping flags = functionp(f) ? function_object(f) : mappingp(f) ? f : ([]);
 		if (flags->featurename && (channel->config->features[?flags->featurename] || channel->config->allcmds) <= 0) continue;
 		if ((flags->require_moderator || flags->access == "mod") && !is_mod) continue;
+		//Note that VIP commands aren't filtered here, so non-VIPs might see them. They'll be blocked by check_perms.
 		if (flags->access == "none") continue;
 		//If we get here, the command is acceptable.
 		return f;
