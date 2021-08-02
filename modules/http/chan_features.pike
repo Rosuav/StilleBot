@@ -43,6 +43,8 @@ $$save_or_login||$$
 //- Shoutout command, and link to the main commands page ("others here")
 //- Hype train status?
 
+//TODO: Don't enable Activate/Deactivate if not mod, but show state in other way
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	//Assume that the list of commands for each feature isn't going to change often.
