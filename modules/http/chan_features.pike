@@ -35,7 +35,6 @@ $$save_or_login||$$
 
 //TODO: Add shorthands for creating more features:
 //- Giveaway triggers?? Maybe?
-//- Transcoding on stream start
 //- VLC track reporting
 //- VLC !song command (and link to the VLC page, of course)
 //- Shoutout command, and link to the main commands page ("others here")
