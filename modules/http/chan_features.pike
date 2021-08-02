@@ -1,10 +1,22 @@
 inherit http_websocket;
 constant markdown = #"# Feature management for channel $$channel$$
 
+## Manageable components
+
 Feature | Controls | Affected commands | Active?
 --------|----------|-------------------|---------
 (loading...) | - | - | -
 {: #features}
+
+## Permanent features
+
+These features are always available, and cannot be disabled. Some of them may require
+authentication to be fully functional.
+
+Feature | Description
+--------|-----------
+[Hype train tracker](/hypetrain?for=$$chan$$) | Status of an ongoing or recent hype train with details
+[Raid finder](/raidfinder?for=$$chan$$) | Your follow list, sorted to help you find a raid target
 
 $$save_or_login||$$
 
@@ -21,7 +33,6 @@ $$save_or_login||$$
 //- Hype train status?
 //Note that these will not necessarily report whether they're active; they'll just have a "Create" button.
 //Maybe also a "Delete" button for some, where plausible.
-//Also list some permanently-available features
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -37,6 +48,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	return render(req, ([
 		"vars": (["ws_group": req->misc->is_mod ? "control" : "view", "featurecmds": featurecmds]),
+		"chan": req->misc->channel->name[1..],
 	]) | req->misc->chaninfo);
 }
 
