@@ -33,16 +33,13 @@ $$save_or_login||$$
 <style>:checked + span {background-color: #a0f0c0;}</style>
 ";
 
-//TODO: Also have some shorthands for creating other features:
-//- Autoban buy-follows
+//TODO: Add shorthands for creating more features:
 //- Giveaway triggers?? Maybe?
 //- Transcoding on stream start
 //- VLC track reporting
 //- VLC !song command (and link to the VLC page, of course)
 //- Shoutout command, and link to the main commands page ("others here")
 //- Hype train status?
-//Note that these will not necessarily report whether they're active; they'll just have a "Create" button.
-//Maybe also a "Delete" button for some, where plausible.
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
