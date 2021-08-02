@@ -32,10 +32,22 @@ constant COMPLEX_TEMPLATES = ([
 constant ENABLEABLE_FEATURES = ([
 	"buy-follows": ([
 		"description": "Automatically ban those bots that try to sell you followers",
-		"cmdname": "",
 		"response": COMPLEX_TEMPLATES["buy-follows"],
 	]),
 ]);
+
+string get_trig_id(object channel, string kwd) {
+	echoable_message response = G->G->echocommands["!trigger" + channel->name];
+	mapping info = ENABLEABLE_FEATURES[kwd]->?response; if (!info) return 0;
+	string cmdname = "";
+	if (arrayp(response)) foreach (response, mapping trig) {
+		if (trig->conditional == info->conditional &&
+			(trig->expr1||"") == (info->expr1||"") &&
+			(trig->expr2||"") == (info->expr2||""))
+				return trig->id;
+	}
+}
+int is_feature_active(object channel, string kwd) {return !!get_trig_id(channel, kwd);}
 
 void enable_feature(object channel, string kwd) {
 	mapping info = ENABLEABLE_FEATURES[kwd]; if (!info) return;
@@ -43,7 +55,10 @@ void enable_feature(object channel, string kwd) {
 	G->G->websocket_types->chan_commands->websocket_cmd_update(([
 		"group": "!!trigger" + channel->name,
 		"sock": (["send_text": lambda(mixed msg) { }]), //Ignore a response being sent back
-	]), info);
+	]), ([
+		"cmdname": get_trig_id(channel, kwd) || "",
+		"response": info->response,
+	]));
 }
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
