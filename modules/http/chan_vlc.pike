@@ -93,6 +93,9 @@ void sendstatus(object channel) {
 		"{block}": status->curblockdesc || "",
 		"{track}": status->curtrack || "",
 	]));
+	//TODO: Set the $vlcplaying$ and $vlccurtrack$ variables after the special goes through
+	//That way, if you want to check for a change, you can, but otherwise, the vars are just
+	//there automatically.
 	send_updates_all(channel->name);
 	send_updates_all("blocks" + channel->name);
 }
