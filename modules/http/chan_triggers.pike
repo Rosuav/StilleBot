@@ -39,7 +39,6 @@ constant ENABLEABLE_FEATURES = ([
 string get_trig_id(object channel, string kwd) {
 	echoable_message response = G->G->echocommands["!trigger" + channel->name];
 	mapping info = ENABLEABLE_FEATURES[kwd]->?response; if (!info) return 0;
-	string cmdname = "";
 	if (arrayp(response)) foreach (response, mapping trig) {
 		if (trig->conditional == info->conditional &&
 			(trig->expr1||"") == (info->expr1||"") &&
@@ -52,12 +51,12 @@ int can_manage_feature(object channel, string kwd) {return get_trig_id(channel, 
 void enable_feature(object channel, string kwd, int state) {
 	mapping info = ENABLEABLE_FEATURES[kwd]; if (!info) return;
 	//Hack: Call on the normal commands updater to add a trigger
-	G->G->websocket_types->chan_commands->websocket_cmd_update(([
+	G->G->websocket_types->chan_commands[state ? "websocket_cmd_update" : "websocket_cmd_delete"](([
 		"group": "!!trigger" + channel->name,
 		"sock": (["send_text": lambda(mixed msg) { }]), //Ignore a response being sent back
 	]), ([
 		"cmdname": get_trig_id(channel, kwd) || "",
-		"response": state ? info->response : "",
+		"response": info->response,
 	]));
 }
 
