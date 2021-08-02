@@ -90,6 +90,7 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 			if (em->is_charitable) flags->Charitable = 1;
 			if (em->type == "display_only") flags["Display-only"] = 1;
 			if (em->type == "global_third_party") flags["Third-party"] = 1;
+			if (em->type == "channel_custom") flags["Channel-unique"] = 1;
 			cheeremotes += ({({em->prefix, sizeof(flags) ? "\n#### " + sort(indices(flags)) * ", " : "", tiers})});
 		}
 		return render_template("checklist.md", ([
