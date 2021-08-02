@@ -108,13 +108,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (req->misc->is_mod && req->variables->makespecial) {
 		//Note that this option isn't made obvious if you already have the command,
 		//but we won't stop you from using it if you do so manually. It'll overwrite.
-		make_echocommand("!musictrack" + req->misc->channel->name, ({
-			(["delay": 2, "message": ([
-				"conditional": "string", "expr1": "$vlcplaying$", "expr2": "1",
-				"message": "SingsNote Now playing: {track} ({block}) SingsNote",
-				"otherwise": ""
-			])]),
-		}));
+		G->G->enableable_modules->specials->enable_feature(channel, "songannounce", 1);
 		return redirect("vlc");
 	}
 	if (req->misc->is_mod && req->variables->lua) {
