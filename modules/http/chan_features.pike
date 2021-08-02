@@ -117,6 +117,7 @@ void websocket_cmd_enable(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	foreach (G->G->enableable_modules; string name; object mod) {
 		if (mapping info = mod->ENABLEABLE_FEATURES[msg->id]) {
 			mod->enable_feature(G->G->irc->channels["#" + chan], msg->id, !!msg->state);
+			send_updates_all(conn->group); //Can't be bothered doing proper partial updates of a subinfo block
 			return;
 		}
 	}
