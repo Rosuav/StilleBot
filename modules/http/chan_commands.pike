@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit enableable_module;
 
 //Simplistic stringification for read-only display.
 string respstr(echoable_message resp)
@@ -35,6 +36,30 @@ constant COMPLEX_TEMPLATES = ([
 		"otherwise": "rosuavMuted Not currently playing anything in VLC rosuavMuted",
 	]),
 ]);
+	
+constant ENABLEABLE_FEATURES = ([
+	"song": ([
+		"description": "A !song command to show the currently-playing song (see VLC integration)",
+	]),
+]);
+
+int can_manage_feature(object channel, string kwd) {return G->G->echocommands[kwd + channel->name] ? 2 : 1;} //Should it check if it's the right thing, and if not, return 3?
+
+void enable_feature(object channel, string kwd, int state) {
+	mapping info = ENABLEABLE_FEATURES[kwd]; if (!info) return;
+	//Hack: Call on the normal commands updater to add a trigger
+	if (!state)
+		websocket_cmd_delete(
+			(["group": channel->name]),
+			(["cmdname": kwd])
+		);
+	else
+		websocket_cmd_update(
+			(["group": channel->name]),
+			(["cmdname": kwd, "response": info->response || COMPLEX_TEMPLATES["!" + kwd]])
+		);
+}
+
 
 //Cache the set of available builtins. Needs to be called after any changes to any
 //builtin; currently, is call_out zero'd any time this file gets updated. Note that
