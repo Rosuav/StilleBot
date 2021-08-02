@@ -68,6 +68,36 @@ continue Concurrent.Future|mapping fetch_emotes()
 
 continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP.Server.Request req)
 {
+	if (req->variables->cheer) {
+		//Show cheeremotes, possibly for a specific broadcaster
+		//Nothing to do with the main page, other than that it's all about emotes.
+		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/cheermotes?broadcaster_id={{USER}}",
+			0, (["username": req->variables->broadcaster || "twitch"])));
+		array emotes = info->data; info->data = "<suppressed>";
+		array cheeremotes = ({ });
+		foreach (emotes, mapping em) {
+			array tiers = ({ });
+			multiset(string) flags = (<"Unavailable", "Hidden">);
+			foreach (em->tiers || ({ }), mapping tier) {
+				tiers += ({
+					sprintf("<figure>![%s](%s)"
+						"<figcaption>%[0]s</figcaption></figure>", em->prefix + tier->id,
+						tier->images->light->animated["4"])
+				});
+				if (tier->can_cheer) flags->Unavailable = 0;
+				if (tier->show_in_bits_card) flags->Hidden = 0;
+			}
+			if (em->is_charitable) flags->Charitable = 1;
+			if (em->type == "display_only") flags["Display-only"] = 1;
+			if (em->type == "global_third_party") flags["Third-party"] = 1;
+			cheeremotes += ({({em->prefix, sizeof(flags) ? "\n#### " + sort(indices(flags)) * ", " : "", tiers})});
+		}
+		return render_template("checklist.md", ([
+			"login_link": "", "emotes": "img", "title": "Cheer emotes: " + (req->variables->broadcaster || "global"),
+			"text": sprintf("%{\n## %s%s\n%{%s %}\n%}", cheeremotes),
+			//sprintf("<pre>%O</pre>", cheeremotes),
+		]));
+	}
 	if (req->variables->broadcaster) {
 		//Show emotes for a specific broadcaster
 		//Nothing to do with the main page, other than that it's all about emotes.
