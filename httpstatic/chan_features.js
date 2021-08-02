@@ -26,16 +26,25 @@ export function render(data) {
 	const parent = DOM("#enableables tbody");
 	const rows = [];
 	for (let kwd in data.enableables) {
-		const row = parent.querySelector(`[data-id="${kwd}"]`);
-		if (row) {rows.push(row); continue;}
 		const info = data.enableables[kwd];
+		const row = parent.querySelector(`[data-id="${kwd}"]`);
+		if (row) {
+			row.querySelector(".enable_activate").disabled = !(info.manageable&1);
+			row.querySelector(".enable_deactivate").disabled = !(info.manageable&2);
+			rows.push(row);
+			continue;
+		}
 		let link = "/" + info.module, mgr = info.module;
 		if (mgr.startsWith("chan_")) link = mgr = info.module.slice(5);
 		rows.push(TR({"data-id": kwd}, [
 			TD(kwd),
 			TD(info.description),
 			TD(A({href: link, target: "_blank"}, mgr)),
-			TD(BUTTON({className: "enabl_activate", type: "button"}, "Activate")),
+			TD([
+				BUTTON({className: "enabl_activate", type: "button", "disabled": !(info.manageable&1)}, "Activate"),
+				" ",
+				BUTTON({className: "enabl_deactivate", type: "button", "disabled": !(info.manageable&2)}, "Deactivate"),
+			]),
 		]));
 	}
 	set_content(parent, rows);
@@ -46,5 +55,9 @@ on("change", ".featurestate", e => {
 });
 
 on("click", ".enabl_activate", e => {
-	ws_sync.send({cmd: "enable", id: e.match.closest("tr").dataset.id});
+	ws_sync.send({cmd: "enable", id: e.match.closest("tr").dataset.id, "state": true});
+});
+
+on("click", ".enabl_deactivate", e => {
+	ws_sync.send({cmd: "enable", id: e.match.closest("tr").dataset.id, "state": false});
 });

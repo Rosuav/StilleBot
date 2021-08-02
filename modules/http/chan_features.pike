@@ -80,7 +80,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping enableables = ([]);
 	foreach (G->G->enableable_modules; string name; object mod) {
 		foreach (mod->ENABLEABLE_FEATURES; string kwd; mapping info) {
-			enableables[kwd] = info | (["module": name, "active": mod->is_feature_active(channel, kwd)]);
+			enableables[kwd] = info | (["module": name, "manageable": mod->can_manage_feature(channel, kwd)]);
 		}
 	}
 	return (["items": _get_item(function_object(G->G->commands->features)->FEATURES[*][0][*], channel->config->allcmds, feat),
@@ -116,7 +116,7 @@ void websocket_cmd_enable(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	//In theory we could maintain an id to module mapping, but not worth the hassle.
 	foreach (G->G->enableable_modules; string name; object mod) {
 		if (mapping info = mod->ENABLEABLE_FEATURES[msg->id]) {
-			mod->enable_feature(G->G->irc->channels["#" + chan], msg->id);
+			mod->enable_feature(G->G->irc->channels["#" + chan], msg->id, !!msg->state);
 			return;
 		}
 	}

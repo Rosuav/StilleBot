@@ -47,9 +47,9 @@ string get_trig_id(object channel, string kwd) {
 				return trig->id;
 	}
 }
-int is_feature_active(object channel, string kwd) {return !!get_trig_id(channel, kwd);}
+int can_manage_feature(object channel, string kwd) {return get_trig_id(channel, kwd) ? 2 : 1;}
 
-void enable_feature(object channel, string kwd) {
+void enable_feature(object channel, string kwd, int state) {
 	mapping info = ENABLEABLE_FEATURES[kwd]; if (!info) return;
 	//Hack: Call on the normal commands updater to add a trigger
 	G->G->websocket_types->chan_commands->websocket_cmd_update(([
@@ -57,7 +57,7 @@ void enable_feature(object channel, string kwd) {
 		"sock": (["send_text": lambda(mixed msg) { }]), //Ignore a response being sent back
 	]), ([
 		"cmdname": get_trig_id(channel, kwd) || "",
-		"response": info->response,
+		"response": state ? info->response : "",
 	]));
 }
 

@@ -309,9 +309,8 @@ function|void bounce(function f)
 
 class enableable_module {
 	constant ENABLEABLE_FEATURES = ([]); //Map keywords to mappings containing descriptions and other info
-	void enable_feature(object channel, string kwd) { } //Mandatory: enable the given feature or reset it to default
-	void disable_feature(object channel, string kwd) { } //Optional: disable if active, do nothing if not
-	int is_feature_active(object channel, string kwd) {return 0;} //Optional: figure out if the feature is active
+	void enable_feature(object channel, string kwd, int state) { } //Enable/disable the given feature or reset it to default
+	int can_manage_feature(object channel, string kwd) {return 1;} //Optional UI courtesy: Return 1 if can be activated, 2 if can be deactivated, 3 if both
 
 	protected void create(string name)
 	{
