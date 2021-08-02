@@ -81,8 +81,10 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 			foreach (em->tiers || ({ }), mapping tier) {
 				tiers += ({
 					sprintf("<figure>![%s](%s)"
-						"<figcaption>%[0]s</figcaption></figure>", em->prefix + tier->id,
-						tier->images->light->animated["4"])
+						"<figcaption style=\"color: %s\">%[0]s</figcaption></figure>",
+						em->prefix + tier->id,
+						tier->images->light->animated["4"],
+						tier->color || "black")
 				});
 				if (tier->can_cheer) flags->Unavailable = 0;
 				if (tier->show_in_bits_card) flags->Hidden = 0;
