@@ -35,11 +35,7 @@ $$save_or_login||$$
 
 //TODO: Add shorthands for creating more features:
 //- Giveaway triggers?? Maybe?
-//- VLC track reporting
 //- VLC !song command (and link to the VLC page, of course)
-//  - These two are messy b/c they both need the variables to be set. Maybe the var setting should
-//    be outside of the triggers altogether?? Or maybe automatic track reporting should be controlled
-//    by a variable?
 //- Shoutout command, and link to the main commands page ("others here")
 //- Hype train status?
 

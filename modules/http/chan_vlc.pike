@@ -93,9 +93,11 @@ void sendstatus(object channel) {
 		"{block}": status->curblockdesc || "",
 		"{track}": status->curtrack || "",
 	]));
-	//TODO: Set the $vlcplaying$ and $vlccurtrack$ variables after the special goes through
+	//Note: We set the $vlcplaying$ and $vlccurtrack$ variables after the special goes through.
 	//That way, if you want to check for a change, you can, but otherwise, the vars are just
 	//there automatically.
+	channel->set_variable("vlcplaying", (string)status->playing, "set");
+	channel->set_variable("vlccurtrack", status->current || "", "set");
 	send_updates_all(channel->name);
 	send_updates_all("blocks" + channel->name);
 }
@@ -107,8 +109,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		//Note that this option isn't made obvious if you already have the command,
 		//but we won't stop you from using it if you do so manually. It'll overwrite.
 		make_echocommand("!musictrack" + req->misc->channel->name, ({
-			(["dest": "/set", "message": "{playing}", "target": "vlcplaying"]),
-			(["dest": "/set", "message": "{desc}", "target": "vlccurtrack"]),
 			(["delay": 2, "message": ([
 				"conditional": "string", "expr1": "$vlcplaying$", "expr2": "1",
 				"message": "SingsNote Now playing: {track} ({block}) SingsNote",

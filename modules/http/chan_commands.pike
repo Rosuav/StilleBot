@@ -29,6 +29,11 @@ constant COMPLEX_TEMPLATES = ([
 		"message": "/me devicatHug $$ warmly hugs {participant} maayaHug",
 		"otherwise": "/me devicatHug $$ warmly hugs %s maayaHug",
 	]),
+	"!song": ([
+		"conditional": "string", "expr1": "$vlcplaying$", "expr2": "1",
+		"message": "SingsNote Now playing: {track} ({block}) SingsNote",
+		"otherwise": "rosuavMuted Not currently playing anything in VLC rosuavMuted",
+	]),
 ]);
 
 //Cache the set of available builtins. Needs to be called after any changes to any

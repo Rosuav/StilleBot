@@ -32,6 +32,7 @@ $$save_or_login$$
 > > !raid    | Let's go raiding! Copy and paste this raid call and be ready when I host our target! >>> /me twitchRaid YOUR RAID CALL HERE twitchRaid
 > > !insta   | My portfolio can be found at https://instagram.com/YOUR_INSTAGRAM_NAME/
 > > !calendar | Add my schedule to your calendar: https://calendar.google.com/calendar?cid=LOTS-OF-CHARACTERS
+> > !song    | SingsNote Now playing: $vlccurtrack$ SingsNote
 > {: tag=details}
 >
 > <!-- -->

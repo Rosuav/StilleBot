@@ -19,7 +19,16 @@ constant ENABLEABLE_FEATURES = ([
 				]),
 				"otherwise": "",
 			]),
-		])
+		]),
+	]),
+	"songannounce": ([
+		"description": "Announce songs in chat (see VLC integration)",
+		"special": "!musictrack",
+		"response": (["delay": 2, "message": ([
+			"conditional": "string", "expr1": "$vlcplaying$", "expr2": "1",
+			"message": "SingsNote Now playing: {track} ({block}) SingsNote",
+			"otherwise": ""
+		])]),
 	]),
 ]);
 
@@ -29,7 +38,9 @@ int get_trig_index(object channel, string kwd) {
 	echoable_message response = G->G->echocommands[info->special + channel->name];
 	if (!response) return -1;
 	info = info->response;
+	if (info->delay) info = info->message; 
 	foreach (Array.arrayify(response); int i; echoable_message trig) {
+		if (trig->delay) trig = trig->message; //You can set whatever delay you like and it doesn't affect detection.
 		if (mappingp(trig) && trig->builtin == info->builtin &&
 			trig->conditional == info->conditional &&
 			(trig->expr1||"") == (info->expr1||"") &&
