@@ -1,4 +1,5 @@
 inherit http_endpoint;
+inherit enableable_module;
 
 string respstr(mapping|string resp) {return Parser.encode_html_entities(stringp(resp) ? resp : resp->message);}
 
@@ -28,6 +29,13 @@ constant COMPLEX_TEMPLATES = ([
 	]),
 ]);
 
+constant ENABLEABLE_FEATURES = ([
+	"buy-follows": ([
+		"description": "Automatically ban those bots that try to sell you followers",
+		"feature": COMPLEX_TEMPLATES["buy-follows"],
+	]),
+]);
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	array commands = ({ });
@@ -50,3 +58,5 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"save_or_login": "<p><a href=\"#examples\" id=examples>Create new trigger</a></p>",
 	]) | req->misc->chaninfo);
 }
+
+protected void create(string name) {::create(name);}

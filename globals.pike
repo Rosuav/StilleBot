@@ -14,6 +14,7 @@ protected void create(string n)
 	if (!G->G->http_endpoints) G->G->http_endpoints = ([]);
 	if (!G->G->websocket_types) G->G->websocket_types = ([]);
 	if (!G->G->websocket_groups) G->G->websocket_groups = ([]);
+	if (!G->G->enableable_modules) G->G->enableable_modules = ([]);
 }
 
 //A sendable message could be a string (echo that string), a mapping with a "message"
@@ -304,6 +305,20 @@ function|void bounce(function f)
 	function current = G->G->bouncers[sprintf("%O", f)];
 	if (current != f) return current;
 	return UNDEFINED;
+}
+
+class enableable_module {
+	constant ENABLEABLE_FEATURES = ([]); //Map keywords to mappings containing descriptions and other info
+	void enable_feature(object channel, string kwd) { } //Mandatory: enable the given feature or reset it to default
+	void disable_feature(object channel, string kwd) { } //Optional: disable if active, do nothing if not
+	int is_feature_active(object channel, string kwd) {return 0;} //Optional: figure out if the feature is active
+
+	protected void create(string name)
+	{
+		sscanf(explode_path(name)[-1],"%s.pike",name);
+		if (!name) return;
+		G->G->enableable_modules[name] = this;
+	}
 }
 
 class http_endpoint

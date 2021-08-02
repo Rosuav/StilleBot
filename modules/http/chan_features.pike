@@ -18,6 +18,16 @@ Feature | Description
 [Hype train tracker](/hypetrain?for=$$chan$$) | Status of an ongoing or recent hype train with details
 [Raid finder](/raidfinder?for=$$chan$$) | Your follow list, sorted to help you find a raid target
 
+## Customizable features
+
+Commands, triggers, specials, and other separately-manageable features of the bot can be
+quickly and easily enabled here.
+
+Feature | Description | Manager | Activate
+--------|-------------|---------|-----------
+(loading...) | - | - | -
+{: #enableables}
+
 $$save_or_login||$$
 
 <style>:checked + span {background-color: #a0f0c0;}</style>
@@ -67,8 +77,16 @@ bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping feat = persist_config->path("channels", channel->name[1..], "features");
 	if (id) return _get_item(id, channel->config->allcmds, feat);
+	mapping enableables = ([]);
+	foreach (G->G->enableable_modules; string name; object mod) {
+		foreach (mod->ENABLEABLE_FEATURES; string kwd; mapping info) {
+			enableables[kwd] = info | (["module": name, "active": mod->is_feature_active(channel, kwd)]);
+		}
+	}
 	return (["items": _get_item(function_object(G->G->commands->features)->FEATURES[*][0][*], channel->config->allcmds, feat),
-		"defaultstate": channel->config->allcmds ? "active": "inactive"]);
+		"defaultstate": channel->config->allcmds ? "active": "inactive",
+		"enableables": enableables,
+	]);
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -90,4 +108,16 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	persist_config->save();
 	update_one(conn->group, msg->id);
 	update_one("view#" + chan, msg->id);
+}
+
+void websocket_cmd_enable(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%s#%s", string grp, string chan);
+	if (grp != "control" || !G->G->irc->channels["#" + chan]) return;
+	//In theory we could maintain an id to module mapping, but not worth the hassle.
+	foreach (G->G->enableable_modules; string name; object mod) {
+		if (mapping info = mod->ENABLEABLE_FEATURES[msg->id]) {
+			mod->enable_feature(G->G->irc->channels["#" + chan], msg->id);
+			return;
+		}
+	}
 }

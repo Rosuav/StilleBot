@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {CODE, TR, TD, LABEL, INPUT, SPAN} = choc;
+const {A, BUTTON, CODE, TR, TD, LABEL, INPUT, SPAN} = choc;
 
 export const render_parent = DOM("#features tbody");
 export function render_item(msg, obj) {
@@ -22,8 +22,29 @@ export function render_item(msg, obj) {
 	]);
 }
 
-export function render(data) { }
+export function render(data) {
+	const parent = DOM("#enableables tbody");
+	const rows = [];
+	for (let kwd in data.enableables) {
+		const row = parent.querySelector(`[data-id="${kwd}"]`);
+		if (row) {rows.push(row); continue;}
+		const info = data.enableables[kwd];
+		let link = "/" + info.module, mgr = info.module;
+		if (mgr.startsWith("chan_")) link = mgr = info.module.slice(5);
+		rows.push(TR({"data-id": kwd}, [
+			TD(kwd),
+			TD(info.description),
+			TD(A({href: link, target: "_blank"}, mgr)),
+			TD(BUTTON({className: "enabl_activate", type: "button"}, "Activate")),
+		]));
+	}
+	set_content(parent, rows);
+}
 
 on("change", ".featurestate", e => {
 	ws_sync.send({cmd: "update", id: e.match.name, "state": e.match.value});
+});
+
+on("click", ".enabl_activate", e => {
+	ws_sync.send({cmd: "enable", id: e.match.closest("tr").dataset.id});
 });
