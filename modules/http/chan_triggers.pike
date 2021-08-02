@@ -32,9 +32,19 @@ constant COMPLEX_TEMPLATES = ([
 constant ENABLEABLE_FEATURES = ([
 	"buy-follows": ([
 		"description": "Automatically ban those bots that try to sell you followers",
-		"feature": COMPLEX_TEMPLATES["buy-follows"],
+		"cmdname": "",
+		"response": COMPLEX_TEMPLATES["buy-follows"],
 	]),
 ]);
+
+void enable_feature(object channel, string kwd) {
+	mapping info = ENABLEABLE_FEATURES[kwd]; if (!info) return;
+	//Hack: Call on the normal commands updater to add a trigger
+	G->G->websocket_types->chan_commands->websocket_cmd_update(([
+		"group": "!!trigger" + channel->name,
+		"sock": (["send_text": lambda(mixed msg) { }]), //Ignore a response being sent back
+	]), info);
+}
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
