@@ -20,8 +20,8 @@ ID          | Response | -
 $$save_or_login$$
 
 > ### Available trigger types:
-> Trigger | Text
-> --------|------
+> Type | Description
+> -----|------------
 > $$templates$$
 >
 > Customize as desired, or use as-is.

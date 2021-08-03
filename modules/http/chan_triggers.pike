@@ -4,20 +4,20 @@ inherit enableable_module;
 string respstr(mapping|string resp) {return Parser.encode_html_entities(stringp(resp) ? resp : resp->message);}
 
 constant TEMPLATES = ({
-	"hello | world!",
-	"Kappa | MiniK Kappa KappaHD ZombieKappa",
-	"buy-follows | /ban $$",
+	"Text | Simple text, finds any string of letters",
+	"RegExp | Word trigger - \\&lt;some-word\\&gt;",
+	"buy-follows | Automatically ban bots that ask you to buy followers",
 });
 
 //Due to the nature of triggers, templates ALL use the advanced view.
 constant COMPLEX_TEMPLATES = ([
-	"hello": ([
+	"Text": ([
 		"casefold": "on",
 		"conditional": "contains",
 		"expr1": "hello", "expr2": "%s",
-		"message": "world!",
+		"message": "Hello to you too!!",
 	]),
-	"Kappa": ([
+	"RegExp": ([
 		"conditional": "regexp",
 		"expr1": "\\<Kappa\\>", "expr2": "%s",
 		"message": "MiniK Kappa KappaHD ZombieKappa",
