@@ -75,7 +75,7 @@ void reconnect()
 	//TODO: Dodge the synchronous gethostbyname?
 	mapping opt = persist_config["ircsettings"];
 	if (!opt || !opt->pass) return; //Not yet configured - can't connect.
-	opt += (["channel_program": channel_notif, "connection_lost": reconnect,
+	opt += (["channel_program": channel_notif, "connection_lost": lambda() {call_out(reconnect, 10);},
 		"error_notify": error_notify]);
 	mod_query_delay = 0; //Reset the delay
 	if (mixed ex = catch {
