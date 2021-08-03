@@ -279,7 +279,7 @@ void register_hook(string event, function handler)
 	//counts as the same one as before.
 	G->G->hooks[event] = filter(G->G->hooks[event] || ({ }),
 		lambda(array(string|function) f) {return f[0] != origin;}
-	) + ({({origin, handler})});
+	) + ({({origin, handler})}) * !!handler;
 }
 
 int runhooks(string event, string skip, mixed ... args)
