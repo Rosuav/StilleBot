@@ -19,7 +19,7 @@ int message(object channel, mapping person, string msg)
 		//Note that measurement_offset doesn't apply here as it's an all-msgs hook
 		string name = msg[start..end];
 		if (has_value(name, '_')) continue; //Ignore emotes with _SQ or _HF etc - we can synthesize them from the base emotes
-		if (json->emotes[name] != id) {json->emotes[name] = (string)id; save = 1;}
+		if (json->emotes[name] != (string)id) {json->emotes[name] = (string)id; save = 1;}
 	}
 	if (save) Stdio.write_file(CACHE_FILE, Standards.JSON.encode(json, 7) + "\n");
 	return 0;
