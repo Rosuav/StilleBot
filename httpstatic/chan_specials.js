@@ -52,11 +52,16 @@ export function render(data) {
 				LABEL({htmlFor: "tab-" + tab, className: "tablabel"}, tabs[tab]),
 			]);
 		}));
-		DOM("#commands").dataset.rb = "tab-" + tabs[0];
-		DOM("#tab-" + tabs[0]).checked = true;
+		let tab = tabs[0];
+		if (location.hash && tabs.includes(location.hash.slice(1))) tab = location.hash.slice(1);
+		DOM("#commands").dataset.rb = "tab-" + tab;
+		DOM("#tab-" + tab).checked = true;
 	}
 	return;
 }
-on("click", ".tabradio", e => DOM("#commands").dataset.rb = e.match.id);
+on("click", ".tabradio", e => {
+	DOM("#commands").dataset.rb = e.match.id;
+	history.replaceState(null, "", "#" + e.match.id.slice(4));
+});
 
 add_hook("open_advanced", cmd => set_content("#parameters", describe_all_params(command_lookup[cmd.id])));
