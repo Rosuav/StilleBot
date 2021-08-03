@@ -1,6 +1,12 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BUTTON, CODE, TR, TD, LABEL, INPUT, SPAN} = choc;
+const {A, ABBR, BUTTON, CODE, TR, TD, LABEL, INPUT, SPAN} = choc;
 
+const active_desc = {
+	Active: "Active: Chat commands are available",
+	Inactive: "Inactive: Chat commands disabled, web access only",
+	Default: "Default: Follows the setting of allcmds", //TODO: Show what that setting currently is?
+};
+const prefix_len = {Active: 2, Inactive: 4, Default: 3}; //Number of characters that get kept even on small screens
 export const render_parent = DOM("#features tbody");
 export function render_item(msg, obj) {
 	if (obj) {
@@ -11,13 +17,13 @@ export function render_item(msg, obj) {
 		TD(msg.id),
 		TD({className: "desc"}, msg.desc),
 		TD((featurecmds[msg.id] || []).map(cmd => CODE("!" + cmd + " "))),
-		TD(["Active", "Inactive", "Default"].map(s =>
+		TD({className: "no-wrap"}, ["Active", "Inactive", "Default"].map(s =>
 			(s !== "Default" || msg.id != "allcmds") && LABEL([INPUT({
 				type: "radio", className: "featurestate",
 				name: msg.id, value: s.toLowerCase(),
 				checked: msg.state == s.toLowerCase(),
 				disabled: !ws_group.startsWith("control#"),
-			}), SPAN(s)]),
+			}), ABBR({title: active_desc[s]}, [s.slice(0, prefix_len[s]), SPAN(s.slice(prefix_len[s]))])]),
 		)),
 	]);
 }
@@ -41,7 +47,7 @@ export function render(data) {
 				TD(kwd),
 				TD(info.description),
 				TD(A({href: link, target: "_blank"}, mgr)),
-				TD([
+				TD({className: "no-wrap"}, [
 					BUTTON({className: "enabl_activate", type: "button", "disabled": !(info.manageable&1)}, "Activate"),
 					" ",
 					BUTTON({className: "enabl_deactivate", type: "button", "disabled": !(info.manageable&2)}, "Deactivate"),

@@ -30,7 +30,13 @@ Feature | Description | Manager | Activate
 
 $$save_or_login||$$
 
-<style>:checked + span {background-color: #a0f0c0;}</style>
+<style>
+:checked + abbr {background-color: #a0f0c0;}
+.no-wrap {white-space: nowrap;}
+@media (max-width: 750px) {
+	label abbr span {display: none;}
+}
+</style>
 ";
 
 //TODO: Add shorthands for creating more features:
