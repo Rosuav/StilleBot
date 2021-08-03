@@ -71,11 +71,12 @@ void reconnect()
 {
 	//NOTE: This appears to be creating duplicate channel joinings, for some reason.
 	//HACK: Destroy and reconnect - this might solve the above problem. CJA 20160401.
+	if (bounce(ws_handler)) return; //We're not the current file. Don't connect.
 	if (irc && irc == G->G->irc) {irc->close(); if (objectp(irc)) destruct(irc); werror("%% Reconnecting\n");}
 	//TODO: Dodge the synchronous gethostbyname?
 	mapping opt = persist_config["ircsettings"];
 	if (!opt || !opt->pass) return; //Not yet configured - can't connect.
-	opt += (["channel_program": channel_notif, "connection_lost": lambda() {call_out(reconnect, 10);},
+	opt += (["channel_program": channel_notif, "connection_lost": lambda() {werror("%% Connection lost\n"); call_out(reconnect, 10);},
 		"error_notify": error_notify]);
 	mod_query_delay = 0; //Reset the delay
 	if (mixed ex = catch {
@@ -91,7 +92,9 @@ void reconnect()
 		cap("REQ","twitch.tv/membership");
 		cap("REQ","twitch.tv/commands");
 		cap("REQ","twitch.tv/tags");
-		irc->join_channel(("#"+(indices(persist_config["channels"])-({"!whisper"}))[*])[*]);
+		//Connect to channels progressively to reduce server hammer
+		foreach (indices(persist_config["channels"]) - ({"!whisper"}); int delay; string chan)
+			call_out(irc->join_channel, delay, "#" + chan);
 		//Hack: Create a fake channel object for whispers
 		//Rather than having a pseudo-channel, it would probably be better to
 		//have a "primary channel" that handles all whispers - effectively,
@@ -1008,10 +1011,10 @@ protected void create()
 	if (!G->G->cooldown_timeout) G->G->cooldown_timeout = ([]);
 	if (!G->G->http_sessions) G->G->http_sessions = ([]);
 	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
+	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
 	irc = G->G->irc;
 	//if (!irc) //HACK: Force reconnection every time
 		reconnect();
-	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
 	if (mapping irc = persist_config["ircsettings"])
 	{
 		bot_nick = persist_config["ircsettings"]->nick || "";
