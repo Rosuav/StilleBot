@@ -243,7 +243,7 @@ mapping(string:mixed) gather_person_info(object person, mapping params)
 		foreach (params->emotes / "/", string emote) if (emote != "")
 		{
 			sscanf(emote, "%s:%s", string|int id, string pos);
-			if (!has_prefix(id, "emotesv2")) id = (int)id;
+			if (!has_prefix(id, "emotesv2")) id = (int)id; //TODO: Don't do this (it breaks on modified v1 emotes)
 			foreach (pos / ",", string p) {
 				sscanf(p, "%d-%d", int start, int end);
 				if (end < start) continue; //Shouldn't happen (probably a parse failure)
