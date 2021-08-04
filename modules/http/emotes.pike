@@ -104,8 +104,8 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 	if (req->variables->broadcaster) {
 		//Show emotes for a specific broadcaster
 		//Nothing to do with the main page, other than that it's all about emotes.
-		array emotes = yield(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id={{USER}}",
-			0, (["username": req->variables->broadcaster])))->data;
+		int id = yield(get_user_id(req->variables->broadcaster));
+		array emotes = yield(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + id))->data;
 		mapping sets = ([]);
 		foreach (emotes, mapping em) {
 			if (em->emote_type == "bitstier") em->emote_set_id = "Bits"; //Hack - we don't get the bits levels anyway, so just group 'em.
@@ -124,6 +124,30 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 					"<figcaption>%[0]s</figcaption></figure>", em->name,
 					replace(em->images->url_4x, "/static/", "/default/")) //Most emotes have the same image for static and default. Anims get a one-frame for static, and the animated for default.
 			});
+		}
+		//Also fetch the badges. They're intrinsically at a different size, but they'll be stretched to the same size.
+		//If that's a problem, it'll need to be solved in CSS (probably with a classname on the figure here).
+		array badges = yield(twitch_api_request("https://api.twitch.tv/helix/chat/badges?broadcaster_id=" + id))->data;
+		foreach (badges, mapping set) {
+			mapping cur = ([]);
+			if (set->set_id == "subscriber") cur[1999] = cur[2999] = "<br>";
+			foreach (set->versions, mapping badge) {
+				string desc = badge->id;
+				if (set->set_id == "subscriber") {
+					int tier = (int)badge->id / 1000;
+					int tenure = (int)badge->id % 1000;
+					desc = ({"T1", 0, "T2", "T3"})[tier];
+					if (tenure) desc += ", " + tenure + " months";
+					else desc += ", base";
+				}
+				cur[(int)badge->id] = sprintf("<figure>![%s](%s)"
+						"<figcaption>%[0]s</figcaption></figure>",
+						desc, badge->image_url_4x,
+				);
+			}
+			array b = values(cur); sort(indices(cur), b);
+			if (set->set_id == "subscriber") sets[1<<29] = ({"Subscriber badges", b});
+			if (set->set_id == "bits") sets[1<<30] = ({"Bits badges", b});
 		}
 		array emotesets = values(sets); sort((array(int))indices(sets), emotesets);
 		return render_template("checklist.md", ([
