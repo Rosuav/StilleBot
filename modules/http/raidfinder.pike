@@ -250,7 +250,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			if (int pref = tag_prefs[tagid]) recommend["Tag prefs"] += PREFERENCE_MAGIC_SCORES[pref];
 		}
 		strm->tags = tags;
-		strm->category = G->G->category_names[strm->game_id];
+		strm->category = G->G->category_names[strm->game_id] || strm->game_name;
 		strm->raids = raids[strm->user_login] || ({ });
 		int otheruid = (int)strm->user_id;
 		if (otheruid == userid) {follows_helix[i] = 0; continue;} //Exclude self. There's no easy way to know if you should have shown up, so just always exclude.
