@@ -34,7 +34,7 @@ level to which it has been set (although this can be deduced during a hype train
 it cannot be seen outside of one).
 
 <form method=get action=hypetrain>
-Select channel: <input name=for>
+<label>Select channel: <input name=for></label>
 <input type=submit value="Go">
 </form>
 
