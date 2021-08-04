@@ -46,7 +46,7 @@ export function render(data) {
 			rows.push(TR({"data-id": kwd}, [
 				TD(kwd),
 				TD(info.description),
-				TD(A({href: link, target: "_blank"}, mgr)),
+				TD(A({href: link + (info.fragment||""), target: "_blank"}, mgr)),
 				TD({className: "no-wrap"}, [
 					BUTTON({className: "enabl_activate", type: "button", "disabled": !(info.manageable&1)}, "Activate"),
 					" ",
