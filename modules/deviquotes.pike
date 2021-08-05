@@ -7,13 +7,13 @@ mapping json;
 int message(object channel, mapping person, string msg)
 {
 	if (channel->name != "#devicat" || person->user != "candicat") return 0;
-	//TODO: Record all emotes seen and their IDs. May save us the trouble of updating emotes in full.
 	sscanf(msg, "#%d: %s", int idx, string quote);
 	int save = 0;
 	if (idx && quote) {
 		if (sizeof(json->quotes) <= idx) json->quotes += ({Val.null}) * (idx - sizeof(json->quotes) + 1);
 		if (json->quotes[idx] != quote) {json->quotes[idx] = quote; save = 1;}
 	}
+	//Record all emotes seen and their IDs so the Markdown builder knows what's an emote
 	if (!json->emotes) json->emotes = ([]);
 	foreach (person->emotes || ({ }), [int|string id, int start, int end]) {
 		//Note that measurement_offset doesn't apply here as it's an all-msgs hook
