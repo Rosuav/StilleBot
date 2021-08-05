@@ -824,11 +824,11 @@ class channel_notif
 				//TODO: Check message times for other voices too
 				if (lower_case(person->nick) == lower_case(bot_nick)) {default_queue->lastmsgtime = time(1); default_queue->modmsgs = 0;}
 				if (person->badges) mods[person->user] = person->badges->_mod;
-				handle_command(person, msg, responsedefaults);
-				if (sscanf(msg, "\1ACTION %s\1", string slashme)) msg = person->displayname+" "+slashme;
+				if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
 				//For some reason, whispers show up with "/me" at the start, not "ACTION".
-				else if (sscanf(msg, "/me %s", string slashme)) msg = person->displayname+" "+slashme;
-				else msg = person->displayname+": "+msg;
+				else if (sscanf(msg, "/me %s", msg)) person->is_action_msg = 1;
+				handle_command(person, msg, responsedefaults);
+				msg = person->displayname + (person->is_action_msg ? " " : ": ") + msg;
 				string pfx=sprintf("[%s] ", name);
 				#ifdef __NT__
 				int wid = 80 - sizeof(pfx);
