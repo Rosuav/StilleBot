@@ -3,7 +3,7 @@ inherit http_endpoint;
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	string yourname = req->misc->?session->?user->?display_name || "";
-	string loglink = "[Log in with your Twitch credentials](/twitchlogin?next=/)";
+	string loglink = "[Log in with your Twitch credentials](:#twitchlogin)";
 	if (yourname != "")
 	{
 		loglink = "[Log out](/logout)";

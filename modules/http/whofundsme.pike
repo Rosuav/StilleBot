@@ -71,7 +71,7 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 	]));
 	return render(req, ([
 		"vars": (["ws_group": ""]),
-		"chattoggle": !username ? "[Log in to enable chat](/twitchlogin?next=/whofundsme)" :
+		"chattoggle": !username ? "[Log in to enable chat](:#twitchlogin)" :
 			G->G->whofundsme_announce[username] ? "[Disable announcements in " + username + " chat](:#chattoggle)" :
 			"[Enable announcements in " + username + " chat](:#chattoggle)",
 	]));
