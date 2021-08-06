@@ -457,18 +457,24 @@ bool _parse_attrs(string text, mapping tok) //Used in renderer and lexer - ideal
 {
 	if (sscanf(text, "{:%[^{}\n]}%s", string attrs, string empty) && empty == "")
 	{
-		//TODO: Support attr="x y z" as well
-		foreach (attrs / " ", string att)
-		{
-			if (sscanf(att, ".%s", string cls) && cls && cls != "")
-			{
-				if (tok["attr_class"]) tok["attr_class"] += " " + cls;
-				else tok["attr_class"] = cls;
+		attrs = String.trim(attrs);
+		while (attrs != "") {
+			sscanf(attrs, "%[^= ]%s", string att, attrs);
+			if (att == "") {sscanf(attrs, "%*[= ]%s", attrs); continue;} //Malformed, ignore
+			if (att[0] == '.') {
+				if (tok["attr_class"]) tok["attr_class"] += " " + att[1..];
+				else tok["attr_class"] = att[1..];
 			}
-			else if (sscanf(att, "#%s", string id) && id && id != "")
-				tok["attr_id"] = id;
-			else if (sscanf(att, "%s=%s", string a, string v) && a != "" && v)
-				tok["attr_" + a] = v;
+			else if (att[0] == '#')
+				tok["attr_id"] = att[1..];
+			//Note that the more intuitive notation asdf="qwer zxcv" is NOT supported, as it
+			//conflicts with Markdown's protections. So we use a weird at-quoting notation
+			//instead. (Think "AT"-tribute? I dunno.)
+			else if (sscanf(attrs, "=@%s@%*[ ]%s", string val, attrs) //Quoted value asdf=@qwer zxcv@
+					|| sscanf(attrs, "=%s%*[ ]%s", val, attrs)) //Unquoted value asdf=qwer
+				tok["attr_" + att] = val;
+			else if (sscanf(attrs, "%*[ ]%s", attrs)) //No value at all (should always match, but will trim for consistency)
+				tok["attr_" + att] = "1";
 		}
 		return 1;
 	}
