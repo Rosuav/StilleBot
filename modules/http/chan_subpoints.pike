@@ -53,8 +53,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			"styles": style,
 		]));
 	}
-	if (mapping resp = ensure_bcaster_login(req, "channel:read:subscriptions")) return resp;
+	if (string scopes = ensure_bcaster_token(req, "channel:read:subscriptions"))
+		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
 	string chan = req->misc->channel->name[1..];
+	if (req->misc->session->user->?login == chan) //This is sensitive information, so it's broadcaster-only.
+		return render_template("login.md", (["msg": "authentication as the broadcaster"]));
 	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	array info = yield(get_sub_points(chan, 1));
 	mapping(string:int) tiercount = ([]), gifts = ([]);

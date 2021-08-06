@@ -36,7 +36,8 @@ code {background: #ffe;}
 TODO: Expand on chan_giveaway so it can handle most of the work, including the
 JSON API for managing the rewards (the HTML page will be different though).
 */
-continue Concurrent.Future fetch_rewards(string chan, string uid) {
+continue Concurrent.Future fetch_rewards(string chan) {
+	int uid = yield(get_user_id(chan));
 	mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + uid,
 			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
 	G->G->channel_reward_list[chan] = info->data;
@@ -98,20 +99,21 @@ EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward
 	send_updates_all("#" + chan);
 };
 
-void make_hooks(string chan, int broadcaster_id) {
-	rewardadd(chan, (["broadcaster_user_id": (string)broadcaster_id]));
-	rewardupd(chan, (["broadcaster_user_id": (string)broadcaster_id]));
-	rewardrem(chan, (["broadcaster_user_id": (string)broadcaster_id]));
-}
-
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	if (mapping resp = ensure_bcaster_login(req, "channel:manage:redemptions")) return resp;
+	if (string scopes = ensure_bcaster_token(req, "channel:manage:redemptions"))
+		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
 	string chan = req->misc->channel->name[1..];
-	make_hooks(chan, req->misc->session->user->id);
+	get_user_id(chan)->then() { string id = (string)__ARGS__[0];
+		rewardadd(chan, (["broadcaster_user_id": id]));
+		rewardupd(chan, (["broadcaster_user_id": id]));
+		rewardrem(chan, (["broadcaster_user_id": id]));
+	};
+	//TODO: Should non-mods be allowed to see the details?
+	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
 	//Fire-and-forget a reward listing
 	if (!G->G->channel_reward_list[chan]) G->G->channel_reward_list[chan] = ({ });
-	handle_async(fetch_rewards(chan, req->misc->session->user->id)) { };
+	handle_async(fetch_rewards(chan)) { };
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 	]) | req->misc->chaninfo);

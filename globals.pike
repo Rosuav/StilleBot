@@ -813,17 +813,21 @@ mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|voi
 	//If we get here, it's all good, carry on.
 }
 
-//As with ensure_login, but requires that the user be the channel, and will retain the token and scopes.
-mapping(string:mixed) ensure_bcaster_login(Protocols.HTTP.Server.Request req, string scopes) {
+//Make sure we have a broadcaster token with at least the given scopes. Returns 0 if we do, or a space-separated list of scopes.
+//Note that this should always be called with at least one scope, otherwise it may return a spurious zero if not logged in.
+string ensure_bcaster_token(Protocols.HTTP.Server.Request req, string scopes) {
 	string chan = req->misc->channel->name[1..];
 	array havescopes = (persist_status->path("bcaster_token_scopes")[chan]||"") / " " - ({""});
-	multiset wantscopes = (multiset)havescopes | (multiset)(scopes / " ");
-	if (mapping|string resp = ensure_login(req, indices(wantscopes) * " ")) return resp;
-	if (chan != req->misc->session->user->login)
-		return render_template("login.md", (["scopes": (array)wantscopes * " ", "msg": "authentication as the broadcaster"]));
-	persist_status->path("bcaster_token")[chan] = req->misc->session->token;
-	persist_status->path("bcaster_token_scopes")[chan] = sort(indices(req->misc->session->scopes)) * " ";
-	persist_status->save();
+	if (req->misc->session->user->?login == chan && !sizeof((multiset)havescopes - req->misc->session->scopes)) {
+		//The broadcaster is logged in, with at least as much scope as we previously
+		//had. Upgrade bcaster_token to this token.
+		persist_status->path("bcaster_token")[chan] = req->misc->session->token;
+		persist_status->path("bcaster_token_scopes")[chan] = havescopes = sort(indices(req->misc->session->scopes)) * " ";
+		persist_status->save();
+	}
+	multiset wantscopes = (multiset)(scopes / " ");
+	multiset needscopes = (multiset)havescopes | wantscopes;
+	if (sizeof(needscopes) > sizeof(havescopes)) return sort(indices(needscopes)) * " ";
 }
 
 //User text will be given to the given user_text object; emotes will be markdowned.

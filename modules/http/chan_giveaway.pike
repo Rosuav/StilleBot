@@ -233,19 +233,13 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 {
 	mapping cfg = req->misc->channel->config;
 	string chan = req->misc->channel->name[1..];
-	string login = "<a href=\"" + req->not_query + "?login=bcaster\">Broadcaster login</a>";
-	if (req->variables->login == "bcaster") {
-		if (mapping resp = ensure_bcaster_login(req, "channel:manage:redemptions")) return resp;
-		return redirect(req->not_query);
-	}
-	string token = persist_status->path("bcaster_token")[chan];
-	//TODO: Validate the token. If it's not valid, clear it and give this same error.
-	//Currently tokens get validated only when the websocket connection is established.
-	if (!token) return render(req, ([
+	string login = "[Broadcaster login](:.twitchlogin data-scopes=channel:manage:redemptions)";
+	if (string scopes = ensure_bcaster_token(req, "channel:manage:redemptions")) return render(req, ([
 		"error": "This page will become available once the broadcaster has logged in and configured redemptions.",
 		"login": login,
 	]));
-	login += " | <a href=\"/twitchlogin?next=" + req->not_query + "\">Mod login</a>";
+	string token = persist_status->path("bcaster_token")[chan];
+	login += " [Mod login](:.twitchlogin)"; //TODO: If logged in as wrong user, allow logout
 	int broadcaster_id = yield(get_user_id(chan));
 	Concurrent.Future call(string method, string query, mixed body) {
 		return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&" + query,
