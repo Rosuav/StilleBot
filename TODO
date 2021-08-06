@@ -75,3 +75,6 @@
 * Authentication on Firefox may now have issues with the default popup blocker. Can we
   comply with normal "click for popup" expectations somehow?
 * Giveaway: Replace login links with buttons
+* Enable/disable rewards - allow use of title, will do lookup
+* Redemption triggers - specials?
+* Do I need a way to have multiple execution triggers - a generalization of aliases??
