@@ -814,8 +814,8 @@ mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|voi
 }
 
 //As with ensure_login, but requires that the user be the channel, and will retain the token and scopes.
-mapping(string:mixed) ensure_bcaster_login(Protocols.HTTP.Server.Request req, string scopes, string|void chan) {
-	if (!chan) chan = req->misc->channel->name[1..];
+mapping(string:mixed) ensure_bcaster_login(Protocols.HTTP.Server.Request req, string scopes) {
+	string chan = req->misc->channel->name[1..];
 	array havescopes = (persist_status->path("bcaster_token_scopes")[chan]||"") / " " - ({""});
 	multiset wantscopes = (multiset)havescopes | (multiset)(scopes / " ");
 	if (mapping|string resp = ensure_login(req, indices(wantscopes) * " ")) return resp;
