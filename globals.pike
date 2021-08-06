@@ -457,6 +457,7 @@ bool _parse_attrs(string text, mapping tok) //Used in renderer and lexer - ideal
 {
 	if (sscanf(text, "{:%[^{}\n]}%s", string attrs, string empty) && empty == "")
 	{
+		//TODO: Support attr="x y z" as well
 		foreach (attrs / " ", string att)
 		{
 			if (sscanf(att, ".%s", string cls) && cls && cls != "")
@@ -790,7 +791,7 @@ class TwitchAuth
 
 mapping(string:mixed) twitchlogin(Protocols.HTTP.Server.Request req, multiset(string) scopes, string|void next)
 {
-	mapping resp = render_template("login.md", (["scopes": (array)scopes * " "]));
+	mapping resp = render_template("login.md", (["scopes": ((array)scopes - ({""})) * " "]));
 	req->misc->session->redirect_after_login = next || req->full_query; //Shouldn't usually be necessary
 	return resp;
 }
