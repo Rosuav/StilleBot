@@ -34,15 +34,6 @@
 * Pike HTTP, SSL, and keep-alive: what's going on? Is that why Chrome gets confused?
   - It's currently just disabled - we add "Connection: close" to all responses. Would
     be nice to figure out what's actually wrong and then reap the performance benefits.
-* Allow the bot's commands to be individually enabled and disabled for a particular channel
-  using the web interface. Would be subordinate to the active_channels feature, which gives
-  a hard restriction and would prevent the command from showing up for enabling if it's not
-  one of the specified channels.
-  - For some commands (eg hypetrain), this can be done by shadowing with your own to disable,
-    or to enable a hidden one, create one with the appropriate builtin.
-  - There's now a !features command; needs a web UI. Shadowing will still be possible, and
-    will be the only way to rename such commands, but activation and deactivation should be
-    fully-supported features.
 * On the bot's emote list, allow search/filter by text
 * Advanced timer functionality
   - If there's already a timer of this command happening, allow the user to pick whether it
@@ -84,4 +75,3 @@
 * Authentication on Firefox may now have issues with the default popup blocker. Can we
   comply with normal "click for popup" expectations somehow?
 * Giveaway: Replace login links with buttons
-* Make an access level for commands "VIP or mod" (cf Tina)
