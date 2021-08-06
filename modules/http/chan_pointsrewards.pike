@@ -4,7 +4,8 @@ constant hidden_command = 1;
 constant access = "none";
 constant markdown = #"# Points rewards - $$channel$$
 
-TODO: Allow commands to be triggered by channel point redemptions.
+* TODO: Allow commands to be triggered by channel point redemptions.
+{:#rewards}
 
 This will eventually have a list of all your current rewards, whether they can be managed
 by StilleBot, and a place to attach behaviour to them. Coupled with appropriate use of
@@ -29,25 +30,38 @@ Dynamic management of rewards that weren't created by my client_id has to be rej
 the can_manage flag in the front end; it's 1 if editable, absent if not.)
 */
 
-bool need_mod(string grp) {return grp == "control";}
+bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
-	return 0; //Stub
+	array rewards = G->G->pointsrewards[channel->name[1..]];
+	if (!rewards) return (["status": "Loading, please wait..."]); //When it's loaded, populate_rewards_cache() will update us
+	return (["items": rewards]); //TODO: Support partial updates; also give info about dynamic status
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string grp, string chan);
-	if (grp != "control" || !G->G->irc->channels["#" + chan]) return;
+	if (!G->G->irc->channels["#" + chan]) return;
 }
 
-mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+continue Concurrent.Future populate_rewards_cache(string chan) {
+	int broadcaster_id = yield(get_user_id(chan));
+	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
+	mapping params = (["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]);
+	array rewards = yield(twitch_api_request(url, params))->data;
+	multiset manageable = (multiset)yield(twitch_api_request(url + "&only_manageable_rewards=true", params))->data->id;
+	foreach (rewards, mapping r) r->can_manage = manageable[r->id];
+	G->G->pointsrewards[chan] = rewards;
+	send_updates_all("#" + chan);
+}
+void update_rewards_cache(string chan) {handle_async(populate_rewards_cache(chan)) { };}
+
+mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	//TODO: Check if we have broadcaster perms. Possibly deny altogether if not mod, too.
-	//string chan = req->misc->channel->name[1..];
-	//int broadcaster_id = yield(get_user_id(chan));
-	//array rewards = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
-	//	(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])))->data;
+	if (string scopes = ensure_bcaster_token(req, "channel:manage:redemptions"))
+		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
+	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
+	update_rewards_cache(req->misc->channel->name[1..]);
 	return render(req, ([
-		"vars": (["ws_group": req->misc->is_mod ? "control" : "view"]),
+		"vars": (["ws_group": ""]),
 	]) | req->misc->chaninfo);
 }
 
@@ -103,4 +117,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	]);
 }
 
-protected void create(string name) {::create(name);}
+protected void create(string name) {
+	::create(name);
+	if (!G->G->pointsrewards) G->G->pointsrewards = ([]);
+}
