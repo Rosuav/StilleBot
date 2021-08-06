@@ -29,13 +29,13 @@ export function waitlate(wait_time, late_time, confirmdesc, callback) {
 	};
 }
 
-on("click", "button.twitchlogin", async e => {
+on("click", ".twitchlogin", async e => {
 	let scopes = e.match.dataset.scopes || ""; //Buttons may specify their scopes-required, otherwise assume just identity is needed
 	const data = await (await fetch("/twitchlogin?urlonly=true&scope=" + scopes)).json();
 	window.open(data.uri, "login", "width=525, height=900");
 });
 
-on("click", "button.twitchlogout", async e => {
+on("click", ".twitchlogout", async e => {
 	await fetch("/logout"); //Don't care what the response is (it'll be HTML anyway)
 	location.reload();
 });
