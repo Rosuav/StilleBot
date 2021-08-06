@@ -1,10 +1,10 @@
 inherit http_websocket;
 constant markdown = #"# Feature management for channel $$channel$$
 
-## Manageable components
+## Chat commands
 
-Feature | Controls | Affected commands | Active?
---------|----------|-------------------|---------
+Feature | Description | Affected commands | Active?
+--------|-------------|-------------------|---------
 (loading...) | - | - | -
 {: #features}
 
