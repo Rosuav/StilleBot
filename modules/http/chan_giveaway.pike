@@ -359,6 +359,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			config->multi = ((array(string))sort(values(existing))) * " ";
 		else config->multi = "";
 	}
+	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render(req, ([
 		"vars": (["ws_group": req->misc->is_mod ? "control" : "view", "config": config]),
 		"giveaway_title": g->title, //Prepopulate the heading and the page title so it doesn't have to load and redraw
