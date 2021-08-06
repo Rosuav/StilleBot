@@ -160,7 +160,7 @@ string img(string code, int|string id)
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping emotesets = ([]);
-	string login_link = "[Log in to highlight the emotes you have access to](:#twitchlogin)";
+	string login_link = "[Log in to highlight the emotes you have access to](:#twitchlogin data-scopes=user_subscriptions)";
 	mapping v2_have = ([]);
 	if (req->misc->session->?scopes->?user_subscriptions)
 	{
@@ -187,7 +187,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		return w;
 	});
 	return render_template("checklist.md", ([
-		"vars": (["login_scope": "user_subscriptions"]),
 		"login_link": login_link,
 		"text": text, "emotes": sprintf("img[title=\"%s\"]", used[*]) * ", ",
 	]));
