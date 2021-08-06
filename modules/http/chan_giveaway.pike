@@ -364,7 +364,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		"giveaway_title": g->title, //Prepopulate the heading and the page title so it doesn't have to load and redraw
 		"modonly": req->misc->is_mod && "",
 		"login": req->misc->is_mod ? "" : login,
-	]));
+	]) | req->misc->chaninfo);
 }
 
 bool need_mod(string grp) {return grp == "control";}
