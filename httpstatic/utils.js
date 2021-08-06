@@ -34,3 +34,8 @@ on("click", "button.twitchlogin", async e => {
 	const data = await (await fetch("/twitchlogin?urlonly=true&scope=" + scopes)).json();
 	window.open(data.uri, "login", "width=525, height=900");
 });
+
+on("click", "button.twitchlogout", async e => {
+	await fetch("/logout"); //Don't care what the response is (it'll be HTML anyway)
+	location.reload();
+});

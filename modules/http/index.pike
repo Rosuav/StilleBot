@@ -6,7 +6,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	string loglink = "[Log in with your Twitch credentials](:.twitchlogin)";
 	if (yourname != "")
 	{
-		loglink = "[Log out](/logout)";
+		loglink = "[Log out](:.twitchlogout)";
 		yourname = "You are currently logged in as " + yourname + ".";
 	}
 	return render_template("index.md", ([
