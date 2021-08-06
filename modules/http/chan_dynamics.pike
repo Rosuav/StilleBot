@@ -76,6 +76,7 @@ mapping remap_eventsub_message(mapping info) {
 	return info;
 }
 
+//TODO: Migrate to pointsrewards and have that update everything
 EventSub rewardadd = EventSub("rewardadd", "channel.channel_points_custom_reward.add", "1") {
 	[string chan, mapping info] = __ARGS__;
 	if (!G->G->channel_reward_list[chan]) return;
