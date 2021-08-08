@@ -51,28 +51,32 @@ continue mapping|Concurrent.Future parse_hype_status(mapping data)
 void hypetrain_progression(string status, string chan, mapping info)
 {
 	//Stdio.append_file("evthook.log", sprintf("EVENT: Hype %s [%O, %d]: %O\n", status, chan, time(), info));
-	int channel = (int)chan;
-	handle_async(parse_hype_status(info)) {send_updates_all(channel, @__ARGS__);};
+	handle_async(parse_hype_status(info)) {send_updates_all((int)chan, @__ARGS__);};
 }
 
 EventSub hypetrain_begin = EventSub("hypetrain_begin", "channel.hype_train.begin", "1") {hypetrain_progression("begin", @__ARGS__);};
 EventSub hypetrain_progress = EventSub("hypetrain_progress", "channel.hype_train.progress", "1") {hypetrain_progression("progress", @__ARGS__);};
 EventSub hypetrain_end = EventSub("hypetrain_end", "channel.hype_train.end", "1") {hypetrain_progression("end", @__ARGS__);};
 
-continue mapping|Concurrent.Future get_state(int|string channel)
+continue mapping|Concurrent.Future get_state(int|string chan)
 {
 	mixed ex = catch {
-		if (stringp(channel)) channel = yield(get_user_id(channel)); //Simplify usage for channel mode
-		hypetrain_begin((string)channel, (["broadcaster_user_id": (string)channel]));
-		hypetrain_progress((string)channel, (["broadcaster_user_id": (string)channel]));
-		hypetrain_end((string)channel, (["broadcaster_user_id": (string)channel]));
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + (string)channel,
-				(["Authorization": "Bearer " + G->G->hypetrain_token[channel]])));
+		string uid;
+		if (intp(chan)) {//Deprecated, might change everything to be all channel names at some point
+			uid = (string)chan;
+			chan = yield(get_user_info(chan))->login;
+		}
+		else uid = (string)yield(get_user_id(chan));
+		hypetrain_begin(uid, (["broadcaster_user_id": uid]));
+		hypetrain_progress(uid, (["broadcaster_user_id": uid]));
+		hypetrain_end(uid, (["broadcaster_user_id": uid]));
+		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + uid,
+				(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
 		mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
 		return parse_hype_status(data);
 	};
 	if (ex && arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401")) {
-		return (["error": "Authentication problem. It may help to ask the broadcaster to open this page: ", "errorlink": "https://sikorsky.rosuav.com/hypetrain?reauth"]);
+		return (["error": "Authentication problem. It may help to ask the broadcaster to open this page: ", "errorlink": "https://sikorsky.rosuav.com/hypetrain?for=" + chan]);
 	}
 	throw(ex);
 }
@@ -93,48 +97,48 @@ string url(int|string id) { //TODO: Dedup with the one in checklist
 	if (intp(id)) return sprintf("https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0", id);
 	return sprintf("https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0", id);
 }
+string avail_emotes = "";
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	string channel = req->variables["for"];
-	if (req->variables->reauth)
-	{
-		if (mapping resp = ensure_login(req, "channel:read:hype_train")) return resp;
-		//Weirdly, this seems to work even if the broadcaster_id isn't the one you logged
-		//in as, but you need to have the appropriate scope. So once we see a token that
-		//works, save it, until it doesn't. (TODO: actually discard that token once it's
-		//no longer valid.) 20210523: No longer the case. Now only the broadcaster token
-		//will work. This sucks. It's no longer possible to track as a viewer. WHY NOT?!?
-		G->G->hypetrain_token[(int)req->misc->session->user->id] = req->misc->session->token;
+	string chan = lower_case(req->variables["for"] || "");
+	if (chan == "") {
+		//If you've just logged in, assume that you want your own hype train stats.
+		//Make sure that the page link is viably copy-pastable.
+		if (req->misc->session->scopes[?"channel:read:hype_train"])
+			return redirect("hypetrain?for=" + req->misc->session->user->login);
+		return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
+			"loading": "(no channel selected)",
+			"channelname": "(no channel)",
+			"emotes": avail_emotes,
+			"backlink": !req->variables->mobile && "<a href=\"hypetrain?mobile\">Switch to mobile view</a>",
+		]));
 	}
-	int push_updates = 0;
-	if (!channel || channel == "") channel = req->misc->session->?user->?login;
-	//If we get a fresh token, push updates out, in case they had errors
-	if (channel == req->misc->session->?user->?login && req->misc->session->token)
-		send_updates_all((int)req->misc->session->user->id);
-	mapping emotemd = G->G->emote_code_to_markdown || ([]);
-	mapping emoteids = function_object(G->G->http_endpoints->checklist)->emoteids; //Hack!
-	string avail_emotes = "";
-	foreach (emotes / "\n", string level)
-	{
-		avail_emotes += "\n*";
-		foreach (level / " ", string emote)
+	int need_token = !persist_status->path("bcaster_token")[chan];
+	string scopes = ensure_bcaster_token(req, "channel:read:hype_train", chan);
+	//If we got a fresh token, push updates out, in case they had errors
+	if (need_token && !scopes) send_updates_all(chan);
+	if (avail_emotes == "") {
+		mapping emotemd = G->G->emote_code_to_markdown || ([]);
+		mapping emoteids = function_object(G->G->http_endpoints->checklist)->emoteids; //Hack!
+		avail_emotes = "";
+		foreach (emotes / "\n", string level)
 		{
-			string md = emotemd[emote] || sprintf("![%s](%s)", emote, url(emoteids[emote]));
-			if (!md) {avail_emotes += " " + emote; continue;}
-			avail_emotes += sprintf(" %s*%s*", md, replace(md, "/1.0", "/3.0"));
+			avail_emotes += "\n*";
+			foreach (level / " ", string emote)
+			{
+				string md = emotemd[emote] || sprintf("![%s](%s)", emote, url(emoteids[emote]));
+				if (!md) {avail_emotes += " " + emote; continue;}
+				avail_emotes += sprintf(" %s*%s*", md, replace(md, "/1.0", "/3.0"));
+			}
 		}
 	}
-	return (channel ? get_user_id(channel) : Concurrent.resolve(0)) //TODO: Make this a continue function
-		->then(lambda(int uid) {
-			return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
-				"vars": (["ws_type": uid && "hypetrain", "ws_group": uid]),
-				"loading": uid ? "Loading hype status..." : "(no channel selected)",
-				"channelname": channel || "(no channel)",
-				"emotes": avail_emotes,
-				"backlink": !req->variables->mobile && sprintf("<a href=\"hypetrain?for=%s&mobile\">Switch to mobile view</a>", channel || ""),
-			]));
-		}); //TODO: If auth error, clear the token
+	return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
+		"vars": (["ws_type": "hypetrain", "ws_group": chan, "need_scopes": scopes || ""]),
+		"loading": "Loading hype status...",
+		"channelname": chan, "emotes": avail_emotes,
+		"backlink": !req->variables->mobile && sprintf("<a href=\"hypetrain?for=%s&mobile\">Switch to mobile view</a>", chan),
+	]));
 }
 
 constant command_description = "Show the status of a hype train in this channel, or the cooldown before the next can start";
@@ -217,5 +221,4 @@ protected void create(string name)
 {
 	::create(name);
 	if (!G->G->hypetrain_checktime) G->G->hypetrain_checktime = ([]);
-	if (!G->G->hypetrain_token) G->G->hypetrain_token = ([]);
 }

@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, DIV, IMG, P, UL, LI, SPAN} = choc;
+const {A, BUTTON, BR, DIV, IMG, P, UL, LI, SPAN} = choc;
 
 //The threshold for "Super Hard" is this many bits per level (not total).
 //In order to unlock the sixth emote for each level, you need to have a
@@ -72,7 +72,13 @@ function check_interaction() {
 
 let last_rendered = null;
 export let render = (state) => {
-	if (state.error) {set_content("#hypeinfo", P({id: "status"}, [state.error, A({href: state.errorlink}, state.errorlink)])); return;}
+	if (state.error) {
+		set_content("#hypeinfo", P({id: "status"}, [
+			state.error, A({href: state.errorlink}, state.errorlink), BR(),
+			BUTTON({className: "twitchlogin", "data-scopes": need_scopes || "channel:read:hype_train"}, "Broadcaster log in"),
+		]));
+		return;
+	}
 	check_interaction();
 	//Show the emotes that we could win (or could have won last hype train)
 	const lvl = state.cooldown && state.level; //If not active or cooling down, hide 'em all
