@@ -829,7 +829,7 @@ string ensure_bcaster_token(Protocols.HTTP.Server.Request req, string scopes, st
 		//The broadcaster is logged in, with at least as much scope as we previously
 		//had. Upgrade bcaster_token to this token.
 		persist_status->path("bcaster_token")[chan] = req->misc->session->token;
-		persist_status->path("bcaster_token_scopes")[chan] = havescopes = sort(indices(req->misc->session->scopes)) * " ";
+		persist_status->path("bcaster_token_scopes")[chan] = sort(havescopes = indices(req->misc->session->scopes)) * " ";
 		persist_status->save();
 	}
 	multiset wantscopes = (multiset)(scopes / " ");
