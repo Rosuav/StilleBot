@@ -83,7 +83,7 @@ continue mapping|Concurrent.Future get_state(int|string chan)
 
 void probe_hype_train(int channel)
 {
-	write("Clock-pinging %d clients for hype train %d\n", sizeof(websocket_groups[channel]), channel);
+	write("Clock-pinging %d clients for hype train %d\n", sizeof(websocket_groups[channel] || ([])), channel);
 	send_updates_all(channel);
 }
 
