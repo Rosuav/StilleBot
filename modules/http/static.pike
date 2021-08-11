@@ -40,7 +40,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string fil
 			"type": "text/javascript",
 		]);
 	}
-	return (["file": Stdio.File("httpstatic/" + filename)]);
+	return ([
+		"file": Stdio.File("httpstatic/" + filename),
+		"extra_heads": (["Access-Control-Allow-Origin": "*"]),
+	]);
 }
 
 //Handle /favicon.ico as if it were /static/favicon.ico
