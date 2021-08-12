@@ -905,7 +905,9 @@ class _mainwindow
 
 	void sig_update_activate(object self)
 	{
-		int err = G->bootstrap_all();
+		//object main = G->bootstrap("stillebot.pike"); //Test new bootstrap code
+		//int err = main ? main->bootstrap_all() : 1;
+		int err = G->bootstrap_all(); //Normally the current bootstrap code is fine.
 		if (!err) return; //All OK? Be silent.
 		if (string winid = getenv("WINDOWID")) //On some Linux systems we can pop the console up.
 			catch (Process.create_process(({"wmctrl", "-ia", winid}))->wait()); //Try, but don't mind errors, eg if wmctrl isn't installed.
