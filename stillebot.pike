@@ -20,11 +20,12 @@ void console(object stdin, string buf)
 
 object bootstrap(string c)
 {
+	sscanf(explode_path(c)[-1], "%s.pike", string name);
 	program|object compiled;
-	mixed ex=catch {compiled=compile_file(c);};
+	mixed ex = catch {compiled = compile_file(c);};
 	if (ex) {werror("Exception in compile!\n"); werror(ex->describe()+"\n"); return 0;}
 	if (!compiled) werror("Compilation failed for "+c+"\n");
-	if (mixed ex=catch {compiled = compiled(c);}) werror(describe_backtrace(ex)+"\n");
+	if (mixed ex = catch {compiled = compiled(name);}) werror(describe_backtrace(ex)+"\n");
 	werror("Bootstrapped "+c+"\n");
 	return compiled;
 }
