@@ -385,7 +385,7 @@ export function sockmsg_validated(data) {
 		DOM("#rawdlg").showModal();
 	}
 	else if (data.cmdname === "updateraw") {
-		DOM("#command_details").firstChild.replaceWith(render_command(data.response, 1));
+		DOM("#command_details").firstChild.replaceWith(render_command(data.response, 1)); //TODO: Don't show toplevels if it's a special or trigger
 		checkpos();
 		DOM("#rawdlg").close();
 	}
