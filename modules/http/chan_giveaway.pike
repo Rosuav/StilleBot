@@ -281,7 +281,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 						"cost": cost * tickets,
 						"is_enabled": status->is_open || cfg->giveaway->pausemode,
 						"is_paused": !status->is_open && cfg->giveaway->pausemode,
-					]))))) continue; //Let it get recreated
+					]))))) {m_delete(existing, id); continue;} //And let it get recreated
 				}
 				qty -= ({tickets});
 			}
