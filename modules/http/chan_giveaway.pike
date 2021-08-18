@@ -276,12 +276,12 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				}
 				else {
 					++numupdated;
-					yield(call("PATCH", "id=" + id, ([
+					if (catch (yield(call("PATCH", "id=" + id, ([
 						"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
 						"cost": cost * tickets,
 						"is_enabled": status->is_open || cfg->giveaway->pausemode,
 						"is_paused": !status->is_open && cfg->giveaway->pausemode,
-					])));
+					]))))) continue; //Let it get recreated
 				}
 				qty -= ({tickets});
 			}
