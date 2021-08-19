@@ -374,10 +374,11 @@ void websocket_cmd_savefavs(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (uid) persist_status->path("cmdedit_favourites")[(string)uid] = favs;
 	//Scan all current connections for anyone with the same UID and update them.
 	//This will include the current connection.
+	array sameuser = ({ });
 	foreach (websocket_groups; string|int group; array socks) {
-		socks = filter(socks) {return __ARGS__[0]->session->user->?id == uid;};
-		if (sizeof(socks)) _send_updates(socks, group);
+		foreach (socks, object sock) if (sock->session->user->?id == uid) sameuser += ({sock});
 	}
+	sameuser->send_text(Standards.JSON.encode((["cmd": "loadfavs", "favs": favs])));
 }
 
 protected void create(string name) {::create(name); call_out(find_builtins, 0);}
