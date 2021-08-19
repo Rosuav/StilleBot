@@ -283,7 +283,7 @@ echoable_message validate(echoable_message resp, mapping state)
 //a command or special (they behave the same way). Returns 0 if the command fails
 //validation entirely, otherwise returns the canonicalized version of it.
 mapping(string:mixed) _syntax_check(mapping(string:mixed) msg, string|void cmdname) {
-	mapping state = (["cmd": cmdname || "validateme", "cdanon": 0, "cooldowns": ([]), "voices": "syntaxonly"]);
+	mapping state = (["cmd": cmdname || "validateme", "cooldowns": ([]), "voices": "syntaxonly"]);
 	echoable_message result = validate(msg, state);
 	if (command == "!!trigger" && result != "") {
 		if (!mappingp(result)) result = (["message": result]);
@@ -365,6 +365,19 @@ void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (!valid) return; //But it's okay if the name is invalid.
 	string cmdname = ((valid[0] || msg->cmdname) / "#")[0];
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[1]]), 4));
+}
+
+void websocket_cmd_savefavs(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!arrayp(msg->favs)) return;
+	array favs = validate(msg->favs[*], (["cmd": "fav", "cooldowns": ([]), "voices": "syntaxonly"])) - ({""}) - ({0});
+	string uid = conn->session->user->?id;
+	if (uid) persist_status->path("cmdedit_favourites")[(string)uid] = favs;
+	//Scan all current connections for anyone with the same UID and update them.
+	//This will include the current connection.
+	foreach (websocket_groups; string|int group; array socks) {
+		socks = filter(socks) {return __ARGS__[0]->session->user->?id == uid;};
+		if (sizeof(socks)) _send_updates(socks, group);
+	}
 }
 
 protected void create(string name) {::create(name); call_out(find_builtins, 0);}
