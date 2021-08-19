@@ -376,11 +376,15 @@ void websocket_cmd_savefavs(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (uid) persist_status->path("cmdedit_favourites")[(string)uid] = favs;
 	//Scan all current connections for anyone with the same UID and update them.
 	//This will include the current connection.
-	array sameuser = ({ });
-	foreach (websocket_groups; string|int group; array socks) {
-		foreach (socks, object sock) if (sock->session->user->?id == uid) sameuser += ({sock});
+	if (0) {
+		//WebSockets don't (as of 20210820) have a query_id() method, and id is protected.
+		//This doesn't work. Will need to fix in upstream Pike, or change how I retain groups.
+		array sameuser = ({ });
+		foreach (websocket_groups; string|int group; array socks) {
+			foreach (socks, object sock) if (sock->query_id()->session->user->?id == uid) sameuser += ({sock});
+		}
+		sameuser->send_text(Standards.JSON.encode((["cmd": "loadfavs", "favs": favs])));
 	}
-	sameuser->send_text(Standards.JSON.encode((["cmd": "loadfavs", "favs": favs])));
 }
 
 protected void create(string name) {::create(name); call_out(find_builtins, 0);}
