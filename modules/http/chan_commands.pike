@@ -93,6 +93,14 @@ void find_builtins() {
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
+	if (req->request_type == "POST") {
+		//Undocumented and private. May be moved to a better location and made public.
+		//Syntax-validate a JSON message structure. Returns the canonicalized version,
+		//or a zero.
+		mixed body = Standards.JSON.decode(req->body_raw);
+		if (!body || !mappingp(body) || !body->msg) return (["error": 400]);
+		return jsonify(_syntax_check(body->msg, body->cmdname));
+	}
 	if (req->misc->is_mod) {
 		return render(req, ([
 			"vars": (["ws_group": "", "complex_templates": G->G->commands_complex_templates, "builtins": G->G->commands_builtins,
@@ -258,11 +266,30 @@ echoable_message validate(echoable_message resp, mapping state)
 	aliases = aliases[*] - "!";
 	if (sizeof(aliases)) ret->aliases = aliases * " ";
 
-	//Voice ID validity depends on the channel we're working with.
-	if (state->voices[resp->voice]) ret->voice = resp->voice;
+	//Voice ID validity depends on the channel we're working with. A syntax-only check will
+	//accept any voice ID as long as it's a string of digits.
+	if (state->voices == "syntaxonly") {
+		if (sscanf(resp->voice||"", "%[0-9]%s", string v, string end) && v != "" && end == "") ret->voice = v;
+	}
+	else if (state->voices[resp->voice]) ret->voice = resp->voice;
 
 	if (sizeof(ret) == 1) return ret->message; //No flags? Just return the message.
 	return ret;
+}
+
+//Check a message for syntactic validity without any actual permissions
+//The channel will be ignored and you don't have to be a mod (or even logged in).
+//If cmdname == "!!trigger", will validate a trigger. Otherwise, will validate
+//a command or special (they behave the same way). Returns 0 if the command fails
+//validation entirely, otherwise returns the canonicalized version of it.
+mapping(string:mixed) _syntax_check(mapping(string:mixed) msg, string|void cmdname) {
+	mapping state = (["cmd": cmdname || "validateme", "cdanon": 0, "cooldowns": ([]), "voices": "syntaxonly"]);
+	echoable_message result = validate(msg, state);
+	if (command == "!!trigger" && result != "") {
+		if (!mappingp(result)) result = (["message": result]);
+		m_delete(result, "otherwise"); //Triggers don't have an Else clause
+	}
+	return result;
 }
 
 array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
