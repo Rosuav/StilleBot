@@ -102,7 +102,7 @@ void subpoints_updated(string hook, string chan, mapping info) {
 	//TODO: If it's reliable, maintain the subpoint figure and adjust it, instead of re-fetching.
 	Stdio.append_file("evt_subpoints.log", sprintf("EVENT: Subpoints %s [%O, %d]: %O\n", hook, chan, time(), info));
 	object channel = G->G->irc->channels["#" + chan];
-	mapping cfg = channel->config->subpoints;
+	mapping cfg = channel->?config->?subpoints;
 	if (!cfg || !sizeof(cfg)) return;
 	handle_async(get_sub_points(chan)) {
 		int points = __ARGS__[0];
