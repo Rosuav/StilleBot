@@ -97,7 +97,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//Undocumented and private. May be moved to a better location and made public.
 		//Syntax-validate a JSON message structure. Returns the canonicalized version,
 		//or a zero.
-		mixed body = Standards.JSON.decode(req->body_raw);
+		mixed body = Standards.JSON.decode(utf8_to_string(req->body_raw));
 		if (!body || !mappingp(body) || !body->msg) return (["error": 400]);
 		return jsonify(_syntax_check(body->msg, body->cmdname), 7);
 	}
