@@ -324,6 +324,7 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 			if (!sizeof(response)) id = "1";
 			else id = (string)((int)response[-1]->id + 1);
 		}
+		else if (id == "validateme" || has_prefix(id, "changetab_")) return validate(msg->response, state); //Validate-only and ignore preexisting triggers
 		else if (!(int)id) return 0; //Invalid ID
 		state->cmd += "-" + id;
 		echoable_message trigger = validate(msg->response, state);
