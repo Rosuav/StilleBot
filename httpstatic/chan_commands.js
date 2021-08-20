@@ -10,8 +10,6 @@ const hooks = {
 
 /* Stuff not working:
 
-* Raw view needs to approximate the size of the others - can sizes be synchronized in CSS?
-  - Maybe set a max width for classic view, and have it scroll???
 * Properties dialog for graphical view
 * Anchor settings based on what's being edited
 
@@ -324,7 +322,7 @@ function select_tab(tab, response) {
 			DIV({className: "error", id: "raw_error"}),
 			DIV([BUTTON({className: "raw_view compact", type: "button"}, "Compact"),
 				BUTTON({className: "raw_view pretty", type: "button"}, "Pretty-print")]),
-			TEXTAREA({id: "raw_text", rows: 10, cols: 80}, JSON.stringify(cmd_editing)),
+			TEXTAREA({id: "raw_text", rows: 25, cols: 100}, JSON.stringify(cmd_editing)),
 		]); break;
 		default: set_content("#command_details", "Unknown tab " + tab);
 	}
