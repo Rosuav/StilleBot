@@ -293,19 +293,23 @@ on("change", 'select[data-flag="builtin"]', e => {
 });
 
 let cmd_editing = null, mode = "", cmd_id = "";
-function change_tab(tab) {
-	console.log("Previous:", mode);
-	let response = null;
+function get_message_details() {
 	switch (mode) {
-		case "classic": response = get_command_details(DOM("#command_details").firstChild); break; //TODO: Do we need to retain anything?
-		case "graphical": response = gui_save_message(); break;
+		case "classic": return get_command_details(DOM("#command_details").firstChild);
+		case "graphical": return gui_save_message();
 		case "raw": {
+			let response;
 			try {response = JSON.parse(DOM("#raw_text").value);}
 			catch (e) {set_content("#raw_error", "JSON format error: " + e.message); return null;}
 			set_content("#raw_error", ""); //TODO: Show errors somewhere else (maybe in the header??)
+			return response;
 		}
-		case "": break;
+		case "": return null;
 	}
+}
+function change_tab(tab) {
+	console.log("Previous:", mode);
+	let response = get_message_details();
 	if (response) ws_sync.send({cmd: "validate", cmdname: "changetab_" + tab, response});
 	else select_tab(tab, cmd_editing);
 }
@@ -391,7 +395,7 @@ function get_command_details(elem) {
 }
 
 on("click", "#save_advanced", async e => {
-	let info = get_command_details(DOM("#command_details").firstChild);
+	let info = get_message_details();
 	/*
 	const cmd = commands[document.getElementById("cmdname").innerText.slice(1)];
 	console.log("WAS:", cmd);
