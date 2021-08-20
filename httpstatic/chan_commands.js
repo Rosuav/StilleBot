@@ -1,5 +1,6 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, INPUT, DIV, DETAILS, LI, LABEL, SPAN, SUMMARY, TABLE, TBODY, TR, TH, TD, SELECT, OPTION, FIELDSET, LEGEND, CODE, UL} = choc;
+const {A, BR, BUTTON, INPUT, DIV, DETAILS, LI, LABEL, SPAN, SUMMARY, TABLE, TBODY, TR, TH, TD,
+	P, TEXTAREA, SELECT, OPTION, FIELDSET, LEGEND, CODE, UL} = choc;
 import {waitlate} from "$$static||utils.js$$";
 const commands = { };
 const hooks = {
@@ -290,15 +291,25 @@ on("change", 'select[data-flag="builtin"]', e => {
 	set_content(e.match.closest("table").querySelector(".paramrow tbody"), describe_builtin_vars(builtin));
 });
 
-
+let cmd_editing = null;
 function change_tab(tab) {
 	console.log("Selected:", tab);
-	DOM("#tabset").dataset.selected = tab;
+	switch (tab) {
+		case "Classic": set_content("#command_details", render_command(cmd_editing, cmd_editing.id[0] !== '!')); break;
+		case "Raw": set_content("#command_details", [
+			P("Copy and paste entire commands in JSON format. Make changes as desired!"),
+			DIV({className: "error", id: "raw_error"}),
+			DIV([BUTTON({className: "raw_view compact", type: "button"}, "Compact"),
+				BUTTON({className: "raw_view pretty", type: "button"}, "Pretty-print")]),
+			TEXTAREA({id: "raw_text", rows: 10, cols: 80}),
+		]); break;
+		default: set_content("#command_details", "Unknown tab " + tab);
+	}
 }
 on("change", "#tabset input", e => change_tab(e.match.value));
 
 export function open_advanced_view(cmd) {
-	set_content("#command_details", render_command(cmd, cmd.id[0] !== '!'));
+	cmd_editing = cmd;
 	set_content("#cmdname", "!" + cmd.id.split("#")[0]);
 	if (!DOM("#tabset")) DOM("#advanced_view header").appendChild(UL({id: "tabset"}));
 	set_content("#tabset", tablist.map(tab => LI(LABEL([

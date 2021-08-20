@@ -31,7 +31,7 @@ $$save_or_login$$
 > <ul id=parameters></ul>
 > <div id=command_details></div>
 >
-> [Save](:#save_advanced) [Cancel](:.dialog_close) [Delete?](:#delete_advanced) [Raw view](:#view_raw)
+> [Save](:#save_advanced) [Cancel](:.dialog_close) [Delete?](:#delete_advanced)
 >
 {: tag=dialog #advanced_view}
 
@@ -59,11 +59,3 @@ td ul {margin: 0;}
 tr[data-tabid] {display: none; background: #e1e1e1;}
 .tabradio:checked + label {background: #efd;}
 </style>
-
-> ### Raw command view
-> Copy and paste entire commands in JSON format. Make changes as desired!
-> <div class="error" id="raw_error"></div>
-> [Compact](:.raw_view .compact) [Pretty-print](:.raw_view .pretty)
-> <textarea id=raw_text rows=10 cols=80></textarea><br>
-> [Apply changes](:#update_raw) [Close](:.dialog_close)
-{: tag=dialog #rawdlg}
