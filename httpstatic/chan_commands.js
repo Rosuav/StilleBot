@@ -10,10 +10,10 @@ const hooks = {
 
 /* Stuff not working:
 
-* Triggers can't change mode
 * Raw view needs to approximate the size of the others - can sizes be synchronized in CSS?
   - Maybe set a max width for classic view, and have it scroll???
 * Properties dialog for graphical view
+* Anchor settings based on what's being edited
 
 */
 
