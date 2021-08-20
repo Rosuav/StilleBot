@@ -180,12 +180,15 @@ mapping get_state(string group, string|void id) {
 
 //Map a flag name to a set of valid values for it
 //Blank or null is always allowed, and will result in no flag being set.
-constant valid_flags = ([
+constant message_flags = ([
 	"mode": (<"random">),
-	"access": (<"mod", "vip", "none">),
-	"visibility": (<"hidden">),
 	"action": (<"add">),
 	"dest": (<"/w", "/web", "/set">),
+]);
+//As above, but applying only to the top level of a command.
+constant command_flags = ([
+	"access": (<"mod", "vip", "none">),
+	"visibility": (<"hidden">),
 ]);
 
 constant condition_parts = ([
@@ -197,21 +200,21 @@ constant condition_parts = ([
 ]);
 
 //state array is for purely-linear state that continues past subtrees
-echoable_message validate(echoable_message resp, mapping state)
+echoable_message _validate(echoable_message resp, mapping state)
 {
 	//Filter the response to only that which is valid
 	if (stringp(resp)) return resp;
 	if (arrayp(resp)) switch (sizeof(resp))
 	{
 		case 0: return ""; //This should be dealt with at a higher level (and suppressed).
-		case 1: return validate(resp[0], state); //Collapse single element arrays to their sole element
-		default: return validate(resp[*], state) - ({""}); //Suppress any empty entries
+		case 1: return _validate(resp[0], state); //Collapse single element arrays to their sole element
+		default: return _validate(resp[*], state) - ({""}); //Suppress any empty entries
 	}
 	if (!mappingp(resp)) return ""; //Ensure that nulls become empty strings, for safety and UI simplicity.
-	mapping ret = (["message": validate(resp->message, state)]);
+	mapping ret = (["message": _validate(resp->message, state)]);
 	//Whitelist the valid flags. Note that this will quietly suppress any empty
 	//strings, which would be stating the default behaviour.
-	foreach (valid_flags; string flag; multiset ok)
+	foreach (message_flags; string flag; multiset ok)
 	{
 		if (ok[resp[flag]]) ret[flag] = resp[flag];
 	}
@@ -242,7 +245,7 @@ echoable_message validate(echoable_message resp, mapping state)
 	if (array parts = condition_parts[resp->conditional]) {
 		foreach (parts + ({"conditional"}), string key)
 			if (resp[key]) ret[key] = resp[key];
-		ret->otherwise = validate(resp->otherwise, state);
+		ret->otherwise = _validate(resp->otherwise, state);
 		if (ret->message == "" && ret->otherwise == "") return ""; //Conditionals can omit either message or otherwise, but not both
 		if (ret->conditional == "cooldown") {
 			string name = ret->cdname || "";
@@ -276,6 +279,20 @@ echoable_message validate(echoable_message resp, mapping state)
 	else if (state->voices[resp->voice]) ret->voice = resp->voice;
 
 	if (sizeof(ret) == 1) return ret->message; //No flags? Just return the message.
+	return ret;
+}
+echoable_message validate(echoable_message resp, mapping state)
+{
+	mixed ret = _validate(resp, state);
+	//If there are any top-level flags, apply them. This may require mappingifying the result.
+	//TODO: Only do this for commands, not specials or triggers.
+	foreach (command_flags; string flag; multiset ok)
+	{
+		if (ok[resp[flag]]) {
+			if (!mappingp(ret)) ret = (["message": ret]);
+			ret[flag] = resp[flag];
+		}
+	}
 	return ret;
 }
 
