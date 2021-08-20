@@ -1,8 +1,8 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, BR, BUTTON, INPUT, DIV, DETAILS, LI, LABEL, SPAN, SUMMARY, TABLE, TBODY, TR, TH, TD,
 	P, TEXTAREA, SELECT, OPTION, FIELDSET, LEGEND, CODE, UL} = choc;
-import {waitlate} from "$$static||utils.js$$";
 import {gui_load_message, gui_save_message} from "$$static||command_gui.js$$";
+import {waitlate} from "$$static||utils.js$$";
 const commands = { };
 const hooks = {
 	open_advanced: [], //Called with a command mapping when Advanced View is about to be opened

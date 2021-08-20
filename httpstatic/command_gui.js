@@ -29,7 +29,7 @@ and is everything that isn't in the Favs/Trays/Specials.
 */
 import choc, {set_content, DOM, on, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
 const {BUTTON, DIV, LABEL, INPUT, SELECT, OPTION, TR, TD, TEXTAREA, LI, CODE} = choc;
-//TODO: Create the Properties dialog, then re-call fix_dialogs() with no args
+//TODO: Create the Properties dialog before returning (so it should get caught by fix_dialogs)
 
 const SNAP_RANGE = 100; //Distance-squared to permit snapping (eg 25 = 5px radius)
 const canvas = DOM("#command_gui");
