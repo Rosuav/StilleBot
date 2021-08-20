@@ -318,7 +318,8 @@ function select_tab(tab, response) {
 		case "graphical": {
 			set_content("#command_details", "");
 			//TODO: Load up more info into the basis object (and probably keep it around)
-			const basis = cmd_id[0] === '!' ? {type: "anchor_special"} : {type: "anchor_command", command: "!" + cmd_id.split("#")[0]};
+			//Notably, specials need a ton more info
+			const basis = cmd_id[0] === '!' ? { } : {command: "!" + cmd_id.split("#")[0]};
 			gui_load_message(basis, cmd_editing);
 			break;
 		}

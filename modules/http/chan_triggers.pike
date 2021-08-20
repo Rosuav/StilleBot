@@ -76,6 +76,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"ws_code": "chan_triggers", "complex_templates": COMPLEX_TEMPLATES,
 			"builtins": G->G->commands_builtins,
 			"voices": req->misc->channel->config->voices || ([]),
+			"command_anchor_type": "trigger",
 		]),
 		"loadingmsg": "Loading...",
 		"templates": TEMPLATES * "\n",

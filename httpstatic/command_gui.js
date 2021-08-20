@@ -347,9 +347,12 @@ function element_path(element) {
 	return path_cache[cache_key] = {path, connections, totheight: y, labelpos};
 }
 const actives = [
-	{type: "anchor_command", x: 10, y: 25, command: "!demo", aliases: "", message: [""]},
+	//Specific anchor types for testing
+	//{type: "anchor_command", x: 10, y: 25, command: "!demo", aliases: "", message: [""]},
 	//{type: "anchor_special", x: 10, y: 25, message: [""]},
 	//{type: "anchor_trigger", x: 10, y: 25, message: [""], conditional: "contains", expr1: "", expr2: "%s"},
+	//Generic anchor controlled by the caller
+	{type: "anchor_" + command_anchor_type, x: 10, y: 25, message: [""]},
 ];
 const favourites = [];
 const trays = { };
@@ -993,9 +996,9 @@ function message_to_element(msg, new_elem, array_ok) {
 	return new_elem({type: "text", value: "Shouldn't happen"});
 }
 
-export function gui_load_message(anchor, msg) {
+export function gui_load_message(anchor_info, msg) {
 	actives.splice(1); //Truncate
-	Object.assign(actives[0], anchor);
+	Object.assign(actives[0], anchor_info);
 	if (typeof msg === "string" || Array.isArray(msg)) msg = {message: msg};
 	for (let attr in flags) {
 		actives[0][attr] = msg[attr] || "";
