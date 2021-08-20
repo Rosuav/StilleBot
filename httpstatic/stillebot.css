@@ -135,3 +135,15 @@ table[data-builtin=""] > tr.paramrow {
 table[data-dest]:not([data-dest="/set"]) > tr[data-flag="action"] {
 	display: none;
 }
+
+#advanced_view header div {order: 2;} /* Force the close button to the end */
+#cmdviewtabset {
+	display: flex;
+	padding: 0; margin: 0;
+	list-style-type: none;
+	gap: 0.5em;
+	align-items: flex-end;
+}
+#cmdviewtabset li {
+	background: #a0f0c0;
+}

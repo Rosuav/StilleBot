@@ -322,13 +322,13 @@ function select_tab(tab, response) {
 		default: set_content("#command_details", "Unknown tab " + tab);
 	}
 }
-on("change", "#tabset input", e => change_tab(e.match.value));
+on("change", "#cmdviewtabset input", e => change_tab(e.match.value));
 
 export function open_advanced_view(cmd) {
 	cmd_editing = cmd; mode = ""; cmd_id = cmd.id;
 	set_content("#cmdname", "!" + cmd.id.split("#")[0]);
-	if (!DOM("#tabset")) DOM("#advanced_view header").appendChild(UL({id: "tabset"}));
-	set_content("#tabset", tablist.map(tab => LI(LABEL([
+	if (!DOM("#cmdviewtabset")) DOM("#advanced_view header").appendChild(UL({id: "cmdviewtabset"}));
+	set_content("#cmdviewtabset", tablist.map(tab => LI(LABEL([
 		INPUT({type: "radio", name: "editor", value: tab.toLowerCase(), checked: tab === defaulttab}),
 		SPAN(tab),
 	]))));
@@ -416,15 +416,6 @@ on("click", ".raw_view", e => {
 });
 export function sockmsg_validated(data) {
 	if (data.cmdname.startsWith("changetab_")) select_tab(data.cmdname.replace("changetab_", ""), data.response);
-	else if (data.cmdname === "viewraw") {
-		DOM("#raw_text").value = JSON.stringify(data.response);
-		DOM("#rawdlg").showModal();
-	}
-	else if (data.cmdname === "updateraw") {
-		DOM("#command_details").firstChild.replaceWith(render_command(data.response, 1)); //TODO: Don't show toplevels if it's a special or trigger
-		checkpos();
-		DOM("#rawdlg").close();
-	}
 }
 
 on("click", 'a[href="/emotes"]', e => {

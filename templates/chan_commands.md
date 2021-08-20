@@ -60,18 +60,6 @@ table {width: 100%;}
 th, td {width: 100%;}
 th:first-of-type, th:last-of-type, td:first-of-type, td:last-of-type {width: max-content;}
 td:nth-of-type(2n+1) {white-space: nowrap;}
-
-#advanced_view header div {order: 2;} /* Force the close button to the end */
-#tabset {
-	display: flex;
-	padding: 0; margin: 0;
-	list-style-type: none;
-	gap: 0.5em;
-	align-items: flex-end;
-}
-#tabset li {
-	background: #a0f0c0;
-}
 </style>
 
 > ### Edit command <code id=cmdname></code>
