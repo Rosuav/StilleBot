@@ -993,8 +993,9 @@ function message_to_element(msg, new_elem, array_ok) {
 	return new_elem({type: "text", value: "Shouldn't happen"});
 }
 
-export function gui_load_message(msg) {
+export function gui_load_message(anchor, msg) {
 	actives.splice(1); //Truncate
+	Object.assign(actives[0], anchor);
 	if (typeof msg === "string" || Array.isArray(msg)) msg = {message: msg};
 	for (let attr in flags) {
 		actives[0][attr] = msg[attr] || "";

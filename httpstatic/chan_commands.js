@@ -11,7 +11,6 @@ const hooks = {
 /* Stuff not working:
 
 * Properties dialog for graphical view
-* Anchor settings based on what's being edited
 
 */
 
@@ -316,7 +315,13 @@ function select_tab(tab, response) {
 	DOM("#command_gui").style.display = tab == "graphical" ? "inline" : "none"; //Hack - hide and show the GUI rather than destroying and creating it.
 	switch (tab) {
 		case "classic": set_content("#command_details", render_command(cmd_editing, cmd_id[0] !== '!')); break;
-		case "graphical": set_content("#command_details", ""); gui_load_message(cmd_editing); break;
+		case "graphical": {
+			set_content("#command_details", "");
+			//TODO: Load up more info into the basis object (and probably keep it around)
+			const basis = cmd_id[0] === '!' ? {type: "anchor_special"} : {type: "anchor_command", command: "!" + cmd_id.split("#")[0]};
+			gui_load_message(basis, cmd_editing);
+			break;
+		}
 		case "raw": set_content("#command_details", [
 			P("Copy and paste entire commands in JSON format. Make changes as desired!"),
 			DIV({className: "error", id: "raw_error"}),
