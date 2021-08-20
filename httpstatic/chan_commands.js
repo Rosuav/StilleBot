@@ -10,7 +10,6 @@ const hooks = {
 
 /* Stuff not working:
 
-* Creating !join from template utterly fails
 * Triggers can't change mode
 * Raw view needs to approximate the size of the others - can sizes be synchronized in CSS?
   - Maybe set a max width for classic view, and have it scroll???
