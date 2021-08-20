@@ -291,17 +291,33 @@ on("change", 'select[data-flag="builtin"]', e => {
 	set_content(e.match.closest("table").querySelector(".paramrow tbody"), describe_builtin_vars(builtin));
 });
 
-let cmd_editing = null;
+let cmd_editing = null, mode = "", cmd_id = "";
 function change_tab(tab) {
-	console.log("Selected:", tab);
+	console.log("Previous:", mode);
+	let response = null;
+	switch (mode) {
+		case "classic": response = get_command_details(DOM("#command_details").firstChild); break; //TODO: Do we need to retain anything?
+		case "raw": {
+			try {response = JSON.parse(DOM("#raw_text").value);}
+			catch (e) {set_content("#raw_error", "JSON format error: " + e.message); return null;}
+			set_content("#raw_error", ""); //TODO: Show errors somewhere else (maybe in the header??)
+		}
+		case "": break;
+	}
+	if (response) ws_sync.send({cmd: "validate", cmdname: "changetab_" + tab, response});
+	else select_tab(tab, cmd_editing);
+}
+function select_tab(tab, response) {
+	mode = tab; cmd_editing = response;
+	console.log("Selected:", tab, response);
 	switch (tab) {
-		case "Classic": set_content("#command_details", render_command(cmd_editing, cmd_editing.id[0] !== '!')); break;
-		case "Raw": set_content("#command_details", [
+		case "classic": set_content("#command_details", render_command(cmd_editing, cmd_id[0] !== '!')); break;
+		case "raw": set_content("#command_details", [
 			P("Copy and paste entire commands in JSON format. Make changes as desired!"),
 			DIV({className: "error", id: "raw_error"}),
 			DIV([BUTTON({className: "raw_view compact", type: "button"}, "Compact"),
 				BUTTON({className: "raw_view pretty", type: "button"}, "Pretty-print")]),
-			TEXTAREA({id: "raw_text", rows: 10, cols: 80}),
+			TEXTAREA({id: "raw_text", rows: 10, cols: 80}, JSON.stringify(cmd_editing)),
 		]); break;
 		default: set_content("#command_details", "Unknown tab " + tab);
 	}
@@ -309,14 +325,14 @@ function change_tab(tab) {
 on("change", "#tabset input", e => change_tab(e.match.value));
 
 export function open_advanced_view(cmd) {
-	cmd_editing = cmd;
+	cmd_editing = cmd; mode = ""; cmd_id = cmd.id;
 	set_content("#cmdname", "!" + cmd.id.split("#")[0]);
 	if (!DOM("#tabset")) DOM("#advanced_view header").appendChild(UL({id: "tabset"}));
 	set_content("#tabset", tablist.map(tab => LI(LABEL([
-		INPUT({type: "radio", name: "editor", value: tab, checked: tab === defaulttab}),
+		INPUT({type: "radio", name: "editor", value: tab.toLowerCase(), checked: tab === defaulttab}),
 		SPAN(tab),
 	]))));
-	change_tab(defaulttab);
+	change_tab(defaulttab.toLowerCase());
 	hooks.open_advanced.forEach(f => f(cmd));
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
@@ -391,32 +407,16 @@ on("click", "#delete_advanced", waitlate(750, 5000, "Really delete?", e => {
 	DOM("#advanced_view").close();
 }));
 
-function get_raw() {
+on("click", ".raw_view", e => {
 	let response;
 	try {response = JSON.parse(DOM("#raw_text").value);}
-	catch (e) {set_content("#raw_error", "JSON format error: " + e.message); return null;}
+	catch (e) {set_content("#raw_error", "JSON format error: " + e.message); return;}
 	set_content("#raw_error", "");
-	return response;
-}
-on("click", "#view_raw", e => {
-	//Technically we could just give the user response as is, but it tends to
-	//be very noisy, so we'll ask the server to clean it up as per a normal
-	//save operation.
-	let response = get_command_details(DOM("#command_details").firstChild);
-	ws_sync.send({cmd: "validate", cmdname: "viewraw", response});
-});
-on("click", "#update_raw", e => {
-	//This one DEFINITELY needs to go via a validation step. There's no
-	//knowing what mess could be in that JSON blob.
-	let response = get_raw();
-	if (response) ws_sync.send({cmd: "validate", cmdname: "updateraw", response});
-});
-on("click", ".raw_view", e => {
-	let response = get_raw();
-	if (response) DOM("#raw_text").value = JSON.stringify(response, null, e.match.classList.contains("pretty") ? 4 : 0);
+	DOM("#raw_text").value = JSON.stringify(response, null, e.match.classList.contains("pretty") ? 4 : 0);
 });
 export function sockmsg_validated(data) {
-	if (data.cmdname === "viewraw") {
+	if (data.cmdname.startsWith("changetab_")) select_tab(data.cmdname.replace("changetab_", ""), data.response);
+	else if (data.cmdname === "viewraw") {
 		DOM("#raw_text").value = JSON.stringify(data.response);
 		DOM("#rawdlg").showModal();
 	}
