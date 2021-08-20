@@ -265,12 +265,6 @@ echoable_message _validate(echoable_message resp, mapping state)
 			(intp(resp->delay) || (sscanf((string)resp->delay, "%[0-9]", string d) && d == resp->delay)))
 		ret->delay = (int)resp->delay;
 
-	//Aliases are blank-separated, and might be entered in the UI with bangs.
-	//But internally, we'd rather have them without.
-	array(string) aliases = (resp->aliases || "") / " " - ({""});
-	aliases = aliases[*] - "!";
-	if (sizeof(aliases)) ret->aliases = aliases * " ";
-
 	//Voice ID validity depends on the channel we're working with. A syntax-only check will
 	//accept any voice ID as long as it's a string of digits.
 	if (state->voices == "syntaxonly") {
@@ -284,16 +278,21 @@ echoable_message _validate(echoable_message resp, mapping state)
 echoable_message validate(echoable_message resp, mapping state)
 {
 	mixed ret = _validate(resp, state);
-	//If there are any top-level flags, apply them. This may require mappingifying the result.
+	if (!mappingp(ret)) ret = (["message": ret]);
+	//If there are any top-level flags, apply them.
 	//TODO: Only do this for commands, not specials or triggers.
 	foreach (command_flags; string flag; multiset ok)
 	{
-		if (ok[resp[flag]]) {
-			if (!mappingp(ret)) ret = (["message": ret]);
-			ret[flag] = resp[flag];
-		}
+		if (ok[resp[flag]]) ret[flag] = resp[flag];
 	}
-	return ret;
+
+	//Aliases are blank-separated, and might be entered in the UI with bangs.
+	//But internally, we'd rather have them without.
+	array(string) aliases = (resp->aliases || "") / " " - ({""});
+	aliases = aliases[*] - "!";
+	if (sizeof(aliases)) ret->aliases = aliases * " ";
+
+	return sizeof(ret) == 1 ? ret->message : ret;
 }
 
 //Check a message for syntactic validity without any actual permissions
