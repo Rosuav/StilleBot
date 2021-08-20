@@ -1,10 +1,20 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, INPUT, DIV, DETAILS, LABEL, SUMMARY, TABLE, TBODY, TR, TH, TD, SELECT, OPTION, FIELDSET, LEGEND, CODE} = choc;
+const {A, BR, BUTTON, INPUT, DIV, DETAILS, LI, LABEL, SPAN, SUMMARY, TABLE, TBODY, TR, TH, TD, SELECT, OPTION, FIELDSET, LEGEND, CODE, UL} = choc;
 import {waitlate} from "$$static||utils.js$$";
 const commands = { };
 const hooks = {
 	open_advanced: [], //Called with a command mapping when Advanced View is about to be opened
 };
+
+/* Tabbed editor options
+
+* Three available editors: Classic, Graphical, Raw (replaces the "Raw view" button)
+* Select a radio button to switch tabs. Hide others, show that one.
+* Selected RB and its label drop down a bit to look more active?
+* On change, semi-save the current state, ask server to canonicalize, and load into the other tab.
+  - Avoid flicker if possible? Maybe don't switch tabs till we hear back??
+
+*/
 
 on("click", "button.addline", e => {
 	let parent = e.match.closest("td").previousElementSibling;
@@ -28,6 +38,8 @@ for (let name in builtins) {
 }
 const toplevelflags = ["access", "visibility"];
 const conditionalkeys = "expr1 expr2 casefold".split(" "); //Include every key used by every conditional type
+
+const tablist = ["Classic", "Graphical", "Raw"], defaulttab = "Classic";
 
 function checkpos() {
 	const dlg = DOM("#advanced_view");
@@ -278,9 +290,22 @@ on("change", 'select[data-flag="builtin"]', e => {
 	set_content(e.match.closest("table").querySelector(".paramrow tbody"), describe_builtin_vars(builtin));
 });
 
+
+function change_tab(tab) {
+	console.log("Selected:", tab);
+	DOM("#tabset").dataset.selected = tab;
+}
+on("change", "#tabset input", e => change_tab(e.match.value));
+
 export function open_advanced_view(cmd) {
 	set_content("#command_details", render_command(cmd, cmd.id[0] !== '!'));
 	set_content("#cmdname", "!" + cmd.id.split("#")[0]);
+	if (!DOM("#tabset")) DOM("#advanced_view header").appendChild(UL({id: "tabset"}));
+	set_content("#tabset", tablist.map(tab => LI(LABEL([
+		INPUT({type: "radio", name: "editor", value: tab, checked: tab === defaulttab}),
+		SPAN(tab),
+	]))));
+	change_tab(defaulttab);
 	hooks.open_advanced.forEach(f => f(cmd));
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
