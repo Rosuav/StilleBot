@@ -908,6 +908,7 @@ class _mainwindow
 		//object main = G->bootstrap("stillebot.pike"); //Test new bootstrap code
 		//int err = main ? main->bootstrap_all() : 1;
 		int err = G->bootstrap_all(); //Normally the current bootstrap code is fine.
+		write("Garbage collected: %d\n", gc());
 		if (!err) return; //All OK? Be silent.
 		if (string winid = getenv("WINDOWID")) //On some Linux systems we can pop the console up.
 			catch (Process.create_process(({"wmctrl", "-ia", winid}))->wait()); //Try, but don't mind errors, eg if wmctrl isn't installed.
@@ -920,6 +921,7 @@ class _mainwindow
 			if (has_suffix(f, ".pike")) err += !G->bootstrap("modules/" + f);
 		foreach (sort(get_dir("modules/http")), string f)
 			if (has_suffix(f, ".pike")) err += !G->bootstrap("modules/http/" + f);
+		write("Garbage collected: %d\n", gc());
 		if (!err) return; //All OK? Be silent.
 		if (string winid = getenv("WINDOWID")) //On some Linux systems we can pop the console up.
 			catch (Process.create_process(({"wmctrl", "-ia", winid}))->wait()); //Try, but don't mind errors, eg if wmctrl isn't installed.
