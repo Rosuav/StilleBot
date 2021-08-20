@@ -8,13 +8,13 @@ const hooks = {
 	open_advanced: [], //Called with a command mapping when Advanced View is about to be opened
 };
 
-/* Tabbed editor options
+/* Stuff not working:
 
-* Three available editors: Classic, Graphical, Raw (replaces the "Raw view" button)
-* Select a radio button to switch tabs. Hide others, show that one.
-* Selected RB and its label drop down a bit to look more active?
-* On change, semi-save the current state, ask server to canonicalize, and load into the other tab.
-  - Avoid flicker if possible? Maybe don't switch tabs till we hear back??
+* Creating !join from template utterly fails
+* Triggers can't change mode
+* Raw view needs to approximate the size of the others - can sizes be synchronized in CSS?
+  - Maybe set a max width for classic view, and have it scroll???
+* Properties dialog for graphical view
 
 */
 
