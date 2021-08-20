@@ -278,6 +278,7 @@ echoable_message _validate(echoable_message resp, mapping state)
 echoable_message validate(echoable_message resp, mapping state)
 {
 	mixed ret = _validate(resp, state);
+	if (!mappingp(resp)) return ret; //There can't be any top-level flags if you start with a string or array
 	if (!mappingp(ret)) ret = (["message": ret]);
 	//If there are any top-level flags, apply them.
 	//TODO: Only do this for commands, not specials or triggers.
@@ -324,7 +325,8 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 			if (!sizeof(response)) id = "1";
 			else id = (string)((int)response[-1]->id + 1);
 		}
-		else if (id == "validateme" || has_prefix(id, "changetab_")) return validate(msg->response, state); //Validate-only and ignore preexisting triggers
+		else if (id == "validateme" || has_prefix(id, "changetab_"))
+			return ({0, validate(msg->response, state)}); //Validate-only and ignore preexisting triggers
 		else if (!(int)id) return 0; //Invalid ID
 		state->cmd += "-" + id;
 		echoable_message trigger = validate(msg->response, state);
