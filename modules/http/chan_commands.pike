@@ -287,9 +287,10 @@ echoable_message validate(echoable_message resp, mapping state)
 mapping(string:mixed) _syntax_check(mapping(string:mixed) msg, string|void cmdname) {
 	mapping state = (["cmd": cmdname || "validateme", "cooldowns": ([]), "voices": "syntaxonly"]);
 	echoable_message result = validate(msg, state);
-	if (command == "!!trigger" && result != "") {
+	if (cmdname == "!!trigger" && result != "") {
 		if (!mappingp(result)) result = (["message": result]);
 		m_delete(result, "otherwise"); //Triggers don't have an Else clause
+		if (stringp(msg->id)) result->id = msg->id; //Triggers may have IDs, in which case we should keep them.
 	}
 	return result;
 }
