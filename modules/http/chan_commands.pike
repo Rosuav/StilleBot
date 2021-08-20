@@ -99,7 +99,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//or a zero.
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body) || !body->msg) return (["error": 400]);
-		return jsonify(_syntax_check(body->msg, body->cmdname));
+		return jsonify(_syntax_check(body->msg, body->cmdname), 7);
 	}
 	if (req->misc->is_mod) {
 		string uid = req->misc->session->user->?id;
