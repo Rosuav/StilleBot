@@ -64,6 +64,7 @@ td:nth-of-type(2n+1) {white-space: nowrap;}
 
 > ### Edit command <code id=cmdname></code>
 > <div id=command_details></div>
+> <canvas id=command_gui width=800 height=600></canvas>
 >
 > [Save](:#save_advanced) [Cancel](:.dialog_close) [Delete?](:#delete_advanced)
 >

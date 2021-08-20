@@ -136,6 +136,7 @@ table[data-dest]:not([data-dest="/set"]) > tr[data-flag="action"] {
 	display: none;
 }
 
+/* Styling of command editors - classic, graphical, and raw */
 #advanced_view header div {order: 2;} /* Force the close button to the end */
 #cmdviewtabset {
 	display: flex;
@@ -146,4 +147,18 @@ table[data-dest]:not([data-dest="/set"]) > tr[data-flag="action"] {
 }
 #cmdviewtabset li {
 	background: #a0f0c0;
+}
+
+#command_gui {
+	border: 1px solid black;
+	margin: 0.5em;
+}
+.msgedit {
+	width: min-content;
+}
+.buttonbox {
+	display: flex;
+	gap: 5px;
+	margin: 5px 0;
+	flex-wrap: wrap;
 }

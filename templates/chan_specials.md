@@ -30,6 +30,7 @@ $$save_or_login$$
 > ### Edit special response <code id=cmdname></code>
 > <ul id=parameters></ul>
 > <div id=command_details></div>
+> <canvas id=command_gui width=800 height=600></canvas>
 >
 > [Save](:#save_advanced) [Cancel](:.dialog_close) [Delete?](:#delete_advanced)
 >

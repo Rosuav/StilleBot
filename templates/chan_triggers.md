@@ -39,6 +39,7 @@ td ul {margin: 0;}
 
 > ### Edit trigger response <code id=cmdname></code>
 > <div id=command_details></div>
+> <canvas id=command_gui width=800 height=600></canvas>
 >
 > <p><button type=button id=save_advanced>Save</button> <button type=button class=dialog_close>Cancel</button> <button type=button id=delete_advanced>Delete?</button></p>
 >

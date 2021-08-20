@@ -2,6 +2,7 @@ import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.
 const {A, BR, BUTTON, INPUT, DIV, DETAILS, LI, LABEL, SPAN, SUMMARY, TABLE, TBODY, TR, TH, TD,
 	P, TEXTAREA, SELECT, OPTION, FIELDSET, LEGEND, CODE, UL} = choc;
 import {waitlate} from "$$static||utils.js$$";
+import {gui_load_message, gui_save_message} from "$$static||command_gui.js$$";
 const commands = { };
 const hooks = {
 	open_advanced: [], //Called with a command mapping when Advanced View is about to be opened
@@ -297,6 +298,7 @@ function change_tab(tab) {
 	let response = null;
 	switch (mode) {
 		case "classic": response = get_command_details(DOM("#command_details").firstChild); break; //TODO: Do we need to retain anything?
+		case "graphical": response = gui_save_message(); break;
 		case "raw": {
 			try {response = JSON.parse(DOM("#raw_text").value);}
 			catch (e) {set_content("#raw_error", "JSON format error: " + e.message); return null;}
@@ -310,8 +312,10 @@ function change_tab(tab) {
 function select_tab(tab, response) {
 	mode = tab; cmd_editing = response;
 	console.log("Selected:", tab, response);
+	DOM("#command_gui").style.display = tab == "graphical" ? "inline" : "none"; //Hack - hide and show the GUI rather than destroying and creating it.
 	switch (tab) {
 		case "classic": set_content("#command_details", render_command(cmd_editing, cmd_id[0] !== '!')); break;
+		case "graphical": set_content("#command_details", ""); gui_load_message(cmd_editing); break;
 		case "raw": set_content("#command_details", [
 			P("Copy and paste entire commands in JSON format. Make changes as desired!"),
 			DIV({className: "error", id: "raw_error"}),
@@ -434,6 +438,7 @@ on("click", "#templates tbody tr", e => {
 	const cmdname = cmd.innerText.trim();
 	const template = complex_templates[cmdname];
 	if (template) {
+		//TODO: Do the same tab setup as open_advanced_view does
 		set_content("#command_details", render_command(template, 1));
 		if (cmdname[0] === '!') set_content("#cmdname", INPUT({value: cmdname}));
 		else set_content("#cmdname", ""); //Triggers don't have actual command names
