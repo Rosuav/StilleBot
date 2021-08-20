@@ -438,11 +438,9 @@ on("click", "#templates tbody tr", e => {
 	const cmdname = cmd.innerText.trim();
 	const template = complex_templates[cmdname];
 	if (template) {
-		//TODO: Do the same tab setup as open_advanced_view does
-		set_content("#command_details", render_command(template, 1));
+		open_advanced_view({...template, id: cmdname.slice(1)});
 		if (cmdname[0] === '!') set_content("#cmdname", INPUT({value: cmdname}));
-		else set_content("#cmdname", ""); //Triggers don't have actual command names
-		document.getElementById("advanced_view").showModal();
+		else set_content("#cmdname", "");
 		return;
 	}
 	DOM("#newcmd_name").value = cmdname;
