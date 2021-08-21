@@ -623,6 +623,17 @@ function repaint() {
 }
 repaint();
 
+function save_favourites() {ws_sync.send({cmd:"savefavs", favs: favourites.map(element_to_message)});}
+export function load_favourites(favs) {
+	if (!Array.isArray(favs)) return;
+	const newfavs = favs.map(f => message_to_element(f, el => el));
+	favourites.splice(0); //Replace all favs with the loaded ones.
+	for (let f of newfavs) {
+		if (!is_favourite(f)) {make_template(f); favourites.push(f);}
+	}
+	refactor(); repaint();
+}
+
 function remove_child(childset, idx) {
 	while (++idx < childset.length) {
 		const cur = childset[idx - 1] = childset[idx];
@@ -1032,21 +1043,4 @@ export function gui_save_message() {
 		if (flag && anchor[attr] !== "") msg[attr] = anchor[attr];
 	}
 	return msg;
-}
-
-//DBU violation, fix if you feel like it
-//TODO: Replace these with websocket messages
-function save_favourites() {
-	localStorage.setItem("StilleBotGUI_Favourites", JSON.stringify(favourites.map(element_to_message)));
-}
-
-function load_favourites() {
-	const favs = JSON.parse(localStorage.getItem("StilleBotGUI_Favourites") || "[]");
-	if (!Array.isArray(favs)) return;
-	const newfavs = favs.map(f => message_to_element(f, el => el));
-	favourites.splice(0); //Replace all favs with the loaded ones.
-	for (let f of newfavs) {
-		if (!is_favourite(f)) {make_template(f); favourites.push(f);}
-	}
-	refactor(); repaint();
 }

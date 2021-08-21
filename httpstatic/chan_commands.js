@@ -1,7 +1,7 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, BR, BUTTON, INPUT, DIV, DETAILS, LI, LABEL, SPAN, SUMMARY, TABLE, TBODY, TR, TH, TD,
 	P, TEXTAREA, SELECT, OPTION, FIELDSET, LEGEND, CODE, UL} = choc;
-import {gui_load_message, gui_save_message} from "$$static||command_gui.js$$";
+import {gui_load_message, gui_save_message, load_favourites} from "$$static||command_gui.js$$";
 import {waitlate} from "$$static||utils.js$$";
 const commands = { };
 const hooks = {
@@ -421,6 +421,9 @@ on("click", ".raw_view", e => {
 });
 export function sockmsg_validated(data) {
 	if (data.cmdname.startsWith("changetab_")) select_tab(data.cmdname.replace("changetab_", ""), data.response);
+}
+export function sockmsg_loadfavs(data) {
+	load_favourites(data.favs);
 }
 
 on("click", 'a[href="/emotes"]', e => {
