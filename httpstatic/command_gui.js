@@ -7,12 +7,9 @@ early file history, check that repository.
 /* TODO
 
 Integration with StilleBot.
-* Saving of favourites - send to the server, they'll be validated, and associated with your user ID.
-  - Should be part of the websocket sync so they appear instantly on all clients
 * Deduplicate a ton of data by getting it from the server instead of hard-coding.
   - Builtins and their vars_provided
   - Specials and their SPECIALS and SPECIAL_PARAMS (maybe filter out deprecateds?)
-* Save and load, obviously. Pretty straight-forward and the infrastructure is already there.
 * List of available voices and their names
 
 Pipe dream: Can the label for a text message show emotes graphically?
