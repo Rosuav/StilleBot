@@ -28,14 +28,26 @@ and is everything that isn't in the Favs/Trays/Specials.
   - The primary anchor point may belong in Actives or may belong in Specials. Uncertain.
 */
 import choc, {set_content, DOM, on, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {BUTTON, DIV, LABEL, INPUT, SELECT, OPTION, TR, TD, TEXTAREA, LI, CODE} = choc;
-//TODO: Create the Properties dialog before returning (so it should get caught by fix_dialogs)
+const {BR, BUTTON, DIALOG, DIV, FORM, HEADER, H3, LABEL, INPUT, SECTION, SELECT, OPTION, P, TABLE, TR, TD, TEXTAREA, UL, LI, CODE} = choc;
 
 const SNAP_RANGE = 100; //Distance-squared to permit snapping (eg 25 = 5px radius)
 const canvas = DOM("#command_gui");
 const ctx = canvas.getContext('2d');
 const FAV_BUTTON_TEXT = ["Fav ☆", "Fav ★"];
 const voices_available = {"": "Default", "279141671": "Mustard Mine"}; //Will be provided by the server
+
+const propertiesdlg = DIALOG({id: "properties"}, SECTION([
+	HEADER([H3("Properties"), DIV([BUTTON({type: "button", className: "dialog_cancel"}, "x"), BR(), BUTTON({type: "button", id: "toggle_favourite"}, "fav")])]),
+	DIV(FORM({id: "setprops", method: "dialog"}, [
+		TABLE({id: "params"}), P({id: "typedesc"}), UL({id: "providesdesc"}),
+		P({id: "templateinfo"}, [
+			"This is a template and cannot be edited directly. Drag it to create something in the", BR(),
+			"command, or ==> ", BUTTON({id: "clonetemplate", type: "button"}, "Add to command")
+		]),
+		P(BUTTON({id: "saveprops"}, "Close")),
+	])),
+]));
+document.body.appendChild(propertiesdlg);
 
 const arrayify = x => Array.isArray(x) ? x : [x];
 const ensure_blank = arr => {
