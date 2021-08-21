@@ -8,12 +8,6 @@ const hooks = {
 	open_advanced: [], //Called with a command mapping when Advanced View is about to be opened
 };
 
-/* Stuff not working:
-
-* Properties dialog for graphical view
-
-*/
-
 on("click", "button.addline", e => {
 	let parent = e.match.closest("td").previousElementSibling;
 	parent.appendChild(BR());
