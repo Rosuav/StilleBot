@@ -1,7 +1,7 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {CODE, BR, TABLE, TR, TH, TD, SPAN, DIV, DETAILS, SUMMARY, UL, LI, INPUT, LABEL, STYLE} = choc;
-import {render_item as render_command, add_hook, sockmsg_validated} from "$$static||chan_commands.js$$";
-export {sockmsg_validated};
+import {render_item as render_command, add_hook, sockmsg_validated, sockmsg_loadfavs, favcheck} from "$$static||chan_commands.js$$";
+export {sockmsg_validated, sockmsg_loadfavs};
 
 let command_lookup = { };
 function describe_param(p, desc) {
@@ -16,6 +16,7 @@ function describe_all_params(cmd) {
 }
 
 export function render(data) {
+	favcheck();
 	if (data.id) {
 		const obj = DOM("#commands tbody").querySelector(`[data-id="${data.id}"]`);
 		if (!obj) return; //All objects should be created by the initial pass (see below)

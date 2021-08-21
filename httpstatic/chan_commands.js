@@ -422,9 +422,7 @@ on("click", ".raw_view", e => {
 export function sockmsg_validated(data) {
 	if (data.cmdname.startsWith("changetab_")) select_tab(data.cmdname.replace("changetab_", ""), data.response);
 }
-export function sockmsg_loadfavs(data) {
-	load_favourites(data.favs);
-}
+export function sockmsg_loadfavs(data) {load_favourites(data.favs);}
 
 on("click", 'a[href="/emotes"]', e => {
 	e.preventDefault();
@@ -497,7 +495,12 @@ export function render_item(msg) {
 		]),
 	]);
 }
+let favourites_loaded = false;
+export function favcheck() {
+	if (!favourites_loaded) {favourites_loaded = true; ws_sync.send({cmd: "loadfavs"});}
+}
 export function render(data) {
+	favcheck();
 	if (DOM("#addcmd")) render_parent.appendChild(DOM("#addcmd").closest("TR")); //Move to end w/o disrupting anything
 	else render_parent.appendChild(TR([
 		TD(["Add: ", INPUT({id: "newcmd_name", size: 10, placeholder: "!hype"})]),

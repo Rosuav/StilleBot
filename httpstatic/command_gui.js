@@ -623,7 +623,7 @@ function repaint() {
 }
 repaint();
 
-function save_favourites() {ws_sync.send({cmd:"savefavs", favs: favourites.map(element_to_message)});}
+function save_favourites() {ws_sync.send({cmd: "savefavs", favs: favourites.map(element_to_message)});}
 export function load_favourites(favs) {
 	if (!Array.isArray(favs)) return;
 	const newfavs = favs.map(f => message_to_element(f, el => el));
@@ -633,7 +633,6 @@ export function load_favourites(favs) {
 	}
 	refactor(); repaint();
 }
-load_favourites(initial_favourites);
 
 function remove_child(childset, idx) {
 	while (++idx < childset.length) {

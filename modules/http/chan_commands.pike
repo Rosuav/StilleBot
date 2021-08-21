@@ -103,10 +103,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	if (req->misc->is_mod) {
 		string uid = req->misc->session->user->?id;
-		array favs = (uid && persist_status->path("cmdedit_favourites")[(string)uid]) || ({ });
 		return render(req, ([
 			"vars": (["ws_group": "", "complex_templates": G->G->commands_complex_templates, "builtins": G->G->commands_builtins,
-				"voices": req->misc->channel->config->voices || ([]), "initial_favourites": favs, "command_anchor_type": "command"]),
+				"voices": req->misc->channel->config->voices || ([]), "command_anchor_type": "command"]),
 			"templates": G->G->commands_templates * "\n",
 			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
 				"<input type=submit value=\"Save all\">"
@@ -401,6 +400,12 @@ void websocket_cmd_savefavs(mapping(string:mixed) conn, mapping(string:mixed) ms
 		foreach (socks, object sock) if (sock->query_id()->session->user->?id == uid) sameuser += ({sock});
 	}
 	sameuser->send_text(Standards.JSON.encode((["cmd": "loadfavs", "favs": msg->favs])));
+}
+
+void websocket_cmd_loadfavs(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string uid = conn->session->user->?id;
+	array favs = (uid && persist_status->path("cmdedit_favourites")[(string)uid]) || ({ });
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "loadfavs", "favs": favs])));
 }
 
 protected void create(string name) {::create(name); call_out(find_builtins, 0);}
