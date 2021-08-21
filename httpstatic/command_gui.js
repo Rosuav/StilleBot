@@ -633,6 +633,7 @@ export function load_favourites(favs) {
 	}
 	refactor(); repaint();
 }
+load_favourites(initial_favourites);
 
 function remove_child(childset, idx) {
 	while (++idx < childset.length) {
