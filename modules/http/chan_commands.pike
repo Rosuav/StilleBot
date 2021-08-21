@@ -391,16 +391,16 @@ void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) ms
 
 void websocket_cmd_savefavs(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!arrayp(msg->favs)) return;
-	array favs = validate(msg->favs[*], (["cmd": "fav", "cooldowns": ([]), "voices": "syntaxonly"])) - ({""}) - ({0});
+	//NOTE: Favourites are not validated (other than that they have to pass JSON encode/decode).
 	string uid = conn->session->user->?id;
-	if (uid) persist_status->path("cmdedit_favourites")[(string)uid] = favs;
+	if (uid) persist_status->path("cmdedit_favourites")[(string)uid] = msg->favs;
 	//Scan all current connections for anyone with the same UID and update them.
 	//This will include the current connection.
 	array sameuser = ({ });
 	foreach (websocket_groups; string|int group; array socks) {
 		foreach (socks, object sock) if (sock->query_id()->session->user->?id == uid) sameuser += ({sock});
 	}
-	sameuser->send_text(Standards.JSON.encode((["cmd": "loadfavs", "favs": favs])));
+	sameuser->send_text(Standards.JSON.encode((["cmd": "loadfavs", "favs": msg->favs])));
 }
 
 protected void create(string name) {::create(name); call_out(find_builtins, 0);}
