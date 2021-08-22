@@ -338,7 +338,8 @@ export function open_advanced_view(cmd) {
 		SPAN(tab),
 	]))));
 	change_tab(defaulttab.toLowerCase());
-	hooks.open_advanced.forEach(f => f(cmd));
+	const params = { };
+	hooks.open_advanced.forEach(f => f(cmd, params));
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
 }
