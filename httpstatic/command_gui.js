@@ -978,7 +978,7 @@ function matches(param, val) {
 }
 
 function apply_params(el, msg) {
-	for (let param of types[el.type].params) {
+	for (let param of types[el.type].params || []) {
 		if (typeof param.values !== "string") el[param.attr] = msg[param.attr];
 		//else assert msg[param.attr] === param.values
 		delete msg[param.attr];
