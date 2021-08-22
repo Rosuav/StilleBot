@@ -306,7 +306,7 @@ function change_tab(tab) {
 function select_tab(tab, response) {
 	mode = tab; cmd_editing = response;
 	console.log("Selected:", tab, response);
-	DOM("#command_gui").style.display = tab == "graphical" ? "inline" : "none"; //Hack - hide and show the GUI rather than destroying and creating it.
+	DOM("#command_frame").style.display = tab == "graphical" ? "block" : "none"; //Hack - hide and show the GUI rather than destroying and creating it.
 	switch (tab) {
 		case "classic": set_content("#command_details", render_command(cmd_editing, cmd_id[0] !== '!')); break;
 		case "graphical": {

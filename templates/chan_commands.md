@@ -64,7 +64,8 @@ td:nth-of-type(2n+1) {white-space: nowrap;}
 
 > ### Edit command <code id=cmdname></code>
 > <div id=command_details></div>
-> <canvas id=command_gui width=800 height=600></canvas>
+> <div id=command_frame><p>Drag elements around and snap them into position to build a command. Double-click an element to change its text etc.</p>
+> <canvas id=command_gui width=800 height=600></canvas></div>
 >
 > [Save](:#save_advanced) [Cancel](:.dialog_close) [Delete?](:#delete_advanced)
 >
