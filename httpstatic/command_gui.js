@@ -77,9 +77,9 @@ const types = {
 			{attr: "id", label: null}, //Retain the ID but don't show it for editing
 			{attr: "expr1", label: "Search for"}, {attr: "expr2", values: "%s"}],
 		provides: {
-			"{param}": "Anything typed after the command name",
-			"{username}": "Name of the user who entered the command",
-			"{@mod}": "1 if the command was triggered by a mod/broadcaster, 0 if not",
+			"{param}": "The entire message",
+			"{username}": "Name of the user who entered the triggering message",
+			"{@mod}": "1 if trigger came from a mod/broadcaster, 0 if not",
 		},
 	},
 	anchor_special: {
