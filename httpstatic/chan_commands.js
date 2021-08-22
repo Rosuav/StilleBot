@@ -282,7 +282,7 @@ on("change", 'select[data-flag="builtin"]', e => {
 	set_content(e.match.closest("table").querySelector(".paramrow tbody"), describe_builtin_vars(builtin));
 });
 
-let cmd_editing = null, mode = "", cmd_id = "";
+let cmd_editing = null, mode = "", cmd_id = "", cmd_basis = { };
 function get_message_details() {
 	switch (mode) {
 		case "classic": return get_command_details(DOM("#command_details").firstChild);
@@ -313,8 +313,7 @@ function select_tab(tab, response) {
 			set_content("#command_details", "");
 			//TODO: Load up more info into the basis object (and probably keep it around)
 			//Notably, specials need a ton more info
-			const basis = cmd_id[0] === '!' ? { } : {command: "!" + cmd_id.split("#")[0]};
-			gui_load_message(basis, cmd_editing);
+			gui_load_message(cmd_basis, cmd_editing);
 			break;
 		}
 		case "raw": set_content("#command_details", [
@@ -330,7 +329,8 @@ function select_tab(tab, response) {
 on("change", "#cmdviewtabset input", e => change_tab(e.match.value));
 
 export function open_advanced_view(cmd) {
-	cmd_editing = cmd; mode = ""; cmd_id = cmd.id;
+	cmd_editing = cmd; mode = ""; cmd_id = cmd.id; cmd_basis = { };
+	if (cmd.id[0] !== '!') cmd_basis.command = "!" + cmd.id.split("#")[0];
 	set_content("#cmdname", "!" + cmd.id.split("#")[0]);
 	if (!DOM("#cmdviewtabset")) DOM("#advanced_view header").appendChild(UL({id: "cmdviewtabset"}));
 	set_content("#cmdviewtabset", tablist.map(tab => LI(LABEL([
@@ -338,8 +338,7 @@ export function open_advanced_view(cmd) {
 		SPAN(tab),
 	]))));
 	change_tab(defaulttab.toLowerCase());
-	const params = { };
-	hooks.open_advanced.forEach(f => f(cmd, params));
+	hooks.open_advanced.forEach(f => f(cmd, cmd_basis));
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
 }

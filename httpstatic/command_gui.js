@@ -83,17 +83,9 @@ const types = {
 		},
 	},
 	anchor_special: {
-		//Specials are... special. The details here will vary based on which special we're editing (this is !!musictrack).
+		//Specials are... special. The details here will vary based on which special we're editing.
 		color: "#ffff00", fixed: true, children: ["message"],
-		label: el => "When a song starts...",
-		typedesc: "A track just started playing (see VLC integration)",
-		provides: {
-			"{desc}": "Human-readable description of what's playing (block and track names)",
-			"{blockpath}": "Full path to the current block",
-			"{block}": "Name of the section/album/block of tracks currently playing, if any",
-			"{track}": "Name of the audio file that's currently playing",
-			"{playing}": "1 if music is playing, or 0 if paused, stopped, disconnected, etc",
-		},
+		label: el => el.shortdesc,
 	},
 	trashcan: {
 		color: "#999999", fixed: true, children: ["message"],
@@ -848,7 +840,7 @@ function make_message_editor(id, el) {
 	//will behave the way the back end would handle them.
 	const vars_avail = [];
 	for (let par = el; par; par = par.parent && par.parent[0]) {
-		vars_avail.unshift(types[par.type].provides);
+		vars_avail.unshift(types[par.type].provides || par.provides);
 	}
 	const allvars = Object.assign({}, ...vars_avail);
 	return DIV({className: "msgedit"}, [
@@ -892,7 +884,7 @@ canvas.addEventListener("dblclick", e => {
 		}
 		return control && TR([TD(LABEL({htmlFor: "value-" + param.attr}, param.label + ": ")), TD(control)]);
 	}));
-	set_content("#providesdesc", Object.entries(type.provides || {}).map(([v, d]) => LI([
+	set_content("#providesdesc", Object.entries(type.provides || el.provides || {}).map(([v, d]) => LI([
 		CODE(v), ": " + d,
 	])));
 	set_content("#saveprops", "Close");

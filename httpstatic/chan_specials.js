@@ -65,9 +65,12 @@ on("click", ".tabradio", e => {
 	history.replaceState(null, "", "#" + e.match.id.slice(4));
 });
 
-add_hook("open_advanced", (command, params) => {
+add_hook("open_advanced", (command, basis) => {
 	const cmd = command_lookup[command.id];
 	set_content("#parameters", describe_all_params(cmd)); //TODO: Do this in commands.js instead
-	params["{username}"] = cmd.originator;
+	const params = {"{username}": cmd.originator};
 	cmd.params.split(", ").forEach(p => p && (params["{" + p + "}"] = SPECIAL_PARAMS[p]));
+	basis.provides = params;
+	basis.desc = "Happens when: " + cmd.desc;
+	basis.shortdesc = cmd.desc; //Needs to be even shorter though
 });
