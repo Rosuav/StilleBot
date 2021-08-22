@@ -1,8 +1,6 @@
 inherit http_endpoint;
 inherit enableable_module;
 
-string respstr(mapping|string resp) {return Parser.encode_html_entities(stringp(resp) ? resp : resp->message);}
-
 constant TEMPLATES = ({
 	"Text | Simple text, finds any string of letters",
 	"RegExp | Word trigger - \\&lt;some-word\\&gt;",

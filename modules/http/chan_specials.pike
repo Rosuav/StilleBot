@@ -73,7 +73,6 @@ void enable_feature(object channel, string kwd, int state) {
 			(["cmdname": info->special, "response": response])
 		);
 }
-string respstr(mapping|string resp) {return Parser.encode_html_entities(stringp(resp) ? resp : resp->message);}
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
