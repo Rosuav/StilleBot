@@ -65,6 +65,7 @@ on("click", ".tabradio", e => {
 cmd_configure({
 	get_command_basis: command => {
 		const cmd = command_lookup[command.id], basis = {type: "anchor_special"};
+		set_content("#advanced_view h3", ["Edit special response ", CODE("!" + command.id.split("#")[0])]);
 		const params = {"{username}": cmd.originator};
 		cmd.params.split(", ").forEach(p => p && (params["{" + p + "}"] = SPECIAL_PARAMS[p]));
 		basis.provides = params;

@@ -35,7 +35,7 @@ const ctx = canvas.getContext('2d');
 const FAV_BUTTON_TEXT = ["Fav ☆", "Fav ★"];
 const voices_available = {"": "Default", "279141671": "Mustard Mine"}; //Will be provided by the server
 
-const propertiesdlg = DIALOG({id: "properties"}, SECTION([
+document.body.appendChild(DIALOG({id: "properties"}, SECTION([
 	HEADER([H3("Properties"), DIV([BUTTON({type: "button", className: "dialog_cancel"}, "x"), BR(), BUTTON({type: "button", id: "toggle_favourite"}, "fav")])]),
 	DIV(FORM({id: "setprops", method: "dialog"}, [
 		TABLE({id: "params"}), P({id: "typedesc"}), UL({id: "providesdesc"}),
@@ -45,8 +45,7 @@ const propertiesdlg = DIALOG({id: "properties"}, SECTION([
 		]),
 		P(BUTTON({id: "saveprops"}, "Close")),
 	])),
-]));
-document.body.appendChild(propertiesdlg);
+])));
 
 const arrayify = x => Array.isArray(x) ? x : [x];
 const ensure_blank = arr => {

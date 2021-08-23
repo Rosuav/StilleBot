@@ -27,16 +27,6 @@ Special&nbsp;name | Response | -
 
 $$save_or_login$$
 
-> ### Edit special response <code id=cmdname></code>
-> <ul id=parameters></ul>
-> <div id=command_details></div>
-> <div id=command_frame><p>Drag elements around and snap them into position to build a command. Double-click an element to change its text etc.</p>
-> <canvas id=command_gui width=800 height=600></canvas></div>
->
-> [Save](:#save_advanced) [Cancel](:.dialog_close) [Delete?](:#delete_advanced)
->
-{: tag=dialog #advanced_view}
-
 <style>
 table {width: 100%;}
 th, td {width: 100%;}

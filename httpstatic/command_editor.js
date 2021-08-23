@@ -1,15 +1,46 @@
 //Command advanced editor framework, and Raw mode editor
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {BR, BUTTON, CODE, DIV, INPUT, LABEL, LI, P, SPAN, TEXTAREA, UL, TR, TD} = choc;
-import {gui_load_message, gui_save_message, load_favourites} from "$$static||command_gui.js$$";
+const {BR, BUTTON, CANVAS, CODE, DIALOG, DIV, HEADER, H3, INPUT, LABEL, LI, P, SECTION, SPAN, TEXTAREA, UL, TR, TD} = choc;
+const tablist = ["Classic", "Graphical", "Raw"], defaulttab = "Classic";
+document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
+	HEADER([
+		H3("Edit trigger"),
+		DIV(BUTTON({type: "button", className: "dialog_cancel"}, "x")),
+		UL({id: "cmdviewtabset"}, tablist.map(tab => LI(LABEL([
+			INPUT({type: "radio", name: "editor", value: tab.toLowerCase(), checked: tab === defaulttab}),
+			SPAN(tab),
+		])))),
+	]),
+	DIV([
+		UL({id: "parameters"}),
+		DIV({id: "command_details"}),
+		DIV({id: "command_frame"}, [
+			P("Drag elements around and snap them into position to build a command. Double-click an element to change its text etc."),
+			CANVAS({id: "command_gui", width: "800", height: "600"}),
+		]),
+		P([
+			BUTTON({type: "button", id: "save_advanced"}, "Save"),
+			BUTTON({type: "button", className: "dialog_close"}, "Cancel"),
+			BUTTON({type: "button", id: "delete_advanced"}, "Delete?"),
+		]),
+	]),
+])));
+//Delay the import of command_gui until the above code has executed, because JS is stupid and overly-eagerly
+//imports all modules. Thanks, JS. You're amazing.
+let gui_load_message, gui_save_message, pending_favourites, load_favourites = f => pending_favourites = f;
+async function getgui() {
+	({gui_load_message, gui_save_message, load_favourites} = await import("$$static||command_gui.js$$"));
+	if (pending_favourites) load_favourites(pending_favourites);
+}
+if (document.readyState !== "loading") getgui();
+else window.addEventListener("DOMContentLoaded", getgui);
+//End arbitrarily messy code to do what smarter languages do automatically.
 import {cls_load_message, cls_save_message} from "$$static||command_classic.js$$";
 import {waitlate} from "$$static||utils.js$$";
 
 export const commands = { }; //Deprecated. Need to try to not have this exported mapping.
 const config = {get_command_basis: cmd => ({ })};
 export function cmd_configure(cfg) {Object.assign(config, cfg);}
-
-const tablist = ["Classic", "Graphical", "Raw"], defaulttab = "Classic";
 
 function checkpos() {
 	const dlg = DOM("#advanced_view");
@@ -72,13 +103,7 @@ function describe_params(params) {
 
 export function open_advanced_view(cmd) {
 	cmd_editing = cmd; mode = ""; cmd_id = cmd.id; cmd_basis = config.get_command_basis(cmd);
-	set_content("#cmdname", "!" + cmd.id.split("#")[0]);
 	if (DOM("#parameters")) set_content("#parameters", describe_params(cmd_basis.provides || { }));
-	if (!DOM("#cmdviewtabset")) DOM("#advanced_view header").appendChild(UL({id: "cmdviewtabset"}));
-	set_content("#cmdviewtabset", tablist.map(tab => LI(LABEL([
-		INPUT({type: "radio", name: "editor", value: tab.toLowerCase(), checked: tab === defaulttab}),
-		SPAN(tab),
-	]))));
 	change_tab(defaulttab.toLowerCase());
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();

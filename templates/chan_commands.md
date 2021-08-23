@@ -61,12 +61,3 @@ th, td {width: 100%;}
 th:first-of-type, th:last-of-type, td:first-of-type, td:last-of-type {width: max-content;}
 td:nth-of-type(2n+1) {white-space: nowrap;}
 </style>
-
-> ### Edit command <code id=cmdname></code>
-> <div id=command_details></div>
-> <div id=command_frame><p>Drag elements around and snap them into position to build a command. Double-click an element to change its text etc.</p>
-> <canvas id=command_gui width=800 height=600></canvas></div>
->
-> [Save](:#save_advanced) [Cancel](:.dialog_close) [Delete?](:#delete_advanced)
->
-{: tag=dialog #advanced_view}

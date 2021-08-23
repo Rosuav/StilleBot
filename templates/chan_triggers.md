@@ -36,12 +36,3 @@ td:nth-of-type(2n+1):not([colspan]) {white-space: nowrap;}
 .gap {height: 1em;}
 td ul {margin: 0;}
 </style>
-
-> ### Edit trigger response <code id=cmdname></code>
-> <div id=command_details></div>
-> <div id=command_frame><p>Drag elements around and snap them into position to build a command. Double-click an element to change its text etc.</p>
-> <canvas id=command_gui width=800 height=600></canvas></div>
->
-> <p><button type=button id=save_advanced>Save</button> <button type=button class=dialog_close>Cancel</button> <button type=button id=delete_advanced>Delete?</button></p>
->
-{: tag=dialog #advanced_view}

@@ -1,10 +1,14 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {BR, BUTTON, INPUT, TR, TD} = choc;
+const {BR, BUTTON, CODE, INPUT, TR, TD} = choc;
 import {sockmsg_validated, sockmsg_loadfavs, favcheck, render_command, commands, cmd_configure} from "$$static||command_editor.js$$";
 export {sockmsg_validated, sockmsg_loadfavs};
 
 cmd_configure({
-	get_command_basis: cmd => ({type: "anchor_command", command: "!" + cmd.id.split("#")[0]}),
+	get_command_basis: cmd => {
+		const cmdname = "!" + cmd.id.split("#")[0];
+		set_content("#advanced_view h3", ["Edit command ", CODE(cmdname)]);
+		return {type: "anchor_command", command: cmdname};
+	},
 });
 
 on("click", 'a[href="/emotes"]', e => {
