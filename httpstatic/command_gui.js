@@ -350,12 +350,8 @@ function element_path(element) {
 	return path_cache[cache_key] = {path, connections, totheight: y, labelpos};
 }
 const actives = [
-	//Specific anchor types for testing
-	//{type: "anchor_command", x: 10, y: 25, command: "!demo", aliases: "", message: [""]},
-	//{type: "anchor_special", x: 10, y: 25, message: [""]},
-	//{type: "anchor_trigger", x: 10, y: 25, message: [""], conditional: "contains", expr1: "", expr2: "%s"},
 	//Generic anchor controlled by the caller
-	{type: "anchor_" + command_anchor_type, x: 10, y: 25, message: [""]},
+	{type: "anchor_trigger", x: 10, y: 25, message: [""]}, //Stick with Trigger and you'll live (unless the basis object changes the type)
 ];
 const favourites = [];
 const trays = { };

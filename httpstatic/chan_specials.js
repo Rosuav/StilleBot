@@ -67,7 +67,7 @@ on("click", ".tabradio", e => {
 
 cmd_configure({
 	get_command_basis: command => {
-		const cmd = command_lookup[command.id], basis = { };
+		const cmd = command_lookup[command.id], basis = {type: "anchor_special"};
 		set_content("#parameters", describe_all_params(cmd)); //TODO: Do this in command_editor.js instead
 		const params = {"{username}": cmd.originator};
 		cmd.params.split(", ").forEach(p => p && (params["{" + p + "}"] = SPECIAL_PARAMS[p]));

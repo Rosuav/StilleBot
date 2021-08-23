@@ -4,7 +4,7 @@ import {sockmsg_validated, sockmsg_loadfavs, favcheck, render_command, commands,
 export {sockmsg_validated, sockmsg_loadfavs};
 
 cmd_configure({
-	get_command_basis: cmd => ({command: "!" + cmd.id.split("#")[0]}),
+	get_command_basis: cmd => ({type: "anchor_command", command: "!" + cmd.id.split("#")[0]}),
 });
 
 on("click", 'a[href="/emotes"]', e => {
