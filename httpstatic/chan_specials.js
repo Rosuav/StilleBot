@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {CODE, BR, TABLE, TR, TH, TD, SPAN, DIV, DETAILS, SUMMARY, UL, LI, INPUT, LABEL, STYLE} = choc;
-import {render_command, add_hook, sockmsg_validated, sockmsg_loadfavs, favcheck} from "$$static||command_editor.js$$";
+import {render_command, cmd_configure, sockmsg_validated, sockmsg_loadfavs, favcheck} from "$$static||command_editor.js$$";
 export {sockmsg_validated, sockmsg_loadfavs};
 
 let command_lookup = { };
@@ -65,12 +65,15 @@ on("click", ".tabradio", e => {
 	history.replaceState(null, "", "#" + e.match.id.slice(4));
 });
 
-add_hook("open_advanced", (command, basis) => {
-	const cmd = command_lookup[command.id];
-	set_content("#parameters", describe_all_params(cmd)); //TODO: Do this in command_editor.js instead
-	const params = {"{username}": cmd.originator};
-	cmd.params.split(", ").forEach(p => p && (params["{" + p + "}"] = SPECIAL_PARAMS[p]));
-	basis.provides = params;
-	basis.desc = "Happens when: " + cmd.desc;
-	basis.shortdesc = cmd.desc; //Needs to be even shorter though
+cmd_configure({
+	get_command_basis: command => {
+		const cmd = command_lookup[command.id], basis = { };
+		set_content("#parameters", describe_all_params(cmd)); //TODO: Do this in command_editor.js instead
+		const params = {"{username}": cmd.originator};
+		cmd.params.split(", ").forEach(p => p && (params["{" + p + "}"] = SPECIAL_PARAMS[p]));
+		basis.provides = params;
+		basis.desc = "Happens when: " + cmd.desc;
+		basis.shortdesc = cmd.desc; //Needs to be even shorter though
+		return basis;
+	},
 });

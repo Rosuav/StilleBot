@@ -6,12 +6,8 @@ import {cls_load_message, cls_save_message} from "$$static||command_classic.js$$
 import {waitlate} from "$$static||utils.js$$";
 
 export const commands = { }; //Deprecated. Need to try to not have this exported mapping.
-
-const hooks = {open_advanced: []}; //Deprecated, will be reworked into oblivion
-export function add_hook(name, func) {
-	if (!hooks[name]) return false;
-	return hooks[name].push(func);
-}
+const config = {get_command_basis: cmd => ({ })};
+export function cmd_configure(cfg) {Object.assign(config, cfg);}
 
 const tablist = ["Classic", "Graphical", "Raw"], defaulttab = "Classic";
 
@@ -70,8 +66,7 @@ function select_tab(tab, response) {
 on("change", "#cmdviewtabset input", e => change_tab(e.match.value));
 
 export function open_advanced_view(cmd) {
-	cmd_editing = cmd; mode = ""; cmd_id = cmd.id; cmd_basis = { };
-	if (cmd.id[0] !== '!') cmd_basis.command = "!" + cmd.id.split("#")[0];
+	cmd_editing = cmd; mode = ""; cmd_id = cmd.id; cmd_basis = config.get_command_basis(cmd);
 	set_content("#cmdname", "!" + cmd.id.split("#")[0]);
 	if (!DOM("#cmdviewtabset")) DOM("#advanced_view header").appendChild(UL({id: "cmdviewtabset"}));
 	set_content("#cmdviewtabset", tablist.map(tab => LI(LABEL([
@@ -79,7 +74,6 @@ export function open_advanced_view(cmd) {
 		SPAN(tab),
 	]))));
 	change_tab(defaulttab.toLowerCase());
-	hooks.open_advanced.forEach(f => f(cmd, cmd_basis));
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
 }

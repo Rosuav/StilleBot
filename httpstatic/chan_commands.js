@@ -1,7 +1,11 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {BR, BUTTON, INPUT, TR, TD} = choc;
-import {sockmsg_validated, sockmsg_loadfavs, favcheck, render_command, commands} from "$$static||command_editor.js$$";
+import {sockmsg_validated, sockmsg_loadfavs, favcheck, render_command, commands, cmd_configure} from "$$static||command_editor.js$$";
 export {sockmsg_validated, sockmsg_loadfavs};
+
+cmd_configure({
+	get_command_basis: cmd => ({command: "!" + cmd.id.split("#")[0]}),
+});
 
 on("click", 'a[href="/emotes"]', e => {
 	e.preventDefault();
