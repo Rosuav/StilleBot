@@ -237,8 +237,7 @@ on("click", "#templates tbody tr", e => {
 	document.getElementById("templates").close();
 	const [cmd, text] = e.match.children;
 	const cmdname = cmd.innerText.trim();
-	const template = complex_templates[cmdname] || {message: text.innerText.trim()};
+	let template = complex_templates[cmdname] || text.innerText.trim();
+	if (typeof template !== "object" || Array.isArray(template)) template = {message: template};
 	open_advanced_view({...template, id: cmdname.slice(1)});
-	if (cmdname[0] === '!') set_content("#cmdname", INPUT({value: cmdname}));
-	else set_content("#cmdname", "");
 });
