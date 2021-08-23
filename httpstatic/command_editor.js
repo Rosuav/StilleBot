@@ -110,23 +110,14 @@ export function open_advanced_view(cmd) {
 }
 
 on("click", "#save_advanced", async e => {
-	let info = get_message_details();
-	/*
-	const cmd = commands[document.getElementById("cmdname").innerText.slice(1)];
-	console.log("WAS:", cmd);
-	console.log("NOW:", info);
-	return;
-	// */
+	const info = get_message_details();
 	document.getElementById("advanced_view").close();
-	const el = document.getElementById("cmdname").firstChild;
-	const cmdname = !el ? "" : el.nodeType === 3 ? el.data : el.value; //Not sure if text nodes' .data attribute is the best way to do this
-	ws_sync.send({cmd: "update", cmdname, response: info});
+	const el = DOM("#cmdname");
+	ws_sync.send({cmd: "update", cmdname: el ? el.value : cmd_id, response: info});
 });
 
 on("click", "#delete_advanced", waitlate(750, 5000, "Really delete?", e => {
-	const el = document.getElementById("cmdname").firstChild;
-	const cmdname = el.nodeType === 3 ? el.data : el.value; //Duplicated from above
-	ws_sync.send({cmd: "delete", cmdname});
+	ws_sync.send({cmd: "delete", cmdname: cmd_id});
 	DOM("#advanced_view").close();
 }));
 
@@ -239,5 +230,6 @@ on("click", "#templates tbody tr", e => {
 	const cmdname = cmd.innerText.trim();
 	let template = complex_templates[cmdname] || text.innerText.trim();
 	if (typeof template !== "object" || Array.isArray(template)) template = {message: template};
-	open_advanced_view({...template, id: cmdname.slice(1)});
+	const id = cmdname.startsWith("!") ? cmdname.slice(1) : ""; //Triggers don't get IDs until the server assigns them
+	open_advanced_view({...template, id, template: true});
 });
