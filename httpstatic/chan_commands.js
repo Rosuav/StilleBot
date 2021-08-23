@@ -1,7 +1,7 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {BR, BUTTON, INPUT, TR, TD} = choc;
-import {add_hook, open_advanced_view, sockmsg_validated, sockmsg_loadfavs, favcheck, render_command, commands} from "$$static||command_editor.js$$";
-export {add_hook, open_advanced_view, sockmsg_validated, sockmsg_loadfavs, favcheck};
+import {sockmsg_validated, sockmsg_loadfavs, favcheck, render_command, commands} from "$$static||command_editor.js$$";
+export {sockmsg_validated, sockmsg_loadfavs};
 
 on("click", 'a[href="/emotes"]', e => {
 	e.preventDefault();
@@ -19,38 +19,15 @@ export function render(data) {
 		TD(BUTTON({type: "button", id: "addcmd"}, "Add")),
 	]));
 }
-on("input", "tr[data-id] input", e => e.match.closest("tr").classList.add("dirty"));
 
-on("submit", "main > form", e => {
-	e.preventDefault();
-	document.querySelectorAll("tr.dirty[data-id]").forEach(tr => {
-		const msg = [];
-		tr.querySelectorAll("input").forEach(inp => inp.value && msg.push(inp.value));
-		if (!msg.length) {
-			ws_sync.send({cmd: "delete", cmdname: tr.dataset.id});
-			return;
-		}
-		const response = {message: msg};
-		//In order to get here, we had to render a simple command. That means its
-		//message is pretty much all there is to it, but there might be some flags.
-		const prev = commands[tr.dataset.id];
-		for (let flg in flags) if (prev[flg]) response[flg] = prev[flg];
-		ws_sync.send({cmd: "update", cmdname: tr.dataset.id, response});
-		//Note that the dirty flag is not reset. A successful update will trigger
-		//a broadcast message which, when it reaches us, will rerender the command
-		//completely, thus effectively resetting dirty.
-	});
-	addcmd();
-});
 function addcmd() {
 	const newcmd = DOM("#newcmd_name");
-	if (newcmd) { //Applicable only to the main command editor
-		const cmdname = newcmd.value, response = DOM("#newcmd_resp").value;
-		if (cmdname !== "" && response !== "") {
-			ws_sync.send({cmd: "update", cmdname, response});
-			newcmd.value = DOM("#newcmd_resp").value = "";
-			newcmd.closest("tr").classList.remove("dirty");
-		}
+	const cmdname = newcmd.value, response = DOM("#newcmd_resp").value;
+	if (cmdname !== "" && response !== "") {
+		ws_sync.send({cmd: "update", cmdname, response});
+		newcmd.value = DOM("#newcmd_resp").value = "";
+		newcmd.closest("tr").classList.remove("dirty");
 	}
 }
-on("click", "#addcmd", addcmd); //Note that there'll never be more than one add button at the moment, but might be zero.
+on("submit", "main > form", e => {e.preventDefault(); addcmd();});
+on("click", "#addcmd", addcmd);

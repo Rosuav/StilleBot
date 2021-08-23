@@ -2,7 +2,6 @@ import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfact
 const {CODE, BR, TR, TD, SPAN, DIV, UL, LI, INPUT} = choc;
 import {render_command, sockmsg_validated, sockmsg_loadfavs, favcheck} from "$$static||command_editor.js$$";
 export {sockmsg_validated, sockmsg_loadfavs};
-import "$$static||chan_commands.js$$"; //Deprecated
 
 export const render_parent = DOM("#triggers tbody");
 export const render_item = render_command;

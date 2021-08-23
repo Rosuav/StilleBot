@@ -2,7 +2,6 @@ import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfact
 const {CODE, BR, TABLE, TR, TH, TD, SPAN, DIV, DETAILS, SUMMARY, UL, LI, INPUT, LABEL, STYLE} = choc;
 import {render_command, add_hook, sockmsg_validated, sockmsg_loadfavs, favcheck} from "$$static||command_editor.js$$";
 export {sockmsg_validated, sockmsg_loadfavs};
-import "$$static||chan_commands.js$$"; //Deprecated
 
 let command_lookup = { };
 function describe_param(p, desc) {

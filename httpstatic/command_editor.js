@@ -179,6 +179,28 @@ on("click", "button.advview", e => { //FIXME: Needs to be different for differen
 	const tr = e.match.closest("tr");
 	open_advanced_view(commands[tr.dataset.editid || tr.dataset.id]);
 });
+on("input", "tr[data-id] input", e => e.match.closest("tr").classList.add("dirty"));
+on("submit", "main > form", e => {
+	e.preventDefault();
+	document.querySelectorAll("tr.dirty[data-id]").forEach(tr => {
+		const msg = [];
+		tr.querySelectorAll("input").forEach(inp => inp.value && msg.push(inp.value));
+		if (!msg.length) {
+			ws_sync.send({cmd: "delete", cmdname: tr.dataset.id});
+			return;
+		}
+		const response = {message: msg};
+		//In order to get here, we had to render a simple command. That means its
+		//message is pretty much all there is to it, but there might be some flags.
+		const prev = commands[tr.dataset.id];
+		for (let flg of ["mode", "access", "visibility", "delay", "dest", "target", "action"])
+			if (prev[flg]) response[flg] = prev[flg];
+		ws_sync.send({cmd: "update", cmdname: tr.dataset.id, response});
+		//Note that the dirty flag is not reset. A successful update will trigger
+		//a broadcast message which, when it reaches us, will rerender the command
+		//completely, thus effectively resetting dirty.
+	});
+});
 
 //Not applicable on all callers, but if it is, it should behave consistently
 on("click", "#examples", e => {
