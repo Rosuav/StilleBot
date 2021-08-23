@@ -67,7 +67,7 @@ on("click", ".tabradio", e => {
 
 add_hook("open_advanced", (command, basis) => {
 	const cmd = command_lookup[command.id];
-	set_content("#parameters", describe_all_params(cmd)); //TODO: Do this in commands.js instead
+	set_content("#parameters", describe_all_params(cmd)); //TODO: Do this in command_editor.js instead
 	const params = {"{username}": cmd.originator};
 	cmd.params.split(", ").forEach(p => p && (params["{" + p + "}"] = SPECIAL_PARAMS[p]));
 	basis.provides = params;
