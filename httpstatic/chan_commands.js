@@ -3,40 +3,9 @@ const {BR, BUTTON, INPUT, TR, TD} = choc;
 import {add_hook, open_advanced_view, sockmsg_validated, sockmsg_loadfavs, favcheck, render_command, commands} from "$$static||command_editor.js$$";
 export {add_hook, open_advanced_view, sockmsg_validated, sockmsg_loadfavs, favcheck};
 
-on("click", "button.addline", e => {
-	let parent = e.match.closest("td").previousElementSibling;
-	parent.appendChild(BR());
-	parent.appendChild(INPUT({className: "widetext"}));
-});
-
-on("click", "button.advview", e => {
-	const tr = e.match.closest("tr");
-	open_advanced_view(commands[tr.dataset.editid || tr.dataset.id]);
-});
-
 on("click", 'a[href="/emotes"]', e => {
 	e.preventDefault();
 	window.open("/emotes", "emotes", "width=900, height=700");
-});
-
-on("click", "#examples", e => {
-	e.preventDefault();
-	document.getElementById("templates").showModal();
-});
-on("click", "#templates tbody tr", e => {
-	e.preventDefault();
-	document.getElementById("templates").close();
-	const [cmd, text] = e.match.children;
-	const cmdname = cmd.innerText.trim();
-	const template = complex_templates[cmdname];
-	if (template) {
-		open_advanced_view({...template, id: cmdname.slice(1)});
-		if (cmdname[0] === '!') set_content("#cmdname", INPUT({value: cmdname}));
-		else set_content("#cmdname", "");
-		return;
-	}
-	DOM("#newcmd_name").value = cmdname;
-	DOM("#newcmd_resp").value = text.innerText.trim();
 });
 
 export const render_parent = DOM("#commandview tbody");

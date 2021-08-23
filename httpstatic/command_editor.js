@@ -168,3 +168,35 @@ export function render_command(msg) {
 		]),
 	]);
 }
+
+on("click", "button.addline", e => {
+	let parent = e.match.closest("td").previousElementSibling;
+	parent.appendChild(BR());
+	parent.appendChild(INPUT({className: "widetext"}));
+});
+
+on("click", "button.advview", e => { //FIXME: Needs to be different for different files
+	const tr = e.match.closest("tr");
+	open_advanced_view(commands[tr.dataset.editid || tr.dataset.id]);
+});
+
+//Not applicable on all callers, but if it is, it should behave consistently
+on("click", "#examples", e => {
+	e.preventDefault();
+	document.getElementById("templates").showModal();
+});
+on("click", "#templates tbody tr", e => {
+	e.preventDefault();
+	document.getElementById("templates").close();
+	const [cmd, text] = e.match.children;
+	const cmdname = cmd.innerText.trim();
+	const template = complex_templates[cmdname];
+	if (template) {
+		open_advanced_view({...template, id: cmdname.slice(1)});
+		if (cmdname[0] === '!') set_content("#cmdname", INPUT({value: cmdname}));
+		else set_content("#cmdname", "");
+		return;
+	}
+	DOM("#newcmd_name").value = cmdname;
+	DOM("#newcmd_resp").value = text.innerText.trim();
+});
