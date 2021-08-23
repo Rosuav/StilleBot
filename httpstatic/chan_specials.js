@@ -4,11 +4,8 @@ import {render_command, cmd_configure, sockmsg_validated, sockmsg_loadfavs, favc
 export {sockmsg_validated, sockmsg_loadfavs};
 
 let command_lookup = { };
-function describe_param(p, desc) {
-	//TODO: Make them clickable to insert that token in the current EF??
-	return LI([CODE(p), " - " + desc]);
-}
 
+const describe_param = (p, desc) => LI([CODE(p), " - " + desc]);
 function describe_all_params(cmd) {
 	return [describe_param("$$", cmd.originator)].concat(
 		cmd.params.split(", ").map(p => p && describe_param("{" + p + "}", SPECIAL_PARAMS[p]))
@@ -68,7 +65,6 @@ on("click", ".tabradio", e => {
 cmd_configure({
 	get_command_basis: command => {
 		const cmd = command_lookup[command.id], basis = {type: "anchor_special"};
-		set_content("#parameters", describe_all_params(cmd)); //TODO: Do this in command_editor.js instead
 		const params = {"{username}": cmd.originator};
 		cmd.params.split(", ").forEach(p => p && (params["{" + p + "}"] = SPECIAL_PARAMS[p]));
 		basis.provides = params;

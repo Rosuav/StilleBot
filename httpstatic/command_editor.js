@@ -65,9 +65,15 @@ function select_tab(tab, response) {
 }
 on("change", "#cmdviewtabset input", e => change_tab(e.match.value));
 
+function describe_params(params) {
+	//TODO: Make them clickable to insert that token in the current EF??
+	return Object.keys(params).map(p => LI([CODE(p), " - " + params[p]]));
+}
+
 export function open_advanced_view(cmd) {
 	cmd_editing = cmd; mode = ""; cmd_id = cmd.id; cmd_basis = config.get_command_basis(cmd);
 	set_content("#cmdname", "!" + cmd.id.split("#")[0]);
+	if (DOM("#parameters")) set_content("#parameters", describe_params(cmd_basis.provides || { }));
 	if (!DOM("#cmdviewtabset")) DOM("#advanced_view header").appendChild(UL({id: "cmdviewtabset"}));
 	set_content("#cmdviewtabset", tablist.map(tab => LI(LABEL([
 		INPUT({type: "radio", name: "editor", value: tab.toLowerCase(), checked: tab === defaulttab}),
