@@ -190,13 +190,8 @@ on("click", "#templates tbody tr", e => {
 	document.getElementById("templates").close();
 	const [cmd, text] = e.match.children;
 	const cmdname = cmd.innerText.trim();
-	const template = complex_templates[cmdname];
-	if (template) {
-		open_advanced_view({...template, id: cmdname.slice(1)});
-		if (cmdname[0] === '!') set_content("#cmdname", INPUT({value: cmdname}));
-		else set_content("#cmdname", "");
-		return;
-	}
-	DOM("#newcmd_name").value = cmdname;
-	DOM("#newcmd_resp").value = text.innerText.trim();
+	const template = complex_templates[cmdname] || {message: text.innerText.trim()};
+	open_advanced_view({...template, id: cmdname.slice(1)});
+	if (cmdname[0] === '!') set_content("#cmdname", INPUT({value: cmdname}));
+	else set_content("#cmdname", "");
 });
