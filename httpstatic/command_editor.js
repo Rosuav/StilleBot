@@ -1,9 +1,11 @@
 //Command advanced editor framework, and Raw mode editor
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {BUTTON, DIV, INPUT, LABEL, LI, P, SPAN, TEXTAREA, UL} = choc;
+const {BR, BUTTON, CODE, DIV, INPUT, LABEL, LI, P, SPAN, TEXTAREA, UL, TR, TD} = choc;
 import {gui_load_message, gui_save_message, load_favourites} from "$$static||command_gui.js$$";
 import {cls_load_message, cls_save_message} from "$$static||command_classic.js$$";
 import {waitlate} from "$$static||utils.js$$";
+
+export const commands = { }; //Deprecated. Need to try to not have this exported mapping.
 
 const hooks = {open_advanced: []}; //Deprecated, will be reworked into oblivion
 export function add_hook(name, func) {
@@ -118,4 +120,51 @@ export function sockmsg_loadfavs(data) {load_favourites(data.favs);}
 let favourites_loaded = false;
 export function favcheck() {
 	if (!favourites_loaded) {favourites_loaded = true; ws_sync.send({cmd: "loadfavs"});}
+}
+
+//Command summary view
+function collect_messages(msg, cb, pfx) {
+	if (typeof msg === "string") cb(pfx + msg);
+	else if (Array.isArray(msg)) msg.forEach(line => collect_messages(line, cb, pfx));
+	else if (typeof msg !== "object") return; //Not sure what this could mean, but we can't handle it. Probably a null entry or something.
+	else if (msg.conditional && msg.otherwise) { //Hide the Otherwise if there isn't any (either a normal command with "" or a trigger with undefined)
+		collect_messages(msg.message, cb, pfx + "?) ");
+		collect_messages(msg.otherwise, cb, pfx + "!) ");
+	}
+	else collect_messages(msg.message, cb, pfx);
+}
+export function render_command(msg) {
+	//All commands are objects with (at a minimum) an id and a message.
+	//A simple command is one which is non-conditional, and whose message  is either
+	//a string or an array of strings. Anything else is a non-simple command and will
+	//be non-editable in the table - it can only be edited using the Advanced View popup.
+	const response = [], cmd = msg.id.split("#")[0];
+	let addbtn = "";
+	let editid = msg.id;
+	if (msg.alias_of) {
+		response.push(CODE("Alias of !" + msg.alias_of), BR());
+		editid = msg.alias_of + "#" + msg.id.split("#")[1];
+	}
+	else if (!msg.conditional && (
+		typeof msg.message === "string" ||
+		(Array.isArray(msg.message) && !msg.message.find(r => typeof r !== "string"))
+	)) {
+		//Simple message. Return an editable row.
+		collect_messages(msg.message, m => response.push(INPUT({value: m, className: "widetext"}), BR()), "");
+		addbtn = BUTTON({type: "button", className: "addline", title: "Add another line"}, "+");
+	}
+	else {
+		//Complex message. Return a non-editable row.
+		collect_messages(msg, m => response.push(CODE(m), BR()), "");
+	}
+	response.pop(); //There should be a BR at the end.
+	commands[msg.id] = msg;
+	return TR({"data-id": msg.id, "data-editid": editid}, [
+		TD(CODE("!" + cmd)),
+		TD(response),
+		TD([
+			BUTTON({type: "button", className: "advview", title: "Advanced"}, "\u2699"),
+			addbtn,
+		]),
+	]);
 }

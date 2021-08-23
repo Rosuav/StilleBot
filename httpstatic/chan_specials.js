@@ -1,8 +1,8 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {CODE, BR, TABLE, TR, TH, TD, SPAN, DIV, DETAILS, SUMMARY, UL, LI, INPUT, LABEL, STYLE} = choc;
-import {add_hook, sockmsg_validated, sockmsg_loadfavs, favcheck} from "$$static||command_editor.js$$";
+import {render_command, add_hook, sockmsg_validated, sockmsg_loadfavs, favcheck} from "$$static||command_editor.js$$";
 export {sockmsg_validated, sockmsg_loadfavs};
-import {render_item as render_command} from "$$static||chan_commands.js$$";
+import "$$static||chan_commands.js$$"; //Deprecated
 
 let command_lookup = { };
 function describe_param(p, desc) {
