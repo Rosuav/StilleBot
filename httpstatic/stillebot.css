@@ -102,7 +102,7 @@ nav a {
 #cond_bits.present, #cond_subs.present {background-color: #e060e0;}
 
 tr.dirty {
-	background-color: #ffeeee;
+	background-color: #fdd;
 }
 
 #templates {
