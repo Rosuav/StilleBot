@@ -1,13 +1,13 @@
 //Command advanced editor framework, and Raw mode editor
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {BR, BUTTON, CANVAS, CODE, DIALOG, DIV, HEADER, H3, INPUT, LABEL, LI, P, SECTION, SPAN, TEXTAREA, UL, TR, TD} = choc;
-const tablist = ["Classic", "Graphical", "Raw"], defaulttab = "Classic";
+const tablist = ["Classic", "Graphical", "Raw"], defaulttab = "classic";
 document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 	HEADER([
 		H3("Edit trigger"),
 		DIV(BUTTON({type: "button", className: "dialog_cancel"}, "x")),
 		UL({id: "cmdviewtabset"}, tablist.map(tab => LI(LABEL([
-			INPUT({type: "radio", name: "editor", value: tab.toLowerCase(), checked: tab === defaulttab}),
+			INPUT({type: "radio", name: "editor", value: tab.toLowerCase()}),
 			SPAN(tab),
 		])))),
 	]),
@@ -104,7 +104,7 @@ function describe_params(params) {
 export function open_advanced_view(cmd) {
 	cmd_editing = cmd; mode = ""; cmd_id = cmd.id; cmd_basis = config.get_command_basis(cmd);
 	if (DOM("#parameters")) set_content("#parameters", describe_params(cmd_basis.provides || { }));
-	change_tab(defaulttab.toLowerCase());
+	DOM('[name="editor"][value="' + defaulttab + '"]').checked = true; change_tab(defaulttab);
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
 }
