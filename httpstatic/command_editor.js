@@ -122,8 +122,12 @@ on("click", "#delete_advanced", waitlate(750, 5000, "Really delete?", e => {
 }));
 
 on("click", ".raw_view", e => {
-	let response;
-	try {response = JSON.parse(DOM("#raw_text").value);}
+	let response = DOM("#raw_text").value;
+	//Hack: """long text""" allows multiline text, Python-style. It can ONLY handle text.
+	if (response.startsWith('"""')) {
+		response = response.split('"""')[1].split("\n").map(l => l.trim()).filter(l => l !== "");
+	}
+	else try {response = JSON.parse(response);}
 	catch (e) {set_content("#raw_error", "JSON format error: " + e.message); return;}
 	set_content("#raw_error", "");
 	DOM("#raw_text").value = JSON.stringify(response, null, e.match.classList.contains("pretty") ? 4 : 0);
