@@ -85,4 +85,3 @@
     into the primary. You are permitted (though not required) to make the original
     name an alias, which effectively just changes which one is primary.
   - If you create an alias (without renaming) that already exists, what happens??
-* Follow alert: Check if person is still following before firing the special
