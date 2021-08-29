@@ -554,10 +554,10 @@ class EventSub(string hookname, string type, string version, function callback) 
 
 EventSub new_follower = EventSub("follower", "channel.follow", "1") { [string chan, mapping follower] = __ARGS__;
 	notice_user_name(follower->user_login, follower->user_id);
-	if (object chan = G->G->irc->channels["#" + chan])
+	if (object channel = G->G->irc->channels["#" + chan])
 		check_following(follower->user_login, chan)->then() {
 			//Sometimes bots will follow-unfollow. Avoid spamming chat with meaningless follow messages.
-			if (__ARGS__[0][2]->following) chan->trigger_special("!follower", ([
+			if (__ARGS__[0][2]->following) channel->trigger_special("!follower", ([
 				"user": follower->user_login,
 				"displayname": follower->user_name,
 			]), ([]));
