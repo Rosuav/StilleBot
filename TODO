@@ -85,6 +85,11 @@
     into the primary. You are permitted (though not required) to make the original
     name an alias, which effectively just changes which one is primary.
   - If you create an alias (without renaming) that already exists, what happens??
+* Graphical editor: If you put newlines into a message, render as multiple text.
+  - This would be easy enough if it's the last thing; otherwise, make a group.
+  - Or, always make a group?? Prompt before making a group?
+  - Never make any blank entries. If someone puts a loose newline at the end,
+    silently strip it. Multiple consecutive newlines will be same as one.
 ---- command view master display scribble notes ----
 Recursive descent. Provide flags object.
 - If string, return string.
