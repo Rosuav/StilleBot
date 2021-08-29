@@ -85,3 +85,16 @@
     into the primary. You are permitted (though not required) to make the original
     name an alias, which effectively just changes which one is primary.
   - If you create an alias (without renaming) that already exists, what happens??
+---- command view master display scribble notes ----
+Recursive descent. Provide flags object.
+- If string, return string.
+- If array, map recurse, filter out empty, return array.
+- If mode "random", if multiple real entries, set flag "One of", continue.
+- If conditional, if "message" and "otherwise" both real, set flag "One of", continue.
+- If whisper, return "Whisper:" plus recurse message
+- If variable or other destination, return blank (not real entry)
+- Ignore delay. Ignore cooldown (keep message only).
+If only one string returned, provide input. No "Add line" button. Just gear.
+If anything else, show description, force use of gear.
+On save, be prepared to inject deep into message, retaining all else - including cooldown etc.
+((recursive may need a "replace-with" flag, maybe put it in the flags object??))
