@@ -1,6 +1,6 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {BR, BUTTON, CODE, INPUT, TR, TD} = choc;
-import {sockmsg_validated, sockmsg_loadfavs, favcheck, render_command, commands, cmd_configure} from "$$static||command_editor.js$$";
+import {sockmsg_validated, sockmsg_loadfavs, favcheck, render_command, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 export {sockmsg_validated, sockmsg_loadfavs};
 
 cmd_configure({
@@ -31,11 +31,12 @@ export function render(data) {
 function addcmd() {
 	const newcmd = DOM("#newcmd_name");
 	const cmdname = newcmd.value, response = DOM("#newcmd_resp").value;
+	newcmd.value = DOM("#newcmd_resp").value = "";
 	if (cmdname !== "" && response !== "") {
 		ws_sync.send({cmd: "update", cmdname, response});
-		newcmd.value = DOM("#newcmd_resp").value = "";
 		newcmd.closest("tr").classList.remove("dirty");
 	}
+	else open_advanced_view({message: "", id: cmdname.replace("!", ""), template: true});
 }
 on("submit", "main > form", e => {e.preventDefault(); addcmd();});
 on("click", "#addcmd", addcmd);

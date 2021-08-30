@@ -90,4 +90,3 @@
   - Or, always make a group?? Prompt before making a group?
   - Never make any blank entries. If someone puts a loose newline at the end,
     silently strip it. Multiple consecutive newlines will be same as one.
-* Clicking Add on command editor should bring up advanced editor if no text in command
