@@ -158,7 +158,7 @@ export function render_command(msg) {
 	//A simple command is one which is non-conditional and has a single message. Anything
 	//else is a non-simple command and will be non-editable in the table - it can only be
 	//edited using the Advanced View popup.
-	const response = [], cmd = msg.id.split("#")[0];
+	const response = [];
 	let editid = msg.id;
 	if (msg.alias_of) {
 		response.push(CODE("Alias of !" + msg.alias_of), BR());
@@ -178,7 +178,7 @@ export function render_command(msg) {
 	response.pop(); //There should be a BR at the end.
 	commands[msg.id] = msg;
 	return TR({"data-id": msg.id, "data-editid": editid}, [
-		TD(CODE("!" + cmd)),
+		TD(CODE("!" + msg.id.split("#")[0])),
 		TD(response),
 		TD(BUTTON({type: "button", className: "advview", title: "Open editor"}, "\u2699")),
 	]);
