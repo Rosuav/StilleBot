@@ -928,6 +928,14 @@ on("submit", "#setprops", e => {
 			//Ultimately the server will validate, but it's ugly to let it sit around wrong.
 			if (typeof param.values === "boolean") propedit[param.attr] = val.checked ? "on" : "";
 			else propedit[param.attr] = val.value;
+			if (param.attr === "message" && propedit.message.includes("\n")) {
+				//Convert multiple lines into a group of elements of this type
+				propedit.message = propedit.message.split("\n").filter(l => l !== "")
+					.map((l,i) => ({type: propedit.type, message: l, parent: [propedit, "message", i]}));
+				propedit.type = "group";
+				actives.push(...propedit.message);
+				propedit.message.push("");
+			}
 		}
 	}
 	propedit = null;
