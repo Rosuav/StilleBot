@@ -143,15 +143,40 @@ export function favcheck() {
 }
 
 //Command summary view
-function collect_messages(msg, cb, pfx) {
-	if (typeof msg === "string") cb(pfx + msg);
-	else if (Array.isArray(msg)) msg.forEach(line => collect_messages(line, cb, pfx));
-	else if (typeof msg !== "object") return; //Not sure what this could mean, but we can't handle it. Probably a null entry or something.
-	else if (msg.conditional && msg.otherwise) { //Hide the Otherwise if there isn't any (either a normal command with "" or a trigger with undefined)
-		collect_messages(msg.message, cb, pfx + "?) ");
-		collect_messages(msg.otherwise, cb, pfx + "!) ");
+function arrayify(m) {return Array.isArray(m) ? m : [m];}
+function unarrayify(m) {
+	if (!Array.isArray(m)) return m;
+	if (m.length === 1) return m[0];
+	if (!m.length) return null;
+	return m;
+}
+function scan_message(msg, msgstatus, parent, key) {
+	if (typeof msg === "string") {
+		if (msg === "") return null;
+		if (msgstatus.replacetext) parent[key] = msgstatus.replacetext;
+		return msg;
 	}
-	else collect_messages(msg.message, cb, pfx);
+	if (Array.isArray(msg)) {
+		//Map recurse, filter out any empty strings or null returns.
+		return unarrayify(msg.map((m,i) => scan_message(m, msgstatus, msg, i)).filter(m => m));
+	}
+	if (typeof msg !== "object") return null; //Not sure what this could mean, but we can't handle it. Probably a null entry or something.
+	if (msg.dest === "/w") msgstatus.whisper = true;
+	else if (msg.dest) return null; //Anything with a special destination (eg Variable, Private Message) shouldn't be shown this way.
+	if (msg.mode === "random") msgstatus.oneof = true;
+	if (msg.conditional && msg.conditional !== "cooldown") {
+		//Combine both the branches of the conditional and, if there's only one thing
+		//to say, assume we say that. (A conditional that sometimes suppresses, or a
+		//cooldown, is considered to be just a message with flags.)
+		const oth = scan_message(msg.otherwise, msgstatus, msg, "otherwise");
+		msg = scan_message(msg.message, msgstatus, msg, "message");
+		if (!msg || !oth) return msg || oth; //If either is missing, use the other. (Or null if both are, but that shouldn't happen.)
+		//Both branches have text. Say that it'll be "one of" these.
+		msgstatus.oneof = true;
+		return unarrayify([...arrayify(msg), ...arrayify(oth)]);
+	}
+	if (!msg.message) return null;
+	return scan_message(msg.message, msgstatus, msg, "message");
 }
 export function render_command(msg) {
 	//All commands are objects with (at a minimum) an id and a message.
@@ -161,21 +186,18 @@ export function render_command(msg) {
 	const response = [];
 	let editid = msg.id;
 	if (msg.alias_of) {
-		response.push(CODE("Alias of !" + msg.alias_of), BR());
+		response.push(CODE("Alias of !" + msg.alias_of));
 		editid = msg.alias_of + "#" + msg.id.split("#")[1];
 	}
-	else if (!msg.conditional && (
-		typeof msg.message === "string" ||
-		(Array.isArray(msg.message) && !msg.message.find(r => typeof r !== "string"))
-	)) {
-		//Simple message. Return an editable row.
-		collect_messages(msg.message, m => response.push(INPUT({value: m, className: "widetext"}), BR()), "");
-	}
 	else {
-		//Complex message. Return a non-editable row.
-		collect_messages(msg, m => response.push(CODE(m), BR()), "");
+		const msgstatus = { };
+		const simpletext = scan_message(msg, msgstatus);
+		if (msgstatus.whisper) response.push(EM("Response will be whispered"), BR());
+		if (msgstatus.oneof) response.push(EM("One of:"), BR());
+		if (!simpletext) response.push(CODE("(Special command, unable to summarize)")); //Not going to be common. Get some examples before rewording this.
+		else if (typeof simpletext === "string") response.push(INPUT({value: simpletext, className: "widetext"}));
+		else simpletext.forEach(m => response.push(CODE(m), BR()));
 	}
-	response.pop(); //There should be a BR at the end.
 	commands[msg.id] = msg;
 	return TR({"data-id": msg.id, "data-editid": editid}, [
 		TD(CODE("!" + msg.id.split("#")[0])),
@@ -192,18 +214,16 @@ on("input", "tr[data-id] input", e => e.match.closest("tr").classList.add("dirty
 on("submit", "main > form", e => {
 	e.preventDefault();
 	document.querySelectorAll("tr.dirty[data-id]").forEach(tr => {
-		const msg = [];
-		tr.querySelectorAll("input").forEach(inp => inp.value && msg.push(inp.value));
+		const msg = tr.querySelector("input").value;
 		if (!msg.length) {
 			ws_sync.send({cmd: "delete", cmdname: tr.dataset.id});
 			return;
 		}
-		const response = {message: msg};
-		//In order to get here, we had to render a simple command. That means its
-		//message is pretty much all there is to it, but there might be some flags.
-		const prev = commands[tr.dataset.id];
-		for (let flg of ["mode", "access", "visibility", "delay", "dest", "target", "action"])
-			if (prev[flg]) response[flg] = prev[flg];
+		//Take a copy of the original command (we're going to JSON-encode it anyway, so this should
+		//be safe) and inject the new message text into it.
+		let response = JSON.parse(JSON.stringify(commands[tr.dataset.id]));
+		if (typeof response === "string") response = msg;
+		else scan_message(response, {replacetext: msg});
 		ws_sync.send({cmd: "update", cmdname: tr.dataset.id, response});
 		//Note that the dirty flag is not reset. A successful update will trigger
 		//a broadcast message which, when it reaches us, will rerender the command
