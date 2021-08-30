@@ -52,7 +52,45 @@ const ensure_blank = arr => {
 	return arr;
 };
 
-function required(val) {return !!val;} //Filter that demands that an attribute be present
+const default_handlers = {
+	validate: val => typeof val === "string" || typeof val === "undefined",
+	make_control: (id, val, el) => INPUT({...id, value: val || "", size: 50}),
+};
+const required = {...default_handlers, validate: val => typeof val === "string"}; //Filter that demands that an attribute be present
+const bool_attr = {...default_handlers,
+	make_control: (id, val, el) => INPUT({...id, type: "checkbox", checked: val === "on"}),
+	retrieve_value: el => el.checked ? "on" : "",
+};
+const text_message = {...default_handlers,
+	make_control: (id, val, el) => {
+		//Collect up a list of parents in order from root to here
+		//We scan upwards, inserting parents before us, to ensure proper ordering.
+		//This keeps the display tidy (having {param} always first, for instance),
+		//but also ensures that wonky situations with vars overwriting each other
+		//will behave the way the back end would handle them.
+		const vars_avail = [];
+		for (let par = el; par; par = par.parent && par.parent[0]) {
+			vars_avail.unshift(types[par.type].provides || par.provides);
+		}
+		const allvars = Object.assign({}, ...vars_avail);
+		return DIV({className: "msgedit"}, [
+			DIV({className: "buttonbox"}, Object.entries(allvars).map(([v, d]) => BUTTON({type: "button", title: d, className: "insertvar", "data-insertme": v}, v))),
+			TEXTAREA({...id, rows: 10, cols: 60}, el.message || ""),
+		]);
+	},
+	retrieve_value: (el, msg) => {
+		//Assumes that we're editing the "message" attribute
+		const txt = el.value;
+		if (!txt.includes("\n")) return txt;
+		//Convert multiple lines into a group of elements of this type
+		msg.message = txt.split("\n").filter(l => l !== "")
+			.map((l,i) => ({type: msg.type, message: l, parent: [msg, "message", i]}));
+		msg.type = "group";
+		actives.push(...msg.message);
+		msg.message.push("");
+		return msg.message;
+	},
+}
 
 const types = {
 	anchor_command: {
@@ -71,7 +109,7 @@ const types = {
 		label: el => el.conditional === "contains" ? `When '${el.expr1}' is typed...` : `When a msg matches ${el.expr1} ...`,
 		params: [{attr: "conditional", label: "Match type", values: ["contains", "regexp"],
 				selections: {string: "Simple match", regexp: "Regular expression"}},
-			{attr: "casefold", label: "Case insensitive", values: true},
+			{attr: "casefold", label: "Case insensitive", values: bool_attr},
 			{attr: "id", label: null}, //Retain the ID but don't show it for editing
 			{attr: "expr1", label: "Search for"}, {attr: "expr2", values: "%s"}],
 		provides: {
@@ -206,19 +244,19 @@ const types = {
 			el.expr1 && el.expr2 ? el.expr1 + " == " + el.expr2 : "String comparison",
 			"Otherwise:",
 		],
-		params: [{attr: "conditional", values: "string"}, {attr: "casefold", label: "Case insensitive", values: true},
+		params: [{attr: "conditional", values: "string"}, {attr: "casefold", label: "Case insensitive", values: bool_attr},
 			{attr: "expr1", label: "Expression 1"}, {attr: "expr2", label: "Expression 2"}],
 		typedesc: "Make a decision - if THIS is THAT, do one thing, otherwise do something else.",
 	},
 	conditional_contains: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => ["String includes", "Otherwise:"],
-		params: [{attr: "conditional", values: "contains"}, {attr: "casefold", label: "Case insensitive", values: true},
+		params: [{attr: "conditional", values: "contains"}, {attr: "casefold", label: "Case insensitive", values: bool_attr},
 			{attr: "expr1", label: "Needle"}, {attr: "expr2", label: "Haystack"}],
 		typedesc: "Make a decision - if Needle in Haystack, do one thing, otherwise do something else.",
 	},
 	conditional_regexp: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => ["Regular expression", "Otherwise:"],
-		params: [{attr: "conditional", values: "regexp"}, {attr: "casefold", label: "Case insensitive", values: true},
+		params: [{attr: "conditional", values: "regexp"}, {attr: "casefold", label: "Case insensitive", values: bool_attr},
 			{attr: "expr1", label: "Reg Exp"}, {attr: "expr2", label: "Compare against"}],
 		typedesc: "Make a decision - if regular expression, do one thing, otherwise do something else.",
 	},
@@ -234,7 +272,7 @@ const types = {
 	},
 	whisper_back: {
 		color: "#99ffff", width: 400, label: el => "🤫 " + el.message,
-		params: [{attr: "dest", values: "/w"}, {attr: "target", values: "$$"}, {attr: "message", label: "Text"}],
+		params: [{attr: "dest", values: "/w"}, {attr: "target", values: "$$"}, {attr: "message", label: "Text", values: text_message}],
 		typedesc: "Whisper to the person who ran the command",
 	},
 	whisper_other: {
@@ -276,7 +314,7 @@ const types = {
 	},
 	text: {
 		color: "#77eeee", width: 400, label: el => el.message,
-		params: [{attr: "message", label: "Text"}],
+		params: [{attr: "message", label: "Text", values: text_message}],
 		typedesc: "Send a message in the channel",
 	},
 	group: {
@@ -826,22 +864,6 @@ canvas.addEventListener("pointerup", e => {
 	repaint();
 });
 
-function make_message_editor(id, el) {
-	//Collect up a list of parents in order from root to here
-	//We scan upwards, inserting parents before us, to ensure proper ordering.
-	//This keeps the display tidy (having {param} always first, for instance),
-	//but also ensures that wonky situations with vars overwriting each other
-	//will behave the way the back end would handle them.
-	const vars_avail = [];
-	for (let par = el; par; par = par.parent && par.parent[0]) {
-		vars_avail.unshift(types[par.type].provides || par.provides);
-	}
-	const allvars = Object.assign({}, ...vars_avail);
-	return DIV({className: "msgedit"}, [
-		DIV({className: "buttonbox"}, Object.entries(allvars).map(([v, d]) => BUTTON({type: "button", title: d, className: "insertvar", "data-insertme": v}, v))),
-		TEXTAREA({...id, rows: 10, cols: 60}, el.message || ""),
-	]);
-}
 on("mousedown", ".insertvar", e => e.preventDefault()); //Prevent buttons from taking focus when clicked
 on("click", ".insertvar", e => {
 	const mle = e.match.closest(".msgedit").querySelector("textarea");
@@ -860,23 +882,19 @@ canvas.addEventListener("dblclick", e => {
 	set_content("#params", (type.params||[]).map(param => {
 		if (param.label === null) return null; //Note that a label of undefined is probably a bug and should be visible.
 		let control, id = {name: "value-" + param.attr, id: "value-" + param.attr, disabled: el.template};
-		switch (typeof param.values) {
-			//"object" has to mean array, we don't support any other type
-			case "object": if (param.values.length === 3 && typeof param.values[0] === "number") {
-				const [min, max, step] = param.values;
+		const values = param.values || default_handlers;
+		if (typeof values !== "object") return null; //Fixed strings and such
+		if (!values.validate) {
+			//If there's no validator function, this is an array, not an object.
+			if (values.length === 3 && typeof values[0] === "number") {
+				const [min, max, step] = values;
 				control = INPUT({...id, type: "number", min, max, step, value: el[param.attr]});
 			} else {
-				control = SELECT(id, param.values.map(v => OPTION({selected: v === el[param.attr], value: v}, (param.selections||{})[v] || v)));
+				control = SELECT(id, values.map(v => OPTION({selected: v === el[param.attr], value: v}, (param.selections||{})[v] || v)));
 			}
-			break;
-			case "undefined": case "function":
-				if (param.attr === "message") control = make_message_editor(id, el);
-				else control = INPUT({...id, value: el[param.attr] || "", size: 50});
-				break;
-			case "boolean": control = INPUT({...id, type: "checkbox", checked: el[param.attr] === "on"}); break;
-			default: break; //incl fixed strings
 		}
-		return control && TR([TD(LABEL({htmlFor: "value-" + param.attr}, param.label + ": ")), TD(control)]);
+		else control = values.make_control(id, el[param.attr], el);
+		return TR([TD(LABEL({htmlFor: "value-" + param.attr}, param.label + ": ")), TD(control)]);
 	}));
 	set_content("#providesdesc", Object.entries(type.provides || el.provides || {}).map(([v, d]) => LI([
 		CODE(v), ": " + d,
@@ -926,16 +944,9 @@ on("submit", "#setprops", e => {
 		if (val) {
 			//TODO: Validate based on the type, to prevent junk data from hanging around until save
 			//Ultimately the server will validate, but it's ugly to let it sit around wrong.
-			if (typeof param.values === "boolean") propedit[param.attr] = val.checked ? "on" : "";
+			const values = param.values || default_handlers;
+			if (values.retrieve_value) propedit[param.attr] = values.retrieve_value(val, propedit);
 			else propedit[param.attr] = val.value;
-			if (param.attr === "message" && propedit.message.includes("\n")) {
-				//Convert multiple lines into a group of elements of this type
-				propedit.message = propedit.message.split("\n").filter(l => l !== "")
-					.map((l,i) => ({type: propedit.type, message: l, parent: [propedit, "message", i]}));
-				propedit.type = "group";
-				actives.push(...propedit.message);
-				propedit.message.push("");
-			}
 		}
 	}
 	propedit = null;
@@ -957,15 +968,14 @@ function element_to_message(el) {
 function matches(param, val) {
 	//See if the value is compatible with this parameter's definition of values.
 	switch (typeof param.values) {
-		//"object" has to mean array, we don't support any other type
-		case "object": if (param.values.length === 3 && typeof param.values[0] === "number") {
+		case "object": if (param.values.validate) return param.values.validate(val);
+		//If there's no validator function, it must be an array.
+		if (param.values.length === 3 && typeof param.values[0] === "number") {
 			const num = parseFloat(val);
 			const [min, max, step] = param.values;
 			return num >= min && min <= max && !((num - min) % step);
 		} else return param.values.includes(val);
-		case "function": return param.values(val);
 		case "undefined": return typeof val === "string" || typeof val === "undefined";
-		case "boolean": return !val || val === "on";
 		case "string": return param.values === val;
 		default: return false;
 	}
