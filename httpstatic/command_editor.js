@@ -155,11 +155,10 @@ function collect_messages(msg, cb, pfx) {
 }
 export function render_command(msg) {
 	//All commands are objects with (at a minimum) an id and a message.
-	//A simple command is one which is non-conditional, and whose message  is either
-	//a string or an array of strings. Anything else is a non-simple command and will
-	//be non-editable in the table - it can only be edited using the Advanced View popup.
+	//A simple command is one which is non-conditional and has a single message. Anything
+	//else is a non-simple command and will be non-editable in the table - it can only be
+	//edited using the Advanced View popup.
 	const response = [], cmd = msg.id.split("#")[0];
-	let addbtn = "";
 	let editid = msg.id;
 	if (msg.alias_of) {
 		response.push(CODE("Alias of !" + msg.alias_of), BR());
@@ -171,7 +170,6 @@ export function render_command(msg) {
 	)) {
 		//Simple message. Return an editable row.
 		collect_messages(msg.message, m => response.push(INPUT({value: m, className: "widetext"}), BR()), "");
-		addbtn = BUTTON({type: "button", className: "addline", title: "Add another line"}, "+");
 	}
 	else {
 		//Complex message. Return a non-editable row.
@@ -182,18 +180,9 @@ export function render_command(msg) {
 	return TR({"data-id": msg.id, "data-editid": editid}, [
 		TD(CODE("!" + cmd)),
 		TD(response),
-		TD([
-			BUTTON({type: "button", className: "advview", title: "Advanced"}, "\u2699"),
-			addbtn,
-		]),
+		TD(BUTTON({type: "button", className: "advview", title: "Open editor"}, "\u2699")),
 	]);
 }
-
-on("click", "button.addline", e => {
-	let parent = e.match.closest("td").previousElementSibling;
-	parent.appendChild(BR());
-	parent.appendChild(INPUT({className: "widetext"}));
-});
 
 on("click", "button.advview", e => { //FIXME: Needs to be different for different files
 	const tr = e.match.closest("tr");
