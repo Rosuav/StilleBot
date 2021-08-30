@@ -1,6 +1,6 @@
 //Command advanced editor framework, and Raw mode editor
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {BR, BUTTON, CANVAS, CODE, DIALOG, DIV, HEADER, H3, INPUT, LABEL, LI, P, SECTION, SPAN, TEXTAREA, UL, TR, TD} = choc;
+const {BR, BUTTON, CANVAS, CODE, DIALOG, DIV, EM, FORM, HEADER, H3, INPUT, LABEL, LI, P, SECTION, SPAN, TEXTAREA, UL, TR, TD} = choc;
 const tablist = ["Classic", "Graphical", "Raw"], defaulttab = "classic";
 document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 	HEADER([
@@ -11,7 +11,7 @@ document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 			SPAN(tab),
 		])))),
 	]),
-	DIV([
+	FORM([
 		UL({id: "parameters"}),
 		DIV({id: "command_details"}),
 		DIV({id: "command_frame"}, [
