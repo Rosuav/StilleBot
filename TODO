@@ -103,3 +103,4 @@ If only one string returned, provide input. No "Add line" button. Just gear.
 If anything else, show description, force use of gear.
 On save, be prepared to inject deep into message, retaining all else - including cooldown etc.
 ((recursive may need a "replace-with" flag, maybe put it in the flags object??))
+* Clicking Add on command editor should bring up advanced editor if no text in command
