@@ -184,7 +184,7 @@ export function render_command(msg) {
 	]);
 }
 
-on("click", "button.advview", e => { //FIXME: Needs to be different for different files
+on("click", "button.advview", e => {
 	const tr = e.match.closest("tr");
 	open_advanced_view(commands[tr.dataset.editid || tr.dataset.id]);
 });
