@@ -11,7 +11,6 @@ Reinstate top text in some form?
 Integration with StilleBot.
 * Deduplicate a ton of data by getting it from the server instead of hard-coding.
   - Builtins and their vars_provided
-  - Specials and their SPECIALS and SPECIAL_PARAMS (maybe filter out deprecateds?)
 * List of available voices and their names
 
 Pipe dream: Can the label for a text message show emotes graphically?
