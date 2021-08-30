@@ -102,9 +102,9 @@ function describe_params(params) {
 }
 
 export function open_advanced_view(cmd) {
-	cmd_editing = cmd; mode = ""; cmd_id = cmd.id; cmd_basis = config.get_command_basis(cmd);
+	mode = ""; cmd_id = cmd.id; cmd_basis = config.get_command_basis(cmd);
 	if (DOM("#parameters")) set_content("#parameters", describe_params(cmd_basis.provides || { }));
-	DOM('[name="editor"][value="' + defaulttab + '"]').checked = true; change_tab(defaulttab);
+	DOM('[name="editor"][value="' + defaulttab + '"]').checked = true; select_tab(defaulttab, cmd);
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
 }
