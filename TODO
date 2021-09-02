@@ -85,3 +85,7 @@
     into the primary. You are permitted (though not required) to make the original
     name an alias, which effectively just changes which one is primary.
   - If you create an alias (without renaming) that already exists, what happens??
+* Demo mode for the bot features. Allow anyone to "be a mod" for /channels/demo/ and
+  see features like the command editor, live.
+* Deep link direct to an editable command - history.replace with a hash link as adv
+  view is opened
