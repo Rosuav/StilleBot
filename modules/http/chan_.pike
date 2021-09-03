@@ -90,16 +90,20 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	if (!handler) return (["error": 404]);
 	if (chan == "demo") {
 		chan = "!demo"; //Use /channels/demo/commands to access fake-mod demo mode
-		req->misc->is_fake = 1;
-		req->misc->session = ([
-			"fake_session": 1,
-			"user": ([
-				"broadcaster_type": "fakemod", //Hack :)
-				"display_name": "!Demo",
-				"id": "3141592653589793", //Hopefully Twitch doesn't get THAT many users any time soon. If this ever shows up in logs, it should be obvious.
-				"login": "!demo",
-			]),
-		]);
+		string l = req->misc->session->user->?login;
+		if (!l || !is_localhost_mod(l, req)) {
+			//Localhost mod status takes precedence over fake mod status.
+			req->misc->is_fake = 1;
+			req->misc->session = ([
+				"fake_session": 1,
+				"user": ([
+					"broadcaster_type": "fakemod", //Hack :)
+					"display_name": "!Demo",
+					"id": "3141592653589793", //Hopefully Twitch doesn't get THAT many users any time soon. If this ever shows up in logs, it should be obvious.
+					"login": "!demo",
+				]),
+			]);
+		}
 	}
 	object channel = G->G->irc->channels["#" + chan];
 	if (!channel || !channel->config->active) return ([
@@ -116,10 +120,8 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	]);
 	if (mapping user = req->misc->session->?user)
 	{
-		if (channel->mods[user->login] || req->misc->is_fake || is_localhost_mod(user->login, req)) {
+		if (channel->mods[user->login] || is_localhost_mod(user->login, req)) {
 			req->misc->is_mod = 1;
-			//Fake mod status is overridden by localhost mod status.
-			if (req->misc->is_fake && is_localhost_mod(user->login, req)) req->misc->is_fake = 0;
 			req->misc->chaninfo->autoform = "<form method=post>";
 			req->misc->chaninfo->autoslashform = "</form>";
 		}
