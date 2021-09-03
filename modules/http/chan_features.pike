@@ -60,7 +60,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	return render(req, ([
 		"vars": (["ws_group": req->misc->is_mod ? "control" : "view", "featurecmds": featurecmds]),
-		"chan": req->misc->channel->name[1..],
+		"chan": req->misc->channel->name[1..] - "!",
 	]) | req->misc->chaninfo);
 }
 
@@ -94,6 +94,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string grp, string chan);
 	if (grp != "control" || !G->G->irc->channels["#" + chan]) return;
+	if (conn->session->fake) return;
 	mapping feat = persist_config->path("channels", chan, "features");
 	array FEATUREDESC = function_object(G->G->commands->features)->FEATUREDESC;
 	if (!FEATUREDESC[msg->id]) return;
@@ -115,6 +116,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 void websocket_cmd_enable(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string grp, string chan);
 	if (grp != "control" || !G->G->irc->channels["#" + chan]) return;
+	if (conn->session->fake) return;
 	//In theory we could maintain an id to module mapping, but not worth the hassle.
 	foreach (G->G->enableable_modules; string name; object mod) {
 		if (mapping info = mod->ENABLEABLE_FEATURES[msg->id]) {

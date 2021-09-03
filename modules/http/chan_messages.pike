@@ -73,6 +73,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
 	sscanf(conn->group, "%s#%s", string uid, string chan);
 	if (!G->G->irc->channels["#" + chan]) return;
 	mapping msgs = persist_status->path("private", "#" + chan)[uid];

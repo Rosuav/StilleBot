@@ -50,12 +50,12 @@ void enable_feature(object channel, string kwd, int state) {
 	//Hack: Call on the normal commands updater to add a trigger
 	if (!state)
 		websocket_cmd_delete(
-			(["group": channel->name]),
+			(["group": channel->name, "session": ([])]),
 			(["cmdname": kwd])
 		);
 	else
 		websocket_cmd_update(
-			(["group": channel->name]),
+			(["group": channel->name, "session": ([])]),
 			(["cmdname": kwd, "response": info->response || COMPLEX_TEMPLATES["!" + kwd]])
 		);
 }
@@ -102,7 +102,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		return jsonify(_syntax_check(body->msg, body->cmdname), 7);
 	}
 	if (req->misc->is_mod) {
-		string uid = req->misc->session->user->?id;
 		return render(req, ([
 			"vars": (["ws_group": "", "complex_templates": G->G->commands_complex_templates, "builtins": G->G->commands_builtins,
 				"voices": req->misc->channel->config->voices || ([])]),
@@ -364,7 +363,7 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, msg);
-	if (!valid || !valid[0]) return;
+	if (!valid || !valid[0] || conn->session->fake) return;
 	if (valid[1] != "") {
 		make_echocommand(@valid);
 		if (msg->cmdname == "" && has_prefix(conn->group, "!!trigger#")) {
@@ -376,7 +375,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, msg | (["response": ""]));
-	if (!valid || !valid[0]) return;
+	if (!valid || !valid[0] || !conn->session->fake) return;
 	if (valid[1] == "") make_echocommand(valid[0], 0);
 	else if (has_prefix(conn->group, "!!trigger#")) make_echocommand(@valid);
 	//Else something went wrong. Does it need a response?
@@ -389,7 +388,7 @@ void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) ms
 }
 
 void websocket_cmd_savefavs(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!arrayp(msg->favs)) return;
+	if (conn->session->fake || !arrayp(msg->favs)) return;
 	//NOTE: Favourites are not validated (other than that they have to pass JSON encode/decode).
 	string uid = conn->session->user->?id;
 	if (uid) persist_status->path("cmdedit_favourites")[(string)uid] = msg->favs;

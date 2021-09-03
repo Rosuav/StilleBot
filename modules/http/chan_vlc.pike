@@ -111,7 +111,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		G->G->enableable_modules->specials->enable_feature(channel, "songannounce", 1);
 		return redirect("vlc");
 	}
-	if (req->misc->is_mod && req->variables->lua) {
+	if (req->misc->is_mod && !req->misc->session->fake && req->variables->lua) {
 		mapping cfg = persist_config["ircsettings"];
 		mapping resp = render_template("vlcstillebot.lua", ([
 			"url": cfg->http_address + req->not_query,
@@ -210,6 +210,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 }
 
 void websocket_cmd_authreset(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "blocks") return; //Not mod view? No edits.
 	channel->config->vlcauthtoken = 0;
@@ -217,6 +218,7 @@ void websocket_cmd_authreset(mapping(string:mixed) conn, mapping(string:mixed) m
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "blocks") return; //Not mod view? No edits.
 	//Match based on the provided ID to recognize overwrites.

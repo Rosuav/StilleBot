@@ -102,6 +102,9 @@ EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
+	if (req->misc->session->fake) 
+		return render_template("login.md", (["scopes": "channel:manage:redemptions",
+			"msg": "a real channel, not the demo. Feel free to pretend though"]));
 	if (string scopes = ensure_bcaster_token(req, "channel:manage:redemptions"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
 	string chan = req->misc->channel->name[1..];

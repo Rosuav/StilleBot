@@ -8,6 +8,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mixed body = Standards.JSON.decode(req->body_raw);
 	if (!body || !intp(body->id) || body->id < 1 || body->id > sizeof(quotes)) return 0; //404 if it's not a valid quote index
 	if (!stringp(body->msg)) return (["error": 400]);
+	if (req->misc->session->fake) return (["error": 204]);
 	quotes[body->id - 1]->msg = body->msg;
 	persist_config->save();
 	write("Edited quote %O\n", body);

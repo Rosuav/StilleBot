@@ -15,7 +15,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//trouble of making sure that it's a valid variable name too.
 		string prev = vars["$" + body->var + "$"];
 		if (!prev) return (["error": 404]);
-		req->misc->channel->set_variable(body->var, (string)(int)body->val);
+		if (!req->misc->session->fake) req->misc->channel->set_variable(body->var, (string)(int)body->val);
 		return jsonify((["prev": prev]));
 	}
 	return redirect("monitors");

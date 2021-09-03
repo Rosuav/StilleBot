@@ -6,7 +6,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mapping ac = req->misc->channel->config->autocommands;
 	array repeats = ({ }), messages = ({ });
 	object user = user_text();
-	if (req->misc->is_mod)
+	if (req->misc->is_mod && !req->misc->session->fake)
 	{
 		if (req->request_type == "POST" && req->variables->add)
 		{

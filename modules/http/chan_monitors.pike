@@ -25,6 +25,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (!req->misc->is_mod) return (["error": 401]); //JS wants it this way, not a redirect that a human would like
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body) || !stringp(body->text)) return (["error": 400]);
+		if (req->misc->session->fake) return jsonify((["ok": 1]));
 		if (!cfg->monitors) cfg->monitors = ([]);
 		string nonce = body->nonce;
 		if (!cfg->monitors[nonce]) {
@@ -71,6 +72,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (!body || !mappingp(body) || !stringp(body->nonce)) return (["error": 400]);
 		string nonce = body->nonce;
 		if (!cfg->monitors || !cfg->monitors[nonce]) return (["error": 404]);
+		if (req->misc->session->fake) return (["error": 204]);
 		m_delete(cfg->monitors, nonce);
 		persist_config->save();
 		send_updates_all(req->misc->channel->name);
@@ -98,6 +100,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 
 //Can overwrite an existing variable
 void websocket_cmd_createvar(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "") return;
 	sscanf(msg->varname || "", "%[A-Za-z]", string var);
@@ -106,6 +109,7 @@ void websocket_cmd_createvar(mapping(string:mixed) conn, mapping(string:mixed) m
 
 //Requires that the variable exist
 void websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "") return;
 	mapping vars = persist_status->path("variables")[channel->name] || ([]);

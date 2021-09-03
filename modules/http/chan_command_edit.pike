@@ -18,7 +18,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mapping resp = validate(body);
 	//werror("FROM: %O\nTO: %O\n", body, resp);
 	if (resp == "") return (["error": 400]); //Nothing left, probably stuff was invalid
-	make_echocommand(cmd, resp);
+	if (!req->misc->session->fake) make_echocommand(cmd, resp);
 	if (!mappingp(resp)) resp = (["message": resp]);
 	return jsonify(resp);
 }

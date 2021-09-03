@@ -121,7 +121,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		m_delete(rawdata, var);
 		persist_status->save();
 	}
-	if (req->misc->is_mod && sscanf(req->variables->newcounter || "", "%[a-zA-Z]", string counter) && counter != "")
+	if (req->misc->is_mod && !req->misc->session->fake && sscanf(req->variables->newcounter || "", "%[a-zA-Z]", string counter) && counter != "")
 	{
 		//Create some simple commands. This isn't designed for editing, although
 		//it will overwrite if given a duplicate name.
@@ -166,12 +166,14 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	mapping vars = persist_status->path("variables", channel->name);
 	if (m_delete(vars, "$" + msg->id + "$")) update_one(conn->group, msg->id);
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	mapping vars = persist_status->path("variables", channel->name);
 	string id = "$" + msg->id + "$";

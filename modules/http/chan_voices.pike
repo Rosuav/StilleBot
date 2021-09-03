@@ -47,6 +47,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	mapping v = channel->config->voices[?msg->id];
 	if (!v) return;
@@ -57,6 +58,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	mapping vox = channel->config->voices;
 	if (!vox) return; //Nothing to delete.
@@ -64,6 +66,7 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel) return;
 	string url = function_object(G->G->http_endpoints->twitchlogin)->get_redirect_url(
