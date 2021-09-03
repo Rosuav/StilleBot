@@ -928,7 +928,7 @@ continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 	resp->extra_heads->Connection = "close";
 	resp->extra_heads["Access-Control-Allow-Origin"] = "*";
 	mapping sess = req->misc->session;
-	if (sizeof(sess) && !sess->fake_session) {
+	if (sizeof(sess) && !sess->fake) {
 		if (!sess->cookie) do {sess->cookie = random(1<<64)->digits(36);} while (G->G->http_sessions[sess->cookie]);
 		sess->expires = time() + 604800; //Overwrite expiry time every request
 		resp->extra_heads["Set-Cookie"] = "session=" + sess->cookie + "; Path=/; Max-Age=604800";

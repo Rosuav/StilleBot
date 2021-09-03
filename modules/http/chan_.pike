@@ -46,7 +46,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				resp->extra_heads = (["Content-disposition": sprintf("attachment; filename=%q", fn)]);
 				return resp;
 			}
-			if (!req->misc->is_fake && req->variables->timezone != channel->config->timezone)
+			if (!req->misc->session->fake && req->variables->timezone != channel->config->timezone)
 			{
 				if (req->variables->timezone == "UTC") {
 					messages += ({"* Reset timezone to UTC"});
@@ -84,11 +84,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
-int(1bit) is_localhost_mod(string login, Protocols.HTTP.Server.Request req) {
-	return login == persist_config["ircsettings"]->nick && //Allow mod status if you're me,
-		NetUtils.is_local_host(req->get_ip()) && //from here,
-		G->G->menuitems->chan_->get_active(); //and we're allowing me to pretend to be a mod
-}
 mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string chan, string endpoint)
 {
 	function handler = G->G->http_endpoints["chan_" + endpoint];
@@ -96,11 +91,10 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	if (chan == "demo") {
 		chan = "!demo"; //Use /channels/demo/commands to access fake-mod demo mode
 		string l = req->misc->session->user->?login;
-		if (!l || !is_localhost_mod(l, req)) {
+		if (!l || !is_localhost_mod(l, req->get_ip())) {
 			//Localhost mod status takes precedence over fake mod status.
-			req->misc->is_fake = 1;
 			req->misc->session = ([
-				"fake_session": 1,
+				"fake": 1,
 				"user": ([
 					"broadcaster_type": "fakemod", //Hack :)
 					"display_name": "!Demo",
@@ -125,7 +119,7 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	]);
 	if (mapping user = req->misc->session->?user)
 	{
-		if (channel->mods[user->login] || is_localhost_mod(user->login, req)) {
+		if (channel->mods[user->login] || is_localhost_mod(user->login, req->get_ip())) {
 			req->misc->is_mod = 1;
 			req->misc->chaninfo->autoform = "<form method=post>";
 			req->misc->chaninfo->autoslashform = "</form>";

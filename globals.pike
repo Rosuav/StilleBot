@@ -694,6 +694,12 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 }
 #endif
 
+int(1bit) is_localhost_mod(string login, string ip) {
+	return login && login == persist_config["ircsettings"]->nick && //Allow mod status if you're me,
+		NetUtils.is_local_host(ip) && //from here,
+		G->G->menuitems->chan_->get_active(); //and we're allowing me to pretend to be a mod
+}
+
 //An HTTP handler, a websocket handler, and Markdown
 class http_websocket
 {
@@ -729,11 +735,19 @@ class http_websocket
 		[object channel, string grp] = split_channel(msg->group);
 		if (!channel) return "Bad channel";
 		string login = conn->session->user->?login;
-		conn->is_mod = channel->mods[login] || ( //You're a mod if we've seen your sword...
-			login && login == persist_config["ircsettings"]->nick && //or if you're me,
-			NetUtils.is_local_host(conn->remote_ip) && //from here,
-			G->G->menuitems->chan_->get_active() //and we're allowing me to pretend to be a mod
-		);
+		if (channel->name == "#!demo") {
+			if (!is_localhost_mod(login, conn->remote_ip)) conn->session = ([
+				"fake": 1,
+				"user": ([
+					"broadcaster_type": "fakemod", //Hack :)
+					"display_name": "!Demo",
+					"id": "3141592653589793", //Hopefully Twitch doesn't get THAT many users any time soon. If this ever shows up in logs, it should be obvious.
+					"login": "!demo",
+				]),
+			]);
+			conn->is_mod = 1;
+		}
+		else conn->is_mod = channel->mods[login] || is_localhost_mod(login, conn->remote_ip);
 		if (!conn->is_mod && need_mod(grp)) return "Not logged in";
 	}
 
@@ -823,7 +837,7 @@ mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|voi
 //Make sure we have a broadcaster token with at least the given scopes. Returns 0 if we do, or a space-separated list of scopes.
 //Note that this should always be called with at least one scope, otherwise it may return a spurious zero if not logged in.
 string ensure_bcaster_token(Protocols.HTTP.Server.Request req, string scopes, string|void chan) {
-	if (req->misc->is_fake) return scopes; //There'll never be a valid broadcaster login with fake mod mode active
+	if (req->misc->session->fake) return scopes; //There'll never be a valid broadcaster login with fake mod mode active
 	if (!chan) chan = req->misc->channel->name[1..];
 	array havescopes = (persist_status->path("bcaster_token_scopes")[chan]||"") / " " - ({""});
 	if (req->misc->session->user->?login == chan && !sizeof((multiset)havescopes - req->misc->session->scopes)) {
