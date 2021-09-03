@@ -91,6 +91,15 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	if (chan == "demo") {
 		chan = "!demo"; //Use /channels/demo/commands to access fake-mod demo mode
 		req->misc->is_fake = 1;
+		req->misc->session = ([
+			"fake_session": 1,
+			"user": ([
+				"broadcaster_type": "fakemod", //Hack :)
+				"display_name": "!Demo",
+				"id": "3141592653589793", //Hopefully Twitch doesn't get THAT many users any time soon. If this ever shows up in logs, it should be obvious.
+				"login": "!demo",
+			]),
+		]);
 	}
 	object channel = G->G->irc->channels["#" + chan];
 	if (!channel || !channel->config->active) return ([
