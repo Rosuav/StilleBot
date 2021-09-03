@@ -823,6 +823,7 @@ mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|voi
 //Make sure we have a broadcaster token with at least the given scopes. Returns 0 if we do, or a space-separated list of scopes.
 //Note that this should always be called with at least one scope, otherwise it may return a spurious zero if not logged in.
 string ensure_bcaster_token(Protocols.HTTP.Server.Request req, string scopes, string|void chan) {
+	if (req->misc->is_fake) return scopes; //There'll never be a valid broadcaster login with fake mod mode active
 	if (!chan) chan = req->misc->channel->name[1..];
 	array havescopes = (persist_status->path("bcaster_token_scopes")[chan]||"") / " " - ({""});
 	if (req->misc->session->user->?login == chan && !sizeof((multiset)havescopes - req->misc->session->scopes)) {
