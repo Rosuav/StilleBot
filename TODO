@@ -87,5 +87,6 @@
   - If you create an alias (without renaming) that already exists, what happens??
 * Demo mode for the bot features. Allow anyone to "be a mod" for /channels/demo/ and
   see features like the command editor, live.
+  - Hype train tracker and raid finder may get for=demo - should behave sanely
 * Deep link direct to an editable command - history.replace with a hash link as adv
   view is opened
