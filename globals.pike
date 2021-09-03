@@ -822,6 +822,7 @@ mapping(string:mixed) twitchlogin(Protocols.HTTP.Server.Request req, multiset(st
 //Provide a space-separated list of scopes to also ensure that these scopes are active.
 mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|void scopes)
 {
+	if (req->misc->session->fake) return 0; //In demo mode, pretend you're logged in (as the demo channel owner)
 	multiset havescopes = req->misc->session->?scopes;
 	multiset wantscopes = scopes ? (multiset)(scopes / " ") : (<>);
 	wantscopes[""] = 0; //Remove any empty entry, just in case
