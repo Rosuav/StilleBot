@@ -87,7 +87,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string chan, string endpoint)
 {
 	function handler = G->G->http_endpoints["chan_" + endpoint];
-	if (!handler) return (["error": 404]);
+	if (!handler) return ([
+		"data": "No such page.\n",
+		"type": "text/plain; charset=\"UTF-8\"",
+		"error": 404,
+	]);
 	if (chan == "demo") {
 		chan = "!demo"; //Use /channels/demo/commands to access fake-mod demo mode
 		string l = req->misc->session->user->?login;
