@@ -54,8 +54,8 @@ mapping _get_message(string|int id, mapping msgs) {
 		parts[-1] = parts[-1][..<1]; //The last part will always end with a space.
 		msg->parts = parts - ({""}); //The first and last entries could end up as empty strings.
 	}
-	msg->received = (int)id;
-	msg->id = (string)id; //Currently using the received timestamp as the ID - this may change in the future
+	if (!msg->received) msg->received = (int)id;
+	msg->id = (string)id;
 	return msg;
 }
 
