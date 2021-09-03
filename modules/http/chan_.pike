@@ -46,9 +46,14 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				resp->extra_heads = (["Content-disposition": sprintf("attachment; filename=%q", fn)]);
 				return resp;
 			}
-			if (req->variables->timezone != channel->config->timezone)
+			if (!req->misc->is_fake && req->variables->timezone != channel->config->timezone)
 			{
-				if (!has_value(Calendar.TZnames.zonenames(), req->variables->timezone))
+				if (req->variables->timezone == "UTC") {
+					messages += ({"* Reset timezone to UTC"});
+					channel->config->timezone = ""; timezone = "UTC";
+					persist_config->save();
+				}
+				else if (!has_value(Calendar.TZnames.zonenames(), req->variables->timezone))
 				{
 					//TODO: Handle timezone abbreviations
 					messages += ({"* Invalid timezone " + req->variables->timezone});
