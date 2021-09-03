@@ -79,11 +79,19 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
+int(1bit) is_localhost_mod(string login, Protocols.HTTP.Server.Request req) {
+	return login == persist_config["ircsettings"]->nick && //Allow mod status if you're me,
+		NetUtils.is_local_host(req->get_ip()) && //from here,
+		G->G->menuitems->chan_->get_active(); //and we're allowing me to pretend to be a mod
+}
 mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string chan, string endpoint)
 {
 	function handler = G->G->http_endpoints["chan_" + endpoint];
 	if (!handler) return (["error": 404]);
-	if (chan == "demo") chan = "!demo"; //Use /channels/demo/commands to access fake-mod demo mode
+	if (chan == "demo") {
+		chan = "!demo"; //Use /channels/demo/commands to access fake-mod demo mode
+		req->misc->is_fake = 1;
+	}
 	object channel = G->G->irc->channels["#" + chan];
 	if (!channel || !channel->config->active) return ([
 		"data": "No such page.\n",
@@ -99,12 +107,10 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	]);
 	if (mapping user = req->misc->session->?user)
 	{
-		if (channel->mods[user->login] || ( //You're a mod if we've seen your sword...
-			user->login == persist_config["ircsettings"]->nick && //or if you're me,
-			NetUtils.is_local_host(req->get_ip()) && //from here,
-			G->G->menuitems->chan_->get_active() //and we're allowing me to pretend to be a mod
-		)) {
+		if (channel->mods[user->login] || req->misc->is_fake || is_localhost_mod(user->login, req)) {
 			req->misc->is_mod = 1;
+			//Fake mod status is overridden by localhost mod status.
+			if (req->misc->is_fake && is_localhost_mod(user->login, req)) req->misc->is_fake = 0;
 			req->misc->chaninfo->autoform = "<form method=post>";
 			req->misc->chaninfo->autoslashform = "</form>";
 		}
