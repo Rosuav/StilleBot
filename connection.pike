@@ -93,18 +93,14 @@ void reconnect()
 		cap("REQ","twitch.tv/commands");
 		cap("REQ","twitch.tv/tags");
 		//Connect to channels progressively to reduce server hammer
-		foreach (indices(persist_config["channels"]) - ({"!whisper"}); int delay; string chan)
-			call_out(irc->join_channel, delay, "#" + chan);
-		//Hack: Create a fake channel object for whispers
-		//Rather than having a pseudo-channel, it would probably be better to
-		//have a "primary channel" that handles all whispers - effectively,
-		//whispered commands are treated as if they were sent to that channel,
-		//except that the response is whispered.
-		if (persist_config["channels"]["!whisper"])
-		{
-			object ch = channel_notif();
-			ch->name = "#!whisper";
-			irc->channels["#!whisper"] = ch;
+		foreach (indices(persist_config["channels"]); int delay; string chan) {
+			if (chan[0] == '!') {
+				//Hack: Create fake channel objects for special pseudo-channels
+				object ch = channel_notif();
+				ch->name = "#" + chan;
+				irc->channels["#" + chan] = ch;
+			}
+			else call_out(irc->join_channel, delay, "#" + chan);
 		}
 	})
 	{

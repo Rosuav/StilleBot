@@ -83,6 +83,7 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 {
 	function handler = G->G->http_endpoints["chan_" + endpoint];
 	if (!handler) return (["error": 404]);
+	if (chan == "demo") chan = "!demo"; //Use /channels/demo/commands to access fake-mod demo mode
 	object channel = G->G->irc->channels["#" + chan];
 	if (!channel || !channel->config->active) return ([
 		"data": "No such page.\n",

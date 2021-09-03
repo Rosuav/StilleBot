@@ -271,7 +271,7 @@ void streaminfo(array data)
 	mapping channels = ([]);
 	foreach (data, mapping chan) channels[lower_case(chan->user_login)] = chan;
 	//Now we check over our own list of channels. Anything absent is assumed offline.
-	foreach (indices(persist_config["channels"]), string chan) if (chan != "!whisper")
+	foreach (indices(persist_config["channels"]), string chan) if (chan[0] != '!')
 		stream_status(chan, channels[chan]);
 }
 
@@ -594,7 +594,7 @@ void check_hooks(array eventhooks)
 		if (!cfg->active) continue;
 		mapping c = G->G->channel_info[chan];
 		int userid = c->?_id;
-		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses !whisper.)
+		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses pseudo-channels.)
 		new_follower(chan, (["broadcaster_user_id": (string)userid]));
 		//stream_online(chan, (["broadcaster_user_id": (string)userid])); //These two don't actually give us any benefit.
 		//stream_offline(chan, (["broadcaster_user_id": (string)userid]));
@@ -607,7 +607,7 @@ void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //Maybe make the poll interval customizable?
 	array chan = indices(persist_config["channels"] || ({ }));
-	chan -= ({"!whisper"});
+	chan = filter(chan) {return __ARGS__[0][0] != '!';};
 	if (!sizeof(chan)) return; //Nothing to check.
 	G->G->stream_online_since &= (multiset)chan; //Prune any "channel online" statuses for channels we don't track any more
 	//Note: There's a slight TOCTOU here - the list of channel names will be
