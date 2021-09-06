@@ -71,6 +71,13 @@ function change_tab(tab) {
 	if (response) ws_sync.send({cmd: "validate", cmdname: "changetab_" + tab, response});
 	else select_tab(tab, cmd_editing);
 }
+
+//If we try to open graphical view before it's loaded, twiddle our thumbs for a while.
+function try_gui_load_message(basis, editing) {
+	if (gui_load_message) return gui_load_message(cmd_basis, cmd_editing);
+	setTimeout(try_gui_load_message, 0.025, basis, editing);
+}
+
 function select_tab(tab, response) {
 	mode = tab; cmd_editing = response;
 	console.log("Selected:", tab, response);
@@ -82,7 +89,7 @@ function select_tab(tab, response) {
 			set_content("#command_details", "");
 			//TODO: Load up more info into the basis object (and probably keep it around)
 			//Notably, specials need a ton more info
-			gui_load_message(cmd_basis, cmd_editing);
+			try_gui_load_message(cmd_basis, cmd_editing);
 			break;
 		}
 		case "raw": set_content("#command_details", [
@@ -147,6 +154,9 @@ export function favcheck() {
 	if (!favourites_loaded) {favourites_loaded = true; ws_sync.send({cmd: "loadfavs"});}
 }
 
+let pending_command = null;
+if (location.hash && location.hash.includes("/")) pending_command = location.hash.slice(1).split("/", 2);
+
 //Command summary view
 function arrayify(m) {return Array.isArray(m) ? m : [m];}
 function unarrayify(m) {
@@ -206,6 +216,11 @@ export function render_command(msg) {
 		else simpletext.forEach(m => response.push(CODE(m), BR()));
 	}
 	commands[msg.id] = msg;
+	if (pending_command && pending_command[0] === msg.id.split("#")[0]) {
+		//Let everything else finish loading before opening advanced view
+		setTimeout(open_advanced_view, 0.025, msg, pending_command[1]);
+		pending_command = null;
+	}
 	return TR({"data-id": msg.id, "data-editid": editid}, [
 		TD(CODE("!" + msg.id.split("#")[0])),
 		TD(response),
