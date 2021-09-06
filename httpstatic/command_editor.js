@@ -190,6 +190,8 @@ export function render_command(msg) {
 		editid = msg.alias_of + "#" + msg.id.split("#")[1];
 	}
 	else {
+		//FIXME: Empty specials show up with the "unable to summarize" message. They should probably show as
+		//blank (but maybe continue to be noneditable).
 		const msgstatus = { };
 		const simpletext = scan_message(msg, msgstatus);
 		if (msgstatus.whisper) response.push(EM("Response will be whispered"), BR());
