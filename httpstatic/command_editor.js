@@ -74,6 +74,7 @@ function change_tab(tab) {
 function select_tab(tab, response) {
 	mode = tab; cmd_editing = response;
 	console.log("Selected:", tab, response);
+	history.replaceState(null, "", "#" + cmd_id.split("#")[0] + "/" + tab);
 	DOM("#command_frame").style.display = tab == "graphical" ? "block" : "none"; //Hack - hide and show the GUI rather than destroying and creating it.
 	switch (tab) {
 		case "classic": cls_load_message(cmd_basis, cmd_editing); break;
@@ -108,6 +109,9 @@ export function open_advanced_view(cmd) {
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
 }
+
+//Can't use on() for this as the event doesn't bubble
+DOM("#advanced_view").addEventListener("close", () => history.replaceState(null, "", " "));
 
 on("click", "#save_advanced", async e => {
 	const info = get_message_details();

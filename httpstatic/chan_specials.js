@@ -62,6 +62,11 @@ on("click", ".tabradio", e => {
 	history.replaceState(null, "", "#" + e.match.id.slice(4));
 });
 
+DOM("#advanced_view").addEventListener("close", () => {
+	//On the specials page, we use hash links for the tabs, as well as the individual commands.
+	history.replaceState(null, "", "#" + DOM("#commands").dataset.rb.slice(4));
+});
+
 cmd_configure({
 	get_command_basis: command => {
 		const cmd = command_lookup[command.id], basis = {type: "anchor_special"};
