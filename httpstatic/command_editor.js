@@ -102,10 +102,11 @@ function describe_params(params) {
 	return Object.keys(params).map(p => LI([CODE(p), " - " + params[p]]));
 }
 
-export function open_advanced_view(cmd) {
+export function open_advanced_view(cmd, tab) {
 	mode = ""; cmd_id = cmd.id; cmd_basis = config.get_command_basis(cmd);
+	if (!tab) tab = defaulttab;
 	if (DOM("#parameters")) set_content("#parameters", describe_params(cmd_basis.provides || { }));
-	DOM('[name="editor"][value="' + defaulttab + '"]').checked = true; select_tab(defaulttab, cmd);
+	DOM('[name="editor"][value="' + tab + '"]').checked = true; select_tab(tab, cmd);
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
 }
