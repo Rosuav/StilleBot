@@ -32,7 +32,8 @@ const SNAP_RANGE = 100; //Distance-squared to permit snapping (eg 25 = 5px radiu
 const canvas = DOM("#command_gui");
 const ctx = canvas.getContext('2d');
 const FAV_BUTTON_TEXT = ["Fav ☆", "Fav ★"];
-const voices_available = {"": "Default", "279141671": "Mustard Mine"}; //Will be provided by the server
+let voices_available = {"": "Default"}; //TODO: Update this from server, same as loading favs
+Object.keys(voices).forEach(id => voices_available[id] = voices[id].name);
 
 document.body.appendChild(DIALOG({id: "properties"}, SECTION([
 	HEADER([H3("Properties"), DIV([BUTTON({type: "button", className: "dialog_cancel"}, "x"), BR(), BUTTON({type: "button", id: "toggle_favourite"}, "fav")])]),
