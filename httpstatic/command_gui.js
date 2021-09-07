@@ -242,7 +242,7 @@ const types = {
 	},
 	conditional_string: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => [
-			el.expr1 && el.expr2 ? el.expr1 + " == " + el.expr2 : "String comparison",
+			el.expr1 && el.expr2 ? el.expr1 + " == " + el.expr2 : el.expr1 ? el.expr1 + " is blank" : "String comparison",
 			"Otherwise:",
 		],
 		params: [{attr: "conditional", values: "string"}, {attr: "casefold", label: "Case insensitive", values: bool_attr},
@@ -394,7 +394,7 @@ const favourites = [];
 const trays = { };
 const tray_tabs = [
 	{name: "Default", color: "#efdbb2", items: [
-		{type: "text", message: "Sample text message"},
+		{type: "text", message: "Simple text message"},
 		{type: "random"},
 		{type: "conditional_string", expr1: "%s"},
 		{type: "cooldown", cdlength: "30", cdname: ""},
