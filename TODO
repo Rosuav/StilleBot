@@ -95,4 +95,5 @@
     so this can continue to focus on how many have been gained recently (eg daily
     sub/resub count).
 * "Advance Goal Bar" action in graphical editor, for custom advancements
-* Special trigger when any goal bar tiers up??
+* Special trigger when any goal bar tiers up?? Would be better than the weird system
+  where it triggers an actual command. Could deep link straight to the editor now.
