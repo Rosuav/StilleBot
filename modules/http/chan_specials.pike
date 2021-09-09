@@ -64,12 +64,12 @@ void enable_feature(object channel, string kwd, int state) {
 	response -= ({""});
 	if (!sizeof(response)) //Nothing left? Delete the trigger altogether.
 		G->G->websocket_types->chan_commands->websocket_cmd_delete(
-			(["group": "!!" + channel->name]),
+			(["group": "!!" + channel->name, "session": ([])]),
 			(["cmdname": info->special])
 		);
 	else
 		G->G->websocket_types->chan_commands->websocket_cmd_update(
-			(["group": "!!" + channel->name]),
+			(["group": "!!" + channel->name, "session": ([])]),
 			(["cmdname": info->special, "response": response])
 		);
 }
