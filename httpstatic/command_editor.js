@@ -167,15 +167,15 @@ function unarrayify(m) {
 }
 function scan_message(msg, msgstatus, parent, key) {
 	if (typeof msg === "string") {
-		if (msg === "") return null;
 		if (msgstatus.replacetext) parent[key] = msgstatus.replacetext;
+		if (msg === "") return null;
 		return msg;
 	}
 	if (Array.isArray(msg)) {
 		//Map recurse, filter out any empty strings or null returns.
 		return unarrayify(msg.map((m,i) => scan_message(m, msgstatus, msg, i)).filter(m => m));
 	}
-	if (typeof msg !== "object") return null; //Not sure what this could mean, but we can't handle it. Probably a null entry or something.
+	if (!msg || typeof msg !== "object") return null; //Not sure what this could mean, but we can't handle it. Probably a null entry or something.
 	if (msg.dest === "/w") msgstatus.whisper = true;
 	else if (msg.dest) return null; //Anything with a special destination (eg Variable, Private Message) shouldn't be shown this way.
 	if (msg.mode === "random") msgstatus.oneof = true;
@@ -190,7 +190,6 @@ function scan_message(msg, msgstatus, parent, key) {
 		msgstatus.oneof = true;
 		return unarrayify([...arrayify(msg), ...arrayify(oth)]);
 	}
-	if (!msg.message) return null;
 	return scan_message(msg.message, msgstatus, msg, "message");
 }
 export function render_command(msg) {
@@ -205,14 +204,14 @@ export function render_command(msg) {
 		editid = msg.alias_of + "#" + msg.id.split("#")[1];
 	}
 	else {
-		//FIXME: Empty specials show up with the "unable to summarize" message. They should probably show as
-		//blank (but maybe continue to be noneditable).
 		const msgstatus = { };
-		const simpletext = scan_message(msg, msgstatus);
+		let simpletext = scan_message(msg, msgstatus);
+		//Special case (pun intended): A completely empty message (no flags or anything) can show up as empty.
+		if (msg.message === "" && msg.id && Object.keys(msg).length === 2) simpletext = "";
 		if (msgstatus.whisper) response.push(EM("Response will be whispered"), BR());
 		if (msgstatus.oneof) response.push(EM("One of:"), BR());
-		if (!simpletext) response.push(CODE("(Special command, unable to summarize)")); //Not going to be common. Get some examples before rewording this.
-		else if (typeof simpletext === "string") response.push(INPUT({value: simpletext, className: "widetext"}));
+		if (typeof simpletext === "string") response.push(INPUT({value: simpletext, className: "widetext"}));
+		else if (!simpletext) response.push(CODE("(Special command, unable to summarize)")); //Not going to be common. Get some examples before rewording this.
 		else simpletext.forEach(m => response.push(CODE(m), BR()));
 	}
 	commands[msg.id] = msg;
