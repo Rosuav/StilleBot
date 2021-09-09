@@ -375,7 +375,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, msg | (["response": ""]));
-	if (!valid || !valid[0] || !conn->session->fake) return;
+	if (!valid || !valid[0] || conn->session->fake) return;
 	if (valid[1] == "") make_echocommand(valid[0], 0);
 	else if (has_prefix(conn->group, "!!trigger#")) make_echocommand(@valid);
 	//Else something went wrong. Does it need a response?
