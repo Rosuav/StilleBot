@@ -32,7 +32,7 @@ constant COMPLEX_TEMPLATES = ([
 	]),
 	"!song": ([
 		"conditional": "string", "expr1": "$vlcplaying$", "expr2": "1",
-		"message": "SingsNote Now playing: {track} ({block}) SingsNote",
+		"message": "SingsNote Now playing: $vlccurtrack$ SingsNote",
 		"otherwise": "rosuavMuted Not currently playing anything in VLC rosuavMuted",
 	]),
 ]);
