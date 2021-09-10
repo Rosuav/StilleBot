@@ -77,7 +77,10 @@
 * Giveaway: Replace login links with buttons
 * Enable/disable rewards - allow use of title, will do lookup
 * Redemption triggers - specials?
-* Do I need a way to have multiple execution triggers - a generalization of aliases??
+* Create a way to daisychain into an existing command. This will allow a special to
+  "alias" to a command, or for a command to do things and then chain.
+  - What should happen with nested information eg from builtins?
+  - Will this make StilleBot commands Turing-complete?
 * If you attempt to rename a command or add an alias that already exists (and isn't an
   alias for the current command), warn on client side and block save unless confirmed.
 * Demo mode for the bot features. Allow anyone to "be a mod" for /channels/demo/ and
