@@ -5,9 +5,6 @@ early file history, check that repository.
 
 */
 /* TODO
-- Double-clicking on a subelement of a template shows info for the whole template, but dumps the
-  subelement into trash. Also - and probably related - click, then click-drag, and it will drag
-  the subelement instead of the entire thing.
 
 Integration with StilleBot.
 * Deduplicate a ton of data by getting it from the server instead of hard-coding.
