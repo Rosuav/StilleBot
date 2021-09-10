@@ -81,7 +81,7 @@ function try_gui_load_message(basis, editing) {
 function select_tab(tab, response) {
 	mode = tab; cmd_editing = response;
 	console.log("Selected:", tab, response);
-	history.replaceState(null, "", "#" + cmd_id.split("#")[0] + "/" + tab);
+	history.replaceState(null, "", "#" + cmd_id.split("#")[0].replace("!", "") + "/" + tab);
 	DOM("#command_frame").style.display = tab == "graphical" ? "block" : "none"; //Hack - hide and show the GUI rather than destroying and creating it.
 	switch (tab) {
 		case "classic": cls_load_message(cmd_basis, cmd_editing); break;
@@ -215,7 +215,7 @@ export function render_command(msg) {
 		else simpletext.forEach(m => response.push(CODE(m), BR()));
 	}
 	commands[msg.id] = msg;
-	if (pending_command && pending_command[0] === msg.id.split("#")[0]) {
+	if (pending_command && pending_command[0].replace("!", "") === msg.id.split("#")[0].replace("!", "")) {
 		//Let everything else finish loading before opening advanced view
 		setTimeout(open_advanced_view, 0.025, msg, pending_command[1]);
 		pending_command = null;
