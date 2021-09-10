@@ -6,7 +6,7 @@ constant ENABLEABLE_FEATURES = ([
 	"transcoding": ([
 		"description": "Greet the new stream with an announcement of transcoding availability",
 		"special": "!channelonline",
-		"fragment": "#Status",
+		"fragment": "#!channelonline/",
 		"response": ([
 			"builtin": "transcoding",
 			"message": ([
@@ -25,7 +25,7 @@ constant ENABLEABLE_FEATURES = ([
 	"songannounce": ([
 		"description": "Announce songs in chat (see VLC integration)",
 		"special": "!musictrack",
-		"fragment": "#Status",
+		"fragment": "#!musictrack/",
 		"response": (["delay": 2, "message": ([
 			"conditional": "string", "expr1": "$vlcplaying$", "expr2": "1",
 			"message": "SingsNote Now playing: {track} ({block}) SingsNote",

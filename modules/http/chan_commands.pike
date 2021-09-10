@@ -40,6 +40,7 @@ constant COMPLEX_TEMPLATES = ([
 constant ENABLEABLE_FEATURES = ([
 	"song": ([
 		"description": "A !song command to show the currently-playing song (see VLC integration)",
+		"fragment": "#song/",
 	]),
 ]);
 
