@@ -1043,7 +1043,8 @@ export function gui_save_message() {
 	//the desired effect.
 	const anchor = actives[0]; //assert anchor.type =~ "anchor*"
 	const msg = element_to_message(anchor);
-	apply_params(anchor, msg);
+	for (let param of types[anchor.type].params || [])
+		msg[param.attr] = typeof param.values === "string" ? param.values : anchor[param.attr];
 	for (let attr in flags) {
 		const flag = flags[attr][anchor[attr]];
 		if (flag && anchor[attr] !== "") msg[attr] = anchor[attr];
