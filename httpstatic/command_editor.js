@@ -111,7 +111,7 @@ function describe_params(params) {
 
 export function open_advanced_view(cmd, tab) {
 	mode = ""; cmd_id = cmd.id; cmd_basis = config.get_command_basis(cmd);
-	if (!tab) tab = defaulttab;
+	if (!tablist.some(t => t.toLowerCase() === tab)) tab = defaulttab;
 	if (DOM("#parameters")) set_content("#parameters", describe_params(cmd_basis.provides || { }));
 	DOM('[name="editor"][value="' + tab + '"]').checked = true; select_tab(tab, cmd);
 	DOM("#advanced_view").style.cssText = "";
