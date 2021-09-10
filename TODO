@@ -95,3 +95,9 @@
 * "Advance Goal Bar" action in graphical editor, for custom advancements
 * Special trigger when any goal bar tiers up?? Would be better than the weird system
   where it triggers an actual command. Could deep link straight to the editor now.
+* What will it take to make the graphical editor the default?
+  - All builtins need to be in a tray somewhere
+    - Have some builtins in a tray (the common ones), and then autogenerate a tray
+      based on a serverside dump of all builtins. That can ensure other guarantees
+      as well, while making sure that any builtin CAN be invoked.
+  - Whisper to someone other than originator
