@@ -256,7 +256,7 @@ const types = {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => ["Regular expression", "Otherwise:"],
 		params: [{attr: "conditional", values: "regexp"}, {attr: "casefold", label: "Case insensitive", values: bool_attr},
 			{attr: "expr1", label: "Reg Exp"}, {attr: "expr2", label: "Compare against"}],
-		typedesc: "Make a decision - if regular expression, do one thing, otherwise do something else.",
+		typedesc: "Make a decision - if regular expression matches, do one thing, otherwise do something else.",
 	},
 	conditional_number: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => ["Numeric computation", "Otherwise:"],
@@ -407,6 +407,7 @@ const tray_tabs = [
 	{name: "Conditionals", color: "#bbbbf7", items: [
 		{type: "conditional_contains", expr1: "/foo/bar/quux/", expr2: "/%s/"},
 		{type: "conditional_number", expr1: "$deaths$ > 10"},
+		{type: "conditional_regexp", expr1: "[Hh]ello", expr2: "%s"},
 		//NOTE: Even though they're internally conditionals too, cooldowns don't belong in this tray
 	]},
 	{name: "Special", color: "#bbffbb", items: [
