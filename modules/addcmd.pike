@@ -112,17 +112,22 @@ multiset(string) update_aliases(string chan, string aliases, echoable_message re
 	return updates;
 }
 
+void purge(string chan, string cmd, multiset updates) {
+	echoable_message prev = m_delete(G->G->echocommands, cmd);
+	if (prev) updates[cmd] = 1;
+	if (!mappingp(prev)) return;
+	if (prev->alias_of) purge(chan, prev->alias_of + "#" + chan, updates);
+	if (prev->aliases) updates |= update_aliases(chan, prev->aliases, 0);
+}
+
 //Update (or delete) an echo command and save them to disk
 void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 {
 	sscanf(cmd || "", "%[!]%s#%s", string pfx, string basename, string chan);
 	multiset updates = (<cmd>);
-	if (echoable_message prev = G->G->echocommands[cmd]) {
-		//See if there are any aliases to be purged
-		if (mappingp(prev) && prev->aliases) updates |= update_aliases(chan, prev->aliases, 0);
-	}
-	G->G->echocommands[cmd] = response;
-	if (!response) m_delete(G->G->echocommands, cmd);
+	purge(chan, cmd, updates);
+	purge(chan, extra->original, updates); //Renaming a command requires removal of what used to be.
+	if (response) G->G->echocommands[cmd] = response;
 	if (mappingp(response) && response->aliases) updates |= update_aliases(chan, response->aliases, (response - (<"aliases">)) | (["alias_of": basename]));
 	foreach (extra->?cooldowns || ([]); string cdname; int cdlength) {
 		//If the cooldown delay is shorter than the cooldown timeout,
@@ -140,6 +145,8 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 		//If the command name starts with "!", it's a special, to be
 		//sent out to "!!#channel" and not to "#channel".
 		foreach (updates; cmd;) {
+			//TODO maybe: If a command has been renamed, notify clients to rename, rather than
+			//deleting the old and creating the new.
 			if (has_prefix(cmd, "!trigger#")) handler->send_updates_all("!" + cmd);
 			else handler->update_one(pfx + pfx + "#" + chan, cmd);
 			handler->send_updates_all(cmd);

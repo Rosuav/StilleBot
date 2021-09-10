@@ -85,12 +85,6 @@
     into the primary. You are permitted (though not required) to make the original
     name an alias, which effectively just changes which one is primary.
   - If you create an alias (without renaming) that already exists, what happens??
-  - Possibilities:
-    - New primary name previously existed, either primary or secondary, not this cmd
-    - New alias previously existed, ditto
-    - New primary was an alias of this
-    - New alias was the primary of this
-    - New primary or alias shadows a stock command
 * Demo mode for the bot features. Allow anyone to "be a mod" for /channels/demo/ and
   see features like the command editor, live.
   - Mostly done. Some things are a bit ugly and have mutely nonfunctional buttons.

@@ -353,6 +353,13 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 		if (command == "") return 0;
 		state->cmd = command = pfx + command;
 		if (pfx == "!" && !function_object(G->G->commands->addcmd)->SPECIAL_NAMES[command]) command = 0; //Only specific specials are valid
+		if (pfx == "") {
+			//See if an original name was provided
+			string orig = msg->original || "";
+			sscanf(orig, "%*[!]%s%*[#]", orig);
+			orig = String.trim(lower_case(orig));
+			if (orig != "") state->original = orig + "#" + chan;
+		}
 	}
 	if (command) command += "#" + chan; //Potentially getting us right back to conn->group, but more likely the group is just the channel
 	//Validate the message. Note that there will be some things not caught by this
