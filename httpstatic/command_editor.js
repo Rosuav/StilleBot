@@ -125,7 +125,7 @@ on("click", "#save_advanced", async e => {
 	const info = get_message_details();
 	document.getElementById("advanced_view").close();
 	const el = DOM("#cmdname");
-	ws_sync.send({cmd: "update", cmdname: el ? el.value : cmd_id, response: info});
+	ws_sync.send({cmd: "update", cmdname: el ? el.value : cmd_id, original: cmd_id, response: info});
 });
 
 on("click", "#delete_advanced", waitlate(750, 5000, "Really delete?", e => {
