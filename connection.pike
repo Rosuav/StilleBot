@@ -142,7 +142,7 @@ class SendQueue(string id) {
 			werror("%% Error connecting to voice %s:\n%s\n", my_nick, describe_error(ex));
 			finalize(); return;
 		}
-		call_out(check_active, 300);
+		call_out(check_active, 900);
 		write("Connected to voice %O\n", my_nick);
 	}
 	void finalize() {
@@ -157,7 +157,7 @@ class SendQueue(string id) {
 			return;
 		}
 		active = 0;
-		call_out(check_active, 300);
+		call_out(check_active, 900);
 	}
 
 	void pump_queue() {
