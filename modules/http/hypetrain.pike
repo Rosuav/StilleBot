@@ -211,7 +211,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 			"{level}": (string)state->level,
 			"{total}": (string)state->total,
 			"{goal}": (string)state->goal,
-			"{cooldown}": sprintf("%02d:%02d", tm / 60, tm % 60), //TODO: H:M:S ?
+			"{cooldown}": sprintf("%02d:%02d", tm / 60, tm % 60),
 			"{conductors}": allcond, "{subs_conduct}": conductors->SUBS, "{bits_conduct}": conductors->BITS,
 		]);
 	} else return (["{error}": "", "{state}": "idle"]);
