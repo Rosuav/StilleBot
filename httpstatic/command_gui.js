@@ -138,7 +138,7 @@ const types = {
 		typedesc: "Delay message(s) by a certain length of time",
 	},
 	voice: {
-		color: "#bbbb33", children: ["message"], label: el => "Change voice",
+		color: "#bbbb33", children: ["message"], label: el => "Select voice: " + (voices_available[el.voice] || el.voice),
 		params: [{attr: "voice", label: "Voice", values: Object.keys(voices_available), selections: voices_available}],
 		typedesc: "Select a different voice for messages - only available if alternate voices are authorized",
 	},
@@ -412,6 +412,7 @@ const tray_tabs = [
 	]},
 	{name: "Special", color: "#bbffbb", items: [
 		{type: "delay", delay: "2"},
+		{type: "voice", voice: ""},
 		{type: "whisper_other", target: "{param}", message: [{type: "text", message: "Here's a whisper!"}]},
 		{type: "group", message: [
 			{type: "web_message", target: "{param}", message: [
