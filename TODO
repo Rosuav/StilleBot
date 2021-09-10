@@ -78,13 +78,8 @@
 * Enable/disable rewards - allow use of title, will do lookup
 * Redemption triggers - specials?
 * Do I need a way to have multiple execution triggers - a generalization of aliases??
-* Allow commands to be renamed on save. Advanced editor only.
-  - If you try to rename to something that exists, block it on the server (don't save,
-    leave the unedited version where it is), and warn on the client beforehand.
-  - If you rename something that has aliases to one of its aliases, make that alias
-    into the primary. You are permitted (though not required) to make the original
-    name an alias, which effectively just changes which one is primary.
-  - If you create an alias (without renaming) that already exists, what happens??
+* If you attempt to rename a command or add an alias that already exists (and isn't an
+  alias for the current command), warn on client side and block save unless confirmed.
 * Demo mode for the bot features. Allow anyone to "be a mod" for /channels/demo/ and
   see features like the command editor, live.
   - Mostly done. Some things are a bit ugly and have mutely nonfunctional buttons.
