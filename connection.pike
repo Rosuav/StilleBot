@@ -534,7 +534,7 @@ class channel_notif
 			//Stash the text away. Recommendation: Have a public message that informs the
 			//recipient that info is available at https://sikorsky.rosuav.com/channels/%s/private
 			mapping n2u = persist_status->path("name_to_uid");
-			string uid = n2u[lower_case(target)]; //Yes, it's a string, even though it's always going to be digits
+			string uid = n2u[lower_case(target - "@")]; //Yes, it's a string, even though it's always going to be digits
 			if (!uid)
 			{
 				//TODO: Look the person up, delay the message, and then if
