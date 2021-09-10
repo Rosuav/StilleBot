@@ -92,7 +92,6 @@
   - Note that Twitch now has on-platform goals that track current followers and subs,
     so this can continue to focus on how many have been gained recently (eg daily
     sub/resub count).
-* "Advance Goal Bar" action in graphical editor, for custom advancements
 * Special trigger when any goal bar tiers up?? Would be better than the weird system
   where it triggers an actual command. Could deep link straight to the editor now.
 * What will it take to make the graphical editor the default?
