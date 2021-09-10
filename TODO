@@ -100,4 +100,3 @@
     - Have some builtins in a tray (the common ones), and then autogenerate a tray
       based on a serverside dump of all builtins. That can ensure other guarantees
       as well, while making sure that any builtin CAN be invoked.
-  - Whisper to someone other than originator

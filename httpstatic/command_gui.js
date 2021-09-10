@@ -415,6 +415,7 @@ const tray_tabs = [
 	]},
 	{name: "Special", color: "#bbffbb", items: [
 		{type: "delay", delay: "2"},
+		{type: "whisper_other", target: "{param}", message: [{type: "text", message: "Here's a whisper!"}]},
 		{type: "group", message: [
 			{type: "web_message", target: "{param}", message: [
 				{type: "text", message: "This is a top secret message."},
