@@ -104,3 +104,5 @@
     have it, but disabled??
   - Add some docs on PCRE syntax??
   - Explain synchronization tags??
+  - Note that the Classic editor is far more a11y-friendly, so it should be kept
+    around even after Graphical becomes the default.
