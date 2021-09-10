@@ -145,6 +145,43 @@ const types = {
 		params: [{attr: "voice", label: "Voice", values: Object.keys(voices_available), selections: voices_available}],
 		typedesc: "Select a different voice for messages - only available if alternate voices are authorized",
 	},
+	whisper_back: {
+		color: "#99ffff", width: 400, label: el => "🤫 " + el.message,
+		params: [{attr: "dest", values: "/w"}, {attr: "target", values: "$$"}, {attr: "message", label: "Text", values: text_message}],
+		typedesc: "Whisper to the person who ran the command",
+	},
+	whisper_other: {
+		color: "#99ffff", children: ["message"], label: el => "🤫 to " + el.target,
+		params: [{attr: "dest", values: "/w"}, {attr: "target", label: "Person to whisper to"}],
+		typedesc: "Whisper to a specific person",
+	},
+	web_message: {
+		color: "#99ffff", children: ["message"], label: el => "🌏 to " + el.target,
+		params: [{attr: "dest", values: "/web"}, {attr: "target", label: "Recipient"}],
+		typedesc: "Leave a private message for someone",
+	},
+	incr_variable: {
+		color: "#dd7777", label: el => `Add ${el.message} to $${el.target}$`,
+		params: [{attr: "dest", values: "/set"}, {attr: "action", values: "add"},
+			{attr: "target", label: "Variable name"}, {attr: "message", label: "Increment by"}],
+		typedesc: "Update a variable. Can be accessed as $varname$ in this or any other command.",
+	},
+	incr_variable_complex: {
+		color: "#dd7777", children: ["message"], label: el => `Add onto $${el.target}$`,
+		params: [{attr: "dest", values: "/set"}, {attr: "action", values: "add"},
+			{attr: "target", label: "Variable name"},],
+		typedesc: "Capture message as a variable update. Can be accessed as $varname$ in this or any other command.",
+	},
+	set_variable: {
+		color: "#dd7777", label: el => `Set $${el.target}$ to ${el.message}`,
+		params: [{attr: "dest", values: "/set"}, {attr: "target", label: "Variable name"}, {attr: "message", label: "New value"}],
+		typedesc: "Change a variable. Can be accessed as $varname$ in this or any other command.",
+	},
+	set_variable_complex: {
+		color: "#dd7777", children: ["message"], label: el => `Change variable $${el.target}$`,
+		params: [{attr: "dest", values: "/set"}, {attr: "target", label: "Variable name"},],
+		typedesc: "Capture message into a variable. Can be accessed as $varname$ in this or any other command.",
+	},
 	builtin_uptime: {
 		color: "#ee77ee", children: ["message"], label: el => "Channel uptime",
 		params: [{attr: "builtin", values: "uptime"}],
@@ -270,43 +307,6 @@ const types = {
 		color: "#aacc55", children: ["message", "otherwise"], label: el => [el.cdlength + "-second cooldown", "If on cooldown:"],
 		params: [{attr: "cdlength", label: "Delay (seconds)", values: [1, 7200, 1]}, {attr: "cdname", label: "Tag (optional)"}],
 		typedesc: "Prevent the command from being used too quickly. If it's been used recently, the second block happens instead.",
-	},
-	whisper_back: {
-		color: "#99ffff", width: 400, label: el => "🤫 " + el.message,
-		params: [{attr: "dest", values: "/w"}, {attr: "target", values: "$$"}, {attr: "message", label: "Text", values: text_message}],
-		typedesc: "Whisper to the person who ran the command",
-	},
-	whisper_other: {
-		color: "#99ffff", children: ["message"], label: el => "🤫 to " + el.target,
-		params: [{attr: "dest", values: "/w"}, {attr: "target", label: "Person to whisper to"}],
-		typedesc: "Whisper to a specific person",
-	},
-	web_message: {
-		color: "#99ffff", children: ["message"], label: el => "🌏 to " + el.target,
-		params: [{attr: "dest", values: "/web"}, {attr: "target", label: "Recipient"}],
-		typedesc: "Leave a private message for someone",
-	},
-	incr_variable: {
-		color: "#dd7777", label: el => `Add ${el.message} to $${el.target}$`,
-		params: [{attr: "dest", values: "/set"}, {attr: "action", values: "add"},
-			{attr: "target", label: "Variable name"}, {attr: "message", label: "Increment by"}],
-		typedesc: "Update a variable. Can be accessed as $varname$ in this or any other command.",
-	},
-	incr_variable_complex: {
-		color: "#dd7777", children: ["message"], label: el => `Add onto $${el.target}$`,
-		params: [{attr: "dest", values: "/set"}, {attr: "action", values: "add"},
-			{attr: "target", label: "Variable name"},],
-		typedesc: "Capture message as a variable update. Can be accessed as $varname$ in this or any other command.",
-	},
-	set_variable: {
-		color: "#dd7777", label: el => `Set $${el.target}$ to ${el.message}`,
-		params: [{attr: "dest", values: "/set"}, {attr: "target", label: "Variable name"}, {attr: "message", label: "New value"}],
-		typedesc: "Change a variable. Can be accessed as $varname$ in this or any other command.",
-	},
-	set_variable_complex: {
-		color: "#dd7777", children: ["message"], label: el => `Change variable $${el.target}$`,
-		params: [{attr: "dest", values: "/set"}, {attr: "target", label: "Variable name"},],
-		typedesc: "Capture message into a variable. Can be accessed as $varname$ in this or any other command.",
 	},
 	random: {
 		color: "#ee7777", children: ["message"], label: el => "Randomize",
