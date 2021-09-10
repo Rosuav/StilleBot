@@ -120,7 +120,7 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 }
 
 constant command_description = "Create, manage, or link to an MPN document";
-constant builtin_name = "MPN document";
+constant builtin_name = "Multi-Player Notepad";
 constant default_response = ([
 	"conditional": "string", "expr1": "{error}", "expr2": "",
 	"message": ([
