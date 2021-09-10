@@ -840,11 +840,7 @@ canvas.addEventListener("pointerup", e => {
 		}
 		if (dragging.fresh) {
 			//It's been picked up off the template but never dropped. Just discard it.
-			let idx = actives.length - 1;
-			//It's highly unlikely, but possible, that two pointers could simultaneously drag fresh items
-			//and then the earlier one dragged is the one that gets dropped back on the template.
-			if (dragging !== actives[idx]) idx = actives.indexOf(dragging);
-			actives.splice(idx, 1);
+			make_template(dragging); //Easiest way to purge it from actives recursively.
 			refactor();
 			dragging = null; repaint();
 			return;
