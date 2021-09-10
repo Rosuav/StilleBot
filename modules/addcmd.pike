@@ -124,7 +124,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 	sscanf(cmd || "", "%[!]%s#%s", string pfx, string basename, string chan);
 	multiset updates = (<cmd>);
 	purge(chan, cmd, updates);
-	purge(chan, extra->original, updates); //Renaming a command requires removal of what used to be.
+	if (extra) purge(chan, extra->original, updates); //Renaming a command requires removal of what used to be.
 	if (response) G->G->echocommands[cmd] = response;
 	if (mappingp(response) && response->aliases) update_aliases(chan, response->aliases, (response - (<"aliases">)) | (["alias_of": basename]), updates);
 	foreach (extra->?cooldowns || ([]); string cdname; int cdlength) {
