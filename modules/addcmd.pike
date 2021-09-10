@@ -98,18 +98,16 @@ Editing these special commands can also be done via the bot's web browser
 configuration pages, where available.
 ", SPECIALS, SPECIAL_PARAMS);
 
-multiset(string) update_aliases(string chan, string aliases, echoable_message response) {
-	multiset updates = (<>);
+void update_aliases(string chan, string aliases, echoable_message response, multiset updates) {
 	foreach (aliases / " ", string alias) {
 		sscanf(alias, "%*[!]%[^#\n]", string safealias);
-		if (safealias && safealias != "") {
+		if (safealias && safealias != "" && (!mappingp(response) || safealias != response->alias_of)) {
 			string cmd = safealias + "#" + chan;
 			if (response) G->G->echocommands[cmd] = response;
 			else m_delete(G->G->echocommands, cmd);
 			updates[cmd] = 1;
 		}
 	}
-	return updates;
 }
 
 void purge(string chan, string cmd, multiset updates) {
@@ -117,7 +115,7 @@ void purge(string chan, string cmd, multiset updates) {
 	if (prev) updates[cmd] = 1;
 	if (!mappingp(prev)) return;
 	if (prev->alias_of) purge(chan, prev->alias_of + "#" + chan, updates);
-	if (prev->aliases) updates |= update_aliases(chan, prev->aliases, 0);
+	if (prev->aliases) update_aliases(chan, prev->aliases, 0, updates);
 }
 
 //Update (or delete) an echo command and save them to disk
@@ -128,7 +126,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 	purge(chan, cmd, updates);
 	purge(chan, extra->original, updates); //Renaming a command requires removal of what used to be.
 	if (response) G->G->echocommands[cmd] = response;
-	if (mappingp(response) && response->aliases) updates |= update_aliases(chan, response->aliases, (response - (<"aliases">)) | (["alias_of": basename]));
+	if (mappingp(response) && response->aliases) update_aliases(chan, response->aliases, (response - (<"aliases">)) | (["alias_of": basename]), updates);
 	foreach (extra->?cooldowns || ([]); string cdname; int cdlength) {
 		//If the cooldown delay is shorter than the cooldown timeout,
 		//reset the timeout. That way, if you accidentally set a command
