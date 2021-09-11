@@ -83,9 +83,8 @@ void find_builtins() {
 			templates += ({sprintf("%s | %s", cmd, info->_description || handler->command_description)});
 			complex_templates[cmd] = (["builtin": name, "builtin_param": "%s"]) | info - (<"_description">);
 		}
-		builtins[name] = (["*": handler->builtin_description, "": handler->builtin_name]) | handler->vars_provided;
-		if (builtins[name]["*"] == "") builtins[name]["*"] = handler->command_description;
-		if (builtins[name][""] == "") builtins[name][""] = "!" + name; //Best not to rely on this
+		builtins[name] = (["desc": handler->builtin_description, "name": handler->builtin_name]) | handler->vars_provided;
+		if (builtins[name]->desc == "") builtins[name]->desc = handler->command_description;
 	}
 	G->G->commands_templates = templates;
 	G->G->commands_complex_templates = complex_templates;

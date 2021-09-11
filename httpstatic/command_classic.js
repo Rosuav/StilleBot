@@ -14,7 +14,7 @@ const flags = {
 	action: {"": "Set the value", "add": "Add to the value", "*": "When setting a variable, should it increment or replace?"}, //TODO: Deprecate
 };
 for (let name in builtins) {
-	flags.builtin[name] = builtins[name][""];
+	flags.builtin[name] = builtins[name].name;
 }
 const toplevelflags = ["access", "visibility"];
 const conditionalkeys = "expr1 expr2 casefold".split(" "); //Include every key used by every conditional type
@@ -138,10 +138,8 @@ const conditional_types = {
 function describe_builtin_vars(name) {
 	const builtin = builtins[name]; if (!builtin) return [];
 	const rows = [];
-	for (let v in builtin) {
-		if (v === "" || v === "*") continue;
-		rows.push(TR([TD(CODE(v)), TD(builtin[v])]));
-	}
+	for (let v in builtin)
+		if (v[0] === '{') rows.push(TR([TD(CODE(v)), TD(builtin[v])]));
 	return rows;
 }
 
