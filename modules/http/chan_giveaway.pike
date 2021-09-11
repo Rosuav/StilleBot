@@ -578,6 +578,7 @@ int channel_offline(string channel) {channel_on_off(channel, 0);}
 constant command_description = "Giveaway tools. Use subcommand 'status' or 'refund'.";
 constant builtin_description = "Handle giveaways via channel point redemptions"; //The subcommands are mandated by the parameter type
 constant builtin_name = "Giveaway tools";
+constant builtin_param = "/Action/refund/status";
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{action}": "Action taken - same as subcommand, or 'none' if there was nothing to do",

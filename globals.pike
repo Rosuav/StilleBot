@@ -183,6 +183,7 @@ class builtin_command {
 	constant command_description = "Duplicate, replace, or adjust the normal handling of the !<> command";
 	constant builtin_description = ""; //If omitted, uses command_description
 	constant builtin_name = ""; //Short human-readable name for the drop-down
+	constant builtin_param = ""; //Label for the parameter, or "/Label/option/option/option" to offer specific selections. If blank, has no parameter.
 	constant default_response = ""; //The response to the default command, and also the default suggestion
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
 	constant aliases = ({ }); //Add aliases here and they'll be defaultly aliased if shadowed too

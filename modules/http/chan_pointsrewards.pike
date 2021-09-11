@@ -67,6 +67,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 
 constant command_description = "Manage channel point rewards";
 constant builtin_name = "Points rewards";
+constant builtin_param = "Action";
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{action}": "Action(s) performed, if any (may be blank)",

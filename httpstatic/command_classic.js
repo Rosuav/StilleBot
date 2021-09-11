@@ -14,6 +14,7 @@ const flags = {
 	action: {"": "Set the value", "add": "Add to the value", "*": "When setting a variable, should it increment or replace?"}, //TODO: Deprecate
 };
 for (let name in builtins) {
+	//TODO: Show the param label somewhere, somehow?
 	flags.builtin[name] = builtins[name].name;
 }
 const toplevelflags = ["access", "visibility"];
