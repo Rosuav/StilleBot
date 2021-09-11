@@ -90,95 +90,7 @@ const text_message = {...default_handlers,
 	},
 }
 
-const types = {
-	anchor_command: {
-		color: "#ffff00", fixed: true, children: ["message"],
-		label: el => `When ${el.command} is typed...`, //TODO: Also mention aliases
-		typedesc: "This is how everything starts. Drag flags onto this to apply them.",
-		params: [{attr: "aliases", label: "Aliases"}], //TODO: Validate format? Explain? Or maybe have "Add alias" and "Remove alias" buttons?
-		provides: {
-			"{param}": "Anything typed after the command name",
-			"{username}": "Name of the user who entered the command",
-			"{@mod}": "1 if the command was triggered by a mod/broadcaster, 0 if not",
-		},
-	},
-	anchor_trigger: {
-		color: "#ffff00", fixed: true, children: ["message"],
-		label: el => el.conditional === "contains" ? `When '${el.expr1}' is typed...` : `When a msg matches ${el.expr1} ...`,
-		params: [{attr: "conditional", label: "Match type", values: ["contains", "regexp"],
-				selections: {string: "Simple match", regexp: "Regular expression"}},
-			{attr: "casefold", label: "Case insensitive", values: bool_attr},
-			{attr: "id", label: null}, //Retain the ID but don't show it for editing
-			{attr: "expr1", label: "Search for"}, {attr: "expr2", values: "%s"}],
-		provides: {
-			"{param}": "The entire message",
-			"{username}": "Name of the user who entered the triggering message",
-			"{@mod}": "1 if trigger came from a mod/broadcaster, 0 if not",
-		},
-	},
-	anchor_special: {
-		//Specials are... special. The details here will vary based on which special we're editing.
-		color: "#ffff00", fixed: true, children: ["message"],
-		label: el => el.shortdesc,
-	},
-	trashcan: {
-		color: "#999999", fixed: true, children: ["message"],
-		label: el => "Trash - drop here to discard",
-		typedesc: "Anything dropped here can be retrieved until you next reload, otherwise it's gone forever.",
-	},
-	//Types can apply zero or more attributes to a message, each one with a set of valid values.
-	//Validity can be defined by an array of strings (take your pick), a single string (fixed value,
-	//cannot change), undefined (allow user to type), or an array of three numbers [min, max, step],
-	//which define a range of numeric values.
-	//If the value is editable (ie not a fixed string), also provide a label for editing.
-	//These will be detected in the order they are iterated over.
-	delay: {
-		color: "#77ee77", children: ["message"], label: el => `Delay ${el.delay} seconds`,
-		params: [{attr: "delay", label: "Delay (seconds)", values: [1, 7200, 1]}],
-		typedesc: "Delay message(s) by a certain length of time",
-	},
-	voice: {
-		color: "#bbbb33", children: ["message"], label: el => "Select voice: " + (voices_available[el.voice] || el.voice),
-		params: [{attr: "voice", label: "Voice", values: Object.keys(voices_available), selections: voices_available}],
-		typedesc: "Select a different voice for messages - only available if alternate voices are authorized",
-	},
-	whisper_back: {
-		color: "#99ffff", width: 400, label: el => "🤫 " + el.message,
-		params: [{attr: "dest", values: "/w"}, {attr: "target", values: "$$"}, {attr: "message", label: "Text", values: text_message}],
-		typedesc: "Whisper to the person who ran the command",
-	},
-	whisper_other: {
-		color: "#99ffff", children: ["message"], label: el => "🤫 to " + el.target,
-		params: [{attr: "dest", values: "/w"}, {attr: "target", label: "Person to whisper to"}],
-		typedesc: "Whisper to a specific person",
-	},
-	web_message: {
-		color: "#99ffff", children: ["message"], label: el => "🌏 to " + el.target,
-		params: [{attr: "dest", values: "/web"}, {attr: "target", label: "Recipient"}],
-		typedesc: "Leave a private message for someone",
-	},
-	incr_variable: {
-		color: "#dd7777", label: el => `Add ${el.message} to $${el.target}$`,
-		params: [{attr: "dest", values: "/set"}, {attr: "action", values: "add"},
-			{attr: "target", label: "Variable name"}, {attr: "message", label: "Increment by"}],
-		typedesc: "Update a variable. Can be accessed as $varname$ in this or any other command.",
-	},
-	incr_variable_complex: {
-		color: "#dd7777", children: ["message"], label: el => `Add onto $${el.target}$`,
-		params: [{attr: "dest", values: "/set"}, {attr: "action", values: "add"},
-			{attr: "target", label: "Variable name"},],
-		typedesc: "Capture message as a variable update. Can be accessed as $varname$ in this or any other command.",
-	},
-	set_variable: {
-		color: "#dd7777", label: el => `Set $${el.target}$ to ${el.message}`,
-		params: [{attr: "dest", values: "/set"}, {attr: "target", label: "Variable name"}, {attr: "message", label: "New value"}],
-		typedesc: "Change a variable. Can be accessed as $varname$ in this or any other command.",
-	},
-	set_variable_complex: {
-		color: "#dd7777", children: ["message"], label: el => `Change variable $${el.target}$`,
-		params: [{attr: "dest", values: "/set"}, {attr: "target", label: "Variable name"},],
-		typedesc: "Capture message into a variable. Can be accessed as $varname$ in this or any other command.",
-	},
+function builtin_types() {return {
 	builtin_uptime: {
 		color: "#ee77ee", children: ["message"], label: el => "Channel uptime",
 		params: [{attr: "builtin", values: "uptime"}],
@@ -274,6 +186,98 @@ const types = {
 		params: [{attr: "builtin", label: "Builtin name", values: required}, {attr: "builtin_param", label: "Parameter"}],
 		typedesc: "Unknown builtin - either a malformed command or one that this editor does not recognize.",
 	},
+}};
+
+const types = {
+	anchor_command: {
+		color: "#ffff00", fixed: true, children: ["message"],
+		label: el => `When ${el.command} is typed...`, //TODO: Also mention aliases
+		typedesc: "This is how everything starts. Drag flags onto this to apply them.",
+		params: [{attr: "aliases", label: "Aliases"}], //TODO: Validate format? Explain? Or maybe have "Add alias" and "Remove alias" buttons?
+		provides: {
+			"{param}": "Anything typed after the command name",
+			"{username}": "Name of the user who entered the command",
+			"{@mod}": "1 if the command was triggered by a mod/broadcaster, 0 if not",
+		},
+	},
+	anchor_trigger: {
+		color: "#ffff00", fixed: true, children: ["message"],
+		label: el => el.conditional === "contains" ? `When '${el.expr1}' is typed...` : `When a msg matches ${el.expr1} ...`,
+		params: [{attr: "conditional", label: "Match type", values: ["contains", "regexp"],
+				selections: {string: "Simple match", regexp: "Regular expression"}},
+			{attr: "casefold", label: "Case insensitive", values: bool_attr},
+			{attr: "id", label: null}, //Retain the ID but don't show it for editing
+			{attr: "expr1", label: "Search for"}, {attr: "expr2", values: "%s"}],
+		provides: {
+			"{param}": "The entire message",
+			"{username}": "Name of the user who entered the triggering message",
+			"{@mod}": "1 if trigger came from a mod/broadcaster, 0 if not",
+		},
+	},
+	anchor_special: {
+		//Specials are... special. The details here will vary based on which special we're editing.
+		color: "#ffff00", fixed: true, children: ["message"],
+		label: el => el.shortdesc,
+	},
+	trashcan: {
+		color: "#999999", fixed: true, children: ["message"],
+		label: el => "Trash - drop here to discard",
+		typedesc: "Anything dropped here can be retrieved until you next reload, otherwise it's gone forever.",
+	},
+	//Types can apply zero or more attributes to a message, each one with a set of valid values.
+	//Validity can be defined by an array of strings (take your pick), a single string (fixed value,
+	//cannot change), undefined (allow user to type), or an array of three numbers [min, max, step],
+	//which define a range of numeric values.
+	//If the value is editable (ie not a fixed string), also provide a label for editing.
+	//These will be detected in the order they are iterated over.
+	delay: {
+		color: "#77ee77", children: ["message"], label: el => `Delay ${el.delay} seconds`,
+		params: [{attr: "delay", label: "Delay (seconds)", values: [1, 7200, 1]}],
+		typedesc: "Delay message(s) by a certain length of time",
+	},
+	voice: {
+		color: "#bbbb33", children: ["message"], label: el => "Select voice: " + (voices_available[el.voice] || el.voice),
+		params: [{attr: "voice", label: "Voice", values: Object.keys(voices_available), selections: voices_available}],
+		typedesc: "Select a different voice for messages - only available if alternate voices are authorized",
+	},
+	whisper_back: {
+		color: "#99ffff", width: 400, label: el => "🤫 " + el.message,
+		params: [{attr: "dest", values: "/w"}, {attr: "target", values: "$$"}, {attr: "message", label: "Text", values: text_message}],
+		typedesc: "Whisper to the person who ran the command",
+	},
+	whisper_other: {
+		color: "#99ffff", children: ["message"], label: el => "🤫 to " + el.target,
+		params: [{attr: "dest", values: "/w"}, {attr: "target", label: "Person to whisper to"}],
+		typedesc: "Whisper to a specific person",
+	},
+	web_message: {
+		color: "#99ffff", children: ["message"], label: el => "🌏 to " + el.target,
+		params: [{attr: "dest", values: "/web"}, {attr: "target", label: "Recipient"}],
+		typedesc: "Leave a private message for someone",
+	},
+	incr_variable: {
+		color: "#dd7777", label: el => `Add ${el.message} to $${el.target}$`,
+		params: [{attr: "dest", values: "/set"}, {attr: "action", values: "add"},
+			{attr: "target", label: "Variable name"}, {attr: "message", label: "Increment by"}],
+		typedesc: "Update a variable. Can be accessed as $varname$ in this or any other command.",
+	},
+	incr_variable_complex: {
+		color: "#dd7777", children: ["message"], label: el => `Add onto $${el.target}$`,
+		params: [{attr: "dest", values: "/set"}, {attr: "action", values: "add"},
+			{attr: "target", label: "Variable name"},],
+		typedesc: "Capture message as a variable update. Can be accessed as $varname$ in this or any other command.",
+	},
+	set_variable: {
+		color: "#dd7777", label: el => `Set $${el.target}$ to ${el.message}`,
+		params: [{attr: "dest", values: "/set"}, {attr: "target", label: "Variable name"}, {attr: "message", label: "New value"}],
+		typedesc: "Change a variable. Can be accessed as $varname$ in this or any other command.",
+	},
+	set_variable_complex: {
+		color: "#dd7777", children: ["message"], label: el => `Change variable $${el.target}$`,
+		params: [{attr: "dest", values: "/set"}, {attr: "target", label: "Variable name"},],
+		typedesc: "Capture message into a variable. Can be accessed as $varname$ in this or any other command.",
+	},
+	...builtin_types(),
 	conditional_string: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => [
 			el.expr1 && el.expr2 ? el.expr1 + " == " + el.expr2 : el.expr1 ? el.expr1 + " is blank" : "String comparison",
