@@ -5,6 +5,8 @@ early file history, check that repository.
 
 */
 /* TODO
+Allow a flag to be removed. Currently, you have to drag a replacement flag, but it should make sense
+to say "no I don't want this to be mod-only any more". Or alternatively, always show the default flag??
 
 Integration with StilleBot.
 * Deduplicate a ton of data by getting it from the server instead of hard-coding.
