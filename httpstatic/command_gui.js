@@ -8,10 +8,6 @@ early file history, check that repository.
 Allow a flag to be removed. Currently, you have to drag a replacement flag, but it should make sense
 to say "no I don't want this to be mod-only any more". Or alternatively, always show the default flag??
 
-Integration with StilleBot.
-* Deduplicate a ton of data by getting it from the server instead of hard-coding.
-  - Builtins and their vars_provided
-
 Pipe dream: Can the label for a text message show emotes graphically?
 
 Note that some legacy forms are not supported and will not be. If you have an old command in such a
@@ -92,103 +88,23 @@ const text_message = {...default_handlers,
 	},
 }
 
-function builtin_types() {return {
-	builtin_uptime: {
-		color: "#ee77ee", children: ["message"], label: el => "Channel uptime",
-		params: [{attr: "builtin", values: "uptime"}],
-		typedesc: "See if the channel is online, and if so, for how long",
-		provides: {
-			"{uptime}": "Number of seconds the channel has been online, or 0 if offline",
-			"{channel}": "Channel name (may later become the display name)",
-		},
-	},
-	builtin_shoutout: {
-		color: "#ee77ee", children: ["message"], label: el => "Shoutout",
-		params: [{attr: "builtin", values: "shoutout"}, {attr: "builtin_param", label: "Channel name"}],
-		typedesc: "Fetch information about another channel and what it has recently streamed",
-		provides: {
-			"{url}": "Channel URL, or blank if the user wasn't found",
-			"{name}": "Display name of the user",
-			"{category}": "Current or last-seen category (game)",
-			"{catdesc}": "Category in a human-readable form, eg 'playing X' or 'creating Art'",
-			"{title}": "Current or last-seen stream title",
-		},
-	},
-	builtin_calc: {
-		color: "#ee77ee", children: ["message"], label: el => "Calculator",
-		params: [{attr: "builtin", values: "calc"}, {attr: "builtin_param", label: "Expression"}],
-		typedesc: "Perform arithmetic calculations",
-		provides: {
-			"{error}": "Blank if all is well, otherwise an error message",
-			"{result}": "The result of the calculation",
-		},
-	},
-	builtin_hypetrain: {
-		color: "#ee77ee", children: ["message"], label: el => "Hype train status",
-		params: [{attr: "builtin", values: "hypetrain"}],
-		typedesc: "Get info about a current or recent hype train in this channel",
-		provides: {
-			"{error}": "Normally blank, but can have an error message",
-			"{state}": "A keyword (idle, active, cooldown). If idle, there's no other info; if cooldown, info pertains to the last hype train.",
-			"{level}": "The level that we're currently in (1-5)",
-			"{total}": "The total number of bits or bits-equivalent contributed towards this level",
-			"{goal}": "The number of bits or bits-equivalent to complete this level",
-			"{needbits}": "The number of additional bits required to complete this level (== goal minus total)",
-			"{needsubs}": "The number of Tier 1 subs that would complete this level",
-			"{conductors}": "Either None or a list of the current conductors",
-			"{subs_conduct}": "Either Nobody or the name of the current conductor for subs",
-			"{bits_conduct}": "Either Nobody or the name of the current conductor for bits",
-			"{expires}": "Minutes:Seconds until the hype train runs out of time (only if Active)",
-			"{cooldown}": "Minutes:Seconds until the next hype train can start (only if Cooldown)",
-		},
-	},
-	builtin_giveaway: {
-		color: "#ee77ee", children: ["message"], label: el => "Giveaway tools",
-		params: [
-			{attr: "builtin", values: "chan_giveaway"},
-			{attr: "builtin_param", label: "Action", values: ["refund", "status"]},
-		],
-		typedesc: "Handle giveaways via channel point redemptions",
-		provides: {
-			"{error}": "Error message, if any",
-			"{action}": "Action taken - same as subcommand, or 'none' if there was nothing to do",
-			"{tickets}": "Number of tickets you have (or had)",
-		},
-	},
-	builtin_mpn: {
-		color: "#ee77ee", children: ["message"], label: el => "Multi-Player Notepad",
-		params: [{attr: "builtin", values: "chan_mpn"}, {attr: "builtin_param", label: "Action"}], //Not currently editable. Needs a lot of work.
-		typedesc: "Manipulate MPN documents. Not well supported yet.",
-		provides: {
-			"{error}": "Error message, if any",
-			"{action}": "Action performed (if any)",
-			"{url}": "URL to the manipulated document, blank if no such document",
-		},
-	},
-	builtin_pointsrewards: {
-		color: "#ee77ee", children: ["message"], label: el => "Points Rewards",
-		params: [{attr: "builtin", values: "chan_pointsrewards"}, {attr: "builtin_param", label: "Action"}], //Not usefully editable. Needs reward ID and a set of commands. Might not be worth doing properly.
-		typedesc: "Manipulate channel point rewards",
-		provides: {
-			"{error}": "Error message, if any",
-			"{action}": "Action(s) performed, if any (may be blank)",
-		},
-	},
-	builtin_transcoding: {
-		color: "#ee77ee", children: ["message"], label: el => "Transcoding",
-		params: [{attr: "builtin", values: "transcoding"}],
-		typedesc: "Check whether the channel has transcoding (quality options)",
-		provides: {
-			"{resolution}": "Source resolution eg 1920x1080",
-			"{qualities}": "Comma-separated list of additional qualities - if blank, no transcoding",
-		},
-	},
-	builtin_other: {
-		color: "#ee77ee", children: ["message"], label: el => "Unknown Builtin: " + el.builtin,
-		params: [{attr: "builtin", label: "Builtin name", values: required}, {attr: "builtin_param", label: "Parameter"}],
-		typedesc: "Unknown builtin - either a malformed command or one that this editor does not recognize.",
-	},
-}};
+function builtin_types() {
+	const ret = { };
+	Object.entries(builtins).forEach(([name, blt]) => {
+		const b = ret["builtin_" + name] = {
+			color: "#ee77ee", children: ["message"], label: el => blt.name,
+			params: [{attr: "builtin", values: name}],
+			typedesc: blt.desc, provides: { },
+		};
+		if (blt.param[0] === "/") {
+			const split = blt.param.split("/"); split.shift(); //Remove the empty at the start
+			b.params.push({attr: "builtin_param", label: split.shift(), values: split});
+		}
+		else if (blt.param !== "") b.params.push({attr: "builtin_param", label: blt.param});
+		for (let prov in blt) if (prov[0] === '{' && !blt[prov].includes("(deprecated)")) b.provides[prov] = blt[prov];
+	});
+	return ret;
+}
 
 const types = {
 	anchor_command: {
