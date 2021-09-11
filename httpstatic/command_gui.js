@@ -218,7 +218,7 @@ const types = {
 		typedesc: "Make a decision - if regular expression matches, do one thing, otherwise do something else.",
 	},
 	conditional_number: {
-		color: "#7777ee", children: ["message", "otherwise"], label: el => ["Numeric computation", "Otherwise:"],
+		color: "#7777ee", children: ["message", "otherwise"], label: el => ["Numeric computation", "If it's zero/false:"],
 		params: [{attr: "conditional", values: "number"}, {attr: "expr1", label: "Expression"}],
 		typedesc: "Make a decision - if the result's nonzero, do one thing, otherwise do something else.",
 	},
