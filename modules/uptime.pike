@@ -9,7 +9,7 @@ the uptime just after it goes offline.
 ";
 
 constant command_description = "Show how long the channel has been online";
-constant builtin_description = "Get the channel uptime";
+constant builtin_description = "See if the channel is online, and if so, for how long";
 constant builtin_name = "Channel uptime";
 constant default_response = ([
 	"conditional": "string", "expr1": "{uptime}", "expr2": "0",

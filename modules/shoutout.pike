@@ -29,6 +29,7 @@ constant game_desc = ([
 ]);
 
 constant command_description = "Shout out another streamer, providing a link and some info about them (alias !so)";
+constant builtin_description = "Fetch information about another channel and what it has recently streamed";
 constant builtin_name = "Shoutout";
 constant default_response = ([
 	"conditional": "string",
