@@ -99,6 +99,8 @@
     - Have some builtins in a tray (the common ones), and then autogenerate a tray
       based on a serverside dump of all builtins. That can ensure other guarantees
       as well, while making sure that any builtin CAN be invoked.
+    - Need a way to describe the parameter, or show that none is needed.
+    - Where is builtins[x]["*"] used? It's a briefer version of typedesc.
   - Add some docs on PCRE syntax??
   - Explain synchronization tags??
   - Note that the Classic editor is far more a11y-friendly, so it should be kept
