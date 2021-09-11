@@ -343,7 +343,9 @@ const tray_tabs = [
 			{type: "text", message: "A secret message has been sent to you at: https://sikorsky.rosuav.com/channels/{param}/private"},
 		]},
 	]},
+	{name: "Extras", color: "#7f7f7f", items: []}, //I'm REALLY not happy with these names.
 ];
+const seen_types = {trashcan: 1};
 function make_template(el, par) {
 	if (el === "") return;
 	//Remove this element from actives if present. Note that this is quite inefficient
@@ -352,12 +354,23 @@ function make_template(el, par) {
 	if (idx !== -1) actives.splice(idx, 1);
 	el.template = true;
 	if (par) el.parent = par;
+	seen_types[el.type] = 1;
 	for (let attr of types[el.type].children || []) {
 		if (!el[attr]) el[attr] = [""];
 		else ensure_blank(el[attr]).forEach((e, i) => make_template(e, [el, attr, i]));
 	}
 }
 tray_tabs.forEach(t => (trays[t.name] = t.items).forEach(e => make_template(e)));
+//Search for any type that can't be created from a template
+for (let t in types) if (!seen_types[t]) {
+	if (t.startsWith("anchor_") || t.endsWith("flag")) continue;
+	if (t.startsWith("builtin_")) {
+		const el = {type: t};
+		make_template(el);
+		trays.Extras.push(el);
+	}
+	else console.log("UNSEEN TYPE", t);
+}
 let current_tray = "Default";
 const trashcan = {type: "trashcan", message: [""]};
 const specials = [trashcan];
