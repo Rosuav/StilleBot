@@ -369,7 +369,7 @@ for (let t in types) if (!seen_types[t]) {
 		make_template(el);
 		trays.Extras.push(el);
 	}
-	else console.log("UNSEEN TYPE", t);
+	//else console.log("UNSEEN TYPE", t); //Audit to ensure that we have all the ones that matter
 }
 let current_tray = "Default";
 const trashcan = {type: "trashcan", message: [""]};
