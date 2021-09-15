@@ -28,7 +28,7 @@ export function render(data) {
 	]));
 }
 
-function addcmd() {
+function addcmd(mode) {
 	const newcmd = DOM("#newcmd_name");
 	const cmdname = newcmd.value, response = DOM("#newcmd_resp").value;
 	newcmd.value = DOM("#newcmd_resp").value = "";
@@ -36,7 +36,8 @@ function addcmd() {
 		ws_sync.send({cmd: "update", cmdname, response});
 		newcmd.closest("tr").classList.remove("dirty");
 	}
-	else open_advanced_view({message: "", id: cmdname.replace("!", ""), template: true});
+	else if (mode !== "saveall" || cmdname || response)
+		open_advanced_view({message: response, id: cmdname.replace("!", ""), template: true});
 }
-on("submit", "main > form", e => {e.preventDefault(); addcmd();});
+on("submit", "main > form", e => {e.preventDefault(); addcmd("saveall");});
 on("click", "#addcmd", addcmd);
