@@ -49,7 +49,16 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		req->misc->session->authcookie = cookie;
 		return redirect(dest);
 	}
-	if (req->variables->urlonly) return jsonify((["uri": get_redirect_url((multiset)((req->variables->scope||"") / " "), ([]), login_popup_done)]));
+	//Merge scopes, similarly to ensure_login()
+	//NOTE: Some things are inconsistent on whether it's "scope" or "scopes". Currently
+	//checking for either. TODO: Make them all consistent.
+	multiset havescopes = req->misc->session->?scopes || (<>);
+	multiset wantscopes = (multiset)((req->variables->scopes || req->variables->scope || "") / " " - ({""}));
+	multiset bad = wantscopes - TwitchAuth()->list_valid_scopes();
+	if (sizeof(bad)) return (["error": 400, "type": "text/plain", //Note that this is a 400, as opposed to a 500 in ensure_login
+		"data": sprintf("Unrecognized scope %O being requested", (array)bad * " ")]);
+	multiset needscopes = havescopes | wantscopes; //Note that we'll keep any that we already have.
+	if (req->variables->urlonly) return jsonify((["uri": get_redirect_url(needscopes, ([]), login_popup_done)]));
 	//Attempt to sanitize or whitelist-check the destination. The goal is to permit
 	//anything that could ever have been req->not_query for any legitimate request,
 	//and to deny anything else.
@@ -66,16 +75,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			else if (sizeof(vars)) next += "?" + Protocols.HTTP.http_encode_query(vars);
 		}
 	}
-	//Merge scopes, similarly to ensure_login()
-	//NOTE: THIS IS INCONSISTENT. This uses variable "scopes" but others use "scope".
-	//CHECK TO SEE WHAT WE NEED. Or just deprecate this completely in favour of the
-	//login button, which definitely uses "scope" (and the urlonly flag).
-	multiset havescopes = req->misc->session->?scopes || (<>);
-	multiset wantscopes = (multiset)((req->variables->scopes || "") / " " - ({""}));
-	multiset bad = wantscopes - TwitchAuth()->list_valid_scopes();
-	if (sizeof(bad)) return (["error": 400, "type": "text/plain", //Note that this is a 400, as opposed to a 500 in ensure_login
-		"data": sprintf("Unrecognized scope %O being requested", (array)bad * " ")]);
-	multiset needscopes = havescopes | wantscopes; //Note that we'll keep any that we already have.
 	return twitchlogin(req, needscopes, next);
 }
 
