@@ -170,7 +170,7 @@ const types = {
 	},
 	web_message: {
 		color: "#99ffff", children: ["message"], label: el => "🌏 to " + el.target,
-		params: [{attr: "dest", values: "/web"}, {attr: "target", label: "Recipient"}],
+		params: [{attr: "dest", values: "/web"}, {attr: "target", label: "Recipient"}, {attr: "destcfg", label: "Response to 'Got it' button"}],
 		typedesc: "Leave a private message for someone",
 	},
 	incr_variable: {
