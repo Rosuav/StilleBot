@@ -562,6 +562,9 @@ class channel_notif
 				//End compat, shouldn't be needed once all are migrated.
 				int id = ++meta->lastid;
 				msgs[(string)id] = (["received": time(), "message": msg]);
+				//NOTE: The destcfg has already been var-substituted, and then it gets reprocessed
+				//when it gets sent. That's a bit awkward. Maybe the ideal would be to retain it
+				//unprocessed, but keep the local vars, and then when it's sent, set _changevars?
 				if (destcfg != "") msgs[(string)id]->acknowledgement = destcfg;
 				persist_status->save();
 				G->G->websocket_types->chan_messages->update_one(uid + name, (string)id);
