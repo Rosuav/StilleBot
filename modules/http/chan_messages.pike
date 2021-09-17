@@ -112,6 +112,8 @@ void websocket_cmd_acknowledge(mapping(string:mixed) conn, mapping(string:mixed)
 		};
 	}
 	if (mail) update_one(conn->group, msg->id);
+	mapping msgmeta = msgs->_meta;
+	if (msgmeta) msgmeta->lastread = msgmeta->lastid; //When you acknowledge any message, also mark all messages as serverside-read.
 	persist_status->save();
 }
 
