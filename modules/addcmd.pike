@@ -7,7 +7,7 @@ constant require_moderator = 1;
 constant SPECIALS = ({
 	({"!follower", ({"Someone follows the channel", "The new follower", ""}), "Stream support"}),
 	({"!sub", ({"Someone subscribes for the first time", "The subscriber", "tier, multimonth"}), "Stream support"}),
-	({"!resub", ({"Someone announces a resubscription", "The subscriber", "tier, months, streak"}), "Stream support"}),
+	({"!resub", ({"Someone announces a resubscription", "The subscriber", "tier, months, streak, multimonth"}), "Stream support"}),
 	({"!subgift", ({"Someone gives a sub", "The giver", "tier, months, streak, recipient, multimonth"}), "Stream support"}),
 	({"!subbomb", ({"Someone gives random subgifts", "The giver", "tier, gifts"}), "Stream support"}),
 	({"!cheer", ({"Any bits are cheered (including anonymously)", "The cheerer", "bits"}), "Stream support"}),

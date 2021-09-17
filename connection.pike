@@ -771,6 +771,7 @@ class channel_notif
 					"{tier}": params->msg_param_sub_plan[0..0],
 					"{months}": params->msg_param_cumulative_months,
 					"{streak}": params->msg_param_streak_months || "",
+					"{multimonth}": params->msg_param_multimonth_duration || "1", //Ditto re tenure
 				]));
 				runhooks("subscription", 0, this, "resub", person, params->msg_param_sub_plan[0..0], 1, params);
 				Stdio.append_file("subs.log", sprintf("\n%sDEBUG RESUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?

@@ -25,7 +25,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 -------------|-----------------------------|------------------|-------------
 !!follower | Someone follows the channel | The new follower | 
 !!sub | Someone subscribes for the first time | The subscriber | tier, multimonth
-!!resub | Someone announces a resubscription | The subscriber | tier, months, streak
+!!resub | Someone announces a resubscription | The subscriber | tier, months, streak, multimonth
 !!subgift | Someone gives a sub | The giver | tier, months, streak, recipient, multimonth
 !!subbomb | Someone gives random subgifts | The giver | tier, gifts
 !!cheer | Any bits are cheered (including anonymously) | The cheerer | bits
