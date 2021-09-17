@@ -59,7 +59,7 @@ mapping _get_message(string|int id, mapping msgs) {
 		parts[-1] = parts[-1][..<1]; //The last part will always end with a space.
 		msg->parts = parts - ({""}); //The first and last entries could end up as empty strings.
 	}
-	if (!msg->received) msg->received = (int)id;
+	if (!msg->received) msg->received = time();
 	msg->id = (string)id;
 	return msg;
 }
