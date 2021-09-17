@@ -14,6 +14,9 @@ li {line-height: 2.25;}
 	padding: 0;
 	margin-right: 0.25em;
 }
+.unread {
+	font-weight: bold;
+}
 </style>
 ";
 
@@ -80,4 +83,16 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!msgs) return;
 	if (m_delete(msgs, (string)msg->id)) update_one(conn->group, msg->id);
 	else conn->sock->send_text(Standards.JSON.encode((["cmd": "notify", "msg": "Deletion failed (already gone)"])));
+}
+
+void websocket_cmd_mark_read(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
+	sscanf(conn->group, "%s#%s", string uid, string chan);
+	if (!G->G->irc->channels["#" + chan]) return;
+	mapping msgmeta = persist_status->path("private", "#" + chan)[uid]->?_meta;
+	if (!msgmeta) return;
+	int was = msgmeta->lastread;
+	msgmeta->lastread = msgmeta->lastid;
+	persist_status->save();
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "mark_read", "why": msg->why || "", "was": was, "now": msgmeta->lastread])));
 }

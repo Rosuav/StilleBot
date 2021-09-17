@@ -547,7 +547,7 @@ class channel_notif
 			{
 				//Normally, you'll be sending something to someone who was recently in chat.
 				mapping msgs = persist_status->path("private", name, uid);
-				mapping meta = msgs["_meta"]; if (!meta) meta = msgs[".meta"] = ([]);
+				mapping meta = msgs["_meta"]; if (!meta) meta = msgs["_meta"] = ([]);
 				//Compat: If there are old messages, migrate them to the new ID scheme.
 				array(int) ids = sort((array(int))indices(msgs));
 				foreach (ids, int i) if (i > meta->lastid) {

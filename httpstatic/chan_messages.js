@@ -23,10 +23,16 @@ function date_display(date) {
 	return SPAN({className: "date", title: full_date_format.format(date)}, " [" + shortdate + "] ");
 }
 
+let lastread = -1;
+function is_unread(id) {
+	if (lastread === -1) return false; //How should messages display before we know whether they're unread or read?
+	return (+id) > lastread;
+}
+
 export const render_parent = DOM("#messages");
 export function render_item(msg) {
 	set_content("#loading", "");
-	return LI({"data-id": msg.id}, [
+	return LI({"data-id": msg.id, className: is_unread(msg.id) ? "unread" : ""}, [
 		BUTTON({type: "button", className: "confirmdelete"}, "🗑"),
 		date_display(new Date(msg.received * 1000)),
 		msg.parts ? SPAN(msg.parts.map(p =>
@@ -38,8 +44,20 @@ export function render_item(msg) {
 	]);
 }
 
+export function sockmsg_mark_read(data) {
+	//On startup, we ask the server to mark everything as Read, but we keep the unread
+	//status from prior to this mark.
+	if (data.why === "startup") lastread = data.was;
+	else lastread = data.now;
+	render_parent.querySelectorAll("[data-id]").forEach(el => {
+		el.className = is_unread(el.dataset.id) ? "unread" : "";
+	});
+}
+
 export function render_empty() {set_content("#loading", "You have no messages from this channel.");}
-export function render(data) { }
+export function render(data) {
+	if (lastread === -1) ws_sync.send({cmd: "mark_read", why: "startup"});
+}
 
 on("click", ".confirmdelete", waitlate(750, 5000, "Delete?", e => {
 	ws_sync.send({cmd: "delete", id: e.match.closest("li").dataset.id});
