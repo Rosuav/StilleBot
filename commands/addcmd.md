@@ -24,7 +24,7 @@ certain events. The special action must be one of the following:
 Special name | When it happens             | Initiator (`$$`) | Other info
 -------------|-----------------------------|------------------|-------------
 !!follower | Someone follows the channel | The new follower | 
-!!sub | Someone subscribes for the first time | The subscriber | tier
+!!sub | Someone subscribes for the first time | The subscriber | tier, multimonth
 !!resub | Someone announces a resubscription | The subscriber | tier, months, streak
 !!subgift | Someone gives a sub | The giver | tier, months, streak, recipient, multimonth
 !!subbomb | Someone gives random subgifts | The giver | tier, gifts

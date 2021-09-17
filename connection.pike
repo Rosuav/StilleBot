@@ -759,8 +759,12 @@ class channel_notif
 				}
 				//TODO: Handle sub plans better, esp since "Prime" should count as tier 1
 				case "sub":
-					Stdio.append_file("subs.log", sprintf("\n%sDEBUG RESUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
-					trigger_special("!sub", person, (["{tier}": params->msg_param_sub_plan[0..0]]));
+					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
+					trigger_special("!sub", person, ([
+						"{tier}": params->msg_param_sub_plan[0..0],
+						"{multimonth}": params->msg_param_multimonth_duration || "1",
+						//There's also msg_param_multimonth_tenure - what happens when they get announced? Does duration remain and tenure count up?
+					]));
 					runhooks("subscription", 0, this, "sub", person, params->msg_param_sub_plan[0..0], 1, params);
 					break;
 				case "resub": trigger_special("!resub", person, ([
