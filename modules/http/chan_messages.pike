@@ -69,7 +69,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping msgs = persist_status->path("private", channel->name)[grp];
 	if (!msgs) return (["items": ({ })]);
 	if (id) return _get_message(id, msgs);
-	return (["items": _get_message(sort(indices(msgs))[*], msgs)]);
+	return (["items": _get_message(sort((array(int))indices(msgs) - ({0}))[*], msgs)]);
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {

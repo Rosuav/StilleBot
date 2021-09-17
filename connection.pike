@@ -547,8 +547,15 @@ class channel_notif
 			{
 				//Normally, you'll be sending something to someone who was recently in chat.
 				mapping msgs = persist_status->path("private", name, uid);
-				int id = time();
-				while (msgs[(string)id]) ++id; //Hack to avoid collisions
+				mapping meta = msgs["_meta"]; if (!meta) meta = msgs[".meta"] = ([]);
+				//Compat: If there are old messages, migrate them to the new ID scheme.
+				array(int) ids = sort((array(int))indices(msgs));
+				foreach (ids, int i) if (i > meta->lastid) {
+					mapping msg = m_delete(msgs, (string)i);
+					if (msg) msgs[(string)++meta->lastid] = msg;
+				}
+				//End compat, shouldn't be needed once all are migrated.
+				int id = ++meta->lastid;
 				msgs[(string)id] = (["received": time(), "message": msg]);
 				persist_status->save();
 				G->G->websocket_types->chan_messages->update_one(uid + name, (string)id);
