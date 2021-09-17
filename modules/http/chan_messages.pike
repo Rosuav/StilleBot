@@ -19,6 +19,9 @@ li {line-height: 2.25;}
 .unread {
 	font-weight: bold;
 }
+.acknowledge {margin-left: 0.375em;}
+.soft-deleted {text-decoration: line-through;}
+.soft-deleted .acknowledge {display: none;}
 </style>
 ";
 
@@ -60,6 +63,9 @@ mapping _get_message(string|int id, mapping msgs) {
 		msg->parts = parts - ({""}); //The first and last entries could end up as empty strings.
 	}
 	if (!msg->received) msg->received = time();
+	//TODO: If msg->acknowledgement is a non-null non-string, flatten it to a string for the client.
+	//Technically the acknowledgement could be any echoable_message, though it'll usually be either
+	//null or a simple text string.
 	msg->id = (string)id;
 	return msg;
 }
@@ -85,6 +91,28 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!msgs) return;
 	if (m_delete(msgs, (string)msg->id)) update_one(conn->group, msg->id);
 	else conn->sock->send_text(Standards.JSON.encode((["cmd": "notify", "msg": "Deletion failed (already gone)"])));
+	persist_status->save();
+}
+
+void websocket_cmd_acknowledge(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
+	sscanf(conn->group, "%s#%s", string uid, string chan);
+	object channel = G->G->irc->channels["#" + chan];
+	if (!channel) return;
+	mapping msgs = persist_status->path("private", "#" + chan)[uid];
+	if (!msgs) return;
+	mapping mail = m_delete(msgs, (string)msg->id);
+	if (mail->acknowledgement) {
+		mapping person = (["uid": (int)uid]);
+		get_user_info((int)uid)->then() {mapping user = __ARGS__[0];
+			if (!user) return;
+			person->displayname = user->display_name;
+			person->user = user->login;
+			channel->send(person, mail->acknowledgement);
+		};
+	}
+	if (mail) update_one(conn->group, msg->id);
+	persist_status->save();
 }
 
 void websocket_cmd_mark_read(mapping(string:mixed) conn, mapping(string:mixed) msg) {

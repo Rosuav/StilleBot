@@ -41,6 +41,8 @@ export function render_item(msg) {
 			p.type === "image" ? IMG({src: p.url, title: p.text, alt: p.text}) :
 			p.text //Shouldn't happen, but if we get an unknown type, just emit the text
 		)) : msg.message,
+		msg.acknowledgement && " ",
+		msg.acknowledgement && BUTTON({type: "button", className: "acknowledge", title: "Will respond with: " + msg.acknowledgement}, "Got it, thanks!"),
 	]);
 }
 
@@ -60,7 +62,17 @@ export function render(data) {
 }
 
 on("click", ".confirmdelete", waitlate(750, 5000, "Delete?", e => {
-	ws_sync.send({cmd: "delete", id: e.match.closest("li").dataset.id});
+	const li = e.match.closest("li");
+	if (!li.dataset.id) li.replaceWith();
+	else ws_sync.send({cmd: "delete", id: li.dataset.id});
 }));
 
 on("click", "#mark_read", e => ws_sync.send({cmd: "mark_read", why: "explicit"}));
+
+on("click", ".acknowledge", e => {
+	const li = e.match.closest("li");
+	const id = li.dataset.id; if (!id) return;
+	delete li.dataset.id;
+	li.classList.add("soft-deleted");
+	ws_sync.send({cmd: "acknowledge", id});
+});
