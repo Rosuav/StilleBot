@@ -103,3 +103,5 @@
 * On Specials, don't show provisions top-level unless Classic editor
 * Doubling up on a waitlate gets it confused. Ideally it should unwaitlate the other,
   and restart the countdown timer.
+* If dest is "/set", looks at message->action, not cfg. Make this work with cfg, and
+  then make it also carry an acknowledgement for dest="/web".
