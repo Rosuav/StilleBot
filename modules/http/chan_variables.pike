@@ -33,14 +33,12 @@ void check_for_variables(string type, string name, echoable_message response, st
 			//people can go look on the main commands page for the details.
 			string delta = stringp(response->message) ? response->message : "something";
 			add_command(info, type, name,
-				response->action == "add" ? "Add " + delta : "Set to " + delta,
+				(response->action || response->destcfg) == "add" ? "Add " + delta : "Set to " + delta,
 				1);
 		}
 		check_for_variables(type, name, response->message, varname, info);
 	}
 }
-
-string fmt_cmd(mapping cmd) {return sprintf("!%s | %s", cmd->name, cmd->action);}
 
 echoable_message build_View(string var, string msg) {
 	return msg;
@@ -49,7 +47,7 @@ echoable_message build_View(string var, string msg) {
 echoable_message build_Increment(string var, string msg) {
 	return ([
 		"access": "mod", "message": ({
-			(["dest": "/set", "target": var, "message": "1", "action": "add"]),
+			(["dest": "/set", "target": var, "message": "1", "destcfg": "add"]),
 			msg,
 		}),
 	]);

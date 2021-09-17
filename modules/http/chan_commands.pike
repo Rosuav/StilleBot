@@ -180,7 +180,6 @@ mapping get_state(string group, string|void id) {
 //Blank or null is always allowed, and will result in no flag being set.
 constant message_flags = ([
 	"mode": (<"random">),
-	"action": (<"add">),
 	"dest": (<"/w", "/web", "/set">),
 ]);
 //As above, but applying only to the top level of a command.
@@ -233,6 +232,12 @@ echoable_message _validate(echoable_message resp, mapping state)
 		sscanf(resp->dest, "/%[a-z] %[a-zA-Z$%]%s", string dest, string target, string empty);
 		if ((<"w", "web", "set">)[dest] && target != "" && empty == "")
 			[ret->dest, ret->target] = ({"/" + dest, target});
+		//NOTE: In theory, a /web message's destcfg could represent an entire message subtree.
+		//Currently only simple strings will pass validation though.
+		//Note also that not all destcfgs are truly meaningful, but any string is valid and
+		//will be saved.
+		if (stringp(resp->destcfg) && resp->destcfg != "") ret->destcfg = resp->destcfg;
+		else if (resp->action == "add") ret->destcfg = "add"; //Handle variable management in the old style
 	}
 	if (resp->builtin && G->G->builtins[resp->builtin]) {
 		//Validated separately as the builtins aren't a constant

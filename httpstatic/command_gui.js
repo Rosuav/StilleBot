@@ -175,13 +175,13 @@ const types = {
 	},
 	incr_variable: {
 		color: "#dd7777", label: el => `Add ${el.message} to $${el.target}$`,
-		params: [{attr: "dest", values: "/set"}, {attr: "action", values: "add"},
+		params: [{attr: "dest", values: "/set"}, {attr: "destcfg", values: "add"},
 			{attr: "target", label: "Variable name"}, {attr: "message", label: "Increment by"}],
 		typedesc: "Update a variable. Can be accessed as $varname$ in this or any other command.",
 	},
 	incr_variable_complex: {
 		color: "#dd7777", children: ["message"], label: el => `Add onto $${el.target}$`,
-		params: [{attr: "dest", values: "/set"}, {attr: "action", values: "add"},
+		params: [{attr: "dest", values: "/set"}, {attr: "destcfg", values: "add"},
 			{attr: "target", label: "Variable name"},],
 		typedesc: "Capture message as a variable update. Can be accessed as $varname$ in this or any other command.",
 	},
@@ -958,6 +958,10 @@ export function gui_load_message(cmd_basis, msg) {
 	actives.splice(1); //Truncate
 	Object.assign(actives[0], cmd_basis);
 	if (typeof msg === "string" || Array.isArray(msg)) msg = {message: msg};
+	if (msg.action) {
+		msg.destcfg = msg.action;
+		delete msg.action;
+	}
 	for (let attr in flags) {
 		actives[0][attr] = msg[attr] || "";
 		delete msg[attr];

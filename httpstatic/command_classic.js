@@ -11,7 +11,6 @@ const flags = {
 	builtin: {"": "None", "*": "Call on extra information from a built-in function or action"},
 	dest: {"": "Chat", "/w": "Whisper", "/web": "Private message", "/set": "Set a variable",
 		"*": "Where should the response be sent?"},
-	action: {"": "Set the value", "add": "Add to the value", "*": "When setting a variable, should it increment or replace?"}, //TODO: Deprecate
 };
 for (let name in builtins) {
 	//TODO: Show the param label somewhere, somehow?
@@ -233,6 +232,7 @@ function render_command(cmd, toplevel) {
 			])]),
 		]));
 	}
+	opts.push(TR({className: "destcfgrow"}, [TD(INPUT({"data-flag": "destcfg", value: cmd.action || cmd.destcfg || ""})), TD("Extra config. Use 'add' to add to a variable. See docs?")]));
 	opts.push(TR({className: "targetrow"}, [TD(INPUT({"data-flag": "target", value: cmd.target || ""})), TD("Who/what should it send to? User or variable name.")]));
 	const voiceids = Object.keys(voices);
 	if (voiceids.length > 0 || cmd.voice) {

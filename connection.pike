@@ -426,10 +426,15 @@ class channel_notif
 		//Legacy mode: dest is dest + " " + target, target doesn't exist
 		if (has_value(message->dest || "", ' ') && !message->target) {
 			sscanf(message->dest, "%s %s", string d, string t);
-			cfg |= (["dest": d, "target": _substitute_vars(t, vars, person)]);
+			cfg |= (["dest": d, "target": _substitute_vars(t, vars, person), "destcfg": message->action || ""]);
 		}
 		//Normal mode: Destination and target are separate fields
-		else if (message->dest) cfg |= (["dest": message->dest, "target": _substitute_vars(message->target || "", vars, person)]);
+		//Note that message->action was a variables-only form of destcfg, so it is merged in too.
+		else if (message->dest) cfg |= ([
+			"dest": message->dest,
+			"target": _substitute_vars(message->target || "", vars, person),
+			"destcfg": _substitute_vars(message->action || message->destcfg || "", vars, person),
+		]);
 
 		if (message->builtin) {
 			object handler = G->G->builtins[message->builtin] || message->builtin; //Chaining can be done by putting the object itself in the mapping
@@ -528,7 +533,7 @@ class channel_notif
 		//And now we have just a single string to send.
 		string prefix = _substitute_vars(message->prefix || "", vars, person);
 		msg = _substitute_vars(msg, vars, person);
-		string dest = cfg->dest || "", target = cfg->target || "";
+		string dest = cfg->dest || "", target = cfg->target || "", destcfg = cfg->destcfg || "";
 		if (dest == "/web")
 		{
 			//Stash the text away. Recommendation: Have a public message that informs the
@@ -557,6 +562,7 @@ class channel_notif
 				//End compat, shouldn't be needed once all are migrated.
 				int id = ++meta->lastid;
 				msgs[(string)id] = (["received": time(), "message": msg]);
+				if (destcfg != "") msgs[(string)id]->acknowledgement = destcfg;
 				persist_status->save();
 				G->G->websocket_types->chan_messages->update_one(uid + name, (string)id);
 				return; //Nothing more to send here.
@@ -567,7 +573,7 @@ class channel_notif
 		//these with public messages. (Silence is perfectly acceptable for triggers.)
 		if (dest == "/set" && sscanf(target, "%[A-Za-z]", string var) && var && var != "")
 		{
-			vars["$" + var + "$"] = set_variable(var, msg, message->action);
+			vars["$" + var + "$"] = set_variable(var, msg, destcfg);
 			return;
 		}
 
