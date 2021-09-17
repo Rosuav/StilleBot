@@ -4,6 +4,8 @@ constant markdown = #"# Messages for $$recip$$ from channel $$channel$$
 <div id=loading>Loading...</div>
 <ul id=messages></ul>
 
+[Mark all as read](:#mark_read)
+
 <style>
 li {line-height: 2.25;}
 .date {

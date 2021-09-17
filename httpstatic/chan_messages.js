@@ -62,3 +62,5 @@ export function render(data) {
 on("click", ".confirmdelete", waitlate(750, 5000, "Delete?", e => {
 	ws_sync.send({cmd: "delete", id: e.match.closest("li").dataset.id});
 }));
+
+on("click", "#mark_read", e => ws_sync.send({cmd: "mark_read", why: "explicit"}));
