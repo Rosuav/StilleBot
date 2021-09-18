@@ -151,13 +151,6 @@ let pending_command = null;
 if (location.hash && location.hash.includes("/")) pending_command = location.hash.slice(1).split("/", 2);
 
 //Command summary view
-function arrayify(m) {return Array.isArray(m) ? m : [m];}
-function unarrayify(m) {
-	if (!Array.isArray(m)) return m;
-	if (m.length === 1) return m[0];
-	if (!m.length) return null;
-	return m;
-}
 function scan_message(msg, msgstatus, parent, key) {
 	if (typeof msg === "string") {
 		if (msgstatus.replacetext) parent[key] = msgstatus.replacetext;
@@ -166,7 +159,7 @@ function scan_message(msg, msgstatus, parent, key) {
 	}
 	if (Array.isArray(msg)) {
 		//Map recurse, filter out any empty strings or null returns.
-		return unarrayify(msg.map((m,i) => scan_message(m, msgstatus, msg, i)).filter(m => m));
+		return [].concat(...msg.map((m,i) => scan_message(m, msgstatus, msg, i)).filter(m => m));
 	}
 	if (!msg || typeof msg !== "object") return null; //Not sure what this could mean, but we can't handle it. Probably a null entry or something.
 	if (msg.dest === "/w") msgstatus.whisper = true;
@@ -181,7 +174,7 @@ function scan_message(msg, msgstatus, parent, key) {
 		if (!msg || !oth) return msg || oth; //If either is missing, use the other. (Or null if both are, but that shouldn't happen.)
 		//Both branches have text. Say that it'll be "one of" these.
 		msgstatus.oneof = true;
-		return unarrayify([...arrayify(msg), ...arrayify(oth)]);
+		return [].concat(msg, oth);
 	}
 	return scan_message(msg.message, msgstatus, msg, "message");
 }
