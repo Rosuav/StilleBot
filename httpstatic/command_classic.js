@@ -302,5 +302,5 @@ function get_command_details(elem) {
 	//will clean it up before next load anyhow.
 	return ret;
 }
-export function cls_save_message() {return get_command_details(DOM("#command_details").firstChild);}
+export function cls_save_message() {return get_command_details(DOM("#command_details > .optedmsg"));}
 export function cls_load_message(cmd_basis, cmd_editing) {set_content("#command_details", render_command(cmd_editing, cmd_basis.command));}
