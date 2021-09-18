@@ -12,7 +12,6 @@ document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 		])))),
 	]),
 	FORM([
-		UL({id: "parameters"}),
 		DIV({id: "command_details"}),
 		DIV({id: "command_frame"}, [
 			P("Drag elements around and snap them into position to build a command. Double-click an element to change its text etc."),
@@ -104,15 +103,9 @@ function select_tab(tab, response) {
 }
 on("change", "#cmdviewtabset input", e => change_tab(e.match.value));
 
-function describe_params(params) {
-	//TODO: Make them clickable to insert that token in the current EF??
-	return Object.keys(params).map(p => LI([CODE(p), " - " + params[p]]));
-}
-
 export function open_advanced_view(cmd, tab) {
 	mode = ""; cmd_id = cmd.id; cmd_basis = config.get_command_basis(cmd);
 	if (!tablist.some(t => t.toLowerCase() === tab)) tab = defaulttab;
-	if (DOM("#parameters")) set_content("#parameters", describe_params(cmd_basis.provides || { }));
 	DOM('[name="editor"][value="' + tab + '"]').checked = true; select_tab(tab, cmd);
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();

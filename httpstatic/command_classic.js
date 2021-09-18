@@ -1,6 +1,6 @@
 //Command editor: Classic mode
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, CODE, DETAILS, SUMMARY, DIV, FIELDSET, INPUT, LABEL, LEGEND, SELECT, OPTION, TABLE, TBODY, TR, TH, TD} = choc;
+const {A, BR, BUTTON, CODE, DETAILS, SUMMARY, DIV, FIELDSET, INPUT, LABEL, LEGEND, SELECT, OPTION, TABLE, TBODY, TR, TH, TD, UL, LI} = choc;
 
 const flags = {
 	mode: {"": "Sequential", random: "Random", "*": "Where multiple responses are available, send them all or pick one at random?"},
@@ -303,4 +303,10 @@ function get_command_details(elem) {
 	return ret;
 }
 export function cls_save_message() {return get_command_details(DOM("#command_details > .optedmsg"));}
-export function cls_load_message(cmd_basis, cmd_editing) {set_content("#command_details", render_command(cmd_editing, cmd_basis.command));}
+export function cls_load_message(cmd_basis, cmd_editing) {
+	set_content("#command_details", [
+		//Maybe make the Provides entries clickable to insert that token in the current EF??
+		UL(Object.keys(cmd_basis.provides || { }).map(p => LI([CODE(p), " - " + cmd_basis.provides[p]]))),
+		render_command(cmd_editing, cmd_basis.command),
+	]);
+}
