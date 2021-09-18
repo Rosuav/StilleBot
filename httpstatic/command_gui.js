@@ -964,6 +964,7 @@ function message_to_element(msg, new_elem, array_ok) {
 export function gui_load_message(cmd_basis, msg) {
 	actives.splice(1); //Truncate
 	Object.assign(actives[0], cmd_basis);
+	msg = JSON.parse(JSON.stringify(msg)); //Deep disconnect from the original, allowing mutation
 	if (typeof msg === "string" || Array.isArray(msg)) msg = {message: msg};
 	if (msg.action) {
 		msg.destcfg = msg.action;
