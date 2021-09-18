@@ -101,5 +101,3 @@
     around even after Graphical becomes the default.
   - Mnemonics to switch editors? Would that cause problems w/ asynchronicity?
 * On Specials, don't show provisions top-level unless Classic editor
-* Doubling up on a waitlate gets it confused. Ideally it should unwaitlate the other,
-  and restart the countdown timer.
