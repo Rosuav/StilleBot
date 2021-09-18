@@ -94,7 +94,4 @@
     sub/resub count).
 * Special trigger when any goal bar tiers up?? Would be better than the weird system
   where it triggers an actual command. Could deep link straight to the editor now.
-* What will it take to make the graphical editor the default?
-  - Add some docs on PCRE syntax??
-  - Note that the Classic editor is far more a11y-friendly, so it should be kept
-    around even after Graphical becomes the default.
+* Find a good one-page PCRE syntax summary to link to

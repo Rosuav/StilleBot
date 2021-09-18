@@ -1,7 +1,7 @@
 //Command advanced editor framework, and Raw mode editor
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {BR, BUTTON, CANVAS, CODE, DIALOG, DIV, EM, FORM, HEADER, H3, INPUT, LABEL, LI, P, SECTION, SPAN, TEXTAREA, U, UL, TR, TD} = choc;
-const tablist = ["Classic", "Graphical", "Raw"], defaulttab = "classic";
+const tablist = ["Classic", "Graphical", "Raw"], defaulttab = "graphical";
 document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 	HEADER([
 		H3("Edit trigger"),
