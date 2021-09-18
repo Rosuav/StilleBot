@@ -493,7 +493,7 @@ class channel_notif
 			}
 			case "cooldown": //Timeout (defined in seconds, although the front end may show it as mm:ss or hh:mm:ss)
 			{
-				string key = message->cdname + "#" + name;
+				string key = message->cdname + name;
 				int delay = G->G->cooldown_timeout[key] - time();
 				if (delay < 0) { //The time has passed!
 					G->G->cooldown_timeout[key] = time() + message->cdlength; //But reset it.
