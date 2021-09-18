@@ -73,7 +73,7 @@ function change_tab(tab) {
 
 //If we try to open graphical view before it's loaded, twiddle our thumbs for a while.
 function try_gui_load_message(basis, editing) {
-	if (gui_load_message) return gui_load_message(cmd_basis, cmd_editing);
+	if (gui_load_message) return gui_load_message(basis, editing);
 	setTimeout(try_gui_load_message, 0.025, basis, editing);
 }
 
