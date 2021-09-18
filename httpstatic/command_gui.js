@@ -228,8 +228,9 @@ const types = {
 	},
 	cooldown: {
 		color: "#aacc55", children: ["message", "otherwise"], label: el => [el.cdlength + "-second cooldown", "If on cooldown:"],
-		params: [{attr: "conditional", values: "cooldown"}, {attr: "cdname", label: "Tag (optional)", values: cooldown_name},
-			{attr: "cdlength", label: "Delay (seconds)", values: [1, 7200, 1]}],
+		params: [{attr: "conditional", values: "cooldown"},
+			{attr: "cdlength", label: "Delay (seconds)", values: [1, 7200, 1]},
+			{attr: "cdname", label: "Tag (optional)", values: cooldown_name}],
 		typedesc: "Prevent the command from being used too quickly. If it's been used recently, the second block happens instead.",
 	},
 	random: {
