@@ -95,3 +95,4 @@
 * Special trigger when any goal bar tiers up?? Would be better than the weird system
   where it triggers an actual command. Could deep link straight to the editor now.
 * Find a good one-page PCRE syntax summary to link to
+* Improve tabular command view on narrower screens
