@@ -231,7 +231,8 @@ const types = {
 		params: [{attr: "conditional", values: "cooldown"},
 			{attr: "cdlength", label: "Delay (seconds)", values: [1, 7200, 1]},
 			{attr: "cdname", label: "Tag (optional)", values: cooldown_name}],
-		typedesc: "Prevent the command from being used too quickly. If it's been used recently, the second block happens instead.",
+		typedesc: "Prevent the command from being used too quickly. If it's been used recently, the second block happens instead. "
+			+ "To have several commands share a cooldown, put the same tag in each one (any word or phrase will do).",
 	},
 	random: {
 		color: "#ee7777", children: ["message"], label: el => "Randomize",

@@ -161,3 +161,9 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 	margin: 5px 0;
 	flex-wrap: wrap;
 }
+#typedesc {max-width: fit-content;}
+#setprops {min-width: 25em;}
+/* Alternating colours doesn't really improve things much
+#setprops tr:nth-child(odd) {background: #dff;}
+#setprops tr:nth-child(even) {background: #ddf;}
+*/
