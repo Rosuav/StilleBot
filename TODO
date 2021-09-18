@@ -100,4 +100,3 @@
   - Note that the Classic editor is far more a11y-friendly, so it should be kept
     around even after Graphical becomes the default.
   - Mnemonics to switch editors? Would that cause problems w/ asynchronicity?
-* On Specials, don't show provisions top-level unless Classic editor
