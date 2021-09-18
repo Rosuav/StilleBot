@@ -86,7 +86,11 @@ const text_message = {...default_handlers,
 		msg.message.push("");
 		return msg.message;
 	},
-}
+};
+//Special case: The cooldown name field can contain an internal ID, eg ".fuse:1", which won't be interesting to the user.
+const cooldown_name = {...default_handlers,
+	make_control: (id, val, el) => default_handlers.make_control(id, (val && val[0] === '.') ? "" : val, el),
+};
 
 function builtin_types() {
 	const ret = { };
@@ -224,7 +228,8 @@ const types = {
 	},
 	cooldown: {
 		color: "#aacc55", children: ["message", "otherwise"], label: el => [el.cdlength + "-second cooldown", "If on cooldown:"],
-		params: [{attr: "cdlength", label: "Delay (seconds)", values: [1, 7200, 1]}, {attr: "cdname", label: "Tag (optional)"}],
+		params: [{attr: "conditional", values: "cooldown"}, {attr: "cdname", label: "Tag (optional)", values: cooldown_name},
+			{attr: "cdlength", label: "Delay (seconds)", values: [1, 7200, 1]}],
 		typedesc: "Prevent the command from being used too quickly. If it's been used recently, the second block happens instead.",
 	},
 	random: {
