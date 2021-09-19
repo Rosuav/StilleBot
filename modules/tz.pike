@@ -20,6 +20,8 @@ constant vars_provided = ([
 	"{second}": "Time in specified timezone: Second (2 digits)",
 	"{weekday}": "Weekday name (in English, full word, eg 'Monday')",
 	"{weekday_short}": "Weekday name (in English, abbr, eg 'Mon')",
+	"{monthname}": "Month name (in English, full word, eg 'September')",
+	"{monthname_short}": "Weekday name (in English, abbr, eg 'Sep')",
 ]);
 
 mapping message_params(object channel, mapping person, string param)
@@ -34,6 +36,8 @@ mapping message_params(object channel, mapping person, string param)
 	info["{day}"] = sprintf("%02d", t->month_day());
 	info["{weekday}"] = t->week_day_name();
 	info["{weekday_short}"] = t->week_day_shortname();
+	info["{monthname}"] = t->month_name();
+	info["{monthname_short}"] = t->month_shortname();
 	return info;
 }
 
