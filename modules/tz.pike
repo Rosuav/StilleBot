@@ -1,5 +1,5 @@
 inherit builtin_command;
-constant featurename = 0; //TODO: Make a default-ish command with a proper feature-enabler?
+constant active_channels = ({""});
 
 mapping timezones;
 mapping(string:string) tzleaf;
@@ -8,7 +8,7 @@ constant command_description = "Show the current time in a particular, or your d
 constant builtin_description = "Get the current date and time in a particular timezone"; //TODO: Or convert date/time
 constant builtin_name = "Date/Time";
 constant builtin_param = "Timezone name"; //TODO: And optional date
-constant default_response = "";
+constant default_response = "It's currently {hour}:{minute} {weekday_short} in {tz}.";
 constant vars_provided = ([
 	"{tz}": "Timezone in canonical form eg Australia/Melbourne",
 	"{unix}": "Unix time right now", //TODO: Or the date/time converted
