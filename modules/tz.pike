@@ -26,7 +26,6 @@ constant vars_provided = ([
 
 mapping message_params(object channel, mapping person, string param)
 {
-	write("GET PARAMS: %O\n", param);
 	string tz = replace(param, " ", "_");
 	tz = tzleaf[lower_case(tz)] || tz; //If you enter "Melbourne", use "Australia/Melbourne" automatically.
 	object t = Calendar.Gregorian.Second()->set_timezone(tz);
