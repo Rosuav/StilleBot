@@ -33,7 +33,7 @@ int|float binop(int|float left, string op, int|float right) {
 }
 
 string stitch(string ... parts) {return parts * "";}
-int makeint(string digits) {return (int)digits;}
+int makeint(string digits) {sscanf(digits, "%d", int ret); return ret;} //Always parse as decimal
 float makefloat(string digits) {return (float)digits;}
 int|float parens(string open, int|float val, string close) {return val;}
 
