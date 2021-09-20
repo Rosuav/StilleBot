@@ -505,8 +505,8 @@ function render(set, y) {
 	});
 }
 //NOTE: The color *must* be a string of the form "#rrggbb" as it will have alpha added
-function boxed_set(set, color, desc, y) {
-	const h = set.map(el => element_path(el).totheight + 10).reduce((x,y) => x + y, 30)
+function boxed_set(set, color, desc, y, minheight) {
+	const h = Math.max(set.map(el => element_path(el).totheight + 10).reduce((x,y) => x + y, 30), minheight || 0);
 	ctx.save();
 	ctx.fillStyle = color;
 	ctx.fillRect(template_x - 10, y, 220, h);
@@ -553,7 +553,8 @@ function repaint() {
 		}
 		tab_y += tab_height;
 	}
-	let spec_y = boxed_set(trays[current_tray], curtab_color, "Current tray: " + current_tray, tray_y);
+	tab_y += tab_width * 3 / 2;
+	let spec_y = boxed_set(trays[current_tray], curtab_color, "Current tray: " + current_tray, tray_y, tab_y - tray_y);
 	if (curtab_y) {
 		//Draw the current tab
 		ctx.save();
