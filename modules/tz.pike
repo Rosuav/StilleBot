@@ -1,8 +1,7 @@
 inherit builtin_command;
 constant active_channels = ({""});
 
-mapping timezones;
-mapping(string:string) tzleaf;
+mapping(string:string) timezones = ([]);
 
 constant command_description = "Show the current time in a particular, or your default, timezone";
 constant builtin_description = "Get the current date and time in a particular timezone"; //TODO: Or convert date/time
@@ -27,7 +26,7 @@ constant vars_provided = ([
 mapping message_params(object channel, mapping person, string param)
 {
 	string tz = replace(param, " ", "_");
-	tz = tzleaf[lower_case(tz)] || tz; //If you enter "Melbourne", use "Australia/Melbourne" automatically.
+	tz = timezones[lower_case(tz)] || tz; //If you enter "Melbourne", use "Australia/Melbourne" automatically.
 	object t = Calendar.Gregorian.Second()->set_timezone(tz);
 	mapping info = (["{tz}": tz, "{unix}": t->unix_time()]);
 	foreach ("year month hour minute second" / " ", string twodigit) //Yes, year too, since a four digit number will still render correctly
@@ -42,17 +41,9 @@ mapping message_params(object channel, mapping person, string param)
 
 protected void create(string name)
 {
-	timezones = ([]); tzleaf = ([]);
-	foreach (sort(Calendar.TZnames.zonenames()), string zone)
-	{
-		array(string) parts = lower_case(zone)/"/";
-		mapping tz = timezones;
-		foreach (parts[..<1], string region)
-			if (!tz[region]) tz = tz[region] = ([]);
-			else tz = tz[region];
-		tz[parts[-1]] = zone;
-		if (tzleaf[parts[-1]]) werror("%s\n", tzleaf[parts[-1]] = "ASSERT FAILED - duplicate leaf node " + tzleaf[parts[-1]] + " and " + zone);
-		else tzleaf[parts[-1]] = zone;
-	}
+	//Map the last part of a timezone name to the full name, eg "Melbourne" ==> "Australia/Melbourne"
+	//but compatible with weirder names like Salta ==> America/Argentina/Salta
+	foreach (Calendar.TZnames.zonenames(), string zone)
+		timezones[(lower_case(zone) / "/")[-1]] = zone;
 	::create(name);
 }
