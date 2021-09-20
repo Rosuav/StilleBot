@@ -146,6 +146,7 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 }
 #cmdviewtabset li {
 	background: #a0f0c0;
+	padding-right: 0.25em;
 }
 
 #command_gui {
