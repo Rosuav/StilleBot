@@ -33,6 +33,7 @@ th, td {width: 100%;}
 dialog td:last-of-type {width: 100%;}
 th:first-of-type, th:last-of-type, td:first-of-type, td:last-of-type {width: max-content;}
 td:nth-of-type(2n+1):not([colspan]) {white-space: nowrap;}
+code {overflow-wrap: anywhere;}
 .gap {height: 1em;}
 td ul {margin: 0;}
 </style>

@@ -60,4 +60,5 @@ table {width: 100%;}
 th, td {width: 100%;}
 th:first-of-type, th:last-of-type, td:first-of-type, td:last-of-type {width: max-content;}
 td:nth-of-type(2n+1) {white-space: nowrap;}
+code {overflow-wrap: anywhere;}
 </style>
