@@ -325,13 +325,16 @@ const tray_tabs = [
 		{type: "conditional_string", expr1: "{param}"},
 		{type: "cooldown", cdlength: "30", cdname: ""},
 	]},
-	{name: "Advanced", color: "#f7bbf7", items: [
+	{name: "Alternate delivery", color: "#f7bbf7", items: [
 		{type: "whisper_back", message: "Shh! This is a whisper!"},
-		{type: "incr_variable", target: "deaths", message: "1"},
-		{type: "set_variable", target: "deaths", message: "0"},
-		{type: "builtin_uptime"},
-		{type: "builtin_shoutout", builtin_param: "%s"},
-		{type: "builtin_calc", builtin_param: "1 + 2 + 3"},
+		{type: "whisper_other", target: "{param}", message: [{type: "text", message: "Here's a whisper!"}]},
+		{type: "voice", voice: ""},
+		{type: "group", message: [
+			{type: "web_message", target: "{param}", message: [
+				{type: "text", message: "This is a top secret message."},
+			]},
+			{type: "text", message: "@{param}, a secret message has been sent to you at: " + new URL("private", location.href).href},
+		]},
 	]},
 	{name: "Conditionals", color: "#bbbbf7", items: [
 		{type: "conditional_contains", expr1: "/foo/bar/quux/", expr2: "/%s/"},
@@ -339,16 +342,13 @@ const tray_tabs = [
 		{type: "conditional_regexp", expr1: "[Hh]ello", expr2: "%s"},
 		//NOTE: Even though they're internally conditionals too, cooldowns don't belong in this tray
 	]},
-	{name: "Special", color: "#bbffbb", items: [
+	{name: "Advanced", color: "#bbffbb", items: [
+		{type: "incr_variable", target: "deaths", message: "1"},
+		{type: "set_variable", target: "deaths", message: "0"},
+		{type: "builtin_uptime"},
+		{type: "builtin_shoutout", builtin_param: "%s"},
+		{type: "builtin_calc", builtin_param: "1 + 2 + 3"},
 		{type: "delay", delay: "2"},
-		{type: "voice", voice: ""},
-		{type: "whisper_other", target: "{param}", message: [{type: "text", message: "Here's a whisper!"}]},
-		{type: "group", message: [
-			{type: "web_message", target: "{param}", message: [
-				{type: "text", message: "This is a top secret message."},
-			]},
-			{type: "text", message: "@{param}, a secret message has been sent to you at: " + new URL("private", location.href).href},
-		]},
 	]},
 	{name: "Extras", color: "#7f7f7f", items: []}, //I'm REALLY not happy with these names.
 ];
