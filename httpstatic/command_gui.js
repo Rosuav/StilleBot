@@ -348,6 +348,7 @@ const tray_tabs = [
 		{type: "builtin_uptime"},
 		{type: "builtin_shoutout", builtin_param: "%s"},
 		{type: "builtin_calc", builtin_param: "1 + 2 + 3"},
+		{type: "builtin_tz", builtin_param: "Los Angeles"},
 		{type: "delay", delay: "2"},
 	]},
 	{name: "Extras", color: "#7f7f7f", items: []}, //I'm REALLY not happy with these names.
