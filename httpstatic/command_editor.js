@@ -6,7 +6,7 @@ document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 	HEADER([
 		H3("Edit trigger"),
 		DIV(BUTTON({type: "button", className: "dialog_cancel"}, "x")),
-		UL({id: "cmdviewtabset"}, tablist.map(tab => LI(LABEL([
+		UL({id: "cmdviewtabset", className: "buttonbox"}, tablist.map(tab => LI(LABEL([
 			INPUT({type: "radio", name: "editor", value: tab.toLowerCase(), accessKey: tab[0]}),
 			SPAN([U(tab[0]), tab.slice(1)]),
 		])))),
@@ -17,10 +17,10 @@ document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 			P("Drag elements around and snap them into position to build a command. Double-click an element to change its text etc."),
 			CANVAS({id: "command_gui", width: "800", height: "600"}),
 		]),
-		P([
-			BUTTON({type: "button", id: "save_advanced"}, "Save"),
-			BUTTON({type: "button", className: "dialog_close"}, "Cancel"),
-			BUTTON({type: "button", id: "delete_advanced"}, "Delete?"),
+		UL({className: "buttonbox"}, [
+			LI(BUTTON({type: "button", id: "save_advanced"}, "Save")),
+			LI(BUTTON({type: "button", className: "dialog_close"}, "Cancel")),
+			LI(BUTTON({type: "button", id: "delete_advanced"}, "Delete?")),
 		]),
 	]),
 ])));

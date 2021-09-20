@@ -137,7 +137,7 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 
 /* Styling of command editors - classic, graphical, and raw */
 #advanced_view header div {order: 2;} /* Force the close button to the end */
-#cmdviewtabset {
+.buttonbox {
 	display: flex;
 	padding: 0; margin: 0;
 	list-style-type: none;
