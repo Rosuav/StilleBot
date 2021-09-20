@@ -68,13 +68,8 @@
   - This would allow the bot to see its own messages, but only if sent by a non-primary
     account.
   - Can this kind of auth be used to get host notifications??
-* Login responses can now redirect to queried URLs. Check for all where this is crucial
-  (cf MPN with ?document=) and ensure that the appropriate query vars are whitelisted.
-* Dialogs now autoclose only if formless. Ensure that the annoying cases get forms
-  added or removed as appropriate.
 * Authentication on Firefox may now have issues with the default popup blocker. Can we
   comply with normal "click for popup" expectations somehow?
-* Giveaway: Replace login links with buttons
 * Enable/disable rewards - allow use of title, will do lookup
 * Redemption triggers - specials?
 * Create a way to daisychain into an existing command. This will allow a special to
@@ -83,11 +78,8 @@
   - Will this make StilleBot commands Turing-complete?
 * If you attempt to rename a command or add an alias that already exists (and isn't an
   alias for the current command), warn on client side and block save unless confirmed.
-* Demo mode for the bot features. Allow anyone to "be a mod" for /channels/demo/ and
-  see features like the command editor, live.
-  - Mostly done. Some things are a bit ugly and have mutely nonfunctional buttons.
-    Would be nice to have those a little tidier.
-  - Hype train tracker and raid finder may get for=demo - should behave sanely
+* Tidy up demo mode a bit.
+  - Some pages have mutely nonfunctional buttons - they should announce that it's a demo.
 * Goal bar templates - nice easy ones that you can use right away
   - Note that Twitch now has on-platform goals that track current followers and subs,
     so this can continue to focus on how many have been gained recently (eg daily
@@ -95,4 +87,3 @@
 * Special trigger when any goal bar tiers up?? Would be better than the weird system
   where it triggers an actual command. Could deep link straight to the editor now.
 * Find a good one-page PCRE syntax summary to link to
-* Improve tabular command view on narrower screens
