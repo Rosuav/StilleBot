@@ -376,7 +376,7 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, msg);
-	if (!valid || !valid[0] || conn->session->fake) return;
+	if (!valid || !valid[0] || conn->session->?fake) return;
 	if (valid[1] != "") {
 		make_echocommand(@valid);
 		if (msg->cmdname == "" && has_prefix(conn->group, "!!trigger#")) {
