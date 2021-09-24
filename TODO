@@ -28,9 +28,6 @@
     - This might require dedicated code. But it's fun to see how far we can go without.
 * Across an update of connection.pike, retain the mod list, until such time as we get an
   updated list.
-* Thank people for hosting (effectively a spam command triggered by a host notice)
-  - Currently this is better done with Lisp Whispers, since distinguishing autohosts from
-    explicit hosts requires authentication as the broadcaster.
 * Pike HTTP, SSL, and keep-alive: what's going on? Is that why Chrome gets confused?
   - It's currently just disabled - we add "Connection: close" to all responses. Would
     be nice to figure out what's actually wrong and then reap the performance benefits.
