@@ -1,7 +1,7 @@
 # Regular Expressions
 
 Regular expressions offer a powerful text matching syntax, which you can use to
-make decisions in your commands and triggers. If you're familiar with PCRE syntax,
+make decisions in your commands and triggers. If you're already familiar with PCREs,
 [this cheat sheet](https://www.debuggex.com/cheatsheet/regex/pcre) lists all the
 special symbols that have meaning in a regexp.
 
