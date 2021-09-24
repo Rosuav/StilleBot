@@ -337,9 +337,9 @@ const tray_tabs = [
 		]},
 	]},
 	{name: "Conditionals", color: "#bbbbf7", items: [
-		{type: "conditional_contains", expr1: "/foo/bar/quux/", expr2: "/%s/"},
+		{type: "conditional_contains", expr1: "/foo/bar/quux/", expr2: "/{param}/"},
 		{type: "conditional_number", expr1: "$deaths$ > 10"},
-		{type: "conditional_regexp", expr1: "[Hh]ello", expr2: "%s"},
+		{type: "conditional_regexp", expr1: "[Hh]ello", expr2: "{param}"},
 		//NOTE: Even though they're internally conditionals too, cooldowns don't belong in this tray
 	]},
 	{name: "Advanced", color: "#bbffbb", items: [
