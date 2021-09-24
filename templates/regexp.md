@@ -1,8 +1,9 @@
 # Regular Expressions
 
-Brief summary of regular expression purpose.
-
-If you know PCREs, blah blah, here's a cheat sheet.
+Regular expressions offer a powerful text matching syntax, which you can use to
+make decisions in your commands and triggers. If you're familiar with PCRE syntax,
+[this cheat sheet](https://www.debuggex.com/cheatsheet/regex/pcre) lists all the
+special symbols that have meaning in a regexp.
 
 <form action="#" autocomplete="off">
 <table border>
@@ -17,14 +18,22 @@ If you know PCREs, blah blah, here's a cheat sheet.
 .regex-error {background: #fcc;}
 .regex-match {background: #cfc;}
 .regex-nomatch {background: #ccf;}
+
+code {background: #f0a0f0;}
+strong {background: #a0f0c0;}
 </style>
 
-In a regexp, you can use:
+## Regexp Features
 
-This
+Normal text in a regular expression matches that exact text. In these examples,
+`[Hh]ello` is a regexp, and **hello** is text that matches it.
 
-That
+### This
 
-the Other
+### That
+
+### the Other
+
+----
 
 Test out your regular expressions above and then use them in conditionals in commands and triggers.
