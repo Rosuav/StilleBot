@@ -141,11 +141,7 @@ export function sockmsg_validated(data) {
 	if (data.cmdname.startsWith("changetab_")) select_tab(data.cmdname.replace("changetab_", ""), data.response);
 }
 export function sockmsg_loadfavs(data) {load_favourites(data.favs);}
-
-let favourites_loaded = false;
-export function favcheck() {
-	if (!favourites_loaded) {favourites_loaded = true; ws_sync.send({cmd: "loadfavs"});}
-}
+ws_sync.send({cmd: "loadfavs"});
 
 let pending_command = null;
 if (location.hash && location.hash.includes("/")) pending_command = location.hash.slice(1).split("/", 2);
