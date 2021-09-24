@@ -1,11 +1,10 @@
-import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {LI, SPAN} = choc;
+import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 
-export function render(state) { }
+function send() {ws_sync.send({cmd: "test", regexp: DOM("#regexp").value, text: DOM("#text").value});}
+on("input", "#regexp,#text", send);
 
-on("input", "#regexp,#text", e => {
-	ws_sync.send({cmd: "test", regexp: DOM("#regexp").value, text: DOM("#text").value});
-});
+let sent = 0;
+export function render(state) {if (!sent) {sent = 1; send();}}
 
 export function sockmsg_testresult(msg) {
 	if (msg.error) set_content("#result", msg.error).className = "regex-error";

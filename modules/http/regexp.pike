@@ -9,6 +9,8 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 
 }
 
+mapping get_state(string group, string|void id) {return ([]);}
+
 void websocket_cmd_test(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	object re = regex_cache[msg->regexp];
 	mapping ret = (["cmd": "testresult", "regexp": msg->regexp, "text": msg->text]);
