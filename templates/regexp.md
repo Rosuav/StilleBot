@@ -7,8 +7,8 @@ special symbols that have meaning in a regexp.
 
 <form action="#" autocomplete="off">
 <table border>
-<tr><td><label for=regexp>Reg Exp:</label></td><td><input id=regexp value="[Hh]ello"></td></tr>
-<tr><td><label for=text>Text:</label></td><td><input id=text value="hello"></td></tr>
+<tr><td><label for=regexp>Reg&nbsp;Exp:</label></td><td><input id=regexp value="^[Hh]ello$" size=60></td></tr>
+<tr><td><label for=text>Text:</label></td><td><input id=text value="hello" size=60></td></tr>
 <tr><td>Result:</td><td><span id=result></span></td></tr>
 </table>
 </form>
@@ -21,6 +21,9 @@ special symbols that have meaning in a regexp.
 
 code {background: #f0d0f0; margin: 0 0.25em}
 strong {background: #c0f0d0; margin: 0 0.25em}
+
+form {font-size: 125%;}
+input {font-size: 100%; width: 100%;}
 </style>
 
 ## Regexp Features
