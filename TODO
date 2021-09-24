@@ -87,3 +87,6 @@
 * Special trigger when any goal bar tiers up?? Would be better than the weird system
   where it triggers an actual command. Could deep link straight to the editor now.
 * Find a good one-page PCRE syntax summary to link to
+  - Make one.
+  - Use `code` for regex, *em* or **strong** for example text
+  - Aim it at people who don't know regex, but have front matter saying that it's PCRE
