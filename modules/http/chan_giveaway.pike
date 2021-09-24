@@ -24,7 +24,7 @@ $$login$$
 >
 > <button>Save/reconfigure</button>
 >
-> Giveaway notifications are handled through [special triggers](specials) and can be customized there.<br>
+> Giveaway notifications are handled through [special triggers](specials#Giveaways) and can be customized there.<br>
 > [Create default notifications (replacing existing ones)](: #makenotifs)
 >
 > </form>
