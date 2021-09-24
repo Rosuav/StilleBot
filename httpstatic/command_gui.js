@@ -21,7 +21,7 @@ and is everything that isn't in the Favs/Trays/Specials.
   - The primary anchor point may belong in Actives or may belong in Specials. Uncertain.
 */
 import choc, {set_content, DOM, on, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {BR, BUTTON, DIALOG, DIV, FORM, HEADER, H3, LABEL, INPUT, SECTION, SELECT, OPTION, P, TABLE, TR, TD, TEXTAREA, UL, LI, CODE} = choc;
+const {A, BR, BUTTON, DIALOG, DIV, FORM, HEADER, H3, LABEL, INPUT, SECTION, SELECT, OPTION, P, TABLE, TR, TD, TEXTAREA, UL, LI, CODE} = choc;
 
 const SNAP_RANGE = 100; //Distance-squared to permit snapping (eg 25 = 5px radius)
 const canvas = DOM("#command_gui");
@@ -160,7 +160,7 @@ const types = {
 	voice: {
 		color: "#bbbb33", children: ["message"], label: el => "Select voice: " + (voices_available[el.voice] || el.voice),
 		params: [{attr: "voice", label: "Voice", values: Object.keys(voices_available), selections: voices_available}],
-		typedesc: "Select a different voice for messages - only available if alternate voices are authorized",
+		typedesc: ["Select a different ", A({href: "voices"}, "voice"), " for messages - only available if alternate voices are authorized"],
 	},
 	whisper_back: {
 		color: "#99ffff", width: 400, label: el => "🤫 " + el.message,
@@ -175,7 +175,7 @@ const types = {
 	web_message: {
 		color: "#99ffff", children: ["message"], label: el => "🌏 to " + el.target,
 		params: [{attr: "dest", values: "/web"}, {attr: "target", label: "Recipient"}, {attr: "destcfg", label: "Response to 'Got it' button"}],
-		typedesc: "Leave a private message for someone",
+		typedesc: ["Leave a ", A({href: "messages"}, "private message"), " for someone"],
 	},
 	incr_variable: {
 		color: "#dd7777", label: el => `Add ${el.message} to $${el.target}$`,
@@ -219,7 +219,7 @@ const types = {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => ["Regular expression", "Otherwise:"],
 		params: [{attr: "conditional", values: "regexp"}, {attr: "casefold", label: "Case insensitive", values: bool_attr},
 			{attr: "expr1", label: "Reg Exp"}, {attr: "expr2", label: "Compare against"}],
-		typedesc: "Make a decision - if regular expression matches, do one thing, otherwise do something else.",
+		typedesc: ["Make a decision - if ", A({href: "/regexp"}, "regular expression"), " matches, do one thing, otherwise do something else."],
 	},
 	conditional_number: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => ["Numeric computation", "If it's zero/false:"],
