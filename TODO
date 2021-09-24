@@ -86,4 +86,3 @@
     sub/resub count).
 * Special trigger when any goal bar tiers up?? Would be better than the weird system
   where it triggers an actual command. Could deep link straight to the editor now.
-* On creating a command with no text, place nothing in the GUI. Maybe disallow all "" ?

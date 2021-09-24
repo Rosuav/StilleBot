@@ -58,6 +58,7 @@ const bool_attr = {...default_handlers,
 	retrieve_value: el => el.checked ? "on" : "",
 };
 const text_message = {...default_handlers,
+	validate: val => typeof val === "string" && val !== "",
 	make_control: (id, val, el) => {
 		//Collect up a list of parents in order from root to here
 		//We scan upwards, inserting parents before us, to ensure proper ordering.
@@ -959,8 +960,8 @@ function message_to_element(msg, new_elem, array_ok) {
 			return el;
 		}
 	}
-	if (msg.message) return message_to_element(msg.message, new_elem, array_ok);
-	return new_elem({type: "text", value: "Shouldn't happen"});
+	if (msg.message !== undefined) return message_to_element(msg.message, new_elem, array_ok);
+	return new_elem({type: "text", message: "Shouldn't happen"});
 }
 
 export function gui_load_message(cmd_basis, msg) {
