@@ -4,6 +4,7 @@
 let default_handler = null;
 let send_socket; //If present, send() is functional.
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
+let pending_message = null; //Allow at most one message to be queued on startup (will be sent after initialization)
 export function connect(group, handler)
 {
 	if (!handler) handler = default_handler;
@@ -12,6 +13,7 @@ export function connect(group, handler)
 		console.log("Socket connection established.");
 		socket.send(JSON.stringify({cmd: "init", type: handler.ws_type || ws_type, group}));
 		send_socket = socket; //Don't activate send() until we're initialized
+		if (pending_message) {socket.send(JSON.stringify(pending_message)); pending_message = null;}
 	};
 	socket.onclose = () => {
 		send_socket = null;
@@ -55,4 +57,4 @@ async function init() {default_handler = await import(ws_code); connect(ws_group
 if (document.readyState !== "loading") init();
 else window.addEventListener("DOMContentLoaded", init);
 
-export function send(msg) {if (send_socket) send_socket.send(JSON.stringify(msg));}
+export function send(msg) {if (send_socket) send_socket.send(JSON.stringify(msg)); else pending_message = msg;}
