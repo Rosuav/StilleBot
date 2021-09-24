@@ -8,5 +8,7 @@ on("input", "#regexp,#text", e => {
 });
 
 export function sockmsg_testresult(msg) {
-	console.log("Test result", msg);
+	if (msg.error) set_content("#result", msg.error).className = "regex-error";
+	else if (msg.matches) set_content("#result", "Matches").className = "regex-match";
+	else set_content("#result", "Doesn't match").className = "regex-nomatch";
 }
