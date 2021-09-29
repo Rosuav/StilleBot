@@ -17,7 +17,7 @@ constant game_desc = ([
 	"Just Chatting": "%s",
 	"Makers & Crafting": "streaming craft", //Don't really like this description, as it doesn't include the actual category
 	"Music & Performing Arts": "creating %s",
-	"Science & Technology": "creating %s",
+	"Software and Game Development": "magicking some %s",
 	//All others come up as "playing %s"
 	//TODO: Handle the IRL-tagged categories better.
 	//"ASMR"
