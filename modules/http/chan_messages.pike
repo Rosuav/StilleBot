@@ -45,6 +45,7 @@ mapping _get_message(string|int id, mapping msgs) {
 	string|mapping msg = msgs[(string)id];
 	if (!msg) return 0;
 	if (stringp(msg)) msg = (["message": msg]); else msg = ([]) | msg;
+	if (msg->expiry && msg->expiry < time()) return 0;
 	mapping emotes = G->G->emote_code_to_markdown;
 	if (!msg->parts && emotes) {
 		array parts = ({""});
@@ -80,7 +81,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping msgs = persist_status->path("private", channel->name)[grp];
 	if (!msgs) return (["items": ({ })]);
 	if (id) return _get_message(id, msgs);
-	return (["items": _get_message(sort((array(int))indices(msgs) - ({0}))[*], msgs)]);
+	return (["items": _get_message(sort((array(int))indices(msgs) - ({0}))[*], msgs) - ({0})]);
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {

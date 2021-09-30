@@ -329,6 +329,13 @@ class channel_notif
 		else send(person, cmd, person->vars);
 	}
 
+	void delete_msg(string uid, string msgid) {
+		mapping msgs = persist_status->path("private", name, uid);
+		m_delete(msgs, msgid);
+		persist_status->save();
+		G->G->websocket_types->chan_messages->update_one(uid + name, msgid);
+	}
+
 	string set_variable(string var, string val, string action)
 	{
 		var = "$" + var + "$";
@@ -565,7 +572,16 @@ class channel_notif
 				//NOTE: The destcfg has already been var-substituted, and then it gets reprocessed
 				//when it gets sent. That's a bit awkward. Maybe the ideal would be to retain it
 				//unprocessed, but keep the local vars, and then when it's sent, set _changevars?
-				if (destcfg != "") msgs[(string)id]->acknowledgement = destcfg;
+				if (destcfg != "") {
+					//TODO maybe: make destcfg accept non-string values, then it can just have
+					//multiple parts.
+					sscanf(destcfg, ":%d:%s", int timeout, string ack);
+					msgs[(string)id]->acknowledgement = ack || destcfg;
+					if (timeout) {
+						msgs[(string)id]->expiry = time() + timeout;
+						call_out(delete_msg, timeout, uid, (string)id);
+					}
+				}
 				persist_status->save();
 				G->G->websocket_types->chan_messages->update_one(uid + name, (string)id);
 				return; //Nothing more to send here.
