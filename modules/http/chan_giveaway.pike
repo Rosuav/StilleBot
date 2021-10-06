@@ -523,7 +523,7 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 			foreach (redemptions * ({ }), mapping redem)
 				set_redemption_status(redem, msg->action == "cancel" ? "CANCELED" : "FULFILLED");
 			array people = values(G->G->giveaway_tickets[chan]);
-			int tickets = `+(@people->tickets), entrants = sizeof(people->tickets - ({0}));
+			int tickets = sizeof(people->tickets) && `+(@people->tickets), entrants = sizeof(people->tickets - ({0}));
 			channel->trigger_special("!giveaway_ended", (["user": chan]), ([
 				"{title}": cfg->giveaway->title || "",
 				"{tickets_total}": (string)tickets,
@@ -627,7 +627,7 @@ continue Concurrent.Future check_bcaster_tokens() {
 	foreach (persist_status->path("bcaster_token"); string chan; string token) {
 		mixed resp = yield(twitch_api_request("https://id.twitch.tv/oauth2/validate",
 			(["Authorization": "Bearer " + token])));
-		string scopes = sort(resp->scopes) * " ";
+		string scopes = sort(resp->scopes || ({ })) * " ";
 		if (tokscopes[chan] != scopes) {tokscopes[chan] = scopes; persist_status->save();}
 	}
 }
