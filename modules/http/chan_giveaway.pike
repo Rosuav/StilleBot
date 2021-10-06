@@ -253,7 +253,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		write("Got request: %O\n", body);
 		if (int cost = (int)body->cost) {
 			//Master reconfiguration
-			array qty = (array(int))((body->multi || "") / " ") - ({0});
+			array qty = (array(int))(replace(body->multi || "", ",", " ") / " ") - ({0});
 			if (!has_value(qty, 1)) qty = ({1}) + qty;
 			if (!cfg->giveaway) cfg->giveaway = ([]);
 			mapping status = persist_status->path("giveaways", chan);
