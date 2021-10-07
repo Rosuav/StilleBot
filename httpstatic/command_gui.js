@@ -41,7 +41,8 @@ document.body.appendChild(DIALOG({id: "properties"}, SECTION([
 		P(BUTTON({id: "saveprops"}, "Close")),
 	])),
 ])));
-
+fix_dialogs();
+		
 const arrayify = x => Array.isArray(x) ? x : [x];
 const ensure_blank = arr => {
 	if (arr[arr.length - 1] !== "") arr.push(""); //Ensure the usual empty
