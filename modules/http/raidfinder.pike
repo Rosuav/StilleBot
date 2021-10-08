@@ -6,11 +6,6 @@ inherit http_endpoint;
 
 TODO: Put a real space between tags so highlighting works correctly.
 -- The browser seems to be ditching it for me. Not sure why, or how to stop it.
-
-Button on raid finder to evaluate recent raids and gauge stream length
-- Show simple average across recent streams
-- Show streams close to a week ago, two weeks ago, etc, in case schedule varies
-- It's okay if it's a bit slow - just get this when specifically requested
 */
 
 constant MAX_PREF = 3, MIN_PREF = -3;

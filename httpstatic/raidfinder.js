@@ -47,18 +47,31 @@ async function show_vod_lengths(userid, vodid, startdate) {
 	console.log("VODs:", info);
 	const uptime = Math.floor((new Date() - new Date(startdate)) / 1000);
 	const scale = Math.max(info.max_duration, uptime);
+	info.vods.unshift({duration_seconds: uptime, week_correlation: 0});
 	set_content("#vodlengths ul", info.vods.map(vod => {
-		//Show colour highlight on spectrum of 0 to 604800/2 for week_correlation
-		const li = LI(hms(vod.duration_seconds));
-		let gradient;
+		let date = "Current stream";
+		if (vod.created_at) {
+			const tm = new Date(vod.created_at);
+			date = "Mon Tue Wed Thu Fri Sat Sun".split(" ")[tm.getDay()] + " " +
+				"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[tm.getMonth()] + " " +
+				tm.getDate() + ", " +
+				((tm.getHours() % 12) || 12) + ":" +
+				("0" + tm.getMinutes()).slice(-2) +
+				(tm.getHours() >= 12 ? "pm" : "am");
+		}
+		const li = LI(hms(vod.duration_seconds) + " - " + date);
+		//Based on the week_correlation, figure out a colour to fill the bar with.
+		const correlation = vod.week_correlation / (604800/2); //Correlation is scaled to half a week
+		const paleness = Math.floor(correlation * 192 + 64);
+		let gradient = `rgb(${paleness}, 255, ${paleness}) `;
+		if (!vod.created_at) gradient = "#fcf "; //For the current VOD line, show it in pale red instead
 		const up = uptime / scale * 100, dur = vod.duration_seconds / scale * 100;
 		if (uptime < vod.duration_seconds) {
 			//Show the vod-length colour with an uptime hairline across it
-			gradient = `#a0f0c0 ${up}%, red ${up}% ${up + 0.25}%, #a0f0c0 ${up + 0.25}% ${dur}%, #ddd ${dur}%`;
+			gradient += `${up}%, red ${up}% ${up + 0.25}%, ${gradient} ${up + 0.25}% ${dur}%, #ddd ${dur}%`;
 		} else {
 			//Show the uptime hairline after the vod-length colour stops
-			gradient = `#a0f0c0 ${dur}%, #ddd ${dur}% ${up}%, red ${up}% ${up + 0.25}%, #ddd ${up + 0.25}%`;
-			console.log(gradient);
+			gradient += `${dur}%, #ddd ${dur}% ${up}%, red ${up}% ${up + 0.25}%, #ddd ${up + 0.25}%`;
 		}
 		li.style.background = "linear-gradient(to right, " + gradient + ")";
 		return li;

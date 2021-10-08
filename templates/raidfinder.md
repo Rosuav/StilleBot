@@ -114,8 +114,9 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 #viewerlegend {display: flex;}
 #viewerlegend div {margin-right: 0.5em; padding: 0.25em 0.125em;}
 
+#vodlengths {width: min-content;}
 #vodlengths li {
-	width: 400px; /* TODO: Shrink this on narrow screens (but how much?) */
+	width: 500px; /* TODO: Shrink this on narrow screens (but how much?) */
 	margin-right: 25px;
 }
 
@@ -171,5 +172,12 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 <script type=module src="$$static||raidfinder.js$$"></script>
 
 > ### Previous stream lengths
+>
+> Green bars represent previous stream lengths, with current uptime shown as a red hairline.
+> Streams precisely a week ago, two weeks ago, etc, are vibrant green, with paler green for
+> streams at other times of the week.
+>
+> Dates and times are in your local time zone.
+>
 > <ul></ul>
 {: tag=dialog #vodlengths}
