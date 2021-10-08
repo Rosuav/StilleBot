@@ -770,7 +770,7 @@ mapping(string:mixed) redirect(string url, int|void status)
 
 mapping(string:mixed) jsonify(mixed data, int|void jsonflags)
 {
-	return (["data": Standards.JSON.encode(data, jsonflags), "type": "application/json"]);
+	return (["data": string_to_utf8(Standards.JSON.encode(data, jsonflags)), "type": "application/json"]);
 }
 
 class TwitchAuth
