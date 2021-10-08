@@ -24,8 +24,7 @@ on("click", "#sort li", e => {
 
 DOM("#legend").onclick = e => DOM("#infodlg").showModal();
 
-function uptime(startdate) {
-	const time = Math.floor((new Date() - new Date(startdate)) / 1000);
+function hms(time) {
 	if (time < 60) return time + " seconds";
 	const hh = Math.floor((time / 3600) % 24);
 	const mm = ("0" + Math.floor((time / 60) % 60)).slice(-2);
@@ -34,6 +33,37 @@ function uptime(startdate) {
 	if (time >= 3600) ret = hh + ":" + ret;
 	if (time >= 86400) ret = Math.floor(time / 86400) + " days, " + ret;
 	return ret;
+}
+function uptime(startdate) {return hms(Math.floor((new Date() - new Date(startdate)) / 1000));}
+
+async function show_vod_lengths(userid, vodid, startdate) {
+	const info = await (await fetch("/raidfinder?streamlength=" + userid + "&ignore=" + vodid)).json();
+	if (!info.max_duration || !info.vods.length) {
+		//Might be there are no VODs recorded (maybe the streamer has them disabled).
+		set_content("#vodlengths ul", LI("No VODs found, unable to estimate stream duration"));
+		DOM("#vodlengths").showModal();
+		return;
+	}
+	console.log("VODs:", info);
+	const uptime = Math.floor((new Date() - new Date(startdate)) / 1000);
+	const scale = Math.max(info.max_duration, uptime);
+	set_content("#vodlengths ul", info.vods.map(vod => {
+		//Show colour highlight on spectrum of 0 to 604800/2 for week_correlation
+		const li = LI(hms(vod.duration_seconds));
+		let gradient;
+		const up = uptime / scale * 100, dur = vod.duration_seconds / scale * 100;
+		if (uptime < vod.duration_seconds) {
+			//Show the vod-length colour with an uptime hairline across it
+			gradient = `#a0f0c0 ${up}%, red ${up}% ${up + 0.25}%, #a0f0c0 ${up + 0.25}% ${dur}%, #ddd ${dur}%`;
+		} else {
+			//Show the uptime hairline after the vod-length colour stops
+			gradient = `#a0f0c0 ${dur}%, #ddd ${dur}% ${up}%, red ${up}% ${up + 0.25}%, #ddd ${up + 0.25}%`;
+			console.log(gradient);
+		}
+		li.style.background = "linear-gradient(to right, " + gradient + ")";
+		return li;
+	}));
+	DOM("#vodlengths").showModal();
 }
 
 function low_show_raids(raids) {
@@ -159,6 +189,12 @@ function adornment(type) {
 
 console.log(follows);
 function build_follow_list() {
+	function describe_uptime(stream) {
+		return SPAN({
+			className: "uptime",
+			onclick: () => show_vod_lengths(stream.user_id, stream.id, stream.started_at),
+		}, "Uptime " + uptime(stream.started_at));
+	}
 	function describe_raid(raids) {
 		if (!raids.length) return null;
 		const raiddesc = raids[raids.length - 1];
@@ -240,7 +276,7 @@ function build_follow_list() {
 				UL([
 					LI([A({href: stream.url}, [adornment(stream.broadcaster_type), stream.user_name]), " - ", B(stream.category)]),
 					LI({className: "streamtitle"}, stream.title),
-					LI("Uptime " + uptime(stream.started_at) + ", " + stream.viewer_count + " viewers"),
+					LI([describe_uptime(stream), ", " + stream.viewer_count + " viewers"]),
 					LI(stream.tags.map(tag => SPAN({className: tag.auto ? "tag autotag" : "tag", "title": tag.desc}, tag.name + " "))),
 					LI([describe_notes(stream), describe_raid(stream.raids), raidbtn(stream)]),
 				]),

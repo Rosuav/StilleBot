@@ -84,15 +84,14 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	}
 	//Provide some info on VOD durations for the front end to display graphically
 	if (string chan = req->variables->streamlength) {
-		int uid = yield(get_user_id(chan));
-		array vods = yield(get_helix_paginated("https://api.twitch.tv/helix/videos", (["user_id": (string)uid, "type": "archive"])));
+		array vods = yield(get_helix_paginated("https://api.twitch.tv/helix/videos", (["user_id": chan, "type": "archive"])));
 		if (string ignore = req->variables->ignore) //Ignore the stream ID for a currently live broadcast
 			vods = filter(vods) {return __ARGS__[0]->stream_id != ignore;};
 		//For convenience of the front end, do some parsing here in Pike.
 		mapping ret = (["vods": vods]);
 		foreach (vods, mapping vod) {
-			if (sscanf(vod->duration, "%dh%dm%ds", int h, int m, int s)) vod->duration_seconds = h * 3600 + m * 60 + s;
-			else if (sscanf(vod->duration, "%dm%ds", int m, int s)) vod->duration_seconds = m * 60 + s;
+			if (sscanf(vod->duration, "%dh%dm%ds", int h, int m, int s) == 3) vod->duration_seconds = h * 3600 + m * 60 + s;
+			else if (sscanf(vod->duration, "%dm%ds", int m, int s) == 2) vod->duration_seconds = m * 60 + s;
 			else if (sscanf(vod->duration, "%ds", int s)) vod->duration_seconds = s;
 			//What do day-long streams look like?
 			else {werror("**** UNKNOWN VOD DURATION FORMAT %O ****\n", vod->duration); vod->duration_seconds = 0;}

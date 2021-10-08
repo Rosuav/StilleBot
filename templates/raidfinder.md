@@ -85,6 +85,7 @@
 	text-decoration: solid underline;
 }
 #sort li.current {text-decoration: double underline;}
+.uptime {cursor: pointer;}
 .raid-incoming {font-weight: bold;}
 .raid-incoming,.raid-outgoing {cursor: pointer;}
 .notes {margin-right: 0.5em;}
@@ -112,6 +113,11 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 
 #viewerlegend {display: flex;}
 #viewerlegend div {margin-right: 0.5em; padding: 0.25em 0.125em;}
+
+#vodlengths li {
+	width: 400px; /* TODO: Shrink this on narrow screens (but how much?) */
+	margin-right: 25px;
+}
 
 .magic-score {
 	display: inline-block;
@@ -163,3 +169,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 {: tag=dialog #infodlg}
 
 <script type=module src="$$static||raidfinder.js$$"></script>
+
+> ### Previous stream lengths
+> <ul></ul>
+{: tag=dialog #vodlengths}
