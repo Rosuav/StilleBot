@@ -82,6 +82,35 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		persist_status->save();
 		return (["error": 204]);
 	}
+	//Provide some info on VOD durations for the front end to display graphically
+	if (string chan = req->variables->streamlength) {
+		int uid = yield(get_user_id(chan));
+		array vods = yield(get_helix_paginated("https://api.twitch.tv/helix/videos", (["user_id": (string)uid, "type": "archive"])));
+		if (string ignore = req->variables->ignore) //Ignore the stream ID for a currently live broadcast
+			vods = filter(vods) {return __ARGS__[0]->stream_id != ignore;};
+		//For convenience of the front end, do some parsing here in Pike.
+		mapping ret = (["vods": vods]);
+		foreach (vods, mapping vod) {
+			if (sscanf(vod->duration, "%dh%dm%ds", int h, int m, int s)) vod->duration_seconds = h * 3600 + m * 60 + s;
+			else if (sscanf(vod->duration, "%dm%ds", int m, int s)) vod->duration_seconds = m * 60 + s;
+			else if (sscanf(vod->duration, "%ds", int s)) vod->duration_seconds = s;
+			//What do day-long streams look like?
+			else {werror("**** UNKNOWN VOD DURATION FORMAT %O ****\n", vod->duration); vod->duration_seconds = 0;}
+
+			//Would be nice to show the category too but I don't know where to get the data from. Kraken gets it.
+
+			//Calculate how close this VOD is to the current time, modulo a week
+			//If the VOD spans the current time, return zero. Otherwise, return the shorter of the time
+			//until the start, and the time since the end.
+			//Assumes no leap seconds.
+			int howlongago = (time() - Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", vod->created_at)->unix_time()) % 604800;
+			//Three options: the inverse of the time since it started; or the time since ending; or, if
+			//time since ending is negative, zero.
+			vod->week_correlation = max(min(604800 - howlongago, howlongago - vod->duration_seconds), 0);
+		}
+		ret->max_duration = max(@vods->duration_seconds);
+		return jsonify(ret);
+	}
 	mapping logged_in = req->misc->session && req->misc->session->user;
 	int userid = 0;
 	if (string chan = req->variables["for"])
