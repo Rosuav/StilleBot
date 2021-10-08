@@ -62,7 +62,7 @@ async function show_vod_lengths(userid, vodid, startdate) {
 		const li = LI(hms(vod.duration_seconds) + " - " + date);
 		//Based on the week_correlation, figure out a colour to fill the bar with.
 		const correlation = vod.week_correlation / (604800/2); //Correlation is scaled to half a week
-		const paleness = Math.floor(correlation * 192 + 64);
+		const paleness = Math.floor(correlation * 160 + 64);
 		let gradient = `rgb(${paleness}, 255, ${paleness}) `;
 		if (!vod.created_at) gradient = "#fcf "; //For the current VOD line, show it in pale red instead
 		const up = uptime / scale * 100, dur = vod.duration_seconds / scale * 100;
