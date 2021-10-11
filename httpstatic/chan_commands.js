@@ -6,7 +6,7 @@ export {sockmsg_validated, sockmsg_loadfavs};
 cmd_configure({
 	get_command_basis: cmd => {
 		const cmdname = "!" + cmd.id.split("#")[0];
-		set_content("#advanced_view h3", ["Edit command ", INPUT({id: "cmdname", value: cmdname})]);
+		set_content("#advanced_view h3", ["Edit command ", INPUT({autocomplete: "off", id: "cmdname", value: cmdname})]);
 		check_save();
 		return {type: "anchor_command", command: cmdname};
 	},

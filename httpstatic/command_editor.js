@@ -11,7 +11,7 @@ document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 			SPAN([U(tab[0]), tab.slice(1)]),
 		])))),
 	]),
-	FORM([
+	FORM({autocomplete: "off"}, [
 		DIV({id: "command_details"}),
 		DIV({id: "command_frame"}, [
 			P("Drag elements around and snap them into position to build a command. Double-click an element to change its text etc."),
