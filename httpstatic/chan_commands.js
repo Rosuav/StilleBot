@@ -8,7 +8,7 @@ cmd_configure({
 		const cmdname = "!" + cmd.id.split("#")[0];
 		set_content("#advanced_view h3", ["Edit command ", INPUT({autocomplete: "off", id: "cmdname", value: cmdname})]);
 		check_save();
-		return {type: "anchor_command", command: cmdname};
+		return {type: "anchor_command", command: cmdname, aliases: cmd.aliases || ""};
 	},
 });
 
