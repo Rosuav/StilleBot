@@ -68,7 +68,12 @@ constant vars_provided = ([
 mapping message_params(object channel, mapping person, string param) {
 	if (param == "") return (["{error}": "Usage: !calc 1+2", "{result}": ""]);
 	if (person->badges->?_mod) param = channel->expand_variables(param);
-	mixed ex = catch {return (["{error}": "", "{result}": sprintf("%O", evaluate(param))]);};
+	mixed ex = catch {
+		int|float result = evaluate(param);
+		//"!calc 1.5 + 2.5" will give a result of 4.0, but it's nicer to say "4"
+		if (floatp(result) && result == (float)(int)result) result = (int)result;
+		return (["{error}": "", "{result}": sprintf("%O", result)]);
+	};
 	return (["{error}": "Invalid expression [" + (describe_error(ex)/"\n")[0] + "]", "{result}": ""]);
 }
 
