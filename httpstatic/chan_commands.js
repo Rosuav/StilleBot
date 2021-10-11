@@ -7,6 +7,7 @@ cmd_configure({
 	get_command_basis: cmd => {
 		const cmdname = "!" + cmd.id.split("#")[0];
 		set_content("#advanced_view h3", ["Edit command ", INPUT({id: "cmdname", value: cmdname})]);
+		check_save();
 		return {type: "anchor_command", command: cmdname};
 	},
 });
@@ -15,6 +16,9 @@ on("click", 'a[href="/emotes"]', e => {
 	e.preventDefault();
 	window.open("/emotes", "emotes", "width=900, height=700");
 });
+
+function check_save() {DOM("#save_advanced").disabled = DOM("#cmdname").value.replace("!", "").trim() === "";}
+on("input", "#cmdname", check_save);
 
 export const render_parent = DOM("#commandview tbody");
 export const render_item = render_command;
