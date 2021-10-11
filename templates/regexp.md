@@ -31,6 +31,10 @@ input {font-size: 100%; width: 100%;}
 Normal text in a regular expression matches that exact text. In these examples,
 `[Hh]ello` is a regexp, and **hello** is text that matches it.
 
+A regexp conditional succeeds if *any part of* the string matches it. The condition
+`[Hh]ello` would match on the input "Why, **hello** there!", and would set
+<samp>{regexp0}</samp> to **hello**.
+
 ### Anchors
 
 A regexp will match anywhere in the text, unless it is anchored with a `^` at the

@@ -6,7 +6,6 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 	]));
-
 }
 
 mapping get_state(string group, string|void id) {return ([]);}
@@ -19,6 +18,10 @@ void websocket_cmd_test(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 		//If sscanf fails, just leave the full text in ret->error.
 		sscanf(ret->error, "error calling pcre_compile [%d]: %s", ret->errorloc, ret->error);
 	}
-	else ret->matches = re->match(msg->text);
+	else {
+		int|array match = re->exec(msg->text);
+		ret->matches = arrayp(match);
+		if (arrayp(match)) ret->matchtext = map(match / 2) {return msg->text[__ARGS__[0][0]..__ARGS__[0][1]-1];};
+	}
 	conn->sock->send_text(Standards.JSON.encode(ret, 4));
 }

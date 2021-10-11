@@ -1,7 +1,7 @@
 object irc;
 string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
-object substitutions = Regexp.PCRE("(\\$[A-Za-z|]+\\$)|({[a-z_@|]+})");
+object substitutions = Regexp.PCRE("(\\$[A-Za-z|]+\\$)|({[a-z0-9_@|]+})");
 
 class IRCClient
 {
@@ -484,7 +484,18 @@ class channel_notif
 				//regexp's own syntax.
 				object re = simple_regex_cache[message->expr1];
 				if (!re) re = simple_regex_cache[message->expr1] = Regexp.PCRE(message->expr1);
-				if (re->match(expr(message->expr2))) break; //The regexp passes!
+				string matchtext = expr(message->expr2);
+				int|array result = re->exec(matchtext);
+				if (arrayp(result)) { //The regexp passes!
+					//NOTE: Other {regexpNN} vars are not cleared. This may mean
+					//that nested regexps can both contribute. I may change this
+					//in the future, if I allow an easy way to set a local var.
+					foreach (result / 2; int i; [int start, int end])
+						vars["{regexp" + i + "}"] = matchtext[start..end-1];
+					break;
+				}
+				//Otherwise, the return code is probably NOMATCH (-1). If it isn't, should we
+				//show something to the user?
 				msg = message->otherwise;
 				break;
 			}
