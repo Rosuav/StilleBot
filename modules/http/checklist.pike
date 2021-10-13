@@ -170,6 +170,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			(["username": req->misc->session->user->login])))->emoticon_sets;
 		v2_have = persist_status->path("seen_emotes")[(string)req->misc->session->?user->?id] || ([]);
 	}
+	else login_link += "\n\n<input type=checkbox id=showall style=\"display:none\" checked>"; //Hack: Show all if not logged in
 	mapping have_emotes = ([]);
 	array(string) used = indices(v2_have); //Emote names that we have AND used. If they're in that mapping, they're in the checklist (by definition).
 	foreach (emotesets;; array set) foreach (set, mapping em)
