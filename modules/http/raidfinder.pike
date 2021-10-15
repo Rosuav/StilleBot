@@ -227,6 +227,14 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			sort(raidtimes, raiders);
 			args->user_id = raiders[<99..]; //Is it worth trying to support more than 100 raiders? Would need to paginate.
 		}
+		else if (req->variables->login == "demo") {
+			//Like specifying login= for each of the channels that I bot for
+			//Note that this excludes connected but not active (monitor-only) channels.
+			args->user_login = ({ });
+			foreach (persist_config->path("channels"); string chan; mapping info)
+				if (chan[0] != '!' && info->active) args->user_login += ({chan});
+			title = "This bot's channels";
+		}
 		else if (req->variables->login) {
 			//TODO: Load up the specified users even if they're not currently online.
 			//This may involve stubbing out things like the thumbnail and viewership,
