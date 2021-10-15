@@ -563,7 +563,7 @@ class channel_notif
 				//TODO: Look the person up, delay the message, and then if
 				//still not found, give a different error. For now, it depends
 				//on the person having said something at some point.
-				msg = sprintf("%s: User %s not found, has s/he said anything in chat?", person->user, target);
+				msg = sprintf("No added MSG. Reason: User %s not found (has s/he said anything in chat?)", target);
 				dest = name; //Send it to the default, the channel.
 			}
 			else
