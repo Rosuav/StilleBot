@@ -128,7 +128,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			}
 			return (["data": "<style>.bot::marker{color:green}.monitor::marker{color:orange}body{font-size:16pt}</style><ul>" + lines * "\n" + "</ul>", "type": "text/html"]);
 		}
-		userid = yield(get_user_id(chan));
+		if (userid == (string)(int)userid) userid = (int)userid;
+		else userid = yield(get_user_id(chan));
 	}
 	else if (logged_in) userid = (int)logged_in->id; //Raidfind for self if logged in.
 	//TODO: Based on the for= or the logged in user, determine whether raids are tracked.
