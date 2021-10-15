@@ -79,5 +79,6 @@
   - Would need some functionality in ws_sync to independently handle prefs, NOT via the
     per-type handler
   - Absorbs raidnotes and GUI command editor favs
+  - Add selection of default command editor
   - Needs new concept of websocket group?? Or just collect them as needed?
   - Would need to transcend specific websocket class
