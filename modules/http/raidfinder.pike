@@ -42,6 +42,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body) || !intp(body->id)) return (["error": 400]);
 		string newnotes = body->notes || "";
+		//TODO: Migrate this into persist_status->path("prefs", (string)req->misc->session->user->id, "raidnotes")
 		mapping notes = persist_status->path("raidnotes", (string)req->misc->session->user->id);
 		if (body->id == 0)
 		{

@@ -404,6 +404,7 @@ void websocket_cmd_savefavs(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (conn->session->fake || !arrayp(msg->favs)) return;
 	//NOTE: Favourites are not validated (other than that they have to pass JSON encode/decode).
 	string uid = conn->session->user->?id;
+	//TODO: Migrate this to persist_status->path("prefs", (string)uid, "cmdedit_favourites")
 	if (uid) persist_status->path("cmdedit_favourites")[(string)uid] = msg->favs;
 	//Scan all current connections for anyone with the same UID and update them.
 	//This will include the current connection.

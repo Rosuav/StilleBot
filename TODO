@@ -73,3 +73,11 @@
     sub/resub count).
 * Special trigger when any goal bar tiers up?? Would be better than the weird system
   where it triggers an actual command. Could deep link straight to the editor now.
+* Client-side per-user preferences.
+  - Any client for that userid with a websocket would get a message any time any of the
+    user's prefs change (even if not strictly relevant).
+  - Would need some functionality in ws_sync to independently handle prefs, NOT via the
+    per-type handler
+  - Absorbs raidnotes and GUI command editor favs
+  - Needs new concept of websocket group?? Or just collect them as needed?
+  - Would need to transcend specific websocket class
