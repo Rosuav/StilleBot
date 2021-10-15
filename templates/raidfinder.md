@@ -120,7 +120,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	width: 500px; /* TODO: Shrink this on narrow screens (but how much?) */
 	margin-right: 25px;
 }
-.is_following {background: #efe; border: 1px solid #8f8;}
+.is_following {background: #eef;}
 .not_following {background: #ddf; border: 1px solid blue;}
 
 .magic-score {

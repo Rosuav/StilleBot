@@ -112,7 +112,18 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			mapping info = yield(twitch_api_request(sprintf("https://api.twitch.tv/helix/users/follows?from_id=%s&to_id=%s", chanid, chan)));
 			if (sizeof(info->data)) {
 				ret->is_following = info->data[0];
-				//TODO: Show "how long" in a useful way
+				object howlong = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", ret->is_following->followed_at)->distance(Calendar.ISO.now());
+				string length = "less than a day";
+				foreach (({
+					({Calendar.ISO.Year, "year"}),
+					({Calendar.ISO.Month, "month"}),
+					({Calendar.ISO.Day, "day"}),
+				}), [program span, string desc])
+					if (int n = howlong / span) {
+						length = sprintf("%d %s%s", n, desc, "s" * (n > 1));
+						break;
+					}
+				ret->is_following->follow_length = length;
 			}
 			else ret->is_following = ([]);
 		}

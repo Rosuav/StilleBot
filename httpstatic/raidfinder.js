@@ -81,9 +81,7 @@ async function show_vod_lengths(userid, vodid, startdate) {
 			B(info.is_following.from_name),
 			" has been following ",
 			B(info.is_following.to_name),
-			" since ",
-			B(info.is_following.followed_at),
-			".",
+			" for " + info.is_following.follow_length + ".",
 		]).className = "is_following";
 		else set_content("#is_following",
 			"Not currently followed, might be a new frond!",
