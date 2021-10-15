@@ -45,9 +45,9 @@ async function show_vod_lengths(userid, vodid, startdate) {
 		return;
 	}
 	console.log("VODs:", info);
-	const uptime = Math.floor((new Date() - new Date(startdate)) / 1000);
+	const uptime = startdate ? Math.floor((new Date() - new Date(startdate)) / 1000) : info.max_duration;
 	const scale = Math.max(info.max_duration, uptime);
-	info.vods.unshift({duration_seconds: uptime, week_correlation: 0});
+	if (startdate) info.vods.unshift({duration_seconds: uptime, week_correlation: 0});
 	set_content("#vodlengths ul", info.vods.map(vod => {
 		let date = "Current stream";
 		if (vod.created_at) {
