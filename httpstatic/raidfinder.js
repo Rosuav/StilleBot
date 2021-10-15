@@ -37,7 +37,7 @@ function hms(time) {
 function uptime(startdate) {return hms(Math.floor((new Date() - new Date(startdate)) / 1000));}
 
 async function show_vod_lengths(userid, vodid, startdate) {
-	const info = await (await fetch("/raidfinder?streamlength=" + userid + "&ignore=" + vodid)).json();
+	const info = await (await fetch(`/raidfinder?for=${on_behalf_of_userid}&streamlength=${userid}&ignore=${vodid}`)).json();
 	if (!info.max_duration || !info.vods.length) {
 		//Might be there are no VODs recorded (maybe the streamer has them disabled).
 		set_content("#vodlengths ul", LI("No VODs found, unable to estimate stream duration"));
@@ -76,6 +76,20 @@ async function show_vod_lengths(userid, vodid, startdate) {
 		li.style.background = "linear-gradient(to right, " + gradient + ")";
 		return li;
 	}));
+	if (info.is_following) {
+		if (info.is_following.followed_at) set_content("#is_following", [
+			B(info.is_following.from_name),
+			" has been following ",
+			B(info.is_following.to_name),
+			" since ",
+			B(info.is_following.followed_at),
+			".",
+		]).className = "is_following";
+		else set_content("#is_following",
+			"Not currently followed, might be a new frond!",
+		).className = "not_following";
+	}
+	else set_content("#is_following", "");
 	DOM("#vodlengths").showModal();
 }
 

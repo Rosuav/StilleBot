@@ -120,6 +120,8 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	width: 500px; /* TODO: Shrink this on narrow screens (but how much?) */
 	margin-right: 25px;
 }
+.is_following {background: #efe; border: 1px solid #8f8;}
+.not_following {background: #ddf; border: 1px solid blue;}
 
 .magic-score {
 	display: inline-block;
@@ -179,6 +181,8 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 > streams at other times of the week.
 >
 > Dates and times are in your local time zone.
+>
+> <span id=is_following></span>
 >
 > <ul></ul>
 {: tag=dialog #vodlengths}

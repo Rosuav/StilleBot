@@ -77,7 +77,10 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		persist_status->save();
 		return (["error": 204]);
 	}
+	mapping logged_in = req->misc->session && req->misc->session->user;
 	//Provide some info on VOD durations for the front end to display graphically
+	//Additionally (since this is a costly check anyway, so it won't add much), it
+	//checks if the for= target is following them.
 	if (string chan = req->variables->streamlength) {
 		array vods = yield(get_helix_paginated("https://api.twitch.tv/helix/videos", (["user_id": chan, "type": "archive"])));
 		if (string ignore = req->variables->ignore) //Ignore the stream ID for a currently live broadcast
@@ -103,9 +106,18 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			vod->week_correlation = max(min(604800 - howlongago, howlongago - vod->duration_seconds), 0);
 		}
 		ret->max_duration = max(@vods->duration_seconds);
+		string chanid = req->variables["for"];
+		if (chanid && chanid != (string)logged_in->?id) {
+			//If you provided for=userid, also show whether the target is following this stream.
+			mapping info = yield(twitch_api_request(sprintf("https://api.twitch.tv/helix/users/follows?from_id=%s&to_id=%s", chanid, chan)));
+			if (sizeof(info->data)) {
+				ret->is_following = info->data[0];
+				//TODO: Show "how long" in a useful way
+			}
+			else ret->is_following = ([]);
+		}
 		return jsonify(ret);
 	}
-	mapping logged_in = req->misc->session && req->misc->session->user;
 	int userid = 0;
 	if (string chan = req->variables["for"])
 	{
@@ -380,6 +392,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	array tags = values(G->G->all_stream_tags); sort(tags->name, tags);
 	return render_template("raidfinder.md", ([
 		"vars": ([
+			"on_behalf_of_userid": userid, //The same userid as you're logged in as, unless for= is specified
 			"follows": follows_helix, "all_tags": tags,
 			"your_stream": your_stream, "highlights": highlights,
 			"tag_prefs": tag_prefs, "MAX_PREF": MAX_PREF, "MIN_PREF": MIN_PREF,
