@@ -103,6 +103,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	border: 1px solid #ff0;
 }
 
+/* TODO: Check these on the legend, they don't seem to be showing up */
 #streams > div.much_smaller     {border-color: #bfe;}
 #streams > div.smaller          {border-color: #cfe;}
 #streams > div.slightly_smaller {border-color: #dfe;}
