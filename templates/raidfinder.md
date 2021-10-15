@@ -15,7 +15,7 @@
 * $$sortorders$$
 {: #sort}
 
-<div id=streams></div>
+<div id=streams class=sizeborders></div>
 <div id=copied>Copied!</div>
 
 > <span id=notes_about_channel>Channel name: </span>
@@ -42,7 +42,6 @@
 }
 #streams > div {
 	width: 324px; /* the width of the preview image plus border size */
-	border: 2px solid transparent;
 	margin-bottom: 1em;
 }
 #streams ul {list-style-type: none; margin: 0; padding: 0; flex-grow: 1;}
@@ -104,14 +103,14 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	border: 1px solid #ff0;
 }
 
-/* TODO: Check these on the legend, they don't seem to be showing up */
-#streams > div.much_smaller     {border-color: #bfe;}
-#streams > div.smaller          {border-color: #cfe;}
-#streams > div.slightly_smaller {border-color: #dfe;}
-#streams > div.samesize         {border-color: #efe;}
-#streams > div.slightly_larger  {border-color: #efd;}
-#streams > div.larger           {border-color: #efc;}
-#streams > div.much_larger      {border-color: #efb;}
+.sizeborders > div {border: 2px solid transparent;}
+.sizeborders > div.much_smaller     {border-color: #bfe;}
+.sizeborders > div.smaller          {border-color: #cfe;}
+.sizeborders > div.slightly_smaller {border-color: #dfe;}
+.sizeborders > div.samesize         {border-color: #efe;}
+.sizeborders > div.slightly_larger  {border-color: #efd;}
+.sizeborders > div.larger           {border-color: #efc;}
+.sizeborders > div.much_larger      {border-color: #efb;}
 
 #viewerlegend {display: flex;}
 #viewerlegend div {margin-right: 0.5em; padding: 0.25em 0.125em;}
@@ -162,7 +161,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 > * Tags that both of you are using
 >
 > Followed channels have a subtle border highlight to show viewer count relative to your own.
-> <div id=viewerlegend>
+> <div id=viewerlegend class=sizeborders>
 > <div class=much_larger>Double</div>
 > <div class=larger>50% more</div>
 > <div class=slightly_larger>25% more</div>
