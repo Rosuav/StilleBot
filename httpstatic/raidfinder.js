@@ -91,6 +91,8 @@ async function show_vod_lengths(userid, vodid, startdate) {
 	DOM("#vodlengths").showModal();
 }
 
+on("click", "#mydetails", e => show_vod_lengths(on_behalf_of_userid, your_stream && your_stream.id, your_stream && your_stream.started_at));
+
 function low_show_raids(raids) {
 	const scrollme = set_content("#raids ul", raids).parentElement;
 	DOM("#raids").showModal();

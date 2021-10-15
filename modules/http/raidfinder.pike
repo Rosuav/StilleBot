@@ -108,7 +108,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		}
 		ret->max_duration = max(@vods->duration_seconds);
 		string chanid = req->variables["for"];
-		if (chanid && chanid != (string)logged_in->?id) {
+		if (chanid && chanid != (string)logged_in->?id && chanid != chan) {
 			//If you provided for=userid, also show whether the target is following this stream.
 			mapping info = yield(twitch_api_request(sprintf("https://api.twitch.tv/helix/users/follows?from_id=%s&to_id=%s", chanid, chan)));
 			if (sizeof(info->data)) {

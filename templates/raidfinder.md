@@ -10,6 +10,7 @@
 
 <button id=legend>Legend/info</button> <button id=highlights>Edit highlight list</button>
 <button id=allraids>All recent raids</button> <button id=tagprefs>Tag preferences</button>
+<button id=mydetails>This stream's info</button>
 
 * $$sortorders$$
 {: #sort}
