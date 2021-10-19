@@ -30,7 +30,7 @@ string process(object channel, object person, string param)
 	}
 	last_used = time();
 	string user = person->user;
-	if (param != "" && channel->mods[person->user]) user = param;
+	if (param != "" && channel->mods[person->user]) user = param - "@";
 	#if 0
 	//This service appears to be no longer available.
 
