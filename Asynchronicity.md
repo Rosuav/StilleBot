@@ -56,5 +56,37 @@ void perform_calculations() {
 Continue Functions
 ------------------
 
+Rather than returning a single value and then finishing, a continue function can,
+as the name suggests, yield a value and continue running. When you call such a
+function, you get back a state function which keeps track of everything that the
+continue function was doing, and can be resumed until the function is done.
+
+```
+continue int fibonacci() {
+	int a = 0, b = 1;
+	while (1) {
+		yield(a += b);
+		yield(b += a);
+	}
+}
+```
+
+This will produce an infinite stream of Fibonacci numbers. It can be used thus:
+
+```
+int main() {
+	function fib = fibonacci();
+	while (1) {
+		write("--> %d\n", fib());
+		sleep(0.125);
+	}
+}
+```
+
+A continue function can return, either with the regular `return` statement or by
+running off the end, just as other functions do. The value thus produced will be
+the last value returned by the state function, and then the state function will
+return 0 thereafter.
+
 Asynchronous functions with yield points
 ----------------------------------------
