@@ -7,7 +7,7 @@ abstractions over the basics of callbacks include promises/futures and continue
 functions, which work together to create elegant single-threaded code which looks
 as clean and readable as threaded code.
 
-(NOTE: All descriptions here are based on Pike 8.1.4 as of mid-2021. If someone
+(NOTE: All descriptions here are based on Pike 8.1.15 as of mid-2021. If someone
 wants to adjust things to match a specific 8.0 or 8.2 release, feel free.)
 
 Concurrent.Future and its friends
@@ -90,3 +90,10 @@ return 0 thereafter.
 
 Asynchronous functions with yield points
 ----------------------------------------
+
+Putting the above two features together offers a powerful combination: a continue
+function which yields Concurrent.Future objects until it has a true result, which
+it then returns. This allows a simple and generic event loop to handle many such
+functions simultaneously, and each one behaves as if it runs in its own lightweight
+thread.
+
