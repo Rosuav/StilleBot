@@ -91,9 +91,90 @@ return 0 thereafter.
 Asynchronous functions with yield points
 ----------------------------------------
 
+(TODO: Make this more of a tutorial or explanation, not a dump of an example.)
+
 Putting the above two features together offers a powerful combination: a continue
 function which yields Concurrent.Future objects until it has a true result, which
 it then returns. This allows a simple and generic event loop to handle many such
 functions simultaneously, and each one behaves as if it runs in its own lightweight
 thread.
 
+Define some tasks such as:
+
+```
+continue Concurrent.Future|mapping fetch_info(string url) {
+	object res = yield(Protocols.HTTP.Promise.get_url(url));
+	if (res->status >= 400) error("HTTP error %d fetching %s\n", res->status, url);
+	mixed data = Standards.JSON.decode_utf8(res->get());
+	if (!mappingp(data)) error("Malformed response\n");
+	return data;
+}
+
+Concurrent.Future delay(float|int tm) {
+	Concurrent.Promise p = Concurrent.Promise();
+	call_out(p->success, tm, 0);
+	return p->future();
+}
+
+continue Concurrent.Future read_stuff(string base) {
+	int start = 0;
+	while (1) {
+		mapping data = yield(fetch_info(url + "?start=" + start));
+		//... process data
+		if (!data->next) break;
+		start = data->next;
+	}
+	exit(0);
+}
+
+continue Concurrent.Future show_progress() {
+	while (1) {
+		foreach ("/-\\|";; int c) {
+			yield(delay(0.25));
+			write("%c\r", c);
+		}
+	}
+}
+```
+
+The crucial asynchronicity handler looks like this:
+
+```
+class spawn_task(mixed gen, function|void got_result, function|void got_error) {
+	array extra;
+	protected void create(mixed ... args) {
+		extra = args;
+		if (!got_result) got_result = lambda() { };
+		if (!got_error) got_error = _unhandled_error;
+		if (functionp(gen)) pump(0, 0);
+		else if (objectp(gen) && gen->then)
+			gen->then(got_result, got_error, @extra);
+		else got_result(gen, @extra);
+	}
+	void pump(mixed last, mixed err) {
+		mixed resp;
+		if (mixed ex = catch {resp = gen(last){if (err) throw(err);};}) {got_error(ex, @extra); return;}
+		if (undefinedp(resp)) got_result(last, @extra);
+		else if (functionp(resp)) handle_async(resp, pump, propagate_error);
+		else if (objectp(resp) && resp->then) resp->then(pump, propagate_error);
+		else pump(resp, 0);
+	}
+	void propagate_error(mixed err) {pump(0, err);}
+}
+```
+
+And it's really easy to use!
+
+```
+int main() {
+	spawn_task(show_progress());
+	spawn_task(read_stuff("http://some.site.example/api/items"));
+	return -1;
+}
+```
+
+The same backend will run every task, meaning that the process is single-threaded
+regardless of the number of tasks. Tasks may freely spawn additional tasks (for
+instance, a socket listener task might spawn a task for each connected client),
+and tasks may freely use all normal control flow, without the hassles of looping
+across promises or callbacks.
