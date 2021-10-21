@@ -142,6 +142,10 @@ echoable_message targeted(string text) {return (["message": text, "prefix": "@$$
 void _unhandled_error(mixed err) {
 	werror("Unhandled asynchronous exception\n%s\n", describe_backtrace(err));
 }
+void _ignore_result(mixed value) { }
+
+//TODO: Replace this with a Function.function_type() check or similar
+int(0..1) is_genstate(mixed x) {return functionp(x) && has_value(sprintf("%O", x), "\\u0000");}
 
 //Handle asynchronous results. Will either call the callback immediately
 //(before returning), or will call it when the asynchronous results are
@@ -150,15 +154,16 @@ void _unhandled_error(mixed err) {
 //TODO: If/when a Pike function is available to unambiguously identify
 //whether a generator has finished or not, permit more types of yields:
 //1) Concurrent.Future, as now
-//2) Generator state function (currently allows any function)
+//2) Generator state function
 //3) Array of the above. Use Concurrent.all implicitly, and return an array.
 //4) Anything else?
-class handle_async(mixed gen, function got_result, function|void got_error) {
+class spawn_task(mixed gen, function|void got_result, function|void got_error) {
 	mixed extra;
 	protected void create(mixed ... args) {
 		extra = args;
+		if (!got_result) got_result = _ignore_result;
 		if (!got_error) got_error = _unhandled_error;
-		if (functionp(gen)) pump(0, 0); //TODO: Recognize generator state functions only??
+		if (is_genstate(gen)) pump(0, 0);
 		else if (objectp(gen) && gen->then)
 			gen->then(got_result, got_error, @extra);
 		else got_result(gen, @extra);
@@ -170,12 +175,13 @@ class handle_async(mixed gen, function got_result, function|void got_error) {
 		mixed resp;
 		if (mixed ex = catch {resp = gen(last){if (err) throw(err);};}) {got_error(ex, @extra); return;}
 		if (undefinedp(resp)) got_result(last, @extra);
-		else if (functionp(resp)) handle_async(resp, pump, propagate_error); //As above
+		else if (is_genstate(resp)) spawn_task(resp, pump, propagate_error);
 		else if (objectp(resp) && resp->then) resp->then(pump, propagate_error);
 		else pump(resp, 0);
 	}
 	void propagate_error(mixed err) {pump(0, err);}
 }
+constant handle_async = spawn_task; //Compatibility name (deprecated)
 
 //Some commands are available for echocommands to call on.
 class builtin_command {
@@ -396,7 +402,7 @@ class websocket_handler
 	}
 
 	void _send_updates(array(object) socks, string|int group, mapping|void data) {
-		handle_async(data || get_state(group), _low_send_updates, 0, socks);
+		spawn_task(data || get_state(group), _low_send_updates, 0, socks);
 	}
 	void _low_send_updates(mapping resp, array(object) socks) {
 		if (!resp) return;
