@@ -178,3 +178,57 @@ regardless of the number of tasks. Tasks may freely spawn additional tasks (for
 instance, a socket listener task might spawn a task for each connected client),
 and tasks may freely use all normal control flow, without the hassles of looping
 across promises or callbacks.
+
+
+Interfacing between asynchronicity styles
+-----------------------------------------
+
+Or: Rosetta Stone of asynchronous code.
+
+### Concurrent.Future and callbacks ###
+
+```
+Concurrent.Future promisify(function func, mixed ... args) {
+	//Shorthand if the function takes two callbacks, success and failure:
+	//return Concurrent.Promise(func, @args)->future();
+	//Otherwise, doing it manually:
+	Concurrent.Promise p = Concurrent.Promise();
+	func(@args, p->success); //When p->success(x) is called, the promise will resolve with x.
+	return p->future();
+}
+
+void call_me_maybe(Concurrent.Future fut, function cb) {
+	fut->then(cb);
+}
+```
+
+### Generator and Concurrent.Future ###
+
+Generators with the spawn_task executor are built on top of futures, so these
+two work well together.
+
+```
+continue Concurrent.Future wait_for(Concurrent.Future fut) {
+	mixed ret = yield(fut);
+	return ret;
+}
+
+Concurrent.Future generate_promise(function g) {
+	Concurrent.Promise p = Concurrent.Promise();
+	spawn_task(g, p->success, p->failure);
+	return p->future();
+}
+```
+
+### Generator and callbacks ###
+
+spawn_task can call a callback when the task completes, so it is inherently able
+to translate in that direction. If you have a function which expects a callback,
+the easiest way to use it in a continue function is to first promisify it.
+
+```
+continue Concurrent.Future wait_for(function func) {
+	mixed ret = yield(promisify(func));
+	return ret;
+}
+```
