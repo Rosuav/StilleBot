@@ -340,7 +340,7 @@ mapping build_channel_info(mapping stream)
 			//in the ordering of the "top 100" and "next 100". It should be safe
 			//to retain any previous ones seen this run.
 			fetching_game_names = 1;
-			handle_async(cache_game_names(stream->game_id)) {fetching_game_names = 0;};
+			spawn_task(cache_game_names(stream->game_id)) {fetching_game_names = 0;};
 		}
 		return 0;
 	}
@@ -461,7 +461,7 @@ void stream_status(string name, mapping info)
 				"{uptime_english}": describe_time(uptime),
 			]));
 		}
-		handle_async(save_channel_info(name, info)) { };
+		spawn_task(save_channel_info(name, info));
 		notice_user_name(name, info->user_id);
 		G->G->stream_online_since[name] = started;
 		int viewers = info->viewer_count;
@@ -664,7 +664,7 @@ protected void create()
 #if !constant(G)
 void runhooks(mixed ... args) { }
 mapping G_G_(mixed ... args) {return ([]);}
-mixed handle_async(mixed ... args) {error("handle_async is not currently supported in CLI mode\n");}
+mixed spawn_task(mixed ... args) {error("spawn_task is not currently supported in CLI mode\n");}
 
 int requests;
 

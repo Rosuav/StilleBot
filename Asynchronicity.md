@@ -155,7 +155,7 @@ class spawn_task(mixed gen, function|void got_result, function|void got_error) {
 		mixed resp;
 		if (mixed ex = catch {resp = gen(last){if (err) throw(err);};}) {got_error(ex, @extra); return;}
 		if (undefinedp(resp)) got_result(last, @extra);
-		else if (functionp(resp)) handle_async(resp, pump, propagate_error);
+		else if (functionp(resp)) spawn_task(resp, pump, propagate_error);
 		else if (objectp(resp) && resp->then) resp->then(pump, propagate_error);
 		else pump(resp, 0);
 	}

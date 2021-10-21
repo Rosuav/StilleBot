@@ -58,7 +58,7 @@ void check() {
 	if (mixed id = G->G->whofundsme_callout) remove_call_out(id);
 	if (!sizeof(websocket_groups[""]||([]))) return;
 	G->G->whofundsme_callout = call_out(check, 1800);
-	handle_async(do_check()) { };
+	spawn_task(do_check());
 }
 
 mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {

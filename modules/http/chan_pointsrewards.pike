@@ -52,7 +52,7 @@ continue Concurrent.Future populate_rewards_cache(string chan) {
 	G->G->pointsrewards[chan] = rewards;
 	send_updates_all("#" + chan);
 }
-void update_rewards_cache(string chan) {handle_async(populate_rewards_cache(chan)) { };}
+void update_rewards_cache(string chan) {spawn_task(populate_rewards_cache(chan));}
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {

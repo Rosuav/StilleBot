@@ -447,7 +447,7 @@ class channel_notif
 			object handler = G->G->builtins[message->builtin] || message->builtin; //Chaining can be done by putting the object itself in the mapping
 			if (objectp(handler)) {
 				string param = _substitute_vars(message->builtin_param || "", vars, person);
-				handle_async(handler->message_params(this, person, param)) {
+				spawn_task(handler->message_params(this, person, param)) {
 					if (!__ARGS__[0]) return; //No params? No output.
 					_send_recursive(person, message->message, vars | __ARGS__[0], cfg);
 				};
@@ -986,7 +986,7 @@ continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 	req->response_and_finish(resp);
 }
 
-void http_handler(Protocols.HTTP.Server.Request req) {handle_async(http_request(req)) { };}
+void http_handler(Protocols.HTTP.Server.Request req) {spawn_task(http_request(req));}
 
 void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 {

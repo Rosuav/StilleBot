@@ -454,7 +454,7 @@ void websocket_cmd_makenotifs(mapping(string:mixed) conn, mapping(string:mixed) 
 		make_echocommand(sprintf("!giveaway_%s%s", kwd, channel->name), resp);
 }
 
-void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {handle_async(master_control(conn, msg)) { };}
+void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(master_control(conn, msg));}
 continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
@@ -639,5 +639,5 @@ protected void create(string name)
 	if (!G->G->giveaway_purchases) G->G->giveaway_purchases = (<>);
 	register_hook("channel-online", channel_online);
 	register_hook("channel-offline", channel_offline);
-	handle_async(check_bcaster_tokens()) { };
+	spawn_task(check_bcaster_tokens());
 }

@@ -524,6 +524,6 @@ continue Concurrent.Future|int retrofit_raids(int|void fastlookups) {
 
 protected void create(string name) {
 	::create(name);
-	//handle_async(retrofit_raids()) { }; //Uncomment to do a full migration pass. CAUTION: Takes a while.
-	//handle_async(retrofit_raids(1)) { }; //Uncomment to do a fast(ish) migration pass, just getting renames.
+	//spawn_task(retrofit_raids()); //Uncomment to do a full migration pass. CAUTION: Takes a while.
+	//spawn_task(retrofit_raids(1)); //Uncomment to do a fast(ish) migration pass, just getting renames.
 }

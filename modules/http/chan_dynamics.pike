@@ -117,7 +117,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
 	//Fire-and-forget a reward listing
 	if (!G->G->channel_reward_list[chan]) G->G->channel_reward_list[chan] = ({ });
-	handle_async(fetch_rewards(chan)) { };
+	spawn_task(fetch_rewards(chan));
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 	]) | req->misc->chaninfo);

@@ -104,7 +104,7 @@ void subpoints_updated(string hook, string chan, mapping info) {
 	object channel = G->G->irc->channels["#" + chan];
 	mapping cfg = channel->?config->?subpoints;
 	if (!cfg || !sizeof(cfg)) return;
-	handle_async(get_sub_points(chan)) {
+	spawn_task(get_sub_points(chan)) {
 		int points = __ARGS__[0];
 		Stdio.append_file("evt_subpoints.log", sprintf("Updated subpoint count: %d\n", points));
 		foreach (cfg; string nonce; mapping tracker)
