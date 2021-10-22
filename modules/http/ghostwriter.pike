@@ -3,20 +3,35 @@ constant markdown = #"# Ghostwriter
 
 When your channel is offline, host other channels automatically.
 
-$$login$$
+$$login||Hosting SomeChannel / Now Live / Channel Offline$$
+{: #statusbox}
+
+[Check hosting now](: #recheck disabled=true)
 
 TODO: Have a nice picker for these. For now, just enter channel names, one per line.
 <textarea id=channels rows=10 cols=40></textarea><br>
 [Update channel list](: #updatechannels disabled=true)
 
 <style>
-#loginbox {
+#statusbox {
 	max-width: max-content;
-	background: aliceblue;
-	border: 3px solid blue;
 	margin: auto;
 	padding: 1em;
 	font-size: 125%;
+	background: aliceblue; /* Colours used on startup and if not logged in */
+	border: 3px solid blue;
+}
+#statusbox.statusidle {
+	background: #ddd;
+	border: 3px solid #777;
+}
+#statusbox.statushost {
+	background: #cff;
+	border: 3px solid #0ff;
+}
+#statusbox.statuslive {
+	background: #fcf;
+	border: 3px solid rebeccapurple;
 }
 </style>
 ";
@@ -34,13 +49,12 @@ TODO: Have a nice picker for these. For now, just enter channel names, one per l
 */
 
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
-	string login = "";
+	string login;
 	if (string scopes = ensure_bcaster_token(req, "chat:edit", req->misc->session->user->?login || "!!"))
 		login = sprintf("> This feature requires Twitch chat authentication.\n>\n"
-				"> [Grant permission](: .twitchlogin data-scopes=@%s@)\n"
-				"{: #loginbox}", scopes);
+				"> [Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
 	return render(req, ([
-		"vars": (["ws_group": login == "" && req->misc->session->user->login]), //If null, no connection will be established
+		"vars": (["ws_group": !login && req->misc->session->user->login]), //If null, no connection will be established
 		"login": login,
 	]));
 }
@@ -62,4 +76,11 @@ void websocket_cmd_setchannels(mapping(string:mixed) conn, mapping(string:mixed)
 	config->channels = chan;
 	persist_config->save();
 	send_updates_all(conn->group, (["channels": chan]));
+}
+
+void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Hack: Test the display
+	send_updates_all(conn->group, (["status": "Hosting SomeChannel", "statustype": "host"]));
+	call_out(send_updates_all, 3, conn->group, (["status": "Now Live", "statustype": "live"]));
+	call_out(send_updates_all, 6, conn->group, (["status": "Channel Offline", "statustype": "idle"]));
 }

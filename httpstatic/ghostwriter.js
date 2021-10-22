@@ -6,6 +6,7 @@ export function render(state) {
 	document.querySelectorAll("button").forEach(b => b.disabled = false);
 	//Partial updates: only update channels if channels were set
 	if (state.channels) DOM("#channels").value = state.channels.map(c => c.name).join("\n");
+	if (state.status) set_content("#statusbox", state.status).className = "status" + state.statustype;
 }
 
 
@@ -15,3 +16,5 @@ export function render(state) {
 on("click", "#updatechannels", e => {
 	ws_sync.send({cmd: "setchannels", channels: DOM("#channels").value.split("\n").map(name => ({name}))});
 });
+
+on("click", "#recheck", e => ws_sync.send({cmd: "recheck"}));
