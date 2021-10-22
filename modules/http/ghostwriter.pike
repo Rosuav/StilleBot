@@ -36,7 +36,7 @@ TODO: Have a nice picker for these. For now, just enter channel names, one per l
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
 	string login = "";
 	if (string scopes = ensure_bcaster_token(req, "chat:edit", req->misc->session->user->?login || "!!"))
-		login = sprintf("> This feature requires Twitch chat authentication.<br>\n"
+		login = sprintf("> This feature requires Twitch chat authentication.\n>\n"
 				"> [Grant permission](: .twitchlogin data-scopes=@%s@)\n"
 				"{: #loginbox}", scopes);
 	return render(req, ([
