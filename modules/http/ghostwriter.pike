@@ -59,35 +59,24 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]));
 }
 
-void got_message(string chan, string type, string message, mapping params) {
-	write("Got message: %O %O %O %O\n", chan, type, message, params);
+void host_changed(string chan, string message) {
+	sscanf(message, "%s %s", string target, string viewers);
+	//Note that viewers may be "-" if we're already hosting, so don't depend on it
+	//target is "-" if not hosting
+	write("Host changed: %O -> %O\n", chan, target);
 }
 
 class IRCClient
 {
 	inherit Protocols.IRC.Client;
-	void got_command(string what, string ... args)
-	{
-		//TODO: Deduplicate with connection.pike
-		what = utf8_to_string(what); args[0] = utf8_to_string(args[0]); //TODO: Check if anything ever breaks because of this
-		mapping(string:string) attr = ([]);
-		if (has_prefix(what, "@"))
-		{
-			foreach (what[1..]/";", string att)
-			{
-				sscanf(att, "%s=%s", string name, string val);
-				attr[replace(name, "-", "_")] = replace(val || "", "\\s", " ");
-			}
-		}
-		sscanf(args[0], "%s :%s", string a, string message);
-		array parts = (a || args[0]) / " ";
-		if (sizeof(parts) >= 3 && (<"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT">)[parts[1]])
-		{
-			string chan = lower_case(parts[2]);
-			G->G->websocket_types->ghostwriter->got_message(chan - "#", parts[1], message, attr);
-			return;
-		}
-		::got_command(what, @args);
+	void got_notify(string from, string type, string|void chan, string|void message, string ... extra) {
+		::got_notify(from, type, chan, message, @extra);
+		if (type == "HOSTTARGET") G->G->websocket_types->ghostwriter->host_changed(chan - "#", message);
+	}
+	void close() {
+		::close();
+		remove_call_out(da_ping);
+		remove_call_out(no_ping_reply);
 	}
 }
 
@@ -96,6 +85,7 @@ void connect(string chan, mapping info) {
 	if (object irc = G->G->ghostwriterirc[chan]) {
 		//TODO: Make sure it's still connected
 		//write("Already connected to %O\n", chan);
+		//**/if (1) irc->close(); else
 		return;
 	}
 	write("Ghostwriter connecting to %O\n", chan);
