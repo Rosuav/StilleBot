@@ -26,6 +26,12 @@ class IRCClient
 	}
 	#endif
 
+	void close() {
+		::close();
+		remove_call_out(da_ping);
+		remove_call_out(no_ping_reply);
+	}
+
 	void got_command(string what, string ... args)
 	{
 		//With the capability "twitch.tv/tags" active, some messages get delivered prefixed.
