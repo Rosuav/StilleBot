@@ -36,6 +36,8 @@ TODO: Have a nice picker for these. For now, just enter channel names, one per l
 </style>
 ";
 
+mapping(string:mapping(string:mixed)) chanstate;
+
 /*
 - Require login for functionality, but give full deets
 - Event-based, but can be pinged via the web site "re-check". Also check on bot startup.
@@ -59,11 +61,30 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]));
 }
 
+array(string) low_recalculate_status(mapping st) {
+	//1) Being live trumps all.
+	if (st->uptime) return ({"live", "Now Live"});
+	//2) Hosting. TODO: Distinguish Twitch autohosting from ghostwriter hosts from manual hosts (and maybe acknowledge raids too)
+	if (st->hosting) return ({"host", "Hosting " + st->hosting});
+	//3) Paused.
+	//3a) TODO: Paused due to schedule
+	//3b) TODO: Paused due to explicit web page interaction "unhost for X minutes"
+	//4) Idle
+	return ({"idle", "Channel Offline"});
+}
+void recalculate_status(string chan) {
+	mapping st = chanstate[chan];
+	[st->statustype, st->status] = low_recalculate_status(st);
+	send_updates_all(chan); //Note: doesn't update configs, so it won't trample all over a half-done change in a client
+}
+
 void host_changed(string chan, string message) {
 	sscanf(message, "%s %s", string target, string viewers);
 	//Note that viewers may be "-" if we're already hosting, so don't depend on it
-	//target is "-" if not hosting
 	write("Host changed: %O -> %O\n", chan, target);
+	if (target == "-") target = 0; //Not currently hosting
+	chanstate[chan]->hosting = target;
+	recalculate_status(chan);
 }
 
 class IRCClient
@@ -82,10 +103,11 @@ class IRCClient
 
 void connect(string chan, mapping info) {
 	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) return;
+	if (!chanstate[chan]) chanstate[chan] = (["statustype": "idle", "status": "Channel Offline"]);
 	if (object irc = G->G->ghostwriterirc[chan]) {
-		//TODO: Make sure it's still connected
+		//TODO: Make sure it's actually still connected
 		//write("Already connected to %O\n", chan);
-		//**/if (1) irc->close(); else
+		/**/if (1) irc->close(); else
 		return;
 	}
 	write("Ghostwriter connecting to %O\n", chan);
@@ -103,7 +125,7 @@ void connect(string chan, mapping info) {
 	if (ex) werror("%% Error connecting to IRC:\n%s\n", describe_error(ex));
 }
 
-mapping get_state(string group) {return persist_config->path("ghostwriter")[group] || ([]);}
+mapping get_state(string group) {return (persist_config->path("ghostwriter")[group] || ([])) | (chanstate[group] || ([]));}
 
 void websocket_cmd_setchannels(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->group || conn->group == "0") return;
@@ -132,6 +154,8 @@ void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg
 protected void create(string name) {
 	::create(name);
 	if (!G->G->ghostwriterirc) G->G->ghostwriterirc = ([]);
+	if (!G->G->ghostwriterstate) G->G->ghostwriterstate = ([]);
+	chanstate = G->G->ghostwriterstate;
 	int delay = 0; //Don't hammer the server
 	foreach (persist_config->path("ghostwriter"); string chan; mapping info) {
 		if (sizeof(info->channels || ({ }))) call_out(connect, delay += 2, chan, info);
