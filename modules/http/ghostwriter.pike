@@ -78,11 +78,10 @@ void recalculate_status(string chan) {
 	send_updates_all(chan); //Note: doesn't update configs, so it won't trample all over a half-done change in a client
 }
 
-void host_changed(string chan, string message) {
-	sscanf(message, "%s %s", string target, string viewers);
+void host_changed(string chan, string target, string viewers) {
 	//Note that viewers may be "-" if we're already hosting, so don't depend on it
+	if (chanstate[chan]->hosting == target) return; //eg after reconnecting to IRC
 	write("Host changed: %O -> %O\n", chan, target);
-	if (target == "-") target = 0; //Not currently hosting
 	chanstate[chan]->hosting = target;
 	recalculate_status(chan);
 }
@@ -90,39 +89,51 @@ void host_changed(string chan, string message) {
 class IRCClient
 {
 	inherit Protocols.IRC.Client;
+	void got_host(string chan, string message) {
+		sscanf(message, "%s %s", string target, string viewers);
+		if (target == "-") target = 0; //Not currently hosting
+		G->G->websocket_types->ghostwriter->host_changed(chan - "#", target, viewers);
+		if (object p = m_delete(options, "promise")) p->success(target);
+	}
 	void got_notify(string from, string type, string|void chan, string|void message, string ... extra) {
 		::got_notify(from, type, chan, message, @extra);
-		if (type == "HOSTTARGET") G->G->websocket_types->ghostwriter->host_changed(chan - "#", message);
+		if (type == "HOSTTARGET") got_host(chan, message);
+		//If you're not currently hosting, there is no HOSTTARGET on startup. Once we're
+		//confident that one isn't coming, notify that there is no host target.
+		if (type == "ROOMSTATE" && options->promise) got_host(chan, "- -");
 	}
 	void close() {
+		if (options->promise) options->promise->failure(0);
 		::close();
 		remove_call_out(da_ping);
 		remove_call_out(no_ping_reply);
 	}
+	void connection_lost() {close();}
 }
 
-void connect(string chan, mapping info) {
-	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) return;
+Concurrent.Future connect(string chan, mapping info) {
+	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) return Concurrent.reject(0);
 	if (!chanstate[chan]) chanstate[chan] = (["statustype": "idle", "status": "Channel Offline"]);
 	if (object irc = G->G->ghostwriterirc[chan]) {
 		//TODO: Make sure it's actually still connected
 		//write("Already connected to %O\n", chan);
-		/**/if (1) irc->close(); else
-		return;
+		//**/if (1) catch {irc->close();}; else
+		return Concurrent.resolve("(" + chanstate[chan]->hosting + ")");
 	}
 	write("Ghostwriter connecting to %O\n", chan);
+	Concurrent.Promise prom = Concurrent.Promise();
 	mixed ex = catch {
 		object irc = IRCClient("irc.chat.twitch.tv", ([
 			"nick": chan,
 			"pass": "oauth:" + persist_status->path("bcaster_token")[chan],
-			"connection_lost": lambda() {werror("Ghostwriter disconnecting from %O\n", chan); m_delete(G->G->ghostwriterirc, chan);},
+			"promise": prom,
 		]));
-		irc->cmd->cap("REQ","twitch.tv/tags");
 		irc->cmd->cap("REQ","twitch.tv/commands");
 		irc->join_channel("#" + chan);
 		G->G->ghostwriterirc[chan] = irc;
 	};
-	if (ex) werror("%% Error connecting to IRC:\n%s\n", describe_error(ex));
+	if (ex) {werror("%% Error connecting to IRC:\n%s\n", describe_error(ex)); return Concurrent.reject(0);}
+	return prom->future();
 }
 
 mapping get_state(string group) {return (persist_config->path("ghostwriter")[group] || ([])) | (chanstate[group] || ([]));}
@@ -144,12 +155,16 @@ void websocket_cmd_setchannels(mapping(string:mixed) conn, mapping(string:mixed)
 	send_updates_all(conn->group, (["channels": chan]));
 }
 
-void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	//Hack: Test the display
-	send_updates_all(conn->group, (["status": "Hosting SomeChannel", "statustype": "host"]));
-	call_out(send_updates_all, 3, conn->group, (["status": "Now Live", "statustype": "live"]));
-	call_out(send_updates_all, 6, conn->group, (["status": "Channel Offline", "statustype": "idle"]));
+continue void force_check(string chan) {
+	mapping info = persist_config->path("ghostwriter")[chan] || ([]);
+	object irc = G->G->ghostwriterirc[chan];
+	write("Current conn: %O\n", irc);
+	connect(chan, info)->then(lambda(string target) {write("GOT HOST TARGET: %O\n", target);}) {write("FAILED TO GET HOST TARGET\n");};
+	mapping data = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan));
+	write("Live? %O\n", data);
 }
+
+void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(force_check(conn->group));}
 
 protected void create(string name) {
 	::create(name);
