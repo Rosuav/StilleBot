@@ -45,4 +45,21 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]));
 }
 
-mapping get_state(string group, string|void id) {return ([]);}
+mapping get_state(string group) {return persist_config->path("ghostwriter")[group] || ([]);}
+
+void websocket_cmd_setchannels(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->group || conn->group == "0") return;
+	if (!arrayp(msg->channels)) return;
+	mapping config = persist_config->path("ghostwriter", conn->group);
+	array chan = map(msg->channels) {[mapping c] = __ARGS__;
+		if (!mappingp(c)) return 0;
+		c->name = String.trim(c->name || "");
+		if (c->name == "") return;
+		//TODO: Look up the channel and make sure it's valid
+		return c;
+	};
+	chan -= ({0});
+	config->channels = chan;
+	persist_config->save();
+	send_updates_all(conn->group, (["channels": chan]));
+}
