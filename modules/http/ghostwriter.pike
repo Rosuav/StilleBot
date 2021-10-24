@@ -1,5 +1,5 @@
 inherit http_websocket;
-constant markdown = #"# Ghostwriter
+constant markdown = #"# Ghostwriter $$displayname$$
 
 When your channel is offline, host other channels automatically.
 
@@ -58,6 +58,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	return render(req, ([
 		"vars": (["ws_group": !login && req->misc->session->user->login]), //If null, no connection will be established
 		"login": login,
+		"displayname": !login ? "- " + req->misc->session->user->display_name : "",
 	]));
 }
 
