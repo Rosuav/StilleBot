@@ -48,6 +48,9 @@ mapping(string:mapping(string:mixed)) chanstate;
 - Note that Stream Offline may need to track any channel, not just a registered target
 - Would probably need to spin up an altvoice (so this is a poltergeist) to see host status and send host commands
 - Check stream schedule, and automatically unhost X seconds (default: 15 mins) before a stream
+- TODO: Allow host overriding if a higher-priority target goes live
+  - This would add an event while Hosting: "stream online (self or any higher target)"
+  - Would also change the logic in recalculate_status to check even if hosting
 */
 
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
@@ -60,6 +63,27 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		"login": login,
 		"displayname": !login ? "- " + req->misc->session->user->display_name : "",
 	]));
+}
+
+continue Concurrent.Future findhost(string chan, array(mapping) targets) {
+	//If you have more than 100 host targets, you deserve problems. No fracturing of the array here.
+	write("Probing %O\n", targets);
+	array live = yield(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_login": targets->name])));
+	write("Live: %O\n", live);
+	if (!sizeof(live)) return 0; //Nothing to do, nobody live.
+	//Reorder the live streams by the order of the original targets
+	/* Requires the IDs to be stored.
+	mapping byid = ([]);
+	foreach (live, mapping st) byid[live->user_id] = live;
+	live = map(targets->id, byid) - ({0});
+	if (!sizeof(live)) return 0; //Somehow we lost everyone?
+	*/
+	//Currently we always take the first on the list. This may change in the future.
+	object irc = yield(connect(chan)); //Make sure we're connected. (Mutually recursive via a long chain.)
+	write("Connected\n");
+	irc->send_message("#" + chan, "/host " + string_to_utf8(live[0]->user_login)); //Is it possible to have a non-ASCII login??
+	//If the host succeeds, there should be a HOSTTARGET message shortly.
+	write("Got live: %O\n", live);
 }
 
 array(string) low_recalculate_status(mapping st) {
@@ -77,6 +101,11 @@ void recalculate_status(string chan) {
 	mapping st = chanstate[chan];
 	[st->statustype, st->status] = low_recalculate_status(st);
 	send_updates_all(chan, st); //Note: doesn't update configs, so it won't trample all over a half-done change in a client
+	if (st->statustype == "idle") {
+		mapping config = persist_config->path("ghostwriter", chan);
+		array targets = config->channels || ({ });
+		if (sizeof(targets)) spawn_task(findhost(chan, targets));
+	}
 }
 
 void host_changed(string chan, string target, string viewers) {
@@ -94,7 +123,7 @@ class IRCClient
 		sscanf(message, "%s %s", string target, string viewers);
 		if (target == "-") target = 0; //Not currently hosting
 		G->G->websocket_types->ghostwriter->host_changed(chan - "#", target, viewers);
-		if (object p = m_delete(options, "promise")) p->success(target);
+		if (object p = m_delete(options, "promise")) p->success(this);
 	}
 	void got_notify(string from, string type, string|void chan, string|void message, string ... extra) {
 		::got_notify(from, type, chan, message, @extra);
@@ -112,14 +141,14 @@ class IRCClient
 	void connection_lost() {close();}
 }
 
-Concurrent.Future connect(string chan, mapping info) {
+Concurrent.Future connect(string chan) {
 	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) return Concurrent.reject(0);
 	if (!chanstate[chan]) chanstate[chan] = (["statustype": "idle", "status": "Channel Offline"]);
 	if (object irc = G->G->ghostwriterirc[chan]) {
 		//TODO: Make sure it's actually still connected
 		//write("Already connected to %O\n", chan);
 		//**/if (1) catch {irc->close();}; else
-		return Concurrent.resolve(chanstate[chan]->hosting);
+		return Concurrent.resolve(irc);
 	}
 	write("Ghostwriter connecting to %O\n", chan);
 	Concurrent.Promise prom = Concurrent.Promise();
@@ -157,10 +186,9 @@ void websocket_cmd_setchannels(mapping(string:mixed) conn, mapping(string:mixed)
 }
 
 continue void force_check(string chan) {
-	mapping info = persist_config->path("ghostwriter")[chan] || ([]);
-	object irc = G->G->ghostwriterirc[chan];
-	[string target, mapping data] = yield(Concurrent.all(connect(chan, info),
+	[object irc, mapping data] = yield(Concurrent.all(connect(chan),
 		twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan)));
+	//We don't actually need the IRC object here, just that one has to exist.
 	mapping st = chanstate[chan];
 	if (!sizeof(data->data)) m_delete(st, "uptime");
 	else st->uptime = data->data[0]->started_at;
@@ -176,6 +204,6 @@ protected void create(string name) {
 	chanstate = G->G->ghostwriterstate;
 	int delay = 0; //Don't hammer the server
 	foreach (persist_config->path("ghostwriter"); string chan; mapping info) {
-		if (sizeof(info->channels || ({ }))) call_out(connect, delay += 2, chan, info);
+		if (sizeof(info->channels || ({ }))) call_out(connect, delay += 2, chan);
 	}
 }
