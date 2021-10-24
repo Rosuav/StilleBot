@@ -195,7 +195,11 @@ continue void force_check(string chan) {
 	recalculate_status(chan);
 }
 
-void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(force_check(conn->group));}
+void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Forcing a check also forces a reconnect, in case there are problems.
+	if (object irc = m_delete(G->G->ghostwriterirc, conn->group)) catch {irc->close();};
+	spawn_task(force_check(conn->group));
+}
 
 protected void create(string name) {
 	::create(name);
