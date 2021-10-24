@@ -76,7 +76,7 @@ array(string) low_recalculate_status(mapping st) {
 void recalculate_status(string chan) {
 	mapping st = chanstate[chan];
 	[st->statustype, st->status] = low_recalculate_status(st);
-	send_updates_all(chan); //Note: doesn't update configs, so it won't trample all over a half-done change in a client
+	send_updates_all(chan, st); //Note: doesn't update configs, so it won't trample all over a half-done change in a client
 }
 
 void host_changed(string chan, string target, string viewers) {
@@ -119,7 +119,7 @@ Concurrent.Future connect(string chan, mapping info) {
 		//TODO: Make sure it's actually still connected
 		//write("Already connected to %O\n", chan);
 		//**/if (1) catch {irc->close();}; else
-		return Concurrent.resolve("(" + chanstate[chan]->hosting + ")");
+		return Concurrent.resolve(chanstate[chan]->hosting);
 	}
 	write("Ghostwriter connecting to %O\n", chan);
 	Concurrent.Promise prom = Concurrent.Promise();
@@ -159,10 +159,12 @@ void websocket_cmd_setchannels(mapping(string:mixed) conn, mapping(string:mixed)
 continue void force_check(string chan) {
 	mapping info = persist_config->path("ghostwriter")[chan] || ([]);
 	object irc = G->G->ghostwriterirc[chan];
-	write("Current conn: %O\n", irc);
-	connect(chan, info)->then(lambda(string target) {write("GOT HOST TARGET: %O\n", target);}) {write("FAILED TO GET HOST TARGET\n");};
-	mapping data = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan));
-	write("Live? %O\n", data);
+	[string target, mapping data] = yield(Concurrent.all(connect(chan, info),
+		twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan)));
+	mapping st = chanstate[chan];
+	if (!sizeof(data->data)) m_delete(st, "uptime");
+	else st->uptime = data->data[0]->started_at;
+	recalculate_status(chan);
 }
 
 void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(force_check(conn->group));}
