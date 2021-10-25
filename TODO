@@ -82,3 +82,4 @@
   - Add selection of default command editor
   - Needs new concept of websocket group?? Or just collect them as needed?
   - Would need to transcend specific websocket class
+* TODO: "max-width: fit-content" is borked, look it up
