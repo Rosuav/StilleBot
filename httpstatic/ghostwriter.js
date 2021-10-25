@@ -15,12 +15,13 @@ function display_channel(chan) {
 
 export function render(state) {
 	//If we have a socket connection, enable the primary control buttons
-	document.querySelectorAll("button").forEach(b => b.disabled = false);
+	if (state.active) document.querySelectorAll("button").forEach(b => b.disabled = false);
 	//Partial updates: only update channels if channels were set
 	if (state.channels) set_content("#channels", state.channels.map(display_channel));
 	if (state.status) set_content("#statusbox", state.status).className = "status" + state.statustype;
+	//Allow the server to explicitly mark us as inactive (for the demo)
+	if (state.inactive) document.querySelectorAll("button").forEach(b => b.disabled = !b.dataset.scopes);
 }
-
 
 //NOTE: Do not save channel list on input/change on textarea as it would be disruptive.
 //Ultimately, save immediately on any *real* change, after validating the channel name.

@@ -3,7 +3,7 @@ constant markdown = #"# Ghostwriter $$displayname$$
 
 When your channel is offline, host other channels automatically.
 
-$$login||Hosting SomeChannel / Now Live / Channel Offline$$
+$$login||Loading...$$
 {: #statusbox}
 
 [Check hosting now](: #recheck disabled=true)
@@ -48,8 +48,6 @@ $$login||Hosting SomeChannel / Now Live / Channel Offline$$
 
 mapping(string:mapping(string:mixed)) chanstate;
 
-//TODO: If not logged in, provide some example autohost targets (maybe use the bot's autohost list?)
-
 /*
 - Require login for functionality, but give full deets
 - Event-based, but can be pinged via the web site "re-check". Also check on bot startup.
@@ -71,7 +69,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		login = sprintf("> This feature requires Twitch chat authentication.\n>\n"
 				"> [Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
 	return render(req, ([
-		"vars": (["ws_group": !login && req->misc->session->user->login]), //If null, no connection will be established
+		"vars": (["ws_group": login ? "0" : req->misc->session->user->login]),
 		"login": login,
 		"displayname": !login ? "- " + req->misc->session->user->display_name : "",
 	]));
@@ -126,6 +124,8 @@ void host_changed(string chan, string target, string viewers) {
 	write("Host changed: %O -> %O\n", chan, target);
 	chanstate[chan]->hosting = target;
 	recalculate_status(chan);
+	//TODO: Add the current host target to the stream_offline hook channel list
+	//TODO: Purge the hook channel list of any that we don't need (those for whom autohosts_this[id] is empty or absent)
 }
 
 class IRCClient
@@ -178,7 +178,17 @@ Concurrent.Future connect(string chan) {
 	return prom->future();
 }
 
-mapping get_state(string group) {return (persist_config->path("ghostwriter")[group] || ([])) | (chanstate[group] || ([]));}
+mapping get_state(string group) {
+	if (group == "0") {
+		//If you're not logged in, show the bot's autohost list as an example.
+		//NOTE TO BOT OPERATORS: This *will* reveal your AH list to the world. Hack this out
+		//if you're not okay with that.
+		mapping config = persist_config->path("ghostwriter")[persist_config["ircsettings"]->nick];
+		if (!config) return ([]);
+		return (["inactive": 1, "channels": config->channels || ({ })]);
+	}
+	return (["active": 1]) | persist_config->path("ghostwriter")[group] | chanstate[group];
+}
 
 continue void force_check(string chan) {
 	[object irc, mapping data] = yield(Concurrent.all(connect(chan),
@@ -191,6 +201,7 @@ continue void force_check(string chan) {
 }
 
 void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->group || conn->group == "0") return;
 	//Forcing a check also forces a reconnect, in case there are problems.
 	if (object irc = m_delete(G->G->ghostwriterirc, conn->group)) catch {irc->close();};
 	spawn_task(force_check(conn->group));
