@@ -184,6 +184,10 @@ void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg
 	spawn_task(force_check(conn->group));
 }
 
+//TODO: Maintain a mapping from target-stream-id to array of channels that autohost it
+//(Doesn't need to be saved, can be calculated on code update)
+//On stream online, for each channel autohosting it, if idle, host it.
+//On stream offline, for each channel autohosting it, if hosting it, recheck.
 //EventSub stream_online = EventSub("online", "stream.online", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Stream online [%d, %O]: %O\n", time(), @__ARGS__));};
 //EventSub stream_offline = EventSub("offline", "stream.offline", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Stream offline [%d, %O]: %O\n", time(), @__ARGS__));};
 		//stream_online(chan, (["broadcaster_user_id": (string)userid])); //These two don't actually give us any benefit.
