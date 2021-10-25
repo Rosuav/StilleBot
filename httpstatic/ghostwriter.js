@@ -1,9 +1,13 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {LI, IMG} = choc;
+const {LI, IMG, BUTTON} = choc;
+import {waitlate} from "$$static||utils.js$$";
 
-let channels = [];
+let li_cache = { };
 function display_channel(chan) {
-	return LI({"data-id": chan.id}, [
+	return li_cache[chan.id] = li_cache[chan.id] || LI({"data-id": chan.id}, [
+		BUTTON({className: "reorder moveup", "data-dir": -1, title: "Increase priority"}, "\u2191"),
+		BUTTON({className: "reorder movedn", "data-dir": +1, title: "Decrease priority"}, "\u2193"),
+		BUTTON({type: "button", className: "confirmdelete"}, "🗑"),
 		IMG({className: "avatar", src: chan.profile_image_url}),
 		chan.display_name,
 	]);
@@ -13,7 +17,7 @@ export function render(state) {
 	//If we have a socket connection, enable the primary control buttons
 	document.querySelectorAll("button").forEach(b => b.disabled = false);
 	//Partial updates: only update channels if channels were set
-	if (state.channels) set_content("#channels", (channels = state.channels).map(display_channel));
+	if (state.channels) set_content("#channels", state.channels.map(display_channel));
 	if (state.status) set_content("#statusbox", state.status).className = "status" + state.statustype;
 }
 
@@ -28,3 +32,11 @@ on("submit", "#addchannel", e => {
 });
 
 on("click", "#recheck", e => ws_sync.send({cmd: "recheck"}));
+
+on("click", ".reorder", e => {
+	ws_sync.send({cmd: "reorder", id: e.match.closest("li").dataset.id, "dir": +e.match.dataset.dir});
+});
+
+on("click", ".confirmdelete", waitlate(750, 5000, "Delete?", e => {
+	ws_sync.send({cmd: "delete", id: e.match.closest("li").dataset.id});
+}));

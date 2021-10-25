@@ -8,7 +8,7 @@ $$login||Hosting SomeChannel / Now Live / Channel Offline$$
 
 [Check hosting now](: #recheck disabled=true)
 
-Channels to autohost:
+## Channels to autohost
 1. loading...
 {: #channels}
 
@@ -18,7 +18,11 @@ Channels to autohost:
 </form>
 
 <style>
-.avatar {max-width: 40px; vertical-align: middle;}
+.avatar {max-width: 40px; vertical-align: middle; margin: 0 8px;}
+#channels button {min-width: 25px; height: 25px; margin: 0 5px;}
+/* Hide buttons that wouldn't have any effect */
+#channels li:first-of-type .moveup {visibility: hidden;}
+#channels li:last-of-type .movedn {visibility: hidden;}
 #statusbox {
 	max-width: max-content;
 	margin: auto;
@@ -213,6 +217,35 @@ void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) 
 		persist_config->save();
 		send_updates_all(conn->group, (["channels": config->channels]));
 	};
+}
+
+void websocket_cmd_reorder(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->group || conn->group == "0") return;
+	int dir = (int)msg->dir;
+	if (!msg->id || !msg->dir) return;
+	mapping config = persist_config->path("ghostwriter", conn->group);
+	foreach (config->channels || ({ }); int i; mapping chan) {
+		if (chan->id != msg->id) continue;
+		//Found it.
+		int dest = min(max(i + msg->dir, 0), sizeof(config->channels) - 1);
+		if (dest == i) return; //No movement needed!
+		//The front end will only ever send a dir of 1 or -1, so if you hack it and
+		//send larger numbers, it might be a little odd. Specifically, this is a swap,
+		//not multiple shifts.
+		[config->channels[i], config->channels[dest]] = ({config->channels[dest], config->channels[i]});
+		persist_config->save();
+		send_updates_all(conn->group, (["channels": config->channels]));
+		break;
+	}
+}
+
+void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->group || conn->group == "0") return;
+	mapping config = persist_config->path("ghostwriter", conn->group);
+	if (!msg->id || !config->channels) return;
+	config->channels = filter(config->channels) {return __ARGS__[0]->id != msg->id;};
+	persist_config->save();
+	send_updates_all(conn->group, (["channels": config->channels]));
 }
 
 protected void create(string name) {
