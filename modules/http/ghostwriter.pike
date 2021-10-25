@@ -78,7 +78,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 continue Concurrent.Future findhost(string chan, array(mapping) targets) {
 	//If you have more than 100 host targets, you deserve problems. No fracturing of the array here.
 	write("Probing %O\n", targets);
-	array live = yield(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_login": targets->name])));
+	array live = yield(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": targets->id])));
 	write("Live: %O\n", live);
 	if (!sizeof(live)) return 0; //Nothing to do, nobody live.
 	//Reorder the live streams by the order of the original targets
