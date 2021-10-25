@@ -196,14 +196,24 @@ void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg
 	spawn_task(force_check(conn->group));
 }
 
-//TODO: Maintain a mapping from target-stream-id to array of channels that autohost it
+//Mapping from target-stream-id to the channels that autohost it
 //(Doesn't need to be saved, can be calculated on code update)
-//On stream online, for each channel autohosting it, if idle, host it.
-//On stream offline, for each channel autohosting it, if hosting it, recheck.
-//EventSub stream_online = EventSub("online", "stream.online", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Stream online [%d, %O]: %O\n", time(), @__ARGS__));};
-//EventSub stream_offline = EventSub("offline", "stream.offline", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Stream offline [%d, %O]: %O\n", time(), @__ARGS__));};
-		//stream_online(chan, (["broadcaster_user_id": (string)userid])); //These two don't actually give us any benefit.
-		//stream_offline(chan, (["broadcaster_user_id": (string)userid]));
+mapping(string:multiset(string)) autohosts_this = ([]);
+EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string chanid, mapping event] = __ARGS__;
+	//TODO: For each channel autohosting chanid, if idle, host it.
+	write("** GW: Channel %O online: %O\nThese channels care: %O\n", chanid, event, autohosts_this[chanid]);
+};
+EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string chanid, mapping event] = __ARGS__;
+	//TODO: For each channel autohosting chanid, if hosting it, recheck.
+	write("** GW: Channel %O offline: %O\nThese channels care: %O\n", chanid, event, autohosts_this[chanid]);
+};
+
+void has_channel(string chan, string target) {
+	if (!autohosts_this[target]) autohosts_this[target] = (<>);
+	autohosts_this[target][chan] = 1;
+	stream_online(target, (["broadcaster_user_id": (string)target]));
+	stream_offline(target, (["broadcaster_user_id": (string)target]));
+}
 
 void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->group || conn->group == "0") return;
@@ -214,6 +224,7 @@ void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) 
 	get_user_info(msg->name, "login")->then() {[mapping c] = __ARGS__;
 		if (!c) return; //TODO: Report error to the user
 		config->channels += ({c});
+		has_channel(conn->group, c->id);
 		persist_config->save();
 		send_updates_all(conn->group, (["channels": config->channels]));
 	};
@@ -244,6 +255,7 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	mapping config = persist_config->path("ghostwriter", conn->group);
 	if (!msg->id || !config->channels) return;
 	config->channels = filter(config->channels) {return __ARGS__[0]->id != msg->id;};
+	if (multiset aht = autohosts_this[msg->id]) aht[conn->group] = 0;
 	persist_config->save();
 	send_updates_all(conn->group, (["channels": config->channels]));
 }
@@ -255,6 +267,8 @@ protected void create(string name) {
 	chanstate = G->G->ghostwriterstate;
 	int delay = 0; //Don't hammer the server
 	foreach (persist_config->path("ghostwriter"); string chan; mapping info) {
-		if (sizeof(info->channels || ({ }))) call_out(connect, delay += 2, chan);
+		if (!info->channels || !sizeof(info->channels)) continue;
+		call_out(connect, delay += 2, chan);
+		has_channel(chan, info->channels->id[*]);
 	}
 }
