@@ -18,6 +18,7 @@ Channels to autohost:
 </form>
 
 <style>
+.avatar {max-width: 40px; vertical-align: middle;}
 #statusbox {
 	max-width: max-content;
 	margin: auto;

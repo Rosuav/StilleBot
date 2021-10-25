@@ -1,9 +1,12 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {LI, SPAN} = choc;
+const {LI, IMG} = choc;
 
 let channels = [];
 function display_channel(chan) {
-	return LI(chan.display_name);
+	return LI({"data-id": chan.id}, [
+		IMG({className: "avatar", src: chan.profile_image_url}),
+		chan.display_name,
+	]);
 }
 
 export function render(state) {
