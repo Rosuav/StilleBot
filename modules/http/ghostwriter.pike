@@ -187,7 +187,7 @@ mapping get_state(string group) {
 		if (!config) return ([]);
 		return (["inactive": 1, "channels": config->channels || ({ })]);
 	}
-	return (["active": 1]) | persist_config->path("ghostwriter")[group] | chanstate[group];
+	return (["active": 1, "channels": ({ })]) | (persist_config->path("ghostwriter")[group] || ([])) | (chanstate[group] || ([]));
 }
 
 continue void force_check(string chan) {

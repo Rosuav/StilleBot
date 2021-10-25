@@ -17,7 +17,10 @@ export function render(state) {
 	//If we have a socket connection, enable the primary control buttons
 	if (state.active) document.querySelectorAll("button").forEach(b => b.disabled = false);
 	//Partial updates: only update channels if channels were set
-	if (state.channels) set_content("#channels", state.channels.map(display_channel));
+	if (state.channels) {
+		if (state.channels.length) set_content("#channels", state.channels.map(display_channel));
+		else set_content("#channels", "No channels to autohost yet - add one below!");
+	}
 	if (state.status) set_content("#statusbox", state.status).className = "status" + state.statustype;
 	//Allow the server to explicitly mark us as inactive (for the demo)
 	if (state.inactive) document.querySelectorAll("button").forEach(b => b.disabled = !b.dataset.scopes);
