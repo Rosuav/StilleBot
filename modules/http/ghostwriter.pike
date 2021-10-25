@@ -8,9 +8,14 @@ $$login||Hosting SomeChannel / Now Live / Channel Offline$$
 
 [Check hosting now](: #recheck disabled=true)
 
-TODO: Have a nice picker for these. For now, just enter channel names, one per line.
-<textarea id=channels rows=10 cols=40></textarea><br>
-[Update channel list](: #updatechannels disabled=true)
+Channels to autohost:
+1. loading...
+{: #channels}
+
+<form id=addchannel>
+<label>Add channel: <input name=channame></label>
+[Add](: disabled=true)
+</form>
 
 <style>
 #statusbox {
@@ -37,6 +42,8 @@ TODO: Have a nice picker for these. For now, just enter channel names, one per l
 ";
 
 mapping(string:mapping(string:mixed)) chanstate;
+
+//TODO: If not logged in, provide some example autohost targets (maybe use the bot's autohost list?)
 
 /*
 - Require login for functionality, but give full deets
@@ -193,21 +200,18 @@ void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg
 		//stream_online(chan, (["broadcaster_user_id": (string)userid])); //These two don't actually give us any benefit.
 		//stream_offline(chan, (["broadcaster_user_id": (string)userid]));
 
-void websocket_cmd_setchannels(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->group || conn->group == "0") return;
-	if (!arrayp(msg->channels)) return;
+	if (!stringp(msg->name)) return;
 	mapping config = persist_config->path("ghostwriter", conn->group);
-	array chan = map(msg->channels) {[mapping c] = __ARGS__;
-		if (!mappingp(c)) return 0;
-		c->name = String.trim(c->name || "");
-		if (c->name == "") return;
-		//TODO: Look up the channel and make sure it's valid
-		return c;
+	//TODO: Recheck all channels on add? Or do that separately?
+	//Rechecking would update their avatars and display names.
+	get_user_info(msg->name, "login")->then() {[mapping c] = __ARGS__;
+		if (!c) return;
+		config->channels += ({c});
+		persist_config->save();
+		send_updates_all(conn->group, (["channels": config->channels]));
 	};
-	chan -= ({0});
-	config->channels = chan;
-	persist_config->save();
-	send_updates_all(conn->group, (["channels": chan]));
 }
 
 protected void create(string name) {
