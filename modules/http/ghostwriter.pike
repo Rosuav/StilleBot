@@ -168,6 +168,27 @@ Concurrent.Future connect(string chan) {
 
 mapping get_state(string group) {return (persist_config->path("ghostwriter")[group] || ([])) | (chanstate[group] || ([]));}
 
+continue void force_check(string chan) {
+	[object irc, mapping data] = yield(Concurrent.all(connect(chan),
+		twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan)));
+	//We don't actually need the IRC object here, just that one has to exist.
+	mapping st = chanstate[chan];
+	if (!sizeof(data->data)) m_delete(st, "uptime");
+	else st->uptime = data->data[0]->started_at;
+	recalculate_status(chan);
+}
+
+void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Forcing a check also forces a reconnect, in case there are problems.
+	if (object irc = m_delete(G->G->ghostwriterirc, conn->group)) catch {irc->close();};
+	spawn_task(force_check(conn->group));
+}
+
+//EventSub stream_online = EventSub("online", "stream.online", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Stream online [%d, %O]: %O\n", time(), @__ARGS__));};
+//EventSub stream_offline = EventSub("offline", "stream.offline", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Stream offline [%d, %O]: %O\n", time(), @__ARGS__));};
+		//stream_online(chan, (["broadcaster_user_id": (string)userid])); //These two don't actually give us any benefit.
+		//stream_offline(chan, (["broadcaster_user_id": (string)userid]));
+
 void websocket_cmd_setchannels(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->group || conn->group == "0") return;
 	if (!arrayp(msg->channels)) return;
@@ -183,22 +204,6 @@ void websocket_cmd_setchannels(mapping(string:mixed) conn, mapping(string:mixed)
 	config->channels = chan;
 	persist_config->save();
 	send_updates_all(conn->group, (["channels": chan]));
-}
-
-continue void force_check(string chan) {
-	[object irc, mapping data] = yield(Concurrent.all(connect(chan),
-		twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan)));
-	//We don't actually need the IRC object here, just that one has to exist.
-	mapping st = chanstate[chan];
-	if (!sizeof(data->data)) m_delete(st, "uptime");
-	else st->uptime = data->data[0]->started_at;
-	recalculate_status(chan);
-}
-
-void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	//Forcing a check also forces a reconnect, in case there are problems.
-	if (object irc = m_delete(G->G->ghostwriterirc, conn->group)) catch {irc->close();};
-	spawn_task(force_check(conn->group));
 }
 
 protected void create(string name) {
