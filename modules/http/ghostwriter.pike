@@ -12,7 +12,7 @@ Channels to autohost:
 1. loading...
 {: #channels}
 
-<form id=addchannel>
+<form id=addchannel autocomplete=off>
 <label>Add channel: <input name=channame></label>
 [Add](: disabled=true)
 </form>
@@ -207,7 +207,7 @@ void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) 
 	//TODO: Recheck all channels on add? Or do that separately?
 	//Rechecking would update their avatars and display names.
 	get_user_info(msg->name, "login")->then() {[mapping c] = __ARGS__;
-		if (!c) return;
+		if (!c) return; //TODO: Report error to the user
 		config->channels += ({c});
 		persist_config->save();
 		send_updates_all(conn->group, (["channels": config->channels]));
