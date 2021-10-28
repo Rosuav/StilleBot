@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {LI, IMG, BUTTON} = choc;
+const {A, LI, IMG, BUTTON} = choc;
 import {waitlate} from "$$static||utils.js$$";
 
 let li_cache = { };
@@ -8,8 +8,10 @@ function display_channel(chan) {
 		BUTTON({className: "reorder moveup", "data-dir": -1, title: "Increase priority"}, "\u2191"),
 		BUTTON({className: "reorder movedn", "data-dir": +1, title: "Decrease priority"}, "\u2193"),
 		BUTTON({type: "button", className: "confirmdelete"}, "🗑"),
-		IMG({className: "avatar", src: chan.profile_image_url}),
-		chan.display_name,
+		A({href: "https://twitch.tv/" + chan.login}, [
+			IMG({className: "avatar", src: chan.profile_image_url}),
+			chan.display_name,
+		]),
 	]);
 }
 
