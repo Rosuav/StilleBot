@@ -75,6 +75,15 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]));
 }
 
+EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string chanid, mapping event] = __ARGS__;
+	write("** GW: Channel %O offline: %O\n", chanid, event);
+	mapping st = chanstate[event->broadcaster_user_login];
+	if (st) spawn_task(recalculate_status(event->broadcaster_user_login));
+	foreach (chanstate; string chan; mapping st) {
+		if (st->hostingid == chanid) spawn_task(recalculate_status(chan));
+	}
+};
+
 array(string) low_recalculate_status(mapping st) {
 	//1) Being live trumps all.
 	if (st->uptime) return ({"live", "Now Live"});
@@ -91,11 +100,15 @@ continue Concurrent.Future recalculate_status(string chan) {
 	[st->statustype, st->status] = low_recalculate_status(st);
 	send_updates_all(chan, st); //Note: doesn't update configs, so it won't trample all over a half-done change in a client
 	mapping config = persist_config->path("ghostwriter", chan);
-	array targets = config->channels || ({ }); string type = "user_id";
+	array targets = config->channels || ({ });
+	m_delete(st, "hostingid");
 	if (st->hosting) {
 		//Check if the hosted channel is still live
-		targets = ({st->hosting});
-		type = "user_login";
+		string id = (string)yield(get_user_id(st->hosting));
+		targets = ({id});
+		st->hostingid = id;
+		//Make sure we get notified when that channel goes offline
+		stream_offline(id, (["broadcaster_user_id": (string)id]));
 	}
 	else if (st->statustype == "idle") targets = targets->id;
 	else {
@@ -106,12 +119,11 @@ continue Concurrent.Future recalculate_status(string chan) {
 	//If you have more than 100 host targets, you deserve problems. No fracturing of the array here.
 	write("Probing %O\n", targets);
 	array live = ({ });
-	if (sizeof(targets)) live = yield(get_helix_paginated("https://api.twitch.tv/helix/streams", ([type: targets])));
+	if (sizeof(targets)) live = yield(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": targets])));
 	write("Live: %O\n", live);
 	string msg = "/unhost";
 	if (sizeof(live) > 1) {
 		//Reorder the live streams by the order of the original targets
-		//Not applicable if looking up by user_login as there'll only be one.
 		mapping byid = ([]);
 		foreach (live, mapping st) byid[live->user_id] = live;
 		live = map(targets, byid) - ({0});
@@ -131,7 +143,6 @@ void host_changed(string chan, string target, string viewers) {
 	write("Host changed: %O -> %O\n", chan, target);
 	chanstate[chan]->hosting = target;
 	spawn_task(recalculate_status(chan));
-	//TODO: Add the current host target to the stream_offline hook channel list
 	//TODO: Purge the hook channel list of any that we don't need (those for whom autohosts_this[id] is empty or absent)
 }
 
@@ -218,19 +229,18 @@ void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg
 //(Doesn't need to be saved, can be calculated on code update)
 mapping(string:multiset(string)) autohosts_this = ([]);
 EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string chanid, mapping event] = __ARGS__;
-	//TODO: For each channel autohosting chanid, if idle, host it.
 	write("** GW: Channel %O online: %O\nThese channels care: %O\n", chanid, event, autohosts_this[chanid]);
-};
-EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string chanid, mapping event] = __ARGS__;
-	//TODO: For each channel autohosting chanid, if hosting it, recheck.
-	write("** GW: Channel %O offline: %O\nThese channels care: %O\n", chanid, event, autohosts_this[chanid]);
+	foreach (autohosts_this[chanid]; string chan;) {
+		mapping st = chanstate[chan];
+		write("Channel %O cares - status %O\n", chan, st->statustype);
+		if (st->statustype == "idle") spawn_task(recalculate_status(chan));
+	}
 };
 
 void has_channel(string chan, string target) {
 	if (!autohosts_this[target]) autohosts_this[target] = (<>);
 	autohosts_this[target][chan] = 1;
 	stream_online(target, (["broadcaster_user_id": (string)target]));
-	stream_offline(target, (["broadcaster_user_id": (string)target]));
 }
 
 void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) msg) {
