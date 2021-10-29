@@ -8,6 +8,8 @@ $$login||Loading...$$
 
 [Check hosting now](: #recheck disabled=true)
 
+Pause duration: <select disabled=true id=pausetime><option value=300>Five minutes</option><option value=900>Fifteen minutes</option><option value=1800>Thirty minutes</option></select>
+
 ## Channels to autohost
 1. loading...
 {: #channels}
@@ -250,6 +252,16 @@ void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) 
 		persist_config->save();
 		send_updates_all(conn->group, (["channels": config->channels]));
 	};
+}
+
+void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->group || conn->group == "0") return;
+	mapping config = persist_config->path("ghostwriter", conn->group);
+	foreach ("pausetime" / " ", string key) {
+		if (msg[key]) config[key] = msg[key];
+	}
+	persist_config->save();
+	send_updates_all(conn->group, config);
 }
 
 void websocket_cmd_reorder(mapping(string:mixed) conn, mapping(string:mixed) msg) {

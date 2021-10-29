@@ -17,15 +17,16 @@ function display_channel(chan) {
 
 export function render(state) {
 	//If we have a socket connection, enable the primary control buttons
-	if (state.active) document.querySelectorAll("button").forEach(b => b.disabled = false);
+	if (state.active) document.querySelectorAll("button,select").forEach(b => b.disabled = false);
 	//Partial updates: only update channels if channels were set
 	if (state.channels) {
 		if (state.channels.length) set_content("#channels", state.channels.map(display_channel));
 		else set_content("#channels", "No channels to autohost yet - add one below!");
 	}
 	if (state.status) set_content("#statusbox", state.status).className = "status" + state.statustype;
+	if (state.pausetime) DOM("#pausetime").value = state.pausetime;
 	//Allow the server to explicitly mark us as inactive (for the demo)
-	if (state.inactive) document.querySelectorAll("button").forEach(b => b.disabled = !b.dataset.scopes);
+	if (state.inactive) document.querySelectorAll("button,select").forEach(b => b.disabled = !b.dataset.scopes);
 }
 
 //NOTE: Do not save channel list on input/change on textarea as it would be disruptive.
@@ -46,3 +47,7 @@ on("click", ".reorder", e => {
 on("click", ".confirmdelete", waitlate(750, 5000, "Delete?", e => {
 	ws_sync.send({cmd: "delete", id: e.match.closest("li").dataset.id});
 }));
+
+on("change", "#pausetime", e => {
+	ws_sync.send({cmd: "config", pausetime: +e.match.value});
+});
