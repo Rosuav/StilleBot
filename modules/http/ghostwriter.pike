@@ -14,7 +14,7 @@ $$login||Loading...$$
 
 <form id=addchannel autocomplete=off>
 <label>Add channel: <input name=channame></label>
-[Add](: disabled=true)
+[Add](: type=submit disabled=true)
 </form>
 
 <style>
