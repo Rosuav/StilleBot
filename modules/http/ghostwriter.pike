@@ -274,6 +274,7 @@ void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) 
 	//Rechecking would update their avatars and display names.
 	get_user_info(msg->name, "login")->then() {[mapping c] = __ARGS__;
 		if (!c) return; //TODO: Report error to the user
+		if (config->channels && has_value(config->channels->id, c->id)) return;
 		config->channels += ({c});
 		has_channel(conn->group, c->id);
 		persist_config->save();
