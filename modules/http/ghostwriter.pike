@@ -58,6 +58,7 @@ mapping(string:mapping(string:mixed)) chanstate;
 - TODO: Allow host overriding if a higher-priority target goes live
   - This would add an event while Hosting: "stream online (self or any higher target)"
   - Would also change the logic in recalculate_status to check even if hosting
+- FIXME: Connection group is your login, not your ID. This applies also to your configs.
 */
 
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
@@ -105,6 +106,10 @@ continue Concurrent.Future recalculate_status(string chan) {
 	send_updates_all(chan, st);
 	mapping config = persist_config->path("ghostwriter", chan);
 	array targets = config->channels || ({ });
+	//If we're hitting the API too much, rate-limit this check (eg once per five mins), but remove
+	//the flag saying recent check any time the user explicitly forces a check.
+	//TODO: Figure out where we're going to retain IDs since we'll defo need them for this
+	//mapping sched = yield(twitch_api_request("https://api.twitch.tv/helix/schedule?broadcaster_id=" + id + "&first=5"));
 	m_delete(st, "hostingid");
 	if (st->pause_until) {
 		int pauseleft = st->pause_until - time();
