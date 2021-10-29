@@ -72,6 +72,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]));
 }
 
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (msg->group == "0" || msg->group == conn->session->user->?login) return 0;
+	return "Not your data";
+}
+
 EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string chanid, mapping event] = __ARGS__;
 	write("** GW: Channel %O offline: %O\n", chanid, event);
 	mapping st = chanstate[event->broadcaster_user_login];
