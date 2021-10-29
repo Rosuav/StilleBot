@@ -75,27 +75,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]));
 }
 
-continue Concurrent.Future findhost(string chan, array(mapping) targets) {
-	//If you have more than 100 host targets, you deserve problems. No fracturing of the array here.
-	write("Probing %O\n", targets);
-	array live = yield(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": targets->id])));
-	write("Live: %O\n", live);
-	if (!sizeof(live)) return 0; //Nothing to do, nobody live.
-	//Reorder the live streams by the order of the original targets
-	/* Requires the IDs to be stored.
-	mapping byid = ([]);
-	foreach (live, mapping st) byid[live->user_id] = live;
-	live = map(targets->id, byid) - ({0});
-	if (!sizeof(live)) return 0; //Somehow we lost everyone?
-	*/
-	//Currently we always take the first on the list. This may change in the future.
-	object irc = yield(connect(chan)); //Make sure we're connected. (Mutually recursive via a long chain.)
-	write("Connected\n");
-	irc->send_message("#" + chan, "/host " + string_to_utf8(live[0]->user_login)); //Is it possible to have a non-ASCII login??
-	//If the host succeeds, there should be a HOSTTARGET message shortly.
-	write("Got live: %O\n", live);
-}
-
 array(string) low_recalculate_status(mapping st) {
 	//1) Being live trumps all.
 	if (st->uptime) return ({"live", "Now Live"});
@@ -107,15 +86,43 @@ array(string) low_recalculate_status(mapping st) {
 	//4) Idle
 	return ({"idle", "Channel Offline"});
 }
-void recalculate_status(string chan) {
+continue Concurrent.Future recalculate_status(string chan) {
 	mapping st = chanstate[chan];
 	[st->statustype, st->status] = low_recalculate_status(st);
 	send_updates_all(chan, st); //Note: doesn't update configs, so it won't trample all over a half-done change in a client
-	if (st->statustype == "idle") {
-		mapping config = persist_config->path("ghostwriter", chan);
-		array targets = config->channels || ({ });
-		if (sizeof(targets)) spawn_task(findhost(chan, targets));
+	mapping config = persist_config->path("ghostwriter", chan);
+	array targets = config->channels || ({ }); string type = "user_id";
+	if (st->hosting) {
+		//Check if the hosted channel is still live
+		targets = ({st->hosting});
+		type = "user_login";
 	}
+	else if (st->statustype == "idle") targets = targets->id;
+	else {
+		//If we're live, paused, or in any other yet-to-be-invented state, the only thing we want
+		//to do is unhost.
+		targets = ({ });
+	}
+	//If you have more than 100 host targets, you deserve problems. No fracturing of the array here.
+	write("Probing %O\n", targets);
+	array live = ({ });
+	if (sizeof(targets)) live = yield(get_helix_paginated("https://api.twitch.tv/helix/streams", ([type: targets])));
+	write("Live: %O\n", live);
+	string msg = "/unhost";
+	if (sizeof(live) > 1) {
+		//Reorder the live streams by the order of the original targets
+		//Not applicable if looking up by user_login as there'll only be one.
+		mapping byid = ([]);
+		foreach (live, mapping st) byid[live->user_id] = live;
+		live = map(targets, byid) - ({0});
+	}
+	if (sizeof(live)) msg = "/host " + string_to_utf8(live[0]->user_login); //Is it possible to have a non-ASCII login??
+	//Currently we always take the first on the list. This may change in the future.
+	object irc = yield(connect(chan)); //Make sure we're connected. (Mutually recursive via a long chain.)
+	write("Connected\n");
+	irc->send_message("#" + chan, msg);
+	//If the host succeeds, there should be a HOSTTARGET message shortly.
+	write("Got live: %O\n", live);
 }
 
 void host_changed(string chan, string target, string viewers) {
@@ -123,7 +130,7 @@ void host_changed(string chan, string target, string viewers) {
 	if (chanstate[chan]->hosting == target) return; //eg after reconnecting to IRC
 	write("Host changed: %O -> %O\n", chan, target);
 	chanstate[chan]->hosting = target;
-	recalculate_status(chan);
+	spawn_task(recalculate_status(chan));
 	//TODO: Add the current host target to the stream_offline hook channel list
 	//TODO: Purge the hook channel list of any that we don't need (those for whom autohosts_this[id] is empty or absent)
 }
@@ -197,7 +204,7 @@ continue void force_check(string chan) {
 	mapping st = chanstate[chan];
 	if (!sizeof(data->data)) m_delete(st, "uptime");
 	else st->uptime = data->data[0]->started_at;
-	recalculate_status(chan);
+	yield(recalculate_status(chan));
 }
 
 void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
