@@ -51,3 +51,4 @@ on("click", ".confirmdelete", waitlate(750, 5000, "Delete?", e => {
 on("change", "#pausetime", e => {
 	ws_sync.send({cmd: "config", pausetime: +e.match.value});
 });
+on("click", "#pausenow", e => ws_sync.send({cmd: "pause"}));

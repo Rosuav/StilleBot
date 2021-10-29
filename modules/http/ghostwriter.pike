@@ -8,7 +8,8 @@ $$login||Loading...$$
 
 [Check hosting now](: #recheck disabled=true)
 
-Pause duration: <select disabled=true id=pausetime><option value=300>Five minutes</option><option value=900>Fifteen minutes</option><option value=1800>Thirty minutes</option></select>
+Pause duration: <select disabled=true id=pausetime><option value=60>One minute</option><option value=300>Five minutes</option><option value=900 selected>Fifteen minutes</option><option value=1800>Thirty minutes</option></select>
+[Unhost and pause](: #pausenow disabled=true)
 
 ## Channels to autohost
 1. loading...
@@ -85,18 +86,26 @@ array(string) low_recalculate_status(mapping st) {
 	if (st->hosting) return ({"host", "Hosting " + st->hosting});
 	//3) Paused.
 	//3a) TODO: Paused due to schedule
-	//3b) TODO: Paused due to explicit web page interaction "unhost for X minutes"
+	//3b) Paused due to explicit web page interaction "unhost for X minutes"
+	//TODO: Show the time a little more cleanly
+	if (st->pause_until) return ({"idle", "Paused until " + ctime(st->pause_until)});
 	//4) Idle
 	return ({"idle", "Channel Offline"});
 }
 continue Concurrent.Future recalculate_status(string chan) {
 	mapping st = chanstate[chan];
 	[st->statustype, st->status] = low_recalculate_status(st);
-	send_updates_all(chan, st); //Note: doesn't update configs, so it won't trample all over a half-done change in a client
+	send_updates_all(chan, st);
 	mapping config = persist_config->path("ghostwriter", chan);
 	array targets = config->channels || ({ });
 	m_delete(st, "hostingid");
-	if (st->hosting) {
+	if (st->pause_until) {
+		int pauseleft = st->pause_until - time();
+		write("Pause left: %O\n", pauseleft);
+		if (pauseleft <= 0) m_delete(st, "pause_until");
+		else targets = ({ }); //Automatically unhost during pause time
+	}
+	else if (st->hosting) {
 		//Check if the hosted channel is still live
 		string id = (string)yield(get_user_id(st->hosting));
 		targets = ({id});
@@ -217,6 +226,17 @@ void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg
 	//Forcing a check also forces a reconnect, in case there are problems.
 	if (object irc = m_delete(G->G->ghostwriterirc, conn->group)) catch {irc->close();};
 	spawn_task(force_check(conn->group));
+}
+
+void websocket_cmd_pause(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->group || conn->group == "0") return;
+	string chan = conn->group;
+	mapping st = chanstate[chan];
+	mapping config = persist_config->path("ghostwriter", chan);
+	int pausetime = ((int)config->pausetime || 900);
+	st->pause_until = time() + pausetime;
+	spawn_task(recalculate_status(chan));
+	call_out(lambda() {spawn_task(G->G->websocket_types->ghostwriter->recalculate_status(chan));}, pausetime);
 }
 
 //Mapping from target-stream-id to the channels that autohost it
