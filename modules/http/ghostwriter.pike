@@ -49,14 +49,6 @@ $$login||Loading...$$
 mapping(string:mapping(string:mixed)) chanstate;
 
 /*
-- Require login for functionality, but give full deets
-- Event-based, but can be pinged via the web site "re-check". Also check on bot startup.
-- Three states: Online, Hosting, Idle
-- If Online, next event is Stream Offline (self)
-- If Hosting, next event is Stream Offline (host target)
-- If Idle, next event is Stream Online (self or any target)
-- Note that Stream Offline may need to track any channel, not just a registered target
-- Would probably need to spin up an altvoice (so this is a poltergeist) to see host status and send host commands
 - Check stream schedule, and automatically unhost X seconds (default: 15 mins) before a stream
 - TODO: Allow host overriding if a higher-priority target goes live
   - This would add an event while Hosting: "stream online (self or any higher target)"
@@ -230,6 +222,8 @@ void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg
 mapping(string:multiset(string)) autohosts_this = ([]);
 EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string chanid, mapping event] = __ARGS__;
 	write("** GW: Channel %O online: %O\nThese channels care: %O\n", chanid, event, autohosts_this[chanid]);
+	mapping st = chanstate[event->broadcaster_user_login];
+	if (st) spawn_task(recalculate_status(event->broadcaster_user_login));
 	foreach (autohosts_this[chanid]; string chan;) {
 		mapping st = chanstate[chan];
 		write("Channel %O cares - status %O\n", chan, st->statustype);
