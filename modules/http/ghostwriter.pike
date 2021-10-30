@@ -140,7 +140,7 @@ continue Concurrent.Future recalculate_status(string chan) {
 	if (sizeof(live) > 1) {
 		//Reorder the live streams by the order of the original targets
 		mapping byid = ([]);
-		foreach (live, mapping st) byid[live->user_id] = live;
+		foreach (live, mapping l) byid[l->user_id] = l;
 		live = map(targets, byid) - ({0});
 	}
 	if (sizeof(live)) msg = "/host " + string_to_utf8(live[0]->user_login); //Is it possible to have a non-ASCII login??
