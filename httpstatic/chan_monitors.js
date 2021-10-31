@@ -272,7 +272,7 @@ ws_sync.connect(ws_group, {
 	is_recommended: cmd => cmd.access === "none" && cmd.visibility === "hidden",
 	render: function(data) {
 		if (data.id) {
-			const opt = select.querySelector(`[data-id="${data.id}"]`);
+			const opt = this.select.querySelector(`[data-id="${data.id}"]`);
 			//Note that a partial update (currently) won't move a command between groups.
 			if (opt) set_content(opt, "!" + cmd.id.split("#")[0] + " -- " + textify(cmd.message)); //TODO: dedup
 			else this.groups[this.is_recommended(cmd) ? 1 : 2].appendChild(this.make_option(cmd));
