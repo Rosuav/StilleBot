@@ -4,8 +4,17 @@ inherit http_endpoint;
 //be greyed out if not available.
 //NOTE: The display is aimed at no more than six emotes across.
 constant hypetrain = replace(#"
+## Hype Train set five
+### Unlockable Nov 2021 to current
+### (Highlighting is unreliable due to Twitch limitations)
+HypeLUL HypeCool HypeLove1 HypeSleep HypePat HypeCozy1<br>
+HypeHands1 HypeHands2 HypeFail HypeHai HypeNom HypeBoop<br>
+HypeBLEH HypeApplause HypeRage HypeMwah HypeHuh HypeSeemsGood<br>
+HypeWave HypeReading HypeShock HypeStress HypeCry<br>
+HypeCheer HypeLurk HypePopcorn HypeEvil HypeAwww HypeHype<br>
+
 ## Hype Train set four
-### Unlockable May 2021 to current
+### Unlockable May 2021 to Oct 2021
 ### (Highlighting is unreliable due to Twitch limitations)
 HypeHeh HypeDoh HypeYum HypeShame HypeHide HypeWow<br>
 HypeTongue HypePurr HypeOoh HypeBeard HypeEyes HypeHay<br>
@@ -142,6 +151,45 @@ constant emoteids = ([
 	"HypeHeyFriends": "emotesv2_be2e7ac3e077421da3526633fbbb9176",
 	"HypeMine": "emotesv2_ebc2e7675cdd4f4f9871557cfed4b28e",
 	"HypeShy": "emotesv2_d4a50cfaa51f46e99e5228ce8ef953c4",
+
+	//Hype Train v5: level 1
+	"HypeLUL": "emotesv2_e7a6e7e24a844e709c4d93c0845422e1",
+	"HypeCool": "emotesv2_e2a11d74a4824cbf9a8b28079e5e67dd",
+	"HypeLove1": "emotesv2_036fd741be4141198999b2ca4300668e",
+	"HypeSleep": "emotesv2_3114c3d12dc44f53810140f632128b54",
+	"HypePat": "emotesv2_7d457ecda087479f98501f80e23b5a04",
+	"HypeCozy1": "emotesv2_6d27dcab0df7442b88260a25d60bd807",
+
+	//Level 2
+	"HypeHands1": "emotesv2_0457808073314f62962554c12ebb6b4d",
+	"HypeHands2": "emotesv2_8c40cd16027f48c0a70ac7b1fa1c397e",
+	"HypeFail": "emotesv2_0330a84e75ad48c1821c1d29a7dadd4d",
+	"HypeHai": "emotesv2_9b68a8fa2f1d457496ac016b251e06b6",
+	"HypeNom": "emotesv2_9bcc622c0b2a48b180a159c25a2b8245",
+	"HypeBoop": "emotesv2_f930e2f43d284c51a3eb02714360a331",
+
+	//Level 3
+	"HypeBLEH": "emotesv2_08abf0cd0e78494a9da8a2315c3648f4",
+	"HypeApplause": "emotesv2_ccc146905a694f3b8df390f55e34002a",
+	"HypeRage": "emotesv2_4918bd32ff5b476f82bda49f3e958767",
+	"HypeMwah": "emotesv2_7d01d1cf36b549098434c7a6e50a8828",
+	"HypeHuh": "emotesv2_43da115e6b6749828f7dee47d17dd315",
+	"HypeSeemsGood": "emotesv2_73aba26793314019b5ff7a5643e52749",
+
+	//Level 4
+	"HypeWave": "emotesv2_663dbd72c3ae48c585ffd61f3c348fa9",
+	"HypeReading": "emotesv2_271ea48a09ca418baad2ea1f734ab09e",
+	"HypeShock": "emotesv2_1337536bcecf49f4bb9cd1a699341ee2",
+	"HypeStress": "emotesv2_8c1d964bd7e14fe1b8bd61d29ee0eb8c",
+	"HypeCry": "emotesv2_cdc7a602ee08462e81fb6cc0e3e8de61",
+
+	//Level 5
+	"HypeCheer": "emotesv2_dd4f4f9cea1a4039ad3390e20900abe4",
+	"HypeLurk": "emotesv2_1630ff0e5ff34a808f4b25320a540ee7",
+	"HypePopcorn": "emotesv2_7b8e74be7bd64601a2608c2ff5f6eb7a",
+	"HypeEvil": "emotesv2_1885b5088372466b800789b02daf7b65",
+	"HypeAwww": "emotesv2_85a13cc47247425fa152b9292c4589a9",
+	"HypeHype": "emotesv2_e920cae6f2d8401d8e15392b1a292fbb",
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
