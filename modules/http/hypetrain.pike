@@ -87,11 +87,11 @@ void probe_hype_train(int channel)
 	send_updates_all(channel);
 }
 
-constant emotes = #"HypeHeh HypeDoh HypeYum HypeShame HypeHide HypeWow
-HypeTongue HypePurr HypeOoh HypeBeard HypeEyes HypeHay
-HypeYesPlease HypeDerp HypeJudge HypeEars HypeCozy HypeYas
-HypeWant HypeStahp HypeYawn HypeCreep HypeDisguise HypeAttack
-HypeScream HypeSquawk HypeSus HypeHeyFriends HypeMine HypeShy";
+constant emotes = #"HypeLUL HypeCool HypeLove1 HypeSleep HypePat HypeCozy1
+HypeHands1 HypeHands2 HypeFail HypeHai HypeNom HypeBoop
+HypeBLEH HypeApplause HypeRage HypeMwah HypeHuh HypeSeemsGood
+HypeWave HypeReading HypeShock HypeStress HypeCry HyperReveal
+HypeCheer HypeLurk HypePopcorn HypeEvil HypeAwww HypeHype";
 
 string url(int|string id) { //TODO: Dedup with the one in checklist
 	if (intp(id)) return sprintf("https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0", id);
