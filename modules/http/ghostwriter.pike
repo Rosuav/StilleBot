@@ -134,7 +134,12 @@ continue Concurrent.Future recalculate_status(string chan) {
 	//If you have more than 100 host targets, you deserve problems. No fracturing of the array here.
 	write("Probing %O\n", targets);
 	array live = ({ });
-	if (sizeof(targets)) live = yield(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": targets])));
+	if (sizeof(twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan)->data)) {
+		//Never host if live. However, don't spam /unhost commands either.
+		if (!st->hosting) return 0;
+		//Leave live empty so we'll definitely unhost.
+	}
+	else if (sizeof(targets)) live = yield(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": targets])));
 	write("Live: %O\n", live);
 	string msg = "/unhost";
 	if (sizeof(live) > 1) {
