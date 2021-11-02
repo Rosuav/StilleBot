@@ -34,7 +34,8 @@ continue mapping|Concurrent.Future parse_hype_status(mapping data)
 	}
 	mapping state = ([
 		"cooldown": cooldown, "expires": expires,
-		"level": (int)data->level, "goal": (int)data->goal, "total": (int)data->total,
+		"level": (int)data->level, "goal": (int)data->goal,
+		"total": data->progress || (int)data->total, //Different format problems. Sigh.
 	]);
 	//The API has one format, the eventsub notification has another. Sigh. Synchronize manually.
 	foreach (data->top_contributions + ({data->last_contribution}) - ({0}), mapping user) {
@@ -84,7 +85,7 @@ continue mapping|Concurrent.Future get_state(int|string chan)
 void probe_hype_train(int channel)
 {
 	write("Clock-pinging %d clients for hype train %d\n", sizeof(websocket_groups[channel] || ([])), channel);
-	send_updates_all(channel);
+	get_user_info(channel)->then() {send_updates_all(__ARGS__[0]->login);};
 }
 
 constant emotes = #"HypeLUL HypeCool HypeLove1 HypeSleep HypePat HypeCozy1
