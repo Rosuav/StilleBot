@@ -73,12 +73,7 @@
     sub/resub count).
 * Special trigger when any goal bar tiers up?? Would be better than the weird system
   where it triggers an actual command. Could deep link straight to the editor now.
-* Client-side per-user preferences.
-  - Any client for that userid with a websocket would get a message any time any of the
-    user's prefs change (even if not strictly relevant).
-  - Would need some functionality in ws_sync to independently handle prefs, NOT via the
-    per-type handler
-  - Absorbs raidnotes and GUI command editor favs
-  - Add selection of default command editor
+* Client-side per-user preferences are now a thing. Use them where appropriate.
+  - Absorb raidnotes into this system.
   - Note that only pages with websockets can have prefs. Raid Finder may need to grow one.
 * TODO: "max-width: fit-content" is borked, look it up

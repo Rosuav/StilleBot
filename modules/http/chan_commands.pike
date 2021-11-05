@@ -400,25 +400,4 @@ void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) ms
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[1]]), 4));
 }
 
-void websocket_cmd_savefavs(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->session->fake || !arrayp(msg->favs)) return;
-	//NOTE: Favourites are not validated (other than that they have to pass JSON encode/decode).
-	string uid = conn->session->user->?id;
-	//TODO: Migrate this to persist_status->path("prefs", (string)uid, "cmdedit_favourites")
-	if (uid) persist_status->path("cmdedit_favourites")[(string)uid] = msg->favs;
-	//Scan all current connections for anyone with the same UID and update them.
-	//This will include the current connection.
-	array sameuser = ({ });
-	foreach (websocket_groups; string|int group; array socks) {
-		foreach (socks, object sock) if (sock->query_id()->session->user->?id == uid) sameuser += ({sock});
-	}
-	sameuser->send_text(Standards.JSON.encode((["cmd": "loadfavs", "favs": msg->favs])));
-}
-
-void websocket_cmd_loadfavs(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	string uid = conn->session->user->?id;
-	array favs = (uid && persist_status->path("cmdedit_favourites")[(string)uid]) || ({ });
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "loadfavs", "favs": favs])));
-}
-
 protected void create(string name) {::create(name); call_out(find_builtins, 0);}
