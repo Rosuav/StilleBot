@@ -125,12 +125,12 @@ continue Concurrent.Future recalculate_status(string chan) {
 		//Make sure we get notified when that channel goes offline
 		stream_offline(id, (["broadcaster_user_id": (string)id]));
 	}
-	else if (st->statustype == "idle") targets = targets->id;
-	else {
+	else if (st->statustype != "idle") {
 		//If we're live, paused, or in any other yet-to-be-invented state, the only thing we want
 		//to do is unhost.
 		targets = ({ });
 	}
+	if (mappingp(targets)) targets = targets->id;
 	//If you have more than 100 host targets, you deserve problems. No fracturing of the array here.
 	write("Probing %O\n", targets);
 	array live = ({ });
