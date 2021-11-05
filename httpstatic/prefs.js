@@ -1,9 +1,15 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {P, SECTION, TEXTAREA, DIV, BR} = choc;
+const {P, SECTION, TEXTAREA, DIV, BR, UL, LI, LABEL, INPUT} = choc;
 
 const render_pref = {
 	//Provide a function to render each thing, based on the prefs key
-	demo: val => P("Demo"),
+	cmd_defaulttab: val => [
+		"Command editor: which view should be opened first?",
+		UL(["Classic", "Graphical", "Raw"].map(tab => LI(LABEL([
+			INPUT({type: "radio", name: "editor", value: tab.toLowerCase(), checked: val === tab.toLowerCase()}),
+			" " + tab,
+		])))),
+	],
 
 	//Any unknowns will be rendered with this
 	"": (key, val) => {
