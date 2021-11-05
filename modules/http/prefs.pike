@@ -19,13 +19,10 @@ mapping get_state(string group) {return (["info": "See Other"]);}
 void websocket_cmd_prefs_send(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->prefs_uid) return;
 	mapping prefs = persist_status->path("userprefs", conn->prefs_uid);
-	write("SENDING PREFS %O\n", prefs);
-	write("My connections: %O\n", websocket_groups);
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "prefs_replace", "prefs": prefs])));
 }
 void websocket_cmd_prefs_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->prefs_uid) return;
-	write("UPDATING PREFS: %O\n", msg);
 	mapping prefs = persist_status->path("userprefs", conn->prefs_uid);
 	foreach (msg; string k; mixed v) {
 		//Update individual keys, but in case something gets looped back, don't
