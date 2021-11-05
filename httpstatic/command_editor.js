@@ -109,7 +109,7 @@ function select_tab(tab, response) {
 	}
 }
 on("change", "#cmdviewtabset input", e => change_tab(e.match.value));
-on("click", "#makedefault", e => ws_sync.send({cmd: "prefs_update", prefs: {cmd_defaulttab: mode}}));
+on("click", "#makedefault", e => ws_sync.send({cmd: "prefs_update", cmd_defaulttab: mode}));
 
 export function open_advanced_view(cmd, tab) {
 	mode = ""; cmd_id = cmd.id; cmd_basis = config.get_command_basis(cmd);
