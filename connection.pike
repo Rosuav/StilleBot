@@ -1016,7 +1016,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 		conn->type = data->type; conn->group = group;
 		handler->websocket_groups[group] += ({conn->sock});
 		string uid = conn->session->user->?id;
-		if (object h = uid && uid != "0" && G->G->websocket_types->prefs) {
+		if (object h = uid && uid != "0" && uid != "3141592653589793" && G->G->websocket_types->prefs) {
 			//You're logged in. Provide automated preference synchronization.
 			h->websocket_groups[conn->prefs_uid = uid] += ({conn->sock});
 			call_out(h->websocket_cmd_prefs_send, 0, conn, ([]));
