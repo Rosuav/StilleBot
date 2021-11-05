@@ -52,7 +52,7 @@ async function show_vod_lengths(userid, vodid, startdate) {
 		let date = "Current stream";
 		if (vod.created_at) {
 			const tm = new Date(vod.created_at);
-			date = "Mon Tue Wed Thu Fri Sat Sun".split(" ")[tm.getDay()] + " " +
+			date = "Sun Mon Tue Wed Thu Fri Sat Sun".split(" ")[tm.getDay()] + " " +
 				"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[tm.getMonth()] + " " +
 				tm.getDate() + ", " +
 				((tm.getHours() % 12) || 12) + ":" +
