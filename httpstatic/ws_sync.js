@@ -74,3 +74,4 @@ export function prefs_notify(key, func) {
 	if (!func) {func = key; key = null;}
 	prefs_hooks.push({key, func});
 }
+export function get_prefs() {return prefs;}

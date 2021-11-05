@@ -29,10 +29,9 @@ document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 ])));
 //Delay the import of command_gui until the above code has executed, because JS is stupid and overly-eagerly
 //imports all modules. Thanks, JS. You're amazing.
-let gui_load_message, gui_save_message, pending_favourites, load_favourites = f => pending_favourites = f;
+let gui_load_message, gui_save_message;
 async function getgui() {
-	({gui_load_message, gui_save_message, load_favourites} = await import("$$static||command_gui.js$$"));
-	if (pending_favourites) load_favourites(pending_favourites);
+	({gui_load_message, gui_save_message} = await import("$$static||command_gui.js$$"));
 }
 if (document.readyState !== "loading") getgui();
 else window.addEventListener("DOMContentLoaded", getgui);
@@ -148,8 +147,6 @@ on("click", ".raw_view", e => {
 export function sockmsg_validated(data) {
 	if (data.cmdname.startsWith("changetab_")) select_tab(data.cmdname.replace("changetab_", ""), data.response);
 }
-export function sockmsg_loadfavs(data) {load_favourites(data.favs);}
-ws_sync.send({cmd: "loadfavs"});
 
 let pending_command = null;
 if (location.hash && location.hash.includes("/")) pending_command = location.hash.slice(1).split("/", 2);

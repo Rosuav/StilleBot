@@ -593,8 +593,8 @@ function repaint() {
 }
 repaint();
 
-function save_favourites() {ws_sync.send({cmd: "savefavs", favs: favourites.map(element_to_message)});}
-export function load_favourites(favs) {
+function save_favourites() {ws_sync.send({cmd: "prefs_update", cmd_favourites: favourites.map(element_to_message)})}
+function load_favourites(favs) {
 	if (!Array.isArray(favs)) return;
 	const newfavs = favs.map(f => message_to_element(f, el => el));
 	favourites.splice(0); //Replace all favs with the loaded ones.
@@ -603,6 +603,8 @@ export function load_favourites(favs) {
 	}
 	refactor(); repaint();
 }
+ws_sync.prefs_notify(p => load_favourites(p.cmd_favourites)); //TODO: Listen only to cmd_favourites (to avoid flicker)
+load_favourites(ws_sync.get_prefs().cmd_favourites); //In case it's already been fetched once we load
 
 function remove_child(childset, idx) {
 	while (++idx < childset.length) {

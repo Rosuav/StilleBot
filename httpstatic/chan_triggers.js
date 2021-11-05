@@ -1,7 +1,7 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {CODE, BR, TR, TD, SPAN, DIV, UL, LI, INPUT} = choc;
-import {render_command, sockmsg_validated, sockmsg_loadfavs} from "$$static||command_editor.js$$";
-export {sockmsg_validated, sockmsg_loadfavs};
+import {render_command, sockmsg_validated} from "$$static||command_editor.js$$";
+export {sockmsg_validated};
 
 export const render_parent = DOM("#triggers tbody");
 export const render_item = render_command;
