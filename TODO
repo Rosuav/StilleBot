@@ -80,6 +80,5 @@
     per-type handler
   - Absorbs raidnotes and GUI command editor favs
   - Add selection of default command editor
-  - Needs new concept of websocket group?? Or just collect them as needed?
-  - Would need to transcend specific websocket class
+  - Note that only pages with websockets can have prefs. Raid Finder may need to grow one.
 * TODO: "max-width: fit-content" is borked, look it up

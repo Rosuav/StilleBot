@@ -1015,8 +1015,15 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 		string group = (stringp(data->group) || intp(data->group)) ? data->group : "";
 		conn->type = data->type; conn->group = group;
 		handler->websocket_groups[group] += ({conn->sock});
+		string uid = conn->session->user->?id;
+		if (object h = uid && uid != "0" && G->G->websocket_types->prefs) {
+			//You're logged in. Provide automated preference synchronization.
+			h->websocket_groups[conn->prefs_uid = uid] += ({conn->sock});
+			call_out(h->websocket_cmd_prefs_send, 0, conn, ([]));
+		}
 	}
-	if (object handler = G->G->websocket_types[conn->type]) handler->websocket_msg(conn, data);
+	string type = has_prefix(data->cmd||"", "prefs_") ? "prefs" : conn->type;
+	if (object handler = G->G->websocket_types[type]) handler->websocket_msg(conn, data);
 	else write("Message: %O\n", data);
 }
 
@@ -1027,6 +1034,11 @@ void ws_close(int reason, mapping conn)
 	{
 		handler->websocket_msg(conn, 0);
 		handler->websocket_groups[conn->group] -= ({conn->sock});
+	}
+	if (object handler = conn->prefs_uid && G->G->websocket_types->prefs) //Disconnect from preferences
+	{
+		handler->websocket_msg(conn, 0);
+		handler->websocket_groups[conn->prefs_uid] -= ({conn->sock});
 	}
 	m_delete(conn, "sock"); //De-floop
 }
