@@ -144,7 +144,7 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 	gap: 0.5em;
 	align-items: flex-end;
 }
-#cmdviewtabset li {
+#cmdviewtabset label {
 	background: #a0f0c0;
 	padding-right: 0.25em;
 }

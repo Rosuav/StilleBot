@@ -1,15 +1,18 @@
 //Command advanced editor framework, and Raw mode editor
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {BR, BUTTON, CANVAS, CODE, DIALOG, DIV, EM, FORM, HEADER, H3, INPUT, LABEL, LI, P, SECTION, SPAN, TEXTAREA, U, UL, TR, TD} = choc;
-const tablist = ["Classic", "Graphical", "Raw"], defaulttab = "graphical";
+const tablist = ["Classic", "Graphical", "Raw"];
+let defaulttab = "graphical"; //Can be overridden with prefs
 document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 	HEADER([
 		H3("Edit trigger"),
 		DIV(BUTTON({type: "button", className: "dialog_cancel"}, "x")),
-		UL({id: "cmdviewtabset", className: "buttonbox"}, tablist.map(tab => LI(LABEL([
+		UL({id: "cmdviewtabset", className: "buttonbox"}, [...tablist.map(tab => LI(LABEL([
 			INPUT({type: "radio", name: "editor", value: tab.toLowerCase(), accessKey: tab[0]}),
 			SPAN([U(tab[0]), tab.slice(1)]),
-		])))),
+		]))),
+			LI(BUTTON({id: "makedefault"}, "Make default")),
+		]),
 	]),
 	FORM({autocomplete: "off"}, [
 		DIV({id: "command_details"}),
@@ -36,6 +39,10 @@ else window.addEventListener("DOMContentLoaded", getgui);
 //End arbitrarily messy code to do what smarter languages do automatically.
 import {cls_load_message, cls_save_message} from "$$static||command_classic.js$$";
 import {waitlate} from "$$static||utils.js$$";
+ws_sync.prefs_notify(p => {
+	const tab = p.cmd_defaulttab || "";
+	if (tablist.some(t => t.toLowerCase() === tab)) defaulttab = tab;
+});
 
 export const commands = { }; //Deprecated. Need to try to not have this exported mapping.
 const config = {get_command_basis: cmd => ({ })};
@@ -102,6 +109,7 @@ function select_tab(tab, response) {
 	}
 }
 on("change", "#cmdviewtabset input", e => change_tab(e.match.value));
+on("click", "#makedefault", e => ws_sync.send({cmd: "prefs_update", prefs: {cmd_defaulttab: mode}}));
 
 export function open_advanced_view(cmd, tab) {
 	mode = ""; cmd_id = cmd.id; cmd_basis = config.get_command_basis(cmd);

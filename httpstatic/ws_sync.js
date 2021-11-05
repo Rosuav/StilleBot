@@ -5,6 +5,8 @@ let default_handler = null;
 let send_socket; //If present, send() is functional.
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 let pending_message = null; //Allow at most one message to be queued on startup (will be sent after initialization)
+let prefs = { }; //Updated from the server as needed
+const prefs_hooks = [];
 export function connect(group, handler)
 {
 	if (!handler) handler = default_handler;
@@ -48,6 +50,12 @@ export function connect(group, handler)
 			//Note that render() is called *after* render_item in all cases.
 			handler.render(data, group);
 		}
+		else if (data.cmd === "prefs_replace") {
+			prefs = data.prefs;
+			prefs_hooks.forEach(p => {
+				if (!p.key /* || p.key has changed */) p.func(data.prefs);
+			});
+		} //TODO: Also prefs_update
 		const f = handler["sockmsg_" + data.cmd];
 		if (f) f(data);
 	};
@@ -58,3 +66,11 @@ if (document.readyState !== "loading") init();
 else window.addEventListener("DOMContentLoaded", init);
 
 export function send(msg) {if (send_socket) send_socket.send(JSON.stringify(msg)); else pending_message = msg;}
+//Usage: prefs_notify("favs", favs => {...})
+//Or: prefs_notify(prefs => {...})
+//With a key, will (TODO, not impl yet) notify with the value of that key, when it changes
+//Without a key, will notify on all changes to all prefs.
+export function prefs_notify(key, func) {
+	if (!func) {func = key; key = null;}
+	prefs_hooks.push({key, func});
+}

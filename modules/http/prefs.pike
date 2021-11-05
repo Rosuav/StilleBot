@@ -27,11 +27,14 @@ void websocket_cmd_prefs_update(mapping(string:mixed) conn, mapping(string:mixed
 	if (!conn->prefs_uid || !mappingp(msg->prefs)) return;
 	write("UPDATING PREFS: %O\n", msg);
 	mapping prefs = persist_status->path("userprefs", conn->prefs_uid);
-	prefs |= msg->prefs;
+	foreach (msg->prefs; string k; mixed v) {
+		//TODO: Whitelist keys?
+		prefs[k] = v;
+	}
 	persist_status->save();
 	//TODO maybe: Have a simpler command prefs_update which, clientside, will
 	//merge the given prefs with any existing ones. It should give the same
 	//end result as this, but with less traffic, esp if some things are large
 	//and others change frequently.
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "prefs_replace", "prefs": prefs])));
+	websocket_groups[conn->prefs_uid]->send_text(Standards.JSON.encode((["cmd": "prefs_replace", "prefs": prefs])));
 }
