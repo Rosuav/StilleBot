@@ -1,7 +1,17 @@
 inherit http_websocket;
 constant markdown = #"# Preferences and configuration
 
-Coming Soon&trade;
+<section id=prefs></section>
+
+Coming Soon: a save button so you can make changes?
+
+<style>
+#prefs > section {
+	margin: 0.75em 0;
+}
+.pref_unknown {display: flex;}
+.pref_unknown textarea {margin-left: 0.5em;}
+</style>
 ";
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
