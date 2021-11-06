@@ -130,7 +130,7 @@ continue Concurrent.Future recalculate_status(string chan) {
 		//to do is unhost.
 		targets = ({ });
 	}
-	if (mappingp(targets)) targets = targets->id;
+	if (mappingp(targets[0])) targets = targets->id;
 	//If you have more than 100 host targets, you deserve problems. No fracturing of the array here.
 	write("Probing %O\n", targets);
 	array live = ({ });
