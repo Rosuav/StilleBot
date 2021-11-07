@@ -238,11 +238,16 @@ continue void force_check(string chan) {
 	yield(recalculate_status(chan));
 }
 
+continue void force_check_all() {
+	foreach (persist_config->path("ghostwriter"); string chan;) yield(force_check(chan));
+}
+
 void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->group || conn->group == "0") return;
 	//Forcing a check also forces a reconnect, in case there are problems.
 	if (object irc = m_delete(G->G->ghostwriterirc, conn->group)) catch {irc->close();};
 	spawn_task(force_check(conn->group));
+	//spawn_task(force_check_all());
 }
 
 void websocket_cmd_pause(mapping(string:mixed) conn, mapping(string:mixed) msg) {
