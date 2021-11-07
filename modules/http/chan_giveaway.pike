@@ -129,6 +129,8 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 		int now = person->tickets + values[redem->reward->id];
 		mapping status = persist_status->path("giveaways", chan);
 		int max = cfg->giveaway->max_tickets;
+		//TODO: If the giveaway is closed, but *was* open when the redemption happened,
+		//accept it. This will require some testing to find out if we're losing notifs.
 		if (!status->is_open) max = 0; //If anything snuck in while we were closing the giveaway, refund it as soon as we notice.
 		else if (!max) max = now; //No maximum :)
 		if (now > max && !G->G->giveaway_purchases[redem->id]) {
@@ -136,7 +138,18 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 			//This means that if you change the max tickets during a giveaway, any excess will
 			//still be kept, unless/until they get explicitly refunded.
 			set_redemption_status(redem, "CANCELED")->then(lambda(mixed resp) {
-				write("Cancelled: %O\n", resp);
+				int redemption_time = 0;
+				catch {
+					object ts = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", redem->redeemed_at);
+					if (!ts) ts = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s.%f%z", redem->redeemed_at);
+					redemption_time = ts->unix_time();
+					array timestamps = ({redemption_time, status->last_opened, status->last_closed});
+					array ts_labels = ({"Bought", "Opened", "Closed"});
+					sort(timestamps, ts_labels);
+					foreach (timestamps; int i; int ts)
+						write("%s: %d (%+d)\n", ts_labels[i], ts, ts - time());
+				};
+				write("Cancelled (%d/%d): %O\n", now, max, resp);
 				object channel = G->G->irc->channels["#" + chan];
 				//If max is zero, you were probably too late. Should there be a different message?
 				if (max) channel->trigger_special("!giveaway_toomany", (["user": redem->user_name]), ([
@@ -154,6 +167,8 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 				//Only announce a given purchase once, even if we do a full recalc of giveaway_tickets
 				G->G->giveaway_purchases[redem->id] = 1;
 				object channel = G->G->irc->channels["#" + chan];
+				write("GIVEAWAY: %s bought %d, now %d/%d\n", redem->user_name,
+					values[redem->reward->id], now, cfg->giveaway->max_tickets);
 				channel->trigger_special("!giveaway_ticket", (["user": redem->user_name]), ([
 					"{title}": cfg->giveaway->title || "",
 					"{tickets_bought}": (string)values[redem->reward->id],
@@ -414,6 +429,7 @@ void open_close(string chan, int broadcaster_id, int want_open) {
 	string token = persist_status->path("bcaster_token")[chan];
 	if (!token) {werror("Can't open/close giveaway w/o bcaster token\n"); return;}
 	status->is_open = want_open;
+	status[want_open ? "last_opened" : "last_closed"] = time();
 	if (mixed id = m_delete(autoclose, chan)) remove_call_out(id);
 	if (int d = want_open && cfg->giveaway->duration) {
 		status->end_time = time() + d;
