@@ -27,7 +27,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	object nw = Calendar.ISO.Second()->add(86400 * 7);
 	string next_week = nw->format_ymd() + "T" + nw->format_tod() + "Z";
 	while (1) {
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/schedule?broadcaster_id=" + id + "&after=" + cursor + "&first=25"));
+		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/schedule?broadcaster_id=" + id + "&after=" + cursor + "&first=25", ([]), (["return_errors": 1])));
+		if (info->error) break; //Probably 404, schedule not found.
 		chan = info->data->broadcaster_name || chan;
 		cursor = info->pagination->?cursor;
 		foreach (info->data->segments, mapping ev) {
