@@ -505,16 +505,20 @@ Concurrent.Future check_following(string user, string chan)
 }
 
 //Fetch a stream's schedule, up to N events within the next M seconds.
-continue Concurrent.Future|array get_stream_schedule(int|string channel, int maxevents, int maxtime) {
+continue Concurrent.Future|array get_stream_schedule(int|string channel, int rewind, int maxevents, int maxtime) {
 	int id = (int)channel || yield(get_user_id(channel));
 	if (!id) return ({ });
 	//NOTE: Do not use get_helix_paginated here as the events probably go on forever.
 	array events = ({ });
 	string cursor = "";
-	object limit = Calendar.ISO.Second()->add(maxtime);
+	object begin = Calendar.ISO.Second()->set_timezone("UTC")->add(-rewind);
+	string starttime = begin->format_ymd() + "T" + begin->format_tod() + "Z";
+	object limit = Calendar.ISO.Second()->set_timezone("UTC")->add(maxtime);
 	string cutoff = limit->format_ymd() + "T" + limit->format_tod() + "Z";
 	while (1) {
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/schedule?broadcaster_id=" + id + "&after=" + cursor + "&first=25", ([]), (["return_errors": 1])));
+		mapping info = yield(request("https://api.twitch.tv/helix/schedule?broadcaster_id=" + id
+			+ "&start_time=" + starttime + "&after=" + cursor + "&first=25",
+			([]), (["return_errors": 1])));
 		if (info->error) break; //Probably 404, schedule not found.
 		cursor = info->pagination->?cursor;
 		foreach (info->data->segments, mapping ev) {
