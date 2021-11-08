@@ -106,6 +106,9 @@ array(string) low_recalculate_status(mapping st) {
 }
 continue Concurrent.Future recalculate_status(string chan) {
 	mapping st = chanstate[chan];
+	mapping self_live = twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan)->data || ({ });
+	if (sizeof(self_live)) st->uptime = self_live[0]->started_at;
+	else m_delete(st, "uptime");
 	[st->statustype, st->status] = low_recalculate_status(st);
 	send_updates_all(chan, st);
 	mapping config = persist_config->path("ghostwriter", chan);
@@ -138,7 +141,7 @@ continue Concurrent.Future recalculate_status(string chan) {
 	//If you have more than 100 host targets, you deserve problems. No fracturing of the array here.
 	write("Probing %O\n", targets);
 	array live = ({ });
-	if (sizeof(twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan)->data || ({ }))) {
+	if (st->uptime) {
 		//Never host if live. However, don't spam /unhost commands either.
 		if (!st->hosting) return 0;
 		//Leave live empty so we'll definitely unhost.
@@ -252,12 +255,7 @@ mapping get_state(string group) {
 }
 
 continue void force_check(string chan) {
-	[object irc, mapping data] = yield(Concurrent.all(connect(chan),
-		twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan)));
-	//We don't actually need the IRC object here, just that one has to exist.
-	mapping st = chanstate[chan];
-	if (!sizeof(data->data)) m_delete(st, "uptime");
-	else st->uptime = data->data[0]->started_at;
+	yield(connect(chan)); //We don't actually need the IRC object here, but forcing one to exist guarantees some checks.
 	yield(recalculate_status(chan));
 }
 
