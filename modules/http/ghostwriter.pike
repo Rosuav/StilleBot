@@ -153,7 +153,7 @@ continue Concurrent.Future recalculate_status(string chan) {
 		//If any channel has gone offline very very recently, don't autohost it.
 		int mindelay = 86400;
 		live = filter(live) {
-			int delay = channel_seen_offline[(int)__ARGS__->user_id] + 60 - time();
+			int delay = channel_seen_offline[(int)__ARGS__[0]->user_id] + 60 - time();
 			if (delay > 0) mindelay = min(delay, mindelay);
 			return delay <= 0;
 		};
@@ -255,7 +255,7 @@ mapping get_state(string group) {
 }
 
 continue void force_check(string chan) {
-	yield(connect(chan)); //We don't actually need the IRC object here, but forcing one to exist guarantees some checks.
+	mapping irc = yield(connect(chan)); //We don't actually need the IRC object here, but forcing one to exist guarantees some checks. Avoid bug by putting it in a variable.
 	yield(recalculate_status(chan));
 }
 
