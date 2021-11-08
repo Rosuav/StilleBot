@@ -20,27 +20,15 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 {
 	string chan = req->variables["for"];
 	if (!chan) return render_template("# Twitch stream calendar\n\n" + form, ([]));
-	int id = yield(get_user_id(chan));
-	//NOTE: Do not use get_helix_paginated here as the events probably go on forever.
-	array events = ({ });
-	string cursor = "";
-	object nw = Calendar.ISO.Second()->add(86400 * 7);
-	string next_week = nw->format_ymd() + "T" + nw->format_tod() + "Z";
-	while (1) {
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/schedule?broadcaster_id=" + id + "&after=" + cursor + "&first=25", ([]), (["return_errors": 1])));
-		if (info->error) break; //Probably 404, schedule not found.
-		chan = info->data->broadcaster_name || chan;
-		cursor = info->pagination->?cursor;
-		foreach (info->data->segments, mapping ev) {
-			if (ev->start_time > next_week) {cursor = 0; break;}
-			string datedesc = ev->start_time; //TODO: Format this nicely
-			events += ({sprintf("* <time datetime=\"%s\">%s</time> %s", ev->start_time, datedesc, ev->title)});
-		}
-		if (!cursor) break;
-	}
+	mapping info = yield(get_user_info(chan, "login"));
+	array events = yield(get_stream_schedule(info->id, 100, 86400 * 7));
+	events = map(events) {[mapping ev] = __ARGS__;
+		string datedesc = ev->start_time; //TODO: Format this nicely
+		return sprintf("* <time datetime=\"%s\">%s</time> %s", ev->start_time, datedesc, ev->title);
+	};
 	return render_template(markdown, ([
-		"chan": chan,
+		"chan": info->display_name,
 		"events": sizeof(events) ? events * "\n" : "* No scheduled streams",
-		"calurl": "https://api.twitch.tv/helix/schedule/icalendar?broadcaster_id=" + id,
+		"calurl": "https://api.twitch.tv/helix/schedule/icalendar?broadcaster_id=" + info->id,
 	]));
 }

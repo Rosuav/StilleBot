@@ -504,6 +504,29 @@ Concurrent.Future check_following(string user, string chan)
 	});
 }
 
+//Fetch a stream's schedule, up to N events within the next M seconds.
+continue Concurrent.Future|array get_stream_schedule(int|string channel, int maxevents, int maxtime) {
+	int id = (int)channel || yield(get_user_id(channel));
+	if (!id) return ({ });
+	//NOTE: Do not use get_helix_paginated here as the events probably go on forever.
+	array events = ({ });
+	string cursor = "";
+	object limit = Calendar.ISO.Second()->add(maxtime);
+	string cutoff = limit->format_ymd() + "T" + limit->format_tod() + "Z";
+	while (1) {
+		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/schedule?broadcaster_id=" + id + "&after=" + cursor + "&first=25", ([]), (["return_errors": 1])));
+		if (info->error) break; //Probably 404, schedule not found.
+		cursor = info->pagination->?cursor;
+		foreach (info->data->segments, mapping ev) {
+			if (ev->start_time > cutoff) return events;
+			events += ({ev});
+			if (sizeof(events) >= maxevents) return events;
+		}
+		if (!cursor) break;
+	}
+	return events;
+}
+
 class EventSub(string hookname, string type, string version, function callback) {
 	Crypto.SHA256.HMAC signer;
 	multiset(string) have_subs = (<>);
@@ -655,6 +678,7 @@ protected void create()
 	add_constant("notice_user_name", notice_user_name);
 	add_constant("translate_tag_ids", translate_tag_ids);
 	add_constant("EventSub", EventSub);
+	add_constant("get_stream_schedule", get_stream_schedule);
 }
 
 #if !constant(G)
