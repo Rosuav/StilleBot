@@ -106,7 +106,7 @@ array(string) low_recalculate_status(mapping st) {
 }
 continue Concurrent.Future recalculate_status(string chan) {
 	mapping st = chanstate[chan];
-	mapping self_live = twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan)->data || ({ });
+	array self_live = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan))->data || ({ });
 	if (sizeof(self_live)) st->uptime = self_live[0]->started_at;
 	else m_delete(st, "uptime");
 	[st->statustype, st->status] = low_recalculate_status(st);
@@ -137,7 +137,7 @@ continue Concurrent.Future recalculate_status(string chan) {
 		//to do is unhost.
 		targets = ({ });
 	}
-	if (mappingp(targets[0])) targets = targets->id;
+	if (sizeof(targets) && mappingp(targets[0])) targets = targets->id;
 	//If you have more than 100 host targets, you deserve problems. No fracturing of the array here.
 	write("Probing %O\n", targets);
 	array live = ({ });
