@@ -109,6 +109,19 @@ continue Concurrent.Future recalculate_status(string chan) {
 	array self_live = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan))->data || ({ });
 	if (sizeof(self_live)) st->uptime = self_live[0]->started_at;
 	else m_delete(st, "uptime");
+	//TODO: Halt hosting when +/- pause time of a scheduled event
+	//The rewind (here hacked to 10800) should be pause time, so that we catch
+	//recently-passed events. If -pause < until < pause, unhost and don't rehost
+	//(exactly as if we're live), and schedule a check at pause. If until is
+	//positive, schedule a check at until. NOTE: This can mean that we have some
+	//long-delay checks pending.
+	int limit = 86400 * 7;
+	array events = yield(get_stream_schedule(chan, 10800, 1, limit));
+	if (sizeof(events)) {
+		write("GOT EVENT: %O\n", events[0]);
+		int until = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", events[0]->start_time)->unix_time() - time();
+		write("Time until event: %d\n", until);
+	}
 	[st->statustype, st->status] = low_recalculate_status(st);
 	send_updates_all(chan, st);
 	mapping config = persist_config->path("ghostwriter", chan);
