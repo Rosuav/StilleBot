@@ -50,6 +50,7 @@ Pause duration: <select disabled=true id=pausetime><option value=60>One minute</
 ";
 
 mapping(string:mapping(string:mixed)) chanstate;
+mapping(int:int) channel_seen_offline = ([]); //Note: Not maintained over code reload
 
 /*
 - Check stream schedule, and automatically unhost X seconds (default: 15 mins) before a stream
@@ -80,6 +81,9 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 
 EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string chanid, mapping event] = __ARGS__;
 	write("** GW: Channel %O offline: %O\n", chanid, event);
+	//Hack: Mark the channel as just-gone-offline. That way, we won't attempt to
+	//host it while it's still shutting down.
+	channel_seen_offline[(int)chanid] = time();
 	mapping st = chanstate[event->broadcaster_user_login];
 	if (st) spawn_task(recalculate_status(event->broadcaster_user_login));
 	foreach (chanstate; string chan; mapping st) {
@@ -142,13 +146,32 @@ continue Concurrent.Future recalculate_status(string chan) {
 	else if (sizeof(targets)) live = yield(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": targets])));
 	write("Live: %O\n", live);
 	string msg = "/unhost";
-	if (sizeof(live) > 1) {
-		//Reorder the live streams by the order of the original targets
-		mapping byid = ([]);
-		foreach (live, mapping l) byid[l->user_id] = l;
-		live = map(targets, byid) - ({0});
+	if (sizeof(live)) {
+		//If any channel has gone offline very very recently, don't autohost it.
+		int mindelay = 86400;
+		live = filter(live) {
+			int delay = channel_seen_offline[(int)__ARGS__->user_id] + 60 - time();
+			if (delay > 0) mindelay = min(delay, mindelay);
+			return delay <= 0;
+		};
+		if (mindelay && !sizeof(live)) {
+			//Every live channel got filtered out. That could leave us in a weird state where,
+			//due to this check, we abandon a channel that comes back online. To avoid this, we
+			//recheck once the sixty-second cooldown is up.
+			write("Holding recheck on %s for %d seconds\n", chan, mindelay);
+			yield(Concurrent.resolve(1)->delay(mindelay));
+			write("Rechecking %s now that the timeout is up\n", chan);
+			return recalculate_status(chan);
+		}
+
+		if (sizeof(live) > 1) {
+			//Reorder the live streams by the order of the original targets
+			mapping byid = ([]);
+			foreach (live, mapping l) byid[l->user_id] = l;
+			live = map(targets, byid) - ({0});
+		}
+		if (sizeof(live)) msg = "/host " + string_to_utf8(live[0]->user_login); //Is it possible to have a non-ASCII login??
 	}
-	if (sizeof(live)) msg = "/host " + string_to_utf8(live[0]->user_login); //Is it possible to have a non-ASCII login??
 	//Currently we always take the first on the list. This may change in the future.
 	object irc = yield(connect(chan)); //Make sure we're connected. (Mutually recursive via a long chain.)
 	write("Connected\n");
