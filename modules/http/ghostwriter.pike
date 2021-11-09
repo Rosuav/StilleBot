@@ -100,8 +100,8 @@ array(string) low_recalculate_status(mapping st) {
 	if (st->uptime) return ({"live", "Now Live"});
 	//2) Hosting. TODO: Distinguish Twitch autohosting from ghostwriter hosts from manual hosts (and maybe acknowledge raids too)
 	if (st->hosting) return ({"host", "Hosting " + st->hosting});
-	//3) Paused.
-	//3a) TODO: Paused due to schedule
+	//3) Paused. Currently all pauses are shown the same way.
+	//3a) Paused due to schedule
 	//3b) Paused due to explicit web page interaction "unhost for X minutes"
 	//TODO: Show the time a little more cleanly
 	if (st->pause_until) return ({"idle", "Paused until " + ctime(st->pause_until)});
