@@ -30,7 +30,7 @@ export function render(state) {
 	if (state.schedule_last_checked) {
 		const ev = state.schedule_next_event;
 		if (ev) set_content("#calendar", [
-			"Next scheduled event: ",
+			"Next scheduled stream: ",
 			TIME({
 				dateTime: ev.start_time,
 				title: ""+new Date(ev.start_time),
