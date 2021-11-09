@@ -131,11 +131,11 @@ continue Concurrent.Future recalculate_status(string chan) {
 		write("Time until event: %d\n", until);
 		if (-pausetime <= until && until <= pausetime) {
 			write("PAUSING UNTIL SCHEDULE TIME PLUS %d\n", pausetime);
-			st->pause_until = ev->unix_time + pausetime;
+			st->pause_until = max(st->pause_until, ev->unix_time + pausetime);
 		}
 		//TODO: Automatically schedule a check at whichever is soonest:
 		//1) ev->unix_time - pausetime (if above zero)
-		//2) ev->unix_time + pausetime
+		//2) st->pause_until (regardless of the reason for the pause)
 		//3) One day from now, or whatever schedule-check period we want to use
 		//TODO: Ensure that we don't stack schedule rechecks.
 		//- On reinitialization, clear out any call_outs
