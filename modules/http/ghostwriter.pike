@@ -121,21 +121,21 @@ continue Concurrent.Future recalculate_status(string chan) {
 		if (sizeof(events)) {
 			write("GOT EVENT: %O\n", events[0]);
 			st->schedule_next_event = events[0];
+			events[0]->unix_time = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", events[0]->start_time)->unix_time();
 		}
 		else m_delete(st, "schedule_next_event");
 		st->schedule_last_checked = time();
 	}
 	if (mapping ev = st->schedule_next_event) {
-		int sched = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", ev->start_time)->unix_time();
-		int until = sched - time();
+		int until = ev->unix_time - time();
 		write("Time until event: %d\n", until);
 		if (-pausetime <= until && until <= pausetime) {
 			write("PAUSING UNTIL SCHEDULE TIME PLUS %d\n", pausetime);
-			st->pause_until = sched + pausetime;
+			st->pause_until = ev->unix_time + pausetime;
 		}
 		//TODO: Automatically schedule a check at whichever is soonest:
-		//1) sched - pausetime (if above zero)
-		//2) sched + pausetime
+		//1) ev->unix_time - pausetime (if above zero)
+		//2) ev->unix_time + pausetime
 		//3) One day from now, or whatever schedule-check period we want to use
 		//TODO: Ensure that we don't stack schedule rechecks.
 		//- On reinitialization, clear out any call_outs
