@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, LI, IMG, BUTTON} = choc;
+const {A, LI, IMG, BUTTON, TIME} = choc;
 import {waitlate} from "$$static||utils.js$$";
 
 let li_cache = { };
@@ -27,6 +27,19 @@ export function render(state) {
 	if (state.pausetime) DOM("#pausetime").value = state.pausetime;
 	//Allow the server to explicitly mark us as inactive (for the demo)
 	if (state.inactive) document.querySelectorAll("button,select").forEach(b => b.disabled = !b.dataset.scopes);
+	if (state.schedule_last_checked) {
+		const ev = state.schedule_next_event;
+		if (ev) set_content("#calendar", [
+			"Next scheduled event: ",
+			TIME({
+				dateTime: ev.start_time,
+				title: ""+new Date(ev.start_time),
+			}, ev.start_time), //TODO: Format the human-readable part more nicely, esp if it's coming soon
+			" ",
+			ev.title,
+		]);
+		else set_content("#calendar", "");
+	}
 }
 
 //NOTE: Do not save channel list on input/change on textarea as it would be disruptive.

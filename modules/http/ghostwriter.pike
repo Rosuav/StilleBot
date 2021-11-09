@@ -8,8 +8,11 @@ $$login||Loading...$$
 
 [Check hosting now](: #recheck disabled=true)
 
+<div>
 Pause duration: <select disabled=true id=pausetime><option value=60>One minute</option><option value=300>Five minutes</option><option value=900 selected>Fifteen minutes</option><option value=1800>Thirty minutes</option></select>
+<div id=calendar>Loading calendar...</div>
 [Unhost and pause](: #pausenow disabled=true)
+</div>
 
 ## Channels to autohost
 1. loading...
@@ -49,6 +52,7 @@ Pause duration: <select disabled=true id=pausetime><option value=60>One minute</
 </style>
 ";
 
+constant DEFAULT_PAUSE_TIME = 900; //Ensure that this is synchronized with the <option value=N selected> in the Markdown above
 mapping(string:mapping(string:mixed)) chanstate;
 mapping(int:int) channel_seen_offline = ([]); //Note: Not maintained over code reload
 
@@ -109,27 +113,37 @@ continue Concurrent.Future recalculate_status(string chan) {
 	array self_live = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan))->data || ({ });
 	if (sizeof(self_live)) st->uptime = self_live[0]->started_at;
 	else m_delete(st, "uptime");
+	mapping config = persist_config->path("ghostwriter", chan);
+	int pausetime = ((int)config->pausetime || DEFAULT_PAUSE_TIME);
 	if (st->schedule_last_checked < time() + 86400) {
-		//TODO: Halt hosting when +/- pause time of a scheduled event
-		//The rewind (here hacked to 10800) should be pause time, so that we catch
-		//recently-passed events. If -pause < until < pause, unhost and don't rehost
-		//(exactly as if we're live), and schedule a check at pause. If until is
-		//positive, schedule a check at until. NOTE: This can mean that we have some
-		//long-delay checks pending.
 		int limit = 86400 * 7;
-		array events = yield(get_stream_schedule(chan, 10800, 1, limit));
+		array events = yield(get_stream_schedule(chan, pausetime, 1, limit));
 		if (sizeof(events)) {
 			write("GOT EVENT: %O\n", events[0]);
 			st->schedule_next_event = events[0];
-			int until = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", events[0]->start_time)->unix_time() - time();
-			write("Time until event: %d\n", until);
 		}
 		else m_delete(st, "schedule_next_event");
 		st->schedule_last_checked = time();
 	}
+	if (mapping ev = st->schedule_next_event) {
+		int sched = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", ev->start_time)->unix_time();
+		int until = sched - time();
+		write("Time until event: %d\n", until);
+		if (-pausetime <= until && until <= pausetime) {
+			write("PAUSING UNTIL SCHEDULE TIME PLUS %d\n", pausetime);
+			st->pause_until = sched + pausetime;
+		}
+		//TODO: Automatically schedule a check at whichever is soonest:
+		//1) sched - pausetime (if above zero)
+		//2) sched + pausetime
+		//3) One day from now, or whatever schedule-check period we want to use
+		//TODO: Ensure that we don't stack schedule rechecks.
+		//- On reinitialization, clear out any call_outs
+		//- On setup (init or reinit), create fresh call_outs
+		//- On noticing that a schedule has changed, remove old call_out before creating new one
+	}
 	[st->statustype, st->status] = low_recalculate_status(st);
 	send_updates_all(chan, st);
-	mapping config = persist_config->path("ghostwriter", chan);
 	array targets = config->channels || ({ });
 	//If we're hitting the API too much, rate-limit this check (eg once per five mins), but remove
 	//the flag saying recent check any time the user explicitly forces a check.
@@ -294,7 +308,7 @@ void websocket_cmd_pause(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	string chan = conn->group;
 	mapping st = chanstate[chan];
 	mapping config = persist_config->path("ghostwriter", chan);
-	int pausetime = ((int)config->pausetime || 900);
+	int pausetime = ((int)config->pausetime || DEFAULT_PAUSE_TIME);
 	st->pause_until = time() + pausetime;
 	spawn_task(recalculate_status(chan));
 	call_out(lambda() {spawn_task(G->G->websocket_types->ghostwriter->recalculate_status(chan));}, pausetime);
