@@ -145,10 +145,6 @@ continue Concurrent.Future recalculate_status(string chan) {
 	[st->statustype, st->status] = low_recalculate_status(st);
 	send_updates_all(chan, st);
 	array targets = config->channels || ({ });
-	//If we're hitting the API too much, rate-limit this check (eg once per five mins), but remove
-	//the flag saying recent check any time the user explicitly forces a check.
-	//TODO: Figure out where we're going to retain IDs since we'll defo need them for this
-	//mapping sched = yield(twitch_api_request("https://api.twitch.tv/helix/schedule?broadcaster_id=" + id + "&first=5"));
 	m_delete(st, "hostingid");
 	if (st->pause_until) {
 		int pauseleft = st->pause_until - time();
