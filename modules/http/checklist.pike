@@ -10,7 +10,7 @@ constant hypetrain = replace(#"
 HypeLUL HypeCool HypeLove1 HypeSleep HypePat HypeCozy1<br>
 HypeHands1 HypeHands2 HypeFail HypeHai HypeNom HypeBoop<br>
 HypeBLEH HypeApplause HypeRage HypeMwah HypeHuh HypeSeemsGood<br>
-HypeWave HypeReading HypeShock HypeStress HypeCry<br>
+HypeWave HypeReading HypeShock HypeStress HypeCry HypeDerp1<br>
 HypeCheer HypeLurk HypePopcorn HypeEvil HypeAwww HypeHype<br>
 
 ## Hype Train set four
@@ -182,6 +182,7 @@ constant emoteids = ([
 	"HypeShock": "emotesv2_1337536bcecf49f4bb9cd1a699341ee2",
 	"HypeStress": "emotesv2_8c1d964bd7e14fe1b8bd61d29ee0eb8c",
 	"HypeCry": "emotesv2_cdc7a602ee08462e81fb6cc0e3e8de61",
+	"HypeDerp1": "emotesv2_e029042dd623498d8b1e74e3ea472bea",
 
 	//Level 5
 	"HypeCheer": "emotesv2_dd4f4f9cea1a4039ad3390e20900abe4",

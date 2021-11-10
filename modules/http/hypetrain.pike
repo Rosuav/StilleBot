@@ -91,7 +91,7 @@ void probe_hype_train(int channel)
 constant emotes = #"HypeLUL HypeCool HypeLove1 HypeSleep HypePat HypeCozy1
 HypeHands1 HypeHands2 HypeFail HypeHai HypeNom HypeBoop
 HypeBLEH HypeApplause HypeRage HypeMwah HypeHuh HypeSeemsGood
-HypeWave HypeReading HypeShock HypeStress HypeCry HyperReveal
+HypeWave HypeReading HypeShock HypeStress HypeCry HypeDerp1
 HypeCheer HypeLurk HypePopcorn HypeEvil HypeAwww HypeHype";
 
 string url(int|string id) { //TODO: Dedup with the one in checklist
