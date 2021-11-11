@@ -144,7 +144,8 @@ continue Concurrent.Future recalculate_status(string chan) {
 		st->schedule_last_checked = time();
 	}
 	if (mapping ev = st->schedule_next_event) {
-		if (ev->unix_time > time() && ev->unix_time < next_check) next_check = ev->unix_time;
+		int pausestart = ev->unix_time - pausetime;
+		if (pausestart > time() && pausestart < next_check) next_check = pausestart;
 		int until = ev->unix_time - time();
 		write("Time until event: %d\n", until);
 		if (-pausetime <= until && until <= pausetime) {
@@ -153,6 +154,7 @@ continue Concurrent.Future recalculate_status(string chan) {
 		}
 	}
 	if (st->pause_until > time() && st->pause_until < next_check) next_check = st->pause_until;
+	//TODO: Add int...times to schedule_recalculation to do all the if > time < next_check.
 	schedule_recalculation(chan, next_check);
 	//TODO: Automatically schedule a check at whichever is soonest:
 	//1) ev->unix_time - pausetime (if above zero)
