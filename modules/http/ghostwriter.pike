@@ -55,6 +55,7 @@ Pause duration: <select disabled=true id=pausetime><option value=60>One minute</
 constant DEFAULT_PAUSE_TIME = 900; //Ensure that this is synchronized with the <option value=N selected> in the Markdown above
 mapping(string:mapping(string:mixed)) chanstate;
 mapping(int:int) channel_seen_offline = ([]); //Note: Not maintained over code reload
+mapping(string:mixed) schedule_check_callouts = ([]); //Cleared and rechecked over code reload
 
 /*
 - Check stream schedule, and automatically unhost X seconds (default: 15 mins) before a stream
@@ -95,6 +96,21 @@ EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string
 	}
 };
 
+void scheduled_recalculation(string chan) {
+	if (G->G->ghostwriterstate[""] != hash_value(this)) return; //Code's been updated. Don't do anything.
+	chanstate[chan]->next_scheduled_check = 0;
+	spawn_task(recalculate_status(chan));
+}
+void schedule_recalculation(string chan, int target) {
+	int until = target - time();
+	if (until < 0) return;
+	mapping st = chanstate[chan];
+	if (st->next_scheduled_check == target) return; //Already scheduled at the same time.
+	if (mixed c = schedule_check_callouts[chan]) remove_call_out(c);
+	st->next_scheduled_check = target;
+	schedule_check_callouts[chan] = call_out(scheduled_recalculation, until, chan);
+}
+
 array(string) low_recalculate_status(mapping st) {
 	//1) Being live trumps all.
 	if (st->uptime) return ({"live", "Now Live"});
@@ -115,7 +131,8 @@ continue Concurrent.Future recalculate_status(string chan) {
 	else m_delete(st, "uptime");
 	mapping config = persist_config->path("ghostwriter", chan);
 	int pausetime = ((int)config->pausetime || DEFAULT_PAUSE_TIME);
-	if (st->schedule_last_checked < time() + 86400) {
+	int next_check = time() + 86400; //Maximum time that we'll ever wait between schedule checks (in case someone adds or changes)
+	if (st->schedule_last_checked < next_check) {
 		int limit = 86400 * 7;
 		array events = yield(get_stream_schedule(chan, pausetime, 1, limit));
 		if (sizeof(events)) {
@@ -127,21 +144,20 @@ continue Concurrent.Future recalculate_status(string chan) {
 		st->schedule_last_checked = time();
 	}
 	if (mapping ev = st->schedule_next_event) {
+		if (ev->unix_time > time() && ev->unix_time < next_check) next_check = ev->unix_time;
 		int until = ev->unix_time - time();
 		write("Time until event: %d\n", until);
 		if (-pausetime <= until && until <= pausetime) {
 			write("PAUSING UNTIL SCHEDULE TIME PLUS %d\n", pausetime);
 			st->pause_until = max(st->pause_until, ev->unix_time + pausetime);
 		}
-		//TODO: Automatically schedule a check at whichever is soonest:
-		//1) ev->unix_time - pausetime (if above zero)
-		//2) st->pause_until (regardless of the reason for the pause)
-		//3) One day from now, or whatever schedule-check period we want to use
-		//TODO: Ensure that we don't stack schedule rechecks.
-		//- On reinitialization, clear out any call_outs
-		//- On setup (init or reinit), create fresh call_outs
-		//- On noticing that a schedule has changed, remove old call_out before creating new one
 	}
+	if (st->pause_until > time() && st->pause_until < next_check) next_check = st->pause_until;
+	schedule_recalculation(chan, next_check);
+	//TODO: Automatically schedule a check at whichever is soonest:
+	//1) ev->unix_time - pausetime (if above zero)
+	//2) st->pause_until (regardless of the reason for the pause)
+	//3) One day from now, or whatever schedule-check period we want to use
 	[st->statustype, st->status] = low_recalculate_status(st);
 	send_updates_all(chan, st);
 	array targets = config->channels || ({ });
@@ -391,10 +407,19 @@ protected void create(string name) {
 	if (!G->G->ghostwriterirc) G->G->ghostwriterirc = ([]);
 	if (!G->G->ghostwriterstate) G->G->ghostwriterstate = ([]);
 	chanstate = G->G->ghostwriterstate;
+	if (mapping callouts = G->G->ghostwritercallouts) {
+		//Clear out the callouts, and empty the mapping so the older code sees they're gone
+		foreach (indices(callouts), string chan) if (chan != "") remove_call_out(m_delete(callouts, chan));
+	}
+	G->G->ghostwritercallouts = schedule_check_callouts = (["": hash_value(this)]);
 	int delay = 0; //Don't hammer the server
 	foreach (persist_config->path("ghostwriter"); string chan; mapping info) {
 		if (!info->channels || !sizeof(info->channels)) continue;
 		call_out(connect, delay += 2, chan);
 		has_channel(chan, info->channels->id[*]);
+		if (int t = chanstate[chan]->?next_scheduled_check) {
+			t -= time();
+			if (t >= 0) schedule_check_callouts[chan] = call_out(scheduled_recalculation, t, chan);
+		}
 	}
 }
