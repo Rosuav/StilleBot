@@ -164,12 +164,14 @@ continue Concurrent.Future recalculate_status(string chan) {
 	send_updates_all(chan, st);
 	array targets = config->channels || ({ });
 	m_delete(st, "hostingid");
+	//Clean up junk data
 	if (st->pause_until) {
 		int pauseleft = st->pause_until - time();
-		write("Pause left: %O\n", pauseleft);
 		if (pauseleft <= 0) m_delete(st, "pause_until");
-		else targets = ({ }); //Automatically unhost during pause time
+		else write("Pause left: %O\n", pauseleft);
 	}
+
+	if (st->pause_until) targets = ({ }); //Automatically unhost during pause time
 	else if (st->hosting) {
 		//Check if the hosted channel is still live
 		string id = (string)yield(get_user_id(st->hosting));
