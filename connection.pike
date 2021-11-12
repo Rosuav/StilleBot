@@ -144,7 +144,9 @@ class SendQueue(string id) {
 			"pass": "oauth:" + tok->token,
 			"connection_lost": finalize,
 			"error_notify": error_notify,
-			"motd_notify": lambda() {initialized = 1;}, //Once we see the MOTD, we're ready to send messages
+			//Once we see the MOTD, we're ready to send messages. (Or should we wait for
+			//USERSTATE or ROOMSTATE? Do we get those if not joining a channel?)
+			"motd_notify": lambda() {initialized = 1;},
 		])));
 		if (ex) {
 			tok->last_error_time = time();
