@@ -4,12 +4,13 @@ const {OPTION, SELECT, INPUT, LABEL, UL, LI, BUTTON, TR, TH, TD, SPAN} = choc;
 const dlg = document.getElementById("editdlg");
 let editing_quote = 0;
 let quote_li = null;
-on("click", "li", e => {
+on("click", ".editbtn", e => {
 	if (dlg.open) return;
-	let idx = [...e.match.parentNode.children].indexOf(e.match);
+	const li = e.match.closest("li");
+	let idx = [...li.parentNode.children].indexOf(li);
 	let quote = quotes[idx]; if (!quote) return;
 	editing_quote = idx + 1; // because humans start counting at 1, silly things
-	quote_li = e.match;
+	quote_li = li;
 	set_content("#idx", "" + editing_quote);
 	document.getElementById("text").value = quote.msg;
 	set_content("#timestamp", new Date(quote.timestamp * 1000).toLocaleString());

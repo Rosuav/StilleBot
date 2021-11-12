@@ -19,3 +19,10 @@ Twitch Clips, quotes are a great way to remember those fun moments forever.
 {: tag=dialog #editdlg}
 
 $$editjs||$$
+
+<style>
+.editbtn {
+	padding: 0 5px;
+	width: 2em; height: 2em;
+}
+</style>
