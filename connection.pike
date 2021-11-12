@@ -131,6 +131,8 @@ class SendQueue(string id) {
 	array msgqueue = ({ });
 	int active = 1;
 	string my_nick;
+	mixed active_call_out;
+
 	protected void create() {
 		lastmsgtime = time(); //TODO: Subsecond resolution? Have had problems sometimes with triggering my own commands if non-mod.
 		if (!id) {my_nick = bot_nick; return;} //The default queue uses the primary connection
@@ -148,13 +150,14 @@ class SendQueue(string id) {
 			werror("%% Error connecting to voice %s:\n%s\n", my_nick, describe_error(ex));
 			finalize(); return;
 		}
-		call_out(check_active, 900);
+		check_active(); active = 1;
 		write("Connected to voice %O\n", my_nick);
 	}
 	void finalize() {
 		write("Finalizing voice queue for %O -> %O\n", my_nick, msgqueue);
 		m_delete(sendqueues, id);
 		if (client) client->close();
+		remove_call_out(active_call_out); active_call_out = 0;
 	}
 	void check_active() {
 		if (!active) {
@@ -163,7 +166,8 @@ class SendQueue(string id) {
 			return;
 		}
 		active = 0;
-		call_out(check_active, 900);
+		remove_call_out(active_call_out);
+		active_call_out = call_out(check_active, 900);
 	}
 
 	void pump_queue() {
