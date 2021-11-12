@@ -61,6 +61,11 @@ continue Concurrent.Future|mapping fetch_emotes()
 		//What if there's a collision? Should we prioritize?
 		foreach (G->G->bot_emote_list->emoticon_sets;; array set) foreach (set, mapping em)
 			emotes[em->code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0)", em->code, em->id);
+		//Augment (or replace) with any that we've seen that the bot has access to
+		foreach (persist_status->path("bot_emotes"); string code; string id) {
+			//Note: Uses the v2 URL scheme even if it's v1 - they seem to work
+			emotes[code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0)", code, (string)id);
+		}
 		G->G->emote_code_to_markdown = emotes;
 	}
 	return G->G->bot_emote_list;

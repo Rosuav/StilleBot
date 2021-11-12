@@ -1080,7 +1080,8 @@ protected void create()
 		reconnect();
 	if (mapping irc = persist_config["ircsettings"])
 	{
-		bot_nick = persist_config["ircsettings"]->nick || "";
+		bot_nick = irc->nick || "";
+		get_user_id(persist_config["ircsettings"]->nick)->then() {G->G->bot_uid = __ARGS__[0];};
 		if (mixed ex = irc->http_address && irc->http_address != "" && catch
 		{
 			int use_https = has_prefix(irc->http_address, "https://");
