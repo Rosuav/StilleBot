@@ -129,7 +129,7 @@ class SendQueue(string id) {
 	int modmsgs = 0;
 	object client;
 	array msgqueue = ({ });
-	int active = 1;
+	int active = 1, initialized = 0;
 	string my_nick;
 	mixed active_call_out;
 
@@ -144,6 +144,7 @@ class SendQueue(string id) {
 			"pass": "oauth:" + tok->token,
 			"connection_lost": finalize,
 			"error_notify": error_notify,
+			"motd_notify": lambda() {initialized = 1;}, //Once we see the MOTD, we're ready to send messages
 		])));
 		if (ex) {
 			tok->last_error_time = time();
@@ -202,7 +203,7 @@ class SendQueue(string id) {
 				return;
 			}
 		}
-		if (sizeof(msgqueue) || tm == lastmsgtime)
+		if (!initialized || sizeof(msgqueue) || tm == lastmsgtime)
 		{
 			msgqueue += ({({to, msg})});
 			call_out(pump_queue, 1);
