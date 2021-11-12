@@ -7,6 +7,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	array q = ({ });
 	string tz = req->misc->channel->config->timezone;
 	object user = user_text();
+	string btn = req->misc->is_mod ? " [\U0001F589](:.editbtn)" : "";
 	foreach (quotes; int i; mapping quote)
 	{
 		//Render emotes. TODO: Use the bot's emote list primarily, but
@@ -15,7 +16,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (tz) ts = ts->set_timezone(tz) || ts;
 		string msg = emotify_user_text(quote->msg, user);
 		string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
-		q += ({sprintf("%d. %s [%s, %s] [\U0001F589](:.editbtn)", i + 1, msg, quote->game || "uncategorized", date)});
+		q += ({sprintf("%d. %s [%s, %s]%s", i + 1, msg, quote->game || "uncategorized", date, btn)});
 	}
 	return render_template("chan_quotes.md", ([
 		"quotes": q * "\n",
