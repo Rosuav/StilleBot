@@ -76,4 +76,4 @@
 * Client-side per-user preferences are now a thing. Use them where appropriate.
   - Absorb raidnotes into this system.
   - Note that only pages with websockets can have prefs. Raid Finder may need to grow one.
-* TODO: "max-width: fit-content" is borked, look it up
+* "max-width: fit-content" doesn't work in Firefox - but nor does -moz-fit-content :(
