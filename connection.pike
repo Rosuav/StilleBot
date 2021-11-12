@@ -244,8 +244,7 @@ mapping(string:mixed) gather_person_info(object person, mapping params)
 		ret->emotes = ({ });
 		foreach (params->emotes / "/", string emote) if (emote != "")
 		{
-			sscanf(emote, "%s:%s", string|int id, string pos);
-			if (!has_prefix(id, "emotesv2")) id = (int)id; //TODO: Don't do this (it breaks on modified v1 emotes)
+			sscanf(emote, "%s:%s", string id, string pos);
 			foreach (pos / ",", string p) {
 				sscanf(p, "%d-%d", int start, int end);
 				if (end < start) continue; //Shouldn't happen (probably a parse failure)
@@ -316,10 +315,10 @@ class channel_notif
 		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
 		person->measurement_offset = offset;
 		string emoted = "", residue = param;
-		foreach (person->emotes || ({ }), [int|string id, int start, int end]) {
+		foreach (person->emotes || ({ }), [string id, int start, int end]) {
 			emoted += sprintf("%s\uFFFAe%s:%s\uFFFB",
 				residue[..start - offset - 1], //Text before the emote
-				(string)id, residue[start-offset..end-offset], //Emote ID and name
+				id, residue[start-offset..end-offset], //Emote ID and name
 			);
 			residue = residue[end - offset + 1..];
 			offset = end + 1;

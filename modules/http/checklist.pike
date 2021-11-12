@@ -248,13 +248,13 @@ int message(object channel, mapping person, string msg) {
 	mapping seen = persist_status->path("seen_emotes")[(string)person->uid];
 	mapping emotes = G->G->emote_code_to_markdown || ([]); //If not set, don't crash, just ignore them
 	mapping botemotes = person->uid == G->G->bot_uid && persist_status->path("bot_emotes");
-	foreach (person->emotes, [int|string id, int start, int end]) {
+	foreach (person->emotes, [string id, int start, int end]) {
 		if (botemotes) {
 			string code = msg[start..end];
 			if (!botemotes[code]) {
-				botemotes[code] = (string)id;
+				botemotes[code] = id;
 				//Note: Uses the v2 URL scheme even if it's v1 - they seem to work
-				emotes[code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0)", code, (string)id);
+				emotes[code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0)", code, id);
 			}
 		}
 		string emotename = v2[id];
