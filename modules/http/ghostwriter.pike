@@ -56,6 +56,7 @@ constant DEFAULT_PAUSE_TIME = 900; //Ensure that this is synchronized with the <
 mapping(string:mapping(string:mixed)) chanstate;
 mapping(int:int) channel_seen_offline = ([]); //Note: Not maintained over code reload
 mapping(string:mixed) schedule_check_callouts = ([]); //Cleared and rechecked over code reload
+//mapping(string:int) suppress_autohosting = ([]); //TODO: If a broadcaster manually unhosts or rehosts, don't change hosting for a bit.
 
 /*
 - Check stream schedule, and automatically unhost X seconds (default: 15 mins) before a stream
