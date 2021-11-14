@@ -101,9 +101,11 @@ void scheduled_recalculation(string chan) {
 	chanstate[chan]->next_scheduled_check = 0;
 	spawn_task(recalculate_status(chan));
 }
-void schedule_recalculation(string chan, int target) {
-	int until = target - time();
-	if (until < 0) return;
+void schedule_recalculation(string chan, array(int) targets) {
+	int now = time();
+	int target = min(@filter(targets, `>, now));
+	int until = target - now;
+	if (until < 0) return; //Including if there are no valid targets (target == 0)
 	mapping st = chanstate[chan];
 	if (st->next_scheduled_check == target) return; //Already scheduled at the same time.
 	if (mixed c = schedule_check_callouts[chan]) remove_call_out(c);
@@ -131,8 +133,8 @@ continue Concurrent.Future recalculate_status(string chan) {
 	else m_delete(st, "uptime");
 	mapping config = persist_config->path("ghostwriter", chan);
 	int pausetime = ((int)config->pausetime || DEFAULT_PAUSE_TIME);
-	int next_check = time() + 86400; //Maximum time that we'll ever wait between schedule checks (in case someone adds or changes)
-	if (st->schedule_last_checked < next_check) {
+	array(int) next_check = ({time() + 86400}); //Maximum time that we'll ever wait between schedule checks (in case someone adds or changes)
+	if (st->schedule_last_checked < next_check[0]) {
 		int limit = 86400 * 7;
 		array events = yield(get_stream_schedule(chan, pausetime, 1, limit));
 		if (sizeof(events)) {
@@ -145,7 +147,7 @@ continue Concurrent.Future recalculate_status(string chan) {
 	}
 	if (mapping ev = st->schedule_next_event) {
 		int pausestart = ev->unix_time - pausetime;
-		if (pausestart > time() && pausestart < next_check) next_check = pausestart;
+		next_check += ({pausestart});
 		int until = ev->unix_time - time();
 		write("Time until event: %d\n", until);
 		if (-pausetime <= until && until <= pausetime) {
@@ -153,13 +155,9 @@ continue Concurrent.Future recalculate_status(string chan) {
 			st->pause_until = max(st->pause_until, ev->unix_time + pausetime);
 		}
 	}
-	if (st->pause_until > time() && st->pause_until < next_check) next_check = st->pause_until;
-	//TODO: Add int...times to schedule_recalculation to do all the if > time < next_check.
+	next_check += ({st->pause_until});
 	schedule_recalculation(chan, next_check);
-	//TODO: Automatically schedule a check at whichever is soonest:
-	//1) ev->unix_time - pausetime (if above zero)
-	//2) st->pause_until (regardless of the reason for the pause)
-	//3) One day from now, or whatever schedule-check period we want to use
+
 	[st->statustype, st->status] = low_recalculate_status(st);
 	send_updates_all(chan, st);
 	array targets = config->channels || ({ });
