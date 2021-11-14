@@ -112,6 +112,7 @@ TODO: Check Pok* (Pokemon) emotes
 constant emoteids = ([
 	"HypeOni6": 301205427, "OWL2019Tracer": 1833318,
 	"PrimeYouDontSay": 134251, "PrimeUWot": 134252, "PrimeRlyTho": 134253,
+	"HypeHeart": 304420791, //Not sure why this one, and this one alone, didn't show up
 	//Hype Train v4: level 1
 	"HypeHeh": "emotesv2_62199faa2ca34ea8a0f3567990a72a14",
 	"HypeDoh": "emotesv2_69a7806c6837428f82475e99677d2f78",
