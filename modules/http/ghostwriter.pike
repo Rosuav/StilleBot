@@ -97,7 +97,7 @@ EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string
 };
 
 void scheduled_recalculation(string chan) {
-	if (G->G->ghostwriterstate[""] != hash_value(this)) return; //Code's been updated. Don't do anything.
+	if (G->G->ghostwritercallouts[""] != hash_value(this)) return; //Code's been updated. Don't do anything.
 	chanstate[chan]->next_scheduled_check = 0;
 	spawn_task(recalculate_status(chan));
 }
