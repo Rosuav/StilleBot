@@ -253,10 +253,12 @@ class IRCClient
 		//If you're not currently hosting, there is no HOSTTARGET on startup. Once we're
 		//confident that one isn't coming, notify that there is no host target.
 		if (type == "ROOMSTATE" && options->promise) got_host(chan, "- -");
-		if (type == "NOTICE" && sscanf(message, "%s has gone offline. Exiting host mode%s", string chan, string dot) && dot == ".") {
-			write("** GONE OFFLINE: %O\n", chan);
-			//suppress_autohost[chan] = time() + 60; //TODO: Synchronize this with code reloads (or just do it on the latest version)
+		if (type == "NOTICE" && sscanf(message, "%s has gone offline. Exiting host mode%s", string target, string dot) && dot == ".") {
+			write("** GONE OFFLINE: %O\n", target);
+			mapping st = chanstate[chan];
+			if (st->hosting == target && st->hostingid) channel_seen_offline[(int)st->hostingid] = time();
 		}
+		if (type == "NOTICE") write("GW: NOTICE %O\n", message);
 	}
 	void close() {
 		if (options->promise) options->promise->failure(0);
