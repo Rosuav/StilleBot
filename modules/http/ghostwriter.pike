@@ -273,7 +273,9 @@ class IRCClient
 		}
 		if (type == "NOTICE" && message == "Host target cannot be changed more than 3 times every half hour.") {
 			//Probably only happens while I'm testing, but ehh, whatever
-			G->G->websocket_types->ghostwriter->pause_autohost(chan - "#", time() + 30*60);
+			//Note that it is still legal to *unhost* for the rest of the half hour, just not host anyone.
+			int target = time() + 30*60;
+			G->G->websocket_types->ghostwriter->pause_autohost(chan - "#", target - target % 1800 + 3);
 		}
 	}
 	void close() {
