@@ -68,11 +68,12 @@ continue mapping|Concurrent.Future get_state(int|string chan)
 			chan = yield(get_user_info(chan))->login;
 		}
 		else uid = (string)yield(get_user_id(chan));
+		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + uid,
+				(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
+		//If there's an error fetching events, don't set up hooks
 		hypetrain_begin(uid, (["broadcaster_user_id": uid]));
 		hypetrain_progress(uid, (["broadcaster_user_id": uid]));
 		hypetrain_end(uid, (["broadcaster_user_id": uid]));
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + uid,
-				(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
 		mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
 		return parse_hype_status(data);
 	};
