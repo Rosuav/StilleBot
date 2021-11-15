@@ -193,7 +193,7 @@ continue Concurrent.Future recalculate_status(string chan) {
 	}
 	else if (sizeof(targets)) live = yield(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": targets])));
 	write("Live: %O\n", live);
-	string msg = "/unhost";
+	string msg = "/unhost", expected = 0;
 	if (sizeof(live)) {
 		//If any channel has gone offline very very recently, don't autohost it.
 		int mindelay = 86400;
@@ -218,21 +218,29 @@ continue Concurrent.Future recalculate_status(string chan) {
 			foreach (live, mapping l) byid[l->user_id] = l;
 			live = map(targets, byid) - ({0});
 		}
-		if (sizeof(live)) msg = "/host " + string_to_utf8(live[0]->user_login); //Is it possible to have a non-ASCII login??
+		if (sizeof(live)) {
+			msg = "/host " + string_to_utf8(live[0]->user_login); //Is it possible to have a non-ASCII login??
+			expected = live[0]->user_login;
+		}
 	}
+	if (expected == st->hosting) return 0; //Including if they're both 0 (want no host, currently not hosting)
 	//Currently we always take the first on the list. This may change in the future.
 	object irc = yield(connect(chan)); //Make sure we're connected. (Mutually recursive via a long chain.)
 	write("Connected\n");
 	irc->send_message("#" + chan, msg);
+	write("GW: Expected host target for %O is now %O\n", chan, expected);
+	st->expected_host_target = expected;
 	//If the host succeeds, there should be a HOSTTARGET message shortly.
 	write("Got live: %O\n", live);
 }
 
 void host_changed(string chan, string target, string viewers) {
 	//Note that viewers may be "-" if we're already hosting, so don't depend on it
-	if (chanstate[chan]->hosting == target) return; //eg after reconnecting to IRC
-	write("Host changed: %O -> %O\n", chan, target);
-	chanstate[chan]->hosting = target;
+	mapping st = chanstate[chan];
+	if (st->hosting == target) return; //eg after reconnecting to IRC
+	write("Host changed: %O -> %O (expected %O)\n", chan, target, st->expected_host_target);
+	st->hosting = target;
+	if (target == st->expected_host_target) m_delete(st, "expected_host_target");
 	spawn_task(recalculate_status(chan));
 	//TODO: Purge the hook channel list of any that we don't need (those for whom autohosts_this[id] is empty or absent)
 }
