@@ -232,7 +232,6 @@ continue Concurrent.Future recalculate_status(string chan) {
 	write("GW: Expected host target for %O is now %O\n", chan, expected);
 	st->expected_host_target = expected;
 	//If the host succeeds, there should be a HOSTTARGET message shortly.
-	write("Got live: %O\n", live);
 }
 
 void pause_autohost(string chan, int target) {
@@ -247,7 +246,7 @@ void host_changed(string chan, string target, string viewers) {
 	write("Host changed: %O -> %O (expected %O)\n", chan, target, st->expected_host_target);
 	st->hosting = target;
 	if (target == st->expected_host_target) m_delete(st, "expected_host_target");
-	else pause_autohost(chan, time() + 60); //If you manually host or unhost, disable autohost for one minute
+	else if (target) pause_autohost(chan, time() + 60); //If you manually host, disable autohost for one minute
 	spawn_task(recalculate_status(chan));
 	//TODO: Purge the hook channel list of any that we don't need (those for whom autohosts_this[id] is empty or absent)
 }
