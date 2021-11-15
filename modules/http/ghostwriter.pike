@@ -275,7 +275,6 @@ class IRCClient
 			//Probably only happens while I'm testing, but ehh, whatever
 			G->G->websocket_types->ghostwriter->pause_autohost(chan - "#", time() + 30*60);
 		}
-		if (type == "NOTICE") write("GW: NOTICE %O\n", message);
 	}
 	void close() {
 		if (options->promise) options->promise->failure(0);
