@@ -56,7 +56,7 @@ constant DEFAULT_PAUSE_TIME = 900; //Ensure that this is synchronized with the <
 mapping(string:mapping(string:mixed)) chanstate;
 mapping(int:int) channel_seen_offline = ([]); //Note: Not maintained over code reload
 mapping(string:mixed) schedule_check_callouts = ([]); //Cleared and rechecked over code reload
-//mapping(string:int) suppress_autohosting = ([]); //TODO: If a broadcaster manually unhosts or rehosts, don't change hosting for a bit.
+mapping(string:int) suppress_autohosting = ([]); //If a broadcaster manually unhosts or rehosts, don't change hosting for a bit.
 
 /*
 - Check stream schedule, and automatically unhost X seconds (default: 15 mins) before a stream
@@ -154,11 +154,12 @@ continue Concurrent.Future recalculate_status(string chan) {
 			st->pause_until = max(st->pause_until, ev->unix_time + pausetime);
 		}
 	}
-	next_check += ({st->pause_until});
+	next_check += ({st->pause_until, suppress_autohosting[chan]});
 	schedule_recalculation(chan, next_check);
 
 	[st->statustype, st->status] = low_recalculate_status(st);
 	send_updates_all(chan, st);
+	if (suppress_autohosting[chan] > time()) return 0;
 	array targets = config->channels || ({ });
 	m_delete(st, "hostingid");
 	//Clean up junk data
@@ -234,6 +235,11 @@ continue Concurrent.Future recalculate_status(string chan) {
 	write("Got live: %O\n", live);
 }
 
+void pause_autohost(string chan, int target) {
+	suppress_autohosting[chan] = target;
+	schedule_recalculation(chan, ({target}));
+}
+
 void host_changed(string chan, string target, string viewers) {
 	//Note that viewers may be "-" if we're already hosting, so don't depend on it
 	mapping st = chanstate[chan];
@@ -241,6 +247,7 @@ void host_changed(string chan, string target, string viewers) {
 	write("Host changed: %O -> %O (expected %O)\n", chan, target, st->expected_host_target);
 	st->hosting = target;
 	if (target == st->expected_host_target) m_delete(st, "expected_host_target");
+	else pause_autohost(chan, time() + 60); //If you manually host or unhost, disable autohost for one minute
 	spawn_task(recalculate_status(chan));
 	//TODO: Purge the hook channel list of any that we don't need (those for whom autohosts_this[id] is empty or absent)
 }
@@ -264,6 +271,10 @@ class IRCClient
 			write("** GONE OFFLINE: %O\n", target);
 			mapping st = chanstate[chan];
 			if (st->hosting == target && st->hostingid) channel_seen_offline[(int)st->hostingid] = time();
+		}
+		if (type == "NOTICE" && message == "Host target cannot be changed more than 3 times every half hour.") {
+			//Probably only happens while I'm testing, but ehh, whatever
+			G->G->websocket_types->ghostwriter->pause_autohost(chan - "#", time() + 30*60);
 		}
 		if (type == "NOTICE") write("GW: NOTICE %O\n", message);
 	}
