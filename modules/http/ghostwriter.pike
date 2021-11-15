@@ -86,8 +86,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string chanid, mapping event] = __ARGS__;
-	write("** GW: Channel %O offline: %O\n", chanid, event);
-	//Hack: Mark the channel as just-gone-offline. That way, we won't attempt to
+	//Mark the channel as just-gone-offline. That way, we won't attempt to
 	//host it while it's still shutting down.
 	channel_seen_offline[(int)chanid] = time();
 	mapping st = chanstate[event->broadcaster_user_login];
@@ -139,7 +138,6 @@ continue Concurrent.Future recalculate_status(string chan) {
 		int limit = 86400 * 7;
 		array events = yield(get_stream_schedule(chan, pausetime, 1, limit));
 		if (sizeof(events)) {
-			write("GOT EVENT: %O\n", events[0]);
 			st->schedule_next_event = events[0];
 			events[0]->unix_time = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", events[0]->start_time)->unix_time();
 		}
