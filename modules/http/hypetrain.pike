@@ -135,10 +135,17 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			}
 		}
 	}
+	//In case the user activates checklist mode, enumerate emotes we've seen used.
+	mapping seen_emotes = persist_status->path("seen_emotes")[(string)req->misc->session->?user->?id] || ([]);
+	array have_emotes = ({ });
+	foreach (replace(emotes, "\n", " ") / " ", string emote)
+		if (seen_emotes[emote]) have_emotes += ({sprintf("#emotes.emotes_checklist img[title=\"%s\"]", emote)});
+
 	return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
 		"vars": (["ws_type": "hypetrain", "ws_group": chan, "need_scopes": scopes || ""]),
 		"loading": "Loading hype status...",
 		"channelname": chan, "emotes": avail_emotes,
+		"have_emotes": have_emotes * ",",
 		"backlink": !req->variables->mobile && sprintf("<a href=\"hypetrain?for=%s&mobile\">Switch to mobile view</a>", chan),
 	]));
 }

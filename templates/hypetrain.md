@@ -92,11 +92,11 @@ it cannot be seen outside of one).
 #emotes.emotes_large li {height: 140px;}
 #emotes.emotes_large em img {display: block; box-shadow: none; border: none;}
 #emotes.emotes_large em:nth-of-type(1) {left: 0px;} /* Reposition since we have to do it manually anyway :( */
-#emotes.emotes_large em:nth-of-type(2) {left: 120px;}
-#emotes.emotes_large em:nth-of-type(3) {left: 240px;}
-#emotes.emotes_large em:nth-of-type(4) {left: 360px;}
-#emotes.emotes_large em:nth-of-type(5) {left: 480px;}
-#emotes.emotes_large em:nth-of-type(6) {left: 600px;}
+#emotes.emotes_large em:nth-of-type(2) {left: 125px;}
+#emotes.emotes_large em:nth-of-type(3) {left: 250px;}
+#emotes.emotes_large em:nth-of-type(4) {left: 375px;}
+#emotes.emotes_large em:nth-of-type(5) {left: 500px;}
+#emotes.emotes_large em:nth-of-type(6) {left: 625px;}
 #emotes.emotes_large li > em:last-of-type {display: none;}
 #emotes.emotes_large.hardmode li > img:last-of-type {display: none;}
 #emotes.emotes_large.hardmode li > em:last-of-type {display: block;}
@@ -119,6 +119,9 @@ audio {display: none;}
 	max-width: 40em;
 	border: 1px dashed blue;
 }
+
+#emotes.emotes_checklist img {opacity: 1;}
+$$have_emotes$$ {opacity: 0.25;}
 </style>
 
 > ### Train Track configuration <!-- that sounds like something completely different -->
@@ -143,7 +146,7 @@ audio {display: none;}
 >
 > Emote display:
 > * <label><input type=checkbox name=emotes_large>Large format</label>
-> * <label><input type=checkbox name=emotes_checklist>Highlight those you have</label>
+> * <label><input type=checkbox name=emotes_checklist>Highlight emotes you don't yet have</label>
 > * <label><input type=checkbox name=emotes_allrows>Keep all rows visible</label>
 >
 > [Save](:#save_prefs type=submit) [Cancel](:.dialog_close)
