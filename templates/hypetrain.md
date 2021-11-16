@@ -108,6 +108,8 @@ audio {display: none;}
 
 > ### Train Track configuration <!-- that sounds like something completely different -->
 > <form id=configform>
+> [Log in to save preferences](:.twitchlogin)
+>
 > * <label><input type=checkbox name=use_start> Play sound on hype train start</label><br>
 >   Volume <input type=range name=vol_start value=100><br>
 >   <button type=button class="play" id="play_start">&#x25b6;</button>
@@ -123,7 +125,7 @@ audio {display: none;}
 >
 > <!-- TODO: Emotes: Small, Large, Checklist (aka "Default", "Zoom", "Enhance") -->
 >
-> <p><button>Save</button> <button type=button class=dialog_close>Cancel</button></p>
+> [Save](:#save_prefs type=submit) [Cancel](:.dialog_close)
 > </form>
 {: tag=dialog #config}
 

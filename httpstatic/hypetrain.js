@@ -8,9 +8,16 @@ const {A, BUTTON, BR, DIV, IMG, P, UL, LI, SPAN} = choc;
 const hardmode = [0, 5000, 7500, 10600, 14600, 22300];
 
 const ismobile = !DOM("#configform");
-let config = {};
-if (!ismobile) {
+let have_prefs = false; //If false, the user probably needs to log in before prefs will be saved
+if (!ismobile) ws_sync.prefs_notify(prefs => {
+	have_prefs = true;
+	//Merge (legacy) local configs
+	let config = {};
 	try {config = JSON.parse(localStorage.getItem("hypetrain_config")) || {};} catch (e) {}
+	if (prefs["hypetrain"]) config = {...prefs["hypetrain"], ...config};
+	localStorage.removeItem("hypetrain_config");
+	//Ultimately: const config = prefs["hypetrain"] or set prefs_notify to tell us about "hypetrain" only.
+
 	const el = DOM("#configform").elements;
 	for (let name in config) {
 		const [type, which] = name.split("_");
@@ -19,7 +26,7 @@ if (!ismobile) {
 		else if (type === "vol") {el[name].value = config[name]; audio.volume = config[name] / 100;}
 		//That should be all the configs that get saved
 	}
-}
+});
 
 let expiry, updating = null;
 function update() {
@@ -199,7 +206,11 @@ if (ismobile) render = (state) => {
 function refresh() {ws_sync.send({cmd: "refresh"});}
 if (!ismobile) {
 	DOM("#refresh").onclick = refresh;
-	DOM("#configure").onclick = () => DOM("#config").showModal();
+	DOM("#configure").onclick = () => {
+		DOM("#save_prefs").disabled = !have_prefs;
+		if (have_prefs) DOM(".twitchlogin").style.display = "none";
+		DOM("#config").showModal();
+	};
 	on("click", ".play", e => {
 		play(e.match.id.split("_")[1], 1);
 	});
@@ -224,7 +235,7 @@ if (!ismobile) {
 	DOM("#configform").onsubmit = e => {
 		e.preventDefault();
 		config = {}; new FormData(DOM("#configform")).forEach((v,k) => config[k] = v);
-		localStorage.setItem("hypetrain_config", JSON.stringify(config));
+		if (have_prefs) ws_sync.send({cmd: "prefs_update", hypetrain: config});
 		DOM("#config").close();
 	};
 	document.onclick = () => {interacted = 1; check_interaction();}

@@ -11,6 +11,9 @@ const render_pref = {
 		])))),
 	],
 
+	//TODO:
+	//hypetrain: val => ...
+
 	//Any unknowns will be rendered with this
 	"": (key, val) => {
 		if (typeof val === "string") {
