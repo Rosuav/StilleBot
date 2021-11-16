@@ -60,9 +60,10 @@ it cannot be seen outside of one).
 
 #emotes li > img:last-of-type {display: none;}
 #emotes.hardmode li > img:last-of-type {display: inline-block;}
+#emotes li:before {content: "Pending: ";}
 #emotes li.available:before {content: "Earnable: ";}
 #emotes li.next:before {content: "Next goal: ";}
-#emotes li:not(.next):not(.available) {display: none;}
+#emotes:not(.emotes_allrows) li:not(.next):not(.available) {display: none;}
 
 /* Show a larger version of the emotes on hover */
 #emotes em {
@@ -88,7 +89,7 @@ it cannot be seen outside of one).
 
 /* With class emotes_large, show those larger-format ones instead of the small ones. No hover. */
 #emotes.emotes_large img {display: none;}
-#emotes.emotes_large li {height: 115px;}
+#emotes.emotes_large li {height: 140px;}
 #emotes.emotes_large em img {display: block; box-shadow: none; border: none;}
 #emotes.emotes_large em:nth-of-type(1) {left: 0px;} /* Reposition since we have to do it manually anyway :( */
 #emotes.emotes_large em:nth-of-type(2) {left: 120px;}
