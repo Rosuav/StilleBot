@@ -26,8 +26,9 @@ if (!ismobile) ws_sync.prefs_notify(prefs => {
 	for (let name in config) {
 		const [type, which] = name.split("_");
 		const audio = DOM("#sfx_" + which);
-		if (type === "use") {el[name].checked = true; audio.preload = "auto";}
+		if (type === "use") {el[name].checked = config[name]; audio.preload = config[name] ? "auto" : "none";}
 		else if (type === "vol") {el[name].value = config[name]; audio.volume = config[name] / 100;}
+		else if (type === "emotes") {el[name].checked = config[name]; DOM("#emotes").classList.toggle(name, config[name]);}
 		//That should be all the configs that get saved
 	}
 });
@@ -238,7 +239,10 @@ if (!ismobile) {
 	});
 	DOM("#configform").onsubmit = e => {
 		e.preventDefault();
-		const config = {}; new FormData(DOM("#configform")).forEach((v,k) => config[k] = v);
+		const config = {};
+		DOM("#configform").querySelectorAll("input").forEach(el =>
+			config[el.name] = el.type === "checkbox" ? el.checked : el.value
+		);
 		if (have_prefs) ws_sync.send({cmd: "prefs_update", hypetrain: config});
 		DOM("#config").close();
 	};
