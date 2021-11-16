@@ -121,6 +121,8 @@ audio {display: none;}
 >   <button type=button class="play" id="play_ding">&#x25b6;</button>
 >   CC-0 audio clip from [Freesound](https://freesound.org/people/ccr_fs/sounds/484718/)
 >
+> <!-- TODO: Emotes: Small, Large, Checklist (aka "Default", "Zoom", "Enhance") -->
+>
 > <p><button>Save</button> <button type=button class=dialog_close>Cancel</button></p>
 > </form>
 {: tag=dialog #config}
