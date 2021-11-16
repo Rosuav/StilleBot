@@ -12,10 +12,14 @@ let have_prefs = false; //If false, the user probably needs to log in before pre
 if (!ismobile) ws_sync.prefs_notify(prefs => {
 	have_prefs = true;
 	//Merge (legacy) local configs
-	let config = {};
-	try {config = JSON.parse(localStorage.getItem("hypetrain_config")) || {};} catch (e) {}
+	let config = {}, save_prefs = false;
+	try {
+		config = JSON.parse(localStorage.getItem("hypetrain_config")) || {};
+		localStorage.removeItem("hypetrain_config");
+		if (Object.keys(config).length) save_prefs = true;
+	} catch (e) {}
 	if (prefs["hypetrain"]) config = {...prefs["hypetrain"], ...config};
-	localStorage.removeItem("hypetrain_config");
+	if (save_prefs) ws_sync.send({cmd: "prefs_update", hypetrain: config});
 	//Ultimately: const config = prefs["hypetrain"] or set prefs_notify to tell us about "hypetrain" only.
 
 	const el = DOM("#configform").elements;
@@ -234,7 +238,7 @@ if (!ismobile) {
 	});
 	DOM("#configform").onsubmit = e => {
 		e.preventDefault();
-		config = {}; new FormData(DOM("#configform")).forEach((v,k) => config[k] = v);
+		const config = {}; new FormData(DOM("#configform")).forEach((v,k) => config[k] = v);
 		if (have_prefs) ws_sync.send({cmd: "prefs_update", hypetrain: config});
 		DOM("#config").close();
 	};
