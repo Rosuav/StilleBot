@@ -87,7 +87,7 @@ it cannot be seen outside of one).
 #emotes img:hover + em img {display: block;}
 
 audio {display: none;}
-#config li {margin-bottom: 1.5em;}
+#config ul.gapbelow li {margin-bottom: 1.5em;}
 #interact-warning {
 	background: #ffff88;
 	border: 3px solid #ffaa00;
@@ -122,8 +122,14 @@ audio {display: none;}
 >   Volume <input type=range name=vol_ding value=100><br>
 >   <button type=button class="play" id="play_ding">&#x25b6;</button>
 >   CC-0 audio clip from [Freesound](https://freesound.org/people/ccr_fs/sounds/484718/)
+> {: .gapbelow}
 >
-> <!-- TODO: Emotes: Small, Large, Checklist (aka "Default", "Zoom", "Enhance") -->
+> <hr>
+>
+> Emote display:
+> * <label><input type=checkbox name=emotes_large>Large format</label>
+> * <label><input type=checkbox name=emotes_checklist>Highlight those you have</label>
+> * <label><input type=checkbox name=emotes_allrows>Keep all rows visible</label>
 >
 > [Save](:#save_prefs type=submit) [Cancel](:.dialog_close)
 > </form>
