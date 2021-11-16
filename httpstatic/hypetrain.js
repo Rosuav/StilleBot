@@ -8,7 +8,7 @@ const {A, BUTTON, BR, DIV, IMG, P, UL, LI, SPAN} = choc;
 const hardmode = [0, 5000, 7500, 10600, 14600, 22300];
 
 const ismobile = !DOM("#configform");
-let have_prefs = false; //If false, the user probably needs to log in before prefs will be saved
+let have_prefs = false, need_interaction = false;
 if (!ismobile) ws_sync.prefs_notify(prefs => {
 	have_prefs = true;
 	//Merge (legacy) local configs
@@ -31,6 +31,8 @@ if (!ismobile) ws_sync.prefs_notify(prefs => {
 		else if (type === "emotes") {el[name].checked = config[name]; DOM("#emotes").classList.toggle(name, config[name]);}
 		//That should be all the configs that get saved
 	}
+	need_interaction = config.use_ding || config.use_insistent || config.use_start;
+	check_interaction();
 });
 
 let expiry, updating = null;
@@ -77,9 +79,7 @@ function cooldown_ended() {play("ding"); play("insistent");}
 
 let interacted = 0;
 function check_interaction() {
-	DOM("#interact-warning").classList.toggle("hidden",
-		interacted || (!config.use_ding && !config.use_insistent && !config.use_start)
-	);
+	DOM("#interact-warning").classList.toggle("hidden", interacted || !need_interaction);
 }
 
 let last_rendered = null;
