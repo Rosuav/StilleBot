@@ -86,6 +86,20 @@ it cannot be seen outside of one).
 }
 #emotes img:hover + em img {display: block;}
 
+/* With class emotes_large, show those larger-format ones instead of the small ones. No hover. */
+#emotes.emotes_large img {display: none;}
+#emotes.emotes_large li {height: 115px;}
+#emotes.emotes_large em img {display: block; box-shadow: none; border: none;}
+#emotes.emotes_large em:nth-of-type(1) {left: 0px;} /* Reposition since we have to do it manually anyway :( */
+#emotes.emotes_large em:nth-of-type(2) {left: 120px;}
+#emotes.emotes_large em:nth-of-type(3) {left: 240px;}
+#emotes.emotes_large em:nth-of-type(4) {left: 360px;}
+#emotes.emotes_large em:nth-of-type(5) {left: 480px;}
+#emotes.emotes_large em:nth-of-type(6) {left: 600px;}
+#emotes.emotes_large li > em:last-of-type {display: none;}
+#emotes.emotes_large.hardmode li > img:last-of-type {display: none;}
+#emotes.emotes_large.hardmode li > em:last-of-type {display: block;}
+
 audio {display: none;}
 #config ul.gapbelow li {margin-bottom: 1.5em;}
 #interact-warning {
