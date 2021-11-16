@@ -32,6 +32,12 @@ continue mapping|Concurrent.Future parse_hype_status(mapping data)
 			channelid, checktime, checktime - now + 1);
 		call_out(probe_hype_train, checktime - now + 1, (int)channelid);
 	}
+	if (expires && !cooldown) {
+		//There's a weird issue with the eventsub message: the cooldown is omitted.
+		//For simplicity's sake, assume that it'll be 55 minutes after the expiry
+		//(which will be true if, and only if, there's a one-hour cooldown).
+		cooldown = expires + 55 * 60;
+	}
 	mapping state = ([
 		"cooldown": cooldown, "expires": expires,
 		"level": (int)data->level, "goal": (int)data->goal,
