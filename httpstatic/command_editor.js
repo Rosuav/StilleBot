@@ -38,8 +38,7 @@ else window.addEventListener("DOMContentLoaded", getgui);
 //End arbitrarily messy code to do what smarter languages do automatically.
 import {cls_load_message, cls_save_message} from "$$static||command_classic.js$$";
 import {waitlate} from "$$static||utils.js$$";
-ws_sync.prefs_notify(p => {
-	const tab = p.cmd_defaulttab || "";
+ws_sync.prefs_notify("cmd_defaulttab", tab => {
 	if (tablist.some(t => t.toLowerCase() === tab)) defaulttab = tab;
 });
 

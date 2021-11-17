@@ -603,7 +603,7 @@ function load_favourites(favs) {
 	}
 	refactor(); repaint();
 }
-ws_sync.prefs_notify(p => load_favourites(p.cmd_favourites)); //TODO: Listen only to cmd_favourites (to avoid flicker)
+ws_sync.prefs_notify("cmd_favourites", fav => load_favourites(fav));
 load_favourites(ws_sync.get_prefs().cmd_favourites); //In case it's already been fetched once we load
 
 function remove_child(childset, idx) {

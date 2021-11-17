@@ -51,11 +51,22 @@ export function connect(group, handler)
 			handler.render(data, group);
 		}
 		else if (data.cmd === "prefs_replace") {
+			const oldprefs = prefs;
 			prefs = data.prefs;
 			prefs_hooks.forEach(p => {
-				if (!p.key /* || p.key has changed */) p.func(data.prefs);
+				if (!p.key) p.func(prefs);
+				else if (prefs[p.key] !== oldprefs[p.key]) p.func(prefs[p.key]);
 			});
-		} //TODO: Also prefs_update
+		}
+		else if (data.cmd === "prefs_update") {
+			for (let k in data.prefs) prefs[k] = data.prefs[k];
+			prefs_hooks.forEach(p => {
+				//Note: We assume that the server only sends us what's changed, so we'll
+				//push a change through for everything that's in the update message.
+				if (!p.key) p.func(prefs);
+				else if (data.prefs[p.key]) p.func(prefs[p.key]);
+			});
+		}
 		const f = handler["sockmsg_" + data.cmd];
 		if (f) f(data);
 	};
@@ -65,11 +76,13 @@ async function init() {default_handler = await import(ws_code); connect(ws_group
 if (document.readyState !== "loading") init();
 else window.addEventListener("DOMContentLoaded", init);
 
-export function send(msg) {if (send_socket) send_socket.send(JSON.stringify(msg)); else pending_message = msg;}
+export function send(msg) {console.log("Sending to server:", msg); if (send_socket) send_socket.send(JSON.stringify(msg)); else pending_message = msg;}
 //Usage: prefs_notify("favs", favs => {...})
 //Or: prefs_notify(prefs => {...})
-//With a key, will (TODO, not impl yet) notify with the value of that key, when it changes
+//With a key, will notify with the value of that key, when it changes
 //Without a key, will notify on all changes to all prefs.
+//Note that, on startup, keyless notifications are always called, but
+//keyed notifications are only called if there is a value set.
 export function prefs_notify(key, func) {
 	if (!func) {func = key; key = null;}
 	prefs_hooks.push({key, func});

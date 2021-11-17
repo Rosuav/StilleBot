@@ -9,7 +9,7 @@ const hardmode = [0, 5000, 7500, 10600, 14600, 22300];
 
 const ismobile = !DOM("#configform");
 let have_prefs = false, need_interaction = false;
-if (!ismobile) ws_sync.prefs_notify(prefs => {
+if (!ismobile) ws_sync.prefs_notify(prefs => { //Note: Even if no prefs are set, we need a notification that they're loaded, so this is unkeyed notification for now.
 	have_prefs = true;
 	//Merge (legacy) local configs
 	let config = {}, save_prefs = false;
