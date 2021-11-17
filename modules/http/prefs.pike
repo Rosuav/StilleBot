@@ -39,7 +39,7 @@ void websocket_cmd_prefs_update(mapping(string:mixed) conn, mapping(string:mixed
 		//Update individual keys, but in case something gets looped back, don't
 		//nest prefs inside prefs.
 		if (k == "cmd" || k == "prefs") continue;
-		if (v == has_index(prefs, k) ? Val.null : prefs[k]) continue; //Setting to the same value
+		if (v == !has_index(prefs, k) ? Val.null : prefs[k]) continue; //Setting to the same value
 		changed[k] = v;
 		if (v == Val.null) m_delete(prefs, k); else prefs[k] = v;
 	}
