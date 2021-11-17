@@ -42,9 +42,6 @@ export function render(state) {
 	}
 }
 
-//NOTE: Do not save channel list on input/change on textarea as it would be disruptive.
-//Ultimately, save immediately on any *real* change, after validating the channel name.
-//For now, there's an explicit button to commit the change.
 on("submit", "#addchannel", e => {
 	e.preventDefault();
 	ws_sync.send({cmd: "addchannel", name: e.match.elements.channame.value});
