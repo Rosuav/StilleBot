@@ -34,16 +34,17 @@ void websocket_cmd_prefs_send(mapping(string:mixed) conn, mapping(string:mixed) 
 void websocket_cmd_prefs_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->prefs_uid) return;
 	mapping prefs = persist_status->path("userprefs", conn->prefs_uid);
+	mapping changed = ([]);
 	foreach (msg; string k; mixed v) {
 		//Update individual keys, but in case something gets looped back, don't
 		//nest prefs inside prefs.
 		if (k == "cmd" || k == "prefs") continue;
+		if (v == has_index(prefs, k) ? Val.null : prefs[k]) continue; //Setting to the same value
+		changed[k] = v;
 		if (v == Val.null) m_delete(prefs, k); else prefs[k] = v;
 	}
 	persist_status->save();
-	//TODO maybe: Have a simpler command prefs_update which, clientside, will
-	//merge the given prefs with any existing ones. It should give the same
-	//end result as this, but with less traffic, esp if some things are large
-	//and others change frequently.
+	websocket_groups[conn->prefs_uid]->send_text(Standards.JSON.encode((["cmd": "prefs_update", "prefs": changed])));
+	//HACK: Temporarily send the whole thing, until clientside is updated. Otherwise old clients will get out of sync.
 	websocket_groups[conn->prefs_uid]->send_text(Standards.JSON.encode((["cmd": "prefs_replace", "prefs": prefs])));
 }
