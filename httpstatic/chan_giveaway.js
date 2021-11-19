@@ -14,12 +14,29 @@ function show_end_time(end_time, el, init) {
 	set_content(el, end);
 	if (init) {ticker = setInterval(show_end_time, 1000, end_time, el); return el;}
 }
+
+let lastrecommended = null;
+function recommend(btn) {
+	if (btn === lastrecommended) return;
+	//Pick a master control button that is likely to be the next one wanted
+	const next = document.getElementById(btn).parentElement;
+	if (!next) return; //Borked. Don't change.
+	const prevnext = DOM("#master li.next"); if (prevnext) prevnext.classList.remove("next");
+	lastrecommended = btn;
+	next.classList.add("next");
+}
+
 export function render(state) {
 	if (state.message) {console.warn(state.message); return;} //TODO: Handle info/warn/error, and put in the DOM, kthx
 	if (state.title) set_content("h1", "Giveaway - " + state.title + "!");
 	if (state.tickets) set_content("#ticketholders", state.tickets.map(t => LI([""+t.tickets, " ", t.name])));
 	if ("is_open" in state) {
 		if (ticker) {clearInterval(ticker); ticker = null;}
+		//Choose a button to recommend based on what's likely to be the next one needed
+		if (state.is_open) recommend("close"); //After opening the giveaway, recommend closing it. This is the GUI equivalent of a useless box.
+		else if (state.last_winner) recommend("end");
+		else if (state.tickets && state.tickets.length > 0) recommend("pick");
+		else recommend("open");
 		set_content("#master_status", [
 			H3("Giveaway is " + (state.is_open ? "OPEN" : "CLOSED")),
 			state.is_open && state.end_time && show_end_time(state.end_time, H3(), 1),

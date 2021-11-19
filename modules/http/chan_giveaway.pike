@@ -49,6 +49,8 @@ details {border: 1px solid black; padding: 0.5em; margin: 0.5em;}
 	margin-right: 40px;
 	list-style-type: none;
 }
+#master li.next {list-style-type: \"=> \";}
+#master li.next::marker {font-weight: bold;}
 #master_status {
 	width: 350px;
 	background: aliceblue;
