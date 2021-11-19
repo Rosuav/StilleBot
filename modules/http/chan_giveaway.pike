@@ -138,11 +138,10 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 			//This means that if you change the max tickets during a giveaway, any excess will
 			//still be kept, unless/until they get explicitly refunded.
 			set_redemption_status(redem, "CANCELED")->then(lambda(mixed resp) {
-				int redemption_time = 0;
 				catch {
 					object ts = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", redem->redeemed_at);
 					if (!ts) ts = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s.%f%z", redem->redeemed_at);
-					redemption_time = ts->unix_time();
+					int redemption_time = ts->unix_time();
 					array timestamps = ({redemption_time, status->last_opened, status->last_closed});
 					array ts_labels = ({"Bought", "Opened", "Closed"});
 					sort(timestamps, ts_labels);
