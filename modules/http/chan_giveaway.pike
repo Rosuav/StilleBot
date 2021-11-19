@@ -193,10 +193,12 @@ void notify_websockets(string chan) {
 	mapping status = persist_status->path("giveaways")[chan] || ([]);
 	send_updates_all("control#" + chan, ([
 		"tickets": tickets_in_order(chan),
+		"last_opened": status->last_opened, "last_closed": status->last_closed,
 		"is_open": status->is_open, "end_time": status->end_time,
 		"last_winner": status->last_winner,
 	]));
 	send_updates_all("view#" + chan, ([
+		"last_opened": status->last_opened, "last_closed": status->last_closed,
 		"is_open": status->is_open, "end_time": status->end_time,
 		"last_winner": status->last_winner,
 	]));
