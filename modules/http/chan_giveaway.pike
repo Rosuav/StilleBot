@@ -541,6 +541,11 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 			if (!existing) break; //No rewards, nothing to cancel
 			mapping status = persist_status->path("giveaways", chan);
 			m_delete(status, "last_winner");
+			//Clear out the front end's view of ticket purchases to reduce flicker
+			foreach (values(G->G->giveaway_tickets[chan] || ([])), mapping p) {
+				p->redemptions = ([]);
+				p->tickets = 0;
+			}
 			notify_websockets(chan);
 			persist_status->save();
 			array(array) redemptions = yield(Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*])));
