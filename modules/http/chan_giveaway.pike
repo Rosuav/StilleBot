@@ -10,17 +10,17 @@ $$login$$
 > <summary>Set up rewards</summary>
 >
 > <form id=configform>
-> * <label>Giveaway title: <input name=title size=40 placeholder=\"an awesome thing\"></label> What are people winning?
-> * <label>Cost per ticket: <input name=cost type=number min=1 value=1></label>
-> * <label>Description: <input name=desc size=45 maxlength=45 placeholder=\"Buy # tickets\"> Put a <code>#</code> symbol for multibuy count</label>
-> * <label>Multibuy options: <input name=multi size=40 placeholder=\"1 5 10 25 50\"> Allow people to buy tickets in bulk</label>
-> * <label>Max tickets: <input name=max type=number min=0 value=1> Purchases that would put you over this limit will be cancelled</label>
-> * <label>Redemption hiding:
->   <select name=pausemode><option value=disable>Disable, hiding them from users</option><option value=pause>Pause and leave visible</option></select>
->   When there's no current giveaway, should redemptions remain visible (but unpurchaseable), or vanish entirely?
->   </label>
-> * <label><input type=checkbox name=allow_multiwin value=yes> Allow one person to win multiple times? If not, the winner's tickets will be automatically removed.</label>
-> * <label>Time before giveaway closes: <input name=duration type=number min=0 max=3600> (seconds) How long should the giveaway be open? 0 leaves it until explicitly closed.</label>
+>
+> - | - | -
+> --|---|--
+> <label for=ga_title>Giveaway title</label> | <input id=ga_title name=title size=40 placeholder=\"an awesome thing\"> | What are people winning?
+> <label for=ga_cost>Cost per ticket</label> | <input id=ga_cost name=cost type=number min=1 value=1></label> | Loyal viewers can earn a thousand points in a 2-3 hour stream. [See details.](https://help.twitch.tv/s/article/channel-points-guide)
+> <label for=ga_desc>Description</label> | <input id=ga_desc name=desc size=40 maxlength=40 placeholder=\"Buy # tickets\"> | Put a <code>#</code> symbol for multibuy count
+> <label for=ga_multi>Multibuy options</label> | <input id=ga_multi name=multi size=40 placeholder=\"1 5 10 25 50\"> | Allow people to buy tickets in bulk
+> <label for=ga_max>Max tickets</label> | <input id=ga_max name=max type=number min=0 value=1> | Purchases that would put you over this limit will be cancelled
+> <label for=ga_pausemode>Redemption hiding</label> | <select id=ga_pausemode name=pausemode><option value=disable>Disable, hiding them from users</option><option value=pause>Pause and leave visible</option></select> | When there's no current giveaway, should redemptions remain visible (but unpurchaseable), or vanish entirely?
+> Multi-win | <label><input type=checkbox name=allow_multiwin value=yes> Allow one person to win multiple times</label> | If not, the winner's tickets will be automatically removed.
+> <label for=ga_duration>Time before giveaway closes</label> | <input id=ga_duration name=duration type=number min=0 max=3600> (seconds) | How long should the giveaway be open? 0 leaves it until explicitly closed.
 >
 > <button>Save/reconfigure</button>
 >
@@ -41,8 +41,6 @@ $$login$$
 > * [End giveaway](:.master #end) clearing out tickets
 >
 {: tag=dialog #master}
-
-<div id=existing class=modonly></div>
 
 <style>
 details {border: 1px solid black; padding: 0.5em; margin: 0.5em;}
