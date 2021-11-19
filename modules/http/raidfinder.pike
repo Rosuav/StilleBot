@@ -101,7 +101,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//If the VOD spans the current time, return zero. Otherwise, return the shorter of the time
 			//until the start, and the time since the end.
 			//Assumes no leap seconds.
-			int howlongago = (time() - Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", vod->created_at)->unix_time()) % 604800;
+			int howlongago = (time() - time_from_iso(vod->created_at)->unix_time()) % 604800;
 			//Three options: the inverse of the time since it started; or the time since ending; or, if
 			//time since ending is negative, zero.
 			vod->week_correlation = max(min(604800 - howlongago, howlongago - vod->duration_seconds), 0);
@@ -113,7 +113,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			mapping info = yield(twitch_api_request(sprintf("https://api.twitch.tv/helix/users/follows?from_id=%s&to_id=%s", chanid, chan)));
 			if (sizeof(info->data)) {
 				ret->is_following = info->data[0];
-				object howlong = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", ret->is_following->followed_at)->distance(Calendar.ISO.now());
+				object howlong = time_from_iso(ret->is_following->followed_at)->distance(Calendar.ISO.now());
 				string length = "less than a day";
 				foreach (({
 					({Calendar.ISO.Year, "year"}),
@@ -391,7 +391,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		}
 		//Up to 100 points for having just started, scaling down to zero at four hours of uptime
 		if (strm->started_at) {
-			int uptime = time() - Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", strm->started_at)->unix_time();
+			int uptime = time() - time_from_iso(strm->started_at)->unix_time();
 			recommend["Uptime"] = max(100 - uptime / 4 / 36, 0);
 		}
 		strm->recommend = `+(@values(recommend));

@@ -18,8 +18,7 @@ string process(object channel, object person, string param)
 			{
 				mapping person = msg->commenter;
 				mapping u2n = persist_status->path("uid_to_name", person->_id);
-				object ts = Calendar.ISO.parse("%Y-%M-%aT%h:%m:%s.%f%z", msg->created_at)
-					|| Calendar.ISO.parse("%Y-%M-%aT%h:%m:%s%z", msg->created_at); //Some don't have fractional seconds
+				object ts = time_from_iso(msg->created_at);
 				if (!ts) continue;
 				int t = ts->unix_time();
 				if (!u2n[person->name] || u2n[person->name] > t) u2n[person->name] = t;

@@ -9,8 +9,7 @@ constant hidden_command = 1;
 //or in the past, returns 0.
 int until(string ts, int now)
 {
-	object tm = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", ts || "");
-	if (!tm) tm = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s.%f%z", ts || "");
+	object tm = time_from_iso(ts || "");
 	return tm && tm->unix_time() > now && tm->unix_time();
 }
 mapping cached = 0; int cache_time = 0;

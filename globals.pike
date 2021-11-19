@@ -139,6 +139,12 @@ command_handler find_command(object channel, string cmd, int is_mod)
 //Shorthand for a common targeting style
 echoable_message targeted(string text) {return (["message": text, "prefix": "@$$: "]);}
 
+//Return a Second or a Fraction representing the given ISO time, or 0 if unparseable
+Calendar.ISO.Second time_from_iso(string time) {
+	if (object ts = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", time)) return ts;
+	return Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s.%f%z", time);
+}
+
 void _unhandled_error(mixed err) {
 	werror("Unhandled asynchronous exception\n%s\n", describe_backtrace(err));
 }

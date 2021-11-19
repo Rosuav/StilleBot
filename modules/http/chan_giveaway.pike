@@ -139,8 +139,7 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 			//still be kept, unless/until they get explicitly refunded.
 			set_redemption_status(redem, "CANCELED")->then(lambda(mixed resp) {
 				catch {
-					object ts = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", redem->redeemed_at);
-					if (!ts) ts = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s.%f%z", redem->redeemed_at);
+					object ts = time_from_iso(redem->redeemed_at);
 					int redemption_time = ts->unix_time();
 					array timestamps = ({redemption_time, status->last_opened, status->last_closed});
 					array ts_labels = ({"Bought", "Opened", "Closed"});
