@@ -128,12 +128,20 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 	else {
 		int now = person->tickets + values[redem->reward->id];
 		mapping status = persist_status->path("giveaways", chan);
-		int max = cfg->giveaway->max_tickets;
-		//TODO: If the giveaway is closed, but *was* open when the redemption happened,
-		//accept it. This will require some testing to find out if we're losing notifs.
-		if (!status->is_open) max = 0; //If anything snuck in while we were closing the giveaway, refund it as soon as we notice.
-		else if (!max) max = now; //No maximum :)
-		if (now > max && !G->G->giveaway_purchases[redem->id]) {
+		int max = cfg->giveaway->max_tickets || (1<<100); //Hack: Max max tickets is a big number, not infinite. Whatever.
+		int too_late = 0;
+		if (!status->is_open) {
+			//If anything snuck in while we were closing the giveaway, refund it as soon as we notice.
+			too_late = 1;
+			if (status->last_opened < status->last_closed) {
+				//It's possible that the giveaway was recently closed, and that you bought tickets
+				//while it was open. If so, honour those purchases.
+				int redemption_time = time_from_iso(redem->redeemed_at)->unix_time();
+				if (status->last_opened <= redemption_time && redemption_time <= status->last_closed)
+					too_late = 0;
+			}
+		}
+		if ((too_late || now > max) && !G->G->giveaway_purchases[redem->id]) {
 			//If we previously saw this as acceptable, don't refund it.
 			//This means that if you change the max tickets during a giveaway, any excess will
 			//still be kept, unless/until they get explicitly refunded.
