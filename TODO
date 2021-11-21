@@ -77,3 +77,4 @@
   - Absorb raidnotes into this system.
   - Note that only pages with websockets can have prefs. Raid Finder may need to grow one.
 * "max-width: fit-content" doesn't work in Firefox - but nor does -moz-fit-content :(
+  - Causes display problems on graphical editor and opening up element details
