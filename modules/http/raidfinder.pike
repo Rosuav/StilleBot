@@ -128,6 +128,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			}
 			else ret->is_following = ([]);
 		}
+		//Ping Twitch and check if there are any chat restrictions. So far I can't do this in bulk, but
+		//it's great to be able to query them this way for the VOD length popup. Note that we're not
+		//asking for mod settings here, so non_moderator_chat_delay won't be in the response.
+		mapping settings = yield(twitch_api_request("https://api.twitch.tv/helix/chat/settings?broadcaster_id=" + chan));
+		if (arrayp(settings->data) && sizeof(settings->data)) ret->chat_settings = settings->data[0];
 		return jsonify(ret);
 	}
 	int userid = 0;

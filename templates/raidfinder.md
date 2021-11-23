@@ -145,6 +145,16 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	opacity: 1;
 	transition: opacity .5s 0s;
 }
+
+#chat_restrictions li {
+	background: red;
+	color: yellow;
+	font-weight: bold;
+	padding: 2px 6px;
+	margin: 2px 0;
+	list-style-type: none;
+	width: max-content;
+}
 </style>
 
 > ### Legend/info
@@ -183,6 +193,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 > Dates and times are in your local time zone.
 >
 > <span id=is_following></span>
+> <ul id=chat_restrictions></ul>
 >
-> <ul></ul>
+> <ul id=vods></ul>
 {: tag=dialog #vodlengths}

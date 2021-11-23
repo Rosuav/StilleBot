@@ -1,6 +1,17 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, B, BR, BUTTON, DIV, IMG, P, UL, LI, SPAN} = choc;
 
+const chat_restrictions = [
+	["emote_mode", "Emote-only mode"],
+	["follower_mode", s => s.follower_mode_duration
+		? "Follower-only mode (" + s.follower_mode_duration + " minutes)"
+		: "Follower-only mode"
+	],
+	["slow_mode", s => "Slow mode (" + s.slow_mode_wait_time + " seconds)"],
+	["subscriber_mode", "Subscriber-only mode"],
+	["unique_chat_mode", "Unique chat (R9k) mode"],
+];
+
 const sortfunc = {
 	Magic: (s1, s2) => s2.recommend - s1.recommend,
 	Viewers: (s1, s2) => s1.viewer_count - s2.viewer_count,
@@ -38,17 +49,36 @@ function uptime(startdate) {return hms(Math.floor((new Date() - new Date(startda
 
 async function show_vod_lengths(userid, vodid, startdate) {
 	const info = await (await fetch(`/raidfinder?for=${on_behalf_of_userid}&streamlength=${userid}&ignore=${vodid}`)).json();
+	console.log("VODs:", info);
+
+	if (info.is_following) {
+		if (info.is_following.followed_at) set_content("#is_following", [
+			B(info.is_following.from_name),
+			" has been following ",
+			B(info.is_following.to_name),
+			" for " + info.is_following.follow_length + ".",
+		]).className = "is_following";
+		else set_content("#is_following",
+			"Not currently followed, might be a new frond!",
+		).className = "not_following";
+	}
+	else set_content("#is_following", "");
+
+	const s = info.chat_settings || { };
+	set_content("#chat_restrictions", chat_restrictions.map(([key, desc]) => 
+		s[key] ? LI(typeof desc === "string" ? desc : desc(s)) : ""
+	));
+
 	if (!info.max_duration || !info.vods.length) {
 		//Might be there are no VODs recorded (maybe the streamer has them disabled).
-		set_content("#vodlengths ul", LI("No VODs found, unable to estimate stream duration"));
+		set_content("#vods", LI("No VODs found, unable to estimate stream duration"));
 		DOM("#vodlengths").showModal();
 		return;
 	}
-	console.log("VODs:", info);
 	const uptime = startdate ? Math.floor((new Date() - new Date(startdate)) / 1000) : info.max_duration;
 	const scale = Math.max(info.max_duration, uptime);
 	if (startdate) info.vods.unshift({duration_seconds: uptime, week_correlation: 0});
-	set_content("#vodlengths ul", info.vods.map(vod => {
+	set_content("#vods", info.vods.map(vod => {
 		let date = "Current stream";
 		if (vod.created_at) {
 			const tm = new Date(vod.created_at);
@@ -76,18 +106,6 @@ async function show_vod_lengths(userid, vodid, startdate) {
 		li.style.background = "linear-gradient(to right, " + gradient + ")";
 		return li;
 	}));
-	if (info.is_following) {
-		if (info.is_following.followed_at) set_content("#is_following", [
-			B(info.is_following.from_name),
-			" has been following ",
-			B(info.is_following.to_name),
-			" for " + info.is_following.follow_length + ".",
-		]).className = "is_following";
-		else set_content("#is_following",
-			"Not currently followed, might be a new frond!",
-		).className = "not_following";
-	}
-	else set_content("#is_following", "");
 	DOM("#vodlengths").showModal();
 }
 
