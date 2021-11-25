@@ -1,7 +1,9 @@
 inherit http_websocket;
 constant markdown = #"# Ghostwriter $$displayname$$
 
-When your channel is offline, host other channels automatically.
+When your channel is offline, host other channels automatically. You can immediately
+unhost and pause from this page, but if you have a stream schedule configured on
+Twitch, hosting will automatically pause near the start of a scheduled stream.
 
 $$login||Loading...$$
 {: #statusbox}
@@ -148,9 +150,7 @@ continue Concurrent.Future recalculate_status(string chan) {
 		int pausestart = ev->unix_time - pausetime;
 		next_check += ({pausestart});
 		int until = ev->unix_time - time();
-		write("Time until event: %d\n", until);
 		if (-pausetime <= until && until <= pausetime) {
-			write("PAUSING UNTIL SCHEDULE TIME PLUS %d\n", pausetime);
 			st->pause_until = max(st->pause_until, ev->unix_time + pausetime);
 		}
 	}
@@ -166,7 +166,6 @@ continue Concurrent.Future recalculate_status(string chan) {
 	if (st->pause_until) {
 		int pauseleft = st->pause_until - time();
 		if (pauseleft <= 0) m_delete(st, "pause_until");
-		else write("Pause left: %O\n", pauseleft);
 	}
 
 	if (st->pause_until) targets = ({ }); //Automatically unhost during pause time
@@ -185,7 +184,6 @@ continue Concurrent.Future recalculate_status(string chan) {
 	}
 	if (sizeof(targets) && mappingp(targets[0])) targets = targets->id;
 	//If you have more than 100 host targets, you deserve problems. No fracturing of the array here.
-	write("Probing %O\n", targets);
 	array live = ({ });
 	if (st->uptime) {
 		//Never host if live. However, don't spam /unhost commands either.
@@ -193,7 +191,6 @@ continue Concurrent.Future recalculate_status(string chan) {
 		//Leave live empty so we'll definitely unhost.
 	}
 	else if (sizeof(targets)) live = yield(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": targets])));
-	write("Live: %O\n", live);
 	string msg = "/unhost", expected = 0;
 	if (sizeof(live)) {
 		//If any channel has gone offline very very recently, don't autohost it.
@@ -207,9 +204,7 @@ continue Concurrent.Future recalculate_status(string chan) {
 			//Every live channel got filtered out. That could leave us in a weird state where,
 			//due to this check, we abandon a channel that comes back online. To avoid this, we
 			//recheck once the sixty-second cooldown is up.
-			write("Holding recheck on %s for %d seconds\n", chan, mindelay);
 			yield(Concurrent.resolve(1)->delay(mindelay));
-			write("Rechecking %s now that the timeout is up\n", chan);
 			return recalculate_status(chan);
 		}
 
@@ -227,9 +222,7 @@ continue Concurrent.Future recalculate_status(string chan) {
 	if (expected == st->hosting) return 0; //Including if they're both 0 (want no host, currently not hosting)
 	//Currently we always take the first on the list. This may change in the future.
 	object irc = yield(connect(chan)); //Make sure we're connected. (Mutually recursive via a long chain.)
-	write("Connected\n");
 	irc->send_message("#" + chan, msg);
-	write("GW: Expected host target for %O is now %O\n", chan, expected);
 	st->expected_host_target = expected;
 	//If the host succeeds, there should be a HOSTTARGET message shortly.
 }
@@ -243,7 +236,6 @@ void host_changed(string chan, string target, string viewers) {
 	//Note that viewers may be "-" if we're already hosting, so don't depend on it
 	mapping st = chanstate[chan];
 	if (st->hosting == target) return; //eg after reconnecting to IRC
-	write("Host changed: %O -> %O (expected %O)\n", chan, target, st->expected_host_target);
 	st->hosting = target;
 	if (target == st->expected_host_target) m_delete(st, "expected_host_target");
 	else if (target) pause_autohost(chan, time() + 60); //If you manually host, disable autohost for one minute
@@ -267,7 +259,6 @@ class IRCClient
 		//confident that one isn't coming, notify that there is no host target.
 		if (type == "ROOMSTATE" && options->promise) got_host(chan, "- -");
 		if (type == "NOTICE" && sscanf(message, "%s has gone offline. Exiting host mode%s", string target, string dot) && dot == ".") {
-			write("** GONE OFFLINE: %O\n", target);
 			mapping st = chanstate[chan];
 			if (st->hosting == target && st->hostingid) channel_seen_offline[(int)st->hostingid] = time();
 		}
@@ -296,7 +287,6 @@ Concurrent.Future connect(string chan) {
 		//**/if (1) catch {irc->close();}; else
 		return Concurrent.resolve(irc);
 	}
-	write("Ghostwriter connecting to %O\n", chan);
 	Concurrent.Promise prom = Concurrent.Promise();
 	mixed ex = catch {
 		object irc = IRCClient("irc.chat.twitch.tv", ([
