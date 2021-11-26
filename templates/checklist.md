@@ -31,6 +31,9 @@ img {
 	figcaption {font-size: 50%;}
 }
 img:hover {filter: saturate(1);}
+</style>
+
+<style id=haveemotes>
 img.have, $$emotes$$ {filter: saturate(1); border-color: green;}
 </style>
 
