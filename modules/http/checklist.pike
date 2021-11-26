@@ -1,4 +1,20 @@
-inherit http_endpoint;
+inherit http_websocket;
+
+/* TODO: Highlight emotes dynamically.
+
+Every time a new emote is seen (one that the person hadn't had), update that
+user's websocket group to report this.
+
+Have a button and websocket command that, destructively or nondestructively
+(or perchance a brilliant combination of both), pokes all tracked emotes to
+#mustardmine under your name. Requires chat:edit scope.
+
+As the above poke gets sighted by the main bot, it will cycle through the
+message hook and update the display.
+*/
+
+//TODO: Figure out why some of the v1 emotes are vanishing, and track them
+//more dependably.
 
 //Markdown; emote names will be replaced with their emotes, but will
 //be greyed out if not available.
@@ -237,10 +253,15 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (id) return img(w, id);
 		return w;
 	});
-	return render_template("checklist.md", ([
+	return render(req, ([
+		"vars": (["ws_group": req->misc->session->?user->?id]),
 		"login_link": login_link,
 		"text": text, "emotes": sprintf("img[title=\"%s\"]", used[*]) * ", ",
 	]));
+}
+
+mapping get_state(string group) {
+	return (["emotes": indices(persist_status->path("seen_emotes")[group] || ([]))]);
 }
 
 int message(object channel, mapping person, string msg) {
