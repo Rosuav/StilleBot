@@ -278,7 +278,15 @@ int message(object channel, mapping person, string msg) {
 			}
 		}
 		string emotename = v2[id];
-		if (!emotename) continue;
+		if (!emotename) {
+			//If it's not one of our list of known tracked emotes, check if the
+			//emote name (drawn from the message text) shows up anywhere in the
+			//Markdown for the emote checklist blocks. TODO: Recognize actual
+			//emotes a bit more reliably.
+			string code = msg[start..end];
+			if (has_value(hypetrain, code)) emotename = code;
+			else continue;
+		}
 		if (!seen) seen = persist_status->path("seen_emotes", (string)person->uid);
 		if (!seen[emotename]) changed = 1;
 		seen[emotename] = time();
