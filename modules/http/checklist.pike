@@ -194,6 +194,7 @@ array(string) tracked_emote_names;
 
 //HACK: Send to a channel nobody cares about, but which the bot tracks.
 //Bot hosts, ensure that this is a channel that you use with the bot.
+//(Name must be in lowercase to match incoming message channel name.)
 constant echolocation_channel = "#mustardmine";
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
@@ -287,17 +288,20 @@ void websocket_cmd_echolocate(mapping(string:mixed) conn, mapping(string:mixed) 
 		//TODO: Skip those that we already know you have - or maybe, those that have been
 		//sighted within the last X amount of time. That way, the Court Jester mode below
 		//will work (mostly) reliably.
+		mapping seen = persist_status->path("seen_emotes", conn->session->user->id);
+		int threshold = time() - 86400;
+		array emotes = filter(tracked_emote_names) {return seen[__ARGS__[0]] < threshold;};
 		irc->messages = String.trim((sprintf("%=500s", tracked_emote_names * " ") / "\n")[*]);
 	}
 }
 
 int message(object channel, mapping person, string msg) {
-	if (!person->uid || !person->emotes || !sizeof(person->emotes)) return 0;
+	if (!person->uid || !person->emotes || (!sizeof(person->emotes) && channel->name != echolocation_channel)) return 0;
 	mapping v2 = G->G->emotes_v2;
 	mapping seen = persist_status->path("seen_emotes")[(string)person->uid];
 	mapping emotes = G->G->emote_code_to_markdown || ([]); //If not set, don't crash, just ignore them
 	mapping botemotes = person->uid == G->G->bot_uid && persist_status->path("bot_emotes");
-	int changed = 0;
+	int changed = 0, now = time();
 	foreach (person->emotes, [string id, int start, int end]) {
 		if (botemotes) {
 			string code = msg[start..end];
@@ -319,13 +323,22 @@ int message(object channel, mapping person, string msg) {
 		}
 		if (!seen) seen = persist_status->path("seen_emotes", (string)person->uid);
 		if (!seen[emotename]) changed = 1;
-		seen[emotename] = time();
+		seen[emotename] = now;
 		persist_status->save();
 	}
-	//TODO: If channel->name == echolocation_channel, scan for words that are NOT emotes and
-	//remove them from the seen_emotes list. This will avoid the uncertainty of whether or not
-	//an emote is indeed available, and saves us the hassle of deciding whether to query
-	//destructively or nondestructively, by being a brilliant combination of both.
+	if (channel->name == echolocation_channel && seen) {
+		//When it's a message specifically for emote testing, scan for words that are NOT emotes and
+		//remove them from the seen_emotes list. This will avoid the uncertainty of whether or not
+		//an emote is indeed available, and saves us the hassle of deciding whether to query
+		//destructively or nondestructively, by being a brilliant combination of both.
+		foreach (msg / " ", string w) {
+			if (seen[w] && seen[w] != now) {
+				m_delete(seen, w);
+				persist_status->save();
+				changed = 1;
+			}
+		}
+	}
 	if (changed) send_updates_all((string)person->uid);
 }
 
