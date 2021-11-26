@@ -13,9 +13,6 @@ As the above poke gets sighted by the main bot, it will cycle through the
 message hook and update the display.
 */
 
-//TODO: Figure out why some of the v1 emotes are vanishing, and track them
-//more dependably.
-
 //Markdown; emote names will be replaced with their emotes, but will
 //be greyed out if not available.
 //NOTE: The display is aimed at no more than six emotes across.
@@ -128,7 +125,6 @@ TODO: Check Pok* (Pokemon) emotes
 constant emoteids = ([
 	"HypeOni6": 301205427, "OWL2019Tracer": 1833318,
 	"PrimeYouDontSay": 134251, "PrimeUWot": 134252, "PrimeRlyTho": 134253,
-	"HypeHeart": 304420791, //Not sure why this one, and this one alone, didn't show up
 	//Hype Train v4: level 1
 	"HypeHeh": "emotesv2_62199faa2ca34ea8a0f3567990a72a14",
 	"HypeDoh": "emotesv2_69a7806c6837428f82475e99677d2f78",
@@ -248,6 +244,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		//2) Does the bot have the emote?
 		string md = G->G->emote_code_to_markdown[w];
 		if (md && sscanf(md, "%*s/v1/%d/1.0", int id)) return img(w, id);
+		if (md && sscanf(md, "%*s/v2/%s/default", string id)) return img(w, id);
 		//3) Is it in the hard-coded list of known emote IDs?
 		int|string id = emoteids[w];
 		if (id) return img(w, id);
