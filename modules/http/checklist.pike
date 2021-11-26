@@ -270,6 +270,7 @@ int message(object channel, mapping person, string msg) {
 	mapping seen = persist_status->path("seen_emotes")[(string)person->uid];
 	mapping emotes = G->G->emote_code_to_markdown || ([]); //If not set, don't crash, just ignore them
 	mapping botemotes = person->uid == G->G->bot_uid && persist_status->path("bot_emotes");
+	int changed = 0;
 	foreach (person->emotes, [string id, int start, int end]) {
 		if (botemotes) {
 			string code = msg[start..end];
@@ -282,9 +283,11 @@ int message(object channel, mapping person, string msg) {
 		string emotename = v2[id];
 		if (!emotename) continue;
 		if (!seen) seen = persist_status->path("seen_emotes", (string)person->uid);
+		if (!seen[emotename]) changed = 1;
 		seen[emotename] = time();
 		persist_status->save();
 	}
+	if (changed) send_updates_all((string)person->uid);
 }
 
 protected void create(string name) {
