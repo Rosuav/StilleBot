@@ -222,14 +222,23 @@ string img(string code, int|string id)
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping emotesets = ([]);
-	string login_link = "[Log in to highlight the emotes you have access to](:.twitchlogin data-scopes=user_subscriptions)";
+	string login_link = "[Log in to highlight the emotes you have access to](:.twitchlogin data-scopes=@chat_login chat:edit@)";
 	mapping v2_have = ([]);
-	if (req->misc->session->?scopes->?user_subscriptions)
+	multiset scopes = req->misc->session->?scopes || (<>);
+	if (scopes->user_subscriptions)
 	{
+		//Legacy: query emotes using Kraken
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>";
 		emotesets = yield(twitch_api_request("https://api.twitch.tv/kraken/users/{{USER}}/emotes",
 			(["Authorization": "OAuth " + req->misc->session->token]),
 			(["username": req->misc->session->user->login])))->emoticon_sets;
+		v2_have = persist_status->path("seen_emotes")[(string)req->misc->session->?user->?id] || ([]);
+	}
+	else if (scopes->chat_login && scopes[?"chat:edit"]) {
+		//Helix-friendly: query emotes by pushing them through chat.
+		//No, this is not better than the Kraken way. Not even slightly.
+		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>\n\n"
+			"[Check for newly-unlocked emotes](:#echolocate)";
 		v2_have = persist_status->path("seen_emotes")[(string)req->misc->session->?user->?id] || ([]);
 	}
 	else login_link += "\n\n<input type=checkbox id=showall style=\"display:none\" checked>"; //Hack: Show all if not logged in
@@ -259,6 +268,37 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 
 mapping get_state(string group) {
 	return (["emotes": indices(persist_status->path("seen_emotes")[group] || ([]))]);
+}
+
+class IRCClient
+{
+	inherit Protocols.IRC.Client;
+	array messages = ({"Swipey swipey HypeSwipe"});
+	void send_next_message() {
+		if (!sizeof(messages)) {close(); return;}
+		[string msg, messages] = Array.shift(messages);
+		//HACK: Send to a channel nobody cares about, but which the bot tracks.
+		//Bot hosts, ensure that this is a channel that you use with the bot.
+		send_message("#mustardmine", msg);
+		call_out(send_next_message, 1);
+	}
+	void got_notify(string from, string type, string|void chan, string|void message, string ... extra) {
+		::got_notify(from, type, chan, message, @extra);
+		if (type == "376") call_out(send_next_message, 1); //End of MOTD - start sending messages
+	}
+	void close() {
+		::close();
+		remove_call_out(da_ping);
+		remove_call_out(no_ping_reply);
+	}
+	void connection_lost() {close();}
+}
+
+void websocket_cmd_echolocate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	object irc = IRCClient("irc.chat.twitch.tv", ([
+		"nick": conn->session->user->login,
+		"pass": "oauth:" + conn->session->token,
+	]));
 }
 
 int message(object channel, mapping person, string msg) {
@@ -304,4 +344,6 @@ protected void create(string name) {
 	mapping v2 = filter(emoteids, stringp);
 	G->G->emotes_v2 = mkmapping(values(v2), indices(v2));
 	register_hook("all-msgs", message);
+	m_delete(persist_status->path("seen_emotes")["49497888"] || ([]), "HypeFail");
+	m_delete(persist_status->path("seen_emotes")["279141671"] || ([]), "HypeSwipe");
 }

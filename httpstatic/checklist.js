@@ -8,3 +8,5 @@ export function render(data) {
 		"{filter: saturate(1); border-color: green;}"
 	);
 }
+
+on("click", "#echolocate", e => ws_sync.send({cmd: "echolocate"}));
