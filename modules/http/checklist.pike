@@ -1,25 +1,11 @@
 inherit http_websocket;
 
-/* TODO: Highlight emotes dynamically.
-
-Every time a new emote is seen (one that the person hadn't had), update that
-user's websocket group to report this.
-
-Have a button and websocket command that, destructively or nondestructively
-(or perchance a brilliant combination of both), pokes all tracked emotes to
-#mustardmine under your name. Requires chat:edit scope.
-
-As the above poke gets sighted by the main bot, it will cycle through the
-message hook and update the display.
-*/
-
 //Markdown; emote names will be replaced with their emotes, but will
 //be greyed out if not available.
 //NOTE: The display is aimed at no more than six emotes across.
 constant hypetrain = replace(#"
 ## Hype Train set five
 ### Unlockable Nov 2021 to current
-### (Highlighting is unreliable due to Twitch limitations)
 HypeLUL HypeCool HypeLove1 HypeSleep HypePat HypeCozy1<br>
 HypeHands1 HypeHands2 HypeFail HypeHai HypeNom HypeBoop<br>
 HypeBLEH HypeApplause HypeRage HypeMwah HypeHuh HypeSeemsGood<br>
@@ -28,7 +14,6 @@ HypeCheer HypeLurk HypePopcorn HypeEvil HypeAwww HypeHype<br>
 
 ## Hype Train set four
 ### Unlockable May 2021 to Oct 2021
-### (Highlighting is unreliable due to Twitch limitations)
 HypeHeh HypeDoh HypeYum HypeShame HypeHide HypeWow<br>
 HypeTongue HypePurr HypeOoh HypeBeard HypeEyes HypeHay<br>
 HypeYesPlease HypeDerp HypeJudge HypeEars HypeCozy HypeYas<br>
@@ -205,6 +190,11 @@ constant emoteids = ([
 	"HypeAwww": "emotesv2_85a13cc47247425fa152b9292c4589a9",
 	"HypeHype": "emotesv2_e920cae6f2d8401d8e15392b1a292fbb",
 ]);
+array(string) tracked_emote_names;
+
+//HACK: Send to a channel nobody cares about, but which the bot tracks.
+//Bot hosts, ensure that this is a channel that you use with the bot.
+constant echolocation_channel = "#mustardmine";
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
 
@@ -225,16 +215,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	string login_link = "[Log in to highlight the emotes you have access to](:.twitchlogin data-scopes=@chat_login chat:edit@)";
 	mapping v2_have = ([]);
 	multiset scopes = req->misc->session->?scopes || (<>);
-	if (scopes->user_subscriptions)
-	{
-		//Legacy: query emotes using Kraken
-		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>";
-		emotesets = yield(twitch_api_request("https://api.twitch.tv/kraken/users/{{USER}}/emotes",
-			(["Authorization": "OAuth " + req->misc->session->token]),
-			(["username": req->misc->session->user->login])))->emoticon_sets;
-		v2_have = persist_status->path("seen_emotes")[(string)req->misc->session->?user->?id] || ([]);
-	}
-	else if (scopes->chat_login && scopes[?"chat:edit"]) {
+	if (scopes->chat_login && scopes[?"chat:edit"]) {
 		//Helix-friendly: query emotes by pushing them through chat.
 		//No, this is not better than the Kraken way. Not even slightly.
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>\n\n"
@@ -246,8 +227,10 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	array(string) used = indices(v2_have); //Emote names that we have AND used. If they're in that mapping, they're in the checklist (by definition).
 	foreach (emotesets;; array set) foreach (set, mapping em)
 		have_emotes[em->code] = img(em->code, em->id);
+	array trackme = !tracked_emote_names && ({ });
 	string text = words->replace(hypetrain, lambda(string w) {
 		//1) Do we (the logged-in user) have the emote?
+		if (trackme) trackme += ({w});
 		if (string have = have_emotes[w]) {used += ({w}); return have;}
 		if (!G->G->emote_code_to_markdown) return w;
 		//2) Does the bot have the emote?
@@ -257,8 +240,10 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		//3) Is it in the hard-coded list of known emote IDs?
 		int|string id = emoteids[w];
 		if (id) return img(w, id);
+		if (trackme) trackme -= ({w}); //It's not an emote after all.
 		return w;
 	});
+	if (trackme) tracked_emote_names = trackme; //Retain the list on page load. After code update, will need to load page before using echolocation button.
 	return render(req, ([
 		"vars": (["ws_group": req->misc->session->?user->?id]),
 		"login_link": login_link,
@@ -273,13 +258,11 @@ mapping get_state(string group) {
 class IRCClient
 {
 	inherit Protocols.IRC.Client;
-	array messages = ({"Swipey swipey HypeSwipe"});
+	array messages = ({"Oops, unable to enumerate emotes NotLikeThis"});
 	void send_next_message() {
 		if (!sizeof(messages)) {close(); return;}
 		[string msg, messages] = Array.shift(messages);
-		//HACK: Send to a channel nobody cares about, but which the bot tracks.
-		//Bot hosts, ensure that this is a channel that you use with the bot.
-		send_message("#mustardmine", msg);
+		send_message(echolocation_channel, msg);
 		call_out(send_next_message, 1);
 	}
 	void got_notify(string from, string type, string|void chan, string|void message, string ... extra) {
@@ -299,6 +282,13 @@ void websocket_cmd_echolocate(mapping(string:mixed) conn, mapping(string:mixed) 
 		"nick": conn->session->user->login,
 		"pass": "oauth:" + conn->session->token,
 	]));
+	if (tracked_emote_names) {
+		//Break up the list of emote names into blocks no more than 500 characters each
+		//TODO: Skip those that we already know you have - or maybe, those that have been
+		//sighted within the last X amount of time. That way, the Court Jester mode below
+		//will work (mostly) reliably.
+		irc->messages = String.trim((sprintf("%=500s", tracked_emote_names * " ") / "\n")[*]);
+	}
 }
 
 int message(object channel, mapping person, string msg) {
@@ -332,6 +322,10 @@ int message(object channel, mapping person, string msg) {
 		seen[emotename] = time();
 		persist_status->save();
 	}
+	//TODO: If channel->name == echolocation_channel, scan for words that are NOT emotes and
+	//remove them from the seen_emotes list. This will avoid the uncertainty of whether or not
+	//an emote is indeed available, and saves us the hassle of deciding whether to query
+	//destructively or nondestructively, by being a brilliant combination of both.
 	if (changed) send_updates_all((string)person->uid);
 }
 
@@ -344,6 +338,4 @@ protected void create(string name) {
 	mapping v2 = filter(emoteids, stringp);
 	G->G->emotes_v2 = mkmapping(values(v2), indices(v2));
 	register_hook("all-msgs", message);
-	m_delete(persist_status->path("seen_emotes")["49497888"] || ([]), "HypeFail");
-	m_delete(persist_status->path("seen_emotes")["279141671"] || ([]), "HypeSwipe");
 }
