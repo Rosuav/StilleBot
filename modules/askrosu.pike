@@ -56,11 +56,6 @@ array(function) rare_responses = ({
 echoable_message process(object channel, object person, string param)
 {
 	if (param == "") return "$$: Ask me a question! Any question! Preferably a yes-no one.";
-	object calc = function_object(G->G->commands->calc);
-	string noqs = param - "?"; //No dumb questions, no smart questions either
-	if (noqs != "" && !sizeof((multiset)(array)noqs - (multiset)(array)calc->legal))
-		//"!askrosu 1 + 1?" ==> "!calc 1 + 1"
-		return calc->process(channel, person, noqs);
 	//Check if we have a "remembered response"
 	function spec = special[person->user];
 	if (string resp = spec && spec(channel, person, param)) return resp;
