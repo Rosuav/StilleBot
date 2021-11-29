@@ -260,7 +260,7 @@ class IRCClient
 		if (type == "ROOMSTATE" && options->promise) got_host(chan, "- -");
 		if (type == "NOTICE" && sscanf(message, "%s has gone offline. Exiting host mode%s", string target, string dot) && dot == ".") {
 			mapping st = chanstate[chan];
-			if (st->hosting == target && st->hostingid) channel_seen_offline[(int)st->hostingid] = time();
+			if (st->?hosting == target && st->hostingid) channel_seen_offline[(int)st->hostingid] = time();
 		}
 		if (type == "NOTICE" && message == "Host target cannot be changed more than 3 times every half hour.") {
 			//Probably only happens while I'm testing, but ehh, whatever
