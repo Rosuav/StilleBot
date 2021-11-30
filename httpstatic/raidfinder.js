@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, B, BR, BUTTON, DIV, IMG, P, UL, LI, SPAN} = choc;
+const {A, B, BR, BUTTON, DIV, IMG, UL, LI, SPAN} = choc;
 
 const chat_restrictions = [
 	["emote_mode", "Emote-only mode"],
