@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, DIV, TR, TD, UL, LI, B, INPUT, TEXTAREA, BUTTON} = choc;
+const {A, TR, TD, UL, LI, B, INPUT, BUTTON} = choc;
 import {waitlate} from "$$static||utils.js$$";
 
 function describe_usage(u) {

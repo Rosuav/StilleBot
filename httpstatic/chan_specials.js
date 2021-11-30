@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {CODE, BR, TABLE, TR, TH, TD, SPAN, DIV, DETAILS, SUMMARY, UL, LI, INPUT, LABEL, STYLE} = choc;
+const {CODE, TR, TD, DIV, DETAILS, SUMMARY, UL, LI, INPUT, LABEL, STYLE} = choc;
 import {render_command, cmd_configure, sockmsg_validated} from "$$static||command_editor.js$$";
 export {sockmsg_validated};
 

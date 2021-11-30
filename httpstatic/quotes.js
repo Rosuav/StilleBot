@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {OPTION, SELECT, INPUT, LABEL, UL, LI, BUTTON, TR, TH, TD, SPAN} = choc;
+const { } = choc;
 
 const dlg = document.getElementById("editdlg");
 let editing_quote = 0;

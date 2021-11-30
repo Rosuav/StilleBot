@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, DETAILS, SUMMARY, DIV, FORM, FIELDSET, LEGEND, LABEL, INPUT, TEXTAREA, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
+const {A, BUTTON, LABEL, INPUT, TR, TD} = choc;
 import {waitlate} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#trackers tbody");

@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BUTTON, INPUT, LI, TR, TD} = choc;
+const {BUTTON, INPUT, LI, TR, TD} = choc;
 import {waitlate} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#blocks tbody");

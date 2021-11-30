@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, CODE, DETAILS, SUMMARY, DIV, FORM, FIELDSET, LEGEND, LABEL, INPUT, TEXTAREA, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
+const {A, BR, BUTTON, CODE, DIV, FIELDSET, LEGEND, LABEL, INPUT, TEXTAREA, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
 import update_display from "$$static||monitor.js$$";
 import {waitlate} from "$$static||utils.js$$";
 
