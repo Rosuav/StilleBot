@@ -264,7 +264,7 @@ class IRCClient
 		if (!sizeof(messages)) {close(); return;}
 		[string msg, messages] = Array.shift(messages);
 		send_message(echolocation_channel, msg);
-		call_out(send_next_message, 1);
+		call_out(send_next_message, 2);
 	}
 	void got_notify(string from, string type, string|void chan, string|void message, string ... extra) {
 		::got_notify(from, type, chan, message, @extra);
