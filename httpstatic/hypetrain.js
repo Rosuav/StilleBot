@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BUTTON, BR, DIV, IMG, P, UL, LI, SPAN} = choc;
+const {A, BUTTON, BR, P, SPAN} = choc;
 
 //The threshold for "Super Hard" is this many bits per level (not total).
 //In order to unlock the sixth emote for each level, you need to have a
