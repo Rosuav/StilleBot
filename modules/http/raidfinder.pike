@@ -120,6 +120,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			vod->week_correlation = max(min(604800 - howlongago, howlongago - vod->duration_seconds), 0);
 		}
 		ret->max_duration = max(@vods->duration_seconds);
+		//TODO: Calculate an approximate average VOD duration, which can (if available) be used in place of
+		//the four hour threshold used for magic sort. Ignore outliers. Don't bother trying to combine
+		//broken VODs together - too hard, too rare, let it adjust the average, it's fine.
 
 		//Ping Twitch and check if there are any chat restrictions. So far I can't do this in bulk, but
 		//it's great to be able to query them this way for the VOD length popup. Note that we're not
@@ -429,6 +432,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			}
 		}
 		//Up to 100 points for having just started, scaling down to zero at four hours of uptime
+		//TODO: If we have channel info with an average VOD duration, calculated no more than a
+		//week ago, use that instead of four hours.
 		if (strm->started_at) {
 			int uptime = time() - time_from_iso(strm->started_at)->unix_time();
 			recommend["Uptime"] = max(100 - uptime / 4 / 36, 0);

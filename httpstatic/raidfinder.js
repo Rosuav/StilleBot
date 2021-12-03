@@ -280,6 +280,9 @@ function describe_uptime(stream, el) {
 	const fol = stream.chanstatus?.is_following;
 	if (fol && +fol.from_id === on_behalf_of_userid && !fol.followed_at)
 		frond = SPAN({className: "new_frond", title: "Might be a new frond! (click to confirm)"}, "\u{1f334}");
+
+	//TODO: Colour the background of the word "Uptime" based on how close we are to the
+	//average VOD duration.
 	return set_content(el, [frond, restrictions, "Uptime " + uptime(stream.started_at)]);
 }
 

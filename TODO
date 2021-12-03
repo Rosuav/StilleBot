@@ -77,5 +77,3 @@
   - Absorb raidnotes into this system.
 * "max-width: fit-content" doesn't work in Firefox - but nor does -moz-fit-content :(
   - Causes display problems on graphical editor and opening up element details
-* Raid finder: Cache average stream length (maybe) and chat restrictions
-  - Load them as required, not too many at a time, show on main view.
