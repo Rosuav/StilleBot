@@ -240,7 +240,9 @@ function describe_uptime(stream, el) {
 	});
 	//If no chat restrictions seen in cache, add a0f0c0 badge. If some seen, add ff0 badge.
 	let restrictions = null;
-	if (stream.chanstatus && stream.chanstatus.cache_time > new Date/1000 - 86400) {
+	const cached = stream.chanstatus ? stream.chanstatus.cache_time : 0;
+	want_streaminfo[stream.user_id] = cached;
+	if (cached > new Date/1000 - 86400) {
 		const set = stream.chanstatus.chat_settings;
 		if (chat_restrictions.find(r => set[r[0]]))
 			//There's at least one chat restriction set. Give a warning.
@@ -248,9 +250,7 @@ function describe_uptime(stream, el) {
 		else
 			//No chat restrictions, and we saw this recently so it's probably safe to trust it.
 			restrictions = SPAN({className: "allclear", title: "No chat restrictions active (click to recheck)"}, "*");
-		delete want_streaminfo[stream.user_id];
 	}
-	else want_streaminfo[stream.user_id] = 1;
 	return set_content(el, [restrictions, "Uptime " + uptime(stream.started_at)]);
 }
 
@@ -348,7 +348,7 @@ function build_follow_list() {
 			stream.magic_breakdown && show_magic(stream.magic_breakdown), //Will only exist if the back end decides to send it.
 		]
 	)));
-	ws_sync.send({cmd: "want_streaminfo", channels: Object.keys(want_streaminfo)});
+	ws_sync.send({cmd: "interested", want_streaminfo});
 	//TODO maybe: Have this link back to raidfinder with a marker saying "your cat",
 	//and thus get all the recent raid info etc, rather than just linking to the cat.
 	if (your_stream)
@@ -359,7 +359,8 @@ function build_follow_list() {
 }
 build_follow_list();
 
-export function render(data) {
+export function render(data) { }
+export function sockmsg_chanstatus(data) {
 	const stream = follows.find(f => f.user_id === data.channelid);
 	if (!stream) return; //Not of interest to us.
 	stream.chanstatus = data.chanstatus;

@@ -142,8 +142,15 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		}
 
 		//Publish this info to all socket-connected clients that care.
-		//(For now, to all socket-connected clients. TODO: Track those that care.)
-		send_updates_all("", (["channelid": chan, "chanstatus": ret]));
+		string msg = Standards.JSON.encode((["cmd": "chanstatus", "channelid": chan, "chanstatus": ret]));
+		foreach (websocket_groups[""], object sock) if (sock && sock->state == 1) {
+			//See if the client is interested in this channel
+			catch {
+				mapping conn = sock->query_id(); //If older Pike, don't bother with the check, just push it out anyway
+				if (!conn->want_streaminfo || !has_index(conn->want_streaminfo, chan)) continue;
+			};
+			sock->send_text(msg);
+		}
 
 		return jsonify(ret);
 	}
@@ -441,8 +448,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]));
 }
 
-void websocket_cmd_want_streaminfo(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (arrayp(msg->want_streaminfo)) conn->want_streaminfo = (multiset)msg->want_streaminfo;
+//Record what the client is interested in hearing about. It's not consistent or coherent
+//enough to use the standard 'groups' system, as a single client may be interested in
+//many similar things, but it's the same kind of idea.
+void websocket_cmd_interested(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (mappingp(msg->want_streaminfo)) conn->want_streaminfo = msg->want_streaminfo;
 }
 
 continue Concurrent.Future|int guess_user_id(string name, int|void fastonly) {
