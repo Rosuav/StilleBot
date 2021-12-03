@@ -75,9 +75,7 @@
   where it triggers an actual command. Could deep link straight to the editor now.
 * Client-side per-user preferences are now a thing. Use them where appropriate.
   - Absorb raidnotes into this system.
-  - Note that only pages with websockets can have prefs. Raid Finder may need to grow one.
 * "max-width: fit-content" doesn't work in Firefox - but nor does -moz-fit-content :(
   - Causes display problems on graphical editor and opening up element details
 * Raid finder: Cache average stream length (maybe) and chat restrictions
   - Load them as required, not too many at a time, show on main view.
-  - May require websocket, which would then allow prefsing.

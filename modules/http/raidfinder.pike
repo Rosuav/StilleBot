@@ -1,4 +1,4 @@
-inherit http_endpoint;
+inherit http_websocket;
 /* Raid target finder
   - Raid tracking works only for channels that I track, but I don't have to bot for them.
   - There's not going to be any easy UI for it, but it'd be great to have a "raided my friend"
@@ -415,8 +415,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	follows_helix -= ({0}); //Remove self (already nulled out)
 	sort(-follows_helix->recommend[*], follows_helix); //Sort by magic initially
 	array tags = values(G->G->all_stream_tags); sort(tags->name, tags);
-	return render_template("raidfinder.md", ([
+	return render(req, ([
 		"vars": ([
+			"ws_group": "",
 			"on_behalf_of_userid": userid, //The same userid as you're logged in as, unless for= is specified
 			"follows": follows_helix, "all_tags": tags,
 			"your_stream": your_stream, "highlights": highlights,
