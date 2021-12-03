@@ -251,6 +251,8 @@ function describe_uptime(stream, el) {
 			//No chat restrictions, and we saw this recently so it's probably safe to trust it.
 			restrictions = SPAN({className: "allclear", title: "No chat restrictions active (click to recheck)"}, "*");
 	}
+	//TODO: Show a "new frond" icon (a leaf or something???) if not following.
+	//This won't show on initial load but may show up if random loads happen.
 	return set_content(el, [restrictions, "Uptime " + uptime(stream.started_at)]);
 }
 
