@@ -11,6 +11,7 @@ const chat_restrictions = [
 	["subscriber_mode", "Subscriber-only mode"],
 	["unique_chat_mode", "Unique chat (R9k) mode"],
 ];
+const want_streaminfo = { }; //Channel IDs that we don't yet know about chat restrictions for
 
 const sortfunc = {
 	Magic: (s1, s2) => s2.recommend - s1.recommend,
@@ -237,8 +238,20 @@ function describe_uptime(stream, el) {
 		className: "uptime",
 		onclick: () => show_vod_lengths(stream.user_id, stream.id, stream.started_at),
 	});
-	//TODO: If no chat restrictions seen in cache, add a0f0c0 badge. If some seen, add ff0 badge.
-	return set_content(el, "Uptime " + uptime(stream.started_at));
+	//If no chat restrictions seen in cache, add a0f0c0 badge. If some seen, add ff0 badge.
+	let restrictions = null;
+	if (stream.chanstatus && stream.chanstatus.cache_time > new Date/1000 - 86400) {
+		const set = stream.chanstatus.chat_settings;
+		if (chat_restrictions.find(r => set[r[0]]))
+			//There's at least one chat restriction set. Give a warning.
+			restrictions = SPAN({className: "warning", title: "Chat restrictions active, click for details"}, "*");
+		else
+			//No chat restrictions, and we saw this recently so it's probably safe to trust it.
+			restrictions = SPAN({className: "allclear", title: "No chat restrictions active (click to recheck)"}, "*");
+		delete want_streaminfo[stream.user_id];
+	}
+	else want_streaminfo[stream.user_id] = 1;
+	return set_content(el, [restrictions, "Uptime " + uptime(stream.started_at)]);
 }
 
 console.log(follows);
@@ -335,6 +348,7 @@ function build_follow_list() {
 			stream.magic_breakdown && show_magic(stream.magic_breakdown), //Will only exist if the back end decides to send it.
 		]
 	)));
+	ws_sync.send({cmd: "want_streaminfo", channels: Object.keys(want_streaminfo)});
 	//TODO maybe: Have this link back to raidfinder with a marker saying "your cat",
 	//and thus get all the recent raid info etc, rather than just linking to the cat.
 	if (your_stream)
@@ -344,3 +358,10 @@ function build_follow_list() {
 	else set_content("#yourcat", "");
 }
 build_follow_list();
+
+export function render(data) {
+	const stream = follows.find(f => f.user_id === data.channelid);
+	if (!stream) return; //Not of interest to us.
+	stream.chanstatus = data.chanstatus;
+	if (stream.element) describe_uptime(stream, stream.element.querySelector(".uptime"));
+}

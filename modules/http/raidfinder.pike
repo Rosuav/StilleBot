@@ -107,6 +107,18 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			vod->week_correlation = max(min(604800 - howlongago, howlongago - vod->duration_seconds), 0);
 		}
 		ret->max_duration = max(@vods->duration_seconds);
+
+		//Ping Twitch and check if there are any chat restrictions. So far I can't do this in bulk, but
+		//it's great to be able to query them this way for the VOD length popup. Note that we're not
+		//asking for mod settings here, so non_moderator_chat_delay won't be in the response.
+		mapping settings = yield(twitch_api_request("https://api.twitch.tv/helix/chat/settings?broadcaster_id=" + chan));
+		if (arrayp(settings->data) && sizeof(settings->data)) ret->chat_settings = settings->data[0];
+
+		//Hang onto this info in cache, apart from is_following (below).
+		ret->cache_time = time();
+		persist_status->path("raidfinder_cache")[chan] = ret;
+		persist_status->save();
+
 		string chanid = req->variables["for"];
 		if (chanid && chanid != (string)logged_in->?id && chanid != chan) {
 			//If you provided for=userid, also show whether the target is following this stream.
@@ -126,13 +138,13 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 					}
 				ret->is_following->follow_length = length;
 			}
-			else ret->is_following = ([]);
+			else ret->is_following = (["from_id": chanid]);
 		}
-		//Ping Twitch and check if there are any chat restrictions. So far I can't do this in bulk, but
-		//it's great to be able to query them this way for the VOD length popup. Note that we're not
-		//asking for mod settings here, so non_moderator_chat_delay won't be in the response.
-		mapping settings = yield(twitch_api_request("https://api.twitch.tv/helix/chat/settings?broadcaster_id=" + chan));
-		if (arrayp(settings->data) && sizeof(settings->data)) ret->chat_settings = settings->data[0];
+
+		//Publish this info to all socket-connected clients that care.
+		//(For now, to all socket-connected clients. TODO: Track those that care.)
+		send_updates_all("", (["channelid": chan, "chanstatus": ret]));
+
 		return jsonify(ret);
 	}
 	int userid = 0;
@@ -427,6 +439,10 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
 		"title": title,
 	]));
+}
+
+void websocket_cmd_want_streaminfo(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (arrayp(msg->want_streaminfo)) conn->want_streaminfo = (multiset)msg->want_streaminfo;
 }
 
 continue Concurrent.Future|int guess_user_id(string name, int|void fastonly) {
