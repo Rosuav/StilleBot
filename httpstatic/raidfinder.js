@@ -232,14 +232,17 @@ function adornment(type) {
 	}
 }
 
+function describe_uptime(stream, el) {
+	if (!el) el = SPAN({
+		className: "uptime",
+		onclick: () => show_vod_lengths(stream.user_id, stream.id, stream.started_at),
+	});
+	//TODO: If no chat restrictions seen in cache, add a0f0c0 badge. If some seen, add ff0 badge.
+	return set_content(el, "Uptime " + uptime(stream.started_at));
+}
+
 console.log(follows);
 function build_follow_list() {
-	function describe_uptime(stream) {
-		return SPAN({
-			className: "uptime",
-			onclick: () => show_vod_lengths(stream.user_id, stream.id, stream.started_at),
-		}, "Uptime " + uptime(stream.started_at));
-	}
 	function describe_raid(raids) {
 		if (!raids.length) return null;
 		const raiddesc = raids[raids.length - 1];
