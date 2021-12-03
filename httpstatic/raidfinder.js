@@ -112,6 +112,28 @@ async function show_vod_lengths(userid, vodid, startdate) {
 
 on("click", "#mydetails", e => show_vod_lengths(on_behalf_of_userid, your_stream && your_stream.id, your_stream && your_stream.started_at));
 
+let precache_timer = 0;
+function precache_streaminfo() {
+	const now = Math.floor(new Date / 1000) - 86400;
+	const streams = [], weights = [];
+	let sum = 0;
+	for (let stream of follows) {
+		const cacheage = now - want_streaminfo[stream.user_id];
+		if (cacheage <= 0) continue;
+		weights.push(sum += cacheage);
+		streams.push(stream);
+	}
+	if (!streams.length) return clearInterval(precache_timer); //Nothing to look up? We're done.
+	//Pick a weighted random selection, such that older cache entries are picked
+	//more frequently. Something not in cache at all will have a weight equal to
+	//the time since 1970, which is a lot of weight. Quite a lot.
+	const sel = Math.floor(Math.random() * sum);
+	const index = weights.findIndex(w => w > sel);
+	if (index === -1) index = 0; //Shouldn't happen. Whatever.
+	const stream = streams[index];
+	fetch(`/raidfinder?for=${on_behalf_of_userid}&streamlength=${stream.user_id}&ignore=${stream.id}&precache=1`);
+}
+
 function low_show_raids(raids) {
 	const scrollme = set_content("#raids ul", raids).parentElement;
 	DOM("#raids").showModal();
@@ -363,6 +385,7 @@ function build_follow_list() {
 			your_stream.user_name + " has " + your_stream.viewer_count + " viewers in " + your_stream.category,
 		]).href = "raidfinder?categories=" + encodeURIComponent(your_stream.category);
 	else set_content("#yourcat", "");
+	if (!precache_timer) precache_timer = setInterval(precache_streaminfo, 2000);
 }
 build_follow_list();
 

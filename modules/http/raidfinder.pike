@@ -24,6 +24,7 @@ Concurrent.Future fracture(array stuff, int max, function cb) {
 
 multiset(string) creative_names = (<"Art", "Science & Technology", "Software and Game Development", "Food & Drink", "Music", "Makers & Crafting", "Beauty & Body Art">);
 multiset(int) creatives = (<>);
+int next_precache_request = time();
 
 mapping(string:string|array) safe_query_vars(mapping(string:string|array) vars) {return vars & (<"for">);}
 	
@@ -83,6 +84,18 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//Additionally (since this is a costly check anyway, so it won't add much), it
 	//checks if the for= target is following them.
 	if (string chan = req->variables->streamlength) {
+		if (req->variables->precache) {
+			//Low-priority request to populate the cache. Never more than 1 per second,
+			//regardless of the number of connected clients.
+			int now = time();
+			int delay = ++next_precache_request - time();
+			if (delay > 5) return jsonify((["error": "Wait a bit"])) | (["error": 425]);
+			if (delay) {
+				Concurrent.Promise p = Concurrent.Promise();
+				call_out(p->success, delay, 0);
+				yield(p->future());
+			}
+		}
 		array vods = yield(get_helix_paginated("https://api.twitch.tv/helix/videos", (["user_id": chan, "type": "archive"])));
 		if (string ignore = req->variables->ignore) //Ignore the stream ID for a currently live broadcast
 			vods = filter(vods) {return __ARGS__[0]->stream_id != ignore;};
