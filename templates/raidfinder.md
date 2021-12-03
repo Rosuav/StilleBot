@@ -191,7 +191,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 > </div>
 {: tag=dialog #infodlg}
 
-<script type=module src="$$static||raidfinder.js$$"></script>
+<!-- break dialogs apart -->
 
 > ### Previous stream lengths
 >

@@ -213,8 +213,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//This allows the front end to access it identically for convenience.
 			strm->user_name = strm->display_name;
 		}
-		return render_template("raidfinder.md", ([
-			"vars": (["follows": follows_helix, "your_stream": 0, "highlights": highlights, "all_raids": ({}), "mode": "allfollows"]),
+		return render(req, ([
+			"vars": (["ws_group": "", "follows": follows_helix, "your_stream": 0, "highlights": highlights, "all_raids": ({}), "mode": "allfollows"]),
 			"sortorders": ({"Channel Creation", "Follow Date", "Name"}) * "\n* ",
 		]));
 	}
