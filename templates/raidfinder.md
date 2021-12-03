@@ -164,6 +164,9 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	background: #a0f0c0;
 	margin-right: 0.25em;
 }
+.uptime .new_frond {
+	margin-right: 0.25em;
+}
 </style>
 
 > ### Legend/info

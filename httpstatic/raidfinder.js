@@ -251,9 +251,14 @@ function describe_uptime(stream, el) {
 			//No chat restrictions, and we saw this recently so it's probably safe to trust it.
 			restrictions = SPAN({className: "allclear", title: "No chat restrictions active (click to recheck)"}, "*");
 	}
-	//TODO: Show a "new frond" icon (a leaf or something???) if not following.
+	//If we have follower info for the one we're tracking, and they're not
+	//following this channel, show a "new frond" icon (a palm tree).
 	//This won't show on initial load but may show up if random loads happen.
-	return set_content(el, [restrictions, "Uptime " + uptime(stream.started_at)]);
+	let frond = null;
+	const fol = stream.chanstatus?.is_following;
+	if (fol && +fol.from_id === on_behalf_of_userid && !fol.followed_at)
+		frond = SPAN({className: "new_frond", title: "Might be a new frond! (click to confirm)"}, "\u{1f334}");
+	return set_content(el, [frond, restrictions, "Uptime " + uptime(stream.started_at)]);
 }
 
 console.log(follows);
