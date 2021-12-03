@@ -326,6 +326,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//Okay! Preliminaries done. Let's look through the Helix-provided info and
 	//build up a final result.
 	mapping(string:int) tag_prefs = notes->tags || ([]);
+	mapping cached_status = persist_status->path("raidfinder_cache");
 	foreach (follows_helix; int i; mapping strm)
 	{
 		mapping(string:int) recommend = ([]);
@@ -337,6 +338,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		strm->tags = tags;
 		strm->category = G->G->category_names[strm->game_id] || strm->game_name;
 		strm->raids = raids[strm->user_login] || ({ });
+		if (mapping st = cached_status[strm->user_id]) strm->chanstatus = st;
 		int otheruid = (int)strm->user_id;
 		if (otheruid == userid) {follows_helix[i] = 0; continue;} //Exclude self. There's no easy way to know if you should have shown up, so just always exclude.
 		//TODO: Configurable hard tag requirements
