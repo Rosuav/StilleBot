@@ -1,5 +1,16 @@
 inherit http_endpoint;
 
+/* Bits VIP leaderboard
+
+* Query the leaderboard month by month, showing the most recent (say) 12 months of leaderboards
+* Filter out (grey out) any that have modswords?? Might need a dedicated /mods command sent.
+* Highlight any that currently have VIP badges.
+* Button "add VIPs". Take the top N, for some configured number N, and grant VIP status.
+* Button "remove VIPs". Ditto. Recommendation: Remove first then add.
+* May need a record of who has permanent badges and should therefore be immune to the "remove" button
+
+*/
+
 constant levels = ({5000000, 4500000, 4000000, 3500000, 3000000, 2500000, 2000000,
 	1750000, 1500000, 1250000, 1000000, 900000, 800000, 700000, 600000, 500000,
 	400000, 300000, 200000, 100000, 75000, 50000, 25000, 10000, 5000, 1000});
@@ -14,6 +25,24 @@ string header(int level)
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "bits:read")) return resp;
+	if ((<"year", "month", "week", "day">)[req->variables->period]) {
+		string period = req->variables->period;
+		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=50&period=" + period,
+				(["Authorization": "Bearer " + req->misc->session->token])));
+		sscanf(info->date_range->started_at, "%d-%d-%*dT%*d:%*d:%*dZ", int year, int month);
+		string text = "* Current month: " + info->data->user_name * ", " + "\n";
+		array(string) months = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec" / " ";
+		for (int i = 0; i < 12; ++i) {
+			//Get stats for a previous month. TODO: Make this work with any period, not just month
+			//Will need to worry about timezones. Maybe don't support day??
+			if (!--month) {--year; month = 12;}
+			mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=50&period=" + period
+					+ sprintf("&started_at=%d-%02d-02T00:00:00Z", year, month),
+					(["Authorization": "Bearer " + req->misc->session->token])));
+			text += sprintf("* %s %d: %s\n", months[month - 1], year, info->data->user_name * ", ");
+		}
+		return render_template("bitsbadges.md", (["text": text]));
+	}
 	mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=100",
 			(["Authorization": "Bearer " + req->misc->session->token])));
 	if (!sizeof(info->data)) return render_template("bitsbadges.md", (["text": "No data found."]));
