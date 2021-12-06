@@ -28,9 +28,10 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 {
 	if (mapping resp = ensure_login(req, "bits:read")) return resp;
 	if ((<"year", "month", "week", "day">)[req->variables->period]) {
-		if (mixed data = cache[req->misc->session->user->id]) //Hack
+		if (mapping resp = ensure_login(req, "bits:read moderation:read")) return resp;
+		if (mixed vars = cache[req->misc->session->user->id]) //Hack
 			return render_template("bitsbadges.md", ([
-				"vars": (["periodicdata": data]),
+				"vars": vars,
 				"text": sprintf("<div id=leaders></div><script type=module src=%q></script>", G->G->template_defaults["static"]("bitsbadges.js")),
 			]));
 		string period = req->variables->period;
@@ -48,9 +49,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 					(["Authorization": "Bearer " + req->misc->session->token])));
 			periodicdata += ({({sprintf("%s %d", months[month - 1], year), info->data})});
 		}
-		cache[req->misc->session->user->id] = periodicdata;
+		mapping mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id="
+				+ req->misc->session->user->id,
+				(["Authorization": "Bearer " + req->misc->session->token])));
 		return render_template("bitsbadges.md", ([
-			"vars": (["periodicdata": periodicdata]),
+			"vars": cache[req->misc->session->user->id] = (["periodicdata": periodicdata, "mods": mods->data]),
 			"text": sprintf("<div id=leaders></div><script type=module src=%q></script>", G->G->template_defaults["static"]("bitsbadges.js")),
 		]));
 	}
