@@ -22,26 +22,37 @@ string header(int level)
 	return "* 0: "; //Shouldn't happen
 }
 
+mapping(int|string:mixed) cache = ([]);
+
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "bits:read")) return resp;
 	if ((<"year", "month", "week", "day">)[req->variables->period]) {
+		if (mixed data = cache[req->misc->session->user->id]) //Hack
+			return render_template("bitsbadges.md", ([
+				"vars": (["periodicdata": data]),
+				"text": sprintf("<div id=leaders></div><script type=module src=%q></script>", G->G->template_defaults["static"]("bitsbadges.js")),
+			]));
 		string period = req->variables->period;
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=50&period=" + period,
+		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period,
 				(["Authorization": "Bearer " + req->misc->session->token])));
 		sscanf(info->date_range->started_at, "%d-%d-%*dT%*d:%*d:%*dZ", int year, int month);
-		string text = "* Current month: " + info->data->user_name * ", " + "\n";
+		array periodicdata = ({({"Current", info->data})});
 		array(string) months = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec" / " ";
-		for (int i = 0; i < 12; ++i) {
+		for (int i = 0; i < 6; ++i) {
 			//Get stats for a previous month. TODO: Make this work with any period, not just month
 			//Will need to worry about timezones. Maybe don't support day??
 			if (!--month) {--year; month = 12;}
-			mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=50&period=" + period
+			mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
 					+ sprintf("&started_at=%d-%02d-02T00:00:00Z", year, month),
 					(["Authorization": "Bearer " + req->misc->session->token])));
-			text += sprintf("* %s %d: %s\n", months[month - 1], year, info->data->user_name * ", ");
+			periodicdata += ({({sprintf("%s %d", months[month - 1], year), info->data})});
 		}
-		return render_template("bitsbadges.md", (["text": text]));
+		cache[req->misc->session->user->id] = periodicdata;
+		return render_template("bitsbadges.md", ([
+			"vars": (["periodicdata": periodicdata]),
+			"text": sprintf("<div id=leaders></div><script type=module src=%q></script>", G->G->template_defaults["static"]("bitsbadges.js")),
+		]));
 	}
 	mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=100",
 			(["Authorization": "Bearer " + req->misc->session->token])));
