@@ -28,13 +28,35 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 {
 	if (mapping resp = ensure_login(req, "bits:read")) return resp;
 	if ((<"year", "month", "week", "day">)[req->variables->period]) {
+		//This is a bit of a mess, but it kinda works. Would be nice to tidy it up a bit though.
 		if (mapping resp = ensure_login(req, "bits:read moderation:read")) return resp;
+		string period = req->variables->period;
+		if (string start = req->variables->vip || req->variables->unvip) {
+			sscanf(start, "%d-%d-%dT%d:%d:%dZ", int year, int month, int day, int hour, int min, int sec);
+			start = sprintf("%04d-%02d-%02dT%02d:%02d:%02dZ", year, month, day, hour, min, sec);
+			mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
+				+ "&started_at=" + start,
+				(["Authorization": "Bearer " + req->misc->session->token])));
+			int limit = 10; //TODO: Make configurable
+			mapping mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id="
+				+ req->misc->session->user->id,
+				(["Authorization": "Bearer " + req->misc->session->token])));
+			multiset is_mod = (multiset)mods->data->user_id;
+			string cmd = req->variables->vip ? "/vip" : "/unvip";
+			array(string) cmds = ({ });
+			foreach (info->data, mapping person) {
+				if (is_mod[person->user_id]) continue;
+				cmds += ({cmd + " " + person->user_login});
+				if (!--limit) break;
+			}
+			write("Send these commands: %O\n", cmds);
+			return "OK";
+		}
 		if (mixed vars = cache[req->misc->session->user->id]) //Hack
 			return render_template("bitsbadges.md", ([
 				"vars": vars,
 				"text": sprintf("<div id=leaders></div><script type=module src=%q></script>", G->G->template_defaults["static"]("bitsbadges.js")),
 			]));
-		string period = req->variables->period;
 		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period,
 				(["Authorization": "Bearer " + req->misc->session->token])));
 		sscanf(info->date_range->started_at, "%d-%d-%*dT%*d:%*d:%*dZ", int year, int month);
@@ -53,7 +75,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				+ req->misc->session->user->id,
 				(["Authorization": "Bearer " + req->misc->session->token])));
 		return render_template("bitsbadges.md", ([
-			"vars": cache[req->misc->session->user->id] = (["periodicdata": periodicdata, "mods": mods->data]),
+			"vars": cache[req->misc->session->user->id] = ([
+				"period": period,
+				"periodicdata": periodicdata,
+				"mods": mods->data,
+			]),
 			"text": sprintf("<div id=leaders></div><script type=module src=%q></script>", G->G->template_defaults["static"]("bitsbadges.js")),
 		]));
 	}
