@@ -1,14 +1,12 @@
 inherit http_endpoint;
 
-/* Bits VIP leaderboard
+/* Bits VIP leaderboard: bitsbadges?period=month
 
-* Query the leaderboard month by month, showing the most recent (say) 12 months of leaderboards
-* Filter out (grey out) any that have modswords?? Might need a dedicated /mods command sent.
-* Highlight any that currently have VIP badges.
-* Button "add VIPs". Take the top N, for some configured number N, and grant VIP status.
-* Button "remove VIPs". Ditto. Recommendation: Remove first then add.
+* TODO: Support other periods - currently it assumes months in some places
+* Highlight any that currently have VIP badges. May need a /vip command and its associated response.
 * May need a record of who has permanent badges and should therefore be immune to the "remove" button
-
+* Check formatting/layout and make sure it's still practical when there are lots of cheerers
+* Highlight only the first ten eligible names
 */
 
 constant levels = ({5000000, 4500000, 4000000, 3500000, 3000000, 2500000, 2000000,
