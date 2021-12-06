@@ -259,12 +259,11 @@ mapping get_state(string group) {
 class IRCClient
 {
 	inherit Protocols.IRC.Client;
-	array messages = ({"Oops, unable to enumerate emotes NotLikeThis"});
 	void send_next_message() {
-		if (!sizeof(messages)) {close(); return;}
-		[string msg, messages] = Array.shift(messages);
-		send_message(echolocation_channel, msg);
-		call_out(send_next_message, 2);
+		if (!sizeof(options->messages)) {close(); return;}
+		[string msg, options->messages] = Array.shift(options->messages);
+		send_message(options->sendchannel, msg);
+		call_out(send_next_message, options->delay || 2);
 	}
 	void got_notify(string from, string type, string|void chan, string|void message, string ... extra) {
 		::got_notify(from, type, chan, message, @extra);
@@ -279,20 +278,21 @@ class IRCClient
 }
 
 void websocket_cmd_echolocate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!tracked_emote_names) return;
+	//Break up the list of emote names into blocks no more than 500 characters each
+	//TODO: Skip those that we already know you have - or maybe, those that have been
+	//sighted within the last X amount of time. That way, the Court Jester mode below
+	//will work (mostly) reliably.
+	mapping seen = persist_status->path("seen_emotes", conn->session->user->id);
+	int threshold = time() - 86400;
+	array emotes = filter(tracked_emote_names) {return seen[__ARGS__[0]] < threshold;};
+	array messages = String.trim((sprintf("%=500s", tracked_emote_names * " ") / "\n")[*]);
 	object irc = IRCClient("irc.chat.twitch.tv", ([
 		"nick": conn->session->user->login,
 		"pass": "oauth:" + conn->session->token,
+		"sendchannel": echolocation_channel,
+		"messages": messages,
 	]));
-	if (tracked_emote_names) {
-		//Break up the list of emote names into blocks no more than 500 characters each
-		//TODO: Skip those that we already know you have - or maybe, those that have been
-		//sighted within the last X amount of time. That way, the Court Jester mode below
-		//will work (mostly) reliably.
-		mapping seen = persist_status->path("seen_emotes", conn->session->user->id);
-		int threshold = time() - 86400;
-		array emotes = filter(tracked_emote_names) {return seen[__ARGS__[0]] < threshold;};
-		irc->messages = String.trim((sprintf("%=500s", tracked_emote_names * " ") / "\n")[*]);
-	}
 }
 
 int message(object channel, mapping person, string msg) {
@@ -350,5 +350,6 @@ protected void create(string name) {
 	//used in X seconds", which will be possible, since they're stored with their timestamps.
 	mapping v2 = filter(emoteids, stringp);
 	G->G->emotes_v2 = mkmapping(values(v2), indices(v2));
+	G->G->IRCClientMessageSender = IRCClient;
 	register_hook("all-msgs", message);
 }
