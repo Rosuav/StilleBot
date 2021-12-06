@@ -38,7 +38,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period,
 				(["Authorization": "Bearer " + req->misc->session->token])));
 		sscanf(info->date_range->started_at, "%d-%d-%*dT%*d:%*d:%*dZ", int year, int month);
-		array periodicdata = ({({"Current", info->data})});
+		array periodicdata = ({({"Current", info->data, ""})});
 		array(string) months = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec" / " ";
 		for (int i = 0; i < 6; ++i) {
 			//Get stats for a previous month. TODO: Make this work with any period, not just month
@@ -47,7 +47,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
 					+ sprintf("&started_at=%d-%02d-02T00:00:00Z", year, month),
 					(["Authorization": "Bearer " + req->misc->session->token])));
-			periodicdata += ({({sprintf("%s %d", months[month - 1], year), info->data})});
+			periodicdata += ({({sprintf("%s %d", months[month - 1], year), info->data, info->date_range->started_at})});
 		}
 		mapping mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id="
 				+ req->misc->session->user->id,
