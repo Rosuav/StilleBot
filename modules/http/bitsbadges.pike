@@ -27,7 +27,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	if (mapping resp = ensure_login(req, "bits:read")) return resp;
 	if ((<"year", "month", "week", "day">)[req->variables->period]) {
 		//This is a bit of a mess, but it kinda works. Would be nice to tidy it up a bit though.
-		if (mapping resp = ensure_login(req, "bits:read moderation:read channel:moderate")) return resp;
+		if (mapping resp = ensure_login(req, "bits:read moderation:read channel:moderate chat_login chat:edit")) return resp;
 		string period = req->variables->period;
 		if (string start = req->variables->vip || req->variables->unvip) {
 			sscanf(start, "%d-%d-%dT%d:%d:%dZ", int year, int month, int day, int hour, int min, int sec);
