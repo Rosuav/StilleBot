@@ -267,6 +267,7 @@ class IRCClient
 	}
 	void got_notify(string from, string type, string|void chan, string|void message, string ... extra) {
 		::got_notify(from, type, chan, message, @extra);
+		if (options->verbosedebug) write("Got notify: %O %O\n", type, message);
 		if (type == "376") call_out(send_next_message, 1); //End of MOTD - start sending messages
 	}
 	void close() {
