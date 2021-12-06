@@ -29,7 +29,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	if (mapping resp = ensure_login(req, "bits:read")) return resp;
 	if ((<"year", "month", "week", "day">)[req->variables->period]) {
 		//This is a bit of a mess, but it kinda works. Would be nice to tidy it up a bit though.
-		if (mapping resp = ensure_login(req, "bits:read moderation:read")) return resp;
+		if (mapping resp = ensure_login(req, "bits:read moderation:read channel:moderate")) return resp;
 		string period = req->variables->period;
 		if (string start = req->variables->vip || req->variables->unvip) {
 			sscanf(start, "%d-%d-%dT%d:%d:%dZ", int year, int month, int day, int hour, int min, int sec);
@@ -44,12 +44,23 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			multiset is_mod = (multiset)mods->data->user_id;
 			string cmd = req->variables->vip ? "/vip" : "/unvip";
 			array(string) cmds = ({ });
+			array(string) people = ({ });
 			foreach (info->data, mapping person) {
 				if (is_mod[person->user_id]) continue;
 				cmds += ({cmd + " " + person->user_login});
+				people += ({person->user_name});
 				if (!--limit) break;
 			}
-			write("Send these commands: %O\n", cmds);
+			if (!sizeof(cmd)) cmds = ({"No non-mods to manage VIP badges for"}); //Highly unlikely in practice :)
+			else cmds = ({(req->variables->vip ? "Adding VIP status to: " : "Removing VIP status from: ") + people * ", "})
+				+ cmds + ({req->variables->vip ? "Done adding VIPs." : "Done removing VIPs."});
+			object irc = G->G->IRCClientMessageSender("irc.chat.twitch.tv", ([
+				"nick": req->misc->session->user->login,
+				"pass": "oauth:" + req->misc->session->token,
+				"messages": cmds,
+				"sendchannel": "#" + req->misc->session->user->login,
+				"delay": 0.5,
+			]));
 			return "OK";
 		}
 		if (mixed vars = cache[req->misc->session->user->id]) //Hack
