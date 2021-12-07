@@ -6,6 +6,7 @@ statistical purposes, but will be skipped for VIP badges. Sorry, ghosts.
 
 $$save_or_login$$
 ";
+//TODO: Have a way to enable and disable channel->config->tracksubgifts
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
