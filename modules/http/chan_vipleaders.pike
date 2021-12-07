@@ -30,12 +30,13 @@ mapping ignore_indiv_timeout = ([]);
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type != "subgift" && type != "subbomb") return 0; 
 	if (!channel->config->tracksubgifts) return 0;
+
+	int months = (int)extra->msg_param_gift_months;
+	if (months) qty *= months; //Currently, you can't subbomb multimonths.
+
 	//Note: Sub bombs get announced first, followed by their individual gifts.
 	//We could ignore the bombs and just count the individuals, but I'd rather
 	//record the bomb and skip the individuals.
-	mapping stats = persist_status->path("subgiftstats", channel->name[1..]);
-	int months = (int)extra->msg_param_gift_months;
-	if (months) qty *= months; //Currently, you can't subbomb multimonths.
 	if (type == "subbomb") {
 		ignore_individuals[extra->user_id] += qty;
 		ignore_indiv_timeout[extra->user_id] = time() + 600; //After ten minutes, if we haven't reset it, we must have missed them.
@@ -44,6 +45,8 @@ int subscription(object channel, string type, mapping person, string tier, int q
 		ignore_individuals[extra->user_id] -= qty;
 		return 0;
 	}
+
+	mapping stats = persist_status->path("subgiftstats", channel->name[1..]);
 	stats->all += ({([
 		"giver": ([
 			"user_id": extra->user_id,
@@ -54,8 +57,7 @@ int subscription(object channel, string type, mapping person, string tier, int q
 		"tier": tier, "qty": qty,
 		"timestamp": time(),
 	])});
-	write("Updated subgift stats for %O: %O\n", channel->name, stats->all);
-	write("Extra params: %O\n", extra);
+	//Assume that monthly is the type wanted. TODO: Make it configurable.
 	persist_status->save();
 }
 
