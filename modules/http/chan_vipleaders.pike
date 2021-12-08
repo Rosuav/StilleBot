@@ -21,7 +21,7 @@ constant loggedin = #"
 ";
 //TODO: Have a way to enable and disable channel->config->tracksubgifts
 
-mapping tierval = (["2": 2, "3": 6]);
+mapping tierval = (["2": 2, "3": 6]); //TODO: Should this be configurable? Some people might prefer a T3 to be worth 5.
 
 void force_recalc(string chan) {
 	mapping stats = persist_status->path("subgiftstats", chan);
