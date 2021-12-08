@@ -43,7 +43,9 @@ function reformat_date(yearmonth) {
 
 function remap_to_array(stats) {
 	const people = Object.entries(stats).map(e => ({id: e[0], ...(id_to_info[e[0]]||{}), qty: e[1]}));
-	people.sort((a,b) => b.qty - a.qty); //Reverse sort
+	//FIXME: Would be better to use "oldest timestamp this month" but I don't
+	//really have that available.
+	people.sort((a,b) => b.qty - a.qty || a.login.localeCompare(b.login));
 	if (people.length > 25) people.length = 25;
 	return people;
 }
