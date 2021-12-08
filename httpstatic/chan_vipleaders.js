@@ -57,3 +57,5 @@ export function render(data) {
 		OL(remap_to_array(e[1]).map(p => LI([p.displayname, " with ", p.qty]))),
 	]));
 }
+
+on("click", "#recalc", e => ws_sync.send({cmd: "recalculate"}));

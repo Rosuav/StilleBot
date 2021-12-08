@@ -16,6 +16,9 @@ month.
 
 $$save_or_login$$
 ";
+constant loggedin = #"
+[Force recalculation](: #recalc)
+";
 //TODO: Have a way to enable and disable channel->config->tracksubgifts
 
 mapping tierval = (["2": 2, "3": 6]);
@@ -37,10 +40,9 @@ void force_recalc(string chan) {
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	call_out(force_recalc, 0, req->misc->channel->name[1..]); //TODO: Do this only if needed, or maybe if explicitly requested
 	return render(req, ([
 		"vars": (["ws_group": "control" * req->misc->is_mod]),
-		"save_or_login": "(Coming soon: buttons that do stuff)",
+		"save_or_login": loggedin,
 	]) | req->misc->chaninfo);
 }
 
@@ -49,6 +51,12 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping stats = persist_status->path("subgiftstats", channel->name[1..]);
 	if (!stats->all) return ([]);
 	return stats;
+}
+
+void websocket_cmd_recalculate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (grp != "control") return 0;
+	force_recalc(channel->name[1..]);
 }
 
 mapping ignore_individuals = ([]);
