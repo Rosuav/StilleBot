@@ -8,6 +8,8 @@ NOTE: Subgifting stats are currently based on UTC month rollover, but
 cheering stats come directly from the Twitch API and are based on Los Angeles
 time instead. This creates a 7-8 hour discrepancy in the rollover times.
 
+<div id=monthly></div>
+
 $$save_or_login$$
 ";
 //TODO: Have a way to enable and disable channel->config->tracksubgifts
@@ -34,7 +36,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	call_out(force_recalc, 0, req->misc->channel->name[1..]); //TODO: Do this only if needed, or maybe if explicitly requested
 	return render(req, ([
 		"vars": (["ws_group": "control" * req->misc->is_mod]),
-		"save_or_login": "(logged in)",
+		"save_or_login": "(Coming soon: buttons that do stuff)",
 	]) | req->misc->chaninfo);
 }
 
