@@ -24,7 +24,8 @@ word per se.
 //Keyword checks to see if someone's trying to sell us followers. Will be
 //added to as necessary, and all users of this blacklist will automatically
 //start noticing the new ones.
-constant buyfollows = ({"addviewers.com", "bigfollows . com", "bigfollows .com", "bigfollows*com", "bigfollow s . com", "vk.cc/c7aT0b", "bigfollows-com", "u.to/jazMGw"});
+constant buyfollows = ({"addviewers.com", "bigfollows . com", "bigfollows .com", "bigfollows*com", "bigfollow s . com",
+	"vk.cc/c7aT0b", "bigfollows-com", "u.to/jazMGw", "clck.ru/ZEWvg"});
 
 string process(object channel, object person, string param)
 {
