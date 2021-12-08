@@ -23,9 +23,9 @@ constant loggedin = #"
 
 mapping tierval = (["2": 2, "3": 6]); //TODO: Should this be configurable? Some people might prefer a T3 to be worth 5.
 
-void force_recalc(string chan) {
+continue Concurrent.Future force_recalc(string chan) {
 	mapping stats = persist_status->path("subgiftstats", chan);
-	if (!stats->all) return;
+	if (!stats->all) return 0;
 	stats->monthly = ([]);
 	foreach (stats->all, mapping sub) {
 		object cal = Calendar.ISO.Day("unix", sub->timestamp);
@@ -33,6 +33,9 @@ void force_recalc(string chan) {
 		if (!stats->monthly[month]) stats->monthly[month] = ([]);
 		stats->monthly[month][sub->giver->user_id] += sub->qty * (tierval[sub->tier] || 1);
 	}
+	int chanid = yield(get_user_id(chan));
+	stats->mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=" + chanid,
+		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
 	persist_status->save();
 	send_updates_all("#" + chan);
 	send_updates_all("control#" + chan);
@@ -61,7 +64,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 void websocket_cmd_recalculate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
-	force_recalc(channel->name[1..]);
+	spawn_task(force_recalc(channel->name[1..]));
 }
 
 mapping ignore_individuals = ([]);
