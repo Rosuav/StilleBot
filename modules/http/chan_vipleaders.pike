@@ -14,7 +14,7 @@ month.
 
 <div id=monthly></div>
 
-$$save_or_login$$
+$$buttons$$
 ";
 constant loggedin = #"
 [Force recalculation](: #recalc)
@@ -40,9 +40,14 @@ void force_recalc(string chan) {
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
+	string buttons = loggedin;
+	if (string scopes = ensure_bcaster_token(req, "bits:read moderation:read channel:moderate chat_login chat:edit"))
+		buttons = sprintf("[Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
+	else if (!req->misc->is_mod)
+		buttons = "*You're logged in, but not a recognized mod. View-only access granted.*";
 	return render(req, ([
 		"vars": (["ws_group": "control" * req->misc->is_mod]),
-		"save_or_login": loggedin,
+		"buttons": buttons,
 	]) | req->misc->chaninfo);
 }
 
