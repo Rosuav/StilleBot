@@ -2,6 +2,7 @@ import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed
 const {BUTTON, DIV, LI, OL} = choc; //autoimport
 import {waitlate} from "$$static||utils.js$$";
 
+/*
 const is_mod = { };
 mods.forEach(m => is_mod[m.user_id] = 1);
 
@@ -30,3 +31,4 @@ on("click", ".remvip", waitlate(750, 5000, "Remove VIPs from this period?", e =>
 	console.log("Removing!");
 	fetch("/bitsbadges?period=" + period + "&unvip=" + e.match.closest("DIV").dataset.starttime);
 }));
+*/

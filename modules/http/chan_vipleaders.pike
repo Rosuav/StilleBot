@@ -4,12 +4,34 @@ constant markdown = #"# Leaderboards and VIPs
 NOTE: AnAnonymousGifter may show up in the subgifting leaderboard for
 statistical purposes, but will be skipped for VIP badges. Sorry, ghosts.
 
+NOTE: Subgifting stats are currently based on UTC month rollover, but
+cheering stats come directly from the Twitch API and are based on Los Angeles
+time instead. This creates a 7-8 hour discrepancy in the rollover times.
+
 $$save_or_login$$
 ";
 //TODO: Have a way to enable and disable channel->config->tracksubgifts
 
+mapping tierval = (["2": 2, "3": 6]);
+
+void force_recalc(string chan) {
+	mapping stats = persist_status->path("subgiftstats", chan);
+	if (!stats->all) return;
+	stats->monthly = ([]);
+	foreach (stats->all, mapping sub) {
+		object cal = Calendar.ISO.Day("unix", sub->timestamp);
+		string month = sprintf("%04d%02d", cal->year_no(), cal->month_no());
+		if (!stats->monthly[month]) stats->monthly[month] = ([]);
+		stats->monthly[month][sub->giver->user_id] += sub->qty * (tierval[sub->tier] || 1);
+	}
+	persist_status->save();
+	send_updates_all("#" + chan);
+	send_updates_all("control#" + chan);
+}
+
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
+	call_out(force_recalc, 0, req->misc->channel->name[1..]); //TODO: Do this only if needed, or maybe if explicitly requested
 	return render(req, ([
 		"vars": (["ws_group": "control" * req->misc->is_mod]),
 		"save_or_login": "(logged in)",
@@ -18,7 +40,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
-	return ([]);
+	mapping stats = persist_status->path("subgiftstats", channel->name[1..]);
+	if (!stats->all) return ([]);
+	return stats;
 }
 
 mapping ignore_individuals = ([]);
@@ -58,7 +82,14 @@ int subscription(object channel, string type, mapping person, string tier, int q
 		"timestamp": time(),
 	])});
 	//Assume that monthly is the type wanted. TODO: Make it configurable.
+	if (!stats->monthly) stats->monthly = ([]);
+	object cal = Calendar.ISO.Day("unix", stats->all[-1]->timestamp);
+	string month = sprintf("%04d%02d", cal->year_no(), cal->month_no()); //eg 202112
+	if (!stats->monthly[month]) stats->monthly[month] = ([]);
+	stats->monthly[month][extra->user_id] += qty * (tierval[tier] || 1);
 	persist_status->save();
+	send_updates_all(channel->name);
+	send_updates_all("control" + channel->name);
 }
 
 protected void create(string name)
