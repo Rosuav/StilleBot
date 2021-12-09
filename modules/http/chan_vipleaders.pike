@@ -143,7 +143,7 @@ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 	}
 	if (!sizeof(people)) cmds = ({"No non-mods have cheered bits in that month."});
 	else cmds = ({(add ? "Adding VIP status to cheerers: " : "Removing VIP status from cheerers: ") + people * ", "})
-		+ cmds + ({add ? "Done adding VIPs to cheerers." : "Done removing VIPs from cheerers."});
+		+ cmds;
 	//2) Get the top ten subbers
 	limit = 10; people = ({ });
 	foreach (subs, mapping person) {
@@ -158,8 +158,9 @@ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 	if (sizeof(people)) {
 		//If nobody's subbed, don't even say anything.
 		cmds = ({(add ? "Adding VIP status to subgifters: " : "Removing VIP status from subgifters: ") + people * ", "})
-			+ cmds + ({add ? "Done adding VIPs to subgifters." : "Done removing VIPs from subgifters."});
+			+ cmds;
 	}
+	cmds += ({add ? "Done adding VIPs." : "Done removing VIPs."});
 	object irc = G->G->IRCClientMessageSender("irc.chat.twitch.tv", ([
 		"nick": chan,
 		"pass": "oauth:" + persist_status->path("bcaster_token")[chan],
