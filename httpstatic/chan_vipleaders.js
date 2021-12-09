@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {DIV, LI, OL, SPAN, TABLE, TD, TH, TR} = choc; //autoimport
+const {BUTTON, DIV, LI, OL, SPAN, TABLE, TD, TH, TR} = choc; //autoimport
 import {waitlate} from "$$static||utils.js$$";
 
 //TODO: Exclude anyone who's been banned, just in case
@@ -28,6 +28,7 @@ const monthnames = ["???", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug
 export function render(data) {
 	if (data.all) data.all.forEach(s => id_to_info[s.giver.user_id] = s.giver);
 	if (data.mods) mods = data.mods;
+	const mod = ws_group.startsWith("control#"); //Hide the buttons if the server would reject the signals anyway
 	if (data.monthly) {
 		const rows = [];
 		const now = new Date();
@@ -37,7 +38,12 @@ export function render(data) {
 			const subs = remap_to_array(data.monthly["subs" + ym]);
 			const bits = data.monthly["bits" + ym];
 			if (bits && bits.length > 15) bits.length = 15; //We display fifteen, but the back end tracks ten more
-			rows.push(TR(TH({colSpan: 2}, monthnames[mon] + " " + year)));
+			//IDs are set so you can, in theory, deep link. I doubt anyone will though.
+			rows.push(TR({"id": ym}, TH({colSpan: 2}, [
+				monthnames[mon] + " " + year,
+				mod && BUTTON({className: "addvip", title: "Add VIPs"}, "💎"),
+				mod && BUTTON({className: "remvip", title: "Remove VIPs"}, "X"),
+			])));
 			rows.push(TR([
 				TD(make_list(subs, " subs", "(no subgifting data)")),
 				TD(make_list(bits, " bits", "(no cheering data)")),
@@ -49,3 +55,11 @@ export function render(data) {
 }
 
 on("click", "#recalc", e => ws_sync.send({cmd: "recalculate"}));
+
+on("click", ".addvip", waitlate(750, 5000, "Add VIPs for this period?", e =>
+	ws_sync.send({cmd: "addvip", "yearmonth": e.match.closest("TR").id})
+));
+
+on("click", ".remvip", waitlate(750, 5000, "Remove VIPs for this period?", e =>
+	ws_sync.send({cmd: "remvip", "yearmonth": e.match.closest("TR").id})
+));

@@ -15,6 +15,12 @@ Ties are currently broken by favouring the first to subgift in the given month.
 $$buttons$$
 
 <style>
+.addvip,.remvip {
+	margin-left: 0.5em;
+	min-width: 2.4em; height: 1.7em;
+}
+.addvip {color: blue;}
+.remvip {color: red;}
 .is_mod {
 	opacity: 0.5;
 	background: #a0f0c0;
@@ -90,6 +96,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		buttons = sprintf("[Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
 	else if (!req->misc->is_mod)
 		buttons = "*You're logged in, but not a recognized mod. View-only access granted.*";
+	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render(req, ([
 		"vars": (["ws_group": "control" * req->misc->is_mod]),
 		"buttons": buttons,
@@ -107,6 +114,19 @@ void websocket_cmd_recalculate(mapping(string:mixed) conn, mapping(string:mixed)
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	spawn_task(force_recalc(channel->name[1..]));
+}
+
+void websocket_cmd_addvip(mapping(string:mixed) conn, mapping(string:mixed) msg) {addremvip(conn, msg, 1);}
+void websocket_cmd_remvip(mapping(string:mixed) conn, mapping(string:mixed) msg) {addremvip(conn, msg, 0);}
+void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (grp != "control") return;
+	//If you're a mod, but not the broadcaster, do a dry run - put commands in chat
+	//that say what would happen, but not /vip commands.
+	string cmd = add ? "Add VIP to" : "Remove VIP from";
+	if (conn->session->user->login == channel->name[1..])
+		cmd = add ? "/vip" : "/unvip";
+	write("%O == %O => %O\n", conn->session->user->login, channel->name[1..], cmd);
 }
 
 mapping ignore_individuals = ([]);
