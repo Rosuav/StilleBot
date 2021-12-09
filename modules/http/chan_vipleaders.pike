@@ -121,12 +121,52 @@ void websocket_cmd_remvip(mapping(string:mixed) conn, mapping(string:mixed) msg)
 void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return;
+	string chan = channel->name[1..];
 	//If you're a mod, but not the broadcaster, do a dry run - put commands in chat
 	//that say what would happen, but not /vip commands.
 	string cmd = add ? "Add VIP to" : "Remove VIP from";
-	if (conn->session->user->login == channel->name[1..])
+	if (conn->session->user->login == chan)
 		cmd = add ? "/vip" : "/unvip";
-	write("%O == %O => %O\n", conn->session->user->login, channel->name[1..], cmd);
+	mapping stats = persist_status->path("subgiftstats", chan);
+	array bits = stats->monthly["bits" + msg->yearmonth] || ({ });
+	array subs = values(stats->monthly["subs" + msg->yearmonth] || ([]));
+	sort(subs->firstsub, subs); sort(-subs->score[*], subs);
+	//1) Get the top ten cheerers
+	int limit = 10;
+	array(string) cmds = ({ });
+	array(string) people = ({ });
+	foreach (bits, mapping person) {
+		if (stats->mods[person->user_id]) continue;
+		cmds += ({cmd + " " + person->user_login});
+		people += ({person->user_name});
+		if (!--limit) break;
+	}
+	if (!sizeof(people)) cmds = ({"No non-mods have cheered bits in that month."});
+	else cmds = ({(add ? "Adding VIP status to cheerers: " : "Removing VIP status from cheerers: ") + people * ", "})
+		+ cmds + ({add ? "Done adding VIPs to cheerers." : "Done removing VIPs from cheerers."});
+	//2) Get the top ten subbers
+	limit = 10; people = ({ });
+	foreach (subs, mapping person) {
+		if (stats->mods[person->user_id]) continue;
+		if (!has_value(cmds, cmd + " " + person->user_login)) {
+			//If that person has already received a VIP badge for cheering, don't re-add.
+			cmds += ({cmd + " " + person->user_login});
+			people += ({person->user_name});
+		}
+		if (!--limit) break;
+	}
+	if (sizeof(people)) {
+		//If nobody's subbed, don't even say anything.
+		cmds = ({(add ? "Adding VIP status to subgifters: " : "Removing VIP status from subgifters: ") + people * ", "})
+			+ cmds + ({add ? "Done adding VIPs to subgifters." : "Done removing VIPs from subgifters."});
+	}
+	object irc = G->G->IRCClientMessageSender("irc.chat.twitch.tv", ([
+		"nick": chan,
+		"pass": "oauth:" + persist_status->path("bcaster_token")[chan],
+		"messages": cmds,
+		"sendchannel": "#" + chan,
+		"delay": 0.5,
+	]));
 }
 
 mapping ignore_individuals = ([]);
