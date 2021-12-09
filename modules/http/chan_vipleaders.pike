@@ -30,7 +30,7 @@ $$buttons$$
 constant loggedin = #"
 [Force recalculation](: #recalc)
 ";
-//TODO: Have a way to enable and disable channel->config->tracksubgifts
+//TODO: Have a way to enable and disable channel->config->tracksubgifts (maybe set it to the period eg "monthly"?)
 
 mapping tierval = (["2": 2, "3": 6]); //TODO: Should this be configurable? Some people might prefer a T3 to be worth 5.
 
@@ -40,14 +40,33 @@ continue Concurrent.Future force_recalc(string chan) {
 	stats->monthly = ([]);
 	foreach (stats->all, mapping sub) {
 		object cal = Calendar.ISO.Day("unix", sub->timestamp);
-		string month = sprintf("%04d%02d", cal->year_no(), cal->month_no());
+		string month = sprintf("subs%04d%02d", cal->year_no(), cal->month_no());
 		if (!stats->monthly[month]) stats->monthly[month] = ([]);
 		stats->monthly[month][sub->giver->user_id] += sub->qty * (tierval[sub->tier] || 1);
 	}
+
 	int chanid = yield(get_user_id(chan));
 	array mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=" + chanid,
 		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])))->data;
 	stats->mods = mkmapping(mods->user_id, mods->user_name);
+
+	//Collect bit stats for that time period. NOTE: Periods other than "monthly" are basically broken. FIXME.
+	string period = "month";
+	mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period,
+			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
+	string was_uncertain = stats["latest_bits_" + period];
+	sscanf(info->date_range->started_at, "%d-%d-%*dT%*d:%*d:%*dZ", int year, int month);
+	stats[period + "ly"][stats["latest_bits_" + period] = sprintf("bits%04d%02d", year, month)] = info->data;
+	for (int i = 0; i < 6; ++i) {
+		if (!--month) {--year; month = 12;}
+		string key = sprintf("bits%04d%02d", year, month);
+		if (key != was_uncertain && stats[period + "ly"][key]) break; //We have dependable stats, they shouldn't change now.
+		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
+				+ sprintf("&started_at=%d-%02d-02T00:00:00Z", year, month),
+				(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
+		stats[period + "ly"][key] = info->data;
+	}
+
 	persist_status->save();
 	send_updates_all("#" + chan);
 	send_updates_all("control#" + chan);

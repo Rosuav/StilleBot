@@ -36,10 +36,11 @@ on("click", ".remvip", waitlate(750, 5000, "Remove VIPs from this period?", e =>
 const id_to_info = { };
 let mods = { };
 
-//Take a date in digital format ("202112") and return a human-readable form
+//Take a date in digital format ("subs202112") and return a human-readable form
 function reformat_date(yearmonth) {
+	const pfx = yearmonth.slice(0, 4); yearmonth = yearmonth.slice(4);
 	const months = ["???", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-	return months[+yearmonth.slice(4)] + " " + yearmonth.slice(0, 4);
+	return pfx + " " + months[+yearmonth.slice(4)] + " " + yearmonth.slice(0, 4);
 }
 
 function remap_to_array(stats) {
@@ -56,9 +57,9 @@ export function render(data) {
 	if (data.mods) mods = data.mods;
 	if (data.monthly) set_content("#monthly", Object.entries(data.monthly).map(e => [
 		reformat_date(e[0]),
-		OL(remap_to_array(e[1]).map(p => LI({
+		e[0].startsWith("subs") ? OL(remap_to_array(e[1]).map(p => LI({
 			className: p.id === "274598607" ? "anonymous" : mods[p.id] ? "is_mod" : "",
-		}, [p.displayname, " with ", p.qty]))),
+		}, [p.displayname, " with ", p.qty]))) : DIV("(coming soon)"),
 	]));
 }
 
