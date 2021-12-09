@@ -34,6 +34,7 @@ on("click", ".remvip", waitlate(750, 5000, "Remove VIPs from this period?", e =>
 */
 
 const id_to_info = { };
+let mods = { };
 
 //Take a date in digital format ("202112") and return a human-readable form
 function reformat_date(yearmonth) {
@@ -52,9 +53,12 @@ function remap_to_array(stats) {
 
 export function render(data) {
 	if (data.all) data.all.forEach(s => id_to_info[s.giver.user_id] = s.giver);
+	if (data.mods) mods = data.mods;
 	if (data.monthly) set_content("#monthly", Object.entries(data.monthly).map(e => [
 		reformat_date(e[0]),
-		OL(remap_to_array(e[1]).map(p => LI([p.displayname, " with ", p.qty]))),
+		OL(remap_to_array(e[1]).map(p => LI({
+			className: p.id === "274598607" ? "anonymous" : mods[p.id] ? "is_mod" : "",
+		}, [p.displayname, " with ", p.qty]))),
 	]));
 }
 

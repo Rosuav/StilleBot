@@ -15,6 +15,17 @@ month.
 <div id=monthly></div>
 
 $$buttons$$
+
+<style>
+.is_mod {
+	opacity: 0.5;
+	background: #a0f0c0;
+}
+.anonymous {
+	opacity: 0.5;
+	background: #c0c0c0;
+}
+</style>
 ";
 constant loggedin = #"
 [Force recalculation](: #recalc)
@@ -34,8 +45,9 @@ continue Concurrent.Future force_recalc(string chan) {
 		stats->monthly[month][sub->giver->user_id] += sub->qty * (tierval[sub->tier] || 1);
 	}
 	int chanid = yield(get_user_id(chan));
-	stats->mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=" + chanid,
-		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
+	array mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=" + chanid,
+		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])))->data;
+	stats->mods = mkmapping(mods->user_id, mods->user_name);
 	persist_status->save();
 	send_updates_all("#" + chan);
 	send_updates_all("control#" + chan);
