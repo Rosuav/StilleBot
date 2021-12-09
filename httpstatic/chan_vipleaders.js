@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {DIV, LI, OL, TABLE, TD, TH, TR} = choc; //autoimport
+const {DIV, LI, OL, SPAN, TABLE, TD, TH, TR} = choc; //autoimport
 import {waitlate} from "$$static||utils.js$$";
 
 /* TODO: Get this info from the server without massively spamming it, and without being late with updates
@@ -49,8 +49,8 @@ function remap_to_array(stats) {
 function make_list(arr, desc, empty) {
 	if (!arr || !arr.length) return DIV(empty);
 	return OL(arr.map(p => LI(
-		{className: p.id === "274598607" ? "anonymous" : mods[p.id] ? "is_mod" : ""},
-		[p.displayname || p.user_name, " with ", desc(p)]
+		{className: p.id === "274598607" ? "anonymous" : mods[p.user_id || p.id] ? "is_mod" : ""},
+		[SPAN({className: "username"}, p.displayname || p.user_name), " with ", desc(p)]
 	)));
 }
 

@@ -25,6 +25,10 @@ $$buttons$$
 	opacity: 0.5;
 	background: #c0c0c0;
 }
+.username {
+	font-weight: bold;
+}
+#monthly td {vertical-align: top;}
 </style>
 ";
 constant loggedin = #"
