@@ -284,7 +284,7 @@ Concurrent.Future connect(string chan) {
 	if (object irc = G->G->ghostwriterirc[chan]) {
 		//TODO: Make sure it's actually still connected
 		//write("Already connected to %O\n", chan);
-		//**/if (1) catch {irc->close();}; else
+		/**/if (1) catch {irc->close();}; else
 		return Concurrent.resolve(irc);
 	}
 	Concurrent.Promise prom = Concurrent.Promise();
