@@ -9,10 +9,9 @@ let mods = { };
 
 function remap_to_array(stats) {
 	if (!stats) return stats;
-	const people = Object.entries(stats).map(e => ({id: e[0], ...(id_to_info[e[0]]||{}), qty: e[1]}));
-	//FIXME: Would be better to use "oldest timestamp this month" but I don't
-	//really have that available.
-	people.sort((a,b) => b.qty - a.qty || a.login.localeCompare(b.login));
+	const people = Object.values(stats);
+	//Sort by score descending, but break ties with earliest subgift for the month
+	people.sort((a,b) => (b.score - a.score) || (a.firstsub - b.firstsub));
 	if (people.length > 15) people.length = 15;
 	return people;
 }
@@ -20,8 +19,8 @@ function remap_to_array(stats) {
 function make_list(arr, desc, empty) {
 	if (!arr || !arr.length) return DIV(empty);
 	return OL(arr.map(p => LI(
-		{className: p.id === "274598607" ? "anonymous" : mods[p.user_id || p.id] ? "is_mod" : ""},
-		[SPAN({className: "username"}, p.displayname || p.user_name), " with ", desc(p)]
+		{className: p.user_id === "274598607" ? "anonymous" : mods[p.user_id] ? "is_mod" : ""},
+		[SPAN({className: "username"}, p.user_name), " with ", p.score, desc]
 	)));
 }
 
@@ -40,8 +39,8 @@ export function render(data) {
 			if (bits && bits.length > 15) bits.length = 15; //We display fifteen, but the back end tracks ten more
 			rows.push(TR(TH({colSpan: 2}, monthnames[mon] + " " + year)));
 			rows.push(TR([
-				TD(make_list(subs, p => p.qty + " subs", "(no subgifting data)")),
-				TD(make_list(bits, p => p.score + " bits", "(no cheering data)")),
+				TD(make_list(subs, " subs", "(no subgifting data)")),
+				TD(make_list(bits, " bits", "(no cheering data)")),
 			]));
 			if (!--mon) {--year; mon = 12;}
 		}

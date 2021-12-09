@@ -8,9 +8,7 @@ NOTE: Subgifting stats are currently based on UTC month rollover, but
 cheering stats come directly from the Twitch API and are based on Los Angeles
 time instead. This creates a 7-8 hour discrepancy in the rollover times.
 
-FIXME: Ties are currently broken by people's usernames for stability. Would
-prefer to break them by preferring the one who first subbed earlier in the
-month.
+Ties are currently broken by favouring the first to subgift in the given month.
 
 <div id=monthly></div>
 
@@ -38,16 +36,25 @@ constant loggedin = #"
 
 mapping tierval = (["2": 2, "3": 6]); //TODO: Should this be configurable? Some people might prefer a T3 to be worth 5.
 
+void add_score(mapping monthly, mapping sub) {
+	object cal = Calendar.ISO.Day("unix", sub->timestamp);
+	string month = sprintf("subs%04d%02d", cal->year_no(), cal->month_no()); //To generate weekly or yearly stats, this is the main part to change
+	if (!monthly[month]) monthly[month] = ([]);
+	mapping user = monthly[month][sub->giver->user_id];
+	if (!user) monthly[month][sub->giver->user_id] = user = ([
+		"firstsub": sub->timestamp, //Tiebreaker - earliest sub takes the spot
+		"user_id": sub->giver->user_id,
+		"user_login": sub->giver->login,
+		"user_name": sub->giver->displayname,
+	]);
+	user->score += sub->qty * (tierval[sub->tier] || 1);
+}
+
 continue Concurrent.Future force_recalc(string chan) {
 	mapping stats = persist_status->path("subgiftstats", chan);
 	if (!stats->all) return 0;
 	stats->monthly = ([]);
-	foreach (stats->all, mapping sub) {
-		object cal = Calendar.ISO.Day("unix", sub->timestamp);
-		string month = sprintf("subs%04d%02d", cal->year_no(), cal->month_no());
-		if (!stats->monthly[month]) stats->monthly[month] = ([]);
-		stats->monthly[month][sub->giver->user_id] += sub->qty * (tierval[sub->tier] || 1);
-	}
+	foreach (stats->all, mapping sub) add_score(stats->monthly, sub);
 
 	int chanid = yield(get_user_id(chan));
 	array mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=" + chanid,
@@ -140,10 +147,7 @@ int subscription(object channel, string type, mapping person, string tier, int q
 	])});
 	//Assume that monthly is the type wanted. TODO: Make it configurable.
 	if (!stats->monthly) stats->monthly = ([]);
-	object cal = Calendar.ISO.Day("unix", stats->all[-1]->timestamp);
-	string month = sprintf("%04d%02d", cal->year_no(), cal->month_no()); //eg 202112
-	if (!stats->monthly[month]) stats->monthly[month] = ([]);
-	stats->monthly[month][extra->user_id] += qty * (tierval[tier] || 1);
+	add_score(stats->monthly, stats->all[-1]);
 	persist_status->save();
 	send_updates_all(channel->name);
 	send_updates_all("control" + channel->name);
