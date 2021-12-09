@@ -8,7 +8,7 @@ NOTE: Subgifting stats are currently based on UTC month rollover, but
 cheering stats come directly from the Twitch API and are based on Los Angeles
 time instead. This creates a 7-8 hour discrepancy in the rollover times.
 
-Ties are currently broken by favouring the first to subgift in the given month.
+Ties are broken by favouring whoever was first to subgift in the given month.
 
 <div id=monthly></div>
 
