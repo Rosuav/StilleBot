@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {BUTTON, DIV, LI, OL} = choc; //autoimport
+const {DIV, LI, OL, TABLE, TD, TR} = choc; //autoimport
 import {waitlate} from "$$static||utils.js$$";
 
 /* TODO: Get this info from the server without massively spamming it, and without being late with updates
@@ -36,31 +36,48 @@ on("click", ".remvip", waitlate(750, 5000, "Remove VIPs from this period?", e =>
 const id_to_info = { };
 let mods = { };
 
-//Take a date in digital format ("subs202112") and return a human-readable form
-function reformat_date(yearmonth) {
-	const pfx = yearmonth.slice(0, 4); yearmonth = yearmonth.slice(4);
-	const months = ["???", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-	return pfx + " " + months[+yearmonth.slice(4)] + " " + yearmonth.slice(0, 4);
-}
-
 function remap_to_array(stats) {
 	const people = Object.entries(stats).map(e => ({id: e[0], ...(id_to_info[e[0]]||{}), qty: e[1]}));
 	//FIXME: Would be better to use "oldest timestamp this month" but I don't
 	//really have that available.
 	people.sort((a,b) => b.qty - a.qty || a.login.localeCompare(b.login));
-	if (people.length > 25) people.length = 25;
+	if (people.length > 15) people.length = 15;
 	return people;
 }
 
+const monthnames = ["???", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 export function render(data) {
 	if (data.all) data.all.forEach(s => id_to_info[s.giver.user_id] = s.giver);
 	if (data.mods) mods = data.mods;
-	if (data.monthly) set_content("#monthly", Object.entries(data.monthly).map(e => [
-		reformat_date(e[0]),
-		e[0].startsWith("subs") ? OL(remap_to_array(e[1]).map(p => LI({
-			className: p.id === "274598607" ? "anonymous" : mods[p.id] ? "is_mod" : "",
-		}, [p.displayname, " with ", p.qty]))) : DIV("(coming soon)"),
-	]));
+	if (data.monthly) {
+		const rows = [];
+		const now = new Date();
+		let year = now.getFullYear(), mon = now.getMonth() + 1;
+		for (let i = 0; i < 7; ++i) {
+			const ym = year * 100 + mon;
+			const subs = data.monthly["subs" + ym];
+			const bits = data.monthly["bits" + ym];
+			if (bits && bits.length > 15) bits.length = 15; //We display fifteen, but the back end tracks ten more
+			rows.push(TR(TD({colSpan: 2}, monthnames[mon] + " " + year)));
+			rows.push(TR([
+				TD([
+					"Subs",
+					!subs ? DIV("(no subgifting data)") : OL(remap_to_array(subs).map(p => LI({
+						className: p.id === "274598607" ? "anonymous" : mods[p.id] ? "is_mod" : "",
+					}, [p.displayname, " with ", p.qty])))
+				]),
+				TD([
+					"Bits",
+					!bits ? DIV("(no cheering data)") : OL(bits.map(person => LI(
+						{className: mods[person.user_id] ? "is_mod" : ""},
+						person.user_name
+					))),
+				]),
+			]));
+			if (!--mon) {--year; mon = 12;}
+		}
+		set_content("#monthly", TABLE({border: 1}, rows));
+	}
 }
 
 on("click", "#recalc", e => ws_sync.send({cmd: "recalculate"}));
