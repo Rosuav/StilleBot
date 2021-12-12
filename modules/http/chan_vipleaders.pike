@@ -56,16 +56,20 @@ void add_score(mapping monthly, mapping sub) {
 	user->score += sub->qty * (tierval[sub->tier] || 1);
 }
 
-continue Concurrent.Future force_recalc(string chan) {
+continue Concurrent.Future force_recalc(string chan, int|void fast) {
 	mapping stats = persist_status->path("subgiftstats", chan);
 	if (!stats->all) return 0;
-	stats->monthly = ([]);
-	foreach (stats->all, mapping sub) add_score(stats->monthly, sub);
+	if (!fast || !stats->monthly) {
+		stats->monthly = ([]);
+		foreach (stats->all, mapping sub) add_score(stats->monthly, sub);
+	}
 
 	int chanid = yield(get_user_id(chan));
-	array mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=" + chanid,
-		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])))->data;
-	stats->mods = mkmapping(mods->user_id, mods->user_name);
+	if (!fast || !stats->mods) {
+		array mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=" + chanid,
+			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])))->data;
+		stats->mods = mkmapping(mods->user_id, mods->user_name);
+	}
 
 	//Collect bit stats for that time period. NOTE: Periods other than "monthly" are basically broken. FIXME.
 	string period = "month";
@@ -214,8 +218,14 @@ int subscription(object channel, string type, mapping person, string tier, int q
 	send_updates_all("control" + channel->name);
 }
 
+int cheer(object channel, mapping person, int bits, mapping extra) {
+	if (!channel->config->tracksubgifts) return 0;
+	call_out(spawn_task, 0.5, force_recalc(channel->name[1..], 1)); //Wait half a second, then do a fast update (is half a second enough?)
+}
+
 protected void create(string name)
 {
 	register_hook("subscription", subscription);
+	register_hook("cheer", cheer);
 	::create(name);
 }
