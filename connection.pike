@@ -894,8 +894,10 @@ class channel_notif
 				if (person->badges->?_mod) msg = "\u2694 " + msg;
 				msg = string_to_utf8(msg);
 				log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
-				if (params->bits && (int)params->bits)
+				if (params->bits && (int)params->bits) {
+					runhooks("cheer", 0, this, person, (int)params->bits, params);
 					trigger_special("!cheer", person, (["{bits}": params->bits]));
+				}
 				break;
 			}
 			//The delete-msg hook has person (the one who triggered it),
