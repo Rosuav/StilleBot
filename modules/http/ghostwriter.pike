@@ -60,6 +60,10 @@ mapping(int:int) channel_seen_offline = ([]); //Note: Not maintained over code r
 mapping(string:mixed) schedule_check_callouts = ([]); //Cleared and rechecked over code reload
 mapping(string:int) suppress_autohosting = ([]); //If a broadcaster manually unhosts or rehosts, don't change hosting for a bit.
 
+//Mapping from target-stream-id to the channels that autohost it
+//(Doesn't need to be saved, can be calculated on code update)
+mapping(string:multiset(string)) autohosts_this = ([]);
+
 /*
 - Check stream schedule, and automatically unhost X seconds (default: 15 mins) before a stream
   - Use the same pause duration, both sides of the scheduled time - so if you are late starting,
@@ -311,6 +315,7 @@ mapping get_state(string group) {
 		if (!config) return ([]);
 		return (["inactive": 1, "channels": config->channels || ({ })]);
 	}
+	//TODO: Include (["aht": (array)autohosts_this[group]])) except that group is a login and AHT looks up by ID
 	return (["active": 1, "channels": ({ })]) | (persist_config->path("ghostwriter")[group] || ([])) | (chanstate[group] || ([]));
 }
 
@@ -342,9 +347,6 @@ void websocket_cmd_pause(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	call_out(lambda() {spawn_task(G->G->websocket_types->ghostwriter->recalculate_status(chan));}, pausetime);
 }
 
-//Mapping from target-stream-id to the channels that autohost it
-//(Doesn't need to be saved, can be calculated on code update)
-mapping(string:multiset(string)) autohosts_this = ([]);
 EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string chanid, mapping event] = __ARGS__;
 	write("** GW: Channel %O online: %O\nThese channels care: %O\n", chanid, event, autohosts_this[chanid]);
 	mapping st = chanstate[event->broadcaster_user_login];
@@ -360,6 +362,7 @@ void has_channel(string chan, string target) {
 	if (!autohosts_this[target]) autohosts_this[target] = (<>);
 	autohosts_this[target][chan] = 1;
 	stream_online(target, (["broadcaster_user_id": (string)target]));
+	//TODO: send_updates_all(target, (["aht": (array)autohosts_this[target]])) except that target is an id and groups are currently logins
 }
 
 void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -413,7 +416,10 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	mapping config = persist_config->path("ghostwriter", conn->group);
 	if (!msg->id || !config->channels) return;
 	config->channels = filter(config->channels) {return __ARGS__[0]->id != msg->id;};
-	if (multiset aht = autohosts_this[msg->id]) aht[conn->group] = 0;
+	if (multiset aht = autohosts_this[msg->id]) {
+		aht[conn->group] = 0;
+		//TODO: send_updates_all(target, (["aht": (array)aht])) except that target is an id and groups are currently logins
+	}
 	persist_config->save();
 	send_updates_all(conn->group, (["channels": config->channels]));
 }
