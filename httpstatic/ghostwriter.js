@@ -26,7 +26,10 @@ export function render(state) {
 	if (state.status) set_content("#statusbox", state.status).className = "status" + state.statustype;
 	if (state.pausetime) DOM("#pausetime").value = state.pausetime;
 	//Allow the server to explicitly mark us as inactive (for the demo)
-	if (state.inactive) document.querySelectorAll("button,select").forEach(b => b.disabled = !b.dataset.scopes);
+	if (state.inactive) {
+		document.querySelectorAll("button,select").forEach(b => b.disabled = !b.dataset.scopes);
+		set_content("#calendar", "(Your stream schedule would show up here)");
+	}
 	if (state.schedule_last_checked) {
 		const ev = state.schedule_next_event;
 		if (ev) set_content("#calendar", [
