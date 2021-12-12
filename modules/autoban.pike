@@ -59,7 +59,7 @@ int message(object channel, mapping person, string msg)
 	foreach (buyfollows, string badword) if (has_value(msg, badword)) person->vars["{@buyfollows}"] = "1";
 	if (has_value(msg, "Want to become famous? Buy followers") && (
 		has_value(msg, " http://") || has_value(msg, " https://") ||
-		has_value(msg, " vk.cc/") || has_value(msg, " clck.ru")
+		has_value(msg, " vk.cc/") || has_value(msg, " clck.ru") //These are the URL shorteners they use
 	)) person->vars["{@buyfollows}"] = "1";
 	mapping autoban = channel->config->autoban;
 	if (!autoban) return 0;
