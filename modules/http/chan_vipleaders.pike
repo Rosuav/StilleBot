@@ -220,7 +220,7 @@ int subscription(object channel, string type, mapping person, string tier, int q
 
 int cheer(object channel, mapping person, int bits, mapping extra) {
 	if (!channel->config->tracksubgifts) return 0;
-	call_out(spawn_task, 0.5, force_recalc(channel->name[1..], 1)); //Wait half a second, then do a fast update (is half a second enough?)
+	call_out(spawn_task, 1, force_recalc(channel->name[1..], 1)); //Wait a second, then do a fast update (is that enough time?)
 }
 
 protected void create(string name)
