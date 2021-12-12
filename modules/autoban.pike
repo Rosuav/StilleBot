@@ -57,6 +57,10 @@ int message(object channel, mapping person, string msg)
 	//Detect the follower-selling bots and provide a flag that a trigger can examine.
 	person->vars["{@buyfollows}"] = "0";
 	foreach (buyfollows, string badword) if (has_value(msg, badword)) person->vars["{@buyfollows}"] = "1";
+	if (has_value(msg, "Want to become famous? Buy followers") && (
+		has_value(msg, " http://") || has_value(msg, " https://") ||
+		has_value(msg, " vk.cc/") || has_value(msg, " clck.ru")
+	)) person->vars["{@buyfollows}"] = "1";
 	mapping autoban = channel->config->autoban;
 	if (!autoban) return 0;
 	if (person->badges->_mod) return 0; //Don't time out mods. It usually won't work anyway, but don't try.
