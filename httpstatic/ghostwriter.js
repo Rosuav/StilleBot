@@ -1,6 +1,13 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, LI, IMG, BUTTON, TIME} = choc;
+const {A, BUTTON, H2, IMG, LI, TIME, UL} = choc; //autoimport
 import {waitlate} from "$$static||utils.js$$";
+
+function channel_profile(chan) {
+	return A({href: "https://twitch.tv/" + chan.login}, [
+		IMG({className: "avatar", src: chan.profile_image_url}),
+		chan.display_name,
+	]);
+}
 
 let li_cache = { };
 function display_channel(chan) {
@@ -8,10 +15,7 @@ function display_channel(chan) {
 		BUTTON({className: "reorder moveup", "data-dir": -1, title: "Increase priority"}, "\u2191"),
 		BUTTON({className: "reorder movedn", "data-dir": +1, title: "Decrease priority"}, "\u2193"),
 		BUTTON({type: "button", className: "confirmdelete"}, "🗑"),
-		A({href: "https://twitch.tv/" + chan.login}, [
-			IMG({className: "avatar", src: chan.profile_image_url}),
-			chan.display_name,
-		]),
+		channel_profile(chan),
 	]);
 }
 
@@ -42,6 +46,13 @@ export function render(state) {
 			ev.title,
 		]);
 		else set_content("#calendar", "");
+	}
+	if (state.aht) {
+		if (state.aht.length) set_content("#autohosts_this", [
+			H2("Who autohosts you?"),
+			UL(state.aht.map(chan => LI(channel_profile(chan)))),
+		]);
+		else set_content("#autohosts_this", "");
 	}
 }
 

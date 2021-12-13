@@ -25,6 +25,8 @@ Pause duration: <select disabled=true id=pausetime><option value=60>One minute</
 [Add](: type=submit disabled=true)
 </form>
 
+<div id=autohosts_this></div>
+
 <style>
 .avatar {max-width: 40px; vertical-align: middle; margin: 0 8px;}
 #channels button {min-width: 25px; height: 25px; margin: 0 5px;}
@@ -314,7 +316,7 @@ Concurrent.Future connect(string chanid, string chan) {
 	return prom->future();
 }
 
-mapping get_state(string group) {
+continue Concurrent.Future|mapping get_state(string group) {
 	if (group == "0") {
 		//If you're not logged in, show the bot's autohost list as an example.
 		//NOTE TO BOT OPERATORS: This *will* reveal your AH list to the world. Hack this out
@@ -323,7 +325,12 @@ mapping get_state(string group) {
 		if (!config) return ([]);
 		return (["inactive": 1, "channels": config->channels || ({ })]);
 	}
-	return (["active": 1, "channels": ({ }), "aht": (array)(autohosts_this[group] || ({ }))])
+	array aht = ({ });
+	if (multiset m = autohosts_this[group]) {
+		aht = yield(get_users_info((array)m)); //Will normally yield from cache
+		sort(aht->login, aht);
+	}
+	return (["active": 1, "channels": ({ }), "aht": aht])
 		| (persist_status->path("ghostwriter")[group] || ([]))
 		| (chanstate[group] || ([]));
 }
@@ -372,7 +379,7 @@ void has_channel(string chanid, string target) {
 	if (!autohosts_this[target]) autohosts_this[target] = (<>);
 	autohosts_this[target][chanid] = 1;
 	stream_online(target, (["broadcaster_user_id": (string)target]));
-	send_updates_all(target, (["aht": (array)autohosts_this[target]]));
+	send_updates_all(target); //Could save some hassle by only updating AHT, but would need to remap to channel objects
 }
 
 void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -428,7 +435,7 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	config->channels = filter(config->channels) {return __ARGS__[0]->id != msg->id;};
 	if (multiset aht = autohosts_this[msg->id]) {
 		aht[conn->group] = 0;
-		send_updates_all(msg->id, (["aht": (array)aht]));
+		send_updates_all(msg->id); //As above, could just update AHT, but not worth the duplication
 	}
 	persist_status->save();
 	send_updates_all(conn->group, (["channels": config->channels]));
