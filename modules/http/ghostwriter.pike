@@ -136,6 +136,7 @@ array(string) low_recalculate_status(mapping st) {
 }
 continue Concurrent.Future recalculate_status(string chanid) {
 	mapping st = chanstate[chanid];
+	if (!st) st = chanstate[chanid] = ([]);
 	array self_live = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + chanid))->data || ({ });
 	if (sizeof(self_live)) st->uptime = self_live[0]->started_at;
 	else m_delete(st, "uptime");
