@@ -59,6 +59,7 @@ mapping(string:mapping(string:mixed)) chanstate;
 mapping(int:int) channel_seen_offline = ([]); //Note: Not maintained over code reload
 mapping(string:mixed) schedule_check_callouts = ([]); //Cleared and rechecked over code reload
 mapping(string:int) suppress_autohosting = ([]); //If a broadcaster manually unhosts or rehosts, don't change hosting for a bit.
+string botid; //eg 49497888
 
 //Mapping from target-stream-id to the channels that autohost it
 //(Doesn't need to be saved, can be calculated on code update)
@@ -71,7 +72,6 @@ mapping(string:multiset(string)) autohosts_this = ([]);
 - TODO: Allow host overriding if a higher-priority target goes live
   - This would add an event while Hosting: "stream online (self or any higher target)"
   - Would also change the logic in recalculate_status to check even if hosting
-- FIXME: Connection group is your login, not your ID. This applies also to your configs.
 */
 
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
@@ -80,14 +80,14 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		login = sprintf("> This feature requires Twitch chat authentication.\n>\n"
 				"> [Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
 	return render(req, ([
-		"vars": (["ws_group": login ? "0" : req->misc->session->user->login]),
+		"vars": (["ws_group": login ? "0" : req->misc->session->user->id]),
 		"login": login,
 		"displayname": !login ? "- " + req->misc->session->user->display_name : "",
 	]));
 }
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (msg->group == "0" || msg->group == conn->session->user->?login) return 0;
+	if (msg->group == "0" || msg->group == conn->session->user->?id) return 0;
 	return "Not your data";
 }
 
@@ -95,28 +95,28 @@ EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string
 	//Mark the channel as just-gone-offline. That way, we won't attempt to
 	//host it while it's still shutting down.
 	channel_seen_offline[(int)chanid] = time();
-	mapping st = chanstate[event->broadcaster_user_login];
-	if (st) spawn_task(recalculate_status(event->broadcaster_user_login));
-	foreach (chanstate; string chan; mapping st) {
-		if (st->hostingid == chanid) spawn_task(recalculate_status(chan));
+	mapping st = chanstate[chanid];
+	if (st) spawn_task(recalculate_status(chanid));
+	foreach (chanstate; string id; mapping st) {
+		if (st->hostingid == chanid) spawn_task(recalculate_status(id));
 	}
 };
 
-void scheduled_recalculation(string chan) {
+void scheduled_recalculation(string chanid) {
 	if (G->G->ghostwritercallouts[""] != hash_value(this)) return; //Code's been updated. Don't do anything.
-	chanstate[chan]->next_scheduled_check = 0;
-	spawn_task(recalculate_status(chan));
+	chanstate[chanid]->next_scheduled_check = 0;
+	spawn_task(recalculate_status(chanid));
 }
-void schedule_recalculation(string chan, array(int) targets) {
+void schedule_recalculation(string chanid, array(int) targets) {
 	int now = time();
 	int target = min(@filter(targets, `>, now));
 	int until = target - now;
 	if (until < 0) return; //Including if there are no valid targets (target == 0)
-	mapping st = chanstate[chan];
+	mapping st = chanstate[chanid];
 	if (st->next_scheduled_check == target) return; //Already scheduled at the same time.
-	if (mixed c = schedule_check_callouts[chan]) remove_call_out(c);
+	if (mixed c = schedule_check_callouts[chanid]) remove_call_out(c);
 	st->next_scheduled_check = target;
-	schedule_check_callouts[chan] = call_out(scheduled_recalculation, until, chan);
+	schedule_check_callouts[chanid] = call_out(scheduled_recalculation, until, chanid);
 }
 
 array(string) low_recalculate_status(mapping st) {
@@ -132,17 +132,17 @@ array(string) low_recalculate_status(mapping st) {
 	//4) Idle
 	return ({"idle", "Channel Offline"});
 }
-continue Concurrent.Future recalculate_status(string chan) {
-	mapping st = chanstate[chan];
-	array self_live = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_login=" + chan))->data || ({ });
+continue Concurrent.Future recalculate_status(string chanid) {
+	mapping st = chanstate[chanid];
+	array self_live = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + chanid))->data || ({ });
 	if (sizeof(self_live)) st->uptime = self_live[0]->started_at;
 	else m_delete(st, "uptime");
-	mapping config = persist_config->path("ghostwriter", chan);
+	mapping config = persist_status->path("ghostwriter", chanid);
 	int pausetime = ((int)config->pausetime || DEFAULT_PAUSE_TIME);
 	array(int) next_check = ({time() + 86400}); //Maximum time that we'll ever wait between schedule checks (in case someone adds or changes)
 	if (st->schedule_last_checked < next_check[0]) {
 		int limit = 86400 * 7;
-		array events = yield(get_stream_schedule(chan, pausetime, 1, limit));
+		array events = yield(get_stream_schedule(chanid, pausetime, 1, limit));
 		if (sizeof(events)) {
 			st->schedule_next_event = events[0];
 			events[0]->unix_time = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", events[0]->start_time)->unix_time();
@@ -158,12 +158,12 @@ continue Concurrent.Future recalculate_status(string chan) {
 			st->pause_until = max(st->pause_until, ev->unix_time + pausetime);
 		}
 	}
-	next_check += ({st->pause_until, suppress_autohosting[chan]});
-	schedule_recalculation(chan, next_check);
+	next_check += ({st->pause_until, suppress_autohosting[chanid]});
+	schedule_recalculation(chanid, next_check);
 
 	[st->statustype, st->status] = low_recalculate_status(st);
-	send_updates_all(chan, st);
-	if (suppress_autohosting[chan] > time()) return 0;
+	send_updates_all(chanid, st);
+	if (suppress_autohosting[chanid] > time()) return 0;
 	array targets = config->channels || ({ });
 	m_delete(st, "hostingid");
 	//Clean up junk data
@@ -209,7 +209,7 @@ continue Concurrent.Future recalculate_status(string chan) {
 			//due to this check, we abandon a channel that comes back online. To avoid this, we
 			//recheck once the sixty-second cooldown is up.
 			yield(Concurrent.resolve(1)->delay(mindelay));
-			return recalculate_status(chan);
+			return recalculate_status(chanid);
 		}
 
 		if (sizeof(live) > 1) {
@@ -225,52 +225,59 @@ continue Concurrent.Future recalculate_status(string chan) {
 	}
 	if (expected == st->hosting) return 0; //Including if they're both 0 (want no host, currently not hosting)
 	//Currently we always take the first on the list. This may change in the future.
-	object irc = yield(connect(chan)); //Make sure we're connected. (Mutually recursive via a long chain.)
-	irc->send_message("#" + chan, msg);
+	object irc = yield(connect(chanid, config->chan)); //Make sure we're connected. (Mutually recursive via a long chain.)
+	irc->send_message("#" + config->chan, msg);
 	st->expected_host_target = expected;
 	//If the host succeeds, there should be a HOSTTARGET message shortly.
 }
 
-void pause_autohost(string chan, int target) {
-	suppress_autohosting[chan] = target;
-	schedule_recalculation(chan, ({target}));
+void pause_autohost(string chanid, int target) {
+	suppress_autohosting[chanid] = target;
+	schedule_recalculation(chanid, ({target}));
 }
 
-void host_changed(string chan, string target, string viewers) {
+void host_changed(string chanid, string target, string viewers) {
+	if (!(int)chanid) {
+		//Previously this accepted channel names. In case we get old data,
+		//look up the channel ID from the name and try again. (Remove this
+		//code when that's not going to be a problem any more.)
+		get_user_id(chanid)->then() {host_changed((string)__ARGS__[0], target, viewers);};
+		return;
+	}
 	//Note that viewers may be "-" if we're already hosting, so don't depend on it
-	mapping st = chanstate[chan];
+	mapping st = chanstate[chanid];
 	if (st->hosting == target) return; //eg after reconnecting to IRC
 	st->hosting = target;
 	if (target == st->expected_host_target) m_delete(st, "expected_host_target");
-	else if (target) pause_autohost(chan, time() + 60); //If you manually host, disable autohost for one minute
-	spawn_task(recalculate_status(chan));
+	else if (target) pause_autohost(chanid, time() + 60); //If you manually host, disable autohost for one minute
+	spawn_task(recalculate_status(chanid));
 	//TODO: Purge the hook channel list of any that we don't need (those for whom autohosts_this[id] is empty or absent)
 }
 
 class IRCClient
 {
 	inherit Protocols.IRC.Client;
-	void got_host(string chan, string message) {
+	void got_host(string message) {
 		sscanf(message, "%s %s", string target, string viewers);
 		if (target == "-") target = 0; //Not currently hosting
-		G->G->websocket_types->ghostwriter->host_changed(chan - "#", target, viewers);
+		G->G->websocket_types->ghostwriter->host_changed(options->chanid, target, viewers);
 		if (object p = m_delete(options, "promise")) p->success(this);
 	}
 	void got_notify(string from, string type, string|void chan, string|void message, string ... extra) {
 		::got_notify(from, type, chan, message, @extra);
-		if (type == "HOSTTARGET") got_host(chan, message);
+		if (type == "HOSTTARGET") got_host(message);
 		//If you're not currently hosting, there is no HOSTTARGET on startup. Once we're
 		//confident that one isn't coming, notify that there is no host target.
-		if (type == "ROOMSTATE" && options->promise) got_host(chan, "- -");
+		if (type == "ROOMSTATE" && options->promise) got_host("- -");
 		if (type == "NOTICE" && sscanf(message, "%s has gone offline. Exiting host mode%s", string target, string dot) && dot == ".") {
-			mapping st = chanstate[chan];
+			mapping st = chanstate[options->chanid];
 			if (st->?hosting == target && st->hostingid) channel_seen_offline[(int)st->hostingid] = time();
 		}
 		if (type == "NOTICE" && message == "Host target cannot be changed more than 3 times every half hour.") {
 			//Probably only happens while I'm testing, but ehh, whatever
 			//Note that it is still legal to *unhost* for the rest of the half hour, just not host anyone.
 			int target = time() + 30*60;
-			G->G->websocket_types->ghostwriter->pause_autohost(chan - "#", target - target % 1800 + 3);
+			G->G->websocket_types->ghostwriter->pause_autohost(options->chanid, target - target % 1800 + 3);
 		}
 	}
 	void close() {
@@ -282,12 +289,12 @@ class IRCClient
 	void connection_lost() {close();}
 }
 
-Concurrent.Future connect(string chan) {
+Concurrent.Future connect(string chanid, string chan) {
 	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) return Concurrent.reject(0);
-	if (!chanstate[chan]) chanstate[chan] = (["statustype": "idle", "status": "Channel Offline"]);
-	if (object irc = G->G->ghostwriterirc[chan]) {
+	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
+	if (object irc = G->G->ghostwriterirc[chanid]) {
 		//TODO: Make sure it's actually still connected
-		//write("Already connected to %O\n", chan);
+		//write("Already connected to %O/%O\n", chanid, chan);
 		/**/if (1) catch {irc->close();}; else
 		return Concurrent.resolve(irc);
 	}
@@ -297,10 +304,11 @@ Concurrent.Future connect(string chan) {
 			"nick": chan,
 			"pass": "oauth:" + persist_status->path("bcaster_token")[chan],
 			"promise": prom,
+			"chanid": chanid,
 		]));
 		irc->cmd->cap("REQ","twitch.tv/commands");
 		irc->join_channel("#" + chan);
-		G->G->ghostwriterirc[chan] = irc;
+		G->G->ghostwriterirc[chanid] = irc;
 	};
 	if (ex) {werror("%% Error connecting to IRC:\n%s\n", describe_error(ex)); return Concurrent.reject(0);}
 	return prom->future();
@@ -310,22 +318,24 @@ mapping get_state(string group) {
 	if (group == "0") {
 		//If you're not logged in, show the bot's autohost list as an example.
 		//NOTE TO BOT OPERATORS: This *will* reveal your AH list to the world. Hack this out
-		//if you're not okay with that.
-		mapping config = persist_config->path("ghostwriter")[persist_config["ircsettings"]->nick];
+		//if you're not okay with that. One easy way would be to fix botid to some other value.
+		mapping config = persist_status->path("ghostwriter")[botid];
 		if (!config) return ([]);
 		return (["inactive": 1, "channels": config->channels || ({ })]);
 	}
-	//TODO: Include (["aht": (array)autohosts_this[group]])) except that group is a login and AHT looks up by ID
-	return (["active": 1, "channels": ({ })]) | (persist_config->path("ghostwriter")[group] || ([])) | (chanstate[group] || ([]));
+	return (["active": 1, "channels": ({ }), "aht": (array)(autohosts_this[group] || ({ }))])
+		| (persist_status->path("ghostwriter")[group] || ([]))
+		| (chanstate[group] || ([]));
 }
 
-continue void force_check(string chan) {
-	mapping irc = yield(connect(chan)); //We don't actually need the IRC object here, but forcing one to exist guarantees some checks. Avoid bug by putting it in a variable.
-	yield(recalculate_status(chan));
+continue void force_check(string chanid) {
+	string chan = yield(get_user_info(chanid))->login;
+	mapping irc = yield(connect(chanid, chan)); //We don't actually need the IRC object here, but forcing one to exist guarantees some checks. Avoid bug by putting it in a variable.
+	yield(recalculate_status(chanid));
 }
 
 continue void force_check_all() {
-	foreach (persist_config->path("ghostwriter"); string chan;) yield(force_check(chan));
+	foreach (persist_status->path("ghostwriter"); string chanid;) yield(force_check(chanid));
 }
 
 void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -338,37 +348,37 @@ void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg
 
 void websocket_cmd_pause(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->group || conn->group == "0") return;
-	string chan = conn->group;
-	mapping st = chanstate[chan];
-	mapping config = persist_config->path("ghostwriter", chan);
+	string chanid = conn->group;
+	mapping st = chanstate[chanid];
+	mapping config = persist_status->path("ghostwriter", chanid);
 	int pausetime = ((int)config->pausetime || DEFAULT_PAUSE_TIME);
 	st->pause_until = time() + pausetime;
-	spawn_task(recalculate_status(chan));
-	call_out(lambda() {spawn_task(G->G->websocket_types->ghostwriter->recalculate_status(chan));}, pausetime);
+	spawn_task(recalculate_status(chanid));
+	call_out(lambda() {spawn_task(G->G->websocket_types->ghostwriter->recalculate_status(chanid));}, pausetime);
 }
 
 EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string chanid, mapping event] = __ARGS__;
 	write("** GW: Channel %O online: %O\nThese channels care: %O\n", chanid, event, autohosts_this[chanid]);
-	mapping st = chanstate[event->broadcaster_user_login];
+	mapping st = chanstate[chanid];
 	if (st) spawn_task(recalculate_status(event->broadcaster_user_login));
-	foreach (autohosts_this[chanid]; string chan;) {
-		mapping st = chanstate[chan];
-		write("Channel %O cares - status %O\n", chan, st->statustype);
-		if (st->statustype == "idle") spawn_task(recalculate_status(chan));
+	foreach (autohosts_this[chanid]; string id;) {
+		mapping st = chanstate[id];
+		write("Channel %O cares - status %O\n", persist_status->path("ghostwriter")[chanid]->chan, st->statustype);
+		if (st->statustype == "idle") spawn_task(recalculate_status(chanid));
 	}
 };
 
-void has_channel(string chan, string target) {
+void has_channel(string chanid, string target) {
 	if (!autohosts_this[target]) autohosts_this[target] = (<>);
-	autohosts_this[target][chan] = 1;
+	autohosts_this[target][chanid] = 1;
 	stream_online(target, (["broadcaster_user_id": (string)target]));
-	//TODO: send_updates_all(target, (["aht": (array)autohosts_this[target]])) except that target is an id and groups are currently logins
+	send_updates_all(target, (["aht": (array)autohosts_this[target]]));
 }
 
 void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->group || conn->group == "0") return;
 	if (!stringp(msg->name)) return;
-	mapping config = persist_config->path("ghostwriter", conn->group);
+	mapping config = persist_status->path("ghostwriter", conn->group);
 	//TODO: Recheck all channels on add? Or do that separately?
 	//Rechecking would update their avatars and display names.
 	get_user_info(msg->name, "login")->then() {[mapping c] = __ARGS__;
@@ -376,18 +386,18 @@ void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) 
 		if (config->channels && has_value(config->channels->id, c->id)) return;
 		config->channels += ({c});
 		has_channel(conn->group, c->id);
-		persist_config->save();
+		persist_status->save();
 		send_updates_all(conn->group, (["channels": config->channels]));
 	};
 }
 
 void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->group || conn->group == "0") return;
-	mapping config = persist_config->path("ghostwriter", conn->group);
+	mapping config = persist_status->path("ghostwriter", conn->group);
 	foreach ("pausetime" / " ", string key) {
 		if (msg[key]) config[key] = msg[key];
 	}
-	persist_config->save();
+	persist_status->save();
 	send_updates_all(conn->group, config);
 }
 
@@ -395,7 +405,7 @@ void websocket_cmd_reorder(mapping(string:mixed) conn, mapping(string:mixed) msg
 	if (!conn->group || conn->group == "0") return;
 	int dir = (int)msg->dir;
 	if (!msg->id || !msg->dir) return;
-	mapping config = persist_config->path("ghostwriter", conn->group);
+	mapping config = persist_status->path("ghostwriter", conn->group);
 	foreach (config->channels || ({ }); int i; mapping chan) {
 		if (chan->id != msg->id) continue;
 		//Found it.
@@ -405,7 +415,7 @@ void websocket_cmd_reorder(mapping(string:mixed) conn, mapping(string:mixed) msg
 		//send larger numbers, it might be a little odd. Specifically, this is a swap,
 		//not multiple shifts.
 		[config->channels[i], config->channels[dest]] = ({config->channels[dest], config->channels[i]});
-		persist_config->save();
+		persist_status->save();
 		send_updates_all(conn->group, (["channels": config->channels]));
 		break;
 	}
@@ -413,14 +423,14 @@ void websocket_cmd_reorder(mapping(string:mixed) conn, mapping(string:mixed) msg
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->group || conn->group == "0") return;
-	mapping config = persist_config->path("ghostwriter", conn->group);
+	mapping config = persist_status->path("ghostwriter", conn->group);
 	if (!msg->id || !config->channels) return;
 	config->channels = filter(config->channels) {return __ARGS__[0]->id != msg->id;};
 	if (multiset aht = autohosts_this[msg->id]) {
 		aht[conn->group] = 0;
-		//TODO: send_updates_all(target, (["aht": (array)aht])) except that target is an id and groups are currently logins
+		send_updates_all(msg->id, (["aht": (array)aht]));
 	}
-	persist_config->save();
+	persist_status->save();
 	send_updates_all(conn->group, (["channels": config->channels]));
 }
 
@@ -431,17 +441,44 @@ protected void create(string name) {
 	chanstate = G->G->ghostwriterstate;
 	if (mapping callouts = G->G->ghostwritercallouts) {
 		//Clear out the callouts, and empty the mapping so the older code sees they're gone
-		foreach (indices(callouts), string chan) if (chan != "") remove_call_out(m_delete(callouts, chan));
+		foreach (indices(callouts), string chanid) if (chanid != "") remove_call_out(m_delete(callouts, chanid));
 	}
 	G->G->ghostwritercallouts = schedule_check_callouts = (["": hash_value(this)]);
+	string botnick = persist_config["ircsettings"]->?nick;
+	if (botnick) get_user_id(botnick)->then() {botid = (string)__ARGS__[0];}; //Cache the bot's user ID for the demo
 	int delay = 0; //Don't hammer the server
-	foreach (persist_config->path("ghostwriter"); string chan; mapping info) {
+	mapping configs = persist_status->path("ghostwriter");
+	if (mapping old = persist_config["ghostwriter"]) {
+		//Formerly, ghostwriter configs were git-managed and keyed by login.
+		//Now they are backed-up and keyed by ID.
+		//We want synchronous lookup of IDs, so if we can't, queue them and leave unmigrated data.
+		foreach (indices(old), string chan) {
+			if ((int)chan) {configs[chan] = m_delete(old, chan); continue;}
+			if (!G->G->user_info[chan]) {
+				//Don't know the ID. Look it up (for the cache), leave it unmigrated.
+				werror("WARNING: Unmigrated Ghostwriter configs for %O - update again to check\n", chan);
+				get_user_id(chan);
+				continue;
+			}
+			string chanid = (string)G->G->user_info[chan]->id;
+			if (configs[chanid]) {
+				werror("WARNING: Unmerged Ghostwriter configs for %O and %O\n", chan, chanid);
+				continue;
+			}
+			configs[chanid] = m_delete(old, chan);
+			configs[chanid]->chan = chan;
+		}
+		if (!sizeof(old)) m_delete(persist_config, "ghostwriter");
+		else persist_config->save();
+		persist_status->save();
+	}
+	foreach (configs; string chanid; mapping info) {
 		if (!info->channels || !sizeof(info->channels)) continue;
-		call_out(connect, delay += 2, chan);
-		has_channel(chan, info->channels->id[*]);
-		if (int t = chanstate[chan]->?next_scheduled_check) {
+		call_out(connect, delay += 2, chanid, info->chan);
+		has_channel(chanid, info->channels->id[*]);
+		if (int t = chanstate[chanid]->?next_scheduled_check) {
 			t -= time();
-			if (t >= 0) schedule_check_callouts[chan] = call_out(scheduled_recalculation, t, chan);
+			if (t >= 0) schedule_check_callouts[chanid] = call_out(scheduled_recalculation, t, chanid);
 		}
 	}
 }
