@@ -479,7 +479,7 @@ protected void create(string name) {
 				continue;
 			}
 			string chanid = (string)G->G->user_info[chan]->id;
-			if (configs[chanid]) {
+			if (configs[chanid] && sizeof(configs[chanid])) {
 				werror("WARNING: Unmerged Ghostwriter configs for %O and %O\n", chan, chanid);
 				continue;
 			}
