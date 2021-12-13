@@ -370,7 +370,7 @@ EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string ch
 	if (st) spawn_task(recalculate_status(event->broadcaster_user_login));
 	foreach (autohosts_this[chanid]; string id;) {
 		mapping st = chanstate[id];
-		write("Channel %O cares - status %O\n", persist_status->path("ghostwriter")[chanid]->chan, st->statustype);
+		write("Channel %O cares - status %O\n", persist_status->path("ghostwriter")[chanid]->?chan || chanid, st->statustype);
 		if (st->statustype == "idle") spawn_task(recalculate_status(chanid));
 	}
 };
@@ -441,6 +441,16 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	send_updates_all(conn->group, (["channels": config->channels]));
 }
 
+continue Concurrent.Future migrate(string channame) {
+	//Not sure why, but some names are getting into the configs.
+	werror("WARNING WARNING NON-ID IN CONFIG %O\n", channame);
+	int chanid = yield(get_user_id(channame));
+	mapping configs = persist_status->path("ghostwriter");
+	configs[(string)chanid] = m_delete(configs, channame);
+	persist_status->save();
+	werror("UPDATED TO ID %O\n", chanid);
+}
+
 protected void create(string name) {
 	::create(name);
 	if (!G->G->ghostwriterirc) G->G->ghostwriterirc = ([]);
@@ -480,7 +490,8 @@ protected void create(string name) {
 		persist_status->save();
 	}
 	foreach (configs; string chanid; mapping info) {
-		if (!info->channels || !sizeof(info->channels)) continue;
+		if (!(int)chanid) {spawn_task(migrate(chanid)); continue;}
+		if (!info->?channels || !sizeof(info->channels)) continue;
 		call_out(connect, delay += 2, chanid, info->chan);
 		has_channel(chanid, info->channels->id[*]);
 		if (int t = chanstate[chanid]->?next_scheduled_check) {
