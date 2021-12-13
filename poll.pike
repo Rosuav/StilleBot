@@ -154,7 +154,7 @@ Concurrent.Future get_user_info(int|string user, string|void type)
 //Convenience shorthand when all you need is the ID
 Concurrent.Future get_user_id(string user)
 {
-	return get_users_info(({user}), "login")->then(lambda(mapping info) {return sizeof(info) && (int)info[0]->id;});
+	return get_users_info(({user}), "login")->then(lambda(array(mapping) info) {return sizeof(info) && (int)info[0]->id;});
 }
 
 Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
