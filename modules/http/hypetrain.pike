@@ -117,7 +117,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
 			"loading": "(no channel selected)",
 			"channelname": "(no channel)",
-			"emotes": avail_emotes,
+			"emotes": avail_emotes, "have_emotes": "",
 			"backlink": !req->variables->mobile && "<a href=\"hypetrain?mobile\">Switch to mobile view</a>",
 		]));
 	}
