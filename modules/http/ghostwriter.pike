@@ -347,7 +347,7 @@ continue void force_check_all() {
 }
 
 void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!conn->group || conn->group == "0") return;
+	if (!(int)conn->group) return;
 	//Forcing a check also forces a reconnect, in case there are problems.
 	if (object irc = m_delete(G->G->ghostwriterirc, conn->group)) catch {irc->close();};
 	spawn_task(force_check(conn->group));
@@ -355,7 +355,7 @@ void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg
 }
 
 void websocket_cmd_pause(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!conn->group || conn->group == "0") return;
+	if (!(int)conn->group) return;
 	string chanid = conn->group;
 	mapping st = chanstate[chanid];
 	mapping config = persist_status->path("ghostwriter", chanid);
@@ -410,7 +410,7 @@ void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 void websocket_cmd_reorder(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!conn->group || conn->group == "0") return;
+	if (!(int)conn->group) return;
 	int dir = (int)msg->dir;
 	if (!msg->id || !msg->dir) return;
 	mapping config = persist_status->path("ghostwriter", conn->group);
@@ -430,7 +430,7 @@ void websocket_cmd_reorder(mapping(string:mixed) conn, mapping(string:mixed) msg
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!conn->group || conn->group == "0") return;
+	if (!(int)conn->group) return;
 	mapping config = persist_status->path("ghostwriter", conn->group);
 	if (!msg->id || !config->channels) return;
 	config->channels = filter(config->channels) {return __ARGS__[0]->id != msg->id;};
