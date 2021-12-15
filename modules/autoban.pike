@@ -57,7 +57,10 @@ int message(object channel, mapping person, string msg)
 	//Detect the follower-selling bots and provide a flag that a trigger can examine.
 	person->vars["{@buyfollows}"] = "0";
 	foreach (buyfollows, string badword) if (has_value(msg, badword)) person->vars["{@buyfollows}"] = "1";
-	if (has_value(msg, "Want to become famous? Buy followers") && (
+	if ((
+		has_value(msg, "Want to become famous? Buy followers") ||
+		has_value(msg, "Buy followers, primes and viewers on")
+	) && (
 		has_value(msg, " http://") || has_value(msg, " https://") ||
 		has_value(msg, " vk.cc/") || has_value(msg, " clck.ru") //These are the URL shorteners they use
 	)) person->vars["{@buyfollows}"] = "1";
