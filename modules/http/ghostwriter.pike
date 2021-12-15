@@ -384,7 +384,7 @@ void has_channel(string chanid, string target) {
 }
 
 void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!conn->group || conn->group == "0") return;
+	if (!(int)conn->group) return;
 	if (!stringp(msg->name)) return;
 	mapping config = persist_status->path("ghostwriter", conn->group);
 	//TODO: Recheck all channels on add? Or do that separately?
@@ -400,7 +400,7 @@ void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) 
 }
 
 void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!conn->group || conn->group == "0") return;
+	if (!(int)conn->group) return;
 	mapping config = persist_status->path("ghostwriter", conn->group);
 	foreach ("pausetime" / " ", string key) {
 		if (msg[key]) config[key] = msg[key];
