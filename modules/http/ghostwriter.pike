@@ -228,6 +228,7 @@ continue Concurrent.Future recalculate_status(string chanid) {
 	}
 	if (expected == st->hosting) return 0; //Including if they're both 0 (want no host, currently not hosting)
 	//Currently we always take the first on the list. This may change in the future.
+	write("GHOSTWRITER: Connect %O %O, send %O\n", chanid, config->chan, msg);
 	object irc = yield(connect(chanid, config->chan)); //Make sure we're connected. (Mutually recursive via a long chain.)
 	irc->send_message("#" + config->chan, msg);
 	st->expected_host_target = expected;
@@ -452,6 +453,15 @@ continue Concurrent.Future migrate(string channame) {
 	werror("UPDATED TO ID %O\n", chanid);
 }
 
+continue Concurrent.Future no_name(string chanid) {
+	//Not sure why, but some names are getting into the configs.
+	werror("WARNING WARNING ID HAS NO NAME IN CONFIG %O\n", chanid);
+	string channame = yield(get_user_info(chanid))->login;
+	persist_status->path("ghostwriter", chanid)->chan = channame;
+	persist_status->save();
+	werror("UPDATED ID %O TO NAME %O\n", chanid, channame);
+}
+
 protected void create(string name) {
 	::create(name);
 	if (!G->G->ghostwriterirc) G->G->ghostwriterirc = ([]);
@@ -466,6 +476,7 @@ protected void create(string name) {
 	if (botnick) get_user_id(botnick)->then() {botid = (string)__ARGS__[0];}; //Cache the bot's user ID for the demo
 	int delay = 0; //Don't hammer the server
 	mapping configs = persist_status->path("ghostwriter");
+	write("Configs available for %O\n", mkmapping(indices(configs), values(configs)->chan));
 	if (mapping old = persist_config["ghostwriter"]) {
 		//Formerly, ghostwriter configs were git-managed and keyed by login.
 		//Now they are backed-up and keyed by ID.
@@ -493,6 +504,7 @@ protected void create(string name) {
 	foreach (configs; string chanid; mapping info) {
 		if (!(int)chanid) {spawn_task(migrate(chanid)); continue;}
 		if (!info->?channels || !sizeof(info->channels)) continue;
+		if (!info->chan) {spawn_task(no_name(chanid)); continue;}
 		call_out(connect, delay += 2, chanid, info->chan);
 		has_channel(chanid, info->channels->id[*]);
 		if (int t = chanstate[chanid]->?next_scheduled_check) {
