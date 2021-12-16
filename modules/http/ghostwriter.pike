@@ -503,8 +503,8 @@ protected void create(string name) {
 	}
 	foreach (configs; string chanid; mapping info) {
 		if (!(int)chanid) {spawn_task(migrate(chanid)); continue;}
-		if (!info->?channels || !sizeof(info->channels)) continue;
 		if (!info->chan) {spawn_task(no_name(chanid)); continue;}
+		if (!info->?channels || !sizeof(info->channels)) continue;
 		call_out(connect, delay += 2, chanid, info->chan);
 		has_channel(chanid, info->channels->id[*]);
 		if (int t = chanstate[chanid]->?next_scheduled_check) {
