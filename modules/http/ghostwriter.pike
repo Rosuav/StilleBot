@@ -501,6 +501,25 @@ protected void create(string name) {
 		else persist_config->save();
 		persist_status->save();
 	}
+	if (string data = Stdio.read_file("lastnightbackup.json")) {
+		write("RESTORING CONTENT\n");
+		foreach (Standards.JSON.decode_utf8(data)->ghostwriter; string chanid; mapping cfg) {
+			if (!sizeof(cfg)) continue;
+			if (!(int)chanid) {write("Non-integer key skipped: %O\n", chanid); continue;}
+			if (configs[chanid] && sizeof(configs[chanid])) {
+				if (!sizeof(configs[chanid]->channels || ({ })) && sizeof(cfg->channels || ({ }))) {
+					write("Merging in channels only: %O\n", chanid);
+					configs[chanid]->channels = cfg->channels;
+				}
+				write("Already has content, not merging: %O\n", chanid);
+				write("Have: %O\nRestore: %O\n", indices(configs[chanid]), indices(cfg));
+				continue;
+			}
+			configs[chanid] = cfg;
+			persist_status->save();
+			write("Restored from backup: %O\n", chanid);
+		}
+	}
 	foreach (configs; string chanid; mapping info) {
 		if (!(int)chanid) {spawn_task(migrate(chanid)); continue;}
 		if (!info->chan) {spawn_task(no_name(chanid)); continue;}
