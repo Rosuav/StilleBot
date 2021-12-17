@@ -77,5 +77,3 @@
   - Absorb raidnotes into this system.
 * "max-width: fit-content" doesn't work in Firefox - but nor does -moz-fit-content :(
   - Causes display problems on graphical editor and opening up element details
-* "Who autohosts me?" view in Ghostwriter - either so you know who to thank, or who to
-  not be confused by when you see their hosts all batched up
