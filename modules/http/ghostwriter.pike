@@ -369,11 +369,11 @@ void websocket_cmd_pause(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string chanid, mapping event] = __ARGS__;
 	write("** GW: Channel %O online: %O\nThese channels care: %O\n", chanid, event, autohosts_this[chanid]);
 	mapping st = chanstate[chanid];
-	if (st) spawn_task(recalculate_status(event->broadcaster_user_login));
+	if (st) spawn_task(recalculate_status(chanid));
 	foreach (autohosts_this[chanid] || ([]); string id;) {
 		mapping st = chanstate[id];
-		write("Channel %O cares - status %O\n", persist_status->path("ghostwriter")[chanid]->?chan || chanid, st->statustype);
-		if (st->statustype == "idle") spawn_task(recalculate_status(chanid));
+		write("Channel %O cares - status %O\n", persist_status->path("ghostwriter")[id]->?chan || id, st->statustype);
+		if (st->statustype == "idle") spawn_task(recalculate_status(id));
 	}
 };
 
