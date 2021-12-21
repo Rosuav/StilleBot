@@ -298,7 +298,7 @@ Concurrent.Future connect(string chanid, string chan) {
 	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
 	if (object irc = G->G->ghostwriterirc[chanid]) {
 		//TODO: Make sure it's actually still connected
-		//write("Already connected to %O/%O\n", chanid, chan);
+		write("Already connected to %O/%O, disconnecting\n", chanid, chan);
 		/**/if (1) catch {irc->close();}; else
 		return Concurrent.resolve(irc);
 	}
