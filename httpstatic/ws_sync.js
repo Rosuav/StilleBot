@@ -7,11 +7,13 @@ const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 let pending_message = null; //Allow at most one message to be queued on startup (will be sent after initialization)
 let prefs = { }; //Updated from the server as needed
 const prefs_hooks = [];
+let reconnect_delay = 250;
 export function connect(group, handler)
 {
 	if (!handler) handler = default_handler;
 	let socket = new WebSocket(protocol + window.location.host + "/ws");
 	socket.onopen = () => {
+		reconnect_delay = 250;
 		console.log("Socket connection established.");
 		socket.send(JSON.stringify({cmd: "init", type: handler.ws_type || ws_type, group}));
 		send_socket = socket; //Don't activate send() until we're initialized
@@ -20,7 +22,8 @@ export function connect(group, handler)
 	socket.onclose = () => {
 		send_socket = null;
 		console.log("Socket connection lost.");
-		setTimeout(connect, 250, group, handler);
+		setTimeout(connect, reconnect_delay, group, handler);
+		if (reconnect_delay < 5000) reconnect_delay *= 1.5 + 0.5 * Math.random(); //Exponential back-off with a (small) random base
 	};
 	socket.onmessage = (ev) => {
 		let data = JSON.parse(ev.data);
