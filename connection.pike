@@ -178,6 +178,7 @@ class SendQueue(string id) {
 		if (tm == lastmsgtime) {call_out(pump_queue, 1); return;}
 		lastmsgtime = tm; modmsgs = 0;
 		[[string|array to, string msg], msgqueue] = Array.shift(msgqueue);
+		write("client %O irc %O G->irc %O\n", client, irc, G->G->irc);
 		(client || irc)->send_message(to, string_to_utf8(msg));
 	}
 	void send_message(string to, string msg, int|void is_mod) {

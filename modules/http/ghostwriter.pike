@@ -241,6 +241,7 @@ void pause_autohost(string chanid, int target) {
 }
 
 void host_changed(string chanid, string target, string viewers) {
+	write("GHOSTWRITER: host_changed(%O, %O, %O)\n", chanid, target, viewers);
 	if (!(int)chanid) {
 		//Previously this accepted channel names. In case we get old data,
 		//look up the channel ID from the name and try again. (Remove this
