@@ -158,12 +158,13 @@ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 			cmds += ({cmd + " " + person->user_login});
 			people += ({person->user_name});
 		}
+		else people += ({"(" + person->user_name + ")"});
 		if (!--limit) break;
 	}
 	if (sizeof(people)) {
 		//If nobody's subbed, don't even say anything.
-		cmds = ({(add ? "Adding VIP status to subgifters: " : "Removing VIP status from subgifters: ") + people * ", "})
-			+ cmds;
+		cmds = ({cmds[0], (add ? "Adding VIP status to subgifters: " : "Removing VIP status from subgifters: ") + people * ", "})
+			+ cmds[1..];
 	}
 	cmds += ({add ? "Done adding VIPs." : "Done removing VIPs."});
 	object irc = G->G->IRCClientMessageSender("irc.chat.twitch.tv", ([
