@@ -152,6 +152,7 @@ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 	limit = 10; people = ({ });
 	foreach (subs, mapping person) {
 		if (stats->mods[person->user_id]) continue;
+		if ((string)person->user_id == "274598607") continue; //AnAnonymousGifter
 		if (!has_value(cmds, cmd + " " + person->user_login)) {
 			//If that person has already received a VIP badge for cheering, don't re-add.
 			cmds += ({cmd + " " + person->user_login});
