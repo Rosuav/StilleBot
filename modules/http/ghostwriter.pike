@@ -301,7 +301,7 @@ class IRCClient
 }
 
 Concurrent.Future connect(string chanid, string chan) {
-	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) return Concurrent.reject(0);
+	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) return Concurrent.reject("No auth\n");
 	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
 	if (object irc = G->G->ghostwriterirc[chanid]) {
 		//TODO: Make sure it's actually still connected
@@ -321,7 +321,7 @@ Concurrent.Future connect(string chanid, string chan) {
 		irc->join_channel("#" + chan);
 		G->G->ghostwriterirc[chanid] = irc;
 	};
-	if (ex) {werror("%% Error connecting to IRC:\n%s\n", describe_error(ex)); return Concurrent.reject(0);}
+	if (ex) {werror("%% Error connecting to IRC:\n%s\n", describe_error(ex)); return Concurrent.reject(ex);}
 	return prom->future();
 }
 
