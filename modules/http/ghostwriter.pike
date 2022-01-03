@@ -292,7 +292,7 @@ class IRCClient
 		}
 	}
 	void close() {
-		if (options->promise) options->promise->failure(0);
+		if (object p = m_delete(options, "promise")) p->failure(({"IRC conn closed during initialization\n", backtrace()}));
 		::close();
 		remove_call_out(da_ping);
 		remove_call_out(no_ping_reply);
@@ -301,7 +301,7 @@ class IRCClient
 }
 
 Concurrent.Future connect(string chanid, string chan) {
-	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) return Concurrent.reject("No auth\n");
+	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) return Concurrent.reject(({"No auth\n", backtrace()}));
 	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
 	if (object irc = G->G->ghostwriterirc[chanid]) {
 		//TODO: Make sure it's actually still connected
