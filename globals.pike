@@ -185,7 +185,7 @@ class spawn_task(mixed gen, function|void got_result, function|void got_error) {
 		else if (objectp(resp) && resp->then) resp->then(pump, propagate_error);
 		else pump(resp, 0);
 	}
-	void propagate_error(mixed err) {pump(0, err);}
+	void propagate_error(mixed err) {pump(0, err || ({"Null error\n", backtrace()}));}
 }
 constant handle_async = spawn_task; //Compatibility name (deprecated)
 
