@@ -230,8 +230,9 @@ continue Concurrent.Future recalculate_status(string chanid) {
 	//Currently we always take the first on the list. This may change in the future.
 	write("GHOSTWRITER: Connect %O %O, send %O\n", chanid, config->chan, msg);
 	object irc = yield(connect(chanid, config->chan)); //Make sure we're connected. (Mutually recursive via a long chain.)
-	while (!irc) {
+	if (!irc) {
 		//Wut. I still have no idea how this can ever happen. When can connect() yield zero??
+		//One retry, then stop.
 		werror("GHOSTWRITER: Connect %O %O, retry, got irc %O\n", chanid, config->chan, irc);
 		yield(Concurrent.resolve(1)->delay(1));
 		irc = yield(connect(chanid, config->chan));
