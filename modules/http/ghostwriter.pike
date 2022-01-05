@@ -450,8 +450,12 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		aht[conn->group] = 0;
 		send_updates_all(msg->id); //As above, could just update AHT, but not worth the duplication
 	}
-	persist_status->save();
-	send_updates_all(conn->group, (["channels": config->channels]));
+	//Any time you remove a channel, recheck all others for updated avatars or displaynames.
+	get_users_info(config->channels->id)->then() {
+		config->channels = __ARGS__[0];
+		persist_status->save();
+		send_updates_all(conn->group, (["channels": config->channels]));
+	};
 }
 
 continue Concurrent.Future migrate(string channame) {
