@@ -269,13 +269,16 @@ void host_changed(string chanid, string target, string viewers) {
 class IRCClient
 {
 	inherit Protocols.IRC.Client;
+	array log = ({ });
 	void got_host(string message) {
 		sscanf(message, "%s %s", string target, string viewers);
 		if (target == "-") target = 0; //Not currently hosting
 		G->G->websocket_types->ghostwriter->host_changed(options->chanid, target, viewers);
 		if (object p = m_delete(options, "promise")) p->success(this);
 	}
+	void got_command(string ... args) {if (options->promise) log += ({args * ":"}); ::got_command(@args);}
 	void got_notify(string from, string type, string|void chan, string|void message, string ... extra) {
+		if (options->promise) log += ({message});
 		::got_notify(from, type, chan, message, @extra);
 		if (type == "HOSTTARGET") got_host(message);
 		//If you're not currently hosting, there is no HOSTTARGET on startup. Once we're
@@ -293,7 +296,7 @@ class IRCClient
 		}
 	}
 	void close() {
-		if (object p = m_delete(options, "promise")) p->failure(({"IRC conn closed during initialization\n", backtrace()}));
+		if (object p = m_delete(options, "promise")) p->failure(({"IRC conn closed during initialization\n" + log*"\n", backtrace()}));
 		::close();
 		remove_call_out(da_ping);
 		remove_call_out(no_ping_reply);
