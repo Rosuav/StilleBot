@@ -17,7 +17,7 @@ $$login$$
 > <label for=ga_cost>Cost per ticket</label> | <input id=ga_cost name=cost type=number min=1 value=1></label> | Loyal viewers can earn a thousand points in a 2-3 hour stream. [See details.](https://help.twitch.tv/s/article/channel-points-guide)
 > <label for=ga_desc>Description</label> | <input id=ga_desc name=desc size=40 maxlength=40 placeholder=\"Buy # tickets\"> | Put a <code>#</code> symbol for multibuy count
 > <label for=ga_multi>Multibuy options</label> | <input id=ga_multi name=multi size=40 placeholder=\"1 5 10 25 50\"> | Allow people to buy tickets in bulk
-> <label for=ga_max>Max tickets</label> | <input id=ga_max name=max type=number min=0 value=1> | Purchases that would put you over this limit will be cancelled
+> <label for=ga_max>Max tickets</label> | <input id=ga_max name=max type=number min=0 value=0> | Purchases that would put you over this limit will be cancelled
 > <label for=ga_pausemode>Redemption hiding</label> | <select id=ga_pausemode name=pausemode><option value=disable>Disable, hiding them from users</option><option value=pause>Pause and leave visible</option></select> | When there's no current giveaway, should redemptions remain visible (but unpurchaseable), or vanish entirely?
 > Multi-win | <label><input type=checkbox name=allow_multiwin value=yes> Allow one person to win multiple times</label> | If not, the winner's tickets will be automatically removed.
 > <label for=ga_duration>Time before giveaway closes</label> | <input id=ga_duration name=duration type=number min=0 max=3600> (seconds) | How long should the giveaway be open? 0 leaves it until explicitly closed.
@@ -373,7 +373,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	config->title = g->title || ""; //Give this one even to non-mods
 	if (req->misc->is_mod) {
 		config->cost = g->cost || 1;
-		config->max = g->max_tickets || 1;
+		config->max = g->max_tickets;
 		config->desc = g->desc_template || "";
 		config->pausemode = g->pausemode ? "pause" : "disable";
 		config->allow_multiwin = g->allow_multiwin ? "yes" : "no";
