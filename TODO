@@ -77,3 +77,4 @@
   - Absorb raidnotes into this system.
 * "max-width: fit-content" doesn't work in Firefox - but nor does -moz-fit-content :(
   - Causes display problems on graphical editor and opening up element details
+* On all textual wait-late buttons, add "CONFIRM:" at the start, for clarity
