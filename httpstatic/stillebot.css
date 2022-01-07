@@ -14,8 +14,11 @@ dialog {
 }
 @supports (-moz-appearance:none) {
 	/* Firefox doesn't automatically position dialogs properly. */
-	/* It's a pain to try to center them, so just snap to the top. */
-	dialog {top: 0;}
+	/* It's a pain to try to center them during resizes, so just
+	position them once and hope for the best. */
+	/* CJA 20220107: It might actually work natively in some
+	versions now. Will have to see if this can be removed. */
+	dialog {top: 50%; transform: translateY(-50%);}
 }
 /* Create a scroll context inside dialogs */
 dialog > section {
@@ -29,7 +32,7 @@ dialog > section > header {
 dialog > section > header > h3 {
 	margin: 0.5em 0;
 }
-dialog > section > div {
+dialog > section > div, dialog > section > form > div {
 	overflow-y: auto;
 	max-height: 70vh;
 }
