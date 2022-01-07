@@ -6,6 +6,17 @@ who wishes to use it, learn from it, or borrow code from it.
 
 $$yourname$$ $$loglink$$
 
+## For everyone
+
+StilleBot uses real-time updates whereever possible. In many cases, status pages and
+configuration pages will keep themselves current without your help. If your internet
+connection goes down, this may fail, but it should correct itself before long.
+
+Potentially-destructive actions are often confirmed using a "wait-late" button. Click
+once, then wait for the button to be available, then click again to confirm. Be sure
+that you actually meant to do this! If the button makes you wait a long time, it's
+probably because the action is more destructive.
+
 ## For broadcasters
 
 If StilleBot is serving as your channel bot, a number of configuration pages are
@@ -75,11 +86,15 @@ and check if there are any cautionary chat restrictions.
 So long as the bot is active in your channel, incoming and outgoing raids will be
 recorded, and will be used for recommendations also.
 
-## For moderators
+## For moderators and viewers
 
 Moderating a channel managed by StilleBot grants you many of the privileges that the
 broadcaster has. All of the [key bot features](#key-bot-features) above are available
 to you too; the easiest way to access them is to go to the channel's landing page.
+
+A number of the bot's configuration pages can be viewed by anyone, if the broadcaster
+is making use of the feature. The easiest way to get the appropriate link is from the
+channel itself, either via a link in chat, or the landing page:
 
 Enter a channel name: <input id=for size=20> [Go!](: #gotochannel)
 
@@ -87,15 +102,9 @@ Enter a channel name: <input id=for size=20> [Go!](: #gotochannel)
 document.getElementById("gotochannel").onclick = e => window.location.href = "/channels/" + document.getElementById("for").value;
 </script>
 
-## For everyone
+Non-moderators will often have a read-only view, but moderators usually get full power.
 
-### General information
+### Raid recommendations
 
-StilleBot uses real-time updates whereever possible. In many cases, status pages and
-configuration pages will keep themselves current without your help. If your internet
-connection goes down, this may fail, but it should correct itself before long.
-
-Potentially-destructive actions are often confirmed using a "wait-late" button. Click
-once, then wait for the button to be available, then click again to confirm. Be sure
-that you actually meant to do this! If the button makes you wait a long time, it's
-probably because the action is more destructive.
+The raid finder can be used by anyone. It will use your own follow list, but can compare
+viewership stats to some other broadcaster. FIXME: Explain what does and doesn't change.
