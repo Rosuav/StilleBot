@@ -109,6 +109,7 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 	if (req->variables->broadcaster) {
 		//Show emotes for a specific broadcaster
 		//Nothing to do with the main page, other than that it's all about emotes.
+		//TODO: If you don't have any emotes, say so, don't just leave the page blank
 		int id = yield(get_user_id(req->variables->broadcaster));
 		array emotes = yield(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + id))->data;
 		mapping sets = ([]);
