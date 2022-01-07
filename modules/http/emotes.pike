@@ -109,7 +109,6 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 	if (req->variables->broadcaster) {
 		//Show emotes for a specific broadcaster
 		//Nothing to do with the main page, other than that it's all about emotes.
-		//TODO: If you don't have any emotes, say so, don't just leave the page blank
 		int id = yield(get_user_id(req->variables->broadcaster));
 		array emotes = yield(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + id))->data;
 		mapping sets = ([]);
@@ -156,6 +155,7 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 			if (set->set_id == "bits") sets[1<<30] = ({"Bits badges", b});
 		}
 		array emotesets = values(sets); sort((array(int))indices(sets), emotesets);
+		if (!sizeof(emotesets)) emotesets = ({({"None", ({"No emotes found for this channel. Partnered and affiliated channels have emote slots available; emotes awaiting approval may not show up here."})})});
 		return render_template("checklist.md", ([
 			"login_link": "", "emotes": "img", "title": "Channel emotes: " + req->variables->broadcaster,
 			"text": sprintf("%{\n## %s\n%{%s %}\n%}", emotesets),
