@@ -56,10 +56,10 @@ export function render(data) {
 
 on("click", "#recalc", e => ws_sync.send({cmd: "recalculate"}));
 
-on("click", ".addvip", waitlate(750, 5000, "Add VIPs for this period?", e =>
+on("click", ".addvip", waitlate(750, 5000, "CONFIRM: Add VIPs for this period?", e =>
 	ws_sync.send({cmd: "addvip", "yearmonth": e.match.closest("TR").id})
 ));
 
-on("click", ".remvip", waitlate(750, 5000, "Remove VIPs for this period?", e =>
+on("click", ".remvip", waitlate(750, 5000, "CONFIRM: Remove VIPs for this period?", e =>
 	ws_sync.send({cmd: "remvip", "yearmonth": e.match.closest("TR").id})
 ));

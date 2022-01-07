@@ -21,12 +21,12 @@ function update_leaders(periodicdata) {
 }
 update_leaders(periodicdata);
 
-on("click", ".addvip", waitlate(750, 5000, "Add VIPs from this period?", e => {
+on("click", ".addvip", waitlate(750, 5000, "CONFIRM: Add VIPs from this period?", e => {
 	console.log("Adding!");
 	fetch("/bitsbadges?period=" + period + "&vip=" + e.match.closest("DIV").dataset.starttime);
 }));
 
-on("click", ".remvip", waitlate(750, 5000, "Remove VIPs from this period?", e => {
+on("click", ".remvip", waitlate(750, 5000, "CONFIRM: Remove VIPs from this period?", e => {
 	console.log("Removing!");
 	fetch("/bitsbadges?period=" + period + "&unvip=" + e.match.closest("DIV").dataset.starttime);
 }));
