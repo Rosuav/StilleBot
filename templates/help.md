@@ -108,3 +108,13 @@ Non-moderators will often have a read-only view, but moderators usually get full
 
 The raid finder can be used by anyone. It will use your own follow list, but can compare
 viewership stats to some other broadcaster. FIXME: Explain what does and doesn't change.
+
+### Stream calendar
+
+[Add a streamer's Twitch schedule to your calendar](/calendar) eg Google Calendar or iCal.
+This requires no special permissions and can be used for any broadcaster who has set up
+an on-Twitch schedule.
+
+## Bug reports
+
+Found an issue somewhere? Contact Rosuav (the bot author) via Twitch, Discord, or GitHub.
