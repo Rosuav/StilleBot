@@ -921,6 +921,8 @@ class _mainwindow
 			if (has_suffix(f, ".pike")) err += !G->bootstrap("modules/" + f);
 		foreach (sort(get_dir("modules/http")), string f)
 			if (has_suffix(f, ".pike")) err += !G->bootstrap("modules/http/" + f);
+		foreach (sort(get_dir("zz_local")), string f)
+			if (has_suffix(f, ".pike")) err += !G->bootstrap("zz_local/" + f);
 		gc();
 		if (!err) return; //All OK? Be silent.
 		if (string winid = getenv("WINDOWID")) //On some Linux systems we can pop the console up.
