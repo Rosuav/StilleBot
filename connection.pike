@@ -997,7 +997,7 @@ continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 		resp->extra_heads["Set-Cookie"] = "session=" + sess->cookie + "; Path=/; Max-Age=604800";
 		G->G->http_sessions[sess->cookie] = sess;
 		if (!G->G->http_session_cleanup) session_cleanup();
-		else Stdio.write_file("twitchbot_sessions.json", encode_value(sess));
+		else Stdio.write_file("twitchbot_sessions.json", encode_value(G->G->http_sessions));
 	}
 	req->response_and_finish(resp);
 }
