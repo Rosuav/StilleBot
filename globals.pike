@@ -189,6 +189,13 @@ class spawn_task(mixed gen, function|void got_result, function|void got_error) {
 }
 constant handle_async = spawn_task; //Compatibility name (deprecated)
 
+//mixed _ = task_sleep(seconds); //Delay the current task efficiently
+class task_sleep(int|float delay) {
+	void then(function whendone) {
+		call_out(whendone, delay, delay || "0"); //Never yield zero, it can cause confusion
+	}
+}
+
 //Some commands are available for echocommands to call on.
 class builtin_command {
 	inherit command;
