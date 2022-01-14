@@ -62,6 +62,9 @@ mapping(int:int) channel_seen_offline = ([]); //Note: Not maintained over code r
 mapping(string:mixed) schedule_check_callouts = ([]); //Cleared and rechecked over code reload
 mapping(string:int) suppress_autohosting = ([]); //If a broadcaster manually unhosts or rehosts, don't change hosting for a bit.
 string botid; //eg 49497888
+constant MINIMUM_CONNECTION_SPACING = 0.5; //Seconds between IRC connection attempts
+constant ADDITIONAL_CONNECTION_SPACING = 0.25; //Random additional seconds to add (linear within 0..this)
+System.Timer last_connection_started = System.Timer();
 
 //Mapping from target-stream-id to the channels that autohost it
 //(Doesn't need to be saved, can be calculated on code update)
@@ -211,7 +214,7 @@ continue Concurrent.Future recalculate_status(string chanid) {
 			//Every live channel got filtered out. That could leave us in a weird state where,
 			//due to this check, we abandon a channel that comes back online. To avoid this, we
 			//recheck once the sixty-second cooldown is up.
-			yield(Concurrent.resolve(1)->delay(mindelay));
+			mixed _ = yield(Concurrent.resolve(1)->delay(mindelay));
 			return recalculate_status(chanid);
 		}
 
@@ -234,7 +237,7 @@ continue Concurrent.Future recalculate_status(string chanid) {
 		//Wut. I still have no idea how this can ever happen. When can connect() yield zero??
 		//One retry, then stop.
 		werror("GHOSTWRITER: Connect %O %O, retry, got irc %O\n", chanid, config->chan, irc);
-		yield(Concurrent.resolve(1)->delay(1));
+		mixed _ = yield(Concurrent.resolve(1)->delay(1));
 		irc = yield(connect(chanid, config->chan));
 	}
 	irc->send_message("#" + config->chan, msg);
@@ -304,28 +307,34 @@ class IRCClient
 	void connection_lost() {close();}
 }
 
-Concurrent.Future connect(string chanid, string chan) {
-	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) return Concurrent.reject(({"No auth\n", backtrace()}));
+continue Concurrent.Future connect(string chanid, string chan) {
+	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) error("No auth\n");
 	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
 	if (object irc = G->G->ghostwriterirc[chanid]) {
 		//TODO: Make sure it's actually still connected
 		write("Already connected to %O/%O, disconnecting\n", chanid, chan);
 		/**/if (1) catch {irc->close();}; else
-		return Concurrent.resolve(irc);
+		return irc;
 	}
+	//In case we're hammering the server, delay spawns.
+	float delay = MINIMUM_CONNECTION_SPACING - last_connection_started->peek();
+	while (delay > 0) {
+		delay += random(ADDITIONAL_CONNECTION_SPACING);
+		werror("Delaying %O connection for %.5fs\n", chan, delay);
+		mixed _ = yield(Concurrent.resolve(1)->delay(delay));
+		delay = MINIMUM_CONNECTION_SPACING - last_connection_started->peek(); //Requery in case another task updated it
+	}
+	last_connection_started->get();
 	Concurrent.Promise prom = Concurrent.Promise();
-	mixed ex = catch {
-		object irc = IRCClient("irc.chat.twitch.tv", ([
-			"nick": chan,
-			"pass": "oauth:" + persist_status->path("bcaster_token")[chan],
-			"promise": prom,
-			"chanid": chanid,
-		]));
-		irc->cmd->cap("REQ","twitch.tv/commands");
-		irc->join_channel("#" + chan);
-		G->G->ghostwriterirc[chanid] = irc;
-	};
-	if (ex) {werror("%% Error connecting to IRC:\n%s\n", describe_error(ex)); return Concurrent.reject(ex);}
+	object irc = IRCClient("irc.chat.twitch.tv", ([
+		"nick": chan,
+		"pass": "oauth:" + persist_status->path("bcaster_token")[chan],
+		"promise": prom,
+		"chanid": chanid,
+	]));
+	irc->cmd->cap("REQ","twitch.tv/commands");
+	irc->join_channel("#" + chan);
+	G->G->ghostwriterirc[chanid] = irc;
 	return prom->future();
 }
 
@@ -489,7 +498,6 @@ protected void create(string name) {
 	G->G->ghostwritercallouts = schedule_check_callouts = (["": hash_value(this)]);
 	string botnick = persist_config["ircsettings"]->?nick;
 	if (botnick) get_user_id(botnick)->then() {botid = (string)__ARGS__[0];}; //Cache the bot's user ID for the demo
-	int delay = 0; //Don't hammer the server
 	mapping configs = persist_status->path("ghostwriter");
 	write("Configs available for %O\n", mkmapping(indices(configs), values(configs)->chan));
 	if (mapping old = persist_config["ghostwriter"]) {
@@ -539,7 +547,7 @@ protected void create(string name) {
 		if (!(int)chanid) {spawn_task(migrate(chanid)); continue;}
 		if (!info->chan) {spawn_task(no_name(chanid)); continue;}
 		if (!info->?channels || !sizeof(info->channels)) continue;
-		call_out(connect, delay += 2, chanid, info->chan);
+		spawn_task(connect(chanid, info->chan));
 		has_channel(chanid, info->channels->id[*]);
 		if (int t = chanstate[chanid]->?next_scheduled_check) {
 			t -= time();
