@@ -70,11 +70,7 @@ System.Timer last_connection_started = System.Timer();
 //(Doesn't need to be saved, can be calculated on code update)
 mapping(string:multiset(string)) autohosts_this = ([]);
 
-/*
-- Check stream schedule, and automatically unhost X seconds (default: 15 mins) before a stream
-  - Use the same pause duration, both sides of the scheduled time - so if you are late starting,
-    you have as much leeway after scheduled time as you have before it.
-- TODO: Allow host overriding if a higher-priority target goes live
+/* TODO: Allow host overriding if a higher-priority target goes live
   - This would add an event while Hosting: "stream online (self or any higher target)"
   - Would also change the logic in recalculate_status to check even if hosting
 */
