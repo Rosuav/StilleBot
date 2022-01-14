@@ -211,7 +211,7 @@ continue Concurrent.Future recalculate_status(string chanid) {
 			//Every live channel got filtered out. That could leave us in a weird state where,
 			//due to this check, we abandon a channel that comes back online. To avoid this, we
 			//recheck once the sixty-second cooldown is up.
-			mixed _ = yield(Concurrent.resolve(1)->delay(mindelay));
+			mixed _ = yield(task_sleep(mindelay));
 			return recalculate_status(chanid);
 		}
 
@@ -234,7 +234,7 @@ continue Concurrent.Future recalculate_status(string chanid) {
 		//Wut. I still have no idea how this can ever happen. When can connect() yield zero??
 		//One retry, then stop.
 		werror("GHOSTWRITER: Connect %O %O, retry, got irc %O\n", chanid, config->chan, irc);
-		mixed _ = yield(Concurrent.resolve(1)->delay(1));
+		mixed _ = yield(task_sleep(1));
 		irc = yield(connect(chanid, config->chan));
 	}
 	irc->send_message("#" + config->chan, msg);
@@ -318,7 +318,7 @@ continue Concurrent.Future connect(string chanid, string chan) {
 	while (delay > 0) {
 		delay += random(ADDITIONAL_CONNECTION_SPACING);
 		werror("Delaying %O connection for %.5fs\n", chan, delay);
-		mixed _ = yield(Concurrent.resolve(1)->delay(delay));
+		mixed _ = yield(task_sleep(delay));
 		delay = MINIMUM_CONNECTION_SPACING - last_connection_started->peek(); //Requery in case another task updated it
 	}
 	last_connection_started->get();
