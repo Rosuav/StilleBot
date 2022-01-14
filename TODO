@@ -77,3 +77,5 @@
   - Absorb raidnotes into this system.
 * "max-width: fit-content" doesn't work in Firefox - but nor does -moz-fit-content :(
   - Causes display problems on graphical editor and opening up element details
+* Allow sending web messages to "#mods" which can be seen (in a different colour) by
+  all mods, and can be deleted by any mod
