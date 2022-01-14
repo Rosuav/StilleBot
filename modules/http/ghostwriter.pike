@@ -84,6 +84,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	if (string scopes = ensure_bcaster_token(req, "chat_login channel_editor chat:edit", req->misc->session->user->?login || "!!"))
 		login = sprintf("> This feature requires Twitch chat authentication.\n>\n"
 				"> [Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
+	if (!login) spawn_task(force_check(req->misc->session->user->id));
 	return render(req, ([
 		"vars": (["ws_group": login ? "0" : req->misc->session->user->id]),
 		"login": login,
