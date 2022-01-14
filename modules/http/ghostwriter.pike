@@ -552,3 +552,16 @@ protected void create(string name) {
 		}
 	}
 }
+
+/* If there's weird issues and infinitely-looping tasks with delays in them, try something like this:
+
+foreach (call_out_info(), array co) {
+	object task = find_callback_task(co[2]);
+	if (!task) continue;
+	//TODO: Figure out whether the task is one that we care about, by examining the generator
+	//Function.defined(task->gen) will give the file and line number.
+	write("Cancelling task %O for gen %O\n", function_name(object_program(task)), function_object(task->gen));
+	remove_call_out(co[2]);
+	task->propagate_error(({"Task cancelled\n", backtrace()}));
+}
+*/
