@@ -75,7 +75,7 @@ mapping(string:multiset(string)) autohosts_this = ([]);
   - Would also change the logic in recalculate_status to check even if hosting
 */
 
-continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
+mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
 	string login;
 	if (string scopes = ensure_bcaster_token(req, "chat_login channel_editor chat:edit", req->misc->session->user->?login || "!!"))
 		login = sprintf("> This feature requires Twitch chat authentication.\n>\n"
