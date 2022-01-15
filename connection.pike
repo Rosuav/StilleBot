@@ -566,6 +566,7 @@ class channel_notif
 		string dest = cfg->dest || "", target = cfg->target || "", destcfg = cfg->destcfg || "";
 		if (dest == "/web")
 		{
+			if (target == "") return; //Attempting to send to a borked destination just silences it
 			//Stash the text away. Recommendation: Have a public message that informs the
 			//recipient that info is available at https://sikorsky.rosuav.com/channels/%s/private
 			mapping n2u = persist_status->path("name_to_uid");
