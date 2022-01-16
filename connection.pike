@@ -706,6 +706,8 @@ class channel_notif
 		});
 	}
 
+	mapping subbomb_individuals = ([]);
+	mapping subbomb_indiv_timeout = ([]);
 	void not_message(object ircperson, string msg, mapping(string:string)|void params)
 	{
 		//TODO: Figure out whether msg and params are bytes or text
@@ -824,6 +826,14 @@ class channel_notif
 				case "subgift":
 				{
 					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBGIFT: chan %s person %O id %O\n", ctime(time()), name, person->user, params->msg_param_origin_id));
+					//Note: Sub bombs get announced first, followed by their individual gifts.
+					//It may be that the msg_param_origin_id can be used to recognize these
+					//gift messages, but in case it can't, we tick off the messages as we see
+					//them, marking them as having come from a bomb.
+					if (subbomb_individuals[params->user_id] > 0 && subbomb_indiv_timeout[params->user_id] > time()) {
+						subbomb_individuals[params->user_id]--;
+						params->came_from_subbomb = "1"; //Hack in an extra parameter
+					}
 					/*write("DEBUG SUBGIFT: chan %s disp %O user %O mon %O recip %O multi %O\n",
 						name, person->displayname, person->user,
 						params->msg_param_months, params->msg_param_recipient_display_name,
@@ -834,6 +844,7 @@ class channel_notif
 						"{streak}": params->msg_param_streak_months || "",
 						"{recipient}": params->msg_param_recipient_display_name,
 						"{multimonth}": params->msg_param_gift_months || "1",
+						"{from_subbomb}": params->came_from_subbomb || "0",
 					]));
 					//Other params: login, user_id, msg_param_recipient_user_name, msg_param_recipient_id,
 					//msg_param_sender_count (the total gifts this person has given in this channel)
@@ -844,6 +855,8 @@ class channel_notif
 				case "submysterygift":
 				{
 					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBBOMB: chan %s person %O count %O id %O\n", ctime(time()), name, person->user, params->msg_param_mass_gift_count, params->msg_param_origin_id));
+					subbomb_individuals[params->user_id] += (int)params->msg_param_mass_gift_count;
+					subbomb_indiv_timeout[params->user_id] = time() + 600; //After ten minutes, if we haven't reset it, we must have missed them.
 					/*write("DEBUG SUBGIFT: chan %s disp %O user %O gifts %O multi %O\n",
 						name, person->displayname, person->user,
 						params->msg_param_mass_gift_count,

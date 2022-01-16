@@ -26,7 +26,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!follower | Someone follows the channel | The new follower | 
 !!sub | Someone subscribes for the first time | The subscriber | tier, multimonth
 !!resub | Someone announces a resubscription | The subscriber | tier, months, streak, multimonth
-!!subgift | Someone gives a sub | The giver | tier, months, streak, recipient, multimonth
+!!subgift | Someone gives a sub | The giver | tier, months, streak, recipient, multimonth, from_subbomb
 !!subbomb | Someone gives random subgifts | The giver | tier, gifts
 !!cheer | Any bits are cheered (including anonymously) | The cheerer | bits
 !!cheerbadge | A viewer attains a new cheer badge | The cheerer | level
@@ -54,6 +54,7 @@ Parameter    | Meaning
 {streak} | Consecutive months of subscription. If a sub is restarted after a delay, {months} continues, but {streak} resets.
 {recipient} | Display name of the gift sub recipient
 {multimonth} | Number of consecutive months of subscription given
+{from_subbomb} | 1 if the gift was part of a sub bomb, 0 if not
 {gifts} | Number of randomly-assigned gifts. Can be 1.
 {bits} | Total number of bits cheered in this message
 {level} | New badge level, eg 1000 if the 1K bits badge has just been attained
