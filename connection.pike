@@ -823,6 +823,7 @@ class channel_notif
 				case "communitypayforward": break; //X is paying forward the Gift they got from Y to the community!
 				case "subgift":
 				{
+					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBGIFT: chan %s person %O id %O\n", ctime(time()), name, person->user, params->msg_param_origin_id));
 					/*write("DEBUG SUBGIFT: chan %s disp %O user %O mon %O recip %O multi %O\n",
 						name, person->displayname, person->user,
 						params->msg_param_months, params->msg_param_recipient_display_name,
@@ -842,6 +843,7 @@ class channel_notif
 				}
 				case "submysterygift":
 				{
+					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBBOMB: chan %s person %O count %O id %O\n", ctime(time()), name, person->user, params->msg_param_mass_gift_count, params->msg_param_origin_id));
 					/*write("DEBUG SUBGIFT: chan %s disp %O user %O gifts %O multi %O\n",
 						name, person->displayname, person->user,
 						params->msg_param_mass_gift_count,
