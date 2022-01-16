@@ -79,3 +79,5 @@
   - Causes display problems on graphical editor and opening up element details
 * Allow sending web messages to "#mods" which can be seen (in a different colour) by
   all mods, and can be deleted by any mod
+* Mark subgift specials with whether they came from a subbomb
+  - Code exists in vipleaders but needs to be brought core
