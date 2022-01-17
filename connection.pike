@@ -571,6 +571,7 @@ class channel_notif
 			//recipient that info is available at https://sikorsky.rosuav.com/channels/%s/private
 			mapping n2u = persist_status->path("name_to_uid");
 			string uid = n2u[lower_case(target - "@")]; //Yes, it's a string, even though it's always going to be digits
+			if (target == "#mods") uid = "-1"; //Pseudo-user for "all mods"
 			if (!uid)
 			{
 				//TODO: Look the person up, delay the message, and then if

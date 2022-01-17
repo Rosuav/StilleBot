@@ -3,6 +3,7 @@ constant markdown = #"# Messages for $$recip$$ from channel $$channel$$
 
 <div id=loading>Loading...</div>
 <ul id=messages></ul>
+<ul id=modmessages></ul>
 
 [Mark all as read](:#mark_read)
 
@@ -36,7 +37,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req)) return resp;
 	return render(req, ([
-		"vars": (["ws_group": req->misc->session->user->id]),
+		"vars": ([
+			"ws_group": req->misc->session->user->id,
+			"ws_extra_group": req->misc->is_mod ? "-1" + req->misc->channel->name : 0,
+		]),
 		"recip": req->misc->session->user->display_name,
 	]) | req->misc->chaninfo);
 }
@@ -74,6 +78,7 @@ mapping _get_message(string|int id, mapping msgs) {
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (string err = ::websocket_validate(conn, msg)) return err;
 	sscanf(msg->group, "%s#%s", string uid, string chan);
+	if (uid == "-1") return !conn->is_mod && "Bad group ID"; //UID -1 is a pseudo-user for all mods to share
 	if (conn->session->user->id != uid) return "Bad group ID"; //Shouldn't happen, but maybe if you refresh the page after logging in as a different user???
 }
 

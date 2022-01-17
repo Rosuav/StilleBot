@@ -2,6 +2,12 @@ import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfact
 const {A, BUTTON, IMG, LI, SPAN} = choc;
 import {waitlate} from "$$static||utils.js$$";
 
+/* PROBLEM: With two connections (personal and mod-shared), there's no easy way
+to know which socket to send signals on. Each socket needs to get signals for
+its own group. Will need some facility inside ws_sync itself for distinguishing
+send destinations.
+*/
+
 const full_date_format = new Intl.DateTimeFormat('default', {
 	weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
 	hour: 'numeric', minute: 'numeric', second: 'numeric',
@@ -75,4 +81,11 @@ on("click", ".acknowledge", e => {
 	delete li.dataset.id;
 	li.classList.add("soft-deleted");
 	ws_sync.send({cmd: "acknowledge", id});
+});
+
+if (ws_extra_group) ws_sync.connect(ws_extra_group, {
+	ws_type: "chan_messages",
+	render_parent: DOM("#modmessages"),
+	render_item: render_item,
+	render: function(data) { },
 });
