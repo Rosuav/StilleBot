@@ -29,11 +29,15 @@ function date_display(date) {
 	return SPAN({className: "date", title: full_date_format.format(date)}, " [" + shortdate + "] ");
 }
 
+//FIXME: lastread needs to distinguish modmessages from regular messages
+//And then the mod render() needs to mark modmessages as read.
 let lastread = -1;
 function is_unread(id) {
 	if (lastread === -1) return false; //How should messages display before we know whether they're unread or read?
 	return (+id) > lastread;
 }
+
+let mod_sock = null;
 
 export const render_parent = DOM("#messages");
 export function render_item(msg) {
@@ -62,7 +66,7 @@ export function sockmsg_mark_read(data) {
 	});
 }
 
-export function render_empty() {set_content("#loading", "You have no messages from this channel.");}
+export function render_empty() {set_content("#loading", "You have no personal messages from this channel.");}
 export function render(data) {
 	if (lastread === -1) ws_sync.send({cmd: "mark_read", why: "startup"});
 }
@@ -70,22 +74,28 @@ export function render(data) {
 on("click", ".confirmdelete", waitlate(750, 5000, "Delete?", e => {
 	const li = e.match.closest("li");
 	if (!li.dataset.id) li.replaceWith();
-	else ws_sync.send({cmd: "delete", id: li.dataset.id});
+	else if (!li.closest("#modmessages")) ws_sync.send({cmd: "delete", id: li.dataset.id});
+	else if (mod_sock) mod_sock.send(JSON.stringify({cmd: "delete", id: li.dataset.id}));
 }));
 
-on("click", "#mark_read", e => ws_sync.send({cmd: "mark_read", why: "explicit"}));
+on("click", "#mark_read", e => {
+	ws_sync.send({cmd: "mark_read", why: "explicit"});
+	if (mod_sock) mod_sock.send(JSON.stringify({cmd: "mark_read", why: "explicit"}));
+});
 
 on("click", ".acknowledge", e => {
 	const li = e.match.closest("li");
 	const id = li.dataset.id; if (!id) return;
 	delete li.dataset.id;
 	li.classList.add("soft-deleted");
-	ws_sync.send({cmd: "acknowledge", id});
+	if (!li.closest("#modmessages")) ws_sync.send({cmd: "acknowledge", id});
+	else mod_sock.send(JSON.stringify({cmd: "acknowledge", id}));
 });
 
 if (ws_extra_group) ws_sync.connect(ws_extra_group, {
 	ws_type: "chan_messages",
 	render_parent: DOM("#modmessages"),
 	render_item: render_item,
-	render: function(data) { },
+	render: function(data) { }, //FIXME: Mod messages aren't marked read on startup
+	socket_connected: sock => mod_sock = sock,
 });

@@ -16,11 +16,13 @@ export function connect(group, handler)
 		reconnect_delay = 250;
 		console.log("Socket connection established.");
 		socket.send(JSON.stringify({cmd: "init", type: handler.ws_type || ws_type, group}));
-		send_socket = socket; //Don't activate send() until we're initialized
+		if (handler.socket_connected) handler.socket_connected(socket);
+		else send_socket = socket; //Don't activate send() until we're initialized
 		if (pending_message) {socket.send(JSON.stringify(pending_message)); pending_message = null;}
 	};
 	socket.onclose = () => {
-		send_socket = null;
+		if (handler.socket_connected) handler.socket_connected(null);
+		else send_socket = null;
 		console.log("Socket connection lost.");
 		setTimeout(connect, reconnect_delay, group, handler);
 		if (reconnect_delay < 5000) reconnect_delay *= 1.5 + 0.5 * Math.random(); //Exponential back-off with a (small) random base
