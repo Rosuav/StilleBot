@@ -23,6 +23,10 @@ li {line-height: 2.25;}
 .acknowledge {margin-left: 0.375em;}
 .soft-deleted {text-decoration: line-through;}
 .soft-deleted .acknowledge {display: none;}
+
+#modmessages li {
+	background: #a0f0c0;
+}
 </style>
 ";
 
