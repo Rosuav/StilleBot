@@ -29,20 +29,18 @@ function date_display(date) {
 	return SPAN({className: "date", title: full_date_format.format(date)}, " [" + shortdate + "] ");
 }
 
-//FIXME: lastread needs to distinguish modmessages from regular messages
-//And then the mod render() needs to mark modmessages as read.
-let lastread = -1;
-function is_unread(id) {
-	if (lastread === -1) return false; //How should messages display before we know whether they're unread or read?
-	return (+id) > lastread;
+const ctx_personal = {lastread: -1, parent: DOM("#messages")};
+const ctx_mod = {lastread: -1, parent: DOM("#modmessages")};
+let mod_sock = null;
+function is_unread(id, ctx) {
+	if (ctx.lastread === -1) return false; //How should messages display before we know whether they're unread or read?
+	return (+id) > ctx.lastread;
 }
 
-let mod_sock = null;
-
 export const render_parent = DOM("#messages");
-export function render_item(msg) {
+function render_message(msg, ctx) {
 	set_content("#loading", "");
-	return LI({"data-id": msg.id, className: is_unread(msg.id) ? "unread" : ""}, [
+	return LI({"data-id": msg.id, className: is_unread(msg.id, ctx) ? "unread" : ""}, [
 		BUTTON({type: "button", className: "confirmdelete"}, "🗑"),
 		date_display(new Date(msg.received * 1000)),
 		msg.parts ? SPAN(msg.parts.map(p =>
@@ -55,20 +53,22 @@ export function render_item(msg) {
 		msg.acknowledgement && BUTTON({type: "button", className: "acknowledge", title: "Will respond with: " + msg.acknowledgement}, "Got it, thanks!"),
 	]);
 }
+export function render_item(msg) {return render_message(msg, ctx_personal);}
 
-export function sockmsg_mark_read(data) {
+function mark_as_read(data, ctx) {
 	//On startup, we ask the server to mark everything as Read, but we keep the unread
 	//status from prior to this mark.
-	if (data.why === "startup") lastread = data.was;
-	else lastread = data.now;
-	render_parent.querySelectorAll("[data-id]").forEach(el => {
-		el.className = is_unread(el.dataset.id) ? "unread" : "";
+	if (data.why === "startup") ctx.lastread = data.was;
+	else ctx.lastread = data.now;
+	ctx.parent.querySelectorAll("[data-id]").forEach(el => {
+		el.className = is_unread(el.dataset.id, ctx) ? "unread" : "";
 	});
 }
+export function sockmsg_mark_read(data) {mark_as_read(data, ctx_personal);}
 
 export function render_empty() {set_content("#loading", "You have no personal messages from this channel.");}
 export function render(data) {
-	if (lastread === -1) ws_sync.send({cmd: "mark_read", why: "startup"});
+	if (ctx_personal.lastread === -1) ws_sync.send({cmd: "mark_read", why: "startup"});
 }
 
 on("click", ".confirmdelete", waitlate(750, 5000, "Delete?", e => {
@@ -95,7 +95,8 @@ on("click", ".acknowledge", e => {
 if (ws_extra_group) ws_sync.connect(ws_extra_group, {
 	ws_type: "chan_messages",
 	render_parent: DOM("#modmessages"),
-	render_item: render_item,
-	render: function(data) { }, //FIXME: Mod messages aren't marked read on startup
+	render_item: msg => render_message(msg, ctx_mod),
+	render: function(data) {if (ctx_mod.lastread === -1) mod_sock.send(JSON.stringify({cmd: "mark_read", why: "startup"}));},
 	socket_connected: sock => mod_sock = sock,
+	sockmsg_mark_read: data => mark_as_read(data, ctx_mod),
 });
