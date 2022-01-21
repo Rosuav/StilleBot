@@ -59,7 +59,8 @@ int message(object channel, mapping person, string msg)
 	foreach (buyfollows, string badword) if (has_value(msg, badword)) person->vars["{@buyfollows}"] = "1";
 	if ((
 		has_value(msg, "Want to become famous? Buy followers") ||
-		has_value(msg, "Buy followers, primes and viewers on")
+		has_value(msg, "Buy followers, primes and viewers on") ||
+		has_value(msg, "Buy followers and viewers on")
 	) && (
 		has_value(msg, " http://") || has_value(msg, " https://") || has_value(msg, " alturl.com") ||
 		has_value(msg, " vk.cc/") || has_value(msg, " clck.ru") || has_value(msg, " cutt.ly") ||
