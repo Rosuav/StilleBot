@@ -182,7 +182,7 @@ DOM("#editnotes").onclose = e => {
 		headers: {"content-type": "application/json"},
 		body: JSON.stringify({id: +stream.user_id, notes: newnotes}),
 	}).then(res => {
-		if (!res.ok) {console.error("ERROR SAVING NOTES"); console.error(res);} //TODO: This could include a 401 if the login has expired
+		if (!res.ok) {console.error("ERROR SAVING NOTES"); console.error(res);} //This could include a 401 if the login has expired
 		if (!stream.element) return res.json(); //Changing the highlights gets an actual response
 		const btn = stream.element.querySelector(".notes");
 		if (newnotes === "") {btn.className = "notes absent"; set_content(btn, "\u270D");}
@@ -381,8 +381,6 @@ function build_follow_list() {
 		]
 	)));
 	ws_sync.send({cmd: "interested", want_streaminfo});
-	//TODO maybe: Have this link back to raidfinder with a marker saying "your cat",
-	//and thus get all the recent raid info etc, rather than just linking to the cat.
 	if (your_stream)
 		set_content("#yourcat", [
 			your_stream.user_name + " has " + your_stream.viewer_count + " viewers in " + your_stream.category,
