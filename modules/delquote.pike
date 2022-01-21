@@ -1,7 +1,14 @@
 inherit command;
 constant featurename = "quotes";
 constant require_moderator = 1;
-//TODO-DOCSTRING
+constant docstring = #"
+Delete a channel quote
+
+Usage: `!delquote 123`
+
+Remove a quote added with the `!addquote` command. Note that this will
+renumber all quotes after the one removed.
+";
 
 echoable_message process(object channel, object person, string param)
 {

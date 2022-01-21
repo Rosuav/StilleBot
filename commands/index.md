@@ -12,6 +12,7 @@ Commands in alphabetical order:
 * [!autoban: Keyword-based automatic moderation.](autoban)
 * [!calc: Calculate something, possibly involving channel variables](calc)
 * [!delcmd: Remove an echo command for this channel](delcmd)
+* [!delquote: Delete a channel quote](delquote)
 * [!features: Enable or disable bot features.](features)
 * [!help: List commands available to you](help)
 * [!quote: View a chosen or randomly-selected quote](quote)
