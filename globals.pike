@@ -834,7 +834,7 @@ class TwitchAuth
 			request_access_token(code) {cb[!__ARGS__[0]](__ARGS__[1]);};
 		});
 	}
-	//TODO: Promisified version of refresh_access_token if we start using that
+	//Promisified version of refresh_access_token not necessary with Twitch's current "never-expire" policy
 }
 
 mapping(string:mixed) twitchlogin(Protocols.HTTP.Server.Request req, multiset(string) scopes, string|void next)
