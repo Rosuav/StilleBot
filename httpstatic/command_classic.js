@@ -40,7 +40,7 @@ function simple_to_conditional(e) {
 
 function simple_text(msg) {
 	return DIV({className: "simpletext"}, [
-		INPUT({value: msg}),
+		INPUT({value: msg.replace("##CHANNEL##", ws_group.slice(1))}),
 		BUTTON({onclick: simple_to_advanced, title: "Customize flags for this line"}, "\u2699"),
 		BUTTON({onclick: simple_to_conditional, title: "Make this conditional"}, "\u2753"),
 	]);

@@ -16,7 +16,6 @@ constant MAX_RESPONSES = 10; //Max pieces of text per command, for simple view. 
 //use the Advanced view in the front end.
 constant COMPLEX_TEMPLATES = ([
 	"!winner": ({
-		//TODO: Populate the actual channel name in the template
 		"Congratulations, %s! You have won The Thing! Details are waiting for you over here: https://sikorsky.rosuav.com/channels/##CHANNEL##/private",
 		(["message": "Your secret code is 0TB54-I3YKG-CNDKV and you can go to https://some.url.example/look-here to redeem it!", "dest": "/web %s"]),
 	}),

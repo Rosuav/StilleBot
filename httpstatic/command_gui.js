@@ -936,7 +936,7 @@ function apply_params(el, msg) {
 
 function message_to_element(msg, new_elem, array_ok) {
 	if (msg === "" || typeof msg === "undefined") return "";
-	if (typeof msg === "string") return new_elem({type: "text", message: msg});
+	if (typeof msg === "string") return new_elem({type: "text", message: msg.replace("##CHANNEL##", ws_group.slice(1))});
 	if (Array.isArray(msg)) switch (msg.length) {
 		case 0: return ""; //Empty array is an empty message
 		case 1: return message_to_element(msg[0], new_elem, array_ok);
