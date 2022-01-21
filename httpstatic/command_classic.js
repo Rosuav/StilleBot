@@ -236,7 +236,6 @@ function render_command(cmd, toplevel) {
 		const v = voiceids.map(id => OPTION({value: id, selected: cmd.voice+"" === id ? "1" : undefined}, voices[id].desc));
 		v.unshift(OPTION({value: "", selected: cmd.voice ? "1" : undefined}, "Default voice"));
 		if (cmd.voice && !voices[cmd.voice]) {
-			//TODO: Show the name somehow?
 			v.push(OPTION({value: "", selected: "1", style: "color: red"}, "Deauthenticated"));
 		}
 		opts.push(TR({"data-flag": "voice"}, [
