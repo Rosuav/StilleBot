@@ -3,10 +3,6 @@ constant markdown = #"# Giveaway - $$giveaway_title||win things with channel poi
 
 <div id=master_status>$$error||Loading giveaway status...$$</div>
 
-<!-- FIXME: In Firefox, the Master Control dialog (like all dialogs) is at the top of
-the screen. This overlays the Master Status div, making it hard to read the winner's
-identity. -->
-
 <ul id=ticketholders></ul>
 
 $$login$$
