@@ -221,7 +221,7 @@ const types = {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => ["Regular expression", "Otherwise:"],
 		params: [{attr: "conditional", values: "regexp"}, {attr: "casefold", label: "Case insensitive", values: bool_attr},
 			{attr: "expr1", label: "Reg Exp"}, {attr: "expr2", label: "Compare against"}],
-		typedesc: ["Make a decision - if ", A({href: "/regexp"}, "regular expression"), " matches, do one thing, otherwise do something else."],
+		typedesc: ["Make a decision - if ", A({href: "/regexp", target: "_blank"}, "regular expression"), " matches, do one thing, otherwise do something else."],
 	},
 	conditional_number: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => ["Numeric computation", "If it's zero/false:"],
