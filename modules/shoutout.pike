@@ -18,14 +18,14 @@ constant game_desc = ([
 	"Makers & Crafting": "streaming craft", //Don't really like this description, as it doesn't include the actual category
 	"Music & Performing Arts": "creating %s",
 	"Software and Game Development": "magicking some %s",
+	//Not a fan of the "streaming" cop-out
+	"ASMR": "streaming %s",
+	"Beauty & Body Art": "creating %s",
+	"Talk Shows & Podcasts": "streaming %s",
+	"Travel & Outdoors": "streaming %s",
+	"Special Events": "streaming %s",
+	"Sports & Fitness": "streaming %s",
 	//All others come up as "playing %s"
-	//TODO: Handle the IRL-tagged categories better.
-	//"ASMR"
-	//"Beauty & Body Art"
-	//"Talk Shows & Podcasts"
-	//"Travel & Outdoors"
-	//"Special Events"
-	//"Sports & Fitness"
 ]);
 
 constant command_description = "Shout out another streamer, providing a link and some info about them (alias !so)";
