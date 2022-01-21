@@ -79,3 +79,4 @@
   - Causes display problems on graphical editor and opening up element details
 * Hype train Configure button broken if no channel selected?
 * Hype train Configure button differently broken if borked channel - finds two logins
+* Check VLC 3.0.16 to see if there are better docs about the Lua interface
