@@ -25,7 +25,7 @@ Visibility  | visible    | Command will be listed in !help
 Editing commands can also be done via the bot's web browser configuration
 pages, where available.
 ";
-//TODO maybe: Have an option for a cooldown?? Would need to be more than a keyword flag.
+
 string process(object channel, object person, string param)
 {
 	if (sscanf(param, "!%[^# ] %s", string cmd, string flags) == 2)
