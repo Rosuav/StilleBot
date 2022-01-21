@@ -101,7 +101,6 @@ most popular emote from the set. These sole survivors are all that remain
 of their formerly grand sets...
 CupFooty ZombieKappa OWL2019Tracer FightCC<br>
 
-TODO: Check Pok* (Pokemon) emotes
 ", "<br>\n", "<br>"); //Remove the newlines after the line breaks so we don't get superfluous empty paragraphs
 //For V1 emotes that the bot has, we can get their IDs from the API.
 //For others, list them here and they'll work. This means that all v2 emotes have to be
