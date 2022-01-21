@@ -72,7 +72,7 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 			headers->Authorization = "Bearer " + G->G->app_access_token;
 		}
 		else {
-			//TODO: Under what circumstances do we need to use "OAuth <token>" instead?
+			//Under what circumstances do we need to use "OAuth <token>" instead?
 			//In Mustard Mine, the only remaining place is PUT /kraken/channels which we
 			//don't use here, but are there any others?
 			//20200511: It seems emote lookups require "OAuth" instead of "Bearer". Sheesh.
