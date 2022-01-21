@@ -6,8 +6,8 @@ Part of manageable feature: features
 
 Usage: `!features featurename {enable|disable|default}`
 
-Setting a feature to 'default' state will enable it if all-cmds, disable if
-http-only. TODO: Make this flag visible and possibly mutable.
+Features set to the 'default' state follow the setting for allcmds, so in
+general, you need only specify the features that are different from that.
 
 Note that features disabled here may still be available via the bot's web
 interface.
