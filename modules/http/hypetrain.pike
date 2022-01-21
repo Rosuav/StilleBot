@@ -66,6 +66,7 @@ EventSub hypetrain_end = EventSub("hypetrain_end", "channel.hype_train.end", "1"
 
 continue mapping|Concurrent.Future get_state(int|string chan)
 {
+	if (chan == "-") return 0;
 	mixed ex = catch {
 		string uid;
 		if (intp(chan)) {//Deprecated, might change everything to be all channel names at some point
@@ -108,25 +109,6 @@ string avail_emotes = "";
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	string chan = lower_case(req->variables["for"] || "");
-	if (chan == "") {
-		//If you've just logged in, assume that you want your own hype train stats.
-		//Make sure that the page link is viably copy-pastable.
-		if (req->misc->session->scopes[?"channel:read:hype_train"])
-			return redirect("hypetrain?for=" + req->misc->session->user->login);
-		return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
-			"loading": "(no channel selected)",
-			"channelname": "(no channel)",
-			//TODO: When emote IDs are easily available, provide the matrix of emotes
-			//and their IDs to the front end, instead of doing it with a Markdown list.
-			"emotes": avail_emotes, "have_emotes": "",
-			"backlink": !req->variables->mobile && "<a href=\"hypetrain?mobile\">Switch to mobile view</a>",
-		]));
-	}
-	int need_token = !persist_status->path("bcaster_token")[chan];
-	string scopes = ensure_bcaster_token(req, "channel:read:hype_train", chan);
-	//If we got a fresh token, push updates out, in case they had errors
-	if (need_token && !scopes) send_updates_all(chan);
 	if (avail_emotes == "") {
 		mapping emotemd = G->G->emote_code_to_markdown || ([]);
 		mapping emoteids = function_object(G->G->http_endpoints->checklist)->emoteids; //Hack!
@@ -142,6 +124,26 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			}
 		}
 	}
+	string chan = lower_case(req->variables["for"] || "");
+	if (chan == "") {
+		//If you've just logged in, assume that you want your own hype train stats.
+		//Make sure that the page link is viably copy-pastable.
+		if (req->misc->session->scopes[?"channel:read:hype_train"])
+			return redirect("hypetrain?for=" + req->misc->session->user->login);
+		return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
+			"vars": (["ws_type": "hypetrain", "ws_group": "-"]),
+			"loading": "(no channel selected)",
+			"channelname": "(no channel)",
+			//TODO: When emote IDs are easily available, provide the matrix of emotes
+			//and their IDs to the front end, instead of doing it with a Markdown list.
+			"emotes": avail_emotes, "have_emotes": "",
+			"backlink": !req->variables->mobile && "<a href=\"hypetrain?mobile\">Switch to mobile view</a>",
+		]));
+	}
+	int need_token = !persist_status->path("bcaster_token")[chan];
+	string scopes = ensure_bcaster_token(req, "channel:read:hype_train", chan);
+	//If we got a fresh token, push updates out, in case they had errors
+	if (need_token && !scopes) send_updates_all(chan);
 	//In case the user activates checklist mode, enumerate emotes we've seen used.
 	mapping seen_emotes = persist_status->path("seen_emotes")[(string)req->misc->session->?user->?id] || ([]);
 	array have_emotes = ({ });
