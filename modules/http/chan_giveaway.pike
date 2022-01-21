@@ -1,6 +1,8 @@
 inherit http_websocket;
 constant markdown = #"# Giveaway - $$giveaway_title||win things with channel points$$
 
+<div id=errormessage class=hidden></div>
+
 <div id=master_status>$$error||Loading giveaway status...$$</div>
 
 <ul id=ticketholders></ul>
@@ -72,6 +74,14 @@ details {border: 1px solid black; padding: 0.5em; margin: 0.5em;}
 	font-weight: bold;
 }
 .modonly {$$modonly||display: none$$;}
+#errormessage {
+	background: #fdd;
+	border: 3px solid red;
+	max-width: fit-content;
+	padding: 5px;
+	margin: 10px;
+}
+.hidden {display: none;}
 </style>
 ";
 

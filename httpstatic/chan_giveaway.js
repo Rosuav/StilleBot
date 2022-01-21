@@ -26,8 +26,15 @@ function recommend(btn) {
 	next.classList.add("next");
 }
 
+let message_timeout = 0;
+function update_message(msg) {
+	set_content("#errormessage", msg).classList.toggle("hidden", msg === "");
+	clearTimeout(message_timeout);
+	message_timeout = setTimeout(update_message, 10000, "");
+}
+
 export function render(state) {
-	if (state.message) {console.warn(state.message); return;} //TODO: Handle info/warn/error, and put in the DOM, kthx
+	if (state.message) {update_message(state.message); return;}
 	if (state.title) set_content("h1", "Giveaway - " + state.title + "!");
 	if (state.tickets) set_content("#ticketholders", state.tickets.map(t => LI([""+t.tickets, " ", t.name])));
 	if ("is_open" in state) {
