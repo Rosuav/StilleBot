@@ -213,7 +213,7 @@ if (!ismobile) {
 	DOM("#refresh").onclick = refresh;
 	DOM("#configure").onclick = () => {
 		DOM("#save_prefs").disabled = !have_prefs;
-		if (have_prefs) DOM(".twitchlogin").style.display = "none";
+		if (have_prefs) DOM("#configform .twitchlogin").style.display = "none";
 		DOM("#config").showModal();
 	};
 	on("click", ".play", e => {
