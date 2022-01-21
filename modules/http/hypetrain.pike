@@ -117,6 +117,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
 			"loading": "(no channel selected)",
 			"channelname": "(no channel)",
+			//TODO: When emote IDs are easily available, provide the matrix of emotes
+			//and their IDs to the front end, instead of doing it with a Markdown list.
 			"emotes": avail_emotes, "have_emotes": "",
 			"backlink": !req->variables->mobile && "<a href=\"hypetrain?mobile\">Switch to mobile view</a>",
 		]));
