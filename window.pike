@@ -782,7 +782,8 @@ class easy_auth
 	//The simple, normal way to authenticate
 	inherit window;
 	mapping config = persist->path("ircsettings");
-	//TODO: Generate our own, probably using a github.io redirect URI
+	//This is only necessary for people who don't have the web interface, which probably
+	//means they won't have a client ID either. So we use the Twitch default one.
 	constant url = "https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=q6batx0epp608isickayubi39itsckt&redirect_uri=https://twitchapps.com/tmi/&scope=chat:read+chat:edit+channel:moderate+whispers:read+whispers:edit+channel_editor";
 
 	void makewindow()
