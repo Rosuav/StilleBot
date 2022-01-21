@@ -63,7 +63,7 @@ function get_message_details() {
 			let response;
 			try {response = JSON.parse(DOM("#raw_text").value);}
 			catch (e) {set_content("#raw_error", "JSON format error: " + e.message); return null;}
-			set_content("#raw_error", ""); //TODO: Show errors somewhere else (maybe in the header??)
+			set_content("#raw_error", "");
 			return response;
 		}
 		case "": return null;
@@ -91,8 +91,6 @@ function select_tab(tab, response) {
 		case "classic": cls_load_message(cmd_basis, cmd_editing); break;
 		case "graphical": {
 			set_content("#command_details", "");
-			//TODO: Load up more info into the basis object (and probably keep it around)
-			//Notably, specials need a ton more info
 			try_gui_load_message(cmd_basis, cmd_editing);
 			break;
 		}
