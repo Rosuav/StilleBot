@@ -6,9 +6,9 @@ underpin a lot of internet security, and I'm hoping this can be a fun visualizat
 
 Scenario:
 Coded messages are no longer safe. Your enemies have discovered your code, and can both read your messages
-and write fake messages of your own. You need a way to send your contact one crucial instruction which will
-allow you to share a new code. How? There is a public message board on which anyone may leave a note, so
-you must leave a message there, with some proof that it is truly from you.
+and write fake messages of their own. You need a way to send your contact one crucial instruction which
+will allow you to share a new code. How? There is a public message board on which anyone may leave a note,
+so you must leave a message there, with some proof that it is truly from you.
 
 The Diffie Hellman Paint Company has a public mixing facility. Starting with an ugly beige, you can add
 any pigments you like, selected from seventeen options (various secondary or tertiary colours), in any of
@@ -226,7 +226,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	}
 	void add_pattern(string name, array pattern) {
 		array color = STANDARD_BASE;
-		array design = ({({"small base", "Base"})});
+		array design = ({({"swatch small base", "Base"})});
 		foreach (pattern; int i; [string pigment, int strength]) {
 			for (int s = 0; s < strength; ++s)
 				color = mix(color, PIGMENTS[pigment]);
