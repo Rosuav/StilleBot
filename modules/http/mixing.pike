@@ -1,3 +1,73 @@
+/* Pseudo-game concept.
+
+I'm writing this up as if it's a game to be played, but the purpose isn't primarily to be a fun game,
+it's to be a demonstration. The principles on which this works are the same as the principles which
+underpin a lot of internet security, and I'm hoping this can be a fun visualization.
+
+Scenario:
+Coded messages are no longer safe. Your enemies have discovered your code, and can both read your messages
+and write fake messages of your own. You need a way to send your contact one crucial instruction which will
+allow you to share a new code. How? There is a public message board on which anyone may leave a note, so
+you must leave a message there, with some proof that it is truly from you.
+
+The Diffie Hellman Paint Company has a public mixing facility. Starting with an ugly beige, you can add
+any pigments you like, selected from seventeen options (various secondary or tertiary colours), in any of
+three strengths (a spot, a spoonful, or a splash).
+
+You can leave a paint pot (with your name on it and the colour daubed on the label) at the mixer; your
+contact will see it, but so will everyone else.
+
+Notes on the board can have painted mastheads. It's easy to compare masthead colours to any pot you
+have - "identical", "similar", "different".
+
+With zero private communication, communicate safely.
+
+The trick to it is: Choose *and remember* any combination of pigments. Mix this and leave it under your
+name. Your contact does likewise. Then you pick up your contact's paint pot, and mix in the same pigments
+that you put into your own; contact does likewise with yours. You are now in possession of identically
+coloured pots of paint (which you will not share), and can use them to communicate reliably.
+
+
+Public paint pots starts out with {"Beige": STANDARD_BASE}
+Personal paint pots starts out empty for all players.
+During paint mixing phase, all players may take any base colour (public or personal paint) and add any
+pigments, and can save the current paint to personal collection, optionally with a label.
+Players get one opportunity to post one of their pots in public. All players see it with the name of the
+one who posted it. All players may use it as a base.
+Optional: To avoid too much information leakage through timings, players must explicitly check for public pots?
+Otherwise, push 'em out on websocket.
+When paint mixing phase ends, all players retain access to their personal collections. All players may then
+select one paint colour to post a message with. Once all players have done so, the message board is revealed.
+Success is defined as your contact correctly selecting your message out of all the messages on the board.
+
+
+Crucial: Paint mixing. Every paint pot is identified on the server by a unique ID that is *not* defined
+by its composition. When you attempt a mix, you get back a new paint pot, and you (but only you) can see
+that it's "this base plus these pigments". Everyone else just sees the new ID (if you share it).
+Any existing paint pot can be used as a base, or you can use the standard beige base any time.
+
+Essential: Find a mathematical operation which takes a base and a modifier.
+* Must be transitive: f(f(b, m1), m2) == f(f(b, m2), m1)
+* Must be repeatable: f(f(b, m1), m1) != f(b, m1) up to 3-6 times (it's okay if x*5 and x*6 are visually similar)
+* Must "feel" like it's becoming more like that colour (subjective)
+* Must not overly darken the result.
+The current algorithm works, but probably won't scale to 3-5 pigments without going ugly brown.
+Ideally I would like each key to be able to be 3-5 pigments at 1-3 strength each, totalling anywhere from
+6 to 30 pigment additions. Maybe add a little bit to the colour each time it's modified, to compensate
+for the darkening effect of the pigmentation?
+
+Note: If both sides choose 3-5 pigments at random, and strengths 1-3 each, this gives about 41 bits of key length.
+Not a lot by computing standards, but 3e12 possibilities isn't bad for a (pseudo-)game.
+
+Current algorithm uses fractions out of 256, then takes the fourth root. It may be worth rationalizing these
+to some nearby approximation, and then differentiating between the "label colour" (the original) and the
+"mixing colour" (the three rationals). This will allow efficient and 100% reproducible colour creation. Do not
+reveal the actual rational numbers that form the resultant colour, as factors may leak information, but it would
+be possible to retain them in that form internally.
+
+(Note that real DHKE uses modulo arithmetic to keep storage requirements sane, so it doesn't have to worry about
+rounding or inaccuracies.)
+*/
 inherit http_websocket;
 
 constant markdown = #"# Diffie Hellman Paint Mixing
