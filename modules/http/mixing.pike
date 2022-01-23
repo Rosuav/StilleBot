@@ -102,32 +102,31 @@ constant PIGMENTS = ([
 	"Chocolate": ({0x7B, 0x3F, 0x11}),
 	"Alice Blue": ({0xF0, 0xF8, 0xFE}),
 	"Mint Mus": ({0x99, 0xFD, 0x97}),
-	"Bulker": STANDARD_BASE[*] * 2, //Special-case this one and don't show swatches.
+	"Bulker": STANDARD_BASE[*] * 2,
 	"Charcoal": ({0x44, 0x45, 0x4f}),
 	"Beige": STANDARD_BASE,
-	//Special-case this one. Swatch it as a vibrant crimson (fresh blood), but use the actual "Blood" value for mixing (old blood).
-	"Blood-fresh": ({0xAA, 0, 0}),
 	"Blood": ({0x7E, 0x35, 0x17}),
 ]);
-constant PIGMENT_DESCRIPTIONS = ([
-	"Crimson": "It's red. What did you expect?",
-	"Jade": "Derived from pulverised ancient artifacts. Probably not cursed.",
-	"Cobalt": "Like balt, but the other way around",
-	"Hot Pink": "Use it quickly before it cools down!",
-	"Orange": "For when security absolutely depends on not being able to rhyme",
-	"Lawn Green": "Not to be confused with Australian Lawn Green, which is brown",
-	"Spring Green": "It's a lie; most of my springs are unpainted",
-	"Sky Blue": "Paint your ceiling in this colour and pretend you're outside!",
-	"Orchid": "And Kid didn't want to participate, so I got his brother instead",
-	"Rebecca Purple": "A tribute to Eric Meyer's daughter. #663399",
-	"Chocolate": "Everything's better with chocolate.",
-	"Alice Blue": "Who is more famous - the president or his wife?",
-	"Mint Mus": "Definitely not a frozen dessert.",
-	"Bulker": "Add some more base colour to pale out your paint",
-	"Charcoal": "Dirty grey for when vibrant colours just aren't your thing",
-	"Beige": "In case the default beige just isn't beigey enough for you",
-	"Blood": "This pigment is made from real blood. Use it wisely.",
-]);
+constant SWATCHES = ({
+	({"Crimson", "It's red. What did you expect?"}),
+	({"Jade", "Derived from pulverised ancient artifacts. Probably not cursed."}),
+	({"Cobalt", "Like balt, but the other way around"}),
+	({"Hot Pink", "Use it quickly before it cools down!"}),
+	({"Orange", "For when security absolutely depends on not being able to rhyme"}),
+	({"Lawn Green", "Not to be confused with Australian Lawn Green, which is brown"}),
+	({"Spring Green", "It's a lie; most of my springs are unpainted"}),
+	({"Sky Blue", "Paint your ceiling in this colour and pretend you're outside!"}),
+	({"Orchid", "'And Kid' didn't want to participate, so I got his brother instead"}),
+	({"Rebecca Purple", "A tribute to Eric Meyer's daughter. #663399"}),
+	({"Chocolate", "Everything's better with chocolate."}),
+	({"Alice Blue", "Who is more famous - the president or his wife?"}),
+	({"Mint Mus", "Definitely not a frozen dessert."}),
+	({"Bulker", "Add some more base colour to pale out your paint", 0}),
+	({"Charcoal", "Dirty grey for when vibrant colours just aren't your thing"}),
+	({"Beige", "In case the default beige just isn't beigey enough for you"}),
+	//Special case. Swatched as a vibrant crimson (fresh blood), but for mixing, the actual "Blood" value is used (old blood).
+	({"Blood", "This pigment is made from real blood. Use it wisely.", ({0xAA, 0, 0})}),
+});
 constant STRENGTHS = ({"spot", "spoonful", "splash"});
 
 //Craft some spy-speak instructions. The game is not about hiding information in the
@@ -206,19 +205,25 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	mapping colors = (["base": hexcolor(STANDARD_BASE)]);
 	array swatches = ({ });
 	//TODO: Abstract this stuff out and make it tidier, don't just build HTML
-	foreach (PIGMENTS; string name; array modifier) {
-		string desc = PIGMENT_DESCRIPTIONS[name] || "(null)";
+	foreach (SWATCHES, array info) {
+		string name = info[0];
+		if (sizeof(info) < 3) info += ({PIGMENTS[name]});
 		name -= " ";
-		array color = STANDARD_BASE;
-		array design = ({({"swatch base", "Base"})});
-		colors[name] = hexcolor(modifier);
-		foreach (STRENGTHS, string strength) {
-			color = mix(color, modifier);
-			string ns = name + "-" + strength;
-			design += ({({"swatch " + ns, ns})});
-			colors[ns] = hexcolor(color);
+		array design = ({ });
+		if (array modifier = info[2]) {
+			design += ({({"swatch base", "Base"})});
+			array color = STANDARD_BASE;
+			colors[name] = hexcolor(modifier);
+			if (modifier[0] * .2126 + modifier[1] * .7152 + modifier[2] * .0722 < 128)
+				colors[name] += "; color: white"; //Hack: White text for dark colour swatches
+			foreach (STRENGTHS, string strength) {
+				color = mix(color, modifier);
+				string ns = name + "-" + strength;
+				design += ({({"swatch " + ns, ns})});
+				colors[ns] = hexcolor(color);
+			}
 		}
-		design += ({({"swatch " + name, sprintf("<abbr title=\"%s\">%s</abbr>", desc, name)})});
+		design += ({({"swatch " + name, sprintf("<abbr title=\"%s\">%s</abbr>", info[1], name)})});
 		swatches += ({design});
 	}
 	void add_pattern(string name, array pattern) {
