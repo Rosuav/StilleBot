@@ -217,12 +217,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				colors[name] += "; color: white"; //Hack: White text for dark colour swatches
 			foreach (STRENGTHS, string strength) {
 				color = mix(color, modifier);
-				string ns = name + "-" + strength;
-				design += ({({"swatch " + ns, ns})});
-				colors[ns] = hexcolor(color);
+				design += ({({"swatch " + name + "-" + strength, info[0] + "<br>(" + strength + ")"})});
+				colors[name + "-" + strength] = hexcolor(color);
 			}
 		}
-		design += ({({"swatch " + name, sprintf("<abbr title=\"%s\">%s</abbr>", info[1], name)})});
+		design += ({({"swatch " + name, sprintf("<abbr title=\"%s\">%s</abbr>", info[1], info[0])})});
 		swatches += ({design});
 	}
 	void add_pattern(string name, array pattern) {
