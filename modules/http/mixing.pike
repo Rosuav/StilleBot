@@ -59,11 +59,10 @@ for the darkening effect of the pigmentation?
 Note: If both sides choose 3-5 pigments at random, and strengths 1-3 each, this gives about 41 bits of key length.
 Not a lot by computing standards, but 3e12 possibilities isn't bad for a (pseudo-)game.
 
-Current algorithm uses fractions out of 256, then takes the fourth root. It may be worth rationalizing these
-to some nearby approximation, and then differentiating between the "label colour" (the original) and the
-"mixing colour" (the three rationals). This will allow efficient and 100% reproducible colour creation. Do not
-reveal the actual rational numbers that form the resultant colour, as factors may leak information, but it would
-be possible to retain them in that form internally.
+Current algorithm uses fractions, which allows efficient and 100% reproducible colour creation (assuming
+arbitrary precision rational support - see fractions.Fraction in Python, Gmp.mpq in Pike). Do not ever
+reveal the actual rational numbers that form the resultant colour, as factors may leak information, but it
+would be possible to retain them in that form internally.
 
 (Note that real DHKE uses modulo arithmetic to keep storage requirements sane, so it doesn't have to worry about
 rounding or inaccuracies.)
