@@ -241,7 +241,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//This part would be replaced with real-time stuff that depends on the user.
 	add_pattern("Foo", ({({"Crimson", 3}), ({"Jade", 1})}));
 	add_pattern("Bar", ({({"Jade", 1}), ({"Crimson", 3})}));
-	add_pattern("Fum", ({({"Crimson", 2}), ({"Jade", 1}), ({"Crimson", 1})}));
+	add_pattern("Fum", ({({"Crimson", 1}), ({"Jade", 1}), ({"Crimson", 2})}));
 	array KEY1 = ({({"Lawn Green", 3}), ({"Hot Pink", 1}), ({"Alice Blue", 3}), ({"Crimson", 1}), ({"Orchid", 3})});
 	array KEY2 = ({({"Orchid", 2}), ({"Cobalt", 3}), ({"Bulker", 3}), ({"Chocolate", 1}), ({"Rebecca Purple", 1})});
 	add_pattern("Spam", KEY1 + KEY2);
