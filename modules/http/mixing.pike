@@ -207,7 +207,7 @@ array(Gmp.mpq) mix(array(Gmp.mpq) base, array(int) modifier) {
 }
 
 string hexcolor(array(Gmp.mpq) color) {
-	return sprintf("%02X%02X%02X", @min(((array(int))color)[*], 255));
+	return sprintf("%02X%02X%02X", @min(((array(int))color)[*], STANDARD_BASE[*]));
 }
 
 multiset _messages_used = (<>);
