@@ -94,7 +94,7 @@ Welcome to the paint studio. Pick any pigment to mix it into your paint. (Coming
 <section>
 <h4>Available base colors</h4>
 Choose one of these to start a fresh paint mix with this as the base.
-<div id=basepots class=colorpicker><div class=swatch style=\"background: #F5F5DC\" data-id=stdbase>Standard Beige</div></div>
+<div id=basepots class=colorpicker><div class=swatch style=\"background: #F5F5DC\" data-id=0>Standard Beige</div></div>
 </section>
 
 > ### Start new paint mix
@@ -341,13 +341,19 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 mapping|Concurrent.Future get_state(string|int group, string|void id) {
-	mapping state = (["loginbtn": -1, "paints": ({(["creator": "-1", "hexcolor": hexcolor(STANDARD_BASE)])})]);
+	mapping state = (["loginbtn": -1, "paints": ({({0, "Standard Beige", hexcolor(STANDARD_BASE)})})]);
 	sscanf(group, "%d#%s", int uid, string game);
 	if (!uid) state->loginbtn = 1;
 	if (!game) return state; //If you're not connected to a game, there are no saved paints.
 	mapping gs = game_state[game];
 	state->gameid = gs->gameid;
-	//TODO: Incorporate the user's saved paints
+	state->paints = map(sort(indices(gs->published_paints))) {[int id] = __ARGS__;
+		return ({id, gs->published_paints[id][0], hexcolor(gs->published_paints[id][1])});
+	};
+	mapping saved = gs->saved_paints[uid] || ([]);
+	state->paints += map(sort(indices(saved))) {[string key] = __ARGS__;
+		return ({key, saved[key]->label, hexcolor(saved[key]->color)});
+	};
 	return state;
 }
 void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg) {

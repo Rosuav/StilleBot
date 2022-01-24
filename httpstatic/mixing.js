@@ -6,11 +6,8 @@ export function render(data) {
 		{className: "swatch " + sw.color, title: sw.desc, "data-coloridx": idx},
 		sw.label
 	)));
-	//NOTE: For guests, curcolor is not synchronized in state, but will only be sent
-	//to a specific client in response to that client's addcolor requests. This means
-	//that a guest getting disconnected will result in losing state. Sorry. Log in to
-	//avoid that issue.
-	//TODO: Have a login button.
+	//NOTE: The current paint is not synchronized in state. (This may need to change,
+	//but if so, only for logged-in users, not for guests.) Saved paints are, of course.
 	if (data.curpaint) {
 		//Your current paint is defined by a base and a series of zero or more
 		//pigments. At each point, the server provides a hex color.
@@ -23,6 +20,10 @@ export function render(data) {
 	if (data.loginbtn === 1) DOM("#loginbox").classList.remove("hidden");
 	if (data.loginbtn === -1) DOM("#newgame").classList.remove("hidden");
 	if (data.gameid) set_content("#gamedesc", ["Operation ", B(data.gameid), " is now in progress. "]);
+	if (data.paints) set_content("#basepots", data.paints.map(p => DIV(
+		{className: "swatch", "data-id": p[0], style: "background: #" + p[2]},
+		p[1]
+	)));
 }
 
 let selectedcolor = null;
