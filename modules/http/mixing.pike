@@ -380,6 +380,7 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	if (!game) return state; //If you're not connected to a game, there are no saved paints.
 	mapping gs = game_state[game];
 	state->gameid = gs->gameid;
+	state->phase = gs->phase;
 	state->paints = map(sort(indices(gs->published_paints))) {[int id] = __ARGS__;
 		return ({id, gs->published_paints[id][0], hexcolor(gs->published_paints[id][1])});
 	};

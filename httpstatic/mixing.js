@@ -20,7 +20,13 @@ export function render(data) {
 	}
 	if (data.loginbtn === 1) DOM("#loginbox").classList.remove("hidden");
 	if (data.loginbtn === -1) DOM("#newgame").classList.remove("hidden");
-	if (data.gameid) set_content("#gamedesc", ["Operation ", B(data.gameid), " is now in progress. "]);
+	if (data.gameid) set_content("#gamedesc", [
+		"Operation ", B(data.gameid), " is now in progress. ",
+		data.phase === "mixpaint" && ["It is ", B("morning"), " and the paint shop is open for mixing."],
+		data.phase === "writenote" && ["It is ", B("afternoon"), " and the message board is receiving submissions."],
+		data.phase === "readnote" && ["It is ", B("evening"), " and today's messages are on the board."],
+		data.phase === "gameover" && ["The ", B("game is over"), ", and Rosuav needs to code this part."],
+	]);
 	if (data.paints) set_content("#basepots", data.paints.map(p => DIV(
 		{className: "swatch", "data-id": p[0], style: "background: #" + p[2]},
 		p[1],
