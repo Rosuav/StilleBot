@@ -53,7 +53,7 @@ and write fake messages of their own. You need a way to send your contact one cr
 will allow you to share a new code. How? There is a public message board on which anyone may leave a note,
 so you must leave a message there, with some proof that it is truly from you.
 
-[More information](:.infobtn data-dlg=sitrep) [The Secret Trick](:.infobtn data-dlg=secret) [Key Exchange](:.infobtn data-dlg=dhke)
+[More information](:.infobtn data-dlg=sitrep) [The Secret Trick](:.infobtn data-dlg=secret) [How it really works](:.infobtn data-dlg=dhke)
 
 ## Paint mixing
 
@@ -93,7 +93,10 @@ dialog {max-width: 1100px;}
 
 > ### The Secret Trick
 >
-> As with everything involving secrecy, there's a trick to it. Here's what you can do: Choose *and remember*
+> As with everything involving secrecy, there's a trick to it. If you add the same pigments to the base
+> color, you will always get the same result - even if you add them in a different order.
+>
+> So with that in mind, here's what you can do: Choose *and remember*
 > any combination of pigments. Mix this and leave it under your name. Your contact does likewise.
 > 
 > Then you pick up your contact's paint pot, and mix in the same pigments that you put into your own; contact
