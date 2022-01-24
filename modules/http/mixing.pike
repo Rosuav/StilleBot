@@ -110,6 +110,21 @@ though you can't save or publish your paints.<br>
 <span id=gamedesc></span>
 [Start new game](:#newgame .hidden .infobtn data-dlg=newgamedlg)
 
+> ## Recruitment
+>
+> Declare your allegiance!
+>
+> Game host: <span id=gamehost><!-- name --></span>
+>
+> * Spymaster: <span id=spymaster><!-- name or 'claim role' button --></span>
+> * Contact: <span id=contact><!-- name or 'claim role' button --></span>
+> * Agents of Chaos: [Join](:#joinchaos) <span id=chaos><!-- list of names --></span>
+> * Spectators: [Join](:#joinspec) <span id=spectators><!-- list of names --></span>
+> <!-- #joinchaos and #joinspec get disabled if you're in that role -->
+>
+{: tag=article #recruit}
+
+<!-- -->
 > ## Paint mixing
 >
 > Welcome to the paint studio. Pick any pigment to mix it into your paint. To start fresh, pick a base color from any available.
