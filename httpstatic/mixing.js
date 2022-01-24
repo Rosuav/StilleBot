@@ -67,3 +67,11 @@ on("click", ".infobtn", e => DOM("#" + e.match.dataset.dlg).showModal());
 
 //After starting a new game, have a completely fresh start - don't try to fudge things.
 export function sockmsg_redirect(data) {location.href = "/mixing?game=" + data.game;}
+
+on("submit", "#savepaint", e => {
+	e.preventDefault();
+	const el = e.match.elements.paintid;
+	if (el.value === "") return; //TODO: Give error message (can't save nameless)
+	ws_sync.send({cmd: "savepaint", id: el.value});
+	el.value = "";
+});

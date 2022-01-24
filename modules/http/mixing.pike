@@ -125,6 +125,13 @@ dialog section {border: none; margin: 0; padding: 0;} /* Don't touch sections in
 h4 {margin: 0;}
 #loginbox {width: 40em; border: 2px solid yellow; background: #fff8ee; padding: 5px;}
 .hidden {display: none;}
+#savepaint {
+	margin: 10px;
+	border: 1px solid blue;
+	padding: 5px;
+	background: #eeeeff;
+	max-width: 400px;
+}
 </style>
 
 > ### The Secret Trick
@@ -171,6 +178,11 @@ h4 {margin: 0;}
 <h4>Current paint</h4>
 <div id=curpaint class=design><div class=swatch style=\"background: #F5F5DC\">Base: Standard Beige</div></div>
 <div id=curcolor class=\"swatch large\" style=\"background: #F5F5DC\">Resulting color</div>
+<form id=savepaint autocomplete=off>
+	Save this paint to your personal collection?<br>
+	<label>Name: <input name=paintid></label> (must be unique)<br>
+	<button type=submit>Save</button>
+</form>
 </section>
 
 > ### Add color to paint
@@ -374,6 +386,20 @@ void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg
 }
 
 void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg) { }
+
+void websocket_cmd_savepaint(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!stringp(msg->id)) return;
+	sscanf(conn->group, "%d#%s", int uid, string game);
+	if (!uid) return;
+	//Save the user's current paint and reset to beige
+	mapping gs = game_state[game];
+	if (!gs) return;
+	if (!gs->saved_paints[uid]) gs->saved_paints[uid] = ([]);
+	if (gs->saved_paints[uid][msg->id]) return; //Duplicate ID
+	gs->saved_paints[uid][msg->id] = (["label": "Saved paint: " + msg->id, "color": conn->curpaint->definition]);
+	websocket_cmd_freshpaint(conn, (["base": "0"]));
+	send_updates_all(conn->group);
+}
 
 void websocket_cmd_addcolor(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!PIGMENTS[msg->color] || !has_value(({1, 2, 3}), msg->strength)) return;
