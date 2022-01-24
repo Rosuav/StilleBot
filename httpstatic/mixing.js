@@ -32,6 +32,7 @@ export function render(data) {
 		p[1],
 	)));
 	if (data.selfpublished) published_color = data.selfpublished;
+	if (data.phase) set_content("#phase", "article#" + data.phase + " {display: block;}");
 }
 
 let selectedcolor = null;

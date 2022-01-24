@@ -84,7 +84,9 @@ h4 {margin: 0;}
 	background: #eeeeff;
 	max-width: 400px;
 }
+article {display: none;}
 </style>
+<style id=phase>article#paintmix {display: block;}</style>
 
 ## Situation Report
 Coded messages are no longer safe. Your enemies have discovered your code, and can both read your messages
@@ -131,6 +133,24 @@ though you can't save or publish your paints.<br>
 >
 > <!-- -->
 {: tag=article #paintmix}
+
+<!-- -->
+> ## Notes!
+>
+> Oh, I see you've got one too.
+{: tag=article #writenote}
+
+<!-- -->
+> ## The Message Board
+>
+> Far too many notes for my taste, but one of them is for you.
+{: tag=article #readnote}
+
+<!-- -->
+> ## Game Over
+>
+> Did you win? Did you lose? Did you learn anything?
+{: tag=article #gameover}
 
 <!-- -->
 > ### Start new game
