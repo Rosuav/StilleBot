@@ -91,6 +91,9 @@ $$swatch_colors$$
 }
 .colorpicker div {cursor: pointer;}
 dialog {max-width: 1100px;}
+section {border: 1px solid black; margin: 4px; padding: 4px;}
+dialog section {border: none; margin: 0; padding: 0;} /* Don't touch sections in dialogs */
+h4 {margin: 0;}
 </style>
 
 > ### The Secret Trick
@@ -111,7 +114,10 @@ dialog {max-width: 1100px;}
 > [Ah ha! So it IS possible!](:.dialog_close)
 {: tag=dialog #secret}
 
+<section>
+<h4>Pigments (click to add)</h4>
 <div id=swatches class=colorpicker></div>
+</section>
 
 > ### Diffie-Hellman Key Exchange
 >
@@ -130,11 +136,10 @@ dialog {max-width: 1100px;}
 > [And that's how HTTPS works.](:.dialog_close)
 {: tag=dialog #dhke}
 
-<hr>
-
 <section>
+<h4>Current paint</h4>
 <div id=curpaint class=design><div class=swatch style=\"background: #F5F5DC\">Base: Standard Beige</div></div>
-<div id=curcolor class=\"swatch large\" style=\"background: #F5F5DC\">Current paint</div>
+<div id=curcolor class=\"swatch large\" style=\"background: #F5F5DC\">Resulting color</div>
 </section>
 
 > ### Add color to paint
