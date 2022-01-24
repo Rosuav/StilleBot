@@ -102,37 +102,37 @@ though you can't save or publish your paints.<br>
 <span id=gamedesc></span>
 [Start new game](:#newgame .hidden .infobtn data-dlg=newgamedlg)
 
-<article id=mixpaint>
+> ## Paint mixing
+>
+> Welcome to the paint studio. Pick any pigment to mix it into your paint. To start fresh, pick a base color from any available.
+>
+> > #### Available base colors
+> > Choose one of these to start a fresh paint mix with this as the base.
+> > <div id=basepots class=colorpicker><div class=swatch style=\"background: #F5F5DC\" data-id=0>Standard Beige</div></div>
+> {: tag=section}
+> 
+> <!-- -->
+> > #### Pigments (click to add)
+> > <div id=swatches class=colorpicker></div>
+> {: tag=section}
+> 
+> <!-- -->
+> > #### Current paint
+> > <div id=curpaint class=design><div class=swatch style=\"background: #F5F5DC\">Base: Standard Beige</div></div>
+> > <div id=curcolor class=\"swatch large\" style=\"background: #F5F5DC\">Resulting color</div>
+> > > Save this paint to your personal collection?<br>
+> > > <label>Name: <input name=paintid></label> (must be unique)<br>
+> > > <button type=submit>Save</button>
+> > {: tag=form #savepaint autocomplete=off}
+> >
+> > <!-- -->
+> > <button type=button id=publishpaint>Publish this paint</button>
+> {: tag=section}
+>
+> <!-- -->
+{: tag=article #paintmix}
 
-<h2>Paint mixing</h2>
-
-<p>Welcome to the paint studio. Pick any pigment to mix it into your paint. To start fresh, pick a base color from any available.</p>
-
-<section>
-<h4>Available base colors</h4>
-Choose one of these to start a fresh paint mix with this as the base.
-<div id=basepots class=colorpicker><div class=swatch style=\"background: #F5F5DC\" data-id=0>Standard Beige</div></div>
-</section>
-
-<section>
-<h4>Pigments (click to add)</h4>
-<div id=swatches class=colorpicker></div>
-</section>
-
-<section>
-<h4>Current paint</h4>
-<div id=curpaint class=design><div class=swatch style=\"background: #F5F5DC\">Base: Standard Beige</div></div>
-<div id=curcolor class=\"swatch large\" style=\"background: #F5F5DC\">Resulting color</div>
-<form id=savepaint autocomplete=off>
-	Save this paint to your personal collection?<br>
-	<label>Name: <input name=paintid></label> (must be unique)<br>
-	<button type=submit>Save</button>
-</form>
-<button type=button id=publishpaint>Publish this paint</button>
-</section>
-
-</article>
-
+<!-- -->
 > ### Start new game
 > Leave this mayhem and go to a brand new show?
 >
