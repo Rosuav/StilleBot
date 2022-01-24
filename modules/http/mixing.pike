@@ -88,6 +88,9 @@ $$swatch_colors$$
 
 <div id=swatches class=colorpicker></div>
 
+Current paint:
+<div id=curpaint class=design></div>
+
 > ### Add color to paint
 > Chosen color: <span id=colorname></span><br>
 > <span id=colordesc></span>
@@ -258,11 +261,20 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]));
 }
 
+mapping fresh_paint(string basis, array basecolor) {
+	return ([
+		"definition": basecolor,
+		"blobs": ({(["label": "Base: " + basis, "color": hexcolor(basecolor)])}),
+		"color": hexcolor(basecolor),
+	]);
+}
+
 //Websocket groups:
 //0 --> Guest account, cannot share, will not see any base other than standard, always on mixer screen
 //Other integer --> Logged in, not part of game
 //TODO: Logged in, part of game, can share paints, will use mode from game
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	conn->curpaint = fresh_paint("Standard Beige", STANDARD_BASE);
 	if (msg->group == "0") return 0; //Always okay to be guest
 	if (msg->group == (string)conn->session->user->?id) return 0; //Logged in as you, no game
 	//TODO: Figure out a game, including optionally spectator view
@@ -270,11 +282,23 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 mapping|Concurrent.Future get_state(string|int group, string|void id) {
-	if (group == "0") return (["paints": ({(["creator": "-1", "hexcolor": hexcolor(STANDARD_BASE)])})]);
+	mapping state = (["paints": ({(["creator": "-1", "hexcolor": hexcolor(STANDARD_BASE)])})]);
+	if (group == "0") return state;
 	//TODO: Incorporate the user's saved paints
-	return (["paints": ({(["creator": "-1", "hexcolor": hexcolor(STANDARD_BASE)])})]);
+	return state;
 }
 void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg) { }
+
+void websocket_cmd_addcolor(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!PIGMENTS[msg->color] || !has_value(({1, 2, 3}), msg->strength)) return;
+	for (int i = 0; i < msg->strength; ++i)
+		conn->curpaint->definition = mix(conn->curpaint->definition, PIGMENTS[msg->color]);
+	conn->curpaint->blobs += ({([
+		"label": msg->color + " (" + STRENGTHS[msg->strength - 1] + ")",
+		"color": conn->curpaint->color = hexcolor(conn->curpaint->definition),
+	])});
+	send_update(conn, (["curpaint": (["blobs": conn->curpaint->blobs, "color": conn->curpaint->color])]));
+}
 
 protected void create(string name) {
 	::create(name);
