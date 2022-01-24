@@ -12,6 +12,12 @@ Player roles:
 * Spectators - not participating in the game, unable to interfere
 
 Game phases:
+0) recruit - players start as spectators and can assign themselves to roles. Whoever created the game will
+   be shown as host, and can advance to the next phase. Anyone joining the game in this phase is an Agent of
+   Chaos by default, can choose to be Spymaster or Contact if the roles are available, can choose to become
+   Spectator. On phase advancement, if no Spymaster/Contact is assigned, one will be randomly selected from
+   the Agents. (And if there's only one person involved, error out.) NOTE: After the recruitment phase, role
+   selection is locked in, and anyone freshly joining the game is a spectator.
 1) mixpaint - all players (spectators included) may mix paints, save them to their personal collections, and
    (non-spectators only) publish one pot.
 2) writenote - players may see their saved paints but not edit them. Spymaster is shown one message and may
@@ -427,8 +433,8 @@ void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg
 		string newid = random(CODENAMES) + "-" + random(CODENAMES) + "-" + random(CODENAMES);
 		if (game_state[newid]) continue;
 		game_state[newid] = ([
-			"gameid": newid,
-			"phase": "mixpaint",
+			"gameid": newid, "host": uid,
+			"phase": "recruit",
 			"published_paints": ([0: ({"Standard Beige", STANDARD_BASE})]),
 			"saved_paints": ([]),
 		]);
