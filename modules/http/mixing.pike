@@ -75,7 +75,7 @@ constant markdown = #"# Diffie Hellman Paint Mixing
 .swatch {display: inline-block; width: 80px; height: 60px; border: 1px solid black;}
 .large {width: 200px; height: 150px;}
 .label {display: inline-block; height: 90px;}
-.design {display: flex; margin: 8px 0; gap: 5px;}
+.design {display: flex; flex-wrap: wrap; margin: 8px 0; gap: 5px;}
 $$swatch_colors$$
 .colorpicker {
 	display: flex;
@@ -88,8 +88,10 @@ $$swatch_colors$$
 
 <div id=swatches class=colorpicker></div>
 
-Current paint:
+<section>
 <div id=curpaint class=design></div>
+<div id=curcolor class=\"swatch large\" style=\"background: #F5F5DC\">Current paint</div>
+</section>
 
 > ### Add color to paint
 > Chosen color: <span id=colorname></span><br>

@@ -14,13 +14,11 @@ export function render(data) {
 	if (data.curpaint) {
 		//Your current paint is defined by a base and a series of zero or more
 		//pigments. At each point, the server provides a hex color.
-		set_content("#curpaint", [
-			data.curpaint.blobs.map(b => DIV(
-				{className: "swatch", style: "background: #" + b.color},
-				b.label
-			)),
-			DIV({className: "swatch large", style: "background: #" + data.curpaint.color}, "Current paint"),
-		]);
+		set_content("#curpaint", data.curpaint.blobs.map(b => DIV(
+			{className: "swatch", style: "background: #" + b.color},
+			b.label
+		)));
+		DOM("#curcolor").style.background = "#" + data.curpaint.color;
 	}
 }
 
