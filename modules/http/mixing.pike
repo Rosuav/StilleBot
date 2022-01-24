@@ -4,30 +4,6 @@ I'm writing this up as if it's a game to be played, but the purpose isn't primar
 it's to be a demonstration. The principles on which this works are the same as the principles which
 underpin a lot of internet security, and I'm hoping this can be a fun visualization.
 
-Scenario:
-Coded messages are no longer safe. Your enemies have discovered your code, and can both read your messages
-and write fake messages of their own. You need a way to send your contact one crucial instruction which
-will allow you to share a new code. How? There is a public message board on which anyone may leave a note,
-so you must leave a message there, with some proof that it is truly from you.
-
-The Diffie Hellman Paint Company has a public mixing facility. Starting with an ugly beige, you can add
-any pigments you like, selected from seventeen options (various secondary or tertiary colours), in any of
-three strengths (a spot, a spoonful, or a splash).
-
-You can leave a paint pot (with your name on it and the colour daubed on the label) at the mixer; your
-contact will see it, but so will everyone else.
-
-Notes on the board can have painted mastheads. It's easy to compare masthead colours to any pot you
-have - "identical", "similar", "different".
-
-With zero private communication, communicate safely.
-
-The trick to it is: Choose *and remember* any combination of pigments. Mix this and leave it under your
-name. Your contact does likewise. Then you pick up your contact's paint pot, and mix in the same pigments
-that you put into your own; contact does likewise with yours. You are now in possession of identically
-coloured pots of paint (which you will not share), and can use them to communicate reliably.
-
-
 Public paint pots starts out with {"Beige": STANDARD_BASE}
 Personal paint pots starts out empty for all players.
 During paint mixing phase, all players may take any base colour (public or personal paint) and add any
@@ -71,6 +47,34 @@ inherit http_websocket;
 
 constant markdown = #"# Diffie Hellman Paint Mixing
 
+## Situation Report
+Coded messages are no longer safe. Your enemies have discovered your code, and can both read your messages
+and write fake messages of their own. You need a way to send your contact one crucial instruction which
+will allow you to share a new code. How? There is a public message board on which anyone may leave a note,
+so you must leave a message there, with some proof that it is truly from you.
+
+[More information](:.infobtn data-dlg=sitrep) [The Secret Trick](:.infobtn data-dlg=secret) [Key Exchange](:.infobtn data-dlg=dhke)
+
+## Paint mixing
+
+> ### Situation report
+> Your mission: Share a message with your contact, such that no enemy can forge a similar message.
+>
+> The Diffie Hellman Paint Company has a public mixing facility. Starting with an ugly beige, you can add
+> any pigments you like, selected from seventeen options (various secondary or tertiary colours), in any of
+> three strengths (a spot, a spoonful, or a splash).
+>
+> You can leave a paint pot (with your name on it and the colour daubed on the label) at the mixer; your
+> contact will see it, but so will everyone else.
+>
+> Notes on the board can have painted mastheads. It's easy to compare masthead colours to any pot you
+> have - \"identical\", \"similar\", \"different\".
+>
+> With zero private communication, communicate safely.
+>
+> [Got it! Let's get to work.](:.dialog_close)
+{: tag=dialog #sitrep}
+
 <style>
 .swatch {display: inline-block; width: 80px; height: 60px; border: 1px solid black;}
 .large {width: 200px; height: 150px;}
@@ -84,9 +88,42 @@ $$swatch_colors$$
 	flex-wrap: wrap;
 }
 .colorpicker div {cursor: pointer;}
+dialog {max-width: 1100px;}
 </style>
 
+> ### The Secret Trick
+>
+> As with everything involving secrecy, there's a trick to it. Here's what you can do: Choose *and remember*
+> any combination of pigments. Mix this and leave it under your name. Your contact does likewise.
+> 
+> Then you pick up your contact's paint pot, and mix in the same pigments that you put into your own; contact
+> does likewise with yours. You may not know what anyone else's pigment choices are, but you know your own.
+>
+> You and your contact are now in possession of identically coloured pots of paint (which you will not share),
+> and can use them to communicate reliably. Mark your message with this paint, and your contact can compare;
+> but nobody can forge a message like this without knowing your pigment choices.
+>
+> [Ah ha! So it IS possible!](:.dialog_close)
+{: tag=dialog #secret}
+
 <div id=swatches class=colorpicker></div>
+
+> ### Diffie-Hellman Key Exchange
+>
+> Unsurprisingly, this entire \"game\" is based on a real-world security technique. It was invented by Diffie,
+> Hellman, and Merkle (sorry Merkle, your name deserves to be on this, but everyone calls it DH), and the way
+> it's used in computing security involves numbers rather than paint, but the principle is very similar.
+>
+> Starting with a standard (and well-known) base, each party makes a specific change to it, and publishes the
+> result. You swap these results, and apply your own change to the other person's result. Just like with the
+> paint, this is guaranteed to give the same final value for both of you, but for an eavesdropper to reconstruct
+> this value would be highly impractical.
+>
+> [More information can be found on Wikipedia](https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange)
+> or on various computing security blogs.
+>
+> [And that's how HTTPS works.](:.dialog_close)
+{: tag=dialog #dhke}
 
 <section>
 <div id=curpaint class=design><div class=swatch style=\"background: #F5F5DC\">Base: Standard Beige</div></div>

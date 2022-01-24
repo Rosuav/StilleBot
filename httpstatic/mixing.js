@@ -41,3 +41,5 @@ on("click", "#colorpicker div", e => {
 	ws_sync.send({cmd: "addcolor", "color": selectedcolor.label, "strength": e.match.dataset.strength|0});
 	DOM("#colordlg").close();
 });
+
+on("click", ".infobtn", e => DOM("#" + e.match.dataset.dlg).showModal());
