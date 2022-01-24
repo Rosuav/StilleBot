@@ -53,7 +53,7 @@ and write fake messages of their own. You need a way to send your contact one cr
 will allow you to share a new code. How? There is a public message board on which anyone may leave a note,
 so you must leave a message there, with some proof that it is truly from you.
 
-[More information](:.infobtn data-dlg=sitrep) [The Secret Trick](:.infobtn data-dlg=secret) [How it really works](:.infobtn data-dlg=dhke)
+[Mission Briefing](:.infobtn data-dlg=sitrep) [The Secret Trick](:.infobtn data-dlg=secret) [How it really works](:.infobtn data-dlg=dhke)
 
 To participate in games, you'll need to confirm your Twitch account name. Otherwise, feel free to play with the paint mixer,
 though you can't save or publish your paints.<br>
