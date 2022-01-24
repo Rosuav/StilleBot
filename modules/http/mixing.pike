@@ -77,6 +77,21 @@ Welcome to the paint studio. Pick any pigment to mix it into your paint. (Coming
 > [Got it! Let's get to work.](:.dialog_close)
 {: tag=dialog #sitrep}
 
+<section>
+<h4>Available base colors</h4>
+Choose one of these to start a fresh paint mix with this as the base.
+<div id=basepots class=colorpicker><div class=swatch style=\"background: #F5F5DC\" data-id=stdbase>Standard Beige</div></div>
+</section>
+
+> ### Start new paint mix
+>
+> Confirm that you want to discard your current paint mix and start a new one using this base color:
+>
+> <div id=bigsample class=\"swatch large\" style=\"background: #F5F5DC\">Standard Beige</div></div>
+>
+> [Yes, start mixing!](:#startpaint) [Cancel](:.dialog_close)
+{: tag=dialog #freshpaint}
+
 <style>
 .swatch {display: inline-block; width: 80px; height: 60px; border: 1px solid black;}
 .large {width: 200px; height: 150px;}
@@ -319,6 +334,12 @@ void websocket_cmd_addcolor(mapping(string:mixed) conn, mapping(string:mixed) ms
 		"label": msg->color + " (" + STRENGTHS[msg->strength - 1] + ")",
 		"color": conn->curpaint->color = hexcolor(conn->curpaint->definition),
 	])});
+	send_update(conn, (["curpaint": (["blobs": conn->curpaint->blobs, "color": conn->curpaint->color])]));
+}
+
+void websocket_cmd_freshpaint(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//TODO: Have a table of saved bases with their component rationals
+	if (msg->base == "stdbase") conn->curpaint = fresh_paint("Standard Beige", STANDARD_BASE);
 	send_update(conn, (["curpaint": (["blobs": conn->curpaint->blobs, "color": conn->curpaint->color])]));
 }
 

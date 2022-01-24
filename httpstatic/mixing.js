@@ -42,4 +42,16 @@ on("click", "#colorpicker div", e => {
 	DOM("#colordlg").close();
 });
 
+let selectedpaint = null;
+on("click", "#basepots div", e => {
+	selectedpaint = e.match.dataset.id;
+	set_content("#bigsample", e.match.innerText).style.cssText = e.match.style.cssText;
+	DOM("#freshpaint").showModal();
+});
+
+on("click", "#startpaint", e => {
+	ws_sync.send({cmd: "freshpaint", base: selectedpaint});
+	DOM("#freshpaint").close();
+});
+
 on("click", ".infobtn", e => DOM("#" + e.match.dataset.dlg).showModal());
