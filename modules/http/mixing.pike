@@ -55,6 +55,20 @@ so you must leave a message there, with some proof that it is truly from you.
 
 [More information](:.infobtn data-dlg=sitrep) [The Secret Trick](:.infobtn data-dlg=secret) [How it really works](:.infobtn data-dlg=dhke)
 
+To participate in games, you'll need to confirm your Twitch account name. Otherwise, feel free to play with the paint mixer,
+though you can't save or publish your paints.<br>
+[Twitch login](:.twitchlogin)
+{: #loginbox .hidden}
+
+<span id=gamedesc></span>
+[Start new game](:#newgame .hidden .infobtn data-dlg=newgamedlg)
+
+> ### Start new game
+> Leave this mayhem and go to a brand new show?
+>
+> [Do it. We shall prevail.](:#startnewgame) [On second thoughts...](:.dialog_close)
+{: tag=dialog #newgamedlg}
+
 ## Paint mixing
 
 Welcome to the paint studio. Pick any pigment to mix it into your paint. (Coming soon: Pick a base colour to start over.)
@@ -109,6 +123,8 @@ dialog {max-width: 1100px;}
 section {border: 1px solid black; margin: 4px; padding: 4px;}
 dialog section {border: none; margin: 0; padding: 0;} /* Don't touch sections in dialogs */
 h4 {margin: 0;}
+#loginbox {width: 40em; border: 2px solid yellow; background: #fff8ee; padding: 5px;}
+.hidden {display: none;}
 </style>
 
 > ### The Secret Trick
@@ -313,7 +329,7 @@ mapping fresh_paint(string basis, array basecolor) {
 //Websocket groups:
 //0 --> Guest account, cannot share, will not see any base other than standard, always on mixer screen
 //Other integer --> Logged in, not part of game
-//TODO: Logged in, part of game, can share paints, will use mode from game
+//int#str: Logged in, part of game, can share paints, will use mode from game
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	conn->curpaint = fresh_paint("Standard Beige", STANDARD_BASE);
 	if (!stringp(msg->group)) return "Invalid group ID";
@@ -325,12 +341,32 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 mapping|Concurrent.Future get_state(string|int group, string|void id) {
-	mapping state = (["paints": ({(["creator": "-1", "hexcolor": hexcolor(STANDARD_BASE)])})]);
+	mapping state = (["loginbtn": -1, "paints": ({(["creator": "-1", "hexcolor": hexcolor(STANDARD_BASE)])})]);
 	sscanf(group, "%d#%s", int uid, string game);
+	if (!uid) state->loginbtn = 1;
 	if (!game) return state; //If you're not connected to a game, there are no saved paints.
+	mapping gs = game_state[game];
+	state->gameid = gs->gameid;
 	//TODO: Incorporate the user's saved paints
 	return state;
 }
+void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%d#%s", int uid, string game);
+	if (!uid) return; //Guests can't start new games. Log in first.
+	//TODO: If the game exists and is completed, flush it?
+	while (1) {
+		string newid = random(CODENAMES) + "-" + random(CODENAMES) + "-" + random(CODENAMES);
+		if (game_state[newid]) continue;
+		game_state[newid] = ([
+			"gameid": newid,
+			"published_paints": ([0: ({"Standard Beige", STANDARD_BASE})]),
+			"saved_paints": ([]),
+		]);
+		conn->sock->send_text(Standards.JSON.encode((["cmd": "redirect", "game": newid])));
+		return;
+	}
+}
+
 void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg) { }
 
 void websocket_cmd_addcolor(mapping(string:mixed) conn, mapping(string:mixed) msg) {

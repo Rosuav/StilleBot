@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {DIV} = choc; //autoimport
+const {B, DIV} = choc; //autoimport
 
 export function render(data) {
 	set_content("#swatches", swatches.map((sw, idx) => DIV(
@@ -20,6 +20,9 @@ export function render(data) {
 		)));
 		DOM("#curcolor").style.background = "#" + data.curpaint.color;
 	}
+	if (data.loginbtn === 1) DOM("#loginbox").classList.remove("hidden");
+	if (data.loginbtn === -1) DOM("#newgame").classList.remove("hidden");
+	if (data.gameid) set_content("#gamedesc", ["Operation ", B(data.gameid), " is now in progress. "]);
 }
 
 let selectedcolor = null;
@@ -54,4 +57,12 @@ on("click", "#startpaint", e => {
 	DOM("#freshpaint").close();
 });
 
+on("click", "#startnewgame", e => {
+	ws_sync.send({cmd: "newgame"});
+	DOM("#newgamedlg").close();
+});
+
 on("click", ".infobtn", e => DOM("#" + e.match.dataset.dlg).showModal());
+
+//After starting a new game, have a completely fresh start - don't try to fudge things.
+export function sockmsg_redirect(data) {location.href = "/mixing?game=" + data.game;}
