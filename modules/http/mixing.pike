@@ -421,7 +421,7 @@ void websocket_cmd_freshpaint(mapping(string:mixed) conn, mapping(string:mixed) 
 	//If it's all digits, you're asking for a user ID.
 	else if (msg->base == (string)(int)msg->base) request = gs->published_paints[(int)msg->base];
 	//Otherwise, you're asking for one of your own saved paints.
-	else request = gs->saved_paints[uid][?msg->base];
+	else if (mapping saved = gs->saved_paints[uid][?msg->base]) request = ({msg->base, saved->color});
 	if (!request) return; //TODO: Send back an error message
 	conn->curpaint = fresh_paint(@request);
 	send_update(conn, (["curpaint": (["blobs": conn->curpaint->blobs, "color": conn->curpaint->color])]));
