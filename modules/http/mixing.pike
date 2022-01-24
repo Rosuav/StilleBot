@@ -167,7 +167,7 @@ h4 {margin: 0;}
 $$swatches||$$
 ";
 
-mapping global_state = ([]);
+mapping game_state = ([]);
 mapping swatch_colors = ([]);
 string swatch_color_style = "";
 array swatches = ({ });
@@ -291,9 +291,13 @@ string devise_message() {
 }
 
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
-	//Note that the user ID may be zero, which will give guest access.
+	string group = "0";
+	string uid = req->misc->session->user->?id;
+	mapping state = game_state[req->variables->game];
+	if (state && uid) group = uid + "#" + state->gameid;
+	else if (uid) group = (string)uid;
 	return render(req, ([
-		"vars": (["ws_group": (string)req->misc->session->user->?id, "swatches": swatches]),
+		"vars": (["ws_group": group, "swatches": swatches]),
 		"swatch_colors": swatch_color_style,
 	]));
 }
@@ -312,15 +316,18 @@ mapping fresh_paint(string basis, array basecolor) {
 //TODO: Logged in, part of game, can share paints, will use mode from game
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	conn->curpaint = fresh_paint("Standard Beige", STANDARD_BASE);
+	if (!stringp(msg->group)) return "Invalid group ID";
 	if (msg->group == "0") return 0; //Always okay to be guest
 	if (msg->group == (string)conn->session->user->?id) return 0; //Logged in as you, no game
-	//TODO: Figure out a game, including optionally spectator view
+	sscanf(msg->group, "%d#%s", int uid, string game);
+	if (uid && uid == (int)conn->session->user->?id && game_state[game]) return 0;
 	return "Not logged in";
 }
 
 mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	mapping state = (["paints": ({(["creator": "-1", "hexcolor": hexcolor(STANDARD_BASE)])})]);
-	if (group == "0") return state;
+	sscanf(group, "%d#%s", int uid, string game);
+	if (!game) return state; //If you're not connected to a game, there are no saved paints.
 	//TODO: Incorporate the user's saved paints
 	return state;
 }
@@ -338,15 +345,24 @@ void websocket_cmd_addcolor(mapping(string:mixed) conn, mapping(string:mixed) ms
 }
 
 void websocket_cmd_freshpaint(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	//TODO: Have a table of saved bases with their component rationals
-	if (msg->base == "stdbase") conn->curpaint = fresh_paint("Standard Beige", STANDARD_BASE);
+	sscanf(conn->group, "%d#%s", int uid, string game);
+	mapping gs = game_state[game];
+	array request;
+	//If you're not logged in, the only option is 0, the standard base.
+	if (!uid || !game) request = msg->base == "0" && ({"Standard Beige", STANDARD_BASE});
+	//If it's all digits, you're asking for a user ID.
+	else if (msg->base == (string)(int)msg->base) request = gs->published_paints[(int)msg->base];
+	//Otherwise, you're asking for one of your own saved paints.
+	else request = gs->saved_paints[uid][?msg->base];
+	if (!request) return; //TODO: Send back an error message
+	conn->curpaint = fresh_paint(@request);
 	send_update(conn, (["curpaint": (["blobs": conn->curpaint->blobs, "color": conn->curpaint->color])]));
 }
 
 protected void create(string name) {
 	::create(name);
 	if (!G->G->diffie_hellman) G->G->diffie_hellman = ([]);
-	global_state = G->G->diffie_hellman;
+	game_state = G->G->diffie_hellman;
 	foreach (SWATCHES, array info) {
 		string name = info[0];
 		if (sizeof(info) < 3) info += ({PIGMENTS[name]});
