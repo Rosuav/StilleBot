@@ -1,6 +1,7 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {B, DIV} = choc; //autoimport
 
+let published_color = null;
 export function render(data) {
 	set_content("#swatches", swatches.map((sw, idx) => DIV(
 		{className: "swatch " + sw.color, title: sw.desc, "data-coloridx": idx},
@@ -22,8 +23,9 @@ export function render(data) {
 	if (data.gameid) set_content("#gamedesc", ["Operation ", B(data.gameid), " is now in progress. "]);
 	if (data.paints) set_content("#basepots", data.paints.map(p => DIV(
 		{className: "swatch", "data-id": p[0], style: "background: #" + p[2]},
-		p[1]
+		p[1],
 	)));
+	if (data.selfpublished) published_color = data.selfpublished;
 }
 
 let selectedcolor = null;
@@ -74,4 +76,20 @@ on("submit", "#savepaint", e => {
 	if (el.value === "") return; //TODO: Give error message (can't save nameless)
 	ws_sync.send({cmd: "savepaint", id: el.value});
 	el.value = "";
+});
+
+on("click", "#publishpaint", e => {
+	if (published_color) {
+		set_content("#publishonce", "NOTE: You can only publish one paint. This is the paint you shared:");
+		DOM("#publishme").style.cssText = "background: #" + published_color;
+		DOM("#publishconfirm").classList.add("hidden");
+		set_content("#publishcancel", "It will have to suffice.");
+	}
+	else DOM("#publishme").style.cssText = DOM("#curcolor").style.cssText;
+	DOM("#publishdlg").showModal();
+});
+
+on("click", "#publishconfirm", e => {
+	ws_sync.send({cmd: "publish"});
+	DOM("#publishdlg").close();
 });

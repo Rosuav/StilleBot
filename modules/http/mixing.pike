@@ -183,6 +183,7 @@ h4 {margin: 0;}
 	<label>Name: <input name=paintid></label> (must be unique)<br>
 	<button type=submit>Save</button>
 </form>
+<button type=button id=publishpaint>Publish this paint</button>
 </section>
 
 > ### Add color to paint
@@ -192,7 +193,16 @@ h4 {margin: 0;}
 > [Cancel](:.dialog_close)
 {: tag=dialog #colordlg}
 
-$$swatches||$$
+<!-- -->
+
+> ### Publish your paint
+> NOTE: You can only publish one paint. Is this the paint you want to share?
+> {: #publishonce}
+>
+> <div id=publishme class=\"swatch large\" style=\"background: #F5F5DC\"></div></div>
+>
+> [Publish or perish!](:#publishconfirm) [Wait, I'm not ready...](:.dialog_close #publishcancel)
+{: tag=dialog #publishdlg}
 ";
 
 mapping game_state = ([]);
@@ -366,6 +376,7 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	state->paints += map(sort(indices(saved))) {[string key] = __ARGS__;
 		return ({key, saved[key]->label, hexcolor(saved[key]->color)});
 	};
+	if (array selfpub = gs->published_paints[uid]) state->selfpublished = hexcolor(selfpub[1]);
 	return state;
 }
 void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -385,7 +396,17 @@ void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg
 	}
 }
 
-void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg) { }
+void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%d#%s", int uid, string game);
+	if (!uid) return;
+	mapping gs = game_state[game];
+	if (!gs) return;
+	if (gs->published_paints[uid]) return; //Already published one. No shenanigans.
+	gs->published_paints[uid] = ({conn->session->user->display_name + "'s paint", conn->curpaint->definition});
+	//Publish this to everyone in the same game - potentially many groups
+	foreach (indices(websocket_groups), string grp)
+		if (has_suffix(grp, "#" + game)) send_updates_all(grp);
+}
 
 void websocket_cmd_savepaint(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->id)) return;
