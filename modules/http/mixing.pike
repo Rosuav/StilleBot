@@ -125,6 +125,8 @@ dialog {max-width: 1100px;}
 > [And that's how HTTPS works.](:.dialog_close)
 {: tag=dialog #dhke}
 
+<hr>
+
 <section>
 <div id=curpaint class=design><div class=swatch style=\"background: #F5F5DC\">Base: Standard Beige</div></div>
 <div id=curcolor class=\"swatch large\" style=\"background: #F5F5DC\">Current paint</div>
