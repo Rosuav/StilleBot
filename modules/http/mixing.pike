@@ -89,7 +89,7 @@ $$swatch_colors$$
 <div id=swatches class=colorpicker></div>
 
 <section>
-<div id=curpaint class=design></div>
+<div id=curpaint class=design><div class=swatch style=\"background: #F5F5DC\">Base: Standard Beige</div></div>
 <div id=curcolor class=\"swatch large\" style=\"background: #F5F5DC\">Current paint</div>
 </section>
 
@@ -105,6 +105,7 @@ $$swatches||$$
 
 mapping global_state = ([]);
 mapping swatch_colors = ([]);
+string swatch_color_style = "";
 array swatches = ({ });
 
 constant STANDARD_BASE = ({0xF5, 0xF5, 0xDC});
@@ -226,40 +227,10 @@ string devise_message() {
 }
 
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
-	mapping stdvars = ([
-		"swatches": swatches, "swatch_colors": swatch_colors,
-	]);
-	if (!req->misc->session->user) return render(req, ([
-		"vars": (["ws_group": "0"]) | stdvars,
-		"swatch_colors": sprintf("%{.%s {background: #%s;}\n%}", sort((array)swatch_colors)),
-	]));
-	mapping colors = (["base": hexcolor(STANDARD_BASE)]);
-	array swatches = ({ });
-	void add_pattern(string name, array pattern) {
-		array color = STANDARD_BASE;
-		array design = ({({"swatch small base", "Base"})});
-		foreach (pattern; int i; [string pigment, int strength]) {
-			for (int s = 0; s < strength; ++s)
-				color = mix(color, PIGMENTS[pigment]);
-			design += ({({sprintf("swatch small %s-%d", name, i + 1), sprintf("%s<br>(%s)", pigment, STRENGTHS[strength - 1])})});
-			colors[name + "-" + (i+1)] = hexcolor(color);
-		}
-		colors[name] = hexcolor(color);
-		design += ({({"label", sprintf("==&gt; %s:<br>%s", name, hexcolor(color))})});
-		swatches += ({design});
-	}
-	//This part would be replaced with real-time stuff that depends on the user.
-	add_pattern("Foo", ({({"Crimson", 3}), ({"Jade", 1})}));
-	add_pattern("Bar", ({({"Jade", 1}), ({"Crimson", 3})}));
-	add_pattern("Fum", ({({"Crimson", 1}), ({"Jade", 1}), ({"Crimson", 2})}));
-	array KEY1 = ({({"Lawn Green", 3}), ({"Hot Pink", 1}), ({"Alice Blue", 3}), ({"Crimson", 1}), ({"Orchid", 3})});
-	array KEY2 = ({({"Orchid", 2}), ({"Cobalt", 3}), ({"Bulker", 3}), ({"Chocolate", 1}), ({"Rebecca Purple", 1})});
-	add_pattern("Spam", KEY1 + KEY2);
-	add_pattern("Ham", KEY2 + KEY1);
+	//Note that the user ID may be zero, which will give guest access.
 	return render(req, ([
-		"vars": (["ws_group": req->misc->session->user->id]) | stdvars,
-		"swatch_colors": sprintf("%{.%s {background: #%s;}\n%}", sort((array)swatch_colors + (array)colors)),
-		"swatches": sprintf("<div class=design>%{<div class=\"%s\">%s</div>%}</div>", swatches[*]) * "\n",
+		"vars": (["ws_group": (string)req->misc->session->user->?id, "swatches": swatches]),
+		"swatch_colors": swatch_color_style,
 	]));
 }
 
@@ -328,4 +299,5 @@ protected void create(string name) {
 		}
 		swatches += ({(["color": name, "desc": info[1], "label": info[0]])});
 	}
+	swatch_color_style = sprintf("%{.%s {background: #%s;}\n%}", sort((array)swatch_colors));
 }
