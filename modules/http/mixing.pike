@@ -57,6 +57,8 @@ so you must leave a message there, with some proof that it is truly from you.
 
 ## Paint mixing
 
+Welcome to the paint studio. Pick any pigment to mix it into your paint. (Coming soon: Pick a base colour to start over.)
+
 > ### Situation report
 > Your mission: Share a message with your contact, such that no enemy can forge a similar message.
 >
