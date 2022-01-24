@@ -102,9 +102,11 @@ though you can't save or publish your paints.<br>
 <span id=gamedesc></span>
 [Start new game](:#newgame .hidden .infobtn data-dlg=newgamedlg)
 
-## Paint mixing
+<article id=mixpaint>
 
-Welcome to the paint studio. Pick any pigment to mix it into your paint. To start fresh, pick a base color from any available.
+<h2>Paint mixing</h2>
+
+<p>Welcome to the paint studio. Pick any pigment to mix it into your paint. To start fresh, pick a base color from any available.</p>
 
 <section>
 <h4>Available base colors</h4>
@@ -128,6 +130,8 @@ Choose one of these to start a fresh paint mix with this as the base.
 </form>
 <button type=button id=publishpaint>Publish this paint</button>
 </section>
+
+</article>
 
 > ### Start new game
 > Leave this mayhem and go to a brand new show?
