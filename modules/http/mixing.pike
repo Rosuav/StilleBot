@@ -4,23 +4,34 @@ I'm writing this up as if it's a game to be played, but the purpose isn't primar
 it's to be a demonstration. The principles on which this works are the same as the principles which
 underpin a lot of internet security, and I'm hoping this can be a fun visualization.
 
-Public paint pots starts out with {"Beige": STANDARD_BASE}
-Personal paint pots starts out empty for all players.
-During paint mixing phase, all players may take any base colour (public or personal paint) and add any
-pigments, and can save the current paint to personal collection, optionally with a label.
-Players get one opportunity to post one of their pots in public. All players see it with the name of the
-one who posted it. All players may use it as a base.
-Optional: To avoid too much information leakage through timings, players must explicitly check for public pots?
-Otherwise, push 'em out on websocket.
-When paint mixing phase ends, all players retain access to their personal collections. All players may then
-select one paint colour to post a message with. Once all players have done so, the message board is revealed.
-Success is defined as your contact correctly selecting your message out of all the messages on the board.
+
+Player roles:
+* Spymaster - knows the secret message, must transmit it safely
+* Contact - doesn't know who anyone is, must select the correct message
+* Agents of Chaos - trying to deceive the contact into selecting a false message
+* Spectators - not participating in the game, unable to interfere
+
+Game phases:
+1) mixpaint - all players (spectators included) may mix paints, save them to their personal collections, and
+   (non-spectators only) publish one pot.
+2) writenote - players may see their saved paints but not edit them. Spymaster is shown one message and may
+   choose a paint to mark it with. Contact sits tight and gets some suitably nerve-wracking flavour text.
+   Chaos Agents are shown one message each and may choose a paint to mark it with. The game synthesizes some
+   fake notes to pad to a predetermined number, guaranteeing to not collide with hex color of any published
+   note. (It's entirely possible for two Chaos Agents to post identical note colours.)
+3) readnote - everything is now read-only. Contact browses the notes. Click note to view larger. Click paint
+   to compare, or click "Follow instructions" (w/ confirmation) to conclude the game, successfully or not.
+   Everyone else just watches; the Contact's state is all now global to the game.
+4) gameover - report whether the Contact picked the Spymaster's note.
 
 
 Crucial: Paint mixing. Every paint pot is identified on the server by a unique ID that is *not* defined
-by its composition. When you attempt a mix, you get back a new paint pot, and you (but only you) can see
-that it's "this base plus these pigments". Everyone else just sees the new ID (if you share it).
-Any existing paint pot can be used as a base, or you can use the standard beige base any time.
+by its composition. (For convenience, published pots use one namespace, and personal pots are namespaced
+to the owner.) When you attempt a mix, you get back a new paint pot, and you (but only you) can see
+that it's "this base plus these pigments". Everyone else just sees the publisher and hex color (if it's
+published, otherwise they don't see it at all). Any existing paint pot can be used as a base, or you can
+use the standard beige base any time.
+- TODO: Show "base plus pigments" for personal pots, prob not for your published one though
 
 Essential: Find a mathematical operation which takes a base and a modifier.
 * Must be transitive: f(f(b, m1), m2) == f(f(b, m2), m1)
@@ -388,6 +399,7 @@ void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg
 		if (game_state[newid]) continue;
 		game_state[newid] = ([
 			"gameid": newid,
+			"phase": "mixpaint",
 			"published_paints": ([0: ({"Standard Beige", STANDARD_BASE})]),
 			"saved_paints": ([]),
 		]);
