@@ -71,7 +71,7 @@ though you can't save or publish your paints.<br>
 
 ## Paint mixing
 
-Welcome to the paint studio. Pick any pigment to mix it into your paint. (Coming soon: Pick a base colour to start over.)
+Welcome to the paint studio. Pick any pigment to mix it into your paint. To start fresh, pick a base color from any available.
 
 > ### Situation report
 > Your mission: Share a message with your contact, such that no enemy can forge a similar message.
