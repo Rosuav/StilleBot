@@ -72,15 +72,35 @@ inherit http_websocket;
 constant markdown = #"# Diffie Hellman Paint Mixing
 
 <style>
-.swatch {display: inline-block; width: 200px; height: 150px; border: 1px solid black;}
-.small {width: 80px; height: 60px;}
+.swatch {display: inline-block; width: 80px; height: 60px; border: 1px solid black;}
+.large {width: 200px; height: 150px;}
 .label {display: inline-block; height: 90px;}
 .design {display: flex; margin: 8px 0; gap: 5px;}
-$$colors$$
+$$swatch_colors$$
+.colorpicker {
+	display: flex;
+	margin: 8px;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+.colorpicker div {cursor: pointer;}
 </style>
 
-$$swatches$$
+<div id=swatches class=colorpicker></div>
+
+> ### Add color to paint
+> Chosen color: <span id=colorname></span><br>
+> <span id=colordesc></span>
+> <div id=colorpicker class=colorpicker></div>
+> [Cancel](:.dialog_close)
+{: tag=dialog #colordlg}
+
+$$swatches||$$
 ";
+
+mapping global_state = ([]);
+mapping swatch_colors = ([]);
+array swatches = ({ });
 
 constant STANDARD_BASE = ({0xF5, 0xF5, 0xDC});
 
@@ -201,29 +221,15 @@ string devise_message() {
 }
 
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
+	mapping stdvars = ([
+		"swatches": swatches, "swatch_colors": swatch_colors,
+	]);
+	if (!req->misc->session->user) return render(req, ([
+		"vars": (["ws_group": "0"]) | stdvars,
+		"swatch_colors": sprintf("%{.%s {background: #%s;}\n%}", sort((array)swatch_colors)),
+	]));
 	mapping colors = (["base": hexcolor(STANDARD_BASE)]);
 	array swatches = ({ });
-	//TODO: Abstract this stuff out and make it tidier, don't just build HTML
-	foreach (SWATCHES, array info) {
-		string name = info[0];
-		if (sizeof(info) < 3) info += ({PIGMENTS[name]});
-		name -= " ";
-		array design = ({ });
-		if (array modifier = info[2]) {
-			design += ({({"swatch base", "Base"})});
-			array color = STANDARD_BASE;
-			colors[name] = hexcolor(modifier);
-			if (modifier[0] * .2126 + modifier[1] * .7152 + modifier[2] * .0722 < 128)
-				colors[name] += "; color: white"; //Hack: White text for dark colour swatches
-			foreach (STRENGTHS, string strength) {
-				color = mix(color, modifier);
-				design += ({({"swatch " + name + "-" + strength, info[0] + "<br>(" + strength + ")"})});
-				colors[name + "-" + strength] = hexcolor(color);
-			}
-		}
-		design += ({({"swatch " + name, sprintf("<abbr title=\"%s\">%s</abbr>", info[1], info[0])})});
-		swatches += ({design});
-	}
 	void add_pattern(string name, array pattern) {
 		array color = STANDARD_BASE;
 		array design = ({({"swatch small base", "Base"})});
@@ -246,8 +252,54 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	add_pattern("Spam", KEY1 + KEY2);
 	add_pattern("Ham", KEY2 + KEY1);
 	return render(req, ([
-		//"vars": (["ws_group": req->misc->session->user->id]),
-		"colors": sprintf("%{.%s {background: #%s;}\n%}", sort((array)colors)),
+		"vars": (["ws_group": req->misc->session->user->id]) | stdvars,
+		"swatch_colors": sprintf("%{.%s {background: #%s;}\n%}", sort((array)swatch_colors + (array)colors)),
 		"swatches": sprintf("<div class=design>%{<div class=\"%s\">%s</div>%}</div>", swatches[*]) * "\n",
 	]));
+}
+
+//Websocket groups:
+//0 --> Guest account, cannot share, will not see any base other than standard, always on mixer screen
+//Other integer --> Logged in, not part of game
+//TODO: Logged in, part of game, can share paints, will use mode from game
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (msg->group == "0") return 0; //Always okay to be guest
+	if (msg->group == (string)conn->session->user->?id) return 0; //Logged in as you, no game
+	//TODO: Figure out a game, including optionally spectator view
+	return "Not logged in";
+}
+
+mapping|Concurrent.Future get_state(string|int group, string|void id) {
+	if (group == "0") return (["paints": ({(["creator": "-1", "hexcolor": hexcolor(STANDARD_BASE)])})]);
+	//TODO: Incorporate the user's saved paints
+	return (["paints": ({(["creator": "-1", "hexcolor": hexcolor(STANDARD_BASE)])})]);
+}
+void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg) { }
+
+protected void create(string name) {
+	::create(name);
+	if (!G->G->diffie_hellman) G->G->diffie_hellman = ([]);
+	global_state = G->G->diffie_hellman;
+	foreach (SWATCHES, array info) {
+		string name = info[0];
+		if (sizeof(info) < 3) info += ({PIGMENTS[name]});
+		name -= " ";
+		if (array modifier = info[2]) {
+			array color = STANDARD_BASE;
+			swatch_colors[name] = hexcolor(modifier);
+			if (modifier[0] * .2126 + modifier[1] * .7152 + modifier[2] * .0722 < 128)
+				swatch_colors[name] += "; color: white"; //Hack: White text for dark colour swatches
+			foreach (STRENGTHS, string strength) {
+				color = mix(color, modifier);
+				swatch_colors[name + "-" + strength] = hexcolor(color);
+			}
+		}
+		else {
+			//Hack: For bulker, just show lots of beige.
+			swatch_colors[name] = hexcolor(STANDARD_BASE);
+			foreach (STRENGTHS, string strength)
+				swatch_colors[name + "-" + strength] = swatch_colors[name];
+		}
+		swatches += ({(["color": name, "desc": info[1], "label": info[0]])});
+	}
 }
