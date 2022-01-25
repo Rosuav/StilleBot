@@ -211,7 +211,7 @@ CAUTION: Don't let anyone else see what's on your screen! To livestream the game
 > As a **Chaos Agent**, try to deceive the Contact with a fake note.
 > {: .role .chaos}
 >
-> You will be sending these instructions: <code id=note_to_send>Refresh the page for further instructions.</code>
+> You will be sending these instructions: <code class=note_to_send>Refresh the page for further instructions.</code>
 >
 > <div id=paintradio class=colorpicker><div class=swatch style=\"background: #F5F5DC\" data-id=0>Standard Beige</div></div>
 >
@@ -231,6 +231,9 @@ CAUTION: Don't let anyone else see what's on your screen! To livestream the game
 > the correct note.
 > {: .role .spymaster .chaos .spectator}
 >
+> The instructions you sent were: <code class=note_to_send>Refresh the page for further instructions.</code>
+>
+> Notes on the board: <ul id=all_notes></ul>
 {: tag=article #readnote}
 
 <!-- -->

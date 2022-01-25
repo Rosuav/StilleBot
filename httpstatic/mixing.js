@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, B, BR, BUTTON, DIV, INPUT, LABEL, P} = choc; //autoimport
+const {A, B, BR, BUTTON, CODE, DIV, INPUT, LABEL, LI, P} = choc; //autoimport
 
 let published_color = null;
 export function render(data) {
@@ -65,11 +65,15 @@ export function render(data) {
 		);
 		set_content("#chaos", data.chaos.length ? data.chaos.join(", ") : "(none)");
 	}
-	if (data.note_to_send) set_content("#note_to_send", [
+	if (data.note_to_send) set_content("#" + data.phase + " .note_to_send", [
 		data.note_send_color && DIV({className: "swatch inline", style: "background: #" + data.note_send_color}),
 		data.note_to_send
 	]);
 	if (data.note_send_color) {DOM("#paintradio").classList.add("hidden"); DOM("#postnote").classList.add("hidden");}
+	if (data.msg_order) set_content("#all_notes", data.msg_order.map((m, i) => LI([
+		DIV({className: "swatch inline", style: "background: #" + data.msg_color_order[i]}),
+		CODE(m),
+	])));
 	if (data.role) set_content("#rolestyle", ".role." + data.role + " {display: block;}");
 	if (data.host) set_content("#gamehost", data.host);
 	if (data.no_save) {
