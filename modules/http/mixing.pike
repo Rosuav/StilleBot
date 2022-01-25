@@ -92,7 +92,7 @@ h4 {margin: 0;}
 }
 article {display: none;}
 </style>
-<style id=phase>article#paintmix {display: block;}</style>
+<style id=phase>article#mixpaint {display: block;}</style>
 
 ## Situation Report
 Coded messages are no longer safe. Your enemies have discovered your code, and can both read your messages
@@ -151,7 +151,7 @@ though you can't save or publish your paints.<br>
 > {: tag=section}
 >
 > <!-- -->
-{: tag=article #paintmix}
+{: tag=article #mixpaint}
 
 <!-- -->
 > ## Notes!
@@ -177,6 +177,14 @@ though you can't save or publish your paints.<br>
 >
 > [Do it. We shall prevail.](:#startnewgame) [On second thoughts...](:.dialog_close)
 {: tag=dialog #newgamedlg}
+
+<!-- -->
+> ### Advance time
+> Time and tide, they say, wait for no one. In fairness, you shouldn't have to wait<br>
+> either. Are you ready to advance time to (TODO: name the next phase here)?
+>
+> [Activate time travel powers!](:#nextphase) [Wait, not yet.](:.dialog_close)
+{: tag=dialog #nextphasedlg}
 
 <!-- -->
 > ### Situation report
@@ -439,6 +447,7 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	state->phase = gs->phase;
 	state->host = gs->usernames[gs->host];
 	if (gs->host == uid) state->is_host = 1; //Enable the phase advancement button(s)
+	if (gs->nophaseshift) state->nophaseshift = gs->nophaseshift;
 	state->chaos = ({ });
 	foreach (gs->roles; int uid; string role)
 		if (role == "chaos") state[role] += ({gs->usernames[uid]});
@@ -481,6 +490,44 @@ void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg
 	}
 }
 
+void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
+	mapping gs = game_state[game]; if (!gs) return;
+	if (gs->host != uid) return;
+	m_delete(gs, "nophaseshift");
+	switch (gs->phase) {
+		case "recruit": {
+			if (sizeof(gs->roles) < 2) {gs->nophaseshift = "Need a minimum of two non-spectating players."; break;}
+			foreach (({"spymaster", "contact"}), string needrole) if (!has_value(gs->roles, needrole)) {
+				//Pick a random chaos agent to promote
+				array agents = filter(indices(gs->roles)) {return gs->roles[__ARGS__[0]] == "chaos";};
+				//assert sizeof(agents) > 0 //we already made sure there were enough total roles
+				gs->roles[random(agents)] = needrole;
+			}
+			gs->phase = "mixpaint";
+			break;
+		}
+		case "mixpaint": {
+			if (sizeof(gs->published_paints) <= 1) {gs->nophaseshift = "Nobody's published any paints!"; break;}
+			gs->phase = "writenote";
+			break;
+		}
+		case "writenote": {
+			if (1) {gs->nophaseshift = "UNIMPL"; break;}
+			gs->phase = "readnote";
+			break;
+		}
+		case "readnote": {
+			if (1) {gs->nophaseshift = "UNIMPL"; break;}
+			gs->phase = "gameover";
+			break;
+		}
+		case "gameover": break;
+		default: gs->nophaseshift = "Unknown phase " + gs->phase;
+	}
+	update_game(game);
+}
+
 void websocket_cmd_setrole(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
 	mapping gs = game_state[game]; if (!gs) return;
@@ -493,7 +540,7 @@ void websocket_cmd_setrole(mapping(string:mixed) conn, mapping(string:mixed) msg
 		//give a different message, but still block it.)
 		if (has_value(gs->roles, msg->role)) return;
 	}
-	if (msg->role == "spectator") m_delete(gs->roles, uid); //No need to record spectators (though it wouldn't hurt)
+	if (msg->role == "spectator") m_delete(gs->roles, uid); //No need to record spectators (and it's convenient for player counting to omit them)
 	else gs->roles[uid] = msg->role;
 	update_game(game);
 }

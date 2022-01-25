@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {B, BUTTON, DIV} = choc; //autoimport
+const {B, BR, BUTTON, DIV} = choc; //autoimport
 
 let published_color = null;
 export function render(data) {
@@ -27,6 +27,11 @@ export function render(data) {
 		data.phase === "writenote" && ["It is ", B("afternoon"), " and the message board is receiving submissions."],
 		data.phase === "readnote" && ["It is ", B("evening"), " and today's messages are on the board."],
 		data.phase === "gameover" && ["The ", B("game is over"), ", and Rosuav needs to code this part."],
+		data.is_host && [BR(),
+			"When everything is ready, use your host privileges to ",
+			BUTTON({className: "infobtn", "data-dlg": "nextphasedlg"}, "advance time"), " to the next phase.",
+			data.nophaseshift && " (Once everything's ready. " + data.nophaseshift + ")",
+		],
 	]);
 	if (data.paints) set_content("#basepots", data.paints.map(p => DIV(
 		{className: "swatch", "data-id": p[0], style: "background: #" + p[2]},
@@ -107,4 +112,9 @@ on("click", "#publishpaint", e => {
 on("click", "#publishconfirm", e => {
 	ws_sync.send({cmd: "publish"});
 	DOM("#publishdlg").close();
+});
+
+on("click", "#nextphase", e => {
+	ws_sync.send({cmd: "nextphase"});
+	DOM("#nextphasedlg").close();
 });
