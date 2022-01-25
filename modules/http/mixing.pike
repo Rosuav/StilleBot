@@ -123,7 +123,9 @@ though you can't save or publish your paints.<br>
 [Twitch login](:.twitchlogin)
 {: #loginbox .hidden}
 
-[Start new game](:#newgame .hidden .infobtn data-dlg=newgamedlg)
+To join an operation in progress, ask the host for a link. Alternatively,
+[start a new game](:#newgame .hidden .infobtn data-dlg=newgamedlg) and
+share the link with others!
 {: #gamedesc}
 
 > ## Recruitment
@@ -143,6 +145,9 @@ though you can't save or publish your paints.<br>
 > ## Paint mixing
 >
 > Welcome to the paint studio. Pick any pigment to mix it into your paint. To start fresh, pick a base color from any available.
+>
+> Outside of properly-started Operations, paints cannot be saved, so the only base color is the standard beige.
+> {: .hidden #onlybeige}
 >
 > As the **Spymaster**, prepare and save the paint you will use on your note, and publish whatever your contact will need.
 > {: .role .spymaster}
@@ -175,8 +180,7 @@ though you can't save or publish your paints.<br>
 > > > <button type=submit>Save</button>
 > > {: tag=form #savepaint autocomplete=off}
 > >
-> > <!-- -->
-> > <button type=button id=publishpaint>Publish this paint</button>
+> > [Publish this paint](:#publishpaint)
 > {: tag=section}
 >
 > <!-- -->
@@ -484,6 +488,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	mapping state = (["loginbtn": -1, "paints": ({({0, "Standard Beige", hexcolor(STANDARD_BASE)})})]);
 	sscanf(group, "%d#%s", int uid, string game);
+	if (!uid || !game) state->no_save = 1;
 	if (!uid) state->loginbtn = 1;
 	if (!game) return state; //If you're not connected to a game, there are no saved paints.
 	mapping gs = game_state[game];

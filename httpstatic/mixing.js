@@ -49,6 +49,12 @@ export function render(data) {
 		set_content("#chaos", data.chaos.length ? data.chaos.join(", ") : "(none)");
 	}
 	if (data.role) set_content("#rolestyle", ".role." + data.role + " {display: block;}");
+	if (data.no_save) {
+		//You can't save paints, so hide the forms and explain.
+		DOM("#savepaint").classList.add("hidden");
+		DOM("#publishpaint").parentElement.classList.add("hidden"); //Hide the whole paragraph fwiw
+		DOM("#onlybeige").classList.remove("hidden");
+	}
 }
 
 let selectedcolor = null;
