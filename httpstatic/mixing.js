@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {B, BR, BUTTON, DIV} = choc; //autoimport
+const {B, BUTTON, DIV, P} = choc; //autoimport
 
 let published_color = null;
 export function render(data) {
@@ -27,11 +27,14 @@ export function render(data) {
 		data.phase === "writenote" && ["It is ", B("afternoon"), " and the message board is receiving submissions."],
 		data.phase === "readnote" && ["It is ", B("evening"), " and today's messages are on the board."],
 		data.phase === "gameover" && ["The ", B("game is over"), ", and Rosuav needs to code this part."],
-		data.is_host && [BR(),
+		data.is_host && P([
 			"When everything is ready, use your host privileges to ",
 			BUTTON({className: "infobtn", "data-dlg": "nextphasedlg"}, "advance time"), " to the next phase.",
 			data.nophaseshift && " (Once everything's ready. " + data.nophaseshift + ")",
-		],
+		]),
+		data.phase !== "recruit" && data.spymaster && data.contact && P([
+			"The Spymaster is ", B(data.spymaster), " and the Contact is ", B(data.contact), ".",
+		]),
 	]);
 	if (data.paints) set_content("#basepots", data.paints.map(p => DIV(
 		{className: "swatch", "data-id": p[0], style: "background: #" + p[2]},
@@ -45,6 +48,7 @@ export function render(data) {
 		);
 		set_content("#chaos", data.chaos.length ? data.chaos.join(", ") : "(none)");
 	}
+	if (data.role) set_content("#rolestyle", ".role." + data.role + " {display: block;}");
 }
 
 let selectedcolor = null;

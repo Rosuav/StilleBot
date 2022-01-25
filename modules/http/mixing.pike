@@ -91,8 +91,24 @@ h4 {margin: 0;}
 	max-width: 400px;
 }
 article {display: none;}
+.role {
+	display: none;
+	margin: 10px;
+	border: 1px solid green;
+	padding: 5px;
+	background: #eeffee;
+	max-width: 400px;
+}
+#gamedesc {
+	margin: 20px;
+	border: 3px solid blue;
+	padding: 10px;
+	background: #eeeeff;
+	max-width: 600px;
+}
 </style>
 <style id=phase>article#mixpaint {display: block;}</style>
+<style id=rolestyle></style>
 
 ## Situation Report
 Coded messages are no longer safe. Your enemies have discovered your code, and can both read your messages
@@ -107,7 +123,8 @@ though you can't save or publish your paints.<br>
 [Twitch login](:.twitchlogin)
 {: #loginbox .hidden}
 
-<span id=gamedesc>[Start new game](:#newgame .hidden .infobtn data-dlg=newgamedlg)</span>
+[Start new game](:#newgame .hidden .infobtn data-dlg=newgamedlg)
+{: #gamedesc}
 
 > ## Recruitment
 >
@@ -126,6 +143,18 @@ though you can't save or publish your paints.<br>
 > ## Paint mixing
 >
 > Welcome to the paint studio. Pick any pigment to mix it into your paint. To start fresh, pick a base color from any available.
+>
+> As the **Spymaster**, prepare and save the paint you will use on your note, and publish whatever your contact will need.
+> {: .role .spymaster}
+>
+> As the **Contact**, predict and save the paint the Spymaster will use, and publish whatever you need to.
+> {: .role .contact}
+>
+> As a **Chaos Agent**, try to predict what the Spymaster will use, so you can deceive the Contact.
+> {: .role .chaos}
+>
+> As a **Spectator**, observe what the Spymaster and Contact do.
+> {: .role .spectator}
 >
 > > #### Available base colors
 > > Choose one of these to start a fresh paint mix with this as the base.
@@ -156,13 +185,28 @@ though you can't save or publish your paints.<br>
 <!-- -->
 > ## Notes!
 >
-> Oh, I see you've got one too.
+> Submit one note for inclusion on the message board. You may choose any of your saved
+> paints or anyone's published paints to mark it with.
+>
+> As the **Contact**, you may submit a note if you wish, but this is optional.
+> {: .role .contact}
+>
+> As a **Chaos Agent**, try to deceive the Contact with a fake note.
+> {: .role .chaos}
+>
 {: tag=article #writenote}
 
 <!-- -->
 > ## The Message Board
 >
-> Far too many notes for my taste, but one of them is for you.
+> Far too many notes for my taste, but one of them is meant for you.
+> Choose the right note to win the game!
+> {: .role .contact}
+>
+> It's all out of your hands now. The only thing that matters is whether the Contact chooses
+> the correct note.
+> {: .role .spymaster .chaos .spectator}
+>
 {: tag=article #readnote}
 
 <!-- -->
