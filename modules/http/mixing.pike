@@ -479,7 +479,10 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		//Joining a game? Record your username and the role you're assigned.
 		//(If we're past the recruitment phase, you get Spectator role by default.)
 		gs->usernames[uid] = conn->session->user->display_name;
-		if (!gs->roles[uid] && gs->phase == "recruit") gs->roles[uid] = "chaos";
+		if (!gs->roles[uid] && gs->phase == "recruit") {
+			gs->roles[uid] = "chaos";
+			update_game(game);
+		}
 		return 0;
 	}
 	return "Not logged in";
