@@ -695,8 +695,9 @@ void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) m
 			break;
 		}
 		case "readnote": {
-			if (1) {gs->nophaseshift = "UNIMPL"; break;}
-			gs->phase = "gameover";
+			gs->nophaseshift = "The Contact hasn't selected which instructions to follow.";
+			//Note that setting phase to gameover actually happens as a direct consequence of
+			//selecting instructions. Host privileges do not apply.
 			break;
 		}
 		case "gameover": break;
