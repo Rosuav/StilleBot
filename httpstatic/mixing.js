@@ -75,22 +75,25 @@ export function render(data) {
 		CODE(m),
 	])));
 	if (data.selected_note) set_content("#notecolor", data.msg_order[data.selected_note - 1]).style = "background: #" + data.msg_color_order[data.selected_note - 1];
-	if (data.comparison_log) set_content("#comparison_log", [...data.comparison_log].reverse().map(action => LI([
-		action.action === "select" && [
-			"Took note #" + action.noteid + " for a closer look.", BR(),
-			DIV({className: "swatch inline", style: "background: #" + data.msg_color_order[action.noteid - 1]}),
-			CODE(data.msg_order[action.noteid - 1]),
-		],
-		action.action === "compare" && [
-			"Compared ",
-			DIV({className: "swatch inline", style: "background: #" + data.msg_color_order[action.noteid - 1]}),
-			" note #" + action.noteid + " with a pot of ",
-			//If you're the contact, show the paint you compared it against.
-			data.comparison_paints && DIV({className: "swatch inline", style: "background: #" + data.comparison_paints[action.coloridx]}),
-			" paint",
-		],
-		action.action === "result" && ["They look... ", B(action.similarity), "."],
-	])));
+	if (data.comparison_log) {
+		set_content("#comparison_log", [...data.comparison_log].reverse().map(action => LI([
+			action.action === "select" && [
+				"Took note #" + action.noteid + " for a closer look.", BR(),
+				DIV({className: "swatch inline", style: "background: #" + data.msg_color_order[action.noteid - 1]}),
+				CODE(data.msg_order[action.noteid - 1]),
+			],
+			action.action === "compare" && [
+				"Compared ",
+				DIV({className: "swatch inline", style: "background: #" + data.msg_color_order[action.noteid - 1]}),
+				" note #" + action.noteid + " with a pot of ",
+				//If you're the contact, show the paint you compared it against.
+				data.comparison_paints && DIV({className: "swatch inline", style: "background: #" + data.comparison_paints[action.coloridx]}),
+				" paint",
+			],
+			action.action === "result" && ["They look... ", B(action.similarity), "."],
+		])));
+		DOM("#comparison").classList.toggle("comparing", !!data.comparing);
+	}
 	if (data.phase === "readnote" && data.role === "contact") { //Need a more elegant way to do that
 		DOM("#comparepaint").classList.remove("hidden");
 		set_content("#midbtn", BUTTON({type: "button", id: "compare"}, "Compare!"));

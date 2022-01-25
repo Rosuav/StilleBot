@@ -119,7 +119,17 @@ article {display: none;}
 	flex-direction: column;
 	justify-content: center;
 }
+#comparison.comparing {
+	/* Clients will all animate (across maybe 0.5-1.0 seconds) bringing the boxes together:
+	- Hide the Compare button or text (#midbtn) - visibility:hidden, not display:none
+	- Move/enlarge the boxes so they meet in the middle
+	- Remove the borders from the two boxes
+	*/
+}
+
 #paintcolor {
+	/* When nothing's selected - notably, this is always the case for those other than
+	the Contact - cover the comparison box with 'nope' stripes. */
 	background: repeating-linear-gradient(
 		-45deg,
 		white,
@@ -833,18 +843,7 @@ void websocket_cmd_comparenotepaint(mapping(string:mixed) conn, mapping(string:m
 		gs->msg_color[gs->msg_order[gs->selected_note - 1]],
 		gs->msg_color_order[gs->selected_note - 1],
 		color, hexcolor(color));
-	//1) Notify everyone that a comparison is being made. (The Contact's client can continue with its local representation.)
-	//1a) This will appear in the comparison log.
-	//2) Clients will all animate (across maybe 0.5-1.0 seconds) bringing the boxes together:
-	//2a) Hide the Compare button or text (#midbtn) - visibility:hidden, not display:none
-	//2b) Move/enlarge the boxes so they meet in the middle
-	//2c) Remove the borders from the two boxes
-	//3) Wait about five seconds to allow humans to get an idea of whether this worked.
-	//4) Announce (to all? to contact only?) whether it's Identical, Similar, or Different
-	//4a) Identical is *only* if the R/G/B rationals are actually equal.
-	//4b) If they're not identical, calculate distance-squared for each component. Sum them as if greyscaled.
-	//4c) Figure out a threshold such that "similar" corresponds to visually looking similar
-	//5) Unrelated: Allow a "Follow these instructions" action which, regardless of comparison, will end the phase.
+	//Still need a "Follow these instructions" action which, regardless of comparison, will end the phase.
 	update_game(game);
 }
 
