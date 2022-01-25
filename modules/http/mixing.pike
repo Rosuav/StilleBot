@@ -297,7 +297,10 @@ CAUTION: Don't let anyone else see what's on your screen! To livestream the game
 <!-- -->
 > ### Start new paint mix
 >
-> Confirm that you want to discard your current paint mix and start a new one using this base color:
+> Confirm that you want to discard your current paint mix and start a new one using this base color.
+>
+> This paint color is...
+> {: #paintorigin}
 >
 > <div id=bigsample class=\"swatch large\" style=\"background: #F5F5DC\">Standard Beige</div></div>
 >
@@ -470,7 +473,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]));
 }
 
-mapping fresh_paint(string basis, array basecolor) {
+mapping fresh_paint(string basis, array basecolor, string|void basisdesc) {
 	return ([
 		"definition": basecolor,
 		"blobs": ({(["label": "Base: " + basis, "color": hexcolor(basecolor)])}),
@@ -522,11 +525,11 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 		else state[role] = gs->usernames[uid];
 	state->role = gs->roles[uid] || "spectator";
 	state->paints = map(sort(indices(gs->published_paints))) {[int id] = __ARGS__;
-		return ({id, gs->published_paints[id][0], hexcolor(gs->published_paints[id][1])});
+		return ({id, gs->published_paints[id][0], hexcolor(gs->published_paints[id][1]), gs->published_paints[id][2]});
 	};
 	mapping saved = gs->saved_paints[uid] || ([]);
 	state->paints += map(sort(indices(saved))) {[string key] = __ARGS__;
-		return ({key, saved[key]->label, hexcolor(saved[key]->color)});
+		return ({key, saved[key]->label, hexcolor(saved[key]->color), saved[key]->description});
 	};
 	if (array selfpub = gs->published_paints[uid]) state->selfpublished = hexcolor(selfpub[1]);
 	return state;
@@ -550,7 +553,7 @@ void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg
 			"usernames": ([uid: conn->session->user->display_name]),
 			"roles": ([]),
 			"phase": "recruit",
-			"published_paints": ([0: ({"Standard Beige", STANDARD_BASE})]),
+			"published_paints": ([0: ({"Standard Beige", STANDARD_BASE, "The Diffie Hellman Standardized Beige"})]),
 			"saved_paints": ([]),
 		]);
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "redirect", "game": newid])));
@@ -617,7 +620,11 @@ void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
 	mapping gs = game_state[game]; if (!gs) return;
 	if (gs->published_paints[uid]) return; //Already published one. No shenanigans.
-	gs->published_paints[uid] = ({conn->session->user->display_name + "'s paint", conn->curpaint->definition});
+	gs->published_paints[uid] = ({
+		conn->session->user->display_name + "'s paint",
+		conn->curpaint->definition,
+		"The color published by " + conn->session->user->display_name,
+	});
 	update_game(game);
 }
 
@@ -630,7 +637,11 @@ void websocket_cmd_savepaint(mapping(string:mixed) conn, mapping(string:mixed) m
 	if (!gs) return;
 	if (!gs->saved_paints[uid]) gs->saved_paints[uid] = ([]);
 	if (gs->saved_paints[uid][msg->id]) return; //Duplicate ID
-	gs->saved_paints[uid][msg->id] = (["label": "Saved paint: " + msg->id, "color": conn->curpaint->definition]);
+	gs->saved_paints[uid][msg->id] = ([
+		"label": "Saved paint: " + msg->id,
+		"color": conn->curpaint->definition,
+		"description": conn->curpaint->blobs->label * ", ",
+	]);
 	websocket_cmd_freshpaint(conn, (["base": "0"]));
 	send_updates_all(conn->group);
 }
@@ -655,7 +666,7 @@ void websocket_cmd_freshpaint(mapping(string:mixed) conn, mapping(string:mixed) 
 	//If it's all digits, you're asking for a user ID.
 	else if (msg->base == (string)(int)msg->base) request = gs->published_paints[(int)msg->base];
 	//Otherwise, you're asking for one of your own saved paints.
-	else if (mapping saved = gs->saved_paints[uid][?msg->base]) request = ({msg->base, saved->color});
+	else if (mapping saved = gs->saved_paints[uid][?msg->base]) request = ({msg->base, saved->color, saved->description});
 	if (!request) return; //TODO: Send back an error message
 	conn->curpaint = fresh_paint(@request);
 	send_update(conn, (["curpaint": (["blobs": conn->curpaint->blobs, "color": conn->curpaint->color])]));

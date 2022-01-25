@@ -48,7 +48,7 @@ export function render(data) {
 		]),
 	]);
 	if (data.paints) set_content("#basepots", data.paints.map(p => DIV(
-		{className: "swatch", "data-id": p[0], style: "background: #" + p[2]},
+		{className: "swatch", "data-id": p[0], style: "background: #" + p[2], "data-desc": p[3]},
 		p[1],
 	)));
 	if (data.selfpublished) published_color = data.selfpublished;
@@ -92,6 +92,7 @@ on("click", "#colorpicker div", e => {
 let selectedpaint = null;
 on("click", "#basepots div", e => {
 	selectedpaint = e.match.dataset.id;
+	set_content("#paintorigin", e.match.dataset.desc);
 	set_content("#bigsample", e.match.innerText).style.cssText = e.match.style.cssText;
 	DOM("#freshpaint").showModal();
 });
