@@ -334,7 +334,7 @@ constant PIGMENTS = ([
 	"Cobalt": ({0x1F, 0x45, 0xFC}), //Blue
 	//Secondary colors
 	"Hot Pink": ({0xFF, 0x14, 0x93}), //Rb
-	"Orange": ({0xFF, 0x8C, 0x0A}), //Rg
+	"Maize": ({0xFB, 0xEC, 0x5D}), //Rg
 	"Lawn Green": ({0x9C, 0xFC, 0x0D}), //Gr
 	"Spring Green": ({0x03, 0xFA, 0x9A}), //Gb
 	"Sky Blue": ({0x57, 0xCE, 0xFA}), //Bg
@@ -346,7 +346,7 @@ constant PIGMENTS = ([
 	"Mint Mus": ({0x99, 0xFD, 0x97}),
 	"Bulker": STANDARD_BASE[*] * 2,
 	"Charcoal": ({0x44, 0x45, 0x4f}),
-	"Beige": STANDARD_BASE,
+	"Orange": ({0xFF, 0x8C, 0x0A}),
 	"Blood": ({0x7E, 0x35, 0x17}),
 ]);
 constant SWATCHES = ({
@@ -354,7 +354,7 @@ constant SWATCHES = ({
 	({"Jade", "Derived from pulverised ancient artifacts. Probably not cursed."}),
 	({"Cobalt", "Like balt, but the other way around"}),
 	({"Hot Pink", "Use it quickly before it cools down!"}),
-	({"Orange", "For when security absolutely depends on not being able to rhyme"}),
+	({"Maize", "Astonish your friends! Amaize your enemies! Die of bad puns!"}),
 	({"Lawn Green", "Not to be confused with Australian Lawn Green, which is brown"}),
 	({"Spring Green", "It's a lie; most of my springs are unpainted"}),
 	({"Sky Blue", "Paint your ceiling in this colour and pretend you're outside!"}),
@@ -365,7 +365,7 @@ constant SWATCHES = ({
 	({"Mint Mus", "Definitely not a frozen dessert."}),
 	({"Bulker", "Add some more base colour to pale out your paint", 0}),
 	({"Charcoal", "Dirty grey for when vibrant colours just aren't your thing"}),
-	({"Beige", "In case the default beige just isn't beigey enough for you"}),
+	({"Orange", "For when security absolutely depends on not being able to rhyme"}),
 	//Special case. Swatched as a vibrant crimson (fresh blood), but for mixing, the actual "Blood" value is used (old blood).
 	({"Blood", "This pigment is made from real blood. Use it wisely.", ({0xAA, 0, 0})}),
 });
