@@ -259,7 +259,7 @@ CAUTION: Don't let anyone else see what's on your screen! To livestream the game
 >
 > <div id=comparison><div id=notecolor class=\"swatch large\"></div><div id=midbtn><div>Waiting for comparison...</div></div><div id=paintcolor class=\"swatch large\"></div></div>
 >
-> <ol id=comparison_log></ol>
+> <ol reversed id=comparison_log></ol>
 {: tag=article #readnote}
 
 <!-- -->
@@ -562,11 +562,10 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	if (!uid) state->loginbtn = 1;
 	if (!game) return state; //If you're not connected to a game, there are no saved paints.
 	mapping gs = game_state[game];
-	state->gameid = gs->gameid;
-	state->phase = gs->phase;
+	foreach ("gameid phase nophaseshift msg_order msg_color_order selected_note comparison_log" / " ", string passthru)
+		if (gs[passthru]) state[passthru] = gs[passthru];
 	state->host = gs->usernames[gs->host];
 	if (gs->host == uid) state->is_host = 1; //Enable the phase advancement button(s)
-	if (gs->nophaseshift) state->nophaseshift = gs->nophaseshift;
 	state->chaos = ({ });
 	if (string note = gs->notes[?uid]) state->note_to_send = note;
 	if (array color = gs->messageboard[?uid]) state->note_send_color = hexcolor(color);
@@ -574,9 +573,6 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 		if (role == "chaos") state[role] += ({gs->usernames[uid]});
 		else state[role] = gs->usernames[uid];
 	state->role = gs->roles[uid] || "spectator";
-	if (gs->msg_order) {state->msg_order = gs->msg_order; state->msg_color_order = gs->msg_color_order;}
-	if (gs->selected_note) state->selected_note = gs->selected_note;
-	if (gs->comparison_log) state->comparison_log = gs->comparison_log;
 	state->paints = map(sort(indices(gs->published_paints))) {[int id] = __ARGS__;
 		return ({id, gs->published_paints[id][0], hexcolor(gs->published_paints[id][1]), gs->published_paints[id][2]});
 	};
