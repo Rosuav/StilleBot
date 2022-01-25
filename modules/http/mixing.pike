@@ -128,6 +128,8 @@ To join an operation in progress, ask the host for a link. Alternatively,
 share the link with others!
 {: #gamedesc .hidden}
 
+CAUTION: Don't let anyone else see what's on your screen!
+
 > ## Recruitment
 >
 > Declare your allegiance!
