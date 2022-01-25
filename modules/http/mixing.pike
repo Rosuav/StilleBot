@@ -99,6 +99,10 @@ article {display: none;}
 	background: #eeffee;
 	max-width: 400px;
 }
+.role.warning {
+	border: 1px solid yellow;
+	background: #ffcc77;
+}
 #gamedesc {
 	margin: 20px;
 	border: 3px solid blue;
@@ -130,6 +134,7 @@ share the link with others!
 
 CAUTION: Don't let anyone else see what's on your screen! To livestream the game, open an additional window
 (possibly using a different browser, or Incognito Mode) with the same game link; this will be spectator view.
+{: .warning .role .spymaster .contact .chaos}
 
 > ## Recruitment
 >
