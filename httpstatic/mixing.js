@@ -18,7 +18,10 @@ export function render(data) {
 		)));
 		DOM("#curcolor").style.background = "#" + data.curpaint.color;
 	}
-	if (data.loginbtn === 1) DOM("#loginbox").classList.remove("hidden");
+	if (data.loginbtn === 1) {
+		DOM("#loginbox").classList.remove("hidden");
+		if (data.gameid) set_content("#specview", "observe the game in progress");
+	}
 	if (data.loginbtn === -1) DOM("#gamedesc").classList.remove("hidden");
 	if (data.gameid) set_content("#gamedesc", [
 		"Operation ", B(data.gameid), " is now in progress. ",

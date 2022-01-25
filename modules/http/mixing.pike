@@ -118,8 +118,8 @@ so you must leave a message there, with some proof that it is truly from you.
 
 [Mission Briefing](:.infobtn data-dlg=sitrep) [The Secret Trick](:.infobtn data-dlg=secret) [How it really works](:.infobtn data-dlg=dhke)
 
-To participate in games, you'll need to confirm your Twitch account name. Otherwise, feel free to play with the paint mixer,
-though you can't save or publish your paints.<br>
+To participate in games, you'll need to confirm your Twitch account name. Otherwise, feel free to
+<span id=specview>play with the paint mixer, though you can't save or publish your paints</span>.<br>
 [Twitch login](:.twitchlogin)
 {: #loginbox .hidden}
 
@@ -128,7 +128,8 @@ To join an operation in progress, ask the host for a link. Alternatively,
 share the link with others!
 {: #gamedesc .hidden}
 
-CAUTION: Don't let anyone else see what's on your screen!
+CAUTION: Don't let anyone else see what's on your screen! To livestream the game, open an additional window
+(possibly using a different browser, or Incognito Mode) with the same game link; this will be spectator view.
 
 > ## Recruitment
 >
@@ -191,8 +192,8 @@ CAUTION: Don't let anyone else see what's on your screen!
 <!-- -->
 > ## Notes!
 >
-> Submit one note for inclusion on the message board. You may choose any of your saved
-> paints or anyone's published paints to mark it with.
+> Each player may submit up to one note for inclusion on the message board. You may choose any
+> of your saved paints or anyone's published paints to mark it with.
 >
 > As the **Contact**, you may submit a note if you wish, but this is optional.
 > {: .role .contact}
@@ -449,8 +450,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	string group = "0";
 	string uid = req->misc->session->user->?id;
 	mapping state = game_state[req->variables->game];
-	if (state && uid) group = uid + "#" + state->gameid;
-	else if (uid) group = (string)uid;
+	if (state) group = uid + "#" + state->gameid;
+	else group = (string)uid;
 	return render(req, ([
 		"vars": (["ws_group": group, "swatches": swatches]),
 		"swatch_colors": swatch_color_style,
@@ -469,15 +470,16 @@ mapping fresh_paint(string basis, array basecolor) {
 //0 --> Guest account, cannot share, will not see any base other than standard, always on mixer screen
 //Other integer --> Logged in, not part of game
 //int#str: Logged in, part of game, can share paints, will use mode from game
+//0#str: Guest, spectating game
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	conn->curpaint = fresh_paint("Standard Beige", STANDARD_BASE);
 	if (!stringp(msg->group)) return "Invalid group ID";
 	if (msg->group == "0") return 0; //Always okay to be guest
 	if (msg->group == (string)conn->session->user->?id) return 0; //Logged in as you, no game
 	sscanf(msg->group, "%d#%s", int uid, string game);
-	if (mapping gs = uid && uid == (int)conn->session->user->?id && game_state[game]) {
-		if (!gs->usernames) gs->usernames = ([]); //temp
-		if (!gs->roles) gs->roles = ([]); //temp
+	if (uid && uid != (int)conn->session->user->?id) return "Not logged in";
+	if (mapping gs = game_state[game]) {
+		if (!uid) return 0; //Spectate a game w/o logging in
 		//Joining a game? Record your username and the role you're assigned.
 		//(If we're past the recruitment phase, you get Spectator role by default.)
 		gs->usernames[uid] = conn->session->user->display_name;
@@ -487,7 +489,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		}
 		return 0;
 	}
-	return "Not logged in";
+	return "Bad game ID";
 }
 
 mapping|Concurrent.Future get_state(string|int group, string|void id) {
