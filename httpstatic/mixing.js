@@ -213,3 +213,4 @@ on("click", "#comparepaint .colorpicker div", e => {
 });
 
 on("click", "#all_notes li", e => ws_sync.send({cmd: "selectnote", note: e.match.dataset.id|0}));
+on("click", "#compare", e => ws_sync.send({cmd: "comparenotepaint", paint: comparisonpaint}));
