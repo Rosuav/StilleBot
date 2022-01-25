@@ -75,6 +75,13 @@ export function render(data) {
 		CODE(m),
 	])));
 	if (data.selected_note) set_content("#notecolor", data.msg_order[data.selected_note - 1]).style = "background: #" + data.msg_color_order[data.selected_note - 1];
+	if (data.comparison_log) set_content("#comparison_log", data.comparison_log.map(action => LI([
+		action.action === "select" && [
+			"Took note #" + action.noteid + " for a closer look.", BR(),
+			DIV({className: "swatch inline", style: "background: #" + data.msg_color_order[action.noteid - 1]}),
+			CODE(data.msg_order[action.noteid - 1]),
+		],
+	])));
 	if (data.phase === "readnote" && data.role === "contact") { //Need a more elegant way to do that
 		DOM("#comparepaint").classList.remove("hidden");
 		set_content("#midbtn", BUTTON({type: "button", id: "compare"}, "Compare!"));

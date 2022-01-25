@@ -255,9 +255,11 @@ CAUTION: Don't let anyone else see what's on your screen! To livestream the game
 > Select a paint to compare against. Others will not see your selection.
 > <div class=colorpicker></div></div>
 >
-> Notes on the board: <ul id=all_notes></ul>
+> Notes on the board: <ol id=all_notes></ol>
 >
 > <div id=comparison><div id=notecolor class=\"swatch large\"></div><div id=midbtn><div>Waiting for comparison...</div></div><div id=paintcolor class=\"swatch large\"></div></div>
+>
+> <ol id=comparison_log></ol>
 {: tag=article #readnote}
 
 <!-- -->
@@ -574,6 +576,7 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	state->role = gs->roles[uid] || "spectator";
 	if (gs->msg_order) {state->msg_order = gs->msg_order; state->msg_color_order = gs->msg_color_order;}
 	if (gs->selected_note) state->selected_note = gs->selected_note;
+	if (gs->comparison_log) state->comparison_log = gs->comparison_log;
 	state->paints = map(sort(indices(gs->published_paints))) {[int id] = __ARGS__;
 		return ({id, gs->published_paints[id][0], hexcolor(gs->published_paints[id][1]), gs->published_paints[id][2]});
 	};
@@ -672,6 +675,7 @@ void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) m
 				}
 			}
 			gs->msg_color_order = map(gs->msg_order) {return hexcolor(gs->msg_color[__ARGS__[0]]);};
+			gs->comparison_log = ({ });
 			gs->phase = "readnote";
 			break;
 		}
@@ -789,6 +793,7 @@ void websocket_cmd_selectnote(mapping(string:mixed) conn, mapping(string:mixed) 
 	//Note IDs are 1-based.
 	if (!intp(msg->note) || msg->note < 1 || msg->note > sizeof(gs->msg_order)) return;
 	gs->selected_note = msg->note;
+	gs->comparison_log += ({(["action": "select", "noteid": msg->note])});
 	send_updates_all(conn->group);
 }
 
