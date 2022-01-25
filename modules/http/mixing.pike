@@ -200,6 +200,10 @@ CAUTION: Don't let anyone else see what's on your screen! To livestream the game
 > Each player may submit up to one note for inclusion on the message board. You may choose any
 > of your saved paints or anyone's published paints to mark it with.
 >
+> As the **Spymaster**, you must submit your note in such a way that your Contact will
+> know that it is from you. Choose your paint color wisely!
+> {: .role .spymaster}
+>
 > As the **Contact**, you may submit a note if you wish, but this is optional.
 > {: .role .contact}
 >
