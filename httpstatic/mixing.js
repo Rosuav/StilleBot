@@ -19,7 +19,7 @@ export function render(data) {
 		DOM("#curcolor").style.background = "#" + data.curpaint.color;
 	}
 	if (data.loginbtn === 1) DOM("#loginbox").classList.remove("hidden");
-	if (data.loginbtn === -1 && !data.phase) DOM("#newgame").classList.remove("hidden");
+	if (data.loginbtn === -1) DOM("#gamedesc").classList.remove("hidden");
 	if (data.gameid) set_content("#gamedesc", [
 		"Operation ", B(data.gameid), " is now in progress. ",
 		data.phase === "recruit" && ["It is ", B("that dark hour before dawn"), " and we need to know who's on what side. ",

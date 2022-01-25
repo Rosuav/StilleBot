@@ -124,9 +124,9 @@ though you can't save or publish your paints.<br>
 {: #loginbox .hidden}
 
 To join an operation in progress, ask the host for a link. Alternatively,
-[start a new game](:#newgame .hidden .infobtn data-dlg=newgamedlg) and
+[start a new game](:#newgame .infobtn data-dlg=newgamedlg) and
 share the link with others!
-{: #gamedesc}
+{: #gamedesc .hidden}
 
 > ## Recruitment
 >
