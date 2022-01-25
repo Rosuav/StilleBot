@@ -27,7 +27,13 @@ export function render(data) {
 		"Operation ", B(data.gameid), " is now in progress. ",
 		data.phase === "recruit" && ["It is ", B("that dark hour before dawn"), " and we need to know who's on what side. Share ",
 			A({href: "/mixing?game=" + data.gameid}, "the link to this page"),
-			" to recruit both friends and enemies!"],
+			" to recruit both friends and enemies!",
+			data.is_host && P([
+				"Are you live-streaming? ",
+				BUTTON({className: "infobtn", "data-dlg": "chatlink"}, "I can post in chat for you"),
+				" to try to attract people!",
+			]),
+		],
 		data.phase === "mixpaint" && ["It is ", B("morning"), " and the paint shop is open for mixing."],
 		data.phase === "writenote" && ["It is ", B("afternoon"), " and the message board is receiving submissions."],
 		data.phase === "readnote" && ["It is ", B("evening"), " and today's messages are on the board."],
@@ -133,4 +139,34 @@ on("click", "#publishconfirm", e => {
 on("click", "#nextphase", e => {
 	ws_sync.send({cmd: "nextphase"});
 	DOM("#nextphasedlg").close();
+});
+
+on("click", "#suggestmsg", e => {
+	const messages = [
+		"We're playing Diffie Hellman Paint Mixing - come join us at {link} !",
+		"Join us to play or spectate a game about paint and security: {link}",
+		"Come to {link} for a silly little game about paint mixing and spies!",
+		"Secret Agents, your orders can be found at {link} - burn after reading.",
+		"Follow us to {link} ... if you dare. Don't worry, it's just paint...",
+		//More message suggestions welcome!
+	];
+	while (1) {
+		const msg = messages[Math.floor(Math.random() * messages.length)];
+		if (DOM("input[name=msg]").value === msg) continue;
+		DOM("input[name=msg]").value = msg;
+		break;
+	}
+});
+
+on("submit", "#chatlinkform", e => {
+	e.preventDefault();
+	const msg = e.match.elements.msg.value;
+	if (msg === "") return; //TODO: Give error message
+	ws_sync.send({cmd: "chatlink", msg});
+	ws_sync.send({cmd: "prefs_update", diffie_hellman_chatlink: msg});
+	DOM("#chatlink").close();
+});
+
+ws_sync.prefs_notify("diffie_hellman_chatlink", chatlink => {
+	DOM("input[name=msg]").value = chatlink;
 });

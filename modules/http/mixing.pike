@@ -321,6 +321,18 @@ CAUTION: Don't let anyone else see what's on your screen! To livestream the game
 >
 > [Publish or perish!](:#publishconfirm) [Wait, I'm not ready...](:.dialog_close #publishcancel)
 {: tag=dialog #publishdlg}
+
+<!-- -->
+> ### Post link in chat
+> The channel bot that hosts this game can announce the link in your chat channel.
+>
+> > What should I say? Put <code>{link}</code> for the game page link.<br>
+> > <input name=msg size=80> [Suggest](: #suggestmsg)
+> >
+> > [Yes! Cast 'Summon More Players'!](: type=submit) [It's fine, I can share it myself](:.dialog_close)
+> {: tag=form #chatlinkform}
+>
+{: tag=dialog #chatlink}
 ";
 
 mapping game_state = ([]);
@@ -647,6 +659,15 @@ void websocket_cmd_freshpaint(mapping(string:mixed) conn, mapping(string:mixed) 
 	if (!request) return; //TODO: Send back an error message
 	conn->curpaint = fresh_paint(@request);
 	send_update(conn, (["curpaint": (["blobs": conn->curpaint->blobs, "color": conn->curpaint->color])]));
+}
+
+void websocket_cmd_chatlink(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!stringp(msg->msg)) return;
+	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
+	mapping gs = game_state[game]; if (!gs) return;
+	if (gs->host != uid) return;
+	string url = persist_config["ircsettings"]->http_address + "/mixing?game=" + game;
+	send_message("#" + conn->session->user->login, replace(msg->msg, "{link}", url));
 }
 
 protected void create(string name) {
