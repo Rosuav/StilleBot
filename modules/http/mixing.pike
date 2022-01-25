@@ -113,18 +113,25 @@ article {display: none;}
 }
 #comparison {
 	display: flex;
+	transition: all 1s;
 }
 #midbtn {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
+	text-align: center;
+	transition: width 1s, opacity 0s 1s; /* Make it reappear only when the transition is complete */
+	width: 150px;
 }
-#comparison.comparing {
-	/* Clients will all animate (across maybe 0.5-1.0 seconds) bringing the boxes together:
-	- Hide the Compare button or text (#midbtn) - visibility:hidden, not display:none
-	- Move/enlarge the boxes so they meet in the middle
-	- Remove the borders from the two boxes
-	*/
+#comparison .swatch {transition: all 1s;}
+#comparison.comparing .swatch {
+	border-color: transparent;
+	width: 250px;
+}
+#comparison.comparing #midbtn {
+	transition: width 1s, opacity 0s 0s; /* Make it disappear immediately before shrinking the gap */
+	opacity: 0;
+	width: 0;
 }
 
 #paintcolor {
