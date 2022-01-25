@@ -111,6 +111,23 @@ article {display: none;}
 	background: #eeeeff;
 	max-width: 600px;
 }
+#comparison {
+	display: flex;
+}
+#midbtn {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+#paintcolor {
+	background: repeating-linear-gradient(
+		-45deg,
+		white,
+		white 10px,
+		black 10px,
+		black 12px
+	);
+}
 </style>
 <style id=phase>article#mixpaint {display: block;}</style>
 <style id=rolestyle></style>
@@ -233,7 +250,13 @@ CAUTION: Don't let anyone else see what's on your screen! To livestream the game
 >
 > The instructions you sent were: <code class=note_to_send>Refresh the page for further instructions.</code>
 >
+> <div id=comparepaint class=hidden>
+> Select a paint to compare against. Others will not see your selection.
+> <div class=colorpicker></div></div>
+>
 > Notes on the board: <ul id=all_notes></ul>
+>
+> <div id=comparison><div id=notecolor class=\"swatch large\"></div><div id=midbtn><div>Waiting for comparison...</div></div><div id=paintcolor class=\"swatch large\"></div></div>
 {: tag=article #readnote}
 
 <!-- -->
@@ -311,7 +334,7 @@ CAUTION: Don't let anyone else see what's on your screen! To livestream the game
 > [More information can be found on Wikipedia](https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange)
 > or on various computing security blogs.
 >
-> [And that's how HTTPS works.](:.dialog_close)
+> [And that's how HTTPS works. Partly.](:.dialog_close)
 {: tag=dialog #dhke}
 
 <!-- -->

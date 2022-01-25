@@ -48,7 +48,7 @@ export function render(data) {
 		]),
 	]);
 	if (data.paints) {
-		set_content("#basepots", data.paints.map(p => DIV(
+		set_content(data.phase === "readnote" ? "#comparepaint .colorpicker" : "#basepots", data.paints.map(p => DIV(
 			{className: "swatch", "data-id": p[0], style: "background: #" + p[2], "data-desc": p[3]},
 			p[1],
 		)));
@@ -74,6 +74,10 @@ export function render(data) {
 		DIV({className: "swatch inline", style: "background: #" + data.msg_color_order[i]}),
 		CODE(m),
 	])));
+	if (data.phase === "readnote" && data.role === "contact") { //Need a more elegant way to do that
+		DOM("#comparepaint").classList.remove("hidden");
+		set_content("#midbtn", BUTTON({type: "button", id: "compare"}, "Compare!"));
+	}
 	if (data.role) set_content("#rolestyle", ".role." + data.role + " {display: block;}");
 	if (data.host) set_content("#gamehost", data.host);
 	if (data.no_save) {
