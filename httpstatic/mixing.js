@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {B, DIV} = choc; //autoimport
+const {B, BUTTON, DIV} = choc; //autoimport
 
 let published_color = null;
 export function render(data) {
@@ -19,9 +19,10 @@ export function render(data) {
 		DOM("#curcolor").style.background = "#" + data.curpaint.color;
 	}
 	if (data.loginbtn === 1) DOM("#loginbox").classList.remove("hidden");
-	if (data.loginbtn === -1) DOM("#newgame").classList.remove("hidden");
+	if (data.loginbtn === -1 && !data.phase) DOM("#newgame").classList.remove("hidden");
 	if (data.gameid) set_content("#gamedesc", [
 		"Operation ", B(data.gameid), " is now in progress. ",
+		data.phase === "recruit" && ["It is ", B("that dark hour before dawn"), " and we need to know who's on what side."],
 		data.phase === "mixpaint" && ["It is ", B("morning"), " and the paint shop is open for mixing."],
 		data.phase === "writenote" && ["It is ", B("afternoon"), " and the message board is receiving submissions."],
 		data.phase === "readnote" && ["It is ", B("evening"), " and today's messages are on the board."],
@@ -33,6 +34,12 @@ export function render(data) {
 	)));
 	if (data.selfpublished) published_color = data.selfpublished;
 	if (data.phase) set_content("#phase", "article#" + data.phase + " {display: block;}");
+	if (data.phase === "recruit" && data.chaos) {
+		["spymaster", "contact"].forEach(role =>
+			set_content("#" + role, data[role] || BUTTON({className: "setrole", "data-role": role}, "Claim role"))
+		);
+		set_content("#chaos", data.chaos.length ? data.chaos.join(", ") : "(none)");
+	}
 }
 
 let selectedcolor = null;
@@ -72,6 +79,7 @@ on("click", "#startnewgame", e => {
 	DOM("#newgamedlg").close();
 });
 
+on("click", ".setrole", e => ws_sync.send({cmd: "setrole", role: e.match.dataset.role}));
 on("click", ".infobtn", e => DOM("#" + e.match.dataset.dlg).showModal());
 
 //After starting a new game, have a completely fresh start - don't try to fudge things.

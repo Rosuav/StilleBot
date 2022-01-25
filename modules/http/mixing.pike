@@ -107,8 +107,7 @@ though you can't save or publish your paints.<br>
 [Twitch login](:.twitchlogin)
 {: #loginbox .hidden}
 
-<span id=gamedesc></span>
-[Start new game](:#newgame .hidden .infobtn data-dlg=newgamedlg)
+<span id=gamedesc>[Start new game](:#newgame .hidden .infobtn data-dlg=newgamedlg)</span>
 
 > ## Recruitment
 >
@@ -116,11 +115,10 @@ though you can't save or publish your paints.<br>
 >
 > Game host: <span id=gamehost><!-- name --></span>
 >
-> * Spymaster: <span id=spymaster><!-- name or 'claim role' button --></span>
-> * Contact: <span id=contact><!-- name or 'claim role' button --></span>
-> * Agents of Chaos: [Join](:#joinchaos) <span id=chaos><!-- list of names --></span>
-> * Spectators: [Join](:#joinspec) <span id=spectators><!-- list of names --></span>
-> <!-- #joinchaos and #joinspec get disabled if you're in that role -->
+> * Spymaster: <span id=spymaster>searching...</span>
+> * Contact: <span id=contact>scanning...</span>
+> * Agents of Chaos: [Join](:.setrole data-role=chaos) <span id=chaos>recruiting...</span>
+> * Everyone else is a Spectator. [Spectate](:.setrole data-role=spectator)
 >
 {: tag=article #recruit}
 
@@ -203,7 +201,8 @@ though you can't save or publish your paints.<br>
 > ### The Secret Trick
 >
 > As with everything involving secrecy, there's a trick to it. If you add the same pigments to the base
-> color, you will always get the same result - even if you add them in a different order.
+> color, you will always get the same result - even if you add them in a different order. Base + Jade +
+> Crimson is exactly the same as Base + Crimson + Jade.
 >
 > So with that in mind, here's what you can do: Choose *and remember*
 > any combination of pigments. Mix this and leave it under your name. Your contact does likewise.
@@ -418,7 +417,15 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (msg->group == "0") return 0; //Always okay to be guest
 	if (msg->group == (string)conn->session->user->?id) return 0; //Logged in as you, no game
 	sscanf(msg->group, "%d#%s", int uid, string game);
-	if (uid && uid == (int)conn->session->user->?id && game_state[game]) return 0;
+	if (mapping gs = uid && uid == (int)conn->session->user->?id && game_state[game]) {
+		if (!gs->usernames) gs->usernames = ([]); //temp
+		if (!gs->roles) gs->roles = ([]); //temp
+		//Joining a game? Record your username and the role you're assigned.
+		//(If we're past the recruitment phase, you get Spectator role by default.)
+		gs->usernames[uid] = conn->session->user->display_name;
+		if (!gs->roles[uid] && gs->phase == "recruit") gs->roles[uid] = "chaos";
+		return 0;
+	}
 	return "Not logged in";
 }
 
@@ -430,6 +437,13 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	mapping gs = game_state[game];
 	state->gameid = gs->gameid;
 	state->phase = gs->phase;
+	state->host = gs->usernames[gs->host];
+	if (gs->host == uid) state->is_host = 1; //Enable the phase advancement button(s)
+	state->chaos = ({ });
+	foreach (gs->roles; int uid; string role)
+		if (role == "chaos") state[role] += ({gs->usernames[uid]});
+		else state[role] = gs->usernames[uid];
+	state->role = gs->roles[uid] || "spectator";
 	state->paints = map(sort(indices(gs->published_paints))) {[int id] = __ARGS__;
 		return ({id, gs->published_paints[id][0], hexcolor(gs->published_paints[id][1])});
 	};
@@ -440,6 +454,13 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	if (array selfpub = gs->published_paints[uid]) state->selfpublished = hexcolor(selfpub[1]);
 	return state;
 }
+
+void update_game(string game) {
+	//Publish a change to everyone in the same game - potentially many groups
+	foreach (indices(websocket_groups), string grp)
+		if (has_suffix(grp, "#" + game)) send_updates_all(grp);
+}
+
 void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game);
 	if (!uid) return; //Guests can't start new games. Log in first.
@@ -449,6 +470,8 @@ void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg
 		if (game_state[newid]) continue;
 		game_state[newid] = ([
 			"gameid": newid, "host": uid,
+			"usernames": ([uid: conn->session->user->display_name]),
+			"roles": ([]),
 			"phase": "recruit",
 			"published_paints": ([0: ({"Standard Beige", STANDARD_BASE})]),
 			"saved_paints": ([]),
@@ -458,16 +481,29 @@ void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg
 	}
 }
 
+void websocket_cmd_setrole(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
+	mapping gs = game_state[game]; if (!gs) return;
+	if (gs->phase != "recruit") return; //Role assignments are locked in after recruitment phase
+	int valid = (["spymaster": 1, "contact": 1, "chaos": 999, "spectator": 999])[msg->role];
+	if (!valid) return;
+	if (valid == 1) {
+		//Only one person can have that role. If someone else has it, they have
+		//to step down before you can take it. (If you already have it, we should
+		//give a different message, but still block it.)
+		if (has_value(gs->roles, msg->role)) return;
+	}
+	if (msg->role == "spectator") m_delete(gs->roles, uid); //No need to record spectators (though it wouldn't hurt)
+	else gs->roles[uid] = msg->role;
+	update_game(game);
+}
+
 void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	sscanf(conn->group, "%d#%s", int uid, string game);
-	if (!uid) return;
-	mapping gs = game_state[game];
-	if (!gs) return;
+	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
+	mapping gs = game_state[game]; if (!gs) return;
 	if (gs->published_paints[uid]) return; //Already published one. No shenanigans.
 	gs->published_paints[uid] = ({conn->session->user->display_name + "'s paint", conn->curpaint->definition});
-	//Publish this to everyone in the same game - potentially many groups
-	foreach (indices(websocket_groups), string grp)
-		if (has_suffix(grp, "#" + game)) send_updates_all(grp);
+	update_game(game);
 }
 
 void websocket_cmd_savepaint(mapping(string:mixed) conn, mapping(string:mixed) msg) {
