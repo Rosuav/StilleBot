@@ -22,7 +22,8 @@ export function render(data) {
 	if (data.loginbtn === -1 && !data.phase) DOM("#newgame").classList.remove("hidden");
 	if (data.gameid) set_content("#gamedesc", [
 		"Operation ", B(data.gameid), " is now in progress. ",
-		data.phase === "recruit" && ["It is ", B("that dark hour before dawn"), " and we need to know who's on what side."],
+		data.phase === "recruit" && ["It is ", B("that dark hour before dawn"), " and we need to know who's on what side. ",
+			"Share the link to this page to recruit both friends and enemies!"],
 		data.phase === "mixpaint" && ["It is ", B("morning"), " and the paint shop is open for mixing."],
 		data.phase === "writenote" && ["It is ", B("afternoon"), " and the message board is receiving submissions."],
 		data.phase === "readnote" && ["It is ", B("evening"), " and today's messages are on the board."],
