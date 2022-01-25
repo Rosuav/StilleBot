@@ -81,6 +81,15 @@ export function render(data) {
 			DIV({className: "swatch inline", style: "background: #" + data.msg_color_order[action.noteid - 1]}),
 			CODE(data.msg_order[action.noteid - 1]),
 		],
+		action.action === "compare" && [
+			"Compared ",
+			DIV({className: "swatch inline", style: "background: #" + data.msg_color_order[action.noteid - 1]}),
+			" note #" + action.noteid + " with a pot of ",
+			//If you're the contact, show the paint you compared it against.
+			data.comparison_paints && DIV({className: "swatch inline", style: "background: #" + data.comparison_paints[action.coloridx]}),
+			" paint",
+		],
+		action.action === "result" && ["They look... ", B(action.similarity), "."],
 	])));
 	if (data.phase === "readnote" && data.role === "contact") { //Need a more elegant way to do that
 		DOM("#comparepaint").classList.remove("hidden");

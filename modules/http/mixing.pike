@@ -581,6 +581,8 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 		return ({key, saved[key]->label, hexcolor(saved[key]->color), saved[key]->description});
 	};
 	if (array selfpub = gs->published_paints[uid]) state->selfpublished = hexcolor(selfpub[1]);
+	if (gs->comparing) state->comparing = 1; //Don't give any details, just "we're comparing, do the animation"
+	if (state->role == "contact" && gs->comparison_paints) state->comparison_paints = gs->comparison_paints;
 	return state;
 }
 
@@ -671,7 +673,7 @@ void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) m
 				}
 			}
 			gs->msg_color_order = map(gs->msg_order) {return hexcolor(gs->msg_color[__ARGS__[0]]);};
-			gs->comparison_log = ({ });
+			gs->comparison_log = ({ }); gs->comparison_paints = ({ });
 			gs->phase = "readnote";
 			break;
 		}
@@ -793,16 +795,40 @@ void websocket_cmd_selectnote(mapping(string:mixed) conn, mapping(string:mixed) 
 	send_updates_all(conn->group);
 }
 
+void complete_comparison(mapping gs) {
+	werror("FINALIZE COMPARISON: %O\n", gs->comparing);
+	[array note, array paint, mixed callout] = m_delete(gs, "comparing");
+	string similarity = "different";
+	if (`+(@(note[*] == paint[*])) == 3) similarity = "identical";
+	else {
+		//Try to figure out whether the colors are similar or different
+		//These values are scaled 0-255 (maybe higher), so "very different" could
+		//be some fairly big numbers.
+		[float r, float g, float b] = (array(float))((note[*] - paint[*])[*] ** 2);
+		float greydiff = r * .2126 + g * .7152 + b * .0722;
+		//write("Resulting differences: %O, %O, %O ==> %O\n", r, g, b, greydiff);
+		//What constitutes "similar"? It's hard to judge. Also, should the components
+		//(which are distance-squareds) be scaled by the square of these ratios?
+		if (greydiff < 256) similarity = "similar";
+	}
+	gs->comparison_log += ({(["action": "result", "similarity": similarity])});
+	update_game(gs->gameid);
+}
+
 void websocket_cmd_comparenotepaint(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
 	mapping gs = game_state[game]; if (!gs) return;
 	if (gs->phase != "readnote") return;
 	if (gs->roles[uid] != "contact") return;
 	if (!gs->selected_note) return; //First select a note, then compare to the paint
+	if (gs->comparing) return; //Another comparison is in progress.
 	array color;
 	if (msg->paint == (string)(int)msg->paint) color = gs->published_paints[(int)msg->paint][?1];
 	else if (mapping saved = gs->saved_paints[uid][?msg->paint]) color = saved->color;
 	if (!color) return;
+	gs->comparing = ({gs->msg_color[gs->msg_order[gs->selected_note - 1]], color, call_out(complete_comparison, 5, gs)});
+	gs->comparison_log += ({(["action": "compare", "coloridx": sizeof(gs->comparison_paints), "noteid": gs->selected_note])});
+	gs->comparison_paints += ({hexcolor(color)});
 	werror("COMPARE %O [%s] AGAINST %O [%s]\n",
 		gs->msg_color[gs->msg_order[gs->selected_note - 1]],
 		gs->msg_color_order[gs->selected_note - 1],
@@ -819,7 +845,7 @@ void websocket_cmd_comparenotepaint(mapping(string:mixed) conn, mapping(string:m
 	//4b) If they're not identical, calculate distance-squared for each component. Sum them as if greyscaled.
 	//4c) Figure out a threshold such that "similar" corresponds to visually looking similar
 	//5) Unrelated: Allow a "Follow these instructions" action which, regardless of comparison, will end the phase.
-	send_updates_all(conn->group);
+	update_game(game);
 }
 
 protected void create(string name) {
