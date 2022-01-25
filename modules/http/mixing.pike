@@ -465,8 +465,8 @@ string hexcolor(array(Gmp.mpq) color) {
 	return sprintf("%02X%02X%02X", @min(((array(int))color)[*], STANDARD_BASE[*]));
 }
 
-array(string) devise_messages(array(string) avoid, int n) {
-	multiset messages_used = (<>);
+array(string) devise_messages(array(string) avoid, int n, multiset|void bootstrap) {
+	multiset messages_used = bootstrap || (<>);
 	array codenames = CODENAMES - avoid;
 	if (!sizeof(codenames)) codenames = CODENAMES; //shouldn't happen
 	while (1) {
@@ -545,6 +545,7 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 		if (role == "chaos") state[role] += ({gs->usernames[uid]});
 		else state[role] = gs->usernames[uid];
 	state->role = gs->roles[uid] || "spectator";
+	if (gs->msg_order) {state->msg_order = gs->msg_order; state->msg_color_order = gs->msg_color_order;}
 	state->paints = map(sort(indices(gs->published_paints))) {[int id] = __ARGS__;
 		return ({id, gs->published_paints[id][0], hexcolor(gs->published_paints[id][1]), gs->published_paints[id][2]});
 	};
@@ -608,7 +609,41 @@ void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) m
 			break;
 		}
 		case "writenote": {
-			if (1) {gs->nophaseshift = "UNIMPL"; break;}
+			int spymaster = search(gs->roles, "spymaster");
+			if (!gs->messageboard[spymaster]) {gs->nophaseshift = "The spymaster hasn't posted a note yet. This would end rather badly."; break;}
+			//Remap the message board in message-keyed form
+			int size = max(sizeof(gs->messageboard) * 2, 15); //May need to adjust the size in more ways
+			gs->msg_order = Array.shuffle(devise_messages(game / "-", size, (multiset)values(gs->notes)));
+			gs->msg_color = ([]);
+			multiset seenhex = (<>);
+			foreach (gs->messageboard; int uid; array color) {
+				gs->msg_color[gs->notes[uid]] = color;
+				seenhex[hexcolor(color)] = 1;
+			}
+			//Fill in random colors for the messages that don't have any set.
+			//This includes any that were allocated to players who didn't submit.
+			//We avoid duplication of hex color with any of the player ones, so if
+			//any two messages have the same color, they must either both be from
+			//players, or both be random. However, even though this information is
+			//a bit unfair, it isn't devastating.
+			//Possible interesting analysis: If 10 pigments at a depth of 1-3 each
+			//are mixed (parallelling the recommended 3-5 pigments per half-key),
+			//what is the distribution of hexcolor components? I'm doing simple
+			//linear unweighted random selection, so 0, 60, 120, 180, 240 are all
+			//equally likely to show up. Is that actually plausible? Of course,
+			//what we can't be sure of is what happens when actual humans pick, as
+			//it's near-impossible to define what a "pretty" colour will be.
+			foreach (gs->msg_order, string msg) {
+				if (gs->msg_color[msg]) continue;
+				while (1) {
+					array color = random(STANDARD_BASE[*]);
+					string hex = hexcolor(color);
+					if (seenhex[hex]) continue;
+					gs->msg_color[msg] = color;
+					break;
+				}
+			}
+			gs->msg_color_order = map(gs->msg_order) {return hexcolor(gs->msg_color[__ARGS__[0]]);};
 			gs->phase = "readnote";
 			break;
 		}
