@@ -196,3 +196,10 @@ on("submit", "#chatlinkform", e => {
 ws_sync.prefs_notify("diffie_hellman_chatlink", chatlink => {
 	DOM("input[name=msg]").value = chatlink;
 });
+
+let comparisonpaint = null;
+on("click", "#comparepaint .colorpicker div", e => {
+	comparisonpaint = e.match.dataset.id;
+	console.log("Comparison:", comparisonpaint);
+	set_content("#paintcolor", "Compare against: " + e.match.dataset.id).style.cssText = e.match.style.cssText;
+});
