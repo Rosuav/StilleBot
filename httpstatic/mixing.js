@@ -70,10 +70,11 @@ export function render(data) {
 		data.note_to_send
 	]);
 	if (data.note_send_color) {DOM("#paintradio").classList.add("hidden"); DOM("#postnote").classList.add("hidden");}
-	if (data.msg_order) set_content("#all_notes", data.msg_order.map((m, i) => LI([
+	if (data.msg_order) set_content("#all_notes", data.msg_order.map((m, i) => LI({"data-id": i + 1}, [
 		DIV({className: "swatch inline", style: "background: #" + data.msg_color_order[i]}),
 		CODE(m),
 	])));
+	if (data.selected_note) set_content("#notecolor", data.msg_order[data.selected_note - 1]).style = "background: #" + data.msg_color_order[data.selected_note - 1];
 	if (data.phase === "readnote" && data.role === "contact") { //Need a more elegant way to do that
 		DOM("#comparepaint").classList.remove("hidden");
 		set_content("#midbtn", BUTTON({type: "button", id: "compare"}, "Compare!"));
@@ -203,3 +204,5 @@ on("click", "#comparepaint .colorpicker div", e => {
 	console.log("Comparison:", comparisonpaint);
 	set_content("#paintcolor", "Compare against: " + e.match.dataset.id).style.cssText = e.match.style.cssText;
 });
+
+on("click", "#all_notes li", e => ws_sync.send({cmd: "selectnote", note: e.match.dataset.id|0}));

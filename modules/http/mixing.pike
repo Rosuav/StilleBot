@@ -128,6 +128,7 @@ article {display: none;}
 		black 12px
 	);
 }
+#all_notes li {cursor: pointer;}
 </style>
 <style id=phase>article#mixpaint {display: block;}</style>
 <style id=rolestyle></style>
@@ -572,6 +573,7 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 		else state[role] = gs->usernames[uid];
 	state->role = gs->roles[uid] || "spectator";
 	if (gs->msg_order) {state->msg_order = gs->msg_order; state->msg_color_order = gs->msg_color_order;}
+	if (gs->selected_note) state->selected_note = gs->selected_note;
 	state->paints = map(sort(indices(gs->published_paints))) {[int id] = __ARGS__;
 		return ({id, gs->published_paints[id][0], hexcolor(gs->published_paints[id][1]), gs->published_paints[id][2]});
 	};
@@ -776,6 +778,17 @@ void websocket_cmd_postnote(mapping(string:mixed) conn, mapping(string:mixed) ms
 	else if (mapping saved = gs->saved_paints[uid][?msg->paint]) color = saved->color;
 	if (!color) return;
 	gs->messageboard[uid] = color;
+	send_updates_all(conn->group);
+}
+
+void websocket_cmd_selectnote(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
+	mapping gs = game_state[game]; if (!gs) return;
+	if (gs->phase != "readnote") return;
+	if (gs->roles[uid] != "contact") return;
+	//Note IDs are 1-based.
+	if (!intp(msg->note) || msg->note < 1 || msg->note > sizeof(gs->msg_order)) return;
+	gs->selected_note = msg->note;
 	send_updates_all(conn->group);
 }
 
