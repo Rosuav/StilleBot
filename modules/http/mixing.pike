@@ -67,6 +67,7 @@ constant markdown = #"# Diffie Hellman Paint Mixing
 <style>
 .swatch {display: inline-block; width: 80px; height: 60px; border: 1px solid black;}
 .large {width: 200px; height: 150px;}
+.inline {width: 3em; height: 1.2em; vertical-align: text-top; margin: 0 0.5em;}
 .label {display: inline-block; height: 90px;}
 .design {display: flex; flex-wrap: wrap; margin: 8px 0; gap: 5px;}
 $$swatch_colors$$
@@ -210,6 +211,13 @@ CAUTION: Don't let anyone else see what's on your screen! To livestream the game
 > As a **Chaos Agent**, try to deceive the Contact with a fake note.
 > {: .role .chaos}
 >
+> You will be sending these instructions: <code id=note_to_send>Refresh the page for further instructions.</code>
+>
+> <div id=paintradio class=colorpicker><div class=swatch style=\"background: #F5F5DC\" data-id=0>Standard Beige</div></div>
+>
+> [Post It!](: #postnote)
+>
+> Once everyone's notes have been posted, the host can advance time.
 {: tag=article #writenote}
 
 <!-- -->
@@ -457,16 +465,18 @@ string hexcolor(array(Gmp.mpq) color) {
 	return sprintf("%02X%02X%02X", @min(((array(int))color)[*], STANDARD_BASE[*]));
 }
 
-multiset _messages_used = (<>);
-string devise_message() {
+array(string) devise_messages(array(string) avoid, int n) {
+	multiset messages_used = (<>);
+	array codenames = CODENAMES - avoid;
+	if (!sizeof(codenames)) codenames = CODENAMES; //shouldn't happen
 	while (1) {
 		string msg = replace(random(MESSAGES), ([
-			"{codename}": random(CODENAMES),
+			"{codename}": random(codenames),
 			"{action}": random(ACTIONS),
 		]));
-		if (_messages_used[msg]) continue;
-		_messages_used[msg] = 1;
-		return msg;
+		if (messages_used[msg]) continue;
+		messages_used[msg] = 1;
+		if (sizeof(messages_used) >= n) return indices(messages_used);
 	}
 }
 
@@ -529,6 +539,8 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	if (gs->host == uid) state->is_host = 1; //Enable the phase advancement button(s)
 	if (gs->nophaseshift) state->nophaseshift = gs->nophaseshift;
 	state->chaos = ({ });
+	if (string note = gs->notes[?uid]) state->note_to_send = note;
+	if (array color = gs->messageboard[?uid]) state->note_send_color = hexcolor(color);
 	foreach (gs->roles; int uid; string role)
 		if (role == "chaos") state[role] += ({gs->usernames[uid]});
 		else state[role] = gs->usernames[uid];
@@ -590,6 +602,9 @@ void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) m
 		case "mixpaint": {
 			if (sizeof(gs->published_paints) <= 1) {gs->nophaseshift = "Nobody's published any paints!"; break;}
 			gs->phase = "writenote";
+			//Assign a random message to each player.
+			gs->notes = mkmapping(indices(gs->roles), devise_messages(game / "-", sizeof(gs->roles)));
+			gs->messageboard = ([]);
 			break;
 		}
 		case "writenote": {
@@ -646,6 +661,7 @@ void websocket_cmd_savepaint(mapping(string:mixed) conn, mapping(string:mixed) m
 	if (!gs) return;
 	if (!gs->saved_paints[uid]) gs->saved_paints[uid] = ([]);
 	if (gs->saved_paints[uid][msg->id]) return; //Duplicate ID
+	if (msg->id == (string)(int)msg->id) return; //Numeric ID. Disallow as it would look like a published paint.
 	gs->saved_paints[uid][msg->id] = ([
 		"label": "Saved paint: " + msg->id,
 		"color": conn->curpaint->definition,
@@ -688,6 +704,18 @@ void websocket_cmd_chatlink(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (gs->host != uid) return;
 	string url = persist_config["ircsettings"]->http_address + "/mixing?game=" + game;
 	send_message("#" + conn->session->user->login, replace(msg->msg, "{link}", url));
+}
+
+void websocket_cmd_postnote(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
+	mapping gs = game_state[game]; if (!gs) return;
+	if (gs->phase != "writenote") return;
+	array color;
+	if (msg->paint == (string)(int)msg->paint) color = gs->published_paints[(int)msg->paint][?1];
+	else if (mapping saved = gs->saved_paints[uid][?msg->paint]) color = saved->color;
+	if (!color) return;
+	gs->messageboard[uid] = color;
+	send_updates_all(conn->group);
 }
 
 protected void create(string name) {

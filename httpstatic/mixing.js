@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, B, BUTTON, DIV, P} = choc; //autoimport
+const {A, B, BR, BUTTON, DIV, INPUT, LABEL, P} = choc; //autoimport
 
 let published_color = null;
 export function render(data) {
@@ -47,10 +47,16 @@ export function render(data) {
 			"The Spymaster is ", B(data.spymaster), " and the Contact is ", B(data.contact), ".",
 		]),
 	]);
-	if (data.paints) set_content("#basepots", data.paints.map(p => DIV(
-		{className: "swatch", "data-id": p[0], style: "background: #" + p[2], "data-desc": p[3]},
-		p[1],
-	)));
+	if (data.paints) {
+		set_content("#basepots", data.paints.map(p => DIV(
+			{className: "swatch", "data-id": p[0], style: "background: #" + p[2], "data-desc": p[3]},
+			p[1],
+		)));
+		set_content("#paintradio", data.paints.map(p => LABEL(
+			{className: "swatch", "data-id": p[0], style: "background: #" + p[2], "data-desc": p[3]},
+			[p[1], BR(), INPUT({type: "radio", name: "notepaint", value: p[0]})],
+		)));
+	}
 	if (data.selfpublished) published_color = data.selfpublished;
 	if (data.phase) set_content("#phase", "article#" + data.phase + " {display: block;}");
 	if (data.phase === "recruit" && data.chaos) {
@@ -59,6 +65,11 @@ export function render(data) {
 		);
 		set_content("#chaos", data.chaos.length ? data.chaos.join(", ") : "(none)");
 	}
+	if (data.note_to_send) set_content("#note_to_send", [
+		data.note_send_color && DIV({className: "swatch inline", style: "background: #" + data.note_send_color}),
+		data.note_to_send
+	]);
+	if (data.note_send_color) {DOM("#paintradio").classList.add("hidden"); DOM("#postnote").classList.add("hidden");}
 	if (data.role) set_content("#rolestyle", ".role." + data.role + " {display: block;}");
 	if (data.host) set_content("#gamehost", data.host);
 	if (data.no_save) {
@@ -157,6 +168,12 @@ on("click", "#suggestmsg", e => {
 		DOM("input[name=msg]").value = msg;
 		break;
 	}
+});
+
+on("click", "#postnote", e => {
+	const rb = DOM("#paintradio input:checked");
+	if (!rb) return; //TODO: Error message
+	ws_sync.send({cmd: "postnote", paint: rb.value});
 });
 
 on("submit", "#chatlinkform", e => {
