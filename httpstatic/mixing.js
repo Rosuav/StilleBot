@@ -75,7 +75,8 @@ export function render(data) {
 		CODE(m),
 	])));
 	if (data.selected_note) {
-		set_content("#notecolor", data.msg_order[data.selected_note - 1]).style = "background: #" + data.msg_color_order[data.selected_note - 1];
+		set_content("#notecolor", DIV({className: "large"}, data.msg_order[data.selected_note - 1]))
+			.style = "background: #" + data.msg_color_order[data.selected_note - 1];
 		set_content("#instrdescribe", [
 			"Please confirm: You will be following the instructions in this note, which say: ", BR(),
 			DIV({className: "swatch inline", style: "background: #" + data.msg_color_order[data.selected_note - 1]}),
@@ -257,7 +258,7 @@ let comparisonpaint = null;
 on("click", "#comparepaint .colorpicker div", e => {
 	comparisonpaint = e.match.dataset.id;
 	console.log("Comparison:", comparisonpaint);
-	set_content("#paintcolor", "Compare against: " + e.match.dataset.id).style.cssText = e.match.style.cssText;
+	set_content("#paintcolor", DIV({className: "large"}, "Compare against: " + e.match.dataset.id)).style.cssText = e.match.style.cssText;
 });
 
 on("click", "#all_notes li", e => ws_sync.send({cmd: "selectnote", note: e.match.dataset.id|0}));
