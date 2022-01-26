@@ -37,8 +37,8 @@ export function render(data) {
 		data.phase === "mixpaint" && ["It is ", B("morning"), " and the paint shop is open for mixing."],
 		data.phase === "writenote" && ["It is ", B("afternoon"), " and the message board is receiving submissions."],
 		data.phase === "readnote" && ["It is ", B("evening"), " and today's messages are on the board."],
-		data.phase === "gameover" && ["The ", B("game is over"), ", and Rosuav needs to code this part."],
-		data.is_host && P([
+		data.phase === "gameover" && ["The ", B("game is over"), ", and the results can be seen below."],
+		data.is_host && data.phase !== "gameover" && P([
 			"When everything is ready, use your host privileges to ",
 			BUTTON({className: "infobtn", "data-dlg": "nextphasedlg"}, "advance time"), " to the next phase.",
 			data.nophaseshift && " (Once everything's ready. " + data.nophaseshift + ")",
@@ -65,7 +65,7 @@ export function render(data) {
 		);
 		set_content("#chaos", data.chaos.length ? data.chaos.join(", ") : "(none)");
 	}
-	if (data.note_to_send) set_content("#" + data.phase + " .note_to_send", [
+	if (data.note_to_send && DOM("#" + data.phase + " .note_to_send")) set_content("#" + data.phase + " .note_to_send", [
 		data.note_send_color && DIV({className: "swatch inline", style: "background: #" + data.note_send_color}),
 		data.note_to_send
 	]);
@@ -74,7 +74,15 @@ export function render(data) {
 		DIV({className: "swatch inline", style: "background: #" + data.msg_color_order[i]}),
 		CODE(m),
 	])));
-	if (data.selected_note) set_content("#notecolor", data.msg_order[data.selected_note - 1]).style = "background: #" + data.msg_color_order[data.selected_note - 1];
+	if (data.selected_note) {
+		set_content("#notecolor", data.msg_order[data.selected_note - 1]).style = "background: #" + data.msg_color_order[data.selected_note - 1];
+		set_content("#instrdescribe", [
+			"Please confirm: You will be following the instructions in this note, which say: ", BR(),
+			DIV({className: "swatch inline", style: "background: #" + data.msg_color_order[data.selected_note - 1]}),
+			CODE(data.msg_order[data.selected_note - 1]),
+			P("Is this correct?"),
+		]);
+	}
 	if (data.comparison_log) {
 		set_content("#comparison_log", [...data.comparison_log].reverse().map(action => LI([
 			action.action === "select" && [
@@ -106,6 +114,18 @@ export function render(data) {
 		DOM("#publishpaint").parentElement.classList.add("hidden"); //Hide the whole paragraph fwiw
 		DOM("#onlybeige").classList.remove("hidden");
 	}
+	if (data.game_summary) set_content("#gamesummary", data.game_summary.map(para => P(para.map(part => {
+		switch (part[0]) {
+			case "text": return part[1];
+			case "role": return B(part[1]);
+			case "msg": return CODE([
+				DIV({className: "swatch inline", style: "background: #" + part[2]}),
+				part[1],
+			]);
+			case "box": return DIV({className: "gameoverbox " + part[1]}, part[2]);
+		}
+		return CODE("[?] " + part[0]);
+	}))));
 }
 
 let selectedcolor = null;
@@ -226,3 +246,7 @@ on("click", "#comparepaint .colorpicker div", e => {
 
 on("click", "#all_notes li", e => ws_sync.send({cmd: "selectnote", note: e.match.dataset.id|0}));
 on("click", "#compare", e => ws_sync.send({cmd: "comparenotepaint", paint: comparisonpaint}));
+on("click", "#followinstrs", e => {
+	ws_sync.send({cmd: "followinstrs"});
+	DOM("#useinstrs").close();
+});

@@ -113,7 +113,6 @@ article {display: none;}
 }
 #comparison {
 	display: flex;
-	transition: all 1s;
 }
 #midbtn {
 	display: flex;
@@ -123,7 +122,7 @@ article {display: none;}
 	transition: width 1s, opacity 0s 1s; /* Make it reappear only when the transition is complete */
 	width: 150px;
 }
-#comparison .swatch {transition: all 1s;}
+#comparison .swatch {transition: border-color, width 1s;}
 #comparison.comparing .swatch {
 	border-color: transparent;
 	width: 250px;
@@ -146,6 +145,23 @@ article {display: none;}
 	);
 }
 #all_notes li {cursor: pointer;}
+#instrdescribe {max-width: 500px;}
+
+.gameoverbox {
+	font-size: 110%;
+	max-width: 300px;
+	margin: 10px;
+	border: 2px solid black;
+	padding: 8px;
+}
+.victory {
+	background: #eeffee;
+	border-color: green;
+}
+.defeat {
+	background: #ffeeee;
+	border-color: red;
+}
 </style>
 <style id=phase>article#mixpaint {display: block;}</style>
 <style id=rolestyle></style>
@@ -168,10 +184,6 @@ To join an operation in progress, ask the host for a link. Alternatively,
 share the link with others!
 {: #gamedesc .hidden}
 
-CAUTION: Don't let anyone else see what's on your screen! To livestream the game, open an additional window
-(possibly using a different browser, or Incognito Mode) with the same game link; this will be spectator view.
-{: .warning .role .spymaster .contact .chaos}
-
 > ## Recruitment
 >
 > Declare your allegiance!
@@ -187,6 +199,10 @@ CAUTION: Don't let anyone else see what's on your screen! To livestream the game
 
 <!-- -->
 > ## Paint mixing
+>
+> CAUTION: Don't let anyone else see what's on your screen! To livestream the game, open an additional window
+> (possibly using a different browser, or Incognito Mode) with the same game link; this will be spectator view.
+> {: .warning .role .spymaster .contact .chaos}
 >
 > Welcome to the paint studio. Pick any pigment to mix it into your paint. To start fresh, pick a base color from any available.
 >
@@ -275,6 +291,7 @@ CAUTION: Don't let anyone else see what's on your screen! To livestream the game
 > Notes on the board: <ol id=all_notes></ol>
 >
 > <div id=comparison><div id=notecolor class=\"swatch large\"></div><div id=midbtn><div>Waiting for comparison...</div></div><div id=paintcolor class=\"swatch large\"></div></div>
+> [Use these instructions!](: .infobtn data-dlg=useinstrs)
 >
 > <ol reversed id=comparison_log></ol>
 {: tag=article #readnote}
@@ -283,6 +300,9 @@ CAUTION: Don't let anyone else see what's on your screen! To livestream the game
 > ## Game Over
 >
 > Did you win? Did you lose? Did you learn anything?
+> {: #gamesummary}
+>
+> [Start new game](: .infobtn data-dlg=newgamedlg)
 {: tag=article #gameover}
 
 <!-- -->
@@ -399,6 +419,15 @@ CAUTION: Don't let anyone else see what's on your screen! To livestream the game
 > {: tag=form #chatlinkform}
 >
 {: tag=dialog #chatlink}
+
+<!-- -->
+> ### Adopt instructions
+> Hmm, start by picking something to follow...
+> {: #instrdescribe}
+>
+> [My Spymaster's words, without a doubt.](: #followinstrs) [Hmm, actually, I'm not sure.](:.dialog_close)
+>
+{: tag=dialog #useinstrs}
 ";
 
 mapping game_state = ([]);
@@ -498,6 +527,51 @@ constant _MESSAGES = ({
 });
 constant MESSAGES = _MESSAGES + filter(_MESSAGES, has_value, '{'); //If this doesn't work, just drop the weight increase
 
+constant WIN_STORIES = ({
+	({
+		({
+			"Against unimaginable odds, the ", ({"role", "spymaster"}),
+			" was able to deliver this message to the ", ({"role", "contact"}), ": ",
+		}), ({
+			({"msg", "truth"}),
+		}), ({
+			"Thanks to this success, fresh codebooks could be exchanged securely, "
+			"allowing future communication to be both private and secure. Agents "
+			"of Chaos watch in frustration, unable to defeat the beautiful paint "
+			"and mathematics of Diffie Hellman Key Exchange, no matter how they try. "
+			"The Spymaster and Contact power-walk into the sunset, and the credits roll."
+		}), ({
+			({"box", "victory", "The forces of virtue have triumped over the forces of rottenness!"}),
+		}),
+	}),
+});
+constant LOSE_STORIES = ({
+	({
+		({
+			"In their moment of desperation, the ", ({"role", "spymaster"}),
+			" and ", ({"role", "contact"}), " clutched at straws, hoping that ",
+			"a public message board could be used for secure communications. "
+			"They were sadly mistaken; Agents of Chaos used the codes they'd "
+			"cracked, forged a plausible-sounding message, and deceived the "
+			"Contact into following these instructions: ",
+		}), ({
+			({"msg", "following"}),
+		}), ({
+			"Unfortunately, that message led to disaster: the Contact was caught, "
+			"made an offer that he didn't want to refuse, and succumbed to Chaos. "
+			"Meanwhile, the real instructions went completely unnoticed: ",
+		}), ({
+			({"msg", "truth"}),
+		}), ({
+			"You can't win 'em all. Don't worry. There will be other opportunities "
+			"to try to safely communicate - in fact, this (or something like it) "
+			"happens every time your web browser goes to an HTTPS web site.",
+		}), ({
+			({"box", "defeat", "Missed it by... that much."}),
+		}),
+	}),
+});
+
 Gmp.mpq _mix_part(int|Gmp.mpq base, int modifier) {
 	Gmp.mpq effect = 1 - (1 - Gmp.mpq(modifier, 256)) / 5;
 	return base * effect;
@@ -579,7 +653,7 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	if (!uid) state->loginbtn = 1;
 	if (!game) return state; //If you're not connected to a game, there are no saved paints.
 	mapping gs = game_state[game];
-	foreach ("gameid phase nophaseshift msg_order msg_color_order selected_note comparison_log" / " ", string passthru)
+	foreach ("gameid phase nophaseshift msg_order msg_color_order selected_note comparison_log game_summary" / " ", string passthru)
 		if (gs[passthru]) state[passthru] = gs[passthru];
 	state->host = gs->usernames[gs->host];
 	if (gs->host == uid) state->is_host = 1; //Enable the phase advancement button(s)
@@ -810,11 +884,10 @@ void websocket_cmd_selectnote(mapping(string:mixed) conn, mapping(string:mixed) 
 	if (!intp(msg->note) || msg->note < 1 || msg->note > sizeof(gs->msg_order)) return;
 	gs->selected_note = msg->note;
 	gs->comparison_log += ({(["action": "select", "noteid": msg->note])});
-	send_updates_all(conn->group);
+	update_game(game);
 }
 
 void complete_comparison(mapping gs) {
-	werror("FINALIZE COMPARISON: %O\n", gs->comparing);
 	[array note, array paint, mixed callout] = m_delete(gs, "comparing");
 	string similarity = "different";
 	if (`+(@(note[*] == paint[*])) == 3) similarity = "identical";
@@ -847,11 +920,39 @@ void websocket_cmd_comparenotepaint(mapping(string:mixed) conn, mapping(string:m
 	gs->comparing = ({gs->msg_color[gs->msg_order[gs->selected_note - 1]], color, call_out(complete_comparison, 5, gs)});
 	gs->comparison_log += ({(["action": "compare", "coloridx": sizeof(gs->comparison_paints), "noteid": gs->selected_note])});
 	gs->comparison_paints += ({hexcolor(color)});
-	werror("COMPARE %O [%s] AGAINST %O [%s]\n",
-		gs->msg_color[gs->msg_order[gs->selected_note - 1]],
-		gs->msg_color_order[gs->selected_note - 1],
-		color, hexcolor(color));
-	//Still need a "Follow these instructions" action which, regardless of comparison, will end the phase.
+	update_game(game);
+}
+
+void websocket_cmd_followinstrs(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
+	mapping gs = game_state[game]; if (!gs) return;
+	if (gs->phase != "readnote") return;
+	if (gs->roles[uid] != "contact") return;
+	if (!gs->selected_note) return; //First select a note to follow
+	if (gs->comparing) return; //A comparison is in progress. You probably don't want to skip out on it.
+	int spymaster = search(gs->roles, "spymaster");
+	int contact = search(gs->roles, "contact");
+	mapping msgs = (["following": gs->msg_order[gs->selected_note - 1],
+			"truth": gs->notes[spymaster]]);
+	mapping roles = ([
+		"spymaster": "Spymaster (" + gs->usernames[spymaster] + ")",
+		"contact": "Contact (" + gs->usernames[contact] + ")",
+	]);
+	//Generate a flavourful game summary.
+	array story;
+	if (msgs->following == msgs->truth) story = random(WIN_STORIES);
+	else story = random(LOSE_STORIES);
+	array xfrm(string|array part) {
+		if (stringp(part)) return ({"text", part});
+		switch (part[0]) {
+			case "role": return ({"role", roles[part[1]] || "(??)"});
+			case "msg": return ({"msg", msgs[part[1]], hexcolor(gs->msg_color[msgs[part[1]]])});
+			case "box": return part;
+		}
+		return ({"text", "(unknown part type)"});
+	}
+	gs->game_summary = map(story[*], xfrm);
+	gs->phase = "gameover";
 	update_game(game);
 }
 
