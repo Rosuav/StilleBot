@@ -128,6 +128,22 @@ export function render(data) {
 	}))));
 }
 
+//TODO: Tidy this up, make a nice way to do things like this
+set_content("#annotateme", [
+	DIV({className: "swatch inline", style: "background: #F5F5DC"}),
+	" Base + ",
+	DIV({className: "swatch inline", style: "background: #37FD12"}),
+	" Jade + ",
+	DIV({className: "swatch inline", style: "background: #DC143C"}),
+	" Crimson is exactly the same as ",
+	DIV({className: "swatch inline", style: "background: #F5F5DC"}),
+	" Base + ",
+	DIV({className: "swatch inline", style: "background: #DC143C"}),
+	" Crimson + ",
+	DIV({className: "swatch inline", style: "background: #37FD12"}),
+	" Jade.",
+]);
+
 let selectedcolor = null;
 on("click", "#swatches div", e => {
 	const sw = swatches[e.match.dataset.coloridx];

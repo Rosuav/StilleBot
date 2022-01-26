@@ -343,8 +343,8 @@ share the link with others!
 > ### The Secret Trick
 >
 > As with everything involving secrecy, there's a trick to it. If you add the same pigments to the base
-> color, you will always get the same result - even if you add them in a different order. Base + Jade +
-> Crimson is exactly the same as Base + Crimson + Jade.
+> color, you will always get the same result - even if you add them in a different order.
+> <span id=annotateme>Base + Jade + Crimson is exactly the same as Base + Crimson + Jade.</span>
 >
 > So with that in mind, here's what you can do: Choose *and remember*
 > any combination of pigments. Mix this and leave it under your name. Your contact does likewise.
