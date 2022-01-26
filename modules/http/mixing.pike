@@ -531,7 +531,7 @@ constant WIN_STORIES = ({
 	({
 		({
 			"Against unimaginable odds, the ", ({"role", "spymaster"}),
-			" was able to deliver this message to the ", ({"role", "contact"}), ": ",
+			" was able to deliver this message to the ", ({"role", "contact"}), ":",
 		}), ({
 			({"msg", "truth"}),
 		}), ({
@@ -543,6 +543,22 @@ constant WIN_STORIES = ({
 		}), ({
 			({"box", "victory", "The forces of virtue have triumped over the forces of rottenness!"}),
 		}),
+	}), ({
+		({
+			"It takes mathematical precision to be this perfect. Nobody would fault "
+			"you for not being absolutely spot-on. And yet... that's what happened. "
+			"Spot on. Perfect. Nailed it. The ", ({"role", "spymaster"}), " hid a "
+			"message in plain sight on the message board:",
+		}), ({
+			({"msg", "truth"}),
+		}), ({
+			"And the ", ({"role", "contact"}), ", out of all the notes on the board, "
+			"picked out the right one. Through this public medium, they communicated "
+			"private information, and from there, were able to reestablish secret "
+			"channels for the future.",
+		}), ({
+			({"box", "victory", "Secrecy and privacy from mathematics. It's the best."}),
+		}),
 	}),
 });
 constant LOSE_STORIES = ({
@@ -553,7 +569,7 @@ constant LOSE_STORIES = ({
 			"a public message board could be used for secure communications. "
 			"They were sadly mistaken; Agents of Chaos used the codes they'd "
 			"cracked, forged a plausible-sounding message, and deceived the "
-			"Contact into following these instructions: ",
+			"Contact into following these instructions:",
 		}), ({
 			({"msg", "following"}),
 		}), ({
@@ -568,6 +584,20 @@ constant LOSE_STORIES = ({
 			"happens every time your web browser goes to an HTTPS web site.",
 		}), ({
 			({"box", "defeat", "Missed it by... that much."}),
+		}),
+	}), ({
+		({
+			"Ah, the old \"cover the message board with notes\" trick. That's the "
+			"third time they've fallen for it this month... If only there were some "
+			"way for the ", ({"role", "spymaster"}), " to sign the message so that "
+			"the ", ({"role", "contact"}), " could be sure who it was from. If only "
+			"some trick of the universe could provide a magical way to share secrets "
+			"without them being seen by anyone else. If only.",
+		}), ({
+			"It seems that the Agents of Chaos have won. This time. But there will be "
+			"another time, there will be a rematch! And next time, it will be different.",
+		}), ({
+			({"box", "defeat", "Sorry about that, Chief."}),
 		}),
 	}),
 });
