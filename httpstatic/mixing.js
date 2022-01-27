@@ -16,7 +16,7 @@ export function render(data) {
 			{className: "swatch", style: "background: #" + b.color},
 			b.label
 		)));
-		DOM("#curcolor").style.background = "#" + data.curpaint.color;
+		DOM("#curcolor").style.cssText = "background: #" + data.curpaint.color;
 	}
 	if (data.loginbtn === 1) {
 		DOM("#loginbox").classList.remove("hidden");
