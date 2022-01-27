@@ -612,7 +612,13 @@ array(Gmp.mpq) mix(array(Gmp.mpq) base, array(int) modifier) {
 }
 
 string hexcolor(array(Gmp.mpq) color) {
-	return sprintf("%02X%02X%02X", @min(((array(int))color)[*], STANDARD_BASE[*]));
+	string textcolor = "";
+	if (color[0] * .2126 + color[1] * .7152 + color[2] * .0722 < 128)
+		textcolor = "; color: white"; //Hack: White text for dark colour swatches
+	return sprintf("%02X%02X%02X%s",
+		@min(((array(int))color)[*], STANDARD_BASE[*]),
+		textcolor,
+	);
 }
 
 array(string) devise_messages(array(string) avoid, int n, multiset|void bootstrap) {
@@ -997,8 +1003,6 @@ protected void create(string name) {
 		if (array modifier = info[2]) {
 			array color = STANDARD_BASE;
 			swatch_colors[name] = hexcolor(modifier);
-			if (modifier[0] * .2126 + modifier[1] * .7152 + modifier[2] * .0722 < 128)
-				swatch_colors[name] += "; color: white"; //Hack: White text for dark colour swatches
 			foreach (STRENGTHS, string strength) {
 				color = mix(color, modifier);
 				swatch_colors[name + "-" + strength] = hexcolor(color);
