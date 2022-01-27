@@ -1,3 +1,4 @@
+#charset utf8
 /* Pseudo-game concept.
 
 I'm writing this up as if it's a game to be played, but the purpose isn't primarily to be a fun game,
@@ -856,7 +857,7 @@ void websocket_cmd_savepaint(mapping(string:mixed) conn, mapping(string:mixed) m
 	if (gs->saved_paints[uid][msg->id]) return; //Duplicate ID
 	if (msg->id == (string)(int)msg->id) return; //Numeric ID. Disallow as it would look like a published paint.
 	gs->saved_paints[uid][msg->id] = ([
-		"label": "Saved paint: " + msg->id,
+		"label": "💾 " + msg->id,
 		"color": conn->curpaint->definition,
 		"description": conn->curpaint->blobs->label * ", ",
 	]);
