@@ -50,6 +50,10 @@ export function render(data) {
 		]),
 		data.codename && P(["You are codenamed ", B("Agent " + data.codename), "."]),
 	]);
+	if (data.gameid && data.phase === "gameover") { //Or maybe not require gameover? Uncertain. Also, restrict to host only?
+		set_content("#newgamedlg label b", "Operation " + data.gameid);
+		DOM("#newgamedlg label").classList.remove("hidden");
+	}
 	if (data.paints) {
 		set_content(data.phase === "readnote" ? "#comparepaint .colorpicker" : "#basepots", data.paints.map(p => DIV(
 			{className: "swatch", "data-id": p[0], "data-label": p[1], style: "background: #" + p[2], "data-desc": p[3]},
@@ -133,6 +137,10 @@ export function render(data) {
 		}
 		return CODE("[?] " + part[0]);
 	}))));
+	if (data.invitations) set_content("#invitations", data.invitations.map(i => LI([
+		"You have been invited to ", A({href: "/mixing?game=" + i}, B("Operation " + i)),
+		" by its host."
+	])));
 	if (data.errormsg) set_error(data.errormsg);
 }
 
@@ -193,7 +201,7 @@ on("click", "#startpaint", e => {
 });
 
 on("click", "#startnewgame", e => {
-	ws_sync.send({cmd: "newgame"});
+	ws_sync.send({cmd: "newgame", invite: DOM("#newgamedlg input[type=checkbox]").checked});
 	DOM("#newgamedlg").close();
 });
 

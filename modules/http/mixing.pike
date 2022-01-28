@@ -335,12 +335,15 @@ share the link with others!
 > Did you win? Did you lose? Did you learn anything?
 > {: #gamesummary}
 >
+> <ul id=invitations></ul>
 > [Start new game](: .infobtn data-dlg=newgamedlg)
 {: tag=article #gameover}
 
 <!-- -->
 > ### Start new game
 > Leave this mayhem and go to a brand new show?
+>
+> <label class=hidden><input type=checkbox id=invitecurrent> Invite everyone from <b>Operation Foo-Bar-Fum</b></label>
 >
 > [Do it. We shall prevail.](:#startnewgame) [On second thoughts...](:.dialog_close)
 {: tag=dialog #newgamedlg}
@@ -813,7 +816,7 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	if (!uid) state->loginbtn = 1;
 	if (!game) return state; //If you're not connected to a game, there are no saved paints.
 	mapping gs = game_state[game];
-	foreach ("gameid phase msg_order msg_color_order selected_note comparison_log game_summary" / " ", string passthru)
+	foreach ("gameid phase msg_order msg_color_order selected_note comparison_log game_summary invitations" / " ", string passthru)
 		if (gs[passthru]) state[passthru] = gs[passthru];
 	state->host = gs->usernames[gs->host];
 	if (gs->host == uid) state->is_host = 1; //Enable the phase advancement button(s)
@@ -848,7 +851,7 @@ void errormsg(mapping conn, string msg) {send_update(conn, (["errormsg": msg]));
 void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game);
 	if (!uid) return; //Guests can't start new games. Log in first.
-	//TODO: If the game exists and is completed, flush it?
+	//TODO: If the game exists and is completed, queue it to be flushed after X minutes?
 	while (1) {
 		array(string) codenames = ({random(CODENAMES), random(CODENAMES), random(CODENAMES)}); //Is it worth preventing duplicates? Operation Shark-Elk-Shark isn't so bad, honestly.
 		string newid = codenames * "-";
@@ -863,6 +866,11 @@ void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg
 			"saved_paints": ([]),
 		]);
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "redirect", "game": newid])));
+		if (mapping gs = msg->invite && game_state[game]) {
+			//Invite everyone from the previous game to join this one.
+			gs->invitations += ({newid});
+			update_game(game);
+		}
 		return;
 	}
 }
@@ -1100,12 +1108,13 @@ void websocket_cmd_comparenotepaint(mapping(string:mixed) conn, mapping(string:m
 	mapping gs = game_state[game]; if (!gs) return;
 	if (gs->phase != "readnote") return;
 	if (gs->roles[uid] != "contact") return;
+	if (!msg->paint) {errormsg(conn, "Need a paint pot to compare against"); return;}
 	if (!gs->selected_note) {errormsg(conn, "First select a note, then compare to the paint"); return;}
 	if (gs->comparing) {errormsg(conn, "Another comparison is in progress."); return;}
 	array color;
 	if (msg->paint == (string)(int)msg->paint) color = gs->published_paints[(int)msg->paint][?1];
 	else if (mapping saved = gs->saved_paints[uid][?msg->paint]) color = saved->color;
-	if (!color) return;
+	if (!color) {errormsg(conn, "Pick a paint pot to compare against"); return;} //Unlikely to ever happen
 	gs->comparing = ({gs->msg_color[gs->msg_order[gs->selected_note - 1]], color, call_out(complete_comparison, 5, gs)});
 	gs->comparison_log += ({(["action": "compare", "coloridx": sizeof(gs->comparison_paints), "noteid": gs->selected_note])});
 	gs->comparison_paints += ({hexcolor(color)});
