@@ -580,6 +580,24 @@ constant WIN_STORIES = ({
 		}), ({
 			({"box", "victory", "Chaos has been defeated by mathematics!"}),
 		}),
+	}), ({
+		({
+			"Congratulations! Succeeding in this mission shortened the war by three feet six "
+			"inches. Not that there was a war on, of course, but it's shorter now. The ",
+			({"role", "spymaster"}), " was able, despite massively stacked odds, to send this "
+			"message to the ", ({"role", "contact"}), ":",
+		}), ({
+			({"msg", "truth"}),
+		}), ({
+			"No matter how much the Agents of Chaos grind their teeth, they will never be able "
+			"to fool these brilliant mathematicians. Thanks to some beautiful",
+			({"footnote", "Note: Changes in the beholder's eye may cause these to be considered ugly"}),
+			" colours of paint, some even more beautiful",
+			({"footnote", "Note: Warranty void if mathematics is considered ugly"}),
+			" mathematics, and a splash of computing security, we have regained control.",
+		}), ({
+			({"box", "victory", "Beauty is before all. Come, you are one of us once more."}),
+		}),
 	}),
 });
 constant LOSE_STORIES = ({
@@ -640,6 +658,29 @@ constant LOSE_STORIES = ({
 			"scene unfolded, which we shall draw a veil of discretion over.",
 		}), ({
 			({"box", "defeat", "*biff* *bonk* *splat* *kapow*"}),
+		}),
+	}), ({
+		({
+			"Things look grim. The prestige of the Secret Service throughout the civilised "
+			"world (and even America) is at an all-time low. Their codes broken, their "
+			"emergency backup codes broken, and even their paint code wasn't enough "
+			"to save them. There's only one thing left to do.",
+		}), ({
+			"And we've forgotten what that was.",
+		}), ({
+			"But it was a very clever idea, very clever indeed! We thought of it while "
+			"reading what the ", ({"role", "spymaster"}), " was trying to send:",
+		}), ({
+			({"msg", "truth"}),
+		}), ({
+			"That's not what the ", ({"role", "contact"}), " followed, though... which was:",
+		}), ({
+			({"msg", "following"}),
+		}), ({
+			"Ah well. If we can think of the clever idea again, we'll be sure to let you "
+			"know. In the meantime, I suppose we'll all succumb to chaos.",
+		}), ({
+			({"box", "defeat", "Fancy mathematics won't save you now!"}),
 		}),
 	}),
 });
@@ -1050,6 +1091,7 @@ void websocket_cmd_followinstrs(mapping(string:mixed) conn, mapping(string:mixed
 	array story;
 	if (msgs->following == msgs->truth) story = random(WIN_STORIES);
 	else story = random(LOSE_STORIES);
+	int refcount = 0;
 	array xfrm(string|array part) {
 		if (stringp(part)) return ({"text", part});
 		switch (part[0]) {
@@ -1060,6 +1102,7 @@ void websocket_cmd_followinstrs(mapping(string:mixed) conn, mapping(string:mixed
 				case "notecount": return ({"text", (string)sizeof(gs->msg_order)});
 				default: return ({"text", "(unknown value " + part[1] + ")"});
 			}
+			case "footnote": return ({"footnote", sprintf("[%d]", ++refcount), part[1]});
 		}
 		return ({"text", "(unknown part type)"});
 	}

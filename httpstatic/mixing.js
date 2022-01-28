@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, B, BR, BUTTON, CODE, DIV, INPUT, LABEL, LI, P} = choc; //autoimport
+const {A, ABBR, B, BR, BUTTON, CODE, DIV, INPUT, LABEL, LI, P, SUP} = choc; //autoimport
 
 let published_color = null;
 export function render(data) {
@@ -126,6 +126,7 @@ export function render(data) {
 				part[1],
 			]);
 			case "box": return DIV({className: "gameoverbox " + part[1]}, part[2]);
+			case "footnote": return SUP(ABBR({title: part[2]}, part[1]));
 		}
 		return CODE("[?] " + part[0]);
 	}))));
