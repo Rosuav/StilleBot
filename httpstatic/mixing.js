@@ -44,8 +44,10 @@ export function render(data) {
 			data.nophaseshift && " (Once everything's ready. " + data.nophaseshift + ")",
 		]),
 		data.phase !== "recruit" && data.spymaster && data.contact && P([
-			"The Spymaster is ", B(data.spymaster), " and the Contact is ", B(data.contact), ".",
+			"The Spymaster is ", B([data.spymaster[0], " (Agent " + data.spymaster[1] + ")"]),
+			" and the Contact is ", B([data.contact[0], " (Agent " + data.contact[1] + ")"]), ".",
 		]),
+		data.codename && P(["You are codenamed ", B("Agent " + data.codename), "."]),
 	]);
 	if (data.paints) {
 		set_content(data.phase === "readnote" ? "#comparepaint .colorpicker" : "#basepots", data.paints.map(p => DIV(

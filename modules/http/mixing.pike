@@ -676,6 +676,13 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		gs->usernames[uid] = conn->session->user->display_name;
 		if (!gs->roles[uid] && gs->phase == "recruit") {
 			gs->roles[uid] = "chaos";
+			if (sizeof(gs->codenames) > sizeof(CODENAMES) / 2) {
+				//In the unlikely event that half our codenames get allocated, switch to
+				//agent numbers. That way, we still have some names available for the
+				//message selection later.
+				gs->codenames[uid] = "Agent " + uid;
+			}
+			else gs->codenames[uid] = random(CODENAMES - values(gs->codenames));
 			update_game(game);
 		}
 		return 0;
@@ -699,8 +706,9 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	if (array color = gs->messageboard[?uid]) state->note_send_color = hexcolor(color);
 	foreach (gs->roles; int uid; string role)
 		if (role == "chaos") state[role] += ({gs->usernames[uid]});
-		else state[role] = gs->usernames[uid];
+		else state[role] = ({gs->usernames[uid], gs->codenames[uid]});
 	state->role = gs->roles[uid] || "spectator";
+	if (string cn = gs->codenames[uid]) state->codename = cn;
 	state->paints = map(sort(indices(gs->published_paints))) {[int id] = __ARGS__;
 		return ({id, gs->published_paints[id][0], hexcolor(gs->published_paints[id][1]), gs->published_paints[id][2]});
 	};
@@ -725,11 +733,13 @@ void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg
 	if (!uid) return; //Guests can't start new games. Log in first.
 	//TODO: If the game exists and is completed, flush it?
 	while (1) {
-		string newid = random(CODENAMES) + "-" + random(CODENAMES) + "-" + random(CODENAMES);
+		array(string) codenames = ({random(CODENAMES), random(CODENAMES), random(CODENAMES)}); //Is it worth preventing duplicates? Operation Shark-Elk-Shark isn't so bad, honestly.
+		string newid = codenames * "-";
 		if (game_state[newid]) continue;
 		game_state[newid] = ([
 			"gameid": newid, "host": uid,
 			"usernames": ([uid: conn->session->user->display_name]),
+			"codenames": mkmapping(enumerate(sizeof(codenames), -1, -1), codenames),
 			"roles": ([]),
 			"phase": "recruit",
 			"published_paints": ([0: ({"Standard Beige", STANDARD_BASE, "The Diffie Hellman Standardized Beige"})]),
@@ -765,7 +775,7 @@ void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) m
 			if (sizeof(gs->published_paints) <= 1) {gs->nophaseshift = "Nobody's published any paints!"; break;}
 			gs->phase = "writenote";
 			//Assign a random message to each player.
-			gs->notes = mkmapping(indices(gs->roles), devise_messages(game / "-", sizeof(gs->roles)));
+			gs->notes = mkmapping(indices(gs->roles), devise_messages(values(gs->codenames), sizeof(gs->roles)));
 			gs->messageboard = ([]);
 			break;
 		}
@@ -773,7 +783,7 @@ void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) m
 			if (!gs->messageboard[gs->spymaster]) {gs->nophaseshift = "The spymaster hasn't posted a note yet. This would end rather badly."; break;}
 			//Remap the message board in message-keyed form
 			int size = max(sizeof(gs->messageboard) * 2, 15); //May need to adjust the size in more ways
-			gs->msg_order = Array.shuffle(devise_messages(game / "-", size, (multiset)values(gs->notes)));
+			gs->msg_order = Array.shuffle(devise_messages(values(gs->codenames), size, (multiset)values(gs->notes)));
 			gs->msg_color = ([]);
 			multiset seenhex = (<>);
 			foreach (gs->messageboard; int uid; array color) {
@@ -843,9 +853,9 @@ void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg
 	if (gs->published_paints[uid]) return; //Already published one. No shenanigans.
 	gs->published_paints[uid] = ({
 		([
-			"spymaster": "🦸 Spymaster",
-			"contact": "🕵 Contact",
-			"chaos": "👽 Agent " + uid,
+			"spymaster": "🦸 " + gs->codenames[uid],
+			"contact": "🕵 " + gs->codenames[uid],
+			"chaos": "👽 " + gs->codenames[uid],
 		])[gs->roles[uid]] || "(??)",
 		conn->curpaint->definition,
 		sprintf("The color published by %s (%s)", conn->session->user->display_name, gs->roles[uid]),
