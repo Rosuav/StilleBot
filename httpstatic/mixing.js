@@ -81,6 +81,7 @@ export function render(data) {
 		data.note_to_send
 	]);
 	if (data.note_send_color) {DOM("#paintradio").classList.add("hidden"); DOM("#postnote").classList.add("hidden");}
+	if (data.role === "spectator") DOM("#postnote").classList.add("hidden");
 	if (data.msg_order) set_content("#all_notes", data.msg_order.map((m, i) => LI({"data-id": i + 1}, [
 		DIV({className: "swatch inline", style: "background: #" + data.msg_color_order[i]}),
 		CODE(m),

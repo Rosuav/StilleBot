@@ -299,7 +299,7 @@ share the link with others!
 >
 > <div id=paintradio class=colorpicker><div class=swatch style=\"background: #F5F5DC\" data-id=0>Standard Beige</div></div>
 >
-> [Post It!](: #postnote .hidden .spymaster .contact .chaos)
+> [Post It!](: #postnote)
 >
 > Once everyone's notes have been posted, the host can advance time.
 {: tag=article #writenote}
