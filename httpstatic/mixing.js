@@ -52,7 +52,7 @@ export function render(data) {
 	]);
 	if (data.paints) {
 		set_content(data.phase === "readnote" ? "#comparepaint .colorpicker" : "#basepots", data.paints.map(p => DIV(
-			{className: "swatch", "data-id": p[0], style: "background: #" + p[2], "data-desc": p[3]},
+			{className: "swatch", "data-id": p[0], "data-label": p[1], style: "background: #" + p[2], "data-desc": p[3]},
 			p[1],
 		)));
 		set_content("#paintradio", data.paints.map(p => LABEL(
@@ -270,7 +270,7 @@ let comparisonpaint = null;
 on("click", "#comparepaint .colorpicker div", e => {
 	comparisonpaint = e.match.dataset.id;
 	console.log("Comparison:", comparisonpaint);
-	set_content("#paintcolor", DIV({className: "large"}, "Compare against: " + e.match.dataset.id)).style.cssText = e.match.style.cssText;
+	set_content("#paintcolor", DIV({className: "large"}, ["Compare against:", BR(), e.match.dataset.label])).style.cssText = e.match.style.cssText;
 });
 
 on("click", "#all_notes li", e => ws_sync.send({cmd: "selectnote", note: e.match.dataset.id|0}));
