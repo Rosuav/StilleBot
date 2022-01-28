@@ -748,11 +748,15 @@ void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) m
 	switch (gs->phase) {
 		case "recruit": {
 			if (sizeof(gs->roles) < 2) {gs->nophaseshift = "Need a minimum of two non-spectating players."; break;}
-			foreach (({"spymaster", "contact"}), string needrole) if (!has_value(gs->roles, needrole)) {
-				//Pick a random chaos agent to promote
-				array agents = filter(indices(gs->roles)) {return gs->roles[__ARGS__[0]] == "chaos";};
-				//assert sizeof(agents) > 0 //we already made sure there were enough total roles
-				gs->roles[random(agents)] = needrole;
+			foreach (({"spymaster", "contact"}), string needrole) {
+				int uid = search(gs->roles, needrole);
+				if (!uid) {
+					//Pick a random chaos agent to promote
+					array agents = filter(indices(gs->roles)) {return gs->roles[__ARGS__[0]] == "chaos";};
+					//assert sizeof(agents) > 0 //we already made sure there were enough total roles
+					gs->roles[uid = random(agents)] = needrole;
+				}
+				gs[needrole] = uid; //gs->spymaster is the UID of the spymaster
 			}
 			gs->phase = "mixpaint";
 			break;
@@ -766,8 +770,7 @@ void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) m
 			break;
 		}
 		case "writenote": {
-			int spymaster = search(gs->roles, "spymaster");
-			if (!gs->messageboard[spymaster]) {gs->nophaseshift = "The spymaster hasn't posted a note yet. This would end rather badly."; break;}
+			if (!gs->messageboard[gs->spymaster]) {gs->nophaseshift = "The spymaster hasn't posted a note yet. This would end rather badly."; break;}
 			//Remap the message board in message-keyed form
 			int size = max(sizeof(gs->messageboard) * 2, 15); //May need to adjust the size in more ways
 			gs->msg_order = Array.shuffle(devise_messages(game / "-", size, (multiset)values(gs->notes)));
@@ -982,13 +985,11 @@ void websocket_cmd_followinstrs(mapping(string:mixed) conn, mapping(string:mixed
 	if (gs->roles[uid] != "contact") return;
 	if (!gs->selected_note) return; //First select a note to follow
 	if (gs->comparing) return; //A comparison is in progress. You probably don't want to skip out on it.
-	int spymaster = search(gs->roles, "spymaster");
-	int contact = search(gs->roles, "contact");
 	mapping msgs = (["following": gs->msg_order[gs->selected_note - 1],
-			"truth": gs->notes[spymaster]]);
+			"truth": gs->notes[gs->spymaster]]);
 	mapping roles = ([
-		"spymaster": "Spymaster (" + gs->usernames[spymaster] + ")",
-		"contact": "Contact (" + gs->usernames[contact] + ")",
+		"spymaster": "Spymaster (" + gs->usernames[gs->spymaster] + ")",
+		"contact": "Contact (" + gs->usernames[gs->contact] + ")",
 	]);
 	//Generate a flavourful game summary.
 	array story;
