@@ -324,7 +324,7 @@ share the link with others!
 > Notes on the board: <ol id=all_notes></ol>
 >
 > <div id=comparison><div id=notecolor class=\"swatch large\"></div><div id=midbtn><div>Waiting for comparison...</div></div><div id=paintcolor class=\"swatch large\"></div></div>
-> [Use these instructions!](: .infobtn data-dlg=useinstrs)
+> [Use these instructions!](: .infobtn data-dlg=useinstrs .contact .hidden)
 >
 > <ol reversed id=comparison_log></ol>
 {: tag=article #readnote}

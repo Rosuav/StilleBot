@@ -112,7 +112,7 @@ export function render(data) {
 		DOM("#comparepaint").classList.remove("hidden");
 		set_content("#midbtn", BUTTON({type: "button", id: "compare"}, "Compare!"));
 	}
-	if (data.role) set_content("#rolestyle", ".role." + data.role + " {display: block;}");
+	if (data.role) set_content("#rolestyle", "." + data.role + "." + data.role + " {display: block;}");
 	if (data.host) set_content("#gamehost", data.host);
 	if (data.no_save) {
 		//You can't save paints, so hide the forms and explain.
