@@ -21,6 +21,7 @@ export function render(data) {
 	if (data.loginbtn === 1) {
 		DOM("#loginbox").classList.remove("hidden");
 		if (data.gameid) set_content("#specview", "observe the game in progress");
+		DOM("#recruit ul").classList.add("guest"); //Hide the "join role" buttons
 	}
 	if (data.loginbtn === -1) DOM("#gamedesc").classList.remove("hidden");
 	if (data.gameid) set_content("#gamedesc", [
@@ -64,6 +65,7 @@ export function render(data) {
 	if (data.phase === "recruit" && data.chaos) {
 		["spymaster", "contact"].forEach(role =>
 			set_content("#" + role, data[role] ? data[role][0] + " (Agent " + data[role][1] + ")"
+				: data.loginbtn === 1 ? "Awaiting volunteer..."
 				: BUTTON({className: "setrole", "data-role": role}, "Claim role"))
 		);
 		set_content("#chaos", data.chaos.length ? data.chaos.join(", ") : "(none)");

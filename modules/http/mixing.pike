@@ -191,6 +191,7 @@ article {display: none;}
 	cursor: pointer;
 	line-height: 0.9;
 }
+#recruit ul.guest button {display: none;}
 </style>
 <style id=phase>article#mixpaint {display: block;}</style>
 <style id=rolestyle></style>
