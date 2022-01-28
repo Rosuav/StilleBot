@@ -63,7 +63,8 @@ export function render(data) {
 	if (data.phase) set_content("#phase", "article#" + data.phase + " {display: block;}");
 	if (data.phase === "recruit" && data.chaos) {
 		["spymaster", "contact"].forEach(role =>
-			set_content("#" + role, data[role] || BUTTON({className: "setrole", "data-role": role}, "Claim role"))
+			set_content("#" + role, data[role] ? data[role][0] + " (Agent " + data[role][1] + ")"
+				: BUTTON({className: "setrole", "data-role": role}, "Claim role"))
 		);
 		set_content("#chaos", data.chaos.length ? data.chaos.join(", ") : "(none)");
 	}
