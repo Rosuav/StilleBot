@@ -22,6 +22,8 @@ export function render(data) {
 		DOM("#loginbox").classList.remove("hidden");
 		if (data.gameid) set_content("#specview", "observe the game in progress");
 		DOM("#recruit ul").classList.add("guest"); //Hide the "join role" buttons
+		DOM("#gameovernewgame").classList.add("hidden");
+		//TODO maybe: Have .guestonly and .useronly classes, and make one of them invisible either way.
 	}
 	if (data.loginbtn === -1) DOM("#gamedesc").classList.remove("hidden");
 	if (data.gameid) set_content("#gamedesc", [
@@ -61,7 +63,7 @@ export function render(data) {
 		)));
 		set_content("#paintradio", data.paints.map(p => LABEL(
 			{className: "swatch", "data-id": p[0], style: "background: #" + p[2], "data-desc": p[3]},
-			[p[1], BR(), INPUT({type: "radio", name: "notepaint", value: p[0]})],
+			[p[1], BR(), data.role !== "spectator" && INPUT({type: "radio", name: "notepaint", value: p[0]})],
 		)));
 	}
 	if (data.selfpublished) published_color = data.selfpublished;

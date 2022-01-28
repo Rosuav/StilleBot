@@ -299,7 +299,7 @@ share the link with others!
 >
 > <div id=paintradio class=colorpicker><div class=swatch style=\"background: #F5F5DC\" data-id=0>Standard Beige</div></div>
 >
-> [Post It!](: #postnote)
+> [Post It!](: #postnote .hidden .spymaster .contact .chaos)
 >
 > Once everyone's notes have been posted, the host can advance time.
 {: tag=article #writenote}
@@ -336,7 +336,7 @@ share the link with others!
 > {: #gamesummary}
 >
 > <ul id=invitations></ul>
-> [Start new game](: .infobtn data-dlg=newgamedlg)
+> [Start new game](: .infobtn data-dlg=newgamedlg #gameovernewgame)
 {: tag=article #gameover}
 
 <!-- -->
@@ -601,7 +601,7 @@ constant WIN_STORIES = ({
 		({
 			"There are infinite possible paint colours. Would you believe that? Truly infinite! "
 			"Or uhh... would you believe... sixteen million? Well, how about ", ({"value", "notecount"}),
-			"? Whatever the number, the ", ({"role", "contact"}), "correctly picked out the "
+			"? Whatever the number, the ", ({"role", "contact"}), " correctly picked out the "
 			"unique message from the amazing ", ({"role", "spymaster"}), ", ignoring the "
 			"irrelevant ones, and now control is back in the hands of our heroes.",
 		}), ({
