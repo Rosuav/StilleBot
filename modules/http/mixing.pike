@@ -237,7 +237,7 @@ share the link with others!
 > > <div id=curpaint class=design><div class=swatch style=\"background: #F5F5DC\">Base: Standard Beige</div></div>
 > > <div id=curcolor class=\"swatch large\" style=\"background: #F5F5DC\">Resulting color</div>
 > > > Save this paint to your personal collection?<br>
-> > > <label>Name: <input name=paintid></label> (must be unique)<br>
+> > > <label>Name: <input name=paintid size=10></label> (short and unique)<br>
 > > > <button type=submit>Save</button>
 > > {: tag=form #savepaint autocomplete=off}
 > >
