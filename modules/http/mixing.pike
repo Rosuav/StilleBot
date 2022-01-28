@@ -843,6 +843,21 @@ void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg
 		conn->curpaint->definition,
 		"The color published by " + conn->session->user->display_name,
 	});
+	//If you haven't saved an identical paint, automatically save this under a default name.
+	int need = 1;
+	mapping sav = gs->saved_paints[uid];
+	if (!sav) sav = gs->saved_paints[uid] = ([]);
+	foreach (sav; string id; mapping p) if (p->color == conn->curpaint->definition) need = 0;
+	if (need) {
+		string id = "Published";
+		if (sav[id]) for (int i = 0; sav[id = sprintf("Published #%d", i)]; ++i) ;
+		sav[id] = ([
+			"label": "📜 " + id,
+			"color": conn->curpaint->definition,
+			"description": conn->curpaint->blobs->label * ", ",
+		]);
+		websocket_cmd_freshpaint(conn, (["base": "0"]));
+	}
 	update_game(game);
 }
 
