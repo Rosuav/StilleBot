@@ -842,9 +842,13 @@ void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg
 	mapping gs = game_state[game]; if (!gs) return;
 	if (gs->published_paints[uid]) return; //Already published one. No shenanigans.
 	gs->published_paints[uid] = ({
-		conn->session->user->display_name + "'s paint",
+		([
+			"spymaster": "🦸 Spymaster",
+			"contact": "🕵 Contact",
+			"chaos": "👽 Agent " + uid,
+		])[gs->roles[uid]] || "(??)",
 		conn->curpaint->definition,
-		"The color published by " + conn->session->user->display_name,
+		sprintf("The color published by %s (%s)", conn->session->user->display_name, gs->roles[uid]),
 	});
 	//If you haven't saved an identical paint, automatically save this under a default name.
 	int need = 1;
@@ -852,8 +856,8 @@ void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg
 	if (!sav) sav = gs->saved_paints[uid] = ([]);
 	foreach (sav; string id; mapping p) if (p->color == conn->curpaint->definition) need = 0;
 	if (need) {
-		string id = "Published";
-		if (sav[id]) for (int i = 0; sav[id = sprintf("Published #%d", i)]; ++i) ;
+		string id = "My paint";
+		if (sav[id]) for (int i = 0; sav[id = sprintf("Published #%d", i)]; ++i) ; //In case you deliberately try to mess it up :)
 		sav[id] = ([
 			"label": "📜 " + id,
 			"color": conn->curpaint->definition,
