@@ -960,7 +960,7 @@ void websocket_cmd_setrole(mapping(string:mixed) conn, mapping(string:mixed) msg
 		//Only one person can have that role. If someone else has it, they have
 		//to step down before you can take it. (If you already have it, we should
 		//give a different message, but still block it.)
-		if (has_value(gs->roles, msg->role)) return;
+		if (has_value(gs->roles, msg->role)) {errormsg(conn, "There's already a " + msg->role + "!"); return;}
 	}
 	if (msg->role == "spectator") m_delete(gs->roles, uid); //No need to record spectators (and it's convenient for player counting to omit them)
 	else gs->roles[uid] = msg->role;
@@ -970,7 +970,7 @@ void websocket_cmd_setrole(mapping(string:mixed) conn, mapping(string:mixed) msg
 void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
 	mapping gs = game_state[game]; if (!gs) return;
-	if (gs->published_paints[uid]) return; //Already published one. No shenanigans.
+	if (gs->published_paints[uid]) {errormsg(conn, "You've already published a paint!"); return;}
 	gs->published_paints[uid] = ({
 		([
 			"spymaster": "🦹 " + gs->codenames[uid],
@@ -1006,8 +1006,8 @@ void websocket_cmd_savepaint(mapping(string:mixed) conn, mapping(string:mixed) m
 	mapping gs = game_state[game];
 	if (!gs) return;
 	if (!gs->saved_paints[uid]) gs->saved_paints[uid] = ([]);
-	if (gs->saved_paints[uid][msg->id]) return; //Duplicate ID
-	if (msg->id == (string)(int)msg->id) return; //Numeric ID. Disallow as it would look like a published paint.
+	if (gs->saved_paints[uid][msg->id]) {errormsg(conn, "Cannot save over existing paint name"); return;}
+	if (msg->id == (string)(int)msg->id) {errormsg(conn, "Please use some letters..."); return;} //Numeric ID. Disallow as it would look like a published paint.
 	gs->saved_paints[uid][msg->id] = ([
 		"label": "💾 " + msg->id,
 		"color": conn->curpaint->definition,
@@ -1038,7 +1038,7 @@ void websocket_cmd_freshpaint(mapping(string:mixed) conn, mapping(string:mixed) 
 	else if (msg->base == (string)(int)msg->base) request = gs->published_paints[(int)msg->base];
 	//Otherwise, you're asking for one of your own saved paints.
 	else if (mapping saved = gs->saved_paints[uid][?msg->base]) request = ({msg->base, saved->color, saved->description});
-	if (!request) return; //TODO: Send back an error message
+	if (!request) {errormsg(conn, "Base paint not found, please select"); return;}
 	conn->curpaint = fresh_paint(@request);
 	send_update(conn, (["curpaint": (["blobs": conn->curpaint->blobs, "color": conn->curpaint->color])]));
 }
@@ -1100,8 +1100,8 @@ void websocket_cmd_comparenotepaint(mapping(string:mixed) conn, mapping(string:m
 	mapping gs = game_state[game]; if (!gs) return;
 	if (gs->phase != "readnote") return;
 	if (gs->roles[uid] != "contact") return;
-	if (!gs->selected_note) return; //First select a note, then compare to the paint
-	if (gs->comparing) return; //Another comparison is in progress.
+	if (!gs->selected_note) {errormsg(conn, "First select a note, then compare to the paint"); return;}
+	if (gs->comparing) {errormsg(conn, "Another comparison is in progress."); return;}
 	array color;
 	if (msg->paint == (string)(int)msg->paint) color = gs->published_paints[(int)msg->paint][?1];
 	else if (mapping saved = gs->saved_paints[uid][?msg->paint]) color = saved->color;
@@ -1117,8 +1117,8 @@ void websocket_cmd_followinstrs(mapping(string:mixed) conn, mapping(string:mixed
 	mapping gs = game_state[game]; if (!gs) return;
 	if (gs->phase != "readnote") return;
 	if (gs->roles[uid] != "contact") return;
-	if (!gs->selected_note) return; //First select a note to follow
-	if (gs->comparing) return; //A comparison is in progress. You probably don't want to skip out on it.
+	if (!gs->selected_note) {errormsg(conn, "First select a note to follow."); return;}
+	if (gs->comparing) {errormsg(conn, "You're still comparing a note and paint - hang tight!"); return;}
 	mapping msgs = (["following": gs->msg_order[gs->selected_note - 1],
 			"truth": gs->notes[gs->spymaster]]);
 	mapping roles = ([

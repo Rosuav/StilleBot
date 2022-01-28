@@ -133,10 +133,12 @@ export function render(data) {
 		}
 		return CODE("[?] " + part[0]);
 	}))));
-	if (data.errormsg) {
-		set_content("#errormessage p", [data.errormsg, SPAN({className: "close"}, "☒")])
-		DOM("#errormessage").classList.remove("hidden");
-	}
+	if (data.errormsg) set_error(data.errormsg);
+}
+
+function set_error(err) {
+	set_content("#errormessage p", [err, SPAN({className: "close"}, "☒")])
+	DOM("#errormessage").classList.remove("hidden");
 }
 
 //TODO: Tidy this up, make a nice way to do things like this
@@ -204,7 +206,7 @@ export function sockmsg_redirect(data) {location.href = "/mixing?game=" + data.g
 on("submit", "#savepaint", e => {
 	e.preventDefault();
 	const el = e.match.elements.paintid;
-	if (el.value === "") return; //TODO: Give error message (can't save nameless)
+	if (el.value === "") {set_error("Paint needs a unique, short name"); return;}
 	ws_sync.send({cmd: "savepaint", id: el.value});
 	el.value = "";
 });
@@ -249,14 +251,14 @@ on("click", "#suggestmsg", e => {
 
 on("click", "#postnote", e => {
 	const rb = DOM("#paintradio input:checked");
-	if (!rb) return; //TODO: Error message
+	if (!rb) {set_error("Select a pot of paint to colour this with"); return;}
 	ws_sync.send({cmd: "postnote", paint: rb.value});
 });
 
 on("submit", "#chatlinkform", e => {
 	e.preventDefault();
 	const msg = e.match.elements.msg.value;
-	if (msg === "") return; //TODO: Give error message
+	if (msg === "") {set_error("I can't send blank messages!"); return;}
 	ws_sync.send({cmd: "chatlink", msg});
 	ws_sync.send({cmd: "prefs_update", diffie_hellman_chatlink: msg});
 	DOM("#chatlink").close();
