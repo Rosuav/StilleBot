@@ -1056,6 +1056,10 @@ void websocket_cmd_followinstrs(mapping(string:mixed) conn, mapping(string:mixed
 			case "role": return ({"role", roles[part[1]] || "(??)"});
 			case "msg": return ({"msg", msgs[part[1]], hexcolor(gs->msg_color[msgs[part[1]]])});
 			case "box": return part;
+			case "value": switch (part[1]) {
+				case "notecount": return ({"text", (string)sizeof(gs->msg_order)});
+				default: return ({"text", "(unknown value " + part[1] + ")"});
+			}
 		}
 		return ({"text", "(unknown part type)"});
 	}
