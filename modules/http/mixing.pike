@@ -560,6 +560,26 @@ constant WIN_STORIES = ({
 		}), ({
 			({"box", "victory", "Secrecy and privacy from mathematics. It's the best."}),
 		}),
+	}), ({
+		({
+			"There are infinite possible paint colours. Would you believe that? Truly infinite! "
+			"Or uhh... would you believe... sixteen million? Well, how about ", ({"value", "notecount"}),
+			"? Whatever the number, the ", ({"role", "contact"}), "correctly picked out the "
+			"unique message from the amazing ", ({"role", "spymaster"}), ", ignoring the "
+			"irrelevant ones, and now control is back in the hands of our heroes.",
+		}), ({
+			"This is the message that was securely delivered:",
+		}), ({
+			({"msg", "truth"}),
+		}), ({
+			"If this seems a little silly, or ridiculous, or completely impractical, you're "
+			"absolutely right! But what's impractical for people can be quite acceptable for a "
+			"computer, and computers do this sort of thing many times a day. The curious among "
+			"you can read up about Diffie-Hellman Key Exchange, and take comfort in the fact "
+			"that computers still don't know how to unmix two pots of paint.",
+		}), ({
+			({"box", "victory", "Chaos has been defeated by mathematics!"}),
+		}),
 	}),
 });
 constant LOSE_STORIES = ({
@@ -599,6 +619,27 @@ constant LOSE_STORIES = ({
 			"another time, there will be a rematch! And next time, it will be different.",
 		}), ({
 			({"box", "defeat", "Sorry about that, Chief."}),
+		}),
+	}), ({
+		({
+			"Life is hard. Really, REALLY hard. Like, about a 12 on the Mohs scale. "
+			"The odds were stacked so hard against our heroes, and it was unreasonable "
+			"of us to expect that the ", ({"role", "spymaster"}), " could send a message "
+			"to the ", ({"role", "contact"}), " without it being discovered. This was "
+			"what they were trying to agree upon:",
+		}), ({
+			({"msg", "truth"}),
+		}), ({
+			"The Spymaster sent this in utter desperation, hoping against logic that the "
+			"Contact would choose it; but the actual instructions the Contact followed "
+			"were...",
+		}), ({
+			({"msg", "following"}),
+		}), ({
+			"And that led the hapless Contact straight into a Chaos trap. A terrifying "
+			"scene unfolded, which we shall draw a veil of discretion over.",
+		}), ({
+			({"box", "defeat", "*biff* *bonk* *splat* *kapow*"}),
 		}),
 	}),
 });
