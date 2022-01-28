@@ -171,6 +171,26 @@ article {display: none;}
 	font-size: 1.5em;
 	font-weight: bold;
 }
+#errormessage {
+	position: fixed;
+	bottom: 0; left: 0; right: 0;
+	margin: 0;
+}
+#errormessage p {
+	position: relative;
+	margin: auto;
+	max-width: max-content;
+	background: #ffdddd;
+	border: 3px solid red;
+	padding: 8px 20px 8px 8px;
+}
+#errormessage .close {
+	position: absolute;
+	display: inline-block;
+	right: 0; top: 0;
+	cursor: pointer;
+	line-height: 0.9;
+}
 </style>
 <style id=phase>article#mixpaint {display: block;}</style>
 <style id=rolestyle></style>
@@ -188,6 +208,8 @@ To participate in games, you'll need to confirm your Twitch account name. Otherw
 <span id=specview>play with the paint mixer, though you can't save or publish your paints</span>.<br>
 [Twitch login](:.twitchlogin)
 {: #loginbox .hidden}
+
+<div class=hidden id=errormessage><p>Error: No error has occurred.</p></div>
 
 To join an operation in progress, ask the host for a link. Alternatively,
 [start a new game](:#newgame .infobtn data-dlg=newgamedlg) and
@@ -438,6 +460,8 @@ share the link with others!
 > [My Spymaster's words, without a doubt.](: #followinstrs) [Hmm, actually, I'm not sure.](:.dialog_close)
 >
 {: tag=dialog #useinstrs}
+
+<p>&nbsp;<!-- ensure scroll room for the error box so it won't overlap stuff --></p>
 ";
 
 mapping game_state = ([]);
@@ -788,7 +812,7 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	if (!uid) state->loginbtn = 1;
 	if (!game) return state; //If you're not connected to a game, there are no saved paints.
 	mapping gs = game_state[game];
-	foreach ("gameid phase nophaseshift msg_order msg_color_order selected_note comparison_log game_summary" / " ", string passthru)
+	foreach ("gameid phase msg_order msg_color_order selected_note comparison_log game_summary" / " ", string passthru)
 		if (gs[passthru]) state[passthru] = gs[passthru];
 	state->host = gs->usernames[gs->host];
 	if (gs->host == uid) state->is_host = 1; //Enable the phase advancement button(s)
@@ -818,6 +842,7 @@ void update_game(string game) {
 	foreach (indices(websocket_groups), string grp)
 		if (has_suffix(grp, "#" + game)) send_updates_all(grp);
 }
+void errormsg(mapping conn, string msg) {send_update(conn, (["errormsg": msg]));}
 
 void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game);
@@ -845,10 +870,15 @@ void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) m
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
 	mapping gs = game_state[game]; if (!gs) return;
 	if (gs->host != uid) return;
-	m_delete(gs, "nophaseshift");
+	string err = advance_phase(gs);
+	if (err) errormsg(conn, "Cannot advance to next phase: " + err);
+	update_game(game);
+}
+
+string advance_phase(mapping gs) {
 	switch (gs->phase) {
 		case "recruit": {
-			if (sizeof(gs->roles) < 2) {gs->nophaseshift = "Need a minimum of two non-spectating players."; break;}
+			if (sizeof(gs->roles) < 2) return "Need a minimum of two non-spectating players.";
 			foreach (({"spymaster", "contact"}), string needrole) {
 				int uid = search(gs->roles, needrole);
 				if (!uid) {
@@ -863,7 +893,7 @@ void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) m
 			break;
 		}
 		case "mixpaint": {
-			if (sizeof(gs->published_paints) <= 1) {gs->nophaseshift = "Nobody's published any paints!"; break;}
+			if (sizeof(gs->published_paints) <= 1) return "Nobody's published any paints!";
 			gs->phase = "writenote";
 			//Assign a random message to each player.
 			gs->notes = mkmapping(indices(gs->roles), devise_messages(values(gs->codenames), sizeof(gs->roles)));
@@ -871,7 +901,7 @@ void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) m
 			break;
 		}
 		case "writenote": {
-			if (!gs->messageboard[gs->spymaster]) {gs->nophaseshift = "The spymaster hasn't posted a note yet. This would end rather badly."; break;}
+			if (!gs->messageboard[gs->spymaster]) return "The spymaster hasn't posted a note yet. This would end rather badly.";
 			//Remap the message board in message-keyed form
 			int size = max(sizeof(gs->messageboard) * 2, 15); //May need to adjust the size in more ways
 			gs->msg_order = Array.shuffle(devise_messages(values(gs->codenames), size, (multiset)values(gs->notes)));
@@ -910,15 +940,13 @@ void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) m
 			break;
 		}
 		case "readnote": {
-			gs->nophaseshift = "The Contact hasn't selected which instructions to follow.";
 			//Note that setting phase to gameover actually happens as a direct consequence of
 			//selecting instructions. Host privileges do not apply.
-			break;
+			return "The Contact hasn't selected which instructions to follow.";
 		}
 		case "gameover": break;
-		default: gs->nophaseshift = "Unknown phase " + gs->phase;
+		default: return "Unknown phase " + gs->phase;
 	}
-	update_game(game);
 }
 
 void websocket_cmd_setrole(mapping(string:mixed) conn, mapping(string:mixed) msg) {

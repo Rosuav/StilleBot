@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, ABBR, B, BR, BUTTON, CODE, DIV, INPUT, LABEL, LI, P, SUP} = choc; //autoimport
+const {A, ABBR, B, BR, BUTTON, CODE, DIV, INPUT, LABEL, LI, P, SPAN, SUP} = choc; //autoimport
 
 let published_color = null;
 export function render(data) {
@@ -130,6 +130,10 @@ export function render(data) {
 		}
 		return CODE("[?] " + part[0]);
 	}))));
+	if (data.errormsg) {
+		set_content("#errormessage p", [data.errormsg, SPAN({className: "close"}, "☒")])
+		DOM("#errormessage").classList.remove("hidden");
+	}
 }
 
 //TODO: Tidy this up, make a nice way to do things like this
@@ -147,6 +151,8 @@ set_content("#annotateme", [
 	DIV({className: "swatch inline", style: "background: #37FD12"}),
 	" Jade.",
 ]);
+
+on("click", "#errormessage .close", e => DOM("#errormessage").classList.add("hidden"));
 
 let selectedcolor = null;
 on("click", "#swatches div", e => {
