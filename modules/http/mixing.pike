@@ -935,7 +935,7 @@ void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg
 	if (gs->published_paints[uid]) return; //Already published one. No shenanigans.
 	gs->published_paints[uid] = ({
 		([
-			"spymaster": "🦸 " + gs->codenames[uid],
+			"spymaster": "🦹 " + gs->codenames[uid],
 			"contact": "🕵 " + gs->codenames[uid],
 			"chaos": "👽 " + gs->codenames[uid],
 		])[gs->roles[uid]] || "(??)",
