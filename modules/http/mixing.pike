@@ -163,17 +163,26 @@ article {display: none;}
 	background: #ffeeee;
 	border-color: red;
 }
+#sitrepdetails {
+	border: 1px solid black;
+	padding: 5px 15px;
+}
+#sitrepdetails summary {
+	font-size: 1.5em;
+	font-weight: bold;
+}
 </style>
 <style id=phase>article#mixpaint {display: block;}</style>
 <style id=rolestyle></style>
 
-## Situation Report
-Coded messages are no longer safe. Your enemies have discovered your code, and can both read your messages
-and write fake messages of their own. You need a way to send your contact one crucial instruction which
-will allow you to share a new code. How? There is a public message board on which anyone may leave a note,
-so you must leave a message there, with some proof that it is truly from you.
-
-[Mission Briefing](:.infobtn data-dlg=sitrep) [The Secret Trick](:.infobtn data-dlg=secret) [How it really works](:.infobtn data-dlg=dhke)
+> ### Situation Report
+> Coded messages are no longer safe. Your enemies have discovered your code, and can both read your messages
+> and write fake messages of their own. You need a way to send your contact one crucial instruction which
+> will allow you to share a new code. How? There is a public message board on which anyone may leave a note,
+> so you must leave a message there, with some proof that it is truly from you.
+>
+> [Mission Briefing](:.infobtn data-dlg=sitrep) [The Secret Trick](:.infobtn data-dlg=secret) [How it really works](:.infobtn data-dlg=dhke)
+{: tag=details open=1 #sitrepdetails}
 
 To participate in games, you'll need to confirm your Twitch account name. Otherwise, feel free to
 <span id=specview>play with the paint mixer, though you can't save or publish your paints</span>.<br>
