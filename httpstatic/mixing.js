@@ -23,9 +23,14 @@ export function render(data) {
 		if (data.gameid) set_content("#specview", "observe the game in progress");
 		DOM("#recruit ul").classList.add("guest"); //Hide the "join role" buttons
 		DOM("#gameovernewgame").classList.add("hidden");
-		//TODO maybe: Have .guestonly and .useronly classes, and make one of them invisible either way.
+		//TODO: Use .guestonly and .useronly classes rather than any of these hacks -
+		//the only thing to do here is to add guest or loggedin
+		DOM("body").classList.add("isguest");
 	}
-	if (data.loginbtn === -1) DOM("#gamedesc").classList.remove("hidden");
+	if (data.loginbtn === -1) {
+		DOM("#gamedesc").classList.remove("hidden");
+		DOM("body").classList.add("isuser");
+	}
 	if (data.gameid) set_content("#gamedesc", [
 		"Operation ", B(data.gameid), " is now in progress. ",
 		data.phase === "recruit" && ["It is ", B("that dark hour before dawn"), " and we need to know who's on what side. Share ",

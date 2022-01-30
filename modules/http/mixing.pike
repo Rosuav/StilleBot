@@ -192,6 +192,8 @@ article {display: none;}
 	line-height: 0.9;
 }
 #recruit ul.guest button {display: none;}
+body.isuser .guestonly {display: none;}
+body.isguest .useronly {display: none;}
 </style>
 <style id=phase>article#mixpaint {display: block;}</style>
 <style id=rolestyle></style>
