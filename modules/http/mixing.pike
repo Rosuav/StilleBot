@@ -191,7 +191,6 @@ article {display: none;}
 	cursor: pointer;
 	line-height: 0.9;
 }
-#recruit ul.guest button {display: none;}
 body.isuser .guestonly {display: none;}
 body.isguest .useronly {display: none;}
 </style>
@@ -210,14 +209,14 @@ body.isguest .useronly {display: none;}
 To participate in games, you'll need to confirm your Twitch account name. Otherwise, feel free to
 <span id=specview>play with the paint mixer, though you can't save or publish your paints</span>.<br>
 [Twitch login](:.twitchlogin)
-{: #loginbox .hidden}
+{: #loginbox .guestonly}
 
 <div class=hidden id=errormessage><p>Error: No error has occurred.</p></div>
 
 To join an operation in progress, ask the host for a link. Alternatively,
 [start a new game](:#newgame .infobtn data-dlg=newgamedlg) and
 share the link with others!
-{: #gamedesc .hidden}
+{: #gamedesc .useronly}
 
 > ## Recruitment
 >
@@ -227,8 +226,8 @@ share the link with others!
 >
 > * Spymaster: <span id=spymaster>searching...</span>
 > * Contact: <span id=contact>scanning...</span>
-> * Agents of Chaos: [Join](:.setrole data-role=chaos) <span id=chaos>recruiting...</span>
-> * Everyone else is a Spectator. [Spectate](:.setrole data-role=spectator)
+> * Agents of Chaos: [Join](:.setrole data-role=chaos .useronly) <span id=chaos>recruiting...</span>
+> * Everyone else is a Spectator. [Spectate](:.setrole data-role=spectator .useronly)
 >
 {: tag=article #recruit}
 
@@ -338,7 +337,7 @@ share the link with others!
 > {: #gamesummary}
 >
 > <ul id=invitations></ul>
-> [Start new game](: .infobtn data-dlg=newgamedlg #gameovernewgame)
+> [Start new game](: .infobtn data-dlg=newgamedlg .useronly)
 {: tag=article #gameover}
 
 <!-- -->
