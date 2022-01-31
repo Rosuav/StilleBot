@@ -492,7 +492,7 @@ constant PIGMENTS = ([
 	"Jade": ({0x37, 0xFD, 0x12}), //Green
 	"Cobalt": ({0x1F, 0x45, 0xFC}), //Blue
 	//Secondary colors
-	"Hot Pink": ({0xFF, 0x14, 0xB3}), //Rb
+	"Hot Pink": ({0xFF, 0x12, 0xB3}), //Rb
 	"Maize": ({0xFB, 0xEC, 0x5D}), //Rg
 	"Lawn Green": ({0x9C, 0xFC, 0x3D}), //Gr
 	"Spring Green": ({0x03, 0xFA, 0x9A}), //Gb
@@ -504,9 +504,9 @@ constant PIGMENTS = ([
 	"Alice Blue": ({0xF0, 0xF8, 0xFE}),
 	"Mint Mus": ({0x99, 0xFD, 0x97}),
 	"Bulker": STANDARD_BASE[*] * 2,
-	"Charcoal": ({0x44, 0x45, 0x4f}),
-	"Orange": ({0xFF, 0x8C, 0x0A}),
-	"Nuclear Radiation": ({0x14, 0x95, 0xCE}),
+	"Prussian Blue": ({0x03, 0x21, 0x53}),
+	"Orange": ({0xFF, 0x8C, 0x0F}),
+	"Nuclear Radiation": ({0x0E, 0x55, 0xDE}),
 ]);
 constant SWATCHES = ({
 	({"Crimson", "It's red. What did you expect?"}),
@@ -523,7 +523,7 @@ constant SWATCHES = ({
 	({"Alice Blue", "Who is more famous - the president or his wife?"}),
 	({"Mint Mus", "Definitely not a frozen dessert."}),
 	({"Bulker", "Add some more base colour to pale out your paint", 0}),
-	({"Charcoal", "Dirty grey for when vibrant colours just aren't your thing"}),
+	({"Prussian Blue", "You are neither holy, nor German, nor an engineer... wait, that's not how it goes"}),
 	({"Orange", "For when security absolutely depends on not being able to rhyme"}),
 	//Special case. Swatched as a classic uranium glass colour (green), but for mixing, is more like
 	//the colour of Cherenkov radiation in water.
@@ -1208,12 +1208,12 @@ protected void create(string name) {
 }
 
 mapping popularity = ([]);
-array greyscores = allocate(10);
 mapping random_paint(int|void parts) {
 	if (!parts) parts = 5 + random(4) + random(4);
 	//Generate a random colour mix with that many components, at random strengths
 	array allcolors = SWATCHES[*][0] - ({"Bulker"});
 	allcolors += allcolors[..8]; //The first nine swatches are the standard colours. Give them more selection weight.
+	allcolors += ({"Crimson", "Cobalt"}) * 3; //It seems to skew badly towards green, not sure why. Artificially weight red and blue.
 	mapping ret = fresh_paint("Standard Beige", STANDARD_BASE);
 	m_delete(ret, "blobs"); //Irrelevant here, cut things down a bit
 	ret->description = "Standard Beige";
@@ -1222,13 +1222,10 @@ mapping random_paint(int|void parts) {
 		int strength = 1 + random(3);
 		//If the current paint is dark enough to need white text on its label, consider adding bulker
 		//instead of another pigment. The darker the current paint, the more likely that we should.
-		int greyscore = 0;
-		foreach (ret->definition, mixed part) if (part > 204) greyscore = -1;
-		if (!greyscore) greyscore += `+(@(random(160) > ret->definition[*]));
-		if (greyscore >= 1) {
+		float grey = ret->definition[0] * .2126 + ret->definition[1] * .7152 + ret->definition[2] * .0722;
+		if (random(192) > grey) {
 			color = "Bulker";
-			strength = greyscore == 3 ? 2 : 1;
-			greyscores[greyscore]++;
+			strength = 1;
 		}
 		popularity[color] += strength;
 		for (int i = 0; i < strength; ++i)
@@ -1256,30 +1253,35 @@ int main() {
 	}
 	write("Net scores:\nRed\t%d\nGreen\t%d\nBlue\t%d\n", scores->Red, scores->Green, scores->Blue);
 	object tm = System.Timer();
-	array red = allocate(256), green = allocate(256), blue = allocate(256);
-	for (int i = 0; i < 10000; ++i) {
-		mapping paint = random_paint();
-		array color = min(((array(int))paint->definition)[*], STANDARD_BASE[*]);
-		//Analysis on each color channel is done separately.
-		red[color[0]]++; green[color[1]]++; blue[color[2]]++;
-		if (i < 10) write("%02X%02X%02X => %s\n", @color, paint->description); //Show the first few in text too
+	object img;
+	for (int pigcount = 1; pigcount <= 25; ++pigcount) {
+		array red = allocate(256), green = allocate(256), blue = allocate(256), grey = allocate(256);
+		for (int i = 0; i < 10000; ++i) {
+			mapping paint = random_paint(15);
+			array color = min(((array(int))paint->definition)[*], STANDARD_BASE[*]);
+			//Analysis on each color channel is done separately.
+			red[color[0]]++; green[color[1]]++; blue[color[2]]++;
+			grey[(int)(color[0] * .2126 + color[1] * .7152 + color[2] * .0722)]++;
+			//if (i < 10) write("%02X%02X%02X => %s\n", @color, paint->description); //Show the first few in text too
+		}
+		#if !constant(G)
+		img = Graphics.Graph.line(([
+			"data": ({(array(float))red, (array(float))blue, (array(float))green, (array(float))grey}), //Pike's graphing module allocates blue to the second graph
+			"xsize": 1600, "ysize": 900,
+			"horgrid": 1,
+			"fontsize": 18,
+		]));
+		//Stdio.write_file(sprintf("/home/rosuav/tmp/pigments/p%02d.png", pigcount), Image.PNG.encode(img));
+		#endif
+		write("%d components... %.3fs...\r", pigcount, tm->peek());
 	}
 	write("Paints generated in %.3fs\n", tm->get());
 	array pigments = indices(popularity), weights = values(popularity);
 	sort(-weights[*], weights, pigments);
 	write("Most popular pigments:\n%{%" + sizeof((string)weights[0]) + "d %s\n%}", Array.transpose(({weights, pigments})));
-#if !constant(G)
-	//Ensure that GTK doesn't get loaded unnecessarily
+	if (!img) return 0;
 	GTK2.setup_gtk();
-	object img = GTK2.GdkImage(0, Graphics.Graph.line(([
-		"data": ({(array(float))red, (array(float))blue, (array(float))green}), //Pike's graphing module allocates blue to the second graph
-		//"data": ({(array(float))greyscores}),
-		"xsize": 1600, "ysize": 900,
-		"horgrid": 1,
-		"fontsize": 18,
-	])));
-	GTK2.Window(0)->set_title("Color distribution")->add(GTK2.Image(img))
+	GTK2.Window(0)->set_title("Color distribution")->add(GTK2.Image(GTK2.GdkImage(0, img)))
 		->show_all()->signal_connect("destroy",lambda() {exit(0);});
 	return -1;
-#endif
 }
