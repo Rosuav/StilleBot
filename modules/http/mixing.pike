@@ -61,7 +61,7 @@ would be possible to retain them in that form internally.
 (Note that real DHKE uses modulo arithmetic to keep storage requirements sane, so it doesn't have to worry about
 rounding or inaccuracies.)
 */
-#if defined(G)
+#if constant(G)
 inherit http_websocket;
 #else
 mixed render(object req, mapping args) { }
@@ -506,7 +506,7 @@ constant PIGMENTS = ([
 	"Bulker": STANDARD_BASE[*] * 2,
 	"Charcoal": ({0x44, 0x45, 0x4f}),
 	"Orange": ({0xFF, 0x8C, 0x0A}),
-	"Blood": ({0x7E, 0x35, 0x17}),
+	"Nuclear Radiation": ({0x14, 0x95, 0xCE}),
 ]);
 constant SWATCHES = ({
 	({"Crimson", "It's red. What did you expect?"}),
@@ -525,8 +525,9 @@ constant SWATCHES = ({
 	({"Bulker", "Add some more base colour to pale out your paint", 0}),
 	({"Charcoal", "Dirty grey for when vibrant colours just aren't your thing"}),
 	({"Orange", "For when security absolutely depends on not being able to rhyme"}),
-	//Special case. Swatched as a vibrant crimson (fresh blood), but for mixing, the actual "Blood" value is used (old blood).
-	({"Blood", "This pigment is made from real blood. Use it wisely.", ({0xAA, 0, 0})}),
+	//Special case. Swatched as a classic uranium glass colour (green), but for mixing, is more like
+	//the colour of Cherenkov radiation in water.
+	({"Nuclear Radiation", "It's... the colour of a nuclear reaction under water. Just ask Mr Cherenkov.", ({0x90, 0xFF, 0})}),
 });
 constant STRENGTHS = ({"spot", "spoonful", "splash"});
 
@@ -1177,7 +1178,7 @@ void websocket_cmd_followinstrs(mapping(string:mixed) conn, mapping(string:mixed
 }
 
 protected void create(string name) {
-	#if defined(G)
+	#if constant(G)
 	::create(name);
 	#endif
 	if (!G->G->diffie_hellman) G->G->diffie_hellman = ([]);
@@ -1248,7 +1249,8 @@ mapping random_paint(int|void parts) {
 int main() {
 	mapping scores = (["Red": 0, "Green": 0, "Blue": 0]);
 	foreach (SWATCHES, array info) {
-		if (info[0] == "Rebecca Purple") break; //Evaluate only the first nine
+		//if (info[0] == "Rebecca Purple") break; //Evaluate only the first nine
+		if (info[0] == "Bulker") continue; //The bulker doesn't factor into pigment usage
 		array color = PIGMENTS[info[0]] + ({ });
 		write("%s: %d,%d,%d\n", info[0], @color);
 		array parts = ({"Red", "Green", "Blue"});
@@ -1273,6 +1275,8 @@ int main() {
 	array pigments = indices(popularity), weights = values(popularity);
 	sort(-weights[*], weights, pigments);
 	write("Most popular pigments:\n%{%" + sizeof((string)weights[0]) + "d %s\n%}", Array.transpose(({weights, pigments})));
+#if !constant(G)
+	//Ensure that GTK doesn't get loaded unnecessarily
 	GTK2.setup_gtk();
 	object img = GTK2.GdkImage(0, Graphics.Graph.line(([
 		"data": ({(array(float))red, (array(float))blue, (array(float))green}), //Pike's graphing module allocates blue to the second graph
@@ -1284,4 +1288,5 @@ int main() {
 	GTK2.Window(0)->set_title("Color distribution")->add(GTK2.Image(img))
 		->show_all()->signal_connect("destroy",lambda() {exit(0);});
 	return -1;
+#endif
 }
