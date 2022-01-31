@@ -888,6 +888,13 @@ void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) m
 string advance_phase(mapping gs) {
 	switch (gs->phase) {
 		case "recruit": {
+			//TODO: If only one player (and maybe only if that player is the host??), engage solo mode.
+			//The Spymaster will be played by StilleBot with an ID of 407665396 (== AnAnonymousCheerer)
+			//and the sole player is the Contact. Immediately upon phase change, the Spymaster will
+			//publish a randomly-generated paint. Phase advancement will be blocked until the Contact
+			//has published also. Upon advancement out of mixpaint, the Spymaster will mix up the secret
+			//paint and immediately writenote; the Contact is not given an opportunity to write one, and
+			//phase advances a second step. So the player will see mixpaint, readnote, gameover.
 			if (sizeof(gs->roles) < 2) return "Need a minimum of two non-spectating players.";
 			foreach (({"spymaster", "contact"}), string needrole) {
 				int uid = search(gs->roles, needrole);
