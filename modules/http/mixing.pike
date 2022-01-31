@@ -826,6 +826,7 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	sscanf(group, "%d#%s", int uid, string game);
 	if (!uid || !game) state->no_save = 1;
 	if (!uid) state->loginbtn = 1;
+	//for (int i = 0; i < 32; ++i) state->paints += ({({"#" + i, "#" + i, hexcolor(random_paint()->definition)})});
 	if (!game) return state; //If you're not connected to a game, there are no saved paints.
 	mapping gs = game_state[game];
 	foreach ("gameid phase msg_order msg_color_order selected_note comparison_log game_summary invitations" / " ", string passthru)
@@ -1207,7 +1208,7 @@ protected void create(string name) {
 }
 
 mapping popularity = ([]);
-array greyscores = allocate(8);
+array greyscores = allocate(10);
 mapping random_paint(int|void parts) {
 	if (!parts) parts = 5 + random(4) + random(4);
 	//Generate a random colour mix with that many components, at random strengths
@@ -1221,20 +1222,12 @@ mapping random_paint(int|void parts) {
 		int strength = 1 + random(3);
 		//If the current paint is dark enough to need white text on its label, consider adding bulker
 		//instead of another pigment. The darker the current paint, the more likely that we should.
-		float grey = ret->definition[0] * .2126 + ret->definition[1] * .7152 + ret->definition[2] * .0722;
 		int greyscore = 0;
-		for (int threshold = 128; threshold; threshold >>= 1) {
-			//if (random(threshold) > grey) ++greyscore;
-			if (random(threshold) > ret->definition[0]) ++greyscore;
-			if (random(threshold) > ret->definition[1]) ++greyscore;
-			if (random(threshold) > ret->definition[2]) ++greyscore;
-		}
-		foreach (ret->definition, mixed part) if (part > 204) greyscore = 0;
+		foreach (ret->definition, mixed part) if (part > 204) greyscore = -1;
+		if (!greyscore) greyscore += `+(@(random(160) > ret->definition[*]));
 		if (greyscore >= 1) {
-			//write("%02X%02X%02X => grey %.3f => selecting bulker\n", @(array(int))ret->definition, grey);
 			color = "Bulker";
-			//strength = max(min(greyscore / 2, 3), 1);
-			strength = 1;
+			strength = greyscore == 3 ? 2 : 1;
 			greyscores[greyscore]++;
 		}
 		popularity[color] += strength;
