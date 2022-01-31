@@ -61,7 +61,17 @@ would be possible to retain them in that form internally.
 (Note that real DHKE uses modulo arithmetic to keep storage requirements sane, so it doesn't have to worry about
 rounding or inaccuracies.)
 */
+#if defined(G)
 inherit http_websocket;
+#else
+mixed render(object req, mapping args) { }
+mapping(string|int:array(object)) websocket_groups = ([]);
+void send_update(mapping(string:mixed) conn, mapping|void data) { }
+void send_updates_all(string|int group, mapping|void data) { }
+mapping persist_config = (["ircsettings": ([])]);
+void send_message(string to, string msg) { }
+mapping G = (["G": ([])]);
+#endif
 
 constant markdown = #"# Diffie Hellman Paint Mixing
 
@@ -1167,7 +1177,9 @@ void websocket_cmd_followinstrs(mapping(string:mixed) conn, mapping(string:mixed
 }
 
 protected void create(string name) {
+	#if defined(G)
 	::create(name);
+	#endif
 	if (!G->G->diffie_hellman) G->G->diffie_hellman = ([]);
 	game_state = G->G->diffie_hellman;
 	foreach (SWATCHES, array info) {
@@ -1191,4 +1203,85 @@ protected void create(string name) {
 		swatches += ({(["color": name, "desc": info[1], "label": info[0]])});
 	}
 	swatch_color_style = sprintf("%{.%s {background: #%s;}\n%}", sort((array)swatch_colors));
+}
+
+mapping popularity = ([]);
+array greyscores = allocate(8);
+mapping random_paint(int|void parts) {
+	if (!parts) parts = 5 + random(4) + random(4);
+	//Generate a random colour mix with that many components, at random strengths
+	array allcolors = SWATCHES[*][0] - ({"Bulker"});
+	allcolors += allcolors[..8]; //The first nine swatches are the standard colours. Give them more selection weight.
+	mapping ret = fresh_paint("Standard Beige", STANDARD_BASE);
+	m_delete(ret, "blobs"); //Irrelevant here, cut things down a bit
+	ret->description = "Standard Beige";
+	for (int p = 0; p < parts; ++p) {
+		string color = random(allcolors);
+		int strength = 1 + random(3);
+		//If the current paint is dark enough to need white text on its label, consider adding bulker
+		//instead of another pigment. The darker the current paint, the more likely that we should.
+		float grey = ret->definition[0] * .2126 + ret->definition[1] * .7152 + ret->definition[2] * .0722;
+		int greyscore = 0;
+		for (int threshold = 128; threshold; threshold >>= 1) {
+			//if (random(threshold) > grey) ++greyscore;
+			if (random(threshold) > ret->definition[0]) ++greyscore;
+			if (random(threshold) > ret->definition[1]) ++greyscore;
+			if (random(threshold) > ret->definition[2]) ++greyscore;
+		}
+		foreach (ret->definition, mixed part) if (part > 204) greyscore = 0;
+		if (greyscore >= 1) {
+			//write("%02X%02X%02X => grey %.3f => selecting bulker\n", @(array(int))ret->definition, grey);
+			color = "Bulker";
+			//strength = max(min(greyscore / 2, 3), 1);
+			strength = 1;
+			greyscores[greyscore]++;
+		}
+		popularity[color] += strength;
+		for (int i = 0; i < strength; ++i)
+			ret->definition = mix(ret->definition, PIGMENTS[color]);
+		ret->description += " + " + color + " (" + STRENGTHS[strength - 1] + ")";
+	}
+	return ret;
+}
+
+//In-depth algorithmic analysis at the command line
+int main() {
+	mapping scores = (["Red": 0, "Green": 0, "Blue": 0]);
+	foreach (SWATCHES, array info) {
+		if (info[0] == "Rebecca Purple") break; //Evaluate only the first nine
+		array color = PIGMENTS[info[0]] + ({ });
+		write("%s: %d,%d,%d\n", info[0], @color);
+		array parts = ({"Red", "Green", "Blue"});
+		sort(color, parts);
+		for (int i = 2; i >= 0; --i) {
+			int sc = (int)(100 * color[i] / color[2]);
+			write("\t%s (%d == %d%%)\n", parts[i], color[i], sc);
+			scores[parts[i]] += sc;
+		}
+	}
+	write("Net scores:\nRed\t%d\nGreen\t%d\nBlue\t%d\n", scores->Red, scores->Green, scores->Blue);
+	object tm = System.Timer();
+	array red = allocate(256), green = allocate(256), blue = allocate(256);
+	for (int i = 0; i < 10000; ++i) {
+		mapping paint = random_paint();
+		array color = min(((array(int))paint->definition)[*], STANDARD_BASE[*]);
+		//Analysis on each color channel is done separately.
+		red[color[0]]++; green[color[1]]++; blue[color[2]]++;
+		if (i < 10) write("%02X%02X%02X => %s\n", @color, paint->description); //Show the first few in text too
+	}
+	write("Paints generated in %.3fs\n", tm->get());
+	array pigments = indices(popularity), weights = values(popularity);
+	sort(-weights[*], weights, pigments);
+	write("Most popular pigments:\n%{%" + sizeof((string)weights[0]) + "d %s\n%}", Array.transpose(({weights, pigments})));
+	GTK2.setup_gtk();
+	object img = GTK2.GdkImage(0, Graphics.Graph.line(([
+		"data": ({(array(float))red, (array(float))blue, (array(float))green}), //Pike's graphing module allocates blue to the second graph
+		//"data": ({(array(float))greyscores}),
+		"xsize": 1600, "ysize": 900,
+		"horgrid": 1,
+		"fontsize": 18,
+	])));
+	GTK2.Window(0)->set_title("Color distribution")->add(GTK2.Image(img))
+		->show_all()->signal_connect("destroy",lambda() {exit(0);});
+	return -1;
 }
