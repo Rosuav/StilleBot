@@ -10,6 +10,9 @@ class Persist(string savefn, int flip_save)
 
 	protected void create()
 	{
+		#if constant(INTERACTIVE)
+		saving = 1; //Prevent saving of persisted content in interactive mode
+		#endif
 		catch //Ignore any errors, just have no saved data.
 		{
 			mixed decode=Standards.JSON.decode_utf8(Stdio.read_file(savefn));

@@ -665,6 +665,20 @@ void poll()
 			->on_success(check_hooks);
 }
 
+void interactive(mixed info)
+{
+	write("%O\n", info);
+	//TODO: Surely there's a better way to access the history object for the running Hilfe...
+	object history = function_object(all_constants()["backend_thread"]->backtrace()[0]->args[0])->history;
+	history->push(info);
+}
+int req(string url, string|void username) //Returns 0 to suppress Hilfe warning.
+{
+	//NOTE: You need the helix/ or kraken/ prefix to indicate which API to use.
+	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/" + url[url[0]=='/'..];
+	request(url, 0, (["username": username]))->then(interactive);
+}
+
 protected void create()
 {
 	if (!G->G->stream_online_since) G->G->stream_online_since = ([]);
@@ -684,7 +698,9 @@ protected void create()
 	}
 
 	remove_call_out(G->G->poll_call_out);
+	#if !constant(INTERACTIVE)
 	poll();
+	#endif
 	add_constant("get_channel_info", get_channel_info);
 	add_constant("check_following", check_following);
 	add_constant("get_video_info", get_video_info);
@@ -714,20 +730,6 @@ mapping decode(string data)
 	if (!info) write("Request failed - server down?\n");
 	else write("%d %s: %s\n", info->status, info->error, info->message||"(unknown)");
 	if (!--requests) exit(0);
-}
-
-void interactive(mixed info)
-{
-	write("%O\n", info);
-	//TODO: Surely there's a better way to access the history object for the running Hilfe...
-	object history = function_object(all_constants()["backend_thread"]->backtrace()[0]->args[0])->history;
-	history->push(info);
-}
-int req(string url, string|void username) //Returns 0 to suppress Hilfe warning.
-{
-	//NOTE: You need the helix/ or kraken/ prefix to indicate which API to use.
-	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/" + url[url[0]=='/'..];
-	request(url, 0, (["username": username]))->then(interactive);
 }
 
 //Lifted from globals because I can't be bothered refactoring

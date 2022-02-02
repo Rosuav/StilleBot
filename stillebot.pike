@@ -49,6 +49,14 @@ int main(int argc,array(string) argv)
 {
 	add_constant("G", this);
 	G->argv = argv;
+	if (has_value(argv, "-i")) {
+		add_constant("INTERACTIVE", 1);
+		bootstrap("persist.pike");
+		bootstrap("globals.pike");
+		bootstrap("poll.pike");
+		Tools.Hilfe.StdinHilfe(({"start backend"}));
+		return 0;
+	}
 	bootstrap_all();
 	foreach ("persist_config command send_message window" / " ", string vital)
 		if (!all_constants()[vital])
