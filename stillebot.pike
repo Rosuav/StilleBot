@@ -52,9 +52,9 @@ int main(int argc,array(string) argv)
 	if (has_value(argv, "-i")) {
 		add_constant("INTERACTIVE", 1);
 		Tools.Hilfe.StdinHilfe(({"start backend",
-			"G->bootstrap(\"persist.pike\");",
-			"G->bootstrap(\"globals.pike\");",
-			"G->bootstrap(\"poll.pike\");",
+			"mixed _ignore = G->bootstrap(\"persist.pike\");",
+			"mixed _ignore = G->bootstrap(\"globals.pike\");",
+			"function req = G->bootstrap(\"poll.pike\")->req;",
 		}));
 		return 0;
 	}
