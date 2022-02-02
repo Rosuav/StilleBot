@@ -51,10 +51,11 @@ int main(int argc,array(string) argv)
 	G->argv = argv;
 	if (has_value(argv, "-i")) {
 		add_constant("INTERACTIVE", 1);
-		bootstrap("persist.pike");
-		bootstrap("globals.pike");
-		bootstrap("poll.pike");
-		Tools.Hilfe.StdinHilfe(({"start backend"}));
+		Tools.Hilfe.StdinHilfe(({"start backend",
+			"G->bootstrap(\"persist.pike\");",
+			"G->bootstrap(\"globals.pike\");",
+			"G->bootstrap(\"poll.pike\");",
+		}));
 		return 0;
 	}
 	bootstrap_all();
