@@ -665,7 +665,7 @@ void poll()
 			->on_success(check_hooks);
 }
 
-int req(string url, string|void username) //Returns 0 to suppress Hilfe warning.
+int request_interactive(string url, string|void username) //Returns 0 to suppress Hilfe warning.
 {
 	//NOTE: You need the helix/ or kraken/ prefix to indicate which API to use.
 	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/" + url[url[0]=='/'..];
