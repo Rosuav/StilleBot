@@ -540,6 +540,10 @@ protected void create(string name) {
 			write("Restored from backup: %O\n", chanid);
 		}
 	}
+	call_out(start_connections, 4, configs); //Delay startup a bit to avoid connection conflicts and allow compilation errors to be seen
+}
+
+void start_connections(mapping configs) {
 	foreach (configs; string chanid; mapping info) {
 		if (!(int)chanid) {spawn_task(migrate(chanid)); continue;}
 		if (!info->chan) {spawn_task(no_name(chanid)); continue;}
