@@ -226,6 +226,20 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	});
 }
 
+//Returns "offline" if not broadcasting, or a channel uptime.
+continue Concurrent.Future|string channel_still_broadcasting(string|int chan) {
+	if (stringp(chan)) chan = yield(get_user_id(chan));
+	array initial = request("https://api.twitch.tv/helix/videos?type=archive&user_id=" + chan + "&first=1")->data;
+	//If there are no videos found, then presumably the person isn't live, since
+	//(even if VODs are disabled) the current livestream always shows up.
+	if (!sizeof(initial)) return "offline";
+	mixed _ = yield(task_sleep(1.5));
+	array second = request("https://api.twitch.tv/helix/videos?type=archive&user_id=" + chan + "&first=1")->data;
+	//When a channel is offline, the VOD doesn't grow in length.
+	if (!sizeof(second) || second[0]->duration == initial[0]->duration) return "offline";
+	return second[0]->duration;
+}
+
 Concurrent.Future get_channel_info(string name)
 {
 	return request("https://api.twitch.tv/helix/channels?broadcaster_id={{USER}}", ([]), (["username": name]))
@@ -688,6 +702,7 @@ protected void create()
 #if !constant(G)
 void runhooks(mixed ... args) { }
 mapping G_G_(mixed ... args) {return ([]);}
+mixed task_sleep(mixed ... args) {error("task_sleep is not currently supported in CLI mode\n");}
 mixed spawn_task(mixed ... args) {error("spawn_task is not currently supported in CLI mode\n");}
 
 int requests;
