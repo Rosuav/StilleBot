@@ -54,7 +54,7 @@ int main(int argc,array(string) argv)
 		Tools.Hilfe.StdinHilfe(({"start backend",
 			"mixed _ignore = G->bootstrap(\"persist.pike\");",
 			"mixed _ignore = G->bootstrap(\"globals.pike\");",
-			"function req = G->bootstrap(\"poll.pike\")->request_interactive;",
+			"object poll = G->bootstrap(\"poll.pike\"); function req = poll->request_interactive;",
 		}));
 		return 0;
 	}
