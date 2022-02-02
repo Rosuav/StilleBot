@@ -665,18 +665,16 @@ void poll()
 			->on_success(check_hooks);
 }
 
-void interactive(mixed info)
-{
-	write("%O\n", info);
-	//TODO: Surely there's a better way to access the history object for the running Hilfe...
-	object history = function_object(all_constants()["backend_thread"]->backtrace()[0]->args[0])->history;
-	history->push(info);
-}
 int req(string url, string|void username) //Returns 0 to suppress Hilfe warning.
 {
 	//NOTE: You need the helix/ or kraken/ prefix to indicate which API to use.
 	if (!has_prefix(url, "http")) url = "https://api.twitch.tv/" + url[url[0]=='/'..];
-	request(url, 0, (["username": username]))->then(interactive);
+	request(url, 0, (["username": username]))->then() {[mixed info] = __ARGS__;
+		write("%O\n", info);
+		//TODO: Surely there's a better way to access the history object for the running Hilfe...
+		object history = function_object(all_constants()["backend_thread"]->backtrace()[0]->args[0])->history;
+		history->push(info);
+	};
 }
 
 protected void create()
