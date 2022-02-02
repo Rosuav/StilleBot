@@ -45,17 +45,32 @@ int bootstrap_all()
 	return err;
 }
 
+class Hilfe {
+	inherit Tools.Hilfe.StdinHilfe;
+	protected void create() {
+		function orig_reswrite = reswrite;
+		reswrite = lambda(function w, string sres, int num, mixed res) {
+			mixed spawn_task = all_constants()["spawn_task"];
+			if (spawn_task) spawn_task(res) {orig_reswrite(w, sprintf("%O", __ARGS__[0]), num, __ARGS__[0]);};
+			else orig_reswrite(w, sres, num, res); //Fallback if we can't spawn tasks yet
+		};
+		G->Hilfe = this;
+		//The superclass won't return till the user is done.
+		::create(({"start backend",
+			"mixed _ignore = G->bootstrap(\"persist.pike\");",
+			"mixed _ignore = G->bootstrap(\"globals.pike\");",
+			"object poll = G->bootstrap(\"poll.pike\"); function req = poll->request_interactive;",
+		}));
+	}
+}
+
 int main(int argc,array(string) argv)
 {
 	add_constant("G", this);
 	G->argv = argv;
 	if (has_value(argv, "-i")) {
 		add_constant("INTERACTIVE", 1);
-		Tools.Hilfe.StdinHilfe(({"start backend",
-			"mixed _ignore = G->bootstrap(\"persist.pike\");",
-			"mixed _ignore = G->bootstrap(\"globals.pike\");",
-			"object poll = G->bootstrap(\"poll.pike\"); function req = poll->request_interactive;",
-		}));
+		Hilfe();
 		return 0;
 	}
 	bootstrap_all();
