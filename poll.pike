@@ -902,11 +902,6 @@ void subpoints_display(string ch) {
 
 int main(int argc, array(string) argv)
 {
-	if (argc == 1)
-	{
-		Tools.Hilfe.StdinHilfe(({"inherit \"poll.pike\";", "start backend"}));
-		return 0;
-	}
 	requests = argc - 1;
 	foreach (argv[1..], string chan)
 	{
