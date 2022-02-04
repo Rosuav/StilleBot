@@ -32,6 +32,30 @@ constant ENABLEABLE_FEATURES = ([
 			"otherwise": ""
 		])]),
 	]),
+	"raidshield": ([
+		"description": "Alert incoming raiders if they're still broadcasting",
+		"special": "!raided",
+		"fragment": "#!raided/",
+		"response": ([
+			"delay": 5,
+			"message": ([
+				"builtin": "nowlive",
+				"builtin_param": "$$",
+				"message": ([
+					"casefold": "",
+					"conditional": "string",
+					"expr1": "{channellive}",
+					"expr2": "offline",
+					"message": "",
+					"otherwise": ([
+						"dest": "/w",
+						"message": "SirShield twitchRaid Hi! It looks like you're possibly still broadcasting. If that's not your intention, it may be worth checking your streaming software (eg OBS, StreamLabs Desktop, Xsplit, etc) to see if it has shut down. SirShield twitchRaid ",
+						"target": "$$",
+					]),
+				]),
+			]),
+		]),
+	]),
 ]);
 
 //Note that, unlike regular trigger IDs, these indices are not intrinsic and can change. -1 indicates not present.

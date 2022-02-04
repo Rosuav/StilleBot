@@ -271,6 +271,18 @@ mapping(string:function(string:string)) text_filters = ([
 	"upper": upper_case, "lower": lower_case,
 ]);
 
+continue Concurrent.Future raidwatch(int channel, string raiddesc) {
+	string status;
+	System.Timer tm = System.Timer();
+	for (int tries = 0; tries < 10; ++tries) {
+		mixed _ = tries && yield(task_sleep(5));
+		mixed ex = catch {status = yield(channel_still_broadcasting(channel));};
+		if (ex) {status = "error"; break;}
+		if (status == "offline") break;
+	}
+	Stdio.append_file("raidwatch.log", sprintf("[%s] %s: %s after %.3fs\n", ctime(time())[..<1], raiddesc, status, tm->get()));
+}
+
 class channel_notif
 {
 	inherit Protocols.IRC.Channel;
@@ -690,6 +702,7 @@ class channel_notif
 			//an incoming raid for 1234 from 2345. Either way, it's in
 			//status->raids->1234->2345 and then has the timestamp.
 			[int fromid, int toid] = ids;
+			spawn_task(raidwatch(fromid, sprintf("%s raided %s", fromname, toname))) { };
 			int outgoing = fromid < toid;
 			string base = outgoing ? (string)fromid : (string)toid;
 			string other = outgoing ? (string)toid : (string)fromid;

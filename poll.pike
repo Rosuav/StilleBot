@@ -699,6 +699,7 @@ protected void create()
 	add_constant("translate_tag_ids", translate_tag_ids);
 	add_constant("EventSub", EventSub);
 	add_constant("get_stream_schedule", get_stream_schedule);
+	add_constant("channel_still_broadcasting", channel_still_broadcasting);
 }
 
 #if !constant(G)

@@ -15,6 +15,7 @@ Commands in alphabetical order:
 * [!delquote: Delete a channel quote](delquote)
 * [!features: Enable or disable bot features.](features)
 * [!help: List commands available to you](help)
+* [!nowlive: Check if a stream is currently live](nowlive)
 * [!quote: View a chosen or randomly-selected quote](quote)
 * [!repeat: Add a repeated command (autocommand) for this channel](repeat)
 * [!setcmd: Configure an echo command for this channel](setcmd)
