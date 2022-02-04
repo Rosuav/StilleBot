@@ -18,7 +18,7 @@ constant default_response = ([
 ]);
 constant vars_provided = ([
 	"{uptime}": "Number of seconds the channel has been online, or 0 if offline",
-	"{uptime_english}": "(deprecated) Equivalent to {uptime|time_hms}",
+	"{uptime_english}": "(deprecated) Equivalent to {uptime|time_english}",
 	"{uptime_hms}": "(deprecated) Equivalent to {uptime|time_hms}",
 	"{channel}": "Channel name (may later become the display name)",
 ]);
