@@ -926,7 +926,7 @@ string advance_phase(mapping gs) {
 						if (needrole == "contact") return "To play on your own, be the contact, not the spymaster. Otherwise, find at least one other player.";
 						gs->usernames[ROBOT_SPYMASTER_UID] = ROBOT_SPYMASTER_DISPLAYNAME;
 						agents = ({ROBOT_SPYMASTER_UID});
-						gs->codenames[uid] = ROBOT_SPYMASTER_CODENAME;
+						gs->codenames[ROBOT_SPYMASTER_UID] = ROBOT_SPYMASTER_CODENAME;
 						//Automatically publish a random paint.
 						mapping paint = random_paint(random(3) + 3);
 						gs->published_paints[ROBOT_SPYMASTER_UID] = ({
@@ -945,11 +945,20 @@ string advance_phase(mapping gs) {
 		}
 		case "mixpaint": {
 			if (sizeof(gs->published_paints) <= 1) return "Nobody's published any paints!";
+			if (gs->spymaster == ROBOT_SPYMASTER_UID && !gs->published_paints[gs->contact])
+				return "You need to publish your paint before the Spymaster can do his work.";
 			gs->phase = "writenote";
 			//Assign a random message to each player.
 			gs->notes = mkmapping(indices(gs->roles), devise_messages(values(gs->codenames), sizeof(gs->roles)));
 			gs->messageboard = ([]);
-			break;
+			if (gs->spymaster == ROBOT_SPYMASTER_UID) {
+				//Automatically post a note based on the contact's published paint
+				array paint = gs->published_paints[gs->contact][1];
+				foreach (gs->robot_spymaster_paint, string color)
+					paint = mix(paint, PIGMENTS[color]);
+				gs->messageboard[ROBOT_SPYMASTER_UID] = paint;
+			}
+			else break; //With a robot spymaster, fall through and advance another step.
 		}
 		case "writenote": {
 			if (!gs->messageboard[gs->spymaster]) return "The spymaster hasn't posted a note yet. This would end rather badly.";
