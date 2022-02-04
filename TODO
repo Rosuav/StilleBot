@@ -79,3 +79,6 @@
   - Causes display problems on graphical editor and opening up element details
 * Check VLC 3.0.16 to see if there are better docs about the Lua interface
 * Should runhooks switch to continue functions and then remove the "call next" feature?
+* Should ALL specials function as implicit arrays, the way triggers do?
+  - Alternatively: should invocations and executions be separated? Aliases would then
+    be just another way to have more than one invocation for a single command.
