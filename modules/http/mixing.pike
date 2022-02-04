@@ -1238,6 +1238,13 @@ protected void create(string name) {
 	swatch_color_style = sprintf("%{.%s {background: #%s;}\n%}", sort((array)swatch_colors));
 }
 
+//Return ({dominant, middle, weak}) indicating color strength (eg purple is ({"Blue", "Red", "Green"}))
+array(string) color_dominance(array color) {
+	array cols = ({"Red", "Green", "Blue"});
+	sort(color + ({ }), cols);
+	return cols;
+}
+
 mapping popularity = ([]);
 mapping random_paint(int|void parts) {
 	if (!parts) parts = 5 + random(4) + random(4);
@@ -1251,11 +1258,15 @@ mapping random_paint(int|void parts) {
 	ret->parts = ({ });
 	for (int p = 0; p < parts; ++p) {
 		string color = random(allcolors);
+		array current = color_dominance(ret->definition);
+		//When we pick a color that is dominant in our current weakest color, 50% chance to
+		//try a different color.
+		if (color_dominance(PIGMENTS[color])[0] == current[-1] && random(2)) {--p; continue;}
 		int strength = 1 + random(3);
 		//If the current paint is dark enough to need white text on its label, consider adding bulker
 		//instead of another pigment. The darker the current paint, the more likely that we should.
 		float grey = ret->definition[0] * .2126 + ret->definition[1] * .7152 + ret->definition[2] * .0722;
-		if (random(192) > grey) {
+		if (random(160) > grey) {
 			color = "Bulker";
 			strength = 1;
 		}
@@ -1288,7 +1299,7 @@ int main() {
 	write("Net scores:\nRed\t%d\nGreen\t%d\nBlue\t%d\n", scores->Red, scores->Green, scores->Blue);
 	object tm = System.Timer();
 	object img;
-	for (int pigcount = 1; pigcount <= 25; ++pigcount) {
+	for (int pigcount = 5; pigcount <= 5; ++pigcount) { //Widen the range to test color stability
 		array red = allocate(256), green = allocate(256), blue = allocate(256), grey = allocate(256);
 		for (int i = 0; i < 10000; ++i) {
 			mapping paint = random_paint(15);
