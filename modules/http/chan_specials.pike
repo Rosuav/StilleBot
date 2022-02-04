@@ -37,7 +37,7 @@ constant ENABLEABLE_FEATURES = ([
 		"special": "!raided",
 		"fragment": "#!raided/",
 		"response": ([
-			"delay": 5,
+			"delay": 5, //TODO: See how long people tend to be online for after raiding
 			"message": ([
 				"builtin": "nowlive",
 				"builtin_param": "$$",
