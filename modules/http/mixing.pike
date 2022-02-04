@@ -531,6 +531,11 @@ constant SWATCHES = ({
 });
 constant STRENGTHS = ({"spot", "spoonful", "splash"});
 
+//In solo play, you (the contact) will be sent a message from the robot spymaster.
+constant ROBOT_SPYMASTER_UID = 407665396; //The ID of AnAnonymousCheerer
+constant ROBOT_SPYMASTER_DISPLAYNAME = "StilleBot";
+constant ROBOT_SPYMASTER_CODENAME = "Agent Incarnation";
+
 //Craft some spy-speak instructions. The game is not about hiding information in the
 //text, so we provide the text as a fully-randomized Mad Libs system.
 constant CODENAMES = "Angel Ape Archer Badger Bat Bear Bird Boar Camel Caribou Cat Chimera Cleric Crab Crocodile"
@@ -891,7 +896,8 @@ void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg
 void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
 	mapping gs = game_state[game]; if (!gs) return;
-	if (gs->host != uid) return;
+	//Host is normally the only one to advance time, but in solo mode, the contact can too.
+	if (gs->host != uid && gs->spymaster != ROBOT_SPYMASTER_UID) return;
 	string err = advance_phase(gs);
 	if (err) errormsg(conn, "Cannot advance to next phase: " + err);
 	update_game(game);
@@ -907,13 +913,29 @@ string advance_phase(mapping gs) {
 			//has published also. Upon advancement out of mixpaint, the Spymaster will mix up the secret
 			//paint and immediately writenote; the Contact is not given an opportunity to write one, and
 			//phase advances a second step. So the player will see mixpaint, readnote, gameover.
-			if (sizeof(gs->roles) < 2) return "Need a minimum of two non-spectating players.";
-			foreach (({"spymaster", "contact"}), string needrole) {
+			if (sizeof(gs->roles) < 1) return "You can't all just watch!";
+			foreach (({"contact", "spymaster"}), string needrole) {
 				int uid = search(gs->roles, needrole);
 				if (!uid) {
 					//Pick a random chaos agent to promote
 					array agents = filter(indices(gs->roles)) {return gs->roles[__ARGS__[0]] == "chaos";};
-					//assert sizeof(agents) > 0 //we already made sure there were enough total roles
+					if (!sizeof(agents)) {
+						//Two possibility.
+						//One. The sole human is the spymaster, and we have no contact.
+						//Or two. We need a robot spymaster.
+						if (needrole == "contact") return "To play on your own, be the contact, not the spymaster. Otherwise, find at least one other player.";
+						gs->usernames[ROBOT_SPYMASTER_UID] = ROBOT_SPYMASTER_DISPLAYNAME;
+						agents = ({ROBOT_SPYMASTER_UID});
+						gs->codenames[uid] = ROBOT_SPYMASTER_CODENAME;
+						//Automatically publish a random paint.
+						mapping paint = random_paint(random(3) + 3);
+						gs->published_paints[ROBOT_SPYMASTER_UID] = ({
+							"🤖 " + ROBOT_SPYMASTER_CODENAME,
+							paint->definition,
+							sprintf("The color published by %s (robot spymaster)", ROBOT_SPYMASTER_DISPLAYNAME),
+						});
+						gs->robot_spymaster_paint = paint->parts;
+					}
 					gs->roles[uid = random(agents)] = needrole;
 				}
 				gs[needrole] = uid; //gs->spymaster is the UID of the spymaster
@@ -1217,6 +1239,7 @@ mapping random_paint(int|void parts) {
 	mapping ret = fresh_paint("Standard Beige", STANDARD_BASE);
 	m_delete(ret, "blobs"); //Irrelevant here, cut things down a bit
 	ret->description = "Standard Beige";
+	ret->parts = ({ });
 	for (int p = 0; p < parts; ++p) {
 		string color = random(allcolors);
 		int strength = 1 + random(3);
@@ -1228,8 +1251,10 @@ mapping random_paint(int|void parts) {
 			strength = 1;
 		}
 		popularity[color] += strength;
-		for (int i = 0; i < strength; ++i)
+		for (int i = 0; i < strength; ++i) {
 			ret->definition = mix(ret->definition, PIGMENTS[color]);
+			ret->parts += ({color});
+		}
 		ret->description += " + " + color + " (" + STRENGTHS[strength - 1] + ")";
 	}
 	return ret;
