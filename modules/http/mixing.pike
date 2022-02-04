@@ -534,7 +534,7 @@ constant STRENGTHS = ({"spot", "spoonful", "splash"});
 //In solo play, you (the contact) will be sent a message from the robot spymaster.
 constant ROBOT_SPYMASTER_UID = 407665396; //The ID of AnAnonymousCheerer
 constant ROBOT_SPYMASTER_DISPLAYNAME = "StilleBot";
-constant ROBOT_SPYMASTER_CODENAME = "Agent Incarnation";
+constant ROBOT_SPYMASTER_CODENAME = "Incarnation";
 
 //Craft some spy-speak instructions. The game is not about hiding information in the
 //text, so we provide the text as a fully-randomized Mad Libs system.
