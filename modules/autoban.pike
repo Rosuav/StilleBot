@@ -1,4 +1,5 @@
 inherit command;
+inherit hook;
 constant featurename = "info";
 constant require_moderator = 1;
 constant docstring = #"
@@ -51,6 +52,7 @@ string process(object channel, object person, string param)
 	return sprintf("@$$: Done. Next time I see that, I'll automatically time out for %d seconds.", tm);
 }
 
+@hook_allmsgs:
 int message(object channel, mapping person, string msg)
 {
 	msg = lower_case(msg);
@@ -78,6 +80,6 @@ int message(object channel, mapping person, string msg)
 
 protected void create(string name)
 {
-	register_hook("all-msgs", message);
+	register_hook("all-msgs", Program.defined(this_program));
 	::create(name);
 }

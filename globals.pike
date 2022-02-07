@@ -8,13 +8,15 @@ protected void create(string n)
 	//coding them here.
 	if (!G->G->commands) G->G->commands=([]);
 	if (!G->G->builtins) G->G->builtins=([]);
-	if (!G->G->hooks) G->G->hooks=([]);
+	if (!G->G->hooks) G->G->hooks = ([]); //Deprecated
+	if (!G->G->eventhooks) G->G->eventhooks = ([]);
 	if (!G->G->bouncers) G->G->bouncers = ([]);
 	if (!G->G->template_defaults) G->G->template_defaults = ([]);
 	if (!G->G->http_endpoints) G->G->http_endpoints = ([]);
 	if (!G->G->websocket_types) G->G->websocket_types = ([]);
 	if (!G->G->websocket_groups) G->G->websocket_groups = ([]);
 	if (!G->G->enableable_modules) G->G->enableable_modules = ([]);
+	if (!all_constants()["create_hook"]) add_constant("create_hook", _HookID("")); //Don't recreate this one
 }
 
 //A sendable message could be a string (echo that string), a mapping with a "message"
@@ -298,6 +300,49 @@ mapping G_G_(string ... path)
 	return ret;
 }
 
+class _HookID(string event) {constant is_hook_annotation = 1;}
+
+class hook {
+	protected void create(string name) {
+		//1) Clear out any hooks for the same name
+		foreach (G->G->eventhooks;; mapping hooks) m_delete(hooks, name);
+		//2) Go through all annotations in this and add hooks as appropriate
+		foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
+			if (ann) foreach (indices(ann), mixed anno) {
+				if (objectp(anno) && anno->is_hook_annotation) {
+					if (anno->event == "") {//Create or replace a hook definition
+						if (!G->G->eventhooks[key]) {
+							add_constant("hook_" + key, _HookID(key));
+							G->G->eventhooks[key] = ([]);
+							//NOTE: The object annotated (available as this[key]) is
+							//not currently used in any way. At some point I'll figure
+							//out what's needed, and give it meaning, but until then,
+							//be prepared to rewrite any hook provider objects.
+						}
+						continue;
+					}
+					//Otherwise, it's registering a function for an existing hook.
+					if (!G->G->eventhooks[anno->event]) error("Unrecognized hook %s\n", anno->event);
+					G->G->eventhooks[anno->event][name] = this[key];
+				}
+			}
+		}
+	}
+
+	//Run all registered hook functions for the given event, in an arbitrary order
+	//Unlike hooks set up with the register_hook/runhooks globals, there is no concept
+	//of returning 1 to cancel the event, nor of deferring execution of the underlying
+	//action. Event notifications are fire-and-forget.
+	void event_notify(string event, mixed ... args) {
+		mapping hooks = G->G->eventhooks[event];
+		if (!hooks) error("Unrecognized hook %s\n", event);
+		foreach (hooks; string name; function func)
+			if (mixed ex = catch (func(@args)))
+				werror("Error in hook %s->%s: %s", name, event, describe_backtrace(ex));
+	}
+}
+
+//Deprecated way of implementing hooks. Is buggy in a number of ways. Use "inherit hook" instead (see above).
 //To deregister a hook: register_hook("...event...", Program.defined(this_program));
 void register_hook(string event, function|string handler)
 {

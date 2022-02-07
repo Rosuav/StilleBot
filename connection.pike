@@ -1,3 +1,5 @@
+inherit hook;
+
 object irc;
 string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
@@ -283,6 +285,9 @@ continue Concurrent.Future raidwatch(int channel, string raiddesc) {
 	Stdio.append_file("raidwatch.log", sprintf("[%s] %s: %s after %.3fs\n", ctime(time())[..<1], raiddesc, status, tm->get()));
 }
 
+@create_hook:
+constant allmsgs = ({"object channel", "mapping person", "string msg"});
+
 class channel_notif
 {
 	inherit Protocols.IRC.Channel;
@@ -328,6 +333,7 @@ class channel_notif
 		if (person->user) G_G_("participants", name[1..], person->user)->lastnotice = time();
 		person->vars = (["%s": msg, "{@mod}": person->badges->?_mod ? "1" : "0"]);
 		runhooks("all-msgs", 0, this, person, msg);
+		event_notify("allmsgs", this, person, msg);
 		trigger_special("!trigger", person, person->vars);
 		[command_handler cmd, string param] = locate_command(person, msg);
 		int offset = sizeof(msg) - sizeof(param);
@@ -1105,8 +1111,9 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 	sock->onclose = ws_close;
 }
 
-protected void create()
+protected void create(string name)
 {
+	::create(name);
 	if (!G->G->channelcolor) G->G->channelcolor = ([]);
 	if (!G->G->cooldown_timeout) G->G->cooldown_timeout = ([]);
 	if (!G->G->http_sessions) {
