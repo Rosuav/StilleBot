@@ -298,16 +298,17 @@ mapping G_G_(string ... path)
 	return ret;
 }
 
-void register_hook(string event, function handler)
+//To deregister a hook: register_hook("...event...", Program.defined(this_program));
+void register_hook(string event, function|string handler)
 {
-	string origin = Program.defined(function_program(handler));
+	string origin = functionp(handler) ? Program.defined(function_program(handler)) : handler;
 	//Trim out any hooks for this event that were defined in the same class
 	//"Same class" is identified by its textual origin, rather than the actual
 	//identity of the program, such that a reloaded/updated version of a class
 	//counts as the same one as before.
 	G->G->hooks[event] = filter(G->G->hooks[event] || ({ }),
 		lambda(array(string|function) f) {return f[0] != origin;}
-	) + ({({origin, handler})}) * !!handler;
+	) + ({({origin, handler})}) * functionp(handler);
 }
 
 int runhooks(string event, string skip, mixed ... args)
