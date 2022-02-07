@@ -4,18 +4,9 @@
 protected void create(string n)
 {
 	foreach (indices(this),string f) if (f!="create" && f[0]!='_') add_constant(f,this[f]);
-	//TODO: Have some way to 'declare' these down below, rather than
-	//coding them here.
-	if (!G->G->commands) G->G->commands=([]);
-	if (!G->G->builtins) G->G->builtins=([]);
-	if (!G->G->hooks) G->G->hooks = ([]); //Deprecated
-	if (!G->G->eventhooks) G->G->eventhooks = ([]);
-	if (!G->G->bouncers) G->G->bouncers = ([]);
-	if (!G->G->template_defaults) G->G->template_defaults = ([]);
-	if (!G->G->http_endpoints) G->G->http_endpoints = ([]);
-	if (!G->G->websocket_types) G->G->websocket_types = ([]);
-	if (!G->G->websocket_groups) G->G->websocket_groups = ([]);
-	if (!G->G->enableable_modules) G->G->enableable_modules = ([]);
+	foreach (Program.annotations(this_program); string anno;)
+		if (stringp(anno) && sscanf(anno, "G->G->%s", string gl) && gl)
+			if (!G->G[gl]) G->G[gl] = ([]);
 	if (!all_constants()["create_hook"]) add_constant("create_hook", _HookID("")); //Don't recreate this one
 }
 
@@ -40,6 +31,7 @@ Available to: %s
 %s
 ";
 
+@"G->G->commands";
 class command
 {
 	constant require_moderator = 0; //(deprecated) Set to 1 if the command is mods-only (equivalent to access="mod")
@@ -207,6 +199,7 @@ class task_sleep(int|float delay) {
 }
 
 //Some commands are available for echocommands to call on.
+@"G->G->builtins";
 class builtin_command {
 	inherit command;
 	constant command_description = "Duplicate, replace, or adjust the normal handling of the !<> command";
@@ -302,6 +295,7 @@ mapping G_G_(string ... path)
 
 class _HookID(string event) {constant is_hook_annotation = 1;}
 
+@"G->G->eventhooks";
 class hook {
 	protected void create(string name) {
 		//1) Clear out any hooks for the same name
@@ -344,6 +338,7 @@ class hook {
 
 //Deprecated way of implementing hooks. Is buggy in a number of ways. Use "inherit hook" instead (see above).
 //To deregister a hook: register_hook("...event...", Program.defined(this_program));
+@"G->G->hooks";
 void register_hook(string event, function|string handler)
 {
 	string origin = functionp(handler) ? Program.defined(function_program(handler)) : handler;
@@ -374,10 +369,8 @@ if (function f = bounce(this_function)) return f(...my args...);
 If the code has been updated since the callback was triggered, it'll give back
 the new function. Functions are identified by their %O descriptions.
 */
-void register_bouncer(function f)
-{
-	G->G->bouncers[sprintf("%O", f)] = f;
-}
+@"G->G->bouncers";
+void register_bouncer(function f) {G->G->bouncers[sprintf("%O", f)] = f;}
 function|void bounce(function f)
 {
 	function current = G->G->bouncers[sprintf("%O", f)];
@@ -385,6 +378,7 @@ function|void bounce(function f)
 	return UNDEFINED;
 }
 
+@"G->G->enableable_modules";
 class enableable_module {
 	constant ENABLEABLE_FEATURES = ([]); //Map keywords to mappings containing descriptions and other info
 	void enable_feature(object channel, string kwd, int state) { } //Enable/disable the given feature or reset it to default
@@ -398,6 +392,7 @@ class enableable_module {
 	}
 }
 
+@"G->G->http_endpoints";
 class http_endpoint
 {
 	//Set to an sscanf pattern to handle multiple request URIs. Otherwise will handle just "/myname".
@@ -442,6 +437,7 @@ array(function|array) find_http_handler(string not_query) {
 	return ({0, ({ })});
 }
 
+@"G->G->websocket_types"; @"G->G->websocket_groups";
 class websocket_handler
 {
 	mapping(string|int:array(object)) websocket_groups;
@@ -686,6 +682,7 @@ class Lexer
 	}
 }
 
+@"G->G->template_defaults";
 mapping(string:mixed) render_template(string template, mapping(string:string|function(string|void:string)|mapping) replacements)
 {
 	string content;
