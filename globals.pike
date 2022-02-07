@@ -295,7 +295,7 @@ mapping G_G_(string ... path)
 
 class _HookID(string event) {constant is_hook_annotation = 1;}
 
-@"G->G->eventhooks";
+@"G->G->eventhooks"; //Unfortunate naming, since eventhook_types is completely different. Maybe when G->G->hooks is removed, rename this to that??
 class hook {
 	protected void create(string name) {
 		//1) Clear out any hooks for the same name
