@@ -224,7 +224,7 @@ void points_redeemed(string chan, mapping data, int|void removal)
 {
 	//write("POINTS %s ON %O: %O\n", removal ? "REFUNDED" : "REDEEMED", chan, data);
 	string token = persist_status->path("bcaster_token")[chan];
-	mapping cfg = persist_config->path("channels", chan);
+	mapping cfg = persist_config["channels"][chan]; if (!cfg) return;
 	update_ticket_count(cfg, data, removal);
 
 	if (mapping dyn = !removal && cfg->dynamic_rewards && cfg->dynamic_rewards[data->reward->id]) {
@@ -441,7 +441,7 @@ continue mapping|Concurrent.Future get_chan_state(object channel, string grp)
 
 mapping(string:mixed) autoclose = ([]);
 void open_close(string chan, int broadcaster_id, int want_open) {
-	mapping cfg = persist_config->path("channels", chan);
+	mapping cfg = persist_config["channels"][chan] || ([]);
 	if (!cfg->giveaway) return; //No rewards, nothing to open/close
 	mapping status = persist_status->path("giveaways", chan);
 	string token = persist_status->path("bcaster_token")[chan];
@@ -493,7 +493,7 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	string chan = channel->name[1..];
-	mapping cfg = persist_config->path("channels", chan);
+	mapping cfg = persist_config["channels"][chan] || ([]);
 	if (!cfg->giveaway) return 0; //No rewards, nothing to activate or anything
 	int broadcaster_id = yield(get_user_id(chan));
 	switch (msg->action) {

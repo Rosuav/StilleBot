@@ -100,7 +100,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!FEATUREDESC[msg->id]) return;
 	if (msg->id == "allcmds") {
 		//The allcmds setting goes into global settings, not features
-		persist_config->path("channels", chan)->allcmds = msg->state == "active";
+		persist_config["channels"][chan]->allcmds = msg->state == "active";
 	}
 	else switch (msg->state) {
 		case "active": feat[msg->id] = 1; break;
