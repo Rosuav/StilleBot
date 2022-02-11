@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit hook;
 
 //Markdown; emote names will be replaced with their emotes, but will
 //be greyed out if not available.
@@ -295,6 +296,7 @@ void websocket_cmd_echolocate(mapping(string:mixed) conn, mapping(string:mixed) 
 	]));
 }
 
+@hook_allmsgs:
 int message(object channel, mapping person, string msg) {
 	if (!person->uid || !person->emotes || (!sizeof(person->emotes) && channel->name != echolocation_channel)) return 0;
 	mapping v2 = G->G->emotes_v2;
@@ -351,5 +353,5 @@ protected void create(string name) {
 	mapping v2 = filter(emoteids, stringp);
 	G->G->emotes_v2 = mkmapping(values(v2), indices(v2));
 	G->G->IRCClientMessageSender = IRCClient;
-	register_hook("all-msgs", message);
+	register_hook("all-msgs", Program.defined(this_program));
 }

@@ -1,4 +1,5 @@
 inherit command;
+inherit hook;
 constant hidden_command = 1;
 constant require_moderator = 1;
 constant active_channels = ({"rosuav"});
@@ -108,6 +109,7 @@ echoable_message process(object channel, object person, string param)
 	}
 }
 
+@hook_allmsgs:
 int message(object channel, mapping person, string msg)
 {
 	if (channel->name != G->G->tts_channel || !G->G->tts_queue) return 0;
@@ -136,7 +138,7 @@ int purge(object channel, object person, string target)
 protected void create(string name)
 {
 	G->G->tts_suppress = (<>);
-	register_hook("all-msgs", message);
+	register_hook("all-msgs", Program.defined(this_program));
 	register_hook("delete-msg", delmsg);
 	register_hook("delete-msgs", purge);
 	::create(name);

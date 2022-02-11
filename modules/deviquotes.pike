@@ -1,9 +1,11 @@
 //Monitor DeviCat's channel for quote commands and update a JSON file in the web site repo
 //Note that the actual Markdown files are not edited by this.
+inherit hook;
 
 constant CACHE_FILE = "../devicatoutlet.github.io/_quotes.json";
 mapping json;
 
+@hook_allmsgs:
 int message(object channel, mapping person, string msg)
 {
 	if (channel->name != "#devicat" || person->user != "candicat") return 0;
@@ -28,5 +30,6 @@ int message(object channel, mapping person, string msg)
 protected void create(string name)
 {
 	catch {json = Standards.JSON.decode_utf8(Stdio.read_file(CACHE_FILE));};
-	register_hook("all-msgs", mappingp(json) && message);
+	if (json) ::create(name); //Hack: Don't initialize self if no JSON file
+	register_hook("all-msgs", Program.defined(this_program));
 }
