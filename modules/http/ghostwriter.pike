@@ -166,7 +166,7 @@ continue Concurrent.Future recalculate_status(string chanid) {
 
 	[st->statustype, st->status] = low_recalculate_status(st);
 	send_updates_all(chanid, st);
-	if (suppress_autohosting[chanid] > time()) return 0;
+	if (suppress_autohosting[chanid] > time()) return 0; //May need to change this to "don't automatically change goal until"
 	array targets = config->channels || ({ });
 	m_delete(st, "hostingid");
 	//Clean up junk data
@@ -226,6 +226,7 @@ continue Concurrent.Future recalculate_status(string chanid) {
 			expected = live[0]->user_login;
 		}
 	}
+	st->goal = expected;
 	if (expected == st->hosting) return 0; //Including if they're both 0 (want no host, currently not hosting)
 	//Currently we always take the first on the list. This may change in the future.
 	write("GHOSTWRITER: Connect %O %O, send %O\n", chanid, config->chan, msg);
@@ -238,7 +239,6 @@ continue Concurrent.Future recalculate_status(string chanid) {
 		irc = yield(connect(chanid, config->chan));
 	}
 	irc->send_message("#" + config->chan, msg);
-	st->expected_host_target = expected;
 	//If the host succeeds, there should be a HOSTTARGET message shortly.
 }
 
@@ -260,8 +260,7 @@ void host_changed(string chanid, string target, string viewers) {
 	mapping st = chanstate[chanid];
 	if (st->hosting == target) return; //eg after reconnecting to IRC
 	st->hosting = target;
-	if (target == st->expected_host_target) m_delete(st, "expected_host_target");
-	else if (target) pause_autohost(chanid, time() + 60); //If you manually host, disable autohost for one minute
+	if (target) {st->goal = target; pause_autohost(chanid, time() + 60);} //If you manually host, disable autohost for one minute
 	spawn_task(recalculate_status(chanid));
 	//TODO: Purge the hook channel list of any that we don't need (those for whom autohosts_this[id] is empty or absent)
 }
@@ -304,14 +303,14 @@ class IRCClient
 	void connection_lost() {close();}
 }
 
-continue Concurrent.Future connect(string chanid, string chan) {
+continue Concurrent.Future connect(string chanid, string chan, int|void force) {
 	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) error("No auth\n");
 	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
 	if (object irc = G->G->ghostwriterirc[chanid]) {
-		//TODO: Make sure it's actually still connected
-		write("Already connected to %O/%O, disconnecting\n", chanid, chan);
-		/**/if (1) catch {irc->close();}; else
-		return irc;
+		write("Already connected to %O/%O, %s\n", chanid, chan, force ? "disconnecting" : "retaining");
+		if (force) catch {irc->close();};
+		//TODO: Make sure it's actually still connected (send "/help help", if no "Usage:" line in 30s, reconnect)
+		else return irc;
 	}
 	//In case we're hammering the server, delay spawns.
 	float delay = MINIMUM_CONNECTION_SPACING - last_connection_started->peek();
@@ -356,7 +355,7 @@ continue Concurrent.Future|mapping get_state(string group) {
 
 continue void force_check(string chanid) {
 	string chan = yield(get_user_info(chanid))->login;
-	mapping irc = yield(connect(chanid, chan)); //We don't actually need the IRC object here, but forcing one to exist guarantees some checks. Avoid bug by putting it in a variable.
+	mapping irc = yield(connect(chanid, chan, 1)); //We don't actually need the IRC object here, but forcing one to exist guarantees some checks. Avoid bug by putting it in a variable.
 	yield(recalculate_status(chanid));
 }
 
@@ -548,7 +547,7 @@ void start_connections(mapping configs) {
 		if (!(int)chanid) {spawn_task(migrate(chanid)); continue;}
 		if (!info->chan) {spawn_task(no_name(chanid)); continue;}
 		if (!info->?channels || !sizeof(info->channels)) continue;
-		spawn_task(connect(chanid, info->chan));
+		spawn_task(connect(chanid, info->chan, 1));
 		has_channel(chanid, info->channels->id[*]);
 		if (int t = chanstate[chanid]->?next_scheduled_check) {
 			t -= time();
