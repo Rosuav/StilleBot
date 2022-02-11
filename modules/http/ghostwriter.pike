@@ -262,9 +262,9 @@ void pause_autohost(string chanid, int target) {
 }
 
 void host_changed(string chanid, string target, string viewers) {
-	write("GHOSTWRITER: host_changed(%O, %O, %O)\n", chanid, target, viewers);
 	//Note that viewers may be "-" if we're already hosting, so don't depend on it
 	mapping st = chanstate[chanid];
+	write("GHOSTWRITER: host_changed(%O, %O, %O), hosting %O\n", chanid, target, viewers, st->hosting);
 	if (st->hosting == target) return; //eg after reconnecting to IRC
 	st->hosting = target;
 	if (target) {st->goal = target; pause_autohost(chanid, time() + 60);} //If you manually host, disable autohost for one minute
