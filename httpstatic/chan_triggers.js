@@ -6,7 +6,7 @@ export {sockmsg_validated};
 export const render_parent = DOM("#triggers tbody");
 export const render_item = render_command;
 export function render_empty() {
-	render_parent.appendChild(TR([ //TODO: Ensure that this will be removed if we get a single-item render
+	return render_parent.appendChild(TR([
 		TD({colSpan: 3}, "No triggers defined. Create one!"),
 	]));
 }

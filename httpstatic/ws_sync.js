@@ -8,6 +8,7 @@ let pending_message = null; //Allow at most one message to be queued on startup 
 let prefs = { }; //Updated from the server as needed
 const prefs_hooks = [];
 let reconnect_delay = 250;
+let empty_desc = null; //If present, will be removed upon non-empty render
 export function connect(group, handler)
 {
 	if (!handler) handler = default_handler;
@@ -34,22 +35,27 @@ export function connect(group, handler)
 		if (data.cmd === "update") {
 			if (handler.render_item && handler.render_parent) {
 				//If partial rendering is possible, we need render_item() and render_parent, and
-				//optionally render_empty() to special-case the "no items" display.
+				//optionally render_empty() to special-case the "no items" display. If render_empty
+				//returns a DOM element, that element will be destroyed upon any future non-empty
+				//render; otherwise, you are responsible to "un-empty" the display as appropriate.
+				//Note that something rendered on empty may or may not be a child of render_parent.
 				if (data.id) {
 					const obj = handler.render_parent.querySelector(`[data-id="${data.id}"]`);
 					const newobj = data.data && handler.render_item(data.data, obj);
+					if (newobj && empty_desc) {empty_desc.replaceWith(); empty_desc = null;}
 					if (obj && newobj) obj.replaceWith(newobj); //They might be the same
 					else if (newobj) handler.render_parent.appendChild(newobj);
 					else if (obj) {
 						//Delete this item. That might leave the render_parent empty.
 						obj.replaceWith();
 						if (handler.render_empty && !handler.render_parent.querySelectorAll("[data-id]").length)
-							handler.render_empty();
+							empty_desc = handler.render_empty();
 					}
 					//else it's currently absent, needs to be absent, nothing to do
 				} else if (data.items) {
 					set_content(handler.render_parent, data.items.map(i => handler.render_item(i)));
-					if (!data.items.length && handler.render_empty) handler.render_empty();
+					if (!data.items.length && handler.render_empty) empty_desc = handler.render_empty();
+					if (data.items.length && empty_desc) {empty_desc.replaceWith(); empty_desc = null;}
 				}
 			}
 			//Note that render() is called *after* render_item in all cases.

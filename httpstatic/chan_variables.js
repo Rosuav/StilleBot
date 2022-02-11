@@ -23,7 +23,7 @@ export function render_item(item) {
 	]);
 }
 export function render_empty() {
-	render_parent.appendChild(TR([
+	return render_parent.appendChild(TR([
 		TD({colSpan: 4}, "No variables found."),
 	]));
 }

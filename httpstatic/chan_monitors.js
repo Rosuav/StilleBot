@@ -53,7 +53,7 @@ export function render_item(msg, obj) {
 	return el;
 }
 export function render_empty() {
-	render_parent.appendChild(TR([
+	return render_parent.appendChild(TR([
 		TD({colSpan: 4}, "No monitors defined. Create one!"),
 	]));
 }

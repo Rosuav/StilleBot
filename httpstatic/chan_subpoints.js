@@ -23,7 +23,7 @@ export function render_item(msg, obj) {
 	]);
 }
 export function render_empty() {
-	render_parent.appendChild(TR([
+	return render_parent.appendChild(TR([
 		TD({colSpan: 6}, "No subpoint trackers active. Create one!"),
 	]));
 }
