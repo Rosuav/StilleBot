@@ -263,13 +263,6 @@ void pause_autohost(string chanid, int target) {
 
 void host_changed(string chanid, string target, string viewers) {
 	write("GHOSTWRITER: host_changed(%O, %O, %O)\n", chanid, target, viewers);
-	if (!(int)chanid) {
-		//Previously this accepted channel names. In case we get old data,
-		//look up the channel ID from the name and try again. (Remove this
-		//code when that's not going to be a problem any more.)
-		get_user_id(chanid)->then() {host_changed((string)__ARGS__[0], target, viewers);};
-		return;
-	}
 	//Note that viewers may be "-" if we're already hosting, so don't depend on it
 	mapping st = chanstate[chanid];
 	if (st->hosting == target) return; //eg after reconnecting to IRC
