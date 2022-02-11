@@ -282,6 +282,8 @@ continue Concurrent.Future raidwatch(int channel, string raiddesc) {
 
 @create_hook:
 constant allmsgs = ({"object channel", "mapping person", "string msg"});
+@create_hook:
+constant subscription = ({"object channel", "string type", "mapping person", "string tier", "int qty", "mapping extra"});
 
 class channel_notif
 {
@@ -822,6 +824,7 @@ class channel_notif
 						//There's also msg_param_multimonth_tenure - what happens when they get announced? Does duration remain and tenure count up?
 					]));
 					runhooks("subscription", 0, this, "sub", person, params->msg_param_sub_plan[0..0], 1, params);
+					event_notify("subscription", this, "sub", person, params->msg_param_sub_plan[0..0], 1, params);
 					break;
 				case "resub": trigger_special("!resub", person, ([
 					"{tier}": params->msg_param_sub_plan[0..0],
@@ -830,6 +833,7 @@ class channel_notif
 					"{multimonth}": params->msg_param_multimonth_duration || "1", //Ditto re tenure
 				]));
 				runhooks("subscription", 0, this, "resub", person, params->msg_param_sub_plan[0..0], 1, params);
+				event_notify("subscription", this, "resub", person, params->msg_param_sub_plan[0..0], 1, params);
 				Stdio.append_file("subs.log", sprintf("\n%sDEBUG RESUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
 				break;
 				case "giftpaidupgrade": break; //Pledging to continue a subscription (first introduced for the Subtember special in 2018, and undocumented)
@@ -863,6 +867,7 @@ class channel_notif
 					//msg_param_sender_count (the total gifts this person has given in this channel)
 					//Remember that all params are strings, even those that look like numbers
 					runhooks("subscription", 0, this, "subgift", person, params->msg_param_sub_plan[0..0], 1, params);
+					event_notify("subscription", this, "subgift", person, params->msg_param_sub_plan[0..0], 1, params);
 					break;
 				}
 				case "submysterygift":
@@ -880,6 +885,8 @@ class channel_notif
 						"{multimonth}": params->msg_param_gift_months || "1",
 					]));
 					runhooks("subscription", 0, this, "subbomb", person, params->msg_param_sub_plan[0..0],
+						(int)params->msg_param_mass_gift_count, params);
+					event_notify("subscription", this, "subbomb", person, params->msg_param_sub_plan[0..0],
 						(int)params->msg_param_mass_gift_count, params);
 					break;
 				}

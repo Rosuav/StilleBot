@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit hook;
 constant markdown = #"# Leaderboards and VIPs
 
 NOTE: AnAnonymousGifter may show up in the subgifting leaderboard for
@@ -182,6 +183,7 @@ mapping ignore_indiv_timeout = ([]);
 //Note that slabs of this don't depend on the HTTP interface, but for simplicity,
 //this is in modules/http. If you're not using StilleBot's web interface, this may
 //need to have some things stubbed out.
+@hook_subscription:
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type != "subgift" && type != "subbomb") return 0; 
 	if (!channel->config->tracksubgifts) return 0;
@@ -216,7 +218,7 @@ int cheer(object channel, mapping person, int bits, mapping extra) {
 
 protected void create(string name)
 {
-	register_hook("subscription", subscription);
+	register_hook("subscription", Program.defined(this_program));
 	register_hook("cheer", cheer);
 	::create(name);
 }

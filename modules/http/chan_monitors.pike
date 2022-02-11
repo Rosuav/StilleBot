@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit hook;
 
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
 constant css_attributes = "font fontweight fontstyle fontsize color css whitespace previewbg barcolor "
@@ -118,6 +119,7 @@ void websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	channel->set_variable(msg->varname, (string)(int)msg->val, "set");
 }
 
+@hook_allmsgs:
 int message(object channel, mapping person, string msg)
 {
 	mapping mon = channel->config->monitors;
@@ -130,6 +132,7 @@ int message(object channel, mapping person, string msg)
 	if (person->bits) autoadvance(channel, person, "bit", person->bits);
 }
 
+@hook_subscription:
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	autoadvance(channel, person, "sub_t" + tier, qty);
 }
@@ -160,7 +163,7 @@ void autoadvance(object channel, mapping person, string key, int weight) {
 
 protected void create(string name)
 {
-	register_hook("all-msgs", message);
-	register_hook("subscription", subscription);
+	register_hook("all-msgs", Program.defined(this_program));
+	register_hook("subscription", Program.defined(this_program));
 	::create(name);
 }
