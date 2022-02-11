@@ -179,7 +179,10 @@ continue Concurrent.Future recalculate_status(string chanid) {
 
 	[st->statustype, st->status] = low_recalculate_status(st);
 	send_updates_all(chanid, st);
-	if (suppress_autohosting[chanid] > time()) return 0; //May need to change this to "don't automatically change goal until"
+	if (suppress_autohosting[chanid] > time()) {
+		write("GHOSTWRITER: Channel %O retaining goal %O for %d sec\n", config->chan, st->goal, suppress_autohosting[chanid] - time());
+		return 0;
+	}
 	array targets = config->channels || ({ });
 	m_delete(st, "hostingid");
 	//Clean up junk data
