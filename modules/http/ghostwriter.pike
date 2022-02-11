@@ -121,6 +121,19 @@ void schedule_recalculation(string chanid, array(int) targets) {
 	schedule_check_callouts[chanid] = call_out(scheduled_recalculation, until, chanid);
 }
 
+//Watch a channel until the goal is reached
+continue Concurrent.Future ensure_goal_reached(string chanid) {
+	for (int i = 0; i < 5; ++i) {
+		mixed _ = yield(task_sleep(30));
+		mapping st = chanstate[chanid];
+		write("GHOSTWRITER RUFUS: %O %O %O\n", st->goal, st->hosting, st->hostingid);
+		if (st->goal == st->hosting) return 0;
+	}
+	//Welp. Been a couple mins, haven't found our Goal yet.
+	write("GHOSTWRITER RUFUS: Recalculating\n");
+	return recalculate_status(chanid);
+}
+
 array(string) low_recalculate_status(mapping st) {
 	//1) Being live trumps all.
 	if (st->uptime) return ({"live", "Now Live"});
@@ -230,6 +243,7 @@ continue Concurrent.Future recalculate_status(string chanid) {
 	if (expected == st->hosting) return 0; //Including if they're both 0 (want no host, currently not hosting)
 	//Currently we always take the first on the list. This may change in the future.
 	write("GHOSTWRITER: Connect %O %O, send %O\n", chanid, config->chan, msg);
+	spawn_task(ensure_goal_reached(chanid));
 	object irc = yield(connect(chanid, config->chan)); //Make sure we're connected. (Mutually recursive via a long chain.)
 	if (!irc) {
 		//Wut. I still have no idea how this can ever happen. When can connect() yield zero??
