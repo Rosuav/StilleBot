@@ -335,7 +335,9 @@ continue Concurrent.Future connect(string chanid, string chan, int|void force) {
 			}
 			Concurrent.Promise prom = irc->options->promise = Concurrent.Promise();
 			irc->send_message("#" + chan, "/help help");
-			return prom->future();
+			catch {return prom->future()->timeout(10);};
+			//If anything goes wrong - including a 10s timeout - just reconnect.
+			catch {irc->close();};
 		}
 	}
 	//In case we're hammering the server, delay spawns.
