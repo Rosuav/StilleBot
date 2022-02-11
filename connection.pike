@@ -284,6 +284,8 @@ continue Concurrent.Future raidwatch(int channel, string raiddesc) {
 constant allmsgs = ({"object channel", "mapping person", "string msg"});
 @create_hook:
 constant subscription = ({"object channel", "string type", "mapping person", "string tier", "int qty", "mapping extra"});
+@create_hook:
+constant cheer = ({"object channel", "mapping person", "int bits", "mapping extra"});
 
 class channel_notif
 {
@@ -931,6 +933,7 @@ class channel_notif
 				log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
 				if (params->bits && (int)params->bits) {
 					runhooks("cheer", 0, this, person, (int)params->bits, params);
+					event_notify("cheer", this, person, (int)params->bits, params);
 					trigger_special("!cheer", person, (["{bits}": params->bits]));
 				}
 				break;

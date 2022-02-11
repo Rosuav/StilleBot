@@ -211,6 +211,7 @@ int subscription(object channel, string type, mapping person, string tier, int q
 	send_updates_all("control" + channel->name);
 }
 
+@hook_cheer:
 int cheer(object channel, mapping person, int bits, mapping extra) {
 	if (!channel->config->tracksubgifts) return 0;
 	call_out(spawn_task, 1, force_recalc(channel->name[1..], 1)); //Wait a second, then do a fast update (is that enough time?)
@@ -219,6 +220,6 @@ int cheer(object channel, mapping person, int bits, mapping extra) {
 protected void create(string name)
 {
 	register_hook("subscription", Program.defined(this_program));
-	register_hook("cheer", cheer);
+	register_hook("cheer", Program.defined(this_program));
 	::create(name);
 }
