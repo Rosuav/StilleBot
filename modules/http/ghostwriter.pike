@@ -307,6 +307,10 @@ class IRCClient
 			int target = time() + 30*60;
 			G->G->websocket_types->ghostwriter->pause_autohost(options->chanid, target - target % 1800 + 3);
 		}
+		if (type == "NOTICE" && message == "Usage: \"/help\" - Lists the commands available to you in this room.") {
+			//The "/help help" command is sent when we need to poke the connection.
+			if (object p = m_delete(options, "promise")) p->success(this);
+		}
 	}
 	void close() {
 		if (object p = m_delete(options, "promise")) p->failure(({"IRC conn closed during initialization\n" + log*"\n", backtrace()}));
@@ -323,8 +327,16 @@ continue Concurrent.Future connect(string chanid, string chan, int|void force) {
 	if (object irc = G->G->ghostwriterirc[chanid]) {
 		write("Already connected to %O/%O, %s\n", chanid, chan, force ? "disconnecting" : "retaining");
 		if (force) catch {irc->close();};
-		//TODO: Make sure it's actually still connected (send "/help help", if no "Usage:" line in 30s, reconnect)
-		else return irc;
+		else {
+			//Make sure it's actually still connected
+			if (irc->options->promise) {
+				write("GHOSTWRITER ENTANGLEMENT %O %O %O\n", chanid, chan, force);
+				return irc->options->promise->future();
+			}
+			Concurrent.Promise prom = irc->options->promise = Concurrent.Promise();
+			irc->send_message("#" + chan, "/help help");
+			return prom->future();
+		}
 	}
 	//In case we're hammering the server, delay spawns.
 	float delay = MINIMUM_CONNECTION_SPACING - last_connection_started->peek();
