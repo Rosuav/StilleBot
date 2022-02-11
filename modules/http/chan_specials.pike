@@ -37,7 +37,7 @@ constant ENABLEABLE_FEATURES = ([
 		"special": "!raided",
 		"fragment": "#!raided/",
 		"response": ([
-			"delay": 5, //TODO: See how long people tend to be online for after raiding
+			"delay": 30,
 			"message": ([
 				"builtin": "nowlive",
 				"builtin_param": "$$",
@@ -49,7 +49,7 @@ constant ENABLEABLE_FEATURES = ([
 					"message": "",
 					"otherwise": ([
 						"dest": "/w",
-						"message": "SirShield twitchRaid Hi! It looks like you're possibly still broadcasting. If that's not your intention, it may be worth checking your streaming software (eg OBS, StreamLabs Desktop, Xsplit, etc) to see if it has shut down. SirShield twitchRaid ",
+						"message": "SirShield twitchRaid Hi! It looks like you're possibly still broadcasting. If that's not your intention, it may be worth checking your streaming software (eg OBS, StreamLabs Desktop, Xsplit, etc) to see if it has shut down. SirShield twitchRaid This is an automated message from the StilleBot Raid Shield. Feel free to reply to this whisper with any questions.",
 						"target": "$$",
 					]),
 				]),
