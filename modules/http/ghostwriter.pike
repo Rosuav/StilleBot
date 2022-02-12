@@ -321,6 +321,7 @@ continue Concurrent.Future connect(string chanid, string chan, int|void force) {
 	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) error("No auth\n");
 	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
 	if (object irc = G->G->ghostwriterirc[chanid]) {
+		force = 1; //Reinstate the hack: always reconnect. I really do not understand what's happening here.
 		write("Already connected to %O/%O, %s\n", chanid, chan, force ? "disconnecting" : "retaining");
 		if (force) catch {irc->close();};
 		else {

@@ -108,7 +108,7 @@ void reconnect()
 				ch->name = "#" + chan;
 				irc->channels["#" + chan] = ch;
 			}
-			else call_out(irc->join_channel, delay * 0.25, "#" + chan);
+			else call_out(irc->join_channel, delay * 0.5, "#" + chan);
 		}
 	})
 	{
