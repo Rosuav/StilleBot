@@ -73,6 +73,10 @@ mapping(string:multiset(string)) autohosts_this = ([]);
 /* TODO: Allow host overriding if a higher-priority target goes live
   - This would add an event while Hosting: "stream online (self or any higher target)"
   - Would also change the logic in recalculate_status to check even if hosting
+
+Could the IRC connections be restructured to scale better? One connection, logged in as me,
+that listens to everything; then every time a change is done, log in, do it, log out. That
+would mean that connect() would need a command to send, and it'd be completely asynchronous.
 */
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
