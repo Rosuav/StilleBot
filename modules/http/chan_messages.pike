@@ -82,7 +82,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (string err = ::websocket_validate(conn, msg)) return err;
 	sscanf(msg->group, "%s#%s", string uid, string chan);
 	if (uid == "-1") return !conn->is_mod && "Bad group ID"; //UID -1 is a pseudo-user for all mods to share
-	if (conn->session->user->id != uid) return "Bad group ID"; //Shouldn't happen, but maybe if you refresh the page after logging in as a different user???
+	if (conn->session->user->?id != uid) return "Bad group ID"; //Shouldn't happen, but maybe if you refresh the page after logging in as a different user???
 }
 
 mapping get_chan_state(object channel, string grp, string|void id) {
