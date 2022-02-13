@@ -492,25 +492,6 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	};
 }
 
-continue Concurrent.Future migrate(string channame) {
-	//Not sure why, but some names are getting into the configs.
-	werror("WARNING WARNING NON-ID IN CONFIG %O\n", channame);
-	int chanid = yield(get_user_id(channame));
-	mapping configs = persist_status->path("ghostwriter");
-	configs[(string)chanid] = m_delete(configs, channame);
-	persist_status->save();
-	werror("UPDATED TO ID %O\n", chanid);
-}
-
-continue Concurrent.Future no_name(string chanid) {
-	//Not sure why, but some names are getting into the configs.
-	werror("WARNING WARNING ID HAS NO NAME IN CONFIG %O\n", chanid);
-	string channame = yield(get_user_info(chanid))->login;
-	persist_status->path("ghostwriter", chanid)->chan = channame;
-	persist_status->save();
-	werror("UPDATED ID %O TO NAME %O\n", chanid, channame);
-}
-
 protected void create(string name) {
 	::create(name);
 	if (!G->G->ghostwriterirc) G->G->ghostwriterirc = ([]);
@@ -525,56 +506,11 @@ protected void create(string name) {
 	if (botnick) get_user_id(botnick)->then() {botid = (string)__ARGS__[0];}; //Cache the bot's user ID for the demo
 	mapping configs = persist_status->path("ghostwriter");
 	write("Configs available for %O\n", mkmapping(indices(configs), values(configs)->chan));
-	if (mapping old = persist_config["ghostwriter"]) {
-		//Formerly, ghostwriter configs were git-managed and keyed by login.
-		//Now they are backed-up and keyed by ID.
-		//We want synchronous lookup of IDs, so if we can't, queue them and leave unmigrated data.
-		foreach (indices(old), string chan) {
-			if ((int)chan) {configs[chan] = m_delete(old, chan); continue;}
-			if (!G->G->user_info[chan]) {
-				//Don't know the ID. Look it up (for the cache), leave it unmigrated.
-				werror("WARNING: Unmigrated Ghostwriter configs for %O - update again to check\n", chan);
-				get_user_id(chan);
-				continue;
-			}
-			string chanid = (string)G->G->user_info[chan]->id;
-			if (configs[chanid] && sizeof(configs[chanid])) {
-				werror("WARNING: Unmerged Ghostwriter configs for %O and %O\n", chan, chanid);
-				continue;
-			}
-			configs[chanid] = m_delete(old, chan);
-			configs[chanid]->chan = chan;
-		}
-		if (!sizeof(old)) m_delete(persist_config, "ghostwriter");
-		else persist_config->save();
-		persist_status->save();
-	}
-	if (string data = Stdio.read_file("lastnightbackup.json")) {
-		write("RESTORING CONTENT\n");
-		foreach (Standards.JSON.decode_utf8(data)->ghostwriter; string chanid; mapping cfg) {
-			if (!sizeof(cfg)) continue;
-			if (!(int)chanid) {write("Non-integer key skipped: %O\n", chanid); continue;}
-			if (configs[chanid] && sizeof(configs[chanid])) {
-				if (!sizeof(configs[chanid]->channels || ({ })) && sizeof(cfg->channels || ({ }))) {
-					write("Merging in channels only: %O\n", chanid);
-					configs[chanid]->channels = cfg->channels;
-				}
-				write("Already has content, not merging: %O\n", chanid);
-				write("Have: %O\nRestore: %O\n", indices(configs[chanid]), indices(cfg));
-				continue;
-			}
-			configs[chanid] = cfg;
-			persist_status->save();
-			write("Restored from backup: %O\n", chanid);
-		}
-	}
 	call_out(start_connections, 4, configs); //Delay startup a bit to avoid connection conflicts and allow compilation errors to be seen
 }
 
 void start_connections(mapping configs) {
 	foreach (configs; string chanid; mapping info) {
-		if (!(int)chanid) {spawn_task(migrate(chanid)); continue;}
-		if (!info->chan) {spawn_task(no_name(chanid)); continue;}
 		if (!info->?channels || !sizeof(info->channels)) continue;
 		spawn_task(connect(chanid, info->chan, 1));
 		has_channel(chanid, info->channels->id[*]);
