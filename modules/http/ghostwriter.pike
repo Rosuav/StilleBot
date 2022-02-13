@@ -62,9 +62,6 @@ mapping(int:int) channel_seen_offline = ([]); //Note: Not maintained over code r
 mapping(string:mixed) schedule_check_callouts = ([]); //Cleared and rechecked over code reload
 mapping(string:int) suppress_autohosting = ([]); //If a broadcaster manually unhosts or rehosts, don't change hosting for a bit.
 string botid; //eg 49497888
-constant MINIMUM_CONNECTION_SPACING = 0.5; //Seconds between IRC connection attempts
-constant ADDITIONAL_CONNECTION_SPACING = 0.25; //Random additional seconds to add (linear within 0..this)
-System.Timer last_connection_started = System.Timer();
 
 //Mapping from target-stream-id to the channels that autohost it
 //(Doesn't need to be saved, can be calculated on code update)
@@ -73,10 +70,6 @@ mapping(string:multiset(string)) autohosts_this = ([]);
 /* TODO: Allow host overriding if a higher-priority target goes live
   - This would add an event while Hosting: "stream online (self or any higher target)"
   - Would also change the logic in recalculate_status to check even if hosting
-
-Could the IRC connections be restructured to scale better? One connection, logged in as me,
-that listens to everything; then every time a change is done, log in, do it, log out. That
-would mean that connect() would need a command to send, and it'd be completely asynchronous.
 */
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
@@ -123,19 +116,6 @@ void schedule_recalculation(string chanid, array(int) targets) {
 	if (mixed c = schedule_check_callouts[chanid]) remove_call_out(c);
 	st->next_scheduled_check = target;
 	schedule_check_callouts[chanid] = call_out(scheduled_recalculation, until, chanid);
-}
-
-//Watch a channel until the goal is reached
-continue Concurrent.Future ensure_goal_reached(string chanid) {
-	for (int i = 0; i < 5; ++i) {
-		mixed _ = yield(task_sleep(30));
-		mapping st = chanstate[chanid];
-		write("GHOSTWRITER RUFUS: %O %O %O\n", st->goal, st->hosting, st->hostingid);
-		if (st->goal == st->hosting) return 0;
-	}
-	//Welp. Been a couple mins, haven't found our Goal yet.
-	write("GHOSTWRITER RUFUS: Recalculating\n");
-	return recalculate_status(chanid);
 }
 
 array(string) low_recalculate_status(mapping st) {
@@ -250,17 +230,7 @@ continue Concurrent.Future recalculate_status(string chanid) {
 	if (expected == st->hosting) return 0; //Including if they're both 0 (want no host, currently not hosting)
 	//Currently we always take the first on the list. This may change in the future.
 	write("GHOSTWRITER: Connect %O %O, send %O\n", chanid, config->chan, msg);
-	spawn_task(ensure_goal_reached(chanid));
-	object irc = yield(connect(chanid, config->chan)); //Make sure we're connected. (Mutually recursive via a long chain.)
-	if (!irc) {
-		//Wut. I still have no idea how this can ever happen. When can connect() yield zero??
-		//One retry, then stop.
-		werror("GHOSTWRITER: Connect %O %O, retry, got irc %O\n", chanid, config->chan, irc);
-		mixed _ = yield(task_sleep(1));
-		irc = yield(connect(chanid, config->chan));
-	}
-	irc->send_message("#" + config->chan, msg);
-	//If the host succeeds, there should be a HOSTTARGET message shortly.
+	connect(chanid, config->chan, msg); //Connect and send message
 }
 
 void pause_autohost(string chanid, int target) {
@@ -282,38 +252,32 @@ void host_changed(string chanid, string target, string viewers) {
 class IRCClient
 {
 	inherit Protocols.IRC.Client;
-	array log = ({ });
-	void got_host(string message) {
+	multiset seenhosts = (<>);
+	void got_host(string chan, string message) {
+		seenhosts[chan] = 1;
 		sscanf(message, "%s %s", string target, string viewers);
 		if (target == "-") target = 0; //Not currently hosting
-		G->G->websocket_types->ghostwriter->host_changed(options->chanid, target, viewers);
-		if (object p = m_delete(options, "promise")) p->success(this);
+		G->G->websocket_types->ghostwriter->host_changed(options->chanids[chan], target, viewers);
 	}
-	void got_command(string ... args) {if (options->promise) log += ({args * ":"}); ::got_command(@args);}
 	void got_notify(string from, string type, string|void chan, string|void message, string ... extra) {
-		if (options->promise) log += ({message});
 		::got_notify(from, type, chan, message, @extra);
-		if (type == "HOSTTARGET") got_host(message);
+		chan -= "#";
+		if (type == "HOSTTARGET") got_host(chan, message);
 		//If you're not currently hosting, there is no HOSTTARGET on startup. Once we're
 		//confident that one isn't coming, notify that there is no host target.
-		if (type == "ROOMSTATE" && options->promise) got_host("- -");
+		if (type == "ROOMSTATE" && !seenhosts[chan]) got_host(chan, "- -");
 		if (type == "NOTICE" && sscanf(message, "%s has gone offline. Exiting host mode%s", string target, string dot) && dot == ".") {
-			mapping st = chanstate[options->chanid];
+			mapping st = chanstate[options->chanids[chan]];
 			if (st->?hosting == target && st->hostingid) channel_seen_offline[(int)st->hostingid] = time();
 		}
 		if (type == "NOTICE" && message == "Host target cannot be changed more than 3 times every half hour.") {
 			//Probably only happens while I'm testing, but ehh, whatever
 			//Note that it is still legal to *unhost* for the rest of the half hour, just not host anyone.
 			int target = time() + 30*60;
-			G->G->websocket_types->ghostwriter->pause_autohost(options->chanid, target - target % 1800 + 3);
-		}
-		if (type == "NOTICE" && message == "Usage: \"/help\" - Lists the commands available to you in this room.") {
-			//The "/help help" command is sent when we need to poke the connection.
-			if (object p = m_delete(options, "promise")) p->success(this);
+			G->G->websocket_types->ghostwriter->pause_autohost(options->chanids[chan], target - target % 1800 + 3);
 		}
 	}
 	void close() {
-		if (object p = m_delete(options, "promise")) p->failure(({"IRC conn closed during initialization\n" + log*"\n", backtrace()}));
 		::close();
 		remove_call_out(da_ping);
 		remove_call_out(no_ping_reply);
@@ -321,46 +285,15 @@ class IRCClient
 	void connection_lost() {close();}
 }
 
-continue Concurrent.Future connect(string chanid, string chan, int|void force) {
+void connect(string chanid, string chan, string msg) {
 	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) error("No auth\n");
 	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
-	if (object irc = G->G->ghostwriterirc[chanid]) {
-		force = 1; //Reinstate the hack: always reconnect. I really do not understand what's happening here.
-		write("Already connected to %O/%O, %s\n", chanid, chan, force ? "disconnecting" : "retaining");
-		if (force) catch {irc->close();};
-		else {
-			//Make sure it's actually still connected
-			if (irc->options->promise) {
-				write("GHOSTWRITER ENTANGLEMENT %O %O %O\n", chanid, chan, force);
-				return irc->options->promise->future();
-			}
-			Concurrent.Promise prom = irc->options->promise = Concurrent.Promise();
-			irc->send_message("#" + chan, "/help help");
-			catch {return prom->future()->timeout(10);};
-			//If anything goes wrong - including a 10s timeout - just reconnect.
-			catch {irc->close();};
-		}
-	}
-	//In case we're hammering the server, delay spawns.
-	float delay = MINIMUM_CONNECTION_SPACING - last_connection_started->peek();
-	while (delay > 0) {
-		delay += random(ADDITIONAL_CONNECTION_SPACING);
-		werror("Delaying %O connection for %.5fs\n", chan, delay);
-		mixed _ = yield(task_sleep(delay));
-		delay = MINIMUM_CONNECTION_SPACING - last_connection_started->peek(); //Requery in case another task updated it
-	}
-	last_connection_started->get();
-	Concurrent.Promise prom = Concurrent.Promise();
 	object irc = IRCClient("irc.chat.twitch.tv", ([
 		"nick": chan,
 		"pass": "oauth:" + persist_status->path("bcaster_token")[chan],
-		"promise": prom,
-		"chanid": chanid,
 	]));
-	irc->cmd->cap("REQ","twitch.tv/commands");
-	irc->join_channel("#" + chan);
-	G->G->ghostwriterirc[chanid] = irc;
-	return prom->future();
+	call_out(irc->send_message, 1, "#" + chan, msg);
+	call_out(irc->close, 2);
 }
 
 continue Concurrent.Future|mapping get_state(string group) {
@@ -384,7 +317,7 @@ continue Concurrent.Future|mapping get_state(string group) {
 
 continue void force_check(string chanid) {
 	string chan = yield(get_user_info(chanid))->login;
-	mapping irc = yield(connect(chanid, chan, 1)); //We don't actually need the IRC object here, but forcing one to exist guarantees some checks. Avoid bug by putting it in a variable.
+	//mapping irc = yield(connect(chanid, chan, 1)); //We don't actually need the IRC object here, but forcing one to exist guarantees some checks. Avoid bug by putting it in a variable.
 	yield(recalculate_status(chanid));
 }
 
@@ -394,8 +327,6 @@ continue void force_check_all() {
 
 void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!(int)conn->group) return;
-	//Forcing a check also forces a reconnect, in case there are problems.
-	if (object irc = m_delete(G->G->ghostwriterirc, conn->group)) catch {irc->close();};
 	spawn_task(force_check(conn->group));
 	//spawn_task(force_check_all());
 }
@@ -492,6 +423,31 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	};
 }
 
+void reconnect(int|void first) {
+	mapping opt = persist_config["ircsettings"];
+	if (!opt || !opt->pass) return; //Not yet configured - can't connect.
+	mapping chanids = ([]);
+	object irc = IRCClient("irc.chat.twitch.tv", ([
+		"nick": opt->nick, "pass": opt->pass,
+		"connection_lost": lambda() {werror("GHOSTWRITER: Connection lost\n"); call_out(reconnect, 10);},
+		"chanids": chanids,
+	]));
+	irc->cmd->cap("REQ", "twitch.tv/commands");
+	G->G->ghostwriterirc[-1] = irc;
+	int delay;
+	foreach (persist_status->path("ghostwriter"); string chanid; mapping info) {
+		if (!info->?channels || !sizeof(info->channels)) continue;
+		call_out(irc->join_channel, ++delay, "#" + info->chan);
+		chanids[info->chan] = chanid;
+		if (!first) continue; //First-time setup needed only, well, the first time
+		call_out(has_channel, delay, chanid, info->channels->id[*]);
+		if (int t = chanstate[chanid]->?next_scheduled_check) {
+			t -= time();
+			if (t >= 0) schedule_check_callouts[chanid] = call_out(scheduled_recalculation, t, chanid);
+		}
+	}
+}
+
 protected void create(string name) {
 	::create(name);
 	if (!G->G->ghostwriterirc) G->G->ghostwriterirc = ([]);
@@ -506,19 +462,7 @@ protected void create(string name) {
 	if (botnick) get_user_id(botnick)->then() {botid = (string)__ARGS__[0];}; //Cache the bot's user ID for the demo
 	mapping configs = persist_status->path("ghostwriter");
 	write("Configs available for %O\n", mkmapping(indices(configs), values(configs)->chan));
-	call_out(start_connections, 4, configs); //Delay startup a bit to avoid connection conflicts and allow compilation errors to be seen
-}
-
-void start_connections(mapping configs) {
-	foreach (configs; string chanid; mapping info) {
-		if (!info->?channels || !sizeof(info->channels)) continue;
-		spawn_task(connect(chanid, info->chan, 1));
-		has_channel(chanid, info->channels->id[*]);
-		if (int t = chanstate[chanid]->?next_scheduled_check) {
-			t -= time();
-			if (t >= 0) schedule_check_callouts[chanid] = call_out(scheduled_recalculation, t, chanid);
-		}
-	}
+	call_out(reconnect, 4, 1); //Delay startup a bit to avoid connection conflicts and allow compilation errors to be seen
 }
 
 /* If there's weird issues and infinitely-looping tasks with delays in them, try something like this:
