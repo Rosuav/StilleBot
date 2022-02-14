@@ -83,3 +83,7 @@
 * Should ALL specials function as implicit arrays, the way triggers do?
   - Alternatively: should invocations and executions be separated? Aliases would then
     be just another way to have more than one invocation for a single command.
+* With the shutdown of Kraken, can we record things locally that used to be on Twitch?
+  - Followed games/categories - you can still follow/unfollow but you can't query it in API
+* Alternatively, can I just use GQL from StilleBot? BTTV seems to. If Twitch won't make
+  public APIs available for things, they're kinda forcing us to use their internal API.
