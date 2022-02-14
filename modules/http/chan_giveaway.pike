@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit hook;
 constant markdown = #"# Giveaway - $$giveaway_title||win things with channel points$$
 
 <div id=errormessage class=hidden></div>
@@ -614,8 +615,8 @@ void channel_on_off(string channel, int online)
 		}
 	});
 }
-int channel_online(string channel) {channel_on_off(channel, 1);}
-int channel_offline(string channel) {channel_on_off(channel, 0);}
+@hook_channel_online: int channel_online(string channel) {channel_on_off(channel, 1);}
+@hook_channel_offline: int channel_offline(string channel) {channel_on_off(channel, 0);}
 
 constant command_description = "Giveaway tools. Use subcommand 'status' or 'refund'.";
 constant builtin_description = "Handle giveaways via channel point redemptions"; //The subcommands are mandated by the parameter type
@@ -679,7 +680,7 @@ protected void create(string name)
 	::create(name);
 	if (!G->G->giveaway_tickets) G->G->giveaway_tickets = ([]);
 	if (!G->G->giveaway_purchases) G->G->giveaway_purchases = (<>);
-	register_hook("channel-online", channel_online);
-	register_hook("channel-offline", channel_offline);
+	register_hook("channel-online", Program.defined(this_program));
+	register_hook("channel-offline", Program.defined(this_program));
 	spawn_task(check_bcaster_tokens());
 }

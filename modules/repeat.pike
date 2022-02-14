@@ -1,4 +1,5 @@
 inherit command;
+inherit hook;
 constant featurename = "commands";
 constant require_moderator = 1;
 constant docstring = #"
@@ -141,7 +142,7 @@ echoable_message unrepeat(object channel, mapping person, string param)
 	return check_perms(channel, person, "-1 " + param);
 }
 
-int connected(string channel)
+@hook_channel_online: int connected(string channel)
 {
 	mapping cfg = persist_config["channels"][channel];
 	if (!cfg->autocommands) return 0;
@@ -172,7 +173,7 @@ void check_autocommands()
 
 protected void create(string name)
 {
-	register_hook("channel-online", connected);
+	register_hook("channel-online", Program.defined(this_program));
 	register_bouncer(autospam);
 	if (!G->G->autocommands) G->G->autocommands = ([]);
 	check_autocommands();

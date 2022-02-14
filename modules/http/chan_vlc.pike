@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit hook;
 constant markdown = #"# VLC integration
 
 (loading...)
@@ -253,7 +254,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	send_updates_all("blocks" + channel->name);
 }
 
-int disconnected(string channel) {
+@hook_channel_offline: int disconnected(string channel) {
 	mapping status = G->G->vlc_status["#" + channel];
 	if (!status) return 0;
 	status->playing = 0;
@@ -263,5 +264,5 @@ int disconnected(string channel) {
 protected void create(string name) {
 	::create(name);
 	if (!G->G->vlc_status) G->G->vlc_status = ([]);
-	register_hook("channel-offline", disconnected); //CJA 20210710: This was previously an ONline check. Was there supposed to be an initialization?
+	register_hook("channel-offline", Program.defined(this_program));
 }
