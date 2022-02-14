@@ -1,6 +1,6 @@
 /* Chat bot for Twitch.tv
 See API docs:
-https://dev.twitch.tv/docs/v5/
+https://dev.twitch.tv/docs/api/reference
 
 Requires OAuth authentication, which is by default handled by the GUI.
 */
