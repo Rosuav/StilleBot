@@ -83,6 +83,3 @@
 * Should ALL specials function as implicit arrays, the way triggers do?
   - Alternatively: should invocations and executions be separated? Aliases would then
     be just another way to have more than one invocation for a single command.
-* Giveaway: If multibuy is blank, default to 1 10 100 1000 etc.
-  - Automatically cut off the list at the max w/o error, so people can have their own
-    preferred pattern (eg "1 5 10 50 100 500 1000") even if the max changes

@@ -18,10 +18,10 @@ $$login$$
 > <label for=ga_title>Giveaway title</label> | <input id=ga_title name=title size=40 placeholder=\"an awesome thing\"> | What are people winning?
 > <label for=ga_cost>Cost per ticket</label> | <input id=ga_cost name=cost type=number min=1 value=1></label> | Loyal viewers can earn a thousand points in a 2-3 hour stream. [See details.](https://help.twitch.tv/s/article/channel-points-guide)
 > <label for=ga_desc>Description</label> | <input id=ga_desc name=desc size=40 maxlength=40 placeholder=\"Buy # tickets\"> | Put a <code>#</code> symbol for multibuy count
-> <label for=ga_multi>Multibuy options</label> | <input id=ga_multi name=multi size=40 placeholder=\"1 5 10 25 50\"> | Allow people to buy tickets in bulk
+> <label for=ga_multi>Multibuy options</label> | <input id=ga_multi name=multi size=40 placeholder=\"1 5 10 25 50\"> | Allow people to buy tickets in these quantities. If omitted, you'll get 1, 10, 100, 1000, etc.
 > <label for=ga_max>Max tickets</label> | <input id=ga_max name=max type=number min=0 value=0> | Purchases that would put you over this limit will be cancelled
 > <label for=ga_pausemode>Redemption hiding</label> | <select id=ga_pausemode name=pausemode><option value=disable>Disable, hiding them from users</option><option value=pause>Pause and leave visible</option></select> | When there's no current giveaway, should redemptions remain visible (but unpurchaseable), or vanish entirely?
-> Multi-win | <label><input type=checkbox name=allow_multiwin value=yes> Allow one person to win multiple times</label> | If not, the winner's tickets will be automatically removed.
+> Multi-win | <label><input type=checkbox name=allow_multiwin value=yes> Allow one person to win multiple times</label> | By default, the winner's tickets will be removed in case of a reroll or second winner.
 > <label for=ga_duration>Time before giveaway closes</label> | <input id=ga_duration name=duration type=number min=0 max=3600> (seconds) | How long should the giveaway be open? 0 leaves it until explicitly closed.
 >
 > <button>Save/reconfigure</button>
@@ -283,16 +283,17 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	if (req->misc->is_mod && req->request_type == "PUT") {
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body)) return (["error": 400]);
-		write("Got request: %O\n", body);
 		if (int cost = (int)body->cost) {
 			//Master reconfiguration
-			array qty = (array(int))(replace(body->multi || "", ",", " ") / " ") - ({0});
+			array qty = (array(int))(replace(body->multi || "1 10 100 1000 10000 100000 1000000", ",", " ") / " ") - ({0});
 			if (!has_value(qty, 1)) qty = ({1}) + qty;
 			if (!cfg->giveaway) cfg->giveaway = ([]);
 			mapping status = persist_status->path("giveaways", chan);
 			cfg->giveaway->title = body->title;
-			cfg->giveaway->max_tickets = (int)body->max;
+			if (int max = cfg->giveaway->max_tickets = (int)body->max)
+				qty = filter(qty) {return __ARGS__[0] <= max;};
 			cfg->giveaway->desc_template = body->desc;
+			cfg->giveaway->multibuy = body->multi;
 			cfg->giveaway->cost = cost;
 			cfg->giveaway->pausemode = body->pausemode == "pause";
 			cfg->giveaway->allow_multiwin = body->allow_multiwin == "yes";
@@ -388,9 +389,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		config->pausemode = g->pausemode ? "pause" : "disable";
 		config->allow_multiwin = g->allow_multiwin ? "yes" : "no";
 		config->duration = g->duration;
-		if (mapping existing = g->rewards)
-			config->multi = ((array(string))sort(values(existing))) * " ";
-		else config->multi = "";
+		//TODO: Show the actual existing rewards somewhere?
+		//if (mapping existing = g->rewards)
+		//	config->multi = ((array(string))sort(values(existing))) * " ";
+		//else config->multi = "";
+		config->multi = g->multibuy;
 	}
 	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render(req, ([
