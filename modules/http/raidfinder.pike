@@ -297,11 +297,19 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				}
 				//Else fall through. Any sort of junk category name, treat it as if it's "?categories"
 			}
-			case "": case "categories": { //For ?categories and ?categories= modes, show those you follow
+			case "": case "categories": case "flush": { //For ?categories and ?categories= modes, show those you follow
 				if (mapping resp = ensure_login(req, "user_read")) return resp;
-				//20210716: Kraken API, information not available in Helix.
-				mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/users/" + req->misc->session->user->id + "/follows/games"));
-				args->game_id = (array(string))info->follows->game->_id;
+				//20220216: This still isn't available in Helix, so what we do is cache it ourselves.
+				//Populating this cache is outside the scope of this module.
+				array cats = persist_status->path("user_followed_categories")[req->misc->session->user->id];
+				if (!cats || req->variables->categories == "flush") {
+					//Try to populate the cache using an external lookup. As of 20220216,
+					//this lookup will be done using the legacy Kraken API, but will then
+					//be cached so the data is retained post-shutdown.
+					cats = yield(G->G->external_api_lookups->user_followed_categories(req->misc->session->user->id));
+					persist_status->path("user_followed_categories")[req->misc->session->user->id] = cats;
+				}
+				args->game_id = cats;
 				title = "Followed categories";
 				break;
 			}

@@ -87,3 +87,4 @@
   - Followed games/categories - you can still follow/unfollow but you can't query it in API
 * Alternatively, can I just use GQL from StilleBot? BTTV seems to. If Twitch won't make
   public APIs available for things, they're kinda forcing us to use their internal API.
+* Find every place where I use Kraken and put it into a wrapper in modules/twitch_apis.pike
