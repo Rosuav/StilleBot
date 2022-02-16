@@ -7,7 +7,7 @@ continue Concurrent.Future user_followed_categories(string userid) {
 	return (array(string))info->follows->game->_id;
 }
 
-void create(string name) {
+protected void create(string name) {
 	if (!G->G->external_api_lookups) G->G->external_api_lookups = ([]);
 	foreach (indices(this), string f) if (f != "create" && f[0] != '_') G->G->external_api_lookups[f] = this[f];
 }
