@@ -29,8 +29,7 @@ continue Concurrent.Future|mapping fetch_emotes()
 		if (!cfg->nick || cfg->nick == "") return Concurrent.reject("Oops, shouldn't happen");
 		sscanf(cfg["pass"] || "", "oauth:%s", string pass);
 		write("Fetching emote list\n");
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/users/{{USER}}/emotes",
-			0, (["username": cfg->nick, "authtype": "OAuth"])));
+		mapping info = yield(G->G->external_api_lookups->get_user_emotes(cfg->nick));
 		info->fetchtime = time();
 		G->G->bot_emote_list = info;
 	}

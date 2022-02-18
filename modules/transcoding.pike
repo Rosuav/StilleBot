@@ -18,7 +18,7 @@ constant vars_provided = ([
 ]);
 
 continue Concurrent.Future|mapping message_params(object channel, mapping person, string param) {
-	mapping videoinfo = yield(get_video_info(channel->name[1..]));
+	mapping videoinfo = yield(G->G->external_api_lookups->get_video_info(channel->name[1..]));
 	mapping res = videoinfo->resolutions;
 	if (!res || !sizeof(res)) return ([]); //Shouldn't happen
 	//Would it be better to just use time() instead? LUL
