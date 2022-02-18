@@ -866,7 +866,7 @@ class TwitchAuth
 		//Hype trains (new as of 20200619)
 		"channel:read:hype_train",
 		//Insufficiently documented. Dunno if we need it or not.
-		"moderation:read",
+		"moderation:read", "channel:manage:broadcast",
 	>);
 	protected void create(multiset(string)|void scopes) {
 		mapping cfg = persist_config["ircsettings"];
