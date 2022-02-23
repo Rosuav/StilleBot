@@ -92,16 +92,21 @@
   - Transparent normally, but on host, shows custom image (possibly GIF) and plays sound.
     - Preload both on startup so it doesn't need to be poked.
   - Websocket for config synchronization, not for events. Use ComfyJS for that.
+    - Group "config#channel" for the main web interface
+    - Group "display#channel" for the viewer. BOT_BASIS/channels/CHANNEL/hostalert?key=KEY
+      to trigger this; if no key=, use config mode (mod only). If wrong key=, static error.
   - Have an auth key like VLC's (but probably not the same one), so it doesn't need login
   - Incorporate custom text with a placeholder for the login/display name
   - Full style config as per monitors
   - Basic styling of the image only, but have a published ID so people can use custom CSS?
   - OAuth key (bcaster token) sent on WS sync
-  - If user asks to upload GIF, save it somewhere. If file size is "fairly small", for some
-    definition of that, just save a data URI in persist_status. Otherwise, save the file in
-    a dedicated directory. Not sure how best to do that. Don't want to accumulate too many.
-  - On receipt of configs, if OAuth included, connect. Otherwise, after timeout (maybe 3-5
-    seconds), show error message in browser window. If connection fails, show error.
+  - Must accept file uploads for GIF/PNG and audio (support OGG, MP3, not WAV). Assign IDs
+    and save the files into a non-tracked directory named "{userid}-{fileid}", extension
+    optional. Save user's original file name as default description, allow it to be edited,
+    retain in persist_status.
+  - On receipt of configs, if OAuth included and not same as previous, (re)connect.
+  - If no OAuth token received after timeout (maybe 3-5 seconds), show error message in
+    browser window. If connection fails, show error.
   - It's not currently possible to push out a WS update every time bcaster login changes.
     But if a login is done _on this page_, we can send out the update.
   - Don't support multiple host alert boxes immediately, but don't rule out the possibility.
