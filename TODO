@@ -117,3 +117,5 @@
     managed by the WS.
   - If you refresh the browser source, it will reset the record of "seen this host".
   - Borrow host notification code from Lisp Whispers
+* CathyCat wants VIP Leaderboard, but for top 3 not top 10. Needs to be configurable.
+  - Also may want the leaderboard to be locked to mods only, no read-only access
