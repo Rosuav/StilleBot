@@ -32,10 +32,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		mapping file = cfg->files[idx];
 		if (file->url) return jsonify((["error": "File has already been uploaded"]));
 		if (file->size < sizeof(req->body_raw)) return jsonify((["error": "Requested upload of " + file->size + "bytes, not " + sizeof(req->body_raw) + " bytes!"]));
-		file->filename = sprintf("%d-%s", req->misc->channel->userid, file->id);
-		Stdio.write_file("httpstatic/uploads/" + file->filename, req->body_raw);
-		file->url = sprintf("%s/static/upload-%s", persist_config["ircsettings"]->http_address, file->filename);
-		persist_status->path("upload_metadata")[file->filename] = (["mimetype": file->mimetype]);
+		string filename = sprintf("%d-%s", req->misc->channel->userid, file->id);
+		Stdio.write_file("httpstatic/uploads/" + filename, req->body_raw);
+		file->url = sprintf("%s/static/upload-%s", persist_config["ircsettings"]->http_address, filename);
+		persist_status->path("upload_metadata")[filename] = (["mimetype": file->mimetype]);
 		persist_status->save();
 		send_updates_all("control" + req->misc->channel->name); //Display connection doesn't need to get updated.
 		return jsonify((["url": file->url]));
