@@ -12,6 +12,7 @@ export function render_item(msg, obj) {
 	if (obj) {
 		set_content(obj.querySelector(".desc"), msg.desc);
 		obj.querySelector(`[value="${msg.state}"]`).checked = true;
+		return obj;
 	}
 	return TR({"data-id": msg.id}, [
 		TD(msg.id),
