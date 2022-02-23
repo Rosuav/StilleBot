@@ -19,13 +19,17 @@ constant http_path_pattern = "/static/%[^/]";
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string filename)
 {
 	if (filename == "" || has_prefix(filename, ".")) return (["error": 403, "data": "Forbidden"]);
+	string dir = "httpstatic";
+	//Support a small number of subdirectory names
+	if (sscanf(filename, "upload-%s", filename) && filename && filename != "" && !has_prefix(filename, "."))
+		dir = "httpstatic/uploads";
 	//For absolute paranoia-level safety, instead of trying to open the
 	//file directly, we check that the name comes up in a directory listing.
-	if (!has_value(get_dir("httpstatic"), filename)) return (["error": 404, "data": "Not found"]);
+	if (!has_value(get_dir(dir), filename)) return (["error": 404, "data": "Not found"]);
 	//TODO: Play nicely with caches by providing an etag, don't rely on modified timestamps
 	object modsince = Calendar.ISO.parse("%e, %a %M %Y %h:%m:%s %z", req->request_headers["if-modified-since"] || "");
 	if (modsince && _get_mtime(filename) <= modsince->unix_time()) return (["error": 304, "data": ""]);
-	if (has_suffix(filename, ".js")) {
+	if (dir == "httpstatic" && has_suffix(filename, ".js")) {
 		//See if the file has any import markers.
 		string data = Stdio.read_file("httpstatic/" + filename);
 		multiset deps = (<>);
@@ -41,7 +45,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string fil
 		]);
 	}
 	return ([
-		"file": Stdio.File("httpstatic/" + filename),
+		"file": Stdio.File(dir + "/" + filename),
 		"extra_heads": (["Access-Control-Allow-Origin": "*"]),
 	]);
 }
