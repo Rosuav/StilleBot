@@ -10,6 +10,8 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 </style>
 ";
 
+constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->request_type == "POST") {
@@ -27,7 +29,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	//TODO: If key=X set but incorrect, give static error
 	//TODO: Require mod login, but give some info if not - since that might be seen if someone messes up the URL
 	return render(req, ([
-		"vars": (["ws_group": "control", "maxfilesize": 5, "maxtotsize": 25]),
+		"vars": (["ws_group": "control", "maxfilesize": MAX_PER_FILE, "maxtotsize": MAX_TOTAL_STORAGE]),
 	]) | req->misc->chaninfo);
 }
 
@@ -35,28 +37,46 @@ bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	array files = ({ });
 	//TODO: Enumerate files in upload order (or upload authorization order)
-	return (["items": files,
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	return (["items": cfg->files || ({ }),
 		//TODO: All details about text positioning and style
 	]);
 }
 
 void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	sscanf(conn->group, "%s#%s", string grp, string chan);
-	if (grp != "control") return;
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || grp != "control") return;
 	if (conn->session->fake) return;
-	//TODO: Authorize a file upload.
-	//1) Check that the requested size is less than the max
-	//2) Check that the user's storage limit isn't reached
-	//2a) Enumerate existing files
-	//2b) Include previous authorizations (files w/o content)
-	//2c) Add the requested size. If total < maxtotsize, okay.
-	//3) Generate a unique ID
-	//4) Create a file entry for the user with the ID, the name, and the requested
-	//   size, but no content file name.
-	//5) Signal this client to request that the file be sent.
-	//6) Update the group.
-	string id = String.string2hex(random_string(14)); //TODO: Ensure that this hasn't (miraculously) collided
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	if (!cfg->files) cfg->files = ({ });
+	if (!intp(msg->size) || msg->size < 0) return; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
+	int used = `+(0, @cfg->files->allocation);
+	//Count 1KB chunks, rounding up, and adding one chunk for overhead. Won't make much
+	//difference to most files, but will stop someone from uploading twenty-five million
+	//one-byte files, which would be just stupid :)
+	int allocation = (msg->size + 2047) / 1024;
+	string error;
+	if (!has_prefix(msg->mimetype, "image/") && !has_prefix(msg->mimetype, "audio/"))
+		error = "Currently only audio and image files are supported - video support Coming Soon";
+	else if (msg->size > MAX_PER_FILE * 1048576)
+		error = "File too large (limit " + MAX_PER_FILE + " MB)";
+	else if (used + allocation > MAX_TOTAL_STORAGE * 1024)
+		error = "Unable to upload, storage limit of " + MAX_TOTAL_STORAGE + " MB exceeded. Delete other files to make room.";
+	//TODO: Check if the file name is duplicated? Maybe? Not sure. It's not a fundamental blocker.
+	if (error) {
+		conn->sock->send_text(Standards.JSON.encode((["cmd": "uploaderror", "name": msg->name, "error": error]), 4));
+		return;
+	}
+	string id;
+	while (has_value(cfg->files->id, id = String.string2hex(random_string(14))))
+		; //I would be highly surprised if this loops at all, let alone more than once
+	cfg->files += ({([
+		"id": id, "name": msg->name,
+		"size": msg->size, "allocation": allocation,
+	])});
+	persist_status->save();
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "upload", "id": id, "name": msg->name]), 4));
+	send_updates_all(conn->group); //Note that the display connection doesn't need to be updated
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
