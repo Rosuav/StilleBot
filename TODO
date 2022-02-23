@@ -104,6 +104,8 @@
     and save the files into a non-tracked directory named "{userid}-{fileid}", extension
     optional. Save user's original file name as default description, allow it to be edited,
     retain in persist_status.
+  - Limit file size to 5MB for now. I've heard of people with 3MB GIFs, and my Cheshire Cat
+    images are 11MB, but those are by far the exception.
   - On receipt of configs, if OAuth included and not same as previous, (re)connect.
   - If no OAuth token received after timeout (maybe 3-5 seconds), show error message in
     browser window. If connection fails, show error.
