@@ -3,6 +3,8 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 
 <div id=uploads></div>
 
+<form>Upload new file: <input type=file multiple></form>
+
 <style>
 #uploads {display: flex;}
 </style>
@@ -10,14 +12,17 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
-	/* TODO: If POST request, check if an authorized upload, if so, accept it.
-	Authorized uploads are recorded as files, but don't yet have content. An
-	attempt to upload into the same ID as an existing file should be rejected.
-	On the front end, attempting to upload the same file *name* should offer
-	to first delete, but on the back end it will always create new. An upload
-	is rejected if the file size exceeds the requested size (even if the new
-	file would fit within limits). Upload one item in the group once accepted.
-	*/
+	if (req->request_type == "POST") {
+		/* TODO: If POST request, check if an authorized upload, if so, accept it.
+		Authorized uploads are recorded as files, but don't yet have content. An
+		attempt to upload into the same ID as an existing file should be rejected.
+		On the front end, attempting to upload the same file *name* should offer
+		to first delete, but on the back end it will always create new. An upload
+		is rejected if the file size exceeds the requested size (even if the new
+		file would fit within limits). Upload one item in the group once accepted.
+		*/
+		return jsonify((["error": "Unimpl"]));
+	}
 	//TODO: If key=X set and correct, use group "display"
 	//TODO: If key=X set but incorrect, give static error
 	//TODO: Require mod login, but give some info if not - since that might be seen if someone messes up the URL
@@ -37,7 +42,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 
 void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string grp, string chan);
-	if (grp != "control" || !conn->is_mod) return;
+	if (grp != "control") return;
 	if (conn->session->fake) return;
 	//TODO: Authorize a file upload.
 	//1) Check that the requested size is less than the max
@@ -48,16 +53,23 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	//3) Generate a unique ID
 	//4) Create a file entry for the user with the ID, the name, and the requested
 	//   size, but no content file name.
-	//5) Update the group.
+	//5) Signal this client to request that the file be sent.
+	//6) Update the group.
+	string id = String.string2hex(random_string(14)); //TODO: Ensure that this hasn't (miraculously) collided
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "upload", "id": id, "name": msg->name]), 4));
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%s#%s", string grp, string chan);
+	if (grp != "control") return;
 	//TODO: Delete a file (or file authorization) to free up space.
 	//Delete the actual file in httpstatic/uploads, the entry in persist_status,
 	//and any other metadata.
 }
 
 void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%s#%s", string grp, string chan);
+	if (grp != "control") return;
 	//TODO: Send a test alert. This message comes in on the control connection,
 	//and signals everything in the display group.
 }
