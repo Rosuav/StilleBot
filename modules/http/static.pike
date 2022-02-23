@@ -20,9 +20,17 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string fil
 {
 	if (filename == "" || has_prefix(filename, ".")) return (["error": 403, "data": "Forbidden"]);
 	string dir = "httpstatic";
+	string type = "text/plain";
+	//Guess a MIME type based on the extension, by default
+	foreach (([".css": "text/css", ".flac": "audio/flac", ".mp3": "audio/mp3"]); string ext; string t)
+		if (has_suffix(filename, ext)) type = t;
 	//Support a small number of subdirectory names
-	if (sscanf(filename, "upload-%s", filename) && filename && filename != "" && !has_prefix(filename, "."))
+	if (sscanf(filename, "upload-%s", filename) && filename && filename != "" && !has_prefix(filename, ".")) {
+		mapping meta = persist_status->path("upload_metadata")[filename];
+		if (!meta) return (["error": 404, "data": "Not found"]); //It's possible that the file exists but has no metadata, but more likely it just doesn't.
 		dir = "httpstatic/uploads";
+		type = meta->mimetype;
+	}
 	//For absolute paranoia-level safety, instead of trying to open the
 	//file directly, we check that the name comes up in a directory listing.
 	if (!has_value(get_dir(dir), filename)) return (["error": 404, "data": "Not found"]);
@@ -46,6 +54,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string fil
 	}
 	return ([
 		"file": Stdio.File(dir + "/" + filename),
+		"type": type,
 		"extra_heads": (["Access-Control-Allow-Origin": "*"]),
 	]);
 }

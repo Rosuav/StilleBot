@@ -14,6 +14,8 @@ constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
+	//TODO: Give some useful info if not a mod, since that might be seen if someone messes up the URL
+	if (!req->misc->is_mod) return render(req, req->misc->chaninfo);
 	if (req->request_type == "POST") {
 		/* TODO: If POST request, check if an authorized upload, if so, accept it.
 		Authorized uploads are recorded as files, but don't yet have content. An
@@ -23,11 +25,23 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		is rejected if the file size exceeds the requested size (even if the new
 		file would fit within limits). Upload one item in the group once accepted.
 		*/
-		return jsonify((["error": "Unimpl"]));
+		mapping cfg = persist_status->path("alertbox", (string)req->misc->channel->userid);
+		if (!req->variables->id) return jsonify((["error": "No file ID specified"]));
+		int idx = search((cfg->files || ({ }))->id, req->variables->id);
+		if (idx < 0) return jsonify((["error": "Bad file ID specified (may have been deleted already)"]));
+		mapping file = cfg->files[idx];
+		if (file->url) return jsonify((["error": "File has already been uploaded"]));
+		if (file->size < sizeof(req->body_raw)) return jsonify((["error": "Requested upload of " + file->size + "bytes, not " + sizeof(req->body_raw) + " bytes!"]));
+		file->filename = sprintf("%d-%s", req->misc->channel->userid, file->id);
+		Stdio.write_file("httpstatic/uploads/" + file->filename, req->body_raw);
+		file->url = sprintf("%s/static/upload-%s", persist_config["ircsettings"]->http_address, file->filename);
+		persist_status->path("upload_metadata")[file->filename] = (["mimetype": file->mimetype]);
+		persist_status->save();
+		send_updates_all("control" + req->misc->channel->name); //Display connection doesn't need to get updated.
+		return jsonify((["url": file->url]));
 	}
 	//TODO: If key=X set and correct, use group "display"
 	//TODO: If key=X set but incorrect, give static error
-	//TODO: Require mod login, but give some info if not - since that might be seen if someone messes up the URL
 	return render(req, ([
 		"vars": (["ws_group": "control", "maxfilesize": MAX_PER_FILE, "maxtotsize": MAX_TOTAL_STORAGE]),
 	]) | req->misc->chaninfo);
@@ -73,6 +87,7 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	cfg->files += ({([
 		"id": id, "name": msg->name,
 		"size": msg->size, "allocation": allocation,
+		"mimetype": msg->mimetype, //TODO: Ensure that it's a valid type, or at least formatted correctly
 	])});
 	persist_status->save();
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "upload", "id": id, "name": msg->name]), 4));
