@@ -5,6 +5,17 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 
 <form>Upload new file: <input type=file multiple></form>
 
+> ### Delete file
+> Really delete this file?
+>
+> [...](...)
+>
+> figure
+>
+> [Delete](:#delete) [Cancel](:.dialog_close)
+{: tag=dialog #confirmdeletedlg}
+
+
 <style>
 #uploadfrm {
 	border: 1px solid black;
@@ -19,6 +30,13 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 	border: 1px solid black; /* TODO: Show incomplete uploads with a different border */
 	margin: 0.5em;
 	padding: 0.5em;
+	position: relative;
+}
+#uploads .confirmdelete {
+	position: absolute;
+	right: 0.5em; top: 0.5em;
+	width: 20px; height: 23px;
+	padding: 0;
 }
 .thumbnail {
 	width: 150px; height: 150px;

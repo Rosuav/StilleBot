@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {AUDIO, DIV, FIGCAPTION, FIGURE, IMG} = choc; //autoimport
+const {A, AUDIO, BUTTON, DIV, FIGCAPTION, FIGURE} = choc; //autoimport
 
 function THUMB(file) {
 	if (!file.url) return DIV({className: "thumbnail"}, "uploading...");
@@ -15,7 +15,8 @@ export const render_parent = DOM("#uploads");
 export function render_item(file, obj) {
 	return FIGURE({"data-id": file.id}, [
 		THUMB(file),
-		FIGCAPTION(file.name),
+		FIGCAPTION(A({href: file.url}, file.name)),
+		BUTTON({type: "button", className: "confirmdelete", title: "Delete"}, "🗑"),
 	]);
 }
 
