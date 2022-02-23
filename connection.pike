@@ -295,6 +295,7 @@ class channel_notif
 	multiset mods=(<>);
 	mapping(string:int) recent_viewers = ([]);
 	string hosting;
+	int userid;
 
 	protected void create() {call_out(configure,0);}
 	void configure() //Needs to happen after this->name is injected by Protocols.IRC.Client
@@ -311,6 +312,7 @@ class channel_notif
 		//mod-only command, that's trivially easy; for web access, just "poke
 		//the bot" in chat first.)
 		mods[name[1..]] = 1;
+		if (!has_prefix(name, "!")) get_user_id(name[1..])->then() {[userid] = __ARGS__;};
 	}
 
 	//NOTE: Without not_join and its friends, Pike 8.0 will spam noisy failure
