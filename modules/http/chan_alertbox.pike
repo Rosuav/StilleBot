@@ -1,12 +1,31 @@
 inherit http_websocket;
 constant markdown = #"# Alertbox management for channel $$channel$$
 
-<div id=uploads></div>
+<div id=uploadfrm><div id=uploads></div></div>
 
 <form>Upload new file: <input type=file multiple></form>
 
 <style>
-#uploads {display: flex;}
+#uploadfrm {
+	border: 1px solid black;
+	background: #eee;
+	padding: 1em;
+}
+#uploads {
+	display: flex;
+	flex-wrap: wrap;
+}
+#uploads > figure {
+	border: 1px solid black; /* TODO: Show incomplete uploads with a different border */
+	margin: 0.5em;
+	padding: 0.5em;
+}
+.thumbnail {
+	width: 150px; height: 150px;
+	background: none center/contain no-repeat;
+}
+figcaption {max-width: 150px;}
+.thumbnail audio {max-width: 100%; max-height: 100%;}
 </style>
 ";
 
@@ -17,14 +36,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	//TODO: Give some useful info if not a mod, since that might be seen if someone messes up the URL
 	if (!req->misc->is_mod) return render(req, req->misc->chaninfo);
 	if (req->request_type == "POST") {
-		/* TODO: If POST request, check if an authorized upload, if so, accept it.
-		Authorized uploads are recorded as files, but don't yet have content. An
-		attempt to upload into the same ID as an existing file should be rejected.
-		On the front end, attempting to upload the same file *name* should offer
-		to first delete, but on the back end it will always create new. An upload
-		is rejected if the file size exceeds the requested size (even if the new
-		file would fit within limits). Upload one item in the group once accepted.
-		*/
 		mapping cfg = persist_status->path("alertbox", (string)req->misc->channel->userid);
 		if (!req->variables->id) return jsonify((["error": "No file ID specified"]));
 		int idx = search((cfg->files || ({ }))->id, req->variables->id);

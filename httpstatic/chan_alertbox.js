@@ -1,14 +1,21 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {DIV} = choc; //autoimport
+const {AUDIO, DIV, FIGCAPTION, FIGURE, IMG} = choc; //autoimport
+
+function THUMB(file) {
+	if (!file.url) return DIV({className: "thumbnail"}, "uploading...");
+	if (!file.mimetype) return DIV({className: "thumbnail"}, "legacy"); //Old data, won't happen long-term
+	if (file.mimetype.startsWith("audio/")) return DIV({className: "thumbnail"}, AUDIO({src: file.url, controls: true}));
+	return DIV({className: "thumbnail", style: "background-image: url(" + file.url + ")"});
+}
 
 //NOTE: Item rendering applies to uploaded files. Other things are handled by render() itself.
 //NOTE: Since newly-uploaded files will always go to the end, this should always be sorted by
 //order added, as a documented feature. The server will need to ensure this.
 export const render_parent = DOM("#uploads");
 export function render_item(file, obj) {
-	return DIV({"data-id": file.id}, [
-		"[Thumbnail]", //TODO: Three types of thumbnail - image, audio (play button, clickable), "uploading..."
-		file.name,
+	return FIGURE({"data-id": file.id}, [
+		THUMB(file),
+		FIGCAPTION(file.name),
 	]);
 }
 
@@ -20,7 +27,6 @@ export async function sockmsg_upload(msg) {
 	const file = uploadme[msg.name];
 	if (!file) return;
 	delete uploadme[msg.name];
-	console.log("Pushing file", msg.name);
 	const resp = await (await fetch("alertbox?id=" + msg.id, { //The server guarantees that the ID is URL-safe
 		method: "POST",
 		body: file,
