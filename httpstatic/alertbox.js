@@ -1,10 +1,10 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {DIV, IMG, P} = choc; //autoimport
+const {FIGCAPTION, FIGURE, IMG, P} = choc; //autoimport
 
 const alert_formats = {
-	text_under: data => DIV({className: "text_under"}, [
+	text_under: data => FIGURE({className: "text_under"}, [
 		IMG({src: data.image}),
-		P({"data-textformat": data.textformat}),
+		FIGCAPTION({"data-textformat": data.textformat}),
 	]),
 };
 
