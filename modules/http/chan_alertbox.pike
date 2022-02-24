@@ -45,7 +45,10 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 	width: 150px; height: 150px;
 	background: none center/contain no-repeat;
 }
-figcaption {max-width: 150px;}
+figcaption {
+	max-width: 150px;
+	overflow-wrap: break-word;
+}
 .thumbnail audio {max-width: 100%; max-height: 100%;}
 </style>
 ";
@@ -88,7 +91,13 @@ bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	if (grp == "display") {
 		//Cut-down information for the display
-		return (["alert_format": "text_under", "textformat": "{NAME} hosted for {VIEWERS} viewers!", "image": "https://sikorsky.rosuav.com/static/upload-49497888-7405a4f514eba34f702fbd3266e2"]);
+		return ([
+			"alert_format": "text_under",
+			"textformat": "{NAME} hosted for {VIEWERS} viewers!",
+			"image": "https://sikorsky.rosuav.com/static/upload-49497888-7405a4f514eba34f702fbd3266e2",
+			"sound": "https://sikorsky.rosuav.com/static/upload-49497888-6f7e21773311a4c36ec322fa4411",
+			"volume": 0.0625,
+		]);
 	}
 	array files = ({ });
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
