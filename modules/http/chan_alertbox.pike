@@ -54,6 +54,13 @@ constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
+	if (string key = req->variables->key) {
+		//TODO: If key is incorrect, give static error
+		return render_template("alertbox.html", ([
+			"vars": (["ws_type": ws_type, "ws_code": "alertbox", "ws_group": "display" + req->misc->channel->name]),
+			"channelname": req->misc->channel->name[1..],
+		]) | req->misc->chaninfo);
+	}
 	//TODO: Give some useful info if not a mod, since that might be seen if someone messes up the URL
 	if (!req->misc->is_mod) return render(req, req->misc->chaninfo);
 	if (req->request_type == "POST") {
@@ -72,8 +79,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		send_updates_all("control" + req->misc->channel->name); //Display connection doesn't need to get updated.
 		return jsonify((["url": file->url]));
 	}
-	//TODO: If key=X set and correct, use group "display"
-	//TODO: If key=X set but incorrect, give static error
 	return render(req, ([
 		"vars": (["ws_group": "control", "maxfilesize": MAX_PER_FILE, "maxtotsize": MAX_TOTAL_STORAGE]),
 	]) | req->misc->chaninfo);
@@ -81,8 +86,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
+	if (grp == "display") {
+		//Cut-down information for the display
+		return (["alert_format": "text_under", "textformat": "{NAME} hosted for {VIEWERS} viewers!", "image": "https://sikorsky.rosuav.com/static/upload-49497888-7405a4f514eba34f702fbd3266e2"]);
+	}
 	array files = ({ });
-	//TODO: Enumerate files in upload order (or upload authorization order)
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (id) {
 		if (!cfg->files) return 0;
