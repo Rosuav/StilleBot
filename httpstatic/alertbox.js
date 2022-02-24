@@ -37,6 +37,7 @@ export function render(data) {
 		else set_content("#hostalert", P("Unrecognized alert format, check editor or refresh page"));
 	}
 	if (data.alert_length) alert_length = data.alert_length;
+	if (data.send_alert) do_alert("#hostalert", data.send_alert, Math.floor(Math.random() * 100) + 1);
 }
 
 function remove_alert(alert) {

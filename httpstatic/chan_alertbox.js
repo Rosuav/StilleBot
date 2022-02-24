@@ -39,6 +39,8 @@ on("click", "#delete", e => {
 	DOM("#confirmdeletedlg").close();
 });
 
+on("click", "#testalert", e => ws_sync.send({cmd: "testalert"}));
+
 const uploadme = { };
 export async function sockmsg_upload(msg) {
 	const file = uploadme[msg.name];

@@ -5,6 +5,8 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 
 <form>Upload new file: <input type=file multiple></form>
 
+[Send test alert](:#testalert)
+
 > ### Delete file
 > Really delete this file?
 >
@@ -173,6 +175,5 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string grp, string chan);
 	if (grp != "control") return;
-	//TODO: Send a test alert. This message comes in on the control connection,
-	//and signals everything in the display group.
+	send_updates_all("display#" + chan, (["send_alert": chan])); //TODO: Use the display name
 }
