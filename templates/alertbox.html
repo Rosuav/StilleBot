@@ -4,6 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Alert box: $$channelname$$</title>
 <style>
+* {box-sizing: border-box;}
 .text_under {
 }
 .text_under img {max-width: 250px; max-height: 250px;}
@@ -12,14 +13,16 @@ main {
 	transition: opacity 0.25s;
 }
 main.active {opacity: 1;}
+figure {
+	margin: 0;
+}
 figcaption {width: 250px;}
 </style>
 <style id=styles></style>
 </head>
 <body>
 $$js_variables||$$
-<main>
+<main id=hostalert>
 </main>
-<audio id=alertsound preload=auto></audio>
 </body>
 </html>
