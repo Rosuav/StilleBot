@@ -10,7 +10,10 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 >
 > [...](...)
 >
-> figure
+> <div class=thumbnail></div>
+>
+> Once deleted, this file will no longer be available for alerts, and if<br>
+> reuploaded, will have a brand new URL.
 >
 > [Delete](:#delete) [Cancel](:.dialog_close)
 {: tag=dialog #confirmdeletedlg}
@@ -81,6 +84,11 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	array files = ({ });
 	//TODO: Enumerate files in upload order (or upload authorization order)
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	if (id) {
+		if (!cfg->files) return 0;
+		int idx = search(cfg->files->id, id);
+		return idx >= 0 && cfg->files[idx];
+	}
 	return (["items": cfg->files || ({ }),
 		//TODO: All details about text positioning and style
 	]);
@@ -124,11 +132,23 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	sscanf(conn->group, "%s#%s", string grp, string chan);
-	if (grp != "control") return;
-	//TODO: Delete a file (or file authorization) to free up space.
-	//Delete the actual file in httpstatic/uploads, the entry in persist_status,
-	//and any other metadata.
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || grp != "control") return;
+	if (conn->session->fake) return;
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	if (!cfg->files) return; //No files, can't delete
+	int idx = search(cfg->files->id, msg->id);
+	if (idx == -1) return; //Not found.
+	mapping file = cfg->files[idx];
+	cfg->files = cfg->files[..idx-1] + cfg->files[idx+1..];
+	write("%O\n", file);
+	string fn = sprintf("%d-%s", channel->userid, file->id);
+	rm("httpstatic/uploads/" + fn); //If it returns 0 (file not found/not deleted), no problem
+	m_delete(persist_status->path("upload_metadata"), fn);
+	persist_status->save();
+	//TODO: See if the file was being used by an alert, and if so, remove it and
+	//update the display group.
+	update_one(conn->group, file->id);
 }
 
 void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
