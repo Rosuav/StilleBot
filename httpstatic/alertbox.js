@@ -48,9 +48,11 @@ function do_alert(alert, channel, viewers) {
 	document.querySelectorAll(alert + " [data-textformat]").forEach(el =>
 		set_content(el, el.dataset.textformat.replace("{NAME}", channel).replace("{VIEWERS}", viewers))
 	);
+	//Force animations to restart
+	document.querySelectorAll(alert + " img").forEach(el => el.src = el.src);
 	DOM(alert).classList.add("active");
 	DOM(alert + " audio").play();
-	//setTimeout(remove_alert, alert_length * 1000, alert);
+	setTimeout(remove_alert, alert_length * 1000, alert);
 }
 window.ping = () => do_alert("#hostalert", "Test", 42);
 setTimeout(do_alert, 500, "#hostalert", "Demo", 123);

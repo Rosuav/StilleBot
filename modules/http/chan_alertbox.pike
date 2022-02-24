@@ -94,7 +94,9 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		return ([
 			"alert_format": "text_under",
 			"textformat": "{NAME} hosted for {VIEWERS} viewers!",
-			"image": "https://sikorsky.rosuav.com/static/upload-49497888-7405a4f514eba34f702fbd3266e2",
+			//"image": "https://sikorsky.rosuav.com/static/upload-49497888-7405a4f514eba34f702fbd3266e2", //Non-square
+			"image": "https://sikorsky.rosuav.com/static/upload-49497888-d7ada7224efc280135d697f24ca2", //Animated
+			//"image": "https://placekitten.com/1000/1740", //Shareable, odd aspect ratio
 			"sound": "https://sikorsky.rosuav.com/static/upload-49497888-6f7e21773311a4c36ec322fa4411",
 			"volume": 0.0625,
 		]);

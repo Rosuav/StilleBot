@@ -6,8 +6,24 @@
 <style>
 * {box-sizing: border-box;}
 .text_under {
+	display: flex;
+	flex-direction: column;
+	width: 250px; height: 250px;
 }
-.text_under img {max-width: 250px; max-height: 250px;}
+.text_under > * {
+	max-width: 100%;
+	flex: 1;
+	min-height: 0;
+}
+.text_under > figcaption {
+	flex: 0;
+	min-height: auto;
+}
+.text_under img {
+	display: block;
+	max-height: 100%;
+	margin: auto;
+}
 main {
 	opacity: 0;
 	transition: opacity 0.25s;
@@ -16,7 +32,6 @@ main.active {opacity: 1;}
 figure {
 	margin: 0;
 }
-figcaption {width: 250px;}
 </style>
 <style id=styles></style>
 </head>
