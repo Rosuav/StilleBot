@@ -31,7 +31,7 @@ export function render(data) {
 	//replace <main></main> with a set of position-absolute tiles, all on top of
 	//each other, each with an ID that says what it is. Alert queueing would be
 	//shared across all of them, but each alert type would activate a different
-	//element. TODO: If one audio is playing, don't fire another.
+	//element. We guard against playing one audio while another is unpaused.
 	if (data.alert_format) {
 		if (alert_formats[data.alert_format]) set_content("#hostalert", alert_formats[data.alert_format](data));
 		else set_content("#hostalert", P("Unrecognized alert format, check editor or refresh page"));
@@ -52,7 +52,9 @@ function do_alert(alert, channel, viewers) {
 	//Force animations to restart
 	elem.querySelectorAll("img").forEach(el => el.src = el.src);
 	elem.classList.add("active");
-	elem.querySelector("audio").play();
+	let playing = false;
+	document.querySelectorAll("audio").forEach(a => {if (!a.paused) playing = true;});
+	if (!playing) elem.querySelector("audio").play();
 	setTimeout(remove_alert, alert_length * 1000, alert);
 }
 window.ping = () => do_alert("#hostalert", "Test", 42);
