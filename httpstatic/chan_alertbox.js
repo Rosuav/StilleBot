@@ -23,7 +23,12 @@ export function render_item(file, obj) {
 }
 
 export function render(data) {
+	if (data.authkey) DOM("#alertboxlink").href = "alertbox?key=" + data.authkey;
 }
+
+on("dragstart", "#alertboxlink", e => {
+	e.dataTransfer.setData("text/uri-list", `${e.match.href}&layer-name=Host%20Alerts&layer-width=300&layer-height=300`);
+});
 
 let deleteid = null;
 on("click", ".confirmdelete", e => {

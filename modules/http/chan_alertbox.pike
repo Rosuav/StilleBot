@@ -5,6 +5,8 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 
 <form>Upload new file: <input type=file multiple></form>
 
+Drag this to OBS or use this URL as a browser source: <a id=alertboxlink href=\"alertbox?key=LOADING\">Alert Box</a>
+
 [Send test alert](:#testalert)
 
 > ### Delete file
@@ -60,7 +62,9 @@ constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (string key = req->variables->key) {
-		//TODO: If key is incorrect, give static error
+		//TODO: If key is incorrect, give static error, something readable.
+		if (key != persist_status->path("alertbox", (string)req->misc->channel->userid)->authkey)
+			return (["error": 401, "data": "Bad key", "type": "text/plain"]);
 		return render_template("alertbox.html", ([
 			"vars": (["ws_type": ws_type, "ws_code": "alertbox", "ws_group": "display" + req->misc->channel->name]),
 			"channelname": req->misc->channel->name[1..],
@@ -70,8 +74,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (!req->misc->is_mod) return render(req, req->misc->chaninfo);
 	if (string scopes = ensure_bcaster_token(req, "chat:read"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
+	mapping cfg = persist_status->path("alertbox", (string)req->misc->channel->userid);
 	if (req->request_type == "POST") {
-		mapping cfg = persist_status->path("alertbox", (string)req->misc->channel->userid);
 		if (!req->variables->id) return jsonify((["error": "No file ID specified"]));
 		int idx = search((cfg->files || ({ }))->id, req->variables->id);
 		if (idx < 0) return jsonify((["error": "Bad file ID specified (may have been deleted already)"]));
@@ -114,7 +118,11 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		int idx = search(cfg->files->id, id);
 		return idx >= 0 && cfg->files[idx];
 	}
+	//TODO: Have a way to revoke the key and generate a new one. It should magically disconnect
+	//all clients in the display group.
+	if (!cfg->authkey) {cfg->authkey = String.string2hex(random_string(11)); persist_status->save();}
 	return (["items": cfg->files || ({ }),
+		"authkey": cfg->authkey,
 		//TODO: All details about text positioning and style
 	]);
 }
