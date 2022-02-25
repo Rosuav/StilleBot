@@ -9,6 +9,8 @@ Drag this to OBS or use this URL as a browser source: <a id=alertboxlink href=\"
 
 [Send test alert](:#testalert)
 
+<div id=alertconfigs></div>
+
 > ### Delete file
 > Really delete this file?
 >
@@ -54,10 +56,23 @@ figcaption {
 	overflow-wrap: break-word;
 }
 .thumbnail audio {max-width: 100%; max-height: 100%;}
+
+.alertconfig {
+	margin: 3px;
+	border: 1px solid black;
+	padding: 8px;
+}
 </style>
 ";
 
 constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB
+constant ALERTTYPES = ([
+	"hostalert": "When some other channel hosts yours (TODO: check if raids too)",
+	//Currently only the one, but leave open the possibility for more in the future
+]);
+constant FORMAT_ATTRS = ([
+	"text_under": "textformat image sound volume" / " ",
+]);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -97,22 +112,16 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (grp == "display") {
 		//Cut-down information for the display
 		string chan = channel->name[1..];
 		return ([
-			"alert_format": "text_under",
-			"textformat": "{NAME} hosted for {VIEWERS} viewers!",
-			//"image": "https://sikorsky.rosuav.com/static/upload-49497888-7405a4f514eba34f702fbd3266e2", //Non-square
-			"image": "https://sikorsky.rosuav.com/static/upload-49497888-d7ada7224efc280135d697f24ca2", //Animated
-			//"image": "https://placekitten.com/1000/1740", //Shareable, odd aspect ratio
-			"sound": "https://sikorsky.rosuav.com/static/upload-49497888-6f7e21773311a4c36ec322fa4411",
-			"volume": 0.0625,
+			"alertconfigs": cfg->alertconfigs || ([]),
 			"token": has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read") && persist_status->path("bcaster_token")[chan],
 		]);
 	}
 	array files = ({ });
-	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (id) {
 		if (!cfg->files) return 0;
 		int idx = search(cfg->files->id, id);
@@ -123,7 +132,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	if (!cfg->authkey) {cfg->authkey = String.string2hex(random_string(11)); persist_status->save();}
 	return (["items": cfg->files || ({ }),
 		"authkey": cfg->authkey,
-		//TODO: All details about text positioning and style
+		"alertconfigs": cfg->alertconfigs || ([]),
+		"alerttypes": ALERTTYPES,
 	]);
 }
 
@@ -188,4 +198,19 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 	sscanf(conn->group, "%s#%s", string grp, string chan);
 	if (grp != "control") return;
 	send_updates_all("display#" + chan, (["send_alert": chan])); //TODO: Use the display name
+}
+
+void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || grp != "control") return;
+	if (conn->session->fake) return;
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	if (!ALERTTYPES[msg->type]) return;
+	array attrs = FORMAT_ATTRS[msg->format];
+	if (!attrs) return;
+	//For now, completely replace the configs on any save
+	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
+	cfg->alertconfigs[msg->type] = (["format": msg->format]) | mkmapping(attrs, msg[attrs[*]]);
+	persist_status->save();
+	send_updates_all(conn->group);
 }

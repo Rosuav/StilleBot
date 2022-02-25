@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, AUDIO, BUTTON, DIV, FIGCAPTION, FIGURE} = choc; //autoimport
+const {A, AUDIO, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, INPUT, LABEL, OPTION, P, SELECT} = choc; //autoimport
 
 function THUMB(file) {
 	if (!file.url) return DIV({className: "thumbnail"}, "uploading...");
@@ -8,12 +8,15 @@ function THUMB(file) {
 }
 
 const files = { };
+const alerttypes = { };
 
 //NOTE: Item rendering applies to uploaded files. Other things are handled by render() itself.
 //NOTE: Since newly-uploaded files will always go to the end, this should always be sorted by
 //order added, as a documented feature. The server will need to ensure this.
 export const render_parent = DOM("#uploads");
 export function render_item(file, obj) {
+	//TODO: If obj, reduce flicker by reconfiguring it, without doing any changes to the
+	//thumbnail if the URL hasn't changed.
 	files[file.id] = file;
 	return FIGURE({"data-id": file.id}, [
 		THUMB(file),
@@ -24,7 +27,53 @@ export function render_item(file, obj) {
 
 export function render(data) {
 	if (data.authkey) DOM("#alertboxlink").href = "alertbox?key=" + data.authkey;
+	if (data.alerttypes) Object.entries(data.alerttypes).forEach(([type, desc]) => {
+		if (alerttypes[type]) return; //TODO: Update its description?
+		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({className: "alertconfig", "data-type": type}, [
+			H3(desc),
+			P([
+				SELECT({name: "format"}, OPTION({value: "text_under"}, "Text under image")),
+				" (Currently only one option, more Coming Soon™)",
+			]),
+			P(LABEL([
+				"Image: ",
+				//TODO: Have a thing that will enable a "Choose" button in the FIGURE section above?
+				INPUT({name: "image", size: 80}),
+				" (Coming soon: Selection from the above images)",
+			])),
+			P(LABEL([
+				"Text: ",
+				INPUT({name: "textformat", size: 80, placeholder: "{NAME} hosted for {VIEWERS} viewers!"}),
+				" Use ", CODE("{NAME}"), " for the channel name, and ", CODE("{VIEWERS}"), " for the view count.",
+			])),
+			P([
+				LABEL([
+					"Sound: ",
+					INPUT({name: "sound", size: 80}),
+				]),
+				LABEL([
+					"Volume: ",
+					INPUT({name: "volume", type: "number", step: 0.00001}),
+				]),
+			]),
+			P([BUTTON({type: "submit"}, "Save")]),
+		]));
+	});
+	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => {
+		const par = alerttypes[type]; if (!par) return;
+		Object.entries(attrs).forEach(([attr, val]) => par.elements[attr].value = val);
+	});
 }
+
+on("submit", ".alertconfig", e => {
+	e.preventDefault();
+	const el = e.match.elements;
+	ws_sync.send({cmd: "alertcfg", type: e.match.dataset.type,
+		format: el.format.value, image: el.image.value,
+		sound: el.sound.value, volume: el.volume.value,
+		textformat: el.textformat.value,
+	});
+});
 
 on("dragstart", "#alertboxlink", e => {
 	e.dataTransfer.setData("text/uri-list", `${e.match.href}&layer-name=Host%20Alerts&layer-width=300&layer-height=300`);

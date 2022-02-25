@@ -6,7 +6,7 @@ const alert_formats = {
 	text_under: data => FIGURE({className: "text_under"}, [
 		IMG({src: data.image}),
 		FIGCAPTION({"data-textformat": data.textformat}),
-		AUDIO({preload: "auto", src: data.sound, volume: data.volume}),
+		AUDIO({preload: "auto", src: data.sound, volume: +data.volume}),
 	]),
 };
 
@@ -34,8 +34,13 @@ export function render(data) {
 	//each other, each with an ID that says what it is. Alert queueing would be
 	//shared across all of them, but each alert type would activate a different
 	//element. We guard against playing one audio while another is unpaused.
-	if (data.alert_format) {
-		if (alert_formats[data.alert_format]) set_content("#hostalert", alert_formats[data.alert_format](data));
+	//This would then iterate over all of alertconfigs, creating all that are
+	//needed; it would need to destroy any that are NOT needed, without flickering
+	//those that are still present.
+	//TODO: Have each alert type record its own alert_length.
+	if (data.alertconfigs && data.alertconfigs.hostalert) {
+		const cfg = data.alertconfigs.hostalert;
+		if (alert_formats[cfg.format]) set_content("#hostalert", alert_formats[cfg.format](cfg));
 		else set_content("#hostalert", P("Unrecognized alert format, check editor or refresh page"));
 	}
 	if (data.alert_length) alert_length = data.alert_length;
