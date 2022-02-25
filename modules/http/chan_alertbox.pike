@@ -81,7 +81,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		file->url = sprintf("%s/static/upload-%s", persist_config["ircsettings"]->http_address, filename);
 		persist_status->path("upload_metadata")[filename] = (["mimetype": file->mimetype]);
 		persist_status->save();
-		send_updates_all("control" + req->misc->channel->name); //Display connection doesn't need to get updated.
+		update_one("control" + req->misc->channel->name, file->id); //Display connection doesn't need to get updated.
 		return jsonify((["url": file->url]));
 	}
 	return render(req, ([
@@ -149,7 +149,7 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	])});
 	persist_status->save();
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "upload", "id": id, "name": msg->name]), 4));
-	send_updates_all(conn->group); //Note that the display connection doesn't need to be updated
+	update_one(conn->group, id); //Note that the display connection doesn't need to be updated
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
