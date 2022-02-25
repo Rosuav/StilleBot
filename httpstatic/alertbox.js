@@ -1,5 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {AUDIO, FIGCAPTION, FIGURE, IMG, P} = choc; //autoimport
+import "https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js"; const ComfyJS = window.ComfyJS;
 
 const alert_formats = {
 	text_under: data => FIGURE({className: "text_under"}, [
@@ -26,6 +27,7 @@ const alert_formats = {
 //   short alert_gap will have alerts coming hard on each other's heels.
 let alert_length = 6, alert_gap = 2;
 
+let inited = false;
 export function render(data) {
 	//If, in the future, I need more than one alert type (with distinct formats),
 	//replace <main></main> with a set of position-absolute tiles, all on top of
@@ -38,6 +40,7 @@ export function render(data) {
 	}
 	if (data.alert_length) alert_length = data.alert_length;
 	if (data.send_alert) do_alert("#hostalert", data.send_alert, Math.floor(Math.random() * 100) + 1);
+	if (!inited && data.token) {inited = true; ComfyJS.Init(ws_group.split("#")[1], data.token);}
 }
 
 function remove_alert(alert) {
@@ -59,4 +62,13 @@ function do_alert(alert, channel, viewers) {
 	setTimeout(remove_alert, alert_length * 1000, alert);
 }
 window.ping = () => do_alert("#hostalert", "Test", 42);
-setTimeout(do_alert, 500, "#hostalert", "Demo", 123);
+
+const current_hosts = { };
+ComfyJS.onHosted = (username, viewers, autohost, extra) => {
+	//Note that ComfyJS itself never seems to announce autohosts. It also
+	//doesn't provide the displayname, so we fall back on the username.
+	if (current_hosts[username]) return;
+	current_hosts[username] = 1;
+	console.log("HOST:", username, viewers, autohost, extra);
+	do_alert("#hostalert", username, viewers);
+};

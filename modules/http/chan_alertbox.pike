@@ -93,6 +93,7 @@ bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	if (grp == "display") {
 		//Cut-down information for the display
+		string chan = channel->name[1..];
 		return ([
 			"alert_format": "text_under",
 			"textformat": "{NAME} hosted for {VIEWERS} viewers!",
@@ -101,6 +102,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 			//"image": "https://placekitten.com/1000/1740", //Shareable, odd aspect ratio
 			"sound": "https://sikorsky.rosuav.com/static/upload-49497888-6f7e21773311a4c36ec322fa4411",
 			"volume": 0.0625,
+			"token": has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read") && persist_status->path("bcaster_token")[chan],
 		]);
 	}
 	array files = ({ });
