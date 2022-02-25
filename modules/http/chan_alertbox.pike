@@ -213,4 +213,5 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	cfg->alertconfigs[msg->type] = (["format": msg->format]) | mkmapping(attrs, msg[attrs[*]]);
 	persist_status->save();
 	send_updates_all(conn->group);
+	send_updates_all("display" + channel->name);
 }
