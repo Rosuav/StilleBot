@@ -1,5 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, AUDIO, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, INPUT, LABEL, OPTION, P, SELECT} = choc; //autoimport
+const {A, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, INPUT, LABEL, OPTION, P, SELECT} = choc; //autoimport
+import {TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
 	if (!file.url) return DIV({className: "thumbnail"}, "uploading...");
@@ -41,11 +42,6 @@ export function render(data) {
 				INPUT({name: "image", size: 80}),
 				" (Coming soon: Selection from the above images)",
 			])),
-			P(LABEL([
-				"Text: ",
-				INPUT({name: "textformat", size: 80, placeholder: "{NAME} hosted for {VIEWERS} viewers!"}),
-				" Use ", CODE("{NAME}"), " for the channel name, and ", CODE("{VIEWERS}"), " for the view count.",
-			])),
 			P([
 				LABEL([
 					"Sound: ",
@@ -56,6 +52,10 @@ export function render(data) {
 					INPUT({name: "volume", type: "number", step: 0.00001}),
 				]),
 			]),
+			TEXTFORMATTING({
+				textname: "textformat",
+				textdesc: [BR(), CODE("{NAME}"), " for the channel name, and ", CODE("{VIEWERS}"), " for the view count."],
+			}),
 			P([BUTTON({type: "submit"}, "Save")]),
 		]));
 	});

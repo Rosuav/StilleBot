@@ -42,7 +42,7 @@ on("click", ".twitchlogout", async e => {
 });
 
 export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
-	TR([TH("Text"), TD(INPUT({size: 40, name: "text"}))]),
+	TR([TH(cfg.textlabel || "Text"), TD([INPUT({size: 40, name: cfg.textname || "text"}), cfg.textdesc])]),
 	TR([TH("Font"), TD([
 		INPUT({name: "font", size: "28"}),
 		SELECT({name: "fontweight"}, [OPTION("normal"), OPTION("bold")]),
@@ -52,7 +52,7 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 		BR(), "one that's already on your PC.",
 	])]),
 	TR([TH("Text color"), TD(INPUT({name: "color", type: "color"}))]),
-	TR([TH("Preview bg"), TD(INPUT({name: "previewbg", type: "color"}))]),
+	cfg.use_preview && TR([TH("Preview bg"), TD(INPUT({name: "previewbg", type: "color"}))]),
 	TR([TH("Border"), TD([
 		"Width (px):", INPUT({name: "borderwidth", type: "number"}),
 		"Color:", INPUT({name: "bordercolor", type: "color"}),

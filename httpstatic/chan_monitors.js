@@ -59,7 +59,7 @@ export function render_empty() {
 }
 export function render(data) { }
 
-set_content("#edittext form div", TEXTFORMATTING({ }));
+set_content("#edittext form div", TEXTFORMATTING({use_preview: true}));
 
 set_content("#editgoalbar form div", TABLE({border: 1}, [
 	TR([TH("Active"), TD(LABEL([INPUT({name: "active", type: "checkbox"}), "Enable auto-advance and level up messages"]))]),
