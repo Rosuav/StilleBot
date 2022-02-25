@@ -68,6 +68,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	//TODO: Give some useful info if not a mod, since that might be seen if someone messes up the URL
 	if (!req->misc->is_mod) return render(req, req->misc->chaninfo);
+	if (string scopes = ensure_bcaster_token(req, "chat:read"))
+		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
 	if (req->request_type == "POST") {
 		mapping cfg = persist_status->path("alertbox", (string)req->misc->channel->userid);
 		if (!req->variables->id) return jsonify((["error": "No file ID specified"]));
