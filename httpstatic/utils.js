@@ -2,6 +2,7 @@
 //import {...} from "$$static||utils.js$$";
 
 import {on, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
+const {BR, INPUT, OPTGROUP, OPTION, SELECT, TABLE, TD, TH, TR} = choc; //autoimport
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
 
 export function waitlate(wait_time, late_time, confirmdesc, callback) {
@@ -39,3 +40,36 @@ on("click", ".twitchlogout", async e => {
 	await fetch("/logout"); //Don't care what the response is (it'll be HTML anyway)
 	location.reload();
 });
+
+export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
+	TR([TH("Text"), TD(INPUT({size: 40, name: "text"}))]),
+	TR([TH("Font"), TD([
+		INPUT({name: "font", size: "28"}),
+		SELECT({name: "fontweight"}, [OPTION("normal"), OPTION("bold")]),
+		SELECT({name: "fontstyle"}, [OPTION("normal"), OPTION("italic")]),
+		INPUT({name: "fontsize", type: "number", size: "3", value: "16"}),
+		BR(), "Pick a font from Google Fonts or",
+		BR(), "one that's already on your PC.",
+	])]),
+	TR([TH("Text color"), TD(INPUT({name: "color", type: "color"}))]),
+	TR([TH("Preview bg"), TD(INPUT({name: "previewbg", type: "color"}))]),
+	TR([TH("Border"), TD([
+		"Width (px):", INPUT({name: "borderwidth", type: "number"}),
+		"Color:", INPUT({name: "bordercolor", type: "color"}),
+	])]),
+	//TODO: Gradient?
+	//TODO: Drop shadow?
+	//TODO: Padding? Back end already supports padvert and padhoriz.
+	TR([TH("Formatting"), TD(SELECT({name: "whitespace"}, [
+		OPTGROUP({label: "Single line"}, [
+			OPTION({value: "normal"}, "Wrapped"),
+			OPTION({value: "nowrap"}, "No wrapping"),
+		]),
+		OPTGROUP({label: "Multi-line"}, [
+			OPTION({value: "pre-line"}, "Normal"),
+			OPTION({value: "pre"}, "Keep indents"),
+			OPTION({value: "pre-wrap"}, "No wrapping"),
+		]),
+	]))]),
+	TR([TH("Custom CSS"), TD(INPUT({name: "css", size: 40}))]),
+])}

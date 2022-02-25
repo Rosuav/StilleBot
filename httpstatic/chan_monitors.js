@@ -1,7 +1,7 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, CODE, DIV, FIELDSET, LEGEND, LABEL, INPUT, TEXTAREA, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc;
+const {A, BR, BUTTON, CODE, DIV, FIELDSET, LEGEND, LABEL, INPUT, TEXTAREA, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc; //autoimport
 import update_display from "$$static||monitor.js$$";
-import {waitlate} from "$$static||utils.js$$";
+import {waitlate, TEXTFORMATTING} from "$$static||utils.js$$";
 
 const editables = { };
 function set_values(nonce, info, elem) {
@@ -59,39 +59,7 @@ export function render_empty() {
 }
 export function render(data) { }
 
-//TODO: Build these from data in some much more maintainable way (cf commands advanced edit)
-set_content("#edittext form div", TABLE({border: 1}, [
-	TR([TH("Text"), TD(INPUT({size: 40, name: "text"}))]),
-	TR([TH("Font"), TD([
-		INPUT({name: "font", size: "28"}),
-		SELECT({name: "fontweight"}, [OPTION("normal"), OPTION("bold")]),
-		SELECT({name: "fontstyle"}, [OPTION("normal"), OPTION("italic")]),
-		INPUT({name: "fontsize", type: "number", size: "3", value: "16"}),
-		BR(), "Pick a font from Google Fonts or",
-		BR(), "one that's already on your PC.",
-	])]),
-	TR([TH("Text color"), TD(INPUT({name: "color", type: "color"}))]),
-	TR([TH("Preview bg"), TD(INPUT({name: "previewbg", type: "color"}))]),
-	TR([TH("Border"), TD([
-		"Width (px):", INPUT({name: "borderwidth", type: "number"}),
-		"Color:", INPUT({name: "bordercolor", type: "color"}),
-	])]),
-	//TODO: Gradient?
-	//TODO: Drop shadow?
-	//TODO: Padding? Back end already supports padvert and padhoriz.
-	TR([TH("Formatting"), TD(SELECT({name: "whitespace"}, [
-		OPTGROUP({label: "Single line"}, [
-			OPTION({value: "normal"}, "Wrapped"),
-			OPTION({value: "nowrap"}, "No wrapping"),
-		]),
-		OPTGROUP({label: "Multi-line"}, [
-			OPTION({value: "pre-line"}, "Normal"),
-			OPTION({value: "pre"}, "Keep indents"),
-			OPTION({value: "pre-wrap"}, "No wrapping"),
-		]),
-	]))]),
-	TR([TH("Custom CSS"), TD(INPUT({name: "css", size: 40}))]),
-]));
+set_content("#edittext form div", TEXTFORMATTING({ }));
 
 set_content("#editgoalbar form div", TABLE({border: 1}, [
 	TR([TH("Active"), TD(LABEL([INPUT({name: "active", type: "checkbox"}), "Enable auto-advance and level up messages"]))]),
