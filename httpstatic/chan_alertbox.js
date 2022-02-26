@@ -88,7 +88,7 @@ on("click", ".showlibrary", e => {
 		rb.disabled = !want || pfx === "";
 		rb.checked = librarytarget && el.querySelector("a").href === librarytarget.value;
 	}
-	DOM("#libraryselect").disabled = pfx === "";
+	DOM("#library").classList.toggle("noselect", DOM("#libraryselect").disabled = pfx === "");
 	DOM("#library").showModal();
 });
 

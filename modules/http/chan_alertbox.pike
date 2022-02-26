@@ -8,7 +8,9 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 >
 > <div id=uploadfrm><div id=uploads></div></div>
 >
-> <p><form>Upload new file: <input type=file multiple></form></p>
+> <p><label class=selectmode><input type=radio name=chooseme> None<br></label>
+> <label class=selectmode><input type=radio name=chooseme> URL: [...]<br></label>
+> <form>Upload new file: <input type=file multiple></form></p>
 >
 > [Select](:#libraryselect disabled=true) [Close](:.dialog_close)
 {: tag=dialog #library}
@@ -93,6 +95,8 @@ figcaption {
 	border: 1px solid black;
 	padding: 8px;
 }
+
+#library.noselect .selectmode {display: none;}
 </style>
 ";
 
