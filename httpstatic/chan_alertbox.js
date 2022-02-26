@@ -78,6 +78,7 @@ let librarytarget = null;
 on("click", ".showlibrary", e => {
 	const mode = e.match.dataset.target;
 	librarytarget = mode ? e.match.form.elements[mode] : null; //In case there are multiple forms, retain the exact object we're targeting
+	let needvalue = !!librarytarget;
 	const pfx = e.match.dataset.prefix || "";
 	for (let el of render_parent.children) {
 		if (!el.dataset.id) continue;
@@ -86,7 +87,15 @@ on("click", ".showlibrary", e => {
 		el.classList.toggle("inactive", !want); //Not sure which is going to be more useful. Pick a style and ditch the other.
 		const rb = el.querySelector("input[type=radio]");
 		rb.disabled = !want || pfx === "";
-		rb.checked = librarytarget && el.querySelector("a").href === librarytarget.value;
+		if (needvalue && el.querySelector("a").href === librarytarget.value) {rb.checked = true; needvalue = false;}
+	}
+	if (needvalue) {
+		//Didn't match against any of the library entries.
+		if (librarytarget.value === "") DOM("input[type=radio][data-special=None]").checked = true;
+		else {
+			DOM("input[type=radio][data-special=URL]").checked = true;
+			//TODO: Set the input to the URL
+		}
 	}
 	DOM("#library").classList.toggle("noselect", DOM("#libraryselect").disabled = pfx === "");
 	DOM("#library").showModal();
@@ -98,7 +107,11 @@ on("click", ".showlibrary", e => {
 on("click", "#libraryselect", e => {
 	if (librarytarget) {
 		const rb = DOM("#library input[type=radio]:checked");
-		if (rb) librarytarget.value = rb.parentElement.querySelector("a").href;
+		if (rb) switch (rb.dataset.special) {
+			case "None": librarytarget.value = ""; break;
+			case "URL": librarytarget.value = "<...>"; break; //TODO
+			default: librarytarget.value = rb.parentElement.querySelector("a").href;
+		}
 		librarytarget = null;
 	}
 	DOM("#library").close();
