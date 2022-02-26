@@ -51,10 +51,14 @@ Drag this to OBS or use this URL as a browser source: <a id=alertboxlink href=\"
 	padding: 0.5em;
 	position: relative;
 }
-#uploads figure {margin: 0 1em;}
+#uploads figure {
+	margin: 0;
+	padding: 0 1em;
+}
+#uploads input[type=radio] {
+	position: absolute;
+}
 input[name=chooseme]:checked ~ figure {
-	/* TODO: There's a lot of dead space around this. Maybe position the RB
-	absolute and fiddle with paddings? */
 	background: aliceblue;
 }
 #uploads .active {
