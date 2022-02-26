@@ -25,7 +25,7 @@ const alert_formats = {
 //   to keep it roughly as long as the alert, no more, no less.
 //6) A long alert_gap will result in weird waiting periods between alerts. A
 //   short alert_gap will have alerts coming hard on each other's heels.
-let alert_length = 6, alert_gap = 2;
+let alert_length = 6, alert_gap = 1;
 
 let inited = false;
 export function render(data) {
@@ -56,12 +56,23 @@ export function render(data) {
 	if (!inited && data.token) {inited = true; ComfyJS.Init(ws_group.split("#")[1], data.token);}
 }
 
+const alert_queue = [];
+let alert_playing = false;
+
+function next_alert() {
+	alert_playing = false;
+	const next = alert_queue.shift();
+	if (next) setTimeout(do_alert, alert_gap * 1000, ...next);
+}
+
 function remove_alert(alert) {
 	DOM(alert).classList.remove("active");
-	//If there's a queued alert, schedule it for another alert_gap seconds from now
+	setTimeout(next_alert, alert_gap * 1000);
 }
 
 function do_alert(alert, channel, viewers) {
+	if (alert_playing) {alert_queue.push([alert, channel, viewers]); return;}
+	alert_playing = true;
 	const elem = DOM(alert);
 	elem.querySelectorAll("[data-textformat]").forEach(el =>
 		set_content(el, el.dataset.textformat.replace("{NAME}", channel).replace("{VIEWERS}", viewers))
