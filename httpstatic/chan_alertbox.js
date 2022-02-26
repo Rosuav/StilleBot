@@ -19,10 +19,13 @@ export function render_item(file, obj) {
 	//TODO: If obj, reduce flicker by reconfiguring it, without doing any changes to the
 	//thumbnail if the URL hasn't changed.
 	files[file.id] = file;
-	return FIGURE({"data-id": file.id}, [
-		THUMB(file),
-		FIGCAPTION(A({href: file.url}, file.name)),
-		BUTTON({type: "button", className: "confirmdelete", title: "Delete"}, "🗑"),
+	return LABEL({"data-id": file.id, "data-type": file.mimetype}, [
+		INPUT({type: "radio", name: "chooseme", value: file.id}),
+		FIGURE([
+			THUMB(file),
+			FIGCAPTION(A({href: file.url, target: "_blank"}, file.name)),
+			BUTTON({type: "button", className: "confirmdelete", title: "Delete"}, "🗑"),
+		]),
 	]);
 }
 
@@ -36,19 +39,20 @@ export function render(data) {
 				SELECT({name: "format"}, OPTION({value: "text_under"}, "Text under image")),
 				" (Currently only one option, more Coming Soon™)",
 			]),
-			P(LABEL([
-				"Image: ",
-				//TODO: Have a thing that will enable a "Choose" button in the FIGURE section above?
-				INPUT({name: "image", size: 80}),
-				" (Coming soon: Selection from the above images)",
-			])),
+			P([
+				LABEL(["Image: ", INPUT({name: "image", size: 100})]),
+				" ",
+				BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-prefix": "image/"}, "Choose"),
+			]),
 			P([
 				LABEL([
 					"Sound: ",
-					INPUT({name: "sound", size: 80}),
+					INPUT({name: "sound", size: 100}),
 				]),
+				" ",
+				BUTTON({type: "button", className: "showlibrary", "data-target": "sound", "data-prefix": "audio/"}, "Choose"),
 				LABEL([
-					"Volume: ",
+					" Volume: ",
 					INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1}),
 					SPAN({className: "rangedisplay"}, "50%"),
 				]),
@@ -70,6 +74,36 @@ export function render(data) {
 function rangedisplay(el) {set_content(el.parentElement.querySelector(".rangedisplay"), el.value * 100 + "%");}
 on("input", "input[type=range]", e => rangedisplay(e.match));
 
+let librarytarget = null;
+on("click", ".showlibrary", e => {
+	const mode = e.match.dataset.target;
+	librarytarget = mode ? e.match.form.elements[mode] : null; //In case there are multiple forms, retain the exact object we're targeting
+	const pfx = e.match.dataset.prefix || "";
+	for (let el of render_parent.children) {
+		if (!el.dataset.id) continue;
+		const want = el.dataset.type.startsWith(pfx);
+		el.classList.toggle("active", want);
+		el.classList.toggle("inactive", !want); //Not sure which is going to be more useful. Pick a style and ditch the other.
+		const rb = el.querySelector("input[type=radio]");
+		rb.disabled = !want || pfx === "";
+		rb.checked = librarytarget && el.querySelector("a").href === librarytarget.value;
+	}
+	DOM("#libraryselect").disabled = pfx === "";
+	DOM("#library").showModal();
+});
+
+//Can the dialog be made into a form and this turned into a submit event? <form method=dialog>
+//isn't very well supported yet, so I might have to do some of the work myself. Would improve
+//keyboard accessibility though.
+on("click", "#libraryselect", e => {
+	if (librarytarget) {
+		const rb = DOM("#library input[type=radio]:checked");
+		if (rb) librarytarget.value = rb.parentElement.querySelector("a").href;
+		librarytarget = null;
+	}
+	DOM("#library").close();
+});
+
 on("submit", ".alertconfig", e => {
 	e.preventDefault();
 	const msg = {cmd: "alertcfg", type: e.match.dataset.type};
@@ -84,7 +118,7 @@ on("dragstart", "#alertboxlink", e => {
 
 let deleteid = null;
 on("click", ".confirmdelete", e => {
-	deleteid = e.match.closest("figure").dataset.id;
+	deleteid = e.match.closest("[data-id]").dataset.id;
 	const file = files[deleteid];
 	DOM("#confirmdeletedlg .thumbnail").replaceWith(THUMB(file));
 	set_content("#confirmdeletedlg a", file.name).href = file.url;

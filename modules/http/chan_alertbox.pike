@@ -1,13 +1,21 @@
 inherit http_websocket;
 constant markdown = #"# Alertbox management for channel $$channel$$
 
-<div id=uploadfrm><div id=uploads></div></div>
-
-<form>Upload new file: <input type=file multiple></form>
+> ### Library
+>
+> Upload files (up to 5MB each) to use in your alerts. You may also
+> link to files that are accessible on the internet.
+>
+> <div id=uploadfrm><div id=uploads></div></div>
+>
+> <p><form>Upload new file: <input type=file multiple></form></p>
+>
+> [Select](:#libraryselect disabled=true) [Close](:.dialog_close)
+{: tag=dialog #library}
 
 Drag this to OBS or use this URL as a browser source: <a id=alertboxlink href=\"alertbox?key=LOADING\">Alert Box</a>
 
-[Send test alert](:#testalert)
+[Show library](:.showlibrary) [Send test alert](:#testalert)
 
 <div id=alertconfigs></div>
 
@@ -35,11 +43,34 @@ Drag this to OBS or use this URL as a browser source: <a id=alertboxlink href=\"
 	display: flex;
 	flex-wrap: wrap;
 }
-#uploads > figure {
+#uploads > label {
 	border: 1px solid black; /* TODO: Show incomplete uploads with a different border */
 	margin: 0.5em;
 	padding: 0.5em;
 	position: relative;
+}
+#uploads figure {margin: 0 1em;}
+input[name=chooseme]:checked ~ figure {
+	/* TODO: There's a lot of dead space around this. Maybe position the RB
+	absolute and fiddle with paddings? */
+	background: aliceblue;
+}
+#uploads .active {
+	/* TODO: Style the library elements so you can see which ones are selectable.
+	When you simply 'show library', that's all of them (but the radio buttons are
+	disabled); but if you ask to select an image or sound, only those of that type
+	are active (and will have radio buttons). */
+}
+#uploads .inactive {
+	/* Alternatively, style the inactive ones. Current placeholder: crosshatched. */
+	filter: grayscale(50%);
+	background: repeating-linear-gradient(
+		-45deg,
+		#eee,
+		#eee 10px,
+		#ccc 10px,
+		#ccc 12px
+	);
 }
 #uploads .confirmdelete {
 	position: absolute;
