@@ -6,7 +6,7 @@ const alert_formats = {
 	text_under: data => FIGURE({className: "text_under"}, [
 		IMG({src: data.image}),
 		FIGCAPTION({"data-textformat": data.textformat, style: data.text_css || ""}),
-		AUDIO({preload: "auto", src: data.sound, volume: +data.volume}),
+		AUDIO({preload: "auto", src: data.sound, volume: data.volume ** 2}),
 	]),
 };
 

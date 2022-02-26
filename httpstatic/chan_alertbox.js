@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, INPUT, LABEL, OPTION, P, SELECT} = choc; //autoimport
+const {A, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, INPUT, LABEL, OPTION, P, SELECT, SPAN} = choc; //autoimport
 import {TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
@@ -49,7 +49,8 @@ export function render(data) {
 				]),
 				LABEL([
 					"Volume: ",
-					INPUT({name: "volume", type: "number", step: 0.00001}),
+					INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1}),
+					SPAN({className: "rangedisplay"}, "50%"),
 				]),
 			]),
 			TEXTFORMATTING({
@@ -62,8 +63,12 @@ export function render(data) {
 	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => {
 		const par = alerttypes[type]; if (!par) return;
 		Object.entries(attrs).forEach(([attr, val]) => par.elements[attr] && (par.elements[attr].value = val));
+		document.querySelectorAll("input[type=range]").forEach(rangedisplay);
 	});
 }
+
+function rangedisplay(el) {set_content(el.parentElement.querySelector(".rangedisplay"), el.value * 100 + "%");}
+on("input", "input[type=range]", e => rangedisplay(e.match));
 
 on("submit", ".alertconfig", e => {
 	e.preventDefault();
