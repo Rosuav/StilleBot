@@ -71,7 +71,7 @@ constant ALERTTYPES = ([
 	//Currently only the one, but leave open the possibility for more in the future
 ]);
 constant FORMAT_ATTRS = ([
-	"text_under": "textformat image sound volume" / " ",
+	"text_under": "textformat image sound volume" / " " + TEXTFORMATTING_ATTRS,
 ]);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
@@ -184,7 +184,6 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (idx == -1) return; //Not found.
 	mapping file = cfg->files[idx];
 	cfg->files = cfg->files[..idx-1] + cfg->files[idx+1..];
-	write("%O\n", file);
 	string fn = sprintf("%d-%s", channel->userid, file->id);
 	rm("httpstatic/uploads/" + fn); //If it returns 0 (file not found/not deleted), no problem
 	m_delete(persist_status->path("upload_metadata"), fn);
@@ -210,7 +209,8 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (!attrs) return;
 	//For now, completely replace the configs on any save
 	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
-	cfg->alertconfigs[msg->type] = (["format": msg->format]) | mkmapping(attrs, msg[attrs[*]]);
+	mapping data = cfg->alertconfigs[msg->type] = (["format": msg->format]) | mkmapping(attrs, msg[attrs[*]]);
+	data->text_css = textformatting_css(data);
 	persist_status->save();
 	send_updates_all(conn->group);
 	send_updates_all("display" + channel->name);

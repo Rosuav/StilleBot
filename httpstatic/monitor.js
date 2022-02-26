@@ -15,6 +15,7 @@ const formatters = {
 const styleinfo = { }; //Retained info for when the styles need to change based on data (for goal bars)
 export function render(data) {update_display(DOM("#display"), data.data);}
 export default function update_display(elem, data) { //Used for the preview as well as the live display
+	//TODO: Rework this to use textformatting_css on the backend
 	//Update styles. If the arbitrary CSS setting isn't needed, make sure it is "" not null.
 	if (data.css || data.css === "") {
 		elem.style.cssText = data.css;

@@ -61,18 +61,16 @@ export function render(data) {
 	});
 	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => {
 		const par = alerttypes[type]; if (!par) return;
-		Object.entries(attrs).forEach(([attr, val]) => par.elements[attr].value = val);
+		Object.entries(attrs).forEach(([attr, val]) => par.elements[attr] && (par.elements[attr].value = val));
 	});
 }
 
 on("submit", ".alertconfig", e => {
 	e.preventDefault();
-	const el = e.match.elements;
-	ws_sync.send({cmd: "alertcfg", type: e.match.dataset.type,
-		format: el.format.value, image: el.image.value,
-		sound: el.sound.value, volume: el.volume.value,
-		textformat: el.textformat.value,
-	});
+	const msg = {cmd: "alertcfg", type: e.match.dataset.type};
+	for (let el of e.match.elements)
+		if (el.name) msg[el.name] = el.value; //TODO: Support checkboxes
+	ws_sync.send(msg);
 });
 
 on("dragstart", "#alertboxlink", e => {

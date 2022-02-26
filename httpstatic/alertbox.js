@@ -1,11 +1,11 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {AUDIO, FIGCAPTION, FIGURE, IMG, P} = choc; //autoimport
+const {AUDIO, FIGCAPTION, FIGURE, IMG, LINK, P} = choc; //autoimport
 import "https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js"; const ComfyJS = window.ComfyJS;
 
 const alert_formats = {
 	text_under: data => FIGURE({className: "text_under"}, [
 		IMG({src: data.image}),
-		FIGCAPTION({"data-textformat": data.textformat}),
+		FIGCAPTION({"data-textformat": data.textformat, style: data.text_css || ""}),
 		AUDIO({preload: "auto", src: data.sound, volume: +data.volume}),
 	]),
 };
@@ -42,6 +42,14 @@ export function render(data) {
 		const cfg = data.alertconfigs.hostalert;
 		if (alert_formats[cfg.format]) set_content("#hostalert", alert_formats[cfg.format](cfg));
 		else set_content("#hostalert", P("Unrecognized alert format, check editor or refresh page"));
+		if (cfg.font) {
+			//TODO: Deduplicate this with monitor.js
+			const id = "fontlink_" + encodeURIComponent(cfg.font);
+			if (!document.getElementById(id)) document.body.appendChild(LINK({
+				id, rel: "stylesheet",
+				href: "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(cfg.font) + "&display=swap",
+			}));
+		}
 	}
 	if (data.alert_length) alert_length = data.alert_length;
 	if (data.send_alert) do_alert("#hostalert", data.send_alert, Math.floor(Math.random() * 100) + 1);

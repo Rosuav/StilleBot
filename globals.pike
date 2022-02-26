@@ -765,6 +765,26 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 }
 #endif
 
+//The TEXTFORMATTING widget in utils.js creates a bunch of form elements. Save these
+//element names into a mapping, then call textformatting_css on that mapping, and you
+//will get back the correct CSS text for the specified formatting.
+array TEXTFORMATTING_ATTRS = "font fontweight fontstyle fontsize color borderwidth bordercolor whitespace css" / " ";
+string textformatting_css(mapping cfg) {
+	string css = cfg->css || "";
+	if (css != "" && !has_suffix(css, ";")) css += ";";
+	foreach ("color font-weight font-style border-color white-space" / " ", string attr)
+		if (mixed val = cfg[attr - "-"]) css += attr + ": " + val + ";";
+	foreach ("font-size width height" / " ", string attr)
+		if (mixed val = cfg[attr - "-"]) css += attr + ": " + val + "px;";
+	if (cfg->font) css += "font-family: " + cfg->font + ";"; //Note that the front end may have other work to do too, but here, we just set the font family.
+	if (cfg->padvert) css += sprintf("padding-top: %sem; padding-bottom: %<sem;", cfg->padvert);
+	if (cfg->padhoriz) css += sprintf("padding-left: %sem; padding-right: %<sem;", cfg->padhoriz);
+	//If you set a border width, assume we want a solid border. (For others, set the
+	//entire border definition in custom CSS.)
+	if (cfg->borderwidth && cfg->borderwidth != "") css += sprintf("border-width: %spx; border-style: solid;", cfg->borderwidth);
+	return css;
+}
+
 int(1bit) is_localhost_mod(string login, string ip) {
 	return login && login == persist_config["ircsettings"]->nick && //Allow mod status if you're me,
 		NetUtils.is_local_host(ip) && //from here,
