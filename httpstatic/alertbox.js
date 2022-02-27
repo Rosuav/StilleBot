@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {AUDIO, FIGCAPTION, FIGURE, IMG, LINK, P} = choc; //autoimport
+const {AUDIO, DIV, FIGCAPTION, FIGURE, IMG, LINK, P} = choc; //autoimport
 import "https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js"; const ComfyJS = window.ComfyJS;
 
 const alert_formats = {
@@ -8,6 +8,15 @@ const alert_formats = {
 		FIGCAPTION({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
 		AUDIO({preload: "auto", src: data.sound, volume: data.volume ** 2}),
 	]),
+	text_image_overlaid: data => DIV(
+		{
+			className: "text_image_overlaid " + (data.layout||""),
+			style: "background-image: url(" + data.image + ")",
+		}, [
+			DIV({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
+			AUDIO({preload: "auto", src: data.sound, volume: data.volume ** 2}),
+		]
+	),
 };
 
 //Timings:

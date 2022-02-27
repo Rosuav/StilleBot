@@ -112,6 +112,7 @@ constant ALERTTYPES = ([
 constant GLOBAL_ATTRS = "format alertlength alertgap" / " ";
 constant FORMAT_ATTRS = ([
 	"text_image_stacked": "layout textformat image sound volume" / " " + TEXTFORMATTING_ATTRS,
+	"text_image_overlaid": "layout textformat image sound volume" / " " + TEXTFORMATTING_ATTRS,
 ]);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)

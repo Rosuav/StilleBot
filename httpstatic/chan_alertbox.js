@@ -36,8 +36,10 @@ export function render(data) {
 		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({className: "alertconfig", "data-type": type}, [
 			H3(desc),
 			P([
-				SELECT({name: "format"}, OPTION({value: "text_image_stacked"}, "Text and image, stacked")),
-				" (Currently only one option, more in future perhaps)",
+				SELECT({name: "format"}, [
+					OPTION({value: "text_image_stacked"}, "Text and image, stacked"),
+					OPTION({value: "text_image_overlaid"}, "Text overlaid on image"),
+				]),
 			]),
 			P(LABEL([
 				"Layout: ",
@@ -75,9 +77,25 @@ export function render(data) {
 	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => {
 		const par = alerttypes[type]; if (!par) return;
 		Object.entries(attrs).forEach(([attr, val]) => par.elements[attr] && (par.elements[attr].value = val));
+		update_layout_options(par, attrs.layout);
 		document.querySelectorAll("input[type=range]").forEach(rangedisplay);
 	});
 }
+
+function update_layout_options(par, layout) {
+	const fmt = par.querySelector("[name=format]").value;
+	const opts = {
+		text_image_stacked: ["Image above", "Image below"],
+		text_image_overlaid: ["Top left", "Top middle", "Top right", "Middle left", "Centered", "Middle right", "Bottom left", "Bottom middle", "Bottom right"],
+	}[fmt];
+	if (!opts) return;
+	const el = par.querySelector("[name=layout]");
+	if (layout === "") layout = el.layout;
+	set_content(el, opts.map(o => OPTION({value: o.toLowerCase().replace(" ", "_")}, o)));
+	setTimeout(() => el.value = layout, 1);
+}
+
+on("change", "select[name=format]", e => update_layout_options(e.match.closest("form"), ""));
 
 function rangedisplay(el) {set_content(el.parentElement.querySelector(".rangedisplay"), el.value * 100 + "%");}
 on("input", "input[type=range]", e => rangedisplay(e.match));
