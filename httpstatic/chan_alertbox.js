@@ -94,12 +94,16 @@ on("click", ".showlibrary", e => {
 		if (librarytarget.value === "") DOM("input[type=radio][data-special=None]").checked = true;
 		else {
 			DOM("input[type=radio][data-special=URL]").checked = true;
-			//TODO: Set the input to the URL
+			DOM("#customurl").value = librarytarget.value;
 		}
 	}
 	DOM("#library").classList.toggle("noselect", DOM("#libraryselect").disabled = pfx === "");
 	DOM("#library").showModal();
 });
+
+//Select radio buttons as appropriate when you manipulate the URL box
+DOM("#customurl").onfocus = e => e.target.value !== "" && (DOM("input[type=radio][data-special=URL]").checked = true);
+on("input", "#customurl", e => DOM("input[type=radio][data-special=" + (e.target.value !== "" ? "URL" : "None") + "]").checked = true);
 
 //Can the dialog be made into a form and this turned into a submit event? <form method=dialog>
 //isn't very well supported yet, so I might have to do some of the work myself. Would improve
@@ -109,7 +113,7 @@ on("click", "#libraryselect", e => {
 		const rb = DOM("#library input[type=radio]:checked");
 		if (rb) switch (rb.dataset.special) {
 			case "None": librarytarget.value = ""; break;
-			case "URL": librarytarget.value = "<...>"; break; //TODO
+			case "URL": librarytarget.value = DOM("#customurl").value; break;
 			default: librarytarget.value = rb.parentElement.querySelector("a").href;
 		}
 		librarytarget = null;
