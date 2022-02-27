@@ -27,6 +27,23 @@
 	max-height: 100%;
 	margin: auto;
 }
+.text_image_overlaid {
+	width: 250px; height: 250px;
+	position: relative;
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+.text_image_overlaid div {position: absolute;}
+.text_image_overlaid.top div {top: 0;}
+.text_image_overlaid.bottom div {bottom: 0;}
+.text_image_overlaid.left div {left: 0;}
+.text_image_overlaid.right div {right: 0; text-align: right;}
+.text_image_overlaid.center div {top: 50%; transform: translate(0, -50%);}
+.text_image_overlaid.middle div {left: 50%; transform: translate(-50%, 0); text-align: center;}
+/* Because transform is a single attribute, it won't combine properly.
+So in the case where both transforms are needed, override with the pair. */
+.text_image_overlaid.center.middle div {transform: translate(-50%, -50%);}
 main {
 	opacity: 0;
 	transition: opacity 0.25s;
@@ -36,7 +53,6 @@ figure {
 	margin: 0;
 }
 </style>
-<style id=styles></style>
 </head>
 <body>
 $$js_variables||$$

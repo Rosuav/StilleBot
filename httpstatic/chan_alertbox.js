@@ -86,7 +86,7 @@ function update_layout_options(par, layout) {
 	const fmt = par.querySelector("[name=format]").value;
 	const opts = {
 		text_image_stacked: ["Image above", "Image below"],
-		text_image_overlaid: ["Top left", "Top middle", "Top right", "Middle left", "Centered", "Middle right", "Bottom left", "Bottom middle", "Bottom right"],
+		text_image_overlaid: ["Top left", "Top middle", "Top right", "Center left", "Center middle", "Center right", "Bottom left", "Bottom middle", "Bottom right"],
 	}[fmt];
 	if (!opts) return;
 	const el = par.querySelector("[name=layout]");

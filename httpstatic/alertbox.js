@@ -10,7 +10,9 @@ const alert_formats = {
 	]),
 	text_image_overlaid: data => DIV(
 		{
-			className: "text_image_overlaid " + (data.layout||""),
+			//The layout might be "top_middle", but in CSS, we can handle each dimension
+			//separately, so apply classes of "top middle" instead :)
+			className: "text_image_overlaid " + (data.layout||"").replace("_", " "),
 			style: "background-image: url(" + data.image + ")",
 		}, [
 			DIV({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
