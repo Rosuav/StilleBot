@@ -198,6 +198,7 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	else if (used + allocation > MAX_TOTAL_STORAGE * 1024)
 		error = "Unable to upload, storage limit of " + MAX_TOTAL_STORAGE + " MB exceeded. Delete other files to make room.";
 	//TODO: Check if the file name is duplicated? Maybe? Not sure. It's not a fundamental blocker.
+	//TODO: Sanitize the name - at least a length check.
 	if (error) {
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "uploaderror", "name": msg->name, "error": error]), 4));
 		return;
@@ -256,9 +257,16 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (!attrs) return;
 	//For now, completely replace the configs on any save
 	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
+	//TODO: Validate (see commands for example of deep validation)
 	mapping data = cfg->alertconfigs[msg->type] = mkmapping(GLOBAL_ATTRS, msg[GLOBAL_ATTRS[*]]) | mkmapping(attrs, msg[attrs[*]]);
 	data->text_css = textformatting_css(data);
 	persist_status->save();
 	send_updates_all(conn->group);
 	send_updates_all("display" + channel->name);
+}
+
+void websocket_cmd_rename(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//TODO: Rename a file. Won't change its URL (since that's based on ID),
+	//nor the name of the file as stored (ditto), so this is really an
+	//"edit description" endpoint. But users will think of it as "rename".
 }
