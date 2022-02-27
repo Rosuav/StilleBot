@@ -97,6 +97,7 @@
     But if a login is done _on this page_, we can send out the update.
   - Aspect ratio in stacked mode. I thought I fixed that.
   - Create a builtin to send an alert??
+  - Replace the inputs with previews and instantly save when updated from dlg
   - Make the demo work
 * CathyCat wants VIP Leaderboard, but for top 3 not top 10. Needs to be configurable.
   - Also may want the leaderboard to be locked to mods only, no read-only access
