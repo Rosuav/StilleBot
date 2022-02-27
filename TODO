@@ -96,6 +96,8 @@
   - Aspect ratio in stacked mode. I thought I fixed that.
   - Create a builtin to send an alert??
   - Replace the inputs with previews and instantly save when updated from dlg
+  - Change the rendered size to be custom and/or reflect the size or aspect ratio of the
+    image (esp for overlaid mode)
   - Make the demo work
 * CathyCat wants VIP Leaderboard, but for top 3 not top 10. Needs to be configurable.
   - Also may want the leaderboard to be locked to mods only, no read-only access
