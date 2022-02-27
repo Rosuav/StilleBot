@@ -226,10 +226,16 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	string fn = sprintf("%d-%s", channel->userid, file->id);
 	rm("httpstatic/uploads/" + fn); //If it returns 0 (file not found/not deleted), no problem
 	m_delete(persist_status->path("upload_metadata"), fn);
+	int changed_alert = 0;
+	if (file->url) 
+		foreach (cfg->alertconfigs || ([]);; mapping alert)
+			while (string key = search(alert, file->url)) {
+				alert[key] = "";
+				changed_alert = 1;
+			}
 	persist_status->save();
-	//TODO: See if the file was being used by an alert, and if so, remove it and
-	//update the display group.
 	update_one(conn->group, file->id);
+	if (changed_alert) update_one("display" + channel->name, file->id);
 }
 
 void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
