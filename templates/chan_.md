@@ -12,6 +12,7 @@ StilleBot can do here:
 * [Variables](variables) - mods only
 * [Repeated/automatic commands](repeats)
 * [Quotes](quotes)
+* [Alert Box](alertbox) - configure host alerts, maybe others in the future
 
 $$uptime$$
 
