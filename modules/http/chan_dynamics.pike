@@ -21,7 +21,6 @@ can't claim the reward at the same price.
 [Configure reward details here](https://dashboard.twitch.tv/viewer-rewards/channel-points/rewards)
 
 <style>
-input[type=number] {width: 4em;}
 code {background: #ffe;}
 </style>
 ";

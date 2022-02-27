@@ -3,9 +3,9 @@ const {AUDIO, FIGCAPTION, FIGURE, IMG, LINK, P} = choc; //autoimport
 import "https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js"; const ComfyJS = window.ComfyJS;
 
 const alert_formats = {
-	text_under: data => FIGURE({className: "text_under"}, [
+	text_image_stacked: data => FIGURE({className: "text_image_stacked " + (data.layout||"")}, [
 		IMG({src: data.image}),
-		FIGCAPTION({"data-textformat": data.textformat, style: data.text_css || ""}),
+		FIGCAPTION({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
 		AUDIO({preload: "auto", src: data.sound, volume: data.volume ** 2}),
 	]),
 };
@@ -25,7 +25,6 @@ const alert_formats = {
 //   to keep it roughly as long as the alert, no more, no less.
 //6) A long alert_gap will result in weird waiting periods between alerts. A
 //   short alert_gap will have alerts coming hard on each other's heels.
-let alert_length = 6, alert_gap = 1;
 
 let inited = false;
 export function render(data) {
@@ -37,11 +36,12 @@ export function render(data) {
 	//This would then iterate over all of alertconfigs, creating all that are
 	//needed; it would need to destroy any that are NOT needed, without flickering
 	//those that are still present.
-	//TODO: Have each alert type record its own alert_length.
 	if (data.alertconfigs && data.alertconfigs.hostalert) {
 		const cfg = data.alertconfigs.hostalert;
 		if (alert_formats[cfg.format]) set_content("#hostalert", alert_formats[cfg.format](cfg));
 		else set_content("#hostalert", P("Unrecognized alert format, check editor or refresh page"));
+		DOM("#hostalert").dataset.alertlength = cfg.alertlength || 6;
+		DOM("#hostalert").dataset.alertgap = cfg.alertgap || 1;
 		if (cfg.font) {
 			//TODO: Deduplicate this with monitor.js
 			const id = "fontlink_" + encodeURIComponent(cfg.font);
@@ -51,7 +51,6 @@ export function render(data) {
 			}));
 		}
 	}
-	if (data.alert_length) alert_length = data.alert_length;
 	if (data.send_alert) do_alert("#hostalert", data.send_alert, Math.floor(Math.random() * 100) + 1);
 	if (!inited && data.token) {inited = true; ComfyJS.Init(ws_group.split("#")[1], data.token);}
 }
@@ -62,12 +61,12 @@ let alert_playing = false;
 function next_alert() {
 	alert_playing = false;
 	const next = alert_queue.shift();
-	if (next) setTimeout(do_alert, alert_gap * 1000, ...next);
+	if (next) do_alert(...next);
 }
 
-function remove_alert(alert) {
+function remove_alert(alert, gap) {
 	DOM(alert).classList.remove("active");
-	setTimeout(next_alert, alert_gap * 1000);
+	setTimeout(next_alert, gap * 1000);
 }
 
 function do_alert(alert, channel, viewers) {
@@ -83,7 +82,7 @@ function do_alert(alert, channel, viewers) {
 	let playing = false;
 	document.querySelectorAll("audio").forEach(a => {if (!a.paused) playing = true;});
 	if (!playing) elem.querySelector("audio").play();
-	setTimeout(remove_alert, alert_length * 1000, alert);
+	setTimeout(remove_alert, elem.dataset.alertlength * 1000, alert, elem.dataset.alertgap);
 }
 window.ping = () => do_alert("#hostalert", "Test", 42);
 

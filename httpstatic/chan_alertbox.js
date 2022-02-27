@@ -36,8 +36,16 @@ export function render(data) {
 		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({className: "alertconfig", "data-type": type}, [
 			H3(desc),
 			P([
-				SELECT({name: "format"}, OPTION({value: "text_under"}, "Text under image")),
-				" (Currently only one option, more Coming Soon™)",
+				SELECT({name: "format"}, OPTION({value: "text_image_stacked"}, "Text and image, stacked")),
+				" (Currently only one option, more in future perhaps)",
+			]),
+			P(LABEL([
+				"Layout: ",
+				SELECT({name: "layout"}, [OPTION({value: "image_above"}, "Image above"), OPTION({value: "image_below"}, "Image below")]),
+			])),
+			P([
+				LABEL(["Alert length: ", INPUT({name: "alertlength", type: "number", value: "6", step: "0.5"}), " seconds; "]),
+				LABEL(["gap before next alert: ", INPUT({name: "alertgap", type: "number", value: "1", step: "0.25"}), " seconds"]),
 			]),
 			P([
 				LABEL(["Image: ", INPUT({name: "image", size: 100})]),
