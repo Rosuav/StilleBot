@@ -106,7 +106,7 @@ figcaption {
 
 constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB
 constant ALERTTYPES = ([
-	"hostalert": "When some other channel hosts yours (TODO: check if raids too)",
+	"hostalert": "When some other channel hosts yours",
 	//Currently only the one, but leave open the possibility for more in the future
 ]);
 constant FORMAT_ATTRS = ([
