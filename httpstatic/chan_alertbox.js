@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, INPUT, LABEL, OPTION, P, SELECT, SPAN} = choc; //autoimport
+const {A, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, IMG, INPUT, LABEL, OPTION, P, SELECT, SPAN} = choc; //autoimport
 import {TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
@@ -50,7 +50,8 @@ export function render(data) {
 				LABEL(["gap before next alert: ", INPUT({name: "alertgap", type: "number", value: "1", step: "0.25"}), " seconds"]),
 			]),
 			P([
-				LABEL(["Image: ", INPUT({name: "image", size: 100})]),
+				"Image: ",
+				IMG({className: "preview", "data-library": "image"}),
 				" ",
 				BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-prefix": "image/"}, "Choose"),
 			]),
@@ -77,6 +78,7 @@ export function render(data) {
 	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => {
 		const par = alerttypes[type]; if (!par) return;
 		Object.entries(attrs).forEach(([attr, val]) => par.elements[attr] && (par.elements[attr].value = val));
+		par.querySelectorAll("[data-library]").forEach(el => el.src = attrs[el.dataset.library]);
 		update_layout_options(par, attrs.layout);
 		document.querySelectorAll("input[type=range]").forEach(rangedisplay);
 	});
@@ -103,7 +105,7 @@ on("input", "input[type=range]", e => rangedisplay(e.match));
 let librarytarget = null;
 on("click", ".showlibrary", e => {
 	const mode = e.match.dataset.target;
-	librarytarget = mode ? e.match.form.elements[mode] : null; //In case there are multiple forms, retain the exact object we're targeting
+	librarytarget = mode ? e.match.form.querySelector("[data-library=" + mode + "]") : null; //In case there are multiple forms, retain the exact object we're targeting
 	let needvalue = !!librarytarget;
 	const pfx = e.match.dataset.prefix || "";
 	for (let el of render_parent.children) {
@@ -113,14 +115,14 @@ on("click", ".showlibrary", e => {
 		el.classList.toggle("inactive", !want); //Not sure which is going to be more useful. Pick a style and ditch the other.
 		const rb = el.querySelector("input[type=radio]");
 		rb.disabled = !want || pfx === "";
-		if (needvalue && el.querySelector("a").href === librarytarget.value) {rb.checked = true; needvalue = false;}
+		if (needvalue && el.querySelector("a").href === librarytarget.src) {rb.checked = true; needvalue = false;}
 	}
 	if (needvalue) {
 		//Didn't match against any of the library entries.
-		if (librarytarget.value === "") DOM("input[type=radio][data-special=None]").checked = true;
+		if (librarytarget.src === "") DOM("input[type=radio][data-special=None]").checked = true;
 		else {
 			DOM("input[type=radio][data-special=URL]").checked = true;
-			DOM("#customurl").value = librarytarget.value;
+			DOM("#customurl").value = librarytarget.src;
 		}
 	}
 	DOM("#library").classList.toggle("noselect", DOM("#libraryselect").disabled = pfx === "");
@@ -138,10 +140,12 @@ on("click", "#libraryselect", e => {
 	if (librarytarget) {
 		const rb = DOM("#library input[type=radio]:checked");
 		if (rb) switch (rb.dataset.special) {
-			case "None": librarytarget.value = ""; break;
-			case "URL": librarytarget.value = DOM("#customurl").value; break;
-			default: librarytarget.value = rb.parentElement.querySelector("a").href;
+			case "None": librarytarget.src = ""; break;
+			case "URL": librarytarget.src = DOM("#customurl").value; break;
+			default: librarytarget.src = rb.parentElement.querySelector("a").href;
 		}
+		ws_sync.send({cmd: "alertcfg", type: librarytarget.closest(".alertconfig").dataset.type,
+			[librarytarget.dataset.library]: librarytarget.src});
 		librarytarget = null;
 	}
 	DOM("#library").close();

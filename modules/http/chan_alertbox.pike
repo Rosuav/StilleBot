@@ -101,6 +101,9 @@ figcaption {
 }
 
 #library.noselect .selectmode {display: none;}
+img.preview {
+	max-width: 75px; max-height: 75px;
+}
 </style>
 ";
 
@@ -109,10 +112,11 @@ constant ALERTTYPES = ([
 	"hostalert": "When some other channel hosts yours",
 	//Currently only the one, but leave open the possibility for more in the future
 ]);
+constant RETAINED_ATTRS = ({"image"});
 constant GLOBAL_ATTRS = "format alertlength alertgap" / " ";
 constant FORMAT_ATTRS = ([
-	"text_image_stacked": "layout textformat image sound volume" / " " + TEXTFORMATTING_ATTRS,
-	"text_image_overlaid": "layout textformat image sound volume" / " " + TEXTFORMATTING_ATTRS,
+	"text_image_stacked": "layout textformat sound volume" / " " + TEXTFORMATTING_ATTRS,
+	"text_image_overlaid": "layout textformat sound volume" / " " + TEXTFORMATTING_ATTRS,
 ]);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
@@ -253,12 +257,27 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (conn->session->fake) return;
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!ALERTTYPES[msg->type]) return;
+	if (!msg->format) {
+		//If the format is not specified, this is a partial update, which can
+		//change only the RETAINED_ATTRS - all others are left untouched.
+		mapping data = cfg->alertconfigs[?msg->type]; if (!data) return;
+		foreach (RETAINED_ATTRS, string attr) if (msg[attr]) data[attr] = msg[attr];
+		persist_status->save();
+		send_updates_all(conn->group);
+		send_updates_all("display" + channel->name);
+		return;
+	}
 	array attrs = FORMAT_ATTRS[msg->format];
 	if (!attrs) return;
-	//For now, completely replace the configs on any save
+	//If the format *is* specified, this is a full update, *except* for the retained
+	//attributes. Other forms of partial update are not supported; instead, any
+	//unspecified attribute will be deleted.
 	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
 	//TODO: Validate (see commands for example of deep validation)
-	mapping data = cfg->alertconfigs[msg->type] = mkmapping(GLOBAL_ATTRS, msg[GLOBAL_ATTRS[*]]) | mkmapping(attrs, msg[attrs[*]]);
+	mapping data = cfg->alertconfigs[msg->type] =
+		mkmapping(RETAINED_ATTRS, (cfg->alertconfigs[msg->type]||([]))[RETAINED_ATTRS[*]])
+		| mkmapping(GLOBAL_ATTRS, msg[GLOBAL_ATTRS[*]])
+		| mkmapping(attrs, msg[attrs[*]]);
 	data->text_css = textformatting_css(data);
 	persist_status->save();
 	send_updates_all(conn->group);
