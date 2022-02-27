@@ -89,35 +89,15 @@
   public APIs available for things, they're kinda forcing us to use their internal API.
 * Find every place where I use Kraken and put it into a wrapper in modules/twitch_apis.pike
 * Host alert widget
-  - Transparent normally, but on host, shows custom image (possibly GIF) and plays sound.
-    - Preload both on startup so it doesn't need to be poked.
-  - Websocket for config synchronization, not for events. Use ComfyJS for that.
-    - Group "config#channel" for the main web interface
-    - Group "display#channel" for the viewer. BOT_BASIS/channels/CHANNEL/hostalert?key=KEY
-      to trigger this; if no key=, use config mode (mod only). If wrong key=, static error.
-  - Have an auth key like VLC's (but probably not the same one), so it doesn't need login
-  - Incorporate custom text with a placeholder for the login/display name
-  - Full style config as per monitors
   - Basic styling of the image only, but have a published ID so people can use custom CSS?
-  - OAuth key (bcaster token) sent on WS sync
-  - Must accept file uploads for GIF/PNG and audio (support OGG, MP3, not WAV). Assign IDs
-    and save the files into a non-tracked directory named "{userid}-{fileid}", extension
-    optional. Save user's original file name as default description, allow it to be edited,
-    retain in persist_status.
-  - Limit file size to 5MB for now. I've heard of people with 3MB GIFs, and my Cheshire Cat
-    images are 11MB, but those are by far the exception. Limit per user, maybe 25MB? Allow
-    files to be deleted (obviously). If upload same file name, offer to delete other?
   - On receipt of configs, if OAuth included and not same as previous, (re)connect.
   - If no OAuth token received after timeout (maybe 3-5 seconds), show error message in
     browser window. If connection fails, show error.
   - It's not currently possible to push out a WS update every time bcaster login changes.
     But if a login is done _on this page_, we can send out the update.
-  - Don't support multiple host alert boxes immediately, but don't rule out the possibility.
-  - Have a "test alert" button which sends a special WS message. But normally it wouldn't be
-    managed by the WS.
-  - If you refresh the browser source, it will reset the record of "seen this host".
-  - Borrow host notification code from Lisp Whispers
+  - Aspect ratio in stacked mode. I thought I fixed that.
+  - Create a builtin to send an alert??
+  - Make the demo work
 * CathyCat wants VIP Leaderboard, but for top 3 not top 10. Needs to be configurable.
   - Also may want the leaderboard to be locked to mods only, no read-only access
 * Raidshield - make it 60s, or check twice
-* Aspect ratio in stacked mode. I thought I fixed that.
