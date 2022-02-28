@@ -140,7 +140,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (key != persist_status->path("alertbox", (string)req->misc->channel->userid)->authkey)
 			return (["error": 401, "data": "Bad key", "type": "text/plain"]);
 		return render_template("alertbox.html", ([
-			"vars": (["ws_type": ws_type, "ws_code": "alertbox", "ws_group": "display" + req->misc->channel->name]),
+			"vars": (["ws_type": ws_type, "ws_code": "alertbox", "ws_group": req->variables->key + req->misc->channel->name]),
 			"channelname": req->misc->channel->name[1..],
 		]) | req->misc->chaninfo);
 	}
@@ -172,7 +172,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	if (grp == "display") {
+	if (grp == cfg->authkey) {
 		//Cut-down information for the display
 		string chan = channel->name[1..];
 		string token;
@@ -184,6 +184,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 			"token": token,
 		]);
 	}
+	if (grp != "control") return 0; //If it's not "control" and not the auth key, it's probably an expired auth key.
 	array files = ({ });
 	if (id) {
 		if (!cfg->files) return 0;
@@ -258,16 +259,17 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			}
 	persist_status->save();
 	update_one(conn->group, file->id);
-	if (changed_alert) update_one("display" + channel->name, file->id);
+	if (changed_alert) update_one(cfg->authkey + channel->name, file->id);
 }
 
 void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	sscanf(conn->group, "%s#%s", string grp, string chan);
-	if (grp != "control") return;
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || grp != "control") return;
 	//NOTE: Fake clients are fully allowed to send test alerts, but they will go
 	//to *every* client. This means multiple people playing with the demo
 	//simultaneously will see each other's alerts show up.
-	send_updates_all("display#" + chan, (["send_alert": chan])); //TODO: Use the display name
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	send_updates_all(cfg->authkey + channel->name, (["send_alert": channel->name[1..]])); //TODO: Use the display name
 }
 
 void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -283,7 +285,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		foreach (RETAINED_ATTRS, string attr) if (msg[attr]) data[attr] = msg[attr];
 		persist_status->save();
 		send_updates_all(conn->group);
-		send_updates_all("display" + channel->name);
+		send_updates_all(cfg->authkey + channel->name);
 		return;
 	}
 	array attrs = FORMAT_ATTRS[msg->format];
@@ -300,7 +302,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	data->text_css = textformatting_css(data);
 	persist_status->save();
 	send_updates_all(conn->group);
-	send_updates_all("display" + channel->name);
+	send_updates_all(cfg->authkey + channel->name);
 }
 
 void websocket_cmd_rename(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -317,5 +319,5 @@ void websocket_cmd_revokekey(mapping(string:mixed) conn, mapping(string:mixed) m
 	string prevkey = m_delete(cfg, "authkey");
 	persist_status->save();
 	send_updates_all(conn->group);
-	send_updates_all("display" + channel->name, (["breaknow": 1]));
+	send_updates_all(prevkey + channel->name, (["breaknow": 1]));
 }
