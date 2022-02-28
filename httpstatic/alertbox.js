@@ -109,7 +109,8 @@ function do_alert(alert, channel, viewers) {
 	elem.querySelectorAll("img").forEach(el => el.src = el.src);
 	elem.classList.add("active");
 	let playing = false;
-	document.querySelectorAll("audio").forEach(a => {if (!a.paused) playing = true;});
+	//If the page is in the background, don't play audio.
+	if (!document.hidden) document.querySelectorAll("audio").forEach(a => {if (!a.paused) playing = true;});
 	if (!playing) elem.querySelector("audio").play();
 	setTimeout(remove_alert, elem.dataset.alertlength * 1000, alert, elem.dataset.alertgap);
 }

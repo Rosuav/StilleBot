@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, IMG, INPUT, LABEL, OPTION, P, SELECT, SPAN} = choc; //autoimport
+const {A, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, IFRAME, IMG, INPUT, LABEL, OPTION, P, SELECT, SPAN} = choc; //autoimport
 import {TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
@@ -163,8 +163,17 @@ on("submit", ".alertconfig", e => {
 });
 
 on("dragstart", "#alertboxlink", e => {
-	e.dataTransfer.setData("text/uri-list", `${e.match.href}&layer-name=Host%20Alerts&layer-width=300&layer-height=300`);
+	e.dataTransfer.setData("text/uri-list", `${e.match.href}&layer-name=Host%20Alerts&layer-width=600&layer-height=400`);
 });
+
+on("click", "#alertboxlink", e => {
+	e.preventDefault();
+	DOM("#alertembed").src = e.match.href;
+	DOM("#previewdlg").showModal();
+});
+
+//Unload the preview when the dialog closes
+DOM("#previewdlg").onclose = e => DOM("#alertembed").src = "";
 
 let deleteid = null;
 on("click", ".confirmdelete", e => {
@@ -180,7 +189,7 @@ on("click", "#delete", e => {
 	DOM("#confirmdeletedlg").close();
 });
 
-on("click", "#testalert", e => ws_sync.send({cmd: "testalert"}));
+on("click", ".testalert", e => ws_sync.send({cmd: "testalert"}));
 
 const uploadme = { };
 export async function sockmsg_upload(msg) {

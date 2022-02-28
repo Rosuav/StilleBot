@@ -18,7 +18,7 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 Drag this to OBS or use this URL as a browser source: <a id=alertboxlink href=\"alertbox?key=LOADING\">Alert Box</a><br>
 Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:#revokekey) to generate a new one.
 
-[Show library](:.showlibrary) [Send test alert](:#testalert)
+[Show library](:.showlibrary) [Send test alert](:.testalert)
 
 > ### Revoke authentication key
 >
@@ -119,6 +119,15 @@ figcaption {
 }
 input[type=range] {vertical-align: middle;}
 </style>
+
+> ### Alert preview
+>
+> Your alerts currently look like this:
+>
+> <iframe id=alertembed width=600 height=400></iframe>
+>
+> [Send test alert](:.testalert) [Close](:.dialog_close)
+{: tag=dialog #previewdlg}
 ";
 
 constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB
