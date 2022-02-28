@@ -72,6 +72,11 @@ export function render(data) {
 		token = data.token;
 		if (token !== "!demo") ComfyJS.Init(ws_group.split("#")[1], data.token);
 	}
+	if (data.breaknow) {
+		//Token has been revoked. This will be the last message we receive
+		//on the websocket. Clean up some resources rather than waiting around.
+		ComfyJS.Disconnect();
+	}
 }
 
 setTimeout(() => {

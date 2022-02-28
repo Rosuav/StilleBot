@@ -15,9 +15,21 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 > [Select](:#libraryselect disabled=true) [Close](:.dialog_close)
 {: tag=dialog #library}
 
-Drag this to OBS or use this URL as a browser source: <a id=alertboxlink href=\"alertbox?key=LOADING\">Alert Box</a>
+Drag this to OBS or use this URL as a browser source: <a id=alertboxlink href=\"alertbox?key=LOADING\">Alert Box</a><br>
+Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:#revokekey) to generate a new one.
 
 [Show library](:.showlibrary) [Send test alert](:#testalert)
+
+> ### Revoke authentication key
+>
+> If your authentication key is accidentally shared, don't panic! It can be quickly and<br>
+> easily revoked here, before anyone can use it to snoop on your alerts.
+>
+> After doing this, you will need to update any browser sources showing your alerts,<br>
+> but all your configuration will be retained.
+>
+> [Generate a new key, disabling the old one](:#confirmrevokekey) [Cancel](:.dialog_close)
+{: tag=dialog #revokekeydlg}
 
 <div id=alertconfigs></div>
 
@@ -178,8 +190,6 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		int idx = search(cfg->files->id, id);
 		return idx >= 0 && cfg->files[idx];
 	}
-	//TODO: Have a way to revoke the key and generate a new one. It should magically disconnect
-	//all clients in the display group.
 	if (!cfg->authkey) {cfg->authkey = String.string2hex(random_string(11)); persist_status->save();}
 	return (["items": cfg->files || ({ }),
 		"authkey": cfg->authkey,
@@ -297,4 +307,15 @@ void websocket_cmd_rename(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	//TODO: Rename a file. Won't change its URL (since that's based on ID),
 	//nor the name of the file as stored (ditto), so this is really an
 	//"edit description" endpoint. But users will think of it as "rename".
+}
+
+void websocket_cmd_revokekey(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || grp != "control") return;
+	if (conn->session->fake) return;
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	string prevkey = m_delete(cfg, "authkey");
+	persist_status->save();
+	send_updates_all(conn->group);
+	send_updates_all("display" + channel->name, (["breaknow": 1]));
 }

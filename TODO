@@ -89,8 +89,6 @@
 * Host alert widget
   - Basic styling of the image only, but have a published ID so people can use custom CSS?
   - Create a builtin to send an alert??
-  - Option to revoke auth key and generate a new one. This should socket out a signal to
-    display clients to instabreak them.
 * CathyCat wants VIP Leaderboard, but for top 3 not top 10. Needs to be configurable.
   - Also may want the leaderboard to be locked to mods only, no read-only access
 * Raidshield - make it 60s, or check twice
