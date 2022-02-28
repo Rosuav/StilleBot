@@ -56,10 +56,8 @@ export function render(data) {
 				BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-prefix": "image/"}, "Choose"),
 			]),
 			P([
-				LABEL([
-					"Sound: ",
-					INPUT({name: "sound", size: 100}),
-				]),
+				"Sound: ",
+				AUDIO({className: "preview", "data-library": "sound", controls: true}),
 				" ",
 				BUTTON({type: "button", className: "showlibrary", "data-target": "sound", "data-prefix": "audio/"}, "Choose"),
 				LABEL([

@@ -101,9 +101,11 @@ figcaption {
 }
 
 #library.noselect .selectmode {display: none;}
-img.preview {
-	max-width: 75px; max-height: 75px;
+.preview {
+	max-height: 2em;
+	vertical-align: middle;
 }
+input[type=range] {vertical-align: middle;}
 </style>
 ";
 
@@ -112,11 +114,11 @@ constant ALERTTYPES = ([
 	"hostalert": "When some other channel hosts yours",
 	//Currently only the one, but leave open the possibility for more in the future
 ]);
-constant RETAINED_ATTRS = ({"image"});
+constant RETAINED_ATTRS = ({"image", "sound"});
 constant GLOBAL_ATTRS = "format alertlength alertgap" / " ";
 constant FORMAT_ATTRS = ([
-	"text_image_stacked": "layout textformat sound volume" / " " + TEXTFORMATTING_ATTRS,
-	"text_image_overlaid": "layout textformat sound volume" / " " + TEXTFORMATTING_ATTRS,
+	"text_image_stacked": "layout textformat volume" / " " + TEXTFORMATTING_ATTRS,
+	"text_image_overlaid": "layout textformat volume" / " " + TEXTFORMATTING_ATTRS,
 ]);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
