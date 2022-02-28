@@ -37,7 +37,7 @@ const alert_formats = {
 //6) A long alert_gap will result in weird waiting periods between alerts. A
 //   short alert_gap will have alerts coming hard on each other's heels.
 
-let inited = false;
+let inited = false, token = null;
 export function render(data) {
 	//If, in the future, I need more than one alert type (with distinct formats),
 	//replace <main></main> with a set of position-absolute tiles, all on top of
@@ -63,8 +63,17 @@ export function render(data) {
 		}
 	}
 	if (data.send_alert) do_alert("#hostalert", data.send_alert, Math.floor(Math.random() * 100) + 1);
-	if (!inited && data.token) {inited = true; ComfyJS.Init(ws_group.split("#")[1], data.token);}
+	if (data.token && data.token !== token) {
+		if (inited) ComfyJS.Disconnect();
+		inited = true;
+		ComfyJS.Init(ws_group.split("#")[1], data.token);
+	}
 }
+
+setTimeout(() => {
+	if (inited) return; //All good!
+	set_content("#hostalert", P("No login token provided - check configuration or refresh page"));
+}, 5000);
 
 const alert_queue = [];
 let alert_playing = false;

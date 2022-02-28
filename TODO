@@ -88,9 +88,6 @@
 * Find every place where I use Kraken and put it into a wrapper in modules/twitch_apis.pike
 * Host alert widget
   - Basic styling of the image only, but have a published ID so people can use custom CSS?
-  - On receipt of configs, if OAuth included and not same as previous, (re)connect.
-  - If no OAuth token received after timeout (maybe 3-5 seconds), show error message in
-    browser window. If connection fails, show error.
   - It's not currently possible to push out a WS update every time bcaster login changes.
     But if a login is done _on this page_, we can send out the update.
   - Aspect ratio in stacked mode. I thought I fixed that.
