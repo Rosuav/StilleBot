@@ -92,3 +92,4 @@
 * CathyCat wants VIP Leaderboard, but for top 3 not top 10. Needs to be configurable.
   - Also may want the leaderboard to be locked to mods only, no read-only access
 * Raidshield - make it 60s, or check twice
+* Add text stroke to the standard text formatting options, with caveat that it's Chrome-only
