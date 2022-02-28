@@ -40,6 +40,8 @@ export function render(data) {
 					OPTION({value: "text_image_stacked"}, "Text and image, stacked"),
 					OPTION({value: "text_image_overlaid"}, "Text overlaid on image"),
 				]),
+				LABEL([" Size:", INPUT({name: "alertwidth", type: "number", value: "250"})]),
+				LABEL([" x ", INPUT({name: "alertheight", type: "number", value: "250"}), " pixels"]),
 			]),
 			P(LABEL([
 				"Layout: ",

@@ -3,7 +3,10 @@ const {AUDIO, DIV, FIGCAPTION, FIGURE, IMG, LINK, P} = choc; //autoimport
 import "https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js"; const ComfyJS = window.ComfyJS;
 
 const alert_formats = {
-	text_image_stacked: data => FIGURE({className: "text_image_stacked " + (data.layout||"")}, [
+	text_image_stacked: data => FIGURE({
+		className: "text_image_stacked " + (data.layout||""),
+		style: `width: ${data.alertwidth||250}px; max-height: ${data.alertheight||250}px;`,
+	}, [
 		IMG({src: data.image}),
 		FIGCAPTION({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
 		AUDIO({preload: "auto", src: data.sound, volume: data.volume ** 2}),
@@ -13,7 +16,7 @@ const alert_formats = {
 			//The layout might be "top_middle", but in CSS, we can handle each dimension
 			//separately, so apply classes of "top middle" instead :)
 			className: "text_image_overlaid " + (data.layout||"").replace("_", " "),
-			style: "background-image: url(" + data.image + ")",
+			style: `background-image: url(${data.image}); width: ${data.alertwidth||250}px; height: ${data.alertheight||250}px;`,
 		}, [
 			DIV({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
 			AUDIO({preload: "auto", src: data.sound, volume: data.volume ** 2}),
