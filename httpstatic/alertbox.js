@@ -69,7 +69,8 @@ export function render(data) {
 	if (data.token && data.token !== token) {
 		if (inited) ComfyJS.Disconnect();
 		inited = true;
-		ComfyJS.Init(ws_group.split("#")[1], data.token);
+		token = data.token;
+		if (token !== "!demo") ComfyJS.Init(ws_group.split("#")[1], data.token);
 	}
 }
 

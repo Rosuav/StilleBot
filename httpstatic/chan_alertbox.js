@@ -64,7 +64,7 @@ export function render(data) {
 				BUTTON({type: "button", className: "showlibrary", "data-target": "sound", "data-prefix": "audio/"}, "Choose"),
 				LABEL([
 					" Volume: ",
-					INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1}),
+					INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1, value: 0.5}),
 					SPAN({className: "rangedisplay"}, "50%"),
 				]),
 			]),

@@ -133,11 +133,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		]) | req->misc->chaninfo);
 	}
 	//TODO: Give some useful info if not a mod, since that might be seen if someone messes up the URL
-	if (string scopes = ensure_bcaster_token(req, "chat:read"))
+	if (string scopes = req->misc->channel->name != "#!demo" && ensure_bcaster_token(req, "chat:read"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
 	if (!req->misc->is_mod) return render(req, req->misc->chaninfo);
 	mapping cfg = persist_status->path("alertbox", (string)req->misc->channel->userid);
-	if (req->request_type == "POST") {
+	if (!req->misc->session->fake && req->request_type == "POST") {
 		if (!req->variables->id) return jsonify((["error": "No file ID specified"]));
 		int idx = search((cfg->files || ({ }))->id, req->variables->id);
 		if (idx < 0) return jsonify((["error": "Bad file ID specified (may have been deleted already)"]));
@@ -163,9 +163,13 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	if (grp == "display") {
 		//Cut-down information for the display
 		string chan = channel->name[1..];
+		string token;
+		if (channel->name == "#!demo") token = "!demo"; //Permit test alerts but no chat connection
+		else if (has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read"))
+			token = persist_status->path("bcaster_token")[chan];
 		return ([
 			"alertconfigs": cfg->alertconfigs || ([]),
-			"token": has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read") && persist_status->path("bcaster_token")[chan],
+			"token": token,
 		]);
 	}
 	array files = ({ });
@@ -250,6 +254,9 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string grp, string chan);
 	if (grp != "control") return;
+	//NOTE: Fake clients are fully allowed to send test alerts, but they will go
+	//to *every* client. This means multiple people playing with the demo
+	//simultaneously will see each other's alerts show up.
 	send_updates_all("display#" + chan, (["send_alert": chan])); //TODO: Use the display name
 }
 
