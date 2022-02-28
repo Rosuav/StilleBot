@@ -88,7 +88,6 @@
 * Find every place where I use Kraken and put it into a wrapper in modules/twitch_apis.pike
 * Host alert widget
   - Basic styling of the image only, but have a published ID so people can use custom CSS?
-  - Aspect ratio in stacked mode. I thought I fixed that.
   - Create a builtin to send an alert??
   - Change the rendered size to be custom and/or reflect the size or aspect ratio of the
     image (esp for overlaid mode)
