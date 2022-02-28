@@ -5,6 +5,13 @@ When your channel is offline, host other channels automatically. You can immedia
 unhost and pause from this page, but if you have a stream schedule configured on
 Twitch, hosting will automatically pause near the start of a scheduled stream.
 
+## DISABLED
+
+Ghostwriter is cursed code and has been breaking other things. Until I figure out
+what the cause is, this is not functional. Sorry. :(
+
+## DISABLED
+
 $$login||Loading...$$
 {: #statusbox}
 
@@ -77,7 +84,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (string scopes = ensure_bcaster_token(req, "chat_login channel_editor chat:edit", req->misc->session->user->?login || "!!"))
 		login = sprintf("> This feature requires Twitch chat authentication.\n>\n"
 				"> [Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
-	if (!login) spawn_task(force_check(req->misc->session->user->id));
+	//if (!login) spawn_task(force_check(req->misc->session->user->id)); //HACK: Disabled.
 	return render(req, ([
 		"vars": (["ws_group": login ? "0" : req->misc->session->user->id]),
 		"login": login,
@@ -462,7 +469,8 @@ protected void create(string name) {
 	if (botnick) get_user_id(botnick)->then() {botid = (string)__ARGS__[0];}; //Cache the bot's user ID for the demo
 	mapping configs = persist_status->path("ghostwriter");
 	write("Configs available for %O\n", mkmapping(indices(configs), values(configs)->chan));
-	call_out(reconnect, 4, 1); //Delay startup a bit to avoid connection conflicts and allow compilation errors to be seen
+	//HACK: Temporarily disabled. Sigh.
+	//call_out(reconnect, 4, 1); //Delay startup a bit to avoid connection conflicts and allow compilation errors to be seen
 }
 
 /* If there's weird issues and infinitely-looping tasks with delays in them, try something like this:
