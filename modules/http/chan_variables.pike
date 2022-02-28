@@ -174,8 +174,6 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	mapping vars = persist_status->path("variables", channel->name);
-	string id = "$" + msg->id + "$";
-	if (undefinedp(vars[id])) return; //Only update existing vars this way.
-	vars[id] = msg->value || "";
-	update_one(conn->group, msg->id);
+	if (undefinedp(vars["$" + msg->id + "$"])) return; //Only update existing vars this way.
+	channel->set_variable(msg->id, msg->value || "", "set");
 }
