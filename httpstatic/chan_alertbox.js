@@ -97,7 +97,10 @@ function update_layout_options(par, layout) {
 
 on("change", "select[name=format]", e => update_layout_options(e.match.closest("form"), ""));
 
-function rangedisplay(el) {set_content(el.parentElement.querySelector(".rangedisplay"), el.value * 100 + "%");}
+function rangedisplay(el) {
+	set_content(el.parentElement.querySelector(".rangedisplay"), Math.floor(el.value * 100) + "%");
+	el.closest("form").querySelector("[data-library=sound]").volume = el.value ** 2;
+}
 on("input", "input[type=range]", e => rangedisplay(e.match));
 
 let librarytarget = null;
