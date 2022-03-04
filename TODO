@@ -85,7 +85,6 @@
     be just another way to have more than one invocation for a single command.
 * With the shutdown of Kraken, can we record things locally that used to be on Twitch?
   - Followed games/categories - you can still follow/unfollow but you can't query it in API
-* Find every place where I use Kraken and put it into a wrapper in modules/twitch_apis.pike
 * Host alert widget
   - Basic styling of the image only, but have a published ID so people can use custom CSS?
   - Create a builtin to send an alert??

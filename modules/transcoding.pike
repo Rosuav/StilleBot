@@ -1,3 +1,5 @@
+#if 0
+//Currently utterly and totally broken. If ever this can be revived, maybe it's worth looking into.
 inherit builtin_command;
 constant featurename = "info";
 constant hidden_command = 1;
@@ -34,3 +36,4 @@ continue Concurrent.Future|mapping message_params(object channel, mapping person
 		"{uptime}": (string)uptime,
 	]);
 }
+#endif
