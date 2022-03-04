@@ -82,7 +82,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render(req, (["vars": ([
 		"ws_group": "",
-		"css_attributes": css_attributes * " ",
 	])]) | req->misc->chaninfo);
 }
 

@@ -48,8 +48,7 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 		SELECT({name: "fontweight"}, [OPTION("normal"), OPTION("bold")]),
 		SELECT({name: "fontstyle"}, [OPTION("normal"), OPTION("italic")]),
 		INPUT({name: "fontsize", type: "number", size: "3", value: "16"}),
-		BR(), "Pick a font from Google Fonts or",
-		BR(), "one that's already on your PC.",
+		BR(), "Pick a font from Google Fonts or one that's already on your PC.",
 	])]),
 	TR([TH("Text color"), TD([
 		INPUT({name: "color", type: "color"}),

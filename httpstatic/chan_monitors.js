@@ -148,10 +148,8 @@ on("submit", "dialog form", async e => {
 	console.log(e.match.elements);
 	const dlg = e.match.closest("dialog");
 	const body = {nonce: dlg.dataset.nonce, type: dlg.id.slice(4)};
-	("text varname " + css_attributes).split(" ").forEach(attr => {
-		const el = e.match.elements[attr]; if (!el) return;
-		body[attr] = el.type === "checkbox" ? el.checked : el.value;
-	});
+	for (let el of e.match.elements)
+		if (el.name) body[el.name] = el.type === "checkbox" ? el.checked : el.value;
 	console.log("Saving", body);
 	const res = await fetch("monitors", {
 		method: "PUT",
