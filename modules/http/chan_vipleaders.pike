@@ -99,21 +99,28 @@ continue Concurrent.Future force_recalc(string chan, int|void fast) {
 	}
 
 	persist_status->save();
-	send_updates_all("#" + chan); //TODO: If view-only access is not allowed, don't push updates
+	if (!stats->private) send_updates_all("#" + chan);
 	send_updates_all("control#" + chan);
 }
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	string buttons = loggedin;
+	string group = "control";
 	if (string scopes = ensure_bcaster_token(req, "bits:read moderation:read channel:moderate chat_login chat:edit"))
 		buttons = sprintf("[Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
-	else if (!req->misc->is_mod)
-		//TODO: If view-only access is not allowed, give no ws_group
-		buttons = "*You're logged in, but not a recognized mod. View-only access granted.*";
+	else if (!req->misc->is_mod) {
+		if (persist_status->path("subgiftstats")[req->misc->channel->name[1..]]->?private_leaderboard) {
+			group = 0; //Empty string gives read-only access, null gives no socket (more efficient than one that gives no info)
+			buttons = "*This leaderboard is private and viewable only by the moderators.*";
+		} else {
+			group = "";
+			buttons = "*You're not a recognized mod, but you're welcome to view the leaderboard.*";
+		}
+	}
 	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render(req, ([
-		"vars": (["ws_group": "control" * req->misc->is_mod]),
+		"vars": (["ws_group": group]),
 		"buttons": buttons,
 	]) | req->misc->chaninfo);
 }
@@ -121,7 +128,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping stats = persist_status->path("subgiftstats", channel->name[1..]);
-	//TODO: If view-only access is not allowed and group is not "control", return empty
+	if (grp != "control" && stats->private_leaderboard) return ([]);
 	return stats;
 }
 
