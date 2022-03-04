@@ -312,7 +312,7 @@ class channel_notif
 		//mod-only command, that's trivially easy; for web access, just "poke
 		//the bot" in chat first.)
 		mods[name[1..]] = 1;
-		if (!has_prefix(name, "!")) get_user_id(name[1..])->then() {[userid] = __ARGS__;};
+		if (!has_prefix(name, "#!")) get_user_id(name[1..])->then() {[userid] = __ARGS__;};
 	}
 
 	//NOTE: Without not_join and its friends, Pike 8.0 will spam noisy failure
