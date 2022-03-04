@@ -56,7 +56,7 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 		" Outline ",
 		SELECT({name: "strokewidth"}, ["None 0.25px 0.5px 0.75px 1px 2px 3px 4px 5px".split(" ").map(o => OPTION(o))]),
 		INPUT({name: "strokecolor", type: "color"}),
-		" (outline works only in Chrome/CEF)",
+		" Note: Outline works only in Chrome (including OBS)",
 	])]),
 	cfg.use_preview && TR([TH("Preview bg"), TD(INPUT({name: "previewbg", type: "color"}))]),
 	TR([TH("Border"), TD([
