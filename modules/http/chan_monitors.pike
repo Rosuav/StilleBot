@@ -2,9 +2,8 @@ inherit http_websocket;
 inherit hook;
 
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
-constant css_attributes = "font fontweight fontstyle fontsize color css whitespace previewbg barcolor "
-	"fillcolor bordercolor borderwidth needlesize thresholds padvert padhoriz lvlupcmd format width height "
-	"active bit sub_t1 sub_t2 sub_t3 tip follow";
+constant css_attributes = "previewbg barcolor fillcolor needlesize thresholds padvert padhoriz lvlupcmd format width height "
+	"active bit sub_t1 sub_t2 sub_t3 tip follow" / " " + TEXTFORMATTING_ATTRS;
 constant valid_types = (<"text", "goalbar">);
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -59,7 +58,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		mapping info = cfg->monitors[nonce] = (["type": "text", "text": body->text]);
 		if (valid_types[body->type]) info->type = body->type;
 		//TODO: Validate the individual values?
-		foreach (css_attributes / " ", string key) if (body[key]) info[key] = body[key];
+		foreach (css_attributes, string key) if (body[key]) info[key] = body[key];
 		if (info->needlesize == "") info->needlesize = "0";
 		if (body->varname) info->text = sprintf("$%s$:%s", body->varname, info->text);
 		persist_config->save();
@@ -83,7 +82,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render(req, (["vars": ([
 		"ws_group": "",
-		"css_attributes": css_attributes,
+		"css_attributes": css_attributes * " ",
 	])]) | req->misc->chaninfo);
 }
 

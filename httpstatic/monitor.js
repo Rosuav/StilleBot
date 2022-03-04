@@ -18,7 +18,10 @@ export default function update_display(elem, data) { //Used for the preview as w
 	//TODO: Rework this to use textformatting_css on the backend
 	//Update styles. If the arbitrary CSS setting isn't needed, make sure it is "" not null.
 	if (data.css || data.css === "") {
-		elem.style.cssText = data.css;
+		let stroketxt = "";
+		if (data.strokewidth && data.strokewidth !== "None")
+			stroketxt = "-webkit-text-stroke: " + data.strokewidth + " " + (data.strokecolor || "black") + ";";
+		elem.style.cssText = stroketxt + data.css;
 		for (let attr in css_attribute_names) {
 			if (data[attr]) elem.style[css_attribute_names[attr]] = data[attr];
 		}
