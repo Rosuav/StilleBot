@@ -126,8 +126,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (req->variables->auth && req->variables->auth == channel->config->vlcauthtoken) {
 		//It could be a valid VLC signal.
 		if (!status) status = G->G->vlc_status[channel->name] = ([]);
-		req->variables->auth = "(correct)"; werror("%sGot VLC notification: %O\n", ctime(time()), req->variables);
-		if (req->variables->shutdown) {req->variables->status = "shutdown"; werror("VLC link shutdown\n");}
+		req->variables->auth = "(correct)"; //werror("%sGot VLC notification: %O\n", ctime(time()), req->variables);
+		if (req->variables->shutdown) req->variables->status = "shutdown";
 		int send = 0;
 		if (string uri = req->variables->now_playing) {
 			catch {uri = utf8_to_string(uri);}; //If it's not UTF-8, pretend it's Latin-1
@@ -151,7 +151,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				blockdesc = "";
 				if (!status->unknowns || !has_value(status->unknowns, block)) {
 					status->unknowns += ({block});
-					werror("New unknowns: %O\n", status->unknowns);
+					//werror("New unknowns: %O\n", status->unknowns);
 					send_updates_all("blocks" + channel->name);
 				}
 			}
@@ -168,9 +168,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				status->current = desc; status->curtrack = fn;
 				status->curblock = block; status->curblockdesc = blockdesc;
 				send = 1;
-				write("Changed desc, will report; playing is %O\n%O\n", status->playing, desc);
+				//write("Changed desc, will report; playing is %O\n%O\n", status->playing, desc);
 			}
-			else write("Unchanged desc, no report:\n%O\n", desc);
+			//else write("Unchanged desc, no report:\n%O\n", desc);
 		}
 		if (string s = req->variables->status) {
 			int playing = s == "playing";
