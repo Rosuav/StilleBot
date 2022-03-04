@@ -6,13 +6,14 @@ import {waitlate} from "$$static||utils.js$$";
 
 const id_to_info = { };
 let mods = { };
+let board_count = 15;
 
 function remap_to_array(stats) {
 	if (!stats) return stats;
 	const people = Object.values(stats);
 	//Sort by score descending, but break ties with earliest subgift for the month
 	people.sort((a,b) => (b.score - a.score) || (a.firstsub - b.firstsub));
-	if (people.length > 15) people.length = 15;
+	if (people.length > board_count) people.length = board_count;
 	return people;
 }
 
@@ -29,6 +30,7 @@ export function render(data) {
 	if (data.all) data.all.forEach(s => id_to_info[s.giver.user_id] = s.giver);
 	if (data.mods) mods = data.mods;
 	const mod = ws_group.startsWith("control#"); //Hide the buttons if the server would reject the signals anyway
+	if (data.board_count) board_count = data.board_count;
 	if (data.monthly) {
 		const rows = [];
 		const now = new Date();
@@ -37,7 +39,7 @@ export function render(data) {
 			const ym = year * 100 + mon;
 			const subs = remap_to_array(data.monthly["subs" + ym]);
 			const bits = data.monthly["bits" + ym];
-			if (bits && bits.length > 15) bits.length = 15; //We display fifteen, but the back end tracks ten more
+			if (bits && bits.length > board_count) bits.length = board_count; //We display a limited number, but the back end tracks more
 			//IDs are set so you can, in theory, deep link. I doubt anyone will though.
 			rows.push(TR({"id": ym}, TH({colSpan: 2}, [
 				monthnames[mon] + " " + year,
@@ -62,7 +64,7 @@ export function render(data) {
 				P([
 					LABEL([
 						"How many badges should be given out per category? ",
-						INPUT({name: "badge_count", type: "number", value: "10"}),
+						INPUT({name: "badge_count", type: "number", value: 10, min: 1, max: 25}),
 					]),
 					BR(),
 					"The top N cheerers and the top N subgifters will receive badges.",
@@ -70,7 +72,7 @@ export function render(data) {
 				P([
 					LABEL([
 						"How many names should be shown on the leaderboard, per category? ",
-						INPUT({name: "board_count", type: "number", value: "15"}),
+						INPUT({name: "board_count", type: "number", value: 15, min: 1, max: 25}),
 					]),
 					BR(),
 					"These people will be visible on the leaderboard. This may include ineligible people such as mods",
