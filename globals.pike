@@ -768,7 +768,7 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 //The TEXTFORMATTING widget in utils.js creates a bunch of form elements. Save these
 //element names into a mapping, then call textformatting_css on that mapping, and you
 //will get back the correct CSS text for the specified formatting.
-array TEXTFORMATTING_ATTRS = "font fontweight fontstyle fontsize color borderwidth bordercolor whitespace css" / " ";
+array TEXTFORMATTING_ATTRS = "font fontweight fontstyle fontsize color strokewidth strokecolor borderwidth bordercolor whitespace css" / " ";
 string textformatting_css(mapping cfg) {
 	string css = cfg->css || "";
 	if (css != "" && !has_suffix(css, ";")) css += ";";
@@ -779,6 +779,8 @@ string textformatting_css(mapping cfg) {
 	if (cfg->font) css += "font-family: " + cfg->font + ";"; //Note that the front end may have other work to do too, but here, we just set the font family.
 	if (cfg->padvert) css += sprintf("padding-top: %sem; padding-bottom: %<sem;", cfg->padvert);
 	if (cfg->padhoriz) css += sprintf("padding-left: %sem; padding-right: %<sem;", cfg->padhoriz);
+	if (cfg->strokewidth && cfg->strokewidth != "None")
+		css += sprintf("-webkit-text-stroke: %s %s;", cfg->strokewidth, cfg->strokecolor || "black");
 	//If you set a border width, assume we want a solid border. (For others, set the
 	//entire border definition in custom CSS.)
 	if (cfg->borderwidth && cfg->borderwidth != "") css += sprintf("border-width: %spx; border-style: solid;", cfg->borderwidth);

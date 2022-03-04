@@ -51,7 +51,13 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 		BR(), "Pick a font from Google Fonts or",
 		BR(), "one that's already on your PC.",
 	])]),
-	TR([TH("Text color"), TD(INPUT({name: "color", type: "color"}))]),
+	TR([TH("Text color"), TD([
+		INPUT({name: "color", type: "color"}),
+		" Outline ",
+		SELECT({name: "strokewidth"}, ["None 0.25px 0.5px 0.75px 1px 2px 3px 4px 5px".split(" ").map(o => OPTION(o))]),
+		INPUT({name: "strokecolor", type: "color"}),
+		" (outline works only in Chrome/CEF)",
+	])]),
 	cfg.use_preview && TR([TH("Preview bg"), TD(INPUT({name: "previewbg", type: "color"}))]),
 	TR([TH("Border"), TD([
 		"Width (px):", INPUT({name: "borderwidth", type: "number"}),
