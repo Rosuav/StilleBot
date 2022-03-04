@@ -58,7 +58,7 @@ void add_score(mapping monthly, mapping sub) {
 
 continue Concurrent.Future force_recalc(string chan, int|void fast) {
 	mapping stats = persist_status->path("subgiftstats")[chan];
-	if (!stats->?active) return;
+	if (!stats->?active) return 0;
 	if (!fast || !stats->monthly) {
 		stats->monthly = ([]);
 		foreach (stats->all || ({ }), mapping sub) add_score(stats->monthly, sub);
@@ -89,7 +89,7 @@ continue Concurrent.Future force_recalc(string chan, int|void fast) {
 	}
 
 	persist_status->save();
-	send_updates_all("#" + chan);
+	send_updates_all("#" + chan); //TODO: If view-only access is not allowed, don't push updates
 	send_updates_all("control#" + chan);
 }
 
@@ -99,6 +99,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (string scopes = ensure_bcaster_token(req, "bits:read moderation:read channel:moderate chat_login chat:edit"))
 		buttons = sprintf("[Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
 	else if (!req->misc->is_mod)
+		//TODO: If view-only access is not allowed, give no ws_group
 		buttons = "*You're logged in, but not a recognized mod. View-only access granted.*";
 	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render(req, ([
@@ -110,7 +111,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping stats = persist_status->path("subgiftstats", channel->name[1..]);
-	if (!stats->all) return ([]);
+	if (!stats->active) return ([]);
+	//TODO: If view-only access is not allowed and group is not "control", return empty
 	return stats;
 }
 
