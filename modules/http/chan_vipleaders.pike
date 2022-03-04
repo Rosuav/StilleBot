@@ -223,7 +223,7 @@ protected void create(string name)
 {
 	foreach (persist_config->path("channels"); string chan; mapping cfg)
 		if (m_delete(cfg, "tracksubgifts")) {
-			persist_status->path("subgiftstats", chan[1..])->active = 1;
+			persist_status->path("subgiftstats", chan)->active = 1;
 			persist_status->save(); persist_config->save();
 		}
 	register_hook("subscription", Program.defined(this_program));
