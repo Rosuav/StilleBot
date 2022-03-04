@@ -136,8 +136,8 @@ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 	array bits = stats->monthly["bits" + msg->yearmonth] || ({ });
 	array subs = values(stats->monthly["subs" + msg->yearmonth] || ([]));
 	sort(subs->firstsub, subs); sort(-subs->score[*], subs);
-	//1) Get the top ten cheerers
-	int limit = 10;
+	//1) Get the top cheerers
+	int limit = stats->badge_count || 10;
 	array(string) cmds = ({ });
 	array(string) people = ({ });
 	foreach (bits, mapping person) {
@@ -149,8 +149,8 @@ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 	if (!sizeof(people)) cmds = ({"No non-mods have cheered bits in that month."});
 	else cmds = ({(add ? "Adding VIP status to cheerers: " : "Removing VIP status from cheerers: ") + people * ", "})
 		+ cmds;
-	//2) Get the top ten subbers
-	limit = 10; people = ({ });
+	//2) Get the top subbers
+	limit = stats->badge_count || 10; people = ({ });
 	foreach (subs, mapping person) {
 		if (stats->mods[person->user_id]) continue;
 		if ((string)person->user_id == "274598607") continue; //AnAnonymousGifter
