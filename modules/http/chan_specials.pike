@@ -37,7 +37,7 @@ constant ENABLEABLE_FEATURES = ([
 		"special": "!raided",
 		"fragment": "#!raided/",
 		"response": ([
-			"delay": 30,
+			"delay": 60,
 			"message": ([
 				"builtin": "nowlive",
 				"builtin_param": "$$",

@@ -89,4 +89,3 @@
 * Host alert widget
   - Basic styling of the image only, but have a published ID so people can use custom CSS?
   - Create a builtin to send an alert??
-* Raidshield - make it 60s, or check twice
