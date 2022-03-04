@@ -59,11 +59,16 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 	])]),
 	cfg.use_preview && TR([TH("Preview bg"), TD(INPUT({name: "previewbg", type: "color"}))]),
 	TR([TH("Border"), TD([
-		"Width (px):", INPUT({name: "borderwidth", type: "number"}),
-		"Color:", INPUT({name: "bordercolor", type: "color"}),
+		"Width (px): ", INPUT({name: "borderwidth", type: "number"}),
+		" Color: ", INPUT({name: "bordercolor", type: "color"}),
+	])]),
+	TR([TH("Drop shadow"), TD([
+		"Position (px): ", INPUT({name: "shadowx", type: "number"}), INPUT({name: "shadowy", type: "number"}),
+		" Color: ", INPUT({name: "shadowcolor", type: "color"}),
+		" Opacity: ", INPUT({name: "shadowalpha", type: "number", min: 0, max: 100, value: 0}),
+		" 0 to disable",
 	])]),
 	//TODO: Gradient?
-	//TODO: Drop shadow?
 	//TODO: Padding? Back end already supports padvert and padhoriz.
 	TR([TH("Formatting"), TD(SELECT({name: "whitespace"}, [
 		OPTGROUP({label: "Single line"}, [

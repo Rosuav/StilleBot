@@ -768,7 +768,9 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 //The TEXTFORMATTING widget in utils.js creates a bunch of form elements. Save these
 //element names into a mapping, then call textformatting_css on that mapping, and you
 //will get back the correct CSS text for the specified formatting.
-array TEXTFORMATTING_ATTRS = "font fontweight fontstyle fontsize color strokewidth strokecolor borderwidth bordercolor whitespace css" / " ";
+array TEXTFORMATTING_ATTRS = ("font fontweight fontstyle fontsize whitespace css "
+			"color strokewidth strokecolor borderwidth bordercolor "
+			"shadowx shadowy shadowcolor shadowalpha") / " ";
 string textformatting_css(mapping cfg) {
 	string css = cfg->css || "";
 	if (css != "" && !has_suffix(css, ";")) css += ";";
@@ -781,6 +783,14 @@ string textformatting_css(mapping cfg) {
 	if (cfg->padhoriz) css += sprintf("padding-left: %sem; padding-right: %<sem;", cfg->padhoriz);
 	if (cfg->strokewidth && cfg->strokewidth != "None")
 		css += sprintf("-webkit-text-stroke: %s %s;", cfg->strokewidth, cfg->strokecolor || "black");
+	if (int alpha = (int)cfg->shadowalpha) {
+		//NOTE: If we do more than one filter, make sure we combine them properly here on the back end.
+		string col = cfg->shadowcolor || "";
+		if (sizeof(col) != 7 && col[0] != '#') col = "#FFFFFF"; //I don't know how to add alpha to something that isn't in hex.
+		css += sprintf("filter: drop-shadow(%dpx %dpx %s%02X)",
+			(int)cfg->shadowx, (int)cfg->shadowy,
+			col, (int)(alpha * 2.55 + 0.5));
+	}
 	//If you set a border width, assume we want a solid border. (For others, set the
 	//entire border definition in custom CSS.)
 	if (cfg->borderwidth && cfg->borderwidth != "") css += sprintf("border-width: %spx; border-style: solid;", cfg->borderwidth);
