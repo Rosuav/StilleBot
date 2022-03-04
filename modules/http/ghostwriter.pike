@@ -102,9 +102,9 @@ EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string
 	//host it while it's still shutting down.
 	channel_seen_offline[(int)chanid] = time();
 	mapping st = chanstate[chanid];
-	if (st) spawn_task(recalculate_status(chanid));
+	recalculate_soon(chanid);
 	foreach (chanstate; string id; mapping st) {
-		if (st->hostingid == chanid) spawn_task(recalculate_status(id));
+		if (st->hostingid == chanid) recalculate_soon(id);
 	}
 };
 
@@ -124,6 +124,10 @@ void schedule_recalculation(string chanid, array(int) targets) {
 	st->next_scheduled_check = target;
 	schedule_check_callouts[chanid] = call_out(scheduled_recalculation, until, chanid);
 }
+
+//Anything that needs to recalculate after Twitch has settled all nodes, use this,
+//and the time delay can be synchronized. 30 seconds is a pure guess.
+void recalculate_soon(string chanid) {schedule_recalculation(chanid, ({time() + 30}));}
 
 array(string) low_recalculate_status(mapping st) {
 	//1) Being live trumps all.
@@ -352,11 +356,11 @@ void websocket_cmd_pause(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string chanid, mapping event] = __ARGS__;
 	write("** GW: Channel %O online: %O\nThese channels care: %O\n", chanid, event, autohosts_this[chanid]);
 	mapping st = chanstate[chanid];
-	if (st) spawn_task(recalculate_status(chanid));
+	spawn_task(recalculate_status(chanid));
 	foreach (autohosts_this[chanid] || ([]); string id;) {
 		mapping st = chanstate[id];
 		write("Channel %O cares - status %O\n", persist_status->path("ghostwriter")[id]->?chan || id, st->statustype);
-		if (st->statustype == "idle") spawn_task(recalculate_status(id));
+		if (st->statustype == "idle") recalculate_soon(id);
 	}
 };
 
@@ -432,7 +436,7 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 
 void reconnect(int|void first) {
 	if (G->G->ghostwritercallouts[""] != hash_value(this)) return; //Code's been updated. Don't do anything.
-	if (object irc = G->G->ghostwriterirc[-1]) {irc->close(); destruct(irc);}
+	if (object irc = G->G->ghostwriterirc[-1]) {irc->close(); call_out(destruct, 1, irc);}
 	mapping opt = persist_config["ircsettings"];
 	if (!opt || !opt->pass) return; //Not yet configured - can't connect.
 	mapping chanids = ([]);
@@ -448,9 +452,9 @@ void reconnect(int|void first) {
 		if (!info->?channels || !sizeof(info->channels)) continue;
 		call_out(irc->join_channel, ++delay, "#" + info->chan);
 		chanids[info->chan] = chanid;
-		if (!first) continue; //First-time setup needed only, well, the first time
-		call_out(has_channel, delay, chanid, info->channels->id[*]);
-		if (int t = chanstate[chanid]->?next_scheduled_check) {
+		if (first) call_out(has_channel, delay, chanid, info->channels->id[*]);
+		if (!chanstate[chanid]) chanstate[chanid] = ([]);
+		if (int t = chanstate[chanid]->next_scheduled_check) {
 			t -= time();
 			if (t >= 0) schedule_check_callouts[chanid] = call_out(scheduled_recalculation, t, chanid);
 		}
