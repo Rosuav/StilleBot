@@ -76,7 +76,7 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 			OPTION({value: "pre-wrap"}, "No wrapping"),
 		]),
 	]))]),
-	TR([TH("Custom CSS"), TD(INPUT({name: "css", size: 40}))]),
+	TR([TH("Custom CSS"), TD(INPUT({name: "css", size: 60}))]),
 ])}
 
 //Ensure that a font is loaded if applicable. If this fails, the font may
