@@ -87,7 +87,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 
 mapping _get_monitor(object channel, mapping monitors, string id) {
 	mapping text = monitors[id];
-	return text && (["css": ""]) | text | (["id": id, "display": channel->expand_variables(text->text)]);
+	return text && text | (["id": id, "display": channel->expand_variables(text->text), "text_css": textformatting_css(text)]);
 }
 bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
 mapping get_chan_state(object channel, string grp, string|void id) {

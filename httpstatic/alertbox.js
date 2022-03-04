@@ -1,6 +1,7 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {AUDIO, DIV, FIGCAPTION, FIGURE, IMG, LINK, P} = choc; //autoimport
 import "https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js"; const ComfyJS = window.ComfyJS;
+import {ensure_font} from "$$static||utils.js$$";
 
 const alert_formats = {
 	text_image_stacked: data => FIGURE({
@@ -56,14 +57,7 @@ export function render(data) {
 		else set_content("#hostalert", P("Unrecognized alert format, check editor or refresh page"));
 		DOM("#hostalert").dataset.alertlength = cfg.alertlength || 6;
 		DOM("#hostalert").dataset.alertgap = cfg.alertgap || 1;
-		if (cfg.font) {
-			//TODO: Deduplicate this with monitor.js
-			const id = "fontlink_" + encodeURIComponent(cfg.font);
-			if (!document.getElementById(id)) document.body.appendChild(LINK({
-				id, rel: "stylesheet",
-				href: "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(cfg.font) + "&display=swap",
-			}));
-		}
+		ensure_font(cfg.font);
 	}
 	if (data.send_alert) do_alert("#hostalert", data.send_alert, Math.floor(Math.random() * 100) + 1);
 	if (data.token && data.token !== token) {

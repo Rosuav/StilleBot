@@ -2,7 +2,7 @@
 //import {...} from "$$static||utils.js$$";
 
 import {on, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {BR, INPUT, OPTGROUP, OPTION, SELECT, TABLE, TD, TH, TR} = choc; //autoimport
+const {BR, INPUT, LINK, OPTGROUP, OPTION, SELECT, TABLE, TD, TH, TR} = choc; //autoimport
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
 
 export function waitlate(wait_time, late_time, confirmdesc, callback) {
@@ -78,3 +78,17 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 	]))]),
 	TR([TH("Custom CSS"), TD(INPUT({name: "css", size: 40}))]),
 ])}
+
+//Ensure that a font is loaded if applicable. If this fails, the font may
+//still be usable if installed on the person's computer (not suitable for
+//external use of course, but for something inside OBS, that's fine).
+//Note: It's safe to call this more than once for the same font.
+export function ensure_font(font) {
+	if (!font) return; //Omitted? Blank? Not a problem.
+	const id = "fontlink_" + encodeURIComponent(font);
+	if (document.getElementById(id)) return; //Got it already.
+	document.body.appendChild(LINK({
+		id, rel: "stylesheet",
+		href: "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(font) + "&display=swap",
+	}));
+}

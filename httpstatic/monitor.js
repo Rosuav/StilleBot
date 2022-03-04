@@ -1,8 +1,6 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
 const {DIV} = choc;
-
-//Map the CSS attributes on the server to the names used in element.style
-const css_attribute_names = {color: "color", font: "fontFamily", fontweight: "fontWeight", fontstyle: "fontStyle", bordercolor: "borderColor", whitespace: "white-space"};
+import {ensure_font} from "$$static||utils.js$$";
 
 const currency_formatter = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
 const formatters = {
@@ -15,45 +13,17 @@ const formatters = {
 const styleinfo = { }; //Retained info for when the styles need to change based on data (for goal bars)
 export function render(data) {update_display(DOM("#display"), data.data);}
 export default function update_display(elem, data) { //Used for the preview as well as the live display
-	//TODO: Rework this to use textformatting_css on the backend
-	//Update styles. If the arbitrary CSS setting isn't needed, make sure it is "" not null.
-	if (data.css || data.css === "") {
-		let stroketxt = "";
-		if (data.strokewidth && data.strokewidth !== "None")
-			stroketxt = "-webkit-text-stroke: " + data.strokewidth + " " + (data.strokecolor || "black") + ";";
-		elem.style.cssText = stroketxt + data.css;
-		for (let attr in css_attribute_names) {
-			if (data[attr]) elem.style[css_attribute_names[attr]] = data[attr];
-		}
+	//Update styles. The server provides a single "text_css" attribute covering most of the easy
+	//stuff; all we have to do here is handle the goal bar position.
+	if (data.text_css || data.text_css === "") {
+		elem.style.cssText = data.text_css;
 		if (data.type) styleinfo[data.id] = {type: data.type}; //Reset all type-specific info when type is sent
 		if (data.thresholds) styleinfo[data.id].t = data.thresholds.split(" ").map(x => +x).filter(x => x && x === x); //Suppress any that fail to parse as numbers
 		if (data.barcolor) styleinfo[data.id].barcolor = data.barcolor;
 		if (data.fillcolor) styleinfo[data.id].fillcolor = data.fillcolor;
 		if (data.format) styleinfo[data.id].format = data.format;
 		if (data.needlesize) styleinfo[data.id].needlesize = +data.needlesize;
-		if (data.fontsize) elem.style.fontSize = data.fontsize + "px"; //Special-cased to add the unit
-		//It's more-or-less like saying "padding: {padvert}em {padhoriz}em"
-		if (data.padvert)  elem.style.paddingTop = elem.style.paddingBottom = data.padvert + "em";
-		if (data.padhoriz) elem.style.paddingLeft = elem.style.paddingRight = data.padhoriz + "em";
-		if (data.width)  elem.style.width = data.width + "px";
-		if (data.height) elem.style.height = data.height + "px";
-		//If you set a border width, assume we want a solid border. (For others, set the
-		//entire border definition in custom CSS.)
-		if (data.borderwidth) {elem.style.borderWidth = data.borderwidth + "px"; elem.style.borderStyle = "solid";}
-		if (data.font) {
-			//Attempt to fetch fonts from Google Fonts if they're not installed already
-			//This will be ignored by the browser if you have the font, so it's no big
-			//deal to have it where it's unnecessary. If you misspell a font name, it'll
-			//do a fetch, fail, and then just use a fallback font.
-			const id = "fontlink_" + encodeURIComponent(data.font);
-			if (!document.getElementById(id)) {
-				const elem = document.createElement("link");
-				elem.href = "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(data.font) + "&display=swap";
-				elem.rel = "stylesheet";
-				elem.id = id;
-				document.body.appendChild(elem);
-			}
-		}
+		ensure_font(data.font);
 	}
 	const type = styleinfo[data.id] && styleinfo[data.id].type;
 	if (type === "goalbar") {
