@@ -431,6 +431,8 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 void reconnect(int|void first) {
+	if (G->G->ghostwritercallouts[""] != hash_value(this)) return; //Code's been updated. Don't do anything.
+	if (object irc = G->G->ghostwriterirc[-1]) {irc->close(); destruct(irc);}
 	mapping opt = persist_config["ircsettings"];
 	if (!opt || !opt->pass) return; //Not yet configured - can't connect.
 	mapping chanids = ([]);
