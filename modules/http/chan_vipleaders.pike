@@ -11,6 +11,8 @@ time instead. This creates a 7-8 hour discrepancy in the rollover times.
 
 Ties are broken by favouring whoever was first to subgift in the given month.
 
+<div id=modcontrols></div>
+
 <div id=monthly></div>
 
 $$buttons$$
@@ -34,6 +36,14 @@ $$buttons$$
 	font-weight: bold;
 }
 #monthly td {vertical-align: top;}
+
+#modcontrols {margin-bottom: 1em;}
+#configform {
+	border: 1px solid black;
+	padding: 0.5em;
+	max-width: 600px;
+	margin: auto;
+}
 </style>
 ";
 constant loggedin = #"
@@ -111,9 +121,19 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping stats = persist_status->path("subgiftstats", channel->name[1..]);
-	if (!stats->active) return ([]);
 	//TODO: If view-only access is not allowed and group is not "control", return empty
 	return stats;
+}
+
+void websocket_cmd_configure(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (grp != "control") return 0;
+	mapping stats = persist_status->path("subgiftstats", channel->name[1..]);
+	constant options = "active badge_count board_count private_leaderboard" / " ";
+	int was_private = stats->private_leaderboard;
+	foreach (options, string opt) if (!undefinedp(msg[opt])) stats[opt] = (int)msg[opt]; //They're all integers at the moment
+	if (!was_private || !stats->private_leaderboard) send_updates_all(channel->name);
+	send_updates_all("control" + channel->name);
 }
 
 void websocket_cmd_recalculate(mapping(string:mixed) conn, mapping(string:mixed) msg) {

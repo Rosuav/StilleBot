@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {BUTTON, DIV, LI, OL, SPAN, TABLE, TD, TH, TR} = choc; //autoimport
+const {BR, BUTTON, DETAILS, DIV, FORM, H3, INPUT, LABEL, LI, OL, P, SPAN, SUMMARY, TABLE, TD, TH, TR} = choc; //autoimport
 import {waitlate} from "$$static||utils.js$$";
 
 //TODO: Exclude anyone who's been banned, just in case
@@ -52,6 +52,43 @@ export function render(data) {
 		}
 		set_content("#monthly", TABLE({border: 1}, rows));
 	}
+	if (mod) {
+		if (!DOM("#modcontrols").childElementCount) set_content("#modcontrols", DETAILS([
+			SUMMARY("Configuration"),
+			FORM({id: "configform"}, [
+				H3("Leaderboard settings"),
+				P("Tracking of gifted subscriptions is done only while the leaderboard is active. Cheers are tracked by Twitch themselves."),
+				P([BUTTON({id: "activate", type: "button"}, "Activate"), BUTTON({id: "deactivate", type: "button"}, "Deactivate")]),
+				P([
+					LABEL([
+						"How many badges should be given out per category? ",
+						INPUT({name: "badge_count", type: "number", value: "10"}),
+					]),
+					BR(),
+					"The top N cheerers and the top N subgifters will receive badges.",
+				]),
+				P([
+					LABEL([
+						"How many names should be shown on the leaderboard, per category? ",
+						INPUT({name: "board_count", type: "number", value: "15"}),
+					]),
+					BR(),
+					"These people will be visible on the leaderboard. This may include ineligible people such as mods",
+					" (they're greater than VIPs and won't be demoted).",
+				]),
+				P(LABEL([
+					INPUT({name: "private_leaderboard", type: "checkbox"}),
+					" Hide the leaderboard from non-mods",
+				])),
+				P(BUTTON({type: "submit"}, "Save")),
+			]),
+		]));
+		DOM("#activate").disabled = !!data.active;
+		DOM("#deactivate").disabled = !data.active;
+		for (let el of DOM("#configform").elements)
+			if (el.name && data[el.name])
+				el[el.type === "checkbox" ? "checked" : "value"] = data[el.name];
+	}
 }
 
 on("click", "#recalc", e => ws_sync.send({cmd: "recalculate"}));
@@ -63,3 +100,12 @@ on("click", ".addvip", waitlate(750, 5000, "CONFIRM: Add VIPs for this period?",
 on("click", ".remvip", waitlate(750, 5000, "CONFIRM: Remove VIPs for this period?", e =>
 	ws_sync.send({cmd: "remvip", "yearmonth": e.match.closest("TR").id})
 ));
+
+on("click", "#activate,#deactivate", e => ws_sync.send({cmd: "configure", "active": e.match.id === "activate"}));
+on("submit", "#configform", e => {
+	e.preventDefault();
+	const msg = {cmd: "configure"};
+	for (let el of e.match.elements)
+		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
+	ws_sync.send(msg);
+});
