@@ -39,7 +39,6 @@ $$buttons$$
 constant loggedin = #"
 [Force recalculation](: #recalc)
 ";
-//TODO: Have a way to enable and disable channel->config->tracksubgifts (maybe set it to the period eg "monthly"?)
 
 mapping tierval = (["2": 2, "3": 6]); //TODO: Should this be configurable? Some people might prefer a T3 to be worth 5.
 
@@ -58,11 +57,11 @@ void add_score(mapping monthly, mapping sub) {
 }
 
 continue Concurrent.Future force_recalc(string chan, int|void fast) {
-	mapping stats = persist_status->path("subgiftstats", chan);
-	if (!stats->all) return 0;
+	mapping stats = persist_status->path("subgiftstats")[chan];
+	if (!stats->?active) return;
 	if (!fast || !stats->monthly) {
 		stats->monthly = ([]);
-		foreach (stats->all, mapping sub) add_score(stats->monthly, sub);
+		foreach (stats->all || ({ }), mapping sub) add_score(stats->monthly, sub);
 	}
 
 	int chanid = yield(get_user_id(chan));
@@ -186,13 +185,13 @@ mapping ignore_indiv_timeout = ([]);
 @hook_subscription:
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type != "subgift" && type != "subbomb") return 0; 
-	if (!channel->config->tracksubgifts) return 0;
 	if (extra->came_from_subbomb) return 0;
+	mapping stats = persist_status->path("subgiftstats")[channel->name[1..]];
+	if (!stats->?active) return 0;
 
 	int months = (int)extra->msg_param_gift_months;
 	if (months) qty *= months; //Currently, you can't subbomb multimonths.
 
-	mapping stats = persist_status->path("subgiftstats", channel->name[1..]);
 	stats->all += ({([
 		"giver": ([
 			"user_id": extra->user_id,
@@ -213,12 +212,18 @@ int subscription(object channel, string type, mapping person, string tier, int q
 
 @hook_cheer:
 int cheer(object channel, mapping person, int bits, mapping extra) {
-	if (!channel->config->tracksubgifts) return 0;
+	mapping stats = persist_status->path("subgiftstats")[channel->name[1..]];
+	if (!stats->?active) return 0;
 	call_out(spawn_task, 1, force_recalc(channel->name[1..], 1)); //Wait a second, then do a fast update (is that enough time?)
 }
 
 protected void create(string name)
 {
+	foreach (persist_config->path("channels"); string chan; mapping cfg)
+		if (m_delete(cfg, "tracksubgifts")) {
+			persist_status->path("subgiftstats", chan[1..])->active = 1;
+			persist_status->save(); persist_config->save();
+		}
 	register_hook("subscription", Program.defined(this_program));
 	register_hook("cheer", Program.defined(this_program));
 	::create(name);
