@@ -50,6 +50,11 @@ constant loggedin = #"
 [Force recalculation](: #recalc)
 ";
 
+//Possible TODO: Permanent VIPs.
+//These people would be ineligible for leaderboard badges (and thus skipped),
+//would never have badges removed (even if they were given leaderboard badges before becoming permavips),
+//and will always have them added when any badges are added (to ensure that they retain them).
+
 mapping tierval = (["2": 2, "3": 6]); //TODO: Should this be configurable? Some people might prefer a T3 to be worth 5.
 
 void add_score(mapping monthly, mapping sub) {
