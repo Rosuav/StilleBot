@@ -62,6 +62,7 @@ int message(object channel, mapping person, string msg)
 	if ((
 		has_value(msg, "Want to become famous? Buy followers") ||
 		has_value(msg, "Buy followers, primes and viewers on") ||
+		has_value(msg, "Best followers, primes and viewers on") ||
 		has_value(msg, "Buy followers and viewers on")
 	) && (
 		has_value(msg, " http://") || has_value(msg, " https://") || has_value(msg, " alturl.com") ||
