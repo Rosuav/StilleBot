@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {AUDIO, DIV, FIGCAPTION, FIGURE, IMG, LINK, P} = choc; //autoimport
+const {AUDIO, DIV, FIGCAPTION, FIGURE, IMG, P, SECTION} = choc; //autoimport
 import "https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js"; const ComfyJS = window.ComfyJS;
 import {ensure_font} from "$$static||utils.js$$";
 
@@ -54,8 +54,8 @@ export function render(data) {
 	if (data.alertconfigs) {
 		for (let kwd in data.alertconfigs) {
 			const cfg = data.alertconfigs[kwd];
-			const elem = DOM("#" + kwd);
-			if (!elem) continue; //TODO: Create one instead
+			let elem = DOM("#" + kwd);
+			if (!elem) elem = DOM("main").appendChild(SECTION({className: "alert", id: kwd})); //New alert type
 			if (alert_formats[cfg.format]) set_content(elem, alert_formats[cfg.format](cfg));
 			else set_content(elem, P("Unrecognized alert format, check editor or refresh page"));
 			elem.dataset.alertlength = cfg.alertlength || 6;

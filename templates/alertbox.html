@@ -43,6 +43,8 @@
 So in the case where both transforms are needed, override with the pair. */
 .text_image_overlaid.center.middle div {transform: translate(-50%, -50%);}
 .alert {
+	position: absolute;
+	left: 0; top: 0;
 	opacity: 0;
 	transition: opacity 0.25s;
 }
@@ -55,7 +57,6 @@ figure {
 <body>
 $$js_variables||$$
 <main id=alertboxes>
-<section class=alert id=hostalert data-alertlength=6 data-alertgap=1></section>
 </main>
 </body>
 </html>
