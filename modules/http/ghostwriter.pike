@@ -112,6 +112,7 @@ void schedule_recalculation(string chanid, array(int) targets) {
 	int until = target - now;
 	if (until < 0) return; //Including if there are no valid targets (target == 0)
 	mapping st = chanstate[chanid];
+	if (!st) st = chanstate[chanid] = ([]);
 	if (st->next_scheduled_check == target) return; //Already scheduled at the same time.
 	if (mixed c = schedule_check_callouts[chanid]) remove_call_out(c);
 	st->next_scheduled_check = target;
