@@ -42,11 +42,11 @@
 /* Because transform is a single attribute, it won't combine properly.
 So in the case where both transforms are needed, override with the pair. */
 .text_image_overlaid.center.middle div {transform: translate(-50%, -50%);}
-main {
+.alert {
 	opacity: 0;
 	transition: opacity 0.25s;
 }
-main.active {opacity: 1;}
+.alert.active {opacity: 1;}
 figure {
 	margin: 0;
 }
@@ -54,7 +54,8 @@ figure {
 </head>
 <body>
 $$js_variables||$$
-<main id=hostalert data-alertlength=6 data-alertgap=1>
+<main id=alertboxes>
+<section class=alert id=hostalert data-alertlength=6 data-alertgap=1></section>
 </main>
 </body>
 </html>

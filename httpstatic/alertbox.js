@@ -51,13 +51,17 @@ export function render(data) {
 	//This would then iterate over all of alertconfigs, creating all that are
 	//needed; it would need to destroy any that are NOT needed, without flickering
 	//those that are still present.
-	if (data.alertconfigs && data.alertconfigs.hostalert) {
-		const cfg = data.alertconfigs.hostalert;
-		if (alert_formats[cfg.format]) set_content("#hostalert", alert_formats[cfg.format](cfg));
-		else set_content("#hostalert", P("Unrecognized alert format, check editor or refresh page"));
-		DOM("#hostalert").dataset.alertlength = cfg.alertlength || 6;
-		DOM("#hostalert").dataset.alertgap = cfg.alertgap || 1;
-		ensure_font(cfg.font);
+	if (data.alertconfigs) {
+		for (let kwd in data.alertconfigs) {
+			const cfg = data.alertconfigs[kwd];
+			const elem = DOM("#" + kwd);
+			if (!elem) continue; //TODO: Create one instead
+			if (alert_formats[cfg.format]) set_content(elem, alert_formats[cfg.format](cfg));
+			else set_content(elem, P("Unrecognized alert format, check editor or refresh page"));
+			elem.dataset.alertlength = cfg.alertlength || 6;
+			elem.dataset.alertgap = cfg.alertgap || 1;
+			ensure_font(cfg.font);
+		}
 	}
 	if (data.send_alert) do_alert("#hostalert", data.send_alert, Math.floor(Math.random() * 100) + 1);
 	if (data.token && data.token !== token) {
@@ -108,7 +112,7 @@ function do_alert(alert, replacements) {
 	if (!playing) elem.querySelector("audio").play();
 	setTimeout(remove_alert, elem.dataset.alertlength * 1000, alert, elem.dataset.alertgap);
 }
-window.ping = () => do_alert("#hostalert", {NAME: "Test", VIEWERS: 42});
+window.ping = type => do_alert("#" + (type || "hostalert"), {NAME: "Test", VIEWERS: 42});
 
 const current_hosts = { };
 ComfyJS.onHosted = (username, viewers, autohost, extra) => {
