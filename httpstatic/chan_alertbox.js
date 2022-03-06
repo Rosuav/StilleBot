@@ -72,7 +72,7 @@ export function render(data) {
 				textname: "textformat",
 				textdesc: [BR(), CODE("{NAME}"), " for the channel name, and ", CODE("{VIEWERS}"), " for the view count."],
 			}),
-			P([BUTTON({type: "submit"}, "Save")]),
+			P([BUTTON({type: "submit"}, "Save"), BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")]),
 		]));
 	});
 	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => {
@@ -189,7 +189,7 @@ on("click", "#delete", e => {
 	DOM("#confirmdeletedlg").close();
 });
 
-on("click", ".testalert", e => ws_sync.send({cmd: "testalert"}));
+on("click", ".testalert", e => ws_sync.send({cmd: "testalert", type: e.match.dataset.type}));
 
 const uploadme = { };
 export async function sockmsg_upload(msg) {

@@ -63,7 +63,7 @@ export function render(data) {
 			ensure_font(cfg.font);
 		}
 	}
-	if (data.send_alert) do_alert("#hostalert", data.send_alert, Math.floor(Math.random() * 100) + 1);
+	if (data.send_alert) do_alert("#" + data.send_alert, data);
 	if (data.token && data.token !== token) {
 		if (inited) ComfyJS.Disconnect();
 		inited = true;

@@ -18,7 +18,7 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 Drag this to OBS or use this URL as a browser source: <a id=alertboxlink href=\"alertbox?key=LOADING\">Alert Box</a><br>
 Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:#revokekey) to generate a new one.
 
-[Show library](:.showlibrary) [Send test alert](:.testalert)
+[Show library](:.showlibrary)
 
 > ### Revoke authentication key
 >
@@ -126,7 +126,7 @@ input[type=range] {vertical-align: middle;}
 >
 > <iframe id=alertembed width=600 height=400></iframe>
 >
-> [Send test alert](:.testalert) [Close](:.dialog_close)
+> [Test host alert](:.testalert data-type=hostalert) [Close](:.dialog_close)
 {: tag=dialog #previewdlg}
 ";
 
@@ -278,7 +278,12 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 	//to *every* client. This means multiple people playing with the demo
 	//simultaneously will see each other's alerts show up.
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	send_updates_all(cfg->authkey + channel->name, (["send_alert": channel->name[1..]])); //TODO: Use the display name
+	string type = ALERTTYPES[msg->type] ? msg->type : "hostalert";
+	send_updates_all(cfg->authkey + channel->name, ([
+		"send_alert": type,
+		"NAME": channel->name[1..], //TODO: Use the display name
+		"VIEWERS": random(100) + 1,
+	]));
 }
 
 void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
