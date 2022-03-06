@@ -92,12 +92,12 @@ function remove_alert(alert, gap) {
 	setTimeout(next_alert, gap * 1000);
 }
 
-function do_alert(alert, channel, viewers) {
-	if (alert_playing) {alert_queue.push([alert, channel, viewers]); return;}
+function do_alert(alert, replacements) {
+	if (alert_playing) {alert_queue.push([alert, replacements]); return;}
 	alert_playing = true;
 	const elem = DOM(alert);
 	elem.querySelectorAll("[data-textformat]").forEach(el =>
-		set_content(el, el.dataset.textformat.replace("{NAME}", channel).replace("{VIEWERS}", viewers))
+		set_content(el, el.dataset.textformat.replaceAll(/{([^}]+)}/g, (_,kwd) => replacements[kwd] || ""))
 	);
 	//Force animations to restart
 	elem.querySelectorAll("img").forEach(el => el.src = el.src);
@@ -108,7 +108,7 @@ function do_alert(alert, channel, viewers) {
 	if (!playing) elem.querySelector("audio").play();
 	setTimeout(remove_alert, elem.dataset.alertlength * 1000, alert, elem.dataset.alertgap);
 }
-window.ping = () => do_alert("#hostalert", "Test", 42);
+window.ping = () => do_alert("#hostalert", {NAME: "Test", VIEWERS: 42});
 
 const current_hosts = { };
 ComfyJS.onHosted = (username, viewers, autohost, extra) => {
@@ -117,5 +117,5 @@ ComfyJS.onHosted = (username, viewers, autohost, extra) => {
 	if (current_hosts[username]) return;
 	current_hosts[username] = 1;
 	console.log("HOST:", username, viewers, autohost, extra);
-	do_alert("#hostalert", username, viewers);
+	do_alert("#hostalert", {NAME: username, VIEWERS: viewers});
 };
