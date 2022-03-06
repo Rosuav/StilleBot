@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit builtin_command;
 constant markdown = #"# Alertbox management for channel $$channel$$
 
 > ### Library
@@ -335,3 +336,24 @@ void websocket_cmd_revokekey(mapping(string:mixed) conn, mapping(string:mixed) m
 	send_updates_all(conn->group);
 	send_updates_all(prevkey + channel->name, (["breaknow": 1]));
 }
+
+constant builtin_name = "Send Alert";
+constant builtin_param = "Alert type, and optional text";
+constant vars_provided = ([
+	"{error}": "Error message, if any",
+]);
+
+mapping message_params(object channel, mapping person, string param)
+{
+	if (param == "") return (["{error}": "Need an alert type"]);
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	sscanf(param, "%s %s", param, string text);
+	if (!ALERTTYPES[param]) return (["{error}": "Unknown alert type"]);
+	send_updates_all(cfg->authkey + channel->name, ([
+		"send_alert": param,
+		"TEXT": text || "",
+	]));
+	return (["{error}": ""]);
+}
+
+protected void create(string name) {::create(name);}
