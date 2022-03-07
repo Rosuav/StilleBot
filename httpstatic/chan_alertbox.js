@@ -32,12 +32,18 @@ export function render_item(file, obj) {
 export function render(data) {
 	if (data.authkey) DOM("#alertboxlink").href = "alertbox?key=" + data.authkey;
 	if (data.alerttypes) Object.entries(data.alerttypes).forEach(([type, info]) => {
-		if (alerttypes[type]) {set_content(alerttypes[type].querySelector("h3"), info.heading); return;}
-		//TODO: Have alert names as well as descriptions
-		//There's currently a keyword "hostalert", a description "When some other channel hosts yours",
-		//but no label/name "Host". So we just use the keyword for now.
-		//TODO: Customize the placeholder description. For user-created alert types, this
-		//is just TEXT for the full text.
+		const placeholder_description = !info.placeholders ? ""
+			: Object.entries(info.placeholders).map((k,d) => [BR(), CODE("{" + k + "}"), " - " + d]);
+		if (alerttypes[type]) {
+			for (let kwd in info) {
+				let txt = info[kwd];
+				if (kwd === "placeholders") txt = placeholder_description;
+				const elem = alerttypes[type].querySelector("." + kwd);
+				if (elem) set_content(elem, txt);
+			}
+			set_content("label[for=select-" + type + "]", info.label);
+			return;
+		}
 		//TODO: Allow inherits?!? It would be really cool if you could say "bighostalert"
 		//is "hostalert" with a different sound effect, for instance.
 		//If inherits can be chained, this would allow alert schemes to be done by having
@@ -47,11 +53,12 @@ export function render(data) {
 		DOM("#alertselectors").appendChild(LI([
 			INPUT({type: "radio", name: "alertselect", id: "select-" + type, value: type,
 				checked: !DOM("input[name=alertselect]:checked")}),
-			LABEL({htmlFor: "select-" + type}, type),
+			LABEL({htmlFor: "select-" + type}, info.label),
 		]));
 		update_visible_form();
 		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({className: "alertconfig", "data-type": type}, [
-			H3(info.heading),
+			H3({className: "heading"}, info.heading),
+			P({className: "description"}, info.description),
 			P([
 				SELECT({name: "format"}, [
 					OPTION({value: "text_image_stacked"}, "Text and image, stacked"),
@@ -87,7 +94,7 @@ export function render(data) {
 			]),
 			TEXTFORMATTING({
 				textname: "textformat",
-				textdesc: [BR(), CODE("{NAME}"), " for the channel name, and ", CODE("{VIEWERS}"), " for the view count."],
+				textdesc: SPAN({className: "placeholders"}, placeholder_description),
 			}),
 			P([BUTTON({type: "submit"}, "Save"), BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")]),
 		]));
