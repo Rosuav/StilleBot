@@ -29,8 +29,15 @@ export function render_item(file, obj) {
 	]);
 }
 
+let have_authkey = false;
+export function sockmsg_authkey(msg) {
+	DOM("#alertboxlink").href = "alertbox?key=" + msg.key;
+	msg.key = "<hidden>";
+	have_authkey = true;
+}
+
 export function render(data) {
-	if (data.authkey) DOM("#alertboxlink").href = "alertbox?key=" + data.authkey;
+	if (data.authkey === "<REVOKED>" || !have_authkey) ws_sync.send({cmd: "getkey"});
 	if (data.alerttypes) Object.entries(data.alerttypes).forEach(([type, info]) => {
 		const placeholder_description = !info.placeholders ? ""
 			: Object.entries(info.placeholders).map(([k,d]) => [BR(), CODE("{" + k + "}"), " - " + d]);

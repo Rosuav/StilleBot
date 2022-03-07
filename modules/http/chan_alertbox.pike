@@ -232,12 +232,18 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		int idx = search(cfg->files->id, id);
 		return idx >= 0 && cfg->files[idx];
 	}
-	if (!cfg->authkey) {cfg->authkey = String.string2hex(random_string(11)); persist_status->save();}
 	return (["items": cfg->files || ({ }),
-		"authkey": cfg->authkey,
 		"alertconfigs": cfg->alertconfigs || ([]),
 		"alerttypes": ALERTTYPES,
 	]);
+}
+
+void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || grp != "control") return;
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	if (!cfg->authkey) {cfg->authkey = String.string2hex(random_string(11)); persist_status->save();}
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "authkey", "key": cfg->authkey]), 4));
 }
 
 void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -365,7 +371,7 @@ void websocket_cmd_revokekey(mapping(string:mixed) conn, mapping(string:mixed) m
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	string prevkey = m_delete(cfg, "authkey");
 	persist_status->save();
-	send_updates_all(conn->group);
+	send_updates_all(conn->group, (["authkey": "<REVOKED>"]));
 	send_updates_all(prevkey + channel->name, (["breaknow": 1]));
 }
 

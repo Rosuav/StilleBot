@@ -87,5 +87,4 @@
   - Followed games/categories - you can still follow/unfollow but you can't query it in API
 * Host alert widget
   - Basic styling of the image only, but have a published ID so people can use custom CSS?
-  - Request the key in a separate message, don't send it in the state
   - On sending test alert, prompt to save
