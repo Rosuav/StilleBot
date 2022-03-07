@@ -134,9 +134,18 @@ input[type=range] {vertical-align: middle;}
 
 constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB
 constant ALERTTYPES = ([
-	"hostalert": "When some other channel hosts yours",
-	"samplealert": "EXAMPLE ALTERNATE ALERT TYPE",
-	//Currently only the one, but leave open the possibility for more in the future
+	"hostalert": ([
+		"label": "Host",
+		"heading": "Hosted by another channel",
+		"description": "When some other channel hosts yours",
+		"placeholders": (["NAME": "Channel name", "VIEWERS": "View count"]),
+	]),
+	"samplealert": ([
+		"label": "Sample",
+		"heading": "EXAMPLE ALTERNATE ALERT TYPE",
+		"description": "Used for testing. Not an actual alert.",
+		"placeholders": (["SAMPLE": "Example placeholder"]),
+	]),
 ]);
 constant RETAINED_ATTRS = ({"image", "sound"});
 constant GLOBAL_ATTRS = "format alertlength alertgap" / " ";

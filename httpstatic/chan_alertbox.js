@@ -31,8 +31,8 @@ export function render_item(file, obj) {
 
 export function render(data) {
 	if (data.authkey) DOM("#alertboxlink").href = "alertbox?key=" + data.authkey;
-	if (data.alerttypes) Object.entries(data.alerttypes).forEach(([type, desc]) => {
-		if (alerttypes[type]) {set_content(alerttypes[type].querySelector("h3"), desc); return;}
+	if (data.alerttypes) Object.entries(data.alerttypes).forEach(([type, info]) => {
+		if (alerttypes[type]) {set_content(alerttypes[type].querySelector("h3"), info.heading); return;}
 		//TODO: Have alert names as well as descriptions
 		//There's currently a keyword "hostalert", a description "When some other channel hosts yours",
 		//but no label/name "Host". So we just use the keyword for now.
@@ -51,7 +51,7 @@ export function render(data) {
 		]));
 		update_visible_form();
 		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({className: "alertconfig", "data-type": type}, [
-			H3(desc),
+			H3(info.heading),
 			P([
 				SELECT({name: "format"}, [
 					OPTION({value: "text_image_stacked"}, "Text and image, stacked"),
