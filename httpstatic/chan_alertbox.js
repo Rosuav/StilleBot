@@ -32,7 +32,7 @@ export function render_item(file, obj) {
 export function render(data) {
 	if (data.authkey) DOM("#alertboxlink").href = "alertbox?key=" + data.authkey;
 	if (data.alerttypes) Object.entries(data.alerttypes).forEach(([type, desc]) => {
-		if (alerttypes[type]) return; //TODO: Update its description?
+		if (alerttypes[type]) {set_content(alerttypes[type].querySelector("h3"), desc); return;}
 		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({className: "alertconfig", "data-type": type}, [
 			H3(desc),
 			P([
