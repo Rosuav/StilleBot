@@ -29,11 +29,15 @@ continue Concurrent.Future|mapping fetch_emotes()
 		if (!cfg->nick || cfg->nick == "") return Concurrent.reject("Oops, shouldn't happen");
 		sscanf(cfg["pass"] || "", "oauth:%s", string pass);
 		write("Fetching emote list\n");
-		mapping info = yield(G->G->external_api_lookups->get_user_emotes(cfg->nick));
+		//Kraken's down.
+		/*mapping info = yield(G->G->external_api_lookups->get_user_emotes(cfg->nick));
 		info->fetchtime = time();
-		G->G->bot_emote_list = info;
+		G->G->bot_emote_list = info;*/
+		G->G->bot_emote_list = ([]);
+		G->G->emote_set_mapping = ([]); //TODO: Manually group them?
 	}
 	//TODO: Always update if the sets have changed
+	mapping emotes = G->G->emote_code_to_markdown || ([]);
 	if (!G->G->emote_set_mapping) {
 		//NOTE: This fetches only the sets that the bot is able to use. This is
 		//a LOT faster than fetching them all (which could take up to 90 secs),
@@ -56,17 +60,16 @@ continue Concurrent.Future|mapping fetch_emotes()
 		foreach (Standards.JSON.decode(result->get()), mapping setinfo)
 			info[setinfo->set_id] = setinfo;
 		G->G->emote_set_mapping = info;
-		mapping emotes = ([]);
 		//What if there's a collision? Should we prioritize?
 		foreach (G->G->bot_emote_list->emoticon_sets;; array set) foreach (set, mapping em)
 			emotes[em->code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0)", em->code, em->id);
-		//Augment (or replace) with any that we've seen that the bot has access to
-		foreach (persist_status->path("bot_emotes"); string code; string id) {
-			//Note: Uses the v2 URL scheme even if it's v1 - they seem to work
-			emotes[code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0)", code, (string)id);
-		}
-		G->G->emote_code_to_markdown = emotes;
 	}
+	//Augment (or replace) with any that we've seen that the bot has access to
+	foreach (persist_status->path("bot_emotes"); string code; string id) {
+		//Note: Uses the v2 URL scheme even if it's v1 - they seem to work
+		emotes[code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0)", code, (string)id);
+	}
+	G->G->emote_code_to_markdown = emotes;
 	return G->G->bot_emote_list;
 }
 
