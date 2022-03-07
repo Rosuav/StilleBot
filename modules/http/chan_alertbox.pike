@@ -32,7 +32,7 @@ Keep this link secret; if the authentication key is accidentally shared, you can
 > [Generate a new key, disabling the old one](:#confirmrevokekey) [Cancel](:.dialog_close)
 {: tag=dialog #revokekeydlg}
 
-<div id=alertconfigs></div>
+<ul id=alertselectors></ul><style id=selectalert></style><div id=alertconfigs></div>
 
 > ### Delete file
 > Really delete this file?
@@ -111,6 +111,7 @@ figcaption {
 	margin: 3px;
 	border: 1px solid black;
 	padding: 8px;
+	display: none;
 }
 
 #library.noselect .selectmode {display: none;}
@@ -134,6 +135,7 @@ input[type=range] {vertical-align: middle;}
 constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB
 constant ALERTTYPES = ([
 	"hostalert": "When some other channel hosts yours",
+	"samplealert": "EXAMPLE ALTERNATE ALERT TYPE",
 	//Currently only the one, but leave open the possibility for more in the future
 ]);
 constant RETAINED_ATTRS = ({"image", "sound"});

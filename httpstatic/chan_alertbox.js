@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, IFRAME, IMG, INPUT, LABEL, OPTION, P, SELECT, SPAN} = choc; //autoimport
+const {A, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN} = choc; //autoimport
 import {TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
@@ -33,6 +33,23 @@ export function render(data) {
 	if (data.authkey) DOM("#alertboxlink").href = "alertbox?key=" + data.authkey;
 	if (data.alerttypes) Object.entries(data.alerttypes).forEach(([type, desc]) => {
 		if (alerttypes[type]) {set_content(alerttypes[type].querySelector("h3"), desc); return;}
+		//TODO: Have alert names as well as descriptions
+		//There's currently a keyword "hostalert", a description "When some other channel hosts yours",
+		//but no label/name "Host". So we just use the keyword for now.
+		//TODO: Customize the placeholder description. For user-created alert types, this
+		//is just TEXT for the full text.
+		//TODO: Allow inherits?!? It would be really cool if you could say "bighostalert"
+		//is "hostalert" with a different sound effect, for instance.
+		//If inherits can be chained, this would allow alert schemes to be done by having
+		//several top-level configs, then second tier selection that defines which is the
+		//active scheme, and finally the lowest tier defines variants, using inherits for
+		//everything that should follow the scheme.
+		DOM("#alertselectors").appendChild(LI([
+			INPUT({type: "radio", name: "alertselect", id: "select-" + type, value: type,
+				checked: !DOM("input[name=alertselect]:checked")}),
+			LABEL({htmlFor: "select-" + type}, type),
+		]));
+		update_visible_form();
 		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({className: "alertconfig", "data-type": type}, [
 			H3(desc),
 			P([
@@ -83,6 +100,12 @@ export function render(data) {
 		document.querySelectorAll("input[type=range]").forEach(rangedisplay);
 	});
 }
+
+function update_visible_form() {
+	const sel = DOM("input[name=alertselect]:checked").value;
+	set_content("#selectalert", ".alertconfig[data-type=" + sel + "] {display: block;}");
+}
+on("click", "input[name=alertselect]", update_visible_form);
 
 function update_layout_options(par, layout) {
 	const fmt = par.querySelector("[name=format]").value;
