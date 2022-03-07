@@ -88,3 +88,8 @@
 * Host alert widget
   - Basic styling of the image only, but have a published ID so people can use custom CSS?
   - On sending test alert, prompt to save
+* Multi-argument builtins
+  - Allow multiple values in builtin_param. If a single string, parse as per current design.
+  - Will require that each argument be individually selectable in the command GUI
+  - Some arguments may be drop-downs rather than entry fields. How best to do this?
+    - Alert Box will need a drop-down that can depend on channel state (select an alert).
