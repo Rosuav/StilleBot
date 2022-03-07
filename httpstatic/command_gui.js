@@ -128,7 +128,7 @@ const types = {
 		color: "#ffff00", fixed: true, children: ["message"],
 		label: el => el.conditional === "contains" ? `When '${el.expr1}' is typed...` : `When a msg matches ${el.expr1} ...`,
 		params: [{attr: "conditional", label: "Match type", values: ["contains", "regexp"],
-				selections: {string: "Simple match", regexp: "Regular expression"}},
+				selections: {contains: "Simple match", regexp: "Regular expression"}},
 			{attr: "casefold", label: "Case insensitive", values: bool_attr},
 			{attr: "id", label: null}, //Retain the ID but don't show it for editing
 			{attr: "expr1", label: "Search for"}, {attr: "expr2", values: "%s"}],
