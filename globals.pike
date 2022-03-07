@@ -471,7 +471,7 @@ class websocket_handler
 		if (!resp) return;
 		resp->cmd = "update";
 		foreach (socks, object sock)
-			if (sock && sock->state == 1) sock->send_text(Standards.JSON.encode(resp));
+			if (sock && sock->state == 1) sock->send_text(Standards.JSON.encode(resp, 4));
 	}
 
 	//Send an update to a specific connection. If not provided, data will
