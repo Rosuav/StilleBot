@@ -90,6 +90,7 @@
   - On sending test alert, prompt to save
   - Disable save button ("Saved") if no changes; disable but leave text "Save" if demo
     - If button disabled, accept updates from server
+  - On the preview page, have a thing that reveals the URL on click.
 * Multi-argument builtins
   - Allow multiple values in builtin_param. If a single string, parse as per current design.
   - Will require that each argument be individually selectable in the command GUI
