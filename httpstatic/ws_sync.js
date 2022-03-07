@@ -30,8 +30,8 @@ export function connect(group, handler)
 	};
 	socket.onmessage = (ev) => {
 		let data = JSON.parse(ev.data);
-		console.log("Got message from server:", data);
-		if (!handler) return;
+		if (!handler) {console.log("Got message from server:", data); return;}
+		let unknown = " UNKNOWN";
 		if (data.cmd === "update") {
 			if (handler.render_item && handler.render_parent) {
 				//If partial rendering is possible, we need render_item() and render_parent, and
@@ -60,6 +60,7 @@ export function connect(group, handler)
 			}
 			//Note that render() is called *after* render_item in all cases.
 			handler.render(data, group);
+			unknown = "";
 		}
 		else if (data.cmd === "prefs_replace") {
 			const oldprefs = prefs;
@@ -68,6 +69,7 @@ export function connect(group, handler)
 				if (!p.key) p.func(prefs);
 				else if (prefs[p.key] !== oldprefs[p.key]) p.func(prefs[p.key]);
 			});
+			unknown = "";
 		}
 		else if (data.cmd === "prefs_update") {
 			for (let k in data.prefs) prefs[k] = data.prefs[k];
@@ -77,9 +79,11 @@ export function connect(group, handler)
 				if (!p.key) p.func(prefs);
 				else if (data.prefs[p.key]) p.func(prefs[p.key]);
 			});
+			unknown = "";
 		}
 		const f = handler["sockmsg_" + data.cmd];
-		if (f) f(data);
+		if (f) {f(data); unknown = "";}
+		console.log("Got " + unknown + "message from server:", data);
 	};
 }
 //When ready, import the handler code. It'll be eg "/subpoints.js" but with automatic mtime handling.
