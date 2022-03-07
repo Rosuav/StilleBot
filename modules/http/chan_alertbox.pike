@@ -108,7 +108,7 @@ figcaption {
 .thumbnail audio {max-width: 100%; max-height: 100%;}
 
 .alertconfig {
-	margin: 3px;
+	margin: 0 3px 3px 0;
 	border: 1px solid black;
 	padding: 8px;
 	display: none;
@@ -120,6 +120,26 @@ figcaption {
 	vertical-align: middle;
 }
 input[type=range] {vertical-align: middle;}
+
+#alertselectors {
+	display: flex;
+	list-style-type: none;
+	margin-bottom: 0;
+	padding: 0;
+}
+#alertselectors input {display: none;}
+#alertselectors label {
+	display: inline-block;
+	cursor: pointer;
+	padding: 0.4em;
+	margin: 0 1px;
+	font-weight: bold;
+	border: 1px solid black;
+	border-radius: 0.5em 0.5em 0 0;
+	height: 2em; width: 8em;
+	text-align: center;
+}
+#alertselectors input:checked + label {background: #efd;}
 </style>
 
 > ### Alert preview

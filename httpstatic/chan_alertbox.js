@@ -33,7 +33,7 @@ export function render(data) {
 	if (data.authkey) DOM("#alertboxlink").href = "alertbox?key=" + data.authkey;
 	if (data.alerttypes) Object.entries(data.alerttypes).forEach(([type, info]) => {
 		const placeholder_description = !info.placeholders ? ""
-			: Object.entries(info.placeholders).map((k,d) => [BR(), CODE("{" + k + "}"), " - " + d]);
+			: Object.entries(info.placeholders).map(([k,d]) => [BR(), CODE("{" + k + "}"), " - " + d]);
 		if (alerttypes[type]) {
 			for (let kwd in info) {
 				let txt = info[kwd];
