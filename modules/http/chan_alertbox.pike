@@ -153,20 +153,19 @@ input[type=range] {vertical-align: middle;}
 ";
 
 constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB
-constant ALERTTYPES = ([
-	"hostalert": ([
-		"label": "Host",
-		"heading": "Hosted by another channel",
-		"description": "When some other channel hosts yours",
-		"placeholders": (["NAME": "Channel name", "VIEWERS": "View count"]),
-	]),
-	"samplealert": ([
-		"label": "Sample",
-		"heading": "EXAMPLE ALTERNATE ALERT TYPE",
-		"description": "Used for testing. Not an actual alert.",
-		"placeholders": (["SAMPLE": "Example placeholder"]),
-	]),
-]);
+constant ALERTTYPES = ({([
+	"id": "hostalert",
+	"label": "Host",
+	"heading": "Hosted by another channel",
+	"description": "When some other channel hosts yours",
+	"placeholders": (["NAME": "Channel name", "VIEWERS": "View count"]),
+]), ([
+	"id": "samplealert",
+	"label": "Sample",
+	"heading": "EXAMPLE ALTERNATE ALERT TYPE",
+	"description": "Used for testing. Not an actual alert.",
+	"placeholders": (["SAMPLE": "Example placeholder"]),
+])});
 constant RETAINED_ATTRS = ({"image", "sound"});
 constant GLOBAL_ATTRS = "format alertlength alertgap" / " ";
 constant FORMAT_ATTRS = ([
@@ -234,7 +233,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	}
 	return (["items": cfg->files || ({ }),
 		"alertconfigs": cfg->alertconfigs || ([]),
-		"alerttypes": ALERTTYPES,
+		"alerttypes": ALERTTYPES + (cfg->personals || ({ })),
 	]);
 }
 
@@ -244,6 +243,33 @@ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->authkey) {cfg->authkey = String.string2hex(random_string(11)); persist_status->save();}
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "authkey", "key": cfg->authkey]), 4));
+}
+
+//NOW it's personal.
+void websocket_cmd_makepersonal(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || grp != "control") return;
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	if (!cfg->personals) cfg->personals = ({ });
+	mapping info;
+	if (msg->id) {
+		//Look up an existing one, and maybe delete it
+		int idx = search(cfg->personals->id, msg->id);
+		if (idx == -1) return; //ID specified and not found? Can't save.
+		//TODO: Have a way to request deletion (splice it out of the array)
+		info = cfg->personals[idx];
+	}
+	else {
+		string id;
+		do {id = replace(MIME.encode_base64(random_string(9)), (["/": "1", "+": "0"]));}
+		while (has_value(cfg->personals->id, id));
+		cfg->personals += ({info = (["id": id])});
+	}
+	foreach ("label heading description" / " ", string key)
+		if (stringp(msg[key])) info[key] = msg[key];
+	persist_status->save();
+	send_updates_all(conn->group);
+	send_updates_all(cfg->authkey + channel->name);
 }
 
 void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -309,6 +335,11 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (changed_alert) update_one(cfg->authkey + channel->name, file->id);
 }
 
+int(0..1) valid_alert_type(string type, mapping|void cfg) {
+	if (has_value(ALERTTYPES->id, type)) return 1;
+	if (cfg->?personals && has_value(cfg->personals->id, type)) return 1;
+}
+
 void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel || grp != "control") return;
@@ -316,7 +347,7 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 	//to *every* client. This means multiple people playing with the demo
 	//simultaneously will see each other's alerts show up.
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	string type = ALERTTYPES[msg->type] ? msg->type : "hostalert";
+	string type = valid_alert_type(msg->type, cfg) ? msg->type : "hostalert";
 	send_updates_all(cfg->authkey + channel->name, ([
 		"send_alert": type,
 		"NAME": channel->name[1..], //TODO: Use the display name
@@ -329,7 +360,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (!channel || grp != "control") return;
 	if (conn->session->fake) return;
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	if (!ALERTTYPES[msg->type]) return;
+	if (!valid_alert_type(msg->type, cfg)) return;
 	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
 	if (!msg->format) {
 		//If the format is not specified, this is a partial update, which can
@@ -386,7 +417,7 @@ mapping message_params(object channel, mapping person, string param)
 	if (param == "") return (["{error}": "Need an alert type"]);
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	sscanf(param, "%s %s", param, string text);
-	if (!ALERTTYPES[param]) return (["{error}": "Unknown alert type"]);
+	if (!valid_alert_type(param, cfg)) return (["{error}": "Unknown alert type"]);
 	send_updates_all(cfg->authkey + channel->name, ([
 		"send_alert": param,
 		"TEXT": text || "",

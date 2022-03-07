@@ -38,7 +38,8 @@ export function sockmsg_authkey(msg) {
 
 export function render(data) {
 	if (data.authkey === "<REVOKED>" || !have_authkey) ws_sync.send({cmd: "getkey"});
-	if (data.alerttypes) Object.entries(data.alerttypes).forEach(([type, info]) => {
+	if (data.alerttypes) data.alerttypes.forEach(info => {
+		const type = info.id;
 		const placeholder_description = !info.placeholders ? ""
 			: Object.entries(info.placeholders).map(([k,d]) => [BR(), CODE("{" + k + "}"), " - " + d]);
 		if (alerttypes[type]) {
