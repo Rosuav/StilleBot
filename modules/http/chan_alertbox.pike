@@ -295,10 +295,12 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (conn->session->fake) return;
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!ALERTTYPES[msg->type]) return;
+	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
 	if (!msg->format) {
 		//If the format is not specified, this is a partial update, which can
 		//change only the RETAINED_ATTRS - all others are left untouched.
-		mapping data = cfg->alertconfigs[?msg->type]; if (!data) return;
+		mapping data = cfg->alertconfigs[msg->type];
+		if (!data) data = cfg->alertconfigs[msg->type] = ([]);
 		foreach (RETAINED_ATTRS, string attr) if (msg[attr]) data[attr] = msg[attr];
 		persist_status->save();
 		send_updates_all(conn->group);
@@ -310,7 +312,6 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	//If the format *is* specified, this is a full update, *except* for the retained
 	//attributes. Other forms of partial update are not supported; instead, any
 	//unspecified attribute will be deleted.
-	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
 	//TODO: Validate (see commands for example of deep validation)
 	mapping data = cfg->alertconfigs[msg->type] =
 		mkmapping(RETAINED_ATTRS, (cfg->alertconfigs[msg->type]||([]))[RETAINED_ATTRS[*]])
