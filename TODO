@@ -96,3 +96,6 @@
   - Will require that each argument be individually selectable in the command GUI
   - Some arguments may be drop-downs rather than entry fields. How best to do this?
     - Alert Box will need a drop-down that can depend on channel state (select an alert).
+* Retain user IDs for all active channels. If one renames, automatically track it.
+  - Need to enumerate all the places where a channel name gets used as a config key
+    (outside of persist_config->channels->username) so they can be changed too.
