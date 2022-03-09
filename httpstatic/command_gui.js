@@ -21,7 +21,7 @@ and is everything that isn't in the Favs/Trays/Specials.
   - The primary anchor point may belong in Actives or may belong in Specials. Uncertain.
 */
 import choc, {set_content, DOM, on, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, BR, BUTTON, DIALOG, DIV, FORM, HEADER, H3, LABEL, INPUT, SECTION, SELECT, OPTION, P, TABLE, TR, TD, TEXTAREA, UL, LI, CODE} = choc;
+const {A, BR, BUTTON, CODE, DIALOG, DIV, FORM, H3, HEADER, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TEXTAREA, TR, UL} = choc; //autoimport
 
 const SNAP_RANGE = 100; //Distance-squared to permit snapping (eg 25 = 5px radius)
 const canvas = DOM("#command_gui");
@@ -29,13 +29,8 @@ const ctx = canvas.getContext('2d');
 const FAV_BUTTON_TEXT = ["Fav ☆", "Fav ★"];
 let voices_available = {"": "Default"};
 Object.keys(voices).forEach(id => voices_available[id] = voices[id].name);
-let alerts_available = { };
-fetch("alertbox?summary", {credentials: "include"}).then(r => r.json()).then(alerts => {
-	//TODO: Distinguish standard from personal, and warn that standard alerts might
-	//not work properly (since they may expect other placeholders than TEXT).
-	alerts.stdalerts.forEach(a => alerts_available[a.id] = a.name);
-	alerts.personals.forEach(a => alerts_available[a.id] = a.name);
-});
+let alertcfg = {stdalerts: [], personals: [], loading: true};
+fetch("alertbox?summary", {credentials: "include"}).then(r => r.json()).then(c => alertcfg = c);
 
 document.body.appendChild(DIALOG({id: "properties"}, SECTION([
 	HEADER([H3("Properties"), DIV([BUTTON({type: "button", className: "dialog_cancel"}, "x"), BR(), BUTTON({type: "button", id: "toggle_favourite"}, "fav")])]),
@@ -100,6 +95,25 @@ const text_message = {...default_handlers,
 const cooldown_name = {...default_handlers,
 	make_control: (id, val, el) => default_handlers.make_control(id, (val && val[0] === '.') ? "" : val, el),
 };
+//Special case: Builtins can require custom code.
+const builtin_validators = {
+	alertbox_id = {...default_handlers,
+		make_control: (id, val, el) => SELECT(id, [
+			OPTGROUP({label: "Personal alerts"}, [
+				alertcfg.personals.map(a => OPTION({selected: a.id === val, value: a.id}, a.label)),
+				!alertcfg.personals.length && OPTION({disabled: true}, alertcfg.loading ? "loading..." : "None"),
+			]),
+			OPTGROUP({label: "Standard alerts"}, [
+				alertcfg.stdalerts.map(a => OPTION({selected: a.id === val, value: a.id}, a.label)),
+				!alertcfg.stdalerts.length && OPTION({disabled: true}, alertcfg.loading ? "loading..." : "None???"), //Should never get "None" here once it's loaded
+			]),
+		]),
+		//NOTE: Will permit anything while loading, but that should only happen if we get a hash link
+		//directly to open a command, or if the internet connection is very slow. Either way, the
+		//drop-down should be correctly populated by the time someone actually clicks on something.
+		validate: val => alertcfg.loading || alertcfg.stdalerts.find(a => a.id === val) || alertcfg.personals.find(a => a.id === val),
+	},
+};
 
 function builtin_types() {
 	const ret = { };
@@ -111,8 +125,13 @@ function builtin_types() {
 		};
 		const add_param = (param, idx) => {
 			if (param[0] === "/") {
-				const split = param.split("/"); split.shift(); //Remove the empty at the start
-				b.params.push({attr: "builtin_param" + (idx||""), label: split.shift(), values: split});
+				let split = param.split("/"); split.shift(); //Remove the empty at the start
+				const label = split.shift();
+				if (split.length === 1) {
+					//Special-case some to allow custom client-side code
+					split = builtin_validators[split[0]] || split;
+				}
+				b.params.push({attr: "builtin_param" + (idx||""), label: label, values: split});
 			}
 			else if (param !== "") b.params.push({attr: "builtin_param" + (idx||""), label: param});
 		};

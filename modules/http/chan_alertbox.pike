@@ -412,8 +412,8 @@ void websocket_cmd_revokekey(mapping(string:mixed) conn, mapping(string:mixed) m
 }
 
 constant builtin_name = "Send Alert";
-constant builtin_description = "Send an alert on the in-browser alertbox";
-constant builtin_param = ({"Alert type", "Text"}); //Alert type will need to become a drop-down
+constant builtin_description = "Send an alert on the in-browser alertbox. Best with personal (not standard) alerts.";
+constant builtin_param = ({"/Alert type/alertbox_id", "Text"});
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 ]);
