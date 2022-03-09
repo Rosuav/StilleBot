@@ -222,7 +222,8 @@ function render_command(cmd, toplevel) {
 		]));
 		//Can these (builtin ==> builtin_param, dest ==> target) be made more generic?
 		if (flg === "builtin") opts.push(TR({className: "paramrow"}, [
-			TD(INPUT({"data-flag": "builtin_param", value: cmd.builtin_param || ""})),
+			//Note that multi-param is not supported here, and it'll always and only return a single string.
+			TD(INPUT({"data-flag": "builtin_param", value: typeof cmd.builtin_param === "object" ? cmd.builtin_param.join(" ") : (cmd.builtin_param || "")})),
 			TD(["Parameter (extra info) for the built-in", BR(), DETAILS({className: "builtininfo"}, [
 				SUMMARY("Information provided"),
 				TABLE([TR([TH("Var"), TH("Value")]), TBODY(describe_builtin_vars(cmd.builtin))]),

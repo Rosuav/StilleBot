@@ -396,8 +396,9 @@ class channel_notif
 	//For consistency, this is used for all vars substitutions. If, in the future,
 	//we make $UNKNOWN$ into an error, or an empty string, or something, this would
 	//be the place to do it.
-	string _substitute_vars(string text, mapping vars, mapping person)
+	string|array _substitute_vars(string|array text, mapping vars, mapping person)
 	{
+		if (arrayp(text)) return _substitute_vars(text[*], vars, person);
 		//Replace shorthands with their long forms. They are exactly equivalent, but the
 		//long form can be enhanced with filters and/or defaults.
 		text = replace(text, (["%s": "{param}", "$$": "{username}", "$participant$": "{participant}"]));

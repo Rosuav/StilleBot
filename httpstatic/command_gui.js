@@ -102,11 +102,15 @@ function builtin_types() {
 			params: [{attr: "builtin", values: name}],
 			typedesc: blt.desc, provides: { },
 		};
-		if (blt.param[0] === "/") {
-			const split = blt.param.split("/"); split.shift(); //Remove the empty at the start
-			b.params.push({attr: "builtin_param", label: split.shift(), values: split});
-		}
-		else if (blt.param !== "") b.params.push({attr: "builtin_param", label: blt.param});
+		const add_param = (param, idx) => {
+			if (param[0] === "/") {
+				const split = param.split("/"); split.shift(); //Remove the empty at the start
+				b.params.push({attr: "builtin_param" + (idx||""), label: split.shift(), values: split});
+			}
+			else if (param !== "") b.params.push({attr: "builtin_param" + (idx||""), label: param});
+		};
+		if (typeof blt.param === "string") add_param(blt.param, "");
+		else blt.param.forEach(add_param);
 		for (let prov in blt) if (prov[0] === '{' && !blt[prov].includes("(deprecated)")) b.provides[prov] = blt[prov];
 	});
 	return ret;
@@ -728,8 +732,15 @@ function same_template(t1, t2) {
 	if (t1 === "" || t2 === "") return false;
 	if (t1.type !== t2.type) return false;
 	const type = types[t1.type];
-	if (type.params) for (let p of type.params)
-		if (t1[p.attr] !== t2[p.attr]) return false;
+	if (type.params) for (let p of type.params) {
+		let v1 = t1[p.attr], v2 = t2[p.attr];
+		if (Array.isArray(v1) && Array.isArray(v2)) {
+			//Compare arrays element-wise
+			if (v1.length !== v2.length) return false;
+			for (let i = 0; i < v1.length; ++i) if (v1[i] !== v2[i]) return false;
+		}
+		else if (v1 !== v2) return false;
+	}
 	for (let attr of type.children || []) {
 		const c1 = content_only(t1[attr]), c2 = content_only(t2[attr]);
 		if (c1.length !== c2.length) return false;
@@ -829,16 +840,20 @@ canvas.addEventListener("dblclick", e => {
 		let control, id = {name: "value-" + param.attr, id: "value-" + param.attr, disabled: el.template};
 		const values = param.values || default_handlers;
 		if (typeof values !== "object") return null; //Fixed strings and such
+		let value = el[param.attr];
+		const m = /^(builtin_param)([0-9]+)$/.exec(param.attr); //As per the other of this regex, currently restricted to builtin_param
+		if (m && Array.isArray(el[m[1]])) value = el[m[1]][m[2]];
+		else if (Array.isArray(value)) value = value[0]; //The first element doesn't get an index
 		if (!values.validate) {
 			//If there's no validator function, this is an array, not an object.
 			if (values.length === 3 && typeof values[0] === "number") {
 				const [min, max, step] = values;
-				control = INPUT({...id, type: "number", min, max, step, value: el[param.attr]});
+				control = INPUT({...id, type: "number", min, max, step, value: value});
 			} else {
-				control = SELECT(id, values.map(v => OPTION({selected: v === el[param.attr], value: v}, (param.selections||{})[v] || v)));
+				control = SELECT(id, values.map(v => OPTION({selected: v === value, value: v}, (param.selections||{})[v] || v)));
 			}
 		}
-		else control = values.make_control(id, el[param.attr], el);
+		else control = values.make_control(id, value, el);
 		return TR([TD(LABEL({htmlFor: "value-" + param.attr}, param.label + ": ")), TD(control)]);
 	}));
 	set_content("#providesdesc", Object.entries(type.provides || el.provides || {}).map(([v, d]) => LI([
@@ -890,8 +905,17 @@ on("submit", "#setprops", e => {
 			//TODO: Validate based on the type, to prevent junk data from hanging around until save
 			//Ultimately the server will validate, but it's ugly to let it sit around wrong.
 			const values = param.values || default_handlers;
-			if (values.retrieve_value) propedit[param.attr] = values.retrieve_value(val, propedit);
-			else propedit[param.attr] = val.value;
+			let value = values.retrieve_value ? values.retrieve_value(val, propedit) : val.value;
+			//Special case: builtin_param could be a single string, or could start an array.
+			//So if we find builtin_param1, we add it to the array.
+			//We expect to hit builtin_param before any others, so that will replace with
+			//a string; then builtin_param1 will arrayify, and others will append.
+			const m = /^(builtin_param)([0-9]+)$/.exec(param.attr); //Currently restricted to builtin_param, could expand that (but be aware that expr1/expr2 are not done like this)
+			if (!m) propedit[param.attr] = value;
+			else {
+				if (m[2] === "1") propedit[m[1]] = [propedit[m[1]]]; //Arrayify with the value already stored
+				propedit[m[1]][m[2]] = value; //TODO: If we've (somehow) skipped over any, fill them with empty strings.
+			}
 		}
 	}
 	propedit = null;
@@ -906,12 +930,16 @@ function element_to_message(el) {
 	if (type.children) for (let attr of type.children) {
 		ret[attr] = el[attr].filter(e => e !== "").map(element_to_message);
 	}
-	if (type.params) type.params.forEach(p => ret[p.attr] = typeof p.values === "string" ? p.values : el[p.attr]);
+	if (type.params) type.params.forEach(p => ret[p.attr] = typeof p.values === "string" ? p.values : el[p.attr]); //VERIFY: Should be copying unnecessarily but with no consequence
 	return ret;
 }
 
-function matches(param, val) {
+function matches(param, msg) {
 	//See if the value is compatible with this parameter's definition of values.
+	let val = msg[param.attr];
+	const m = /^(builtin_param)([0-9]+)$/.exec(param.attr);
+	if (m && Array.isArray(msg[m[1]])) val = msg[m[1]][m[2]];
+	else if (Array.isArray(val)) val = val[0];
 	switch (typeof param.values) {
 		case "object": if (param.values.validate) return param.values.validate(val);
 		//If there's no validator function, it must be an array.
@@ -928,6 +956,10 @@ function matches(param, val) {
 
 function apply_params(el, msg) {
 	for (let param of types[el.type].params || []) {
+		//TODO: If builtin_param is an array and the first element has a fixed value, this
+		//will break. That's not currently possible with the way things are, but it would
+		//be nice to support that, as it'd allow draggables that fix a keyword parameter,
+		//and then allow other parameters to be configurable.
 		if (typeof param.values !== "string") el[param.attr] = msg[param.attr];
 		//else assert msg[param.attr] === param.values
 		delete msg[param.attr];
@@ -952,7 +984,7 @@ function message_to_element(msg, new_elem, array_ok) {
 	}
 	for (let typename in types) {
 		const type = types[typename];
-		if (!type.fixed && type.params && type.params.every(p => matches(p, msg[p.attr]))) {
+		if (!type.fixed && type.params && type.params.every(p => matches(p, msg))) {
 			const el = new_elem({type: typename});
 			apply_params(el, msg);
 			if (type.children) for (let attr of type.children) {

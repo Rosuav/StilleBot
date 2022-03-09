@@ -199,21 +199,30 @@ class task_sleep(int|float delay) {
 }
 
 //Some commands are available for echocommands to call on.
+//Possible future expansion: Separate "inherit builtin" and "inherit command", and then
+//"inherit builtin_command" will imply that it defines a builtin and also a default
+//command. For those builtins where there's no meaningful default command, just use builtin.
 @"G->G->builtins";
 class builtin_command {
 	inherit command;
 	constant command_description = "Duplicate, replace, or adjust the normal handling of the !<> command";
 	constant builtin_description = ""; //If omitted, uses command_description
 	constant builtin_name = ""; //Short human-readable name for the drop-down
-	constant builtin_param = ""; //Label for the parameter, or "/Label/option/option/option" to offer specific selections. If blank, has no parameter.
+	constant builtin_param = ""; //Label for the parameter, or "/Label/option/option/option" to offer specific selections. If blank, has no parameter. May be an array for multiple params.
 	constant default_response = ""; //The response to the default command, and also the default suggestion
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
 	constant aliases = ({ }); //Add aliases here and they'll be defaultly aliased if shadowed too
 	constant command_suggestions = 0; //If unset, will use builtin_name and default_response
+
 	//Override this either as-is or as a continue function to return the useful params.
 	//Note that the person mapping may be as skeletal as (["user": "Nobody"]) - all
 	//other keys are optional.
-	mapping|function|Concurrent.Future message_params(object channel, mapping person, string param) { }
+	//The parameter will be a single string when executed by the inherent chat command, but may be
+	//an array if coming from an echocommand's signal. Ultimately the string form MAY be deemed a
+	//legacy form, and the default will be to send ({"param goes here"}) so it's always an array.
+	//Possibly, even, the builtin could be declared to take N parameters, and a string would be
+	//automatically split into N-1 one-word parameters followed by the remainder.
+	mapping|function|Concurrent.Future message_params(object channel, mapping person, array|string param) { }
 
 	protected void create(string name)
 	{

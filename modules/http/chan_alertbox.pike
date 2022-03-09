@@ -407,19 +407,22 @@ void websocket_cmd_revokekey(mapping(string:mixed) conn, mapping(string:mixed) m
 }
 
 constant builtin_name = "Send Alert";
-constant builtin_param = "Alert type, and optional text";
+constant builtin_description = "Send an alert on the in-browser alertbox";
+constant builtin_param = ({"Alert type", "Text"}); //Alert type will need to become a drop-down
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 ]);
 
-mapping message_params(object channel, mapping person, string param)
+mapping message_params(object channel, mapping person, array|string param)
 {
-	if (param == "") return (["{error}": "Need an alert type"]);
+	string alert, text;
+	if (arrayp(param)) [alert, text] = param;
+	else sscanf(param, "%s %s", alert, text);
+	if (!alert || alert == "") return (["{error}": "Need an alert type"]);
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	sscanf(param, "%s %s", param, string text);
-	if (!valid_alert_type(param, cfg)) return (["{error}": "Unknown alert type"]);
+	if (!valid_alert_type(alert, cfg)) return (["{error}": "Unknown alert type"]);
 	send_updates_all(cfg->authkey + channel->name, ([
-		"send_alert": param,
+		"send_alert": alert,
 		"TEXT": text || "",
 	]));
 	return (["{error}": ""]);
