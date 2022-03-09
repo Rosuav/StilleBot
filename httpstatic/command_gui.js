@@ -29,6 +29,13 @@ const ctx = canvas.getContext('2d');
 const FAV_BUTTON_TEXT = ["Fav ☆", "Fav ★"];
 let voices_available = {"": "Default"};
 Object.keys(voices).forEach(id => voices_available[id] = voices[id].name);
+let alerts_available = { };
+fetch("alertbox?summary", {credentials: "include"}).then(r => r.json()).then(alerts => {
+	//TODO: Distinguish standard from personal, and warn that standard alerts might
+	//not work properly (since they may expect other placeholders than TEXT).
+	alerts.stdalerts.forEach(a => alerts_available[a.id] = a.name);
+	alerts.personals.forEach(a => alerts_available[a.id] = a.name);
+});
 
 document.body.appendChild(DIALOG({id: "properties"}, SECTION([
 	HEADER([H3("Properties"), DIV([BUTTON({type: "button", className: "dialog_cancel"}, "x"), BR(), BUTTON({type: "button", id: "toggle_favourite"}, "fav")])]),

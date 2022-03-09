@@ -189,6 +189,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
 	if (!req->misc->is_mod) return render(req, req->misc->chaninfo);
 	mapping cfg = persist_status->path("alertbox", (string)req->misc->channel->userid);
+	//For API usage eg command viewer, provide some useful information in JSON.
+	if (req->variables->summary) return jsonify(([
+		"stdalerts": ALERTTYPES,
+		"personals": cfg->personals || ({ }),
+	]));
 	if (!req->misc->session->fake && req->request_type == "POST") {
 		if (!req->variables->id) return jsonify((["error": "No file ID specified"]));
 		int idx = search((cfg->files || ({ }))->id, req->variables->id);
