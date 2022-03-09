@@ -101,3 +101,6 @@
 * Retain user IDs for all active channels. If one renames, automatically track it.
   - Need to enumerate all the places where a channel name gets used as a config key
     (outside of persist_config->channels->username) so they can be changed too.
+* In command_gui, if you start dragging with Ctrl held, make a temporary template, drag
+  from that, and discard the template. This will allow a simply Copy effect, and should
+  be compatible with "copying" from actual templates too.
