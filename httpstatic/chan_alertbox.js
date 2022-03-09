@@ -68,6 +68,9 @@ export function render(data) {
 			H3({className: "heading"}, info.heading),
 			P({className: "description"}, info.description),
 			P([
+				LABEL([INPUT({name: "active", type: "checkbox"}), " Active/enabled"]),
+			]),
+			P([
 				SELECT({name: "format"}, [
 					OPTION({value: "text_image_stacked"}, "Text and image, stacked"),
 					OPTION({value: "text_image_overlaid"}, "Text overlaid on image"),
@@ -109,7 +112,10 @@ export function render(data) {
 	});
 	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => {
 		const par = alerttypes[type]; if (!par) return;
-		Object.entries(attrs).forEach(([attr, val]) => par.elements[attr] && (par.elements[attr].value = val));
+		Object.entries(attrs).forEach(([attr, val]) => {
+			const el = par.elements[attr]; if (!el) return;
+			el[el.type === "checkbox" ? "checked" : "value"] = val;
+		});
 		par.querySelectorAll("[data-library]").forEach(el => el.src = attrs[el.dataset.library]);
 		update_layout_options(par, attrs.layout);
 		document.querySelectorAll("input[type=range]").forEach(rangedisplay);
@@ -196,7 +202,7 @@ on("submit", ".alertconfig", e => {
 	e.preventDefault();
 	const msg = {cmd: "alertcfg", type: e.match.dataset.type};
 	for (let el of e.match.elements)
-		if (el.name) msg[el.name] = el.value; //TODO: Support checkboxes
+		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
 	ws_sync.send(msg);
 });
 

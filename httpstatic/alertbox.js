@@ -42,6 +42,7 @@ const alert_formats = {
 //   short alert_gap will have alerts coming hard on each other's heels.
 
 let inited = false, token = null;
+const alert_active = { };
 export function render(data) {
 	//If, in the future, I need more than one alert type (with distinct formats),
 	//replace <main></main> with a set of position-absolute tiles, all on top of
@@ -58,6 +59,7 @@ export function render(data) {
 			if (!elem) elem = DOM("main").appendChild(SECTION({className: "alert", id: kwd})); //New alert type
 			if (alert_formats[cfg.format]) set_content(elem, alert_formats[cfg.format](cfg));
 			else set_content(elem, P("Unrecognized alert format, check editor or refresh page"));
+			alert_active["#" + kwd] = cfg.active;
 			elem.dataset.alertlength = cfg.alertlength || 6;
 			elem.dataset.alertgap = cfg.alertgap || 1;
 			ensure_font(cfg.font);
@@ -87,7 +89,13 @@ let alert_playing = false;
 
 function next_alert() {
 	alert_playing = false;
-	const next = alert_queue.shift();
+	let next = alert_queue.shift();
+	//If you disable an alert while there are a bunch of them queued, they
+	//remain in the queue until they would have been displayed, at which
+	//point they get dropped. This is unlikely to matter as there's currently
+	//no way to see the queue, but if one is ever added, it may be worth
+	//hiding any that are inactive.
+	while (next && !alert_active[next[0]]) next = alert_queue.shift();
 	if (next) do_alert(...next);
 }
 
@@ -97,6 +105,7 @@ function remove_alert(alert, gap) {
 }
 
 function do_alert(alert, replacements) {
+	if (!alert_active[alert]) return;
 	if (alert_playing) {alert_queue.push([alert, replacements]); return;}
 	alert_playing = true;
 	const elem = DOM(alert);
