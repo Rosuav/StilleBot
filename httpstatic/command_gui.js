@@ -939,7 +939,7 @@ function matches(param, msg) {
 	let val = msg[param.attr];
 	const m = /^(builtin_param)([0-9]+)$/.exec(param.attr);
 	if (m && Array.isArray(msg[m[1]])) val = msg[m[1]][m[2]];
-	else if (Array.isArray(val)) val = val[0];
+	else if (param.attr === "builtin_param" && Array.isArray(val)) val = val[0];
 	switch (typeof param.values) {
 		case "object": if (param.values.validate) return param.values.validate(val);
 		//If there's no validator function, it must be an array.
