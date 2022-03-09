@@ -93,11 +93,6 @@
   - On the preview page, have a thing that reveals the URL on click. Don't get the URL at
     all until then.
   - Image of "None" isn't working
-* Multi-argument builtins
-  - Allow multiple values in builtin_param. If a single string, parse as per current design.
-  - Will require that each argument be individually selectable in the command GUI
-  - Some arguments may be drop-downs rather than entry fields. How best to do this?
-    - Alert Box will need a drop-down that can depend on channel state (select an alert).
 * Retain user IDs for all active channels. If one renames, automatically track it.
   - Need to enumerate all the places where a channel name gets used as a config key
     (outside of persist_config->channels->username) so they can be changed too.
