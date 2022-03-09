@@ -97,7 +97,7 @@ const cooldown_name = {...default_handlers,
 };
 //Special case: Builtins can require custom code.
 const builtin_validators = {
-	alertbox_id = {...default_handlers,
+	alertbox_id: {...default_handlers,
 		make_control: (id, val, el) => SELECT(id, [
 			OPTGROUP({label: "Personal alerts"}, [
 				alertcfg.personals.map(a => OPTION({selected: a.id === val, value: a.id}, a.label)),
