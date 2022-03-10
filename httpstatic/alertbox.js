@@ -107,7 +107,7 @@ function remove_alert(alert, gap) {
 }
 
 function do_alert(alert, replacements) {
-	if (!alert_active[alert]) return;
+	if (!replacements.test_alert && !alert_active[alert]) return;
 	if (alert_playing) {alert_queue.push([alert, replacements]); return;}
 	alert_playing = true;
 	const elem = DOM(alert);
@@ -123,7 +123,7 @@ function do_alert(alert, replacements) {
 	if (!playing) elem.querySelector("audio").play();
 	setTimeout(remove_alert, elem.dataset.alertlength * 1000, alert, elem.dataset.alertgap);
 }
-window.ping = type => do_alert("#" + (type || "hostalert"), {NAME: "Test", VIEWERS: 42});
+window.ping = type => do_alert("#" + (type || "hostalert"), {NAME: "Test", VIEWERS: 42, test_alert: 1});
 
 const current_hosts = { };
 ComfyJS.onHosted = (username, viewers, autohost, extra) => {

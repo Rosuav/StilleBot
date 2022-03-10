@@ -357,6 +357,7 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 		"send_alert": type,
 		"NAME": channel->name[1..], //TODO: Use the display name
 		"VIEWERS": random(100) + 1,
+		"test_alert": 1,
 	]));
 }
 
