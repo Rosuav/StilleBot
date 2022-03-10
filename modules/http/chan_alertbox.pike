@@ -47,6 +47,14 @@ Keep this link secret; if the authentication key is accidentally shared, you can
 > [Delete](:#delete) [Cancel](:.dialog_close)
 {: tag=dialog #confirmdeletedlg}
 
+<!-- -->
+
+> ### Unsaved changes
+> Unsaved changes. Save or discard them?
+> {:#discarddesc}
+>
+> [Save and continue](:#unsaved-save) [Discard changes](:#unsaved-discard) [Cancel](:.dialog_close)
+{: tag=dialog #unsaveddlg}
 
 <style>
 #uploadfrm {

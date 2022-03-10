@@ -11,7 +11,7 @@ function THUMB(file) {
 const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
 
 const files = { };
-const alerttypes = { };
+const alerttypes = { }, revert_data = { };
 
 //NOTE: Item rendering applies to uploaded files. Other things are handled by render() itself.
 //NOTE: Since newly-uploaded files will always go to the end, this should always be sorted by
@@ -117,6 +117,7 @@ export function render(data) {
 	});
 	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => {
 		const par = alerttypes[type]; if (!par) return;
+		revert_data[type] = attrs;
 		if (par.classList.contains("unsaved-changes")) return; //TODO: Notify the user that server changes haven't been applied
 		Object.entries(attrs).forEach(([attr, val]) => {
 			const el = par.elements[attr]; if (!el) return;
@@ -253,26 +254,43 @@ on("click", "#delete", e => {
 	DOM("#confirmdeletedlg").close();
 });
 
+let unsaved_form = null, unsaved_clickme = null;
+on("click", "#unsaved-save,#unsaved-discard", e => {
+	DOM("#unsaveddlg").close();
+	console.log(unsaved_form);
+	//Asynchronicity note: There are three timestreams involved in a "save
+	//and test" scenario, all independent, but all internally sequenced.
+	//1) Here in the editor, we collect form data, then push that out on
+	//   the websocket to the server. Then we send the "test alert" message.
+	//2) On the server, the "alertcfg" message is received, and configuration
+	//   is saved, and pushed out to all clients (including both the editor
+	//   and the display). Then the "testalert" message is received, and the
+	//   signal goes to the display to send a test alert.
+	//3) In the display client, the update from the server is received, and
+	//   all changes are immediately applied. Then the alert signal comes in,
+	//   and the freshly-updated alert gets fired.
+	//So even though we have two separations of asynchronicity, the sequencing
+	//of "save, then test" actually still works, so long as requestSubmit() is
+	//properly synchronous. (If that's not true on all browsers, just refactor
+	//submission into a callable function and do the save directly.)
+	if (e.match.id === "unsaved-save") unsaved_form.requestSubmit();
+	else {
+		const type = unsaved_form.dataset.type;
+		unsaved_form.classList.remove("unsaved-changes");
+		//TODO: Refactor the loading of data?
+		render({alertconfigs: {[type]: revert_data[type]}});
+	}
+	unsaved_clickme.click();
+	unsaved_form = unsaved_clickme = null;
+});
+
 on("click", ".testalert", e => {
 	const type = e.match.dataset.type, frm = DOM("form[data-type=" + type + "]");
 	if (frm.classList.contains("unsaved-changes")) {
-		//Asynchronicity note: There are three timestreams involved in a "save
-		//and test" scenario, all independent, but all internally sequenced.
-		//1) Here in the editor, we collect form data, then push that out on
-		//   the websocket to the server. Then we send the "test alert" message.
-		//2) On the server, the "alertcfg" message is received, and configuration
-		//   is saved, and pushed out to all clients (including both the editor
-		//   and the display). Then the "testalert" message is received, and the
-		//   signal goes to the display to send a test alert.
-		//3) In the display client, the update from the server is received, and
-		//   all changes are immediately applied. Then the alert signal comes in,
-		//   and the freshly-updated alert gets fired.
-		//So even though we have two separations of asynchronicity, the sequencing
-		//of "save, then test" actually still works, so long as requestSubmit() is
-		//properly synchronous. (If that's not true on all browsers, just refactor
-		//submission into a callable function and do the save directly.)
-		if (e.match.dataset.unsaved === "autosave") frm.requestSubmit();
-		else {console.log("Skipping, unsaved changes"); return;}
+		unsaved_form = frm; unsaved_clickme = e.match;
+		set_content("#discarddesc", "Cannot send a test alert with unsaved changes.");
+		DOM("#unsaveddlg").showModal();
+		return;
 	}
 	ws_sync.send({cmd: "testalert", type});
 });
