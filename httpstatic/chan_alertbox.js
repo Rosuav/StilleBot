@@ -109,7 +109,7 @@ export function render(data) {
 				textname: "textformat",
 				textdesc: SPAN({className: "placeholders"}, placeholder_description),
 			}),
-			P([BUTTON({type: "submit"}, "Save"), BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")]),
+			P([BUTTON({type: "submit", disabled: true}, "Save"), BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")]),
 		]));
 	});
 	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => {
@@ -150,6 +150,15 @@ function rangedisplay(el) {
 	el.closest("form").querySelector("[data-library=sound]").volume = el.value ** 2;
 }
 on("input", "input[type=range]", e => rangedisplay(e.match));
+
+function formchanged(e) {
+	const frm = e.match.form; if (!frm || !frm.classList.contains("alertconfig")) return;
+	frm.classList.add("unsaved_changes"); //Add "dirty" here to colour the entire form
+	e.match.classList.add("dirty"); //Can skip this if dirty is applied to the whole form
+	e.match.labels.forEach(l => l.classList.add("dirty"));
+	frm.querySelectorAll("[type=submit]").forEach(el => el.disabled = false);
+}
+on("input", "input", formchanged); on("change", "input,select", formchanged);
 
 let librarytarget = null;
 on("click", ".showlibrary", e => {
