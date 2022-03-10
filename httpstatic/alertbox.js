@@ -4,6 +4,7 @@ import "https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js"; const ComfyJS 
 import {ensure_font} from "$$static||utils.js$$";
 
 const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
+const EMPTY_AUDIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
 const alert_formats = {
 	text_image_stacked: data => FIGURE({
@@ -22,7 +23,7 @@ const alert_formats = {
 			style: `background-image: url(${data.image}); width: ${data.alertwidth||250}px; height: ${data.alertheight||250}px;`,
 		}, [
 			DIV({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
-			AUDIO({preload: "auto", src: data.sound, volume: data.volume ** 2}),
+			AUDIO({preload: "auto", src: data.sound || EMPTY_AUDIO, volume: data.volume ** 2}),
 		]
 	),
 };
