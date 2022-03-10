@@ -131,11 +131,11 @@ export function render(data) {
 	});
 }
 
+let wanted_tab = null; //TODO: Allow this to be set from the page fragment (wait till loading is done)
 function update_visible_form() {
-	const sel = DOM("input[name=alertselect]:checked").value;
-	set_content("#selectalert", ".alertconfig[data-type=" + sel + "] {display: block;}");
+	wanted_tab = DOM("input[name=alertselect]:checked").value;
+	set_content("#selectalert", ".alertconfig[data-type=" + wanted_tab + "] {display: block;}");
 }
-on("click", "input[name=alertselect]", update_visible_form);
 
 function update_layout_options(par, layout) {
 	const fmt = par.querySelector("[name=format]").value;
@@ -257,7 +257,6 @@ on("click", "#delete", e => {
 let unsaved_form = null, unsaved_clickme = null;
 on("click", "#unsaved-save,#unsaved-discard", e => {
 	DOM("#unsaveddlg").close();
-	console.log(unsaved_form);
 	//Asynchronicity note: There are three timestreams involved in a "save
 	//and test" scenario, all independent, but all internally sequenced.
 	//1) Here in the editor, we collect form data, then push that out on
@@ -293,6 +292,18 @@ on("click", ".testalert", e => {
 		return;
 	}
 	ws_sync.send({cmd: "testalert", type});
+});
+
+on("click", "input[name=alertselect]", e => {
+	const frm = DOM(".alertconfig[data-type=" + wanted_tab + "]");
+	if (frm && frm.classList.contains("unsaved-changes")) {
+		unsaved_form = frm; unsaved_clickme = e.match;
+		set_content("#discarddesc", "Unsaved changes will be lost if you switch to another alert type.");
+		DOM("#select-" + wanted_tab).checked = true; //Snap back to the other one
+		DOM("#unsaveddlg").showModal();
+		return;
+	}
+	update_visible_form();
 });
 
 const uploadme = { };
