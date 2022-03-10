@@ -2,7 +2,7 @@
 //import {...} from "$$static||utils.js$$";
 
 import {on, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
-const {BR, INPUT, LINK, OPTGROUP, OPTION, SELECT, TABLE, TD, TH, TR} = choc; //autoimport
+const {BR, INPUT, LABEL, LINK, OPTGROUP, OPTION, SELECT, TABLE, TD, TH, TR} = choc; //autoimport
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
 
 export function waitlate(wait_time, late_time, confirmdesc, callback) {
@@ -59,14 +59,17 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 	])]),
 	cfg.use_preview && TR([TH("Preview bg"), TD(INPUT({name: "previewbg", type: "color"}))]),
 	TR([TH("Border"), TD([
-		"Width (px): ", INPUT({name: "borderwidth", type: "number"}),
-		" Color: ", INPUT({name: "bordercolor", type: "color"}),
+		LABEL(["Width (px): ", INPUT({name: "borderwidth", type: "number"})]),
+		LABEL([" Color: ", INPUT({name: "bordercolor", type: "color"})]),
 	])]),
 	TR([TH("Drop shadow"), TD([
 		"Position (px): ", INPUT({name: "shadowx", type: "number"}), INPUT({name: "shadowy", type: "number"}),
-		" Color: ", INPUT({name: "shadowcolor", type: "color"}),
-		" Opacity: ", INPUT({name: "shadowalpha", type: "number", min: 0, max: 100, value: 0}),
-		" 0 to disable",
+		LABEL([" Color: ", INPUT({name: "shadowcolor", type: "color"})]),
+		LABEL([
+			" Opacity: ",
+			INPUT({name: "shadowalpha", type: "number", min: 0, max: 100, value: 0}),
+			" 0 to disable",
+		]),
 	])]),
 	//TODO: Gradient?
 	//TODO: Padding? Back end already supports padvert and padhoriz.
