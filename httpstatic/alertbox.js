@@ -3,12 +3,14 @@ const {AUDIO, DIV, FIGCAPTION, FIGURE, IMG, P, SECTION} = choc; //autoimport
 import "https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js"; const ComfyJS = window.ComfyJS;
 import {ensure_font} from "$$static||utils.js$$";
 
+const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
+
 const alert_formats = {
 	text_image_stacked: data => FIGURE({
 		className: "text_image_stacked " + (data.layout||""),
 		style: `width: ${data.alertwidth||250}px; max-height: ${data.alertheight||250}px;`,
 	}, [
-		IMG({src: data.image}),
+		IMG({src: data.image || TRANSPARENT_IMAGE}),
 		FIGCAPTION({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
 		AUDIO({preload: "auto", src: data.sound, volume: data.volume ** 2}),
 	]),

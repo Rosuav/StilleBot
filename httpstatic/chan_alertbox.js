@@ -8,6 +8,8 @@ function THUMB(file) {
 	return DIV({className: "thumbnail", style: "background-image: url(" + file.url + ")"});
 }
 
+const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
+
 const files = { };
 const alerttypes = { };
 
@@ -116,7 +118,7 @@ export function render(data) {
 			const el = par.elements[attr]; if (!el) return;
 			el[el.type === "checkbox" ? "checked" : "value"] = val;
 		});
-		par.querySelectorAll("[data-library]").forEach(el => el.src = attrs[el.dataset.library]);
+		par.querySelectorAll("[data-library]").forEach(el => el.src = attrs[el.dataset.library] || TRANSPARENT_IMAGE);
 		update_layout_options(par, attrs.layout);
 		document.querySelectorAll("input[type=range]").forEach(rangedisplay);
 	});
@@ -166,7 +168,7 @@ on("click", ".showlibrary", e => {
 	}
 	if (needvalue) {
 		//Didn't match against any of the library entries.
-		if (librarytarget.src === "") DOM("input[type=radio][data-special=None]").checked = true;
+		if (librarytarget.src === TRANSPARENT_IMAGE) DOM("input[type=radio][data-special=None]").checked = true;
 		else {
 			DOM("input[type=radio][data-special=URL]").checked = true;
 			DOM("#customurl").value = librarytarget.src;
@@ -186,13 +188,15 @@ on("input", "#customurl", e => DOM("input[type=radio][data-special=" + (e.target
 on("click", "#libraryselect", e => {
 	if (librarytarget) {
 		const rb = DOM("#library input[type=radio]:checked");
+		let img = "";
 		if (rb) switch (rb.dataset.special) {
-			case "None": librarytarget.src = ""; break;
-			case "URL": librarytarget.src = DOM("#customurl").value; break;
-			default: librarytarget.src = rb.parentElement.querySelector("a").href;
+			case "None": break;
+			case "URL": img = DOM("#customurl").value; break;
+			default: img = rb.parentElement.querySelector("a").href;
 		}
 		ws_sync.send({cmd: "alertcfg", type: librarytarget.closest(".alertconfig").dataset.type,
-			[librarytarget.dataset.library]: librarytarget.src});
+			[librarytarget.dataset.library]: img});
+		librarytarget.src = img || TRANSPARENT_IMAGE;
 		librarytarget = null;
 	}
 	DOM("#library").close();
