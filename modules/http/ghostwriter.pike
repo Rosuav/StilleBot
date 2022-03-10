@@ -468,7 +468,7 @@ protected void create(string name) {
 	string botnick = persist_config["ircsettings"]->?nick;
 	if (botnick) get_user_id(botnick)->then() {botid = (string)__ARGS__[0];}; //Cache the bot's user ID for the demo
 	mapping configs = persist_status->path("ghostwriter");
-	write("Configs available for %O\n", mkmapping(indices(configs), values(configs)->chan));
+	//write("Configs available for %O\n", mkmapping(indices(configs), values(configs)->chan));
 	call_out(reconnect, 4, 1); //Delay startup a bit to avoid connection conflicts and allow compilation errors to be seen
 }
 
