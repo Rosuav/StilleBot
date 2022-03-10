@@ -253,7 +253,29 @@ on("click", "#delete", e => {
 	DOM("#confirmdeletedlg").close();
 });
 
-on("click", ".testalert", e => ws_sync.send({cmd: "testalert", type: e.match.dataset.type}));
+on("click", ".testalert", e => {
+	const type = e.match.dataset.type, frm = DOM("form[data-type=" + type + "]");
+	if (frm.classList.contains("unsaved-changes")) {
+		//Asynchronicity note: There are three timestreams involved in a "save
+		//and test" scenario, all independent, but all internally sequenced.
+		//1) Here in the editor, we collect form data, then push that out on
+		//   the websocket to the server. Then we send the "test alert" message.
+		//2) On the server, the "alertcfg" message is received, and configuration
+		//   is saved, and pushed out to all clients (including both the editor
+		//   and the display). Then the "testalert" message is received, and the
+		//   signal goes to the display to send a test alert.
+		//3) In the display client, the update from the server is received, and
+		//   all changes are immediately applied. Then the alert signal comes in,
+		//   and the freshly-updated alert gets fired.
+		//So even though we have two separations of asynchronicity, the sequencing
+		//of "save, then test" actually still works, so long as requestSubmit() is
+		//properly synchronous. (If that's not true on all browsers, just refactor
+		//submission into a callable function and do the save directly.)
+		if (e.match.dataset.unsaved === "autosave") frm.requestSubmit();
+		else {console.log("Skipping, unsaved changes"); return;}
+	}
+	ws_sync.send({cmd: "testalert", type});
+});
 
 const uploadme = { };
 export async function sockmsg_upload(msg) {
