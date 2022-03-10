@@ -87,9 +87,6 @@
   - Followed games/categories - you can still follow/unfollow but you can't query it in API
 * Host alert widget
   - Basic styling of the image only, but have a published ID so people can use custom CSS?
-  - On sending test alert, prompt to save
-  - Disable save button ("Saved") if no changes; disable but leave text "Save" if demo
-    - If button disabled, accept updates from server
   - On the preview page, have a thing that reveals the URL on click. Don't get the URL at
     all until then.
   - Hash link to the ID of the alert
