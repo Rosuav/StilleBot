@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN} = choc; //autoimport
+const {A, ABBR, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN} = choc; //autoimport
 import {TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
@@ -67,7 +67,10 @@ export function render(data) {
 		]));
 		update_visible_form();
 		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({className: "alertconfig", "data-type": type}, [
-			H3({className: "heading"}, info.heading),
+			H3({className: "heading"}, [
+				info.heading, SPAN({className: "if-unsaved"}, " "),
+				ABBR({className: "dirty if-unsaved", title: "Unsaved changes - click Save to apply them"}, "*"),
+			]),
 			P({className: "description"}, info.description),
 			P([
 				LABEL([INPUT({name: "active", type: "checkbox"}), " Active/enabled"]),
@@ -114,9 +117,12 @@ export function render(data) {
 	});
 	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => {
 		const par = alerttypes[type]; if (!par) return;
+		if (par.classList.contains("unsaved-changes")) return; //TODO: Notify the user that server changes haven't been applied
 		Object.entries(attrs).forEach(([attr, val]) => {
 			const el = par.elements[attr]; if (!el) return;
 			el[el.type === "checkbox" ? "checked" : "value"] = val;
+			el.classList.remove("dirty");
+			el.labels.forEach(l => l.classList.remove("dirty"));
 		});
 		par.querySelectorAll("[data-library]").forEach(el => el.src = attrs[el.dataset.library] || TRANSPARENT_IMAGE);
 		update_layout_options(par, attrs.layout);
@@ -153,7 +159,7 @@ on("input", "input[type=range]", e => rangedisplay(e.match));
 
 function formchanged(e) {
 	const frm = e.match.form; if (!frm || !frm.classList.contains("alertconfig")) return;
-	frm.classList.add("unsaved_changes"); //Add "dirty" here to colour the entire form
+	frm.classList.add("unsaved-changes"); //Add "dirty" here to colour the entire form
 	e.match.classList.add("dirty"); //Can skip this if dirty is applied to the whole form
 	e.match.labels.forEach(l => l.classList.add("dirty"));
 	frm.querySelectorAll("[type=submit]").forEach(el => el.disabled = false);
@@ -217,6 +223,7 @@ on("submit", ".alertconfig", e => {
 	for (let el of e.match.elements)
 		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
 	ws_sync.send(msg);
+	e.match.classList.remove("unsaved-changes");
 });
 
 on("dragstart", "#alertboxlink", e => {

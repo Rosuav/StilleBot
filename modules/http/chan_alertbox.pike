@@ -140,6 +140,7 @@ input[type=range] {vertical-align: middle;}
 	text-align: center;
 }
 #alertselectors input:checked + label {background: #efd;}
+form:not(.unsaved-changes) .if-unsaved {display: none;}
 </style>
 
 > ### Alert preview
