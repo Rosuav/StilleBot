@@ -296,7 +296,8 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		error = "File too large (limit " + MAX_PER_FILE + " MB)";
 	else if (used + allocation > MAX_TOTAL_STORAGE * 1024)
 		error = "Unable to upload, storage limit of " + MAX_TOTAL_STORAGE + " MB exceeded. Delete other files to make room.";
-	//TODO: Check if the file name is duplicated? Maybe? Not sure. It's not a fundamental blocker.
+	//TODO: Check if the file name is duplicated? Maybe? Not sure. It's not a fundamental
+	//blocker. Maybe the front end should check instead, and offer to delete the old one.
 	//TODO: Sanitize the name - at least a length check.
 	if (error) {
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "uploaderror", "name": msg->name, "error": error]), 4));
