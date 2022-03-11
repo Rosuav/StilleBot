@@ -35,6 +35,21 @@ Keep this link secret; if the authentication key is accidentally shared, you can
 
 <ul id=alertselectors><li id=newpersonal><button id=addpersonal title=\"Add new personal alert\">+</button></li></ul><style id=selectalert></style><div id=alertconfigs></div>
 
+> ### Rename file
+> Renaming a file has no effect on alerts; call them whatever you like. FIXME: Write better description.
+>
+> <div class=thumbnail></div>
+>
+> <form id=renameform method=dialog>
+> <input type=hidden name=id>
+> <label>Name: <input name=name size=50></label>
+>
+> [Apply](:#renamefile type=submit) [Cancel](:.dialog_close)
+> </form>
+{: tag=dialog #renamefiledlg}
+
+<!-- -->
+
 > ### Delete file
 > Really delete this file?
 >
@@ -154,9 +169,13 @@ input[type=range] {vertical-align: middle;}
 	margin: 4px;
 }
 form:not(.unsaved-changes) .if-unsaved {display: none;}
-.editpersonaldesc {
+.editpersonaldesc,.renamefile {
 	padding: 0;
 	margin-right: 5px;
+}
+.editpersonaldesc {
+	padding: 0;
+	margin-left: 5px;
 }
 </style>
 
@@ -455,10 +474,22 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	send_updates_all(cfg->authkey + channel->name);
 }
 
-void websocket_cmd_rename(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	//TODO: Rename a file. Won't change its URL (since that's based on ID),
+void websocket_cmd_renamefile(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Rename a file. Won't change its URL (since that's based on ID),
 	//nor the name of the file as stored (ditto), so this is really an
 	//"edit description" endpoint. But users will think of it as "rename".
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || grp != "control") return;
+	if (!stringp(msg->id) || !stringp(msg->name)) return;
+	if (conn->session->fake) return;
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	if (!cfg->files) return; //No files, can't rename
+	int idx = search(cfg->files->id, msg->id);
+	if (idx == -1) return; //Not found.
+	mapping file = cfg->files[idx];
+	file->name = msg->name;
+	persist_status->save();
+	update_one(conn->group, file->id);
 }
 
 void websocket_cmd_revokekey(mapping(string:mixed) conn, mapping(string:mixed) msg) {

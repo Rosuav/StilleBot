@@ -25,7 +25,11 @@ export function render_item(file, obj) {
 		INPUT({type: "radio", name: "chooseme", value: file.id}),
 		FIGURE([
 			THUMB(file),
-			FIGCAPTION(A({href: file.url, target: "_blank"}, file.name)),
+			FIGCAPTION([
+				A({href: file.url, target: "_blank"}, file.name),
+				" ",
+				BUTTON({type: "button", className: "renamefile", title: "Rename"}, "📝"),
+			]),
 			BUTTON({type: "button", className: "confirmdelete", title: "Delete"}, "🗑"),
 		]),
 	]);
@@ -389,6 +393,11 @@ on("click", ".editpersonaldesc", e => {
 	DOM("#personaldlg").showModal();
 });
 
+//TODO: Make a general handler in utils for all form[method=dialog]?
+//Would need a data-cmd to bootstrap the message, or alternatively,
+//some other type of hook that receives the form and an object of data.
+//Maybe even have a "form dialog opening button", the entire thing??
+//When it's clicked, it triggers a delayed event upon form submission.
 on("submit", "#editpersonal", e => {
 	e.preventDefault(); //Can't depend on method=dialog :(
 	const msg = {cmd: "makepersonal"}; //Atwix's Legacy?
@@ -402,3 +411,22 @@ on("click", "#delpersonal", waitlate(1000, 7500, "Really delete?", e => {
 	ws_sync.send({cmd: "delpersonal", id: DOM("#editpersonal").elements.id.value});
 	DOM("#personaldlg").close();
 }));
+
+on("click", ".renamefile", e => {
+	const elem = DOM("#renameform").elements;
+	const file = files[e.match.closest("[data-id]").dataset.id];
+	if (!file) return;
+	DOM("#renamefiledlg .thumbnail").replaceWith(THUMB(file));
+	elem.id.value = file.id;
+	elem.name.value = file.name;
+	DOM("#renamefiledlg").showModal();
+});
+
+on("submit", "#renameform", e => {
+	e.preventDefault();
+	const msg = {cmd: "renamefile"};
+	for (let el of e.match.elements)
+		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
+	ws_sync.send(msg);
+	DOM("#renamefiledlg").close();
+});
