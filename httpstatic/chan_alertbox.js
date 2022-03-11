@@ -64,7 +64,7 @@ export function render(data) {
 		//several top-level configs, then second tier selection that defines which is the
 		//active scheme, and finally the lowest tier defines variants, using inherits for
 		//everything that should follow the scheme.
-		DOM("#alertselectors").appendChild(LI([
+		DOM("#newpersonal").before(LI([
 			INPUT({type: "radio", name: "alertselect", id: "select-" + type, value: type,
 				checked: !DOM("input[name=alertselect]:checked")}),
 			LABEL({htmlFor: "select-" + type}, info.label),
@@ -340,3 +340,26 @@ on("change", "input[type=file]", e => {
 
 on("click", "#revokekey", e => DOM("#revokekeydlg").showModal());
 on("click", "#confirmrevokekey", e => {ws_sync.send({cmd: "revokekey"}); DOM("#revokekeydlg").close();});
+
+
+on("click", "#addpersonal", e => {
+	const frm = DOM(".alertconfig[data-type=" + wanted_tab + "]");
+	if (frm && frm.classList.contains("unsaved-changes")) {
+		unsaved_form = frm; unsaved_clickme = e.match;
+		set_content("#discarddesc", "Unsaved changes will be lost if you create another alert type.");
+		DOM("#unsaveddlg").showModal();
+		return;
+	}
+	DOM("#editpersonal").elements.id.value = "";
+	set_content("#savepersonal", "Add");
+	DOM("#personaldlg").showModal();
+});
+
+on("submit", "#editpersonal", e => {
+	e.preventDefault(); //Can't depend on method=dialog :(
+	const msg = {cmd: "makepersonal"};
+	for (let el of e.match.elements)
+		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
+	ws_sync.send(msg);
+	DOM("#personaldlg").close();
+});

@@ -32,7 +32,7 @@ Keep this link secret; if the authentication key is accidentally shared, you can
 > [Generate a new key, disabling the old one](:#confirmrevokekey) [Cancel](:.dialog_close)
 {: tag=dialog #revokekeydlg}
 
-<ul id=alertselectors></ul><style id=selectalert></style><div id=alertconfigs></div>
+<ul id=alertselectors><li id=newpersonal><button id=addpersonal title=\"Add new personal alert\">+</button></li></ul><style id=selectalert></style><div id=alertconfigs></div>
 
 > ### Delete file
 > Really delete this file?
@@ -148,6 +148,10 @@ input[type=range] {vertical-align: middle;}
 	text-align: center;
 }
 #alertselectors input:checked + label {background: #efd;}
+#addpersonal {
+	height: 24px; width: 24px;
+	margin: 4px;
+}
 form:not(.unsaved-changes) .if-unsaved {display: none;}
 </style>
 
@@ -165,6 +169,23 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 >
 > [Test host alert](:.testalert data-type=hostalert) [Close](:.dialog_close)
 {: tag=dialog #previewdlg}
+
+<!-- -->
+
+> ### Personal alert
+>
+> Personal alert types are not triggered automatically, but are available for your channel's
+> commands and specials. They can be customized just like the standard alerts can, and can be
+> tested from here, yada yada include description pls.
+>
+> <form id=editpersonal method=dialog><input type=hidden name=id>
+> <label>Tab label: <input name=label> Keep this short and unique</label><br>
+> <label>Heading: <input name=heading size=60></label><br>
+> <label>Description:<br><textarea name=description cols=60 rows=4></textarea></label>
+>
+> [Save](:#savepersonal type=submit) [Cancel](:.dialog_close)
+> </form>
+{: tag=dialog #personaldlg style=max-width:min-content}
 ";
 
 constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB
@@ -272,7 +293,7 @@ void websocket_cmd_makepersonal(mapping(string:mixed) conn, mapping(string:mixed
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->personals) cfg->personals = ({ });
 	mapping info;
-	if (msg->id) {
+	if (msg->id && msg->id != "") {
 		//Look up an existing one, and maybe delete it
 		int idx = search(cfg->personals->id, msg->id);
 		if (idx == -1) return; //ID specified and not found? Can't save.

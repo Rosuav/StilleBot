@@ -90,7 +90,6 @@
   - Hash link to the ID of the alert
   - Permit renaming of files
   - Need a way to create and edit personals
-    - "+" button to the right of all tabs, open dialog
     - Pencil button near the description, open same dialog
     - Dialog has a Delete button when editing
     - Be very clear that personals don't get triggered by default
