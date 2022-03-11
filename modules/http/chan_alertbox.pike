@@ -16,7 +16,7 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 > [Select](:#libraryselect disabled=true) [Close](:.dialog_close)
 {: tag=dialog #library}
 
-Drag this to OBS or use this URL as a browser source: <a id=alertboxlink href=\"alertbox?key=LOADING\">Alert Box</a><br>
+To use these alerts, [show the preview](:#authpreview) from which you can access your unique display link.<br>
 Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:#revokekey) to generate a new one.
 
 [Show library](:.showlibrary)
@@ -153,9 +153,15 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 
 > ### Alert preview
 >
+> Drag this to OBS or use this URL as a browser source:
+> <a id=alertboxlink href=\"alertbox?key=LOADING\" target=_blank>Alert Box</a><br><label>
+> Click to reveal: <input readonly disabled size=65 value=\"https://sikorsky.rosuav.com/channels/rosuav/alertbox?key=(hidden)\" id=alertboxdisplay></label>
+>
 > Your alerts currently look like this:
 >
 > <iframe id=alertembed width=600 height=400></iframe>
+>
+> TODO: Have a background color selection popup, and buttons for all alert types, not just hosts
 >
 > [Test host alert](:.testalert data-type=hostalert) [Close](:.dialog_close)
 {: tag=dialog #previewdlg}

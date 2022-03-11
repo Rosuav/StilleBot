@@ -36,10 +36,14 @@ export function sockmsg_authkey(msg) {
 	DOM("#alertboxlink").href = "alertbox?key=" + msg.key;
 	msg.key = "<hidden>";
 	have_authkey = true;
+	if (DOM("#previewdlg").open) DOM("#alertembed").src = DOM("#alertboxlink").href;
 }
 
 export function render(data) {
-	if (data.authkey === "<REVOKED>" || !have_authkey) ws_sync.send({cmd: "getkey"});
+	if (data.authkey === "<REVOKED>") {
+		have_authkey = false;
+		if (DOM("#previewdlg").open) ws_sync.send({cmd: "getkey"});
+	}
 	if (data.alerttypes) data.alerttypes.forEach(info => {
 		const type = info.id;
 		const placeholder_description = !info.placeholders ? ""
@@ -228,13 +232,19 @@ on("submit", ".alertconfig", e => {
 });
 
 on("dragstart", "#alertboxlink", e => {
+	//TODO: Set the width and height to the (individual) maximums of all active alerts
 	e.dataTransfer.setData("text/uri-list", `${e.match.href}&layer-name=Host%20Alerts&layer-width=600&layer-height=400`);
 });
 
-on("click", "#alertboxlink", e => {
-	e.preventDefault();
-	DOM("#alertembed").src = e.match.href;
+on("click", "#authpreview", e => {
+	if (!have_authkey) ws_sync.send({cmd: "getkey"});
+	else DOM("#alertembed").src = DOM("#alertboxlink").href;
 	DOM("#previewdlg").showModal();
+});
+on("click", "#alertboxdisplay", e => {
+	e.match.value = DOM("#alertboxlink").href;
+	e.match.disabled = false;
+	e.match.select();
 });
 
 //Unload the preview when the dialog closes
