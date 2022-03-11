@@ -77,7 +77,7 @@ export function render(data) {
 				ABBR({className: "dirty if-unsaved", title: "Unsaved changes - click Save to apply them"}, "*"),
 			]),
 			P([
-				!info.builtin && BUTTON({className: "editpersonaldesc", title: "Edit"}, "📝"),
+				!info.builtin && BUTTON({type: "button", className: "editpersonaldesc", title: "Edit"}, "📝"),
 				SPAN({className: "description"}, info.description),
 			]),
 			HR(),
