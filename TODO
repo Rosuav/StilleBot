@@ -90,9 +90,7 @@
   - Hash link to the ID of the alert
   - Permit renaming of files
   - Need a way to create and edit personals
-    - Pencil button near the description, open same dialog
     - Dialog has a Delete button when editing
-    - Be very clear that personals don't get triggered by default
 * Retain user IDs for all active channels. If one renames, automatically track it.
   - Need to enumerate all the places where a channel name gets used as a config key
     (outside of persist_config->channels->username) so they can be changed too.

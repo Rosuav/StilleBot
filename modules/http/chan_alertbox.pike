@@ -153,6 +153,10 @@ input[type=range] {vertical-align: middle;}
 	margin: 4px;
 }
 form:not(.unsaved-changes) .if-unsaved {display: none;}
+.editpersonaldesc {
+	padding: 0;
+	margin-right: 5px;
+}
 </style>
 
 > ### Alert preview
@@ -189,18 +193,22 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 ";
 
 constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB
+//Every standard alert should have a 'builtin' which says which module will trigger this.
+//Not currently used, beyond that standard alerts have a builtin and personal alerts don't.
 constant ALERTTYPES = ({([
 	"id": "hostalert",
 	"label": "Host",
 	"heading": "Hosted by another channel",
 	"description": "When some other channel hosts yours",
 	"placeholders": (["NAME": "Channel name", "VIEWERS": "View count"]),
+	"builtin": "chan_alertbox",
 ]), ([
 	"id": "samplealert",
 	"label": "Sample",
 	"heading": "EXAMPLE ALTERNATE ALERT TYPE",
 	"description": "Used for testing. Not an actual alert.",
 	"placeholders": (["SAMPLE": "Example placeholder"]),
+	"builtin": "logout", //HACK :)
 ])});
 constant RETAINED_ATTRS = ({"image", "sound"});
 constant GLOBAL_ATTRS = "active format alertlength alertgap" / " ";

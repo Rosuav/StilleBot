@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
-const {A, ABBR, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN} = choc; //autoimport
+const {A, ABBR, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN} = choc; //autoimport
 import {TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
@@ -11,7 +11,7 @@ function THUMB(file) {
 const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
 
 const files = { };
-const alerttypes = { }, revert_data = { };
+const alerttypes = { }, alert_definitions = { }, revert_data = { };
 
 //NOTE: Item rendering applies to uploaded files. Other things are handled by render() itself.
 //NOTE: Since newly-uploaded files will always go to the end, this should always be sorted by
@@ -46,6 +46,7 @@ export function render(data) {
 	}
 	if (data.alerttypes) data.alerttypes.forEach(info => {
 		const type = info.id;
+		alert_definitions[type] = info;
 		const placeholder_description = !info.placeholders ? ""
 			: Object.entries(info.placeholders).map(([k,d]) => [BR(), CODE("{" + k + "}"), " - " + d]);
 		if (alerttypes[type]) {
@@ -75,7 +76,11 @@ export function render(data) {
 				info.heading, SPAN({className: "if-unsaved"}, " "),
 				ABBR({className: "dirty if-unsaved", title: "Unsaved changes - click Save to apply them"}, "*"),
 			]),
-			P({className: "description"}, info.description),
+			P([
+				!info.builtin && BUTTON({className: "editpersonaldesc", title: "Edit"}, "📝"),
+				SPAN({className: "description"}, info.description),
+			]),
+			HR(),
 			P([
 				LABEL([INPUT({name: "active", type: "checkbox"}), " Active/enabled"]),
 			]),
@@ -352,6 +357,18 @@ on("click", "#addpersonal", e => {
 	}
 	DOM("#editpersonal").elements.id.value = "";
 	set_content("#savepersonal", "Add");
+	DOM("#personaldlg").showModal();
+});
+
+on("click", ".editpersonaldesc", e => {
+	const type = e.match.closest("form").dataset.type;
+	const elem = DOM("#editpersonal").elements;
+	const info = alert_definitions[type];
+	for (let kwd in info) {
+		if (elem[kwd]) elem[kwd].value = info[kwd];
+	}
+	elem.id.value = type;
+	set_content("#savepersonal", "Save");
 	DOM("#personaldlg").showModal();
 });
 
