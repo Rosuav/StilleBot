@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
 const {A, ABBR, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN} = choc; //autoimport
-import {TEXTFORMATTING} from "$$static||utils.js$$";
+import {waitlate, TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
 	if (!file.url) return DIV({className: "thumbnail"}, "uploading...");
@@ -372,6 +372,7 @@ on("click", "#addpersonal", e => {
 	}
 	for (let el of DOM("#editpersonal").elements) el.value = "";
 	set_content("#savepersonal", "Add");
+	DOM("#delpersonal").disabled = true;
 	DOM("#personaldlg").showModal();
 });
 
@@ -384,14 +385,20 @@ on("click", ".editpersonaldesc", e => {
 	}
 	elem.id.value = type;
 	set_content("#savepersonal", "Save");
+	DOM("#delpersonal").disabled = false;
 	DOM("#personaldlg").showModal();
 });
 
 on("submit", "#editpersonal", e => {
 	e.preventDefault(); //Can't depend on method=dialog :(
-	const msg = {cmd: "makepersonal"};
+	const msg = {cmd: "makepersonal"}; //Atwix's Legacy?
 	for (let el of e.match.elements)
 		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
 	ws_sync.send(msg);
 	DOM("#personaldlg").close();
 });
+
+on("click", "#delpersonal", waitlate(1000, 7500, "Really delete?", e => {
+	ws_sync.send({cmd: "delpersonal", id: DOM("#editpersonal").elements.id.value});
+	DOM("#personaldlg").close();
+}));

@@ -187,7 +187,7 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 > <label>Heading: <input name=heading size=60></label><br>
 > <label>Description:<br><textarea name=description cols=60 rows=4></textarea></label>
 >
-> [Save](:#savepersonal type=submit) [Cancel](:.dialog_close)
+> [Save](:#savepersonal type=submit) [Delete](:#delpersonal) [Cancel](:.dialog_close)
 > </form>
 {: tag=dialog #personaldlg style=max-width:min-content}
 ";
