@@ -415,6 +415,7 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 		"send_alert": type,
 		"NAME": channel->name[1..], //TODO: Use the display name
 		"VIEWERS": random(100) + 1,
+		"TEXT": "This is a test alert.",
 		"test_alert": 1,
 	]));
 }
@@ -471,7 +472,7 @@ void websocket_cmd_revokekey(mapping(string:mixed) conn, mapping(string:mixed) m
 }
 
 constant builtin_name = "Send Alert";
-constant builtin_description = "Send an alert on the in-browser alertbox. Best with personal (not standard) alerts.";
+constant builtin_description = "Send an alert on the in-browser alertbox. Best with personal (not standard) alerts. Does nothing (no error) if the alert is disabled.";
 constant builtin_param = ({"/Alert type/alertbox_id", "Text"});
 constant vars_provided = ([
 	"{error}": "Error message, if any",
