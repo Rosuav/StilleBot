@@ -138,6 +138,21 @@ export function render(data) {
 		update_layout_options(par, attrs.layout);
 		document.querySelectorAll("input[type=range]").forEach(rangedisplay);
 	});
+	if (data.delpersonal) {
+		//This isn't part of a normal stateful update, and is a signal that a personal
+		//alert has gone bye-bye. Clean up our local state, matching what we'd have if
+		//we refreshed the page.
+		const type = data.delpersonal;
+		alerttypes[type].replaceWith();
+		delete alerttypes[type];
+		delete revert_data[type];
+		DOM("#select-" + type).closest("li").replaceWith();
+		if (wanted_tab === type) {
+			//The currently-selected one got deleted. Switch to the first available.
+			document.querySelectorAll("input[name=alertselect]")[0].checked = true;
+			update_visible_form();
+		}
+	}
 }
 
 let wanted_tab = null; //TODO: Allow this to be set from the page fragment (wait till loading is done)
@@ -355,7 +370,7 @@ on("click", "#addpersonal", e => {
 		DOM("#unsaveddlg").showModal();
 		return;
 	}
-	DOM("#editpersonal").elements.id.value = "";
+	for (let el of DOM("#editpersonal").elements) el.value = "";
 	set_content("#savepersonal", "Add");
 	DOM("#personaldlg").showModal();
 });

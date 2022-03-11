@@ -302,10 +302,9 @@ void websocket_cmd_makepersonal(mapping(string:mixed) conn, mapping(string:mixed
 	if (!cfg->personals) cfg->personals = ({ });
 	mapping info;
 	if (msg->id && msg->id != "") {
-		//Look up an existing one, and maybe delete it
+		//Look up an existing one to edit
 		int idx = search(cfg->personals->id, msg->id);
 		if (idx == -1) return; //ID specified and not found? Can't save.
-		//TODO: Have a way to request deletion (splice it out of the array)
 		info = cfg->personals[idx];
 	}
 	else {
@@ -319,6 +318,20 @@ void websocket_cmd_makepersonal(mapping(string:mixed) conn, mapping(string:mixed
 	persist_status->save();
 	send_updates_all(conn->group);
 	send_updates_all(cfg->authkey + channel->name);
+}
+
+void websocket_cmd_delpersonal(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || grp != "control") return;
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	if (!cfg->personals) return; //Nothing to delete
+	if (!stringp(msg->id)) return;
+	int idx = search(cfg->personals->id, msg->id);
+	if (idx == -1) return; //Not found (maybe was already deleted)
+	cfg->personals = cfg->personals[..idx-1] + cfg->personals[idx+1..];
+	if (cfg->alertconfigs) m_delete(cfg->alertconfigs, msg->id);
+	persist_status->save();
+	send_updates_all(conn->group, (["delpersonal": msg->id]));
 }
 
 void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg) {
