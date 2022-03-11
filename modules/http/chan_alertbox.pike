@@ -1,5 +1,6 @@
 inherit http_websocket;
 inherit builtin_command;
+inherit hook;
 constant markdown = #"# Alertbox management for channel $$channel$$
 
 > ### Library
@@ -203,12 +204,12 @@ constant ALERTTYPES = ({([
 	"placeholders": (["NAME": "Channel name", "VIEWERS": "View count"]),
 	"builtin": "chan_alertbox",
 ]), ([
-	"id": "samplealert",
-	"label": "Sample",
-	"heading": "EXAMPLE ALTERNATE ALERT TYPE",
-	"description": "Used for testing. Not an actual alert.",
-	"placeholders": (["SAMPLE": "Example placeholder"]),
-	"builtin": "logout", //HACK :)
+	"id": "follower",
+	"label": "Follow",
+	"heading": "Somebody followed your channel",
+	"description": "When someone follows your channel, and remains followed for at least a fraction of a second",
+	"placeholders": (["NAME": "Display name of the new follower"]),
+	"builtin": "poll",
 ])});
 constant RETAINED_ATTRS = ({"image", "sound"});
 constant GLOBAL_ATTRS = "active format alertlength alertgap" / " ";
@@ -491,6 +492,17 @@ mapping message_params(object channel, mapping person, array|string param)
 		"TEXT": text || "",
 	]));
 	return (["{error}": ""]);
+}
+
+@hook_follower:
+void follower(object channel, mapping follower)
+{
+	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
+	if (!cfg->?authkey) return;
+	send_updates_all(cfg->authkey + channel->name, ([
+		"send_alert": "follower",
+		"NAME": follower->displayname,
+	]));
 }
 
 protected void create(string name) {::create(name);}
