@@ -124,7 +124,7 @@ function do_alert(alert, replacements) {
 	if (!playing) elem.querySelector("audio").play();
 	setTimeout(remove_alert, elem.dataset.alertlength * 1000, alert, elem.dataset.alertgap);
 }
-window.ping = type => do_alert("#" + (type || "hostalert"), {NAME: "Test", VIEWERS: 42, test_alert: 1});
+window.ping = type => do_alert("#" + (type || "hostalert"), {NAME: "Test", username: "Test", VIEWERS: 42, viewers: 42, test_alert: 1});
 
 const current_hosts = { };
 ComfyJS.onHosted = (username, viewers, autohost, extra) => {
@@ -133,5 +133,5 @@ ComfyJS.onHosted = (username, viewers, autohost, extra) => {
 	if (current_hosts[username]) return;
 	current_hosts[username] = 1;
 	console.log("HOST:", username, viewers, autohost, extra);
-	do_alert("#hostalert", {NAME: username, VIEWERS: viewers});
+	do_alert("#hostalert", {NAME: username, VIEWERS: viewers, username, viewers});
 };

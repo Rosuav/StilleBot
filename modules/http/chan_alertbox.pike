@@ -220,14 +220,14 @@ constant ALERTTYPES = ({([
 	"label": "Host",
 	"heading": "Hosted by another channel",
 	"description": "When some other channel hosts yours",
-	"placeholders": (["NAME": "Channel name", "VIEWERS": "View count"]),
+	"placeholders": (["username": "Channel name (equivalently {NAME})", "viewers": "View count (equivalently {VIEWERS})"]),
 	"builtin": "chan_alertbox",
 ]), ([
 	"id": "follower",
 	"label": "Follow",
 	"heading": "Somebody followed your channel",
 	"description": "When someone follows your channel, and remains followed for at least a fraction of a second",
-	"placeholders": (["NAME": "Display name of the new follower"]),
+	"placeholders": (["username": "Display name of the new follower (equivalently {NAME})"]),
 	"builtin": "poll",
 ])});
 constant RETAINED_ATTRS = ({"image", "sound"});
@@ -431,11 +431,13 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 	//simultaneously will see each other's alerts show up.
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	string type = valid_alert_type(msg->type, cfg) ? msg->type : "hostalert";
+	int viewcount = random(100) + 1;
 	send_updates_all(cfg->authkey + channel->name, ([
 		"send_alert": type,
-		"NAME": channel->name[1..], //TODO: Use the display name
-		"VIEWERS": random(100) + 1,
+		"NAME": channel->name[1..], "username": channel->name[1..], //TODO: Use the display name
+		"VIEWERS": viewcount, "viewers": viewcount,
 		"TEXT": "This is a test alert.",
+		"text": "This is a test alert.",
 		"test_alert": 1,
 	]));
 }
@@ -521,6 +523,7 @@ mapping message_params(object channel, mapping person, array|string param)
 	send_updates_all(cfg->authkey + channel->name, ([
 		"send_alert": alert,
 		"TEXT": text || "",
+		"text": text || "",
 	]));
 	return (["{error}": ""]);
 }
@@ -533,6 +536,7 @@ void follower(object channel, mapping follower)
 	send_updates_all(cfg->authkey + channel->name, ([
 		"send_alert": "follower",
 		"NAME": follower->displayname,
+		"username": follower->displayname,
 	]));
 }
 
