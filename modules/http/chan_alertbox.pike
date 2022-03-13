@@ -229,6 +229,17 @@ constant ALERTTYPES = ({([
 	"description": "When someone follows your channel, and remains followed for at least a fraction of a second",
 	"placeholders": (["username": "Display name of the new follower (equivalently {NAME})"]),
 	"builtin": "poll",
+]), ([
+	"id": "sub",
+	"label": "Subscription",
+	"heading": "New subscriber, resub, or sub gift",
+	"description": "Whenever anyone subscribes or resubs for any reason",
+	"placeholders": ([
+		"username": "Display name of the subscriber",
+		"tier": "Tier (1, 2, or 3) of the subscription", //Anything more than just "subscribed at T{tier}" will need advanced usage
+		"months": "Number of months subscribed for",
+	]),
+	"builtin": "connection",
 ])});
 constant RETAINED_ATTRS = ({"image", "sound"});
 constant GLOBAL_ATTRS = "active format alertlength alertgap" / " ";
@@ -537,6 +548,19 @@ void follower(object channel, mapping follower)
 		"send_alert": "follower",
 		"NAME": follower->displayname,
 		"username": follower->displayname,
+	]));
+}
+
+@hook_subscription:
+void subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
+	//If extra->came_from_subbomb and a sub bomb alert exists, skip.
+	//(That flag is set on the individual sub notifications.)
+	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
+	if (!cfg->?authkey) return;
+	send_updates_all(cfg->authkey + channel->name, ([
+		"send_alert": "sub",
+		"username": person->displayname,
+		"tier": tier, "months": extra->msg_param_cumulative_months,
 	]));
 }
 
