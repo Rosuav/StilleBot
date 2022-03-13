@@ -88,6 +88,7 @@
 * Host alert widget
   - Basic styling of the image only, but have a published ID so people can use custom CSS?
   - Hash link to the ID of the alert
+  - Sub alert - magically don't for sub bombs if bomb alert active
 * Retain user IDs for all active channels. If one renames, automatically track it.
   - Need to enumerate all the places where a channel name gets used as a config key
     (outside of persist_config->channels->username) so they can be changed too.
