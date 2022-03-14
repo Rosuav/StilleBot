@@ -273,6 +273,18 @@ constant FORMAT_ATTRS = ([
 	"text_image_stacked": "layout alertwidth alertheight textformat volume" / " " + TEXTFORMATTING_ATTRS,
 	"text_image_overlaid": "layout alertwidth alertheight textformat volume" / " " + TEXTFORMATTING_ATTRS,
 ]);
+//List all defaults here. They will be applied to everything that isn't explicitly configured.
+//TODO: Don't save things where the user didn't change the value away from default, but *do*
+//save things where the user changed it, then changed it back, happening to land on the default.
+constant NULL_ALERT = ([
+	"active": 0, "format": "text_image_stacked",
+	"alertlength": 6, "alertgap": 1,
+	"layout": "USE_DEFAULT", //Due to the way invalid keywords are handled, this effectively will use the first available layout as the default.
+	"alertwidth": 250, "alertheight": 250,
+	"textformat": "", "volume": 0.5,
+	"image": "", "sound": "",
+	//TODO: Defaults for formatting attrs?
+]);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -328,6 +340,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		return ([
 			"alertconfigs": cfg->alertconfigs || ([]),
 			"token": token,
+			"alertdefaults": NULL_ALERT,
 		]);
 	}
 	if (grp != "control") return 0; //If it's not "control" and not the auth key, it's probably an expired auth key.
@@ -340,6 +353,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["items": cfg->files || ({ }),
 		"alertconfigs": cfg->alertconfigs || ([]),
 		"alerttypes": ALERTTYPES + (cfg->personals || ({ })),
+		"alertdefaults": NULL_ALERT,
 	]);
 }
 

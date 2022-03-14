@@ -56,8 +56,9 @@ export function render(data) {
 	//needed; it would need to destroy any that are NOT needed, without flickering
 	//those that are still present.
 	if (data.alertconfigs) {
+		const defaults = data.alertdefaults || { };
 		for (let kwd in data.alertconfigs) {
-			const cfg = data.alertconfigs[kwd];
+			const cfg = {...defaults, ...data.alertconfigs[kwd]};
 			let elem = DOM("#" + kwd);
 			if (!elem) elem = DOM("main").appendChild(SECTION({className: "alert", id: kwd})); //New alert type
 			if (alert_formats[cfg.format]) set_content(elem, alert_formats[cfg.format](cfg));

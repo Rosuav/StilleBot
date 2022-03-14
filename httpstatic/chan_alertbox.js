@@ -11,7 +11,8 @@ function THUMB(file) {
 const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
 
 const files = { };
-const alerttypes = { }, alert_definitions = { }, revert_data = { };
+const alerttypes = { }, alert_definitions = { };
+const revert_data = {"default": { }};
 
 //NOTE: Item rendering applies to uploaded files. Other things are handled by render() itself.
 //NOTE: Since newly-uploaded files will always go to the end, this should always be sorted by
@@ -128,9 +129,10 @@ export function render(data) {
 			P([BUTTON({type: "submit", disabled: true}, "Save"), BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")]),
 		]));
 	});
+	if (data.alertdefaults) revert_data["default"] = data.alertdefaults;
 	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => {
 		const par = alerttypes[type]; if (!par) return;
-		revert_data[type] = attrs;
+		revert_data[type] = attrs = {...revert_data["default"], ...attrs};
 		if (par.classList.contains("unsaved-changes")) return; //TODO: Notify the user that server changes haven't been applied
 		Object.entries(attrs).forEach(([attr, val]) => {
 			const el = par.elements[attr]; if (!el) return;
@@ -313,7 +315,7 @@ on("click", "#unsaved-save,#unsaved-discard", e => {
 		const type = unsaved_form.dataset.type;
 		unsaved_form.classList.remove("unsaved-changes");
 		//TODO: Refactor the loading of data?
-		render({alertconfigs: {[type]: revert_data[type]}});
+		render({alertconfigs: {[type]: revert_data[type] || revert_data["default"]}});
 	}
 	unsaved_clickme.click();
 	unsaved_form = unsaved_clickme = null;
