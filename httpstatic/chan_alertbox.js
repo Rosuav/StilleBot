@@ -174,6 +174,8 @@ function update_layout_options(par, layout) {
 	if (!opts) return;
 	const el = par.querySelector("[name=layout]");
 	if (layout === "") layout = el.layout;
+	const kwds = opts.map(o => o.toLowerCase().replace(" ", "_")); //TODO: Deduplicate
+	if (!kwds.includes(layout)) layout = kwds[0];
 	set_content(el, opts.map(o => OPTION({value: o.toLowerCase().replace(" ", "_")}, o)));
 	setTimeout(() => el.value = layout, 1);
 }
