@@ -44,11 +44,27 @@ export function sockmsg_authkey(msg) {
 	if (DOM("#previewdlg").open) DOM("#alertembed").src = DOM("#alertboxlink").href;
 }
 
+function load_data(type, attrs) {
+	const par = alerttypes[type]; if (!par) return;
+	revert_data[type] = attrs = {...revert_data["default"], ...attrs};
+	if (par.classList.contains("unsaved-changes")) return; //TODO: Notify the user that server changes haven't been applied
+	Object.entries(attrs).forEach(([attr, val]) => {
+		const el = par.elements[attr]; if (!el) return;
+		el[el.type === "checkbox" ? "checked" : "value"] = val;
+		el.classList.remove("dirty");
+		el.labels.forEach(l => l.classList.remove("dirty"));
+	});
+	par.querySelectorAll("[data-library]").forEach(el => el.src = attrs[el.dataset.library] || TRANSPARENT_IMAGE);
+	update_layout_options(par, attrs.layout);
+	document.querySelectorAll("input[type=range]").forEach(rangedisplay);
+}
+
 export function render(data) {
 	if (data.authkey === "<REVOKED>") {
 		have_authkey = false;
 		if (DOM("#previewdlg").open) ws_sync.send({cmd: "getkey"});
 	}
+	if (data.alertdefaults) revert_data["default"] = data.alertdefaults;
 	if (data.alerttypes) data.alerttypes.forEach(info => {
 		const type = info.id;
 		alert_definitions[type] = info;
@@ -94,16 +110,16 @@ export function render(data) {
 					OPTION({value: "text_image_stacked"}, "Text and image, stacked"),
 					OPTION({value: "text_image_overlaid"}, "Text overlaid on image"),
 				]),
-				LABEL([" Size:", INPUT({name: "alertwidth", type: "number", value: "250"})]),
-				LABEL([" x ", INPUT({name: "alertheight", type: "number", value: "250"}), " pixels"]),
+				LABEL([" Size:", INPUT({name: "alertwidth", type: "number"})]),
+				LABEL([" x ", INPUT({name: "alertheight", type: "number"}), " pixels"]),
 			]),
 			P(LABEL([
 				"Layout: ",
 				SELECT({name: "layout"}, [OPTION({value: "image_above"}, "Image above"), OPTION({value: "image_below"}, "Image below")]),
 			])),
 			P([
-				LABEL(["Alert length: ", INPUT({name: "alertlength", type: "number", value: "6", step: "0.5"}), " seconds; "]),
-				LABEL(["gap before next alert: ", INPUT({name: "alertgap", type: "number", value: "1", step: "0.25"}), " seconds"]),
+				LABEL(["Alert length: ", INPUT({name: "alertlength", type: "number", step: "0.5"}), " seconds; "]),
+				LABEL(["gap before next alert: ", INPUT({name: "alertgap", type: "number", step: "0.25"}), " seconds"]),
 			]),
 			P([
 				"Image: ",
@@ -118,8 +134,8 @@ export function render(data) {
 				BUTTON({type: "button", className: "showlibrary", "data-target": "sound", "data-prefix": "audio/"}, "Choose"),
 				LABEL([
 					" Volume: ",
-					INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1, value: 0.5}),
-					SPAN({className: "rangedisplay"}, "50%"),
+					INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1}),
+					SPAN({className: "rangedisplay"}, ""),
 				]),
 			]),
 			TEXTFORMATTING({
@@ -128,22 +144,9 @@ export function render(data) {
 			}),
 			P([BUTTON({type: "submit", disabled: true}, "Save"), BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")]),
 		]));
+		load_data(type, { });
 	});
-	if (data.alertdefaults) revert_data["default"] = data.alertdefaults;
-	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => {
-		const par = alerttypes[type]; if (!par) return;
-		revert_data[type] = attrs = {...revert_data["default"], ...attrs};
-		if (par.classList.contains("unsaved-changes")) return; //TODO: Notify the user that server changes haven't been applied
-		Object.entries(attrs).forEach(([attr, val]) => {
-			const el = par.elements[attr]; if (!el) return;
-			el[el.type === "checkbox" ? "checked" : "value"] = val;
-			el.classList.remove("dirty");
-			el.labels.forEach(l => l.classList.remove("dirty"));
-		});
-		par.querySelectorAll("[data-library]").forEach(el => el.src = attrs[el.dataset.library] || TRANSPARENT_IMAGE);
-		update_layout_options(par, attrs.layout);
-		document.querySelectorAll("input[type=range]").forEach(rangedisplay);
-	});
+	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => load_data(type, attrs));
 	if (data.delpersonal) {
 		//This isn't part of a normal stateful update, and is a signal that a personal
 		//alert has gone bye-bye. Clean up our local state, matching what we'd have if
@@ -314,8 +317,7 @@ on("click", "#unsaved-save,#unsaved-discard", e => {
 	else {
 		const type = unsaved_form.dataset.type;
 		unsaved_form.classList.remove("unsaved-changes");
-		//TODO: Refactor the loading of data?
-		render({alertconfigs: {[type]: revert_data[type] || revert_data["default"]}});
+		load_data(type, revert_data[type] || { });
 	}
 	unsaved_clickme.click();
 	unsaved_form = unsaved_clickme = null;
