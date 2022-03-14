@@ -59,6 +59,7 @@ function load_data(type, attrs) {
 	document.querySelectorAll("input[type=range]").forEach(rangedisplay);
 }
 
+let selecttab = location.hash.slice(1);
 export function render(data) {
 	if (data.authkey === "<REVOKED>") {
 		have_authkey = false;
@@ -87,11 +88,9 @@ export function render(data) {
 		//active scheme, and finally the lowest tier defines variants, using inherits for
 		//everything that should follow the scheme.
 		DOM("#newpersonal").before(LI([
-			INPUT({type: "radio", name: "alertselect", id: "select-" + type, value: type,
-				checked: !DOM("input[name=alertselect]:checked")}),
+			INPUT({type: "radio", name: "alertselect", id: "select-" + type, value: type}),
 			LABEL({htmlFor: "select-" + type}, info.label),
 		]));
-		update_visible_form();
 		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({className: "alertconfig", "data-type": type}, [
 			H3({className: "heading"}, [
 				info.heading, SPAN({className: "if-unsaved"}, " "),
@@ -146,6 +145,15 @@ export function render(data) {
 		]));
 		load_data(type, { });
 	});
+	if (selecttab !== null && data.alerttypes && !DOM("input[name=alertselect]:checked")) {
+		console.log("Trying to select", selecttab);
+		if (!DOM("#select-" + selecttab))
+			//Invalid or not specified? Use the first tab.
+			selecttab = document.querySelectorAll("input[name=alertselect]")[0].id.replace("select-", "")
+		DOM("#select-" + selecttab).checked = true;
+		update_visible_form();
+		selecttab = null;
+	}
 	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => load_data(type, attrs));
 	if (data.delpersonal) {
 		//This isn't part of a normal stateful update, and is a signal that a personal
@@ -168,6 +176,7 @@ let wanted_tab = null; //TODO: Allow this to be set from the page fragment (wait
 function update_visible_form() {
 	wanted_tab = DOM("input[name=alertselect]:checked").value;
 	set_content("#selectalert", ".alertconfig[data-type=" + wanted_tab + "] {display: block;}");
+	history.replaceState(null, "", "#" + wanted_tab);
 }
 
 function update_layout_options(par, layout) {
