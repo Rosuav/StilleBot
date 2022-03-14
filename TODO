@@ -90,10 +90,6 @@
   - Hash link to the ID of the alert
   - Sub alert - magically don't for sub bombs if bomb alert active
   - List available placeholders for personals
-  - Add a testpholders mapping to all alert types, giving test/example data
-    - Skip username, which is simply going to use your own name in tests
-    - If array ({1, 100}), pick a random value
-    - If array of strings, pick a random string
 * Retain user IDs for all active channels. If one renames, automatically track it.
   - Need to enumerate all the places where a channel name gets used as a config key
     (outside of persist_config->channels->username) so they can be changed too.

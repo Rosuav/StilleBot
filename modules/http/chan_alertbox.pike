@@ -221,6 +221,7 @@ constant ALERTTYPES = ({([
 	"heading": "Hosted by another channel",
 	"description": "When some other channel hosts yours",
 	"placeholders": (["username": "Channel name (equivalently {NAME})", "viewers": "View count (equivalently {VIEWERS})"]),
+	"testpholders": (["viewers": ({1, 100}), "VIEWERS": ({1, 100})]),
 	"builtin": "chan_alertbox",
 ]), ([
 	"id": "follower",
@@ -228,6 +229,7 @@ constant ALERTTYPES = ({([
 	"heading": "Somebody followed your channel",
 	"description": "When someone follows your channel, and remains followed for at least a fraction of a second",
 	"placeholders": (["username": "Display name of the new follower (equivalently {NAME})"]),
+	"testpholders": ([]),
 	"builtin": "poll",
 ]), ([
 	"id": "sub",
@@ -238,7 +240,9 @@ constant ALERTTYPES = ({([
 		"username": "Display name of the subscriber",
 		"tier": "Tier (1, 2, or 3) of the subscription", //Anything more than just "subscribed at T{tier}" will need advanced usage
 		"months": "Number of months subscribed for",
+		//"monthdesc": "Either 'for N months' or '?? wording for new sub ??'", //FIXME
 	]),
+	"testpholders": (["tier": ({1, 3}), "months": ({1, 60})]),
 	"builtin": "connection",
 ])});
 constant RETAINED_ATTRS = ({"image", "sound"});
@@ -441,16 +445,24 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 	//to *every* client. This means multiple people playing with the demo
 	//simultaneously will see each other's alerts show up.
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	string type = valid_alert_type(msg->type, cfg) ? msg->type : "hostalert";
-	int viewcount = random(100) + 1;
-	send_updates_all(cfg->authkey + channel->name, ([
-		"send_alert": type,
+	mapping alert = ([
+		"send_alert": valid_alert_type(msg->type, cfg) ? msg->type : "hostalert",
 		"NAME": channel->name[1..], "username": channel->name[1..], //TODO: Use the display name
-		"VIEWERS": viewcount, "viewers": viewcount,
-		"TEXT": "This is a test alert.",
-		"text": "This is a test alert.",
 		"test_alert": 1,
-	]));
+	]);
+	int idx = search(ALERTTYPES->id, msg->type);
+	mapping pholders = idx >= 0 ? ALERTTYPES[idx]->testpholders : ([
+		"text": "This is a test personal alert.",
+		"TEXT": "This is a test personal alert.",
+	]);
+	foreach (pholders; string key; string|array value) {
+		if (arrayp(value)) {
+			if (stringp(value[0])) alert[key] = random(value);
+			else alert[key] = (string)(random(value[1] - value[0] + 1) + value[0]);
+		}
+		else alert[key] = value;
+	}
+	send_updates_all(cfg->authkey + channel->name, alert);
 }
 
 void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
