@@ -57,6 +57,7 @@ function load_data(type, attrs) {
 	par.querySelectorAll("[data-library]").forEach(el => el.src = attrs[el.dataset.library] || TRANSPARENT_IMAGE);
 	update_layout_options(par, attrs.layout);
 	document.querySelectorAll("input[type=range]").forEach(rangedisplay);
+	par.querySelectorAll("[type=submit]").forEach(el => el.disabled = true);
 }
 
 let selecttab = location.hash.slice(1);
