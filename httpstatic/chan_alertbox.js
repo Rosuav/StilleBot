@@ -51,7 +51,7 @@ export function render(data) {
 	if (data.alerttypes) data.alerttypes.forEach(info => {
 		const type = info.id;
 		alert_definitions[type] = info;
-		const placeholder_description = !info.placeholders ? ""
+		const placeholder_description = !info.placeholders ? [BR(), CODE("{text}"), " - the text used to trigger the alert"]
 			: Object.entries(info.placeholders).map(([k,d]) => [BR(), CODE("{" + k + "}"), " - " + d]);
 		if (alerttypes[type]) {
 			for (let kwd in info) {
