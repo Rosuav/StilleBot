@@ -234,15 +234,37 @@ constant ALERTTYPES = ({([
 ]), ([
 	"id": "sub",
 	"label": "Subscription",
-	"heading": "New subscriber, resub, or sub gift",
-	"description": "Whenever anyone subscribes or resubs for any reason",
+	"heading": "New subscriber",
+	"description": "Whenever anyone subscribes for the first time (including if gifted)",
 	"placeholders": ([
 		"username": "Display name of the subscriber",
 		"tier": "Tier (1, 2, or 3) of the subscription", //Anything more than just "subscribed at T{tier}" will need advanced usage
+	]),
+	"testpholders": (["tier": ({1, 3})]),
+	"builtin": "connection",
+]), ([
+	"id": "resub",
+	"label": "Resubscription",
+	"heading": "Renewed subscription",
+	"description": "Whenever anyone resubscribes, or is given a gift sub that isn't the first month. If not active, the sub alert is used instead.",
+	"placeholders": ([
+		"username": "Display name of the subscriber",
+		"tier": "Tier (1, 2, or 3) of the subscription",
 		"months": "Number of months subscribed for",
-		//"monthdesc": "Either 'for N months' or '?? wording for new sub ??'", //FIXME
 	]),
 	"testpholders": (["tier": ({1, 3}), "months": ({1, 60})]),
+	"builtin": "connection",
+]), ([
+	"id": "subbomb",
+	"label": "Sub Bomb",
+	"heading": "Randomly-aimed subgifts",
+	"description": "When someone drops 1-100 subscriptions on the community, letting the RNG choose who gets them. If this alert is not active, the sub alert will announce sub bombs individually.",
+	"placeholders": ([
+		"username": "Display name of the giver of the subs",
+		"tier": "Tier (1, 2, or 3) of the subscription",
+		"gifts": "Number of subscriptions given",
+	]),
+	"testpholders": (["tier": "1", "gifts": ({1, 100})]),
 	"builtin": "connection",
 ])});
 constant RETAINED_ATTRS = ({"image", "sound"});
@@ -565,14 +587,18 @@ void follower(object channel, mapping follower)
 
 @hook_subscription:
 void subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
-	//If extra->came_from_subbomb and a sub bomb alert exists, skip.
-	//(That flag is set on the individual sub notifications.)
 	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
 	if (!cfg->?authkey) return;
+	string alerttype = "sub";
+	int months = (int)extra->msg_param_cumulative_months || 1;
+	//If this channel has no subbomb alert configured, the follow-up sub messages will fire alerts.
+	if (extra->came_from_subbomb && cfg->alertconfigs[?"subbomb"]->?active) return;
+	else if (type == "subbomb") alerttype = "subbomb";
+	else if (months > 1 && cfg->alertconfigs[?"resub"]->?active) alerttype = "resub";
 	send_updates_all(cfg->authkey + channel->name, ([
-		"send_alert": "sub",
+		"send_alert": alerttype,
 		"username": person->displayname,
-		"tier": tier, "months": extra->msg_param_cumulative_months,
+		"tier": tier, "months": months,
 	]));
 }
 
