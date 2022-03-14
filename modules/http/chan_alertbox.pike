@@ -256,7 +256,7 @@ constant ALERTTYPES = ({([
 	"builtin": "connection",
 ]), ([
 	"id": "subbomb",
-	"label": "Sub Bomb",
+	"label": "Sub bomb",
 	"heading": "Randomly-aimed subgifts",
 	"description": "When someone drops 1-100 subscriptions on the community, letting the RNG choose who gets them. If this alert is not active, the sub alert will announce sub bombs individually.",
 	"placeholders": ([
