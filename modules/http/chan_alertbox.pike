@@ -341,6 +341,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 			"alertconfigs": cfg->alertconfigs || ([]),
 			"token": token,
 			"alertdefaults": NULL_ALERT,
+			"hostlist_command": cfg->hostlist_command || "",
+			"hostlist_format": cfg->hostlist_format || "",
 		]);
 	}
 	if (grp != "control") return 0; //If it's not "control" and not the auth key, it's probably an expired auth key.
@@ -354,6 +356,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		"alertconfigs": cfg->alertconfigs || ([]),
 		"alerttypes": ALERTTYPES + (cfg->personals || ({ })),
 		"alertdefaults": NULL_ALERT,
+		"hostlist_command": cfg->hostlist_command || "",
+		"hostlist_format": cfg->hostlist_format || "",
 	]);
 }
 
@@ -499,6 +503,18 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 		else alert[key] = value;
 	}
 	send_updates_all(cfg->authkey + channel->name, alert);
+}
+
+void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || grp != "control") return;
+	if (conn->session->fake) return;
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	foreach ("hostlist_command hostlist_format" / " ", string key)
+		if (stringp(msg[key])) cfg[key] = msg[key];
+	persist_status->save();
+	send_updates_all(conn->group);
+	send_updates_all(cfg->authkey + channel->name);
 }
 
 void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) msg) {

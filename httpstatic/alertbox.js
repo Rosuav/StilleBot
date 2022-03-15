@@ -45,6 +45,7 @@ const alert_formats = {
 //   short alert_gap will have alerts coming hard on each other's heels.
 
 let inited = false, token = null;
+let hostlist_command = null, hostlist_format = null;
 const alert_active = { };
 export function render(data) {
 	//If, in the future, I need more than one alert type (with distinct formats),
@@ -81,6 +82,8 @@ export function render(data) {
 		//on the websocket. Clean up some resources rather than waiting around.
 		ComfyJS.Disconnect();
 	}
+	if (data.hostlist_command) hostlist_command = data.hostlist_command;
+	if (data.hostlist_format) hostlist_format = data.hostlist_format;
 }
 
 setTimeout(() => {
@@ -135,4 +138,11 @@ ComfyJS.onHosted = (username, viewers, autohost, extra) => {
 	current_hosts[username] = 1;
 	console.log("HOST:", username, viewers, autohost, extra);
 	do_alert("#hostalert", {NAME: username, VIEWERS: viewers, username, viewers});
+};
+
+ComfyJS.onCommand = (user, command, message, flags, extra) => {
+	if (!hostlist_command || !hostlist_format || command !== hostlist_command) return;
+	if (!flags.broadcaster && !flags.mod) return;
+	const hosts = Object.keys(current_hosts);
+	ComfyJS.Say(hostlist_format.replace("{count}", hosts.length).replace("{hosts}", hosts.join(", ")));
 };
