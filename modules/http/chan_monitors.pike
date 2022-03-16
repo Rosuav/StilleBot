@@ -2,7 +2,7 @@ inherit http_websocket;
 inherit hook;
 
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
-constant saveable_attributes = "previewbg barcolor fillcolor needlesize thresholds padvert padhoriz lvlupcmd format width height "
+constant saveable_attributes = "previewbg barcolor fillcolor needlesize thresholds lvlupcmd format width height "
 	"active bit sub_t1 sub_t2 sub_t3 tip follow" / " " + TEXTFORMATTING_ATTRS;
 constant valid_types = (<"text", "goalbar">);
 

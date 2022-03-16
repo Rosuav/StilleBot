@@ -779,7 +779,7 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 //will get back the correct CSS text for the specified formatting.
 array TEXTFORMATTING_ATTRS = ("font fontweight fontstyle fontsize whitespace css "
 			"color strokewidth strokecolor borderwidth bordercolor "
-			"bgcolor bgalpha "
+			"bgcolor bgalpha padvert padhoriz "
 			"shadowx shadowy shadowcolor shadowalpha") / " ";
 string textformatting_css(mapping cfg) {
 	string css = cfg->css || "";

@@ -62,6 +62,10 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 		LABEL(["Width (px): ", INPUT({name: "borderwidth", type: "number"})]),
 		LABEL([" Color: ", INPUT({name: "bordercolor", type: "color"})]),
 	])]),
+	TR([TH("Padding"), TD([
+		LABEL(["Vertical (em): ", INPUT({name: "padvert", type: "number", step: "0.25"})]),
+		LABEL([" Horizontal (em): ", INPUT({name: "padhoriz", type: "number", step: "0.25"})]),
+	])]),
 	TR([TH("Background"), TD([
 		LABEL([" Color: ", INPUT({name: "bgcolor", type: "color"})]),
 		LABEL([
