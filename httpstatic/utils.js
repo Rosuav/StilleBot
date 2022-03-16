@@ -62,6 +62,14 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 		LABEL(["Width (px): ", INPUT({name: "borderwidth", type: "number"})]),
 		LABEL([" Color: ", INPUT({name: "bordercolor", type: "color"})]),
 	])]),
+	TR([TH("Background"), TD([
+		LABEL([" Color: ", INPUT({name: "bgcolor", type: "color"})]),
+		LABEL([
+			" Opacity: ",
+			INPUT({name: "bgalpha", type: "number", min: 0, max: 100, value: 0}),
+			" 0 to disable",
+		]),
+	])]),
 	TR([TH("Drop shadow"), TD([
 		"Position (px): ", INPUT({name: "shadowx", type: "number"}), INPUT({name: "shadowy", type: "number"}),
 		LABEL([" Color: ", INPUT({name: "shadowcolor", type: "color"})]),

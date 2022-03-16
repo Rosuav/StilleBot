@@ -779,6 +779,7 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 //will get back the correct CSS text for the specified formatting.
 array TEXTFORMATTING_ATTRS = ("font fontweight fontstyle fontsize whitespace css "
 			"color strokewidth strokecolor borderwidth bordercolor "
+			"bgcolor bgalpha "
 			"shadowx shadowy shadowcolor shadowalpha") / " ";
 string textformatting_css(mapping cfg) {
 	string css = cfg->css || "";
@@ -795,10 +796,15 @@ string textformatting_css(mapping cfg) {
 	if (int alpha = (int)cfg->shadowalpha) {
 		//NOTE: If we do more than one filter, make sure we combine them properly here on the back end.
 		string col = cfg->shadowcolor || "";
-		if (sizeof(col) != 7 && col[0] != '#') col = "#FFFFFF"; //I don't know how to add alpha to something that isn't in hex.
-		css += sprintf("filter: drop-shadow(%dpx %dpx %s%02X)",
+		if (sizeof(col) != 7 && col[0] != '#') col = "#000000"; //I don't know how to add alpha to something that isn't in hex.
+		css += sprintf("filter: drop-shadow(%dpx %dpx %s%02X);",
 			(int)cfg->shadowx, (int)cfg->shadowy,
 			col, (int)(alpha * 2.55 + 0.5));
+	}
+	if (int alpha = (int)cfg->bgalpha) {
+		string col = cfg->bgcolor || "";
+		if (sizeof(col) != 7 && col[0] != '#') col = "#000000"; //As above. Since <input type=color> is supposed to return hex, this should be safe.
+		css += sprintf("background-color: %s%02X;", col, (int)(alpha * 2.55 + 0.5));
 	}
 	//If you set a border width, assume we want a solid border. (For others, set the
 	//entire border definition in custom CSS.)
