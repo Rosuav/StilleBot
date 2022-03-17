@@ -9,7 +9,7 @@ function set_values(nonce, info, elem) {
 	for (let attr in info) {
 		if (attr === "text" && info.type === "goalbar") {
 			//Fracture text into the variable name and the actual text.
-			const m = /^\$([^:$]+)\$:(.*)/.exec(info.text);
+			const m = /^\$([^:$]+)\$:(.*)/.exec(info.text) || [0, "???", info.text];
 			const v = elem.querySelector("[name=varname]"); if (v) v.value = m[1];
 			const t = elem.querySelector("[name=text]");    if (t) t.value = m[2];
 			continue;
