@@ -137,6 +137,7 @@ array(string) low_recalculate_status(mapping st) {
 	return ({"idle", "Channel Offline"});
 }
 continue Concurrent.Future recalculate_status(string chanid) {
+	return 0; //Disabled.
 	mapping st = chanstate[chanid];
 	if (!st) st = chanstate[chanid] = ([]);
 	array self_live = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + chanid))->data || ({ });
@@ -291,6 +292,7 @@ class IRCClient
 }
 
 void connect(string chanid, string chan, string msg) {
+	return; //Disabled.
 	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) error("No auth\n");
 	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
 	object irc = IRCClient("irc.chat.twitch.tv", ([
