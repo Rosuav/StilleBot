@@ -107,6 +107,8 @@
       - image/gif --> gif
       - etc
     - if result is empty, file failed validation, reject it (ask user if it's a PS file etc)
+    - Log all failing results w/ ID of file, and in the error message, invite people to ask
+      me to check the log for that file
   - Mod command to nuke the last-posted file?
   - If someone gets timed out or banned, remove their files
   - Dispose of files after a day
