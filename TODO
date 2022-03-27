@@ -91,3 +91,22 @@
 * In command_gui, if you start dragging with Ctrl held, make a temporary template, drag
   from that, and discard the template. This will allow a simply Copy effect, and should
   be compatible with "copying" from actual templates too.
+* Art Share tool
+  - Who may share? All configurable.
+    - Streamer/mods
+    - VIPs
+    - Raiders (will last for the duration of the stream)
+    - By !permit command
+    - Anyone
+  - Upload a file to the bot host, same as the alertbox
+  - Automatically and immediately post a link in chat
+  - Perform some validation
+    - "ffprobe - -print_format json -show_format -v quiet", pipe in the content
+    - result->format->format_name should be in a whitelist:
+      - image/png --> png_pipe
+      - image/gif --> gif
+      - etc
+    - if result is empty, file failed validation, reject it (ask user if it's a PS file etc)
+  - Mod command to nuke the last-posted file?
+  - If someone gets timed out or banned, remove their files
+  - Dispose of files after a day
