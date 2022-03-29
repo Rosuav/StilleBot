@@ -121,6 +121,7 @@ Concurrent.Future set_redemption_status(mapping redem, string status) {
 void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 	if (!cfg->giveaway) return;
 	mapping values = cfg->giveaway->rewards || ([]);
+	if (!values[redem->reward->id]) return; //No value assigned to this reward, so it's presumably not a giveaway ticket redemption
 	string chan = redem->broadcaster_login || redem->broadcaster_user_login;
 	mapping people = G->G->giveaway_tickets[chan];
 	if (!people) people = G->G->giveaway_tickets[chan] = ([]);
@@ -221,9 +222,13 @@ void notify_websockets(string chan) {
 	]));
 }
 
+@create_hook:
+constant point_redemption = ({"string chan", "string id", "int(0..1) refund", "mapping data"});
+
 void points_redeemed(string chan, mapping data, int|void removal)
 {
 	//write("POINTS %s ON %O: %O\n", removal ? "REFUNDED" : "REDEEMED", chan, data);
+	event_notify("point_redemption", chan, data->reward->id, removal, data);
 	string token = persist_status->path("bcaster_token")[chan];
 	mapping cfg = persist_config["channels"][chan]; if (!cfg) return;
 	update_ticket_count(cfg, data, removal);
@@ -234,11 +239,12 @@ void points_redeemed(string chan, mapping data, int|void removal)
 		//at least a few seconds, preferably a few minutes.
 		object chan = G->G->irc->channels["#" + chan];
 		int newcost = G->G->evaluate_expr(chan->expand_variables(replace(dyn->formula, "PREV", (string)data->reward->cost)));
-		twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
-				+ data->broadcaster_user_id + "&id=" + data->reward->id,
-			(["Authorization": "Bearer " + token]),
-			(["method": "PATCH", "json": (["cost": newcost])]),
-		);
+		if ((string)newcost != (string)data->reward->cost)
+			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+					+ data->broadcaster_user_id + "&id=" + data->reward->id,
+				(["Authorization": "Bearer " + token]),
+				(["method": "PATCH", "json": (["cost": newcost])]),
+			);
 	}
 	notify_websockets(chan);
 }
