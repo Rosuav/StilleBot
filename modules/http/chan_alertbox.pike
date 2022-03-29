@@ -17,10 +17,10 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 > [Select](:#libraryselect disabled=true) [Close](:.dialog_close)
 {: tag=dialog #library}
 
-To use these alerts, [show the preview](:#authpreview) from which you can access your unique display link.<br>
-Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:#revokekey) to generate a new one.
+$$notmodmsg||To use these alerts, [show the preview](:#authpreview) from which you can access your unique display link.<br>$$
+$$blank||Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:#revokekey) to generate a new one.$$
 
-[Show library](:.showlibrary)
+$$notmod2||[Show library](:.showlibrary)$$
 
 > ### Revoke authentication key
 >
@@ -300,7 +300,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	//TODO: Give some useful info if not a mod, since that might be seen if someone messes up the URL
 	if (string scopes = req->misc->channel->name != "#!demo" && ensure_bcaster_token(req, "chat:read"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
-	if (!req->misc->is_mod) return render(req, req->misc->chaninfo);
+	if (!req->misc->is_mod) return render(req, req->misc->chaninfo | ([
+		"notmodmsg": "You're logged in, but you're not a recognized mod. Please say something in chat so I can see your sword.",
+		"blank": "",
+		"notmod2": "Functionality on this page will be activated for mods (and broadcaster) only.",
+	]));
 	mapping cfg = persist_status->path("alertbox", (string)req->misc->channel->userid);
 	//For API usage eg command viewer, provide some useful information in JSON.
 	if (req->variables->summary) return jsonify(([
