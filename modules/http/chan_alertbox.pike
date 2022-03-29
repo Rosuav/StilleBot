@@ -300,11 +300,14 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	//TODO: Give some useful info if not a mod, since that might be seen if someone messes up the URL
 	if (string scopes = req->misc->channel->name != "#!demo" && ensure_bcaster_token(req, "chat:read"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
-	if (!req->misc->is_mod) return render(req, req->misc->chaninfo | ([
-		"notmodmsg": "You're logged in, but you're not a recognized mod. Please say something in chat so I can see your sword.",
-		"blank": "",
-		"notmod2": "Functionality on this page will be activated for mods (and broadcaster) only.",
-	]));
+	if (!req->misc->is_mod) {
+		if (req->misc->session->user) return render(req, req->misc->chaninfo | ([
+			"notmodmsg": "You're logged in, but you're not a recognized mod. Please say something in chat so I can see your sword.",
+			"blank": "",
+			"notmod2": "Functionality on this page will be activated for mods (and broadcaster) only.",
+		]));
+		return render_template("login.md", (["msg": "moderator privileges"]));
+	}
 	mapping cfg = persist_status->path("alertbox", (string)req->misc->channel->userid);
 	//For API usage eg command viewer, provide some useful information in JSON.
 	if (req->variables->summary) return jsonify(([
