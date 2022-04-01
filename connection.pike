@@ -910,6 +910,9 @@ class channel_notif
 					]));
 					break;
 				}
+				case "announcement": //The /announce command
+					//Has a msg_param_color that is either PRIMARY or a colour word eg "PURPLE"
+					break;
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
 					params->_type, params->msg_id, name, params, msg);
 			}
