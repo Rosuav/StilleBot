@@ -305,6 +305,9 @@ void connect(string chanid, string chan, string msg) {
 	]));
 	call_out(irc->send_message, 1, "#" + chan, msg);
 	call_out(irc->close, 2);
+	#if constant(GHOSTWRITER)
+	call_out(exit, 3, 0); //In GW-only mode, finish once we're done with a single host signal.
+	#endif
 }
 
 continue Concurrent.Future|mapping get_state(string group) {
