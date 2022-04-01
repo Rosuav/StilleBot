@@ -171,8 +171,10 @@ continue Concurrent.Future recalculate_status(string chanid) {
 		write("GHOSTWRITER: Channel %O retaining current status for %d sec\n", config->chan, suppress_autohosting[chanid] - time());
 		return 0;
 	}
+	#if !constant(GHOSTWRITER)
 	//yield(update_status(chanid)); //Disabled. Use the subprocess instead.
 	write("GHOSTWRITER: Need to update status for %O\npike stillebot --ghostwriter %<s\n", chanid);
+	#endif
 }
 
 continue Concurrent.Future update_status(string chanid) {
@@ -332,11 +334,10 @@ continue Concurrent.Future|mapping get_state(string group) {
 
 continue void force_check(string chanid) {
 	if (!(int)chanid) chanid = (string)yield(get_user_id(chanid)); //Support usernames for the sake of command line access
+	mixed _ = yield(recalculate_status(chanid));
 	#if constant(GHOSTWRITER)
 	string msg = yield(update_status(chanid));
 	if (!msg) exit(0);
-	#else
-	yield(recalculate_status(chanid));
 	#endif
 }
 
@@ -375,7 +376,9 @@ EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string ch
 void has_channel(string chanid, string target) {
 	if (!autohosts_this[target]) autohosts_this[target] = (<>);
 	autohosts_this[target][chanid] = 1;
+	#if !constant(GHOSTWRITER)
 	stream_online(target, (["broadcaster_user_id": (string)target]));
+	#endif
 	send_updates_all(target); //Could save some hassle by only updating AHT, but would need to remap to channel objects
 }
 
@@ -488,8 +491,13 @@ protected void create(string name) {
 	int pos = search(G->G->argv, "--ghostwriter");
 	if (pos > -1 && pos < sizeof(G->G->argv) - 1) {
 		string cmd = G->G->argv[pos + 1]; //eg "pike stillebot --ghostwriter SOMETHING". I can't be bothered doing proper arg parsing.
-		write("GHOSTWRITER: Calculating status for %O\n", cmd);
-		spawn_task(force_check(cmd));
+		if (cmd == "irc") {
+			write("GHOSTWRITER: Establishing monitoring for log only\n");
+			call_out(reconnect, 1, 1);
+		} else {
+			write("GHOSTWRITER: Calculating status for %O\n", cmd);
+			spawn_task(force_check(cmd));
+		}
 	}
 }
 
