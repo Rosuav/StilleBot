@@ -172,6 +172,7 @@ continue Concurrent.Future recalculate_status(string chanid) {
 		return 0;
 	}
 	//yield(update_status(chanid)); //Disabled. Use the subprocess instead.
+	write("GHOSTWRITER: Need to update status for %O\npike stillebot --ghostwriter %<s\n", chanid);
 }
 
 continue Concurrent.Future update_status(string chanid) {
