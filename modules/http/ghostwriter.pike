@@ -137,7 +137,9 @@ array(string) low_recalculate_status(mapping st) {
 	return ({"idle", "Channel Offline"});
 }
 continue Concurrent.Future recalculate_status(string chanid) {
-	return 0; //Disabled.
+	#if !constant(GHOSTWRITER)
+	return 0; //Disabled in normal bot operation; available only in the subprocess.
+	#endif
 	mapping st = chanstate[chanid];
 	if (!st) st = chanstate[chanid] = ([]);
 	array self_live = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + chanid))->data || ({ });
@@ -292,7 +294,9 @@ class IRCClient
 }
 
 void connect(string chanid, string chan, string msg) {
-	return; //Disabled.
+	#if !constant(GHOSTWRITER)
+	return 0; //Disabled in normal bot operation; available only in the subprocess.
+	#endif
 	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) error("No auth\n");
 	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
 	object irc = IRCClient("irc.chat.twitch.tv", ([
@@ -323,8 +327,7 @@ continue Concurrent.Future|mapping get_state(string group) {
 }
 
 continue void force_check(string chanid) {
-	//string chan = yield(get_user_info(chanid))->login;
-	//mapping irc = yield(connect(chanid, chan, 1)); //We don't actually need the IRC object here, but forcing one to exist guarantees some checks. Avoid bug by putting it in a variable.
+	if (!(int)chanid) chanid = (string)yield(get_user_id(chanid)); //Support usernames for the sake of command line access
 	yield(recalculate_status(chanid));
 }
 
@@ -473,6 +476,12 @@ protected void create(string name) {
 	//write("Configs available for %O\n", mkmapping(indices(configs), values(configs)->chan));
 	//Goodbye.
 	//call_out(reconnect, 4, 1); //Delay startup a bit to avoid connection conflicts and allow compilation errors to be seen
+	int pos = search(G->G->argv, "--ghostwriter");
+	if (pos > -1 && pos < sizeof(G->G->argv) - 1) {
+		string cmd = G->G->argv[pos + 1]; //eg "pike stillebot --ghostwriter SOMETHING". I can't be bothered doing proper arg parsing.
+		write("GHOSTWRITER: Calculating status for %O\n", cmd);
+		spawn_task(force_check(cmd));
+	}
 }
 
 /* If there's weird issues and infinitely-looping tasks with delays in them, try something like this:
