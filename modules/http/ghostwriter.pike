@@ -242,6 +242,7 @@ continue Concurrent.Future update_status(string chanid) {
 	//Currently we always take the first on the list. This may change in the future.
 	write("GHOSTWRITER: Connect %O %O, send %O\n", chanid, config->chan, msg);
 	connect(chanid, config->chan, msg); //Connect and send message
+	return msg;
 }
 
 void pause_autohost(string chanid, int target) {
@@ -332,7 +333,8 @@ continue Concurrent.Future|mapping get_state(string group) {
 continue void force_check(string chanid) {
 	if (!(int)chanid) chanid = (string)yield(get_user_id(chanid)); //Support usernames for the sake of command line access
 	#if constant(GHOSTWRITER)
-	yield(update_status(chanid));
+	string msg = yield(update_status(chanid));
+	if (!msg) exit(0);
 	#else
 	yield(recalculate_status(chanid));
 	#endif
