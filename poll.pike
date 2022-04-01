@@ -535,6 +535,7 @@ continue Concurrent.Future|array get_stream_schedule(int|string channel, int rew
 			([]), (["return_errors": 1])));
 		if (info->error) break; //Probably 404, schedule not found.
 		cursor = info->pagination->?cursor;
+		if (!info->data->segments) break; //No segments? Probably no schedule, nothing to return
 		foreach (info->data->segments, mapping ev) {
 			if (ev->start_time > cutoff) return events;
 			events += ({ev});

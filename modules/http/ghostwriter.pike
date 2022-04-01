@@ -299,6 +299,9 @@ class IRCClient
 	void connection_lost() {close();}
 }
 
+int task_count = 0;
+void task_done() {if (!--task_count) exit(0);}
+
 void connect(string chanid, string chan, string msg) {
 	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) error("No auth\n");
 	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
@@ -309,7 +312,7 @@ void connect(string chanid, string chan, string msg) {
 	call_out(irc->send_message, 1, "#" + chan, msg);
 	call_out(irc->close, 2);
 	#if constant(GHOSTWRITER)
-	call_out(exit, 3, 0); //In GW-only mode, finish once we're done with a single host signal.
+	call_out(task_done, 3); //In GW-only mode, finish once we're done with a single host signal.
 	#endif
 }
 
@@ -333,16 +336,24 @@ continue Concurrent.Future|mapping get_state(string group) {
 }
 
 continue void force_check(string chanid) {
+	++task_count;
 	if (!(int)chanid) chanid = (string)yield(get_user_id(chanid)); //Support usernames for the sake of command line access
 	mixed _ = yield(recalculate_status(chanid));
 	#if constant(GHOSTWRITER)
 	string msg = yield(update_status(chanid));
-	if (!msg) exit(0);
+	if (!msg) task_done();
 	#endif
 }
 
 continue void force_check_all() {
-	foreach (persist_status->path("ghostwriter"); string chanid;) yield(force_check(chanid));
+	++task_count;
+	foreach (persist_status->path("ghostwriter"); string chanid;) {
+		write("Checking %O\n", chanid);
+		mixed _ = yield(force_check(chanid));
+	}
+	#if constant(GHOSTWRITER)
+	task_done();
+	#endif
 }
 
 void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -494,6 +505,9 @@ protected void create(string name) {
 		if (cmd == "irc") {
 			write("GHOSTWRITER: Establishing monitoring for log only\n");
 			call_out(reconnect, 1, 1);
+		} else if (cmd == "all") {
+			write("GHOSTWRITER: Calculating status for all channels\n");
+			spawn_task(force_check_all());
 		} else {
 			write("GHOSTWRITER: Calculating status for %O\n", cmd);
 			spawn_task(force_check(cmd));
