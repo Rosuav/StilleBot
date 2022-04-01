@@ -94,7 +94,6 @@ EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string
 	//Mark the channel as just-gone-offline. That way, we won't attempt to
 	//host it while it's still shutting down.
 	channel_seen_offline[(int)chanid] = time();
-	mapping st = chanstate[chanid];
 	recalculate_soon(chanid);
 	foreach (chanstate; string id; mapping st) {
 		if (st->hostingid == chanid) recalculate_soon(id);
@@ -137,9 +136,6 @@ array(string) low_recalculate_status(mapping st) {
 	return ({"idle", "Channel Offline"});
 }
 continue Concurrent.Future recalculate_status(string chanid) {
-	#if !constant(GHOSTWRITER)
-	return 0; //Disabled in normal bot operation; available only in the subprocess.
-	#endif
 	mapping st = chanstate[chanid];
 	if (!st) st = chanstate[chanid] = ([]);
 	array self_live = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + chanid))->data || ({ });
@@ -175,6 +171,13 @@ continue Concurrent.Future recalculate_status(string chanid) {
 		write("GHOSTWRITER: Channel %O retaining goal %O for %d sec\n", config->chan, st->goal, suppress_autohosting[chanid] - time());
 		return 0;
 	}
+	//yield(update_status(chanid)); //Disabled. Use the subprocess instead.
+}
+
+continue Concurrent.Future update_status(string chanid) {
+	mapping st = chanstate[chanid];
+	if (!st) st = chanstate[chanid] = ([]);
+	mapping config = persist_status->path("ghostwriter", chanid);
 	array targets = config->channels || ({ });
 	m_delete(st, "hostingid");
 	//Clean up junk data
@@ -331,7 +334,11 @@ continue Concurrent.Future|mapping get_state(string group) {
 
 continue void force_check(string chanid) {
 	if (!(int)chanid) chanid = (string)yield(get_user_id(chanid)); //Support usernames for the sake of command line access
+	#if constant(GHOSTWRITER)
+	yield(update_status(chanid));
+	#else
 	yield(recalculate_status(chanid));
+	#endif
 }
 
 continue void force_check_all() {
