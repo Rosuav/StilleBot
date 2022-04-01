@@ -77,7 +77,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (string scopes = ensure_bcaster_token(req, "chat_login channel_editor chat:edit", req->misc->session->user->?login || "!!"))
 		login = sprintf("> This feature requires Twitch chat authentication.\n>\n"
 				"> [Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
-	//if (!login) spawn_task(force_check(req->misc->session->user->id));
+	if (!login) spawn_task(force_check(req->misc->session->user->id));
 	return render(req, ([
 		"vars": (["ws_group": login ? "0" : req->misc->session->user->id]),
 		"login": login,
@@ -323,7 +323,7 @@ continue Concurrent.Future|mapping get_state(string group) {
 }
 
 continue void force_check(string chanid) {
-	string chan = yield(get_user_info(chanid))->login;
+	//string chan = yield(get_user_info(chanid))->login;
 	//mapping irc = yield(connect(chanid, chan, 1)); //We don't actually need the IRC object here, but forcing one to exist guarantees some checks. Avoid bug by putting it in a variable.
 	yield(recalculate_status(chanid));
 }
