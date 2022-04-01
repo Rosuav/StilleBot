@@ -299,8 +299,14 @@ class IRCClient
 	void connection_lost() {close();}
 }
 
-int task_count = 0;
-void task_done() {if (!--task_count) exit(0);}
+int task_count = 0, forced_checks = 0, connections_made = 0;
+void task_done() {
+	if (--task_count) return;
+	write("\nChannels checked: %d\n", forced_checks);
+	write("Twitch API calls: %d\n", G->G->twitch_api_query_count);
+	write("IRC connections established: %d\n", connections_made);
+	exit(0);
+}
 
 void connect(string chanid, string chan, string msg) {
 	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) error("No auth\n");
@@ -309,6 +315,7 @@ void connect(string chanid, string chan, string msg) {
 		"nick": chan,
 		"pass": "oauth:" + persist_status->path("bcaster_token")[chan],
 	]));
+	++connections_made;
 	call_out(irc->send_message, 1, "#" + chan, msg);
 	call_out(irc->close, 2);
 	#if constant(GHOSTWRITER)
@@ -336,7 +343,7 @@ continue Concurrent.Future|mapping get_state(string group) {
 }
 
 continue void force_check(string chanid) {
-	++task_count;
+	++task_count; ++forced_checks;
 	if (!(int)chanid) chanid = (string)yield(get_user_id(chanid)); //Support usernames for the sake of command line access
 	mixed _ = yield(recalculate_status(chanid));
 	#if constant(GHOSTWRITER)
