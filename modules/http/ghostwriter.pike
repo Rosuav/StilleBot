@@ -119,8 +119,8 @@ void schedule_recalculation(string chanid, array(int) targets) {
 }
 
 //Anything that needs to recalculate after Twitch has settled all nodes, use this,
-//and the time delay can be synchronized. 30 seconds is a pure guess.
-void recalculate_soon(string chanid) {schedule_recalculation(chanid, ({time() + 30}));}
+//and the time delay can be synchronized. Two minutes is a pure guess.
+void recalculate_soon(string chanid) {schedule_recalculation(chanid, ({time() + 120}));}
 
 array(string) low_recalculate_status(mapping st) {
 	//1) Being live trumps all.
@@ -168,7 +168,7 @@ continue Concurrent.Future recalculate_status(string chanid) {
 	[st->statustype, st->status] = low_recalculate_status(st);
 	send_updates_all(chanid, st);
 	if (suppress_autohosting[chanid] > time()) {
-		write("GHOSTWRITER: Channel %O retaining goal %O for %d sec\n", config->chan, st->goal, suppress_autohosting[chanid] - time());
+		write("GHOSTWRITER: Channel %O retaining current status for %d sec\n", config->chan, st->goal, suppress_autohosting[chanid] - time());
 		return 0;
 	}
 	//yield(update_status(chanid)); //Disabled. Use the subprocess instead.
@@ -237,7 +237,6 @@ continue Concurrent.Future update_status(string chanid) {
 			expected = live[0]->user_login;
 		}
 	}
-	st->goal = expected;
 	if (expected == st->hosting) return 0; //Including if they're both 0 (want no host, currently not hosting)
 	//Currently we always take the first on the list. This may change in the future.
 	write("GHOSTWRITER: Connect %O %O, send %O\n", chanid, config->chan, msg);
@@ -255,7 +254,7 @@ void host_changed(string chanid, string target, string viewers) {
 	write("GHOSTWRITER: host_changed(%O, %O, %O), hosting %O\n", chanid, target, viewers, st->hosting);
 	if (st->hosting == target) return; //eg after reconnecting to IRC
 	st->hosting = target;
-	if (target) {st->goal = target; pause_autohost(chanid, time() + 60);} //If you manually host, disable autohost for one minute
+	if (target) pause_autohost(chanid, time() + 300); //If you manually host, disable autohost for five minutes
 	spawn_task(recalculate_status(chanid));
 	//TODO: Purge the hook channel list of any that we don't need (those for whom autohosts_this[id] is empty or absent)
 }
@@ -297,9 +296,6 @@ class IRCClient
 }
 
 void connect(string chanid, string chan, string msg) {
-	#if !constant(GHOSTWRITER)
-	return 0; //Disabled in normal bot operation; available only in the subprocess.
-	#endif
 	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) error("No auth\n");
 	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
 	object irc = IRCClient("irc.chat.twitch.tv", ([
