@@ -9,6 +9,7 @@
 //module name to distinguish them. Connecting again will update the options,
 //notably changing the callbacks, but will retain the same socket connection.
 mapping connection_cache = ([]);
+mapping latest_version = ([]);
 #define TRACE werror
 
 class TwitchIRC(mapping options) {
@@ -16,7 +17,7 @@ class TwitchIRC(mapping options) {
 	constant port = 6667;
 	string ip; //Randomly selected from the A/AAAA records for the server.
 
-	Stdio.File sock = Stdio.File();
+	Stdio.File sock;
 	array(string) queue = ({ }); //Commands waiting to be sent, and callbacks
 	string buf = "";
 
@@ -24,6 +25,10 @@ class TwitchIRC(mapping options) {
 		array ips = gethostbyname(server); //TODO: Support IPv6
 		if (!ips || !sizeof(ips[1])) error("Unable to gethostbyname for %O\n", server);
 		ip = random(ips[1]);
+		connect();
+	}
+	void connect() {
+		sock = Stdio.File();
 		sock->open_socket();
 		sock->set_nonblocking(sockread, connected, connfailed);
 		sock->connect(ip, port); //Will throw on error
@@ -42,9 +47,7 @@ class TwitchIRC(mapping options) {
 	void sockclosed() {
 		TRACE("Connection closed.\n");
 		//TODO: Retry connection, unless the caller's gone.
-		//This might require a versioning system: active connections get retriggered with the
-		//new version, inactive ones languish with the old version, and on disconnect, get
-		//dropped.
+		if (options->modver == latest_version[options->module]) connect();
 	}
 
 	void sockread(mixed _, string data) {
@@ -69,6 +72,26 @@ class TwitchIRC(mapping options) {
 Concurrent.Future connect(mapping options) {
 	//If there's no existing connection, establish one.
 	//If there is one, poke it?
+	options = (options || ([])) | ([]);
+	if (!options->modver) {
+		//Most of the time, use magic to identify the module and version.
+		//If you specify a module but not a version, it will be appended to the
+		//file name, and the version will still come from the program.
+		//To fully control the module specification, specify both module and
+		//modver, eg if replacing a previous module.
+		//NOTE: Since we retain hash_value without keeping a reference to the
+		//program itself, it's technically possible for the program to be
+		//garbage collected and another loaded up in its place. But that would
+		//only happen if none of the callbacks retain such a reference (unlikely
+		//but possible, as callbacks aren't required), and only if multiple
+		//updates happen, since StilleBot always loads up a new module before
+		//the old one is disposed of.
+		object frm = backtrace()[-2];
+		options->module = frm->filename + (options->module || "");
+		options->modver = hash_value(function_program(frm->fun));
+	}
+	else if (!options->module) error("Cannot specify modver while omitting module\n");
+	latest_version[options->module] = options->modver;
 	//return conn->promise();
 }
 
