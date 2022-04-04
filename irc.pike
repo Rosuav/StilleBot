@@ -4,7 +4,8 @@
 //Twitch has the tags feature, this will automatically parse tags, even though
 //that might not actually be a standard feature.
 
-#define IRCTRACE werror
+//#define _IRCTRACE werror
+void _IRCTRACE(mixed ... ignore) { }
 
 /* Available options:
 
@@ -74,7 +75,7 @@ class _TwitchIRC(mapping options) {
 	}
 
 	void sockclosed() {
-		IRCTRACE("Connection closed.\n");
+		_IRCTRACE("Connection closed.\n");
 		//Look up the latest version of the callback container. If that isn't the one we were
 		//set up to call, don't reconnect.
 		object current_module = G->G->irc_callbacks[options->module->modulename];
@@ -112,7 +113,7 @@ class _TwitchIRC(mapping options) {
 			if (prefix) sscanf(prefix, "%s%*[!.]", attrs->user);
 			if (function f = this["command_" + args[0]]) f(attrs, prefix, args);
 			else if ((int)args[0]) command_0000(attrs, prefix, args);
-			else IRCTRACE("Unrecognized command received: %O\n", line);
+			else _IRCTRACE("Unrecognized command received: %O\n", line);
 		}
 	}
 
@@ -128,7 +129,7 @@ class _TwitchIRC(mapping options) {
 				//from the newline at the end, we will store an empty string
 				//into the queue, which will then cause a "blank line" to be
 				//sent, thus finishing the line correctly.
-				IRCTRACE("Partial write, requeueing\n");
+				_IRCTRACE("Partial write, requeueing\n");
 				queue = ({next[sent..]}) + queue;
 			}
 			return;
@@ -261,12 +262,12 @@ class irc_callback {
 		//solution: The old connection is kept, but flagged as outdated. This
 		//can be seen in callbacks.
 		if (conn && conn->update_options(options)) {
-			IRCTRACE("Update failed, reconnecting\n");
+			_IRCTRACE("Update failed, reconnecting\n");
 			conn->options->outdated = 1;
 			conn->quit();
 			conn = 0;
 		}
-		else if (conn) IRCTRACE("Retaining across update\n");
+		else if (conn) _IRCTRACE("Retaining across update\n");
 		if (!conn) conn = _TwitchIRC(options);
 		connection_cache[options->user] = conn;
 		return conn->promise();
