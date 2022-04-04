@@ -155,7 +155,7 @@ class TwitchIRC(mapping options) {
 	int(0..1) update_options(mapping opt) {
 		//TODO: Check for a version incompatibility. If code version has changed, return 1.
 		//If credentials have changed, reconnect.
-		if (opt->pass != options->pass) return 1; //The user is the same, or cache wouldn't have pulled us up.
+		if (opt->pass != pass) return 1; //The user is the same, or cache wouldn't have pulled us up.
 		if (opt->login_commands * "\n" != options->login_commands * "\n") return 1; //No way of knowing whether it's compatible or not
 		//Capabilities can be added, but not removed. Since the client might be
 		//expecting results based on the exact set given, if any are removed, we
@@ -200,6 +200,11 @@ class TwitchIRC(mapping options) {
 	void command_USERSTATE(mapping attrs, string pfx, array(string) args) { }
 	void command_ROOMSTATE(mapping attrs, string pfx, array(string) args) { }
 	void command_JOIN(mapping attrs, string pfx, array(string) args) { }
+	void command_PING(mapping attrs, string pfx, array(string) args) {
+		TRACE("GOT PING: %O %O %O\n", attrs, pfx, args);
+		qpoke();
+		queue += ({"pong :" + args[1]});
+	}
 	void command_CAP(mapping attrs, string pfx, array(string) args) { } //We assume Twitch supports what they've documented
 	//Send all types of message through, let the callback sort 'em out
 	void command_PRIVMSG(mapping attrs, string pfx, array(string) args) {
@@ -232,6 +237,7 @@ class irc_callback {
 		//solution: The old connection is kept, but flagged as outdated. This
 		//can be seen in callbacks.
 		if (conn && conn->update_options(options)) {
+			TRACE("Update failed, reconnecting\n");
 			conn->options->outdated = 1;
 			conn->quit();
 			conn = 0;
