@@ -4,12 +4,10 @@
 //Twitch has the tags feature, this will automatically parse tags, even though
 //that might not actually be a standard feature.
 
-//TODO: Version the TwitchIRC class too somehow. If it changes, force reconnect
-//on all clients.
-
 //Connections can be reused. Callbacks will be replaced automatically when the
 //irc_callback object is initialized.
 mapping current_callbacks = ([]);
+constant VERSION = 1;
 #define TRACE werror
 
 /* Available options:
@@ -155,7 +153,8 @@ class TwitchIRC(mapping options) {
 	}
 
 	int(0..1) update_options(mapping opt) {
-		//TODO: Check for a version incompatibility. If code version has changed, return 1.
+		//If the IRC handling code has changed incompatibly, reconnect.
+		if (opt->version != options->version) return 1;
 		//If credentials have changed, reconnect.
 		if (opt->pass != pass) return 1; //The user is the same, or cache wouldn't have pulled us up.
 		if (Array.arrayify(opt->login_commands) * "\n" !=
@@ -215,7 +214,7 @@ class irc_callback {
 	void irc_closed(mapping options) { } //Called only if we're not reconnecting
 
 	Concurrent.Future irc_connect(mapping options) {
-		options = (["module": this]) | (options || ([]));
+		options = (["module": this, "version": VERSION]) | (options || ([]));
 		//TODO: If user not specified, fetch user and pass from persist_config
 		//TODO: If pass not specified, fetch from bcaster_token, if authenticated for chat
 		object conn = connection_cache[options->user];
@@ -240,5 +239,7 @@ class irc_callback {
 }
 
 protected void create() {
+	if (!G->G->irc_callbacks) G->G->irc_callbacks = ([]);
+	current_callbacks = G->G->irc_callbacks;
 	add_constant("irc_callback", irc_callback);
 }

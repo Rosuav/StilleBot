@@ -88,7 +88,8 @@ int main(int argc,array(string) argv)
 		bootstrap("globals.pike");
 		bootstrap("irc.pike");
 		bootstrap("irctest.pike");
-		call_out(bootstrap, 3, "irctest.pike");
+		call_out(bootstrap, 3, "irc.pike");
+		call_out(bootstrap, 3.125, "irctest.pike");
 		return -1;
 	}
 	bootstrap_all();
