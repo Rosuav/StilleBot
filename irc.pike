@@ -16,7 +16,7 @@ join		Optional array of channels to join (include the hashes)
 login_commands	Optional commands to be sent after (re)connection
 
 */
-class TwitchIRC(mapping options) {
+class _TwitchIRC(mapping options) {
 	constant server = "irc.chat.twitch.tv";
 	constant port = 6667;
 	string ip; //Randomly selected from the A/AAAA records for the server.
@@ -267,7 +267,7 @@ class irc_callback {
 			conn = 0;
 		}
 		else if (conn) IRCTRACE("Retaining across update\n");
-		if (!conn) conn = TwitchIRC(options);
+		if (!conn) conn = _TwitchIRC(options);
 		connection_cache[options->user] = conn;
 		return conn->promise();
 	}
