@@ -156,7 +156,8 @@ class TwitchIRC(mapping options) {
 		//TODO: Check for a version incompatibility. If code version has changed, return 1.
 		//If credentials have changed, reconnect.
 		if (opt->pass != pass) return 1; //The user is the same, or cache wouldn't have pulled us up.
-		if (opt->login_commands * "\n" != options->login_commands * "\n") return 1; //No way of knowing whether it's compatible or not
+		if (Array.arrayify(opt->login_commands) * "\n" !=
+			Array.arrayify(options->login_commands) * "\n") return 1; //No way of knowing whether it's compatible or not
 		//Capabilities can be added, but not removed. Since the client might be
 		//expecting results based on the exact set given, if any are removed, we
 		//just disconnect.

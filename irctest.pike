@@ -1,19 +1,18 @@
 inherit irc_callback;
-object irc;
 
 continue Concurrent.Future say_hello(string channel) {
-	irc = yield(irc_connect(([
+	G->G->testirc = yield(irc_connect(([
 		"user": "rosuav", "pass": persist_config->path("ircsettings", "pass"),
 		"join": channel,
 		//"capabilities": ({"membership", "commands", "tags"}),
 	])));
-	//irc->send(channel, "!hello");
+	//G->G->testirc->send(channel, "!hello");
 }
 
 void irc_message(string type, string chan, string msg, mapping attrs) {
 	if (type != "PRIVMSG") return;
 	write("[%d] Got msg: %O %O\n", hash_value(this), msg, attrs);
-	if (msg == "!quit") irc->quit();
+	if (msg == "!quit") G->G->testirc->quit();
 }
 
 void irc_closed(mapping options) {
