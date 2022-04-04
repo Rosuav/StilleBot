@@ -142,7 +142,6 @@ class TwitchIRC(mapping options) {
 				//sent, thus finishing the line correctly.
 				TRACE("Partial write, requeueing\n");
 				queue = ({next[sent..]}) + queue;
-				return; //Don't poke the socket until it's actually writable again
 			}
 			return;
 		}
