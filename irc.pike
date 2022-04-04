@@ -5,7 +5,7 @@
 //that might not actually be a standard feature.
 
 //Connections can be reused. Callbacks will be replaced automatically when the
-//irc_callback program is initialized.
+//irc_callback object is initialized.
 mapping current_callbacks = ([]);
 #define TRACE werror
 
@@ -69,20 +69,58 @@ class TwitchIRC(mapping options) {
 	void sockclosed() {
 		TRACE("Connection closed.\n");
 		//TODO: Retry connection, unless the caller's gone.
-		if (options->module == current_callbacks[function_name(options->module)]) connect();
+		//Look up the latest version of the callback container. If that isn't the one we were
+		//set up to call, don't reconnect.
+		object current_module = current_callbacks[function_name(object_program(options->module))];
+		if (!options->no_reconnect && options->module == current_module) connect();
+		else options->module->irc_closed(options);
 	}
 
 	void sockread(mixed _, string data) {
 		buf += data;
-		TRACE("Sock read: %O\n", data);
+		while (sscanf(buf, "%s\n%s", string line, buf)) {
+			line -= "\r";
+			if (line == "") continue;
+			//Twitch messages with TAGS capability begin with the tags
+			sscanf(line, "@%s %s", string tags, line);
+			//Most messages from the server begin with a prefix.
+			sscanf(line, ":%s %s", string prefix, line);
+			//A lot of messages end with a colon-prefixed string.
+			sscanf(line, "%s :%s", line, string str);
+			//With all that removed, what's left must be the command and
+			//its parameters. (Only the last parameter is allowed to be
+			//an arbitrary string, the rest must be atoms.)
+			array args = line / " " - ({""});
+			if (str) args += ({str});
+			if (!sizeof(args)) continue; //Broken command
+			mapping attr = ([]); //TODO: Parse tags into attr[]
+			if (function f = this["command_" + args[0]]) f(attr, prefix, args);
+			else if ((int)args[0]) command_0000(attr, prefix, args);
+			else TRACE("Unrecognized command received: %O\n", line);
+		}
+		if (sizeof(buf)) TRACE("Buffer remaining: %O\n", buf);
 	}
 
 	void sockwrite() {
-		TRACE("Socket writable.\n");
+		//TRACE("Socket writable.\n");
 		//Send the next thing from the queue
 		if (!sizeof(queue)) return;
 		[mixed next, queue] = Array.shift(queue);
-		if (stringp(next)) sock->write(next + "\r\n");
+		if (stringp(next)) {
+			int sent = sock->write(next + "\n");
+			if (sent < sizeof(next) + 1) {
+				//Partial send. Requeue all but the part that got sent.
+				//In the unusual case that we send the entire message apart
+				//from the newline at the end, we will store an empty string
+				//into the queue, which will then cause a "blank line" to be
+				//sent, thus finishing the line correctly.
+				TRACE("Partial write, requeueing\n");
+				queue = ({next[sent..]}) + queue;
+				return; //Don't poke the socket until it's actually writable again
+			}
+		}
+		else if (functionp(next)) next(this);
+		else error("Unknown entry in queue: %t\n", next);
 		call_out(sockwrite, 0.125); //TODO: Figure out a safe rate limit. Or do we even need one?
 	}
 
@@ -95,6 +133,50 @@ class TwitchIRC(mapping options) {
 			//augment by adding another call to promise().
 		});
 	}
+
+	void qpoke() {if (!sizeof(queue)) call_out(sockwrite, 0);}
+	void send(string channel, string msg) {
+		qpoke();
+		queue += ({"privmsg #" + (channel - "#") + " :" + replace(msg, "\n", " ")});
+	}
+
+	void close() {
+		//Close the socket immediately
+		sock->close();
+	}
+	void queueclose() {
+		//Close the socket once we empty what's currently in queue
+		qpoke();
+		queue += ({close});
+	}
+	void quit() {
+		//Ask the server to close once the queue is done
+		qpoke();
+		queue += ({"quit", no_reconnect});
+	}
+	void no_reconnect() {options->no_reconnect = 1;}
+
+	void command_473(mapping attr, string pfx, array(string) args) {
+		//Failed to join channel. Reject promise?
+	}
+	void command_0000(mapping attr, string pfx, array(string) args) {
+		//Handle all unknown numeric responses (currently by ignoring them)
+	}
+	void command_USERSTATE(mapping attr, string pfx, array(string) args) { }
+	void command_JOIN(mapping attr, string pfx, array(string) args) { }
+	void command_CAP(mapping attr, string pfx, array(string) args) { } //We assume Twitch supports what they've documented
+	void command_PRIVMSG(mapping attr, string pfx, array(string) args) {
+		//TODO
+		TRACE("Got PRIVMSG: %O %O %O\n", attr, pfx, args);
+	}
+	void command_NOTICE(mapping attr, string pfx, array(string) args) {
+		//TODO
+		TRACE("Got NOTICE: %O %O %O\n", attr, pfx, args);
+	}
+	void command_USERNOTICE(mapping attr, string pfx, array(string) args) {
+		//TODO
+		TRACE("Got USERNOTICE: %O %O %O\n", attr, pfx, args);
+	}
 }
 
 //Inherit this to listen to connection responses
@@ -103,14 +185,14 @@ class irc_callback {
 	protected void create(string name) {
 		name = function_name(this_program); //Ignore the passed-in name and rely on the program name
 		connection_cache = current_callbacks[name]->?connection_cache || ([]);
-		current_callbacks[name] = this_program;
+		current_callbacks[name] = this;
 	}
 	void irc_notify(mixed ... args) { }
 	void irc_message(mixed ... args) { }
 	void irc_closed(mixed ... args) { } //Called only if we're not reconnecting
 
 	Concurrent.Future irc_connect(mapping options) {
-		options = (["module": this_program]) | (options || ([]));
+		options = (["module": this]) | (options || ([]));
 		//TODO: If user not specified, fetch user and pass from persist_config
 		//TODO: If pass not specified, fetch from bcaster_token, if authenticated for chat
 		object conn = connection_cache[options->user];
@@ -152,6 +234,11 @@ class spawn_task(mixed gen, function|void got_result, function|void got_error) {
 	}
 	void propagate_error(mixed err) {pump(0, err || ({"Null error\n", backtrace()}));}
 }
+class task_sleep(int|float delay) {
+	void then(function whendone) {
+		call_out(whendone, delay, delay || "0"); //Never yield zero, it can cause confusion
+	}
+}
 #endif
 
 class SomeModule {
@@ -162,9 +249,11 @@ class SomeModule {
 		object irc = yield(irc_connect(([
 			"user": "rosuav", "pass": config->ircsettings->pass,
 			"join": channel,
+			//"capabilities": ({"membership", "commands", "tags"}),
 		])));
-		irc->send(channel, "Hello, world");
-		irc->queueclose();
+		irc->send(channel, "!hello");
+		mixed _ = yield(task_sleep(1));
+		irc->quit();
 	}
 
 	void irc_closed(mapping options) {
