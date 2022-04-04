@@ -4,9 +4,6 @@
 //Twitch has the tags feature, this will automatically parse tags, even though
 //that might not actually be a standard feature.
 
-//Connections can be reused. Callbacks will be replaced automatically when the
-//irc_callback object is initialized.
-mapping current_callbacks = ([]);
 constant VERSION = 1;
 #define TRACE werror
 
@@ -87,7 +84,7 @@ class TwitchIRC(mapping options) {
 		TRACE("Connection closed.\n");
 		//Look up the latest version of the callback container. If that isn't the one we were
 		//set up to call, don't reconnect.
-		object current_module = current_callbacks[function_name(object_program(options->module))];
+		object current_module = G->G->irc_callbacks[options->module->modulename];
 		if (!options->no_reconnect && options->module == current_module) connect();
 		else if (!options->outdated) options->module->irc_closed(options);
 	}
@@ -233,9 +230,11 @@ class TwitchIRC(mapping options) {
 //Inherit this to listen to connection responses
 class irc_callback {
 	mapping connection_cache;
+	string modulename;
 	protected void create(string name) {
-		connection_cache = current_callbacks[name]->?connection_cache || ([]);
-		current_callbacks[name] = this;
+		modulename = name;
+		connection_cache = G->G->irc_callbacks[name]->?connection_cache || ([]);
+		G->G->irc_callbacks[name] = this;
 	}
 	//The type is PRIVMSG, NOTICE, USERNOTICE; chan begins "#"; attrs may be empty mapping but will not be null
 	void irc_message(string type, string chan, string msg, mapping attrs) { }
@@ -283,6 +282,5 @@ class irc_callback {
 
 protected void create() {
 	if (!G->G->irc_callbacks) G->G->irc_callbacks = ([]);
-	current_callbacks = G->G->irc_callbacks;
 	add_constant("irc_callback", irc_callback);
 }
