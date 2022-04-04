@@ -4,6 +4,9 @@
 //Twitch has the tags feature, this will automatically parse tags, even though
 //that might not actually be a standard feature.
 
+//TODO: Version the TwitchIRC class too somehow. If it changes, force reconnect
+//on all clients.
+
 //Connections can be reused. Callbacks will be replaced automatically when the
 //irc_callback object is initialized.
 mapping current_callbacks = ([]);
@@ -68,12 +71,11 @@ class TwitchIRC(mapping options) {
 
 	void sockclosed() {
 		TRACE("Connection closed.\n");
-		//TODO: Retry connection, unless the caller's gone.
 		//Look up the latest version of the callback container. If that isn't the one we were
 		//set up to call, don't reconnect.
 		object current_module = current_callbacks[function_name(object_program(options->module))];
 		if (!options->no_reconnect && options->module == current_module) connect();
-		else options->module->irc_closed(options);
+		else if (!options->outdated) options->module->irc_closed(options);
 	}
 
 	void sockread(mixed _, string data) {
@@ -150,6 +152,29 @@ class TwitchIRC(mapping options) {
 		queue += ({"privmsg #" + (channel - "#") + " :" + replace(msg, "\n", " ")});
 	}
 
+	int(0..1) update_options(mapping opt) {
+		//TODO: Check for a version incompatibility. If code version has changed, return 1.
+		//If credentials have changed, reconnect.
+		if (opt->pass != options->pass) return 1; //The user is the same, or cache wouldn't have pulled us up.
+		if (opt->login_commands * "\n" != options->login_commands * "\n") return 1; //No way of knowing whether it's compatible or not
+		//Capabilities can be added, but not removed. Since the client might be
+		//expecting results based on the exact set given, if any are removed, we
+		//just disconnect.
+		array haveopt = Array.arrayify(options->capabilities);
+		array wantopt = Array.arrayify(opt->capabilities);
+		if (sizeof(haveopt - wantopt)) return 1;
+		//Channels can be joined and parted freely.
+		array havechan = Array.arrayify(options->join);
+		array wantchan = Array.arrayify(opt->join);
+		//For some reason, these automaps are raising warnings about indexing
+		//empty strings. I don't get it.
+		array commands = ("CAP REQ :twitch.tv/" + (wantopt - haveopt)[*])
+			+ ("JOIN " + (wantchan - havechan)[*])
+			+ ("PART " + (havechan - wantchan)[*]);
+		if (sizeof(commands)) {qpoke(); queue += commands;}
+		options->module = opt->module;
+	}
+
 	void close() {
 		//Close the socket immediately
 		sock->close();
@@ -187,7 +212,6 @@ class TwitchIRC(mapping options) {
 class irc_callback {
 	mapping connection_cache;
 	protected void create(string name) {
-		name = function_name(this_program); //Ignore the passed-in name and rely on the program name
 		connection_cache = current_callbacks[name]->?connection_cache || ([]);
 		current_callbacks[name] = this;
 	}
@@ -200,78 +224,24 @@ class irc_callback {
 		//TODO: If user not specified, fetch user and pass from persist_config
 		//TODO: If pass not specified, fetch from bcaster_token, if authenticated for chat
 		object conn = connection_cache[options->user];
-		if (conn) {
-			//TODO: Poke the connection and make sure it's actually alive
-			conn->update_options(options);
-		} else {
-			connection_cache[options->user] = conn = TwitchIRC(options);
+		//If the connection exists, give it a chance to update itself. Normally
+		//it will do so, and return 0; otherwise, it'll return 1, we disconnect
+		//it, and start fresh. Problem: We could have multiple connections in
+		//parallel for a short while. Alternate problem: Waiting for the other
+		//to disconnect could leave us stalled if anything goes wrong. Partial
+		//solution: The old connection is kept, but flagged as outdated. This
+		//can be seen in callbacks.
+		if (conn && conn->update_options(options)) {
+			conn->options->outdated = 1;
+			conn->quit();
+			conn = 0;
 		}
+		if (!conn) conn = TwitchIRC(options);
+		connection_cache[options->user] = conn;
 		return conn->promise();
 	}
 }
 
-#if !constant(G)
-void _unhandled_error(mixed err) {werror("Unhandled asynchronous exception\n%s\n", describe_backtrace(err));}
-void _ignore_result(mixed value) { }
-int(0..1) is_genstate(mixed x) {return functionp(x) && has_value(sprintf("%O", x), "\\u0000");}
-class spawn_task(mixed gen, function|void got_result, function|void got_error) {
-	mixed extra;
-	protected void create(mixed ... args) {
-		extra = args;
-		if (!got_result) got_result = _ignore_result;
-		if (!got_error) got_error = _unhandled_error;
-		if (is_genstate(gen)) pump(0, 0);
-		else if (objectp(gen) && gen->then)
-			gen->then(got_result, got_error, @extra);
-		else got_result(gen, @extra);
-	}
-	//Pump a generator function. It should yield Futures until it returns a
-	//final result. If it yields a non-Future, it will be passed back
-	//immediately, but don't do that.
-	void pump(mixed last, mixed err) {
-		mixed resp;
-		if (mixed ex = catch {resp = gen(last){if (err) throw(err);};}) {got_error(ex, @extra); return;}
-		if (undefinedp(resp)) got_result(last, @extra);
-		else if (is_genstate(resp)) spawn_task(resp, pump, propagate_error);
-		else if (objectp(resp) && resp->then) resp->then(pump, propagate_error);
-		else pump(resp, 0);
-	}
-	void propagate_error(mixed err) {pump(0, err || ({"Null error\n", backtrace()}));}
-}
-class task_sleep(int|float delay) {
-	void then(function whendone) {
-		call_out(whendone, delay, delay || "0"); //Never yield zero, it can cause confusion
-	}
-}
-#endif
-
-class SomeModule {
-	inherit irc_callback;
-
-	continue Concurrent.Future say_hello(string channel) {
-		mapping config = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"));
-		object irc = yield(irc_connect(([
-			"user": "rosuav", "pass": config->ircsettings->pass,
-			"join": channel,
-			//"capabilities": ({"membership", "commands", "tags"}),
-		])));
-		irc->send(channel, "!hello");
-		mixed _ = yield(task_sleep(1));
-		irc->quit();
-	}
-
-	void irc_message(string type, string chan, string msg, mapping attrs) {
-		if (type != "PRIVMSG") return;
-		write("Got msg: %O %O\n", msg, attrs);
-	}
-
-	void irc_closed(mapping options) {
-		write("Shutting down!\n");
-		exit(0);
-	}
-}
-
-int main() {
-	spawn_task(SomeModule("somemodule.pike")->say_hello("#rosuav"));
-	return -1;
+protected void create() {
+	add_constant("irc_callback", irc_callback);
 }
