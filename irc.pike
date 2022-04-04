@@ -99,8 +99,9 @@ class TwitchIRC(mapping options) {
 			if (str) args += ({str});
 			if (!sizeof(args)) continue; //Broken command
 			mapping attrs = ([]);
-			if (tags) {
-				//TODO: Parse tags into attrs[]
+			if (tags) foreach (tags / ";", string att) {
+				sscanf(att, "%s=%s", string name, string val);
+				attrs[replace(name, "-", "_")] = replace(val || "", "\\s", " ");
 			}
 			if (prefix) sscanf(prefix, "%s%*[!.]", attrs->user);
 			if (function f = this["command_" + args[0]]) f(attrs, prefix, args);
@@ -172,6 +173,7 @@ class TwitchIRC(mapping options) {
 		//Handle all unknown numeric responses (currently by ignoring them)
 	}
 	void command_USERSTATE(mapping attrs, string pfx, array(string) args) { }
+	void command_ROOMSTATE(mapping attrs, string pfx, array(string) args) { }
 	void command_JOIN(mapping attrs, string pfx, array(string) args) { }
 	void command_CAP(mapping attrs, string pfx, array(string) args) { } //We assume Twitch supports what they've documented
 	//Send all types of message through, let the callback sort 'em out
