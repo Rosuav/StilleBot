@@ -2,7 +2,6 @@ inherit irc_callback;
 
 continue Concurrent.Future say_hello(string channel) {
 	G->G->testirc = yield(irc_connect(([
-		"user": "rosuav", "pass": persist_config->path("ircsettings", "pass"),
 		"join": channel,
 		//"capabilities": ({"membership", "commands", "tags"}),
 	])));
@@ -13,6 +12,7 @@ continue Concurrent.Future say_hello(string channel) {
 void irc_message(string type, string chan, string msg, mapping attrs) {
 	if (type != "PRIVMSG") return;
 	write("[%d] Got msg: %O %O\n", hash_value(this), msg, attrs);
+	if (msg == "!test") G->G->testirc->send(chan, "Testing!");
 	if (msg == "!quit") {
 		write("Shutting down connection: %O\n", hash_value(G->G->testirc));
 		G->G->testirc->quit();

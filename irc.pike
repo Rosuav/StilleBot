@@ -243,8 +243,23 @@ class irc_callback {
 
 	Concurrent.Future irc_connect(mapping options) {
 		options = (["module": this, "version": VERSION]) | (options || ([]));
-		//TODO: If user not specified, fetch user and pass from persist_config
-		//TODO: If pass not specified, fetch from bcaster_token, if authenticated for chat
+		if (!options->user) {
+			//Default credentials from the 
+			mapping cfg = persist_config->path("ircsettings");
+			options->user = cfg->nick; options->pass = cfg->pass;
+		}
+		if (!options->pass) {
+			string chan = lower_case(options->user);
+			string pass = persist_status->path("bcaster_token")[chan];
+			if (!pass) return Concurrent.reject(({"No broadcaster auth for " + chan + "\n", backtrace()}));
+			array scopes = (persist_status->path("bcaster_token_scopes")[chan]||"") / " ";
+			//Note that we accept chat:read even if there are commands that would require
+			//chat:edit permission. This isn't meant to be a thorough check, just a quick
+			//confirmation that we really are trying to work with chat here.
+			if (!has_value(scopes, "chat:edit") && !has_value(scopes, "chat:read"))
+				return Concurrent.reject(({"No chat auth for " + chan + "\n", backtrace()}));
+			options->pass = "oauth:" + pass;
+		}
 		object conn = connection_cache[options->user];
 		//If the connection exists, give it a chance to update itself. Normally
 		//it will do so, and return 0; otherwise, it'll return 1, we disconnect
