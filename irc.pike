@@ -4,18 +4,26 @@
 //Twitch has the tags feature, this will automatically parse tags, even though
 //that might not actually be a standard feature.
 
-//Connections can be reused. It is assumed that any given module will only use
-//a single connection for any user; if that's not the case, invent a different
-//module name to distinguish them. Connecting again will update the options,
-//notably changing the callbacks, but will retain the same socket connection.
-mapping connection_cache = ([]);
-mapping latest_version = ([]);
+//Connections can be reused. Callbacks will be replaced automatically when the
+//irc_callback program is initialized.
+mapping current_callbacks = ([]);
 #define TRACE werror
 
+/* Available options:
+
+module		Override the default selection of callbacks and module version
+user		User to log in as. With module, defines connection caching.
+pass		OAuth password
+capabilities	Optional array of caps to request
+join		Optional array of channels to join (include the hashes)
+login_commands	Optional commands to be sent after (re)connection
+
+*/
 class TwitchIRC(mapping options) {
 	constant server = "irc.chat.twitch.tv";
 	constant port = 6667;
 	string ip; //Randomly selected from the A/AAAA records for the server.
+	string pass; //Pulled out of options in case options gets printed out
 
 	Stdio.File sock;
 	array(string) queue = ({ }); //Commands waiting to be sent, and callbacks
@@ -26,16 +34,30 @@ class TwitchIRC(mapping options) {
 		if (!ips || !sizeof(ips[1])) error("Unable to gethostbyname for %O\n", server);
 		ip = random(ips[1]);
 		connect();
+		pass = m_delete(options, "pass");
 	}
 	void connect() {
 		sock = Stdio.File();
 		sock->open_socket();
 		sock->set_nonblocking(sockread, connected, connfailed);
 		sock->connect(ip, port); //Will throw on error
+		TRACE("Connecting to %O : %O\n", ip, port);
 	}
 
 	void connected() {
 		TRACE("Connected.\n");
+		werror("%O\n", options);
+		array login = ({
+			"PASS " + pass,
+			"NICK " + options->user,
+			"USER " + options->user + " localhost 127.0.0.1 :StilleBot",
+		});
+		//PREPEND onto the queue.
+		queue = login
+			+ sprintf("CAP REQ :twitch.tv/%s", Array.arrayify(options->capabilities)[*])
+			+ sprintf("JOIN %s", Array.arrayify(options->join)[*])
+			+ Array.arrayify(options->login_commands)
+			+ queue;
 		sock->set_nonblocking(sockread, sockwrite, sockclosed);
 	}
 
@@ -47,15 +69,21 @@ class TwitchIRC(mapping options) {
 	void sockclosed() {
 		TRACE("Connection closed.\n");
 		//TODO: Retry connection, unless the caller's gone.
-		if (options->modver == latest_version[options->module]) connect();
+		if (options->module == current_callbacks[function_name(options->module)]) connect();
 	}
 
 	void sockread(mixed _, string data) {
 		buf += data;
+		TRACE("Sock read: %O\n", data);
 	}
 
 	void sockwrite() {
+		TRACE("Socket writable.\n");
 		//Send the next thing from the queue
+		if (!sizeof(queue)) return;
+		[mixed next, queue] = Array.shift(queue);
+		if (stringp(next)) sock->write(next + "\r\n");
+		call_out(sockwrite, 0.125); //TODO: Figure out a safe rate limit. Or do we even need one?
 	}
 
 	Concurrent.Future promise() {
@@ -69,30 +97,31 @@ class TwitchIRC(mapping options) {
 	}
 }
 
-Concurrent.Future connect(mapping options) {
-	//If there's no existing connection, establish one.
-	//If there is one, poke it?
-	options = (options || ([])) | ([]);
-	if (!options->modver) {
-		//Most of the time, use magic to identify the module and version.
-		//If you specify a module but not a version, it will be appended to the
-		//file name, and the version will still come from the program.
-		//To fully control the module specification, specify both module and
-		//modver, eg if replacing a previous module.
-		//NOTE: Since we retain hash_value without keeping a reference to the
-		//program itself, it's technically possible for the program to be
-		//garbage collected and another loaded up in its place. But that would
-		//only happen if none of the callbacks retain such a reference (unlikely
-		//but possible, as callbacks aren't required), and only if multiple
-		//updates happen, since StilleBot always loads up a new module before
-		//the old one is disposed of.
-		object frm = backtrace()[-2];
-		options->module = frm->filename + (options->module || "");
-		options->modver = hash_value(function_program(frm->fun));
+//Inherit this to listen to connection responses
+class irc_callback {
+	mapping connection_cache;
+	protected void create(string name) {
+		name = function_name(this_program); //Ignore the passed-in name and rely on the program name
+		connection_cache = current_callbacks[name]->?connection_cache || ([]);
+		current_callbacks[name] = this_program;
 	}
-	else if (!options->module) error("Cannot specify modver while omitting module\n");
-	latest_version[options->module] = options->modver;
-	//return conn->promise();
+	void irc_notify(mixed ... args) { }
+	void irc_message(mixed ... args) { }
+	void irc_closed(mixed ... args) { } //Called only if we're not reconnecting
+
+	Concurrent.Future irc_connect(mapping options) {
+		options = (["module": this_program]) | (options || ([]));
+		//TODO: If user not specified, fetch user and pass from persist_config
+		//TODO: If pass not specified, fetch from bcaster_token, if authenticated for chat
+		object conn = connection_cache[options->user];
+		if (conn) {
+			//TODO: Poke the connection and make sure it's actually alive
+			conn->update_options(options);
+		} else {
+			connection_cache[options->user] = conn = TwitchIRC(options);
+		}
+		return conn->promise();
+	}
 }
 
 #if !constant(G)
@@ -125,15 +154,26 @@ class spawn_task(mixed gen, function|void got_result, function|void got_error) {
 }
 #endif
 
-continue Concurrent.Future say_hello(string channel) {
-	object irc = yield(connect(([
-		"user": "rosuav", "pass": "fetch from settings",
-		"join": channel,
-	])));
-	irc->send(channel, "Hello, world");
-	irc->queueclose();
+class SomeModule {
+	inherit irc_callback;
+
+	continue Concurrent.Future say_hello(string channel) {
+		mapping config = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"));
+		object irc = yield(irc_connect(([
+			"user": "rosuav", "pass": config->ircsettings->pass,
+			"join": channel,
+		])));
+		irc->send(channel, "Hello, world");
+		irc->queueclose();
+	}
+
+	void irc_closed(mapping options) {
+		write("Shutting down!\n");
+		exit(0);
+	}
 }
 
 int main() {
-	spawn_task(say_hello("#rosuav"));
+	spawn_task(SomeModule("somemodule.pike")->say_hello("#rosuav"));
+	return -1;
 }
