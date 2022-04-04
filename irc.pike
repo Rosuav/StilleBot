@@ -136,9 +136,13 @@ class TwitchIRC(mapping options) {
 		call_out(sockwrite, 0.125); //TODO: Figure out a safe rate limit. Or do we even need one?
 	}
 
+	void enqueue(mixed ... items) {
+		if (!sizeof(queue)) call_out(sockwrite, 0);
+		queue += items;
+	}
 	Concurrent.Future promise() {
 		return Concurrent.Promise(lambda(function res, function rej) {
-			queue += ({res});
+			enqueue(res);
 			//TODO: Call rej() on error
 			//TODO: If the other end code gets updated, allow the promise to be migrated
 			//(by removing the old callback and putting in a new one). You can always
@@ -146,10 +150,8 @@ class TwitchIRC(mapping options) {
 		});
 	}
 
-	void qpoke() {if (!sizeof(queue)) call_out(sockwrite, 0);}
 	void send(string channel, string msg) {
-		qpoke();
-		queue += ({"privmsg #" + (channel - "#") + " :" + replace(msg, "\n", " ")});
+		enqueue("privmsg #" + (channel - "#") + " :" + replace(msg, "\n", " "));
 	}
 
 	int(0..1) update_options(mapping opt) {
@@ -172,24 +174,13 @@ class TwitchIRC(mapping options) {
 		array commands = ("CAP REQ :twitch.tv/" + (wantopt - haveopt)[*])
 			+ ("JOIN " + (wantchan - havechan)[*])
 			+ ("PART " + (havechan - wantchan)[*]);
-		if (sizeof(commands)) {qpoke(); queue += commands;}
+		if (sizeof(commands)) enqueue(@commands);
 		options->module = opt->module;
 	}
 
-	void close() {
-		//Close the socket immediately
-		sock->close();
-	}
-	void queueclose() {
-		//Close the socket once we empty what's currently in queue
-		qpoke();
-		queue += ({close});
-	}
-	void quit() {
-		//Ask the server to close once the queue is done
-		qpoke();
-		queue += ({"quit", no_reconnect});
-	}
+	void close() {sock->close();} //Close the socket immediately
+	void queueclose() {enqueue(close);} //Close the socket once we empty what's currently in queue
+	void quit() {enqueue("quit", no_reconnect);} //Ask the server to close once the queue is done
 	void no_reconnect() {options->no_reconnect = 1;}
 
 	void command_473(mapping attrs, string pfx, array(string) args) {
@@ -202,8 +193,7 @@ class TwitchIRC(mapping options) {
 	void command_ROOMSTATE(mapping attrs, string pfx, array(string) args) { }
 	void command_JOIN(mapping attrs, string pfx, array(string) args) { }
 	void command_PING(mapping attrs, string pfx, array(string) args) {
-		qpoke();
-		queue += ({"pong :" + args[1]});
+		enqueue("pong :" + args[1]);
 	}
 	void command_CAP(mapping attrs, string pfx, array(string) args) { } //We assume Twitch supports what they've documented
 	//Send all types of message through, let the callback sort 'em out
