@@ -4,14 +4,13 @@
 //Twitch has the tags feature, this will automatically parse tags, even though
 //that might not actually be a standard feature.
 
-constant VERSION = 1;
-#define TRACE werror
+#define IRCTRACE werror
 
 /* Available options:
 
 module		Override the default selection of callbacks and module version
 user		User to log in as. With module, defines connection caching.
-pass		OAuth password
+pass		OAuth password. If omitted, uses bcaster_token.
 capabilities	Optional array of caps to request
 join		Optional array of channels to join (include the hashes)
 login_commands	Optional commands to be sent after (re)connection
@@ -41,7 +40,6 @@ class TwitchIRC(mapping options) {
 		sock->open_socket();
 		sock->set_nonblocking(sockread, connected, connfailed);
 		sock->connect(ip, port); //Will throw on error
-		TRACE("Connecting to %O : %O\n", ip, port);
 		//Until we get connected, hold, waiting for our marker.
 		//The establishment of the connection will insert login
 		//commands before this.
@@ -50,8 +48,6 @@ class TwitchIRC(mapping options) {
 	}
 
 	void connected() {
-		TRACE("Connected.\n");
-		werror("%O\n", options);
 		array login = ({
 			"PASS " + pass,
 			"NICK " + options->user,
@@ -67,10 +63,7 @@ class TwitchIRC(mapping options) {
 		sock->set_nonblocking(sockread, sockwrite, sockclosed);
 	}
 
-	void connfailed() {
-		TRACE("Connect failed.\n");
-		fail("Connection failed.");
-	}
+	void connfailed() {fail("Connection failed.");}
 	void fail(string how) {
 		failure_notifs(({how + "\n", backtrace()}));
 		//Since we're rejecting all the promises, we should dispose of the
@@ -81,7 +74,7 @@ class TwitchIRC(mapping options) {
 	}
 
 	void sockclosed() {
-		TRACE("Connection closed.\n");
+		IRCTRACE("Connection closed.\n");
 		//Look up the latest version of the callback container. If that isn't the one we were
 		//set up to call, don't reconnect.
 		object current_module = G->G->irc_callbacks[options->module->modulename];
@@ -119,13 +112,11 @@ class TwitchIRC(mapping options) {
 			if (prefix) sscanf(prefix, "%s%*[!.]", attrs->user);
 			if (function f = this["command_" + args[0]]) f(attrs, prefix, args);
 			else if ((int)args[0]) command_0000(attrs, prefix, args);
-			else TRACE("Unrecognized command received: %O\n", line);
+			else IRCTRACE("Unrecognized command received: %O\n", line);
 		}
-		if (sizeof(readbuf)) TRACE("Buffer remaining: %O\n", readbuf);
 	}
 
 	void sockwrite() {
-		//TRACE("Socket writable.\n");
 		//Send the next thing from the queue
 		if (!sizeof(queue)) return;
 		[mixed next, queue] = Array.shift(queue);
@@ -137,7 +128,7 @@ class TwitchIRC(mapping options) {
 				//from the newline at the end, we will store an empty string
 				//into the queue, which will then cause a "blank line" to be
 				//sent, thus finishing the line correctly.
-				TRACE("Partial write, requeueing\n");
+				IRCTRACE("Partial write, requeueing\n");
 				queue = ({next[sent..]}) + queue;
 			}
 			return;
@@ -241,7 +232,9 @@ class irc_callback {
 	void irc_closed(mapping options) { } //Called only if we're not reconnecting
 
 	Concurrent.Future irc_connect(mapping options) {
-		options = (["module": this, "version": VERSION]) | (options || ([]));
+		//Bump this version number when there's an incompatible change. Old
+		//connections will all be severed.
+		options = (["module": this, "version": 1]) | (options || ([]));
 		if (!options->user) {
 			//Default credentials from the 
 			mapping cfg = persist_config->path("ircsettings");
@@ -268,12 +261,12 @@ class irc_callback {
 		//solution: The old connection is kept, but flagged as outdated. This
 		//can be seen in callbacks.
 		if (conn && conn->update_options(options)) {
-			TRACE("Update failed, reconnecting\n");
+			IRCTRACE("Update failed, reconnecting\n");
 			conn->options->outdated = 1;
 			conn->quit();
 			conn = 0;
 		}
-		else if (conn) TRACE("Retaining across update\n");
+		else if (conn) IRCTRACE("Retaining across update\n");
 		if (!conn) conn = TwitchIRC(options);
 		connection_cache[options->user] = conn;
 		return conn->promise();
