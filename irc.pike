@@ -81,9 +81,14 @@ class TwitchIRC(mapping options) {
 		while (sscanf(buf, "%s\n%s", string line, buf)) {
 			line -= "\r";
 			if (line == "") continue;
+			line = utf8_to_string(line);
 			//Twitch messages with TAGS capability begin with the tags
 			sscanf(line, "@%s %s", string tags, line);
-			//Most messages from the server begin with a prefix.
+			//Most messages from the server begin with a prefix. It's
+			//irrelevant to many Twitch messages, but for where it's
+			//wanted, it is passed along to the raw command handlers.
+			//The only part that is usually interesting is the user
+			//name, which we add to the attrs.
 			sscanf(line, ":%s %s", string prefix, line);
 			//A lot of messages end with a colon-prefixed string.
 			sscanf(line, "%s :%s", line, string str);
@@ -93,9 +98,13 @@ class TwitchIRC(mapping options) {
 			array args = line / " " - ({""});
 			if (str) args += ({str});
 			if (!sizeof(args)) continue; //Broken command
-			mapping attr = ([]); //TODO: Parse tags into attr[]
-			if (function f = this["command_" + args[0]]) f(attr, prefix, args);
-			else if ((int)args[0]) command_0000(attr, prefix, args);
+			mapping attrs = ([]);
+			if (tags) {
+				//TODO: Parse tags into attrs[]
+			}
+			if (prefix) sscanf(prefix, "%s%*[!.]", attrs->user);
+			if (function f = this["command_" + args[0]]) f(attrs, prefix, args);
+			else if ((int)args[0]) command_0000(attrs, prefix, args);
 			else TRACE("Unrecognized command received: %O\n", line);
 		}
 		if (sizeof(buf)) TRACE("Buffer remaining: %O\n", buf);
@@ -156,27 +165,20 @@ class TwitchIRC(mapping options) {
 	}
 	void no_reconnect() {options->no_reconnect = 1;}
 
-	void command_473(mapping attr, string pfx, array(string) args) {
+	void command_473(mapping attrs, string pfx, array(string) args) {
 		//Failed to join channel. Reject promise?
 	}
-	void command_0000(mapping attr, string pfx, array(string) args) {
+	void command_0000(mapping attrs, string pfx, array(string) args) {
 		//Handle all unknown numeric responses (currently by ignoring them)
 	}
-	void command_USERSTATE(mapping attr, string pfx, array(string) args) { }
-	void command_JOIN(mapping attr, string pfx, array(string) args) { }
-	void command_CAP(mapping attr, string pfx, array(string) args) { } //We assume Twitch supports what they've documented
-	void command_PRIVMSG(mapping attr, string pfx, array(string) args) {
-		//TODO
-		TRACE("Got PRIVMSG: %O %O %O\n", attr, pfx, args);
+	void command_USERSTATE(mapping attrs, string pfx, array(string) args) { }
+	void command_JOIN(mapping attrs, string pfx, array(string) args) { }
+	void command_CAP(mapping attrs, string pfx, array(string) args) { } //We assume Twitch supports what they've documented
+	//Send all types of message through, let the callback sort 'em out
+	void command_PRIVMSG(mapping attrs, string pfx, array(string) args) {
+		options->module->irc_message(@args, attrs);
 	}
-	void command_NOTICE(mapping attr, string pfx, array(string) args) {
-		//TODO
-		TRACE("Got NOTICE: %O %O %O\n", attr, pfx, args);
-	}
-	void command_USERNOTICE(mapping attr, string pfx, array(string) args) {
-		//TODO
-		TRACE("Got USERNOTICE: %O %O %O\n", attr, pfx, args);
-	}
+	function command_NOTICE = command_PRIVMSG, command_USERNOTICE = command_PRIVMSG;
 }
 
 //Inherit this to listen to connection responses
@@ -187,9 +189,9 @@ class irc_callback {
 		connection_cache = current_callbacks[name]->?connection_cache || ([]);
 		current_callbacks[name] = this;
 	}
-	void irc_notify(mixed ... args) { }
-	void irc_message(mixed ... args) { }
-	void irc_closed(mixed ... args) { } //Called only if we're not reconnecting
+	//The type is PRIVMSG, NOTICE, USERNOTICE; chan begins "#"; attrs may be empty mapping but will not be null
+	void irc_message(string type, string chan, string msg, mapping attrs) { }
+	void irc_closed(mapping options) { } //Called only if we're not reconnecting
 
 	Concurrent.Future irc_connect(mapping options) {
 		options = (["module": this]) | (options || ([]));
@@ -254,6 +256,11 @@ class SomeModule {
 		irc->send(channel, "!hello");
 		mixed _ = yield(task_sleep(1));
 		irc->quit();
+	}
+
+	void irc_message(string type, string chan, string msg, mapping attrs) {
+		if (type != "PRIVMSG") return;
+		write("Got msg: %O %O\n", msg, attrs);
 	}
 
 	void irc_closed(mapping options) {
