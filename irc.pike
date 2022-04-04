@@ -202,7 +202,6 @@ class TwitchIRC(mapping options) {
 	void command_ROOMSTATE(mapping attrs, string pfx, array(string) args) { }
 	void command_JOIN(mapping attrs, string pfx, array(string) args) { }
 	void command_PING(mapping attrs, string pfx, array(string) args) {
-		TRACE("GOT PING: %O %O %O\n", attrs, pfx, args);
 		qpoke();
 		queue += ({"pong :" + args[1]});
 	}
@@ -243,6 +242,7 @@ class irc_callback {
 			conn->quit();
 			conn = 0;
 		}
+		else if (conn) TRACE("Retaining across update\n");
 		if (!conn) conn = TwitchIRC(options);
 		connection_cache[options->user] = conn;
 		return conn->promise();

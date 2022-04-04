@@ -6,13 +6,17 @@ continue Concurrent.Future say_hello(string channel) {
 		"join": channel,
 		//"capabilities": ({"membership", "commands", "tags"}),
 	])));
+	write("Established connection: %O\n", hash_value(G->G->testirc));
 	//G->G->testirc->send(channel, "!hello");
 }
 
 void irc_message(string type, string chan, string msg, mapping attrs) {
 	if (type != "PRIVMSG") return;
 	write("[%d] Got msg: %O %O\n", hash_value(this), msg, attrs);
-	if (msg == "!quit") G->G->testirc->quit();
+	if (msg == "!quit") {
+		write("Shutting down connection: %O\n", hash_value(G->G->testirc));
+		G->G->testirc->quit();
+	}
 }
 
 void irc_closed(mapping options) {
