@@ -28,7 +28,9 @@ class TwitchIRC(mapping options) {
 
 	Stdio.File sock;
 	array(string) queue = ({ }); //Commands waiting to be sent, and callbacks
-	string buf = "";
+	array(function) failure_notifs = ({ }); //All will be called on failure
+	int have_connection = 0;
+	string readbuf = "";
 
 	protected void create() {
 		array ips = gethostbyname(server); //TODO: Support IPv6
@@ -43,6 +45,11 @@ class TwitchIRC(mapping options) {
 		sock->set_nonblocking(sockread, connected, connfailed);
 		sock->connect(ip, port); //Will throw on error
 		TRACE("Connecting to %O : %O\n", ip, port);
+		//Until we get connected, hold, waiting for our marker.
+		//The establishment of the connection will insert login
+		//commands before this.
+		have_connection = 0; queue += ({await_connection});
+		readbuf = "";
 	}
 
 	void connected() {
@@ -58,13 +65,22 @@ class TwitchIRC(mapping options) {
 			+ sprintf("CAP REQ :twitch.tv/%s", Array.arrayify(options->capabilities)[*])
 			+ sprintf("JOIN %s", Array.arrayify(options->join)[*])
 			+ Array.arrayify(options->login_commands)
+			+ ({"MARKER"})
 			+ queue;
 		sock->set_nonblocking(sockread, sockwrite, sockclosed);
 	}
 
 	void connfailed() {
 		TRACE("Connect failed.\n");
-		//TODO: Report failure to any waiting promise. We weren't able to get a connection.
+		fail("Connection failed.");
+	}
+	void fail(string how) {
+		failure_notifs(({how + "\n", backtrace()}));
+		//Since we're rejecting all the promises, we should dispose of the
+		//queued success functions. But this is a failure mode anyway, so
+		//for simplicity, just dispose of the entire queue.
+		failure_notifs = queue = ({ });
+		sock->close();
 	}
 
 	void sockclosed() {
@@ -77,8 +93,8 @@ class TwitchIRC(mapping options) {
 	}
 
 	void sockread(mixed _, string data) {
-		buf += data;
-		while (sscanf(buf, "%s\n%s", string line, buf)) {
+		readbuf += data;
+		while (sscanf(readbuf, "%s\n%s", string line, readbuf)) {
 			line -= "\r";
 			if (line == "") continue;
 			line = utf8_to_string(line);
@@ -108,7 +124,7 @@ class TwitchIRC(mapping options) {
 			else if ((int)args[0]) command_0000(attrs, prefix, args);
 			else TRACE("Unrecognized command received: %O\n", line);
 		}
-		if (sizeof(buf)) TRACE("Buffer remaining: %O\n", buf);
+		if (sizeof(readbuf)) TRACE("Buffer remaining: %O\n", readbuf);
 	}
 
 	void sockwrite() {
@@ -128,7 +144,9 @@ class TwitchIRC(mapping options) {
 				queue = ({next[sent..]}) + queue;
 				return; //Don't poke the socket until it's actually writable again
 			}
+			return;
 		}
+		else if (intp(next) || floatp(next)) {call_out(sockwrite, next); return;} //Delay.
 		else if (functionp(next)) next(this);
 		else error("Unknown entry in queue: %t\n", next);
 		call_out(sockwrite, 0.125); //TODO: Figure out a safe rate limit. Or do we even need one?
@@ -140,11 +158,8 @@ class TwitchIRC(mapping options) {
 	}
 	Concurrent.Future promise() {
 		return Concurrent.Promise(lambda(function res, function rej) {
-			enqueue(res);
-			//TODO: Call rej() on error
-			//TODO: If the other end code gets updated, allow the promise to be migrated
-			//(by removing the old callback and putting in a new one). You can always
-			//augment by adding another call to promise().
+			enqueue() {failure_notifs -= ({rej}); res(@__ARGS__);};
+			failure_notifs += ({rej});
 		});
 	}
 
@@ -182,6 +197,15 @@ class TwitchIRC(mapping options) {
 	void quit() {enqueue("quit", no_reconnect);} //Ask the server to close once the queue is done
 	void no_reconnect() {options->no_reconnect = 1;}
 
+	void await_connection() {
+		//Wait until we have seen the error response to the MARKER
+		if (!have_connection) queue = ({.25, this_function}) + queue;
+	}
+	void command_421(mapping attrs, string pfx, array(string) args) {
+		//We send this command after the credentials. If we get this without
+		//first seeing any failures of login, then we assume the login worked.
+		if (sizeof(args) > 2 && args[2] == "MARKER") have_connection = 1;
+	}
 	void command_473(mapping attrs, string pfx, array(string) args) {
 		//Failed to join channel. Reject promise?
 	}
@@ -197,6 +221,11 @@ class TwitchIRC(mapping options) {
 	void command_CAP(mapping attrs, string pfx, array(string) args) { } //We assume Twitch supports what they've documented
 	//Send all types of message through, let the callback sort 'em out
 	void command_PRIVMSG(mapping attrs, string pfx, array(string) args) {
+		if (!have_connection && args * " " == "NOTICE * Login authentication failed") {
+			//Don't pass this failure along to the module; it's a failure to connect.
+			fail("Login authentication failed.");
+			return;
+		}
 		options->module->irc_message(@args, attrs);
 	}
 	function command_NOTICE = command_PRIVMSG, command_USERNOTICE = command_PRIVMSG;
