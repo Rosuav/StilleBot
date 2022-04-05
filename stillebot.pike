@@ -86,10 +86,8 @@ int main(int argc,array(string) argv)
 		add_constant("INTERACTIVE", 1); //As above
 		bootstrap("persist.pike");
 		bootstrap("globals.pike");
-		bootstrap("irc.pike");
 		bootstrap("irctest.pike");
-		call_out(bootstrap, 3, "irc.pike");
-		call_out(bootstrap, 3.125, "irctest.pike");
+		call_out(bootstrap, 3, "irctest.pike");
 		return -1;
 	}
 	bootstrap_all();
