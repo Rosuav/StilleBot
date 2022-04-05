@@ -73,23 +73,6 @@ int main(int argc,array(string) argv)
 		Hilfe();
 		return 0;
 	}
-	if (has_value(argv, "--ghostwriter")) {
-		add_constant("INTERACTIVE", 1); //Disable normal bot operations
-		add_constant("GHOSTWRITER", 1);
-		bootstrap("persist.pike");
-		bootstrap("globals.pike");
-		bootstrap("poll.pike");
-		bootstrap("modules/http/ghostwriter.pike");
-		return -1;
-	}
-	if (has_value(argv, "--irctest")) {
-		add_constant("INTERACTIVE", 1); //As above
-		bootstrap("persist.pike");
-		bootstrap("globals.pike");
-		bootstrap("irctest.pike");
-		call_out(bootstrap, 3, "irctest.pike");
-		return -1;
-	}
 	bootstrap_all();
 	foreach ("persist_config command send_message window" / " ", string vital)
 		if (!all_constants()[vital])

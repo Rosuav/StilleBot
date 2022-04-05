@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit irc_callback;
 constant markdown = #"# Ghostwriter $$displayname$$
 
 When your channel is offline, host other channels automatically. You can immediately
@@ -62,6 +63,8 @@ mapping(int:int) channel_seen_offline = ([]); //Note: Not maintained over code r
 mapping(string:mixed) schedule_check_callouts = ([]); //Cleared and rechecked over code reload
 mapping(string:int) suppress_autohosting = ([]); //If a broadcaster manually unhosts or rehosts, don't change hosting for a bit.
 string botid; //eg 49497888
+mapping channel_ids = ([]); //Reverse-map names to IDs for convenience
+multiset seenhosts = (<>); //Track startup so we know who's NOT hosting
 
 //Mapping from target-stream-id to the channels that autohost it
 //(Doesn't need to be saved, can be calculated on code update)
@@ -171,10 +174,7 @@ continue Concurrent.Future recalculate_status(string chanid) {
 		write("GHOSTWRITER: Channel %O retaining current status for %d sec\n", config->chan, suppress_autohosting[chanid] - time());
 		return 0;
 	}
-	#if !constant(GHOSTWRITER)
-	//yield(update_status(chanid)); //Disabled. Use the subprocess instead.
-	write("GHOSTWRITER: Need to update status for %O\npike stillebot --ghostwriter %<s\n", chanid);
-	#endif
+	yield(update_status(chanid));
 }
 
 continue Concurrent.Future update_status(string chanid) {
@@ -254,7 +254,12 @@ void pause_autohost(string chanid, int target) {
 
 void host_changed(string chanid, string target, string viewers) {
 	//Note that viewers may be "-" if we're already hosting, so don't depend on it
+	if (!chanid) {werror("GHOSTWRITER: Null channel ID, target %O viewers %O\n", target, viewers); return;}
 	mapping st = chanstate[chanid];
+	if (!st) {
+		if (target == "-") return; //Not particularly interesting
+		chanstate[chanid] = st = ([]);
+	}
 	write("GHOSTWRITER: host_changed(%O, %O, %O), hosting %O\n", chanid, target, viewers, st->hosting);
 	if (st->hosting == target) return; //eg after reconnecting to IRC
 	st->hosting = target;
@@ -263,64 +268,33 @@ void host_changed(string chanid, string target, string viewers) {
 	//TODO: Purge the hook channel list of any that we don't need (those for whom autohosts_this[id] is empty or absent)
 }
 
-class IRCClient
-{
-	inherit Protocols.IRC.Client;
-	multiset seenhosts = (<>);
-	void got_host(string chan, string message) {
+void irc_message(string type, string chan, string msg, mapping attrs) {
+	if (type == "HOSTTARGET") {
 		seenhosts[chan] = 1;
-		sscanf(message, "%s %s", string target, string viewers);
+		sscanf(msg, "%s %s", string target, string viewers);
 		if (target == "-") target = 0; //Not currently hosting
-		G->G->websocket_types->ghostwriter->host_changed(options->chanids[chan], target, viewers);
+		host_changed(channel_ids[chan - "#"], target, viewers);
 	}
-	void got_notify(string from, string type, string|void chan, string|void message, string ... extra) {
-		::got_notify(from, type, chan, message, @extra);
-		chan -= "#";
-		if (type == "HOSTTARGET") got_host(chan, message);
-		//If you're not currently hosting, there is no HOSTTARGET on startup. Once we're
-		//confident that one isn't coming, notify that there is no host target.
-		if (type == "ROOMSTATE" && !seenhosts[chan]) got_host(chan, "- -");
-		if (type == "NOTICE" && sscanf(message, "%s has gone offline. Exiting host mode%s", string target, string dot) && dot == ".") {
-			mapping st = chanstate[options->chanids[chan]];
-			if (st->?hosting == target && st->hostingid) channel_seen_offline[(int)st->hostingid] = time();
-		}
-		if (type == "NOTICE" && message == "Host target cannot be changed more than 3 times every half hour.") {
-			//Probably only happens while I'm testing, but ehh, whatever
-			//Note that it is still legal to *unhost* for the rest of the half hour, just not host anyone.
-			int target = time() + 30*60;
-			G->G->websocket_types->ghostwriter->pause_autohost(options->chanids[chan], target - target % 1800 + 3);
-		}
+	if (type == "ROOMSTATE" && !seenhosts[chan]) {
+		seenhosts[chan] = 1;
+		host_changed(channel_ids[chan - "#"], "-", "0");
 	}
-	void close() {
-		::close();
-		remove_call_out(da_ping);
-		remove_call_out(no_ping_reply);
+	if (attrs->msg_id == "host_target_went_offline") {
+		sscanf(msg, "%s has gone offline", string target);
+		mapping st = chanstate[channel_ids[chan - "#"]];
+		if (st->?hosting == target && st->hostingid) channel_seen_offline[(int)st->hostingid] = time();
 	}
-	void connection_lost() {close();}
-}
-
-int task_count = 0, forced_checks = 0, connections_made = 0;
-void task_done() {
-	if (--task_count) return;
-	write("\nChannels checked: %d\n", forced_checks);
-	write("Twitch API calls: %d\n", G->G->twitch_api_query_count);
-	write("IRC connections established: %d\n", connections_made);
-	exit(0);
+	if (attrs->msg_id == "bad_host_rate_exceeded") {
+		//Probably only happens while I'm testing, but ehh, whatever
+		//Note that it is still legal to *unhost* for the rest of the half hour, just not host anyone.
+		int target = time() + 30*60;
+		pause_autohost(channel_ids[chan - "#"], target - target % 1800 + 3);
+	}
 }
 
 void connect(string chanid, string chan, string msg) {
-	if (!has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:edit")) error("No auth\n");
 	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
-	object irc = IRCClient("irc.chat.twitch.tv", ([
-		"nick": chan,
-		"pass": "oauth:" + persist_status->path("bcaster_token")[chan],
-	]));
-	++connections_made;
-	call_out(irc->send_message, 1, "#" + chan, msg);
-	call_out(irc->close, 2);
-	#if constant(GHOSTWRITER)
-	call_out(task_done, 3); //In GW-only mode, finish once we're done with a single host signal.
-	#endif
+	irc_connect((["nick": chan]))->then() {__ARGS__[0]->send(chan, msg); werror("QUEUE: %O\n", __ARGS__[0]->queue);};
 }
 
 continue Concurrent.Future|mapping get_state(string group) {
@@ -343,24 +317,14 @@ continue Concurrent.Future|mapping get_state(string group) {
 }
 
 continue void force_check(string chanid) {
-	++task_count; ++forced_checks;
 	if (!(int)chanid) chanid = (string)yield(get_user_id(chanid)); //Support usernames for the sake of command line access
 	mixed _ = yield(recalculate_status(chanid));
-	#if constant(GHOSTWRITER)
-	string msg = yield(update_status(chanid));
-	if (!msg) task_done();
-	#endif
 }
 
 continue void force_check_all() {
-	++task_count;
 	foreach (persist_status->path("ghostwriter"); string chanid;) {
-		write("Checking %O\n", chanid);
 		mixed _ = yield(force_check(chanid));
 	}
-	#if constant(GHOSTWRITER)
-	task_done();
-	#endif
 }
 
 void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -394,9 +358,7 @@ EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string ch
 void has_channel(string chanid, string target) {
 	if (!autohosts_this[target]) autohosts_this[target] = (<>);
 	autohosts_this[target][chanid] = 1;
-	#if !constant(GHOSTWRITER)
 	stream_online(target, (["broadcaster_user_id": (string)target]));
-	#endif
 	send_updates_all(target); //Could save some hassle by only updating AHT, but would need to remap to channel objects
 }
 
@@ -463,36 +425,30 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	};
 }
 
-void reconnect(int|void first) {
-	if (G->G->ghostwritercallouts[""] != hash_value(this)) return; //Code's been updated. Don't do anything.
-	if (object irc = G->G->ghostwriterirc[-1]) {irc->close(); call_out(destruct, 1, irc);}
-	mapping opt = persist_config["ircsettings"];
-	if (!opt || !opt->pass) return; //Not yet configured - can't connect.
+void reconnect() {
 	mapping chanids = ([]);
-	object irc = IRCClient("irc.chat.twitch.tv", ([
-		"nick": opt->nick, "pass": opt->pass,
-		"connection_lost": lambda() {werror("GHOSTWRITER: Connection lost\n"); call_out(reconnect, 10);},
-		"chanids": chanids,
-	]));
-	irc->cmd->cap("REQ", "twitch.tv/commands");
-	G->G->ghostwriterirc[-1] = irc;
-	int delay;
+	array channels = ({ });
 	foreach (persist_status->path("ghostwriter"); string chanid; mapping info) {
+		channel_ids[info->chan] = chanid;
 		if (!info->?channels || !sizeof(info->channels)) continue;
-		call_out(irc->join_channel, ++delay, "#" + info->chan);
-		chanids[info->chan] = chanid;
-		if (first) call_out(has_channel, delay, chanid, info->channels->id[*]);
+		channels += ({"#" + info->chan});
+		has_channel(chanid, info->channels->id[*]);
 		if (!chanstate[chanid]) chanstate[chanid] = ([]);
 		if (int t = chanstate[chanid]->next_scheduled_check) {
 			t -= time();
 			if (t >= 0) schedule_check_callouts[chanid] = call_out(scheduled_recalculation, t, chanid);
 		}
 	}
+	werror("Joining channels: %O\n", channels);
+	irc_connect(([
+		"capabilities": ({"tags", "commands"}),
+		"join": channels,
+	]));
 }
 
 protected void create(string name) {
 	::create(name);
-	if (!G->G->ghostwriterirc) G->G->ghostwriterirc = ([]);
+	m_delete(connection_cache, "rosuav")->close();
 	if (!G->G->ghostwriterstate) G->G->ghostwriterstate = ([]);
 	chanstate = G->G->ghostwriterstate;
 	if (mapping callouts = G->G->ghostwritercallouts) {
@@ -505,13 +461,13 @@ protected void create(string name) {
 	mapping configs = persist_status->path("ghostwriter");
 	//write("Configs available for %O\n", mkmapping(indices(configs), values(configs)->chan));
 	//Goodbye.
-	//call_out(reconnect, 4, 1); //Delay startup a bit to avoid connection conflicts and allow compilation errors to be seen
+	//call_out(reconnect, 0); //Delay startup a bit to avoid connection conflicts and allow compilation errors to be seen
 	int pos = search(G->G->argv, "--ghostwriter");
 	if (pos > -1 && pos < sizeof(G->G->argv) - 1) {
 		string cmd = G->G->argv[pos + 1]; //eg "pike stillebot --ghostwriter SOMETHING". I can't be bothered doing proper arg parsing.
 		if (cmd == "irc") {
 			write("GHOSTWRITER: Establishing monitoring for log only\n");
-			call_out(reconnect, 1, 1);
+			call_out(reconnect, 1);
 		} else if (cmd == "all") {
 			write("GHOSTWRITER: Calculating status for all channels\n");
 			spawn_task(force_check_all());
