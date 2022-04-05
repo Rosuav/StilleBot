@@ -448,7 +448,6 @@ void reconnect() {
 
 protected void create(string name) {
 	::create(name);
-	m_delete(connection_cache, "rosuav")->close();
 	if (!G->G->ghostwriterstate) G->G->ghostwriterstate = ([]);
 	chanstate = G->G->ghostwriterstate;
 	if (mapping callouts = G->G->ghostwritercallouts) {
