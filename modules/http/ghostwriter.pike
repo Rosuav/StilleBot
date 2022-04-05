@@ -459,8 +459,7 @@ protected void create(string name) {
 	if (botnick) get_user_id(botnick)->then() {botid = (string)__ARGS__[0];}; //Cache the bot's user ID for the demo
 	mapping configs = persist_status->path("ghostwriter");
 	//write("Configs available for %O\n", mkmapping(indices(configs), values(configs)->chan));
-	//Goodbye.
-	//call_out(reconnect, 0); //Delay startup a bit to avoid connection conflicts and allow compilation errors to be seen
+	call_out(reconnect, 0); //Delay startup a bit to avoid connection conflicts and allow compilation errors to be seen
 	int pos = search(G->G->argv, "--ghostwriter");
 	if (pos > -1 && pos < sizeof(G->G->argv) - 1) {
 		string cmd = G->G->argv[pos + 1]; //eg "pike stillebot --ghostwriter SOMETHING". I can't be bothered doing proper arg parsing.
