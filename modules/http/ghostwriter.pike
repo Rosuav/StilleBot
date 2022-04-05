@@ -457,23 +457,7 @@ protected void create(string name) {
 	G->G->ghostwritercallouts = schedule_check_callouts = (["": hash_value(this)]);
 	string botnick = persist_config["ircsettings"]->?nick;
 	if (botnick) get_user_id(botnick)->then() {botid = (string)__ARGS__[0];}; //Cache the bot's user ID for the demo
-	mapping configs = persist_status->path("ghostwriter");
-	//write("Configs available for %O\n", mkmapping(indices(configs), values(configs)->chan));
 	call_out(reconnect, 0); //Delay startup a bit to avoid connection conflicts and allow compilation errors to be seen
-	int pos = search(G->G->argv, "--ghostwriter");
-	if (pos > -1 && pos < sizeof(G->G->argv) - 1) {
-		string cmd = G->G->argv[pos + 1]; //eg "pike stillebot --ghostwriter SOMETHING". I can't be bothered doing proper arg parsing.
-		if (cmd == "irc") {
-			write("GHOSTWRITER: Establishing monitoring for log only\n");
-			call_out(reconnect, 1);
-		} else if (cmd == "all") {
-			write("GHOSTWRITER: Calculating status for all channels\n");
-			spawn_task(force_check_all());
-		} else {
-			write("GHOSTWRITER: Calculating status for %O\n", cmd);
-			spawn_task(force_check(cmd));
-		}
-	}
 }
 
 /* If there's weird issues and infinitely-looping tasks with delays in them, try something like this:
