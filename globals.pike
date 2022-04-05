@@ -726,7 +726,7 @@ class _TwitchIRC(mapping options) {
 		}
 		options->module->irc_message(@args, attrs);
 	}
-	function command_NOTICE = command_PRIVMSG, command_USERNOTICE = command_PRIVMSG;
+	function command_NOTICE = command_PRIVMSG, command_USERNOTICE = command_PRIVMSG, command_HOSTTARGET = command_PRIVMSG;
 }
 
 //Inherit this to listen to connection responses
@@ -738,7 +738,7 @@ class irc_callback {
 		connection_cache = G->G->irc_callbacks[name]->?connection_cache || ([]);
 		G->G->irc_callbacks[name] = this;
 	}
-	//The type is PRIVMSG, NOTICE, USERNOTICE; chan begins "#"; attrs may be empty mapping but will not be null
+	//The type is PRIVMSG, NOTICE, etc; chan begins "#"; attrs may be empty mapping but will not be null
 	void irc_message(string type, string chan, string msg, mapping attrs) { }
 	void irc_closed(mapping options) { } //Called only if we're not reconnecting
 
