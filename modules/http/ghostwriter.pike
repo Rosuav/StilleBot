@@ -110,12 +110,14 @@ void scheduled_recalculation(string chanid) {
 }
 void schedule_recalculation(string chanid, array(int) targets) {
 	int now = time();
+	//TODO maybe: Include st->next_scheduled_check as a target, thus ensuring that we never shorten the delay?
 	int target = min(@filter(targets, `>, now));
 	int until = target - now;
 	if (until < 0) return; //Including if there are no valid targets (target == 0)
 	mapping st = chanstate[chanid];
 	if (!st) st = chanstate[chanid] = ([]);
 	if (st->next_scheduled_check == target) return; //Already scheduled at the same time.
+	write("GW: Rescheduling %O from T%+d to T%+d\n", chanid, st->next_scheduled_check - now, until);
 	if (mixed c = schedule_check_callouts[chanid]) remove_call_out(c);
 	st->next_scheduled_check = target;
 	schedule_check_callouts[chanid] = call_out(scheduled_recalculation, until, chanid);
