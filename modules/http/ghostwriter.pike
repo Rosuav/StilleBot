@@ -217,7 +217,7 @@ continue Concurrent.Future update_status(string chanid) {
 		//If any channel has gone offline very very recently, don't autohost it.
 		int mindelay = 86400;
 		live = filter(live) {
-			int delay = channel_seen_offline[(int)__ARGS__[0]->user_id] + 60 - time();
+			int delay = channel_seen_offline[(int)__ARGS__[0]->user_id] + 180 - time();
 			if (delay > 0) mindelay = min(delay, mindelay);
 			return delay <= 0;
 		};
