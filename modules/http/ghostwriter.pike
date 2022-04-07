@@ -351,7 +351,10 @@ EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string ch
 	foreach (autohosts_this[chanid] || ([]); string id;) {
 		mapping st = chanstate[id];
 		write("Channel %O cares - status %O\n", persist_status->path("ghostwriter")[id]->?chan || id, st->statustype);
-		if (st->statustype == "idle") recalculate_soon(id);
+		if (st->statustype == "idle") {
+			recalculate_soon(id);
+			write("Next check at %d [T%+d]\n", st->next_scheduled_check, st->next_scheduled_check - time());
+		}
 	}
 };
 
