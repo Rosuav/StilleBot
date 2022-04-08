@@ -107,6 +107,8 @@ CupFooty ZombieKappa OWL2019Tracer FightCC<br>
 //For others, list them here and they'll work. This means that all v2 emotes have to be
 //kept here permanently, even if the bot has them. This may entail a maintenance cost
 //if the emote IDs ever change. Hopefully they won't.
+//TODO: Use the bot's list of seen emotes rather than the now-defunct API call, to
+//regain the "doesn't need to be listed if bot has it" feature.
 constant emoteids = ([
 	"HypeOni6": 301205427, "OWL2019Tracer": 1833318,
 	"PrimeYouDontSay": 134251, "PrimeUWot": 134252, "PrimeRlyTho": 134253,
