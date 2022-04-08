@@ -296,7 +296,7 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 
 void connect(string chanid, string chan, string msg) {
 	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
-	irc_connect((["nick": chan]))->then() {__ARGS__[0]->send(chan, msg); werror("QUEUE: %O\n", __ARGS__[0]->queue);};
+	irc_connect((["user": chan]))->then() {__ARGS__[0]->send(chan, msg); werror("QUEUE: %O\n", __ARGS__[0]->queue);};
 }
 
 continue Concurrent.Future|mapping get_state(string group) {
