@@ -73,6 +73,13 @@ int main(int argc,array(string) argv)
 		Hilfe();
 		return 0;
 	}
+	if (has_value(argv, "--test")) {
+		add_constant("INTERACTIVE", 1);
+		bootstrap("persist.pike");
+		bootstrap("globals.pike");
+		bootstrap("testing.pike");
+		return -1;
+	}
 	bootstrap_all();
 	foreach ("persist_config command send_message window" / " ", string vital)
 		if (!all_constants()[vital])
