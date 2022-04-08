@@ -526,7 +526,7 @@ capabilities	Optional array of caps to request
 join		Optional array of channels to join (include the hashes)
 login_commands	Optional commands to be sent after (re)connection
 */
-@"G->G->irc_callbacks";
+@"G->G->irc_callbacks"; @"G->G->irc_token_bucket"; @"G->G->user_mod_status";
 class _TwitchIRC(mapping options) {
 	constant server = "irc.chat.twitch.tv";
 	constant port = 6667;
