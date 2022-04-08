@@ -782,6 +782,9 @@ class _TwitchIRC(mapping options) {
 		//No token available? Delay, then re-request.
 		if (wait) queue = ({wait, ({get_token, chan})}) + queue;
 	}
+	//TODO: When a message comes *in* for a user, also consume a bucket entry? That way,
+	//the bot will be able to respond to himself in chat without issues.
+	//TODO: If msg_ratelimit comes in, retry last message????
 }
 
 //Inherit this to listen to connection responses
