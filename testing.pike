@@ -15,9 +15,27 @@ continue Concurrent.Future do_stuff() {
 	exit(0);
 }
 
+array queue = ({"asdf", "qwer", "zxcv", "1234"}) * 5;
+continue Concurrent.Future spam() {
+	object irc = yield(irc_connect(([])));
+	while (sizeof(queue)) {
+		[string next, queue] = Array.shift(queue);
+		float wait = irc->request_rate_token(next, "#test");
+		if (wait) {
+			//Prepend the delay as well
+			queue = ({next}) + queue;
+			mixed _ = yield(task_sleep(wait));
+			continue;
+		}
+		werror("[%d] %s\n", time(), next);
+	}
+	exit(0);
+}
+
 protected void create(string name) {
 	::create(name);
 	spawn_task(do_stuff());
+	//spawn_task(spam());
 }
 
 /* Global token bucket for Twitch message sending
