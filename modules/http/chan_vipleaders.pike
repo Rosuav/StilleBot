@@ -1,5 +1,6 @@
 inherit http_websocket;
 inherit hook;
+inherit irc_callback;
 constant markdown = #"# Leaderboards and VIPs
 
 NOTE: AnAnonymousGifter may show up in the subgifting leaderboard for
@@ -202,13 +203,10 @@ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 			+ cmds[1..];
 	}
 	cmds += ({add ? "Done adding VIPs." : "Done removing VIPs."});
-	object irc = G->G->IRCClientMessageSender("irc.chat.twitch.tv", ([
-		"nick": chan,
-		"pass": "oauth:" + persist_status->path("bcaster_token")[chan],
-		"messages": cmds,
-		"sendchannel": "#" + chan,
-		"delay": 0.5,
-	]));
+	irc_connect((["user": chan]))->then() {[object irc] = __ARGS__;
+		irc->send("#" + chan, cmds[*]);
+		irc->quit();
+	};
 }
 
 mapping ignore_individuals = ([]);
