@@ -1,5 +1,6 @@
 inherit http_websocket;
 inherit hook;
+inherit irc_callback;
 
 //Markdown; emote names will be replaced with their emotes, but will
 //be greyed out if not available.
@@ -258,7 +259,7 @@ mapping get_state(string group) {
 	return (["emotes": indices(persist_status->path("seen_emotes")[group] || ([]))]);
 }
 
-class IRCClient
+class IRCClient //Deprecated, will be removed at some point soon. Not needed by this module.
 {
 	inherit Protocols.IRC.Client;
 	void send_next_message() {
@@ -280,22 +281,20 @@ class IRCClient
 	void connection_lost() {close();}
 }
 
+continue Concurrent.Future echolocate(string user, string pass, array emotes) {
+	//Break up the list of emote names into blocks no more than 500 characters each
+	array messages = String.trim((sprintf("%=500s", emotes * " ") / "\n")[*]);
+	object irc = yield(irc_connect((["user": user, "pass": pass])));
+	irc->send(echolocation_channel, messages[*]);
+	irc->quit();
+}
+
 void websocket_cmd_echolocate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!tracked_emote_names) return;
-	//Break up the list of emote names into blocks no more than 500 characters each
-	//TODO: Skip those that we already know you have - or maybe, those that have been
-	//sighted within the last X amount of time. That way, the Court Jester mode below
-	//will work (mostly) reliably.
 	mapping seen = persist_status->path("seen_emotes", conn->session->user->id);
 	int threshold = time() - 86400;
 	array emotes = filter(tracked_emote_names) {return seen[__ARGS__[0]] < threshold;};
-	array messages = String.trim((sprintf("%=500s", tracked_emote_names * " ") / "\n")[*]);
-	object irc = IRCClient("irc.chat.twitch.tv", ([
-		"nick": conn->session->user->login,
-		"pass": "oauth:" + conn->session->token,
-		"sendchannel": echolocation_channel,
-		"messages": messages,
-	]));
+	spawn_task(echolocate(conn->session->user->login, "oauth:" + conn->session->token, emotes));
 }
 
 @hook_allmsgs:
