@@ -259,28 +259,6 @@ mapping get_state(string group) {
 	return (["emotes": indices(persist_status->path("seen_emotes")[group] || ([]))]);
 }
 
-class IRCClient //Deprecated, will be removed at some point soon. Not needed by this module.
-{
-	inherit Protocols.IRC.Client;
-	void send_next_message() {
-		if (!sizeof(options->messages)) {close(); return;}
-		[string msg, options->messages] = Array.shift(options->messages);
-		send_message(options->sendchannel, msg);
-		call_out(send_next_message, options->delay || 2);
-	}
-	void got_notify(string from, string type, string|void chan, string|void message, string ... extra) {
-		::got_notify(from, type, chan, message, @extra);
-		if (options->verbosedebug) write("Got notify: %O %O\n", type, message);
-		if (type == "376") call_out(send_next_message, 1); //End of MOTD - start sending messages
-	}
-	void close() {
-		::close();
-		remove_call_out(da_ping);
-		remove_call_out(no_ping_reply);
-	}
-	void connection_lost() {close();}
-}
-
 continue Concurrent.Future echolocate(string user, string pass, array emotes) {
 	//Break up the list of emote names into blocks no more than 500 characters each
 	array messages = String.trim((sprintf("%=500s", emotes * " ") / "\n")[*]);
@@ -353,6 +331,5 @@ protected void create(string name) {
 	//used in X seconds", which will be possible, since they're stored with their timestamps.
 	mapping v2 = filter(emoteids, stringp);
 	G->G->emotes_v2 = mkmapping(values(v2), indices(v2));
-	G->G->IRCClientMessageSender = IRCClient;
 	register_hook("all-msgs", Program.defined(this_program));
 }
