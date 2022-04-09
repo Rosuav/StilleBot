@@ -1,4 +1,5 @@
 inherit http_endpoint;
+inherit irc_callback;
 
 /* Bits VIP leaderboard: bitsbadges?period=month
 
@@ -52,13 +53,13 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			if (!sizeof(cmd)) cmds = ({"No non-mods to manage VIP badges for"}); //Highly unlikely in practice :)
 			else cmds = ({(req->variables->vip ? "Adding VIP status to: " : "Removing VIP status from: ") + people * ", "})
 				+ cmds + ({req->variables->vip ? "Done adding VIPs." : "Done removing VIPs."});
-			object irc = G->G->IRCClientMessageSender("irc.chat.twitch.tv", ([
-				"nick": req->misc->session->user->login,
+			irc_connect(([
+				"user": req->misc->session->user->login,
 				"pass": "oauth:" + req->misc->session->token,
-				"messages": cmds,
-				"sendchannel": "#" + req->misc->session->user->login,
-				"delay": 0.5,
-			]));
+			]))->then() {[object irc] = __ARGS__;
+				irc->send("#" + req->misc->session->user->login, cmds[*]);
+				irc->quit();
+			};
 			return "OK";
 		}
 		if (mixed vars = cache[req->misc->session->user->id]) //Hack
@@ -114,3 +115,5 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	if (sizeof(info->data) == 100) text += "\n\nNOTE: This shows only the top 100 users, and the last tier may have other people in it.";
 	return render_template("bitsbadges.md", (["text": text]));
 }
+
+protected void create(string name) {::create(name);}
