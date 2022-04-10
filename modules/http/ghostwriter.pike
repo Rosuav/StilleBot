@@ -285,6 +285,7 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 		sscanf(msg, "%s has gone offline", string target);
 		mapping st = chanstate[channel_ids[chan - "#"]];
 		if (st->?hosting == target && st->hostingid) channel_seen_offline[(int)st->hostingid] = time();
+		spawn_task(recalculate_status(channel_ids[chan - "#"]));
 	}
 	if (attrs->msg_id == "bad_host_rate_exceeded") {
 		//Probably only happens while I'm testing, but ehh, whatever
