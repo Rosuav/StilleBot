@@ -90,11 +90,15 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		string gift = gifts[tier] ? sprintf(", of which %d (%d) are gifts", tiers[tier] * gifts[tier], gifts[tier]) : "";
 		tierlist += ({sprintf("Tier %c: %d (%d)%s<br>\n", tier[0], tiers[tier] * count, count, gift)});
 	}
+	int uid = yield(get_user_id(chan)); //Should come from cache
+	mapping raw = yield(twitch_api_request("https://api.twitch.tv/helix/subscriptions?broadcaster_id=" + uid, ([]),
+		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 		"points": sort(tierlist) * ""
 			+ sprintf("Total: %d subs, %d points", tot, pts)
-			+ (totgifts ? sprintf(", of which %d (%d) are gifts", totgiftpts, totgifts) : ""),
+			+ (totgifts ? sprintf(", of which %d (%d) are gifts", totgiftpts, totgifts) : "")
+			+ sprintf("<br>\nTotal as reported by Twitch: %d", raw->points),
 	]) | req->misc->chaninfo);
 }
 
