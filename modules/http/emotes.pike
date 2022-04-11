@@ -124,6 +124,8 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 					case "bitstier": desc = "Bits"; break; //The actual unlock level is missing.
 					default: break;
 				}
+				//As of 2022, only T1 sub emotes are ever animated, but if that ever changes, we'll be ready!
+				if (has_value(em->format, "animated")) desc = "Animated " + desc;
 				sets[em->emote_set_id] = ({desc, ({ })});
 			}
 			sets[em->emote_set_id][1] += ({
