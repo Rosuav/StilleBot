@@ -39,3 +39,12 @@ protected void create(string name) {
 	::create(name);
 	spawn_task(do_stuff());
 }
+
+/*
+It's possible to query a channel's emotes, but not a user's.
+It's also not possible currently to find out exactly how an emote was unlocked (eg bits - how many?).
+Is there any way to find out what set an emote belongs to, if it wasn't listed in USERSTATE?
+Would like to see the emote set(s) that contain, for instance, hype train emotes.
+GQL can get this info, but even then, querying the emote sets in question does not yield useful results,
+so there's no point hard-coding a bunch of emote set IDs.
+*/
