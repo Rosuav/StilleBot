@@ -270,6 +270,7 @@ void host_changed(string chanid, string target, string viewers) {
 	//TODO: Purge the hook channel list of any that we don't need (those for whom autohosts_this[id] is empty or absent)
 }
 
+constant messagetypes = ({"PRIVMSG", "NOTICE", "USERNOTICE", "HOSTTARGET"});
 void irc_message(string type, string chan, string msg, mapping attrs) {
 	if (type == "HOSTTARGET") {
 		seenhosts[chan] = 1;

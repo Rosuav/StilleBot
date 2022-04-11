@@ -539,6 +539,12 @@ class _TwitchIRC(mapping options) {
 	int have_connection = 0;
 	string readbuf = "";
 
+	//Messages in this set will not be traced on discovery as we know them.
+	constant ignore_message_types = (<
+		"USERSTATE", "ROOMSTATE", "JOIN",
+		"CAP", //We assume Twitch supports what they've documented
+	>);
+
 	protected void create() {
 		array ips = gethostbyname(server); //TODO: Support IPv6
 		if (!ips || !sizeof(ips[1])) error("Unable to gethostbyname for %O\n", server);
@@ -621,8 +627,16 @@ class _TwitchIRC(mapping options) {
 				attrs[replace(name, "-", "_")] = replace(val || "", "\\s", " ");
 			}
 			if (prefix) sscanf(prefix, "%s%*[!.]", attrs->user);
+			if (!have_connection && args * " " == "NOTICE * Login authentication failed") {
+				//Don't pass this failure along to the module; it's a failure to connect.
+				fail("Login authentication failed.");
+				return;
+			}
 			if (function f = this["command_" + args[0]]) f(attrs, prefix, args);
 			else if ((int)args[0]) command_0000(attrs, prefix, args);
+			else if (has_value(options->module->messagetypes, args[0]))
+				//Pass these on to the module
+				options->module->irc_message(@args, attrs);
 			else _IRCTRACE("Unrecognized command received: %O\n", line);
 		}
 	}
@@ -720,23 +734,9 @@ class _TwitchIRC(mapping options) {
 	void command_0000(mapping attrs, string pfx, array(string) args) {
 		//Handle all unknown numeric responses (currently by ignoring them)
 	}
-	void command_USERSTATE(mapping attrs, string pfx, array(string) args) { }
-	void command_ROOMSTATE(mapping attrs, string pfx, array(string) args) { }
-	void command_JOIN(mapping attrs, string pfx, array(string) args) { }
 	void command_PING(mapping attrs, string pfx, array(string) args) {
-		enqueue("pong :" + args[1]);
+		enqueue("pong :" + args[1]); //Enqueue or prepend to queue?
 	}
-	void command_CAP(mapping attrs, string pfx, array(string) args) { } //We assume Twitch supports what they've documented
-	//Send all types of message through, let the callback sort 'em out
-	void command_PRIVMSG(mapping attrs, string pfx, array(string) args) {
-		if (!have_connection && args * " " == "NOTICE * Login authentication failed") {
-			//Don't pass this failure along to the module; it's a failure to connect.
-			fail("Login authentication failed.");
-			return;
-		}
-		options->module->irc_message(@args, attrs);
-	}
-	function command_NOTICE = command_PRIVMSG, command_USERNOTICE = command_PRIVMSG, command_HOSTTARGET = command_PRIVMSG;
 
 	//Token bucket system, shared among all connections.
 	float request_rate_token(string user, string chan) {
@@ -791,12 +791,13 @@ class _TwitchIRC(mapping options) {
 class irc_callback {
 	mapping connection_cache;
 	string modulename;
+	constant messagetypes = ({ });
 	protected void create(string name) {
 		modulename = name;
 		connection_cache = G->G->irc_callbacks[name]->?connection_cache || ([]);
 		G->G->irc_callbacks[name] = this;
 	}
-	//The type is PRIVMSG, NOTICE, etc; chan begins "#"; attrs may be empty mapping but will not be null
+	//The type is one of the ones in messagetypes; chan begins "#"; attrs may be empty mapping but will not be null
 	void irc_message(string type, string chan, string msg, mapping attrs) { }
 	void irc_closed(mapping options) { } //Called only if we're not reconnecting
 
