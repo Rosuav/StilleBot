@@ -77,6 +77,7 @@ int main(int argc,array(string) argv)
 		add_constant("INTERACTIVE", 1);
 		bootstrap("persist.pike");
 		bootstrap("globals.pike");
+		bootstrap("poll.pike");
 		bootstrap("testing.pike");
 		return -1;
 	}
