@@ -516,8 +516,11 @@ class websocket_handler
 	}
 }
 
-//#define _IRCTRACE werror
+#ifdef IRCTRACE
+#define _IRCTRACE werror
+#else
 void _IRCTRACE(mixed ... ignore) { }
+#endif
 /* Available options:
 module		Override the default selection of callbacks and module version
 user		User to log in as. With module, defines connection caching.
@@ -634,10 +637,15 @@ class _TwitchIRC(mapping options) {
 			}
 			if (function f = this["command_" + args[0]]) f(attrs, prefix, args);
 			else if ((int)args[0]) command_0000(attrs, prefix, args);
-			else if (has_value(options->module->messagetypes, args[0]))
+			else if (has_value(options->module->messagetypes, args[0])) {
 				//Pass these on to the module
+				if (sizeof(args) == 1) args += ({""}); //No channel. What should happen here?
+				else if (!has_prefix(args[1], "#")) args[1] = "#" + args[1]; //Some messages, for unknown reason, have channels without the leading hash. Why?!
+				if (sizeof(args) == 2) args += ({""}); //No message, pass an empty string along
 				options->module->irc_message(@args, attrs);
-			else _IRCTRACE("Unrecognized command received: %O\n", line);
+			}
+			else if (!ignore_message_types[args[0]])
+				_IRCTRACE("Unrecognized command received: %O\n", line);
 		}
 	}
 
