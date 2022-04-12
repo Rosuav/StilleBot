@@ -275,6 +275,7 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 	if (type == "HOSTTARGET") {
 		seenhosts[chan] = 1;
 		sscanf(msg, "%s %s", string target, string viewers);
+		write("GHOSTWRITER: Host target (%O, %O, %O)\n", chan, target, viewers);
 		if (target == "-") target = 0; //Not currently hosting
 		host_changed(channel_ids[chan - "#"], target, viewers);
 	}
@@ -285,6 +286,7 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 	if (attrs->msg_id == "host_target_went_offline") {
 		sscanf(msg, "%s has gone offline", string target);
 		mapping st = chanstate[channel_ids[chan - "#"]];
+		write("GHOSTWRITER: host_target_went_offline (%O, %O)\n", chan, target);
 		if (st->?hosting == target && st->hostingid) channel_seen_offline[(int)st->hostingid] = time();
 		spawn_task(recalculate_status(channel_ids[chan - "#"]));
 	}
