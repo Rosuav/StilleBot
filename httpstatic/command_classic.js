@@ -176,8 +176,7 @@ function render_command(cmd, toplevel) {
 		rows.unshift(TR([TD("Type:"), TD(conditions)]));
 		rows[0].querySelector("[data-flag=conditional]").value = cmd.conditional;
 		if (typeof desc === "function") desc = desc();
-		const td = TD(desc); td.setAttribute("colspan", 2);
-		rows.push(TR(td));
+		rows.push(TR(TD({colSpan: 2}, desc)));
 
 		return FIELDSET({className: "optedmsg"}, [
 			DIV([
