@@ -1,4 +1,4 @@
-import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {A, BUTTON, BR, P, SPAN} = choc;
 
 //The threshold for "Super Hard" is this many bits per level (not total).

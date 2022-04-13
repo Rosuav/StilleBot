@@ -1,4 +1,4 @@
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {AUDIO, DIV, FIGCAPTION, FIGURE, IMG, P, SECTION} = choc; //autoimport
 import "https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js"; const ComfyJS = window.ComfyJS;
 import {ensure_font} from "$$static||utils.js$$";

@@ -1,4 +1,4 @@
-import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {TR, TD, FORM, INPUT, OPTION} = choc;
 
 let allrewards = { };

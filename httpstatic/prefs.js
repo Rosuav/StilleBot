@@ -1,4 +1,4 @@
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, BR, DIV, INPUT, LABEL, LI, SECTION, TEXTAREA, UL} = choc; //autoimport
 
 const render_pref = {

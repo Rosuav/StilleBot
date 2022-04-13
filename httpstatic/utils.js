@@ -1,7 +1,7 @@
 //Usage:
 //import {...} from "$$static||utils.js$$";
 
-import {on, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
+import {on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
 const {BR, INPUT, LABEL, LINK, OPTGROUP, OPTION, SELECT, TABLE, TD, TH, TR} = choc; //autoimport
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
 

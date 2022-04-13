@@ -1,5 +1,5 @@
 //Command editor: Classic mode
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, BR, BUTTON, CODE, DETAILS, SUMMARY, DIV, FIELDSET, INPUT, LABEL, LEGEND, SELECT, OPTION, TABLE, TBODY, TR, TH, TD, UL, LI} = choc;
 
 const flags = {

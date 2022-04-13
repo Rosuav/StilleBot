@@ -1,4 +1,4 @@
-import choc, {set_content, DOM} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {SPAN} = choc;
 
 function send() {ws_sync.send({cmd: "test", regexp: DOM("#regexp").value, text: DOM("#text").value});}

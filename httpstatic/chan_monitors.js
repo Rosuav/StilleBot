@@ -1,4 +1,4 @@
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, BR, BUTTON, CODE, DIV, FIELDSET, LEGEND, LABEL, INPUT, TEXTAREA, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc; //autoimport
 import update_display from "$$static||monitor.js$$";
 import {waitlate, TEXTFORMATTING} from "$$static||utils.js$$";

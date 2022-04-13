@@ -1,4 +1,4 @@
-import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/shed/chocfactory.js";
+import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
 const {A, BUTTON, H2, IMG, LI, TIME, UL} = choc; //autoimport
 import {waitlate} from "$$static||utils.js$$";
 
