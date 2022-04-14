@@ -266,7 +266,7 @@ void host_changed(string chanid, string target, string viewers) {
 	if (st->hosting == target) return; //eg after reconnecting to IRC
 	st->hosting = target;
 	if (target) pause_autohost(chanid, time() + 300); //If you manually host, disable autohost for five minutes
-	spawn_task(recalculate_status(chanid));
+	schedule_recalculation(chanid, ({time() + 2})); //Recalculate, but give it a moment. There might be some other messages to process.
 	//TODO: Purge the hook channel list of any that we don't need (those for whom autohosts_this[id] is empty or absent)
 }
 
