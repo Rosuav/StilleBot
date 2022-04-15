@@ -1,6 +1,12 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, DIV, FIGCAPTION, FIGURE, LABEL} = choc; //autoimport
+const {A, BUTTON, DIV, FIGCAPTION, FIGURE, INPUT, LABEL, LI} = choc; //autoimport
 
+set_content("#user_types", user_types.map(([kwd, lbl, desc]) => LI(LABEL(
+	{title: desc},
+	[is_mod && INPUT({type: "checkbox", "data-kwd": kwd}), lbl]
+)))).classList.toggle("nonmod", !is_mod);
+if (!is_mod) DOM("#user_types").appendChild(LI({id: "user-nobody", title: "Art sharing is not enabled for this channel."}, "Nobody"));
+	
 //NOTE: Item rendering applies to uploaded files. Other things are handled by render() itself.
 const files = { };
 export const render_parent = DOM("#uploads");
@@ -21,6 +27,18 @@ export function render_item(file, obj) {
 export function render(data) {
 	if (data.who) {
 		console.log("Who may upload?", data.who);
+		user_types.forEach(u => {
+			const permitted = !!data.who[u[0]];
+			const cb = DOM("#user_types input[data-kwd=" + u[0] + "]");
+			if (!cb) return; //Unknown keyword (might be an outdated permission flag)
+			if (is_mod) cb.checked = permitted;
+			cb.closest("li").classList.toggle("permitted", permitted);
+		});
+		if (!is_mod) {
+			//If absolutely nobody has permission, show the "Nobody" entry.
+			const nobody = !document.querySelector("#user_types .permitted");
+			DOM("#user-nobody").classList.toggle("permitted", nobody);
+		}
 	}
 }
 
@@ -36,6 +54,10 @@ on("click", ".confirmdelete", e => {
 on("click", "#delete", e => {
 	if (deleteid) ws_sync.send({cmd: "delete", id: deleteid});
 	DOM("#confirmdeletedlg").close();
+});
+
+on("click", "#user_types input", e => {
+	ws_sync.send({cmd: "config", who: {[e.match.dataset.kwd]: e.match.checked}});
 });
 
 const uploadme = { };
