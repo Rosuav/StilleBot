@@ -1,10 +1,13 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, ABBR, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN} = choc; //autoimport
+const {A, BUTTON, DIV, FIGCAPTION, FIGURE, LABEL} = choc; //autoimport
 
 //NOTE: Item rendering applies to uploaded files. Other things are handled by render() itself.
+const files = { };
 export const render_parent = DOM("#uploads");
 export function render_item(file, obj) {
-	return LABEL({"data-id": file.id, "data-type": file.mimetype}, [
+	console.log("render_item", file, obj);
+	files[file.id] = file;
+	return LABEL({"data-id": file.id}, [
 		FIGURE([
 			DIV({className: "thumbnail", style: "background-image: url(" + file.url + ")"}),
 			FIGCAPTION([

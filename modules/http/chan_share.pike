@@ -81,6 +81,11 @@ Upload time: %s
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = persist_status->path("artshare", (string)channel->userid, grp);
 	mapping settings = persist_status->path("artshare", (string)channel->userid, "settings");
+	if (id) {
+		if (!cfg->files) return 0;
+		int idx = search(cfg->files->id, id);
+		return idx >= 0 && cfg->files[idx];
+	}
 	return (["items": cfg->files || ({ }),
 		"who": settings->who || ([]),
 	]);
@@ -106,6 +111,7 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		; //I would be highly surprised if this loops at all, let alone more than once
 	cfg->files += ({([
 		"id": id, "name": msg->name,
+		"uploaded": time(),
 	])});
 	persist_status->save();
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "upload", "id": id, "name": msg->name]), 4));
@@ -114,8 +120,7 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || grp != "control") return;
-	if (conn->session->fake) return;
+	if (!channel || conn->session->fake) return;
 	mapping cfg = persist_status->path("artshare", (string)channel->userid, grp);
 	if (!cfg->files) return; //No files, can't delete
 	int idx = search(cfg->files->id, msg->id);
@@ -123,18 +128,10 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	mapping file = cfg->files[idx];
 	cfg->files = cfg->files[..idx-1] + cfg->files[idx+1..];
 	string fn = sprintf("%d-%s", channel->userid, file->id);
-	rm("httpstatic/uploads/" + fn); //If it returns 0 (file not found/not deleted), no problem
-	m_delete(persist_status->path("upload_metadata"), fn);
-	int changed_alert = 0;
-	if (file->url) 
-		foreach (cfg->alertconfigs || ([]);; mapping alert)
-			while (string key = search(alert, file->url)) {
-				alert[key] = "";
-				changed_alert = 1;
-			}
+	rm("httpstatic/artshare/" + fn); //If it returns 0 (file not found/not deleted), no problem
+	m_delete(persist_status->path("share_metadata"), fn);
 	persist_status->save();
 	update_one(conn->group, file->id);
-	if (changed_alert) update_one(cfg->authkey + channel->name, file->id);
 }
 
 void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg) {
