@@ -68,6 +68,16 @@ constant user_types = ({
 	({"all", "Anyone", "Anyone is allowed, any time"}),
 });
 
+//Map the FFProbe results to their MIME types.
+//If not listed, the file is unrecognized and will be rejected.
+constant file_mime_types = ([
+	//"apng": "image/apng"? "video/apng"? WHAT?!?
+	"gif": "image/gif", "gif_pipe": "image/gif",
+	"jpeg_pipe": "image/jpeg",
+	"png_pipe": "image/png",
+	"svg_pipe": "image/svg+xml",
+]);
+
 string permission_check(string|int channelid, int is_mod, mapping user) {
 	mapping cfg = persist_status->path("artshare", (string)channelid, "settings");
 	mapping who = cfg->who || ([]);
@@ -92,7 +102,7 @@ string permission_check(string|int channelid, int is_mod, mapping user) {
 	return error;
 }
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+continue Concurrent.Future|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (mapping resp = ensure_login(req)) return resp;
 	mapping cfg = persist_status->path("artshare", (string)req->misc->channel->userid, (string)req->misc->session->user->id);
 	if (!req->misc->session->fake && req->request_type == "POST") {
@@ -105,7 +115,13 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 		if (string error = permission_check(req->misc->channel->userid, req->misc->is_mod, req->misc->session->user))
 			return jsonify((["error": error]));
 		string mimetype;
-		//TODO: ffprobe
+		mapping rc = Process.run(({"ffprobe", "-", "-print_format", "json", "-show_format", "-v", "quiet"}),
+			(["stdin": req->body_raw]));
+		mixed raw_ffprobe = rc->stdout + "\n" + rc->stderr + "\n";
+		if (!rc->exitcode) {
+			catch {raw_ffprobe = Standards.JSON.decode(rc->stdout);};
+			if (mappingp(raw_ffprobe)) mimetype = file_mime_types[raw_ffprobe->format->format_name];
+		}
 		if (!mimetype) {
 			Stdio.append_file("artshare.log", sprintf(#"Unable to ffprobe file art-%s
 Channel: %s
@@ -113,7 +129,7 @@ Beginning of file: %O
 FFProbe result: %O
 Upload time: %s
 -------------------------
-", file->id, req->misc->channel->name, req->body_raw[..64], "(unimpl)", ctime(time())[..<1]));
+", file->id, req->misc->channel->name, req->body_raw[..64], raw_ffprobe, ctime(time())[..<1]));
 			return jsonify((["error": "File type unrecognized. If it should have been supported, contact Rosuav and quote ID art-" + file->id]));
 		}
 		string filename = sprintf("%d-%s", req->misc->channel->userid, file->id);
@@ -121,7 +137,7 @@ Upload time: %s
 		file->url = sprintf("%s/static/share-%s", persist_config["ircsettings"]->http_address, filename);
 		persist_status->path("share_metadata")[filename] = (["mimetype": mimetype]);
 		persist_status->save();
-		update_one("control" + req->misc->channel->name, file->id); //Display connection doesn't need to get updated.
+		update_one(req->misc->session->user->id + req->misc->channel->name, file->id);
 		return jsonify((["url": file->url]));
 	}
 	return render(req, ([
