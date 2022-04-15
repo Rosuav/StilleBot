@@ -15,6 +15,9 @@ int _get_mtime(string filename, multiset|void ignore) {
 	return mtime;
 }
 
+//Map filename prefix to directory name
+constant upload_dirs = (["upload": "uploads", "share": "artshare"]);
+
 constant http_path_pattern = "/static/%[^/]";
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string filename)
 {
@@ -25,10 +28,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string fil
 	foreach (([".css": "text/css", ".flac": "audio/flac", ".mp3": "audio/mp3"]); string ext; string t)
 		if (has_suffix(filename, ext)) type = t;
 	//Support a small number of subdirectory names
-	if (sscanf(filename, "upload-%s", filename) && filename && filename != "" && !has_prefix(filename, ".")) {
-		mapping meta = persist_status->path("upload_metadata")[filename];
+	if (sscanf(filename, "%s-%s", string pfx, filename) && upload_dirs[pfx] &&
+			filename && filename != "" && !has_prefix(filename, ".")) {
+		mapping meta = persist_status->path(pfx + "_metadata")[filename];
 		if (!meta) return (["error": 404, "data": "Not found"]); //It's possible that the file exists but has no metadata, but more likely it just doesn't.
-		dir = "httpstatic/uploads";
+		dir = "httpstatic/" + upload_dirs[pfx];
 		type = meta->mimetype;
 	}
 	//For absolute paranoia-level safety, instead of trying to open the
@@ -77,4 +81,5 @@ protected void create(string name)
 	G->G->http_endpoints["favicon.ico"] = favicon;
 	G->G->template_defaults["static"] = staticfile;
 	if (!G->G->httpstatic_deps) G->G->httpstatic_deps = ([]);
+	foreach (upload_dirs;; string dir) mkdir("httpstatic/" + dir); //Autocreate directories as needed
 }
