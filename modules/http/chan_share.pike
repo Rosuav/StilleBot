@@ -55,6 +55,29 @@ Please note: Files are removed periodically; this is not a portfolio.
 #user_types.nonmod li:not(.permitted) {
 	display: none;
 }
+#uploads {
+	display: flex;
+	flex-wrap: wrap;
+}
+#uploads > label {
+	border: 1px solid black;
+	margin: 1em;
+	position: relative;
+}
+#uploads .confirmdelete {
+	position: absolute;
+	right: 0.5em; top: 0.5em;
+	width: 20px; height: 23px;
+	padding: 0;
+}
+.thumbnail {
+	width: 150px; height: 150px;
+	background: none center/contain no-repeat;
+}
+figcaption {
+	max-width: 150px;
+	overflow-wrap: break-word;
+}
 </style>
 ";
 
