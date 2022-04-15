@@ -92,23 +92,9 @@
   from that, and discard the template. This will allow a simply Copy effect, and should
   be compatible with "copying" from actual templates too.
 * Art Share tool
-  - Who may share? All configurable.
-    - Streamer/mods
-    - VIPs
-    - Raiders (will last for the duration of the stream)
-    - By !permit command
-    - Anyone
-  - Upload a file to the bot host, same as the alertbox
+  - Who may share? Not all options implemented yet.
   - Automatically and immediately post a link in chat
-  - Perform some validation
-    - "ffprobe - -print_format json -show_format -v quiet", pipe in the content
-    - result->format->format_name should be in a whitelist:
-      - image/png --> png_pipe
-      - image/gif --> gif
-      - etc
-    - if result is empty, file failed validation, reject it (ask user if it's a PS file etc)
-    - Log all failing results w/ ID of file, and in the error message, invite people to ask
-      me to check the log for that file
+    - Mod config option: chat format, use {{URL}} for the URL
   - Mod command to nuke the last-posted file?
   - If someone gets timed out or banned, remove their files
   - Dispose of files after a day

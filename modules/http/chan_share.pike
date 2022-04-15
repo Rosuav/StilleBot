@@ -202,6 +202,7 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		return;
 	}
 	string id;
+	//FIXME: Check the metadata rather than this list of files (maybe also in alertbox)
 	while (has_value(cfg->files->id, id = "share-" + String.string2hex(random_string(14))))
 		; //I would be highly surprised if this loops at all, let alone more than once
 	cfg->files += ({([
@@ -237,13 +238,10 @@ void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	//	if (stringp(msg[key])) cfg[key] = msg[key];
 	if (mappingp(msg->who)) {
 		if (!cfg->who) cfg->who = ([]);
-		werror("WHO: %O\n", msg->who);
 		foreach (user_types, array user) {
 			mixed perm = msg->who[user[0]];
-			werror("WHO %O: %O\n", user[0], perm);
 			if (!undefinedp(perm)) cfg->who[user[0]] = !!perm;
 		}
-		werror("NOW WHO: %O\n", cfg->who);
 	}
 	persist_status->save();
 	//NOTE: We don't actually update everyone when these change.
