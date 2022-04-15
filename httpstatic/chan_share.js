@@ -60,6 +60,10 @@ on("click", "#user_types input", e => {
 	ws_sync.send({cmd: "config", who: {[e.match.dataset.kwd]: e.match.checked}});
 });
 
+export function sockmsg_uploaderror(msg) {
+	set_content("#errormsg", msg.error).classList.add("visible");
+}
+
 const uploadme = { };
 export async function sockmsg_upload(msg) {
 	const file = uploadme[msg.name];

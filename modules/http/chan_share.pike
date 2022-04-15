@@ -68,6 +68,30 @@ constant user_types = ({
 	({"all", "Anyone", "Anyone is allowed, any time"}),
 });
 
+string permission_check(string|int channelid, int is_mod, mapping user) {
+	mapping cfg = persist_status->path("artshare", (string)channelid, "settings");
+	mapping who = cfg->who || ([]);
+	if (who->all) return 0; //Go for it!
+	//Ideally, replace this error with something more helpful, based on who DOES have permission.
+	//The order of these checks is important, as the last one wins on error messages.
+	string error = "You don't have permission to share files here, sorry!";
+	if (who->raider) {
+		//TODO: Check a log of recent raiders (not currently tracked)
+		//If found, return 0.
+		//No error message change here.
+	}
+	//if (who->permit) //TODO: If you've been given temp permission, return 0, else set error to "ask for a !permit before sharing"
+	if (who->mod) {
+		if (is_mod) return 0;
+		error = "Moderators are allowed to share artwork. If you're a mod, please say something in chat so I can see your mod sword.";
+	}
+	if (who->vip) {
+		//TODO: If user has a VIP badge - not currently tracked - return 0.
+		error = (who->mod ? "Mods and" : "Only") + " VIPs are allowed to share artwork. If you are such, please say something in chat so I can see your badge.";
+	}
+	return error;
+}
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (mapping resp = ensure_login(req)) return resp;
 	mapping cfg = persist_status->path("artshare", (string)req->misc->channel->userid, (string)req->misc->session->user->id);
@@ -78,6 +102,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 		mapping file = cfg->files[idx];
 		if (file->url) return jsonify((["error": "File has already been uploaded"]));
 		if (sizeof(req->body_raw) > MAX_PER_FILE * 1048576) return jsonify((["error": "Upload exceeds maximum file size"]));
+		if (string error = permission_check(req->misc->channel->userid, req->misc->is_mod, req->misc->session->user))
+			return jsonify((["error": error]));
 		string mimetype;
 		//TODO: ffprobe
 		if (!mimetype) {
@@ -126,7 +152,9 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!cfg->files) cfg->files = ({ });
 	if (!intp(msg->size) || msg->size < 0) return; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
 	string error;
-	if (msg->size > MAX_PER_FILE * 1048576)
+	if (string err = permission_check(channel->userid, conn->is_mod, conn->session->user))
+		error = err;
+	else if (msg->size > MAX_PER_FILE * 1048576)
 		error = "File too large (limit " + MAX_PER_FILE + " MB)";
 	else if (sizeof(cfg->files) >= MAX_FILES)
 		error = "Limit of " + MAX_FILES + " files reached. Delete other files to make room.";
