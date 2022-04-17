@@ -202,8 +202,8 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		return;
 	}
 	string id;
-	//FIXME: Check the metadata rather than this list of files (maybe also in alertbox)
-	while (has_value(cfg->files->id, id = "share-" + String.string2hex(random_string(14))))
+	mapping meta = persist_status->path("share_metadata");
+	while (meta[sprintf("%d-%s", channel->userid, id = "share-" + String.string2hex(random_string(14)))])
 		; //I would be highly surprised if this loops at all, let alone more than once
 	cfg->files += ({([
 		"id": id, "name": msg->name,
