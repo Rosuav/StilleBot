@@ -286,6 +286,10 @@ constant allmsgs = ({"object channel", "mapping person", "string msg"});
 constant subscription = ({"object channel", "string type", "mapping person", "string tier", "int qty", "mapping extra"});
 @create_hook:
 constant cheer = ({"object channel", "mapping person", "int bits", "mapping extra"});
+@create_hook:
+constant deletemsg = ({"object channel", "object person", "string target", "string msgid"});
+@create_hook:
+constant deletemsgs = ({"object channel", "object person", "string target"});
 
 class channel_notif
 {
@@ -954,10 +958,12 @@ class channel_notif
 			//acknowledged accidentally.
 			case "CLEARMSG":
 				runhooks("delete-msg", 0, this, person, params->login, params->target_msg_id);
+				event_notify("deletemsg", this, person, params->login, params->target_msg_id);
 				G_G_("participants", name[1..], params->login)->lastnotice = 0;
 				break;
 			case "CLEARCHAT":
 				runhooks("delete-msgs", 0, this, person, params->target_user_id);
+				event_notify("deletemsgs", this, person, params->target_user_id);
 				if (params->target_user_id) get_user_info(params->target_user_id)->then() {
 					G_G_("participants", name[1..], __ARGS__[0]->login)->lastnotice = 0;
 				};
