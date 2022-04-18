@@ -3,7 +3,7 @@ inherit hook;
 object irc;
 string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
-object substitutions = Regexp.PCRE("(\\$[A-Za-z|]+\\$)|({[a-z0-9_@|]+})");
+object substitutions = Regexp.PCRE("(\\$[A-Za-z|]+\\$)|({[A-Za-z0-9_@|]+})");
 
 class IRCClient
 {
