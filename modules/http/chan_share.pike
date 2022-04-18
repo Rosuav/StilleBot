@@ -285,6 +285,18 @@ mapping message_params(object channel, mapping person, array|string param)
 	return (["{error}": ""]);
 }
 
+//TODO: If a mod purges the bot's message reporting the link, delete the file.
+//Would require knowing the message IDs of what we send, or the content of the deleted message.
+@hook_deletemsg:
+int delmsg(object channel, object person, string target, string msgid) { }
+
+@hook_deletemsgs:
+int delmsgs(object channel, object person, string target) {
+	//If someone gets timed out or banned, delete all their files.
+	mapping cfg = persist_status->path("artshare", (string)channel->userid)[target];
+	foreach (cfg->?files || ({ }), mapping file) delete_file(channel, target, file->id);
+}
+
 void cleanup() {
 	if (mixed co = m_delete(G->G, "artshare_cleanup")) remove_call_out(co);
 	mapping meta = persist_status->path("share_metadata");
