@@ -284,4 +284,31 @@ mapping message_params(object channel, mapping person, array|string param)
 	return (["{error}": ""]);
 }
 
-protected void create(string name) {::create(name);}
+void cleanup() {
+	if (mixed co = m_delete(G->G, "artshare_cleanup")) remove_call_out(co);
+	mapping meta = persist_status->path("share_metadata");
+	mapping artshare = persist_status->path("artshare");
+	int old = time() - 86400; //Max age
+	array chans = values(G->G->irc->channels);
+	foreach (artshare; string channelid; mapping configs) {
+		//First, find the right channel object.
+		int idx = search(chans->userid, (int)channelid);
+		if (idx < 0) continue; //Are we still loading, or is this a deleted channel? Hard to know.
+		object channel = chans[idx];
+		foreach (configs; string userid; mapping cfg) {
+			if (!(int)userid) continue; //Not a user ID (probably the word "settings")
+			foreach (cfg->files, mapping file) {
+				if (file->uploaded >= old) continue; //Mmmm, still fresh!
+				//This file is old. Dispose of it. Eww.
+				delete_file(channel, userid, file->id);
+			}
+		}
+	}
+	//Note: It is possible for upload permission to be requested, but the upload
+	//not happen, which would leave entries in the channel+user file list, but
+	//nothing in meta. This is only a problem if there are actually no files at
+	//all that have been fully uploaded.
+	if (sizeof(meta)) G->G->artshare_cleanup = call_out(cleanup, 3600 * 12); //Check twice a day for anything over a day old
+}
+
+protected void create(string name) {::create(name); cleanup();}
