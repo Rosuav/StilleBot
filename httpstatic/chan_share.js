@@ -5,8 +5,11 @@ set_content("#user_types", user_types.map(([kwd, lbl, desc]) => LI(LABEL(
 	{title: desc},
 	[is_mod && INPUT({type: "checkbox", "data-kwd": kwd}), lbl]
 )))).classList.toggle("nonmod", !is_mod);
-if (!is_mod) DOM("#user_types").appendChild(LI({id: "user-nobody", title: "Art sharing is not enabled for this channel."}, "Nobody"));
-	
+if (!is_mod) {
+	DOM("#user_types").appendChild(LI({id: "user-nobody", title: "Art sharing is not enabled for this channel."}, "Nobody"));
+	DOM("#msgformat").readonly = true;
+}
+
 //NOTE: Item rendering applies to uploaded files. Other things are handled by render() itself.
 const files = { };
 export const render_parent = DOM("#uploads");
@@ -40,6 +43,11 @@ export function render(data) {
 			DOM("#user-nobody").classList.toggle("permitted", nobody);
 		}
 	}
+	if (data.defaultmsg) {
+		set_content("#defaultmsg", data.defaultmsg);
+		DOM("#msgformat").placeholder = data.defaultmsg;
+	}
+	if (data.msgformat) DOM("#msgformat").value = data.msgformat;
 }
 
 let deleteid = null;
@@ -87,3 +95,5 @@ on("change", "input[type=file]", e => {
 	}
 	e.match.value = "";
 });
+
+on("change", "#msgformat", e => ws_sync.send({cmd: "config", msgformat: e.match.value}));

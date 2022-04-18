@@ -7,6 +7,9 @@ constant markdown = #"# Share your creations with $$channel$$
 
 Uploading is permitted for: <ul id=user_types></ul>
 
+Whenever a file gets uploaded, the bot will announce this in chat: <input id=msgformat size=50><br>
+Example: <code id=defaultmsg></code>
+
 ### Your files
 
 Please note: Files are removed periodically; this is not a portfolio.
@@ -81,6 +84,7 @@ figcaption {
 </style>
 ";
 
+constant DEFAULT_MSG_FORMAT = "New art share from {username}: {URL}";
 constant MAX_PER_FILE = 15, MAX_FILES = 4; //MB and file count. Larger than the alertbox limits since these files are ephemeral.
 constant user_types = ({
 	//Keyword, label, description
@@ -148,11 +152,12 @@ continue Concurrent.Future|mapping(string:mixed) http_request(Protocols.HTTP.Ser
 		if (!mimetype) {
 			Stdio.append_file("artshare.log", sprintf(#"Unable to ffprobe file art-%s
 Channel: %s
+File size: %d
 Beginning of file: %O
 FFProbe result: %O
 Upload time: %s
 -------------------------
-", file->id, req->misc->channel->name, req->body_raw[..64], raw_ffprobe, ctime(time())[..<1]));
+", file->id, req->misc->channel->name, sizeof(req->body_raw), req->body_raw[..64], raw_ffprobe, ctime(time())[..<1]));
 			return jsonify((["error": "File type unrecognized. If it should have been supported, contact Rosuav and quote ID art-" + file->id]));
 		}
 		string filename = sprintf("%d-%s", req->misc->channel->userid, file->id);
@@ -161,6 +166,12 @@ Upload time: %s
 		persist_status->path("share_metadata")[filename] = (["mimetype": mimetype]);
 		persist_status->save();
 		update_one(req->misc->session->user->id + req->misc->channel->name, file->id);
+		mapping cfg = persist_status->path("artshare", (string)req->misc->channel->userid, "settings");
+		req->misc->channel->send(
+			(["displayname": req->misc->session->user->display_name]),
+			cfg->msgformat || DEFAULT_MSG_FORMAT,
+			(["{URL}": file->url]),
+		);
 		return jsonify((["url": file->url]));
 	}
 	return render(req, ([
@@ -181,6 +192,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	}
 	return (["items": cfg->files || ({ }),
 		"who": settings->who || ([]),
+		"msgformat": settings->msgformat,
+		"defaultmsg": DEFAULT_MSG_FORMAT,
 	]);
 }
 
@@ -232,10 +245,10 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 
 void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || conn->session->fake) return;
+	if (!channel || conn->session->fake || !conn->is_mod) return;
 	mapping cfg = persist_status->path("artshare", (string)channel->userid, "settings");
-	//foreach ("foo bar spam ham" / " ", string key)
-	//	if (stringp(msg[key])) cfg[key] = msg[key];
+	foreach ("msgformat" / " ", string key)
+		if (stringp(msg[key])) cfg[key] = msg[key];
 	if (mappingp(msg->who)) {
 		if (!cfg->who) cfg->who = ([]);
 		foreach (user_types, array user) {
