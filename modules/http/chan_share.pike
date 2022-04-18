@@ -106,8 +106,23 @@ constant file_mime_types = ([
 	"svg_pipe": "image/svg+xml",
 ]);
 
-string permission_check(string|int channelid, int is_mod, mapping user) {
-	mapping cfg = persist_status->path("artshare", (string)channelid, "settings");
+continue Concurrent.Future|string permission_check(object channel, int is_mod, mapping user) {
+	mapping cfg = persist_status->path("artshare", (string)channel->userid, "settings");
+	string scopes = persist_status->path("bcaster_token_scopes")[channel->name[1..]] || "";
+	if (has_value(scopes / " ", "moderation:read")) {
+		//TODO: Only do this check periodically, and augment the cached list of banned
+		//users whenever someone gets timed out. Or just refresh the list on any timeout.
+		//And then use the expiration date to refresh the list again, or at least to mark
+		//it as stale. Like bread.
+		array banned = yield(get_helix_paginated("https://api.twitch.tv/helix/moderation/banned",
+			(["broadcaster_id": (string)channel->userid]),
+			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[channel->name[1..]]]),
+		));
+		if (has_value(banned->user_id, user->id)) {
+			//Should we show differently if there's an expiration on the timeout?
+			return "You're currently unable to talk in that channel, so you can't share either - sorry!";
+		}
+	}
 	mapping who = cfg->who || ([]);
 	if (who->all) return 0; //Go for it!
 	//Ideally, replace this error with something more helpful, based on who DOES have permission.
@@ -140,7 +155,7 @@ continue Concurrent.Future|mapping(string:mixed) http_request(Protocols.HTTP.Ser
 		mapping file = cfg->files[idx];
 		if (file->url) return jsonify((["error": "File has already been uploaded"]));
 		if (sizeof(req->body_raw) > MAX_PER_FILE * 1048576) return jsonify((["error": "Upload exceeds maximum file size"]));
-		if (string error = permission_check(req->misc->channel->userid, req->misc->is_mod, req->misc->session->user))
+		if (string error = yield(permission_check(req->misc->channel, req->misc->is_mod, req->misc->session->user)))
 			return jsonify((["error": error]));
 		string filename = sprintf("%d-%s", req->misc->channel->userid, file->id);
 		Stdio.write_file("httpstatic/artshare/" + filename, req->body_raw);
@@ -198,14 +213,15 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	]);
 }
 
-void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(upload(conn, msg));}
+continue Concurrent.Future upload(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || conn->session->fake) return;
+	if (!channel || conn->session->fake) return 0;
 	mapping cfg = persist_status->path("artshare", (string)channel->userid, grp);
 	if (!cfg->files) cfg->files = ({ });
-	if (!intp(msg->size) || msg->size < 0) return; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
+	if (!intp(msg->size) || msg->size < 0) return 0; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
 	string error;
-	if (string err = permission_check(channel->userid, conn->is_mod, conn->session->user))
+	if (string err = yield(permission_check(channel, conn->is_mod, conn->session->user)))
 		error = err;
 	else if (msg->size > MAX_PER_FILE * 1048576)
 		error = "File too large (limit " + MAX_PER_FILE + " MB)";
@@ -213,7 +229,7 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		error = "Limit of " + MAX_FILES + " files reached. Delete other files to make room.";
 	if (error) {
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "uploaderror", "name": msg->name, "error": error]), 4));
-		return;
+		return 0;
 	}
 	string id;
 	mapping meta = persist_status->path("share_metadata");
