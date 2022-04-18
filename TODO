@@ -106,3 +106,14 @@
   - Add link to the /channels/NAME/ landing page once it's ready for launch
 * Break out name-to/from-uid mappings into a separate file, maybe not even JSON? I think
   they might be the largest part of persist_status.
+* Migration of connection.pike to 'inherit irc_callback':
+  - Maintain G->G->irc->channels as a mapping from "#channelname" to channel object
+    - What do channel objects need other than what I've created? name, any others?
+    - Don't react to channel joinings/partings; just construct them all in create()
+  - G->G->irc->join_channel and G->G->irc->part_channel are used by window.pike and
+    will need to be migrated. It also uses absence of G->G->irc to know to reconnect.
+  - Track recent_viewers differently. It's only used for quote addition.
+  - Have a single top-level irc_message() that distributes stuff to the individual
+    objects. The not_message() function will become simpler.
+  - Replace SendQueue with more initializers, but set them to not reconnect
+  - Handle whispers
