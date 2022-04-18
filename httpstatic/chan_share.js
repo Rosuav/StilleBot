@@ -7,7 +7,7 @@ set_content("#user_types", user_types.map(([kwd, lbl, desc]) => LI(LABEL(
 )))).classList.toggle("nonmod", !is_mod);
 if (!is_mod) {
 	DOM("#user_types").appendChild(LI({id: "user-nobody", title: "Art sharing is not enabled for this channel."}, "Nobody"));
-	DOM("#msgformat").readonly = true;
+	DOM("#msgformat").disabled = true;
 }
 
 //NOTE: Item rendering applies to uploaded files. Other things are handled by render() itself.
