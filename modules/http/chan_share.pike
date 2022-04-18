@@ -141,9 +141,10 @@ continue Concurrent.Future|mapping(string:mixed) http_request(Protocols.HTTP.Ser
 		if (sizeof(req->body_raw) > MAX_PER_FILE * 1048576) return jsonify((["error": "Upload exceeds maximum file size"]));
 		if (string error = permission_check(req->misc->channel->userid, req->misc->is_mod, req->misc->session->user))
 			return jsonify((["error": error]));
+		string filename = sprintf("%d-%s", req->misc->channel->userid, file->id);
+		Stdio.write_file("httpstatic/artshare/" + filename, req->body_raw);
 		string mimetype;
-		mapping rc = Process.run(({"ffprobe", "-", "-print_format", "json", "-show_format", "-v", "quiet"}),
-			(["stdin": req->body_raw]));
+		mapping rc = Process.run(({"ffprobe", "httpstatic/artshare/" + filename, "-print_format", "json", "-show_format", "-v", "quiet"}));
 		mixed raw_ffprobe = rc->stdout + "\n" + rc->stderr + "\n";
 		if (!rc->exitcode) {
 			catch {raw_ffprobe = Standards.JSON.decode(rc->stdout);};
@@ -158,10 +159,9 @@ FFProbe result: %O
 Upload time: %s
 -------------------------
 ", file->id, req->misc->channel->name, sizeof(req->body_raw), req->body_raw[..64], raw_ffprobe, ctime(time())[..<1]));
+			delete_file(req->misc->channel, req->misc->session->user->id, file->id);
 			return jsonify((["error": "File type unrecognized. If it should have been supported, contact Rosuav and quote ID art-" + file->id]));
 		}
-		string filename = sprintf("%d-%s", req->misc->channel->userid, file->id);
-		Stdio.write_file("httpstatic/artshare/" + filename, req->body_raw);
 		file->url = sprintf("%s/static/share-%s", persist_config["ircsettings"]->http_address, filename);
 		persist_status->path("share_metadata")[filename] = (["mimetype": mimetype]);
 		persist_status->save();
@@ -227,12 +227,10 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	update_one(conn->group, id);
 }
 
-void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || conn->session->fake) return;
-	mapping cfg = persist_status->path("artshare", (string)channel->userid, grp);
+void delete_file(object channel, string userid, string fileid) {
+	mapping cfg = persist_status->path("artshare", (string)channel->userid, userid);
 	if (!cfg->files) return; //No files, can't delete
-	int idx = search(cfg->files->id, msg->id);
+	int idx = search(cfg->files->id, fileid);
 	if (idx == -1) return; //Not found.
 	mapping file = cfg->files[idx];
 	cfg->files = cfg->files[..idx-1] + cfg->files[idx+1..];
@@ -240,7 +238,13 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	rm("httpstatic/artshare/" + fn); //If it returns 0 (file not found/not deleted), no problem
 	m_delete(persist_status->path("share_metadata"), fn);
 	persist_status->save();
-	update_one(conn->group, file->id);
+	update_one(userid + channel->name, file->id);
+}
+
+void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || conn->session->fake) return;
+	delete_file(channel, grp, msg->id);
 }
 
 void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg) {

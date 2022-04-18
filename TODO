@@ -93,8 +93,6 @@
   be compatible with "copying" from actual templates too.
 * Art Share tool
   - Who may share? Not all options implemented yet.
-  - Automatically and immediately post a link in chat
-    - Mod config option: chat format, use {{URL}} for the URL
   - Mod command to nuke the last-posted file?
   - If someone gets timed out or banned, remove their files
     - Anyone currently under timeout or ban is to be denied upload permission.
