@@ -97,6 +97,7 @@
     - Mod config option: chat format, use {{URL}} for the URL
   - Mod command to nuke the last-posted file?
   - If someone gets timed out or banned, remove their files
+    - Anyone currently under timeout or ban is to be denied upload permission.
   - Dispose of files after a day
 * Break out name-to/from-uid mappings into a separate file, maybe not even JSON? I think
   they might be the largest part of persist_status.
