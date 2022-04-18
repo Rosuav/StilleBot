@@ -55,6 +55,7 @@ Please note: Files are removed periodically; this is not a portfolio.
 	border: 1px solid black;
 	padding: 2px;
 }
+#user_types.nonmod input {display: none;}
 #user_types.nonmod li:not(.permitted) {
 	display: none;
 }

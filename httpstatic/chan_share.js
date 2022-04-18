@@ -3,7 +3,7 @@ const {A, BUTTON, DIV, FIGCAPTION, FIGURE, INPUT, LABEL, LI} = choc; //autoimpor
 
 set_content("#user_types", user_types.map(([kwd, lbl, desc]) => LI(LABEL(
 	{title: desc},
-	[is_mod && INPUT({type: "checkbox", "data-kwd": kwd}), lbl]
+	[INPUT({type: "checkbox", "data-kwd": kwd}), lbl]
 )))).classList.toggle("nonmod", !is_mod);
 if (!is_mod) {
 	DOM("#user_types").appendChild(LI({id: "user-nobody", title: "Art sharing is not enabled for this channel."}, "Nobody"));
