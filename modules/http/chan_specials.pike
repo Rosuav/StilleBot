@@ -66,7 +66,7 @@ int get_trig_index(object channel, string kwd) {
 	info = info->response;
 	if (info->delay) info = info->message; 
 	foreach (Array.arrayify(response); int i; echoable_message trig) {
-		if (trig->delay) trig = trig->message; //You can set whatever delay you like and it doesn't affect detection.
+		if (mappingp(trig) && trig->delay) trig = trig->message; //You can set whatever delay you like and it doesn't affect detection.
 		if (mappingp(trig) && trig->builtin == info->builtin &&
 			trig->conditional == info->conditional &&
 			(trig->expr1||"") == (info->expr1||"") &&
