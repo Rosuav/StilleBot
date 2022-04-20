@@ -814,7 +814,7 @@ class irc_callback {
 		//connections will all be severed.
 		options = (["module": this, "version": 1]) | (options || ([]));
 		if (!options->user) {
-			//Default credentials from the 
+			//Default credentials from the bot's main configs
 			mapping cfg = persist_config->path("ircsettings");
 			options->user = cfg->nick; options->pass = cfg->pass;
 		}
