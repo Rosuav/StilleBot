@@ -270,6 +270,11 @@ void host_changed(string chanid, string target, string viewers) {
 	//TODO: Purge the hook channel list of any that we don't need (those for whom autohosts_this[id] is empty or absent)
 }
 
+continue Concurrent.Future target_offline(string channelid, string target) {
+	channel_seen_offline[yield(get_user_id(target))] = time();
+	yield(recalculate_status(channelid));
+}
+
 constant messagetypes = ({"PRIVMSG", "NOTICE", "USERNOTICE", "HOSTTARGET"});
 void irc_message(string type, string chan, string msg, mapping attrs) {
 	if (type == "HOSTTARGET") {
@@ -285,10 +290,8 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 	}
 	if (attrs->msg_id == "host_target_went_offline") {
 		sscanf(msg, "%s has gone offline", string target);
-		mapping st = chanstate[channel_ids[chan - "#"]];
 		write("GHOSTWRITER: host_target_went_offline (%O, %O)\n", chan, target);
-		if (st->?hosting == target && st->hostingid) channel_seen_offline[(int)st->hostingid] = time();
-		spawn_task(recalculate_status(channel_ids[chan - "#"]));
+		spawn_task(target_offline(channel_ids[chan - "#"], target));
 	}
 	if (attrs->msg_id == "bad_host_rate_exceeded") {
 		//Probably only happens while I'm testing, but ehh, whatever
