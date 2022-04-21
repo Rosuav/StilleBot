@@ -1,11 +1,13 @@
 inherit hook;
+//inherit irc_callback; //IRCMIGRATE: Uncomment this. Key steps in the migration are tagged thus.
 
 object irc;
 string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
 object substitutions = Regexp.PCRE("(\\$[A-Za-z|]+\\$)|({[A-Za-z0-9_@|]+})");
+constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT"});
 
-class IRCClient
+class IRCClient //IRCMIGRATE: Made redundant
 {
 	inherit Protocols.IRC.Client;
 	#if __REAL_VERSION__ < 8.1
@@ -72,10 +74,10 @@ class IRCClient
 	}
 }
 
-void error_notify(mixed ... args) {werror("error_notify: %O\n", args);}
+void error_notify(mixed ... args) {werror("error_notify: %O\n", args);} //IRCMIGRATE: Redundant
+Concurrent.Future irc_connect(mapping options) {return Concurrent.resolve(1);} //IRCMIGRATE: Remove to enable functionality
 
-int mod_query_delay = 0;
-void reconnect()
+void reconnect() //IRCMIGRATE: Redundant, folded into init. Reconnection logic is handled by the _TwitchIRC type internally.
 {
 	//NOTE: This appears to be creating duplicate channel joinings, for some reason.
 	//HACK: Destroy and reconnect - this might solve the above problem. CJA 20160401.
@@ -86,7 +88,6 @@ void reconnect()
 	if (!opt || !opt->pass) return; //Not yet configured - can't connect.
 	opt += (["channel_program": channel_notif, "connection_lost": lambda() {werror("%% Connection lost\n"); call_out(reconnect, 10);},
 		"error_notify": error_notify]);
-	mod_query_delay = 0; //Reset the delay
 	if (mixed ex = catch {
 		G->G->irc = irc = IRCClient("irc.chat.twitch.tv", opt);
 		#if __REAL_VERSION__ >= 8.1
@@ -126,7 +127,7 @@ void reconnect()
 //The old queues will be pumped by the old code, and the new code will
 //have a single empty queue for the default voice.
 mapping(string:object) sendqueues = ([]);
-class SendQueue(string id) {
+class SendQueue(string id) { //IRCMIGRATE: This entire system will be redundant in favour of temporary (no-reconnect) ancillaries.
 	int lastmsgtime;
 	int modmsgs = 0;
 	object client;
@@ -185,7 +186,7 @@ class SendQueue(string id) {
 	void send_message(string to, string msg, int|void is_mod) {
 		if (has_prefix(to, "/"))
 		{
-			if (to == "/w " + my_nick)
+			if (to == "/w " + my_nick) //IRCMIGRATE: Keep this logic somewhere, it's good for testing
 			{
 				//Hack: Instead of whispering to ourselves, write to the console.
 				write("<%s> %s\n", to, msg);
@@ -228,7 +229,7 @@ constant badge_aliases = ([ //Fold a few badges together, and give shorthands fo
 //Go through a message's parameters/tags to get the info about the person
 //There may be some non-person info gathered into here too, just for
 //convenience; in fact, the name "person" here is kinda orphanned. (Tragic.)
-mapping(string:mixed) gather_person_info(object person, mapping params)
+mapping(string:mixed) gather_person_info(object person, mapping params) //IRCMIGRATE: "object person" won't be a thing, use params instead
 {
 	mapping ret = (["nick": person->nick, "user": person->user]);
 	if (params->user_id && person->user)
@@ -293,7 +294,7 @@ constant deletemsgs = ({"object channel", "object person", "string target"});
 
 class channel_notif
 {
-	inherit Protocols.IRC.Channel;
+	inherit Protocols.IRC.Channel; //IRCMIGRATE: No inherit. Give the class some useful args instead.
 	string color;
 	mapping config = ([]);
 	multiset mods=(<>);
@@ -733,14 +734,13 @@ class channel_notif
 	}
 
 	mapping subbomb_ids = ([]);
+	//IRCMIGRATE: Rename this and have it take different args. Notably, ircperson isn't a thing - get it all from attrs.
 	void not_message(object ircperson, string msg, mapping(string:string)|void params)
 	{
-		//TODO: Figure out whether msg and params are bytes or text
-		//With the tags parser, they are now always text (I think), but the
-		//default parser may be using bytes.
+		//IRCMIGRATE: The msg parameter will now be guaranteed text, not bytes. Confirm also true for params/attrs.
 		if (!params) params = ([]);
 		mapping(string:mixed) person = gather_person_info(ircperson, params);
-		if (!params->_type && person->nick == "tmi.twitch.tv")
+		if (!params->_type && person->nick == "tmi.twitch.tv") //IRCMIGRATE: Redundant
 		{
 			//HACK: If we don't have the actual type provided, guess based on
 			//the person's nick and the text of the message. Note that this code
@@ -835,16 +835,17 @@ class channel_notif
 					runhooks("subscription", 0, this, "sub", person, params->msg_param_sub_plan[0..0], 1, params);
 					event_notify("subscription", this, "sub", person, params->msg_param_sub_plan[0..0], 1, params);
 					break;
-				case "resub": trigger_special("!resub", person, ([
-					"{tier}": params->msg_param_sub_plan[0..0],
-					"{months}": params->msg_param_cumulative_months,
-					"{streak}": params->msg_param_streak_months || "",
-					"{multimonth}": params->msg_param_multimonth_duration || "1", //Ditto re tenure
-				]));
-				runhooks("subscription", 0, this, "resub", person, params->msg_param_sub_plan[0..0], 1, params);
-				event_notify("subscription", this, "resub", person, params->msg_param_sub_plan[0..0], 1, params);
-				Stdio.append_file("subs.log", sprintf("\n%sDEBUG RESUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
-				break;
+				case "resub":
+					Stdio.append_file("subs.log", sprintf("\n%sDEBUG RESUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
+					trigger_special("!resub", person, ([
+						"{tier}": params->msg_param_sub_plan[0..0],
+						"{months}": params->msg_param_cumulative_months,
+						"{streak}": params->msg_param_streak_months || "",
+						"{multimonth}": params->msg_param_multimonth_duration || "1", //Ditto re tenure
+					]));
+					runhooks("subscription", 0, this, "resub", person, params->msg_param_sub_plan[0..0], 1, params);
+					event_notify("subscription", this, "resub", person, params->msg_param_sub_plan[0..0], 1, params);
+					break;
 				case "giftpaidupgrade": break; //Pledging to continue a subscription (first introduced for the Subtember special in 2018, and undocumented)
 				case "anongiftpaidupgrade": break; //Ditto but when the original gift was anonymous
 				case "primepaidupgrade": break; //Similar to the above - if you were on Prime but now pledge to continue, which could be done half price Subtember 2019.
@@ -925,8 +926,9 @@ class channel_notif
 			case "PRIVMSG": case 0: //If there's no params block, assume it's a PRIVMSG
 			{
 				//TODO: Check message times for other voices too
+				request_rate_token(lower_case(person->nick), name); //Do we need to lowercase it?
 				if (lower_case(person->nick) == lower_case(bot_nick)) {default_queue->lastmsgtime = time(1); default_queue->modmsgs = 0;}
-				if (person->badges) mods[person->user] = person->badges->_mod;
+				if (person->badges) G->G->user_mod_status[person->user + name] = mods[person->user] = person->badges->_mod;
 				if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
 				//For some reason, whispers show up with "/me" at the start, not "ACTION".
 				else if (sscanf(msg, "/me %s", msg)) person->is_action_msg = 1;
@@ -972,8 +974,7 @@ class channel_notif
 		}
 	}
 
-	//Not sent by Twitch, so not very useful.
-	void not_mode(object who,string mode) { }
+	void not_mode(object who,string mode) { } //IRCMIGRATE: Redundant
 
 	//Requires a UTF-8 encoded byte string (not Unicode text). May contain colour codes.
 	void log(strict_sprintf_format fmt, sprintf_args ... args)
@@ -1145,8 +1146,13 @@ protected void create(string name)
 		reconnect();
 	if (mapping irc = persist_config["ircsettings"])
 	{
+		irc_connect(([
+			"join": filter(indices(persist_config["channels"] || ([]))) {return __ARGS__[0][0] != '!';},
+			"capabilities": "membership tags commands" / " ",
+		]))->then() { } //IRCMIGRATE: Set G->G->irc here?
+		->thencatch() {werror("Unable to connect to Twitch:\n%s\n", describe_backtrace(__ARGS__[0]));};
 		bot_nick = irc->nick || "";
-		get_user_id(persist_config["ircsettings"]->nick)->then() {G->G->bot_uid = __ARGS__[0];};
+		if (bot_nick != "") get_user_id(bot_nick)->then() {G->G->bot_uid = __ARGS__[0];};
 		if (mixed ex = irc->http_address && irc->http_address != "" && catch
 		{
 			int use_https = has_prefix(irc->http_address, "https://");
