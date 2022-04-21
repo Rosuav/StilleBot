@@ -24,6 +24,7 @@ export function render(state) {
 	if (state.active) document.querySelectorAll("button,select").forEach(b => b.disabled = false);
 	//Partial updates: only update channels if channels were set
 	if (state.channels) {
+		DOM("#channelnames").value = state.channels.map(c => c.login).join(" ");
 		if (state.channels.length) set_content("#channels", state.channels.map(display_channel));
 		else set_content("#channels", "No channels to autohost yet - add one below!");
 	}
@@ -76,3 +77,10 @@ on("change", "#pausetime", e => {
 	ws_sync.send({cmd: "config", pausetime: +e.match.value});
 });
 on("click", "#pausenow", e => ws_sync.send({cmd: "pause"}));
+
+on("click", "#edithosts", e => DOM("#edithostsdlg").showModal());
+on("click", "#edithostlist", e => {
+	ws_sync.send({cmd: "clear"});
+	ws_sync.send({cmd: "addchannel", name: DOM("#channelnames").value});
+	DOM("#edithostsdlg").close();
+});

@@ -22,11 +22,23 @@ Pause duration: <select disabled=true id=pausetime><option value=60>One minute</
 {: #channels}
 
 <form id=addchannel autocomplete=off>
-<label>Add channel: <input name=channame></label>
+<label>Add channel(s): <input name=channame size=80></label>
 [Add](: type=submit disabled=true)
 </form>
+[Edit host list](:#edithosts)
 
 <div id=autohosts_this></div>
+
+> ### Edit host list
+>
+> This is your autohost list. Make any changes required. Channel names can be<br>
+> separated with spaces or placed on separate lines. The order of names<br>
+> determines precedence.
+>
+> <textarea id=channelnames rows=15 cols=60></textarea>
+>
+> [Apply changes](:#edithostlist) [Cancel](:.dialog_close)
+{: tag=dialog #edithostsdlg}
 
 <style>
 .avatar {max-width: 40px; vertical-align: middle; margin: 0 8px;}
@@ -380,11 +392,14 @@ void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) 
 	mapping config = persist_status->path("ghostwriter", conn->group);
 	//TODO: Recheck all channels on add? Or do that separately?
 	//Rechecking would update their avatars and display names.
-	get_user_info(msg->name, "login")->then() {[mapping c] = __ARGS__;
-		if (!c) return; //TODO: Report error to the user
-		if (config->channels && has_value(config->channels->id, c->id)) return;
-		config->channels += ({c});
-		has_channel(conn->group, c->id);
+	array names = replace(msg->name, "\n", " ") / " " - ({""});
+	Concurrent.all(get_users_info((names / 100.0)[*], "login"))->then() {array chans = __ARGS__[0] * ({ });
+		if (!sizeof(chans)) return; //TODO: Report error to the user
+		foreach (chans, mapping c) {
+			if (config->channels && has_value(config->channels->id, c->id)) continue;
+			config->channels += ({c});
+			has_channel(conn->group, c->id);
+		}
 		persist_status->save();
 		send_updates_all(conn->group, (["channels": config->channels]));
 	};
@@ -435,6 +450,19 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		persist_status->save();
 		send_updates_all(conn->group, (["channels": config->channels]));
 	};
+}
+
+void websocket_cmd_clear(mapping(string:mixed) conn, mapping(string:mixed) msg) { //Used only by the "edit host list" dialog, not standalone
+	if (!(int)conn->group) return;
+	mapping config = persist_status->path("ghostwriter", conn->group);
+	if (!config->channels) return;
+	foreach (config->channels, mapping channel)
+		if (multiset aht = autohosts_this[channel->id]) {
+			aht[conn->group] = 0;
+			send_updates_all(channel->id); //As above, could just update AHT, but not worth the duplication
+		}
+	send_updates_all(conn->group, (["channels": config->channels = ({ })]));
+	persist_status->save();
 }
 
 void reconnect() {
