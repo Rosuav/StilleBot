@@ -9,5 +9,5 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 
 protected void create(string name) {
 	::create(name);
-	irc_connect((["join": "#twitch", "user": "mustardmine", "capabilities": "tags commands" / " "]));
+	irc_connect((["join": "#twitch", "capabilities": "tags commands" / " "]));
 }

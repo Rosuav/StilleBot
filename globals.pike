@@ -816,6 +816,7 @@ class irc_callback {
 		if (!options->user) {
 			//Default credentials from the bot's main configs
 			mapping cfg = persist_config->path("ircsettings");
+			if (!cfg->pass) return Concurrent.reject(({"IRC authentication not configured\n", backtrace()}));
 			options->user = cfg->nick; options->pass = cfg->pass;
 		}
 		if (!options->pass) {

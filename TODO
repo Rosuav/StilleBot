@@ -106,6 +106,9 @@
   - Add link to the /channels/NAME/ landing page once it's ready for launch
 * Break out name-to/from-uid mappings into a separate file, maybe not even JSON? I think
   they might be the largest part of persist_status.
+* This command doesn't work:
+  - {"message":{"dest":"/w","message":"!quit","target":"$$"},"voice":"279141671"}
+  - In theory, should whisper from the specified voice. Does that need more scopes?
 * Migration of connection.pike to 'inherit irc_callback':
   - Maintain G->G->irc->channels as a mapping from "#channelname" to channel object
     - What do channel objects need other than what I've created? name, any others?
