@@ -516,6 +516,43 @@ class websocket_handler
 	}
 }
 
+//Token bucket system, shared among all IRC connections.
+float request_rate_token(string user, string chan) {
+	//By default, messages are limited to 20 every 30 seconds.
+	int bucket_size = 20;
+	int window_size = 30;
+	float safety_shave = 0.0; //For small windows, it's reasonable to shave the safety margin.
+	if (chan == "#!login" || chan == "#!join")
+		//Logins and channel joinings are limited to 20 every 10 seconds.
+		window_size = 10;
+	else if (chan == "#" + user || G->G->user_mod_status[user + chan])
+		//You can spam harder in channels you mod for.
+		bucket_size = 100;
+	else if (has_suffix(chan, "-nonmod")) {
+		//HACK: Non-mods also have to restrict themselves to one message per second.
+		bucket_size = window_size = 1;
+		safety_shave = 0.875; //Safety margin of 1/8 sec is plenty when working with a window of one second.
+	}
+	else if (float wait = request_rate_token(user, chan + "-nonmod"))
+		//Other half of hack: If you're not a mod, check both limits.
+		return wait;
+	array bucket = G->G->irc_token_bucket[user + chan];
+	if (!bucket) G->G->irc_token_bucket[user + chan] = bucket = ({0, 0});
+	int now = time() / window_size; //I'm pretty sure "number of half-minutes since 1970" isn't the way most humans think about time.
+	if (now != bucket[0]) {bucket[0] = now; bucket[1] = 0;} //New time period, fresh bucket of tokens.
+	if (bucket[1] < bucket_size) {bucket[1]++; return 0;} //Tokens available - take one and pass it on, like your IQ was normal
+	//We're out of tokens. Notify the caller to wait.
+	//For safety's sake, we wait until one second past the next window.
+	//Note that we do not automatically consume a token from the next window;
+	//if you get a float back from this function, you do NOT have permission
+	//yet, and must re-request a token after the delay.
+	//To calculate the required delay, we find the time_t of the next window,
+	//that being the (now+1)th window, plus the safety second. Asking Pike
+	//how many seconds since an epoch in the future returns a negative number,
+	//and negating that number gives us the time until that instant.
+	return -time(window_size * (now + 1) + 1) - safety_shave;
+}
+
 #ifdef IRCTRACE
 #define _IRCTRACE werror
 #else
@@ -744,43 +781,6 @@ class _TwitchIRC(mapping options) {
 	}
 	void command_PING(mapping attrs, string pfx, array(string) args) {
 		enqueue("pong :" + args[1]); //Enqueue or prepend to queue?
-	}
-
-	//Token bucket system, shared among all connections.
-	float request_rate_token(string user, string chan) {
-		//By default, messages are limited to 20 every 30 seconds.
-		int bucket_size = 20;
-		int window_size = 30;
-		float safety_shave = 0.0; //For small windows, it's reasonable to shave the safety margin.
-		if (chan == "#!login" || chan == "#!join")
-			//Logins and channel joinings are limited to 20 every 10 seconds.
-			window_size = 10;
-		else if (chan == "#" + user || G->G->user_mod_status[user + chan])
-			//You can spam harder in channels you mod for.
-			bucket_size = 100;
-		else if (has_suffix(chan, "-nonmod")) {
-			//HACK: Non-mods also have to restrict themselves to one message per second.
-			bucket_size = window_size = 1;
-			safety_shave = 0.875; //Safety margin of 1/8 sec is plenty when working with a window of one second.
-		}
-		else if (float wait = request_rate_token(user, chan + "-nonmod"))
-			//Other half of hack: If you're not a mod, check both limits.
-			return wait;
-		array bucket = G->G->irc_token_bucket[user + chan];
-		if (!bucket) G->G->irc_token_bucket[user + chan] = bucket = ({0, 0});
-		int now = time() / window_size; //I'm pretty sure "number of half-minutes since 1970" isn't the way most humans think about time.
-		if (now != bucket[0]) {bucket[0] = now; bucket[1] = 0;} //New time period, fresh bucket of tokens.
-		if (bucket[1] < bucket_size) {bucket[1]++; return 0;} //Tokens available - take one and pass it on, like your IQ was normal
-		//We're out of tokens. Notify the caller to wait.
-		//For safety's sake, we wait until one second past the next window.
-		//Note that we do not automatically consume a token from the next window;
-		//if you get a float back from this function, you do NOT have permission
-		//yet, and must re-request a token after the delay.
-		//To calculate the required delay, we find the time_t of the next window,
-		//that being the (now+1)th window, plus the safety second. Asking Pike
-		//how many seconds since an epoch in the future returns a negative number,
-		//and negating that number gives us the time until that instant.
-		return -time(window_size * (now + 1) + 1) - safety_shave;
 	}
 	//Insert ({get_token, "#some_channel"}) into the queue to grab a token before
 	//proceeding. This is done automatically for PRIVMSG and JOIN commands, but for
