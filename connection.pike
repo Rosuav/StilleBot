@@ -81,7 +81,7 @@ continue Concurrent.Future voice_enable(string voiceid, string chan, array(strin
 	mapping tok = persist_status["voices"][voiceid];
 	werror("Connecting to voice %O...\n", voiceid);
 	object conn = yield(irc_connect(([
-		"user": tok->login, "pass": tok->token,
+		"user": tok->login, "pass": "oauth:" + tok->token,
 		"voiceid": voiceid,
 		"capabilities": ({"commands"}),
 	])));
@@ -437,8 +437,8 @@ class channel(string name) { //name begins with hash and is all lower case
 			return;
 		}
 
-		if (dest == "/w") dest += " " + target;
-		else dest = name; //Everything other than whispers and open chat has been handled elsewhere.
+		//The only remaining destination (other than open chat) is whispers, which are a command prefix.
+		if (dest == "/w") prefix = sprintf("%s %s %s", dest, target, prefix);
 
 		//VERY simplistic form of word wrap.
 		array msgs = ({ });
@@ -447,7 +447,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			sscanf(msg, "%400s%s %s", string piece, string word, msg);
 			msgs += ({sprintf("%s%s%s ...", prefix, piece, word)});
 		}
-		msgs += ({msg});
+		msgs += ({prefix + msg});
 
 		string voice = cfg->voice && cfg->voice != "" && cfg->voice;
 		if (voice) write("Selecting voice for %O\n", voice);
