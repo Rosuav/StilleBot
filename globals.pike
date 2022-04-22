@@ -763,6 +763,7 @@ class _TwitchIRC(mapping options) {
 	void queueclose() {enqueue(close);} //Close the socket once we empty what's currently in queue
 	void quit() {enqueue("quit", no_reconnect);} //Ask the server to close once the queue is done
 	void no_reconnect() {options->no_reconnect = 1;}
+	void yes_reconnect() {options->no_reconnect = 0;}
 
 	void await_connection() {
 		//Wait until we have seen the error response to the MARKER

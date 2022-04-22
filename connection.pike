@@ -1,226 +1,11 @@
 inherit hook;
-//inherit irc_callback; //IRCMIGRATE: Uncomment this. Key steps in the migration are tagged thus.
+inherit irc_callback;
 
-object irc;
 string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
 object substitutions = Regexp.PCRE("(\\$[A-Za-z|]+\\$)|({[A-Za-z0-9_@|]+})");
 constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT"});
-
-class IRCClient //IRCMIGRATE: Made redundant
-{
-	inherit Protocols.IRC.Client;
-	#if __REAL_VERSION__ < 8.1
-	//Basically monkey-patch in a couple of methods that Pike 8.0 doesn't ship with.
-	void join_channel(string chan)
-	{
-	   cmd->join(chan);
-	   if (options->channel_program)
-	   {
-	      object ch = options->channel_program();
-	      ch->name = lower_case(chan);
-	      channels[lower_case(chan)] = ch;
-	   }
-	}
-
-	void part_channel(string chan)
-	{
-	   cmd->part(chan);
-	   m_delete(channels, lower_case(chan));
-	}
-	#endif
-
-	void close() {
-		::close();
-		remove_call_out(da_ping);
-		remove_call_out(no_ping_reply);
-	}
-
-	void got_command(string what, string ... args)
-	{
-		//With the capability "twitch.tv/tags" active, some messages get delivered prefixed.
-		//The Pike IRC client doesn't handle the prefixes, and I'm not sure how standardized
-		//this concept is (it could be completely Twitch-exclusive), so I'm handling it here.
-		//The prefix is formatted as "@x=y;a=b;q=w" with simple key=value pairs. We parse it
-		//out into a mapping and pass that along to not_message. Note that we also parse out
-		//whispers the same way, even though there's actually no such thing as whisper_notif
-		//in the core Protocols.IRC.Client handler - they go through to not_message for some
-		//channel (currently "#!whisper", though this may change in the future).
-		what = utf8_to_string(what); args[0] = utf8_to_string(args[0]); //TODO: Check if anything ever breaks because of this
-		mapping(string:string) attr = ([]);
-		if (has_prefix(what, "@"))
-		{
-			foreach (what[1..]/";", string att)
-			{
-				sscanf(att, "%s=%s", string name, string val);
-				attr[replace(name, "-", "_")] = replace(val || "", "\\s", " ");
-			}
-			//write(">> %O %O <<\n", args[0], attr);
-		}
-		sscanf(args[0], "%s :%s", string a, string message);
-		array parts = (a || args[0]) / " ";
-		if (sizeof(parts) >= 3 && (<"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT">)[parts[1]])
-		{
-			//Send whispers to a pseudochannel named #!whisper
-			string chan = parts[1] == "WHISPER" ? "#!whisper" : lower_case(parts[2]);
-			if (object c = channels[chan])
-			{
-				attr->_type = parts[1]; //Distinguish the three types of message
-				c->not_message(person(@(parts[0] / "!")), message, attr);
-				return;
-			}
-		}
-		::got_command(what, @args);
-	}
-}
-
-void error_notify(mixed ... args) {werror("error_notify: %O\n", args);} //IRCMIGRATE: Redundant
-Concurrent.Future irc_connect(mapping options) {return Concurrent.resolve(1);} //IRCMIGRATE: Remove to enable functionality
-
-void reconnect() //IRCMIGRATE: Redundant, folded into init. Reconnection logic is handled by the _TwitchIRC type internally.
-{
-	//NOTE: This appears to be creating duplicate channel joinings, for some reason.
-	//HACK: Destroy and reconnect - this might solve the above problem. CJA 20160401.
-	if (bounce(ws_handler)) return; //We're not the current file. Don't connect.
-	if (irc && irc == G->G->irc) {irc->close(); if (objectp(irc)) destruct(irc); werror("%% Reconnecting\n");}
-	//TODO: Dodge the synchronous gethostbyname?
-	mapping opt = persist_config["ircsettings"];
-	if (!opt || !opt->pass) return; //Not yet configured - can't connect.
-	opt += (["channel_program": channel_notif, "connection_lost": lambda() {werror("%% Connection lost\n"); call_out(reconnect, 10);},
-		"error_notify": error_notify]);
-	if (mixed ex = catch {
-		G->G->irc = irc = IRCClient("irc.chat.twitch.tv", opt);
-		#if __REAL_VERSION__ >= 8.1
-		function cap = irc->cmd->cap;
-		#else
-		//The 'cap' command isn't supported by Pike 8.0's Protocols.IRC.Client,
-		//so we create our own, the same way. There will be noisy failures from
-		//the responses, but it's fine in fire-and-forget mode.
-		function cap = irc->cmd->SyncRequest(Protocols.IRC.Requests.NoReply("CAP", "string", "text"), irc->cmd);
-		#endif
-		cap("REQ","twitch.tv/membership");
-		cap("REQ","twitch.tv/commands");
-		cap("REQ","twitch.tv/tags");
-		//Connect to channels progressively to reduce server hammer
-		foreach (indices(persist_config["channels"]); int delay; string chan) {
-			if (chan[0] == '!') {
-				//Hack: Create fake channel objects for special pseudo-channels
-				object ch = channel_notif();
-				ch->name = "#" + chan;
-				irc->channels["#" + chan] = ch;
-			}
-			else call_out(irc->join_channel, delay * 0.5, "#" + chan);
-		}
-	})
-	{
-		//Something went wrong with the connection. Most likely, it's a
-		//network issue, so just print the exception and retry in a
-		//minute (non-backoff).
-		werror("%% Error connecting to Twitch:\n%s\n", describe_error(ex));
-		//Since other modules will want to look up G->G->irc->channels,
-		//let them. One little shim is all it takes.
-		G->G->irc = (["close": lambda() { }, "channels": ([])]);
-	}
-}
-
-//NOTE: When this file gets updated, the queues will not be migrated.
-//The old queues will be pumped by the old code, and the new code will
-//have a single empty queue for the default voice.
-mapping(string:object) sendqueues = ([]);
-class SendQueue(string id) { //IRCMIGRATE: This entire system will be redundant in favour of temporary (no-reconnect) ancillaries.
-	int lastmsgtime;
-	int modmsgs = 0;
-	object client;
-	array msgqueue = ({ });
-	int active = 1, initialized = 0;
-	string my_nick;
-	mixed active_call_out;
-
-	protected void create() {
-		lastmsgtime = time(); //TODO: Subsecond resolution? Have had problems sometimes with triggering my own commands if non-mod.
-		if (!id) {my_nick = bot_nick; return;} //The default queue uses the primary connection
-		sendqueues[id] = this;
-		mapping tok = persist_status["voices"][?id];
-		if (!tok) {werror("Unable to get auth token for voice %O\n", id); finalize(); return;}
-		mixed ex = catch (client = IRCClient("irc.chat.twitch.tv", ([
-			"nick": my_nick = tok->login,
-			"pass": "oauth:" + tok->token,
-			"connection_lost": finalize,
-			"error_notify": error_notify,
-			//Once we see the MOTD, we're ready to send messages. (Or should we wait for
-			//USERSTATE or ROOMSTATE? Do we get those if not joining a channel?)
-			"motd_notify": lambda() {initialized = 1;},
-		])));
-		if (ex) {
-			tok->last_error_time = time();
-			werror("%% Error connecting to voice %s:\n%s\n", my_nick, describe_error(ex));
-			finalize(); return;
-		}
-		check_active(); active = 1;
-		write("Connected to voice %O\n", my_nick);
-	}
-	void finalize() {
-		write("Finalizing voice queue for %O -> %O\n", my_nick, msgqueue);
-		m_delete(sendqueues, id);
-		if (client) client->close();
-		remove_call_out(active_call_out); active_call_out = 0;
-	}
-	void check_active() {
-		if (!active) {
-			write("Voice %s idle, disconnecting\n", my_nick);
-			finalize();
-			return;
-		}
-		active = 0;
-		remove_call_out(active_call_out);
-		active_call_out = call_out(check_active, 900);
-	}
-
-	void pump_queue() {
-		int tm = time(1);
-		if (tm == lastmsgtime) {call_out(pump_queue, 1); return;}
-		lastmsgtime = tm; modmsgs = 0;
-		[[string|array to, string msg], msgqueue] = Array.shift(msgqueue);
-		(client || irc)->send_message(to, string_to_utf8(msg));
-	}
-	void send_message(string to, string msg, int|void is_mod) {
-		if (has_prefix(to, "/"))
-		{
-			if (to == "/w " + my_nick) //IRCMIGRATE: Keep this logic somewhere, it's good for testing
-			{
-				//Hack: Instead of whispering to ourselves, write to the console.
-				write("<%s> %s\n", to, msg);
-				return;
-			}
-			msg = to + " " + msg; //eg "/w target message"
-			to = "#" + my_nick; //Shouldn't matter what the dest is with these.
-		}
-		int tm = time(1);
-		if (is_mod)
-		{
-			//Mods can always ignore slow-mode. But they should still keep it to
-			//a max of 100 messages in 30 seconds (which I simplify down to 3/sec)
-			//to avoid getting globalled.
-			if (tm != lastmsgtime) {lastmsgtime = tm; modmsgs = 0;}
-			if (++modmsgs < 3)
-			{
-				(client || irc)->send_message(to, string_to_utf8(msg));
-				return;
-			}
-		}
-		if (!initialized || sizeof(msgqueue) || tm == lastmsgtime)
-		{
-			msgqueue += ({({to, msg})});
-			call_out(pump_queue, 1);
-		}
-		else
-		{
-			lastmsgtime = tm; modmsgs = 0;
-			(client || irc)->send_message(to, string_to_utf8(msg));
-		}
-	}
-}
-object default_queue = SendQueue(0);
+mapping irc_connections = ([]); //Not persisted across code reloads, but will be repopulated (after checks) from the connection_cache.
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
 	"broadcaster": "_mod", "moderator": "_mod", "staff": "_mod",
@@ -229,15 +14,15 @@ constant badge_aliases = ([ //Fold a few badges together, and give shorthands fo
 //Go through a message's parameters/tags to get the info about the person
 //There may be some non-person info gathered into here too, just for
 //convenience; in fact, the name "person" here is kinda orphanned. (Tragic.)
-mapping(string:mixed) gather_person_info(object person, mapping params) //IRCMIGRATE: "object person" won't be a thing, use params instead
+mapping(string:mixed) gather_person_info(mapping params)
 {
-	mapping ret = (["nick": person->nick, "user": person->user]);
-	if (params->user_id && person->user)
+	mapping ret = (["nick": params->user, "user": params->user]); //TODO: Is nick used anywhere? If not, remove.
+	if (params->user_id && params->user) //Should always be the case
 	{
 		ret->uid = (int)params->user_id;
-		notice_user_name(person->user, params->user_id);
+		notice_user_name(params->user, params->user_id);
 	}
-	ret->displayname = params->display_name || person->nick;
+	ret->displayname = params->display_name || params->user;
 	ret->msgid = params->id;
 	if (params->badges)
 	{
@@ -292,19 +77,30 @@ constant deletemsg = ({"object channel", "object person", "string target", "stri
 @create_hook:
 constant deletemsgs = ({"object channel", "object person", "string target"});
 
-class channel_notif
-{
-	inherit Protocols.IRC.Channel; //IRCMIGRATE: No inherit. Give the class some useful args instead.
+continue Concurrent.Future voice_enable(string voiceid, string chan, array(string) msgs) {
+	mapping tok = persist_status["voices"][voiceid];
+	werror("Connecting to voice %O...\n", voiceid);
+	object conn = yield(irc_connect(([
+		"user": tok->login, "pass": tok->token,
+		"voiceid": voiceid,
+		"capabilities": ({"commands"}),
+	])));
+	werror("Voice %O connected, sending to channel %O\n", voiceid, chan);
+	irc_connections[voiceid] = conn;
+	conn->yes_reconnect(); //Mark that we need this connection
+	conn->send(chan, msgs[*]);
+	conn->enqueue(conn->no_reconnect); //Once everything's sent, it's okay to disconnect
+}
+
+class channel(string name) { //name begins with hash and is all lower case
 	string color;
 	mapping config = ([]);
 	multiset mods=(<>);
-	mapping(string:int) recent_viewers = ([]);
+	mapping(string:int) recent_viewers = ([]); //FIXME: Gone, use participants instead
 	string hosting;
 	int userid;
 
-	protected void create() {call_out(configure,0);}
-	void configure() //Needs to happen after this->name is injected by Protocols.IRC.Client
-	{
+	protected void create() {
 		config = persist_config["channels"][name[1..]];
 		if (config->chatlog)
 		{
@@ -317,13 +113,9 @@ class channel_notif
 		//mod-only command, that's trivially easy; for web access, just "poke
 		//the bot" in chat first.)
 		mods[name[1..]] = 1;
-		if (!has_prefix(name, "#!")) get_user_id(name[1..])->then() {[userid] = __ARGS__;};
+		if (config->userid) userid = config->userid;
+		else if (!has_prefix(name, "#!")) get_user_id(name[1..])->then() {config->userid = userid = __ARGS__[0];};
 	}
-
-	//NOTE: Without not_join and its friends, Pike 8.0 will spam noisy failure
-	//messages. Everything seems to still work, though.
-	void not_join(object who) {/*log("%sJoin %s: %s\e[0m\n",color,name,who->user);*/ recent_viewers[who->user] = 1;}
-	void not_part(object who,string message,object executor) {/*log("%sPart %s: %s\e[0m\n", color, name, who->user);*/}
 
 	array(command_handler|string) locate_command(mapping person, string msg)
 	{
@@ -649,21 +441,19 @@ class channel_notif
 		if (dest == "/w") dest += " " + target;
 		else dest = name; //Everything other than whispers and open chat has been handled elsewhere.
 
-		function send_message = default_queue->send_message;
-		if (cfg->voice && cfg->voice != "") {
-			write("Selecting voice for %O\n", cfg->voice);
-			if (!sendqueues[cfg->voice]) SendQueue(cfg->voice);
-			send_message = sendqueues[cfg->voice]->send_message;
-			write("Selected voice: %O\n", send_message);
-		}
-
 		//VERY simplistic form of word wrap.
+		array msgs = ({ });
 		while (sizeof(msg) > 400)
 		{
 			sscanf(msg, "%400s%s %s", string piece, string word, msg);
-			send_message(dest, sprintf("%s%s%s ...", prefix, piece, word), mods[bot_nick]);
+			msgs += ({sprintf("%s%s%s ...", prefix, piece, word)});
 		}
-		send_message(dest, prefix + msg, mods[bot_nick]);
+		msgs += ({msg});
+
+		string voice = cfg->voice && cfg->voice != "" && cfg->voice;
+		if (voice) write("Selecting voice for %O\n", voice);
+		if (irc_connections[voice]) irc_connections[voice]->send(name, msgs[*]);
+		else spawn_task(voice_enable(voice, name, msgs));
 	}
 
 	//Send any sort of echoable message.
@@ -734,29 +524,11 @@ class channel_notif
 	}
 
 	mapping subbomb_ids = ([]);
-	//IRCMIGRATE: Rename this and have it take different args. Notably, ircperson isn't a thing - get it all from attrs.
-	void not_message(object ircperson, string msg, mapping(string:string)|void params)
-	{
-		//IRCMIGRATE: The msg parameter will now be guaranteed text, not bytes. Confirm also true for params/attrs.
-		if (!params) params = ([]);
-		mapping(string:mixed) person = gather_person_info(ircperson, params);
-		if (!params->_type && person->nick == "tmi.twitch.tv") //IRCMIGRATE: Redundant
-		{
-			//HACK: If we don't have the actual type provided, guess based on
-			//the person's nick and the text of the message. Note that this code
-			//is undertested and may easily be buggy. The normal case is that we
-			//WILL get the correct message IDs, thus guaranteeing reliability.
-			params->_type = "NOTICE";
-			foreach (([
-				"Now hosting %*s.": "host_on",
-				"Exited host mode.": "host_off",
-				"%*s has gone offline. Exiting host mode.": "host_target_went_offline",
-				"The moderators of this channel are: %*s": "room_mods",
-			]); string match; string id)
-				if (sscanf(msg, match)) params->msg_id = id;
-		}
+	void irc_message(string type, string chan, string msg, mapping params) {
+		//TODO: The msg parameter will now be guaranteed text, not bytes. Confirm also true for params/attrs.
+		mapping(string:mixed) person = gather_person_info(params);
 		mapping responsedefaults;
-		switch (params->_type)
+		switch (type)
 		{
 			case "NOTICE": case "USERNOTICE": switch (params->msg_id)
 			{
@@ -919,15 +691,13 @@ class channel_notif
 					//Has a msg_param_color that is either PRIMARY or a colour word eg "PURPLE"
 					break;
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
-					params->_type, params->msg_id, name, params, msg);
+					type, params->msg_id, name, params, msg);
 			}
 			break;
 			case "WHISPER": responsedefaults = (["dest": "/w", "target": "$$"]); //fallthrough
-			case "PRIVMSG": case 0: //If there's no params block, assume it's a PRIVMSG
+			case "PRIVMSG":
 			{
-				//TODO: Check message times for other voices too
 				request_rate_token(lower_case(person->nick), name); //Do we need to lowercase it?
-				if (lower_case(person->nick) == lower_case(bot_nick)) {default_queue->lastmsgtime = time(1); default_queue->modmsgs = 0;}
 				if (person->badges) G->G->user_mod_status[person->user + name] = mods[person->user] = person->badges->_mod;
 				if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
 				//For some reason, whispers show up with "/me" at the start, not "ACTION".
@@ -970,11 +740,9 @@ class channel_notif
 					G_G_("participants", name[1..], __ARGS__[0]->login)->lastnotice = 0;
 				};
 				break;
-			default: werror("Unknown message type %O on channel %s\n", params->_type, name);
+			default: werror("Unknown message type %O on channel %s\n", type, name);
 		}
 	}
-
-	void not_mode(object who,string mode) { } //IRCMIGRATE: Redundant
 
 	//Requires a UTF-8 encoded byte string (not Unicode text). May contain colour codes.
 	void log(strict_sprintf_format fmt, sprintf_args ... args)
@@ -989,6 +757,15 @@ class channel_notif
 		if (has_value(info, 0)) werror("DEBUG: Special %O got info %O\n", special, info); //Track down those missing-info errors
 		send(person, response, info);
 	}
+}
+
+void irc_message(string type, string chan, string msg, mapping attrs) {
+	object channel = G->G->irc->channels[type == "WHISPER" ? "#!whisper" : chan];
+	if (channel) channel->irc_message(type, chan, msg, attrs);
+}
+
+void irc_closed(mapping options) {
+	if (options->voiceid) m_delete(irc_connections, options->voiceid);
 }
 
 void session_cleanup()
@@ -1141,15 +918,14 @@ protected void create(string name)
 	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
 	if (sizeof(G->G->http_sessions)) session_cleanup();
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
-	irc = G->G->irc;
-	//if (!irc) //HACK: Force reconnection every time
-		reconnect();
 	if (mapping irc = persist_config["ircsettings"])
 	{
+		array channels = "#" + indices(persist_config["channels"] || ([]))[*];
+		G->G->irc = (["channels": mkmapping(channels, channel(channels[*]))]);
 		irc_connect(([
-			"join": filter(indices(persist_config["channels"] || ([]))) {return __ARGS__[0][0] != '!';},
+			"join": filter(channels) {return __ARGS__[0][1] != '!';},
 			"capabilities": "membership tags commands" / " ",
-		]))->then() { } //IRCMIGRATE: Set G->G->irc here?
+		]))->then() {irc_connections[0] = __ARGS__[0];}
 		->thencatch() {werror("Unable to connect to Twitch:\n%s\n", describe_backtrace(__ARGS__[0]));};
 		bot_nick = irc->nick || "";
 		if (bot_nick != "") get_user_id(bot_nick)->then() {G->G->bot_uid = __ARGS__[0];};
@@ -1193,5 +969,5 @@ protected void create(string name)
 			if (object http = m_delete(G->G, "httpserver")) catch {http->close();};
 		}
 	}
-	add_constant("send_message", default_queue->send_message);
+	add_constant("send_message") {if (irc_connections[0]) irc_connections[0]->send(@__ARGS__);};
 }
