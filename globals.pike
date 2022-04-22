@@ -672,6 +672,11 @@ class _TwitchIRC(mapping options) {
 				fail("Login authentication failed.");
 				return;
 			}
+			if (!have_connection && args * " " == "NOTICE * Improperly formatted auth") {
+				//This is also a failure to connect, but a code bug rather than auth failure.
+				fail("Login authentication format error, check oauth: prefix.");
+				return;
+			}
 			if (function f = this["command_" + args[0]]) f(attrs, prefix, args);
 			else if ((int)args[0]) command_0000(attrs, prefix, args);
 			else if (has_value(options->module->messagetypes, args[0])) {
