@@ -255,6 +255,7 @@ continue Concurrent.Future update_status(string chanid) {
 		}
 	}
 	if (expected == st->hosting) return 0; //Including if they're both 0 (want no host, currently not hosting)
+	if (!config->chan) config->chan = yield(get_user_info(chanid)->login);
 	//Currently we always take the first on the list. This may change in the future.
 	write("GHOSTWRITER: Connect %O %O, send %O\n", chanid, config->chan, msg);
 	connect(chanid, config->chan, msg); //Connect and send message
@@ -390,6 +391,7 @@ void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) 
 	if (!(int)conn->group) return;
 	if (!stringp(msg->name)) return;
 	mapping config = persist_status->path("ghostwriter", conn->group);
+	if (!config->chan) spawn_task(fetch_name(conn->group, config));
 	//TODO: Recheck all channels on add? Or do that separately?
 	//Rechecking would update their avatars and display names.
 	array names = replace(msg->name, "\n", " ") / " " - ({""});
@@ -465,10 +467,17 @@ void websocket_cmd_clear(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	persist_status->save();
 }
 
+continue Concurrent.Future fetch_name(string chanid, mapping info) {
+	mapping user = yield(get_user_info(chanid));
+	info->chan = user->login;
+	persist_status->save();
+}
+
 void reconnect() {
 	mapping chanids = ([]);
 	array channels = ({ });
 	foreach (persist_status->path("ghostwriter"); string chanid; mapping info) {
+		if (!info->chan) {spawn_task(fetch_name(chanid, info)); continue;}
 		channel_ids[info->chan] = chanid;
 		if (!info->?channels || !sizeof(info->channels)) continue;
 		channels += ({"#" + info->chan});
