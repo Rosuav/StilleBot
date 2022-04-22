@@ -488,7 +488,6 @@ void reconnect() {
 			if (t >= 0) schedule_check_callouts[chanid] = call_out(scheduled_recalculation, t, chanid);
 		}
 	}
-	werror("Joining channels: %O\n", channels);
 	irc_connect(([
 		"capabilities": ({"tags", "commands"}),
 		"join": channels,
