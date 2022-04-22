@@ -937,11 +937,7 @@ class _mainwindow
 	void save_content(mapping(string:mixed) info)
 	{
 		string kwd = win->kwd->get_text();
-		if (!G->G->irc->channels["#"+kwd])
-		{
-			write("%%% Joining #"+kwd+"\n");
-			G->G->irc->join_channel("#"+kwd);
-		}
+		if (!G->G->irc->channels["#" + kwd]) function_object(send_message)->reconnect();
 	}
 	void load_content(mapping(string:mixed) info)
 	{
@@ -949,16 +945,12 @@ class _mainwindow
 		{
 			int t = channel_uptime(kwd);
 			string host = "";
-			if (object chan=G->G->irc->channels["#"+kwd])
+			if (object chan = G->G->irc->channels["#" + kwd])
 				if (chan->hosting) host = "Hosting: " + chan->hosting;
 			win->uptime->set_text(t ? describe_time(t) : host);
 		}
 	}
-	void delete_content(string kwd,mapping(string:mixed) info)
-	{
-		write("%%% Parting #"+kwd+"\n");
-		G->G->irc->part_channel("#"+kwd);
-	}
+	void delete_content(string kwd,mapping(string:mixed) info) {function_object(send_message)->reconnect();}
 
 	void closewindow() {exit(0);}
 

@@ -906,6 +906,18 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 	sock->onclose = ws_close;
 }
 
+void reconnect() {
+	array channels = "#" + indices(persist_config["channels"] || ([]))[*];
+	G->G->irc = (["channels": mkmapping(channels, channel(channels[*]))]);
+	irc_connect(([
+		"join": filter(channels) {return __ARGS__[0][1] != '!';},
+		"capabilities": "membership tags commands" / " ",
+	]))->then() {irc_connections[0] = __ARGS__[0];}
+	->thencatch() {werror("Unable to connect to Twitch:\n%s\n", describe_backtrace(__ARGS__[0]));};
+}
+
+void send_message(string chan, string msg) {if (irc_connections[0]) irc_connections[0]->send(chan, msg);}
+
 protected void create(string name)
 {
 	::create(name);
@@ -920,13 +932,7 @@ protected void create(string name)
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
 	if (mapping irc = persist_config["ircsettings"])
 	{
-		array channels = "#" + indices(persist_config["channels"] || ([]))[*];
-		G->G->irc = (["channels": mkmapping(channels, channel(channels[*]))]);
-		irc_connect(([
-			"join": filter(channels) {return __ARGS__[0][1] != '!';},
-			"capabilities": "membership tags commands" / " ",
-		]))->then() {irc_connections[0] = __ARGS__[0];}
-		->thencatch() {werror("Unable to connect to Twitch:\n%s\n", describe_backtrace(__ARGS__[0]));};
+		reconnect();
 		bot_nick = irc->nick || "";
 		if (bot_nick != "") get_user_id(bot_nick)->then() {G->G->bot_uid = __ARGS__[0];};
 		if (mixed ex = irc->http_address && irc->http_address != "" && catch
@@ -969,5 +975,5 @@ protected void create(string name)
 			if (object http = m_delete(G->G, "httpserver")) catch {http->close();};
 		}
 	}
-	add_constant("send_message") {if (irc_connections[0]) irc_connections[0]->send(@__ARGS__);};
+	add_constant("send_message", send_message);
 }
