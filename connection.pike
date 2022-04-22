@@ -96,7 +96,6 @@ class channel(string name) { //name begins with hash and is all lower case
 	string color;
 	mapping config = ([]);
 	multiset mods=(<>);
-	mapping(string:int) recent_viewers = ([]); //FIXME: Gone, use participants instead
 	string hosting;
 	int userid;
 

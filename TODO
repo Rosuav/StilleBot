@@ -109,6 +109,3 @@
 * This command doesn't work:
   - {"message":{"dest":"/w","message":"!quit","target":"$$"},"voice":"279141671"}
   - In theory, should whisper from the specified voice. Does that need more scopes?
-* Migration of connection.pike to 'inherit irc_callback':
-  - Track recent_viewers differently. It's only used for quote addition.
-    - Maybe use G->G->participants? Also, that should possibly get pruned occasionally.
