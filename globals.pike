@@ -1121,12 +1121,12 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 //will get back the correct CSS text for the specified formatting.
 array TEXTFORMATTING_ATTRS = ("font fontweight fontstyle fontsize whitespace css "
 			"color strokewidth strokecolor borderwidth bordercolor "
-			"bgcolor bgalpha padvert padhoriz "
+			"bgcolor bgalpha padvert padhoriz textalign "
 			"shadowx shadowy shadowcolor shadowalpha") / " ";
 string textformatting_css(mapping cfg) {
 	string css = cfg->css || "";
 	if (css != "" && !has_suffix(css, ";")) css += ";";
-	foreach ("color font-weight font-style border-color white-space" / " ", string attr)
+	foreach ("color font-weight font-style border-color white-space text-align" / " ", string attr)
 		if (mixed val = cfg[attr - "-"]) css += attr + ": " + val + ";";
 	foreach ("font-size width height" / " ", string attr)
 		if (mixed val = cfg[attr - "-"]) css += attr + ": " + val + "px;";

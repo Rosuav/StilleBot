@@ -85,17 +85,21 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 	])]),
 	//TODO: Gradient?
 	//TODO: Padding? Back end already supports padvert and padhoriz.
-	TR([TH("Formatting"), TD(SELECT({name: "whitespace"}, [
-		OPTGROUP({label: "Single line"}, [
-			OPTION({value: "normal"}, "Wrapped"),
-			OPTION({value: "nowrap"}, "No wrapping"),
+	TR([TH("Formatting"), TD([
+		SELECT({name: "whitespace"}, [
+			OPTGROUP({label: "Single line"}, [
+				OPTION({value: "normal"}, "Wrapped"),
+				OPTION({value: "nowrap"}, "No wrapping"),
+			]),
+			OPTGROUP({label: "Multi-line"}, [
+				OPTION({value: "pre-line"}, "Normal"),
+				OPTION({value: "pre"}, "Keep indents"),
+				OPTION({value: "pre-wrap"}, "No wrapping"),
+			]),
 		]),
-		OPTGROUP({label: "Multi-line"}, [
-			OPTION({value: "pre-line"}, "Normal"),
-			OPTION({value: "pre"}, "Keep indents"),
-			OPTION({value: "pre-wrap"}, "No wrapping"),
-		]),
-	]))]),
+		"Alignment",
+		SELECT({name: "textalign"}, "start end center justify".split(" ").map(o => OPTION(o))),
+	])]),
 	TR([TH("Custom CSS"), TD(INPUT({name: "css", size: 60}))]),
 ])}
 
