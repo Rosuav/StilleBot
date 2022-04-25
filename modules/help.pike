@@ -13,7 +13,7 @@ command.
 echoable_message process(object channel, mapping person, string param)
 {
 	multiset(string) cmds = (<>);
-	int is_mod = channel->mods[person->user];
+	int is_mod = G->G->user_mod_status[person->user + channel->name];
 	if (param != "")
 	{
 		//NOTE: We say "mod-only" if a mod command comes up when a non-mod one

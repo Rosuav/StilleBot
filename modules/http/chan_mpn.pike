@@ -47,7 +47,7 @@ constant valid_modes = (["": 1, "html": 2, "embed": 2]); //Map to 2 if anyone ca
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, mapping doc, string mode] = split_channel(msg->group);
 	if (!channel) return "Bad channel";
-	conn->is_mod = channel->mods[conn->session->?user->?login];
+	conn->is_mod = G->G->user_mod_status[conn->session->?user->?login + channel->name];
 	if (valid_modes[mode] - !conn->is_mod <= 0) return "Bad mode flag"; //No default-to-HTML here - keep it dependable
 	if (!doc) return "Bad document name"; //Allowed to be ugly as it'll normally be trapped at the HTTP request end
 }

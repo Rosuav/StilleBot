@@ -75,7 +75,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			save_config += " <input type=submit name=export value='Export all configs'>";
 	}
 	return render_template("chan_.md", ([
-		"bot_or_mod": channel->mods[persist_config["ircsettings"]->nick] ? "mod" : "bot",
+		"bot_or_mod": G->G->user_mod_status[persist_config["ircsettings"]->nick + channel->name] ? "mod" : "bot",
 		"uptime": uptime ? "Channel has been online for " + describe_time(uptime) : "Channel is currently offline.",
 		"user_is_mod": user_is_mod,
 		"timezone": timezone,
@@ -123,7 +123,7 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	]);
 	if (mapping user = req->misc->session->?user)
 	{
-		if (channel->mods[user->login] || is_localhost_mod(user->login, req->get_ip())) {
+		if (G->G->user_mod_status[user->login + channel->name] || is_localhost_mod(user->login, req->get_ip())) {
 			req->misc->is_mod = 1;
 			req->misc->chaninfo->autoform = "<form method=post>";
 			req->misc->chaninfo->autoslashform = "</form>";

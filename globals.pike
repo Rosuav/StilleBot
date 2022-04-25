@@ -55,8 +55,8 @@ class command
 	echoable_message check_perms(object channel, mapping person, string param)
 	{
 		if (featurename && (channel->config->features[?featurename] || channel->config->allcmds) <= 0) return 0;
-		if ((require_moderator || access == "mod") && !channel->mods[person->user]) return 0;
-		if (access == "vip" && !channel->mods[person->user] && !person->badges->?vip) return 0;
+		if ((require_moderator || access == "mod") && !G->G->user_mod_status[person->user + channel->name]) return 0;
+		if (access == "vip" && !G->G->user_mod_status[person->user + channel->name] && !person->badges->?vip) return 0;
 		if (access == "none") return 0;
 		return process(channel, person, param);
 	}
@@ -1231,7 +1231,7 @@ class http_websocket
 			]);
 			conn->is_mod = 1;
 		}
-		else conn->is_mod = channel->mods[login] || is_localhost_mod(login, conn->remote_ip);
+		else conn->is_mod = G->G->user_mod_status[login + channel->name] || is_localhost_mod(login, conn->remote_ip);
 		if (!conn->is_mod && need_mod(grp)) return "Not logged in";
 	}
 
