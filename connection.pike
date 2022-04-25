@@ -94,6 +94,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	multiset mods=(<>);
 	string hosting;
 	int userid;
+	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream online.
 
 	protected void create() {
 		config = persist_config["channels"][name[1..]];
@@ -110,6 +111,15 @@ class channel(string name) { //name begins with hash and is all lower case
 		mods[name[1..]] = 1;
 		if (config->userid) userid = config->userid;
 		else if (!has_prefix(name, "#!")) get_user_id(name[1..])->then() {config->userid = userid = __ARGS__[0];};
+	}
+
+	void channel_online(int uptime) {
+		//Purge the raider list of anyone who didn't raid since the stream went online.
+		//This signal comes through a minute or six after the channel actually goes
+		//online, so we use the current uptime as a signal to know who raided THIS stream
+		//as opposed to LAST stream.
+		int went_online = time() - uptime;
+		raiders = filter(raiders) {return __ARGS__[0] >= went_online;};
 	}
 
 	array(command_handler|string) locate_command(mapping person, string msg)
@@ -583,6 +593,7 @@ class channel(string name) { //name begins with hash and is all lower case
 					//	ctime(time())[..<1], name, person->displayname, params));
 					//NOTE: The destination "room ID" might not remain forever.
 					//If it doesn't, we'll need to get the channel's user id instead.
+					raiders[(int)params->user_id] = time();
 					record_raid((int)params->user_id, person->displayname,
 						(int)params->room_id, name[1..], (int)params->tmi_sent_ts,
 						(int)params->msg_param_viewerCount);
@@ -766,6 +777,11 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 
 void irc_closed(mapping options) {
 	if (options->voiceid) m_delete(irc_connections, options->voiceid);
+}
+
+@hook_channel_online: int connected(string chan, int uptime) {
+	object channel = G->G->irc->channels[chan];
+	if (channel) channel->channel_online(uptime);
 }
 
 void session_cleanup()
