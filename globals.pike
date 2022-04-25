@@ -302,6 +302,7 @@ mapping G_G_(string ... path)
 	return ret;
 }
 
+//TODO: Make this callable, move the functionality for hooks into here, and maybe fold "inherit hook" into "inherit export"?
 class _HookID(string event) {constant is_hook_annotation = 1;}
 
 @"G->G->eventhooks"; //Unfortunate naming, since eventhook_types is completely different. Maybe when G->G->hooks is removed, rename this to that??
