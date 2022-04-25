@@ -733,6 +733,7 @@ class channel(string name) { //name begins with hash and is all lower case
 				G_G_("participants", name[1..], params->login)->lastnotice = 0;
 				break;
 			case "CLEARCHAT":
+				G_G_("banned_list", (string)userid)->stale = 1; //When anyone's banned/timed out, drop the banned users cache
 				runhooks("delete-msgs", 0, this, person, params->target_user_id);
 				event_notify("deletemsgs", this, person, params->target_user_id);
 				if (params->target_user_id) get_user_info(params->target_user_id)->then() {
@@ -931,8 +932,9 @@ protected void create(string name)
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
 	if (mapping irc = persist_config["ircsettings"])
 	{
-		reconnect();
 		bot_nick = irc->nick || "";
+		irc_connections[0] = connection_cache[bot_nick]; //If it exists, use it; it'll get replaced if necessary.
+		reconnect();
 		if (bot_nick != "") get_user_id(bot_nick)->then() {G->G->bot_uid = __ARGS__[0];};
 		if (mixed ex = irc->http_address && irc->http_address != "" && catch
 		{

@@ -229,6 +229,26 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	});
 }
 
+continue Concurrent.Future|array(mapping) get_banned_list(string|int userid, int|void force) {
+	if (intp(userid)) userid = (string)userid;
+	mapping cached = G_G_("banned_list", userid);
+	if (!cached->stale && cached->taken_at > time() - 3600 &&
+		(!cached->expires || cached->expires > Calendar.ISO.Second()))
+			return cached->banlist;
+	string username = yield(get_user_info(userid))->login;
+	string scopes = persist_status->path("bcaster_token_scopes")[username] || "";
+	if (!has_value(scopes / " ", "moderation:read")) error("Don't have broadcaster auth to fetch ban list for %O\n", username);
+	mapping ret = yield(get_helix_paginated("https://api.twitch.tv/helix/moderation/banned",
+		(["broadcaster_id": userid]),
+		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[username]]),
+	));
+	cached->stale = 0; cached->taken_at = time();
+	//If any of the entries have expiration times, record the earliest.
+	array expires = ret->expires_at - ({""});
+	cached->expires = min(@Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", expires[*])); //0 if no expiration
+	return cached->banlist = ret;
+}
+
 //Returns "offline" if not broadcasting, or a channel uptime.
 continue Concurrent.Future|string channel_still_broadcasting(string|int chan) {
 	if (stringp(chan)) chan = yield(get_user_id(chan));
@@ -701,6 +721,7 @@ protected void create(string|void name)
 	add_constant("get_user_id", get_user_id);
 	add_constant("get_user_info", get_user_info);
 	add_constant("get_users_info", get_users_info);
+	add_constant("get_banned_list", get_banned_list);
 	add_constant("notice_user_name", notice_user_name);
 	add_constant("translate_tag_ids", translate_tag_ids);
 	add_constant("EventSub", EventSub);
