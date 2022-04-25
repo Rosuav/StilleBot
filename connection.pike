@@ -91,7 +91,6 @@ continue Concurrent.Future voice_enable(string voiceid, string chan, array(strin
 class channel(string name) { //name begins with hash and is all lower case
 	string color;
 	mapping config = ([]);
-	multiset mods=(<>);
 	string hosting;
 	int userid;
 	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream online.
@@ -108,7 +107,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		//show us the badge, after which we'll acknowledge mod status. (For a
 		//mod-only command, that's trivially easy; for web access, just "poke
 		//the bot" in chat first.)
-		mods[name[1..]] = 1;
+		G->G->user_mod_status[name[1..] + name] = 1; //eg "rosuav#rosuav" is trivially a mod.
 		if (config->userid) userid = config->userid;
 		else if (!has_prefix(name, "#!")) get_user_id(name[1..])->then() {config->userid = userid = __ARGS__[0];};
 	}
@@ -124,7 +123,7 @@ class channel(string name) { //name begins with hash and is all lower case
 
 	array(command_handler|string) locate_command(mapping person, string msg)
 	{
-		int mod = mods[person->user];
+		int mod = G->G->user_mod_status[person->user + name];
 		if (command_handler f = sscanf(msg, "!%[^# ] %s", string cmd, string param)
 			&& find_command(this, cmd, mod))
 				return ({f, param||""});
@@ -565,12 +564,9 @@ class channel(string name) { //name begins with hash and is all lower case
 				case "host_off": case "host_target_went_offline": hosting = 0; break;
 				case "room_mods": if (sscanf(msg, "The moderators of this channel are: %s", string names) && names)
 				{
-					//Response to a "/mods" command
-					foreach (names / ", ", string name) if (!mods[name])
-					{
-						log("%sAcknowledging %s as a mod\e[0m\n", color, name);
-						mods[name] = 1;
-					}
+					//Response to a "/mods" command. Not sure if we still need this, but whatever.
+					foreach (names / ", ", string mod)
+						G->G->user_mod_status[mod + name] = 1;
 				}
 				break;
 				case "slow_on": case "slow_off": break; //Channel is now/no longer in slow mode
@@ -708,7 +704,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			case "PRIVMSG":
 			{
 				request_rate_token(lower_case(person->nick), name); //Do we need to lowercase it?
-				if (person->badges) G->G->user_mod_status[person->user + name] = mods[person->user] = person->badges->_mod;
+				if (person->badges) G->G->user_mod_status[person->user + name] = person->badges->_mod;
 				if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
 				//For some reason, whispers show up with "/me" at the start, not "ACTION".
 				else if (sscanf(msg, "/me %s", msg)) person->is_action_msg = 1;
