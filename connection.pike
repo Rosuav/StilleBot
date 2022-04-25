@@ -94,6 +94,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	string hosting;
 	int userid;
 	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream online.
+	mapping user_attrs = ([]); //Latest-seen user status (see gather_person_info). Not guaranteed fresh. Some parts will be message-specific.
 
 	protected void create() {
 		config = persist_config["channels"][name[1..]];
@@ -531,6 +532,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	void irc_message(string type, string chan, string msg, mapping params) {
 		//TODO: The msg parameter will now be guaranteed text, not bytes. Confirm also true for params/attrs.
 		mapping(string:mixed) person = gather_person_info(params);
+		if (person->uid) user_attrs[person->uid] = person;
 		mapping responsedefaults;
 		//For some unknown reason, certain types of notification come through
 		//as PRIVMSG when they would more logically be a NOTICE. They're usually
