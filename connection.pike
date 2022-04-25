@@ -24,15 +24,11 @@ mapping(string:mixed) gather_person_info(mapping params)
 	}
 	ret->displayname = params->display_name || params->user;
 	ret->msgid = params->id;
-	if (params->badges)
-	{
-		ret->badges = ([]);
-		foreach (params->badges / ",", string badge) if (badge != "")
-		{
-			sscanf(badge, "%s/%d", badge, int status);
-			ret->badges[badge] = status;
-			if (string flag = badge_aliases[badge]) ret->badges[flag] = status;
-		}
+	ret->badges = ([]);
+	if (params->badges) foreach (params->badges / ",", string badge) if (badge != "") {
+		sscanf(badge, "%s/%d", badge, int status);
+		ret->badges[badge] = status;
+		if (string flag = badge_aliases[badge]) ret->badges[flag] = status;
 	}
 	if (params->emotes)
 	{
