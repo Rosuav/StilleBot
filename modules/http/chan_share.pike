@@ -326,7 +326,7 @@ void cleanup() {
 		object channel = chans[idx];
 		foreach (configs; string userid; mapping cfg) {
 			if (!(int)userid) continue; //Not a user ID (probably the word "settings")
-			foreach (cfg->files, mapping file) {
+			if (cfg->files) foreach (cfg->files, mapping file) {
 				if (file->uploaded >= old) continue; //Mmmm, still fresh!
 				//This file is old. Dispose of it. Eww.
 				delete_file(channel, userid, file->id);
