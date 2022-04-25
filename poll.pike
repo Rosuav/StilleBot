@@ -11,7 +11,7 @@ inherit exporter;
 //Place a request to the API. Returns a Future that will be resolved with a fully
 //decoded result (a mapping of Unicode text, generally), or rejects if Twitch or
 //the network failed the request.
-Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, mapping|void options)
+@export: Concurrent.Future twitch_api_request(Protocols.HTTP.Session.URL url, mapping|void headers, mapping|void options)
 {
 	headers = (headers || ([])) + ([]);
 	options = options || ([]);
@@ -32,7 +32,7 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 		}
 		if (sizeof(reqs) > 1) reqs = ({Concurrent.all(@reqs)});
 		if (sizeof(reqs)) return reqs[0]->then(lambda() {
-			return request(replace(url, usernames), headers, options - (<"username">));
+			return twitch_api_request(replace(url, usernames), headers, options - (<"username">));
 		});
 		url = replace(url, usernames);
 		//If we found everything in cache, carry on with a modified URL.
@@ -53,7 +53,7 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 				if (G->G->app_access_token_expiry == -1) {
 					//TODO: Wait until the other request returns.
 					//For now we just sleep and try again.
-					return Concurrent.resolve(0)->delay(2)->then(lambda() {return request(url, headers, options);});
+					return Concurrent.resolve(0)->delay(2)->then(lambda() {return twitch_api_request(url, headers, options);});
 				}
 				G->G->app_access_token_expiry = -1; //Prevent spinning
 				Standards.URI uri = Standards.URI("https://id.twitch.tv/oauth2/token");
@@ -63,13 +63,13 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 					"client_secret": persist_config["ircsettings"]["clientsecret"],
 					"grant_type": "client_credentials",
 				]));
-				return request(uri, ([]), (["method": "POST"]))
+				return twitch_api_request(uri, ([]), (["method": "POST"]))
 					->then(lambda (mapping data) {
 						G->G->app_access_token = data->access_token;
 						G->G->app_access_token_expiry = time() + data->expires_in - 120;
 						//If this becomes a continue function, we could just fall through
 						//instead of calling ourselves recursively.
-						return request(url, headers, options);
+						return twitch_api_request(url, headers, options);
 					});
 			}
 			headers->Authorization = "Bearer " + G->G->app_access_token;
@@ -132,7 +132,7 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 		else lookups += ({(string)u});
 	}
 	if (!sizeof(lookups)) return Concurrent.resolve(results); //Got 'em all from cache.
-	return request(sprintf("https://api.twitch.tv/helix/users?%{" + type + "=%s&%}", Protocols.HTTP.uri_encode(lookups[*])))
+	return twitch_api_request(sprintf("https://api.twitch.tv/helix/users?%{" + type + "=%s&%}", Protocols.HTTP.uri_encode(lookups[*])))
 		->then(lambda(mapping data) {
 			foreach (data->data, mapping info) {
 				G->G->user_info[info->login] = G->G->user_info[(int)info->id] = info;
@@ -205,9 +205,9 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 		if (!sizeof(raw->data) && ++empty >= 3) return data;
 		//uri->add_query_variable("after", raw->pagination->cursor);
 		query["after"] = raw->pagination->cursor; uri->query = Protocols.HTTP.http_encode_query(query);
-		return request(uri, headers, options)->then(nextpage);
+		return twitch_api_request(uri, headers, options)->then(nextpage);
 	}
-	return request(uri, headers, options)->then(nextpage);
+	return twitch_api_request(uri, headers, options)->then(nextpage);
 }
 
 //Doesn't help, but it's certainly very interesting.
@@ -253,12 +253,12 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 //Returns "offline" if not broadcasting, or a channel uptime.
 @export: continue Concurrent.Future|string channel_still_broadcasting(string|int chan) {
 	if (stringp(chan)) chan = yield(get_user_id(chan));
-	array initial = yield(request("https://api.twitch.tv/helix/videos?type=archive&user_id=" + chan + "&first=1"))->data;
+	array initial = yield(twitch_api_request("https://api.twitch.tv/helix/videos?type=archive&user_id=" + chan + "&first=1"))->data;
 	//If there are no videos found, then presumably the person isn't live, since
 	//(even if VODs are disabled) the current livestream always shows up.
 	if (!sizeof(initial)) return "offline";
 	mixed _ = yield(task_sleep(1.5));
-	array second = yield(request("https://api.twitch.tv/helix/videos?type=archive&user_id=" + chan + "&first=1"))->data;
+	array second = yield(twitch_api_request("https://api.twitch.tv/helix/videos?type=archive&user_id=" + chan + "&first=1"))->data;
 	//When a channel is offline, the VOD doesn't grow in length.
 	if (!sizeof(second) || second[0]->duration == initial[0]->duration) return "offline";
 	return second[0]->duration;
@@ -266,7 +266,7 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 
 @export: Concurrent.Future get_channel_info(string name)
 {
-	return request("https://api.twitch.tv/helix/channels?broadcaster_id={{USER}}", ([]), (["username": name]))
+	return twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id={{USER}}", ([]), (["username": name]))
 	->then(lambda(mapping info) {
 		info = info->data[0];
 		//Provide Kraken-like attribute names for convenience
@@ -314,7 +314,7 @@ continue Concurrent.Future cache_game_names(string game_id)
 		write("Fetched %d games, total %d\n", sizeof(games), sizeof(G->G->category_names));
 		if (!G->G->category_names[game_id]) {
 			//We were specifically asked for this game ID. Explicitly ask Twitch for it.
-			mapping info = yield(request("https://api.twitch.tv/helix/games?id=" + game_id));
+			mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/games?id=" + game_id));
 			if (!sizeof(info->data)) werror("Unable to fetch game info for ID %O\n", game_id);
 			else if (info->data[0]->id != game_id) werror("???? Asked for game %O but got %O ????\n", game_id, info->data[0]->id);
 			else G->G->category_names[game_id] = info->data[0]->name;
@@ -523,7 +523,7 @@ void stream_status(string name, mapping info)
 
 @export: Concurrent.Future check_following(string user, string chan)
 {
-	return request("https://api.twitch.tv/helix/users/follows?from_id={{USER}}&to_id={{CHAN}}", ([]),
+	return twitch_api_request("https://api.twitch.tv/helix/users/follows?from_id={{USER}}&to_id={{CHAN}}", ([]),
 		(["username": (["{{USER}}": user, "{{CHAN}}": chan])]))
 	->then(lambda(mapping info) {
 		if (!sizeof(info->data)) {
@@ -552,7 +552,7 @@ void stream_status(string name, mapping info)
 	object limit = Calendar.ISO.Second()->set_timezone("UTC")->add(maxtime);
 	string cutoff = limit->format_ymd() + "T" + limit->format_tod() + "Z";
 	while (1) {
-		mapping info = yield(request("https://api.twitch.tv/helix/schedule?broadcaster_id=" + id
+		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/schedule?broadcaster_id=" + id
 			+ "&start_time=" + starttime + "&after=" + cursor + "&first=25",
 			([]), (["return_errors": 1])));
 		if (info->error) break; //Probably 404, schedule not found.
@@ -591,7 +591,7 @@ void stream_status(string name, mapping info)
 	protected void `()(string|mixed arg, mapping condition) {
 		if (!stringp(arg)) arg = (string)arg; //It really should be a string
 		if (have_subs[arg]) return;
-		request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
+		twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
 			"authtype": "app",
 			"json": ([
 				"type": type, "version": version,
@@ -643,7 +643,7 @@ void check_hooks(array eventhooks)
 		object handler = G->G->eventhook_types[type];
 		if (!handler) {
 			write("Deleting eventhook: %O\n", hook);
-			request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
+			twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
 				([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
 		}
 		else handler->have_subs[arg] = 1;
@@ -715,7 +715,6 @@ protected void create(string|void name)
 	#if !constant(INTERACTIVE)
 	poll();
 	#endif
-	add_constant("twitch_api_request", request);
 	#if constant(G)
 	::create(name);
 	#endif
@@ -775,7 +774,7 @@ Concurrent.Future chaninfo_display(mapping info)
 	if (info->mature) write("[MATURE] ");
 	write("%s was last seen playing %s, at %s - %s\n",
 		info->display_name, string_to_utf8(info->game || "(null)"), info->url, string_to_utf8(info->status || "(null)"));
-	return request("https://api.twitch.tv/helix/streams?user_id=" + info->_id)->then(streaminfo_display);
+	return twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + info->_id)->then(streaminfo_display);
 }
 void followinfo_display(array args)
 {
@@ -931,8 +930,8 @@ int main(int argc, array(string) argv)
 			{
 				write("Checking transcoding history...\n");
 				//Can't use Helix yet, as it doesn't include the resolutions array
-				//request("https://api.twitch.tv/helix/videos?user_id={{USER}}&type=archive&limit=100", ([]), (["username": ch]))
-				request("https://api.twitch.tv/kraken/channels/{{USER}}/videos?broadcast_type=archive&limit=100", ([]), (["username": ch]))
+				//twitch_api_request("https://api.twitch.tv/helix/videos?user_id={{USER}}&type=archive&limit=100", ([]), (["username": ch]))
+				twitch_api_request("https://api.twitch.tv/kraken/channels/{{USER}}/videos?broadcast_type=archive&limit=100", ([]), (["username": ch]))
 					->then(transcoding_display);
 				continue;
 			}
