@@ -527,6 +527,10 @@ class channel(string name) { //name begins with hash and is all lower case
 		//TODO: The msg parameter will now be guaranteed text, not bytes. Confirm also true for params/attrs.
 		mapping(string:mixed) person = gather_person_info(params);
 		mapping responsedefaults;
+		//For some unknown reason, certain types of notification come through
+		//as PRIVMSG when they would more logically be a NOTICE. They're usually
+		//suppressed from the default chat view, but are visible to bots.
+		if (params->user == "jtv" && type == "PRIVMSG") type = "NOTICE";
 		switch (type)
 		{
 			case "NOTICE": case "USERNOTICE": switch (params->msg_id)
