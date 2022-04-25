@@ -5,6 +5,7 @@ mapping persist_config = (["channels": ({ }), "ircsettings": Standards.JSON.deco
 mapping persist_status = ([]);
 #else
 inherit hook;
+inherit exporter;
 #endif
 
 //Place a request to the API. Returns a Future that will be resolved with a fully
@@ -100,7 +101,7 @@ Concurrent.Future request(Protocols.HTTP.Session.URL url, mapping|void headers, 
 		});
 }
 
-void notice_user_name(string login, string id) {
+@export: void notice_user_name(string login, string id) {
 	//uid_to_name[(string)userid] maps the user names seen to the timestamps.
 	//To detect renames, sort the keys and values in parallel; the most recent
 	//change is represented by the last two keys.
@@ -114,7 +115,7 @@ void notice_user_name(string login, string id) {
 }
 
 //Will return from cache if available. Set type to "login" to look up by name, else uses ID.
-Concurrent.Future get_users_info(array(int|string) users, string|void type)
+@export: Concurrent.Future get_users_info(array(int|string) users, string|void type)
 {
 	//Simplify things elsewhere: 0 yields 0 with no error. (Otherwise you'll
 	//always get an array of mappings, or a rejection.)
@@ -149,18 +150,18 @@ Concurrent.Future get_users_info(array(int|string) users, string|void type)
 }
 
 //As above but only a single user's info. For convenience, 0 will yield 0 without an error.
-Concurrent.Future get_user_info(int|string user, string|void type)
+@export: Concurrent.Future get_user_info(int|string user, string|void type)
 {
 	return get_users_info(({user}), type)->then(lambda(array(mapping) info) {return sizeof(info) && info[0];});
 }
 
 //Convenience shorthand when all you need is the ID
-Concurrent.Future get_user_id(string user)
+@export: Concurrent.Future get_user_id(string user)
 {
 	return get_users_info(({user}), "login")->then(lambda(array(mapping) info) {return sizeof(info) && (int)info[0]->id;});
 }
 
-Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
+@export: Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
 {
 	array data = ({ });
 	Standards.URI uri = Standards.URI(url);
@@ -229,7 +230,7 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	});
 }
 
-continue Concurrent.Future|array(mapping) get_banned_list(string|int userid, int|void force) {
+@export: continue Concurrent.Future|array(mapping) get_banned_list(string|int userid, int|void force) {
 	if (intp(userid)) userid = (string)userid;
 	mapping cached = G_G_("banned_list", userid);
 	if (!cached->stale && cached->taken_at > time() - 3600 &&
@@ -250,7 +251,7 @@ continue Concurrent.Future|array(mapping) get_banned_list(string|int userid, int
 }
 
 //Returns "offline" if not broadcasting, or a channel uptime.
-continue Concurrent.Future|string channel_still_broadcasting(string|int chan) {
+@export: continue Concurrent.Future|string channel_still_broadcasting(string|int chan) {
 	if (stringp(chan)) chan = yield(get_user_id(chan));
 	array initial = yield(request("https://api.twitch.tv/helix/videos?type=archive&user_id=" + chan + "&first=1"))->data;
 	//If there are no videos found, then presumably the person isn't live, since
@@ -263,7 +264,7 @@ continue Concurrent.Future|string channel_still_broadcasting(string|int chan) {
 	return second[0]->duration;
 }
 
-Concurrent.Future get_channel_info(string name)
+@export: Concurrent.Future get_channel_info(string name)
 {
 	return request("https://api.twitch.tv/helix/channels?broadcaster_id={{USER}}", ([]), (["username": name]))
 	->then(lambda(mapping info) {
@@ -323,7 +324,7 @@ continue Concurrent.Future cache_game_names(string game_id)
 	}
 }
 
-continue Concurrent.Future|array translate_tag_ids(array tag_ids) {
+@export: continue Concurrent.Future|array translate_tag_ids(array tag_ids) {
 	array got_tags = ({ });
 	if (!G->G->all_stream_tags) {
 		G->G->all_stream_tags = ([]);
@@ -520,7 +521,7 @@ void stream_status(string name, mapping info)
 	}
 }
 
-Concurrent.Future check_following(string user, string chan)
+@export: Concurrent.Future check_following(string user, string chan)
 {
 	return request("https://api.twitch.tv/helix/users/follows?from_id={{USER}}&to_id={{CHAN}}", ([]),
 		(["username": (["{{USER}}": user, "{{CHAN}}": chan])]))
@@ -540,7 +541,7 @@ Concurrent.Future check_following(string user, string chan)
 }
 
 //Fetch a stream's schedule, up to N events within the next M seconds.
-continue Concurrent.Future|array get_stream_schedule(int|string channel, int rewind, int maxevents, int maxtime) {
+@export: continue Concurrent.Future|array get_stream_schedule(int|string channel, int rewind, int maxevents, int maxtime) {
 	int id = (int)channel || yield(get_user_id(channel));
 	if (!id) return ({ });
 	//NOTE: Do not use get_helix_paginated here as the events probably go on forever.
@@ -567,7 +568,7 @@ continue Concurrent.Future|array get_stream_schedule(int|string channel, int rew
 	return events;
 }
 
-class EventSub(string hookname, string type, string version, function callback) {
+@export: class EventSub(string hookname, string type, string version, function callback) {
 	Crypto.SHA256.HMAC signer;
 	multiset(string) have_subs = (<>);
 	protected void create() {
@@ -714,19 +715,7 @@ protected void create(string|void name)
 	#if !constant(INTERACTIVE)
 	poll();
 	#endif
-	add_constant("get_channel_info", get_channel_info);
-	add_constant("check_following", check_following);
 	add_constant("twitch_api_request", request);
-	add_constant("get_helix_paginated", get_helix_paginated);
-	add_constant("get_user_id", get_user_id);
-	add_constant("get_user_info", get_user_info);
-	add_constant("get_users_info", get_users_info);
-	add_constant("get_banned_list", get_banned_list);
-	add_constant("notice_user_name", notice_user_name);
-	add_constant("translate_tag_ids", translate_tag_ids);
-	add_constant("EventSub", EventSub);
-	add_constant("get_stream_schedule", get_stream_schedule);
-	add_constant("channel_still_broadcasting", channel_still_broadcasting);
 	#if constant(G)
 	::create(name);
 	#endif

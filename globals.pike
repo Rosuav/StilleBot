@@ -387,6 +387,29 @@ function|void bounce(function f)
 	return UNDEFINED;
 }
 
+@"G->G->exports";
+class exporter {
+	protected void create(string name) {
+		mapping prev = G->G->exports[name];
+		G->G->exports[name] = ([]);
+		foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
+			if (ann) foreach (indices(ann), mixed anno) {
+				if (objectp(anno) && anno->is_callable_annotation) anno(this, name, key);
+			}
+		}
+		//Purge any that are no longer being exported (handles renames etc)
+		if (prev) foreach (prev - G->G->exports[name]; string key;)
+			add_constant(key);
+	}
+}
+object export = class {
+	constant is_callable_annotation = 1;
+	protected void `()(object module, string modname, string key) {
+		add_constant(key, module[key]);
+		G->G->exports[modname][key] = 1;
+	}
+}();
+
 @"G->G->enableable_modules";
 class enableable_module {
 	constant ENABLEABLE_FEATURES = ([]); //Map keywords to mappings containing descriptions and other info
