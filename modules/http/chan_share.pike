@@ -121,8 +121,7 @@ continue Concurrent.Future|string permission_check(object channel, int is_mod, m
 	//The order of these checks is important, as the last one wins on error messages.
 	string error = "You don't have permission to share files here, sorry!";
 	if (who->raider) {
-		//TODO: Check a log of recent raiders (not currently tracked)
-		//If found, return 0.
+		if (channel->raiders[(int)user->id]) return 0; //Raided any time this stream, all good.
 		//No error message change here.
 	}
 	//if (who->permit) //TODO: If you've been given temp permission, return 0, else set error to "ask for a !permit before sharing"
