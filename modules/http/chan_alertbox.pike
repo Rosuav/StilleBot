@@ -593,6 +593,7 @@ constant builtin_param = ({"/Alert type/alertbox_id", "Text"});
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 ]);
+constant command_suggestions = ([]); //This isn't something that you'd create a default command for - it'll want to be custom. (And probably a special, not a command, anyway.)
 
 mapping message_params(object channel, mapping person, array|string param)
 {
