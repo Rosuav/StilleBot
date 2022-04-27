@@ -948,7 +948,6 @@ protected void create(string name)
 	if (mapping irc = persist_config["ircsettings"])
 	{
 		bot_nick = irc->nick || "";
-		irc_connections[0] = connection_cache[bot_nick]; //If it exists, use it; it'll get replaced if necessary.
 		reconnect();
 		if (bot_nick != "") get_user_id(bot_nick)->then() {G->G->bot_uid = __ARGS__[0];};
 		if (mixed ex = irc->http_address && irc->http_address != "" && catch

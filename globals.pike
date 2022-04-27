@@ -785,7 +785,7 @@ class _TwitchIRC(mapping options) {
 			+ ("JOIN " + (wantchan - havechan)[*])
 			+ ("PART " + (havechan - wantchan)[*]);
 		if (sizeof(commands)) enqueue(@commands);
-		options->module = opt->module;
+		options = opt; m_delete(options, "pass"); //Transfer all options. Anything unchecked is assumed to be okay to change like this.
 	}
 
 	void close() {sock->close();} //Close the socket immediately
@@ -842,7 +842,7 @@ class irc_callback {
 	Concurrent.Future irc_connect(mapping options) {
 		//Bump this version number when there's an incompatible change. Old
 		//connections will all be severed.
-		options = (["module": this, "version": 1]) | (options || ([]));
+		options = (["module": this, "version": 2]) | (options || ([]));
 		if (!options->user) {
 			//Default credentials from the bot's main configs
 			mapping cfg = persist_config->path("ircsettings");
