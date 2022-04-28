@@ -16,13 +16,14 @@ constant badge_aliases = ([ //Fold a few badges together, and give shorthands fo
 //convenience; in fact, the name "person" here is kinda orphanned. (Tragic.)
 mapping(string:mixed) gather_person_info(mapping params)
 {
-	mapping ret = (["nick": params->user, "user": params->user]); //TODO: Is nick used anywhere? If not, remove.
-	if (params->user_id && params->user) //Should always be the case
+	string user = params->login || params->user;
+	mapping ret = (["nick": user, "user": user]); //TODO: Is nick used anywhere? If not, remove.
+	if (params->user_id && user) //Should always be the case
 	{
 		ret->uid = (int)params->user_id;
-		notice_user_name(params->user, params->user_id);
+		notice_user_name(user, params->user_id);
 	}
-	ret->displayname = params->display_name || params->user;
+	ret->displayname = params->display_name || user;
 	ret->msgid = params->id;
 	ret->badges = ([]);
 	if (params->badges) foreach (params->badges / ",", string badge) if (badge != "") {
