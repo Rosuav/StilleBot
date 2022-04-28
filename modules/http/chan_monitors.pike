@@ -57,10 +57,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		}
 		mapping info = cfg->monitors[nonce] = (["type": "text", "text": body->text]);
 		if (valid_types[body->type]) info->type = body->type;
-		//TODO: Validate the individual values?
 		foreach (saveable_attributes, string key) if (body[key]) info[key] = body[key];
 		if (info->needlesize == "") info->needlesize = "0";
 		if (body->varname) info->text = sprintf("$%s$:%s", body->varname, info->text);
+		textformatting_validate(info);
 		persist_config->save();
 		send_updates_all(nonce + req->misc->channel->name);
 		update_one(req->misc->channel->name, nonce);

@@ -1143,6 +1143,9 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 //The TEXTFORMATTING widget in utils.js creates a bunch of form elements. Save these
 //element names into a mapping, then call textformatting_css on that mapping, and you
 //will get back the correct CSS text for the specified formatting.
+//** NOTE ** Always ensure that every attribute in this array is handled by both
+//textformatting_css and textformatting_validate. Both of them will happily accept
+//mappings with other attributes, but must poke every textformatting attribute.
 array TEXTFORMATTING_ATTRS = ("font fontweight fontstyle fontsize whitespace css "
 			"color strokewidth strokecolor borderwidth bordercolor "
 			"bgcolor bgalpha padvert padhoriz textalign "
@@ -1176,6 +1179,81 @@ string textformatting_css(mapping cfg) {
 	//entire border definition in custom CSS.)
 	if (cfg->borderwidth && cfg->borderwidth != "") css += sprintf("border-width: %spx; border-style: solid;", cfg->borderwidth);
 	return css;
+}
+//Validate the textformatting attributes. Ignores any other attributes.
+//Where possible, attrs will be mutated to ensure safety (eg int/str cast).
+//Invalid attributes will be removed from cfg; if any were, 0 is returned,
+//otherwise 1 is. Either way, the config mapping is at that point safe.
+//Note that the "css" attribute is only very cursorily checked.
+constant _textformatting_kwdattr = ([
+	"fontstyle": ({"normal", "italic", "oblique"}), //Technically "oblique <angle>" is supported, but I reject it here for simplicity
+	"whitespace": ({"normal", "nowrap", "pre", "pre-wrap", "pre-line", "break-spaces"}),
+	"textalign": ({"start", "end", "center", "justify"}), //There are other options, but not all formalized. This may need to support a fill character some day.
+	//"fontfamily": ({"serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "emoji", "math", "fangsong"}),
+]);
+int(1bit) textformatting_validate(mapping cfg) {
+	int ok = 1;
+	//Numeric attributes. Note that "0" will be retained, but "" will be removed (and is not an error).
+	foreach ("fontsize strokewidth borderwidth bgalpha padvert padhoriz shadowx shadowy shadowalpha" / " ", string attr)
+		if (mixed val = cfg[attr]) {
+			if (val == "") m_delete(cfg, attr);
+			else if (intp(val)) val = (string)val; //Not an error, but let's go with strings for consistency
+			else if (!stringp(val)) {m_delete(cfg, attr); ok = 0;}
+			else if (val != (string)(int)val) {m_delete(cfg, attr); ok = 0;} //Should we be merciful about whitespace?
+		}
+	//Colors. In textformatting_css(), shadowcolor is further mandated to be a hex color, but
+	//for now, we accept more forms.
+	foreach ("color strokecolor bordercolor bgcolor shadowcolor" / " ", string attr) if (mixed val = cfg[attr]) {
+		if (has_value(({4,5,7,9}), sizeof(val)) && sscanf(val, "#%x%s", int n, string tail) && tail == "")
+			//#RGB, #RGBA, #RRGGBB, #RRGGBBAA
+			cfg[attr] = sprintf("#%0" + (sizeof(val) - 1) + "X", n);
+		//Keywords. Currently not actually validating whether it's a recognized color
+		//name, just whether it's syntactically a keyword.
+		else if (sscanf(val, "%[a-zA-Z]", string col) && col == val) ;
+		//Maybe consider adding rgb() functional notation, in case?
+		//All the others, no, just reject them.
+		else {m_delete(cfg, attr); ok = 0;}
+	}
+	//Keyword attributes. These must all be one of their specified keywords, although blank is not an error.
+	foreach (_textformatting_kwdattr; string attr; array valid) {
+		if (!cfg[attr] || has_value(valid, cfg[attr])) ;
+		else if (m_delete(cfg, attr) != "") ok = 0;
+	}
+	//The last few, needing individual validation.
+	if (mixed val = cfg->css) {
+		if (!stringp(val)) {m_delete(cfg, "css"); ok = 0;}
+		//At the moment, I'm being way too permissive here. It'd be nice to have
+		//a basic syntactic check (eg no close brace), not because actual abuse
+		//is likely, but because a typo would cause bizarre and hard-to-diagnose
+		//formatting errors (instead of simply affecting this element, it'd break
+		//styling for other things too). But it'd need to be a proper check, not
+		//just "does this have a close brace in it", since quoted strings are OK.
+	}
+	if (mixed val = cfg->fontweight) {
+		//Font weight can be one of a handful of keywords, OR a number.
+		if (val == "") m_delete(cfg, "fontweight");
+		else if (stringp(val) && has_value(({"normal", "bold", "lighter", "bolder"}), val)) ;
+		else if ((int)val >= 1 && (int)val <= 1000) cfg->fontweight = (string)(int)val;
+		else {m_delete(cfg, "fontweight"); ok = 0;}
+	}
+	if (mixed val = cfg->font) {
+		//The font is allowed to be a series of values separated by commas.
+		//Each value can be a quoted string or an atom.
+		array fonts = ({ });
+		while (sscanf(val, "%*[ ]\"%[^\"]\"%s", string font, string tail) == 3 //eg >>"Lucida Sans"<<
+				|| sscanf(val, "%*[ ]%[-A-Za-z ]%s", font, tail) == 3) { //eg >>Lucida Sans<<
+			if (font == "") break;
+			fonts += ({font});
+			if (!tail || tail == "" || sscanf(tail, "%*[ ],%s", val) != 2 || val == "") break;
+		}
+		//Quote all font names that aren't single-word atoms. CSS does allow
+		//(but does not recommend) multi-atom names without quotes, but let's not.
+		cfg->font = map(fonts) {[string font] = __ARGS__;
+			if (sscanf(font, "%*[-A-Za-z]%s", string tail) && tail == "") return font;
+			return sprintf("%q", font);
+		} * ", ";
+	}
+	return 1;
 }
 
 int(1bit) is_localhost_mod(string login, string ip) {

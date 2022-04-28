@@ -558,11 +558,11 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	//If the format *is* specified, this is a full update, *except* for the retained
 	//attributes. Any unspecified attribute will be deleted, setting it to inherit
 	//from the parent (not yet implemented) or be omitted altogether.
-	//TODO: Validate (see commands for example of deep validation)
 	mapping data = cfg->alertconfigs[msg->type] =
 		mkmapping(RETAINED_ATTRS, (cfg->alertconfigs[msg->type]||([]))[RETAINED_ATTRS[*]])
 		| mkmapping(GLOBAL_ATTRS, msg[GLOBAL_ATTRS[*]])
 		| mkmapping(attrs, msg[attrs[*]]);
+	textformatting_validate(data);
 	data->text_css = textformatting_css(data);
 	persist_status->save();
 	send_updates_all(conn->group);
