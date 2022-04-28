@@ -88,6 +88,7 @@ export function render(data) {
 		//several top-level configs, then second tier selection that defines which is the
 		//active scheme, and finally the lowest tier defines variants, using inherits for
 		//everything that should follow the scheme.
+		const nondef = type !== "defaults"; //A lot of things are different for the defaults
 		DOM("#newpersonal").before(LI([
 			INPUT({type: "radio", name: "alertselect", id: "select-" + type, value: type}),
 			LABEL({htmlFor: "select-" + type}, info.label),
@@ -102,7 +103,7 @@ export function render(data) {
 				SPAN({className: "description"}, info.description),
 			]),
 			HR(),
-			P([
+			nondef && P([
 				LABEL([INPUT({name: "active", type: "checkbox"}), " Active/enabled"]),
 			]),
 			P([
@@ -121,13 +122,13 @@ export function render(data) {
 				LABEL(["Alert length: ", INPUT({name: "alertlength", type: "number", step: "0.5"}), " seconds; "]),
 				LABEL(["gap before next alert: ", INPUT({name: "alertgap", type: "number", step: "0.25"}), " seconds"]),
 			]),
-			P([
+			nondef && P([
 				"Image: ",
 				IMG({className: "preview", "data-library": "image"}),
 				" ",
 				BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-prefix": "image/"}, "Choose"),
 			]),
-			P([
+			nondef && P([
 				"Sound: ",
 				AUDIO({className: "preview", "data-library": "sound", controls: true}),
 				" ",
@@ -139,10 +140,10 @@ export function render(data) {
 				]),
 			]),
 			TEXTFORMATTING({
-				textname: "textformat",
+				textname: nondef ? "textformat" : "-",
 				textdesc: SPAN({className: "placeholders"}, placeholder_description),
 			}),
-			P([BUTTON({type: "submit", disabled: true}, "Save"), BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")]),
+			P([BUTTON({type: "submit", disabled: true}, "Save"), nondef && BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")]),
 		]));
 		load_data(type, { });
 	});

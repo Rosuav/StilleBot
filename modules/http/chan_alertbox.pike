@@ -216,6 +216,14 @@ constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB
 //Every standard alert should have a 'builtin' which says which module will trigger this.
 //Not currently used, beyond that standard alerts have a builtin and personal alerts don't.
 constant ALERTTYPES = ({([
+	"id": "defaults",
+	"label": "Defaults",
+	"heading": "Defaults for all alerts",
+	"description": "Settings selected here will apply to all alerts, but can be overridden on each alert. (WIP - not implemented yet.)",
+	"placeholders": ([]),
+	"testpholders": ([]),
+	"builtin": "chan_alertbox",
+]), ([
 	"id": "hostalert",
 	"label": "Host",
 	"heading": "Hosted by another channel",
