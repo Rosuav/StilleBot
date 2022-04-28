@@ -61,7 +61,7 @@ function load_data(type, attrs) {
 	//For everything in this alert's MRO, disallow that thing inheriting from this one.
 	//That makes reference cycles impossible (barring shenanigans, which would be caught
 	//on the server by simply inheriting nothing).
-	const mro = attrs.mro || [];
+	const mro = attrs.mro || [type];
 	document.querySelectorAll("select[name=parent] option[value=" + type + "]").forEach(el =>
 		el.disabled = mro.includes(el.closest(".alertconfig").dataset.type)
 	);
@@ -116,7 +116,7 @@ export function render(data) {
 				LABEL(["Inherit settings from: ", SELECT({name: "parent"},
 					Object.entries(alert_definitions).map(([t, x]) =>
 						t === "defaults" ? OPTION({value: ""}, "None")
-						: t !== type && OPTION({value: t}, x.label)),
+						: OPTION({value: t}, x.label)),
 				)]), " (not implemented yet)"
 			]),
 			P([

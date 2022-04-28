@@ -583,10 +583,10 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	//doesn't inherit from this alert. Attempting to do so will just reset to "".
 	if (stringp(msg->parent) && msg->parent != "" && msg->parent != "defaults" && valid_alert_type(msg->parent, cfg)) {
 		array mro = cfg->alertconfigs[msg->parent]->?mro;
-		if (!mro) mro = ({ });
+		if (!mro) mro = ({msg->parent});
 		if (!has_value(mro, msg->type)) {
 			data->parent = msg->parent;
-			data->mro = ({msg->parent}) + mro;
+			data->mro = ({msg->type}) + mro;
 		}
 		//Otherwise, leave data->mro and data->parent unset.
 	}
