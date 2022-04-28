@@ -1195,7 +1195,7 @@ constant _textformatting_kwdattr = ([
 int(1bit) textformatting_validate(mapping cfg) {
 	int ok = 1;
 	//Numeric attributes. Note that "0" will be retained, but "" will be removed (and is not an error).
-	foreach ("fontsize strokewidth borderwidth bgalpha padvert padhoriz shadowx shadowy shadowalpha" / " ", string attr)
+	foreach ("fontsize borderwidth bgalpha padvert padhoriz shadowx shadowy shadowalpha" / " ", string attr)
 		if (mixed val = cfg[attr]) {
 			if (val == "") m_delete(cfg, attr);
 			else if (intp(val)) val = (string)val; //Not an error, but let's go with strings for consistency
@@ -1253,6 +1253,13 @@ int(1bit) textformatting_validate(mapping cfg) {
 			if (sscanf(font, "%*[-A-Za-z]%s", string tail) && tail == "") return font;
 			return sprintf("%q", font);
 		} * ", ";
+	}
+	if (mixed val = cfg->strokewidth) {
+		if (intp(val)) cfg->strokewidth = val + "px";
+		else if (!stringp(val)) {m_delete(cfg, "strokewidth"); ok = 0;}
+		else if (val == "None") ; //"None" is basically 0px but won't give the directives at all (however, it won't inherit)
+		else if (sscanf(val, "%dpx", int n) && n) cfg->strokewidth = n + "px";
+		else {m_delete(cfg, "strokewidth"); ok = 0;}
 	}
 	return 1;
 }
