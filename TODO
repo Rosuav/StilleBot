@@ -77,7 +77,6 @@
   - Absorb raidnotes into this system.
 * "max-width: fit-content" doesn't work in Firefox - but nor does -moz-fit-content :(
   - Causes display problems on graphical editor and opening up element details
-* Check VLC 3.0.16 to see if there are better docs about the Lua interface
 * Should runhooks switch to continue functions and then remove the "call next" feature?
   - runhooks is buggy. It needs to be replaced.
 * Should ALL specials function as implicit arrays, the way triggers do?
