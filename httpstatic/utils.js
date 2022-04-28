@@ -48,7 +48,12 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 		SELECT({name: "fontweight"}, [OPTION("normal"), OPTION("bold")]),
 		SELECT({name: "fontstyle"}, [OPTION("normal"), OPTION("italic")]),
 		INPUT({name: "fontsize", type: "number", size: "3", value: "16"}),
+		" Family: ", SELECT({name: "fontfamily"}, [
+			OPTION({value: ""}, "Unspecified"),
+			"serif sans-serif monospace cursive fantasy system-ui emoji".split(" ")
+			.map(f => OPTION({style: "font-family: " + f}, f))]),
 		BR(), "Pick a font from Google Fonts or one that's already on your PC.",
+		BR(), "Choosing both a font and the family provides a fallback during loading.",
 	])]),
 	TR([TH("Text color"), TD([
 		INPUT({name: "color", type: "color"}),

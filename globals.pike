@@ -1146,7 +1146,7 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 //** NOTE ** Always ensure that every attribute in this array is handled by both
 //textformatting_css and textformatting_validate. Both of them will happily accept
 //mappings with other attributes, but must poke every textformatting attribute.
-array TEXTFORMATTING_ATTRS = ("font fontweight fontstyle fontsize whitespace css "
+array TEXTFORMATTING_ATTRS = ("font fontweight fontstyle fontsize fontfamily whitespace css "
 			"color strokewidth strokecolor borderwidth bordercolor "
 			"bgcolor bgalpha padvert padhoriz textalign "
 			"shadowx shadowy shadowcolor shadowalpha") / " ";
@@ -1157,7 +1157,8 @@ string textformatting_css(mapping cfg) {
 		if (mixed val = cfg[attr - "-"]) css += attr + ": " + val + ";";
 	foreach ("font-size width height" / " ", string attr) //FIXME: This is processing width and height, which aren't text formatting attrs
 		if (mixed val = cfg[attr - "-"]) css += attr + ": " + val + "px;";
-	if (cfg->font) css += "font-family: " + cfg->font + ";"; //Note that the front end may have other work to do too, but here, we just set the font family.
+	if (cfg->font && cfg->fontfamily) css += "font-family: " + cfg->font + ", " + cfg->fontfamily + ";"; //Note that the front end may have other work to do too, but here, we just set the font family.
+	else if (cfg->font || cfg->fontfamily) css += "font-family: " + (cfg->font || cfg->fontfamily) + ";";
 	if (cfg->padvert) css += sprintf("padding-top: %sem; padding-bottom: %<sem;", cfg->padvert);
 	if (cfg->padhoriz) css += sprintf("padding-left: %sem; padding-right: %<sem;", cfg->padhoriz);
 	if (cfg->strokewidth && cfg->strokewidth != "None")
@@ -1189,7 +1190,7 @@ constant _textformatting_kwdattr = ([
 	"fontstyle": ({"normal", "italic", "oblique"}), //Technically "oblique <angle>" is supported, but I reject it here for simplicity
 	"whitespace": ({"normal", "nowrap", "pre", "pre-wrap", "pre-line", "break-spaces"}),
 	"textalign": ({"start", "end", "center", "justify"}), //There are other options, but not all formalized. This may need to support a fill character some day.
-	//"fontfamily": ({"serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "emoji", "math", "fangsong"}),
+	"fontfamily": ({"serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "emoji", "math", "fangsong"}),
 ]);
 int(1bit) textformatting_validate(mapping cfg) {
 	int ok = 1;
