@@ -94,13 +94,6 @@
   - Who may share? Not all options implemented yet.
   - Mod command to nuke the last-posted file?
   - Anyone currently under timeout or ban is to be denied upload permission.
-    - Currently done with a full scan of the ban list every upload. Would be better
-      to cache that.
-    - Flag cache as stale any time:
-      - A user is purged/timed out/banned (see the deletemsgs hook)
-      - The earliest expiration date has passed (known only after a ban list fetch)
-      - It's been more than a day since the last check
-      - We gain the moderation:read scope on bcaster auth (if we can know this)
     - Need a way to grant authentication for this purpose.
   - Add link to the /channels/NAME/ landing page once it's ready for launch
 * Break out name-to/from-uid mappings into a separate file, maybe not even JSON? I think
