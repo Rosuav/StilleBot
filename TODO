@@ -132,7 +132,7 @@
   - Can have a button on the config page "force refresh" which sends ver+1 as an
     arbitrary update. This will trigger a reload, but not an infinite loop, as it
     will get state that has the regular version number.
-* Alert Box: Support movies everywhere (not just GIFs)
+* Alert Box: Support movies (not just GIFs) everywhere
   - I don't think a video can be used as an element's background. Would need to
     rework the "overlaid" option completely to use two elements.
   - Have a helper that can render an IMG or a VIDEO, or an IMG of the transparent
