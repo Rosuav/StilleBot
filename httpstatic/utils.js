@@ -113,6 +113,7 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 //Note: It's safe to call this more than once for the same font.
 export function ensure_font(font) {
 	if (!font) return; //Omitted? Blank? Not a problem.
+	font = font.replace('"', '').replace('"', ''); //Remove any spare quotes. TODO: Also split on commas, not counting commas in quotes.
 	const id = "fontlink_" + encodeURIComponent(font);
 	if (document.getElementById(id)) return; //Got it already.
 	document.body.appendChild(LINK({
