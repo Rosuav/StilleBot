@@ -579,6 +579,17 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		| mkmapping(attrs, msg[attrs[*]]);
 	textformatting_validate(data);
 	data->text_css = textformatting_css(data);
+	//You may inherit from "", meaning the defaults, or from any other alert that
+	//doesn't inherit from this alert. Attempting to do so will just reset to "".
+	if (stringp(msg->parent) && msg->parent != "" && msg->parent != "defaults" && valid_alert_type(msg->parent, cfg)) {
+		array mro = cfg->alertconfigs[msg->parent]->?mro;
+		if (!mro) mro = ({ });
+		if (!has_value(mro, msg->type)) {
+			data->parent = msg->parent;
+			data->mro = ({msg->parent}) + mro;
+		}
+		//Otherwise, leave data->mro and data->parent unset.
+	}
 	persist_status->save();
 	send_updates_all(conn->group);
 	send_updates_all(cfg->authkey + channel->name);

@@ -99,11 +99,8 @@
 * Break out name-to/from-uid mappings into a separate file, maybe not even JSON? I think
   they might be the largest part of persist_status.
 * Alert Box: Allow alerts to inherit from other alerts
-  - You should be able to select any alert to inherit from. If you select something which
-    inherits, they will daisy-chain. Circular inheritance will be rejected on save.
-  - By default, all alerts inherit from Defaults. Which means that, ultimately, they'll
-    always make their way back to there.
   - All alert features will need an "unset"/"inherit"/"default" option
+  - Resolve all inheritance of attributes on the server before feeding to client.
 * Alert Box: Alert conditions
   - Each alert type (other than Default and personals) will support filters, with a
     unique set of options available.

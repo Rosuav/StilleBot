@@ -58,6 +58,13 @@ function load_data(type, attrs) {
 	update_layout_options(par, attrs.layout);
 	document.querySelectorAll("input[type=range]").forEach(rangedisplay);
 	par.querySelectorAll("[type=submit]").forEach(el => el.disabled = true);
+	//For everything in this alert's MRO, disallow that thing inheriting from this one.
+	//That makes reference cycles impossible (barring shenanigans, which would be caught
+	//on the server by simply inheriting nothing).
+	const mro = attrs.mro || [];
+	document.querySelectorAll("select[name=parent] option[value=" + type + "]").forEach(el =>
+		el.disabled = mro.includes(el.closest(".alertconfig").dataset.type)
+	);
 }
 
 let selecttab = location.hash.slice(1);
@@ -93,6 +100,7 @@ export function render(data) {
 			INPUT({type: "radio", name: "alertselect", id: "select-" + type, value: type}),
 			LABEL({htmlFor: "select-" + type}, info.label),
 		]));
+		document.querySelectorAll("select[name=parent]").forEach(el => el.appendChild(OPTION({value: type}, info.label)));
 		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({className: "alertconfig", "data-type": type}, [
 			H3({className: "heading"}, [
 				info.heading, SPAN({className: "if-unsaved"}, " "),
@@ -104,7 +112,12 @@ export function render(data) {
 			]),
 			HR(),
 			nondef && P([
-				LABEL([INPUT({name: "active", type: "checkbox"}), " Active/enabled"]),
+				LABEL([INPUT({name: "active", type: "checkbox"}), " Active/enabled"]), BR(),
+				LABEL(["Inherit settings from: ", SELECT({name: "parent"},
+					Object.entries(alert_definitions).map(([t, x]) =>
+						t === "defaults" ? OPTION({value: ""}, "None")
+						: t !== type && OPTION({value: t}, x.label)),
+				)]), " (not implemented yet)"
 			]),
 			P([
 				SELECT({name: "format"}, [
@@ -166,6 +179,7 @@ export function render(data) {
 		delete alerttypes[type];
 		delete revert_data[type];
 		DOM("#select-" + type).closest("li").replaceWith();
+		document.querySelectorAll("select[name=parent] option[value=" + type + "]").forEach(el => el.replaceWith());
 		if (wanted_tab === type) {
 			//The currently-selected one got deleted. Switch to the first available.
 			document.querySelectorAll("input[name=alertselect]")[0].checked = true;
