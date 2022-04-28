@@ -138,3 +138,9 @@
   - Have a helper that can render an IMG or a VIDEO, or an IMG of the transparent
     PNG, based on the URL provided
   - This will bump the version number, so ensure that versioning is done first.
+* Text formatting: Add a "font family" drop-down with all the generic names.
+  In conversion to CSS, set font-family to font followed by fontfamily.
+  - serif, sans-serif, monospace, cursive, fantasy, system-ui, emoji
+  - Don't bother with others, it'll just clutter things up
+  - Even though it doesn't work in option elements, have each one use its own
+    family as its style. It'll give people an idea what they're selecting.
