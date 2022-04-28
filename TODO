@@ -106,3 +106,29 @@
   - Add link to the /channels/NAME/ landing page once it's ready for launch
 * Break out name-to/from-uid mappings into a separate file, maybe not even JSON? I think
   they might be the largest part of persist_status.
+* Alert Box: Allow alerts to inherit from other alerts
+  - Create a "Defaults" pseudo-alert which will never be triggered
+    - It should have no "Text" entry, cannot be activated, and cannot be tested
+    - Otherwise, it has all features, but cannot inherit from anything else
+  - You should be able to select any alert to inherit from. If you select something which
+    inherits, they will daisy-chain. Circular inheritance will be rejected on save.
+  - By default, all alerts inherit from Defaults. Which means that, ultimately, they'll
+    always make their way back to there.
+  - All alert features will need an "unset"/"inherit"/"default" option
+* Alert Box: Alert conditions
+  - Each alert type (other than Default and personals) will support filters, with a
+    unique set of options available.
+  - For example, Sub alerts could filter based on tier and/or tenure. Cheers could
+    filter on the number of bits.
+  - Filters will deliberately be simplistic. For anything more complicated, advise the
+    use of special triggers. Possibly have a way to move an alert to a special?
+    - Using the builtin would bypass the filter
+    - Parameters wouldn't be clean. Figure something out. Maybe if {TEXT} is passed,
+      use that instead of anything else??
+* Alert Box: Alert variations
+  - A new variation will initially inherit from the variation it was spawned from
+  - Conditions accumulate? Or replace?
+  - Find a good UI to show the variants. Maybe a button that brings up a dialog?
+  - Alternatively, maybe all variants inherit from the base alert (not from each
+    other), and any filter on the base alert affects them all, but otherwise, the
+    filters are independent. Might make a cleaner UI.
