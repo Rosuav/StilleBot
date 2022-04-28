@@ -266,6 +266,17 @@ constant ALERTTYPES = ({([
 	]),
 	"testpholders": (["tier": "1", "gifts": ({1, 100})]),
 	"builtin": "connection",
+]), ([
+	"id": "cheer",
+	"label": "Cheer",
+	"heading": "Cheer",
+	"description": "When someone uses bits to cheer in the channel (this does not include extensions and special features).",
+	"placeholders": ([
+		"username": "Display name of the giver of the subs",
+		"bits": "Number of bits cheered",
+	]),
+	"testpholders": (["bits": ({1, 25000})]),
+	"builtin": "connection",
 ])});
 constant RETAINED_ATTRS = ({"image", "sound"});
 constant GLOBAL_ATTRS = "active format alertlength alertgap" / " ";
@@ -637,6 +648,17 @@ void subscription(object channel, string type, mapping person, string tier, int 
 		"send_alert": alerttype,
 		"username": person->displayname,
 		"tier": tier, "months": months,
+	]));
+}
+
+@hook_cheer:
+void cheer(object channel, mapping person, int bits, mapping extra) {
+	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
+	if (!cfg->?authkey) return;
+	send_updates_all(cfg->authkey + channel->name, ([
+		"send_alert": "cheer",
+		"username": extra->displayname,
+		"bits": (string)bits,
 	]));
 }
 
