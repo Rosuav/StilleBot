@@ -1152,7 +1152,7 @@ string textformatting_css(mapping cfg) {
 	if (css != "" && !has_suffix(css, ";")) css += ";";
 	foreach ("color font-weight font-style border-color white-space text-align" / " ", string attr)
 		if (mixed val = cfg[attr - "-"]) css += attr + ": " + val + ";";
-	foreach ("font-size width height" / " ", string attr)
+	foreach ("font-size width height" / " ", string attr) //FIXME: This is processing width and height, which aren't text formatting attrs
 		if (mixed val = cfg[attr - "-"]) css += attr + ": " + val + "px;";
 	if (cfg->font) css += "font-family: " + cfg->font + ";"; //Note that the front end may have other work to do too, but here, we just set the font family.
 	if (cfg->padvert) css += sprintf("padding-top: %sem; padding-bottom: %<sem;", cfg->padvert);
