@@ -84,7 +84,6 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 		]),
 	])]),
 	//TODO: Gradient?
-	//TODO: Padding? Back end already supports padvert and padhoriz.
 	TR([TH("Formatting"), TD([
 		SELECT({name: "whitespace"}, [
 			OPTGROUP({label: "Single line"}, [
