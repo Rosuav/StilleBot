@@ -124,17 +124,9 @@
   - Alternatively, maybe all variants inherit from the base alert (not from each
     other), and any filter on the base alert affects them all, but otherwise, the
     filters are independent. Might make a cleaner UI.
-* Alert Box: Version numbering
-  - The client will have an embedded version number
-  - Alerts and the alert system itself will all announce a minimum version
-  - If minimum version > current version, location.reload()
-  - Enabling this feature should be the last time that a manual reload is needed.
-  - Can have a button on the config page "force refresh" which sends ver+1 as an
-    arbitrary update. This will trigger a reload, but not an infinite loop, as it
-    will get state that has the regular version number.
 * Alert Box: Support movies (not just GIFs) everywhere
   - I don't think a video can be used as an element's background. Would need to
     rework the "overlaid" option completely to use two elements.
   - Have a helper that can render an IMG or a VIDEO, or an IMG of the transparent
     PNG, based on the URL provided
-  - This will bump the version number, so ensure that versioning is done first.
+  - This will bump the version number, ideally only for alerts with videos in them.

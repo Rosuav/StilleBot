@@ -56,10 +56,12 @@ export function render(data) {
 	//This would then iterate over all of alertconfigs, creating all that are
 	//needed; it would need to destroy any that are NOT needed, without flickering
 	//those that are still present.
+	if (data.version > alertbox_version) {location.reload(); return;}
 	if (data.alertconfigs) {
 		const defaults = data.alertdefaults || { };
 		for (let kwd in data.alertconfigs) {
 			const cfg = {...defaults, ...data.alertconfigs[kwd]};
+			if (cfg.version > alertbox_version) {location.reload(); return;}
 			let elem = DOM("#" + kwd);
 			if (!elem) elem = DOM("main").appendChild(SECTION({className: "alert", id: kwd})); //New alert type
 			if (alert_formats[cfg.format]) set_content(elem, alert_formats[cfg.format](cfg));

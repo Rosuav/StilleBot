@@ -296,6 +296,8 @@ constant NULL_ALERT = ([
 	"image": "", "sound": "",
 	//TODO: Defaults for formatting attrs?
 ]);
+constant LATEST_VERSION = 1; //Bump this every time a change might require the client to refresh.
+constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump this too.
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -304,7 +306,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (key != persist_status->path("alertbox", (string)req->misc->channel->userid)->authkey)
 			return (["error": 401, "data": "Bad key", "type": "text/plain"]);
 		return render_template("alertbox.html", ([
-			"vars": (["ws_type": ws_type, "ws_code": "alertbox", "ws_group": req->variables->key + req->misc->channel->name]),
+			"vars": ([
+				"ws_type": ws_type, "ws_code": "alertbox",
+				"ws_group": req->variables->key + req->misc->channel->name,
+				"alertbox_version": LATEST_VERSION,
+			]),
 			"channelname": req->misc->channel->name[1..],
 		]) | req->misc->chaninfo);
 	}
@@ -361,6 +367,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 			"alertdefaults": NULL_ALERT,
 			"hostlist_command": cfg->hostlist_command || "",
 			"hostlist_format": cfg->hostlist_format || "",
+			"version": COMPAT_VERSION,
 		]);
 	}
 	if (grp != "control") return 0; //If it's not "control" and not the auth key, it's probably an expired auth key.
@@ -596,6 +603,18 @@ void websocket_cmd_revokekey(mapping(string:mixed) conn, mapping(string:mixed) m
 	persist_status->save();
 	send_updates_all(conn->group, (["authkey": "<REVOKED>"]));
 	send_updates_all(prevkey + channel->name, (["breaknow": 1]));
+}
+
+//Currently no UI for this, but it works if you fiddle on the console.
+void websocket_cmd_reload(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || grp != "control") return;
+	if (conn->session->fake) return;
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	//Send a fake version number that's higher than the current, thus making it think
+	//it needs to update. After it reloads, it will get the regular state, with the
+	//current version, so it'll reload once and then be happy.
+	send_updates_all(cfg->authkey + channel->name, (["version": LATEST_VERSION + 1]));
 }
 
 constant builtin_name = "Send Alert";
