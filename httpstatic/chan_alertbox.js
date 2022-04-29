@@ -48,12 +48,17 @@ function load_data(type, attrs) {
 	const par = alerttypes[type]; if (!par) return;
 	revert_data[type] = attrs = {...revert_data["default"], ...attrs};
 	if (par.classList.contains("unsaved-changes")) return; //TODO: Notify the user that server changes haven't been applied
-	Object.entries(attrs).forEach(([attr, val]) => {
-		const el = par.elements[attr]; if (!el) return;
-		el[el.type === "checkbox" ? "checked" : "value"] = val;
+	for (let el of par.elements) {
+		if (!el.name) continue;
+		if (el.type === "checkbox") el.checked = !!attrs[el.name];
+		else el.value = attrs[el.name] || "";
 		el.classList.remove("dirty");
 		el.labels.forEach(l => l.classList.remove("dirty"));
-	});
+		if (el.tagName === "SELECT" || el.type === "text" || el.type === "number") {
+			el.classList.toggle("inherited", el.value === "");
+			el.labels.forEach(l => l.classList.toggle("inherited", el.value === ""));
+		}
+	}
 	par.querySelectorAll("[data-library]").forEach(el => el.src = attrs[el.dataset.library] || TRANSPARENT_IMAGE);
 	update_layout_options(par, attrs.layout);
 	document.querySelectorAll("input[type=range]").forEach(rangedisplay);
@@ -223,6 +228,9 @@ function formchanged(e) {
 	frm.classList.add("unsaved-changes"); //Add "dirty" here to colour the entire form
 	e.match.classList.add("dirty"); //Can skip this if dirty is applied to the whole form
 	e.match.labels.forEach(l => l.classList.add("dirty"));
+	const inh = e.match.value === "";
+	e.match.classList.toggle("inherited", inh);
+	e.match.labels.forEach(l => l.classList.toggle("inherited", inh));
 	frm.querySelectorAll("[type=submit]").forEach(el => el.disabled = false);
 }
 on("input", "input", formchanged); on("change", "input,select", formchanged);

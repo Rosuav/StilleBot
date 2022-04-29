@@ -177,6 +177,12 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 	padding: 0;
 	margin-left: 5px;
 }
+.inherited, label.inherited ~ label input[type=color], label.inherited ~ input[type=color] {
+	background: #cdf;
+}
+.dirty.inherited, label.dirty.inherited ~ label input[type=color], label.dirty.inherited ~ input[type=color] {
+	background: #fdf;
+}
 </style>
 
 > ### Alert preview
