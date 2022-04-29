@@ -1166,14 +1166,14 @@ string textformatting_css(mapping cfg) {
 	if (int alpha = (int)cfg->shadowalpha) {
 		//NOTE: If we do more than one filter, make sure we combine them properly here on the back end.
 		string col = cfg->shadowcolor || "";
-		if (sizeof(col) != 7 && col[0] != '#') col = "#000000"; //I don't know how to add alpha to something that isn't in hex.
+		if (sizeof(col) != 7 || col[0] != '#') col = "#000000"; //I don't know how to add alpha to something that isn't in hex.
 		css += sprintf("filter: drop-shadow(%dpx %dpx %s%02X);",
 			(int)cfg->shadowx, (int)cfg->shadowy,
 			col, (int)(alpha * 2.55 + 0.5));
 	}
 	if (int alpha = (int)cfg->bgalpha) {
 		string col = cfg->bgcolor || "";
-		if (sizeof(col) != 7 && col[0] != '#') col = "#000000"; //As above. Since <input type=color> is supposed to return hex, this should be safe.
+		if (sizeof(col) != 7 || col[0] != '#') col = "#000000"; //As above. Since <input type=color> is supposed to return hex, this should be safe.
 		css += sprintf("background-color: %s%02X;", col, (int)(alpha * 2.55 + 0.5));
 	}
 	//If you set a border width, assume we want a solid border. (For others, set the
