@@ -45,11 +45,11 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 	cfg.textname !== "-" && TR([TH(cfg.textlabel || "Text"), TD([INPUT({size: 40, name: cfg.textname || "text"}), cfg.textdesc])]),
 	TR([TH("Font"), TD([
 		INPUT({name: "font", size: "28"}),
-		SELECT({name: "fontweight"}, [OPTION("normal"), OPTION("bold")]),
-		SELECT({name: "fontstyle"}, [OPTION("normal"), OPTION("italic")]),
+		SELECT({name: "fontweight"}, [cfg.blank_opts && OPTION(), OPTION("normal"), OPTION("bold")]),
+		SELECT({name: "fontstyle"}, [cfg.blank_opts && OPTION(), OPTION("normal"), OPTION("italic")]),
 		INPUT({name: "fontsize", type: "number", size: "3", value: "16"}),
 		" Family: ", SELECT({name: "fontfamily"}, [
-			OPTION({value: ""}, "Unspecified"),
+			OPTION({value: ""}, cfg.blank_opts ? "" : "Unspecified"),
 			"serif sans-serif monospace cursive fantasy system-ui emoji".split(" ")
 			.map(f => OPTION({style: "font-family: " + f}, f))]),
 		BR(), "Pick a font from Google Fonts or one that's already on your PC.",
@@ -58,7 +58,7 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 	TR([TH("Text color"), TD([
 		INPUT({name: "color", type: "color"}),
 		" Outline ",
-		SELECT({name: "strokewidth"}, ["None 0.25px 0.5px 0.75px 1px 2px 3px 4px 5px".split(" ").map(o => OPTION(o))]),
+		SELECT({name: "strokewidth"}, [cfg.blank_opts && OPTION(), "None 0.25px 0.5px 0.75px 1px 2px 3px 4px 5px".split(" ").map(o => OPTION(o))]),
 		INPUT({name: "strokecolor", type: "color"}),
 		" Note: Outline works only in Chrome (including OBS)",
 	])]),
@@ -89,6 +89,7 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 	//TODO: Gradient?
 	TR([TH("Formatting"), TD([
 		SELECT({name: "whitespace"}, [
+			cfg.blank_opts && OPTION(),
 			OPTGROUP({label: "Single line"}, [
 				OPTION({value: "normal"}, "Wrapped"),
 				OPTION({value: "nowrap"}, "No wrapping"),
@@ -100,7 +101,7 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 			]),
 		]),
 		"Alignment",
-		SELECT({name: "textalign"}, "start end center justify".split(" ").map(o => OPTION(o))),
+		SELECT({name: "textalign"}, [cfg.blank_opts && OPTION(), "start end center justify".split(" ").map(o => OPTION(o))]),
 	])]),
 	TR([TH("Custom CSS"), TD(INPUT({name: "css", size: 60}))]),
 ])}
