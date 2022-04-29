@@ -94,12 +94,6 @@ export function render(data) {
 			set_content("label[for=select-" + type + "]", info.label);
 			return;
 		}
-		//TODO: Allow inherits?!? It would be really cool if you could say "bighostalert"
-		//is "hostalert" with a different sound effect, for instance.
-		//If inherits can be chained, this would allow alert schemes to be done by having
-		//several top-level configs, then second tier selection that defines which is the
-		//active scheme, and finally the lowest tier defines variants, using inherits for
-		//everything that should follow the scheme.
 		const nondef = type !== "defaults"; //A lot of things are different for the defaults
 		DOM("#newpersonal").before(LI([
 			INPUT({type: "radio", name: "alertselect", id: "select-" + type, value: type}),
@@ -160,6 +154,7 @@ export function render(data) {
 			TEXTFORMATTING({
 				textname: nondef ? "textformat" : "-",
 				textdesc: SPAN({className: "placeholders"}, placeholder_description),
+				blank_opts: nondef, //Add a blank option to selects, but not on the Defaults tab
 			}),
 			P([BUTTON({type: "submit", disabled: true}, "Save"), nondef && BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")]),
 		]));

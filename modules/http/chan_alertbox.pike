@@ -177,10 +177,10 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 	padding: 0;
 	margin-left: 5px;
 }
-.inherited, label.inherited ~ label input[type=color], label.inherited ~ input[type=color] {
+.inherited, .inherited ~ label input[type=color], .inherited ~ input[type=color] {
 	background: #cdf;
 }
-.dirty.inherited, label.dirty.inherited ~ label input[type=color], label.dirty.inherited ~ input[type=color] {
+.dirty.inherited, .dirty.inherited ~ label input[type=color], .dirty.inherited ~ input[type=color] {
 	background: #fdf;
 }
 </style>
@@ -301,6 +301,7 @@ constant FORMAT_ATTRS = ([
 //List all defaults here. They will be applied to everything that isn't explicitly configured.
 //TODO: Don't save things where the user didn't change the value away from default, but *do*
 //save things where the user changed it, then changed it back, happening to land on the default.
+//TODO: Replace this with initial values for the Defaults mapping.
 constant NULL_ALERT = ([
 	"active": 0, "format": "text_image_stacked",
 	"alertlength": 6, "alertgap": 1,
