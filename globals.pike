@@ -637,7 +637,7 @@ class _TwitchIRC(mapping options) {
 		//PREPEND onto the queue.
 		queue = login
 			+ sprintf("CAP REQ :twitch.tv/%s", Array.arrayify(options->capabilities)[*])
-			+ sprintf("JOIN %s", Array.arrayify(options->join)[*])
+			+ ({sprintf("JOIN :%s", Array.arrayify(options->join) * ",")})
 			+ Array.arrayify(options->login_commands)
 			+ ({"MARKER"})
 			+ queue;
@@ -776,14 +776,15 @@ class _TwitchIRC(mapping options) {
 		array haveopt = Array.arrayify(options->capabilities);
 		array wantopt = Array.arrayify(opt->capabilities);
 		if (sizeof(haveopt - wantopt)) return 1;
-		//Channels can be joined and parted freely.
+		//Channels can be parted freely. For dependability, we (re)join all
+		//the channels currently wanted, but first part what's not.
 		array havechan = Array.arrayify(options->join);
 		array wantchan = Array.arrayify(opt->join);
 		//For some reason, these automaps are raising warnings about indexing
 		//empty strings. I don't get it.
-		array commands = ("CAP REQ :twitch.tv/" + (wantopt - haveopt)[*])
-			+ ("JOIN " + (wantchan - havechan)[*])
-			+ ("PART " + (havechan - wantchan)[*]);
+		array commands = ("CAP REQ :twitch.tv/" + (wantopt - haveopt)[*]) +
+			({"PART :" + (havechan - wantchan) * ",",
+			"JOIN :" + (wantchan - havechan) * ","});
 		if (sizeof(commands)) enqueue(@commands);
 		options = opt; m_delete(options, "pass"); //Transfer all options. Anything unchecked is assumed to be okay to change like this.
 	}
@@ -820,8 +821,6 @@ class _TwitchIRC(mapping options) {
 		//No token available? Delay, then re-request.
 		if (wait) queue = ({wait, ({get_token, chan})}) + queue;
 	}
-	//TODO: When a message comes *in* for a user, also consume a bucket entry? That way,
-	//the bot will be able to respond to himself in chat without issues.
 	//TODO: If msg_ratelimit comes in, retry last message????
 }
 
@@ -842,7 +841,7 @@ class irc_callback {
 	Concurrent.Future irc_connect(mapping options) {
 		//Bump this version number when there's an incompatible change. Old
 		//connections will all be severed.
-		options = (["module": this, "version": 2]) | (options || ([]));
+		options = (["module": this, "version": 3]) | (options || ([]));
 		if (!options->user) {
 			//Default credentials from the bot's main configs
 			mapping cfg = persist_config->path("ircsettings");
