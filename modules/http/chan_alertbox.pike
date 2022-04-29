@@ -366,6 +366,21 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
+mapping resolve_inherits(mapping alerts, string id, mapping alert) {
+	string par = alert->?parent || "defaults";
+	mapping parent = id == "defaults" ? NULL_ALERT //The defaults themselves are defaulted to the vanilla null alert.
+		: resolve_inherits(alerts, par, alerts[par]); //Everything else has a parent, potentially implicit.
+	if (!alert) return parent;
+	return parent | alert;
+}
+
+mapping resolve_all_inherits(mapping alerts) {
+	mapping ret = ([]);
+	if (alerts) foreach (alerts; string id; mapping alert)
+		if (id != "defaults") ret[id] = resolve_inherits(alerts, id, alert);
+	return ret;
+}
+
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
@@ -377,9 +392,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		else if (has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read"))
 			token = persist_status->path("bcaster_token")[chan];
 		return ([
-			"alertconfigs": cfg->alertconfigs || ([]),
+			"alertconfigs": resolve_all_inherits(cfg->alertconfigs),
 			"token": token,
-			"alertdefaults": NULL_ALERT,
 			"hostlist_command": cfg->hostlist_command || "",
 			"hostlist_format": cfg->hostlist_format || "",
 			"version": COMPAT_VERSION,
@@ -585,7 +599,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		| mkmapping(GLOBAL_ATTRS, msg[GLOBAL_ATTRS[*]])
 		| mkmapping(attrs, msg[attrs[*]]);
 	textformatting_validate(data);
-	data->text_css = textformatting_css(data);
+	data->text_css = textformatting_css(resolve_inherits(cfg->alertconfigs, msg->type, data));
 	//You may inherit from "", meaning the defaults, or from any other alert that
 	//doesn't inherit from this alert. Attempting to do so will just reset to "".
 	if (stringp(msg->parent) && msg->parent != "" && msg->parent != "defaults" && valid_alert_type(msg->parent, cfg)) {
