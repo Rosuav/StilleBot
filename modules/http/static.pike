@@ -25,7 +25,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string fil
 	string dir = "httpstatic";
 	string type = "text/plain";
 	//Guess a MIME type based on the extension, by default
-	foreach (([".css": "text/css", ".flac": "audio/flac", ".mp3": "audio/mp3"]); string ext; string t)
+	foreach (([".css": "text/css", ".flac": "audio/flac", ".mp3": "audio/mp3", ".html": "text/html"]); string ext; string t)
 		if (has_suffix(filename, ext)) type = t;
 	//Support a small number of subdirectory names
 	if (sscanf(filename, "%s-%s", string pfx, filename) && upload_dirs[pfx] &&
