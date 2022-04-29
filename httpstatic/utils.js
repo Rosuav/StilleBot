@@ -72,21 +72,19 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 		LABEL([" Horizontal (em): ", INPUT({name: "padhoriz", type: "number", step: "0.25"})]),
 	])]),
 	TR([TH("Background"), TD([
-		LABEL([" Color: ", INPUT({name: "bgcolor", type: "color"})]),
 		LABEL([
-			" Opacity: ",
+			" Opacity (0 to disable): ",
 			INPUT({name: "bgalpha", type: "number", min: 0, max: 100, value: 0}),
-			" 0 to disable",
 		]),
+		LABEL([" Color: ", INPUT({name: "bgcolor", type: "color"})]),
 	])]),
 	TR([TH("Drop shadow"), TD([
 		"Position (px): ", INPUT({name: "shadowx", type: "number"}), INPUT({name: "shadowy", type: "number"}),
-		LABEL([" Color: ", INPUT({name: "shadowcolor", type: "color"})]),
 		LABEL([
-			" Opacity: ",
+			" Opacity (0 to disable): ",
 			INPUT({name: "shadowalpha", type: "number", min: 0, max: 100, value: 0}),
-			" 0 to disable",
 		]),
+		LABEL([" Color: ", INPUT({name: "shadowcolor", type: "color"})]),
 	])]),
 	//TODO: Gradient?
 	TR([TH("Formatting"), TD([
