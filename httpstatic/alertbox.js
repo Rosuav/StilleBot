@@ -58,9 +58,8 @@ export function render(data) {
 	//those that are still present.
 	if (data.version > alertbox_version) {location.reload(); return;}
 	if (data.alertconfigs) {
-		const defaults = data.alertdefaults || { };
 		for (let kwd in data.alertconfigs) {
-			const cfg = {...defaults, ...data.alertconfigs[kwd]};
+			const cfg = data.alertconfigs[kwd];
 			if (cfg.version > alertbox_version) {location.reload(); return;}
 			let elem = DOM("#" + kwd);
 			if (!elem) elem = DOM("main").appendChild(SECTION({className: "alert", id: kwd})); //New alert type
