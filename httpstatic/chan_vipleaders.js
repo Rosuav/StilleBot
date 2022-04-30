@@ -34,7 +34,7 @@ export function render(data) {
 	if (data.monthly) {
 		const rows = [];
 		const now = new Date();
-		let year = now.getFullYear(), mon = now.getMonth() + 1;
+		let year = now.getUTCFullYear(), mon = now.getUTCMonth() + 1;
 		for (let i = 0; i < 7; ++i) {
 			const ym = year * 100 + mon;
 			const subs = remap_to_array(data.monthly["subs" + ym]);
