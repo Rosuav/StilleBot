@@ -90,6 +90,10 @@ export function render(data) {
 		for (let el of DOM("#configform").elements)
 			if (el.name && data[el.name])
 				el[el.type === "checkbox" ? "checked" : "value"] = data[el.name];
+	} else {
+		if (!DOM("#modcontrols").childElementCount) set_content("#modcontrols",
+			BUTTON({class: "twitchlogin", type: "button"}, "Login"),
+		);
 	}
 }
 
