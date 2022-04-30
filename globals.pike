@@ -546,9 +546,10 @@ float request_rate_token(string user, string chan) {
 	int bucket_size = 20;
 	int window_size = 30;
 	float safety_shave = 0.0; //For small windows, it's reasonable to shave the safety margin.
-	if (chan == "#!login" || chan == "#!join")
+	if (chan == "#!login" || chan == "#!join") {
 		//Logins and channel joinings are limited to 20 every 10 seconds.
-		window_size = 10;
+		window_size = 10; bucket_size = 1; user = "";
+	}
 	else if (chan == "#" + user || G->G->user_mod_status[user + chan])
 		//You can spam harder in channels you mod for.
 		bucket_size = 100;
@@ -637,7 +638,7 @@ class _TwitchIRC(mapping options) {
 		//PREPEND onto the queue.
 		queue = login
 			+ sprintf("CAP REQ :twitch.tv/%s", Array.arrayify(options->capabilities)[*])
-			+ ({sprintf("JOIN :%s", Array.arrayify(options->join) * ",")})
+			+ map(Array.arrayify(options->join) / 10.0) {return "JOIN :" + __ARGS__[0] * ",";}
 			+ Array.arrayify(options->login_commands)
 			+ ({"MARKER"})
 			+ queue;
@@ -782,9 +783,11 @@ class _TwitchIRC(mapping options) {
 		array wantchan = Array.arrayify(opt->join);
 		//For some reason, these automaps are raising warnings about indexing
 		//empty strings. I don't get it.
-		array commands = ("CAP REQ :twitch.tv/" + (wantopt - haveopt)[*]) +
-			({"PART :" + (havechan - wantchan) * ",",
-			"JOIN :" + (wantchan - havechan) * ","});
+		array commands = ("CAP REQ :twitch.tv/" + (wantopt - haveopt)[*]);
+		if (sizeof(havechan - wantchan)) commands += ({"PART :" + (havechan - wantchan) * ","});
+		//FIXME: Figure out why channels are getting inexplicably parted, and
+		//then change this to be (wantchan-havechan) instead of just wantchan
+		if (sizeof(wantchan)) commands += map(wantchan / 10.0) {return "JOIN :" + __ARGS__[0] * ",";};
 		if (sizeof(commands)) enqueue(@commands);
 		options = opt; m_delete(options, "pass"); //Transfer all options. Anything unchecked is assumed to be okay to change like this.
 	}
