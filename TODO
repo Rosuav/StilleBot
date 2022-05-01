@@ -118,6 +118,7 @@
   - Alternatively, maybe all variants inherit from the base alert (not from each
     other), and any filter on the base alert affects them all, but otherwise, the
     filters are independent. Might make a cleaner UI.
+  - Allow use of variables. That way, variations can be used for alert sets too.
 * Alert Box: Support movies (not just GIFs) everywhere
   - I don't think a video can be used as an element's background. Would need to
     rework the "overlaid" option completely to use two elements.
