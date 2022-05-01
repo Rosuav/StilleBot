@@ -761,7 +761,7 @@ class _TwitchIRC(mapping options) {
 	}
 
 	void send(string channel, string msg) {
-		enqueue("PRIVMSG #" + (channel - "#") + " :" + replace(msg, "\n", " "));
+		enqueue("PRIVMSG #" + (channel - "#") + " :" + string_to_utf8(replace(msg, "\n", " ")));
 	}
 
 	int(0..1) update_options(mapping opt) {
@@ -844,7 +844,7 @@ class irc_callback {
 	Concurrent.Future irc_connect(mapping options) {
 		//Bump this version number when there's an incompatible change. Old
 		//connections will all be severed.
-		options = (["module": this, "version": 3]) | (options || ([]));
+		options = (["module": this, "version": 4]) | (options || ([]));
 		if (!options->user) {
 			//Default credentials from the bot's main configs
 			mapping cfg = persist_config->path("ircsettings");
