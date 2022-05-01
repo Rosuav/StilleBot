@@ -125,3 +125,7 @@
   - Have a helper that can render an IMG or a VIDEO, or an IMG of the transparent
     PNG, based on the URL provided
   - This will bump the version number, ideally only for alerts with videos in them.
+* Recent Followers list, incl both login and display name
+  - Shouldn't need any authentication
+  - Useful for mods who saw an alert go through
+  - Have a "copy login to clipboard" button
