@@ -578,7 +578,7 @@ class channel(string name) { //name begins with hash and is all lower case
 				case "subs_on": case "subs_off": break; //Channel is now/no longer in sub-only mode
 				case "followers_on": case "followers_off": break; //Channel is now/no longer in follower-only mode (regardless of minimum time)
 				case "followers_on_zero": break; //Regardless? Not quite; if it's zero-second followers-only mode, it's separate.
-				case "msg_duplicate": case "msg_slowmode": case "msg_timedout": case "msg_banned":
+				case "msg_duplicate": case "msg_slowmode": case "msg_timedout": case "msg_banned": case "msg_requires_verified_phone_number":
 					/* Last message wasn't sent, for some reason. There seems to be no additional info in the tags.
 					- Your message was not sent because it is identical to the previous one you sent, less than 30 seconds ago.
 					- This room is in slow mode and you are sending messages too quickly. You will be able to talk again in %d seconds.
