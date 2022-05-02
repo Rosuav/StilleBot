@@ -248,6 +248,7 @@ constant ALERTTYPES = ({([
 	"placeholders": (["username": "Display name of the new follower (equivalently {NAME})"]),
 	"testpholders": ([]),
 	"builtin": "poll",
+	"condition_vars": ({ }),
 ]), ([
 	"id": "sub",
 	"label": "Subscription",
@@ -259,6 +260,7 @@ constant ALERTTYPES = ({([
 	]),
 	"testpholders": (["tier": ({1, 3})]),
 	"builtin": "connection",
+	"condition_vars": ({"{tier}"}),
 ]), ([
 	"id": "resub",
 	"label": "Resubscription",
@@ -271,6 +273,7 @@ constant ALERTTYPES = ({([
 	]),
 	"testpholders": (["tier": ({1, 3}), "months": ({1, 60})]),
 	"builtin": "connection",
+	"condition_vars": ({"{tier}", "{months}"}),
 ]), ([
 	"id": "subbomb",
 	"label": "Sub bomb",
@@ -283,6 +286,7 @@ constant ALERTTYPES = ({([
 	]),
 	"testpholders": (["tier": "1", "gifts": ({1, 100})]),
 	"builtin": "connection",
+	"condition_vars": ({"{tier}", "{gifts}"}),
 ]), ([
 	"id": "cheer",
 	"label": "Cheer",
@@ -294,9 +298,10 @@ constant ALERTTYPES = ({([
 	]),
 	"testpholders": (["bits": ({1, 25000})]),
 	"builtin": "connection",
+	"condition_vars": ({"{bits}"}),
 ])});
 constant RETAINED_ATTRS = ({"image", "sound"});
-constant GLOBAL_ATTRS = "active format alertlength alertgap" / " ";
+constant GLOBAL_ATTRS = "active format alertlength alertgap condition" / " ";
 constant FORMAT_ATTRS = ([
 	"text_image_stacked": "layout alertwidth alertheight textformat volume" / " " + TEXTFORMATTING_ATTRS,
 	"text_image_overlaid": "layout alertwidth alertheight textformat volume" / " " + TEXTFORMATTING_ATTRS,
@@ -670,6 +675,13 @@ constant vars_provided = ([
 ]);
 constant command_suggestions = ([]); //This isn't something that you'd create a default command for - it'll want to be custom. (And probably a special, not a command, anyway.)
 
+void send_alert(object channel, string alerttype, mapping args) {
+	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
+	if (!cfg->?authkey) return;
+	//TODO: Parse the condition
+	send_updates_all(cfg->authkey + channel->name, (["send_alert": alerttype]) | args);
+}
+
 mapping message_params(object channel, mapping person, array|string param)
 {
 	string alert, text;
@@ -678,8 +690,7 @@ mapping message_params(object channel, mapping person, array|string param)
 	if (!alert || alert == "") return (["{error}": "Need an alert type"]);
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!valid_alert_type(alert, cfg)) return (["{error}": "Unknown alert type"]);
-	send_updates_all(cfg->authkey + channel->name, ([
-		"send_alert": alert,
+	send_alert(channel, alert, ([
 		"TEXT": text || "",
 		"text": text || "",
 	]));
@@ -687,12 +698,8 @@ mapping message_params(object channel, mapping person, array|string param)
 }
 
 @hook_follower:
-void follower(object channel, mapping follower)
-{
-	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
-	if (!cfg->?authkey) return;
-	send_updates_all(cfg->authkey + channel->name, ([
-		"send_alert": "follower",
+void follower(object channel, mapping follower) {
+	send_alert(channel, "follower", ([
 		"NAME": follower->displayname,
 		"username": follower->displayname,
 	]));
@@ -708,8 +715,8 @@ void subscription(object channel, string type, mapping person, string tier, int 
 	if (extra->came_from_subbomb && cfg->alertconfigs[?"subbomb"]->?active) return;
 	else if (type == "subbomb") alerttype = "subbomb";
 	else if (months > 1 && cfg->alertconfigs[?"resub"]->?active) alerttype = "resub";
-	send_updates_all(cfg->authkey + channel->name, ([
-		"send_alert": alerttype,
+	//FIXME: Is {gifts} getting set?
+	send_alert(channel, alerttype, ([
 		"username": person->displayname,
 		"tier": tier, "months": months,
 	]));
@@ -719,8 +726,7 @@ void subscription(object channel, string type, mapping person, string tier, int 
 void cheer(object channel, mapping person, int bits, mapping extra) {
 	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
 	if (!cfg->?authkey) return;
-	send_updates_all(cfg->authkey + channel->name, ([
-		"send_alert": "cheer",
+	send_alert(channel, "cheer", ([
 		"username": extra->displayname,
 		"bits": (string)bits,
 	]));

@@ -99,6 +99,8 @@
 * Break out name-to/from-uid mappings into a separate file, maybe not even JSON? I think
   they might be the largest part of persist_status.
 * Alert Box: Alert conditions
+  - Not currently supported for host alerts as they are managed directly by the client.
+    Changing this would require pushing them out from the server too - might be worth it.
   - Each alert type (other than Default and personals) will support filters, with a
     unique set of options available.
   - For example, Sub alerts could filter based on tier and/or tenure. Cheers could

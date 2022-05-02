@@ -110,6 +110,13 @@ export function render(data) {
 				SPAN({className: "description"}, info.description),
 			]),
 			HR(),
+			info.condition_vars && P([
+				LABEL(["Condition for this alert to fire: ", INPUT({name: "condition", size: 40})]), BR(),
+				"If blank, alert will always fire when appropriate; otherwise, see command handler, whatevs.",
+				" Put ", CODE({style: "background: #ffe"}, "1 = 0"), " to quickly disable this alert.",
+				" FIXME: Write better copy.", BR(),
+				"Variables available:", info.condition_vars.map(c => [" ", CODE({style: "background: #ffe"}, c)]),
+			]),
 			nondef && P([
 				LABEL([INPUT({name: "active", type: "checkbox"}), " Active/enabled"]), BR(),
 				LABEL(["Inherit settings from: ", SELECT({name: "parent"},
