@@ -1,8 +1,9 @@
 inherit http_websocket;
+inherit hook;
 
 constant markdown = #"# Recent followers - $$channel$$
 
-$$error||$$
+$$message||$$
 
 <ul id=followers></ul>
 <div id=copied>Copied!</div>
@@ -12,7 +13,6 @@ button {padding: 0;}
 </style>
 ";
 /* If no channel, show form to type one in
-  - Eventually: Websocket notification of new followers so you can just keep the page open.
 */
 continue Concurrent.Future|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -26,18 +26,35 @@ continue Concurrent.Future|mapping(string:mixed) http_request(Protocols.HTTP.Ser
 		mixed ex = catch (channel = yield(get_user_id(req->variables->channel)));
 		if (ex) return render(req, ([
 			"channel": "channel selection",
-			"error": "Unknown channel name " + req->variables->channel,
+			"message": "Unknown channel name " + req->variables->channel,
 		]));
 	}
 	return render(req, ([
 		"vars": (["ws_group": channel]),
 		"channel": yield(get_user_info(channel))->display_name,
+		"message": has_value(values(G->G->irc->channels)->userid, channel)
+			? "Will automatically update as people follow"
+			: "Not guaranteed to automatically update - refresh as needed",
 	]));
 }
 
 Concurrent.Future|mapping get_state(string|int group) {
-	//TODO: Cache until a new follower is seen
 	return twitch_api_request("https://api.twitch.tv/helix/users/follows?to_id=" + group)->then() {
 		return (["followers": __ARGS__[0]->data[..20]]);
 	};
 }
+
+@hook_follower:
+void follower(object channel, mapping follower) {
+	send_updates_all(channel->userid, (["newfollow": ([
+		"followed_at": follower->followed_at, //Note that this includes subsecond resolution, which it doesn't in get_state()
+		"from_id": follower->user_id,
+		"from_login": follower->user_login,
+		"from_name": follower->user_name,
+		"to_id": follower->broadcaster_user_id,
+		"to_login": follower->broadcaster_user_login,
+		"to_name": follower->broadcaster_user_name,
+	])]));
+}
+
+protected void create(string name) {::create(name);}

@@ -6,9 +6,11 @@ function if_different(login, name) {
 	return " (" + login + ")";
 }
 
+let followers = [];
 export function render(data) {
-	replace_content("#followers",
-		data.followers.map(f => LI({key: f.from_id}, [
+	if (data.newfollow) (data.followers = followers).unshift(data.newfollow);
+	if (data.followers) replace_content("#followers",
+		(followers = data.followers).map(f => LI({key: f.from_id}, [
 			//Avatar? Maybe? Would need to have the server do the lookup for us.
 			BUTTON({class: "clipbtn", "data-copyme": f.from_login,
 				title: "Click to copy: " + f.from_login}, "📋"), " ",
