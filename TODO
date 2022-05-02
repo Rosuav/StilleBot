@@ -110,6 +110,15 @@
     - Using the builtin would bypass the filter
     - Parameters wouldn't be clean. Figure something out. Maybe if {TEXT} is passed,
       use that instead of anything else??
+  - Have some default filter types to choose from:
+    - Sub Tier is 1/2/3
+    - Number of months/bits is >= [input]
+    - Alert set is active: [select]
+    - Is a sub bomb. Special; if any such alert is activated, it disables the alerts
+      for all the individual sub gifts.
+    - Custom Filter: Calculation/Comparison/Containment/Regex
+    - Any or all of these can be selected in combination, but only one custom (or
+      only one per type, if that's convenient).
 * Alert Box: Alert variations
   - A new variation will initially inherit from the variation it was spawned from
   - Conditions accumulate? Or replace?
