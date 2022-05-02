@@ -183,6 +183,9 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 .dirty.inherited, .dirty.inherited ~ label input[type=color], .dirty.inherited ~ input[type=color] {
 	background: #fdf;
 }
+/* On the defaults tab, don't show blanks in any special way (there's no user-controlled inheritance beyond defaults) */
+[data-type=defaults] input {background: #ffe;}
+[data-type=defaults] label {background: inherit;}
 </style>
 
 > ### Alert preview
@@ -299,17 +302,16 @@ constant FORMAT_ATTRS = ([
 	"text_image_overlaid": "layout alertwidth alertheight textformat volume" / " " + TEXTFORMATTING_ATTRS,
 ]);
 //List all defaults here. They will be applied to everything that isn't explicitly configured.
-//TODO: Don't save things where the user didn't change the value away from default, but *do*
-//save things where the user changed it, then changed it back, happening to land on the default.
-//TODO: Replace this with initial values for the Defaults mapping.
 constant NULL_ALERT = ([
 	"active": 0, "format": "text_image_stacked",
 	"alertlength": 6, "alertgap": 1,
 	"layout": "USE_DEFAULT", //Due to the way invalid keywords are handled, this effectively will use the first available layout as the default.
 	"alertwidth": 250, "alertheight": 250,
-	"textformat": "", "volume": 0.5,
-	"image": "", "sound": "",
-	//TODO: Defaults for formatting attrs?
+	"volume": 0.5, "whitespace": "normal",
+	"fontweight": "normal", "fontstyle": "normal", "fontsize": "24",
+	"strokewidth": "None", "strokecolor": "#000000", "borderwidth": "0",
+	"padvert": "0", "padhoriz": "0", "textalign": "start",
+	"shadowx": "0", "shadowy": "0", "shadowalpha": "0", "bgalpha": "0",
 ]);
 constant LATEST_VERSION = 1; //Bump this every time a change might require the client to refresh.
 constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump this too.
@@ -406,8 +408,11 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		int idx = search(cfg->files->id, id);
 		return idx >= 0 && cfg->files[idx];
 	}
+	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
+	cfg->alertconfigs->defaults = resolve_inherits(cfg->alertconfigs, "defaults",
+		filter(cfg->alertconfigs->defaults || ([])) {return __ARGS__[0] != "";});
 	return (["items": cfg->files || ({ }),
-		"alertconfigs": cfg->alertconfigs || ([]),
+		"alertconfigs": cfg->alertconfigs,
 		"alerttypes": ALERTTYPES + (cfg->personals || ({ })),
 		"alertdefaults": NULL_ALERT,
 		"hostlist_command": cfg->hostlist_command || "",

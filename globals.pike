@@ -1161,8 +1161,8 @@ string textformatting_css(mapping cfg) {
 		if (mixed val = cfg[attr - "-"]) css += attr + ": " + val + "px;";
 	if (cfg->font && cfg->fontfamily) css += "font-family: " + cfg->font + ", " + cfg->fontfamily + ";"; //Note that the front end may have other work to do too, but here, we just set the font family.
 	else if (cfg->font || cfg->fontfamily) css += "font-family: " + (cfg->font || cfg->fontfamily) + ";";
-	if (cfg->padvert) css += sprintf("padding-top: %sem; padding-bottom: %<sem;", cfg->padvert);
-	if (cfg->padhoriz) css += sprintf("padding-left: %sem; padding-right: %<sem;", cfg->padhoriz);
+	if ((int)cfg->padvert) css += sprintf("padding-top: %dem; padding-bottom: %<sem;", (int)cfg->padvert);
+	if ((int)cfg->padhoriz) css += sprintf("padding-left: %dem; padding-right: %<sem;", (int)cfg->padhoriz);
 	if (cfg->strokewidth && cfg->strokewidth != "None")
 		css += sprintf("-webkit-text-stroke: %s %s;", cfg->strokewidth, cfg->strokecolor || "black");
 	if (int alpha = (int)cfg->shadowalpha) {
@@ -1180,7 +1180,7 @@ string textformatting_css(mapping cfg) {
 	}
 	//If you set a border width, assume we want a solid border. (For others, set the
 	//entire border definition in custom CSS.)
-	if (cfg->borderwidth && cfg->borderwidth != "") css += sprintf("border-width: %spx; border-style: solid;", cfg->borderwidth);
+	if ((int)cfg->borderwidth) css += sprintf("border-width: %dpx; border-style: solid;", (int)cfg->borderwidth);
 	return css;
 }
 //Validate the textformatting attributes. Ignores any other attributes.

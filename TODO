@@ -98,9 +98,6 @@
   - Add link to the /channels/NAME/ landing page once it's ready for launch
 * Break out name-to/from-uid mappings into a separate file, maybe not even JSON? I think
   they might be the largest part of persist_status.
-* Alert Box: Deprecate NULL_ALERT's status and make it the default defaults
-  - Config page (chan_alertbox.js) will need to respect inheritance for all the fields
-    in NULL_ALERT - currently it assumes there will always be values
 * Alert Box: Alert conditions
   - Each alert type (other than Default and personals) will support filters, with a
     unique set of options available.
