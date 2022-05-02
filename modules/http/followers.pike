@@ -12,13 +12,15 @@ $$message||$$
 button {padding: 0;}
 </style>
 ";
-/* If no channel, show form to type one in
-*/
 continue Concurrent.Future|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (!req->variables->channel) {
 		return render(req, ([
 			"channel": "channel selection",
+			"message": #"<form>
+				<label>No channel selected - type a channel name: <input name=channel size=20></label>
+				<input type=submit value=Go>
+			</form>"
 		]));
 	}
 	int channel = (int)req->variables->channel;
