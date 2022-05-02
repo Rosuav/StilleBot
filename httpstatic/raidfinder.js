@@ -344,14 +344,8 @@ function build_follow_list() {
 		return UL(parts.map(p => p.elem));
 	}
 	function raidbtn(stream) {
-		return BUTTON({className: "clipbtn", onclick: e => {
-			navigator.clipboard.writeText("/raid " + stream.user_name);
-			const c = DOM("#copied");
-			c.classList.add("shown");
-			c.style.left = e.pageX + "px";
-			c.style.top = e.pageY + "px";
-			setTimeout(() => c.classList.remove("shown"), 1000);
-		}, title: "Click to copy: /raid " + stream.user_name}, "📋")
+		return BUTTON({className: "clipbtn", "data-copyme": "/raid " + stream.user_name,
+			title: "Click to copy: /raid " + stream.user_name}, "📋")
 	}
 	set_content("#streams", follows.map(stream => stream.element = DIV({className: describe_size(stream) + " " + (stream.highlight ? "highlighted" : "")},
 		mode === "allfollows" ? [

@@ -129,23 +129,6 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	text-align: end;
 }
 
-.clipbtn {cursor: copy;}
-#copied {
-	opacity: 0;
-	position: absolute;
-	background: black;
-	color: white;
-	border: 1px solid green;
-	margin-left: 1.5em;
-	padding: 2px;
-	cursor: default;
-	transition: opacity 2s 0.5s;
-}
-#copied.shown {
-	opacity: 1;
-	transition: opacity .5s 0s;
-}
-
 #chat_restrictions li {
 	background: red;
 	color: yellow;

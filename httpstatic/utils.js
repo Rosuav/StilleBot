@@ -120,3 +120,12 @@ export function ensure_font(font) {
 		href: "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(font) + "&display=swap",
 	}));
 }
+
+on("click", ".clipbtn", e => {
+	navigator.clipboard.writeText(e.match.dataset.copyme);
+	const c = DOM("#copied");
+	c.classList.add("shown");
+	c.style.left = e.pageX + "px";
+	c.style.top = e.pageY + "px";
+	setTimeout(() => c.classList.remove("shown"), 1000);
+});

@@ -5,9 +5,13 @@ constant markdown = #"# Recent followers - $$channel$$
 $$error||$$
 
 <ul id=followers></ul>
+<div id=copied>Copied!</div>
+
+<style>
+button {padding: 0;}
+</style>
 ";
 /* If no channel, show form to type one in
-  - Have a "copy login to clipboard" button
   - Eventually: Websocket notification of new followers so you can just keep the page open.
 */
 continue Concurrent.Future|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
