@@ -117,7 +117,15 @@
   - Alternatively, maybe all variants inherit from the base alert (not from each
     other), and any filter on the base alert affects them all, but otherwise, the
     filters are independent. Might make a cleaner UI.
-  - Allow use of variables. That way, variations can be used for alert sets too.
+  - Testing alert variations is complex.
+    - If you test one specific variant, it should test that precise alert. Is it
+      possible to bound the random selection to comply? If not, don't bother.
+      (Would require back-parsing the condition. Might be useful though, as it
+      would make the default bit etc values look more sane.)
+    - Have a "Test All Variants" button which will go through every variation and
+      test them, in order. Maybe reverse order, since they'll likely be done in
+      highest-to-lowest. Or not.
+    - Testing a base alert. Should it obey conditions or not? Unsure.
 * Alert Box: Support movies (not just GIFs) everywhere
   - I don't think a video can be used as an element's background. Would need to
     rework the "overlaid" option completely to use two elements.

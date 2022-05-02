@@ -678,7 +678,13 @@ constant command_suggestions = ([]); //This isn't something that you'd create a 
 void send_alert(object channel, string alerttype, mapping args) {
 	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
 	if (!cfg->?authkey) return;
-	//TODO: Parse the condition
+	//TODO: Support string comparisons, not just numeric evaluation
+	if (cfg->condition && cfg->condition != "") {
+		if (mixed ex = catch {
+			int|float value = G->G->evaluate_expr(channel->expand_variables(cfg->condition));
+			if (!value || value == 0.0) return; //Condition not passed
+		}) werror("ERROR EVALUATING ALERT CONDITION: " + describe_backtrace(ex)); //TODO: Report to the broadcaster somehow
+	}
 	send_updates_all(cfg->authkey + channel->name, (["send_alert": alerttype]) | args);
 }
 
