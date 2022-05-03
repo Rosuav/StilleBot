@@ -143,6 +143,10 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	background: yellow;
 	margin-right: 0.25em;
 }
+.uptime .info {
+	background: #aaf;
+	margin-right: 0.25em;
+}
 .uptime .allclear {
 	background: #a0f0c0;
 	margin-right: 0.25em;

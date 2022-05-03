@@ -2,14 +2,14 @@ import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {A, B, BR, BUTTON, DIV, IMG, UL, LI, SPAN} = choc;
 
 const chat_restrictions = [
-	["emote_mode", "Emote-only mode"],
+	["emote_mode", "Emote-only mode", 1],
 	["follower_mode", s => s.follower_mode_duration
 		? "Follower-only mode (" + s.follower_mode_duration + " minutes)"
 		: "Follower-only mode"
 	],
-	["slow_mode", s => "Slow mode (" + s.slow_mode_wait_time + " seconds)"],
+	["slow_mode", s => "Slow mode (" + s.slow_mode_wait_time + " seconds)", 1],
 	["subscriber_mode", "Subscriber-only mode"],
-	["unique_chat_mode", "Unique chat (R9k) mode"],
+	["unique_chat_mode", "Unique chat (R9k) mode", 1],
 ];
 const want_streaminfo = { }; //Channel IDs that we don't yet know about chat restrictions for
 
@@ -266,9 +266,16 @@ function describe_uptime(stream, el) {
 	want_streaminfo[stream.user_id] = cached;
 	if (cached > new Date/1000 - 86400) {
 		const set = stream.chanstatus.chat_settings;
-		if (chat_restrictions.find(r => set[r[0]]))
-			//There's at least one chat restriction set. Give a warning.
+		let warn = false, info = false;
+		chat_restrictions.forEach(r => {if (set[r[0]]) {
+			if (r[2]) info = true; else warn = true;
+		}});
+		if (warn)
+			//There's at least one notable chat restriction set. Give a warning.
 			restrictions = SPAN({className: "warning", title: "Chat restrictions active, click for details"}, "*");
+		else if (info)
+			//There's none of the serious ones, but at least one mild chat restriction set. Give an informational.
+			restrictions = SPAN({className: "info", title: "Mild chat restrictions active, click for details"}, "*");
 		else
 			//No chat restrictions, and we saw this recently so it's probably safe to trust it.
 			restrictions = SPAN({className: "allclear", title: "No chat restrictions active (click to recheck)"}, "*");
