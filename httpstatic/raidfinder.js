@@ -52,7 +52,8 @@ async function show_vod_lengths(userid, vodid, startdate) {
 	set_content("#is_following", "");
 	set_content("#vods", LI("... loading VODs ..."));
 	DOM("#vodlengths").showModal();
-	const info = await (await fetch(`/raidfinder?for=${on_behalf_of_userid}&streamlength=${userid}&ignore=${vodid}`)).json();
+	const info = typeof userid === "object" ? userid :
+		await (await fetch(`/raidfinder?for=${on_behalf_of_userid}&streamlength=${userid}&ignore=${vodid}`)).json();
 	console.log("VODs:", info);
 
 	if (info.is_following) {
@@ -293,8 +294,8 @@ function describe_uptime(stream, el) {
 	return set_content(el, [frond, restrictions, "Uptime " + uptime(stream.started_at)]);
 }
 
-console.log(follows);
 function build_follow_list() {
+	console.log(follows);
 	function describe_raid(raids) {
 		if (!raids.length) return null;
 		const raiddesc = raids[raids.length - 1];
@@ -389,7 +390,7 @@ function build_follow_list() {
 	else set_content("#yourcat", "");
 	if (!precache_timer) precache_timer = setInterval(precache_streaminfo, 2000);
 }
-build_follow_list();
+if (mode === "vodlength") show_vod_lengths(vodinfo); else build_follow_list();
 
 export function render(data) { }
 export function sockmsg_chanstatus(data) {
