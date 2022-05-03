@@ -90,11 +90,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			int now = time();
 			int delay = ++next_precache_request - time();
 			if (delay > 5) return jsonify((["error": "Wait a bit"])) | (["error": 425]);
-			if (delay) {
-				Concurrent.Promise p = Concurrent.Promise();
-				call_out(p->success, delay, 0);
-				yield(p->future());
-			}
+			if (delay) yield(task_sleep(delay));
 		}
 		array vods = yield(get_helix_paginated("https://api.twitch.tv/helix/videos", (["user_id": chan, "type": "archive"])));
 		if (string ignore = req->variables->ignore) //Ignore the stream ID for a currently live broadcast
