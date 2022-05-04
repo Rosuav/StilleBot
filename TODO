@@ -135,6 +135,23 @@
       test them, in order. Maybe reverse order, since they'll likely be done in
       highest-to-lowest. Or not.
     - Testing a base alert. Should it obey conditions or not? Unsure.
+  - Should alert variations be in a defined order (first one wins), a tree (any
+    alert, even a variation, can have variations, and each will silence its parent
+    but not its siblings), or a bag, with the most specific variant winning?
+    - Defined order means the user has to think about priority and be able to
+      reorder the variants.
+    - The tree is... complicated.
+    - Specificity is fine in CSS, but would it be confusing here? It could simply
+      count the number of active conditions; add meaningless conditions (like sub
+      tier >= 1) to increase specificity.
+      - Sub bomb may need to artificially count as more specific, which is... odd.
+      - Either that, or have a three-option selection for sub bombs:
+        - IS a sub bomb
+        - Is FROM a sub bomb
+        - Is NOT from a sub bomb
+      - Broad concept: Variations, when selected, replace their base alerts. This
+        means that a "community sub gift" alert variant should replace the "sub"
+        base alert. Making this work intuitively may be hard, but is necessary.
 * Alert Box: Support movies (not just GIFs) everywhere
   - I don't think a video can be used as an element's background. Would need to
     rework the "overlaid" option completely to use two elements.
