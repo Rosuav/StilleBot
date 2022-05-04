@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, ABBR, AUDIO, BR, BUTTON, CODE, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN} = choc; //autoimport
+const {A, ABBR, AUDIO, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN, SUMMARY, UL} = choc; //autoimport
 import {waitlate, TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
@@ -100,7 +100,7 @@ export function render(data) {
 			LABEL({htmlFor: "select-" + type}, info.label),
 		]));
 		document.querySelectorAll("select[name=parent]").forEach(el => el.appendChild(OPTION({value: type}, info.label)));
-		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({className: "alertconfig", "data-type": type}, [
+		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({class: type === "defaults" ? "alertconfig no-inherit": "alertconfig", "data-type": type}, [
 			H3({className: "heading"}, [
 				info.heading, SPAN({className: "if-unsaved"}, " "),
 				ABBR({className: "dirty if-unsaved", title: "Unsaved changes - click Save to apply them"}, "*"),
@@ -110,12 +110,49 @@ export function render(data) {
 				SPAN({className: "description"}, info.description),
 			]),
 			HR(),
-			info.condition_vars && P([
-				LABEL(["Condition for this alert to fire: ", INPUT({name: "condition", size: 40})]), BR(),
-				"If blank, alert will always fire when appropriate; otherwise, see command handler, whatevs.",
-				" Put ", CODE({style: "background: #ffe"}, "1 = 0"), " to quickly disable this alert.",
-				" FIXME: Write better copy.", BR(),
-				"Variables available:", info.condition_vars.map(c => [" ", CODE({style: "background: #ffe"}, c)]),
+			info.condition_vars && DETAILS({class: "expandbox no-inherit"}, [
+				SUMMARY("Alert will be used (TODO) <always/never/by default/when alert set active>. Expand to configure."),
+				P("If any alert variation (coming soon!) is used, the base alert will be replaced with it."),
+				P("All selected conditions must hold for this alert (or variant) to activate."),
+				//TODO: Lay these out in... a table? Flexbox? UL is ugly but for now I just
+				//want something that I can play with.
+				UL([
+					//Condition vars depend on the alert type. For instance, a sub alert
+					//can check the tier, a cheer alert the number of bits. It's entirely
+					//possible to have empty condition_vars, which will just have the
+					//standard condition types.
+					info.condition_vars.map(c => LI([
+						c + " ", //TODO: Replace with a description
+						SELECT({name: "cond-" + c + "-oper"}, [
+							OPTION({value: ""}, "n/a"),
+							"< <= == != >= >".split(" ").map(o => OPTION(o)),
+						]),
+						" ",
+						INPUT({name: "cond-" + c + "-val", type: "number"}),
+					])),
+					//Ultimately this will get a list of alert sets from the server
+					["Foo", "Bar"].map(set => LI(LABEL([
+						INPUT({name: "alertset-" + set, type: "checkbox"}),
+						" Alert set " + set + " active [unimpl]",
+					]))),
+					//Fully custom conditions
+					LI(LABEL([
+						"Custom numeric condition: ",
+						INPUT({name: "cond-numeric", size: 30}),
+						" (blank to ignore)",
+					])),
+					LI([
+						"Custom text condition: ",
+						INPUT({name: "cond-expr1", size: 20}),
+						SELECT({name: "cond-type"}, [
+							OPTION({value: ""}, "n/a"),
+							OPTION({value: "string"}, "is exactly"),
+							OPTION({value: "contains"}, "includes"),
+							OPTION({value: "regexp"}, "matches regex"),
+						]),
+						INPUT({name: "cond-expr2", size: 20}),
+					]),
+				]),
 			]),
 			nondef && P([
 				LABEL([INPUT({name: "active", type: "checkbox"}), " Active/enabled"]), BR(),

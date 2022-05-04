@@ -184,8 +184,14 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 	background: #fdf;
 }
 /* On the defaults tab, don't show blanks in any special way (there's no user-controlled inheritance beyond defaults) */
-[data-type=defaults] input {background: #ffe;}
-[data-type=defaults] label {background: inherit;}
+.no-inherit input {background: #ffe;} /* Revert these to my global default for editable text */
+.no-inherit label, .no-inherit select {background: revert;} /* These don't have a global default, so revert to UA style */
+
+.expandbox {
+	border: 1px solid black;
+	padding: 0 2em;
+}
+.expandbox summary {margin-left: -1.75em;} /* Pull the summary back to the left */
 </style>
 
 > ### Alert preview
@@ -260,7 +266,7 @@ constant ALERTTYPES = ({([
 	]),
 	"testpholders": (["tier": ({1, 3})]),
 	"builtin": "connection",
-	"condition_vars": ({"{tier}"}),
+	"condition_vars": ({"tier"}),
 ]), ([
 	"id": "resub",
 	"label": "Resubscription",
@@ -273,7 +279,7 @@ constant ALERTTYPES = ({([
 	]),
 	"testpholders": (["tier": ({1, 3}), "months": ({1, 60})]),
 	"builtin": "connection",
-	"condition_vars": ({"{tier}", "{months}"}),
+	"condition_vars": ({"tier", "months"}),
 ]), ([
 	"id": "subbomb",
 	"label": "Sub bomb",
@@ -286,7 +292,7 @@ constant ALERTTYPES = ({([
 	]),
 	"testpholders": (["tier": "1", "gifts": ({1, 100})]),
 	"builtin": "connection",
-	"condition_vars": ({"{tier}", "{gifts}"}),
+	"condition_vars": ({"tier", "gifts"}),
 ]), ([
 	"id": "cheer",
 	"label": "Cheer",
@@ -298,10 +304,10 @@ constant ALERTTYPES = ({([
 	]),
 	"testpholders": (["bits": ({1, 25000})]),
 	"builtin": "connection",
-	"condition_vars": ({"{bits}"}),
+	"condition_vars": ({"bits"}),
 ])});
 constant RETAINED_ATTRS = ({"image", "sound"});
-constant GLOBAL_ATTRS = "active format alertlength alertgap condition" / " ";
+constant GLOBAL_ATTRS = "active format alertlength alertgap" / " ";
 constant FORMAT_ATTRS = ([
 	"text_image_stacked": "layout alertwidth alertheight textformat volume" / " " + TEXTFORMATTING_ATTRS,
 	"text_image_overlaid": "layout alertwidth alertheight textformat volume" / " " + TEXTFORMATTING_ATTRS,
@@ -621,6 +627,8 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		}
 		//Otherwise, leave data->mro and data->parent unset.
 	}
+	//TODO: Turn this into an array
+	if (stringp(msg->condition)) data->condition = msg->condition;
 	persist_status->save();
 	send_updates_all(conn->group);
 	send_updates_all(cfg->authkey + channel->name);
