@@ -123,7 +123,7 @@ export function render(data) {
 					Object.entries(alert_definitions).map(([t, x]) =>
 						t === "defaults" ? OPTION({value: ""}, "None")
 						: OPTION({value: t}, x.label)),
-				)]), " (not implemented yet)"
+				)]),
 			]),
 			P([
 				SELECT({name: "format"}, [
