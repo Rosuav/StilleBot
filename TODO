@@ -100,7 +100,13 @@
   they might be the largest part of persist_status.
 * Alert Box: Alert conditions
   - Not currently supported for host alerts as they are managed directly by the client.
-    Changing this would require pushing them out from the server too - might be worth it.
+    Changing this would require pushing them out from the server too - might be worth
+    it. Unfortunately host notifications require a chat connection logged in as the
+    broadcaster, which is most elegantly done on the client; but there are security
+    benefits to doing this on the server, so there may be enough value to justify the
+    complexity. Would want to have the websocket from the client cause the IRC conn to
+    be flagged as in-use, which might mean we'll want to just let them get disconnected
+    and then have a hook that reconnects if there are any active websockets.
   - Each alert type (other than Default and personals) will support filters, with a
     unique set of options available.
   - For example, Sub alerts could filter based on tier and/or tenure. Cheers could
