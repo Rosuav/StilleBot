@@ -125,7 +125,8 @@ export function render(data) {
 						c + " ", //TODO: Replace with a description
 						SELECT({name: "cond-" + c + "-oper"}, [
 							OPTION({value: ""}, "n/a"),
-							"< <= == != >= >".split(" ").map(o => OPTION(o)),
+							OPTION({value: "=="}, "is exactly"),
+							OPTION({value: ">="}, "is at least"),
 						]),
 						" ",
 						INPUT({name: "cond-" + c + "-val", type: "number"}),
