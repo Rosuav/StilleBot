@@ -48,14 +48,6 @@ let inited = false, token = null;
 let hostlist_command = null, hostlist_format = null;
 const alert_active = { };
 export function render(data) {
-	//If, in the future, I need more than one alert type (with distinct formats),
-	//replace <main></main> with a set of position-absolute tiles, all on top of
-	//each other, each with an ID that says what it is. Alert queueing would be
-	//shared across all of them, but each alert type would activate a different
-	//element. We guard against playing one audio while another is unpaused.
-	//This would then iterate over all of alertconfigs, creating all that are
-	//needed; it would need to destroy any that are NOT needed, without flickering
-	//those that are still present.
 	if (data.version > alertbox_version) {location.reload(); return;}
 	if (data.alertconfigs) {
 		for (let kwd in data.alertconfigs) {
