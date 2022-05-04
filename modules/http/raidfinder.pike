@@ -96,7 +96,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (!(int)chan) {
 			//Client-side view. Return HTML and enough variables to open up the popup.
 			html_title = "VOD lengths for " + chan;
-			chan = (string)yield(get_user_id(chan));
+			if (mixed ex = catch (chan = (string)yield(get_user_id(chan))))
+				return (["error": 400, "data": "Unrecognized channel name " + chan]);
 		}
 		array vods = yield(get_helix_paginated("https://api.twitch.tv/helix/videos", (["user_id": chan, "type": "archive"])));
 		if (string ignore = req->variables->ignore) //Ignore the stream ID for a currently live broadcast
