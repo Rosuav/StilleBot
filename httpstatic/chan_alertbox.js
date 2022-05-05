@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, ABBR, AUDIO, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN, SUMMARY, UL} = choc; //autoimport
+const {A, ABBR, AUDIO, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR} = choc; //autoimport
 import {waitlate, TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
@@ -114,47 +114,42 @@ export function render(data) {
 				SUMMARY("Alert will be used (TODO) <always/never/by default/when alert set active>. Expand to configure."),
 				P("If any alert variation (coming soon!) is used, the base alert will be replaced with it."),
 				P("All selected conditions must hold for this alert (or variant) to activate."),
-				//TODO: Lay these out in... a table? Flexbox? UL is ugly but for now I just
-				//want something that I can play with.
-				UL([
-					//Condition vars depend on the alert type. For instance, a sub alert
-					//can check the tier, a cheer alert the number of bits. It's entirely
-					//possible to have empty condition_vars, which will just have the
-					//standard condition types.
-					info.condition_vars.map(c => LI([
-						c + " ", //TODO: Replace with a description
-						SELECT({name: "cond-" + c + "-oper"}, [
-							OPTION({value: ""}, "n/a"),
-							OPTION({value: "=="}, "is exactly"),
-							OPTION({value: ">="}, "is at least"),
-						]),
-						" ",
-						INPUT({name: "cond-" + c + "-val", type: "number"}),
-					])),
-					//Ultimately this will get a list of alert sets from the server
-					LI(LABEL(["Only if alert set active: (unimpl) ", SELECT({name: "cond-alertset"}, [
+				//Condition vars depend on the alert type. For instance, a sub alert
+				//can check the tier, a cheer alert the number of bits. It's entirely
+				//possible to have empty condition_vars, which will just have the
+				//standard condition types.
+				TABLE(info.condition_vars.map(c => TR([
+					TD(c), //TODO: Replace with a description
+					TD(SELECT({name: "cond-" + c + "-oper"}, [
 						OPTION({value: ""}, "n/a"),
-						["Foo", "Bar"].map(s => OPTION(s)),
-					])])),
-					//Fully custom conditions. Currently disabled. Do we need them? Would it be
-					//better to recommend that people use the full special+builtin system instead?
-					/*LI(LABEL([
-						"Custom numeric condition: ",
-						INPUT({name: "cond-numeric", size: 30}),
-						" (blank to ignore)",
+						OPTION({value: "=="}, "is exactly"),
+						OPTION({value: ">="}, "is at least"),
 					])),
-					LI([
-						"Custom text condition: ",
-						INPUT({name: "cond-expr1", size: 20}),
-						SELECT({name: "cond-type"}, [
-							OPTION({value: ""}, "n/a"),
-							OPTION({value: "string"}, "is exactly"),
-							OPTION({value: "contains"}, "includes"),
-							OPTION({value: "regexp"}, "matches regex"),
-						]),
-						INPUT({name: "cond-expr2", size: 20}),
-					]),*/
-				]),
+					TD(INPUT({name: "cond-" + c + "-val", type: "number"})),
+				]))),
+				//Ultimately this will get a list of alert sets from the server
+				P(LABEL(["Only if alert set active: (unimpl) ", SELECT({name: "cond-alertset"}, [
+					OPTION({value: ""}, "n/a"),
+					["Foo", "Bar"].map(s => OPTION(s)),
+				])])),
+				//Fully custom conditions. Currently disabled. Do we need them? Would it be
+				//better to recommend that people use the full special+builtin system instead?
+				/*P(LABEL([
+					"Custom numeric condition: ",
+					INPUT({name: "cond-numeric", size: 30}),
+					" (blank to ignore)",
+				])),
+				P([
+					"Custom text condition: ",
+					INPUT({name: "cond-expr1", size: 20}),
+					SELECT({name: "cond-type"}, [
+						OPTION({value: ""}, "n/a"),
+						OPTION({value: "string"}, "is exactly"),
+						OPTION({value: "contains"}, "includes"),
+						OPTION({value: "regexp"}, "matches regex"),
+					]),
+					INPUT({name: "cond-expr2", size: 20}),
+				]),*/
 			]),
 			nondef && P([
 				LABEL([INPUT({name: "active", type: "checkbox"}), " Active/enabled"]), BR(),
