@@ -627,8 +627,32 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		}
 		//Otherwise, leave data->mro and data->parent unset.
 	}
-	//TODO: Turn this into an array
-	if (stringp(msg->condition)) data->condition = msg->condition;
+	//Calculate specificity.
+	//The calculation assumes that all comparison values are nonnegative integers.
+	//It is technically possible to cheer five and a half million bits in a single
+	//message (spam "uni99999" over and over till you reach 500 characters), but as
+	//that is faintly ridiculous, I'm assuming that alerts for cheers over a million
+	//bits are unlikely. Therefore "bits == 123" is worth 1048576 specificity.
+	//Note that the specificity calculation is not scaled differently for different
+	//variables, and "sub tier == 2" is also worth 1048576.
+	int idx = search(ALERTTYPES->id, msg->type);
+	array(string) condvars = idx >= 0 ? ALERTTYPES[idx]->condition_vars : ({ });
+	int specificity = 0;
+	foreach (condvars, string c) {
+		string oper = msg["cond-" + c + "-oper"];
+		if (!oper || oper == "") continue; //Don't save the value if no operator set
+		if (oper != "==" && oper != ">=") oper = ">="; //May need to expand the operator list, but these are the most common
+		data["cond-" + c + "-oper"] = oper;
+		//Note that setting the operator and leaving the value blank will set the value to zero.
+		int val = (int)msg["cond-" + c + "-val"];
+		data["cond-" + c + "-val"] = val;
+		specificity += oper == "==" ? 1048576 : val;
+	}
+	string alertset = msg["cond-alertset"];
+	if (alertset && alertset != "") {
+		msg["cond-alertset"] = alertset;
+		specificity += 2097152;
+	}
 	persist_status->save();
 	send_updates_all(conn->group);
 	send_updates_all(cfg->authkey + channel->name);
