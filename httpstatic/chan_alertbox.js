@@ -110,7 +110,7 @@ export function render(data) {
 				SPAN({className: "description"}, info.description),
 			]),
 			HR(),
-			info.condition_vars && DETAILS({class: "expandbox no-inherit"}, [
+			info.condition_vars && DETAILS({class: "expandbox no-inherit", open: true}, [ //Remove {open: true} for production
 				SUMMARY("Alert will be used (TODO) <always/never/by default/when alert set active>. Expand to configure."),
 				P("If any alert variation (coming soon!) is used, the base alert will be replaced with it."),
 				P("All selected conditions must hold for this alert (or variant) to activate."),
@@ -132,12 +132,13 @@ export function render(data) {
 						INPUT({name: "cond-" + c + "-val", type: "number"}),
 					])),
 					//Ultimately this will get a list of alert sets from the server
-					["Foo", "Bar"].map(set => LI(LABEL([
-						INPUT({name: "alertset-" + set, type: "checkbox"}),
-						" Alert set " + set + " active [unimpl]",
-					]))),
-					//Fully custom conditions
-					LI(LABEL([
+					LI(LABEL(["Only if alert set active: (unimpl) ", SELECT({name: "cond-alertset"}, [
+						OPTION({value: ""}, "n/a"),
+						["Foo", "Bar"].map(s => OPTION(s)),
+					])])),
+					//Fully custom conditions. Currently disabled. Do we need them? Would it be
+					//better to recommend that people use the full special+builtin system instead?
+					/*LI(LABEL([
 						"Custom numeric condition: ",
 						INPUT({name: "cond-numeric", size: 30}),
 						" (blank to ignore)",
@@ -152,7 +153,7 @@ export function render(data) {
 							OPTION({value: "regexp"}, "matches regex"),
 						]),
 						INPUT({name: "cond-expr2", size: 20}),
-					]),
+					]),*/
 				]),
 			]),
 			nondef && P([
@@ -336,7 +337,7 @@ on("submit", ".alertconfig", e => {
 });
 
 on("dragstart", "#alertboxlink", e => {
-	//TODO: Set the width and height to the (individual) maximums of all active alerts
+	//TODO: Set the width and height to the (individual) maximums of all alerts, incl defaults
 	e.dataTransfer.setData("text/uri-list", `${e.match.href}&layer-name=Host%20Alerts&layer-width=600&layer-height=400`);
 });
 
