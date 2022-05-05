@@ -170,3 +170,4 @@
   - Have a helper that can render an IMG or a VIDEO, or an IMG of the transparent
     PNG, based on the URL provided
   - This will bump the version number, ideally only for alerts with videos in them.
+* Alert box shouldn't require broadcaster auth except for hostalert
