@@ -646,13 +646,15 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		//Note that setting the operator and leaving the value blank will set the value to zero.
 		int val = (int)msg["cond-" + c + "-val"];
 		data["cond-" + c + "-val"] = val;
+		//Note that ">= 0" is no specificity, as zero is considered "unassigned".
 		specificity += oper == "==" ? 1048576 : val;
 	}
 	string alertset = msg["cond-alertset"];
 	if (alertset && alertset != "") { //And make sure it's actually a valid alert set
-		msg["cond-alertset"] = alertset;
-		specificity += 2097152;
+		data["cond-alertset"] = alertset;
+		specificity += 10485760; //Setting an alert set is worth ten equality checks. I don't think there'll ever be ten equality checks to have.
 	}
+	data->specificity = specificity;
 	persist_status->save();
 	send_updates_all(conn->group);
 	send_updates_all(cfg->authkey + channel->name);
@@ -710,12 +712,20 @@ constant command_suggestions = ([]); //This isn't something that you'd create a 
 void send_alert(object channel, string alerttype, mapping args) {
 	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
 	if (!cfg->?authkey) return;
-	//TODO: Support string comparisons, not just numeric evaluation
-	if (cfg->condition && cfg->condition != "") {
-		if (mixed ex = catch {
-			int|float value = G->G->evaluate_expr(channel->expand_variables(cfg->condition));
-			if (!value || value == 0.0) return; //Condition not passed
-		}) werror("ERROR EVALUATING ALERT CONDITION: " + describe_backtrace(ex)); //TODO: Report to the broadcaster somehow
+	if (!args->text) { //Conditions are ignored if the alert is pushed via the builtin
+		mapping alert = cfg->alertconfigs[alerttype]; if (!alert) return; //No alert means it can't possibly fire
+		int idx = search(ALERTTYPES->id, alerttype); //TODO: Rework this so it's a lookup instead (this same check is done twice)
+		array(string) condvars = idx >= 0 ? ALERTTYPES[idx]->condition_vars : ({ });
+		foreach (condvars, string c) {
+			int val = (int)args[c];
+			int comp = alert["cond-" + c + "-val"];
+			switch (alert["cond-" + c + "-oper"]) {
+				case "==": if (val != comp) return;
+				case ">=": if (val < comp) return;
+				default: break; //TODO: Report errors, this shouldn't happen
+			}
+		}
+		//TODO: Check that the alert set is active, if one is selected
 	}
 	send_updates_all(cfg->authkey + channel->name, (["send_alert": alerttype]) | args);
 }
