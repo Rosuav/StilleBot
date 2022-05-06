@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, ABBR, AUDIO, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR} = choc; //autoimport
+const {A, ABBR, AUDIO, B, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR} = choc; //autoimport
 import {waitlate, TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
@@ -44,11 +44,20 @@ export function sockmsg_authkey(msg) {
 	if (DOM("#previewdlg").open) DOM("#alertembed").src = DOM("#alertboxlink").href;
 }
 
+function update_condition_summary(par) {
+	const target = par.querySelector(".cond-label");
+	if (!target) return; //Nothing to do
+	const enabled = par.querySelector("[name=active]").checked;
+	let cond = par.querySelector("[name=cond-label]").value;
+	if (cond === "") cond = enabled ? "always" : "never";
+	else if (!enabled) cond += " (inactive)";
+	set_content(target, cond);
+}
+
 function load_data(type, attrs) {
 	const par = alerttypes[type]; if (!par) return;
 	revert_data[type] = attrs;
 	if (par.classList.contains("unsaved-changes")) return; //TODO: Notify the user that server changes haven't been applied
-	const conds = [];
 	for (let el of par.elements) {
 		if (!el.name) continue;
 		if (el.type === "checkbox") el.checked = !!attrs[el.name];
@@ -59,24 +68,12 @@ function load_data(type, attrs) {
 			el.classList.toggle("inherited", el.value === "");
 			el.labels.forEach(l => l.classList.toggle("inherited", el.value === ""));
 		}
-		else if (/cond-.*-oper/.exec(el.name)) {
-			//Group up the conditions into the summary
-			let desc = attrs[el.name.replace("-oper", "-val")] || 0;
-			if (attrs[el.name] === ">=") desc += "+"; //eg ">= 100" is shown as "100+"
-			//Special case: "tier 2" instead of "2 tier"
-			if (el.name === "cond-tier-oper") desc = "tier " + desc;
-			else desc += " " + el.name.split("-")[1];
-			conds.push(desc);
-		}
 	}
-	if (!conds.length) conds.push(attrs.active ? "always" : "never");
-	else if (!attrs.active) conds.push("inactive");
 	const summary = par.querySelector(".expandbox summary");
-	if (summary) set_content(summary,
-		"Alert will be used: " + conds.join(", ") + ". Expand to configure. ")
-		.title = "Specificity: " + (attrs.specificity || 0);
+	if (summary) summary.title = "Specificity: " + (attrs.specificity || 0);
 	par.querySelectorAll("[data-library]").forEach(el => el.src = attrs[el.dataset.library] || TRANSPARENT_IMAGE);
 	update_layout_options(par, attrs.layout);
+	update_condition_summary(par);
 	document.querySelectorAll("input[type=range]").forEach(rangedisplay);
 	par.querySelectorAll("[type=submit]").forEach(el => el.disabled = true);
 	//For everything in this alert's MRO, disallow that thing inheriting from this one.
@@ -125,8 +122,8 @@ export function render(data) {
 				SPAN({className: "description"}, info.description),
 			]),
 			HR(),
-			info.condition_vars && DETAILS({class: "expandbox no-inherit", open: true}, [ //Remove {open: true} for production
-				SUMMARY("Alert will be used (TODO) <always/never/by default/when alert set active>. Expand to configure."),
+			info.condition_vars && DETAILS({class: "expandbox no-inherit"}, [
+				SUMMARY(["Alert will be used: ", B({class: "cond-label"}, "always"), ". Expand to configure."]),
 				P("If any alert variation (coming soon!) is used, the base alert will be replaced with it."),
 				P([
 					LABEL([INPUT({name: "active", type: "checkbox"}), " Alert active"]), BR(),
@@ -138,18 +135,22 @@ export function render(data) {
 				//standard condition types.
 				TABLE(info.condition_vars.map(c => TR([
 					TD(c), //TODO: Replace with a description
-					TD(SELECT({name: "cond-" + c + "-oper"}, [
+					TD(SELECT({name: "condoper-" + c}, [
 						OPTION({value: ""}, "n/a"),
 						OPTION({value: "=="}, "is exactly"),
 						OPTION({value: ">="}, "is at least"),
 					])),
-					TD(INPUT({name: "cond-" + c + "-val", type: "number"})),
+					TD(INPUT({name: "condval-" + c, type: "number"})),
 				]))),
 				//Ultimately this will get a list of alert sets from the server
 				P(LABEL(["Only if alert set active: (unimpl) ", SELECT({name: "cond-alertset"}, [
 					OPTION({value: ""}, "n/a"),
 					["Foo", "Bar"].map(s => OPTION(s)),
 				])])),
+				P([
+					LABEL(["Label: ", INPUT({name: "cond-label", size: 30})]),
+					LABEL([INPUT({type: "checkbox", name: "cond-disableautogen"}), " Retain (don't autogenerate)"]),
+				]),
 				//Fully custom conditions. Currently disabled. Do we need them? Would it be
 				//better to recommend that people use the full special+builtin system instead?
 				/*P(LABEL([
@@ -245,6 +246,24 @@ export function render(data) {
 		}
 	}
 }
+
+on("change", ".expandbox", e => {
+	if (e.match.querySelector("[name=cond-disableautogen]").checked) return;
+	const conds = [];
+	const set = e.match.querySelector("[name=cond-alertset]").value;
+	if (set) conds.push(set + " alerts");
+	e.match.querySelectorAll("[name^=condoper-]").forEach(el => {
+		let desc = e.match.querySelector("[name=" + el.name.replace("oper-", "val-") + "]").value || 0;
+		if (el.value === ">=") desc += "+"; //eg ">= 100" is shown as "100+"
+		else if (el.value !== "==") return; //Condition not applicable
+		//Special case: "tier 2" instead of "2 tier"
+		if (el.name === "condoper-tier") desc = "tier " + desc;
+		else desc += " " + el.name.split("-")[1];
+		conds.push(desc);
+	});
+	e.match.querySelector("[name=cond-label]").value = conds.join(", ");
+	update_condition_summary(e.match);
+});
 
 let wanted_tab = null; //TODO: Allow this to be set from the page fragment (wait till loading is done)
 function update_visible_form() {

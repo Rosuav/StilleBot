@@ -307,7 +307,7 @@ constant ALERTTYPES = ({([
 	"condition_vars": ({"bits"}),
 ])});
 constant RETAINED_ATTRS = ({"image", "sound"});
-constant GLOBAL_ATTRS = "active format alertlength alertgap" / " ";
+constant GLOBAL_ATTRS = "active format alertlength alertgap cond-label cond-disableautogen" / " ";
 constant FORMAT_ATTRS = ([
 	"text_image_stacked": "layout alertwidth alertheight textformat volume" / " " + TEXTFORMATTING_ATTRS,
 	"text_image_overlaid": "layout alertwidth alertheight textformat volume" / " " + TEXTFORMATTING_ATTRS,
@@ -638,13 +638,13 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	int idx = search(ALERTTYPES->id, msg->type);
 	array(string) condvars = idx >= 0 && ALERTTYPES[idx]->condition_vars;
 	if (condvars) foreach (condvars, string c) {
-		string oper = msg["cond-" + c + "-oper"];
+		string oper = msg["condoper-" + c];
 		if (!oper || oper == "") continue; //Don't save the value if no operator set
 		if (oper != "==" && oper != ">=") oper = ">="; //May need to expand the operator list, but these are the most common
-		data["cond-" + c + "-oper"] = oper;
+		data["condoper-" + c] = oper;
 		//Note that setting the operator and leaving the value blank will set the value to zero.
-		int val = (int)msg["cond-" + c + "-val"];
-		data["cond-" + c + "-val"] = val;
+		int val = (int)msg["condval-" + c];
+		data["condval-" + c] = val;
 		//Note that ">= 0" is no specificity, as zero is considered "unassigned".
 		specificity += oper == "==" ? 1048576 : val;
 	}
