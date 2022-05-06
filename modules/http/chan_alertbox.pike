@@ -72,6 +72,12 @@ $$notmod2||[Show library](:.showlibrary)$$
 > [Save and continue](:#unsaved-save) [Discard changes](:#unsaved-discard) [Cancel](:.dialog_close)
 {: tag=dialog #unsaveddlg}
 
+<!-- -->
+
+> ### Alert variations
+> <form id=replaceme>loading...</form>
+{: tag=dialog #variationdlg}
+
 <style>
 #uploadfrm {
 	border: 1px solid black;
@@ -137,6 +143,7 @@ figcaption {
 	padding: 8px;
 	display: none;
 }
+#variationdlg .alertconfig {display: block;}
 
 #library.noselect .selectmode {display: none;}
 .preview {
@@ -239,6 +246,15 @@ constant ALERTTYPES = ({([
 	"testpholders": ([]),
 	"builtin": "chan_alertbox",
 ]), ([
+	//Pseudo-alert used for the Alert Variant dialog
+	"id": "variant",
+	"label": "(Variant)",
+	"heading": "Alert Variation",
+	"description": "Choose a variant of the current alert, apply filters to choose when it happens, and configure it as needed.",
+	"placeholders": ([]),
+	"testpholders": ([]),
+	"builtin": "chan_alertbox",
+]), ([
 	"id": "hostalert",
 	"label": "Host",
 	"heading": "Hosted by another channel",
@@ -306,7 +322,7 @@ constant ALERTTYPES = ({([
 	"builtin": "connection",
 	"condition_vars": ({"bits"}),
 ])});
-constant RETAINED_ATTRS = ({"image", "sound"});
+constant RETAINED_ATTRS = ({"image", "sound", "variants"});
 constant GLOBAL_ATTRS = "active format alertlength alertgap cond-label cond-disableautogen" / " ";
 constant FORMAT_ATTRS = ([
 	"text_image_stacked": "layout alertwidth alertheight textformat volume" / " " + TEXTFORMATTING_ATTRS,

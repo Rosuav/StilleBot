@@ -85,6 +85,18 @@ function load_data(type, attrs) {
 	);
 }
 
+function make_condition_vars(vars) {
+	return vars.map(c => TR([
+		TD(c), //TODO: Replace with a description
+		TD(SELECT({name: "condoper-" + c}, [
+			OPTION({value: ""}, "n/a"),
+			OPTION({value: "=="}, "is exactly"),
+			OPTION({value: ">="}, "is at least"),
+		])),
+		TD(INPUT({name: "condval-" + c, type: "number"})),
+	]));
+}
+
 let selecttab = location.hash.slice(1);
 export function render(data) {
 	if (data.authkey === "<REVOKED>") {
@@ -106,12 +118,14 @@ export function render(data) {
 			set_content("label[for=select-" + type + "]", info.label);
 			return;
 		}
+		if (type !== "variant") {
+			DOM("#newpersonal").before(LI([
+				INPUT({type: "radio", name: "alertselect", id: "select-" + type, value: type}),
+				LABEL({htmlFor: "select-" + type}, info.label),
+			]));
+			document.querySelectorAll("select[name=parent]").forEach(el => el.appendChild(OPTION({value: type}, info.label)));
+		}
 		const nondef = type !== "defaults"; //A lot of things are different for the defaults
-		DOM("#newpersonal").before(LI([
-			INPUT({type: "radio", name: "alertselect", id: "select-" + type, value: type}),
-			LABEL({htmlFor: "select-" + type}, info.label),
-		]));
-		document.querySelectorAll("select[name=parent]").forEach(el => el.appendChild(OPTION({value: type}, info.label)));
 		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({class: type === "defaults" ? "alertconfig no-inherit": "alertconfig", "data-type": type}, [
 			H3({className: "heading"}, [
 				info.heading, SPAN({className: "if-unsaved"}, " "),
@@ -133,15 +147,7 @@ export function render(data) {
 				//can check the tier, a cheer alert the number of bits. It's entirely
 				//possible to have empty condition_vars, which will just have the
 				//standard condition types.
-				TABLE(info.condition_vars.map(c => TR([
-					TD(c), //TODO: Replace with a description
-					TD(SELECT({name: "condoper-" + c}, [
-						OPTION({value: ""}, "n/a"),
-						OPTION({value: "=="}, "is exactly"),
-						OPTION({value: ">="}, "is at least"),
-					])),
-					TD(INPUT({name: "condval-" + c, type: "number"})),
-				]))),
+				TABLE(make_condition_vars(info.condition_vars)),
 				//Ultimately this will get a list of alert sets from the server
 				P(LABEL(["Only if alert set active: (unimpl) ", SELECT({name: "cond-alertset"}, [
 					OPTION({value: ""}, "n/a"),
@@ -174,7 +180,7 @@ export function render(data) {
 				LABEL(["Inherit settings from: ", SELECT({name: "parent"},
 					Object.entries(alert_definitions).map(([t, x]) =>
 						t === "defaults" ? OPTION({value: ""}, "None")
-						: OPTION({value: t}, x.label)),
+						: t !== "variant" && OPTION({value: t}, x.label)),
 				)]),
 			]),
 			P([
@@ -217,6 +223,7 @@ export function render(data) {
 			}),
 			P([BUTTON({type: "submit", disabled: true}, "Save"), nondef && BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")]),
 		]));
+		if (type === "variant") DOM("#replaceme").replaceWith(alerttypes.variant);
 		load_data(type, { });
 	});
 	if (selecttab !== null && data.alerttypes && !DOM("input[name=alertselect]:checked")) {
