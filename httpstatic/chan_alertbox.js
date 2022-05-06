@@ -48,6 +48,7 @@ function load_data(type, attrs) {
 	const par = alerttypes[type]; if (!par) return;
 	revert_data[type] = attrs;
 	if (par.classList.contains("unsaved-changes")) return; //TODO: Notify the user that server changes haven't been applied
+	const conds = [];
 	for (let el of par.elements) {
 		if (!el.name) continue;
 		if (el.type === "checkbox") el.checked = !!attrs[el.name];
@@ -58,7 +59,22 @@ function load_data(type, attrs) {
 			el.classList.toggle("inherited", el.value === "");
 			el.labels.forEach(l => l.classList.toggle("inherited", el.value === ""));
 		}
+		else if (/cond-.*-oper/.exec(el.name)) {
+			//Group up the conditions into the summary
+			let desc = attrs[el.name.replace("-oper", "-val")] || 0;
+			if (attrs[el.name] === ">=") desc += "+"; //eg ">= 100" is shown as "100+"
+			//Special case: "tier 2" instead of "2 tier"
+			if (el.name === "cond-tier-oper") desc = "tier " + desc;
+			else desc += " " + el.name.split("-")[1];
+			conds.push(desc);
+		}
 	}
+	if (!conds.length) conds.push(attrs.active ? "always" : "never");
+	else if (!attrs.active) conds.push("inactive");
+	const summary = par.querySelector(".expandbox summary");
+	if (summary) set_content(summary,
+		"Alert will be used: " + conds.join(", ") + ". Expand to configure. ")
+		.title = "Specificity: " + (attrs.specificity || 0);
 	par.querySelectorAll("[data-library]").forEach(el => el.src = attrs[el.dataset.library] || TRANSPARENT_IMAGE);
 	update_layout_options(par, attrs.layout);
 	document.querySelectorAll("input[type=range]").forEach(rangedisplay);
