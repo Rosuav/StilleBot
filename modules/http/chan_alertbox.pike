@@ -254,6 +254,7 @@ constant ALERTTYPES = ({([
 	"placeholders": ([]),
 	"testpholders": ([]),
 	"builtin": "chan_alertbox",
+	"condition_vars": ({ }),
 ]), ([
 	"id": "hostalert",
 	"label": "Host",
@@ -323,11 +324,9 @@ constant ALERTTYPES = ({([
 	"condition_vars": ({"bits"}),
 ])});
 constant RETAINED_ATTRS = ({"image", "sound", "variants"});
-constant GLOBAL_ATTRS = "active format alertlength alertgap cond-label cond-disableautogen" / " ";
-constant FORMAT_ATTRS = ([
-	"text_image_stacked": "layout alertwidth alertheight textformat volume" / " " + TEXTFORMATTING_ATTRS,
-	"text_image_overlaid": "layout alertwidth alertheight textformat volume" / " " + TEXTFORMATTING_ATTRS,
-]);
+constant FORMAT_ATTRS = ("active format alertlength alertgap cond-label cond-disableautogen "
+			"layout alertwidth alertheight textformat volume") / " " + TEXTFORMATTING_ATTRS;
+constant VALID_FORMATS = "text_image_stacked text_image_overlaid" / " ";
 //List all defaults here. They will be applied to everything that isn't explicitly configured.
 constant NULL_ALERT = ([
 	"active": 0, "format": "text_image_stacked",
@@ -607,8 +606,18 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (!channel || grp != "control") return;
 	if (conn->session->fake) return;
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	if (!valid_alert_type(msg->type, cfg)) return;
+	string basetype = msg->type || ""; sscanf(basetype, "%s-%s", basetype, string variation);
+	if (!valid_alert_type(basetype, cfg)) return;
 	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
+	mapping sock_reply;
+	if (variation == "") {
+		//New variant requested. Generate a subid and use that.
+		//Note that if (!variation), we're editing the base alert, not a variant.
+		do {variation = replace(MIME.encode_base64(random_string(9)), (["/": "1", "+": "0"]));}
+		while (cfg->alertconfigs[basetype + "-" + variation]);
+		msg->type = basetype + "-" + variation;
+		sock_reply = (["cmd": "select_variant", "type": basetype, "variant": variation]);
+	}
 	if (!msg->format) {
 		//If the format is not specified, this is a partial update, which can
 		//change only the RETAINED_ATTRS - all others are left untouched.
@@ -618,21 +627,19 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		persist_status->save();
 		send_updates_all(conn->group);
 		send_updates_all(cfg->authkey + channel->name);
+		if (sock_reply) conn->sock->send_text(Standards.JSON.encode(sock_reply, 4));
 		return;
 	}
-	array attrs = FORMAT_ATTRS[msg->format];
-	if (!attrs) return;
 	//If the format *is* specified, this is a full update, *except* for the retained
 	//attributes. Any unspecified attribute will be deleted, setting it to inherit
 	//from the parent (not yet implemented) or be omitted altogether.
 	mapping data = cfg->alertconfigs[msg->type] =
 		mkmapping(RETAINED_ATTRS, (cfg->alertconfigs[msg->type]||([]))[RETAINED_ATTRS[*]])
-		| mkmapping(GLOBAL_ATTRS, msg[GLOBAL_ATTRS[*]])
-		| mkmapping(attrs, msg[attrs[*]]);
-	textformatting_validate(data);
-	data->text_css = textformatting_css(resolve_inherits(cfg->alertconfigs, msg->type, data));
+		| mkmapping(FORMAT_ATTRS, msg[FORMAT_ATTRS[*]]);
 	//You may inherit from "", meaning the defaults, or from any other alert that
 	//doesn't inherit from this alert. Attempting to do so will just reset to "".
+	//NOTE: Currently you can only inherit from a base alert. This helps to keep
+	//the UI a bit less cluttered.
 	if (stringp(msg->parent) && msg->parent != "" && msg->parent != "defaults" && valid_alert_type(msg->parent, cfg)) {
 		array mro = cfg->alertconfigs[msg->parent]->?mro;
 		if (!mro) mro = ({msg->parent});
@@ -642,6 +649,13 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		}
 		//Otherwise, leave data->mro and data->parent unset.
 	}
+	mapping inh = resolve_inherits(cfg->alertconfigs, msg->type, data);
+	if (!has_value(VALID_FORMATS, inh->format)) {
+		data->format = ""; //Assume that inheriting will be safe.
+		inh->format = NULL_ALERT->format;
+	}
+	textformatting_validate(data);
+	data->text_css = textformatting_css(inh);
 	//Calculate specificity.
 	//The calculation assumes that all comparison values are nonnegative integers.
 	//It is technically possible to cheer five and a half million bits in a single
@@ -670,9 +684,23 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		specificity += 100000000; //Setting an alert set is worth ten equality checks. I don't think there'll ever be ten equality checks to have.
 	}
 	data->specificity = specificity;
+	if (variation) {
+		//For convenience, every time a change is made, we update an array of
+		//variants in the base alert's data.
+		if (!cfg->alertconfigs[basetype]) cfg->alertconfigs[basetype] = ([]);
+		array ids = ({ }), specs = ({ });
+		foreach (cfg->alertconfigs; string id; mapping info)
+			if (has_prefix(id, basetype)) {
+				ids += ({id});
+				specs += ({-info->specificity});
+			}
+		sort(specs, ids);
+		cfg->alertconfigs[basetype]->variants = ids;
+	}
 	persist_status->save();
 	send_updates_all(conn->group);
 	send_updates_all(cfg->authkey + channel->name);
+	if (sock_reply) conn->sock->send_text(Standards.JSON.encode(sock_reply, 4));
 }
 
 void websocket_cmd_renamefile(mapping(string:mixed) conn, mapping(string:mixed) msg) {

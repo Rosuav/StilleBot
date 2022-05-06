@@ -54,9 +54,10 @@ function update_condition_summary(par) {
 	set_content(target, cond);
 }
 
-function load_data(type, attrs) {
-	const par = alerttypes[type]; if (!par) return;
+function load_data(type, attrs, par) {
 	revert_data[type] = attrs;
+	if (!par) par = alerttypes[type];
+	if (!par) return;
 	if (par.classList.contains("unsaved-changes")) return; //TODO: Notify the user that server changes haven't been applied
 	for (let el of par.elements) {
 		if (!el.name) continue;
@@ -115,7 +116,7 @@ export function render(data) {
 				const elem = alerttypes[type].querySelector("." + kwd);
 				if (elem) set_content(elem, txt);
 			}
-			set_content("label[for=select-" + type + "]", info.label);
+			if (type !== "variant") set_content("label[for=select-" + type + "]", info.label);
 			return;
 		}
 		if (type !== "variant") {
@@ -135,10 +136,14 @@ export function render(data) {
 				!info.builtin && BUTTON({type: "button", className: "editpersonaldesc", title: "Edit"}, "📝"),
 				SPAN({className: "description"}, info.description),
 			]),
+			type === "variant" && P([
+				LABEL(["Select variant:", SELECT({name: "variant"}, OPTION({value: ""}, "Add new"))]),
+				//Gonna need a "delete variant" somewhere too
+			]),
 			HR(),
 			info.condition_vars && DETAILS({class: "expandbox no-inherit"}, [
 				SUMMARY(["Alert will be used: ", B({class: "cond-label"}, "always"), ". Expand to configure."]),
-				P("If any alert variation (coming soon!) is used, the base alert will be replaced with it."),
+				P("If any alert variation is used, the base alert will be replaced with it."),
 				P([
 					LABEL([INPUT({name: "active", type: "checkbox"}), " Alert active"]), BR(),
 					"Inactive alerts will never be used, but can be inherited from.",
@@ -147,7 +152,7 @@ export function render(data) {
 				//can check the tier, a cheer alert the number of bits. It's entirely
 				//possible to have empty condition_vars, which will just have the
 				//standard condition types.
-				TABLE(make_condition_vars(info.condition_vars)),
+				TABLE({class: "conditions"}, make_condition_vars(info.condition_vars)),
 				//Ultimately this will get a list of alert sets from the server
 				P(LABEL(["Only if alert set active: (unimpl) ", SELECT({name: "cond-alertset"}, [
 					OPTION({value: ""}, "n/a"),
@@ -221,7 +226,11 @@ export function render(data) {
 				textdesc: SPAN({className: "placeholders"}, placeholder_description),
 				blank_opts: nondef, //Add a blank option to selects, but not on the Defaults tab
 			}),
-			P([BUTTON({type: "submit", disabled: true}, "Save"), nondef && BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")]),
+			P([
+				BUTTON({type: "submit", disabled: true}, "Save"),
+				nondef && BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert"),
+				type !== "variant" && info.condition_vars && BUTTON({type: "button", className: "editvariants", "data-type": type}, "Manage alert variants"),
+			]),
 		]));
 		if (type === "variant") DOM("#replaceme").replaceWith(alerttypes.variant);
 		load_data(type, { });
@@ -270,6 +279,33 @@ on("change", ".expandbox", e => {
 	});
 	e.match.querySelector("[name=cond-label]").value = conds.join(", ");
 	update_condition_summary(e.match);
+});
+
+on("click", ".editvariants", e => {
+	const type = e.match.closest("form").dataset.type;
+	const info = alert_definitions[type];
+	set_content("#variationdlg .conditions", make_condition_vars(info.condition_vars));
+	const frm = DOM("#variationdlg form");
+	load_data(type + "-", { }, frm);
+	frm.dataset.type = type + "-";
+	DOM("#variationdlg [name=variant]").value = "";
+	DOM("#variationdlg").showModal();
+});
+
+on("change", "[name=variant]", e => {
+	const frm = e.match.form;
+	if (frm && frm.classList.contains("unsaved-changes")) {
+		//FIXME: This won't successfully discard changes
+		//FIXME: Also do the same check on dialog close
+		unsaved_form = frm; unsaved_clickme = e.match;
+		set_content("#discarddesc", "Unsaved changes will be lost if you switch to another alert variant.");
+		e.match.value = frm.dataset.type.split("-")[1];
+		DOM("#unsaveddlg").showModal();
+		return;
+	}
+	const type = wanted_tab + "-" + (e.match.value || "");
+	frm.dataset.type = type;
+	load_data(type, revert_data[type] || { }, frm);
 });
 
 let wanted_tab = null; //TODO: Allow this to be set from the page fragment (wait till loading is done)
