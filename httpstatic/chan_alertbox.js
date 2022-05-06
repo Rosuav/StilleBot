@@ -102,8 +102,10 @@ function update_alert_variants() {
 	const basetype = DOM("#variationdlg form").dataset.type.split("-")[0] + "-";
 	const variants = [];
 	Object.entries(revert_data).forEach(([type, attrs]) => {
-		if (type.startsWith(basetype) && type !== basetype) variants.push(OPTION({value: type.split("-")[1]}, attrs["cond-label"] || "(always)"));
+		if (type.startsWith(basetype) && type !== basetype)
+			variants.push(OPTION({value: type.split("-")[1]}, (attrs["cond-label"] || "(always)") + " " + attrs.specificity));
 	});
+	//TODO: Sort the options by specificity (descending)
 	set_content("#variationdlg [name=variant]", [
 		OPTION({value: ""}, "Add new"),
 		variants,
@@ -327,7 +329,9 @@ on("change", "[name=variant]", e => {
 	}
 	const type = wanted_tab + "-" + (e.match.value || "");
 	frm.dataset.type = type;
+	const variant = e.match.value;
 	load_data(type, revert_data[type] || { }, frm);
+	e.match.value = variant; //Ensure that the selected variant is still selected, if it exists in the user's settings.
 });
 
 let wanted_tab = null; //TODO: Allow this to be set from the page fragment (wait till loading is done)

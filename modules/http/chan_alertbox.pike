@@ -665,7 +665,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	//Note that the specificity calculation is not scaled differently for different
 	//variables, and "sub tier == 2" is also worth 10,000,000.
 	int specificity = 0;
-	int idx = search(ALERTTYPES->id, msg->type);
+	int idx = search(ALERTTYPES->id, basetype);
 	array(string) condvars = idx >= 0 && ALERTTYPES[idx]->condition_vars;
 	if (condvars) foreach (condvars, string c) {
 		string oper = msg["condoper-" + c];
