@@ -31,7 +31,7 @@ export function connect(group, handler)
 	socket.onmessage = (ev) => {
 		let data = JSON.parse(ev.data);
 		if (!handler) {console.log("Got message from server:", data); return;}
-		let unknown = " UNKNOWN";
+		let unknown = "UNKNOWN ";
 		if (data.cmd === "update") {
 			if (handler.render_item && handler.render_parent) {
 				//If partial rendering is possible, we need render_item() and render_parent, and
