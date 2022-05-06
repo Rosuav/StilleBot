@@ -717,8 +717,8 @@ void send_alert(object channel, string alerttype, mapping args) {
 		array(string) condvars = idx >= 0 ? ALERTTYPES[idx]->condition_vars : ({ });
 		foreach (condvars, string c) {
 			int val = (int)args[c];
-			int comp = alert["cond-" + c + "-val"];
-			switch (alert["cond-" + c + "-oper"]) {
+			int comp = alert["condval-" + c];
+			switch (alert["condoper-" + c]) {
 				case "==": if (val != comp) return;
 				case ">=": if (val < comp) return;
 				default: break; //TODO: Report errors, this shouldn't happen
