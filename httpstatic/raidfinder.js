@@ -50,6 +50,7 @@ function uptime(startdate) {return hms(Math.floor((new Date() - new Date(startda
 
 async function show_vod_lengths(userid, vodid, startdate) {
 	set_content("#is_following", "");
+	set_content("#chat_restrictions", "");
 	set_content("#vods", LI("... loading VODs ..."));
 	DOM("#vodlengths").showModal();
 	const info = typeof userid === "object" ? userid :
