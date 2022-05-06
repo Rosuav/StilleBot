@@ -712,6 +712,11 @@ class channel(string name) { //name begins with hash and is all lower case
 				if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
 				//For some reason, whispers show up with "/me" at the start, not "ACTION".
 				else if (sscanf(msg, "/me %s", msg)) person->is_action_msg = 1;
+				if (person->badges->?broadcaster && sscanf(msg, "fakecheer%d", int bits) && bits)
+					//Allow the broadcaster to "fakecheer100" (start of message only) to
+					//test alerts etc. Note that "fakecheer-100" can also be done, if that
+					//is ever useful to your testing. It may confuse things though!
+					params->bits = (string)bits;
 				handle_command(person, msg, responsedefaults);
 				msg = person->displayname + (person->is_action_msg ? " " : ": ") + msg;
 				string pfx=sprintf("[%s] ", name);
