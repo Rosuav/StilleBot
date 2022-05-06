@@ -425,7 +425,6 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["items": cfg->files || ({ }),
 		"alertconfigs": cfg->alertconfigs,
 		"alerttypes": ALERTTYPES + (cfg->personals || ({ })),
-		"alertdefaults": NULL_ALERT,
 		"hostlist_command": cfg->hostlist_command || "",
 		"hostlist_format": cfg->hostlist_format || "",
 	]);

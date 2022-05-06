@@ -12,7 +12,7 @@ const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAA
 
 const files = { };
 const alerttypes = { }, alert_definitions = { };
-const revert_data = {"default": { }};
+const revert_data = { };
 
 //NOTE: Item rendering applies to uploaded files. Other things are handled by render() itself.
 //NOTE: Since newly-uploaded files will always go to the end, this should always be sorted by
@@ -46,7 +46,7 @@ export function sockmsg_authkey(msg) {
 
 function load_data(type, attrs) {
 	const par = alerttypes[type]; if (!par) return;
-	revert_data[type] = attrs = {...revert_data["default"], ...attrs};
+	revert_data[type] = attrs;
 	if (par.classList.contains("unsaved-changes")) return; //TODO: Notify the user that server changes haven't been applied
 	for (let el of par.elements) {
 		if (!el.name) continue;
@@ -78,7 +78,6 @@ export function render(data) {
 		have_authkey = false;
 		if (DOM("#previewdlg").open) ws_sync.send({cmd: "getkey"});
 	}
-	if (data.alertdefaults) revert_data["default"] = data.alertdefaults;
 	if (data.alerttypes) data.alerttypes.forEach(info => {
 		const type = info.id;
 		alert_definitions[type] = info;
