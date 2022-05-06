@@ -629,11 +629,11 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	//Calculate specificity.
 	//The calculation assumes that all comparison values are nonnegative integers.
 	//It is technically possible to cheer five and a half million bits in a single
-	//message (spam "uni99999" over and over till you reach 500 characters), but as
-	//that is faintly ridiculous, I'm assuming that alerts for cheers over a million
-	//bits are unlikely. Therefore "bits == 123" is worth 1048576 specificity.
+	//message (spam "uni99999" over and over till you reach 500 characters), and so
+	//even though that is more than a little ridiculous, I'm declaring that a single
+	//value is worth 10,000,000.
 	//Note that the specificity calculation is not scaled differently for different
-	//variables, and "sub tier == 2" is also worth 1048576.
+	//variables, and "sub tier == 2" is also worth 10,000,000.
 	int specificity = 0;
 	int idx = search(ALERTTYPES->id, msg->type);
 	array(string) condvars = idx >= 0 && ALERTTYPES[idx]->condition_vars;
@@ -646,12 +646,12 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		int val = (int)msg["condval-" + c];
 		data["condval-" + c] = val;
 		//Note that ">= 0" is no specificity, as zero is considered "unassigned".
-		specificity += oper == "==" ? 1048576 : val;
+		specificity += oper == "==" ? 10000000 : val;
 	}
 	string alertset = msg["cond-alertset"];
 	if (alertset && alertset != "") { //And make sure it's actually a valid alert set
 		data["cond-alertset"] = alertset;
-		specificity += 10485760; //Setting an alert set is worth ten equality checks. I don't think there'll ever be ten equality checks to have.
+		specificity += 100000000; //Setting an alert set is worth ten equality checks. I don't think there'll ever be ten equality checks to have.
 	}
 	data->specificity = specificity;
 	persist_status->save();
