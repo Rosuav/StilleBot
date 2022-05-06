@@ -649,7 +649,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		specificity += oper == "==" ? 1048576 : val;
 	}
 	string alertset = msg["cond-alertset"];
-	if (alertset && alertset != "") {
+	if (alertset && alertset != "") { //And make sure it's actually a valid alert set
 		msg["cond-alertset"] = alertset;
 		specificity += 2097152;
 	}

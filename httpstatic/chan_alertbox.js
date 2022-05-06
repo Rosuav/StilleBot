@@ -113,6 +113,10 @@ export function render(data) {
 			info.condition_vars && DETAILS({class: "expandbox no-inherit", open: true}, [ //Remove {open: true} for production
 				SUMMARY("Alert will be used (TODO) <always/never/by default/when alert set active>. Expand to configure."),
 				P("If any alert variation (coming soon!) is used, the base alert will be replaced with it."),
+				P([
+					LABEL([INPUT({name: "active", type: "checkbox"}), " Alert active"]), BR(),
+					"Inactive alerts will never be used, but can be inherited from.",
+				]),
 				//Condition vars depend on the alert type. For instance, a sub alert
 				//can check the tier, a cheer alert the number of bits. It's entirely
 				//possible to have empty condition_vars, which will just have the
@@ -151,7 +155,6 @@ export function render(data) {
 				]),*/
 			]),
 			nondef && P([
-				LABEL([INPUT({name: "active", type: "checkbox"}), " Active/enabled"]), BR(),
 				LABEL(["Inherit settings from: ", SELECT({name: "parent"},
 					Object.entries(alert_definitions).map(([t, x]) =>
 						t === "defaults" ? OPTION({value: ""}, "None")
