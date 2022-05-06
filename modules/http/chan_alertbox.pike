@@ -725,6 +725,7 @@ void send_alert(object channel, string alerttype, mapping args) {
 			}
 		}
 		//TODO: Check that the alert set is active, if one is selected
+		//Note that the enabled flag is actually checked on the client. This may change in future.
 	}
 	send_updates_all(cfg->authkey + channel->name, (["send_alert": alerttype]) | args);
 }
