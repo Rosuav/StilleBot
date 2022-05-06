@@ -98,6 +98,23 @@ function make_condition_vars(vars) {
 	]));
 }
 
+function update_alert_variants() {
+	const basetype = DOM("#variationdlg form").dataset.type.split("-")[0] + "-";
+	const variants = [];
+	Object.entries(revert_data).forEach(([type, attrs]) => {
+		if (type.startsWith(basetype) && type !== basetype) variants.push(OPTION({value: type.split("-")[1]}, attrs["cond-label"] || "(always)"));
+	});
+	set_content("#variationdlg [name=variant]", [
+		OPTION({value: ""}, "Add new"),
+		variants,
+	])
+}
+
+export function sockmsg_select_variant(msg) {
+	const basetype = DOM("#variationdlg form").dataset.type.split("-")[0];
+	if (basetype === msg.type) DOM("#variationdlg [name=variant]").value = msg.variant;
+}
+
 let selecttab = location.hash.slice(1);
 export function render(data) {
 	if (data.authkey === "<REVOKED>") {
@@ -137,6 +154,7 @@ export function render(data) {
 				SPAN({className: "description"}, info.description),
 			]),
 			type === "variant" && P([
+				//TODO: No inherit and no dirty, this is a selector not a saveable
 				LABEL(["Select variant:", SELECT({name: "variant"}, OPTION({value: ""}, "Add new"))]),
 				//Gonna need a "delete variant" somewhere too
 			]),
@@ -244,7 +262,10 @@ export function render(data) {
 		update_visible_form();
 		selecttab = null;
 	}
-	if (data.alertconfigs) Object.entries(data.alertconfigs).forEach(([type, attrs]) => load_data(type, attrs));
+	if (data.alertconfigs) {
+		Object.entries(data.alertconfigs).forEach(([type, attrs]) => load_data(type, attrs));
+		update_alert_variants();
+	}
 	if (data.delpersonal) {
 		//This isn't part of a normal stateful update, and is a signal that a personal
 		//alert has gone bye-bye. Clean up our local state, matching what we'd have if
@@ -289,6 +310,7 @@ on("click", ".editvariants", e => {
 	load_data(type + "-", { }, frm);
 	frm.dataset.type = type + "-";
 	DOM("#variationdlg [name=variant]").value = "";
+	update_alert_variants();
 	DOM("#variationdlg").showModal();
 });
 
