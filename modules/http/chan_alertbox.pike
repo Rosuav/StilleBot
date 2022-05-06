@@ -634,10 +634,10 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	//bits are unlikely. Therefore "bits == 123" is worth 1048576 specificity.
 	//Note that the specificity calculation is not scaled differently for different
 	//variables, and "sub tier == 2" is also worth 1048576.
-	int idx = search(ALERTTYPES->id, msg->type);
-	array(string) condvars = idx >= 0 ? ALERTTYPES[idx]->condition_vars : ({ });
 	int specificity = 0;
-	foreach (condvars, string c) {
+	int idx = search(ALERTTYPES->id, msg->type);
+	array(string) condvars = idx >= 0 && ALERTTYPES[idx]->condition_vars;
+	if (condvars) foreach (condvars, string c) {
 		string oper = msg["cond-" + c + "-oper"];
 		if (!oper || oper == "") continue; //Don't save the value if no operator set
 		if (oper != "==" && oper != ">=") oper = ">="; //May need to expand the operator list, but these are the most common
