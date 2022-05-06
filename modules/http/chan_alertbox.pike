@@ -271,7 +271,7 @@ constant ALERTTYPES = ({([
 	"id": "resub",
 	"label": "Resubscription",
 	"heading": "Renewed subscription",
-	"description": "Whenever anyone resubscribes, or is given a gift sub that isn't the first month. If not active, the sub alert is used instead.",
+	"description": "DEPRECATED. This is currently used for renewed subs, but this will soon be merged into the Subscription alert.",
 	"placeholders": ([
 		"username": "Display name of the subscriber",
 		"tier": "Tier (1, 2, or 3) of the subscription",
@@ -284,7 +284,7 @@ constant ALERTTYPES = ({([
 	"id": "subbomb",
 	"label": "Sub bomb",
 	"heading": "Randomly-aimed subgifts",
-	"description": "When someone drops 1-100 subscriptions on the community, letting the RNG choose who gets them. If this alert is not active, the sub alert will announce sub bombs individually.",
+	"description": "DEPRECATED. This is currently used for community sub gifts, but this will soon be merged into the Subscription alert.",
 	"placeholders": ([
 		"username": "Display name of the giver of the subs",
 		"tier": "Tier (1, 2, or 3) of the subscription",
