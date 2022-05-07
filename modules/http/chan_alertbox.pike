@@ -399,7 +399,7 @@ mapping resolve_inherits(mapping alerts, string id, mapping alert) {
 	mapping parent = id == "defaults" ? NULL_ALERT //The defaults themselves are defaulted to the vanilla null alert.
 		: resolve_inherits(alerts, par, alerts[par]); //Everything else has a parent, potentially implicit.
 	if (!alert) return parent;
-	return parent | alert;
+	return parent | filter(alert) {return __ARGS__[0] != "";}; //Shouldn't need to filter since it's done on save, may be able to remove this later
 }
 
 mapping resolve_all_inherits(mapping alerts) {
@@ -436,7 +436,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	}
 	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
 	cfg->alertconfigs->defaults = resolve_inherits(cfg->alertconfigs, "defaults",
-		filter(cfg->alertconfigs->defaults || ([])) {return __ARGS__[0] != "";});
+		cfg->alertconfigs->defaults || ([]));
 	return (["items": cfg->files || ({ }),
 		"alertconfigs": cfg->alertconfigs,
 		"alerttypes": ALERTTYPES + (cfg->personals || ({ })),
@@ -636,9 +636,10 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	//If the format *is* specified, this is a full update, *except* for the retained
 	//attributes. Any unspecified attribute will be deleted, setting it to inherit
 	//from the parent (not yet implemented) or be omitted altogether.
-	mapping data = cfg->alertconfigs[msg->type] =
+	mapping data = cfg->alertconfigs[msg->type] = filter(
 		mkmapping(RETAINED_ATTRS, (cfg->alertconfigs[msg->type]||([]))[RETAINED_ATTRS[*]])
-		| mkmapping(FORMAT_ATTRS, msg[FORMAT_ATTRS[*]]);
+		| mkmapping(FORMAT_ATTRS, msg[FORMAT_ATTRS[*]]))
+			{return __ARGS__[0] != "";}; //Any blank values get removed and will be inherited.
 	//You may inherit from "", meaning the defaults, or from any other alert that
 	//doesn't inherit from this alert. Attempting to do so will just reset to "".
 	//NOTE: Currently you can only inherit from a base alert. This helps to keep
@@ -654,7 +655,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	}
 	mapping inh = resolve_inherits(cfg->alertconfigs, msg->type, data);
 	if (!has_value(VALID_FORMATS, inh->format)) {
-		data->format = ""; //Assume that inheriting will be safe.
+		m_delete(data, "format"); //Assume that inheriting will be safe.
 		inh->format = NULL_ALERT->format;
 	}
 	textformatting_validate(data);
@@ -777,6 +778,8 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 			}
 		}
 		//TODO: Check that the alert set is active, if one is selected
+
+		//If any variant responds, use that instead.
 		foreach (alert->variants || ({ }), string subid)
 			if (send_alert(channel, subid, args)) return 1;
 	}
