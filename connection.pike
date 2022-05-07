@@ -136,7 +136,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	void handle_command(mapping person, string msg, mapping defaults)
 	{
 		if (person->user) G_G_("participants", name[1..], person->user)->lastnotice = time();
-		person->vars = (["%s": msg, "{@mod}": person->badges->?_mod ? "1" : "0"]);
+		person->vars = (["%s": msg, "{@mod}": person->badges->?_mod ? "1" : "0", "{@sub}": person->badges->?_sub ? "1" : "0"]);
 		runhooks("all-msgs", 0, this, person, msg);
 		event_notify("allmsgs", this, person, msg);
 		trigger_special("!trigger", person, person->vars);
