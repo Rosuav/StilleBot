@@ -617,6 +617,9 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		while (cfg->alertconfigs[basetype + "-" + variation]);
 		msg->type = basetype + "-" + variation;
 		sock_reply = (["cmd": "select_variant", "type": basetype, "variant": variation]);
+	} else if (variation) {
+		//Existing variant requested. Make sure the ID has already existed.
+		if (!cfg->alertconfigs[msg->type]) return;
 	}
 	if (!msg->format) {
 		//If the format is not specified, this is a partial update, which can
@@ -693,7 +696,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		if (!cfg->alertconfigs[basetype]) cfg->alertconfigs[basetype] = ([]);
 		array ids = ({ }), specs = ({ });
 		foreach (cfg->alertconfigs; string id; mapping info)
-			if (has_prefix(id, basetype)) {
+			if (has_prefix(id, basetype + "-")) {
 				ids += ({id});
 				specs += ({-info->specificity});
 			}
