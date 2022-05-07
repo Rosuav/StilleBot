@@ -153,7 +153,7 @@ export function render(data) {
 				!info.builtin && BUTTON({type: "button", className: "editpersonaldesc", title: "Edit"}, "📝"),
 				SPAN({className: "description"}, info.description),
 			]),
-			type === "variant" && P({class: "no-inherit"}, [
+			type === "variant" && P({class: "no-inherit no-dirty"}, [
 				//TODO: No inherit and no dirty, this is a selector not a saveable
 				LABEL(["Select variant:", SELECT({name: "variant"}, OPTION({value: ""}, "Add new"))]),
 				//Gonna need a "delete variant" somewhere too
@@ -307,9 +307,9 @@ on("click", ".editvariants", e => {
 	const info = alert_definitions[type];
 	set_content("#variationdlg .conditions", make_condition_vars(info.condition_vars));
 	const frm = DOM("#variationdlg form");
+	DOM("#variationdlg [name=variant]").value = "";
 	load_data(type + "-", {active: true}, frm);
 	frm.dataset.type = type + "-";
-	DOM("#variationdlg [name=variant]").value = "";
 	update_alert_variants();
 	DOM("#variationdlg").showModal();
 });
@@ -330,6 +330,7 @@ on("change", "[name=variant]", e => {
 	const variant = e.match.value;
 	load_data(type, revert_data[type] || { }, frm);
 	e.match.value = variant; //Ensure that the selected variant is still selected, if it exists in the user's settings.
+	frm.classList.remove("unsaved-changes"); //Fresh load doesn't count as unsaved changes
 });
 
 let wanted_tab = null; //TODO: Allow this to be set from the page fragment (wait till loading is done)
@@ -364,6 +365,7 @@ on("input", "input[type=range]", e => rangedisplay(e.match));
 
 function formchanged(e) {
 	const frm = e.match.form; if (!frm || !frm.classList.contains("alertconfig")) return;
+	if (e.match.closest(".no-dirty")) return;
 	frm.classList.add("unsaved-changes"); //Add "dirty" here to colour the entire form
 	e.match.classList.add("dirty"); //Can skip this if dirty is applied to the whole form
 	e.match.labels.forEach(l => l.classList.add("dirty"));
