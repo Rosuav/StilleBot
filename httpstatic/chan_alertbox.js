@@ -155,7 +155,7 @@ export function render(data) {
 				!info.builtin && BUTTON({type: "button", className: "editpersonaldesc", title: "Edit"}, "📝"),
 				SPAN({className: "description"}, info.description),
 			]),
-			type === "variant" && P([
+			type === "variant" && P({class: "no-inherit"}, [
 				//TODO: No inherit and no dirty, this is a selector not a saveable
 				LABEL(["Select variant:", SELECT({name: "variant"}, OPTION({value: ""}, "Add new"))]),
 				//Gonna need a "delete variant" somewhere too
