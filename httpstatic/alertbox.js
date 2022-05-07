@@ -56,7 +56,7 @@ export function render(data) {
 			let elem = DOM("#" + kwd);
 			if (!elem) elem = DOM("main").appendChild(SECTION({className: "alert", id: kwd})); //New alert type
 			if (alert_formats[cfg.format]) set_content(elem, alert_formats[cfg.format](cfg));
-			else set_content(elem, P("Unrecognized alert format, check editor or refresh page"));
+			else set_content(elem, P("Unrecognized alert format '" + cfg.format + "', check editor or refresh page"));
 			alert_active["#" + kwd] = cfg.active;
 			elem.dataset.alertlength = cfg.alertlength || 6;
 			elem.dataset.alertgap = cfg.alertgap || 1;
