@@ -103,13 +103,14 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (string ignore = req->variables->ignore) //Ignore the stream ID for a currently live broadcast
 			vods = filter(vods) {return __ARGS__[0]->stream_id != ignore;};
 		//For convenience of the front end, do some parsing here in Pike.
-		mapping ret = (["vods": vods]);
-		foreach (vods, mapping vod) {
-			if (sscanf(vod->duration, "%dh%dm%ds", int h, int m, int s) == 3) vod->duration_seconds = h * 3600 + m * 60 + s;
-			else if (sscanf(vod->duration, "%dm%ds", int m, int s) == 2) vod->duration_seconds = m * 60 + s;
-			else if (sscanf(vod->duration, "%ds", int s)) vod->duration_seconds = s;
+		mapping ret = (["vods": map(vods) {mapping raw = __ARGS__[0];
+			mapping vod = (["created_at": raw->created_at]);
+			//Attributes in use: created_at, duration_seconds, week_correlation
+			if (sscanf(raw->duration, "%dh%dm%ds", int h, int m, int s) == 3) vod->duration_seconds = h * 3600 + m * 60 + s;
+			else if (sscanf(raw->duration, "%dm%ds", int m, int s) == 2) vod->duration_seconds = m * 60 + s;
+			else if (sscanf(raw->duration, "%ds", int s)) vod->duration_seconds = s;
 			//What do day-long streams look like?
-			else {werror("**** UNKNOWN VOD DURATION FORMAT %O ****\n", vod->duration); vod->duration_seconds = 0;}
+			else {werror("**** UNKNOWN VOD DURATION FORMAT %O ****\n", raw->duration); vod->duration_seconds = 0;}
 
 			//Would be nice to show the category too but I don't know where to get the data from. Kraken gets it.
 
@@ -121,8 +122,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//Three options: the inverse of the time since it started; or the time since ending; or, if
 			//time since ending is negative, zero.
 			vod->week_correlation = max(min(604800 - howlongago, howlongago - vod->duration_seconds), 0);
-		}
-		ret->max_duration = max(@vods->duration_seconds);
+			return vod;
+		}]);
+		ret->max_duration = max(@ret->vods->duration_seconds);
 		//TODO: Calculate an approximate average VOD duration, which can (if available) be used in place of
 		//the four hour threshold used for magic sort. Ignore outliers. Don't bother trying to combine
 		//broken VODs together - too hard, too rare, let it adjust the average, it's fine.
@@ -594,4 +596,11 @@ protected void create(string name) {
 	::create(name);
 	//spawn_task(retrofit_raids()); //Uncomment to do a full migration pass. CAUTION: Takes a while.
 	//spawn_task(retrofit_raids(1)); //Uncomment to do a fast(ish) migration pass, just getting renames.
+	//Clean out the raid finder cache of anything more than two weeks old
+	mapping cache = persist_status["raidfinder_cache"] || ([]);
+	int stale = time() - 86400 * 14;
+	foreach (indices(cache), string uid) {
+		if (cache[uid]->cache_time < stale) m_delete(cache, uid);
+	}
+	persist_status->save();
 }

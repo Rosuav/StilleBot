@@ -96,8 +96,8 @@
   - Anyone currently under timeout or ban is to be denied upload permission.
     - Need a way to grant authentication for this purpose.
   - Add link to the /channels/NAME/ landing page once it's ready for launch
-* Break out name-to/from-uid mappings into a separate file, maybe not even JSON? I think
-  they might be the largest part of persist_status.
+* Break out name-to/from-uid mappings into a separate file, maybe not even JSON? Ditto
+  the raidfinder cache. Between them they are the bulk of persist_status.
 * Alert Box: Alert conditions
   - Not currently supported for host alerts as they are managed directly by the client.
     Changing this would require pushing them out from the server too - might be worth
