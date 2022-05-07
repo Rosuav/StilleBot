@@ -311,7 +311,7 @@ on("click", ".editvariants", e => {
 	set_content("#variationdlg .conditions", make_condition_vars(info.condition_vars));
 	const frm = DOM("#variationdlg form");
 	DOM("#variationdlg [name=variant]").value = "";
-	load_data(type + "-", {active: true}, frm);
+	load_data(type + "-", {active: true, parent: type}, frm);
 	frm.dataset.type = type + "-";
 	update_alert_variants();
 	DOM("#variationdlg").showModal();
