@@ -676,7 +676,10 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		int val = (int)msg["condval-" + c];
 		data["condval-" + c] = val;
 		//Note that ">= 0" is no specificity, as zero is considered "unassigned".
-		specificity += oper == "==" ? 10000000 : val;
+		//Note: Technically, the specificity could be the same for all equality
+		//checks; however, since alert variants are ordered by specificity, it is
+		//more elegant to have them sort by their values.
+		specificity += oper == "==" ? 10000000 + val : val;
 	}
 	string alertset = msg["cond-alertset"];
 	if (alertset && alertset != "") { //And make sure it's actually a valid alert set

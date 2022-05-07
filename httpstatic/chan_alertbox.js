@@ -99,13 +99,11 @@ function make_condition_vars(vars) {
 }
 
 function update_alert_variants() {
-	const basetype = DOM("#variationdlg form").dataset.type.split("-")[0] + "-";
-	const variants = [];
-	Object.entries(revert_data).forEach(([type, attrs]) => {
-		if (type.startsWith(basetype) && type !== basetype)
-			variants.push(OPTION({value: type.split("-")[1]}, (attrs["cond-label"] || "(always)") + " " + attrs.specificity));
+	const basetype = DOM("#variationdlg form").dataset.type.split("-")[0];
+	const variants = (revert_data[basetype].variants || []).map(id => {
+		const attrs = revert_data[id] || { };
+		return OPTION({value: id.split("-")[1]}, (attrs["cond-label"] || "(always)") + " " + attrs.specificity);
 	});
-	//TODO: Sort the options by specificity (descending)
 	set_content("#variationdlg [name=variant]", [
 		OPTION({value: ""}, "Add new"),
 		variants,
