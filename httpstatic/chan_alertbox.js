@@ -99,6 +99,7 @@ function make_condition_vars(vars) {
 	]));
 }
 
+let wanted_variant = null; //Unlike wanted_tab, this won't be loadable on startup (no need).
 function update_alert_variants() {
 	const basetype = DOM("#variationdlg form").dataset.type.split("-")[0];
 	const variants = (revert_data[basetype].variants || []).map(id => {
@@ -108,7 +109,7 @@ function update_alert_variants() {
 	set_content("#variationdlg [name=variant]", [
 		OPTION({value: ""}, "Add new"),
 		variants,
-	])
+	]).value = wanted_variant || "";
 }
 
 export function sockmsg_select_variant(msg) {
@@ -330,9 +331,9 @@ on("change", "[name=variant]", e => {
 	}
 	const type = wanted_tab + "-" + (e.match.value || "");
 	frm.dataset.type = type;
-	const variant = e.match.value;
+	wanted_variant = e.match.value;
 	load_data(type, revert_data[type] || { }, frm);
-	e.match.value = variant; //Ensure that the selected variant is still selected, if it exists in the user's settings.
+	e.match.value = wanted_variant; //Ensure that the selected variant is still selected, if it exists in the user's settings.
 	frm.classList.remove("unsaved-changes"); //Fresh load doesn't count as unsaved changes
 });
 
