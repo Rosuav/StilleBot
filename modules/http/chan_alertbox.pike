@@ -763,6 +763,7 @@ void send_alert(object channel, string alerttype, mapping args) {
 	if (!cfg->?authkey) return;
 	if (!args->text) { //Conditions are ignored if the alert is pushed via the builtin
 		mapping alert = cfg->alertconfigs[alerttype]; if (!alert) return; //No alert means it can't possibly fire
+		if (!alert->active) return;
 		int idx = search(ALERTTYPES->id, alerttype); //TODO: Rework this so it's a lookup instead (this same check is done twice)
 		array(string) condvars = idx >= 0 ? ALERTTYPES[idx]->condition_vars : ({ });
 		foreach (condvars, string c) {
@@ -775,7 +776,6 @@ void send_alert(object channel, string alerttype, mapping args) {
 			}
 		}
 		//TODO: Check that the alert set is active, if one is selected
-		//Note that the enabled flag is actually checked on the client. This may change in future.
 	}
 	send_updates_all(cfg->authkey + channel->name, (["send_alert": alerttype]) | args);
 }
