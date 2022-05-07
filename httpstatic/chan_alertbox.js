@@ -255,7 +255,6 @@ export function render(data) {
 		load_data(type, { });
 	});
 	if (selecttab !== null && data.alerttypes && !DOM("input[name=alertselect]:checked")) {
-		console.log("Trying to select", selecttab);
 		if (!DOM("#select-" + selecttab))
 			//Invalid or not specified? Use the first tab.
 			selecttab = document.querySelectorAll("input[name=alertselect]")[0].id.replace("select-", "")
@@ -286,7 +285,10 @@ export function render(data) {
 }
 
 on("change", ".expandbox", e => {
-	if (e.match.querySelector("[name=cond-disableautogen]").checked) return;
+	if (e.match.querySelector("[name=cond-disableautogen]").checked) {
+		if (e.target.name === "cond-label") update_condition_summary(e.match); //If you edit the label itself, update everything
+		return;
+	}
 	const conds = [];
 	const set = e.match.querySelector("[name=cond-alertset]").value;
 	if (set) conds.push(set + " alerts");
@@ -531,11 +533,9 @@ export async function sockmsg_upload(msg) {
 		body: file,
 		credentials: "same-origin",
 	})).json();
-	console.log(resp);
 }
 
 on("change", "input[type=file]", e => {
-	console.log(e.match.files);
 	for (let f of e.match.files) {
 		ws_sync.send({cmd: "upload", name: f.name, size: f.size, mimetype: f.type});
 		uploadme[f.name] = f;
