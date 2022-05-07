@@ -758,26 +758,30 @@ constant vars_provided = ([
 ]);
 constant command_suggestions = ([]); //This isn't something that you'd create a default command for - it'll want to be custom. (And probably a special, not a command, anyway.)
 
-void send_alert(object channel, string alerttype, mapping args) {
+//Attempt to send an alert. Returns 1 if alert sent, 0 if not (eg if alert disabled).
+int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
-	if (!cfg->?authkey) return;
+	if (!cfg->?authkey) return 0;
 	if (!args->text) { //Conditions are ignored if the alert is pushed via the builtin
-		mapping alert = cfg->alertconfigs[alerttype]; if (!alert) return; //No alert means it can't possibly fire
-		if (!alert->active) return;
+		mapping alert = cfg->alertconfigs[alerttype]; if (!alert) return 0; //No alert means it can't possibly fire
+		if (!alert->active) return 0;
 		int idx = search(ALERTTYPES->id, alerttype); //TODO: Rework this so it's a lookup instead (this same check is done twice)
 		array(string) condvars = idx >= 0 ? ALERTTYPES[idx]->condition_vars : ({ });
 		foreach (condvars, string c) {
 			int val = (int)args[c];
 			int comp = alert["condval-" + c];
 			switch (alert["condoper-" + c]) {
-				case "==": if (val != comp) return;
-				case ">=": if (val < comp) return;
+				case "==": if (val != comp) return 0;
+				case ">=": if (val < comp) return 0;
 				default: break; //TODO: Report errors, this shouldn't happen
 			}
 		}
 		//TODO: Check that the alert set is active, if one is selected
+		foreach (alert->variants || ({ }), string subid)
+			if (send_alert(channel, subid, args)) return 1;
 	}
 	send_updates_all(cfg->authkey + channel->name, (["send_alert": alerttype]) | args);
+	return 1;
 }
 
 mapping message_params(object channel, mapping person, array|string param)
