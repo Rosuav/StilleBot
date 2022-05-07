@@ -62,6 +62,7 @@ function load_data(type, attrs, par) {
 	for (let el of par.elements) {
 		if (!el.name) continue;
 		if (el.type === "checkbox") el.checked = !!attrs[el.name];
+		else if (el.type === "color") el.value = attrs[el.name] || "#000000"; //Suppress warning about empty string being inappropriate
 		else el.value = attrs[el.name] || "";
 		el.classList.remove("dirty");
 		el.labels.forEach(l => l.classList.remove("dirty"));
