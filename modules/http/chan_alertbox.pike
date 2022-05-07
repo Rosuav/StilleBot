@@ -766,7 +766,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	if (!args->text) { //Conditions are ignored if the alert is pushed via the builtin
 		mapping alert = cfg->alertconfigs[alerttype]; if (!alert) return 0; //No alert means it can't possibly fire
 		if (!alert->active) return 0;
-		int idx = search(ALERTTYPES->id, alerttype); //TODO: Rework this so it's a lookup instead (this same check is done twice)
+		int idx = search(ALERTTYPES->id, (alerttype/"-")[0]); //TODO: Rework this so it's a lookup instead (this same check is done twice)
 		array(string) condvars = idx >= 0 ? ALERTTYPES[idx]->condition_vars : ({ });
 		foreach (condvars, string c) {
 			int val = (int)args[c];
