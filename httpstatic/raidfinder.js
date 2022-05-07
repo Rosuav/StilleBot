@@ -266,7 +266,7 @@ function describe_uptime(stream, el) {
 	let restrictions = null;
 	const cached = stream.chanstatus ? stream.chanstatus.cache_time : 0;
 	want_streaminfo[stream.user_id] = cached;
-	if (cached > new Date/1000 - 86400) {
+	if (cached > new Date/1000 - 86400 * 14) {
 		const set = stream.chanstatus.chat_settings;
 		let warn = false, info = false;
 		chat_restrictions.forEach(r => {if (set[r[0]]) {
