@@ -13,7 +13,7 @@ const alert_formats = {
 	}, [
 		IMG({src: data.image || TRANSPARENT_IMAGE}),
 		FIGCAPTION({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
-		AUDIO({preload: "auto", src: data.sound, volume: data.volume ** 2}),
+		AUDIO({preload: "auto", src: data.sound || EMPTY_AUDIO, volume: data.volume ** 2}),
 	]),
 	text_image_overlaid: data => DIV(
 		{
