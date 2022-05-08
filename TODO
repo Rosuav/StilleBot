@@ -107,15 +107,7 @@
     complexity. Would want to have the websocket from the client cause the IRC conn to
     be flagged as in-use, which might mean we'll want to just let them get disconnected
     and then have a hook that reconnects if there are any active websockets.
-  - Rework display of conditions. Unticking "Active" makes a variant as if it doesn't
-    exist; on top-level, it quickly suppresses the entire alert type. Filters on the
-    top-level alert suppress all alerts that don't match.
-  - Don't say "Always" and "Never", instead say "(inactive)" when it's unticked
   - Testing alert variations is complex.
-    - If you test one specific variant, it should test that precise alert. Is it
-      possible to bound the random selection to comply? If not, don't bother.
-      (Would require back-parsing the condition. Might be useful though, as it
-      would make the default bit etc values look more sane.)
     - Have a "Test All Variants" button which will go through every variation and
       test them, in order. Maybe reverse order, since they'll likely be done in
       highest-to-lowest. Or not.
@@ -126,8 +118,6 @@
     PNG, based on the URL provided
   - This will bump the version number, ideally only for alerts with videos in them.
 * Alert box shouldn't require broadcaster auth except for hostalert
-* Alert box client needs to purge deleted alert types. When only base alerts were
-  created, this wasn't a big deal, but spare subalerts could grow unbounded.
 * Alert Box: Fold resub and sub bomb into Subscription, as variants
   - Add condition type: "Is sub bomb", high specificity.
   - Add condition type: "Is gifted". Does not apply to a sub bomb, but if the bomb
