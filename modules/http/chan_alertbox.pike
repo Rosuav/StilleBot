@@ -235,6 +235,15 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 > [Save](:#savepersonal type=submit) [Delete](:#delpersonal) [Cancel](:.dialog_close)
 > </form>
 {: tag=dialog #personaldlg style=max-width:min-content}
+
+<!-- -->
+
+> ### Send test alert
+>
+> This alert has variations available. Would you like to...?
+>
+> [Test the base alert](:#testalertbase) [Test all N variants](:#testalertall) [Test the N active variants](:#testalertactive) [Cancel](:.dialog_close)
+{: tag=dialog #testalertdlg}
 ";
 
 constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB

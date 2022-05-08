@@ -545,6 +545,10 @@ on("click", ".testalert", e => {
 		DOM("#unsaveddlg").showModal();
 		return;
 	}
+	if (!frm.dataset.type.includes("-")) {
+		//If alert has variants...
+		//DOM("#testalertdlg").showModal(); return;
+	}
 	ws_sync.send({cmd: "testalert", type: frm.dataset.type});
 });
 
