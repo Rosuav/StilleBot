@@ -49,7 +49,7 @@ function update_condition_summary(par) {
 	if (!target) return; //Nothing to do
 	const enabled = par.querySelector("[name=active]").checked;
 	let cond = par.querySelector("[name=cond-label]").value;
-	if (cond === "") cond = enabled ? "always" : "never";
+	if (cond === "") cond = enabled ? "always" : "(inactive)";
 	else if (!enabled) cond += " (inactive)";
 	set_content(target, cond);
 }
@@ -110,6 +110,8 @@ function update_alert_variants() {
 		OPTION({value: ""}, "Add new"),
 		variants,
 	]).value = wanted_variant || "";
+	//FIXME: Sometimes on save, the variant is cleared to defaults. Not sure when or why. Maybe this-ish will help?
+	//load_data(wanted_variant, revert_data[wanted_variant] || {active: true, parent: basetype}, DOM("#variationdlg form"));
 }
 
 export function sockmsg_select_variant(msg) {
@@ -156,18 +158,20 @@ export function render(data) {
 				SPAN({className: "description"}, info.description),
 			]),
 			type === "variant" && P({class: "no-inherit no-dirty"}, [
-				//TODO: No inherit and no dirty, this is a selector not a saveable
+				//No inherit and no dirty, this is a selector not a saveable
 				LABEL(["Select variant:", SELECT({name: "variant"}, OPTION({value: ""}, "Add new"))]),
 				//Gonna need a "delete variant" somewhere too
+			]),
+			P([
+				LABEL([INPUT({name: "active", type: "checkbox"}), " Alert active"]), BR(),
+				type === "variant"
+					? "Inactive variants are ignored when selecting which variant to use."
+					: "Inactive alerts will never be used (nor their variants), but can be inherited from.",
 			]),
 			HR(),
 			info.condition_vars && DETAILS({class: "expandbox no-inherit"}, [
 				SUMMARY(["Alert will be used: ", B({class: "cond-label"}, "always"), ". Expand to configure."]),
 				P("If any alert variation is used, the base alert will be replaced with it."),
-				P([
-					LABEL([INPUT({name: "active", type: "checkbox"}), " Alert active"]), BR(),
-					"Inactive alerts will never be used, but can be inherited from.",
-				]),
 				//Condition vars depend on the alert type. For instance, a sub alert
 				//can check the tier, a cheer alert the number of bits. It's entirely
 				//possible to have empty condition_vars, which will just have the
