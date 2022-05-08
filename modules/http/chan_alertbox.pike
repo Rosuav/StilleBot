@@ -677,8 +677,10 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	}
 	mapping inh = resolve_inherits(cfg->alertconfigs, msg->type, data);
 	if (!has_value(VALID_FORMATS, inh->format)) {
-		m_delete(data, "format"); //Assume that inheriting will be safe.
-		inh->format = NULL_ALERT->format;
+		m_delete(data, "format"); //Inheriting will usually be safe. Usually.
+		inh = resolve_inherits(cfg->alertconfigs, msg->type, data); //Overkill, but whatever.
+		//If it's STILL not valid, then that probably means a parent is broken. Force to a safe default.
+		if (!has_value(VALID_FORMATS, inh->format)) data->format = inh->format = NULL_ALERT->format;
 	}
 	textformatting_validate(data);
 	data->text_css = textformatting_css(inh);
