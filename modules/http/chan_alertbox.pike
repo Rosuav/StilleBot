@@ -589,12 +589,14 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 	//to *every* client. This means multiple people playing with the demo
 	//simultaneously will see each other's alerts show up.
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	string basetype = msg->type || ""; sscanf(basetype, "%s-%s", basetype, string variation);
 	mapping alert = ([
-		"send_alert": valid_alert_type(msg->type, cfg) ? msg->type : "hostalert",
+		"send_alert": valid_alert_type(basetype, cfg) ? msg->type : "hostalert",
 		"NAME": channel->name[1..], "username": channel->name[1..], //TODO: Use the display name
 		"test_alert": 1,
 	]);
-	int idx = search(ALERTTYPES->id, msg->type);
+	if (variation && !cfg->alertconfigs[msg->type]) alert->send_alert = basetype; //Borked variation name? Test the base alert instead.
+	int idx = search(ALERTTYPES->id, basetype);
 	mapping pholders = idx >= 0 ? ALERTTYPES[idx]->testpholders : ([
 		"text": "This is a test personal alert.",
 		"TEXT": "This is a test personal alert.",
