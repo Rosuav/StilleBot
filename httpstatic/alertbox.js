@@ -58,8 +58,8 @@ export function render(data) {
 			if (alert_formats[cfg.format]) set_content(elem, alert_formats[cfg.format](cfg));
 			else set_content(elem, P("Unrecognized alert format '" + cfg.format + "', check editor or refresh page"));
 			alert_active["#" + kwd] = cfg.active;
-			elem.dataset.alertlength = cfg.alertlength || 6;
-			elem.dataset.alertgap = cfg.alertgap || 1;
+			elem.dataset.alertlength = cfg.alertlength;
+			elem.dataset.alertgap = cfg.alertgap;
 			ensure_font(cfg.font);
 		}
 	}
