@@ -175,7 +175,10 @@ export function render(data) {
 			HR(),
 			info.condition_vars && DETAILS({class: "expandbox no-inherit"}, [
 				SUMMARY(["Alert will be used: ", B({class: "cond-label"}, "always"), ". Expand to configure."]),
-				P("If any alert variation is used, the base alert will be replaced with it."),
+				P([
+					"If any alert variation is used, the base alert will be replaced with it.",
+					type !== "variant" && " Filters here will prevent ANY variation from being used.",
+				]),
 				//Condition vars depend on the alert type. For instance, a sub alert
 				//can check the tier, a cheer alert the number of bits. It's entirely
 				//possible to have empty condition_vars, which will just have the
