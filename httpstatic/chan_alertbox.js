@@ -115,6 +115,7 @@ function update_alert_variants() {
 		revert_data[basetype + "-" + wanted_variant] || {active: true, parent: basetype},
 		DOM("#variationdlg form"));
 	sel.value = wanted_variant || "";
+	DOM("#variationdlg .testalert").disabled = !wanted_variant;
 }
 
 export function sockmsg_select_variant(msg) {
@@ -345,6 +346,7 @@ function select_variant(elem) {
 	load_data(type, revert_data[type] || { }, frm);
 	elem.value = wanted_variant; //Ensure that the selected variant is still selected, if it exists in the user's settings.
 	frm.classList.remove("unsaved-changes"); //Fresh load doesn't count as unsaved changes
+	DOM("#variationdlg .testalert").disabled = !wanted_variant;
 }
 
 let wanted_tab = null; //TODO: Allow this to be set from the page fragment (wait till loading is done)
@@ -533,14 +535,14 @@ on("click", "#unsaved-save,#unsaved-discard", e => {
 });
 
 on("click", ".testalert", e => {
-	const type = e.match.dataset.type, frm = e.match.form;
+	const frm = e.match.form;
 	if (frm.classList.contains("unsaved-changes")) {
 		unsaved_form = frm; unsaved_clickme = e.match;
 		set_content("#discarddesc", "Cannot send a test alert with unsaved changes.");
 		DOM("#unsaveddlg").showModal();
 		return;
 	}
-	ws_sync.send({cmd: "testalert", type});
+	ws_sync.send({cmd: "testalert", type: frm.dataset.type});
 });
 
 on("click", "input[name=alertselect]", e => {
