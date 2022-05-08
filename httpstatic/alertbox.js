@@ -62,6 +62,9 @@ export function render(data) {
 			elem.dataset.alertgap = cfg.alertgap;
 			ensure_font(cfg.font);
 		}
+		const removeme = [];
+		document.querySelectorAll("main > section").forEach(el => !data.alertconfigs[el.id] && removeme.push(el));
+		removeme.forEach(el => el.replaceWith()); //Do all the removal after the checks, to avoid trampling on things
 	}
 	if (data.send_alert) do_alert("#" + data.send_alert, data);
 	if (data.token && data.token !== token) {
