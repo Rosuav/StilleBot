@@ -672,8 +672,14 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		if (!has_value(mro, msg->type)) {
 			data->parent = msg->parent;
 			data->mro = ({msg->type}) + mro;
-		}
+		} else mro = ({ });
 		//Otherwise, leave data->mro and data->parent unset.
+		//If this alert exists in the MROs of any other alerts, they need to be recalculated.
+		foreach (cfg->alertconfigs; string id; mapping alert) {
+			int idx = search(alert->mro || ({ }), msg->type);
+			if (idx == -1) continue;
+			alert->mro = alert->mro[..idx] + mro;
+		}
 	}
 	mapping inh = resolve_inherits(cfg->alertconfigs, msg->type, data);
 	if (!has_value(VALID_FORMATS, inh->format)) {
