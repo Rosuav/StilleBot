@@ -140,3 +140,6 @@
   - If master alert disabled, test them anyway. But if sub-alerts are disabled, the
     "All Active" button will skip them.
   - Run through the variations in descending specificity, then the base
+* Check a new account: what happens if you try to save a variant before saving the
+  base alert? If it's a problem, disable the alert variations button until base is
+  saved, and just ignore all variant-saves.
