@@ -240,9 +240,14 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 
 > ### Send test alert
 >
-> This alert has variations available. Would you like to...?
+> This alert has variations available. Would you like to:
 >
-> [Test the base alert](:#testalertbase) [Test all N variants](:#testalertall) [Test the N active variants](:#testalertactive) [Cancel](:.dialog_close)
+> * Test just the base alert, as detailed on this page
+> * Test all the active alerts for the current alert set (<span id=tvactivedesc>N</span> alerts)
+> * Test all alert variations and the base alert (<span id=tvalldesc>N</span> in total)
+>
+> [Base alert](:.testvariant #tvbase) [Active only](:.testvariant #tvactive)
+> [All variants](:.testvariant #tvall) [Cancel](:.dialog_close)
 {: tag=dialog #testalertdlg}
 ";
 

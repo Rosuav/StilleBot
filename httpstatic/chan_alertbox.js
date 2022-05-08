@@ -537,6 +537,7 @@ on("click", "#unsaved-save,#unsaved-discard", e => {
 	unsaved_form = unsaved_clickme = null;
 });
 
+const multitest = {tvbase: [], tvall: [], tvactive: []};
 on("click", ".testalert", e => {
 	const frm = e.match.form;
 	if (frm.classList.contains("unsaved-changes")) {
@@ -546,10 +547,36 @@ on("click", ".testalert", e => {
 		return;
 	}
 	if (!frm.dataset.type.includes("-")) {
-		//If alert has variants...
-		//DOM("#testalertdlg").showModal(); return;
+		const data = revert_data[frm.dataset.type] || { };
+		if (data.variants && data.variants.length) {
+			console.log("Test alert", frm.dataset.type, revert_data[frm.dataset.type]);
+			let general = 0, thisset = 0;
+			multitest.tvall.length = multitest.tvactive.length = 0;
+			multitest.tvbase[0] = frm.dataset.type;
+			data.variants.forEach(v => {
+				const a = revert_data[v] || { };
+				multitest.tvall.push(v); //Should there be any checks to ensure that this is a real alert?
+				if (!a.active) return;
+				if (!a["cond-alertset"]) {++general; multitest.tvactive.push(v);}
+				//else if (a["cond-alertset"] === current-alert-set) {++thisset; multitest_active.push(v);}
+			});
+			multitest.tvall.push(frm.dataset.type); //Always play the base alert last
+			if (!data["cond-alertset"]) {++general; multitest.tvactive.push(frm.dataset.type);}
+			//else as above ++thisset
+			//if (current-alert-set) set_content("#tvactivedesc", general + " general + " + thisset + " " + current-alert-set + " =");
+			/*else*/ set_content("#tvactivedesc", ""+general);
+			set_content("#tvalldesc", ""+multitest.tvall.length);
+			DOM("#testalertdlg").showModal();
+			return;
+		}
 	}
 	ws_sync.send({cmd: "testalert", type: frm.dataset.type});
+});
+
+on("click", ".testvariant", e => {
+	DOM("#testalertdlg").close();
+	const alerts = multitest[e.match.id]; if (!alerts) return;
+	alerts.forEach(type => ws_sync.send({cmd: "testalert", type}));
 });
 
 on("click", "input[name=alertselect]", e => {
