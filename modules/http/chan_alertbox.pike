@@ -601,10 +601,19 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 		"text": "This is a test personal alert.",
 		"TEXT": "This is a test personal alert.",
 	]);
+	mapping alertcfg = cfg->alertconfigs[msg->type];
 	foreach (pholders; string key; string|array value) {
+		if (alertcfg["condoper-" + key] == "==") {alert[key] = (string)alertcfg["condval-" + key]; continue;}
+		int minimum = alertcfg["condoper-" + key] == ">=" && alertcfg["condval-" + key];
 		if (arrayp(value)) {
-			if (stringp(value[0])) alert[key] = random(value);
-			else alert[key] = (string)(random(value[1] - value[0] + 1) + value[0]);
+			if (stringp(value[0])) alert[key] = random(value); //Minimums not supported
+			else {
+				//Pick a random number no less than the minimum. Note that since random(-123)
+				//always returns zero, it's okay to have minimum > value[1], and we'll just
+				//pick the user-specified minimum.
+				if (!minimum || minimum < value[0]) minimum = value[0];
+				alert[key] = (string)(random(value[1] - minimum + 1) + minimum);
+			}
 		}
 		else alert[key] = value;
 	}
