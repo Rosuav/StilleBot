@@ -106,12 +106,15 @@ function update_alert_variants() {
 		const attrs = revert_data[id] || { };
 		return OPTION({value: id.split("-")[1]}, (attrs["cond-label"] || "(always)") + " " + attrs.specificity);
 	});
-	set_content("#variationdlg [name=variant]", [
+	const sel = set_content("#variationdlg [name=variant]", [
 		OPTION({value: ""}, "Add new"),
 		variants,
-	]).value = wanted_variant || "";
-	//FIXME: Sometimes on save, the variant is cleared to defaults. Not sure when or why. Maybe this-ish will help?
-	//load_data(wanted_variant, revert_data[wanted_variant] || {active: true, parent: basetype}, DOM("#variationdlg form"));
+	]);
+	//Loading data will clear the select, so we have to populate it, then load, then choose the selected variant.
+	load_data(wanted_variant,
+		revert_data[basetype + "-" + wanted_variant] || {active: true, parent: basetype},
+		DOM("#variationdlg form"));
+	sel.value = wanted_variant || "";
 }
 
 export function sockmsg_select_variant(msg) {
