@@ -119,7 +119,7 @@ function update_alert_variants() {
 
 export function sockmsg_select_variant(msg) {
 	const basetype = DOM("#variationdlg form").dataset.type.split("-")[0];
-	if (basetype === msg.type) DOM("#variationdlg [name=variant]").value = msg.variant;
+	if (basetype === msg.type) DOM("#variationdlg [name=variant]").value = wanted_variant = msg.variant;
 }
 
 let selecttab = location.hash.slice(1);
@@ -321,6 +321,7 @@ on("click", ".editvariants", e => {
 	DOM("#variationdlg [name=variant]").value = "";
 	load_data(type + "-", {active: true, parent: type}, frm);
 	frm.dataset.type = type + "-";
+	wanted_variant = null;
 	update_alert_variants();
 	DOM("#variationdlg").showModal();
 });
