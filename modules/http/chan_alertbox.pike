@@ -398,11 +398,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 }
 
 mapping resolve_inherits(mapping alerts, string id, mapping alert) {
-	string par = alert->?parent || "defaults";
+	string par = alert->?parent || "defaults"; //TODO: For MRO insertion of sets, insert "|| alert->cond_alertset" or similar.
 	mapping parent = id == "defaults" ? NULL_ALERT //The defaults themselves are defaulted to the vanilla null alert.
 		: resolve_inherits(alerts, par, alerts[par]); //Everything else has a parent, potentially implicit.
 	if (!alert) return parent;
-	return parent | filter(alert) {return __ARGS__[0] != "";}; //Shouldn't need to filter since it's done on save, may be able to remove this later
+	return parent | filter(alert) {return __ARGS__[0] && __ARGS__[0] != "";}; //Shouldn't need to filter since it's done on save, may be able to remove this later
 }
 
 mapping resolve_all_inherits(mapping alerts) {
@@ -659,7 +659,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	mapping data = cfg->alertconfigs[msg->type] = filter(
 		mkmapping(RETAINED_ATTRS, (cfg->alertconfigs[msg->type]||([]))[RETAINED_ATTRS[*]])
 		| mkmapping(FORMAT_ATTRS, msg[FORMAT_ATTRS[*]]))
-			{return __ARGS__[0] != "";}; //Any blank values get removed and will be inherited.
+			{return __ARGS__[0] && __ARGS__[0] != "";}; //Any blank values get removed and will be inherited.
 	//You may inherit from "", meaning the defaults, or from any other alert that
 	//doesn't inherit from this alert. Attempting to do so will just reset to "".
 	//NOTE: Currently you can only inherit from a base alert. This helps to keep
