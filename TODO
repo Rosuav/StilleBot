@@ -107,10 +107,6 @@
     complexity. Would want to have the websocket from the client cause the IRC conn to
     be flagged as in-use, which might mean we'll want to just let them get disconnected
     and then have a hook that reconnects if there are any active websockets.
-  - Testing alert variations is complex.
-    - Have a "Test All Variants" button which will go through every variation and
-      test them, in order. Maybe reverse order, since they'll likely be done in
-      highest-to-lowest. Or not.
 * Alert Box: Support movies (not just GIFs) everywhere
   - I don't think a video can be used as an element's background. Would need to
     rework the "overlaid" option completely to use two elements.
