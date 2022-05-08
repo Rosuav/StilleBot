@@ -533,7 +533,7 @@ on("click", "#unsaved-save,#unsaved-discard", e => {
 });
 
 on("click", ".testalert", e => {
-	const type = e.match.dataset.type, frm = DOM("form[data-type=" + type + "]");
+	const type = e.match.dataset.type, frm = e.match.form;
 	if (frm.classList.contains("unsaved-changes")) {
 		unsaved_form = frm; unsaved_clickme = e.match;
 		set_content("#discarddesc", "Cannot send a test alert with unsaved changes.");
