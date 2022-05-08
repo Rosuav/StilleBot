@@ -326,24 +326,25 @@ on("click", ".editvariants", e => {
 	DOM("#variationdlg").showModal();
 });
 
-on("change", "[name=variant]", e => {
-	const frm = e.match.form;
+let unsaved_form = null, unsaved_clickme = null;
+on("change", "[name=variant]", e => select_variant(e.match));
+function select_variant(elem) {
+	const frm = elem.form;
 	if (frm && frm.classList.contains("unsaved-changes")) {
-		//FIXME: This won't successfully discard changes
-		//FIXME: Also do the same check on dialog close
-		unsaved_form = frm; unsaved_clickme = e.match;
+		const orig = elem.value;
+		unsaved_form = frm; unsaved_clickme = () => {elem.value = orig; select_variant(elem);};
 		set_content("#discarddesc", "Unsaved changes will be lost if you switch to another alert variant.");
-		e.match.value = frm.dataset.type.split("-")[1];
+		elem.value = frm.dataset.type.split("-")[1];
 		DOM("#unsaveddlg").showModal();
 		return;
 	}
-	const type = wanted_tab + "-" + (e.match.value || "");
+	const type = wanted_tab + "-" + (elem.value || "");
 	frm.dataset.type = type;
-	wanted_variant = e.match.value;
+	wanted_variant = elem.value;
 	load_data(type, revert_data[type] || { }, frm);
-	e.match.value = wanted_variant; //Ensure that the selected variant is still selected, if it exists in the user's settings.
+	elem.value = wanted_variant; //Ensure that the selected variant is still selected, if it exists in the user's settings.
 	frm.classList.remove("unsaved-changes"); //Fresh load doesn't count as unsaved changes
-});
+}
 
 let wanted_tab = null; //TODO: Allow this to be set from the page fragment (wait till loading is done)
 function update_visible_form() {
@@ -503,7 +504,6 @@ on("click", "#delete", e => {
 	DOM("#confirmdeletedlg").close();
 });
 
-let unsaved_form = null, unsaved_clickme = null;
 on("click", "#unsaved-save,#unsaved-discard", e => {
 	DOM("#unsaveddlg").close();
 	//Asynchronicity note: There are three timestreams involved in a "save
@@ -527,7 +527,7 @@ on("click", "#unsaved-save,#unsaved-discard", e => {
 		unsaved_form.classList.remove("unsaved-changes");
 		load_data(type, revert_data[type] || { });
 	}
-	unsaved_clickme.click();
+	if (unsaved_clickme.click) unsaved_clickme.click(); else unsaved_clickme();
 	unsaved_form = unsaved_clickme = null;
 });
 
