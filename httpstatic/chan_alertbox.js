@@ -163,7 +163,7 @@ export function render(data) {
 			type === "variant" && P({class: "no-inherit no-dirty"}, [
 				//No inherit and no dirty, this is a selector not a saveable
 				LABEL(["Select variant:", SELECT({name: "variant"}, OPTION({value: ""}, "Add new"))]),
-				//Gonna need a "delete variant" somewhere too
+				BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑"),
 			]),
 			P([
 				LABEL([INPUT({name: "active", type: "checkbox"}), " Alert active"]), BR(),
@@ -467,17 +467,39 @@ on("click", "#alertboxdisplay", e => {
 //Unload the preview when the dialog closes
 DOM("#previewdlg").onclose = e => DOM("#alertembed").src = "";
 
-let deleteid = null;
-on("click", ".confirmdelete", e => {
+let deletetype = null, deleteid = null;
+on("click", "#uploads .confirmdelete", e => {
 	deleteid = e.match.closest("[data-id]").dataset.id;
-	const file = files[deleteid];
+	const file = files[deleteid]; if (!file) return;
+	deletetype = "file";
 	DOM("#confirmdeletedlg .thumbnail").replaceWith(THUMB(file));
 	set_content("#confirmdeletedlg a", file.name).href = file.url;
+	document.querySelectorAll(".deltype").forEach(e => e.innerHTML = deletetype);
+	set_content("#deletewarning", [
+		"Once deleted, this file will no longer be available for alerts, and if", BR(),
+		"reuploaded, will have a brand new URL.",
+	]);
+	DOM("#confirmdeletedlg").showModal();
+});
+
+on("click", ".alertconfig .confirmdelete", e => {
+	const subid = e.match.form.elements.variant.value; if (subid === "") return; //Button should be hidden when on the "Add New" anyway
+	deleteid = e.match.form.dataset.type.split("-")[0] + "-" + subid;
+	const alert = revert_data[deleteid]; if (!alert) return;
+	deletetype = "variant";
+	//TODO: Have an actual thumbnail of the alert, somehow
+	DOM("#confirmdeletedlg .thumbnail").replaceWith(P({class: "thumbnail"}, alert["cond-label"]));
+	set_content("#confirmdeletedlg a", "");
+	document.querySelectorAll(".deltype").forEach(e => e.innerHTML = deletetype);
+	set_content("#deletewarning", [
+		"Deleting this variant will allow other variants, or the base alert,", BR(),
+		"to be used when this one would have.",
+	]);
 	DOM("#confirmdeletedlg").showModal();
 });
 
 on("click", "#delete", e => {
-	if (deleteid) ws_sync.send({cmd: "delete", id: deleteid});
+	if (deletetype && deleteid) ws_sync.send({cmd: "delete", type: deletetype, id: deleteid});
 	DOM("#confirmdeletedlg").close();
 });
 

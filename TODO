@@ -128,7 +128,6 @@
 * Alert box shouldn't require broadcaster auth except for hostalert
 * Alert box client needs to purge deleted alert types. When only base alerts were
   created, this wasn't a big deal, but spare subalerts could grow unbounded.
-* Deleting of alert variants
 * Alert Box: Fold resub and sub bomb into Subscription, as variants
   - Add condition type: "Is sub bomb", high specificity.
   - Add condition type: "Is gifted". Does not apply to a sub bomb, but if the bomb

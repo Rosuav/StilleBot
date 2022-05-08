@@ -50,8 +50,8 @@ $$notmod2||[Show library](:.showlibrary)$$
 
 <!-- -->
 
-> ### Delete file
-> Really delete this file?
+> ### Delete <span class=deltype>file</span>
+> Really delete this <span class=deltype>file</span>?
 >
 > [...](...)
 >
@@ -59,6 +59,7 @@ $$notmod2||[Show library](:.showlibrary)$$
 >
 > Once deleted, this file will no longer be available for alerts, and if<br>
 > reuploaded, will have a brand new URL.
+> {: #deletewarning}
 >
 > [Delete](:#delete) [Cancel](:.dialog_close)
 {: tag=dialog #confirmdeletedlg}
@@ -124,6 +125,8 @@ input[name=chooseme]:checked ~ figure {
 #uploads .confirmdelete {
 	position: absolute;
 	right: 0.5em; top: 0.5em;
+}
+.confirmdelete {
 	width: 20px; height: 23px;
 	padding: 0;
 }
@@ -537,6 +540,23 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!channel || grp != "control") return;
 	if (conn->session->fake) return;
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	if (msg->type == "variant") {
+		//Delete an alert variant. Only valid if it's a variant (not a base
+		//alert - personals are deleted differently), and has no effect if
+		//the alert doesn't exist.
+		if (!stringp(msg->id) || !has_value(msg->id, '-')) return;
+		if (!cfg->alertconfigs) return;
+		sscanf(msg->id, "%s-%s", string basetype, string variation);
+		mapping base = cfg->alertconfigs[basetype]; if (!base) return;
+		if (!arrayp(base->variants)) return; //A properly-saved alert variant should have a base alert with a set of variants.
+		m_delete(cfg->alertconfigs, msg->id);
+		base->variants -= ({msg->id});
+		persist_status->save();
+		send_updates_all(conn->group);
+		send_updates_all(cfg->authkey + channel->name);
+		conn->sock->send_text(Standards.JSON.encode((["cmd": "select_variant", "type": basetype, "variant": ""]), 4));
+		return;
+	}
 	if (!cfg->files) return; //No files, can't delete
 	int idx = search(cfg->files->id, msg->id);
 	if (idx == -1) return; //Not found.
