@@ -319,6 +319,7 @@ on("click", ".editvariants", e => {
 	set_content("#variationdlg .conditions", make_condition_vars(info.condition_vars));
 	const frm = DOM("#variationdlg form");
 	DOM("#variationdlg [name=variant]").value = "";
+	frm.classList.remove("unsaved-changes");
 	load_data(type + "-", {active: true, parent: type}, frm);
 	frm.dataset.type = type + "-";
 	wanted_variant = null;
