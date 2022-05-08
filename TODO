@@ -134,3 +134,9 @@
   - Add condition type: "Is gifted". Does not apply to a sub bomb, but if the bomb
     doesn't cause an alert, the individuals from it will fire, and do count as
     gifted subs. (So, of course, do aimed gifts.)
+* Test All Variants
+  - Bring up a dialog to prompt: "All", "All Active", "Cancel"
+  - State how many alerts will be queued in each case
+  - If master alert disabled, test them anyway. But if sub-alerts are disabled, the
+    "All Active" button will skip them.
+  - Run through the variations in descending specificity, then the base
