@@ -120,15 +120,10 @@
 * Hide delete buttons when "Add New" is selected
 * Ghostwriter needs a LOT more error checking. Maybe, on error, reschedule check five mins?
 * To make "defaults variants" behave like alert sets:
-  - Remove the conditions
-  - Allow custom naming only (cond-label can be kept)
   - Allow a description (might also eventually be useful for variants, don't block it)
-  - Redescribe "Alert active"
-  - Redescribe "Select variant" and the headings
   - Remove inherit/parent
   - Remove image/sound
   - Remove text
   - Remove "Send Test Alert"
   - Sort affabeck not by specificity
-  - Back end: all variants on Defaults become available as alert sets
-  - Front end: all available alert sets become options in filters
+  - Cope with the fact that there are now two cond-label elements
