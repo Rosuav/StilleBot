@@ -77,7 +77,7 @@ function load_data(type, attrs, par) {
 	//That makes reference cycles impossible (barring shenanigans, which would be caught
 	//on the server by simply inheriting nothing).
 	const mro = attrs.mro || [type];
-	document.querySelectorAll("select[name=parent] option[value=" + type + "]").forEach(el =>
+	document.querySelectorAll("select[name=parent] option[value=\"" + type + "\"]").forEach(el =>
 		el.disabled = mro.includes(el.closest(".alertconfig").dataset.type)
 	);
 }
@@ -106,16 +106,16 @@ function update_alert_variants() {
 		variants,
 	]);
 	//Loading data will clear the select, so we have to populate it, then load, then choose the selected variant.
-	load_data(wanted_variant,
-		revert_data[basetype + "-" + wanted_variant] || {active: true, parent: basetype},
-		DOM("#variationdlg form"));
+	const frm = DOM("#variationdlg form"), type = basetype + "-" + (wanted_variant||"");
+	load_data(wanted_variant, revert_data[type] || {active: true, parent: basetype}, frm);
 	sel.value = wanted_variant || "";
+	frm.dataset.type = type;
 	DOM("#variationdlg .testalert").disabled = !wanted_variant;
 }
 
 export function sockmsg_select_variant(msg) {
 	const basetype = DOM("#variationdlg form").dataset.type.split("-")[0];
-	if (basetype === msg.type) DOM("#variationdlg [name=variant]").value = wanted_variant = msg.variant;
+	if (basetype === msg.type) {wanted_variant = msg.variant; update_alert_variants();}
 }
 
 let selecttab = location.hash.slice(1);
