@@ -255,7 +255,7 @@ export function render(data) {
 			P([
 				BUTTON({type: "submit", disabled: true}, "Save"),
 				nondef ? BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")
-					: BUTTON({type: "button", class: "editvariants"}, "Manage alert sets"),
+					: BUTTON({type: "button", class: "editvariants"}, "Manage alert sets (WIP)"),
 				type !== "variant" && info.condition_vars && BUTTON({type: "button", className: "editvariants", "data-type": type}, "Manage alert variants"),
 			]),
 		]));
