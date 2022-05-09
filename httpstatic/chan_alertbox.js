@@ -46,12 +46,7 @@ export function sockmsg_authkey(msg) {
 
 function update_condition_summary(par) {
 	const target = par.querySelector(".cond-label");
-	if (!target) return; //Nothing to do
-	const enabled = par.querySelector("[name=active]").checked;
-	let cond = par.querySelector("[name=cond-label]").value;
-	if (cond === "") cond = enabled ? "always" : "(inactive)";
-	else if (!enabled) cond += " (inactive)";
-	set_content(target, cond);
+	if (target) set_content(target, par.querySelector("[name=cond-label]").value || "always");
 }
 
 function load_data(type, attrs, par) {
@@ -316,6 +311,8 @@ on("change", ".expandbox", e => {
 	e.match.querySelector("[name=cond-label]").value = conds.join(", ");
 	update_condition_summary(e.match);
 });
+
+on("input", "[name=cond-label]", e => e.match.closest(".expandbox").querySelector("[name=cond-disableautogen]").checked = true);
 
 on("click", ".editvariants", e => {
 	const type = e.match.closest("form").dataset.type;
