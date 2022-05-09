@@ -283,6 +283,11 @@ export function render(data) {
 	if (data.alertconfigs) {
 		Object.entries(data.alertconfigs).forEach(([type, attrs]) => load_data(type, attrs));
 		update_alert_variants();
+		const sets = data.alertconfigs.defaults?.variants || [];
+		document.querySelectorAll("[name=cond-alertset]").forEach(el => set_content(el, [
+			OPTION({value: ""}, "n/a"),
+			sets.map(s => OPTION({value: s}, data.alertconfigs[s]["cond-label"]))
+		]));
 	}
 	if (data.delpersonal) {
 		//This isn't part of a normal stateful update, and is a signal that a personal
