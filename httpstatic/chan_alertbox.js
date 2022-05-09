@@ -549,7 +549,6 @@ on("click", ".testalert", e => {
 	if (!frm.dataset.type.includes("-")) {
 		const data = revert_data[frm.dataset.type] || { };
 		if (data.variants && data.variants.length) {
-			console.log("Test alert", frm.dataset.type, revert_data[frm.dataset.type]);
 			let general = 0, thisset = 0;
 			multitest.tvall.length = multitest.tvactive.length = 0;
 			multitest.tvbase[0] = frm.dataset.type;
