@@ -117,3 +117,5 @@
 * Check a new account: what happens if you try to save a variant before saving the
   base alert? If it's a problem, disable the alert variations button until base is
   saved, and just ignore all variant-saves.
+* Hide delete buttons when "Add New" is selected
+* Ghostwriter needs a LOT more error checking. Maybe, on error, reschedule check five mins?
