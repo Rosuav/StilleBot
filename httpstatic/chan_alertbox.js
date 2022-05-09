@@ -161,7 +161,7 @@ export function render(data) {
 				LABEL(["Select variant:", SELECT({name: "variant"}, OPTION({value: ""}, "Add new"))]),
 				BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑"),
 			]),
-			P([
+			nondef && P([
 				LABEL([INPUT({name: "active", type: "checkbox"}), " Alert active"]), BR(),
 				type === "variant"
 					? "Inactive variants are ignored when selecting which variant to use."
