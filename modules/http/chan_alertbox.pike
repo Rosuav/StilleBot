@@ -201,6 +201,9 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 	padding: 0 2em;
 }
 .expandbox summary {margin-left: -1.75em;} /* Pull the summary back to the left */
+
+.mode-alertset .not-alertset {display: none;}
+.mode-variant .not-variant {display: none;}
 </style>
 
 > ### Alert preview

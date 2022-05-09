@@ -147,28 +147,38 @@ export function render(data) {
 			document.querySelectorAll("select[name=parent]").forEach(el => el.appendChild(OPTION({value: type}, info.label)));
 		}
 		const nondef = type !== "defaults"; //A lot of things are different for the defaults
+		//For variants, some things get redescribed when it's in alertset mode. Variant/Set
+		//descriptors are in a superposition, or some technobabble like that.
+		const VS = type === "variant" ? (v,s) => SPAN({"data-variant": v, "data-alertset": s}, v) : (v,s) => v;
 		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({class: type === "defaults" ? "alertconfig no-inherit": "alertconfig", "data-type": type}, [
 			H3({className: "heading"}, [
-				info.heading, SPAN({className: "if-unsaved"}, " "),
+				VS(info.heading, "Alert Set"), SPAN({className: "if-unsaved"}, " "),
 				ABBR({className: "dirty if-unsaved", title: "Unsaved changes - click Save to apply them"}, "*"),
 			]),
 			P([
 				!info.builtin && BUTTON({type: "button", className: "editpersonaldesc", title: "Edit"}, "📝"),
-				SPAN({className: "description"}, info.description),
+				SPAN({className: "description", "data-variant": info.description,
+					"data-alertset": "Create alert sets to easily enable/disable all associated alert variants. You can also set layout defaults for alert sets.",
+				}, info.description),
 			]),
 			type === "variant" && P({class: "no-inherit no-dirty"}, [
 				//No inherit and no dirty, this is a selector not a saveable
-				LABEL(["Select variant:", SELECT({name: "variant"}, OPTION({value: ""}, "Add new"))]),
+				LABEL([VS("Select variant:", "Select alert set:"), SELECT({name: "variant"}, OPTION({value: ""}, "Add new"))]),
 				BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑"),
 			]),
+			type === "variant" && P({class: "no-inherit not-variant"}, [ //Yeah, this is only for variants, but only NOT for variants. It's for alertset mode only.
+				LABEL(["Label: ", INPUT({name: "cond-label", size: 30})]),
+				//LABEL([" Description: ", INPUT({name: "cond-description", size: 60})]), //Might be nice to add this
+			]),
 			nondef && P([
-				LABEL([INPUT({name: "active", type: "checkbox"}), " Alert active"]), BR(),
+				LABEL([INPUT({name: "active", type: "checkbox"}), VS(" Alert active", " Alert set active")]), BR(),
 				type === "variant"
-					? "Inactive variants are ignored when selecting which variant to use."
+					? VS("Inactive variants are ignored when selecting which variant to use.",
+						"Inactive alert sets effectively deactivate the corresponding alerts.")
 					: "Inactive alerts will never be used (nor their variants), but can be inherited from.",
 			]),
 			HR(),
-			info.condition_vars && DETAILS({class: "expandbox no-inherit"}, [
+			info.condition_vars && DETAILS({class: "expandbox no-inherit not-alertset"}, [
 				SUMMARY(["Alert will be used: ", B({class: "cond-label"}, "always"), ". Expand to configure."]),
 				P([
 					"If any alert variation is used, the base alert will be replaced with it.",
@@ -207,7 +217,7 @@ export function render(data) {
 					INPUT({name: "cond-expr2", size: 20}),
 				]),*/
 			]),
-			nondef && P([
+			nondef && P({class: "not-alertset"}, [
 				LABEL(["Inherit settings from: ", SELECT({name: "parent"},
 					Object.entries(alert_definitions).map(([t, x]) =>
 						t === "defaults" ? OPTION({value: ""}, "None")
@@ -230,13 +240,13 @@ export function render(data) {
 				LABEL(["Alert length: ", INPUT({name: "alertlength", type: "number", step: "0.5"}), " seconds; "]),
 				LABEL(["gap before next alert: ", INPUT({name: "alertgap", type: "number", step: "0.25"}), " seconds"]),
 			]),
-			nondef && P([
+			nondef && P({class: "not-alertset"}, [
 				"Image: ",
 				IMG({className: "preview", "data-library": "image"}),
 				" ",
 				BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-prefix": "image/"}, "Choose"),
 			]),
-			nondef && P([
+			nondef && P({class: "not-alertset"}, [
 				"Sound: ",
 				AUDIO({className: "preview", "data-library": "sound", controls: true}),
 				" ",
@@ -248,7 +258,7 @@ export function render(data) {
 				]),
 			]),
 			TEXTFORMATTING({
-				textname: nondef ? "textformat" : "-",
+				textname: nondef ? "textformat" : "-", //FIXME: Hide this when in alertset mode
 				textdesc: SPAN({className: "placeholders"}, placeholder_description),
 				blank_opts: nondef, //Add a blank option to selects, but not on the Defaults tab
 			}),
@@ -313,7 +323,7 @@ on("change", ".expandbox", e => {
 	update_condition_summary(e.match);
 });
 
-on("input", "[name=cond-label]", e => e.match.closest(".expandbox").querySelector("[name=cond-disableautogen]").checked = true);
+on("input", ".expandbox [name=cond-label]", e => e.match.closest(".expandbox").querySelector("[name=cond-disableautogen]").checked = true);
 
 on("click", ".editvariants", e => {
 	const type = e.match.closest("form").dataset.type;
@@ -322,6 +332,10 @@ on("click", ".editvariants", e => {
 	const frm = DOM("#variationdlg form");
 	DOM("#variationdlg [name=variant]").value = "";
 	frm.classList.remove("unsaved-changes");
+	//In alertset mode, some things get redescribed. Choose the wording appropriately.
+	frm.classList.toggle("mode-alertset", type === "defaults"); //Hide things that aren't needed for alertsets.
+	const key = type === "defaults" ? "alertset" : "variant";
+	frm.querySelectorAll("[data-alertset]").forEach(el => set_content(el, el.dataset[key]));
 	load_data(type + "-", {active: true, parent: type}, frm);
 	frm.dataset.type = type + "-";
 	wanted_variant = null;
@@ -447,8 +461,11 @@ on("click", "#libraryselect", e => {
 on("submit", ".alertconfig", e => {
 	e.preventDefault();
 	const msg = {cmd: "alertcfg", type: e.match.dataset.type};
-	for (let el of e.match.elements)
+	for (let el of e.match.elements) {
+		if (el.closest(".mode-alertset .not-alertset")) continue; //TODO: Find a more efficient way to do this
+		if (el.closest(".mode-variant .not-variant")) continue;
 		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
+	}
 	ws_sync.send(msg);
 	e.match.classList.remove("unsaved-changes");
 });
