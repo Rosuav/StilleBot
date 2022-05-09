@@ -284,10 +284,14 @@ export function render(data) {
 		Object.entries(data.alertconfigs).forEach(([type, attrs]) => load_data(type, attrs));
 		update_alert_variants();
 		const sets = data.alertconfigs.defaults?.variants || [];
-		document.querySelectorAll("[name=cond-alertset]").forEach(el => set_content(el, [
-			OPTION({value: ""}, "n/a"),
-			sets.map(s => OPTION({value: s}, data.alertconfigs[s]["cond-label"]))
-		]));
+		document.querySelectorAll("[name=cond-alertset]").forEach(el => {
+			const val = el.value;
+			set_content(el, [
+				OPTION({value: ""}, "n/a"),
+				sets.map(s => OPTION({value: s}, data.alertconfigs[s]["cond-label"]))
+			]);
+			el.value = sets.includes(val) ? val : "";
+		});
 	}
 	if (data.delpersonal) {
 		//This isn't part of a normal stateful update, and is a signal that a personal
@@ -314,7 +318,7 @@ on("change", ".expandbox", e => {
 	}
 	const conds = [];
 	const set = e.match.querySelector("[name=cond-alertset]").value;
-	if (set) conds.push(set + " alerts");
+	if (set) conds.push(revert_data[set]["cond-label"] + " alerts");
 	e.match.querySelectorAll("[name^=condoper-]").forEach(el => {
 		let desc = e.match.querySelector("[name=" + el.name.replace("oper-", "val-") + "]").value || 0;
 		if (el.value === ">=") desc += "+"; //eg ">= 100" is shown as "100+"

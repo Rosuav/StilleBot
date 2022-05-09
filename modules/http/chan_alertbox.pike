@@ -720,7 +720,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		specificity += oper == "==" ? 10000000 + val : val;
 	}
 	string alertset = msg["cond-alertset"];
-	if (alertset && alertset != "") { //And make sure it's actually a valid alert set
+	if (alertset && alertset != "" && has_value(cfg->alertconfigs->defaults->?variants || ({ }), alertset)) {
 		data["cond-alertset"] = alertset;
 		specificity += 100000000; //Setting an alert set is worth ten equality checks. I don't think there'll ever be ten equality checks to have.
 	}
