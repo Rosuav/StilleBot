@@ -144,9 +144,8 @@ figcaption {
 	margin: 0 3px 3px 0;
 	border: 1px solid black;
 	padding: 8px;
-	display: none;
 }
-#variationdlg .alertconfig {display: block;}
+#alertconfigs .alertconfig {display: none;}
 
 #library.noselect .selectmode {display: none;}
 .preview {
@@ -258,7 +257,7 @@ constant ALERTTYPES = ({([
 	"id": "defaults",
 	"label": "Defaults",
 	"heading": "Defaults for all alerts",
-	"description": "Settings selected here will apply to all alerts, but can be overridden on each alert. (WIP - not implemented yet.)",
+	"description": "Settings selected here will apply to all alerts, but can be overridden on each alert.",
 	"placeholders": ([]),
 	"testpholders": ([]),
 	"builtin": "chan_alertbox",

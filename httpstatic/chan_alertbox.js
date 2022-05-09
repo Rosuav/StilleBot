@@ -83,7 +83,7 @@ function load_data(type, attrs, par) {
 }
 
 function make_condition_vars(vars) {
-	return vars.map(c => TR([
+	return vars && vars.map(c => TR([
 		TD(c), //TODO: Replace with a description
 		TD(SELECT({name: "condoper-" + c}, [
 			OPTION({value: ""}, "n/a"),
@@ -254,7 +254,8 @@ export function render(data) {
 			}),
 			P([
 				BUTTON({type: "submit", disabled: true}, "Save"),
-				nondef && BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert"),
+				nondef ? BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")
+					: BUTTON({type: "button", class: "editvariants"}, "Manage alert sets"),
 				type !== "variant" && info.condition_vars && BUTTON({type: "button", className: "editvariants", "data-type": type}, "Manage alert variants"),
 			]),
 		]));
@@ -352,7 +353,7 @@ function select_variant(elem) {
 let wanted_tab = null; //TODO: Allow this to be set from the page fragment (wait till loading is done)
 function update_visible_form() {
 	wanted_tab = DOM("input[name=alertselect]:checked").value;
-	set_content("#selectalert", ".alertconfig[data-type=" + wanted_tab + "] {display: block;}");
+	set_content("#selectalert", "#alertconfigs .alertconfig[data-type=" + wanted_tab + "] {display: block;}");
 	history.replaceState(null, "", "#" + wanted_tab);
 }
 
