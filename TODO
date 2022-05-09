@@ -114,11 +114,6 @@
     PNG, based on the URL provided
   - This will bump the version number, ideally only for alerts with videos in them.
 * Alert box shouldn't require broadcaster auth except for hostalert
-* Alert Box: Fold resub and sub bomb into Subscription, as variants
-  - Add condition type: "Is sub bomb", high specificity.
-  - Add condition type: "Is gifted". Does not apply to a sub bomb, but if the bomb
-    doesn't cause an alert, the individuals from it will fire, and do count as
-    gifted subs. (So, of course, do aimed gifts.)
 * Check a new account: what happens if you try to save a variant before saving the
   base alert? If it's a problem, disable the alert variations button until base is
   saved, and just ignore all variant-saves.

@@ -295,38 +295,17 @@ constant ALERTTYPES = ({([
 	"heading": "New subscriber",
 	"description": "Whenever anyone subscribes for the first time (including if gifted)",
 	"placeholders": ([
-		"username": "Display name of the subscriber",
-		"tier": "Tier (1, 2, or 3) of the subscription", //Anything more than just "subscribed at T{tier}" will need advanced usage
-	]),
-	"testpholders": (["tier": ({1, 3})]),
-	"builtin": "connection",
-	"condition_vars": ({"tier"}),
-]), ([
-	"id": "resub",
-	"label": "Resubscription",
-	"heading": "Renewed subscription",
-	"description": "DEPRECATED. This is currently used for renewed subs, but this will soon be merged into the Subscription alert.",
-	"placeholders": ([
-		"username": "Display name of the subscriber",
+		"username": "Display name of the subscriber; for a sub bomb, is the channel name",
 		"tier": "Tier (1, 2, or 3) of the subscription",
-		"months": "Number of months subscribed for",
+		"months": "Number of months subscribed for (0 for new subs)",
+		"gifted": "0 for voluntary subs, 1 for all forms of gift sub",
+		"giver": "Display name of the giver of a sub or sub bomb",
+		"subbomb": "For community sub gifts, the number of subscriptions given - otherwise 0",
+		"streak": "Number of consecutive months subscribed",
 	]),
-	"testpholders": (["tier": ({1, 3}), "months": ({1, 60})]),
+	"testpholders": (["tier": ({1, 3}), "months": ({1, 60}), "gifted": "0", "subbomb": ({0, 0}), "streak": "1"]),
 	"builtin": "connection",
-	"condition_vars": ({"tier", "months"}),
-]), ([
-	"id": "subbomb",
-	"label": "Sub bomb",
-	"heading": "Randomly-aimed subgifts",
-	"description": "DEPRECATED. This is currently used for community sub gifts, but this will soon be merged into the Subscription alert.",
-	"placeholders": ([
-		"username": "Display name of the giver of the subs",
-		"tier": "Tier (1, 2, or 3) of the subscription",
-		"gifts": "Number of subscriptions given",
-	]),
-	"testpholders": (["tier": "1", "gifts": ({1, 100})]),
-	"builtin": "connection",
-	"condition_vars": ({"tier", "gifts"}),
+	"condition_vars": ({"tier", "months", "gifted", "subbomb"}),
 ]), ([
 	"id": "cheer",
 	"label": "Cheer",
@@ -816,6 +795,7 @@ constant command_suggestions = ([]); //This isn't something that you'd create a 
 int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
 	if (!cfg->?authkey) return 0;
+	int suppress_alert = 0;
 	if (!args->text) { //Conditions are ignored if the alert is pushed via the builtin
 		mapping alert = cfg->alertconfigs[alerttype]; if (!alert) return 0; //No alert means it can't possibly fire
 		if (!alert->active) return 0;
@@ -827,7 +807,14 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 			switch (alert["condoper-" + c]) {
 				case "==": if (val != comp) return 0;
 				case ">=": if (val < comp) return 0;
-				default: break; //TODO: Report errors, this shouldn't happen
+				default: {
+					//The subbomb flag is special. If an alert variant does not
+					//specify that it is looking for sub bombs, then it implicitly
+					//does not fire for sub bombs; however, if a base alert does
+					//not specify sub bombs, it will check its variants, and only
+					//suppress the base alert itself.
+					if (c == "subbomb" && val) suppress_alert = 1;
+				}
 			}
 		}
 		//TODO: Check that the alert set is active, if one is selected
@@ -836,6 +823,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 		foreach (alert->variants || ({ }), string subid)
 			if (send_alert(channel, subid, args)) return 1;
 	}
+	if (suppress_alert) return 0;
 	send_updates_all(cfg->authkey + channel->name, (["send_alert": alerttype]) | args);
 	return 1;
 }
@@ -863,21 +851,36 @@ void follower(object channel, mapping follower) {
 	]));
 }
 
+//When we fire a dedicated sub bomb alert, save extra->msg_param_origin_id into this
+//set, and it will suppress all the alerts from the individuals. Assumptions: The IDs
+//are unique across all channels; code will not be updated in the middle of processing
+//of a sub bomb (a very narrow window normally - this isn't the length of the alerts);
+//and IDs will not be reused.
+multiset subbomb_ids = (<>);
+
 @hook_subscription:
 void subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
 	if (!cfg->?authkey) return;
-	string alerttype = "sub";
 	int months = (int)extra->msg_param_cumulative_months || 1;
-	//If this channel has no subbomb alert configured, the follow-up sub messages will fire alerts.
-	if (extra->came_from_subbomb && cfg->alertconfigs[?"subbomb"]->?active) return;
-	else if (type == "subbomb") alerttype = "subbomb";
-	else if (months > 1 && cfg->alertconfigs[?"resub"]->?active) alerttype = "resub";
-	//FIXME: Is {gifts} getting set?
-	send_alert(channel, alerttype, ([
+	//If this channel has a subbomb alert variant, the follow-up sub messages will be skipped.
+	if (extra->came_from_subbomb && subbomb_ids[extra->msg_param_origin_id]) return;
+	mapping args = ([
 		"username": person->displayname,
 		"tier": tier, "months": months,
-	]));
+		"streak": extra->msg_param_streak_months || "1",
+	]);
+	if ((<"subgift", "subbomb">)[type]) {
+		args->gifted = "1";
+		args->giver = person->displayname;
+		args->username = extra->msg_param_recipient_display_name;
+		if (type == "subbomb") {
+			args->username = channel->name;
+			args->subbomb = (string)extra->msg_param_mass_gift_count;
+		}
+	}
+	if (!send_alert(channel, "sub", args)) return; //If alert didn't happen, don't do any further processing.
+	if (type == "subbomb") subbomb_ids[extra->msg_param_origin_id] = 1; //Suppress the other alerts
 }
 
 @hook_cheer:
