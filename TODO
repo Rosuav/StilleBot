@@ -130,3 +130,5 @@
   - Remove text
   - Remove "Send Test Alert"
   - Sort affabeck not by specificity
+  - Back end: all variants on Defaults become available as alert sets
+  - Front end: all available alert sets become options in filters
