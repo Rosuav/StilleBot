@@ -323,7 +323,7 @@ constant ALERTTYPES = ({([
 ])});
 constant SINGLE_EDIT_ATTRS = ({"image", "sound"}); //Attributes that can be edited by the client without changing the rest
 constant RETAINED_ATTRS = SINGLE_EDIT_ATTRS + ({"variants"}); //Attributes that are not cleared when a full edit is done (changing the format)
-constant FORMAT_ATTRS = ("name active format alertlength alertgap cond-label cond-disableautogen "
+constant FORMAT_ATTRS = ("format name description active alertlength alertgap cond-label cond-disableautogen "
 			"layout alertwidth alertheight textformat volume") / " " + TEXTFORMATTING_ATTRS;
 constant VALID_FORMATS = "text_image_stacked text_image_overlaid" / " ";
 //List all defaults here. They will be applied to everything that isn't explicitly configured.
@@ -671,7 +671,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	//doesn't inherit from this alert. Attempting to do so will just reset to "".
 	//NOTE: Currently you can only inherit from a base alert. This helps to keep
 	//the UI a bit less cluttered.
-	if (stringp(msg->parent) && msg->parent != "" && msg->parent != "defaults" && valid_alert_type(msg->parent, cfg)) {
+	if (basetype != "defaults" && stringp(msg->parent) && msg->parent != "" && msg->parent != "defaults" && valid_alert_type(msg->parent, cfg)) {
 		array mro = cfg->alertconfigs[msg->parent]->?mro;
 		if (!mro) mro = ({msg->parent});
 		if (!has_value(mro, msg->type)) {
@@ -695,37 +695,39 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	}
 	textformatting_validate(data);
 	data->text_css = textformatting_css(inh);
-	//Calculate specificity.
-	//The calculation assumes that all comparison values are nonnegative integers.
-	//It is technically possible to cheer five and a half million bits in a single
-	//message (spam "uni99999" over and over till you reach 500 characters), and so
-	//even though that is more than a little ridiculous, I'm declaring that a single
-	//value is worth 10,000,000.
-	//Note that the specificity calculation is not scaled differently for different
-	//variables, and "sub tier == 2" is also worth 10,000,000.
-	int specificity = 0;
-	int idx = search(ALERTTYPES->id, basetype);
-	array(string) condvars = idx >= 0 && ALERTTYPES[idx]->condition_vars;
-	if (condvars) foreach (condvars, string c) {
-		string oper = msg["condoper-" + c];
-		if (!oper || oper == "") continue; //Don't save the value if no operator set
-		if (oper != "==" && oper != ">=") oper = ">="; //May need to expand the operator list, but these are the most common
-		data["condoper-" + c] = oper;
-		//Note that setting the operator and leaving the value blank will set the value to zero.
-		int val = (int)msg["condval-" + c];
-		data["condval-" + c] = val;
-		//Note that ">= 0" is no specificity, as zero is considered "unassigned".
-		//Note: Technically, the specificity could be the same for all equality
-		//checks; however, since alert variants are ordered by specificity, it is
-		//more elegant to have them sort by their values.
-		specificity += oper == "==" ? 10000000 + val : val;
+	if (basetype != "defaults") {
+		//Calculate specificity.
+		//The calculation assumes that all comparison values are nonnegative integers.
+		//It is technically possible to cheer five and a half million bits in a single
+		//message (spam "uni99999" over and over till you reach 500 characters), and so
+		//even though that is more than a little ridiculous, I'm declaring that a single
+		//value is worth 10,000,000.
+		//Note that the specificity calculation is not scaled differently for different
+		//variables, and "sub tier == 2" is also worth 10,000,000.
+		int specificity = 0;
+		int idx = search(ALERTTYPES->id, basetype);
+		array(string) condvars = idx >= 0 && ALERTTYPES[idx]->condition_vars;
+		if (condvars) foreach (condvars, string c) {
+			string oper = msg["condoper-" + c];
+			if (!oper || oper == "") continue; //Don't save the value if no operator set
+			if (oper != "==" && oper != ">=") oper = ">="; //May need to expand the operator list, but these are the most common
+			data["condoper-" + c] = oper;
+			//Note that setting the operator and leaving the value blank will set the value to zero.
+			int val = (int)msg["condval-" + c];
+			data["condval-" + c] = val;
+			//Note that ">= 0" is no specificity, as zero is considered "unassigned".
+			//Note: Technically, the specificity could be the same for all equality
+			//checks; however, since alert variants are ordered by specificity, it is
+			//more elegant to have them sort by their values.
+			specificity += oper == "==" ? 10000000 + val : val;
+		}
+		string alertset = msg["cond-alertset"];
+		if (alertset && alertset != "" && has_value(cfg->alertconfigs->defaults->?variants || ({ }), alertset)) {
+			data["cond-alertset"] = alertset;
+			specificity += 100000000; //Setting an alert set is worth ten equality checks. I don't think there'll ever be ten equality checks to have.
+		}
+		data->specificity = specificity;
 	}
-	string alertset = msg["cond-alertset"];
-	if (alertset && alertset != "" && has_value(cfg->alertconfigs->defaults->?variants || ({ }), alertset)) {
-		data["cond-alertset"] = alertset;
-		specificity += 100000000; //Setting an alert set is worth ten equality checks. I don't think there'll ever be ten equality checks to have.
-	}
-	data->specificity = specificity;
 	if (variation) {
 		//For convenience, every time a change is made, we update an array of
 		//variants in the base alert's data.

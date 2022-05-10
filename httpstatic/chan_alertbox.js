@@ -99,7 +99,10 @@ function update_alert_variants() {
 	const basetype = DOM("#variationdlg form").dataset.type.split("-")[0];
 	const variants = (revert_data[basetype].variants || []).map(id => {
 		const attrs = revert_data[id] || { };
-		return OPTION({value: id.split("-")[1]}, (attrs["cond-label"] || "(always)") + " " + attrs.specificity);
+		return OPTION({value: id.split("-")[1]}, 
+			basetype === "defaults" ? attrs.name || "unnamed " + id.split("-")[1]
+			: attrs.name || attrs["cond-label"] || "(always)"
+		);
 	});
 	const sel = set_content("#variationdlg [name=variant]", [
 		OPTION({value: ""}, "Add new"),
@@ -166,9 +169,12 @@ export function render(data) {
 				LABEL([VS("Select variant:", "Select alert set:"), SELECT({name: "variant"}, OPTION({value: ""}, "Add new"))]),
 				BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑"),
 			]),
-			type === "variant" && P({class: "no-inherit not-variant"}, [ //Yeah, this is only for variants, but only NOT for variants. It's for alertset mode only.
-				LABEL(["Label: ", INPUT({name: "cond-label", size: 30})]),
-				//LABEL([" Description: ", INPUT({name: "cond-description", size: 60})]), //Might be nice to add this
+			//Yeah, this is only for variants, but only NOT for variants. It's for alertset mode only.
+			//That's not actually a requirement - both name and description will be saved by the backend
+			//for base alerts and variants as well - but they're less useful, so they're currently hidden.
+			type === "variant" && P({class: "no-inherit not-variant"}, [
+				LABEL(["Name: ", INPUT({name: "name", size: 30})]),
+				//LABEL([" Description: ", INPUT({name: "description", size: 60})]), //Might be nice to add this
 			]),
 			nondef && P([
 				LABEL([INPUT({name: "active", type: "checkbox"}), VS(" Alert active", " Alert set active")]), BR(),
@@ -288,7 +294,7 @@ export function render(data) {
 			const val = el.value;
 			set_content(el, [
 				OPTION({value: ""}, "n/a"),
-				sets.map(s => OPTION({value: s}, data.alertconfigs[s]["cond-label"]))
+				sets.map(s => OPTION({value: s}, data.alertconfigs[s]["name"] || s))
 			]);
 			el.value = sets.includes(val) ? val : "";
 		});
@@ -318,7 +324,7 @@ on("change", ".expandbox", e => {
 	}
 	const conds = [];
 	const set = e.match.querySelector("[name=cond-alertset]").value;
-	if (set) conds.push(revert_data[set]["cond-label"] + " alerts");
+	if (set) conds.push(revert_data[set]["name"] + " alerts");
 	e.match.querySelectorAll("[name^=condoper-]").forEach(el => {
 		let desc = e.match.querySelector("[name=" + el.name.replace("oper-", "val-") + "]").value || 0;
 		if (el.value === ">=") desc += "+"; //eg ">= 100" is shown as "100+"
@@ -519,7 +525,7 @@ on("click", ".alertconfig .confirmdelete", e => {
 	const alert = revert_data[deleteid]; if (!alert) return;
 	deletetype = "variant";
 	//TODO: Have an actual thumbnail of the alert, somehow
-	DOM("#confirmdeletedlg .thumbnail").replaceWith(P({class: "thumbnail"}, alert["cond-label"]));
+	DOM("#confirmdeletedlg .thumbnail").replaceWith(P({class: "thumbnail"}, alert["name"] || subid));
 	set_content("#confirmdeletedlg a", "");
 	document.querySelectorAll(".deltype").forEach(e => e.innerHTML = deletetype);
 	set_content("#deletewarning", [

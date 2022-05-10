@@ -120,10 +120,6 @@
 * Hide delete buttons when "Add New" is selected
 * Ghostwriter needs a LOT more error checking. Maybe, on error, reschedule check five mins?
 * To make "defaults variants" behave like alert sets:
-  - Allow a description (might also eventually be useful for variants, don't block it)
-  - Remove inherit/parent
-  - Remove image/sound
   - Remove text
   - Remove "Send Test Alert"
   - Sort affabeck not by specificity
-  - Cope with the fact that there are now two cond-label elements
