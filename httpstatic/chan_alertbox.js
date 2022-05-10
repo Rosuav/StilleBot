@@ -348,6 +348,7 @@ on("click", ".editvariants", e => {
 	frm.classList.remove("unsaved-changes");
 	//In alertset mode, some things get redescribed. Choose the wording appropriately.
 	frm.classList.toggle("mode-alertset", type === "defaults"); //Hide things that aren't needed for alertsets.
+	frm.classList.toggle("mode-variant", type !== "defaults"); //Ditto variants.
 	load_data(type + "-", {active: true, parent: type}, frm);
 	frm.dataset.type = type + "-";
 	wanted_variant = null;

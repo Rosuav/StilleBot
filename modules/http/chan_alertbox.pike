@@ -822,7 +822,10 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 				}
 			}
 		}
-		//TODO: Check that the alert set is active, if one is selected
+		if (mapping set = cfg->alertconfigs[alert["cond-alertset"]]) {
+			//Check that the alert set is active, if one is selected
+			if (!set->active) return 0;
+		}
 
 		//If any variant responds, use that instead.
 		foreach (alert->variants || ({ }), string subid)
