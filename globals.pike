@@ -809,9 +809,11 @@ class _TwitchIRC(mapping options) {
 	}
 	void command_473(mapping attrs, string pfx, array(string) args) {
 		//Failed to join channel. Reject promise?
+		werror("IRC: Failed to join channel: %O %O %O %O\n", options->user, attrs, pfx, args);
 	}
 	void command_0000(mapping attrs, string pfx, array(string) args) {
 		//Handle all unknown numeric responses (currently by ignoring them)
+		werror("IRC: Unknown numeric response: %O %O %O %O\n", options->user, attrs, pfx, args);
 	}
 	void command_PING(mapping attrs, string pfx, array(string) args) {
 		enqueue("pong :" + args[1]); //Enqueue or prepend to queue?
