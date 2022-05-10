@@ -152,7 +152,7 @@ export function render(data) {
 		const nondef = type !== "defaults"; //A lot of things are different for the defaults
 		//For variants, some things get redescribed when it's in alertset mode. Variant/Set
 		//descriptors are in a superposition, or some technobabble like that.
-		const VS = type === "variant" ? (v,s) => SPAN({"data-variant": v, "data-alertset": s}, v) : (v,s) => v;
+		const VS = type === "variant" ? (v,s) => [SPAN({class: "not-alertset"}, v), SPAN({class: "not-variant"}, s)] : (v,s) => v;
 		DOM("#alertconfigs").appendChild(alerttypes[type] = FORM({class: type === "defaults" ? "alertconfig no-inherit": "alertconfig", "data-type": type}, [
 			H3({className: "heading"}, [
 				VS(info.heading, "Alert Set"), SPAN({className: "if-unsaved"}, " "),
@@ -160,9 +160,8 @@ export function render(data) {
 			]),
 			P([
 				!info.builtin && BUTTON({type: "button", className: "editpersonaldesc", title: "Edit"}, "📝"),
-				SPAN({className: "description", "data-variant": info.description,
-					"data-alertset": "Create alert sets to easily enable/disable all associated alert variants. You can also set layout defaults for alert sets.",
-				}, info.description),
+				SPAN({class: "description not-alertset"}, info.description),
+				SPAN({class: "not-variant"}, "Create alert sets to easily enable/disable all associated alert variants. You can also set layout defaults for alert sets."),
 			]),
 			type === "variant" && P({class: "no-inherit no-dirty"}, [
 				//No inherit and no dirty, this is a selector not a saveable
@@ -349,8 +348,6 @@ on("click", ".editvariants", e => {
 	frm.classList.remove("unsaved-changes");
 	//In alertset mode, some things get redescribed. Choose the wording appropriately.
 	frm.classList.toggle("mode-alertset", type === "defaults"); //Hide things that aren't needed for alertsets.
-	const key = type === "defaults" ? "alertset" : "variant";
-	frm.querySelectorAll("[data-alertset]").forEach(el => set_content(el, el.dataset[key]));
 	load_data(type + "-", {active: true, parent: type}, frm);
 	frm.dataset.type = type + "-";
 	wanted_variant = null;
