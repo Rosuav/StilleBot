@@ -321,8 +321,9 @@ constant ALERTTYPES = ({([
 	"builtin": "connection",
 	"condition_vars": ({"bits"}),
 ])});
-constant RETAINED_ATTRS = ({"image", "sound", "variants"});
-constant FORMAT_ATTRS = ("active format alertlength alertgap cond-label cond-disableautogen "
+constant SINGLE_EDIT_ATTRS = ({"image", "sound"}); //Attributes that can be edited by the client without changing the rest
+constant RETAINED_ATTRS = SINGLE_EDIT_ATTRS + ({"variants"}); //Attributes that are not cleared when a full edit is done (changing the format)
+constant FORMAT_ATTRS = ("name active format alertlength alertgap cond-label cond-disableautogen "
 			"layout alertwidth alertheight textformat volume") / " " + TEXTFORMATTING_ATTRS;
 constant VALID_FORMATS = "text_image_stacked text_image_overlaid" / " ";
 //List all defaults here. They will be applied to everything that isn't explicitly configured.
@@ -649,10 +650,10 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	}
 	if (!msg->format) {
 		//If the format is not specified, this is a partial update, which can
-		//change only the RETAINED_ATTRS - all others are left untouched.
+		//change only the SINGLE_EDIT_ATTRS - all others are left untouched.
 		mapping data = cfg->alertconfigs[msg->type];
 		if (!data) data = cfg->alertconfigs[msg->type] = ([]);
-		foreach (RETAINED_ATTRS, string attr) if (msg[attr]) data[attr] = msg[attr];
+		foreach (SINGLE_EDIT_ATTRS, string attr) if (msg[attr]) data[attr] = msg[attr];
 		persist_status->save();
 		send_updates_all(conn->group);
 		send_updates_all(cfg->authkey + channel->name);
