@@ -55,6 +55,10 @@
   - This would allow the bot to see its own messages, but only if sent by a non-primary
     account.
   - Can this kind of auth be used to get host notifications??
+  - Allow accounts to have a different default voice - probably just the channel's own.
+    Then allow people to activate the bot, authenticate for self-voicing, and immediately
+    start using bot features, with some restrictions, and with me able to lift those by
+    granting them full permission.
 * Authentication on Firefox may now have issues with the default popup blocker. Can we
   comply with normal "click for popup" expectations somehow?
 * Enable/disable rewards - allow use of title, will do lookup
