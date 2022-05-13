@@ -444,6 +444,7 @@ on("click", ".showlibrary", e => {
 		}
 	}
 	DOM("#library").classList.toggle("noselect", DOM("#libraryselect").disabled = pfx === "");
+	set_content("#uploaderror", "").classList.add("hidden"); //Clear any lingering error message
 	DOM("#library").showModal();
 });
 
@@ -470,6 +471,10 @@ on("click", "#libraryselect", e => {
 	}
 	DOM("#library").close();
 });
+
+export function sockmsg_uploaderror(msg) {
+	set_content("#uploaderror", msg.error || "Unknown upload error, see server log").classList.remove("hidden");
+}
 
 on("submit", ".alertconfig", e => {
 	e.preventDefault();

@@ -8,6 +8,8 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 > Upload files (up to 8MB each) to use in your alerts. You may also
 > link to files that are accessible on the internet.
 >
+> <div id=uploaderror class=hidden></div>
+>
 > <div id=uploadfrm><div id=uploads></div></div>
 >
 > <p><label class=selectmode><input type=radio name=chooseme data-special=None> None<br></label>
@@ -204,6 +206,15 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 
 .mode-alertset .not-alertset {display: none;}
 .mode-variant .not-variant {display: none;}
+
+#uploaderror {
+	margin-bottom: 0.5em;
+	background: #fee;
+	border: 1px solid red;
+	padding: 0.125em 0.5em;
+	max-width: fit-content;
+}
+#uploaderror.hidden {display: none;}
 </style>
 
 > ### Alert preview
