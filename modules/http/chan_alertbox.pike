@@ -520,8 +520,8 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	array mimetype = (msg->mimetype || "") / "/";
 	if (sizeof(mimetype) != 2)
 		error = sprintf("Unrecognized MIME type %O", msg->mimetype);
-	else if (!(<"image", "audio">)[mimetype[0]])
-		error = "Currently only audio and image files are supported - video support Coming Soon";
+	else if (!(<"image", "audio", "video">)[mimetype[0]])
+		error = "Only audio and image (including video) files are supported";
 	else if (msg->size > MAX_PER_FILE * 1048576)
 		error = "File too large (limit " + MAX_PER_FILE + " MB)";
 	else if (used + allocation > MAX_TOTAL_STORAGE * 1024)

@@ -494,7 +494,7 @@ on("click", "#libraryselect", async e => {
 			[librarytarget.dataset.library]: img, image_is_video: type.startsWith("video/")});
 		const isvid = librarytarget.tagName === "VIDEO", wantvid = type.startsWith("video/");
 		if (isvid !== wantvid) librarytarget.replaceWith(wantvid
-			? VIDEO({class: "preview", "data-library": "image", src: img, loop: true, autoplay: true})
+			? VIDEO({class: "preview", "data-library": "image", src: img, loop: true, muted: true, autoplay: true})
 			: IMG({class: "preview", "data-library": "image", src: img || TRANSPARENT_IMAGE})
 		);
 		else librarytarget.src = img || TRANSPARENT_IMAGE;
