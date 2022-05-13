@@ -1,10 +1,15 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, ABBR, AUDIO, B, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR} = choc; //autoimport
+const {A, ABBR, AUDIO, B, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR, VIDEO} = choc; //autoimport
 import {waitlate, TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
 	if (!file.url) return DIV({className: "thumbnail"}, "uploading...");
 	if (file.mimetype.startsWith("audio/")) return DIV({className: "thumbnail"}, AUDIO({src: file.url, controls: true}));
+	if (file.mimetype.startsWith("video/")) {
+		const elem = VIDEO({class: "thumbnail", src: file.url, controls: true, loop: true});
+		elem.muted = true; elem.play();
+		return elem;
+	}
 	return DIV({className: "thumbnail", style: "background-image: url(" + file.url + ")"});
 }
 
@@ -68,7 +73,19 @@ function load_data(type, attrs, par) {
 	}
 	const summary = par.querySelector(".expandbox summary");
 	if (summary) summary.title = "Specificity: " + (attrs.specificity || 0);
-	par.querySelectorAll("[data-library]").forEach(el => el.src = attrs[el.dataset.library] || TRANSPARENT_IMAGE);
+	const previewimg = par.querySelector("[data-library=image]");
+	if (previewimg && (previewimg.tagName !== "VIDEO") !== !attrs.image_is_video) {
+		if (attrs.image_is_video) {
+			const el = VIDEO({class: "preview", "data-library": "image", src: attrs.image, loop: true, autoplay: true});
+			previewimg.replaceWith(el);
+			el.muted = true; el.play();
+		}
+		previewimg.replaceWith(IMG({class: "preview", "data-library": "image", src: attrs.image || TRANSPARENT_IMAGE}));
+	}
+	par.querySelectorAll("[data-library]").forEach(el => {
+		const want = attrs[el.dataset.library] || TRANSPARENT_IMAGE;
+		if (el.src !== want) el.src = want; //Avoid flicker and video breakage by only setting if it's different
+	});
 	update_layout_options(par, attrs.layout);
 	update_condition_summary(par);
 	document.querySelectorAll("input[type=range]").forEach(rangedisplay);
@@ -247,7 +264,7 @@ export function render(data) {
 			]),
 			nondef && P({class: "not-alertset"}, [
 				"Image: ",
-				IMG({className: "preview", "data-library": "image"}),
+				IMG({className: "preview", "data-library": "image"}), //Will be replaced with a VIDEO element as needed
 				" ",
 				BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-type": "image,video"}, "Choose"),
 			]),
@@ -455,18 +472,32 @@ on("input", "#customurl", e => DOM("input[type=radio][data-special=" + (e.target
 //Can the dialog be made into a form and this turned into a submit event? <form method=dialog>
 //isn't very well supported yet, so I might have to do some of the work myself. Would improve
 //keyboard accessibility though.
-on("click", "#libraryselect", e => {
+on("click", "#libraryselect", async e => {
 	if (librarytarget) {
 		const rb = DOM("#library input[type=radio]:checked");
-		let img = "";
+		let img = "", type = "";
 		if (rb) switch (rb.dataset.special) {
 			case "None": break;
-			case "URL": img = DOM("#customurl").value; break;
-			default: img = rb.parentElement.querySelector("a").href;
+			case "URL": {
+				img = DOM("#customurl").value;
+				try {
+					const blob = await (await fetch(img)).blob();
+					type = blob.type;
+				} catch (e) { } //TODO: Report the error (don't just assume it's a still image)
+				break;
+			}
+			default:
+				img = rb.parentElement.querySelector("a").href;
+				type = rb.closest("[data-type]").dataset.type;
 		}
 		ws_sync.send({cmd: "alertcfg", type: librarytarget.closest(".alertconfig").dataset.type,
-			[librarytarget.dataset.library]: img});
-		librarytarget.src = img || TRANSPARENT_IMAGE;
+			[librarytarget.dataset.library]: img, image_is_video: type.startsWith("video/")});
+		const isvid = librarytarget.tagName === "VIDEO", wantvid = type.startsWith("video/");
+		if (isvid !== wantvid) librarytarget.replaceWith(wantvid
+			? VIDEO({class: "preview", "data-library": "image", src: img, loop: true, autoplay: true})
+			: IMG({class: "preview", "data-library": "image", src: img || TRANSPARENT_IMAGE})
+		);
+		else librarytarget.src = img || TRANSPARENT_IMAGE;
 		librarytarget = null;
 	}
 	DOM("#library").close();
