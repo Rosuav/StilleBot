@@ -127,3 +127,7 @@
   - Remove text
   - Remove "Send Test Alert"
   - Sort affabeck not by specificity
+* General system for bot-affected channel point redemptions
+  - On success, mark redemption as complete
+  - If failure of any sort, report, and refund
+  - Bring the LispWhispers camhack into that system (via zzlocal)
