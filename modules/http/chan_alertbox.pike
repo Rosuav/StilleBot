@@ -5,7 +5,7 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 
 > ### Library
 >
-> Upload files (up to 5MB each) to use in your alerts. You may also
+> Upload files (up to 8MB each) to use in your alerts. You may also
 > link to files that are accessible on the internet.
 >
 > <div id=uploadfrm><div id=uploads></div></div>
@@ -253,7 +253,7 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 {: tag=dialog #testalertdlg}
 ";
 
-constant MAX_PER_FILE = 5, MAX_TOTAL_STORAGE = 25; //MB
+constant MAX_PER_FILE = 8, MAX_TOTAL_STORAGE = 25; //MB
 //Every standard alert should have a 'builtin' which says which module will trigger this.
 //Not currently used, beyond that standard alerts have a builtin and personal alerts don't.
 constant ALERTTYPES = ({([
