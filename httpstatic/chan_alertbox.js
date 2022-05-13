@@ -249,13 +249,13 @@ export function render(data) {
 				"Image: ",
 				IMG({className: "preview", "data-library": "image"}),
 				" ",
-				BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-prefix": "image/"}, "Choose"),
+				BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-type": "image,video"}, "Choose"),
 			]),
 			nondef && P({class: "not-alertset"}, [
 				"Sound: ",
 				AUDIO({className: "preview", "data-library": "sound", controls: true}),
 				" ",
-				BUTTON({type: "button", className: "showlibrary", "data-target": "sound", "data-prefix": "audio/"}, "Choose"),
+				BUTTON({type: "button", className: "showlibrary", "data-target": "sound", "data-type": "audio"}, "Choose"),
 				LABEL([
 					" Volume: ",
 					INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1}),
@@ -425,14 +425,14 @@ on("click", ".showlibrary", e => {
 	const mode = e.match.dataset.target;
 	librarytarget = mode ? e.match.form.querySelector("[data-library=" + mode + "]") : null; //In case there are multiple forms, retain the exact object we're targeting
 	let needvalue = !!librarytarget;
-	const pfx = e.match.dataset.prefix || "";
+	const wanttypes = (e.match.dataset.type || "").split(",");
 	for (let el of render_parent.children) {
 		if (!el.dataset.id) continue;
-		const want = el.dataset.type.startsWith(pfx);
+		const want = wanttypes[0] === "" || wanttypes.includes(el.dataset.type.split("/")[0]);
 		el.classList.toggle("active", want);
 		el.classList.toggle("inactive", !want); //Not sure which is going to be more useful. Pick a style and ditch the other.
 		const rb = el.querySelector("input[type=radio]");
-		rb.disabled = !want || pfx === "";
+		rb.disabled = !want || wanttypes[0] === "";
 		if (needvalue && el.querySelector("a").href === librarytarget.src) {rb.checked = true; needvalue = false;}
 	}
 	if (needvalue) {
@@ -443,7 +443,7 @@ on("click", ".showlibrary", e => {
 			DOM("#customurl").value = librarytarget.src;
 		}
 	}
-	DOM("#library").classList.toggle("noselect", DOM("#libraryselect").disabled = pfx === "");
+	DOM("#library").classList.toggle("noselect", DOM("#libraryselect").disabled = wanttypes[0] === "");
 	set_content("#uploaderror", "").classList.add("hidden"); //Clear any lingering error message
 	DOM("#library").showModal();
 });
