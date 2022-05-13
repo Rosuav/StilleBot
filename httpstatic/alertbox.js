@@ -7,9 +7,10 @@ const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAA
 const EMPTY_AUDIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
 function img_or_video(data) {
-	return data.image_is_video
-		? VIDEO({src: data.image, preload: "auto", loop: true})
-		: IMG({src: data.image || TRANSPARENT_IMAGE});
+	if (!data.image_is_video) return IMG({src: data.image || TRANSPARENT_IMAGE});
+	const el = VIDEO({src: data.image, preload: "auto", loop: true});
+	el.muted = true;
+	return el;
 }
 
 const alert_formats = {

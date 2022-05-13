@@ -76,7 +76,7 @@ function load_data(type, attrs, par) {
 	const previewimg = par.querySelector("[data-library=image]");
 	if (previewimg && (previewimg.tagName !== "VIDEO") !== !attrs.image_is_video) {
 		if (attrs.image_is_video) {
-			const el = VIDEO({class: "preview", "data-library": "image", src: attrs.image, loop: true, autoplay: true});
+			const el = VIDEO({class: "preview", "data-library": "image", src: attrs.image, loop: true});
 			previewimg.replaceWith(el);
 			el.muted = true; el.play();
 		}
