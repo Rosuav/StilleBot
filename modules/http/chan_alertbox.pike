@@ -349,9 +349,9 @@ constant NULL_ALERT = ([
 	"padvert": "0", "padhoriz": "0", "textalign": "start",
 	"shadowx": "0", "shadowy": "0", "shadowalpha": "0", "bgalpha": "0",
 ]);
-constant LATEST_VERSION = 2; //Bump this every time a change might require the client to refresh.
+constant LATEST_VERSION = 3; //Bump this every time a change might require the client to refresh.
 constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump this too.
-//Version 2 supports <video> tags in text_image_stacked mode, but not in text_image_overlaid.
+//Version 3 supports <video> tags for images.
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -677,7 +677,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 				//if this is wrong anyway.
 				data->image_is_video = msg->image_is_video;
 			else data->image_is_video = has_prefix(cfg->files[idx]->mimetype, "video/");
-			if (data->image_is_video && COMPAT_VERSION < 2) data->version = 2;
+			if (data->image_is_video && COMPAT_VERSION < 3) data->version = 3;
 		}
 		persist_status->save();
 		send_updates_all(conn->group);

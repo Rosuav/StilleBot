@@ -6,14 +6,18 @@ import {ensure_font} from "$$static||utils.js$$";
 const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
 const EMPTY_AUDIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
+function img_or_video(data) {
+	return data.image_is_video
+		? VIDEO({src: data.image, preload: "auto", loop: true})
+		: IMG({src: data.image || TRANSPARENT_IMAGE});
+}
+
 const alert_formats = {
 	text_image_stacked: data => FIGURE({
 		className: "text_image_stacked " + (data.layout||""),
 		style: `width: ${data.alertwidth}px; max-height: ${data.alertheight}px;`,
 	}, [
-		data.image_is_video
-			? VIDEO({src: data.image, preload: "auto", loop: true})
-			: IMG({src: data.image || TRANSPARENT_IMAGE}),
+		img_or_video(data),
 		FIGCAPTION({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
 		AUDIO({preload: "auto", src: data.sound || EMPTY_AUDIO, volume: data.volume ** 2}),
 	]),
@@ -22,8 +26,9 @@ const alert_formats = {
 			//The layout might be "top_middle", but in CSS, we can handle each dimension
 			//separately, so apply classes of "top middle" instead :)
 			className: "text_image_overlaid " + (data.layout||"").replace("_", " "),
-			style: `background-image: url(${data.image}); width: ${data.alertwidth}px; height: ${data.alertheight}px;`,
+			style: `width: ${data.alertwidth}px; height: ${data.alertheight}px;`,
 		}, [
+			DIV({class: "boundingbox", style: `width: ${data.alertwidth}px; height: ${data.alertheight}px;`}, img_or_video(data)),
 			DIV({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
 			AUDIO({preload: "auto", src: data.sound || EMPTY_AUDIO, volume: data.volume ** 2}),
 		]
