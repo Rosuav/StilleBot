@@ -117,6 +117,11 @@
   - Have a helper that can render an IMG or a VIDEO, or an IMG of the transparent
     PNG, based on the URL provided
   - This will bump the version number, ideally only for alerts with videos in them.
+  - When an external URL is added, have a Validate button
+    - Until Validate passes, cannot save
+    - Validate fetches (on the client) and checks MIME type (fetch, r=>r.blob(), then
+      blob.type has to begin "audio/", "video/", "image/", depending on library mode
+    - Send URL and MIME type to the server for retention
 * Alert box shouldn't require broadcaster auth except for hostalert
 * Check a new account: what happens if you try to save a variant before saving the
   base alert? If it's a problem, disable the alert variations button until base is

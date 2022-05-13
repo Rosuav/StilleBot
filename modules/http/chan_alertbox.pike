@@ -333,7 +333,7 @@ constant ALERTTYPES = ({([
 	"condition_vars": ({"bits"}),
 ])});
 constant SINGLE_EDIT_ATTRS = ({"image", "sound"}); //Attributes that can be edited by the client without changing the rest
-constant RETAINED_ATTRS = SINGLE_EDIT_ATTRS + ({"variants"}); //Attributes that are not cleared when a full edit is done (changing the format)
+constant RETAINED_ATTRS = SINGLE_EDIT_ATTRS + ({"version", "variants", "image_is_video"}); //Attributes that are not cleared when a full edit is done (changing the format)
 constant FORMAT_ATTRS = ("format name description active alertlength alertgap cond-label cond-disableautogen "
 			"layout alertwidth alertheight textformat volume") / " " + TEXTFORMATTING_ATTRS;
 constant VALID_FORMATS = "text_image_stacked text_image_overlaid" / " ";
@@ -349,8 +349,9 @@ constant NULL_ALERT = ([
 	"padvert": "0", "padhoriz": "0", "textalign": "start",
 	"shadowx": "0", "shadowy": "0", "shadowalpha": "0", "bgalpha": "0",
 ]);
-constant LATEST_VERSION = 1; //Bump this every time a change might require the client to refresh.
+constant LATEST_VERSION = 2; //Bump this every time a change might require the client to refresh.
 constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump this too.
+//Version 2 supports <video> tags in text_image_stacked mode, but not in text_image_overlaid.
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -668,6 +669,16 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		mapping data = cfg->alertconfigs[msg->type];
 		if (!data) data = cfg->alertconfigs[msg->type] = ([]);
 		foreach (SINGLE_EDIT_ATTRS, string attr) if (msg[attr]) data[attr] = msg[attr];
+		if (msg->image) {
+			//If you're setting the image, see if we need to set the "image_is_video" flag
+			int idx = search((cfg->files || ({ }))->url, msg->image);
+			if (idx == -1 && has_prefix(msg->image, "https://"))
+				//Let the client tell us which tag to use. It'll only hurt the client
+				//if this is wrong anyway.
+				data->image_is_video = msg->image_is_video;
+			else data->image_is_video = has_prefix(cfg->files[idx]->mimetype, "video/");
+			if (data->image_is_video && COMPAT_VERSION < 2) data->version = 2;
+		}
 		persist_status->save();
 		send_updates_all(conn->group);
 		send_updates_all(cfg->authkey + channel->name);

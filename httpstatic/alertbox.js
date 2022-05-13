@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {AUDIO, DIV, FIGCAPTION, FIGURE, IMG, P, SECTION} = choc; //autoimport
+const {AUDIO, DIV, FIGCAPTION, FIGURE, IMG, P, SECTION, VIDEO} = choc; //autoimport
 import "https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js"; const ComfyJS = window.ComfyJS;
 import {ensure_font} from "$$static||utils.js$$";
 
@@ -9,9 +9,11 @@ const EMPTY_AUDIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAA
 const alert_formats = {
 	text_image_stacked: data => FIGURE({
 		className: "text_image_stacked " + (data.layout||""),
-		style: `width: ${data.alertwidth||250}px; max-height: ${data.alertheight||250}px;`,
+		style: `width: ${data.alertwidth}px; max-height: ${data.alertheight}px;`,
 	}, [
-		IMG({src: data.image || TRANSPARENT_IMAGE}),
+		data.image_is_video
+			? VIDEO({src: data.image, preload: "auto", loop: true})
+			: IMG({src: data.image || TRANSPARENT_IMAGE}),
 		FIGCAPTION({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
 		AUDIO({preload: "auto", src: data.sound || EMPTY_AUDIO, volume: data.volume ** 2}),
 	]),
@@ -20,7 +22,7 @@ const alert_formats = {
 			//The layout might be "top_middle", but in CSS, we can handle each dimension
 			//separately, so apply classes of "top middle" instead :)
 			className: "text_image_overlaid " + (data.layout||"").replace("_", " "),
-			style: `background-image: url(${data.image}); width: ${data.alertwidth||250}px; height: ${data.alertheight||250}px;`,
+			style: `background-image: url(${data.image}); width: ${data.alertwidth}px; height: ${data.alertheight}px;`,
 		}, [
 			DIV({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
 			AUDIO({preload: "auto", src: data.sound || EMPTY_AUDIO, volume: data.volume ** 2}),
@@ -104,6 +106,7 @@ function next_alert() {
 
 function remove_alert(alert, gap) {
 	DOM(alert).classList.remove("active");
+	DOM(alert).querySelectorAll("video").forEach(el => el.pause());
 	setTimeout(next_alert, gap * 1000);
 }
 
@@ -115,8 +118,9 @@ function do_alert(alert, replacements) {
 	elem.querySelectorAll("[data-textformat]").forEach(el =>
 		set_content(el, el.dataset.textformat.replaceAll(/{([^}]+)}/g, (_,kwd) => replacements[kwd] || ""))
 	);
-	//Force animations to restart
+	//Force animations and videos to restart
 	elem.querySelectorAll("img").forEach(el => el.src = el.src);
+	elem.querySelectorAll("video").forEach(el => {el.currentTime = 0; el.play();});
 	elem.classList.add("active");
 	let playing = false;
 	//If the page is in the background, don't play audio.
