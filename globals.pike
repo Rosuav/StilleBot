@@ -811,8 +811,10 @@ class _TwitchIRC(mapping options) {
 		//Failed to join channel. Reject promise?
 		werror("IRC: Failed to join channel: %O %O %O %O\n", options->user, attrs, pfx, args);
 	}
+	multiset command_0000_ignore = (<"001", "002", "003", "004", "353", "366", "372", "375", "376">);
 	void command_0000(mapping attrs, string pfx, array(string) args) {
-		//Handle all unknown numeric responses (currently by ignoring them)
+		//Handle all unknown numeric responses
+		if (command_0000_ignore[args[0]]) return;
 		werror("IRC: Unknown numeric response: %O %O %O %O\n", options->user, attrs, pfx, args);
 	}
 	void command_PING(mapping attrs, string pfx, array(string) args) {
