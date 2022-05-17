@@ -71,7 +71,7 @@ function load_data(type, attrs, par) {
 			el.labels.forEach(l => l.classList.toggle("inherited", el.value === ""));
 		}
 	}
-	const summary = par.querySelector(".expandbox summary");
+	const summary = par.querySelector(".condbox summary");
 	if (summary) summary.title = "Specificity: " + (attrs.specificity || 0);
 	const previewimg = par.querySelector("[data-library=image]");
 	if (previewimg && (previewimg.tagName !== "VIDEO") !== !attrs.image_is_video) {
@@ -200,7 +200,7 @@ export function render(data) {
 					: "Inactive alerts will never be used (nor their variants), but can be inherited from.",
 			]),
 			HR(),
-			info.condition_vars && DETAILS({class: "expandbox no-inherit not-alertset"}, [
+			info.condition_vars && DETAILS({class: "condbox expandbox no-inherit not-alertset"}, [
 				SUMMARY(["Alert will be used: ", B({class: "cond-label"}, "always"), ". Expand to configure."]),
 				P([
 					"If any alert variation is used, the base alert will be replaced with it.",
@@ -333,7 +333,7 @@ export function render(data) {
 	}
 }
 
-on("change", ".expandbox", e => {
+on("change", ".condbox", e => {
 	if (e.match.querySelector("[name=cond-disableautogen]").checked) {
 		if (e.target.name === "cond-label") update_condition_summary(e.match); //If you edit the label itself, update everything
 		return;
@@ -354,7 +354,7 @@ on("change", ".expandbox", e => {
 	update_condition_summary(e.match);
 });
 
-on("input", ".expandbox [name=cond-label]", e => e.match.closest(".expandbox").querySelector("[name=cond-disableautogen]").checked = true);
+on("input", ".condbox [name=cond-label]", e => e.match.closest(".condbox").querySelector("[name=cond-disableautogen]").checked = true);
 
 on("click", ".editvariants", e => {
 	const type = e.match.closest("form").dataset.type;
