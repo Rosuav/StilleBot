@@ -2,3 +2,4 @@ twitchbot_*.json
 *.log
 *.pem
 httpstatic/atc-*.json
+tts-credentials.json

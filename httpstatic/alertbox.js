@@ -127,6 +127,14 @@ function do_alert(alert, replacements) {
 	//Force animations and videos to restart
 	elem.querySelectorAll("img").forEach(el => el.src = el.src);
 	elem.querySelectorAll("video").forEach(el => {el.currentTime = 0; el.play();});
+	if (replacements.tts) {
+		//TODO: Queue this after the audio itself plays
+		//TODO: Bump version number when this is used in an alert
+		const tts = DOM("#tts");
+		tts.src = replacements.tts;
+		tts.play();
+		console.log(tts)
+	}
 	elem.classList.add("active");
 	let playing = false;
 	//If the page is in the background, don't play audio.

@@ -813,6 +813,39 @@ void websocket_cmd_reload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	send_updates_all(cfg->authkey + channel->name, (["version": LATEST_VERSION + 1]));
 }
 
+//Hack for my own use. Usable only when empowered with localhost-mod status.
+void websocket_cmd_tts(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(send_tts(conn, msg));}
+continue Concurrent.Future send_tts(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || grp != "control") return 0;
+	if (conn->session->fake) return 0;
+	if (channel->name != "#!demo") return 0; //Only possible on the demo channel, meaning only localhost mod can use this
+	string token = G->G->tts_config->?access_token; if (!token) return 0;
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize",
+		Protocols.HTTP.Promise.Arguments((["headers": ([
+			"Authorization": "Bearer " + token,
+			"Content-Type": "application/json; charset=utf-8",
+		]), "data": Standards.JSON.encode(([
+			"input": (["text": msg->text || "Hello, world!"]),
+			"voice": ([ //Set all these via channel configuration
+				"languageCode": "en-gb",
+				"name": "en-GB-Standard-A",
+				"ssmlGender": "FEMALE",
+			]),
+			"audioConfig": (["audioEncoding": "OGG_OPUS"]),
+		]))]))));
+	mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
+	if (!mappingp(data) || !stringp(data->audioContent)) return 0; //TODO: Report errors somehow
+	werror("Sending!\n");
+	send_updates_all(cfg->authkey + channel->name, ([
+		"send_alert": "hostalert",
+		"NAME": "TTS", "username": "TTS",
+		"test_alert": 1,
+		"tts": "data:audio/ogg;base64," + data->audioContent,
+	]));
+}
+
 constant builtin_name = "Send Alert";
 constant builtin_description = "Send an alert on the in-browser alertbox. Best with personal (not standard) alerts. Does nothing (no error) if the alert is disabled.";
 constant builtin_param = ({"/Alert type/alertbox_id", "Text"});
@@ -926,4 +959,13 @@ void cheer(object channel, mapping person, int bits, mapping extra) {
 	]));
 }
 
-protected void create(string name) {::create(name);}
+protected void create(string name) {
+	::create(name);
+	//See if we have a credentials file. If so, get local credentials via gcloud.
+	if (file_stat("tts-credentials.json")) {
+		mapping rc = Process.run(({"gcloud", "auth", "application-default", "print-access-token"}),
+			(["env": getenv() | (["GOOGLE_APPLICATION_CREDENTIALS": "tts-credentials.json"])]));
+		if (!G->G->tts_config) G->G->tts_config = ([]);
+		G->G->tts_config->access_token = String.trim(rc->stdout);
+	}
+}
