@@ -279,6 +279,23 @@ export function render(data) {
 					SPAN({className: "rangedisplay"}, ""),
 				]),
 			]),
+			type !== "hostalert" && DETAILS({class: "expandbox"}, [ //Currently, host alerts can't do TTS, since they don't come from the backend.
+				SUMMARY("Text-To-Speech settings (unimpl)"),
+				TABLE([
+					nondef && TR([TD(LABEL({for: type + "-tts_text"}, "Spoken text:")), TD(INPUT({id: type + "-tts_text", name: "tts_text", size: 40}))]),
+					TR([TD(LABEL({for: type + "-tts_dwell"}, "Extra time permitted:")), TD(INPUT({id: type + "-tts_dwell", name: "tts_dwell", type: "number"}))]),
+					TR(TD({colspan: 2}, [
+						"If zero, the alert will stop abruptly and cut off TTS; if longer,", BR(),
+						"the alert will be permitted to lengthen to finish the message."
+					])),
+					TR([
+						TD(LABEL({for: type + "-tts_volume"}, "Volume:")),
+						TD(LABEL([INPUT({id: type + "-tts_volume", name: "tts_volume", type: "range", step: 0.05, min: 0, max: 1}),
+							SPAN({class: "rangedisplay"}, "")])),
+					]),
+					
+				]),
+			]),
 			TEXTFORMATTING({
 				textname: nondef ? "textformat" : "-", //FIXME: Hide this when in alertset mode
 				textdesc: SPAN({className: "placeholders"}, placeholder_description),
@@ -420,7 +437,7 @@ on("change", "select[name=format]", e => update_layout_options(e.match.closest("
 
 function rangedisplay(el) {
 	set_content(el.parentElement.querySelector(".rangedisplay"), Math.floor(el.value * 100) + "%");
-	el.closest("form").querySelector("[data-library=sound]").volume = el.value ** 2;
+	if (el.name === "volume") el.closest("form").querySelector("[data-library=sound]").volume = el.value ** 2;
 }
 on("input", "input[type=range]", e => rangedisplay(e.match));
 

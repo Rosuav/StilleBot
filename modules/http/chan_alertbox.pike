@@ -335,6 +335,7 @@ constant ALERTTYPES = ({([
 constant SINGLE_EDIT_ATTRS = ({"image", "sound"}); //Attributes that can be edited by the client without changing the rest
 constant RETAINED_ATTRS = SINGLE_EDIT_ATTRS + ({"version", "variants", "image_is_video"}); //Attributes that are not cleared when a full edit is done (changing the format)
 constant FORMAT_ATTRS = ("format name description active alertlength alertgap cond-label cond-disableautogen "
+			"tts_text tts_dwell tts_volume "
 			"layout alertwidth alertheight textformat volume") / " " + TEXTFORMATTING_ATTRS;
 constant VALID_FORMATS = "text_image_stacked text_image_overlaid" / " ";
 //List all defaults here. They will be applied to everything that isn't explicitly configured.
@@ -348,6 +349,7 @@ constant NULL_ALERT = ([
 	"strokewidth": "None", "strokecolor": "#000000", "borderwidth": "0",
 	"padvert": "0", "padhoriz": "0", "textalign": "start",
 	"shadowx": "0", "shadowy": "0", "shadowalpha": "0", "bgalpha": "0",
+	"tts_text": "", "tts_dwell": "0", "tts_volume": 0,
 ]);
 constant LATEST_VERSION = 3; //Bump this every time a change might require the client to refresh.
 constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump this too.
