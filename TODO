@@ -129,3 +129,14 @@
   - Notify Kimmy when done
   - Ultimately, add a bad-word filter (which the streamer can disable, but active by default)
     - Call on someone else's definition of bad words
+  - Providers:
+    - Watson: Free tier is 10,000 characters per month, else 0.02 USD per thousand chars
+      https://www.ibm.com/au-en/cloud/watson-text-to-speech/pricing
+    - Amazon Polly: Free tier might only last 12 months? Else 4 USD per million chars
+      https://aws.amazon.com/polly/pricing/?p=ft&c=ml&z=3
+    - Azure: One concurrent request (but that might not count playback time), and 500k
+      characters per month, else 16 USD per million characters
+      https://azure.microsoft.com/en-us/pricing/details/cognitive-services/speech-services/
+    - Google: The first 1M or 4M characters per month are free, then 4 USD or 16 USD per
+      million characters (depending on whether it's a WaveNet voice)
+      https://cloud.google.com/text-to-speech/pricing
