@@ -90,7 +90,9 @@ continue Concurrent.Future force_recalc(string chan, int|void fast) {
 
 	//Collect bit stats for that time period. NOTE: Periods other than "monthly" are basically broken. FIXME.
 	string period = "month";
-	mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period,
+	mapping tm = gmtime(time()); //Twitch actually uses America/Pacific but whatever
+	mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
+			+ sprintf("&started_at=%d-%02d-02T00:00:00Z", tm->year + 1900, tm->mon + 1),
 			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
 	string was_uncertain = stats["latest_bits_" + period];
 	sscanf(info->date_range->started_at, "%d-%d-%*dT%*d:%*d:%*dZ", int year, int month);
