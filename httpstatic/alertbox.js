@@ -123,7 +123,13 @@ function do_alert(alert, replacements) {
 	alert_playing = true;
 	const elem = DOM(alert);
 	elem.querySelectorAll("[data-textformat]").forEach(el =>
-		set_content(el, el.dataset.textformat.replaceAll(/{([^}]+)}/g, (_,kwd) => replacements[kwd] || ""))
+		set_content(el, el.dataset.textformat.split(/{([^}]+)}/).map((kwd,i) => {
+			if (i&1) {
+				//TODO: If replacement is an array, parse it out into images
+				return replacements[kwd] || ""; //1st, 3rd, 5th are all braced keywords
+			}
+			else return kwd; //0th, 2nd, 4th etc are all literal text
+		}))
 	);
 	//Force animations and videos to restart
 	elem.querySelectorAll("img").forEach(el => el.src = el.src);
