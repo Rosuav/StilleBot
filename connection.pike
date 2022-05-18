@@ -624,6 +624,7 @@ class channel(string name) { //name begins with hash and is all lower case
 						"{months}": params->msg_param_cumulative_months,
 						"{streak}": params->msg_param_streak_months || "",
 						"{multimonth}": params->msg_param_multimonth_duration || "1", //Ditto re tenure
+						"{msg}": msg,
 					]));
 					runhooks("subscription", 0, this, "resub", person, params->msg_param_sub_plan[0..0], 1, params);
 					event_notify("subscription", this, "resub", person, params->msg_param_sub_plan[0..0], 1, params, msg);

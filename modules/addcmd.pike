@@ -7,10 +7,10 @@ constant require_moderator = 1;
 constant SPECIALS = ({
 	({"!follower", ({"Someone follows the channel", "The new follower", ""}), "Stream support"}),
 	({"!sub", ({"Someone subscribes for the first time", "The subscriber", "tier, multimonth"}), "Stream support"}),
-	({"!resub", ({"Someone announces a resubscription", "The subscriber", "tier, months, streak, multimonth"}), "Stream support"}),
+	({"!resub", ({"Someone announces a resubscription", "The subscriber", "tier, months, streak, multimonth, msg"}), "Stream support"}),
 	({"!subgift", ({"Someone gives a sub", "The giver", "tier, months, streak, recipient, multimonth, from_subbomb"}), "Stream support"}),
 	({"!subbomb", ({"Someone gives random subgifts", "The giver", "tier, gifts"}), "Stream support"}),
-	({"!cheer", ({"Any bits are cheered (including anonymously)", "The cheerer", "bits"}), "Stream support"}),
+	({"!cheer", ({"Any bits are cheered (including anonymously)", "The cheerer", "bits, msg"}), "Stream support"}),
 	({"!cheerbadge", ({"A viewer attains a new cheer badge", "The cheerer", "level"}), "Stream support"}),
 	({"!raided", ({"Another broadcaster raided you", "The raiding broadcaster", "viewers"}), "Stream support"}),
 
@@ -33,6 +33,7 @@ constant SPECIAL_PARAMS = ({
 	({"streak", "Consecutive months of subscription. If a sub is restarted after a delay, {months} continues, but {streak} resets."}),
 	({"recipient", "Display name of the gift sub recipient"}),
 	({"multimonth", "Number of consecutive months of subscription given"}),
+	({"msg", "Any message included with the sub/cheer (blank if none)"}),
 	({"from_subbomb", "1 if the gift was part of a sub bomb, 0 if not"}),
 	({"gifts", "Number of randomly-assigned gifts. Can be 1."}),
 	({"bits", "Total number of bits cheered in this message"}),

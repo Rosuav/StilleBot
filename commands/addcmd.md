@@ -25,10 +25,10 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 -------------|-----------------------------|------------------|-------------
 !!follower | Someone follows the channel | The new follower | 
 !!sub | Someone subscribes for the first time | The subscriber | tier, multimonth
-!!resub | Someone announces a resubscription | The subscriber | tier, months, streak, multimonth
+!!resub | Someone announces a resubscription | The subscriber | tier, months, streak, multimonth, msg
 !!subgift | Someone gives a sub | The giver | tier, months, streak, recipient, multimonth, from_subbomb
 !!subbomb | Someone gives random subgifts | The giver | tier, gifts
-!!cheer | Any bits are cheered (including anonymously) | The cheerer | bits
+!!cheer | Any bits are cheered (including anonymously) | The cheerer | bits, msg
 !!cheerbadge | A viewer attains a new cheer badge | The cheerer | level
 !!raided | Another broadcaster raided you | The raiding broadcaster | viewers
 !!channelonline | The channel has recently gone online (started streaming) | The broadcaster | uptime, uptime_hms, uptime_english
@@ -54,6 +54,7 @@ Parameter    | Meaning
 {streak} | Consecutive months of subscription. If a sub is restarted after a delay, {months} continues, but {streak} resets.
 {recipient} | Display name of the gift sub recipient
 {multimonth} | Number of consecutive months of subscription given
+{msg} | Any message included with the sub/cheer (blank if none)
 {from_subbomb} | 1 if the gift was part of a sub bomb, 0 if not
 {gifts} | Number of randomly-assigned gifts. Can be 1.
 {bits} | Total number of bits cheered in this message
