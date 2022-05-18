@@ -815,37 +815,36 @@ void websocket_cmd_reload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	send_updates_all(cfg->authkey + channel->name, (["version": LATEST_VERSION + 1]));
 }
 
-//Hack for my own use. Usable only when empowered with localhost-mod status.
-void websocket_cmd_tts(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(send_tts(conn, msg));}
-continue Concurrent.Future send_tts(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || grp != "control") return 0;
-	if (conn->session->fake) return 0;
-	if (channel->name != "#!demo") return 0; //Only possible on the demo channel, meaning only localhost mod can use this
-	string token = G->G->tts_config->?access_token; if (!token) return 0;
+continue Concurrent.Future send_with_tts(object channel, string alerttype, mapping args) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize",
-		Protocols.HTTP.Promise.Arguments((["headers": ([
-			"Authorization": "Bearer " + token,
-			"Content-Type": "application/json; charset=utf-8",
-		]), "data": Standards.JSON.encode(([
-			"input": (["text": msg->text || "Hello, world!"]),
-			"voice": ([ //Set all these via channel configuration
-				"languageCode": "en-gb",
-				"name": "en-GB-Standard-A",
-				"ssmlGender": "FEMALE",
-			]),
-			"audioConfig": (["audioEncoding": "OGG_OPUS"]),
-		]))]))));
-	mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
-	if (!mappingp(data) || !stringp(data->audioContent)) return 0; //TODO: Report errors somehow
-	werror("Sending!\n");
-	send_updates_all(cfg->authkey + channel->name, ([
-		"send_alert": "hostalert",
-		"NAME": "TTS", "username": "TTS",
-		"test_alert": 1,
-		"tts": "data:audio/ogg;base64," + data->audioContent,
-	]));
+	mapping inh = resolve_inherits(cfg->alertconfigs, alerttype, cfg->alertconfigs[alerttype]);
+	args |= (["send_alert": alerttype]);
+	string fmt = inh->tts_text || "", text = "";
+	while (sscanf(fmt, "%s{%s}%s", string before, string tok, string after) == 3) {
+		text += before + (args[tok] || "");
+		fmt = after;
+	}
+	text += fmt;
+	if (string token = text != "" && G->G->tts_config->?access_token) {
+		object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize",
+			Protocols.HTTP.Promise.Arguments((["headers": ([
+				"Authorization": "Bearer " + token,
+				"Content-Type": "application/json; charset=utf-8",
+			]), "data": Standards.JSON.encode(([
+				"input": (["text": text || "Hello, world!"]),
+				"voice": ([ //Set all these via inh[]
+					"languageCode": "en-gb",
+					"name": "en-GB-Standard-A",
+					"ssmlGender": "FEMALE",
+				]),
+				"audioConfig": (["audioEncoding": "OGG_OPUS"]),
+			]))]))));
+		mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
+		if (mappingp(data) && stringp(data->audioContent))
+			args->tts = "data:audio/ogg;base64," + data->audioContent;
+		//else ; //TODO: Report errors somehow
+	}
+	send_updates_all(cfg->authkey + channel->name, args);
 }
 
 constant builtin_name = "Send Alert";
@@ -857,6 +856,7 @@ constant vars_provided = ([
 constant command_suggestions = ([]); //This isn't something that you'd create a default command for - it'll want to be custom. (And probably a special, not a command, anyway.)
 
 //Attempt to send an alert. Returns 1 if alert sent, 0 if not (eg if alert disabled).
+//Note that the actual sending of the alert is asynchronous, esp if TTS is used.
 int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
 	if (!cfg->?authkey) return 0;
@@ -892,7 +892,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 			if (send_alert(channel, subid, args)) return 1;
 	}
 	if (suppress_alert) return 0;
-	send_updates_all(cfg->authkey + channel->name, (["send_alert": alerttype]) | args);
+	spawn_task(send_with_tts(channel, alerttype, args));
 	return 1;
 }
 
