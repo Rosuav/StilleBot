@@ -55,6 +55,7 @@ const alert_formats = {
 let inited = false, token = null;
 let hostlist_command = null, hostlist_format = null;
 const alert_active = { };
+const retainme = ["alertlength", "alertgap", "tts_dwell", "tts_volume"];
 export function render(data) {
 	if (data.version > alertbox_version) {location.reload(); return;}
 	if (data.alertconfigs) {
@@ -66,8 +67,8 @@ export function render(data) {
 			if (alert_formats[cfg.format]) set_content(elem, alert_formats[cfg.format](cfg));
 			else set_content(elem, P("Unrecognized alert format '" + cfg.format + "', check editor or refresh page"));
 			alert_active["#" + kwd] = cfg.active;
-			elem.dataset.alertlength = cfg.alertlength;
-			elem.dataset.alertgap = cfg.alertgap;
+			for (let attr of retainme)
+				elem.dataset[attr] = cfg[attr];
 			ensure_font(cfg.font);
 		}
 		const removeme = [];
@@ -142,23 +143,36 @@ function do_alert(alert, replacements) {
 	//Force animations and videos to restart
 	elem.querySelectorAll("img").forEach(el => el.src = el.src);
 	elem.querySelectorAll("video").forEach(el => {el.currentTime = 0; el.play();});
-	//TODO: Have an option to allow TTS to extend the alert length
-	let alertlength = +elem.dataset.alertlength;
+	const alertlength = +elem.dataset.alertlength;
+	let alerttimeout = null;
 	if (replacements.tts) {
-		//TODO: Bump version number when this is used in an alert
+		const maxlength = alertlength + +elem.dataset.tts_dwell;
 		const len = elem.querySelector("audio").duration;
-		if (len < alertlength) setTimeout(() => {
+		if (len < maxlength) {
+			//Start TTS playing after the main audio finishes
 			const tts = DOM("#tts");
 			tts.src = replacements.tts;
-			tts.play();
-		}, len * 1000);
+			tts.volume = (+elem.dataset.tts_volume) ** 2;
+			setTimeout(() => tts.play(), len * 1000);
+			//Potentially increase the alert length up to the maxlength
+			//Since the TTS content comes from a string, we assume that it will
+			//load quickly - not instantly (it's still asynchronous), but fast
+			//enough that we don't have to compensate for the delay. The alert
+			//length will be counted from this event.
+			tts.ondurationchange = e => {
+				const reallen = Math.min(alertlength + tts.duration, maxlength);
+				clearTimeout(alerttimeout);
+				setTimeout(remove_alert, reallen * 1000, alert, elem.dataset.alertgap);
+				tts.ondurationchange = null;
+			};
+		}
 	}
 	elem.classList.add("active");
 	let playing = false;
 	//If the page is in the background, don't play audio.
 	if (!document.hidden) document.querySelectorAll("audio").forEach(a => {if (!a.paused) playing = true;});
 	if (!playing) elem.querySelector("audio").play();
-	setTimeout(remove_alert, alertlength * 1000, alert, elem.dataset.alertgap);
+	alerttimeout = setTimeout(remove_alert, alertlength * 1000, alert, elem.dataset.alertgap);
 }
 window.ping = type => do_alert("#" + (type || "hostalert"), {NAME: "Test", username: "Test", VIEWERS: 42, viewers: 42, test_alert: 1});
 
