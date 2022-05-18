@@ -7,8 +7,8 @@ const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAA
 const EMPTY_AUDIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
 function img_or_video(data) {
-	if (!data.image_is_video) return IMG({src: data.image || TRANSPARENT_IMAGE});
-	const el = VIDEO({src: data.image, preload: "auto", loop: true});
+	if (!data.image_is_video) return IMG({class: "mainimg", src: data.image || TRANSPARENT_IMAGE});
+	const el = VIDEO({class: "mainimg", src: data.image, preload: "auto", loop: true});
 	el.muted = true;
 	return el;
 }
@@ -117,6 +117,13 @@ function remove_alert(alert, gap) {
 	setTimeout(next_alert, gap * 1000);
 }
 
+function render_emoted_text(txt) {
+	if (typeof txt === "string") return txt;
+	if (Array.isArray(txt)) return txt.map(render_emoted_text);
+	if (txt.img) return IMG({src: txt.img, alt: txt.title, title: txt.title});
+	return "<ERROR> Unknown text format: " + Object.keys(txt);
+}
+
 function do_alert(alert, replacements) {
 	if (!replacements.test_alert && !alert_active[alert]) return;
 	if (alert_playing) {alert_queue.push([alert, replacements]); return;}
@@ -124,11 +131,12 @@ function do_alert(alert, replacements) {
 	const elem = DOM(alert);
 	elem.querySelectorAll("[data-textformat]").forEach(el =>
 		set_content(el, el.dataset.textformat.split(/{([^}]+)}/).map((kwd,i) => {
-			if (i&1) {
-				//TODO: If replacement is an array, parse it out into images
-				return replacements[kwd] || ""; //1st, 3rd, 5th are all braced keywords
+			if (i&1) { //1st, 3rd, 5th are all braced keywords
+				if (kwd === "msg") kwd = replacements._emoted || replacements.msg;
+				else kwd = replacements[kwd];
+				return render_emoted_text(kwd || "");
 			}
-			else return kwd; //0th, 2nd, 4th etc are all literal text
+			return kwd; //0th, 2nd, 4th etc are all literal text
 		}))
 	);
 	//Force animations and videos to restart
