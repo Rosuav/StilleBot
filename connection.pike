@@ -66,9 +66,9 @@ continue Concurrent.Future raidwatch(int channel, string raiddesc) {
 @create_hook:
 constant allmsgs = ({"object channel", "mapping person", "string msg"});
 @create_hook:
-constant subscription = ({"object channel", "string type", "mapping person", "string tier", "int qty", "mapping extra"});
+constant subscription = ({"object channel", "string type", "mapping person", "string tier", "int qty", "mapping extra", "string msg"});
 @create_hook:
-constant cheer = ({"object channel", "mapping person", "int bits", "mapping extra"});
+constant cheer = ({"object channel", "mapping person", "int bits", "mapping extra", "string msg"});
 @create_hook:
 constant deletemsg = ({"object channel", "object person", "string target", "string msgid"});
 @create_hook:
@@ -615,7 +615,7 @@ class channel(string name) { //name begins with hash and is all lower case
 						//There's also msg_param_multimonth_tenure - what happens when they get announced? Does duration remain and tenure count up?
 					]));
 					runhooks("subscription", 0, this, "sub", person, params->msg_param_sub_plan[0..0], 1, params);
-					event_notify("subscription", this, "sub", person, params->msg_param_sub_plan[0..0], 1, params);
+					event_notify("subscription", this, "sub", person, params->msg_param_sub_plan[0..0], 1, params, "");
 					break;
 				case "resub":
 					Stdio.append_file("subs.log", sprintf("\n%sDEBUG RESUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
@@ -626,7 +626,7 @@ class channel(string name) { //name begins with hash and is all lower case
 						"{multimonth}": params->msg_param_multimonth_duration || "1", //Ditto re tenure
 					]));
 					runhooks("subscription", 0, this, "resub", person, params->msg_param_sub_plan[0..0], 1, params);
-					event_notify("subscription", this, "resub", person, params->msg_param_sub_plan[0..0], 1, params);
+					event_notify("subscription", this, "resub", person, params->msg_param_sub_plan[0..0], 1, params, msg);
 					break;
 				case "giftpaidupgrade": break; //Pledging to continue a subscription (first introduced for the Subtember special in 2018, and undocumented)
 				case "anongiftpaidupgrade": break; //Ditto but when the original gift was anonymous
@@ -659,7 +659,7 @@ class channel(string name) { //name begins with hash and is all lower case
 					//msg_param_sender_count (the total gifts this person has given in this channel)
 					//Remember that all params are strings, even those that look like numbers
 					runhooks("subscription", 0, this, "subgift", person, params->msg_param_sub_plan[0..0], 1, params);
-					event_notify("subscription", this, "subgift", person, params->msg_param_sub_plan[0..0], 1, params);
+					event_notify("subscription", this, "subgift", person, params->msg_param_sub_plan[0..0], 1, params, "");
 					break;
 				}
 				case "submysterygift":
@@ -679,7 +679,7 @@ class channel(string name) { //name begins with hash and is all lower case
 					runhooks("subscription", 0, this, "subbomb", person, params->msg_param_sub_plan[0..0],
 						(int)params->msg_param_mass_gift_count, params);
 					event_notify("subscription", this, "subbomb", person, params->msg_param_sub_plan[0..0],
-						(int)params->msg_param_mass_gift_count, params);
+						(int)params->msg_param_mass_gift_count, params, "");
 					break;
 				}
 				case "extendsub":
@@ -718,6 +718,11 @@ class channel(string name) { //name begins with hash and is all lower case
 					//is ever useful to your testing. It may confuse things though!
 					params->bits = (string)bits;
 				handle_command(person, msg, responsedefaults);
+				if (params->bits && (int)params->bits) {
+					runhooks("cheer", 0, this, person, (int)params->bits, params);
+					event_notify("cheer", this, person, (int)params->bits, params, msg);
+					trigger_special("!cheer", person, (["{bits}": params->bits, "{msg}": msg]));
+				}
 				msg = person->displayname + (person->is_action_msg ? " " : ": ") + msg;
 				string pfx=sprintf("[%s] ", name);
 				#ifdef __NT__
@@ -728,11 +733,6 @@ class channel(string name) { //name begins with hash and is all lower case
 				if (person->badges->?_mod) msg = "\u2694 " + msg;
 				msg = string_to_utf8(msg);
 				log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
-				if (params->bits && (int)params->bits) {
-					runhooks("cheer", 0, this, person, (int)params->bits, params);
-					event_notify("cheer", this, person, (int)params->bits, params);
-					trigger_special("!cheer", person, (["{bits}": params->bits]));
-				}
 				break;
 			}
 			//The delete-msg hook has person (the one who triggered it),

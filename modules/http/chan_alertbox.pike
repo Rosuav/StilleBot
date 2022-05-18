@@ -952,12 +952,13 @@ void subscription(object channel, string type, mapping person, string tier, int 
 }
 
 @hook_cheer:
-void cheer(object channel, mapping person, int bits, mapping extra) {
+void cheer(object channel, mapping person, int bits, mapping extra, string msg) {
 	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
 	if (!cfg->?authkey) return;
 	send_alert(channel, "cheer", ([
 		"username": extra->displayname,
 		"bits": (string)bits,
+		"msg": msg,
 	]));
 }
 
