@@ -817,18 +817,32 @@ void websocket_cmd_reload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 
 continue Concurrent.Future send_with_tts(object channel, string alerttype, mapping args) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	//TODO: Retain inh for all alert types. Every time any alert gets updated,
+	//reconstruct all inherits for that client. Should they get saved into G->G
+	//or cfg? Either could work. Probably G->G.
 	mapping inh = resolve_inherits(cfg->alertconfigs, alerttype, cfg->alertconfigs[alerttype]);
 	args |= (["send_alert": alerttype]);
 	string fmt = inh->tts_text || "", text = "";
 	while (sscanf(fmt, "%s{%s}%s", string before, string tok, string after) == 3) {
-		if (tok == "text") {
-			//if (inh->tts_filter_emotes == "emotes") use args->emoted instead
+		string replacement = args[tok] || "";
+		if (tok == "msg") {
+			if (inh->tts_filter_emotes == "emotes") replacement = args->_noemotes || replacement;
 			if ((<"emotes", "cheers">)[inh->tts_filter_emotes]) {
 				//Split into words, if any word is %[a-zA-Z]%[0-9] and nothing
 				//else, and if the first half is a known cheeremote, suppress.
+				array words = replacement / " ";
+				array cheeremotes = (G->G->tts_config->cheeremotes || ({ })) + ({"fakecheer"});
+				foreach (words; int i; string w) {
+					sscanf(w, "%[a-zA-Z]%[0-9]%s", string base, string n, string empty);
+					if (n != "" && empty == "" && has_value(cheeremotes, base))
+						//It looks like a cheer emote. Hide it.
+						words[i] = "";
+				}
+				replacement = words * " ";
 			}
 		}
-		text += before + (args[tok] || "");
+		else if (tok == "" || tok[0] == '_') replacement = "";
+		text += before + replacement;
 		fmt = after;
 	}
 	text += fmt;
@@ -903,6 +917,22 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	return 1;
 }
 
+mapping parse_emotes(string text, mapping person) {
+	string noemotes = "";
+	array emoted = ({ });
+	int pos = 0;
+	if (person->emotes) foreach (person->emotes, [string id, int start, int end]) {
+		string before = text[pos..start-1];
+		noemotes += before; emoted += ({before});
+		emoted += ({([
+			"img": sprintf("https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0", id),
+			"title": text[start..end], //Emote name
+		])});
+		pos = end + 1;
+	}
+	return (["_noemotes": noemotes + text[pos..], "_emoted": emoted + ({text[pos..]})]);
+}
+
 mapping message_params(object channel, mapping person, array|string param)
 {
 	string alert, text;
@@ -966,7 +996,7 @@ void cheer(object channel, mapping person, int bits, mapping extra, string msg) 
 		"username": extra->displayname,
 		"bits": (string)bits,
 		"msg": msg,
-	]));
+	]) | parse_emotes(msg, person));
 }
 
 protected void create(string name) {
