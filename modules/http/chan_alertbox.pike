@@ -821,6 +821,13 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 	args |= (["send_alert": alerttype]);
 	string fmt = inh->tts_text || "", text = "";
 	while (sscanf(fmt, "%s{%s}%s", string before, string tok, string after) == 3) {
+		if (tok == "text") {
+			//if (inh->tts_filter_emotes == "emotes") use args->emoted instead
+			if ((<"emotes", "cheers">)[inh->tts_filter_emotes]) {
+				//Split into words, if any word is %[a-zA-Z]%[0-9] and nothing
+				//else, and if the first half is a known cheeremote, suppress.
+			}
+		}
 		text += before + (args[tok] || "");
 		fmt = after;
 	}
