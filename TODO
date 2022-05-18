@@ -140,3 +140,10 @@
     - Google: The first 1M or 4M characters per month are free, then 4 USD or 16 USD per
       million characters (depending on whether it's a WaveNet voice)
       https://cloud.google.com/text-to-speech/pricing
+* Alertbox: Parse message text and emotes where appropriate. Send array to client.
+  - If client receives replacements.text just use it. Don't use textformat.
+  - Array consists of strings and objects {img: "https://..."}
+  - Might have a configuration on the client to set the image size
+    - Set the CSS height for the images, and also pick an appropriate version
+    - Alternatively, just use font size??
+  - Manually parse/recognize cheer emotes and replace them?
