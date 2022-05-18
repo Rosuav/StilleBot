@@ -293,7 +293,14 @@ export function render(data) {
 						TD(LABEL([INPUT({id: type + "-tts_volume", name: "tts_volume", type: "range", step: 0.05, min: 0, max: 1}),
 							SPAN({class: "rangedisplay"}, "")])),
 					]),
-					
+					TR([TD("Filter out"), TD([
+						SELECT({name: "tts_filter_emotes"}, [
+							OPTION(),
+							OPTION({value: "cheers"}, "Cheer emotes"),
+							OPTION({value: "emotes"}, "All emotes"),
+						]),
+						"TODO: Bad words, custom words",
+					])]),
 				]),
 			]),
 			TEXTFORMATTING({
