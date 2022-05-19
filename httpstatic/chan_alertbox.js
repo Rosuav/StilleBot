@@ -6,8 +6,8 @@ function THUMB(file) {
 	if (!file.url) return DIV({className: "thumbnail"}, "uploading...");
 	if (file.mimetype.startsWith("audio/")) return DIV({className: "thumbnail"}, AUDIO({src: file.url, controls: true}));
 	if (file.mimetype.startsWith("video/")) {
-		const elem = VIDEO({class: "thumbnail", src: file.url, controls: true, loop: true});
-		elem.muted = true; elem.play();
+		const elem = VIDEO({class: "thumbnail", src: file.url, controls: true, loop: true, ".muted": true});
+		elem.play();
 		return elem;
 	}
 	return DIV({className: "thumbnail", style: "background-image: url(" + file.url + ")"});
@@ -76,9 +76,9 @@ function load_data(type, attrs, par) {
 	const previewimg = par.querySelector("[data-library=image]");
 	if (previewimg && (previewimg.tagName !== "VIDEO") !== !attrs.image_is_video) {
 		if (attrs.image_is_video) {
-			const el = VIDEO({class: "preview", "data-library": "image", src: attrs.image, loop: true});
+			const el = VIDEO({class: "preview", "data-library": "image", src: attrs.image, loop: true, ".muted": true});
 			previewimg.replaceWith(el);
-			el.muted = true; el.play();
+			el.play();
 		}
 		previewimg.replaceWith(IMG({class: "preview", "data-library": "image", src: attrs.image || TRANSPARENT_IMAGE}));
 	}
@@ -527,7 +527,7 @@ on("click", "#libraryselect", async e => {
 			[librarytarget.dataset.library]: img, image_is_video: type.startsWith("video/")});
 		const isvid = librarytarget.tagName === "VIDEO", wantvid = type.startsWith("video/");
 		if (isvid !== wantvid) librarytarget.replaceWith(wantvid
-			? VIDEO({class: "preview", "data-library": "image", src: img, loop: true, muted: true, autoplay: true})
+			? VIDEO({class: "preview", "data-library": "image", src: img, loop: true, ".muted": true, autoplay: true})
 			: IMG({class: "preview", "data-library": "image", src: img || TRANSPARENT_IMAGE})
 		);
 		else librarytarget.src = img || TRANSPARENT_IMAGE;
