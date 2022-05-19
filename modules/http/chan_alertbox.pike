@@ -825,6 +825,10 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 	//TODO: Retain inh for all alert types. Every time any alert gets updated,
 	//reconstruct all inherits for that client. Should they get saved into G->G
 	//or cfg? Either could work. Probably G->G.
+	//FIXME. This is necessary to make edits to parents propagate through CSS.
+	//After resolving inherits, regenerate text_css. Would also be the single
+	//place to set the version of the alert, guaranteeing inheritance works on
+	//minimum version too.
 	mapping inh = resolve_inherits(cfg->alertconfigs, alerttype, cfg->alertconfigs[alerttype]);
 	args |= (["send_alert": alerttype]);
 	string fmt = inh->tts_text || "", text = "";
