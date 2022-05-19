@@ -280,7 +280,7 @@ export function render(data) {
 				]),
 			]),
 			type !== "hostalert" && DETAILS({class: "expandbox"}, [ //Currently, host alerts can't do TTS, since they don't come from the backend.
-				SUMMARY("Text-To-Speech settings (unimpl)"),
+				SUMMARY("Text-To-Speech settings"),
 				TABLE([
 					nondef && TR([TD(LABEL({for: type + "-tts_text"}, "Spoken text:")), TD(INPUT({id: type + "-tts_text", name: "tts_text", size: 40}))]),
 					TR([
