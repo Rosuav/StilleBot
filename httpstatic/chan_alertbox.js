@@ -285,9 +285,12 @@ export function render(data) {
 					nondef && TR([TD(LABEL({for: type + "-tts_text"}, "Spoken text:")), TD(INPUT({id: type + "-tts_text", name: "tts_text", size: 40}))]),
 					TR([
 						TD("Voice:"),
-						TD(SELECT({name: "tts_voice"}, avail_voices.map(([label, voices]) =>
-							OPTGROUP({label}, voices.map(v => OPTION({value: v.selector}, v.desc)))
-						))),
+						TD(SELECT({name: "tts_voice"}, [
+							OPTION(),
+							avail_voices.map(([label, voices]) =>
+								OPTGROUP({label}, voices.map(v => OPTION({value: v.selector}, v.desc)))
+							),
+						])),
 					]),
 					TR([TD(LABEL({for: type + "-tts_dwell"}, "Extra time permitted:")), TD(INPUT({id: type + "-tts_dwell", name: "tts_dwell", type: "number"}))]),
 					TR(TD({colspan: 2}, [
