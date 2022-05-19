@@ -717,6 +717,12 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 			alert->mro = alert->mro[..idx] + mro;
 		}
 	}
+	//Volume can only be set when the audio file is set. If audio inherits (which
+	//will be common for variants), volume will also inherit. In theory, you might
+	//want to have a variant with "same audio but a little louder"; but since there
+	//is no way to express "a little louder" without setting an exact volume, I'm OK
+	//with not being able to express "same audio" without explicitly picking the file.
+	if (!data->sound) m_delete(data, "volume");
 	mapping inh = resolve_inherits(cfg->alertconfigs, msg->type, data);
 	if (!has_value(VALID_FORMATS, inh->format)) {
 		m_delete(data, "format"); //Inheriting will usually be safe. Usually.
