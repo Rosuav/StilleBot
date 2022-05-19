@@ -335,7 +335,7 @@ constant ALERTTYPES = ({([
 constant SINGLE_EDIT_ATTRS = ({"image", "sound"}); //Attributes that can be edited by the client without changing the rest
 constant RETAINED_ATTRS = SINGLE_EDIT_ATTRS + ({"version", "variants", "image_is_video"}); //Attributes that are not cleared when a full edit is done (changing the format)
 constant FORMAT_ATTRS = ("format name description active alertlength alertgap cond-label cond-disableautogen "
-			"tts_text tts_dwell tts_volume tts_filter_emotes tts_filter_badwords tts_filter_words "
+			"tts_text tts_dwell tts_volume tts_filter_emotes tts_filter_badwords tts_filter_words tts_voice "
 			"layout alertwidth alertheight textformat volume") / " " + TEXTFORMATTING_ATTRS;
 constant VALID_FORMATS = "text_image_stacked text_image_overlaid" / " ";
 //List all defaults here. They will be applied to everything that isn't explicitly configured.
@@ -351,9 +351,10 @@ constant NULL_ALERT = ([
 	"shadowx": "0", "shadowy": "0", "shadowalpha": "0", "bgalpha": "0",
 	"tts_text": "", "tts_dwell": "0", "tts_volume": 0, "tts_filter_emotes": "cheers",
 ]);
-constant LATEST_VERSION = 3; //Bump this every time a change might require the client to refresh.
+constant LATEST_VERSION = 4; //Bump this every time a change might require the client to refresh.
 constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump this too.
 //Version 3 supports <video> tags for images.
+//Version 4 supports TTS.
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -403,7 +404,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		return jsonify((["url": file->url]));
 	}
 	return render(req, ([
-		"vars": (["ws_group": "control", "maxfilesize": MAX_PER_FILE, "maxtotsize": MAX_TOTAL_STORAGE]),
+		"vars": (["ws_group": "control",
+			"maxfilesize": MAX_PER_FILE, "maxtotsize": MAX_TOTAL_STORAGE,
+			"avail_voices": G->G->tts_config->avail_voices || ({ }),
+		]),
 	]) | req->misc->chaninfo);
 }
 
@@ -679,7 +683,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 				//if this is wrong anyway.
 				data->image_is_video = msg->image_is_video;
 			else data->image_is_video = has_prefix(cfg->files[idx]->mimetype, "video/");
-			if (data->image_is_video && COMPAT_VERSION < 3) data->version = 3;
+			if (data->image_is_video && COMPAT_VERSION < 3 && data->version < 3) data->version = 3;
 		}
 		persist_status->save();
 		send_updates_all(conn->group);
@@ -722,6 +726,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	}
 	textformatting_validate(data);
 	data->text_css = textformatting_css(inh);
+	if (inh->tts_text && COMPAT_VERSION < 4) data->version = 4;
 	if (basetype != "defaults") {
 		//Calculate specificity.
 		//The calculation assumes that all comparison values are nonnegative integers.
@@ -846,6 +851,8 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 		fmt = after;
 	}
 	text += fmt;
+	array voice = (inh->tts_voice || "") / "/";
+	if (sizeof(voice) != 3) voice = G->G->tts_config->default_voice / "/";
 	if (string token = text != "" && G->G->tts_config->?access_token) {
 		object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize",
 			Protocols.HTTP.Promise.Arguments((["headers": ([
@@ -853,10 +860,10 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 				"Content-Type": "application/json; charset=utf-8",
 			]), "data": Standards.JSON.encode(([
 				"input": (["text": text || "Hello, world!"]),
-				"voice": ([ //Set all these via inh[]
-					"languageCode": "en-gb",
-					"name": "en-GB-Standard-A",
-					"ssmlGender": "FEMALE",
+				"voice": ([
+					"languageCode": voice[0],
+					"name": voice[1],
+					"ssmlGender": voice[2],
 				]),
 				"audioConfig": (["audioEncoding": "OGG_OPUS"]),
 			]))]))));
@@ -999,6 +1006,43 @@ void cheer(object channel, mapping person, int bits, mapping extra, string msg) 
 	]) | parse_emotes(msg, person));
 }
 
+continue Concurrent.Future fetch_voice_list() {
+	//For now, only English voices are listed. That's only a UI concern though.
+	object res = yield(Protocols.HTTP.Promise.get_url("https://texttospeech.googleapis.com/v1/voices?languageCode=en",
+		Protocols.HTTP.Promise.Arguments((["headers": ([
+			"Authorization": "Bearer " + G->G->tts_config->access_token,
+		])]))));
+	mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
+	if (!mappingp(data) || !data->voices) return 0;
+	mapping languages = ([]);
+	foreach (data->voices, mapping v) {
+		//For now, I'm excluding all the premium Wavenet voices. Depending on usage,
+		//these might be able to be reenabled, or I could make them a premium feature
+		//from my end (ie people who contribute to the costs of TTS can use them).
+		if (has_value(v->name, "Wavenet")) continue;
+		//The "Neural" voices seem locked - I get Forbiddens. Same with the test voice.
+		if (!has_value(v->name, "Standard")) continue;
+		//It seems that every voice supports just one language. If this is ever not
+		//the case, then hopefully the first one listed is the most important.
+		string lang = m_delete(v, "languageCodes")[0];
+		v->selector = sprintf("%s/%s/%s", lang, v->name, v->ssmlGender);
+		v->desc = sprintf("%s (%s)", v->name, lower_case(v->ssmlGender[..0]));
+		sscanf(lang, "en-%s", string cc); //TODO: Support other languages
+		languages["English (" + cc + ")"] += ({v});
+	}
+	foreach (languages; string lang; array voices) sort(voices->name, voices);
+	//Just to make sure the selection isn't completely empty, have a final fallback
+	//This is the language code used in the docs (as of 20220519). It shouldn't be
+	//used, like, ever, but if TTS isn't available for whatever reason, this means
+	//we won't just fail hard.
+	if (!sizeof(languages)) languages["en-GB"] = ({(["selector": "en-GB/en-GB-Standard-A/FEMALE", "desc": "Default Voice"])});
+	array fallback = languages["en-US"] || languages["en-GB"] || values(languages)[0];
+	G->G->tts_config->default_voice = fallback[0]->selector;
+	array all_voices = (array)languages;
+	sort(indices(languages), all_voices);
+	G->G->tts_config->avail_voices = all_voices;
+}
+
 protected void create(string name) {
 	::create(name);
 	//See if we have a credentials file. If so, get local credentials via gcloud.
@@ -1010,5 +1054,6 @@ protected void create(string name) {
 		twitch_api_request("https://api.twitch.tv/helix/bits/cheermotes")->then() {
 			G->G->tts_config->cheeremotes = lower_case(__ARGS__[0]->data->prefix[*]);
 		};
+		spawn_task(fetch_voice_list());
 	}
 }

@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, ABBR, AUDIO, B, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR, VIDEO} = choc; //autoimport
+const {A, ABBR, AUDIO, B, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR, VIDEO} = choc; //autoimport
 import {waitlate, TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
@@ -283,6 +283,12 @@ export function render(data) {
 				SUMMARY("Text-To-Speech settings (unimpl)"),
 				TABLE([
 					nondef && TR([TD(LABEL({for: type + "-tts_text"}, "Spoken text:")), TD(INPUT({id: type + "-tts_text", name: "tts_text", size: 40}))]),
+					TR([
+						TD("Voice:"),
+						TD(SELECT({name: "tts_voice"}, avail_voices.map(([label, voices]) =>
+							OPTGROUP({label}, voices.map(v => OPTION({value: v.selector}, v.desc)))
+						))),
+					]),
 					TR([TD(LABEL({for: type + "-tts_dwell"}, "Extra time permitted:")), TD(INPUT({id: type + "-tts_dwell", name: "tts_dwell", type: "number"}))]),
 					TR(TD({colspan: 2}, [
 						"If zero, the alert will stop abruptly and cut off TTS; if longer,", BR(),
