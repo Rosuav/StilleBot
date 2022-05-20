@@ -1,6 +1,17 @@
 inherit http_websocket;
 inherit builtin_command;
 inherit hook;
+/* Bot operators, if you want to use TTS:
+* Create credentials on Google Cloud Platform
+  - https://cloud.google.com/docs/authentication/production
+  - Will need a service account and a JSON key
+  - Store the JSON key in stillebot/tts-credentials.json (or symlink it there)
+* Install the Google Cloud SDK https://cloud.google.com/sdk/docs/install
+* Test the credentials:
+  $ GOOGLE_APPLICATION_CREDENTIALS=tts-credentials.json gcloud auth application-default print-access-token
+  - Should produce a lot of text and no visible error messages
+The credentials file will be automatically loaded on code update, and should be used thereafter.
+*/
 constant markdown = #"# Alertbox management for channel $$channel$$
 
 > ### Library
