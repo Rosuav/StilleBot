@@ -221,6 +221,7 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 .expandbox {
 	border: 1px solid black;
 	padding: 0 2em;
+	margin: 1em 0;
 }
 .expandbox summary {margin-left: -1.75em;} /* Pull the summary back to the left */
 
