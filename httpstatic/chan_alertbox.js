@@ -213,10 +213,10 @@ export function render(data) {
 				//possible to have empty condition_vars, which will just have the
 				//standard condition types.
 				TABLE({class: "conditions"}, make_condition_vars(info.condition_vars)),
-				//Ultimately this will get a list of alert sets from the server
-				P(LABEL(["Only if alert set active: (unimpl) ", SELECT({name: "cond-alertset"}, [
+				P(LABEL(["Only if alert set active: ", SELECT({name: "cond-alertset"}, [
 					OPTION({value: ""}, "n/a"),
-					["Foo", "Bar"].map(s => OPTION(s)),
+					(data.alertconfigs.defaults?.variants || [])
+						.map(s => OPTION(s)), //Note that this just uses the IDs; they'll be replaced with names shortly.
 				])])),
 				P([
 					LABEL(["Label: ", INPUT({name: "cond-label", size: 30})]),
