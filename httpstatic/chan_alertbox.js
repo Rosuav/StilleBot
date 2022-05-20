@@ -85,6 +85,8 @@ function load_data(type, attrs, par) {
 	par.querySelectorAll("[data-library]").forEach(el => {
 		const want = attrs[el.dataset.library] || TRANSPARENT_IMAGE;
 		if (el.src !== want) el.src = want; //Avoid flicker and video breakage by only setting if it's different
+		const block = el.closest(".inheritblock");
+		if (block) block.classList.toggle("inherited", !attrs[el.dataset.library]);
 	});
 	update_layout_options(par, attrs.layout);
 	update_condition_summary(par);
@@ -262,13 +264,13 @@ export function render(data) {
 				LABEL(["Alert length: ", INPUT({name: "alertlength", type: "number", step: "0.5"}), " seconds; "]),
 				LABEL(["gap before next alert: ", INPUT({name: "alertgap", type: "number", step: "0.25"}), " seconds"]),
 			]),
-			nondef && P({class: "not-alertset"}, [
+			nondef && P({class: "not-alertset inheritblock"}, [
 				"Image: ",
 				IMG({className: "preview", "data-library": "image"}), //Will be replaced with a VIDEO element as needed
 				" ",
 				BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-type": "image,video"}, "Choose"),
 			]),
-			nondef && P({class: "not-alertset"}, [
+			nondef && P({class: "not-alertset inheritblock"}, [
 				"Sound: ",
 				AUDIO({className: "preview", "data-library": "sound", controls: true}),
 				" ",
@@ -531,6 +533,8 @@ on("click", "#libraryselect", async e => {
 			: IMG({class: "preview", "data-library": "image", src: img || TRANSPARENT_IMAGE})
 		);
 		else librarytarget.src = img || TRANSPARENT_IMAGE;
+		const block = librarytarget.closest(".inheritblock");
+		if (block) block.classList.toggle("inherited", !img);
 		librarytarget = null;
 	}
 	DOM("#library").close();

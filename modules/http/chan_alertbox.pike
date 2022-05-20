@@ -211,6 +211,12 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 /* On the defaults tab, don't show blanks in any special way (there's no user-controlled inheritance beyond defaults) */
 .no-inherit input {background: #ffe;} /* Revert these to my global default for editable text */
 .no-inherit label, .no-inherit select {background: revert;} /* These don't have a global default, so revert to UA style */
+/* If the entire block should be deemed 'inherited' at once, adjust the styling */
+.inheritblock {
+	padding: 0.5em;
+	margin: 0.5em 0; /* Shave half the margin to make the padding */
+	width: fit-content;
+}
 
 .expandbox {
 	border: 1px solid black;
