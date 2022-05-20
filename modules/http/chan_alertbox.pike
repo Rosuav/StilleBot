@@ -1063,8 +1063,8 @@ void cheer(object channel, mapping person, int bits, mapping extra, string msg) 
 }
 
 continue Concurrent.Future fetch_voice_list() {
-	//For now, only English voices are listed. That's only a UI concern though.
-	object res = yield(Protocols.HTTP.Promise.get_url("https://texttospeech.googleapis.com/v1/voices?languageCode=en",
+	//To filter to just English results, add "?languageCode=en"
+	object res = yield(Protocols.HTTP.Promise.get_url("https://texttospeech.googleapis.com/v1/voices",
 		Protocols.HTTP.Promise.Arguments((["headers": ([
 			"Authorization": "Bearer " + G->G->tts_config->access_token,
 		])]))));
@@ -1080,11 +1080,18 @@ continue Concurrent.Future fetch_voice_list() {
 		if (!has_value(v->name, "Standard")) continue;
 		//It seems that every voice supports just one language. If this is ever not
 		//the case, then hopefully the first one listed is the most important.
-		string lang = m_delete(v, "languageCodes")[0];
-		v->selector = sprintf("%s/%s/%s", lang, v->name, v->ssmlGender);
+		string langcode = m_delete(v, "languageCodes")[0];
+		v->selector = sprintf("%s/%s/%s", langcode, v->name, v->ssmlGender);
 		v->desc = sprintf("%s (%s)", v->name, lower_case(v->ssmlGender[..0]));
-		sscanf(lang, "en-%s", string cc); //TODO: Support other languages
-		languages["English (" + cc + ")"] += ({v});
+		sscanf(langcode, "%s-%s", string lang, string cc);
+		//Google uses ISO 639-3 codes, but I only have a 639-2 table (and 639-1 lookups).
+		lang = Standards.ISO639_2.map_639_1(lang) || lang;
+		mapping langname = ([
+			"eng": " English", //Hack: Sort English at the top since most of my users speak English
+			"cmn": "Chinese (Mandarin)",
+			"yue": "Chinese (Yue)", //Or should these be inverted ("Yue Chinese")?
+		])[lang] || Standards.ISO639_2.get_language(lang) || lang;
+		languages[langname + " (" + cc + ")"] += ({v});
 	}
 	foreach (languages; string lang; array voices) sort(voices->name, voices);
 	//Just to make sure the selection isn't completely empty, have a final fallback
