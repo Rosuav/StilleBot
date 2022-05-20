@@ -135,5 +135,4 @@
     - Alternatively, just use font size??
   - Manually parse/recognize cheer emotes and replace them? Their URLs are part of the
     payload of the cheeremotes query, but at the moment I'm just keeping the keywords.
-* Cache inh[] and update on any change, per other TODOs
 * Inherit from alertset

@@ -439,11 +439,23 @@ mapping resolve_inherits(mapping alerts, string id, mapping alert) {
 	return parent | filter(alert) {return __ARGS__[0] && __ARGS__[0] != "";}; //Shouldn't need to filter since it's done on save, may be able to remove this later
 }
 
-mapping resolve_all_inherits(mapping alerts) {
-	mapping ret = ([]);
-	if (alerts) foreach (alerts; string id; mapping alert)
-		if (id != "defaults") ret[id] = resolve_inherits(alerts, id, alert);
-	return ret;
+void resolve_all_inherits(string userid) {
+	mapping alerts = persist_status->path("alertbox", userid)->alertconfigs, ret = ([]);
+	if (alerts) foreach (alerts; string id; mapping alert) if (id != "defaults") {
+		mapping resolved = ret[id] = resolve_inherits(alerts, id, alert);
+		resolved->text_css = textformatting_css(resolved);
+		if (resolved->image_is_video && COMPAT_VERSION < 3) resolved->version = 3;
+		if (resolved->tts_text && COMPAT_VERSION < 4) resolved->version = 4;
+	}
+	G_G_("alertbox_resolved")[userid] = ret;
+}
+
+void resolve_affected_inherits(string userid, string id) {
+	//TODO maybe: Resolve this ID, and anything that depends on it.
+	//Best way would be to switch this and resolve_all, so that
+	//resolve_all really means "resolve those affected by defaults".
+	//For now, a bit of overkill: just always resolve all.
+	resolve_all_inherits(userid);
 }
 
 bool need_mod(string grp) {return grp == "control";}
@@ -457,7 +469,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		else if (has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read"))
 			token = persist_status->path("bcaster_token")[chan];
 		return ([
-			"alertconfigs": resolve_all_inherits(cfg->alertconfigs),
+			"alertconfigs": G_G_("alertbox_resolved")[(string)channel->userid] || ([]),
 			"token": token,
 			"hostlist_command": cfg->hostlist_command || "",
 			"hostlist_format": cfg->hostlist_format || "",
@@ -698,13 +710,14 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		if (msg->image) {
 			//If you're setting the image, see if we need to set the "image_is_video" flag
 			int idx = search((cfg->files || ({ }))->url, msg->image);
-			if (idx == -1 && has_prefix(msg->image, "https://"))
-				//Let the client tell us which tag to use. It'll only hurt the client
-				//if this is wrong anyway.
-				data->image_is_video = msg->image_is_video;
+			if (idx == -1) {
+				//If it's a link, let the client tell us which tag to use. It'll
+				//only hurt the client if this is wrong anyway.
+				data->image_is_video = has_prefix(msg->image, "https://") && msg->image_is_video;
+			}
 			else data->image_is_video = has_prefix(cfg->files[idx]->mimetype, "video/");
-			if (data->image_is_video && COMPAT_VERSION < 3 && data->version < 3) data->version = 3;
 		}
+		resolve_affected_inherits((string)channel->userid, msg->type);
 		persist_status->save();
 		send_updates_all(conn->group);
 		send_updates_all(cfg->authkey + channel->name);
@@ -737,22 +750,17 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 			alert->mro = alert->mro[..idx] + mro;
 		}
 	}
+
 	//Volume can only be set when the audio file is set. If audio inherits (which
 	//will be common for variants), volume will also inherit. In theory, you might
 	//want to have a variant with "same audio but a little louder"; but since there
 	//is no way to express "a little louder" without setting an exact volume, I'm OK
 	//with not being able to express "same audio" without explicitly picking the file.
 	if (!data->sound) m_delete(data, "volume");
-	mapping inh = resolve_inherits(cfg->alertconfigs, msg->type, data);
-	if (!has_value(VALID_FORMATS, inh->format)) {
-		m_delete(data, "format"); //Inheriting will usually be safe. Usually.
-		inh = resolve_inherits(cfg->alertconfigs, msg->type, data); //Overkill, but whatever.
-		//If it's STILL not valid, then that probably means a parent is broken. Force to a safe default.
-		if (!has_value(VALID_FORMATS, inh->format)) data->format = inh->format = NULL_ALERT->format;
-	}
+	if (data->format && !has_value(VALID_FORMATS, data->format)) m_delete(data, "format");
 	textformatting_validate(data);
-	data->text_css = textformatting_css(inh);
-	if (inh->tts_text && COMPAT_VERSION < 4) data->version = 4;
+
+	resolve_affected_inherits((string)channel->userid, msg->type);
 	if (basetype != "defaults") {
 		//Calculate specificity.
 		//The calculation assumes that all comparison values are nonnegative integers.
@@ -848,14 +856,7 @@ void websocket_cmd_reload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 
 continue Concurrent.Future send_with_tts(object channel, string alerttype, mapping args) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	//TODO: Retain inh for all alert types. Every time any alert gets updated,
-	//reconstruct all inherits for that client. Should they get saved into G->G
-	//or cfg? Either could work. Probably G->G.
-	//FIXME. This is necessary to make edits to parents propagate through CSS.
-	//After resolving inherits, regenerate text_css. Would also be the single
-	//place to set the version of the alert, guaranteeing inheritance works on
-	//minimum version too.
-	mapping inh = resolve_inherits(cfg->alertconfigs, alerttype, cfg->alertconfigs[alerttype]);
+	mapping inh = G_G_("alertbox_resolved", (string)channel->userid, alerttype);
 	args |= (["send_alert": alerttype]);
 	string fmt = inh->tts_text || "", text = "";
 	while (sscanf(fmt, "%s{%s}%s", string before, string tok, string after) == 3) {
@@ -1086,4 +1087,8 @@ protected void create(string name) {
 		};
 		spawn_task(fetch_voice_list());
 	}
+	mapping resolved = G_G_("alertbox_resolved");
+	//mapping resolved = G->G->alertbox_resolved = ([]); //Use this instead (once) if a change breaks inheritance
+	foreach (persist_status->path("alertbox"); string userid;)
+		if (!resolved[userid]) resolve_all_inherits(userid);
 }
