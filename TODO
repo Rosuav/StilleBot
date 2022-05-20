@@ -135,5 +135,5 @@
     - Alternatively, just use font size??
   - Manually parse/recognize cheer emotes and replace them? Their URLs are part of the
     payload of the cheeremotes query, but at the moment I'm just keeping the keywords.
-* Alert volume can only be set when the audio is set, otherwise it inherits. Show this
-  visually, rather than setting volume to 50%.
+* If image/sound omitted, show as inherited, rather than as empty
+  - If sound omitted, alert volume also inherits - don't pretend volume is 50%.
