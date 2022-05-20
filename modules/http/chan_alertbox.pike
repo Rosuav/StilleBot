@@ -432,10 +432,21 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
-mapping resolve_inherits(mapping alerts, string id, mapping alert) {
-	string par = alert->?parent || "defaults"; //TODO: For MRO insertion of sets, insert "|| alert->cond_alertset" or similar.
+//Find the alertset that this alert depends on. Note that (as of 20220520) only
+//one alertset can be active at a time, and therefore we do not support conflicting
+//alertset choices in an inheritance chain; therefore there will be only one alert
+//set chosen, the one closest to the tip (furthest from the root at the defaults).
+string find_alertset(mapping alerts, string id) {
+	mapping alert = alerts[id];
+	if (string s = alert["cond-alertset"]) return s;
+	if (alert->parent && alert->parent != "" && alert->parent != "defaults")
+		return find_alertset(alerts, alert->parent);
+}
+
+mapping resolve_inherits(mapping alerts, string id, mapping alert, string alertset) {
+	string par = alert->?parent || (id != alertset && alertset) || "defaults";
 	mapping parent = id == "defaults" ? NULL_ALERT //The defaults themselves are defaulted to the vanilla null alert.
-		: resolve_inherits(alerts, par, alerts[par]); //Everything else has a parent, potentially implicit.
+		: resolve_inherits(alerts, par, alerts[par], alertset); //Everything else has a parent, potentially implicit.
 	if (!alert) return parent;
 	return parent | filter(alert) {return __ARGS__[0] && __ARGS__[0] != "";}; //Shouldn't need to filter since it's done on save, may be able to remove this later
 }
@@ -443,7 +454,11 @@ mapping resolve_inherits(mapping alerts, string id, mapping alert) {
 void resolve_all_inherits(string userid) {
 	mapping alerts = persist_status->path("alertbox", userid)->alertconfigs, ret = ([]);
 	if (alerts) foreach (alerts; string id; mapping alert) if (id != "defaults") {
-		mapping resolved = ret[id] = resolve_inherits(alerts, id, alert);
+		//First walk the list of parents to find the alert set.
+		string alertset = find_alertset(alerts, id);
+		//Then, resolve inherits via the list of parents AND the alert set.
+		mapping resolved = ret[id] = resolve_inherits(alerts, id, alert, alertset);
+		//Finally, update some derived information to save effort later.
 		resolved->text_css = textformatting_css(resolved);
 		if (resolved->image_is_video && COMPAT_VERSION < 3) resolved->version = 3;
 		if (resolved->tts_text && COMPAT_VERSION < 4) resolved->version = 4;
@@ -486,7 +501,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	}
 	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
 	cfg->alertconfigs->defaults = resolve_inherits(cfg->alertconfigs, "defaults",
-		cfg->alertconfigs->defaults || ([]));
+		cfg->alertconfigs->defaults || ([]), 0);
 	return (["items": cfg->files || ({ }),
 		"alertconfigs": cfg->alertconfigs,
 		"alerttypes": ALERTTYPES + (cfg->personals || ({ })),
@@ -736,6 +751,8 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	//doesn't inherit from this alert. Attempting to do so will just reset to "".
 	//NOTE: Currently you can only inherit from a base alert. This helps to keep
 	//the UI a bit less cluttered.
+	//Note that technically, the full MRO consists of this array, followed by the
+	//alert set (if present), followed by the channel defaults and global defaults.
 	if (basetype != "defaults" && stringp(msg->parent) && msg->parent != "" && msg->parent != "defaults" && valid_alert_type(msg->parent, cfg)) {
 		array mro = cfg->alertconfigs[msg->parent]->?mro;
 		if (!mro) mro = ({msg->parent});
@@ -942,7 +959,14 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 				}
 			}
 		}
-		if (mapping set = cfg->alertconfigs[alert["cond-alertset"]]) {
+		//Note that due to the oddities of alertsets and inheritance, we actually
+		//use the *resolved* config to check an alert set. This allows a variant
+		//to choose its alertset, it allows a base alert to choose the alertset
+		//for all variants, but not for the base alert AND the variant to select
+		//conflicting alertsets. Since (as of 20220520) you can't have multiple
+		//alert sets active at once, such an alert would never fire anyway.
+		string setname = G_G_("alertbox_resolved", (string)channel->userid, alerttype)["cond-alertset"];
+		if (mapping set = cfg->alertconfigs[setname]) {
 			//Check that the alert set is active, if one is selected
 			if (!set->active) return 0;
 		}
