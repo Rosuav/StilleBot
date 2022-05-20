@@ -10,6 +10,9 @@ inherit hook;
 * Test the credentials:
   $ GOOGLE_APPLICATION_CREDENTIALS=tts-credentials.json gcloud auth application-default print-access-token
   - Should produce a lot of text and no visible error messages
+* The first 1M or 4M characters per month are free, then 4 USD or 16 USD per
+  million characters. Since I disable Wavenet voices here, it's 4M then 4 USD,
+  but removing that check would make it more expensive (fine if low throughput).
 The credentials file will be automatically loaded on code update, and should be used thereafter.
 */
 constant markdown = #"# Alertbox management for channel $$channel$$
