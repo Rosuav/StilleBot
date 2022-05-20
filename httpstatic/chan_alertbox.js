@@ -308,7 +308,7 @@ export function render(data) {
 							OPTION({value: "cheers"}, "Cheer emotes"),
 							OPTION({value: "emotes"}, "All emotes"),
 						]),
-						"TODO: Bad words, custom words",
+						" (TODO: Bad words, custom words)",
 					])]),
 				]),
 			]),
