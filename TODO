@@ -137,3 +137,5 @@
     payload of the cheeremotes query, but at the moment I'm just keeping the keywords.
 * If image/sound omitted, show as inherited, rather than as empty
   - If sound omitted, alert volume also inherits - don't pretend volume is 50%.
+* Cache inh[] and update on any change, per other TODOs
+* Inherit from alertset
