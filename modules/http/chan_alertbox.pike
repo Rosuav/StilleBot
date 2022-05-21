@@ -147,11 +147,11 @@ input[name=chooseme]:checked ~ figure {
 	padding: 0;
 }
 .thumbnail {
-	width: 150px; height: 150px;
+	width: 100px; height: 100px;
 	background: none center/contain no-repeat;
 }
 figcaption {
-	max-width: 150px;
+	max-width: 100px;
 	overflow-wrap: break-word;
 }
 .thumbnail audio {max-width: 100%; max-height: 100%;}
@@ -1110,7 +1110,7 @@ protected void create(string name) {
 	::create(name);
 	//See if we have a credentials file. If so, get local credentials via gcloud.
 	if (!G->G->tts_config) G->G->tts_config = ([]);
-	if (file_stat("tts-credentials.json")) {
+	if (file_stat("tts-credentials.json") && !G->G->tts_config->access_token) {
 		mapping rc = Process.run(({"gcloud", "auth", "application-default", "print-access-token"}),
 			(["env": getenv() | (["GOOGLE_APPLICATION_CREDENTIALS": "tts-credentials.json"])]));
 		G->G->tts_config->access_token = String.trim(rc->stdout);
