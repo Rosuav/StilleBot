@@ -147,11 +147,11 @@ input[name=chooseme]:checked ~ figure {
 	padding: 0;
 }
 .thumbnail {
-	width: 100px; height: 100px;
+	width: 150px; height: 150px;
 	background: none center/contain no-repeat;
 }
 figcaption {
-	max-width: 100px;
+	max-width: 150px;
 	overflow-wrap: break-word;
 }
 .thumbnail audio {max-width: 100%; max-height: 100%;}
