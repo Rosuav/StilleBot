@@ -193,3 +193,5 @@
     always put an accept in this branch and a reject in that one, even if the
     command could be invoked by name or by reward
   - Would require that the reward be created by StilleBot
+* Dynamic rewards need a major rework. Once the above is done, maybe the builtin
+  can do the dynamic updates too?
