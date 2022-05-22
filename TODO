@@ -177,3 +177,19 @@
   - Add an entry to the StilleBot library for "Default Animations/Sounds"
     - Populated from the JSON file, obviously
     - Maybe just a drop-down, no previews??
+* Command editor: Put a gear button on the anchor, same as dblclick
+* Update the command anchor when the command name is edited
+* Add to command anchor:
+  - Automation - run the command every X minutes, or X-Y minutes
+    - Change of behaviour: if you say "30", it will be exactly 30, not
+      29-31. But you can still say 29-31 if you want to.
+  - Trigger on channel point redemption
+    - Make chan_pointsrewards able to configure and select these
+    - Is it possible for chan_pointsrewards to simply open up the command popup
+      for a particular command? Worst case, deep-link to the editor.
+    - If this is the invocation, provide {rewardid} and {redemptionid}.
+* Builtin to accept/reject a channel point redemption
+  - No error if you try to accept/reject blank, so you can code your command to
+    always put an accept in this branch and a reject in that one, even if the
+    command could be invoked by name or by reward
+  - Would require that the reward be created by StilleBot
