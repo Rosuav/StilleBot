@@ -136,10 +136,6 @@
   - Manually parse/recognize cheer emotes and replace them? Their URLs are part of the
     payload of the cheeremotes query, but at the moment I'm just keeping the keywords.
 * Add more features to the command anchor
-  - Access drop-down, with explanation that "Access: None" means nobody can run it, but it
-    can still be invoked in other ways
-  - Visibility drop-down, with explanation
-  - Both the above duplicate the effect of flags, and will enable/disable them accordingly
   - Command automation - creates a !repeat
   - Channel point redemption
   - Note that these ignore the access restriction. Have a way to create a command that's
