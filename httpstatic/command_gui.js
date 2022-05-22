@@ -146,8 +146,16 @@ const types = {
 	anchor_command: {
 		color: "#ffff00", fixed: true, children: ["message"],
 		label: el => `When ${el.command} is typed...`, //TODO: Also mention aliases
-		typedesc: "This is how everything starts. Drag flags onto this to apply them.",
-		params: [{attr: "aliases", label: "Aliases"}], //TODO: Validate format? Explain? Or maybe have "Add alias" and "Remove alias" buttons?
+		typedesc: "This is how everything starts. Drag flags onto this to apply them. "
+			+ "Restricting access affects who may type the command, but it may still "
+			+ "be invoked in other ways even if nobody has access.",
+		params: [
+			{attr: "aliases", label: "Aliases"}, //TODO: Validate format? Explain? Or maybe have "Add alias" and "Remove alias" buttons?
+			{attr: "access", label: "Access", values: ["", "vip", "mod", "none"],
+				selections: {"": "Everyone", vip: "VIPs/mods", mod: "Mods only", none: "Nobody"}},
+			{attr: "visibility", label: "Visibility", values: ["", "hidden"],
+				selections: {"": "Visible", hidden: "Hidden"}},
+		],
 		provides: {
 			"{param}": "Anything typed after the command name",
 			"{username}": "Name of the user who entered the command",
