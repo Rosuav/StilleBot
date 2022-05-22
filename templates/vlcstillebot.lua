@@ -13,11 +13,9 @@ function descriptor()
 end
 
 function notify(args)
-	vlc.msg.info(args)
 	local s = vlc.stream(URL .. args .. nextnotif)
 	nextnotif = ""
 	local line = s:readline() -- read a line. Return nil if EOF was reached.
-	vlc.msg.dbg("[StilleBot] Got line: " .. line)
 end
 
 function activate()
