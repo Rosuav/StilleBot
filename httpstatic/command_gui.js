@@ -874,9 +874,9 @@ canvas.addEventListener("dblclick", e => {
 			//If there's no validator function, this is an array, not an object.
 			if (values.length === 3 && typeof values[0] === "number") {
 				const [min, max, step] = values;
-				control = INPUT({...id, type: "number", min, max, step, value: value});
+				control = INPUT({...id, type: "number", min, max, step, value});
 			} else {
-				control = SELECT(id, values.map(v => OPTION({selected: v === value, value: v}, (param.selections||{})[v] || v)));
+				control = SELECT({...id, value}, values.map(v => OPTION({value: v}, (param.selections||{})[v] || v)));
 			}
 		}
 		else control = values.make_control(id, value, el);
