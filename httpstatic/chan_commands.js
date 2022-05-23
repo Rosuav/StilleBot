@@ -8,7 +8,14 @@ cmd_configure({
 		const cmdname = "!" + cmd.id.split("#")[0];
 		set_content("#advanced_view h3", ["Edit command ", INPUT({autocomplete: "off", id: "cmdname", value: cmdname})]);
 		check_save();
-		return {type: "anchor_command", command: cmdname, aliases: cmd.aliases || "", automate: cmd.automate};
+		let automate = "";
+		if (cmd.automate) {
+			const [m1, m2, mode] = cmd.automate;
+			if (mode) automate = ("0" + m1).slice(-2) + ":" + ("0" + m2).slice(-2); //hr:min
+			else if (m1 === m2) automate = ""+m1; //min-min is the same as just min
+			else automate = m1 + "-" + m2; //min-max
+		}
+		return {type: "anchor_command", command: cmdname, aliases: cmd.aliases || "", automate};
 	},
 });
 

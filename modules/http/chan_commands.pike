@@ -296,6 +296,14 @@ echoable_message validate(echoable_message resp, mapping state)
 	aliases -= ({"", state->cmd}); //Disallow blank, or an alias pointing back to self (it'd be ignored anyway)
 	if (sizeof(aliases)) ret->aliases = aliases * " ";
 
+	//Automation comes in a couple of strict forms; anything else gets dropped.
+	if (resp->automate) {
+		if (sscanf(resp->automate, "%d:%d", int hr, int min) == 2) ret->automate = ({hr, min, 1});
+		else if (sscanf(resp->automate, "%d-%d", int min, int max) && min >= 0 && max >= min) ret->automate = ({min, max, 0});
+		else if (sscanf(resp->automate, "%d", int minmax) && minmax >= 0) ret->automate = ({minmax, minmax, 0});
+		//Else don't set ret->automate.
+	}
+
 	return sizeof(ret) == 1 ? ret->message : ret;
 }
 
