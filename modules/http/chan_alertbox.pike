@@ -1114,6 +1114,11 @@ protected void create(string name) {
 		mapping rc = Process.run(({"gcloud", "auth", "application-default", "print-access-token"}),
 			(["env": getenv() | (["GOOGLE_APPLICATION_CREDENTIALS": "tts-credentials.json"])]));
 		G->G->tts_config->access_token = String.trim(rc->stdout);
+		//Not sure, but I think credentials expire after a while. It's quite slow to
+		//generate them, though, and I'd rather generate only when needed; so for now,
+		//this will stay here for diagnosis purposes only. If I can figure out an
+		//expiration time, I'll schedule a regeneration at or just before that time.
+		G->G->tts_config->access_token_fetchtime = time();
 		twitch_api_request("https://api.twitch.tv/helix/bits/cheermotes")->then() {
 			G->G->tts_config->cheeremotes = lower_case(__ARGS__[0]->data->prefix[*]);
 		};
