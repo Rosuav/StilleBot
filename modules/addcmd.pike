@@ -118,6 +118,11 @@ void purge(string chan, string cmd, multiset updates) {
 	if (!mappingp(prev)) return;
 	if (prev->alias_of) purge(chan, prev->alias_of + "#" + chan, updates);
 	if (prev->aliases) update_aliases(chan, prev->aliases, 0, updates);
+	if (prev->automate) {
+		//Clear out the timer
+		mixed id = m_delete(G->G->autocommands, cmd);
+		if (id) remove_call_out(id);
+	}
 }
 
 //Update (or delete) an echo command and save them to disk
@@ -138,6 +143,12 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 		//worst, they'll linger in G->G until restart - no big deal.
 		int timeout = G->G->cooldown_timeout[cdname + "#" + chan] - time();
 		if (cdlength && timeout > cdlength) G->G->cooldown_timeout[cdname + "#" + chan] = cdlength + time();
+	}
+	if (response->?automate && G->G->stream_online_since[chan]) {
+		//Start a timer
+		//Currently, a simple hack: notify repeat.pike to recheck everything.
+		function repeat = G->G->commands->repeat;
+		if (repeat) function_object(repeat)->connected(chan);
 	}
 	string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 	Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));

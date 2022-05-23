@@ -72,20 +72,12 @@ void autospam(string channel, string msg)
 	if (!G->G->stream_online_since[channel[1..]]) return;
 	mapping cfg = persist_config["channels"][channel[1..]];
 	if (!cfg) return; //Channel no longer configured
-	int|array(int) mins = cfg->autocommands[msg];
+	echoable_message response = G->G->echocommands[msg[1..] + channel];
+	int|array(int) mins = (mappingp(response) && response->automate) || cfg->autocommands[msg];
 	if (!mins) return; //Autocommand disabled
-	string key = channel + " " + msg;
+	string key = cfg->autocommands[msg] ? channel + " " + msg : msg[1..] + channel;
 	G->G->autocommands[key] = call_out(autospam, seconds(mins, cfg->timezone), channel, msg);
-	if (has_prefix(msg, "!"))
-	{
-		//If a command is given, invoke it directly. This is the recommended
-		//way to configure autocommands, and in fact may eventually become the
-		//ONLY way to do this (with "send this text every X minutes" implicitly
-		//creating a hidden command to do it).
-		//Note that the fallback shouldn't happen; the repeat should be cleared
-		//when the command is deleted/renamed.
-		msg = G->G->echocommands[msg[1..] + channel] || "!repeat: Autocommand " + msg + " not found";
-	}
+	if (response) msg = response;
 	string me = persist_config["ircsettings"]->nick;
 	G->G->irc->channels[channel]->send((["nick": me, "user": me]), msg);
 }
@@ -107,6 +99,10 @@ echoable_message process(object channel, mapping person, string param)
 	else if (sscanf(param, "%d %s", int m, msg) && msg)
 		mins = ({m, m, 0}); //Repeated exactly every X minutes
 	if (!mins) return "Check https://rosuav.github.io/StilleBot/commands/repeat for usage information.";
+	//TODO: If it's a command, edit the command's automate attribute.
+	//TODO: If it's NOT a command, create a command, with the automation set, and report
+	//to the user what the command was called. If unrepeating, suggest removing the command
+	//instead. Most people will prob use the web interface anyway.
 	mapping ac = channel->config->autocommands;
 	if (!ac) ac = channel->config->autocommands = ([]);
 	string key = channel->name + " " + msg;
@@ -156,6 +152,13 @@ echoable_message unrepeat(object channel, mapping person, string param)
 		if (!id || undefinedp(find_call_out(id)))
 			G->G->autocommands[key] = call_out(autospam, seconds(mins, cfg->timezone), "#" + channel, msg);
 	}
+	foreach (G->G->echocommands; string cmd; echoable_message response) {
+		if (!has_suffix(cmd, "#" + channel)) continue;
+		if (!mappingp(response) || !response->automate) continue;
+		mixed id = G->G->autocommands[cmd];
+		if (!id || undefinedp(find_call_out(id)))
+			G->G->autocommands[cmd] = call_out(autospam, seconds(response->automate, cfg->timezone), "#" + channel, (cmd / "#")[0]);
+	}
 }
 
 void check_autocommands()
@@ -164,10 +167,11 @@ void check_autocommands()
 	//No need to worry about channels being offline; they'll be caught at next repeat.
 	foreach (G->G->autocommands; string key; mixed id)
 	{
-		sscanf(key, "%s %s", string channel, string msg);
-		mapping cfg = persist_config["channels"][channel[1..]];
-		if (!cfg || !cfg->autocommands[msg])
-			remove_call_out(m_delete(G->G->autocommands, key));
+		if (sscanf(key, "%s %s", string channel, string msg) == 2) {
+			mapping cfg = persist_config["channels"][channel[1..]];
+			if (!cfg || !cfg->autocommands[msg])
+				remove_call_out(m_delete(G->G->autocommands, key));
+		}
 	}
 	//Next, look for any that need to be started.
 	foreach (persist_config["channels"]; string channel; mapping cfg)
