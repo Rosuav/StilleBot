@@ -155,6 +155,7 @@ const types = {
 				selections: {"": "Everyone", vip: "VIPs/mods", mod: "Mods only", none: "Nobody"}},
 			{attr: "visibility", label: "Visibility", values: ["", "hidden"],
 				selections: {"": "Visible", hidden: "Hidden"}},
+			//{label: "This is just a label"},
 		],
 		provides: {
 			"{param}": "Anything typed after the command name",
@@ -766,7 +767,7 @@ function same_template(t1, t2) {
 	if (t1 === "" || t2 === "") return false;
 	if (t1.type !== t2.type) return false;
 	const type = types[t1.type];
-	if (type.params) for (let p of type.params) {
+	if (type.params) for (let p of type.params) if (p.attr) {
 		let v1 = t1[p.attr], v2 = t2[p.attr];
 		if (Array.isArray(v1) && Array.isArray(v2)) {
 			//Compare arrays element-wise
@@ -871,6 +872,7 @@ canvas.addEventListener("dblclick", e => {
 	set_content("#typedesc", type.typedesc || el.desc);
 	set_content("#params", (type.params||[]).map(param => {
 		if (param.label === null) return null; //Note that a label of undefined is probably a bug and should be visible.
+		if (!param.attr) return TR(TD({colspan: 2}, param.label)); //Descriptive text
 		let control, id = {name: "value-" + param.attr, id: "value-" + param.attr, disabled: el.template};
 		const values = param.values || default_handlers;
 		if (typeof values !== "object") return null; //Fixed strings and such
@@ -933,7 +935,7 @@ on("input", "#properties [name]", e => set_content("#saveprops", "Apply changes"
 
 on("submit", "#setprops", e => {
 	const type = types[propedit.type];
-	if (!propedit.template && type.params) for (let param of type.params) {
+	if (!propedit.template && type.params) for (let param of type.params) if (param.attr) {
 		const val = document.getElementById("value-" + param.attr);
 		if (val) {
 			//TODO: Validate based on the type, to prevent junk data from hanging around until save
@@ -964,7 +966,7 @@ function element_to_message(el) {
 	if (type.children) for (let attr of type.children) {
 		ret[attr] = el[attr].filter(e => e !== "").map(element_to_message);
 	}
-	if (type.params) type.params.forEach(p => ret[p.attr] = typeof p.values === "string" ? p.values : el[p.attr]); //VERIFY: Should be copying unnecessarily but with no consequence
+	if (type.params) type.params.forEach(p => p.attr && (ret[p.attr] = typeof p.values === "string" ? p.values : el[p.attr])); //VERIFY: Should be copying unnecessarily but with no consequence
 	return ret;
 }
 
@@ -989,7 +991,7 @@ function matches(param, msg) {
 }
 
 function apply_params(el, msg) {
-	for (let param of types[el.type].params || []) {
+	for (let param of types[el.type].params || []) if (param.attr) {
 		//TODO: If builtin_param is an array and the first element has a fixed value, this
 		//will break. That's not currently possible with the way things are, but it would
 		//be nice to support that, as it'd allow draggables that fix a keyword parameter,
@@ -1018,7 +1020,7 @@ function message_to_element(msg, new_elem, array_ok) {
 	}
 	for (let typename in types) {
 		const type = types[typename];
-		if (!type.fixed && type.params && type.params.every(p => matches(p, msg))) {
+		if (!type.fixed && type.params && type.params.every(p => !p.attr || matches(p, msg))) {
 			const el = new_elem({type: typename});
 			apply_params(el, msg);
 			if (type.children) for (let attr of type.children) {
@@ -1056,7 +1058,7 @@ export function gui_save_message() {
 	//the desired effect.
 	const anchor = actives[0]; //assert anchor.type =~ "anchor*"
 	const msg = element_to_message(anchor);
-	for (let param of types[anchor.type].params || [])
+	for (let param of types[anchor.type].params || []) if (param.attr)
 		msg[param.attr] = typeof param.values === "string" ? param.values : anchor[param.attr];
 	for (let attr in flags) {
 		const flag = flags[attr][anchor[attr]];
