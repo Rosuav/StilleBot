@@ -141,9 +141,6 @@
   - Note that these ignore the access restriction. Have a way to create a command that's
     access none and hidden, and ask for an identifier just for disambiguation purposes;
     it can then be used with other triggers.
-* Fix permissions with repeats
-  - Using the web interface to create them doesn't work (produces weird "0" messages) if
-    the feature is disabled. Every other feature is still available via the web.
 * Alertbox: Have "minimum bits for TTS" setting (default 0), and default text is "{msg}"
   - Recommend that people set minbits on the global defaults, but it can be set anywhere
   - Can be set for an alert set

@@ -16,7 +16,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			string msg = req->variables->command || "";
 			if (mins == "") messages += ({"* Must provide a repetition frequency or scheduled time"});
 			else if (msg == "") messages += ({"* Need a command to repeat"});
-			else messages += ({"* " + G->G->commands->repeat(req->misc->channel,
+			else messages += ({"* " + function_object(G->G->commands->repeat)->process(req->misc->channel,
 				(["user": req->misc->session->user->login]), mins + " " + msg)});
 		}
 		//NOTE: If this is not at the top, pressing Enter in the form will click the wrong
@@ -35,7 +35,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			if (req->request_type == "POST" && req->variables["delete" + msg] == "Delete")
 			{
 				//TODO: Should it confirm before deleting?
-				messages += ({"* " + G->G->commands->repeat(req->misc->channel, (["user": req->misc->session->user->login]), "-1 " + msg)});
+				messages += ({"* " + function_object(G->G->commands->repeat)->process(req->misc->channel, (["user": req->misc->session->user->login]), "-1 " + msg)});
 				continue;
 			}
 			//Add a Delete button to the end of each row
