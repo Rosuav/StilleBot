@@ -105,7 +105,7 @@ echoable_message process(object channel, mapping person, string param)
 	else if (sscanf(param, "%d-%d %s", int min, int max, msg) && msg)
 		mins = ({min, max, 0}); //Repeated between X and Y minutes
 	else if (sscanf(param, "%d %s", int m, msg) && msg)
-		mins = ({m-1, m+1, 0}); //Repeated approx every X minutes
+		mins = ({m, m, 0}); //Repeated exactly every X minutes
 	if (!mins) return "Check https://rosuav.github.io/StilleBot/commands/repeat for usage information.";
 	mapping ac = channel->config->autocommands;
 	if (!ac) ac = channel->config->autocommands = ([]);
