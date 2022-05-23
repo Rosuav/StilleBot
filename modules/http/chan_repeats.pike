@@ -1,5 +1,10 @@
 inherit http_endpoint;
 //TODO: Check for multi-response commands and show them better, esp in nonmod view
+//TODO: List all automated commands for this channel (iterate over G->G->echocommands),
+//showing their repeat rates or target times, and either having a gear button to open
+//the command editor, or at very least, a link that opens ./commands#commandname in a
+//new tab/window.
+//TODO: If a mod, live-update this based on updates to the commands list. 
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
