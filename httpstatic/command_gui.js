@@ -153,9 +153,15 @@ const types = {
 			{attr: "aliases", label: "Aliases"}, //TODO: Validate format? Explain? Or maybe have "Add alias" and "Remove alias" buttons?
 			{attr: "access", label: "Access", values: ["", "vip", "mod", "none"],
 				selections: {"": "Everyone", vip: "VIPs/mods", mod: "Mods only", none: "Nobody"}},
+			{label: "Access controls apply only to chat commands; other invocations are separate."},
 			{attr: "visibility", label: "Visibility", values: ["", "hidden"],
 				selections: {"": "Visible", hidden: "Hidden"}},
-			//{label: "This is just a label"},
+			{label: "Hidden commands do not show up to non-mods."},
+			{attr: "automate", label: "Automate"},
+			{label: [ //TODO: Should I support non-text labels like this?
+				"To have this command performed automatically every X minutes, put X here (or X-Y to randomize).",
+				BR(), "To have it performed automatically at hh:mm, put hh:mm here.",
+			]},
 		],
 		provides: {
 			"{param}": "Anything typed after the command name",
@@ -1037,7 +1043,7 @@ function message_to_element(msg, new_elem, array_ok) {
 
 export function gui_load_message(cmd_basis, msg) {
 	actives.splice(1); //Truncate
-	Object.assign(actives[0], cmd_basis);
+	Object.assign(actives[0], cmd_basis); //TODO: Ensure that omitted attributes become the default. This may mean iterating over all params and clearing them first.
 	msg = JSON.parse(JSON.stringify(msg)); //Deep disconnect from the original, allowing mutation
 	if (typeof msg === "string" || Array.isArray(msg)) msg = {message: msg};
 	if (msg.action) {
