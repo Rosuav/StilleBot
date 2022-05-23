@@ -1,6 +1,6 @@
 //Command advanced editor framework, and Raw mode editor
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, CANVAS, CODE, DIALOG, DIV, EM, FORM, HEADER, H3, INPUT, LABEL, LI, P, SECTION, SPAN, TEXTAREA, U, UL, TR, TD} = choc;
+const {B, BR, BUTTON, CANVAS, CODE, DIALOG, DIV, EM, FORM, H3, HEADER, INPUT, LABEL, LI, P, SECTION, SPAN, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
 const tablist = ["Classic", "Graphical", "Raw"];
 let defaulttab = "graphical"; //Can be overridden with prefs
 document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
@@ -17,7 +17,11 @@ document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 	FORM({autocomplete: "off"}, [
 		DIV({id: "command_details"}),
 		DIV({id: "command_frame"}, [
-			P("Drag elements around and snap them into position to build a command. Double-click an element to change its text etc."),
+			P([
+				"Drag elements around and snap them into position to build a command. ",
+				B("Double-click"),
+				" an element to make changes to it.",
+			]),
 			CANVAS({id: "command_gui", width: "800", height: "600"}),
 		]),
 		UL({className: "buttonbox"}, [
