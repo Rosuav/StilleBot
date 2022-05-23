@@ -78,13 +78,16 @@ void autospam(string channel, string msg)
 	G->G->autocommands[key] = call_out(autospam, seconds(mins, cfg->timezone), channel, msg);
 	if (has_prefix(msg, "!"))
 	{
-		//If a command is given, pretend the bot typed it, and process as normal.
-		object chan = G->G->irc->channels[channel];
-		string me = persist_config["ircsettings"]->nick;
-		chan->irc_message("PRIVMSG", channel, msg, (["nick": me, "user": me]));
-		return;
+		//If a command is given, invoke it directly. This is the recommended
+		//way to configure autocommands, and in fact may eventually become the
+		//ONLY way to do this (with "send this text every X minutes" implicitly
+		//creating a hidden command to do it).
+		//Note that the fallback shouldn't happen; the repeat should be cleared
+		//when the command is deleted/renamed.
+		msg = G->G->echocommands[msg[1..] + channel] || "!repeat: Autocommand " + msg + " not found";
 	}
-	send_message(channel, msg);
+	string me = persist_config["ircsettings"]->nick;
+	G->G->irc->channels[channel]->send((["nick": me, "user": me]), msg);
 }
 
 echoable_message process(object channel, mapping person, string param)
