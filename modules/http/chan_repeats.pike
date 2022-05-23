@@ -55,6 +55,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			else if (mappingp(cmd)) output = cmd->message;
 			else if (arrayp(cmd)) output = cmd * " "; //TODO: Handle array of mappings
 			else output = "(unknown/variable)";
+			if (!stringp(output)) output = Standards.JSON.encode(output); //HACK: Allow complex commands to be kinda displayed
 			repeats += ({sprintf("%s | %s | %s%s", time, user(msg), user(output), delete)});
 		}
 		//Arbitrary echoed text, no associated command
