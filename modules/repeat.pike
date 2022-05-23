@@ -43,7 +43,7 @@ automated echoing will happen only while the stream is live.
 //Assumes a span of +/- 1 minute if not explicitly given
 int seconds(int|array mins, string timezone)
 {
-	if (!arrayp(mins)) mins = ({mins-1, mins+1, 0});
+	if (!arrayp(mins)) mins = ({mins-1, mins+1, 0}); //Ancient compatibility mode. Shouldn't ever happen now.
 	if (sizeof(mins) == 2) mins += ({0});
 	switch (mins[2])
 	{
