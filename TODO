@@ -136,11 +136,10 @@
   - Manually parse/recognize cheer emotes and replace them? Their URLs are part of the
     payload of the cheeremotes query, but at the moment I'm just keeping the keywords.
 * Add more features to the command anchor
-  - Command automation - creates a !repeat
   - Channel point redemption
-  - Note that these ignore the access restriction. Have a way to create a command that's
-    access none and hidden, and ask for an identifier just for disambiguation purposes;
-    it can then be used with other triggers.
+  - Note that alternate invocations ignore the access restriction. Offer a way to
+    quickly create a simple text command that's access none and hidden, and ask for an
+    identifier just for disambiguation purposes; it can then be used with other triggers.
 * Alertbox: Have "minimum bits for TTS" setting (default 0), and default text is "{msg}"
   - Recommend that people set minbits on the global defaults, but it can be set anywhere
   - Can be set for an alert set
@@ -175,6 +174,7 @@
     - Maybe just a drop-down, no previews??
 * Command editor: Put a gear button on the anchor, same as dblclick
 * Update the command anchor when the command name is edited
+  - Might require a new hook from the command_editor into command_gui
 * Add to command anchor:
   - Automation - run the command every X minutes, or X-Y minutes
   - Trigger on channel point redemption
