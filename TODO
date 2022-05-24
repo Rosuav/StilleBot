@@ -172,7 +172,6 @@
 * Update the command anchor when the command name is edited
   - Might require a new hook from the command_editor into command_gui
 * Add to command anchor:
-  - Automation - run the command every X minutes, or X-Y minutes
   - Trigger on channel point redemption
     - Make chan_pointsrewards able to configure and select these
     - Is it possible for chan_pointsrewards to simply open up the command popup
