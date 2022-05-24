@@ -957,7 +957,8 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 		object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
 		mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
 		if (mappingp(data) && data->error->?details[?0]->?reason == "ACCESS_TOKEN_EXPIRED") {
-			werror("TTS access key expired after %d seconds\n", time() - G->G->tts_config->access_token_fetchtime);
+			Stdio.append_file("tts_error.log", sprintf("%sTTS access key expired after %d seconds\n",
+				ctime(time()), time() - G->G->tts_config->access_token_fetchtime));
 			mixed _ = yield(fetch_tts_credentials(1));
 			reqargs->headers->Authorization = "Bearer " + G->G->tts_config->access_token;
 			object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
@@ -966,7 +967,7 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 		}
 		if (mappingp(data) && stringp(data->audioContent))
 			args->tts = "data:audio/ogg;base64," + data->audioContent;
-		else werror("Bad TTS response: %O\n", data); //TODO: Report errors to the streamer somehow
+		else Stdio.append_file("tts_error.log", sprintf("%sBad TTS response: %O\n-------------\n", ctime(time()), data));
 	}
 	send_updates_all(cfg->authkey + channel->name, args);
 }
