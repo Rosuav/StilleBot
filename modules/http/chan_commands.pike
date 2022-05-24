@@ -34,6 +34,16 @@ constant COMPLEX_TEMPLATES = ([
 		"message": "SingsNote Now playing: $vlccurtrack$ SingsNote",
 		"otherwise": "rosuavMuted Not currently playing anything in VLC rosuavMuted",
 	]),
+	"!periodic": ([
+		"access": "none", "visibility": "hidden",
+		"automate": ({30, 30, 0}), "mode": "rotate",
+		"message": ({
+			"If you'd like to see more of what I do, check out my social media: https://some.example/ https://example.com/ https://etc.example/myusername",
+			"If you're enjoying your time here, consider devicatLove_TK the follow button - it would touch my heart!",
+			"Thank you for being here! We appreciate you for choosing to spend time here <3",
+			"It's totally okay to lurk here! Thank you for hanging out with us.",
+		}),
+	]),
 ]);
 	
 constant ENABLEABLE_FEATURES = ([

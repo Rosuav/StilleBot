@@ -25,6 +25,7 @@ $$save_or_login$$
 > > !insta   | My portfolio can be found at https://instagram.com/YOUR_INSTAGRAM_NAME/
 > > !calendar | Add my schedule to your calendar: https://calendar.google.com/calendar?cid=LOTS-OF-CHARACTERS
 > > !song    | SingsNote Now playing: $vlccurtrack$ SingsNote
+> > !periodic | One of these messages every half hour: socials, please follow, thank you for being here, lurking is awesome
 > {: tag=details}
 >
 > <!-- -->
