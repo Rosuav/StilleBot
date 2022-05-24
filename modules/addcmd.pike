@@ -132,6 +132,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 	multiset updates = (<cmd>);
 	purge(chan, cmd, updates);
 	if (extra) purge(chan, extra->original, updates); //Renaming a command requires removal of what used to be.
+	//TODO: Purge any iteration variables that begin with "."+cmd - anonymous rotations restart on any edit
 	if (response) G->G->echocommands[cmd] = response;
 	if (mappingp(response) && response->aliases) update_aliases(chan, response->aliases, (response - (<"aliases">)) | (["alias_of": basename]), updates);
 	foreach (extra->?cooldowns || ([]); string cdname; int cdlength) {

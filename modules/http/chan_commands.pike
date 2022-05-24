@@ -188,7 +188,7 @@ mapping get_state(string group, string|void id) {
 //Map a flag name to a set of valid values for it
 //Blank or null is always allowed, and will result in no flag being set.
 constant message_flags = ([
-	"mode": (<"random">),
+	"mode": (<"random", "rotate">),
 	"dest": (<"/w", "/web", "/set">),
 ]);
 //As above, but applying only to the top level of a command.
@@ -276,6 +276,14 @@ echoable_message _validate(echoable_message resp, mapping state)
 	if (resp->delay && resp->delay != "0" &&
 			(intp(resp->delay) || (sscanf((string)resp->delay, "%[0-9]", string d) && d == resp->delay)))
 		ret->delay = (int)resp->delay;
+
+	if (ret->mode == "rotate") {
+		string name = resp->rotatename || "";
+		//Anonymous rotations, like anonymous cooldowns, get named for the back end only.
+		//In this case, though, it also creates a variable. For simplicity, reuse cdanon.
+		if (name == "" || name[0] == '.') name = sprintf(".%s:%d", state->cmd, ++state->cdanon);
+		ret->rotatename = name;
+	}
 
 	//Voice ID validity depends on the channel we're working with. A syntax-only check will
 	//accept any voice ID as long as it's a string of digits.
