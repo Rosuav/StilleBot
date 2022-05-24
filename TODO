@@ -136,6 +136,19 @@
   - Note that alternate invocations ignore the access restriction. Offer a way to
     quickly create a simple text command that's access none and hidden, and ask for an
     identifier just for disambiguation purposes; it can then be used with other triggers.
+  - Dynamic description.
+    - For triggers, the description is currently borked. Features for making command
+      anchors more dynamic may help here too. (Specials should be fine with fixed text.)
+    - Pick the highest message by priority:
+      - "When !x is typed" is high priority if access != none
+      - "Every X minutes" / "At XX:YY" is medium priority
+      - Channel point redemption will be medium priority when implemented
+      - "Command name: !x" is low priority if access == none
+    - If there are other messages, excluding access-none low prio, append ", ..." or
+      some other indication that there's more options
+    - Recalculate description whenever its attributes get saved
+    - Allow external triggering of a recalculation? Or have an encapsulation-breaking
+      event handler that will respond to a change of the command name field?
 * Alertbox: Have "minimum bits for TTS" setting (default 0), and default text is "{msg}"
   - Recommend that people set minbits on the global defaults, but it can be set anywhere
   - Can be set for an alert set
@@ -169,8 +182,6 @@
     - Populated from the JSON file, obviously
     - Maybe just a drop-down, no previews??
 * Command editor: Put a gear button on the anchor, same as dblclick
-* Update the command anchor when the command name is edited
-  - Might require a new hook from the command_editor into command_gui
 * Add to command anchor:
   - Trigger on channel point redemption
     - Make chan_pointsrewards able to configure and select these
