@@ -127,8 +127,6 @@
   - Bring the LispWhispers camhack into that system (via zzlocal)
 * TTS for alerts (and maybe other features)
   - Notify Kimmy when done
-  - Ultimately, add a bad-word filter (which the streamer can disable, but active by default)
-    - Call on someone else's definition of bad words
 * Alertbox: Parse message text and emotes where appropriate. Send array to client.
   - Might have a configuration on the client to set the image size
     - Set the CSS height for the images, and also pick an appropriate version

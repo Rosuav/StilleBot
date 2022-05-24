@@ -371,6 +371,7 @@ constant NULL_ALERT = ([
 	"padvert": "0", "padhoriz": "0", "textalign": "start",
 	"shadowx": "0", "shadowy": "0", "shadowalpha": "0", "bgalpha": "0",
 	"tts_text": "", "tts_dwell": "0", "tts_volume": 0, "tts_filter_emotes": "cheers",
+	"tts_filter_badwords": "none",
 ]);
 constant LATEST_VERSION = 4; //Bump this every time a change might require the client to refresh.
 constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump this too.
@@ -872,6 +873,15 @@ void websocket_cmd_reload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	send_updates_all(cfg->authkey + channel->name, (["version": LATEST_VERSION + 1]));
 }
 
+//Words created by a quick brainstorm among DeviCat's community :)
+constant cutewords = "puppy kitten crumpet tutu butterscotch flapjack pilliwiggins "
+	"puffball buttercup cupcake cookie sprinkle fluffball fluffy squish poke hue "
+	"smoosh sweetheart lovely sugarplum blossom kitty paw marshmallow sparkles "
+	"chihuahua loaf poof pow bonk hug cuddles meow coffee cherry nom nibbles "
+	"fudge cocoa vanilla choco berry tart giggle love dream cotton candy oreo "
+	"blueberry rainbow treasure princess cutie shiny dance bread sakura train "
+	"gift art flag candle heart love magic save tada hug cool party plush star "
+	"donut teacup cat purring flower sugar biscuit pillow banana berry " / " ";
 continue Concurrent.Future send_with_tts(object channel, string alerttype, mapping args) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	mapping inh = G_G_("alertbox_resolved", (string)channel->userid, alerttype);
@@ -891,6 +901,30 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 					if (n != "" && empty == "" && has_value(cheeremotes, base))
 						//It looks like a cheer emote. Hide it.
 						words[i] = "";
+				}
+				replacement = words * " ";
+			}
+			if (inh->tts_filter_badwords != "none") {
+				if (G->G->tts_config->badwordlist_fetchtime < time() - 86400) {
+					object res = yield(Protocols.HTTP.Promise.get_url(
+						"https://raw.githubusercontent.com/coffee-and-fun/google-profanity-words/main/data/list.txt"
+					));
+					G->G->tts_config->badwordlist_fetchtime = time();
+					G->G->tts_config->badwordlist = (multiset)String.trim((res->get() / "\n")[*]);
+				}
+				array words = replacement / " ";
+				multiset bad = G->G->tts_config->badwordlist;
+				foreach (words; int i; string w) {
+					//For the purposes of badword filtering, ignore all non-alphabetics.
+					//TODO: Handle "abc123qwe" by checking both abc and qwe?
+					sscanf(w, "%*[^A-Za-z]%[A-Za-z]", w);
+					if (!bad[w]) continue;
+					if (inh->tts_filter_badwords == "message") {words = ({ }); break;}
+					switch (inh->tts_filter_badwords) {
+						case "skip": words[i] = ""; break;
+						case "replace": words[i] = random(cutewords); break;
+						default: break;
+					}
 				}
 				replacement = words * " ";
 			}
@@ -919,7 +953,7 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 		mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
 		if (mappingp(data) && stringp(data->audioContent))
 			args->tts = "data:audio/ogg;base64," + data->audioContent;
-		//else ; //TODO: Report errors somehow
+		else werror("Bad TTS response: %O\n", data); //TODO: Report errors to the streamer somehow
 	}
 	send_updates_all(cfg->authkey + channel->name, args);
 }
