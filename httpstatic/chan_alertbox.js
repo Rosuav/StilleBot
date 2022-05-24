@@ -284,6 +284,20 @@ export function render(data) {
 			type !== "hostalert" && DETAILS({class: "expandbox"}, [ //Currently, host alerts can't do TTS, since they don't come from the backend.
 				SUMMARY("Text-To-Speech settings"),
 				TABLE([
+					TR({class: "cheer-only"}, [
+						//Note that this is hidden when not on the cheer page (or a variant for
+						//cheer alerts), but is technically fully functional. Setting this on an
+						//alert set would be potentially useful, but only if it's unset on the
+						//base cheer alert, and set on the defaults instead. This is UI-confusing
+						//but perfectly sane on the back end, so this is UI-hidden rather than
+						//being actually server-side blocked. If you understand the implications
+						//and want to use the full power of this, go ahead and unhide the fields.
+						TD(LABEL({for: type + "-tts_min_bits"}, "Minimum bits for TTS:")),
+						TD([
+							INPUT({id: type + "-tts_min_bits", name: "tts_min_bits", size: 4}),
+							" Cheers smaller than this will ignore text-to-speech",
+						]),
+					]),
 					nondef && TR([
 						TD(LABEL({for: type + "-tts_text"}, "Spoken text:")),
 						TD([

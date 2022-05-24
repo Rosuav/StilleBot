@@ -228,6 +228,9 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 .mode-alertset .not-alertset {display: none;}
 .mode-variant .not-variant {display: none;}
 
+.cheer-only {display: none;}
+[data-type^=cheer] .cheer-only {display: revert;}
+
 #uploaderror {
 	margin-bottom: 0.5em;
 	background: #fee;
@@ -356,7 +359,7 @@ constant ALERTTYPES = ({([
 constant SINGLE_EDIT_ATTRS = ({"image", "sound"}); //Attributes that can be edited by the client without changing the rest
 constant RETAINED_ATTRS = SINGLE_EDIT_ATTRS + ({"version", "variants", "image_is_video"}); //Attributes that are not cleared when a full edit is done (changing the format)
 constant FORMAT_ATTRS = ("format name description active alertlength alertgap cond-label cond-disableautogen "
-			"tts_text tts_dwell tts_volume tts_filter_emotes tts_filter_badwords tts_filter_words tts_voice "
+			"tts_text tts_dwell tts_volume tts_filter_emotes tts_filter_badwords tts_filter_words tts_voice tts_min_bits "
 			"layout alertwidth alertheight textformat volume") / " " + TEXTFORMATTING_ATTRS;
 constant VALID_FORMATS = "text_image_stacked text_image_overlaid" / " ";
 //List all defaults here. They will be applied to everything that isn't explicitly configured.
@@ -370,8 +373,8 @@ constant NULL_ALERT = ([
 	"strokewidth": "None", "strokecolor": "#000000", "borderwidth": "0",
 	"padvert": "0", "padhoriz": "0", "textalign": "start",
 	"shadowx": "0", "shadowy": "0", "shadowalpha": "0", "bgalpha": "0",
-	"tts_text": "", "tts_dwell": "0", "tts_volume": 0, "tts_filter_emotes": "cheers",
-	"tts_filter_badwords": "none",
+	"tts_text": "{msg}", "tts_dwell": "0", "tts_volume": 0, "tts_filter_emotes": "cheers",
+	"tts_filter_badwords": "none", "tts_min_bits": "0",
 ]);
 constant LATEST_VERSION = 4; //Bump this every time a change might require the client to refresh.
 constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump this too.
@@ -887,6 +890,8 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 	mapping inh = G_G_("alertbox_resolved", (string)channel->userid, alerttype);
 	args |= (["send_alert": alerttype]);
 	string fmt = inh->tts_text || "", text = "";
+	int bits = (int)args->bits;
+	if (bits && bits < (int)inh->tts_min_bits) fmt = "";
 	while (sscanf(fmt, "%s{%s}%s", string before, string tok, string after) == 3) {
 		string replacement = args[tok] || "";
 		if (tok == "msg") {
@@ -937,8 +942,7 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 	array voice = (inh->tts_voice || "") / "/";
 	if (sizeof(voice) != 3) voice = G->G->tts_config->default_voice / "/";
 	if (string token = text != "" && G->G->tts_config->?access_token) {
-		object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize",
-			Protocols.HTTP.Promise.Arguments((["headers": ([
+		object reqargs = Protocols.HTTP.Promise.Arguments((["headers": ([
 				"Authorization": "Bearer " + token,
 				"Content-Type": "application/json; charset=utf-8",
 			]), "data": Standards.JSON.encode(([
@@ -949,8 +953,17 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 					"ssmlGender": voice[2],
 				]),
 				"audioConfig": (["audioEncoding": "OGG_OPUS"]),
-			]))]))));
+			]))]));
+		object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
 		mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
+		if (mappingp(data) && data->error->?details[?0]->?reason == "ACCESS_TOKEN_EXPIRED") {
+			werror("TTS access key expired after %d seconds\n", time() - G->G->tts_config->access_token_fetchtime);
+			mixed _ = yield(fetch_tts_credentials(1));
+			reqargs->headers->Authorization = "Bearer " + G->G->tts_config->access_token;
+			object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
+			catch {data = Standards.JSON.decode_utf8(res->get());};
+			//Exactly one retry attempt; if it fails, fall through and report a generic error.
+		}
 		if (mappingp(data) && stringp(data->audioContent))
 			args->tts = "data:audio/ogg;base64," + data->audioContent;
 		else werror("Bad TTS response: %O\n", data); //TODO: Report errors to the streamer somehow
@@ -1096,7 +1109,21 @@ void cheer(object channel, mapping person, int bits, mapping extra, string msg) 
 	]) | parse_emotes(msg, person));
 }
 
-continue Concurrent.Future fetch_voice_list() {
+continue Concurrent.Future fetch_tts_credentials(int fast) {
+	mapping rc = Process.run(({"gcloud", "auth", "application-default", "print-access-token"}),
+		(["env": getenv() | (["GOOGLE_APPLICATION_CREDENTIALS": "tts-credentials.json"])]));
+	G->G->tts_config->access_token = String.trim(rc->stdout);
+	//Not sure, but I think credentials expire after a while. It's quite slow to
+	//generate them, though, and I'd rather generate only when needed; so for now,
+	//this will stay here for diagnosis purposes only. If I can figure out an
+	//expiration time, I'll schedule a regeneration at or just before that time.
+	//CJA 20220525: Now fetching automatically whenever there's a problem. It'd
+	//still be good to preempt that if we can.
+	G->G->tts_config->access_token_fetchtime = time();
+	if (fast) return 0;
+	twitch_api_request("https://api.twitch.tv/helix/bits/cheermotes")->then() {
+		G->G->tts_config->cheeremotes = lower_case(__ARGS__[0]->data->prefix[*]);
+	};
 	//To filter to just English results, add "?languageCode=en"
 	object res = yield(Protocols.HTTP.Promise.get_url("https://texttospeech.googleapis.com/v1/voices",
 		Protocols.HTTP.Promise.Arguments((["headers": ([
@@ -1144,20 +1171,7 @@ protected void create(string name) {
 	::create(name);
 	//See if we have a credentials file. If so, get local credentials via gcloud.
 	if (!G->G->tts_config) G->G->tts_config = ([]);
-	if (file_stat("tts-credentials.json") && !G->G->tts_config->access_token) {
-		mapping rc = Process.run(({"gcloud", "auth", "application-default", "print-access-token"}),
-			(["env": getenv() | (["GOOGLE_APPLICATION_CREDENTIALS": "tts-credentials.json"])]));
-		G->G->tts_config->access_token = String.trim(rc->stdout);
-		//Not sure, but I think credentials expire after a while. It's quite slow to
-		//generate them, though, and I'd rather generate only when needed; so for now,
-		//this will stay here for diagnosis purposes only. If I can figure out an
-		//expiration time, I'll schedule a regeneration at or just before that time.
-		G->G->tts_config->access_token_fetchtime = time();
-		twitch_api_request("https://api.twitch.tv/helix/bits/cheermotes")->then() {
-			G->G->tts_config->cheeremotes = lower_case(__ARGS__[0]->data->prefix[*]);
-		};
-		spawn_task(fetch_voice_list());
-	}
+	if (file_stat("tts-credentials.json") && !G->G->tts_config->access_token) spawn_task(fetch_tts_credentials(0));
 	mapping resolved = G_G_("alertbox_resolved");
 	//mapping resolved = G->G->alertbox_resolved = ([]); //Use this instead (once) if a change breaks inheritance
 	foreach (persist_status->path("alertbox"); string userid;)
