@@ -143,21 +143,12 @@
       - "When !x is typed" is high priority if access != none
       - "Every X minutes" / "At XX:YY" is medium priority
       - Channel point redemption will be medium priority when implemented
-      - "Command name: !x" is low priority if access == none
-    - If there are other messages, excluding access-none low prio, append ", ..." or
-      some other indication that there's more options
+    - If there are multiple messages, append ", ..." or some other indication that
+      there's more ways to invoke this.
+    - If there are no messages, fallback is "Command name: !x".
     - Recalculate description whenever its attributes get saved
     - Allow external triggering of a recalculation? Or have an encapsulation-breaking
       event handler that will respond to a change of the command name field?
-* Alertbox: Have "minimum bits for TTS" setting (default 0), and default text is "{msg}"
-  - Recommend that people set minbits on the global defaults, but it can be set anywhere
-  - Can be set for an alert set
-  - Overriding on a variant makes good sense
-  - Setting TTS text to something else doesn't affect minbits
-  - If no bits cheered, ignores minbits. Setting TTS text on anything other than a cheer
-    will make it happen. This means TTS is default-active for resubs, and (since minbits
-    defaults to zero) for cheers, unless someone changes it.
-  - Make it clear that TTS only happens if the alert happens
 * Get some default alerts, which will be there (but disabled) initially
   - Collaborate with an artist to make a default animation???
     - I say "collab" b/c this will need specific licensing terms, but I'm willing to pay
