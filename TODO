@@ -125,8 +125,6 @@
   - On success, mark redemption as complete
   - If failure of any sort, report, and refund
   - Bring the LispWhispers camhack into that system (via zzlocal)
-* TTS for alerts (and maybe other features)
-  - Notify Kimmy when done
 * Alertbox: Parse message text and emotes where appropriate. Send array to client.
   - Might have a configuration on the client to set the image size
     - Set the CSS height for the images, and also pick an appropriate version
