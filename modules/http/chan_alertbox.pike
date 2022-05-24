@@ -946,7 +946,7 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 				"Authorization": "Bearer " + token,
 				"Content-Type": "application/json; charset=utf-8",
 			]), "data": Standards.JSON.encode(([
-				"input": (["text": text || "Hello, world!"]),
+				"input": (["text": text]),
 				"voice": ([
 					"languageCode": voice[0],
 					"name": voice[1],
