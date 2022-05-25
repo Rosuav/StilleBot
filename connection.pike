@@ -376,8 +376,14 @@ class channel(string name) { //name begins with hash and is all lower case
 		if (arrayp(msg))
 		{
 			if (message->mode == "random") msg = random(msg);
-			else
-			{
+			else if (message->mode == "rotate") {
+				string varname = message->rotatename;
+				if (!varname || varname == "") varname = ".borked"; //Shouldn't happen, just guard against crashes
+				int val = (int)vars["$" + varname + "$"];
+				if (val >= sizeof(msg)) val = 0;
+				msg = msg[val];
+				vars["$" + varname + "$"] = set_variable(varname, (string)(val + 1), "");
+			} else {
 				foreach (msg, echoable_message m)
 					_send_recursive(person, message | (["conditional": 0, "message": m]), vars, cfg);
 				return;

@@ -132,7 +132,16 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 	multiset updates = (<cmd>);
 	purge(chan, cmd, updates);
 	if (extra) purge(chan, extra->original, updates); //Renaming a command requires removal of what used to be.
-	//TODO: Purge any iteration variables that begin with "."+cmd - anonymous rotations restart on any edit
+	//Purge any iteration variables that begin with ".basename:" - anonymous rotations restart on
+	//any edit. This ensures that none of the anonymous ones hang around. Named ones are regular
+	//variables, though, and might be shared, so we don't delete those.
+	mapping vars = persist_status->path("variables")["#" + chan];
+	string remove = "$." + basename + ":";
+	if (vars) foreach (indices(vars), string v) if (has_prefix(v, remove)) {
+		m_delete(vars, v);
+		if (object handler = chan && G->G->websocket_types->chan_variables)
+			handler->update_one("#" + chan, v - "$");
+	}
 	if (response) G->G->echocommands[cmd] = response;
 	if (mappingp(response) && response->aliases) update_aliases(chan, response->aliases, (response - (<"aliases">)) | (["alias_of": basename]), updates);
 	foreach (extra->?cooldowns || ([]); string cdname; int cdlength) {

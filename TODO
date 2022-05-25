@@ -186,10 +186,4 @@
   - Would require that the reward be created by StilleBot
 * Dynamic rewards need a major rework. Once the above is done, maybe the builtin
   can do the dynamic updates too?
-* Multiple message modes: currently only "random" is supported. Add "rotate".
-  - Distinct from omitting mode, this would still only do one of the children on
-    invocation.
-  - Have an optional tag, like with cooldowns - if omitted, synthesize.
-  - On invocation: Look at counter, if > sizeof(messages), set to zero. Select
-    that child to use. Increment counter (before chaining to child).
-  - Counter is described as "next" and could potentially be mutated.
+* Add "Rotate" message mode to command editor trays
