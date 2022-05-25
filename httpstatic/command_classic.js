@@ -3,7 +3,7 @@ import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.
 const {A, BR, BUTTON, CODE, DETAILS, SUMMARY, DIV, FIELDSET, INPUT, LABEL, LEGEND, SELECT, OPTION, TABLE, TBODY, TR, TH, TD, UL, LI} = choc;
 
 const flags = {
-	mode: {"": "Sequential", random: "Random", rotate: "Rotate", "*": "Where multiple responses are available, send them all or pick one at random?"},
+	mode: {"": "Sequential", random: "Random", rotate: "Rotate", "*": "Where multiple responses are available, send them all or pick one?"},
 	access: {"": "Anyone", mod: "Mods only", vip: "Mods/VIPs", none: "Nobody", "*": "Who should be able to use this command? Disable a command with 'Nobody'."},
 	visibility: {"": "Visible", hidden: "Hidden", "*": "Should the command be listed in !help and the non-mod commands view?"},
 	delay: {"": "Immediate", "2": "2 seconds", "30": "30 seconds", "60": "1 minute", "120": "2 minutes", "300": "5 minutes",
