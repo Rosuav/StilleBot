@@ -74,7 +74,6 @@ function get_message_details() {
 	}
 }
 function change_tab(tab) {
-	console.log("Previous:", mode);
 	let response = get_message_details();
 	if (response) ws_sync.send({cmd: "validate", cmdname: "changetab_" + tab, response});
 	else select_tab(tab, cmd_editing);
@@ -88,7 +87,6 @@ function try_gui_load_message(basis, editing) {
 
 function select_tab(tab, response) {
 	mode = tab; cmd_editing = response;
-	console.log("Selected:", tab, response);
 	history.replaceState(null, "", "#" + cmd_id.split("#")[0].replace("!", "") + "/" + tab);
 	DOM("#command_frame").style.display = tab == "graphical" ? "block" : "none"; //Hack - hide and show the GUI rather than destroying and creating it.
 	switch (tab) {
