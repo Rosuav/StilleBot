@@ -17,7 +17,7 @@ document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 	FORM({autocomplete: "off"}, [
 		DIV({id: "command_details"}),
 		DIV({id: "command_frame"}, [
-			P([
+			P({style: "margin: 0.5em 0 0 0"}, [ //Hack: Try removing some margin to save space. Will prob unhack this eventually.
 				"Drag elements around and snap them into position to build a command. ",
 				B("Double-click"),
 				" an element to make changes to it.",
