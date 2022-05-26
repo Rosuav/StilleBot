@@ -982,7 +982,7 @@ function open_element_properties(el) {
 		CODE(v), ": " + d,
 	])));
 	set_content("#saveprops", "Close");
-	DOM("#templateinfo").style.display = el.template ? "block" : "none";
+	DOM("#templateinfo").style.display = el.template && el.type !== "flag" ? "block" : "none";
 	DOM("#properties").showModal();
 }
 
@@ -1003,7 +1003,7 @@ on("click", "#toggle_favourite", e => {
 });
 
 on("click", "#clonetemplate", e => {
-	if (!propedit.template) return;
+	if (!propedit.template || propedit.type === "flag") return;
 	const parent = actives[0];
 	const path = element_path(parent);
 	for (let conn of path.connections || []) {
