@@ -849,7 +849,8 @@ class irc_callback {
 	}
 	//The type is one of the ones in messagetypes; chan begins "#"; attrs may be empty mapping but will not be null
 	void irc_message(string type, string chan, string msg, mapping attrs) { }
-	void irc_closed(mapping options) { } //Called only if we're not reconnecting
+	//Called only if we're not reconnecting. Be sure to call the parent.
+	void irc_closed(mapping options) {m_delete(connection_cache, options->user);}
 
 	Concurrent.Future irc_connect(mapping options) {
 		//Bump this version number when there's an incompatible change. Old

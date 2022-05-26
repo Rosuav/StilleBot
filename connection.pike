@@ -788,6 +788,7 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 }
 
 void irc_closed(mapping options) {
+	::irc_closed(options);
 	if (options->voiceid) m_delete(irc_connections, options->voiceid);
 }
 
