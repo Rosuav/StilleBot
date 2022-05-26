@@ -145,7 +145,20 @@ function builtin_types() {
 const types = {
 	anchor_command: {
 		color: "#ffff00", fixed: true, children: ["message"],
-		label: el => `When ${el.command} is typed...`, //TODO: Also mention aliases
+		label: el => {
+			const invok = [];
+			if (el.access !== "none") {
+				invok.push(`When ${el.command} is typed`); //TODO: Also mention aliases
+			}
+			if (el.automate) {
+				if (el.automate.includes(':')) invok.push(`At ${el.automate}`);
+				else invok.push(`Every ${el.automate} minutes`);
+			}
+			if (!invok.length) return `Command name: ${el.command}`;
+			if (invok.length === 1) return invok[0] + "...";
+			//There are multiple invocations. TODO: Word this better.
+			return invok[0] + ", etc...";
+		},
 		typedesc: "This is how everything starts. Drag flags onto this to apply them. "
 			+ "Restricting access affects who may type the command, but it may still "
 			+ "be invoked in other ways even if nobody has access.",
