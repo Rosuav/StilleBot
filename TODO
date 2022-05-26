@@ -133,11 +133,8 @@
   - Note that alternate invocations ignore the access restriction. Offer a way to
     quickly create a simple text command that's access none and hidden, and ask for an
     identifier just for disambiguation purposes; it can then be used with other triggers.
-  - Dynamic description.
-    - For triggers, the description is currently borked. Features for making command
-      anchors more dynamic may help here too. (Specials should be fine with fixed text.)
-    - Allow external triggering of a recalculation? Or have an encapsulation-breaking
-      event handler that will respond to a change of the command name field?
+  - Command description currently doesn't change if the input (above the canvas) is
+    edited. Would be nice if that updated it dynamically.
 * Get some default alerts, which will be there (but disabled) initially
   - Collaborate with an artist to make a default animation???
     - I say "collab" b/c this will need specific licensing terms, but I'm willing to pay
@@ -175,3 +172,4 @@
 * Dynamic rewards need a major rework. Once the above is done, maybe the builtin
   can do the dynamic updates too?
 * Add "Rotate" message mode to command editor trays
+* Triggers currently misparse - no content on the anchor, has another element inside.
