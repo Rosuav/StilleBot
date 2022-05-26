@@ -540,6 +540,7 @@ function limit_width(ctx, txt, width) {
 }
 
 let max_descent = 0;
+const edit_anchor = { };
 function draw_at(ctx, el, parent, reposition) {
 	if (el === "") return;
 	if (reposition) {el.x = parent.x + reposition.x; el.y = parent.y + reposition.y;}
@@ -550,14 +551,37 @@ function draw_at(ctx, el, parent, reposition) {
 	ctx.translate(el.x|0, el.y|0);
 	ctx.fillStyle = el.color || type.color;
 	ctx.fill(path.path);
-	ctx.fillStyle = "black";
 	ctx.font = "12px sans";
+	let right_margin = 4;
+	if (type.fixed && el.type.startsWith("anchor_")) {
+		let x = (type.width||200) - right_margin, y = path.labelpos[0];
+		let wid = edit_anchor.right - edit_anchor.left - 4;
+		if (!edit_anchor.right) {
+			//Assuming that the anchor is fixed in position, and the font size is constant,
+			//the position and size of this box won't ever change. If either of the above
+			//does change, zero out edit_anchor.right to force it to be recalculated.
+			const textmetrics_edit = ctx.measureText("Edit");
+			wid = textmetrics_edit.actualBoundingBoxRight - textmetrics_edit.actualBoundingBoxLeft;
+			x -= wid;
+			edit_anchor.left = el.x + x + textmetrics_edit.actualBoundingBoxLeft - 2;
+			edit_anchor.right = el.x + x + textmetrics_edit.actualBoundingBoxRight + 2;
+			edit_anchor.top = el.y + y - textmetrics_edit.actualBoundingBoxAscent - 1;
+			edit_anchor.bottom = el.y + y + 2;
+		}
+		else x -= wid;
+		ctx.fillStyle = "#0000FF";
+		ctx.fillText("Edit", x, y);
+		//Drawing a line is weirdly nonsimple. Let's cheat and draw a tiny rectangle.
+		ctx.fillRect(edit_anchor.left - el.x + 2, y + 2, wid + 1, 1);
+		right_margin += wid + 4;
+	}
+	ctx.fillStyle = "black";
 	const labels = arrayify(type.label(el));
 	let label_x = 20;
 	if (type.style === "flag") label_x = 6; //Hack!
 	else if (el.template) labels[0] = "⯇ " + labels[0];
 	else if (!type.fixed) labels[0] = "⣿ " + labels[0];
-	const w = (type.width || 200) - label_x;
+	const w = (type.width || 200) - label_x - right_margin;
 	for (let i = 0; i < labels.length; ++i) ctx.fillText(limit_width(ctx, labels[i], w), label_x, path.labelpos[i]);
 	ctx.stroke(path.path);
 	let flag_x = 220;
@@ -568,19 +592,6 @@ function draw_at(ctx, el, parent, reposition) {
 		}
 	}
 	ctx.restore();
-	//If it's an anchor, draw a gear button. Wow, it's like we're back in the 90s...
-	//drawing buttons manually and tracking whether they're up or down...
-	//Or possibly draw blue underlined text saying "Edit", and have a mouse move
-	//trigger to change the cursor, and then allow people to single-click on that to
-	//open it up - it'll look and feel like a link. Still not happy with that idea
-	//though. Every other element, you double-click for config; this one, you can
-	//single-click? But single-clicking can only be used on fixed elements, else we
-	//get to the age-old problem of "did you want to click or did you want to drag",
-	//which - while technically solvable in code (with timeouts and maximum motion
-	//settings) - is fundamentally unsolvable in UI/UX.
-	if (type.fixed && el.type.startsWith("anchor_")) {
-		console.log("It's an anchor", el);
-	}
 	const children = type.children || [];
 	let conn = path.connections, cc = 0;
 	for (let i = 0; i < children.length; ++i) {
@@ -761,6 +772,9 @@ canvas.addEventListener("pointerdown", e => {
 		}
 		return;
 	}
+	if (e.offsetX >= edit_anchor.left && e.offsetX <= edit_anchor.right &&
+		e.offsetY >= edit_anchor.top && e.offsetY <= edit_anchor.bottom)
+			edit_anchor.clicking = true; //A potential click starts with a mouse down over the Edit box, and never leaves it before mouse up.
 	dragging = null;
 	let el = element_at_position(e.offsetX, e.offsetY, el => !types[el.type].fixed);
 	if (!el) return;
@@ -808,9 +822,22 @@ function snap_to_elements(xpos, ypos) {
 }
 
 canvas.addEventListener("pointermove", e => {
-	if (!dragging) return;
-	[dragging.x, dragging.y] = snap_to_elements(e.offsetX - dragbasex, e.offsetY - dragbasey);
-	repaint();
+	let cursor = "default";
+	if (dragging) {
+		cursor = "grabbing";
+		[dragging.x, dragging.y] = snap_to_elements(e.offsetX - dragbasex, e.offsetY - dragbasey);
+		repaint();
+	}
+	else if (e.offsetX >= edit_anchor.left && e.offsetX <= edit_anchor.right &&
+		e.offsetY >= edit_anchor.top && e.offsetY <= edit_anchor.bottom)
+			cursor = "pointer";
+	else {
+		edit_anchor.clicking = false;
+		const el = element_at_position(e.offsetX, e.offsetY, el => !types[el.type].fixed);
+		if (el && e.ctrlKey) cursor = "copy";
+		//else if (el) cursor = el.template ? "copy" : "default"; //Changing the cursor emphasizes dragging but obscures double-clicking. Probably a bad tradeoff.
+	}
+	canvas.style.cursor = cursor;
 });
 
 function content_only(arr) {return (arr||[]).filter(el => el);} //Filter out any empty strings or null entries
@@ -845,6 +872,10 @@ function is_favourite(el) {
 }
 
 canvas.addEventListener("pointerup", e => {
+	if (edit_anchor.clicking) {
+		edit_anchor.clicking = false;
+		open_element_properties(actives[0]);
+	}
 	if (!dragging) return;
 	e.target.releasePointerCapture(e.pointerId);
 	//Recalculate connections only on pointer-up. (Or would it be better to do it on pointer-move?)
@@ -918,7 +949,9 @@ let propedit = null;
 canvas.addEventListener("dblclick", e => {
 	e.stopPropagation();
 	const el = element_at_position(e.offsetX, e.offsetY);
-	if (!el) return;
+	if (el) open_element_properties(el);
+});
+function open_element_properties(el) {
 	propedit = el;
 	const type = types[el.type];
 	set_content("#toggle_favourite", FAV_BUTTON_TEXT[is_favourite(el) ? 1 : 0]).disabled = type.fixed;
@@ -951,7 +984,7 @@ canvas.addEventListener("dblclick", e => {
 	set_content("#saveprops", "Close");
 	DOM("#templateinfo").style.display = el.template ? "block" : "none";
 	DOM("#properties").showModal();
-});
+}
 
 on("click", "#toggle_favourite", e => {
 	if (types[propedit.type].fixed) return;

@@ -169,7 +169,6 @@
   - Add an entry to the StilleBot library for "Default Animations/Sounds"
     - Populated from the JSON file, obviously
     - Maybe just a drop-down, no previews??
-* Command editor: Put a gear button on the anchor, same as dblclick
 * Add to command anchor:
   - Trigger on channel point redemption
     - Make chan_pointsrewards able to configure and select these
