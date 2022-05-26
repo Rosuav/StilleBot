@@ -148,7 +148,16 @@ const types = {
 		label: el => {
 			const invok = [];
 			if (el.access !== "none") {
-				invok.push(`When ${el.command} is typed`); //TODO: Also mention aliases
+				const aliases = el.aliases.split(" ").filter(a => a);
+				switch (aliases.length) {
+					case 0: invok.push(`When ${el.command} is typed`); break;
+					case 1: invok.push(`When ${el.command} or !${aliases[0]} is typed`); break;
+					default: {
+						let msg = "When " + el.command;
+						aliases.forEach(a => msg += ", !" + a);
+						invok.push(msg + " is typed");
+					}
+				}
 			}
 			if (el.automate) {
 				if (el.automate.includes(':')) invok.push(`At ${el.automate}`);
