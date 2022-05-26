@@ -181,6 +181,7 @@ const types = {
 			"{username}": "Name of the user who entered the command",
 			"{@mod}": "1 if the command was triggered by a mod/broadcaster, 0 if not",
 		},
+		width: 400,
 	},
 	anchor_trigger: {
 		color: "#ffff00", fixed: true, children: ["message"],
@@ -195,11 +196,13 @@ const types = {
 			"{username}": "Name of the user who entered the triggering message",
 			"{@mod}": "1 if trigger came from a mod/broadcaster, 0 if not",
 		},
+		width: 400,
 	},
 	anchor_special: {
 		//Specials are... special. The details here will vary based on which special we're editing.
 		color: "#ffff00", fixed: true, children: ["message"],
 		label: el => el.shortdesc,
+		width: 400,
 	},
 	trashcan: {
 		color: "#999999", fixed: true, children: ["message"],
@@ -380,7 +383,7 @@ function element_path(element) {
 }
 const actives = [
 	//Generic anchor controlled by the caller
-	{type: "anchor_trigger", x: 10, y: 25, message: [""]}, //Stick with Trigger and you'll live (unless the basis object changes the type)
+	{type: "anchor_trigger", x: 10, y: 45, message: [""]}, //Stick with Trigger and you'll live (unless the basis object changes the type)
 ];
 const favourites = [];
 const trays = { };
