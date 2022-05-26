@@ -785,9 +785,15 @@ class _TwitchIRC(mapping options) {
 		//empty strings. I don't get it.
 		array commands = ("CAP REQ :twitch.tv/" + (wantopt - haveopt)[*]);
 		if (sizeof(havechan - wantchan)) commands += ({"PART :" + (havechan - wantchan) * ","});
-		//FIXME: Figure out why channels are getting inexplicably parted, and
-		//then change this to be (wantchan-havechan) instead of just wantchan
-		if (sizeof(wantchan)) commands += map(wantchan / 10.0) {return "JOIN :" + __ARGS__[0] * ",";};
+		if (sizeof(wantchan - havechan)) commands += map((wantchan - havechan) / 10.0) {return "JOIN :" + __ARGS__[0] * ",";};
+		if (sizeof(wantchan & havechan)) {
+			//Rejoin channels after a moment. We'll announce ourselves as ready
+			//before this, but asynchronously rejoin.
+			//FIXME: Figure out why channels are getting inexplicably parted, or
+			//at least which ones have been parted, and only rejoin those.
+			array rejoin = wantchan & havechan;
+			call_out(lambda() {enqueue(@map(rejoin / 10.0) {return "JOIN :" + __ARGS__[0] * ",";});}, 0.125);
+		}
 		if (sizeof(commands)) enqueue(@commands);
 		options = opt; m_delete(options, "pass"); //Transfer all options. Anything unchecked is assumed to be okay to change like this.
 	}
