@@ -136,14 +136,6 @@
   - Dynamic description.
     - For triggers, the description is currently borked. Features for making command
       anchors more dynamic may help here too. (Specials should be fine with fixed text.)
-    - Pick the highest message by priority:
-      - "When !x is typed" is high priority if access != none
-      - "Every X minutes" / "At XX:YY" is medium priority
-      - Channel point redemption will be medium priority when implemented
-    - If there are multiple messages, append ", ..." or some other indication that
-      there's more ways to invoke this.
-    - If there are no messages, fallback is "Command name: !x".
-    - Recalculate description whenever its attributes get saved
     - Allow external triggering of a recalculation? Or have an encapsulation-breaking
       event handler that will respond to a change of the command name field?
 * Get some default alerts, which will be there (but disabled) initially

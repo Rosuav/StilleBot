@@ -166,8 +166,11 @@ const types = {
 			switch (invok.length) {
 				case 0: return `Command name: ${el.command}`; //Fallback for inactive commands
 				case 1: return invok[0] + "..."; //Common case - a single invocation
-				case 2: return invok[0] + ", or " + invok[1][0].toLowerCase() + invok[1].slice(1);
-				default: return invok[0] + ", etc...";
+				default: return invok.map((msg, i) =>
+						!i ? msg :
+						(i === invok.length - 1 ? "or " : "")
+						+ msg[0].toLowerCase() + msg.slice(1)
+					).join(", ") + "...";
 			}
 		},
 		typedesc: "This is how everything starts. Drag flags onto this to apply them. "
