@@ -703,6 +703,7 @@ function clone_template(t, par) {
 	if (el.type === "flag") el.type = "dragflag"; //Hack - dragging a flag unfurls it (and doesn't add an active element)
 	else actives.push(el);
 	if (par && el.parent) el.parent[0] = par;
+	else delete el.parent;
 	for (let attr of types[el.type].children || [])
 		el[attr] = el[attr].map(e => clone_template(e, el));
 	return el;
@@ -724,8 +725,8 @@ canvas.addEventListener("pointerdown", e => {
 	let el = element_at_position(e.offsetX, e.offsetY, el => !types[el.type].fixed);
 	if (!el) return;
 	e.target.setPointerCapture(e.pointerId);
-	if (el.template) {
-		//Clone and spawn.
+	if (el.template || e.ctrlKey) {
+		//Clone and spawn. Holding Ctrl allows you to copy any element.
 		el = clone_template(el);
 		el.fresh = true;
 		refactor();
