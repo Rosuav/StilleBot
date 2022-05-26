@@ -215,7 +215,7 @@ const types = {
 	anchor_special: {
 		//Specials are... special. The details here will vary based on which special we're editing.
 		color: "#ffff00", fixed: true, children: ["message"],
-		label: el => el.shortdesc,
+		label: el => "When " + el.shortdesc[0].toLowerCase() + el.shortdesc.slice(1),
 		width: 400,
 	},
 	trashcan: {
