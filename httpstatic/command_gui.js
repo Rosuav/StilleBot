@@ -568,6 +568,19 @@ function draw_at(ctx, el, parent, reposition) {
 		}
 	}
 	ctx.restore();
+	//If it's an anchor, draw a gear button. Wow, it's like we're back in the 90s...
+	//drawing buttons manually and tracking whether they're up or down...
+	//Or possibly draw blue underlined text saying "Edit", and have a mouse move
+	//trigger to change the cursor, and then allow people to single-click on that to
+	//open it up - it'll look and feel like a link. Still not happy with that idea
+	//though. Every other element, you double-click for config; this one, you can
+	//single-click? But single-clicking can only be used on fixed elements, else we
+	//get to the age-old problem of "did you want to click or did you want to drag",
+	//which - while technically solvable in code (with timeouts and maximum motion
+	//settings) - is fundamentally unsolvable in UI/UX.
+	if (type.fixed && el.type.startsWith("anchor_")) {
+		console.log("It's an anchor", el);
+	}
 	const children = type.children || [];
 	let conn = path.connections, cc = 0;
 	for (let i = 0; i < children.length; ++i) {
