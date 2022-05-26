@@ -184,3 +184,5 @@
 * Dynamic rewards need a major rework. Once the above is done, maybe the builtin
   can do the dynamic updates too?
 * Add "Rotate" message mode to command editor trays
+* Command GUI: Double-clicking on a flag opens up an info box with not much info,
+  but with a button to add to command, which will do the wrong thing
