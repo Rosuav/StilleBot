@@ -163,10 +163,12 @@ const types = {
 				if (el.automate.includes(':')) invok.push(`At ${el.automate}`);
 				else invok.push(`Every ${el.automate} minutes`);
 			}
-			if (!invok.length) return `Command name: ${el.command}`;
-			if (invok.length === 1) return invok[0] + "...";
-			//There are multiple invocations. TODO: Word this better.
-			return invok[0] + ", etc...";
+			switch (invok.length) {
+				case 0: return `Command name: ${el.command}`; //Fallback for inactive commands
+				case 1: return invok[0] + "..."; //Common case - a single invocation
+				case 2: return invok[0] + ", or " + invok[1][0].toLowerCase() + invok[1].slice(1);
+				default: return invok[0] + ", etc...";
+			}
 		},
 		typedesc: "This is how everything starts. Drag flags onto this to apply them. "
 			+ "Restricting access affects who may type the command, but it may still "
