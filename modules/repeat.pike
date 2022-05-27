@@ -157,7 +157,7 @@ echoable_message unrepeat(object channel, mapping person, string param)
 		if (!mappingp(response) || !response->automate) continue;
 		mixed id = G->G->autocommands[cmd];
 		if (!id || undefinedp(find_call_out(id)))
-			G->G->autocommands[cmd] = call_out(autospam, seconds(response->automate, cfg->timezone), "#" + channel, (cmd / "#")[0]);
+			G->G->autocommands[cmd] = call_out(autospam, seconds(response->automate, cfg->timezone), "#" + channel, "!" + (cmd / "#")[0]);
 	}
 }
 
