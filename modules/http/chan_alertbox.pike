@@ -822,13 +822,14 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		//For convenience, every time a change is made, we update an array of
 		//variants in the base alert's data.
 		if (!cfg->alertconfigs[basetype]) cfg->alertconfigs[basetype] = ([]);
-		array ids = ({ }), specs = ({ });
+		array ids = ({ }), specs = ({ }), names = ({ });
 		foreach (cfg->alertconfigs; string id; mapping info)
 			if (has_prefix(id, basetype + "-")) {
 				ids += ({id});
 				specs += ({-info->specificity});
+				names += ({lower_case(info->name)});
 			}
-		sort(specs, ids);
+		sort(names, ids); sort(specs, ids);
 		cfg->alertconfigs[basetype]->variants = ids;
 	}
 	persist_status->save();
