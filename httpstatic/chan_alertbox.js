@@ -132,7 +132,8 @@ function update_alert_variants() {
 	load_data(wanted_variant, revert_data[type] || {active: true, parent: basetype}, frm);
 	sel.value = wanted_variant || "";
 	frm.dataset.type = type;
-	DOM("#variationdlg .testalert").disabled = !wanted_variant;
+	DOM("#variationdlg .testalert").disabled = !wanted_variant || wanted_tab === "defaults";
+	frm.querySelector(".confirmdelete").classList.toggle("invisible", !wanted_variant);
 }
 
 export function sockmsg_select_variant(msg) {
@@ -185,7 +186,7 @@ export function render(data) {
 			type === "variant" && P({class: "no-inherit no-dirty"}, [
 				//No inherit and no dirty, this is a selector not a saveable
 				LABEL([VS("Select variant:", "Select alert set:"), SELECT({name: "variant"}, OPTION({value: ""}, "Add new"))]),
-				BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑"),
+				BUTTON({type: "button", class: "confirmdelete invisible", title: "Delete"}, "🗑"),
 			]),
 			//Yeah, this is only for variants, but only NOT for variants. It's for alertset mode only.
 			//That's not actually a requirement - both name and description will be saved by the backend
@@ -453,7 +454,8 @@ function select_variant(elem) {
 	load_data(type, revert_data[type] || { }, frm);
 	elem.value = wanted_variant; //Ensure that the selected variant is still selected, if it exists in the user's settings.
 	frm.classList.remove("unsaved-changes"); //Fresh load doesn't count as unsaved changes
-	DOM("#variationdlg .testalert").disabled = !wanted_variant;
+	DOM("#variationdlg .testalert").disabled = !wanted_variant || wanted_tab === "defaults";
+	frm.querySelector(".confirmdelete").classList.toggle("invisible", !wanted_variant);
 }
 
 let wanted_tab = null; //TODO: Allow this to be set from the page fragment (wait till loading is done)

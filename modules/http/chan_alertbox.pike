@@ -239,6 +239,8 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 	max-width: fit-content;
 }
 #uploaderror.hidden {display: none;}
+
+.invisible {visibility: hidden;}
 </style>
 
 > ### Alert preview
