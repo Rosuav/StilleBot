@@ -600,10 +600,11 @@ on("click", "#authpreview", e => {
 	else DOM("#alertembed").src = DOM("#alertboxlink").href;
 	DOM("#previewdlg").showModal();
 });
-on("click", "#alertboxdisplay", e => {
-	e.match.value = DOM("#alertboxlink").href;
-	e.match.disabled = false;
-	e.match.select();
+on("click", "#alertboxlabel", e => {
+	const inp = DOM("#alertboxdisplay");
+	inp.value = DOM("#alertboxlink").href;
+	inp.disabled = false;
+	inp.select();
 });
 
 //Unload the preview when the dialog closes
