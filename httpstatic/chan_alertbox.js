@@ -181,7 +181,11 @@ export function render(data) {
 			P([
 				!info.builtin && BUTTON({type: "button", className: "editpersonaldesc", title: "Edit"}, "📝"),
 				SPAN({class: "description not-alertset"}, info.description),
-				type == "variant" && SPAN({class: "not-variant"}, "Create alert sets to easily enable/disable all associated alert variants. You can also set layout defaults for alert sets."),
+				type === "hostalert" && host_alert_scopes && P({class: "need-auth"}, [
+					"Host alerts require authentication as the broadcaster. ",
+					BUTTON({class: "twitchlogin", "data-scopes": host_alert_scopes}, "Grant permissions"),
+				]),
+				type === "variant" && SPAN({class: "not-variant"}, "Create alert sets to easily enable/disable all associated alert variants. You can also set layout defaults for alert sets."),
 			]),
 			type === "variant" && P({class: "no-inherit no-dirty"}, [
 				//No inherit and no dirty, this is a selector not a saveable

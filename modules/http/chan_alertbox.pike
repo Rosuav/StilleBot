@@ -236,11 +236,21 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 	background: #fee;
 	border: 1px solid red;
 	padding: 0.125em 0.5em;
+	max-width: -moz-fit-content;
 	max-width: fit-content;
 }
 #uploaderror.hidden {display: none;}
 
 .invisible {visibility: hidden;}
+
+.need-auth {
+	margin: 1em;
+	border: 1px solid blue;
+	padding: 0.5em;
+	max-width: -moz-fit-content;
+	max-width: fit-content;
+	background: #eef;
+}
 </style>
 
 > ### Alert preview
@@ -397,9 +407,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"channelname": req->misc->channel->name[1..],
 		]) | req->misc->chaninfo);
 	}
-	//TODO: Give some useful info if not a mod, since that might be seen if someone messes up the URL
-	if (string scopes = req->misc->channel->name != "#!demo" && ensure_bcaster_token(req, "chat:read"))
-		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
 	if (!req->misc->is_mod) {
 		if (req->misc->session->user) return render(req, req->misc->chaninfo | ([
 			"notmodmsg": "You're logged in, but you're not a recognized mod. Please say something in chat so I can see your sword.",
@@ -433,6 +440,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"vars": (["ws_group": "control",
 			"maxfilesize": MAX_PER_FILE, "maxtotsize": MAX_TOTAL_STORAGE,
 			"avail_voices": G->G->tts_config->avail_voices || ({ }),
+			"host_alert_scopes": req->misc->channel->name != "#!demo" && ensure_bcaster_token(req, "chat:read"),
 		]),
 	]) | req->misc->chaninfo);
 }
