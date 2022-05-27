@@ -171,4 +171,3 @@
   - Would require that the reward be created by StilleBot
 * Dynamic rewards need a major rework. Once the above is done, maybe the builtin
   can do the dynamic updates too?
-* Triggers currently misparse - no content on the anchor, has another element inside.

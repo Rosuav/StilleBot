@@ -1122,9 +1122,19 @@ function message_to_element(msg, new_elem, array_ok) {
 
 export function gui_load_message(cmd_basis, msg) {
 	actives.splice(1); //Truncate
-	Object.assign(actives[0], cmd_basis); //TODO: Ensure that omitted attributes become the default. This may mean iterating over all params and clearing them first.
 	msg = JSON.parse(JSON.stringify(msg)); //Deep disconnect from the original, allowing mutation
 	if (typeof msg === "string" || Array.isArray(msg)) msg = {message: msg};
+	//Copy in attributes from the basis object where applicable, or from the message itself
+	const typename = cmd_basis.type || actives[0].type;
+	actives[0].type = typename;
+	const type = types[typename];
+	if (type.params) for (let p of type.params) if (p.attr) {
+		if (p.attr in cmd_basis) actives[0][p.attr] = cmd_basis[p.attr];
+		else if (!flags[p.attr]) { //Flags will be handled below, don't redo the work
+			actives[0][p.attr] = msg[p.attr];
+			delete msg[p.attr];
+		}
+	}
 	if (msg.action) {
 		msg.destcfg = msg.action;
 		delete msg.action;
