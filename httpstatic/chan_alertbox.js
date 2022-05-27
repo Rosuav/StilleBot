@@ -675,6 +675,7 @@ on("click", "#unsaved-save,#unsaved-discard", e => {
 const multitest = {tvbase: [], tvall: [], tvactive: []};
 on("click", ".testalert", e => {
 	const frm = e.match.form;
+	if (!frm) {ws_sync.send({cmd: "testalert", type: e.match.dataset.type}); return;}
 	if (frm.classList.contains("unsaved-changes")) {
 		unsaved_form = frm; unsaved_clickme = e.match;
 		set_content("#discarddesc", "Cannot send a test alert with unsaved changes.");

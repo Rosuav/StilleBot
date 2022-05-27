@@ -265,7 +265,8 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 >
 > TODO: Have a background color selection popup, and buttons for all alert types, not just hosts
 >
-> [Test host alert](:.testalert data-type=hostalert) [Close](:.dialog_close)
+> [Test host alert](:.testalert data-type=hostalert) [Test follow alert](:.testalert data-type=follower)
+> [Test sub alert](:.testalert data-type=sub) [Test cheer alert](:.testalert data-type=cheer) [Close](:.dialog_close)
 {: tag=dialog #previewdlg}
 
 <!-- -->
