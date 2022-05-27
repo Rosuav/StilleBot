@@ -397,7 +397,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (string key = req->variables->key) {
 		if (key != persist_status->path("alertbox", (string)req->misc->channel->userid)->authkey)
-			return (["error": 401, "data": "Bad key - check the URL from the config page (or remove key= from the URL)", "type": "text/plain"]);
+			return (["error": 401, "type": "text/plain", "data":
+				key == "bcaster-only" ? "Currently this is available only to the broadcaster - sorry!"
+				: "Bad key - check the URL from the config page (or remove key= from the URL)",
+			]);
 		return render_template("alertbox.html", ([
 			"vars": ([
 				"ws_type": ws_type, "ws_code": "alertbox",
@@ -526,6 +529,11 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel || grp != "control") return;
+	//TODO: When host alerts get moved to backend, reenable this for mods.
+	if (!conn->session->fake && conn->session->user->id != (string)channel->userid) {
+		conn->sock->send_text(Standards.JSON.encode((["cmd": "authkey", "key": "bcaster-only"]), 4));
+		return;
+	}
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->authkey) {cfg->authkey = String.string2hex(random_string(11)); persist_status->save();}
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "authkey", "key": cfg->authkey]), 4));
