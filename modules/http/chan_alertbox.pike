@@ -386,9 +386,8 @@ constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (string key = req->variables->key) {
-		//TODO: If key is incorrect, give static error, something readable.
 		if (key != persist_status->path("alertbox", (string)req->misc->channel->userid)->authkey)
-			return (["error": 401, "data": "Bad key", "type": "text/plain"]);
+			return (["error": 401, "data": "Bad key - check the URL from the config page (or remove key= from the URL)", "type": "text/plain"]);
 		return render_template("alertbox.html", ([
 			"vars": ([
 				"ws_type": ws_type, "ws_code": "alertbox",
