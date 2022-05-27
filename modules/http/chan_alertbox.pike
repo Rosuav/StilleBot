@@ -947,7 +947,7 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 		object reqargs = Protocols.HTTP.Promise.Arguments((["headers": ([
 				"Authorization": "Bearer " + token,
 				"Content-Type": "application/json; charset=utf-8",
-			]), "data": Standards.JSON.encode(([
+			]), "data": string_to_utf8(Standards.JSON.encode(([
 				"input": (["text": text]),
 				"voice": ([
 					"languageCode": voice[0],
@@ -955,7 +955,7 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 					"ssmlGender": voice[2],
 				]),
 				"audioConfig": (["audioEncoding": "OGG_OPUS"]),
-			]))]));
+			])))]));
 		object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
 		mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
 		if (mappingp(data) && data->error->?details[?0]->?reason == "ACCESS_TOKEN_EXPIRED") {
