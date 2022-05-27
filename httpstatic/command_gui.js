@@ -147,13 +147,14 @@ const types = {
 		color: "#ffff00", fixed: true, children: ["message"],
 		label: el => {
 			const invok = [];
+			const cmdname = DOM("#cmdname").value;
 			if (el.access !== "none") {
 				const aliases = el.aliases.split(" ").filter(a => a);
 				switch (aliases.length) {
-					case 0: invok.push(`When ${el.command} is typed`); break;
-					case 1: invok.push(`When ${el.command} or !${aliases[0]} is typed`); break;
+					case 0: invok.push(`When ${cmdname} is typed`); break;
+					case 1: invok.push(`When ${cmdname} or !${aliases[0]} is typed`); break;
 					default: {
-						let msg = "When " + el.command;
+						let msg = "When " + cmdname;
 						aliases.forEach(a => msg += ", !" + a);
 						invok.push(msg + " is typed");
 					}
@@ -164,7 +165,7 @@ const types = {
 				else invok.push(`Every ${el.automate} minutes`);
 			}
 			switch (invok.length) {
-				case 0: return `Command name: ${el.command}`; //Fallback for inactive commands
+				case 0: return "Command name: " + cmdname; //Fallback for inactive commands
 				case 1: return invok[0] + "..."; //Common case - a single invocation
 				default: return invok.map((msg, i) =>
 						!i ? msg :
@@ -336,6 +337,9 @@ const types = {
 		style: "flag", width: 150,
 	},
 };
+
+//Encapsulation breach: If there's a #cmdname, it's going to affect the command_anchor.
+on("change", "#cmdname", e => repaint());
 
 const path_cache = { };
 function element_path(element) {

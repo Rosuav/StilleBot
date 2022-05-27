@@ -133,8 +133,6 @@
   - Note that alternate invocations ignore the access restriction. Offer a way to
     quickly create a simple text command that's access none and hidden, and ask for an
     identifier just for disambiguation purposes; it can then be used with other triggers.
-  - Command description currently doesn't change if the input (above the canvas) is
-    edited. Would be nice if that updated it dynamically.
 * Get some default alerts, which will be there (but disabled) initially
   - Collaborate with an artist to make a default animation???
     - I say "collab" b/c this will need specific licensing terms, but I'm willing to pay
