@@ -160,3 +160,5 @@
   - Would require that the reward be created by StilleBot
 * Dynamic rewards need a major rework. Once the above is done, maybe the builtin
   can do the dynamic updates too?
+* Allow non-bcaster to use preview w/o chat - no authkey but login cookie
+  - Host alerts disabled
