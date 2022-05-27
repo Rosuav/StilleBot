@@ -344,13 +344,14 @@ export function render(data) {
 			]),
 			TEXTFORMATTING({
 				textname: nondef ? "textformat" : "-", //FIXME: Hide this when in alertset mode
+				textclass: "not-alertset",
 				textdesc: SPAN({className: "placeholders"}, placeholder_description),
 				blank_opts: nondef, //Add a blank option to selects, but not on the Defaults tab
 			}),
 			P([
 				BUTTON({type: "submit", disabled: true}, "Save"),
 				nondef ? BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")
-					: BUTTON({type: "button", class: "editvariants"}, "Manage alert sets (WIP)"),
+					: BUTTON({type: "button", class: "editvariants"}, "Manage alert sets"),
 				type !== "variant" && info.condition_vars && BUTTON({type: "button", className: "editvariants", "data-type": type}, "Manage alert variants"),
 			]),
 		]));

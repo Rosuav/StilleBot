@@ -42,7 +42,7 @@ on("click", ".twitchlogout", async e => {
 });
 
 export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
-	cfg.textname !== "-" && TR([TH(cfg.textlabel || "Text"), TD([INPUT({size: 40, name: cfg.textname || "text"}), cfg.textdesc])]),
+	cfg.textname !== "-" && TR({class: cfg.textclass || ""}, [TH(cfg.textlabel || "Text"), TD([INPUT({size: 40, name: cfg.textname || "text"}), cfg.textdesc])]),
 	TR([TH("Font"), TD([
 		INPUT({name: "font", size: "28"}),
 		SELECT({name: "fontweight"}, [cfg.blank_opts && OPTION(), OPTION("normal"), OPTION("bold")]),
