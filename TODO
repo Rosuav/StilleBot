@@ -108,9 +108,6 @@
     complexity. Would want to have the websocket from the client cause the IRC conn to
     be flagged as in-use, which might mean we'll want to just let them get disconnected
     and then have a hook that reconnects if there are any active websockets.
-* Check a new account: what happens if you try to save a variant before saving the
-  base alert? If it's a problem, disable the alert variations button until base is
-  saved, and just ignore all variant-saves.
 * Ghostwriter needs a LOT more error checking. Maybe, on error, reschedule check five mins?
 * General system for bot-affected channel point redemptions
   - On success, mark redemption as complete

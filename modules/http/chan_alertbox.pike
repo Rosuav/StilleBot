@@ -733,6 +733,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		//Note that if (!variation), we're editing the base alert, not a variant.
 		do {variation = replace(MIME.encode_base64(random_string(9)), (["/": "1", "+": "0"]));}
 		while (cfg->alertconfigs[basetype + "-" + variation]);
+		if (!cfg->alertconfigs[basetype]) cfg->alertconfigs[basetype] = ([]);
 		msg->type = basetype + "-" + variation;
 		sock_reply = (["cmd": "select_variant", "type": basetype, "variant": variation]);
 	} else if (variation) {
