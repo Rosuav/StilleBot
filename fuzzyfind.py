@@ -22,7 +22,7 @@ def show_matches(target):
 	except ValueError:
 		pass
 	for name, score in process.extract(target, followers, limit=10, scorer=shortest_token_set_ratio):
-		print("\t[%3d%%] %s" % (score//1000, name))
+		print("\t[%3d%%] %-20s https://twitch.tv/%s" % (score//1000, name, name))
 
 if len(sys.argv) > 1:
 	for arg in sys.argv[1:]:
