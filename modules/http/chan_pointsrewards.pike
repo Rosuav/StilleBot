@@ -28,6 +28,18 @@ reward and allow it to have a command attached.
 
 Dynamic management of rewards that weren't created by my client_id has to be rejected. (See
 the can_manage flag in the front end; it's 1 if editable, absent if not.)
+
+There are three levels of permission that can be granted:
+0) No permissions. Bot has no special access, but can see reward IDs for those that have
+   messages. No official support for this, but it might be nice to provide the reward ID
+   in normal command/trigger invocation.
+1) Read-only access (channel:read:redemptions). We can enumerate rewards but none of them
+   can be managed. It will be possible to react to any reward (regardless of who made it),
+   even without text, but not possible to mark them as completed.
+2) Full access (channel:manage:redemptions). We can create rewards, which we would then be
+   able to manage, and can react to any rewards (manageable or not). The builtin to manage
+   a redemption would become available, and any drop-down listing rewards would have two
+   sections, manageable and unmanageable.
 */
 
 bool need_mod(string grp) {return 1;}
