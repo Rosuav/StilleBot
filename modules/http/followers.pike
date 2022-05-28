@@ -31,6 +31,20 @@ continue Concurrent.Future|mapping(string:mixed) http_request(Protocols.HTTP.Ser
 			"message": "Unknown channel name " + req->variables->channel,
 		]));
 	}
+	if (req->variables->all && 0) { //Enable only when needed. Can be v slow for streamers w/ many followers.
+		string baseurl = "https://api.twitch.tv/helix/users/follows?first=100&to_id=" + channel + "&after=";
+		string cursor = ""; int tot = 0;
+		string ret = "";
+		do {
+			mapping cur = yield(twitch_api_request(baseurl + cursor));
+			werror("Loaded %d/%d...\n", tot += sizeof(cur->data), cur->total);
+			ret += cur->data->from_name * "\n" + "\n";
+			cursor = cur->pagination->?cursor;
+			mixed _ = yield(task_sleep(1));
+		} while (cursor && cursor != "IA");
+		Stdio.write_file("all_follows.txt", string_to_utf8(ret));
+		return "Done";
+	}
 	return render(req, ([
 		"vars": (["ws_group": channel]),
 		"channel": yield(get_user_info(channel))->display_name,
