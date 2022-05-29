@@ -1,4 +1,4 @@
-inherit http_websocket;
+inherit http_endpoint;
 constant markdown = #"# Channel points - dynamic rewards
 
 Title | Base cost | Activation condition | Growth Formula | Current cost | Actions
@@ -32,72 +32,9 @@ code {background: #ffe;}
 - Title, which also serves as the description within the web page
 - Other attributes maybe, or let people handle them elsewhere
 
-TODO: Expand on chan_giveaway so it can handle most of the work, including the
+TODO: Expand on chan_pointsrewards so it can handle most of the work, including the
 JSON API for managing the rewards (the HTML page will be different though).
 */
-continue Concurrent.Future fetch_rewards(string chan) {
-	int uid = yield(get_user_id(chan));
-	mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + uid,
-			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
-	G->G->channel_reward_list[chan] = info->data;
-	//Prune the dynamic rewards list
-	mapping current = persist_config["channels"][chan]->?dynamic_rewards;
-	if (current) {
-		write("Current dynamics: %O\n", current);
-		multiset unseen = (multiset)indices(current) - (multiset)info->data->id;
-		if (sizeof(unseen)) {m_delete(current, ((array)unseen)[*]); persist_config->save();}
-	}
-	mapping manageable = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + uid + "&only_manageable_rewards=true",
-			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
-	multiset can_manage = (multiset)manageable->data->id;
-	multiset cannot_manage = (multiset)info->data->id - can_manage;
-	G->G->channel_reward_manageable = G->G->channel_reward_manageable | can_manage - cannot_manage;
-	foreach (G->G->channel_reward_list[chan], mapping rew) if (can_manage[rew->id]) rew->can_manage = 1;
-	send_updates_all("#" + chan);
-}
-
-//Event messages have all the info that we get by querying, but NOT in the same format.
-mapping remap_eventsub_message(mapping info) {
-	foreach (({
-		({0, "broadcaster_user_id", "broadcaster_id"}),
-		({0, "broadcaster_user_login", "broadcaster_login"}),
-		({0, "broadcaster_user_name", "broadcaster_name"}),
-		({0, "global_cooldown", "global_cooldown_setting"}),
-		({0, "max_per_stream", "max_per_stream_setting"}),
-		({0, "max_per_user_per_stream", "max_per_user_per_stream_setting"}),
-		({"global_cooldown_setting", "seconds", "global_cooldown_seconds"}),
-		({"max_per_stream_setting", "value", "max_per_stream_setting"}),
-		({"max_per_user_per_stream_setting", "value", "max_per_user_per_stream"}),
-	}), [string elem, string from, string to]) {
-		mapping el = elem ? info[elem] : info;
-		if (el && !undefinedp(el[from])) el[to] = m_delete(el, from);
-	}
-	return info;
-}
-
-//TODO: Migrate to pointsrewards and have that update everything
-EventSub rewardadd = EventSub("rewardadd", "channel.channel_points_custom_reward.add", "1") {
-	[string chan, mapping info] = __ARGS__;
-	if (!G->G->channel_reward_list[chan]) return;
-	G->G->channel_reward_list[chan] += ({remap_eventsub_message(info)});
-	send_updates_all("#" + chan);
-};
-EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward.update", "1") {
-	[string chan, mapping info] = __ARGS__;
-	array rew = G->G->channel_reward_list[chan];
-	if (!rew) return;
-	foreach (rew; int i; mapping reward)
-		if (rew->id == info->id) {rew[i] = remap_eventsub_message(info); break;}
-	send_updates_all("#" + chan);
-};
-EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward.remove", "1") {
-	[string chan, mapping info] = __ARGS__;
-	G->G->channel_reward_manageable[info->id] = 0; //Prune the multiset, no big deal
-	array rew = G->G->channel_reward_list[chan];
-	if (!rew) return;
-	G->G->channel_reward_list[chan] = filter(rew) {return __ARGS__[0]->id != info->id;};
-	send_updates_all("#" + chan);
-};
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
@@ -106,37 +43,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			"msg": "a real channel, not the demo. Feel free to pretend though"]));
 	if (string scopes = ensure_bcaster_token(req, "channel:manage:redemptions"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
-	string chan = req->misc->channel->name[1..];
-	get_user_id(chan)->then() { string id = (string)__ARGS__[0];
-		rewardadd(chan, (["broadcaster_user_id": id]));
-		rewardupd(chan, (["broadcaster_user_id": id]));
-		rewardrem(chan, (["broadcaster_user_id": id]));
-	};
 	//TODO: Should non-mods be allowed to see the details?
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
-	//Fire-and-forget a reward listing
-	if (!G->G->channel_reward_list[chan]) G->G->channel_reward_list[chan] = ({ });
-	spawn_task(fetch_rewards(chan));
-	return render(req, ([
-		"vars": (["ws_group": ""]),
+	return render_template(markdown, ([
+		"vars": (["ws_type": "chan_pointsrewards", "ws_group": "dyn" + req->misc->channel->name, "ws_code": "chan_dynamics"]),
 	]) | req->misc->chaninfo);
-}
-
-bool need_mod(string grp) {return 1;}
-
-mapping get_chan_state(object channel, string grp, string|void id) {
-	array rewards = ({ }), allrewards = G->G->channel_reward_list[channel->name[1..]];
-	mapping current = channel->config->dynamic_rewards || ([]);
-	foreach (allrewards, mapping rew) {
-		mapping r = current[rew->id];
-		if (r) rewards += ({r | (["id": rew->id, "title": r->title = rew->title, "curcost": rew->cost])});
-		write("Dynamic ID %O --> %O\n", rew->id, r);
-	}
-	return (["items": rewards, "allrewards": allrewards]);
-}
-
-protected void create(string name) {
-	::create(name);
-	if (!G->G->channel_reward_list) G->G->channel_reward_list = ([]);
-	if (!G->G->channel_reward_manageable) G->G->channel_reward_manageable = (<>);
 }

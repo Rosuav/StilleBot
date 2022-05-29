@@ -44,9 +44,18 @@ There are three levels of permission that can be granted:
 
 bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
-	array rewards = G->G->pointsrewards[channel->name[1..]];
-	if (!rewards) return (["status": "Loading, please wait..."]); //When it's loaded, populate_rewards_cache() will update us
-	return (["items": rewards]); //TODO: Support partial updates; also give info about dynamic status
+	array rewards = G->G->pointsrewards[channel->name[1..]] || ({ }), dynrewards = ({ });
+	mapping current = channel->config->dynamic_rewards || ([]);
+	foreach (rewards, mapping rew) {
+		mapping r = current[rew->id];
+		if (r) dynrewards += ({r | (["id": rew->id, "title": r->title = rew->title, "curcost": rew->cost])});
+		write("Dynamic ID %O --> %O\n", rew->id, r);
+	}
+	//FIXME: Change chan_dynamics.js to want items to be all rewards, and then
+	//other clients can use the same socket type without it feeling weird. This
+	//hack just doesn't feel right IMO.
+	if (grp == "dyn") return (["items": dynrewards, "allrewards": rewards]);
+	return (["items": rewards, "dynrewards": dynrewards]);
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -54,17 +63,19 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!G->G->irc->channels["#" + chan]) return;
 }
 
-void recheck_rewards(string chan, mapping info) {spawn_task(populate_rewards_cache(chan, (int)info->broadcaster_user_id));}
-EventSub rewardadd = EventSub("rewardadd", "channel.channel_points_custom_reward.add", "1", recheck_rewards);
-EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward.update", "1", recheck_rewards);
-EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward.remove", "1", recheck_rewards);
-
 continue Concurrent.Future populate_rewards_cache(string chan, int|void broadcaster_id) {
 	if (!broadcaster_id) broadcaster_id = yield(get_user_id(chan));
 	G->G->pointsrewards[chan] = ({ }); //If there's any error, don't keep retrying
 	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
 	mapping params = (["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]);
 	array rewards = yield(twitch_api_request(url, params))->data;
+	//Prune the dynamic rewards list
+	mapping current = persist_config["channels"][chan]->?dynamic_rewards;
+	if (current) {
+		write("Current dynamics: %O\n", current);
+		multiset unseen = (multiset)indices(current) - (multiset)rewards->id;
+		if (sizeof(unseen)) {m_delete(current, ((array)unseen)[*]); persist_config->save();}
+	}
 	multiset manageable = (multiset)yield(twitch_api_request(url + "&only_manageable_rewards=true", params))->data->id;
 	foreach (rewards, mapping r) r->can_manage = manageable[r->id];
 	G->G->pointsrewards[chan] = rewards;
@@ -73,6 +84,47 @@ continue Concurrent.Future populate_rewards_cache(string chan, int|void broadcas
 	rewardrem(chan, (["broadcaster_user_id": (string)broadcaster_id]));
 	send_updates_all("#" + chan);
 }
+
+//Event messages have all the info that we get by querying, but NOT in the same format.
+mapping remap_eventsub_message(mapping info) {
+	foreach (({
+		({0, "broadcaster_user_id", "broadcaster_id"}),
+		({0, "broadcaster_user_login", "broadcaster_login"}),
+		({0, "broadcaster_user_name", "broadcaster_name"}),
+		({0, "global_cooldown", "global_cooldown_setting"}),
+		({0, "max_per_stream", "max_per_stream_setting"}),
+		({0, "max_per_user_per_stream", "max_per_user_per_stream_setting"}),
+		({"global_cooldown_setting", "seconds", "global_cooldown_seconds"}),
+		({"max_per_stream_setting", "value", "max_per_stream_setting"}),
+		({"max_per_user_per_stream_setting", "value", "max_per_user_per_stream"}),
+	}), [string elem, string from, string to]) {
+		mapping el = elem ? info[elem] : info;
+		if (el && !undefinedp(el[from])) el[to] = m_delete(el, from);
+	}
+	return info;
+}
+
+EventSub rewardadd = EventSub("rewardadd", "channel.channel_points_custom_reward.add", "1") {
+	[string chan, mapping info] = __ARGS__;
+	if (!G->G->pointsrewards[chan]) return;
+	G->G->pointsrewards[chan] += ({remap_eventsub_message(info)});
+	send_updates_all("#" + chan);
+};
+EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward.update", "1") {
+	[string chan, mapping info] = __ARGS__;
+	array rew = G->G->pointsrewards[chan];
+	if (!rew) return;
+	foreach (rew; int i; mapping reward)
+		if (rew->id == info->id) {rew[i] = remap_eventsub_message(info); break;}
+	send_updates_all("#" + chan);
+};
+EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward.remove", "1") {
+	[string chan, mapping info] = __ARGS__;
+	array rew = G->G->pointsrewards[chan];
+	if (!rew) return;
+	G->G->pointsrewards[chan] = filter(rew) {return __ARGS__[0]->id != info->id;};
+	send_updates_all("#" + chan);
+};
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
