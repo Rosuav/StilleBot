@@ -54,24 +54,32 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!G->G->irc->channels["#" + chan]) return;
 }
 
-continue Concurrent.Future populate_rewards_cache(string chan) {
-	int broadcaster_id = yield(get_user_id(chan));
+void recheck_rewards(string chan, mapping info) {spawn_task(populate_rewards_cache(chan, (int)info->broadcaster_user_id));}
+EventSub rewardadd = EventSub("rewardadd", "channel.channel_points_custom_reward.add", "1", recheck_rewards);
+EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward.update", "1", recheck_rewards);
+EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward.remove", "1", recheck_rewards);
+
+continue Concurrent.Future populate_rewards_cache(string chan, int|void broadcaster_id) {
+	if (!broadcaster_id) broadcaster_id = yield(get_user_id(chan));
+	G->G->pointsrewards[chan] = ({ }); //If there's any error, don't keep retrying
 	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
 	mapping params = (["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]);
 	array rewards = yield(twitch_api_request(url, params))->data;
 	multiset manageable = (multiset)yield(twitch_api_request(url + "&only_manageable_rewards=true", params))->data->id;
 	foreach (rewards, mapping r) r->can_manage = manageable[r->id];
 	G->G->pointsrewards[chan] = rewards;
+	rewardadd(chan, (["broadcaster_user_id": (string)broadcaster_id]));
+	rewardupd(chan, (["broadcaster_user_id": (string)broadcaster_id]));
+	rewardrem(chan, (["broadcaster_user_id": (string)broadcaster_id]));
 	send_updates_all("#" + chan);
 }
-void update_rewards_cache(string chan) {spawn_task(populate_rewards_cache(chan));}
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (string scopes = ensure_bcaster_token(req, "channel:manage:redemptions"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
-	update_rewards_cache(req->misc->channel->name[1..]);
+	spawn_task(populate_rewards_cache(req->misc->channel->name[1..], req->misc->channel->userid));
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 	]) | req->misc->chaninfo);
@@ -133,4 +141,12 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 protected void create(string name) {
 	::create(name);
 	if (!G->G->pointsrewards) G->G->pointsrewards = ([]);
+	foreach (persist_config->path("channels"); string chan; mapping cfg) {
+		if (!G->G->pointsrewards[chan]) {
+			string scopes = persist_status->path("bcaster_token_scopes")[chan] || "";
+			if (has_value(scopes / " ", "channel:manage:redemptions")
+				|| has_value(scopes / " ", "channel:read:redemptions"))
+					spawn_task(populate_rewards_cache(chan, cfg->userid));
+		}
+	}
 }
