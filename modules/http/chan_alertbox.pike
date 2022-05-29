@@ -915,7 +915,7 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 	if (bits && bits < (int)inh->tts_min_bits) fmt = "";
 	while (sscanf(fmt, "%s{%s}%s", string before, string tok, string after) == 3) {
 		string replacement = args[tok] || "";
-		if (tok == "msg") {
+		if (tok == "msg" || tok == "text") {
 			if (inh->tts_filter_emotes == "emotes") replacement = args->_noemotes || replacement;
 			if ((<"emotes", "cheers">)[inh->tts_filter_emotes]) {
 				//Split into words, if any word is %[a-zA-Z]%[0-9] and nothing
@@ -1073,10 +1073,14 @@ mapping message_params(object channel, mapping person, array|string param)
 	if (!alert || alert == "") return (["{error}": "Need an alert type"]);
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!valid_alert_type(alert, cfg)) return (["{error}": "Unknown alert type"]);
+	mapping emotes = ([]);
+	//TODO: If text isn't exactly %s but is contained in it, give an offset.
+	//TODO: If %s is contained in text, parse that somehow too.
+	if (text == person->vars["%s"]) emotes = parse_emotes(text, person);
 	send_alert(channel, alert, ([
 		"TEXT": text || "",
 		"text": text || "",
-	]));
+	]) | emotes);
 	return (["{error}": ""]);
 }
 
