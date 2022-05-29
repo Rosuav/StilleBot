@@ -5,6 +5,8 @@ constant TEMPLATES = ({
 	"Text | Simple text, finds any string of letters",
 	"RegExp | Word trigger - \\&lt;some-word\\&gt;",
 	"buy-follows | Automatically ban bots that ask you to buy followers",
+	"Reward lister | Identify messages that come from custom rewards",
+	"Reward trigger | Use the ID from the reward lister to react to a reward",
 });
 
 //Due to the nature of triggers, templates ALL use the advanced view.
@@ -24,6 +26,16 @@ constant COMPLEX_TEMPLATES = ([
 		"conditional": "number",
 		"expr1": "{@buyfollows} && {@mod} == 0",
 		"message": "/ban $$",
+	]),
+	"Reward lister": ([
+		"conditional": "contains",
+		"expr1": "-", "expr2": "{rewardid}",
+		"message": "Reward ID: {rewardid}",
+	]),
+	"Reward trigger": ([
+		"conditional": "contains",
+		"expr1": "PASTE-ID-HERE", "expr2": "{rewardid}",
+		"message": "Custom reward selected! (Use Reward Lister to find the ID)",
 	]),
 ]);
 

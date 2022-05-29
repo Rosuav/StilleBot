@@ -200,12 +200,18 @@ const types = {
 	},
 	anchor_trigger: {
 		color: "#ffff00", fixed: true, children: ["message"],
-		label: el => el.conditional === "contains" ? `When '${el.expr1}' is typed...` : `When a msg matches ${el.expr1} ...`,
+		label: el => el.expr2 === "{rewardid}" ? 
+				el.expr1 === "-" && el.conditional === "contains" ? "Custom point redemption: any"
+				: "Custom point redemption: " + el.expr1
+			: el.conditional === "contains" ? `When '${el.expr1}' is typed...` : `When a msg matches ${el.expr1} ...`,
 		params: [{attr: "conditional", label: "Match type", values: ["contains", "regexp", "number"],
 				selections: {contains: "Simple match", regexp: "Regular expression", number: "Expression evaluation"}},
 			{attr: "casefold", label: "Case insensitive", values: bool_attr},
 			{attr: "id", label: null}, //Retain the ID but don't show it for editing
-			{attr: "expr1", label: "Search for"}, {attr: "expr2", values: "%s"}],
+			{attr: "expr1", label: "Search for"},
+			{attr: "expr2", label: "Trigger type", values: ["%s", "{rewardid}"],
+				selections: {"%s": "Regular", "{rewardid}": "Channel point redemption"}},
+		],
 		provides: {
 			"{param}": "The entire message",
 			"{username}": "Name of the user who entered the triggering message",

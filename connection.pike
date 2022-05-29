@@ -133,10 +133,18 @@ class channel(string name) { //name begins with hash and is all lower case
 		return ({0, ""});
 	}
 
-	void handle_command(mapping person, string msg, mapping defaults)
+	//TODO: Figure out what this function's purpose is. I frankly have no idea why some
+	//code is in here, and other code is down in "case PRIVMSG" below. Whatever.
+	void handle_command(mapping person, string msg, mapping defaults, mapping params)
 	{
 		if (person->user) G_G_("participants", name[1..], person->user)->lastnotice = time();
-		person->vars = (["%s": msg, "{@mod}": person->badges->?_mod ? "1" : "0", "{@sub}": person->badges->?_sub ? "1" : "0"]);
+		person->vars = ([
+			"%s": msg, "{@mod}": person->badges->?_mod ? "1" : "0", "{@sub}": person->badges->?_sub ? "1" : "0",
+			//Even without broadcaster permissions, it's possible to see the UUID of a reward.
+			//You can't see the redemption ID, and definitely can't complete/reject it, but you
+			//would be able to craft a trigger that responds to it.
+			"{rewardid}": params->custom_reward_id || "",
+		]);
 		runhooks("all-msgs", 0, this, person, msg);
 		event_notify("allmsgs", this, person, msg);
 		trigger_special("!trigger", person, person->vars);
@@ -724,7 +732,7 @@ class channel(string name) { //name begins with hash and is all lower case
 					//test alerts etc. Note that "fakecheer-100" can also be done, if that
 					//is ever useful to your testing. It may confuse things though!
 					params->bits = (string)bits;
-				handle_command(person, msg, responsedefaults);
+				handle_command(person, msg, responsedefaults, params);
 				if (params->bits && (int)params->bits) {
 					runhooks("cheer", 0, this, person, (int)params->bits, params);
 					event_notify("cheer", this, person, (int)params->bits, params, msg);
