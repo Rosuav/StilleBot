@@ -222,6 +222,8 @@ void notify_websockets(string chan) {
 	]));
 }
 
+//TODO: Move this event into pointsrewards, then hook it here for the actual giveaway stuff
+//Automatically make the hooks for all active channels.
 @create_hook:
 constant point_redemption = ({"string chan", "string id", "int(0..1) refund", "mapping data"});
 
