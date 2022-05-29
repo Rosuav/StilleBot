@@ -133,7 +133,7 @@ function do_alert(alert, replacements) {
 	elem.querySelectorAll("[data-textformat]").forEach(el =>
 		set_content(el, el.dataset.textformat.split(/{([^}]+)}/).map((kwd,i) => {
 			if (i&1) { //1st, 3rd, 5th are all braced keywords
-				if (kwd === "msg") kwd = replacements._emoted || replacements.msg;
+				if ((kwd === "msg" || kwd === "text") && replacements._emoted) kwd = replacements._emoted;
 				else kwd = replacements[kwd];
 				return render_emoted_text(kwd || "");
 			}

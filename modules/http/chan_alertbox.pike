@@ -322,7 +322,7 @@ constant ALERTTYPES = ({([
 	"testpholders": ([]),
 	"builtin": "chan_alertbox",
 	"condition_vars": ({ }),
-]), ([
+]), ([ //Alert types sent to the command editor begin here - first two are sliced off; see stdalerts.
 	"id": "hostalert",
 	"label": "Host",
 	"heading": "Hosted by another channel",
@@ -422,7 +422,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mapping cfg = persist_status->path("alertbox", (string)req->misc->channel->userid);
 	//For API usage eg command viewer, provide some useful information in JSON.
 	if (req->variables->summary) return jsonify(([
-		"stdalerts": ALERTTYPES,
+		"stdalerts": ALERTTYPES[2..],
 		"personals": cfg->personals || ({ }),
 	]));
 	if (!req->misc->session->fake && req->request_type == "POST") {
