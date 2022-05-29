@@ -201,8 +201,8 @@ const types = {
 	anchor_trigger: {
 		color: "#ffff00", fixed: true, children: ["message"],
 		label: el => el.conditional === "contains" ? `When '${el.expr1}' is typed...` : `When a msg matches ${el.expr1} ...`,
-		params: [{attr: "conditional", label: "Match type", values: ["contains", "regexp"],
-				selections: {contains: "Simple match", regexp: "Regular expression"}},
+		params: [{attr: "conditional", label: "Match type", values: ["contains", "regexp", "number"],
+				selections: {contains: "Simple match", regexp: "Regular expression", number: "Expression evaluation"}},
 			{attr: "casefold", label: "Case insensitive", values: bool_attr},
 			{attr: "id", label: null}, //Retain the ID but don't show it for editing
 			{attr: "expr1", label: "Search for"}, {attr: "expr2", values: "%s"}],
