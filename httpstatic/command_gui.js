@@ -100,11 +100,11 @@ const builtin_validators = {
 	alertbox_id: {...default_handlers,
 		make_control: (id, val, el) => SELECT(id, [
 			OPTGROUP({label: "Personal alerts"}, [
-				alertcfg.personals.map(a => OPTION({selected: a.id === val, value: a.id}, a.label)),
+				alertcfg.personals.map(a => OPTION({".selected": a.id === val, value: a.id}, a.label)),
 				!alertcfg.personals.length && OPTION({disabled: true}, alertcfg.loading ? "loading..." : "None"),
 			]),
 			OPTGROUP({label: "Standard alerts"}, [
-				alertcfg.stdalerts.map(a => OPTION({selected: a.id === val, value: a.id}, a.label)),
+				alertcfg.stdalerts.map(a => OPTION({".selected": a.id === val, value: a.id}, a.label)),
 				!alertcfg.stdalerts.length && OPTION({disabled: true}, alertcfg.loading ? "loading..." : "None???"), //Should never get "None" here once it's loaded
 			]),
 		]),

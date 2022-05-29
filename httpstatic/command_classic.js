@@ -210,7 +210,7 @@ function render_command(cmd, toplevel) {
 		const opt = [];
 		for (let o in flags[flg]) if (o !== "*")
 		{
-			const el = OPTION({value: o, selected: cmd[flg]+"" === o ? "1" : undefined}, flags[flg][o]);
+			const el = OPTION({value: o, ".selected": cmd[flg]+"" === o ? "1" : undefined}, flags[flg][o]);
 			//Guarantee that the one marked with an empty string will be the first
 			//It usually would be anyway, but make certain.
 			if (o === "") opt.unshift(el); else opt.push(el);
@@ -233,10 +233,10 @@ function render_command(cmd, toplevel) {
 	opts.push(TR({className: "targetrow"}, [TD(INPUT({"data-flag": "target", value: cmd.target || ""})), TD("Who/what should it send to? User or variable name.")]));
 	const voiceids = Object.keys(voices);
 	if (voiceids.length > 0 || cmd.voice) {
-		const v = voiceids.map(id => OPTION({value: id, selected: cmd.voice+"" === id ? "1" : undefined}, voices[id].desc));
-		v.unshift(OPTION({value: "", selected: cmd.voice ? "1" : undefined}, "Default voice"));
+		const v = voiceids.map(id => OPTION({value: id, ".selected": cmd.voice+"" === id ? "1" : undefined}, voices[id].desc));
+		v.unshift(OPTION({value: "", ".selected": cmd.voice ? "1" : undefined}, "Default voice"));
 		if (cmd.voice && !voices[cmd.voice]) {
-			v.push(OPTION({value: "", selected: "1", style: "color: red"}, "Deauthenticated"));
+			v.push(OPTION({value: "", ".selected": "1", style: "color: red"}, "Deauthenticated"));
 		}
 		opts.push(TR({"data-flag": "voice"}, [
 			TD(SELECT({"data-flag": "voice"}, v)),
