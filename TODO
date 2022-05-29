@@ -160,6 +160,6 @@
   - Would require that the reward be created by StilleBot
 * Dynamic rewards need a major rework. Once the above is done, maybe the builtin
   can do the dynamic updates too?
-* Allow non-bcaster to use preview w/o chat - no authkey but login cookie
+* Alertbox: Allow non-bcaster to use preview w/o chat - no authkey but login cookie
   - Real host alerts disabled, but test alerts would work
 * Weird bug: After an update, the first output on voice 0 seems to be lost.
