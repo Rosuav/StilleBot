@@ -765,6 +765,8 @@ class _TwitchIRC(mapping options) {
 	}
 
 	int(0..1) update_options(mapping opt) {
+		if (!sock || !sock->is_open) return 1; //We've lost the connection. Fresh connect.
+		werror("update_options mod %O user %O - sock is %O\n", options->module, options->user, sock);
 		//If the IRC handling code has changed incompatibly, reconnect.
 		if (opt->version != options->version) return 1;
 		//If credentials have changed, reconnect.

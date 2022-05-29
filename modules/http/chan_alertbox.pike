@@ -455,6 +455,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 //set chosen, the one closest to the tip (furthest from the root at the defaults).
 string find_alertset(mapping alerts, string id) {
 	mapping alert = alerts[id];
+	if (!alert) return 0; //Shouldn't happen? Bad alert set name.
 	if (string s = alert["cond-alertset"]) return s;
 	if (alert->parent && alert->parent != "" && alert->parent != "defaults")
 		return find_alertset(alerts, alert->parent);
