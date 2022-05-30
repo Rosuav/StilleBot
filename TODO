@@ -154,6 +154,9 @@
   - Would require that the reward be created by StilleBot
 * Dynamic rewards need a major rework. Once the above is done, maybe the builtin
   can do the dynamic updates too?
+  - Change the Add New Dynamic to let you select any manageable reward first
+  - If you don't pick one, then you can create new (optionally copying)
+  - Move the simple Create New onto the pointsrewards socket
 * Alertbox: Allow non-bcaster to use preview w/o chat - no authkey but login cookie
   - Real host alerts disabled, but test alerts would work
 * Weird bug: After a full update, the first output on voice 0 seems to be lost.
