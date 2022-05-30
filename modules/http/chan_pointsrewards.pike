@@ -49,7 +49,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping current = channel->config->dynamic_rewards || ([]);
 	foreach (rewards, mapping rew) {
 		mapping r = current[rew->id];
-		if (r) dynrewards += ({r | (["id": rew->id, "title": r->title = rew->title, "curcost": rew->cost])});
+		if (r) dynrewards += ({r | (["id": rew->id, "title": rew->title, "curcost": rew->cost])});
 		write("Dynamic ID %O --> %O\n", rew->id, r);
 	}
 	//FIXME: Change chan_dynamics.js to want items to be all rewards, and then

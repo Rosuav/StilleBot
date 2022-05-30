@@ -322,9 +322,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//multiple rewards, add a numeric disambiguator on conflict.
 			string deftitle = copyfrom->title || "Example Dynamic Reward";
 			mapping rwd = (["basecost": copyfrom->cost || 1000, "availability": "{online}", "formula": "PREV * 2"]);
-			array have = filter(values(cfg->dynamic_rewards)->title, has_prefix, deftitle);
-			rwd->title = deftitle + " #" + (sizeof(have) + 1);
-			copyfrom |= (["title": rwd->title, "cost": rwd->basecost]);
+			array have = filter(G->G->pointsrewards[chan]->title, has_prefix, deftitle);
+			copyfrom |= (["title": deftitle + " #" + (sizeof(have) + 1), "cost": rwd->basecost]);
 			string id = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
 				(["Authorization": "Bearer " + token]),
 				(["method": "POST", "json": copyfrom]),
@@ -337,7 +336,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (string id = body->dynamic_id) { //TODO: Ditto, move to pointsrewards
 			if (!cfg->dynamic_rewards || !cfg->dynamic_rewards[id]) return (["error": 400]);
 			mapping rwd = cfg->dynamic_rewards[id];
-			if (body->title) rwd->title = body->title;
+			m_delete(rwd, "title"); //Clean out old data (can get rid of this once we're not saving that any more)
 			if (body->basecost) rwd->basecost = (int)body->basecost || rwd->basecost;
 			if (body->formula) rwd->formula = body->formula;
 			if (body->availability) rwd->availability = body->availability;
@@ -346,7 +345,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				//Currently fire-and-forget - there's no feedback if you get something wrong.
 				twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&id=" + id,
 					(["Authorization": "Bearer " + token]),
-					(["method": "PATCH", "json": (["title": rwd->title, "cost": (int)body->curcost])]),
+					(["method": "PATCH", "json": (["title": body->title, "cost": (int)body->curcost])]),
 				);
 			}
 			persist_config->save();
