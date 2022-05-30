@@ -102,7 +102,7 @@ void points_redeemed(string chan, mapping data, int|void removal)
 EventSub redemption = EventSub("redemption", "channel.channel_points_custom_reward_redemption.add", "1", points_redeemed);
 EventSub redemptiongone = EventSub("redemptiongone", "channel.channel_points_custom_reward_redemption.update", "1") {points_redeemed(@__ARGS__, 1);};
 
-continue Concurrent.Future populate_rewards_cache(string chan, int|void broadcaster_id) {
+continue Concurrent.Future populate_rewards_cache(string chan, string|int|void broadcaster_id) {
 	if (!broadcaster_id) broadcaster_id = yield(get_user_id(chan));
 	G->G->pointsrewards[chan] = ({ }); //If there's any error, don't keep retrying
 	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
@@ -158,7 +158,7 @@ EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward
 	array rew = G->G->pointsrewards[chan];
 	if (!rew) return;
 	foreach (rew; int i; mapping reward)
-		if (rew->id == info->id) {rew[i] = remap_eventsub_message(info); break;}
+		if (reward->id == info->id) {rew[i] = remap_eventsub_message(info); break;}
 	send_updates_all("#" + chan);
 	send_updates_all("dyn#" + chan);
 };
