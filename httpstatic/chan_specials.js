@@ -78,9 +78,9 @@ cmd_configure({
 		set_content("#advanced_view h3", ["Edit special response ", CODE("!" + command.id.split("#")[0])]);
 		const params = {"{username}": cmd.originator};
 		cmd.params.split(", ").forEach(p => p && (params["{" + p + "}"] = SPECIAL_PARAMS[p]));
-		basis.provides = params;
-		basis.desc = "Happens when: " + cmd.desc;
-		basis.shortdesc = cmd.desc; //Needs to be even shorter though
+		basis._provides = params;
+		basis._desc = "Happens when: " + cmd.desc;
+		basis._shortdesc = cmd.desc; //Needs to be even shorter though
 		return basis;
 	},
 });

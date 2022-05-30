@@ -1145,6 +1145,8 @@ export function gui_load_message(cmd_basis, msg) {
 			delete msg[p.attr];
 		}
 	}
+	//Copy cmd_basis._shortdesc --> anchor.shortdesc (TODO: Use _shortdesc on both sides?)
+	for (let attr in cmd_basis) if (attr[0] === '_') actives[0][attr.slice(1)] = cmd_basis[attr];
 	if (msg.action) {
 		msg.destcfg = msg.action;
 		delete msg.action;
