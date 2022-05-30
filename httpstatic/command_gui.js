@@ -142,6 +142,9 @@ function builtin_types() {
 	return ret;
 }
 
+//If we have pointsrewards, remap it into something more useful
+let rewards = {"": ""}; try {pointsrewards.forEach(r => rewards[r.id] = r.title);} catch (e) { }
+
 const types = {
 	anchor_command: {
 		color: "#ffff00", fixed: true, children: ["message"],
@@ -163,6 +166,9 @@ const types = {
 			if (el.automate) {
 				if (el.automate.includes(':')) invok.push(`At ${el.automate}`);
 				else invok.push(`Every ${el.automate} minutes`);
+			}
+			if (el.redemption && rewards[el.redemption]) {
+				invok.push(`When '${rewards[el.redemption]}' is redeemed`);
 			}
 			switch (invok.length) {
 				case 0: return "Command name: " + cmdname; //Fallback for inactive commands
@@ -190,11 +196,16 @@ const types = {
 				"To have this command performed automatically every X minutes, put X here (or X-Y to randomize).",
 				BR(), "To have it performed automatically at hh:mm, put hh:mm here.",
 			]},
+			{attr: "redemption", label: "Redemption", values: Object.keys(rewards),
+				selections: rewards},
+			{label: "Invoke this command whenever some channel points reward is redeemed."},
 		],
 		provides: {
 			"{param}": "Anything typed after the command name",
 			"{username}": "Name of the user who entered the command",
 			"{@mod}": "1 if the command was triggered by a mod/broadcaster, 0 if not",
+			"{rewardid}": "UUID of the channel point reward that triggered this, or blank",
+			"{redemptionid}": "UUID of the precise channel point redemption (for confirm/cancel)",
 		},
 		width: 400,
 	},

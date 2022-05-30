@@ -113,6 +113,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (req->misc->is_mod) {
 		return render(req, ([
 			"vars": (["ws_group": "", "complex_templates": G->G->commands_complex_templates, "builtins": G->G->commands_builtins,
+				"pointsrewards": G->G->pointsrewards[req->misc->channel->name[1..]] || ({ }),
 				"voices": req->misc->channel->config->voices || ([])]),
 			"templates": G->G->commands_templates * "\n",
 			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
@@ -322,6 +323,9 @@ echoable_message validate(echoable_message resp, mapping state)
 		//Else don't set ret->automate.
 	} else if (arrayp(resp->automate) && sizeof(resp->automate) == 3 && min(@resp->automate) >= 0 && resp->automate[2] <= 1)
 		ret->automate = resp->automate;
+
+	//TODO: Ensure that the reward still exists
+	if (stringp(resp->redemption) && resp->redemption != "") ret->redemption = resp->redemption;
 
 	return sizeof(ret) == 1 ? ret->message : ret;
 }
