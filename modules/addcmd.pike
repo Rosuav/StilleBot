@@ -123,6 +123,10 @@ void purge(string chan, string cmd, multiset updates) {
 		mixed id = m_delete(G->G->autocommands, cmd);
 		if (id) remove_call_out(id);
 	}
+	if (prev->redemption) {
+		G->G->redemption_commands[prev->redemption] -= ({cmd});
+		if (!sizeof(G->G->redemption_commands[prev->redemption])) m_delete(G->G->redemption_commands, prev->redemption);
+	}
 }
 
 //Update (or delete) an echo command and save them to disk
@@ -160,6 +164,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 		function repeat = G->G->commands->repeat;
 		if (repeat) function_object(repeat)->connected(chan);
 	}
+	if (mappingp(response) && response->redemption) G->G->redemption_commands[response->redemption] += ({cmd});
 	string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 	Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
 	if (object handler = chan && G->G->websocket_types->chan_commands) {
@@ -196,5 +201,8 @@ protected void create(string name)
 {
 	::create(name);
 	G->G->echocommands = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_commands.json")||"{}");
+	G->G->redemption_commands = ([]);
+	foreach (G->G->echocommands; string cmd; echoable_message response)
+		if (mappingp(response) && response->redemption) G->G->redemption_commands[response->redemption] += ({cmd});
 	add_constant("make_echocommand", make_echocommand);
 }
