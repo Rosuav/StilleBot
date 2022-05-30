@@ -113,6 +113,7 @@ continue Concurrent.Future populate_rewards_cache(string chan, int|void broadcas
 	redemption(chan, (["broadcaster_user_id": (string)broadcaster_id]));
 	redemptiongone(chan, (["broadcaster_user_id": (string)broadcaster_id]));
 	send_updates_all("#" + chan);
+	send_updates_all("dyn#" + chan);
 }
 
 //Event messages have all the info that we get by querying, but NOT in the same format.
@@ -139,6 +140,7 @@ EventSub rewardadd = EventSub("rewardadd", "channel.channel_points_custom_reward
 	if (!G->G->pointsrewards[chan]) return;
 	G->G->pointsrewards[chan] += ({remap_eventsub_message(info)});
 	send_updates_all("#" + chan);
+	send_updates_all("dyn#" + chan);
 };
 EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward.update", "1") {
 	[string chan, mapping info] = __ARGS__;
@@ -147,6 +149,7 @@ EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward
 	foreach (rew; int i; mapping reward)
 		if (rew->id == info->id) {rew[i] = remap_eventsub_message(info); break;}
 	send_updates_all("#" + chan);
+	send_updates_all("dyn#" + chan);
 };
 EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward.remove", "1") {
 	[string chan, mapping info] = __ARGS__;
@@ -154,6 +157,7 @@ EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward
 	if (!rew) return;
 	G->G->pointsrewards[chan] = filter(rew) {return __ARGS__[0]->id != info->id;};
 	send_updates_all("#" + chan);
+	send_updates_all("dyn#" + chan);
 };
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
