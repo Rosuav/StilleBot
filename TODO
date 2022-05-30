@@ -113,17 +113,13 @@
   - On success, mark redemption as complete
   - If failure of any sort, report, and refund
   - Bring the LispWhispers camhack into that system (via zzlocal)
+  - Have a template - a command that's invisible and access-none, and responds to reward
 * Alertbox: Parse message text and emotes where appropriate. Send array to client.
   - Might have a configuration on the client to set the image size
     - Set the CSS height for the images, and also pick an appropriate version
     - Alternatively, just use font size??
   - Manually parse/recognize cheer emotes and replace them? Their URLs are part of the
     payload of the cheeremotes query, but at the moment I'm just keeping the keywords.
-* Add more features to the command anchor
-  - Channel point redemption
-  - Note that alternate invocations ignore the access restriction. Offer a way to
-    quickly create a simple text command that's access none and hidden, and ask for an
-    identifier just for disambiguation purposes; it can then be used with other triggers.
 * Get some default alerts, which will be there (but disabled) initially
   - Collaborate with an artist to make a default animation???
     - I say "collab" b/c this will need specific licensing terms, but I'm willing to pay
@@ -149,10 +145,8 @@
     - Maybe just a drop-down, no previews??
 * Add to command anchor:
   - Trigger on channel point redemption
-    - Make chan_pointsrewards able to configure and select these
     - Is it possible for chan_pointsrewards to simply open up the command popup
       for a particular command? Worst case, deep-link to the editor.
-    - If this is the invocation, provide {rewardid} and {redemptionid}.
 * Builtin to accept/reject a channel point redemption
   - No error if you try to accept/reject blank, so you can code your command to
     always put an accept in this branch and a reject in that one, even if the
