@@ -222,40 +222,11 @@ void notify_websockets(string chan) {
 	]));
 }
 
-//TODO: Move this event into pointsrewards, then hook it here for the actual giveaway stuff
-//Automatically make the hooks for all active channels.
-@create_hook:
-constant point_redemption = ({"string chan", "string id", "int(0..1) refund", "mapping data"});
-
-void points_redeemed(string chan, mapping data, int|void removal)
-{
-	//write("POINTS %s ON %O: %O\n", removal ? "REFUNDED" : "REDEEMED", chan, data);
-	event_notify("point_redemption", chan, data->reward->id, removal, data);
-	string token = persist_status->path("bcaster_token")[chan];
+@hook_point_redemption:
+void redemption(string chan, string id, int(0..1) refund, mapping data) {
 	mapping cfg = persist_config["channels"][chan]; if (!cfg) return;
-	update_ticket_count(cfg, data, removal);
-
-	if (mapping dyn = !removal && cfg->dynamic_rewards && cfg->dynamic_rewards[data->reward->id]) {
-		//Up the price every time it's redeemed
-		//For this to be viable, the reward needs a global cooldown of
-		//at least a few seconds, preferably a few minutes.
-		object chan = G->G->irc->channels["#" + chan];
-		int newcost = G->G->evaluate_expr(chan->expand_variables(replace(dyn->formula, "PREV", (string)data->reward->cost)));
-		if ((string)newcost != (string)data->reward->cost)
-			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
-					+ data->broadcaster_user_id + "&id=" + data->reward->id,
-				(["Authorization": "Bearer " + token]),
-				(["method": "PATCH", "json": (["cost": newcost])]),
-			);
-	}
+	update_ticket_count(cfg, data, refund);
 	notify_websockets(chan);
-}
-EventSub redemption = EventSub("redemption", "channel.channel_points_custom_reward_redemption.add", "1", points_redeemed);
-EventSub redemptiongone = EventSub("redemptiongone", "channel.channel_points_custom_reward_redemption.update", "1") {points_redeemed(@__ARGS__, 1);};
-
-void make_hooks(string chan, int broadcaster_id) {
-	redemption(chan, (["broadcaster_user_id": (string)broadcaster_id]));
-	redemptiongone(chan, (["broadcaster_user_id": (string)broadcaster_id]));
 }
 
 //List all redemptions for a particular reward ID
@@ -339,13 +310,12 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				existing[info->data[0]->id] = tickets;
 				++numcreated;
 			}
-			make_hooks(chan, broadcaster_id);
 			persist_config->save();
 			//TODO: Notify the front end what's been changed, not just counts. What else needs to be pushed out?
 			send_updates_all(chan, (["title": cfg->giveaway->title]));
 			return jsonify((["ok": 1, "created": numcreated, "updated": numupdated, "deleted": numdeleted]));
 		}
-		if (body->new_dynamic) { //This kinda should be a POST request, but whatever.
+		if (body->new_dynamic) { //TODO: Migrate this to chan_pointsrewards as "create manageable reward". It doesn't necessarily have to have dynamic pricing.
 			if (!cfg->dynamic_rewards) cfg->dynamic_rewards = ([]);
 			mapping copyfrom = body->copy_from || ([]); //Whatever we get from the front end, pass to Twitch. Good idea? Not sure.
 			//Titles must be unique (among all rewards). To simplify rapid creation of
@@ -361,11 +331,10 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			))->data[0]->id;
 			//write("Created new dynamic: %O\n", info->data[0]);
 			cfg->dynamic_rewards[id] = rwd;
-			make_hooks(chan, broadcaster_id);
 			persist_config->save();
 			return jsonify((["ok": 1, "reward": rwd | (["id": id])]));
 		}
-		if (string id = body->dynamic_id) {
+		if (string id = body->dynamic_id) { //TODO: Ditto, move to pointsrewards
 			if (!cfg->dynamic_rewards || !cfg->dynamic_rewards[id]) return (["error": 400]);
 			mapping rwd = cfg->dynamic_rewards[id];
 			if (body->title) rwd->title = body->title;
@@ -380,7 +349,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 					(["method": "PATCH", "json": (["title": rwd->title, "cost": (int)body->curcost])]),
 				);
 			}
-			make_hooks(chan, broadcaster_id);
 			persist_config->save();
 			return jsonify((["ok": 1]));
 		}
@@ -423,7 +391,6 @@ continue mapping|Concurrent.Future get_chan_state(object channel, string grp)
 	]);
 	if (grp != "control") return 0;
 	int broadcaster_id = yield(get_user_id(chan));
-	make_hooks(chan, broadcaster_id);
 	array rewards;
 	if (mixed ex = catch {rewards = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + broadcaster_id,
 		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])))->data;
@@ -583,6 +550,7 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 	}
 }
 
+//TODO: Migrate the dynamic reward management to pointsrewards, keeping the giveaway management here
 void channel_on_off(string channel, int online)
 {
 	mapping cfg = persist_config["channels"][channel];
@@ -602,7 +570,6 @@ void channel_on_off(string channel, int online)
 		"{dow}": (string)ts->week_day(), //1 = Monday, 7 = Sunday
 	]);
 	get_user_id(channel)->then(lambda(int broadcaster_id) {
-		if (online) make_hooks(channel, broadcaster_id);
 		string token = persist_status->path("bcaster_token")[channel];
 		if (token) foreach (dyn; string reward_id; mapping info) {
 			int active = 0;

@@ -1,5 +1,6 @@
 inherit http_websocket;
 inherit builtin_command;
+inherit hook;
 constant hidden_command = 1;
 constant access = "none";
 constant markdown = #"# Points rewards - $$channel$$
@@ -63,6 +64,33 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!G->G->irc->channels["#" + chan]) return;
 }
 
+@create_hook:
+constant point_redemption = ({"string chan", "string id", "int(0..1) refund", "mapping data"});
+
+void points_redeemed(string chan, mapping data, int|void removal)
+{
+	//write("POINTS %s ON %O: %O\n", removal ? "REFUNDED" : "REDEEMED", chan, data);
+	event_notify("point_redemption", chan, data->reward->id, removal, data);
+	string token = persist_status->path("bcaster_token")[chan];
+	mapping cfg = persist_config["channels"][chan]; if (!cfg) return;
+
+	if (mapping dyn = !removal && cfg->dynamic_rewards && cfg->dynamic_rewards[data->reward->id]) {
+		//Up the price every time it's redeemed
+		//For this to be viable, the reward needs a global cooldown of
+		//at least a few seconds, preferably a few minutes.
+		object chan = G->G->irc->channels["#" + chan];
+		int newcost = G->G->evaluate_expr(chan->expand_variables(replace(dyn->formula, "PREV", (string)data->reward->cost)));
+		if ((string)newcost != (string)data->reward->cost)
+			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+					+ data->broadcaster_user_id + "&id=" + data->reward->id,
+				(["Authorization": "Bearer " + token]),
+				(["method": "PATCH", "json": (["cost": newcost])]),
+			);
+	}
+}
+EventSub redemption = EventSub("redemption", "channel.channel_points_custom_reward_redemption.add", "1", points_redeemed);
+EventSub redemptiongone = EventSub("redemptiongone", "channel.channel_points_custom_reward_redemption.update", "1") {points_redeemed(@__ARGS__, 1);};
+
 continue Concurrent.Future populate_rewards_cache(string chan, int|void broadcaster_id) {
 	if (!broadcaster_id) broadcaster_id = yield(get_user_id(chan));
 	G->G->pointsrewards[chan] = ({ }); //If there's any error, don't keep retrying
@@ -82,6 +110,8 @@ continue Concurrent.Future populate_rewards_cache(string chan, int|void broadcas
 	rewardadd(chan, (["broadcaster_user_id": (string)broadcaster_id]));
 	rewardupd(chan, (["broadcaster_user_id": (string)broadcaster_id]));
 	rewardrem(chan, (["broadcaster_user_id": (string)broadcaster_id]));
+	redemption(chan, (["broadcaster_user_id": (string)broadcaster_id]));
+	redemptiongone(chan, (["broadcaster_user_id": (string)broadcaster_id]));
 	send_updates_all("#" + chan);
 }
 
