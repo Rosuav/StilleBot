@@ -94,7 +94,7 @@ void points_redeemed(string chan, mapping data, int|void removal)
 			"uid": data->user_id,
 		]), G->G->echocommands[cmd], ([
 			"%s": data->user_input,
-			"rewardid": data->reward->id, "redemptionid": data->id,
+			"{rewardid}": data->reward->id, "{redemptionid}": data->id,
 		]));
 	}
 }
