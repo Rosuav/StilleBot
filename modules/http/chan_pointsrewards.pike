@@ -167,6 +167,8 @@ EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward
 	array rew = G->G->pointsrewards[chan];
 	if (!rew) return;
 	G->G->pointsrewards[chan] = filter(rew) {return __ARGS__[0]->id != info->id;};
+	mapping dyn = persist_config["channels"][chan]->?dynamic_rewards;
+	if (dyn) {m_delete(dyn, info->id); persist_config->save();}
 	send_updates_all("#" + chan);
 	send_updates_all("dyn#" + chan);
 };
