@@ -273,7 +273,7 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 		//TODO: Find everything that uses the Kraken names and correct them
 		info->game = info->game_name;
 		info->display_name = info->broadcaster_name;
-		info->url = "https://twitch.tv/" + info->broadcaster_name; //Is this reliable??
+		info->url = "https://twitch.tv/" + info->broadcaster_login; //Should be reliable, I think?
 		info->_id = info->broadcaster_id;
 		info->status = info->title;
 		if (!G->G->channel_info[name]) G->G->channel_info[name] = info; //Autocache
