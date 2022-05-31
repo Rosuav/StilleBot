@@ -394,7 +394,7 @@ void websocket_cmd_addchannel(mapping(string:mixed) conn, mapping(string:mixed) 
 	if (!config->chan) spawn_task(fetch_name(conn->group, config));
 	//TODO: Recheck all channels on add? Or do that separately?
 	//Rechecking would update their avatars and display names.
-	array names = replace(msg->name, "\n", " ") / " " - ({""});
+	array names = replace(msg->name - "https://twitch.tv/", "\n", " ") / " " - ({""});
 	Concurrent.all(get_users_info((names / 100.0)[*], "login"))->then() {array chans = __ARGS__[0] * ({ });
 		if (!sizeof(chans)) return; //TODO: Report error to the user
 		foreach (chans, mapping c) {
