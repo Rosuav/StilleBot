@@ -75,6 +75,17 @@
   - Note that Twitch now has on-platform goals that track current followers and subs,
     so this can continue to focus on how many have been gained recently (eg daily
     sub/resub count).
+  - All of them will be usable out-of-the-box, but have "Advanced" that lets you fully
+    customize the advancement. Also, if you REALLY need flexibility, they are backed by
+    the variable system, so any command or special can move them around.
+  - Make the advancement command a proper thing. It should be broadly possible to hack
+    together a bit-boss kind of thing if you want to.
+  - Standard goal bars:
+    - Daily subs/resubs
+    - Daily sub points (ie tiered subs count for more)
+    - Daily cheers
+    - All stream support (subs, resubs, cheers, all worth their USD equivalents)
+    - Any others?
 * Special trigger when any goal bar tiers up?? Would be better than the weird system
   where it triggers an actual command. Could deep link straight to the editor now.
 * Client-side per-user preferences are now a thing. Use them where appropriate.
