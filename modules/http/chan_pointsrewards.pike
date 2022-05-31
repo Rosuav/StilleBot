@@ -5,12 +5,22 @@ constant hidden_command = 1;
 constant access = "none";
 constant markdown = #"# Points rewards - $$channel$$
 
-* TODO: Allow commands to be triggered by channel point redemptions.
+Icon | Title | Prompt | Manage? | Commands
+-----|-------|--------|---------|-----------
+-    | -     | -      | -       | (loading...)
 {:#rewards}
+
+[Add reward](:#add) Copy from: <select id=copyfrom><option value=\"-1\">(none)</option></select>
 
 This will eventually have a list of all your current rewards, whether they can be managed
 by StilleBot, and a place to attach behaviour to them. Coupled with appropriate use of
 channel voices, this can allow a wide variety of interactions with other bots.
+
+You can remove functionality from a reward by deleting the corresponding command, or editing
+it so that it no longer responds to the redemption (if you want to keep the command for other
+purposes).
+
+[Configure reward details here](https://dashboard.twitch.tv/viewer-rewards/channel-points/rewards)
 ";
 
 /* Ultimately this should be the master management for all points rewards. All shared code for
@@ -51,6 +61,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		mapping r = current[rew->id];
 		if (r) dynrewards += ({r | (["id": rew->id, "title": rew->title, "curcost": rew->cost])});
 		write("Dynamic ID %O --> %O\n", rew->id, r);
+		rew->invocations = G->G->redemption_commands[rew->id] || ({ });
 	}
 	//FIXME: Change chan_dynamics.js to want items to be all rewards, and then
 	//other clients can use the same socket type without it feeling weird. This
