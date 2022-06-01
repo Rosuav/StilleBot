@@ -205,8 +205,24 @@ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 			+ cmds[1..];
 	}
 	cmds += ({add ? "Done adding VIPs." : "Done removing VIPs."});
-	irc_connect((["user": chan]))->then() {[object irc] = __ARGS__;
-		irc->send("#" + chan, cmds[*]);
+	werror("VIP leaders: %O\n", cmds);
+	irc_connect((["user": chan, "verbose": 1]))->then() {[object irc] = __ARGS__;
+		//Fast mode doesn't seem to work.
+		//irc->send("#" + chan, cmds[*]);
+		//Slow mode... maybe works? Can't even be sure.
+		//In simulation mode, where simple text gets output, everything works.
+		//But when it's done for real, some of the badge movements simply don't
+		//happen, and I am completely at a loss as to why. There's a small
+		//measure of consistency - when things go wrong, the same badge gets
+		//skipped each time - so maybe a solution would be to shuffle the array
+		//of commands (other than the textual ones) so that clicking the button
+		//a second time is more likely to work??? But it's also possible that
+		//crawl mode, changing one badge every two seconds, works, so I still
+		//don't know. (One every second didn't fix the problem.)
+		foreach (cmds, string cmd) {
+			irc->send("#" + chan, cmd);
+			irc->enqueue(2.0);
+		}
 		irc->quit();
 	};
 }
