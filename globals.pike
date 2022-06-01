@@ -671,6 +671,7 @@ class _TwitchIRC(mapping options) {
 			line -= "\r";
 			if (line == "") continue;
 			line = utf8_to_string(line);
+			if (options->verbose) werror("IRC < %O\n", line);
 			//Twitch messages with TAGS capability begin with the tags
 			sscanf(line, "@%s %s", string tags, line);
 			//Most messages from the server begin with a prefix. It's
@@ -731,6 +732,7 @@ class _TwitchIRC(mapping options) {
 				call_out(sockwrite, wait);
 				return;
 			}
+			if (options->verbose) werror("IRC > %O\n", next);
 			int sent = sock->write(next + "\n");
 			if (sent < sizeof(next) + 1) {
 				//Partial send. Requeue all but the part that got sent.
