@@ -182,3 +182,5 @@
   - Needs point redemption
   - Check list of builtins
   - Can builtins receive multiple args?
+* Poke every channel to see whether we're connected
+  - What command? Slash commands seem to respond even if we're connected.
