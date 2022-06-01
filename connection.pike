@@ -462,12 +462,15 @@ class channel(string name) { //name begins with hash and is all lower case
 		//The only remaining destination (other than open chat) is whispers, which are a command prefix.
 		if (dest == "/w") prefix = sprintf("%s %s %s", dest, target, prefix);
 
-		//VERY simplistic form of word wrap.
+		//Wrap to 500 characters to fit inside the Twitch limit
 		array msgs = ({ });
-		while (sizeof(msg) > 400)
+		while (sizeof(msg) > 500)
 		{
-			sscanf(msg, "%400s%s %s", string piece, string word, msg);
-			msgs += ({sprintf("%s%s%s ...", prefix, piece, word)});
+			int pos = 500 - sizeof(prefix);
+			while (msg[pos] != ' ' && pos--) ;
+			if (!pos) pos = 500 - sizeof(prefix);
+			msgs += ({prefix + String.trim(msg[..pos-1])});
+			msg = String.trim(msg[pos+1..]);
 		}
 		msgs += ({prefix + msg});
 
