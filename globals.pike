@@ -602,6 +602,7 @@ class _TwitchIRC(mapping options) {
 	array(string) queue = ({ }); //Commands waiting to be sent, and callbacks
 	array(function) failure_notifs = ({ }); //All will be called on failure
 	int have_connection = 0;
+	int writing = 1; //If not writing and need to write, immediately write.
 	string readbuf = "";
 
 	//Messages in this set will not be traced on discovery as we know them.
@@ -718,7 +719,7 @@ class _TwitchIRC(mapping options) {
 
 	void sockwrite() {
 		//Send the next thing from the queue
-		if (!sizeof(queue)) return;
+		if (!sizeof(queue)) {writing = 0; return;}
 		[mixed next, queue] = Array.shift(queue);
 		if (stringp(next)) {
 			//Automatic rate limiting
@@ -750,7 +751,7 @@ class _TwitchIRC(mapping options) {
 	}
 
 	void enqueue(mixed ... items) {
-		if (!sizeof(queue)) call_out(sockwrite, 0);
+		if (!writing) {writing = 1; call_out(sockwrite, 0);}
 		queue += items;
 	}
 	Concurrent.Future promise() {
