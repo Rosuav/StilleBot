@@ -33,7 +33,7 @@ on("click", ".addcmd", e => {
 	let i = 1;
 	while (commands["untitled" + i + ws_group]) ++i;
 	open_advanced_view({
-		id: "untitled" + i, template: true, access: "none",
+		id: "untitled" + i, template: true, access: "none", visibility: "hidden",
 		message: "@{username}, you redeemed: " + e.match.dataset.title,
 		redemption: e.match.dataset.reward,
 	})
