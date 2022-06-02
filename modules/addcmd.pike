@@ -126,6 +126,7 @@ void purge(string chan, string cmd, multiset updates) {
 	if (prev->redemption) {
 		G->G->redemption_commands[prev->redemption] -= ({cmd});
 		if (!sizeof(G->G->redemption_commands[prev->redemption])) m_delete(G->G->redemption_commands, prev->redemption);
+		updates["rew " + prev->redemption] = 1;
 	}
 }
 
@@ -164,7 +165,10 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 		function repeat = G->G->commands->repeat;
 		if (repeat) function_object(repeat)->connected(chan);
 	}
-	if (mappingp(response) && response->redemption) G->G->redemption_commands[response->redemption] += ({cmd});
+	if (mappingp(response) && response->redemption) {
+		G->G->redemption_commands[response->redemption] += ({cmd});
+		updates["rew " + response->redemption] = 1;
+	}
 	string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 	Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
 	if (object handler = chan && G->G->websocket_types->chan_commands) {
@@ -173,9 +177,19 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 		foreach (updates; cmd;) {
 			//TODO maybe: If a command has been renamed, notify clients to rename, rather than
 			//deleting the old and creating the new.
+			if (has_prefix(cmd, "rew ")) continue;
 			if (has_prefix(cmd, "!trigger#")) handler->send_updates_all("!" + cmd);
 			else handler->update_one(pfx + pfx + "#" + chan, cmd);
 			handler->send_updates_all(cmd);
+		}
+	}
+	if (object handler = chan && G->G->websocket_types->chan_pointsrewards) {
+		//Similarly to the above, notify changes to any redemption invocations.
+		foreach (updates; cmd;) {
+			if (!has_prefix(cmd, "rew ")) continue;
+			//update_one not currently supported on this socket, so just
+			//send a full update and then stop (so we don't multiupdate).
+			handler->send_updates_all("#" + chan); break;
 		}
 	}
 }
