@@ -214,7 +214,7 @@ export function render_command(msg) {
 }
 
 on("click", "button.advview", e => {
-	const tr = e.match.closest("tr");
+	const tr = e.match.closest("[data-id]");
 	open_advanced_view(commands[tr.dataset.editid || tr.dataset.id]);
 });
 on("input", "tr[data-id] input", e => e.match.closest("tr").classList.add("dirty"));
