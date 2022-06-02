@@ -307,6 +307,12 @@ const types = {
 		typedesc: "Capture message into a variable. Can be accessed as $varname$ in this or any other command.",
 	},
 	...builtin_types(),
+	handle_errors: {
+		color: "#ff8800", label: el => "Handle errors",
+		params: [{attr: "conditional", values: "string"}, {attr: "expr1", values: "{error}"},
+			{attr: "otherwise", values: "Unexpected error: {error}"}],
+		typedesc: "Handle potential errors from a builtin",
+	},
 	conditional_string: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => [
 			el.expr1 && el.expr2 ? "If " + el.expr1 + " == " + el.expr2 : el.expr1 ? "If " + el.expr1 + " is blank" : "String comparison",
@@ -463,7 +469,7 @@ const tray_tabs = [
 		{type: "builtin_tz", builtin_param: "Los Angeles"},
 		{type: "delay", delay: "2"},
 	]},
-	{name: "Extras", color: "#7f7f7f", items: []}, //I'm REALLY not happy with these names.
+	{name: "Extras", color: "#7f7f7f", items: [{type: "handle_errors"}]}, //I'm REALLY not happy with these names.
 ];
 const seen_types = {trashcan: 1};
 function make_template(el, par) {

@@ -185,7 +185,7 @@
 * Poke every channel to see whether we're connected
   - What command? Slash commands seem to respond even if we're connected.
 * Allow "fire-and-forget" builtin invocation if message is omitted
-  - Effectively, this is equivalent to an implicit message of:
-    {conditional: "string", expr1: "{error}", message: "", otherwise: "Unexpected error: {error}"}
-  - Don't show this in the GUI though
-  - On validation, these implicit messages should prevent the branch from being pruned
+  - On saving, if a builtin has no message, synthesize this:
+    {"conditional":"string","expr1":"{error}","message":"","otherwise":"Unexpected error: {error}"}
+  - This will be displayed in the GUI as "Handle errors".
+  - How to show this in classic view?
