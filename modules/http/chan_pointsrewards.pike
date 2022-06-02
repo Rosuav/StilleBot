@@ -229,7 +229,10 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	if (!token) return (["{error}": "Need broadcaster permissions"]);
 	string reward_id; array(string) cmds = "";
 	werror("Params: %O\n", param);
-	if (arrayp(param)) [reward_id, cmds] = Array.pop(param); //TODO: Make this [ID, cmd, param] rather than "cost=500"
+	//Hmm. Might need to always have the reward ID, and then put the redemption ID into
+	//the same place that the cost goes. The "fulfil/cancel" API requires both IDs for
+	//some reason. On the plus side, that means we consistently require reward_id.
+	if (arrayp(param)) {cmds = ({param[0] + "=" + param[1]}); reward_id = param[2];}
 	else {sscanf(param, "%[-0-9a-f] %s", reward_id, string cmd); cmds = cmd / " ";} //Keep this one unchanged though
 	mapping params = ([]);
 	foreach (cmds, string cmd) {
