@@ -73,7 +73,6 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	foreach (rewards, mapping rew) {
 		mapping r = current[rew->id];
 		if (r) dynrewards += ({r | (["id": rew->id, "title": rew->title, "curcost": rew->cost])});
-		write("Dynamic ID %O --> %O\n", rew->id, r);
 		rew->invocations = G->G->redemption_commands[rew->id] || ({ });
 	}
 	//FIXME: Change chan_dynamics.js to want items to be all rewards, and then
