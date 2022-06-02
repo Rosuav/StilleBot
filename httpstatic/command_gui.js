@@ -115,11 +115,23 @@ const builtin_validators = {
 	},
 };
 
+const builtin_label_funcs = {
+	chan_pointsrewards: el => {
+		if (!el.builtin_param || typeof el.builtin_param === "string") return "Points rewards"; //TODO: Reformat into new style?
+		switch (el.builtin_param[1]) {
+			case "enable": if (el.builtin_param[2] !== "0") return "Points reward: enable";
+			case "disable": return "Points reward: disable";
+			case "fulfil": return "Points: Done " + el.builtin_param[2];
+			case "cancel": return "Points: Refund " + el.builtin_param[2];
+		}
+		return "Points rewards";
+	},
+};
 function builtin_types() {
 	const ret = { };
 	Object.entries(builtins).forEach(([name, blt]) => {
 		const b = ret["builtin_" + name] = {
-			color: "#ee77ee", children: ["message"], label: el => blt.name,
+			color: "#ee77ee", children: ["message"], label: builtin_label_funcs[name] || (el => blt.name),
 			params: [{attr: "builtin", values: name}],
 			typedesc: blt.desc, provides: { },
 		};
