@@ -757,6 +757,7 @@ class _TwitchIRC(mapping options) {
 		queue += items;
 	}
 	Concurrent.Future promise() {
+		if (!sizeof(queue)) return Concurrent.resolve(this);
 		return Concurrent.Promise(lambda(function res, function rej) {
 			enqueue() {failure_notifs -= ({rej}); res(@__ARGS__);};
 			failure_notifs += ({rej});
