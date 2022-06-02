@@ -21,6 +21,16 @@ it so that it no longer responds to the redemption (if you want to keep the comm
 purposes).
 
 [Configure reward details here](https://dashboard.twitch.tv/viewer-rewards/channel-points/rewards)
+
+<style>
+#rewards th {
+	padding: 0 0.25em;
+}
+#rewards ul {
+	margin: 0; padding: 0;
+	list-style-type: none;
+}
+</style>
 ";
 
 /* Ultimately this should be the master management for all points rewards. All shared code for

@@ -1,9 +1,9 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, IMG, LI, TD, TR, UL} = choc; //autoimport
+const {A, BUTTON, IMG, LI, TD, TR, UL} = choc; //autoimport
 
 export const render_parent = DOM("#rewards tbody");
 export function render_item(rew) {
-	return TR([
+	return TR({"data-id": rew.id}, [
 		TD({style: "background: " + rew.background_color}, IMG({src:
 			rew.image ? rew.image.url_1x //If an image is selected
 			: rew.default_image.url_1x //Otherwise, the default fallback
@@ -15,7 +15,10 @@ export function render_item(rew) {
 			: "Reward created elsewhere, can attach functionality only"},
 			rew.can_manage ? "✅" + (rew.should_redemptions_skip_request_queue ? "⤐" : "") : "❎"
 		),
-		TD(UL(rew.invocations.map(c => LI(A({href: "commands#" + c.split("#")[0] + "/", target: "_blank"}, "!" + c.split("#")[0]))))),
+		TD(UL([
+			rew.invocations.map(c => LI(A({href: "commands#" + c.split("#")[0] + "/", target: "_blank"}, "!" + c.split("#")[0]))),
+			LI(BUTTON({class: "addcmd", "data-reward": rew.id}, "New")),
+		])),
 	]);
 }
 export function render_empty() {
@@ -24,3 +27,7 @@ export function render_empty() {
 	]));
 }
 export function render(data) { }
+
+on("click", ".addcmd", e => {
+	//TODO
+});
