@@ -212,10 +212,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	]) | req->misc->chaninfo);
 }
 
-constant command_description = "Manage channel point rewards";
+constant command_description = "Manage channel point rewards - fulfil and cancel need redemption ID too";
 constant builtin_name = "Points rewards";
 //TODO: In the front end, label them as "[En/Dis]able reward", "Mark complete", "Refund points"
-constant builtin_param = ({"/Action/enable/disable/fulfil/cancel", "Reward/redemption ID"});
+constant builtin_param = ({"Reward ID", "/Action/enable/disable/fulfil/cancel", "Redemption ID"});
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{action}": "Action(s) performed, if any (may be blank)",
@@ -232,7 +232,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	//Hmm. Might need to always have the reward ID, and then put the redemption ID into
 	//the same place that the cost goes. The "fulfil/cancel" API requires both IDs for
 	//some reason. On the plus side, that means we consistently require reward_id.
-	if (arrayp(param)) {cmds = ({param[0] + "=" + param[1]}); reward_id = param[2];}
+	if (arrayp(param)) {reward_id = param[0]; cmds = ({param[1] + "=" + param[2]});}
 	else {sscanf(param, "%[-0-9a-f] %s", reward_id, string cmd); cmds = cmd / " ";} //Keep this one unchanged though
 	mapping params = ([]);
 	foreach (cmds, string cmd) {
@@ -242,8 +242,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 			case "disable": params->is_enabled = Val.false; break;
 			case "cost": params->cost = (int)arg; break;
 			case "fulfil": case "cancel": {
-				if (sizeof(params)) return (["{error}": "Can't mix enable/disable and fulfil/cancel"]);
-				if (reward_id == "") return (["{error}": ""]); //Not an error to attempt to mark nothing
+				if (arg == "") return (["{error}": ""]); //Not an error to attempt to mark nothing
 				return (["{error}": "Redemption management unimplemented"]);
 			}
 			default: return (["{error}": sprintf("Unknown action %O", cmd)]);
