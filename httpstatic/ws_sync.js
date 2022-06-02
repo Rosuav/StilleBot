@@ -2,7 +2,7 @@
 //Relies on globals ws_type and ws_group
 
 let default_handler = null;
-let send_socket; //If present, send() is functional.
+let send_socket, send_sockets = { }; //If populated, send() is functional.
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
 let pending_message = null; //Allow at most one message to be queued on startup (will be sent after initialization)
 let prefs = { }; //Updated from the server as needed
@@ -18,6 +18,7 @@ export function connect(group, handler)
 		console.log("Socket connection established.");
 		socket.send(JSON.stringify({cmd: "init", type: handler.ws_type || ws_type, group}));
 		if (handler.socket_connected) handler.socket_connected(socket);
+		else if (handler.ws_sendid) send_sockets[handler.ws_sendid] = socket;
 		else send_socket = socket; //Don't activate send() until we're initialized
 		if (pending_message) {socket.send(JSON.stringify(pending_message)); pending_message = null;}
 	};
@@ -91,7 +92,12 @@ async function init() {default_handler = await import(ws_code); connect(ws_group
 if (document.readyState !== "loading") init();
 else window.addEventListener("DOMContentLoaded", init);
 
-export function send(msg) {console.log("Sending to server:", msg); if (send_socket) send_socket.send(JSON.stringify(msg)); else pending_message = msg;}
+export function send(msg, sendid) {
+	console.log("Sending to " + (sendid ? sendid + " socket" : "server") + ":", msg);
+	const sock = send_sockets[sendid] || send_socket;
+	if (sock) sock.send(JSON.stringify(msg));
+	else pending_message = msg; //NOTE: Pending-send always goes onto the first socket to get connected. Would be nice to separate by sendid.
+}
 //Usage: prefs_notify("favs", favs => {...})
 //Or: prefs_notify(prefs => {...})
 //With a key, will notify with the value of that key, when it changes

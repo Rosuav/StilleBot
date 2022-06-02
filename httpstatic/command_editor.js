@@ -75,7 +75,7 @@ function get_message_details() {
 }
 function change_tab(tab) {
 	let response = get_message_details();
-	if (response) ws_sync.send({cmd: "validate", cmdname: "changetab_" + tab, response});
+	if (response) ws_sync.send({cmd: "validate", cmdname: "changetab_" + tab, response}, "cmdedit");
 	else select_tab(tab, cmd_editing);
 }
 
@@ -124,11 +124,11 @@ on("click", "#save_advanced", async e => {
 	const info = get_message_details();
 	document.getElementById("advanced_view").close();
 	const el = DOM("#cmdname");
-	ws_sync.send({cmd: "update", cmdname: el ? el.value : cmd_id, original: cmd_id, response: info});
+	ws_sync.send({cmd: "update", cmdname: el ? el.value : cmd_id, original: cmd_id, response: info}, "cmdedit");
 });
 
 on("click", "#delete_advanced", waitlate(750, 5000, "Really delete?", e => {
-	ws_sync.send({cmd: "delete", cmdname: cmd_id});
+	ws_sync.send({cmd: "delete", cmdname: cmd_id}, "cmdedit");
 	DOM("#advanced_view").close();
 }));
 
@@ -223,7 +223,7 @@ on("submit", "main > form", e => {
 	document.querySelectorAll("tr.dirty[data-id]").forEach(tr => {
 		const msg = tr.querySelector("input").value;
 		if (!msg.length) {
-			ws_sync.send({cmd: "delete", cmdname: tr.dataset.id});
+			ws_sync.send({cmd: "delete", cmdname: tr.dataset.id}, "cmdedit");
 			return;
 		}
 		//Take a copy of the original command (we're going to JSON-encode it anyway, so this should
@@ -231,7 +231,7 @@ on("submit", "main > form", e => {
 		let response = JSON.parse(JSON.stringify(commands[tr.dataset.id]));
 		if (typeof response === "string") response = msg;
 		else scan_message(response, {replacetext: msg});
-		ws_sync.send({cmd: "update", cmdname: tr.dataset.id, response});
+		ws_sync.send({cmd: "update", cmdname: tr.dataset.id, response}, "cmdedit");
 		//Note that the dirty flag is not reset. A successful update will trigger
 		//a broadcast message which, when it reaches us, will rerender the command
 		//completely, thus effectively resetting dirty.

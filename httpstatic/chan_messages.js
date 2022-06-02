@@ -93,7 +93,7 @@ on("click", ".acknowledge", e => {
 });
 
 if (ws_extra_group) ws_sync.connect(ws_extra_group, {
-	ws_type: "chan_messages",
+	ws_type: "chan_messages", ws_sendid: "modmsgs",
 	render_parent: DOM("#modmessages"),
 	render_item: msg => render_message(msg, ctx_mod),
 	render: function(data) {if (ctx_mod.lastread === -1) mod_sock.send(JSON.stringify({cmd: "mark_read", why: "startup"}));},

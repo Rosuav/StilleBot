@@ -55,9 +55,7 @@ cmd_configure({
 });
 
 ws_sync.connect(ws_group, {
-	ws_type: "chan_commands",
+	ws_type: "chan_commands", ws_sendid: "cmdedit",
 	render_parent: UL(), //Don't actually need them rendered anywhere
-	render_item: render_command,
-	sockmsg_validated, //For tab switching. Doesn't work as ws_sync always sends on the main socket.
-	render: data => { },
+	render_item: render_command, sockmsg_validated, render: data => { },
 });
