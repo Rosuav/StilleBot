@@ -109,7 +109,7 @@ constant NOTIFICATION_SPECIALS = ([
 ]);
 
 Concurrent.Future set_redemption_status(mapping redem, string status) {
-	//Reject the redemption, refunding the points
+	//Fulfil or reject the redemption, consuming or refunding the points
 	return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions"
 			+ "?broadcaster_id=" + (redem->broadcaster_id || redem->broadcaster_user_id)
 			+ "&reward_id=" + redem->reward->id

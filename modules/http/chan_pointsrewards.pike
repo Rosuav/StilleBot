@@ -238,9 +238,11 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 			case "enable": params->is_enabled = arg != "0" ? Val.true : Val.false; break;
 			case "disable": params->is_enabled = Val.false; break;
 			case "cost": params->cost = (int)arg; break;
-			case "fulfil": case "cancel":
+			case "fulfil": case "cancel": {
+				if (sizeof(params)) return (["{error}": "Can't mix enable/disable and fulfil/cancel"]);
 				if (reward_id == "") return (["{error}": ""]); //Not an error to attempt to mark nothing
 				return (["{error}": "Redemption management unimplemented"]);
+			}
 			default: return (["{error}": sprintf("Unknown action %O", cmd)]);
 		}
 	}
