@@ -227,16 +227,20 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	if (param == "") return (["{error}": "Need a subcommand"]);
 	string token = persist_status->path("bcaster_token")[channel->name[1..]];
 	if (!token) return (["{error}": "Need broadcaster permissions"]);
-	string reward_id, cmds = "";
-	if (arrayp(param)) [reward_id, cmds] = Array.shift(param); //TODO: Make this [ID, cmd, param] rather than "cost=500"
-	else sscanf(param, "%[-0-9a-f] %s", reward_id, cmds); //Keep this one unchanged though
+	string reward_id; array(string) cmds = "";
+	werror("Params: %O\n", param);
+	if (arrayp(param)) [reward_id, cmds] = Array.pop(param); //TODO: Make this [ID, cmd, param] rather than "cost=500"
+	else {sscanf(param, "%[-0-9a-f] %s", reward_id, string cmd); cmds = cmd / " ";} //Keep this one unchanged though
 	mapping params = ([]);
-	foreach (cmds / " ", string cmd) {
+	foreach (cmds, string cmd) {
 		sscanf(cmd, "%s=%s", cmd, string arg);
 		switch (cmd) {
 			case "enable": params->is_enabled = arg != "0" ? Val.true : Val.false; break;
 			case "disable": params->is_enabled = Val.false; break;
 			case "cost": params->cost = (int)arg; break;
+			case "fulfil": case "cancel":
+				if (reward_id == "") return (["{error}": ""]); //Not an error to attempt to mark nothing
+				return (["{error}": "Redemption management unimplemented"]);
 			default: return (["{error}": sprintf("Unknown action %O", cmd)]);
 		}
 	}
