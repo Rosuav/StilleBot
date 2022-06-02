@@ -1,5 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, IMG, LI, TD, TR, UL} = choc; //autoimport
+const {BUTTON, IMG, INPUT, LI, TD, TR, UL} = choc; //autoimport
+import {sockmsg_validated, commands, render_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 export const render_parent = DOM("#rewards tbody");
 export function render_item(rew) {
@@ -16,8 +17,8 @@ export function render_item(rew) {
 			rew.can_manage ? "✅" + (rew.should_redemptions_skip_request_queue ? "⤐" : "") : "❎"
 		),
 		TD(UL([
-			rew.invocations.map(c => LI(A({href: "commands#" + c.split("#")[0] + "/", target: "_blank"}, "!" + c.split("#")[0]))),
-			LI(BUTTON({class: "addcmd", "data-reward": rew.id}, "New")),
+			rew.invocations.map(c => LI({"data-id": c}, BUTTON({class: "advview"}, "!" + c.split("#")[0]))),
+			LI(BUTTON({class: "addcmd", "data-title": rew.title, "data-reward": rew.id}, "New")),
 		])),
 	]);
 }
@@ -29,5 +30,34 @@ export function render_empty() {
 export function render(data) { }
 
 on("click", ".addcmd", e => {
-	//TODO
+	let i = 1;
+	while (commands["untitled" + i + ws_group]) ++i;
+	open_advanced_view({
+		id: "untitled" + i, template: true, access: "none",
+		message: "@{username}, you redeemed: " + e.match.dataset.title,
+		redemption: e.match.dataset.reward,
+	})
+});
+
+cmd_configure({
+	get_command_basis: cmd => {
+		const cmdname = "!" + cmd.id.split("#")[0];
+		set_content("#advanced_view h3", ["Command name ", INPUT({autocomplete: "off", id: "cmdname", value: cmdname})]);
+		let automate = "";
+		if (cmd.automate) {
+			const [m1, m2, mode] = cmd.automate;
+			if (mode) automate = ("0" + m1).slice(-2) + ":" + ("0" + m2).slice(-2); //hr:min
+			else if (m1 === m2) automate = ""+m1; //min-min is the same as just min
+			else automate = m1 + "-" + m2; //min-max
+		}
+		return {type: "anchor_command", aliases: cmd.aliases || "", automate};
+	},
+});
+
+ws_sync.connect(ws_group, {
+	ws_type: "chan_commands",
+	render_parent: UL(), //Don't actually need them rendered anywhere
+	render_item: render_command,
+	sockmsg_validated, //For tab switching. Doesn't work as ws_sync always sends on the main socket.
+	render: data => { },
 });
