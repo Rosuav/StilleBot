@@ -214,35 +214,24 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 
 constant command_description = "Manage channel point rewards";
 constant builtin_name = "Points rewards";
-constant builtin_param = "Action";
+//TODO: In the front end, label them as "[En/Dis]able reward", "Mark complete", "Refund points"
+constant builtin_param = ({"/Action/enable/disable/fulfil/cancel", "Reward/redemption ID"});
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{action}": "Action(s) performed, if any (may be blank)",
 ]);
-constant command_suggestions = ([]); //No default command suggestions. Ultimately this will need a proper builder (eg for dynamic pricing).
-constant command_template = ([
-	"builtin": "chan_pointsrewards",
-	"builtin_param": "<ID> enable",
-	"message": ([
-		"conditional": "string", "expr1": "{error}",
-		"message": ([
-			"conditional": "string",
-			"expr1": "{action}",
-			"message": "",
-			"otherwise": "Reward updated: {action}",
-		]),
-		"otherwise": "Unable to update reward: {error}",
-	]),
-]);
+constant command_suggestions = ([]); //No default command suggestions.
 
-continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
+continue mapping|Concurrent.Future message_params(object channel, mapping person, string|array param)
 {
 	if (param == "") return (["{error}": "Need a subcommand"]);
 	string token = persist_status->path("bcaster_token")[channel->name[1..]];
 	if (!token) return (["{error}": "Need broadcaster permissions"]);
-	sscanf(param, "%[-0-9a-f]%{ %s%}", string reward_id, array(array(string)) cmds);
+	string reward_id, cmds = "";
+	if (arrayp(param)) [reward_id, cmds] = Array.shift(param); //TODO: Make this [ID, cmd, param] rather than "cost=500"
+	else sscanf(param, "%[-0-9a-f] %s", reward_id, cmds); //Keep this one unchanged though
 	mapping params = ([]);
-	foreach (cmds, [string cmd]) {
+	foreach (cmds / " ", string cmd) {
 		sscanf(cmd, "%s=%s", cmd, string arg);
 		switch (cmd) {
 			case "enable": params->is_enabled = arg != "0" ? Val.true : Val.false; break;

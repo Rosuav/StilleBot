@@ -18,7 +18,7 @@ export function render_item(rew) {
 		),
 		TD(UL([
 			rew.invocations.map(c => LI({"data-id": c}, BUTTON({class: "advview"}, "!" + c.split("#")[0]))),
-			LI(BUTTON({class: "addcmd", "data-title": rew.title, "data-reward": rew.id}, "New")),
+			rew.can_manage && LI(BUTTON({class: "addcmd", "data-title": rew.title, "data-reward": rew.id}, "New")),
 		])),
 	]);
 }
@@ -34,7 +34,14 @@ on("click", ".addcmd", e => {
 	while (commands["untitled" + i + ws_group]) ++i;
 	open_advanced_view({
 		id: "untitled" + i, template: true, access: "none", visibility: "hidden",
-		message: "@{username}, you redeemed: " + e.match.dataset.title,
+		message: [
+			"@{username}, you redeemed: " + e.match.dataset.title,
+			//TODO: Include this only if the reward doesn't skip the queue
+			{builtin: "chan_pointsrewards", builtin_param: ["fulfil", "{redemptionid}"], message: {
+				conditional: "string", expr1: "{error}",
+				message: "", otherwise: "Unable to mark as completed: {error}",
+			}},
+		],
 		redemption: e.match.dataset.reward,
 	})
 });
