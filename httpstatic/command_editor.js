@@ -50,14 +50,6 @@ export const commands = { }; //Deprecated. Need to try to not have this exported
 const config = {get_command_basis: cmd => ({ })};
 export function cmd_configure(cfg) {Object.assign(config, cfg);}
 
-function checkpos() {
-	const dlg = DOM("#advanced_view");
-	const html = DOM("html");
-	dlg.style.left = Math.max(html.clientWidth - dlg.clientWidth, 0) / 2 + "px";
-	dlg.style.top = Math.max(html.clientHeight - dlg.clientHeight, 0) / 2 + "px";
-	dlg.style.margin = "0";
-}
-
 let cmd_editing = null, mode = "", cmd_id = "", cmd_basis = { };
 function get_message_details() {
 	switch (mode) {
