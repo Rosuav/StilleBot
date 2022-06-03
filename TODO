@@ -189,5 +189,5 @@
   - Validate automation immediately, w/o waiting to hear back from server
 * Switching from raw to graphical loses automation - not parsing array properly??
 * Firefox 98 has full support for dialogs.
-  - The next Firefox ESR that will have this is 102, due out Aug 23rd
+  - The next Firefox ESR that will have this is 102, due out June 23rd
   - Test on ESR when possible.
