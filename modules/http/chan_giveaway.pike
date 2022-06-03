@@ -109,15 +109,10 @@ constant NOTIFICATION_SPECIALS = ([
 ]);
 
 Concurrent.Future set_redemption_status(mapping redem, string status) {
-	//Fulfil or reject the redemption, consuming or refunding the points
-	return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions"
-			+ "?broadcaster_id=" + (redem->broadcaster_id || redem->broadcaster_user_id)
-			+ "&reward_id=" + redem->reward->id
-			+ "&id=" + redem->id,
-		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[redem->broadcaster_login || redem->broadcaster_user_login]]),
-		(["method": "PATCH", "json": (["status": status])]),
-	);
+	return complete_redemption(redem->broadcaster_login || redem->broadcaster_user_login,
+		redem->reward->id, redem->id, status);
 }
+
 void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 	if (!cfg->giveaway) return;
 	mapping values = cfg->giveaway->rewards || ([]);

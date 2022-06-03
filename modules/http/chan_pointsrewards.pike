@@ -235,20 +235,25 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	if (arrayp(param)) {reward_id = param[0]; cmds = ({param[1] + "=" + param[2]});}
 	else {sscanf(param, "%[-0-9a-f] %s", reward_id, string cmd); cmds = cmd / " ";} //Keep this one unchanged though
 	mapping params = ([]);
+	int empty_ok = 0;
 	foreach (cmds, string cmd) {
 		sscanf(cmd, "%s=%s", cmd, string arg);
 		switch (cmd) {
 			case "enable": params->is_enabled = arg != "0" ? Val.true : Val.false; break;
 			case "disable": params->is_enabled = Val.false; break;
 			case "cost": params->cost = (int)arg; break;
-			case "fulfil": case "cancel": {
-				if (arg == "") return (["{error}": ""]); //Not an error to attempt to mark nothing
-				return (["{error}": "Redemption management unimplemented"]);
+			case "fulfil": case "cancel": if (arg != "") { //Not an error to attempt to mark nothing
+				complete_redemption(channel->name[1..], reward_id, arg, cmd == "fulfil" ? "FULFILLED" : "CANCELED");
+				empty_ok = 1;
 			}
+			break;
 			default: return (["{error}": sprintf("Unknown action %O", cmd)]);
 		}
 	}
-	if (!sizeof(params)) return (["{error}": "No changes requested"]);
+	if (!sizeof(params)) {
+		if (empty_ok) return (["{error}": "", "{action}": "Done"]);
+		else return (["{error}": "No changes requested"]);
+	}
 	int broadcaster_id = yield(get_user_id(channel->name[1..]));
 	mapping ret = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 			+ broadcaster_id + "&id=" + reward_id,

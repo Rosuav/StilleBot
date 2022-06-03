@@ -250,6 +250,19 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	return cached->banlist = ret;
 }
 
+@export: Concurrent.Future complete_redemption(string chan, string rewardid, string redemid, string status) {
+	//Fulfil or reject the redemption, consuming or refunding the points
+	return get_user_id(chan)->then() {
+		return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions"
+				+ "?broadcaster_id=" + __ARGS__[0]
+				+ "&reward_id=" + rewardid
+				+ "&id=" + redemid,
+			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]),
+			(["method": "PATCH", "json": (["status": status])]),
+		);
+	};
+}
+
 //Returns "offline" if not broadcasting, or a channel uptime.
 @export: continue Concurrent.Future|string channel_still_broadcasting(string|int chan) {
 	if (stringp(chan)) chan = yield(get_user_id(chan));
