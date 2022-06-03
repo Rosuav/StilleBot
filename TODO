@@ -161,10 +161,6 @@
   - Add an entry to the StilleBot library for "Default Animations/Sounds"
     - Populated from the JSON file, obviously
     - Maybe just a drop-down, no previews??
-* Add to command anchor:
-  - Trigger on channel point redemption
-    - Is it possible for chan_pointsrewards to simply open up the command popup
-      for a particular command? Worst case, deep-link to the editor.
 * Dynamic rewards need a major rework. Once the above is done, maybe the builtin
   can do the dynamic updates too?
   - Change the Add New Dynamic to let you select any manageable reward first
