@@ -326,6 +326,6 @@ export function cls_load_message(cmd_basis, cmd_editing) {
 	set_content("#command_details", [
 		//Maybe make the Provides entries clickable to insert that token in the current EF??
 		UL(Object.keys(cmd_basis.provides || { }).map(p => LI([CODE(p), " - " + cmd_basis.provides[p]]))),
-		render_command(cmd_editing, cmd_basis.command),
+		render_command(cmd_editing, cmd_basis.type === "anchor_command"),
 	]);
 }

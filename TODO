@@ -166,9 +166,7 @@
 * Classic command editor is lagging behind a bit.
   - Top-level flags:
     - Point redemption
-    - Command aliases
     - Command automation
-    - Access/visibility
   - Triggers should not have an "if false" branch on their master conditionals
   - Set variable, "extra config", that sucks
   - Delays that aren't an exact value in the drop-down are completely lost
