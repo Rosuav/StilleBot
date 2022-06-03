@@ -252,7 +252,13 @@ echoable_message _validate(echoable_message resp, mapping state)
 	if (resp->builtin && G->G->builtins[resp->builtin]) {
 		//Validated separately as the builtins aren't a constant
 		ret->builtin = resp->builtin;
-		if (resp->builtin_param && resp->builtin_param != "") ret->builtin_param = resp->builtin_param;
+		//Simple string? Let the builtin itself handle it.
+		if (stringp(resp->builtin_param) && resp->builtin_param != "") ret->builtin_param = resp->builtin_param;
+		//Array of strings? Maybe we should validate the number of arguments (different per builtin),
+		//but for now, any array will be accepted.
+		else if (arrayp(resp->builtin_param) && sizeof(resp->builtin_param)
+			&& !has_value(stringp(resp->builtin_param[*]), 0))
+				ret->builtin_param = resp->builtin_param;
 	}
 	//Conditions have their own active ingredients.
 	if (array parts = condition_parts[resp->conditional]) {
