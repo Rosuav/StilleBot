@@ -170,7 +170,6 @@
     - Command automation
     - Access/visibility
   - Triggers should not have an "if false" branch on their master conditionals
-  - Builtin params need to be split out as per the GUI
   - Set variable, "extra config", that sucks
   - Delays that aren't an exact value in the drop-down are completely lost
 * Poke every channel to see whether we're connected

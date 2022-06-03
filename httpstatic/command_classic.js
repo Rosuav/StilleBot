@@ -222,7 +222,13 @@ function render_command(cmd, toplevel) {
 		//Can these (builtin ==> builtin_param, dest ==> target) be made more generic?
 		if (flg === "builtin") opts.push(TR({className: "paramrow"}, [
 			//Note that multi-param is not supported here, and it'll always and only return a single string.
-			TD(INPUT({"data-flag": "builtin_param", value: typeof cmd.builtin_param === "object" ? cmd.builtin_param.join(" ") : (cmd.builtin_param || "")})),
+			TD([
+				//NOTE: This cheats horrifically by attaching a value attribute to an element
+				//that normally doesn't have one. It should work fine, though.
+				CODE({"data-flag": "builtin_param", ".value": cmd.builtin_param}, JSON.stringify(cmd.builtin_param)),
+				BR(),
+				BUTTON({class: "bltedit", type: "button"}, "Edit"),
+			]),
 			TD(["Parameter (extra info) for the built-in", BR(), DETAILS({className: "builtininfo"}, [
 				SUMMARY("Information provided"),
 				TABLE([TR([TH("Var"), TH("Value")]), TBODY(describe_builtin_vars(cmd.builtin))]),
@@ -248,6 +254,15 @@ function render_command(cmd, toplevel) {
 		TABLE({border: 1, "data-dest": cmd.dest || "", "data-builtin": cmd.builtin || ""}, opts),
 	]), cmd.message));
 }
+
+on("click", ".bltedit", e => {
+	const tb = e.match.closest("table"), builtin = tb.dataset.builtin;
+	const code = tb.querySelector("[data-flag=builtin_param]")
+	//Encapsulation breach: Call on a function from the GUI editor to open a
+	//properties dialog for the builtin params.
+	window.open_element_properties({type: "builtin_" + builtin, builtin_param: code.value,
+		_onsave: function() {set_content(code, JSON.stringify(code.value = this.builtin_param));}});
+});
 
 on("change", 'select[data-flag="dest"]', e => e.match.closest("table").dataset.dest = e.match.value);
 on("change", 'select[data-flag="builtin"]', e => {

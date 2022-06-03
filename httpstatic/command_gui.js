@@ -1023,6 +1023,9 @@ function open_element_properties(el) {
 	DOM("#templateinfo").style.display = el.template && el.type !== "flag" ? "block" : "none";
 	DOM("#properties").showModal();
 }
+//Encapsulation breach: Allow the classic editor to open up an element's properties
+//TODO: Refactor some of this into command_editor.js and then have both call on it?
+window.open_element_properties = open_element_properties;
 
 on("click", "#toggle_favourite", e => {
 	if (types[propedit.type].fixed) return;
@@ -1078,6 +1081,7 @@ on("submit", "#setprops", e => {
 			}
 		}
 	}
+	if (propedit._onsave) propedit._onsave(); //Pseudo-elements from the classic editor need to push data elsewhere
 	propedit = null;
 	e.match.closest("dialog").close();
 	repaint();
