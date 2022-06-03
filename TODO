@@ -120,11 +120,6 @@
     be flagged as in-use, which might mean we'll want to just let them get disconnected
     and then have a hook that reconnects if there are any active websockets.
 * Ghostwriter needs a LOT more error checking. Maybe, on error, reschedule check five mins?
-* General system for bot-affected channel point redemptions
-  - On success, mark redemption as complete
-  - If failure of any sort, report, and refund
-  - Bring the LispWhispers camhack into that system (via zzlocal)
-  - Have a template - a command that's invisible and access-none, and responds to reward
 * Alertbox: Parse message text and emotes where appropriate. Send array to client.
   - Might have a configuration on the client to set the image size
     - Set the CSS height for the images, and also pick an appropriate version
