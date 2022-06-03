@@ -164,9 +164,15 @@
   - Real host alerts disabled, but test alerts would work
 * Weird bug: After a full update, the first output on voice 0 seems to be lost.
 * Classic command editor is lagging behind a bit.
-  - Needs point redemption
-  - Check list of builtins
-  - Can builtins receive multiple args?
+  - Top-level flags:
+    - Point redemption
+    - Command aliases
+    - Command automation
+    - Access/visibility
+  - Triggers should not have an "if false" branch on their master conditionals
+  - Builtin params need to be split out as per the GUI
+  - Set variable, "extra config", that sucks
+  - Delays that aren't an exact value in the drop-down are completely lost
 * Poke every channel to see whether we're connected
   - What command? Slash commands seem to respond even if we're connected.
 * Allow "fire-and-forget" builtin invocation if message is omitted
@@ -174,3 +180,11 @@
     {"conditional":"string","expr1":"{error}","message":"","otherwise":"Unexpected error: {error}"}
   - This will be displayed in the GUI as "Handle errors".
   - How to show this in classic view?
+* GUI editor - params need formatting options, in and out
+  - Builtin params need to cope with splitting strings to arrays
+  - Aliases on command anchor should strip ! on save to allow "!foo" as alias
+    (on the backend, and on load, just say "foo")
+  - Unhack automation so it doesn't need to be parsed in multiple places
+    - see cmd_configure in pointsrewards and commands
+  - Validate automation immediately, w/o waiting to hear back from server
+* Switching from raw to graphical loses automation - not parsing array properly??
