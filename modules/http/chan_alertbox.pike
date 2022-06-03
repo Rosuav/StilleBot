@@ -1076,7 +1076,7 @@ mapping message_params(object channel, mapping person, array|string param)
 	mapping emotes = ([]);
 	//TODO: If text isn't exactly %s but is contained in it, give an offset.
 	//TODO: If %s is contained in text, parse that somehow too.
-	if (text == person->vars["%s"]) emotes = parse_emotes(text, person);
+	if (text == person->vars[?"%s"]) emotes = parse_emotes(text, person);
 	send_alert(channel, alert, ([
 		"TEXT": text || "",
 		"text": text || "",

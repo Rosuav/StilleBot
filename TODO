@@ -165,16 +165,10 @@
   - Trigger on channel point redemption
     - Is it possible for chan_pointsrewards to simply open up the command popup
       for a particular command? Worst case, deep-link to the editor.
-* Builtin to accept/reject a channel point redemption
-  - No error if you try to accept/reject blank, so you can code your command to
-    always put an accept in this branch and a reject in that one, even if the
-    command could be invoked by name or by reward
-  - Would require that the reward be created by StilleBot
 * Dynamic rewards need a major rework. Once the above is done, maybe the builtin
   can do the dynamic updates too?
   - Change the Add New Dynamic to let you select any manageable reward first
   - If you don't pick one, then you can create new (optionally copying)
-  - Move the simple Create New onto the pointsrewards socket
 * Alertbox: Allow non-bcaster to use preview w/o chat - no authkey but login cookie
   - Real host alerts disabled, but test alerts would work
 * Weird bug: After a full update, the first output on voice 0 seems to be lost.

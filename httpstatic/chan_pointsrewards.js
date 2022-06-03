@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, IMG, INPUT, LI, TD, TR, UL} = choc; //autoimport
+const {BUTTON, IMG, INPUT, LI, OPTION, TD, TR, UL} = choc; //autoimport
 import {sockmsg_validated, commands, render_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 export const render_parent = DOM("#rewards tbody");
@@ -27,7 +27,10 @@ export function render_empty() {
 		TD({colSpan: 5}, "No redemptions (add one!)"),
 	]));
 }
-export function render(data) { }
+export function render(data) {
+	const sel = DOM("#copyfrom"), val = sel.value;
+	set_content(sel, [sel.firstElementChild, data.items.map(rew => OPTION({value: rew.id}, rew.title))]).value = val;
+}
 
 on("click", ".addcmd", e => {
 	let i = 1;
@@ -45,6 +48,8 @@ on("click", ".addcmd", e => {
 		redemption: e.match.dataset.reward,
 	})
 });
+
+on("click", "#add", e => ws_sync.send({cmd: "add", copyfrom: DOM("#copyfrom").value}));
 
 cmd_configure({
 	get_command_basis: cmd => {

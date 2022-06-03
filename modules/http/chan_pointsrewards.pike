@@ -10,7 +10,7 @@ Icon | Title | Prompt | Manage? | Commands
 -    | -     | -      | -       | (loading...)
 {:#rewards}
 
-[Add reward](:#add) Copy from: <select id=copyfrom><option value=\"-1\">(none)</option></select>
+[Add reward](:#add) Copy from: <select id=copyfrom><option value=\"\">(none)</option></select>
 
 If you are a Twitch partner or affiliate, you can see here a list of all your channel point rewards,
 whether they can be managed by StilleBot, and a place to attach behaviour to them. Coupled with
@@ -82,9 +82,26 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["items": rewards, "dynrewards": dynrewards]);
 }
 
-void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+void websocket_cmd_add(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string grp, string chan);
-	if (!G->G->irc->channels["#" + chan]) return;
+	object channel = G->G->irc->channels["#" + chan]; if (!channel) return;
+	array rewards = G->G->pointsrewards[chan] || ({ });
+	mapping copyfrom = ([]);
+	string basetitle = "New Custom Reward";
+	if (msg->copyfrom && msg->copyfrom != "") {
+		int idx = search(rewards->id, msg->copyfrom);
+		if (idx != -1) {copyfrom = rewards[idx]; sscanf(basetitle = copyfrom->title, "%s #%*d", basetitle);}
+	}
+	//Titles must be unique (among all rewards). To simplify rapid creation of
+	//multiple rewards, add a numeric disambiguator on conflict.
+	multiset have_titles = (multiset)G->G->pointsrewards[chan]->title;
+	string title = basetitle; int idx = 1; //First one doesn't get the number appended
+	while (have_titles[title]) title = sprintf("%s #%d", basetitle, ++idx);
+	//Twitch will notify us when it's created, so no need to explicitly respond.
+	twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid,
+		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]),
+		(["method": "POST", "json": copyfrom | (["title": title])]),
+	);
 }
 
 @create_hook:
