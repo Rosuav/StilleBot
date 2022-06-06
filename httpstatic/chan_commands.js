@@ -15,7 +15,7 @@ cmd_configure({
 			else if (m1 === m2) automate = ""+m1; //min-min is the same as just min
 			else automate = m1 + "-" + m2; //min-max
 		}
-		return {type: "anchor_command", aliases: cmd.aliases || "", automate};
+		return {type: "anchor_command", automate};
 	},
 });
 

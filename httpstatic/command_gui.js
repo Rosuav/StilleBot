@@ -56,8 +56,8 @@ const default_handlers = {
 	validate: val => typeof val === "string" || typeof val === "undefined",
 	//Normalization takes the original value and returns a canonical representation of it. The
 	//unnormalized version has to have passed validation, but every other part of the code can
-	//assume that the data will have been normalized. Note that this is not a clean/smudge pair
-	//and the return value from retrieve_value should already be normalized.
+	//assume that the data will have been normalized. Note that this should be idempotent, and
+	//will be called also on saving.
 	//normalize: val => val,
 	//Create the appropriate DOM element for this (called a "control" because the word "element"
 	//has so many different meanings here).
@@ -103,7 +103,7 @@ const text_message = {...default_handlers,
 };
 //Special case: The cooldown name field can contain an internal ID, eg ".fuse:1", which won't be interesting to the user.
 const cooldown_name = {...default_handlers,
-	make_control: (id, val, el) => default_handlers.make_control(id, (val && val[0] === '.') ? "" : val, el),
+	normalize: val => (val && val[0] === '.') ? "" : val,
 };
 //Special case: Builtins can require custom code.
 const builtin_validators = {
@@ -174,7 +174,7 @@ const types = {
 			const invok = [];
 			const cmdname = DOM("#cmdname").value;
 			if (el.access !== "none") {
-				const aliases = el.aliases.split(" ").filter(a => a);
+				const aliases = (el.aliases||"").split(" ").filter(a => a);
 				switch (aliases.length) {
 					case 0: invok.push(`When ${cmdname} is typed`); break;
 					case 1: invok.push(`When ${cmdname} or !${aliases[0]} is typed`); break;
@@ -206,14 +206,18 @@ const types = {
 			+ "Restricting access affects who may type the command, but it may still "
 			+ "be invoked in other ways even if nobody has access.",
 		params: [
-			{attr: "aliases", label: "Aliases"}, //TODO: Validate format? Explain? Or maybe have "Add alias" and "Remove alias" buttons?
+			{attr: "aliases", label: "Aliases", values: {...default_handlers,
+				normalize: val => (val||"").replace(/!/g, ""),
+			}},
 			{attr: "access", label: "Access", values: ["", "vip", "mod", "none"],
 				selections: {"": "Everyone", vip: "VIPs/mods", mod: "Mods only", none: "Nobody"}},
 			{label: "Access controls apply only to chat commands; other invocations are separate."},
 			{attr: "visibility", label: "Visibility", values: ["", "hidden"],
 				selections: {"": "Visible", hidden: "Hidden"}},
 			{label: "Hidden commands do not show up to non-mods."},
-			{attr: "automate", label: "Automate"},
+			{attr: "automate", label: "Automate", values: {...default_handlers,
+				normalize: val => {console.log("Validating automation", val); return val;},
+			}},
 			{label: [ //TODO: Should I support non-text labels like this?
 				"To have this command performed automatically every X minutes, put X here (or X-Y to randomize).",
 				BR(), "To have it performed automatically at hh:mm, put hh:mm here.",
@@ -1014,6 +1018,7 @@ function open_element_properties(el) {
 		const m = /^(builtin_param)([0-9]+)$/.exec(param.attr); //As per the other of this regex, currently restricted to builtin_param
 		if (m && Array.isArray(el[m[1]])) value = el[m[1]][m[2]];
 		else if (Array.isArray(value)) value = value[0]; //The first element doesn't get an index
+		if (values.normalize) value = values.normalize(value);
 		if (!values.validate) {
 			//If there's no validator function, this is an array, not an object.
 			if (values.length === 3 && typeof values[0] === "number") {
@@ -1075,10 +1080,11 @@ on("submit", "#setprops", e => {
 	if (!propedit.template && type.params) for (let param of type.params) if (param.attr) {
 		const val = document.getElementById("value-" + param.attr);
 		if (val) {
-			//TODO: Validate based on the type, to prevent junk data from hanging around until save
-			//Ultimately the server will validate, but it's ugly to let it sit around wrong.
 			const values = param.values || default_handlers;
 			let value = values.retrieve_value ? values.retrieve_value(val, propedit) : val.value;
+			//Validate based on the type, to prevent junk data from hanging around until save.
+			//Ultimately the server will validate, but it's ugly to let it sit around wrong.
+			if (values.normalize) value = values.normalize(value);
 			//Special case: builtin_param could be a single string, or could start an array.
 			//So if we find builtin_param1, we add it to the array.
 			//We expect to hit builtin_param before any others, so that will replace with
