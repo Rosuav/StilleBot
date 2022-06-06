@@ -53,7 +53,6 @@ const ensure_blank = arr => {
 
 function automation_to_string(val) {
 	if (!val) return "";
-	if (typeof val === "number") val = ""+val; //I do not understand why I'm sometimes getting numbers here.
 	if (!Array.isArray(val)) {
 		//Parse string to array, then parse array to string, thus ensuring canonicalization.
 		const mode = val.includes(":");
@@ -1032,9 +1031,8 @@ function open_element_properties(el) {
 		const values = param.values || default_handlers;
 		if (typeof values !== "object") return null; //Fixed strings and such
 		let value = el[param.attr];
-		const m = /^(builtin_param)([0-9]+)$/.exec(param.attr); //As per the other of this regex, currently restricted to builtin_param
-		if (m && Array.isArray(el[m[1]])) value = el[m[1]][m[2]];
-		else if (Array.isArray(value)) value = value[0]; //The first element doesn't get an index
+		const m = /^(builtin_param)([0-9]*)$/.exec(param.attr); //As per the other of this regex, currently restricted to builtin_param
+		if (m && Array.isArray(el[m[1]])) value = el[m[1]][m[2] || 0];
 		if (values.normalize) value = values.normalize(value);
 		if (!values.validate) {
 			//If there's no validator function, this is an array, not an object.
@@ -1134,9 +1132,8 @@ function element_to_message(el) {
 function matches(param, msg) {
 	//See if the value is compatible with this parameter's definition of values.
 	let val = msg[param.attr];
-	const m = /^(builtin_param)([0-9]+)$/.exec(param.attr);
-	if (m && Array.isArray(msg[m[1]])) val = msg[m[1]][m[2]];
-	else if (param.attr === "builtin_param" && Array.isArray(val)) val = val[0];
+	const m = /^(builtin_param)([0-9]*)$/.exec(param.attr);
+	if (m && Array.isArray(msg[m[1]])) val = msg[m[1]][m[2] || 0];
 	switch (typeof param.values) {
 		case "object": if (param.values.validate) return param.values.validate(val);
 		//If there's no validator function, it must be an array.
