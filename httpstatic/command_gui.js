@@ -52,7 +52,15 @@ const ensure_blank = arr => {
 };
 
 function automation_to_string(val) {
-	if (!Array.isArray(val)) return val || "";
+	if (!val) return "";
+	if (typeof val === "number") val = ""+val; //I do not understand why I'm sometimes getting numbers here.
+	if (!Array.isArray(val)) {
+		//Parse string to array, then parse array to string, thus ensuring canonicalization.
+		const mode = val.includes(":");
+		const m = val.split(mode ? ":" : "-");
+		if (m.length === 1) m.push(m[0]);
+		val = [m[0]|0, m[1]|0, mode];
+	}
 	const [m1, m2, mode] = val;
 	if (mode) return ("0" + m1).slice(-2) + ":" + ("0" + m2).slice(-2); //hr:min
 	else if (m1 >= m2) return ""+m1; //min-min is the same as just min
