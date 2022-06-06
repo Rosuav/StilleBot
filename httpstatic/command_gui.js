@@ -58,12 +58,12 @@ const default_handlers = {
 	//unnormalized version has to have passed validation, but every other part of the code can
 	//assume that the data will have been normalized. Note that this is not a clean/smudge pair
 	//and the return value from retrieve_value should already be normalized.
-	normalize: val => val,
+	//normalize: val => val,
 	//Create the appropriate DOM element for this (called a "control" because the word "element"
 	//has so many different meanings here).
 	make_control: (id, val, el) => INPUT({...id, value: val || "", size: 50}),
 	//Fetch the serializable value from the DOM element. Inverse of make_control, to an extent.
-	retrieve_value: (val, el) => val.value,
+	//retrieve_value: (val, el) => val.value,
 };
 const required = {...default_handlers, validate: val => typeof val === "string"}; //Filter that demands that an attribute be present
 const bool_attr = {...default_handlers,
@@ -1078,7 +1078,7 @@ on("submit", "#setprops", e => {
 			//TODO: Validate based on the type, to prevent junk data from hanging around until save
 			//Ultimately the server will validate, but it's ugly to let it sit around wrong.
 			const values = param.values || default_handlers;
-			let value = values.retrieve_value(val, propedit);
+			let value = values.retrieve_value ? values.retrieve_value(val, propedit) : val.value;
 			//Special case: builtin_param could be a single string, or could start an array.
 			//So if we find builtin_param1, we add it to the array.
 			//We expect to hit builtin_param before any others, so that will replace with
