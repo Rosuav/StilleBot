@@ -179,12 +179,6 @@
   - How to show this in classic view?
 * GUI editor - params need formatting options, in and out
   - Builtin params need to cope with splitting strings to arrays
-  - Aliases on command anchor should strip ! on save to allow "!foo" as alias
-    (on the backend, and on load, just say "foo")
-  - Unhack automation so it doesn't need to be parsed in multiple places
-    - see cmd_configure in pointsrewards and commands
-  - Validate automation immediately, w/o waiting to hear back from server
-* Switching from raw to graphical loses automation - not parsing array properly??
 * Firefox 98 has full support for dialogs.
   - The next Firefox ESR that will have this is 102, due out June 23rd
   - Test on ESR when possible.
