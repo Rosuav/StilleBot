@@ -12,10 +12,7 @@ const flags = {
 	dest: {"": "Chat", "/w": "Whisper", "/web": "Private message", "/set": "Set a variable",
 		"*": "Where should the response be sent?"},
 };
-for (let name in builtins) {
-	//TODO: Show the param label somewhere, somehow?
-	flags.builtin[name] = builtins[name].name;
-}
+for (let name in builtins) flags.builtin[name] = builtins[name].name;
 const toplevelflags = ["access", "visibility"];
 const conditionalkeys = "expr1 expr2 casefold".split(" "); //Include every key used by every conditional type
 
@@ -216,13 +213,19 @@ function render_command(cmd, toplevel) {
 	for (let flg in flags) {
 		if (!toplevel && toplevelflags.includes(flg)) continue;
 		const opt = [];
+		let custom = true;
 		for (let o in flags[flg]) if (o !== "*")
 		{
 			const el = OPTION({value: o, ".selected": cmd[flg]+"" === o ? "1" : undefined}, flags[flg][o]);
 			//Guarantee that the one marked with an empty string will be the first
 			//It usually would be anyway, but make certain.
 			if (o === "") opt.unshift(el); else opt.push(el);
+			if (cmd[flg]+"" === o) custom = false;
 		}
+		//The current value for the flag doesn't match any of our standard options.
+		//Add a custom option to allow the value to be retained (but if you save
+		//with a default, you won't be able to reset to this one).
+		if (cmd[flg] && custom) opt.push(OPTION({value: cmd[flg]+"", ".selected": "1"}, "Custom: " + cmd[flg]));
 		opts.push(TR({"data-flag": flg}, [
 			TD(SELECT({"data-flag": flg}, opt)),
 			TD(flags[flg]["*"]),

@@ -164,8 +164,8 @@
   - Real host alerts disabled, but test alerts would work
 * Weird bug: After a full update, the first output on voice 0 seems to be lost.
 * Classic command editor is lagging behind a bit.
-  - Set variable, "extra config", that sucks
-  - Delays that aren't an exact value in the drop-down are completely lost
+  - Set variable, "extra config", that sucks. The whole destcfg thing is a bit of a
+    hack though, so I don't think it's worth going to any effort for this yet.
 * Poke every channel to see whether we're connected
   - What command? Slash commands seem to respond even if we're connected.
 * GUI editor - params need formatting options, in and out
