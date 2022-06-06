@@ -172,11 +172,6 @@
   - Delays that aren't an exact value in the drop-down are completely lost
 * Poke every channel to see whether we're connected
   - What command? Slash commands seem to respond even if we're connected.
-* Allow "fire-and-forget" builtin invocation if message is omitted
-  - On saving, if a builtin has no message, synthesize this:
-    {"conditional":"string","expr1":"{error}","message":"","otherwise":"Unexpected error: {error}"}
-  - This will be displayed in the GUI as "Handle errors".
-  - How to show this in classic view?
 * GUI editor - params need formatting options, in and out
   - Builtin params need to cope with splitting strings to arrays
 * Firefox 98 has full support for dialogs.

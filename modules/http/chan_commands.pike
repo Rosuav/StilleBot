@@ -277,7 +277,17 @@ echoable_message _validate(echoable_message resp, mapping state)
 			//TODO: Keyword-synchronized cooldowns should synchronize their cdlengths too
 		}
 	}
-	else if (ret->message == "") return ""; //No message? Nothing to do.
+	else if (ret->message == "") {
+		//No message? Might be nothing to do.
+		if (!ret->builtin) return "";
+		//But if there's a builtin, assume that it could have side effects.
+		ret->message = ([ //Synthesized "Handle Errors" element as per the GUI
+			"conditional": "string",
+			"expr1": "{error}",
+			"message": "",
+			"otherwise": "Unexpected error: {error}"
+		]);
+	}
 	//Delays are integer seconds. We'll permit a string of digits, since that might be
 	//easier for the front end.
 	if (resp->delay && resp->delay != "0" &&
