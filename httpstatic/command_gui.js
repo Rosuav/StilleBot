@@ -51,6 +51,14 @@ const ensure_blank = arr => {
 	return arr;
 };
 
+function automation_to_string(val) {
+	if (!Array.isArray(val)) return val || "";
+	const [m1, m2, mode] = val;
+	if (mode) return ("0" + m1).slice(-2) + ":" + ("0" + m2).slice(-2); //hr:min
+	else if (m1 >= m2) return ""+m1; //min-min is the same as just min
+	else return m1 + "-" + m2; //min-max
+}
+
 const default_handlers = {
 	//Validation sees the original value and determines whether it's possible for it to be correct.
 	validate: val => typeof val === "string" || typeof val === "undefined",
@@ -185,9 +193,10 @@ const types = {
 					}
 				}
 			}
-			if (el.automate) {
-				if (el.automate.includes(':')) invok.push(`At ${el.automate}`);
-				else invok.push(`Every ${el.automate} minutes`);
+			const auto = automation_to_string(el.automate);
+			if (auto) {
+				if (auto.includes(':')) invok.push(`At ${auto}`);
+				else invok.push(`Every ${auto} minutes`);
 			}
 			if (el.redemption && rewards[el.redemption]) {
 				invok.push(`When '${rewards[el.redemption]}' is redeemed`);
@@ -216,7 +225,7 @@ const types = {
 				selections: {"": "Visible", hidden: "Hidden"}},
 			{label: "Hidden commands do not show up to non-mods."},
 			{attr: "automate", label: "Automate", values: {...default_handlers,
-				normalize: val => {console.log("Validating automation", val); return val;},
+				normalize: automation_to_string,
 			}},
 			{label: [ //TODO: Should I support non-text labels like this?
 				"To have this command performed automatically every X minutes, put X here (or X-Y to randomize).",
