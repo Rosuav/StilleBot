@@ -333,6 +333,10 @@ export function cls_save_message() {
 	return {...toplevel_params, ...get_command_details(DOM("#command_details > .optedmsg"))};
 }
 export function cls_load_message(cmd_basis, cmd_editing) {
+	//HACK: The server's validation for tab changing doesn't know that this is a trigger,
+	//so if the basis doesn't tell us what type to be (ie it's a trigger), remove a blank
+	//"otherwise" branch, so it doesn't show to the user.
+	if (!cmd_basis.type && cmd_editing.otherwise === "") delete cmd_editing.otherwise;
 	toplevel_params = {...cmd_basis, ...cmd_editing};
 	set_content("#command_details", [
 		//Maybe make the Provides entries clickable to insert that token in the current EF??
