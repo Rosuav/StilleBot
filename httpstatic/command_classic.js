@@ -202,7 +202,7 @@ function render_command(cmd, toplevel) {
 	const opts = [TR([TH("Option"), TH("Effect")])];
 	//Note that specials could technically alias to commands (but not vice versa),
 	//but this UI will never let you do it.
-	if (toplevel) opts.push(TR([TD(INPUT({"data-flag": "aliases", value: cmd.aliases || ""})), TD("List other command names that should do the same as this one")]));
+	if (toplevel) opts.push(TR([TD(BUTTON({class: "anchorprops", type: "button"}, "Advanced")), TD("Advanced command options")]));
 	let m = !cmd.target && /^(\/[a-z]+) ([a-zA-Z$%]+)$/.exec(cmd.dest);
 	if (m) {cmd.dest = m[1]; cmd.target = m[2];}
 	//Replace deprecated "/builtin" with the new way of doing builtins.
@@ -272,6 +272,14 @@ on("click", ".bltedit", e => {
 		_onsave: function() {set_content(code, JSON.stringify(code.value = this.builtin_param));}});
 });
 
+let toplevel_params = { };
+on("click", ".anchorprops", e => {
+	//Encapsulation breach as above
+	toplevelflags.forEach(f => toplevel_params[f] = DOM("#command_details select[data-flag=" + f + "]").value);
+	toplevel_params._onsave = () => toplevelflags.forEach(f => DOM("#command_details select[data-flag=" + f + "]").value = toplevel_params[f]);
+	window.open_element_properties(toplevel_params);
+});
+
 on("change", 'select[data-flag="dest"]', e => e.match.closest("table").dataset.dest = e.match.value);
 on("change", 'select[data-flag="builtin"]', e => {
 	const builtin = e.match.closest("table").dataset.builtin = e.match.value;
@@ -321,8 +329,11 @@ function get_command_details(elem) {
 	//will clean it up before next load anyhow.
 	return ret;
 }
-export function cls_save_message() {return get_command_details(DOM("#command_details > .optedmsg"));}
+export function cls_save_message() {
+	return {...toplevel_params, ...get_command_details(DOM("#command_details > .optedmsg"))};
+}
 export function cls_load_message(cmd_basis, cmd_editing) {
+	toplevel_params = {...cmd_basis, ...cmd_editing};
 	set_content("#command_details", [
 		//Maybe make the Provides entries clickable to insert that token in the current EF??
 		UL(Object.keys(cmd_basis.provides || { }).map(p => LI([CODE(p), " - " + cmd_basis.provides[p]]))),

@@ -164,9 +164,6 @@
   - Real host alerts disabled, but test alerts would work
 * Weird bug: After a full update, the first output on voice 0 seems to be lost.
 * Classic command editor is lagging behind a bit.
-  - Top-level flags:
-    - Point redemption
-    - Command automation
   - Triggers should not have an "if false" branch on their master conditionals
   - Set variable, "extra config", that sucks
   - Delays that aren't an exact value in the drop-down are completely lost
