@@ -41,7 +41,7 @@ if (document.readyState !== "loading") getgui();
 else window.addEventListener("DOMContentLoaded", getgui);
 //End arbitrarily messy code to do what smarter languages do automatically.
 import {cls_load_message, cls_save_message} from "$$static||command_classic.js$$";
-import {waitlate} from "$$static||utils.js$$";
+import {simpleconfirm} from "$$static||utils.js$$";
 ws_sync.prefs_notify("cmd_defaulttab", tab => {
 	if (tablist.some(t => t.toLowerCase() === tab)) defaulttab = tab;
 });
@@ -119,7 +119,7 @@ on("click", "#save_advanced", async e => {
 	ws_sync.send({cmd: "update", cmdname: el ? el.value : cmd_id, original: cmd_id, response: info}, "cmdedit");
 });
 
-on("click", "#delete_advanced", waitlate(750, 5000, "Really delete?", e => {
+on("click", "#delete_advanced", simpleconfirm("Delete this command?", e => {
 	ws_sync.send({cmd: "delete", cmdname: cmd_id}, "cmdedit");
 	DOM("#advanced_view").close();
 }));
