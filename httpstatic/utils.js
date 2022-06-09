@@ -2,7 +2,8 @@
 //import {...} from "$$static||utils.js$$";
 
 import {on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
-const {BR, INPUT, LABEL, LINK, OPTGROUP, OPTION, SELECT, TABLE, TD, TH, TR} = choc; //autoimport
+const {BR, BUTTON, DIALOG, DIV, H3, HEADER, INPUT, LABEL, LINK, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TH, TR} = choc; //autoimport
+ensure_simpleconfirm_dlg(); //Unnecessary overhead once Firefox 98+ is standard - can then be removed
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
 
 export function waitlate(wait_time, late_time, confirmdesc, callback) {
@@ -29,6 +30,33 @@ export function waitlate(wait_time, late_time, confirmdesc, callback) {
 		set_content(btn, confirmdesc).disabled = true;
 	};
 }
+
+function ensure_simpleconfirm_dlg() {
+	if (!DOM("#simpleconfirmdlg")) document.body.appendChild(DIALOG({id: "simpleconfirmdlg"}, SECTION([
+		HEADER([H3("Are you sure?"), DIV(BUTTON({type: "button", class: "dialog_cancel"}, "x"))]),
+		DIV([
+			P({id: "simpleconfirmdesc"}, "Really do the thing?"),
+			P([BUTTON({id: "simpleconfirmyes"}, "Confirm"), BUTTON({class: "dialog_close"}, "Cancel")]),
+		]),
+	])));
+}
+
+let simpleconfirm_callback = null;
+//Simple confirmation dialog. If you need more than just a text string in the
+//confirmdesc, provide a function; it can return any Choc Factory content.
+export function simpleconfirm(confirmdesc, callback) {
+	ensure_simpleconfirm_dlg();
+	return e => {
+		simpleconfirm_callback = callback;
+		set_content("#simpleconfirmdesc", typeof confirmdesc === "string" ? confirmdesc : confirmdesc());
+		DOM("#simpleconfirmdlg").showModal();
+	};
+}
+on("click", "#simpleconfirmyes", e => {
+	let cb = simpleconfirm_callback; simpleconfirm_callback = null;
+	if (cb) cb();
+	DOM("#simpleconfirmdlg").close();
+})
 
 on("click", ".twitchlogin", async e => {
 	let scopes = e.match.dataset.scopes || ""; //Buttons may specify their scopes-required, otherwise assume just identity is needed
