@@ -32,7 +32,8 @@ export function waitlate(wait_time, late_time, confirmdesc, callback) {
 }
 
 function ensure_simpleconfirm_dlg() {
-	if (!DOM("#simpleconfirmdlg")) document.body.appendChild(DIALOG({id: "simpleconfirmdlg"}, SECTION([
+	//Setting the z-index is necessary only on older Firefoxes that don't support true showModal()
+	if (!DOM("#simpleconfirmdlg")) document.body.appendChild(DIALOG({id: "simpleconfirmdlg", style: "z-index: 999"}, SECTION([
 		HEADER([H3("Are you sure?"), DIV(BUTTON({type: "button", class: "dialog_cancel"}, "x"))]),
 		DIV([
 			P({id: "simpleconfirmdesc"}, "Really do the thing?"),
