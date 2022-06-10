@@ -967,7 +967,7 @@ continue Concurrent.Future send_with_tts(object channel, string alerttype, mappi
 					//For the purposes of badword filtering, ignore all non-alphabetics.
 					//TODO: Handle "abc123qwe" by checking both abc and qwe?
 					sscanf(w, "%*[^A-Za-z]%[A-Za-z]", w);
-					if (!bad[w]) continue;
+					if (w == "" || !bad[w]) continue;
 					if (inh->tts_filter_badwords == "message") {words = ({ }); break;}
 					switch (inh->tts_filter_badwords) {
 						case "skip": words[i] = ""; break;
