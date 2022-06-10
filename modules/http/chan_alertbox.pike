@@ -397,15 +397,22 @@ constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (string key = req->variables->key) {
-		if (key != persist_status->path("alertbox", (string)req->misc->channel->userid)->authkey)
-			return (["error": 401, "type": "text/plain", "data":
-				key == "bcaster-only" ? "Currently this is available only to the broadcaster - sorry!"
-				: "Bad key - check the URL from the config page (or remove key= from the URL)",
-			]);
+		string group = req->variables->key;
+		if (key == "preview-only") {
+			//Preview mode works for mods, works for the demo, but not otherwise.
+			//For the demo, test alerts go to the IP address; for mods, they go to
+			//the user name; for anyone else, there should be a more useful error
+			//than just "Bad key".
+			if (req->misc->channel->name == "#!demo") group = "demo-" + req->get_ip();
+			else if (req->misc->is_mod) group = "preview-" + req->misc->session->user->login;
+			else return (["error": 401, "type": "text/plain", "data": "Preview mode requires mod login (or the demo account)."]);
+		}
+		else if (key != persist_status->path("alertbox", (string)req->misc->channel->userid)->authkey)
+			return (["error": 401, "type": "text/plain", "data": "Bad key - check the URL from the config page (or remove key= from the URL)"]);
 		return render_template("alertbox.html", ([
 			"vars": ([
 				"ws_type": ws_type, "ws_code": "alertbox",
-				"ws_group": req->variables->key + req->misc->channel->name,
+				"ws_group": group + req->misc->channel->name,
 				"alertbox_version": LATEST_VERSION,
 			]),
 			"channelname": req->misc->channel->name[1..],
@@ -492,15 +499,28 @@ void resolve_affected_inherits(string userid, string id) {
 	resolve_all_inherits(userid);
 }
 
-bool need_mod(string grp) {return grp == "control";}
+bool need_mod(string grp) {return grp == "control" || has_prefix(grp, "preview-");}
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (string err = ::websocket_validate(conn, msg)) return err;
+	if (sscanf(msg->group, "preview-%s#", string user) && user) {
+		//Groups like "preview-fred#joe" require (a) that Fred be logged in,
+		//and (b) that Fred be a mod for Joe. The first is checked above.
+		if (user == "" || user != conn->session->user->?login) return "That's not you";
+	}
+	if (sscanf(msg->group, "demo-%s#", string ip) && ip) {
+		if (ip != conn->remote_ip) return "That's not where you are";
+	}
+}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	if (grp == cfg->authkey) {
+	if (grp == cfg->authkey //The broadcaster, not requiring any login token
+		|| has_prefix(grp, "preview-") //Any mod, with the same login token (test alerts only, and only from same user)
+		|| (channel->name == "#!demo" && has_prefix(grp, "demo-")) //Anyone using the demo (test alerts from same IP)
+	) {
 		//Cut-down information for the display
 		string chan = channel->name[1..];
 		string token;
-		if (channel->name == "#!demo") token = "!demo"; //Permit test alerts but no chat connection
-		else if (has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read"))
+		if (grp == cfg->authkey && has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read"))
 			token = persist_status->path("bcaster_token")[chan];
 		return ([
 			"alertconfigs": G_G_("alertbox_resolved")[(string)channel->userid] || ([]),
@@ -510,7 +530,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 			"version": COMPAT_VERSION,
 		]);
 	}
-	if (grp != "control") return 0; //If it's not "control" and not the auth key, it's probably an expired auth key.
+	if (grp != "control") return 0; //If it's not "control" and not the auth key (or a preview key), it's probably an expired auth key.
 	array files = ({ });
 	if (id) {
 		if (!cfg->files) return 0;
@@ -531,9 +551,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel || grp != "control") return;
-	//TODO: When host alerts get moved to backend, reenable this for mods.
-	if (!conn->session->fake && conn->session->user->id != (string)channel->userid) {
-		conn->sock->send_text(Standards.JSON.encode((["cmd": "authkey", "key": "bcaster-only"]), 4));
+	if (conn->session->user->id != (string)channel->userid) {
+		conn->sock->send_text(Standards.JSON.encode((["cmd": "authkey", "key": "preview-only"]), 4));
 		return;
 	}
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);

@@ -80,7 +80,7 @@ export function render(data) {
 		if (inited) ComfyJS.Disconnect();
 		inited = true;
 		token = data.token;
-		if (token !== "!demo") ComfyJS.Init(ws_group.split("#")[1], data.token);
+		ComfyJS.Init(ws_group.split("#")[1], data.token);
 	}
 	if (data.breaknow) {
 		//Token has been revoked. This will be the last message we receive
