@@ -791,8 +791,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		return;
 	}
 	//If the format *is* specified, this is a full update, *except* for the retained
-	//attributes. Any unspecified attribute will be deleted, setting it to inherit
-	//from the parent (not yet implemented) or be omitted altogether.
+	//attributes. Any unspecified attribute will be deleted, setting it to inherit.
 	mapping data = cfg->alertconfigs[msg->type] = filter(
 		mkmapping(RETAINED_ATTRS, (cfg->alertconfigs[msg->type]||([]))[RETAINED_ATTRS[*]])
 		| mkmapping(FORMAT_ATTRS, msg[FORMAT_ATTRS[*]]))
