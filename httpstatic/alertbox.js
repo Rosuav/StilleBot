@@ -91,11 +91,6 @@ export function render(data) {
 	if (data.hostlist_format) hostlist_format = data.hostlist_format;
 }
 
-setTimeout(() => {
-	if (inited) return; //All good!
-	set_content("#hostalert", P("No login token provided - check configuration or refresh page"));
-}, 5000);
-
 const alert_queue = [];
 let alert_playing = false;
 
