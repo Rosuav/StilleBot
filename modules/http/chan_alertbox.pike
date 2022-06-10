@@ -681,7 +681,7 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			}
 	persist_status->save();
 	update_one(conn->group, file->id);
-	if (changed_alert) update_one(cfg->authkey + channel->name, file->id);
+	if (changed_alert) update_one(cfg->authkey + channel->name, file->id); //TODO: Is this needed? Does the client conn use these pushes?
 }
 
 int(0..1) valid_alert_type(string type, mapping|void cfg) {
