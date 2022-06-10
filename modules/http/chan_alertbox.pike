@@ -545,6 +545,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		"alerttypes": ALERTTYPES + (cfg->personals || ({ })),
 		"hostlist_command": cfg->hostlist_command || "",
 		"hostlist_format": cfg->hostlist_format || "",
+		"replay": cfg->replay || ({ }),
+		"replay_offset": cfg->replay_offset || 0,
 	]);
 }
 
@@ -701,6 +703,7 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 	else if (conn->session->user->id == (string)channel->userid) dest = cfg->authkey;
 	else dest = "preview-" + conn->session->user->login;
 	string basetype = msg->type || ""; sscanf(basetype, "%s-%s", basetype, string variation);
+	//TODO: Use send_with_tts() here?
 	mapping alert = ([
 		"send_alert": valid_alert_type(basetype, cfg) ? msg->type : "hostalert",
 		"NAME": channel->name[1..], "username": channel->name[1..], //TODO: Use the display name
@@ -929,10 +932,9 @@ constant cutewords = "puppy kitten crumpet tutu butterscotch flapjack pilliwiggi
 	"blueberry rainbow treasure princess cutie shiny dance bread sakura train "
 	"gift art flag candle heart love magic save tada hug cool party plush star "
 	"donut teacup cat purring flower sugar biscuit pillow banana berry " / " ";
-continue Concurrent.Future send_with_tts(object channel, string alerttype, mapping args) {
+continue Concurrent.Future send_with_tts(object channel, mapping args) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	mapping inh = G_G_("alertbox_resolved", (string)channel->userid, alerttype);
-	args |= (["send_alert": alerttype]);
+	mapping inh = G_G_("alertbox_resolved", (string)channel->userid, args->send_alert);
 	string fmt = inh->tts_text || "", text = "";
 	int bits = (int)args->bits;
 	if (bits && bits < (int)inh->tts_min_bits) fmt = "";
@@ -1068,8 +1070,27 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 			if (send_alert(channel, subid, args)) return 1;
 	}
 	if (suppress_alert) return 0;
-	spawn_task(send_with_tts(channel, alerttype, args));
+	//Retain alert HERE to remember the precise type
+	//On replay, if alerttype does not exist, replay with base alert type?
+	args |= (["send_alert": alerttype]);
+	//TODO: Prune if necessary (but if so, increment cfg->replay_offset by the number removed)
+	cfg->replay += ({args});
+	persist_status->save();
+	send_updates_all("control" + channel->name);
+	spawn_task(send_with_tts(channel, args));
 	return 1;
+}
+
+void websocket_cmd_replay_alert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || grp != "control") return;
+	if (conn->session->fake) return;
+	if (!intp(msg->idx)) return;
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	int idx = msg->idx - cfg->replay_offset;
+	if (idx < 0 || idx >= sizeof(cfg->replay)) return;
+	//Resend the alert exactly as-is, modulo configuration changes.
+	spawn_task(send_with_tts(channel, cfg->replay[idx]));
 }
 
 mapping parse_emotes(string text, mapping person) {
