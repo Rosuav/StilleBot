@@ -160,8 +160,6 @@
   can do the dynamic updates too?
   - Change the Add New Dynamic to let you select any manageable reward first
   - If you don't pick one, then you can create new (optionally copying)
-* Alertbox: Allow non-bcaster to use preview w/o chat - no authkey but login cookie
-  - Real host alerts disabled, but test alerts would work
 * Alertbox: Have a quick way to replay an alert
 * Weird bug: After a full update, the first output on voice 0 seems to be lost.
 * Classic command editor is lagging behind a bit.

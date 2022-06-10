@@ -692,10 +692,14 @@ int(0..1) valid_alert_type(string type, mapping|void cfg) {
 void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel || grp != "control") return;
-	//NOTE: Fake clients are fully allowed to send test alerts, but they will go
-	//to *every* client. This means multiple people playing with the demo
-	//simultaneously will see each other's alerts show up.
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	//NOTE: Fake clients are fully allowed to send test alerts, but they go only
+	//to clients on the same IP address. Similarly, mods sending test alerts will
+	//send them to clients on the same login.
+	string dest;
+	if (channel->name == "#!demo") dest = "demo-" + conn->remote_ip;
+	else if (conn->session->user->id == (string)channel->userid) dest = cfg->authkey;
+	else dest = "preview-" + conn->session->user->login;
 	string basetype = msg->type || ""; sscanf(basetype, "%s-%s", basetype, string variation);
 	mapping alert = ([
 		"send_alert": valid_alert_type(basetype, cfg) ? msg->type : "hostalert",
@@ -724,7 +728,7 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 		}
 		else alert[key] = value;
 	}
-	send_updates_all(cfg->authkey + channel->name, alert);
+	send_updates_all(dest + channel->name, alert);
 }
 
 void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg) {
