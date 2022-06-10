@@ -825,6 +825,15 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	//with not being able to express "same audio" without explicitly picking the file.
 	if (!data->sound) m_delete(data, "volume");
 	if (data->format && !has_value(VALID_FORMATS, data->format)) m_delete(data, "format");
+	//Similarly, colors can only be set when there's a thing to set the color on. That's
+	//governed by either the width or alpha of the corresponding 'thing'. If you don't
+	//specify either width or alpha, inherit the color too.
+	foreach (indices(data), string key) {
+		if (has_suffix(key, "color") && key != "color") {
+			string base = key - "color";
+			if (!data[base + "width"] && !data[base + "alpha"]) m_delete(data, key);
+		}
+	}
 	textformatting_validate(data);
 
 	resolve_affected_inherits((string)channel->userid, msg->type);
