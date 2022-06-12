@@ -1080,7 +1080,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	if (suppress_alert) return 0;
 	//Retain alert HERE to remember the precise type
 	//On replay, if alerttype does not exist, replay with base alert type?
-	args |= (["send_alert": alerttype]);
+	args |= (["send_alert": alerttype, "alert_timestamp": time()]);
 	//TODO: Prune if necessary (but if so, increment cfg->replay_offset by the number removed)
 	cfg->replay += ({args});
 	persist_status->save();
