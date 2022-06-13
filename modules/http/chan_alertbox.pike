@@ -1092,9 +1092,11 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	if (suppress_alert) return 0;
 	//Retain alert HERE to remember the precise type
 	//On replay, if alerttype does not exist, replay with base alert type?
-	args |= (["send_alert": alerttype, "alert_timestamp": time()]);
+	args |= (["send_alert": alerttype]);
+	//The mapping saved here needs to be disconnected from the one used downstream. Otherwise,
+	//we'd be retaining big TTS blobs and stuff.
 	//TODO: Prune if necessary (but if so, increment cfg->replay_offset by the number removed)
-	cfg->replay += ({args});
+	cfg->replay += ({args | (["alert_timestamp": time()])});
 	persist_status->save();
 	send_updates_all("control" + channel->name);
 	spawn_task(send_with_tts(channel, args));
