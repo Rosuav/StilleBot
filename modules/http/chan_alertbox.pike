@@ -1110,7 +1110,6 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 void websocket_cmd_replay_alert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel || grp != "control") return;
-	if (conn->session->fake) return;
 	if (!intp(msg->idx)) return;
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	int idx = msg->idx - cfg->replay_offset;
