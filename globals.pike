@@ -502,9 +502,9 @@ class websocket_handler
 	}
 	void _low_send_updates(mapping resp, array(object) socks) {
 		if (!resp) return;
-		resp->cmd = "update";
+		string text = Standards.JSON.encode(resp | (["cmd": "update"]), 4);
 		foreach (socks, object sock)
-			if (sock && sock->state == 1) sock->send_text(Standards.JSON.encode(resp, 4));
+			if (sock && sock->state == 1) sock->send_text(text);
 	}
 
 	//Send an update to a specific connection. If not provided, data will
