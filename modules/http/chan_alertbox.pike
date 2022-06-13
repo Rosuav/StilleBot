@@ -34,9 +34,9 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 {: tag=dialog #library}
 
 $$notmodmsg||To use these alerts, [show the preview](:#authpreview) from which you can access your unique display link.<br>$$
-$$blank||Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:#revokekey) to generate a new one.$$
+$$blank||Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:#revokekey .dlg) to generate a new one.$$
 
-$$notmod2||[Show library](:.showlibrary)$$
+$$notmod2||[Show library](:.showlibrary) [Recent events](:#recentevents .dlg)$$
 
 > ### Revoke authentication key
 >
@@ -94,6 +94,12 @@ $$notmod2||[Show library](:.showlibrary)$$
 > ### Alert variations
 > <form id=replaceme>loading...</form>
 {: tag=dialog #variationdlg}
+
+<!-- -->
+
+> ### Recent events
+> <div id=replays>loading...</div>
+{: tag=dialog #recenteventsdlg}
 
 <style>
 #uploadfrm {

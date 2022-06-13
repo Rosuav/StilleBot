@@ -747,7 +747,7 @@ on("change", "input[type=file]", e => {
 	e.match.value = "";
 });
 
-on("click", "#revokekey", e => DOM("#revokekeydlg").showModal());
+on("click", ".dlg", e => DOM("#" + e.match.id + "dlg").showModal());
 on("click", "#confirmrevokekey", e => {ws_sync.send({cmd: "revokekey"}); DOM("#revokekeydlg").close();});
 
 
