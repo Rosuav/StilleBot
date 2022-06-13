@@ -957,6 +957,7 @@ constant cutewords = "puppy kitten crumpet tutu butterscotch flapjack pilliwiggi
 	"donut teacup cat purring flower sugar biscuit pillow banana berry " / " ";
 continue Concurrent.Future send_with_tts(object channel, mapping args) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	if (!cfg->alertconfigs[args->send_alert]) return 0; //On replay, if the alert doesn't exist, do nothing. TODO: Replay a base alert if variant deleted?
 	mapping inh = G_G_("alertbox_resolved", (string)channel->userid, args->send_alert);
 	string fmt = inh->tts_text || "", text = "";
 	int bits = (int)args->bits;
