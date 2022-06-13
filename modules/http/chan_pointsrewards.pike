@@ -245,7 +245,6 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	string token = persist_status->path("bcaster_token")[channel->name[1..]];
 	if (!token) return (["{error}": "Need broadcaster permissions"]);
 	string reward_id; array(string) cmds = "";
-	werror("Params: %O\n", param);
 	//Hmm. Might need to always have the reward ID, and then put the redemption ID into
 	//the same place that the cost goes. The "fulfil/cancel" API requires both IDs for
 	//some reason. On the plus side, that means we consistently require reward_id.
