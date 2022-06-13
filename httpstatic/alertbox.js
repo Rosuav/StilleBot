@@ -116,7 +116,7 @@ function remove_alert(alert, gap) {
 function render_emoted_text(txt) {
 	if (typeof txt === "string") return txt;
 	if (Array.isArray(txt)) return txt.map(render_emoted_text);
-	if (txt.img) return IMG({src: txt.img, alt: txt.title, title: txt.title});
+	if (txt.img) return IMG({src: txt.img, alt: txt.title, title: txt.title, class: "textimg"});
 	return "<ERROR> Unknown text format: " + Object.keys(txt);
 }
 

@@ -1127,7 +1127,10 @@ mapping parse_emotes(string text, mapping person) {
 		string before = text[pos..start-1];
 		noemotes += before; emoted += ({before});
 		emoted += ({([
-			"img": sprintf("https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0", id),
+			//It'd be kinda nice to be able to select the image format based on the
+			//font size of the surrounding text (1.0, 2.0, 3.0), but for now, just
+			//use the highest resolution image and hope it caches well.
+			"img": sprintf("https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/3.0", id),
 			"title": text[start..end], //Emote name
 		])});
 		pos = end + 1;
