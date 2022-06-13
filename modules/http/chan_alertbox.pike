@@ -975,6 +975,7 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 					sscanf(w, "%[a-zA-Z]%[0-9]%s", string base, string n, string empty);
 					if (n != "" && empty == "" && has_value(cheeremotes, lower_case(base)))
 						//It looks like a cheer emote. Hide it.
+						//TODO: Alter _emoted if appropriate?
 						words[i] = "";
 				}
 				replacement = words * " ";
