@@ -113,6 +113,21 @@ function make_condition_vars(vars) {
 	]));
 }
 
+function alert_name(id) {
+	//Figure out a reasonable name for an alert type, based on the ID.
+	const base = id.split("-")[0], info = alert_definitions[base];
+	//If the alert has been deleted, it must (almost certainly) have been a personal
+	if (!info) return "(Personal alert)";
+	//Otherwise, we show the description for the base alert, possibly with some
+	//adornment indicating which variant was selected.
+	let name = info.label;
+	const cfg = revert_data[id] || { };
+	if (!cfg) return name; //A deleted variant - just use the base name.
+	if (cfg["cond-label"]) name += " - " + cfg["cond-label"];
+	//If no label, can we synthesize something useful?
+	return name;
+}
+
 let wanted_variant = null; //Unlike wanted_tab, this won't be loadable on startup (no need).
 function update_alert_variants() {
 	const basetype = DOM("#variationdlg form").dataset.type.split("-")[0];
@@ -399,7 +414,21 @@ export function render(data) {
 			update_visible_form();
 		}
 	}
+	if (data.replay) {
+		const ofs = data.replay_offset || 0;
+		set_content("#replays", data.replay.map((r,i) => LI([
+			alert_name(r.send_alert),
+			" from ",
+			r.username || "Anonymous", //Absence of username may indicate fakecheer or (as of 20220613) a personal alert
+			" at ",
+			new Date(r.alert_timestamp*1000).toLocaleString(),
+			" ",
+			BUTTON({class: "replayalert", "data-alertidx": i + ofs}, "⟲"),
+		])));
+	}
 }
+
+on("click", ".replayalert", e => ws_sync.send({cmd: "replay_alert", idx: e.match.dataset.alertidx|0}));
 
 on("change", ".condbox", e => {
 	if (e.match.querySelector("[name=cond-disableautogen]").checked) {

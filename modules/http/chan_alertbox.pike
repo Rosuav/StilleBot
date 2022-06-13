@@ -98,7 +98,9 @@ $$notmod2||[Show library](:.showlibrary) [Recent events](:#recentevents .dlg)$$
 <!-- -->
 
 > ### Recent events
-> <div id=replays>loading...</div>
+> Note that host alerts will not be listed here, due to a technical limitation.
+> <ul id=replays>loading...</ul>
+> [Close](:.dialog_close)
 {: tag=dialog #recenteventsdlg}
 
 <style>
@@ -256,6 +258,10 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 	max-width: -moz-fit-content;
 	max-width: fit-content;
 	background: #eef;
+}
+
+.replayalert {
+	padding: 0 3px;
 }
 </style>
 

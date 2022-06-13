@@ -160,7 +160,8 @@
   can do the dynamic updates too?
   - Change the Add New Dynamic to let you select any manageable reward first
   - If you don't pick one, then you can create new (optionally copying)
-* Alertbox: Need a UI to replay an alert
+* Alertbox: Whenever possible, retain username for all personal alerts. May require
+  negotiation with the builtin.
 * Weird bug: After a full update, the first output on voice 0 seems to be lost.
 * Classic command editor is lagging behind a bit.
   - Set variable, "extra config", that sucks. The whole destcfg thing is a bit of a
