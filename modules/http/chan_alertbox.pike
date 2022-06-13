@@ -1147,6 +1147,7 @@ mapping message_params(object channel, mapping person, array|string param)
 	send_alert(channel, alert, ([
 		"TEXT": text || "",
 		"text": text || "",
+		"username": person->displayname,
 	]) | emotes);
 	return (["{error}": ""]);
 }
@@ -1196,7 +1197,7 @@ void cheer(object channel, mapping person, int bits, mapping extra, string msg) 
 	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
 	if (!cfg->?authkey) return;
 	send_alert(channel, "cheer", ([
-		"username": extra->displayname,
+		"username": person->displayname,
 		"bits": (string)bits,
 		"msg": msg,
 	]) | parse_emotes(msg, person));

@@ -426,7 +426,7 @@ export function render(data) {
 		else set_content("#replays", data.replay.map((r,i) => DETAILS([SUMMARY([
 			alert_name(r.send_alert),
 			" from ",
-			r.username || "Anonymous", //Absence of username may indicate fakecheer or (as of 20220613) a personal alert
+			r.username || "Anonymous", //Absence of username may indicate a bug.
 			" at ",
 			new Date(r.alert_timestamp*1000).toLocaleString(),
 			" ",
