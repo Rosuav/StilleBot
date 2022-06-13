@@ -1120,7 +1120,7 @@ void websocket_cmd_replay_alert(mapping(string:mixed) conn, mapping(string:mixed
 	else if (conn->session->user->id == (string)channel->userid) dest = cfg->authkey;
 	else dest = "preview-" + conn->session->user->login;
 	//Resend the alert exactly as-is, modulo configuration changes.
-	spawn_task(send_with_tts(channel, cfg->replay[idx] | ([]), dest));
+	spawn_task(send_with_tts(channel, cfg->replay[idx] | (["test_alert": 1]), dest));
 }
 
 mapping parse_emotes(string text, mapping person) {
