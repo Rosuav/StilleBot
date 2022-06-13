@@ -99,7 +99,8 @@ $$notmod2||[Show library](:.showlibrary) [Recent events](:#recentevents .dlg)$$
 
 > ### Recent events
 > Note that host alerts will not be listed here, due to a technical limitation.
-> <ul id=replays>loading...</ul>
+> <div id=replays>loading...</div>
+>
 > [Close](:.dialog_close)
 {: tag=dialog #recenteventsdlg}
 
@@ -1112,7 +1113,7 @@ void websocket_cmd_replay_alert(mapping(string:mixed) conn, mapping(string:mixed
 	int idx = msg->idx - cfg->replay_offset;
 	if (idx < 0 || idx >= sizeof(cfg->replay)) return;
 	//Resend the alert exactly as-is, modulo configuration changes.
-	spawn_task(send_with_tts(channel, cfg->replay[idx]));
+	spawn_task(send_with_tts(channel, cfg->replay[idx] | ([])));
 }
 
 mapping parse_emotes(string text, mapping person) {

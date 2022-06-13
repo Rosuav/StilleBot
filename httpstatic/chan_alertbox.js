@@ -128,6 +128,12 @@ function alert_name(id) {
 	return name;
 }
 
+//Based on the alert type, try to give some useful information.
+const replay_details = {
+	cheer: r => [r.bits, " bits - ", CODE(r.msg)],
+	personal: r => CODE(r.text),
+}
+
 let wanted_variant = null; //Unlike wanted_tab, this won't be loadable on startup (no need).
 function update_alert_variants() {
 	const basetype = DOM("#variationdlg form").dataset.type.split("-")[0];
@@ -416,7 +422,8 @@ export function render(data) {
 	}
 	if (data.replay) {
 		const ofs = data.replay_offset || 0;
-		set_content("#replays", data.replay.map((r,i) => LI([
+		if (!data.replay.length) set_content("#replays", "No events to replay");
+		else set_content("#replays", data.replay.map((r,i) => DETAILS([SUMMARY([
 			alert_name(r.send_alert),
 			" from ",
 			r.username || "Anonymous", //Absence of username may indicate fakecheer or (as of 20220613) a personal alert
@@ -424,7 +431,7 @@ export function render(data) {
 			new Date(r.alert_timestamp*1000).toLocaleString(),
 			" ",
 			BUTTON({class: "replayalert", "data-alertidx": i + ofs}, "⟲"),
-		])));
+		]), (replay_details[r.send_alert.split("-")[0]] || replay_details.personal)(r)])));
 	}
 }
 
