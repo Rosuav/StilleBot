@@ -365,6 +365,7 @@ constant ALERTTYPES = ({([
 		"giver": "Display name of the giver of a sub or sub bomb",
 		"subbomb": "For community sub gifts, the number of subscriptions given - otherwise 0",
 		"streak": "Number of consecutive months subscribed",
+		"msg": "Resub message, if included",
 	]),
 	"testpholders": (["tier": ({1, 3}), "months": ({1, 60}), "gifted": "0", "subbomb": ({0, 0}), "streak": "1"]),
 	"builtin": "connection",
@@ -377,6 +378,7 @@ constant ALERTTYPES = ({([
 	"placeholders": ([
 		"username": "Display name of the giver of the subs",
 		"bits": "Number of bits cheered",
+		"msg": "Message text including emotes",
 	]),
 	"testpholders": (["bits": ({1, 25000})]),
 	"builtin": "connection",
