@@ -955,7 +955,7 @@ constant cutewords = "puppy kitten crumpet tutu butterscotch flapjack pilliwiggi
 	"blueberry rainbow treasure princess cutie shiny dance bread sakura train "
 	"gift art flag candle heart love magic save tada hug cool party plush star "
 	"donut teacup cat purring flower sugar biscuit pillow banana berry " / " ";
-continue Concurrent.Future send_with_tts(object channel, mapping args) {
+continue Concurrent.Future send_with_tts(object channel, mapping args, string|void destgroup) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->alertconfigs[args->send_alert]) return 0; //On replay, if the alert doesn't exist, do nothing. TODO: Replay a base alert if variant deleted?
 	mapping inh = G_G_("alertbox_resolved", (string)channel->userid, args->send_alert);
@@ -1039,7 +1039,7 @@ continue Concurrent.Future send_with_tts(object channel, mapping args) {
 			args->tts = "data:audio/ogg;base64," + data->audioContent;
 		else Stdio.append_file("tts_error.log", sprintf("%sBad TTS response: %O\n-------------\n", ctime(time()), data));
 	}
-	send_updates_all(cfg->authkey + channel->name, args);
+	send_updates_all((destgroup || cfg->authkey) + channel->name, args);
 }
 
 constant builtin_name = "Send Alert";
@@ -1115,8 +1115,13 @@ void websocket_cmd_replay_alert(mapping(string:mixed) conn, mapping(string:mixed
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	int idx = msg->idx - cfg->replay_offset;
 	if (idx < 0 || idx >= sizeof(cfg->replay)) return;
+	//TODO: Deduplicate with testalert
+	string dest;
+	if (channel->name == "#!demo") dest = "demo-" + conn->remote_ip;
+	else if (conn->session->user->id == (string)channel->userid) dest = cfg->authkey;
+	else dest = "preview-" + conn->session->user->login;
 	//Resend the alert exactly as-is, modulo configuration changes.
-	spawn_task(send_with_tts(channel, cfg->replay[idx] | ([])));
+	spawn_task(send_with_tts(channel, cfg->replay[idx] | ([]), dest));
 }
 
 mapping parse_emotes(string text, mapping person) {
