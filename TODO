@@ -167,3 +167,13 @@
 * Firefox 98 has full support for dialogs.
   - The next Firefox ESR that will have this is 102, due out June 23rd
   - Test on ESR when possible.
+* Extend ws_sync's single render to other keys?
+  - Set autorender to an object
+  - Old style is equivalent to:
+    export const autorender = {item_parent: render_parent, item: render_item, item_empty: render_empty};
+  - ws_sync will store emptydesc in autorender.item_emptydesc and destroy it (if present) on render
+  - ws_sync will store array of keywords in autorender.all - generally don't mutate
+  - Don't replace the autorender object (although it's probably okay to mutate it, albeit generally unnecessary)
+  - A socket message with {id: 42, data: {...}} is equivalent to {render: "item", id: 42, data: {...}}
+  - Any socket message with kwd+"s" where kwd in autorender.all will replace that full set
+  - Calling of handler.render() is unchanged and still occurs after all other handlers
