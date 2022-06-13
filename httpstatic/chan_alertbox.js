@@ -22,24 +22,26 @@ const revert_data = { };
 //NOTE: Item rendering applies to uploaded files. Other things are handled by render() itself.
 //NOTE: Since newly-uploaded files will always go to the end, this should always be sorted by
 //order added, as a documented feature. The server will need to ensure this.
-export const render_parent = DOM("#uploads");
-export function render_item(file, obj) {
-	//TODO: If obj, reduce flicker by reconfiguring it, without doing any changes to the
-	//thumbnail if the URL hasn't changed.
-	files[file.id] = file;
-	return LABEL({"data-id": file.id, "data-type": file.mimetype}, [
-		INPUT({type: "radio", name: "chooseme", value: file.id}),
-		FIGURE([
-			THUMB(file),
-			FIGCAPTION([
-				A({href: file.url, target: "_blank"}, file.name),
-				" ",
-				BUTTON({type: "button", className: "renamefile", title: "Rename"}, "📝"),
+export const autorender = {
+	item_parent: DOM("#uploads"),
+	item(file, obj) {
+		//TODO: If obj, reduce flicker by reconfiguring it, without doing any changes to the
+		//thumbnail if the URL hasn't changed.
+		files[file.id] = file;
+		return LABEL({"data-id": file.id, "data-type": file.mimetype}, [
+			INPUT({type: "radio", name: "chooseme", value: file.id}),
+			FIGURE([
+				THUMB(file),
+				FIGCAPTION([
+					A({href: file.url, target: "_blank"}, file.name),
+					" ",
+					BUTTON({type: "button", className: "renamefile", title: "Rename"}, "📝"),
+				]),
+				BUTTON({type: "button", className: "confirmdelete", title: "Delete"}, "🗑"),
 			]),
-			BUTTON({type: "button", className: "confirmdelete", title: "Delete"}, "🗑"),
-		]),
-	]);
-}
+		]);
+	},
+};
 
 let have_authkey = false;
 export function sockmsg_authkey(msg) {
@@ -548,7 +550,7 @@ on("click", ".showlibrary", e => {
 	librarytarget = mode ? e.match.form.querySelector("[data-library=" + mode + "]") : null; //In case there are multiple forms, retain the exact object we're targeting
 	let needvalue = !!librarytarget;
 	const wanttypes = (e.match.dataset.type || "").split(",");
-	for (let el of render_parent.children) {
+	for (let el of DOM("#uploads").children) {
 		if (!el.dataset.id) continue;
 		const want = wanttypes[0] === "" || wanttypes.includes(el.dataset.type.split("/")[0]);
 		el.classList.toggle("active", want);
