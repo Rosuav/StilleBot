@@ -75,10 +75,6 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		if (r) dynrewards += ({r | (["id": rew->id, "title": rew->title, "curcost": rew->cost])});
 		rew->invocations = G->G->redemption_commands[rew->id] || ({ });
 	}
-	//FIXME: Change chan_dynamics.js to want items to be all rewards, and then
-	//other clients can use the same socket type without it feeling weird. This
-	//hack just doesn't feel right IMO.
-	if (grp == "dyn") return (["items": dynrewards, "allrewards": rewards]);
 	return (["items": rewards, "dynrewards": dynrewards]);
 }
 
@@ -164,7 +160,6 @@ continue Concurrent.Future populate_rewards_cache(string chan, string|int|void b
 	redemption(chan, (["broadcaster_user_id": (string)broadcaster_id]));
 	redemptiongone(chan, (["broadcaster_user_id": (string)broadcaster_id]));
 	send_updates_all("#" + chan);
-	send_updates_all("dyn#" + chan);
 }
 
 //Event messages have all the info that we get by querying, but NOT in the same format.
@@ -191,7 +186,6 @@ EventSub rewardadd = EventSub("rewardadd", "channel.channel_points_custom_reward
 	if (!G->G->pointsrewards[chan]) return;
 	G->G->pointsrewards[chan] += ({remap_eventsub_message(info)});
 	send_updates_all("#" + chan);
-	send_updates_all("dyn#" + chan);
 };
 EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward.update", "1") {
 	[string chan, mapping info] = __ARGS__;
@@ -200,7 +194,6 @@ EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward
 	foreach (rew; int i; mapping reward)
 		if (reward->id == info->id) {rew[i] = remap_eventsub_message(info); break;}
 	send_updates_all("#" + chan);
-	send_updates_all("dyn#" + chan);
 };
 EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward.remove", "1") {
 	[string chan, mapping info] = __ARGS__;
@@ -210,7 +203,6 @@ EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward
 	mapping dyn = persist_config["channels"][chan]->?dynamic_rewards;
 	if (dyn) {m_delete(dyn, info->id); persist_config->save();}
 	send_updates_all("#" + chan);
-	send_updates_all("dyn#" + chan);
 };
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
