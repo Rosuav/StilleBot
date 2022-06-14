@@ -4,8 +4,8 @@ const {TR, TD, FORM, INPUT, OPTION} = choc;
 let allrewards = { };
 
 export const autorender = {
-	item_parent: DOM("#rewards tbody"),
-	item(r) {return TR({"data-id": r.id}, [
+	dynreward_parent: DOM("#rewards tbody"),
+	dynreward(r) {return TR({"data-id": r.id}, [
 		TD(FORM({id: r.id, className: "editreward"}, INPUT({name: "title", value: r.title, "size": 40}))),
 		TD(INPUT({name: "basecost", form: r.id, type: "number", value: r.basecost})),
 		TD(INPUT({name: "availability", form: r.id, value: r.availability || "{online}"})),
@@ -16,12 +16,12 @@ export const autorender = {
 			INPUT({form: r.id, type: "submit", value: "Save"}),
 		]),
 	]);},
-	item_empty() {return DOM("#rewards tbody").appendChild(TR([
+	dynreward_empty() {return DOM("#rewards tbody").appendChild(TR([
 		TD({colSpan: 6}, "No redemptions (add one!)"),
 	]));},
 }
 export function render(data) {
-	allrewards = data.allrewards;
+	allrewards = data.items;
 	const copiables = allrewards.map((r, i) => OPTION({value: i}, r.title));
 	copiables.unshift(DOM("#copyfrom").firstElementChild);
 	set_content("#copyfrom", copiables);
