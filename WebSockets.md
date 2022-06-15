@@ -46,6 +46,23 @@ an id and, unless the item has been deleted, a new data mapping.
     Update: {"id": "foo", "data": {"id": "foo", ...}}
     Delete: {"id": "foo"} or {"id": "foo", "data": 0}
 
+
+Client usage
+------------
+
+Making use of ws_sync.js to establish the websocket will handle most of the
+above protocol automatically. Initialize global variables thus:
+
+    let ws_group = "some-group-name"; //For channel-based groups, end with "#channame"
+    let ws_type = "some-type-name";
+    let ws_code = "/static/chan_dynamics.js";
+    let ws_sync = null; import('/static/ws_sync.js').then(m => ws_sync = m);
+
+In the identified code file, provide any or all of the following exports:
+
+    //Mandatory. Called every time there is any sort of data update.
+    export function render(data) { }
+
 Using these sockets outside of StilleBot
 ----------------------------------------
 
