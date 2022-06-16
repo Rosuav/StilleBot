@@ -53,7 +53,7 @@ export function connect(group, handler)
 					const newobj = data.data && ren(data.data, obj);
 					if (newobj && empty_desc) {empty_desc.replaceWith(); empty_desc = null;}
 					if (obj && newobj) obj.replaceWith(newobj); //They might be the same
-					else if (newobj) ren.appendChild(newobj);
+					else if (newobj) par.appendChild(newobj);
 					else if (obj) {
 						//Delete this item. That might leave the parent empty.
 						obj.replaceWith();
