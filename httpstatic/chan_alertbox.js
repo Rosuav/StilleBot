@@ -28,7 +28,7 @@ export const autorender = {
 		//TODO: If obj, reduce flicker by reconfiguring it, without doing any changes to the
 		//thumbnail if the URL hasn't changed.
 		files[file.id] = file;
-		return LABEL({"data-id": file.id, "data-type": file.mimetype}, [
+		return LABEL({"data-type": file.mimetype}, [
 			INPUT({type: "radio", name: "chooseme", value: file.id}),
 			FIGURE([
 				THUMB(file),
