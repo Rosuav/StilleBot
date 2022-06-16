@@ -62,6 +62,32 @@ In the identified code file, provide any or all of the following exports:
 
     //Mandatory. Called every time there is any sort of data update.
     export function render(data) { }
+    //To be notified when {"cmd": "FOO"} is received from the server:
+    export function sockmsg_FOO(msg) { }
+    //For rendering of individual items, including partial updates:
+    export const autorender = {
+      //The most common is "item", but anything is supported. Have more
+      //than one of these sets to automatically render multiple arrays.
+      item_parent: DOM("#some_element"),
+      item(it) {return LI({"data-id": it.id}, it.name);},
+      item_empty() { }, //Called whenever there are no items to display
+    }
+
+For compatibility with the previous specification, autorender can also be
+provided as three separate exports, if autorender itself is absent:
+
+    export const render_parent = DOM("#some_element");
+    export function render_item(it) {return LI({"data-id": it.id, it.name);}
+    export function render_empty() { }
+
+The empty renderer is optional, but if provided, will be called (a) when a
+full update gives an empty array of items, and (b) when a single-item render
+removes the last item. Its return value, if any, should be a DOM element; it
+will be removed upon the next non-empty render. This element may be inside or
+outside the item_parent.
+
+Elements returned from the item renderer will have their data-id attribute set
+automatically to the ID of the corresponding element.
 
 Using these sockets outside of StilleBot
 ----------------------------------------
