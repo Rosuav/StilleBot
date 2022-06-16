@@ -51,6 +51,7 @@ export function connect(group, handler)
 				if (ren && par) {
 					const obj = par.querySelector(`[data-id="${data.id}"]`);
 					const newobj = data.data && ren(data.data, obj);
+					if (newobj) newobj.dataset.id = data.id;
 					if (newobj && empty_desc) {empty_desc.replaceWith(); empty_desc = null;}
 					if (obj && newobj) obj.replaceWith(newobj); //They might be the same
 					else if (newobj) par.appendChild(newobj);
@@ -65,7 +66,11 @@ export function connect(group, handler)
 			} else autorender.all.forEach(type => {
 				const items = data[type + "s"];
 				if (items) {
-					set_content(autorender[type + "_parent"], items.map(it => autorender[type](it)));
+					set_content(autorender[type + "_parent"], items.map(it => {
+						const obj = autorender[type](it);
+						obj.dataset.id = it.id;
+						return obj;
+					}));
 					if (!items.length && autorender[type + "_empty"]) autorender[type + "_emptydesc"] = autorender[type + "_empty"]();
 					if (items.length && autorender[type + "_emptydesc"]) {autorender[type + "_emptydesc"].replaceWith(); autorender[type + "_emptydesc"] = null;}
 				}
