@@ -101,10 +101,6 @@ HypeBLEH HypeApplause HypeRage HypeMwah HypeHuh HypeSeemsGood
 HypeWave HypeReading HypeShock HypeStress HypeCry HypeDerp1
 HypeCheer HypeLurk HypePopcorn HypeEvil HypeAwww HypeHype";
 
-string url(int|string id) { //TODO: Dedup with the one in checklist
-	if (intp(id)) return sprintf("https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0", id);
-	return sprintf("https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0", id);
-}
 string avail_emotes = "";
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -118,7 +114,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			avail_emotes += "\n*";
 			foreach (level / " ", string emote)
 			{
-				string md = emotemd[emote] || sprintf("![%s](%s)", emote, url(emoteids[emote]));
+				string md = emotemd[emote] || sprintf("![%s](%s)", emote, emote_url(emoteids[emote], 1));
 				if (!md) {avail_emotes += " " + emote; continue;}
 				avail_emotes += sprintf(" %s*%s*", md, replace(md, "/1.0", "/3.0"));
 			}

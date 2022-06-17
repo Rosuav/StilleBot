@@ -202,15 +202,10 @@ constant echolocation_channel = "#mustardmine";
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
 
-string url(int|string id) {
-	if (intp(id)) return sprintf("https://static-cdn.jtvnw.net/emoticons/v1/%d/3.0", id);
-	return sprintf("https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/3.0", id);
-}
-
 string img(string code, int|string id)
 {
 	return sprintf("<figure>![%s](%s)"
-		"<figcaption>%[0]s</figcaption></figure>", code, url(id));
+		"<figcaption>%[0]s</figcaption></figure>", code, emote_url((string)id, 3));
 }
 
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -286,10 +281,9 @@ int message(object channel, mapping person, string msg) {
 	foreach (person->emotes, [string id, int start, int end]) {
 		if (botemotes) {
 			string code = msg[start..end];
-			if (!has_value(code, '_') && !botemotes[code]) {
+			if (!has_prefix(code, "/") && !has_value(code, '_') && !botemotes[code]) {
 				botemotes[code] = id;
-				//Note: Uses the v2 URL scheme even if it's v1 - they seem to work
-				emotes[code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0)", code, id);
+				emotes[code] = sprintf("![%s](%s)", code, emote_url(id, 1));
 			}
 		}
 		string emotename = v2[id];

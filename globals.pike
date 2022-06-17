@@ -901,6 +901,26 @@ class irc_callback {
 	}
 }
 
+string emote_url(string id, int|void size) {
+	if (!intp(size) || !size || size > 3) size = 3;
+	else if (size < 1) size = 1;
+	if (has_prefix(id, "/")) {
+		//Cheer emotes use a different URL pattern.
+		if (size == 3) size = 4; //Cheer emotes have sizes 1, 1.5, 2, 3, 4, but 3 is really 2.5, and 4 is really 3.
+		sscanf(id, "/%s/%d", string pfx, int n);
+		//Cheering N bits will choose the nearest non-larger emote to N.
+		//TODO maybe: Get these from the lookup table Twitch returns?
+		if (n >= 10000) n = 10000;
+		else if (n >= 5000) n = 5000;
+		else if (n >= 1000) n = 1000;
+		else if (n >= 100) n = 100;
+		else n = 1;
+		return sprintf("https://d3aqoihi2n8ty8.cloudfront.net/actions/%s/light/animated/%d/%d.gif",
+			lower_case(pfx), n, size);
+	}
+	return sprintf("https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/%d.0", id, size);
+}
+
 class user_text
 {
 	/* Instantiate one of these, then call it with any user-defined text
@@ -980,8 +1000,7 @@ class Renderer
 				case 'u': output += replace(texts[(int)info], (["<": "&lt;", "&": "&amp;"])); break;
 				case 'e': {
 					sscanf(info, "%s:%s", string id, string text);
-					if ((int)id) output += sprintf("<img src=\"https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0\" title=%q alt=%<q>", (int)id, text);
-					else output += sprintf("<img src=\"https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/1.0\" title=%q alt=%<q>", id, text);
+					output += sprintf("<img src=\"\" title=%q alt=%<q>", emote_url(id, 1), text);
 				}
 				default: break; //Should this put a noisy error in?
 			}

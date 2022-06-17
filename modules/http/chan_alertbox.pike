@@ -1135,7 +1135,7 @@ mapping parse_emotes(string text, mapping person) {
 			//It'd be kinda nice to be able to select the image format based on the
 			//font size of the surrounding text (1.0, 2.0, 3.0), but for now, just
 			//use the highest resolution image and hope it caches well.
-			"img": sprintf("https://static-cdn.jtvnw.net/emoticons/v2/%s/default/light/3.0", id),
+			"img": emote_url(id, 3),
 			"title": text[start..end], //Emote name
 		])});
 		pos = end + 1;

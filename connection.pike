@@ -14,7 +14,7 @@ constant badge_aliases = ([ //Fold a few badges together, and give shorthands fo
 //Go through a message's parameters/tags to get the info about the person
 //There may be some non-person info gathered into here too, just for
 //convenience; in fact, the name "person" here is kinda orphanned. (Tragic.)
-mapping(string:mixed) gather_person_info(mapping params)
+mapping(string:mixed) gather_person_info(mapping params, string msg)
 {
 	string user = params->login || params->user;
 	mapping ret = (["nick": user, "user": user]); //TODO: Is nick used anywhere? If not, remove.
@@ -42,6 +42,23 @@ mapping(string:mixed) gather_person_info(mapping params)
 				if (end < start) continue; //Shouldn't happen (probably a parse failure)
 				ret->emotes += ({({id, start, end})});
 			}
+		}
+		//Also list all cheer emotes as emotes
+		int ofs = 0;
+		foreach (msg / " ", string word) {
+			//4Head is the only cheeremote with non-alphabetics in the prefix.
+			//Since we don't want to misparse "4head4000", we special-case it
+			//by accepting a 4 at the start of the letters (but nowhere else).
+			sscanf(word, "%[4]%[A-Za-z]%[0-9]%s", string four, string letters, string digits, string blank);
+			mapping cheer = G->G->cheeremotes[four + letters];
+			if (cheer && digits != "" && digits != "0" && blank == "") {
+				//Synthesize an emote ID with a leading space so we know that
+				//it can't be a normal emote. This may cause some broken images,
+				//but it should at least allow cheeremotes to be suppressed with
+				//other emotes.
+				ret->emotes += ({({"/" + cheer->prefix + "/" + digits, ofs, ofs + sizeof(word)})});
+			}
+			ofs += sizeof(word) + 1;
 		}
 		sort(ret->emotes[*][1], ret->emotes); //Sort the emotes by start position
 	}
@@ -550,7 +567,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	mapping subbomb_ids = ([]);
 	void irc_message(string type, string chan, string msg, mapping params) {
 		//TODO: The msg parameter will now be guaranteed text, not bytes. Confirm also true for params/attrs.
-		mapping(string:mixed) person = gather_person_info(params);
+		mapping(string:mixed) person = gather_person_info(params, msg);
 		if (person->uid) user_attrs[person->uid] = person;
 		mapping responsedefaults;
 		//For some unknown reason, certain types of notification come through
@@ -971,6 +988,12 @@ protected void create(string name)
 	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
 	if (sizeof(G->G->http_sessions)) session_cleanup();
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
+	if (!G->G->cheeremotes) twitch_api_request("https://api.twitch.tv/helix/bits/cheermotes")->then() {
+		mapping c = G->G->cheeremotes = ([]);
+		foreach (__ARGS__[0]->data, mapping em) c[lower_case(em->prefix)] = em;
+		//Hack to enable fakecheers to look like emotes
+		c->fakecheer = c->cheerwhal;
+	};
 	if (mapping irc = persist_config["ircsettings"])
 	{
 		bot_nick = irc->nick || "";
