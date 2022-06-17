@@ -58,7 +58,7 @@ export function connect(group, handler)
 					else if (obj) {
 						//Delete this item. That might leave the parent empty.
 						obj.replaceWith();
-						if (autorender[type + "_empty"] && !ren.querySelectorAll("[data-id]").length)
+						if (autorender[type + "_empty"] && !par.querySelectorAll("[data-id]").length)
 							autorender[type + "_emptydesc"] = autorender[type + "_empty"]();
 					}
 					//else it's currently absent, needs to be absent, nothing to do
