@@ -120,8 +120,6 @@
     be flagged as in-use, which might mean we'll want to just let them get disconnected
     and then have a hook that reconnects if there are any active websockets.
 * Ghostwriter needs a LOT more error checking. Maybe, on error, reschedule check five mins?
-* Alertbox: Parse out cheeremotes same as emotes are.
-  - Their URLs are part of the payload of the cheeremotes query, currently being discarded.
 * Get some default alerts, which will be there (but disabled) initially
   - Collaborate with an artist to make a default animation???
     - I say "collab" b/c this will need specific licensing terms, but I'm willing to pay
