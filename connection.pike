@@ -50,13 +50,13 @@ mapping(string:mixed) gather_person_info(mapping params, string msg)
 			//Since we don't want to misparse "4head4000", we special-case it
 			//by accepting a 4 at the start of the letters (but nowhere else).
 			sscanf(word, "%[4]%[A-Za-z]%[0-9]%s", string four, string letters, string digits, string blank);
-			mapping cheer = G->G->cheeremotes[four + letters];
+			mapping cheer = G->G->cheeremotes[lower_case(four + letters)];
 			if (cheer && digits != "" && digits != "0" && blank == "") {
 				//Synthesize an emote ID with a leading space so we know that
 				//it can't be a normal emote. This may cause some broken images,
 				//but it should at least allow cheeremotes to be suppressed with
 				//other emotes.
-				ret->emotes += ({({"/" + cheer->prefix + "/" + digits, ofs, ofs + sizeof(word)})});
+				ret->emotes += ({({"/" + cheer->prefix + "/" + digits, ofs, ofs + sizeof(word) - 1})});
 			}
 			ofs += sizeof(word) + 1;
 		}
