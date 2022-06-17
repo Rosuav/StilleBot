@@ -966,19 +966,16 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 		string replacement = args[tok] || "";
 		if (tok == "msg" || tok == "text") {
 			if (inh->tts_filter_emotes == "emotes") replacement = args->_noemotes || replacement;
-			if ((<"emotes", "cheers">)[inh->tts_filter_emotes]) {
-				//Split into words, if any word is %[a-zA-Z]%[0-9] and nothing
-				//else, and if the first half is a known cheeremote, suppress.
-				array words = replacement / " ";
-				array cheeremotes = (G->G->tts_config->cheeremotes || ({ })) + ({"fakecheer"});
-				foreach (words; int i; string w) {
-					sscanf(w, "%[a-zA-Z]%[0-9]%s", string base, string n, string empty);
-					if (n != "" && empty == "" && has_value(cheeremotes, lower_case(base)))
-						//It looks like a cheer emote. Hide it.
-						//TODO: Alter _emoted if appropriate?
-						words[i] = "";
+			if (inh->tts_filter_emotes == "cheers" && args->_emoted) {
+				//Cheer emotes are the subset of emotes whose IDs start with "/". (That's
+				//a StilleBot hack - see connection.pike where cheeremotes are added to the
+				//emotes array for the convenience of everything else.) Since we have the
+				//URLs for the emotes, check which ones look like emoticon URLs.
+				replacement = "";
+				foreach (args->_emoted, string|mapping part) {
+					if (stringp(part)) replacement += part;
+					else if (has_value(part->img, "emoticons/v2")) replacement += part->title;
 				}
-				replacement = words * " ";
 			}
 			if (inh->tts_filter_badwords != "none") {
 				if (G->G->tts_config->badwordlist_fetchtime < time() - 86400) {
@@ -1226,9 +1223,6 @@ continue Concurrent.Future fetch_tts_credentials(int fast) {
 	//still be good to preempt that if we can.
 	G->G->tts_config->access_token_fetchtime = time();
 	if (fast) return 0;
-	twitch_api_request("https://api.twitch.tv/helix/bits/cheermotes")->then() {
-		G->G->tts_config->cheeremotes = lower_case(__ARGS__[0]->data->prefix[*]);
-	};
 	//To filter to just English results, add "?languageCode=en"
 	object res = yield(Protocols.HTTP.Promise.get_url("https://texttospeech.googleapis.com/v1/voices",
 		Protocols.HTTP.Promise.Arguments((["headers": ([
