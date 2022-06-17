@@ -647,7 +647,5 @@ protected void create(string name)
 	::create(name);
 	if (!G->G->giveaway_tickets) G->G->giveaway_tickets = ([]);
 	if (!G->G->giveaway_purchases) G->G->giveaway_purchases = (<>);
-	register_hook("channel-online", Program.defined(this_program));
-	register_hook("channel-offline", Program.defined(this_program));
 	spawn_task(check_bcaster_tokens());
 }

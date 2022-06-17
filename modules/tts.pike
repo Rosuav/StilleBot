@@ -138,7 +138,6 @@ int purge(object channel, object person, string target)
 protected void create(string name)
 {
 	G->G->tts_suppress = (<>);
-	register_hook("all-msgs", Program.defined(this_program));
 	register_hook("delete-msg", delmsg);
 	register_hook("delete-msgs", purge);
 	::create(name);

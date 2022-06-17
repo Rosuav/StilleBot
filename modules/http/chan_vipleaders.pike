@@ -275,7 +275,5 @@ protected void create(string name)
 			persist_status->path("subgiftstats", chan)->active = 1;
 			persist_status->save(); persist_config->save();
 		}
-	register_hook("subscription", Program.defined(this_program));
-	register_hook("cheer", Program.defined(this_program));
 	::create(name);
 }

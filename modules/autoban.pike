@@ -79,8 +79,4 @@ int message(object channel, mapping person, string msg)
 	}
 }
 
-protected void create(string name)
-{
-	register_hook("all-msgs", Program.defined(this_program));
-	::create(name);
-}
+protected void create(string name) {::create(name);}

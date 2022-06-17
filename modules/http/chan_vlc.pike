@@ -264,5 +264,4 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 protected void create(string name) {
 	::create(name);
 	if (!G->G->vlc_status) G->G->vlc_status = ([]);
-	register_hook("channel-offline", Program.defined(this_program));
 }

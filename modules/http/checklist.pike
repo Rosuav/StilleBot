@@ -325,5 +325,4 @@ protected void create(string name) {
 	//used in X seconds", which will be possible, since they're stored with their timestamps.
 	mapping v2 = filter(emoteids, stringp);
 	G->G->emotes_v2 = mkmapping(values(v2), indices(v2));
-	register_hook("all-msgs", Program.defined(this_program));
 }

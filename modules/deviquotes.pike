@@ -32,5 +32,4 @@ protected void create(string name)
 {
 	catch {json = Standards.JSON.decode_utf8(Stdio.read_file(CACHE_FILE));};
 	if (json) ::create(name); //Hack: Don't initialize self if no JSON file
-	register_hook("all-msgs", Program.defined(this_program));
 }

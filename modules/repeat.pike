@@ -180,7 +180,6 @@ void check_autocommands()
 
 protected void create(string name)
 {
-	register_hook("channel-online", Program.defined(this_program));
 	register_bouncer(autospam);
 	if (!G->G->autocommands) G->G->autocommands = ([]);
 	check_autocommands();
