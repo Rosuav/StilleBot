@@ -237,5 +237,5 @@ protected void create(string name)
 	::create(name);
 	mapping cfg = persist_config["ircsettings"];
 	if (cfg && cfg->nick && cfg->nick != "" && !G->G->emote_set_mapping)
-		fetch_emotes();
+		spawn_task(fetch_emotes());
 }
