@@ -1,7 +1,7 @@
 inherit command;
 constant featurename = 0;
 constant hidden_command = 1;
-constant active_channels = ({"devicat"});
+constant active_channels = ({"devicat", "silentlilac"});
 constant require_moderator = 1; //If 0, anyone can tag themselves. Mods can always tag anyone.
 int last_used = 0;
 
@@ -63,6 +63,7 @@ string process(object channel, object person, string param)
 	names -= ({"jtv"}); //Some junk data in the files implies falsely that some people renamed to "jtv"
 	if (sizeof(names) < 2) return "@$$: No name changes found.";
 	write("%O\n", names); //In case we care about other names
+	if (channel->name == "#silentlilac") return sprintf("!transfer %s %s", names[-2], names[-1]);
 	return sprintf("!renameuser %s %s", names[-2], names[-1]);
 	#endif
 }
