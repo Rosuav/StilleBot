@@ -165,5 +165,3 @@
   - The next Firefox ESR that will have this is 102, due out June 23rd
   - Test on ESR when possible.
 * Follow alerts seem to lack username in replay. Test.
-* Test IRC subsystem in an external runnable
-  - Test GW?
