@@ -33,8 +33,6 @@
     for people who follow a lot of people.
   - Adding ?raiders will show incoming, but not outgoing, raids.
 * Move "$$autoform||$$" from markdown.html into each of the files that actually wants it
-* Use persist_status->path("bcaster_token")[chan] for all need-more-auth calls
-  - Use ensure_bcaster_login rather than ensure_login for the retention of scopes.
 * Importing of config export files
   - Ignore the active flag but keep the allcmds flag?
   - Create all listed commands, but don't destroy unmentioned ones (overwrite any with
@@ -62,7 +60,6 @@
 * Authentication on Firefox may now have issues with the default popup blocker. Can we
   comply with normal "click for popup" expectations somehow?
 * Enable/disable rewards - allow use of title, will do lookup
-* Redemption triggers - specials?
 * Create a way to daisychain into an existing command. This will allow a special to
   "alias" to a command, or for a command to do things and then chain.
   - What should happen with nested information eg from builtins?
@@ -93,17 +90,16 @@
 * "max-width: fit-content" doesn't work in Firefox - but nor does -moz-fit-content :(
   - Causes display problems on graphical editor and opening up element details
 * Should runhooks switch to continue functions and then remove the "call next" feature?
-  - runhooks is buggy. It needs to be replaced.
+  - runhooks is buggy. It needs to be removed in favour of 'inherit hook'.
 * Should ALL specials function as implicit arrays, the way triggers do?
   - Alternatively: should invocations and executions be separated? Aliases would then
     be just another way to have more than one invocation for a single command.
 * With the shutdown of Kraken, can we record things locally that used to be on Twitch?
   - Followed games/categories - you can still follow/unfollow but you can't query it in API
-* Retain user IDs for all active channels. If one renames, automatically track it.
-  - Need to enumerate all the places where a channel name gets used as a config key
-    (outside of persist_config->channels->username) so they can be changed too.
+* Need to enumerate all the places where a channel name gets used as a config key
+  (outside of persist_config->channels->username) so they can be changed on rename.
 * Art Share tool
-  - Who may share? Not all options implemented yet.
+  - Implement !permit command for temporary single-use access
   - Mod command to nuke the last-posted file?
   - Anyone currently under timeout or ban is to be denied upload permission.
     - Need a way to grant authentication for this purpose.
@@ -157,11 +153,10 @@
 * Classic command editor is lagging behind a bit.
   - Set variable, "extra config", that sucks. The whole destcfg thing is a bit of a
     hack though, so I don't think it's worth going to any effort for this yet.
-* Poke every channel to see whether we're connected
-  - What command? Slash commands seem to respond even if we're connected.
 * GUI editor - params need formatting options, in and out
   - Builtin params need to cope with splitting strings to arrays
 * Firefox 98 has full support for dialogs.
   - The next Firefox ESR that will have this is 102, due out June 23rd
   - Test on ESR when possible.
-* Follow alerts seem to lack username in replay. Test.
+* raidfinder?for=online - show tiles for the respective channels, as well as having
+  the links to for=channel
