@@ -82,37 +82,7 @@ class Persist(string savefn, int flip_save)
 object config = Persist("twitchbot_config.json", 0);
 object status = Persist("twitchbot_status.json", 1);
 
-//Migrate one entry from config to status
-//Will not merge if it already exists in status.
-void migrate(string ... path)
-{
-	mapping source = config->data;
-	mapping dest = status->data;
-	//Step through all the prior path components
-	foreach (path[..<1], string step)
-	{
-		source = source[step];
-		if (undefinedp(source)) return; //The thing to migrate doesn't exist - nothing to do
-		if (!mappingp(source)) error("Migration source %O has non-mapping at %O!\n", path*"/", step);
-		if (undefinedp(dest[step])) dest = dest[step] = ([]); //Not triggering a save yet - if it's lost, nbd
-		else if (mappingp(dest[step])) dest = dest[step];
-		else error("Migration destination %O has non-mapping at %O!\n", path*"/", step);
-	}
-	string target = path[-1];
-	if (undefinedp(source[target])) return; //Nothing to migrate (maybe already migrated, or new start)
-	if (!undefinedp(dest[target])) error("Migration destination %O already exists - cannot merge\n", path*"/");
-	//And after massive preliminaries, the actual migration is trivially easy.
-	dest[target] = m_delete(source, target);
-	config->save(); status->save();
-}
-
-protected void create()
-{
-	//Compat: Migrate ephemeral info from config into status
-	migrate("wealth");
-	migrate("viewertime");
-	migrate("songrequests");
-	migrate("songrequest_meta");
+protected void create() {
 	add_constant("persist_config", config);
 	add_constant("persist_status", status);
 }
