@@ -18,20 +18,50 @@ void console(object stdin, string buf) {
 	}
 }
 
+continue Concurrent.Future voice_enable(string voiceid, string chan, array(string) msgs) {
+	mapping tok = persist_status["voices"][voiceid];
+	werror("Connecting to voice %O...\n", voiceid);
+	object conn = yield(irc_connect(([
+		"user": tok->login, "pass": "oauth:" + tok->token,
+		"voiceid": voiceid,
+		"capabilities": ({"commands"}),
+	])));
+	werror("Voice %O connected, sending to channel %O\n", voiceid, chan);
+	irc_connections[voiceid] = conn;
+	conn->yes_reconnect(); //Mark that we need this connection
+	conn->send(chan, msgs[*]);
+	conn->enqueue(conn->no_reconnect); //Once everything's sent, it's okay to disconnect
+}
+
+continue Concurrent.Future poke_channels() {
+	array channels = ({
+		"#rosuav", "#pixalicious_", "#mustardmine", "#devicat", "#khamidova",
+		"#loudlotus", "#lara_cr", "#hallwayraptor", "#itsastarael",
+		"#stephenangelico", "#lulu_jenkins", "#othersister", "#ladydreamtv",
+	});
+	foreach (channels, string name) {
+		mixed _ = yield(voice_enable("279141671", name, ({"Hi! Don't mind me, just doing some random spot-checking of a bot feature. MrDestructoid"})));
+		yield(task_sleep(0.125));
+	}
+}
+
 class channel(string name) {
 	mapping config = ([]);
 
 	protected void create() {config = persist_config["channels"][name[1..]];}
 
-	void send(mapping person, echoable_message message, mapping|void vars) {
-		if (stringp(message)) irc_connections[0]->send(name, message);
-	}
-
 	void irc_message(string type, string chan, string msg, mapping params) {
+		if (name == "#rosuav" && msg == "!mm") spawn_task(poke_channels());
+		if (name == "#rosuav" && msg == "!test") {
+			werror("Test command, responding! Queue: %O\n", connection_cache->rosuav->queue);
+			irc_connections[0]->send(name, "This is a test MrDestructoid");
+		}
 		string pfx = sprintf("[%s %s] ", type, name);
 		int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
-		msg = string_to_utf8(msg);
-		write("\e[1;42m%s\e[0m", sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
+		if (sscanf(msg, "\1ACTION %s\1", msg)) msg = " " + msg;
+		else msg = ": " + msg;
+		msg = string_to_utf8(params->display_name + msg + " ");
+		if (config->chatlog || params->user_id == "279141671") write("\e[1;32m%s\e[0m", sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
 	}
 }
 
@@ -51,9 +81,9 @@ void reconnect() {
 	irc_connect(([
 		"join": filter(channels) {return __ARGS__[0][1] != '!';},
 		"capabilities": "membership tags commands" / " ",
-	]))->then() {irc_connections[0] = __ARGS__[0]; werror("Now connected: %O\n", __ARGS__[0]);}
+	]))->then() {irc_connections[0] = __ARGS__[0]; werror("[%d] Now connected: %O\n", time(), __ARGS__[0]);}
 	->thencatch() {werror("Unable to connect to Twitch:\n%s\n", describe_backtrace(__ARGS__[0]));};
-	werror("Now connecting: %O queue %O\n", connection_cache->rosuav, connection_cache->rosuav->queue);
+	werror("[%d] Now connecting: %O queue %O\n", time(), connection_cache->rosuav, connection_cache->rosuav->queue);
 }
 
 protected void create(string name) {

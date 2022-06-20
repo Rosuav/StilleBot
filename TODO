@@ -154,7 +154,6 @@
   can do the dynamic updates too?
   - Change the Add New Dynamic to let you select any manageable reward first
   - If you don't pick one, then you can create new (optionally copying)
-* Weird bug: After a full update, the first output on voice 0 seems to be lost.
 * Classic command editor is lagging behind a bit.
   - Set variable, "extra config", that sucks. The whole destcfg thing is a bit of a
     hack though, so I don't think it's worth going to any effort for this yet.
@@ -167,7 +166,4 @@
   - Test on ESR when possible.
 * Follow alerts seem to lack username in replay. Test.
 * Test IRC subsystem in an external runnable
-  - Use stdin to trigger either a full build or a module build
-  - Test the "weird bug" from above
   - Test GW?
-  - Test channel join failures?
