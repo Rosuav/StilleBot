@@ -766,7 +766,7 @@ class channel(string name) { //name begins with hash and is all lower case
 				int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
 				#endif
 				if (person->badges->?_mod) msg = "\u2694 " + msg;
-				msg = string_to_utf8(msg);
+				msg = string_to_utf8(msg) + " "; //Trailing space improves wrapping with %= mode
 				log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
 				break;
 			}
