@@ -1163,8 +1163,8 @@ mapping message_params(object channel, mapping person, array|string param)
 @hook_follower:
 void follower(object channel, mapping follower) {
 	send_alert(channel, "follower", ([
-		"NAME": follower->displayname,
-		"username": follower->displayname,
+		"NAME": follower->user_name,
+		"username": follower->user_name,
 	]));
 }
 
