@@ -93,6 +93,15 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		login = sprintf("> This feature requires Twitch chat authentication.\n>\n"
 				"> [Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
 	if (!login) spawn_task(force_check(req->misc->session->user->id));
+	if (!login && req->misc->session->user->id == botid && req->variables->showall) {
+		string ret = "### Active channels\n";
+		foreach (persist_status->path("ghostwriter"); string chanid; mapping info) {
+			if (!info->channels || !sizeof(info->channels)) continue;
+			mapping st = chanstate[chanid] || ([]);
+			ret += sprintf("* %s %s %s\n", chanid, info->chan, st->status || "(unknown)");
+		}
+		return render_template(ret, ([]));
+	}
 	return render(req, ([
 		"vars": (["ws_group": login ? "0" : req->misc->session->user->id]),
 		"login": login,
