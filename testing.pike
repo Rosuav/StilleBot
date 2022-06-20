@@ -1,32 +1,63 @@
 //Build code into this file to be able to quickly and easily run it using "stillebot --test"
 inherit irc_callback;
+mapping irc_connections = ([]);
 
 constant messagetypes = ({"WHISPER", "PRIVMSG"});
-void irc_message(string type, string chan, string msg, mapping attrs) {
-	werror("irc_message: %O, %O, %O, %O\n", type, chan, msg, attrs);
-	if (msg == "!quit") exit(0);
+
+void bootstrap_all() {
+	G->bootstrap("persist.pike");
+	G->bootstrap("globals.pike");
+	G->bootstrap("poll.pike");
+	G->bootstrap("testing.pike");
+}
+void console(object stdin, string buf) {
+	while (buf != "") {
+		sscanf(buf, "%s%*[\n]%s", string line, buf);
+		if (line == "update") bootstrap_all();
+		if (line == "module") G->bootstrap("testing.pike");
+	}
 }
 
-void irc_closed(mapping options) {werror("IRC connection closed.\n"); exit(0);}
+class channel(string name) {
+	mapping config = ([]);
+
+	protected void create() {config = persist_config["channels"][name[1..]];}
+
+	void send(mapping person, echoable_message message, mapping|void vars) {
+		if (stringp(message)) irc_connections[0]->send(name, message);
+	}
+
+	void irc_message(string type, string chan, string msg, mapping params) {
+		string pfx = sprintf("[%s %s] ", type, name);
+		int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
+		msg = string_to_utf8(msg);
+		write("\e[1;42m%s\e[0m", sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
+	}
+}
+
+void irc_message(string type, string chan, string msg, mapping attrs) {
+	object channel = G->G->irc->channels[chan];
+	if (channel) channel->irc_message(type, chan, msg, attrs);
+}
+
+void irc_closed(mapping options) {
+	::irc_closed(options);
+	if (options->voiceid) m_delete(irc_connections, options->voiceid);
+}
+
+void reconnect() {
+	array channels = "#" + indices(persist_config["channels"] || ([]))[*];
+	G->G->irc = (["channels": mkmapping(channels, channel(channels[*]))]);
+	irc_connect(([
+		"join": filter(channels) {return __ARGS__[0][1] != '!';},
+		"capabilities": "membership tags commands" / " ",
+	]))->then() {irc_connections[0] = __ARGS__[0]; werror("Now connected: %O\n", __ARGS__[0]);}
+	->thencatch() {werror("Unable to connect to Twitch:\n%s\n", describe_backtrace(__ARGS__[0]));};
+	werror("Now connecting: %O queue %O\n", connection_cache->rosuav, connection_cache->rosuav->queue);
+}
 
 protected void create(string name) {
 	::create(name);
-	spawn_task(do_stuff());
-}
-continue Concurrent.Future do_stuff() {
-	string voiceid = "279141671", chan = "#rosuav";
-	array msgs = ({"Hello from Mustard Mine"});
-	mapping tok = persist_status["voices"][voiceid];
-	werror("Connecting to voice %O...\n", voiceid);
-	mixed ex = catch {
-		object conn = yield(irc_connect(([
-			"user": tok->login, "pass": tok->token,
-			"voiceid": voiceid,
-			"capabilities": ({"commands"}),
-		])));
-		werror("Voice %O connected, sending to channel %O\n", voiceid, chan);
-		conn->send(chan, msgs[*]);
-		conn->quit();
-	};
-	if (ex) werror("Unable to connect to voice %O:\n%s\n", voiceid, describe_backtrace(ex));
+	reconnect();
+	Stdio.stdin->set_read_callback(console);
 }
