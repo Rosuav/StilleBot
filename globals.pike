@@ -792,18 +792,6 @@ class _TwitchIRC(mapping options) {
 		array commands = ("CAP REQ :twitch.tv/" + (wantopt - haveopt)[*]);
 		if (sizeof(havechan - wantchan)) commands += ({"PART :" + (havechan - wantchan) * ","});
 		if (sizeof(wantchan - havechan)) commands += map((wantchan - havechan) / 10.0) {return "JOIN :" + __ARGS__[0] * ",";};
-		if (sizeof(wantchan & havechan)) {
-			//Rejoin channels after a moment. We'll announce ourselves as ready
-			//before this, but asynchronously rejoin.
-			//FIXME: Figure out why channels are getting inexplicably parted, or
-			//at least which ones have been parted, and only rejoin those.
-			array rejoin = wantchan & havechan;
-			call_out(lambda() {
-				array rejoin = map(rejoin / 10.0) {return "JOIN :" + __ARGS__[0] * ",";};
-				werror("Rejoining channels: %O\n", rejoin);
-				enqueue(@rejoin);
-			}, 0.125);
-		}
 		if (sizeof(commands)) enqueue(@commands);
 		options = opt; m_delete(options, "pass"); //Transfer all options. Anything unchecked is assumed to be okay to change like this.
 	}
@@ -865,7 +853,7 @@ class irc_callback {
 	Concurrent.Future irc_connect(mapping options) {
 		//Bump this version number when there's an incompatible change. Old
 		//connections will all be severed.
-		options = (["module": this, "version": 4]) | (options || ([]));
+		options = (["module": this, "version": 5]) | (options || ([]));
 		if (!options->user) {
 			//Default credentials from the bot's main configs
 			mapping cfg = persist_config->path("ircsettings");
