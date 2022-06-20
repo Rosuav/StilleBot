@@ -380,9 +380,9 @@ EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string ch
 	mapping st = chanstate[chanid];
 	spawn_task(recalculate_status(chanid));
 	foreach (autohosts_this[chanid] || ([]); string id;) {
-		mapping st = chanstate[id];
+		mapping st = chanstate[id] || ([]);
 		write("Channel %O cares - status %O\n", persist_status->path("ghostwriter")[id]->?chan || id, st->statustype);
-		if (st->statustype == "idle") {
+		if (st->statustype == "idle" || !st->statustype) {
 			recalculate_soon(id);
 			write("Next check at %d [T%+d]\n", st->next_scheduled_check, st->next_scheduled_check - time());
 		}
@@ -496,6 +496,7 @@ void reconnect() {
 			t -= time();
 			if (t >= 0) schedule_check_callouts[chanid] = call_out(scheduled_recalculation, t, chanid);
 		}
+		else if (!chanstate[chanid]->statustype) recalculate_soon(chanid);
 	}
 	irc_connect(([
 		"capabilities": ({"tags", "commands"}),
