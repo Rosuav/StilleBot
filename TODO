@@ -158,5 +158,3 @@
 * Firefox 98 has full support for dialogs.
   - The next Firefox ESR that will have this is 102, due out June 23rd
   - Test on ESR when possible.
-* raidfinder?for=online - show tiles for the respective channels, as well as having
-  the links to for=channel

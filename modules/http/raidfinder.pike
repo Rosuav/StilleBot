@@ -200,7 +200,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 					name,
 				)});
 			}
-			return (["data": "<style>.bot::marker{color:green}.monitor::marker{color:orange}body{font-size:16pt}</style><ul>" + lines * "\n" + "</ul>", "type": "text/html"]);
+			return (["data": "<style>.bot::marker{color:green}.monitor::marker{color:orange}body{font-size:16pt}</style><ul>" + lines * "\n" + "</ul><p>See tiled: <a href=\"raidfinder?login=demo\">login=demo</a></p>", "type": "text/html"]);
 		}
 		if (userid == (string)(int)userid) userid = (int)userid;
 		else userid = yield(get_user_id(chan));
@@ -282,7 +282,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//Note that this excludes connected but not active (monitor-only) channels.
 			args->user_login = ({ });
 			foreach (persist_config->path("channels"); string chan; mapping info)
-				if (chan[0] != '!' && info->active) args->user_login += ({chan});
+				if (chan[0] != '!') args->user_login += ({chan});
 			title = "This bot's channels";
 		}
 		else if (req->variables->login) {
