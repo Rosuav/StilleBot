@@ -158,3 +158,5 @@
 * Firefox 98 has full support for dialogs.
   - The next Firefox ESR that will have this is 102, due out June 23rd
   - Test on ESR when possible.
+* Alertbox: Include raiders in the !hostlist
+* Allow filtering of raiders from the host alerts
