@@ -515,6 +515,29 @@ void resolve_affected_inherits(string userid, string id) {
 	resolve_all_inherits(userid);
 }
 
+EventSub raidin = EventSub("raidin", "channel.raid", "1") {
+	object channel = G->G->irc->channels["#" + __ARGS__[0]];
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	//TODO: If the backend engine is selected, push out a host alert as Raid variant.
+	send_updates_all(cfg->authkey + channel->name, (["raidhack": __ARGS__[1]->from_broadcaster_user_login]));
+};
+
+void ensure_host_connection(string chan) {
+	//If host alerts are active, we need notifications so we can push them through.
+	object channel = G->G->irc->channels["#" + chan];
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	if (cfg->alertconfigs->?hostalert->?active) {
+		werror("ALERTBOX: Ensuring connection for %O/%O\n", chan, channel->userid);
+		irc_connect((["user": chan, "userid": channel->userid]))->then() {
+			werror("ALERTBOX: Connected to %O\n", chan);
+		}->thencatch() {
+			werror("ALERTBOX: Unable to connect to %O\n", chan);
+			werror("%O\n", __ARGS__);
+		};
+		raidin(chan, (["to_broadcaster_user_id": (string)channel->userid]));
+	}
+}
+
 bool need_mod(string grp) {return grp == "control" || has_prefix(grp, "preview-");}
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (string err = ::websocket_validate(conn, msg)) return err;
@@ -535,16 +558,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	) {
 		//Cut-down information for the display
 		string chan = channel->name[1..];
-		//If host alerts are active, ensure we have a backend connection.
-		if (cfg->alertconfigs->?hostalert->?active) {
-			werror("ALERTBOX: Ensuring connection for %O/%O\n", chan, channel->userid);
-			irc_connect((["user": chan, "userid": channel->userid]))->then() {
-				werror("ALERTBOX: Connected to %O\n", chan);
-			}->thencatch() {
-				werror("ALERTBOX: Unable to connect to %O\n", chan);
-				werror("%O\n", __ARGS__);
-			};
-		}
+		ensure_host_connection(chan);
 		string token;
 		if (grp == cfg->authkey && has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read"))
 			token = persist_status->path("bcaster_token")[chan];
@@ -915,15 +929,10 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	send_updates_all(conn->group);
 	send_updates_all(cfg->authkey + channel->name);
 	if (sock_reply) conn->sock->send_text(Standards.JSON.encode(sock_reply, 4));
-	if (!hosts_were_active && cfg->alertconfigs->?hostalert->?active) {
-		//Host alerts have just been activated. Make sure we have a backend.
-		werror("ALERTBOX: Activated hosts, connecting to %O/%O\n", channel->name[1..], channel->userid);
-		irc_connect((["user": channel->name[1..], "userid": channel->userid]))->then() {
-			werror("ALERTBOX: Connected to %O\n", channel->name[1..]);
-		}->thencatch() {
-			werror("ALERTBOX: Unable to connect to %O\n", channel->name[1..]);
-			werror("%O\n", __ARGS__);
-		};
+	if (!hosts_were_active) {
+		//Host alerts may have just been activated. Make sure we have a backend.
+		werror("ALERTBOX: Hosts weren't active for %O/%O\n", channel->name[1..], channel->userid);
+		ensure_host_connection(channel->name[1..]);
 	}
 }
 

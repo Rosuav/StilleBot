@@ -56,6 +56,7 @@ let inited = false, token = null;
 let hostlist_command = null, hostlist_format = null;
 const alert_active = { };
 const retainme = ["alertlength", "alertgap", "tts_dwell", "tts_volume"];
+const current_hosts = { };
 export function render(data) {
 	if (data.version > alertbox_version) {location.reload(); return;}
 	if (data.alertconfigs) {
@@ -76,6 +77,7 @@ export function render(data) {
 		removeme.forEach(el => el.replaceWith()); //Do all the removal after the checks, to avoid trampling on things
 	}
 	if (data.send_alert) do_alert("#" + data.send_alert, data);
+	if (data.raidhack) current_hosts[data.raidhack] = 1;
 	if (data.token && data.token !== token) {
 		if (inited) ComfyJS.Disconnect();
 		inited = true;
@@ -171,7 +173,6 @@ function do_alert(alert, replacements) {
 }
 window.ping = type => do_alert("#" + (type || "hostalert"), {NAME: "Test", username: "Test", VIEWERS: 42, viewers: 42, test_alert: 1});
 
-const current_hosts = { };
 ComfyJS.onHosted = (username, viewers, autohost, extra) => {
 	//Note that ComfyJS itself never seems to announce autohosts. It also
 	//doesn't provide the displayname, so we fall back on the username.
