@@ -535,16 +535,16 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	) {
 		//Cut-down information for the display
 		string chan = channel->name[1..];
-		//Make sure we have a backend connection for host alerts.
-		//TODO: Only establish if host alerts are active; but ensure established
-		//if host alerts get activated.
-		werror("ALERTBOX: Ensuring connection for %O/%O\n", chan, channel->userid);
-		irc_connect((["user": chan, "userid": channel->userid]))->then() {
-			werror("ALERTBOX: Connected to %O\n", chan);
-		}->thencatch() {
-			werror("ALERTBOX: Unable to connect to %O\n", chan);
-			werror("%O\n", __ARGS__);
-		};
+		//If host alerts are active, ensure we have a backend connection.
+		if (cfg->alertconfigs->?hostalert->?active) {
+			werror("ALERTBOX: Ensuring connection for %O/%O\n", chan, channel->userid);
+			irc_connect((["user": chan, "userid": channel->userid]))->then() {
+				werror("ALERTBOX: Connected to %O\n", chan);
+			}->thencatch() {
+				werror("ALERTBOX: Unable to connect to %O\n", chan);
+				werror("%O\n", __ARGS__);
+			};
+		}
 		string token;
 		if (grp == cfg->authkey && has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read"))
 			token = persist_status->path("bcaster_token")[chan];
@@ -818,6 +818,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	}
 	//If the format *is* specified, this is a full update, *except* for the retained
 	//attributes. Any unspecified attribute will be deleted, setting it to inherit.
+	int hosts_were_active = cfg->alertconfigs->?hostalert->?active;
 	mapping data = cfg->alertconfigs[msg->type] = filter(
 		mkmapping(RETAINED_ATTRS, (cfg->alertconfigs[msg->type]||([]))[RETAINED_ATTRS[*]])
 		| mkmapping(FORMAT_ATTRS, msg[FORMAT_ATTRS[*]]))
@@ -914,6 +915,16 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	send_updates_all(conn->group);
 	send_updates_all(cfg->authkey + channel->name);
 	if (sock_reply) conn->sock->send_text(Standards.JSON.encode(sock_reply, 4));
+	if (!hosts_were_active && cfg->alertconfigs->?hostalert->?active) {
+		//Host alerts have just been activated. Make sure we have a backend.
+		werror("ALERTBOX: Activated hosts, connecting to %O/%O\n", channel->name[1..], channel->userid);
+		irc_connect((["user": channel->name[1..], "userid": channel->userid]))->then() {
+			werror("ALERTBOX: Connected to %O\n", channel->name[1..]);
+		}->thencatch() {
+			werror("ALERTBOX: Unable to connect to %O\n", channel->name[1..]);
+			werror("%O\n", __ARGS__);
+		};
+	}
 }
 
 void websocket_cmd_renamefile(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -1248,11 +1259,10 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 void irc_closed(mapping options) {
 	::irc_closed(options);
 	//If we still need host alerts for this user, reconnect.
-	//TODO: Check if host alerts are active.
 	mapping cfg = persist_status->path("alertbox", (string)options->userid);
 	array socks = websocket_groups[cfg->authkey + "#" + options->user] || ({ });
-	werror("ALERTBOX: irc_closed for %O, %d connections\n", options->user, sizeof(socks));
-	if (sizeof(socks)) irc_connect(options);
+	werror("ALERTBOX: irc_closed for %O, %d connections, active %O\n", options->user, sizeof(socks), cfg->alertconfigs->?hostalert->?active);
+	if (sizeof(socks) && cfg->alertconfigs->?hostalert->?active) irc_connect(options);
 }
 
 continue Concurrent.Future fetch_tts_credentials(int fast) {
