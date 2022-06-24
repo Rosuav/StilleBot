@@ -85,8 +85,6 @@
     - Any others?
 * Special trigger when any goal bar tiers up?? Would be better than the weird system
   where it triggers an actual command. Could deep link straight to the editor now.
-* Client-side per-user preferences are now a thing. Use them where appropriate.
-  - Absorb raidnotes into this system.
 * "max-width: fit-content" doesn't work in Firefox - but nor does -moz-fit-content :(
   - Causes display problems on graphical editor and opening up element details
 * Should runhooks switch to continue functions and then remove the "call next" feature?
