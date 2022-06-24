@@ -1,6 +1,7 @@
 inherit http_websocket;
 inherit builtin_command;
 inherit hook;
+inherit irc_callback;
 /* Bot operators, if you want to use TTS:
 * Create credentials on Google Cloud Platform
   - https://cloud.google.com/docs/authentication/production
@@ -534,6 +535,16 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	) {
 		//Cut-down information for the display
 		string chan = channel->name[1..];
+		//Make sure we have a backend connection for host alerts.
+		//TODO: Only establish if host alerts are active; but ensure established
+		//if host alerts get activated.
+		werror("ALERTBOX: Ensuring connection for %O/%O\n", chan, channel->userid);
+		irc_connect((["user": chan, "userid": channel->userid]))->then() {
+			werror("ALERTBOX: Connected to %O\n", chan);
+		}->thencatch() {
+			werror("ALERTBOX: Unable to connect to %O\n", chan);
+			werror("%O\n", __ARGS__);
+		};
 		string token;
 		if (grp == cfg->authkey && has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read"))
 			token = persist_status->path("bcaster_token")[chan];
@@ -1059,7 +1070,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 		if (!alert->active) return 0;
 		int idx = search(ALERTTYPES->id, (alerttype/"-")[0]); //TODO: Rework this so it's a lookup instead (this same check is done twice)
 		array(string) condvars = idx >= 0 ? ALERTTYPES[idx]->condition_vars : ({ });
-		foreach (condvars, string c) {
+		if (condvars) foreach (condvars, string c) {
 			int val = (int)args[c];
 			int comp = alert["condval-" + c];
 			switch (alert["condoper-" + c]) {
@@ -1209,6 +1220,39 @@ void cheer(object channel, mapping person, int bits, mapping extra, string msg) 
 		"bits": (string)bits,
 		"msg": msg,
 	]) | parse_emotes(msg, person));
+}
+
+constant messagetypes = ({"PRIVMSG"});
+void irc_message(string type, string chan, string msg, mapping attrs) {
+	if (attrs->user == "jtv") {
+		//TODO: Filter to new hosts only
+		//TODO: Clear the "new hosts" list when stream goes on/offline
+		//-- maybe use timestamps, or when online, clear since last went-offline
+		//seenhosts[chan] = 1;
+		//For zero-viewer hosts, it looks like "USERNAME is now hosting you."
+		//Check what the message says if there are viewers.
+		string target = "-", viewers = "0";
+		if (has_suffix(msg, " is now hosting you."))
+			sscanf(msg, "%s is", target);
+		//else sscanf(msg, "%s is now hosting for %s viewers", target, viewers)?
+		werror("ALERTBOX: Host target (%O, %O, %O)\n", chan, target, viewers);
+		//TODO: Have a way to select which engine to use - ComfyJS or backend -
+		//and only if backend is selected, send_alert.
+		/*if (target && target != "-") send_alert(G->G->irc->channels[chan], "hostalert", ([
+			"NAME": target, "username": target,
+			"VIEWERS": viewers, "viewers": viewers,
+		]));*/
+	}
+}
+
+void irc_closed(mapping options) {
+	::irc_closed(options);
+	//If we still need host alerts for this user, reconnect.
+	//TODO: Check if host alerts are active.
+	mapping cfg = persist_status->path("alertbox", (string)options->userid);
+	array socks = websocket_groups[cfg->authkey + "#" + options->user] || ({ });
+	werror("ALERTBOX: irc_closed for %O, %d connections\n", options->user, sizeof(socks));
+	if (sizeof(socks)) irc_connect(options);
 }
 
 continue Concurrent.Future fetch_tts_credentials(int fast) {
