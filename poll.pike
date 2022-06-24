@@ -645,8 +645,8 @@ EventSub new_follower = EventSub("follower", "channel.follow", "1") { [string ch
 			]), ([]));
 		};
 };
-EventSub raidin = EventSub("raidin", "channel.raid", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Raid incoming [%d, %O]: %O\n", time(), @__ARGS__));};
-EventSub raidout = EventSub("raidout", "channel.raid", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Raid outgoing [%d, %O]: %O\n", time(), @__ARGS__));};
+//EventSub raidin = EventSub("raidin", "channel.raid", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Raid incoming [%d, %O]: %O\n", time(), @__ARGS__));};
+//EventSub raidout = EventSub("raidout", "channel.raid", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Raid outgoing [%d, %O]: %O\n", time(), @__ARGS__));};
 
 void check_hooks(array eventhooks)
 {
@@ -676,8 +676,8 @@ void check_hooks(array eventhooks)
 		int userid = c->?_id;
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses pseudo-channels.)
 		new_follower(chan, (["broadcaster_user_id": (string)userid]));
-		raidin(chan, (["to_broadcaster_user_id": (string)userid]));
-		raidout(chan, (["from_broadcaster_user_id": (string)userid]));
+		//raidin(chan, (["to_broadcaster_user_id": (string)userid]));
+		//raidout(chan, (["from_broadcaster_user_id": (string)userid]));
 	}
 }
 
