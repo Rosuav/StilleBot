@@ -732,7 +732,7 @@ class _TwitchIRC(mapping options) {
 				call_out(sockwrite, wait);
 				return;
 			}
-			if (options->verbose) werror("IRC > %O\n", next);
+			if (options->verbose) werror("IRC > %O\n", replace(next, pass, "<password>"));
 			int sent = sock->write(next + "\n");
 			if (sent < sizeof(next) + 1) {
 				//Partial send. Requeue all but the part that got sent.
