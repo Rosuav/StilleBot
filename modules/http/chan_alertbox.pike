@@ -520,6 +520,7 @@ EventSub raidin = EventSub("raidin", "channel.raid", "1") {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	//TODO: If the backend engine is selected, push out a host alert as Raid variant.
 	send_updates_all(cfg->authkey + channel->name, (["raidhack": __ARGS__[1]->from_broadcaster_user_login]));
+	Stdio.append_file("alertbox_hosts.log", sprintf("[%d] SRVRAID: %s -> %O\n", time(), __ARGS__[0], __ARGS__[1]));
 };
 
 void ensure_host_connection(string chan) {
@@ -1256,6 +1257,7 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 			sscanf(msg, "%s is", target);
 		//else sscanf(msg, "%s is now hosting for %s viewers", target, viewers)?
 		werror("ALERTBOX: Host target (%O, %O, %O)\n", chan, target, viewers);
+		Stdio.append_file("alertbox_hosts.log", sprintf("[%d] SRVHOST: %s -> %O\n", time(), chan, msg));
 		//TODO: Have a way to select which engine to use - ComfyJS or backend -
 		//and only if backend is selected, send_alert.
 		/*if (target && target != "-") send_alert(G->G->irc->channels[chan], "hostalert", ([
@@ -1263,6 +1265,12 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 			"VIEWERS": viewers, "viewers": viewers,
 		]));*/
 	}
+}
+
+void websocket_cmd_loghost(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%*s#%s", string chan);
+	//Technically someone could spam me with these, but I really hope nobody would be that petty :)
+	Stdio.append_file("alertbox_hosts.log", sprintf("[%d] CLIHOST: %s -> %O\n", time(), "#" + chan, msg));
 }
 
 void irc_closed(mapping options) {
