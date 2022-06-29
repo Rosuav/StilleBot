@@ -214,11 +214,20 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	string login_link = "[Log in to highlight the emotes you have access to](:.twitchlogin data-scopes=@chat_login chat:edit@)";
 	mapping v2_have = ([]);
 	multiset scopes = req->misc->session->?scopes || (<>);
-	if (scopes->chat_login && scopes[?"chat:edit"]) {
+	string title = "Emote checklist";
+	if (req->variables->showcase) {
+		//?showcase=49497888 to see Rosuav's emotes
+		//Only if permission granted.
+		v2_have = persist_status->path("seen_emotes")[req->variables->showcase] || ([]);
+		if (!v2_have->_allow_showcase) v2_have = ([]);
+		else title = "Emote showcase for " + v2_have->_allow_showcase;
+	}
+	else if (scopes->chat_login && scopes[?"chat:edit"]) {
 		//Helix-friendly: query emotes by pushing them through chat.
 		//No, this is not better than the Kraken way. Not even slightly.
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>\n\n"
-			"[Check for newly-unlocked emotes](:#echolocate)";
+			"[Check for newly-unlocked emotes](:#echolocate) [Enable showcase](:#toggleshowcase)\n\n"
+			"[Show off your emotes here](checklist?showcase=" + req->misc->session->?user->?id + ")";
 		v2_have = persist_status->path("seen_emotes")[(string)req->misc->session->?user->?id] || ([]);
 	}
 	else login_link += "\n\n<input type=checkbox id=showall style=\"display:none\" checked>"; //Hack: Show all if not logged in
@@ -247,9 +256,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		"vars": (["ws_group": req->misc->session->?user->?id]),
 		"login_link": login_link,
 		"text": text, "emotes": sprintf("img[title=\"%s\"]", used[*]) * ", ",
+		"title": title,
 	]));
 }
 
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {if (msg->group != conn->session->?user->?id) return "Not you";}
 mapping get_state(string group) {
 	return (["emotes": indices(persist_status->path("seen_emotes")[group] || ([]))]);
 }
@@ -268,6 +279,13 @@ void websocket_cmd_echolocate(mapping(string:mixed) conn, mapping(string:mixed) 
 	int threshold = time() - 86400;
 	array emotes = filter(tracked_emote_names) {return seen[__ARGS__[0]] < threshold;};
 	spawn_task(echolocate(conn->session->user->login, "oauth:" + conn->session->token, emotes));
+}
+
+void websocket_cmd_toggleshowcase(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping seen = persist_status->path("seen_emotes", conn->session->user->id);
+	if (!m_delete(seen, "_allow_showcase")) seen->_allow_showcase = conn->session->user->display_name;
+	persist_status->save();
+	send_updates_all(conn->group);
 }
 
 @hook_allmsgs:
