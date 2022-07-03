@@ -520,7 +520,7 @@ EventSub raidin = EventSub("raidin", "channel.raid", "1") {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	//TODO: If the backend engine is selected, push out a host alert as Raid variant.
 	send_updates_all(cfg->authkey + channel->name, (["raidhack": __ARGS__[1]->from_broadcaster_user_login]));
-	Stdio.append_file("alertbox_hosts.log", sprintf("[%d] SRVRAID: %s -> %O\n", time(), __ARGS__[0], __ARGS__[1]));
+	//Stdio.append_file("alertbox_hosts.log", sprintf("[%d] SRVRAID: %s -> %O\n", time(), __ARGS__[0], __ARGS__[1]));
 };
 
 void ensure_host_connection(string chan) {
