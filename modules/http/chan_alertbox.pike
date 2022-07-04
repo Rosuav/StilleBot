@@ -412,7 +412,7 @@ constant NULL_ALERT = ([
 	"strokewidth": "None", "strokecolor": "#000000", "borderwidth": "0",
 	"padvert": "0", "padhoriz": "0", "textalign": "start",
 	"shadowx": "0", "shadowy": "0", "shadowalpha": "0", "bgalpha": "0",
-	"tts_text": "{msg}", "tts_dwell": "0", "tts_volume": 0, "tts_filter_emotes": "cheers",
+	"tts_text": "", "tts_dwell": "0", "tts_volume": 0, "tts_filter_emotes": "cheers",
 	"tts_filter_badwords": "none", "tts_min_bits": "0",
 ]);
 constant LATEST_VERSION = 4; //Bump this every time a change might require the client to refresh.
