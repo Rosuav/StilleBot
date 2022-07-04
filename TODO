@@ -158,6 +158,3 @@
   - The next Firefox ESR that will have this is 102, due out June 23rd
   - Test on ESR when possible.
 * Make raid alerts into a variant of host alerts, with filtering capability
-* Play with a single personal alert to permit an array of GIFs as variants
-  - Take keyword (not number) for variant selector
-  - If no matching keyword, alert must fail back to the original command
