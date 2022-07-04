@@ -410,7 +410,7 @@ constant NULL_ALERT = ([
 	"volume": 0.5, "whitespace": "normal",
 	"fontweight": "normal", "fontstyle": "normal", "fontsize": "24",
 	"strokewidth": "None", "strokecolor": "#000000", "borderwidth": "0",
-	"padvert": "0", "padhoriz": "0", "textalign": "start",
+	"padvert": "0", "padhoriz": "0", "textalign": "start", "textformat": "",
 	"shadowx": "0", "shadowy": "0", "shadowalpha": "0", "bgalpha": "0",
 	"tts_text": "", "tts_dwell": "0", "tts_volume": 0, "tts_filter_emotes": "cheers",
 	"tts_filter_badwords": "none", "tts_min_bits": "0",
@@ -899,15 +899,18 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		int idx = search(ALERTTYPES->id, basetype);
 		array(string) condvars = ALERTTYPES[idx]->condition_vars;
 		if (condvars) foreach (condvars, string c) {
+			int is_str = c[0] == '\'';
+			c = c[is_str..]; //Strip off the text marker
 			string oper = msg["condoper-" + c];
 			if (!oper || oper == "") continue; //Don't save the value if no operator set
 			//TODO-STRCOND: Need == and incl for strings
 			if (oper != "==" && oper != ">=") oper = ">="; //May need to expand the operator list, but these are the most common
 			data["condoper-" + c] = oper;
 			//Note that setting the operator and leaving the value blank will set the value to zero.
-			//TODO-STRCOND: Need to not intify
-			int val = (int)msg["condval-" + c];
+			int|string val = msg["condval-" + c];
+			if (!is_str) val = (int)val;
 			data["condval-" + c] = val;
+			if (is_str) val = sizeof(val); //TODO: Tweak specificities in some way to make the display look good
 			//Note that ">= 0" is no specificity, as zero is considered "unassigned".
 			//Note: Technically, the specificity could be the same for all equality
 			//checks; however, since alert variants are ordered by specificity, it is
@@ -1146,7 +1149,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 
 	if (suppress_alert) return 0;
 	//A completely null alert does not actually fire.
-	if (!resolved->image && !resolved->sound && resolved->tts_text == "" && !resolved->text) return 0;
+	if (!resolved->image && !resolved->sound && resolved->tts_text == "" && resolved->textformat == "") return 0;
 
 	//Retain alert HERE to remember the precise type
 	//On replay, if alerttype does not exist, replay with base alert type?

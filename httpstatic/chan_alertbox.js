@@ -105,14 +105,14 @@ function load_data(type, attrs, par) {
 
 function make_condition_vars(vars) {
 	return vars && vars.map(c => TR([
-		//TODO-STRCOND: Handle differently, incl putting more width on the input
-		TD(c), //TODO: Replace with a description
-		TD(SELECT({name: "condoper-" + c}, [
+		TD(c.replace("'", "")), //TODO: Replace with a description
+		TD(SELECT({name: "condoper-" + c.replace("'", "")}, [
 			OPTION({value: ""}, "n/a"),
 			OPTION({value: "=="}, "is exactly"),
-			OPTION({value: ">="}, "is at least"),
+			c[0] === "'" ? OPTION({value: "incl"}, "includes") :
+				OPTION({value: ">="}, "is at least"),
 		])),
-		TD(INPUT({name: "condval-" + c, type: "number"})),
+		TD(INPUT({name: "condval-" + c.replace("'", ""), type: c[0] === "'" ? "text" : "number"})),
 	]));
 }
 
@@ -457,9 +457,12 @@ on("change", ".condbox", e => {
 	e.match.querySelectorAll("[name^=condoper-]").forEach(el => {
 		let desc = e.match.querySelector("[name=" + el.name.replace("oper-", "val-") + "]").value || 0;
 		if (el.value === ">=") desc += "+"; //eg ">= 100" is shown as "100+"
+		else if (el.value === "incl") desc = "incl " + desc; //"text incl Hello"
 		else if (el.value !== "==") return; //Condition not applicable
 		//Special case: "tier 2" instead of "2 tier"
 		if (el.name === "condoper-tier") desc = "tier " + desc;
+		//Another special case: "text" gets described differently. FIXME: Don't say "text is incl X"
+		else if (el.name === "condoper-text") desc = "text is " + desc;
 		else desc += " " + el.name.split("-")[1];
 		conds.push(desc);
 	});
