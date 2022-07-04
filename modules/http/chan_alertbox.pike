@@ -1095,9 +1095,9 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
 	if (!cfg->?authkey) return 0;
 	int suppress_alert = 0;
-	if (!args->text) { //Conditions are ignored if the alert is pushed via the builtin
-		mapping alert = cfg->alertconfigs[alerttype]; if (!alert) return 0; //No alert means it can't possibly fire
-		if (!alert->active) return 0;
+	mapping alert = cfg->alertconfigs[alerttype]; if (!alert) return 0; //No alert means it can't possibly fire
+	if (!alert->active) return 0;
+	if (!args->text) { //Alert-specific conditions are ignored if the alert is pushed via the builtin
 		int idx = search(ALERTTYPES->id, (alerttype/"-")[0]); //TODO: Rework this so it's a lookup instead (this same check is done twice)
 		array(string) condvars = ALERTTYPES[idx]->condition_vars;
 		if (condvars) foreach (condvars, string c) {
@@ -1118,23 +1118,36 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 				}
 			}
 		}
-		//Note that due to the oddities of alertsets and inheritance, we actually
-		//use the *resolved* config to check an alert set. This allows a variant
-		//to choose its alertset, it allows a base alert to choose the alertset
-		//for all variants, but not for the base alert AND the variant to select
-		//conflicting alertsets. Since (as of 20220520) you can't have multiple
-		//alert sets active at once, such an alert would never fire anyway.
-		string setname = G_G_("alertbox_resolved", (string)channel->userid, alerttype)["cond-alertset"];
-		if (mapping set = cfg->alertconfigs[setname]) {
-			//Check that the alert set is active, if one is selected
-			if (!set->active) return 0;
+	} else { //When pushed via the builtin, the only condition possible is a string comparison on the text.
+		string val = args->text;
+		string comp = alert["condval-text"];
+		switch (alert["condoper-text"]) {
+			case "==": if (val != comp) return 0;
+			//TODO: Need incl operator as above
+			default: break;
 		}
-
-		//If any variant responds, use that instead.
-		foreach (alert->variants || ({ }), string subid)
-			if (send_alert(channel, subid, args)) return 1;
 	}
+	//Note that due to the oddities of alertsets and inheritance, we actually
+	//use the *resolved* config to check an alert set. This allows a variant
+	//to choose its alertset, it allows a base alert to choose the alertset
+	//for all variants, but not for the base alert AND the variant to select
+	//conflicting alertsets. Since (as of 20220520) you can't have multiple
+	//alert sets active at once, such an alert would never fire anyway.
+	mapping resolved = G_G_("alertbox_resolved", (string)channel->userid, alerttype);
+	string setname = resolved["cond-alertset"];
+	if (mapping set = cfg->alertconfigs[setname]) {
+		//Check that the alert set is active, if one is selected
+		if (!set->active) return 0;
+	}
+
+	//If any variant responds, use that instead.
+	foreach (alert->variants || ({ }), string subid)
+		if (send_alert(channel, subid, args)) return 1;
+
 	if (suppress_alert) return 0;
+	//A completely null alert does not actually fire.
+	if (!resolved->image && !resolved->sound && resolved->tts_text == "" && !resolved->text) return 0;
+
 	//Retain alert HERE to remember the precise type
 	//On replay, if alerttype does not exist, replay with base alert type?
 	args |= (["send_alert": alerttype]);
