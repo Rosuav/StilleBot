@@ -384,6 +384,16 @@ constant ALERTTYPES = ({([
 	"testpholders": (["bits": ({1, 25000})]),
 	"builtin": "connection",
 	"condition_vars": ({"bits"}),
+]), ([
+	//Settings for personal alerts (must be last in the array)
+	"placeholders": ([
+		"text": "Text provided with the alert trigger",
+	]),
+	"testpholders": ([
+		"text": "This is a test personal alert.",
+		"TEXT": "This is a test personal alert.",
+	]),
+	"condition_vars": ({"'text"}),
 ])});
 constant SINGLE_EDIT_ATTRS = ({"image", "sound"}); //Attributes that can be edited by the client without changing the rest
 constant RETAINED_ATTRS = SINGLE_EDIT_ATTRS + ({"version", "variants", "image_is_video"}); //Attributes that are not cleared when a full edit is done (changing the format)
@@ -445,7 +455,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mapping cfg = persist_status->path("alertbox", (string)req->misc->channel->userid);
 	//For API usage eg command viewer, provide some useful information in JSON.
 	if (req->variables->summary) return jsonify(([
-		"stdalerts": ALERTTYPES[2..],
+		"stdalerts": ALERTTYPES[2..<1],
 		"personals": cfg->personals || ({ }),
 	]));
 	if (!req->misc->session->fake && req->request_type == "POST") {
@@ -583,7 +593,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		cfg->alertconfigs->defaults || ([]), 0);
 	return (["items": cfg->files || ({ }),
 		"alertconfigs": cfg->alertconfigs,
-		"alerttypes": ALERTTYPES + (cfg->personals || ({ })),
+		"alerttypes": ALERTTYPES[..<1] + (cfg->personals || ({ })),
 		"hostlist_command": cfg->hostlist_command || "",
 		"hostlist_format": cfg->hostlist_format || "",
 		"replay": cfg->replay || ({ }),
@@ -752,10 +762,7 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 	]);
 	if (variation && !cfg->alertconfigs[msg->type]) alert->send_alert = basetype; //Borked variation name? Test the base alert instead.
 	int idx = search(ALERTTYPES->id, basetype);
-	mapping pholders = idx >= 0 ? ALERTTYPES[idx]->testpholders : ([
-		"text": "This is a test personal alert.",
-		"TEXT": "This is a test personal alert.",
-	]);
+	mapping pholders = ALERTTYPES[idx]->testpholders;
 	mapping alertcfg = cfg->alertconfigs[msg->type];
 	foreach (pholders; string key; string|array value) {
 		if (alertcfg["condoper-" + key] == "==") {alert[key] = (string)alertcfg["condval-" + key]; continue;}
@@ -890,13 +897,15 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		//variables, and "sub tier == 2" is also worth 10,000,000.
 		int specificity = 0;
 		int idx = search(ALERTTYPES->id, basetype);
-		array(string) condvars = idx >= 0 && ALERTTYPES[idx]->condition_vars;
+		array(string) condvars = ALERTTYPES[idx]->condition_vars;
 		if (condvars) foreach (condvars, string c) {
 			string oper = msg["condoper-" + c];
 			if (!oper || oper == "") continue; //Don't save the value if no operator set
+			//TODO-STRCOND: Need == and incl for strings
 			if (oper != "==" && oper != ">=") oper = ">="; //May need to expand the operator list, but these are the most common
 			data["condoper-" + c] = oper;
 			//Note that setting the operator and leaving the value blank will set the value to zero.
+			//TODO-STRCOND: Need to not intify
 			int val = (int)msg["condval-" + c];
 			data["condval-" + c] = val;
 			//Note that ">= 0" is no specificity, as zero is considered "unassigned".
@@ -1090,11 +1099,13 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 		mapping alert = cfg->alertconfigs[alerttype]; if (!alert) return 0; //No alert means it can't possibly fire
 		if (!alert->active) return 0;
 		int idx = search(ALERTTYPES->id, (alerttype/"-")[0]); //TODO: Rework this so it's a lookup instead (this same check is done twice)
-		array(string) condvars = idx >= 0 ? ALERTTYPES[idx]->condition_vars : ({ });
+		array(string) condvars = ALERTTYPES[idx]->condition_vars;
 		if (condvars) foreach (condvars, string c) {
+			//TODO-STRCOND: Don't intify if string var
 			int val = (int)args[c];
 			int comp = alert["condval-" + c];
 			switch (alert["condoper-" + c]) {
+				//TODO-STRCOND: Need incl operator for strings
 				case "==": if (val != comp) return 0;
 				case ">=": if (val < comp) return 0;
 				default: {
