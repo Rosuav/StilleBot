@@ -252,8 +252,8 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 			case "cost": params->cost = (int)arg; break;
 			case "fulfil": case "cancel": if (arg != "") { //Not an error to attempt to mark nothing
 				complete_redemption(channel->name[1..], reward_id, arg, cmd == "fulfil" ? "FULFILLED" : "CANCELED");
-				empty_ok = 1;
 			}
+			empty_ok = 1;
 			break;
 			default: return (["{error}": sprintf("Unknown action %O", cmd)]);
 		}
