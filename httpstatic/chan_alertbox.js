@@ -105,6 +105,7 @@ function load_data(type, attrs, par) {
 
 function make_condition_vars(vars) {
 	return vars && vars.map(c => TR([
+		//TODO-STRCOND: Handle differently, incl putting more width on the input
 		TD(c), //TODO: Replace with a description
 		TD(SELECT({name: "condoper-" + c}, [
 			OPTION({value: ""}, "n/a"),
@@ -173,8 +174,13 @@ export function render(data) {
 	if (data.alerttypes) data.alerttypes.forEach(info => {
 		const type = info.id;
 		alert_definitions[type] = info;
-		const placeholder_description = !info.placeholders ? [BR(), CODE("{text}"), " - the text used to trigger the alert"]
-			: Object.entries(info.placeholders).map(([k,d]) => [BR(), CODE("{" + k + "}"), " - " + d]);
+		if (!info.placeholders) {
+			//Personal alerts don't have all their data stored, since it would be the same for all
+			//personals, and might change over time. (TODO: Send it from the back end instead?)
+			info.placeholders = {text: "the text used to trigger the alert"};
+			info.condition_vars = ["'text"];
+		}
+		const placeholder_description = Object.entries(info.placeholders).map(([k,d]) => [BR(), CODE("{" + k + "}"), " - " + d]);
 		if (alerttypes[type]) {
 			for (let kwd in info) {
 				let txt = info[kwd];
