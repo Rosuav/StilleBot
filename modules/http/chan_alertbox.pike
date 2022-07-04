@@ -1184,12 +1184,12 @@ mapping message_params(object channel, mapping person, array|string param)
 	//TODO: If text isn't exactly %s but is contained in it, give an offset.
 	//TODO: If %s is contained in text, parse that somehow too.
 	if (text == person->vars[?"%s"]) emotes = parse_emotes(text, person);
-	send_alert(channel, alert, ([
+	int sent = send_alert(channel, alert, ([
 		"TEXT": text || "",
 		"text": text || "",
 		"username": person->displayname,
 	]) | emotes);
-	return (["{error}": ""]);
+	return (["{error}": "", "{alert_sent}": sent ? "yes" : "no"]);
 }
 
 @hook_follower:
