@@ -51,6 +51,29 @@ export function sockmsg_authkey(msg) {
 	if (DOM("#previewdlg").open) DOM("#alertembed").src = DOM("#alertboxlink").href;
 }
 
+let ip_history = null, ip_log = [];
+function update_ip_log() {
+	set_content("#ip_log", ip_log.map(([ip, n, from, to]) => {
+		if (!ip_history || ip > ip_history.length) ip = "IP #" + (ip + 1);
+		else ip = ip_history[ip];
+		let times = n + " times";
+		if (n === 1) times = "just once";
+		else if (n === 2) times = "twice";
+		let dates;
+		from = new Date(from * 1000).toLocaleDateString();
+		to = new Date(to * 1000).toLocaleDateString();
+		//Note that from and to can be equal even if the original timestamps weren't
+		//(since we're just reporting the date, not the time).
+		if (from === to) dates = " on " + from;
+		else dates = " between " + from + " and " + to;
+		return LI([
+			B(ip),
+			" - " + times + dates
+		]);
+	}));
+}
+export function sockmsg_auditlog(msg) {ip_history = msg.ip_history; update_ip_log();}
+
 function update_condition_summary(par) {
 	const target = par.querySelector(".cond-label");
 	if (target) set_content(target, par.querySelector("[name=cond-label]").value || "always");
@@ -441,6 +464,11 @@ export function render(data) {
 			" ",
 			BUTTON({class: "replayalert", "data-alertidx": i + ofs}, "⟲"),
 		]), (replay_details[r.send_alert.split("-")[0]] || replay_details.personal)(r)])));
+	}
+	if (data.ip_log) {
+		if (!ip_history) {ws_sync.send({cmd: "auditlog"}); ip_history = [];} //Only fetch once. Refresh the page if you notice that there's a new IP.
+		ip_log = data.ip_log;
+		update_ip_log();
 	}
 }
 

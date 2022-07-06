@@ -47,6 +47,10 @@ $$notmod2||[Show library](:.showlibrary) [Recent events](:#recentevents .dlg)$$
 > After doing this, you will need to update any browser sources showing your alerts,<br>
 > but all your configuration will be retained.
 >
+> Your authentication key has been used from these locations:
+> * loading IP history...
+> {: #ip_log}
+>
 > [Generate a new key, disabling the old one](:#confirmrevokekey) [Cancel](:.dialog_close)
 {: tag=dialog #revokekeydlg}
 
@@ -645,7 +649,7 @@ void websocket_cmd_auditlog(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (!channel || grp != "control") return;
 	if (conn->session->user->id != (string)channel->userid) return;
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "auditlog", "iphistory": cfg->ip_history]), 4));
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "auditlog", "ip_history": cfg->ip_history]), 4));
 }
 
 //NOW it's personal.
