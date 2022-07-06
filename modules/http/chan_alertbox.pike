@@ -624,6 +624,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		"hostlist_format": cfg->hostlist_format || "",
 		"replay": cfg->replay || ({ }),
 		"replay_offset": cfg->replay_offset || 0,
+		"ip_log": cfg->ip_log || ({ }),
 	]);
 }
 
@@ -637,6 +638,14 @@ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->authkey) {cfg->authkey = String.string2hex(random_string(11)); persist_status->save();}
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "authkey", "key": cfg->authkey]), 4));
+}
+
+void websocket_cmd_auditlog(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel || grp != "control") return;
+	if (conn->session->user->id != (string)channel->userid) return;
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "auditlog", "iphistory": cfg->ip_history]), 4));
 }
 
 //NOW it's personal.
