@@ -104,15 +104,6 @@
   - Add link to the /channels/NAME/ landing page once it's ready for launch
 * Break out name-to/from-uid mappings into a separate file, maybe not even JSON? Ditto
   the raidfinder cache. Between them they are the bulk of persist_status.
-* Alert Box: Alert conditions/variations
-  - Not currently supported for host alerts as they are managed directly by the client.
-    Changing this would require pushing them out from the server too - might be worth
-    it. Unfortunately host notifications require a chat connection logged in as the
-    broadcaster, which is most elegantly done on the client; but there are security
-    benefits to doing this on the server, so there may be enough value to justify the
-    complexity. Would want to have the websocket from the client cause the IRC conn to
-    be flagged as in-use, which might mean we'll want to just let them get disconnected
-    and then have a hook that reconnects if there are any active websockets.
 * Ghostwriter needs a LOT more error checking. Maybe, on error, reschedule check five mins?
 * Get some default alerts, which will be there (but disabled) initially
   - Collaborate with an artist to make a default animation???
