@@ -560,6 +560,32 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (sscanf(msg->group, "demo-%s#", string ip) && ip) {
 		if (ip != conn->remote_ip) return "That's not where you are";
 	}
+	[object channel, string grp] = split_channel(msg->group);
+	mapping cfg = channel && persist_status->path("alertbox", (string)channel->userid);
+	if (grp == cfg->?authkey) {
+		//When using the official auth key (which will yield the OAuth token), log
+		//the IP address used. This will give some indication of whether the key
+		//has been leaked. In case mods aren't granted full details of the bcaster's
+		//internet location, we obscure the actual IPs behind "IP #1", "IP #2" etc,
+		//with the translation to dotted-quad or IPv6 being stored separately.
+
+		//1) Translate conn->remote_ip into an IP index
+		int idx = search(cfg->ip_history || ({ }), conn->remote_ip);
+		if (idx == -1) {
+			cfg->ip_history += ({conn->remote_ip});
+			idx = sizeof(cfg->ip_history) - 1;
+		}
+		//2) Add a log entry, as compactly as possible
+		if (!cfg->ip_log || !sizeof(cfg->ip_log) || cfg->ip_log[-1][0] != idx) {
+			//Add a new log entry: this IP index, one retrieval between now and now
+			cfg->ip_log += ({({idx, 1, time(), time()})});
+		} else {
+			//For compactness, augment the existing entry.
+			array log = cfg->ip_log[-1];
+			++log[1]; log[3] = time();
+		}
+		persist_status->save();
+	}
 }
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
