@@ -9,6 +9,7 @@ int main(int argc, array(string) argv)
 		if (sizeof(seen) == 1 && seen[name]) {write(name + ": No others seen\n"); continue;}
 		array names = indices(seen), times = values(seen);
 		sort(times, names);
+		names -= ({"jtv", "tmi"});
 		write(name + ": " + names * ", " + "\n");
 	}
 }

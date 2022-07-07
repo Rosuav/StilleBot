@@ -60,7 +60,7 @@ string process(object channel, object person, string param)
 	mapping u2n = persist_status->path("uid_to_name", uid);
 	array names = indices(u2n);
 	sort(values(u2n), names);
-	names -= ({"jtv"}); //Some junk data in the files implies falsely that some people renamed to "jtv"
+	names -= ({"jtv", "tmi"}); //Some junk data in the files implies falsely that some people renamed to "jtv" or "tmi"
 	if (sizeof(names) < 2) return "@$$: No name changes found.";
 	write("%O\n", names); //In case we care about other names
 	if (channel->name == "#silentlilac") return sprintf("!transfer %s %s", names[-2], names[-1]);
