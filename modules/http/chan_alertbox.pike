@@ -1421,3 +1421,29 @@ protected void create(string name) {
 	foreach (persist_status->path("alertbox"); string userid;)
 		if (!resolved[userid]) resolve_all_inherits(userid);
 }
+
+/* A Tale of Two Backends
+
+(Technically three, since "None" is viable, but it's just "not this and not this")
+
+Host alerts can be provided serverside (backend == "pike") or clientside (backend == "js").
+These are not currently at feature parity, and they will never be identical in flexibility or security.
+
+JS backend
+==========
+
+* Uses ComfyJS inside CEF inside OBS
+* Supports !hostlist command to report current hosts
+* Independent of IRC issues on Sikorsky
+* Requires OAuth token to be sent to client
+
+Pike backend
+============
+
+* Uses IRC and pushes signals on websocket
+* No !hostlist command. If one is needed, try using the command system to implement it?
+* Requires OAuth on the back end only - much safer
+* Capable of alert variants, filtering, etc, but not implemented yet
+* Can recognize raids
+
+*/
