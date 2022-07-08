@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, ABBR, AUDIO, B, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR, VIDEO} = choc; //autoimport
+const {A, ABBR, AUDIO, B, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR, UL, VIDEO} = choc; //autoimport
 import {waitlate, TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
@@ -233,11 +233,19 @@ export function render(data) {
 			P([
 				!info.builtin && BUTTON({type: "button", className: "editpersonaldesc", title: "Edit"}, "📝"),
 				SPAN({class: "description not-alertset"}, info.description),
-				type === "hostalert" && host_alert_scopes && P({class: "need-auth"}, [
+				type === "variant" && SPAN({class: "not-variant"}, "Create alert sets to easily enable/disable all associated alert variants. You can also set layout defaults for alert sets."),
+			]),
+			type === "hostalert" && P({class: "no-dirty no-inherit"}, [
+				host_alert_scopes && DIV({class: "need-auth"}, [
 					"Host alerts require authentication as the broadcaster. ",
 					BUTTON({class: "twitchlogin", "data-scopes": host_alert_scopes}, "Grant permissions"),
 				]),
-				type === "variant" && SPAN({class: "not-variant"}, "Create alert sets to easily enable/disable all associated alert variants. You can also set layout defaults for alert sets."),
+				"Select host detection back end: ",
+				SELECT({name: "hostbackend"}, [
+					OPTION({value: "none"}, "None"),
+					OPTION({value: "js"}, "JavaScript"),
+					OPTION({value: "pike"}, "Pike"),
+				]),
 			]),
 			type === "variant" && P({class: "no-inherit no-dirty"}, [
 				//No inherit and no dirty, this is a selector not a saveable
@@ -470,6 +478,7 @@ export function render(data) {
 		ip_log = data.ip_log;
 		update_ip_log();
 	}
+	if (data.hostbackend) DOM("select[name=hostbackend]").value = data.hostbackend;
 }
 
 on("click", ".replayalert", e => ws_sync.send({cmd: "replay_alert", idx: e.match.dataset.alertidx|0}));
@@ -499,6 +508,8 @@ on("change", ".condbox", e => {
 });
 
 on("input", ".condbox [name=cond-label]", e => e.match.closest(".condbox").querySelector("[name=cond-disableautogen]").checked = true);
+
+on("change", "[name=hostbackend]", e => ws_sync.send({cmd: "config", hostbackend: e.match.value}));
 
 on("click", ".editvariants", e => {
 	const type = e.match.closest("form").dataset.type;

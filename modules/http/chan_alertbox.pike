@@ -629,6 +629,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		"replay": cfg->replay || ({ }),
 		"replay_offset": cfg->replay_offset || 0,
 		"ip_log": cfg->ip_log || ({ }),
+		"hostbackend": cfg->hostbackend || "none",
 	]);
 }
 
@@ -826,7 +827,7 @@ void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!channel || grp != "control") return;
 	if (conn->session->fake) return;
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	foreach ("hostlist_command hostlist_format" / " ", string key)
+	foreach ("hostlist_command hostlist_format hostbackend" / " ", string key)
 		if (stringp(msg[key])) cfg[key] = msg[key];
 	persist_status->save();
 	send_updates_all(conn->group);
