@@ -20,8 +20,9 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 
 > ### Library
 >
-> Upload files (up to 8MB each) to use in your alerts. You may also
-> link to files that are accessible on the internet.
+> Upload files (up to 8MB each) to use in your alerts. You may also link to files
+> that are accessible on the internet. NOTE: OBS does not support all media formats,
+> and best results are often achieved with GIF, WEBM, WAV, OGG, and PNG.
 >
 > <div id=uploaderror class=hidden></div>
 >

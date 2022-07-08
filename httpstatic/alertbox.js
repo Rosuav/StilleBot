@@ -8,7 +8,6 @@ const EMPTY_AUDIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAA
 
 function img_or_video(data) {
 	if (!data.image_is_video) return IMG({class: "mainimg", src: data.image || TRANSPARENT_IMAGE});
-	//FIXME: Videos don't seem to be playing. Maybe switch from src to <source>?
 	const el = VIDEO({class: "mainimg", src: data.image, preload: "auto", loop: true});
 	el.muted = true;
 	return el;
