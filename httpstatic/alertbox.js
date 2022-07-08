@@ -81,9 +81,11 @@ export function render(data) {
 	if (data.raidhack) current_hosts[data.raidhack] = 1;
 	if (data.token && data.token !== token) {
 		if (inited) ComfyJS.Disconnect();
-		inited = true;
-		token = data.token;
-		ComfyJS.Init(ws_group.split("#")[1], data.token);
+		if (data.token !== "backendinstead") {
+			inited = true;
+			token = data.token;
+			ComfyJS.Init(ws_group.split("#")[1], data.token);
+		}
 	}
 	if (data.breaknow) {
 		//Token has been revoked. This will be the last message we receive

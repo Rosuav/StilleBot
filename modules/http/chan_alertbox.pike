@@ -541,7 +541,7 @@ void ensure_host_connection(string chan) {
 	//If host alerts are active, we need notifications so we can push them through.
 	object channel = G->G->irc->channels["#" + chan];
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	if (cfg->alertconfigs->?hostalert->?active) {
+	if (cfg->hostbackend == "pike") {
 		werror("ALERTBOX: Ensuring connection for %O/%O\n", chan, channel->userid);
 		irc_connect((["user": chan, "userid": channel->userid]))->then() {
 			werror("ALERTBOX: Connected to %O\n", chan);
@@ -601,8 +601,11 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		string chan = channel->name[1..];
 		ensure_host_connection(chan);
 		string token;
-		if (grp == cfg->authkey && has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read"))
-			token = persist_status->path("bcaster_token")[chan];
+		if (grp == cfg->authkey && has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read")) {
+			//FIXME: Default to NOT using the JS backend
+			if (!cfg->hostbackend || cfg->hostbackend == "js") token = persist_status->path("bcaster_token")[chan];
+			else token = "backendinstead";
+		}
 		return ([
 			"alertconfigs": G_G_("alertbox_resolved")[(string)channel->userid] || ([]),
 			"token": token,
@@ -629,7 +632,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		"replay": cfg->replay || ({ }),
 		"replay_offset": cfg->replay_offset || 0,
 		"ip_log": cfg->ip_log || ({ }),
-		"hostbackend": cfg->hostbackend || "none",
+		"hostbackend": cfg->hostbackend || "js", //FIXME: Default to "none", or to "pike" if auth
 	]);
 }
 
@@ -1325,12 +1328,16 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 		//else sscanf(msg, "%s is now hosting for %s viewers", target, viewers)?
 		werror("ALERTBOX: Host target (%O, %O, %O)\n", chan, target, viewers);
 		Stdio.append_file("alertbox_hosts.log", sprintf("[%d] SRVHOST: %s -> %O\n", time(), chan, msg));
-		//TODO: Have a way to select which engine to use - ComfyJS or backend -
-		//and only if backend is selected, send_alert.
-		/*if (target && target != "-") send_alert(G->G->irc->channels[chan], "hostalert", ([
-			"NAME": target, "username": target,
-			"VIEWERS": viewers, "viewers": viewers,
-		]));*/
+		if (target && target != "-") {
+			object channel = G->G->irc->channels[chan]; if (!channel) return;
+			mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+			if (cfg->hostbackend == "pike") {
+				send_alert(channel, "hostalert", ([
+					"NAME": target, "username": target,
+					"VIEWERS": viewers, "viewers": viewers,
+				]));
+			}
+		}
 	}
 }
 
@@ -1345,8 +1352,8 @@ void irc_closed(mapping options) {
 	//If we still need host alerts for this user, reconnect.
 	mapping cfg = persist_status->path("alertbox", (string)options->userid);
 	array socks = websocket_groups[cfg->authkey + "#" + options->user] || ({ });
-	werror("ALERTBOX: irc_closed for %O, %d connections, active %O\n", options->user, sizeof(socks), cfg->alertconfigs->?hostalert->?active);
-	if (sizeof(socks) && cfg->alertconfigs->?hostalert->?active) irc_connect(options);
+	werror("ALERTBOX: irc_closed for %O, %d connections, active %O\n", options->user, sizeof(socks), cfg->hostbackend == "pike");
+	if (sizeof(socks) && cfg->hostbackend == "pike") irc_connect(options);
 }
 
 continue Concurrent.Future fetch_tts_credentials(int fast) {

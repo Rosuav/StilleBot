@@ -153,3 +153,5 @@
   - None: default and only available option if no auth
   - JS: minimal dependencies, limited featureset, requires clientside auth
   - Pike: full-featured but depends on a backend connection
+* Reimplement hostlist_command/hostlist_format for Pike backend
+  - When should it reset the list?
