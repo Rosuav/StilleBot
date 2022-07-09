@@ -387,7 +387,7 @@ const types = {
 	text: {
 		color: "#77eeee", width: 400, label: el => el.message,
 		params: [{attr: "message", label: "Text", values: text_message}],
-		typedesc: "Send a message in the channel",
+		typedesc: "Send a message in the channel. Commands like /announce, /me, /ban, etc all work as normal.",
 	},
 	group: {
 		color: "#66dddd", children: ["message"], label: el => "Group",
