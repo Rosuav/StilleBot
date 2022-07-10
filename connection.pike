@@ -566,7 +566,6 @@ class channel(string name) { //name begins with hash and is all lower case
 
 	mapping subbomb_ids = ([]);
 	void irc_message(string type, string chan, string msg, mapping params) {
-		//TODO: The msg parameter will now be guaranteed text, not bytes. Confirm also true for params/attrs.
 		mapping(string:mixed) person = gather_person_info(params, msg);
 		if (person->uid) user_attrs[person->uid] = person;
 		mapping responsedefaults;
