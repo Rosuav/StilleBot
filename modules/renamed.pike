@@ -30,30 +30,6 @@ string process(object channel, object person, string param)
 	last_used = time();
 	string user = person->user;
 	if (param != "" && G->G->user_mod_status[user + channel->name]) user = param - "@";
-	#if 0
-	//This service appears to be no longer available.
-
-	//For some reason, Protocols.HTTP.get_url_data() is failing with a possibly emulated HTTP 502.
-	//I can't be bothered figuring it out, so here's a shortcut: call on wget.
-	Stdio.File stdout = Stdio.File();
-	string response = "";
-	Process.Process(({"wget", "-qO-", "https://twitch-tools.rootonline.de/username_changelogs_search.php?"
-		+ Protocols.HTTP.http_encode_query((["q": user, "format": "json"]))}),
-		(["stdout": stdout->pipe()])
-	);
-	stdout->set_read_callback(lambda(mixed i, string data) {response += data;});
-	stdout->set_close_callback(lambda () {
-		stdout->set_read_callback(0);
-		catch {stdout->close();};
-		mixed data; catch {data = Standards.JSON.decode_utf8(response);};
-		if (arrayp(data) && sizeof(data))
-		{
-			sort(data->found_at, data);
-			send_message(channel->name, sprintf("!renameuser %s %s", data[-1]->username_old, user));
-		}
-		else send_message(channel->name, sprintf("@%s: No name changes found.", user));
-	});
-	#else
 	//Use our own instead. Depends on us having seen it ourselves.
 	string uid = G->G->name_to_uid[lower_case(user)];
 	if (!uid) return "@$$: Can't find an ID for that person.";
@@ -65,5 +41,4 @@ string process(object channel, object person, string param)
 	write("%O\n", names); //In case we care about other names
 	if (channel->name == "#silentlilac") return sprintf("!transfer %s %s", names[-2], names[-1]);
 	return sprintf("!renameuser %s %s", names[-2], names[-1]);
-	#endif
 }
