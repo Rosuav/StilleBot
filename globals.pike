@@ -130,9 +130,6 @@ command_handler find_command(object channel, string cmd, int is_mod)
 	}
 }
 
-//Shorthand for a common targeting style
-echoable_message targeted(string text) {return (["message": text, "prefix": "@$$: "]);}
-
 //Return a Second or a Fraction representing the given ISO time, or 0 if unparseable
 Calendar.ISO.Second time_from_iso(string time) {
 	if (object ts = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", time)) return ts;
@@ -263,32 +260,6 @@ int channel_uptime(string channel)
 {
 	if (object started = G->G->stream_online_since[channel])
 		return started->distance(Calendar.now())->how_many(Calendar.Second());
-}
-
-int invoke_browser(string url)
-{
-	if (G->G->invoke_cmd) {Process.create_process(G->G->invoke_cmd+({url})); return 1;}
-	foreach (({
-		#ifdef __NT__
-		//Windows
-		({"cmd","/c","start"}),
-		#elif defined(__APPLE__)
-		//Darwin
-		({"open"}),
-		#else
-		//Linux, various. Try the first one in the list; if it doesn't
-		//work, go on to the next, and the next. A sloppy technique. :(
-		({"xdg-open"}),
-		({"exo-open"}),
-		({"gnome-open"}),
-		({"kde-open"}),
-		#endif
-	}),array(string) cmd) catch
-	{
-		Process.create_process(cmd+({url}));
-		G->G->invoke_cmd = cmd; //Remember this for next time, to save a bit of trouble
-		return 1; //If no exception is thrown, hope that it worked.
-	};
 }
 
 mapping G_G_(string ... path)
