@@ -1,10 +1,9 @@
 int main(int argc, array(string) argv)
 {
-	mapping sta = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_status.json"));
-	if (!mappingp(sta)) exit(1, "No status found");
+	[mapping uid_to_name, mapping name_to_uid] = Standards.JSON.decode(Stdio.read_file("twitchbot_uids.json"));
 	foreach (argv[1..], string name)
 	{
-		mapping seen = sta->uid_to_name[sta->name_to_uid[lower_case(name)]];
+		mapping seen = uid_to_name[name_to_uid[lower_case(name)]];
 		if (!seen) {write(name + ": Not found\n"); continue;} //Since uid_to_name[0] is 0, this is safe
 		if (sizeof(seen) == 1 && seen[name]) {write(name + ": No others seen\n"); continue;}
 		array names = indices(seen), times = values(seen);

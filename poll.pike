@@ -107,11 +107,13 @@ inherit exporter;
 	//change is represented by the last two keys.
 	if (!login || !persist_status->path) return; //The latter check stops us from bombing in CLI usage
 	id = (string)id; login = lower_case((string)login);
-	mapping u2n = persist_status->path("uid_to_name", id);
-	if (!u2n[login]) {u2n[login] = time(); persist_status->save();}
+	int save = 0;
+	mapping u2n = G->G->uid_to_name[id]; if (!u2n) u2n = G->G->uid_to_name[id] = ([]);
+	if (!u2n[login]) {u2n[login] = time(); save = 1;}
 	//The name-to-UID mapping should be considered advisory, and useful mainly for recent ones.
-	mapping n2u = persist_status->path("name_to_uid");
-	if (n2u[login] != id) {n2u[login] = id; persist_status->save();}
+	mapping n2u = G->G->name_to_uid;
+	if (n2u[login] != id) {n2u[login] = id; save = 1;}
+	if (save) Stdio.write_file("twitchbot_uids.json", Standards.JSON.encode(({G->G->uid_to_name, G->G->name_to_uid})));
 }
 
 //Will return from cache if available. Set type to "login" to look up by name, else uses ID.
@@ -456,7 +458,7 @@ void stream_status(string name, mapping info)
 				//Synthesize a basic person mapping
 				"user": name,
 				"displayname": name, //Might not have the actual display name handy (get_channel_info is async)
-				"uid": persist_status->path("name_to_uid")[name] || "0", //It should always be there, but if someone renames while live, who knows.
+				"uid": G->G->name_to_uid[name] || "0", //It should always be there, but if someone renames while live, who knows.
 			]), ([
 				"{uptime}": (string)uptime,
 				"{uptime_hms}": describe_time_short(uptime),
@@ -712,6 +714,17 @@ protected void create(string|void name)
 	if (!G->G->channel_info) G->G->channel_info = ([]);
 	if (!G->G->category_names) G->G->category_names = ([]);
 	if (!G->G->user_info) G->G->user_info = ([]);
+	if (!G->G->uid_to_name) {
+		G->G->uid_to_name = ([]);
+		G->G->name_to_uid = ([]);
+		catch {[G->G->uid_to_name, G->G->name_to_uid] = Standards.JSON.decode(Stdio.read_file("twitchbot_uids.json"));};
+		//Migrate UID mappings from persist
+		mapping u2n = m_delete(persist_status, "uid_to_name");
+		mapping n2u = m_delete(persist_status, "name_to_uid");
+		if (u2n && !sizeof(G->G->uid_to_name)) G->G->uid_to_name = u2n;
+		if (n2u && !sizeof(G->G->name_to_uid)) G->G->name_to_uid = n2u;
+		if (u2n || n2u) {persist_status->save(); Stdio.write_file("twitchbot_uids.json", Standards.JSON.encode(({G->G->uid_to_name, G->G->name_to_uid})));}
+	}
 
 	if (!persist_config["allcmds_migrated"]) {
 		//CJA 20210726: Formerly, "allcmds" meant active and allcmds, and "httponly"

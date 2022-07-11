@@ -17,7 +17,7 @@ string process(object channel, object person, string param)
 			foreach (info->comments, mapping msg)
 			{
 				mapping person = msg->commenter;
-				mapping u2n = persist_status->path("uid_to_name", person->_id);
+				mapping u2n = G->G->uid_to_name[person->_id] || ([]);
 				object ts = time_from_iso(msg->created_at);
 				if (!ts) continue;
 				int t = ts->unix_time();
@@ -55,9 +55,9 @@ string process(object channel, object person, string param)
 	});
 	#else
 	//Use our own instead. Depends on us having seen it ourselves.
-	string uid = persist_status->path("name_to_uid")[lower_case(user)];
+	string uid = G->G->name_to_uid[lower_case(user)];
 	if (!uid) return "@$$: Can't find an ID for that person.";
-	mapping u2n = persist_status->path("uid_to_name", uid);
+	mapping u2n = G->G->uid_to_name[uid] || ([]);
 	array names = indices(u2n);
 	sort(values(u2n), names);
 	names -= ({"jtv", "tmi"}); //Some junk data in the files implies falsely that some people renamed to "jtv" or "tmi"

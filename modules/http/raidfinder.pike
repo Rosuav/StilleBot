@@ -530,7 +530,7 @@ continue Concurrent.Future|int guess_user_id(string name, int|void fastonly) {
 		if (id) return id; //If the name currently exists, hope that it is the right person.
 	};
 	//Otherwise, try to look up our history of old names
-	mapping n2u = persist_status->path("name_to_uid");
+	mapping n2u = G->G->name_to_uid;
 	if (n2u[name]) return (int)n2u[name];
 	//Otherwise, bail.
 	return 0;
