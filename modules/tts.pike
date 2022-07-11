@@ -109,8 +109,7 @@ echoable_message process(object channel, object person, string param)
 	}
 }
 
-@hook_allmsgs:
-int message(object channel, mapping person, string msg)
+@hook_allmsgs: int message(object channel, mapping person, string msg)
 {
 	if (channel->name != G->G->tts_channel || !G->G->tts_queue) return 0;
 	if (has_prefix(msg, "!")) return 0; //Ignore bot commands
@@ -119,14 +118,14 @@ int message(object channel, mapping person, string msg)
 	return 0;
 }
 
-int delmsg(object channel, object person, string target, string msgid)
+@hook_deletemsg: int delmsg(object channel, object person, string target, string msgid)
 {
 	if (channel->name != G->G->tts_channel || !G->G->tts_queue) return 0;
 	write("TTS hide: %O %O\n", target, msgid);
 	G->G->tts_suppress[msgid] = 1;
 	G->G->tts_queue->write((["type": "unsuppress", "target": msgid]));
 }
-int purge(object channel, object person, string target)
+@hook_deletemsgs: int purge(object channel, object person, string target)
 {
 	if (channel->name != G->G->tts_channel || !G->G->tts_queue) return 0;
 	write("TTS purge: %O\n", target);
@@ -138,7 +137,7 @@ int purge(object channel, object person, string target)
 protected void create(string name)
 {
 	G->G->tts_suppress = (<>);
-	register_hook("delete-msg", delmsg);
-	register_hook("delete-msgs", purge);
+	register_hook("delete-msg", Program.defined(this_program));
+	register_hook("delete-msgs", Program.defined(this_program));
 	::create(name);
 }

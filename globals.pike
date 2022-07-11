@@ -322,6 +322,7 @@ class hook {
 @"G->G->hooks";
 void register_hook(string event, function|string handler)
 {
+	if (functionp(handler)) werror("WARNING: Deprecated use of register_hook() - use 'inherit hook' instead\n");
 	string origin = functionp(handler) ? Program.defined(function_program(handler)) : handler;
 	//Trim out any hooks for this event that were defined in the same class
 	//"Same class" is identified by its textual origin, rather than the actual
