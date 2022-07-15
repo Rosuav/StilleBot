@@ -128,7 +128,7 @@ function load_data(type, attrs, par) {
 
 function make_condition_vars(vars) {
 	return vars && vars.map(c => TR([
-		TD(c.replace("'", "")), //TODO: Replace with a description
+		TD(c.replace("'", "")), //TODO: Replace with a short name
 		TD(SELECT({name: "condoper-" + c.replace("'", "")}, [
 			OPTION({value: ""}, "n/a"),
 			OPTION({value: "=="}, "is exactly"),
@@ -136,6 +136,7 @@ function make_condition_vars(vars) {
 				OPTION({value: ">="}, "is at least"),
 		])),
 		TD(INPUT({name: "condval-" + c.replace("'", ""), type: c[0] === "'" ? "text" : "number"})),
+		//TD(description), //TODO
 	]));
 }
 
