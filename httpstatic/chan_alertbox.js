@@ -472,6 +472,7 @@ export function render(data) {
 		}
 	}
 	//TODO: Migrate this to autorender, but first, have the alertidx come from the server
+	//(With autorender, the display order may have to be managed in CSS instead)
 	if (data.replay) {
 		const ofs = data.replay_offset || 0;
 		if (!data.replay.length) set_content("#replays", "No events to replay");
