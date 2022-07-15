@@ -930,7 +930,6 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	}
 	textformatting_validate(data);
 
-	resolve_affected_inherits((string)channel->userid, msg->type);
 	if (basetype != "defaults") {
 		//Calculate specificity.
 		//The calculation assumes that all comparison values are nonnegative integers.
@@ -969,6 +968,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 		}
 		data->specificity = specificity;
 	}
+	resolve_affected_inherits((string)channel->userid, msg->type);
 	if (variation) {
 		//For convenience, every time a change is made, we update an array of
 		//variants in the base alert's data.
