@@ -253,6 +253,7 @@ export function render(data) {
 					OPTION({value: "js"}, "JavaScript"),
 					OPTION({value: "pike"}, "Pike"),
 				]),
+				" (Pike backend supports variants, JS backend supports !hostlist command)",
 			]),
 			type === "variant" && P({class: "no-inherit no-dirty"}, [
 				//No inherit and no dirty, this is a selector not a saveable
