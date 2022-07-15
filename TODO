@@ -147,3 +147,5 @@
   - The next Firefox ESR that will have this is 102, due out June 23rd
   - Test on ESR when possible.
 * Make raid alerts into a variant of host alerts, with filtering capability
+* Rename "gifted" flag in sub alerts to "is_gifted" to trigger boolean handling
+  - Migrate existing settings

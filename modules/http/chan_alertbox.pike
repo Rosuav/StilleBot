@@ -349,7 +349,7 @@ constant ALERTTYPES = ({([
 	"placeholders": ([
 		"username": "Channel name (equivalently {NAME})",
 		"viewers": "View count (equivalently {VIEWERS})",
-		"is_raid": "Is this host a raid?", //TODO: Make booleans an actual thing
+		"is_raid": "Is this host a raid?",
 	]),
 	"testpholders": (["viewers": ({1, 100}), "VIEWERS": ({1, 100}), "is_raid": ({0, 0})]),
 	"builtin": "chan_alertbox",

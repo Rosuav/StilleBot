@@ -126,18 +126,24 @@ function load_data(type, attrs, par) {
 	);
 }
 
-function make_condition_vars(vars) {
-	return vars && vars.map(c => TR([
-		TD(c.replace("'", "")), //TODO: Replace with a short name
-		TD(SELECT({name: "condoper-" + c.replace("'", "")}, [
-			OPTION({value: ""}, "n/a"),
-			OPTION({value: "=="}, "is exactly"),
-			c[0] === "'" ? OPTION({value: "incl"}, "includes") :
-				OPTION({value: ">="}, "is at least"),
-		])),
-		TD(INPUT({name: "condval-" + c.replace("'", ""), type: c[0] === "'" ? "text" : "number"})),
-		//TD(description), //TODO
-	]));
+function make_condition_vars(vars, phold) {
+	const opers = {
+		"is_": {"": "n/a", "true": "Yes", "false": "No"},
+		"'": {"": "n/a", "==": "is exactly", "incl": "includes"},
+		"": {"": "n/a", "==": "is exactly", ">=": "is at least"},
+	};
+	return vars && vars.map(c => {
+		const id = c.replace("'", "");
+		const operset = Object.keys(opers).find(pfx => c.startsWith(pfx));
+		return TR([
+			TD(id), //TODO: Replace with a short name
+			TD(SELECT({name: "condoper-" + id}, Object.entries(opers[operset]).map(([k, v]) =>
+				OPTION({value: k}, v)
+			))),
+			TD(operset !== "is_" && INPUT({name: "condval-" + id, type: c[0] === "'" ? "text" : "number"})),
+			TD(phold[id] || ""),
+		]);
+	});
 }
 
 function alert_name(id) {
@@ -278,7 +284,7 @@ export function render(data) {
 				//can check the tier, a cheer alert the number of bits. It's entirely
 				//possible to have empty condition_vars, which will just have the
 				//standard condition types.
-				TABLE({class: "conditions"}, make_condition_vars(info.condition_vars)),
+				TABLE({class: "conditions"}, make_condition_vars(info.condition_vars, info.placeholders)),
 				P(LABEL(["Only if alert set active: ", SELECT({name: "cond-alertset"}, [
 					OPTION({value: ""}, "n/a"),
 					(data.alertconfigs.defaults?.variants || [])
@@ -515,7 +521,7 @@ on("change", "[name=hostbackend]", e => ws_sync.send({cmd: "config", hostbackend
 on("click", ".editvariants", e => {
 	const type = e.match.closest("form").dataset.type;
 	const info = alert_definitions[type];
-	set_content("#variationdlg .conditions", make_condition_vars(info.condition_vars));
+	set_content("#variationdlg .conditions", make_condition_vars(info.condition_vars, info.placeholders));
 	const frm = DOM("#variationdlg form");
 	DOM("#variationdlg [name=variant]").value = "";
 	frm.classList.remove("unsaved-changes");
