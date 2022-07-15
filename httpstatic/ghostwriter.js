@@ -1,5 +1,5 @@
-import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, H2, IMG, LI, TIME, UL} = choc; //autoimport
+import {lindt, replace_content as set_content, DOM, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
+const {A, BUTTON, H2, IMG, LI, TIME, UL} = lindt; //autoimport
 import {waitlate} from "$$static||utils.js$$";
 
 function channel_profile(chan) {
@@ -9,9 +9,8 @@ function channel_profile(chan) {
 	]);
 }
 
-let li_cache = { };
 function display_channel(chan) {
-	return li_cache[chan.id] = li_cache[chan.id] || LI({"data-id": chan.id}, [
+	return LI({"key": chan.id, "data-id": chan.id}, [
 		BUTTON({className: "reorder moveup", "data-dir": -1, title: "Increase priority"}, "\u2191"),
 		BUTTON({className: "reorder movedn", "data-dir": +1, title: "Decrease priority"}, "\u2193"),
 		BUTTON({type: "button", className: "confirmdelete"}, "🗑"),
