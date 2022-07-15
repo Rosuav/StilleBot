@@ -349,6 +349,7 @@ constant ALERTTYPES = ({([
 	"placeholders": (["username": "Channel name (equivalently {NAME})", "viewers": "View count (equivalently {VIEWERS})"]),
 	"testpholders": (["viewers": ({1, 100}), "VIEWERS": ({1, 100})]),
 	"builtin": "chan_alertbox",
+	"condition_vars": ({ }),
 ]), ([
 	"id": "follower",
 	"label": "Follow",

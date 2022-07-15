@@ -267,7 +267,7 @@ export function render(data) {
 					: "Inactive alerts will never be used (nor their variants), but can be inherited from.",
 			]),
 			HR(),
-			info.condition_vars && DETAILS({class: "condbox expandbox no-inherit not-alertset"}, [
+			nondef && DETAILS({class: "condbox expandbox no-inherit not-alertset"}, [
 				SUMMARY(["Alert will be used: ", B({class: "cond-label"}, "always"), ". Expand to configure."]),
 				P([
 					"If any alert variation is used, the base alert will be replaced with it.",
@@ -416,7 +416,7 @@ export function render(data) {
 				BUTTON({type: "submit", disabled: true}, "Save"),
 				nondef ? BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")
 					: BUTTON({type: "button", class: "editvariants"}, "Manage alert sets"),
-				type !== "variant" && info.condition_vars && BUTTON({type: "button", className: "editvariants", "data-type": type}, "Manage alert variants"),
+				type !== "variant" && BUTTON({type: "button", className: "editvariants", "data-type": type}, "Manage alert variants"),
 			]),
 		]));
 		if (type === "variant") DOM("#replaceme").replaceWith(alerttypes.variant);
