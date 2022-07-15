@@ -149,3 +149,12 @@
 * Make raid alerts into a variant of host alerts, with filtering capability
 * Rename "gifted" flag in sub alerts to "is_gifted" to trigger boolean handling
   - Migrate existing settings
+* Ghostwriter: Event hosting
+  - During a particular time window (okay if it's too wide), add a specific set
+    of usernames to everyone who has chosen to host the event
+  - Event names can be reused (for recurring events)
+  - Who gets to create an event?
+  - UI to say "host this event"?
+  - There is no indication of who "ought" to be streaming. Just the normal prio
+    list, on the assumption that the previous person will raid into the next one.
+  - Auto-follow hosts and raids???
