@@ -962,11 +962,14 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 			c = c[is_str..]; //Strip off the text marker
 			string oper = msg["condoper-" + c];
 			if (!oper || oper == "") continue; //Don't save the value if no operator set
+			int|string val = msg["condval-" + c];
+			//The "true" and "false" pseudo-operators are really equality with booleans
+			if (oper == "true") {oper = "=="; val = 1;}
+			if (oper == "false") {oper = "=="; val = 0;}
 			//TODO-STRCOND: Need == and incl for strings
 			if (oper != "==" && oper != ">=") oper = ">="; //May need to expand the operator list, but these are the most common
 			data["condoper-" + c] = oper;
 			//Note that setting the operator and leaving the value blank will set the value to zero.
-			int|string val = msg["condval-" + c];
 			if (!is_str) val = (int)val;
 			data["condval-" + c] = val;
 			if (is_str) val = sizeof(val); //TODO: Tweak specificities in some way to make the display look good

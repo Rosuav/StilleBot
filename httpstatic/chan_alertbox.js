@@ -88,6 +88,10 @@ function load_data(type, attrs, par) {
 		if (!el.name) continue;
 		if (el.type === "checkbox") el.checked = !!attrs[el.name];
 		else if (el.type === "color") el.value = attrs[el.name] || "#000000"; //Suppress warning about empty string being inappropriate
+		else if (el.name.startsWith("condoper-is_") && attrs[el.name] === "==")
+			//Hack: Boolean conditions are stored internally as "== 1" or "== 0",
+			//but are shown to the user as "Yes"/"No" with values "true" and "false".
+			el.value = attrs[el.name.replace("condoper", "condval")] === 1;
 		else el.value = attrs[el.name] || "";
 		el.classList.remove("dirty");
 		el.labels.forEach(l => l.classList.remove("dirty"));
@@ -500,15 +504,18 @@ on("change", ".condbox", e => {
 	const set = e.match.querySelector("[name=cond-alertset]").value;
 	if (set) conds.push(revert_data[set]["name"] + " alerts");
 	e.match.querySelectorAll("[name^=condoper-]").forEach(el => {
-		let desc = e.match.querySelector("[name=" + el.name.replace("oper-", "val-") + "]").value || 0;
+		const val = e.match.querySelector("[name=" + el.name.replace("oper-", "val-") + "]");
+		let desc = (val && val.value) || 0;
 		if (el.value === ">=") desc += "+"; //eg ">= 100" is shown as "100+"
 		else if (el.value === "incl") desc = "incl " + desc; //"text incl Hello"
+		else if (el.value === "true") desc = "is"; //"is is_raid"
+		else if (el.value === "false") desc = "not"; //"not is_raid"
 		else if (el.value !== "==") return; //Condition not applicable
 		//Special case: "tier 2" instead of "2 tier"
 		if (el.name === "condoper-tier") desc = "tier " + desc;
 		//Another special case: "text" gets described differently. FIXME: Don't say "text is incl X"
 		else if (el.name === "condoper-text") desc = "text is " + desc;
-		else desc += " " + el.name.split("-")[1];
+		else desc += " " + el.name.split("-")[1].replace("is_", ""); //Transform "is/not is_raid" to just "is/not raid"
 		conds.push(desc);
 	});
 	e.match.querySelector("[name=cond-label]").value = conds.join(", ");
