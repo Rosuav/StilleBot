@@ -1279,7 +1279,7 @@ void follower(object channel, mapping follower) {
 multiset subbomb_ids = (<>);
 
 @hook_subscription:
-void subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
+void subscription(object channel, string type, mapping person, string tier, int qty, mapping extra, string|void msg) {
 	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
 	if (!cfg->?authkey) return;
 	int months = (int)extra->msg_param_cumulative_months || 1;
@@ -1289,6 +1289,7 @@ void subscription(object channel, string type, mapping person, string tier, int 
 		"username": person->displayname,
 		"tier": tier, "months": months,
 		"streak": extra->msg_param_streak_months || "1",
+		"msg": msg || "",
 	]);
 	if ((<"subgift", "subbomb">)[type]) {
 		args->gifted = "1";
