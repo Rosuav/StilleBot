@@ -475,7 +475,7 @@ export function render(data) {
 	if (data.replay) {
 		const ofs = data.replay_offset || 0;
 		if (!data.replay.length) set_content("#replays", "No events to replay");
-		else set_content("#replays", data.replay.map((r,i) => DETAILS([SUMMARY([
+		else set_content("#replays", data.replay.reverse().map((r,i) => DETAILS([SUMMARY([
 			alert_name(r.send_alert),
 			" from ",
 			r.username || "Anonymous", //Absence of username may indicate a bug.
