@@ -104,7 +104,7 @@ $$notmod2||[Show library](:.showlibrary) [Recent events](:#recentevents .dlg)$$
 <!-- -->
 
 > ### Recent events
-> Note that host alerts will not be listed here, due to a technical limitation.
+> Note that host alerts will only be listed here if the Pike backend is used.
 > <div id=replays>loading...</div>
 >
 > [Close](:.dialog_close)
@@ -1465,7 +1465,8 @@ Pike backend
 * Uses IRC and pushes signals on websocket
 * No !hostlist command. If one is needed, try using the command system to implement it?
 * Requires OAuth on the back end only - much safer
-* Capable of alert variants, filtering, etc, but not implemented yet
+* Capable of alert variants, filtering, etc
 * Can recognize raids
+* Stores replayable alerts
 
 */
