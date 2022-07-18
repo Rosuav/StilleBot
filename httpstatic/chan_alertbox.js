@@ -14,6 +14,7 @@ function THUMB(file) {
 }
 
 const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
+const FREEMEDIA_BASE = "https://rosuav.github.io/free-media/media/";
 
 const files = { };
 const alerttypes = { }, alert_definitions = { };
@@ -626,6 +627,10 @@ on("click", ".showlibrary", e => {
 	if (needvalue) {
 		//Didn't match against any of the library entries.
 		if (librarytarget.src === TRANSPARENT_IMAGE) DOM("input[type=radio][data-special=None]").checked = true;
+		else if (librarytarget.src.startsWith(FREEMEDIA_BASE)) {
+			DOM("input[type=radio][data-special=FreeMedia]").checked = true;
+			DOM("#freemedia").value = librarytarget.src.replace(FREEMEDIA_BASE, "");
+		}
 		else {
 			DOM("input[type=radio][data-special=URL]").checked = true;
 			DOM("#customurl").value = librarytarget.src;
@@ -639,6 +644,8 @@ on("click", ".showlibrary", e => {
 //Select radio buttons as appropriate when you manipulate the URL box
 DOM("#customurl").onfocus = e => e.target.value !== "" && (DOM("input[type=radio][data-special=URL]").checked = true);
 on("input", "#customurl", e => DOM("input[type=radio][data-special=" + (e.target.value !== "" ? "URL" : "None") + "]").checked = true);
+DOM("#freemedia").onfocus = e => e.target.value !== "" && (DOM("input[type=radio][data-special=FreeMedia]").checked = true);
+on("input", "#freemedia", e => DOM("input[type=radio][data-special=" + (e.target.value !== "" ? "FreeMedia" : "None") + "]").checked = true);
 
 //Can the dialog be made into a form and this turned into a submit event? <form method=dialog>
 //isn't very well supported yet, so I might have to do some of the work myself. Would improve
@@ -657,6 +664,10 @@ on("click", "#libraryselect", async e => {
 				} catch (e) { } //TODO: Report the error (don't just assume it's a still image)
 				break;
 			}
+			case "FreeMedia":
+				//TODO: Check that it's in the list
+				img = FREEMEDIA_BASE + DOM("#freemedia").value;
+				break;
 			default:
 				img = rb.parentElement.querySelector("a").href;
 				type = rb.closest("[data-type]").dataset.type;
