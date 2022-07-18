@@ -30,11 +30,20 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 >
 > <p><label class=selectmode><input type=radio name=chooseme data-special=None> None<br></label>
 > <span class=selectmode><input type=radio name=chooseme data-special=URL><label> URL: <input id=customurl size=100></label><br></span>
-> <span class=selectmode><input type=radio name=chooseme data-special=FreeMedia><label> Free Media: <input id=freemedia size=20></label><br></span>
+> <span class=selectmode><input type=radio name=chooseme data-special=FreeMedia><label> Free Media: <input id=freemediafn size=20 disabled></label>
+>     <button type=button id=freemedia class=dlg>Browse</button><br></span>
 > <form>Upload new file: <input type=file multiple></form></p>
 >
 > [Select](:#libraryselect disabled=true) [Close](:.dialog_close)
 {: tag=dialog #library}
+
+<!-- -->
+
+> ### Free Media
+>
+> These media files are freely usable in StilleBot alerts and can be used without uploading.
+>
+{: tag=dialog #freemediadlg}
 
 $$notmodmsg||To use these alerts, [show the preview](:#authpreview) from which you can access your unique display link.<br>$$
 $$blank||Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:#revokekey .dlg) to generate a new one.$$
