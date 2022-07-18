@@ -43,8 +43,10 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 >
 > These media files are freely usable in StilleBot alerts and can be used without uploading.
 >
+> <label><input type=radio name=chooseme id=freemedianone> None</label>
 > <div id=freemedialibrary class=filelist></div>
 >
+> [Select](:#freemediaselect) [Close](:.dialog_close)
 {: tag=dialog #freemediadlg}
 
 $$notmodmsg||To use these alerts, [show the preview](:#authpreview) from which you can access your unique display link.<br>$$

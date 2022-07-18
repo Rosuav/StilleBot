@@ -46,10 +46,14 @@ export const autorender = {
 };
 
 //TODO: Call this once and only once, if the user wants freemedia browsing (currently called on startup which is inefficient)
+const freemedia_files = { };
 async function populate_freemedia() {
 	const data = await (await fetch(FREEMEDIA_ROOT + "filelist.json")).json();
 	console.log("Got free media", data);
-	data.files.forEach(file => file.url = FREEMEDIA_BASE + file.filename);
+	data.files.forEach(file => {
+		file.url = FREEMEDIA_BASE + file.filename;
+		freemedia_files[file.filename] = file;
+	});
 	set_content("#freemedialibrary", data.files.map(file => LABEL({"data-type": file.mimetype}, [
 		INPUT({type: "radio", name: "chooseme", value: file.filename}),
 		FIGURE([
@@ -682,10 +686,11 @@ on("click", "#libraryselect", async e => {
 				} catch (e) { } //TODO: Report the error (don't just assume it's a still image)
 				break;
 			}
-			case "FreeMedia":
-				//TODO: Check that it's in the list
-				img = FREEMEDIA_BASE + DOM("#freemediafn").value;
+			case "FreeMedia": {
+				const file = freemedia_files[DOM("#freemediafn").value];
+				if (file) {img = file.url; type = file.mimetype;}
 				break;
+			}
 			default:
 				img = rb.parentElement.querySelector("a").href;
 				type = rb.closest("[data-type]").dataset.type;
@@ -703,6 +708,27 @@ on("click", "#libraryselect", async e => {
 		librarytarget = null;
 	}
 	DOM("#library").close();
+});
+
+on("click", "#freemedia", e => {
+	const fm = DOM("#library input[type=radio][data-special=FreeMedia]");
+	const val = fm.checked ? DOM("#freemediafn").value : "";
+	const el = DOM("#freemediadlg input[name=chooseme][value=\"" + val + "\"]") || DOM("#freemedianone");
+	el.checked = true;
+});
+
+on("click", "#freemediaselect", e => {
+	DOM("#freemediadlg").close();
+	const rb = DOM("#freemediadlg input[name=chooseme]:checked") || DOM("#freemedianone");
+	const fm = DOM("#library input[type=radio][data-special=FreeMedia]");
+	if (rb.id === "freemedianone") {
+		//If you selected "None" and previously had a Free Media selection, switch to None.
+		//Otherwise, leave your previous selection unchanged.
+		if (fm.checked) DOM("#library input[data-special=None]").checked = true;
+		return;
+	}
+	fm.checked = true;
+	DOM("#freemediafn").value = rb.value;
 });
 
 export function sockmsg_uploaderror(msg) {
