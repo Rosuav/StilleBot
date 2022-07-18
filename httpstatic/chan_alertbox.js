@@ -618,8 +618,7 @@ on("click", ".showlibrary", e => {
 	for (let el of DOM("#uploads").children) {
 		if (!el.dataset.id) continue;
 		const want = wanttypes[0] === "" || wanttypes.includes(el.dataset.type.split("/")[0]);
-		el.classList.toggle("active", want);
-		el.classList.toggle("inactive", !want); //Not sure which is going to be more useful. Pick a style and ditch the other.
+		el.classList.toggle("inactive", !want);
 		const rb = el.querySelector("input[type=radio]");
 		rb.disabled = !want || wanttypes[0] === "";
 		if (needvalue && el.querySelector("a").href === librarytarget.src) {rb.checked = true; needvalue = false;}

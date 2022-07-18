@@ -21,7 +21,7 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 > ### Library
 >
 > Upload files (up to 8MB each) to use in your alerts. You may also link to files
-> that are accessible on the internet. NOTE: OBS does not support all media formats,
+> that are accessible on the internet.<br>NOTE: OBS does not support all media formats,
 > and best results are often achieved with GIF, WEBM, WAV, OGG, and PNG.
 >
 > <div id=uploaderror class=hidden></div>
@@ -136,22 +136,8 @@ $$notmod2||[Show library](:.showlibrary) [Recent events](:#recentevents .dlg)$$
 input[name=chooseme]:checked ~ figure {
 	background: aliceblue;
 }
-#uploads .active {
-	/* TODO: Style the library elements so you can see which ones are selectable.
-	When you simply 'show library', that's all of them (but the radio buttons are
-	disabled); but if you ask to select an image or sound, only those of that type
-	are active (and will have radio buttons). */
-}
 #uploads .inactive {
-	/* Alternatively, style the inactive ones. Current placeholder: crosshatched. */
-	filter: grayscale(50%);
-	background: repeating-linear-gradient(
-		-45deg,
-		#eee,
-		#eee 10px,
-		#ccc 10px,
-		#ccc 12px
-	);
+	display: none;
 }
 #uploads .confirmdelete {
 	position: absolute;
