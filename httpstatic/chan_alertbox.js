@@ -14,7 +14,8 @@ function THUMB(file) {
 }
 
 const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
-const FREEMEDIA_BASE = "https://rosuav.github.io/free-media/media/";
+const FREEMEDIA_ROOT = "https://rosuav.github.io/free-media/"
+const FREEMEDIA_BASE = FREEMEDIA_ROOT + "media/";
 
 const files = { };
 const alerttypes = { }, alert_definitions = { };
@@ -43,6 +44,23 @@ export const autorender = {
 		]);
 	},
 };
+
+//TODO: Call this once and only once, if the user wants freemedia browsing (currently called on startup which is inefficient)
+async function populate_freemedia() {
+	const data = await (await fetch(FREEMEDIA_ROOT + "filelist.json")).json();
+	console.log("Got free media", data);
+	data.files.forEach(file => file.url = FREEMEDIA_BASE + file.filename);
+	set_content("#freemedialibrary", data.files.map(file => LABEL({"data-type": file.mimetype}, [
+		INPUT({type: "radio", name: "chooseme", value: file.filename}),
+		FIGURE([
+			THUMB(file),
+			FIGCAPTION([
+				A({href: file.url, target: "_blank"}, file.filename),
+			]),
+		]),
+	])));
+}
+populate_freemedia();
 
 let have_authkey = false;
 export function sockmsg_authkey(msg) {

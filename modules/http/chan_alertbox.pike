@@ -26,7 +26,7 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 >
 > <div id=uploaderror class=hidden></div>
 >
-> <div id=uploadfrm><div id=uploads></div></div>
+> <div id=uploadfrm><div id=uploads class=filelist></div></div>
 >
 > <p><label class=selectmode><input type=radio name=chooseme data-special=None> None<br></label>
 > <span class=selectmode><input type=radio name=chooseme data-special=URL><label> URL: <input id=customurl size=100></label><br></span>
@@ -42,6 +42,8 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 > ### Free Media
 >
 > These media files are freely usable in StilleBot alerts and can be used without uploading.
+>
+> <div id=freemedialibrary class=filelist></div>
 >
 {: tag=dialog #freemediadlg}
 
@@ -126,27 +128,27 @@ $$notmod2||[Show library](:.showlibrary) [Recent events](:#recentevents .dlg)$$
 	background: #eee;
 	padding: 1em;
 }
-#uploads {
+.filelist {
 	display: flex;
 	flex-wrap: wrap;
 }
-#uploads > label {
+.filelist > label {
 	border: 1px solid black; /* TODO: Show incomplete uploads with a different border */
 	margin: 0.5em;
 	padding: 0.5em;
 	position: relative;
 }
-#uploads figure {
+.filelist figure {
 	margin: 0;
 	padding: 0 1em;
 }
-#uploads input[type=radio] {
+.filelist input[type=radio] {
 	position: absolute;
 }
 input[name=chooseme]:checked ~ figure {
 	background: aliceblue;
 }
-#uploads .inactive {
+.filelist .inactive {
 	display: none;
 }
 #uploads .confirmdelete {
