@@ -96,6 +96,7 @@
   - Followed games/categories - you can still follow/unfollow but you can't query it in API
 * Need to enumerate all the places where a channel name gets used as a config key
   (outside of persist_config->channels->username) so they can be changed on rename.
+  - persist_status->bcaster_token, bcaster_token_scopes
 * Art Share tool
   - Implement !permit command for temporary single-use access
   - Mod command to nuke the last-posted file?
