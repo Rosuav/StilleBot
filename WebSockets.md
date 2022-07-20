@@ -76,8 +76,9 @@ In the identified code file, provide any or all of the following exports:
     export const ws_config = {
       //Silence some or all of the console messages
       //  conn - connect/disconnect tracing
-      //  msg - known incoming and all outgoing messages
+      //  msg - known incoming messages
       //  unkmsg - unknown incoming messages
+      //  send - outgoing messages
       quiet: {conn: 1},
     }
 
