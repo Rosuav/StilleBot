@@ -8,7 +8,6 @@ let pending_message = null; //Allow at most one message to be queued on startup 
 let prefs = { }; //Updated from the server as needed
 const prefs_hooks = [];
 let reconnect_delay = 250;
-let empty_desc = null; //If present, will be removed upon non-empty render
 export function connect(group, handler)
 {
 	if (!handler) handler = default_handler;
@@ -52,7 +51,7 @@ export function connect(group, handler)
 					const obj = par.querySelector(`[data-id="${data.id}"]`);
 					const newobj = data.data && ren(data.data, obj);
 					if (newobj) newobj.dataset.id = data.id;
-					if (newobj && empty_desc) {empty_desc.replaceWith(); empty_desc = null;}
+					if (newobj && autorender[type + "_emptydesc"]) {autorender[type + "_emptydesc"].replaceWith(); autorender[type + "_emptydesc"] = null;}
 					if (obj && newobj) obj.replaceWith(newobj); //They might be the same
 					else if (newobj) par.appendChild(newobj);
 					else if (obj) {
