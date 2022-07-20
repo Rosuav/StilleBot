@@ -72,6 +72,14 @@ In the identified code file, provide any or all of the following exports:
       item(it) {return LI({"data-id": it.id}, it.name);},
       item_empty() { }, //Called whenever there are no items to display
     }
+    //Absent is equivalent to empty. All items are optional.
+    export const ws_config = {
+      //Silence some or all of the console messages
+      //  conn - connect/disconnect tracing
+      //  msg - known incoming and all outgoing messages
+      //  unkmsg - unknown incoming messages
+      quiet: {conn: 1},
+    }
 
 For compatibility with the previous specification, autorender can also be
 provided as three separate exports, if autorender itself is absent:

@@ -8,6 +8,7 @@ let pending_message = null; //Allow at most one message to be queued on startup 
 let prefs = { }; //Updated from the server as needed
 const prefs_hooks = [];
 let reconnect_delay = 250;
+
 export function connect(group, handler)
 {
 	if (!handler) handler = default_handler;
@@ -18,10 +19,13 @@ export function connect(group, handler)
 		autorender.item_empty = handler.render_empty;
 	}
 	if (!autorender.all) autorender.all = Object.keys(autorender).filter(k => autorender[k] && autorender[k + "_parent"]);
+	const cfg = handler.ws_config || { };
+	if (!cfg.quiet) cfg.quiet = { };
+	function verbose(kwd, ...msg) {if (!cfg.quiet[kwd]) console.log(...msg)}
 	let socket = new WebSocket(protocol + window.location.host + "/ws");
 	socket.onopen = () => {
 		reconnect_delay = 250;
-		console.log("Socket connection established.");
+		verbose("conn", "Socket connection established.");
 		socket.send(JSON.stringify({cmd: "init", type: handler.ws_type || ws_type, group}));
 		if (handler.socket_connected) handler.socket_connected(socket);
 		else if (handler.ws_sendid) send_sockets[handler.ws_sendid] = socket;
@@ -31,7 +35,7 @@ export function connect(group, handler)
 	socket.onclose = () => {
 		if (handler.socket_connected) handler.socket_connected(null);
 		else send_socket = null;
-		console.log("Socket connection lost.");
+		verbose("conn", "Socket connection lost.");
 		setTimeout(connect, reconnect_delay, group, handler);
 		if (reconnect_delay < 5000) reconnect_delay *= 1.5 + 0.5 * Math.random(); //Exponential back-off with a (small) random base
 	};
@@ -99,7 +103,7 @@ export function connect(group, handler)
 		}
 		const f = handler["sockmsg_" + data.cmd];
 		if (f) {f(data); unknown = "";}
-		console.log("Got " + unknown + "message from server:", data);
+		verbose(unknown ? "unkmsg" : "msg", "Got " + unknown + "message from server:", data);
 	};
 }
 //When ready, import the handler code. It'll be eg "/subpoints.js" but with automatic mtime handling.
