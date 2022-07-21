@@ -78,7 +78,7 @@ In the identified code file, provide any or all of the following exports:
       //  conn - connect/disconnect tracing
       //  msg - known incoming messages
       //  unkmsg - unknown incoming messages
-      //  send - outgoing messages
+      //  send - outgoing messages (only valid on the default handler)
       quiet: {conn: 1},
     }
 

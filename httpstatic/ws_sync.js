@@ -112,7 +112,8 @@ if (document.readyState !== "loading") init();
 else window.addEventListener("DOMContentLoaded", init);
 
 export function send(msg, sendid) {
-	console.log("Sending to " + (sendid ? sendid + " socket" : "server") + ":", msg);
+	const quiet = default_handler?.ws_config?.quiet?.send;
+	if (!quiet) console.log("Sending to " + (sendid ? sendid + " socket" : "server") + ":", msg);
 	const sock = send_sockets[sendid] || send_socket;
 	if (sock) sock.send(JSON.stringify(msg));
 	else pending_message = msg; //NOTE: Pending-send always goes onto the first socket to get connected. Would be nice to separate by sendid.
