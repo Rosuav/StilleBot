@@ -735,6 +735,7 @@ class channel(string name) { //name begins with hash and is all lower case
 					break;
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
 					type, params->msg_id, name, params, msg);
+					Stdio.append_file("notice.log", sprintf("%sUnknown %s %s %s %O\n", ctime(time()), type, chan, msg, params));
 			}
 			break;
 			case "WHISPER": responsedefaults = (["dest": "/w", "target": "$$"]); //fallthrough
