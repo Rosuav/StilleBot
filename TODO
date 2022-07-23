@@ -162,3 +162,6 @@
       raid chasing would keep you there: when your host target raids (only raids,
       no tracking of other hosts as that requires extra perms), also host the new
       target.
+* Replace bcaster_token[name] with user_token[id] and ditto scopes
+  - Have a compatibility function that returns a promise and yields the token
+    when the name has been translated into an ID
