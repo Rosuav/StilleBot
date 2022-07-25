@@ -560,7 +560,7 @@ void ensure_host_connection(string chan) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (cfg->hostbackend == "pike") {
 		werror("ALERTBOX: Ensuring connection for %O/%O\n", chan, channel->userid);
-		irc_connect((["user": chan, "userid": channel->userid]))->then() {
+		irc_connect((["user": chan, "userid": channel->userid, "join": chan]))->then() {
 			werror("ALERTBOX: Connected to %O\n", chan);
 		}->thencatch() {
 			werror("ALERTBOX: Unable to connect to %O\n", chan);
@@ -1334,8 +1334,9 @@ void cheer(object channel, mapping person, int bits, mapping extra, string msg) 
 	]) | parse_emotes(msg, person));
 }
 
-constant messagetypes = ({"PRIVMSG"});
+constant messagetypes = ({"PRIVMSG", "NOTICE"});
 void irc_message(string type, string chan, string msg, mapping attrs) {
+	werror("irc_message - %O %O %O %O\n", type, chan, msg, attrs);
 	if (attrs->user == "jtv") {
 		//TODO: Filter to new hosts only
 		//TODO: Clear the "new hosts" list when stream goes on/offline
