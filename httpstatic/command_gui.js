@@ -146,6 +146,8 @@ const builtin_label_funcs = {
 		switch (el.builtin_param[1]) {
 			case "enable": if (el.builtin_param[2] !== "0") return "Points reward: enable";
 			case "disable": return "Points reward: disable";
+			case "title": return "Points reward: Set title";
+			case "desc": return "Points reward: Set description";
 			case "fulfil": return "Points: Done " + el.builtin_param[2];
 			case "cancel": return "Points: Refund " + el.builtin_param[2];
 		}

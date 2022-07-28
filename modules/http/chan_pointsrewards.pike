@@ -224,7 +224,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 constant command_description = "Manage channel point rewards - fulfil and cancel need redemption ID too";
 constant builtin_name = "Points rewards";
 //TODO: In the front end, label them as "[En/Dis]able reward", "Mark complete", "Refund points"
-constant builtin_param = ({"Reward ID", "/Action/enable/disable/fulfil/cancel", "Redemption ID"});
+constant builtin_param = ({"Reward ID", "/Action/enable/disable/title/desc/fulfil/cancel", "Redemption ID"});
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{action}": "Action(s) performed, if any (may be blank)",
@@ -250,6 +250,8 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 			case "enable": params->is_enabled = arg != "0" ? Val.true : Val.false; break;
 			case "disable": params->is_enabled = Val.false; break;
 			case "cost": params->cost = (int)arg; break;
+			case "title": params->title = arg; break; //With legacy form, these would be unable to set more than one word.
+			case "desc": params->prompt = arg; break; //Use array parameter form instead.
 			case "fulfil": case "cancel": if (arg != "") { //Not an error to attempt to mark nothing
 				complete_redemption(channel->name[1..], reward_id, arg, cmd == "fulfil" ? "FULFILLED" : "CANCELED");
 			}
