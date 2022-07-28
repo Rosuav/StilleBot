@@ -332,7 +332,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			if (!cfg->dynamic_rewards || !cfg->dynamic_rewards[id]) return (["error": 400]);
 			mapping rwd = cfg->dynamic_rewards[id];
 			m_delete(rwd, "title"); //Clean out old data (can get rid of this once we're not saving that any more)
-			if (body->basecost) rwd->basecost = (int)body->basecost || rwd->basecost;
+			if (!undefinedp(body->basecost)) rwd->basecost = (int)body->basecost;
 			if (body->formula) rwd->formula = body->formula;
 			if (body->availability) rwd->availability = body->availability;
 			if (rwd->availability == "" && rwd->formula == "") m_delete(cfg->dynamic_rewards, id); //Hack: Delete by blanking the values. Will be replaced later.
@@ -568,6 +568,7 @@ void channel_on_off(string channel, int online)
 		if (token) foreach (dyn; string reward_id; mapping info) {
 			int active = 0;
 			mapping params = (["cost": info->basecost]);
+			if (!params->cost) m_delete(params, "cost");
 			if (mixed ex = info->availability && catch {
 				write("Evaluating: %O\n", info->availability);
 				active = G->G->evaluate_expr(chan->expand_variables(info->availability, args));
