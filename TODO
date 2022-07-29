@@ -165,4 +165,3 @@
 * Replace bcaster_token[name] with user_token[id] and ditto scopes
   - Have a compatibility function that returns a promise and yields the token
     when the name has been translated into an ID
-* Use SSL to connect to Twitch IRC (port 6697 instead of 6667)

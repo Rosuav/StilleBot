@@ -566,11 +566,11 @@ login_commands	Optional commands to be sent after (re)connection
 @"G->G->irc_callbacks"; @"G->G->irc_token_bucket"; @"G->G->user_mod_status";
 class _TwitchIRC(mapping options) {
 	constant server = "irc.chat.twitch.tv";
-	constant port = 6667;
+	constant port = 6697;
 	string ip; //Randomly selected from the A/AAAA records for the server.
 	string pass; //Pulled out of options in case options gets printed out
 
-	Stdio.File sock;
+	Stdio.File|SSL.File sock;
 	array(string) queue = ({ }); //Commands waiting to be sent, and callbacks
 	array(function) failure_notifs = ({ }); //All will be called on failure
 	int have_connection = 0;
@@ -607,6 +607,8 @@ class _TwitchIRC(mapping options) {
 	}
 
 	void connected() {
+		sock = SSL.File(sock, SSL.Context());
+		sock->connect(server);
 		array login = ({
 			"PASS " + pass,
 			"NICK " + options->user,
@@ -848,7 +850,7 @@ class irc_callback {
 	Concurrent.Future irc_connect(mapping options) {
 		//Bump this version number when there's an incompatible change. Old
 		//connections will all be severed.
-		options = (["module": this, "version": 6]) | (options || ([]));
+		options = (["module": this, "version": 7]) | (options || ([]));
 		if (!options->user) {
 			//Default credentials from the bot's main configs
 			mapping cfg = persist_config->path("ircsettings");
