@@ -576,10 +576,13 @@ class _TwitchIRC(mapping options) {
 	int have_connection = 0;
 	int writing = 1; //If not writing and need to write, immediately write.
 	string readbuf = "";
+	int last_rcv_time = 0; //time_t of last line received
+	constant PING_INTERVAL = 120; //Time between PING messages sent
+	mixed ping_callout;
 
 	//Messages in this set will not be traced on discovery as we know them.
 	constant ignore_message_types = (<
-		"USERSTATE", "ROOMSTATE", "JOIN",
+		"USERSTATE", "ROOMSTATE", "JOIN", "PONG",
 		"CAP", //We assume Twitch supports what they've documented
 	>);
 
@@ -600,6 +603,7 @@ class _TwitchIRC(mapping options) {
 		//commands before this.
 		have_connection = 0; queue += ({await_connection});
 		readbuf = "";
+		last_rcv_time = time();
 	}
 
 	void connected() {
@@ -616,6 +620,7 @@ class _TwitchIRC(mapping options) {
 			+ ({"MARKER"})
 			+ queue;
 		sock->set_nonblocking(sockread, sockwrite, sockclosed);
+		if (!ping_callout) ping_callout = call_out(send_ping, PING_INTERVAL);
 	}
 
 	void connfailed() {fail("Connection failed.");}
@@ -635,6 +640,8 @@ class _TwitchIRC(mapping options) {
 		object current_module = G->G->irc_callbacks[options->module->modulename];
 		if (!options->no_reconnect && options->module == current_module) connect();
 		else if (!options->outdated) options->module->irc_closed(options);
+		sock = 0;
+		remove_call_out(ping_callout);
 	}
 
 	void sockread(mixed _, string data) {
@@ -644,6 +651,7 @@ class _TwitchIRC(mapping options) {
 			if (line == "") continue;
 			line = utf8_to_string(line);
 			if (options->verbose) werror("IRC < %O\n", line);
+			last_rcv_time = time();
 			//Twitch messages with TAGS capability begin with the tags
 			sscanf(line, "@%s %s", string tags, line);
 			//Most messages from the server begin with a prefix. It's
@@ -692,7 +700,7 @@ class _TwitchIRC(mapping options) {
 
 	void sockwrite() {
 		//Send the next thing from the queue
-		if (!sizeof(queue)) {writing = 0; return;}
+		if (!sizeof(queue) || !sock) {writing = 0; return;}
 		[mixed next, queue] = Array.shift(queue);
 		if (stringp(next)) {
 			//Automatic rate limiting
@@ -704,7 +712,7 @@ class _TwitchIRC(mapping options) {
 				call_out(sockwrite, wait);
 				return;
 			}
-			if (options->verbose) werror("IRC > %O\n", replace(next, pass, "<password>"));
+			if (options->verbose) werror("IRC > %O\n", replace(next, pass, "<password>")); //hunter2 :)
 			int sent = sock->write(next + "\n");
 			if (sent < sizeof(next) + 1) {
 				//Partial send. Requeue all but the part that got sent.
@@ -738,6 +746,19 @@ class _TwitchIRC(mapping options) {
 
 	void send(string channel, string msg) {
 		enqueue("PRIVMSG #" + (channel - "#") + " :" + string_to_utf8(replace(msg, "\n", " ")));
+	}
+
+	void send_ping() {
+		if (!sock) return;
+		if (last_rcv_time < time() - PING_INTERVAL * 2) {
+			//It's been two ping intervals since we last heard from the server.
+			//Note that this counts PONG messages, but also everything else.
+			sock->close();
+			sockclosed();
+			return;
+		}
+		ping_callout = call_out(send_ping, PING_INTERVAL);
+		enqueue("ping :stillebot");
 	}
 
 	int(0..1) update_options(mapping opt) {
@@ -827,7 +848,7 @@ class irc_callback {
 	Concurrent.Future irc_connect(mapping options) {
 		//Bump this version number when there's an incompatible change. Old
 		//connections will all be severed.
-		options = (["module": this, "version": 5]) | (options || ([]));
+		options = (["module": this, "version": 6]) | (options || ([]));
 		if (!options->user) {
 			//Default credentials from the bot's main configs
 			mapping cfg = persist_config->path("ircsettings");
