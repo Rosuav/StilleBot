@@ -14,6 +14,7 @@ $$login||Loading...$$
 <div>
 Pause duration: <select disabled=true id=pausetime><option value=60>One minute</option><option value=300>Five minutes</option><option value=900 selected>Fifteen minutes</option><option value=1800>Thirty minutes</option></select>
 <div id=calendar>Loading calendar...</div>
+Your Twitch stream schedule is used for automatic pausing, or you can manually pause any time. [Set your schedule here](https://dashboard.twitch.tv/settings/channel/schedule)<br>
 [Unhost and pause](: #pausenow disabled=true)
 </div>
 
