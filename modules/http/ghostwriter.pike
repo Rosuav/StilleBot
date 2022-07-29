@@ -280,15 +280,18 @@ void pause_autohost(string chanid, int target) {
 void host_changed(string chanid, string target, string viewers) {
 	//Note that viewers may be "-" if we're already hosting, so don't depend on it
 	if (!chanid) {werror("GHOSTWRITER: Null channel ID, target %O viewers %O\n", target, viewers); return;}
+	if (target == "-") target = 0; //Not currently hosting
 	mapping st = chanstate[chanid];
 	if (!st) {
-		if (target == "-") return; //Not particularly interesting
+		if (!target) return; //Not particularly interesting
 		chanstate[chanid] = st = ([]);
 	}
 	write("GHOSTWRITER: host_changed(%O, %O, %O), hosting %O\n", chanid, target, viewers, st->hosting);
 	if (st->hosting == target) return; //eg after reconnecting to IRC
 	st->hosting = target;
-	if (target) pause_autohost(chanid, time() + 300); //If you manually host, disable autohost for five minutes
+	//If you manually host, disable autohost for five minutes. NOTE: Currently this may be
+	//triggering even if autohost does. Keep an eye on this.
+	pause_autohost(chanid, time() + 300);
 	schedule_recalculation(chanid, ({time() + 2})); //Recalculate, but give it a moment. There might be some other messages to process.
 	//TODO: Purge the hook channel list of any that we don't need (those for whom autohosts_this[id] is empty or absent)
 }
@@ -304,7 +307,6 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 		seenhosts[chan] = 1;
 		sscanf(msg, "%s %s", string target, string viewers);
 		write("GHOSTWRITER: Host target (%O, %O, %O)\n", chan, target, viewers);
-		if (target == "-") target = 0; //Not currently hosting
 		host_changed(channel_ids[chan - "#"], target, viewers);
 	}
 	if (type == "ROOMSTATE" && !seenhosts[chan]) {
