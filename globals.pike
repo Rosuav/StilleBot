@@ -607,6 +607,7 @@ class _TwitchIRC(mapping options) {
 	}
 
 	void connected() {
+		if (!sock) werror("ERROR IN IRC HANDLING: connected() with sock == 0!\n%O\n", options);
 		sock = SSL.File(sock, SSL.Context());
 		sock->connect(server);
 		array login = ({
