@@ -732,6 +732,14 @@ class channel(string name) { //name begins with hash and is all lower case
 				}
 				case "announcement": //The /announce command
 					//Has a msg_param_color that is either PRIMARY or a colour word eg "PURPLE"
+					string pfx = sprintf("** %s ** ", name);
+					#ifdef __NT__
+					int wid = 80 - sizeof(pfx);
+					#else
+					int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
+					#endif
+					msg = string_to_utf8(msg) + " "; //Trailing space improves wrapping with %= mode
+					log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
 					break;
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
 					type, params->msg_id, name, params, msg);
