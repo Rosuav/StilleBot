@@ -745,6 +745,8 @@ class _TwitchIRC(mapping options) {
 		werror("update_options mod %O user %O - sock is %O\n", options->module, options->user, sock);
 		//If the IRC handling code has changed incompatibly, reconnect.
 		if (opt->version != options->version) return 1;
+		//If you explicitly ask to be reconnected, do so.
+		if (opt->force_reconnect) return 1;
 		//If credentials have changed, reconnect.
 		if (opt->pass != pass) return 1; //The user is the same, or cache wouldn't have pulled us up.
 		if (Array.arrayify(opt->login_commands) * "\n" !=
