@@ -562,11 +562,12 @@ pass		OAuth password. If omitted, uses bcaster_token.
 capabilities	Optional array of caps to request
 join		Optional array of channels to join (include the hashes)
 login_commands	Optional commands to be sent after (re)connection
+encrypt		Set to 1 to require encryption, -1 to require unencrypted.
+		The default will change at some point such that most are encrypted.
 */
 @"G->G->irc_callbacks"; @"G->G->irc_token_bucket"; @"G->G->user_mod_status";
 class _TwitchIRC(mapping options) {
-	constant server = "irc.chat.twitch.tv";
-	constant port = 6697;
+	constant server = "irc.chat.twitch.tv"; //Port 6667 or 6697 depending on SSL status
 	string ip; //Randomly selected from the A/AAAA records for the server.
 	string pass; //Pulled out of options in case options gets printed out
 
@@ -597,7 +598,7 @@ class _TwitchIRC(mapping options) {
 		sock = Stdio.File();
 		sock->open_socket();
 		sock->set_nonblocking(sockread, connected, connfailed);
-		sock->connect(ip, port); //Will throw on error
+		sock->connect(ip, options->encrypt >= 1 ? 6667 : 6697); //Will throw on error
 		//Until we get connected, hold, waiting for our marker.
 		//The establishment of the connection will insert login
 		//commands before this.
@@ -608,8 +609,10 @@ class _TwitchIRC(mapping options) {
 
 	void connected() {
 		if (!sock) werror("ERROR IN IRC HANDLING: connected() with sock == 0!\n%O\n", options);
-		sock = SSL.File(sock, SSL.Context());
-		sock->connect(server);
+		if (options->encrypt >= 1) { //Make this and the above ">= 0" to change default to be encrypted
+			sock = SSL.File(sock, SSL.Context());
+			sock->connect(server);
+		}
 		array login = ({
 			"PASS " + pass,
 			"NICK " + options->user,
@@ -851,7 +854,7 @@ class irc_callback {
 	Concurrent.Future irc_connect(mapping options) {
 		//Bump this version number when there's an incompatible change. Old
 		//connections will all be severed.
-		options = (["module": this, "version": 7]) | (options || ([]));
+		options = (["module": this, "version": 8]) | (options || ([]));
 		if (!options->user) {
 			//Default credentials from the bot's main configs
 			mapping cfg = persist_config->path("ircsettings");
