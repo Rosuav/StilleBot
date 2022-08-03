@@ -1,6 +1,6 @@
 inherit http_websocket;
 inherit irc_callback;
-#define NERF //NERFED FOR NOW. I am getting so sick of problems and I don't even know what the cause is.
+//#define NERF //Nerfing is an option. I am getting so sick of problems where I don't even know what the cause is.
 constant markdown = #"# Ghostwriter $$displayname$$
 
 When your channel is offline, host other channels automatically. You can immediately
