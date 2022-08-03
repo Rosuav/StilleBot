@@ -976,6 +976,7 @@ void reconnect() {
 	irc_connect(([
 		"join": filter(channels) {return __ARGS__[0][1] != '!';},
 		"capabilities": "membership tags commands" / " ",
+		//"verbose": 1, "force_reconnect": 1,
 	]))->then() {irc_connections[0] = __ARGS__[0]; werror("Now connected: %O\n", __ARGS__[0]);}
 	->thencatch() {werror("Unable to connect to Twitch:\n%s\n", describe_backtrace(__ARGS__[0]));};
 	werror("Now connecting: %O queue %O\n", connection_cache->rosuav, connection_cache->rosuav->queue);

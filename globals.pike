@@ -579,7 +579,7 @@ class _TwitchIRC(mapping options) {
 	int writing = 1; //If not writing and need to write, immediately write.
 	string readbuf = "";
 	int last_rcv_time = 0; //time_t of last line received
-	constant PING_INTERVAL = 120; //Time between PING messages sent
+	constant PING_INTERVAL = 300; //Time between PING messages sent
 	mixed ping_callout;
 
 	//Messages in this set will not be traced on discovery as we know them.
@@ -599,7 +599,7 @@ class _TwitchIRC(mapping options) {
 		sock = Stdio.File();
 		sock->open_socket();
 		sock->set_nonblocking(sockread, connected, connfailed);
-		sock->connect(ip, options->encrypt >= 1 ? 6667 : 6697); //Will throw on error
+		sock->connect(ip, options->encrypt >= 1 ? 6697 : 6667); //Will throw on error
 		//Until we get connected, hold, waiting for our marker.
 		//The establishment of the connection will insert login
 		//commands before this.
@@ -765,7 +765,7 @@ class _TwitchIRC(mapping options) {
 			return;
 		}
 		ping_callout = call_out(send_ping, PING_INTERVAL);
-		enqueue("ping :stillebot");
+		enqueue(); queue = ({"ping :stillebot"}) + queue; //Prepend to queue
 	}
 
 	int(0..1) update_options(mapping opt) {
