@@ -1,5 +1,6 @@
 inherit http_websocket;
 inherit irc_callback;
+#define NERF //NERFED FOR NOW. I am getting so sick of problems and I don't even know what the cause is.
 constant markdown = #"# Ghostwriter $$displayname$$
 
 When your channel is offline, host other channels automatically. You can immediately
@@ -93,7 +94,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (string scopes = ensure_bcaster_token(req, "chat_login channel_editor chat:edit", req->misc->session->user->?login || "!!"))
 		login = sprintf("> This feature requires Twitch chat authentication.\n>\n"
 				"> [Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
+	#ifndef NERF
 	if (!login) spawn_task(force_check(req->misc->session->user->id));
+	#endif
 	if (!login && req->misc->session->user->id == botid && req->variables->showall) {
 		string ret = "### Active channels\n";
 		foreach (persist_status->path("ghostwriter"); string chanid; mapping info) {
@@ -328,7 +331,7 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 
 void connect(string chanid, string chan, string msg) {
 	if (!chanstate[chanid]) chanstate[chanid] = (["statustype": "idle", "status": "Channel Offline"]);
-	irc_connect((["user": chan]))->then() {__ARGS__[0]->send(chan, msg); werror("QUEUE: %O\n", __ARGS__[0]->queue);}
+	irc_connect((["user": chan, "lowprio": 1]))->then() {__ARGS__[0]->send(chan, msg); werror("QUEUE: %O\n", __ARGS__[0]->queue);}
 	->thencatch() {werror("UNABLE TO CONNECT GHOSTWRITER %O %O\n%s\n", chanid, chan, describe_backtrace(__ARGS__[0]));};
 }
 
@@ -364,8 +367,10 @@ continue void force_check_all() {
 
 void websocket_cmd_recheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!(int)conn->group) return;
+	#ifndef NERF
 	spawn_task(force_check(conn->group));
 	//spawn_task(force_check_all());
+	#endif
 }
 
 void websocket_cmd_pause(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -375,8 +380,10 @@ void websocket_cmd_pause(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	mapping config = persist_status->path("ghostwriter", chanid);
 	int pausetime = ((int)config->pausetime || DEFAULT_PAUSE_TIME);
 	st->pause_until = time() + pausetime;
+	#ifndef NERF
 	spawn_task(recalculate_status(chanid));
 	call_out(lambda() {spawn_task(G->G->websocket_types->ghostwriter->recalculate_status(chanid));}, pausetime);
+	#endif
 }
 
 EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string chanid, mapping event] = __ARGS__;
@@ -396,7 +403,9 @@ EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string ch
 void has_channel(string chanid, string target) {
 	if (!autohosts_this[target]) autohosts_this[target] = (<>);
 	autohosts_this[target][chanid] = 1;
+	#ifndef NERF
 	stream_online(target, (["broadcaster_user_id": (string)target]));
+	#endif
 	send_updates_all(target); //Could save some hassle by only updating AHT, but would need to remap to channel objects
 }
 
@@ -481,6 +490,7 @@ void websocket_cmd_clear(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 }
 
 continue Concurrent.Future fetch_name(string chanid, mapping info) {
+	werror("GHOSTWRITER: Fetching name for %O\n", chanid);
 	mapping user = yield(get_user_info(chanid));
 	info->chan = user->login;
 	persist_status->save();
@@ -505,10 +515,14 @@ void reconnect() {
 	irc_connect(([
 		"capabilities": ({"tags", "commands"}),
 		"join": channels,
+		"lowprio": 2,
 	]));
 }
 
 protected void create(string name) {
+	#ifdef NERF
+	http_websocket::create(name); return;
+	#endif
 	::create(name);
 	if (!G->G->ghostwriterstate) G->G->ghostwriterstate = ([]);
 	chanstate = G->G->ghostwriterstate;
