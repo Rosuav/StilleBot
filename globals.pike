@@ -513,7 +513,7 @@ class websocket_handler
 }
 
 //Token bucket system, shared among all IRC connections.
-float request_rate_token(string user, string chan) {
+float request_rate_token(string user, string chan, int|void lowprio) {
 	//By default, messages are limited to 20 every 30 seconds.
 	int bucket_size = 20;
 	int window_size = 30;
@@ -547,7 +547,7 @@ float request_rate_token(string user, string chan) {
 	//that being the (now+1)th window, plus the safety second. Asking Pike
 	//how many seconds since an epoch in the future returns a negative number,
 	//and negating that number gives us the time until that instant.
-	return -time(window_size * (now + 1) + 1) - safety_shave;
+	return -time(window_size * (now + 1) + 1) - safety_shave + (lowprio * window_size / 10.0);
 }
 
 #ifdef IRCTRACE
@@ -564,6 +564,7 @@ join		Optional array of channels to join (include the hashes)
 login_commands	Optional commands to be sent after (re)connection
 encrypt		Set to 1 to require encryption, -1 to require unencrypted.
 		The default will change at some point such that most are encrypted.
+lowprio		Reduce priority by some value 1-9, default 0 is highest priority
 */
 @"G->G->irc_callbacks"; @"G->G->irc_token_bucket"; @"G->G->user_mod_status";
 class _TwitchIRC(mapping options) {
@@ -713,7 +714,7 @@ class _TwitchIRC(mapping options) {
 			string autolim;
 			if (has_prefix(next, "JOIN ")) autolim = "#!join";
 			else if (sscanf(next, "PRIVMSG %s :", string c) && c) autolim = c;
-			if (float wait = autolim && request_rate_token(options->user, autolim)) {
+			if (float wait = autolim && request_rate_token(options->user, autolim, options->lowprio)) {
 				queue = ({next}) + queue;
 				call_out(sockwrite, wait);
 				return;
@@ -829,7 +830,7 @@ class _TwitchIRC(mapping options) {
 	//proceeding. This is done automatically for PRIVMSG and JOIN commands, but for
 	//anything else, the same token buckets can be used.
 	void get_token(string chan) {
-		float wait = request_rate_token(options->user, chan);
+		float wait = request_rate_token(options->user, chan, options->lowprio);
 		//No token available? Delay, then re-request.
 		if (wait) queue = ({wait, ({get_token, chan})}) + queue;
 	}
