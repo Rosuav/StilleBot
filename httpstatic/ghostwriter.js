@@ -28,6 +28,8 @@ export function render(state) {
 		else set_content("#channels", "No channels to autohost yet - add one below!");
 	}
 	if (state.status) set_content("#statusbox", state.status).className = "status" + state.statustype;
+	//TODO: Retain the status too
+	if (state.login_error) set_content("#statusbox", state.login_error).className = "statuserror";
 	if (state.pausetime) DOM("#pausetime").value = state.pausetime;
 	//Allow the server to explicitly mark us as inactive (for the demo)
 	if (state.inactive) {

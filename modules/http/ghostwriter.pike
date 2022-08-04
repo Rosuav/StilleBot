@@ -68,6 +68,10 @@ Your Twitch stream schedule is used for automatic pausing, or you can manually p
 	background: #fcf;
 	border: 3px solid rebeccapurple;
 }
+#statusbox.statuserror {
+	background: #ffc;
+	border: 3px solid #ff0;
+}
 </style>
 ";
 
@@ -172,6 +176,11 @@ continue Concurrent.Future recalculate_status(string chanid) {
 	if (sizeof(self_live)) st->uptime = self_live[0]->started_at;
 	else m_delete(st, "uptime");
 	mapping config = persist_status->path("ghostwriter", chanid);
+	string chan = lower_case(config->chan);
+	if (!persist_status->path("bcaster_token")[chan]) {config->login_error = "No broadcaster auth"; return 0;}
+	array scopes = (persist_status->path("bcaster_token_scopes")[chan]||"") / " ";
+	if (!has_value(scopes, "chat:edit") && !has_value(scopes, "chat:read")) {config->login_error = "No chat auth"; return 0;}
+	m_delete(config, "login_error");
 	int pausetime = ((int)config->pausetime || DEFAULT_PAUSE_TIME);
 	array(int) next_check = ({time() + 86400}); //Maximum time that we'll ever wait between schedule checks (in case someone adds or changes)
 	if (st->schedule_last_checked < next_check[0]) {
