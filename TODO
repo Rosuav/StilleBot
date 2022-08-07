@@ -168,3 +168,5 @@
     when the name has been translated into an ID
 * If no redemptions available, GUI command editor should have disabled entry to
   say so, not just an empty drop-down.
+* FIXME: Replaying of events seems to be backwards. The top entry shows the most
+  recent, but replays the oldest, and vice versa the bottom. Alert box bug.
