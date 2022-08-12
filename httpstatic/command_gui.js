@@ -183,6 +183,7 @@ function builtin_types() {
 
 //If we have pointsrewards, remap it into something more useful
 let rewards = {"": ""}; try {pointsrewards.forEach(r => rewards[r.id] = r.title);} catch (e) { }
+if (Object.keys(rewards).length === 1) rewards = { }; //If there are no rewards whatsoever, show the dropdown differently
 
 const types = {
 	anchor_command: {
@@ -1041,6 +1042,8 @@ function open_element_properties(el) {
 			if (values.length === 3 && typeof values[0] === "number") {
 				const [min, max, step] = values;
 				control = INPUT({...id, type: "number", min, max, step, value});
+			} else if (values.length === 0) {
+				control = SELECT(id, OPTION({disabled: true}, param.if_empty || "(none)"));
 			} else {
 				control = SELECT({...id, value}, values.map(v => OPTION({value: v}, (param.selections||{})[v] || v)));
 			}
