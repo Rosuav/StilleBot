@@ -170,3 +170,7 @@
   say so, not just an empty drop-down.
 * FIXME: Replaying of events seems to be backwards. The top entry shows the most
   recent, but replays the oldest, and vice versa the bottom. Alert box bug.
+* Raidfinder is currently only able to see old-style tags (with their IDs). When
+  the API grows support for new-style tags (free-form, max 10), try to support
+  both. Eventually, ditch old-style tags and leave them blank, rather than doing
+  the extra API calls to translate tag IDs to tag text.
