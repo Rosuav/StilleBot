@@ -166,8 +166,6 @@
 * Replace bcaster_token[name] with user_token[id] and ditto scopes
   - Have a compatibility function that returns a promise and yields the token
     when the name has been translated into an ID
-* If no redemptions available, GUI command editor should have disabled entry to
-  say so, not just an empty drop-down.
 * Raidfinder is currently only able to see old-style tags (with their IDs). When
   the API grows support for new-style tags (free-form, max 10), try to support
   both. Eventually, ditch old-style tags and leave them blank, rather than doing
