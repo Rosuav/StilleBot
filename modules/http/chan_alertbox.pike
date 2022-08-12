@@ -270,6 +270,11 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 .replayalert {
 	padding: 0 3px;
 }
+
+#replays {
+	display: flex;
+	flex-direction: column-reverse; /* Recent at the top */
+}
 </style>
 
 > ### Alert preview
