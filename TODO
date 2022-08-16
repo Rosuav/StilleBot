@@ -170,3 +170,11 @@
   the API grows support for new-style tags (free-form, max 10), try to support
   both. Eventually, ditch old-style tags and leave them blank, rather than doing
   the extra API calls to translate tag IDs to tag text.
+* Raidfinder: include your stream teams? Make it an option?
+  - GET https://api.twitch.tv/helix/teams/channel?broadcaster_id=YOU
+    - Cache the team IDs maybe, to reduce the number of API calls - most people
+      don't join/leave teams often
+  - https://api.twitch.tv/helix/teams?id=6358&id=7384
+    - Cache the member IDs but not for as long
+  - Purge both caches on looking at a specific page or subpage that looks at
+    teams, which can also be where you choose to have teams active
