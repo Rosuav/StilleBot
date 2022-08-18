@@ -178,3 +178,10 @@
     - Cache the member IDs but not for as long
   - Purge both caches on looking at a specific page or subpage that looks at
     teams, which can also be where you choose to have teams active
+* Alertbox: For any non-personal alert, have a "Revert to Stock" which deletes the
+  alert settings that you have, aside from the "Active" flag
+  - It may be worth having Active be a single-attribute update, so when you toggle
+    activation status, it doesn't save everything else.
+  - When an alert does not have any other details set, it uses a stock alert. Thus
+    you can easily enable and disable alerts, without having to do the work of
+    creating them. (I think they should start enabled?)
