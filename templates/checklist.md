@@ -31,6 +31,7 @@ img {
 	figcaption {font-size: 50%;}
 }
 img:hover {filter: saturate(1);}
+body.greyscale {filter: saturate(0);}
 </style>
 
 <style id=haveemotes>
@@ -42,3 +43,6 @@ $$login_link$$
 $$text$$
 
 <script type=module src="$$static||utils.js$$"></script>
+<script>
+document.getElementById("greyscale").onclick = e => document.body.classList.toggle("greyscale");
+</script>
