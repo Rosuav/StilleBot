@@ -161,7 +161,7 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 		array emotesets = values(sets); sort((array(int))indices(sets), emotesets);
 		if (!sizeof(emotesets)) emotesets = ({({"None", ({"No emotes found for this channel. Partnered and affiliated channels have emote slots available; emotes awaiting approval may not show up here."})})});
 		return render_template("checklist.md", ([
-			"login_link": "<button id=greyscale>Toggle Greyscale (value check)</button>",
+			"login_link": "<button id=greyscale onclick=\"document.body.classList.toggle('greyscale')\">Toggle Greyscale (value check)</button>",
 			"emotes": "img", "title": "Channel emotes: " + req->variables->broadcaster,
 			"text": sprintf("%{\n## %s\n%{%s %}\n%}", emotesets),
 		]));

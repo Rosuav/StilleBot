@@ -43,6 +43,3 @@ $$login_link$$
 $$text$$
 
 <script type=module src="$$static||utils.js$$"></script>
-<script>
-document.getElementById("greyscale").onclick = e => document.body.classList.toggle("greyscale");
-</script>
