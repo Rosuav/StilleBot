@@ -185,3 +185,4 @@
   - When an alert does not have any other details set, it uses a stock alert. Thus
     you can easily enable and disable alerts, without having to do the work of
     creating them. (I think they should start enabled?)
+* stillebot.css has two .buttonbox blocks which conflict
