@@ -144,11 +144,13 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 #advanced_view header div {order: 2;} /* Force the close button to the end */
 .buttonbox {
 	display: flex;
-	padding: 0; margin: 0;
+	padding: 0; margin: 5px 0;
 	list-style-type: none;
-	gap: 0.5em;
+	gap: 5px;
 	align-items: flex-end;
+	flex-wrap: wrap;
 }
+.buttonbox.attached {margin-bottom: 1px;}
 #cmdviewtabset label {
 	background: #a0f0c0;
 	padding-right: 0.25em;
@@ -160,12 +162,6 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 }
 .msgedit {
 	width: min-content;
-}
-.buttonbox {
-	display: flex;
-	gap: 5px;
-	margin: 5px 0;
-	flex-wrap: wrap;
 }
 #typedesc {max-width: fit-content;}
 #setprops {min-width: 25em;}

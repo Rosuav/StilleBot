@@ -99,7 +99,7 @@ const text_message = {...default_handlers,
 		}
 		const allvars = Object.assign({}, ...vars_avail);
 		return DIV({className: "msgedit"}, [
-			DIV({className: "buttonbox"}, Object.entries(allvars).map(([v, d]) => BUTTON({type: "button", title: d, className: "insertvar", "data-insertme": v}, v))),
+			DIV({className: "buttonbox attached"}, Object.entries(allvars).map(([v, d]) => BUTTON({type: "button", title: d, className: "insertvar", "data-insertme": v}, v))),
 			TEXTAREA({...id, rows: 10, cols: 60}, el.message || ""),
 		]);
 	},
