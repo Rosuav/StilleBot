@@ -187,8 +187,6 @@
     creating them. (I think they should start enabled?)
 * stillebot.css has two .buttonbox blocks which conflict
 * Free Media dialog needs to show descriptions
-* Clicking on a video in the Free Media dialog (possibly also library) doesn't
-  select it (clicking a GIF does). Disable controls. Ensure muted and looping.
 * Maybe allow Free Media to specify a URL? Would allow a large-file repository
   elsewhere (maybe Gideon) while keeping the index on GH Pages for performance.
   - What would it be like to host static files on Digital Ocean? I think they have

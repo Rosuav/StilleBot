@@ -6,7 +6,7 @@ function THUMB(file) {
 	if (!file.url) return DIV({className: "thumbnail"}, "uploading...");
 	if (file.mimetype.startsWith("audio/")) return DIV({className: "thumbnail"}, AUDIO({src: file.url, controls: true}));
 	if (file.mimetype.startsWith("video/")) {
-		const elem = VIDEO({class: "thumbnail", src: file.url, controls: true, loop: true, ".muted": true});
+		const elem = VIDEO({class: "thumbnail", src: file.url, loop: true, ".muted": true});
 		elem.play();
 		return elem;
 	}
