@@ -64,6 +64,11 @@ async function populate_freemedia() {
 			]),
 		]),
 		file.description.split("\n").map(para => P({class: "descr"}, para)),
+		file.creator && P({class: "descr"}, [
+			"Created by ",
+			file.creator, " ",
+			file.creatorlink && A({href: file.creatorlink, target: "_blank"}, file.creatorlink),
+		]),
 	])));
 }
 populate_freemedia();
