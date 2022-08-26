@@ -60,8 +60,10 @@ async function populate_freemedia() {
 			THUMB(file),
 			FIGCAPTION([
 				A({href: file.url, target: "_blank"}, file.filename),
+				BR(),
 			]),
 		]),
+		file.description.split("\n").map(para => P({class: "descr"}, para)),
 	])));
 }
 populate_freemedia();

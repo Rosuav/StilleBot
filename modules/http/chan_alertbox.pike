@@ -169,6 +169,10 @@ figcaption {
 	max-width: 150px;
 	overflow-wrap: break-word;
 }
+.descr {
+	max-width: calc(150px + 2em);
+	font-size: smaller;
+}
 .thumbnail audio {max-width: 100%; max-height: 100%;}
 
 .alertconfig {
