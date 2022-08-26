@@ -191,3 +191,5 @@
   select it (clicking a GIF does). Disable controls. Ensure muted and looping.
 * Maybe allow Free Media to specify a URL? Would allow a large-file repository
   elsewhere (maybe Gideon) while keeping the index on GH Pages for performance.
+  - What would it be like to host static files on Digital Ocean? I think they have
+    some zero-dollar options.
