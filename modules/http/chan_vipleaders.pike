@@ -5,6 +5,8 @@ constant markdown = #"# Leaderboards and VIPs
 
 NOTE: AnAnonymousGifter may show up in the subgifting leaderboard for
 statistical purposes, but will be skipped for VIP badges. Sorry, ghosts.
+Similarly, moderators (shown with a green highlight) already have a badge
+and will generously pass along the gemstone to the next person.
 
 NOTE: Subgifting stats are currently based on UTC month rollover, but
 cheering stats come directly from the Twitch API and are based on Los Angeles
