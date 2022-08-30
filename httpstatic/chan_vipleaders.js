@@ -17,12 +17,17 @@ function remap_to_array(stats) {
 	return people;
 }
 
-function make_list(arr, desc, empty) {
+function make_list(arr, desc, empty, eligible) {
 	if (!arr || !arr.length) return DIV(empty);
-	return OL(arr.map(p => LI(
-		{className: p.user_id === "274598607" ? "anonymous" : mods[p.user_id] ? "is_mod" : ""},
-		[SPAN({className: "username"}, p.user_name), " with ", p.score, desc]
-	)));
+	return OL(arr.map(p => {
+		let className = "", title = "Not eligible for a badge in this month";
+		if (p.user_id === "274598607") {className = "anonymous"; title = "Anonymous - ineligible for badge";}
+		else if (mods[p.user_id]) {className = "is_mod"; title = "Moderator - already has a badge, won't take a VIP slot";}
+		else if (eligible-- > 0) {className = "eligible"; title = "Eligible for a VIP badge for this month!";}
+		return LI({className, title},
+			[SPAN({className: "username"}, p.user_name), " with ", p.score, desc]
+		);
+	}));
 }
 
 const monthnames = ["???", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -47,8 +52,8 @@ export function render(data) {
 				mod && BUTTON({className: "remvip", title: "Remove VIPs"}, "X"),
 			])));
 			rows.push(TR([
-				TD(make_list(subs, " subs", "(no subgifting data)")),
-				TD(make_list(bits, " bits", "(no cheering data)")),
+				TD(make_list(subs, " subs", "(no subgifting data)", data.badge_count || 10)),
+				TD(make_list(bits, " bits", "(no cheering data)", data.badge_count || 10)),
 			]));
 			if (!--mon) {--year; mon = 12;}
 		}
