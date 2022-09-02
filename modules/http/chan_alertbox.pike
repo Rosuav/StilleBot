@@ -650,8 +650,20 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
 	cfg->alertconfigs->defaults = resolve_inherits(cfg->alertconfigs, "defaults",
 		cfg->alertconfigs->defaults || ([]), 0);
+	mapping alerts = cfg->alertconfigs + ([]); //Allow mutation
+	//For any alerts that aren't configured here, copy in the corresponding stock alert
+	mapping stock = persist_status->path("alertbox", "0", "alertconfigs");
+	foreach (sort(indices(stock)), string key) { //NOTE: Must sort, to ensure that base alerts are sighted before their variants
+		if (alerts[key]) continue;
+		if (sscanf(key, "%s-%s", string base, string var) && var) {
+			//Gotta have the variant in the base, which probably means it's largely stock
+			if (!alerts[base] || !has_value(alerts[base]->variants || ({ }), key)) continue;
+		}
+		//Okay. Copy it in.
+		alerts[key] = stock[key];
+	}
 	return (["items": cfg->files || ({ }),
-		"alertconfigs": cfg->alertconfigs,
+		"alertconfigs": alerts,
 		"alerttypes": ALERTTYPES[..<1] + (cfg->personals || ({ })),
 		"hostlist_command": cfg->hostlist_command || "",
 		"hostlist_format": cfg->hostlist_format || "",
@@ -780,6 +792,7 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		if (!arrayp(base->variants)) return; //A properly-saved alert variant should have a base alert with a set of variants.
 		m_delete(cfg->alertconfigs, msg->id);
 		base->variants -= ({msg->id});
+		resolve_affected_inherits((string)channel->userid, msg->id);
 		persist_status->save();
 		send_updates_all(conn->group);
 		send_updates_all(cfg->authkey + channel->name);
@@ -787,7 +800,15 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		return;
 	}
 	if (msg->type == "alert") {
-		werror("RESET TO STOCK %O\n", msg);
+		if (!stringp(msg->id) || has_value(msg->id, '-')) return; //Don't delete variants this way (see above instead)
+		if (!cfg->alertconfigs) return;
+		mapping base = m_delete(cfg->alertconfigs, msg->id);
+		if (!base) return; //Already didn't exist.
+		if (arrayp(base->variants)) m_delete(cfg->alertconfigs, base->variants[*]);
+		resolve_affected_inherits((string)channel->userid, msg->id);
+		persist_status->save();
+		send_updates_all(conn->group);
+		send_updates_all(cfg->authkey + channel->name);
 		return;
 	}
 	if (!cfg->files) return; //No files, can't delete
