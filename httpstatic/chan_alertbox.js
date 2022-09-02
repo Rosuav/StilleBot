@@ -458,7 +458,7 @@ export function render(data) {
 				BUTTON({type: "submit", disabled: true}, "Save"),
 				nondef ? BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")
 					: BUTTON({type: "button", class: "editvariants"}, "Manage alert sets"),
-				type !== "variant" && BUTTON({type: "button", className: "editvariants", "data-type": type}, "Manage alert variants"),
+				nondef && type !== "variant" && BUTTON({type: "button", className: "editvariants", "data-type": type}, "Manage alert variants"),
 			]),
 		]));
 		if (type === "variant") DOM("#replaceme").replaceWith(alerttypes.variant);
