@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, ABBR, AUDIO, B, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR, UL, VIDEO} = choc; //autoimport
-import {waitlate, TEXTFORMATTING} from "$$static||utils.js$$";
+import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file) {
 	if (!file.url) return DIV({className: "thumbnail"}, "uploading...");
@@ -459,6 +459,7 @@ export function render(data) {
 				nondef ? BUTTON({type: "button", className: "testalert", "data-type": type}, "Send test alert")
 					: BUTTON({type: "button", class: "editvariants"}, "Manage alert sets"),
 				nondef && type !== "variant" && BUTTON({type: "button", className: "editvariants", "data-type": type}, "Manage alert variants"),
+				BUTTON({type: "reset"}, "Reset to defaults"),
 			]),
 		]));
 		if (type === "variant") DOM("#replaceme").replaceWith(alerttypes.variant);
@@ -753,6 +754,15 @@ on("submit", ".alertconfig", e => {
 	e.match.classList.remove("unsaved-changes");
 });
 
+on("reset", ".alertconfig", e => {
+	e.preventDefault();
+	const id = e.match.dataset.type;
+	simpleconfirm(() => [
+		P("Resetting this alert will remove all configuration and variants, restoring the default."),
+		P("Are you sure you want to do this? Cannot be undone!"),
+	], () => ws_sync.send({cmd: "delete", type: "alert", id}))();
+});
+
 on("dragstart", "#alertboxlink", e => {
 	//TODO: Set the width and height to the (individual) maximums of all alerts, incl defaults
 	e.dataTransfer.setData("text/uri-list", `${e.match.href}&layer-name=Host%20Alerts&layer-width=600&layer-height=400`);
@@ -955,7 +965,7 @@ on("submit", "#editpersonal", e => {
 	DOM("#personaldlg").close();
 });
 
-on("click", "#delpersonal", waitlate(1000, 7500, "Really delete?", e => {
+on("click", "#delpersonal", simpleconfirm("Really delete this personal alert?", e => {
 	ws_sync.send({cmd: "delpersonal", id: DOM("#editpersonal").elements.id.value});
 	DOM("#personaldlg").close();
 }));

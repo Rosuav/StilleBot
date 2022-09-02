@@ -786,6 +786,10 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "select_variant", "type": basetype, "variant": ""]), 4));
 		return;
 	}
+	if (msg->type == "alert") {
+		werror("RESET TO STOCK %O\n", msg);
+		return;
+	}
 	if (!cfg->files) return; //No files, can't delete
 	int idx = search(cfg->files->id, msg->id);
 	if (idx == -1) return; //Not found.
