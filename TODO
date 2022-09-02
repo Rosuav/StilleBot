@@ -194,3 +194,5 @@
   Free Media from there, not good.
 * Remove all uploaded files from the Demo alertbox; if they're appropriate for stock
   alerts, put them onto Free Media instead.
+* Store Free Media URIs as freemedia:// instead of direct HTTP links, to ensure
+  that they can be round-tripped correctly, and to allow offsite references.
