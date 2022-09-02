@@ -192,3 +192,5 @@
 * Free-Media library needs max width and scrolling.
 * Personal library peered with Free Media? Currently have to open library, then pick
   Free Media from there, not good.
+* Remove all uploaded files from the Demo alertbox; if they're appropriate for stock
+  alerts, put them onto Free Media instead.
