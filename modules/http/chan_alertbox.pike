@@ -788,6 +788,7 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		if (!stringp(msg->id) || !has_value(msg->id, '-')) return;
 		if (!cfg->alertconfigs) return;
 		sscanf(msg->id, "%s-%s", string basetype, string variation);
+		copy_stock(cfg->alertconfigs, basetype);
 		mapping base = cfg->alertconfigs[basetype]; if (!base) return;
 		if (!arrayp(base->variants)) return; //A properly-saved alert variant should have a base alert with a set of variants.
 		m_delete(cfg->alertconfigs, msg->id);
@@ -888,6 +889,18 @@ void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	send_updates_all(cfg->authkey + channel->name);
 }
 
+void copy_stock(mapping alertconfigs, string basetype) {
+	//If an alerts isn't yet configured here, copy in the corresponding stock alert
+	mapping base = alertconfigs[basetype]; if (base) return;
+	mapping stock = persist_status->path("alertbox", "0", "alertconfigs");
+	//Copy in the alert. Be sure to avoid unintended change propagation.
+	alertconfigs[basetype] = base = Standards.JSON.decode(Standards.JSON.encode(stock[basetype] || ([])));
+	//If the alert has variants, copy those too. Not recursive.
+	foreach (base->variants || ({ }), string var) {
+		alertconfigs[var] = Standards.JSON.decode(Standards.JSON.encode(stock[var]));
+	}
+}
+
 void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel || grp != "control") return;
@@ -896,24 +909,28 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	string basetype = msg->type || ""; sscanf(basetype, "%s-%s", basetype, string variation);
 	if (!valid_alert_type(basetype, cfg)) return;
 	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
+	copy_stock(cfg->alertconfigs, basetype);
+
 	mapping sock_reply;
 	if (variation == "") {
 		//New variant requested. Generate a subid and use that.
 		//Note that if (!variation), we're editing the base alert, not a variant.
 		do {variation = replace(MIME.encode_base64(random_string(9)), (["/": "1", "+": "0"]));}
 		while (cfg->alertconfigs[basetype + "-" + variation]);
-		if (!cfg->alertconfigs[basetype]) cfg->alertconfigs[basetype] = ([]);
 		msg->type = basetype + "-" + variation;
 		sock_reply = (["cmd": "select_variant", "type": basetype, "variant": variation]);
 	} else if (variation) {
 		//Existing variant requested. Make sure the ID has already existed.
+		//Note that attempting to edit a borked variant ID might cause the base alert
+		//to get copied, but then not saved. It shouldn't have any material effect.
 		if (!cfg->alertconfigs[msg->type]) return;
 	}
+
+	mapping data = cfg->alertconfigs[msg->type];
+	if (!data) data = cfg->alertconfigs[msg->type] = ([]);
 	if (!msg->format) {
 		//If the format is not specified, this is a partial update, which can
 		//change only the SINGLE_EDIT_ATTRS - all others are left untouched.
-		mapping data = cfg->alertconfigs[msg->type];
-		if (!data) data = cfg->alertconfigs[msg->type] = ([]);
 		foreach (SINGLE_EDIT_ATTRS, string attr) if (msg[attr]) data[attr] = msg[attr];
 		if (msg->image) {
 			//If you're setting the image, see if we need to set the "image_is_video" flag
@@ -935,8 +952,8 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	//If the format *is* specified, this is a full update, *except* for the retained
 	//attributes. Any unspecified attribute will be deleted, setting it to inherit.
 	int hosts_were_active = cfg->alertconfigs->?hostalert->?active;
-	mapping data = cfg->alertconfigs[msg->type] = filter(
-		mkmapping(RETAINED_ATTRS, (cfg->alertconfigs[msg->type]||([]))[RETAINED_ATTRS[*]])
+	data = cfg->alertconfigs[msg->type] = filter(
+		mkmapping(RETAINED_ATTRS, data[RETAINED_ATTRS[*]])
 		| mkmapping(FORMAT_ATTRS, msg[FORMAT_ATTRS[*]]))
 			{return __ARGS__[0] && __ARGS__[0] != "";}; //Any blank values get removed and will be inherited.
 	//You may inherit from "", meaning the defaults, or from any other alert that
