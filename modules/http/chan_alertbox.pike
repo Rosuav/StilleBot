@@ -501,6 +501,23 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
+//Take a user's alert configs and add in any implicit stock alerts
+mapping incorporate_stock_alerts(mapping alertconfigs) {
+	mapping alerts = alertconfigs + ([]); //Allow mutation
+	//For any alerts that aren't configured here, copy in the corresponding stock alert
+	mapping stock = persist_status->path("alertbox", "0", "alertconfigs");
+	foreach (sort(indices(stock)), string key) { //NOTE: Must sort, to ensure that base alerts are sighted before their variants
+		if (alerts[key]) continue;
+		if (sscanf(key, "%s-%s", string base, string var) && var) {
+			//Gotta have the variant in the base, which probably means it's largely stock
+			if (!alerts[base] || !has_value(alerts[base]->variants || ({ }), key)) continue;
+		}
+		//Okay. Copy it in.
+		alerts[key] = stock[key];
+	}
+	return alerts;
+}
+
 //Find the alertset that this alert depends on. Note that (as of 20220520) only
 //one alertset can be active at a time, and therefore we do not support conflicting
 //alertset choices in an inheritance chain; therefore there will be only one alert
@@ -522,8 +539,9 @@ mapping resolve_inherits(mapping alerts, string id, mapping alert, string alerts
 }
 
 void resolve_all_inherits(string userid) {
-	mapping alerts = persist_status->path("alertbox", userid)->alertconfigs, ret = ([]);
-	if (alerts) foreach (alerts; string id; mapping alert) if (id != "defaults") {
+	mapping alerts = incorporate_stock_alerts(persist_status->path("alertbox", userid)->alertconfigs || ([]));
+	mapping ret = ([]);
+	foreach (alerts; string id; mapping alert) if (id != "defaults") {
 		//First walk the list of parents to find the alert set.
 		string alertset = find_alertset(alerts, id);
 		//Then, resolve inherits via the list of parents AND the alert set.
@@ -650,20 +668,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
 	cfg->alertconfigs->defaults = resolve_inherits(cfg->alertconfigs, "defaults",
 		cfg->alertconfigs->defaults || ([]), 0);
-	mapping alerts = cfg->alertconfigs + ([]); //Allow mutation
-	//For any alerts that aren't configured here, copy in the corresponding stock alert
-	mapping stock = persist_status->path("alertbox", "0", "alertconfigs");
-	foreach (sort(indices(stock)), string key) { //NOTE: Must sort, to ensure that base alerts are sighted before their variants
-		if (alerts[key]) continue;
-		if (sscanf(key, "%s-%s", string base, string var) && var) {
-			//Gotta have the variant in the base, which probably means it's largely stock
-			if (!alerts[base] || !has_value(alerts[base]->variants || ({ }), key)) continue;
-		}
-		//Okay. Copy it in.
-		alerts[key] = stock[key];
-	}
 	return (["items": cfg->files || ({ }),
-		"alertconfigs": alerts,
+		"alertconfigs": incorporate_stock_alerts(cfg->alertconfigs),
 		"alerttypes": ALERTTYPES[..<1] + (cfg->personals || ({ })),
 		"hostlist_command": cfg->hostlist_command || "",
 		"hostlist_format": cfg->hostlist_format || "",
@@ -855,10 +861,10 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 		"NAME": channel->name[1..], "username": channel->name[1..], //TODO: Use the display name
 		"test_alert": 1,
 	]);
-	if (variation && !cfg->alertconfigs[msg->type]) alert->send_alert = basetype; //Borked variation name? Test the base alert instead.
+	mapping alertcfg = cfg->alertconfigs[msg->type] || persist_status->path("alertbox", "0", "alertconfigs")[msg->type];
+	if (!alertcfg) return;
 	int idx = search(ALERTTYPES->id, basetype);
 	mapping pholders = ALERTTYPES[idx]->testpholders;
-	mapping alertcfg = cfg->alertconfigs[msg->type];
 	foreach (pholders; string key; string|array value) {
 		if (alertcfg["condoper-" + key] == "==") {alert[key] = (string)alertcfg["condval-" + key]; continue;}
 		int minimum = alertcfg["condoper-" + key] == ">=" && alertcfg["condval-" + key];
