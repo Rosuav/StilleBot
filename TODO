@@ -189,3 +189,6 @@
   elsewhere (maybe Gideon) while keeping the index on GH Pages for performance.
   - What would it be like to host static files on Digital Ocean? I think they have
     some zero-dollar options.
+* Free-Media library needs max width and scrolling.
+* Personal library peered with Free Media? Currently have to open library, then pick
+  Free Media from there, not good.
