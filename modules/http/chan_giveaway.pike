@@ -317,7 +317,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//multiple rewards, add a numeric disambiguator on conflict.
 			string deftitle = copyfrom->title || "Example Dynamic Reward";
 			mapping rwd = (["basecost": copyfrom->cost || 1000, "availability": "{online}", "formula": "PREV * 2"]);
-			array have = filter(G->G->pointsrewards[chan]->title, has_prefix, deftitle);
+			array have = filter((G->G->pointsrewards[chan]||({}))->title, has_prefix, deftitle);
 			copyfrom |= (["title": deftitle + " #" + (sizeof(have) + 1), "cost": rwd->basecost]);
 			string id = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
 				(["Authorization": "Bearer " + token]),
