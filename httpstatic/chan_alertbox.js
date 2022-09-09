@@ -137,11 +137,11 @@ function load_data(type, attrs, par) {
 	const previewimg = par.querySelector("[data-library=image]");
 	if (previewimg && (previewimg.tagName !== "VIDEO") !== !attrs.image_is_video) {
 		if (attrs.image_is_video) {
-			const el = VIDEO({class: "preview", "data-library": "image", src: attrs.image, loop: true, ".muted": true});
+			const el = VIDEO({class: "preview", "data-library": "image", loop: true, ".muted": true});
 			previewimg.replaceWith(el);
 			el.play();
 		}
-		previewimg.replaceWith(IMG({class: "preview", "data-library": "image", src: attrs.image || TRANSPARENT_IMAGE}));
+		previewimg.replaceWith(IMG({class: "preview", "data-library": "image"}));
 	}
 	par.querySelectorAll("[data-library]").forEach(el => {
 		const block = el.closest(".inheritblock");
