@@ -192,7 +192,6 @@
 * Free-Media library needs max width and scrolling.
 * Personal library peered with Free Media? Currently have to open library, then pick
   Free Media from there, not good.
-* Store Free Media URIs as freemedia:// instead of direct HTTP links, to ensure
-  that they can be round-tripped correctly, and to allow offsite references.
+* Store uploaded file references as internal URIs, same way freemedia ones are
 * Create new alert base type for charity donations
   - May need a free-media animation; talk to Maaya with any ideas.

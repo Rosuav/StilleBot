@@ -551,8 +551,11 @@ void resolve_all_inherits(string userid) {
 		if (resolved->image_is_video && COMPAT_VERSION < 3) resolved->version = 3;
 		if (resolved->tts_text && COMPAT_VERSION < 4) resolved->version = 4;
 		foreach (({"image", "sound"}), string url) {
-			if (sscanf(resolved[url], "freemedia://%s", string fn) && fn)
-				resolved[url] = G->G->freemedia_filelist[fn]->url;
+			if (sscanf(resolved[url] || "", "freemedia://%s", string fn) && fn) {
+				mapping media = G->G->freemedia_filelist->_lookup[fn] || ([]);
+				//TODO: What if !media?
+				resolved[url] = media->url;
+			}
 		}
 	}
 	G_G_("alertbox_resolved")[userid] = ret;
@@ -946,9 +949,14 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 			//If you're setting the image, see if we need to set the "image_is_video" flag
 			int idx = search((cfg->files || ({ }))->url, msg->image);
 			if (idx == -1) {
+				if (sscanf(msg->image || "", "freemedia://%s", string fn) && fn) {
+					mapping media = G->G->freemedia_filelist->_lookup[fn];
+					//TODO: If !media, report error in some way, or revert to a default
+					data->image_is_video = has_prefix(media->mimetype, "video/");
+				}
 				//If it's a link, let the client tell us which tag to use. It'll
 				//only hurt the client if this is wrong anyway.
-				data->image_is_video = has_prefix(msg->image, "https://") && msg->image_is_video;
+				else data->image_is_video = has_prefix(msg->image, "https://") && msg->image_is_video;
 			}
 			else data->image_is_video = has_prefix(cfg->files[idx]->mimetype, "video/");
 		}
@@ -1499,8 +1507,9 @@ continue void initialize_inherits() {
 	//Fetch the free media file list if needed, then resolve inherits (which needs free media URLs)
 	if (G->G->freemedia_filelist->?_last_fetched < time() - 3600) {
 		Protocols.HTTP.Promise.Result res = yield(Protocols.HTTP.Promise.get_url("https://rosuav.github.io/free-media/filelist.json"));
-		G->G->freemedia_filelist = Standards.JSON.decode_utf8(res->get());
-		G->G->freemedia_filelist->_last_fetched = time();
+		mapping fl = G->G->freemedia_filelist = Standards.JSON.decode_utf8(res->get());
+		fl->_last_fetched = time();
+		fl->_lookup = mkmapping(fl->files->filename, fl->files);
 	}
 	mapping resolved = G_G_("alertbox_resolved");
 	//mapping resolved = G->G->alertbox_resolved = ([]); //Use this instead (once) if a change breaks inheritance

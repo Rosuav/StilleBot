@@ -15,7 +15,7 @@ function THUMB(file) {
 
 const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
 const FREEMEDIA_ROOT = "https://rosuav.github.io/free-media/"
-const FREEMEDIA_BASE = FREEMEDIA_ROOT + "media/";
+const FREEMEDIA_BASE = "freemedia://";
 
 const files = { };
 const alerttypes = { }, alert_definitions = { };
@@ -46,14 +46,13 @@ export const autorender = {
 };
 
 //TODO: Call this once and only once, if the user wants freemedia browsing (currently called on startup which is inefficient)
+//Though if it IS delayed, all freemedia:// URIs will need to be resolved on the backend in some way and sent to us.
 const freemedia_files = { };
+let freemedia_update_queue = [];
 async function populate_freemedia() {
 	const data = await (await fetch(FREEMEDIA_ROOT + "filelist.json")).json();
 	console.log("Got free media", data);
-	data.files.forEach(file => {
-		file.url = FREEMEDIA_BASE + file.filename;
-		freemedia_files[file.filename] = file;
-	});
+	data.files.forEach(file => freemedia_files[file.filename] = file);
 	set_content("#freemedialibrary", data.files.map(file => LABEL({"data-type": file.mimetype}, [
 		INPUT({type: "radio", name: "chooseme", value: file.filename}),
 		FIGURE([
@@ -70,6 +69,9 @@ async function populate_freemedia() {
 			file.creatorlink && A({href: file.creatorlink, target: "_blank"}, file.creatorlink),
 		]),
 	])));
+	//Resolve all URIs that were loaded prior to the fetching of the free media index
+	freemedia_update_queue.forEach(([elem, fn]) => elem.src = freemedia_files[fn].url);
+	freemedia_update_queue = null;
 }
 populate_freemedia();
 
@@ -142,10 +144,16 @@ function load_data(type, attrs, par) {
 		previewimg.replaceWith(IMG({class: "preview", "data-library": "image", src: attrs.image || TRANSPARENT_IMAGE}));
 	}
 	par.querySelectorAll("[data-library]").forEach(el => {
-		const want = attrs[el.dataset.library] || TRANSPARENT_IMAGE;
-		if (el.src !== want) el.src = want; //Avoid flicker and video breakage by only setting if it's different
 		const block = el.closest(".inheritblock");
 		if (block) block.classList.toggle("inherited", !attrs[el.dataset.library]);
+		let want = attrs[el.dataset.library] || TRANSPARENT_IMAGE;
+		el.dataset.library_uri = attrs[el.dataset.library];
+		if (want.startsWith("freemedia://")) {
+			const fn = want.replace("freemedia://", "");
+			if (freemedia_update_queue) {freemedia_update_queue.push([el, fn]); return;}
+			else want = freemedia_files[fn].url;
+		}
+		if (el.src !== want) el.src = want; //Avoid flicker and video breakage by only setting if it's different
 	});
 	update_layout_options(par, attrs.layout);
 	update_condition_summary(par);
@@ -658,9 +666,11 @@ on("click", ".showlibrary", e => {
 	if (needvalue) {
 		//Didn't match against any of the library entries.
 		if (librarytarget.src === TRANSPARENT_IMAGE) DOM("input[type=radio][data-special=None]").checked = true;
-		else if (librarytarget.src.startsWith(FREEMEDIA_BASE)) {
+		else if (librarytarget.dataset.library_uri.startsWith(FREEMEDIA_BASE)) {
+			//Free Media selections retain their original URIs. TODO: Use the URI where possible, rather than the
+			//rendered URL that the browser uses for display purposes.
 			DOM("input[type=radio][data-special=FreeMedia]").checked = true;
-			DOM("#freemediafn").value = librarytarget.src.replace(FREEMEDIA_BASE, "");
+			DOM("#freemediafn").value = librarytarget.dataset.library_uri.replace(FREEMEDIA_BASE, "");
 		}
 		else {
 			DOM("input[type=radio][data-special=URL]").checked = true;
@@ -684,7 +694,7 @@ on("input", "#freemediafn", e => DOM("input[type=radio][data-special=" + (e.targ
 on("click", "#libraryselect", async e => {
 	if (librarytarget) {
 		const rb = DOM("#library input[type=radio]:checked");
-		let img = "", type = "";
+		let img = "", type = "", saveme = null;
 		if (rb) switch (rb.dataset.special) {
 			case "None": break;
 			case "URL": {
@@ -697,7 +707,7 @@ on("click", "#libraryselect", async e => {
 			}
 			case "FreeMedia": {
 				const file = freemedia_files[DOM("#freemediafn").value];
-				if (file) {img = file.url; type = file.mimetype;}
+				if (file) {img = file.url; saveme = "freemedia://" + file.filename; type = file.mimetype;}
 				break;
 			}
 			default:
@@ -705,7 +715,7 @@ on("click", "#libraryselect", async e => {
 				type = rb.closest("[data-type]").dataset.type;
 		}
 		ws_sync.send({cmd: "alertcfg", type: librarytarget.closest(".alertconfig").dataset.type,
-			[librarytarget.dataset.library]: img, image_is_video: type.startsWith("video/")});
+			[librarytarget.dataset.library]: saveme || img, image_is_video: type.startsWith("video/")});
 		const isvid = librarytarget.tagName === "VIDEO", wantvid = type.startsWith("video/");
 		if (isvid !== wantvid) librarytarget.replaceWith(wantvid
 			? VIDEO({class: "preview", "data-library": "image", src: img, loop: true, ".muted": true, autoplay: true})
