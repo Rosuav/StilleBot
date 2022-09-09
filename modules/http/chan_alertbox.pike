@@ -550,6 +550,10 @@ void resolve_all_inherits(string userid) {
 		resolved->text_css = textformatting_css(resolved);
 		if (resolved->image_is_video && COMPAT_VERSION < 3) resolved->version = 3;
 		if (resolved->tts_text && COMPAT_VERSION < 4) resolved->version = 4;
+		foreach (({"image", "sound"}), string url) {
+			if (sscanf(resolved[url], "freemedia://%s", string fn) && fn)
+				resolved[url] = G->G->freemedia_filelist[fn]->url;
+		}
 	}
 	G_G_("alertbox_resolved")[userid] = ret;
 }
@@ -1491,15 +1495,25 @@ continue Concurrent.Future fetch_tts_credentials(int fast) {
 	G->G->tts_config->avail_voices = all_voices;
 }
 
+continue void initialize_inherits() {
+	//Fetch the free media file list if needed, then resolve inherits (which needs free media URLs)
+	if (G->G->freemedia_filelist->?_last_fetched < time() - 3600) {
+		Protocols.HTTP.Promise.Result res = yield(Protocols.HTTP.Promise.get_url("https://rosuav.github.io/free-media/filelist.json"));
+		G->G->freemedia_filelist = Standards.JSON.decode_utf8(res->get());
+		G->G->freemedia_filelist->_last_fetched = time();
+	}
+	mapping resolved = G_G_("alertbox_resolved");
+	//mapping resolved = G->G->alertbox_resolved = ([]); //Use this instead (once) if a change breaks inheritance
+	foreach (persist_status->path("alertbox"); string userid;)
+		if (!resolved[userid]) resolve_all_inherits(userid);
+}
+
 protected void create(string name) {
 	::create(name);
 	//See if we have a credentials file. If so, get local credentials via gcloud.
 	if (!G->G->tts_config) G->G->tts_config = ([]);
 	if (file_stat("tts-credentials.json") && !G->G->tts_config->access_token) spawn_task(fetch_tts_credentials(0));
-	mapping resolved = G_G_("alertbox_resolved");
-	//mapping resolved = G->G->alertbox_resolved = ([]); //Use this instead (once) if a change breaks inheritance
-	foreach (persist_status->path("alertbox"); string userid;)
-		if (!resolved[userid]) resolve_all_inherits(userid);
+	spawn_task(initialize_inherits());
 }
 
 /* A Tale of Two Backends
