@@ -2,12 +2,13 @@ import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.
 const {A, ABBR, AUDIO, B, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR, UL, VIDEO} = choc; //autoimport
 import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
-function THUMB(file) {
+function THUMB(file, noautoplay) {
 	if (!file.url) return DIV({className: "thumbnail"}, "uploading...");
 	if (file.mimetype.startsWith("audio/")) return DIV({className: "thumbnail"}, AUDIO({src: file.url, controls: true}));
 	if (file.mimetype.startsWith("video/")) {
 		const elem = VIDEO({class: "thumbnail", src: file.url, loop: true, ".muted": true});
-		elem.play();
+		if (noautoplay) elem.classList.add("hoverplay"); else elem.play();
+		if (file.previewtime) elem.currentTime = file.previewtime;
 		return elem;
 	}
 	return DIV({className: "thumbnail", style: "background-image: url(" + file.url + ")"});
@@ -33,7 +34,7 @@ export const autorender = {
 		return LABEL({"data-type": file.mimetype}, [
 			INPUT({type: "radio", name: "chooseme", value: file.id}),
 			FIGURE([
-				THUMB(file),
+				THUMB(file, true),
 				FIGCAPTION([
 					A({href: file.url, target: "_blank"}, file.name),
 					" ",
@@ -56,7 +57,7 @@ async function populate_freemedia() {
 	set_content("#freemedialibrary", data.files.map(file => LABEL({"data-type": file.mimetype}, [
 		INPUT({type: "radio", name: "chooseme", value: file.filename}),
 		FIGURE([
-			THUMB(file),
+			THUMB(file, true),
 			FIGCAPTION([
 				A({href: file.url, target: "_blank"}, file.filename),
 				BR(),
@@ -566,6 +567,9 @@ on("change", ".condbox", e => {
 on("input", ".condbox [name=cond-label]", e => e.match.closest(".condbox").querySelector("[name=cond-disableautogen]").checked = true);
 
 on("change", "[name=hostbackend]", e => ws_sync.send({cmd: "config", hostbackend: e.match.value}));
+
+on("pointerover", ".hoverplay", e => e.match.play());
+on("pointerout", ".hoverplay", e => e.match.pause());
 
 on("click", ".editvariants", e => {
 	const type = e.match.closest("form").dataset.type;
