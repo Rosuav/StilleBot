@@ -195,3 +195,5 @@
 * Store uploaded file references as internal URIs, same way freemedia ones are
 * Create new alert base type for charity donations
   - May need a free-media animation; talk to Maaya with any ideas.
+* Delay Ghostwriter initialization if no primary IRC connection established
+* Suppress "Conflict" spam on establishment of hooks
