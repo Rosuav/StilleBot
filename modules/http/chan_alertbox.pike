@@ -26,7 +26,7 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 >
 > <div id=uploaderror class=hidden></div>
 >
-> <div id=uploadfrm><div id=uploads class=filelist></div></div>
+> <div id=uploadfrm class=primary><div id=uploads class=filelist></div></div>
 >
 > <p><label class=selectmode><input type=radio name=chooseme data-special=None> None</label><br>
 > <span class=selectmode><input type=radio name=chooseme data-special=URL><label> URL: <input id=customurl size=100></label></span><br>
@@ -35,7 +35,7 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 > <label>Upload new file: <input type=file multiple></label></p>
 >
 > [Select](:#libraryselect disabled=true) [Close](:.dialog_close)
-{: tag=dialog #library}
+{: tag=dialog #library .resizedlg}
 
 <!-- -->
 
@@ -44,10 +44,10 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 > These media files are freely usable in StilleBot alerts and can be used without uploading.
 >
 > <label><input type=radio name=chooseme id=freemedianone> None</label>
-> <div id=freemedialibrary class=filelist></div>
+> <div id=freemedialibrary class=\"filelist primary\"></div>
 >
 > [Select](:#freemediaselect) [Close](:.dialog_close)
-{: tag=dialog #freemediadlg}
+{: tag=dialog #freemediadlg .resizedlg}
 
 $$notmodmsg||To use these alerts, [show the preview](:#authpreview) from which you can access your unique display link.<br>$$
 $$blank||Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:#revokekey .dlg) to generate a new one.$$
@@ -133,6 +133,7 @@ $$notmod2||[Show library](:.showlibrary) [Recent events](:#recentevents .dlg)$$
 .filelist {
 	display: flex;
 	flex-wrap: wrap;
+	max-width: 75vw;
 }
 .filelist > label {
 	border: 1px solid black; /* TODO: Show incomplete uploads with a different border */

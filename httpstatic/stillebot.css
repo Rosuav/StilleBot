@@ -38,6 +38,19 @@ dialog > section > div, dialog > section > form > div {
 	overflow-y: auto;
 	max-height: 70vh;
 }
+/* To give a dialog a single interior scrollable, add class "resizedlg"
+to the dialog and "primary" to the one that should scroll. */
+.resizedlg > section > div {
+	display: flex;
+	flex-direction: column;
+}
+.resizedlg > section > div > * {
+	flex: 0 0;
+}
+.resizedlg > section > div > .primary {
+	overflow-y: auto;
+	flex: 1;
+}
 .dialog_cancel {
 	position: relative;
 	right: -8px; top: -8px;
