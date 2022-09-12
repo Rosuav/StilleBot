@@ -15,7 +15,7 @@ function THUMB(file, noautoplay) {
 }
 
 const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
-const FREEMEDIA_ROOT = "https://rosuav.github.io/free-media/"
+const FREEMEDIA_ROOT = "https://rosuav.github.io/free-media/";
 const FREEMEDIA_BASE = "freemedia://";
 
 const files = { };
