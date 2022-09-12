@@ -21,7 +21,6 @@
 * Pike HTTP, SSL, and keep-alive: what's going on? Is that why Chrome gets confused?
   - It's currently just disabled - we add "Connection: close" to all responses. Would
     be nice to figure out what's actually wrong and then reap the performance benefits.
-* On the bot's emote list, allow search/filter by text
 * Advanced timer functionality
   - If there's already a timer of this command happening, allow the user to pick whether it
     adds another independent one (current behaviour), restarts the timer (cancel existing
