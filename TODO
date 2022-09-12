@@ -184,7 +184,6 @@
   - When an alert does not have any other details set, it uses a stock alert. Thus
     you can easily enable and disable alerts, without having to do the work of
     creating them. (I think they should start enabled?)
-* Free-Media library needs max width and scrolling.
 * Personal library peered with Free Media? Currently have to open library, then pick
   Free Media from there, not good.
 * Store uploaded file references as internal URIs, same way freemedia ones are
