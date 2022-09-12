@@ -185,10 +185,6 @@
   - When an alert does not have any other details set, it uses a stock alert. Thus
     you can easily enable and disable alerts, without having to do the work of
     creating them. (I think they should start enabled?)
-* Maybe allow Free Media to specify a URL? Would allow a large-file repository
-  elsewhere (maybe Gideon) while keeping the index on GH Pages for performance.
-  - What would it be like to host static files on Digital Ocean? I think they have
-    some zero-dollar options.
 * Free-Media library needs max width and scrolling.
 * Personal library peered with Free Media? Currently have to open library, then pick
   Free Media from there, not good.
