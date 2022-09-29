@@ -36,7 +36,10 @@ constant default_response = ([
 	"conditional": "string",
 	"expr1": "{url}",
 	"message": "No channel found (do you have the Twitch time machine?)",
-	"otherwise": "{name} was last seen {catdesc}, at {url} - go check that stream out, maybe drop a follow! The last thing done was: {title}"
+	"otherwise": ({
+		"{name} was last seen {catdesc}, at {url} - go check that stream out, maybe drop a follow! The last thing done was: {title}",
+		//"/shoutout {param}", //Doesn't work (as of 20220930). If it's enabled in the future, uncomment this.
+	}),
 ]);
 constant aliases = ({"so"});
 constant vars_provided = ([
