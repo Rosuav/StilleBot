@@ -208,8 +208,7 @@ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 			+ cmds[1..];
 	}
 	cmds += ({add ? "Done adding VIPs." : "Done removing VIPs."});
-	werror("VIP leaders: %O\n", cmds);
-	irc_connect((["user": chan, "verbose": 1]))->then() {[object irc] = __ARGS__;
+	irc_connect((["user": chan]))->then() {[object irc] = __ARGS__;
 		//Fast mode doesn't seem to work.
 		//irc->send("#" + chan, cmds[*]);
 		//Slow mode... maybe works? Can't even be sure.
@@ -222,6 +221,7 @@ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 		//a second time is more likely to work??? But it's also possible that
 		//crawl mode, changing one badge every two seconds, works, so I still
 		//don't know. (One every second didn't fix the problem.)
+		//20221001: Seems to be working. Let's leave it like this.
 		foreach (cmds, string cmd) {
 			irc->send("#" + chan, cmd);
 			irc->enqueue(2.0);
