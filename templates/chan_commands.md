@@ -10,8 +10,6 @@ Command | Output |
 $$commands||- | Loading....$$
 {: #commandview}
 
-[Emotes available to the bot](/emotes)
-
 $$save_or_login$$
 
 > ### Some handy commands that your channel may want to use:

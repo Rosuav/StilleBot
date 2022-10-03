@@ -1,7 +1,11 @@
 inherit http_websocket;
 inherit irc_callback;
-//#define NERF //Nerfing is an option. I am getting so sick of problems where I don't even know what the cause is.
+#define NERF //Nerfing is an option. I am getting so sick of problems where I don't even know what the cause is.
 constant markdown = #"# Ghostwriter $$displayname$$
+
+## DISABLED
+## Twitch has blocked regular hosts.
+## The rest of this page is an artefact.
 
 When your channel is offline, host other channels automatically. You can immediately
 unhost and pause from this page, but if you have a stream schedule configured on
