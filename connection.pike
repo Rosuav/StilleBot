@@ -882,6 +882,7 @@ continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 	if (!resp->extra_heads) resp->extra_heads = ([]);
 	resp->extra_heads->Connection = "close";
 	resp->extra_heads["Access-Control-Allow-Origin"] = "*";
+	resp->extra_heads["Access-Control-Allow-Private-Network"] = "true";
 	mapping sess = req->misc->session;
 	if (sizeof(sess) && !sess->fake) {
 		if (!sess->cookie) do {sess->cookie = random(1<<64)->digits(36);} while (G->G->http_sessions[sess->cookie]);

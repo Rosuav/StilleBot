@@ -59,7 +59,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string fil
 	return ([
 		"file": Stdio.File(dir + "/" + filename),
 		"type": type,
-		"extra_heads": (["Access-Control-Allow-Origin": "*"]),
 	]);
 }
 
