@@ -127,6 +127,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string chanid, mapping event] = __ARGS__;
+	#ifndef NERF
 	//Mark the channel as just-gone-offline. That way, we won't attempt to
 	//host it while it's still shutting down.
 	channel_seen_offline[(int)chanid] = time();
@@ -134,6 +135,7 @@ EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string
 	foreach (chanstate; string id; mapping st) {
 		if (st->hostingid == chanid) recalculate_soon(id);
 	}
+	#endif
 };
 
 void scheduled_recalculation(string chanid) {
@@ -142,6 +144,9 @@ void scheduled_recalculation(string chanid) {
 	spawn_task(recalculate_status(chanid));
 }
 void schedule_recalculation(string chanid, array(int) targets) {
+	#ifdef NERF
+	return;
+	#endif
 	int now = time();
 	//TODO maybe: Include st->next_scheduled_check as a target, thus ensuring that we never shorten the delay?
 	int target = min(@filter(targets, `>, now));
@@ -401,6 +406,7 @@ void websocket_cmd_pause(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 
 EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string chanid, mapping event] = __ARGS__;
 	write("** GW: Channel %O online: %O\nThese channels care: %O\n", chanid, event, autohosts_this[chanid]);
+	#ifndef NERF
 	mapping st = chanstate[chanid];
 	spawn_task(recalculate_status(chanid));
 	foreach (autohosts_this[chanid] || ([]); string id;) {
@@ -411,6 +417,7 @@ EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string ch
 			write("Next check at %d [T%+d]\n", st->next_scheduled_check, st->next_scheduled_check - time());
 		}
 	}
+	#endif
 };
 
 void has_channel(string chanid, string target) {
