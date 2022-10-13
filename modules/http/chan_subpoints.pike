@@ -21,8 +21,28 @@ loading... | - | - | - | - | -
 
 constant tiers = (["1000": 1, "2000": 2, "3000": 6]); //Sub points per tier
 
+mapping subpoints_cooldowns = ([]);
+
+void delayed_get_sub_points(Concurrent.Promise p, string chan) {
+	m_delete(subpoints_cooldowns, chan);
+	spawn_task(get_sub_points(chan), p->success);
+}
+
 continue mapping|Concurrent.Future get_sub_points(string chan, int|void raw)
 {
+	if (!raw) {
+		array cd = subpoints_cooldowns[chan];
+		if (cd && cd[1]) return yield(cd[1]);
+		if (cd && cd[0] > time()) {
+			//Not using task_sleep to ensure that it's reusable. We want multiple
+			//clients to all wait until there's a result, then return the same.
+			Concurrent.Promise p = Concurrent.Promise();
+			call_out(delayed_get_sub_points, cd[0] - time(), p, chan);
+			cd[1] = p->future();
+			return yield(cd[1]);
+		}
+		else subpoints_cooldowns[chan] = ({time() + 10, 0});
+	}
 	int uid = yield(get_user_id(chan)); //Should come from cache
 	array info = yield(get_helix_paginated("https://api.twitch.tv/helix/subscriptions",
 		(["broadcaster_id": (string)uid, "first": "99"]),
