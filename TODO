@@ -196,3 +196,22 @@
   - Figure out a pattern to the growth rate and therefore the threshold for Super
     Hard difficulty (ergo the sixth emotes)
   - Otherwise, pretty much everything should work
+* Raid train organization
+  - Everything starts with one Owner/Organizer who must be using this bot.
+  - Go to https://sikorsky.rosuav.com/channels/demo/raidtrain
+  - Owner can configure everything:
+    - Title, description, raid call
+    - Start/end date and time
+    - Slot size (eg 1 hour)
+    - Maximum slots per streamer?
+    - Requests visible (y/n)
+  - The time period from start to end, divided into slots, is tabulated (with a
+    scroll bar if necessary) for everyone, and is shown in both the user's TZ and
+    the "canonical" TZ (== the owner's).
+  - Anyone can request a slot. If requests are visible, they will be able to see
+    everyone else who's put in a request.
+  - Owner can approve any (one) request for a slot. This makes that user name and
+    avatar visible to everyone who looks at the tabulated schedule.
+  - Owner and slot holder may edit comments shown in one column on the schedule.
+  - If the current time is within the raid train period, highlight "NOW".
+  - If the current user is on the schedule, highlight "YOU".
