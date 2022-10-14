@@ -1,10 +1,10 @@
 inherit http_websocket;
 constant markdown = #"# Raid train organized by $$channel$$
 
-## $$title$$
+## Raid train settings
 {:#cfg_title}
 
-$$description||The owner can fill out a description here$$
+$$description||The owner can fill out a description here.$$
 {:#cfg_description}
 
 Raid call: <textarea readonly id=cfg_raidcall></textarea>
@@ -24,15 +24,14 @@ Streamer | Start time
 loading  | -
 
 > ### Configuration
->
 > Plan out your raid train!
 >
 > Configuration | -
 > - | -
 > loading... | loading...
 >
-> [Save](:#save) [Close](:.dialog_close)
-{: tag=dialog #configdlg}
+> [Save](:#save type=submit) [Close](:.dialog_close)
+{: tag=formdialog #configdlg}
 
 <style>
 </style>
@@ -57,32 +56,41 @@ loading  | -
 - Owner and slot holder may edit comments shown in one column on the schedule.
 - If the current time is within the raid train period, highlight "NOW".
 - If the current user is on the schedule, highlight "YOU".
+
+All configuration is stored in persist_status->raidtrain->USERID, with public
+info (anything that can be shared with any client regardless of authentication)
+in ->cfg; this should include the vast majority of information.
 */
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
+	mapping trn = persist_status->path("raidtrain", (string)req->misc->channel->userid);
+	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render(req, ([
 		"vars": (["ws_group": req->misc->is_mod ? "control" : "view"]),
 		"save_or_login": "[Edit](:#editconfig)",
-		"title": "(title)",
+		"description": trn->cfg->?description, //Because it will be parsed as Markdown
 	]) | req->misc->chaninfo);
 }
 
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
-	return ([
-		"config": ([]),
-		"schedule": ({ }),
-	]);
+	return (["cfg": persist_status->path("raidtrain", (string)channel->userid, "cfg")]);
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string grp, string chan);
 	//TODO: Allow updates of your own slot's comments, if you have a slot
-	if (grp != "control" || !G->G->irc->channels["#" + chan]) return;
+	object channel = G->G->irc->channels["#" + chan];
+	if (grp != "control" || !channel) return;
 	if (conn->session->fake) return;
+	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+	foreach ("title description raidcall" / " ", string str)
+		if (msg[str]) trn->cfg[str] = msg[str];
+	foreach ("startdate enddate slotsize" / " ", string num)
+		if ((int)msg[num]) trn->cfg[num] = (int)msg[num];
 
 	persist_config->save();
-	update_one("control#" + chan, msg->id);
-	update_one("view#" + chan, msg->id);
+	send_updates_all("control#" + chan);
+	send_updates_all("view#" + chan);
 }
