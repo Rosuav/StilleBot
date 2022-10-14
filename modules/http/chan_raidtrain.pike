@@ -11,8 +11,9 @@ $$description||The owner can fill out a description here.$$
 Raid call: <textarea readonly id=cfg_raidcall></textarea>
 
 Schedule:
-* <span id=dates></span>
+* <span id=cfg_dates></span>
 * Slot size: <span id=cfg_slotsize>1 hour</span>
+* Unique streamers: <span id=streamer_count>(unknown)</span>
 
 $$save_or_login$$
 
@@ -35,6 +36,7 @@ loading  | -
 {: tag=formdialog #configdlg}
 
 <style>
+time {font-weight: bold;}
 </style>
 ";
 
