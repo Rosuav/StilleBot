@@ -1009,11 +1009,16 @@ class Renderer
 			//If the blockquote starts with an H3, it is some form of title.
 			if (sscanf(text, "<h3%*[^>]>%s</h3>%s", string title, string main)) switch (tag) {
 				//For dialogs, the title is outside the scroll context, and also gets a close button added.
+				case "dialogform": case "formdialog": //(allow this to be spelled both ways)
 				case "dialog": return sprintf("<dialog%s><section>"
-					"<header><h3>%s</h3><div><button type=button class=dialog_cancel>x</button></div></header>"
-					"<div>%s</div>"
-					"</section></dialog>",
-				attrs(token), title || "", main);
+						"<header><h3>%s</h3><div><button type=button class=dialog_cancel>x</button></div></header>"
+						"<div>%s%s%s</div>"
+						"</section></dialog>",
+					attrs(token), title || "",
+					tag == "dialog" ? "" : "<form method=dialog>",
+					main,
+					tag == "dialog" ? "" : "</form>",
+				);
 				case "details": return sprintf("<details%s><summary>%s</summary>%s</details>",
 					attrs(token), title || "Details", main);
 				default: break; //No special title handling

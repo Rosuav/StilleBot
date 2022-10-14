@@ -196,3 +196,4 @@
   - Figure out a pattern to the growth rate and therefore the threshold for Super
     Hard difficulty (ergo the sixth emotes)
   - Otherwise, pretty much everything should work
+* Find all forms in dialogs and use tag=formdialog instead
