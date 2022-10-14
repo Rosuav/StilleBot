@@ -15,6 +15,7 @@ export function render(data) {
 			TD(input),
 		]);
 	}));
+	if (data.desc_html) DOM("#cfg_description").innerHTML = data.desc_html;
 }
 
 on("click", "#editconfig", e => DOM("#configdlg").showModal());

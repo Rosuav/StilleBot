@@ -4,8 +4,9 @@ constant markdown = #"# Raid train organized by $$channel$$
 ## Raid train settings
 {:#cfg_title}
 
+<div id=cfg_description markdown=1>
 $$description||The owner can fill out a description here.$$
-{:#cfg_description}
+</div>
 
 Raid call: <textarea readonly id=cfg_raidcall></textarea>
 
@@ -75,7 +76,13 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
-	return (["cfg": persist_status->path("raidtrain", (string)channel->userid, "cfg")]);
+	mapping cfg = persist_status->path("raidtrain", (string)channel->userid, "cfg");
+	return ([
+		"cfg": cfg,
+		"desc_html": Tools.Markdown.parse(cfg->description || "", ([
+			"renderer": Renderer, "lexer": Lexer,
+		])),
+	]);
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
