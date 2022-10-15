@@ -99,6 +99,21 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	foreach ("startdate enddate slotsize" / " ", string num)
 		if ((int)msg[num]) trn->cfg[num] = (int)msg[num];
 
+	if (trn->cfg->startdate && trn->cfg->enddate > trn->cfg->startdate) {
+		int slotwidth = (trn->cfg->slotsize || 1) * 3600;
+		if (!trn->cfg->slots || !sizeof(trn->cfg->slots))
+			trn->cfg->slots = ({(["start": trn->cfg->startdate])});
+		if (trn->cfg->startdate < trn->cfg->slots[0]->start) {
+			//TODO: Extend the array to the left
+		}
+		if (trn->cfg->enddate > trn->cfg->slots[-1]->start + slotwidth) {
+			//TODO: Extend the array to the right
+		}
+		//TODO: Trim the array to the limits, but only removing empty slots.
+		//That way, if someone has claimed a slot, you won't unclaim it for
+		//them simply by miskeying something. Or looking at it the other way
+		//around: any reduction of the date span can be undone safely.
+	}
 	persist_config->save();
 	send_updates_all("control#" + chan);
 	send_updates_all("view#" + chan);
