@@ -103,19 +103,87 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!(<"none", "any">)[trn->cfg->may_request]) trn->cfg->may_request = "none";
 
 	if (trn->cfg->startdate && trn->cfg->enddate > trn->cfg->startdate) {
+		int tcstart = trn->cfg->startdate, tcend = trn->cfg->enddate;
 		int slotwidth = (trn->cfg->slotsize || 1) * 3600;
-		if (!trn->cfg->slots || !sizeof(trn->cfg->slots))
-			trn->cfg->slots = ({(["start": trn->cfg->startdate])});
-		if (trn->cfg->startdate < trn->cfg->slots[0]->start) {
-			//TODO: Extend the array to the left
-		}
-		if (trn->cfg->enddate > trn->cfg->slots[-1]->start + slotwidth) {
-			//TODO: Extend the array to the right
-		}
-		//TODO: Trim the array to the limits, but only removing empty slots.
+		array slots = trn->cfg->slots || ({ });
+		//Trim the array down to the limits, stopping at any non-empty slot.
 		//That way, if someone has claimed a slot, you won't unclaim it for
 		//them simply by miskeying something. Or looking at it the other way
 		//around: any reduction of the date span can be undone safely.
+		//Note that it may be helpful to close slot requests if you need to
+		//shift the start date/time by less than the slot width. If that ever
+		//happens at all, that is, which it probably won't.
+		int trim = 0;
+		foreach (slots; int i; mapping s)
+			if (s->end <= tcstart && !s->streamer && (!s->claims || !sizeof(s->claims)))
+				trim = i;
+			else break;
+		if (trim) slots = slots[trim..];
+		//If the first slot ends after the start date, but starts before it,
+		//make it a short slot.
+		if (sizeof(slots) && slots[0]->end > tcstart && slots[0]->start < tcstart)
+			slots[0]->start = tcstart;
+		//Now trim the end, similarly. The check is done in reverse though,
+		//and no early break. And yes, that means we're doing less-than
+		//comparisons in both - the above is removing anything that ends
+		//before we start, this keeps anything that starts before we end.
+		trim = -1;
+		foreach (slots; int i; mapping s)
+			if (s->start < tcend || s->streamer || (s->claims && sizeof(s->claims)))
+				trim = i;
+		slots = slots[..trim];
+		//Another possible short slot.
+		if (sizeof(slots) && slots[0]->end > tcend && slots[0]->start < tcend)
+			slots[0]->end = tcend;
+		//Alright. Now to add slots. First, to properly define "left" and
+		//"right", ensure that we have at least one slot.
+		if (!sizeof(slots)) slots = ({(["start": tcstart, "end": min(tcstart + slotwidth, tcend)])});
+		//Next, widen the first and/or last slots to the slot width. To
+		//simplify the arithmetic, keep track of the slot start offset;
+		//if all slots start precisely slotwidth apart, starting at the
+		//start time, their Unix times will all be congruent modulo the
+		//slotwidth.
+		int slot_offset = tcstart % slotwidth; //Will often be zero.
+		int wid = slots[0]->end - slots[0]->start;
+		if (wid < slotwidth && slots[0]->start % slotwidth != slot_offset)
+			//Expand the slot, to no more than...
+			slots[0]->start -= min(0, //... its current size,
+				slotwidth - wid, //... the size of one normal slot,
+				slots[0]->start - tcstart, //... and not past the defined start.
+			);
+		//Same with the last slot.
+		wid = slots[-1]->end - slots[-1]->start;
+		if (wid < slotwidth && slots[0]->end % slotwidth != slot_offset)
+			slots[0]->end += min(0, slotwidth - wid, tcend - slots[0]->end);
+		//If the first slot doesn't begin on the slot offset, insert a short slot.
+		if (slots[0]->start % slotwidth != slot_offset) {
+			//Always subtract a positive number of seconds, regardless of
+			//whether the slot_offset is above or below start's offset.
+			int delta = (slots[0]->start - slot_offset) % slotwidth;
+			slots = ({(["start": slots[0]->start - delta, "end": slots[0]->start])}) + slots;
+		}
+		//Extend to the right. Each slot begins where the previous one left off,
+		//is no more than slotwidth in width, and ends on the slot_offset. If we
+		//end up mismatching with the configured end, make a short slot.
+		int end = slots[-1]->end - (slots[-1]->end - slot_offset) % slotwidth;
+		while (end < tcend) slots += ({([
+			"start": slots[-1]->end,
+			"end": min(end += slotwidth, tcend),
+		])});
+		//Rather than extend to the left, we build up a new set of pristine slots
+		//from the start point, stopping once we don't need to make more.
+		array fresh = ({ });
+		for (int tm = tcstart; tm < slots[0]->start; tm += slotwidth) {
+			fresh += ({([
+				"start": tm, "end": min(tm + slotwidth, slots[0]->start),
+			])});
+		}
+		//Whew. That's a lot of chopping and changing, most of which will probably
+		//never happen. Recommendation: Only ever expand/contract in multiples of
+		//the slot width, never change the slot width, and all should be easy.
+		//Also: most of the above code is probably buggy. I have not tested it at
+		//all thoroughly.
+		trn->cfg->slots = fresh + slots;
 	}
 	persist_config->save();
 	send_updates_all("control#" + chan);
