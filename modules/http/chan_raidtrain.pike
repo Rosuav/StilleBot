@@ -40,7 +40,18 @@ loading | - | - | -
 <style>
 time {font-weight: bold;}
 #cfg_may_request {font-weight: bold;}
+.avatar {max-width: 40px; vertical-align: middle; margin: 0 8px;}
+#streamerslot_options {list-style-type: none;}
 </style>
+
+> ### Select Streamer
+> Who should take time slot <span id=streamerslot_start></span> to <span id=streamerslot_end></span>?
+>
+> * loading...
+> {:#streamerslot_options}
+>
+> [Select](:type=submit) [Close](:.dialog_close)
+{: tag=formdialog #streamerslot_dlg}
 ";
 
 /* Raid train organization
@@ -51,7 +62,7 @@ time {font-weight: bold;}
 - Start/end date and time
 - Slot size (eg 1 hour)
 - Maximum slots per streamer?
-- Requests visible (y/n)
+- Requests visible (y/n) - currently has to be Yes as claims are in the public info
 - The time period from start to end, divided into slots, is tabulated (with a
   scroll bar if necessary) for everyone, and is shown in both the user's TZ and
   the "canonical" TZ (== the owner's).
@@ -99,12 +110,34 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = persist_status->path("raidtrain", (string)channel->userid, "cfg");
+	mapping owner = G->G->user_info[channel->userid] || ([]);
+	if (!owner->display_name) get_user_info(channel->userid)->then() {send_updates_all(grp + channel->name);};
 	return ([
 		"cfg": cfg,
+		"owner_info": owner,
+		"is_mod": grp == "control",
 		"desc_html": Tools.Markdown.parse(cfg->description || "", ([
 			"renderer": Renderer, "lexer": Lexer,
 		])),
 	]);
+}
+
+void websocket_cmd_streamerslot(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%s#%s", string grp, string chan);
+	//Should streamers be allowed to revoke their own slots??
+	object channel = G->G->irc->channels["#" + chan];
+	if (grp != "control" || !channel) return;
+	if (conn->session->fake) return;
+	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+	array slots = trn->cfg->slots || ({ });
+	if (!intp(msg->slotidx) || msg->slotidx < 0 || msg->slotidx >= sizeof(slots)) return;
+	mapping slot = slots[msg->slotidx];
+	slot->broadcasterid = (int)msg->broadcasterid;
+	//TODO: Recalculate stats like "number of unique streamers"
+	if (slot->broadcasterid) get_user_info(slot->broadcasterid); //Populate cache just in case
+	persist_status->save();
+	send_updates_all("control#" + chan);
+	send_updates_all("view#" + chan);
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -133,7 +166,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		//happens at all, that is, which it probably won't.
 		int trim = 0;
 		foreach (slots; int i; mapping s)
-			if (s->end <= tcstart && !s->streamer && (!s->claims || !sizeof(s->claims)))
+			if (s->end <= tcstart && !s->broadcasterid && (!s->claims || !sizeof(s->claims)))
 				trim = i;
 			else break;
 		if (trim) slots = slots[trim..];
@@ -147,7 +180,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		//before we start, this keeps anything that starts before we end.
 		trim = -1;
 		foreach (slots; int i; mapping s)
-			if (s->start < tcend || s->streamer || (s->claims && sizeof(s->claims)))
+			if (s->start < tcend || s->broadcasterid || (s->claims && sizeof(s->claims)))
 				trim = i;
 		slots = slots[..trim];
 		//Another possible short slot.
@@ -203,7 +236,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		//all thoroughly.
 		trn->cfg->slots = fresh + slots;
 	}
-	persist_config->save();
+	persist_status->save();
 	send_updates_all("control#" + chan);
 	send_updates_all("view#" + chan);
 }

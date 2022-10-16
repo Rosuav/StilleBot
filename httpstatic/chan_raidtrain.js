@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {INPUT, LABEL, OPTION, SELECT, TD, TEXTAREA, TIME, TR} = choc; //autoimport
+const {A, BUTTON, IMG, INPUT, LABEL, LI, OPTION, SELECT, TD, TEXTAREA, TIME, TR} = choc; //autoimport
 
 const may_request = {
 	none: "closed", any: "open",
@@ -52,6 +52,7 @@ function DATE(d, timeonly) {
 	]);
 }
 
+let owner_info = { }, slots = [];
 export function render(data) {
 	set_content("#configdlg tbody", cfg_vars.map(v => {
 		const input = v.render(data.cfg[v.key] || "", "edit_" + v.key);
@@ -80,13 +81,50 @@ export function render(data) {
 		lastdate = date;
 		return DATE(d, sameday);
 	}
-	if (data.cfg.slots) set_content("#timeslots tbody", data.cfg.slots.map(slot => TR([
+	if (slots = data.cfg.slots) set_content("#timeslots tbody", data.cfg.slots.map((slot,i) => TR([
 		TD(abbrevdate(slot.start)),
 		TD(DATE(slot.end, 1)),
-		TD(slot.streamer || ""),
+		TD([
+			slot.broadcasterid || "",
+			data.is_mod && BUTTON({class: "streamerslot", "data-slotidx": i}, "Select"),
+		]),
 		TD(slot.notes || ""),
 	])));
+	owner_info = data.owner_info;
 }
+
+function channel_profile(chan) {
+	return A({href: "https://twitch.tv/" + chan.login, target: "_blank"}, [
+		IMG({className: "avatar", src: chan.profile_image_url}),
+		chan.display_name,
+	]);
+}
+
+let selectedslot = { }, slotidx = -1;
+function RB(person) {
+	return LI(LABEL([ //FIXME: Labelling the input with an anchor creates a click conflict.
+		INPUT({type: "radio", name: "slotselection", value: person.id, checked: person.id == selectedslot.broadcasterid}),
+		channel_profile(person),
+	]));
+}
+on("click", ".streamerslot", e => {
+	selectedslot = slots[slotidx = (e.match.dataset.slotidx|0)];
+	set_content("#streamerslot_options", [
+		owner_info.id && RB(owner_info),
+		LI(LABEL([INPUT({type: "radio", name: "slotselection", value: "0", checked: !selectedslot.broadcasterid}),
+			"Nobody (for now)"])),
+	]);
+	set_content("#streamerslot_start", DATE(selectedslot.start));
+	set_content("#streamerslot_end", DATE(selectedslot.end));
+	DOM("#streamerslot_dlg").showModal();
+});
+
+on("submit", "#streamerslot_dlg form", e => {
+	const rb = DOM("#streamerslot_options input[type=radio]:checked");
+	const broadcasterid = rb ? rb.value : "0"; //Shouldn't ever be absent but whatever
+	ws_sync.send({cmd: "streamerslot", slotidx, broadcasterid});
+	selectedslot = { }; slotidx = -1;
+});
 
 on("click", "#editconfig", e => DOM("#configdlg").showModal());
 on("submit", "#configdlg form", e => {
