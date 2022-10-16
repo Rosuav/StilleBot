@@ -22,9 +22,10 @@ $$save_or_login$$
 This is who's going to be part of the train when. They may be live earlier than this. Slot requesting
 is currently <span id=cfg_may_request>closed</span>.
 
-Streamer | Start time
----------|-----------
-loading  | -
+Start   | End | Streamer | Notes
+--------|-----|----------|-------
+loading | - | - | -
+{:#timeslots}
 
 > ### Configuration
 > Plan out your raid train!

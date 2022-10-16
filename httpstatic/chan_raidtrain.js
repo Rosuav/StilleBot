@@ -35,7 +35,7 @@ const cfg_vars = [
 		Object.entries(may_request).map(([k,v]) => OPTION({value: k}, v)))},
 ];
 
-function DATE(d) {
+function DATE(d, timeonly) {
 	if (!d) return "(unspecified)";
 	const date = new Date(d * 1000);
 	let day = date.getDate();
@@ -47,8 +47,7 @@ function DATE(d) {
 	}
 	return TIME({datetime: date.toISOString(), title: date.toLocaleString()}, [
 		//This abbreviated format assumes English. The hover will be in your locale.
-		"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[date.getMonth()],
-		" " + day + ", ",
+		!timeonly && "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[date.getMonth()] + " " + day + ", ",
 		pad(date.getHours()) + ":00",
 	]);
 }
@@ -71,6 +70,22 @@ export function render(data) {
 	]);
 	set_content("#cfg_slotsize", (data.cfg.slotsize||1) + " hour(s)");
 	set_content("#cfg_may_request", may_request[data.cfg.may_request||"none"]);
+	let lastdate = 0;
+	function abbrevdate(d) {
+		//If the two dates are on the same day (simplified down to just "same
+		//day of month" since it'll be progressing sequentially), leave out the
+		//date and just show the time. The hover still has everything.
+		const date = new Date(d * 1000).getDate();
+		const sameday = date === lastdate;
+		lastdate = date;
+		return DATE(d, sameday);
+	}
+	if (data.cfg.slots) set_content("#timeslots tbody", data.cfg.slots.map(slot => TR([
+		TD(abbrevdate(slot.start)),
+		TD(DATE(slot.end, 1)),
+		TD(slot.streamer || ""),
+		TD(slot.notes || ""),
+	])));
 }
 
 on("click", "#editconfig", e => DOM("#configdlg").showModal());
