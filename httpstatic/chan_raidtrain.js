@@ -6,14 +6,15 @@ const may_request = {
 	//TODO: Have an option for "approved persons" or "team members" or something
 };
 
+const pad = n => ("0" + n).slice(-2);
 //Note that the user-facing controls show local time, but the server works in UTC.
 function makedate(val, id) {
 	const opts = [];
-	for (let hour = 0; hour < 24; ++hour) opts.push(OPTION(("0" + hour).slice(-2)));
+	for (let hour = 0; hour < 24; ++hour) opts.push(OPTION(pad(hour)));
 	const date = val ? new Date(val * 1000) : new Date();
 	return [
-		INPUT({id, type: "date", value: date.getFullYear() + "-" + (date.getMonth()+1) + "-" + date.getDate()}),
-		SELECT({id: id + "_time", value: ("0" + date.getHours()).slice(-2)}, opts),
+		INPUT({id, type: "date", value: date.getFullYear() + "-" + pad(date.getMonth()+1) + "-" + pad(date.getDate())}),
+		SELECT({id: id + "_time", value: pad(date.getHours())}, opts),
 		":00",
 	];
 }
@@ -48,7 +49,7 @@ function DATE(d) {
 		//This abbreviated format assumes English. The hover will be in your locale.
 		"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[date.getMonth()],
 		" " + day + ", ",
-		("0" + date.getHours()).slice(-2) + ":00",
+		pad(date.getHours()) + ":00",
 	]);
 }
 
