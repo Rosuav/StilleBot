@@ -19,7 +19,8 @@ $$save_or_login$$
 
 ## Schedule
 
-This is who's going to be part of the train when. They may be live earlier than this.
+This is who's going to be part of the train when. They may be live earlier than this. Slot requesting
+is currently <span id=cfg_may_request>closed</span>.
 
 Streamer | Start time
 ---------|-----------
@@ -37,6 +38,7 @@ loading  | -
 
 <style>
 time {font-weight: bold;}
+#cfg_may_request {font-weight: bold;}
 </style>
 ";
 
@@ -94,10 +96,11 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (grp != "control" || !channel) return;
 	if (conn->session->fake) return;
 	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
-	foreach ("title description raidcall" / " ", string str)
+	foreach ("title description raidcall may_request" / " ", string str)
 		if (msg[str]) trn->cfg[str] = msg[str];
 	foreach ("startdate enddate slotsize" / " ", string num)
 		if ((int)msg[num]) trn->cfg[num] = (int)msg[num];
+	if (!(<"none", "any">)[trn->cfg->may_request]) trn->cfg->may_request = "none";
 
 	if (trn->cfg->startdate && trn->cfg->enddate > trn->cfg->startdate) {
 		int slotwidth = (trn->cfg->slotsize || 1) * 3600;

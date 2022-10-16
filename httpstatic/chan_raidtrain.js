@@ -1,6 +1,11 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {INPUT, LABEL, OPTION, SELECT, TD, TEXTAREA, TIME, TR} = choc; //autoimport
 
+const may_request = {
+	none: "closed", any: "open",
+	//TODO: Have an option for "approved persons" or "team members" or something
+};
+
 //Note that the user-facing controls show local time, but the server works in UTC.
 function makedate(val, id) {
 	const opts = [];
@@ -25,6 +30,8 @@ const cfg_vars = [
 	{key: "raidcall", label: "Raid call", render: val => TEXTAREA({rows: 4, cols: 35}, val)},
 	{key: "startdate", label: "Start date", render: makedate, getvalue: getdate},
 	{key: "enddate", label: "End date", render: makedate, getvalue: getdate},
+	{key: "may_request", label: "Slot requests", render: val => SELECT(
+		Object.entries(may_request).map(([k,v]) => OPTION({value: k}, v)))},
 ];
 
 function DATE(d) {
@@ -62,6 +69,7 @@ export function render(data) {
 		" until ", DATE(data.cfg.enddate),
 	]);
 	set_content("#cfg_slotsize", (data.cfg.slotsize||1) + " hour(s)");
+	set_content("#cfg_may_request", may_request[data.cfg.may_request||"none"]);
 }
 
 on("click", "#editconfig", e => DOM("#configdlg").showModal());
