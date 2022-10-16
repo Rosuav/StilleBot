@@ -18,6 +18,8 @@ put on pause when the stream is offline. Note that, due to various delays, it's 
 have a cooldown on the reward itself - at least 30 seconds - to ensure that two people
 can't claim the reward at the same price.
 
+To have dynamic pricing carry from one stream to another, set the base cost to zero.
+
 [Configure reward details here](https://dashboard.twitch.tv/viewer-rewards/channel-points/rewards)
 
 <style>
