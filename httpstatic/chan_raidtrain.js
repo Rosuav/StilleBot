@@ -111,7 +111,8 @@ export function render(data) {
 		]),
 		TD([
 			slot.notes || "",
-			(data.is_mod || slot.broadcasterid === self) && BUTTON({class: "slotnotes", "data-slotidx": i}, "✍"),
+			(data.is_mod || slot.broadcasterid === self) &&
+				BUTTON({class: "slotnotes", "data-slotidx": i, title: "Edit notes"}, "✍"),
 		]),
 	])));
 }
