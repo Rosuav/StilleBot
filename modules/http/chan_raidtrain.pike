@@ -240,7 +240,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		int trim = 0;
 		foreach (slots; int i; mapping s)
 			if (s->end <= tcstart && !s->broadcasterid && (!s->claims || !sizeof(s->claims)))
-				trim = i;
+				++trim;
 			else break;
 		if (trim) slots = slots[trim..];
 		//If the first slot ends after the start date, but starts before it,
@@ -280,7 +280,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		if (wid < slotwidth && slots[0]->end % slotwidth != slot_offset)
 			slots[0]->end += min(0, slotwidth - wid, tcend - slots[0]->end);
 		//If the first slot doesn't begin on the slot offset, insert a short slot.
-		if (slots[0]->start % slotwidth != slot_offset) {
+		if (slots[0]->start % slotwidth != slot_offset && slots[0]->start > tcstart) {
 			//Always subtract a positive number of seconds, regardless of
 			//whether the slot_offset is above or below start's offset.
 			int delta = (slots[0]->start - slot_offset) % slotwidth;
