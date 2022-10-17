@@ -286,6 +286,39 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			int delta = (slots[0]->start - slot_offset) % slotwidth;
 			slots = ({(["start": slots[0]->start - delta, "end": slots[0]->start])}) + slots;
 		}
+		//TODO: Scan the slots for combinables. Two slots can be combined if:
+		//1) They have the same broadcasterid
+		//2) The combined width (from slot[n]->start to slot[n+1]->end) is no
+		//   more than the slotwidth
+		//3) The start is aligned on the slot_offset. It might be possible to
+		//   allow these also if the preceding slot is full width (that is, if
+		//   slot[n-1]->end - slot[n-1]->start == slotwidth), but it's probably
+		//   not worth it. Just merge on the alignment. Most likely, these will
+		//   be merging empty slots, so there'll be a sea of valid options to
+		//   choose from, and forcing the alignment will make it tidier.
+		if (slotwidth > 3600) { //Don't bother if we're on one-hour slots
+			for (int i = 0; i < sizeof(slots) - 1; ++i) {
+				mapping slot1 = slots[i], slot2 = slots[i + 1];
+				if (slot1->broadcasterid != slot2->broadcasterid) continue; //Maybe if one is zero, merge anyway??
+				if (slot2->end - slot1->start > slotwidth) continue;
+				if ((slot1->start - slot_offset) % slotwidth) continue; //First one has to be aligned
+				//Okay. Let's merge. Leave slot1 empty and merge into slot2; that
+				//way, if the following slot could also merge in, we'll catch it.
+				slot2->start = slot1->start;
+				//It might not be fully appropriate, but combine the claims. Try
+				//to keep them in order if possible, and avoid duplicates.
+				array c1 = slot1->claims || ({ }), c2 = slot2->claims || ({ });
+				slot2->claims = c1 + (c2 - c1);
+				if (!slot2->broadcasterid) slot2->broadcasterid = slot1->broadcasterid; //In case we allow one-and-none merges
+				//Combine notes. If both exist, separate with a newline, although
+				//the main display will just show a space.
+				slot2->notes = String.trim((slot1->notes||"") + "\n" + (slot2->notes||""));
+				//Done. Take out slot1, but leave a shim until we're done looping.
+				slots[i] = 0;
+			}
+			slots -= ({0});
+		}
+
 		//Extend to the right. Each slot begins where the previous one left off,
 		//is no more than slotwidth in width, and ends on the slot_offset. If we
 		//end up mismatching with the configured end, make a short slot.
