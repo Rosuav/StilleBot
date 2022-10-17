@@ -106,6 +106,8 @@ TODO: Make slot width configurable, and test various combinations:
 Next steps:
 * Slot width and lots of testing
 * Time-of-day checks
+* Claim revocation
+* Arbitrary assignment by searching for a user - no search, just type/paste the login
 
 */
 
