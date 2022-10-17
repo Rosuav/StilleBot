@@ -107,14 +107,37 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
+void add_person(mapping people, int|string id) {
+	id = (int)id; if (!id) return;
+	mapping person = G->G->user_info[id];
+	if (person) people[(string)id] = person;
+	else people[""][id] = 1;
+}
+
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = persist_status->path("raidtrain", (string)channel->userid, "cfg");
-	mapping owner = G->G->user_info[channel->userid] || ([]);
-	if (!owner->display_name) get_user_info(channel->userid)->then() {send_updates_all(grp + channel->name);};
+	//Populate a mapping of people info for the front end. It contains only what we
+	//already have in cache.
+	mapping people = (["": (<>)]);
+	add_person(people, channel->userid); //First up, the owner. Nice and easy.
+	//Then, everyone who's been allocated a slot.
+	if (cfg->slots) foreach (cfg->slots, mapping slot) {
+		add_person(people, slot->broadcasterid);
+		//If you are a mod, also add info for everyone who's placed a request.
+		//If you are not a mod but requests are public, do it anyway.
+		//NOTE: Currently requests are always public.
+		if (slot->claims) add_person(people, slot->claims[*]);
+	}
+	multiset still_need = m_delete(people, "");
+	if (sizeof(still_need)) get_users_info((array)still_need)->then() {
+		send_updates_all("control" + channel->name);
+		send_updates_all("view" + channel->name);
+	};
 	return ([
 		"cfg": cfg,
-		"owner_info": owner,
+		"owner_id": channel->userid,
+		"people": people,
 		"is_mod": grp == "control",
 		"desc_html": Tools.Markdown.parse(cfg->description || "", ([
 			"renderer": Renderer, "lexer": Lexer,

@@ -52,7 +52,15 @@ function DATE(d, timeonly) {
 	]);
 }
 
-let owner_info = { }, slots = [];
+function channel_profile(chan) {
+	if (!chan) return "";
+	return A({href: "https://twitch.tv/" + chan.login, target: "_blank"}, [
+		IMG({className: "avatar", src: chan.profile_image_url}),
+		chan.display_name,
+	]);
+}
+
+let owner_id = { }, slots = [], people = { };
 export function render(data) {
 	set_content("#configdlg tbody", cfg_vars.map(v => {
 		const input = v.render(data.cfg[v.key] || "", "edit_" + v.key);
@@ -71,6 +79,7 @@ export function render(data) {
 	]);
 	set_content("#cfg_slotsize", (data.cfg.slotsize||1) + " hour(s)");
 	set_content("#cfg_may_request", may_request[data.cfg.may_request||"none"]);
+	people = data.people; owner_id = data.owner_id;
 	let lastdate = 0;
 	function abbrevdate(d) {
 		//If the two dates are on the same day (simplified down to just "same
@@ -85,19 +94,11 @@ export function render(data) {
 		TD(abbrevdate(slot.start)),
 		TD(DATE(slot.end, 1)),
 		TD([
-			slot.broadcasterid || "",
-			data.is_mod && BUTTON({class: "streamerslot", "data-slotidx": i}, "Select"),
+			channel_profile(people[slot.broadcasterid]),
+			data.is_mod && [" ", BUTTON({class: "streamerslot", "data-slotidx": i}, "Select")],
 		]),
 		TD(slot.notes || ""),
 	])));
-	owner_info = data.owner_info;
-}
-
-function channel_profile(chan) {
-	return A({href: "https://twitch.tv/" + chan.login, target: "_blank"}, [
-		IMG({className: "avatar", src: chan.profile_image_url}),
-		chan.display_name,
-	]);
 }
 
 let selectedslot = { }, slotidx = -1;
@@ -110,7 +111,7 @@ function RB(person) {
 on("click", ".streamerslot", e => {
 	selectedslot = slots[slotidx = (e.match.dataset.slotidx|0)];
 	set_content("#streamerslot_options", [
-		owner_info.id && RB(owner_info),
+		owner_id && RB(people[owner_id]),
 		LI(LABEL([INPUT({type: "radio", name: "slotselection", value: "0", checked: !selectedslot.broadcasterid}),
 			"Nobody (for now)"])),
 	]);
