@@ -15,7 +15,7 @@ Schedule:
 * Slot size: <span id=cfg_slotsize>1 hour</span>
 * Unique streamers: <span id=streamer_count>(unknown)</span>
 
-$$save_or_login$$
+$$login_or_edit$$
 
 ## Schedule
 
@@ -103,7 +103,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render(req, ([
 		"vars": (["ws_group": req->misc->is_mod ? "control" : "view", "logged_in_as": (int)req->misc->session->user->?id]),
-		"save_or_login": "[Edit](:#editconfig)",
+		"login_or_edit":
+			req->misc->is_mod ? "[Edit configuration](:#editconfig)"
+			: req->misc->session->user ? "Logged in as " + req->misc->session->user->display_name
+			: "[Log in to make changes or request slots](:.twitchlogin)",
 		"description": trn->cfg->?description, //Because it will be parsed as Markdown
 	]) | req->misc->chaninfo);
 }
