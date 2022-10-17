@@ -71,15 +71,8 @@ textarea {vertical-align: top;}
   everyone else who's put in a request.
 - Owner can approve any (one) request for a slot. This makes that user name and
   avatar visible to everyone who looks at the tabulated schedule.
-  - Back end: Owner and mods may specify any Twitch user ID to be given the slot.
-    The server will cache the display name, login, and avatar. (Steal code from
-    ghostwriter? It's not like GW needs it any more anyway.)
-  - Front end: Owner and mods have a dialog to "assign". It has options for all
-    those who've requested, plus "assign broadcaster"; if mod, can also "assign
-    self". (Or alternatively: Always have "assign self", and if mod, also b/c.
-    Not sure which would be easier. It might not matter, if it just shows the
-    options by display name and avatar.)
-  - Identify a slot by its start time.
+  - Have a way to pick a user even though they haven't requested the slot
+    (otherwise there's a massive hassle to organize in multiple steps).
 - Owner/mod can revoke any claim at any time, even if there is a streamer in the
   slot (which otherwise doesn't remove claims, though it hides them from public).
 - Owner and slot holder may edit comments shown in one column on the schedule.
