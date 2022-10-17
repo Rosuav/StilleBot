@@ -90,6 +90,12 @@ TODO: Make slot width configurable, and test various combinations:
 * Two-hour slots, move start by one hour
 * Four-hour slots, shorten span by three hours, change slot size to two hours
 * Etc
+
+Next steps:
+* Comments
+* Slot width and lots of testing
+* Time-of-day checks
+
 */
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
