@@ -31,8 +31,13 @@ const cfg_vars = [
 	{key: "raidcall", label: "Raid call", render: val => TEXTAREA({rows: 4, cols: 35}, val)},
 	{key: "startdate", label: "Start date", render: makedate, getvalue: getdate},
 	{key: "enddate", label: "End date", render: makedate, getvalue: getdate},
-	{key: "may_request", label: "Slot requests", render: val => SELECT(
-		{value: val},
+	{key: "slotsize", label: "Slot size", render: value => SELECT({value}, [
+		OPTION({value: "1"}, "One hour"),
+		OPTION({value: "2"}, "Two hours"),
+		OPTION({value: "3"}, "Three hours"),
+		OPTION({value: "4"}, "Four hours"),
+	])},
+	{key: "may_request", label: "Slot requests", render: value => SELECT({value},
 		Object.entries(may_request).map(([k,v]) => OPTION({value: k}, v)))},
 ];
 
