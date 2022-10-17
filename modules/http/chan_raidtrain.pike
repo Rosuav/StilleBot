@@ -216,7 +216,6 @@ void websocket_cmd_slotnotes(mapping(string:mixed) conn, mapping(string:mixed) m
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string grp, string chan);
-	//TODO: Allow updates of your own slot's comments, if you have a slot
 	object channel = G->G->irc->channels["#" + chan];
 	if (grp != "control" || !channel) return;
 	if (conn->session->fake) return;
