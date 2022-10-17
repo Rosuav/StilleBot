@@ -8,7 +8,7 @@ constant markdown = #"# Raid train organized by $$channel$$
 $$description||The owner can fill out a description here.$$
 </div>
 
-Raid call: <textarea readonly id=cfg_raidcall></textarea>
+Raid call: <textarea rows=4 cols=35 readonly id=cfg_raidcall></textarea>
 
 Schedule:
 * <span id=cfg_dates></span>
@@ -42,6 +42,7 @@ time {font-weight: bold;}
 #cfg_may_request {font-weight: bold;}
 .avatar {max-width: 40px; vertical-align: middle; margin: 0 8px;}
 #streamerslot_options {list-style-type: none;}
+textarea {vertical-align: top;}
 </style>
 
 > ### Select Streamer
