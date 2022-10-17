@@ -22,9 +22,9 @@ $$save_or_login$$
 This is who's going to be part of the train when. They may be live earlier than this. Slot requesting
 is currently <span id=cfg_may_request>closed</span>.
 
-Start   | End | Streamer | Notes
---------|-----|----------|-------
-loading | - | - | -
+Start   | End | Streamer | Requests | Notes
+--------|-----|----------|----------|-------
+loading | - | - | - | -
 {:#timeslots}
 
 > ### Configuration
@@ -102,7 +102,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mapping trn = persist_status->path("raidtrain", (string)req->misc->channel->userid);
 	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render(req, ([
-		"vars": (["ws_group": req->misc->is_mod ? "control" : "view"]),
+		"vars": (["ws_group": req->misc->is_mod ? "control" : "view", "logged_in_as": (int)req->misc->session->user->?id]),
 		"save_or_login": "[Edit](:#editconfig)",
 		"description": trn->cfg->?description, //Because it will be parsed as Markdown
 	]) | req->misc->chaninfo);
@@ -159,6 +159,23 @@ void websocket_cmd_streamerslot(mapping(string:mixed) conn, mapping(string:mixed
 	slot->broadcasterid = (int)msg->broadcasterid;
 	//TODO: Recalculate stats like "number of unique streamers"
 	if (slot->broadcasterid) get_user_info(slot->broadcasterid); //Populate cache just in case
+	persist_status->save();
+	send_updates_all("control#" + chan);
+	send_updates_all("view#" + chan);
+}
+
+void websocket_cmd_requestslot(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%s#%s", string grp, string chan);
+	object channel = G->G->irc->channels["#" + chan];
+	if (!channel || conn->session->fake) return;
+	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+	array slots = trn->cfg->slots || ({ });
+	if (!intp(msg->slotidx) || msg->slotidx < 0 || msg->slotidx >= sizeof(slots)) return;
+	mapping slot = slots[msg->slotidx];
+	if (slot->broadcasterid) return; //Don't request slots that are taken
+	if (!slot->claims) slot->claims = ({ });
+	int id = (int)conn->session->user->?id; if (!id) return;
+	slot->claims ^= ({id});
 	persist_status->save();
 	send_updates_all("control#" + chan);
 	send_updates_all("view#" + chan);

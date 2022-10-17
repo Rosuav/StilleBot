@@ -9,6 +9,14 @@ let prefs = { }; //Updated from the server as needed
 const prefs_hooks = [];
 let reconnect_delay = 250;
 
+let userid = 0;
+export function get_userid() {
+	if (userid) return userid;
+	//Otherwise, see if the server provided a logged_in_as variable on startup.
+	try {return logged_in_as;}
+	catch (e) {return 0;}
+}
+
 export function connect(group, handler)
 {
 	if (!handler) handler = default_handler;
@@ -85,6 +93,7 @@ export function connect(group, handler)
 		else if (data.cmd === "prefs_replace") {
 			const oldprefs = prefs;
 			prefs = data.prefs;
+			userid = data.userid;
 			prefs_hooks.forEach(p => {
 				if (!p.key) p.func(prefs);
 				else if (prefs[p.key] !== oldprefs[p.key]) p.func(prefs[p.key]);

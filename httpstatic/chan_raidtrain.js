@@ -1,5 +1,5 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, IMG, INPUT, LABEL, LI, OPTION, SELECT, TD, TEXTAREA, TIME, TR} = choc; //autoimport
+const {A, BUTTON, DIV, IMG, INPUT, LABEL, LI, OPTION, SELECT, TD, TEXTAREA, TIME, TR} = choc; //autoimport
 
 const may_request = {
 	none: "closed", any: "open",
@@ -91,12 +91,21 @@ export function render(data) {
 		lastdate = date;
 		return DATE(d, sameday);
 	}
+	const self = ws_sync.get_userid();
 	if (slots = data.cfg.slots) set_content("#timeslots tbody", data.cfg.slots.map((slot,i) => TR([
 		TD(abbrevdate(slot.start)),
 		TD(DATE(slot.end, 1)),
+		TD(channel_profile(people[slot.broadcasterid])),
 		TD([
-			channel_profile(people[slot.broadcasterid]),
-			data.is_mod && [" ", BUTTON({class: "streamerslot", "data-slotidx": i}, "Select")],
+			!slot.broadcasterid && slot.claims && DIV(slot.claims.map(id => DIV(channel_profile(people[id])))),
+			" ",
+			data.is_mod ? BUTTON({class: "streamerslot", "data-slotidx": i}, "Manage")
+			: !self ? ""
+				//TODO: Handle may_request other than none/any
+			: !slot.broadcasterid && data.cfg.may_request === "any" ?
+				BUTTON({class: "requestslot", "data-slotidx": i},
+					slot.claims && slot.claims.indexOf(self) > -1 ? "Unrequest" : "Request")
+			: "",
 		]),
 		TD(slot.notes || ""),
 	])));
@@ -127,6 +136,8 @@ on("submit", "#streamerslot_dlg form", e => {
 	ws_sync.send({cmd: "streamerslot", slotidx, broadcasterid});
 	selectedslot = { }; slotidx = -1;
 });
+
+on("click", ".requestslot", e => ws_sync.send({cmd: "requestslot", slotidx: e.match.dataset.slotidx|0}));
 
 on("click", "#editconfig", e => DOM("#configdlg").showModal());
 on("submit", "#configdlg form", e => {

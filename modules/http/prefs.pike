@@ -29,7 +29,7 @@ mapping get_state(string group) {return (["info": "See Other"]);}
 void websocket_cmd_prefs_send(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->prefs_uid) return;
 	mapping prefs = persist_status->path("userprefs", conn->prefs_uid);
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "prefs_replace", "prefs": prefs])));
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "prefs_replace", "userid": (int)conn->prefs_uid, "prefs": prefs])));
 }
 void websocket_cmd_prefs_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->prefs_uid) return;
