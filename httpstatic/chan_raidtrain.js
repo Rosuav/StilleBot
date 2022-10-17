@@ -1,5 +1,5 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, DIV, IMG, INPUT, LABEL, LI, OPTION, SELECT, TD, TEXTAREA, TIME, TR} = choc; //autoimport
+const {A, BR, BUTTON, DIV, IMG, INPUT, LABEL, LI, OPTION, SELECT, TD, TEXTAREA, TIME, TR} = choc; //autoimport
 
 const may_request = {
 	none: "closed", any: "open",
@@ -27,7 +27,7 @@ function getdate(elem) {
 
 const cfg_vars = [
 	{key: "title", label: "Title", render: val => INPUT({value: val, size: 40})},
-	{key: "description", label: "Description", render: val => TEXTAREA({rows: 4, cols: 35}, val)},
+	{key: "description", label: "Description\n(Markdown)", render: val => TEXTAREA({rows: 4, cols: 35}, val)},
 	{key: "raidcall", label: "Raid call", render: val => TEXTAREA({rows: 4, cols: 35}, val)},
 	{key: "startdate", label: "Start date", render: makedate, getvalue: getdate},
 	{key: "enddate", label: "End date", render: makedate, getvalue: getdate},
@@ -66,8 +66,10 @@ export function render(data) {
 	set_content("#configdlg tbody", cfg_vars.map(v => {
 		const input = v.render(data.cfg[v.key] || "", "edit_" + v.key);
 		if (!Array.isArray(input)) input.id = "edit_" + v.key;
+		//Split the label into lines as required
+		const lbl = v.label.split("\n").map((l,i) => i ? [BR(), l] : l);
 		return TR([
-			TD(LABEL({for: input.id}, v.label)),
+			TD(LABEL({for: input.id}, lbl)),
 			TD(input),
 		]);
 	}));
