@@ -109,7 +109,10 @@ export function render(data) {
 					slot.claims && slot.claims.indexOf(self) > -1 ? "Unrequest" : "Request")
 			: "",
 		]),
-		TD(slot.notes || ""),
+		TD([
+			slot.notes || "",
+			(data.is_mod || slot.broadcasterid === self) && BUTTON({class: "slotnotes", "data-slotidx": i}, "✍"),
+		]),
 	])));
 }
 
@@ -146,6 +149,19 @@ on("submit", "#streamerslot_dlg form", e => {
 });
 
 on("click", ".requestslot", e => ws_sync.send({cmd: "requestslot", slotidx: e.match.dataset.slotidx|0}));
+
+on("click", ".slotnotes", e => {
+	selectedslot = slots[slotidx = (e.match.dataset.slotidx|0)];
+	DOM("#slotnotes_content").value = selectedslot.notes || "";
+	set_content("#slotnotes_start", DATE(selectedslot.start));
+	set_content("#slotnotes_end", DATE(selectedslot.end));
+	DOM("#slotnotes_dlg").showModal();
+});
+
+on("submit", "#slotnotes_dlg form", e => {
+	ws_sync.send({cmd: "slotnotes", slotidx, notes: DOM("#slotnotes_content").value});
+	selectedslot = { }; slotidx = -1;
+});
 
 on("click", "#editconfig", e => DOM("#configdlg").showModal());
 on("submit", "#configdlg form", e => {

@@ -53,6 +53,18 @@ textarea {vertical-align: top;}
 >
 > [Select](:type=submit) [Close](:.dialog_close)
 {: tag=formdialog #streamerslot_dlg}
+
+<!-- -->
+
+> ### Edit Notes
+> Notes for time slot <span id=slotnotes_start></span> to <span id=slotnotes_end></span>
+>
+> Plain text (no Markdown).
+>
+> <textarea rows=5 cols=40 id=slotnotes_content></textarea>
+>
+> [Save](:type=submit) [Close](:.dialog_close)
+{: tag=formdialog #slotnotes_dlg}
 ";
 
 /* Raid train organization
@@ -92,7 +104,6 @@ TODO: Make slot width configurable, and test various combinations:
 * Etc
 
 Next steps:
-* Comments
 * Slot width and lots of testing
 * Time-of-day checks
 
@@ -181,6 +192,23 @@ void websocket_cmd_requestslot(mapping(string:mixed) conn, mapping(string:mixed)
 	if (!slot->claims) slot->claims = ({ });
 	int id = (int)conn->session->user->?id; if (!id) return;
 	slot->claims ^= ({id});
+	persist_status->save();
+	send_updates_all("control#" + chan);
+	send_updates_all("view#" + chan);
+}
+
+void websocket_cmd_slotnotes(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%s#%s", string grp, string chan);
+	object channel = G->G->irc->channels["#" + chan];
+	if (!channel || conn->session->fake) return;
+	int userid = (int)conn->session->user->?id; if (!userid) return; //You don't have to be a mod, but you have to be logged in
+	if (!stringp(msg->notes)) return;
+	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+	array slots = trn->cfg->slots || ({ });
+	if (!intp(msg->slotidx) || msg->slotidx < 0 || msg->slotidx >= sizeof(slots)) return;
+	mapping slot = slots[msg->slotidx];
+	if (grp != "control" && slot->broadcasterid != userid) return; //If you're not a mod, you have to be the streamer in that slot.
+	slot->notes = msg->notes;
 	persist_status->save();
 	send_updates_all("control#" + chan);
 	send_updates_all("view#" + chan);
