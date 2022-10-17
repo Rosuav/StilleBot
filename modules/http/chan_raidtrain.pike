@@ -80,6 +80,8 @@ textarea {vertical-align: top;}
     Not sure which would be easier. It might not matter, if it just shows the
     options by display name and avatar.)
   - Identify a slot by its start time.
+- Owner/mod can revoke any claim at any time, even if there is a streamer in the
+  slot (which otherwise doesn't remove claims, though it hides them from public).
 - Owner and slot holder may edit comments shown in one column on the schedule.
 - If the current time is within the raid train period, highlight "NOW".
 - If the current user is on the schedule, highlight "YOU".
@@ -114,7 +116,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 void add_person(mapping people, int|string id) {
 	id = (int)id; if (!id) return;
 	mapping person = G->G->user_info[id];
-	if (person) people[(string)id] = person;
+	constant keys = ({"id", "login", "display_name", "profile_image_url"});
+	if (person) people[(string)id] = mkmapping(keys, map(keys, person));
 	else people[""][id] = 1;
 }
 

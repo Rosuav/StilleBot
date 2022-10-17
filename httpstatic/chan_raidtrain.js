@@ -112,16 +112,22 @@ export function render(data) {
 }
 
 let selectedslot = { }, slotidx = -1;
-function RB(person) {
-	return LI(LABEL([ //FIXME: Labelling the input with an anchor creates a click conflict.
-		INPUT({type: "radio", name: "slotselection", value: person.id, checked: person.id == selectedslot.broadcasterid}),
-		channel_profile(person),
-	]));
-}
 on("click", ".streamerslot", e => {
 	selectedslot = slots[slotidx = (e.match.dataset.slotidx|0)];
+	const seen = { };
+	function RB(person) {
+		if (!person || seen[person.id]) return "";
+		seen[person.id] = 1;
+		return LI(LABEL([ //FIXME: Labelling the input with an anchor creates a click conflict.
+			INPUT({type: "radio", name: "slotselection", value: person.id, checked: person.id == selectedslot.broadcasterid}),
+			channel_profile(person),
+		]));
+	}
 	set_content("#streamerslot_options", [
-		owner_id && RB(people[owner_id]),
+		RB(people[owner_id]),
+		//TODO: This doesn't work if you have no claims. May need an explicit call to get profile for self.
+		RB(people[ws_sync.get_userid()]),
+		selectedslot.claims && selectedslot.claims.map(id => RB(people[id])),
 		LI(LABEL([INPUT({type: "radio", name: "slotselection", value: "0", checked: !selectedslot.broadcasterid}),
 			"Nobody (for now)"])),
 	]);
