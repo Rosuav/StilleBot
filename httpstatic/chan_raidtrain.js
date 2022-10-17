@@ -1,4 +1,4 @@
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
+import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, BUTTON, IMG, INPUT, LABEL, LI, OPTION, SELECT, TD, TEXTAREA, TIME, TR} = choc; //autoimport
 
 const may_request = {
@@ -32,6 +32,7 @@ const cfg_vars = [
 	{key: "startdate", label: "Start date", render: makedate, getvalue: getdate},
 	{key: "enddate", label: "End date", render: makedate, getvalue: getdate},
 	{key: "may_request", label: "Slot requests", render: val => SELECT(
+		{value: val},
 		Object.entries(may_request).map(([k,v]) => OPTION({value: k}, v)))},
 ];
 
