@@ -20,7 +20,6 @@ function makedate(val, id) {
 }
 function getdate(elem) {
 	if (elem.value === "") return 0;
-	console.log("Date:", elem.value + "T" + DOM("#" + elem.id + "_time").value + ":00");
 	const date = new Date(elem.value + "T" + DOM("#" + elem.id + "_time").value + ":00");
 	return Math.floor((+date)/1000);
 }

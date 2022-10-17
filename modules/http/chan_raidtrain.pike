@@ -286,10 +286,9 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			int delta = (slots[0]->start - slot_offset) % slotwidth;
 			slots = ({(["start": slots[0]->start - delta, "end": slots[0]->start])}) + slots;
 		}
-		//TODO: Scan the slots for combinables. Two slots can be combined if:
+		//Scan the slots for combinables. Two slots can be combined if:
 		//1) They have the same broadcasterid
-		//2) The combined width (from slot[n]->start to slot[n+1]->end) is no
-		//   more than the slotwidth
+		//2) The combined width is no more than the slotwidth
 		//3) The start is aligned on the slot_offset. It might be possible to
 		//   allow these also if the preceding slot is full width (that is, if
 		//   slot[n-1]->end - slot[n-1]->start == slotwidth), but it's probably
@@ -311,12 +310,24 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 				slot2->claims = c1 + (c2 - c1);
 				if (!slot2->broadcasterid) slot2->broadcasterid = slot1->broadcasterid; //In case we allow one-and-none merges
 				//Combine notes. If both exist, separate with a newline, although
-				//the main display will just show a space.
-				slot2->notes = String.trim((slot1->notes||"") + "\n" + (slot2->notes||""));
+				//the main display will just show a space. But if they're the same,
+				//one is enough.
+				if (slot1->notes != slot2->notes)
+					slot2->notes = String.trim((slot1->notes||"") + "\n" + (slot2->notes||""));
 				//Done. Take out slot1, but leave a shim until we're done looping.
 				slots[i] = 0;
 			}
 			slots -= ({0});
+		}
+		//Similarly, see if any slots need to be split. Things could get a bit messy
+		//if you change from three-hour slots to two-hour, or vice versa, so... uhh,
+		//don't do that when people have been assigned to slots.
+		for (int i = 0; i < sizeof(slots); ++i) { //Don't foreach here - we may mutate the array
+			mapping s = slots[i];
+			if (s->end - s->start <= slotwidth) continue;
+			mapping s2 = s | (["start": s->start + slotwidth]);
+			s->end = s2->start;
+			slots = slots[..i] + ({s2}) + slots[i+1..];
 		}
 
 		//Extend to the right. Each slot begins where the previous one left off,
