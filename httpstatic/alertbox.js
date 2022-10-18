@@ -182,7 +182,6 @@ ComfyJS.onHosted = (username, viewers, autohost, extra) => {
 	current_hosts[username] = 1;
 	console.log("HOST:", username, viewers, autohost, extra);
 	do_alert("#hostalert", {NAME: username, VIEWERS: viewers, username, viewers});
-	ws_sync.send({cmd: "loghost", username, viewers, extra});
 };
 
 ComfyJS.onCommand = (user, command, message, flags, extra) => {

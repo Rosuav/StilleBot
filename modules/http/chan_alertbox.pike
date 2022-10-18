@@ -1436,12 +1436,6 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 	}
 }
 
-void websocket_cmd_loghost(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	sscanf(conn->group, "%*s#%s", string chan);
-	//Technically someone could spam me with these, but I really hope nobody would be that petty :)
-	Stdio.append_file("alertbox_hosts.log", sprintf("[%d] CLIHOST: %s -> %O\n", time(), "#" + chan, msg));
-}
-
 void irc_closed(mapping options) {
 	::irc_closed(options);
 	//If we still need host alerts for this user, reconnect.
