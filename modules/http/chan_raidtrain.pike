@@ -4,9 +4,7 @@ constant markdown = #"# Raid train organized by $$channel$$
 ## Raid train settings
 {:#cfg_title}
 
-<div id=cfg_description markdown=1>
-$$description||The owner can fill out a description here.$$
-</div>
+<div id=cfg_description></div>
 
 Raid call: <textarea rows=4 cols=35 readonly id=cfg_raidcall></textarea>
 
@@ -106,7 +104,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			req->misc->is_mod ? "[Edit configuration](:#editconfig)"
 			: req->misc->session->user ? "Logged in as " + req->misc->session->user->display_name
 			: "[Log in to make changes or request slots](:.twitchlogin)",
-		"description": trn->cfg->?description, //Because it will be parsed as Markdown
 	]) | req->misc->chaninfo);
 }
 
