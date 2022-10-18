@@ -142,7 +142,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	multiset need = (<>);
 	int maxage = time() - 300;
 	mapping online_streams = ([]);
-	foreach (cfg->all_casters, int uid) {
+	if (cfg->all_casters) foreach (cfg->all_casters, int uid) {
 		mapping info = cache[uid];
 		if (!info || info->age < maxage) need[uid] = 1;
 		else online_streams[(string)uid] = info;
