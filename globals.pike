@@ -1315,6 +1315,7 @@ class http_websocket
 
 	string ws_type; //Will be set in create(), but can be overridden (also in create) if necessary
 	constant markdown = ""; //Override this with a hash-quoted inline Markdown file
+	mapping annotation_lookup;
 
 	//Override to signal if a group name (the part without the channel name) requires
 	//mod privileges. If not overridden, all groups are open to non-mods.
@@ -1323,6 +1324,7 @@ class http_websocket
 	mapping get_chan_state(object channel, string grp, string|void id) { }
 
 	protected void create(string name) {
+		annotation_lookup = mkmapping(indices(this), annotations(this)); //This could go somewhere else, it's likely to be useful for more than just this class
 		::create(name);
 		sscanf(explode_path(name)[-1],"%s.pike",name);
 		if (!name) return;
@@ -1363,6 +1365,21 @@ class http_websocket
 		if (!channel) return 0;
 		return get_chan_state(channel, grp, id);
 	}
+
+	void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+		::websocket_msg(conn, msg);
+		string name = "wscmd_" + msg->cmd;
+		function f = this[name]; if (!f) return;
+		sscanf(conn->group, "%s#%s", string grp, string chan);
+		object channel = G->G->irc->channels["#" + chan];
+		if (!channel || conn->session->fake) return;
+		if (annotation_lookup[name] && annotation_lookup[name]["is_mod"] && !conn->is_mod) return;
+		f(channel, conn, msg);
+	}
+	/* Example:
+	@"is_mod": void wscmd_do_the_thing(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	Without the decorator, anyone can use it; with it, only mods can.
+	*/
 }
 
 mapping(string:mixed) redirect(string url, int|void status)

@@ -209,11 +209,7 @@ void websocket_cmd_slotnotes(mapping(string:mixed) conn, mapping(string:mixed) m
 	save_and_send(conn);
 }
 
-void websocket_cmd_resetschedule(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	sscanf(conn->group, "%s#%s", string grp, string chan);
-	object channel = G->G->irc->channels["#" + chan];
-	if (grp != "control" || !channel) return;
-	if (conn->session->fake) return;
+@"is_mod": void wscmd_resetschedule(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
 	trn->cfg->slots = ({ });
 	save_and_send(conn);
