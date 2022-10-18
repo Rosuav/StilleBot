@@ -51,6 +51,7 @@ textarea {vertical-align: top;}
 	padding: 0;
 }
 tr.now {background: #a0f0c0;}
+tr.your_slot {background: #bff;} /* That's right, you are your own BFF */
 .recording {color: red;}
 </style>
 
@@ -79,7 +80,6 @@ tr.now {background: #a0f0c0;}
 /* Raid train organization
 - Maximum slots per streamer?
 - Requests visible (y/n) - currently has to be Yes as claims are in the public info
-- If the current user is on the schedule, highlight "YOU".
 */
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)

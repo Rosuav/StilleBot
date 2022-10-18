@@ -113,7 +113,9 @@ function update_schedule() {
 	const self = ws_sync.get_userid();
 	const now = +new Date / 1000;
 	set_content("#timeslots tbody", slots.map((slot,i) => TR(
-	{class: slot.start <= now && slot.end > now && "now"}, [
+	{class: slot.start <= now && slot.end > now ? "now" :
+		slot.broadcasterid === self ? "your_slot" : ""
+	}, [
 		TD(abbrevdate(slot.start)),
 		TD(DATE(slot.end, 1)),
 		TD([
