@@ -498,8 +498,7 @@ class websocket_handler
 	array(object|string) split_channel(string|void group) {
 		if (!stringp(group) || !has_value(group, '#')) return ({0, ""}); //Including if we don't have a group set yet
 		sscanf(group, "%s#%s", string subgroup, string chan);
-		object channel = G->G->irc->channels["#" + chan];
-		return ({channel, subgroup});
+		return ({G->G->irc->channels["#" + chan], subgroup});
 	}
 
 	protected void create(string name)
@@ -1370,8 +1369,7 @@ class http_websocket
 		::websocket_msg(conn, msg);
 		string name = "wscmd_" + msg->?cmd;
 		function f = this[name]; if (!f) return;
-		sscanf(conn->group, "%s#%s", string grp, string chan);
-		object channel = G->G->irc->channels["#" + chan];
+		[object channel, string grp] = split_channel(conn->group);
 		if (!channel || conn->session->fake) return;
 		if (annotation_lookup[name] && annotation_lookup[name]["is_mod"] && !conn->is_mod) return;
 		f(channel, conn, msg);
