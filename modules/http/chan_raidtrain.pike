@@ -43,6 +43,10 @@ time {font-weight: bold;}
 .avatar {max-width: 40px; vertical-align: middle; margin: 0 8px;}
 #streamerslot_options {list-style-type: none;}
 textarea {vertical-align: top;}
+.revokeclaim {
+	width: 20px; height: 23px;
+	padding: 0;
+}
 </style>
 
 > ### Select Streamer
@@ -106,7 +110,6 @@ TODO: Make slot width configurable, and test various combinations:
 Next steps:
 * Slot width and lots of testing
 * Time-of-day checks
-* Claim revocation
 * Arbitrary assignment by searching for a user - no search, just type/paste the login
 
 */
@@ -177,6 +180,21 @@ void websocket_cmd_streamerslot(mapping(string:mixed) conn, mapping(string:mixed
 	slot->broadcasterid = (int)msg->broadcasterid;
 	//TODO: Recalculate stats like "number of unique streamers"
 	if (slot->broadcasterid) get_user_info(slot->broadcasterid); //Populate cache just in case
+	persist_status->save();
+	send_updates_all("control#" + chan);
+	send_updates_all("view#" + chan);
+}
+
+void websocket_cmd_revokeclaim(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%s#%s", string grp, string chan);
+	object channel = G->G->irc->channels["#" + chan];
+	if (grp != "control" || !channel) return;
+	if (conn->session->fake) return;
+	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+	array slots = trn->cfg->slots || ({ });
+	if (!intp(msg->slotidx) || msg->slotidx < 0 || msg->slotidx >= sizeof(slots)) return;
+	mapping slot = slots[msg->slotidx];
+	if (slot->claims) slot->claims -= ({(int)msg->broadcasterid});
 	persist_status->save();
 	send_updates_all("control#" + chan);
 	send_updates_all("view#" + chan);

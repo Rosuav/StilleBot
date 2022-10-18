@@ -1,5 +1,6 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, BR, BUTTON, DIV, IMG, INPUT, LABEL, LI, OPTION, SELECT, TD, TEXTAREA, TIME, TR} = choc; //autoimport
+import {simpleconfirm} from "$$static||utils.js$$";
 
 const may_request = {
 	none: "closed", any: "open",
@@ -128,19 +129,23 @@ let selectedslot = { }, slotidx = -1;
 on("click", ".streamerslot", e => {
 	selectedslot = slots[slotidx = (e.match.dataset.slotidx|0)];
 	const seen = { };
-	function RB(person) {
+	function RB(person, deletable) {
 		if (!person || seen[person.id]) return "";
 		seen[person.id] = 1;
-		return LI(LABEL([ //FIXME: Labelling the input with an anchor creates a click conflict.
-			INPUT({type: "radio", name: "slotselection", value: person.id, checked: person.id == selectedslot.broadcasterid}),
-			channel_profile(person),
-		]));
+		return LI([
+			LABEL([ //FIXME: Labelling the input with an anchor creates a click conflict.
+				INPUT({type: "radio", name: "slotselection", value: person.id, checked: person.id == selectedslot.broadcasterid}),
+				channel_profile(person),
+			]),
+			" ",
+			deletable && BUTTON({type: "button", class: "revokeclaim", "data-broadcasterid": person.id, title: "Remove request"}, "🗑"),
+		]);
 	}
 	set_content("#streamerslot_options", [
 		RB(people[owner_id]),
 		//TODO: This doesn't work if you have no claims. May need an explicit call to get profile for self.
 		RB(people[ws_sync.get_userid()]),
-		selectedslot.claims && selectedslot.claims.map(id => RB(people[id])),
+		selectedslot.claims && selectedslot.claims.map(id => RB(people[id], 1)),
 		LI(LABEL([INPUT({type: "radio", name: "slotselection", value: "0", checked: !selectedslot.broadcasterid}),
 			"Nobody (for now)"])),
 	]);
@@ -155,6 +160,9 @@ on("submit", "#streamerslot_dlg form", e => {
 	ws_sync.send({cmd: "streamerslot", slotidx, broadcasterid});
 	selectedslot = { }; slotidx = -1;
 });
+
+on("click", ".revokeclaim", simpleconfirm("Revoke this claim?", e =>
+	ws_sync.send({cmd: "revokeclaim", slotidx, broadcasterid: e.match.dataset.broadcasterid})));
 
 on("click", ".requestslot", e => ws_sync.send({cmd: "requestslot", slotidx: e.match.dataset.slotidx|0}));
 
