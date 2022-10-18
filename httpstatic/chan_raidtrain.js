@@ -108,7 +108,9 @@ function update_schedule() {
 		return DATE(d, sameday);
 	}
 	const self = ws_sync.get_userid();
-	set_content("#timeslots tbody", slots.map((slot,i) => TR([
+	const now = +new Date / 1000;
+	set_content("#timeslots tbody", slots.map((slot,i) => TR(
+	{class: slot.start <= now && slot.end > now && "now"}, [
 		TD(abbrevdate(slot.start)),
 		TD(DATE(slot.end, 1)),
 		TD(channel_profile(people[slot.broadcasterid])),
@@ -130,6 +132,7 @@ function update_schedule() {
 		]),
 	])));
 }
+setInterval(update_schedule, 60000); //Repaint every minute to update the "now" marker
 
 let selectedslot = { }, slotidx = -1;
 on("click", ".streamerslot", e => {
