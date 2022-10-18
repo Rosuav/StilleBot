@@ -25,6 +25,8 @@ Start   | End | Streamer | Requests | Notes
 loading | - | - | - | -
 {:#timeslots}
 
+Refresh the page to see who's live, or check out any of the channels to see what they do!
+
 > ### Configuration
 > Plan out your raid train!
 >
