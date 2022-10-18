@@ -143,7 +143,7 @@ on("click", ".streamerslot", e => {
 		seen[person.id] = 1;
 		return LI([
 			LABEL([ //FIXME: Labelling the input with an anchor creates a click conflict.
-				INPUT({type: "radio", name: "slotselection", value: person.id, checked: person.id == selectedslot.broadcasterid}),
+				INPUT({type: "radio", name: "slotselection", value: person.id}),
 				channel_profile(person),
 			]),
 			" ",
@@ -164,11 +164,15 @@ on("click", ".streamerslot", e => {
 				INPUT({id: "streamerslot_login", size: 30, autocomplete: "off"}),
 			]),
 		]),
-		LI(LABEL([INPUT({type: "radio", name: "slotselection", value: "0", checked: !selectedslot.broadcasterid}),
+		LI(LABEL([INPUT({type: "radio", name: "slotselection", value: "0"}),
 			"Nobody (for now)"])),
 	]);
 	set_content("#streamerslot_start", DATE(selectedslot.start));
 	set_content("#streamerslot_end", DATE(selectedslot.end));
+	DOM("#streamerslot_login").value = "";
+	const rb = DOM('[name="slotselection"][value="' + selectedslot.broadcasterid + '"]')
+		|| DOM('[name="slotselection"][value="0"]');
+	rb.checked = true;
 	DOM("#streamerslot_dlg").showModal();
 });
 
