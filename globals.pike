@@ -1357,6 +1357,7 @@ class http_websocket
 		}
 		else conn->is_mod = G->G->user_mod_status[login + channel->name] || is_localhost_mod(login, conn->remote_ip);
 		if (!conn->is_mod && need_mod(grp)) return "Not logged in";
+		conn->subgroup = grp;
 	}
 
 	mapping get_state(string group, string|void id) {

@@ -89,28 +89,21 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["items": _get_message(sort((array(int))indices(msgs) - ({0}))[*], msgs) - ({0})]);
 }
 
-void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->session->fake) return;
-	sscanf(conn->group, "%s#%s", string uid, string chan);
-	if (!G->G->irc->channels["#" + chan]) return;
-	mapping msgs = persist_status->path("private", "#" + chan)[uid];
+void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping msgs = persist_status->path("private", channel->name)[conn->subgroup];
 	if (!msgs) return;
 	if (m_delete(msgs, (string)msg->id)) update_one(conn->group, msg->id);
 	else conn->sock->send_text(Standards.JSON.encode((["cmd": "notify", "msg": "Deletion failed (already gone)"])));
 	persist_status->save();
 }
 
-void websocket_cmd_acknowledge(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->session->fake) return;
-	sscanf(conn->group, "%s#%s", string uid, string chan);
-	object channel = G->G->irc->channels["#" + chan];
-	if (!channel) return;
-	mapping msgs = persist_status->path("private", "#" + chan)[uid];
+void wscmd_acknowledge(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping msgs = persist_status->path("private", channel->name)[conn->subgroup];
 	if (!msgs) return;
 	mapping mail = m_delete(msgs, (string)msg->id);
 	if (mail->acknowledgement) {
-		mapping person = (["uid": (int)uid]);
-		get_user_info((int)uid)->then() {mapping user = __ARGS__[0];
+		mapping person = (["uid": (int)conn->subgroup]);
+		get_user_info((int)conn->subgroup)->then() {mapping user = __ARGS__[0];
 			if (!user) return;
 			person->displayname = user->display_name;
 			person->user = user->login;
@@ -123,11 +116,8 @@ void websocket_cmd_acknowledge(mapping(string:mixed) conn, mapping(string:mixed)
 	persist_status->save();
 }
 
-void websocket_cmd_mark_read(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->session->fake) return;
-	sscanf(conn->group, "%s#%s", string uid, string chan);
-	if (!G->G->irc->channels["#" + chan]) return;
-	mapping msgmeta = persist_status->path("private", "#" + chan)[uid]->?_meta;
+void wscmd_mark_read(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping msgmeta = persist_status->path("private", channel->name)[conn->subgroup]->?_meta;
 	if (!msgmeta) return;
 	int was = msgmeta->lastread;
 	msgmeta->lastread = msgmeta->lastid;
