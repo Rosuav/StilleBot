@@ -42,20 +42,25 @@ function ensure_simpleconfirm_dlg() {
 	])));
 }
 
-let simpleconfirm_callback = null;
+let simpleconfirm_callback = null, simpleconfirm_arg = null, simpleconfirm_match;
 //Simple confirmation dialog. If you need more than just a text string in the
 //confirmdesc, provide a function; it can return any Choc Factory content.
+//One argument will be carried through. For convenience with Choc Factory event
+//objects, its match attribute will be carried through independently.
 export function simpleconfirm(confirmdesc, callback) {
 	ensure_simpleconfirm_dlg();
 	return e => {
-		simpleconfirm_callback = callback;
+		simpleconfirm_callback = callback; simpleconfirm_arg = e;
+		if (e && e.match) simpleconfirm_match = e.match;
 		set_content("#simpleconfirmdesc", typeof confirmdesc === "string" ? confirmdesc : confirmdesc());
 		DOM("#simpleconfirmdlg").showModal();
 	};
 }
 on("click", "#simpleconfirmyes", e => {
-	let cb = simpleconfirm_callback; simpleconfirm_callback = null;
-	if (cb) cb();
+	const cb = simpleconfirm_callback, arg = simpleconfirm_arg;
+	if (simpleconfirm_match) arg.match = simpleconfirm_match;
+	simpleconfirm_match = simpleconfirm_arg = simpleconfirm_callback = undefined;
+	if (cb) cb(arg);
 	DOM("#simpleconfirmdlg").close();
 })
 
