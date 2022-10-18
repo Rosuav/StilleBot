@@ -94,6 +94,8 @@ export function render(data) {
 	set_content("#cfg_may_request", may_request_options[data.cfg.may_request||"none"]);
 	people = data.people; owner_id = data.owner_id; is_mod = data.is_mod; may_request = data.cfg.may_request;
 	if (slots = data.cfg.slots) update_schedule();
+	const casters = data.cfg.all_casters || [];
+	set_content("#streamer_count", ""+casters.length);
 }
 
 function update_schedule() {

@@ -163,17 +163,25 @@ void save_and_send(mapping(string:mixed) conn) {
 void wscmd_streamerslot(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping slot = get_slot(channel, msg); if (!slot) return;
 	if (!conn->is_mod) return; //Should streamers be allowed to revoke their own slots??
+	spawn_task(async_streamerslot(channel, conn, msg, slot));
+}
+continue Concurrent.Future async_streamerslot(object channel, mapping conn, mapping msg, mapping slot) {
 	slot->broadcasterid = (int)msg->broadcasterid;
 	if (!slot->broadcasterid && msg->broadcasterlogin) {
 		string login = replace(msg->broadcasterlogin, ({"https://", "www.twitch.tv/", "twitch.tv/"}), "");
 		sscanf(login, "%s%*[/?]", login); //Remove any "?referrer=raid" or "/popout/chat" from the URL
-		get_user_id(login)->then() {
-			slot->broadcasterid = __ARGS__[0];
-			save_and_send(conn);
-		}->thencatch() { }; //TODO: Report errors back to the conn
-		return;
+		mixed ex = catch (slot->broadcasterid = yield(get_user_id(login)));
+		//if (ex) ; //TODO: Report errors back to the conn
 	}
-	//TODO: Recalculate stats like "number of unique streamers"
+	//Identify the set of streamers participating. If we had Python-style order-retaining
+	//mappings, this would be more efficient, but whatever; it's not like you'll have stupid
+	//numbers of streamers such that array searches become notably slow.
+	array casters = ({ });
+	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+	foreach (trn->cfg->slots, mapping s)
+		if (s->broadcasterid && !has_value(casters, s->broadcasterid))
+			casters += ({s->broadcasterid});
+	trn->cfg->all_casters = casters;
 	if (slot->broadcasterid) get_user_info(slot->broadcasterid); //Populate cache just in case
 	save_and_send(conn);
 }
