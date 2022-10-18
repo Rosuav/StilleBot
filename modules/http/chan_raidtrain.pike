@@ -72,26 +72,8 @@ textarea {vertical-align: top;}
 ";
 
 /* Raid train organization
-- Everything starts with one Owner/Organizer who must be using this bot.
-- Go to https://sikorsky.rosuav.com/channels/demo/raidtrain
-- Owner can configure everything:
-- Title, description, raid call
-- Start/end date and time
-- Slot size (eg 1 hour)
 - Maximum slots per streamer?
 - Requests visible (y/n) - currently has to be Yes as claims are in the public info
-- The time period from start to end, divided into slots, is tabulated (with a
-  scroll bar if necessary) for everyone, and is shown in both the user's TZ and
-  the "canonical" TZ (== the owner's).
-- Anyone can request a slot. If requests are visible, they will be able to see
-  everyone else who's put in a request.
-- Owner can approve any (one) request for a slot. This makes that user name and
-  avatar visible to everyone who looks at the tabulated schedule.
-  - Have a way to pick a user even though they haven't requested the slot
-    (otherwise there's a massive hassle to organize in multiple steps).
-- Owner/mod can revoke any claim at any time, even if there is a streamer in the
-  slot (which otherwise doesn't remove claims, though it hides them from public).
-- Owner and slot holder may edit comments shown in one column on the schedule.
 - If the current time is within the raid train period, highlight "NOW".
 - If the current user is on the schedule, highlight "YOU".
 
@@ -99,16 +81,15 @@ All configuration is stored in persist_status->raidtrain->USERID, with public
 info (anything that can be shared with any client regardless of authentication)
 in ->cfg; this should include the vast majority of information.
 
-TODO: Make slot width configurable, and test various combinations:
+TODO: Now that slot width is configurable, test various combinations:
 * Two-hour slots, starting on an even hour; starting on an odd hour
 * Two-hour slots, 15-hour span
-* Change width after schedule established (NOT IMPLEMENTED, schedule will stay)
+* Change width after schedule established
 * Two-hour slots, move start by one hour
 * Four-hour slots, shorten span by three hours, change slot size to two hours
 * Etc
 
 Next steps:
-* Slot width and lots of testing
 * Time-of-day checks
 
 */
