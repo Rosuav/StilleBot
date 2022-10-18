@@ -5,6 +5,8 @@ import {simpleconfirm} from "$$static||utils.js$$";
 const may_request = {
 	none: "closed", any: "open",
 	//TODO: Have an option for "approved persons" or "team members" or something
+	//TODO maybe: Have an option for "streamers", defined by "people with at least one VOD, at least a day old"?
+	//That would effectively require 2FA.
 };
 
 const pad = n => ("0" + n).slice(-2);
