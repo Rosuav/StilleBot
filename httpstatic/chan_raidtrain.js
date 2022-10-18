@@ -142,10 +142,19 @@ on("click", ".streamerslot", e => {
 		]);
 	}
 	set_content("#streamerslot_options", [
+		RB(people[selectedslot.broadcasterid]),
 		RB(people[owner_id]),
 		//TODO: This doesn't work if you have no claims. May need an explicit call to get profile for self.
 		RB(people[ws_sync.get_userid()]),
 		selectedslot.claims && selectedslot.claims.map(id => RB(people[id], 1)),
+		LI([
+			//Note that the checkbox has no label. Clicking the text puts the cursor in the text field.
+			INPUT({type: "radio", name: "slotselection", value: "login", id: "streamerslot_loginrb"}),
+			LABEL({style: "display: inline-block; vertical-align: top"}, [
+				"Enter user name or Twitch link:", BR(),
+				INPUT({id: "streamerslot_login", size: 30, autocomplete: "off"}),
+			]),
+		]),
 		LI(LABEL([INPUT({type: "radio", name: "slotselection", value: "0", checked: !selectedslot.broadcasterid}),
 			"Nobody (for now)"])),
 	]);
@@ -157,12 +166,15 @@ on("click", ".streamerslot", e => {
 on("submit", "#streamerslot_dlg form", e => {
 	const rb = DOM("#streamerslot_options input[type=radio]:checked");
 	const broadcasterid = rb ? rb.value : "0"; //Shouldn't ever be absent but whatever
-	ws_sync.send({cmd: "streamerslot", slotidx, broadcasterid});
+	if (broadcasterid === "login") ws_sync.send({cmd: "streamerslot", slotidx, broadcasterlogin: DOM("#streamerslot_login").value});
+	else ws_sync.send({cmd: "streamerslot", slotidx, broadcasterid});
 	selectedslot = { }; slotidx = -1;
 });
 
 on("click", ".revokeclaim", simpleconfirm("Revoke this claim?", e =>
 	ws_sync.send({cmd: "revokeclaim", slotidx, broadcasterid: e.match.dataset.broadcasterid})));
+
+on("input", "#streamerslot_login", e => DOM("#streamerslot_loginrb").checked = true);
 
 on("click", ".requestslot", e => ws_sync.send({cmd: "requestslot", slotidx: e.match.dataset.slotidx|0}));
 

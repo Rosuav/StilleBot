@@ -110,7 +110,6 @@ TODO: Make slot width configurable, and test various combinations:
 Next steps:
 * Slot width and lots of testing
 * Time-of-day checks
-* Arbitrary assignment by searching for a user - no search, just type/paste the login
 
 */
 
@@ -178,6 +177,17 @@ void websocket_cmd_streamerslot(mapping(string:mixed) conn, mapping(string:mixed
 	if (!intp(msg->slotidx) || msg->slotidx < 0 || msg->slotidx >= sizeof(slots)) return;
 	mapping slot = slots[msg->slotidx];
 	slot->broadcasterid = (int)msg->broadcasterid;
+	if (!slot->broadcasterid && msg->broadcasterlogin) {
+		string login = replace(msg->broadcasterlogin, ({"https://", "www.twitch.tv/", "twitch.tv/"}), "");
+		sscanf(login, "%s%*[/?]", login); //Remove any "?referrer=raid" or "/popout/chat" from the URL
+		get_user_id(login)->then() {
+			slot->broadcasterid = __ARGS__[0];
+			persist_status->save();
+			send_updates_all("control#" + chan);
+			send_updates_all("view#" + chan);
+		}->thencatch() { }; //TODO: Report errors back to the conn
+		return;
+	}
 	//TODO: Recalculate stats like "number of unique streamers"
 	if (slot->broadcasterid) get_user_info(slot->broadcasterid); //Populate cache just in case
 	persist_status->save();
