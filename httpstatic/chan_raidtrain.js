@@ -201,3 +201,7 @@ on("submit", "#configdlg form", e => {
 	});
 	ws_sync.send(msg);
 });
+
+on("click", "#reset_schedule", simpleconfirm(
+	"Resetting the schedule removes all slots, assignments, requests, notes, etc. This cannot be undone!",
+	e => ws_sync.send({cmd: "resetschedule"})));

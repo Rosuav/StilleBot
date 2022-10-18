@@ -34,7 +34,7 @@ loading | - | - | - | -
 > - | -
 > loading... | loading...
 >
-> [Save](:#save type=submit) [Close](:.dialog_close)
+> [Save](:#save type=submit) [Close](:.dialog_close) [Reset schedule](:#reset_schedule)
 {: tag=formdialog #configdlg}
 
 <style>
@@ -222,6 +222,18 @@ void websocket_cmd_slotnotes(mapping(string:mixed) conn, mapping(string:mixed) m
 	mapping slot = slots[msg->slotidx];
 	if (grp != "control" && slot->broadcasterid != userid) return; //If you're not a mod, you have to be the streamer in that slot.
 	slot->notes = msg->notes;
+	persist_status->save();
+	send_updates_all("control#" + chan);
+	send_updates_all("view#" + chan);
+}
+
+void websocket_cmd_resetschedule(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->group, "%s#%s", string grp, string chan);
+	object channel = G->G->irc->channels["#" + chan];
+	if (grp != "control" || !channel) return;
+	if (conn->session->fake) return;
+	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+	trn->cfg->slots = ({ });
 	persist_status->save();
 	send_updates_all("control#" + chan);
 	send_updates_all("view#" + chan);
