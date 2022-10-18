@@ -163,6 +163,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		send_updates_all("control" + channel->name);
 		send_updates_all("view" + channel->name);
 	};
+	if (!cfg->slots) cfg->slots = ({ });
 	return ([
 		"cfg": cfg,
 		"owner_id": channel->userid,
