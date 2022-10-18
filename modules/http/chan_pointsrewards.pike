@@ -78,10 +78,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["items": rewards, "dynrewards": dynrewards]);
 }
 
-void websocket_cmd_add(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	sscanf(conn->group, "%s#%s", string grp, string chan);
-	object channel = G->G->irc->channels["#" + chan]; if (!channel) return;
-	array rewards = G->G->pointsrewards[chan] || ({ });
+void wscmd_add(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	array rewards = G->G->pointsrewards[channel->name[1..]] || ({ });
 	mapping copyfrom = ([]);
 	string basetitle = "New Custom Reward";
 	if (msg->copyfrom && msg->copyfrom != "") {
@@ -90,12 +88,12 @@ void websocket_cmd_add(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	}
 	//Titles must be unique (among all rewards). To simplify rapid creation of
 	//multiple rewards, add a numeric disambiguator on conflict.
-	multiset have_titles = (multiset)G->G->pointsrewards[chan]->title;
+	multiset have_titles = (multiset)rewards->title;
 	string title = basetitle; int idx = 1; //First one doesn't get the number appended
 	while (have_titles[title]) title = sprintf("%s #%d", basetitle, ++idx);
 	//Twitch will notify us when it's created, so no need to explicitly respond.
 	twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid,
-		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]),
+		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[channel->name[1..]]]),
 		(["method": "POST", "json": copyfrom | (["title": title])]),
 	);
 }

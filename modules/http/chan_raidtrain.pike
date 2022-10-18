@@ -149,10 +149,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	]);
 }
 
-mapping get_slot(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	sscanf(conn->group, "%s#%s", string grp, string chan);
-	object channel = G->G->irc->channels["#" + chan];
-	if (!channel || conn->session->fake) return 0;
+mapping get_slot(object channel, mapping(string:mixed) msg) {
 	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
 	array slots = trn->cfg->slots || ({ });
 	if (!intp(msg->slotidx) || msg->slotidx < 0 || msg->slotidx >= sizeof(slots)) return 0;
@@ -166,8 +163,8 @@ void save_and_send(mapping(string:mixed) conn) {
 	send_updates_all("view#" + chan);
 }
 
-void websocket_cmd_streamerslot(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping slot = get_slot(conn, msg); if (!slot) return;
+void wscmd_streamerslot(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping slot = get_slot(channel, msg); if (!slot) return;
 	if (!conn->is_mod) return; //Should streamers be allowed to revoke their own slots??
 	slot->broadcasterid = (int)msg->broadcasterid;
 	if (!slot->broadcasterid && msg->broadcasterlogin) {
@@ -184,15 +181,14 @@ void websocket_cmd_streamerslot(mapping(string:mixed) conn, mapping(string:mixed
 	save_and_send(conn);
 }
 
-void websocket_cmd_revokeclaim(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping slot = get_slot(conn, msg); if (!slot) return;
-	if (!conn->is_mod) return;
+@"is_mod": void wscmd_revokeclaim(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping slot = get_slot(channel, msg); if (!slot) return;
 	if (slot->claims) slot->claims -= ({(int)msg->broadcasterid});
 	save_and_send(conn);
 }
 
-void websocket_cmd_requestslot(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping slot = get_slot(conn, msg); if (!slot) return;
+void wscmd_requestslot(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping slot = get_slot(channel, msg); if (!slot) return;
 	if (slot->broadcasterid) return; //Don't request slots that are taken
 	if (!slot->claims) slot->claims = ({ });
 	int id = (int)conn->session->user->?id; if (!id) return;
@@ -200,8 +196,8 @@ void websocket_cmd_requestslot(mapping(string:mixed) conn, mapping(string:mixed)
 	save_and_send(conn);
 }
 
-void websocket_cmd_slotnotes(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping slot = get_slot(conn, msg); if (!slot) return;
+void wscmd_slotnotes(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping slot = get_slot(channel, msg); if (!slot) return;
 	int userid = (int)conn->session->user->?id; if (!userid) return; //You don't have to be a mod, but you have to be logged in
 	if (!stringp(msg->notes)) return;
 	if (!conn->is_mod && slot->broadcasterid != userid) return; //If you're not a mod, you have to be the streamer in that slot.
@@ -215,11 +211,7 @@ void websocket_cmd_slotnotes(mapping(string:mixed) conn, mapping(string:mixed) m
 	save_and_send(conn);
 }
 
-void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	sscanf(conn->group, "%s#%s", string grp, string chan);
-	object channel = G->G->irc->channels["#" + chan];
-	if (grp != "control" || !channel) return;
-	if (conn->session->fake) return;
+@"is_mod": void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
 	foreach ("title description raidcall may_request" / " ", string str)
 		if (msg[str]) trn->cfg[str] = msg[str];
