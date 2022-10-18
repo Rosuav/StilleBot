@@ -255,7 +255,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	highlights = users->login * "\n";
 	string title = "Followed streams";
 	//Category search - show all streams in the categories you follow
-	if (req->variables->raiders || req->variables->categories || req->variables->login) {
+	if (req->variables->raiders || req->variables->categories || req->variables->login || req->variables->train) {
 		mapping args = ([]);
 		if (req->variables->raiders) {
 			//Raiders mode (categories omitted but "?raiders" specified). Particularly useful with a for= search.
@@ -296,6 +296,18 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//Specify ?login=X&login=Y or ?login=X,Y for multiples
 			if (stringp(args->user_login) && has_value(args->user_login, ",")) args->user_login /= ",";
 			title = "Detailed stream info";
+		}
+		else if (req->variables->train) {
+			//Using a particular user's (current) raid train as a user set, scan
+			//for streams who are currently live. Ignores the schedule and just
+			//uses the list of all_casters.
+			string owner = req->variables->train;
+			if (!(int)owner) owner = (string)yield(get_user_id(owner));
+			mapping trncfg = persist_status->path("raidtrain")[owner]->?cfg;
+			array casters = trncfg->?all_casters;
+			if (!casters) return "No such raid train - check the link and try again";
+			args->user_id = (array(string))casters;
+			title = "Raid Train: " + (trncfg->title || "(untitled)");
 		}
 		else switch (req->variables->categories) {
 			default: { //For ?categories=Art,Food%20%26%20Drink - explicit categories

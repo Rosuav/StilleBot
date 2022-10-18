@@ -27,6 +27,9 @@ loading | - | - | - | -
 
 Refresh the page to see who's live, or check out any of the channels to see what they do!
 
+[See who's live in a tiled view](/raidfinder?train=LOADING)
+{:#raidfinder_link}
+
 > ### Configuration
 > Plan out your raid train!
 >
@@ -77,11 +80,6 @@ tr.now {background: #a0f0c0;}
 - Maximum slots per streamer?
 - Requests visible (y/n) - currently has to be Yes as claims are in the public info
 - If the current user is on the schedule, highlight "YOU".
-
-Next steps:
-* Delayed-load list of who's currently live (regardless of schedule)
-  - Can the raid finder grow a parameter to show "train=ownername"?
-
 */
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)

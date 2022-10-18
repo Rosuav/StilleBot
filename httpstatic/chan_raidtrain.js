@@ -96,6 +96,7 @@ export function render(data) {
 	if (slots = data.cfg.slots) update_schedule();
 	const casters = data.cfg.all_casters || [];
 	set_content("#streamer_count", ""+casters.length);
+	DOM("#raidfinder_link a").href = "/raidfinder?train=" + data.owner_id; //Might be nice to use the name, but both work
 }
 
 function update_schedule() {
