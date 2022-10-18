@@ -91,6 +91,8 @@ TODO: Now that slot width is configurable, test various combinations:
 
 Next steps:
 * Time-of-day checks
+* Delayed-load list of who's currently live (regardless of schedule)
+  - Can the raid finder grow a parameter to show "train=ownername"?
 
 */
 
