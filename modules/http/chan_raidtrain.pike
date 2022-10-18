@@ -76,20 +76,7 @@ tr.now {background: #a0f0c0;}
 /* Raid train organization
 - Maximum slots per streamer?
 - Requests visible (y/n) - currently has to be Yes as claims are in the public info
-- If the current time is within the raid train period, highlight "NOW".
 - If the current user is on the schedule, highlight "YOU".
-
-All configuration is stored in persist_status->raidtrain->USERID, with public
-info (anything that can be shared with any client regardless of authentication)
-in ->cfg; this should include the vast majority of information.
-
-TODO: Now that slot width is configurable, test various combinations:
-* Two-hour slots, starting on an even hour; starting on an odd hour
-* Two-hour slots, 15-hour span
-* Change width after schedule established
-* Two-hour slots, move start by one hour
-* Four-hour slots, shorten span by three hours, change slot size to two hours
-* Etc
 
 Next steps:
 * Delayed-load list of who's currently live (regardless of schedule)
