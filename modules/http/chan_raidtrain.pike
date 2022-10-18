@@ -46,6 +46,7 @@ textarea {vertical-align: top;}
 	padding: 0;
 }
 tr.now {background: #a0f0c0;}
+.recording {color: red;}
 </style>
 
 > ### Select Streamer
@@ -135,10 +136,35 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		send_updates_all("control" + channel->name);
 		send_updates_all("view" + channel->name);
 	};
+	mapping cache = G->G->raidtrain_streamcache; if (!cache) cache = G->G->raidtrain_streamcache = ([]);
+	multiset need = (<>);
+	int maxage = time() - 300;
+	mapping online_streams = ([]);
+	foreach (cfg->all_casters, int uid) {
+		mapping info = cache[uid];
+		if (!info || info->age < maxage) need[uid] = 1;
+		else online_streams[(string)uid] = info;
+	}
+	if (sizeof(need)) get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))need]))->then() {
+		int now = time();
+		foreach (__ARGS__[0], mapping strm) {
+			int uid = (int)strm->user_id;
+			need[uid] = 0;
+			cache[uid] = ([
+				"online": 1, "age": now,
+				"category": strm->game_name,
+				//Any more info useful?
+			]);
+		}
+		//Any we didn't see must be offline.
+		foreach (need; int uid;) cache[uid] = (["online": 0, "age": now]);
+		send_updates_all("control" + channel->name);
+		send_updates_all("view" + channel->name);
+	};
 	return ([
 		"cfg": cfg,
 		"owner_id": channel->userid,
-		"people": people,
+		"people": people, "online_streams": online_streams,
 		"is_mod": grp == "control",
 		"desc_html": Tools.Markdown.parse(cfg->description || "", ([
 			"renderer": Renderer, "lexer": Lexer,

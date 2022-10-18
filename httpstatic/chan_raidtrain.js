@@ -1,5 +1,5 @@
 import {lindt, replace_content as set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, DIV, IMG, INPUT, LABEL, LI, OPTION, SELECT, TD, TEXTAREA, TIME, TR} = lindt; //autoimport
+const {A, BR, BUTTON, DIV, IMG, INPUT, LABEL, LI, OPTION, SELECT, SPAN, TD, TEXTAREA, TIME, TR} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 const may_request_options = {
@@ -71,7 +71,7 @@ function channel_profile(chan) {
 	]);
 }
 
-let owner_id = { }, slots = [], people = { }, is_mod = false, may_request = "none";
+let owner_id = { }, slots = [], people = { }, is_mod = false, may_request = "none", online_streams = { };
 export function render(data) {
 	set_content("#configdlg tbody", cfg_vars.map(v => {
 		const input = v.render(data.cfg[v.key] || "", "edit_" + v.key);
@@ -92,7 +92,8 @@ export function render(data) {
 	]);
 	set_content("#cfg_slotsize", (data.cfg.slotsize||1) + " hour(s)");
 	set_content("#cfg_may_request", may_request_options[data.cfg.may_request||"none"]);
-	people = data.people; owner_id = data.owner_id; is_mod = data.is_mod; may_request = data.cfg.may_request;
+	people = data.people; owner_id = data.owner_id; is_mod = data.is_mod;
+	may_request = data.cfg.may_request; online_streams = data.online_streams;
 	if (slots = data.cfg.slots) update_schedule();
 	const casters = data.cfg.all_casters || [];
 	set_content("#streamer_count", ""+casters.length);
@@ -115,7 +116,11 @@ function update_schedule() {
 	{class: slot.start <= now && slot.end > now && "now"}, [
 		TD(abbrevdate(slot.start)),
 		TD(DATE(slot.end, 1)),
-		TD(channel_profile(people[slot.broadcasterid])),
+		TD([
+			online_streams[slot.broadcasterid] && online_streams[slot.broadcasterid].online &&
+				SPAN({class: "recording", title: "Live now!"}, "⏺"),
+			channel_profile(people[slot.broadcasterid]),
+		]),
 		TD([
 			!slot.broadcasterid && slot.claims && DIV(slot.claims.map(id => DIV(channel_profile(people[id])))),
 			" ",
