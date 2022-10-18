@@ -1368,7 +1368,7 @@ class http_websocket
 
 	void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 		::websocket_msg(conn, msg);
-		string name = "wscmd_" + msg->cmd;
+		string name = "wscmd_" + msg->?cmd;
 		function f = this[name]; if (!f) return;
 		sscanf(conn->group, "%s#%s", string grp, string chan);
 		object channel = G->G->irc->channels["#" + chan];
