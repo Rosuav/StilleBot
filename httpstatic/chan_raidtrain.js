@@ -2,7 +2,7 @@ import {lindt, replace_content as set_content, DOM, on} from "https://rosuav.git
 const {A, BR, BUTTON, DIV, IMG, INPUT, LABEL, LI, OPTION, SELECT, TD, TEXTAREA, TIME, TR} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
-const may_request = {
+const may_request_options = {
 	none: "closed", any: "open",
 	//TODO: Have an option for "approved persons" or "team members" or something
 	//TODO maybe: Have an option for "streamers", defined by "people with at least one VOD, at least a day old"?
@@ -43,7 +43,7 @@ const cfg_vars = [
 		OPTION({value: "24"}, "One day"),
 	])},
 	{key: "may_request", label: "Slot requests", render: value => SELECT({value},
-		Object.entries(may_request).map(([k,v]) => OPTION({value: k}, v)))},
+		Object.entries(may_request_options).map(([k,v]) => OPTION({value: k}, v)))},
 ];
 
 function DATE(d, timeonly) {
@@ -71,7 +71,7 @@ function channel_profile(chan) {
 	]);
 }
 
-let owner_id = { }, slots = [], people = { };
+let owner_id = { }, slots = [], people = { }, is_mod = false, may_request = "none";
 export function render(data) {
 	set_content("#configdlg tbody", cfg_vars.map(v => {
 		const input = v.render(data.cfg[v.key] || "", "edit_" + v.key);
@@ -91,8 +91,12 @@ export function render(data) {
 		" until ", DATE(data.cfg.enddate),
 	]);
 	set_content("#cfg_slotsize", (data.cfg.slotsize||1) + " hour(s)");
-	set_content("#cfg_may_request", may_request[data.cfg.may_request||"none"]);
-	people = data.people; owner_id = data.owner_id;
+	set_content("#cfg_may_request", may_request_options[data.cfg.may_request||"none"]);
+	people = data.people; owner_id = data.owner_id; is_mod = data.is_mod; may_request = data.cfg.may_request;
+	if (slots = data.cfg.slots) update_schedule();
+}
+
+function update_schedule() {
 	let lastdate = 0;
 	function abbrevdate(d) {
 		//If the two dates are on the same day (simplified down to just "same
@@ -104,24 +108,24 @@ export function render(data) {
 		return DATE(d, sameday);
 	}
 	const self = ws_sync.get_userid();
-	if (slots = data.cfg.slots) set_content("#timeslots tbody", data.cfg.slots.map((slot,i) => TR([
+	set_content("#timeslots tbody", slots.map((slot,i) => TR([
 		TD(abbrevdate(slot.start)),
 		TD(DATE(slot.end, 1)),
 		TD(channel_profile(people[slot.broadcasterid])),
 		TD([
 			!slot.broadcasterid && slot.claims && DIV(slot.claims.map(id => DIV(channel_profile(people[id])))),
 			" ",
-			data.is_mod ? BUTTON({class: "streamerslot", "data-slotidx": i}, "Manage")
+			is_mod ? BUTTON({class: "streamerslot", "data-slotidx": i}, "Manage")
 			: !self ? ""
 				//TODO: Handle may_request other than none/any
-			: !slot.broadcasterid && data.cfg.may_request === "any" ?
+			: !slot.broadcasterid && may_request === "any" ?
 				BUTTON({class: "requestslot", "data-slotidx": i},
 					slot.claims && slot.claims.indexOf(self) > -1 ? "Unrequest" : "Request")
 			: "",
 		]),
 		TD([
 			slot.notes || "",
-			(data.is_mod || slot.broadcasterid === self) &&
+			(is_mod || slot.broadcasterid === self) &&
 				BUTTON({class: "slotnotes", "data-slotidx": i, title: "Edit notes"}, "✍"),
 		]),
 	])));
