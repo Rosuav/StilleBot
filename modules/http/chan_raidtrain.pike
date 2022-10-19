@@ -347,6 +347,8 @@ void wscmd_slotnotes(object channel, mapping(string:mixed) conn, mapping(string:
 			"start": slots[-1]->end,
 			"end": min(end += slotwidth, tcend),
 		])});
+		//It's possible that we just created a zero-length slot. If so, trim it off.
+		if (slots[-1]->end <= slots[-1]->start) slots = slots[..<1];
 		//Rather than extend to the left, we build up a new set of pristine slots
 		//from the start point, stopping once we don't need to make more.
 		array fresh = ({ });
