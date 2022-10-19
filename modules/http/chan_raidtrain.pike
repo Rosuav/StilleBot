@@ -77,10 +77,7 @@ tr.your_slot {background: #bff;} /* That's right, you are your own BFF */
 {: tag=formdialog #slotnotes_dlg}
 ";
 
-/* Raid train organization
-- Maximum slots per streamer?
-- Requests visible (y/n) - currently has to be Yes as claims are in the public info
-*/
+//TODO: Allow requests to be hidden, which would entail taking claims out of the cfg mapping.
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
