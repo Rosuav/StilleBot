@@ -648,7 +648,13 @@ EventSub new_follower = EventSub("follower", "channel.follow", "1") { [string ch
 		};
 };
 //EventSub raidin = EventSub("raidin", "channel.raid", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Raid incoming [%d, %O]: %O\n", time(), @__ARGS__));};
-//EventSub raidout = EventSub("raidout", "channel.raid", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Raid outgoing [%d, %O]: %O\n", time(), @__ARGS__));};
+EventSub raidout = EventSub("raidout", "channel.raid", "1") {[string chan, mapping info] = __ARGS__;
+	object channel = G->G->irc->channels["#" + chan];
+	Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s with %d\n",
+		Calendar.now()->format_time(), chan, info->to_broadcaster_user_name, (int)info->viewers));
+	channel->record_raid((int)info->from_broadcaster_user_id, info->from_broadcaster_user_name,
+		(int)info->to_broadcaster_user_id, info->to_broadcaster_user_name, 0, (int)info->viewers);
+};
 
 void check_hooks(array eventhooks)
 {
@@ -679,7 +685,7 @@ void check_hooks(array eventhooks)
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses pseudo-channels.)
 		new_follower(chan, (["broadcaster_user_id": (string)userid]));
 		//raidin(chan, (["to_broadcaster_user_id": (string)userid]));
-		//raidout(chan, (["from_broadcaster_user_id": (string)userid]));
+		raidout(chan, (["from_broadcaster_user_id": (string)userid]));
 	}
 }
 

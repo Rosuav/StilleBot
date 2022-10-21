@@ -576,6 +576,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		{
 			case "NOTICE": case "USERNOTICE": switch (params->msg_id)
 			{
+				//Not happening any more now that hosts are gone.
 				case "host_on": if (sscanf(msg, "Now hosting %s.", string h) && h)
 				{
 					if (G->G->stream_online_since[name[1..]])
