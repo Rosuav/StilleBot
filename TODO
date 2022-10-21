@@ -197,3 +197,4 @@
     Hard difficulty (ergo the sixth emotes)
   - Otherwise, pretty much everything should work
 * Find all forms in dialogs and use tag=formdialog instead
+* FIXME FIXME FIXME Outgoing raids not getting logged, need webhook
