@@ -68,7 +68,7 @@ int message(object channel, mapping person, string msg)
 	) && (
 		has_value(msg, " http://") || has_value(msg, " https://") || has_value(msg, " alturl.com") ||
 		has_value(msg, " vk.cc/") || has_value(msg, " clck.ru") || has_value(msg, " cutt.ly") ||
-		has_value(msg, "mystrm .store") || has_value(msg, "y0urfollowz. com") ||
+		has_value(msg, "mystrm .store") || has_value(msg, "y0urfollowz. com") || has_value(msg, "viewers .shop") ||
 		has_value(msg, " u.to/") || has_value(msg, " y.ly/") || has_value(msg, " t.ly/") //These are the URL shorteners they use
 	)) person->vars["{@buyfollows}"] = "1";
 	mapping autoban = channel->config->autoban;
