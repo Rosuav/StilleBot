@@ -355,15 +355,15 @@ constant ALERTTYPES = ({([
 	"condition_vars": ({ }),
 ]), ([ //Alert types sent to the command editor begin here - first two are sliced off; see stdalerts.
 	"id": "hostalert",
-	"label": "Host",
-	"heading": "Hosted by another channel",
-	"description": "When some other channel hosts yours",
+	"label": "Host/Raid",
+	"heading": "Hosted or raided by another channel",
+	"description": "When some other channel hosts/raids yours",
 	"placeholders": ([
 		"username": "Channel name (equivalently {NAME})",
 		"viewers": "View count (equivalently {VIEWERS})",
-		"is_raid": "Is this host a raid?",
+		"is_raid": "Is this a raid? (As of Oct 2022, always true.)",
 	]),
-	"testpholders": (["viewers": ({1, 100}), "VIEWERS": ({1, 100}), "is_raid": ({0, 0})]),
+	"testpholders": (["viewers": ({1, 100}), "VIEWERS": ({1, 100}), "is_raid": ({1, 1})]),
 	"builtin": "chan_alertbox",
 	"condition_vars": ({"is_raid"}),
 ]), ([
