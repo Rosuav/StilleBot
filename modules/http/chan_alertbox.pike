@@ -1356,6 +1356,7 @@ mapping message_params(object channel, mapping person, array|string param)
 
 @hook_follower:
 void follower(object channel, mapping follower) {
+	if (!follower) {werror("NULL FOLLOWER: %O\n", channel); return;}
 	send_alert(channel, "follower", ([
 		"NAME": follower->user_name,
 		"username": follower->user_name,
