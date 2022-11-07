@@ -106,7 +106,7 @@ class command
 //that eventually fails, but it will attempt to do so as rarely as
 //possible; returning nonzero will NORMALLY mean that the command is
 //fully active.
-command_handler find_command(object channel, string cmd, int is_mod)
+command_handler find_command(object channel, string cmd, int is_mod, int|void is_vip)
 {
 	//Prevent commands from containing a hash, allowing us to use that for
 	//per-chan commands. Since channel->name begins with a hash, that's our
@@ -123,7 +123,7 @@ command_handler find_command(object channel, string cmd, int is_mod)
 		object|mapping flags = functionp(f) ? function_object(f) : mappingp(f) ? f : ([]);
 		if (flags->featurename && (channel->config->features[?flags->featurename] || channel->config->allcmds) <= 0) continue;
 		if ((flags->require_moderator || flags->access == "mod") && !is_mod) continue;
-		//Note that VIP commands aren't filtered here, so non-VIPs might see them. They'll be blocked by check_perms.
+		if (flags->access == "vip" && !is_mod && !is_vip) continue;
 		if (flags->access == "none") continue;
 		//If we get here, the command is acceptable.
 		return f;

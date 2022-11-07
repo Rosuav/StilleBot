@@ -145,7 +145,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	{
 		int mod = G->G->user_mod_status[person->user + name];
 		if (command_handler f = sscanf(msg, "!%[^# ] %s", string cmd, string param)
-			&& find_command(this, cmd, mod))
+			&& find_command(this, cmd, mod, person->badges->?vip))
 				return ({f, param||""});
 		return ({0, ""});
 	}
