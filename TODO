@@ -200,3 +200,12 @@
 * VIP Leaders: use username from last sighting as per rename detection
 * VIP Leaders: report errors that come through in notices, eg "user not found"
   (which happens if someone's renamed)
+* Ko-fi integration
+  - They have a webhook system to receive events. It seems to list all payments,
+    and then identifies whether they are recurring payments (ignore) or first-time
+    recurring payments (announce).
+  - Add an alert for them
+  - Add a special for them
+  - Allow them to autoadvance goal bars
+  - Will need to separate one-off tips from new recurring payments, and allow a
+    goal bar to advance on one or the other
