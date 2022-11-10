@@ -67,6 +67,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			}
 		}
 		user_is_mod = "Welcome, " + req->misc->session->user->display_name + ", and your modsword.";
+		if (req->misc->session->fake) user_is_mod = "Welcome, demo user, and your modsword. On this special channel, everyone is considered a moderator! " +
+			"Actions taken here will not be saved, so feel free to try things out!";
 		//TODO: Have a way to grab the client's timezone (see Mustard Mine)
 		timezone = sprintf("<input name=timezone size=30 value=\"%s\">", Parser.encode_html_entities(timezone));
 		save_config = "<input type=submit value=Save>";
