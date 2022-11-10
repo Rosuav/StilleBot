@@ -194,6 +194,7 @@ input[type=range] {vertical-align: middle;}
 
 #alertselectors {
 	display: flex;
+	flex-wrap: wrap;
 	list-style-type: none;
 	margin-bottom: 0;
 	padding: 0;
