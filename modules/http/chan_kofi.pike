@@ -11,6 +11,9 @@ this value into the Webhook URL: <input readonly value=\"$$webhook_url$$\" size=
 <form id=kofitoken autocomplete=off>Then take the Verification Token from that page and paste it here:
 <input name=token size=40><input type=submit value=\"Save token\"></form>
 
+Once authenticated, Ko-fi events will begin showing up in [Special Triggers](specials),
+[Alerts](alertbox#kofi), and [Goal Bars](monitors).
+
 * TODO:
 * Show a list
 * of recent
