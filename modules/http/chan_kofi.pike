@@ -68,15 +68,26 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 			"{msg}": data->message,
 			"{from_name}": data->from_name,
 		]);
+		mapping alertparams = ([
+			"amount": amount,
+			"msg": data->message,
+			"username": data->from_name,
+		]);
 		if (data->is_subscription_payment) {
 			if (data->is_first_subscription_payment) special = "!kofi_sub"; //Resubs aren't currently interesting.
+			alertparams->is_subscription = "1";
+			alertparams->tiername = params["{tiername}"] = data->tiername || "";
 		} else if (arrayp(data->shop_items) && sizeof(data->shop_items)) {
 			special = "!kofi_shop";
 			params["{shop_item_ids}"] = data->shop_items->direct_link_code * " ";
+			alertparams->is_shopsale = "1";
 			//If we could get the item names too, that'd be great.
 			//What about quantities??
 		} else special = "!kofi_dono";
-		if (special) req->misc->channel->trigger_special(special, (["user": chan]), params);
+		if (special) {
+			G->G->send_alert(req->misc->channel, "kofi", alertparams);
+			req->misc->channel->trigger_special(special, (["user": chan]), params);
+		}
 		return "Cool thanks!";
 	}
 	if (req->misc->is_mod) {

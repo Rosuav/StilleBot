@@ -42,7 +42,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!giveaway_winner | A giveaway winner has been chosen! | The broadcaster | title, winner_name, winner_tickets, tickets_total, entries_total
 !!giveaway_ended | The giveaway is fully concluded and all ticket purchases are nonrefundable. | The broadcaster | title, tickets_total, entries_total, giveaway_cancelled
 !!kofi_dono | Donation received on Ko-fi. | The broadcaster | amount, msg, from_name
-!!kofi_sub | New monthly subscription on Ko-fi. | The broadcaster | amount, msg, from_name
+!!kofi_sub | New monthly subscription on Ko-fi. | The broadcaster | amount, msg, from_name, tiername
 !!kofi_shop | Shop sale on Ko-fi. | The broadcaster | amount, msg, from_name, shop_item_ids
 
 
@@ -88,6 +88,7 @@ Parameter    | Meaning
 {amount} | Total amount given (with currency eg '3 USD')
 {from_name} | Name (possibly username) of the Ko-fi supporter. Not (necessarily) a Twitch username.
 {shop_item_ids} | Blank-separated list of ten-digit hexadecimal item IDs bought.
+{tiername} | Ko-fi subscription tier (if applicable)
 
 
 Editing these special commands can also be done via the bot's web browser

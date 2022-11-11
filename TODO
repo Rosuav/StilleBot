@@ -201,7 +201,6 @@
 * VIP Leaders: report errors that come through in notices, eg "user not found"
   (which happens if someone's renamed)
 * Ko-fi integration
-  - Add an alert for them
   - Allow them to autoadvance goal bars
 * Alert box: With hosts removed, the JS backend is now irrelevant. Just use Pike.
   Try to see if anyone is currently using the JS one. For now, hide the control.

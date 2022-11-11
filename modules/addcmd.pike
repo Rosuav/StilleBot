@@ -27,7 +27,7 @@ constant SPECIALS = ({
 	({"!giveaway_ended", ({"The giveaway is fully concluded and all ticket purchases are nonrefundable.", "The broadcaster", "title, tickets_total, entries_total, giveaway_cancelled"}), "Giveaways"}),
 
 	({"!kofi_dono", ({"Donation received on Ko-fi.", "The broadcaster", "amount, msg, from_name"}), "Ko-fi"}),
-	({"!kofi_sub", ({"New monthly subscription on Ko-fi.", "The broadcaster", "amount, msg, from_name"}), "Ko-fi"}),
+	({"!kofi_sub", ({"New monthly subscription on Ko-fi.", "The broadcaster", "amount, msg, from_name, tiername"}), "Ko-fi"}),
 	({"!kofi_shop", ({"Shop sale on Ko-fi.", "The broadcaster", "amount, msg, from_name, shop_item_ids"}), "Ko-fi"}),
 });
 constant SPECIAL_NAMES = (multiset)SPECIALS[*][0];
@@ -68,6 +68,7 @@ constant SPECIAL_PARAMS = ({
 	({"amount", "Total amount given (with currency eg '3 USD')"}),
 	({"from_name", "Name (possibly username) of the Ko-fi supporter. Not (necessarily) a Twitch username."}),
 	({"shop_item_ids", "Blank-separated list of ten-digit hexadecimal item IDs bought."}),
+	({"tiername", "Ko-fi subscription tier (if applicable)"}),
 });
 constant docstring = sprintf(#"
 Add an echo command for this channel

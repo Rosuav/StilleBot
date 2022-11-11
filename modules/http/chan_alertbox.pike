@@ -208,7 +208,7 @@ input[type=range] {vertical-align: middle;}
 	font-weight: bold;
 	border: 1px solid black;
 	border-radius: 0.5em 0.5em 0 0;
-	height: 2em; width: 8em;
+	height: 2em; width: 7.8em;
 	text-align: center;
 }
 #alertselectors input:checked + label {background: #efd;}
@@ -407,6 +407,22 @@ constant ALERTTYPES = ({([
 	"testpholders": (["bits": ({1, 25000})]),
 	"builtin": "connection",
 	"condition_vars": ({"bits"}),
+]), ([
+	"id": "kofi",
+	"label": "Ko-Fi",
+	"heading": "Ko-Fi donation, new subscription, or sale",
+	"description": "When someone supports your channel using your Ko-Fi page",
+	"placeholders": ([
+		"username": "Display name of the supporter",
+		"amount": "Amount donated or total sale value (includes currency)",
+		"msg": "Message text (if not flagged private)",
+		"tiername": "Subscription tier, if applicable",
+		"is_subscription": "Is this a recurring subscription?",
+		"is_shopsale": "Is this a shop item sale?",
+	]),
+	"testpholders": (["amount": "5 USD"]),
+	"builtin": "kofi",
+	"condition_vars": ({"amount", "is_subscription", "is_shopsale", "tiername"}),
 ]), ([
 	//Settings for personal alerts (must be last in the array)
 	"placeholders": ([
@@ -1523,6 +1539,7 @@ protected void create(string name) {
 	if (!G->G->tts_config) G->G->tts_config = ([]);
 	if (file_stat("tts-credentials.json") && !G->G->tts_config->access_token) spawn_task(fetch_tts_credentials(0));
 	spawn_task(initialize_inherits());
+	G->G->send_alert = send_alert;
 }
 
 /* A Tale of Two Backends
