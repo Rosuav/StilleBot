@@ -1249,7 +1249,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
 	if (!cfg->?authkey) return 0;
 	int suppress_alert = 0;
-	mapping alert = cfg->alertconfigs[alerttype]; if (!alert) return 0; //No alert means it can't possibly fire
+	mapping alert = cfg->alertconfigs[?alerttype]; if (!alert) return 0; //No alert means it can't possibly fire
 	if (!alert->active) return 0;
 	if (!args->text) { //Alert-specific conditions are ignored if the alert is pushed via the builtin
 		int idx = search(ALERTTYPES->id, (alerttype/"-")[0]); //TODO: Rework this so it's a lookup instead (this same check is done twice)
