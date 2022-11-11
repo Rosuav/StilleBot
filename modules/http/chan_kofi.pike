@@ -84,7 +84,8 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 			alertparams->tiername = params["{tiername}"] = data->tiername || "";
 		} else if (arrayp(data->shop_items) && sizeof(data->shop_items)) {
 			special = "!kofi_shop";
-			params["{shop_item_ids}"] = data->shop_items->direct_link_code * " ";
+			if (data->is_public) params["{shop_item_ids}"] = data->shop_items->direct_link_code * " ";
+			else params["{shop_item_ids}"] = "";
 			alertparams->is_shopsale = "1";
 			//If we could get the item names too, that'd be great.
 			//What about quantities??
