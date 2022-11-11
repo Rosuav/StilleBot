@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {CODE, TR, TD, DIV, DETAILS, SUMMARY, UL, LI, INPUT, LABEL, STYLE} = choc;
+const {A, B, CODE, DETAILS, DIV, INPUT, LABEL, LI, STYLE, SUMMARY, TD, TR, UL} = choc; //autoimport
 import {render_command, cmd_configure, sockmsg_validated} from "$$static||command_editor.js$$";
 export {sockmsg_validated};
 
@@ -11,6 +11,11 @@ function describe_all_params(cmd) {
 		cmd.params.split(", ").map(p => p && describe_param("{" + p + "}", SPECIAL_PARAMS[p]))
 	);
 }
+
+const TAB_HEADINGS = {
+	"Giveaways": () => ["Make giveaways happen ", A({href: "giveaway"}, "via their own page")],
+	"Ko-fi": () => [B("NOTE:"), " Ko-fi integrations require setup - ", A({href: "kofi"}, "see here")],
+};
 
 export function render(data) {
 	if (data.id) {
@@ -28,7 +33,14 @@ export function render(data) {
 		const tabs = [];
 		commands.forEach(cmd => {
 			const tab = cmd.tab.replace(" ", "-");
-			if (!tabs[tab]) {tabs.push(tab); tabs[tab] = cmd.tab;}
+			if (!tabs[tab]) {
+				tabs.push(tab);
+				tabs[tab] = cmd.tab;
+				if (TAB_HEADINGS[cmd.tab]) rows.push(
+					TR({className: "gap", "data-tabid": tab}, []),
+					TR({"data-tabid": tab}, TD({colSpan: 3}, TAB_HEADINGS[cmd.tab]()))
+				);
+			}
 			const row = render_command(resp[cmd.id] || {id: cmd.id, message: ""});
 			row.dataset.tabid = tab;
 			rows.push(

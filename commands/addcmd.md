@@ -41,6 +41,9 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!giveaway_closed | The giveaway just closed; people can no longer buy tickets | The broadcaster | title, tickets_total, entries_total
 !!giveaway_winner | A giveaway winner has been chosen! | The broadcaster | title, winner_name, winner_tickets, tickets_total, entries_total
 !!giveaway_ended | The giveaway is fully concluded and all ticket purchases are nonrefundable. | The broadcaster | title, tickets_total, entries_total, giveaway_cancelled
+!!kofi_dono | Donation received on Ko-fi. | The broadcaster | amount, msg, from_name
+!!kofi_sub | New monthly subscription on Ko-fi. | The broadcaster | amount, msg, from_name
+!!kofi_shop | Shop sale on Ko-fi. | The broadcaster | amount, msg, from_name, shop_item_ids
 
 
 Each special action has its own set of available parameters, which can be
@@ -54,7 +57,7 @@ Parameter    | Meaning
 {streak} | Consecutive months of subscription. If a sub is restarted after a delay, {months} continues, but {streak} resets.
 {recipient} | Display name of the gift sub recipient
 {multimonth} | Number of consecutive months of subscription given
-{msg} | Any message included with the sub/cheer (blank if none)
+{msg} | Any message included with the sub/cheer/dono (blank if none)
 {from_subbomb} | 1 if the gift was part of a sub bomb, 0 if not
 {gifts} | Number of randomly-assigned gifts. Can be 1.
 {bits} | Total number of bits cheered in this message
@@ -82,6 +85,9 @@ Parameter    | Meaning
 {winner_name} | Name of the person who won - blank if no tickets purchased
 {winner_tickets} | Number of tickets the winner had purchased
 {giveaway_cancelled} | 1 if the giveaway was cancelled (refunding all tickets), 0 if not (normal ending)
+{amount} | Total amount given (with currency eg '3 USD')
+{from_name} | Name (possibly username) of the Ko-fi supporter. Not (necessarily) a Twitch username.
+{shop_item_ids} | Blank-separated list of ten-digit hexadecimal item IDs bought.
 
 
 Editing these special commands can also be done via the bot's web browser
