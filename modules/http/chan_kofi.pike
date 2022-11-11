@@ -58,6 +58,25 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 		*/
 
 		werror("GOT KOFI NOTIFICATION %O\n", data);
+		string chan = req->misc->channel->name[1..];
+		string amount = data->amount;
+		if (amount[<2..] == ".00") amount = amount[..<3];
+		amount += " " + data->currency;
+		string special;
+		mapping params = ([
+			"{amount}": amount,
+			"{msg}": data->message,
+			"{from_name}": data->from_name,
+		]);
+		if (data->is_subscription_payment) {
+			if (data->is_first_subscription_payment) special = "!kofi_sub"; //Resubs aren't currently interesting.
+		} else if (arrayp(data->shop_items) && sizeof(data->shop_items)) {
+			special = "!kofi_shop";
+			params["{shop_item_ids}"] = data->shop_items->direct_link_code * " ";
+			//If we could get the item names too, that'd be great.
+			//What about quantities??
+		} else special = "!kofi_dono";
+		if (special) req->misc->channel->trigger_special(special, (["user": chan]), params);
 		return "Cool thanks!";
 	}
 	if (req->misc->is_mod) {
