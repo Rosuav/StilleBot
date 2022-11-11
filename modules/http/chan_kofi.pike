@@ -17,6 +17,8 @@ this value into the Webhook URL: <input readonly value=\"$$webhook_url$$\" size=
 * donations,
 * shop sales,
 * and new subs.
+
+TODO: Commissions????
 ";
 
 mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -87,7 +89,14 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 		if (special) {
 			G->G->send_alert(req->misc->channel, "kofi", alertparams);
 			req->misc->channel->trigger_special(special, (["user": chan]), params);
-		}
+		} else special = "!kofi_resub"; //Hack: Goal bars (might) advance on resubs even though nothing else does.
+		//TODO: What about currencies like JPY, which don't scale the same way?
+		//Ko-fi may or may not send us the right number of decimal places.
+		sscanf(data->amount, "%d.%d", int dollars, int cents);
+		cents += dollars * 100; //TODO: Scale differently for different currencies
+		//TODO maybe: Filter to only your currency??? Attempt an approximate conversion?
+		//If the latter, just do a lookup and get a value back, and be consistent.
+		G->G->goal_bar_autoadvance(req->misc->channel, (["user": chan]), special[1..], cents);
 		return "Cool thanks!";
 	}
 	if (req->misc->is_mod) {

@@ -117,7 +117,7 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 		BR(), "TODO: Allow selection of currency eg GBP to change the displayed unit",
 	])]),
 	TR([TH("Auto-count"), TD([
-		"Automatically advance the goal bar based on stream support",
+		"Automatically advance the goal bar based on Twitch support",
 		DIV({className: "optionset"}, [
 			FIELDSET([LEGEND("Bits"), INPUT({type: "number", name: "bit"}), "per bit"]),
 			FIELDSET([LEGEND("T1 sub"), INPUT({type: "number", name: "sub_t1"})]),
@@ -126,6 +126,13 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 			FIELDSET([LEGEND("Tip (each cent)"), INPUT({type: "number", name: "tip"})]), //TODO: Show somewhere what it takes to make this work
 			FIELDSET([LEGEND("Follow"), INPUT({type: "number", name: "follow"})]),
 			//FIELDSET([LEGEND("Raid"), INPUT({type: "number", name: "raid"})]), //Maybe have a tiered system for size of raid???
+		]),
+		"Similarly for Ko-fi support (all scaled by number of cents)",
+		DIV({className: "optionset"}, [
+			FIELDSET([LEGEND("Donation"), INPUT({type: "number", name: "kofi_dono"})]),
+			FIELDSET([LEGEND("New sub"), INPUT({type: "number", name: "kofi_sub"})]),
+			FIELDSET([LEGEND("Renewed sub"), INPUT({type: "number", name: "kofi_resub"})]),
+			FIELDSET([LEGEND("Shop sale"), INPUT({type: "number", name: "kofi_shop"})]),
 		]),
 		"For events not listed, create a command or trigger (TODO - example)",
 	])]),
