@@ -209,3 +209,5 @@
   - Allow them to autoadvance goal bars
   - Will need to separate one-off tips from new recurring payments, and allow a
     goal bar to advance on one or the other
+* Alert box: With hosts removed, the JS backend is now irrelevant. Just use Pike.
+  Try to see if anyone is currently using the JS one. For now, hide the control.
