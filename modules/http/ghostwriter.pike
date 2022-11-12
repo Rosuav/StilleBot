@@ -405,8 +405,8 @@ void websocket_cmd_pause(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 }
 
 EventSub stream_online = EventSub("gw_online", "stream.online", "1") {[string chanid, mapping event] = __ARGS__;
-	write("** GW: Channel %O online: %O\nThese channels care: %O\n", chanid, event, autohosts_this[chanid]);
 	#ifndef NERF
+	write("** GW: Channel %O online: %O\nThese channels care: %O\n", chanid, event, autohosts_this[chanid]);
 	mapping st = chanstate[chanid];
 	spawn_task(recalculate_status(chanid));
 	foreach (autohosts_this[chanid] || ([]); string id;) {
