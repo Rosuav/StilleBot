@@ -149,19 +149,6 @@
     there's an update. When it happens, do full testing esp nested dialogs.
 * Rename "gifted" flag in sub alerts to "is_gifted" to trigger boolean handling
   - Migrate existing settings
-* Ghostwriter: Event hosting
-  - During a particular time window (okay if it's too wide), add a specific set
-    of usernames to everyone who has chosen to host the event
-  - Event names can be reused (for recurring events)
-  - Who gets to create an event?
-  - UI to say "host this event"?
-  - There is no indication of who "ought" to be streaming. Just the normal prio
-    list, on the assumption that the previous person will raid into the next one.
-  - Auto-follow hosts and raids???
-    - This part might actually be sufficient on its own. Once you join the train,
-      raid chasing would keep you there: when your host target raids (only raids,
-      no tracking of other hosts as that requires extra perms), also host the new
-      target.
 * Replace bcaster_token[name] with user_token[id] and ditto scopes
   - Have a compatibility function that returns a promise and yields the token
     when the name has been translated into an ID
@@ -189,7 +176,6 @@
 * Store uploaded file references as internal URIs, same way freemedia ones are
 * Create new alert base type for charity donations
   - May need a free-media animation; talk to Maaya with any ideas.
-* Delay Ghostwriter initialization if no primary IRC connection established
 * Suppress "Conflict" spam on establishment of hooks
 * Hype trains seem to be uncapped now.
   - Remove special-casing of level 5. Keep the code somewhere though.
