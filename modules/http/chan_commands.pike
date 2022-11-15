@@ -44,6 +44,10 @@ constant COMPLEX_TEMPLATES = ([
 			"It's totally okay to lurk here! Thank you for hanging out with us.",
 		}),
 	]),
+	"!raid": ({
+		"Let's go raiding! Copy and paste this raid call and be ready when I host our target!",
+		" /me twitchRaid YOUR RAID CALL HERE twitchRaid"
+	}),
 ]);
 	
 constant ENABLEABLE_FEATURES = ([

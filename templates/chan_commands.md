@@ -19,7 +19,7 @@ $$save_or_login$$
 > > !discord | Join my Discord server: https://discord.gg/YOUR_URL_HERE
 > > !shop    | stephe21LOOT Get some phat lewt at https://www.redbubble.com/people/YOUR_REDBUBBLE_NAME/portfolio iimdprLoot
 > > !twitter | Follow my Twitter for updates, notifications, and other whatever-it-is-I-post: https://twitter.com/YOUR_TWITTER_NAME
-> > !raid    | Let's go raiding! Copy and paste this raid call and be ready when I host our target! >>> /me twitchRaid YOUR RAID CALL HERE twitchRaid
+> > !raid    | Let's go raiding! Copy and paste this raid call and be ready when I host our target! /me twitchRaid YOUR RAID CALL HERE twitchRaid
 > > !insta   | My portfolio can be found at https://instagram.com/YOUR_INSTAGRAM_NAME/
 > > !calendar | Add my schedule to your calendar: https://calendar.google.com/calendar?cid=LOTS-OF-CHARACTERS
 > > !song    | SingsNote Now playing: $vlccurtrack$ SingsNote
