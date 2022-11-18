@@ -190,3 +190,5 @@
   - Create some default/demo alerts including variants
 * Alert box: With hosts removed, the JS backend is now irrelevant. Just use Pike.
   Try to see if anyone is currently using the JS one. For now, hide the control.
+* Priority (connection order) for channels
+* Regex triggers - are they just broken? Test the 'ladder' trigger.
