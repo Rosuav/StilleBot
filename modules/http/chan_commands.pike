@@ -121,7 +121,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				"voices": req->misc->channel->config->voices || ([])]),
 			"templates": G->G->commands_templates * "\n",
 			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
-				"<input type=submit value=\"Save all\">"
+				"[Save all](:#saveall)"
 			),
 		]) | req->misc->chaninfo);
 	}

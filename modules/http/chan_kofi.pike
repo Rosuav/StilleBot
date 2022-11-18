@@ -107,7 +107,6 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 		//NOTE: The token can be set from this page, but will not be shown. It is also
 		//not part of the websocket state. This prevents leaks which could result in a
 		//fake message being sent, deceiving StilleBot into thinking an event happened.
-		req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 		return render(req, ([
 			"vars": (["ws_group": ""]),
 			"webhook_url": sprintf("%s/channels/%s/kofi",

@@ -77,7 +77,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//Read-only view is a bit of a hack - it just doesn't say it's loading.
 		return render_template("chan_triggers.md", ([
 			"loadingmsg": "Restricted to moderators only",
-			"save_or_login": "", "templates": "- | -",
+			"templates": "- | -",
 		]) | req->misc->chaninfo);
 	}
 	return render_template("chan_triggers.md", ([
@@ -89,7 +89,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		]),
 		"loadingmsg": "Loading...",
 		"templates": TEMPLATES * "\n",
-		"save_or_login": "<p><a href=\"#examples\" id=examples>Create new trigger</a></p>",
+		"save_or_login": "[Save all](:#saveall)\n<p><a href=\"#examples\" id=examples>Create new trigger</a></p>",
 	]) | req->misc->chaninfo);
 }
 

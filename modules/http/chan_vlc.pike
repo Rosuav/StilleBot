@@ -35,7 +35,7 @@ details#config {
 
 $$modconfig||$$
 
-$$save_or_login$$
+$$save_or_login||$$
 ";
 
 /* Am getting some duplicated messages, sometimes with "paused" followed by "playing".

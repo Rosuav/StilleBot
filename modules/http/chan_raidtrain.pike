@@ -82,7 +82,6 @@ tr.your_slot {background: #bff;} /* That's right, you are your own BFF */
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping trn = persist_status->path("raidtrain", (string)req->misc->channel->userid);
-	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render(req, ([
 		"vars": (["ws_group": req->misc->is_mod ? "control" : "view", "logged_in_as": (int)req->misc->session->user->?id]),
 		"login_or_edit":

@@ -10,7 +10,7 @@ Command | Output |
 $$commands||- | Loading....$$
 {: #commandview}
 
-$$save_or_login$$
+$$save_or_login||$$
 
 > ### Some handy commands that your channel may want to use:
 > > ### Channel info commands

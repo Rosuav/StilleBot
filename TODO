@@ -31,7 +31,6 @@
   - The allfollows display could be this, but it's nondiscoverable and could be quite costly
     for people who follow a lot of people.
   - Adding ?raiders will show incoming, but not outgoing, raids.
-* Move "$$autoform||$$" from markdown.html into each of the files that actually wants it
 * Importing of config export files
   - Ignore the active flag but keep the allcmds flag?
   - Create all listed commands, but don't destroy unmentioned ones (overwrite any with

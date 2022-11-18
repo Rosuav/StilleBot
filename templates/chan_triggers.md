@@ -17,7 +17,7 @@ ID          | Response | -
 -           | $$loadingmsg$$
 {: #triggers}
 
-$$save_or_login$$
+$$save_or_login||$$
 
 > ### Available trigger types:
 > Type | Description

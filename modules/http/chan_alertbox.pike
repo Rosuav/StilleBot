@@ -510,7 +510,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		update_one("control" + req->misc->channel->name, file->id); //Display connection doesn't need to get updated.
 		return jsonify((["url": file->url]));
 	}
-	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render(req, ([
 		"vars": (["ws_group": "control",
 			"maxfilesize": MAX_PER_FILE, "maxtotsize": MAX_TOTAL_STORAGE,

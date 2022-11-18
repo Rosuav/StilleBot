@@ -210,7 +210,7 @@ on("click", "button.advview", e => {
 	open_advanced_view(commands[tr.dataset.editid || tr.dataset.id]);
 });
 on("input", "tr[data-id] input", e => e.match.closest("tr").classList.add("dirty"));
-on("submit", "main > form", e => {
+on("click", "#saveall", e => {
 	e.preventDefault();
 	document.querySelectorAll("tr.dirty[data-id]").forEach(tr => {
 		const msg = tr.querySelector("input").value;

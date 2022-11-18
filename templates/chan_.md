@@ -22,7 +22,8 @@ Channel configuration:
 
 $$messages$$
 
-- | -
--------------|---------
-Timezone     | $$timezone$$
-- | $$save_config$$
+> - | -
+> -------------|---------
+> Timezone     | $$timezone$$
+> - | $$save_config$$
+{:tag=form method=post}

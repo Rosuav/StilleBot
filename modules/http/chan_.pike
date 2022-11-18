@@ -127,14 +127,12 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	{
 		if (G->G->user_mod_status[user->login + channel->name] || is_localhost_mod(user->login, req->get_ip())) {
 			req->misc->is_mod = 1;
-			req->misc->chaninfo->autoform = "<form method=post>";
-			req->misc->chaninfo->autoslashform = "</form>";
 		}
 		else req->misc->chaninfo->save_or_login = "<i>You're logged in, but not a recognized mod. Before you can make changes, go to the channel and say something, so I can see your mod sword. Thanks!</i>";
 		req->misc->chaninfo->logout = "| <a href=\"/logout\" class=twitchlogout>Log out</a>";
 	}
 	else {
-		req->misc->chaninfo->save_or_login = #"[Mods, login to make changes](:.twitchlogin)";
+		req->misc->chaninfo->save_or_login = "[Mods, login to make changes](:.twitchlogin)";
 	}
 	return handler(req);
 }

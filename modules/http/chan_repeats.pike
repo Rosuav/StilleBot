@@ -69,8 +69,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (!sizeof(repeats)) repeats = ({"- | - | (none)"});
 	return render_template("chan_repeats.md", ([
 		"user text": user,
-		"repeats": repeats * "\n",
+		"repeats": repeats * "\n> ",
 		"messages": messages * "\n",
-		"save_or_login": "",
 	]) | req->misc->chaninfo);
 }

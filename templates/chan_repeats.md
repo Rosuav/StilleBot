@@ -6,11 +6,15 @@ Specify the time as `50-60` to mean a random range of times, or as `14:40` to me
 exact time (in your timezone). Automated commands will be sent only if the channel is
 online at that time.
 
-Frequency | Command | Output |
-----------|---------|--------|-
-$$repeats$$
+NOTE: For greater flexibility and easier management, create a command and have it set to
+automatically run itself. TODO: Describe how to do that easily.
 
-$$save_or_login$$
+> Frequency | Command | Output |
+> ----------|---------|--------|-
+> $$repeats$$
+{:tag=form method=post}
+
+$$save_or_login||$$
 
 Create new autocommands with [!repeat](https://rosuav.github.io/StilleBot/commands/repeat)
 and remove them with [!unrepeat](https://rosuav.github.io/StilleBot/commands/repeat).

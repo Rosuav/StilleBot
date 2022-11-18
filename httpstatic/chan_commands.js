@@ -42,5 +42,5 @@ function addcmd(mode) {
 	else if (mode !== "saveall" || cmdname || response)
 		open_advanced_view({message: response, id: cmdname.replace("!", ""), template: true});
 }
-on("submit", "main > form", e => {e.preventDefault(); addcmd("saveall");});
+on("click", "#saveall", e => {e.preventDefault(); addcmd("saveall");});
 on("click", "#addcmd", addcmd);

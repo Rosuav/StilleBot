@@ -130,7 +130,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			buttons = "*You're not a recognized mod, but you're welcome to view the leaderboard.*";
 		}
 	}
-	req->misc->chaninfo->autoform = req->misc->chaninfo->autoslashform = "";
 	return render(req, ([
 		"vars": (["ws_group": group]),
 		"buttons": buttons,

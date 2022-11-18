@@ -208,13 +208,16 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 		emote_raw[!highlight[chan]][chan] += emotes;
 		if (is_bot)
 		{
-			if (req->request_type == "POST")
+			//This is all broken thanks to the Kraken shutdown anyway, so just disable it.
+			//As of 20221118, the autoform doesn't exist. If functionality like this is
+			//needed, put it through a websocket.
+			/*if (req->request_type == "POST")
 			{
 				if (!req->variables[chan]) m_delete(highlight, chan);
 				else if (req->variables[chan] && !highlight[chan]) highlight[chan] = time();
 				persist_config->save();
 				//Fall through using the *new* highlight status
-			}
+			}*/
 			emotesets[chan + "-Y"] = sprintf("<br><label><input type=checkbox %s name=\"%s\">Permanent</label>",
 				"checked" * !!highlight[chan], chan);
 		}
@@ -226,12 +229,7 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 	if (req->variables->format == "json") return jsonify(mkmapping(({"permanent", "ephemeral"}), emote_raw), 7);
 	array emoteinfo = values(emotesets); sort(indices(emotesets), emoteinfo);
 	mapping replacements = (["emotes": emoteinfo * "", "save": ""]);
-	if (is_bot)
-	{
-		replacements->autoform = "<form method=post>";
-		replacements->autoslashform = "</form>";
-		replacements->save = "<input type=submit value=\"Update permanents\">";
-	}
+	if (is_bot) replacements->save = "<input type=submit value=\"Update permanents\">";
 	return render_template("emotes.md", replacements);
 }
 

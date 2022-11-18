@@ -25,7 +25,7 @@ Special&nbsp;name | Response | -
 
 <p></p>
 
-$$save_or_login$$
+$$save_or_login||$$
 
 <style>
 table {width: 100%;}
