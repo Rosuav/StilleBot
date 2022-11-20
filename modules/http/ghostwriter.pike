@@ -541,7 +541,7 @@ void reconnect() {
 
 protected void create(string name) {
 	#ifdef NERF
-	http_websocket::create(name); return;
+	chanstate = ([]); http_websocket::create(name); return;
 	#endif
 	::create(name);
 	if (!G->G->ghostwriterstate) G->G->ghostwriterstate = ([]);
