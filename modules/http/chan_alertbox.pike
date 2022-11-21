@@ -120,7 +120,6 @@ $$notmod2||[Show library](:.showlibrary) [Recent events](:#recentevents .dlg)$$
 <!-- -->
 
 > ### Recent events
-> Note that host alerts will only be listed here if the Pike backend is used.
 > <div id=replays>loading...</div>
 >
 > [Close](:.dialog_close)
@@ -601,7 +600,7 @@ EventSub raidin = EventSub("raidin", "channel.raid", "1") {
 	}
 	//The JS backend doesn't know about raids, won't get alerts for them, but should
 	//at very least include them in the hostlist command (which is a hack anyway).
-	if (!cfg->hostbackend || cfg->hostbackend == "js")
+	if (cfg->hostbackend == "js")
 		send_updates_all(cfg->authkey + channel->name, (["raidhack": __ARGS__[1]->from_broadcaster_user_login]));
 	//Stdio.append_file("alertbox_hosts.log", sprintf("[%d] SRVRAID: %s -> %O\n", time(), __ARGS__[0], __ARGS__[1]));
 };
@@ -618,8 +617,8 @@ void ensure_host_connection(string chan) {
 			werror("ALERTBOX: Unable to connect to %O\n", chan);
 			werror("%O\n", __ARGS__);
 		};
-		raidin(chan, (["to_broadcaster_user_id": (string)channel->userid]));
 	}
+	raidin(chan, (["to_broadcaster_user_id": (string)channel->userid]));
 }
 
 bool need_mod(string grp) {return grp == "control" || has_prefix(grp, "preview-");}
@@ -671,8 +670,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		ensure_host_connection(chan);
 		string token;
 		if (grp == cfg->authkey && has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read")) {
-			//FIXME: Default to NOT using the JS backend
-			if (!cfg->hostbackend || cfg->hostbackend == "js") token = persist_status->path("bcaster_token")[chan];
+			if (cfg->hostbackend == "js") token = persist_status->path("bcaster_token")[chan];
 			else token = "backendinstead";
 		}
 		return ([
@@ -701,7 +699,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		"replay": cfg->replay || ({ }),
 		"replay_offset": cfg->replay_offset || 0,
 		"ip_log": cfg->ip_log || ({ }),
-		"hostbackend": cfg->hostbackend || "js", //FIXME: Default to "none", or to "pike" if auth
+		//"hostbackend": cfg->hostbackend || "none",
 	]);
 }
 
@@ -913,7 +911,7 @@ void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!channel || grp != "control") return;
 	if (conn->session->fake) return;
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	foreach ("hostlist_command hostlist_format hostbackend" / " ", string key)
+	foreach ("hostlist_command hostlist_format" / " ", string key) //Removed hostbackend as it's not needed at the moment
 		if (stringp(msg[key])) cfg[key] = msg[key];
 	persist_status->save();
 	send_updates_all(conn->group);
@@ -1553,6 +1551,7 @@ JS backend
 * Supports !hostlist command to report current hosts
 * Independent of IRC issues on Sikorsky
 * Requires OAuth token to be sent to client
+* Basically useless now that hosts don't exist.
 
 Pike backend
 ============
@@ -1563,5 +1562,9 @@ Pike backend
 * Capable of alert variants, filtering, etc
 * Can recognize raids
 * Stores replayable alerts
+* The IRC half is useless now that hosts don't exist
 
+I'm keeping the code for the JS backend around, in case hosting ever returns or an equivalent
+is created, but for now, the Pike backend is the only one that's useful. And even that is
+mostly useless (the IRC half isn't necessary), so all we really need is the raid-in hook.
 */
