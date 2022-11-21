@@ -144,3 +144,4 @@
 * VIP Leaders: report errors that come through in notices, eg "user not found"
   (which happens if someone's renamed)
 * Priority (connection order) for channels
+* Mute checkbox for all alerts. On "Defaults", rename it "Mute all".
