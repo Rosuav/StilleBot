@@ -173,7 +173,6 @@ function do_alert(alert, replacements) {
 	if (!playing) elem.querySelector("audio").play();
 	alerttimeout = setTimeout(remove_alert, alertlength * 1000, alert, elem.dataset.alertgap);
 }
-window.ping = type => do_alert("#" + (type || "hostalert"), {NAME: "Test", username: "Test", VIEWERS: 42, viewers: 42, test_alert: 1});
 
 ComfyJS.onHosted = (username, viewers, autohost, extra) => {
 	//Note that ComfyJS itself never seems to announce autohosts. It also
