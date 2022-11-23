@@ -758,7 +758,7 @@ void websocket_cmd_delpersonal(mapping(string:mixed) conn, mapping(string:mixed)
 	int idx = search(cfg->personals->id, msg->id);
 	if (idx == -1) return; //Not found (maybe was already deleted)
 	cfg->personals = cfg->personals[..idx-1] + cfg->personals[idx+1..];
-	if (cfg->alertconfigs) m_delete(cfg->alertconfigs, msg->id);
+	if (cfg->alertconfigs) {m_delete(cfg->alertconfigs, msg->id); resolve_all_inherits((string)channel->userid);}
 	persist_status->save();
 	send_updates_all(conn->group, (["delpersonal": msg->id]));
 }
