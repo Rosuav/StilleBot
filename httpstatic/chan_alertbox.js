@@ -614,7 +614,7 @@ function select_variant(elem) {
 let wanted_tab = null; //TODO: Allow this to be set from the page fragment (wait till loading is done)
 function update_visible_form() {
 	wanted_tab = DOM("input[name=alertselect]:checked").value;
-	set_content("#selectalert", "#alertconfigs .alertconfig[data-type=" + wanted_tab + "] {display: block;}");
+	set_content("#selectalert", '#alertconfigs .alertconfig[data-type="' + wanted_tab + '"] {display: block;}');
 	history.replaceState(null, "", "#" + wanted_tab);
 }
 
@@ -906,7 +906,7 @@ on("click", ".testvariant", e => {
 });
 
 on("click", "input[name=alertselect]", e => {
-	const frm = DOM(".alertconfig[data-type=" + wanted_tab + "]");
+	const frm = DOM('.alertconfig[data-type="' + wanted_tab + '"]');
 	if (frm && frm.classList.contains("unsaved-changes")) {
 		unsaved_form = frm; unsaved_clickme = e.match;
 		set_content("#discarddesc", "Unsaved changes will be lost if you switch to another alert type.");
@@ -942,7 +942,7 @@ on("click", "#confirmrevokekey", e => {ws_sync.send({cmd: "revokekey"}); DOM("#r
 
 
 on("click", "#addpersonal", e => {
-	const frm = DOM(".alertconfig[data-type=" + wanted_tab + "]");
+	const frm = DOM('.alertconfig[data-type="' + wanted_tab + '"]');
 	if (frm && frm.classList.contains("unsaved-changes")) {
 		unsaved_form = frm; unsaved_clickme = e.match;
 		set_content("#discarddesc", "Unsaved changes will be lost if you create another alert type.");
