@@ -737,9 +737,13 @@ void websocket_cmd_makepersonal(mapping(string:mixed) conn, mapping(string:mixed
 		info = cfg->personals[idx];
 	}
 	else {
+		//Generate an ID that hasn't been used before, and which doesn't start with
+		//a digit. Starting with a digit theoretically should be okay, but it causes
+		//some issues in CSS, and special-casing the selectors is a lot more hassle
+		//than just making sure the IDs always begin with an alphabetic.
 		string id;
 		do {id = replace(MIME.encode_base64(random_string(9)), (["/": "1", "+": "0"]));}
-		while (has_value(cfg->personals->id, id));
+		while (has_value(cfg->personals->id, id) || id[0] < 'A');
 		cfg->personals += ({info = (["id": id])});
 	}
 	foreach ("label heading description" / " ", string key)
