@@ -431,7 +431,7 @@ constant ALERTTYPES = ({([
 	]),
 	"condition_vars": ({"'text"}),
 ])});
-constant SINGLE_EDIT_ATTRS = ({"image", "sound"}); //Attributes that can be edited by the client without changing the rest
+constant SINGLE_EDIT_ATTRS = ({"image", "sound", "muted"}); //Attributes that can be edited by the client without changing the rest
 constant RETAINED_ATTRS = SINGLE_EDIT_ATTRS + ({"version", "variants", "image_is_video"}); //Attributes that are not cleared when a full edit is done (changing the format)
 constant FORMAT_ATTRS = ("format name description active alertlength alertgap cond-label cond-disableautogen "
 			"tts_text tts_dwell tts_volume tts_filter_emotes tts_filter_badwords tts_filter_words tts_voice tts_min_bits "
@@ -552,17 +552,22 @@ mapping resolve_inherits(mapping alerts, string id, mapping alert, string alerts
 	mapping parent = id == "defaults" ? NULL_ALERT //The defaults themselves are defaulted to the vanilla null alert.
 		: resolve_inherits(alerts, par, alerts[par], alertset); //Everything else has a parent, potentially implicit.
 	if (!alert) return parent;
-	return parent | filter(alert) {return __ARGS__[0] && __ARGS__[0] != "";}; //Shouldn't need to filter since it's done on save, may be able to remove this later
+	return parent | alert;
 }
 
 void resolve_all_inherits(string userid) {
-	mapping alerts = incorporate_stock_alerts(persist_status->path("alertbox", userid)->alertconfigs || ([]));
+	mapping master = persist_status->path("alertbox", userid);
+	float vol = master->muted ? 0.0 : (master->mastervolume || 1.0);
+	mapping alerts = incorporate_stock_alerts(master->alertconfigs || ([]));
 	mapping ret = ([]);
 	foreach (alerts; string id; mapping alert) if (id != "defaults") {
 		//First walk the list of parents to find the alert set.
 		string alertset = find_alertset(alerts, id);
 		//Then, resolve inherits via the list of parents AND the alert set.
 		mapping resolved = ret[id] = resolve_inherits(alerts, id, alert, alertset);
+		//Volume overrides are applied at resolution time, to simplify the client.
+		if (resolved->muted) resolved->volume = resolved->tts_volume = 0.0;
+		else {resolved->volume = (float)resolved->volume * vol; resolved->tts_volume = (float)resolved->tts_volume * vol;}
 		//Finally, update some derived information to save effort later.
 		resolved->text_css = textformatting_css(resolved);
 		if (resolved->image_is_video && COMPAT_VERSION < 3) resolved->version = 3;
@@ -608,6 +613,7 @@ EventSub raidin = EventSub("raidin", "channel.raid", "1") {
 void ensure_host_connection(string chan) {
 	//If host alerts are active, we need notifications so we can push them through.
 	object channel = G->G->irc->channels["#" + chan];
+	if (!channel->userid) return; //Most likely the demo channel. Don't try to set up notifications.
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (cfg->hostbackend == "pike") {
 		werror("ALERTBOX: Ensuring connection for %O/%O\n", chan, channel->userid);
@@ -696,6 +702,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		"alerttypes": ALERTTYPES[..<1] + (cfg->personals || ({ })),
 		"hostlist_command": cfg->hostlist_command || "",
 		"hostlist_format": cfg->hostlist_format || "",
+		"mastervolume": undefinedp(cfg->mastervolume) ? 1.0 : (float)cfg->mastervolume,
+		"mastermuted": cfg->muted ? Val.true : Val.false, //Force it to be a boolean so JS can do equality checks
 		"replay": cfg->replay || ({ }),
 		"replay_offset": cfg->replay_offset || 0,
 		"ip_log": cfg->ip_log || ({ }),
@@ -917,6 +925,10 @@ void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	foreach ("hostlist_command hostlist_format" / " ", string key) //Removed hostbackend as it's not needed at the moment
 		if (stringp(msg[key])) cfg[key] = msg[key];
+	if (!undefinedp(msg->mastervolume)) cfg->mastervolume = min(max((float)msg->mastervolume, 0.0), 1.0);
+	if (!undefinedp(msg->muted)) cfg->muted = !!msg->muted;
+	//After changing master audio settings, redo all inherit resolutions
+	if (!undefinedp(msg->mastervolume) || !undefinedp(msg->muted)) resolve_all_inherits((string)channel->userid);
 	persist_status->save();
 	send_updates_all(conn->group);
 	send_updates_all(cfg->authkey + channel->name);
@@ -964,7 +976,7 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (!msg->format) {
 		//If the format is not specified, this is a partial update, which can
 		//change only the SINGLE_EDIT_ATTRS - all others are left untouched.
-		foreach (SINGLE_EDIT_ATTRS, string attr) if (msg[attr]) data[attr] = msg[attr];
+		foreach (SINGLE_EDIT_ATTRS, string attr) if (!undefinedp(msg[attr])) data[attr] = msg[attr];
 		if (msg->image) {
 			//If you're setting the image, see if we need to set the "image_is_video" flag
 			int idx = search((cfg->files || ({ }))->url, msg->image);

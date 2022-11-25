@@ -318,6 +318,21 @@ export function render(data) {
 						"Inactive alert sets effectively deactivate the corresponding alerts.")
 					: "Inactive alerts will never be used (nor their variants), but can be inherited from.",
 			]),
+			type !== "variant" && P({class: "no-inherit no-dirty instasave"}, [
+				!nondef && LABEL([
+					"Master volume: ",
+					INPUT({
+						name: "mastervolume",
+						type: "range", step: 0.05, min: 0, max: 1,
+					}),
+					SPAN({class: "rangedisplay"}, ""),
+				]),
+				" ",
+				LABEL([
+					INPUT({type: "checkbox", name: "muted"}),
+					nondef ? " Mute this alert type" : " Mute all alerts",
+				]),
+			]),
 			HR(),
 			nondef && DETAILS({class: "condbox expandbox no-inherit not-alertset"}, [
 				SUMMARY(["Alert will be used: ", B({class: "cond-label"}, "always"), ". Expand to configure."]),
@@ -533,7 +548,12 @@ export function render(data) {
 		ip_log = data.ip_log;
 		update_ip_log();
 	}
-	if (data.hostbackend) DOM("select[name=hostbackend]").value = data.hostbackend;
+	if (data.mastervolume) {
+		const el = DOM("form[data-type=defaults] [name=mastervolume]");
+		el.value = data.mastervolume;
+		rangedisplay(el);
+	}
+	if (data.mastermuted) DOM("form[data-type=defaults] [name=muted]").checked = data.mastermuted;
 }
 
 on("click", ".replayalert", e => ws_sync.send({cmd: "replay_alert", idx: e.match.dataset.alertidx|0}));
@@ -653,6 +673,17 @@ function formchanged(e) {
 	frm.querySelectorAll("[type=submit]").forEach(el => el.disabled = false);
 }
 on("input", "input", formchanged); on("change", "input,select", formchanged);
+
+//Apply the instasave class (and probably no-inherit no-dirty) to have changes instantly pushed to the server.
+on("change", ".instasave", e => {
+	const el = e.target;
+	const frm = el.form; if (!frm || !frm.classList.contains("alertconfig")) return;
+	ws_sync.send({
+		cmd: frm.dataset.type === "defaults" ? "config" : "alertcfg",
+		type: frm.dataset.type, //meaningless if defaults
+		[el.name]: el.type === "checkbox" ? el.checked : el.value,
+	});
+});
 
 let librarytarget = null;
 on("click", ".showlibrary", e => {
