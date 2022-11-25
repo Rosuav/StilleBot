@@ -14,15 +14,15 @@ function img_or_video(data) {
 }
 
 const alert_formats = {
-	text_image_stacked: data => FIGURE({
+	text_image_stacked: (data, placeholder) => FIGURE({
 		className: "text_image_stacked " + (data.layout||""),
 		style: `width: ${data.alertwidth}px; max-height: ${data.alertheight}px;`,
 	}, [
 		img_or_video(data),
-		FIGCAPTION({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
+		FIGCAPTION({"data-textformat": data.textformat, style: data.text_css || ""}, placeholder),
 		AUDIO({preload: "auto", src: data.sound || EMPTY_AUDIO, volume: data.volume ** 2}),
 	]),
-	text_image_overlaid: data => DIV(
+	text_image_overlaid: (data, placeholder) => DIV(
 		{
 			//The layout might be "top_middle", but in CSS, we can handle each dimension
 			//separately, so apply classes of "top middle" instead :)
@@ -30,7 +30,7 @@ const alert_formats = {
 			style: `width: ${data.alertwidth}px; height: ${data.alertheight}px;`,
 		}, [
 			DIV({class: "boundingbox", style: `width: ${data.alertwidth}px; height: ${data.alertheight}px;`}, img_or_video(data)),
-			DIV({"data-textformat": data.textformat, style: data.text_css || ""}, data.textformat),
+			DIV({"data-textformat": data.textformat, style: data.text_css || ""}, placeholder),
 			AUDIO({preload: "auto", src: data.sound || EMPTY_AUDIO, volume: data.volume ** 2}),
 		]
 	),
@@ -65,7 +65,9 @@ export function render(data) {
 			if (cfg.version > alertbox_version) {location.reload(); return;}
 			let elem = DOM("#" + kwd);
 			if (!elem) elem = DOM("main").appendChild(SECTION({className: "alert", id: kwd})); //New alert type
-			if (alert_formats[cfg.format]) set_content(elem, alert_formats[cfg.format](cfg));
+			const tf = elem.querySelector("[data-textformat]"); //There might be multiple, but just grab one.
+			const placeholder = tf ? tf.textContent : cfg.textformat;
+			if (alert_formats[cfg.format]) set_content(elem, alert_formats[cfg.format](cfg, placeholder));
 			else set_content(elem, P("Unrecognized alert format '" + cfg.format + "', check editor or refresh page"));
 			alert_active["#" + kwd] = cfg.active;
 			for (let attr of retainme)
