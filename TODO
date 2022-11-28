@@ -140,7 +140,4 @@
     Hard difficulty (ergo the sixth emotes)
   - Otherwise, pretty much everything should work
 * Find all forms in dialogs and use tag=formdialog instead
-* VIP Leaders: use username from last sighting as per rename detection
-* VIP Leaders: report errors that come through in notices, eg "user not found"
-  (which happens if someone's renamed)
 * Priority (connection order) for channels
