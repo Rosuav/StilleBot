@@ -620,13 +620,11 @@ void stream_status(string name, mapping info)
 					"secret": persist_status->path("eventhook_secret")[hookname],
 				]),
 			]),
+			"return_errors": 1,
 		]))
-		->then(lambda(mixed ret) {
-			//werror("EventSub response: %O\n", ret);
-		}, lambda(mixed ret) {
-			//Could be 409 Conflict if we already have one. What should we do if
-			//we want to change the signer???
-			werror("EventSub error response - %s=%s\n%s\n", hookname, arg, describe_error(ret));
+		->then(lambda(mapping ret) {
+			if (ret->error && ret->status != 409) //409 ("Conflict") probably just means we're restarting w/o recollection
+				werror("EventSub error response - %s=%s\n%O\n", hookname, arg, ret);
 		});
 	}
 }

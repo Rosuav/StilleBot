@@ -131,7 +131,6 @@
 * Personal library peered with Free Media? Currently have to open library, then pick
   Free Media from there, not good.
 * Store uploaded file references as internal URIs, same way freemedia ones are
-* Suppress "Conflict" spam on establishment of hooks
 * Hype trains seem to be uncapped now.
   - Remove special-casing of level 5. Keep the code somewhere though.
   - Figure out a pattern to the growth rate and therefore the threshold for Super
