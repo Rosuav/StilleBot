@@ -876,6 +876,7 @@ class _mainwindow
 		"?chatlog:Log chat to console",
 		"Timezone", "'Scheduled commands (!repeat) will use this timezone", //And so might other things in the future
 		"'uptime:",
+		"#connprio:Connection priority",
 		"+notes:Notes",
 	});
 	constant persist_key = "channels";

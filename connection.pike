@@ -978,7 +978,10 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 }
 
 void reconnect() {
-	array channels = "#" + indices(persist_config["channels"] || ([]))[*];
+	array channels = indices(persist_config["channels"] || ([]));
+	sort(channels); //Default to sorting affabeck
+	if (sizeof(channels)) sort(-persist_config["channels"][channels[*]]->connprio[*], channels);
+	channels = "#" + channels[*];
 	G->G->irc = (["channels": mkmapping(channels, channel(channels[*]))]);
 	irc_connect(([
 		"join": filter(channels) {return __ARGS__[0][1] != '!';},
