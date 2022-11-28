@@ -1407,6 +1407,7 @@ class TwitchAuth
 		"user:edit", "user:edit:broadcast", "user:read:follows", "user:edit:follows",
 		"user:read:broadcast", "user:read:email",
 		"channel:read:redemptions", "channel:manage:redemptions",
+		"channel:manage:vips",
 		//v5 API
 		"channel_check_subscription", "channel_commercial", "channel_editor",
 		"channel_feed_edit", "channel_feed_read", "channel_read", "channel_stream",

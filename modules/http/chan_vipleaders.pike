@@ -1,6 +1,5 @@
 inherit http_websocket;
 inherit hook;
-inherit irc_callback;
 constant markdown = #"# Leaderboards and VIPs
 
 NOTE: AnAnonymousGifter may show up in the subgifting leaderboard for
@@ -70,9 +69,12 @@ void add_score(mapping monthly, mapping sub) {
 	if (!user) monthly[month][sub->giver->user_id] = user = ([
 		"firstsub": sub->timestamp, //Tiebreaker - earliest sub takes the spot
 		"user_id": sub->giver->user_id,
-		"user_login": sub->giver->login,
-		"user_name": sub->giver->displayname,
 	]);
+	//If a person renames, update the display on seeing the next sub gift. Note that this
+	//affects only the leaderboard itself, as the actual granting/revoking of VIP badges
+	//is done based on the user ID.
+	user->user_login = sub->giver->login;
+	user->user_name = sub->giver->displayname;
 	user->score += sub->qty * (tierval[sub->tier] || 1);
 }
 
@@ -119,7 +121,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 {
 	string buttons = loggedin;
 	string group = "control";
-	if (string scopes = ensure_bcaster_token(req, "bits:read moderation:read channel:moderate chat_login chat:edit"))
+	if (string scopes = ensure_bcaster_token(req, "bits:read moderation:read channel:manage:vips"))
 		buttons = sprintf("[Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
 	else if (!req->misc->is_mod) {
 		if (persist_status->path("subgiftstats")[req->misc->channel->name[1..]]->?private_leaderboard) {
@@ -160,42 +162,40 @@ void websocket_cmd_recalculate(mapping(string:mixed) conn, mapping(string:mixed)
 	spawn_task(force_recalc(channel->name[1..]));
 }
 
-void websocket_cmd_addvip(mapping(string:mixed) conn, mapping(string:mixed) msg) {addremvip(conn, msg, 1);}
-void websocket_cmd_remvip(mapping(string:mixed) conn, mapping(string:mixed) msg) {addremvip(conn, msg, 0);}
-void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
+void websocket_cmd_addvip(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(addremvip(conn, msg, 1));}
+void websocket_cmd_remvip(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(addremvip(conn, msg, 0));}
+continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 	[object channel, string grp] = split_channel(conn->group);
-	if (grp != "control") return;
+	if (grp != "control") return 0;
 	string chan = channel->name[1..];
 	//If you're a mod, but not the broadcaster, do a dry run - put commands in chat
-	//that say what would happen, but not /vip commands.
-	string cmd = add ? "Add VIP to" : "Remove VIP from";
-	if (conn->session->user->login == chan)
-		cmd = add ? "/vip" : "/unvip";
+	//that say what would happen, but don't actually make changes.
+	string addrem = add ? "Adding" : "Removing", tofrom = add ? "to" : "from";
+	string method = add ? "POST" : "DELETE";
+	if (conn->session->user->login != chan) {addrem = "Fake-" + lower_case(addrem); method = 0;}
 	mapping stats = persist_status->path("subgiftstats", chan);
 	array bits = stats->monthly["bits" + msg->yearmonth] || ({ });
 	array subs = values(stats->monthly["subs" + msg->yearmonth] || ([]));
 	sort(subs->firstsub, subs); sort(-subs->score[*], subs);
 	//1) Get the top cheerers
 	int limit = stats->badge_count || 10;
-	array(string) cmds = ({ });
-	array(string) people = ({ });
+	array(string) userids = ({ }), people = ({ });
 	foreach (bits, mapping person) {
 		if (stats->mods[person->user_id]) continue;
-		cmds += ({cmd + " " + person->user_login});
+		userids += ({person->user_id});
 		people += ({person->user_name});
 		if (!--limit) break;
 	}
-	if (!sizeof(people)) cmds = ({"No non-mods have cheered bits in that month."});
-	else cmds = ({(add ? "Adding VIP status to cheerers: " : "Removing VIP status from cheerers: ") + people * ", "})
-		+ cmds;
+	if (!sizeof(people)) send_message(channel->name, "No non-mods have cheered bits in that month.");
+	else send_message(channel->name, addrem + " VIP status " + tofrom + " cheerers: " + people * ", ");
 	//2) Get the top subbers
 	limit = stats->badge_count || 10; people = ({ });
 	foreach (subs, mapping person) {
 		if (stats->mods[person->user_id]) continue;
 		if ((string)person->user_id == "274598607") continue; //AnAnonymousGifter
-		if (!has_value(cmds, cmd + " " + person->user_login)) {
+		if (!has_value(userids, person->user_id)) {
 			//If that person has already received a VIP badge for cheering, don't re-add.
-			cmds += ({cmd + " " + person->user_login});
+			userids += ({person->user_id});
 			people += ({person->user_name});
 		}
 		else people += ({"(" + person->user_name + ")"});
@@ -203,34 +203,26 @@ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 	}
 	if (sizeof(people)) {
 		//If nobody's subbed, don't even say anything.
-		cmds = ({cmds[0], (add ? "Adding VIP status to subgifters: " : "Removing VIP status from subgifters: ") + people * ", "})
-			+ cmds[1..];
+		send_message(channel->name, addrem + " VIP status " + tofrom + " subgifters: " + people * ", ");
 	}
-	cmds += ({add ? "Done adding VIPs." : "Done removing VIPs."});
-	irc_connect((["user": chan]))->then() {[object irc] = __ARGS__;
-		//Fast mode doesn't seem to work.
-		//irc->send("#" + chan, cmds[*]);
-		//Slow mode... maybe works? Can't even be sure.
-		//In simulation mode, where simple text gets output, everything works.
-		//But when it's done for real, some of the badge movements simply don't
-		//happen, and I am completely at a loss as to why. There's a small
-		//measure of consistency - when things go wrong, the same badge gets
-		//skipped each time - so maybe a solution would be to shuffle the array
-		//of commands (other than the textual ones) so that clicking the button
-		//a second time is more likely to work??? But it's also possible that
-		//crawl mode, changing one badge every two seconds, works, so I still
-		//don't know. (One every second didn't fix the problem.)
-		//20221001: Seems to be working. Let's leave it like this.
-		foreach (cmds, string cmd) {
-			irc->send("#" + chan, cmd);
-			irc->enqueue(2.0);
+	//3) Actually implement badge changes
+	//The Twitch API actually limits this to 10 badge changes every 10 seconds,
+	//but we simplify this down to 1 every 2 seconds. TODO: Try this at 1 every
+	//1.25 seconds to speed it up, hopefully it won't break anything.
+	if (method) {
+		string baseurl = "https://api.twitch.tv/helix/channels/vips?broadcaster_id=" + channel->userid + "&user_id=";
+		foreach (userids, string uid) {
+			int status = yield(twitch_api_request(baseurl + uid,
+				(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]),
+				(["method": method, "return_status": 1])));
+			if (status == 204) ; //Successfully added/removed
+			else if (status == 422) send_message(channel->name, "NOTE: User " + uid + " already " + (add ? "has" : "doesn't have") + " a VIP badge");
+			else send_message(channel->name, "Error " + status + " applying VIP badge to user " + uid + ", skipping");
+			mixed _ = yield(task_sleep(2.0));
 		}
-		irc->quit();
-	};
+	}
+	send_message(channel->name, "Done " + lower_case(addrem) + " VIPs.");
 }
-
-mapping ignore_individuals = ([]);
-mapping ignore_indiv_timeout = ([]);
 
 //Note that slabs of this don't depend on the HTTP interface, but for simplicity,
 //this is in modules/http. If you're not using StilleBot's web interface, this may
@@ -270,12 +262,4 @@ int cheer(object channel, mapping person, int bits, mapping extra) {
 	call_out(spawn_task, 1, force_recalc(channel->name[1..], 1)); //Wait a second, then do a fast update (is that enough time?)
 }
 
-protected void create(string name)
-{
-	foreach (persist_config->path("channels"); string chan; mapping cfg)
-		if (m_delete(cfg, "tracksubgifts")) {
-			persist_status->path("subgiftstats", chan)->active = 1;
-			persist_status->save(); persist_config->save();
-		}
-	::create(name);
-}
+protected void create(string name) {::create(name);}
