@@ -13,6 +13,7 @@ constant SPECIALS = ({
 	({"!cheer", ({"Any bits are cheered (including anonymously)", "The cheerer", "bits, msg"}), "Stream support"}),
 	({"!cheerbadge", ({"A viewer attains a new cheer badge", "The cheerer", "level"}), "Stream support"}),
 	({"!raided", ({"Another broadcaster raided you", "The raiding broadcaster", "viewers"}), "Stream support"}),
+	({"!charity", ({"Someone donates to the charity you're supporting", "The donor", "amount"}), "Stream support"}),
 
 	({"!channelonline", ({"The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
 	({"!channelsetup", ({"The channel is online and has recently changed its category/title/tags", "The broadcaster", "category, title, tag_ids, tag_names"}), "Status"}),

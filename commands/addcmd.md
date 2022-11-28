@@ -31,6 +31,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!cheer | Any bits are cheered (including anonymously) | The cheerer | bits, msg
 !!cheerbadge | A viewer attains a new cheer badge | The cheerer | level
 !!raided | Another broadcaster raided you | The raiding broadcaster | viewers
+!!charity | Someone donates to the charity you're supporting | The donor | amount
 !!channelonline | The channel has recently gone online (started streaming) | The broadcaster | uptime, uptime_hms, uptime_english
 !!channelsetup | The channel is online and has recently changed its category/title/tags | The broadcaster | category, title, tag_ids, tag_names
 !!channeloffline | The channel has recently gone offline (stopped streaming) | The broadcaster | uptime, uptime_hms, uptime_english

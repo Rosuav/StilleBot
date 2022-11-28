@@ -742,6 +742,11 @@ class channel(string name) { //name begins with hash and is all lower case
 					msg = string_to_utf8(msg) + " "; //Trailing space improves wrapping with %= mode
 					log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
 					break;
+				case "charitydonation":
+					trigger_special("!charity", person, ([
+						"{amount}": params->msg_param_donation_amount + " " + params->msg_param_donation_currency,
+					]));
+					break;
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
 					type, params->msg_id, name, params, msg);
 					Stdio.append_file("notice.log", sprintf("%sUnknown %s %s %s %O\n", ctime(time()), type, chan, msg, params));
