@@ -26,7 +26,7 @@ word per se.
 //added to as necessary, and all users of this blacklist will automatically
 //start noticing the new ones.
 constant buyfollows = ({"addviewers.com", "bigfollows . com", "bigfollows .com", "bigfollows*com", "bigfollow s . com",
-	"vk.cc/c7aT0b", "bigfollows-com", "u.to/jazMGw", "clck.ru/ZEWvg", "vk.cc/c8R4EY"});
+	"vk.cc/c7aT0b", "bigfollows-com", "u.to/jazMGw", "clck.ru/ZEWvg", "vk.cc/c8R4EY", "dogehype dot com"});
 
 string process(object channel, object person, string param)
 {
