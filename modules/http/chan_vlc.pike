@@ -187,7 +187,23 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		string hash = req->variables->hash;
 		if (hash != status->curnamehash) return 0;
 		if (which == "webvtt" && status->webvttdata) return (["data": status->webvttdata, "type": "text/vtt"]);
-		if (which == "audio" && status->audiodata) return (["data": status->audiodata, "type": status->audiotype]);
+		if (which == "audio") {
+			//The Karaoke engine may or may not have provided audio data. If it hasn't,
+			//and it is still connected, ask for it (and make the client wait).
+			if (status->audiodata) return (["data": status->audiodata, "type": status->audiotype]);
+			array engines = websocket_groups[channel->config->vlcauthtoken + channel->name] || ({ });
+			if (!sizeof(engines)) return 0; //No karaoke engine connected? No audio available.
+			Concurrent.Promise p = Concurrent.Promise();
+			if (arrayp(status->audiodata)) status->audiodata += ({p});
+			else {
+				status->audiodata = ({p});
+				//Not using send_updates_all etc because we don't want cmd: "update"
+				string text = Standards.JSON.encode((["cmd": "requestaudio", "uri": status->cururi, "hash": hash]), 4);
+				foreach (engines, object sock)
+					if (sock && sock->state == 1) sock->send_text(text);
+			}
+			return p->future();
+		}
 		return 0;
 	}
 	string chatnotif = "[Enable in-chat notifications](vlc?makespecial)";
@@ -241,9 +257,21 @@ void websocket_cmd_karaoke(mapping(string:mixed) conn, mapping(string:mixed) msg
 	mapping status = G->G->vlc_status[channel->name];
 	if (!status) return;
 	status->curnamehash = msg->namehash; //This will be derived from the full file name, but not reversibly.
+	if (arrayp(status->audiodata)) status->audiodata->success((["error": 404]));
 	status->audiodata = msg->audiodata; //Might be null
 	status->audiotype = msg->audiotype;
 	status->webvttdata = msg->webvttdata;
+}
+
+void websocket_cmd_provideaudio(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
+	[object channel, string grp] = split_channel(conn->group);
+	if (grp != channel->config->vlcauthtoken) return; //Available only to the VLC authenticated computer
+	mapping status = G->G->vlc_status[channel->name];
+	if (!status) return;
+	if (status->curnamehash != msg->namehash) return; //We've moved on, probably.
+	if (arrayp(status->audiodata)) status->audiodata->success((["data": msg->audiodata, "type": status->audiotype]));
+	status->audiodata = msg->audiodata;
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
