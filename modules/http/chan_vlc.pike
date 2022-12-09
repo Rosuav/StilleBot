@@ -101,6 +101,7 @@ void sendstatus(object channel) {
 	channel->set_variable("vlccurtrack", status->current || "", "set");
 	send_updates_all(channel->name);
 	send_updates_all("blocks" + channel->name);
+	if (channel->config->vlcauthtoken) send_updates_all(channel->config->vlcauthtoken + channel->name);
 }
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -131,6 +132,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		int send = 0;
 		if (string uri = req->variables->now_playing) {
 			catch {uri = utf8_to_string(uri);}; //If it's not UTF-8, pretend it's Latin-1
+			status->cururi = uri;
 			string block = dirname(uri);
 			string fn = req->variables->name;
 			//If we don't have a playlist entry name, use the filename instead.
@@ -206,6 +208,11 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		ret->items = map(channel->config->vlcblocks || ({ }),
 			lambda(array b) {return (["id": b[0], "desc": b[1]]);});
 		if (status->unknowns) ret->items += (["id": status->unknowns[*], "desc": ""]);
+	}
+	if (grp == channel->config->vlcauthtoken) {
+		//When authenticated as the broadcaster's computer (not the broadcaster's Twitch user),
+		//include file name information.
+		ret->filename = status->cururi;
 	}
 	return ret;
 }
