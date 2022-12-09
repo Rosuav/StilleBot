@@ -169,6 +169,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 					status->recent = (status->recent + ({status->current}))[<9..];
 				status->current = desc; status->curtrack = fn;
 				status->curblock = block; status->curblockdesc = blockdesc;
+				status->curnamehash = ""; //Set by the Karaoke engine if needed
 				send = 1;
 				//write("Changed desc, will report; playing is %O\n%O\n", status->playing, desc);
 			}
@@ -181,6 +182,13 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		}
 		if (send) sendstatus(channel); //If multiple changes, only send once
 		return (["data": "Okay, fine\n", "type": "text/plain"]);
+	}
+	if (string which = req->variables->raw) {
+		string hash = req->variables->hash;
+		if (hash != status->curnamehash) return 0;
+		if (which == "webvtt" && status->webvttdata) return (["data": status->webvttdata, "type": "text/vtt"]);
+		if (which == "audio" && status->audiodata) return (["data": status->audiodata, "type": status->audiotype]);
+		return 0;
 	}
 	string chatnotif = "[Enable in-chat notifications](vlc?makespecial)";
 	if (G->G->echocommands["!musictrack" + req->misc->channel->name]) {
@@ -213,6 +221,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		//When authenticated as the broadcaster's computer (not the broadcaster's Twitch user),
 		//include file name information.
 		ret->filename = status->cururi;
+		ret->curnamehash = status->curnamehash;
 	}
 	return ret;
 }
@@ -223,6 +232,18 @@ void websocket_cmd_authreset(mapping(string:mixed) conn, mapping(string:mixed) m
 	if (grp != "blocks") return; //Not mod view? No edits.
 	channel->config->vlcauthtoken = 0;
 	auth_token(channel);
+}
+
+void websocket_cmd_karaoke(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
+	[object channel, string grp] = split_channel(conn->group);
+	if (grp != channel->config->vlcauthtoken) return; //Available only to the VLC authenticated computer
+	mapping status = G->G->vlc_status[channel->name];
+	if (!status) return;
+	status->curnamehash = msg->namehash; //This will be derived from the full file name, but not reversibly.
+	status->audiodata = msg->audiodata; //Might be null
+	status->audiotype = msg->audiotype;
+	status->webvttdata = msg->webvttdata;
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
