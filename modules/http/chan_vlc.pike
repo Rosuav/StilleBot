@@ -6,7 +6,7 @@ constant markdown = #"# VLC integration
 {:#nowplaying}
 
 > ### Recently played
-> * loading...
+> * not loaded
 > {:#recent}
 >
 {: tag=details $$showrecents||$$}
