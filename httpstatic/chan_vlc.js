@@ -12,6 +12,7 @@ export function render_item(block) {
 }
 
 let curnamehash = null, synckaraoke = false, fetchedaudio = null, last_time_sync = [0, 0];
+let remotepause = false;
 function set_karaoke_pos() {
 	//The time value has two distinct interpretations. Both of them are in
 	//microseconds. If data.playing, then data.time is the time_t when the
@@ -23,7 +24,7 @@ function set_karaoke_pos() {
 	const aud = DOM("#karaoke");
 	aud.currentTime = msec / 1000;
 	if (last_time_sync[0] && aud.paused) aud.play();
-	else if (!last_time_sync[0] && !aud.paused) aud.pause();
+	else if (!last_time_sync[0] && !aud.paused) {remotepause = true; aud.pause();}
 }
 function fetchkaraoke() {
 	//Fetch the audio and retain it locally, to allow seeking
@@ -79,4 +80,10 @@ DOM("#karaoke track").onload = e => {
 	}));
 };
 
-DOM("#karaoke").onpause = e => set_sync_karaoke(false);
+//JavaScript doesn't give us any way to distinguish "you called the pause() method" from
+//"the user clicked Pause on the player". So we just set a flag and hope we get the event
+//immediately, so that we clear the flag promptly.
+DOM("#karaoke").onpause = e => {
+	if (remotepause) remotepause = false;
+	else set_sync_karaoke(false);
+};
