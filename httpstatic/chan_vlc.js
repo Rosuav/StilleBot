@@ -85,5 +85,7 @@ DOM("#karaoke track").onload = e => {
 //immediately, so that we clear the flag promptly.
 DOM("#karaoke").onpause = e => {
 	if (remotepause) remotepause = false;
-	else set_sync_karaoke(false);
+	//Sigh. It turns out, this breaks on a lot of things, like the end of a track.
+	//So for now... just don't autodesync. You can manually click the sync button.
+	//else set_sync_karaoke(false);
 };
