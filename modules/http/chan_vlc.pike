@@ -11,6 +11,15 @@ constant markdown = #"# VLC integration
 >
 {: tag=details $$showrecents||$$}
 
+<!-- -->
+
+> ### Lyrics (beta)
+> * loading...
+> {:#lyrics}
+>
+> <audio controls id=karaoke><track default kind=captions label=Lyrics></audio>
+{: tag=details}
+
 <style>
 #nowplaying {
 	background: #ddffdd;
@@ -30,6 +39,34 @@ details#config {
 }
 #config summary {
 	margin: 0 -1.5em;
+}
+
+#lyrics {
+	list-style-type: none;
+	width: fit-content;
+	max-height: 5.5em;
+	overflow-y: scroll;
+	padding: 0 1em;
+}
+/* Hackery and dark magic. We want scrollIntoView to ensure that the next line of
+lyrics is visible too, so the element needs to be a bit taller than it looks. But
+that extra height has to NOT be coloured by the .active class, so it's done as a
+white border. Of course, we need the next lyric line to be drawn over that white
+border, hence the negative margin. To avoid losing the first lyric line above the
+top of the screen, we remove its margin; and to avoid having a gap at the bottom,
+we remove the border from the last one. Although, on analysis, it looks fine with
+the gap at the bottom (makes it clear that we're done), so I'm actually keeping a
+white border on the last list item. */
+#lyrics li {
+	transition: all 1s;
+	border-bottom: 1.25em solid #eee;
+	margin-top: -1.25em;
+}
+#lyrics li:first-child {margin-top: 0;}
+/* #lyrics li:last-child {border-bottom-width: 0;} */
+#lyrics .active {
+	background: #a0f0c0;
+	transition: background 0s;
 }
 </style>
 
@@ -218,18 +255,18 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	}
 	mapping status = G->G->vlc_status[channel->name];
 	if (!status) return (["playing": 0, "current": "", "recent": ({ })]);
-	mapping ret = (["playing": status->playing, "current": status->current, "recent": status->recent || ({ })]);
+	mapping ret = ([
+		"playing": status->playing, "current": status->current,
+		"recent": status->recent || ({ }), "curnamehash": status->curnamehash,
+	]);
 	if (grp == "blocks") {
 		ret->items = map(channel->config->vlcblocks || ({ }),
 			lambda(array b) {return (["id": b[0], "desc": b[1]]);});
 		if (status->unknowns) ret->items += (["id": status->unknowns[*], "desc": ""]);
 	}
-	if (grp == channel->config->vlcauthtoken) {
-		//When authenticated as the broadcaster's computer (not the broadcaster's Twitch user),
-		//include file name information.
-		ret->filename = status->cururi;
-		ret->curnamehash = status->curnamehash;
-	}
+	//When authenticated as the broadcaster's computer (not the broadcaster's Twitch user),
+	//include file name information.
+	if (grp == channel->config->vlcauthtoken) ret->filename = status->cururi;
 	return ret;
 }
 
@@ -252,6 +289,8 @@ void websocket_cmd_karaoke(mapping(string:mixed) conn, mapping(string:mixed) msg
 	status->audiodata = msg->audiodata; //Might be null
 	status->audiotype = msg->audiotype;
 	status->webvttdata = msg->webvttdata;
+	send_updates_all(channel->name);
+	send_updates_all("blocks" + channel->name);
 }
 
 void websocket_cmd_provideaudio(mapping(string:mixed) conn, mapping(string:mixed) msg) {
