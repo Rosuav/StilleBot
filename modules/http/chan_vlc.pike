@@ -76,15 +76,6 @@ string auth_token(object channel) {
 	return channel->config->vlcauthtoken = String.string2hex(random_string(12));
 }
 
-mapping(string:mixed) json_resp(object channel)
-{
-	mapping status = G->G->vlc_status[channel->name];
-	return jsonify(([
-		"blocks": channel->config->vlcblocks,
-		"unknowns": status->?unknowns || ({ }),
-	]));
-}
-
 void sendstatus(object channel) {
 	mapping status = G->G->vlc_status[channel->name] || ([]);
 	channel->trigger_special("!musictrack", (["user": "VLC"]), ([
