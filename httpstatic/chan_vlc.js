@@ -27,7 +27,7 @@ function set_karaoke_pos() {
 }
 function fetchkaraoke() {
 	//Fetch the audio and retain it locally, to allow seeking
-	if (fetchedaudio === curnamehash) return;
+	if (fetchedaudio === curnamehash) return 1;
 	fetchedaudio = curnamehash;
 	fetch("vlc?raw=audio&hash=" + curnamehash).then(r => r.blob()).then(blob => {
 		DOM("#karaoke").src = URL.createObjectURL(blob);
@@ -52,10 +52,10 @@ export function render(data) {
 
 //Require the user to click a button to sync karaoke; this avoids autoplay issues,
 //even though the audio is actually muted by default.
+function set_sync_karaoke(state) {set_content("#karaoke_sync", (synckaraoke = state) ? "Synchronizing!" : "Synchronize");}
 on("click", "#karaoke_sync", e => {
-	synckaraoke = !synckaraoke;
-	set_content(e.match, synckaraoke ? "Synchronizing!" : "Synchronize");
-	if (synckaraoke) fetchkaraoke();
+	set_sync_karaoke(!synckaraoke);
+	if (synckaraoke) fetchkaraoke() && set_karaoke_pos();
 });
 
 on("click", "button.save", e => {
@@ -78,3 +78,5 @@ DOM("#karaoke track").onload = e => {
 		return li;
 	}));
 };
+
+DOM("#karaoke").onpause = e => set_sync_karaoke(false);
