@@ -11,22 +11,52 @@ export function render_item(block) {
 	]);
 }
 
-let curnamehash = null;
+let curnamehash = null, synckaraoke = false, fetchedaudio = null, last_time_sync = [0, 0];
+function set_karaoke_pos() {
+	//The time value has two distinct interpretations. Both of them are in
+	//microseconds. If data.playing, then data.time is the time_t when the
+	//track notionally started; we can subtract it from the current time
+	//to get the position within the track, even if there's been a delay.
+	//Otherwise, it's the position within the track.
+	let msec = last_time_sync[1] / 1000; //JS date uses milliseconds
+	if (last_time_sync[0]) msec = +new Date - msec;
+	const aud = DOM("#karaoke");
+	aud.currentTime = msec / 1000;
+	if (last_time_sync[0] && aud.paused) aud.play();
+	else if (!last_time_sync[0] && !aud.paused) aud.pause();
+}
+function fetchkaraoke() {
+	//Fetch the audio and retain it locally, to allow seeking
+	if (fetchedaudio === curnamehash) return;
+	fetchedaudio = curnamehash;
+	fetch("vlc?raw=audio&hash=" + curnamehash).then(r => r.blob()).then(blob => {
+		DOM("#karaoke").src = URL.createObjectURL(blob);
+		set_karaoke_pos();
+	});
+	DOM("#karaoke track").src = "vlc?raw=webvtt&hash=" + curnamehash;
+}
 export function render(data) {
 	if (data.recent) { //Won't be present on narrow updates
 		set_content("#nowplaying", data.playing ? "Now playing: " + data.current : "Not playing or integration not active");
 		set_content("#recent", data.recent.map(track => LI(track)));
 	}
-	if (data.curnamehash && data.curnamehash !== curnamehash) {
-		//TODO: Only do this if the lyrics details is open, but also do it when you
-		//open the details. Or have a separate "keep synchronized" tick box.
+	if (data.curnamehash) {
 		curnamehash = data.curnamehash;
-		//Fetch the audio and retain it locally, to allow seeking
-		fetch("vlc?raw=audio&hash=" + curnamehash).then(r => r.blob())
-			.then(blob => DOM("#karaoke").src = URL.createObjectURL(blob));
-		DOM("#karaoke track").src = "vlc?raw=webvtt&hash=" + curnamehash;
+		if (synckaraoke) fetchkaraoke();
+	}
+	if (data.time_usec !== undefined) { //note that it can be zero
+		last_time_sync = [data.playing, data.time_usec];
+		if (synckaraoke) set_karaoke_pos();
 	}
 }
+
+//Require the user to click a button to sync karaoke; this avoids autoplay issues,
+//even though the audio is actually muted by default.
+on("click", "#karaoke_sync", e => {
+	synckaraoke = !synckaraoke;
+	set_content(e.match, synckaraoke ? "Synchronizing!" : "Synchronize");
+	if (synckaraoke) fetchkaraoke();
+});
 
 on("click", "button.save", e => {
 	const tr = e.match.closest("tr");

@@ -41,6 +41,7 @@ function input_changed()
 	local fn = vlc.strings.decode_uri(item:uri())
 	local notif = "now_playing=" .. vlc.strings.encode_uri_component(fn)
 	notif = notif .. "&name=" .. vlc.strings.encode_uri_component(item:name())
+	notif = notif .. "&usec=" .. vlc.var.get(vlc.object.input(), "time")
 	-- TODO: Try to get more metadata out of the file
 	notify(notif)
 end
@@ -53,7 +54,7 @@ function playing_changed(status)
 		last_status = status
 		vlc.msg.dbg("[StilleBot] Status is now " .. status)
 		nextnotif = "" -- Shouldn't happen, but just in case, don't say status twice
-		notify("status=" .. vlc.playlist.status())
+		notify("status=" .. vlc.playlist.status() .. "&usec=" .. vlc.var.get(vlc.object.input(), "time"))
 	end
 end
 

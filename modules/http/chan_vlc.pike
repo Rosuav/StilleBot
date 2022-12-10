@@ -17,7 +17,8 @@ constant markdown = #"# VLC integration
 > * loading...
 > {:#lyrics}
 >
-> <audio controls id=karaoke><track default kind=captions label=Lyrics></audio>
+> <audio controls muted id=karaoke><track default kind=captions label=Lyrics></audio><br>
+> [Synchronize](:#karaoke_sync)
 {: tag=details}
 
 <style>
@@ -161,6 +162,16 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (string uri = req->variables->now_playing) {
 			catch {uri = utf8_to_string(uri);}; //If it's not UTF-8, pretend it's Latin-1
 			status->cururi = uri;
+			if (req->variables->usec) {
+				//We've been told the current position. Since time has a nasty habit of
+				//marching on, we instead record the time_t when the track "notionally
+				//started". This isn't necessarily the time the track ACTUALLY started,
+				//but if the track has been playing constantly, it will be close.
+				//Note that we assume here that we are currently playing. I'm not sure
+				//whether it's possible to change playlist items while remaining paused.
+				int usec = (int)req->variables->usec;
+				status->time = time(0) * 1000000 - usec;
+			}
 			string block = dirname(uri);
 			string fn = req->variables->name;
 			//If we don't have a playlist entry name, use the filename instead.
@@ -207,6 +218,17 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			int playing = s == "playing";
 			send += playing != status->playing;
 			status->playing = playing;
+			if (req->variables->usec) {
+				//The time value sent to the client has two quite different
+				//interpretations. If playing is true, this is the time_t when
+				//the track "notionally started"; if playing is false, this is
+				//the progress through the track. Either way, is in microseconds.
+				int usec = (int)req->variables->usec;
+				if (playing) status->time = time(0) * 1000000 - usec;
+				else status->time = usec;
+				//If we start pushing timestamp updates periodically, this might
+				//need to set send=1 here, to get those out to the clients.
+			}
 		}
 		if (send) sendstatus(channel); //If multiple changes, only send once
 		return (["data": "Okay, fine\n", "type": "text/plain"]);
@@ -258,6 +280,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping ret = ([
 		"playing": status->playing, "current": status->current,
 		"recent": status->recent || ({ }), "curnamehash": status->curnamehash,
+		"time_usec": status->time,
 	]);
 	if (grp == "blocks") {
 		ret->items = map(channel->config->vlcblocks || ({ }),
