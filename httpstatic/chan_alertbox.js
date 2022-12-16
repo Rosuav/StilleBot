@@ -17,6 +17,7 @@ function THUMB(file, noautoplay) {
 const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
 const FREEMEDIA_ROOT = "https://rosuav.github.io/free-media/";
 const FREEMEDIA_BASE = "freemedia://";
+const UPLOADS_BASE = "uploads://";
 
 const files = { };
 const alerttypes = { }, alert_definitions = { };
@@ -149,10 +150,14 @@ function load_data(type, attrs, par) {
 		if (block) block.classList.toggle("inherited", !attrs[el.dataset.library]);
 		let want = attrs[el.dataset.library] || TRANSPARENT_IMAGE;
 		el.dataset.library_uri = attrs[el.dataset.library];
-		if (want.startsWith("freemedia://")) {
-			const fn = want.replace("freemedia://", "");
+		if (want.startsWith(FREEMEDIA_BASE)) {
+			const fn = want.replace(FREEMEDIA_BASE, "");
 			if (freemedia_update_queue) {freemedia_update_queue.push([el, fn]); return;}
 			else want = freemedia_files[fn].url;
+		}
+		if (want.startsWith(UPLOADS_BASE)) {
+			const file = files[want.replace(UPLOADS_BASE, "")];
+			want = (file && file.url) || TRANSPARENT_IMAGE;
 		}
 		if (el.src !== want) el.src = want; //Avoid flicker and video breakage by only setting if it's different
 	});
@@ -691,22 +696,25 @@ on("click", ".showlibrary", e => {
 	librarytarget = mode ? e.match.form.querySelector("[data-library=" + mode + "]") : null; //In case there are multiple forms, retain the exact object we're targeting
 	let needvalue = !!librarytarget;
 	const wanttypes = (e.match.dataset.type || "").split(",");
+	const uri = librarytarget.dataset.library_uri;
 	for (let el of DOM("#uploads").children) {
 		if (!el.dataset.id) continue;
 		const want = wanttypes[0] === "" || wanttypes.includes(el.dataset.type.split("/")[0]);
 		el.classList.toggle("inactive", !want);
 		const rb = el.querySelector("input[type=radio]");
 		rb.disabled = !want || wanttypes[0] === "";
-		if (needvalue && el.querySelector("a").href === librarytarget.src) {rb.checked = true; needvalue = false;}
+		//Legacy: See if the URI matches an uploaded file's URL
+		if (needvalue && el.querySelector("a").href === uri) {rb.checked = true; needvalue = false;}
 	}
 	if (needvalue) {
 		//Didn't match against any of the library entries.
-		if (librarytarget.src === TRANSPARENT_IMAGE) DOM("input[type=radio][data-special=None]").checked = true;
-		else if (librarytarget.dataset.library_uri.startsWith(FREEMEDIA_BASE)) {
-			//Free Media selections retain their original URIs. TODO: Use the URI where possible, rather than the
-			//rendered URL that the browser uses for display purposes.
+		if (uri === "") DOM("input[type=radio][data-special=None]").checked = true;
+		else if (uri.startsWith(FREEMEDIA_BASE)) {
 			DOM("input[type=radio][data-special=FreeMedia]").checked = true;
 			DOM("#freemediafn").value = librarytarget.dataset.library_uri.replace(FREEMEDIA_BASE, "");
+		}
+		else if (uri.startsWith(UPLOADS_BASE)) {
+			DOM(`#uploads [data-id="${uri.replace(UPLOADS_BASE, "")}"] input[type=radio]`).checked = true;
 		}
 		else {
 			DOM("input[type=radio][data-special=URL]").checked = true;
@@ -730,11 +738,11 @@ on("input", "#freemediafn", e => DOM("input[type=radio][data-special=" + (e.targ
 on("click", "#libraryselect", async e => {
 	if (librarytarget) {
 		const rb = DOM("#library input[type=radio]:checked");
-		let img = "", type = "", saveme = null;
+		let img = "", type = "", saveme = "";
 		if (rb) switch (rb.dataset.special) {
 			case "None": break;
 			case "URL": {
-				img = DOM("#customurl").value;
+				img = saveme = DOM("#customurl").value;
 				try {
 					const blob = await (await fetch(img)).blob();
 					type = blob.type;
@@ -743,15 +751,16 @@ on("click", "#libraryselect", async e => {
 			}
 			case "FreeMedia": {
 				const file = freemedia_files[DOM("#freemediafn").value];
-				if (file) {img = file.url; saveme = "freemedia://" + file.filename; type = file.mimetype;}
+				if (file) {img = file.url; saveme = FREEMEDIA_BASE + file.filename; type = file.mimetype;}
 				break;
 			}
 			default:
 				img = rb.parentElement.querySelector("a").href;
+				saveme = UPLOADS_BASE + rb.closest("[data-id]").dataset.id;
 				type = rb.closest("[data-type]").dataset.type;
 		}
 		ws_sync.send({cmd: "alertcfg", type: librarytarget.closest(".alertconfig").dataset.type,
-			[librarytarget.dataset.library]: saveme || img, image_is_video: type.startsWith("video/")});
+			[librarytarget.dataset.library]: saveme, image_is_video: type.startsWith("video/")});
 		const isvid = librarytarget.tagName === "VIDEO", wantvid = type.startsWith("video/");
 		if (isvid !== wantvid) librarytarget.replaceWith(wantvid
 			? VIDEO({class: "preview", "data-library": "image", src: img, loop: true, ".muted": true, autoplay: true})
