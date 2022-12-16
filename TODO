@@ -134,7 +134,6 @@
     open with free media, else open with personal.
   - Upload button outside of tabs. Successful upload also selects the item if it is
     of the right type. Uploading switches tab to Personal.
-* Store uploaded file references as internal URIs, same way freemedia ones are
 * Hype trains seem to be uncapped now.
   - Remove special-casing of level 5. Keep the code somewhere though.
   - Figure out a pattern to the growth rate and therefore the threshold for Super
