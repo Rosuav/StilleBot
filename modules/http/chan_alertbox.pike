@@ -868,12 +868,6 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	rm("httpstatic/uploads/" + fn); //If it returns 0 (file not found/not deleted), no problem
 	m_delete(persist_status->path("upload_metadata"), fn);
 	int changed_alert = 0;
-	if (file->url) //Legacy: find any references to the file by its URL
-		foreach (cfg->alertconfigs || ([]);; mapping alert)
-			while (string key = search(alert, file->url)) {
-				alert[key] = "";
-				changed_alert = 1;
-			}
 	string uri = "uploads://" + file->id;
 	foreach (cfg->alertconfigs || ([]);; mapping alert)
 		while (string key = search(alert, uri)) {
