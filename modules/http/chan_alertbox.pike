@@ -560,6 +560,7 @@ void resolve_all_inherits(string userid) {
 	float vol = master->muted ? 0.0 : (master->mastervolume || 1.0);
 	mapping alerts = incorporate_stock_alerts(master->alertconfigs || ([]));
 	mapping ret = ([]);
+	mapping uploads = mkmapping(master->files->id, master->files); //Worth caching this?
 	foreach (alerts; string id; mapping alert) if (id != "defaults") {
 		//First walk the list of parents to find the alert set.
 		string alertset = find_alertset(alerts, id);
@@ -578,6 +579,11 @@ void resolve_all_inherits(string userid) {
 				//TODO: What if !media?
 				resolved[url] = media->url;
 			}
+			if (sscanf(resolved[url] || "", "uploads://%s", string fn) && fn) {
+				mapping media = uploads[fn] || ([]);
+				//As above - what if !media?
+				resolved[url] = media->url;
+			}
 		}
 	}
 	G_G_("alertbox_resolved")[userid] = ret;
@@ -594,7 +600,7 @@ void resolve_affected_inherits(string userid, string id) {
 EventSub raidin = EventSub("raidin", "channel.raid", "1") {
 	object channel = G->G->irc->channels["#" + __ARGS__[0]];
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	if (cfg->hostbackend == "pike") {
+	if (cfg->hostbackend == "pike") { //FIXME: Is this supposed to be "if it's not pike or js"? Are raid alerts working?
 		string target = __ARGS__[1]->from_broadcaster_user_login; //TODO: Use user_name instead?
 		int viewers = __ARGS__[1]->viewers;
 		send_alert(channel, "hostalert", ([
@@ -862,12 +868,18 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	rm("httpstatic/uploads/" + fn); //If it returns 0 (file not found/not deleted), no problem
 	m_delete(persist_status->path("upload_metadata"), fn);
 	int changed_alert = 0;
-	if (file->url) 
+	if (file->url) //Legacy: find any references to the file by its URL
 		foreach (cfg->alertconfigs || ([]);; mapping alert)
 			while (string key = search(alert, file->url)) {
 				alert[key] = "";
 				changed_alert = 1;
 			}
+	string uri = "uploads://" + file->id;
+	foreach (cfg->alertconfigs || ([]);; mapping alert)
+		while (string key = search(alert, uri)) {
+			alert[key] = "";
+			changed_alert = 1;
+		}
 	persist_status->save();
 	update_one(conn->group, file->id);
 	if (changed_alert) update_one(cfg->authkey + channel->name, file->id); //TODO: Is this needed? Does the client conn use these pushes?
@@ -976,22 +988,24 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (!msg->format) {
 		//If the format is not specified, this is a partial update, which can
 		//change only the SINGLE_EDIT_ATTRS - all others are left untouched.
-		foreach (SINGLE_EDIT_ATTRS, string attr) if (!undefinedp(msg[attr])) data[attr] = msg[attr];
 		if (msg->image) {
-			//If you're setting the image, see if we need to set the "image_is_video" flag
-			int idx = search((cfg->files || ({ }))->url, msg->image);
-			if (idx == -1) {
-				if (sscanf(msg->image || "", "freemedia://%s", string fn) && fn) {
-					mapping media = G->G->freemedia_filelist->_lookup[fn];
-					//TODO: If !media, report error in some way, or revert to a default
-					data->image_is_video = has_prefix(media->mimetype, "video/");
-				}
-				//If it's a link, let the client tell us which tag to use. It'll
-				//only hurt the client if this is wrong anyway.
-				else data->image_is_video = has_prefix(msg->image, "https://") && msg->image_is_video;
+			//If you're setting the image, see if we need to set the "image_is_video" flag.
+			//Also, if the image URI is invalid, don't set it (retain the previous).
+			if (sscanf(msg->image, "uploads://%s", string imgid) && imgid) {
+				int idx = search((cfg->files || ({ }))->id, imgid);
+				if (idx == -1) m_delete(msg, "image");
+				else data->image_is_video = has_prefix(cfg->files[idx]->mimetype, "video/");
 			}
-			else data->image_is_video = has_prefix(cfg->files[idx]->mimetype, "video/");
+			else if (sscanf(msg->image, "freemedia://%s", string fn) && fn) {
+				mapping media = G->G->freemedia_filelist->_lookup[fn];
+				if (!media) m_delete(msg, "image");
+				else data->image_is_video = has_prefix(media->mimetype, "video/");
+			}
+			//If it's a link, let the client tell us which tag to use. It'll
+			//only hurt the client if this is wrong anyway.
+			else data->image_is_video = has_prefix(msg->image, "https://") && msg->image_is_video;
 		}
+		foreach (SINGLE_EDIT_ATTRS, string attr) if (!undefinedp(msg[attr])) data[attr] = msg[attr];
 		resolve_affected_inherits((string)channel->userid, msg->type);
 		persist_status->save();
 		send_updates_all(conn->group);
