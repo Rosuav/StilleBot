@@ -140,3 +140,4 @@
     Hard difficulty (ergo the sixth emotes)
   - Otherwise, pretty much everything should work
 * Find all forms in dialogs and use tag=formdialog instead
+* Alert box: Since host alerts aren't a thing, change the test button to do a raid
