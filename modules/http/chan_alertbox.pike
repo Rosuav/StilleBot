@@ -560,7 +560,7 @@ void resolve_all_inherits(string userid) {
 	float vol = master->muted ? 0.0 : (master->mastervolume || 1.0);
 	mapping alerts = incorporate_stock_alerts(master->alertconfigs || ([]));
 	mapping ret = ([]);
-	mapping uploads = mkmapping(master->files->id, master->files); //Worth caching this?
+	mapping uploads = master->files ? mkmapping(master->files->id, master->files) : ([]); //Worth caching this?
 	foreach (alerts; string id; mapping alert) if (id != "defaults") {
 		//First walk the list of parents to find the alert set.
 		string alertset = find_alertset(alerts, id);
