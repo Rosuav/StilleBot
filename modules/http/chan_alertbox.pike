@@ -26,8 +26,18 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 >
 > <div id=uploaderror class=hidden></div>
 >
-> <div id=uploadfrm class=primary><div id=uploads class=filelist></div></div>
+> <div id=uploadfrm class=primary>
 >
+> <ul class=tabset>
+> <li><input type=radio name=mediatab id=select-freemedia value=freemedia checked><label for=select-freemedia>Free Media</label></li>
+> <li><input type=radio name=mediatab id=select-personal value=personal><label for=select-personal>Personal</label></li>
+> </ul>
+>
+> <div id=mediatab_freemedia>
+> test test free media goes here
+> </div>
+> <div id=mediatab_personal><div id=uploads class=filelist></div></div>
+> </div>
 > <p><label class=selectmode><input type=radio name=chooseme data-special=None> None</label><br>
 > <span class=selectmode><input type=radio name=chooseme data-special=URL><label> URL: <input id=customurl size=100></label></span><br>
 > <span class=selectmode><input type=radio name=chooseme data-special=FreeMedia><label> Free Media: <input id=freemediafn size=20 readonly></label>
@@ -71,7 +81,7 @@ $$notmod2||[Show library](:.showlibrary) [Recent events](:#recentevents .dlg)$$
 > [Generate a new key, disabling the old one](:#confirmrevokekey) [Cancel](:.dialog_close)
 {: tag=dialog #revokekeydlg}
 
-<ul id=alertselectors><li id=newpersonal><button id=addpersonal title=\"Add new personal alert\">+</button></li></ul><style id=selectalert></style><div id=alertconfigs></div>
+<ul class=tabset><li id=newpersonal><button id=addpersonal title=\"Add new personal alert\">+</button></li></ul><style id=selectalert></style><div id=alertconfigs></div>
 
 > ### Rename file
 > Renaming a file has no effect on alerts; call them whatever you like. FIXME: Write better description.
@@ -191,15 +201,15 @@ figcaption {
 }
 input[type=range] {vertical-align: middle;}
 
-#alertselectors {
+.tabset {
 	display: flex;
 	flex-wrap: wrap;
 	list-style-type: none;
 	margin-bottom: 0;
 	padding: 0;
 }
-#alertselectors input {display: none;}
-#alertselectors label {
+.tabset input {display: none;}
+.tabset label {
 	display: inline-block;
 	cursor: pointer;
 	padding: 0.4em;
@@ -210,7 +220,7 @@ input[type=range] {vertical-align: middle;}
 	height: 2em; width: 7.8em;
 	text-align: center;
 }
-#alertselectors input:checked + label {background: #efd;}
+.tabset input:checked + label {background: #efd;}
 #addpersonal {
 	height: 24px; width: 24px;
 	margin: 4px;

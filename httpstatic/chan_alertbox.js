@@ -957,6 +957,15 @@ on("click", "input[name=alertselect]", e => {
 	update_visible_form();
 });
 
+//TODO: Break this out into utils.js
+function update_tab_visibility(tabset) {
+	document.querySelectorAll("input[type=radio][name=" + tabset + "]").forEach(rb =>
+		DOM("#" + tabset + "_" + rb.value).style.display = rb.checked ? "unset" : "none"
+	);
+}
+on("click", ".tabset input[type=radio]", e => update_tab_visibility(e.match.name));
+update_tab_visibility("mediatab");
+
 const uploadme = { };
 export async function sockmsg_upload(msg) {
 	const file = uploadme[msg.name];
