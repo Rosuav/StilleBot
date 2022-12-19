@@ -128,12 +128,6 @@
   - When an alert does not have any other details set, it uses a stock alert. Thus
     you can easily enable and disable alerts, without having to do the work of
     creating them. (I think they should start enabled?)
-* Personal library peered with Free Media? Currently have to open library, then pick
-  Free Media from there, not good.
-  - Library gets tabs across the top. Open with last used if poss. If no personal,
-    open with free media, else open with personal.
-  - Upload button outside of tabs. Successful upload also selects the item if it is
-    of the right type. Uploading switches tab to Personal.
 * Hype trains seem to be uncapped now.
   - Remove special-casing of level 5. Keep the code somewhere though.
   - Figure out a pattern to the growth rate and therefore the threshold for Super
