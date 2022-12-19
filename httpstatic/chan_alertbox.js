@@ -717,12 +717,15 @@ on("click", ".showlibrary", e => {
 			DOM("#customurl").value = uri || "";
 			DOM("#select-other").checked = true;
 		}
+		DOM("#select-other").closest("li").style.display = "";
 	}
 	else {
 		//When opening the library on its own, select your personals if you
 		//have any, otherwise the Free Media collection.
 		if (Object.keys(files).length) DOM("#select-personal").checked = true;
 		else DOM("#select-freemedia").checked = true;
+		//Hide the Other tab, since it's kinda unsightly when it has nothing visible in it
+		DOM("#select-other").closest("li").style.display = "none";
 	}
 	update_tab_visibility("mediatab");
 	DOM("#library").classList.toggle("noselect", DOM("#libraryselect").disabled = wanttypes[0] === "");
