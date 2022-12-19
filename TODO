@@ -143,3 +143,4 @@
 * Alert box: Since host alerts aren't a thing, change the test button to do a raid
 * chan_giveaway is trying to reference something provided by chan_pointsrewards,
   which fails on fresh start.
+* When opening library, filter display of free media to appropriate MIME types

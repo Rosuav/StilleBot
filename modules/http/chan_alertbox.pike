@@ -26,40 +26,29 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 >
 > <div id=uploaderror class=hidden></div>
 >
-> <div id=uploadfrm class=primary>
+> <div id=uploadfrm class=primary>\
+<ul class=tabset>\
+<li><input type=radio name=mediatab id=select-freemedia value=freemedia checked><label for=select-freemedia>Free Media</label></li>\
+<li><input type=radio name=mediatab id=select-personal value=personal><label for=select-personal>Personal</label></li>\
+<li><input type=radio name=mediatab id=select-other value=other><label for=select-other>Other</label></li>\
+</ul>\
+<div id=mediatab_freemedia><div id=freemedialibrary class=\"filelist primary\"></div></div>\
+<div id=mediatab_personal><div id=uploads class=filelist></div></div>\
+<div id=mediatab_other><p>&nbsp;</p>\
+  <label class=selectmode><input type=radio name=chooseme data-special=None> None</label><br>\
+  <span class=selectmode><input type=radio name=chooseme data-special=URL><label> URL: <input id=customurl size=100></label></span>\
+</div>\
+</div>
+> &nbsp;
 >
-> <ul class=tabset>
-> <li><input type=radio name=mediatab id=select-freemedia value=freemedia checked><label for=select-freemedia>Free Media</label></li>
-> <li><input type=radio name=mediatab id=select-personal value=personal><label for=select-personal>Personal</label></li>
-> </ul>
+> <label>Upload new file: <input type=file multiple></label>
 >
-> <div id=mediatab_freemedia>
-> test test free media goes here
-> </div>
-> <div id=mediatab_personal><div id=uploads class=filelist></div></div>
-> </div>
-> <p><label class=selectmode><input type=radio name=chooseme data-special=None> None</label><br>
-> <span class=selectmode><input type=radio name=chooseme data-special=URL><label> URL: <input id=customurl size=100></label></span><br>
-> <span class=selectmode><input type=radio name=chooseme data-special=FreeMedia><label> Free Media: <input id=freemediafn size=20 readonly></label>
->     <button type=button id=freemedia class=dlg>Browse</button></span><br>
-> <label>Upload new file: <input type=file multiple></label></p>
+> &nbsp;
 >
 > [Select](:#libraryselect disabled=true) [Close](:.dialog_close)
 {: tag=dialog #library .resizedlg}
 
 <!-- -->
-
-> ### Free Media
->
-> These media files are freely usable in StilleBot alerts and can be used without uploading.
->
-> <label><input type=radio name=chooseme id=freemedianone> None</label>
-> {: style=margin:0}
->
-> <div id=freemedialibrary class=\"filelist primary\"></div>
->
-> [Select](:#freemediaselect) [Close](:.dialog_close)
-{: tag=dialog #freemediadlg .resizedlg}
 
 $$notmodmsg||To use these alerts, [show the preview](:#authpreview) from which you can access your unique display link.<br>$$
 $$blank||Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:#revokekey .dlg) to generate a new one.$$
@@ -136,15 +125,16 @@ $$notmod2||[Show library](:.showlibrary) [Recent events](:#recentevents .dlg)$$
 {: tag=dialog #recenteventsdlg}
 
 <style>
+#library p {margin: 0;}
 #uploadfrm {
 	border: 1px solid black;
 	background: #eee;
-	padding: 1em;
+	padding: 0 1em 1em 1em;
+	width: 75vw;
 }
 .filelist {
 	display: flex;
 	flex-wrap: wrap;
-	max-width: 75vw;
 }
 .filelist > label {
 	border: 1px solid black; /* TODO: Show incomplete uploads with a different border */

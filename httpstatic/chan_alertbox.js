@@ -149,7 +149,7 @@ function load_data(type, attrs, par) {
 		const block = el.closest(".inheritblock");
 		if (block) block.classList.toggle("inherited", !attrs[el.dataset.library]);
 		let want = attrs[el.dataset.library] || TRANSPARENT_IMAGE;
-		el.dataset.library_uri = attrs[el.dataset.library];
+		el.dataset.library_uri = attrs[el.dataset.library] || "";
 		if (want.startsWith(FREEMEDIA_BASE)) {
 			const fn = want.replace(FREEMEDIA_BASE, "");
 			if (freemedia_update_queue) {freemedia_update_queue.push([el, fn]); return;}
@@ -707,19 +707,22 @@ on("click", ".showlibrary", e => {
 		if (needvalue && el.querySelector("a").href === uri) {rb.checked = true; needvalue = false;}
 	}
 	if (needvalue) {
-		//Didn't match against any of the library entries.
-		if (uri === "") DOM("input[type=radio][data-special=None]").checked = true;
-		else if (uri.startsWith(FREEMEDIA_BASE)) {
-			DOM("input[type=radio][data-special=FreeMedia]").checked = true;
-			DOM("#freemediafn").value = librarytarget.dataset.library_uri.replace(FREEMEDIA_BASE, "");
+		if (uri.startsWith(FREEMEDIA_BASE)) {
+			console.log(uri.replace(FREEMEDIA_BASE, ""));
+			DOM(`#freemedialibrary input[value="${uri.replace(FREEMEDIA_BASE, "")}"]`).checked = true;
+			DOM("#select-freemedia").checked = true;
 		}
 		else if (uri.startsWith(UPLOADS_BASE)) {
-			DOM(`#uploads [data-id="${uri.replace(UPLOADS_BASE, "")}"] input[type=radio]`).checked = true;
+			DOM(`#uploads input[value="${uri.replace(UPLOADS_BASE, "")}"]`).checked = true;
+			DOM("#select-personal").checked = true;
 		}
 		else {
-			DOM("input[type=radio][data-special=URL]").checked = true;
-			DOM("#customurl").value = librarytarget.src;
+			if (uri === "") DOM("input[type=radio][data-special=None]").checked = true;
+			else DOM("input[type=radio][data-special=URL]").checked = true;
+			DOM("#customurl").value = uri || "";
+			DOM("#select-other").checked = true;
 		}
+		update_tab_visibility("mediatab");
 	}
 	DOM("#library").classList.toggle("noselect", DOM("#libraryselect").disabled = wanttypes[0] === "");
 	set_content("#uploaderror", "").classList.add("hidden"); //Clear any lingering error message
@@ -729,15 +732,13 @@ on("click", ".showlibrary", e => {
 //Select radio buttons as appropriate when you manipulate the URL box
 DOM("#customurl").onfocus = e => e.target.value !== "" && (DOM("input[type=radio][data-special=URL]").checked = true);
 on("input", "#customurl", e => DOM("input[type=radio][data-special=" + (e.target.value !== "" ? "URL" : "None") + "]").checked = true);
-DOM("#freemediafn").onfocus = e => e.target.value !== "" && (DOM("input[type=radio][data-special=FreeMedia]").checked = true);
-on("input", "#freemediafn", e => DOM("input[type=radio][data-special=" + (e.target.value !== "" ? "FreeMedia" : "None") + "]").checked = true);
 
 //Can the dialog be made into a form and this turned into a submit event? <form method=dialog>
 //isn't very well supported yet, so I might have to do some of the work myself. Would improve
 //keyboard accessibility though.
 on("click", "#libraryselect", async e => {
 	if (librarytarget) {
-		const rb = DOM("#library input[type=radio]:checked");
+		const rb = DOM("input[name=chooseme][type=radio]:checked");
 		let img = "", type = "", saveme = "";
 		if (rb) switch (rb.dataset.special) {
 			case "None": break;
@@ -749,15 +750,15 @@ on("click", "#libraryselect", async e => {
 				} catch (e) { } //TODO: Report the error (don't just assume it's a still image)
 				break;
 			}
-			case "FreeMedia": {
-				const file = freemedia_files[DOM("#freemediafn").value];
-				if (file) {img = file.url; saveme = FREEMEDIA_BASE + file.filename; type = file.mimetype;}
-				break;
-			}
 			default:
-				img = rb.parentElement.querySelector("a").href;
-				saveme = UPLOADS_BASE + rb.closest("[data-id]").dataset.id;
-				type = rb.closest("[data-type]").dataset.type;
+				if (rb.closest("#uploads")) {
+					img = rb.parentElement.querySelector("a").href;
+					saveme = UPLOADS_BASE + rb.closest("[data-id]").dataset.id;
+					type = rb.closest("[data-type]").dataset.type;
+				} else {
+					const file = freemedia_files[rb.value];
+					if (file) {img = file.url; saveme = FREEMEDIA_BASE + file.filename; type = file.mimetype;}
+				}
 		}
 		ws_sync.send({cmd: "alertcfg", type: librarytarget.closest(".alertconfig").dataset.type,
 			[librarytarget.dataset.library]: saveme, image_is_video: type.startsWith("video/")});
@@ -772,27 +773,6 @@ on("click", "#libraryselect", async e => {
 		librarytarget = null;
 	}
 	DOM("#library").close();
-});
-
-on("click", "#freemedia", e => {
-	const fm = DOM("#library input[type=radio][data-special=FreeMedia]");
-	const val = fm.checked ? DOM("#freemediafn").value : "";
-	const el = DOM("#freemediadlg input[name=chooseme][value=\"" + val + "\"]") || DOM("#freemedianone");
-	el.checked = true;
-});
-
-on("click", "#freemediaselect", e => {
-	DOM("#freemediadlg").close();
-	const rb = DOM("#freemediadlg input[name=chooseme]:checked") || DOM("#freemedianone");
-	const fm = DOM("#library input[type=radio][data-special=FreeMedia]");
-	if (rb.id === "freemedianone") {
-		//If you selected "None" and previously had a Free Media selection, switch to None.
-		//Otherwise, leave your previous selection unchanged.
-		if (fm.checked) DOM("#library input[data-special=None]").checked = true;
-		return;
-	}
-	fm.checked = true;
-	DOM("#freemediafn").value = rb.value;
 });
 
 export function sockmsg_uploaderror(msg) {
@@ -960,7 +940,7 @@ on("click", "input[name=alertselect]", e => {
 //TODO: Break this out into utils.js
 function update_tab_visibility(tabset) {
 	document.querySelectorAll("input[type=radio][name=" + tabset + "]").forEach(rb =>
-		DOM("#" + tabset + "_" + rb.value).style.display = rb.checked ? "unset" : "none"
+		DOM("#" + tabset + "_" + rb.value).style.display = rb.checked ? "revert" : "none"
 	);
 }
 on("click", ".tabset input[type=radio]", e => update_tab_visibility(e.match.name));
