@@ -960,6 +960,8 @@ export async function sockmsg_upload(msg) {
 		body: file,
 		credentials: "same-origin",
 	})).json();
+	DOM("#select-personal").checked = true;
+	update_tab_visibility("mediatab");
 }
 
 on("change", "input[type=file]", e => {
