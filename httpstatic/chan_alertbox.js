@@ -697,15 +697,11 @@ on("click", ".showlibrary", e => {
 	let needvalue = !!librarytarget;
 	const wanttypes = (e.match.dataset.type || "").split(",");
 	const uri = librarytarget.dataset.library_uri;
-	for (let el of DOM("#uploads").children) {
-		if (!el.dataset.id) continue;
+	document.querySelectorAll("#uploadfrm [data-type]").forEach(el => {
 		const want = wanttypes[0] === "" || wanttypes.includes(el.dataset.type.split("/")[0]);
 		el.classList.toggle("inactive", !want);
-		const rb = el.querySelector("input[type=radio]");
-		rb.disabled = !want || wanttypes[0] === "";
-		//Legacy: See if the URI matches an uploaded file's URL
-		if (needvalue && el.querySelector("a").href === uri) {rb.checked = true; needvalue = false;}
-	}
+		el.querySelector("input[type=radio]").disabled = !want || wanttypes[0] === "";
+	});
 	if (needvalue) {
 		if (uri.startsWith(FREEMEDIA_BASE)) {
 			console.log(uri.replace(FREEMEDIA_BASE, ""));
