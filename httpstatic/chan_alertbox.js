@@ -694,15 +694,14 @@ let librarytarget = null;
 on("click", ".showlibrary", e => {
 	const mode = e.match.dataset.target;
 	librarytarget = mode ? e.match.form.querySelector("[data-library=" + mode + "]") : null; //In case there are multiple forms, retain the exact object we're targeting
-	let needvalue = !!librarytarget;
 	const wanttypes = (e.match.dataset.type || "").split(",");
-	const uri = librarytarget.dataset.library_uri;
 	document.querySelectorAll("#uploadfrm [data-type]").forEach(el => {
 		const want = wanttypes[0] === "" || wanttypes.includes(el.dataset.type.split("/")[0]);
 		el.classList.toggle("inactive", !want);
 		el.querySelector("input[type=radio]").disabled = !want || wanttypes[0] === "";
 	});
-	if (needvalue) {
+	if (librarytarget) {
+		const uri = librarytarget.dataset.library_uri;
 		if (uri.startsWith(FREEMEDIA_BASE)) {
 			console.log(uri.replace(FREEMEDIA_BASE, ""));
 			DOM(`#freemedialibrary input[value="${uri.replace(FREEMEDIA_BASE, "")}"]`).checked = true;
@@ -718,8 +717,14 @@ on("click", ".showlibrary", e => {
 			DOM("#customurl").value = uri || "";
 			DOM("#select-other").checked = true;
 		}
-		update_tab_visibility("mediatab");
 	}
+	else {
+		//When opening the library on its own, select your personals if you
+		//have any, otherwise the Free Media collection.
+		if (Object.keys(files).length) DOM("#select-personal").checked = true;
+		else DOM("#select-freemedia").checked = true;
+	}
+	update_tab_visibility("mediatab");
 	DOM("#library").classList.toggle("noselect", DOM("#libraryselect").disabled = wanttypes[0] === "");
 	set_content("#uploaderror", "").classList.add("hidden"); //Clear any lingering error message
 	DOM("#library").showModal();
