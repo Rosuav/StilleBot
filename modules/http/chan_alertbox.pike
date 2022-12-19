@@ -294,7 +294,7 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 >
 > <iframe id=alertembed width=600 height=400></iframe>
 >
-> [Test host alert](:.testalert data-type=hostalert) [Test follow alert](:.testalert data-type=follower)
+> [Test raid alert](:.testalert data-type=hostalert) [Test follow alert](:.testalert data-type=follower)
 > [Test sub alert](:.testalert data-type=sub) [Test cheer alert](:.testalert data-type=cheer) [Close](:.dialog_close)
 {: tag=dialog #previewdlg}
 
