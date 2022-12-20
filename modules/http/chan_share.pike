@@ -104,6 +104,7 @@ constant file_mime_types = ([
 	"jpeg_pipe": "image/jpeg",
 	"png_pipe": "image/png",
 	"svg_pipe": "image/svg+xml",
+	"matroska,webm": "video/webm",
 ]);
 
 continue Concurrent.Future|string permission_check(object channel, int is_mod, mapping user) {
