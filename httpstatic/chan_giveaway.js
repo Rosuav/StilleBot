@@ -58,7 +58,7 @@ export function render(state) {
 }
 if (config.cost) {
 	const el = DOM("#configform").elements;
-	fields.forEach(f => el[f].value = "" + config[f]);
+	fields.forEach(f => el[f].value = "" + (config[f] || ""));
 	el.allow_multiwin.checked = config.allow_multiwin === "yes";
 }
 /*

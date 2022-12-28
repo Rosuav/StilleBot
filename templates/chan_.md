@@ -12,6 +12,7 @@ StilleBot can do here:
 * [Variables](variables) - mods only
 * [Repeated/automatic commands](repeats)
 * [Quotes](quotes)
+* [Giveaways](giveaway)
 * [Alert Box](alertbox) - configure alerts for follows, subs, cheers, etc
 
 $$uptime$$

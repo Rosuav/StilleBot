@@ -281,7 +281,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				if (!has_value(qty, tickets)) {
 					m_delete(existing, id);
 					++numdeleted;
-					yield(call("DELETE", "id=" + id, 0));
+					mixed _ = yield(call("DELETE", "id=" + id, 0));
 				}
 				else {
 					++numupdated;
