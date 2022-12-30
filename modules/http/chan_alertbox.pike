@@ -1487,7 +1487,7 @@ continue Concurrent.Future fetch_tts_credentials(int fast) {
 	mapping rc = Process.run(({"gcloud", "auth", "application-default", "print-access-token"}),
 		(["env": getenv() | (["GOOGLE_APPLICATION_CREDENTIALS": "tts-credentials.json"])]));
 	G->G->tts_config->access_token = String.trim(rc->stdout);
-	//Not sure, but I think credentials expire after a while. It's quite slow to
+	//Credentials expire after an hour, regardless of usage. It's quite slow to
 	//generate them, though, and I'd rather generate only when needed; so for now,
 	//this will stay here for diagnosis purposes only. If I can figure out an
 	//expiration time, I'll schedule a regeneration at or just before that time.

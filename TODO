@@ -139,3 +139,6 @@
 * Somewhere in either giveaway or pointsrewards, something attempts to query the
   rewards for Mustard Mine, which bombs with a 403 (b/c not affiliate). Track it
   down at some point; may need to add some instrumentation.
+* When client connection joins for alert box, if TTS in use, poke TTS credentials.
+  - Every 3500 seconds (since it expires every hour), if TTS in use on any channel
+    that is currently connected, poke TTS credentials.
