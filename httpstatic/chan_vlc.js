@@ -56,7 +56,14 @@ export function render(data) {
 function set_sync_karaoke(state) {set_content("#karaoke_sync", (synckaraoke = state) ? "Synchronizing!" : "Synchronize");}
 on("click", "#karaoke_sync", e => {
 	set_sync_karaoke(!synckaraoke);
-	if (synckaraoke) fetchkaraoke() && set_karaoke_pos();
+	if (synckaraoke) {
+		fetchkaraoke() && set_karaoke_pos();
+		if (e.ctrlKey) {
+			document.body.appendChild(DOM("#lyrics"));
+			DOM("main").style.display = "none";
+			set_content("nav", "Mini-mode enabled, refresh to reset").style.fontSize = "smaller";
+		}
+	}
 });
 
 on("click", "button.save", e => {
