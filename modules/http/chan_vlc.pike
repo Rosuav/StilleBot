@@ -97,14 +97,22 @@ constant MODCONFIG = #"> ### Configuration
 > Describe a collection of music based on its directory to have a \"block\"
 > in the special trigger.
 >
-> Path | Description |
-> -----|-------------|-
+> Path | Description | &nbsp;
+> -----|-------------|-------
 > -    | -
 > {:#blocks}
 >
 > Directory names will appear above when they are first played.
 >
 {: #config tag=details open=1}
+
+<style>
+/* Expand the inputs to share available space */
+#blocks, #blocks input {width: 100%;}
+/* But the Save buttons don't need any spare space. For some reason,
+this works. I don't understand, but I'll take it. */
+#blocks thead th:last-of-type {width: 0;}
+</style>
 ";
 
 //Create (if necessary) and return the VLC Auth Token

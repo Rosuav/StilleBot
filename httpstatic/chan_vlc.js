@@ -5,9 +5,9 @@ import {waitlate} from "$$static||utils.js$$";
 export const render_parent = DOM("#blocks tbody");
 export function render_item(block) {
 	return TR({"data-id": block.id}, [
-		TD(INPUT({value: block.id, className: "path", size: 80})),
-		TD(INPUT({value: block.desc, className: "desc", size: 80})),
-		TD([BUTTON({type: "button", className: "save"}, "Save")]),
+		TD(INPUT({value: block.id, class: "path"})),
+		TD(INPUT({value: block.desc, class: "desc"})),
+		TD([BUTTON({type: "button", class: "save"}, "Save")]),
 	]);
 }
 
