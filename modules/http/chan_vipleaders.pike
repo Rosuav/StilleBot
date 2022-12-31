@@ -62,7 +62,7 @@ constant loggedin = #"
 mapping tierval = (["2": 2, "3": 6]); //TODO: Should this be configurable? Some people might prefer a T3 to be worth 5.
 
 void add_score(mapping monthly, mapping sub) {
-	object cal = Calendar.ISO.Day("unix", sub->timestamp);
+	object cal = Calendar.ISO.Second("unix", sub->timestamp)->set_timezone("UTC");
 	string month = sprintf("subs%04d%02d", cal->year_no(), cal->month_no()); //To generate weekly or yearly stats, this is the main part to change
 	if (!monthly[month]) monthly[month] = ([]);
 	mapping user = monthly[month][sub->giver->user_id];
