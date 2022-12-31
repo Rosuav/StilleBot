@@ -142,3 +142,13 @@
 * When client connection joins for alert box, if TTS in use, poke TTS credentials.
   - Every 3500 seconds (since it expires every hour), if TTS in use on any channel
     that is currently connected, poke TTS credentials.
+* Bot needs a good landing page. Possibly not served on the bot's own server.
+  - What is this bot?
+  - Who runs it? (Hence, not on the bot's server, as it'll be Rosuav, not generic)
+  - Can I haz?
+  - Demo modes, various
+  - Modules not requiring channel access
+  - Link to source code
+  - Discord for issues? GH tracker?
+* Have an image that people can use to link to the above landing page, if they
+  wish to give credit.
