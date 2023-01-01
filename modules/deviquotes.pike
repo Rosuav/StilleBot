@@ -12,8 +12,8 @@ int message(object channel, mapping person, string msg)
 	sscanf(msg, "#%d: %s", int idx, string quote);
 	int save = 0;
 	if (idx && quote) {
-		if (sizeof(json->quotes) <= idx) json->quotes += ({Val.null}) * (idx - sizeof(json->quotes) + 1);
-		if (json->quotes[idx] != quote) {json->quotes[idx] = quote; save = 1;}
+		if (sizeof(json->quotesnew) <= idx) json->quotesnew += ({Val.null}) * (idx - sizeof(json->quotesnew) + 1);
+		if (json->quotesnew[idx] != quote) {json->quotesnew[idx] = quote; save = 1;}
 	}
 	//Record all emotes seen and their IDs so the Markdown builder knows what's an emote
 	if (!json->emotes) json->emotes = ([]);
