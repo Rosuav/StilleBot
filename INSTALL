@@ -1,0 +1,21 @@
+Installing StilleBot on your own system
+=======================================
+
+StilleBot, being fully open source, is entirely capable of being run on your own
+computer as your own personal bot. You will need:
+
+* Pike version 8.1 or better, with GTK support
+* A Twitch developer account and the appropriate keys
+* Optionally an [SSL certificate](SSL)
+
+Support for platforms other than Linux is on a "best-effort" basis. If you have
+issues, be prepared to work with me to solve them, as I can't directly test on
+these systems myself.
+
+Start the bot using `pike stillebot.pike`. It should open its GUI and invite you
+to authenticate it with Twitch. At very least, you will need an OAuth token for
+chat connection, and for full functionality, you will need a client ID/secret,
+obtained from the [Twitch Developer Console](https://dev.twitch.tv/console).
+
+Enabling the web configuration interface is strongly recommended, but basic
+features can be managed through Twitch chat itself.

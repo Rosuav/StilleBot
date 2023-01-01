@@ -1,8 +1,0 @@
-The best way to install StilleBot on OS X is to use Homebrew. Start by opening a Terminal and typing:
-$ brew install pike
-You may need to additionally install XQuartz:
-http://xquartz.macosforge.org/
-Once Pike is installed, you should be able to download StilleBot from this link,
-or clone the repository using git:
-https://github.com/StilleBot/Gypsum/archive/master.zip
-Extract this to a convenient directory, then run stillebot.pike using Pike.
