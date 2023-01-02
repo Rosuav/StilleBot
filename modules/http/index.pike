@@ -10,7 +10,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		yourname = "You are currently logged in as " + yourname + ".";
 	}
 	return render_template("index.md", ([
-		"botname": persist_config["ircsettings"]->nick,
+		"botname": persist_config["ircsettings"]->realname || persist_config["ircsettings"]->nick,
 		"yourname": yourname, "loglink": loglink,
 	]));
 }
