@@ -1,5 +1,3 @@
-<link rel="stylesheet" href="httpstatic/stillebot.css">
-
 ## The Bot
 
 StilleBot handles Twitch chat and some other functionality. It's named after
