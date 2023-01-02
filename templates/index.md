@@ -5,6 +5,7 @@ but [the source code](https://github.com/rosuav/stillebot) is available to anyon
 who wishes to use it, learn from it, or borrow code from it.
 
 Information about each channel that this bot serves is available.
+<form method=get action="/channels/">Select a Twitch channel: <input name=chan size=20><input type=submit value="Show"></form>
 
 $$yourname$$ $$loglink$$
 
