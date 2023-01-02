@@ -1,6 +1,4 @@
-# StilleBot
-
-## The Bot
+## StilleBot
 
 StilleBot handles Twitch chat and some other functionality. It's named after
 Oberstille, because he joked around with me about names right at the time when
