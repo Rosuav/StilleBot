@@ -3,8 +3,8 @@ constant markdown = #"# Feature management for channel $$channel$$
 
 ## Chat commands
 
-Feature | Description | Affected commands | Active?
---------|-------------|-------------------|---------
+Feature | Description | Command details | Active?
+--------|-------------|-----------------|---------
 (loading...) | - | - | -
 {: #features}
 

@@ -17,7 +17,10 @@ export function render_item(msg, obj) {
 	return TR({"data-id": msg.id}, [
 		TD(msg.id),
 		TD({className: "desc"}, msg.desc),
-		TD((featurecmds[msg.id] || []).map(cmd => CODE("!" + cmd + " "))),
+		TD((featurecmds[msg.id] || []).map(cmd => [A(
+			{href: "https://rosuav.github.io/StilleBot/commands/" + cmd},
+			CODE("!" + cmd)
+		), " "])),
 		TD({className: "no-wrap"}, ["Active", "Inactive", "Default"].map(s =>
 			(s !== "Default" || msg.id != "allcmds") && LABEL([INPUT({
 				type: "radio", className: "featurestate",
