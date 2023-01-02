@@ -14,6 +14,8 @@ StilleBot can do here:
 * [Quotes](quotes)
 * [Giveaways](giveaway)
 * [Alert Box](alertbox) - configure alerts for follows, subs, cheers, etc
+* [Hype Train tracker](/hypetrain?for=$$channel$$) - available to everyone if enabled
+* [Raid finder](/raidfinder?for=$$channel$$) - can be used for recommendations too
 
 $$uptime$$
 

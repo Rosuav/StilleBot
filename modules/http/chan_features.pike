@@ -8,16 +8,6 @@ Feature | Description | Command details | Active?
 (loading...) | - | - | -
 {: #features}
 
-## Permanent features
-
-These features are always available, and cannot be disabled. Some of them may require
-authentication to be fully functional.
-
-Feature | Description
---------|-----------
-[Hype train tracker](/hypetrain?for=$$chan$$) | Status of an ongoing or recent hype train with details
-[Raid finder](/raidfinder?for=$$chan$$) | Your follow list, sorted to help you find a raid target
-
 ## Customizable features
 
 Commands, triggers, specials, and other separately-manageable features of the bot can be
