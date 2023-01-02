@@ -142,11 +142,7 @@
 * When client connection joins for alert box, if TTS in use, poke TTS credentials.
   - Every 3500 seconds (since it expires every hour), if TTS in use on any channel
     that is currently connected, poke TTS credentials.
-* Bot needs a good landing page. Possibly not served on the bot's own server.
-  - Demo modes, various
-  - Modules not requiring channel access
-  - Discord for issues? GH tracker?
-* Have an image that people can use to link to the above landing page, if they
+* Have an image that people can use to link to the bot's landing page, if they
   wish to give credit.
 * The landing page /emotes is no longer useful, but the subpages eg ?broadcaster
   are incredibly so. Would a menu page be better?
