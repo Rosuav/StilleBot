@@ -3,8 +3,8 @@
 StilleBot is a $$bot_or_mod$$ for this channel. You can find out more about what
 StilleBot can do here:
 
-* [Global commands](https://rosuav.github.io/StilleBot/commands/) - available in
-  all supported channels
+* [Global commands](https://rosuav.github.io/StilleBot/commands/) - can easily be
+  enabled/disabled for any channel
 * [Enable and disable bot features](features)
 * [Channel-specific commands](commands)
 * [Triggers](triggers)
