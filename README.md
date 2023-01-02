@@ -4,8 +4,8 @@ StilleBot handles Twitch chat and some other functionality. It's named after
 Oberstille, because he joked around with me about names right at the time when
 I needed to figure out a name. (On such thin threads...)
 
-The source code for StilleBot is available under the terms of the [MIT License](LICENSE)
-and can be found on [GitHub](https://github.com/rosuav/stillebot). [Installing and running
+The [source code](https://github.com/rosuav/stillebot) for StilleBot is available under the
+terms of the [MIT License](LICENSE) and can be found on GitHub. [Installing and running
 your own instance of the bot](INSTALL) is possible and legal, though may take some effort.
 
 The reference bot goes by the name [Rosuav](https://twitch.tv/rosuav) and is accessible at
