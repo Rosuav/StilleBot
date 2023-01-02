@@ -7,7 +7,6 @@ constant FEATURES = ({
 	({"quotes", "Adding, deleting, and removing quotes"}),
 	({"commands", "Chat commands for managing chat commands"}),
 	({"features", "Feature management via chat"}),
-	({"debug", "Tools for debugging the bot itself"}),
 	({"info", "General information and status commands"}),
 });
 constant FEATUREDESC = (mapping)FEATURES;
