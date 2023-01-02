@@ -144,5 +144,7 @@
     that is currently connected, poke TTS credentials.
 * Have an image that people can use to link to the bot's landing page, if they
   wish to give credit.
-* The landing page /emotes is no longer useful, but the subpages eg ?broadcaster
-  are incredibly so. Would a menu page be better?
+* The landing page /emotes is no longer useful, but the subpages most definitely are:
+  - ?broadcaster= for the showcase
+  - ?cheer for all cheer emotes
+  - Maybe link to /checklist as well?
