@@ -3,6 +3,8 @@
 StilleBot is a $$bot_or_mod$$ for this channel. You can find out more about what
 StilleBot can do here:
 
+<!-- TODO: Separate out things only mods can do from things all users can do? -->
+
 * [Standard bot features](features) - can be easily enabled/disabled
 * [Channel-specific commands](commands)
 * [Triggers](triggers)
