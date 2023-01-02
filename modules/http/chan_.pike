@@ -89,8 +89,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string chan, string endpoint)
 {
 	function handler = G->G->http_endpoints["chan_" + endpoint];
-	if (!handler) return ([
-		"data": "No such page.\n",
+	if (!handler) return 0;
+	if (chan == "") return ([ //TODO: Better landing page? No menu of channels though, that would leak info
+		"data": "Please select a channel.\n",
 		"type": "text/plain; charset=\"UTF-8\"",
 		"error": 404,
 	]);
@@ -111,11 +112,7 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 		}
 	}
 	object channel = G->G->irc->channels["#" + chan];
-	if (!channel || !channel->config->active) return ([
-		"data": "No such page.\n",
-		"type": "text/plain; charset=\"UTF-8\"",
-		"error": 404,
-	]);
+	if (!channel || !channel->config->active) return 0;
 	req->misc->channel = channel;
 	string channame = G->G->channel_info[channel->name[1..]]->?display_name || channel->name[1..];
 	req->misc->is_mod = 0; //If is_mod is false, save_or_login will be overridden
@@ -123,17 +120,13 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 		"channel": channame,
 		"backlink": "<a href=\"./\">StilleBot - " + channame + "</a>",
 	]);
-	if (mapping user = req->misc->session->?user)
-	{
-		if (G->G->user_mod_status[user->login + channel->name] || is_localhost_mod(user->login, req->get_ip())) {
+	if (mapping user = req->misc->session->?user) {
+		if (G->G->user_mod_status[user->login + channel->name] || is_localhost_mod(user->login, req->get_ip()))
 			req->misc->is_mod = 1;
-		}
 		else req->misc->chaninfo->save_or_login = "<i>You're logged in, but not a recognized mod. Before you can make changes, go to the channel and say something, so I can see your mod sword. Thanks!</i>";
 		req->misc->chaninfo->logout = "| <a href=\"/logout\" class=twitchlogout>Log out</a>";
 	}
-	else {
-		req->misc->chaninfo->save_or_login = "[Mods, login to make changes](:.twitchlogin)";
-	}
+	else req->misc->chaninfo->save_or_login = "[Mods, login to make changes](:.twitchlogin)";
 	return handler(req);
 }
 
