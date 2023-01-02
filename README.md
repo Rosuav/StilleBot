@@ -1,5 +1,4 @@
-The Bot
-=======
+## The Bot
 
 StilleBot handles Twitch chat and some other functionality. It's named after
 Oberstille, because he joked around with me about names right at the time when
@@ -12,11 +11,9 @@ your own instance of the bot](INSTALL) is possible and legal, though may take so
 The reference bot goes by the name [Rosuav](https://twitch.tv/rosuav) and is accessible at
 https://sikorsky.rosuav.com/ where he serves a number of Twitch channels.
 
-What can StilleBot do for you?
-==============================
+## What can StilleBot do for you?
 
-Running a channel
------------------
+### Running a channel
 
 When StilleBot is the primary bot for a Twitch channel, a number of features are available.
 
@@ -37,8 +34,7 @@ Details on a number of standard commands can be found in [these pages](https://r
 To see what the bot would be like if working for you, explore [Demo Mode](https://sikorsky.rosuav.com/channels/demo/)
 where the bot pretends that you are a mod for a (fake) channel named "!Demo".
 
-See What's Happening
---------------------
+### See What's Happening
 
 Even for people and channels where StilleBot is not an active bot, some services are
 available! Some of these require authentication.
@@ -52,8 +48,7 @@ available! Some of these require authentication.
   up to, exactly what it'll take to finish the current level, and how long the cooldown
   is. Requires permission from the broadcaster.
 
-Other tools
------------
+### Other tools
 
 A few tools don't really connect with any specific channel, and can be used by anyone.
 
@@ -63,8 +58,7 @@ A few tools don't really connect with any specific channel, and can be used by a
   editing triggers and commands that use regular expressions
 * TODO: Raid train management
 
-Can I haz?
-==========
+## Can I haz?
 
 Yes! Well, probably. Depends what you want!
 
@@ -75,8 +69,7 @@ To request that StilleBot be added to your channel, contact Rosuav.
 (TODO: Figure out some wording for "hey don't make me swear kthx", with caveat that
 you can authenticate your own voice and use that)
 
-More information
-================
+## More information
 
 To contact the author/maintainer/operator or ask further questions, reach out to
 Rosuav on Twitch, or [join the Discord](https://discord.gg/dbw4KYE).
