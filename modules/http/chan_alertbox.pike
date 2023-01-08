@@ -600,7 +600,7 @@ void resolve_affected_inherits(string userid, string id) {
 EventSub raidin = EventSub("raidin", "channel.raid", "1") {
 	object channel = G->G->irc->channels["#" + __ARGS__[0]];
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	if (cfg->hostbackend == "pike") { //FIXME: Is this supposed to be "if it's not pike or js"? Are raid alerts working?
+	if (cfg->hostbackend != "pike" && cfg->hostbackend != "js") { //FIXME: Check if raid alerts are working, this is a bit odd
 		string target = __ARGS__[1]->from_broadcaster_user_login; //TODO: Use user_name instead?
 		int viewers = __ARGS__[1]->viewers;
 		send_alert(channel, "hostalert", ([
