@@ -34,6 +34,8 @@ $$save_or_login||$$
 //- Shoutout command, and link to the main commands page ("others here")
 //- Hype train status?
 
+//TODO: Unify the UI for different enableables - not radio buttons for one, action buttons for another
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	//Assume that the list of commands for each feature isn't going to change often.
