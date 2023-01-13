@@ -13,7 +13,7 @@ Commands in alphabetical order:
 * [!calc: Calculate something, possibly involving channel variables](calc)
 * [!delcmd: Remove an echo command for this channel](delcmd)
 * [!delquote: Delete a channel quote](delquote)
-* [!features: Enable or disable bot features.](features)
+* [!features: Enable or disable bot chat commands.](features)
 * [!help: List commands available to you](help)
 * [!nowlive: Check if a stream is currently live](nowlive)
 * [!quote: View a chosen or randomly-selected quote](quote)

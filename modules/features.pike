@@ -12,7 +12,7 @@ constant FEATURES = ({
 constant FEATUREDESC = (mapping)FEATURES;
 
 constant docstring = sprintf(#"
-Enable or disable bot features.
+Enable or disable bot chat commands.
 
 Usage: `!features featurename {enable|disable|default}`
 
@@ -20,7 +20,8 @@ Features set to the 'default' state follow the setting for allcmds, so in
 general, you need only specify the features that are different from that.
 
 Note that features disabled here may still be available via the bot's web
-interface.
+interface; this governs only the commands available in chat, usually to
+moderators.
 
 Feature name | Effect
 -------------|-------------
