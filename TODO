@@ -148,3 +148,19 @@
   - ?broadcaster= for the showcase
   - ?cheer for all cheer emotes
   - Maybe link to /checklist as well?
+* Merge /features into the channel landing page?
+  - This would transform the landing page into a sort of control panel, where you can
+    make sweeping configuration changes (like enabling/disabling features and setting
+    time zone), and can hop across to any of the other pages, which are just sections
+    of the control panel.
+  - It may be worth having a permanent sidebar with a menu of available control panel
+    sections (aka "config pages" as we currently have them).
+* Completely rework the /repeats page and the !repeat command
+  - Deprecate the channel->config->autocommands completely
+  - Prevent any use of !repeat with text, force use of actual commands
+  - Allow !repeat/!unrepeat by modifying the echocommands (see TODO in repeat.pike)
+  - The /repeats page will now serve as a useful tabulation of all autocommands
+    - Needs sorting options
+    - Quick way to remove something from the repeats
+    - This is also the place to put any repeat-related configs, eg (if I ever implement
+      it, of course) "don't autocommand unless chat within last X seconds"

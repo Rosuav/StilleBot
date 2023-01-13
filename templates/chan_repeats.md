@@ -7,7 +7,8 @@ exact time (in your timezone). Automated commands will be sent only if the chann
 online at that time.
 
 NOTE: For greater flexibility and easier management, create a command and have it set to
-automatically run itself. TODO: Describe how to do that easily.
+automatically run itself. This can be done through the regular [command editor](commands);
+double-click a command's yellow "When..." box to configure this.
 
 > Frequency | Command | Output |
 > ----------|---------|--------|-
