@@ -59,6 +59,7 @@ export function render(data) {
 		}
 		set_content(parent, rows);
 	}
+	if (data.timezone) DOM("input[name=timezone]").value = data.timezone;
 }
 
 on("change", ".featurestate", e => {
@@ -71,4 +72,21 @@ on("click", ".enabl_activate", e => {
 
 on("click", ".enabl_deactivate", e => {
 	ws_sync.send({cmd: "enable", id: e.match.closest("tr").dataset.id, "state": false});
+});
+
+/* TODO: Replace this boring input+button with a nice dialog.
+
+* Have an option to use the browser's configured timezone
+  - Intl.DateTimeFormat().resolvedOptions().timeZone;
+* Have some sort of picker, probably with more levels than just "continent" and "city"
+* Show the current time in these time zones, to help with the picking
+* Explain what this setting actually does, which isn't much
+  - Command automation (incl !repeat) if set to a time rather than a period
+  - Quote timestamps (cosmetic only)
+
+Don't forget that a mod may be using this tool, and the "correct" selection is usually
+going to be the broadcaster's timezone.
+*/
+on("click", "#settimezone", e => {
+	ws_sync.send({cmd: "settimezone", timezone: DOM("input[name=timezone]").value});
 });

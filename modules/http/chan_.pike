@@ -8,81 +8,16 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string user_is_mod = "";
 	object channel = req->misc->channel;
 	int uptime = channel_uptime(req->misc->channel->name[1..]);
-	string timezone = channel->config->timezone;
-	if (!timezone || timezone == "") timezone = "UTC";
-	string save_config = "More to come";
-	array(string) messages = ({ });
 	if (req->misc->is_mod)
 	{
-		if (!req->misc->session->fake && req->request_type == "POST")
-		{
-			if (req->variables->export && req->misc->session->user->login == channel->name[1..])
-			{
-				//Standard rule: Everything in this export comes from persist_config and the commands list.
-				//(Which ultimately may end up being merged anyway.)
-				//Anything in persist_status does not belong here; there may eventually be
-				//a separate export of that sort of ephemeral data, eg variables.
-				//Config attributes deprecated or for my own use only are not included.
-				mapping cfg = channel->config;
-				mapping ret = ([]);
-				foreach ("autoban autocommands dynamic_rewards giveaway monitors quotes timezone vlcblocks" / " ", string key)
-					if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
-				if (cfg->allcmds) ret->active = "all"; //TODO: Figure out better keywords for these
-				else ret->active = "httponly";
-				mapping commands = ([]), specials = ([]);
-				string chan = channel->name[1..];
-				foreach (G->G->echocommands; string cmd; echoable_message response) {
-					sscanf(cmd, "%s#%s", cmd, string c);
-					if (c != chan) continue;
-					if (has_prefix(cmd, "!")) specials[cmd] = response;
-					else commands[cmd] = response;
-				}
-				ret->commands = commands;
-				if (array t = m_delete(specials, "!trigger"))
-					if (arrayp(t)) ret->triggers = t;
-				ret->specials = specials;
-				mapping resp = jsonify(ret, 5);
-				string fn = "stillebot-" + channel->name[1..] + ".json";
-				resp->extra_heads = (["Content-disposition": sprintf("attachment; filename=%q", fn)]);
-				return resp;
-			}
-			if (req->variables->timezone != channel->config->timezone)
-			{
-				if (req->variables->timezone == "UTC") {
-					messages += ({"* Reset timezone to UTC"});
-					channel->config->timezone = ""; timezone = "UTC";
-					persist_config->save();
-				}
-				else if (!has_value(Calendar.TZnames.zonenames(), req->variables->timezone))
-				{
-					//TODO: Handle timezone abbreviations
-					messages += ({"* Invalid timezone " + req->variables->timezone});
-				}
-				else
-				{
-					messages += ({"* Set timezone to " + req->variables->timezone});
-					channel->config->timezone = timezone = req->variables->timezone;
-					persist_config->save();
-				}
-			}
-		}
 		user_is_mod = "Welcome, " + req->misc->session->user->display_name + ", and your modsword.";
 		if (req->misc->session->fake) user_is_mod = "Welcome, demo user, and your modsword. On this special channel, everyone is considered a moderator! " +
 			"Actions taken here will not be saved, so feel free to try things out!";
-		//TODO: Have a way to grab the client's timezone (see Mustard Mine)
-		timezone = sprintf("<input name=timezone size=30 value=\"%s\">", Parser.encode_html_entities(timezone));
-		save_config = "<input type=submit value=Save>";
-		if (req->misc->session->user->login == channel->name[1..])
-			//You're the broadcaster. Permit saving of all data.
-			save_config += " <input type=submit name=export value='Export all configs'>";
 	}
 	return render_template("chan_.md", ([
 		"bot_or_mod": G->G->user_mod_status[persist_config["ircsettings"]->nick + channel->name] ? "mod" : "bot",
 		"uptime": uptime ? "Channel has been online for " + describe_time(uptime) : "Channel is currently offline.",
 		"user_is_mod": user_is_mod,
-		"timezone": timezone,
-		"save_config": save_config,
-		"messages": messages * "\n",
 	]) | req->misc->chaninfo);
 }
 

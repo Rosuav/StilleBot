@@ -18,7 +18,12 @@ Feature | Description | Manager | Status
 (loading...) | - | - | -
 {: #enableables}
 
-$$save_or_login||$$
+## Channel configuration
+
+Timezone: <input name=timezone size=30> [Set](:#settimezone)
+
+$$save_or_login||> [Export/back up all configuration](:type=submit name=export)
+{:tag=form method=post}$$
 
 <style>
 :checked + abbr {background-color: #a0f0c0;}
@@ -38,6 +43,36 @@ $$save_or_login||$$
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
+	if (req->misc->is_mod && !req->misc->session->fake && req->request_type == "POST" && req->variables->export) {
+		//Standard rule: Everything in this export comes from persist_config and the commands list.
+		//(Which ultimately may end up being merged anyway.)
+		//Anything in persist_status does not belong here; there may eventually be
+		//a separate export of that sort of ephemeral data, eg variables.
+		//Config attributes deprecated or for my own use only are not included.
+		object channel = req->misc->channel;
+		mapping cfg = channel->config;
+		mapping ret = ([]);
+		foreach ("autoban autocommands dynamic_rewards giveaway monitors quotes timezone vlcblocks" / " ", string key)
+			if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
+		if (cfg->allcmds) ret->active = "all"; //TODO: Figure out better keywords for these
+		else ret->active = "httponly";
+		mapping commands = ([]), specials = ([]);
+		string chan = channel->name[1..];
+		foreach (G->G->echocommands; string cmd; echoable_message response) {
+			sscanf(cmd, "%s#%s", cmd, string c);
+			if (c != chan) continue;
+			if (has_prefix(cmd, "!")) specials[cmd] = response;
+			else commands[cmd] = response;
+		}
+		ret->commands = commands;
+		if (array t = m_delete(specials, "!trigger"))
+			if (arrayp(t)) ret->triggers = t;
+		ret->specials = specials;
+		mapping resp = jsonify(ret, 5);
+		string fn = "stillebot-" + channel->name[1..] + ".json";
+		resp->extra_heads = (["Content-disposition": sprintf("attachment; filename=%q", fn)]);
+		return resp;
+	}
 	//Assume that the list of commands for each feature isn't going to change often.
 	//If it does, refresh the page to see the change.
 	mapping featurecmds = ([]);
@@ -74,8 +109,10 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		}
 	}
 	array features = function_object(G->G->commands->features)->FEATURES[1..][*][0]; //List of configurable feature IDs. May need other filtering in the future??
+	string timezone = channel->config->timezone;
+	if (!timezone || timezone == "") timezone = "UTC";
 	return (["items": _get_item(features[*], channel->config->allcmds || -1, feat),
-		"defaultstate": channel->config->allcmds ? "active": "inactive",
+		"timezone": timezone,
 		"enableables": enableables,
 	]);
 }
@@ -112,4 +149,18 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 			return;
 		}
 	}
+}
+
+@"is_mod": void wscmd_settimezone(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (msg->timezone == "" || msg->timezone == "UTC") {
+		channel->config->timezone = "";
+		persist_config->save();
+	}
+	else if (has_value(Calendar.TZnames.zonenames(), msg->timezone))
+	{
+		channel->config->timezone = msg->timezone;
+		persist_config->save();
+	}
+	send_updates_all(conn->group);
+	send_updates_all("view" + channel->name);
 }

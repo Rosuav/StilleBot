@@ -27,13 +27,3 @@ StilleBot can do here:
 $$uptime$$
 
 $$user_is_mod$$
-
-Channel configuration:
-
-$$messages$$
-
-> - | -
-> -------------|---------
-> Timezone     | $$timezone$$
-> - | $$save_config$$
-{:tag=form method=post}
