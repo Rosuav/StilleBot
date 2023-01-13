@@ -35,6 +35,7 @@ echoable_message process(object channel, mapping person, string param) {
 	sscanf(param, "%s %s", string feature, string active);
 	if (FEATUREDESC[param]) {feature = param; active = "";}
 	if (!FEATUREDESC[feature]) return "@$$: Valid feature names are: " + FEATURES[*][0] * ", ";
+	if (feature == "allcmds") return "@$$: Cannot change allcmds through the !features command - foot-guns not permitted";
 	int send = 1;
 	switch (active) {
 		case "": send = 0; break;
