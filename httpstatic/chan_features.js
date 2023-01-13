@@ -50,11 +50,11 @@ export function render(data) {
 				TD(kwd),
 				TD(info.description),
 				TD(A({href: link + (info.fragment||""), target: "_blank"}, mgr)),
-				TD({className: "no-wrap"}, [
+				TD({className: "no-wrap"}, ws_group.startsWith("control#") ? [
 					BUTTON({className: "enabl_activate", type: "button", "disabled": !(info.manageable&1)}, "Activate"),
 					" ",
 					BUTTON({className: "enabl_deactivate", type: "button", "disabled": !(info.manageable&2)}, "Deactivate"),
-				]),
+				] : {1: "Inactive", 2: "Active", 3: "Half-active"}[info.manageable]),
 			]));
 		}
 		set_content(parent, rows);

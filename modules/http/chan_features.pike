@@ -3,7 +3,7 @@ constant markdown = #"# Feature management for channel $$channel$$
 
 ## Chat commands
 
-Feature | Description | Command details | Active?
+Feature | Description | Command details | Status
 --------|-------------|-----------------|---------
 (loading...) | - | - | -
 {: #features}
@@ -13,7 +13,7 @@ Feature | Description | Command details | Active?
 Commands, triggers, specials, and other separately-manageable features of the bot can be
 quickly and easily enabled here.
 
-Feature | Description | Manager | Activate
+Feature | Description | Manager | Status
 --------|-------------|---------|-----------
 (loading...) | - | - | -
 {: #enableables}
@@ -33,8 +33,6 @@ $$save_or_login||$$
 //- Giveaway triggers?? Maybe?
 //- Shoutout command, and link to the main commands page ("others here")
 //- Hype train status?
-
-//TODO: Don't enable Activate/Deactivate if not mod, but show state in other way
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
