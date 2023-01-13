@@ -14,7 +14,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	array(string) messages = ({ });
 	if (req->misc->is_mod)
 	{
-		if (req->request_type == "POST")
+		if (!req->misc->session->fake && req->request_type == "POST")
 		{
 			if (req->variables->export && req->misc->session->user->login == channel->name[1..])
 			{
@@ -46,7 +46,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				resp->extra_heads = (["Content-disposition": sprintf("attachment; filename=%q", fn)]);
 				return resp;
 			}
-			if (!req->misc->session->fake && req->variables->timezone != channel->config->timezone)
+			if (req->variables->timezone != channel->config->timezone)
 			{
 				if (req->variables->timezone == "UTC") {
 					messages += ({"* Reset timezone to UTC"});
