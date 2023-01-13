@@ -4,7 +4,6 @@ const {A, ABBR, BUTTON, CODE, TR, TD, LABEL, INPUT, SPAN} = choc;
 const active_desc = {
 	Active: "Active: Chat commands are available",
 	Inactive: "Inactive: Chat commands disabled, web access only",
-	Default: "Default: Follows the setting of allcmds", //TODO: Show what that setting currently is?
 };
 const prefix_len = {Active: 2, Inactive: 4, Default: 3}; //Number of characters that get kept even on small screens
 export const render_parent = DOM("#features tbody");
@@ -21,8 +20,8 @@ export function render_item(msg, obj) {
 			{href: "https://rosuav.github.io/StilleBot/commands/" + cmd},
 			CODE("!" + cmd)
 		), " "])),
-		TD({className: "no-wrap"}, ["Active", "Inactive", "Default"].map(s =>
-			(s !== "Default" || msg.id != "allcmds") && LABEL([INPUT({
+		TD({className: "no-wrap"}, ["Active", "Inactive"].map(s =>
+			LABEL([INPUT({
 				type: "radio", className: "featurestate",
 				name: msg.id, value: s.toLowerCase(),
 				checked: msg.state == s.toLowerCase(),

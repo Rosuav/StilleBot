@@ -54,28 +54,27 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
-mapping _get_item(string id, int allcmds, mapping feat) {
+mapping _get_item(string id, int dflt, mapping feat) {
 	array FEATUREDESC = function_object(G->G->commands->features)->FEATUREDESC;
 	if (!FEATUREDESC[id]) return 0;
-	int f = feat[id];
-	if (id == "allcmds") f = allcmds || -1; //The allcmds setting comes from global settings, not from features
 	return ([
 		"id": id, "desc": FEATUREDESC[id],
-		"state": ({"default", "active", "inactive"})[f],
+		"state": ({"default", "active", "inactive"})[feat[id] || dflt],
 	]);
 }
 
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping feat = persist_config->path("channels", channel->name[1..], "features");
-	if (id) return _get_item(id, channel->config->allcmds, feat);
+	if (id) return _get_item(id, channel->config->allcmds || -1, feat);
 	mapping enableables = ([]);
 	foreach (G->G->enableable_modules; string name; object mod) {
 		foreach (mod->ENABLEABLE_FEATURES; string kwd; mapping info) {
 			enableables[kwd] = info | (["module": name, "manageable": mod->can_manage_feature(channel, kwd)]);
 		}
 	}
-	return (["items": _get_item(function_object(G->G->commands->features)->FEATURES[*][0][*], channel->config->allcmds, feat),
+	array features = function_object(G->G->commands->features)->FEATURES[1..][*][0]; //List of configurable feature IDs. May need other filtering in the future??
+	return (["items": _get_item(features[*], channel->config->allcmds || -1, feat),
 		"defaultstate": channel->config->allcmds ? "active": "inactive",
 		"enableables": enableables,
 	]);
@@ -86,13 +85,17 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	array FEATUREDESC = function_object(G->G->commands->features)->FEATUREDESC;
 	if (!FEATUREDESC[msg->id]) return;
 	if (msg->id == "allcmds") {
-		//The allcmds setting goes into global settings, not features
+		//The allcmds setting goes into global settings, not features. This is undocumented
+		//but still available; for the most part, it's easier to just set features one by one.
 		channel->config->allcmds = msg->state == "active";
+		persist_config->save();
+		send_updates_all(conn->group);
+		send_updates_all("view" + channel->name);
 	}
-	else switch (msg->state) {
+	switch (msg->state) {
 		case "active": feat[msg->id] = 1; break;
 		case "inactive": feat[msg->id] = -1; break;
-		case "default": m_delete(feat, msg->id); break;
+		case "default": m_delete(feat, msg->id); break; //Undocumented but still available if needed
 		default: return;
 	}
 	persist_config->save();
