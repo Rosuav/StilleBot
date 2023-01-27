@@ -287,8 +287,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		}
 		else if (req->variables->login) {
 			//TODO: Load up the specified users even if they're not currently online.
-			//This may involve stubbing out things like the thumbnail and viewership,
-			//and might require use of Kraken rather than Helix to get channel info.
+			//This may involve stubbing out things like the thumbnail and viewership.
 			//Once done, though, this could be used for various things incl adding a
 			//note to a stream, or incorporated into the above raiders code, giving
 			//options of "raiders currently online" and "all raiders".
