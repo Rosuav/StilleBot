@@ -359,9 +359,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	mapping your_stream;
 	foreach (follows_helix, mapping strm)
 		if ((int)strm->user_id == userid) your_stream = strm;
-	array all_tags = yield(translate_tag_ids(Array.flatten(follows_helix->tag_ids) - ({0}))); //Force all tags into the cache
-	//We don't actually need the all_tags array, but it prevents an over-aggressive optimization
-	//that results in the function prematurely returning zero.
 	mapping(int:mapping(string:mixed)) extra_info = ([]);
 	foreach (users, mapping user)
 		extra_info[(int)user->id] = ([
@@ -375,12 +372,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	foreach (follows_helix; int i; mapping strm)
 	{
 		mapping(string:int) recommend = ([]);
-		array tags = ({ });
-		foreach (strm->tag_ids || ({ }), string tagid) {
-			if (mapping tag = G->G->all_stream_tags[tagid]) tags += ({tag});
-			if (int pref = tag_prefs[tagid]) recommend["Tag prefs"] += PREFERENCE_MAGIC_SCORES[pref];
-		}
-		strm->tags = tags;
+		foreach (strm->tags || ({ }), string tag)
+			if (int pref = tag_prefs[tag]) recommend["Tag prefs"] += PREFERENCE_MAGIC_SCORES[pref];
 		strm->category = G->G->category_names[strm->game_id] || strm->game_name;
 		strm->raids = raids[strm->user_login] || ({ });
 		if (mapping st = cached_status[strm->user_id]) strm->chanstatus = st;
@@ -452,12 +445,10 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//Been seeing some 500 crashes that have been hard to track down. Is it b/c
 			//one of the streams has no tags?? Maybe just gone live?? In any case, if
 			//you don't have any tags, there won't be any common tags, so we're fine.
-			if (your_stream->tag_ids && strm->tag_ids) {
-				multiset common = (multiset)your_stream->tag_ids & (multiset)strm->tag_ids;
-				if (sizeof(common)) {
-					string desc = "Tags in common: " + G->G->all_stream_tags[((array)common)[*]]->name * ", ";
-					recommend[desc] = 25 * sizeof(common);
-				}
+			if (your_stream->tags && strm->tags) {
+				array common = your_stream->tags & strm->tags;
+				if (sizeof(common))
+					recommend["Tags in common: " + common * ", "] = 25 * sizeof(common);
 			}
 		}
 		//Up to 100 points for having just started, scaling down to zero at four hours of uptime
@@ -482,12 +473,12 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	sort(all_raids->time, all_raids);
 	follows_helix -= ({0}); //Remove self (already nulled out)
 	sort(-follows_helix->recommend[*], follows_helix); //Sort by magic initially
-	array tags = values(G->G->all_stream_tags); sort(tags->name, tags);
 	return render(req, ([
 		"vars": ([
 			"ws_group": "",
 			"on_behalf_of_userid": userid, //The same userid as you're logged in as, unless for= is specified
-			"follows": follows_helix, "all_tags": tags,
+			"follows": follows_helix,
+			"all_tags": ({ }), //Deprecated as of 20230127 - tags by ID are no longer a thing.
 			"your_stream": your_stream, "highlights": highlights,
 			"tag_prefs": tag_prefs, "MAX_PREF": MAX_PREF, "MIN_PREF": MIN_PREF,
 			"all_raids": all_raids[<99..], "mode": "normal",

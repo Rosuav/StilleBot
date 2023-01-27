@@ -1,8 +1,8 @@
 # $$title||Followed streams$$
 
 > ### Tag preferences
-> Choose which tags you like or dislike. Liked tags will be promoted among
-> followed streams; disliked tags will be correspondingly demoted. Preferences
+> Choose which tags you like or dislike. Liked tags will be promoted among<br>
+> followed streams; disliked tags will be correspondingly demoted. Preferences<br>
 > will affect Magic sort, beginning the next time you load the page.
 >
 > <ul></ul>
@@ -45,7 +45,7 @@
 	margin-bottom: 1em;
 }
 #streams ul {list-style-type: none; margin: 0; padding: 0; flex-grow: 1;}
-#streams li {
+#streams li:not(.no-indent) {
 	padding-left: 2em;
 	text-indent: -2em;
 }

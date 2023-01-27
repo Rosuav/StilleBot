@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, BR, BUTTON, DIV, IMG, UL, LI, SPAN} = choc;
+const {A, B, BR, BUTTON, DIV, IMG, INPUT, UL, LABEL, LI, SPAN} = choc; //autoimport
 
 const chat_restrictions = [
 	["emote_mode", "Emote-only mode", 1],
@@ -211,8 +211,28 @@ DOM("#highlights").onclick = () => {
 }
 
 const tag_element = { };
+function update_tag_display() {
+	set_content("#tags ul", [
+		Object.keys(tag_prefs).sort().map(tag => tag_element[tag] = LI({
+			"data-tagid": tag, //Tags are identified by their text, there's no separate UUID
+			className: "tagpref" + (tag_prefs[tag] || 0)
+		}, [
+			BUTTON({className: "disliketag"}, "-"),
+			BUTTON({className: "liketag"}, "+"),
+			" ",
+			SPAN({className: "tag"}, tag),
+		])),
+		LI({"data-tagid": "", className: "tagpref0"}, [
+			BUTTON({className: "disliketag"}, "-"),
+			BUTTON({className: "liketag"}, "+"),
+			" ",
+			LABEL(["Add new tag: ", INPUT({id: "newtagname", size: 20})]),
+		]),
+	]);
+}
 function update_tagpref(e, delta) {
-	const tagid = e.match.closest("li").dataset.tagid;
+	const tagid = e.match.closest("li").dataset.tagid || DOM("#newtagname").value;
+	if (tagid === "") return; //Should we say something if the user leaves the input blank?
 	console.log(tagid);
 	const newpref = (tag_prefs[tagid]|0) + delta;
 	console.log("New pref:", tag_prefs[tagid], " + ", delta, " = ", newpref);
@@ -225,26 +245,14 @@ function update_tagpref(e, delta) {
 		//Update ALL prefs on any change. Helps to minimize desyncs.
 		tag_prefs = resp.prefs;
 		console.log("New prefs:", tag_prefs);
-		all_tags.forEach(tag => tag_element[tag.id].className = "tagpref" + (tag_prefs[tag.id] || 0));
+		update_tag_display();
 	});
 }
 on("click", ".liketag", e => update_tagpref(e, 1));
 on("click", ".disliketag", e => update_tagpref(e, -1));
 
-DOM("#tagprefs").onclick = () => {
-	set_content("#tags ul", all_tags.map(tag => tag_element[tag.id] = LI({
-			"data-tagid": tag.id,
-			className: "tagpref" + (tag_prefs[tag.id] || 0)
-		}, [
-			BUTTON({className: "disliketag"}, "-"),
-			BUTTON({className: "liketag"}, "+"),
-			" ",
-			SPAN({className: tag.auto ? "tag autotag": "tag"}, tag.name),
-			tag.desc,
-		]
-	)));
-	DOM("#tags").showModal();
-}
+//TODO: Have a quick way to promote/demote a tag that you see in your follow list
+DOM("#tagprefs").onclick = () => {update_tag_display(); DOM("#tags").showModal();}
 
 function adornment(type) {
 	if (type === "partner") {
@@ -373,7 +381,7 @@ function build_follow_list() {
 					LI([A({href: stream.url}, [adornment(stream.broadcaster_type), stream.user_name]), " - ", B(stream.category)]),
 					LI({className: "streamtitle"}, stream.title),
 					LI([describe_uptime(stream), ", " + stream.viewer_count + " viewers"]),
-					LI(stream.tags.map(tag => SPAN({className: tag.auto ? "tag autotag" : "tag", "title": tag.desc}, tag.name + " "))),
+					LI({class: "no-indent"}, stream.tags.map(tag => [SPAN({className: "tag"}, tag), " "])),
 					LI([describe_notes(stream), describe_raid(stream.raids), raidbtn(stream)]),
 				]),
 				DIV({className: "img"}, A({href: "raidfinder?categories=" + encodeURIComponent(stream.category)},
