@@ -381,7 +381,7 @@ function build_follow_list() {
 					LI([A({href: stream.url}, [adornment(stream.broadcaster_type), stream.user_name]), " - ", B(stream.category)]),
 					LI({className: "streamtitle"}, stream.title),
 					LI([describe_uptime(stream), ", " + stream.viewer_count + " viewers"]),
-					LI({class: "no-indent"}, stream.tags.map(tag => [SPAN({className: "tag"}, tag), " "])),
+					LI({class: "no-indent"}, stream.tags && stream.tags.map(tag => [SPAN({className: "tag"}, tag), " "])),
 					LI([describe_notes(stream), describe_raid(stream.raids), raidbtn(stream)]),
 				]),
 				DIV({className: "img"}, A({href: "raidfinder?categories=" + encodeURIComponent(stream.category)},
