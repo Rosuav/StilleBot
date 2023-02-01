@@ -254,8 +254,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	array users = yield(get_users_info(highlightids));
 	highlights = users->login * "\n";
 	string title = "Followed streams";
-	//Category search - show all streams in the categories you follow
-	if (req->variables->raiders || req->variables->categories || req->variables->login || req->variables->train) {
+	//Special searches, which don't use your follow list (and may be possible without logging in)
+	if (req->variables->raiders || req->variables->categories || req->variables->login || req->variables->train || req->variables->highlights) {
 		mapping args = ([]);
 		if (req->variables->raiders) {
 			//Raiders mode (categories omitted but "?raiders" specified). Particularly useful with a for= search.
@@ -276,6 +276,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			}
 			sort(raidtimes, raiders);
 			args->user_id = raiders[<99..]; //Is it worth trying to support more than 100 raiders? Would need to paginate.
+		}
+		else if (req->variables->highlights) {
+			//Restrict your follow list to those you have highlighted.
+			args->user_id = (array(string))highlightids;
+			title = "Highlighted channels";
 		}
 		else if (req->variables->login == "demo") {
 			//Like specifying login= for each of the channels that I bot for
