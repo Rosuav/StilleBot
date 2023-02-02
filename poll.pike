@@ -339,31 +339,8 @@ continue Concurrent.Future cache_game_names(string game_id)
 	}
 }
 
-@export: continue Concurrent.Future|array translate_tag_ids(array tag_ids) {
-	array got_tags = ({ });
-	if (!G->G->all_stream_tags) {
-		G->G->all_stream_tags = ([]);
-		got_tags = yield(get_helix_paginated("https://api.twitch.tv/helix/tags/streams"));
-	}
-	else {
-		multiset need_tags = (<>);
-		foreach (tag_ids || ({ }), string tag)
-			if (!G->G->all_stream_tags[tag]) need_tags[tag] = 1;
-		if (sizeof(need_tags)) {
-			//Normally we'll have all the tags from the check up above, but in case, we catch more here.
-			write("Fetching %d tags...\n", sizeof(need_tags));
-			got_tags = yield(get_helix_paginated("https://api.twitch.tv/helix/tags/streams", (["tag_id": (array)need_tags])));
-		}
-	}
-	foreach (got_tags, mapping tag) G->G->all_stream_tags[tag->tag_id] = ([
-		"id": tag->tag_id,
-		"name": tag->localization_names["en-us"],
-		"desc": tag->localization_descriptions["en-us"],
-		"auto": tag->is_auto,
-	]);
-	//Every tag ID should now be in the cache, unless there's a bad ID or something.
-	return G->G->all_stream_tags[tag_ids[*]];
-}
+//Deprecated, will stop working before long, but isn't needed any more - the API can use new-style tags.
+@export: continue Concurrent.Future|array translate_tag_ids(array tag_ids) {return ({ });}
 
 int fetching_game_names = 0;
 //Attempt to construct a channel info mapping from the stream info
@@ -410,8 +387,8 @@ continue Concurrent.Future|mapping save_channel_info(string name, mapping info) 
 		synthesized = yield(get_channel_info(name));
 	}
 	synthesized->viewer_count = info->viewer_count;
-	synthesized->tags = yield(translate_tag_ids(info->tag_ids || ({ })));
-	synthesized->tag_names = sprintf("[%s]", synthesized->tags->name[*]) * ", ";
+	synthesized->tags = info->tags || ({ });
+	synthesized->tag_names = sprintf("[%s]", synthesized->tags[*]) * ", ";
 	int changed = 0;
 	foreach ("game status tag_names" / " ", string attr)
 		changed += synthesized[attr] != G->G->channel_info[name][?attr];
@@ -427,7 +404,7 @@ continue Concurrent.Future|mapping save_channel_info(string name, mapping info) 
 			"{category}": synthesized->game,
 			"{title}": synthesized->status,
 			"{tag_names}": synthesized->tag_names,
-			"{tag_ids}": synthesized->tags->id * ", ",
+			"{tag_ids}": "", //Deprecated - use the tag names (new-style tags have no IDs)
 		]));
 	}
 }

@@ -109,10 +109,6 @@
 * Replace bcaster_token[name] with user_token[id] and ditto scopes
   - Have a compatibility function that returns a promise and yields the token
     when the name has been translated into an ID
-* Raidfinder is currently only able to see old-style tags (with their IDs). When
-  the API grows support for new-style tags (free-form, max 10), try to support
-  both. Eventually, ditch old-style tags and leave them blank, rather than doing
-  the extra API calls to translate tag IDs to tag text.
 * Raidfinder: include your stream teams? Make it an option?
   - GET https://api.twitch.tv/helix/teams/channel?broadcaster_id=YOU
     - Cache the team IDs maybe, to reduce the number of API calls - most people

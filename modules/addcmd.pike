@@ -16,7 +16,7 @@ constant SPECIALS = ({
 	({"!charity", ({"Someone donates to the charity you're supporting", "The donor", "amount"}), "Stream support"}),
 
 	({"!channelonline", ({"The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
-	({"!channelsetup", ({"The channel is online and has recently changed its category/title/tags", "The broadcaster", "category, title, tag_ids, tag_names"}), "Status"}),
+	({"!channelsetup", ({"The channel is online and has recently changed its category/title/tags", "The broadcaster", "category, title, tag_names"}), "Status"}),
 	({"!channeloffline", ({"The channel has recently gone offline (stopped streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
 	({"!musictrack", ({"A track just started playing (see VLC integration)", "VLC", "desc, blockpath, block, track, playing"}), "Status"}),
 
@@ -48,8 +48,7 @@ constant SPECIAL_PARAMS = ({
 	({"uptime_hms", "(deprecated) Equivalent to {uptime|time_hms}"}),
 	({"uptime_english", "(deprecated) Equivalent to {uptime|time_english}"}),
 	({"category", "English name of the game or category being streamed in"}),
-	({"tag_ids", "Stream tag IDs eg '6ea6bca4-4712-4ab9-a906-e3336a9d8039, e90b5f6e-4c6e-4003-885b-4d0d5adeb580'"}),
-	({"tag_names", "Stream tag names eg '[English], [Family Friendly]'"}),
+	({"tag_names", "Stream tags eg '[English], [FamilyFriendly]' - should be searched case insensitively"}),
 	({"track", "Name of the audio file that's currently playing"}),
 	({"block", "Name of the section/album/block of tracks currently playing, if any"}),
 	({"blockpath", "Full path to the current block"}),
