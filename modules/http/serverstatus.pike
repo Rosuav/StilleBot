@@ -10,6 +10,7 @@ constant markdown = #"# StilleBot server status
 <style>
 .percent {
 	width: 2em;
+	display: inline-block;
 }
 .percent::after {
 	content: \"%\";

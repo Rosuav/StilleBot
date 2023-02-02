@@ -10,7 +10,7 @@ set_content("#content", [
 ]);
 if (location.hash === "#mini") {
 	const content = DOM("#content");
-	DOM("main").replaceWith(content);
+	DOM("main").replaceWith(content, DOM("main style"));
 	content.style.margin = "0";
 }
 
