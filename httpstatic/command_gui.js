@@ -330,7 +330,7 @@ const types = {
 		typedesc: "Capture message as a variable update. Can be accessed as $varname$ in this or any other command.",
 	},
 	set_variable: {
-		color: "#dd7777", label: el => `Set $${el.target}$ to ${el.message}`,
+		color: "#dd7777", label: el => el.message ? `Set $${el.target}$ to ${el.message}` : `Empty out $${el.target}$`,
 		params: [{attr: "dest", values: "/set"}, {attr: "target", label: "Variable name"}, {attr: "message", label: "New value"}],
 		typedesc: "Change a variable. Can be accessed as $varname$ in this or any other command.",
 	},

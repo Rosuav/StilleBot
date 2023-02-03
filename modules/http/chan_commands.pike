@@ -281,8 +281,8 @@ echoable_message _validate(echoable_message resp, mapping state)
 			//TODO: Keyword-synchronized cooldowns should synchronize their cdlengths too
 		}
 	}
-	else if (ret->message == "") {
-		//No message? Might be nothing to do.
+	else if (ret->message == "" && (!ret->dest || ret->dest == "/web" || ret->dest == "/w")) {
+		//No message? Might be nothing to do. (Though if there's a special destination, it might be okay.)
 		if (!ret->builtin) return "";
 		//But if there's a builtin, assume that it could have side effects.
 		ret->message = ([ //Synthesized "Handle Errors" element as per the GUI
