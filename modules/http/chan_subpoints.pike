@@ -110,7 +110,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		tierlist += ({sprintf("Tier %c: %d (%d)%s<br>\n", tier[0], tiers[tier] * count, count, gift)});
 	}
 	int uid = yield(get_user_id(chan)); //Should come from cache
-	mapping raw = yield(twitch_api_request("https://api.twitch.tv/helix/subscriptions?broadcaster_id=" + uid, ([]),
+	mapping raw = yield(twitch_api_request("https://api.twitch.tv/helix/subscriptions?broadcaster_id=" + uid,
 		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
 	return render(req, ([
 		"vars": (["ws_group": ""]),
