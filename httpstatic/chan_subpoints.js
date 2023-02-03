@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
 const {A, BUTTON, LABEL, INPUT, TR, TD} = choc;
-import {waitlate} from "$$static||utils.js$$";
+import {simpleconfirm} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#trackers tbody");
 export function render_item(msg, obj) {
@@ -40,7 +40,7 @@ on("click", ".savebtn", e => {
 	ws_sync.send(msg);
 });
 
-on("click", ".deletebtn", waitlate(1000, 7500, "Really delete?", e => {
+on("click", ".deletebtn", simpleconfirm("Delete this monitor?", e => {
 	ws_sync.send({cmd: "delete", id: e.match.closest("tr").dataset.id});
 }));
 

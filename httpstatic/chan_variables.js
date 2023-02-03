@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, TR, TD, UL, LI, B, INPUT, BUTTON} = choc;
-import {waitlate} from "$$static||utils.js$$";
+import {simpleconfirm} from "$$static||utils.js$$";
 
 function describe_usage(u) {
 	switch (u.type) {
@@ -34,6 +34,6 @@ on("click", ".setvalue", e => {
 	ws_sync.send({cmd: "update", id: tr.dataset.id, value: tr.querySelector(".value").value});
 });
 
-on("click", ".delete", waitlate(750, 5000, "Really delete?", e => {
+on("click", ".delete", simpleconfirm("Delete this variable?", e => {
 	ws_sync.send({cmd: "delete", id: e.match.closest("tr").dataset.id});
 }));

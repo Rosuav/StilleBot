@@ -1,6 +1,6 @@
 import {lindt, replace_content as set_content, DOM, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
 const {A, BUTTON, H2, IMG, LI, TIME, UL} = lindt; //autoimport
-import {waitlate} from "$$static||utils.js$$";
+import {simpleconfirm} from "$$static||utils.js$$";
 
 function channel_profile(chan) {
 	return A({href: "https://twitch.tv/" + chan.login}, [
@@ -70,7 +70,7 @@ on("click", ".reorder", e => {
 	ws_sync.send({cmd: "reorder", id: e.match.closest("li").dataset.id, "dir": +e.match.dataset.dir});
 });
 
-on("click", ".confirmdelete", waitlate(750, 5000, "Delete?", e => {
+on("click", ".confirmdelete", simpleconfirm("Delete?", e => {
 	ws_sync.send({cmd: "delete", id: e.match.closest("li").dataset.id});
 }));
 

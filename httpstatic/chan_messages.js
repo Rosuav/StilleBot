@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, BUTTON, IMG, LI, SPAN} = choc;
-import {waitlate} from "$$static||utils.js$$";
+import {simpleconfirm} from "$$static||utils.js$$";
 
 /* PROBLEM: With two connections (personal and mod-shared), there's no easy way
 to know which socket to send signals on. Each socket needs to get signals for
@@ -71,7 +71,8 @@ export function render(data) {
 	if (ctx_personal.lastread === -1) ws_sync.send({cmd: "mark_read", why: "startup"});
 }
 
-on("click", ".confirmdelete", waitlate(750, 5000, "Delete?", e => {
+//TODO: Have a bulk deletion option eg "tick, tick, tick, tick, delete, confirm once"
+on("click", ".confirmdelete", simpleconfirm("Delete this message?", e => {
 	const li = e.match.closest("li");
 	if (!li.dataset.id) li.replaceWith();
 	else if (!li.closest("#modmessages")) ws_sync.send({cmd: "delete", id: li.dataset.id});

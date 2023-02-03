@@ -1,6 +1,6 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {BUTTON, INPUT, LI, TR, TD} = choc;
-import {waitlate} from "$$static||utils.js$$";
+import {simpleconfirm} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#blocks tbody");
 export function render_item(block) {
@@ -74,7 +74,7 @@ on("click", "button.save", e => {
 	});
 });
 
-on("click", "#authreset", waitlate(2000, 10000, "Really reset credentials?", e => ws_sync.send({cmd: "authreset"})));
+on("click", "#authreset", simpleconfirm("Really reset credentials?", e => ws_sync.send({cmd: "authreset"})));
 
 DOM("#karaoke track").onload = e => {
 	if (e.target.readyState < 2) return;

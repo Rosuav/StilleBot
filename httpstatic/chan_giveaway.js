@@ -1,6 +1,6 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {DIV, H3, LI, SPAN} = choc;
-import {waitlate} from "$$static||utils.js$$";
+import {simpleconfirm} from "$$static||utils.js$$";
 
 const fields = "title cost desc max multi pausemode duration".split(" ");
 
@@ -95,4 +95,4 @@ on("click", ".master", async e => {
 	ws_sync.send({cmd: "master", action: e.match.id})
 });
 
-on("click", "#makenotifs", waitlate(2000, 10000, "CONFIRM: Create commands? Will overwrite any that exist!", e => ws_sync.send({cmd: "makenotifs"})));
+on("click", "#makenotifs", simpleconfirm("Create commands? Will overwrite any that exist!", e => ws_sync.send({cmd: "makenotifs"})));

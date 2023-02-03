@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
 const {BUTTON, DIV, LI, OL} = choc; //autoimport
-import {waitlate} from "$$static||utils.js$$";
+import {simpleconfirm} from "$$static||utils.js$$";
 
 const is_mod = { };
 mods.forEach(m => is_mod[m.user_id] = 1);
@@ -21,12 +21,12 @@ function update_leaders(periodicdata) {
 }
 update_leaders(periodicdata);
 
-on("click", ".addvip", waitlate(750, 5000, "CONFIRM: Add VIPs from this period?", e => {
+on("click", ".addvip", simpleconfirm("CONFIRM: Add VIPs from this period?", e => {
 	console.log("Adding!");
 	fetch("/bitsbadges?period=" + period + "&vip=" + e.match.closest("DIV").dataset.starttime);
 }));
 
-on("click", ".remvip", waitlate(750, 5000, "CONFIRM: Remove VIPs from this period?", e => {
+on("click", ".remvip", simpleconfirm("CONFIRM: Remove VIPs from this period?", e => {
 	console.log("Removing!");
 	fetch("/bitsbadges?period=" + period + "&unvip=" + e.match.closest("DIV").dataset.starttime);
 }));

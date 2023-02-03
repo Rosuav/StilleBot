@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {DIV, TR, TD, IMG, INPUT, TEXTAREA, BUTTON} = choc;
-import {waitlate} from "$$static||utils.js$$";
+import {simpleconfirm} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#voices tbody");
 export function render_item(item) {
@@ -34,6 +34,6 @@ on("click", ".save", e => {
 	ws_sync.send(msg);
 });
 
-on("click", ".delete", waitlate(750, 5000, "Really delete?", e => {
+on("click", ".delete", simpleconfirm("Deauthenticate this voice?", e => {
 	ws_sync.send({cmd: "delete", id: e.match.closest("tr").dataset.id});
 }));
