@@ -317,6 +317,15 @@ const types = {
 		params: [{attr: "dest", values: "/web"}, {attr: "target", label: "Recipient"}, {attr: "destcfg", label: "Response to 'Got it' button"}],
 		typedesc: ["Leave a ", A({href: "messages"}, "private message"), " for someone"],
 	},
+	chain_of_command: {
+		color: "#66ee66", label: el => "Chain to " + (el.target ? (el.target.startsWith("!") ? "" : "!") + el.target : "other command"),
+		params: [
+			{attr: "dest", values: "/chain"},
+			{attr: "target", label: "Command name"}, //TODO: Make this a drop-down
+			{attr: "destcfg", label: "Parameters"},
+		],
+		typedesc: ["Chain to another command (like calling a function)"],
+	},
 	incr_variable: {
 		color: "#dd7777", label: el => `Add ${el.message} to $${el.target}$`,
 		params: [{attr: "dest", values: "/set"}, {attr: "destcfg", values: "add"},
@@ -487,10 +496,11 @@ const tray_tabs = [
 			{type: "text", message: "@{param}, a secret message has been sent to you at: " + new URL("private", location.href).href},
 		]},
 	]},
-	{name: "Conditionals", color: "#bbbbf7", items: [
+	{name: "Control Flow", color: "#bbbbf7", items: [
 		{type: "conditional_contains", expr1: "/foo/bar/quux/", expr2: "/{param}/"},
 		{type: "conditional_number", expr1: "$deaths$ > 10"},
 		{type: "conditional_regexp", expr1: "[Hh]ello", expr2: "{param}"},
+		{type: "chain_of_command", target: "", destcfg: ""},
 		//NOTE: Even though they're internally conditionals too, cooldowns don't belong in this tray
 	]},
 	{name: "Advanced", color: "#bbffbb", items: [

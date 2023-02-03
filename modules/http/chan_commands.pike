@@ -194,7 +194,7 @@ mapping get_state(string group, string|void id) {
 //Blank or null is always allowed, and will result in no flag being set.
 constant message_flags = ([
 	"mode": (<"random", "rotate">),
-	"dest": (<"/w", "/web", "/set">),
+	"dest": (<"/w", "/web", "/set", "/chain">),
 ]);
 //As above, but applying only to the top level of a command.
 constant command_flags = ([
@@ -235,6 +235,18 @@ echoable_message _validate(echoable_message resp, mapping state)
 		//so remove that if this is missing; otherwise, any target works.
 		if (!resp->target) m_delete(ret, "dest");
 		else ret->target = resp->target;
+		if (ret->dest == "/chain") {
+			//Command chaining gets extra validation done. You may ONLY chain to
+			//echocommands from the current channel; but you may enter them with
+			//or without their leading exclamation marks.
+			sscanf(ret->target || "", "%*[!]%s", string cmd);
+			if (state->chan && !G->G->echocommands[cmd + "#" + state->chan])
+				//Attempting to chain to something that doesn't exist is invalid.
+				//TODO: Accept it if it's recursion (or maybe have a separate "chain
+				//to self" notation) to allow a new recursive command to be saved.
+				return "";
+			ret->target = cmd;
+		}
 	}
 	if (resp->dest == "/builtin" && resp->target) {
 		//A dest of "/builtin" is really a builtin. What a surprise :)
@@ -369,7 +381,7 @@ mapping(string:mixed) _syntax_check(mapping(string:mixed) msg, string|void cmdna
 array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string command, string chan);
 	object channel = G->G->irc->channels["#" + chan]; if (!channel) return 0;
-	mapping state = (["cmd": command, "cdanon": 0, "cooldowns": ([]), "voices": channel->config->voices || ([])]);
+	mapping state = (["cmd": command, "cdanon": 0, "cooldowns": ([]), "voices": channel->config->voices || ([]), "chan": chan]);
 	if (command == "!!trigger") {
 		echoable_message response = G->G->echocommands["!trigger#" + chan];
 		response += ({ }); //Force array, and disconnect it for mutation's sake

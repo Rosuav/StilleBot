@@ -394,7 +394,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			}
 			default: break; //including UNDEFINED which means unconditional, and 0 which means "condition already processed"
 		}
-		if (!msg || msg == "") return; //If a message doesn't have an Otherwise, it'll end up null.
+		if (!msg) return; //If a message doesn't have an Otherwise, it'll end up null.
 
 		if (mappingp(msg)) {_send_recursive(person, message | (["conditional": 0]) | msg, vars, cfg); return;}
 
@@ -419,6 +419,29 @@ class channel(string name) { //name begins with hash and is all lower case
 		string prefix = _substitute_vars(message->prefix || "", vars, person);
 		msg = _substitute_vars(msg, vars, person);
 		string dest = cfg->dest || "", target = cfg->target || "", destcfg = cfg->destcfg || "";
+
+		//Variable management. Note that these are silent, so commands may want to pair
+		//these with public messages. (Silence is perfectly acceptable for triggers.)
+		if (dest == "/set" && sscanf(target, "%[A-Za-z]", string var) && var && var != "")
+		{
+			vars["$" + var + "$"] = set_variable(var, msg, destcfg);
+			return;
+		}
+
+		if (echoable_message cmd = dest == "/chain" && G->G->echocommands[target + name]) {
+			//You know what the chain of command is? It's a chain that I get, and then
+			//I BREAK so that nobody else can ever be in command.
+			if (cfg->chaindepth) return; //For now, no chaining if already chaining - hard and fast rule.
+			//Note that cfg is completely independent in the chained-to command; the
+			//only value retained is the chaindepth itself. Everything else - voice
+			//selection, destination, etc - is reset to defaults as per the normal
+			//start of a command.
+			_send_recursive(person, cmd, vars, (["chaindepth": cfg->chaindepth + 1]));
+			return;
+		}
+
+		if (msg == "") return; //All other message destinations make no sense if there's no message.
+
 		if (dest == "/web")
 		{
 			if (target == "") return; //Attempting to send to a borked destination just silences it
@@ -467,16 +490,10 @@ class channel(string name) { //name begins with hash and is all lower case
 			}
 		}
 
-		//Variable management. Note that these are silent, so commands may want to pair
-		//these with public messages. (Silence is perfectly acceptable for triggers.)
-		if (dest == "/set" && sscanf(target, "%[A-Za-z]", string var) && var && var != "")
-		{
-			vars["$" + var + "$"] = set_variable(var, msg, destcfg);
-			return;
-		}
-
-		//The only remaining destination (other than open chat) is whispers, which are a command prefix.
+		//Whispers are handled with a command prefix.
 		if (dest == "/w") prefix = sprintf("%s %s %s", dest, target, prefix);
+		//Any other destination, just send it to open chat (there used to be a facility
+		//for sending to other channels, but this is no longer the case).
 
 		//Wrap to 500 characters to fit inside the Twitch limit
 		array msgs = ({ });
@@ -491,7 +508,6 @@ class channel(string name) { //name begins with hash and is all lower case
 		msgs += ({prefix + msg});
 
 		string voice = cfg->voice && cfg->voice != "" && cfg->voice;
-		if (voice) write("Selecting voice for %O\n", voice);
 		if (irc_connections[voice]) irc_connections[voice]->send(name, msgs[*]);
 		else spawn_task(voice_enable(voice, name, msgs));
 	}
