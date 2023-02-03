@@ -1,7 +1,7 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, BR, BUTTON, CODE, DIV, FIELDSET, LEGEND, LABEL, INPUT, TEXTAREA, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc; //autoimport
 import update_display from "$$static||monitor.js$$";
-import {waitlate, TEXTFORMATTING} from "$$static||utils.js$$";
+import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
 const editables = { };
 function set_values(nonce, info, elem) {
@@ -186,7 +186,7 @@ on("click", ".editbtn", e => {
 	dlg.showModal();
 });
 
-on("click", ".deletebtn", waitlate(1000, 7500, "Really delete?", async e => {
+on("click", ".deletebtn", simpleconfirm("Delete this monitor?", async e => {
 	const nonce = e.match.dataset.nonce;
 	console.log("Delete.");
 	const res = await fetch("monitors", {
