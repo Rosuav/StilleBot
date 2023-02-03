@@ -436,7 +436,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			//only value retained is the chaindepth itself. Everything else - voice
 			//selection, destination, etc - is reset to defaults as per the normal
 			//start of a command.
-			_send_recursive(person, cmd, vars, (["chaindepth": cfg->chaindepth + 1]));
+			_send_recursive(person, cmd, vars | (["%s": destcfg]), (["chaindepth": cfg->chaindepth + 1]));
 			return;
 		}
 
