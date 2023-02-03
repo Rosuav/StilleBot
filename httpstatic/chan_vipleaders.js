@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, DETAILS, DIV, FORM, H3, INPUT, LABEL, LI, OL, P, SPAN, SUMMARY, TABLE, TD, TH, TR} = choc; //autoimport
-import {waitlate} from "$$static||utils.js$$";
+import {simpleconfirm} from "$$static||utils.js$$";
 
 //TODO: Exclude anyone who's been banned, just in case
 
@@ -46,7 +46,7 @@ export function render(data) {
 			const bits = data.monthly["bits" + ym];
 			if (bits && bits.length > board_count) bits.length = board_count; //We display a limited number, but the back end tracks more
 			//IDs are set so you can, in theory, deep link. I doubt anyone will though.
-			rows.push(TR({"id": ym}, TH({colSpan: 2}, [
+			rows.push(TR({"id": ym, "data-period": monthnames[mon] + " " + year}, TH({colSpan: 2}, [
 				monthnames[mon] + " " + year,
 				mod && BUTTON({className: "addvip", title: "Add VIPs"}, "💎"),
 				mod && BUTTON({className: "remvip", title: "Remove VIPs"}, "X"),
@@ -104,12 +104,14 @@ export function render(data) {
 
 on("click", "#recalc", e => ws_sync.send({cmd: "recalculate"}));
 
-on("click", ".addvip", waitlate(750, 5000, "CONFIRM: Add VIPs for this period?", e =>
-	ws_sync.send({cmd: "addvip", "yearmonth": e.match.closest("TR").id})
+on("click", ".addvip", simpleconfirm(
+	e => "Add VIPs earned during " + e.match.closest("TR").dataset.period + "?",
+	e => ws_sync.send({cmd: "addvip", "yearmonth": e.match.closest("TR").id}),
 ));
 
-on("click", ".remvip", waitlate(750, 5000, "CONFIRM: Remove VIPs for this period?", e =>
-	ws_sync.send({cmd: "remvip", "yearmonth": e.match.closest("TR").id})
+on("click", ".remvip", simpleconfirm(
+	e => "Remove VIPs earned during " + e.match.closest("TR").dataset.period + "?",
+	e => ws_sync.send({cmd: "remvip", "yearmonth": e.match.closest("TR").id}),
 ));
 
 on("click", "#activate,#deactivate", e => ws_sync.send({cmd: "configure", "active": e.match.id === "activate"}));

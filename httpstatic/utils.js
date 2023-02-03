@@ -52,7 +52,7 @@ export function simpleconfirm(confirmdesc, callback) {
 	return e => {
 		simpleconfirm_callback = callback; simpleconfirm_arg = e;
 		if (e && e.match) simpleconfirm_match = e.match;
-		set_content("#simpleconfirmdesc", typeof confirmdesc === "string" ? confirmdesc : confirmdesc());
+		set_content("#simpleconfirmdesc", typeof confirmdesc === "string" ? confirmdesc : confirmdesc(e));
 		DOM("#simpleconfirmdlg").showModal();
 	};
 }
