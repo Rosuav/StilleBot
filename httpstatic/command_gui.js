@@ -386,8 +386,8 @@ const types = {
 		params: [{attr: "conditional", values: "cooldown"},
 			{attr: "cdlength", label: "Delay (seconds)", values: [1, 7200, 1]}, //TODO: Support hh:mm:ss and show it that way for display
 			{attr: "cdname", label: "Tag (optional)", values: cooldown_name}],
-		typedesc: "Prevent the command from being used too quickly. If it's been used recently, the second block happens instead. "
-			+ "To have several commands share a cooldown, put the same tag in each one (any word or phrase will do).",
+		typedesc: ["Prevent the command from being used too quickly. If it's been used recently, the second block happens instead.",
+			BR(), "To have several commands share a cooldown, put the same tag in each one (any word or phrase will do)."],
 	},
 	randrot: {
 		color: "#ee7777", children: ["message"], label: el => el.mode === "rotate" ? "Rotate" : "Randomize",
