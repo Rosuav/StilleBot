@@ -106,6 +106,11 @@ continue Concurrent.Future voice_enable(string voiceid, string chan, array(strin
 	conn->enqueue(conn->no_reconnect); //Once everything's sent, it's okay to disconnect
 }
 
+string subtier(string plan) {
+	if (plan == "Prime") return "1";
+	return plan[0..0]; //Plans are usually 1000, 2000, 3000 - I don't know if they're ever anything else?
+}
+
 class channel(string name) { //name begins with hash and is all lower case
 	string color;
 	mapping config = ([]);
@@ -655,29 +660,32 @@ class channel(string name) { //name begins with hash and is all lower case
 					//	name, person->displayname, person->user, params);
 					break;
 				}
-				//TODO: Handle sub plans better, esp since "Prime" should count as tier 1
-				case "sub":
+				case "sub": {
+					string tier = subtier(params->msg_param_sub_plan);
 					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
 					trigger_special("!sub", person, ([
-						"{tier}": params->msg_param_sub_plan[0..0],
+						"{tier}": tier,
 						"{multimonth}": params->msg_param_multimonth_duration || "1",
 						//There's also msg_param_multimonth_tenure - what happens when they get announced? Does duration remain and tenure count up?
 					]));
-					runhooks("subscription", 0, this, "sub", person, params->msg_param_sub_plan[0..0], 1, params);
-					event_notify("subscription", this, "sub", person, params->msg_param_sub_plan[0..0], 1, params, "");
+					runhooks("subscription", 0, this, "sub", person, tier, 1, params);
+					event_notify("subscription", this, "sub", person, tier, 1, params, "");
 					break;
-				case "resub":
+				}
+				case "resub": {
+					string tier = subtier(params->msg_param_sub_plan);
 					Stdio.append_file("subs.log", sprintf("\n%sDEBUG RESUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
 					trigger_special("!resub", person, ([
-						"{tier}": params->msg_param_sub_plan[0..0],
+						"{tier}": tier,
 						"{months}": params->msg_param_cumulative_months,
 						"{streak}": params->msg_param_streak_months || "",
 						"{multimonth}": params->msg_param_multimonth_duration || "1", //Ditto re tenure
 						"{msg}": msg,
 					]));
-					runhooks("subscription", 0, this, "resub", person, params->msg_param_sub_plan[0..0], 1, params);
-					event_notify("subscription", this, "resub", person, params->msg_param_sub_plan[0..0], 1, params, msg);
+					runhooks("subscription", 0, this, "resub", person, tier, 1, params);
+					event_notify("subscription", this, "resub", person, tier, 1, params, msg);
 					break;
+				}
 				case "giftpaidupgrade": break; //Pledging to continue a subscription (first introduced for the Subtember special in 2018, and undocumented)
 				case "anongiftpaidupgrade": break; //Ditto but when the original gift was anonymous
 				case "primepaidupgrade": break; //Similar to the above - if you were on Prime but now pledge to continue, which could be done half price Subtember 2019.
@@ -685,6 +693,7 @@ class channel(string name) { //name begins with hash and is all lower case
 				case "communitypayforward": break; //X is paying forward the Gift they got from Y to the community!
 				case "subgift":
 				{
+					string tier = subtier(params->msg_param_sub_plan);
 					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBGIFT: chan %s id %O bomb %d\n", ctime(time()), name, params->msg_param_origin_id, subbomb_ids[params->msg_param_origin_id]));
 					//Note: Sub bombs get announced first, followed by their individual gifts.
 					//It may be that the msg_param_origin_id is guaranteed unique, but in case
@@ -698,7 +707,7 @@ class channel(string name) { //name begins with hash and is all lower case
 						params->msg_param_months, params->msg_param_recipient_display_name,
 						params->msg_param_gift_months);*/
 					trigger_special("!subgift", person, ([
-						"{tier}": params->msg_param_sub_plan[0..0],
+						"{tier}": tier,
 						"{months}": params->msg_param_cumulative_months || params->msg_param_months || "1",
 						"{streak}": params->msg_param_streak_months || "",
 						"{recipient}": params->msg_param_recipient_display_name,
@@ -708,12 +717,13 @@ class channel(string name) { //name begins with hash and is all lower case
 					//Other params: login, user_id, msg_param_recipient_user_name, msg_param_recipient_id,
 					//msg_param_sender_count (the total gifts this person has given in this channel)
 					//Remember that all params are strings, even those that look like numbers
-					runhooks("subscription", 0, this, "subgift", person, params->msg_param_sub_plan[0..0], 1, params);
-					event_notify("subscription", this, "subgift", person, params->msg_param_sub_plan[0..0], 1, params, "");
+					runhooks("subscription", 0, this, "subgift", person, tier, 1, params);
+					event_notify("subscription", this, "subgift", person, tier, 1, params, "");
 					break;
 				}
 				case "submysterygift":
 				{
+					string tier = subtier(params->msg_param_sub_plan);
 					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBBOMB: chan %s person %O count %O id %O\n", ctime(time()), name, person, params->msg_param_mass_gift_count, params->msg_param_origin_id));
 					subbomb_ids[params->msg_param_origin_id] += (int)params->msg_param_mass_gift_count;
 					/*write("DEBUG SUBGIFT: chan %s disp %O user %O gifts %O multi %O\n",
@@ -721,14 +731,14 @@ class channel(string name) { //name begins with hash and is all lower case
 						params->msg_param_mass_gift_count,
 						params->msg_param_gift_months);*/
 					trigger_special("!subbomb", person, ([
-						"{tier}": params->msg_param_sub_plan[0..0],
+						"{tier}": tier,
 						"{gifts}": params->msg_param_mass_gift_count,
 						//TODO: See if this can actually happen, and if not, drop it
 						"{multimonth}": params->msg_param_gift_months || "1",
 					]));
-					runhooks("subscription", 0, this, "subbomb", person, params->msg_param_sub_plan[0..0],
+					runhooks("subscription", 0, this, "subbomb", person, tier,
 						(int)params->msg_param_mass_gift_count, params);
-					event_notify("subscription", this, "subbomb", person, params->msg_param_sub_plan[0..0],
+					event_notify("subscription", this, "subbomb", person, tier,
 						(int)params->msg_param_mass_gift_count, params, "");
 					break;
 				}
