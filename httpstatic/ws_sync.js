@@ -79,7 +79,7 @@ export function connect(group, handler)
 				if (items) {
 					set_content(autorender[type + "_parent"], items.map(it => {
 						const obj = autorender[type](it);
-						obj.dataset.id = it.id;
+						if (obj) obj.dataset.id = it.id;
 						return obj;
 					}));
 					if (!items.length && autorender[type + "_empty"]) autorender[type + "_emptydesc"] = autorender[type + "_empty"]();
