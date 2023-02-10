@@ -1,13 +1,46 @@
-inherit http_endpoint;
+inherit http_websocket;
 //TODO: Check for multi-response commands and show them better, esp in nonmod view
 //TODO: List all automated commands for this channel (iterate over G->G->echocommands),
 //showing their repeat rates or target times, and either having a gear button to open
 //the command editor, or at very least, a link that opens ./commands#commandname in a
 //new tab/window.
-//TODO: If a mod, live-update this based on updates to the commands list. 
+
+constant markdown = #"# Automated commands for $$channel$$
+
+Specify the time as `50-60` to mean a random range of times, or as `14:40` to mean that
+exact time (in your timezone). Automated commands will be sent only if the channel is
+online at that time.
+
+Frequency | Command | Output |
+----------|---------|--------|-
+loading... | - | - | -
+{: #commandview}
+
+Create new autocommands with [!repeat](https://rosuav.github.io/StilleBot/commands/repeat)
+and remove them with [!unrepeat](https://rosuav.github.io/StilleBot/commands/repeat).
+Autocommands can either display text, or execute a command. It's usually easiest to tie
+each autocommand to an [echo command](commands).
+
+<style>
+table {width: 100%;}
+th, td {width: max-content; white-space: nowrap;}
+th:nth-of-type(3), th:nth-of-type(3) {width: 100%;}
+code {overflow-wrap: anywhere;}
+</style>
+";
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
+	if (req->variables->live) {
+		if (!req->misc->is_mod) return redirect("commands");
+		return render(req, ([
+			"vars": (["ws_type": "chan_commands", "ws_group": "", "ws_code": "chan_repeats",
+				"complex_templates": G->G->commands_complex_templates, "builtins": G->G->commands_builtins,
+				"pointsrewards": G->G->pointsrewards[req->misc->channel->name[1..]] || ({ }),
+				"voices": req->misc->channel->config->voices || ([]),
+			]),
+		]) | req->misc->chaninfo);
+	}
 	mapping ac = req->misc->channel->config->autocommands;
 	array repeats = ({ }), messages = ({ });
 	object user = user_text();
