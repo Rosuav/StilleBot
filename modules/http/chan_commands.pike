@@ -433,6 +433,15 @@ array _validate_command(object channel, string command, string cmdname, echoable
 	return ({command, validate(response, state), state});
 }
 
+//TODO: Move this out of chan_commands along with everything it depends on.
+//This function should not depend on anything web or websocket-specific.
+//TODO: Remove the original parameter and have anything capable of renaming
+//add it directly to state, so addcmd can purge old versions of a command.
+void update_command(object channel, string command, string cmdname, echoable_message response, string|void original) {
+	array valid = _validate_command(channel, command, cmdname, response, original);
+	if (valid && valid[1] != "") make_echocommand(@valid);
+}
+
 array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string command, string chan);
 	object channel = G->G->irc->channels["#" + chan]; if (!channel) return 0;
@@ -468,4 +477,8 @@ void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) ms
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[1]]), 4));
 }
 
-protected void create(string name) {::create(name); call_out(find_builtins, 0);}
+protected void create(string name) {
+	::create(name);
+	call_out(find_builtins, 0);
+	G->G->update_command = update_command; //TODO: Migrate this into addcmd.pike or somewhere
+}

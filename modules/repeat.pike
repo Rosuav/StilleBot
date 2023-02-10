@@ -99,28 +99,26 @@ echoable_message process(object channel, mapping person, string param)
 	else if (sscanf(param, "%d %s", int m, msg) && msg)
 		mins = ({m, m, 0}); //Repeated exactly every X minutes
 	if (!mins) return "Check https://rosuav.github.io/StilleBot/commands/repeat for usage information.";
-	//TODO: If it's a command, edit the command's automate attribute.
-	mapping ac = channel->config->autocommands || ([]);
-	string key = channel->name + " " + msg; //Old-style key (not used for new-style repeats)
+	if (mixed id = m_delete(G->G->autocommands, channel->name + " " + msg))
+		remove_call_out(id); //Old-style key (not used for new-style repeats)
+	mapping ac = channel->config->autocommands || ([]); //Legacy autocommands table
 	if (mins[0] < 0 && ac[msg])
 	{
 		//Remove an old-style repeat. This can be done even if it's not a command, in case
 		//someone has legacy data lying around. It will need to be manually migrated.
 		m_delete(ac, msg);
-		if (mixed id = m_delete(G->G->autocommands, key))
-			remove_call_out(id);
 		persist_config->save();
 		return "Repeated command disabled.";
 	}
 	//Currently, if you say "!repeat 20-30 commandname", it will error out rather than
-	//search for "!commandname". Would be convenient if it could search, do this later.
+	//search for "!commandname". Would be convenient if it could search; do this later.
 	if (!msg || msg == "" || msg[0] != '!') return "Usage: !repeat x-y !commandname - see https://rosuav.github.io/StilleBot/commands/repeat";
 	echoable_message command = G->G->echocommands[msg[1..] + channel->name];
 	if (mins[0] < 0) {
 		if (!mappingp(command) || !command->automate) return "That message wasn't being repeated, and can't be cancelled";
 		//Copy the command, remove the automation, and do a standard validation
-		command -= (<"automate">);
-		return "unimpl";
+		G->G->update_command(channel, "", msg, command - (<"automate">));
+		return "Command will no longer run automatically.";
 	}
 	if (!command) return "Command not found (add it using !addcmd first)";
 	switch (mins[2])
@@ -135,12 +133,10 @@ echoable_message process(object channel, mapping person, string param)
 			break;
 		default: return "Huh?"; //Shouldn't happen
 	}
-	if (mixed id = m_delete(G->G->autocommands, key))
-		remove_call_out(id);
-	ac[msg] = mins;
-	G->G->autocommands[key] = call_out(autospam, seconds(mins, channel->config->timezone), channel->name, msg);
+	G->G->update_command(channel, "", msg, command | (["automate": mins]));
+	G->G->autocommands[msg[1..] + channel->name] = call_out(autospam, seconds(mins, channel->config->timezone), channel->name, msg);
 	persist_config->save();
-	return "Added to the repetition table.";
+	return "Command " + msg + " will now be run automatically.";
 }
 
 echoable_message unrepeat(object channel, mapping person, string param)
