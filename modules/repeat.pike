@@ -5,11 +5,11 @@ constant require_moderator = 1;
 constant docstring = #"
 Add a repeated command (autocommand) for this channel
 
-Usage: `!repeat minutes text-to-send` or `!repeat minutes !command`
+Usage: `!repeat minutes !command`
 
 Creates an automated command for this channel. Every N minutes (randomized
 a little each way to avoid emitting text in lock-step) while the channel is
-live, the text will be sent to the channel, or the command will be run.
+live, the command will be run.
 The time delay must be at least 5 minutes, but anything less than 20-30 mins
 will be too spammy for most channels. Use this feature responsibly.
 
@@ -17,8 +17,8 @@ Commands can also be scheduled at a particular time (interpreted within your
 configured time zone). If the channel is live at that time, the command will
 be sent.
 
-It's generally best to create autocommands based on [echo commands](addcmd),
-as this will allow your mods and/or viewers to access the information directly
+Automated commands are defined as [echo commands](addcmd), which conveniently
+allows your mods and/or viewers to access the information directly
 rather than waiting for the bot to offer it voluntarily. This also makes any
 reconfiguration easy, as the autocommand is simple and easy to type.
 
@@ -30,9 +30,9 @@ Example: `!repeat 21:55 !raid` - remind you to go raiding at approx ending time
 
 ---
 
-Usage: `!unrepeat text-to-send` or `!unrepeat !command`
+Usage: `!unrepeat !command`
 
-Remove an autocommand. The command or text must exactly match something that
+Remove an autocommand. The command must exactly match something that
 was previously set to repeat.
 
 Both of these commands can be used while the channel is offline, but the
@@ -100,22 +100,23 @@ echoable_message process(object channel, mapping person, string param)
 		mins = ({m, m, 0}); //Repeated exactly every X minutes
 	if (!mins) return "Check https://rosuav.github.io/StilleBot/commands/repeat for usage information.";
 	//TODO: If it's a command, edit the command's automate attribute.
-	//TODO: If it's NOT a command, create a command, with the automation set, and report
-	//to the user what the command was called. If unrepeating, suggest removing the command
-	//instead. Most people will prob use the web interface anyway.
 	mapping ac = channel->config->autocommands;
 	if (!ac) ac = channel->config->autocommands = ([]);
 	string key = channel->name + " " + msg;
-	if (mins[0] < 0)
+	if (mins[0] < 0 && ac[msg])
 	{
-		//Normally spelled "!unrepeat some-message" but you can do it
-		//as "!repeat -1 some-message" if you really want to
-		if (!m_delete(ac, msg)) return "That message wasn't being repeated, and can't be cancelled";
+		//Remove an old-style repeat. This can be done even if it's not a command, in case
+		//someone has legacy data lying around. It will need to be manually migrated.
+		m_delete(ac, msg);
 		if (mixed id = m_delete(G->G->autocommands, key))
 			remove_call_out(id);
 		persist_config->save();
 		return "Repeated command disabled.";
 	}
+	//Currently, if you say "!repeat 20-30 commandname", it will error out rather than
+	//search for "!commandname". Would be convenient if it could search, do this later.
+	if (!msg || msg == "" || msg[0] != '!') return "Usage: !repeat x-y !commandname - see https://rosuav.github.io/StilleBot/commands/repeat";
+	if (mins[0] < 0) return "That message wasn't being repeated, and can't be cancelled";
 	switch (mins[2])
 	{
 		case 0:
@@ -144,8 +145,7 @@ echoable_message unrepeat(object channel, mapping person, string param)
 @hook_channel_online: int connected(string channel)
 {
 	mapping cfg = persist_config["channels"][channel];
-	if (!cfg->autocommands) return 0;
-	foreach (cfg->autocommands; string msg; int|array(int) mins)
+	if (cfg->autocommands) foreach (cfg->autocommands; string msg; int|array(int) mins)
 	{
 		string key = "#" + channel + " " + msg;
 		mixed id = G->G->autocommands[key];
@@ -167,6 +167,7 @@ void check_autocommands()
 	//No need to worry about channels being offline; they'll be caught at next repeat.
 	foreach (G->G->autocommands; string key; mixed id)
 	{
+		//Clean up any from the autocommands table (not counting those from echocommands' automate attributes)
 		if (sscanf(key, "%s %s", string channel, string msg) == 2) {
 			mapping cfg = persist_config["channels"][channel[1..]];
 			if (!cfg || !cfg->autocommands[msg])
