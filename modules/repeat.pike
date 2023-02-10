@@ -100,9 +100,8 @@ echoable_message process(object channel, mapping person, string param)
 		mins = ({m, m, 0}); //Repeated exactly every X minutes
 	if (!mins) return "Check https://rosuav.github.io/StilleBot/commands/repeat for usage information.";
 	//TODO: If it's a command, edit the command's automate attribute.
-	mapping ac = channel->config->autocommands;
-	if (!ac) ac = channel->config->autocommands = ([]);
-	string key = channel->name + " " + msg;
+	mapping ac = channel->config->autocommands || ([]);
+	string key = channel->name + " " + msg; //Old-style key (not used for new-style repeats)
 	if (mins[0] < 0 && ac[msg])
 	{
 		//Remove an old-style repeat. This can be done even if it's not a command, in case
@@ -116,7 +115,14 @@ echoable_message process(object channel, mapping person, string param)
 	//Currently, if you say "!repeat 20-30 commandname", it will error out rather than
 	//search for "!commandname". Would be convenient if it could search, do this later.
 	if (!msg || msg == "" || msg[0] != '!') return "Usage: !repeat x-y !commandname - see https://rosuav.github.io/StilleBot/commands/repeat";
-	if (mins[0] < 0) return "That message wasn't being repeated, and can't be cancelled";
+	echoable_message command = G->G->echocommands[msg[1..] + channel->name];
+	if (mins[0] < 0) {
+		if (!mappingp(command) || !command->automate) return "That message wasn't being repeated, and can't be cancelled";
+		//Copy the command, remove the automation, and do a standard validation
+		command -= (<"automate">);
+		return "unimpl";
+	}
+	if (!command) return "Command not found (add it using !addcmd first)";
 	switch (mins[2])
 	{
 		case 0:
