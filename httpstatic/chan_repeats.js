@@ -10,6 +10,7 @@ cmd_configure({
 		check_save();
 		return {type: "anchor_command"};
 	},
+	location_format: (cmd_id, tab) => null, //Disable insertion of command IDs into the location hash
 });
 
 function check_save() {DOM("#save_advanced").disabled = DOM("#cmdname").value.replace("!", "").trim() === "";}

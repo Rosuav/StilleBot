@@ -79,7 +79,9 @@ function try_gui_load_message(basis, editing) {
 
 function select_tab(tab, response) {
 	mode = tab; cmd_editing = response;
-	history.replaceState(null, "", "#" + cmd_id.split("#")[0].replace("!", "") + "/" + tab);
+	const hash = config.location_format ? config.location_format(cmd_id, tab)
+		: cmd_id.split("#")[0].replace("!", "") + "/" + tab;
+	if (typeof hash === "string") history.replaceState(null, "", "#" + hash);
 	DOM("#command_frame").style.display = tab == "graphical" ? "block" : "none"; //Hack - hide and show the GUI rather than destroying and creating it.
 	switch (tab) {
 		case "classic": cls_load_message(cmd_basis, cmd_editing); break;
@@ -110,6 +112,7 @@ export function open_advanced_view(cmd, tab) {
 }
 
 //Can't use on() for this as the event doesn't bubble
+//TODO: If config.location_format always returns null, don't clear history hash??
 DOM("#advanced_view").addEventListener("close", () => history.replaceState(null, "", " "));
 
 on("click", "#save_advanced", async e => {
