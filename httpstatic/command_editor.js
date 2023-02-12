@@ -146,7 +146,7 @@ let pending_command = null;
 if (location.hash && location.hash.includes("/")) pending_command = location.hash.slice(1).split("/", 2);
 
 //Command summary view
-function scan_message(msg, msgstatus, parent, key) {
+export function scan_message(msg, msgstatus, parent, key) {
 	if (typeof msg === "string") {
 		if (msgstatus.replacetext) parent[key] = msgstatus.replacetext;
 		if (msg === "") return null;
@@ -173,7 +173,7 @@ function scan_message(msg, msgstatus, parent, key) {
 	}
 	return scan_message(msg.message, msgstatus, msg, "message");
 }
-export function render_command(msg, extracol) {
+export function render_command(msg) {
 	//All commands are objects with (at a minimum) an id and a message.
 	//A simple command is one which is non-conditional and has a single message. Anything
 	//else is a non-simple command and will be non-editable in the table - it can only be
@@ -202,7 +202,6 @@ export function render_command(msg, extracol) {
 		pending_command = null;
 	}
 	return TR({"data-id": msg.id, "data-editid": editid}, [
-		extracol && extracol(msg),
 		TD(CODE("!" + msg.id.split("#")[0])),
 		TD(response),
 		TD(BUTTON({type: "button", className: "advview", title: "Open editor"}, "\u2699")),
