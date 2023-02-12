@@ -159,7 +159,7 @@ function scan_message(msg, msgstatus, parent, key) {
 	if (!msg || typeof msg !== "object") return null; //Not sure what this could mean, but we can't handle it. Probably a null entry or something.
 	if (msg.dest === "/w") msgstatus.whisper = true;
 	else if (msg.dest) return null; //Anything with a special destination (eg Variable, Private Message) shouldn't be shown this way.
-	if (msg.mode === "random") msgstatus.oneof = true;
+	if (msg.mode) msgstatus.oneof = true; //Both rotate and random count as "one of these messages"
 	if (msg.conditional && msg.conditional !== "cooldown") {
 		//Combine both the branches of the conditional and, if there's only one thing
 		//to say, assume we say that. (A conditional that sometimes suppresses, or a
