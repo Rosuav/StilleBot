@@ -221,9 +221,9 @@ const types = {
 					).join(", ") + "...";
 			}
 		},
-		typedesc: "This is how everything starts. Drag flags onto this to apply them. "
-			+ "Restricting access affects who may type the command, but it may still "
-			+ "be invoked in other ways even if nobody has access.",
+		typedesc: ["This is how everything starts. Drag flags onto this to apply them. "
+			+ "Restricting access affects who may", BR(), "type the command, but it may still "
+			+ "be invoked in other ways even if nobody has access."],
 		params: [
 			{attr: "aliases", label: "Aliases", values: {...default_handlers,
 				normalize: val => (val||"").replace(/!/g, ""),
