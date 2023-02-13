@@ -32,27 +32,41 @@ export function render_item(msg) {
 		: mate[0] === mate[1] ? ""+mate[0]
 		: mate[0] + "-" + mate[1];
 	return TR({"data-id": msg.id, "data-editid": msg.id}, [
-		TD(INPUT({value: target, class: "automate narrow"})),
 		TD(CODE("!" + msg.id.split("#")[0])),
+		TD(INPUT({value: target, class: "automate narrow"})),
 		TD({class: "wrap"}, response),
 		TD(BUTTON({type: "button", className: "advview", title: "Open editor"}, "\u2699")),
 	]);
 }
 export function render(data) {
-	return;
-	//TODO: Have an add that does something like this but not so generic
 	if (DOM("#addcmd")) render_parent.appendChild(DOM("#addcmd").closest("TR")); //Move to end w/o disrupting anything
 	else render_parent.appendChild(TR([
-		TD(CODE("--")),
-		TD(["Add: ", INPUT({id: "newcmd_name", size: 10, placeholder: "!hype"})]),
-		TD(INPUT({id: "newcmd_resp", className: "widetext"})),
+		TD("Add new"),
+		TD(INPUT({id: "newcmd_automate", class: "automate narrow"})),
+		TD(INPUT({id: "newcmd_resp", class: "widetext"})),
 		TD(BUTTON({type: "button", id: "addcmd"}, "Add")),
 	]));
 }
 
+function addcmd(mode) {
+	const automate = DOM("#newcmd_automate").value, response = DOM("#newcmd_resp").value;
+	DOM("#newcmd_automate").value = DOM("#newcmd_resp").value = "";
+	//Generate a command name: "!autoNN" where NN increments till it isn't found
+	let cmdname;
+	for (let i = 1; commands[(cmdname = "auto" + i) + ws_group]; ++i) ;
+	if (automate !== "" && response !== "") {
+		ws_sync.send({cmd: "update", cmdname, response: {automate, access: "none", message: response}});
+		DOM("#newcmd_automate").closest("tr").classList.remove("dirty");
+	}
+	else if (mode !== "saveall" || automate || response)
+		open_advanced_view({automate, access: "none", message: response, id: cmdname, template: true});
+}
+on("click", "#addcmd", addcmd);
+
 //Very similar to, but not compatible with, #saveall handling in command_editor.js
 on("click", "#savechanges", e => {
 	e.preventDefault();
+	addcmd("saveall");
 	document.querySelectorAll("tr.dirty[data-id]").forEach(tr => {
 		const msg = tr.querySelector("input.text").value;
 		if (!msg) {

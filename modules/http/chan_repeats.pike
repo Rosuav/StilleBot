@@ -11,8 +11,8 @@ Specify the time as `50-60` to mean a random range of times, or as `14:40` to me
 exact time (in your timezone). Automated commands will be sent only if the channel is
 online at that time.
 
-Frequency | Command | Output |
-----------|---------|--------|-
+Command | Frequency | Output |
+--------|-----------|--------|-
 loading... | - | - | -
 {: #commandview}
 
