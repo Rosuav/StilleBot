@@ -60,6 +60,7 @@ export function render(data) {
 		set_content(parent, rows);
 	}
 	if (data.timezone) DOM("input[name=timezone]").value = data.timezone;
+	if (data.flags) Object.entries(data.flags).forEach(([flg, state]) => DOM('.flag[name="' + flg + '"]').checked = state);
 }
 
 on("change", ".featurestate", e => {
@@ -72,6 +73,10 @@ on("click", ".enabl_activate", e => {
 
 on("click", ".enabl_deactivate", e => {
 	ws_sync.send({cmd: "enable", id: e.match.closest("tr").dataset.id, "state": false});
+});
+
+on("click", "input[type=checkbox].flag", e => {
+	ws_sync.send({cmd: "enable", id: e.match.name, "state": e.match.checked});
 });
 
 /* TODO: Replace this boring input+button with a nice dialog.
