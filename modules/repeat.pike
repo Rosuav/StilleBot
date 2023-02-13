@@ -73,9 +73,9 @@ void autospam(string channel, string msg)
 	mapping cfg = persist_config["channels"][channel[1..]];
 	if (!cfg) return; //Channel no longer configured
 	echoable_message response = G->G->echocommands[msg[1..] + channel];
-	int|array(int) mins = (mappingp(response) && response->automate) || cfg->autocommands[msg];
+	int|array(int) mins = (mappingp(response) && response->automate) || cfg->autocommands[?msg];
 	if (!mins) return; //Autocommand disabled
-	string key = cfg->autocommands[msg] ? channel + " " + msg : msg[1..] + channel;
+	string key = cfg->autocommands[?msg] ? channel + " " + msg : msg[1..] + channel;
 	G->G->autocommands[key] = call_out(autospam, seconds(mins, cfg->timezone), channel, msg);
 	if (response) msg = response;
 	string me = persist_config["ircsettings"]->nick;
