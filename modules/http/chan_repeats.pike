@@ -16,6 +16,8 @@ Frequency | Command | Output |
 loading... | - | - | -
 {: #commandview}
 
+[Save changes](:#savechanges)
+
 Create new autocommands with [!repeat](https://rosuav.github.io/StilleBot/commands/repeat)
 and remove them with [!unrepeat](https://rosuav.github.io/StilleBot/commands/repeat).
 Autocommands can either display text, or execute a command. It's usually easiest to tie
@@ -23,7 +25,7 @@ each autocommand to an [echo command](commands).
 
 <style>
 table {width: 100%;}
-th, td {width: max-content; white-space: nowrap;}
+th, td:not(.wrap) {width: max-content; white-space: nowrap;}
 th:nth-of-type(3), th:nth-of-type(3) {width: 100%;}
 code {overflow-wrap: anywhere;}
 </style>

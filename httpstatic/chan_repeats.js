@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, CODE, INPUT, TD, TR} = choc; //autoimport
+const {BR, BUTTON, CODE, EM, INPUT, TD, TR} = choc; //autoimport
 import {sockmsg_validated, scan_message, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 export {sockmsg_validated};
 
@@ -23,7 +23,7 @@ export function render_item(msg) {
 	const msgstatus = { };
 	let simpletext = scan_message(msg, msgstatus);
 	if (msgstatus.oneof) response.push(EM("One of:"), BR());
-	if (typeof simpletext === "string") response.push(INPUT({value: simpletext, className: "widetext"}));
+	if (typeof simpletext === "string") response.push(INPUT({value: simpletext, class: "text widetext"}));
 	else if (!simpletext) response.push(CODE("(Special command, unable to summarize)")); //Not going to be common. Get some examples before rewording this.
 	else simpletext.forEach(m => response.push(CODE(m), BR()));
 	commands[msg.id] = msg;
@@ -32,9 +32,9 @@ export function render_item(msg) {
 		: mate[0] === mate[1] ? ""+mate[0]
 		: mate[0] + "-" + mate[1];
 	return TR({"data-id": msg.id, "data-editid": msg.id}, [
-		TD(INPUT({value: target, class: "narrow"})),
+		TD(INPUT({value: target, class: "automate narrow"})),
 		TD(CODE("!" + msg.id.split("#")[0])),
-		TD(response),
+		TD({class: "wrap"}, response),
 		TD(BUTTON({type: "button", className: "advview", title: "Open editor"}, "\u2699")),
 	]);
 }
@@ -49,4 +49,37 @@ export function render(data) {
 		TD(BUTTON({type: "button", id: "addcmd"}, "Add")),
 	]));
 }
+
+//Very similar to, but not compatible with, #saveall handling in command_editor.js
+on("click", "#savechanges", e => {
+	e.preventDefault();
+	document.querySelectorAll("tr.dirty[data-id]").forEach(tr => {
+		const msg = tr.querySelector("input.text").value;
+		if (!msg) {
+			ws_sync.send({cmd: "delete", cmdname: tr.dataset.id}, "cmdedit");
+			return;
+		}
+		//Take a copy of the original command (we're going to JSON-encode it anyway, so this should
+		//be safe) and inject the new message text into it.
+		let response = JSON.parse(JSON.stringify(commands[tr.dataset.id]));
+		if (typeof response === "string") response = msg;
+		else scan_message(response, {replacetext: msg});
+		const automate = tr.querySelector("input.automate").value;
+		if (!automate) {
+			//If you blank the automation and the command has no other invocations,
+			//remove the command. TODO: Prompt the user first?
+			//Ensure that this always gets other invocations added to it.
+			if (response.access === "none" && !response.redemption) {
+				ws_sync.send({cmd: "delete", cmdname: tr.dataset.id}, "cmdedit");
+				return;
+			}
+		}
+		response.automate = automate; //Push to the back end as a string; it comes back as an array.
+		ws_sync.send({cmd: "update", cmdname: tr.dataset.id, response}, "cmdedit");
+		//Note that the dirty flag is not reset. A successful update will trigger
+		//a broadcast message which, when it reaches us, will rerender the command
+		//completely, thus effectively resetting dirty.
+	});
+});
+
 //TODO: When gear-opening a thing, open its basis immediately
