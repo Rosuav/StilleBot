@@ -101,12 +101,11 @@ echoable_message process(object channel, mapping person, string param)
 	if (!mins) return "Check https://rosuav.github.io/StilleBot/commands/repeat for usage information.";
 	if (mixed id = m_delete(G->G->autocommands, channel->name + " " + msg))
 		remove_call_out(id); //Old-style key (not used for new-style repeats)
-	mapping ac = channel->config->autocommands || ([]); //Legacy autocommands table
-	if (mins[0] < 0 && ac[msg])
+	if (mins[0] < 0 && channel->config->autocommands[?msg])
 	{
 		//Remove an old-style repeat. This can be done even if it's not a command, in case
 		//someone has legacy data lying around. It will need to be manually migrated.
-		m_delete(ac, msg);
+		m_delete(channel->config->autocommands, msg);
 		persist_config->save();
 		return "Repeated command disabled.";
 	}
@@ -135,7 +134,6 @@ echoable_message process(object channel, mapping person, string param)
 	}
 	G->G->update_command(channel, "", msg, command | (["automate": mins]));
 	G->G->autocommands[msg[1..] + channel->name] = call_out(autospam, seconds(mins, channel->config->timezone), channel->name, msg);
-	persist_config->save();
 	return "Command " + msg + " will now be run automatically.";
 }
 
