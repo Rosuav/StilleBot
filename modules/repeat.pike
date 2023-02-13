@@ -170,7 +170,7 @@ void check_autocommands()
 		//Clean up any from the autocommands table (not counting those from echocommands' automate attributes)
 		if (sscanf(key, "%s %s", string channel, string msg) == 2) {
 			mapping cfg = persist_config["channels"][channel[1..]];
-			if (!cfg || !cfg->autocommands[msg])
+			if (!cfg || !cfg->autocommands[?msg])
 				remove_call_out(m_delete(G->G->autocommands, key));
 		}
 	}
