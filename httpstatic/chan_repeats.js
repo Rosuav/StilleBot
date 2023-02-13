@@ -95,5 +95,3 @@ on("click", "#savechanges", e => {
 		//completely, thus effectively resetting dirty.
 	});
 });
-
-//TODO: When gear-opening a thing, open its basis immediately

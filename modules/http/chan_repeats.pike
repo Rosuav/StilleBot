@@ -1,9 +1,10 @@
 inherit http_websocket;
-//TODO: Check for multi-response commands and show them better, esp in nonmod view
-//TODO: List all automated commands for this channel (iterate over G->G->echocommands),
-//showing their repeat rates or target times, and either having a gear button to open
-//the command editor, or at very least, a link that opens ./commands#commandname in a
-//new tab/window.
+
+//TODO: Sort commands in some useful way?? Maybe by frequency?
+//Currently I think they're sorted affabeck by command name.
+
+//This page is now the place to put any repeat-related configs, eg (if I ever
+//implement it, of course) "don't autocommand unless chat within last X seconds"
 
 constant markdown = #"# Automated commands for $$channel$$
 
