@@ -46,6 +46,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				command = (["message": command, "access": "none"]);
 				for (int i = 1; G->G->echocommands[(cmd = "auto" + i) + chan]; ++i) ;
 			}
+			if (stringp(command)) command = (["message": command]);
 			G->G->update_command(req->misc->channel, "", replace(cmd, "!", ""), command | (["automate": automate]));
 		}
 		m_delete(req->misc->channel->config, "autocommands");
