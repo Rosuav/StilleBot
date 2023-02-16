@@ -496,6 +496,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		}
 
 		//Whispers are handled with a command prefix.
+		//TODO: Send whispers via https://dev.twitch.tv/docs/api/reference/#send-whisper instead
 		if (dest == "/w") prefix = sprintf("%s %s %s", dest, target, prefix);
 		//Any other destination, just send it to open chat (there used to be a facility
 		//for sending to other channels, but this is no longer the case).
