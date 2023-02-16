@@ -70,7 +70,7 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel) return;
 	string url = function_object(G->G->http_endpoints->twitchlogin)->get_redirect_url(
-		(<"chat_login", "user_read", "whispers:edit", "user_subscriptions">), (["force_verify": "true"])
+		(<"chat_login", "user_read", "whispers:edit", "user_subscriptions", "user:manage:whispers">), (["force_verify": "true"])
 	) {
 		[object req, mapping user, multiset scopes, string token, string cookie] = __ARGS__;
 		mapping v = persist_config->path("channels", channel->name[1..], "voices", (string)user->id);

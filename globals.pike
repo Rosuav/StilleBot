@@ -1423,6 +1423,7 @@ class TwitchAuth
 		"channel:read:hype_train",
 		//Enable API shoutouts (added 20230209)
 		"moderator:manage:shoutouts",
+		"user:manage:whispers",
 		//Insufficiently documented. Dunno if we need it or not.
 		"moderation:read", "channel:manage:broadcast",
 	>);
