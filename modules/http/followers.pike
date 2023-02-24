@@ -45,31 +45,38 @@ continue Concurrent.Future|mapping(string:mixed) http_request(Protocols.HTTP.Ser
 		Stdio.write_file("all_follows.txt", string_to_utf8(ret));
 		return "Done";
 	}
-	return render(req, ([
-		"vars": (["ws_group": channel]),
+	mapping resp = yield(twitch_api_request("https://api.twitch.tv/helix/channels/followers?broadcaster_id=" + channel,
+		(["Authorization": "Bearer " + req->misc->session->token]),
+	));
+	//Note: If we don't have permission, there'll be a result but it has only the
+	//follower *count*, not the actual names. Unfortunately, this could also imply
+	//that the channel has no followers whatsoever...
+	if (!sizeof(resp->data) && resp->total) return render(req, ([
 		"channel": yield(get_user_info(channel))->display_name,
-		"message": has_value(values(G->G->irc->channels)->userid, channel)
+		"message": resp->total + " followers. As of 2023, viewing followers requires moderator permissions. "
+			"[Moderator login](:.twitchlogin data-scopes=moderator:read:followers)",
+	]));
+	int autoupdate = has_value(values(G->G->irc->channels)->userid, channel);
+	return render(req, ([
+		"vars": (["current_followers": resp->data[..20], "ws_group": autoupdate && channel]),
+		"channel": yield(get_user_info(channel))->display_name,
+		"message": autoupdate
 			? "Will automatically update as people follow"
-			: "Not guaranteed to automatically update - refresh as needed",
+			: "Not guaranteed to automatically update - refresh as needed"
+				"\n\n<script type=module>import {render} from '" + G->G->template_defaults["static"]("followers.js") + "'; render({});</script>",
 	]));
 }
 
-Concurrent.Future|mapping get_state(string|int group) {
-	return twitch_api_request("https://api.twitch.tv/helix/users/follows?to_id=" + group)->then() {
-		return (["followers": __ARGS__[0]->data[..20]]);
-	};
-}
+//No initial state; the socket exists solely for pushed updates via the follower hook.
+Concurrent.Future|mapping get_state(string|int group) {return ([]);}
 
 @hook_follower:
 void follower(object channel, mapping follower) {
 	send_updates_all(channel->userid, (["newfollow": ([
 		"followed_at": follower->followed_at, //Note that this includes subsecond resolution, which it doesn't in get_state()
-		"from_id": follower->user_id,
-		"from_login": follower->user_login,
-		"from_name": follower->user_name,
-		"to_id": follower->broadcaster_user_id,
-		"to_login": follower->broadcaster_user_login,
-		"to_name": follower->broadcaster_user_name,
+		"user_id": follower->user_id,
+		"user_login": follower->user_login,
+		"user_name": follower->user_name,
 	])]));
 }
 

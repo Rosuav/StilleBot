@@ -6,15 +6,14 @@ function if_different(login, name) {
 	return " (" + login + ")";
 }
 
-let followers = [];
 export function render(data) {
-	if (data.newfollow) (data.followers = followers).unshift(data.newfollow);
-	if (data.followers) replace_content("#followers",
-		(followers = data.followers).map(f => LI({key: f.from_id}, [
+	if (data.newfollow) current_followers.unshift(data.newfollow);
+	replace_content("#followers",
+		current_followers.map(f => LI({key: f.user_id}, [
 			//Avatar? Maybe? Would need to have the server do the lookup for us.
-			BUTTON({class: "clipbtn", "data-copyme": f.from_login,
-				title: "Click to copy: " + f.from_login}, "📋"), " ",
-			f.from_name, if_different(f.from_login, f.from_name),
+			BUTTON({class: "clipbtn", "data-copyme": f.user_login,
+				title: "Click to copy: " + f.user_login}, "📋"), " ",
+			f.user_name, if_different(f.user_login, f.user_name),
 			//Time since follow? f.followed_at
 		])),
 	);
