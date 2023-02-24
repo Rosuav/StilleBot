@@ -516,6 +516,7 @@ void stream_status(string name, mapping info)
 	}
 }
 
+//Basically only used after a follow hook; use the same authentication when that switches over.
 @export: Concurrent.Future check_following(string user, string chan)
 {
 	return twitch_api_request("https://api.twitch.tv/helix/users/follows?from_id={{USER}}&to_id={{CHAN}}", ([]),
@@ -612,6 +613,11 @@ void stream_status(string name, mapping info)
 @create_hook:
 constant follower = ({"object channel", "mapping follower"});
 
+//NOTE: This event hook will work only if the broadcaster or a mod has granted permission
+//for the "moderator:read:followers" scope. It may be simplest to rely on two checks: either
+//the bot account has this permission, or the broadcaster has granted auth; handling the case
+//of some other mod granting permission may be tricky.
+//After Aug 3rd, bump version to "2".
 EventSub new_follower = EventSub("follower", "channel.follow", "1") { [string chan, mapping follower] = __ARGS__;
 	notice_user_name(follower->user_login, follower->user_id);
 	if (object channel = G->G->irc->channels["#" + chan])
@@ -661,6 +667,9 @@ void check_hooks(array eventhooks)
 		mapping c = G->G->channel_info[chan];
 		int userid = c->?_id;
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses pseudo-channels.)
+		//After Aug 3rd, add a second condition "moderator_user_id" which is either the same as the
+		//broadcaster (if we have broadcaster auth scope "moderator:read:followers") or the bot's
+		//user id, which will work only if the bot mods for that channel.
 		new_follower(chan, (["broadcaster_user_id": (string)userid]));
 		//raidin(chan, (["to_broadcaster_user_id": (string)userid]));
 		raidout(chan, (["from_broadcaster_user_id": (string)userid]));
