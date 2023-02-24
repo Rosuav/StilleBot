@@ -290,20 +290,12 @@ export function render(data) {
 				SPAN({class: "description not-alertset"}, info.description),
 				type === "variant" && SPAN({class: "not-variant"}, "Create alert sets to easily enable/disable all associated alert variants. You can also set layout defaults for alert sets."),
 			]),
-			/* No longer needed; the raid hook needs no authentication, and raids are all that happen now.
-			type === "hostalert" && P({class: "no-dirty no-inherit"}, [
-				host_alert_scopes && DIV({class: "need-auth"}, [
-					"Host alerts require authentication as the broadcaster. ",
-					BUTTON({class: "twitchlogin", "data-scopes": host_alert_scopes}, "Grant permissions"),
+			type === "follower" && P({class: "no-dirty no-inherit"}, [
+				follower_alert_scopes && DIV({class: "need-auth"}, [
+					"Follower alerts will, as of August 2023, require authentication as the broadcaster. ",
+					BUTTON({class: "twitchlogin", "data-scopes": follower_alert_scopes}, "Grant permissions"),
 				]),
-				"Select host detection back end: ",
-				SELECT({name: "hostbackend"}, [
-					OPTION({value: "none"}, "None"),
-					OPTION({value: "js"}, "JavaScript"),
-					OPTION({value: "pike"}, "Pike"),
-				]),
-				" (Pike backend supports variants, JS backend supports !hostlist command)",
-			]), */
+			]),
 			type === "variant" && P({class: "no-inherit no-dirty"}, [
 				//No inherit and no dirty, this is a selector not a saveable
 				LABEL([VS("Select variant:", "Select alert set:"), SELECT({name: "variant"}, OPTION({value: ""}, "Add new"))]),

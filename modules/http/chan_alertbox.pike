@@ -513,7 +513,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"vars": (["ws_group": "control",
 			"maxfilesize": MAX_PER_FILE, "maxtotsize": MAX_TOTAL_STORAGE,
 			"avail_voices": G->G->tts_config->avail_voices || ({ }),
-			"host_alert_scopes": req->misc->channel->name != "#!demo" && ensure_bcaster_token(req, "chat:read"),
+			"follower_alert_scopes": req->misc->channel->name != "#!demo" && ensure_bcaster_token(req, "moderator:read:followers"),
 		]),
 	]) | req->misc->chaninfo);
 }
