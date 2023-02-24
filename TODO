@@ -151,12 +151,5 @@
     of the control panel.
   - It may be worth having a permanent sidebar with a menu of available control panel
     sections (aka "config pages" as we currently have them).
-* Deprecation notice:
-  - https://dev.twitch.tv/docs/api/reference/#get-users-follows
-  - https://api.twitch.tv/helix/users/follows
-  - See instead:
-    - https://dev.twitch.tv/docs/api/reference/#get-followed-channels
-    - https://api.twitch.tv/helix/channels/followed and https://api.twitch.tv/helix/channels/followers
-  - Ditto the https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelfollow
-    eventsub message, check how follow notifs are done
-  - v1 vs v2. Also scope moderator:read:followers
+* Before Aug 3rd, complete the changeover to follower requests with authentication
+  - See poll.pike and comments regarding this date
