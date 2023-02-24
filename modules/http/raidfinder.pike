@@ -142,7 +142,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 
 		string chanid = req->variables["for"];
 		if (chanid && chanid != (string)logged_in->?id && chanid != chan) {
-			//If you provided for=userid, also show whether the target is following this stream.
+			//If you provided for=userid, also show whether the target is following this stream. Gonna die when the deprecation concludes.
 			mapping info = yield(twitch_api_request(sprintf("https://api.twitch.tv/helix/users/follows?from_id=%s&to_id=%s", chanid, chan)));
 			if (sizeof(info->data)) {
 				ret->is_following = info->data[0];
@@ -223,11 +223,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	{
 		//Show everyone that you follow (not just those who are live), in an
 		//abbreviated form, mainly for checking notes.
-		if (mapping resp = ensure_login(req, "user_read")) return resp;
-		array f = yield(get_helix_paginated("https://api.twitch.tv/helix/users/follows",
-				(["from_id": (string)req->misc->session->user->id])));
+		if (mapping resp = ensure_login(req, "user:read:follows")) return resp;
+		array f = yield(get_helix_paginated("https://api.twitch.tv/helix/channels/followed",
+				(["user_id": (string)req->misc->session->user->id])));
 		//TODO: Make a cleaner way to fragment requests - we're gonna need it.
-		array(array(string)) blocks = f->to_id / 100.0;
+		array(array(string)) blocks = f->broadcaster_id / 100.0;
 		follows_helix = yield(Concurrent.all(twitch_api_request(("https://api.twitch.tv/helix/users?first=100" + sprintf("%{&id=%s%}", blocks[*])[*])[*])))->data * ({ });
 		array users = yield(get_users_info(highlightids));
 		highlights = users->login * "\n";
