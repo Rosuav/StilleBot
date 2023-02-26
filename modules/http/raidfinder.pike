@@ -332,7 +332,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 					//Try to populate the cache using an external lookup. As of 20220216,
 					//this lookup will be done using the legacy Kraken API, but will then
 					//be cached so the data is retained post-shutdown.
-					cats = yield(G->G->external_api_lookups->user_followed_categories(req->misc->session->user->id));
 					persist_status->path("user_followed_categories")[req->misc->session->user->id] = cats;
 				}
 				args->game_id = cats;
