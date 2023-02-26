@@ -15,6 +15,39 @@ Maybe make "Regular chat messages" its own permission? If so, default it to Yes,
 and if the array of perms isn't found at all, assume that it's the only one that
 was granted. (Legacy data only; otherwise, the actual granted scopes will be used.)
 
+Note that /me requires no permissions and can actually be sent on the chat connection.
+
+/announce, /announceblue, /announcegreen, /announceorange, /announcepurple
+https://dev.twitch.tv/docs/api/reference/#send-chat-announcement
+/ban, /unban, /timeout, /untimeout
+https://dev.twitch.tv/docs/api/reference/#ban-user
+/clear
+https://dev.twitch.tv/docs/api/reference/#delete-chat-messages
+/commercial
+https://dev.twitch.tv/docs/api/reference/#start-commercial
+/emoteonly, /emoteonlyoff, /followers, /followersoff, /slow, /slowoff, /subscribers, /subscribersoff, /uniquechat, /uniquechatoff
+https://dev.twitch.tv/docs/api/reference/#update-chat-settings
+/marker
+https://dev.twitch.tv/docs/api/reference/#create-stream-marker
+/raid, /unraid
+https://dev.twitch.tv/docs/api/reference/#start-a-raid
+/shield, /shieldoff
+https://dev.twitch.tv/docs/api/reference/#update-shield-mode-status
+/shoutout
+https://dev.twitch.tv/docs/api/reference/#send-a-shoutout
+/vip, /unvip
+https://dev.twitch.tv/docs/api/reference/#add-channel-vip
+/color
+https://dev.twitch.tv/docs/api/reference/#update-user-chat-color
+
+Maybe:
+/poll, /deletepoll, /endpoll, /vote, /goal, /prediction (won't open the window, so syntax will differ)
+/mod, /unmod
+
+Not currently possible:
+/pin
+/monitor, /unmonitor, /restrict, /unrestrict
+/gift (probably never possible)
 */
 inherit http_websocket;
 constant markdown = #"# Available voices for $$channel$$
