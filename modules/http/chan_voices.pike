@@ -1,3 +1,21 @@
+/* TODO: Additional perms
+
+Have a table of slash commands and whether or not the voice-authenticator wishes
+to grant permission for them. (Note down that /w requires phone auth.) For each
+command, show either "Available" (scope has been granted) or a tick box "Enable"
+and, if there are any boxes ticked, a "Grant Permissions" button.
+
+Show this dialog when #addvoice is clicked (none will be Available yet), and when
+a "Permissions" button is clicked.
+
+websocket_cmd_login: Pick a list of scopes based on the selected perms. Save the
+scopes actually granted.
+
+Maybe make "Regular chat messages" its own permission? If so, default it to Yes,
+and if the array of perms isn't found at all, assume that it's the only one that
+was granted. (Legacy data only; otherwise, the actual granted scopes will be used.)
+
+*/
 inherit http_websocket;
 constant markdown = #"# Available voices for $$channel$$
 
