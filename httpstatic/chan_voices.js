@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {DIV, TR, TD, IMG, INPUT, TEXTAREA, BUTTON} = choc;
+const {BUTTON, DIV, IMG, INPUT, LABEL, LI, TD, TEXTAREA, TR} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#voices tbody");
@@ -13,6 +13,7 @@ export function render_item(item) {
 		TD(DIV([
 			BUTTON({type: "button", className: "save"}, "Save"),
 			BUTTON({type: "button", className: "delete"}, "Delete"),
+			BUTTON({type: "button", class: "perms", "data-scopes": item.scopes.join(",")}, "Permissions"),
 		])),
 	]);
 }
@@ -23,7 +24,6 @@ export function render_empty() {
 }
 export function render(data) { }
 
-on("click", "#addvoice", e => ws_sync.send({cmd: "login"}));
 export function sockmsg_login(data) {window.open(data.uri, "login", "width=525, height=900");}
 
 on("click", ".save", e => {
@@ -37,3 +37,24 @@ on("click", ".save", e => {
 on("click", ".delete", simpleconfirm("Deauthenticate this voice?", e => {
 	ws_sync.send({cmd: "delete", id: e.match.closest("tr").dataset.id});
 }));
+
+let perms_voiceid = null;
+on("click", ".perms", e => {
+	perms_voiceid = e.match.id !== "addvoice" && e.match.closest("tr").dataset.id;
+	const scopes = (e.match.dataset.scopes || "").split("/");
+	//Hack: Include chat_login in "additional" scopes
+	additional_scopes.chat_login = "Regular messages and /me";
+	set_content("#scopelist", [
+		Object.entries(additional_scopes).sort().map(([scope, desc]) => LI(LABEL([
+			scopes.includes(scope) ? "[Available] " : INPUT({type: "checkbox", name: scope, checked: scope === "chat_login"}),
+			" ", desc,
+		]))),
+	]);
+	DOM("#permsdlg").showModal();
+});
+
+on("click", "#authenticate", e => {
+	const scopes = [];
+	document.querySelectorAll("#scopelist input:checked").forEach(cb => scopes.push(cb.name));
+	ws_sync.send({cmd: "login", voiceid: perms_voiceid, scopes});
+});

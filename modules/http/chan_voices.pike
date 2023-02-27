@@ -66,7 +66,18 @@ Name        | Mnemonic | Description/purpose | -
 -           | -        | Loading...
 {: #voices}
 
-[Add new voice](:#addvoice)
+[Add new voice](:#addvoice .perms)
+
+> ### Permissions
+>
+> In order to send certain commands, the bot must be authenticated. Choose as many<br>
+> or as few as you wish; any commands not authorized here will simply fail to work.
+>
+> * loading...
+> {: #scopelist}
+>
+> [Authenticate](:#authenticate) [Close](:.dialog_close)
+{: tag=dialog #permsdlg}
 
 <style>
 .avatar {max-width: 40px; vertical-align: middle;}
@@ -83,7 +94,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	mapping cfg = req->misc->channel->config;
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
 	return render(req, ([
-		"vars": (["ws_group": ""]),
+		"vars": (["ws_group": "", "additional_scopes": G->G->voice_additional_scopes]),
 	]) | req->misc->chaninfo);
 }
 
@@ -92,8 +103,11 @@ bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping vox = channel->config->voices;
 	if (!vox) return !id && (["items": ({ })]);
-	if (id) return vox[id];
+	if (id) return vox[id] | (["scopes": persist_status->path("voices")[id]->?scopes || ({"chat_login"})]);
 	array voices = values(vox); sort(indices(vox), voices);
+	mapping all_voices = persist_status->path("voices");
+	foreach (voices, mapping voice)
+		voice->scopes = all_voices[voice->id]->?scopes || ({"chat_login"});
 	return (["items": voices]);
 }
 
@@ -120,8 +134,15 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel) return;
+	//TODO: Merge in scopes from broadcaster auth???
+	multiset scopes = (multiset)(msg->scopes || ({ }));
+	if (mapping tok = persist_status->path("voices")[msg->voiceid]) {
+		//Merge in pre-existing scopes. If they're not recorded, assume that we had the ones we used to request.
+		array have = tok->scopes || ({"chat_login", "user_read", "whispers:edit", "user_subscriptions", "user:manage:whispers"});
+		scopes |= (multiset)have;
+	}
 	string url = function_object(G->G->http_endpoints->twitchlogin)->get_redirect_url(
-		(<"chat_login", "user_read", "whispers:edit", "user_subscriptions", "user:manage:whispers">), (["force_verify": "true"])
+		scopes, (["force_verify": "true"])
 	) {
 		[object req, mapping user, multiset scopes, string token, string cookie] = __ARGS__;
 		mapping v = persist_config->path("channels", channel->name[1..], "voices", (string)user->id);
@@ -137,6 +158,7 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 		tok->authcookie = cookie;
 		tok->login = user->login;
 		tok->last_auth_time = v->last_auth_time;
+		tok->scopes = (array)scopes;
 		persist_status->save();
 		update_one(conn->group, v->id);
 		return (["data": "<script>window.close()</script>", "type": "text/html"]);
