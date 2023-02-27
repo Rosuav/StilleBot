@@ -13,7 +13,7 @@ export function render_item(item) {
 		TD(DIV([
 			BUTTON({type: "button", className: "save"}, "Save"),
 			BUTTON({type: "button", className: "delete"}, "Delete"),
-			BUTTON({type: "button", class: "perms", "data-scopes": item.scopes.join(",")}, "Permissions"),
+			BUTTON({type: "button", class: "perms", "data-scopes": item.scopes.join("/")}, "Permissions"),
 		])),
 	]);
 }
