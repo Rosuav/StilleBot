@@ -1424,6 +1424,8 @@ class TwitchAuth
 		//Enable API shoutouts (added 20230209)
 		"moderator:manage:shoutouts",
 		"user:manage:whispers", "moderator:read:followers",
+		//Scopes needed for slash commands implemented as API calls
+		"moderator:manage:announcements", "moderator:manage:chat_settings"
 		//Insufficiently documented. Dunno if we need it or not.
 		"moderation:read", "channel:manage:broadcast",
 	>);
