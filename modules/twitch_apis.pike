@@ -28,6 +28,20 @@ mixed announceorange(object c, string v, mapping t, string m) {return announce(c
 @"moderator:manage:announcements":
 mixed announcepurple(object c, string v, mapping t, string m) {return announce(c, v, m, t, "purple");}
 
+continue Concurrent.Future chat_settings(object channel, string voiceid, string msg, mapping tok, string field, mixed val) {
+	mapping ret = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/chat/settings?broadcaster_id=%d&moderator_id=%s",
+		channel->userid, voiceid),
+		(["Authorization": "Bearer " + tok->token]),
+		(["method": "PATCH", "json": ([field: val])]),
+	));
+}
+
+@"moderator:manage:chat_settings":
+mixed emoteonly(object c, string v, mapping t, string m) {return chat_settings(c, v, m, t, "emote_mode", Val.true);}
+@"moderator:manage:chat_settings":
+mixed emoteonlyoff(object c, string v, mapping t, string m) {return chat_settings(c, v, m, t, "emote_mode", Val.false);}
+
 int(0..1) send_chat_command(object channel, string voiceid, string msg) {
 	sscanf(msg, "/%s %s", string cmd, string param);
 	if (!cmd || !param || !need_scope[cmd]) return 0;
