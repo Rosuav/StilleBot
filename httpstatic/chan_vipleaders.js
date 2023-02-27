@@ -17,14 +17,28 @@ function remap_to_array(stats) {
 	return people;
 }
 
-function make_list(arr, desc, empty, eligible) {
+let badge_count = {}, badge_streak = {};
+console.log(badge_count);
+console.log(badge_streak);
+function make_list(arr, desc, empty, eligible, which) {
 	if (!arr || !arr.length) return DIV(empty);
 	return OL(arr.map(p => {
 		let className = "", title = "Not eligible for a badge in this month";
 		if (p.user_id === "274598607") {className = "anonymous"; title = "Anonymous - ineligible for badge";}
 		else if (mods[p.user_id]) {className = "is_mod"; title = "Moderator - already has a badge, won't take a VIP slot";}
-		else if (eligible-- > 0) {className = "eligible"; title = "Eligible for a VIP badge for this month!";}
-		return LI({className, title},
+		else if (eligible-- > 0) {
+			className = "eligible";
+			if (which === 0) title = "Eligible for a VIP badge for this month!";
+			else {
+				title = "Received a VIP badge for this month!";
+				if (which === 1) badge_count[p.user_id] = badge_streak[p.user_id] = 1;
+				else {
+					badge_count[p.user_id] = (badge_count[p.user_id] || 0) + 1;
+					if (badge_streak[p.user_id] === which - 1) badge_streak[p.user_id] = which;
+				}
+			}
+		}
+		return LI({className, title, "data-uid": p.user_id, "data-which": which},
 			[SPAN({className: "username"}, p.user_name), " with ", p.score, desc]
 		);
 	}));
@@ -40,6 +54,8 @@ export function render(data) {
 		const rows = [];
 		const now = new Date();
 		let year = now.getUTCFullYear(), mon = now.getUTCMonth() + 1;
+		let which_month = 0;
+		badge_count = {}; badge_streak = {}; //Reset the counters
 		for (let i = 0; i < 7; ++i) {
 			const ym = year * 100 + mon;
 			const subs = remap_to_array(data.monthly["subs" + ym]);
@@ -52,12 +68,32 @@ export function render(data) {
 				mod && BUTTON({className: "remvip", title: "Remove VIPs"}, "X"),
 			])));
 			rows.push(TR([
-				TD(make_list(subs, " subs", "(no subgifting data)", data.badge_count || 10)),
-				TD(make_list(bits, " bits", "(no cheering data)", data.badge_count || 10)),
+				TD(make_list(subs, " subs", "(no subgifting data)", data.badge_count || 10, which_month)),
+				TD(make_list(bits, " bits", "(no cheering data)", data.badge_count || 10, which_month)),
 			]));
 			if (!--mon) {--year; mon = 12;}
+			++which_month;
 		}
 		set_content("#monthly", TABLE({border: 1}, rows));
+		Object.entries(badge_count).forEach(([id, count]) => {
+			const streak = badge_streak[id];
+			document.querySelectorAll('li[data-uid="' + id + '"]').forEach(li => {
+				if (li.dataset.which === "0") {
+					//It's the current month. Show things slightly differently.
+					li.title += " - potentially " + (count + 1) + " badges";
+					if (streak) {
+						li.title += ", " + (streak + 1) + " streak";
+						li.append(` (${streak+1} months)`);
+					}
+					return;
+				}
+				li.title += " - " + count + " badges";
+				if (streak > 1 && streak >= +li.dataset.which) {
+					li.title += ", " + streak + " streak";
+					li.append(` (${streak} months)`);
+				}
+			});
+		});
 	}
 	if (mod) {
 		if (!DOM("#modcontrols").childElementCount) set_content("#modcontrols", DETAILS([
