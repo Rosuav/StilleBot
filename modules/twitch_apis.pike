@@ -1,26 +1,57 @@
-//Special place for anything that can't be done with normal Twitch APIs
-//As of 20220216, this is a place for any remaining Kraken calls.
+//Transform slash commands (other than /me) into API calls
 
-continue Concurrent.Future user_followed_categories(string userid) {
-	werror("Warning: Using Kraken API to fetch followed games for %O\n", userid);
-	mapping info = yield(twitch_api_request("https://api.twitch.tv/kraken/users/" + userid + "/follows/games"));
-	return (array(string))info->follows->game->_id;
+mapping scopes = ([
+	"moderator:manage:announcements": "Send announcements",
+]);
+
+mapping need_scope = ([]); //Filled in by create()
+
+@"moderator:manage:announcements":
+continue Concurrent.Future announce(object channel, string voiceid, string msg, mapping tok, string|void color) {
+	mapping ret = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/chat/announcements?broadcaster_id=%d&moderator_id=%s",
+		channel->userid, voiceid),
+		(["Authorization": "Bearer " + tok->token]),
+		(["json": ([
+			"message": msg,
+			"color": color || "primary",
+		])]),
+	));
 }
 
-Concurrent.Future get_video_info(string name) {
-	//20210716: Requires Kraken functionality not available in Helix, incl list of resolutions.
-	werror("Warning: Using Kraken API to fetch video info for %O\n", name);
-	return twitch_api_request("https://api.twitch.tv/kraken/channels/{{USER}}/videos?broadcast_type=archive&limit=1", ([]), (["username": name]))
-		->then(lambda(mapping info) {return info->videos[0];});
-}
+@"moderator:manage:announcements":
+mixed announceblue(object c, string v, mapping t, string m) {return announce(c, v, m, t, "blue");}
+@"moderator:manage:announcements":
+mixed announcegreen(object c, string v, mapping t, string m) {return announce(c, v, m, t, "green");}
+@"moderator:manage:announcements":
+mixed announceorange(object c, string v, mapping t, string m) {return announce(c, v, m, t, "orange");}
+@"moderator:manage:announcements":
+mixed announcepurple(object c, string v, mapping t, string m) {return announce(c, v, m, t, "purple");}
 
-Concurrent.Future get_user_emotes(string name) {
-	werror("Warning: Using Kraken API to fetch emotes for %O\n", name);
-	return twitch_api_request("https://api.twitch.tv/kraken/users/{{USER}}/emotes",
-		0, (["username": name, "authtype": "OAuth"]));
+int(0..1) send_chat_command(object channel, string voiceid, string msg) {
+	sscanf(msg, "/%s %s", string cmd, string param);
+	if (!cmd || !param || !need_scope[cmd]) return 0;
+	mapping tok = persist_status["voices"][voiceid];
+	if (!voiceid || voiceid == "0") {
+		voiceid = (string)G->G->bot_uid;
+		sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
+		//TODO: Figure out which scopes the bot's primary auth has, rather than assuming all
+		tok = (["token": pass, "scopes": indices(scopes)]);
+	}
+	if (!has_value(tok->scopes, need_scope[cmd])) return 0;
+	spawn_task(this[cmd](channel, voiceid, tok, param));
+	return 1;
 }
 
 protected void create(string name) {
-	if (!G->G->external_api_lookups) G->G->external_api_lookups = ([]);
-	foreach (indices(this), string f) if (f != "create" && f[0] != '_') G->G->external_api_lookups[f] = this[f];
+	G->G->voice_additional_scopes = scopes;
+	G->G->send_chat_command = send_chat_command;
+	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
+		if (ann) foreach (indices(ann), mixed anno) {
+			if (!scopes[anno]) scopes[anno] = anno; //Ensure that every scope is listed in the description mapping
+			need_scope[key] = anno;
+		}
+	}
+	//send_chat_command(G->G->irc->channels["#rosuav"], 0, "/announce This is an announcement from the bot!");
+	//send_chat_command(G->G->irc->channels["#rosuav"], "279141671", "/announce This is an announcement from Mustard Mine!");
 }
