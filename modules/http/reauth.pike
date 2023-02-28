@@ -11,9 +11,18 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				persist_status->path("bcaster_token_scopes")[req->misc->session->user->login]),
 			"type": "text/plain; charset=\"UTF-8\""]);
 	}
-	if (mapping resp = ensure_login(req, "chat:read chat:edit user_read whispers:edit user_subscriptions")) return resp;
-	return (["data": sprintf("oauth:%s\nLogged in as %O\nScopes %O\n",
-			req->misc->session->token,
+	mapping config = persist_config->path("ircsettings");
+	multiset scopes = (multiset)(config->scopes || (<>)) | (<"chat:read", "chat:edit", "user_read", "whispers:edit", "user_subscriptions">);
+	if (mapping resp = ensure_login(req, indices(scopes) * " ")) return resp;
+	string desc = "Login details saved.";
+	if (config->nick == req->misc->session->user->login) {
+		config->pass = "oauth:" + req->misc->session->token;
+		config->scopes = sort(indices(req->misc->session->scopes));
+		persist_config->save();
+	}
+	else desc = "oauth:" + req->misc->session->token;
+	return (["data": sprintf("%s\nLogged in as %O\nScopes %O\n",
+			desc,
 			req->misc->session->user,
 			req->misc->session->scopes),
 		"type": "text/plain; charset=\"UTF-8\""]);
