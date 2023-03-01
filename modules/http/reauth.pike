@@ -1,5 +1,14 @@
 inherit http_endpoint;
 
+constant markdown = #"# Authentication complete
+
+$$desc$$
+
+<pre>$$user$$</pre>
+
+Scopes: $$scopes$$
+";
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->variables->bcaster) {
@@ -21,9 +30,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		persist_config->save();
 	}
 	else desc = "oauth:" + req->misc->session->token;
-	return (["data": sprintf("%s\nLogged in as %O\nScopes %O\n",
-			desc,
-			req->misc->session->user,
-			req->misc->session->scopes),
-		"type": "text/plain; charset=\"UTF-8\""]);
+	return render_template(markdown, ([
+		"desc": desc,
+		"user": sprintf("%O", req->misc->session->user),
+		"scopes": sort(indices(req->misc->session->scopes)) * ", ",
+	]));
 }
