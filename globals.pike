@@ -1422,7 +1422,7 @@ class TwitchAuth
 		//Hype trains (added 20200619)
 		"channel:read:hype_train",
 		//Enable API shoutouts (added 20230209)
-		"moderator:manage:shoutouts",
+		"moderator:manage:shoutouts", "moderator:manage:chat_settings",
 		"user:manage:whispers", "moderator:read:followers",
 		//Scopes needed for slash commands implemented as API calls
 		"moderator:manage:announcements", "moderator:manage:chat_settings"

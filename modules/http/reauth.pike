@@ -22,6 +22,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	mapping config = persist_config->path("ircsettings");
 	multiset scopes = (multiset)(config->scopes || (<>)) | (<"chat:read", "chat:edit", "user_read", "whispers:edit", "user_subscriptions">);
+	//Add any requested scopes
+	foreach (req->variables; string key; string value)
+		if (sscanf(key, "scope-%s", string scope) && scope && scope != "") scopes[scope] = 1;
 	if (mapping resp = ensure_login(req, indices(scopes) * " ")) return resp;
 	string desc = "Login details saved.";
 	if (config->nick == req->misc->session->user->login) {
@@ -30,9 +33,17 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		persist_config->save();
 	}
 	else desc = "oauth:" + req->misc->session->token;
+	string add_scopes = "", authbtn = "All permissions granted.";
+	foreach (sort(indices(G->G->voice_additional_scopes)), string scope) {
+		add_scopes += sprintf("> * %s %s\n",
+			scopes[scope] ? "[Available]" : "<input type=checkbox name=\"scope-" + scope + "\">",
+			G->G->voice_additional_scopes[scope],
+		);
+		if (!scopes[scope]) authbtn = "[Add permissions](:type=submit)";
+	}
 	return render_template(markdown, ([
 		"desc": desc,
 		"user": sprintf("%O", req->misc->session->user),
-		"scopes": sort(indices(req->misc->session->scopes)) * ", ",
+		"scopes": sort(indices(req->misc->session->scopes)) * ", " + "\n" + add_scopes + "\n> " + authbtn + "\n{:tag=form method=post}",
 	]));
 }
