@@ -36,7 +36,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string add_scopes = "", authbtn = "All permissions granted.";
 	foreach (sort(indices(G->G->voice_additional_scopes)), string scope) {
 		add_scopes += sprintf("> * %s %s\n",
-			scopes[scope] ? "[Available]" : "<input type=checkbox name=\"scope-" + scope + "\">",
+			scopes[scope] ? "[Available]" : "<label><input type=checkbox name=\"scope-" + scope + "\">", //bad hack: assume the browser properly ends the labels for me
 			G->G->voice_additional_scopes[scope],
 		);
 		if (!scopes[scope]) authbtn = "[Add permissions](:type=submit)";
