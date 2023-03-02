@@ -1,8 +1,6 @@
 //Transform slash commands (other than /me) into API calls
 
 /* Scopes listed but not implemented:
-/ban, /unban, /timeout, /untimeout
-https://dev.twitch.tv/docs/api/reference/#ban-user
 /commercial
 https://dev.twitch.tv/docs/api/reference/#start-commercial
 /marker
@@ -113,6 +111,43 @@ continue Concurrent.Future clear(object channel, string voiceid, string msg, map
 		(["method": "DELETE"]),
 	));
 }
+
+@"moderator:manage:banned_users":
+continue Concurrent.Future ban(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
+	sscanf(msg, "%s %s", string username, string reason);
+	int uid = yield(get_user_id(username || msg));
+	mapping params = (["user_id": uid]);
+	if (timeout == 1) {
+		//The /timeout command accepts a duration prior to the reason.
+		sscanf(reason || "", "%d %s", int duration, string r);
+		params->duration = duration || 600;
+		reason = r; //Ensure that reason is reassigned (otherwise "/timeout user 120" would time them out for 120 seconds with a reason of "120")
+	}
+	if (reason && reason != "") params->reason = reason;
+	mapping ret = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/moderation/bans?broadcaster_id=%d&moderator_id=%s",
+		channel->userid, voiceid),
+		(["Authorization": "Bearer " + tok->token]),
+		(["method": "POST", "json": (["data": params])]), //Not sure why it needs to be wrapped like this
+	));
+}
+@"moderator:manage:banned_users":
+mixed timeout(object c, string v, string m, mapping t) {return ban(c, v, m, t, 1);}
+@"moderator:manage:banned_users":
+mixed t(object c, string v, string m, mapping t) {return ban(c, v, m, t, 1);}
+
+@"moderator:manage:banned_users":
+continue Concurrent.Future unban(object channel, string voiceid, string msg, mapping tok) {
+	int uid = yield(get_user_id(msg));
+	mapping ret = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/moderation/bans?broadcaster_id=%d&moderator_id=%s&user_id=%d",
+		channel->userid, voiceid, uid),
+		(["Authorization": "Bearer " + tok->token]),
+		(["method": "DELETE"]),
+	));
+}
+@"moderator:manage:banned_users":
+mixed untimeout(object c, string v, string m, mapping t) {return unban(c, v, m, t);}
 
 //Returns 0 if it sent the message, otherwise a reason code.
 //Yes, the parameter order is a bit odd; it makes filtering by this easier.
