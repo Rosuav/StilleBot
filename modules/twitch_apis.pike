@@ -23,6 +23,8 @@ https://dev.twitch.tv/docs/api/reference/#add-channel-vip
 https://dev.twitch.tv/docs/api/reference/#add-channel-moderator
 /color
 https://dev.twitch.tv/docs/api/reference/#update-user-chat-color
+/w (/whisper)
+https://dev.twitch.tv/docs/api/reference/#send-whisper
 
 Maybe:
 /poll, /deletepoll, /endpoll, /vote, /goal, /prediction (won't open the window, so syntax will differ)
@@ -45,6 +47,7 @@ mapping scopes = ([
 	"moderator:manage:shield_mode": "Engage/disengage shield mode",
 	"moderator:manage:shoutouts": "Send shoutouts",
 	"user:manage:chat_color": "Change chat color",
+	"user:manage:whispers": "Send whispers (requires phone auth)",
 ]);
 
 mapping need_scope = ([]); //Filled in by create()

@@ -1429,7 +1429,7 @@ class TwitchAuth
 		"channel:manage:raids", "channel:manage:vips", "moderator:manage:announcements",
 		"moderator:manage:banned_users", "moderator:manage:chat_messages",
 		"moderator:manage:chat_settings", "moderator:manage:shield_mode",
-		"moderator:manage:shoutouts", "user:manage:chat_color",
+		"moderator:manage:shoutouts", "user:manage:chat_color", "user:manage:whispers",
 		//Insufficiently documented. Dunno if we need it or not.
 		"moderation:read", "channel:manage:broadcast",
 	>);
