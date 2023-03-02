@@ -636,7 +636,7 @@ class channel(string name) { //name begins with hash and is all lower case
 						G->G->user_mod_status[mod + name] = 1;
 				}
 				break;
-				case "unrecognized_cmd": werror("NOTICE: Unrecognized command %O\n", msg); break;
+				case "unrecognized_cmd": werror("NOTICE: %O\n", msg); break; //The message already says "Unrecognized command"
 				case "slow_on": case "slow_off": break; //Channel is now/no longer in slow mode
 				case "emote_only_on": case "emote_only_off": break; //Channel is now/no longer in emote-only mode
 				case "subs_on": case "subs_off": break; //Channel is now/no longer in sub-only mode
