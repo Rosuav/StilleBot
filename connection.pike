@@ -516,6 +516,12 @@ class channel(string name) { //name begins with hash and is all lower case
 		msgs += ({prefix + msg});
 
 		string voice = cfg->voice && cfg->voice != "" && cfg->voice;
+		if (G->G->send_chat_command) {
+			//Attempt to send the message(s) via the Twitch APIs if they have slash commands
+			//Any that can't be sent that way will be sent the usual way.
+			msgs = filter(msgs, G->G->send_chat_command, this, voice);
+			if (!sizeof(msgs)) return;
+		}
 		if (irc_connections[voice]) irc_connections[voice]->send(name, msgs[*]);
 		else spawn_task(voice_enable(voice, name, msgs));
 	}
@@ -630,6 +636,7 @@ class channel(string name) { //name begins with hash and is all lower case
 						G->G->user_mod_status[mod + name] = 1;
 				}
 				break;
+				case "unrecognized_cmd": werror("NOTICE: Unrecognized command %O\n", msg); break;
 				case "slow_on": case "slow_off": break; //Channel is now/no longer in slow mode
 				case "emote_only_on": case "emote_only_off": break; //Channel is now/no longer in emote-only mode
 				case "subs_on": case "subs_off": break; //Channel is now/no longer in sub-only mode
