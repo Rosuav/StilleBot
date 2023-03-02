@@ -153,5 +153,4 @@
     sections (aka "config pages" as we currently have them).
 * Before Aug 3rd, complete the changeover to follower requests with authentication
   - See poll.pike and comments regarding this date
-* Parse all commands starting with a slash, and process them accordingly, eg if
-  starts /announce, https://dev.twitch.tv/docs/api/reference/#send-chat-announcement
+* Implement more slash commands, incl /shoutout, subsuming the special case
