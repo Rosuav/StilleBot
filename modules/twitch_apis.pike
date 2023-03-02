@@ -3,12 +3,8 @@
 /* Scopes listed but not implemented:
 /ban, /unban, /timeout, /untimeout
 https://dev.twitch.tv/docs/api/reference/#ban-user
-/clear
-https://dev.twitch.tv/docs/api/reference/#delete-chat-messages
 /commercial
 https://dev.twitch.tv/docs/api/reference/#start-commercial
-/followers, /followersoff, /slow, /slowoff, /subscribers, /subscribersoff, /uniquechat, /uniquechatoff
-https://dev.twitch.tv/docs/api/reference/#update-chat-settings
 /marker
 https://dev.twitch.tv/docs/api/reference/#create-stream-marker
 /raid, /unraid
@@ -74,12 +70,15 @@ mixed announceorange(object c, string v, string m, mapping t) {return announce(c
 @"moderator:manage:announcements":
 mixed announcepurple(object c, string v, string m, mapping t) {return announce(c, v, m, t, "purple");}
 
-continue Concurrent.Future chat_settings(object channel, string voiceid, string msg, mapping tok, string field, mixed val) {
+continue Concurrent.Future chat_settings(object channel, string voiceid, string msg, mapping tok, string field, mixed val, string|void duration) {
+	mapping cfg = ([field: val]);
+	//For /followers and /slow, a parameter specifies the duration too.
+	if (duration) cfg[duration] = (int)msg;
 	mapping ret = yield(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/settings?broadcaster_id=%d&moderator_id=%s",
 		channel->userid, voiceid),
 		(["Authorization": "Bearer " + tok->token]),
-		(["method": "PATCH", "json": ([field: val])]),
+		(["method": "PATCH", "json": cfg]),
 	));
 }
 
@@ -87,6 +86,33 @@ continue Concurrent.Future chat_settings(object channel, string voiceid, string 
 mixed emoteonly(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "emote_mode", Val.true);}
 @"moderator:manage:chat_settings":
 mixed emoteonlyoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "emote_mode", Val.false);}
+@"moderator:manage:chat_settings":
+mixed followers(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "follower_mode", Val.true, "follower_mode_duration");}
+@"moderator:manage:chat_settings":
+mixed followersoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "follower_mode", Val.false);}
+@"moderator:manage:chat_settings":
+mixed slow(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "slow_mode", Val.true, "slow_mode_wait_time");}
+@"moderator:manage:chat_settings":
+mixed slowoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "slow_mode", Val.false);}
+@"moderator:manage:chat_settings":
+mixed subscribers(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "subscriber_mode", Val.true);}
+@"moderator:manage:chat_settings":
+mixed subscribersoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "subscriber_mode", Val.false);}
+@"moderator:manage:chat_settings":
+mixed uniquechat(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "unique_chat_mode", Val.true);}
+@"moderator:manage:chat_settings":
+mixed uniquechatoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "unique_chat_mode", Val.false);}
+
+@"moderator:manage:chat_messages":
+continue Concurrent.Future clear(object channel, string voiceid, string msg, mapping tok, string|void msgid) {
+	//Pass a msgid to delete an individual message, else clears all chat
+	mapping ret = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/moderation/chat?broadcaster_id=%d&moderator_id=%s%s",
+		channel->userid, voiceid, msgid ? "&message_id=" + msgid : ""),
+		(["Authorization": "Bearer " + tok->token]),
+		(["method": "DELETE"]),
+	));
+}
 
 //Returns 0 if it sent the message, otherwise a reason code.
 //Yes, the parameter order is a bit odd; it makes filtering by this easier.
