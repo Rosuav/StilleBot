@@ -9,8 +9,6 @@ https://dev.twitch.tv/docs/api/reference/#create-stream-marker
 https://dev.twitch.tv/docs/api/reference/#start-a-raid
 /shield, /shieldoff
 https://dev.twitch.tv/docs/api/reference/#update-shield-mode-status
-/shoutout
-https://dev.twitch.tv/docs/api/reference/#send-a-shoutout
 /vip, /unvip
 https://dev.twitch.tv/docs/api/reference/#add-channel-vip
 /mod, /unmod
@@ -147,6 +145,19 @@ continue Concurrent.Future unban(object channel, string voiceid, string msg, map
 }
 @"moderator:manage:banned_users":
 mixed untimeout(object c, string v, string m, mapping t) {return unban(c, v, m, t);}
+
+@"moderator:manage:shoutouts":
+continue Concurrent.Future shoutout(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
+	mapping ret = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/chat/shoutouts?from_broadcaster_id=%d"
+			+ "&to_broadcaster_id={{USER}}&moderator_id=%s",
+			channel->userid, voiceid),
+		(["Authorization": "Bearer " + tok->token]), ([
+			"method": "POST",
+			"username": replace(msg, ({"@", " "}), ""),
+		]),
+	));
+}
 
 //Returns 0 if it sent the message, otherwise a reason code.
 //Yes, the parameter order is a bit odd; it makes filtering by this easier.

@@ -38,7 +38,7 @@ constant default_response = ([
 	"message": "No channel found (do you have the Twitch time machine?)",
 	"otherwise": ({
 		"{name} was last seen {catdesc}, at {url} - go check that stream out, maybe drop a follow! The last thing done was: {title}",
-		//"/shoutout {param}", //Doesn't work (as of 20220930). If it's enabled in the future, uncomment this.
+		"/shoutout {param}", //Tie in with the twitch_apis handling to do the on-platform shoutout
 	}),
 ]);
 constant aliases = ({"so"});
@@ -52,25 +52,8 @@ constant vars_provided = ([
 
 continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
-	param = replace(param, ({"@", " "}), "");
 	mapping info = ([]);
-	if (channel->config->fancyshoutouts) {
-		//If on-platform shoutouts are enabled, trigger one any time the builtin is called upon.
-		//Note that it will always and only use the bot's user ID as the moderator; it would be
-		//nice if this could tie in with voice selection when in an echo command, but for now,
-		//this feature works only if the bot is a mod in your channel.
-		mixed ret = yield(twitch_api_request(
-			"https://api.twitch.tv/helix/chat/shoutouts?from_broadcaster_id=" + channel->userid
-				+ "&to_broadcaster_id={{USER}}&moderator_id=" + G->G->bot_uid,
-			([]), ([
-				"method": "POST", "return_status": 1,
-				//"authtype": "bcaster:" + persist_config["ircsettings"]->nick, //Not necessary if the right scope is in the core authentication
-				"username": param,
-			]),
-		));
-		//TODO: Check if the request succeeded
-	}
-	catch {info = yield(get_channel_info(param)) || ([]);}; //If error, leave it an empty mapping
+	catch {info = yield(get_channel_info(replace(param, ({"@", " "}), ""))) || ([]);}; //If error, leave it an empty mapping
 	return ([
 		"{name}": info->display_name || "That person",
 		"{url}": info->url || "",
@@ -78,4 +61,10 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 		"{category}": info->game || "(null)",
 		"{title}": info->status || "(null)",
 	]);
+}
+
+protected void create(string name) {
+	::create(name);
+	foreach (persist_config->path("channels"); string name; mapping config)
+		m_delete(config, "fancyshoutouts");
 }

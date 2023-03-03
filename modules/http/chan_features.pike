@@ -21,7 +21,6 @@ Feature | Description | Manager | Status
 ## Channel configuration
 
 Timezone: <input name=timezone size=30> [Set](:#settimezone)
-<label><input name=fancyshoutouts type=checkbox class=flag> Use Twitch's on-platform shoutouts when doing !so commands</label>
 
 $$save_or_login||> [Export/back up all configuration](:type=submit name=export)
 {:tag=form method=post}$$
@@ -53,7 +52,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		object channel = req->misc->channel;
 		mapping cfg = channel->config;
 		mapping ret = ([]);
-		foreach ("autoban autocommands dynamic_rewards fancyshoutouts giveaway monitors quotes timezone vlcblocks" / " ", string key)
+		foreach ("autoban autocommands dynamic_rewards giveaway monitors quotes timezone vlcblocks" / " ", string key)
 			if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
 		if (cfg->allcmds) ret->active = "all"; //TODO: Figure out better keywords for these
 		else ret->active = "httponly";
@@ -114,7 +113,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	if (!timezone || timezone == "") timezone = "UTC";
 	return (["items": _get_item(features[*], channel->config->allcmds || -1, feat),
 		"timezone": timezone,
-		"flags": (["fancyshoutouts": channel->config->fancyshoutouts]),
+		"flags": ([]), //Not currently in use, but maybe worth using in the future. Front end support is still all there.
 		"enableables": enableables,
 	]);
 }
@@ -143,12 +142,6 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 }
 
 @"is_mod": void wscmd_enable(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (msg->id == "fancyshoutouts") {
-		channel->config->fancyshoutouts = !!msg->state;
-		persist_config->save();
-		send_updates_all(conn->group);
-		return;
-	}
 	//In theory we could maintain an id to module mapping, but not worth the hassle.
 	foreach (G->G->enableable_modules; string name; object mod) {
 		if (mapping info = mod->ENABLEABLE_FEATURES[msg->id]) {
