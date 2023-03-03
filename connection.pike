@@ -418,6 +418,8 @@ class channel(string name) { //name begins with hash and is all lower case
 					_send_recursive(person, message | (["conditional": 0, "message": m]), vars, cfg);
 				return;
 			}
+			_send_recursive(person, message | (["conditional": 0, "message": msg]), vars, cfg);
+			return;
 		}
 
 		//And now we have just a single string to send.
