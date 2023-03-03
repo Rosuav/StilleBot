@@ -52,7 +52,7 @@ bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping vox = channel->config->voices;
 	if (!vox) return !id && (["items": ({ })]);
-	if (id) return vox[id] | (["scopes": persist_status->path("voices")[id]->?scopes || ({"chat_login"})]);
+	if (id) return vox[id] && (vox[id] | (["scopes": persist_status->path("voices")[id]->?scopes || ({"chat_login"})]));
 	array voices = values(vox); sort(indices(vox), voices);
 	mapping all_voices = persist_status->path("voices");
 	foreach (voices, mapping voice)
