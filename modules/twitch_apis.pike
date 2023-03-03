@@ -158,7 +158,7 @@ continue Concurrent.Future shoutout(object channel, string voiceid, string msg, 
 }
 
 @"user:manage:whispers":
-continue Concurrent.Future w(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
+continue Concurrent.Future w(object channel, string voiceid, string msg, mapping tok) {
 	sscanf(msg, "%s %s", string user, string message);
 	if (!message) return 0;
 	mapping ret = yield(twitch_api_request(sprintf(
