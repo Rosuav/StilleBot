@@ -138,12 +138,11 @@ mixed t(object c, string v, string m, mapping t) {return ban(c, v, m, t, 1);}
 
 @"moderator:manage:banned_users":
 continue Concurrent.Future unban(object channel, string voiceid, string msg, mapping tok) {
-	int uid = yield(get_user_id(msg));
 	mapping ret = yield(twitch_api_request(sprintf(
-		"https://api.twitch.tv/helix/moderation/bans?broadcaster_id=%d&moderator_id=%s&user_id=%d",
-		channel->userid, voiceid, uid),
+		"https://api.twitch.tv/helix/moderation/bans?broadcaster_id=%d&moderator_id=%s&user_id={{USER}}",
+		channel->userid, voiceid),
 		(["Authorization": "Bearer " + tok->token]),
-		(["method": "DELETE"]),
+		(["method": "DELETE", "username": msg]),
 	));
 }
 @"moderator:manage:banned_users":
