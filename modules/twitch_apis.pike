@@ -15,8 +15,6 @@ https://dev.twitch.tv/docs/api/reference/#add-channel-vip
 https://dev.twitch.tv/docs/api/reference/#add-channel-moderator
 /color
 https://dev.twitch.tv/docs/api/reference/#update-user-chat-color
-/w (/whisper)
-https://dev.twitch.tv/docs/api/reference/#send-whisper
 
 Maybe:
 /poll, /deletepoll, /endpoll, /vote, /goal, /prediction (won't open the window, so syntax will differ)
@@ -158,6 +156,23 @@ continue Concurrent.Future shoutout(object channel, string voiceid, string msg, 
 		]),
 	));
 }
+
+@"user:manage:whispers":
+continue Concurrent.Future w(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
+	sscanf(msg, "%s %s", string user, string message);
+	if (!message) return 0;
+	mapping ret = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/whispers?from_user_id=%s&to_user_id={{USER}}",
+			voiceid),
+		(["Authorization": "Bearer " + tok->token]), ([
+			"method": "POST",
+			"username": replace(user, ({"@", " "}), ""),
+			"json": (["message": message]),
+		]),
+	));
+}
+@"user:manage:whispers":
+mixed whisper(object c, string v, string m, mapping t) {return w(c, v, m, t);}
 
 //Returns 0 if it sent the message, otherwise a reason code.
 //Yes, the parameter order is a bit odd; it makes filtering by this easier.
