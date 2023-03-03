@@ -381,13 +381,13 @@ mapping(string:mixed) _syntax_check(mapping(string:mixed) msg, string|void cmdna
 array _validate_command(object channel, string command, string cmdname, echoable_message response, string|void original) {
 	mapping state = (["cmd": command, "cdanon": 0, "cooldowns": ([]), "channel": channel]);
 	if (command == "!!trigger") {
-		echoable_message response = G->G->echocommands["!trigger" + channel->name];
-		response += ({ }); //Force array, and disconnect it for mutation's sake
+		echoable_message alltrig = G->G->echocommands["!trigger" + channel->name];
+		alltrig += ({ }); //Force array, and disconnect it for mutation's sake
 		string id = cmdname - "!";
 		if (id == "") {
 			//Blank command name? Create a new one.
-			if (!sizeof(response)) id = "1";
-			else id = (string)((int)response[-1]->id + 1);
+			if (!sizeof(alltrig)) id = "1";
+			else id = (string)((int)alltrig[-1]->id + 1);
 		}
 		else if (id == "validateme" || has_prefix(id, "changetab_"))
 			return ({0, validate(response, state)}); //Validate-only and ignore preexisting triggers
@@ -399,16 +399,16 @@ array _validate_command(object channel, string command, string cmdname, echoable
 			trigger->id = id;
 			m_delete(trigger, "otherwise"); //Triggers don't have an Else clause
 		}
-		if (cmdname == "") response += ({trigger});
-		else foreach (response; int i; mapping r) {
+		if (cmdname == "") alltrig += ({trigger});
+		else foreach (alltrig; int i; mapping r) {
 			if (r->id == id) {
-				response[i] = trigger;
+				alltrig[i] = trigger;
 				break;
 			}
 		}
-		response -= ({""});
-		if (!sizeof(response)) response = ""; //No triggers left? Delete the special altogether.
-		return ({"!trigger" + channel->name, response});
+		alltrig -= ({""});
+		if (!sizeof(alltrig)) alltrig = ""; //No triggers left? Delete the special altogether.
+		return ({"!trigger" + channel->name, alltrig});
 	}
 	if (command == "" || command == "!!") {
 		string pfx = command[..0]; //"!" for specials, "" for normals
