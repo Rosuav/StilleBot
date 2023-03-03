@@ -1,28 +1,9 @@
 //Transform slash commands (other than /me) into API calls
 
-/* Scopes listed but not implemented:
-/commercial
-https://dev.twitch.tv/docs/api/reference/#start-commercial
-/marker
-https://dev.twitch.tv/docs/api/reference/#create-stream-marker
-/raid, /unraid
-https://dev.twitch.tv/docs/api/reference/#start-a-raid
-/shield, /shieldoff
-https://dev.twitch.tv/docs/api/reference/#update-shield-mode-status
-/vip, /unvip
-https://dev.twitch.tv/docs/api/reference/#add-channel-vip
-/mod, /unmod
-https://dev.twitch.tv/docs/api/reference/#add-channel-moderator
-/color
-https://dev.twitch.tv/docs/api/reference/#update-user-chat-color
-
-Maybe:
+/* Other slash commands, not easy (or maybe even possible) to implement:
 /poll, /deletepoll, /endpoll, /vote, /goal, /prediction (won't open the window, so syntax will differ)
-
-Not currently possible:
-/pin
+/pin (would love this but with a message ID instead)
 /monitor, /unmonitor, /restrict, /unrestrict
-/gift (probably never possible)
 */
 mapping scopes = ([
 	"channel:edit:commercial": "Run ads (broadcaster only)",
@@ -173,6 +154,102 @@ continue Concurrent.Future w(object channel, string voiceid, string msg, mapping
 }
 @"user:manage:whispers":
 mixed whisper(object c, string v, string m, mapping t) {return w(c, v, m, t);}
+
+@"channel:edit:commercial":
+continue Concurrent.Future commercial(object channel, string voiceid, string msg, mapping tok) {
+	mapping ret = yield(twitch_api_request("https://api.twitch.tv/helix/channels/commercial",
+		(["Authorization": "Bearer " + tok->token]), ([
+			"method": "POST",
+			"json": ([
+				"broadcaster_id": (string)channel->userid,
+				"length": (int)msg || 30,
+			]),
+		]),
+	));
+}
+
+@"channel:manage:broadcast":
+continue Concurrent.Future marker(object channel, string voiceid, string msg, mapping tok) {
+	mapping ret = yield(twitch_api_request("https://api.twitch.tv/helix/streams/markers",
+		(["Authorization": "Bearer " + tok->token]), ([
+			"method": "POST",
+			"json": ([
+				"user_id": (string)channel->userid,
+				"description": msg,
+			]),
+		]),
+	));
+}
+
+@"channel:manage:raids":
+continue Concurrent.Future raid(object channel, string voiceid, string msg, mapping tok) {
+	mapping ret = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/raids?from_broadcaster_id=%d&to_broadcaster_id={{USER}}",
+			channel->userid),
+		(["Authorization": "Bearer " + tok->token]), ([
+			"method": "POST",
+			"username": replace(msg, ({"@", " "}), ""),
+		]),
+	));
+}
+
+@"channel:manage:raids":
+continue Concurrent.Future unraid(object channel, string voiceid, string msg, mapping tok) {
+	mapping ret = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/raids?broadcaster_id=%d",
+			channel->userid),
+		(["Authorization": "Bearer " + tok->token]), ([
+			"method": "DELETE",
+		]),
+	));
+}
+
+@"channel:manage:vips":
+continue Concurrent.Future vip(object channel, string voiceid, string msg, mapping tok, int|void remove) {
+	mapping ret = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/channels/vips?broadcaster_id=%d&user_id={{USER}}",
+			channel->userid),
+		(["Authorization": "Bearer " + tok->token]), ([
+			"method": remove ? "DELETE" : "POST",
+			"username": replace(msg, ({"@", " "}), ""),
+		]),
+	));
+}
+@"channel:manage:vips":
+mixed unvip(object c, string v, string m, mapping t) {return vip(c, v, m, t, 1);}
+
+@"channel:manage:moderators":
+continue Concurrent.Future mod(object channel, string voiceid, string msg, mapping tok, int|void remove) {
+	mapping ret = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=%d&user_id={{USER}}",
+			channel->userid),
+		(["Authorization": "Bearer " + tok->token]), ([
+			"method": remove ? "DELETE" : "POST",
+			"username": replace(msg, ({"@", " "}), ""),
+		]),
+	));
+}
+@"channel:manage:moderators":
+mixed unmod(object c, string v, string m, mapping t) {return mod(c, v, m, t, 1);}
+
+//Rosuav #0000FF, Mustard Mine #DAA520
+Regexp.SimpleRegexp bicap = Regexp.SimpleRegexp("[a-z][A-Z]");
+string bicap_to_snake(string pair) {return pair / 1 * "_";}
+@"user:manage:chat_color":
+continue Concurrent.Future color(object channel, string voiceid, string msg, mapping tok) {
+	if (msg == "") return 0; //No error return here for simplicity (we can't send to just the user anyway)
+	//Twitch expects users to write BiCapitalized colour names eg "GoldenRod", but
+	//the API expects them in snake_case instead eg "golden_rod". Don't add any
+	//underscores in a hex string though, as it's likely a coincidence.
+	if (msg[0] != '#') msg = lower_case(bicap->replace(msg, bicap_to_snake));
+	mapping ret = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/chat/color?user_id=%s&color=%s",
+			voiceid, Protocols.HTTP.uri_encode(msg)),
+		(["Authorization": "Bearer " + tok->token]), ([
+			"method": "PUT",
+		]),
+	));
+}
 
 //Returns 0 if it sent the message, otherwise a reason code.
 //Yes, the parameter order is a bit odd; it makes filtering by this easier.
