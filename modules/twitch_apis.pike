@@ -145,7 +145,7 @@ continue Concurrent.Future unban(object channel, string voiceid, string msg, map
 mixed untimeout(object c, string v, string m, mapping t) {return unban(c, v, m, t);}
 
 @"moderator:manage:shoutouts":
-continue Concurrent.Future shoutout(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
+continue Concurrent.Future shoutout(object channel, string voiceid, string msg, mapping tok) {
 	mapping ret = yield(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/shoutouts?from_broadcaster_id=%d"
 			+ "&to_broadcaster_id={{USER}}&moderator_id=%s",

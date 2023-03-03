@@ -38,12 +38,13 @@ constant default_response = ([
 	"message": "No channel found (do you have the Twitch time machine?)",
 	"otherwise": ({
 		"{name} was last seen {catdesc}, at {url} - go check that stream out, maybe drop a follow! The last thing done was: {title}",
-		"/shoutout {param}", //Tie in with the twitch_apis handling to do the on-platform shoutout
+		"/shoutout {login}", //Tie in with the twitch_apis handling to do the on-platform shoutout
 	}),
 ]);
 constant aliases = ({"so"});
 constant vars_provided = ([
 	"{url}": "Channel URL, or blank if the user wasn't found",
+	"{login}": "Twitch login of the user (usually the same as the parameter but lowercased)",
 	"{name}": "Display name of the user",
 	"{category}": "Current or last-seen category (game)",
 	"{catdesc}": "Category in a human-readable form, eg 'playing X' or 'creating Art'",
@@ -55,16 +56,11 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	mapping info = ([]);
 	catch {info = yield(get_channel_info(replace(param, ({"@", " "}), ""))) || ([]);}; //If error, leave it an empty mapping
 	return ([
+		"{login}": info->broadcaster_login || param,
 		"{name}": info->display_name || "That person",
 		"{url}": info->url || "",
 		"{catdesc}": replace(game_desc[info->game] || "playing %s", "%s", info->game || "(null)"),
 		"{category}": info->game || "(null)",
 		"{title}": info->status || "(null)",
 	]);
-}
-
-protected void create(string name) {
-	::create(name);
-	foreach (persist_config->path("channels"); string name; mapping config)
-		m_delete(config, "fancyshoutouts");
 }
