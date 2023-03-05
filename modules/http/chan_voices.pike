@@ -29,7 +29,10 @@ Name        | Mnemonic | Description/purpose | -
 {: tag=dialog #permsdlg}
 
 <style>
-.avatar {max-width: 40px; vertical-align: middle;}
+.avatar {width: 40px; vertical-align: middle;}
+.defaultvoice .makedefault {display: none;}
+.isdefault {display: none;}
+.defaultvoice .isdefault {display: unset;}
 </style>
 ";
 //Note that, in theory, multiple voice support could be done without an HTTP interface.
@@ -57,17 +60,27 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping all_voices = persist_status->path("voices");
 	foreach (voices, mapping voice)
 		voice->scopes = all_voices[voice->id]->?scopes || ({"chat_login"});
-	return (["items": voices]);
+	return (["items": voices, "defvoice": channel->config->defvoice]);
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
+	if (msg->unsetdefault) { //No voice selection here
+		m_delete(channel->config, "defvoice");
+		send_updates_all(conn->group);
+		persist_config->save();
+		return;
+	}
 	mapping v = channel->config->voices[?msg->id];
 	if (!v) return;
 	if (msg->desc) v->desc = msg->desc;
 	if (msg->notes) v->notes = msg->notes;
-	update_one(conn->group, msg->id);
+	if (msg->makedefault) {
+		channel->config->defvoice = msg->id;
+		send_updates_all(conn->group); //Changing the default voice requires a full update, no point shortcutting
+	}
+	else update_one(conn->group, msg->id);
 	persist_config->save();
 }
 

@@ -517,7 +517,15 @@ class channel(string name) { //name begins with hash and is all lower case
 		}
 		msgs += ({prefix + msg});
 
-		string voice = cfg->voice && cfg->voice != "" && cfg->voice;
+		//cfg->voice could be absent, blank, "0", or a voice ID eg "279141671"
+		//Absent and blank mean "use the channel default" - config->defvoice - which
+		//might be zero (meaning that the channel default is the global default).
+		//"0" means "use the global default, even if it's not the channel default"
+		//Otherwise, it's the ID of a Twitch user whose voice we should use. Note that
+		//there's no check to ensure that we have permission to do so; if you add a
+		//voice but don't grant permission to use chat, all chat messages will just
+		//fail silently. (This would be fine if it's only used for slash commands.)
+		string voice = (cfg->voice && cfg->voice != "") ? cfg->voice : config->defvoice;
 		if (!config->voices[voice]) voice = 0; //Ensure that the voice hasn't been deauthenticated since the command was edited
 		if (G->G->send_chat_command) {
 			//Attempt to send the message(s) via the Twitch APIs if they have slash commands

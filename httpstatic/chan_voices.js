@@ -10,11 +10,18 @@ export function render_item(item) {
 		TD([IMG({src: item.profile_image_url, className: "avatar"}), item.name]),
 		TD(INPUT({value: item.desc, className: "desc", size: 15})),
 		TD(TEXTAREA({value: item.notes || "", className: "notes", rows: 3, cols: 50})),
-		TD(DIV([
-			BUTTON({type: "button", className: "save"}, "Save"),
-			BUTTON({type: "button", className: "delete"}, "Delete"),
-			BUTTON({type: "button", class: "perms", "data-scopes": item.scopes.join("/")}, "Permissions"),
-		])),
+		TD([
+			DIV([
+				BUTTON({type: "button", className: "save"}, "Save"),
+				BUTTON({type: "button", className: "delete"}, "Delete"),
+				BUTTON({type: "button", class: "perms", "data-scopes": item.scopes.join("/")}, "Permissions"),
+				BUTTON({type: "button", class: "makedefault"}, "Make default"),
+			]),
+			DIV({class: "isdefault"}, [
+				"This is the default voice for this channel. ",
+				BUTTON({type: "button", class: "unsetdefault"}, "Unset default"),
+			]),
+		]),
 	]);
 }
 export function render_empty() {
@@ -22,9 +29,23 @@ export function render_empty() {
 		TD({colSpan: 4}, "No additional voices."),
 	]));
 }
-export function render(data) { }
+let defvoice = "0";
+export function render(data) {
+	if (data.defvoice !== undefined) defvoice = data.defvoice;
+	render_parent.querySelectorAll("[data-id]").forEach(tr => {
+		tr.classList.toggle("defaultvoice", tr.dataset.id === defvoice);
+	});
+}
 
 export function sockmsg_login(data) {window.open(data.uri, "login", "width=525, height=900");}
+
+on("click", ".makedefault", e => {
+	ws_sync.send({cmd: "update", id: e.match.closest("tr").dataset.id, makedefault: 1});
+});
+
+on("click", ".unsetdefault", e => {
+	ws_sync.send({cmd: "update", unsetdefault: 1});
+});
 
 on("click", ".save", e => {
 	const tr = e.match.closest("tr");
