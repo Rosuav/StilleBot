@@ -518,6 +518,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		msgs += ({prefix + msg});
 
 		string voice = cfg->voice && cfg->voice != "" && cfg->voice;
+		if (!config->voices[voice]) voice = 0; //Ensure that the voice hasn't been deauthenticated since the command was edited
 		if (G->G->send_chat_command) {
 			//Attempt to send the message(s) via the Twitch APIs if they have slash commands
 			//Any that can't be sent that way will be sent the usual way.
