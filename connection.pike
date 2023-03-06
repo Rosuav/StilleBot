@@ -526,7 +526,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		//voice but don't grant permission to use chat, all chat messages will just
 		//fail silently. (This would be fine if it's only used for slash commands.)
 		string voice = (cfg->voice && cfg->voice != "") ? cfg->voice : config->defvoice;
-		if (!config->voices[voice]) voice = 0; //Ensure that the voice hasn't been deauthenticated since the command was edited
+		if (!config->voices[?voice]) voice = 0; //Ensure that the voice hasn't been deauthenticated since the command was edited
 		if (G->G->send_chat_command) {
 			//Attempt to send the message(s) via the Twitch APIs if they have slash commands
 			//Any that can't be sent that way will be sent the usual way.
