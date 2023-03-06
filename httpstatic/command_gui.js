@@ -27,7 +27,7 @@ const SNAP_RANGE = 100; //Distance-squared to permit snapping (eg 25 = 5px radiu
 const canvas = DOM("#command_gui");
 const ctx = canvas.getContext('2d');
 const FAV_BUTTON_TEXT = ["Fav ☆", "Fav ★"];
-let voices_available = {"": "Default"};
+let voices_available = {"": "Channel default"}; //Note that this will show up after the numeric entries, even though it's entered first
 Object.keys(voices).forEach(id => voices_available[id] = voices[id].name);
 let alertcfg = {stdalerts: [], personals: [], loading: true};
 fetch("alertbox?summary", {credentials: "include"}).then(r => r.json()).then(c => alertcfg = c);

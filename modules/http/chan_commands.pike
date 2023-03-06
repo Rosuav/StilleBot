@@ -115,10 +115,13 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		return jsonify(_syntax_check(body->msg, body->cmdname), 7);
 	}
 	if (req->misc->is_mod) {
+		mapping voices = req->misc->channel->config->voices || ([]);
+		string defvoice = req->misc->channel->config->defvoice;
+		if (voices[defvoice]) voices |= (["0": (["name": "Bot's own voice"])]); //TODO: Give the bot's username?
 		return render(req, ([
 			"vars": (["ws_group": "", "complex_templates": G->G->commands_complex_templates, "builtins": G->G->commands_builtins,
 				"pointsrewards": G->G->pointsrewards[req->misc->channel->name[1..]] || ({ }),
-				"voices": req->misc->channel->config->voices || ([])]),
+				"voices": voices]),
 			"templates": G->G->commands_templates * "\n",
 			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
 				"[Save all](:#saveall)"
@@ -324,6 +327,13 @@ echoable_message _validate(echoable_message resp, mapping state)
 		if (sscanf(resp->voice||"", "%[0-9]%s", string v, string end) && v != "" && end == "") ret->voice = v;
 	}
 	else if ((state->channel->config->voices || ([]))[resp->voice]) ret->voice = resp->voice;
+	//Setting voice to "0" resets to the global default, which is useful if there's a local default.
+	else if (resp->voice == "0" && state->channel->config->defvoice) ret->voice = resp->voice;
+	else if (resp->voice == "") {
+		//Setting voice to blank means "use channel default". This is useful if,
+		//and only if, you've already set it to a nondefault voice in this tree.
+		//TODO: Track changes to voices and allow such a reset to default.
+	}
 
 	if (sizeof(ret) == 1) return ret->message; //No flags? Just return the message.
 	return ret;
