@@ -83,10 +83,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	return render_template("chan_triggers.md", ([
 		"vars": ([
 			"ws_type": "chan_commands", "ws_group": "!!trigger" + req->misc->channel->name,
-			"ws_code": "chan_triggers", "complex_templates": COMPLEX_TEMPLATES,
-			"builtins": G->G->commands_builtins,
-			"voices": req->misc->channel->config->voices || ([]),
-		]),
+			"ws_code": "chan_triggers",
+		]) | G->G->command_editor_vars(req->misc->channel),
 		"loadingmsg": "Loading...",
 		"templates": TEMPLATES * "\n",
 		"save_or_login": "[Save all](:#saveall)\n<p><a href=\"#examples\" id=examples>Create new trigger</a></p>",

@@ -214,8 +214,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//Refresh will fix it (otherwise there's no way for the client to force a refetch).
 	spawn_task(populate_rewards_cache(req->misc->channel->name[1..], req->misc->channel->userid));
 	return render(req, ([
-		"vars": (["ws_group": "", "complex_templates": G->G->commands_complex_templates, "builtins": G->G->commands_builtins,
-			"pointsrewards": rew, "voices": req->misc->channel->config->voices || ([])]),
+		"vars": (["ws_group": ""]) | G->G->command_editor_vars(req->misc->channel),
 	]) | req->misc->chaninfo);
 }
 

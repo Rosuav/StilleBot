@@ -74,6 +74,18 @@ void enable_feature(object channel, string kwd, int state) {
 		);
 }
 
+//Gather all the variables that the JS command editor needs. Some may depend on the channel.
+mapping(string:mixed) command_editor_vars(object channel) {
+	mapping voices = channel->config->voices || ([]);
+	string defvoice = channel->config->defvoice;
+	if (voices[defvoice]) voices |= (["0": (["name": "Bot's own voice"])]); //TODO: Give the bot's username?
+	return ([
+		"complex_templates": G->G->commands_complex_templates,
+		"builtins": G->G->commands_builtins,
+		"pointsrewards": G->G->pointsrewards[channel->name[1..]] || ({ }),
+		"voices": voices,
+	]);
+}
 
 //Cache the set of available builtins. Needs to be called after any changes to any
 //builtin; currently, is call_out zero'd any time this file gets updated. Note that
@@ -102,6 +114,7 @@ void find_builtins() {
 	G->G->commands_templates = templates;
 	G->G->commands_complex_templates = complex_templates;
 	G->G->commands_builtins = builtins;
+	G->G->command_editor_vars = command_editor_vars;
 }
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
@@ -115,13 +128,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		return jsonify(_syntax_check(body->msg, body->cmdname), 7);
 	}
 	if (req->misc->is_mod) {
-		mapping voices = req->misc->channel->config->voices || ([]);
-		string defvoice = req->misc->channel->config->defvoice;
-		if (voices[defvoice]) voices |= (["0": (["name": "Bot's own voice"])]); //TODO: Give the bot's username?
 		return render(req, ([
-			"vars": (["ws_group": "", "complex_templates": G->G->commands_complex_templates, "builtins": G->G->commands_builtins,
-				"pointsrewards": G->G->pointsrewards[req->misc->channel->name[1..]] || ({ }),
-				"voices": voices]),
+			"vars": (["ws_group": ""]) | command_editor_vars(req->misc->channel),
 			"templates": G->G->commands_templates * "\n",
 			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
 				"[Save all](:#saveall)"

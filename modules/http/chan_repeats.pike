@@ -53,10 +53,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		persist_config->save();
 	}
 	return render(req, ([
-		"vars": (["ws_type": "chan_commands", "ws_group": "", "ws_code": "chan_repeats",
-			"complex_templates": G->G->commands_complex_templates, "builtins": G->G->commands_builtins,
-			"pointsrewards": G->G->pointsrewards[req->misc->channel->name[1..]] || ({ }),
-			"voices": req->misc->channel->config->voices || ([]),
-		]),
+		"vars": (["ws_type": "chan_commands", "ws_group": "", "ws_code": "chan_repeats"])
+			| G->G->command_editor_vars(req->misc->channel),
 	]) | req->misc->chaninfo);
 }
