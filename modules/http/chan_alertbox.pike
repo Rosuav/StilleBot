@@ -940,6 +940,19 @@ void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	send_updates_all(cfg->authkey + channel->name);
 }
 
+void check_tts_usage(mapping cfg) {
+	if (!undefinedp(cfg->uses_tts)) return; //Assume it's correct already. Delete the key if it's invalid.
+	//Does any alert use TTS? If so, say that we use TTS.
+	//Note that, this is somewhat conservative; it will flag the account as using TTS
+	//even if the alert in question is disabled, blocked by impossible filtering, etc.
+	//The rule is that if uses_tts is set to 0, you should never need TTS credentials.
+	cfg->uses_tts = 0;
+	foreach (cfg->alertconfigs || ([]); string kw; mapping alert) {
+		if (alert->tts_text && alert->tts_text != "") {cfg->uses_tts = 1; break;}
+	}
+	persist_status->save();
+}
+
 void copy_stock(mapping alertconfigs, string basetype) {
 	//If an alerts isn't yet configured here, copy in the corresponding stock alert
 	mapping base = alertconfigs[basetype]; if (base) return;
@@ -1010,6 +1023,11 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	//If the format *is* specified, this is a full update, *except* for the retained
 	//attributes. Any unspecified attribute will be deleted, setting it to inherit.
 	int hosts_were_active = cfg->alertconfigs->?hostalert->?active;
+	//If you've added or removed TTS, make sure that the uses_tts flag is accurate.
+	string tts_was = cfg->alertconfigs[msg->type]->tts_text || "";
+	string tts_now = msg->tts_text || "";
+	if (tts_was == "" && tts_now != "") cfg->uses_tts = 1;
+	if (tts_was != "" && tts_now == "") {m_delete(cfg, "uses_tts"); call_out(check_tts_usage, 0.25, cfg);}
 	data = cfg->alertconfigs[msg->type] = filter(
 		mkmapping(RETAINED_ATTRS, data[RETAINED_ATTRS[*]])
 		| mkmapping(FORMAT_ATTRS, msg[FORMAT_ATTRS[*]]))
@@ -1559,6 +1577,8 @@ protected void create(string name) {
 	if (file_stat("tts-credentials.json") && !G->G->tts_config->access_token) spawn_task(fetch_tts_credentials(0));
 	spawn_task(initialize_inherits());
 	G->G->send_alert = send_alert;
+	foreach (persist_status->path("alertbox"); string id; mapping cfg)
+		check_tts_usage(cfg);
 }
 
 /* A Tale of Two Backends
