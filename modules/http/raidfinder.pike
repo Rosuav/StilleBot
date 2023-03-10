@@ -528,7 +528,10 @@ void websocket_cmd_raidnow(mapping(string:mixed) conn, mapping(string:mixed) msg
 		}
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "update", "raidstatus": "RAIDING!"]), 4));
 		//It'd be nice to have something that notifies the user when the raid has actually gone through,
-		//but that would require an additional webhook which we'd want to dispose of later.
+		//but that would require an additional webhook which we'd want to dispose of later. It also won't
+		//report if the raid is cancelled.
+		//Should there be an "Abort Raid" button on the dialog? The permission required is the same.
+		//The biggest problem is that it would be easy to misclick it.
 	};
 }
 

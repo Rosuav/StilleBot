@@ -417,13 +417,12 @@ on("click", ".raidbtn", e => {
 	const btn = DOM("#goraiding .clipbtn");
 	btn.title = "Copy '/raid " + raidtarget + "' to the clipboard";
 	btn.dataset.copyme = "/raid " + raidtarget;
-	set_content("#raidnow", "Raid now!");
+	set_content("#raidnow", "Raid now!").disabled = false;
 	DOM("#goraiding").showModal();
 });
 
 on("click", "#raidnow", e => {
-	set_content("#raidnow", "Starting raid...");
-	console.log("Raiding", raidtarget, raidtargetid);
+	set_content("#raidnow", "Starting raid...").disabled = true;
 	ws_sync.send({cmd: "raidnow", target: raidtargetid});
 });
 
