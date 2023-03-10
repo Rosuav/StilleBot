@@ -662,7 +662,7 @@ class channel(string name) { //name begins with hash and is all lower case
 					*/
 					break;
 				case "ban_success": break; //Just banned someone. Probably only a response to an autoban.
-				case "raid": case "unraid": //Incoming raids already get announced and we don't get any more info
+				case "raid": //Incoming raids already get announced and we don't get any more info
 				{
 					//Stdio.append_file("incoming_raids.log", sprintf("%s Debug incoming raid: chan %s user %O params %O\n",
 					//	ctime(time())[..<1], name, person->displayname, params));
@@ -675,6 +675,7 @@ class channel(string name) { //name begins with hash and is all lower case
 					trigger_special("!raided", person, (["{viewers}": params->msg_param_viewerCount]));
 					break;
 				}
+				case "unraid": break; //Raid has been cancelled, nothing to see here.
 				case "rewardgift": //Used for special promo messages eg "so-and-so's cheer just gave X people a bonus emote"
 				{
 					//write("DEBUG REWARDGIFT: chan %s disp %O user %O params %O\n",
