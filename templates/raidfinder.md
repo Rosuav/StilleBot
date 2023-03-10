@@ -154,6 +154,13 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 .uptime .new_frond {
 	margin-right: 0.25em;
 }
+
+#raid_command {
+	background: #eef;
+	border: 1px solid blue;
+	margin: 0 3px;
+	padding: 5px;
+}
 </style>
 
 > ### Legend/info
@@ -196,3 +203,12 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 >
 > <ul id=vods></ul>
 {: tag=dialog #vodlengths}
+
+<!-- break dialogs apart -->
+
+> ### Go raiding!
+>
+> To raid this streamer, type <code id=raid_command></code> [📋](:.clipbtn) into your chat/dashboard!
+>
+> $$raidbtn||$$ [Close](:.dialog_close)
+{: tag=dialog #goraiding}

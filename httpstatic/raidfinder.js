@@ -361,8 +361,9 @@ function build_follow_list() {
 		return UL(parts.map(p => p.elem));
 	}
 	function raidbtn(stream) {
-		return BUTTON({className: "clipbtn", "data-copyme": "/raid " + stream.user_name,
-			title: "Click to copy: /raid " + stream.user_name}, "📋")
+		return BUTTON({class: "raidbtn", "data-target": stream.user_name, "data-targetid": stream.user_id,
+			title: "Raid " + stream.user_name + "!"},
+				IMG({class: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v1/62836/1.0"}));
 	}
 	set_content("#streams", follows.map(stream => stream.element = DIV({className: describe_size(stream) + " " + (stream.highlight ? "highlighted" : "")},
 		mode === "allfollows" ? [
@@ -401,10 +402,31 @@ function build_follow_list() {
 }
 if (mode === "vodlength") show_vod_lengths(vodinfo); else build_follow_list();
 
-export function render(data) { }
 export function sockmsg_chanstatus(data) {
 	const stream = follows.find(f => f.user_id === data.channelid);
 	if (!stream) return; //Not of interest to us.
 	stream.chanstatus = data.chanstatus;
 	if (stream.element) describe_uptime(stream, stream.element.querySelector(".uptime"));
+}
+
+let raidtarget = null, raidtargetid = null;
+on("click", ".raidbtn", e => {
+	raidtarget = e.match.dataset.target;
+	raidtargetid = e.match.dataset.targetid;
+	set_content("#raid_command", "/raid " + raidtarget);
+	const btn = DOM("#goraiding .clipbtn");
+	btn.title = "Copy '/raid " + raidtarget + "' to the clipboard";
+	btn.dataset.copyme = "/raid " + raidtarget;
+	set_content("#raidnow", "Raid now!");
+	DOM("#goraiding").showModal();
+});
+
+on("click", "#raidnow", e => {
+	set_content("#raidnow", "Starting raid...");
+	console.log("Raiding", raidtarget, raidtargetid);
+	ws_sync.send({cmd: "raidnow", target: raidtargetid});
+});
+
+export function render(data) {
+	if (data.raidstatus) set_content("#raidnow", data.raidstatus);
 }

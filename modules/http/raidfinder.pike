@@ -244,8 +244,15 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			"sortorders": ({"Channel Creation", "Follow Date", "Name"}) * "\n* ",
 		]));
 	}
-	string login, disp;
-	if (logged_in && (int)logged_in->id == userid) {login = logged_in->login; disp = logged_in->display_name;}
+	string login, disp, raidbtn = "";
+	if (logged_in && (int)logged_in->id == userid) {
+		login = logged_in->login; disp = logged_in->display_name;
+		//Do we have authentication to start raids? Note that this is
+		//irrelevant if we're doing a raidfind for someone else.
+		multiset havescopes = req->misc->session->?scopes || (<>);
+		if (havescopes["channel:manage:raids"]) raidbtn = "[Raid now!](:#raidnow)";
+		else raidbtn = "[Authenticate to raid automatically](:.twitchlogin data-scopes=channel:manage:raids)";
+	}
 	else if (mapping user = userid && G->G->user_info[userid])
 	{
 		login = user->login || user->name; //helix || kraken
@@ -489,6 +496,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		]),
 		"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
 		"title": title,
+		"raidbtn": raidbtn,
 	]));
 }
 
@@ -497,6 +505,31 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 //many similar things, but it's the same kind of idea.
 void websocket_cmd_interested(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (mappingp(msg->want_streaminfo)) conn->want_streaminfo = msg->want_streaminfo;
+}
+
+//Note that the front end won't send this message if you're doing a for= raidfind, but
+//if you fiddle around and force the message to be sent, all that will happen is that
+//the raid is started for YOUR channel, not the one you're raidfinding for.
+void websocket_cmd_raidnow(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	multiset havescopes = conn->session->?scopes || (<>);
+	if (!havescopes["channel:manage:raids"]) return;
+	string id = conn->session->?user->?id; if (!id) return;
+	int target = (int)msg->target; if (!target) return; //Ensure that it casts to int correctly
+	twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/raids?from_broadcaster_id=%s&to_broadcaster_id=%d",
+			id, target),
+		(["Authorization": "Bearer " + conn->session->token]),
+		(["method": "POST", "return_errors": 1]),
+	)->then() {mapping result = __ARGS__[0];
+		if (result->error) {
+			//Don't give too much info here, not sure what would leak private data
+			conn->sock->send_text(Standards.JSON.encode((["cmd": "update", "raidstatus": "Raid failed."]), 4));
+			return;
+		}
+		conn->sock->send_text(Standards.JSON.encode((["cmd": "update", "raidstatus": "RAIDING!"]), 4));
+		//It'd be nice to have something that notifies the user when the raid has actually gone through,
+		//but that would require an additional webhook which we'd want to dispose of later.
+	};
 }
 
 continue Concurrent.Future|int guess_user_id(string name, int|void fastonly) {
