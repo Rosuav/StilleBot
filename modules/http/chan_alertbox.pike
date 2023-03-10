@@ -633,6 +633,27 @@ void ensure_host_connection(string chan) {
 	raidin(chan, (["to_broadcaster_user_id": (string)channel->userid]));
 }
 
+void ensure_tts_credentials() {
+	//Check if any connected account uses TTS
+	int need_tts = 0;
+	mapping master = persist_status->path("alertbox");
+	foreach (G->G->irc->channels; string name; object channel) {
+		mapping cfg = master[(string)channel->userid] || ([]);
+		if (!cfg->uses_tts) continue;
+		//If you're using the renderer front end, or the editing control panel,
+		//ensure that TTS is available (so that test alerts work). Note that
+		//preview logins won't trigger this, since they will only ever receive
+		//alerts if there's a corresponding control connection.
+		if (sizeof(websocket_groups[cfg->authkey + name] || ({ }))) {need_tts = 1; break;}
+		if (sizeof(websocket_groups["control" + name] || ({ }))) {need_tts = 1; break;}
+	}
+	if (!need_tts) return;
+	float age = time(G->G->tts_config->access_token_fetchtime);
+	if (age > 3500) {age = 0.0; spawn_task(fetch_tts_credentials(1));}
+	remove_call_out(G->G->ensure_tts_callout);
+	G->G->ensure_tts_callout = call_out(ensure_tts_credentials, 3500.0 - age);
+}
+
 bool need_mod(string grp) {return grp == "control" || has_prefix(grp, "preview-");}
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (string err = ::websocket_validate(conn, msg)) return err;
@@ -669,6 +690,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			++log[1]; log[3] = time();
 		}
 		persist_status->save();
+		if (cfg->uses_tts) ensure_tts_credentials();
 	}
 }
 mapping get_chan_state(object channel, string grp, string|void id) {
@@ -1256,7 +1278,10 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 				]),
 				"audioConfig": (["audioEncoding": "OGG_OPUS"]),
 			])))]));
+		System.Timer tm = System.Timer();
 		object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
+		float delay = tm->get();
+		Stdio.append_file("tts_stats.log", sprintf("Channel %O text %O fetch time %.3f", channel->name, text, delay));
 		mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
 		if (mappingp(data) && data->error->?details[?0]->?reason == "ACCESS_TOKEN_EXPIRED") {
 			Stdio.append_file("tts_error.log", sprintf("%sTTS access key expired after %d seconds\n",
@@ -1506,11 +1531,10 @@ continue Concurrent.Future fetch_tts_credentials(int fast) {
 		(["env": getenv() | (["GOOGLE_APPLICATION_CREDENTIALS": "tts-credentials.json"])]));
 	G->G->tts_config->access_token = String.trim(rc->stdout);
 	//Credentials expire after an hour, regardless of usage. It's quite slow to
-	//generate them, though, and I'd rather generate only when needed; so for now,
-	//this will stay here for diagnosis purposes only. If I can figure out an
-	//expiration time, I'll schedule a regeneration at or just before that time.
-	//CJA 20220525: Now fetching automatically whenever there's a problem. It'd
-	//still be good to preempt that if we can.
+	//generate them, so we do it only as needed; if anything fails in the preemptive
+	//checks, we'll run into an issue and then automatically fetch, but otherwise,
+	//this is just to help with scheduling. It might be nicer if we had an expiration
+	//date instead, but for now we just use the fetch time.
 	G->G->tts_config->access_token_fetchtime = time();
 	if (fast) return 0;
 	//To filter to just English results, add "?languageCode=en"
@@ -1579,6 +1603,7 @@ protected void create(string name) {
 	G->G->send_alert = send_alert;
 	foreach (persist_status->path("alertbox"); string id; mapping cfg)
 		check_tts_usage(cfg);
+	ensure_tts_credentials();
 }
 
 /* A Tale of Two Backends
