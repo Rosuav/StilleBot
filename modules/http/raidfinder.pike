@@ -321,6 +321,18 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			title = "Raid Train: " + (trncfg->title || "(untitled)");
 		}
 		else switch (req->variables->categories) {
+			case "pixelplush": { //categories=pixelplush - use an undocumented API to find people playing the !drop game etc
+				object res = yield(Protocols.HTTP.Promise.get_url(
+					"https://api.pixelplush.dev/v1/analytics/sessions/live/short"
+				));
+				mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
+				if (!arrayp(data)) title = "Unable to fetch";
+				else {
+					title = "Active Pixel Plush streamers";
+					args->user_login = data;
+				}
+				break;
+			}
 			default: { //For ?categories=Art,Food%20%26%20Drink - explicit categories
 				array cats = yield(get_helix_paginated("https://api.twitch.tv/helix/games", (["name": req->variables->categories / ","])));
 				if (sizeof(cats)) {
