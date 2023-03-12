@@ -150,7 +150,7 @@
     sections (aka "config pages" as we currently have them).
 * Before Aug 3rd, complete the changeover to follower requests with authentication
   - See poll.pike and comments regarding this date
-* On raid finder, have a button to raid this channel?
-  - Would require broadcaster auth that includes scope channel:manage:raids
-  - Have a dialog to confirm, which is also where the authentication button would go
+* On raid finder, button to raid this channel
   - As a courtesy, remind to halt broadcast after the raid goes through
+  - Would need a hook to notify on the raid going through
+  - Or can we temporarily add the bot to the target channel, so we see the incoming raid?
