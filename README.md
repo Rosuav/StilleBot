@@ -56,6 +56,9 @@ A few tools don't really connect with any specific channel, and can be used by a
   (Hype Train, special promo, etc)
 * [Regular Expression tester](https://sikorsky.rosuav.com/regexp) primarily for people
   editing triggers and commands that use regular expressions
+* [Pixel Plush showcase](https://sikorsky.rosuav.com/raidfinder?categories=pixelplush)
+  - everyone who's currently using any of the [Pixel Plush](https://pixelplush.dev)
+  games. Try the <code>!drop</code> or <code>!plinko</code> command in their chat!
 * TODO: Raid train management
 
 ## Can I haz?
