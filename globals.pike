@@ -1489,26 +1489,8 @@ string ensure_bcaster_token(Protocols.HTTP.Server.Request req, string scopes, st
 	if (sizeof(needscopes) > sizeof(havescopes)) return sort(indices(needscopes)) * " ";
 }
 
-//User text will be given to the given user_text object; emotes will be markdowned.
-//If autolink is specified, words that look like links will be made links.
+//When automatically linkifying links, use this regex for consistency.
 //Note that this is probably a bit too restrictive. Feel free to add more, just as
-//long as nothing abusable can be recognized by this, as it won't be passed through
-//user_text for normal safety.
+//long as nothing abusable can be recognized by this. It's also okay if it doesn't
+//match every possible link, as this is meant as a courtesy, not a validator.
 object hyperlink = Regexp.PCRE("^http(s|)://[A-Za-z0-9.]+(/[-A-Za-z0-9/.+]*|)(\\?[A-Za-z0-9=&+]*|)(#[A-Za-z0-9]*|)$");
-string emotify_user_text(string text, object user, int|void autolink)
-{
-	mapping emotes = G->G->emote_code_to_markdown;
-	if (!emotes) return user(text);
-	array words = text / " ";
-	//This is pretty inefficient - it makes a separate user() entry for each
-	//individual word. If this is a problem, consider at least checking for
-	//any emotes at all, and if not, just return user(text) instead.
-	foreach (words; int i; string w)
-		if (emotes[w]) words[i] = emotes[w];
-		//TODO: Retain emote IDs rather than the markdown for them, then support modified emotes
-		//else if (sscanf(w, "%s_%s", string base, string mod) && mod && sizeof(mod) == 2 && emotes[base])
-			//words[i] = synthesize_emote()
-		else if (autolink && hyperlink->match(w)) words[i] = sprintf("[%s](%<s)", w);
-		else words[i] = user(w);
-	return words * " ";
-}

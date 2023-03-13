@@ -158,14 +158,13 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	foreach (emotesets;; array set) foreach (set, mapping em)
 		have_emotes[em->code] = img(em->code, em->id);
 	array trackme = !tracked_emote_names && ({ });
+	mapping botemotes = persist_status->path("bot_emotes");
 	string text = words->replace(hypetrain, lambda(string w) {
 		//1) Do we (the logged-in user) have the emote?
 		if (trackme) trackme += ({w});
 		if (string have = have_emotes[w]) {used += ({w}); return have;}
-		if (!G->G->emote_code_to_markdown) return w;
 		//2) Does the bot have the emote?
-		string md = G->G->emote_code_to_markdown[w];
-		if (md && sscanf(md, "%*s/v2/%s/default", string id)) return img(w, id);
+		if (string id = botemotes[w]) return img(w, id);
 		//3) Is it in the hard-coded list of known emote IDs?
 		int|string id = emoteids[w];
 		if (id) return img(w, id);
@@ -214,16 +213,13 @@ int message(object channel, mapping person, string msg) {
 	if (!person->uid || !person->emotes || (!sizeof(person->emotes) && channel->name != echolocation_channel)) return 0;
 	mapping v2 = G->G->emotes_v2;
 	mapping seen = persist_status->path("seen_emotes")[(string)person->uid];
-	mapping emotes = G->G->emote_code_to_markdown || ([]); //If not set, don't crash, just ignore them
 	mapping botemotes = person->uid == G->G->bot_uid && persist_status->path("bot_emotes");
 	int changed = 0, now = time();
 	foreach (person->emotes, [string id, int start, int end]) {
 		if (botemotes) {
 			string code = msg[start..end];
-			if (!has_prefix(code, "/") && !has_value(code, '_') && !botemotes[code]) {
+			if (!has_prefix(code, "/") && !has_value(code, '_'))
 				botemotes[code] = id;
-				emotes[code] = sprintf("![%s](%s)", code, emote_url(id, 1));
-			}
 		}
 		string emotename = v2[id];
 		if (!emotename) {
@@ -264,10 +260,4 @@ protected void create(string name) {
 	//used in X seconds", which will be possible, since they're stored with their timestamps.
 	mapping v2 = filter(emoteids, stringp);
 	G->G->emotes_v2 = mkmapping(values(v2), indices(v2));
-	mapping emotes = G->G->emote_code_to_markdown;
-	if (!emotes) G->G->emote_code_to_markdown = emotes = ([]);
-	//Augment (or replace) with any that we've seen that the bot has access to
-	foreach (persist_status->path("bot_emotes"); string code; string id)
-		//Note: Uses the v2 URL scheme even if it's v1 - they seem to work
-		emotes[code] = sprintf("![%s](%s)", code, emote_url((string)id, 1));
 }

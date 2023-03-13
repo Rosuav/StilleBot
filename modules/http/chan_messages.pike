@@ -53,14 +53,16 @@ mapping _get_message(string|int id, mapping msgs) {
 	if (!msg) return 0;
 	if (stringp(msg)) msg = (["message": msg]); else msg = ([]) | msg;
 	if (msg->expiry && msg->expiry < time()) return 0;
-	mapping emotes = G->G->emote_code_to_markdown;
-	if (!msg->parts && emotes) {
+	if (!msg->parts) {
 		array parts = ({""});
+		mapping botemotes = persist_status->path("bot_emotes");
 		foreach (msg->message / " "; int i; string w)
 			if (sscanf(w, "\uFFFAe%s:%s\uFFFB", string emoteid, string alt)) //Assumes that emotes are always entire words, for simplicity
 				parts += ({(["type": "image", "url": emote_url(emoteid, 1), "text": alt]), " "});
-			else if (emotes[w] && sscanf(emotes[w], "![%s](%s)", string alt, string url))
-				parts += ({(["type": "image", "url": url, "text": alt]), " "});
+			else if (botemotes[w])
+				parts += ({(["type": "image", "url": emote_url(botemotes[w], 1), "text": w]), " "});
+			else if (sscanf(w, "%s_%s", string base, string mod) && botemotes[base] && mod)
+				parts += ({(["type": "image", "url": emote_url(botemotes[base] + "_" + mod, 1), "text": w]), " "});
 			else if (hyperlink->match(w))
 				parts += ({(["type": "link", "text": w]), " "});
 			else parts[-1] += w + " ";
