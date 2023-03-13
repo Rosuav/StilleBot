@@ -104,94 +104,16 @@ of their formerly grand sets...
 CupFooty ZombieKappa OWL2019Tracer FightCC<br>
 
 ", "<br>\n", "<br>"); //Remove the newlines after the line breaks so we don't get superfluous empty paragraphs
-//For V1 emotes that the bot has, we can get their IDs from the API.
-//For others, list them here and they'll work. This means that all v2 emotes have to be
-//kept here permanently, even if the bot has them. This may entail a maintenance cost
-//if the emote IDs ever change. Hopefully they won't.
-//TODO: Use the bot's list of seen emotes rather than the now-defunct API call, to
-//regain the "doesn't need to be listed if bot has it" feature.
+//For emotes that the bot has, we can get their IDs from chat sightings.
 constant emoteids = ([
 	"HypeOni6": 301205427, "OWL2019Tracer": 1833318,
 	"PrimeYouDontSay": 134251, "PrimeUWot": 134252, "PrimeRlyTho": 134253,
-	//Hype Train v4: level 1
-	"HypeHeh": "emotesv2_62199faa2ca34ea8a0f3567990a72a14",
-	"HypeDoh": "emotesv2_69a7806c6837428f82475e99677d2f78",
-	"HypeYum": "emotesv2_a964a0cbae9348e6bd981bc714eec71d",
-	"HypeShame": "emotesv2_680c3aae688947d8b6067cff1a8bcdbe",
-	"HypeHide": "emotesv2_6a99bc2baae743099b23ed6ab07bc5c4",
+	//Hype Train v4 bonus emotes
 	"HypeWow": "emotesv2_d20a5e514e534288a1104b92c4f87834",
-
-	//Level 2
-	"HypeTongue": "emotesv2_ea658eb2e9d54833a4518c6dcc196dc6",
-	"HypePurr": "emotesv2_811afb48bceb4ccdbd3281c602d3e3cb",
-	"HypeOoh": "emotesv2_994d515930a14e5396fd36d45e785d48",
-	"HypeBeard": "emotesv2_f045d9aa07d54961ab2ba77174305278",
-	"HypeEyes": "emotesv2_23f63a570f724822bb976f36572a0785",
 	"HypeHay": "emotesv2_50e775355dbe4992a086f24ffaa73676",
-
-	//Level 3
-	"HypeYesPlease": "emotesv2_fa2dad1f526b4c0a843d2cc4d12a7e06",
-	"HypeDerp": "emotesv2_22683be90477418fbc8e76e0cd91a4bd",
-	"HypeJudge": "emotesv2_164b5a252ea94201b7fcfcb7113fe621",
-	"HypeEars": "emotesv2_5ade9654471d406994040073d80c78ac",
-	"HypeCozy": "emotesv2_031719611d64458fb76982679a2d492a",
 	"HypeYas": "emotesv2_d8271fc8f0264fdc9b1ac79051f75349",
-
-	//Level 4
-	"HypeWant": "emotesv2_2a3cd0373fe349cf853c058f10fae0be",
-	"HypeStahp": "emotesv2_661e2889e5b0420a8bb0766dd6cf8010",
-	"HypeYawn": "emotesv2_0f5d26b991a44ffbb88188495a8dd689",
-	"HypeCreep": "emotesv2_19e3d6baefa5477caeaa238bf1b31fb1",
-	"HypeDisguise": "emotesv2_dc24652ada1e4c84a5e3ceebae4de709",
 	"HypeAttack": "emotesv2_f35caa0f5f3243b88cfbd85a3c9e69ff",
-
-	//Level 5
-	"HypeScream": "emotesv2_a05d626acce9485d83fdfb02b6553826",
-	"HypeSquawk": "emotesv2_07dfbc3be2af4edea09217f6f9292b40",
-	"HypeSus": "emotesv2_e0d949b6afb94b01b608fb3ad3e08348",
-	"HypeHeyFriends": "emotesv2_be2e7ac3e077421da3526633fbbb9176",
-	"HypeMine": "emotesv2_ebc2e7675cdd4f4f9871557cfed4b28e",
 	"HypeShy": "emotesv2_d4a50cfaa51f46e99e5228ce8ef953c4",
-
-	//Hype Train v5: level 1
-	"HypeLUL": "emotesv2_e7a6e7e24a844e709c4d93c0845422e1",
-	"HypeCool": "emotesv2_e2a11d74a4824cbf9a8b28079e5e67dd",
-	"HypeLove1": "emotesv2_036fd741be4141198999b2ca4300668e",
-	"HypeSleep": "emotesv2_3114c3d12dc44f53810140f632128b54",
-	"HypePat": "emotesv2_7d457ecda087479f98501f80e23b5a04",
-	"HypeCozy1": "emotesv2_6d27dcab0df7442b88260a25d60bd807",
-
-	//Level 2
-	"HypeHands1": "emotesv2_0457808073314f62962554c12ebb6b4d",
-	"HypeHands2": "emotesv2_8c40cd16027f48c0a70ac7b1fa1c397e",
-	"HypeFail": "emotesv2_0330a84e75ad48c1821c1d29a7dadd4d",
-	"HypeHai": "emotesv2_9b68a8fa2f1d457496ac016b251e06b6",
-	"HypeNom": "emotesv2_9bcc622c0b2a48b180a159c25a2b8245",
-	"HypeBoop": "emotesv2_f930e2f43d284c51a3eb02714360a331",
-
-	//Level 3
-	"HypeBLEH": "emotesv2_08abf0cd0e78494a9da8a2315c3648f4",
-	"HypeApplause": "emotesv2_ccc146905a694f3b8df390f55e34002a",
-	"HypeRage": "emotesv2_4918bd32ff5b476f82bda49f3e958767",
-	"HypeMwah": "emotesv2_7d01d1cf36b549098434c7a6e50a8828",
-	"HypeHuh": "emotesv2_43da115e6b6749828f7dee47d17dd315",
-	"HypeSeemsGood": "emotesv2_73aba26793314019b5ff7a5643e52749",
-
-	//Level 4
-	"HypeWave": "emotesv2_663dbd72c3ae48c585ffd61f3c348fa9",
-	"HypeReading": "emotesv2_271ea48a09ca418baad2ea1f734ab09e",
-	"HypeShock": "emotesv2_1337536bcecf49f4bb9cd1a699341ee2",
-	"HypeStress": "emotesv2_8c1d964bd7e14fe1b8bd61d29ee0eb8c",
-	"HypeCry": "emotesv2_cdc7a602ee08462e81fb6cc0e3e8de61",
-	"HypeDerp1": "emotesv2_e029042dd623498d8b1e74e3ea472bea",
-
-	//Level 5
-	"HypeCheer": "emotesv2_dd4f4f9cea1a4039ad3390e20900abe4",
-	"HypeLurk": "emotesv2_1630ff0e5ff34a808f4b25320a540ee7",
-	"HypePopcorn": "emotesv2_7b8e74be7bd64601a2608c2ff5f6eb7a",
-	"HypeEvil": "emotesv2_1885b5088372466b800789b02daf7b65",
-	"HypeAwww": "emotesv2_85a13cc47247425fa152b9292c4589a9",
-	"HypeHype": "emotesv2_e920cae6f2d8401d8e15392b1a292fbb",
 ]);
 array(string) tracked_emote_names;
 
@@ -222,7 +144,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (!v2_have->_allow_showcase) v2_have = ([]);
 		else title = "Emote showcase for " + v2_have->_allow_showcase;
 	}
-	else if (scopes->chat_login && scopes[?"chat:edit"]) {
+	else if (scopes->chat_login && scopes["chat:edit"]) {
 		//Helix-friendly: query emotes by pushing them through chat.
 		//No, this is not better than the Kraken way. Not even slightly.
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>\n\n"
@@ -243,7 +165,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (!G->G->emote_code_to_markdown) return w;
 		//2) Does the bot have the emote?
 		string md = G->G->emote_code_to_markdown[w];
-		if (md && sscanf(md, "%*s/v1/%d/1.0", int id)) return img(w, id);
 		if (md && sscanf(md, "%*s/v2/%s/default", string id)) return img(w, id);
 		//3) Is it in the hard-coded list of known emote IDs?
 		int|string id = emoteids[w];

@@ -1,5 +1,15 @@
 inherit http_endpoint;
 
+/* TODO: Merge checklist.pike into this file.
+
+* Make checklist redirect to emotes?checklist
+* Make checklist?showcase redirect to emotes?showcase
+* Merge in all functionality
+* Leave checklist.pike doing the redirects if necessary; ultimately remove the file.
+  - Would it violate expectations to have /checklist redirection managed by this file?
+
+*/
+
 constant markdown = #"# Emote showcases and checklists
 
 * [Checklist of unlockable emotes](checklist) eg hype trains, special promos
