@@ -1,78 +1,5 @@
 inherit http_endpoint;
 
-//If the user is logged in as the bot, emotesets can be added/remove to/from a collection
-//of "permanent emotes". These will be highlighted in the emote list. For simplicity, does
-//not distinguish tiered emotes - just uses the channel name alone (all available tiers of
-//a sub are shown together anyway). It's unlikely that the difference between "permanent T1"
-//and "currently T3" will be significant. The channel name is mapped to time() so they can
-//be tracked chronologically - we can't do multisets in JSON anyway, so an object will do.
-
-//To access this programmatically: http[s]://SERVERNAME/emotes?format=json
-//You'll get back a two-key object "ephemeral" and "permanent", each one mapping channel
-//name to array of emotes.
-
-//Assign categories to some of the limited-time-unlockable emotes (only if they're kept permanently).
-//The actual emote set IDs change, so we detect them by looking for one of the emotes.
-constant limited_time_emotes = ([
-	"PrideBalloons": "Pride", "PrideWorld": "Pride",
-	"HypeBigfoot1": "Hype Train (a)", "HypeChest": "Hype Train (b)", "HypeSwipe": "Hype Train (c)",
-	"HahaCat": "Hahahalidays", "RPGPhatLoot": "RPG", "LuvHearts": "Streamer Luv",
-	"HyperCrown": "Hyper", "KPOPcheer": "KPOP",
-]);
-
-continue Concurrent.Future|mapping fetch_emotes()
-{
-	if (!G->G->bot_emote_list || G->G->bot_emote_list->fetchtime < time() - 600)
-	{
-		mapping cfg = persist_config["ircsettings"];
-		if (!cfg) return Concurrent.reject("Oops, shouldn't happen");
-		if (!cfg->nick || cfg->nick == "") return Concurrent.reject("Oops, shouldn't happen");
-		sscanf(cfg["pass"] || "", "oauth:%s", string pass);
-		write("Fetching emote list\n");
-		//Kraken's down.
-		/*mapping info = yield(G->G->external_api_lookups->get_user_emotes(cfg->nick));
-		info->fetchtime = time();
-		G->G->bot_emote_list = info;*/
-		G->G->bot_emote_list = ([]);
-		G->G->emote_set_mapping = ([]); //TODO: Manually group them?
-	}
-	//TODO: Always update if the sets have changed
-	mapping emotes = G->G->emote_code_to_markdown || ([]);
-	if (!G->G->emote_set_mapping) {
-		//NOTE: This fetches only the sets that the bot is able to use. This is
-		//a LOT faster than fetching them all (which could take up to 90 secs),
-		//but if more sets are added - eg a gift sub is dropped on the bot - then
-		//this list becomes outdated :(
-		//NOTE: Formerly this used curl due to an unknown failure. If weird stuff
-		//happens, go back to 9da66622 and consider reversion.
-		write("Fetching emote set info...\n");
-		string sets = indices(G->G->bot_emote_list->emoticon_sets) * ",";
-		object result = yield(Protocols.HTTP.Promise.get_url("https://api.twitchemotes.com/api/v4/sets?id=" + sets)
-			->thencatch() {return __ARGS__[0];}); //Send failures through as results, not exceptions
-		if (result->status != 200) {
-			write("NOT FETCHED: %O %O\n", result->status, result->status_description);
-			G->G->emote_set_mapping = ([]);
-			G->G->emote_code_to_markdown = ([]);
-			return G->G->bot_emote_list;
-		}
-		write("Emote set info fetched.\n");
-		mapping info = (["fetchtime": time(), "sets": sets]);
-		foreach (Standards.JSON.decode(result->get()), mapping setinfo)
-			info[setinfo->set_id] = setinfo;
-		G->G->emote_set_mapping = info;
-		//What if there's a collision? Should we prioritize?
-		foreach (G->G->bot_emote_list->emoticon_sets;; array set) foreach (set, mapping em)
-			emotes[em->code] = sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0)", em->code, em->id);
-	}
-	//Augment (or replace) with any that we've seen that the bot has access to
-	foreach (persist_status->path("bot_emotes"); string code; string id) {
-		//Note: Uses the v2 URL scheme even if it's v1 - they seem to work
-		emotes[code] = sprintf("![%s](%s)", code, emote_url((string)id, 1));
-	}
-	G->G->emote_code_to_markdown = emotes;
-	return G->G->bot_emote_list;
-}
-
 continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->variables->cheer) {
@@ -168,15 +95,7 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 			"text": sprintf("%{\n## %s\n%{%s %}\n%}", emotesets),
 		]));
 	}
-	if (req->variables->flushcache)
-	{
-		//Flush the list of the bot's emotes
-		if (G->G->bot_emote_list) G->G->bot_emote_list->fetchtime = 0;
-		//Also flush the emote set mapping but ONLY if it's at least half an hour old.
-		if (G->G->emote_set_mapping->?fetchtime < time() - 1800) G->G->emote_set_mapping = 0;
-		return redirect("/emotes");
-	}
-	mapping bot_emote_list = yield(fetch_emotes());
+	mapping bot_emote_list = ([]);
 	mapping highlight = persist_config["permanently_available_emotes"];
 	if (!highlight) persist_config["permanently_available_emotes"] = highlight = ([]);
 	mapping(string:string) emotesets = ([]);
@@ -198,9 +117,6 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 		array|string set = ({ });
 		foreach (emotes, mapping em)
 		{
-			if (string set = limited_time_emotes[em->code])
-				//Patch in set names if we recognize an iconic emote from the set
-				chan = "Special unlocks - " + set;
 			set += ({sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0) ", em->code, em->id)});
 		}
 		set = sort(set) * "";
@@ -231,12 +147,4 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 	mapping replacements = (["emotes": emoteinfo * "", "save": ""]);
 	if (is_bot) replacements->save = "<input type=submit value=\"Update permanents\">";
 	return render_template("emotes.md", replacements);
-}
-
-protected void create(string name)
-{
-	::create(name);
-	mapping cfg = persist_config["ircsettings"];
-	if (cfg && cfg->nick && cfg->nick != "" && !G->G->emote_set_mapping)
-		spawn_task(fetch_emotes());
 }

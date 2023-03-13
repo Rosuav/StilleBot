@@ -343,4 +343,10 @@ protected void create(string name) {
 	//used in X seconds", which will be possible, since they're stored with their timestamps.
 	mapping v2 = filter(emoteids, stringp);
 	G->G->emotes_v2 = mkmapping(values(v2), indices(v2));
+	mapping emotes = G->G->emote_code_to_markdown;
+	if (!emotes) G->G->emote_code_to_markdown = emotes = ([]);
+	//Augment (or replace) with any that we've seen that the bot has access to
+	foreach (persist_status->path("bot_emotes"); string code; string id)
+		//Note: Uses the v2 URL scheme even if it's v1 - they seem to work
+		emotes[code] = sprintf("![%s](%s)", code, emote_url((string)id, 1));
 }
