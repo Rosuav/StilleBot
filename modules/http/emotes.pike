@@ -1,5 +1,13 @@
 inherit http_endpoint;
 
+constant markdown = #"# Emote showcases and checklists
+
+* [Checklist of unlockable emotes](checklist) eg hype trains, special promos
+* <form><label>Channel name: <input name=broadcaster size=20></label><input type=submit value=\"Show channel emotes\"></form>
+* [Global cheer emotes](emotes?cheer)
+
+";
+
 continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->variables->cheer) {
@@ -95,56 +103,5 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 			"text": sprintf("%{\n## %s\n%{%s %}\n%}", emotesets),
 		]));
 	}
-	mapping bot_emote_list = ([]);
-	mapping highlight = persist_config["permanently_available_emotes"];
-	if (!highlight) persist_config["permanently_available_emotes"] = highlight = ([]);
-	mapping(string:string) emotesets = ([]);
-	array(mapping(string:array(mapping(string:string)))) emote_raw = ({([]), ([])});
-	mapping session = G->G->http_sessions[req->cookies->session];
-	int is_bot = session->?user->?login == persist_config["ircsettings"]->nick;
-	if (!bot_emote_list->emoticon_sets) return render_template("emotes.md", ([
-		"emotes": "Unable to fetch emotes from Twitch - check again later",
-		"save": "",
-	]));
-	foreach (bot_emote_list->emoticon_sets; string setid; array emotes)
-	{
-		mapping setinfo = G->G->emote_set_mapping[setid] //Ideally get info from the API
-			|| (["channel_name": "Special unlocks - " + (
-				//sprintf("Other (%s)", setid) || //For debugging, uncomment to see the set IDs
-				"other" //Otherwise lump them together as "other".
-			)]);
-		string chan = setinfo->channel_name;
-		array|string set = ({ });
-		foreach (emotes, mapping em)
-		{
-			set += ({sprintf("![%s](https://static-cdn.jtvnw.net/emoticons/v1/%d/1.0) ", em->code, em->id)});
-		}
-		set = sort(set) * "";
-		if (setid == "0") chan = "Global emotes";
-		emote_raw[!highlight[chan]][chan] += emotes;
-		if (is_bot)
-		{
-			//This is all broken thanks to the Kraken shutdown anyway, so just disable it.
-			//As of 20221118, the autoform doesn't exist. If functionality like this is
-			//needed, put it through a websocket.
-			/*if (req->request_type == "POST")
-			{
-				if (!req->variables[chan]) m_delete(highlight, chan);
-				else if (req->variables[chan] && !highlight[chan]) highlight[chan] = time();
-				persist_config->save();
-				//Fall through using the *new* highlight status
-			}*/
-			emotesets[chan + "-Y"] = sprintf("<br><label><input type=checkbox %s name=\"%s\">Permanent</label>",
-				"checked" * !!highlight[chan], chan);
-		}
-		if (highlight[chan]) emotesets[chan + "-Z"] = "\n{: .highlight}";
-		if (setinfo->tier > 1) emotesets[chan + "-T" + setinfo->tier] = sprintf(" T%d: %s", setinfo->tier, set);
-		else if (emotesets[chan]) emotesets[chan] += sprintf(" %s", set);
-		else emotesets[chan] = sprintf("\n\n**%s**: %s", G->G->channel_info[chan]->?display_name || chan, set);
-	}
-	if (req->variables->format == "json") return jsonify(mkmapping(({"permanent", "ephemeral"}), emote_raw), 7);
-	array emoteinfo = values(emotesets); sort(indices(emotesets), emoteinfo);
-	mapping replacements = (["emotes": emoteinfo * "", "save": ""]);
-	if (is_bot) replacements->save = "<input type=submit value=\"Update permanents\">";
-	return render_template("emotes.md", replacements);
+	return render_template(markdown, ([]));
 }
