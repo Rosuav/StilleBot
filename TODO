@@ -137,10 +137,6 @@
   down at some point; may need to add some instrumentation.
 * Have an image that people can use to link to the bot's landing page, if they
   wish to give credit.
-* The landing page /emotes is no longer useful, but the subpages most definitely are:
-  - ?broadcaster= for the showcase
-  - ?cheer for all cheer emotes
-  - Maybe link to /checklist as well?
 * Merge /features into the channel landing page?
   - This would transform the landing page into a sort of control panel, where you can
     make sweeping configuration changes (like enabling/disabling features and setting
