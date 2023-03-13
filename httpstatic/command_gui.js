@@ -493,7 +493,7 @@ const tray_tabs = [
 			{type: "web_message", target: "{param}", message: [
 				{type: "text", message: "This is a top secret message."},
 			]},
-			{type: "text", message: "@{param}, a secret message has been sent to you at: " + new URL("private", location.href).href},
+			{type: "text", message: "@{param}, a secret message has been sent to you at: " + new URL("messages", location.href).href},
 		]},
 	]},
 	{name: "Control Flow", color: "#bbbbf7", items: [
