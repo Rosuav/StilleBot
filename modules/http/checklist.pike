@@ -106,8 +106,8 @@ CupFooty ZombieKappa OWL2019Tracer FightCC<br>
 ", "<br>\n", "<br>"); //Remove the newlines after the line breaks so we don't get superfluous empty paragraphs
 //For emotes that the bot has, we can get their IDs from chat sightings.
 constant emoteids = ([
-	"HypeOni6": 301205427, "OWL2019Tracer": 1833318,
-	"PrimeYouDontSay": 134251, "PrimeUWot": 134252, "PrimeRlyTho": 134253,
+	"HypeOni6": "301205427", "OWL2019Tracer": "1833318",
+	"PrimeYouDontSay": "134251", "PrimeUWot": "134252", "PrimeRlyTho": "134253",
 	//Hype Train v4 bonus emotes
 	"HypeWow": "emotesv2_d20a5e514e534288a1104b92c4f87834",
 	"HypeHay": "emotesv2_50e775355dbe4992a086f24ffaa73676",
@@ -166,8 +166,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		//2) Does the bot have the emote?
 		if (string id = botemotes[w]) return img(w, id);
 		//3) Is it in the hard-coded list of known emote IDs?
-		int|string id = emoteids[w];
-		if (id) return img(w, id);
+		if (string id = emoteids[w]) return img(w, id);
 		if (trackme) trackme -= ({w}); //It's not an emote after all.
 		return w;
 	});
