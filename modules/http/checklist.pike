@@ -157,20 +157,16 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	array(string) used = indices(v2_have); //Emote names that we have AND used. If they're in that mapping, they're in the checklist (by definition).
 	foreach (emotesets;; array set) foreach (set, mapping em)
 		have_emotes[em->code] = img(em->code, em->id);
-	array trackme = !tracked_emote_names && ({ });
 	mapping botemotes = persist_status->path("bot_emotes");
 	string text = words->replace(hypetrain, lambda(string w) {
 		//1) Do we (the logged-in user) have the emote?
-		if (trackme) trackme += ({w});
 		if (string have = have_emotes[w]) {used += ({w}); return have;}
 		//2) Does the bot have the emote?
 		if (string id = botemotes[w]) return img(w, id);
 		//3) Is it in the hard-coded list of known emote IDs?
 		if (string id = emoteids[w]) return img(w, id);
-		if (trackme) trackme -= ({w}); //It's not an emote after all.
 		return w;
 	});
-	if (trackme) tracked_emote_names = trackme; //Retain the list on page load. After code update, will need to load page before using echolocation button.
 	return render(req, ([
 		"vars": (["ws_group": req->misc->session->?user->?id]),
 		"login_link": login_link,
@@ -193,7 +189,6 @@ continue Concurrent.Future echolocate(string user, string pass, array emotes) {
 }
 
 void websocket_cmd_echolocate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!tracked_emote_names) return;
 	mapping seen = persist_status->path("seen_emotes", conn->session->user->id);
 	int threshold = time() - 86400;
 	array emotes = filter(tracked_emote_names) {return seen[__ARGS__[0]] < threshold;};
@@ -259,4 +254,13 @@ protected void create(string name) {
 	//used in X seconds", which will be possible, since they're stored with their timestamps.
 	mapping v2 = filter(emoteids, stringp);
 	G->G->emotes_v2 = mkmapping(values(v2), indices(v2));
+	//List all emotes that would be detected by the main translation loop.
+	//Technically the replacement is ignored, but it's consistent with the above.
+	array trackme = ({ });
+	mapping botemotes = persist_status->path("bot_emotes");
+	string text = words->replace(hypetrain, lambda(string w) {
+		if (botemotes[w] || emoteids[w]) trackme += ({w});
+		return w;
+	});
+	tracked_emote_names = trackme;
 }
