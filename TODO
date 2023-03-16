@@ -150,3 +150,11 @@
   - As a courtesy, remind to halt broadcast after the raid goes through
   - Would need a hook to notify on the raid going through
   - Or can we temporarily add the bot to the target channel, so we see the incoming raid?
+* Outgoing chat messages can have tags added, same syntax as incoming.
+  - @key=value;key2=value2 privmsg #channel :msg
+  - client-nonce=arbitrary-id - trigger a USERSTATE message that includes the same nonce
+    and also the message's id
+  - reply-parent-msg-id=id-of-other-message - send this as a reply
+    - Could be useful in a chat command. "Reply to message ID". Have an easy default like
+      with whisper, which would reply to the command that triggered this.
+    - Would require message IDs to be available to commands
