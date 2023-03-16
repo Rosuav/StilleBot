@@ -410,6 +410,7 @@ export function sockmsg_chanstatus(data) {
 }
 
 let raidtarget = null, raidtargetid = null;
+const raidnow = DOM("#raidnow"); //Won't exist if we aren't authed to raid
 on("click", ".raidbtn", e => {
 	raidtarget = e.match.dataset.target;
 	raidtargetid = e.match.dataset.targetid;
@@ -417,12 +418,12 @@ on("click", ".raidbtn", e => {
 	const btn = DOM("#goraiding .clipbtn");
 	btn.title = "Copy '/raid " + raidtarget + "' to the clipboard";
 	btn.dataset.copyme = "/raid " + raidtarget;
-	set_content("#raidnow", "Raid now!").disabled = false;
+	if (raidnow) set_content(raidnow, "Raid now!").disabled = false;
 	DOM("#goraiding").showModal();
 });
 
 on("click", "#raidnow", e => {
-	set_content("#raidnow", "Starting raid...").disabled = true;
+	if (raidnow) set_content(raidnow, "Starting raid...").disabled = true;
 	ws_sync.send({cmd: "raidnow", target: raidtargetid});
 });
 
