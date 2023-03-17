@@ -251,6 +251,7 @@ const types = {
 			"{@mod}": "1 if the command was triggered by a mod/broadcaster, 0 if not",
 			"{rewardid}": "UUID of the channel point reward that triggered this, or blank",
 			"{redemptionid}": "UUID of the precise channel point redemption (for confirm/cancel)",
+			"{msgid}": "ID of the message that caused this command (suitable for replies)",
 		},
 		width: 400,
 	},

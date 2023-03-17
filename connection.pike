@@ -166,6 +166,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			//You can't see the redemption ID, and definitely can't complete/reject it, but you
 			//would be able to craft a trigger that responds to it.
 			"{rewardid}": params->custom_reward_id || "",
+			"{msgid}": params->id || "",
 		]);
 		runhooks("all-msgs", 0, this, person, msg);
 		event_notify("allmsgs", this, person, msg);
@@ -702,7 +703,7 @@ class channel(string name) { //name begins with hash and is all lower case
 						"{months}": params->msg_param_cumulative_months,
 						"{streak}": params->msg_param_streak_months || "",
 						"{multimonth}": params->msg_param_multimonth_duration || "1", //Ditto re tenure
-						"{msg}": msg,
+						"{msg}": msg, "{msgid}": params->id || "",
 					]));
 					runhooks("subscription", 0, this, "resub", person, tier, 1, params);
 					event_notify("subscription", this, "resub", person, tier, 1, params, msg);
@@ -794,6 +795,7 @@ class channel(string name) { //name begins with hash and is all lower case
 				case "charitydonation":
 					trigger_special("!charity", person, ([
 						"{amount}": params->msg_param_donation_amount + " " + params->msg_param_donation_currency,
+						"{msgid}": params->id || "", //Does this happen? Is there a message at all?
 					]));
 					break;
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
@@ -818,7 +820,7 @@ class channel(string name) { //name begins with hash and is all lower case
 				if (params->bits && (int)params->bits) {
 					runhooks("cheer", 0, this, person, (int)params->bits, params);
 					event_notify("cheer", this, person, (int)params->bits, params, msg);
-					trigger_special("!cheer", person, (["{bits}": params->bits, "{msg}": msg]));
+					trigger_special("!cheer", person, (["{bits}": params->bits, "{msg}": msg, "{msgid}": params->id || ""]));
 				}
 				msg = person->displayname + (person->is_action_msg ? " " : ": ") + msg;
 				string pfx=sprintf("[%s] ", name);

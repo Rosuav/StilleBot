@@ -157,4 +157,3 @@
   - reply-parent-msg-id=id-of-other-message - send this as a reply
     - Could be useful in a chat command. "Reply to message ID". Have an easy default like
       with whisper, which would reply to the command that triggered this.
-    - Would require message IDs to be available to commands
