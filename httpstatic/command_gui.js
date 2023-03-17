@@ -489,11 +489,8 @@ const tray_tabs = [
 		{type: "whisper_back", message: "Shh! This is a whisper!"},
 		{type: "whisper_other", target: "{param}", message: [{type: "text", message: "Here's a whisper!"}]},
 		{type: "voice", voice: ""},
-		{type: "group", message: [
-			{type: "web_message", target: "{param}", message: [
-				{type: "text", message: "This is a top secret message."},
-			]},
-			{type: "text", message: "@{param}, a secret message has been sent to you at: " + new URL("messages", location.href).href},
+		{type: "web_message", target: "{param}", message: [
+			{type: "text", message: "This is a top secret message."},
 		]},
 	]},
 	{name: "Control Flow", color: "#bbbbf7", items: [
