@@ -88,6 +88,8 @@ continue Concurrent.Future clear(object channel, string voiceid, string msg, map
 		(["method": "DELETE"]),
 	));
 }
+@"moderator:manage:chat_messages":
+continue Concurrent.Future deletemsg(object c, string v, string m, mapping t) {return clear(c, v, "", t, m);}
 
 @"moderator:manage:banned_users":
 continue Concurrent.Future ban(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
