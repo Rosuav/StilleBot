@@ -157,3 +157,4 @@
   - reply-parent-msg-id=id-of-other-message - send this as a reply
     - Could be useful in a chat command. "Reply to message ID". Have an easy default like
       with whisper, which would reply to the command that triggered this.
+* Add {msgid} to anchors for specials and triggers to make sure it can be seen
