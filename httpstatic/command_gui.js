@@ -313,6 +313,16 @@ const types = {
 		params: [{attr: "dest", values: "/w"}, {attr: "target", label: "Person to whisper to"}],
 		typedesc: "Whisper to a specific person",
 	},
+	reply_back: {
+		color: "#aaeeff", width: 400, label: el => "🧵 " + el.message,
+		params: [{attr: "dest", values: "/reply"}, {attr: "target", values: "{msgid}"}, {attr: "message", label: "Text", values: text_message}],
+		typedesc: "Reply to the command/message that triggered this (if applicable)",
+	},
+	reply_other: {
+		color: "#aaeeff", children: ["message"], label: el => "🧵 to " + el.target,
+		params: [{attr: "dest", values: "/reply"}, {attr: "target", label: "Message ID (UUID)"}],
+		typedesc: "Reply to a specific message (by its ID)",
+	},
 	web_message: {
 		color: "#99ffff", children: ["message"], label: el => "🌏 to " + el.target,
 		params: [{attr: "dest", values: "/web"}, {attr: "target", label: "Recipient"}, {attr: "destcfg", label: "Response to 'Got it' button"}],
@@ -489,6 +499,7 @@ const tray_tabs = [
 	{name: "Alternate delivery", color: "#f7bbf7", items: [
 		{type: "whisper_back", message: "Shh! This is a whisper!"},
 		{type: "whisper_other", target: "{param}", message: [{type: "text", message: "Here's a whisper!"}]},
+		{type: "reply_back", message: "Join the thread!"},
 		{type: "voice", voice: ""},
 		{type: "web_message", target: "{param}", message: [
 			{type: "text", message: "This is a top secret message."},

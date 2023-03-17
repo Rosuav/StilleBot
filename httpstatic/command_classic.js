@@ -9,7 +9,8 @@ const flags = {
 	delay: {"": "Immediate", "2": "2 seconds", "30": "30 seconds", "60": "1 minute", "120": "2 minutes", "300": "5 minutes",
 			"1800": "Half hour", "3600": "One hour", "7200": "Two hours", "*": "When should this be sent?"},
 	builtin: {"": "None", "*": "Call on extra information from a built-in function or action"},
-	dest: {"": "Chat", "/w": "Whisper", "/web": "Private message", "/set": "Set a variable", "/chain": "Chain to another command",
+	dest: {"": "Chat", "/w": "Whisper", "/web": "Private message", "/set": "Set a variable",
+		"/chain": "Chain to another command", "/reply": "Reply or join a thread, eg to {msgid}",
 		"*": "Where should the response be sent?"},
 };
 for (let name in builtins) flags.builtin[name] = builtins[name].name;

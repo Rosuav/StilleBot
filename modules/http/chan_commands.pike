@@ -205,7 +205,7 @@ mapping get_state(string group, string|void id) {
 //Blank or null is always allowed, and will result in no flag being set.
 constant message_flags = ([
 	"mode": (<"random", "rotate">),
-	"dest": (<"/w", "/web", "/set", "/chain">),
+	"dest": (<"/w", "/web", "/set", "/chain", "/reply">),
 ]);
 //As above, but applying only to the top level of a command.
 constant command_flags = ([
