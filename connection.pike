@@ -553,6 +553,8 @@ class channel(string name) { //name begins with hash and is all lower case
 	//NOTE: Variables should be able to be used in any user-editable text. This means
 	//that all messages involving user-editable text need to come through send(), and
 	//any that don't should be considered buggy.
+	//TODO: Have a way to request that a nonce be sent, and if so, a callback for when
+	//we know the corresponding message ID. It comes through as a USERSTATE message.
 	void send(mapping person, echoable_message message, mapping|void vars)
 	{
 		vars = (persist_status->path("variables")[name] || ([])) | (vars || ([]));

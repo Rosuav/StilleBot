@@ -296,6 +296,10 @@ mapping message_params(object channel, mapping person, array|string param)
 
 //TODO: If a mod purges the bot's message reporting the link, delete the file.
 //Would require knowing the message IDs of what we send, or the content of the deleted message.
+//The easiest way to do this would be to force a client-nonce on the message, then have a hook
+//so that a nonced message gets the ID sent back to the module.
+//TODO similarly: If the user gets banned/timed out within a short period after sharing art,
+//delete the message and the file. Would require the same information.
 @hook_deletemsg:
 int delmsg(object channel, object person, string target, string msgid) { }
 
