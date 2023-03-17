@@ -31,7 +31,7 @@ $$save_or_login||$$
 > > Command  | Text
 > > ---------|------
 > > !love    | rosuavLove maayaHeart fxnLove devicatLove devicatHug noobsLove stephe21Heart beauatLOVE hypeHeart
-> > !hype    | maayaHype silent5HYPU noobsHype maayaHype silent5HYPU noobsHype maayaHype silent5HYPU noobsHype
+> > !hype    | maayaHype HypeHype noobsHype maayaHype HypeHype noobsHype maayaHype HypeHype noobsHype
 > > !hug     | /me devicatHug $$$$ warmly hugs %s maayaHug
 > > !loot    | HypeChest RPGPhatLoot Loot ALL THE THINGS!! stephe21LOOT iimdprLoot
 > > !lurk    | $$$$ drops into the realm of lurkdom devicatLurk
