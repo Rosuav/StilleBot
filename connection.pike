@@ -91,7 +91,7 @@ constant deletemsg = ({"object channel", "object person", "string target", "stri
 @create_hook:
 constant deletemsgs = ({"object channel", "object person", "string target"});
 
-continue Concurrent.Future voice_enable(string voiceid, string chan, array(string) msgs) {
+continue Concurrent.Future voice_enable(string voiceid, string chan, array(string) msgs, mapping|void tags) {
 	mapping tok = persist_status["voices"][voiceid];
 	werror("Connecting to voice %O...\n", voiceid);
 	object conn = yield(irc_connect(([
@@ -102,7 +102,7 @@ continue Concurrent.Future voice_enable(string voiceid, string chan, array(strin
 	werror("Voice %O connected, sending to channel %O\n", voiceid, chan);
 	irc_connections[voiceid] = conn;
 	conn->yes_reconnect(); //Mark that we need this connection
-	conn->send(chan, msgs[*]);
+	conn->send(chan, msgs[*], tags);
 	conn->enqueue(conn->no_reconnect); //Once everything's sent, it's okay to disconnect
 }
 
@@ -498,10 +498,8 @@ class channel(string name) { //name begins with hash and is all lower case
 			}
 		}
 
-		//Whispers are currently handled with a command prefix.
-		//TODO: Make it possible to send whispers via the API instead, in case
-		//whispers get borked on chat again. Would require a different scope.
-		//WARNING: Will only work with verified phone accounts. Thanks, Twitch.
+		//Whispers are currently handled with a command prefix. The actual sending
+		//is done via twitch_apis.pike which hooks the slash commands.
 		if (dest == "/w") prefix = sprintf("%s %s %s", dest, target, prefix);
 		//Any other destination, just send it to open chat (there used to be a facility
 		//for sending to other channels, but this is no longer the case).
@@ -534,8 +532,10 @@ class channel(string name) { //name begins with hash and is all lower case
 			msgs = filter(msgs, G->G->send_chat_command, this, voice);
 			if (!sizeof(msgs)) return;
 		}
-		if (irc_connections[voice]) irc_connections[voice]->send(name, msgs[*]);
-		else spawn_task(voice_enable(voice, name, msgs));
+		mapping tags = ([]);
+		if (dest == "/reply") tags["reply-parent-msg-id"] = target;
+		if (irc_connections[voice]) irc_connections[voice]->send(name, msgs[*], tags);
+		else spawn_task(voice_enable(voice, name, msgs, tags));
 	}
 
 	//Send any sort of echoable message.

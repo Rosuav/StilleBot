@@ -750,8 +750,11 @@ class _TwitchIRC(mapping options) {
 		});
 	}
 
-	void send(string channel, string msg) {
-		enqueue("PRIVMSG #" + (channel - "#") + " :" + string_to_utf8(replace(msg, "\n", " ")));
+	void send(string channel, string msg, mapping(string:string)|void tags) {
+		//Tags can be client-nonce and/or reply-parent-msg-id
+		string pfx = "";
+		if (tags && sizeof(tags)) pfx = "@" + sprintf("%{;%s=%s%} ", (array)tags)[1..]; //Leading and trailing semicolons break things, avoid them
+		enqueue(pfx + "PRIVMSG #" + (channel - "#") + " :" + string_to_utf8(replace(msg, "\n", " ")));
 	}
 
 	void send_ping() {
@@ -857,7 +860,7 @@ class irc_callback {
 	Concurrent.Future irc_connect(mapping options) {
 		//Bump this version number when there's an incompatible change. Old
 		//connections will all be severed.
-		options = (["module": this, "version": 8]) | (options || ([]));
+		options = (["module": this, "version": 9]) | (options || ([]));
 		if (!options->user) {
 			//Default credentials from the bot's main configs
 			mapping cfg = persist_config->path("ircsettings");

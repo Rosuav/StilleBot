@@ -154,7 +154,4 @@
   - @key=value;key2=value2 privmsg #channel :msg
   - client-nonce=arbitrary-id - trigger a USERSTATE message that includes the same nonce
     and also the message's id
-  - reply-parent-msg-id=id-of-other-message - send this as a reply
-    - Could be useful in a chat command. "Reply to message ID". Have an easy default like
-      with whisper, which would reply to the command that triggered this.
 * Add {msgid} to anchors for specials and triggers to make sure it can be seen
