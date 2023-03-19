@@ -106,6 +106,7 @@ string avail_emotes = "";
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (avail_emotes == "") {
+		mapping botemotes = persist_status->path("bot_emotes");
 		mapping emoteids = function_object(G->G->http_endpoints->checklist)->emoteids; //Hack!
 		avail_emotes = "";
 		foreach (emotes / "\n", string level)
@@ -113,7 +114,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			avail_emotes += "\n*";
 			foreach (level / " ", string emote)
 			{
-				string md = sprintf("![%s](%s)", emote, emote_url(emoteids[emote], 1));
+				string id = botemotes[emote] || emoteids[emote];
+				if (!id) continue;
+				string md = sprintf("![%s](%s)", emote, emote_url(id, 1));
 				if (!md) {avail_emotes += " " + emote; continue;}
 				avail_emotes += sprintf(" %s*%s*", md, replace(md, "/1.0", "/3.0"));
 			}
