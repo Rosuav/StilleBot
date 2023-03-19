@@ -1201,8 +1201,8 @@ string textformatting_css(mapping cfg) {
 		if (mixed val = cfg[attr - "-"]) css += attr + ": " + val + "px;";
 	if (cfg->font && cfg->fontfamily) css += "font-family: " + cfg->font + ", " + cfg->fontfamily + ";"; //Note that the front end may have other work to do too, but here, we just set the font family.
 	else if (cfg->font || cfg->fontfamily) css += "font-family: " + (cfg->font || cfg->fontfamily) + ";";
-	if ((int)cfg->padvert) css += sprintf("padding-top: %dem; padding-bottom: %<sem;", (int)cfg->padvert);
-	if ((int)cfg->padhoriz) css += sprintf("padding-left: %dem; padding-right: %<sem;", (int)cfg->padhoriz);
+	if ((int)cfg->padvert) css += sprintf("padding-top: %dem; padding-bottom: %<dem;", (int)cfg->padvert);
+	if ((int)cfg->padhoriz) css += sprintf("padding-left: %dem; padding-right: %<dem;", (int)cfg->padhoriz);
 	if (cfg->strokewidth && cfg->strokewidth != "None")
 		css += sprintf("-webkit-text-stroke: %s %s;", cfg->strokewidth, cfg->strokecolor || "black");
 	if (int alpha = (int)cfg->shadowalpha) {
