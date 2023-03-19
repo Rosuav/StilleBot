@@ -753,6 +753,7 @@ class _TwitchIRC(mapping options) {
 	void send(string channel, string msg, mapping(string:string)|void tags) {
 		//Tags can be client-nonce and/or reply-parent-msg-id
 		string pfx = "";
+		//TODO: Reverse the parsing done on incoming messages - keys transform underscore to hyphen, values transform space to "\\s"
 		if (tags && sizeof(tags)) pfx = "@" + sprintf("%{;%s=%s%} ", (array)tags)[1..]; //Leading and trailing semicolons break things, avoid them
 		enqueue(pfx + "PRIVMSG #" + (channel - "#") + " :" + string_to_utf8(replace(msg, "\n", " ")));
 	}

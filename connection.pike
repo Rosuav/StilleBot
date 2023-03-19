@@ -4,7 +4,7 @@ inherit irc_callback;
 string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
 object substitutions = Regexp.PCRE("(\\$[A-Za-z|]+\\$)|({[A-Za-z0-9_@|]+})");
-constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT"});
+constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT", "USERSTATE"});
 mapping irc_connections = ([]); //Not persisted across code reloads, but will be repopulated (after checks) from the connection_cache.
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
@@ -534,6 +534,15 @@ class channel(string name) { //name begins with hash and is all lower case
 		}
 		mapping tags = ([]);
 		if (dest == "/reply") tags["reply-parent-msg-id"] = target;
+		if (cfg->callback) {
+			//Provide a nonce for the messages, so we call the callback later.
+			//Note that the vars could be mutated between here and the callback,
+			//so we copy them. Note also that we'll use the same nonce for them
+			//all, and only call the callback once.
+			string nonce = sprintf("stillebot-%d", ++G->G->nonce_counter);
+			tags["client-nonce"] = nonce;
+			G->G->nonce_callbacks[nonce] = ({cfg->callback, vars | ([])});
+		}
 		if (irc_connections[voice]) irc_connections[voice]->send(name, msgs[*], tags);
 		else spawn_task(voice_enable(voice, name, msgs, tags));
 	}
@@ -553,13 +562,15 @@ class channel(string name) { //name begins with hash and is all lower case
 	//NOTE: Variables should be able to be used in any user-editable text. This means
 	//that all messages involving user-editable text need to come through send(), and
 	//any that don't should be considered buggy.
-	//TODO: Have a way to request that a nonce be sent, and if so, a callback for when
-	//we know the corresponding message ID. It comes through as a USERSTATE message.
-	void send(mapping person, echoable_message message, mapping|void vars)
+	//If the ID of the message is needed, pass a callback (note that this is intended
+	//for single-message sends, and if multiple messages are sent, it will only be
+	//called once). Example: void cb(mapping vars, mapping params) --> params->id is
+	//the message ID that just got sent.
+	void send(mapping person, echoable_message message, mapping|void vars, function|void callback)
 	{
 		vars = (persist_status->path("variables")[name] || ([])) | (vars || ([]));
 		vars["$$"] = person->displayname || person->user;
-		_send_recursive(person, message, vars, ([]));
+		_send_recursive(person, message, vars, (["callback": callback]));
 	}
 
 	//Expand all channel variables, except for {participant} which usually won't
@@ -857,6 +868,11 @@ class channel(string name) { //name begins with hash and is all lower case
 					G_G_("participants", name[1..], __ARGS__[0]->login)->lastnotice = 0;
 				};
 				break;
+			case "USERSTATE": { //Sent after our messages. The only ones we care about are those with nonces we sent.
+				array callback = m_delete(G->G->nonce_callbacks, params->client_nonce);
+				if (callback) callback[0](callback[1], params);
+				break;
+			}
 			default: werror("Unknown message type %O on channel %s\n", type, name);
 		}
 	}
@@ -1052,6 +1068,7 @@ protected void create(string name)
 	::create(name);
 	if (!G->G->channelcolor) G->G->channelcolor = ([]);
 	if (!G->G->cooldown_timeout) G->G->cooldown_timeout = ([]);
+	if (!G->G->nonce_callbacks) G->G->nonce_callbacks = ([]);
 	if (!G->G->http_sessions) {
 		mixed sess; catch {sess = decode_value(Stdio.read_file("twitchbot_sessions.json"));};
 		G->G->http_sessions = mappingp(sess) ? sess : ([]);
