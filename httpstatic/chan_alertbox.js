@@ -935,9 +935,10 @@ on("click", "input[name=alertselect]", e => {
 
 //TODO: Break this out into utils.js
 function update_tab_visibility(tabset) {
-	document.querySelectorAll("input[type=radio][name=" + tabset + "]").forEach(rb =>
-		DOM("#" + tabset + "_" + rb.value).style.display = rb.checked ? "revert" : "none"
-	);
+	document.querySelectorAll("input[type=radio][name=" + tabset + "]").forEach(rb => {
+		const elem = DOM("#" + tabset + "_" + rb.value);
+		if (elem) elem.style.display = rb.checked ? "revert" : "none"
+	});
 }
 on("click", ".tabset input[type=radio]", e => update_tab_visibility(e.match.name));
 update_tab_visibility("mediatab");
