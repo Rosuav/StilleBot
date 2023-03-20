@@ -179,8 +179,14 @@ Upload time: %s
 		req->misc->channel->send(
 			(["displayname": req->misc->session->user->display_name]),
 			cfg->msgformat || DEFAULT_MSG_FORMAT,
-			(["{URL}": file->url]),
-		);
+			(["{URL}": file->url, "{sharerid}": req->misc->session->user->id, "{fileid}": file->id]),
+		) {[mapping vars, mapping params] = __ARGS__;
+			file->messageid = params->id; //If this has somehow already been deleted from persist, it won't matter; we'll save an unchanged persist mapping.
+			persist_status->save();
+			//Note that the channel ID isn't strictly necessary, as any deletion signal will
+			//itself be associated with that channel; but it's nice to have for debugging.
+			G->G->artshare_messageid[params->id] = ({(string)req->misc->channel->userid, vars["{sharerid}"], vars["{fileid}"]});
+		};
 		return jsonify((["url": file->url]));
 	}
 	return render(req, ([
@@ -294,20 +300,22 @@ mapping message_params(object channel, mapping person, array|string param)
 	return (["{error}": ""]);
 }
 
-//TODO: If a mod purges the bot's message reporting the link, delete the file.
-//Would require knowing the message IDs of what we send, or the content of the deleted message.
-//The easiest way to do this would be to force a client-nonce on the message, then have a hook
-//so that a nonced message gets the ID sent back to the module.
-//TODO similarly: If the user gets banned/timed out within a short period after sharing art,
-//delete the message and the file. Would require the same information.
 @hook_deletemsg:
-int delmsg(object channel, object person, string target, string msgid) { }
+int delmsg(object channel, object person, string target, string msgid) {
+	//If a mod removes the bot's message reporting the link, delete the file.
+	array info = G->G->artshare_messageid[msgid];
+	if (info) delete_file(channel, info[1], info[2]);
+}
 
 @hook_deletemsgs:
 int delmsgs(object channel, object person, string target) {
 	//If someone gets timed out or banned, delete all their files.
 	mapping cfg = persist_status->path("artshare", (string)channel->userid)[target];
-	foreach (cfg->?files || ({ }), mapping file) delete_file(channel, target, file->id);
+	foreach (cfg->?files || ({ }), mapping file) {
+		delete_file(channel, target, file->id);
+		//And delete the messages that announced them
+		if (file->messageid) channel->send(([]), "/deletemsg " + file->messageid);
+	}
 }
 
 void cleanup() {
@@ -337,4 +345,8 @@ void cleanup() {
 	if (sizeof(meta)) G->G->artshare_cleanup = call_out(cleanup, 3600 * 12); //Check twice a day for anything over a day old
 }
 
-protected void create(string name) {::create(name); cleanup();}
+protected void create(string name) {
+	if (!G->G->artshare_messageid) G->G->artshare_messageid = ([]);
+	::create(name);
+	cleanup();
+}
