@@ -533,14 +533,14 @@ class channel(string name) { //name begins with hash and is all lower case
 			if (!sizeof(msgs)) return;
 		}
 		mapping tags = ([]);
-		if (dest == "/reply") tags["reply-parent-msg-id"] = target;
+		if (dest == "/reply") tags->reply_parent_msg_id = target;
 		if (cfg->callback) {
 			//Provide a nonce for the messages, so we call the callback later.
 			//Note that the vars could be mutated between here and the callback,
 			//so we copy them. Note also that we'll use the same nonce for them
 			//all, and only call the callback once.
 			string nonce = sprintf("stillebot-%d", ++G->G->nonce_counter);
-			tags["client-nonce"] = nonce;
+			tags->client_nonce = nonce;
 			G->G->nonce_callbacks[nonce] = ({cfg->callback, vars | ([])});
 		}
 		if (irc_connections[voice]) irc_connections[voice]->send(name, msgs[*], tags);
