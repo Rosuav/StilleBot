@@ -273,6 +273,7 @@ const types = {
 			"{param}": "The entire message",
 			"{username}": "Name of the user who entered the triggering message",
 			"{@mod}": "1 if trigger came from a mod/broadcaster, 0 if not",
+			"{msgid}": "ID of the message that caused this command (suitable for replies)",
 		},
 		width: 400,
 	},

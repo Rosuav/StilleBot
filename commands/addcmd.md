@@ -28,10 +28,10 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!resub | Someone announces a resubscription | The subscriber | tier, months, streak, multimonth, msg
 !!subgift | Someone gives a sub | The giver | tier, months, streak, recipient, multimonth, from_subbomb
 !!subbomb | Someone gives random subgifts | The giver | tier, gifts
-!!cheer | Any bits are cheered (including anonymously) | The cheerer | bits, msg
+!!cheer | Any bits are cheered (including anonymously) | The cheerer | bits, msg, msgid
 !!cheerbadge | A viewer attains a new cheer badge | The cheerer | level
 !!raided | Another broadcaster raided you | The raiding broadcaster | viewers
-!!charity | Someone donates to the charity you're supporting | The donor | amount
+!!charity | Someone donates to the charity you're supporting | The donor | amount, msgid
 !!channelonline | The channel has recently gone online (started streaming) | The broadcaster | uptime, uptime_hms, uptime_english
 !!channelsetup | The channel is online and has recently changed its category/title/tags | The broadcaster | category, title, tag_names
 !!channeloffline | The channel has recently gone offline (stopped streaming) | The broadcaster | uptime, uptime_hms, uptime_english
@@ -59,6 +59,7 @@ Parameter    | Meaning
 {recipient} | Display name of the gift sub recipient
 {multimonth} | Number of consecutive months of subscription given
 {msg} | Any message included with the sub/cheer/dono (blank if none)
+{msgid} | UUID of the message, suitable for replies etc
 {from_subbomb} | 1 if the gift was part of a sub bomb, 0 if not
 {gifts} | Number of randomly-assigned gifts. Can be 1.
 {bits} | Total number of bits cheered in this message
