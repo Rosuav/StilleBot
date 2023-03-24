@@ -8,6 +8,7 @@ so don't be afraid to remove some of the scopes before authenticating!
 Paste the login URL here: <input id=original_url size=120>
 
 Scopes requested:
+{:#origin}
 
 * (paste a Twitch login URL in the above field to start trimming)
 {:#scopelist}

@@ -1,7 +1,7 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {INPUT, LABEL, LI} = choc; //autoimport
+const {CODE, INPUT, LABEL, LI} = choc; //autoimport
 
-let current_url = null;
+let current_url = null, current_origin = "";
 
 function update_resultant_url() {
 	const scopes = [];
@@ -20,6 +20,12 @@ on("input", "#original_url", e => {
 		return;
 	}
 	current_url = url;
+	current_origin = url.searchParams.get("redirect_uri") || url.searchParams.get("client_id") || "(unknown)";
+	replace_content("#origin", [
+		"Scopes requested by ",
+		CODE(current_origin),
+		":",
+	]);
 	const scopes = (url.searchParams.get("scope") || "").split(" ").filter(s => s.length);
 	if (!scopes.length) {
 		replace_content("#scopelist", LI("No scopes requested - this site will only see your user ID"));
