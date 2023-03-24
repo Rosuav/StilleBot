@@ -1409,6 +1409,7 @@ class TwitchAuth
 	inherit Web.Auth.OAuth2.Client;
 	constant OAUTH_AUTH_URI  = "https://id.twitch.tv/oauth2/authorize";
 	constant OAUTH_TOKEN_URI = "https://id.twitch.tv/oauth2/token";
+	//TODO: Make this as (multiset)indices(scopes) where scopes comes from a SSOT with twitch_apis.pike
 	protected multiset(string) valid_scopes = (<
 		//Helix API:
 		"analytics:read:extensions", "analytics:read:games", "bits:read",
