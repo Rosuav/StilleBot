@@ -1476,7 +1476,7 @@ mapping all_twitch_scopes = ([
 	"communities_edit": "Deprecated - join/leave communities??",
 	"communities_moderate": "Deprecated - community moderation",
 	"channel_subscriptions": "Deprecated - See who is subscribed to your channel",
-	"collections_edit": "Deprecated - ?? I don't remember what collections were",
+	"collections_edit": "Deprecated - Manage your channel's collections",
 	"channel_read": "Deprecated - View channel configuration (category, title, etc)",
 	"channel_stream": "Deprecated - View stream key?",
 	"channel_feed_read": "Deprecated - View channel feed",
