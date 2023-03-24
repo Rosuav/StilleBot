@@ -283,14 +283,16 @@ string send_chat_command(string msg, object channel, string voiceid) {
 }
 
 protected void create(string name) {
-	G->G->voice_additional_scopes = scopes;
 	G->G->send_chat_command = send_chat_command;
+	mapping voice_scopes = ([]);
 	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
 		if (ann) foreach (indices(ann), mixed anno) {
 			if (!scopes[anno]) scopes[anno] = anno; //Ensure that every scope is listed in the description mapping
 			need_scope[key] = anno;
+			voice_scopes[anno] = scopes[anno]; //If there's a function that uses it, the voices subsystem can grant it.
 		}
 	}
+	G->G->voice_additional_scopes = voice_scopes;
 	//send_chat_command("/announce This is an announcement from the bot!", G->G->irc->channels["#rosuav"], 0);
 	//send_chat_command("/announce This is an announcement from Mustard Mine!", G->G->irc->channels["#rosuav"], "279141671");
 }
