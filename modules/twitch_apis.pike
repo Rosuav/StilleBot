@@ -5,70 +5,6 @@
 /pin (would love this but with a message ID instead)
 /monitor, /unmonitor, /restrict, /unrestrict
 */
-mapping scopes = ([
-	//Scopes last updated from https://dev.twitch.tv/docs/authentication/scopes/ 20230324
-	//TODO: Annotate the ones that should get a yellow warning triangle added
-	"analytics:read:extensions": "View analytics data for Twitch Extensions",
-	"analytics:read:games": "View analytics data for games",
-	"bits:read": "See cheers and the bits leaderboard",
-	"channel:edit:commercial": "Run ads (broadcaster only)",
-	"channel:manage:broadcast": "Configure broadcast incl category, title, and VOD markers (editor only)",
-	"channel:read:charity": "See charity campaign details",
-	"channel:manage:extensions": "Activate/deactivate Twitch Extensions",
-	"channel:manage:moderators": "Add/remove mod swords (broadcaster only)",
-	"channel:manage:polls": "Start and end polls",
-	"channel:manage:predictions": "Start and end predictions",
-	"channel:manage:raids": "Go raiding (broadcaster only)",
-	"channel:manage:redemptions": "Create and manage channel point rewards and redemptions",
-	"channel:manage:schedule": "Update the channel broadcast schedule",
-	"channel:manage:videos": "Delete VODs",
-	"channel:manage:vips": "Add/remove VIP badges (broadcaster only)",
-	"channel:read:editors": "See who is an editor for the channel",
-	"channel:read:goals": "View goals (eg follower/subscriber counts)",
-	"channel:read:hype_train": "See hype train status and get notifications",
-	"channel:read:polls": "View a current poll in progress and get notifications",
-	"channel:read:predictions": "View a current prediction in progress and get notifications",
-	"channel:read:redemptions": "See channel point rewards and redemptions",
-	"channel:read:stream_key": "See your stream key and stream on your behalf",
-	"channel:read:subscriptions": "See who's subscribed to your channel",
-	"channel:read:vips": "List current channel VIPs",
-	"clips:edit": "Create clips of the current broadcast",
-	"moderation:read": "See who's banned, who's a mod, etc",
-	"moderator:manage:announcements": "Send announcements",
-	"moderator:manage:automod": "Make decisions on automodded messages",
-	"moderator:read:automod_settings": "See Automod settings",
-	"moderator:manage:automod_settings": "Change Automod settings",
-	"moderator:manage:banned_users": "Ban/timeout/unban users",
-	"moderator:read:blocked_terms": "See currently-blocked words and phrases",
-	"moderator:manage:blocked_terms": "Change the blocked words/phrases list",
-	"moderator:manage:chat_messages": "Delete individual chat messages",
-	"moderator:read:chat_settings": "View chat restrictions eg slow mode",
-	"moderator:manage:chat_settings": "Set/remove chat restrictions eg slow mode",
-	"moderator:read:chatters": "See who's currently in chat",
-	"moderator:read:followers": "List your channel followers and get notified on new follows",
-	"moderator:read:shield_mode": "See whether shield mode is active and get notified when it's activated",
-	"moderator:manage:shield_mode": "Engage/disengage shield mode",
-	"moderator:read:shoutouts": "Get notified when you shout out or get shouted out",
-	"moderator:manage:shoutouts": "Send shoutouts",
-	"user:edit": "Update the user's description",
-	"user:edit:follows": "Deprecated - no longer functional (was follow/unfollow)",
-	"user:manage:blocked_users": "Block or unblock other users",
-	"user:read:blocked_users": "See who you've blocked (not the same as banned from the channel)",
-	"user:read:broadcast": "See which Twitch extensions you're using",
-	"user:edit:broadcast": "Activate and deactivate extensions",
-	"user:manage:chat_color": "Change chat color",
-	"user:read:email": "See your email address",
-	"user:read:follows": "See who you follow",
-	"user:read:subscriptions": "Check if you are subscribed to a channel",
-	"user:manage:whispers": "Send whispers (requires phone auth)",
-	//Chat/PubSub scopes
-	"channel:moderate": "Perform and see moderation actions in a channel",
-	"chat:edit": "Send chat messages",
-	"chat:read": "View chat messages as they happen",
-	"whispers:read": "View your whispers as they arrive",
-	"whispers:edit": "Send whispers (may no longer be functional)",
-]);
-
 mapping need_scope = ([]); //Filled in by create()
 
 @"moderator:manage:announcements":
@@ -335,9 +271,8 @@ protected void create(string name) {
 	mapping voice_scopes = ([]);
 	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
 		if (ann) foreach (indices(ann), mixed anno) {
-			if (!scopes[anno]) scopes[anno] = anno; //Ensure that every scope is listed in the description mapping
 			need_scope[key] = anno;
-			voice_scopes[anno] = scopes[anno]; //If there's a function that uses it, the voices subsystem can grant it.
+			voice_scopes[anno] = all_twitch_scopes[anno] || anno; //If there's a function that uses it, the voices subsystem can grant it.
 		}
 	}
 	G->G->voice_additional_scopes = voice_scopes;
