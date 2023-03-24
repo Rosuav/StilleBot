@@ -1,14 +1,20 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {CODE, INPUT, LABEL, LI} = choc; //autoimport
+const {B, CODE, INPUT, LABEL, LI} = choc; //autoimport
 
-let current_url = null, current_origin = "";
+let all_sites = {}, current_url = null, current_origin = "";
 
 function update_resultant_url() {
 	const scopes = [];
-	document.querySelectorAll(".scope_cb").forEach(cb => cb.checked && scopes.push(cb.value));
+	const prefs = all_sites[current_origin].scopes;
+	//Note that this does not overwrite the scopes. If a site *reduces* the scopes it requests,
+	//your preferences will still be remembered for the removed scopes.
+	document.querySelectorAll(".scope_cb").forEach(cb => {
+		prefs[cb.value] = cb.checked; //Remember both selected and deselected for preferences
+		if (cb.checked) scopes.push(cb.value); //For the URL, keep only the selected ones
+	});
 	current_url.searchParams.set("scope", scopes.join(" "));
 	DOM("#resultant_url").href = current_url.href;
-	//TODO: Save into local storage
+	localStorage.setItem("scopetrim_sites", JSON.stringify(all_sites));
 }
 on("click", ".scope_cb", update_resultant_url);
 
@@ -32,11 +38,20 @@ on("input", "#original_url", e => {
 		update_resultant_url();
 		return;
 	}
-	//TODO: Fetch from local storage to see whether the checkboxes should be initially checked or unchecked
-	//(If anything wasn't previously in the mapping - undefined, as opposed to true/false - highlight it.)
+	//Reload the configs every time you edit the URL (in case you have two pages open)
+	all_sites = {};
+	try {all_sites = JSON.parse(localStorage.getItem("scopetrim_sites")) || {};} catch (e) {}
+	//If this is a completely new site, don't show "(new)" on everything. However, if
+	//we've previously seen anything at all - even if it didn't request any scopes - then
+	//adorn every new scope so it can be seen.
+	const new_site = !all_sites[current_origin];
+	if (new_site) all_sites[current_origin] = {scopes: {}};
+	if (!all_sites[current_origin].scopes) all_sites[current_origin].scopes = {};
+	const prev = all_sites[current_origin].scopes;
 	//TODO: Mark some of them with a yellow warning triangle
 	replace_content("#scopelist", scopes.map(s => LI(LABEL([
-		INPUT({type: "checkbox", class: "scope_cb", checked: true, value: s}),
+		!new_site && typeof prev[s] === "undefined" && B("(new)"),
+		INPUT({type: "checkbox", class: "scope_cb", checked: prev[s] !== false, value: s}),
 		" ",
 		all_twitch_scopes[s] || s,
 	]))));
