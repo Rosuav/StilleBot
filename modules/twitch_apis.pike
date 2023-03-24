@@ -234,7 +234,6 @@ continue Concurrent.Future mod(object channel, string voiceid, string msg, mappi
 @"channel:manage:moderators":
 mixed unmod(object c, string v, string m, mapping t) {return mod(c, v, m, t, 1);}
 
-//Rosuav #0000FF, Mustard Mine #DAA520
 Regexp.SimpleRegexp bicap = Regexp.SimpleRegexp("[a-z][A-Z]");
 string bicap_to_snake(string pair) {return pair / 1 * "_";}
 @"user:manage:chat_color":
@@ -252,6 +251,20 @@ continue Concurrent.Future color(object channel, string voiceid, string msg, map
 		]),
 	));
 }
+
+@"moderator:manage:shield_mode":
+continue Concurrent.Future shield(object channel, string voiceid, string msg, mapping tok, int|void remove) {
+	mapping ret = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/moderation/shield_mode?broadcaster_id=%d&moderator_id=%s",
+			channel->userid, voiceid),
+		(["Authorization": "Bearer " + tok->token]), ([
+			"method": "PUT",
+			"json": (["is_active": remove ? Val.false : Val.true]),
+		]),
+	));
+}
+@"moderator:manage:shield_mode":
+mixed shieldoff(object c, string v, string m, mapping t) {return shield(c, v, m, t, 1);}
 
 //Returns 0 if it sent the message, otherwise a reason code.
 //Yes, the parameter order is a bit odd; it makes filtering by this easier.
