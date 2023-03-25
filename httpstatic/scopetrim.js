@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {B, CODE, INPUT, LABEL, LI} = choc; //autoimport
+const {B, CODE, INPUT, LABEL, LI, SPAN} = choc; //autoimport
 
 let all_sites = {}, current_url = null, current_origin = "";
 
@@ -48,12 +48,13 @@ on("input", "#original_url", e => {
 	if (new_site) all_sites[current_origin] = {scopes: {}};
 	if (!all_sites[current_origin].scopes) all_sites[current_origin].scopes = {};
 	const prev = all_sites[current_origin].scopes;
-	//TODO: Mark some of them with a yellow warning triangle
 	replace_content("#scopelist", scopes.map(s => LI(LABEL([
 		!new_site && typeof prev[s] === "undefined" && B("(new)"),
 		INPUT({type: "checkbox", class: "scope_cb", checked: prev[s] !== false, value: s}),
+		(all_twitch_scopes[s] || s)[0] === '*' && SPAN({class: "warningicon"}, "⚠️"),
 		" ",
-		all_twitch_scopes[s] || s,
+		(all_twitch_scopes[s] || s).replace('*', ''),
+		" - ", CODE(s),
 	]))));
 	update_resultant_url();
 });

@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, IMG, INPUT, LABEL, LI, TD, TEXTAREA, TR} = choc; //autoimport
+const {BUTTON, DIV, IMG, INPUT, LABEL, LI, SPAN, TD, TEXTAREA, TR} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#voices tbody");
@@ -68,7 +68,8 @@ on("click", ".perms", e => {
 	set_content("#scopelist", [
 		Object.entries(additional_scopes).sort().map(([scope, desc]) => LI(LABEL([
 			scopes.includes(scope) ? "[Available] " : INPUT({type: "checkbox", name: scope, checked: scope === "chat_login"}),
-			" ", desc,
+			desc[0] === '*' && SPAN({class: "warningicon"}, "⚠️"),
+			" ", desc.replace("*", ""), //should really just be a prefix removal
 		]))),
 	]);
 	DOM("#permsdlg").showModal();
