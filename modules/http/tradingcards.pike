@@ -11,19 +11,12 @@ Make a collection of Australians
 
 Mirror: could there also be something special (like a hologram edition) if you are subscribed to the Streamer (or would that be too difficult)?
 */
-
-/* TODO: Add to the generic markdown renderer, just like for vars, an array/string of scripts and styles
-Then add those to the <head> where they belong, not stuck down in the body.
-*/
 constant add_markdown = #"# Streamer Trading Cards
 
 Add a streamer: <form id=pickstrm><input name=streamer> <button>Add/edit</button></form>
 
 <div id=build_a_card></div>
 <button type=button id=save hidden>Save</button>
-
-<script type=module src=\"$$static||tradingcards.js$$\"></script>
-<link rel=\"stylesheet\" href=\"$$static||tradingcards.css$$\">
 ";
 
 constant menu_markdown = #"# Streamer Trading Cards
@@ -42,9 +35,6 @@ $$desc$$
 <div id=card_collection></div>
 
 [Who's live right now?](/raidfinder?categories=$$coll_id$$)
-
-<script type=module src=\"$$static||tradingcards.js$$\"></script>
-<link rel=\"stylesheet\" href=\"$$static||tradingcards.css$$\">
 ";
 
 mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.Server.Request req, string collection)
@@ -53,6 +43,7 @@ mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.Server.Re
 	if (collection == "add" && req->misc->session->user->?id == (string)G->G->bot_uid) {
 		return render_template(add_markdown, ([
 			"vars": (["collection": 0]),
+			"js": "tradingcards", "css": "tradingcards",
 		]));
 	}
 	mapping coll = persist_status->path("tradingcards", "collections")[collection];
@@ -63,6 +54,7 @@ mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.Server.Re
 		"label": coll->label,
 		"desc": coll->desc,
 		"vars": (["collection": map(coll->streamers, persist_status->path("tradingcards", "all_streamers"))]),
+		"js": "tradingcards", "css": "tradingcards",
 	]));
 }
 

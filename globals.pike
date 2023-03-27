@@ -1111,6 +1111,7 @@ mapping(string:mixed) render_template(string template, mapping(string:string|fun
 	if (!content) error("Unable to load templates/" + template + "\n");
 	array pieces = content / "$$";
 	if (!(sizeof(pieces) & 1)) error("Mismatched $$ in templates/" + template + "\n");
+	function static_fn = G->G->template_defaults["static"];
 	if (replacements->vars) {
 		//Set vars to a mapping of variable name to value and they'll be made available to JS.
 		//To trigger automatic synchronization, set ws_type to a keyword, and ws_group to a string or int.
@@ -1123,12 +1124,24 @@ mapping(string:mixed) render_template(string template, mapping(string:string|fun
 			string code = replacements->vars->ws_code || replacements->vars->ws_type;
 			if (!has_suffix(code, ".js")) code += ".js";
 			vars += ({
-				jsonvar(({"ws_code", G->G->template_defaults["static"](code)})),
-				"let ws_sync = null; import('" + G->G->template_defaults["static"]("ws_sync.js") + "').then(m => ws_sync = m);",
+				jsonvar(({"ws_code", static_fn(code)})),
+				"let ws_sync = null; import('" + static_fn("ws_sync.js") + "').then(m => ws_sync = m);",
 			});
 		}
 		replacements->js_variables = "<script>" + vars * "\n" + "</script>";
 	}
+	replacements->head_scripts = "";
+	//Set js to a string or an array of strings, and those files will be loaded.
+	if (replacements->js) foreach (Array.arrayify(replacements->js), string fn) {
+		if (!has_value(fn, ".")) fn += ".js";
+		replacements->head_scripts += "<script type=module src=\"" + static_fn(fn) + "\"></script>\n";
+	}
+	//Similarly for CSS files.
+	if (replacements->css) foreach (Array.arrayify(replacements->css), string fn) {
+		if (!has_value(fn, ".")) fn += ".css";
+		replacements->head_scripts += "<link rel=\"stylesheet\" href=\"" + static_fn(fn) + "\">\n";
+	}
+
 	for (int i = 1; i < sizeof(pieces); i += 2)
 	{
 		string token = pieces[i];
