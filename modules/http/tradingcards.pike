@@ -61,15 +61,17 @@ mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.Server.Re
 void ensure_collections() {
 	mapping streamers = persist_status->path("tradingcards", "all_streamers");
 	mapping collections = persist_status->path("tradingcards", "collections");
-	mapping tagcount = ([]);
+	mapping tagcount = ([]), tagcase = ([]);
 	foreach (streamers; string id; mapping s)
-		foreach (s->tags || ({ }), string t)
-			tagcount[t] += ({id});
+		foreach (s->tags || ({ }), string t) {
+			tagcount[lower_case(t)] += ({id});
+			tagcase[lower_case(t)] = t;
+		}
 	//For every tag with at least 5 streamers, define a collection.
 	foreach (tagcount; string t; array strm) {
 		if (sizeof(strm) < 5) continue;
 		if (!collections[t]) collections[t] = ([
-			"label": t, //Can be case-changed
+			"label": tagcase[t],
 			"desc": "",
 			"owner": G->G->bot_uid,
 		]);
