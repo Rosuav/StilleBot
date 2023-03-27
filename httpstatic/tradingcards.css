@@ -1,0 +1,30 @@
+.card {
+	width: 325px;
+	border: 8px ridge silver;
+	border-radius: 10px;
+	margin: 4px;
+	padding: 4px;
+	background: #fee;
+}
+
+.card h1 {
+	margin: 0 0 0 10px;
+	text-shadow: #faf 1px 1px 0;
+	font-size: 1.25em;
+}
+
+.card h2 {
+	margin: 0 0 0 8px;
+	text-shadow: #ffe 1px 1px 0;
+	font-size: 1em;
+}
+
+.card img {
+	width: 300px; height: 300px;
+	border: 2px inset silver;
+}
+
+.rules {
+	border: 1px solid black;
+	height: 175px;
+}
