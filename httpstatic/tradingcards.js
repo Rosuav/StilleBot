@@ -12,9 +12,16 @@ function TRADING_CARD(info, editmode) {
 			FIGURE([FIGCAPTION("Edit"), TRADING_CARD(info, 1)]),
 		];
 	}
-	//TODO: Get the user's chat colour to use as the card's colour?
+	//Using the person's chat colour, try to design a background colour.
+	//Current algorithm: Rescale the red, green, and blue components into the
+	//range [C0, FF], making them roughly one quarter saturation.
+	let bgcolor = "#ffffff";
+	if (info.color && info.color[0] === '#') {
+		const n = parseInt(info.color.slice(1), 16);
+		bgcolor = "#" + ((n & 0xFCFCFC) / 4 + 0xC0C0C0).toString(16);
+	}
 	const EDIT = editmode ? (name, value) => INPUT({name, value}) : (n, v) => v;
-	return SECTION({class: "card"}, [
+	return SECTION({class: "card", style: "background-color: " + bgcolor}, [
 		H1(EDIT("card_name", info.card_name)),
 		A({href: info.link, target: "_blank"}, IMG({src: info.image})),
 		//Type line might need a rarity marker

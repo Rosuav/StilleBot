@@ -94,11 +94,14 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (string username = req->variables->query) {
 			username -= "https://twitch.tv/"; //Allow the full URL to be entered if desired
 			mapping raw = yield(get_user_info(username, "login"));
+			array col = yield(twitch_api_request("https://api.twitch.tv/helix/chat/color?user_id=" + raw->id))->data->color;
+			if (!sizeof(col)) col = ({"#000000"});
 			mapping strm = persist_status->path("tradingcards", "all_streamers")[raw->id] || ([]);
 			mapping info = ([
 				"id": raw->id,
 				"card_name": strm->card_name || raw->display_name,
 				"type": strm->type || raw->display_name,
+				"color": col[0],
 				"link": "https://twitch.tv/" + raw->login,
 				"image": raw->profile_image_url,
 				"flavor_text": strm->flavor_text || raw->description || "",
@@ -111,10 +114,13 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			if (!body || !mappingp(body) || !mappingp(body->info)) return (["error": 400]);
 			mapping info = body->info;
 			mapping raw = yield(get_user_info(info->id));
+			array col = yield(twitch_api_request("https://api.twitch.tv/helix/chat/color?user_id=" + raw->id))->data->color;
+			if (!sizeof(col)) col = ({"#000000"});
 			mapping streamers = persist_status->path("tradingcards", "all_streamers");
 			streamers[raw->id] = ([
 				"card_name": info->card_name || raw->display_name,
 				"type": info->type || raw->display_name,
+				"color": col[0],
 				"link": "https://twitch.tv/" + raw->login,
 				"image": raw->profile_image_url,
 				"flavor_text": info->flavor_text || raw->description || "",
