@@ -28,3 +28,11 @@
 	border: 1px solid black;
 	height: 175px;
 }
+
+#build_a_card {display: flex;}
+
+figcaption {
+	text-align: center;
+	font-weight: bold;
+	font-size: 1em;
+}
