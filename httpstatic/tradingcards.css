@@ -49,3 +49,9 @@ figcaption {
 	font-weight: bold;
 	font-size: 1em;
 }
+
+#card_collection {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}

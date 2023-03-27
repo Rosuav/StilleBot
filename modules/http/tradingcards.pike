@@ -44,18 +44,31 @@ How's your collection looking?
 
 constant markdown = #"# Streamer Trading Cards
 
-This would be one collection.
+## $$label$$
+
+$$desc$$
+
+<div id=card_collection></div>
+
+<script type=module src=\"$$static||tradingcards.js$$\"></script>
+<link rel=\"stylesheet\" href=\"$$static||tradingcards.css$$\">
 ";
 
 mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.Server.Request req, string collection)
 {
 	if (collection == "add" && req->misc->session->user->?id == (string)G->G->bot_uid) {
-		return render_template(add_markdown, ([]));
+		return render_template(add_markdown, ([
+			"vars": (["collection": 0]),
+		]));
 	}
 	mapping coll = persist_status->path("tradingcards", "collections")[collection];
 	if (!coll) return redirect("/tradingcards");
-	//TODO: Allow admins to edit the collection metadata
-	return render_template(markdown, ([]));
+	//TODO: Allow the owner to edit the collection metadata
+	return render_template(markdown, ([
+		"label": coll->label,
+		"desc": coll->desc,
+		"vars": (["collection": map(coll->streamers, persist_status->path("tradingcards", "all_streamers"))]),
+	]));
 }
 
 void ensure_collections() {
@@ -121,7 +134,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			persist_status->save();
 		}
 	}
-	return render_template(menu_markdown, ([]));
+	return render_template(menu_markdown, ([
+		"vars": (["collection": 0]),
+	]));
 }
 
 protected void create(string name)

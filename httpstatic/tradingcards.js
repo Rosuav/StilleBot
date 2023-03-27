@@ -56,3 +56,5 @@ on("click", "#save", e => {
 		body: JSON.stringify({info: now_editing}),
 	});
 });
+
+if (collection) replace_content("#card_collection", collection.map(c => TRADING_CARD(c)));
