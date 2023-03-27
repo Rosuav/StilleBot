@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {DIV, FIGCAPTION, FIGURE, H1, H2, IMG, INPUT, LI, SECTION, UL} = choc; //autoimport
+const {A, DIV, FIGCAPTION, FIGURE, H1, H2, IMG, INPUT, LI, SECTION, UL} = choc; //autoimport
 
 let now_editing = null;
 
@@ -16,7 +16,7 @@ function TRADING_CARD(info, editmode) {
 	const EDIT = editmode ? (name, value) => INPUT({name, value}) : (n, v) => v;
 	return SECTION({class: "card"}, [
 		H1(EDIT("card_name", info.card_name)),
-		IMG({src: info.image}),
+		A({href: info.link, target: "_blank"}, IMG({src: info.image})),
 		//Type line might need a rarity marker
 		H2(["Streamer — ", EDIT("type", info.type)]),
 		DIV({class: "rules"}, [
