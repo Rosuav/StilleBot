@@ -56,6 +56,7 @@ $$desc$$
 
 mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.Server.Request req, string collection)
 {
+	collection = lower_case(collection);
 	if (collection == "add" && req->misc->session->user->?id == (string)G->G->bot_uid) {
 		return render_template(add_markdown, ([
 			"vars": (["collection": 0]),
