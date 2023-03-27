@@ -41,5 +41,3 @@ img.have, $$emotes$$ {filter: saturate(1); border-color: green;}
 $$login_link$$
 
 $$text$$
-
-<script type=module src="$$static||utils.js$$"></script>
