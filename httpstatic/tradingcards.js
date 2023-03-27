@@ -24,6 +24,7 @@ function TRADING_CARD(info, editmode) {
 				info.tags.map((t, i) => LI(EDIT("tags:" + i, t))),
 				editmode && LI(EDIT("tags:" + info.tags.length, "")),
 			]),
+			DIV({class: "flavor_text"}, EDIT("flavor_text", info.flavor_text)),
 		]),
 	]);
 }

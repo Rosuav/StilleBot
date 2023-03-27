@@ -27,6 +27,19 @@
 .rules {
 	border: 1px solid black;
 	height: 175px;
+	display: flex;
+	flex-direction: column;
+}
+.rules ul {flex-grow: 1;}
+
+.flavor_text {
+	font-style: italic;
+	text-align: center;
+}
+.flavor_text input {
+	display: block;
+	width: 95%;
+	margin: auto;
 }
 
 #build_a_card {display: flex;}
