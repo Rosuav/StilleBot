@@ -73,8 +73,9 @@ void ensure_collections() {
 			"desc": "",
 			"owner": G->G->bot_uid,
 		]);
-		if (collections[t]->streamers * "," != sort(strm) * ",") {
-			collections[t]->streamers = sort(strm);
+		sort((array(int))strm, strm);
+		if ((collections[t]->streamers || ({ })) * "," != strm * ",") {
+			collections[t]->streamers = strm;
 			persist_status->save();
 		}
 	}
