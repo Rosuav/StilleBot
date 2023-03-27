@@ -6,6 +6,10 @@ inherit http_endpoint;
   - Rarity indicator??
   - If logged-in user is not following this streamer, opacity 80%, saturation 0
 * Have a raid finder mode to show who's live from that collection (link to it from the trading cards page)
+
+Make a collection of Australians
+
+Mirror: could there also be something special (like a hologram edition) if you are subscribed to the Streamer (or would that be too difficult)?
 */
 
 /* TODO: Add to the generic markdown renderer, just like for vars, an array/string of scripts and styles
