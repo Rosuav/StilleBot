@@ -1,7 +1,6 @@
 inherit http_endpoint;
 
 /*
-* Landing page does not list all cards, but lists categories with a minimum of 5 (tweakable if nec) streamers
 * When looking at a collection (canonically: "Canadian"), you see all cards in that category:
   - Rarity indicator??
   - If logged-in user is not following this streamer, opacity 80%, saturation 0
@@ -29,6 +28,8 @@ Add a streamer: <form id=pickstrm><input name=streamer> <button>Add/edit</button
 constant menu_markdown = #"# Streamer Trading Cards
 
 How's your collection looking?
+
+$$collections$$
 ";
 
 constant markdown = #"# Streamer Trading Cards
@@ -130,8 +131,15 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			persist_status->save();
 		}
 	}
+	array coll = ({ }), order = ({ });
+	foreach ((array)persist_status->path("tradingcards", "collections"), [string id, mapping info]) {
+		coll += ({sprintf("* [%s (%d)](/tradingcards/%s)", info->label, sizeof(info->streamers), id)});
+		order += ({info->label}); //Or should they be sorted by streamer count?
+	}
+	sort(order, coll);
 	return render_template(menu_markdown, ([
 		"vars": (["collection": 0]),
+		"collections": coll * "\n",
 	]));
 }
 
