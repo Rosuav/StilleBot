@@ -1,25 +1,10 @@
 inherit http_endpoint;
 
 /*
-Streamer trading cards
-DeviCat - Canadian, Cat-Lover, Coffee, Kawaii
-JessicaMaiArtist - Canadian, Singer
-BeHappyDamnIt - Canadian, Bees
-SuspiciousTumble - Canadian, Sewing, Props, JunkTheCat
-AuroraLee1013 - Canadian, Cross-Stitch, Lego
-
 * Landing page does not list all cards, but lists categories with a minimum of 5 (tweakable if nec) streamers
-* Streamers can have any (reasonable) number of categories, including unusual ones.
 * When looking at a collection (canonically: "Canadian"), you see all cards in that category:
-  - Rounded-corners rectangle with a background to make it look like a card
-  - Top section is the streamer's avatar/PFP
-  - Underneath, "Streamer — " + display_name
   - Rarity indicator??
-  - Rules box lists categories, one per line
-    - Flavor text??
-  - Fancy it up with boxes and stuff
   - If logged-in user is not following this streamer, opacity 80%, saturation 0
-* Anyone you're not following, offer to link to the channel
 * Have a raid finder mode to show who's live from that collection (link to it from the trading cards page)
 */
 
