@@ -2,7 +2,9 @@ inherit http_endpoint;
 
 /*
 * When looking at a collection (canonically: "Canadian"), you see all cards in that category:
-  - Rarity indicator??
+  - Rarity indicator based on the streamer's total follower count?
+    - Use whichever streamer has the highest follower count in this category as the definition???
+    - Otherwise, have some kind of thresholds that define rarity, but that means picking numbers.
   - If logged-in user is not following this streamer, opacity 80%, saturation 0
 * Have a raid finder mode to show who's live from that collection (link to it from the trading cards page)
 
