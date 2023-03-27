@@ -6,6 +6,7 @@ let now_editing = null;
 function TRADING_CARD(info, editmode) {
 	if (editmode === 2) {
 		now_editing = info;
+		DOM("#save").hidden = false;
 		return [
 			FIGURE([FIGCAPTION("Preview"), TRADING_CARD(info)]),
 			FIGURE([FIGCAPTION("Edit"), TRADING_CARD(info, 1)]),
@@ -50,3 +51,10 @@ on("change", "figure input", e => {
 	replace_content("#build_a_card", TRADING_CARD(now_editing, 2))
 });
 
+on("click", "#save", e => {
+	fetch("/tradingcards?save", {
+		method: "PUT",
+		headers: {"Content-Type": "application/json"},
+		body: JSON.stringify({info: now_editing}),
+	});
+});

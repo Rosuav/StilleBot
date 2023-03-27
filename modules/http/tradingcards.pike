@@ -3,10 +3,10 @@ inherit http_endpoint;
 /*
 Streamer trading cards
 DeviCat - Canadian, Cat-Lover, Coffee, Kawaii
-JessicaMaiArtist - Canadian
-BeHappyDamnIt - Canadian
-SuspiciousTumble - Canadian
-AuroraLee1013 - Canadian
+JessicaMaiArtist - Canadian, Singer
+BeHappyDamnIt - Canadian, Bees
+SuspiciousTumble - Canadian, Sewing, Props, JunkTheCat
+AuroraLee1013 - Canadian, Cross-Stitch, Lego
 
 * Landing page does not list all cards, but lists categories with a minimum of 5 (tweakable if nec) streamers
 * Streamers can have any (reasonable) number of categories, including unusual ones.
@@ -31,6 +31,7 @@ constant add_markdown = #"# Streamer Trading Cards
 Add a streamer: <form id=pickstrm><input name=streamer> <button>Add/edit</button></form>
 
 <div id=build_a_card></div>
+<button type=button id=save hidden>Save</button>
 
 <script type=module src=\"$$static||tradingcards.js$$\"></script>
 <link rel=\"stylesheet\" href=\"$$static||tradingcards.css$$\">
@@ -57,6 +58,28 @@ mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.Server.Re
 	return render_template(markdown, ([]));
 }
 
+void ensure_collections() {
+	mapping streamers = persist_status->path("tradingcards", "all_streamers");
+	mapping collections = persist_status->path("tradingcards", "collections");
+	mapping tagcount = ([]);
+	foreach (streamers; string id; mapping s)
+		foreach (s->tags || ({ }), string t)
+			tagcount[t] += ({id});
+	//For every tag with at least 5 streamers, define a collection.
+	foreach (tagcount; string t; array strm) {
+		if (sizeof(strm) < 5) continue;
+		if (!collections[t]) collections[t] = ([
+			"label": t, //Can be case-changed
+			"desc": "",
+			"owner": G->G->bot_uid,
+		]);
+		if (collections[t]->streamers * "," != sort(strm) * ",") {
+			collections[t]->streamers = sort(strm);
+			persist_status->save();
+		}
+	}
+}
+
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->variables->collection) return show_collection(req, req->variables->collection);
@@ -65,7 +88,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (string username = req->variables->query) {
 			username -= "https://twitch.tv/"; //Allow the full URL to be entered if desired
 			mapping raw = yield(get_user_info(username, "login"));
-			mapping info = ([ //TODO: Add exactly this to the all_streamers collection if added
+			mapping info = ([
 				"id": raw->id,
 				"card_name": raw->display_name,
 				"type": raw->display_name,
@@ -76,6 +99,23 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			]);
 			return jsonify((["details": info, "raw": raw]));
 		}
+		if (req->variables->save && req->request_type == "PUT") {
+			mixed body = Standards.JSON.decode(req->body_raw);
+			if (!body || !mappingp(body) || !mappingp(body->info)) return (["error": 400]);
+			mapping info = body->info;
+			mapping raw = yield(get_user_info(info->id));
+			mapping streamers = persist_status->path("tradingcards", "all_streamers");
+			streamers[raw->id] = ([
+				"card_name": info->card_name || raw->display_name,
+				"type": info->type || raw->display_name,
+				"link": "https://twitch.tv/" + raw->login,
+				"image": raw->profile_image_url,
+				"flavor_text": info->flavor_text || raw->description || "",
+				"tags": arrayp(info->tags) ? info->tags : ({ }),
+			]);
+			ensure_collections();
+			persist_status->save();
+		}
 	}
 	return render_template(menu_markdown, ([]));
 }
@@ -84,22 +124,5 @@ protected void create(string name)
 {
 	::create(name);
 	G->G->http_endpoints["/tradingcards/%[^/]"] = show_collection;
-	array streamers = persist_status->path("tradingcards")->all_streamers;
-	if (!streamers) streamers = persist_status->path("tradingcards")->all_streamers = ({ });
-	mapping collections = persist_status->path("tradingcards", "collections");
-	mapping tagcount = ([]);
-	foreach (streamers, mapping s)
-		foreach (s->tags || ({ }), string t)
-			tagcount[t] += ({s->id});
-	//For every tag with at least 5 streamers, define a collection.
-	foreach (tagcount; string t; array strm) {
-		if (sizeof(strm) < 5) continue;
-		if (!collections[t]) collections[t] = ([
-			"label": t, //Can be case-changed
-			"desc": "",
-			"owner": G->G->bot_uid,
-		]);
-		collections[t]->streamers = strm;
-	}
-	persist_status->save();
+	ensure_collections();
 }
