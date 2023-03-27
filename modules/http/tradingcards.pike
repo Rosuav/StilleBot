@@ -91,19 +91,20 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (string username = req->variables->query) {
 			username -= "https://twitch.tv/"; //Allow the full URL to be entered if desired
 			mapping raw = yield(get_user_info(username, "login"));
+			mapping strm = persist_status->path("tradingcards", "all_streamers")[raw->id] || ([]);
 			mapping info = ([
 				"id": raw->id,
-				"card_name": raw->display_name,
-				"type": raw->display_name,
+				"card_name": strm->card_name || raw->display_name,
+				"type": strm->type || raw->display_name,
 				"link": "https://twitch.tv/" + raw->login,
 				"image": raw->profile_image_url,
-				"flavor_text": raw->description || "",
-				"tags": ({ }),
+				"flavor_text": strm->flavor_text || raw->description || "",
+				"tags": strm->tags || ({ }),
 			]);
 			return jsonify((["details": info, "raw": raw]));
 		}
 		if (req->variables->save && req->request_type == "PUT") {
-			mixed body = Standards.JSON.decode(req->body_raw);
+			mixed body = Standards.JSON.decode_utf8(req->body_raw);
 			if (!body || !mappingp(body) || !mappingp(body->info)) return (["error": 400]);
 			mapping info = body->info;
 			mapping raw = yield(get_user_info(info->id));

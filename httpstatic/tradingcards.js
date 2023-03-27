@@ -37,9 +37,6 @@ on("submit", "#pickstrm", async e => {
 	console.log(info);
 	replace_content("#build_a_card", TRADING_CARD(info.details, 2));
 });
-//hack
-fetch("/tradingcards?query=devicat").then(r => r.json())
-	.then(info => replace_content("#build_a_card", TRADING_CARD(info.details, 2)));
 
 on("change", "figure input", e => {
 	if (!now_editing) return;
