@@ -320,6 +320,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			args->user_id = (array(string))casters;
 			title = "Raid Train: " + (trncfg->title || "(untitled)");
 		}
+		else if (mapping tradingcards = persist_status->path("tradingcards", "collections")[lower_case(req->variables->categories)]) {
+			//categories=Canadian to see who's live from the Canadian Streamers collection of trading cards
+			title = "Active " + tradingcards->label + " streamers";
+			args->user_id = tradingcards->streamers;
+		}
 		else switch (req->variables->categories) {
 			case "pixelplush": { //categories=pixelplush - use an undocumented API to find people playing the !drop game etc
 				object res = yield(Protocols.HTTP.Promise.get_url(

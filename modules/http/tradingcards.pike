@@ -6,7 +6,6 @@ inherit http_endpoint;
     - Use whichever streamer has the highest follower count in this category as the definition???
     - Otherwise, have some kind of thresholds that define rarity, but that means picking numbers.
   - If logged-in user is not following this streamer, opacity 80%, saturation 0
-* Have a raid finder mode to show who's live from that collection (link to it from the trading cards page)
 
 Make a collection of Australians
 
@@ -42,6 +41,8 @@ $$desc$$
 
 <div id=card_collection></div>
 
+[Who's live right now?](/raidfinder?categories=$$coll_id$$)
+
 <script type=module src=\"$$static||tradingcards.js$$\"></script>
 <link rel=\"stylesheet\" href=\"$$static||tradingcards.css$$\">
 ";
@@ -58,6 +59,7 @@ mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.Server.Re
 	if (!coll) return redirect("/tradingcards");
 	//TODO: Allow the owner to edit the collection metadata
 	return render_template(markdown, ([
+		"coll_id": collection,
 		"label": coll->label,
 		"desc": coll->desc,
 		"vars": (["collection": map(coll->streamers, persist_status->path("tradingcards", "all_streamers"))]),
