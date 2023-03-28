@@ -21,7 +21,9 @@ function TRADING_CARD(info, editmode) {
 		bgcolor = "#" + ((n & 0xFCFCFC) / 4 + 0xC0C0C0).toString(16);
 	}
 	const EDIT = editmode ? (name, value) => INPUT({name, value}) : (n, v) => v;
-	return SECTION({class: "card", style: "background-color: " + bgcolor}, [
+	//Currently, if you're not logged in, all cards show in full.
+	const cls = info.following === "!" ? "missing card" : "card";
+	return SECTION({class: cls, style: "background-color: " + bgcolor}, [
 		H1(EDIT("card_name", info.card_name)),
 		A({href: info.link, target: "_blank"}, IMG({src: info.image})),
 		//Type line might need a rarity marker

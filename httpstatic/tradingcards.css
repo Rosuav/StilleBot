@@ -7,6 +7,11 @@
 	background: #fee;
 }
 
+.missing {
+	opacity: 80%;
+	filter: saturate(0);
+}
+
 .card h1 {
 	margin: 0 0 0 10px;
 	text-shadow: #faf 1px 1px 0;

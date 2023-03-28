@@ -32,12 +32,14 @@ constant markdown = #"# Streamer Trading Cards
 
 $$desc$$
 
+$$login_link$$
+
 <div id=card_collection></div>
 
 [Who's live right now?](/raidfinder?categories=$$coll_id$$)
 ";
 
-mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.Server.Request req, string collection)
+continue mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.Server.Request req, string collection)
 {
 	collection = lower_case(collection);
 	if (collection == "add" && req->misc->session->user->?id == (string)G->G->bot_uid) {
@@ -49,11 +51,33 @@ mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.Server.Re
 	mapping coll = persist_status->path("tradingcards", "collections")[collection];
 	if (!coll) return redirect("/tradingcards");
 	//TODO: Allow the owner to edit the collection metadata
+	array streamers = map(coll->streamers, persist_status->path("tradingcards", "all_streamers"));
+	string login_link = "";
+	if (req->misc->session->scopes[?"user:read:follows"]) foreach (coll->streamers; int i; string bcaster) {
+		//As far as I know, there's no way to check follows in bulk. So to reduce the cost,
+		//we cache them.
+		mapping foll = G_G_("following", bcaster, req->misc->session->user->id);
+		if (foll->stale < time(1)) {
+			mapping info = yield(twitch_api_request(sprintf(
+				"https://api.twitch.tv/helix/channels/followed?user_id=%s&broadcaster_id=%s",
+				req->misc->session->user->id, bcaster),
+				(["Authorization": "Bearer " + req->misc->session->token])));
+			if (sizeof(info->data)) foll->followed_at = info->data[0]->followed_at;
+			else foll->followed_at = 0;
+			//Cache positive entries for an hour, negative for a few minutes.
+			foll->stale = time(1) + (foll->followed_at ? 3600 : 180);
+		}
+		//Record the following status as either a timestamp or "!" for not following.
+		//This leaves undefined/absent as "unknown" (eg if not logged in).
+		//Don't mutate the streamer info as that's straight from persist
+		streamers[i] = streamers[i] | (["following": foll->followed_at || "!"]);
+	}
+	else login_link = "[Check your collection!](:.twitchlogin data-scopes=user:read:follows)";
 	return render_template(markdown, ([
 		"coll_id": collection,
-		"label": coll->label,
-		"desc": coll->desc,
-		"vars": (["collection": map(coll->streamers, persist_status->path("tradingcards", "all_streamers"))]),
+		"label": coll->label, "desc": coll->desc,
+		"login_link": login_link,
+		"vars": (["collection": streamers]),
 		"js": "tradingcards", "css": "tradingcards",
 	]));
 }
