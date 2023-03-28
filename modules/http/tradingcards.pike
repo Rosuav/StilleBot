@@ -5,7 +5,6 @@ inherit http_endpoint;
   - Rarity indicator based on the streamer's total follower count?
     - Use whichever streamer has the highest follower count in this category as the definition???
     - Otherwise, have some kind of thresholds that define rarity, but that means picking numbers.
-  - If logged-in user is not following this streamer, opacity 80%, saturation 0
 
 Make a collection of Australians
 
