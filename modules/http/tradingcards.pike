@@ -70,6 +70,7 @@ continue mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.
 		//This leaves undefined/absent as "unknown" (eg if not logged in).
 		//Don't mutate the streamer info as that's straight from persist
 		streamers[i] = streamers[i] | (["following": foll->followed_at || "!"]);
+		if (bcaster == req->misc->session->user->id) streamers[i]->following = "forever";
 	}
 	else login_link = "[Check your collection!](:.twitchlogin data-scopes=user:read:follows)";
 	return render_template(markdown, ([
