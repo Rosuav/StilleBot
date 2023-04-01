@@ -95,17 +95,22 @@ continue Concurrent.Future force_recalc(string chan, int|void fast) {
 
 	//Collect bit stats for that time period. NOTE: Periods other than "monthly" are basically broken. FIXME.
 	string period = "month";
-	mapping tm = gmtime(time()); //Twitch actually uses America/Pacific but whatever
+	mapping tm = gmtime(time()); //Twitch actually uses America/Pacific. This is behind UTC so it's mostly fine.
 	mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
 			+ sprintf("&started_at=%d-%02d-02T00:00:00Z", tm->year + 1900, tm->mon + 1),
 			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
 	string was_uncertain = stats["latest_bits_" + period];
+	//I said "mostly fine", but due to the way that rollover works, we can have uncertain data when we're in the
+	//middle of rollover. That's a roughly 8-9 hour period when updates might not push through correctly, so to
+	//compensate, we go a bit overboard and, any time there's any update on the 1st of the month, do a more full
+	//fetch. It's a bit of work but it means we guarantee good data.
+	if (tm->mday == 1) was_uncertain = "force";
 	sscanf(info->date_range->started_at, "%d-%d-%*dT%*d:%*d:%*dZ", int year, int month);
 	stats[period + "ly"][stats["latest_bits_" + period] = sprintf("bits%04d%02d", year, month)] = info->data;
 	for (int i = 0; i < 6; ++i) {
 		if (!--month) {--year; month = 12;}
 		string key = sprintf("bits%04d%02d", year, month);
-		if (key != was_uncertain && stats[period + "ly"][key]) break; //We have dependable stats, they shouldn't change now.
+		if (was_uncertain != "force" && key != was_uncertain && stats[period + "ly"][key]) break; //We have dependable stats, they shouldn't change now.
 		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
 				+ sprintf("&started_at=%d-%02d-02T00:00:00Z", year, month),
 				(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
