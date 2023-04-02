@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, ABBR, AUDIO, B, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR, UL, VIDEO} = choc; //autoimport
+const {A, ABBR, AUDIO, B, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR, VIDEO} = choc; //autoimport
 import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
 function THUMB(file, noautoplay) {
