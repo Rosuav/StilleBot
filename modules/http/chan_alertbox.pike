@@ -407,19 +407,20 @@ constant ALERTTYPES = ({([
 ]), ([
 	"id": "kofi",
 	"label": "Ko-Fi",
-	"heading": "Ko-Fi donation, new subscription, or sale",
+	"heading": "Ko-Fi donation, new membership, sale, or commission",
 	"description": "When someone supports your channel using your Ko-Fi page",
 	"placeholders": ([
 		"username": "Display name of the supporter",
 		"amount": "Amount donated or total sale value (includes currency)",
 		"msg": "Message text (if not flagged private)",
-		"tiername": "Subscription tier, if applicable",
-		"is_subscription": "Is this a recurring subscription?",
+		"tiername": "Membership tier, if applicable",
+		"is_membership": "Is this a membership (recurring subscription)?",
 		"is_shopsale": "Is this a shop item sale?",
+		"is_commission": "Is this a commission?",
 	]),
 	"testpholders": (["amount": "5 USD"]),
 	"builtin": "kofi",
-	"condition_vars": ({"amount", "is_subscription", "is_shopsale", "tiername"}),
+	"condition_vars": ({"amount", "is_membership", "is_shopsale", "is_commission", "tiername"}),
 ]), ([
 	//Settings for personal alerts (must be last in the array)
 	"placeholders": ([

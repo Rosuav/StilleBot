@@ -62,7 +62,7 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 		- Fire special trigger
 		*/
 
-		werror("GOT KOFI NOTIFICATION %O\n", data);
+		Stdio.append_file("kofi.log", sprintf("GOT KOFI NOTIFICATION %O %O\n", req->misc->channel->name, data));
 		string chan = req->misc->channel->name[1..];
 		string amount = data->amount;
 		if (amount[<2..] == ".00") amount = amount[..<3];
@@ -79,8 +79,8 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 			"username": data->from_name,
 		]);
 		if (data->is_subscription_payment) {
-			if (data->is_first_subscription_payment) special = "!kofi_sub"; //Resubs aren't currently interesting.
-			alertparams->is_subscription = "1";
+			if (data->is_first_subscription_payment) special = "!kofi_member"; //Renewals aren't currently interesting.
+			alertparams->is_membership = "1";
 			alertparams->tiername = params["{tiername}"] = data->tiername || "";
 		} else if (arrayp(data->shop_items) && sizeof(data->shop_items)) {
 			special = "!kofi_shop";
@@ -93,7 +93,7 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 		if (special) {
 			G->G->send_alert(req->misc->channel, "kofi", alertparams);
 			req->misc->channel->trigger_special(special, (["user": chan]), params);
-		} else special = "!kofi_resub"; //Hack: Goal bars (might) advance on resubs even though nothing else does.
+		} else special = "!kofi_renew"; //Hack: Goal bars (might) advance on renewals even though nothing else does.
 		//TODO: What about currencies like JPY, which don't scale the same way?
 		//Ko-fi may or may not send us the right number of decimal places.
 		sscanf(data->amount, "%d.%d", int dollars, int cents);

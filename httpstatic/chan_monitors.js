@@ -130,8 +130,8 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 		"Similarly for Ko-fi support (all scaled by number of cents)",
 		DIV({className: "optionset"}, [
 			FIELDSET([LEGEND("Donation"), INPUT({type: "number", name: "kofi_dono"})]),
-			FIELDSET([LEGEND("New sub"), INPUT({type: "number", name: "kofi_sub"})]),
-			FIELDSET([LEGEND("Renewed sub"), INPUT({type: "number", name: "kofi_resub"})]),
+			FIELDSET([LEGEND("Membership"), INPUT({type: "number", name: "kofi_member"})]),
+			FIELDSET([LEGEND("Renewal"), INPUT({type: "number", name: "kofi_renew"})]),
 			FIELDSET([LEGEND("Shop sale"), INPUT({type: "number", name: "kofi_shop"})]),
 		]),
 		"For events not listed, create a command or trigger (TODO - example)",
