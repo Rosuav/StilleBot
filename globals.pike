@@ -833,6 +833,8 @@ class _TwitchIRC(mapping options) {
 	}
 	void command_RECONNECT(mapping attrs, string pfx, array(string) args) {
 		werror("#### Got a RECONNECT signal ####\nthis %O, attrs %O, pfx %O, args %O\n", this, attrs, pfx, args);
+		if (sock) sock->close();
+		sockclosed();
 	}
 	//Insert ({get_token, "#some_channel"}) into the queue to grab a token before
 	//proceeding. This is done automatically for PRIVMSG and JOIN commands, but for
