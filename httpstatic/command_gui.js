@@ -108,8 +108,9 @@ const text_message = {...default_handlers,
 		const txt = el.value;
 		if (!txt.includes("\n")) return txt;
 		//Convert multiple lines into a group of elements of this type
-		msg.message = txt.split("\n").filter(l => l !== "")
-			.map((l,i) => ({type: msg.type, message: l, parent: [msg, "message", i]}));
+		const lines = txt.split("\n").filter(l => l !== "");
+		if (lines.length <= 1) return lines[0] || ""; //Multiple lines but only one non-blank line, so use it as-is.
+		msg.message = lines.map((l,i) => ({type: msg.type, message: l, parent: [msg, "message", i]}));
 		msg.type = "group";
 		actives.push(...msg.message);
 		msg.message.push("");
