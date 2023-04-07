@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, DIV, FIGCAPTION, FIGURE, H1, H2, IMG, INPUT, LI, SECTION, UL} = choc; //autoimport
+const {A, DIV, FIGCAPTION, FIGURE, H1, H2, IMG, INPUT, LI, SECTION, UL} = lindt; //autoimport
 
 let now_editing = null;
 
@@ -30,7 +30,7 @@ function TRADING_CARD(info, editmode) {
 		H2(["Streamer — ", EDIT("type", info.type)]),
 		DIV({class: "rules"}, [
 			UL([
-				info.tags.map((t, i) => LI(EDIT("tags:" + i, t))),
+				...info.tags.map((t, i) => LI(EDIT("tags:" + i, t))),
 				editmode && LI(EDIT("tags:" + info.tags.length, "")),
 			]),
 			DIV({class: "flavor_text"}, EDIT("flavor_text", info.flavor_text)),
@@ -47,7 +47,7 @@ on("submit", "#pickstrm", async e => {
 	replace_content("#build_a_card", TRADING_CARD(info.details, 2));
 });
 
-on("change", "figure input", e => {
+on("input", "figure input", e => {
 	if (!now_editing) return;
 	const parts = e.match.name.split(":");
 	//If name is "type", set now_editing["type"] to the value. If it's
