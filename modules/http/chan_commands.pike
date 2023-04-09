@@ -366,12 +366,14 @@ echoable_message validate(echoable_message resp, mapping state)
 	if (sizeof(aliases)) ret->aliases = aliases * " ";
 
 	//Automation comes in a couple of strict forms; anything else gets dropped.
+	//Very very basic validation is done (no zero-minute automation) but otherwise, stupid stuff is
+	//fine; I'm not going to stop you from setting a command to run every 1048576 minutes.
 	if (stringp(resp->automate)) {
 		if (sscanf(resp->automate, "%d:%d", int hr, int min) == 2) ret->automate = ({hr, min, 1});
-		else if (sscanf(resp->automate, "%d-%d", int min, int max) && min >= 0 && max >= min) ret->automate = ({min, max, 0});
-		else if (sscanf(resp->automate, "%d", int minmax) && minmax >= 0) ret->automate = ({minmax, minmax, 0});
+		else if (sscanf(resp->automate, "%d-%d", int min, int max) && min >= 0 && max >= min && max > 0) ret->automate = ({min, max, 0});
+		else if (sscanf(resp->automate, "%d", int minmax) && minmax > 0) ret->automate = ({minmax, minmax, 0});
 		//Else don't set ret->automate.
-	} else if (arrayp(resp->automate) && sizeof(resp->automate) == 3 && min(@resp->automate) >= 0 && resp->automate[2] <= 1)
+	} else if (arrayp(resp->automate) && sizeof(resp->automate) == 3 && min(@resp->automate) >= 0 && max(@resp->automate) > 0 && resp->automate[2] <= 1)
 		ret->automate = resp->automate;
 
 	//TODO: Ensure that the reward still exists
