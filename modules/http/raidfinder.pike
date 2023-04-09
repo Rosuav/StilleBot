@@ -3,9 +3,6 @@ inherit http_websocket;
   - Raid tracking works only for channels that I track, but I don't have to bot for them.
   - There's not going to be any easy UI for it, but it'd be great to have a "raided my friend"
     feature, where we can see any time that X raided Y where Y is one of my friends... hard.
-
-TODO: Put a real space between tags so highlighting works correctly.
--- The browser seems to be ditching it for me. Not sure why, or how to stop it.
 */
 
 constant MAX_PREF = 3, MIN_PREF = -3;
