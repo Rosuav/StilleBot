@@ -1,5 +1,6 @@
 inherit command;
 inherit hook;
+inherit annotated;
 constant featurename = "commands";
 constant require_moderator = 1;
 constant docstring = #"
@@ -38,6 +39,7 @@ was previously set to repeat.
 Both of these commands can be used while the channel is offline, but the
 automated echoing will happen only while the stream is live.
 ";
+@retain: mapping autocommands = ([]);
 
 //Convert a number of minutes into a somewhat randomized number of seconds
 //Assumes a span of +/- 1 minute if not explicitly given
@@ -99,7 +101,7 @@ echoable_message process(object channel, mapping person, string param)
 	else if (sscanf(param, "%d %s", int m, msg) && msg)
 		mins = ({m, m, 0}); //Repeated exactly every X minutes
 	if (!mins) return "Check https://rosuav.github.io/StilleBot/commands/repeat for usage information.";
-	if (mixed id = m_delete(G->G->autocommands, channel->name + " " + msg))
+	if (mixed id = m_delete(autocommands, channel->name + " " + msg))
 		remove_call_out(id); //Old-style key (not used for new-style repeats)
 	if (mins[0] < 0 && channel->config->autocommands[?msg])
 	{
@@ -133,7 +135,7 @@ echoable_message process(object channel, mapping person, string param)
 		default: return "Huh?"; //Shouldn't happen
 	}
 	G->G->update_command(channel, "", msg, command | (["automate": mins]));
-	G->G->autocommands[msg[1..] + channel->name] = call_out(autospam, seconds(mins, channel->config->timezone), channel->name, msg);
+	autocommands[msg[1..] + channel->name] = call_out(autospam, seconds(mins, channel->config->timezone), channel->name, msg);
 	return "Command " + msg + " will now be run automatically.";
 }
 
@@ -148,16 +150,16 @@ echoable_message unrepeat(object channel, mapping person, string param)
 	if (cfg->autocommands) foreach (cfg->autocommands; string msg; int|array(int) mins)
 	{
 		string key = "#" + channel + " " + msg;
-		mixed id = G->G->autocommands[key];
+		mixed id = autocommands[key];
 		if (!id || undefinedp(find_call_out(id)))
-			G->G->autocommands[key] = call_out(autospam, seconds(mins, cfg->timezone), "#" + channel, msg);
+			autocommands[key] = call_out(autospam, seconds(mins, cfg->timezone), "#" + channel, msg);
 	}
 	foreach (G->G->echocommands; string cmd; echoable_message response) {
 		if (!has_suffix(cmd, "#" + channel)) continue;
 		if (!mappingp(response) || !response->automate) continue;
-		mixed id = G->G->autocommands[cmd];
+		mixed id = autocommands[cmd];
 		if (!id || undefinedp(find_call_out(id)))
-			G->G->autocommands[cmd] = call_out(autospam, seconds(response->automate, cfg->timezone), "#" + channel, "!" + (cmd / "#")[0]);
+			autocommands[cmd] = call_out(autospam, seconds(response->automate, cfg->timezone), "#" + channel, "!" + (cmd / "#")[0]);
 	}
 }
 
@@ -165,7 +167,7 @@ void check_autocommands()
 {
 	//First look for any that should be removed
 	//No need to worry about channels being offline; they'll be caught at next repeat.
-	foreach (G->G->autocommands; string key; mixed id)
+	foreach (autocommands; string key; mixed id)
 	{
 		//Clean up any from the autocommands table (not counting those from echocommands' automate attributes)
 		if (sscanf(key, "%s %s", string channel, string msg) == 2) {
@@ -181,9 +183,8 @@ void check_autocommands()
 
 protected void create(string name)
 {
+	::create(name);
 	register_bouncer(autospam);
-	if (!G->G->autocommands) G->G->autocommands = ([]);
 	check_autocommands();
 	G->G->commands["unrepeat"] = unrepeat;
-	::create(name);
 }

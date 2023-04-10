@@ -1,6 +1,8 @@
 inherit http_endpoint;
+inherit annotated;
 
 //Get the newest modified timestamp for a file or any of its deps
+@retain: mapping httpstatic_deps = ([]);
 int _get_mtime(string filename, multiset|void ignore) {
 	object stat = file_stat("httpstatic/" + filename);
 	if (!stat) return 0;
@@ -47,10 +49,10 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string fil
 		multiset deps = (<>);
 		while (sscanf(data, "%s$$static||%[a-zA-Z_.]$$%s", string before, string fn, string after) == 3) {
 			deps[fn] = 1;
-			if (multiset grandchildren = G->G->httpstatic_deps[fn]) deps |= grandchildren;
+			if (multiset grandchildren = httpstatic_deps[fn]) deps |= grandchildren;
 			data = before + staticfile(fn) + after;
 		}
-		G->G->httpstatic_deps[filename] = deps;
+		httpstatic_deps[filename] = deps;
 		return ([
 			"data": data,
 			"type": "text/javascript",
@@ -79,6 +81,5 @@ protected void create(string name)
 	::create(name);
 	G->G->http_endpoints["favicon.ico"] = favicon;
 	G->G->template_defaults["static"] = staticfile;
-	if (!G->G->httpstatic_deps) G->G->httpstatic_deps = ([]);
 	foreach (upload_dirs;; string dir) mkdir("httpstatic/" + dir); //Autocreate directories as needed
 }

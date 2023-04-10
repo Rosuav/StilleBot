@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit annotated;
 constant markdown = #"# Who Funds Me?
 
 <div id=error></div>
@@ -16,6 +17,7 @@ $$chattoggle$$
 
 constant URL = "https://www.gofundme.com/f/marvincharitystream2021";
 mapping state = (["donations": ({ })]);
+@retain: mapping whofundsme_announce = ([]);
 
 mapping get_state(string group, string|void id) {return state;}
 
@@ -46,7 +48,7 @@ continue Concurrent.Future do_check() {
 		seen_ids[id] = 1;
 		changed = 1;
 		write("%s donated %d %s\n", dono["name"], dono["amount"], currency);
-		foreach (G->G->whofundsme_announce; string chan; int state) if (state)
+		foreach (whofundsme_announce; string chan; int state) if (state)
 			send_message("#" + chan, sprintf("/me maayaSpoiled %s donated %d %s maayaSpoiled\n", dono["name"], dono["amount"], currency));
 		if (dono["comment"])
 			write(dono["comment"] + "\n");
@@ -62,7 +64,6 @@ void check() {
 }
 
 mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
-	if (!G->G->whofundsme_announce) G->G->whofundsme_announce = ([]);
 	string username = req->misc->session->?user->?login;
 	check();
 	if (req->variables->summarycolor) return render_template("monitor.html", ([
@@ -72,7 +73,7 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 		"chattoggle": !username ? "[Log in to enable chat](:.twitchlogin)" :
-			G->G->whofundsme_announce[username] ? "[Disable announcements in " + username + " chat](:#chattoggle)" :
+			whofundsme_announce[username] ? "[Disable announcements in " + username + " chat](:#chattoggle)" :
 			"[Enable announcements in " + username + " chat](:#chattoggle)",
 	]));
 
@@ -81,8 +82,10 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 void websocket_cmd_chattoggle(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	string username = conn->session->?user->?login;
 	if (!username) return;
-	int state = !G->G->whofundsme_announce[username];
-	G->G->whofundsme_announce[username] = state;
+	int state = !whofundsme_announce[username];
+	whofundsme_announce[username] = state;
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "chatbtn", "label": ({"En", "Dis"})[state] + "able announcements in " + username + " chat"]), 4));
 	send_message("#" + username, state ? "New donations will be announced here." : "Halting announcements in this channel.");
 }
+
+protected void create(string name) {::create(name);}
