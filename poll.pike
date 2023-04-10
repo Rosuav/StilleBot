@@ -3,6 +3,8 @@
 mapping G = (["G":([])]);
 mapping persist_config = (["channels": ({ }), "ircsettings": Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"))["ircsettings"] || ([])]);
 mapping persist_status = ([]);
+constant export = "", create_hook = "";
+void event_notify(mixed ... args) { }
 #else
 inherit hook;
 inherit annotated;
