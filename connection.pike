@@ -1,11 +1,15 @@
 inherit hook;
 inherit irc_callback;
+inherit annotated;
 
 string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
 object substitutions = Regexp.PCRE("(\\$[A-Za-z|]+\\$)|({[A-Za-z0-9_@|]+})");
 constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT", "USERSTATE"});
 mapping irc_connections = ([]); //Not persisted across code reloads, but will be repopulated (after checks) from the connection_cache.
+@retain: mapping channelcolor = ([]);
+@retain: mapping cooldown_timeout = ([]);
+@retain: mapping nonce_callbacks = ([]);
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
 	"broadcaster": "_mod", "moderator": "_mod", "staff": "_mod",
@@ -123,8 +127,8 @@ class channel(string name) { //name begins with hash and is all lower case
 		config = persist_config["channels"][name[1..]];
 		if (config->chatlog)
 		{
-			if (!G->G->channelcolor[name]) {if (++G->G->nextcolor>7) G->G->nextcolor=1; G->G->channelcolor[name]=G->G->nextcolor;}
-			color = sprintf("\e[1;3%dm", G->G->channelcolor[name]);
+			if (!channelcolor[name]) {if (++G->G->nextcolor>7) G->G->nextcolor=1; channelcolor[name]=G->G->nextcolor;}
+			color = sprintf("\e[1;3%dm", channelcolor[name]);
 		}
 		else color = "\e[0m"; //Nothing will normally be logged, so don't allocate a color. If logging gets enabled, it'll take a reset to assign one.
 		//The streamer counts as a mod. Everyone else has to speak in chat to
@@ -379,9 +383,9 @@ class channel(string name) { //name begins with hash and is all lower case
 			case "cooldown": //Timeout (defined in seconds, although the front end may show it as mm:ss or hh:mm:ss)
 			{
 				string key = message->cdname + name;
-				int delay = G->G->cooldown_timeout[key] - time();
+				int delay = cooldown_timeout[key] - time();
 				if (delay < 0) { //The time has passed!
-					G->G->cooldown_timeout[key] = time() + message->cdlength; //But reset it.
+					cooldown_timeout[key] = time() + message->cdlength; //But reset it.
 					vars["{cooldown}"] = vars["{cooldown_hms}"] = "0";
 					break;
 				}
@@ -541,7 +545,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			//all, and only call the callback once.
 			string nonce = sprintf("stillebot-%d", ++G->G->nonce_counter);
 			tags->client_nonce = nonce;
-			G->G->nonce_callbacks[nonce] = ({cfg->callback, vars | ([])});
+			nonce_callbacks[nonce] = ({cfg->callback, vars | ([])});
 		}
 		if (irc_connections[voice]) irc_connections[voice]->send(name, msgs[*], tags);
 		else spawn_task(voice_enable(voice, name, msgs, tags));
@@ -869,7 +873,7 @@ class channel(string name) { //name begins with hash and is all lower case
 				};
 				break;
 			case "USERSTATE": { //Sent after our messages. The only ones we care about are those with nonces we sent.
-				array callback = m_delete(G->G->nonce_callbacks, params->client_nonce);
+				array callback = m_delete(nonce_callbacks, params->client_nonce);
 				if (callback) callback[0](callback[1], params);
 				break;
 			}
@@ -1066,9 +1070,6 @@ void send_message(string chan, string msg) {if (irc_connections[0]) irc_connecti
 protected void create(string name)
 {
 	::create(name);
-	if (!G->G->channelcolor) G->G->channelcolor = ([]);
-	if (!G->G->cooldown_timeout) G->G->cooldown_timeout = ([]);
-	if (!G->G->nonce_callbacks) G->G->nonce_callbacks = ([]);
 	if (!G->G->http_sessions) {
 		mixed sess; catch {sess = decode_value(Stdio.read_file("twitchbot_sessions.json"));};
 		G->G->http_sessions = mappingp(sess) ? sess : ([]);
