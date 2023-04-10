@@ -3,12 +3,16 @@
 mapping G = (["G":([])]);
 mapping persist_config = (["channels": ({ }), "ircsettings": Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_config.json"))["ircsettings"] || ([])]);
 mapping persist_status = ([]);
-constant export = "", create_hook = "";
+constant export = "", create_hook = "", retain = "";
 void event_notify(mixed ... args) { }
 #else
 inherit hook;
 inherit annotated;
 #endif
+@retain: mapping stream_online_since = ([]);
+@retain: mapping channel_info = ([]);
+@retain: mapping category_names = ([]);
+@retain: mapping user_info = ([]);
 
 //Place a request to the API. Returns a Future that will be resolved with a fully
 //decoded result (a mapping of Unicode text, generally), or rejects if Twitch or
@@ -27,7 +31,7 @@ inherit annotated;
 		foreach (usernames; string tag; string user)
 		{
 			usernames[tag] = user = lower_case(user);
-			if (mapping info = G->G->user_info[user]) usernames[tag] = (string)info->id; //Local cache lookup where possible
+			if (mapping info = user_info[user]) usernames[tag] = (string)info->id; //Local cache lookup where possible
 			else reqs += ({get_user_info(user, "login")
 				->then(lambda(mapping info) {replace(usernames, info->login, info->id);})
 			});
@@ -136,19 +140,19 @@ inherit annotated;
 	array lookups = ({ });
 	foreach (users; int i; int|string u)
 	{
-		if (mapping info = G->G->user_info[u]) results[i] = info;
+		if (mapping info = user_info[u]) results[i] = info;
 		else lookups += ({(string)u});
 	}
 	if (!sizeof(lookups)) return Concurrent.resolve(results); //Got 'em all from cache.
 	return twitch_api_request(sprintf("https://api.twitch.tv/helix/users?%{" + type + "=%s&%}", Protocols.HTTP.uri_encode(lookups[*])))
 		->then(lambda(mapping data) {
 			foreach (data->data, mapping info) {
-				G->G->user_info[info->login] = G->G->user_info[(int)info->id] = info;
+				user_info[info->login] = user_info[(int)info->id] = info;
 				notice_user_name(info->login, info->id);
 			}
 			foreach (users; int i; int|string u)
 			{
-				if (mapping info = G->G->user_info[u]) results[i] = info;
+				if (mapping info = user_info[u]) results[i] = info;
 				//Note that the returned error will only ever name a single failed lookup.
 				//It's entirely possible that others failed too, but it probably won't matter.
 				else return Concurrent.reject(({"User not found: " + u + "\n", backtrace()}));
@@ -297,7 +301,7 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 		info->url = "https://twitch.tv/" + info->broadcaster_login; //Should be reliable, I think?
 		info->_id = info->broadcaster_id;
 		info->status = info->title;
-		if (!G->G->channel_info[name]) G->G->channel_info[name] = info; //Autocache
+		if (!channel_info[name]) channel_info[name] = info; //Autocache
 		return info;
 		/* Things we make use of:
 		 * game => category
@@ -310,7 +314,7 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	}, lambda(mixed err) {
 		if (has_prefix(err[0], "User not found: ")) {
 			werror(err[0]);
-			if (!G->G->channel_info[name]) G->G->channel_info[name] = ([ ]);
+			if (!channel_info[name]) channel_info[name] = ([ ]);
 		}
 		else return Concurrent.reject(err);
 	});
@@ -331,14 +335,14 @@ continue Concurrent.Future cache_game_names(string game_id)
 {
 	if (mixed ex = catch {
 		array games = yield(get_helix_paginated("https://api.twitch.tv/helix/games/top", (["first":"100"])));
-		foreach (games, mapping game) G->G->category_names[game->id] = game->name;
-		write("Fetched %d games, total %d\n", sizeof(games), sizeof(G->G->category_names));
-		if (!G->G->category_names[game_id]) {
+		foreach (games, mapping game) category_names[game->id] = game->name;
+		write("Fetched %d games, total %d\n", sizeof(games), sizeof(category_names));
+		if (!category_names[game_id]) {
 			//We were specifically asked for this game ID. Explicitly ask Twitch for it.
 			mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/games?id=" + game_id));
 			if (!sizeof(info->data)) werror("Unable to fetch game info for ID %O\n", game_id);
 			else if (info->data[0]->id != game_id) werror("???? Asked for game %O but got %O ????\n", game_id, info->data[0]->id);
-			else G->G->category_names[game_id] = info->data[0]->name;
+			else category_names[game_id] = info->data[0]->name;
 		}
 	}) {
 		werror("Error fetching games:\n%s\n", describe_backtrace(ex));
@@ -356,12 +360,12 @@ mapping build_channel_info(mapping stream)
 {
 	mapping ret = ([]);
 	ret->game_id = stream->game_id;
-	if (!(ret->game = G->G->category_names[stream->game_id]))
+	if (!(ret->game = category_names[stream->game_id]))
 	{
 		if (stream->game_id != "0" && stream->game_id != "" && !fetching_game_names)
 		{
 			write("Fetching games because we know %d games but not %O\n",
-				sizeof(G->G->category_names), stream->game_id);
+				sizeof(category_names), stream->game_id);
 			//Note that category_names is NOT cleared before we start. There
 			//have been many instances where games aren't being detected, and I
 			//suspect that either some games are being omitted from the return
@@ -397,8 +401,8 @@ continue Concurrent.Future|mapping save_channel_info(string name, mapping info) 
 	synthesized->tag_names = sprintf("[%s]", synthesized->tags[*]) * ", ";
 	int changed = 0;
 	foreach ("game status tag_names" / " ", string attr)
-		changed += synthesized[attr] != G->G->channel_info[name][?attr];
-	G->G->channel_info[name] = synthesized;
+		changed += synthesized[attr] != channel_info[name][?attr];
+	channel_info[name] = synthesized;
 	if (changed) {
 		object chan = G->G->irc->channels["#"+name];
 		if (chan) chan->trigger_special("!channelsetup", ([
@@ -423,14 +427,14 @@ void stream_status(string name, mapping info)
 {
 	if (!info)
 	{
-		if (!G->G->channel_info[name])
+		if (!channel_info[name])
 		{
 			//Make sure we know about all channels
 			write("** Channel %s isn't online - fetching last-known state **\n", name);
 			get_channel_info(name);
 		}
-		else m_delete(G->G->channel_info[name], "online_type");
-		if (object started = m_delete(G->G->stream_online_since, name))
+		else m_delete(channel_info[name], "online_type");
+		if (object started = m_delete(stream_online_since, name))
 		{
 			write("** Channel %s noticed offline at %s **\n", name, Calendar.now()->format_nice());
 			object chan = G->G->irc->channels["#"+name];
@@ -475,7 +479,7 @@ void stream_status(string name, mapping info)
 	else
 	{
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->started_at);
-		if (!G->G->stream_online_since[name])
+		if (!stream_online_since[name])
 		{
 			//Is there a cleaner way to say "convert to local time"?
 			object started_here = started->set_timezone(Calendar.now()->timezone());
@@ -497,7 +501,7 @@ void stream_status(string name, mapping info)
 		}
 		spawn_task(save_channel_info(name, info));
 		notice_user_name(name, info->user_id);
-		G->G->stream_online_since[name] = started;
+		stream_online_since[name] = started;
 		int viewers = info->viewer_count;
 		//Calculate half-hour rolling average, and then do stats on that
 		//Record each stream's highest and lowest half-hour average, and maybe the overall average (not the average of the averages)
@@ -667,7 +671,7 @@ void check_hooks(array eventhooks)
 	foreach (persist_config["channels"] || ([]); string chan; mapping cfg)
 	{
 		if (!cfg->active) continue;
-		mapping c = G->G->channel_info[chan];
+		mapping c = channel_info[chan];
 		int userid = c->?_id;
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses pseudo-channels.)
 		//After Aug 3rd, add a second condition "moderator_user_id" which is either the same as the
@@ -685,7 +689,8 @@ void poll()
 	array chan = indices(persist_config["channels"] || ({ }));
 	chan = filter(chan) {return __ARGS__[0][0] != '!';};
 	if (!sizeof(chan)) return; //Nothing to check.
-	G->G->stream_online_since &= (multiset)chan; //Prune any "channel online" statuses for channels we don't track any more
+	//Prune any "channel online" statuses for channels we don't track any more
+	foreach (indices(stream_online_since) - chan, string name) m_delete(stream_online_since, name);
 	//Note: There's a slight TOCTOU here - the list of channel names will be
 	//re-checked from persist_config when the response comes in. If there are
 	//channels that we get info for and don't need, ignore them; if there are
@@ -706,10 +711,6 @@ void poll()
 
 protected void create(string|void name)
 {
-	if (!G->G->stream_online_since) G->G->stream_online_since = ([]);
-	if (!G->G->channel_info) G->G->channel_info = ([]);
-	if (!G->G->category_names) G->G->category_names = ([]);
-	if (!G->G->user_info) G->G->user_info = ([]);
 	if (!G->G->uid_to_name) {
 		G->G->uid_to_name = ([]);
 		G->G->name_to_uid = ([]);
