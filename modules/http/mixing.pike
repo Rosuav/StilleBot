@@ -63,6 +63,7 @@ rounding or inaccuracies.)
 */
 #if constant(G)
 inherit http_websocket;
+inherit annotated;
 #else
 mixed render(object req, mapping args) { }
 mapping(string|int:array(object)) websocket_groups = ([]);
@@ -479,7 +480,7 @@ share the link with others!
 <p>&nbsp;<!-- ensure scroll room for the error box so it won't overlap stuff --></p>
 ";
 
-mapping game_state = ([]);
+@retain: mapping diffie_hellman = ([]); //formerly game_state and thus diffie_hellman[x] goes in the variable 'gs'
 mapping swatch_colors = ([]);
 string swatch_color_style = "";
 array swatches = ({ });
@@ -776,7 +777,7 @@ array(string) devise_messages(array(string) avoid, int n, multiset|void bootstra
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
 	string group = "0";
 	string uid = req->misc->session->user->?id;
-	mapping state = game_state[req->variables->game];
+	mapping state = diffie_hellman[req->variables->game];
 	if (state) group = uid + "#" + state->gameid;
 	else group = (string)uid;
 	return render(req, ([
@@ -805,7 +806,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (msg->group == (string)conn->session->user->?id) return 0; //Logged in as you, no game
 	sscanf(msg->group, "%d#%s", int uid, string game);
 	if (uid && uid != (int)conn->session->user->?id) return "Not logged in";
-	if (mapping gs = game_state[game]) {
+	if (mapping gs = diffie_hellman[game]) {
 		if (!uid) return 0; //Spectate a game w/o logging in
 		//Joining a game? Record your username and the role you're assigned.
 		//(If we're past the recruitment phase, you get Spectator role by default.)
@@ -833,7 +834,7 @@ mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	if (!uid) state->loginbtn = 1;
 	//for (int i = 0; i < 32; ++i) state->paints += ({({"#" + i, "#" + i, hexcolor(random_paint()->definition)})});
 	if (!game) return state; //If you're not connected to a game, there are no saved paints.
-	mapping gs = game_state[game];
+	mapping gs = diffie_hellman[game];
 	foreach ("gameid phase msg_order msg_color_order selected_note comparison_log game_summary invitations" / " ", string passthru)
 		if (gs[passthru]) state[passthru] = gs[passthru];
 	state->host = gs->usernames[gs->host];
@@ -873,8 +874,8 @@ void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg
 	while (1) {
 		array(string) codenames = ({random(CODENAMES), random(CODENAMES), random(CODENAMES)}); //Is it worth preventing duplicates? Operation Shark-Elk-Shark isn't so bad, honestly.
 		string newid = codenames * "-";
-		if (game_state[newid]) continue;
-		game_state[newid] = ([
+		if (diffie_hellman[newid]) continue;
+		diffie_hellman[newid] = ([
 			"gameid": newid, "host": uid,
 			"usernames": ([uid: conn->session->user->display_name]),
 			"codenames": mkmapping(enumerate(sizeof(codenames), -1, -1), codenames),
@@ -884,7 +885,7 @@ void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg
 			"saved_paints": ([]),
 		]);
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "redirect", "game": newid])));
-		if (mapping gs = msg->invite && game_state[game]) {
+		if (mapping gs = msg->invite && diffie_hellman[game]) {
 			//Invite everyone from the previous game to join this one.
 			gs->invitations += ({newid});
 			update_game(game);
@@ -895,7 +896,7 @@ void websocket_cmd_newgame(mapping(string:mixed) conn, mapping(string:mixed) msg
 
 void websocket_cmd_nextphase(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
-	mapping gs = game_state[game]; if (!gs) return;
+	mapping gs = diffie_hellman[game]; if (!gs) return;
 	//Host is normally the only one to advance time, but in solo mode, the contact can too.
 	if (gs->host != uid && gs->spymaster != ROBOT_SPYMASTER_UID) return;
 	string err = advance_phase(gs);
@@ -1011,7 +1012,7 @@ string advance_phase(mapping gs) {
 
 void websocket_cmd_setrole(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
-	mapping gs = game_state[game]; if (!gs) return;
+	mapping gs = diffie_hellman[game]; if (!gs) return;
 	if (gs->phase != "recruit") return; //Role assignments are locked in after recruitment phase
 	int valid = (["spymaster": 1, "contact": 1, "chaos": 999, "spectator": 999])[msg->role];
 	if (!valid) return;
@@ -1028,7 +1029,7 @@ void websocket_cmd_setrole(mapping(string:mixed) conn, mapping(string:mixed) msg
 
 void websocket_cmd_publish(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
-	mapping gs = game_state[game]; if (!gs) return;
+	mapping gs = diffie_hellman[game]; if (!gs) return;
 	if (gs->published_paints[uid]) {errormsg(conn, "You've already published a paint!"); return;}
 	gs->published_paints[uid] = ({
 		([
@@ -1062,7 +1063,7 @@ void websocket_cmd_savepaint(mapping(string:mixed) conn, mapping(string:mixed) m
 	sscanf(conn->group, "%d#%s", int uid, string game);
 	if (!uid) return;
 	//Save the user's current paint and reset to beige
-	mapping gs = game_state[game];
+	mapping gs = diffie_hellman[game];
 	if (!gs) return;
 	if (!gs->saved_paints[uid]) gs->saved_paints[uid] = ([]);
 	if (gs->saved_paints[uid][msg->id]) {errormsg(conn, "Cannot save over existing paint name"); return;}
@@ -1089,7 +1090,7 @@ void websocket_cmd_addcolor(mapping(string:mixed) conn, mapping(string:mixed) ms
 
 void websocket_cmd_freshpaint(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game);
-	mapping gs = game_state[game];
+	mapping gs = diffie_hellman[game];
 	array request;
 	//If you're not logged in, the only option is 0, the standard base.
 	if (!uid || !game) request = msg->base == "0" && ({"Standard Beige", STANDARD_BASE});
@@ -1105,7 +1106,7 @@ void websocket_cmd_freshpaint(mapping(string:mixed) conn, mapping(string:mixed) 
 void websocket_cmd_chatlink(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->msg)) return;
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
-	mapping gs = game_state[game]; if (!gs) return;
+	mapping gs = diffie_hellman[game]; if (!gs) return;
 	if (gs->host != uid) return;
 	string url = persist_config["ircsettings"]->http_address + "/mixing?game=" + game;
 	send_message("#" + conn->session->user->login, replace(msg->msg, "{link}", url));
@@ -1113,7 +1114,7 @@ void websocket_cmd_chatlink(mapping(string:mixed) conn, mapping(string:mixed) ms
 
 void websocket_cmd_postnote(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
-	mapping gs = game_state[game]; if (!gs) return;
+	mapping gs = diffie_hellman[game]; if (!gs) return;
 	if (gs->phase != "writenote") return;
 	array color;
 	if (msg->paint == (string)(int)msg->paint) color = gs->published_paints[(int)msg->paint][?1];
@@ -1125,7 +1126,7 @@ void websocket_cmd_postnote(mapping(string:mixed) conn, mapping(string:mixed) ms
 
 void websocket_cmd_selectnote(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
-	mapping gs = game_state[game]; if (!gs) return;
+	mapping gs = diffie_hellman[game]; if (!gs) return;
 	if (gs->phase != "readnote") return;
 	if (gs->roles[uid] != "contact") return;
 	//Note IDs are 1-based.
@@ -1156,7 +1157,7 @@ void complete_comparison(mapping gs) {
 
 void websocket_cmd_comparenotepaint(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
-	mapping gs = game_state[game]; if (!gs) return;
+	mapping gs = diffie_hellman[game]; if (!gs) return;
 	if (gs->phase != "readnote") return;
 	if (gs->roles[uid] != "contact") return;
 	if (!msg->paint) {errormsg(conn, "Need a paint pot to compare against"); return;}
@@ -1174,7 +1175,7 @@ void websocket_cmd_comparenotepaint(mapping(string:mixed) conn, mapping(string:m
 
 void websocket_cmd_followinstrs(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
-	mapping gs = game_state[game]; if (!gs) return;
+	mapping gs = diffie_hellman[game]; if (!gs) return;
 	if (gs->phase != "readnote") return;
 	if (gs->roles[uid] != "contact") return;
 	if (!gs->selected_note) {errormsg(conn, "First select a note to follow."); return;}
@@ -1213,8 +1214,6 @@ protected void create(string name) {
 	#if constant(G)
 	::create(name);
 	#endif
-	if (!G->G->diffie_hellman) G->G->diffie_hellman = ([]);
-	game_state = G->G->diffie_hellman;
 	foreach (SWATCHES, array info) {
 		string name = info[0];
 		if (sizeof(info) < 3) info += ({PIGMENTS[name]});
