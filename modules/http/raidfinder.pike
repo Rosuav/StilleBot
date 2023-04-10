@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit irc_callback;
 /* Raid target finder
   - Raid tracking works only for channels that I track, but I don't have to bot for them.
   - There's not going to be any easy UI for it, but it'd be great to have a "raided my friend"
@@ -523,6 +524,53 @@ void websocket_cmd_interested(mapping(string:mixed) conn, mapping(string:mixed) 
 	if (mappingp(msg->want_streaminfo)) conn->want_streaminfo = msg->want_streaminfo;
 }
 
+mapping raids_in_progress = ([]);
+constant messagetypes = ({"USERNOTICE"});
+void irc_message(string type, string chan, string msg, mapping attrs) {
+	if (attrs->msg_id == "raid") {
+		array info = m_delete(raids_in_progress, attrs->user_id);
+		if (info[?0] == chan) {
+			//This is the raid we were expecting to happen. (Note that any OTHER
+			//raids that the target receives while we're busily raiding will come
+			//through to this function, but info will be null.)
+			info[2]->sock->send_text(Standards.JSON.encode((["cmd": "update", "raidstatus": "Raid successful!"]), 4));
+		}
+		if (!sizeof(raids_in_progress) && sizeof(connection_cache)) //If we're connected and don't need to be...
+			values(connection_cache)[0]->quit(); //... disconnect.
+	}
+}
+
+continue Concurrent.Future send_raid(string id, int target, mapping conn) {
+	mapping result = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/raids?from_broadcaster_id=%s&to_broadcaster_id=%d",
+			id, target),
+		(["Authorization": "Bearer " + conn->session->token]),
+		(["method": "POST", "return_errors": 1]),
+	));
+	if (result->error) {
+		//Don't give too much info here, not sure what would leak private data
+		conn->sock->send_text(Standards.JSON.encode((["cmd": "update", "raidstatus": "Raid failed."]), 4));
+		return 0;
+	}
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "update", "raidstatus": "RAIDING!"]), 4));
+	//Should there be an "Abort Raid" button on the dialog? The permission required is the same.
+	//The biggest problem is that it would be easy to misclick it.
+	int cookie = time();
+	raids_in_progress[id] = ({"#" + yield(get_user_info(target))->login, cookie, conn});
+	//Invert the mapping to deduplicate raid targets
+	mapping invert = mkmapping(values(raids_in_progress)[*][0], indices(raids_in_progress));
+	object irc = yield(irc_connect(([
+		"capabilities": ({"commands", "tags"}),
+		"join": indices(invert),
+	])));
+	mixed _ = yield(task_sleep(120));
+	if (raids_in_progress[id][?1] == cookie) {
+		//Two minutes after starting the raid, it hasn't gone through. It probably won't.
+		m_delete(raids_in_progress, id);
+		if (!sizeof(raids_in_progress)) irc->quit();
+	}
+}
+
 //Note that the front end won't send this message if you're doing a for= raidfind, but
 //if you fiddle around and force the message to be sent, all that will happen is that
 //the raid is started for YOUR channel, not the one you're raidfinding for.
@@ -531,24 +579,7 @@ void websocket_cmd_raidnow(mapping(string:mixed) conn, mapping(string:mixed) msg
 	if (!havescopes["channel:manage:raids"]) return;
 	string id = conn->session->?user->?id; if (!id) return;
 	int target = (int)msg->target; if (!target) return; //Ensure that it casts to int correctly
-	twitch_api_request(sprintf(
-		"https://api.twitch.tv/helix/raids?from_broadcaster_id=%s&to_broadcaster_id=%d",
-			id, target),
-		(["Authorization": "Bearer " + conn->session->token]),
-		(["method": "POST", "return_errors": 1]),
-	)->then() {mapping result = __ARGS__[0];
-		if (result->error) {
-			//Don't give too much info here, not sure what would leak private data
-			conn->sock->send_text(Standards.JSON.encode((["cmd": "update", "raidstatus": "Raid failed."]), 4));
-			return;
-		}
-		conn->sock->send_text(Standards.JSON.encode((["cmd": "update", "raidstatus": "RAIDING!"]), 4));
-		//It'd be nice to have something that notifies the user when the raid has actually gone through,
-		//but that would require an additional webhook which we'd want to dispose of later. It also won't
-		//report if the raid is cancelled.
-		//Should there be an "Abort Raid" button on the dialog? The permission required is the same.
-		//The biggest problem is that it would be easy to misclick it.
-	};
+	spawn_task(send_raid(id, target, conn));
 }
 
 continue Concurrent.Future|int guess_user_id(string name, int|void fastonly) {
