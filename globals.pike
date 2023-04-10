@@ -1114,7 +1114,7 @@ class Lexer
 }
 
 @"G->G->template_defaults";
-mapping(string:mixed) render_template(string template, mapping(string:string|function(string|void:string)|mapping) replacements)
+mapping(string:mixed) render_template(string template, mapping replacements)
 {
 	string content;
 	if (has_value(template, '\n')) {content = template; template = "<inline>.md";}
