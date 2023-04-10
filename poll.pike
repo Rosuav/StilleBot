@@ -5,7 +5,7 @@ mapping persist_config = (["channels": ({ }), "ircsettings": Standards.JSON.deco
 mapping persist_status = ([]);
 #else
 inherit hook;
-inherit exporter;
+inherit annotated;
 #endif
 
 //Place a request to the API. Returns a Future that will be resolved with a fully

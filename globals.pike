@@ -273,7 +273,7 @@ mapping G_G_(string ... path)
 	return ret;
 }
 
-//TODO: Make this callable, move the functionality for hooks into here, and maybe fold "inherit hook" into "inherit export"?
+//TODO: Make this callable, move the functionality for hooks into here, and maybe fold "inherit hook" into "inherit annotated"?
 class _HookID(string event) {constant is_hook_annotation = 1;}
 
 @"G->G->eventhooks"; //Unfortunate naming, since eventhook_types is completely different. Maybe when G->G->hooks is removed, rename this to that??
@@ -361,8 +361,9 @@ function|void bounce(function f)
 }
 
 @"G->G->exports";
-class exporter {
+class annotated {
 	protected void create(string name) {
+		//TODO: Find a good way to move prev handling into the export class or object below
 		mapping prev = G->G->exports[name];
 		G->G->exports[name] = ([]);
 		foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
@@ -380,6 +381,14 @@ object export = class {
 	protected void `()(object module, string modname, string key) {
 		add_constant(key, module[key]);
 		G->G->exports[modname][key] = 1;
+	}
+}();
+
+object retain = class {
+	constant is_callable_annotation = 1;
+	protected void `()(object module, string modname, string key) {
+		if (!G->G[key]) G->G[key] = module[key];
+		else module[key] = G->G[key];
 	}
 }();
 

@@ -1,5 +1,6 @@
 inherit http_websocket;
 inherit irc_callback;
+inherit annotated;
 /* Raid target finder
   - Raid tracking works only for channels that I track, but I don't have to bot for them.
   - There's not going to be any easy UI for it, but it'd be great to have a "raided my friend"
@@ -524,7 +525,7 @@ void websocket_cmd_interested(mapping(string:mixed) conn, mapping(string:mixed) 
 	if (mappingp(msg->want_streaminfo)) conn->want_streaminfo = msg->want_streaminfo;
 }
 
-mapping raids_in_progress = ([]);
+@retain: mapping raids_in_progress = ([]);
 constant messagetypes = ({"USERNOTICE"});
 void irc_message(string type, string chan, string msg, mapping attrs) {
 	if (attrs->msg_id == "raid") {
