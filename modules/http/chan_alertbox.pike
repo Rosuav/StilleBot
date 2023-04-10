@@ -2,6 +2,7 @@ inherit http_websocket;
 inherit builtin_command;
 inherit hook;
 inherit irc_callback;
+inherit annotated;
 /* Bot operators, if you want to use TTS:
 * Create credentials on Google Cloud Platform
   - https://cloud.google.com/docs/authentication/production
@@ -456,6 +457,7 @@ constant LATEST_VERSION = 4; //Bump this every time a change might require the c
 constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump this too.
 //Version 3 supports <video> tags for images.
 //Version 4 supports TTS.
+@retain: mapping tts_config = ([]);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -513,7 +515,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	return render(req, ([
 		"vars": (["ws_group": "control",
 			"maxfilesize": MAX_PER_FILE, "maxtotsize": MAX_TOTAL_STORAGE,
-			"avail_voices": G->G->tts_config->avail_voices || ({ }),
+			"avail_voices": tts_config->avail_voices || ({ }),
 			"follower_alert_scopes": req->misc->channel->name != "#!demo" && ensure_bcaster_token(req, "moderator:read:followers"),
 		]),
 	]) | req->misc->chaninfo);
@@ -649,7 +651,7 @@ void ensure_tts_credentials() {
 		if (sizeof(websocket_groups["control" + name] || ({ }))) {need_tts = 1; break;}
 	}
 	if (!need_tts) return;
-	float age = time(G->G->tts_config->access_token_fetchtime);
+	float age = time(tts_config->access_token_fetchtime);
 	if (age > 3500) {age = 0.0; spawn_task(fetch_tts_credentials(1));}
 	remove_call_out(G->G->ensure_tts_callout);
 	G->G->ensure_tts_callout = call_out(ensure_tts_credentials, 3500.0 - age);
@@ -1235,15 +1237,15 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 				}
 			}
 			if (inh->tts_filter_badwords != "none") {
-				if (G->G->tts_config->badwordlist_fetchtime < time() - 86400) {
+				if (tts_config->badwordlist_fetchtime < time() - 86400) {
 					object res = yield(Protocols.HTTP.Promise.get_url(
 						"https://raw.githubusercontent.com/coffee-and-fun/google-profanity-words/main/data/list.txt"
 					));
-					G->G->tts_config->badwordlist_fetchtime = time();
-					G->G->tts_config->badwordlist = (multiset)String.trim((res->get() / "\n")[*]);
+					tts_config->badwordlist_fetchtime = time();
+					tts_config->badwordlist = (multiset)String.trim((res->get() / "\n")[*]);
 				}
 				array words = replacement / " ";
-				multiset bad = G->G->tts_config->badwordlist;
+				multiset bad = tts_config->badwordlist;
 				foreach (words; int i; string w) {
 					//For the purposes of badword filtering, ignore all non-alphabetics.
 					//TODO: Handle "abc123qwe" by checking both abc and qwe?
@@ -1265,8 +1267,8 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 	}
 	text += fmt;
 	array voice = (inh->tts_voice || "") / "/";
-	if (sizeof(voice) != 3) voice = G->G->tts_config->default_voice / "/";
-	if (string token = text != "" && G->G->tts_config->?access_token) {
+	if (sizeof(voice) != 3) voice = tts_config->default_voice / "/";
+	if (string token = text != "" && tts_config->?access_token) {
 		object reqargs = Protocols.HTTP.Promise.Arguments((["headers": ([
 				"Authorization": "Bearer " + token,
 				"Content-Type": "application/json; charset=utf-8",
@@ -1286,9 +1288,9 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 		mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
 		if (mappingp(data) && data->error->?details[?0]->?reason == "ACCESS_TOKEN_EXPIRED") {
 			Stdio.append_file("tts_error.log", sprintf("%sTTS access key expired after %d seconds\n",
-				ctime(time()), time() - G->G->tts_config->access_token_fetchtime));
+				ctime(time()), time() - tts_config->access_token_fetchtime));
 			mixed _ = yield(fetch_tts_credentials(1));
-			reqargs->headers->Authorization = "Bearer " + G->G->tts_config->access_token;
+			reqargs->headers->Authorization = "Bearer " + tts_config->access_token;
 			object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
 			catch {data = Standards.JSON.decode_utf8(res->get());};
 			//Exactly one retry attempt; if it fails, fall through and report a generic error.
@@ -1530,18 +1532,18 @@ void irc_closed(mapping options) {
 continue Concurrent.Future fetch_tts_credentials(int fast) {
 	mapping rc = Process.run(({"gcloud", "auth", "application-default", "print-access-token"}),
 		(["env": getenv() | (["GOOGLE_APPLICATION_CREDENTIALS": "tts-credentials.json"])]));
-	G->G->tts_config->access_token = String.trim(rc->stdout);
+	tts_config->access_token = String.trim(rc->stdout);
 	//Credentials expire after an hour, regardless of usage. It's quite slow to
 	//generate them, so we do it only as needed; if anything fails in the preemptive
 	//checks, we'll run into an issue and then automatically fetch, but otherwise,
 	//this is just to help with scheduling. It might be nicer if we had an expiration
 	//date instead, but for now we just use the fetch time.
-	G->G->tts_config->access_token_fetchtime = time();
+	tts_config->access_token_fetchtime = time();
 	if (fast) return 0;
 	//To filter to just English results, add "?languageCode=en"
 	object res = yield(Protocols.HTTP.Promise.get_url("https://texttospeech.googleapis.com/v1/voices",
 		Protocols.HTTP.Promise.Arguments((["headers": ([
-			"Authorization": "Bearer " + G->G->tts_config->access_token,
+			"Authorization": "Bearer " + tts_config->access_token,
 		])]))));
 	mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
 	if (!mappingp(data) || !data->voices) return 0;
@@ -1575,10 +1577,10 @@ continue Concurrent.Future fetch_tts_credentials(int fast) {
 	//we won't just fail hard.
 	if (!sizeof(languages)) languages["en-GB"] = ({(["selector": "en-GB/en-GB-Standard-A/FEMALE", "desc": "Default Voice"])});
 	array fallback = languages["en-US"] || languages["en-GB"] || values(languages)[0];
-	G->G->tts_config->default_voice = fallback[0]->selector;
+	tts_config->default_voice = fallback[0]->selector;
 	array all_voices = (array)languages;
 	sort(indices(languages), all_voices);
-	G->G->tts_config->avail_voices = all_voices;
+	tts_config->avail_voices = all_voices;
 }
 
 continue void initialize_inherits() {
@@ -1598,8 +1600,7 @@ continue void initialize_inherits() {
 protected void create(string name) {
 	::create(name);
 	//See if we have a credentials file. If so, get local credentials via gcloud.
-	if (!G->G->tts_config) G->G->tts_config = ([]);
-	if (file_stat("tts-credentials.json") && !G->G->tts_config->access_token) spawn_task(fetch_tts_credentials(0));
+	if (file_stat("tts-credentials.json") && !tts_config->access_token) spawn_task(fetch_tts_credentials(0));
 	spawn_task(initialize_inherits());
 	G->G->send_alert = send_alert;
 	foreach (persist_status->path("alertbox"); string id; mapping cfg)

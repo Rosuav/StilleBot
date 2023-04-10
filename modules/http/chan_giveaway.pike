@@ -1,5 +1,6 @@
 inherit http_websocket;
 inherit hook;
+inherit annotated;
 constant markdown = #"# Giveaway - $$giveaway_title||win things with channel points$$
 
 <div id=errormessage class=hidden></div>
@@ -89,6 +90,8 @@ details {border: 1px solid black; padding: 0.5em; margin: 0.5em;}
 inherit builtin_command;
 constant visibility = "hidden";
 constant access = "none";
+@retain: mapping giveaway_tickets = ([]);
+@retain: multiset giveaway_purchases = (<>);
 
 constant NOTIFICATION_SPECIALS = ([
 	"started": "A giveaway for {title} is now open - use your channel points to purchase tickets!",
@@ -118,8 +121,8 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 	mapping values = cfg->giveaway->rewards || ([]);
 	if (!values[redem->reward->id]) return; //No value assigned to this reward, so it's presumably not a giveaway ticket redemption
 	string chan = redem->broadcaster_login || redem->broadcaster_user_login;
-	mapping people = G->G->giveaway_tickets[chan];
-	if (!people) people = G->G->giveaway_tickets[chan] = ([]);
+	mapping people = giveaway_tickets[chan];
+	if (!people) people = giveaway_tickets[chan] = ([]);
 	if (!people[redem->user_id]) people[redem->user_id] = ([
 		"name": redem->user_name,
 		"position": sizeof(people) + 1, //First person to buy a ticket gets position 1
@@ -148,7 +151,7 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 					too_late = 0;
 			}
 		}
-		if ((too_late || now > max) && !G->G->giveaway_purchases[redem->id]) {
+		if ((too_late || now > max) && !giveaway_purchases[redem->id]) {
 			//If we previously saw this as acceptable, don't refund it.
 			//This means that if you change the max tickets during a giveaway, any excess will
 			//still be kept, unless/until they get explicitly refunded.
@@ -176,9 +179,9 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 		else {
 			person->tickets = now;
 			person->redemptions[redem->id] = redem;
-			if (!G->G->giveaway_purchases[redem->id]) {
+			if (!giveaway_purchases[redem->id]) {
 				//Only announce a given purchase once, even if we do a full recalc of giveaway_tickets
-				G->G->giveaway_purchases[redem->id] = 1;
+				giveaway_purchases[redem->id] = 1;
 				object channel = G->G->irc->channels["#" + chan];
 				write("GIVEAWAY: %s bought %d, now %d/%d\n", redem->user_name,
 					values[redem->reward->id], now, cfg->giveaway->max_tickets);
@@ -195,7 +198,7 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 
 array tickets_in_order(string chan) {
 	array tickets = ({ });
-	foreach (G->G->giveaway_tickets[chan] || ([]); ; mapping person)
+	foreach (giveaway_tickets[chan] || ([]); ; mapping person)
 		if (person->tickets) tickets += ({person});
 	sort(tickets->position, tickets);
 	return tickets;
@@ -399,7 +402,7 @@ continue mapping|Concurrent.Future get_chan_state(object channel, string grp)
 	}
 	array(array) redemptions = yield(Concurrent.all(list_redemptions(broadcaster_id, chan, rewards->id[*])));
 	//Every time a new websocket is established, fully recalculate. Guarantee fresh data.
-	G->G->giveaway_tickets[chan] = ([]);
+	giveaway_tickets[chan] = ([]);
 	foreach (redemptions * ({ }), mapping redem) update_ticket_count(channel->config, redem);
 	return ([
 		"title": channel->config->giveaway->?title,
@@ -436,7 +439,7 @@ void open_close(string chan, int broadcaster_id, int want_open) {
 	persist_status->save();
 	notify_websockets(chan);
 	object channel = G->G->irc->channels["#" + chan];
-	array people = values(G->G->giveaway_tickets[chan]);
+	array people = values(giveaway_tickets[chan]);
 	int tickets = `+(0, @people->tickets), entrants = sizeof(people->tickets - ({0}));
 	if (status->is_open) channel->trigger_special("!giveaway_started", (["user": chan]), ([
 		"{title}": cfg->giveaway->title || "",
@@ -481,7 +484,7 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 		case "pick": {
 			//NOTE: This is subject to race conditions if the giveaway is open
 			//at the time of drawing. Close the giveaway first.
-			array people = (array)(G->G->giveaway_tickets[chan] || ([]));
+			array people = (array)(giveaway_tickets[chan] || ([]));
 			int tot = 0;
 			array partials = ({ });
 			foreach (people, [mixed id, mapping person]) partials += ({tot += person->tickets});
@@ -522,7 +525,7 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 			mapping status = persist_status->path("giveaways", chan);
 			m_delete(status, "last_winner");
 			//Clear out the front end's view of ticket purchases to reduce flicker
-			foreach (values(G->G->giveaway_tickets[chan] || ([])), mapping p) {
+			foreach (values(giveaway_tickets[chan] || ([])), mapping p) {
 				p->redemptions = ([]);
 				p->tickets = 0;
 			}
@@ -531,7 +534,7 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 			array(array) redemptions = yield(Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*])));
 			foreach (redemptions * ({ }), mapping redem)
 				set_redemption_status(redem, msg->action == "cancel" ? "CANCELED" : "FULFILLED");
-			array people = values(G->G->giveaway_tickets[chan]);
+			array people = values(giveaway_tickets[chan]);
 			int tickets = sizeof(people->tickets) && `+(@people->tickets), entrants = sizeof(people->tickets - ({0}));
 			channel->trigger_special("!giveaway_ended", (["user": chan]), ([
 				"{title}": cfg->giveaway->title || "",
@@ -615,7 +618,7 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string 
 	if (cmd != "refund" && cmd != "status") return (["{error}": "Invalid subcommand"]);
 	if (!channel->config->giveaway) return (["{error}": "Giveaways not active"]); //Not the same as "giveaway not open", this one will not normally be seen
 	string chan = channel->name[1..];
-	mapping people = G->G->giveaway_tickets[chan] || ([]);
+	mapping people = giveaway_tickets[chan] || ([]);
 	mapping you = people[(string)person->uid] || ([]);
 	if (cmd == "refund") {
 		mapping status = persist_status->path("giveaways", chan);
@@ -645,7 +648,5 @@ continue Concurrent.Future check_bcaster_tokens() {
 protected void create(string name)
 {
 	::create(name);
-	if (!G->G->giveaway_tickets) G->G->giveaway_tickets = ([]);
-	if (!G->G->giveaway_purchases) G->G->giveaway_purchases = (<>);
 	spawn_task(check_bcaster_tokens());
 }

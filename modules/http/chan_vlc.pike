@@ -1,5 +1,6 @@
 inherit http_websocket;
 inherit hook;
+inherit annotated;
 constant markdown = #"# VLC integration
 
 (loading...)
@@ -114,6 +115,7 @@ this works. I don't understand, but I'll take it. */
 #blocks thead th:last-of-type {width: 0;}
 </style>
 ";
+@retain: mapping vlc_status = ([]);
 
 //Create (if necessary) and return the VLC Auth Token
 string auth_token(object channel) {
@@ -123,7 +125,7 @@ string auth_token(object channel) {
 }
 
 void sendstatus(object channel) {
-	mapping status = G->G->vlc_status[channel->name] || ([]);
+	mapping status = vlc_status[channel->name] || ([]);
 	channel->trigger_special("!musictrack", (["user": "VLC"]), ([
 		"{playing}": (string)status->playing,
 		"{desc}": status->current || "",
@@ -160,10 +162,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		resp->extra_heads = (["Content-disposition": "attachment; filename=vlcstillebot.lua"]);
 		return resp;
 	}
-	mapping status = G->G->vlc_status[channel->name];
+	mapping status = vlc_status[channel->name];
 	if (req->variables->auth && req->variables->auth == channel->config->vlcauthtoken) {
 		//It could be a valid VLC signal.
-		if (!status) status = G->G->vlc_status[channel->name] = ([]);
+		if (!status) status = vlc_status[channel->name] = ([]);
 		req->variables->auth = "(correct)"; //werror("%sGot VLC notification: %O\n", ctime(time()), req->variables);
 		if (req->variables->shutdown) req->variables->status = "shutdown";
 		int send = 0;
@@ -283,7 +285,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 			if (b[0] == id) return (["id": id, "desc": b[1]]);
 		return (["id": id, "desc": ""]);
 	}
-	mapping status = G->G->vlc_status[channel->name];
+	mapping status = vlc_status[channel->name];
 	if (!status) return (["playing": 0, "current": "", "recent": ({ })]);
 	mapping ret = ([
 		"playing": status->playing, "current": status->current,
@@ -313,7 +315,7 @@ void websocket_cmd_karaoke(mapping(string:mixed) conn, mapping(string:mixed) msg
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != channel->config->vlcauthtoken) return; //Available only to the VLC authenticated computer
-	mapping status = G->G->vlc_status[channel->name];
+	mapping status = vlc_status[channel->name];
 	if (!status) return;
 	status->curnamehash = msg->namehash; //This will be derived from the full file name, but not reversibly.
 	if (arrayp(status->audiodata)) status->audiodata->success((["error": 404]));
@@ -328,7 +330,7 @@ void websocket_cmd_provideaudio(mapping(string:mixed) conn, mapping(string:mixed
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != channel->config->vlcauthtoken) return; //Available only to the VLC authenticated computer
-	mapping status = G->G->vlc_status[channel->name];
+	mapping status = vlc_status[channel->name];
 	if (!status) return;
 	if (status->curnamehash != msg->namehash) return; //We've moved on, probably.
 	if (arrayp(status->audiodata)) status->audiodata->success((["data": msg->audiodata, "type": status->audiotype]));
@@ -363,7 +365,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (msg->desc != "") channel->config->vlcblocks += ({({msg->path, msg->desc})});
 	persist_config->save();
 	//It's entirely possible that this will match some of the unknowns. If so, clear 'em out.
-	mapping status = G->G->vlc_status[channel->name];
+	mapping status = vlc_status[channel->name];
 	if (status->?unknowns) {
 		object re = Regexp.PCRE(msg->path, Regexp.PCRE.OPTION.ANCHORED);
 		status->unknowns = filter(status->unknowns) {return !re->split2(__ARGS__[0]);};
@@ -372,13 +374,10 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 @hook_channel_offline: int disconnected(string channel) {
-	mapping status = G->G->vlc_status["#" + channel];
+	mapping status = vlc_status["#" + channel];
 	if (!status) return 0;
 	status->playing = 0;
 	status->recent = ({ });
 }
 
-protected void create(string name) {
-	::create(name);
-	if (!G->G->vlc_status) G->G->vlc_status = ([]);
-}
+protected void create(string name) {::create(name);}

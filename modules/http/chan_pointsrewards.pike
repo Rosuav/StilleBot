@@ -1,6 +1,7 @@
 inherit http_websocket;
 inherit builtin_command;
 inherit hook;
+inherit annotated;
 constant hidden_command = 1;
 constant access = "none";
 constant markdown = #"# Points rewards - $$channel$$
@@ -35,6 +36,7 @@ purposes).
 }
 </style>
 ";
+@retain: mapping pointsrewards = ([]);
 
 /* Ultimately this should be the master management for all points rewards. All shared code for
 dynamics, giveaway, etc should migrate into here.
@@ -68,7 +70,7 @@ There are three levels of permission that can be granted:
 
 bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
-	array rewards = G->G->pointsrewards[channel->name[1..]] || ({ }), dynrewards = ({ });
+	array rewards = pointsrewards[channel->name[1..]] || ({ }), dynrewards = ({ });
 	mapping current = channel->config->dynamic_rewards || ([]);
 	foreach (rewards, mapping rew) {
 		mapping r = current[rew->id];
@@ -79,7 +81,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 }
 
 void wscmd_add(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	array rewards = G->G->pointsrewards[channel->name[1..]] || ({ });
+	array rewards = pointsrewards[channel->name[1..]] || ({ });
 	mapping copyfrom = ([]);
 	string basetitle = "New Custom Reward";
 	if (msg->copyfrom && msg->copyfrom != "") {
@@ -138,7 +140,7 @@ EventSub redemptiongone = EventSub("redemptiongone", "channel.channel_points_cus
 
 continue Concurrent.Future populate_rewards_cache(string chan, string|int|void broadcaster_id) {
 	if (!broadcaster_id) broadcaster_id = yield(get_user_id(chan));
-	G->G->pointsrewards[chan] = ({ }); //If there's any error, don't keep retrying
+	pointsrewards[chan] = ({ }); //If there's any error, don't keep retrying
 	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
 	mapping params = (["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]);
 	array rewards = yield(twitch_api_request(url, params))->data;
@@ -151,7 +153,7 @@ continue Concurrent.Future populate_rewards_cache(string chan, string|int|void b
 	}
 	multiset manageable = (multiset)yield(twitch_api_request(url + "&only_manageable_rewards=true", params))->data->id;
 	foreach (rewards, mapping r) r->can_manage = manageable[r->id];
-	G->G->pointsrewards[chan] = rewards;
+	pointsrewards[chan] = rewards;
 	rewardadd(chan, (["broadcaster_user_id": (string)broadcaster_id]));
 	rewardupd(chan, (["broadcaster_user_id": (string)broadcaster_id]));
 	rewardrem(chan, (["broadcaster_user_id": (string)broadcaster_id]));
@@ -181,13 +183,13 @@ mapping remap_eventsub_message(mapping info) {
 
 EventSub rewardadd = EventSub("rewardadd", "channel.channel_points_custom_reward.add", "1") {
 	[string chan, mapping info] = __ARGS__;
-	if (!G->G->pointsrewards[chan]) return;
-	G->G->pointsrewards[chan] += ({remap_eventsub_message(info)});
+	if (!pointsrewards[chan]) return;
+	pointsrewards[chan] += ({remap_eventsub_message(info)});
 	send_updates_all("#" + chan);
 };
 EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward.update", "1") {
 	[string chan, mapping info] = __ARGS__;
-	array rew = G->G->pointsrewards[chan];
+	array rew = pointsrewards[chan];
 	if (!rew) return;
 	foreach (rew; int i; mapping reward)
 		if (reward->id == info->id) {rew[i] = remap_eventsub_message(info); break;}
@@ -195,9 +197,9 @@ EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward
 };
 EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward.remove", "1") {
 	[string chan, mapping info] = __ARGS__;
-	array rew = G->G->pointsrewards[chan];
+	array rew = pointsrewards[chan];
 	if (!rew) return;
-	G->G->pointsrewards[chan] = filter(rew) {return __ARGS__[0]->id != info->id;};
+	pointsrewards[chan] = filter(rew) {return __ARGS__[0]->id != info->id;};
 	mapping dyn = persist_config["channels"][chan]->?dynamic_rewards;
 	if (dyn) {m_delete(dyn, info->id); persist_config->save();}
 	send_updates_all("#" + chan);
@@ -208,7 +210,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (string scopes = ensure_bcaster_token(req, "channel:manage:redemptions"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
-	array rew = G->G->pointsrewards[req->misc->channel->name[1..]] || ({ });
+	array rew = pointsrewards[req->misc->channel->name[1..]] || ({ });
 	//Force an update, in case we have stale data. Note that the command editor will only use
 	//what's sent in the initial response, but at least this way, if there's an issue, hitting
 	//Refresh will fix it (otherwise there's no way for the client to force a refetch).
@@ -276,9 +278,8 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 
 protected void create(string name) {
 	::create(name);
-	if (!G->G->pointsrewards) G->G->pointsrewards = ([]);
 	foreach (persist_config->path("channels"); string chan; mapping cfg) {
-		if (!G->G->pointsrewards[chan]) {
+		if (!pointsrewards[chan]) {
 			string scopes = persist_status->path("bcaster_token_scopes")[chan] || "";
 			if (has_value(scopes / " ", "channel:manage:redemptions")
 				|| has_value(scopes / " ", "channel:read:redemptions"))

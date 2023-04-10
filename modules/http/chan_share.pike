@@ -3,6 +3,7 @@
 inherit http_websocket;
 inherit builtin_command;
 inherit hook;
+inherit annotated;
 constant markdown = #"# Share your creations with $$channel$$
 
 Uploading is permitted for: <ul id=user_types></ul>
@@ -107,6 +108,8 @@ constant file_mime_types = ([
 	"matroska,webm": "video/webm",
 ]);
 
+@retain: mapping artshare_messageid = ([]);
+
 continue Concurrent.Future|string permission_check(object channel, int is_mod, mapping user) {
 	mapping cfg = persist_status->path("artshare", (string)channel->userid, "settings");
 	string scopes = persist_status->path("bcaster_token_scopes")[channel->name[1..]] || "";
@@ -185,7 +188,7 @@ Upload time: %s
 			persist_status->save();
 			//Note that the channel ID isn't strictly necessary, as any deletion signal will
 			//itself be associated with that channel; but it's nice to have for debugging.
-			G->G->artshare_messageid[params->id] = ({(string)req->misc->channel->userid, vars["{sharerid}"], vars["{fileid}"]});
+			artshare_messageid[params->id] = ({(string)req->misc->channel->userid, vars["{sharerid}"], vars["{fileid}"]});
 		};
 		return jsonify((["url": file->url]));
 	}
@@ -303,7 +306,7 @@ mapping message_params(object channel, mapping person, array|string param)
 @hook_deletemsg:
 int delmsg(object channel, object person, string target, string msgid) {
 	//If a mod removes the bot's message reporting the link, delete the file.
-	array info = G->G->artshare_messageid[msgid];
+	array info = artshare_messageid[msgid];
 	if (info) delete_file(channel, info[1], info[2]);
 }
 
@@ -346,7 +349,6 @@ void cleanup() {
 }
 
 protected void create(string name) {
-	if (!G->G->artshare_messageid) G->G->artshare_messageid = ([]);
 	::create(name);
 	cleanup();
 }

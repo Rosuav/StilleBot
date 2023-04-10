@@ -1,9 +1,10 @@
 inherit http_endpoint;
 inherit websocket_handler;
-
+inherit annotated;
 inherit builtin_command;
 constant featurename = "info";
 constant hidden_command = 1;
+@retain: mapping hypetrain_checktime = ([]);
 
 //Parse a timestamp into a valid Unix time. If ts is null, malformed,
 //or in the past, returns 0.
@@ -21,12 +22,12 @@ continue mapping|Concurrent.Future parse_hype_status(mapping data)
 	int expires = until(data->expires_at, now);
 	int checktime = expires || cooldown;
 	string channelid = data->broadcaster_id || data->broadcaster_user_id;
-	if (checktime && checktime != G->G->hypetrain_checktime[data->broadcaster_id]) {
+	if (checktime && checktime != hypetrain_checktime[data->broadcaster_id]) {
 		//Schedule a check about when the hype train or cooldown will end.
 		//If something changes before then (eg it goes to a new level),
 		//we'll schedule a duplicate call_out, but otherwise, rechecking
 		//repeatedly won't create a spew of call_outs that spam the API.
-		G->G->hypetrain_checktime[data->broadcaster_id] = checktime;
+		hypetrain_checktime[data->broadcaster_id] = checktime;
 		write("Scheduling a check of %s hype train at %d [%ds from now]\n",
 			channelid, checktime, checktime - now + 1);
 		call_out(probe_hype_train, checktime - now + 1, (int)channelid);
@@ -233,8 +234,4 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	} else return (["{error}": "", "{state}": "idle"]);
 }
 
-protected void create(string name)
-{
-	::create(name);
-	if (!G->G->hypetrain_checktime) G->G->hypetrain_checktime = ([]);
-}
+protected void create(string name) {::create(name);}
