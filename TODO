@@ -146,7 +146,3 @@
     sections (aka "config pages" as we currently have them).
 * Before Aug 3rd, complete the changeover to follower requests with authentication
   - See poll.pike and comments regarding this date
-* On raid finder, button to raid this channel
-  - As a courtesy, remind to halt broadcast after the raid goes through
-  - Would need a hook to notify on the raid going through
-  - Or can we temporarily add the bot to the target channel, so we see the incoming raid?

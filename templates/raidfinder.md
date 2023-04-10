@@ -210,5 +210,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 >
 > To raid this streamer, type <code id=raid_command></code> [📋](:.clipbtn) into your chat/dashboard!
 >
+> <p id=raidsuccess hidden>Raid successful! Your viewers should now be arriving at your raid target.<br>Don't forget to <b>stop the broadcast</b>!</p>
+>
 > $$raidbtn||$$ [Close](:.dialog_close)
 {: tag=dialog #goraiding}

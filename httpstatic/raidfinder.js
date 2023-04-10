@@ -419,6 +419,7 @@ on("click", ".raidbtn", e => {
 	btn.title = "Copy '/raid " + raidtarget + "' to the clipboard";
 	btn.dataset.copyme = "/raid " + raidtarget;
 	if (raidnow) set_content(raidnow, "Raid now!").disabled = false;
+	DOM("#raidsuccess").hidden = true; //in case you successfully raid but keep the page open...
 	DOM("#goraiding").showModal();
 });
 
@@ -428,5 +429,8 @@ on("click", "#raidnow", e => {
 });
 
 export function render(data) {
-	if (data.raidstatus) set_content("#raidnow", data.raidstatus);
+	if (data.raidstatus) {
+		set_content("#raidnow", data.raidstatus);
+		if (data.raidstatus === "Raid successful!") DOM("#raidsuccess").hidden = false;
+	}
 }
