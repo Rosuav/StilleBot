@@ -6,6 +6,7 @@ Requires OAuth authentication, which is by default handled by the GUI.
 */
 
 array(string) bootstrap_files = ({"persist.pike", "globals.pike", "poll.pike", "connection.pike", "window.pike", "modules", "modules/http", "zz_local"});
+array(string) restricted_update;
 mapping G = ([]);
 
 void console(object stdin, string buf)
@@ -32,10 +33,14 @@ object bootstrap(string c)
 
 int bootstrap_all()
 {
-	object main = bootstrap(__FILE__);
-	if (!main || !main->bootstrap_files) {werror("UNABLE TO RESET ALL\n"); return 1;}
+	if (restricted_update) bootstrap_files = restricted_update;
+	else {
+		object main = bootstrap(__FILE__);
+		if (!main || !main->bootstrap_files) {werror("UNABLE TO RESET ALL\n"); return 1;}
+		bootstrap_files = main->bootstrap_files;
+	}
 	int err = 0;
-	foreach (bootstrap_files = main->bootstrap_files, string fn)
+	foreach (bootstrap_files, string fn)
 		if (file_stat(fn)->isdir)
 		{
 			foreach (sort(get_dir(fn)), string f)
@@ -75,10 +80,9 @@ int main(int argc,array(string) argv)
 	}
 	if (has_value(argv, "--test")) {
 		add_constant("INTERACTIVE", 1);
-		bootstrap("persist.pike");
-		bootstrap("globals.pike");
-		bootstrap("poll.pike");
-		bootstrap("testing.pike");
+		restricted_update = ({"persist.pike", "globals.pike", "poll.pike", "testing.pike"});
+		bootstrap_all();
+		Stdio.stdin->set_read_callback(console);
 		return -1;
 	}
 	bootstrap_all();
