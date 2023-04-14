@@ -163,3 +163,9 @@ on("click", ".clipbtn", e => {
 	c.style.top = e.pageY + "px";
 	setTimeout(() => c.classList.remove("shown"), 1000);
 });
+
+on("click", "#togglesidebar", e => {
+	const sidebar = DOM("nav#sidebar");
+	if (sidebar) sidebar.classList.toggle("vis");
+	e.match.parentElement.classList.toggle("sbvis");
+});

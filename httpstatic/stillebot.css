@@ -200,3 +200,49 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 	opacity: 1;
 	transition: opacity .5s 0s;
 }
+
+nav#sidebar {
+	display: none;
+}
+
+#togglesidebar {
+	/* Make the button look like a hamburger menu */
+	border: 0;
+	font-size: 0;
+	padding: 0;
+	height: 32px; width: 32px;
+	margin-right: 8px;
+	background: linear-gradient(transparent 0%, transparent 14%,
+		#bbb 14%, #bbb 28%, transparent 28%, transparent 42%,
+		#bbb 42%, #bbb 56%, transparent 56%, transparent 70%,
+		#bbb 70%, #bbb 84%, transparent 84%);
+}
+
+@media screen and (min-width: 600px) {
+	/* Firefox doesn't currently support the :has selector (it's supported in Ff 103 with a
+	flag, but as of 20230414, not vanilla in any version), so instead of the simpler directive
+	body:has(nav#sidebar) {padding-left: 100px;}
+	we use two directives, one to create the padding unconditionally, and one to remove it if
+	we don't want it. This means that Firefox, until it grows support for the :has selector,
+	will waste 100px of space when there's no sidebar. */
+	body {padding-left: 100px;}
+	body:not(:has(nav#sidebar.vis)) {
+		padding-left: 0;
+	}
+	nav#sidebar.vis {
+		display: block;
+		position: fixed;
+		left: 0px;
+		width: 100px;
+		top: 48px; bottom: 0;
+		background-color: #a0f0c0;
+	}
+	#togglesidebarbox.sbvis {
+		display: block;
+		position: fixed;
+		left: 0; top: 0;
+		width: 100px; height: 48px;
+		background-color: #a0f0c0;
+		padding: 8px;
+	}
+}

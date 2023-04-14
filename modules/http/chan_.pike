@@ -54,8 +54,18 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	req->misc->chaninfo = ([ //Additional (or overriding) template variables
 		"channel": channame,
 		"backlink": "<a href=\"./\">StilleBot - " + channame + "</a>",
+		//TODO: Have the menu active on all channel pages by default (currently restricted for
+		//testing purposes)
+		//"menunav": ...,
 	]);
 	if (mapping user = req->misc->session->?user) {
+		//TODO: If logged in (as anyone), have more menu items available
+		if (user->login == "rosuav" || user->login == "mustardmine") {
+			req->misc->chaninfo->menunav =
+				"<nav id=sidebar class=vis><ul><li>Menu</li><li>nav</li><li>goes</li><li>here</li></ul></nav>";
+			req->misc->chaninfo->menubutton =
+				"<span id=togglesidebarbox class=sbvis><button type=button id=togglesidebar title=\"Show/hide sidebar\">Show/hide sidebar</button></span>";
+		}
 		if (G->G->user_mod_status[user->login + channel->name] || is_localhost_mod(user->login, req->get_ip()))
 			req->misc->is_mod = 1;
 		else req->misc->chaninfo->save_or_login = "<i>You're logged in, but not a recognized mod. Before you can make changes, go to the channel and say something, so I can see your mod sword. Thanks!</i>";
