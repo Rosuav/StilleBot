@@ -21,6 +21,28 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
+constant sidebar_menu = ({
+	({".", "Home"}),
+	({"*features", "Features"}),
+	({"commands", "Commands"}),
+	({"*triggers", "Triggers"}),
+	({"*specials", "Specials"}),
+	({"*variables", "Variables"}),
+	({"*repeats", "Autocommands"}),
+	({"*pointsrewards", "Channel points"}),
+	({"quotes", "Quotes"}),
+	({"giveaway", "Giveaway"}),
+	({"*alertbox", "Alert box"}),
+	({"*voices", "Voices"}),
+	//({"vlc", "VLC music"}), //Not really needed in the sidebar IMO
+	({"*monitors", "Monitors"}),
+	({"messages", "Messages"}),
+	({"share", "Art sharing"}),
+	//TODO: Hype train, raid finder, emote showcase
+});
+constant sidebar_modmenu = map(menu) {return ({__ARGS__[0][0] - "*", __ARGS__[0][1]});};
+constant sidebar_nonmodmenu = filter(menu) {return __ARGS__[0][0][0] != '*';};
+
 mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string chan, string endpoint)
 {
 	function handler = G->G->http_endpoints["chan_" + endpoint];
@@ -54,24 +76,18 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	req->misc->chaninfo = ([ //Additional (or overriding) template variables
 		"channel": channame,
 		"backlink": "<a href=\"./\">StilleBot - " + channame + "</a>",
-		//TODO: Have the menu active on all channel pages by default (currently restricted for
-		//testing purposes)
-		//"menunav": ...,
+		"menubutton": "<span id=togglesidebarbox class=sbvis><button type=button id=togglesidebar title=\"Show/hide sidebar\">Show/hide sidebar</button></span>",
 	]);
 	if (mapping user = req->misc->session->?user) {
-		//TODO: If logged in (as anyone), have more menu items available
-		if (user->login == "rosuav" || user->login == "mustardmine") {
-			req->misc->chaninfo->menunav =
-				"<nav id=sidebar class=vis><ul><li>Menu</li><li>nav</li><li>goes</li><li>here</li></ul></nav>";
-			req->misc->chaninfo->menubutton =
-				"<span id=togglesidebarbox class=sbvis><button type=button id=togglesidebar title=\"Show/hide sidebar\">Show/hide sidebar</button></span>";
-		}
 		if (G->G->user_mod_status[user->login + channel->name] || is_localhost_mod(user->login, req->get_ip()))
 			req->misc->is_mod = 1;
 		else req->misc->chaninfo->save_or_login = "<i>You're logged in, but not a recognized mod. Before you can make changes, go to the channel and say something, so I can see your mod sword. Thanks!</i>";
 		req->misc->chaninfo->logout = "| <a href=\"/logout\" class=twitchlogout>Log out</a>";
 	}
 	else req->misc->chaninfo->save_or_login = "[Mods, login to make changes](:.twitchlogin)";
+	req->misc->chaninfo->menunav = sprintf(
+		"<nav id=sidebar class=vis><ul>%{<li><a href=%q>%s</a></li>%}</ul></nav>",
+		req->misc->is_mod ? sidebar_modmenu : sidebar_menu);
 	return handler(req);
 }
 

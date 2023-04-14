@@ -138,12 +138,14 @@
 * Have an image that people can use to link to the bot's landing page, if they
   wish to give credit.
 * Merge /features into the channel landing page?
+  - Now that channel pages have a sidebar, there's less need for the Home page, which
+    could then subsume /features without issues. (Make /features an alias to it.)
   - This would transform the landing page into a sort of control panel, where you can
     make sweeping configuration changes (like enabling/disabling features and setting
-    time zone), and can hop across to any of the other pages, which are just sections
-    of the control panel.
-  - It may be worth having a permanent sidebar with a menu of available control panel
-    sections (aka "config pages" as we currently have them).
+    time zone).
+  - When not logged in, the sidebar vanishes. Can we reinstate that everywhere?
+  - Add the channel's avatar to the bottom of the sidebar (on a background of the
+    channel's colour).
 * Before Aug 3rd, complete the changeover to follower requests with authentication
   - See poll.pike and comments regarding this date
 * get_users_info needs to expire cache after some time

@@ -8,7 +8,7 @@ constant markdown = #"# Messages for $$recip$$ from channel $$channel$$
 [Mark all as read](:#mark_read)
 
 <style>
-li {line-height: 2.25;}
+main li {line-height: 2.25;}
 .date {
 	padding-right: 0.25em;
 }

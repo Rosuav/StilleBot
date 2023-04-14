@@ -220,6 +220,11 @@ nav#topbar {height: 40px;}
 		#bbb 70%, #bbb 84%, transparent 84%);
 }
 
+nav#sidebar ul {
+	padding-left: 8px;
+	margin: 0;
+}
+
 nav#sidebar.vis {
 	display: block;
 	position: fixed;
