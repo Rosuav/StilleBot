@@ -40,8 +40,8 @@ constant sidebar_menu = ({
 	({"share", "Art sharing"}),
 	//TODO: Hype train, raid finder, emote showcase
 });
-constant sidebar_modmenu = map(menu) {return ({__ARGS__[0][0] - "*", __ARGS__[0][1]});};
-constant sidebar_nonmodmenu = filter(menu) {return __ARGS__[0][0][0] != '*';};
+array sidebar_modmenu = map(sidebar_menu) {return ({__ARGS__[0][0] - "*", __ARGS__[0][1]});};
+array sidebar_nonmodmenu = filter(sidebar_menu) {return __ARGS__[0][0][0] != '*';};
 
 mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string chan, string endpoint)
 {
