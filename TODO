@@ -146,3 +146,4 @@
     sections (aka "config pages" as we currently have them).
 * Before Aug 3rd, complete the changeover to follower requests with authentication
   - See poll.pike and comments regarding this date
+* get_users_info needs to expire cache after some time
