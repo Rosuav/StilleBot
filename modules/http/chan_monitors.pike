@@ -23,7 +23,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (req->request_type == "PUT") {
 		//API handling.
 		if (!req->misc->is_mod) return (["error": 401]); //JS wants it this way, not a redirect that a human would like
-		mixed body = Standards.JSON.decode(req->body_raw);
+		mixed body = Standards.JSON.decode_utf8(req->body_raw);
 		if (!body || !mappingp(body) || !stringp(body->text)) return (["error": 400]);
 		if (req->misc->session->fake) return jsonify((["ok": 1]));
 		if (!cfg->monitors) cfg->monitors = ([]);
