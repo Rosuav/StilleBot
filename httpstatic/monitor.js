@@ -47,6 +47,7 @@ export default function update_display(elem, data) { //Used for the preview as w
 			text = m[2].replace("#", thresholds.length);
 			mark = 100;
 			goal = thresholds[thresholds.length - 1];
+			pos += goal; //After blowing past the last goal, we're clearly past that goal
 		}
 		elem.style.background = `linear-gradient(.25turn, ${t.fillcolor} ${mark-t.needlesize}%, red, ${t.barcolor} ${mark+t.needlesize}%, ${t.barcolor})`;
 		elem.style.display = "flex";
