@@ -61,6 +61,8 @@
   alias for the current command), warn on client side and block save unless confirmed.
 * Tidy up demo mode a bit.
   - Some pages have mutely nonfunctional buttons - they should announce that it's a demo.
+  - Now that there's a sidebar showing all available features, it's the more important
+    to have a viable demo page everywhere. Check - eg giveaway doesn't look good.
 * Goal bar templates - nice easy ones that you can use right away
   - Note that Twitch now has on-platform goals that track current followers and subs,
     so this can continue to focus on how many have been gained recently (eg daily
