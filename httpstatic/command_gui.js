@@ -989,7 +989,7 @@ canvas.addEventListener("pointerup", e => {
 	if (dragging.x > template_x - 100) {
 		//Dropping something over the favourites (the top section of templates) will save it as a
 		//favourite. Dropping it anywhere else (over templates, over trash, or below the trash)
-		//will dump it on the trash. It can be retrieved until save, otherwise it's gone forever.
+		//will dump it on the trash. It can be retrieved until reload, otherwise it's gone forever.
 		if (dragging.y < tray_y) {
 			//Three possibilities.
 			//1) A favourite was dropped back onto favs (while still fresh)
@@ -1246,6 +1246,8 @@ export function gui_load_message(cmd_basis, msg) {
 	}
 	actives[0].message = ensure_blank(arrayify(message_to_element(msg, el => {actives.push(el); return el;}, true)));
 	actives[0].message.forEach((e, i) => typeof e === "object" && (e.parent = [actives[0], "message", i]));
+	//Any retained trash is still active. Not radioactive, fortunately; just active.
+	trashcan.message.forEach(e => typeof e === "object" && actives.push(e));
 	refactor(); repaint();
 }
 

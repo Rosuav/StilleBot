@@ -151,5 +151,4 @@
 * Before Aug 3rd, complete the changeover to follower requests with authentication
   - See poll.pike and comments regarding this date
 * get_users_info needs to expire cache after some time
-* GUI command editor - trash remains but is stuck
 * GUI command editor - add an "Empty Trash" button
