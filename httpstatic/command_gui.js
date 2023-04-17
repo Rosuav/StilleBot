@@ -926,16 +926,18 @@ function snap_to_elements(xpos, ypos) {
 
 canvas.addEventListener("pointermove", e => {
 	let cursor = "default";
+	if (clicking_on && in_rect(e.offsetX - clicking_on.x, e.offsetY - clicking_on.y, clicking_on.actionlink)) {
+		//Still clicking on the same link
+		canvas.style.cursor = "pointer";
+		return;
+	}
+	clicking_on = null;
 	if (dragging) {
 		cursor = "grabbing";
 		[dragging.x, dragging.y] = snap_to_elements(e.offsetX - dragbasex, e.offsetY - dragbasey);
 		repaint();
 	}
-	else if (clicking_on && in_rect(e.offsetX - clicking_on.x, e.offsetY - clicking_on.y, clicking_on.actionlink))
-		//Still clicking on the same thing
-		cursor = "pointer";
 	else {
-		clicking_on = null;
 		let el = element_at_position(e.offsetX, e.offsetY, el => el.actionlink);
 		if (el && in_rect(e.offsetX - el.x, e.offsetY - el.y, el.actionlink)) {
 			const type = types[el.type];
