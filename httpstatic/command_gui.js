@@ -427,10 +427,12 @@ const types = {
 	flag: {
 		color: "#aaddff", label: el => el.icon,
 		style: "flag", width: 25,
+		actionlbl: null,
 	},
 	dragflag: {
 		color: "#aaddff", label: el => el.icon + " " + el.desc,
 		style: "flag", width: 150,
+		actionlbl: null,
 	},
 };
 
