@@ -44,7 +44,8 @@ document.body.appendChild(DIALOG({id: "properties"}, SECTION([
 	])),
 ])));
 fix_dialogs();
-		
+
+const in_rect = (x, y, rect) => x >= rect.left && x <= rect.right && y >= rect.top && rect.bottom;
 const arrayify = x => Array.isArray(x) ? x : [x];
 const ensure_blank = arr => {
 	if (arr[arr.length - 1] !== "") arr.push(""); //Ensure the usual empty
@@ -636,7 +637,6 @@ function limit_width(ctx, txt, width) {
 }
 
 let max_descent = 0;
-let edit_anchor = { }; //deprecated
 function draw_at(ctx, el, parent, reposition) {
 	if (el === "") return;
 	if (reposition) {el.x = parent.x + reposition.x; el.y = parent.y + reposition.y;}
@@ -649,16 +649,17 @@ function draw_at(ctx, el, parent, reposition) {
 	ctx.fill(path.path);
 	ctx.font = "12px sans";
 	let right_margin = 4;
-	if (type.actionlbl) {
+	if (type.actionlbl && type.fixed) {
 		let x = (type.width||200) - right_margin, y = path.labelpos[0];
 		if (!el.actionlink) {
-			//Assuming that the anchor is fixed in position, and the font size is constant,
+			//Assuming that the element is fixed in position, and the font size is constant,
 			//the position and size of this box won't ever change. If either of the above
 			//does change, clear out el.actionlink to force it to be recalculated.
+			//TODO: Allow non-fixed elements by making this rectangle relative to (el.x, el.y).
 			const size = ctx.measureText(type.actionlbl);
 			//The text will be right-justified, so its origin is shifted left by the width.
 			const origin = x - (size.actualBoundingBoxRight - size.actualBoundingBoxLeft);
-			edit_anchor = el.actionlink = {
+			el.actionlink = {
 				left: el.x + origin + size.actualBoundingBoxLeft - 2,
 				right: el.x + origin + size.actualBoundingBoxRight + 2,
 				top: el.y + y - size.actualBoundingBoxAscent - 1,
@@ -830,6 +831,7 @@ function element_contains(el, x, y) {
 	return null;
 }
 
+//TODO maybe: Have some kind of binary space partitioning that makes this less inefficient.
 function element_at_position(x, y, filter) {
 	for (let el of actives) {
 		//Actives check only themselves, because children of actives are themselves actives,
@@ -858,6 +860,7 @@ function clone_template(t, par) {
 	return el;
 }
 
+let clicking_on = null; //If non-null, will have rectangle in clicking_on.actionlink
 canvas.addEventListener("pointerdown", e => {
 	if (e.button) return; //Only left clicks
 	e.preventDefault();
@@ -870,11 +873,11 @@ canvas.addEventListener("pointerdown", e => {
 		}
 		return;
 	}
-	if (e.offsetX >= edit_anchor.left && e.offsetX <= edit_anchor.right &&
-		e.offsetY >= edit_anchor.top && e.offsetY <= edit_anchor.bottom)
-			edit_anchor.clicking = true; //A potential click starts with a mouse down over the Edit box, and never leaves it before mouse up.
+	let el = element_at_position(e.offsetX, e.offsetY, el => el.actionlink);
+	if (in_rect(e.offsetX, e.offsetY, el.actionlink))
+		clicking_on = el; //A potential click starts with a mouse down over the link, and never leaves it before mouse up.
 	dragging = null;
-	let el = element_at_position(e.offsetX, e.offsetY, el => !types[el.type].fixed);
+	el = element_at_position(e.offsetX, e.offsetY, el => !types[el.type].fixed);
 	if (!el) return;
 	e.target.setPointerCapture(e.pointerId);
 	if (el.template || e.ctrlKey) {
@@ -926,14 +929,19 @@ canvas.addEventListener("pointermove", e => {
 		[dragging.x, dragging.y] = snap_to_elements(e.offsetX - dragbasex, e.offsetY - dragbasey);
 		repaint();
 	}
-	else if (e.offsetX >= edit_anchor.left && e.offsetX <= edit_anchor.right &&
-		e.offsetY >= edit_anchor.top && e.offsetY <= edit_anchor.bottom)
-			cursor = "pointer";
+	else if (clicking_on && in_rect(e.offsetX, e.offsetY, clicking_on.actionlink))
+		//Still clicking on the same thing
+		cursor = "pointer";
 	else {
-		edit_anchor.clicking = false;
-		const el = element_at_position(e.offsetX, e.offsetY, el => !types[el.type].fixed);
-		if (el && e.ctrlKey) cursor = "copy";
-		//else if (el) cursor = el.template ? "copy" : "default"; //Changing the cursor emphasizes dragging but obscures double-clicking. Probably a bad tradeoff.
+		clicking_on = null;
+		let el = element_at_position(e.offsetX, e.offsetY, el => el.actionlink);
+		if (el && in_rect(e.offsetX, e.offsetY, el.actionlink))
+			cursor = "pointer";
+		else {
+			el = element_at_position(e.offsetX, e.offsetY, el => !types[el.type].fixed);
+			if (el && e.ctrlKey) cursor = "copy";
+			//else if (el) cursor = el.template ? "copy" : "default"; //Changing the cursor emphasizes dragging but obscures double-clicking. Probably a bad tradeoff.
+		}
 	}
 	canvas.style.cursor = cursor;
 });
@@ -970,9 +978,9 @@ function is_favourite(el) {
 }
 
 canvas.addEventListener("pointerup", e => {
-	if (edit_anchor.clicking) {
-		edit_anchor.clicking = false;
-		open_element_properties(actives[0]);
+	if (clicking_on) {
+		open_element_properties(clicking_on);
+		clicking_on = null;
 	}
 	if (!dragging) return;
 	e.target.releasePointerCapture(e.pointerId);
