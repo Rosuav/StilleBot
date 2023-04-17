@@ -207,8 +207,8 @@ EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	if (string scopes = ensure_bcaster_token(req, "channel:manage:redemptions"))
-		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
+	if (string scopes = !req->misc->session->fake && ensure_bcaster_token(req, "channel:manage:redemptions"))
+		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
 	array rew = pointsrewards[req->misc->channel->name[1..]] || ({ });
 	//Force an update, in case we have stale data. Note that the command editor will only use

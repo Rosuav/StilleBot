@@ -248,7 +248,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	if (string scopes = ensure_bcaster_token(req, "channel:manage:redemptions")) return render(req, ([
 		"error": "This page will become available once the broadcaster has logged in and configured redemptions.",
 		"login": "[Broadcaster login](:.twitchlogin data-scopes=" + replace(scopes, " ", "%20") + ")",
-	]));
+	]) | req->misc->chaninfo);
 	string token = persist_status->path("bcaster_token")[chan];
 	login += " [Mod login](:.twitchlogin)"; //TODO: If logged in as wrong user, allow logout
 	int broadcaster_id = yield(get_user_id(chan));
