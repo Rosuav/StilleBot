@@ -650,21 +650,20 @@ function draw_at(ctx, el, parent, reposition) {
 	ctx.fill(path.path);
 	ctx.font = "12px sans";
 	let right_margin = 4;
-	if (type.actionlbl && type.fixed) {
+	if (type.actionlbl) {
 		let x = (type.width||200) - right_margin, y = path.labelpos[0];
 		if (!el.actionlink) {
-			//Assuming that the element is fixed in position, and the font size is constant,
-			//the position and size of this box won't ever change. If either of the above
-			//does change, clear out el.actionlink to force it to be recalculated.
-			//TODO: Allow non-fixed elements by making this rectangle relative to (el.x, el.y).
+			//Assuming that the font size is constant, the position and size of this
+			//box relative to the element won't ever change. If anything changes it,
+			//clear out el.actionlink to force it to be recalculated.
 			const size = ctx.measureText(type.actionlbl);
 			//The text will be right-justified, so its origin is shifted left by the width.
 			const origin = x - (size.actualBoundingBoxRight - size.actualBoundingBoxLeft);
 			el.actionlink = {
-				left: el.x + origin + size.actualBoundingBoxLeft - 2,
-				right: el.x + origin + size.actualBoundingBoxRight + 2,
-				top: el.y + y - size.actualBoundingBoxAscent - 1,
-				bottom: el.y + y + 2,
+				left: origin + size.actualBoundingBoxLeft - 2,
+				right: origin + size.actualBoundingBoxRight + 2,
+				top: y - size.actualBoundingBoxAscent - 1,
+				bottom: y + 2,
 			};
 		}
 		const wid = el.actionlink.right - el.actionlink.left;
@@ -673,7 +672,7 @@ function draw_at(ctx, el, parent, reposition) {
 		ctx.fillStyle = active ? "#0000FF" : "#000000";
 		ctx.fillText(type.actionlbl, x, y);
 		//Drawing a line is weirdly nonsimple. Let's cheat and draw a tiny rectangle.
-		if (active) ctx.fillRect(el.actionlink.left - el.x + 2, y + 2, wid - 3, 1);
+		if (active) ctx.fillRect(el.actionlink.left + 2, y + 2, wid - 3, 1);
 		right_margin += wid;
 	}
 	ctx.fillStyle = "black";
@@ -876,7 +875,7 @@ canvas.addEventListener("pointerdown", e => {
 		return;
 	}
 	let el = element_at_position(e.offsetX, e.offsetY, el => el.actionlink);
-	if (el && in_rect(e.offsetX, e.offsetY, el.actionlink))
+	if (el && in_rect(e.offsetX - el.x, e.offsetY - el.y, el.actionlink))
 		clicking_on = el; //A potential click starts with a mouse down over the link, and never leaves it before mouse up.
 	dragging = null;
 	el = element_at_position(e.offsetX, e.offsetY, el => !types[el.type].fixed);
@@ -931,13 +930,13 @@ canvas.addEventListener("pointermove", e => {
 		[dragging.x, dragging.y] = snap_to_elements(e.offsetX - dragbasex, e.offsetY - dragbasey);
 		repaint();
 	}
-	else if (clicking_on && in_rect(e.offsetX, e.offsetY, clicking_on.actionlink))
+	else if (clicking_on && in_rect(e.offsetX - clicking_on.x, e.offsetY - clicking_on.y, clicking_on.actionlink))
 		//Still clicking on the same thing
 		cursor = "pointer";
 	else {
 		clicking_on = null;
 		let el = element_at_position(e.offsetX, e.offsetY, el => el.actionlink);
-		if (el && in_rect(e.offsetX, e.offsetY, el.actionlink)) {
+		if (el && in_rect(e.offsetX - el.x, e.offsetY - el.y, el.actionlink)) {
 			const type = types[el.type];
 			if (!type.actionactive || type.actionactive(el))
 				cursor = "pointer";
