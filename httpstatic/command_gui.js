@@ -45,7 +45,7 @@ document.body.appendChild(DIALOG({id: "properties"}, SECTION([
 ])));
 fix_dialogs();
 
-const in_rect = (x, y, rect) => x >= rect.left && x <= rect.right && y >= rect.top && rect.bottom;
+const in_rect = (x, y, rect) => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
 const arrayify = x => Array.isArray(x) ? x : [x];
 const ensure_blank = arr => {
 	if (arr[arr.length - 1] !== "") arr.push(""); //Ensure the usual empty
