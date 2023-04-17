@@ -30,6 +30,7 @@ constant sidebar_menu = ({
 	({"*variables", "Variables"}),
 	({"*repeats", "Autocommands"}),
 	({"*pointsrewards", "Channel points"}),
+	({"*dynamics", "Dynamic costs"}),
 	({"quotes", "Quotes"}),
 	({"giveaway", "Giveaway"}),
 	({"*alertbox", "Alert box"}),
