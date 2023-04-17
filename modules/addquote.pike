@@ -28,6 +28,7 @@ string process(object channel, object person, string param)
 	if (!chaninfo) return "@$$: Internal error - no channel info"; //I'm pretty sure this shouldn't happen
 	int orig_length = sizeof(param);
 	int simulate = sscanf(param, "-n %s", param);
+	int demomode = person->uid == G->G->bot_uid && sscanf(param, "-d %s", param);
 	//If you type "!addquote personname text", transform it.
 	if (sscanf(param, "%*[@]%s %s", string who, string what) && what)
 	{
@@ -60,6 +61,7 @@ string process(object channel, object person, string param)
 		//For testing, just simulate adding the quote and displaying it
 		return sprintf("@$$: SimQuote #%d: %s [%s]",
 			sizeof(channel->config->quotes) + 1, param, chaninfo->game);
+	if (demomode) channel = G->G->irc->channels["#!demo"];
 	//TODO: Record the emotes from the input and retain them for the web site.
 	channel->config->quotes += ({([
 		"msg": param,
