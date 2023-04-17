@@ -337,7 +337,7 @@ const types = {
 		typedesc: ["Leave a ", A({href: "messages"}, "private message"), " for someone"],
 	},
 	chain_of_command: {
-		color: "#66ee66", label: el => "Chain to " + (el.target ? (el.target.startsWith("!") ? "" : "!") + el.target : "other command"),
+		color: "#66ee66", label: el => "Chain to " + (el.target ? (el.target.startsWith("!") ? "" : "!") + el.target : "command"),
 		params: [
 			{attr: "dest", values: "/chain"},
 			{attr: "target", label: "Command name"}, //TODO: Make this a drop-down
@@ -650,13 +650,14 @@ function draw_at(ctx, el, parent, reposition) {
 	ctx.fill(path.path);
 	ctx.font = "12px sans";
 	let right_margin = 4;
-	if (type.actionlbl) {
+	if (type.actionlbl !== null) { //Set to null to force there to be no action link
 		let x = (type.width||200) - right_margin, y = path.labelpos[0];
+		const lbl = type.actionlbl || "🖉";
 		if (!el.actionlink) {
 			//Assuming that the font size is constant, the position and size of this
 			//box relative to the element won't ever change. If anything changes it,
 			//clear out el.actionlink to force it to be recalculated.
-			const size = ctx.measureText(type.actionlbl);
+			const size = ctx.measureText(lbl);
 			//The text will be right-justified, so its origin is shifted left by the width.
 			const origin = x - (size.actualBoundingBoxRight - size.actualBoundingBoxLeft);
 			el.actionlink = {
@@ -670,7 +671,7 @@ function draw_at(ctx, el, parent, reposition) {
 		x -= wid - 4;
 		const active = type.actionactive ? type.actionactive(el) : true; //Default is always active
 		ctx.fillStyle = active ? "#0000FF" : "#000000";
-		ctx.fillText(type.actionlbl, x, y);
+		ctx.fillText(lbl, x, y);
 		//Drawing a line is weirdly nonsimple. Let's cheat and draw a tiny rectangle.
 		if (active) ctx.fillRect(el.actionlink.left + 2, y + 2, wid - 3, 1);
 		right_margin += wid;
