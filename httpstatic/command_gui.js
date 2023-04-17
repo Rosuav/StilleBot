@@ -255,6 +255,7 @@ const types = {
 			"{msgid}": "ID of the message that caused this command (suitable for replies)",
 		},
 		width: 400,
+		actionlbl: "Edit",
 	},
 	anchor_trigger: {
 		color: "#ffff00", fixed: true, children: ["message"],
@@ -277,17 +278,20 @@ const types = {
 			"{msgid}": "ID of the message that caused this command (suitable for replies)",
 		},
 		width: 400,
+		actionlbl: "Edit",
 	},
 	anchor_special: {
 		//Specials are... special. The details here will vary based on which special we're editing.
 		color: "#ffff00", fixed: true, children: ["message"],
 		label: el => "When " + el.shortdesc[0].toLowerCase() + el.shortdesc.slice(1),
 		width: 400,
+		actionlbl: "Edit",
 	},
 	trashcan: {
 		color: "#999999", fixed: true, children: ["message"],
 		label: el => "Trash - drop here to discard",
 		typedesc: "Anything dropped here can be retrieved until you next reload, otherwise it's gone forever.",
+		//actionlbl: "Empty", action: self => self.message = [""],
 	},
 	//Types can apply zero or more attributes to a message, each one with a set of valid values.
 	//Validity can be defined by an array of strings (take your pick), a single string (fixed value,
@@ -632,7 +636,7 @@ function limit_width(ctx, txt, width) {
 }
 
 let max_descent = 0;
-const edit_anchor = { };
+let edit_anchor = { }; //deprecated
 function draw_at(ctx, el, parent, reposition) {
 	if (el === "") return;
 	if (reposition) {el.x = parent.x + reposition.x; el.y = parent.y + reposition.y;}
@@ -645,27 +649,29 @@ function draw_at(ctx, el, parent, reposition) {
 	ctx.fill(path.path);
 	ctx.font = "12px sans";
 	let right_margin = 4;
-	if (type.fixed && el.type.startsWith("anchor_")) {
+	if (type.actionlbl) {
 		let x = (type.width||200) - right_margin, y = path.labelpos[0];
-		let wid = edit_anchor.right - edit_anchor.left - 4;
-		if (!edit_anchor.right) {
+		if (!el.actionlink) {
 			//Assuming that the anchor is fixed in position, and the font size is constant,
 			//the position and size of this box won't ever change. If either of the above
-			//does change, zero out edit_anchor.right to force it to be recalculated.
-			const textmetrics_edit = ctx.measureText("Edit");
-			wid = textmetrics_edit.actualBoundingBoxRight - textmetrics_edit.actualBoundingBoxLeft;
-			x -= wid;
-			edit_anchor.left = el.x + x + textmetrics_edit.actualBoundingBoxLeft - 2;
-			edit_anchor.right = el.x + x + textmetrics_edit.actualBoundingBoxRight + 2;
-			edit_anchor.top = el.y + y - textmetrics_edit.actualBoundingBoxAscent - 1;
-			edit_anchor.bottom = el.y + y + 2;
+			//does change, clear out el.actionlink to force it to be recalculated.
+			const size = ctx.measureText(type.actionlbl);
+			//The text will be right-justified, so its origin is shifted left by the width.
+			const origin = x - (size.actualBoundingBoxRight - size.actualBoundingBoxLeft);
+			edit_anchor = el.actionlink = {
+				left: el.x + origin + size.actualBoundingBoxLeft - 2,
+				right: el.x + origin + size.actualBoundingBoxRight + 2,
+				top: el.y + y - size.actualBoundingBoxAscent - 1,
+				bottom: el.y + y + 2,
+			};
 		}
-		else x -= wid;
+		const wid = el.actionlink.right - el.actionlink.left;
+		x -= wid - 4;
 		ctx.fillStyle = "#0000FF";
-		ctx.fillText("Edit", x, y);
+		ctx.fillText(type.actionlbl, x, y);
 		//Drawing a line is weirdly nonsimple. Let's cheat and draw a tiny rectangle.
-		ctx.fillRect(edit_anchor.left - el.x + 2, y + 2, wid + 1, 1);
-		right_margin += wid + 4;
+		ctx.fillRect(el.actionlink.left - el.x + 2, y + 2, wid - 3, 1);
+		right_margin += wid;
 	}
 	ctx.fillStyle = "black";
 	const labels = arrayify(type.label(el));
