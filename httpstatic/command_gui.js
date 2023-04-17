@@ -293,6 +293,7 @@ const types = {
 		label: el => "Drop trash here to discard",
 		typedesc: "Anything dropped here can be retrieved until you next reload, otherwise it's gone forever.",
 		actionlbl: "🗑", action: self => {self.message = [""]; repaint();},
+		actionactive: self => self.message.length > 1,
 	},
 	//Types can apply zero or more attributes to a message, each one with a set of valid values.
 	//Validity can be defined by an array of strings (take your pick), a single string (fixed value,
@@ -668,10 +669,11 @@ function draw_at(ctx, el, parent, reposition) {
 		}
 		const wid = el.actionlink.right - el.actionlink.left;
 		x -= wid - 4;
-		ctx.fillStyle = "#0000FF";
+		const active = type.actionactive ? type.actionactive(el) : true; //Default is always active
+		ctx.fillStyle = active ? "#0000FF" : "#000000";
 		ctx.fillText(type.actionlbl, x, y);
 		//Drawing a line is weirdly nonsimple. Let's cheat and draw a tiny rectangle.
-		ctx.fillRect(el.actionlink.left - el.x + 2, y + 2, wid - 3, 1);
+		if (active) ctx.fillRect(el.actionlink.left - el.x + 2, y + 2, wid - 3, 1);
 		right_margin += wid;
 	}
 	ctx.fillStyle = "black";
@@ -935,8 +937,11 @@ canvas.addEventListener("pointermove", e => {
 	else {
 		clicking_on = null;
 		let el = element_at_position(e.offsetX, e.offsetY, el => el.actionlink);
-		if (el && in_rect(e.offsetX, e.offsetY, el.actionlink))
-			cursor = "pointer";
+		if (el && in_rect(e.offsetX, e.offsetY, el.actionlink)) {
+			const type = types[el.type];
+			if (!type.actionactive || type.actionactive(el))
+				cursor = "pointer";
+		}
 		else {
 			el = element_at_position(e.offsetX, e.offsetY, el => !types[el.type].fixed);
 			if (el && e.ctrlKey) cursor = "copy";
