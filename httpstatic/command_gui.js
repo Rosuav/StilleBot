@@ -290,9 +290,9 @@ const types = {
 	},
 	trashcan: {
 		color: "#999999", fixed: true, children: ["message"],
-		label: el => "Trash - drop here to discard",
+		label: el => "Drop trash here to discard",
 		typedesc: "Anything dropped here can be retrieved until you next reload, otherwise it's gone forever.",
-		//actionlbl: "Empty", action: self => self.message = [""],
+		actionlbl: "🗑", action: self => {self.message = [""]; repaint();},
 	},
 	//Types can apply zero or more attributes to a message, each one with a set of valid values.
 	//Validity can be defined by an array of strings (take your pick), a single string (fixed value,
@@ -874,7 +874,7 @@ canvas.addEventListener("pointerdown", e => {
 		return;
 	}
 	let el = element_at_position(e.offsetX, e.offsetY, el => el.actionlink);
-	if (in_rect(e.offsetX, e.offsetY, el.actionlink))
+	if (el && in_rect(e.offsetX, e.offsetY, el.actionlink))
 		clicking_on = el; //A potential click starts with a mouse down over the link, and never leaves it before mouse up.
 	dragging = null;
 	el = element_at_position(e.offsetX, e.offsetY, el => !types[el.type].fixed);
@@ -979,7 +979,9 @@ function is_favourite(el) {
 
 canvas.addEventListener("pointerup", e => {
 	if (clicking_on) {
-		open_element_properties(clicking_on);
+		const type = types[clicking_on.type];
+		if (type.action) type.action(clicking_on);
+		else open_element_properties(clicking_on); //Default action: Same as double-click
 		clicking_on = null;
 	}
 	if (!dragging) return;
