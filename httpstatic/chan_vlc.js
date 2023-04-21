@@ -61,6 +61,7 @@ on("click", "#karaoke_sync", e => {
 		if (e.ctrlKey) {
 			document.body.appendChild(DOM("#lyrics"));
 			DOM("main").style.display = "none";
+			DOM("nav#sidebar").replaceWith("");
 			set_content("nav", "Mini-mode enabled, refresh to reset").style.fontSize = "smaller";
 		}
 	}
