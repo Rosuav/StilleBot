@@ -129,6 +129,7 @@ int message(object channel, mapping person, string msg)
 
 @hook_subscription:
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
+	if (extra->came_from_subbomb) return 0;
 	autoadvance(channel, person, "sub_t" + tier, qty);
 }
 
