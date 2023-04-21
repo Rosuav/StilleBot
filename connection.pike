@@ -735,7 +735,7 @@ class channel(string name) { //name begins with hash and is all lower case
 				case "subgift":
 				{
 					string tier = subtier(params->msg_param_sub_plan);
-					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBGIFT: chan %s id %O bomb %d\n", ctime(time()), name, params->msg_param_origin_id, subbomb_ids[params->msg_param_origin_id]));
+					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBGIFT: chan %s id %O origin %O bomb %d\n", ctime(time()), name, params->id, params->msg_param_origin_id, subbomb_ids[params->msg_param_origin_id]));
 					//Note: Sub bombs get announced first, followed by their individual gifts.
 					//It may be that the msg_param_origin_id is guaranteed unique, but in case
 					//it can't, we count down the messages as we see them.
