@@ -155,3 +155,6 @@
   (putting 1000 and 2500), support (1000 and 3000), or just subs (500 and 500) for
   tiered subs. It's just a display format change.
 * /channels/X/kofi should show whether it's configured, but not what the key is
+* Other support platforms? Which ones have integrations available?
+  - Should /kofi be renamed and grow all the others?
+  - Throne?
