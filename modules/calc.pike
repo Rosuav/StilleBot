@@ -28,7 +28,9 @@ int|float binop(int|float left, string op, int|float right) {
 		case "=": return left == right;
 		case "&": return left && right;
 		case "|": return left || right;
+		case "^": return left ** right;
 		case "=>": return left >= right;
+		case "x": return left * right;
 	}
 }
 

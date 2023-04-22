@@ -28,10 +28,12 @@ add: add "+" multiply {binop};
 add: add "-" multiply {binop};
 multiply: expon;
 multiply: multiply "*" expon {binop};
+multiply: multiply "x" expon {binop}; /* Humans like to write 3x4 for multiplication */
 multiply: multiply "/" expon {binop};
 multiply: multiply "%" expon {binop};
 expon: number;
 expon: number "**" expon {binop};
+expon: number "^" expon {binop};
 
 digit: "0";
 digit: "1";
