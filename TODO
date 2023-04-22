@@ -151,3 +151,7 @@
 * Before Aug 3rd, complete the changeover to follower requests with authentication
   - See poll.pike and comments regarding this date
 * get_users_info needs to expire cache after some time
+* Goal bars: Add a Subs format, dividing by 500 - you can choose whether to do points
+  (putting 1000 and 2500), support (1000 and 3000), or just subs (500 and 500) for
+  tiered subs. It's just a display format change.
+* /channels/X/kofi should show whether it's configured, but not what the key is
