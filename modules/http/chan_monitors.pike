@@ -144,7 +144,7 @@ void autoadvance(object channel, mapping person, string key, int weight) {
 		if (!txt) continue;
 		int total = (int)channel->set_variable(varname, advance, "add"); //Abuse the fact that it'll take an int just fine for add :)
 		if (advance < 0) continue;
-		//See if we've just hit a new tier.
+		//See if we've just hit a new tier. This code is quite probably broken; aren't the tiers already in cents?
 		foreach (info->thresholds / " "; int tier; string th) {
 			int nexttier = 100 * (int)th; //TODO: Don't offset if not currency
 			if (total >= nexttier) {total -= nexttier; continue;}
