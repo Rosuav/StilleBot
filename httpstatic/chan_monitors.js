@@ -231,10 +231,10 @@ function textify(cmd) {
 	if (typeof cmd === "string") return cmd;
 	if (Array.isArray(cmd)) return cmd.map(textify).filter(x => x).join(" // ");
 	if (cmd.dest) return null; //Suppress special-destination sections
-	return cmd.message;
+	return textify(cmd.message);
 }
 function shorten(txt, len) {
-	if (txt.length <= len) return txt;
+	if (!txt || txt.length <= len) return txt;
 	return txt.slice(0, len - 1) + "..."; //I really want a width-based shorten, but CSS won't max-width an option
 }
 const commands = { };
