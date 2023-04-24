@@ -7,6 +7,11 @@ inherit annotated;
 @retain: mapping category_names = ([]);
 @retain: mapping user_info = ([]);
 
+mapping cached_user_info(string user) {
+	mapping info = user_info[user];
+	if (info && time() - info->_fetch_time < 3600) return info;
+}
+
 //Place a request to the API. Returns a Future that will be resolved with a fully
 //decoded result (a mapping of Unicode text, generally), or rejects if Twitch or
 //the network failed the request.
@@ -24,7 +29,7 @@ inherit annotated;
 		foreach (usernames; string tag; string user)
 		{
 			usernames[tag] = user = lower_case(user);
-			if (mapping info = user_info[user]) usernames[tag] = (string)info->id; //Local cache lookup where possible
+			if (mapping info = cached_user_info(user)) usernames[tag] = (string)info->id; //Local cache lookup where possible
 			else reqs += ({get_user_info(user, "login")
 				->then(lambda(mapping info) {replace(usernames, info->login, info->id);})
 			});
@@ -133,19 +138,20 @@ inherit annotated;
 	array lookups = ({ });
 	foreach (users; int i; int|string u)
 	{
-		if (mapping info = user_info[u]) results[i] = info;
+		if (mapping info = cached_user_info(u)) results[i] = info;
 		else lookups += ({(string)u});
 	}
 	if (!sizeof(lookups)) return Concurrent.resolve(results); //Got 'em all from cache.
 	return twitch_api_request(sprintf("https://api.twitch.tv/helix/users?%{" + type + "=%s&%}", Protocols.HTTP.uri_encode(lookups[*])))
 		->then(lambda(mapping data) {
 			foreach (data->data, mapping info) {
+				info->_fetch_time = time();
 				user_info[info->login] = user_info[(int)info->id] = info;
 				notice_user_name(info->login, info->id);
 			}
 			foreach (users; int i; int|string u)
 			{
-				if (mapping info = user_info[u]) results[i] = info;
+				if (mapping info = cached_user_info(u)) results[i] = info;
 				//Note that the returned error will only ever name a single failed lookup.
 				//It's entirely possible that others failed too, but it probably won't matter.
 				else return Concurrent.reject(({"User not found: " + u + "\n", backtrace()}));
