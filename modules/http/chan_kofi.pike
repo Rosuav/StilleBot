@@ -104,9 +104,6 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 		return "Cool thanks!";
 	}
 	if (req->misc->is_mod) {
-		//NOTE: The token can be set from this page, but will not be shown. It is also
-		//not part of the websocket state. This prevents leaks which could result in a
-		//fake message being sent, deceiving StilleBot into thinking an event happened.
 		return render(req, ([
 			"vars": (["ws_group": ""]),
 			"webhook_url": sprintf("%s/channels/%s/kofi",
@@ -125,4 +122,13 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 	mapping cfg = persist_status->path("kofi", channel->name[1..]);
 	cfg->verification_token = msg->token;
 	persist_status->save();
+	send_updates_all(conn->group);
+}
+
+bool need_mod(string grp) {return 1;}
+mapping get_chan_state(object channel, string grp) {
+	mapping cfg = persist_status->path("kofi", channel->name[1..]);
+	return ([
+		"token": stringp(cfg->verification_token) && "..." + cfg->verification_token[<3..],
+	]);
 }

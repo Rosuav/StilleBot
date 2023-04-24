@@ -150,7 +150,6 @@
     channel's colour).
 * Before Aug 3rd, complete the changeover to follower requests with authentication
   - See poll.pike and comments regarding this date
-* /channels/X/kofi should show whether it's configured, but not what the key is
 * Other support platforms? Which ones have integrations available?
   - Should /kofi be renamed and grow all the others?
   - Throne?
