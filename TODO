@@ -155,3 +155,5 @@
   - Should /kofi be renamed and grow all the others?
   - Throne?
 * Possible markup syntax for private messages, to allow colour tags??
+* Add a "clear" button to private messages (with proper confirmation incl number of
+  messages to be deleted)
