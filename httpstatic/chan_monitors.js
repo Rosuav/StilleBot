@@ -25,9 +25,39 @@ function set_values(nonce, info, elem) {
 		const el = elem.querySelector("[name=currentval]"); if (el) el.value = info.display.split(":")[0];
 		update_tierpicker();
 		fixformatting();
+		update_preset();
 	}
 	return elem;
 }
+
+const preset_defaults = {
+	format: "plain",
+	bit: "", tip: "", follow: "",
+	sub_t1: "", sub_t2: "", sub_t3: "",
+	kofi_dono: "", kofi_member: "", kofi_renew: "", kofi_shop: "",
+};
+const presets = {
+	Subscribers: {...preset_defaults,
+		sub_t1: 1,
+		sub_t2: 1,
+		sub_t3: 1,
+	},
+	"Sub points": {...preset_defaults,
+		format: "subscriptions",
+		sub_t1: 500,
+		sub_t2: 1000,
+		sub_t3: 3000,
+	},
+	"Financial support": {...preset_defaults,
+		format: "currency",
+		bit: 1, tip: 1,
+		sub_t1: 500, sub_t2: 1000, sub_t3: 2500,
+		kofi_dono: 1, kofi_member: 1, kofi_shop: 1,
+	},
+	Followers: {...preset_defaults,
+		follow: 1,
+	},
+};
 
 export const render_parent = DOM("#monitors tbody");
 export function render_item(msg, obj) {
@@ -138,7 +168,11 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 			FIELDSET([LEGEND("Renewal"), INPUT({type: "number", name: "kofi_renew"})]),
 			FIELDSET([LEGEND("Shop sale"), INPUT({type: "number", name: "kofi_shop"})]),
 		]),
-		"For events not listed, create a command or trigger (TODO - example)",
+		"For events not listed, create a command or trigger.",
+		DIV(["Select preset: ", SELECT({name: "preset"}, [
+			OPTION("Custom"), //Must be first
+			Object.keys(presets).map(p => OPTION(p)),
+		])]),
 	])]),
 	TR([TH("On level up"), TD([
 		SELECT({name: "lvlupcmd", id: "cmdpicker"}, [OPTION("Loading...")]),
@@ -244,6 +278,25 @@ function fixformatting() {
 }
 on("input", "[name=thresholds]", fixformatting);
 on("change", "[name=format],[name=thresholds]", fixformatting);
+
+on("change", "[name=preset]", e => {
+	const preset = presets[e.match.value];
+	if (!preset) return; //If you click Custom, don't clear everything
+	Object.entries(preset).forEach(([k, v]) => DOM("[name=" + k + "]").value = v);
+});
+
+function update_preset() {
+	//See if one of the presets is valid. This is inefficient but I don't really care.
+	for (let name in presets) {
+		const preset = presets[name];
+		let match = true;
+		for (let k in preset)
+			if (DOM("[name=" + k + "]").value !== ""+preset[k]) {match = false; break;}
+		if (match) {DOM("[name=preset]").value = name; return;}
+	}
+	DOM("[name=preset]").selectedIndex = 0;
+}
+on("change", "input", e => e.match.name in preset_defaults && update_preset());
 
 function textify(cmd) {
 	if (typeof cmd === "string") return cmd;
