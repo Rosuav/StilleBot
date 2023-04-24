@@ -114,9 +114,11 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 		"Thickness of the red indicator needle",
 	])]),
 	TR([TH("Format"), TD([
-		SELECT({name: "format"}, [OPTION("plain"), OPTION("currency"), OPTION("subscriptions")]),
-		"Display format for numbers. Currency uses cents - 2718 is $27.18.",
-		BR(), "TODO: Allow selection of currency eg GBP to change the displayed unit",
+		SELECT({name: "format"}, [
+			OPTION({value: "plain"}, "plain - ordinary numbers"),
+			OPTION({value: "currency"}, "currency - cents eg 2718 is $27.18"),
+			OPTION({value: "subscriptions"}, "subs or sub points - 500 each (roughly USD cents)")]),
+		BR(), "Select the desired display format; note that everything is managed in cents still.",
 	])]),
 	TR([TH("Auto-count"), TD([
 		"Automatically advance the goal bar based on Twitch support",
