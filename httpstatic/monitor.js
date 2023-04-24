@@ -3,16 +3,20 @@ const {DIV} = choc;
 import {ensure_font} from "$$static||utils.js$$";
 
 const currency_formatter = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
-const formatters = {
+export const formatters = {
 	currency: cents => {
 		if (cents >= 0 && !(cents % 100)) return "$" + (cents / 100); //Abbreviate the display to "$5" for 500
 		return currency_formatter.format(cents / 100);
+	},
+	subscriptions: cents => {
+		if (cents >= 0 && !(cents % 500)) return "" + (cents / 500);
+		return (cents / 500).toFixed(3);
 	},
 }
 
 const styleinfo = { }; //Retained info for when the styles need to change based on data (for goal bars)
 export function render(data) {update_display(DOM("#display"), data.data);}
-export default function update_display(elem, data) { //Used for the preview as well as the live display
+export function update_display(elem, data) { //Used for the preview as well as the live display
 	//Update styles. The server provides a single "text_css" attribute covering most of the easy
 	//stuff; all we have to do here is handle the goal bar position.
 	if (data.text_css || data.text_css === "") {

@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, CODE, DIV, FIELDSET, LEGEND, LABEL, INPUT, TEXTAREA, OPTION, OPTGROUP, SELECT, TABLE, TR, TH, TD} = choc; //autoimport
-import update_display from "$$static||monitor.js$$";
+const {A, BR, BUTTON, CODE, DIV, FIELDSET, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
+import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
 const editables = { };
@@ -24,6 +24,7 @@ function set_values(nonce, info, elem) {
 	if (info.type === "goalbar") {
 		const el = elem.querySelector("[name=currentval]"); if (el) el.value = info.display.split(":")[0];
 		update_tierpicker();
+		fixformatting();
 	}
 	return elem;
 }
@@ -84,7 +85,8 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 	TR([TH("Goal(s)"), TD([
 		INPUT({name: "thresholds", size: 60}),
 		BR(), "To make a tiered goal bar, set multiple goals eg '", CODE("10 10 10 10 20 30 40 50"), "'",
-		BR(), "For currency, use values in cents (eg 1000 for $10)",
+		BR(), "For currency or subs, use values in cents (eg 1000 for $10 or 2 subs)",
+		BR(), SPAN({id: "thresholds-formatted"}),
 	])]),
 	TR([TH("Font"), TD([
 		INPUT({name: "font", size: 40}),
@@ -112,7 +114,7 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 		"Thickness of the red indicator needle",
 	])]),
 	TR([TH("Format"), TD([
-		SELECT({name: "format"}, [OPTION("plain"), OPTION("currency")]),
+		SELECT({name: "format"}, [OPTION("plain"), OPTION("currency"), OPTION("subscriptions")]),
 		"Display format for numbers. Currency uses cents - 2718 is $27.18.",
 		BR(), "TODO: Allow selection of currency eg GBP to change the displayed unit",
 	])]),
@@ -226,6 +228,20 @@ DOM("#setval").onclick = e => {
 	if (val !== val) return; //TODO: Be nicer
 	ws_sync.send({cmd: "setvar", varname: DOM("[name=varname]").value, val});
 }
+
+function fixformatting() {
+	const fmt = DOM("[name=format]").value;
+	const formatter = formatters[fmt];
+	if (!formatter) {set_content("#thresholds-formatted", ""); return;} //plain mode (or fallback if error)
+	const thresholds = DOM("[name=thresholds]").value
+		.split(" ")
+		.map(th => formatter(+th))
+		.join(" ");
+	const label = fmt === "subscriptions" ? " subs" : ""; //TODO: Generalize this
+	set_content("#thresholds-formatted", "Shown as: " + thresholds + label);
+}
+on("input", "[name=thresholds]", fixformatting);
+on("change", "[name=format],[name=thresholds]", fixformatting);
 
 function textify(cmd) {
 	if (typeof cmd === "string") return cmd;
