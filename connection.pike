@@ -171,6 +171,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			//would be able to craft a trigger that responds to it.
 			"{rewardid}": params->custom_reward_id || "",
 			"{msgid}": params->id || "",
+			"{usernamecolor}": params->color || "", //Undocumented, mainly here as a toy
 		]);
 		runhooks("all-msgs", 0, this, person, msg);
 		event_notify("allmsgs", this, person, msg);
