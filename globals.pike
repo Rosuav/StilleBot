@@ -1530,7 +1530,7 @@ class TwitchAuth
 
 mapping(string:mixed) twitchlogin(Protocols.HTTP.Server.Request req, multiset(string) scopes, string|void next)
 {
-	mapping resp = render_template("login.md", (["scopes": ((array)scopes - ({""})) * " "]));
+	mapping resp = render_template("login.md", (["scopes": ((array)scopes - ({""})) * " "]) | (req->misc->chaninfo || ([])));
 	req->misc->session->redirect_after_login = next || req->full_query; //Shouldn't usually be necessary
 	return resp;
 }

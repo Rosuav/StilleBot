@@ -145,7 +145,6 @@
   - This would transform the landing page into a sort of control panel, where you can
     make sweeping configuration changes (like enabling/disabling features and setting
     time zone).
-  - When not logged in, the sidebar vanishes. Can we reinstate that everywhere?
   - Add the channel's avatar to the bottom of the sidebar (on a background of the
     channel's colour).
 * Before Aug 3rd, complete the changeover to follower requests with authentication
