@@ -42,7 +42,7 @@ function is_unread(id, ctx) {
 function render_attr_txt(txt) {
 	const ret = [];
 	let m;
-	while (m = /^(.*)\[([^\]]+)\]\(:([^\)]*)\)(.*)$/.exec(txt)) {
+	while (m = /^(.*?)\[([^\]]+)\]\(:([^\)]*)\)(.*)$/.exec(txt)) {
 		const [_, before, inner, attrs, after] = m;
 		ret.push(before);
 		//TODO maybe: Fix the split so you can have an equals sign inside the attribute value. Whatever.
