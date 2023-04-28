@@ -1,6 +1,9 @@
 inherit http_websocket;
 constant markdown = #"# Messages for $$recip$$ from channel $$channel$$
 
+* [](:tag=input type=checkbox #select_all title=All/none) [Delete selected](:#delete_selected)
+{:#header}
+
 <div id=loading>Loading...</div>
 <ul id=messages></ul>
 <ul id=modmessages></ul>
@@ -26,6 +29,11 @@ main li {line-height: 2.25;}
 
 #modmessages li {
 	background: #a0f0c0;
+}
+
+#header {
+	list-style-type: none;
+	margin-bottom: -1em;
 }
 </style>
 ";

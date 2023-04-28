@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, IMG, LI, SPAN} = choc;
+const {A, BUTTON, IMG, INPUT, LI, SPAN} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 /* PROBLEM: With two connections (personal and mod-shared), there's no easy way
@@ -41,7 +41,7 @@ export const render_parent = DOM("#messages");
 function render_message(msg, ctx) {
 	set_content("#loading", "");
 	return LI({"data-id": msg.id, className: is_unread(msg.id, ctx) ? "unread" : ""}, [
-		BUTTON({type: "button", className: "confirmdelete"}, "🗑"),
+		INPUT({type: "checkbox", class: "select-msg"}),
 		date_display(new Date(msg.received * 1000)),
 		msg.parts ? SPAN(msg.parts.map(p =>
 			typeof(p) === "string" ? p :
@@ -71,12 +71,23 @@ export function render(data) {
 	if (ctx_personal.lastread === -1) ws_sync.send({cmd: "mark_read", why: "startup"});
 }
 
-//TODO: Have a bulk deletion option eg "tick, tick, tick, tick, delete, confirm once"
-on("click", ".confirmdelete", simpleconfirm("Delete this message?", e => {
-	const li = e.match.closest("li");
-	if (!li.dataset.id) li.replaceWith();
-	else if (!li.closest("#modmessages")) ws_sync.send({cmd: "delete", id: li.dataset.id});
-	else if (mod_sock) mod_sock.send(JSON.stringify({cmd: "delete", id: li.dataset.id}));
+on("click", "#select_all", e => {
+	const state = e.match.checked;
+	document.querySelectorAll(".select-msg").forEach(el => el.checked = state);
+});
+
+on("click", "#delete_selected", simpleconfirm(() => {
+	const sel = document.querySelectorAll(".select-msg:checked").length;
+	if (!sel) return "Nothing to delete. TODO.";
+	if (sel === 1) return "Delete this message?";
+	return "Delete " + sel + " messages?";
+}, e => {
+	document.querySelectorAll(".select-msg:checked").forEach(el => {
+		const li = el.closest("li");
+		if (!li.dataset.id) li.replaceWith(); //CJA 20230428: When would this ever happen? Don't they always have IDs?
+		else if (!li.closest("#modmessages")) ws_sync.send({cmd: "delete", id: li.dataset.id});
+		else if (mod_sock) mod_sock.send(JSON.stringify({cmd: "delete", id: li.dataset.id}));
+	});
 }));
 
 on("click", "#mark_read", e => {
