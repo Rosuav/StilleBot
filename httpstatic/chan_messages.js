@@ -82,12 +82,15 @@ on("click", "#delete_selected", simpleconfirm(() => {
 	if (sel === 1) return "Delete this message?";
 	return "Delete " + sel + " messages?";
 }, e => {
+	const main = [], mod = [];
 	document.querySelectorAll(".select-msg:checked").forEach(el => {
 		const li = el.closest("li");
 		if (!li.dataset.id) li.replaceWith(); //CJA 20230428: When would this ever happen? Don't they always have IDs?
-		else if (!li.closest("#modmessages")) ws_sync.send({cmd: "delete", id: li.dataset.id});
-		else if (mod_sock) mod_sock.send(JSON.stringify({cmd: "delete", id: li.dataset.id}));
+		else if (!li.closest("#modmessages")) main.push(li.dataset.id);
+		else if (mod_sock) mod.push(li.dataset.id);
 	});
+	if (main.length) ws_sync.send({cmd: "delete", id: main});
+	if (mod.length) mod_sock.send(JSON.stringify({cmd: "delete", id: mod}));
 }));
 
 on("click", "#mark_read", e => {

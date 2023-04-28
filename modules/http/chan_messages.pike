@@ -102,7 +102,14 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping msgs = persist_status->path("private", channel->name)[conn->subgroup];
 	if (!msgs) return;
-	if (m_delete(msgs, (string)msg->id)) update_one(conn->group, msg->id);
+	if (arrayp(msg->id)) {
+		//Bulk deletion. Take them all out, then update all at once.
+		int len = sizeof(msgs);
+		m_delete(msgs, msg->id[*]);
+		if (sizeof(msgs) == len) conn->sock->send_text(Standards.JSON.encode((["cmd": "notify", "msg": "Deletion failed (all gone?)"])));
+		else send_updates_all(conn->group);
+	}
+	else if (m_delete(msgs, (string)msg->id)) update_one(conn->group, msg->id); //Single deletion - less traffic.
 	else conn->sock->send_text(Standards.JSON.encode((["cmd": "notify", "msg": "Deletion failed (already gone)"])));
 	persist_status->save();
 }
