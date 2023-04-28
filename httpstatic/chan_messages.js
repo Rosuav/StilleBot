@@ -37,7 +37,9 @@ function is_unread(id, ctx) {
 	return (+id) > ctx.lastread;
 }
 
-function render_colour(txt) {
+//Parse text annotations such as [text goes here](:with=some attributes=here) and return
+//a DOM element to render them. Only a few attributes are selected, not full Markdown.
+function render_attr_txt(txt) {
 	const ret = [];
 	let m;
 	while (m = /^(.*)\[([^\]]+)\]\(:([^\)]*)\)(.*)$/.exec(txt)) {
@@ -65,10 +67,10 @@ function render_message(msg, ctx) {
 		INPUT({type: "checkbox", class: "select-msg"}),
 		date_display(new Date(msg.received * 1000)),
 		msg.parts ? SPAN(msg.parts.map(p =>
-			typeof(p) === "string" ? render_colour(p) :
+			typeof(p) === "string" ? render_attr_txt(p) :
 			p.type === "link" ? A({href: p.href || p.text}, p.text) :
 			p.type === "image" ? IMG({src: p.url, title: p.text, alt: p.text}) :
-			render_colour(p.text) //Shouldn't happen, but if we get an unknown type, just emit the text
+			render_attr_txt(p.text) //Shouldn't happen, but if we get an unknown type, just emit the text
 		)) : msg.message,
 		msg.acknowledgement && " ",
 		msg.acknowledgement && BUTTON({type: "button", className: "acknowledge", title: "Will respond with: " + msg.acknowledgement}, "Got it, thanks!"),
