@@ -88,7 +88,7 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 	else req->misc->chaninfo->save_or_login = "[Mods, login to make changes](:.twitchlogin)";
 	req->misc->chaninfo->menunav = sprintf(
 		"<nav id=sidebar class=vis><ul>%{<li><a href=%q>%s</a></li>%}</ul></nav>",
-		req->misc->is_mod ? sidebar_modmenu : sidebar_menu);
+		req->misc->is_mod ? sidebar_modmenu : sidebar_nonmodmenu);
 	return handler(req);
 }
 
