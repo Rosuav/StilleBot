@@ -143,6 +143,7 @@ void autoadvance(object channel, mapping person, string key, int weight) {
 		sscanf(info->text, "$%s$:%s", string varname, string txt);
 		if (!txt) continue;
 		int total = (int)channel->set_variable(varname, advance, "add"); //Abuse the fact that it'll take an int just fine for add :)
+		Stdio.append_file("subs.log", sprintf("[%s] Advancing %s goal bar by %O*%O = %d - now %d", channel->name, varname, key, weight, advance, total));
 		if (advance < 0) continue;
 		//See if we've just hit a new tier. This code is quite probably broken; aren't the tiers already in cents?
 		foreach (info->thresholds / " "; int tier; string th) {
