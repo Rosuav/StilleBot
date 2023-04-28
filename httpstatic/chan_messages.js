@@ -37,6 +37,27 @@ function is_unread(id, ctx) {
 	return (+id) > ctx.lastread;
 }
 
+function render_colour(txt) {
+	const ret = [];
+	let m;
+	while (m = /^(.*)\[([^\]]+)\]\(:([^\)]*)\)(.*)$/.exec(txt)) {
+		const [_, before, inner, attrs, after] = m;
+		ret.push(before);
+		//TODO maybe: Fix the split so you can have an equals sign inside the attribute value. Whatever.
+		const att = Object.fromEntries(attrs.split(" ").map(a => a.split("=", 2)));
+		const style = [];
+		if (att.color) style.push("color: " + att.color);
+		if ("bold" in att) style.push("font-weight: bold");
+		if ("italic" in att) style.push("font-style: italic");
+		//Add other styles as needed.
+		ret.push(SPAN({style: style.join(";")}, inner));
+		txt = after;
+	}
+	if (!ret.length) return txt; //Nothing to do.
+	ret.push(txt);
+	return ret;
+}
+
 export const render_parent = DOM("#messages");
 function render_message(msg, ctx) {
 	set_content("#loading", "");
@@ -44,10 +65,10 @@ function render_message(msg, ctx) {
 		INPUT({type: "checkbox", class: "select-msg"}),
 		date_display(new Date(msg.received * 1000)),
 		msg.parts ? SPAN(msg.parts.map(p =>
-			typeof(p) === "string" ? p :
+			typeof(p) === "string" ? render_colour(p) :
 			p.type === "link" ? A({href: p.href || p.text}, p.text) :
 			p.type === "image" ? IMG({src: p.url, title: p.text, alt: p.text}) :
-			p.text //Shouldn't happen, but if we get an unknown type, just emit the text
+			render_colour(p.text) //Shouldn't happen, but if we get an unknown type, just emit the text
 		)) : msg.message,
 		msg.acknowledgement && " ",
 		msg.acknowledgement && BUTTON({type: "button", className: "acknowledge", title: "Will respond with: " + msg.acknowledgement}, "Got it, thanks!"),
