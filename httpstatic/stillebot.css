@@ -232,6 +232,7 @@ nav#sidebar.vis {
 	width: 100px;
 	top: 48px; bottom: 0;
 	background-color: #a0f0c0;
+	overflow: clip auto;
 }
 #togglesidebarbox.sbvis {
 	display: block;
