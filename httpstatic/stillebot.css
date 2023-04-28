@@ -223,6 +223,15 @@ nav#topbar {height: 40px;}
 nav#sidebar ul {
 	padding-left: 8px;
 	margin: 0;
+	overflow: clip auto;
+	position: absolute;
+	top: 0px; bottom: 100px; /* Leave room for the avatar below */
+}
+nav#sidebar img {
+	display: block;
+	position: absolute;
+	left: 0; bottom: 0px;
+	width: 100px; height: 100px;
 }
 
 nav#sidebar.vis {
@@ -232,7 +241,6 @@ nav#sidebar.vis {
 	width: 100px;
 	top: 48px; bottom: 0;
 	background-color: #a0f0c0;
-	overflow: clip auto;
 }
 #togglesidebarbox.sbvis {
 	display: block;

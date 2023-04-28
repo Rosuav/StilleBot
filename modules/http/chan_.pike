@@ -86,10 +86,14 @@ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string cha
 		req->misc->chaninfo->logout = "| <a href=\"/logout\" class=twitchlogout>Log out</a>";
 	}
 	else req->misc->chaninfo->save_or_login = "[Mods, login to make changes](:.twitchlogin)";
-	req->misc->chaninfo->menunav = sprintf(
-		"<nav id=sidebar class=vis><ul>%{<li><a href=%q>%s</a></li>%}</ul></nav>",
-		req->misc->is_mod ? sidebar_modmenu : sidebar_nonmodmenu);
-	return handler(req);
+	return get_user_info(channel->userid)->then() {mapping profile = __ARGS__[0] || ([]);
+		req->misc->chaninfo->menunav = sprintf(
+			"<nav id=sidebar class=vis><ul>%{<li><a href=%q>%s</a></li>%}</ul>"
+			"<img src=%q alt=\"Channel avatar\" title=%q></nav>",
+			req->misc->is_mod ? sidebar_modmenu : sidebar_nonmodmenu,
+			profile->profile_image_url || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=", profile->display_name || "");
+		return handler(req);
+	};
 }
 
 mapping(string:mixed) redirect_no_slash(Protocols.HTTP.Server.Request req, string chan)
