@@ -150,3 +150,17 @@
 * Other support platforms? Which ones have integrations available?
   - Should /kofi be renamed and grow all the others?
   - Throne?
+* Bot sharding. What would it take?
+  - MUST NOT disrupt external usage eg URLs
+  - Each channel will need to stay together, meaning that all shards will need IRC and
+    web connections
+  - User preferences must be non-sharded; if you are using multiple channels, prefs are
+    still synchronized across them.
+  - Must be dynamic. This will allow bot restarts to happen progressively by adding and
+    removing shards.
+  - Might require a single central dispatcher. This is a minor problem but not huge (at
+    the moment). Maybe the dispatcher can be the same code as any other shard, with some
+    way to know "there are other shards over there and there"?
+  - Incoming webhooks have to be dispatched to the shards
+  - Updates to configuration need to be centralized. This may predicate this on a config
+    system built on something other than JSON files. Maybe move to PGSQL?
