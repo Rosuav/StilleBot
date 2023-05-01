@@ -18,7 +18,9 @@ function countdown_ticker(elem) {
 	//"##:##" for min:sec
 	//"#:##" for min:sec w/o leading zero
 	//"##" for seconds, padded to two places with zeroes (ditto "###" or "#")
-	let time = Math.floor(elem._stillebot_countdown_target - new Date() / 1000);
+	let time = elem._stillebot_countdown_target;
+	//Times below a gigasecond are paused times, times above that are time_t when it hits zero
+	if (time > 1e9) time = Math.floor(time - new Date() / 1000);
 	if (time < 0) time = 0; //Leave it stuck on 00:00 after it expires
 	const parts = elem._stillebot_countdown_format.split(":##");
 	//For every ":##" in the string, fracture off one sixtieth of the time (thus seconds and minutes)
