@@ -26,7 +26,32 @@ multiset(int) creatives = (<>);
 int next_precache_request = time();
 
 mapping(string:string|array) safe_query_vars(mapping(string:string|array) vars) {return vars & (<"for">);}
-	
+
+constant markdown_menu = #"# Raid finder modes
+* [Your follow list](raidfinder). This is the normal and default mode, and shows
+  your own follow list sorted according to your own channel's statistics. Requires
+  login. Can give recent raid statistics.
+* <form><label>Recommendations for another streamer: <input name=for size=20></label> <input type=submit value=View></form>
+  Show your follow list, but compare against another channel's statistics. Requires
+  login. Can give recent raid statistics, if bot is active for the target channel.
+* <form><label>Browse a category: <input name=category size=20></label> <input type=submit value=Browse></form>
+  Show any category - note that large categories may take a while to load! Does not
+  require a login.
+* [Pixel Plush users](raidfinder?categories=pixelplush) - everyone who's currently
+  using games from [Pixel Plush](https://pixelplush.dev). The same channels as are
+  seen on their homepage carousel. No login required.
+* [The bot's channels](raidfinder?login=demo) - only those channels for which the
+  bot is active. Requires no login. Suitable as a demo but not very useful.
+* [Summary of everyone you follow](raidfinder?allfollows) for note taking. Includes
+  channels not currently online; can be slow to load.
+* [Return the Favour](raidfinder?raiders) - list everyone currently live who has
+  raided you. Add `for=otherstreamer`?? TODO.
+* [Highlighted streamers](raidfinder?highlights) - only those streamers you've
+  listed in your highlight list.
+";
+//Modes train and tradingcards are omitted as they are more usefully accessed from
+//their corresponding pages. Also login=user,user,user omitted as not useful.
+
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	//Try to find all creative categories and get their IDs. Is there a better way to do this?
@@ -180,6 +205,10 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			"title": html_title,
 		]));
 		return jsonify(ret);
+	}
+	if (req->variables->menu) {
+		//Show a menu of available raid finder modes.
+		return render_template(markdown_menu, ([]));
 	}
 	int userid = 0;
 	if (string chan = req->variables["for"])
@@ -357,6 +386,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 					//Try to populate the cache using an external lookup. As of 20220216,
 					//this lookup will be done using the legacy Kraken API, but will then
 					//be cached so the data is retained post-shutdown.
+					//If ever Twitch reimplements this functionality in Helix, add something
+					//like this here:
+					//cats = yield(twitch_api_request("........."));
 					persist_status->path("user_followed_categories")[req->misc->session->user->id] = cats;
 				}
 				args->game_id = cats;
@@ -515,6 +547,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
 		"title": title,
 		"raidbtn": raidbtn,
+		"backlink": "<a href=\"raidfinder?menu\">Other raid finder modes</a>",
 	]));
 }
 
