@@ -28,7 +28,7 @@ mapping message_params(object channel, mapping person, string param)
 	string tz = replace(param, " ", "_");
 	tz = timezones[lower_case(tz)] || tz; //If you enter "Melbourne", use "Australia/Melbourne" automatically.
 	object t = Calendar.Gregorian.Second()->set_timezone(tz);
-	mapping info = (["{tz}": tz, "{unix}": t->unix_time()]);
+	mapping info = (["{tz}": tz, "{unix}": (string)t->unix_time()]);
 	foreach ("year month hour minute second" / " ", string twodigit) //Yes, year too, since a four digit number will still render correctly
 		info["{" + twodigit + "}"] = sprintf("%02d", t[twodigit + "_no"]());
 	info["{day}"] = sprintf("%02d", t->month_day());
