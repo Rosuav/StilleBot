@@ -429,12 +429,13 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//Okay! Preliminaries done. Let's look through the Helix-provided info and
 	//build up a final result.
 	mapping(string:int) tag_prefs = notes->tags || ([]);
+	mapping(string:int) lc_tag_prefs = mkmapping(lower_case(indices(tag_prefs)[*]), values(tag_prefs));
 	mapping cached_status = persist_status->path("raidfinder_cache");
 	foreach (follows_helix; int i; mapping strm)
 	{
 		mapping(string:int) recommend = ([]);
 		foreach (strm->tags || ({ }), string tag)
-			if (int pref = tag_prefs[tag]) recommend["Tag prefs"] += PREFERENCE_MAGIC_SCORES[pref];
+			if (int pref = lc_tag_prefs[lower_case(tag)]) recommend["Tag prefs"] += PREFERENCE_MAGIC_SCORES[pref];
 		strm->category = G->G->category_names[strm->game_id] || strm->game_name;
 		strm->raids = raids[strm->user_login] || ({ });
 		if (mapping st = cached_status[strm->user_id]) strm->chanstatus = st;
@@ -541,7 +542,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			"follows": follows_helix,
 			"all_tags": ({ }), //Deprecated as of 20230127 - tags by ID are no longer a thing.
 			"your_stream": your_stream, "highlights": highlights,
-			"tag_prefs": tag_prefs, "MAX_PREF": MAX_PREF, "MIN_PREF": MIN_PREF,
+			"tag_prefs": tag_prefs, "lc_tag_prefs": lc_tag_prefs,
+			"MAX_PREF": MAX_PREF, "MIN_PREF": MIN_PREF,
 			"all_raids": all_raids[<99..], "mode": "normal",
 		]),
 		"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",

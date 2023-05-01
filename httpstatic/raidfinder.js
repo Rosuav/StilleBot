@@ -383,7 +383,7 @@ function build_follow_list() {
 					LI({className: "streamtitle"}, stream.title),
 					LI([describe_uptime(stream), ", " + stream.viewer_count + " viewers"]),
 					LI({class: "no-indent"}, stream.tags && stream.tags.map(tag => [
-						SPAN({class: "tag tagpref" + (tag_prefs[tag] || "unspecified")}, tag),
+						SPAN({class: "tag tagpref" + (lc_tag_prefs[tag.toLowerCase()] || "0")}, tag),
 						" ",
 					])),
 					LI([describe_notes(stream), describe_raid(stream.raids), raidbtn(stream)]),
