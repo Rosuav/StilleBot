@@ -25,6 +25,7 @@ $$login$$
 > <label for=ga_pausemode>Redemption hiding</label> | <select id=ga_pausemode name=pausemode><option value=disable>Disable, hiding them from users</option><option value=pause>Pause and leave visible</option></select> | When there's no current giveaway, should redemptions remain visible (but unpurchaseable), or vanish entirely?
 > Multi-win | <label><input type=checkbox name=allow_multiwin value=yes> Allow one person to win multiple times</label> | By default, the winner's tickets will be removed in case of a reroll or second winner.
 > <label for=ga_duration>Time before giveaway closes</label> | <input id=ga_duration name=duration type=number min=0 max=3600> (seconds) | How long should the giveaway be open? 0 leaves it until explicitly closed.
+> Non-binding purchases | <label><input type=checkbox name=refund_nonwinning value=yes> Refund non-winning tickets at end of giveaway</label> | By default, all ticket purchases are counted as claimed (channel points spent) when the giveaway is ended.
 >
 > <button>Save/reconfigure</button>
 >
@@ -42,7 +43,7 @@ $$login$$
 > * [Close giveaway](:.master #close) so no more tickets will be bought
 > * [Choose winner](:.master #pick) and remove that person's tickets
 > * [Cancel and refund](:.master #cancel) all points spent on tickets
-> * [End giveaway](:.master #end) clearing out tickets
+> * [End giveaway](:.master #end) <span id=refund_nonwinning_desc>clearing out</span> tickets
 >
 {: tag=dialog #master}
 
@@ -276,6 +277,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			cfg->giveaway->pausemode = body->pausemode == "pause";
 			cfg->giveaway->allow_multiwin = body->allow_multiwin == "yes";
 			cfg->giveaway->duration = min(max((int)body->duration, 0), 3600);
+			cfg->giveaway->refund_nonwinning = body->refund_nonwinning == "yes";
 			mapping existing = cfg->giveaway->rewards;
 			if (!existing) existing = cfg->giveaway->rewards = ([]);
 			int numcreated = 0, numupdated = 0, numdeleted = 0;
@@ -361,6 +363,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		config->pausemode = g->pausemode ? "pause" : "disable";
 		config->allow_multiwin = g->allow_multiwin ? "yes" : "no";
 		config->duration = g->duration;
+		config->refund_nonwinning = g->refund_nonwinning ? "yes" : "no";
 		//TODO: Show the actual existing rewards somewhere?
 		//if (mapping existing = g->rewards)
 		//	config->multi = ((array(string))sort(values(existing))) * " ";
@@ -540,7 +543,7 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 				"{title}": cfg->giveaway->title || "",
 				"{tickets_total}": (string)tickets,
 				"{entries_total}": (string)entrants,
-				"{giveaway_cancelled}": (string)(msg->action == "cancel"),
+				"{giveaway_cancelled}": (string)(msg->action == "cancel" || cfg->giveaway->refund_nonwinning),
 			]));
 		}
 	}

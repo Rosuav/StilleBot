@@ -60,6 +60,8 @@ if (config.cost) {
 	const el = DOM("#configform").elements;
 	fields.forEach(f => el[f].value = "" + (config[f] || ""));
 	el.allow_multiwin.checked = config.allow_multiwin === "yes";
+	el.refund_nonwinning.checked = config.refund_nonwinning === "yes";
+	set_content("#refund_nonwinning_desc", config.refund_nonwinning === "yes" ? "refunding" : "clearing out");
 }
 /*
 1) Create rewards - DONE
@@ -82,12 +84,14 @@ on("submit", "#configform", async e => {
 	const body = { };
 	fields.forEach(f => body[f] = el[f].value);
 	body.allow_multiwin = el.allow_multiwin.checked ? "yes" : "no";
+	body.refund_nonwinning = el.refund_nonwinning.checked ? "yes" : "no";
 	const info = await (await fetch("giveaway", {
 		method: "PUT",
 		headers: {"Content-Type": "application/json"},
 		body: JSON.stringify(body),
 	})).json();
 	console.log("Got response:", info);
+	set_content("#refund_nonwinning_desc", body.refund_nonwinning === "yes" ? "refunding" : "clearing out");
 });
 
 DOM("#showmaster").onclick = e => DOM("#master").showModal();
