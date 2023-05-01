@@ -14,6 +14,31 @@ export const formatters = {
 	},
 }
 
+function countdown_ticker(elem) {
+	//"##:##" for min:sec
+	//"#:##" for min:sec w/o leading zero
+	//"##" for seconds, padded to two places with zeroes (ditto "###" or "#")
+	let time = Math.floor(elem._stillebot_countdown_target - new Date() / 1000);
+	if (time < 0) time = 0; //Leave it stuck on 00:00 after it expires
+	const parts = elem._stillebot_countdown_format.split(":##");
+	//For every ":##" in the string, fracture off one sixtieth of the time (thus seconds and minutes)
+	//Then a hash in the first part of the string gets whatever's left,
+	//padded to the number of hashes.
+	for (let i = parts.length - 1; i > 0; --i) { //From the end, back to all but the last - err I mean first
+		const cur = time % 60;
+		time = Math.floor(time / 60); //Why doesn't JS just have a simple divmod...
+		parts[i] = ("0" + cur).slice(-2) + parts[i];
+	}
+	//The first part should have some number of hashes in it. Pad the number to
+	//that many, but allow more digits if needed.
+	time = "" + time;
+	parts[0] = parts[0].replace(/#+$/, hashes => {
+		if (hashes.length > time.length) return time;
+		return ("0".repeat(hashes.length) + time).slice(-hashes.length);
+	});
+	set_content(elem, parts.join(":"));
+}
+
 const styleinfo = { }; //Retained info for when the styles need to change based on data (for goal bars)
 export function render(data) {update_display(DOM("#display"), data.data);}
 export function update_display(elem, data) { //Used for the preview as well as the live display
@@ -30,11 +55,15 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		ensure_font(data.font);
 	}
 	const type = styleinfo[data.id] && styleinfo[data.id].type;
+	if (elem._stillebot_countdown_interval) {
+		clearInterval(elem._stillebot_countdown_interval);
+		elem._stillebot_countdown_interval = 0;
+	}
 	if (type === "goalbar") {
 		const t = styleinfo[data.id];
 		const thresholds = t.t;
 		const m = /^([0-9]+):(.*)$/.exec(data.display);
-		if (!m) {console.error("Something's misconfigured (see monitor.js regex) -- display", data.display); return;}
+		if (!m) {console.error("Something's misconfigured (see monitor.js goalbar regex) -- display", data.display); return;}
 		let pos = m[1], text, mark, goal;
 		for (let which = 0; which < thresholds.length; ++which) {
 			if (pos < thresholds[which]) {
@@ -57,6 +86,14 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		elem.style.display = "flex";
 		const f = formatters[t.format] || (x => ""+x);
 		set_content(elem, [DIV(text), DIV(f(pos)), DIV(f(goal))]);
+	}
+	else if (type === "countdown") {
+		const m = /^([0-9]+):(.*)$/.exec(data.display);
+		if (!m) {console.error("Something's misconfigured (see monitor.js countdown regex) -- display", data.display); return;}
+		elem._stillebot_countdown_target = +m[1];
+		elem._stillebot_countdown_format = m[2];
+		elem._stillebot_countdown_interval = setInterval(countdown_ticker, 1000, elem);
+		countdown_ticker(elem);
 	}
 	else set_content(elem, data.display);
 }

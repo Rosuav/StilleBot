@@ -91,6 +91,7 @@ export function render_empty() {
 export function render(data) { }
 
 set_content("#edittext form div", TEXTFORMATTING({use_preview: true}));
+set_content("#editcountdown form div", TEXTFORMATTING({use_preview: true}));
 
 set_content("#editgoalbar form div", TABLE({border: 1}, [
 	TR([TH("Active"), TD(LABEL([INPUT({name: "active", type: "checkbox"}), "Enable auto-advance and level up messages"]))]),
@@ -211,6 +212,10 @@ on("click", "#add_text", e => {
 
 on("click", "#add_goalbar", e => {
 	fetch("monitors", {method: "PUT", headers: {"Content-Type": "application/json"}, body: '{"text": "Achieve a goal!", "type": "goalbar"}'});
+});
+
+on("click", "#add_countdown", e => {
+	fetch("monitors", {method: "PUT", headers: {"Content-Type": "application/json"}, body: '{"text": "$countdown$:#:##", "type": "countdown"}'});
 });
 
 on("click", ".editbtn", e => {

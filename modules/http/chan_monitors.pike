@@ -4,7 +4,7 @@ inherit hook;
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
 constant saveable_attributes = "previewbg barcolor fillcolor needlesize thresholds lvlupcmd format width height "
 	"active bit sub_t1 sub_t2 sub_t3 tip follow kofi_dono kofi_member kofi_renew kofi_shop" / " " + TEXTFORMATTING_ATTRS;
-constant valid_types = (<"text", "goalbar">);
+constant valid_types = (<"text", "goalbar", "countdown">);
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {

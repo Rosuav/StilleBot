@@ -21,7 +21,16 @@ Preview | Actions | Link
 loading... | - | - 
 {:#monitors}
 
-[Add text monitor](:#add_text) [Add goal bar](:#add_goalbar)
+> ### Edit countdown timer
+>
+> <form method=dialog>
+> <div></div>
+>
+> [Save](: type=submit value=save) [Cancel](: type=submit value=cancel)
+> </form>
+{: tag=dialog #editcountdown}
+
+[Add text monitor](:#add_text) [Add goal bar](:#add_goalbar) [Add countdown timer](:#add_countdown)
 
 > ### Edit text monitor
 >
