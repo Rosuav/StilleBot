@@ -534,6 +534,7 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 			}
 			notify_websockets(chan);
 			persist_status->save();
+			if (cfg->giveaway->refund_nonwinning) msg->action = "cancel";
 			array(array) redemptions = yield(Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*])));
 			foreach (redemptions * ({ }), mapping redem)
 				set_redemption_status(redem, msg->action == "cancel" ? "CANCELED" : "FULFILLED");
@@ -543,7 +544,7 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 				"{title}": cfg->giveaway->title || "",
 				"{tickets_total}": (string)tickets,
 				"{entries_total}": (string)entrants,
-				"{giveaway_cancelled}": (string)(msg->action == "cancel" || cfg->giveaway->refund_nonwinning),
+				"{giveaway_cancelled}": (string)(msg->action == "cancel"),
 			]));
 		}
 	}
