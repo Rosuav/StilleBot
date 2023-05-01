@@ -58,7 +58,6 @@
 	display: inline-block;
 	padding: 0 0.125em; text-indent: 0; /* Override the general text-wrap settings from above */
 	background: #ddd;
-	border: 1px solid black;
 	margin-right: 0.5em;
 	font-size: 80%;
 }
@@ -72,6 +71,8 @@
 .tagpref1 {background-color: #dfd; border: 1px solid green;}
 .tagpref2 {background-color: #beb; border: 1px solid green;}
 .tagpref3 {background-color: #9d9; border: 1px solid green;}
+
+.tag {border: 1px solid black;} /* Ensure that .tagpref1.tag has a black border not the green one */
 
 #sort::before {content: "Sort: "; margin: 0.5em 1em 0em -1em;}
 #sort {
