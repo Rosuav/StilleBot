@@ -100,7 +100,7 @@ continue Concurrent.Future voice_enable(string voiceid, string chan, array(strin
 	werror("Connecting to voice %O...\n", voiceid);
 	object conn = yield(irc_connect(([
 		"user": tok->login, "pass": "oauth:" + tok->token,
-		"voiceid": voiceid,
+		"voiceid": voiceid, //Triggers auto-cleanup when the voice is no longer in use
 		"capabilities": ({"commands"}),
 	])));
 	werror("Voice %O connected, sending to channel %O\n", voiceid, chan);
@@ -1051,18 +1051,38 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 	sock->onclose = ws_close;
 }
 
+//If desired, sharding of the primary connection can be done using the !demo channel's
+//assigned voices. This is unnecessary if there are fewer than 20 channels in use, and
+//barely necessary for fewer than about 60, but beyond that, becomes more valuable. It
+//is also completely unnecessary if the bot has Verified status, but this would need to
+//be coded in properly (to allow !demo to still have some example voices).
+array(mapping) shard_voices = ({0});
 void reconnect() {
 	array channels = indices(persist_config["channels"] || ([]));
 	sort(channels); //Default to sorting affabeck
 	if (sizeof(channels)) sort(-persist_config["channels"][channels[*]]->connprio[*], channels);
 	channels = "#" + channels[*];
 	G->G->irc = (["channels": mkmapping(channels, channel(channels[*]))]);
-	irc_connect(([
-		"join": filter(channels) {return __ARGS__[0][1] != '!';},
-		"capabilities": "membership tags commands" / " ",
-		//"verbose": 1, "force_reconnect": 1,
-	]))->then() {irc_connections[0] = __ARGS__[0]; werror("Now connected: %O\n", __ARGS__[0]);}
-	->thencatch() {werror("Unable to connect to Twitch:\n%s\n", describe_backtrace(__ARGS__[0]));};
+	channels = filter(channels) {return __ARGS__[0][1] != '!';};
+	//Deal the channels out into N piles based on available users. Any spares
+	//go onto the primary channel. This speeds up initial connection when there
+	//are more than 20 channels to connect to, but isn't necessary.
+	array shards = Array.transpose(channels / sizeof(shard_voices));
+	shards[0] += channels % sizeof(shard_voices);
+	foreach (shards; int i; array chan) {
+		irc_connect(([
+			"user": i && shard_voices[i]->name,
+			"join": chan,
+			"capabilities": "membership tags commands" / " ",
+			//"verbose": 1, "force_reconnect": 1,
+			"shard_id": i && shard_voices[i]->id,
+		]))->then() {
+			mapping opt = __ARGS__[0]->options;
+			werror("IRC now connected: %O --> %O\n", opt->user, opt->join);
+			irc_connections[opt->shard_id] = __ARGS__[0];
+		}
+		->thencatch() {werror("Unable to connect to Twitch:\n%s\n", describe_backtrace(__ARGS__[0]));};
+	}
 	werror("Now connecting: %O queue %O\n", connection_cache->rosuav, connection_cache->rosuav->queue);
 }
 
@@ -1087,6 +1107,9 @@ protected void create(string name)
 	if (mapping irc = persist_config["ircsettings"])
 	{
 		bot_nick = irc->nick || "";
+		array voices = values(persist_config->path("channels")["!demo"]->?voices || ({ }));
+		sort((array(int))voices->id, voices);
+		shard_voices = ({0}) + voices;
 		reconnect();
 		if (bot_nick != "") get_user_id(bot_nick)->then() {G->G->bot_uid = __ARGS__[0];};
 		if (mixed ex = irc->http_address && irc->http_address != "" && catch
