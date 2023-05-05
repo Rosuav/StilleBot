@@ -150,6 +150,13 @@
 * Other support platforms? Which ones have integrations available?
   - Should /kofi be renamed and grow all the others?
   - Throne?
+* Seek verification status.
+  - https://dev.twitch.tv/limit-increase
+  - Requires a panel on the bot's channel saying:
+    (1) Owner contact information,
+    (2) Bot description,
+    (3) Instructions on how to add the bot to a channel, and
+    (4) Instructions on how to remove the bot from a channel
 * Bot sharding. What would it take?
   - MUST NOT disrupt external usage eg URLs
   - Each channel will need to stay together, meaning that all shards will need IRC and
@@ -161,6 +168,11 @@
   - Might require a single central dispatcher. This is a minor problem but not huge (at
     the moment). Maybe the dispatcher can be the same code as any other shard, with some
     way to know "there are other shards over there and there"?
+    - If possible, the central dispatcher should be able to move. Might require some
+      careful handling though.
   - Incoming webhooks have to be dispatched to the shards
-  - Updates to configuration need to be centralized. This may predicate this on a config
+  - Updates to persisted info need to be centralized. This may predicate this on a config
     system built on something other than JSON files. Maybe move to PGSQL?
+  - May be of lower importance now that the IRC connection can be sharded within a single
+    process; this is no longer a startup performance concern, but a reduction in outages
+    and potential geographic sharding.
