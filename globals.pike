@@ -617,7 +617,7 @@ class _TwitchIRC(mapping options) {
 	}
 
 	void connected() {
-		if (!sock) werror("ERROR IN IRC HANDLING: connected() with sock == 0!\n%O\n", options);
+		if (!sock) {werror("ERROR IN IRC HANDLING: connected() with sock == 0!\n%O\n", options); fail("Didn't actually connect"); return;}
 		if (options->encrypt >= 1) { //Make this and the above ">= 0" to change default to be encrypted
 			sock = SSL.File(sock, SSL.Context());
 			sock->connect(server);
