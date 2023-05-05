@@ -526,9 +526,21 @@ float request_rate_token(string user, string chan, int|void lowprio) {
 	int bucket_size = 20;
 	int window_size = 30;
 	float safety_shave = 0.0; //For small windows, it's reasonable to shave the safety margin.
-	if (chan == "#!login" || chan == "#!join") {
-		//Logins and channel joinings are limited to 20 every 10 seconds.
-		window_size = 10; bucket_size = 1; user = "";
+	array bucket = G->G->irc_token_bucket[user + chan];
+	if (!bucket) G->G->irc_token_bucket[user + chan] = bucket = ({0, 0});
+	if (chan == "#!login") {
+		//Logins are limited to 20 every 10 seconds, per user. Probably never an issue.
+		window_size = 10; bucket_size = 20;
+	}
+	else if (chan == "#!join") {
+		//Channel joinings are limited to 20 every 10 seconds, per user; however, they are
+		//usually going to be batched (multiple channels in a single JOIN command), so for
+		//simplicity and safety, we instead lock to one JOIN command per user with a ten
+		//second cooldown before the next one is permitted.
+		int now = time();
+		if (bucket[0] > now) return bucket[0] - now;
+		bucket[0] = now + 11.0; //safety margin
+		return 0;
 	}
 	else if (chan == "#" + user || G->G->user_mod_status[user + chan])
 		//You can spam harder in channels you mod for.
@@ -541,8 +553,6 @@ float request_rate_token(string user, string chan, int|void lowprio) {
 	else if (float wait = request_rate_token(user, chan + "-nonmod"))
 		//Other half of hack: If you're not a mod, check both limits.
 		return wait;
-	array bucket = G->G->irc_token_bucket[user + chan];
-	if (!bucket) G->G->irc_token_bucket[user + chan] = bucket = ({0, 0});
 	int now = time() / window_size; //I'm pretty sure "number of half-minutes since 1970" isn't the way most humans think about time.
 	if (now != bucket[0]) {bucket[0] = now; bucket[1] = 0;} //New time period, fresh bucket of tokens.
 	if (bucket[1] < bucket_size) {bucket[1]++; return 0;} //Tokens available - take one and pass it on, like your IQ was normal
@@ -630,7 +640,7 @@ class _TwitchIRC(mapping options) {
 		//PREPEND onto the queue.
 		queue = login
 			+ sprintf("CAP REQ :twitch.tv/%s", Array.arrayify(options->capabilities)[*])
-			+ map(Array.arrayify(options->join) / 10.0) {return "JOIN :" + __ARGS__[0] * ",";}
+			+ map(Array.arrayify(options->join) / 20.0) {return "JOIN :" + __ARGS__[0] * ",";}
 			+ Array.arrayify(options->login_commands)
 			+ ({"MARKER"})
 			+ queue;
@@ -807,7 +817,7 @@ class _TwitchIRC(mapping options) {
 		//empty strings. I don't get it.
 		array commands = ("CAP REQ :twitch.tv/" + (wantopt - haveopt)[*]);
 		if (sizeof(havechan - wantchan)) commands += ({"PART :" + (havechan - wantchan) * ","});
-		if (sizeof(wantchan - havechan)) commands += map((wantchan - havechan) / 10.0) {return "JOIN :" + __ARGS__[0] * ",";};
+		if (sizeof(wantchan - havechan)) commands += map((wantchan - havechan) / 20.0) {return "JOIN :" + __ARGS__[0] * ",";};
 		if (sizeof(commands)) enqueue(@commands);
 		options = opt; m_delete(options, "pass"); //Transfer all options. Anything unchecked is assumed to be okay to change like this.
 	}
