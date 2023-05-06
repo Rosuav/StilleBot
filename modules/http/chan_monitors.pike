@@ -129,7 +129,7 @@ int message(object channel, mapping person, string msg)
 
 @hook_subscription:
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
-	if (extra->came_from_subbomb) return 0;
+	if (type == "subbomb") return 0; //Sometimes sub bombs come through AFTER their constituent parts :( Safer to count the parts and skip the bomb.
 	autoadvance(channel, person, "sub_t" + tier, qty);
 }
 
@@ -143,7 +143,7 @@ void autoadvance(object channel, mapping person, string key, int weight) {
 		sscanf(info->text, "$%s$:%s", string varname, string txt);
 		if (!txt) continue;
 		int total = (int)channel->set_variable(varname, advance, "add"); //Abuse the fact that it'll take an int just fine for add :)
-		Stdio.append_file("subs.log", sprintf("[%s] Advancing %s goal bar by %O*%O = %d - now %d", channel->name, varname, key, weight, advance, total));
+		Stdio.append_file("subs.log", sprintf("[%s] Advancing %s goal bar by %O*%O = %d - now %d\n", channel->name, varname, key, weight, advance, total));
 		if (advance < 0) continue;
 		//See if we've just hit a new tier. This code is quite probably broken; aren't the tiers already in cents?
 		foreach (info->thresholds / " "; int tier; string th) {
