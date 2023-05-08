@@ -303,7 +303,7 @@ const types = {
 	//These will be detected in the order they are iterated over.
 	delay: {
 		color: "#77ee77", children: ["message"], label: el => `Delay ${el.delay} seconds`,
-		params: [{attr: "delay", label: "Delay (seconds)", values: [1, 7200, 1]}],
+		params: [{attr: "delay", label: "Delay (seconds)", values: [1, 86400, 1]}],
 		typedesc: "Delay message(s) by a certain length of time",
 	},
 	voice: {
@@ -403,7 +403,7 @@ const types = {
 	cooldown: {
 		color: "#aacc55", children: ["message", "otherwise"], label: el => [el.cdlength + "-second cooldown", "If on cooldown:"],
 		params: [{attr: "conditional", values: "cooldown"},
-			{attr: "cdlength", label: "Delay (seconds)", values: [1, 7200, 1]}, //TODO: Support hh:mm:ss and show it that way for display
+			{attr: "cdlength", label: "Delay (seconds)", values: [1, 86400, 1]}, //TODO: Support hh:mm:ss and show it that way for display
 			{attr: "cdname", label: "Tag (optional)", values: cooldown_name}],
 		typedesc: ["Prevent the command from being used too quickly. If it's been used recently, the second block happens instead.",
 			BR(), "To have several commands share a cooldown, put the same tag in each one (any word or phrase will do)."],
