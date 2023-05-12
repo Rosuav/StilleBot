@@ -157,6 +157,8 @@
     (2) Bot description,
     (3) Instructions on how to add the bot to a channel, and
     (4) Instructions on how to remove the bot from a channel
+  - Appeal to Twitch for the name StilleBot? If it can be made available, activate it as
+    another voice, and maybe make it the new default. Otherwise use MustardMine.
 * Bot sharding. What would it take?
   - MUST NOT disrupt external usage eg URLs
   - Each channel will need to stay together, meaning that all shards will need IRC and
@@ -176,8 +178,6 @@
   - May be of lower importance now that the IRC connection can be sharded within a single
     process; this is no longer a startup performance concern, but a reduction in outages
     and potential geographic sharding.
-* Appeal to Twitch for the name StilleBot? If it can be made available, activate it as
-  another voice, and maybe make it the new default.
 * Deprecate the active_channels system; instead, provide functionality and then have a
   per-channel command that utilizes it.
 * Consider changing the font used everywhere, to improve consistency (default font seems
