@@ -176,3 +176,9 @@
   - May be of lower importance now that the IRC connection can be sharded within a single
     process; this is no longer a startup performance concern, but a reduction in outages
     and potential geographic sharding.
+* Appeal to Twitch for the name StilleBot? If it can be made available, activate it as
+  another voice, and maybe make it the new default.
+* Deprecate the active_channels system; instead, provide functionality and then have a
+  per-channel command that utilizes it.
+* Consider changing the font used everywhere, to improve consistency (default font seems
+  to vary in size btwn Chrome and Ff).

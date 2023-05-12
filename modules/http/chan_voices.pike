@@ -46,21 +46,38 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	mapping cfg = req->misc->channel->config;
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
 	return render(req, ([
-		"vars": (["ws_group": "", "additional_scopes": G->G->voice_additional_scopes]),
+		"vars": ([
+			"ws_group": "", "additional_scopes": G->G->voice_additional_scopes,
+			//If you're logged in as the bot intrinsic voice, you can activate any standard voices;
+			//if you're a standard voice yourself, you can activate yourself; otherwise you can't.
+			//This controls the visibility of buttons and should be kept in sync with the corresponding
+			//code in websocket_cmd_activate that does the actual authentication checks.
+			"can_activate": req->misc->session->user->id == (string)G->G->bot_uid ? "any" : req->misc->session->user->id,
+		]),
 	]) | req->misc->chaninfo);
 }
 
 bool need_mod(string grp) {return 1;}
 
 mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping vox = channel->config->voices;
-	if (!vox) return !id && (["items": ({ })]);
+	mapping vox = channel->config->voices || ([]);
 	if (id) return vox[id] && (vox[id] | (["scopes": persist_status->path("voices")[id]->?scopes || ({"chat_login"})]));
+	mapping bv = persist_config->path("channels")["!demo"]->?voices || ([]);
+	string defvoice = persist_config->path("channels")["!demo"]->?defvoice;
+	if (defvoice && bv[defvoice] && !vox[defvoice]) {
+		vox[defvoice] = bv[defvoice] | ([]);
+		persist_config->save();
+	}
 	array voices = values(vox); sort(indices(vox), voices);
 	mapping all_voices = persist_status->path("voices");
 	foreach (voices, mapping voice)
 		voice->scopes = all_voices[voice->id]->?scopes || ({"chat_login"});
-	return (["items": voices, "defvoice": channel->config->defvoice]);
+	array botvoices = values(bv); sort((array(int))indices(bv), botvoices);
+	return ([
+		"items": voices,
+		"defvoice": channel->config->defvoice,
+		"botvoices": botvoices,
+	]);
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -77,10 +94,24 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (msg->desc) v->desc = msg->desc;
 	if (msg->notes) v->notes = msg->notes;
 	if (msg->makedefault) {
-		channel->config->defvoice = msg->id;
+		if (channel->config->voices[msg->id]) channel->config->defvoice = msg->id;
 		send_updates_all(conn->group); //Changing the default voice requires a full update, no point shortcutting
 	}
 	else update_one(conn->group, msg->id);
+	persist_config->save();
+}
+
+void websocket_cmd_activate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
+	[object channel, string grp] = split_channel(conn->group);
+	mapping bv = persist_config->path("channels")["!demo"]->?voices[?msg->id];
+	if (!bv) return;
+	//Activating a voice requires that you be either the voice itself, or the bot
+	//intrinsic voice (and also a mod, but without that you don't get a websocket).
+	if (conn->session->user->id != bv->id && conn->session->user->id != (string)G->G->bot_uid) return;
+	if (!channel->config->voices) channel->config->voices = ([]);
+	channel->config->voices[msg->id] = bv;
+	update_one(conn->group, msg->id);
 	persist_config->save();
 }
 
@@ -90,6 +121,9 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	mapping vox = channel->config->voices;
 	if (!vox) return; //Nothing to delete.
 	if (m_delete(vox, msg->id)) {update_one(conn->group, msg->id); persist_config->save();}
+	//Note that deleting the default voice doesn't unset the default, but if a command
+	//attempts to use this default, it'll see that the voice isn't authenticated for this
+	//channel, and fall back on the global default.
 }
 
 void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) {

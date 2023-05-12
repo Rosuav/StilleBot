@@ -3,14 +3,23 @@ const {BUTTON, DIV, IMG, INPUT, LABEL, LI, SPAN, TD, TEXTAREA, TR} = choc; //aut
 import {simpleconfirm} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#voices tbody");
-export function render_item(item) {
+export function render_item(item, mode) {
 	//item.last_auth_time and (possibly) item.last_error_time - if auth < error,
 	//suggest reauthenticating
+	const botvoice = DOM(`#voices thead [data-id="${item.id}"]`);
+	if (botvoice) botvoice.replaceWith();
 	return TR({"data-id": item.id}, [
 		TD([IMG({src: item.profile_image_url, className: "avatar"}), item.name]),
 		TD(INPUT({value: item.desc, className: "desc", size: 15})),
 		TD(TEXTAREA({value: item.notes || "", className: "notes", rows: 3, cols: 50})),
-		TD([
+		mode === "botvoice" ? TD([
+			DIV([
+				//Activating voices can only be done with proper authentication.
+				can_activate === "any" || can_activate === item.id
+					? BUTTON({type: "button", class: "activate"}, "Activate")
+					: "Contact the administrator to request access to this voice.",
+			]),
+		]) : TD([
 			DIV([
 				BUTTON({type: "button", className: "save"}, "Save"),
 				BUTTON({type: "button", className: "delete"}, "Delete"),
@@ -26,7 +35,7 @@ export function render_item(item) {
 }
 export function render_empty() {
 	return render_parent.appendChild(TR([
-		TD({colSpan: 4}, "No additional voices."),
+		TD({colSpan: 4}, "No active voices."), //Won't normally be shown if there's a global default voice
 	]));
 }
 let defvoice = "0";
@@ -34,6 +43,11 @@ export function render(data) {
 	if (data.defvoice !== undefined) defvoice = data.defvoice;
 	render_parent.querySelectorAll("[data-id]").forEach(tr => {
 		tr.classList.toggle("defaultvoice", tr.dataset.id === defvoice);
+	});
+	//If there are any bot voices that aren't already authenticated, list them too, with option to add them.
+	if (data.botvoices) data.botvoices.forEach(bv => {
+		if (DOM(`[data-id="${bv.id}"]`)) return; //Already got this voice, possibly from a previous render or from having it on the channel
+		DOM("#voices thead").appendChild(render_item(bv, "botvoice"));
 	});
 }
 
@@ -47,6 +61,10 @@ on("click", ".unsetdefault", e => {
 	ws_sync.send({cmd: "update", unsetdefault: 1});
 });
 
+on("click", ".activate", e => {
+	ws_sync.send({cmd: "activate", id: e.match.closest("tr").dataset.id});
+});
+
 on("click", ".save", e => {
 	const tr = e.match.closest("tr");
 	const msg = {cmd: "update", id: tr.dataset.id};
@@ -55,7 +73,7 @@ on("click", ".save", e => {
 	ws_sync.send(msg);
 });
 
-on("click", ".delete", simpleconfirm("Deauthenticate this voice?", e => {
+on("click", ".delete", simpleconfirm("Deactivate this voice? Reactivating will require authentication.", e => {
 	ws_sync.send({cmd: "delete", id: e.match.closest("tr").dataset.id});
 }));
 

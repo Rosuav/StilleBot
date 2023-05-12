@@ -531,6 +531,13 @@ class channel(string name) { //name begins with hash and is all lower case
 		//fail silently. (This would be fine if it's only used for slash commands.)
 		string voice = (cfg->voice && cfg->voice != "") ? cfg->voice : config->defvoice;
 		if (!config->voices[?voice]) voice = 0; //Ensure that the voice hasn't been deauthenticated since the command was edited
+		if (!voice) {
+			//No voice has been selected (either explicitly or as the channel default).
+			//Use the bot's global default voice, or the intrinsic voice (implicitly zero).
+			voice = persist_config->path("channels")[?"!demo"]->?defvoice;
+			//Even if this voice hasn't been activated for this channel, that's fine - it is
+			//implicitly permitted for use by all channels.
+		}
 		if (G->G->send_chat_command) {
 			//Attempt to send the message(s) via the Twitch APIs if they have slash commands
 			//Any that can't be sent that way will be sent the usual way.
@@ -548,6 +555,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			tags->client_nonce = nonce;
 			nonce_callbacks[nonce] = ({cfg->callback, vars | ([])});
 		}
+		if (voice == (string)G->G->bot_uid) voice = 0; //Use the intrinsic connection if possible.
 		if (irc_connections[voice]) irc_connections[voice]->send(name, msgs[*], tags);
 		else spawn_task(voice_enable(voice, name, msgs, tags));
 	}
@@ -1109,7 +1117,8 @@ protected void create(string name)
 		bot_nick = irc->nick || "";
 		array voices = values(persist_config->path("channels")["!demo"]->?voices || ({ }));
 		sort((array(int))voices->id, voices);
-		shard_voices = ({0}) + voices;
+		foreach (voices; int i; mapping v) if (lower_case(v->name) == lower_case(bot_nick)) voices[i] = 0;
+		shard_voices = ({0}) + (voices - ({0})); //Move the null entry (for intrinsic voice) to the start
 		reconnect();
 		if (bot_nick != "") get_user_id(bot_nick)->then() {G->G->bot_uid = __ARGS__[0];};
 		if (mixed ex = irc->http_address && irc->http_address != "" && catch
