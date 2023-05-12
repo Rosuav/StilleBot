@@ -41,7 +41,7 @@ JSON API for managing the rewards (the HTML page will be different though).
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (string scopes = !req->misc->session->fake && ensure_bcaster_token(req, "channel:manage:redemptions"))
-		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
+		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
 	//TODO: Should non-mods be allowed to see the details?
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
 	return render_template(markdown, ([
