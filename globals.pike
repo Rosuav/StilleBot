@@ -884,13 +884,14 @@ class irc_callback {
 	Concurrent.Future irc_connect(mapping options) {
 		//Bump this version number when there's an incompatible change. Old
 		//connections will all be severed.
-		options = (["module": this, "version": 10]) | (options || ([]));
+		options = (["module": this, "version": 11]) | (options || ([]));
 		if (!options->user) {
 			//Default credentials from the bot's main configs
 			mapping cfg = persist_config->path("ircsettings");
 			if (!cfg->pass) return Concurrent.reject(({"IRC authentication not configured\n", backtrace()}));
 			options->user = cfg->nick; options->pass = cfg->pass;
 		}
+		options->user = lower_case(options->user); //Casefold for the cache, don't have multiples kthx
 		if (!options->pass) {
 			string chan = lower_case(options->user);
 			string pass = persist_status->path("bcaster_token")[chan];
