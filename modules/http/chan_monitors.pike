@@ -114,6 +114,13 @@ void websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	channel->set_variable(msg->varname, (string)(int)msg->val, "set");
 }
 
+//Like it says, it's a hack for testing
+void websocket_cmd_hack_pause_audio(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->group != "heLo9cm9SFP01Zx99sKipizVzRNTpI2rimEN#rosuav") return;
+	[object channel, string grp] = split_channel(conn->group);
+	channel->set_variable("startstop", "stop", "set");
+}
+
 @hook_allmsgs:
 int message(object channel, mapping person, string msg)
 {
