@@ -663,7 +663,7 @@ class _TwitchIRC(mapping options) {
 		//Look up the latest version of the callback container. If that isn't the one we were
 		//set up to call, don't reconnect.
 		object current_module = G->G->irc_callbacks[options->module->modulename];
-		if (!options->no_reconnect && options->module == current_module) connect();
+		if (!options->no_reconnect && options->module == current_module) call_out(connect, 0);
 		else if (!options->outdated) options->module->irc_closed(options);
 		sock = 0;
 		remove_call_out(ping_callout);
