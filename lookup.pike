@@ -1,6 +1,7 @@
 int main(int argc, array(string) argv)
 {
 	[mapping uid_to_name, mapping name_to_uid] = Standards.JSON.decode(Stdio.read_file("twitchbot_uids.json"));
+	int show_times = has_value(argv, "--times"); argv -= ({"--times"});
 	foreach (argv[1..], string name)
 	{
 		mapping seen = uid_to_name[name_to_uid[lower_case(name)]];
@@ -8,6 +9,7 @@ int main(int argc, array(string) argv)
 		if (sizeof(seen) == 1 && seen[name]) {write(name + ": No others seen\n"); continue;}
 		array names = indices(seen), times = values(seen);
 		sort(times, names);
+		if (show_times) foreach (times; int i; int t) write("[%s] %s\n", ctime(t)[..<1], names[i]);
 		names -= ({"jtv", "tmi"});
 		write(name + ": " + names * ", " + "\n");
 	}
