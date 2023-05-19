@@ -307,7 +307,7 @@ const types = {
 		typedesc: "Delay message(s) by a certain length of time",
 	},
 	voice: {
-		color: "#bbbb33", children: ["message"], label: el => "Select voice: " + (voices_available[el.voice] || el.voice),
+		color: "#bbbb33", children: ["message"], label: el => "Voice: " + (voices_available[el.voice] || el.voice),
 		params: [{attr: "voice", label: "Voice", values: Object.keys(voices_available), selections: voices_available}],
 		typedesc: ["Select a different ", A({href: "voices"}, "voice"), " for messages - only available if alternate voices are authorized"],
 	},
