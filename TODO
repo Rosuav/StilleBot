@@ -182,6 +182,7 @@
   per-channel command that utilizes it.
 * Consider changing the font used everywhere, to improve consistency (default font seems
   to vary in size btwn Chrome and Ff).
+  - Possible font options: Lato, Nunito, Prompt, Hind
 * Create a command in the MustardMine channel (and StilleBot if it gets granted to me) to
   add the bot to the user's channel. Note that, if a person misbehaves and the bot gets
   deauthenticated from their channel, all I have to do is ban them from #mustardmine and

@@ -1,5 +1,9 @@
 /* Styling across all StilleBot pages */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Conte&display=swap');
+
 * {box-sizing: border-box;}
+
+body {font-family: 'Nunito', sans-serif;}
 
 td {padding: 0.25em 0.5em;}
 
@@ -231,14 +235,14 @@ nav#sidebar img {
 	display: block;
 	position: absolute;
 	left: 0; bottom: 0px;
-	width: 100px; height: 100px;
+	width: 112px; height: 112px;
 }
 
 nav#sidebar.vis {
 	display: block;
 	position: fixed;
 	left: 0px;
-	width: 100px;
+	width: 112px;
 	top: 48px; bottom: 0;
 	background-color: #a0f0c0;
 }
@@ -246,7 +250,7 @@ nav#sidebar.vis {
 	display: block;
 	position: fixed;
 	left: 0; top: 0;
-	width: 100px; height: 48px;
+	width: 112px; height: 48px;
 	background-color: #a0f0c0;
 	padding: 8px;
 }
@@ -256,7 +260,7 @@ body:has(nav#sidebar) nav#topbar {padding-left: 100px;}
 we use two directives, one to create the padding unconditionally, and one to remove it if
 we don't want it. This means that Firefox, until it grows support for the :has selector,
 will waste 100px of space when there's no sidebar. */
-body nav#topbar {padding-left: 100px;}
+body nav#topbar {padding-left: 112px;}
 body:not(:has(nav#sidebar.vis)) nav#topbar {
 	padding-left: 0;
 }
@@ -264,7 +268,7 @@ body:not(:has(nav#sidebar.vis)) nav#topbar {
 @media screen and (width >= 600px) {
 	/* On wide enough screens, consume space for the entire body, not just the nav topbar */
 	body nav#topbar {padding-left: 0;}
-	body {padding-left: 100px;}
+	body {padding-left: 112px;}
 	body:not(:has(nav#sidebar.vis)) {
 		padding-left: 0;
 	}
