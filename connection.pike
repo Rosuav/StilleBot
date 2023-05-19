@@ -1119,8 +1119,8 @@ protected void create(string name)
 		sort((array(int))voices->id, voices);
 		foreach (voices; int i; mapping v) if (lower_case(v->name) == lower_case(bot_nick)) voices[i] = 0;
 		//Sharding temporarily disabled :( As of 20230515, this is a probable culprit in the "can't seem to
-		//stay connected" issues. Let's see if it's better.
-		//shard_voices = ({0}) + (voices - ({0})); //Move the null entry (for intrinsic voice) to the start
+		//stay connected" issues. Let's see if it's better. CJA 20230519: Reenabling to see if stuff breaks.
+		shard_voices = ({0}) + (voices - ({0})); //Move the null entry (for intrinsic voice) to the start
 		reconnect();
 		if (bot_nick != "") get_user_id(bot_nick)->then() {G->G->bot_uid = __ARGS__[0];};
 		if (mixed ex = irc->http_address && irc->http_address != "" && catch
