@@ -33,7 +33,7 @@ string process(object channel, object person, string param)
 		//Create a new command. Note that it *always* gets the channel name appended,
 		//making it a channel-specific command; global commands can only be created by
 		//manually editing the JSON file.
-		cmd = lower_case(cmd); //TODO: Switch this out for a proper Unicode casefold
+		cmd = command_casefold(cmd);
 		//These flags don't apply to the addcmd specials
 		if (has_value(cmd, '!')) return "@$$: Command names cannot include exclamation marks";
 		cmd += channel->name;

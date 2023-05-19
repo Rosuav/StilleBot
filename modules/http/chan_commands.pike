@@ -363,7 +363,7 @@ echoable_message validate(echoable_message resp, mapping state)
 	array(string) aliases = (resp->aliases || "") / " ";
 	foreach (aliases; int i; string a) sscanf(a, "%*[!]%s%*[#\n]", aliases[i]);
 	aliases -= ({"", state->cmd}); //Disallow blank, or an alias pointing back to self (it'd be ignored anyway)
-	if (sizeof(aliases)) ret->aliases = aliases * " ";
+	if (sizeof(aliases)) ret->aliases = command_casefold(aliases * " ");
 
 	//Automation comes in a couple of strict forms; anything else gets dropped.
 	//Very very basic validation is done (no zero-minute automation) but otherwise, stupid stuff is

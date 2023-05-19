@@ -35,7 +35,7 @@ string process(object channel, object person, string param)
 	else if (sscanf(param, "%d %s", int t, badword) && badword) tm = t;
 	else return "@$$: Try !autoban 300 some-bad-word";
 
-	badword = lower_case(badword); //TODO: Switch this out for a proper Unicode casefold
+	badword = command_casefold(badword); //Use the same algorithm that !command lookups use
 	if (badword == "***") return "@$$: It looks like that word is blacklisted on Twitch, so I can't see it to autoban for it.";
 	if (!channel->config->autoban) channel->config->autoban = ([]);
 	if (!tm)

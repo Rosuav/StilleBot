@@ -332,7 +332,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		string expr(string input) {
 			if (!input) return "";
 			string ret = _substitute_vars(input, vars, person);
-			if (message->casefold) return lower_case(ret); //Would be nice to have a real Unicode casefold.
+			if (message->casefold) return command_casefold(ret); //Use the same case-folding algorithm as !command lookups use
 			return ret;
 		}
 		switch (message->conditional) {

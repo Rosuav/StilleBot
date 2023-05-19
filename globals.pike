@@ -101,6 +101,11 @@ class command
 	}
 }
 
+//Case-fold command names. For consistency, use this everywhere; that way,
+//commands will be created and found correctly. TODO eventually: Switch
+//this out for a proper Unicode casefold.
+string command_casefold(string cmd) {return lower_case(cmd);}
+
 //Attempt to find a "likely command" for a given channel.
 //If it returns 0, there's no such command. It may return a function
 //that eventually fails, but it will attempt to do so as rarely as
@@ -113,7 +118,7 @@ command_handler find_command(object channel, string cmd, int is_mod, int|void is
 	//separator. We'll try "help#rosuav" and "help" for "!help".
 	if (has_value(cmd, '#')) return 0;
 	if (has_value(cmd, '!')) return 0; //Pseudo-commands can't be run as normal commands
-	cmd = lower_case(cmd); //TODO: Switch this out for a proper Unicode casefold
+	cmd = command_casefold(cmd);
 	foreach (({cmd + channel->name, cmd}), string tryme)
 	{
 		//NOTE: G->G->commands holds the actual function that gets
