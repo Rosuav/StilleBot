@@ -408,9 +408,23 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	}
 	else {
 		if (mapping resp = ensure_login(req, "user:read:follows")) return resp;
-		follows_helix = yield(get_helix_paginated("https://api.twitch.tv/helix/streams/followed",
-			(["user_id": (string)req->misc->session->user->id]),
-			(["Authorization": "Bearer " + req->misc->session->token])));
+		if (mixed ex = catch {
+			follows_helix = yield(get_helix_paginated("https://api.twitch.tv/helix/streams/followed",
+				(["user_id": (string)req->misc->session->user->id]),
+				(["Authorization": "Bearer " + req->misc->session->token])));
+		}) {
+			//Seems to be a problem fetching, possibly an auth issue.
+			//TODO: Check the exact failure and only do this on 401 response
+			//Should this happen globally? If any 401 leaks out, log the user out?
+			//Or at least, if a 401 leaks out (or if ANY exception leaks), offer a
+			//logout link?
+			werror("RAIDFINDER: Failed to fetch, revoking login\n");
+			werror("%s\n", describe_backtrace(ex));
+			m_delete(G->G->http_sessions, req->misc->session->cookie);
+			req->misc->session = ([]);
+			werror("RAIDFINDER: Returning login page\n");
+			return ensure_login(req, "user:read:follows");
+		}
 		//Ensure that we have the user we're looking up (yourself, unless it's a for=USERNAME raidfind)
 		follows_helix += yield(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (string)userid])));
 		//Grab some additional info from the Users API, including profile image and
