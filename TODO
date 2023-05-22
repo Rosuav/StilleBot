@@ -189,3 +189,7 @@
   the bot will never need to worry about reactivation.
   - Note that this will mean that this is a canonical list of banned users and thus should
     be queried (by API) if ever there is the need to do so.
+* Handle shoutout errors better
+  - User not found
+  - On cooldown (don't show to user though)
+  - Other/unexpected error (report to user)
