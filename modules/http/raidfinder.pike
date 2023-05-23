@@ -249,6 +249,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	if (notes["0"]) notes->highlight = m_delete(notes, "0"); //Migrate
 	if (notes->highlight) highlightids = (array(int))(notes->highlight / "\n");
 	string highlights;
+	mapping annotations = ([]); //Annotations are provided by the server under select circumstances
 	if (req->variables->allfollows)
 	{
 		//Show everyone that you follow (not just those who are live), in an
@@ -358,13 +359,16 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		else switch (req->variables->categories) {
 			case "pixelplush": { //categories=pixelplush - use an undocumented API to find people playing the !drop game etc
 				object res = yield(Protocols.HTTP.Promise.get_url(
-					"https://api.pixelplush.dev/v1/analytics/sessions/live/short"
+					"https://api.pixelplush.dev/v1/analytics/sessions/live"
 				));
 				mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
 				if (!arrayp(data)) title = "Unable to fetch";
 				else {
 					title = "Active Pixel Plush streamers";
-					args->user_login = data;
+					foreach (data, mapping strm) annotations[strm->stream->userId] += ({strm->theme});
+					args->user_id = indices(annotations);
+					//TODO: Make get_helix_paginated support >100 array entries, then this won't have to cut them off
+					args->user_id = args->user_id[..99];
 				}
 				break;
 			}
@@ -559,6 +563,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			"tag_prefs": tag_prefs, "lc_tag_prefs": lc_tag_prefs,
 			"MAX_PREF": MAX_PREF, "MIN_PREF": MIN_PREF,
 			"all_raids": all_raids[<99..], "mode": "normal",
+			"annotations": annotations,
 		]),
 		"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
 		"title": title,

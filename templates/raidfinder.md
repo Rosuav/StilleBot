@@ -162,6 +162,14 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	margin: 0 3px;
 	padding: 5px;
 }
+
+#streams .annotation {
+	font-size: 75%;
+	max-width: max-content;
+	margin: auto;
+	border: 1px solid rebeccapurple;
+	background: #e3e3e3;
+}
 </style>
 
 > ### Legend/info

@@ -393,6 +393,7 @@ function build_follow_list() {
 				)),
 			]),
 			stream.magic_breakdown && show_magic(stream.magic_breakdown), //Will only exist if the back end decides to send it.
+			annotations[stream.user_id] && UL({class: "annotation"}, annotations[stream.user_id].map(anno => LI(anno))),
 		]
 	)));
 	ws_sync.send({cmd: "interested", want_streaminfo});
