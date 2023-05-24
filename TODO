@@ -193,3 +193,12 @@
   - User not found
   - On cooldown (don't show to user though)
   - Other/unexpected error (report to user)
+* Per-channel per-user data
+  - Variables. Have a symbol prefix on variables that makes them prefix with the uid.
+    Example: set variable "*foo", actually sets variable "49497888*foo"
+    Variables with that name would be available under their short names for {username}
+  - Cooldowns. Boolean "per-user". Tags still okay, but are now per-user tags.
+  - Channel currency?? Would become available as "*points" but automatically incremented
+    according to rules like "+1 every 5 minutes to all in chat".
+* Combined condition and variable update: "Spend". Numerically check if the given variable
+  is >= the given value, and if it is, adds -value.
