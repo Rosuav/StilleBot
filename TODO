@@ -205,3 +205,4 @@
 * Combined condition and variable update: "Spend". Numerically check if the given variable
   is >= the given value, and if it is, adds -value.
 * Navbar avatar --> link _top to Twitch
+* Login link on channels/chan/
