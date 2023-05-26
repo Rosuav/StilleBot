@@ -44,7 +44,7 @@ mapping cached_user_info(string user) {
 	string body = options->data;
 	if (options->json) {
 		headers["Content-Type"] = "application/json";
-		body = Standards.JSON.encode(options->json);
+		body = Standards.JSON.encode(options->json, 1);
 	}
 	string method = options->method || (body ? "POST" : "GET");
 	headers["Accept"] = "application/vnd.twitchtv.v5+json"; //Only needed for Kraken but doesn't seem to hurt
@@ -121,7 +121,7 @@ mapping cached_user_info(string user) {
 	//The name-to-UID mapping should be considered advisory, and useful mainly for recent ones.
 	mapping n2u = G->G->name_to_uid;
 	if (n2u[login] != id) {n2u[login] = id; save = 1;}
-	if (save) Stdio.write_file("twitchbot_uids.json", Standards.JSON.encode(({G->G->uid_to_name, G->G->name_to_uid})));
+	if (save) Stdio.write_file("twitchbot_uids.json", Standards.JSON.encode(({G->G->uid_to_name, G->G->name_to_uid})), 1);
 }
 
 //Will return from cache if available. Set type to "login" to look up by name, else uses ID.
@@ -719,7 +719,7 @@ protected void create(string|void name)
 		mapping n2u = m_delete(persist_status, "name_to_uid");
 		if (u2n && !sizeof(G->G->uid_to_name)) G->G->uid_to_name = u2n;
 		if (n2u && !sizeof(G->G->name_to_uid)) G->G->name_to_uid = n2u;
-		if (u2n || n2u) {persist_status->save(); Stdio.write_file("twitchbot_uids.json", Standards.JSON.encode(({G->G->uid_to_name, G->G->name_to_uid})));}
+		if (u2n || n2u) {persist_status->save(); Stdio.write_file("twitchbot_uids.json", Standards.JSON.encode(({G->G->uid_to_name, G->G->name_to_uid})), 1);}
 	}
 
 	if (!persist_config["allcmds_migrated"]) {
