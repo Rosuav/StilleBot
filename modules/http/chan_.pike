@@ -90,9 +90,11 @@ continue mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, s
 	if (channel->userid) profile = yield(get_user_info(channel->userid));
 	req->misc->chaninfo->menunav = sprintf(
 		"<nav id=sidebar class=vis><ul>%{<li><a href=%q>%s</a></li>%}</ul>"
-		"<img src=%q alt=\"Channel avatar\" title=%q></nav>",
+		"<a href=%q target=_blank><img src=%q alt=\"Channel avatar\" title=%q></a></nav>",
 		req->misc->is_mod ? sidebar_modmenu : sidebar_nonmodmenu,
-		profile->profile_image_url || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=", profile->display_name || "");
+		"https://twitch.tv/" + profile->login,
+		profile->profile_image_url || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=",
+		"Go to channel " + (profile->display_name || ""));
 	return yield(handler(req));
 }
 
