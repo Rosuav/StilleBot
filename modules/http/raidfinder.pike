@@ -588,7 +588,7 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 			//This is the raid we were expecting to happen. (Note that any OTHER
 			//raids that the target receives while we're busily raiding will come
 			//through to this function, but info will be null.)
-			info[2]->sock->send_text(Standards.JSON.encode((["cmd": "update", "raidstatus": "Raid successful!"]), 4));
+			if (info[2]->sock) info[2]->sock->send_text(Standards.JSON.encode((["cmd": "update", "raidstatus": "Raid successful!"]), 4));
 		}
 		if (!sizeof(raids_in_progress) && sizeof(connection_cache)) //If we're connected and don't need to be...
 			values(connection_cache)[0]->quit(); //... disconnect.
