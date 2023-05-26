@@ -583,6 +583,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	{
 		vars = (persist_status->path("variables")[name] || ([])) | (vars || ([]));
 		vars["$$"] = person->displayname || person->user;
+		vars["{uid}"] = (string)person->uid; //Will be "0" if no UID known
 		_send_recursive(person, message, vars, (["callback": callback]));
 	}
 

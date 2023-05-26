@@ -250,6 +250,7 @@ const types = {
 		provides: {
 			"{param}": "Anything typed after the command name",
 			"{username}": "Name of the user who entered the command",
+			"{uid}": "Twitch ID of the user who entered the command",
 			"{@mod}": "1 if the command was triggered by a mod/broadcaster, 0 if not",
 			"{rewardid}": "UUID of the channel point reward that triggered this, or blank",
 			"{redemptionid}": "UUID of the precise channel point redemption (for confirm/cancel)",
@@ -275,6 +276,7 @@ const types = {
 		provides: {
 			"{param}": "The entire message",
 			"{username}": "Name of the user who entered the triggering message",
+			"{uid}": "Twitch ID of the user who entered the triggering message",
 			"{@mod}": "1 if trigger came from a mod/broadcaster, 0 if not",
 			"{msgid}": "ID of the message that caused this command (suitable for replies)",
 		},
