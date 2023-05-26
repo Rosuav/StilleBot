@@ -194,9 +194,7 @@
   - On cooldown (don't show to user though)
   - Other/unexpected error (report to user)
 * Per-channel per-user data
-  - Variables. Have a symbol prefix on variables that makes them prefix with the uid.
-    - Example: set variable "*foo", actually sets variable "49497888*foo"
-    - Variables with that name would be available under their short names for {username}
+  - Variables - can use "$*foo$" but not currently "$49497888*foo$" for explicit UID
     - Don't show these in the /variables page, but maybe show which suffixes exist, and
       allow mods to browse and edit by looking at user names??
   - Cooldowns. Boolean "per-user". Tags still okay, but are now per-user tags.

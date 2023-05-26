@@ -4,7 +4,7 @@ inherit annotated;
 
 string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
-object substitutions = Regexp.PCRE("(\\$[A-Za-z|]+\\$)|({[A-Za-z0-9_@|]+})");
+object substitutions = Regexp.PCRE("(\\$[*A-Za-z|]+\\$)|({[A-Za-z0-9_@|]+})");
 constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT", "USERSTATE"});
 mapping irc_connections = ([]); //Not persisted across code reloads, but will be repopulated (after checks) from the connection_cache.
 @retain: mapping channelcolor = ([]);
@@ -207,10 +207,20 @@ class channel(string name) { //name begins with hash and is all lower case
 		G->G->websocket_types->chan_messages->update_one(uid + name, msgid);
 	}
 
-	string set_variable(string var, string val, string action)
+	mapping(string:string) get_channel_variables(int|string|void uid) {
+		mapping vars = persist_status->path("variables")[name] || ([]);
+		if (!uid || uid == "0" || !vars->users) return vars - (<"users">);
+		return (vars - (<"users">)) | (vars->users[(string)uid] || ([]));
+	}
+
+	string set_variable(string var, string val, string action, string|void uid)
 	{
+		//Per-user variable. If you try this without a user context, it will
+		//use uid 0 aka "root" which doesn't exist in Twitch.
+		int per_user = has_prefix(var, "*");
 		var = "$" + var + "$";
-		mapping vars = persist_status->path("variables", name);
+		mapping vars = per_user ? persist_status->path("variables", name, "users", (string)uid)
+				: persist_status->path("variables", name);
 		if (action == "add") {
 			//Add to a variable, REXX-style (decimal digits in strings).
 			//Anything unparseable is considered to be zero.
@@ -218,8 +228,12 @@ class channel(string name) { //name begins with hash and is all lower case
 		}
 		//Otherwise, keep the string exactly as-is.
 		vars[var] = val;
-		//Notify those that depend on this.
-		G->G->websocket_types->chan_variables->update_one(name, var - "$");
+		//Notify those that depend on this. Note that an unadorned per-user variable is
+		//probably going to behave bizarrely in a monitor, so don't do that; use either
+		//global variables or namespace to a particular user eg "$49497888*varname$",
+		//though the latter are not yet supported. TODO.
+		if (per_user) var = "$" + uid + var[1..];
+		else G->G->websocket_types->chan_variables->update_one(name, var - "$");
 		//TODO: Defer this until the next tick (with call_out 0), so that multiple
 		//changes can be batched, reducing flicker.
 		function send_updates_all = G->G->websocket_types->chan_monitors->send_updates_all;
@@ -264,6 +278,8 @@ class channel(string name) { //name begins with hash and is all lower case
 			//So $var||$ would give an empty string if var doesn't exist, but $var$ might
 			//throw an error or something. For now, they're equivalent, and $var$ will be
 			//an empty string if the var isn't found.
+			//TODO: If the kwd is of the format "49497888*varname", and the type is "$",
+			//look up a per-user variable called "*varname" for that user.
 			[string _, string filter, string dflt] = ((filterdflt + "||") / "|")[..2];
 			string value = vars[type + kwd + tail];
 			if (!value || value == "") return dflt;
@@ -290,7 +306,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			//with their new values. There are some bizarre corner cases that
 			//could result from this (eg if you delete a variable, it'll still
 			//exist in the delayed version), but there's no right way to do it.
-			vars = vars | (persist_status->path("variables")[name] || ([]));
+			vars = vars | get_channel_variables(person->uid);
 			message->_changevars = 0; //It's okay to mutate this one, since it'll only ever be a bookkeeping mapping from delay handling.
 		}
 
@@ -418,7 +434,7 @@ class channel(string name) { //name begins with hash and is all lower case
 				int val = (int)vars["$" + varname + "$"];
 				if (val >= sizeof(msg)) val = 0;
 				msg = msg[val];
-				vars["$" + varname + "$"] = set_variable(varname, (string)(val + 1), "");
+				vars["$" + varname + "$"] = set_variable(varname, (string)(val + 1), "", vars["{uid}"]);
 			} else {
 				foreach (msg, echoable_message m)
 					_send_recursive(person, message | (["conditional": 0, "message": m]), vars, cfg);
@@ -435,9 +451,13 @@ class channel(string name) { //name begins with hash and is all lower case
 
 		//Variable management. Note that these are silent, so commands may want to pair
 		//these with public messages. (Silence is perfectly acceptable for triggers.)
-		if (dest == "/set" && sscanf(target, "%[A-Za-z]", string var) && var && var != "")
+		if (dest == "/set" && sscanf(target, "%[*A-Za-z]", string var) && var && var != "")
 		{
-			vars["$" + var + "$"] = set_variable(var, msg, destcfg);
+			//An asterisk prefix is fine; an asterisk embedded in a var name is
+			//currently not supported. TODO: Allow setting var "279141671*varname"
+			//to override the current context and set it on a different user.
+			if (has_value(var[1..], "*")) return;
+			vars["$" + var + "$"] = set_variable(var, msg, destcfg, vars["{uid}"]);
 			return;
 		}
 
@@ -581,7 +601,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	//the message ID that just got sent.
 	void send(mapping person, echoable_message message, mapping|void vars, function|void callback)
 	{
-		vars = (persist_status->path("variables")[name] || ([])) | (vars || ([]));
+		vars = get_channel_variables(person->uid) | (vars || ([]));
 		vars["$$"] = person->displayname || person->user;
 		vars["{uid}"] = (string)person->uid; //Will be "0" if no UID known
 		_send_recursive(person, message, vars, (["callback": callback]));
@@ -592,7 +612,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	//second parameter; otherwise, just expand_variables("Foo is $foo$.") is enough.
 	string expand_variables(string text, mapping|void vars)
 	{
-		vars = (persist_status->path("variables")[name] || ([])) | (vars || ([]));
+		vars = get_channel_variables() | (vars || ([]));
 		return _substitute_vars(text, vars, ([]));
 	}
 
