@@ -5,7 +5,7 @@ GTK2.MenuItem make_menu_item() {return GTK2.CheckMenuItem(menu_label);}
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
-	string user_is_mod = "";
+	string user_is_mod = "[Log in to make changes](:.twitchlogin)";
 	object channel = req->misc->channel;
 	int uptime = channel_uptime(req->misc->channel->name[1..]);
 	if (req->misc->is_mod)
