@@ -22,6 +22,7 @@ function countdown_ticker(elem) {
 	//Times below a gigasecond are paused times, times above that are time_t when it hits zero
 	if (time > 1e9) time = Math.floor(time - new Date() / 1000);
 	if (time < 0) time = 0; //Leave it stuck on 00:00 after it expires
+	if (window.RICEBOT) {time = window.RICEBOT(time); if (typeof time === "string") return set_content(elem, time);}
 	const parts = elem._stillebot_countdown_format.split(":##");
 	//For every ":##" in the string, fracture off one sixtieth of the time (thus seconds and minutes)
 	//Then a hash in the first part of the string gets whatever's left,
