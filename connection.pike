@@ -400,6 +400,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			case "cooldown": //Timeout (defined in seconds, although the front end may show it as mm:ss or hh:mm:ss)
 			{
 				string key = message->cdname + name;
+				if (has_prefix(key, "*")) key = vars["{uid}"] + key; //Cooldown of "*foo" will be a per-user cooldown.
 				int delay = cooldown_timeout[key] - time();
 				if (delay < 0) { //The time has passed!
 					cooldown_timeout[key] = time() + message->cdlength; //But reset it.

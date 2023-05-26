@@ -221,6 +221,14 @@ constant condition_parts = ([
 	"cooldown": ({"cdname", "cdlength"}),
 ]);
 
+string normalize_cooldown_name(string|int(0..0) cdname, mapping state) {
+	sscanf(cdname || "", "%[*]%s", string per_user, string name);
+	//Anonymous cooldowns get named for the back end, but the front end will blank this.
+	//If the front end happens to return something with a dot name in it, ignore it.
+	if (name == "" || name[0] == '.') name = sprintf(".%s:%d", state->cmd, ++state->cdanon);
+	return per_user + name;
+}
+
 //state array is for purely-linear state that continues past subtrees
 echoable_message _validate(echoable_message resp, mapping state)
 {
@@ -297,12 +305,9 @@ echoable_message _validate(echoable_message resp, mapping state)
 		ret->otherwise = _validate(resp->otherwise, state);
 		if (ret->message == "" && ret->otherwise == "") return ""; //Conditionals can omit either message or otherwise, but not both
 		if (ret->conditional == "cooldown") {
-			string name = ret->cdname || "";
-			//Anonymous cooldowns get named for the back end, but the front end will blank this.
-			//If the front end happens to return something with a dot name in it, ignore it.
-			if (name == "" || name[0] == '.') ret->cdname = name = sprintf(".%s:%d", state->cmd, ++state->cdanon);
+			ret->cdname = normalize_cooldown_name(ret->cdname, state);
 			ret->cdlength = (int)ret->cdlength;
-			if (ret->cdlength) state->cooldowns[name] = ret->cdlength;
+			if (ret->cdlength) state->cooldowns[ret->cdname] = ret->cdlength;
 			else m_delete(ret, (({"conditional", "otherwise"}) + parts)[*]); //Not a valid cooldown.
 			//TODO: Keyword-synchronized cooldowns should synchronize their cdlengths too
 		}
@@ -325,12 +330,15 @@ echoable_message _validate(echoable_message resp, mapping state)
 		ret->delay = (int)resp->delay;
 
 	if (ret->mode == "rotate") {
-		string name = resp->rotatename || "";
 		//Anonymous rotations, like anonymous cooldowns, get named for the back end only.
 		//In this case, though, it also creates a variable. For simplicity, reuse cdanon.
-		if (name == "" || name[0] == '.') name = sprintf(".%s:%d", state->cmd, ++state->cdanon);
-		ret->rotatename = name;
+		ret->rotatename = normalize_cooldown_name(resp->rotatename, state);
 	}
+	sscanf(ret->cdname || "", "%[*]%s", string per_user, string name);
+	//Anonymous cooldowns get named for the back end, but the front end will blank this.
+	//If the front end happens to return something with a dot name in it, ignore it.
+	if (name == "" || name[0] == '.') name = sprintf(".%s:%d", state->cmd, ++state->cdanon);
+	ret->cdname = name = per_user + name;
 
 	//Voice ID validity depends on the channel we're working with. A syntax-only check will
 	//accept any voice ID as long as it's a string of digits.

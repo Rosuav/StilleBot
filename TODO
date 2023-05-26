@@ -197,7 +197,6 @@
   - Variables - can use "$*foo$" but not currently "$49497888*foo$" for explicit UID
     - Don't show these in the /variables page, but maybe show which suffixes exist, and
       allow mods to browse and edit by looking at user names??
-  - Cooldowns. Boolean "per-user". Tags still okay, but are now per-user tags.
   - Channel currency?? Would become available as "*points" but automatically incremented
     according to rules like "+1 every 5 minutes to all in chat".
 * Combined condition and variable update: "Spend". Numerically check if the given variable
