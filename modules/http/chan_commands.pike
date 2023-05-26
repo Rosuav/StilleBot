@@ -258,6 +258,9 @@ echoable_message _validate(echoable_message resp, mapping state)
 				return "";
 			ret->target = cmd;
 		}
+		//Variable names containing these characters would be unable to be correctly output
+		//in any command, due to the way variable substitution is processed.
+		if (ret->dest == "/set") ret->target = replace(ret->target, "|${}" / 1, "");
 	}
 	if (resp->dest == "/builtin" && resp->target) {
 		//A dest of "/builtin" is really a builtin. What a surprise :)
