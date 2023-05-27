@@ -58,6 +58,9 @@ class Persist(string savefn, int flip_save)
 		//VM, so the load actually makes a difference).
 		if (mixed ex=catch
 		{
+			//Creep the open file limit up by one while we save, to ensure that we aren't rlimited
+			array lim;
+			catch {lim = System.getrlimit("nofile"); if (lim[0] < lim[1]) System.setrlimit("nofile", lim[0] + 1, lim[1]);};
 			string enc = Standards.JSON.encode(data, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 			if (flip_save)
 			{
@@ -70,6 +73,7 @@ class Persist(string savefn, int flip_save)
 				//Compatible with symlinked files
 				Stdio.write_file(savefn, string_to_utf8(enc));
 			}
+			if (lim) catch {System.setrlimit("nofile", @lim);};
 			saving=0;
 		})
 		{
