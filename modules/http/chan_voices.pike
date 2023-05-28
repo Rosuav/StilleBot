@@ -93,12 +93,22 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!v) return;
 	if (msg->desc) v->desc = msg->desc;
 	if (msg->notes) v->notes = msg->notes;
-	if (msg->makedefault) {
-		if (channel->config->voices[msg->id]) channel->config->defvoice = msg->id;
-		send_updates_all(conn->group); //Changing the default voice requires a full update, no point shortcutting
-	}
-	else update_one(conn->group, msg->id);
-	persist_config->save();
+	//Update the profile pic in case it's changed
+	get_user_info(msg->id)->then() {mapping user = __ARGS__[0];
+		string name = user->display_name;
+		if (lower_case(user->display_name) != user->login) name += " (" + user->login + ")";
+		if (name != v->name) {
+			if (v->desc == v->name) v->desc = name;
+			v->name = name;
+		}
+		v->profile_image_url = user->profile_image_url;
+		if (msg->makedefault) {
+			if (channel->config->voices[msg->id]) channel->config->defvoice = msg->id;
+			send_updates_all(conn->group); //Changing the default voice requires a full update, no point shortcutting
+		}
+		else update_one(conn->group, msg->id);
+		persist_config->save();
+	};
 }
 
 void websocket_cmd_activate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
