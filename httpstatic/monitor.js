@@ -55,6 +55,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		if (data.fillcolor) styleinfo[data.id].fillcolor = data.fillcolor;
 		if (data.format) styleinfo[data.id].format = data.format;
 		if (data.needlesize) styleinfo[data.id].needlesize = +data.needlesize;
+		if (data.progressive) styleinfo[data.id].progressive = data.progressive;
 		ensure_font(data.font);
 	}
 	const type = styleinfo[data.id] && styleinfo[data.id].type;
@@ -76,14 +77,14 @@ export function update_display(elem, data) { //Used for the preview as well as t
 				goal = thresholds[which];
 				break;
 			}
-			else pos -= thresholds[which];
+			else if (!t.progressive) pos -= thresholds[which];
 		}
 		if (!text) {
 			//We're beyond the last threshold!
 			text = m[2].replace("#", thresholds.length);
 			mark = 100;
 			goal = thresholds[thresholds.length - 1];
-			pos += goal; //After blowing past the last goal, we're clearly past that goal
+			if (t.progressive) pos += goal; //After blowing past the last goal, we're clearly past that goal
 		}
 		elem.style.background = `linear-gradient(.25turn, ${t.fillcolor} ${mark-t.needlesize}%, red, ${t.barcolor} ${mark+t.needlesize}%, ${t.barcolor})`;
 		elem.style.display = "flex";

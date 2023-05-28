@@ -115,6 +115,7 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 	])]),
 	TR([TH("Goal(s)"), TD([
 		INPUT({name: "thresholds", size: 60}),
+		BR(), LABEL([INPUT({name: "progressive", type: "checkbox"}), "Progressive goals (begin each goal after the previous one)"]),
 		BR(), "To make a tiered goal bar, set multiple goals eg '", CODE("10 10 10 10 20 30 40 50"), "'",
 		BR(), "For currency or subs, use values in cents (eg 1000 for $10 or 2 subs)",
 		BR(), SPAN({id: "thresholds-formatted"}),
@@ -251,12 +252,14 @@ function update_tierpicker() {
 	const opts = [];
 	thresholds.push(Infinity); //Place a known elephant in Cairo
 	let val = -1, total = 0;
+	const progressive = DOM("[name=progressive]").checked;
 	for (let which = 0; which < thresholds.length; ++which) {
 		//Record the *previous* total as the mark for this tier. If you pick
 		//tier 3, the total should be set to the *start* of tier 3.
 		const desc = which === thresholds.length - 1 ? "And beyond!" : "Tier " + (which + 1);
 		const prevtotal = total;
-		total += +thresholds[which]; //What if thresholds[which] isn't numeric??
+		if (progressive) total = +thresholds[which];
+		else total += +thresholds[which]; //What if thresholds[which] isn't numeric??
 		opts.push(OPTION({value: prevtotal}, desc));
 		if (val === -1 && pos < total) val = prevtotal;
 	}

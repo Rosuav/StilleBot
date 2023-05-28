@@ -2,7 +2,7 @@ inherit http_websocket;
 inherit hook;
 
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
-constant saveable_attributes = "previewbg barcolor fillcolor needlesize thresholds lvlupcmd format width height "
+constant saveable_attributes = "previewbg barcolor fillcolor needlesize thresholds progressive lvlupcmd format width height "
 	"active bit sub_t1 sub_t2 sub_t3 tip follow kofi_dono kofi_member kofi_renew kofi_shop" / " " + TEXTFORMATTING_ATTRS;
 constant valid_types = (<"text", "goalbar", "countdown">);
 
@@ -148,7 +148,7 @@ void autoadvance(object channel, mapping person, string key, int weight) {
 		//See if we've just hit a new tier. This code is quite probably broken; aren't the tiers already in cents?
 		foreach (info->thresholds / " "; int tier; string th) {
 			int nexttier = 100 * (int)th; //TODO: Don't offset if not currency
-			if (total >= nexttier) {total -= nexttier; continue;}
+			if (total >= nexttier) {if (!info->progressive) total -= nexttier; continue;}
 			//This is the current tier. If we've only barely started it,
 			//then we probably just hit this tier. (If tier is 0, we've
 			//just broken positive after having a negative total.)
