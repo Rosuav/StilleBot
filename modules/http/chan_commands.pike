@@ -334,11 +334,6 @@ echoable_message _validate(echoable_message resp, mapping state)
 		//In this case, though, it also creates a variable. For simplicity, reuse cdanon.
 		ret->rotatename = normalize_cooldown_name(resp->rotatename, state);
 	}
-	sscanf(ret->cdname || "", "%[*]%s", string per_user, string name);
-	//Anonymous cooldowns get named for the back end, but the front end will blank this.
-	//If the front end happens to return something with a dot name in it, ignore it.
-	if (name == "" || name[0] == '.') name = sprintf(".%s:%d", state->cmd, ++state->cdanon);
-	ret->cdname = name = per_user + name;
 
 	//Voice ID validity depends on the channel we're working with. A syntax-only check will
 	//accept any voice ID as long as it's a string of digits.
