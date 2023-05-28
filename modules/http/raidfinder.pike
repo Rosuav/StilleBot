@@ -366,6 +366,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				else {
 					title = "Active Pixel Plush streamers";
 					foreach (data, mapping strm) annotations[strm->stream->userId] += ({strm->theme});
+					foreach (annotations; string uid; array anno)
+						annotations[uid] = Array.uniq(anno);
 					args->user_id = indices(annotations);
 					//TODO: Make get_helix_paginated support >100 array entries, then this won't have to cut them off
 					args->user_id = args->user_id[..99];
