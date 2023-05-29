@@ -18,8 +18,6 @@ function remap_to_array(stats) {
 }
 
 let badge_count = {}, badge_streak = {};
-console.log(badge_count);
-console.log(badge_streak);
 function make_list(arr, desc, empty, eligible, which) {
 	if (!arr || !arr.length) return DIV(empty);
 	return OL(arr.map(p => {
@@ -38,7 +36,7 @@ function make_list(arr, desc, empty, eligible, which) {
 				}
 			}
 		}
-		return LI({className, title, "data-uid": p.user_id, "data-which": which},
+		return LI({className, title, "data-uid": p.user_id, "data-which": which, "data-streak": badge_streak[p.user_id]},
 			[SPAN({className: "username"}, p.user_name), " with ", p.score, desc]
 		);
 	}));
@@ -83,14 +81,14 @@ export function render(data) {
 					li.title += " - potentially " + (count + 1) + " badges";
 					if (streak) {
 						li.title += ", " + (streak + 1) + " streak";
-						li.append(` (${streak+1} months)`);
+						li.append(` (month ${streak + 1})`);
 					}
 					return;
 				}
 				li.title += " - " + count + " badges";
 				if (streak > 1 && streak >= +li.dataset.which) {
 					li.title += ", " + streak + " streak";
-					li.append(` (${streak} months)`);
+					li.append(` (month ${streak + 1 - li.dataset.streak})`);
 				}
 			});
 		});
