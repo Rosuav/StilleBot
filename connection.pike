@@ -4,7 +4,7 @@ inherit annotated;
 
 string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
-object substitutions = Regexp.PCRE("(\\$[*A-Za-z|]+\\$)|({[A-Za-z0-9_@|]+})");
+object substitutions = Regexp.PCRE("(\\$[*A-Za-z0-9|]+\\$)|({[A-Za-z0-9_@|]+})");
 constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT", "USERSTATE"});
 mapping irc_connections = ([]); //Not persisted across code reloads, but will be repopulated (after checks) from the connection_cache.
 @retain: mapping channelcolor = ([]);
@@ -209,8 +209,9 @@ class channel(string name) { //name begins with hash and is all lower case
 
 	mapping(string:string) get_channel_variables(int|string|void uid) {
 		mapping vars = persist_status->path("variables")[name] || ([]);
-		if (!uid || uid == "0" || !vars->users) return vars - (<"users">);
-		return (vars - (<"users">)) | (vars->users[(string)uid] || ([]));
+		return vars; //Per-user variables are now handled elsewhere.
+		//if (!uid || uid == "0" || !vars->users) return vars - (<"users">);
+		//return (vars - (<"users">)) | (vars->users[(string)uid] || ([]));
 	}
 
 	string set_variable(string var, string val, string action, string|void uid)
@@ -219,7 +220,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		//use uid 0 aka "root" which doesn't exist in Twitch.
 		int per_user = has_prefix(var, "*");
 		var = "$" + var + "$";
-		mapping vars = per_user ? persist_status->path("variables", name, "users", (string)uid)
+		mapping vars = per_user ? persist_status->path("variables", name, "*", (string)uid)
 				: persist_status->path("variables", name);
 		if (action == "add") {
 			//Add to a variable, REXX-style (decimal digits in strings).
@@ -278,10 +279,15 @@ class channel(string name) { //name begins with hash and is all lower case
 			//So $var||$ would give an empty string if var doesn't exist, but $var$ might
 			//throw an error or something. For now, they're equivalent, and $var$ will be
 			//an empty string if the var isn't found.
-			//TODO: If the kwd is of the format "49497888*varname", and the type is "$",
-			//look up a per-user variable called "*varname" for that user.
 			[string _, string filter, string dflt] = ((filterdflt + "||") / "|")[..2];
-			string value = vars[type + kwd + tail];
+			string value;
+			if (type == "$" && sscanf(kwd, "%s*%s", string user, string basename) && basename && basename != "") {
+				//If the kwd is of the format "49497888*varname", and the type is "$",
+				//look up a per-user variable called "*varname" for that user.
+				if (user == "") user = (string)person->uid; //TODO: Lookup table for the builtin
+				if (mappingp(vars["*"])) value = vars["*"][user][?type + "*" + basename + tail];
+			}
+			else value = vars[type + kwd + tail];
 			if (!value || value == "") return dflt;
 			if (function f = filter != "" && text_filters[filter]) return f(value);
 			return value;
