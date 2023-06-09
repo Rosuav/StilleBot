@@ -231,9 +231,8 @@ class channel(string name) { //name begins with hash and is all lower case
 		vars[var] = val;
 		//Notify those that depend on this. Note that an unadorned per-user variable is
 		//probably going to behave bizarrely in a monitor, so don't do that; use either
-		//global variables or namespace to a particular user eg "$49497888*varname$",
-		//though the latter are not yet supported. TODO.
-		if (per_user) var = "$" + (string)users[?user] + var[1..];
+		//global variables or namespace to a particular user eg "$49497888*varname$".
+		if (per_user) var = "$" + (string)users[?user] + "*" + var[1..];
 		else G->G->websocket_types->chan_variables->update_one(name, var - "$");
 		//TODO: Defer this until the next tick (with call_out 0), so that multiple
 		//changes can be batched, reducing flicker.
