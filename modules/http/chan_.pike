@@ -77,7 +77,7 @@ continue mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, s
 	req->misc->chaninfo = ([ //Additional (or overriding) template variables
 		"channel": channame,
 		"backlink": "<a href=\"./\">StilleBot - " + channame + "</a>",
-		"menubutton": "<span id=togglesidebarbox class=sbvis><button type=button id=togglesidebar title=\"Show/hide sidebar\">Show/hide sidebar</button></span>",
+		"menubutton": "<span id=togglesidebarbox><button type=button id=togglesidebar title=\"Show/hide sidebar\">Show/hide sidebar</button></span>",
 	]);
 	if (mapping user = req->misc->session->?user) {
 		if (G->G->user_mod_status[user->login + channel->name] || is_localhost_mod(user->login, req->get_ip()))
@@ -89,7 +89,7 @@ continue mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, s
 	mapping profile = ([]);
 	if (channel->userid) profile = yield(get_user_info(channel->userid));
 	req->misc->chaninfo->menunav = sprintf(
-		"<nav id=sidebar class=vis><ul>%{<li><a href=%q>%s</a></li>%}</ul>"
+		"<nav id=sidebar><ul>%{<li><a href=%q>%s</a></li>%}</ul>"
 		"<a href=%q target=_blank><img src=%q alt=\"Channel avatar\" title=%q></a></nav>",
 		req->misc->is_mod ? sidebar_modmenu : sidebar_nonmodmenu,
 		"https://twitch.tv/" + profile->login,
