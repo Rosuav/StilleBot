@@ -4,6 +4,9 @@ constant builtin_description = "Look up a user's variables";
 constant builtin_name = "User Vars";
 constant builtin_param = ({"Keyword (optional)", "User name/ID"});
 
+//TODO: A thing kinda like this for a leaderboard.
+//Instaed of "set this keyword to this user's ID", it will be "set this keyword to the
+//UID of the highest ranked person", and possibly "set kwd1, kwd2, kwd3" etc.
 continue mapping|Concurrent.Future message_params(object channel, mapping person, array|string param, mapping cfg) {
 	if (stringp(param)) {
 		if (sscanf(param, "%s %s", string kwd, string user) && user) param = ({kwd, user});
