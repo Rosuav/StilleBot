@@ -251,9 +251,8 @@ class channel(string name) { //name begins with hash and is all lower case
 	//For consistency, this is used for all vars substitutions. If, in the future,
 	//we make $UNKNOWN$ into an error, or an empty string, or something, this would
 	//be the place to do it.
-	string|array _substitute_vars(string|array text, mapping vars, mapping person)
-	{
-		if (arrayp(text)) return _substitute_vars(text[*], vars, person);
+	string|array _substitute_vars(string|array text, mapping vars, mapping person, mapping users) {
+		if (arrayp(text)) return _substitute_vars(text[*], vars, person, users);
 		//Replace shorthands with their long forms. They are exactly equivalent, but the
 		//long form can be enhanced with filters and/or defaults.
 		text = replace(text, (["%s": "{param}", "$$": "{username}", "$participant$": "{participant}"]));
@@ -284,7 +283,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			if (type == "$" && sscanf(kwd, "%s*%s", string user, string basename) && basename && basename != "") {
 				//If the kwd is of the format "49497888*varname", and the type is "$",
 				//look up a per-user variable called "*varname" for that user.
-				if (user == "") user = (string)person->uid; //TODO: Lookup table for the builtin
+				user = users[user] || user;
 				if (mappingp(vars["*"])) value = vars["*"][user][?type + "*" + basename + tail];
 			}
 			else value = vars[type + kwd + tail];
@@ -327,21 +326,20 @@ class channel(string name) { //name begins with hash and is all lower case
 		//Legacy mode: dest is dest + " " + target, target doesn't exist
 		if (has_value(message->dest || "", ' ') && !message->target) {
 			sscanf(message->dest, "%s %s", string d, string t);
-			cfg |= (["dest": d, "target": _substitute_vars(t, vars, person), "destcfg": message->action || ""]);
+			cfg |= (["dest": d, "target": _substitute_vars(t, vars, person, cfg->users), "destcfg": message->action || ""]);
 		}
 		//Normal mode: Destination and target are separate fields
 		//Note that message->action was a variables-only form of destcfg, so it is merged in too.
 		else if (message->dest) cfg |= ([
 			"dest": message->dest,
-			"target": _substitute_vars(message->target || "", vars, person),
-			"destcfg": _substitute_vars(message->action || message->destcfg || "", vars, person),
+			"target": _substitute_vars(message->target || "", vars, person, cfg->users),
+			"destcfg": _substitute_vars(message->action || message->destcfg || "", vars, person, cfg->users),
 		]);
 
 		if (message->builtin) {
 			object handler = G->G->builtins[message->builtin] || message->builtin; //Chaining can be done by putting the object itself in the mapping
 			if (objectp(handler)) {
-				string param = _substitute_vars(message->builtin_param || "", vars, person);
-				spawn_task(handler->message_params(this, person, param)) {
+				string param = _substitute_vars(message->builtin_param || "", vars, person, cfg->users);
 				spawn_task(handler->message_params(this, person, param, cfg)) {
 					if (!__ARGS__[0]) return; //No params? No output.
 					mapping cfg_changes = m_delete(__ARGS__[0], "cfg") || ([]);
@@ -355,7 +353,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		echoable_message msg = message->message;
 		string expr(string input) {
 			if (!input) return "";
-			string ret = _substitute_vars(input, vars, person);
+			string ret = _substitute_vars(input, vars, person, cfg->users);
 			if (message->casefold) return command_casefold(ret); //Use the same case-folding algorithm as !command lookups use
 			return ret;
 		}
@@ -454,8 +452,8 @@ class channel(string name) { //name begins with hash and is all lower case
 		}
 
 		//And now we have just a single string to send.
-		string prefix = _substitute_vars(message->prefix || "", vars, person);
-		msg = _substitute_vars(msg, vars, person);
+		string prefix = _substitute_vars(message->prefix || "", vars, person, cfg->users);
+		msg = _substitute_vars(msg, vars, person, cfg->users);
 		string dest = cfg->dest || "", target = cfg->target || "", destcfg = cfg->destcfg || "";
 
 		//Variable management. Note that these are silent, so commands may want to pair
@@ -613,7 +611,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		vars = get_channel_variables(person->uid) | (vars || ([]));
 		vars["$$"] = person->displayname || person->user;
 		vars["{uid}"] = (string)person->uid; //Will be "0" if no UID known
-		_send_recursive(person, message, vars, (["callback": callback]));
+		_send_recursive(person, message, vars, (["callback": callback, "users": (["": (string)person->uid])]));
 	}
 
 	//Expand all channel variables, except for {participant} which usually won't
@@ -622,7 +620,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	string expand_variables(string text, mapping|void vars)
 	{
 		vars = get_channel_variables() | (vars || ([]));
-		return _substitute_vars(text, vars, ([]));
+		return _substitute_vars(text, vars, ([]), ([]));
 	}
 
 	void record_raid(int fromid, string fromname, int toid, string toname, int|void ts, int|void viewers)
