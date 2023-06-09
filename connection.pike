@@ -214,13 +214,13 @@ class channel(string name) { //name begins with hash and is all lower case
 		//return (vars - (<"users">)) | (vars->users[(string)uid] || ([]));
 	}
 
-	string set_variable(string var, string val, string action, string|void uid)
+	string set_variable(string var, string val, string action, mapping|void users)
 	{
 		//Per-user variable. If you try this without a user context, it will
 		//use uid 0 aka "root" which doesn't exist in Twitch.
-		int per_user = has_prefix(var, "*");
+		int per_user = sscanf(var, "%s*%s", string user, var);
 		var = "$" + var + "$";
-		mapping vars = per_user ? persist_status->path("variables", name, "*", (string)uid)
+		mapping vars = per_user ? persist_status->path("variables", name, "*", (string)users[?user])
 				: persist_status->path("variables", name);
 		if (action == "add") {
 			//Add to a variable, REXX-style (decimal digits in strings).
@@ -233,7 +233,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		//probably going to behave bizarrely in a monitor, so don't do that; use either
 		//global variables or namespace to a particular user eg "$49497888*varname$",
 		//though the latter are not yet supported. TODO.
-		if (per_user) var = "$" + uid + var[1..];
+		if (per_user) var = "$" + (string)users[?user] + var[1..];
 		else G->G->websocket_types->chan_variables->update_one(name, var - "$");
 		//TODO: Defer this until the next tick (with call_out 0), so that multiple
 		//changes can be batched, reducing flicker.
@@ -284,7 +284,7 @@ class channel(string name) { //name begins with hash and is all lower case
 				//If the kwd is of the format "49497888*varname", and the type is "$",
 				//look up a per-user variable called "*varname" for that user.
 				user = users[user] || user;
-				if (mappingp(vars["*"])) value = vars["*"][user][?type + "*" + basename + tail];
+				if (mappingp(vars["*"])) value = vars["*"][user][?type + basename + tail];
 			}
 			else value = vars[type + kwd + tail];
 			if (!value || value == "") return dflt;
@@ -441,7 +441,7 @@ class channel(string name) { //name begins with hash and is all lower case
 				int val = (int)vars["$" + varname + "$"];
 				if (val >= sizeof(msg)) val = 0;
 				msg = msg[val];
-				vars["$" + varname + "$"] = set_variable(varname, (string)(val + 1), "", vars["{uid}"]);
+				vars["$" + varname + "$"] = set_variable(varname, (string)(val + 1), "", cfg->users);
 			} else {
 				foreach (msg, echoable_message m)
 					_send_recursive(person, message | (["conditional": 0, "message": m]), vars, cfg);
@@ -464,7 +464,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			//currently not supported. TODO: Allow setting var "279141671*varname"
 			//to override the current context and set it on a different user.
 			if (has_value(var[1..], "*")) return;
-			vars["$" + var + "$"] = set_variable(var, msg, destcfg, vars["{uid}"]);
+			vars["$" + var + "$"] = set_variable(var, msg, destcfg, cfg->users);
 			return;
 		}
 
