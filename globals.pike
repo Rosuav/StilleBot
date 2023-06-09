@@ -856,7 +856,7 @@ class _TwitchIRC(mapping options) {
 		enqueue("pong :" + args[1]); //Enqueue or prepend to queue?
 	}
 	void command_RECONNECT(mapping attrs, string pfx, array(string) args) {
-		werror("#### Got a RECONNECT signal ####\nthis %O, attrs %O, pfx %O, args %O\n", this, attrs, pfx, args);
+		werror("#### Got a RECONNECT signal #### %s %s", options->user, ctime(time()));
 		if (sock) sock->close();
 		sockclosed();
 	}
