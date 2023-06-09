@@ -116,6 +116,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mapping rawdata = persist_status->path("variables", c);
 	//Prune any bad entries. Shouldn't be needed. Good guard against bugs in other places though (goalbars, I'm looking at you)
 	foreach (indices(rawdata), string var) if (sizeof(var) < 3 || var[0] != '$' || var[-1] != '$') {
+		if (var == "*" && mappingp(rawdata[var])) continue; //But per-user variables are fine (and currently unvalidated).
 		m_delete(rawdata, var);
 		persist_status->save();
 	}
