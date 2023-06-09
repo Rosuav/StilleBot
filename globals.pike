@@ -224,7 +224,7 @@ class builtin_command {
 	//legacy form, and the default will be to send ({"param goes here"}) so it's always an array.
 	//Possibly, even, the builtin could be declared to take N parameters, and a string would be
 	//automatically split into N-1 one-word parameters followed by the remainder.
-	mapping|function|Concurrent.Future message_params(object channel, mapping person, array|string param) { }
+	mapping|function|Concurrent.Future message_params(object channel, mapping person, array|string param, mapping cfg) { }
 
 	protected void create(string name)
 	{

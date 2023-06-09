@@ -342,8 +342,10 @@ class channel(string name) { //name begins with hash and is all lower case
 			if (objectp(handler)) {
 				string param = _substitute_vars(message->builtin_param || "", vars, person);
 				spawn_task(handler->message_params(this, person, param)) {
+				spawn_task(handler->message_params(this, person, param, cfg)) {
 					if (!__ARGS__[0]) return; //No params? No output.
-					_send_recursive(person, message->message, vars | __ARGS__[0], cfg);
+					mapping cfg_changes = m_delete(__ARGS__[0], "cfg") || ([]);
+					_send_recursive(person, message->message, vars | __ARGS__[0], cfg | cfg_changes);
 				};
 				return;
 			}
