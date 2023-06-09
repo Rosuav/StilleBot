@@ -16,8 +16,8 @@ export const render_parent = DOM("#variables tbody");
 export function render_item(item) {
 	return TR({"data-id": item.id}, [
 		TD(item.id),
-		TD(INPUT({className: "value", value: item.curval})),
-		TD([BUTTON({type: "button", className: "setvalue"}, "Set value"),
+		TD(item.per_user ? "(per-user)" : INPUT({class: "value", value: item.curval})),
+		TD(!item.per_user && [BUTTON({type: "button", className: "setvalue"}, "Set value"),
 			BUTTON({type: "button", className: "delete"}, "Delete variable")]),
 		TD(UL(item.usage.map(u => LI(describe_usage(u))))),
 	]);

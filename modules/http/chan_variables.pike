@@ -16,6 +16,7 @@ void add_command(mapping info, string type, string name, string desc, int overwr
 //NOTE: This makes a number of assumptions about the response. Commands that
 //don't fit those assumptions won't be displayed here. In general, complicated
 //stuff needs to be seen in the commands list, not here.
+//TODO: Also notice per-user variables with specific user lookups eg "$target*varname$"
 void check_for_variables(string type, string name, echoable_message response, string varname, mapping info)
 {
 	if (stringp(response)) {
@@ -145,10 +146,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
-mapping _get_variable(mapping vars, object channel, string varname) {
-	if (undefinedp(vars[varname])) return 0;
+mapping _get_variable(mapping vars, object channel, string varname, int|void per_user) {
+	if (!per_user && undefinedp(vars[varname])) return 0; //Note that per-user variables will never be push-deleted
 	string c = channel->name;
-	mapping ret = (["id": varname - "$", "curval": vars[varname], "usage": ({ })]);
+	if (per_user) varname = "$*" + varname[1..];
+	mapping ret = (["id": varname - "$", "curval": vars[varname], "usage": ({ }), "per_user": per_user]);
 	foreach (G->G->echocommands; string cmd; echoable_message response)
 		if (has_suffix(cmd, c) && (!mappingp(response) || !response->alias_of))
 			check_for_variables(has_prefix(cmd, "!trigger#") ? "trigger" : cmd[0] == '!' ? "special" : "command",
@@ -161,7 +163,16 @@ bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping vars = persist_status->path("variables", channel->name);
 	if (id) return _get_variable(vars, channel, "$" + id + "$");
-	array variabledata = _get_variable(vars, channel, sort(indices(vars))[*]);
+	array variabledata = _get_variable(vars, channel, sort(indices(vars) - ({"*"}))[*]);
+	if (mapping uservars = vars["*"]) {
+		//Note: This is potentially slow. Would it be worth caching somewhere? Most likely,
+		//per-user variables will all have broadly the same shape.
+		multiset all_per_user = (<>);
+		foreach (uservars; string uid; mapping v) all_per_user |= (multiset)indices(v);
+		//Okay. Now we know what all possible variable names are, let's get some info.
+		foreach (all_per_user; string varname;)
+			variabledata += ({_get_variable(vars, channel, varname, 1)});
+	}
 	return (["items": variabledata]);
 }
 
