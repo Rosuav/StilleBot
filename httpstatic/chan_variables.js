@@ -1,4 +1,4 @@
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
+import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, TR, TD, UL, LI, B, INPUT, BUTTON} = choc;
 import {simpleconfirm} from "$$static||utils.js$$";
 
@@ -17,8 +17,9 @@ export function render_item(item) {
 	return TR({"data-id": item.id}, [
 		TD(item.id),
 		TD(item.per_user ? "(per-user)" : INPUT({class: "value", value: item.curval})),
-		TD(!item.per_user && [BUTTON({type: "button", className: "setvalue"}, "Set value"),
-			BUTTON({type: "button", className: "delete"}, "Delete variable")]),
+		TD(item.per_user ? BUTTON({type: "button", class: "showuservars"}, "Show users")
+			: [BUTTON({type: "button", class: "setvalue"}, "Set value"),
+				BUTTON({type: "button", class: "delete"}, "Delete variable")]),
 		TD(UL(item.usage.map(u => LI(describe_usage(u))))),
 	]);
 }
@@ -37,3 +38,17 @@ on("click", ".setvalue", e => {
 on("click", ".delete", simpleconfirm("Delete this variable?", e => {
 	ws_sync.send({cmd: "delete", id: e.match.closest("tr").dataset.id});
 }));
+
+on("click", ".showuservars", e => {
+	ws_sync.send({cmd: "getuservars", id: e.match.closest("tr").dataset.id});
+});
+
+export function sockmsg_uservars(msg) {
+	set_content("#uservarname", msg.varname);
+	set_content("#uservars table tbody", msg.users.map(u => TR([
+		TD(u.uid),
+		TD(u.username),
+		TD(u.value),
+	])));
+	DOM("#uservars").showModal();
+}

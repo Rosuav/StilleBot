@@ -107,6 +107,18 @@ table {width: 100%%;}
 ul {margin: 0;}
 td {vertical-align: top;}
 </style>
+
+> ### Per-user variables
+>
+> The variable <code id=uservarname></code> is tracked per-user in this channel.
+>
+> User ID | User name | Value
+> --------|-----------|----------
+> loading... |
+>
+> [Close](:.dialog_close)
+{: tag=dialog #uservars}
+
 ", newcommands);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
@@ -189,4 +201,26 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	mapping vars = persist_status->path("variables", channel->name);
 	if (undefinedp(vars["$" + msg->id + "$"])) return; //Only update existing vars this way.
 	channel->set_variable(msg->id, msg->value || "", "set");
+}
+
+void wscmd_getuservars(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping vars = persist_status->path("variables", channel->name)["*"];
+	if (!mappingp(vars)) return;
+	string var = "$" + (msg->id - "*") + "$";
+	//Scan this for every user that has this variable
+	mapping ret = ({ });
+	foreach (vars; string uid; mapping v) if (v[var]) {
+		//Note that it would be kinda nice to show display names here, but that
+		//would potentially incur a Twitch API call for every user, which could
+		//get rather costly. So we just show the most recently sighted login.
+		mapping u2n = G->G->uid_to_name[uid] || ([]);
+		array names = indices(u2n); sort(values(u2n), names);
+		names -= ({"jtv", "tmi"});
+		ret += ({([
+			"uid": uid,
+			"username": sizeof(names) ? names[-1] : "(unknown user)",
+			"value": v[var],
+		])});
+	}
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "uservars", "varname": var, "users": ret]), 4));
 }
