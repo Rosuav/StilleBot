@@ -204,6 +204,8 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		string var = "*" + replace(msg->id, "*|${}" / 1, "");
 		//TODO: Filter to existing variables according to the all_per_user set
 		//Currently just filters by validity.
+		//TODO: If value == "", delete this user's instance of the variable.
+		//And if that leaves the user's mapping empty, remove it altogether.
 		foreach (msg->per_user; string uid; string value)
 			channel->set_variable(var, value, "set", (["": uid]));
 		return;
