@@ -231,5 +231,6 @@ void wscmd_getuservars(object channel, mapping(string:mixed) conn, mapping(strin
 			"value": v[var],
 		])});
 	}
+	if (sizeof(ret)) sort((array(int))ret->uid, ret);
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "uservars", "varname": var, "users": ret]), 4));
 }
