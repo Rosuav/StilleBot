@@ -459,11 +459,10 @@ class channel(string name) { //name begins with hash and is all lower case
 		//these with public messages. (Silence is perfectly acceptable for triggers.)
 		if (dest == "/set" && sscanf(target, "%[*A-Za-z]", string var) && var && var != "")
 		{
-			//An asterisk prefix is fine; an asterisk embedded in a var name is
-			//currently not supported. TODO: Allow setting var "279141671*varname"
-			//to override the current context and set it on a different user.
-			if (has_value(var[1..], "*")) return;
-			vars["$" + var + "$"] = set_variable(var, msg, destcfg, cfg->users);
+			string val = set_variable(var, msg, destcfg, cfg->users);
+			//Variable names with asterisks are per-user (possibly this, possibly another),
+			//and should not be stuffed back into the vars mapping.
+			if (!has_value(var, '*')) vars["$" + var + "$"] = val;
 			return;
 		}
 
