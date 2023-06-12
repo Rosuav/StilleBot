@@ -43,12 +43,32 @@ on("click", ".showuservars", e => {
 	ws_sync.send({cmd: "getuservars", id: e.match.closest("tr").dataset.id});
 });
 
+let editing_uservar = null;
 export function sockmsg_uservars(msg) {
-	set_content("#uservarname", msg.varname);
+	set_content("#uservarname", editing_uservar = msg.varname);
 	set_content("#uservars table tbody", msg.users.map(u => TR([
 		TD(u.uid),
 		TD(u.username),
-		TD(u.value),
+		TD(INPUT({class: "value", "data-uid": u.uid, value: u.value})),
 	])));
+	DOM("#uservars").classList.add("clean");
+	set_content("#uservars #close_or_cancel", "Close");
 	DOM("#uservars").showModal();
 }
+
+function dirty(el) {
+	el.classList.add("dirty");
+	DOM("#uservars").classList.remove("clean");
+	set_content("#uservars #close_or_cancel", "Cancel");
+}
+on("input", "#uservars input", e => dirty(e.match));
+on("change", "#uservars input", e => dirty(e.match));
+on("paste", "#uservars input", e => dirty(e.match));
+
+on("submit", "#uservars form", e => {
+	const users = { };
+	e.match.querySelectorAll(".dirty").forEach(input => users[input.dataset.uid] = input.value);
+	//Assumes there'll be at least one, since the submit button isn't enabled otherwise.
+	//If you go fiddling, it'll potentially send an empty message back to the server.
+	ws_sync.send({cmd: "update", id: editing_uservar, per_user: users});
+});

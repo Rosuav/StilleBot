@@ -106,6 +106,7 @@ table {width: 100%%;}
 #newcounter tr td:nth-of-type(3) {width: 100%%;}
 ul {margin: 0;}
 td {vertical-align: top;}
+#uservars.clean button[type=submit] {display: none;}
 </style>
 
 > ### Per-user variables
@@ -116,8 +117,8 @@ td {vertical-align: top;}
 > --------|-----------|----------
 > loading... |
 >
-> [Close](:.dialog_close)
-{: tag=dialog #uservars}
+> [Save](:type=submit) [Cancel](:#close_or_cancel .dialog_close)
+{: tag=formdialog #uservars}
 
 ", newcommands);
 
@@ -199,6 +200,14 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	mapping vars = persist_status->path("variables", channel->name);
+	if (mappingp(msg->per_user)) {
+		string var = "*" + replace(msg->id, "*|${}" / 1, "");
+		//TODO: Filter to existing variables according to the all_per_user set
+		//Currently just filters by validity.
+		foreach (msg->per_user; string uid; string value)
+			channel->set_variable(var, value, "set", (["": uid]));
+		return;
+	}
 	if (undefinedp(vars["$" + msg->id + "$"])) return; //Only update existing vars this way.
 	channel->set_variable(msg->id, msg->value || "", "set");
 }
