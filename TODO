@@ -194,9 +194,7 @@
   - On cooldown (don't show to user though)
   - Other/unexpected error (report to user)
 * Per-channel per-user data
-  - Variables - can use "$*foo$" but not currently "$49497888*foo$" for explicit UID
-    - Don't show these in the /variables page, but maybe show which suffixes exist, and
-      allow mods to browse and edit by looking at user names??
+  - Variables - can use "$*foo$" or "$49497888*foo$" for explicit UID
     - Support this notation for cooldowns too?? Including aliasing via the builtin.
   - Channel currency?? Would become available as "*points" but automatically incremented
     according to rules like "+1 every 5 minutes to all in chat".
