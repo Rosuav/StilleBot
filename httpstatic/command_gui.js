@@ -548,6 +548,7 @@ const tray_tabs = [
 		{type: "builtin_shoutout", builtin_param: "%s"},
 		{type: "builtin_calc", builtin_param: "1 + 2 + 3"},
 		{type: "builtin_tz", builtin_param: "Los Angeles"},
+		{type: "builtin_argsplit", builtin_param: "{param}"},
 		{type: "delay", delay: "2"},
 	]},
 	{name: "Extras", color: "#7f7f7f", items: [{type: "handle_errors"}]}, //I'm REALLY not happy with these names.
