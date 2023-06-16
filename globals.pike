@@ -1081,6 +1081,11 @@ class Renderer
 			if (tag == "button" && !token->attr_type) token->attr_type = "button";
 			return sprintf("<%s%s>%s</%[0]s>", tag, attrs(token, ([])), text);
 		}
+		if (sscanf(href, "%s :%s", string dest, string att) && _parse_attrs("{:" + att + "}", token)) {
+			//Usage: [Text](https://link.example/destination/ :attr=value)
+			string tag = m_delete(token, "attr_tag") || "a";
+			return sprintf("<%s%s>%s</%[0]s>", tag, attrs(token, (["href": dest])), text);
+		}
 		return ::link(href, title, text, token);
 	}
 }
