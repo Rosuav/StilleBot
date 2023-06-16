@@ -6,7 +6,7 @@ Title | Base cost | Activation condition | Growth Formula | Current cost | Actio
 -     | -         | -                    | -              | -            | (loading...)
 {: #rewards}
 
-[Save All](:#save_all)
+[Save All](:#save_all) [Activate/Deactivate](:#activate)
 
 [Add dynamic reward](:#add) Copy from: <select id=copyfrom><option value=\"-1\">(none)</option></select>
 

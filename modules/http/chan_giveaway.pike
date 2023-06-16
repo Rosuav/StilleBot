@@ -351,6 +351,10 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			persist_config->save();
 			return jsonify((["ok": 1]));
 		}
+		if (body->activate) { //TODO: As above, move to pointsrewards on the ws
+			channel_on_off(chan, -1); //TODO: If an ID is given, just activate/deactivate that reward
+			return jsonify((["ok": 1]));
+		}
 		return jsonify((["ok": 1]));
 	}
 	mapping config = ([]);
@@ -551,7 +555,7 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 }
 
 //TODO: Migrate the dynamic reward management to pointsrewards, keeping the giveaway management here
-void channel_on_off(string channel, int online)
+void channel_on_off(string channel, int just_went_online)
 {
 	mapping cfg = persist_config["channels"][channel];
 	mapping dyn = cfg->dynamic_rewards || ([]);
@@ -562,7 +566,9 @@ void channel_on_off(string channel, int online)
 	if (cfg->timezone && cfg->timezone != "") ts = ts->set_timezone(cfg->timezone) || ts;
 	string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
 	mapping args = ([
-		"{online}": (string)online, //1 or 0
+		//Is "1" or "0" based on whether you are probably online. It's possible for this to be wrong
+		//if you just went live or shut down.
+		"{online}": (string)(just_went_online == -1 ? !!G->G->stream_online_since[channel] : just_went_online),
 		//Date/time info is in your timezone or UTC if not set, and is the time the stream went online
 		//or (approximately) offline.
 		"{year}": (string)ts->year_no(), "{month}": (string)ts->month_no(), "{day}": (string)ts->month_day(),
@@ -573,8 +579,9 @@ void channel_on_off(string channel, int online)
 		string token = persist_status->path("bcaster_token")[channel];
 		if (token) foreach (dyn; string reward_id; mapping info) {
 			int active = 0;
-			mapping params = (["cost": info->basecost]);
-			if (!params->cost) m_delete(params, "cost");
+			mapping params = ([]);
+			//If we just went online/offline, reset to base cost (if there is one).
+			if (just_went_online != -1 && info->basecost) params->cost = info->basecost;
 			if (mixed ex = info->availability && catch {
 				write("Evaluating: %O\n", info->availability);
 				active = G->G->evaluate_expr(chan->expand_variables(info->availability, args));

@@ -65,3 +65,9 @@ on("click", "#save_all", e => {
 		save(inp.form.elements);
 	});
 });
+
+on("click", "#activate", e => fetch("giveaway", {
+	method: "PUT",
+	headers: {"Content-Type": "application/json"},
+	body: JSON.stringify({activate: 1}),
+}));
