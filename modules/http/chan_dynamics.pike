@@ -22,7 +22,7 @@ can't claim the reward at the same price.
 
 To have dynamic pricing carry from one stream to another, set the base cost to zero.
 
-[Configure reward details here](https://dashboard.twitch.tv/viewer-rewards/channel-points/rewards)
+[Configure reward details here](https://dashboard.twitch.tv/u/$$channel$$/viewer-rewards/channel-points/rewards)
 
 <style>
 code {background: #ffe;}
