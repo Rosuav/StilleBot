@@ -21,10 +21,12 @@ export const autorender = {
 	]));},
 }
 export function render(data) {
-	allrewards = data.items;
-	const copiables = allrewards.map((r, i) => OPTION({value: i}, r.title));
-	copiables.unshift(DOM("#copyfrom").firstElementChild);
-	set_content("#copyfrom", copiables);
+	if (data.items) {
+		allrewards = data.items;
+		const copiables = allrewards.map((r, i) => OPTION({value: i}, r.title));
+		copiables.unshift(DOM("#copyfrom").firstElementChild);
+		set_content("#copyfrom", copiables);
+	}
 }
 
 DOM("#add").onclick = async e => {
@@ -49,3 +51,7 @@ on("submit", "form.editreward", async e => {
 	})).json();
 	console.log("Got response:", info);
 }, true);
+
+on("input", "#rewards input", e => e.match.classList.add("dirty"));
+on("change", "#rewards input", e => e.match.classList.add("dirty"));
+on("paste", "#rewards input", e => e.match.classList.add("dirty"));
