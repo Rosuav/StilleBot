@@ -21,7 +21,7 @@ You can remove functionality from a reward by deleting the corresponding command
 it so that it no longer responds to the redemption (if you want to keep the command for other
 purposes).
 
-[Configure reward details here](https://dashboard.twitch.tv/viewer-rewards/channel-points/rewards)
+[Configure reward details here](https://dashboard.twitch.tv/u/$$channel$$/viewer-rewards/channel-points/rewards)
 
 <style>
 #rewards th {
