@@ -69,14 +69,16 @@ There are three levels of permission that can be granted:
 */
 
 bool need_mod(string grp) {return 1;}
-mapping get_chan_state(object channel, string grp, string|void id) {
+mapping get_chan_state(object channel, string grp, string|void id, string|void type) {
 	array rewards = pointsrewards[channel->name[1..]] || ({ }), dynrewards = ({ });
 	mapping current = channel->config->dynamic_rewards || ([]);
 	foreach (rewards, mapping rew) {
 		mapping r = current[rew->id];
 		if (r) dynrewards += ({r | (["id": rew->id, "title": rew->title, "curcost": rew->cost])});
 		rew->invocations = G->G->redemption_commands[rew->id] || ({ });
+		if (rew->id == id) return type == "dynreward" ? dynrewards[-1] : rew; //Can't be bothered remapping to remove the search
 	}
+	if (id) return 0; //Clearly it wasn't found
 	return (["items": rewards, "dynrewards": dynrewards]);
 }
 
@@ -185,7 +187,8 @@ EventSub rewardadd = EventSub("rewardadd", "channel.channel_points_custom_reward
 	[string chan, mapping info] = __ARGS__;
 	if (!pointsrewards[chan]) return;
 	pointsrewards[chan] += ({remap_eventsub_message(info)});
-	send_updates_all("#" + chan);
+	update_one("#" + chan, info->id);
+	update_one("#" + chan, info->id, "dynreward");
 };
 EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward.update", "1") {
 	[string chan, mapping info] = __ARGS__;
@@ -193,7 +196,8 @@ EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward
 	if (!rew) return;
 	foreach (rew; int i; mapping reward)
 		if (reward->id == info->id) {rew[i] = remap_eventsub_message(info); break;}
-	send_updates_all("#" + chan);
+	update_one("#" + chan, info->id);
+	update_one("#" + chan, info->id, "dynreward");
 };
 EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward.remove", "1") {
 	[string chan, mapping info] = __ARGS__;
@@ -202,7 +206,8 @@ EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward
 	pointsrewards[chan] = filter(rew) {return __ARGS__[0]->id != info->id;};
 	mapping dyn = persist_config["channels"][chan]->?dynamic_rewards;
 	if (dyn) {m_delete(dyn, info->id); persist_config->save();}
-	send_updates_all("#" + chan);
+	update_one("#" + chan, info->id);
+	update_one("#" + chan, info->id, "dynreward");
 };
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
