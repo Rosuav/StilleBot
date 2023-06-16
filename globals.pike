@@ -463,8 +463,9 @@ class websocket_handler
 
 	//Generate a state mapping for a particular connection group. If state is 0, no
 	//information is sent; otherwise it must be a JSON-compatible mapping. An ID will
-	//be given if update_one was called, otherwise it will be 0.
-	mapping|Concurrent.Future get_state(string|int group, string|void id) { }
+	//be given if update_one was called, otherwise it will be 0. Type is rarely needed
+	//but is used only in conjunction with an ID.
+	mapping|Concurrent.Future get_state(string|int group, string|void id, string|void type) { }
 
 	//Override to validate any init requests. Return 0 to allow the socket
 	//establishment, or an error message.
@@ -506,7 +507,9 @@ class websocket_handler
 		if (dest && sizeof(dest)) _send_updates(dest, group, data);
 	}
 
-	void update_one(string|int group, string id) {send_updates_all(group, (["id": id, "data": get_state(group, id)]));}
+	void update_one(string|int group, string id, string|void type) {
+		send_updates_all(group, (["id": id, "data": get_state(group, id, type), "type": type || "item"]));
+	}
 
 	//Returns ({channel, subgroup}) - if channel is 0, it's not valid
 	array(object|string) split_channel(string|void group) {
@@ -1369,7 +1372,7 @@ class http_websocket
 	//mod privileges. If not overridden, all groups are open to non-mods.
 	bool need_mod(string grp) { }
 	//Provide channel state this way, or override get_state and do everything
-	mapping get_chan_state(object channel, string grp, string|void id) { }
+	mapping get_chan_state(object channel, string grp, string|void id, string|void type) { }
 
 	protected void create(string name) {
 		annotation_lookup = mkmapping(indices(this), annotations(this)); //This could go somewhere else, it's likely to be useful for more than just this class
@@ -1409,10 +1412,10 @@ class http_websocket
 		conn->subgroup = grp;
 	}
 
-	mapping get_state(string group, string|void id) {
+	mapping get_state(string group, string|void id, string|void type) {
 		[object channel, string grp] = split_channel(group);
 		if (!channel) return 0;
-		return get_chan_state(channel, grp, id);
+		return get_chan_state(channel, grp, id, type);
 	}
 
 	void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
