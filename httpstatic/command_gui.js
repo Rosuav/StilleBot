@@ -524,32 +524,43 @@ const tray_tabs = [
 		{type: "randrot", mode: "random"},
 		{type: "conditional_string", expr1: "{param}"},
 		{type: "cooldown", cdlength: "30", cdname: ""},
+		{type: "voice", voice: ""},
 	]},
 	{name: "Alternate delivery", color: "#f7bbf7", items: [
 		{type: "whisper_back", message: "Shh! This is a whisper!"},
 		{type: "whisper_other", target: "{param}", message: [{type: "text", message: "Here's a whisper!"}]},
 		{type: "reply_back", message: "Join the thread!"},
-		{type: "voice", voice: ""},
 		{type: "web_message", target: "{param}", message: [
 			{type: "text", message: "This is a top secret message."},
 		]},
+		{type: "set_variable", target: "deaths", message: "0"},
+		{type: "incr_variable", target: "deaths", message: "1"},
+		{type: "delay", delay: "2"},
 	]},
 	{name: "Control Flow", color: "#bbbbf7", items: [
 		{type: "conditional_contains", expr1: "/foo/bar/quux/", expr2: "/{param}/"},
 		{type: "conditional_number", expr1: "$deaths$ > 10"},
 		{type: "conditional_regexp", expr1: "[Hh]ello", expr2: "{param}"},
 		{type: "chain_of_command", target: "", destcfg: ""},
-		//NOTE: Even though they're internally conditionals too, cooldowns don't belong in this tray
+		{type: "builtin_argsplit", builtin_param: "{param}"},
+		//NOTE: Even though they're internally conditionals too, cooldowns don't belong in this tray.
+		//Conversely, even though argsplit isn't really control flow, it fits into the same kind of
+		//use case, where you're thinking more like a programmer.
+	]},
+	{name: "Interaction", color: "#ffffbb", items: [
+		{type: "builtin_shoutout", builtin_param: "%s"},
+		{type: "builtin_calc", builtin_param: "1 + 2 + 3",
+			message: [{type: "text", message: "That works out to: {result}"}]},
+		{type: "builtin_chan_alertbox", builtin_param: "follower", builtin_param1: "Test User",
+			message: [{type: "handle_errors"}]},
+		{type: "builtin_hypetrain"},
 	]},
 	{name: "Advanced", color: "#bbffbb", items: [
-		{type: "incr_variable", target: "deaths", message: "1"},
-		{type: "set_variable", target: "deaths", message: "0"},
 		{type: "builtin_uptime"},
-		{type: "builtin_shoutout", builtin_param: "%s"},
-		{type: "builtin_calc", builtin_param: "1 + 2 + 3"},
+		{type: "builtin_uservars"},
 		{type: "builtin_tz", builtin_param: "Los Angeles"},
-		{type: "builtin_argsplit", builtin_param: "{param}"},
-		{type: "delay", delay: "2"},
+		{type: "builtin_chan_pointsrewards", message: [{type: "handle_errors"}]},
+		{type: "randrot", mode: "rotate"},
 	]},
 	{name: "Extras", color: "#7f7f7f", items: [{type: "handle_errors"}]}, //I'm REALLY not happy with these names.
 ];
