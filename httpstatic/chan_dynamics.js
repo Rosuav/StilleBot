@@ -12,7 +12,7 @@ export const autorender = {
 		TD(INPUT({name: "formula", form: r.id, value: r.formula})),
 		TD(INPUT({name: "curcost", form: r.id, type: "number", value: r.curcost})),
 		TD([
-			INPUT({name: "id", form: r.id, type: "hidden", value: r.id}),
+			INPUT({name: "rewardid", form: r.id, type: "hidden", value: r.id}),
 			INPUT({form: r.id, type: "submit", value: "Save"}),
 		]),
 	]);},
@@ -39,10 +39,8 @@ DOM("#add").onclick = async e => {
 	if (!res.ok) {console.error("Not okay response", res); return;}
 };
 
-on("submit", "form.editreward", async e => {
-	e.preventDefault();
-	const el = e.match.elements;
-	const body = {dynamic_id: el.id.value, title: el.title.value, basecost: el.basecost.value,
+async function save(el) {
+	const body = {dynamic_id: el.rewardid.value, title: el.title.value, basecost: el.basecost.value,
 		availability: el.availability.value, formula: el.formula.value, curcost: el.curcost.value};
 	const info = await (await fetch("giveaway", {
 		method: "PUT",
@@ -50,8 +48,20 @@ on("submit", "form.editreward", async e => {
 		body: JSON.stringify(body),
 	})).json();
 	console.log("Got response:", info);
-}, true);
+}
+on("submit", "form.editreward", e => {e.preventDefault(); save(e.match.elements);}, true);
 
 on("input", "#rewards input", e => e.match.classList.add("dirty"));
 on("change", "#rewards input", e => e.match.classList.add("dirty"));
 on("paste", "#rewards input", e => e.match.classList.add("dirty"));
+
+on("click", "#save_all", e => {
+	//For now, just save each row individually; it may be nice to have a bulk save
+	//but it would probably still cost as much in API calls on the back end anyway.
+	const saved = {}; //Only save any particular form once
+	document.querySelectorAll("#rewards .dirty").forEach(inp => {
+		if (saved[inp.form.id]) return;
+		saved[inp.form.id] = 1;
+		save(inp.form.elements);
+	});
+});

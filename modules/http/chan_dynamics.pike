@@ -6,6 +6,8 @@ Title | Base cost | Activation condition | Growth Formula | Current cost | Actio
 -     | -         | -                    | -              | -            | (loading...)
 {: #rewards}
 
+[Save All](:#save_all)
+
 [Add dynamic reward](:#add) Copy from: <select id=copyfrom><option value=\"-1\">(none)</option></select>
 
 Choose how the price grows by setting a formula, for example:
