@@ -12,10 +12,10 @@ The display is initially blank. It consists of a flexbox of labels.
 - A label is automatically removed when its expiration date is reached.
 
 The builtin creates a new label for the channel.
-- Parameters: Text, duration, time-shown
+- Parameters: Text, duration, time-format
 - Create a label and put {labelid} to the ID created
 - Add duration onto time() to create expiration date. If zero duration, no expiration.
-- If time-shown is selected, the label will be formatted with a countdown.
+- If a time-format is selected, the label will be formatted with a countdown.
 - Alternatively, remove an existing label. Internally it's the same builtin with parameters,
   but in command GUI it could be a separate element. Two parameters, {labelid} and duration -1.
 
@@ -27,5 +27,12 @@ Config:
 
 */
 
+constant builtin_name = "Labels"; //The front end may redescribe this according to the parameters
+constant builtin_description = "Create or remove an on-screen label";
+constant builtin_param = ({"Text", "Duration", "/Countdown/No countdown/Seconds (eg 59)/Min:Sec (eg 05:00)"});
+constant vars_provided = ([
+	"{error}": "Error message, if any",
+	"{labelid}": "ID of the newly-created label - can be used to remove it later",
+]);
 
 protected void create(string name) {::create(name);}
