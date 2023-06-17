@@ -26,6 +26,10 @@ Config:
 - Link for OBS, and reset key
 
 */
+constant markdown = #"# On-screen labels
+
+TODO.
+";
 
 constant builtin_name = "Labels"; //The front end may redescribe this according to the parameters
 constant builtin_description = "Create or remove an on-screen label";
@@ -34,5 +38,14 @@ constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{labelid}": "ID of the newly-created label - can be used to remove it later",
 ]);
+
+mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
+{
+	//TODO: If fake, show something?? maybe?? Borrow ideas from alertbox demo mode.
+	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
+	return render(req, ([
+		"vars": (["ws_group": ""]),
+	]) | req->misc->chaninfo);
+}
 
 protected void create(string name) {::create(name);}
