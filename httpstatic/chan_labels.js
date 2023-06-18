@@ -22,7 +22,7 @@ function ticker() {
 	let none_left = true;
 	document.querySelectorAll(".timefmt").forEach(span => {
 		const then = +span.dataset.bread;
-		if (then < now) {span.style.display = "none"; return;} //The server will probably remove it soon; until then, hide it.
+		if (then < now) {span.parentElement.style.display = "none"; return;} //The server will probably remove it soon; until then, hide it.
 		set_content(span, format_time(span.dataset.timefmt, span.dataset.bread - now));
 		none_left = false;
 	});
