@@ -33,7 +33,7 @@ TODO.
 
 constant builtin_name = "Labels"; //The front end may redescribe this according to the parameters
 constant builtin_description = "Create or remove an on-screen label";
-constant builtin_param = ({"Text", "Duration", "/Countdown/No countdown/Seconds (eg 59)/Min:Sec (eg 05:00)"});
+constant builtin_param = ({"Text", "Duration", "/Countdown/=No countdown/ss=Seconds (eg 59)/mmss=Min:Sec (eg 05:00)"});
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{labelid}": "ID of the newly-created label - can be used to remove it later",

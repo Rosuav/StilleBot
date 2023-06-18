@@ -185,11 +185,18 @@ function builtin_types() {
 			if (param[0] === "/") {
 				let split = param.split("/"); split.shift(); //Remove the empty at the start
 				const label = split.shift();
+				const selections = { };
+				if (split[0].includes("=")) split = split.map(s => {
+					//sscanf(s, "%s=%s", string value, string label);
+					const [value, ...rest] = s.split("=");
+					selections[value] = rest.join("=");
+					return value;
+				});
 				if (split.length === 1) {
 					//Special-case some to allow custom client-side code
 					split = builtin_validators[split[0]] || split;
 				}
-				b.params.push({attr: "builtin_param" + (idx||""), label: label, values: split});
+				b.params.push({attr: "builtin_param" + (idx||""), label, values: split, selections});
 			}
 			else if (param !== "") b.params.push({attr: "builtin_param" + (idx||""), label: param});
 		};
