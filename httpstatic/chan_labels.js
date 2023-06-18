@@ -1,6 +1,6 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {LI, SPAN, UL} = choc; //autoimport
-import {TEXTFORMATTING, ensure_font} from "$$static||utils.js$$";
+import {TEXTFORMATTING, ensure_font, simpleconfirm} from "$$static||utils.js$$";
 
 let countdown = null;
 let csstext = "";
@@ -61,3 +61,14 @@ on("submit", "form", e => {
 		if (el.name) msg[el.name] = el.value;
 	ws_sync.send(msg);
 });
+
+on("dragstart", "#displaylink", e => {
+	e.dataTransfer.setData("text/uri-list", `${e.match.href}&layer-name=On%20Screen%20Labels&layer-width=600&layer-height=400`);
+});
+
+on("click", "#revokeauth", simpleconfirm("Revoking this key will disable your in-OBS labels until you update the URL. Proceed?",
+	e => ws_sync.send({cmd: "revokekey"})));
+export function sockmsg_authkey(msg) {
+	DOM("#displaylink").href = "labels?key=" + msg.key;
+	msg.key = "<hidden>";
+}

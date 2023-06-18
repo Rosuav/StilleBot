@@ -19,11 +19,15 @@ constant STYLES = #"
 }";
 constant markdown = #"# On-screen labels
 
+Show information in OBS when things happen.
+
 > <summary>Preview</summary>
 > <div id=display></div>
 {:tag=details}
 
-Show information in OBS when things happen. [Drag me to OBS](labels?key=TODO-PUT-KEY-HERE)
+Drag this to OBS, or use this URL as a browser source: [On Screen Labels](labels?key=$$accesskey$$ :#displaylink)
+
+Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:#revokeauth) to generate a new one.
 
 > [Save](:type=submit)
 {:tag=form}
@@ -92,6 +96,12 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string|
 	]);
 }
 
+string get_access_key(string chan) {
+	mapping cfg = persist_status->path("channel_labels", chan);
+	if (!cfg->accesskey) {cfg->accesskey = String.string2hex(random_string(13)); persist_status->save();}
+	return cfg->accesskey;
+}
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	//TODO: If fake, show something?? maybe?? Borrow ideas from alertbox demo mode.
 	//TODO: If ?key=x passed, but key is incorrect, give an immediate failure (don't wait for WS failure)
@@ -102,6 +112,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
 	return render(req, ([
 		"vars": (["ws_group": ""]),
+		"accesskey": get_access_key(req->misc->channel->name[1..]),
 	]) | req->misc->chaninfo);
 }
 
@@ -120,7 +131,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping labels = G_G_("channel_labels", channel->name[1..]);
-	mapping cfg = persist_status->path("channel_labels")[channel->name[1..]] || ([]);
+	mapping cfg = persist_status->path("channel_labels", channel->name[1..]);
 	if (id) {
 		foreach (labels->active || ({}), mapping lbl)
 			if (lbl->id == id) return lbl;
@@ -143,6 +154,18 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	//Save anything else eg max labels to show
 	persist_status->save();
 	send_updates_all(channel->name);
+}
+
+@"is_mod": void wscmd_revokekey(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return;
+	mapping cfg = persist_status->path("channel_labels", channel->name[1..]);
+	m_delete(cfg, "accesskey");
+	string newkey = get_access_key(channel->name[1..]);
+	//Non-mod connections get kicked
+	foreach (websocket_groups[channel->name], object sock)
+		if (!sock->query_id()->is_mod) sock->close();
+	//Other mod connections remain but will have the wrong key. Only THIS connection gets the new one.
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "authkey", "key": newkey]), 4));
 }
 
 protected void create(string name) {::create(name);}
