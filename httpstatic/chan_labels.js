@@ -1,5 +1,5 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {LI, SPAN} = choc; //autoimport
+const {LI, SPAN, UL} = choc; //autoimport
 import {TEXTFORMATTING, ensure_font} from "$$static||utils.js$$";
 
 let countdown = null;
@@ -29,14 +29,13 @@ function ticker() {
 	if (none_left) {clearInterval(countdown); countdown = null;}
 }
 
-export const render_parent = DOM("#activelabels");
+export const render_parent = DOM("#display").appendChild(UL({id: "activelabels"}));
 export function render_item(lbl, el) {
 	if (lbl.timefmt && !countdown) countdown = setInterval(ticker, 1000);
 	return LI({"data-id": lbl.id, "style": csstext}, [
 		lbl.timefmt && SPAN({class: "timefmt", "data-timefmt": lbl.timefmt, "data-bread": lbl.bread},
 			format_time(lbl.timefmt, lbl.bread - Math.floor(new Date() / 1000))),
 		lbl.label,
-		//TODO: Text formatting
 	]);
 }
 

@@ -3,20 +3,24 @@ inherit builtin_command;
 inherit annotated;
 /* On-screen labels
 
-Provides two things: a builtin and a display (and a config page). The display goes inside OBS. Like
-with others, it should be authenticated by a key rather than by cookie. The config page exists to
-manage the display.
-
 TODO: Make a separate element for removing a label. Internally it's the same builtin with parameters
 {labelid} and duration -1.
 
 TODO: Max labels (if one is created when at max, discard the oldest)
 - Newest at bottom vs newest at top
 */
+constant STYLES = #"
+#activelabels {
+	padding: 0;
+}
+#activelabels li {
+	width: max-content;
+	list-style-type: none;
+}";
 constant markdown = #"# On-screen labels
 
 > <summary>Preview</summary>
-> <ul id=activelabels></ul>
+> <div id=display></div>
 {:tag=details}
 
 Show information in OBS when things happen. [Drag me to OBS](labels?key=TODO-PUT-KEY-HERE)
@@ -28,14 +32,7 @@ Show information in OBS when things happen. [Drag me to OBS](labels?key=TODO-PUT
 details {
 	border: 1px solid black;
 	margin-bottom: 0.5em;
-}
-#activelabels {
-	padding: 0;
-}
-#activelabels li {
-	width: max-content;
-	list-style-type: none;
-}
+}" + STYLES + #"
 </style>
 ";
 
@@ -97,13 +94,28 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string|
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	//TODO: If fake, show something?? maybe?? Borrow ideas from alertbox demo mode.
-	//TODO: If ?key=x passed, and if key is correct, render a mini page that will connect using
-	//x as the group. HACK: Inside websocket_validate, replace msg->group with "" if it is correct,
-	//otherwise, nonblank groups are rejected and blank rejected for non-mods.
+	//TODO: If ?key=x passed, but key is incorrect, give an immediate failure (don't wait for WS failure)
+	if (req->variables->key) return render_template("monitor.html", ([
+		"vars": (["ws_type": ws_type, "ws_group": req->variables->key + req->misc->channel->name, "ws_code": "chan_labels"]),
+		"title": "Channel labels", "styles": STYLES,
+	]));
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 	]) | req->misc->chaninfo);
+}
+
+//HACK: A non-blank group is the access key. If it is correct, override the group to
+//blank and bypass the moderator check. Otherwise, nonblank groups are rejected and
+//other checks are passed up the line (which will include rejecting non-mods).
+bool need_mod(string grp) {return 1;}
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!stringp(msg->group)) return "Bad group";
+	sscanf(msg->group, "%s#%s", string subgroup, string chan);
+	if (subgroup == "") return ::websocket_validate(conn, msg);
+	string key = persist_status->path("channel_labels")[chan]->?accesskey;
+	if (subgroup != key) return "Bad key";
+	msg->group = "#" + chan; //effectively, subgroup becomes blank
 }
 
 mapping get_chan_state(object channel, string grp, string|void id) {
