@@ -29,7 +29,8 @@ Config:
 */
 constant markdown = #"# On-screen labels
 
-TODO.
+<ul id=activelabels></ul>
+
 ";
 
 @retain: mapping channel_labels = ([]);
@@ -47,18 +48,18 @@ string remove_label(string chan, string labelid) {
 	mapping labels = G_G_("channel_labels", chan);
 	foreach (labels->active || ({ }); int i; mapping lbl) if (lbl->id == labelid) {
 		labels->active = labels->active[..i-1] + labels->active[i+1..];
+		update_one("#" + chan, labelid);
 		return labelid;
 	}
 }
 
-mapping|Concurrent.Future message_params(object channel, mapping person, string|array param)
-{
+mapping|Concurrent.Future message_params(object channel, mapping person, string|array param) {
 	if (stringp(param)) {
 		//Compatibility with non-GUI command editor: allow a command string. Clunky but possible.
 		sscanf(param, "%d %s", int dur, param);
 		string timefmt = "";
 		if (sscanf(param, "-mm %s", param)) timefmt = "mm";
-		else if (sscanf(param, "-hhmm %s", param)) timefmt = "hhmm";
+		else if (sscanf(param, "-mmss %s", param)) timefmt = "mmss";
 		param = ({param, dur, timefmt});
 	}
 	//Normally we'll be given an array of params.
@@ -77,9 +78,10 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string|
 			"id": labelid = "lbl-" + labels->nextid++,
 			"bread": duration > 0 && time() + duration,
 			"label": param[0],
-			"timefmt": (<"mm", "hhmm">)[param[2]] ? param[2] : "",
+			"timefmt": (<"mm", "mmss">)[param[2]] ? param[2] : "",
 		])});
 		if (duration > 0) call_out(remove_label, duration, chan, labelid);
+		update_one("#" + chan, labelid);
 	}
 	return ([
 		"{labelid}": labelid,
@@ -87,13 +89,22 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string|
 	]);
 }
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
-{
+mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	//TODO: If fake, show something?? maybe?? Borrow ideas from alertbox demo mode.
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 	]) | req->misc->chaninfo);
+}
+
+mapping get_chan_state(object channel, string grp, string|void id) {
+	mapping labels = G_G_("channel_labels", channel->name[1..]);
+	if (id) {
+		foreach (labels->active || ({}), mapping lbl)
+			if (lbl->id == id) return lbl;
+		return 0;
+	}
+	return (["items": labels->active || ({})]);
 }
 
 protected void create(string name) {::create(name);}
