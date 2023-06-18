@@ -1,5 +1,6 @@
 inherit http_websocket;
 inherit builtin_command;
+inherit annotated;
 /* On-screen labels
 
 Provides two things: a builtin and a display (and a config page). The display goes inside OBS. Like
@@ -31,6 +32,8 @@ constant markdown = #"# On-screen labels
 TODO.
 ";
 
+@retain: mapping channel_labels = ([]);
+
 constant builtin_name = "Labels"; //The front end may redescribe this according to the parameters
 constant builtin_description = "Create or remove an on-screen label";
 constant builtin_param = ({"Text", "Duration", "/Countdown/=No countdown/ss=Seconds (eg 59)/mmss=Min:Sec (eg 05:00)"});
@@ -38,6 +41,51 @@ constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{labelid}": "ID of the newly-created label - can be used to remove it later",
 ]);
+
+//Attempt to remove a label by its ID. Returns the ID if found.
+string remove_label(string chan, string labelid) {
+	mapping labels = G_G_("channel_labels", chan);
+	foreach (labels->active || ({ }); int i; mapping lbl) if (lbl->id == labelid) {
+		labels->active = labels->active[..i-1] + labels->active[i+1..];
+		return labelid;
+	}
+}
+
+mapping|Concurrent.Future message_params(object channel, mapping person, string|array param)
+{
+	if (stringp(param)) {
+		//Compatibility with non-GUI command editor: allow a command string. Clunky but possible.
+		sscanf(param, "%d %s", int dur, param);
+		string timefmt = "";
+		if (sscanf(param, "-mm %s", param)) timefmt = "mm";
+		else if (sscanf(param, "-hhmm %s", param)) timefmt = "hhmm";
+		param = ({param, dur, timefmt});
+	}
+	//Normally we'll be given an array of params.
+	if (param[0] == "") return (["{error}": "Need a label to work with"]);
+	string chan = channel->name[1..];
+	mapping labels = G_G_("channel_labels", chan);
+	string labelid;
+	int duration = (int)param[1];
+	if (duration == -1) {
+		//Delete an existing label
+		labelid = remove_label(chan, param[0]);
+		if (!labelid) return (["{error}": "Label ID not found for deletion: " + param[0]]);
+	} else {
+		//Create a new label
+		labels->active += ({([
+			"id": labelid = "lbl-" + labels->nextid++,
+			"bread": duration > 0 && time() + duration,
+			"label": param[0],
+			"timefmt": (<"mm", "hhmm">)[param[2]] ? param[2] : "",
+		])});
+		if (duration > 0) call_out(remove_label, duration, chan, labelid);
+	}
+	return ([
+		"{labelid}": labelid,
+		"{error}": "",
+	]);
+}
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
