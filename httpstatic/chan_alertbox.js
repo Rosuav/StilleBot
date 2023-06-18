@@ -798,7 +798,7 @@ on("reset", ".alertconfig", e => {
 
 on("dragstart", "#alertboxlink", e => {
 	//TODO: Set the width and height to the (individual) maximums of all alerts, incl defaults
-	e.dataTransfer.setData("text/uri-list", `${e.match.href}&layer-name=Host%20Alerts&layer-width=600&layer-height=400`);
+	e.dataTransfer.setData("text/uri-list", `${e.match.href}&layer-name=StilleBot%20Alerts&layer-width=600&layer-height=400`);
 });
 
 on("click", "#authpreview", e => {
