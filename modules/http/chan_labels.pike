@@ -29,8 +29,28 @@ Config:
 */
 constant markdown = #"# On-screen labels
 
-<ul id=activelabels></ul>
+> <summary>Preview</summary>
+> <ul id=activelabels></ul>
+{:tag=details}
 
+Show information in OBS when things happen. [Drag me to OBS](labels?key=TODO-PUT-KEY-HERE)
+
+> [Save](:type=submit)
+{:tag=form}
+
+<style>
+details {
+	border: 1px solid black;
+	margin-bottom: 0.5em;
+}
+#activelabels {
+	padding: 0;
+}
+#activelabels li {
+	width: max-content;
+	list-style-type: none;
+}
+</style>
 ";
 
 @retain: mapping channel_labels = ([]);
@@ -91,6 +111,9 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string|
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	//TODO: If fake, show something?? maybe?? Borrow ideas from alertbox demo mode.
+	//TODO: If ?key=x passed, and if key is correct, render a mini page that will connect using
+	//x as the group. HACK: Inside websocket_validate, replace msg->group with "" if it is correct,
+	//otherwise, nonblank groups are rejected and blank rejected for non-mods.
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
 	return render(req, ([
 		"vars": (["ws_group": ""]),
@@ -99,12 +122,29 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping labels = G_G_("channel_labels", channel->name[1..]);
+	mapping cfg = persist_status->path("channel_labels")[channel->name[1..]] || ([]);
 	if (id) {
 		foreach (labels->active || ({}), mapping lbl)
 			if (lbl->id == id) return lbl;
 		return 0;
 	}
-	return (["items": labels->active || ({})]);
+	return ([
+		"items": labels->active || ({}),
+		"style": cfg->style || ([]),
+		"css": textformatting_css(cfg->style || ([])),
+	]);
+}
+
+@"is_mod": void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping cfg = persist_status->path("channel_labels", channel->name[1..]);
+	//Assume that any update completely rewrites the formatting
+	mapping style = ([]);
+	foreach (TEXTFORMATTING_ATTRS, string attr) style[attr] = msg[attr];
+	textformatting_validate(style);
+	cfg->style = style;
+	//Save anything else eg max labels to show
+	persist_status->save();
+	send_updates_all(channel->name);
 }
 
 protected void create(string name) {::create(name);}
