@@ -561,6 +561,7 @@ const tray_tabs = [
 		{type: "builtin_chan_alertbox", builtin_param: "follower", builtin_param1: "Test User",
 			message: [{type: "handle_errors"}]},
 		{type: "builtin_hypetrain"},
+		{type: "builtin_chan_labels"},
 	]},
 	{name: "Advanced", color: "#bbffbb", items: [
 		{type: "builtin_uptime"},
