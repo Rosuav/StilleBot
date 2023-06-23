@@ -41,7 +41,7 @@ class command
 	constant access = "any"; //Set to "mod" for mod-only, "vip" for VIPs and mods, or "none" for disabled/internal-only commands (more useful for echo commands)
 	constant visibility = "visible"; //Set to "hidden" to suppress the command from !help (or set hidden_command to 1, deprecated alternative)
 	constant featurename = "allcmds"; //Set to a feature flag to allow this command to be governed by !features (not usually appropriate for echocommands)
-	constant active_channels = ({ }); //To restrict this to some channels only, set this to a non-empty array.
+	constant active_channels = ({ }); //Deprecated. Instead of setting this, design a builtin and create per-channel commands. Still functional though.
 	constant docstring = ""; //Override this with your docs
 	//Override this to do the command's actual functionality, after permission checks.
 	//Return a string to send that string, with "@$$" to @-notify the user.
@@ -65,6 +65,8 @@ class command
 		sscanf(explode_path(name)[-1],"%s.pike",name);
 		if (!name) return;
 		foreach (indices(G->G->commands), string n) if (n == name || has_prefix(n, name + "#")) m_delete(G->G->commands, n);
+		//active_channels is deprecated, but if set, it should be an array of channel names
+		//for which this command should be activated. (Otherwise it's a global command.)
 		if (!sizeof(active_channels)) G->G->commands[name] = check_perms;
 		else foreach (active_channels, string chan) if (chan!="") G->G->commands[name + "#" + chan] = check_perms;
 		//Update the docs for this command. NOTE: Nothing will currently
