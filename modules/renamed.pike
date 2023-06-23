@@ -8,25 +8,6 @@ int last_used = 0;
 string process(object channel, object person, string param)
 {
 	if (time() < last_used + 60) return 0;
-	if (param == "parse" && person->user == "rosuav") //Special special case. Shouldn't be needed much.
-	{
-		//Parse the saved JSON dumps
-		foreach (sort(get_dir("../MegaClip/cache")), string fn)
-		{
-			mapping info = Standards.JSON.decode_utf8(Stdio.read_file("../MegaClip/cache/" + fn) || "{}");
-			foreach (info->comments, mapping msg)
-			{
-				mapping person = msg->commenter;
-				mapping u2n = G->G->uid_to_name[person->_id] || ([]);
-				object ts = time_from_iso(msg->created_at);
-				if (!ts) continue;
-				int t = ts->unix_time();
-				if (!u2n[person->name] || u2n[person->name] > t) u2n[person->name] = t;
-			}
-		}
-		persist_status->save();
-		return "Done.";
-	}
 	last_used = time();
 	string user = person->user;
 	if (param != "" && G->G->user_mod_status[user + channel->name]) user = param - "@";
