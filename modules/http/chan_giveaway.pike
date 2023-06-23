@@ -583,9 +583,9 @@ void channel_on_off(string channel, int just_went_online)
 			//If we just went online/offline, reset to base cost (if there is one).
 			if (just_went_online != -1 && info->basecost) params->cost = info->basecost;
 			if (mixed ex = info->availability && catch {
-				write("Evaluating: %O\n", info->availability);
+				//write("Evaluating: %O\n", info->availability);
 				active = G->G->evaluate_expr(chan->expand_variables(info->availability, args));
-				write("Result: %O\n", active);
+				//write("Result: %O\n", active);
 				params->is_enabled = active ? Val.true : Val.false;
 			}) werror("ERROR ACTIVATING REWARD:\n%s\n", describe_backtrace(ex)); //TODO: Report to the streamer
 			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
