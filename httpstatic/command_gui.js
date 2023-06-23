@@ -1256,10 +1256,14 @@ function message_to_element(msg, new_elem, array_ok) {
 	if (Array.isArray(msg)) switch (msg.length) {
 		case 0: return ""; //Empty array is an empty message
 		case 1: return message_to_element(msg[0], new_elem, array_ok);
-		default:
+		default: {
+			if (array_ok) return msg.map(el => message_to_element(el, new_elem));
+			const group = new_elem({type: "group", message: []}); //Create the group itself before its children, so they're in the convenient order
 			msg = msg.map(el => message_to_element(el, new_elem));
-			if (array_ok) return msg;
-			return new_elem({type: "group", message: ensure_blank(msg)});
+			msg.forEach((e, i) => typeof e === "object" && (e.parent = [group, "message", i]));
+			group.message = ensure_blank(msg);
+			return group;
+		}
 	}
 	if (msg.dest && msg.dest.includes(" ") && !msg.target) {
 		//Legacy mode: dest is eg "/set varname" and target is unset
