@@ -231,6 +231,11 @@ class channel(string name) { //name begins with hash and is all lower case
 		}
 		//Otherwise, keep the string exactly as-is.
 		vars[var] = val;
+		if (val == "" && per_user) {
+			//Per-user variables don't need to store blank
+			m_delete(vars, var);
+			if (!sizeof(vars)) m_delete(fetcher("variables", name, "*"), (string)users[?user]);
+		}
 		if (ephemeral) return val; //Ephemeral variables are not pushed out to listeners.
 		//Notify those that depend on this. Note that an unadorned per-user variable is
 		//probably going to behave bizarrely in a monitor, so don't do that; use either
