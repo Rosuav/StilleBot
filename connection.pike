@@ -4,7 +4,7 @@ inherit annotated;
 
 string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
-object substitutions = Regexp.PCRE("(\\$[*A-Za-z0-9|]+\\$)|({[A-Za-z0-9_@|]+})");
+object substitutions = Regexp.PCRE("(\\$[*?A-Za-z0-9|]+\\$)|({[A-Za-z0-9_@|]+})");
 constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT", "USERSTATE"});
 mapping irc_connections = ([]); //Not persisted across code reloads, but will be repopulated (after checks) from the connection_cache.
 @retain: mapping channelcolor = ([]);
@@ -209,9 +209,9 @@ class channel(string name) { //name begins with hash and is all lower case
 
 	mapping(string:string) get_channel_variables(int|string|void uid) {
 		mapping vars = persist_status->path("variables")[name] || ([]);
-		return vars; //Per-user variables are now handled elsewhere.
-		//if (!uid || uid == "0" || !vars->users) return vars - (<"users">);
-		//return (vars - (<"users">)) | (vars->users[(string)uid] || ([]));
+		mapping ephemvars = G->G->variables[?name];
+		if (ephemvars) return vars | ephemvars;
+		return vars;
 	}
 
 	string set_variable(string var, string val, string action, mapping|void users)
@@ -219,9 +219,11 @@ class channel(string name) { //name begins with hash and is all lower case
 		//Per-user variable. If you try this without a user context, it will
 		//use uid 0 aka "root" which doesn't exist in Twitch.
 		int per_user = sscanf(var, "%s*%s", string user, var);
-		var = "$" + var + "$";
-		mapping vars = per_user ? persist_status->path("variables", name, "*", (string)users[?user])
-				: persist_status->path("variables", name);
+		int ephemeral = sscanf(var, "%s?", var);
+		var = "$" + var + "?" * ephemeral + "$";
+		function fetcher = ephemeral ? G_G_ : persist_status->path;
+		mapping vars = per_user ? fetcher("variables", name, "*", (string)users[?user])
+				: fetcher("variables", name);
 		if (action == "add") {
 			//Add to a variable, REXX-style (decimal digits in strings).
 			//Anything unparseable is considered to be zero.
@@ -229,6 +231,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		}
 		//Otherwise, keep the string exactly as-is.
 		vars[var] = val;
+		if (ephemeral) return val; //Ephemeral variables are not pushed out to listeners.
 		//Notify those that depend on this. Note that an unadorned per-user variable is
 		//probably going to behave bizarrely in a monitor, so don't do that; use either
 		//global variables or namespace to a particular user eg "$49497888*varname$".
@@ -457,7 +460,7 @@ class channel(string name) { //name begins with hash and is all lower case
 
 		//Variable management. Note that these are silent, so commands may want to pair
 		//these with public messages. (Silence is perfectly acceptable for triggers.)
-		if (dest == "/set" && sscanf(target, "%[*A-Za-z]", string var) && var && var != "")
+		if (dest == "/set" && sscanf(target, "%[*?A-Za-z]", string var) && var && var != "")
 		{
 			string val = set_variable(var, msg, destcfg, cfg->users);
 			//Variable names with asterisks are per-user (possibly this, possibly another),
