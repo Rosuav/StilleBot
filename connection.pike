@@ -437,7 +437,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		}
 		if (!msg) return; //If a message doesn't have an Otherwise, it'll end up null.
 
-		if (mappingp(msg)) {_send_recursive(person, message | (["conditional": 0]) | msg, vars, cfg); return;}
+		if (mappingp(msg)) {_send_recursive(person, (["conditional": 0]) | msg, vars, cfg); return;} //CJA 20230623: See other of this datemark.
 
 		if (arrayp(msg))
 		{
@@ -450,11 +450,17 @@ class channel(string name) { //name begins with hash and is all lower case
 				msg = msg[val];
 				vars["$" + varname + "$"] = set_variable(varname, (string)(val + 1), "", cfg->users);
 			} else {
+				//CJA 20230623: This previously kept all attributes from the current
+				//message except for conditional, and merged that with the message.
+				//Why? I don't understand what I was thinking at the time (see fbd850)
+				//and it's causing issues with a random that contains groups. If it is
+				//needed, it may be better to whitelist attributes to retain, rather
+				//than blacklisting those to remove.
 				foreach (msg, echoable_message m)
-					_send_recursive(person, message | (["conditional": 0, "message": m]), vars, cfg);
+					_send_recursive(person, m, vars, cfg);
 				return;
 			}
-			_send_recursive(person, message | (["conditional": 0, "message": msg]), vars, cfg);
+			_send_recursive(person, (["conditional": 0, "message": msg]), vars, cfg); //CJA 20230623: See other.
 			return;
 		}
 
@@ -478,11 +484,14 @@ class channel(string name) { //name begins with hash and is all lower case
 			//You know what the chain of command is? It's a chain that I get, and then
 			//I BREAK so that nobody else can ever be in command.
 			if (cfg->chaindepth) return; //For now, no chaining if already chaining - hard and fast rule.
-			//Note that cfg is completely independent in the chained-to command; the
-			//only value retained is the chaindepth itself. Everything else - voice
-			//selection, destination, etc - is reset to defaults as per the normal
-			//start of a command.
-			_send_recursive(person, cmd, vars | (["%s": destcfg]), (["chaindepth": cfg->chaindepth + 1]));
+			//Note that cfg is largely independent in the chained-to command; the
+			//only values retained are the chaindepth itself, and the "current user"
+			//(normally the one who invoked it). Everything else - voice selection,
+			//destination, etc - is reset to defaults as per the normal start of a
+			//command. This does mean that a "User Vars" with no keyword will carry,
+			//where one with a keyword won't. Unsure if this is good or bad.
+			_send_recursive(person, cmd, vars | (["%s": destcfg]),
+				(["users": (["": cfg->users[""]]), "chaindepth": cfg->chaindepth + 1]));
 			return;
 		}
 
