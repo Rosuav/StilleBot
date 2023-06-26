@@ -133,7 +133,9 @@ class channel(string name) { //name begins with hash and is all lower case
 		//The streamer counts as a mod. Everyone else has to speak in chat to
 		//show us the badge, after which we'll acknowledge mod status. (For a
 		//mod-only command, that's trivially easy; for web access, just "poke
-		//the bot" in chat first.)
+		//the bot" in chat first.) The helix/moderation/moderators endpoint
+		//might look like the perfect solution, but it requires broadcaster's
+		//permission, so it's not actually dependable.
 		G->G->user_mod_status[name[1..] + name] = 1; //eg "rosuav#rosuav" is trivially a mod.
 		if (config->userid) userid = config->userid;
 		else if (!has_prefix(name, "#!")) get_user_id(name[1..])->then() {config->userid = userid = __ARGS__[0];};
