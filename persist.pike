@@ -37,12 +37,19 @@ class Persist(string savefn, int flip_save)
 
 	//Dig deep into persist[] according to a path
 	//Returns a regular mapping, *not* something that autosaves.
-	mapping path(string ... parts)
-	{
+	mapping path(string ... parts) {
 		mapping ret = data;
-		foreach (parts, string idx)
-		{
+		foreach (parts, string idx) {
 			if (undefinedp(ret[idx])) {ret[idx] = ([]); save();}
+			ret = ret[idx];
+		}
+		return ret;
+	}
+	//Like path() but returns 0 if any non-mapping is found along the way
+	mapping has_path(string ... parts) {
+		mapping ret = data;
+		foreach (parts, string idx) {
+			if (!mappingp(ret[idx])) return UNDEFINED;
 			ret = ret[idx];
 		}
 		return ret;
