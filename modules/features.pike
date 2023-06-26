@@ -30,7 +30,7 @@ Feature name | Effect
 ", FEATURES);
 
 echoable_message process(object channel, mapping person, string param) {
-	if (!persist_config["channels"][channel->name[1..]]) return 0; //No channel, don't manage features
+	if (!persist_config->has_path("channels", channel->name[1..])) return 0; //No channel, don't manage features
 	mapping feat = persist_config->path("channels", channel->name[1..], "features");
 	sscanf(param, "%s %s", string feature, string active);
 	if (FEATUREDESC[param]) {feature = param; active = "";}

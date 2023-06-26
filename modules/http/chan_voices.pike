@@ -62,8 +62,8 @@ bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping vox = channel->config->voices || ([]);
 	if (id) return vox[id] && (vox[id] | (["scopes": persist_status->path("voices")[id]->?scopes || ({"chat_login"})]));
-	mapping bv = persist_config->path("channels")["!demo"]->?voices || ([]);
-	string defvoice = persist_config->path("channels")["!demo"]->?defvoice;
+	mapping bv = persist_config->has_path("channels", "!demo")->?voices || ([]);
+	string defvoice = persist_config->has_path("channels", "!demo")->?defvoice;
 	if (defvoice && bv[defvoice] && !vox[defvoice]) {
 		vox[defvoice] = bv[defvoice] | ([]);
 		persist_config->save();
@@ -114,7 +114,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 void websocket_cmd_activate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
-	mapping bv = persist_config->path("channels")["!demo"]->?voices[?msg->id];
+	mapping bv = persist_config->has_path("channels", "!demo", "voices", msg->id);
 	if (!bv) return;
 	//Activating a voice requires that you be either the voice itself, or the bot
 	//intrinsic voice (and also a mod, but without that you don't get a websocket).

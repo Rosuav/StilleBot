@@ -124,7 +124,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	mapping user_attrs = ([]); //Latest-seen user status (see gather_person_info). Not guaranteed fresh. Some parts will be message-specific.
 
 	protected void create() {
-		config = persist_config["channels"][name[1..]];
+		config = persist_config->path("channels", name[1..]);
 		if (config->chatlog)
 		{
 			if (!channelcolor[name]) {if (++G->G->nextcolor>7) G->G->nextcolor=1; channelcolor[name]=G->G->nextcolor;}
@@ -576,7 +576,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		if (!voice) {
 			//No voice has been selected (either explicitly or as the channel default).
 			//Use the bot's global default voice, or the intrinsic voice (implicitly zero).
-			voice = persist_config->path("channels")[?"!demo"]->?defvoice;
+			voice = persist_config->has_path("channels", "!demo")->?defvoice;
 			//Even if this voice hasn't been activated for this channel, that's fine - it is
 			//implicitly permitted for use by all channels.
 		}
@@ -1158,7 +1158,7 @@ protected void create(string name)
 	if (mapping irc = persist_config["ircsettings"])
 	{
 		bot_nick = irc->nick || "";
-		array voices = values(persist_config->path("channels")["!demo"]->?voices || ({ }));
+		array voices = values(persist_config->has_path("channels", "!demo", "voices") || ({ }));
 		sort((array(int))voices->id, voices);
 		foreach (voices; int i; mapping v) if (lower_case(v->name) == lower_case(bot_nick)) voices[i] = 0;
 		//Sharding temporarily disabled :( As of 20230515, this is a probable culprit in the "can't seem to

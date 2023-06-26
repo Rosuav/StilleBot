@@ -72,7 +72,7 @@ void autospam(string channel, string msg)
 	//If we defer, do we skip an entire execution? Nothing's perfect here, so for
 	//now, just keep it simple: repeated commands WILL repeat, no matter what.
 	if (!G->G->stream_online_since[channel[1..]]) return;
-	mapping cfg = persist_config["channels"][channel[1..]];
+	mapping cfg = persist_config->has_path("channels", channel[1..]);
 	if (!cfg) return; //Channel no longer configured
 	echoable_message response = G->G->echocommands[msg[1..] + channel];
 	int|array(int) mins = (mappingp(response) && response->automate) || cfg->autocommands[?msg];
@@ -146,7 +146,7 @@ echoable_message unrepeat(object channel, mapping person, string param)
 
 @hook_channel_online: int connected(string channel)
 {
-	mapping cfg = persist_config["channels"][channel];
+	mapping cfg = persist_config->has_path("channels", channel); if (!cfg) return;
 	if (cfg->autocommands) foreach (cfg->autocommands; string msg; int|array(int) mins)
 	{
 		string key = "#" + channel + " " + msg;
@@ -171,7 +171,7 @@ void check_autocommands()
 	{
 		//Clean up any from the autocommands table (not counting those from echocommands' automate attributes)
 		if (sscanf(key, "%s %s", string channel, string msg) == 2) {
-			mapping cfg = persist_config["channels"][channel[1..]];
+			mapping cfg = persist_config->has_path("channels", channel[1..]);
 			if (!cfg || !cfg->autocommands[?msg])
 				remove_call_out(m_delete(G->G->autocommands, key));
 		}

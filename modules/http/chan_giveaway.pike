@@ -223,7 +223,7 @@ void notify_websockets(string chan) {
 
 @hook_point_redemption:
 void redemption(string chan, string id, int(0..1) refund, mapping data) {
-	mapping cfg = persist_config["channels"][chan]; if (!cfg) return;
+	mapping cfg = persist_config->has_path("channels", chan); if (!cfg) return;
 	update_ticket_count(cfg, data, refund);
 	notify_websockets(chan);
 }
@@ -421,7 +421,7 @@ continue mapping|Concurrent.Future get_chan_state(object channel, string grp)
 
 mapping(string:mixed) autoclose = ([]);
 void open_close(string chan, int broadcaster_id, int want_open) {
-	mapping cfg = persist_config["channels"][chan] || ([]);
+	mapping cfg = persist_config->has_path("channels", chan) || ([]);
 	if (!cfg->giveaway) return; //No rewards, nothing to open/close
 	mapping status = persist_status->path("giveaways", chan);
 	string token = persist_status->path("bcaster_token")[chan];
@@ -473,7 +473,7 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	string chan = channel->name[1..];
-	mapping cfg = persist_config["channels"][chan] || ([]);
+	mapping cfg = persist_config->has_path("channels", chan) || ([]);
 	if (!cfg->giveaway) return 0; //No rewards, nothing to activate or anything
 	int broadcaster_id = yield(get_user_id(chan));
 	switch (msg->action) {
@@ -557,7 +557,7 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 //TODO: Migrate the dynamic reward management to pointsrewards, keeping the giveaway management here
 void channel_on_off(string channel, int just_went_online)
 {
-	mapping cfg = persist_config["channels"][channel];
+	mapping cfg = persist_config->path("channels", channel);
 	mapping dyn = cfg->dynamic_rewards || ([]);
 	mapping rewards = (cfg->giveaway && cfg->giveaway->rewards) || ([]);
 	if (!sizeof(dyn) && !sizeof(rewards)) return; //Nothing to do
