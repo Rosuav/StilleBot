@@ -207,3 +207,8 @@
   - Allow whispers to trigger commands in some per-channel way
     - Voice setting, "whispers invoke commands"???
     - Don't allow this for shared channels eg MustardMine. How?? How do we know the difference?
+* Convert persist_config->channels to use user IDs as keys instead of channel names
+  - Everything that looks this up should be safe now, using channel[*]->login instead
+  - connection.pike will need to be reworked to use the userid as fundamental
+  - window.pike will need to be rethought majorly
+    - Is it time to abandon the connection with Gypsum, which hasn't been updated much anyway?
