@@ -137,8 +137,17 @@ class channel(string name) { //name begins with hash and is all lower case
 		//might look like the perfect solution, but it requires broadcaster's
 		//permission, so it's not actually dependable.
 		G->G->user_mod_status[name[1..] + name] = 1; //eg "rosuav#rosuav" is trivially a mod.
-		if (config->userid) userid = config->userid;
-		else if (!has_prefix(name, "#!")) get_user_id(name[1..])->then() {config->userid = userid = __ARGS__[0];};
+		//TODO: Make the userid the fundamental, and have login/display_name both merely cached
+		if (config->userid) get_user_info(userid = config->userid)->then() {
+			config->login = __ARGS__[0]->login;
+			config->display_name = __ARGS__[0]->display_name;
+		};
+		else if (!has_prefix(name, "#!")) get_user_info(name[1..], "login")->then() {
+			config->userid = userid = (int)__ARGS__[0]->id;
+			config->login = __ARGS__[0]->login;
+			config->display_name = __ARGS__[0]->display_name;
+		};
+		else config->login = config->display_name = name[1..]; //User ID is zero for pseudo-channels
 		user_attrs = G_G_("channel_user_attrs", name);
 	}
 
