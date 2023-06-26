@@ -201,3 +201,9 @@
   prevent desynchronization, which is a subtle problem and hard to debug.
 * Block bad variable names (those with "$|{}") on the front end - on the back end, those
   characters will be silently stripped out.
+* Identify whispers better
+  - When a whisper comes in, be sure we know which voice received it
+  - Deprecate the !whisper pseudo-channel (or just remove if never documented)
+  - Allow whispers to trigger commands in some per-channel way
+    - Voice setting, "whispers invoke commands"???
+    - Don't allow this for shared channels eg MustardMine. How?? How do we know the difference?
