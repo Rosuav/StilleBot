@@ -118,7 +118,6 @@ string subtier(string plan) {
 class channel(string name) { //name begins with hash and is all lower case
 	string color;
 	mapping config = ([]);
-	string hosting;
 	int userid;
 	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream online.
 	mapping user_attrs = ([]); //Latest-seen user status (see gather_person_info). Not guaranteed fresh. Some parts will be message-specific.
@@ -687,29 +686,6 @@ class channel(string name) { //name begins with hash and is all lower case
 		{
 			case "NOTICE": case "USERNOTICE": switch (params->msg_id)
 			{
-				//Not happening any more now that hosts are gone.
-				case "host_on": if (sscanf(msg, "Now hosting %s.", string h) && h)
-				{
-					if (G->G->stream_online_since[name[1..]])
-					{
-						//Hosting when you're live is a raid. (It might not use the
-						//actual /raid command, but for our purposes, it counts.)
-						//This has a number of good uses. Firstly, a streamer can
-						//check this to see who hasn't been raided recently, and
-						//spread the love around; and secondly, a viewer can see
-						//which channel led to some other channel ("ohh, I met you
-						//when X raided you last week"). Other uses may also be
-						//possible. So it's in a flat file, easily greppable.
-						mapping info = G->G->channel_info[name[1..]];
-						int viewers = info ? info->viewer_count : -1;
-						Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s with %d\n",
-							Calendar.now()->format_time(), name[1..], h, viewers));
-						record_raid(0, name[1..], 0, h, 0, viewers);
-					}
-					hosting = h;
-				}
-				break;
-				case "host_off": case "host_target_went_offline": hosting = 0; break;
 				case "room_mods": if (sscanf(msg, "The moderators of this channel are: %s", string names) && names)
 				{
 					//Response to a "/mods" command. Not sure if we still need this, but whatever.

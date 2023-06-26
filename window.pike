@@ -971,10 +971,7 @@ class _mainwindow
 		if (string kwd = selecteditem())
 		{
 			int t = channel_uptime(kwd);
-			string host = "";
-			if (object chan = G->G->irc->channels["#" + kwd])
-				if (chan->hosting) host = "Hosting: " + chan->hosting;
-			win->uptime->set_text(t ? describe_time(t) : host);
+			win->uptime->set_text(t ? describe_time(t) : "");
 		}
 	}
 	void delete_content(string kwd,mapping(string:mixed) info) {function_object(send_message)->reconnect();}
