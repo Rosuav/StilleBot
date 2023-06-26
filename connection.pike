@@ -1098,6 +1098,7 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 //be coded in properly (to allow !demo to still have some example voices).
 array(mapping) shard_voices = ({0});
 void reconnect() {
+	//TODO: When persist_config->channels changes to using userid keys, update this majorly.
 	array channels = indices(persist_config["channels"] || ([]));
 	sort(channels); //Default to sorting affabeck
 	if (sizeof(channels)) sort(-persist_config["channels"][channels[*]]->connprio[*], channels);

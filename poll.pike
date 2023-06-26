@@ -326,8 +326,10 @@ void streaminfo(array data)
 	mapping channels = ([]);
 	foreach (data, mapping chan) channels[lower_case(chan->user_login)] = chan;
 	//Now we check over our own list of channels. Anything absent is assumed offline.
-	foreach (indices(persist_config["channels"]), string chan) if (chan[0] != '!')
-		stream_status(chan, channels[chan]);
+	foreach (persist_config["channels"];; mapping cfg) {
+		string chan = cfg->login;
+		if (chan[0] != '!') stream_status(chan, channels[chan]);
+	}
 }
 
 continue Concurrent.Future cache_game_names(string game_id)
@@ -458,10 +460,10 @@ void stream_status(string name, mapping info)
 				{
 					//Migrate from old persist
 					status = ([]);
-					foreach (persist_config["channels"]; string name; mapping chan)
+					foreach (persist_config["channels"];; mapping chan)
 					{
 						array stats = m_delete(chan, "stream_stats");
-						if (stats) status[name] = stats;
+						if (stats) status[chan->login] = stats;
 					}
 					persist_status["stream_stats"] = status;
 					persist_config->save();
@@ -667,9 +669,10 @@ void check_hooks(array eventhooks)
 		persist_status->save();
 	}
 
-	foreach (persist_config["channels"] || ([]); string chan; mapping cfg)
+	foreach (persist_config["channels"] || ([]);; mapping cfg)
 	{
 		if (!cfg->active) continue;
+		string chan = cfg->login;
 		mapping c = channel_info[chan];
 		int userid = c->?_id;
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses pseudo-channels.)
@@ -685,7 +688,7 @@ void check_hooks(array eventhooks)
 void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //Maybe make the poll interval customizable?
-	array chan = indices(persist_config["channels"] || ({ }));
+	array chan = values(persist_config["channels"] || ({ }))->login;
 	chan = filter(chan) {return __ARGS__[0][0] != '!';};
 	if (!sizeof(chan)) return; //Nothing to check.
 	//Prune any "channel online" statuses for channels we don't track any more
@@ -727,7 +730,7 @@ protected void create(string|void name)
 		//meant active and (presumably) not allcmds. Now, active is independent of
 		//allcmds, so it needs to be migrated (but only once - don't have allcmds
 		//permanently imply active, as that would be v confusing).
-		foreach (persist_config["channels"] || ([]); string chan; mapping cfg) {
+		foreach (persist_config["channels"] || ([]);; mapping cfg) {
 			if (m_delete(cfg, "httponly") || cfg->allcmds) cfg->active = 1;
 		}
 		persist_config["allcmds_migrated"] = 1;

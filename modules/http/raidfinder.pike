@@ -324,8 +324,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//Like specifying login= for each of the channels that I bot for
 			//Note that this excludes connected but not active (monitor-only) channels.
 			args->user_login = ({ });
-			foreach (persist_config->path("channels"); string chan; mapping info)
-				if (chan[0] != '!') args->user_login += ({chan});
+			foreach (persist_config->path("channels");; mapping info)
+				if (info->login && info->login[0] != '!') args->user_login += ({info->login});
 			title = "This bot's channels";
 		}
 		else if (req->variables->login) {

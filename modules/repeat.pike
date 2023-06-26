@@ -177,8 +177,8 @@ void check_autocommands()
 		}
 	}
 	//Next, look for any that need to be started.
-	foreach (persist_config["channels"]; string channel; mapping cfg)
-		if (G->G->stream_online_since[channel]) connected(channel);
+	foreach (persist_config["channels"];; mapping cfg) if (cfg->login)
+		if (G->G->stream_online_since[cfg->login]) connected(cfg->login);
 }
 
 protected void create(string name)

@@ -283,7 +283,8 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 
 protected void create(string name) {
 	::create(name);
-	foreach (persist_config->path("channels"); string chan; mapping cfg) {
+	foreach (persist_config->path("channels");; mapping cfg) {
+		string chan = cfg->login; if (!chan) continue;
 		if (!pointsrewards[chan]) {
 			string scopes = persist_status->path("bcaster_token_scopes")[chan] || "";
 			if (has_value(scopes / " ", "channel:manage:redemptions")
