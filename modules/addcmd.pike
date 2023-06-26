@@ -149,7 +149,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 	//Purge any iteration variables that begin with ".basename:" - anonymous rotations restart on
 	//any edit. This ensures that none of the anonymous ones hang around. Named ones are regular
 	//variables, though, and might be shared, so we don't delete those.
-	mapping vars = persist_status->path("variables")["#" + chan];
+	mapping vars = persist_status->has_path("variables", "#" + chan);
 	string remove = "$." + basename + ":";
 	if (vars) foreach (indices(vars), string v) if (has_prefix(v, remove)) {
 		m_delete(vars, v);

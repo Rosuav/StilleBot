@@ -639,9 +639,8 @@ void ensure_host_connection(string chan) {
 void ensure_tts_credentials() {
 	//Check if any connected account uses TTS
 	int need_tts = 0;
-	mapping master = persist_status->path("alertbox");
 	foreach (G->G->irc->channels; string name; object channel) {
-		mapping cfg = master[(string)channel->userid] || ([]);
+		mapping cfg = persist_status->has_path("alertbox", (string)channel->userid) || ([]);
 		if (!cfg->uses_tts) continue;
 		//If you're using the renderer front end, or the editing control panel,
 		//ensure that TTS is available (so that test alerts work). Note that
@@ -1313,7 +1312,7 @@ constant command_suggestions = ([]); //This isn't something that you'd create a 
 //Attempt to send an alert. Returns 1 if alert sent, 0 if not (eg if alert disabled).
 //Note that the actual sending of the alert is asynchronous, esp if TTS is used.
 int(1bit) send_alert(object channel, string alerttype, mapping args) {
-	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
+	mapping cfg = persist_status->has_path("alertbox", (string)channel->userid);
 	if (!cfg->?authkey) return 0;
 	int suppress_alert = 0;
 	mapping alert = cfg->alertconfigs[?alerttype]; if (!alert) return 0; //No alert means it can't possibly fire
@@ -1455,7 +1454,7 @@ multiset subbomb_ids = (<>);
 
 @hook_subscription:
 void subscription(object channel, string type, mapping person, string tier, int qty, mapping extra, string|void msg) {
-	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
+	mapping cfg = persist_status->has_path("alertbox", (string)channel->userid);
 	if (!cfg->?authkey) return;
 	int months = (int)extra->msg_param_cumulative_months || 1;
 	//If this channel has a subbomb alert variant, the follow-up sub messages will be skipped.
@@ -1481,7 +1480,7 @@ void subscription(object channel, string type, mapping person, string tier, int 
 
 @hook_cheer:
 void cheer(object channel, mapping person, int bits, mapping extra, string msg) {
-	mapping cfg = persist_status->path("alertbox")[(string)channel->userid];
+	mapping cfg = persist_status->has_path("alertbox", (string)channel->userid);
 	if (!cfg->?authkey) return;
 	send_alert(channel, "cheer", ([
 		"username": person->displayname,

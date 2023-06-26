@@ -244,7 +244,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//annotation. For notes attached to a channel, that channel's ID is
 	//used; other forms of notes are attached to specific keywords. In a
 	//previous iteration of this, notes ID 0 was used for "highlight".
-	mapping notes = persist_status->path("raidnotes")[(string)logged_in->?id] || ([]);
+	mapping notes = persist_status->has_path("raidnotes", (string)logged_in->?id) || ([]);
 	array highlightids = ({ });
 	if (notes["0"]) notes->highlight = m_delete(notes, "0"); //Migrate
 	if (notes->highlight) highlightids = (array(int))(notes->highlight / "\n");
@@ -345,7 +345,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//uses the list of all_casters.
 			string owner = req->variables->train;
 			if (!(int)owner) owner = (string)yield(get_user_id(owner));
-			mapping trncfg = persist_status->path("raidtrain")[owner]->?cfg;
+			mapping trncfg = persist_status->has_path("raidtrain", owner, "cfg");
 			array casters = trncfg->?all_casters;
 			if (!casters) return "No such raid train - check the link and try again";
 			args->user_id = (array(string))casters;

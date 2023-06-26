@@ -207,7 +207,7 @@ array tickets_in_order(string chan) {
 
 //Send an update based on cached data rather than forcing a full recalc every time
 void notify_websockets(string chan) {
-	mapping status = persist_status->path("giveaways")[chan] || ([]);
+	mapping status = persist_status->has_path("giveaways", chan) || ([]);
 	send_updates_all("control#" + chan, ([
 		"tickets": tickets_in_order(chan),
 		"last_opened": status->last_opened, "last_closed": status->last_closed,
@@ -386,7 +386,7 @@ bool need_mod(string grp) {return grp == "control";}
 continue mapping|Concurrent.Future get_chan_state(object channel, string grp)
 {
 	string chan = channel->name[1..];
-	mapping status = persist_status->path("giveaways")[chan] || ([]);
+	mapping status = persist_status->has_path("giveaways", chan) || ([]);
 	if (grp == "view") return ([
 		"title": channel->config->giveaway->?title,
 		"is_open": status->is_open, "end_time": status->end_time,

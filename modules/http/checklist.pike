@@ -140,7 +140,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	if (req->variables->showcase) {
 		//?showcase=49497888 to see Rosuav's emotes
 		//Only if permission granted.
-		v2_have = persist_status->path("seen_emotes")[req->variables->showcase] || ([]);
+		v2_have = persist_status->has_path("seen_emotes", req->variables->showcase) || ([]);
 		if (!v2_have->_allow_showcase) v2_have = ([]);
 		else title = "Emote showcase for " + v2_have->_allow_showcase;
 	}
@@ -150,7 +150,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>\n\n"
 			"[Check for newly-unlocked emotes](:#echolocate) [Enable showcase](:#toggleshowcase)\n\n"
 			"[Show off your emotes here](checklist?showcase=" + req->misc->session->?user->?id + ")";
-		v2_have = persist_status->path("seen_emotes")[(string)req->misc->session->?user->?id] || ([]);
+		v2_have = persist_status->path("seen_emotes", (string)req->misc->session->?user->?id) || ([]);
 	}
 	else login_link += "\n\n<input type=checkbox id=showall style=\"display:none\" checked>"; //Hack: Show all if not logged in
 	mapping have_emotes = ([]);
@@ -177,7 +177,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {if (msg->group != conn->session->?user->?id) return "Not you";}
 mapping get_state(string group) {
-	return (["emotes": indices(persist_status->path("seen_emotes")[group] || ([]))]);
+	return (["emotes": indices(persist_status->has_path("seen_emotes", group) || ([]))]);
 }
 
 continue Concurrent.Future echolocate(string user, string pass, array emotes) {
@@ -206,7 +206,7 @@ void websocket_cmd_toggleshowcase(mapping(string:mixed) conn, mapping(string:mix
 int message(object channel, mapping person, string msg) {
 	if (!person->uid || !person->emotes || (!sizeof(person->emotes) && channel->name != echolocation_channel)) return 0;
 	mapping v2 = G->G->emotes_v2;
-	mapping seen = persist_status->path("seen_emotes")[(string)person->uid];
+	mapping seen = persist_status->has_path("seen_emotes", (string)person->uid);
 	mapping botemotes = person->uid == G->G->bot_uid && persist_status->path("bot_emotes");
 	int changed = 0, now = time();
 	foreach (person->emotes, [string id, int start, int end]) {

@@ -124,7 +124,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!stringp(msg->group)) return "Bad group";
 	sscanf(msg->group, "%s#%s", string subgroup, string chan);
 	if (subgroup == "") return ::websocket_validate(conn, msg);
-	string key = persist_status->path("channel_labels")[chan]->?accesskey;
+	string key = persist_status->has_path("channel_labels", chan)->?accesskey;
 	if (subgroup != key) return "Bad key";
 	msg->group = "#" + chan; //effectively, subgroup becomes blank
 }

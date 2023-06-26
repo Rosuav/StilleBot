@@ -220,7 +220,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	}
 
 	mapping(string:string) get_channel_variables(int|string|void uid) {
-		mapping vars = persist_status->path("variables")[name] || ([]);
+		mapping vars = persist_status->has_path("variables", name) || ([]);
 		mapping ephemvars = G->G->variables[?name];
 		if (ephemvars) return vars | ephemvars;
 		return vars;

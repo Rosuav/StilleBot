@@ -31,7 +31,7 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 		//we have stored, and if it matches, fire all the signals.
 		mapping data = Standards.JSON.decode_utf8(req->variables->data); //If malformed, will bomb and send back a 500.
 		if (!mappingp(data)) return (["error": 400, "type": "text/plain", "data": "No data mapping given"]);
-		mapping cfg = persist_status->path("kofi")[req->misc->channel->name[1..]];
+		mapping cfg = persist_status->has_path("kofi", req->misc->channel->name[1..]);
 		if (!stringp(data->verification_token) || cfg->?verification_token != data->verification_token)
 			//Note that, if we don't have a token on file, it's guaranteed to be a bad
 			//token. This means that any mis-sent POST requests that happen to have a

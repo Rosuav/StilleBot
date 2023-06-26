@@ -79,7 +79,7 @@ void add_score(mapping monthly, mapping sub) {
 }
 
 continue Concurrent.Future force_recalc(string chan, int|void fast) {
-	mapping stats = persist_status->path("subgiftstats")[chan];
+	mapping stats = persist_status->has_path("subgiftstats", chan);
 	if (!stats->?active) return 0;
 	if (!fast || !stats->monthly) {
 		stats->monthly = ([]);
@@ -129,7 +129,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (string scopes = ensure_bcaster_token(req, "bits:read moderation:read channel:manage:vips"))
 		buttons = sprintf("[Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
 	else if (!req->misc->is_mod) {
-		if (persist_status->path("subgiftstats")[req->misc->channel->name[1..]]->?private_leaderboard) {
+		if (persist_status->has_path("subgiftstats", req->misc->channel->name[1..])->?private_leaderboard) {
 			group = 0; //Empty string gives read-only access, null gives no socket (more efficient than one that gives no info)
 			buttons = "*This leaderboard is private and viewable only by the moderators.*";
 		} else {
@@ -236,7 +236,7 @@ continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type != "subgift" && type != "subbomb") return 0; 
 	if (extra->came_from_subbomb) return 0;
-	mapping stats = persist_status->path("subgiftstats")[channel->name[1..]];
+	mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
 	if (!stats->?active) return 0;
 
 	int months = (int)extra->msg_param_gift_months;
@@ -262,7 +262,7 @@ int subscription(object channel, string type, mapping person, string tier, int q
 
 @hook_cheer:
 int cheer(object channel, mapping person, int bits, mapping extra) {
-	mapping stats = persist_status->path("subgiftstats")[channel->name[1..]];
+	mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
 	if (!stats->?active) return 0;
 	call_out(spawn_task, 1, force_recalc(channel->name[1..], 1)); //Wait a second, then do a fast update (is that enough time?)
 }

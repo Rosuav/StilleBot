@@ -32,7 +32,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string fil
 	//Support a small number of subdirectory names
 	if (sscanf(filename, "%s-%s", string pfx, filename) && upload_dirs[pfx] &&
 			filename && filename != "" && !has_prefix(filename, ".")) {
-		mapping meta = persist_status->path(pfx + "_metadata")[filename];
+		mapping meta = persist_status->has_path(pfx + "_metadata", filename);
 		if (!meta) return (["error": 404, "data": "Not found"]); //It's possible that the file exists but has no metadata, but more likely it just doesn't.
 		dir = "httpstatic/" + upload_dirs[pfx];
 		type = meta->mimetype;

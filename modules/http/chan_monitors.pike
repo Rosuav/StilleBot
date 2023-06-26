@@ -37,7 +37,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			if (body->type == "goalbar") {
 				//Hack: Create a new variable for a new goal bar.
 				if (!body->varname) {
-					mapping vars = persist_status->path("variables")[req->misc->channel->name] || ([]);
+					mapping vars = persist_status->has_path("variables", req->misc->channel->name) || ([]);
 					void tryvar(string v) {if (!vars["$"+v+"$"]) body->varname = v;}
 					for (int i = 0; i < 26 && !body->varname; ++i) tryvar(sprintf("goalbar%c", 'A' + i));
 					for (int i = 0; i < 26*26 && !body->varname; ++i) tryvar(sprintf("goalbar%c%c", 'A' + i / 26, 'A' + i % 26));
@@ -108,7 +108,7 @@ void websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "") return;
-	mapping vars = persist_status->path("variables")[channel->name] || ([]);
+	mapping vars = persist_status->has_path("variables", channel->name) || ([]);
 	string prev = vars["$" + msg->varname + "$"];
 	if (!prev) return;
 	channel->set_variable(msg->varname, (string)(int)msg->val, "set");

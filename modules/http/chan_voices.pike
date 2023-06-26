@@ -61,7 +61,7 @@ bool need_mod(string grp) {return 1;}
 
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping vox = channel->config->voices || ([]);
-	if (id) return vox[id] && (vox[id] | (["scopes": persist_status->path("voices")[id]->?scopes || ({"chat_login"})]));
+	if (id) return vox[id] && (vox[id] | (["scopes": persist_status->has_path("voices", id)->?scopes || ({"chat_login"})]));
 	mapping bv = persist_config->has_path("channels", "!demo")->?voices || ([]);
 	string defvoice = persist_config->has_path("channels", "!demo")->?defvoice;
 	if (defvoice && bv[defvoice] && !vox[defvoice]) {
@@ -142,7 +142,7 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	if (!channel) return;
 	//TODO: Merge in scopes from broadcaster auth???
 	multiset scopes = (multiset)(msg->scopes || ({ }));
-	if (mapping tok = persist_status->path("voices")[msg->voiceid]) {
+	if (mapping tok = persist_status->has_path("voices", msg->voiceid)) {
 		//Merge in pre-existing scopes. If they're not recorded, assume that we had the ones we used to request.
 		array have = tok->scopes || ({"chat_login", "user_read", "whispers:edit", "user_subscriptions", "user:manage:whispers"});
 		scopes |= (multiset)have;

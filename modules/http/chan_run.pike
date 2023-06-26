@@ -10,7 +10,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body) || !stringp(body->var) || undefinedp(body->val)) return (["error": 400]);
 		object chan = req->misc->channel;
-		mapping vars = persist_status->path("variables")[chan->name] || ([]);
+		mapping vars = persist_status->has_path("variables", chan->name) || ([]);
 		//Forbid changing a variable that doesn't exist. This saves us the
 		//trouble of making sure that it's a valid variable name too.
 		string prev = vars["$" + body->var + "$"];
