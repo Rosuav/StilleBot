@@ -146,7 +146,7 @@ echoable_message unrepeat(object channel, mapping person, string param)
 
 @hook_channel_online: int connected(string channel)
 {
-	mapping cfg = persist_config->has_path("channels", channel); if (!cfg) return;
+	mapping cfg = persist_config->has_path("channels", channel); if (!cfg) return 0;
 	if (cfg->autocommands) foreach (cfg->autocommands; string msg; int|array(int) mins)
 	{
 		string key = "#" + channel + " " + msg;
