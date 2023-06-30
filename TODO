@@ -203,10 +203,10 @@
   characters will be silently stripped out.
 * Identify whispers better
   - When a whisper comes in, be sure we know which voice received it
-  - Deprecate the !whisper pseudo-channel (or just remove if never documented)
   - Allow whispers to trigger commands in some per-channel way
-    - Voice setting, "whispers invoke commands"???
-    - Don't allow this for shared channels eg MustardMine. How?? How do we know the difference?
+    - Channel config->whispers_as_commands - no current way to set it
+    - What about secondary voices? For example, whispering CandiCat could execute commands
+      in #devicat and then whisper the response from CandiCat.
 * Convert persist_config->channels to use user IDs as keys instead of channel names
   - Everything that looks this up should be safe now, using channel[*]->login instead
   - connection.pike will need to be reworked to use the userid as fundamental

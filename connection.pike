@@ -874,14 +874,15 @@ class channel(string name) { //name begins with hash and is all lower case
 					//test alerts etc. Note that "fakecheer-100" can also be done, if that
 					//is ever useful to your testing. It may confuse things though!
 					params->bits = (string)bits;
-				handle_command(person, msg, responsedefaults, params);
+				if (type != "WHISPER" || config->whispers_as_commands) //Whispers aren't normally counted as commands
+					handle_command(person, msg, responsedefaults, params);
 				if (params->bits && (int)params->bits) {
 					runhooks("cheer", 0, this, person, (int)params->bits, params);
 					event_notify("cheer", this, person, (int)params->bits, params, msg);
 					trigger_special("!cheer", person, (["{bits}": params->bits, "{msg}": msg, "{msgid}": params->id || ""]));
 				}
 				msg = person->displayname + (person->is_action_msg ? " " : ": ") + msg;
-				string pfx=sprintf("[%s] ", name);
+				string pfx = sprintf("[%s%s] ", type == "PRIVMSG" ? "" : type, name);
 				#ifdef __NT__
 				int wid = 80 - sizeof(pfx);
 				#else
@@ -938,7 +939,7 @@ class channel(string name) { //name begins with hash and is all lower case
 }
 
 void irc_message(string type, string chan, string msg, mapping attrs) {
-	object channel = G->G->irc->channels[type == "WHISPER" ? "#!whisper" : chan];
+	object channel = G->G->irc->channels[chan];
 	if (channel) channel->irc_message(type, chan, msg, attrs);
 }
 
