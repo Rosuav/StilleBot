@@ -86,51 +86,6 @@ class confirm
 	}
 }
 
-//Exactly the same as a GTK2.TextView but with additional methods for GTK2.Entry compatibility.
-//Do not provide a buffer; create this with no args, and if you need access to the buffer, call
-//obj->get_buffer() separately. NOTE: This does not automatically scroll (a GTK2.Entry does). If
-//you need scrolling, place this inside a GTK2.ScrolledWindow.
-class MultiLineEntryField
-{
-	#if constant(GTK2.SourceView)
-	inherit GTK2.SourceView;
-	#else
-	inherit GTK2.TextView;
-	#endif
-	this_program set_text(mixed ... args)
-	{
-		object buf=get_buffer();
-		buf->begin_user_action(); //Permit undo of the set_text operation
-		buf->set_text(@args);
-		buf->end_user_action();
-		return this;
-	}
-	string get_text()
-	{
-		object buf=get_buffer();
-		return buf->get_text(buf->get_start_iter(),buf->get_end_iter(),0);
-	}
-	this_program set_position(int pos)
-	{
-		object buf=get_buffer();
-		buf->place_cursor(buf->get_iter_at_offset(pos));
-		return this;
-	}
-	int get_position()
-	{
-		object buf=get_buffer();
-		return buf->get_iter_at_mark(buf->get_insert())->get_offset();
-	}
-	this_program set_visibility(int state)
-	{
-		#if !constant(COMPAT_NOPASSWD)
-		object buf=get_buffer();
-		(state?buf->remove_tag_by_name:buf->apply_tag_by_name)("password", buf->get_start_iter(), buf->get_end_iter());
-		#endif
-		return this;
-	}
-}
-
 //GTK2.ComboBox designed for text strings. Has set_text() and get_text() methods.
 //Should be able to be used like an Entry.
 class SelectBox(array(string) strings)
@@ -612,7 +567,7 @@ class configdlg
 				case "+": //Multi-line text
 					win->real_strings += ({name});
 					objects += ({GTK2.Frame(lbl)->add(
-						win[name]=MultiLineEntryField()->set_wrap_mode(GTK2.WRAP_WORD_CHAR)->set_size_request(225,70)
+						win[name]=GTK2.Entry()
 					),0});
 					break;
 				case "'": //Descriptive text
@@ -650,46 +605,9 @@ class configdlg
 		return objects;
 	}
 
-	//Iterates over labels, applying them to controls in this order:
-	//1) win->kwd, if allow_rename is not zeroed
-	//2) strings, creating Entry()
-	//3) ints, ditto
-	//4) bools, creating CheckButton()
-	//5) strings, if marked to create MultiLineEntryField()
-	//6) Descriptive text underneath
-	//Not yet supported: Anything custom, eg insertion or reordering;
-	//any other widget types eg SelectBox.
 	array(string) migrate_elements()
 	{
-		array stuff = ({ });
-		array atend = ({ });
-		Iterator lbl = get_iterator(labels);
-		if (!lbl) return stuff;
-		if (allow_rename)
-		{
-			stuff += ({"kwd:"+lbl->value()});
-			if (!lbl->next()) return stuff;
-		}
-		foreach (strings+ints, string name)
-		{
-			string desc=lbl->value();
-			if (desc[0]=='\n') //Hack: Multiline fields get shoved to the end. Hack is not needed if elements[] is used instead - this is recommended.
-				atend += ({sprintf("+%s:%s",name,desc[1..])});
-			else
-				stuff += ({sprintf("%s:%s",name,desc)});
-			if (!lbl->next()) return stuff+atend;
-		}
-		foreach (bools, string name)
-		{
-			stuff += ({sprintf("?%s:%s",name,lbl->value())});
-			if (!lbl->next()) return stuff+atend;
-		}
-		stuff += atend; //Now grab any multiline string fields
-		//Finally, consume the remaining entries making text. There'll most
-		//likely be zero or one of them.
-		foreach (lbl;;string text)
-			stuff += ({"'"+text});
-		return stuff;
+		return ({ });
 	}
 
 	//Create and return a widget (most likely a layout widget) representing all the custom content.
@@ -810,7 +728,7 @@ class _mainwindow
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
 	constant elements=({"kwd:Channel", "?chatlog:Log chat to console",
 		"#connprio:Connection priority",
-		"+notes:Notes",
+		"notes:Notes",
 	});
 	constant persist_key = "channels";
 	constant is_subwindow = 0;
