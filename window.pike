@@ -809,8 +809,6 @@ class _mainwindow
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
 	constant elements=({"kwd:Channel", "?chatlog:Log chat to console",
-		"Timezone", "'Scheduled commands (!repeat) will use this timezone", //And so might other things in the future
-		"'uptime:",
 		"#connprio:Connection priority",
 		"+notes:Notes",
 	});
@@ -898,14 +896,6 @@ class _mainwindow
 	{
 		string kwd = win->kwd->get_text();
 		if (!G->G->irc->channels["#" + kwd]) function_object(send_message)->reconnect();
-	}
-	void load_content(mapping(string:mixed) info)
-	{
-		if (string kwd = selecteditem())
-		{
-			int t = channel_uptime(kwd);
-			win->uptime->set_text(t ? describe_time(t) : "");
-		}
 	}
 	void delete_content(string kwd,mapping(string:mixed) info) {function_object(send_message)->reconnect();}
 
