@@ -808,8 +808,7 @@ class _mainwindow
 {
 	inherit configdlg;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
-	constant elements=({"kwd:Channel", "?allcmds:Commands default to active",
-		"?chatlog:Log chat to console",
+	constant elements=({"kwd:Channel", "?chatlog:Log chat to console",
 		"Timezone", "'Scheduled commands (!repeat) will use this timezone", //And so might other things in the future
 		"'uptime:",
 		"#connprio:Connection priority",

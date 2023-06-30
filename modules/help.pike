@@ -47,7 +47,7 @@ echoable_message process(object channel, mapping person, string param)
 				//Those with their own flags use those. Otherwise assume all defaults.
 				mappingp(handler) ? handler : ([]);
 			if (flags->hidden_command || flags->visibility == "hidden") continue;
-			if (flags->featurename && (channel->config->features[?flags->featurename] || channel->config->allcmds) <= 0) return 0;
+			if (flags->featurename && !channel->config->features[?flags->featurename]) return 0;
 			if ((flags->require_moderator || flags->access == "mod") && !is_mod) continue;
 			if (flags->access == "none") continue;
 			if (has_prefix(cmd, "!")) continue; //Special responses aren't commands

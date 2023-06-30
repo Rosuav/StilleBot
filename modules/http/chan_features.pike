@@ -54,8 +54,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		mapping ret = ([]);
 		foreach ("autoban autocommands dynamic_rewards giveaway monitors quotes timezone vlcblocks" / " ", string key)
 			if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
-		if (cfg->allcmds) ret->active = "all"; //TODO: Figure out better keywords for these
-		else ret->active = "httponly";
 		mapping commands = ([]), specials = ([]);
 		string chan = channel->name[1..];
 		foreach (G->G->echocommands; string cmd; echoable_message response) {
@@ -89,29 +87,29 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
-mapping _get_item(string id, int dflt, mapping feat) {
+mapping _get_item(string id, mapping feat) {
 	array FEATUREDESC = function_object(G->G->commands->features)->FEATUREDESC;
 	if (!FEATUREDESC[id]) return 0;
 	return ([
 		"id": id, "desc": FEATUREDESC[id],
-		"state": ({"default", "active", "inactive"})[feat[id] || dflt],
+		"state": feat[id] ? "active" : "inactive",
 	]);
 }
 
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping feat = persist_config->path("channels", channel->name[1..], "features");
-	if (id) return _get_item(id, channel->config->allcmds || -1, feat);
+	if (id) return _get_item(id, feat);
 	mapping enableables = ([]);
 	foreach (G->G->enableable_modules; string name; object mod) {
 		foreach (mod->ENABLEABLE_FEATURES; string kwd; mapping info) {
 			enableables[kwd] = info | (["module": name, "manageable": mod->can_manage_feature(channel, kwd)]);
 		}
 	}
-	array features = function_object(G->G->commands->features)->FEATURES[1..][*][0]; //List of configurable feature IDs. May need other filtering in the future??
+	array features = function_object(G->G->commands->features)->FEATURES[*][0]; //List of configurable feature IDs. May need other filtering in the future??
 	string timezone = channel->config->timezone;
 	if (!timezone || timezone == "") timezone = "UTC";
-	return (["items": _get_item(features[*], channel->config->allcmds || -1, feat),
+	return (["items": _get_item(features[*], feat),
 		"timezone": timezone,
 		"flags": ([]), //Not currently in use, but maybe worth using in the future. Front end support is still all there.
 		"enableables": enableables,
@@ -122,18 +120,9 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping feat = channel->config->features; if (!feat) feat = channel->config->features = ([]);
 	array FEATUREDESC = function_object(G->G->commands->features)->FEATUREDESC;
 	if (!FEATUREDESC[msg->id]) return;
-	if (msg->id == "allcmds") {
-		//The allcmds setting goes into global settings, not features. This is undocumented
-		//but still available; for the most part, it's easier to just set features one by one.
-		channel->config->allcmds = msg->state == "active";
-		persist_config->save();
-		send_updates_all(conn->group);
-		send_updates_all("view" + channel->name);
-	}
 	switch (msg->state) {
 		case "active": feat[msg->id] = 1; break;
-		case "inactive": feat[msg->id] = -1; break;
-		case "default": m_delete(feat, msg->id); break; //Undocumented but still available if needed
+		case "inactive": m_delete(feat, msg->id); break;
 		default: return;
 	}
 	persist_config->save();

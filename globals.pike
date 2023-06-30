@@ -40,7 +40,7 @@ class command
 	//to a 0, as echocommands will normally use 0 for the defaults.
 	constant access = "any"; //Set to "mod" for mod-only, "vip" for VIPs and mods, or "none" for disabled/internal-only commands (more useful for echo commands)
 	constant visibility = "visible"; //Set to "hidden" to suppress the command from !help (or set hidden_command to 1, deprecated alternative)
-	constant featurename = "allcmds"; //Set to a feature flag to allow this command to be governed by !features (not usually appropriate for echocommands)
+	constant featurename = "unknown"; //Set to a feature flag to allow this command to be governed by !features (not usually appropriate for echocommands)
 	constant active_channels = ({ }); //Deprecated. Instead of setting this, design a builtin and create per-channel commands. Still functional though.
 	constant docstring = ""; //Override this with your docs
 	//Override this to do the command's actual functionality, after permission checks.
@@ -54,7 +54,7 @@ class command
 	//commands, and they'll get caught here. This makes !help less helpful.
 	echoable_message check_perms(object channel, mapping person, string param)
 	{
-		if (featurename && (channel->config->features[?featurename] || channel->config->allcmds) <= 0) return 0;
+		if (featurename && !channel->config->features[?featurename]) return 0;
 		if ((require_moderator || access == "mod") && !G->G->user_mod_status[person->user + channel->name]) return 0;
 		if (access == "vip" && !G->G->user_mod_status[person->user + channel->name] && !person->badges->?vip) return 0;
 		if (access == "none") return 0;
@@ -75,7 +75,7 @@ class command
 		{
 			string content = string_to_utf8(sprintf(_COMMAND_DOCS, name, summary,
 				require_moderator ? "mods only" : (["mod": "mods only", "vip": "mods/VIPs", "any": "all users", "none": "nobody (internal only)"])[access],
-				featurename && featurename != "allcmds" ? "\nPart of manageable feature: " + featurename + "\n" : "", //TODO: Grab the description from modules/features.pike?
+				featurename && featurename != "unknown" ? "\nPart of manageable feature: " + featurename + "\n" : "", //TODO: Grab the description from modules/features.pike?
 				main));
 			string fn = sprintf("commands/%s.md", name);
 			string oldcontent = Stdio.read_file(fn);
@@ -128,7 +128,7 @@ command_handler find_command(object channel, string cmd, int is_mod, int|void is
 		command_handler f = G->G->commands[tryme] || G->G->echocommands[tryme];
 		if (!f) continue;
 		object|mapping flags = functionp(f) ? function_object(f) : mappingp(f) ? f : ([]);
-		if (flags->featurename && (channel->config->features[?flags->featurename] || channel->config->allcmds) <= 0) continue;
+		if (flags->featurename && !channel->config->features[?flags->featurename]) continue;
 		if ((flags->require_moderator || flags->access == "mod") && !is_mod) continue;
 		if (flags->access == "vip" && !is_mod && !is_vip) continue;
 		if (flags->access == "none") continue;
