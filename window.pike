@@ -86,29 +86,6 @@ class confirm
 	}
 }
 
-//GTK2.ComboBox designed for text strings. Has set_text() and get_text() methods.
-//Should be able to be used like an Entry.
-class SelectBox(array(string) strings)
-{
-	inherit GTK2.ComboBox;
-	protected void create() {::create(""); foreach (strings,string str) append_text(str);}
-	this_program set_text(string txt)
-	{
-		set_active(search(strings,txt));
-		return this;
-	}
-	string get_text() //Like get_active_text() but will return 0 (not "") if nothing's selected (may not strictly be necessary, but it's consistent with entry fields and such)
-	{
-		int idx=get_active();
-		return (idx>=0 && idx<sizeof(strings)) && strings[idx];
-	}
-	void set_strings(array(string) newstrings)
-	{
-		foreach (strings,string str) remove_text(0);
-		foreach (strings=newstrings,string str) append_text(str);
-	}
-}
-
 //Advisory note that this widget should be packed without the GTK2.Expand|GTK2.Fill options
 //As of Pike 8.0.2, this could safely be done with wid->set_data(), but it's not
 //safe to call get_data() with a keyword that hasn't been set (it'll segfault older Pikes).
@@ -286,39 +263,6 @@ class window
 	}
 }
 
-//Subclass of window that handles save/load of position automatically.
-class movablewindow
-{
-	inherit window;
-	constant pos_key=0; //(string) Set this to the persist[] key in which to store and from which to retrieve the window pos
-	constant load_size=0; //If set to 1, will attempt to load the size as well as position. (It'll always be saved.)
-	constant provides=0;
-
-	void makewindow()
-	{
-		if (array pos=persist[pos_key])
-		{
-			if (sizeof(pos)>3 && load_size) win->mainwindow->set_default_size(pos[2],pos[3]);
-			win->x=1; call_out(lambda() {m_delete(win,"x");},1);
-			win->mainwindow->move(pos[0],pos[1]);
-		}
-		::makewindow();
-	}
-
-	void sig_b4_mainwindow_configure_event()
-	{
-		if (!has_index(win,"x")) call_out(savepos,0.1);
-		mapping pos=win->mainwindow->get_position(); win->x=pos->x; win->y=pos->y;
-	}
-
-	void savepos()
-	{
-		if (!pos_key) {werror("%% Assertion failed: Cannot save position without pos_key set!\n"); return;} //Shouldn't happen.
-		mapping sz=win->mainwindow->get_size();
-		persist[pos_key]=({m_delete(win,"x"),m_delete(win,"y"),sz->width,sz->height});
-	}
-}
-
 //Base class for a configuration dialog. Permits the setup of anything where you
 //have a list of keyworded items, can create/retrieve/update/delete them by keyword.
 //It may be worth breaking out some of this code into a dedicated ListBox class
@@ -337,15 +281,9 @@ class configdlg
 	void save_content(mapping(string:mixed) info) { } //Retrieve content from the window and put it in the mapping.
 	void load_content(mapping(string:mixed) info) { } //Store information from info into the window
 	void delete_content(string kwd,mapping(string:mixed) info) { } //Delete the thing with the given keyword.
-	string actionbtn; //(DEPRECATED) If set, a special "action button" will be included, otherwise not. This is its caption.
-	void action_callback() { } //(DEPRECATED) Callback when the action button is clicked (provide if actionbtn is set)
 	constant allow_new=1; //Set to 0 to remove the -- New -- entry; if omitted, -- New -- will be present and entries can be created.
 	constant allow_delete=1; //Set to 0 to disable the Delete button (it'll always be visible though)
 	constant allow_rename=1; //Set to 0 to ignore changes to keywords
-	constant strings=({ }); //Simple string bindings - see plugins/README
-	constant ints=({ }); //Simple integer bindings, ditto
-	constant bools=({ }); //Simple boolean bindings (to CheckButtons), ditto
-	constant labels=({ }); //Labels for the above
 	/* PROVISIONAL: Instead of using all of the above four, use a single list of
 	tokens which gets parsed out to provide keyword, label, and type.
 	constant elements=({"kwd:Keyword", "name:Name", "?state:State of Being", "#value:Value","+descr:Description"});
@@ -472,7 +410,6 @@ class configdlg
 
 	void makewindow()
 	{
-		win->real_strings = strings; win->real_ints = ints; win->real_bools = bools; //Migrate the constants
 		object ls=GTK2.ListStore(({"string","string"}));
 		//TODO: Break out the list box code into a separate object - it'd be useful eg for zoneinfo.pike.
 		foreach (sort(indices(items)),string kwd)
@@ -494,16 +431,12 @@ class configdlg
 					)->set_policy(GTK2.POLICY_NEVER, GTK2.POLICY_AUTOMATIC))
 					->add(GTK2.Vbox(0,0)
 						->add(make_content())
-						->pack_end(
-							(actionbtn?GTK2.HbuttonBox()
-							->add(win->pb_action=GTK2.Button((["label":actionbtn,"use-underline":1])))
-							:GTK2.HbuttonBox())
+						->pack_end(GTK2.HbuttonBox()
 							->add(win->pb_save=GTK2.Button((["label":"_Save","use-underline":1])))
 							->add(win->pb_delete=GTK2.Button((["label":"_Delete","use-underline":1,"sensitive":allow_delete])))
 						,0,0,0)
 					)
 				)
-				->pack_end(win->buttonbox=GTK2.HbuttonBox()->pack_end(stock_close(), 0, 0, 0), 0, 0, 0)
 			);
 		win->sel=win->list->get_selection(); win->sel->select_iter(win->new_iter||ls->get_iter_first()); sig_sel_changed();
 		::makewindow();
@@ -522,10 +455,7 @@ class configdlg
 		{
 			if (next_obj_name)
 			{
-				if (arrayp(element))
-					objects += ({win[next_obj_name] = SelectBox(element)});
-				else
-					error("Assertion failed: SelectBox without element array\n");
+				error("Assertion failed: SelectBox without element array\n");
 				next_obj_name = 0;
 				continue;
 			}
@@ -636,12 +566,6 @@ class configdlg
 		} while (ls->iter_next(iter));
 		return 0;
 	}
-
-	void dosignals()
-	{
-		::dosignals();
-		if (actionbtn) win->signals+=({gtksignal(win->pb_action,"clicked",action_callback)});
-	}
 }
 //End code lifted from Gypsum
 
@@ -746,10 +670,6 @@ class _mainwindow
 				->add(win->manual_auth=GTK2.MenuItem("Authenticate manually"))
 			));
 		vbox->pack_start(menubar,0,0,0)->reorder_child(menubar, 0);
-		//Remove the close button - we don't need it.
-		//(You can still click the cross or press Alt-F4 or anything else.)
-		win->buttonbox->remove(win->stock_close);
-		destruct(win->stock_close);
 	}
 
 	void sig_kwd_changed(object self)
@@ -759,17 +679,6 @@ class _mainwindow
 		if (lc != txt) self->set_text(lc);
 	}
 
-	//This allows updating of the content block in a live configdlg.
-	//Downside: It probably *only* works (reliably) with the new 'elements'
-	//system; no guarantees about all the older ways of doing things. So
-	//it's not currently a core feature, and upstream Gypsum doesn't have it
-	//at all. Eventually, a new and not-backward-compatible configdlg may be
-	//created, with a new name, and it can have this kind of feature. (It
-	//needn't actually break active stuff - it'll just drop support for all
-	//the old and deprecated things, like the action button.)
-	//Also, this can't adequately handle removal/renaming of objects. There's
-	//no guarantee that the old objects will be destroyed; in fact, they'll
-	//probably hang around in win[].
 	GTK2.Widget make_content() {return win->contentblock = ::make_content();}
 	void remake_content()
 	{
