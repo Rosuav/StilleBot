@@ -1,9 +1,5 @@
 //GTK utility functions/classes lifted straight from Gypsum
 
-//NOTE: In this file, persist is a valid alias for persist_config, for
-//compatibility where the code exists also elsewhere (eg Gypsum).
-#define persist persist_config
-
 //Usage: gtksignal(some_object,"some_signal",handler,arg,arg,arg) --> save that object.
 //Equivalent to some_object->signal_connect("some_signal",handler,arg,arg,arg)
 //When this object expires, the signal is disconnected, which should gc the function.
@@ -177,7 +173,7 @@ class configdlg
 	inherit window;
 	//Provide me...
 	mapping(string:mixed) windowprops=(["title":"Configure"]);
-	mapping(string:mapping(string:mixed)) items; //Will never be rebound. Will generally want to be an alias for a better-named mapping, or something out of persist[] (and see persist_key)
+	mapping(string:mapping(string:mixed)) items; //Will never be rebound. Will generally want to be an alias for a better-named mapping, or something out of persist_config[] (and see persist_key)
 	void save_content(mapping(string:mixed) info) { } //Retrieve content from the window and put it in the mapping.
 	void load_content(mapping(string:mixed) info) { } //Store information from info into the window
 	void delete_content(string kwd,mapping(string:mixed) info) { } //Delete the thing with the given keyword.
@@ -185,14 +181,14 @@ class configdlg
 	constant allow_delete=1; //Set to 0 to disable the Delete button (it'll always be visible though)
 	constant allow_rename=1; //Set to 0 to ignore changes to keywords
 	constant elements=({ });
-	constant persist_key=0; //(string) Set this to the persist[] key to load items[] from; if set, persist will be saved after edits.
+	constant persist_key=0; //(string) Set this to the persist_config[] key to load items[] from; if set, persist will be saved after edits.
 	constant descr_key=0; //(string) Set this to a key inside the info mapping to populate with descriptions.
 	//... end provide me.
 	string last_selected; //Set when something is loaded. Unless the user renames the thing, will be equal to win->kwd->get_text().
 
 	protected void create(string|void name)
 	{
-		if (persist_key && !items) items=persist->setdefault(persist_key,([]));
+		if (persist_key && !items) items=persist_config->setdefault(persist_key,([]));
 		::create(!is_subwindow && name); //Unless we're a main window, pass on no args to the window constructor - all configdlgs are independent
 	}
 
@@ -219,7 +215,7 @@ class configdlg
 		foreach (win->real_ints,string key) info[key]=(int)win[key]->get_text();
 		foreach (win->real_bools,string key) info[key]=(int)win[key]->get_active();
 		save_content(info);
-		if (persist_key) persist->save();
+		if (persist_key) persist_config->save();
 		[object iter,object store]=win->sel->get_selected();
 		if (newkwd!=oldkwd)
 		{
@@ -240,7 +236,7 @@ class configdlg
 		foreach (win->real_strings+win->real_ints,string key) win[key]->set_text("");
 		foreach (win->real_bools,string key) win[key]->set_active(0);
 		delete_content(kwd,m_delete(items,kwd));
-		if (persist_key) persist->save();
+		if (persist_key) persist_config->save();
 	}
 
 	int ischanged()
@@ -413,7 +409,7 @@ class menu_item
 class ircsettings
 {
 	inherit window;
-	mapping config = persist->path("ircsettings");
+	mapping config = persist_config->path("ircsettings");
 
 	void makewindow()
 	{
@@ -449,7 +445,7 @@ class ircsettings
 			config->http_address = "http://" + config->http_address;
 		if (has_suffix(config->http_address, "/")) config->http_address = config->http_address[..<1]; //Strip trailing slash
 		config->listen_address = win->listen_address->get_text();
-		persist->save();
+		persist_config->save();
 		closewindow();
 		if (!G->G->irc) G->bootstrap_all(); //Force an update to get us connected.
 	}
