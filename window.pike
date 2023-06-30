@@ -444,35 +444,12 @@ class configdlg
 	}
 
 	//Generate a widget collection from either the constant or migration mode
-	array(string|GTK2.Widget) collect_widgets(array|void elem, int|void noreset)
+	array(string|GTK2.Widget) collect_widgets(array elem)
 	{
 		array objects = ({ });
-		//Clear the arrays only if we're not recursing.
-		if (!noreset) win->real_strings = win->real_ints = win->real_bools = ({ });
-		elem = elem || elements; if (!sizeof(elem)) elem = migrate_elements();
-		string next_obj_name = 0;
+		win->real_strings = win->real_ints = win->real_bools = ({ });
 		foreach (elem, mixed element)
 		{
-			if (next_obj_name)
-			{
-				error("Assertion failed: SelectBox without element array\n");
-				next_obj_name = 0;
-				continue;
-			}
-			if (mappingp(element))
-			{
-				//EXPERIMENTAL: A mapping creates a notebook.
-				object nb = GTK2.Notebook();
-				foreach (sort(indices(element)), string tabtext)
-					nb->append_page(
-						//Tab contents: Recursively collect widgets from the given array.
-						two_column(collect_widgets(element[tabtext], 1)),
-						//Tab text comes from the mapping key.
-						GTK2.Label(tabtext)
-					);
-				objects += ({nb, 0});
-				continue;
-			}
 			sscanf(element, "%1[?#+'@!*]%s", string type, element);
 			sscanf(element, "%s=%s", element, string dflt); //NOTE: I'm rather worried about collisions here. This is definitely PROVISIONAL.
 			sscanf(element, "%s:%s", string name, string lbl);
@@ -489,55 +466,13 @@ class configdlg
 					objects += ({lbl, win[name]=noex(GTK2.Entry())});
 					break;
 				case 0: //String
-				case "*": //Password
 					win->real_strings += ({name});
 					objects += ({lbl, win[name]=noex(GTK2.Entry())});
-					if (type == "*") win[name]->set_visibility(0);
 					break;
-				case "+": //Multi-line text
-					win->real_strings += ({name});
-					objects += ({GTK2.Frame(lbl)->add(
-						win[name]=GTK2.Entry()
-					),0});
-					break;
-				case "'": //Descriptive text
-				{
-					//Names apply to labels only if they consist entirely of lower-case ASCII letters.
-					//Otherwise, the label has no name (even if it contains a colon).
-					sscanf(element, "%[a-z]:%s", string lblname, string lbltext);
-					//This looks a little odd, but it does work. If parsing is successful, we have
-					//a name to save under; otherwise, sscanf will have put the text into lblname,
-					//so we use that as the label *text*, and it has no name.
-					object obj = noex(GTK2.Label(lbltext || element)->set_line_wrap(1));
-					objects += ({obj, 0});
-					if (lbltext) win[lblname] = obj;
-					break;
-				}
-				case "@": //Drop-down
-				{
-					//Special case: Integer drop-downs are marked with "@#".
-					if (name[0] == '#') win->real_ints += ({name=name[1..]});
-					else win->real_strings += ({name});
-					objects += ({lbl}); next_obj_name = name; //Object creation happens next iteration
-					break;
-				}
-				case "!": //Button
-				{
-					//Buttons don't get any special load/save action.
-					//Normally you'll attach a clicked event to them.
-					//TODO: Put consecutive button elements into the same button box
-					objects += ({GTK2.HbuttonBox()->add(win[name] = GTK2.Button((["label": lbl, "use-underline": 1]))), 0});
-					break;
-				}
 			}
 		}
 		win->real_strings -= ({"kwd"});
 		return objects;
-	}
-
-	array(string) migrate_elements()
-	{
-		return ({ });
 	}
 
 	//Create and return a widget (most likely a layout widget) representing all the custom content.
@@ -548,7 +483,7 @@ class configdlg
 	//additional widgets before or after the ones collect_widgets creates.
 	GTK2.Widget make_content()
 	{
-		return two_column(collect_widgets());
+		return two_column(collect_widgets(elements));
 	}
 
 	//Attempt to select the given keyword - returns 1 if found, 0 if not
