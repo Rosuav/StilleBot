@@ -488,7 +488,6 @@ class _mainwindow
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
 	constant elements=({"kwd:Channel", "?chatlog:Log chat to console",
 		"#connprio:Connection priority",
-		"notes:Notes",
 	});
 	constant persist_key = "channels";
 	constant is_subwindow = 0;
