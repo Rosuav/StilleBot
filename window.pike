@@ -51,13 +51,7 @@ class MessageBox
 	protected void create(int flags,int type,int buttons,string message,GTK2.Window parent,function|void cb,mixed|void cb_arg)
 	{
 		callback=cb;
-		#if constant(COMPAT_MSGDLG)
-		//There's some sort of issue in older Pikes (7.8 only) regarding the parent.
-		//TODO: Hunt down what it was and put a better note here.
-		::create(flags,type,buttons,message);
-		#else
 		::create(flags,type,buttons,message,parent);
-		#endif
 		signal_connect("response",response,cb_arg);
 		show();
 	}
@@ -146,32 +140,7 @@ class window
 	//Stock item creation: Close button. Calls closewindow(), same as clicking the cross does.
 	GTK2.Button stock_close()
 	{
-		return win->stock_close=GTK2.Button((["use-stock":1,"label":GTK2.STOCK_CLOSE]))
-			->add_accelerator("clicked",stock_accel_group(),0xFF1B,0,0); //Esc as a shortcut for Close
-	}
-
-	//Stock item creation: Menu bar. Normally will want to be packed_start(,0,0,0) into a Vbox.
-	GTK2.MenuBar stock_menu_bar(string ... menus)
-	{
-		win->stock_menu_bar = GTK2.MenuBar();
-		win->menus = ([]); win->menuitems = ([]);
-		foreach (menus, string menu)
-		{
-			string key = lower_case(menu) - "_"; //Callables to be placed in this menu start with this key.
-			win->stock_menu_bar->add(GTK2.MenuItem(menu)->set_submenu(win->menus[key] = (object)GTK2.Menu()));
-		}
-		return win->stock_menu_bar;
-	}
-
-	//Stock "item" creation: AccelGroup. The value of this is that it will only ever create one.
-	GTK2.AccelGroup stock_accel_group()
-	{
-		if (!win->accelgroup)
-		{
-			win->accelgroup = GTK2.AccelGroup();
-			if (win->mainwindow) win->mainwindow->add_accel_group(win->accelgroup);
-		}
-		return win->accelgroup;
+		return win->stock_close=GTK2.Button((["use-stock":1,"label":GTK2.STOCK_CLOSE]));
 	}
 
 	//Subclasses should call ::dosignals() and then append to to win->signals. This is the
@@ -185,30 +154,6 @@ class window
 			win->stock_close && gtksignal(win->stock_close,"clicked",closewindow),
 		});
 		collect_signals("sig_", win);
-		if (win->stock_menu_bar)
-		{
-			multiset(string) seen = (<>);
-			foreach (sort(indices(this_program)), string attr)
-			{
-				if (sscanf(attr, "menu_%s_%s", string menu, string item) && this[menu + "_" + item])
-				{
-					object m = win->menus[menu];
-					if (!m) error("%s has no corresponding menu [try%{ %s%}]\n", attr, indices(win->menus));
-					if (object old = win->menuitems[attr]) {({old->destroy})(); destruct(old);}
-					array|string info = this[attr];
-					GTK2.MenuItem mi = arrayp(info)
-						? GTK2.MenuItem(info[0])->add_accelerator("activate", stock_accel_group(), info[1], info[2], GTK2.ACCEL_VISIBLE)
-						: GTK2.MenuItem(info); //String constants are just labels; arrays have accelerator key and modifiers.
-					m->add(mi->show());
-					win->signals += ({gtksignal(mi, "activate", this[menu + "_" + item])});
-					win->menuitems[attr] = mi;
-					seen[attr] = 1;
-				}
-			}
-			//Having marked off everything we've added/updated, remove the left-overs.
-			foreach (win->menuitems - seen; string key;)
-				m_delete(win->menuitems, key)->destroy();
-		}
 	}
 
 	//NOTE: prefix *must* be a single 'word' followed by an underscore. Stuff breaks otherwise.
@@ -245,16 +190,6 @@ class window
 		win->mainwindow->set_skip_taskbar_hint(is_subwindow)->set_skip_pager_hint(is_subwindow)->show_all();
 		dosignals();
 	}
-	void showwindow()
-	{
-		if (!win->mainwindow) {makewindow(); dosignals();}
-		win->mainwindow->set_no_show_all(0)->show_all();
-	}
-	int hidewindow()
-	{
-		win->mainwindow->hide();
-		return 1; //Simplify anti-destruction as "return hidewindow()". Note that this can make updating tricky - be aware of this.
-	}
 	int closewindow()
 	{
 		if (win->mainwindow->destroy) win->mainwindow->destroy();
@@ -263,15 +198,6 @@ class window
 	}
 }
 
-//Base class for a configuration dialog. Permits the setup of anything where you
-//have a list of keyworded items, can create/retrieve/update/delete them by keyword.
-//It may be worth breaking out some of this code into a dedicated ListBox class
-//for future reuse. Currently I don't actually need that for Gypsum, but it'd
-//make a nice utility class for other programs.
-//NOTE: This class may end up becoming the legacy compatibility class, with a new
-//and simpler one (under a new name) being created, thus freeing current code from
-//the baggage of backward compatibility - which this has a lot of. I could then
-//deprecate this class (with no intention of removal) and start fresh.
 class configdlg
 {
 	inherit window;
@@ -284,25 +210,10 @@ class configdlg
 	constant allow_new=1; //Set to 0 to remove the -- New -- entry; if omitted, -- New -- will be present and entries can be created.
 	constant allow_delete=1; //Set to 0 to disable the Delete button (it'll always be visible though)
 	constant allow_rename=1; //Set to 0 to ignore changes to keywords
-	/* PROVISIONAL: Instead of using all of the above four, use a single list of
-	tokens which gets parsed out to provide keyword, label, and type.
-	constant elements=({"kwd:Keyword", "name:Name", "?state:State of Being", "#value:Value","+descr:Description"});
-	If the colon is omitted, the keyword will be the first word of the lowercased name, so this is equivalent:
-	constant elements=({"kwd:Keyword", "Name", "?State of Being", "#Value", "+descr:Description"});
-	In most cases, this and persist_key will be all you need to set.
-	Still figuring out a good way to allow a SelectBox. Currently messing with "@name:lbl",({opt,opt,opt}) which
-	is far from ideal.
-	This is eventually going to be the primary way to do things, but it's currently unpledged to permit changes.
-	In fact, I'd say that it's _now_ (20160809) the primary way to do things, but I haven't yet deprovisionalized
-	it in case I want to make changes (esp to the SelectBox and Notebook APIs). There's already way too much
-	cruft in this class to risk letting even more in.
-	*/
 	constant elements=({ });
 	constant persist_key=0; //(string) Set this to the persist[] key to load items[] from; if set, persist will be saved after edits.
 	constant descr_key=0; //(string) Set this to a key inside the info mapping to populate with descriptions.
-	string selectme; //If this contains a non-null string, it will be preselected.
 	//... end provide me.
-	mapping defaults = ([]); //TODO: Figure out if any usage of defaults needs the value to be 'put back', or not be a string, or anything.
 	string last_selected; //Set when something is loaded. Unless the user renames the thing, will be equal to win->kwd->get_text().
 
 	protected void create(string|void name)
@@ -365,9 +276,9 @@ class configdlg
 		if (allow_rename && win->kwd->get_text() != kwd) return 1;
 		mapping info = items[kwd] || ([]);
 		foreach (win->real_strings, string key)
-			if ((info[key] || defaults[key] || "") != win[key]->get_text()) return 1;
+			if ((info[key] || "") != win[key]->get_text()) return 1;
 		foreach (win->real_ints, string key)
-			if ((int)(info[key] || defaults[key]) != (int)win[key]->get_text()) return 1;
+			if ((int)info[key] != (int)win[key]->get_text()) return 1;
 		foreach (win->real_bools, string key)
 			if ((int)info[key] != (int)win[key]->get_active()) return 1;
 		return 0;
@@ -402,8 +313,8 @@ class configdlg
 		last_selected = kwd;
 		mapping info=items[kwd] || ([]);
 		if (win->kwd) win->kwd->set_text(kwd || "");
-		foreach (win->real_strings,string key) win[key]->set_text((string)(info[key] || defaults[key] || ""));
-		foreach (win->real_ints,string key) win[key]->set_text((string)(info[key] || defaults[key]));
+		foreach (win->real_strings,string key) win[key]->set_text((string)(info[key] || ""));
+		foreach (win->real_ints,string key) win[key]->set_text((string)info[key]);
 		foreach (win->real_bools,string key) win[key]->set_active((int)info[key]);
 		load_content(info);
 	}
@@ -440,7 +351,6 @@ class configdlg
 			);
 		win->sel=win->list->get_selection(); win->sel->select_iter(win->new_iter||ls->get_iter_first()); sig_sel_changed();
 		::makewindow();
-		if (stringp(selectme)) select_keyword(selectme) || (win->kwd && win->kwd->set_text(selectme));
 	}
 
 	//Generate a widget collection from either the constant or migration mode
@@ -451,10 +361,8 @@ class configdlg
 		foreach (elem, mixed element)
 		{
 			sscanf(element, "%1[?#+'@!*]%s", string type, element);
-			sscanf(element, "%s=%s", element, string dflt); //NOTE: I'm rather worried about collisions here. This is definitely PROVISIONAL.
 			sscanf(element, "%s:%s", string name, string lbl);
 			if (!lbl) sscanf(lower_case(lbl = element)+" ", "%s ", name);
-			if (dflt) defaults[name] = dflt;
 			switch (type)
 			{
 				case "?": //Boolean
@@ -530,14 +438,12 @@ class menu_item
 
 class ircsettings
 {
-	//Full control but less convenient
 	inherit window;
 	mapping config = persist->path("ircsettings");
 
 	void makewindow()
 	{
 		win->mainwindow=GTK2.Window((["title":"Authenticate StilleBot"]))->add(two_column(({
-			win->open_auth=GTK2.Button("Open http://twitchapps.com/tmi/"),0,
 			"Twitch user name", win->nick=GTK2.Entry()->set_text(config->nick||""),
 			"Real name (optional)", win->realname=GTK2.Entry()->set_text(config->realname||""),
 			"Client ID (optional)", win->clientid=GTK2.Entry()->set_text(config->clientid||""),
@@ -553,11 +459,6 @@ class ircsettings
 				->add(stock_close())
 			,0
 		})));
-	}
-
-	void sig_open_auth_clicked()
-	{
-		invoke_browser("http://twitchapps.com/tmi/");
 	}
 
 	void sig_save_clicked()
@@ -619,7 +520,6 @@ class _mainwindow
 	{
 		object parent = win->contentblock->get_parent();
 		parent->remove(win->contentblock);
-		//win->contentblock->destroy();
 		parent->add(make_content()->show_all());
 		dosignals(); //For some reason, updating code redoes signals BEFORE triggering this.
 		sig_sel_changed();
