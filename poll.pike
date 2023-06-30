@@ -671,7 +671,6 @@ void check_hooks(array eventhooks)
 
 	foreach (persist_config["channels"] || ([]);; mapping cfg)
 	{
-		if (!cfg->active) continue;
 		string chan = cfg->login;
 		mapping c = channel_info[chan];
 		int userid = c->?_id;
@@ -723,17 +722,6 @@ protected void create(string|void name)
 		if (u2n && !sizeof(G->G->uid_to_name)) G->G->uid_to_name = u2n;
 		if (n2u && !sizeof(G->G->name_to_uid)) G->G->name_to_uid = n2u;
 		if (u2n || n2u) {persist_status->save(); Stdio.write_file("twitchbot_uids.json", Standards.JSON.encode(({G->G->uid_to_name, G->G->name_to_uid})), 1);}
-	}
-
-	if (!persist_config["allcmds_migrated"]) {
-		//CJA 20210726: Formerly, "allcmds" meant active and allcmds, and "httponly"
-		//meant active and (presumably) not allcmds. Now, active is independent of
-		//allcmds, so it needs to be migrated (but only once - don't have allcmds
-		//permanently imply active, as that would be v confusing).
-		foreach (persist_config["channels"] || ([]);; mapping cfg) {
-			if (m_delete(cfg, "httponly") || cfg->allcmds) cfg->active = 1;
-		}
-		persist_config["allcmds_migrated"] = 1;
 	}
 
 	remove_call_out(G->G->poll_call_out);

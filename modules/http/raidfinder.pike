@@ -225,8 +225,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			array lines = ({ });
 			foreach (sort(online), string name) {
 				object chan = G->G->irc->channels["#" + name];
-				if (chan) lines += ({sprintf("<li class=%s><a href=\"/raidfinder?for=%s\">%<s</a></li>",
-					chan->config->active ? "bot": "monitor",
+				if (chan) lines += ({sprintf("<li class=bot><a href=\"/raidfinder?for=%s\">%<s</a></li>",
 					name,
 				)});
 			}
@@ -322,7 +321,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		}
 		else if (req->variables->login == "demo") {
 			//Like specifying login= for each of the channels that I bot for
-			//Note that this excludes connected but not active (monitor-only) channels.
 			args->user_login = ({ });
 			foreach (persist_config->path("channels");; mapping info)
 				if (info->login && info->login[0] != '!') args->user_login += ({info->login});

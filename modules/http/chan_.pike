@@ -70,7 +70,7 @@ continue mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, s
 		}
 	}
 	object channel = G->G->irc->channels["#" + chan];
-	if (!channel || !channel->config->active) return 0;
+	if (!channel) return 0;
 	req->misc->channel = channel;
 	string channame = G->G->channel_info[channel->name[1..]]->?display_name || channel->name[1..];
 	req->misc->is_mod = 0; //If is_mod is false, save_or_login will be overridden
