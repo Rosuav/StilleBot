@@ -22,6 +22,8 @@ advance to the next level, you may need to click Refresh to see it, or wait
 for a non-anonymous event afterwards. (The anonymous event WILL be counted in
 the total progression.)
 
+NOTE: Hype Chat is also counted, but will not be refreshed immediately.
+
 Note also that broadcaster actions do not affect hype trains at all - you can't
 start a hype train for yourself, nor can you progress it. Except for the sneaky
 loophole of anonymity, of course...

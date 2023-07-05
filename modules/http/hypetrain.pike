@@ -28,8 +28,6 @@ continue mapping|Concurrent.Future parse_hype_status(mapping data)
 		//we'll schedule a duplicate call_out, but otherwise, rechecking
 		//repeatedly won't create a spew of call_outs that spam the API.
 		hypetrain_checktime[data->broadcaster_id] = checktime;
-		write("Scheduling a check of %s hype train at %d [%ds from now]\n",
-			channelid, checktime, checktime - now + 1);
 		call_out(probe_hype_train, checktime - now + 1, (int)channelid);
 	}
 	if (expires && !cooldown) {
