@@ -591,7 +591,10 @@ function make_template(el, par) {
 		else ensure_blank(el[attr]).forEach((e, i) => make_template(e, [el, attr, i]));
 	}
 }
-tray_tabs.forEach(t => (trays[t.name] = t.items).forEach(e => make_template(e)));
+tray_tabs.forEach((t, i) => {
+	t.hotkey = i + 1;
+	(trays[t.name] = t.items).forEach(e => make_template(e));
+});
 //Search for any type that can't be created from a template
 for (let t in types) if (!seen_types[t]) {
 	if (t.startsWith("anchor_") || t.endsWith("flag")) continue;
@@ -793,7 +796,7 @@ function repaint() {
 	max_descent = 600; //Base height, will never shrink shorter than this
 	tray_y = boxed_set(favourites, "#eeffee", "> Drop here to save favourites <", template_y);
 	//Draw the tabs down the side of the tray
-	let tab_y = tray_y + tab_width, curtab_y = 0, curtab_color = "#00ff00";
+	let tab_y = tray_y + tab_width, curtab = null;
 	if (!traytab_path) {
 		traytab_path = new Path2D;
 		traytab_path.moveTo(0, 0);
@@ -803,29 +806,33 @@ function repaint() {
 	}
 	for (let tab of tray_tabs) {
 		tab.y = tab_y;
-		if (tab.name === current_tray) {curtab_y = tab_y; curtab_color = tab.color;} //Current tab is drawn last in case of overlap
+		if (tab.name === current_tray) curtab = tab; //Current tab is drawn last in case of overlap
 		else {
 			ctx.save();
 			ctx.translate(tray_x, tab_y);
 			ctx.fillStyle = tab.color;
 			ctx.fill(traytab_path);
 			ctx.stroke(traytab_path);
+			ctx.font = "12px sans"; ctx.fillStyle = "black";
+			ctx.fillText(tab.hotkey, 3, 43);
 			ctx.restore();
 		}
 		tab_y += tab_height;
 	}
 	tab_y += tab_width * 3 / 2;
-	let spec_y = boxed_set(trays[current_tray], curtab_color, "Current tray: " + current_tray, tray_y, tab_y - tray_y);
-	if (curtab_y) {
+	let spec_y = boxed_set(trays[current_tray], curtab ? curtab.color : "#00FF00", "Current tray: " + current_tray, tray_y, tab_y - tray_y);
+	if (curtab) {
 		//Draw the current tab
 		ctx.save();
-		ctx.translate(tray_x, curtab_y);
+		ctx.translate(tray_x, curtab.y);
 		//Remove the dividing line. It might still be partly there but this makes the tab look connected.
-		ctx.strokeStyle = curtab_color;
+		ctx.strokeStyle = curtab.color;
 		ctx.strokeRect(0, 0, 0, tab_height + tab_width / 2);
-		ctx.fillStyle = curtab_color; ctx.strokeStyle = "black";
+		ctx.fillStyle = curtab.color; ctx.strokeStyle = "black";
 		ctx.fill(traytab_path);
 		ctx.stroke(traytab_path);
+		ctx.font = "12px sans"; ctx.fillStyle = "black";
+		ctx.fillText(curtab.hotkey, 3, 43);
 		ctx.restore();
 	}
 	trashcan.x = template_x; trashcan.y = spec_y + 25;
@@ -1147,6 +1154,13 @@ canvas.onkeydown = e => {
 			const focusel = currently_focused_element();
 			if (focusel) open_element_properties(focusel);
 			e.preventDefault();
+			break;
+		}
+		case '1': case '2': case '3': case '4': case '5': case '6':
+		case '7': case '8': case '9': if (e.key <= tray_tabs.length) {
+			current_tray = tray_tabs[e.key - 1].name;
+			//TODO: Hint to a screenreader that the contents of this tray should be read out
+			repaint();
 			break;
 		}
 		default: /*console.log("Key!", e);*/ break;
