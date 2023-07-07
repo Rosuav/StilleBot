@@ -101,7 +101,7 @@ const text_message = {...default_handlers,
 		const allvars = Object.assign({}, ...vars_avail);
 		return DIV({className: "msgedit"}, [
 			DIV({className: "buttonbox attached"}, Object.entries(allvars).map(([v, d]) => BUTTON({type: "button", title: d, className: "insertvar", "data-insertme": v}, v))),
-			TEXTAREA({...id, rows: 10, cols: 60}, el.message || ""),
+			TEXTAREA({...id, rows: 10, cols: 60, "data-editme": 1}, el.message || ""),
 		]);
 	},
 	retrieve_value: (el, msg) => {
@@ -1167,6 +1167,7 @@ function open_element_properties(el) {
 	const type = types[el.type];
 	set_content("#toggle_favourite", FAV_BUTTON_TEXT[is_favourite(el) ? 1 : 0]).disabled = type.fixed;
 	set_content("#typedesc", type.typedesc || el.desc);
+	let focus = null;
 	set_content("#params", (type.params||[]).map(param => {
 		if (param.label === null) return null; //Note that a label of undefined is probably a bug and should be visible.
 		if (!param.attr) return TR(TD({colspan: 2}, param.label)); //Descriptive text
@@ -1189,6 +1190,7 @@ function open_element_properties(el) {
 			}
 		}
 		else control = values.make_control(id, value, el);
+		if (!focus) focus = control;
 		return TR([TD(LABEL({htmlFor: "value-" + param.attr}, param.label + ": ")), TD(control)]);
 	}));
 	set_content("#providesdesc", Object.entries(type.provides || el.provides || {}).map(([v, d]) => LI([
@@ -1197,6 +1199,7 @@ function open_element_properties(el) {
 	set_content("#saveprops", "Close");
 	DOM("#templateinfo").style.display = el.template && el.type !== "flag" ? "block" : "none";
 	DOM("#properties").showModal();
+	if (focus) (focus.querySelector("[data-editme]") || focus).focus();
 }
 //Encapsulation breach: Allow the classic editor to open up an element's properties
 //TODO: Refactor some of this into command_editor.js and then have both call on it?
