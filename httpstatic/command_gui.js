@@ -1132,6 +1132,9 @@ function currently_focused_element() {
 canvas.onkeydown = e => {
 	switch (e.key) {
 		case "ArrowUp": case "ArrowDown": {
+			//TODO: Instead of using the order of actives (which is mostly irrelevant elsewhere),
+			//move focus according to the tree in some useful/logical way.
+			//TODO: If Alt held, move currently selected element in the given direction???
 			const focus = document.activeElement;
 			if (!focus.closest("canvas")) return; //Focus not currently on a canvas fallback element
 			e.preventDefault();
