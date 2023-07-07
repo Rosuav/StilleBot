@@ -857,7 +857,8 @@ function repaint() {
 		if (!el.key) el.key = next_key_idx++;
 		return lindt.DIV({key: el.key, tabindex: idx}, types[el.type].label(el));
 	}));
-	if (focus) canvas.querySelector('[key="' + focus + '"]').focus({preventScroll: true});
+	const focusel = focus && canvas.querySelector('[key="' + focus + '"]');
+	if (focusel) focusel.focus({preventScroll: true});
 	actives.forEach(el => el.parent || el === dragging || draw_at(ctx, el));
 	//if (focus) repaint_that_element(); //TODO: Repaint the element with focus, or at least its focus ring
 	if (dragging) draw_at(ctx, dragging); //Anything being dragged gets drawn last, ensuring it is at the top of z-order.
@@ -1160,7 +1161,7 @@ canvas.onkeydown = e => {
 		case '7': case '8': case '9': if (e.key <= tray_tabs.length) {
 			current_tray = tray_tabs[e.key - 1].name;
 			//TODO: Hint to a screenreader that the contents of this tray should be read out
-			repaint();
+			refactor(); repaint();
 			break;
 		}
 		default: /*console.log("Key!", e);*/ break;
