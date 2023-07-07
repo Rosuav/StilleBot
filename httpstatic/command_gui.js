@@ -20,7 +20,7 @@ An "Element" is anything that can be interacted with. An "Active" is something t
 and is everything that isn't in the Favs/Trays/Specials.
   - The primary anchor point may belong in Actives or may belong in Specials. Uncertain.
 */
-import choc, {set_content, DOM, on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
+import {set_content, choc, replace_content, lindt, DOM, on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
 const {A, BR, BUTTON, CODE, DIALOG, DIV, FORM, H3, HEADER, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TEXTAREA, TR, UL} = choc; //autoimport
 
 const SNAP_RANGE = 100; //Distance-squared to permit snapping (eg 25 = 5px radius)
@@ -693,6 +693,14 @@ function draw_at(ctx, el, parent, reposition) {
 	ctx.translate(el.x|0, el.y|0);
 	ctx.fillStyle = el.color || type.color;
 	ctx.fill(path.path);
+	const fallback = canvas.querySelector('[key="' + el.key + '"]');
+	if (fallback) {
+		//Unfortunately this will cause a lot of snap scrolling. So we snap right back.
+		const scr = canvas.parentElement.scrollTop;
+		ctx.drawFocusIfNeeded(path.path, fallback);
+		canvas.parentElement.scrollTop = scr;
+		//TODO: Check if this path is on screen, and if not, don't snap back.
+	}
 	ctx.font = "12px sans";
 	let right_margin = 4;
 	if (type.actionlbl !== null) { //Set to null to force there to be no action link
@@ -778,6 +786,7 @@ function boxed_set(set, color, desc, y, minheight) {
 	return y + h + 10;
 }
 
+let next_key_idx = 1;
 function repaint() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	max_descent = 600; //Base height, will never shrink shorter than this
@@ -835,7 +844,14 @@ function repaint() {
 	ctx.restore();
 	specials.forEach(el => draw_at(ctx, el));
 
+	const focus = document.activeElement.getAttribute("key");
+	if (next_key_idx > 0) replace_content(canvas, actives.map((el, idx) => {
+		if (!el.key) el.key = next_key_idx++;
+		return lindt.DIV({key: el.key, tabindex: idx}, types[el.type].label(el));
+	}));
+	if (focus) canvas.querySelector('[key="' + focus + '"]').focus({preventScroll: true});
 	actives.forEach(el => el.parent || el === dragging || draw_at(ctx, el));
+	//if (focus) repaint_that_element(); //TODO: Repaint the element with focus, or at least its focus ring
 	if (dragging) draw_at(ctx, dragging); //Anything being dragged gets drawn last, ensuring it is at the top of z-order.
 	if (max_descent != canvas.height) {canvas.height = max_descent; repaint();}
 }
@@ -1037,6 +1053,10 @@ canvas.addEventListener("pointerup", e => {
 		clicking_on = null;
 	}
 	if (!dragging) return;
+	if (dragging.key) {
+		e.preventDefault();
+		canvas.querySelector('[key="' + dragging.key + '"]').focus({preventScroll: true});
+	}
 	e.target.releasePointerCapture(e.pointerId);
 	//Recalculate connections only on pointer-up. (Or would it be better to do it on pointer-move?)
 	if (dragging.type === "dragflag") {
