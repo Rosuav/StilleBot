@@ -49,6 +49,7 @@
     Then allow people to activate the bot, authenticate for self-voicing, and immediately
     start using bot features, with some restrictions, and with me able to lift those by
     granting them full permission.
+  - Unify permissions for bcaster_auth and voice authentication
 * Authentication on Firefox may now have issues with the default popup blocker. Can we
   comply with normal "click for popup" expectations somehow?
 * Enable/disable rewards - allow use of title, will do lookup

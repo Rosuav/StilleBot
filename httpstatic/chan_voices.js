@@ -81,8 +81,8 @@ let perms_voiceid = null;
 on("click", ".perms", e => {
 	perms_voiceid = e.match.id !== "addvoice" && e.match.closest("tr").dataset.id;
 	const scopes = (e.match.dataset.scopes || "").split("/");
-	//Hack: Include chat_login in "additional" scopes
-	additional_scopes.chat_login = "Regular messages and /me";
+	//Hack: Include chat login in "additional" scopes
+	additional_scopes["chat:edit"] = "Regular messages and /me";
 	set_content("#scopelist", [
 		Object.entries(additional_scopes).sort().map(([scope, desc]) => LI(LABEL([
 			scopes.includes(scope) ? "[Available] " : INPUT({type: "checkbox", name: scope, checked: scope === "chat_login"}),
