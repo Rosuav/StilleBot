@@ -1190,7 +1190,7 @@ function open_element_properties(el) {
 			}
 		}
 		else control = values.make_control(id, value, el);
-		if (!focus) focus = control;
+		if (!focus) focus = control; //TODO: What if control is an array?
 		return TR([TD(LABEL({htmlFor: "value-" + param.attr}, param.label + ": ")), TD(control)]);
 	}));
 	set_content("#providesdesc", Object.entries(type.provides || el.provides || {}).map(([v, d]) => LI([
