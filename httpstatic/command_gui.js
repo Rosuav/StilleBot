@@ -1119,6 +1119,23 @@ canvas.addEventListener("pointerup", e => {
 	repaint();
 });
 
+canvas.onkeydown = e => {
+	switch (e.key) {
+		case "ArrowUp": case "ArrowDown": {
+			const focus = document.activeElement;
+			if (!focus.closest("canvas")) return; //Focus not currently on a canvas fallback element
+			e.preventDefault();
+			const newfocus = e.key === "ArrowUp" ? focus.previousElementSibling : focus.nextElementSibling;
+			if (newfocus) {newfocus.focus(); repaint();}
+			break;
+		}
+		default: /*console.log("Key!", e);*/ break;
+	}
+};
+document.onkeydown = e => {
+	if (e.key === "Home") {e.preventDefault(); canvas.firstElementChild.focus(); repaint();}
+};
+
 on("mousedown", ".insertvar", e => e.preventDefault()); //Prevent buttons from taking focus when clicked
 on("click", ".insertvar", e => {
 	const mle = e.match.closest(".msgedit").querySelector("textarea");
