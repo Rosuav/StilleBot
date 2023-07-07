@@ -683,6 +683,7 @@ function limit_width(ctx, txt, width) {
 }
 
 let max_descent = 0;
+let draw_focus_ring = false; //Set to true when keyboard changes focus, false when mouse does
 function draw_at(ctx, el, parent, reposition) {
 	if (el === "") return;
 	if (reposition) {el.x = parent.x + reposition.x; el.y = parent.y + reposition.y;}
@@ -693,7 +694,7 @@ function draw_at(ctx, el, parent, reposition) {
 	ctx.translate(el.x|0, el.y|0);
 	ctx.fillStyle = el.color || type.color;
 	ctx.fill(path.path);
-	const fallback = canvas.querySelector('[key="' + el.key + '"]');
+	const fallback = draw_focus_ring && canvas.querySelector('[key="' + el.key + '"]');
 	if (fallback) {
 		//Unfortunately this will cause a lot of snap scrolling. So we snap right back.
 		const scr = canvas.parentElement.scrollTop;
@@ -1055,6 +1056,7 @@ canvas.addEventListener("pointerup", e => {
 	if (!dragging) return;
 	if (dragging.key) {
 		e.preventDefault();
+		draw_focus_ring = false; //Clicking hides the focus ring. (Or should it simply not show it?)
 		canvas.querySelector('[key="' + dragging.key + '"]').focus({preventScroll: true});
 	}
 	e.target.releasePointerCapture(e.pointerId);
@@ -1134,6 +1136,7 @@ canvas.onkeydown = e => {
 			if (!focus.closest("canvas")) return; //Focus not currently on a canvas fallback element
 			e.preventDefault();
 			const newfocus = e.key === "ArrowUp" ? focus.previousElementSibling : focus.nextElementSibling;
+			draw_focus_ring = true;
 			if (newfocus) {newfocus.focus(); repaint();}
 			break;
 		}
