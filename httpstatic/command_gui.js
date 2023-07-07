@@ -1119,6 +1119,14 @@ canvas.addEventListener("pointerup", e => {
 	repaint();
 });
 
+function currently_focused_element() {
+	const focus = document.activeElement;
+	if (!focus.closest("canvas")) return null; //Focus not currently on a canvas fallback element
+	const key = focus.getAttribute("key");
+	for (const el of actives) if (""+el.key === key) return el;
+	return null;
+}
+
 canvas.onkeydown = e => {
 	switch (e.key) {
 		case "ArrowUp": case "ArrowDown": {
@@ -1127,6 +1135,12 @@ canvas.onkeydown = e => {
 			e.preventDefault();
 			const newfocus = e.key === "ArrowUp" ? focus.previousElementSibling : focus.nextElementSibling;
 			if (newfocus) {newfocus.focus(); repaint();}
+			break;
+		}
+		case 'o': case 'O': case 'Enter': {
+			const focusel = currently_focused_element();
+			if (focusel) open_element_properties(focusel);
+			e.preventDefault();
 			break;
 		}
 		default: /*console.log("Key!", e);*/ break;
