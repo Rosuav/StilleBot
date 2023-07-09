@@ -1168,7 +1168,7 @@ canvas.onkeydown = e => {
 	}
 };
 document.onkeydown = e => {
-	if (e.key === "Home") {e.preventDefault(); canvas.firstElementChild.focus(); repaint();}
+	if (e.key === "Home") {e.preventDefault(); canvas.firstElementChild.focus(); draw_focus_ring = true; repaint();}
 };
 
 on("mousedown", ".insertvar", e => e.preventDefault()); //Prevent buttons from taking focus when clicked
