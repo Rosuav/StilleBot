@@ -1168,7 +1168,14 @@ canvas.onkeydown = e => {
 	}
 };
 document.onkeydown = e => {
-	if (e.key === "Home") {e.preventDefault(); canvas.firstElementChild.focus(); draw_focus_ring = true; repaint();}
+	//Pressing Home takes you to the anchor, but only if we don't have a properties dialog open
+	if (e.key === "Home" && e.target.closest("dialog") === canvas.closest("dialog")) {
+		console.log(e);
+		e.preventDefault();
+		canvas.firstElementChild.focus();
+		draw_focus_ring = true;
+		repaint();
+	}
 };
 
 on("mousedown", ".insertvar", e => e.preventDefault()); //Prevent buttons from taking focus when clicked
