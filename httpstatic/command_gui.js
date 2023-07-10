@@ -1150,15 +1150,39 @@ function set_canvas_focus(el, visible) {
 canvas.onkeydown = e => {
 	switch (e.key) {
 		case "ArrowUp": case "ArrowDown": {
-			//TODO: Instead of using the order of actives (which is mostly irrelevant elsewhere),
-			//move focus according to the tree in some useful/logical way.
 			//TODO: If Alt held, move currently selected element in the given direction???
-			const focus = document.activeElement;
-			if (!focus.closest("canvas")) return; //Focus not currently on a canvas fallback element
+			const focus = currently_focused_element();
+			if (!focus) break;
+			if (!focus.parent && e.key === "ArrowUp") break;
+			//Special case: Down from the anchor goes to its first child.
+			let [par, parslot, paridx] = focus.parent || [focus, "message", -1];
+			const partype = types[par.type];
 			e.preventDefault();
-			const newfocus = e.key === "ArrowUp" ? focus.previousElementSibling : focus.nextElementSibling;
-			draw_focus_ring = true;
-			if (newfocus) {newfocus.focus(); repaint();}
+			const dir = e.key === "ArrowDown" ? 1 : -1;
+			while (1) {
+				paridx += dir;
+				if (paridx < 0 || paridx >= par[parslot].length) {
+					//Find an adjacent available slot, if any
+					const slotidx = partype.children.indexOf(parslot) + dir;
+					if (slotidx >= 0 && slotidx < partype.children.length) {
+						parslot = partype.children[slotidx];
+						if (dir < 0) paridx = par[parslot].length - 1;
+						else paridx = 0;
+					}
+					//When moving up, if we run out of children, go to the parent.
+					else if (dir < 0) {set_canvas_focus(par, true); return;}
+					else if (par.parent) {
+						//When moving down, running out of children means asking the
+						//parent for its next child.
+						[par, parslot, paridx] = par.parent;
+						continue;
+					}
+					else break; //No more children here, and no parents to query. A noble from the Von Habsburg dynasty takes the throne.
+				}
+				//Can we select this one?
+				const child = par[parslot][paridx];
+				if (child) {set_canvas_focus(child, true); return;}
+			}
 			break;
 		}
 		case "ArrowRight": { //Move to first child
