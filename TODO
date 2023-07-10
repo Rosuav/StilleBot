@@ -252,15 +252,5 @@
   - GET A SCREENREADER and see how everything sounds. If needed, adjust.
     - Orca sucks. What others are there?
   - Hotkeys for navigation and manipulation
-    - Up/Down move between siblings
-    - Right descends to first child
-    - Up from first child goes to parent
-    - Left from any child goes to parent
-    - 'i' to insert a node at the current location
-      - This will move the currently-selected node down
-    - 'a' to append a node as child of current node, or current node's parent if cur has
-      no place for children
-    - "parent" might have more than one child (if/then); Down from last child of first
-      child section goes to first child of second child section.
-      - Need a way to say "append as 'else' rather than 'if'"
     - Press ? to see a list of hotkeys
+* Should Favourites become a tray like any other??
