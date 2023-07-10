@@ -929,6 +929,7 @@ function clone_template(t, par) {
 	else actives.push(el);
 	if (par && el.parent) el.parent[0] = par;
 	else delete el.parent;
+	delete el.hotkey;
 	for (let attr of types[el.type].children || [])
 		el[attr] = el[attr].map(e => clone_template(e, el));
 	return el;
@@ -1233,6 +1234,14 @@ canvas.onkeydown = e => {
 			e.preventDefault();
 			break;
 		}
+		case 'q': case 'w': case 'e': case 'r': case 't': case 'y': case 'u': case 'o': case 'p':
+		case 'Q': case 'W': case 'E': case 'R': case 'T': case 'Y': case 'U': case 'O': case 'P': {
+			e.preventDefault();
+			const hotkey = e.key.toLowerCase();
+			var appendme = trays[current_tray].find(el => el.hotkey === hotkey);
+			if (!appendme) break;
+			//Fall through
+		}
 		case 'a': case 'A': {
 			//Append an element to the end of the first child slot of this element, if
 			//there is one; otherwise at the end of the child slot of the parent.
@@ -1243,12 +1252,13 @@ canvas.onkeydown = e => {
 			const childslots = types[focus.type].children;
 			if (childslots) {
 				//Append to the first child, if there is one; otherwise append a sibling.
-				console.log(e);
 				parent = [focus, childslots[e.shiftKey && childslots.length > 1 ? 1 : 0], 0];
 			}
 			const childset = parent[0][parent[1]];
-			const el = {type: "text", message: ""};
-			actives.push(el);
+			//If you press a/A, append a simple text message (initially blank); if you
+			//press the hotkey for a tray entry, insert that template here.
+			const el = appendme ? clone_template(appendme) : {type: "text", message: ""};
+			if (!appendme) actives.push(el);
 			//Assume there will always be an empty string at the end, and insert there
 			el.parent = [parent[0], parent[1], childset.length - 1];
 			childset[childset.length - 1] = el;
@@ -1265,14 +1275,6 @@ canvas.onkeydown = e => {
 			//TODO: Hint to a screenreader that the contents of this tray should be read out
 			refactor(); repaint();
 			break;
-		}
-		case 'q': case 'w': case 'e': case 'r': case 't': case 'y': case 'u': case 'o': case 'p':
-		case 'Q': case 'W': case 'E': case 'R': case 'T': case 'Y': case 'U': case 'O': case 'P': {
-			e.preventDefault();
-			const hotkey = e.key.toLowerCase();
-			const el = trays[current_tray].find(el => el.hotkey === hotkey);
-			if (!el) break;
-			
 		}
 		default: /*console.log("Key!", e);*/ break;
 	}
