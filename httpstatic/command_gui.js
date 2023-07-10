@@ -1233,7 +1233,6 @@ canvas.onkeydown = e => {
 			e.preventDefault();
 			break;
 		}
-		case 'f': case 'F': //"False" will add to the second child branch of an element.
 		case 'a': case 'A': {
 			//Append an element to the end of the first child slot of this element, if
 			//there is one; otherwise at the end of the child slot of the parent.
@@ -1242,14 +1241,10 @@ canvas.onkeydown = e => {
 			e.preventDefault();
 			let parent = focus.parent;
 			const childslots = types[focus.type].children;
-			if (e.key === "f" || e.key === "F") {
-				//Append to the second child, if there is one; otherwise do nothing.
-				if (!childslots || childslots.length < 2) break;
-				parent = [focus, childslots[1], 0];
-			}
-			else if (childslots) {
+			if (childslots) {
 				//Append to the first child, if there is one; otherwise append a sibling.
-				parent = [focus, childslots[0], 0];
+				console.log(e);
+				parent = [focus, childslots[e.shiftKey && childslots.length > 1 ? 1 : 0], 0];
 			}
 			const childset = parent[0][parent[1]];
 			const el = {type: "text", message: ""};
