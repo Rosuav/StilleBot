@@ -1212,6 +1212,21 @@ canvas.onkeydown = e => {
 			e.preventDefault();
 			break;
 		}
+		case 'i': case 'I': {
+			//Insert an element at the current position
+			const focus = currently_focused_element();
+			if (focus && focus.parent) {
+				const childset = focus.parent[0][focus.parent[1]];
+				const el = clone_template(trays[current_tray][0]);
+				childset.splice(focus.parent[2], 0, el);
+				for (let i = focus.parent[2]; i < childset.length; ++i)
+					if (childset[i]) childset[i].parent = [focus.parent[0], focus.parent[1], i];
+				repaint(); //Force all elements to have their corresponding fallbacks
+				set_canvas_focus(el); //Select the new element
+				repaint(); //And now paint it with the correct focus ring.
+			}
+			e.preventDefault();
+		}
 		case '1': case '2': case '3': case '4': case '5': case '6':
 		case '7': case '8': case '9': if (e.key <= tray_tabs.length) {
 			current_tray = tray_tabs[e.key - 1].name;
