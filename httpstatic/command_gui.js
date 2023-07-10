@@ -1066,7 +1066,7 @@ canvas.addEventListener("pointerup", e => {
 	if (dragging.key) {
 		e.preventDefault();
 		draw_focus_ring = false; //Clicking hides the focus ring. (Or should it simply not show it?)
-		canvas.querySelector('[key="' + dragging.key + '"]').focus({preventScroll: true});
+		set_canvas_focus(dragging);
 	}
 	e.target.releasePointerCapture(e.pointerId);
 	//Recalculate connections only on pointer-up. (Or would it be better to do it on pointer-move?)
@@ -1138,6 +1138,15 @@ function currently_focused_element() {
 	return null;
 }
 
+function set_canvas_focus(el, visible) {
+	if (el.key) canvas.querySelector('[key="' + el.key + '"]').focus({preventScroll: true});
+	else console.warn("UNABLE TO SET FOCUS - no key set", el); //TODO: Ensure that this never happens
+	if (visible) {
+		draw_focus_ring = true;
+		repaint();
+	}
+}
+
 canvas.onkeydown = e => {
 	switch (e.key) {
 		case "ArrowUp": case "ArrowDown": {
@@ -1150,6 +1159,27 @@ canvas.onkeydown = e => {
 			const newfocus = e.key === "ArrowUp" ? focus.previousElementSibling : focus.nextElementSibling;
 			draw_focus_ring = true;
 			if (newfocus) {newfocus.focus(); repaint();}
+			break;
+		}
+		case "ArrowRight": { //Move to first child
+			const focus = currently_focused_element();
+			if (!focus) break;
+			const type = types[focus.type];
+			if (!type.children) break;
+			e.preventDefault();
+			//Is it worth remembering where we previously were, and returning, rather than
+			//always going to the first child?
+			//For now, just find the first non-blank child.
+			for (let attr of type.children) {
+				for (let child of focus[attr]) {
+					if (child) {set_canvas_focus(child, true); return;}
+				}
+			}
+			break;
+		}
+		case "ArrowLeft": { //Move to parent
+			const focus = currently_focused_element();
+			if (focus && focus.parent) {e.preventDefault(); set_canvas_focus(focus.parent[0], true);}
 			break;
 		}
 		case 'o': case 'O': case 'Enter': {
