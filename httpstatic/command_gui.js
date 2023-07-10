@@ -740,7 +740,7 @@ function draw_at(ctx, el, parent, reposition) {
 	if (type.style === "flag") label_x = 6; //Hack!
 	else if (el.template) labels[0] = "⯇ " + labels[0];
 	else if (!type.fixed) labels[0] = "⣿ " + labels[0];
-	if (el.hotkey) labels[0] = "[" + el.hotkey + "] " + labels[0]; //FIXME: Ugly
+	if (draw_focus_ring && el.hotkey) labels[0] = "[" + el.hotkey + "] " + labels[0]; //FIXME: Ugly
 	const w = (type.width || 200) - label_x - right_margin;
 	for (let i = 0; i < labels.length; ++i) ctx.fillText(limit_width(ctx, labels[i], w), label_x, path.labelpos[i]);
 	ctx.stroke(path.path);
