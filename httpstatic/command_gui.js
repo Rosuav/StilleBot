@@ -959,17 +959,7 @@ canvas.addEventListener("pointerdown", e => {
 		refactor();
 	}
 	dragging = el; dragbasex = e.offsetX - el.x; dragbasey = e.offsetY - el.y;
-	if (el.parent) {
-		const childset = el.parent[0][el.parent[1]], idx = el.parent[2];
-		childset[idx] = "";
-		//If this makes a double empty, remove one of them.
-		//This may entail moving other elements up a slot, changing their parent pointers.
-		//(OOB array indexing will never return an empty string)
-		//Note that it is possible to have three in a row, in which case we'll remove twice.
-		while (childset[idx - 1] === "" && childset[idx] === "") remove_child(childset, idx);
-		if (childset[idx] === "" && childset[idx + 1] === "") remove_child(childset, idx);
-		el.parent = null;
-	}
+	//Note that the element doesn't lose its parent until you first move the mouse.
 });
 
 function has_parent(child, parent) {
@@ -1004,6 +994,17 @@ canvas.addEventListener("pointermove", e => {
 	clicking_on = null;
 	if (dragging) {
 		cursor = "grabbing";
+		if (dragging.parent) {
+			const childset = dragging.parent[0][dragging.parent[1]], idx = dragging.parent[2];
+			childset[idx] = "";
+			//If this makes a double empty, remove one of them.
+			//This may entail moving other elements up a slot, changing their parent pointers.
+			//(OOB array indexing will never return an empty string)
+			//Note that it is possible to have three in a row, in which case we'll remove twice.
+			while (childset[idx - 1] === "" && childset[idx] === "") remove_child(childset, idx);
+			if (childset[idx] === "" && childset[idx + 1] === "") remove_child(childset, idx);
+			dragging.parent = null;
+		}
 		[dragging.x, dragging.y] = snap_to_elements(e.offsetX - dragbasex, e.offsetY - dragbasey);
 		repaint();
 	}
