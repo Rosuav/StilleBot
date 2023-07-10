@@ -1228,6 +1228,7 @@ canvas.onkeydown = e => {
 			e.preventDefault();
 			break;
 		}
+		case 'e': case 'E': //"Else" will add to the second child branch of an element.
 		case 'a': case 'A': {
 			//Append an element to the end of the first child slot of this element, if
 			//there is one; otherwise at the end of the child slot of the parent.
@@ -1235,10 +1236,15 @@ canvas.onkeydown = e => {
 			if (!focus) break;
 			e.preventDefault();
 			let parent = focus.parent;
-			if (types[focus.type].children) {
-				//What child slots do we have?
-				parent = [focus, types[focus.type].children[0], 0];
-				//TODO: Modifier key to add to other slot??
+			const childslots = types[focus.type].children;
+			if (e.key === "e" || e.key === "E") {
+				//Append to the second child, if there is one; otherwise do nothing.
+				if (!childslots || childslots.length < 2) break;
+				parent = [focus, childslots[1], 0];
+			}
+			else if (childslots) {
+				//Append to the first child, if there is one; otherwise append a sibling.
+				parent = [focus, childslots[0], 0];
 			}
 			const childset = parent[0][parent[1]];
 			const el = clone_template(trays[current_tray][0]);
