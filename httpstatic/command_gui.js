@@ -591,15 +591,16 @@ function make_template(el, par) {
 		else ensure_blank(el[attr]).forEach((e, i) => make_template(e, [el, attr, i]));
 	}
 }
+const _hotkeys = "qwertyuop"; //Skip i b/c "insert"
 tray_tabs.forEach((t, i) => {
 	t.hotkey = i + 1;
-	(trays[t.name] = t.items).forEach(e => make_template(e));
+	(trays[t.name] = t.items).forEach((e, k) => {make_template(e); e.hotkey = _hotkeys[k];});
 });
 //Search for any type that can't be created from a template
 for (let t in types) if (!seen_types[t]) {
 	if (t.startsWith("anchor_") || t.endsWith("flag")) continue;
 	if (t.startsWith("builtin_")) {
-		const el = {type: t};
+		const el = {type: t, hotkey: _hotkeys[trays.Extras.length]};
 		make_template(el);
 		trays.Extras.push(el);
 	}
@@ -739,6 +740,7 @@ function draw_at(ctx, el, parent, reposition) {
 	if (type.style === "flag") label_x = 6; //Hack!
 	else if (el.template) labels[0] = "⯇ " + labels[0];
 	else if (!type.fixed) labels[0] = "⣿ " + labels[0];
+	if (el.hotkey) labels[0] = "[" + el.hotkey + "] " + labels[0]; //FIXME: Ugly
 	const w = (type.width || 200) - label_x - right_margin;
 	for (let i = 0; i < labels.length; ++i) ctx.fillText(limit_width(ctx, labels[i], w), label_x, path.labelpos[i]);
 	ctx.stroke(path.path);
@@ -1148,6 +1150,7 @@ function set_canvas_focus(el, visible) {
 }
 
 canvas.onkeydown = e => {
+	if (e.ctrlKey || e.altKey) return; //For now, no ctrl/alt keystrokes
 	switch (e.key) {
 		case "ArrowUp": case "ArrowDown": {
 			//TODO: If Alt held, move currently selected element in the given direction???
@@ -1206,7 +1209,7 @@ canvas.onkeydown = e => {
 			if (focus && focus.parent) {e.preventDefault(); set_canvas_focus(focus.parent[0], true);}
 			break;
 		}
-		case 'o': case 'O': case 'Enter': {
+		case 'Enter': {
 			const focusel = currently_focused_element();
 			if (focusel) open_element_properties(focusel);
 			e.preventDefault();
@@ -1217,18 +1220,20 @@ canvas.onkeydown = e => {
 			const focus = currently_focused_element();
 			if (focus && focus.parent) {
 				const childset = focus.parent[0][focus.parent[1]];
-				const el = clone_template(trays[current_tray][0]);
+				const el = {type: "text", message: ""};
+				actives.push(el);
 				childset.splice(focus.parent[2], 0, el);
 				for (let i = focus.parent[2]; i < childset.length; ++i)
 					if (childset[i]) childset[i].parent = [focus.parent[0], focus.parent[1], i];
 				repaint(); //Force all elements to have their corresponding fallbacks
 				set_canvas_focus(el); //Select the new element
 				repaint(); //And now paint it with the correct focus ring.
+				open_element_properties(el);
 			}
 			e.preventDefault();
 			break;
 		}
-		case 'e': case 'E': //"Else" will add to the second child branch of an element.
+		case 'f': case 'F': //"False" will add to the second child branch of an element.
 		case 'a': case 'A': {
 			//Append an element to the end of the first child slot of this element, if
 			//there is one; otherwise at the end of the child slot of the parent.
@@ -1237,7 +1242,7 @@ canvas.onkeydown = e => {
 			e.preventDefault();
 			let parent = focus.parent;
 			const childslots = types[focus.type].children;
-			if (e.key === "e" || e.key === "E") {
+			if (e.key === "f" || e.key === "F") {
 				//Append to the second child, if there is one; otherwise do nothing.
 				if (!childslots || childslots.length < 2) break;
 				parent = [focus, childslots[1], 0];
@@ -1247,7 +1252,8 @@ canvas.onkeydown = e => {
 				parent = [focus, childslots[0], 0];
 			}
 			const childset = parent[0][parent[1]];
-			const el = clone_template(trays[current_tray][0]);
+			const el = {type: "text", message: ""};
+			actives.push(el);
 			//Assume there will always be an empty string at the end, and insert there
 			el.parent = [parent[0], parent[1], childset.length - 1];
 			childset[childset.length - 1] = el;
@@ -1255,6 +1261,7 @@ canvas.onkeydown = e => {
 			repaint(); //Force all elements to have their corresponding fallbacks
 			set_canvas_focus(el); //Select the new element
 			repaint(); //And now paint it with the correct focus ring.
+			open_element_properties(el);
 			break;
 		}
 		case '1': case '2': case '3': case '4': case '5': case '6':
@@ -1263,6 +1270,14 @@ canvas.onkeydown = e => {
 			//TODO: Hint to a screenreader that the contents of this tray should be read out
 			refactor(); repaint();
 			break;
+		}
+		case 'q': case 'w': case 'e': case 'r': case 't': case 'y': case 'u': case 'o': case 'p':
+		case 'Q': case 'W': case 'E': case 'R': case 'T': case 'Y': case 'U': case 'O': case 'P': {
+			e.preventDefault();
+			const hotkey = e.key.toLowerCase();
+			const el = trays[current_tray].find(el => el.hotkey === hotkey);
+			if (!el) break;
+			
 		}
 		default: /*console.log("Key!", e);*/ break;
 	}
