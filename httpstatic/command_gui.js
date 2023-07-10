@@ -1226,6 +1226,30 @@ canvas.onkeydown = e => {
 				repaint(); //And now paint it with the correct focus ring.
 			}
 			e.preventDefault();
+			break;
+		}
+		case 'a': case 'A': {
+			//Append an element to the end of the first child slot of this element, if
+			//there is one; otherwise at the end of the child slot of the parent.
+			const focus = currently_focused_element();
+			if (!focus) break;
+			e.preventDefault();
+			let parent = focus.parent;
+			if (types[focus.type].children) {
+				//What child slots do we have?
+				parent = [focus, types[focus.type].children[0], 0];
+				//TODO: Modifier key to add to other slot??
+			}
+			const childset = parent[0][parent[1]];
+			const el = clone_template(trays[current_tray][0]);
+			//Assume there will always be an empty string at the end, and insert there
+			el.parent = [parent[0], parent[1], childset.length - 1];
+			childset[childset.length - 1] = el;
+			childset.push(""); //And reinstate the trailing empty.
+			repaint(); //Force all elements to have their corresponding fallbacks
+			set_canvas_focus(el); //Select the new element
+			repaint(); //And now paint it with the correct focus ring.
+			break;
 		}
 		case '1': case '2': case '3': case '4': case '5': case '6':
 		case '7': case '8': case '9': if (e.key <= tray_tabs.length) {
