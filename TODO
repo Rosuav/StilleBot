@@ -196,6 +196,9 @@
     - Support this notation for cooldowns too?? Including aliasing via the builtin.
   - Channel currency?? Would become available as "*points" but automatically incremented
     according to rules like "+1 every 5 minutes to all in chat".
+    - Builtin to iterate over all participants or all currently in chat?? Could be attached
+      to a regular interval timer. $participant$/{participant} has a fixed timeout of 5 min,
+      but the builtin could have a configurable timeout.
 * Combined condition and variable update: "Spend". Numerically check if the given variable
   is >= the given value, and if it is, adds -value. Not a huge simplicity, but it would
   prevent desynchronization, which is a subtle problem and hard to debug.
