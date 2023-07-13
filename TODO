@@ -31,6 +31,8 @@
   - The allfollows display could be this, but it's nondiscoverable and could be quite costly
     for people who follow a lot of people.
   - Adding ?raiders will show incoming, but not outgoing, raids.
+* Raid finder: Once the /streams endpoint starts reporting CCLs (the way /channels does),
+  show this info on the tile somewhere.
 * Importing of config export files
   - Create all listed commands, but don't destroy unmentioned ones (overwrite any with
     the same name, of course). Ditto specials, but whitelist the names, of course.
