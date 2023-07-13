@@ -378,12 +378,15 @@ mapping build_channel_info(mapping stream)
 		}
 		return 0;
 	}
-	//TODO: ret->mature, if possible
 	ret->display_name = stream->user_name;
 	ret->url = "https://www.twitch.tv/" + lower_case(stream->user_name); //TODO: Get the actual login, which may be different
 	ret->status = stream->title;
 	ret->online_type = stream->type; //Really, THIS should be called "status" (eg "live"), and "status" should be called Title. But whatevs.
 	ret->_id = ret->user_id = stream->user_id;
+	//TODO: Keep an eye on the API and see if content classification labels get
+	//added to the /stream endpoint (they're only in /channels as of 20230713).
+	//This is currently going to be stashing a null into ret.
+	ret->content_classification_labels = stream->content_classification_labels;
 	ret->_raw = stream; //Avoid using this except for testing
 	//Add anything else here that might be of interest
 	return ret;
@@ -391,17 +394,22 @@ mapping build_channel_info(mapping stream)
 
 continue Concurrent.Future|mapping save_channel_info(string name, mapping info) {
 	//Attempt to gather channel info from the stream info. If we
-	//can't, we'll get that info via Kraken.
+	//can't, we'll get that info via an API call.
 	mapping synthesized = build_channel_info(info);
 	if (!synthesized) {
 		if (info->game_id != "") write("SYNTHESIS FAILED - maybe bad game? %O\n", info->game_id);
 		synthesized = yield(get_channel_info(name));
 	}
+	if (!synthesized->content_classification_labels) {
+		//As of 20230713, the /streams endpoint doesn't include CCLs.
+		synthesized = yield(get_channel_info(name));
+	}
 	synthesized->viewer_count = info->viewer_count;
 	synthesized->tags = info->tags || ({ });
 	synthesized->tag_names = sprintf("[%s]", synthesized->tags[*]) * ", ";
+	synthesized->ccls = sprintf("[%s]", synthesized->content_classification_labels[*]) * ", ";
 	int changed = 0;
-	foreach ("game status tag_names" / " ", string attr)
+	foreach ("game status tag_names ccls" / " ", string attr)
 		changed += synthesized[attr] != channel_info[name][?attr];
 	channel_info[name] = synthesized;
 	if (changed) {
@@ -416,6 +424,7 @@ continue Concurrent.Future|mapping save_channel_info(string name, mapping info) 
 			"{title}": synthesized->status,
 			"{tag_names}": synthesized->tag_names,
 			"{tag_ids}": "", //Deprecated - use the tag names (new-style tags have no IDs)
+			"{ccls}": synthesized->ccls,
 		]));
 	}
 }
