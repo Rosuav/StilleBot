@@ -106,6 +106,7 @@
 * Classic command editor is lagging behind a bit.
   - Set variable, "extra config", that sucks. The whole destcfg thing is a bit of a
     hack though, so I don't think it's worth going to any effort for this yet.
+  - Mode "foreach" is also clunky, plus it can't have the participant_activity set.
 * GUI editor - params need formatting options, in and out
   - Builtin params need to cope with splitting strings to arrays
 * Rename "gifted" flag in sub alerts to "is_gifted" to trigger boolean handling
@@ -198,9 +199,8 @@
     - Support this notation for cooldowns too?? Including aliasing via the builtin.
   - Channel currency?? Would become available as "*points" but automatically incremented
     according to rules like "+1 every 5 minutes to all in chat".
-    - Builtin to iterate over all participants or all currently in chat?? Could be attached
-      to a regular interval timer. $participant$/{participant} has a fixed timeout of 5 min,
-      but the builtin could have a configurable timeout.
+    - It's now possible to do this manually (have an automated command that adds to a
+      variable for each chatter), but would be convenient to configure it in one place.
 * Combined condition and variable update: "Spend". Numerically check if the given variable
   is >= the given value, and if it is, adds -value. Not a huge simplicity, but it would
   prevent desynchronization, which is a subtle problem and hard to debug.

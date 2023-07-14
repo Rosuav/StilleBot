@@ -204,7 +204,7 @@ mapping get_state(string group, string|void id) {
 //Map a flag name to a set of valid values for it
 //Blank or null is always allowed, and will result in no flag being set.
 constant message_flags = ([
-	"mode": (<"random", "rotate">),
+	"mode": (<"random", "rotate", "foreach">),
 	"dest": (<"/w", "/web", "/set", "/chain", "/reply">),
 ]);
 //As above, but applying only to the top level of a command.
@@ -334,6 +334,9 @@ echoable_message _validate(echoable_message resp, mapping state)
 		//In this case, though, it also creates a variable. For simplicity, reuse cdanon.
 		ret->rotatename = normalize_cooldown_name(resp->rotatename, state);
 	}
+	//Iteration can be done on all-in-chat or all-who've-chatted.
+	if (int timeout = ret->mode == "foreach" && (int)resp->participant_activity)
+		ret->participant_activity = timeout;
 
 	//Voice ID validity depends on the channel we're working with. A syntax-only check will
 	//accept any voice ID as long as it's a string of digits.

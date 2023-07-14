@@ -397,6 +397,14 @@ const types = {
 		typedesc: ["Capture message into a variable. Can be accessed as $varname$ in this or any other command.", BR(),
 			"Use ", CODE("*varname"), " for a per-user variable, and/or ", CODE("varname?"), " for ephemeral."],
 	},
+	foreach: {
+		color: "#66ee66", children: ["message"], label: el => +el.participant_activity ? "For each active chatter" : "For each person in chat",
+		params: [{attr: "mode", values: "foreach"},
+			{attr: "participant_activity", label: "Active in the past X seconds", values: [0, 86400, 1]},],
+		typedesc: ["Do something for every person in chat (active time of 0) or everyone who has been", BR(),
+			"active recently (eg 300 = five minutes). This user's variables will be available with the", BR(),
+			"name ", CODE("each*"), " for any variable."],
+	},
 	...builtin_types(),
 	handle_errors: {
 		color: "#ff8800", label: el => "Handle errors",
@@ -553,7 +561,7 @@ const tray_tabs = [
 		{type: "conditional_number", expr1: "$deaths$ > 10"},
 		{type: "conditional_regexp", expr1: "[Hh]ello", expr2: "{param}"},
 		{type: "chain_of_command", target: "", destcfg: ""},
-		{type: "builtin_argsplit", builtin_param: "{param}"},
+		{type: "foreach", "participant_activity": "300"},
 		//NOTE: Even though they're internally conditionals too, cooldowns don't belong in this tray.
 		//Conversely, even though argsplit isn't really control flow, it fits into the same kind of
 		//use case, where you're thinking more like a programmer.
@@ -573,6 +581,7 @@ const tray_tabs = [
 		{type: "builtin_tz", builtin_param: "Los Angeles"},
 		{type: "builtin_chan_pointsrewards", message: [{type: "handle_errors"}]},
 		{type: "randrot", mode: "rotate"},
+		{type: "builtin_argsplit", builtin_param: "{param}"},
 	]},
 	{name: "Extras", color: "#7f7f7f", items: [{type: "handle_errors"}]}, //I'm REALLY not happy with these names.
 ];
@@ -1432,7 +1441,7 @@ function matches(param, msg) {
 		case "object": if (param.values.validate) return param.values.validate(val);
 		//If there's no validator function, it must be an array.
 		if (param.values.length === 3 && typeof param.values[0] === "number") {
-			const num = parseFloat(val);
+			const num = parseFloat(val || 0);
 			const [min, max, step] = param.values;
 			return num >= min && min <= max && !((num - min) % step);
 		} else return param.values.includes(val);
