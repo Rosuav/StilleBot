@@ -1,6 +1,6 @@
 //Command advanced editor framework, and Raw mode editor
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {B, BR, BUTTON, CANVAS, CODE, DIALOG, DIV, EM, FORM, H3, HEADER, INPUT, LABEL, LI, P, SECTION, SPAN, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
+const {ABBR, B, BR, BUTTON, CANVAS, CODE, DIALOG, DIV, EM, FORM, H3, HEADER, INPUT, LABEL, LI, P, SECTION, SPAN, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
 const tablist = ["Classic", "Graphical", "Raw"];
 let defaulttab = "graphical"; //Can be overridden with prefs
 document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
@@ -22,7 +22,25 @@ document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 				B("Double-click"),
 				" an element to make changes to it.",
 			]),
-			CANVAS({id: "command_gui", width: "800", height: "600"}),
+			DIV({id: "command_gui_position"}, [
+				CANVAS({id: "command_gui", width: "800", height: "600"}),
+				LABEL({id: "command_gui_keybinds"}, [
+					ABBR({title: "Press ? to show keybinds"}, "?"), //Always visible
+					INPUT({type: "checkbox"}), //Invisible
+					UL([ //Visible only when CB is checked
+						LI("? - show/hide keybinds"),
+						LI("Home - select anchor"),
+						LI("Up/down arrow - move to sibling"),
+						LI("Left/right arrow - move to parent/first child"),
+						LI("Enter - edit current element"),
+						LI("1-6 - change tray"),
+						LI("I - insert text above current element"),
+						LI("A - add text after or inside current element"),
+						LI("Q-U - add the corresponding tray element"),
+						LI("Hold Shift to add to the 'otherwise'"),
+					]),
+				]),
+			]),
 		]),
 		UL({className: "buttonbox"}, [
 			LI(BUTTON({type: "button", id: "save_advanced"}, "Save")),

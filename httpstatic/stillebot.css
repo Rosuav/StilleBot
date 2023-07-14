@@ -174,7 +174,7 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 	padding-right: 0.25em;
 }
 
-#command_gui {
+#command_gui_position {
 	border: 1px solid black;
 	margin: 0.5em;
 }
@@ -187,6 +187,48 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 #setprops tr:nth-child(odd) {background: #dff;}
 #setprops tr:nth-child(even) {background: #ddf;}
 */
+
+#command_gui_position {position: relative;}
+
+#command_gui_keybinds {
+	display: block;
+	position: absolute;
+	top: 0; right: 0;
+}
+
+#command_gui_keybinds abbr {
+	display: block;
+	position: absolute;
+	top: 0; right: 0;
+	background: #ddd;
+	border: 1px solid black;
+	padding: 0.1em 0.25em;
+	text-decoration: none;
+}
+
+#command_gui_keybinds input {display: none;}
+
+#command_gui_keybinds input ~ ul {
+	display: block;
+	position: absolute;
+	top: 0; right: 0;
+	background: #ddd;
+	border: 1px solid black;
+	list-style-type: none;
+	padding: 0; margin: 0;
+	overflow: hidden;
+
+	width: 0; height: 0;
+}
+
+#command_gui_keybinds input:checked ~ ul {
+	width: unset; height: unset;
+	padding: 0.5em;
+}
+
+#command_gui_keybinds li {
+	white-space: nowrap;
+}
 
 .clipbtn {cursor: copy;}
 #copied {

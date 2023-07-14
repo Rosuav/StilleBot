@@ -1281,11 +1281,18 @@ canvas.onkeydown = e => {
 };
 document.onkeydown = e => {
 	//Pressing Home takes you to the anchor, but only if we don't have a properties dialog open
-	if (e.key === "Home" && e.target.closest("dialog") === canvas.closest("dialog")) {
+	if (e.target.closest("dialog") !== canvas.closest("dialog")) return;
+	if (e.key === "Home") {
 		e.preventDefault();
 		canvas.firstElementChild.focus();
 		draw_focus_ring = true;
 		repaint();
+	}
+	//Similarly, press ? to toggle the legend.
+	if (e.key === "?") {
+		e.preventDefault();
+		const el = DOM("#command_gui_keybinds input");
+		if (el) el.checked = !el.checked;
 	}
 };
 
