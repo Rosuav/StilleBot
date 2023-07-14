@@ -21,13 +21,12 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (string dest = resend_redirect[req->variables->code]) return redirect(dest);
 		//write("Login response %O\n", req->variables);
 		object auth = TwitchAuth();
-		write("Requesting access token for %O...\n", req->variables->code); //This shows up twice when those crashes happen. Maybe caching the redirect will help?
+		//write("Requesting access token for %O...\n", req->variables->code); //This shows up twice when those crashes happen. Maybe caching the redirect will help?
 		string cookie = yield(auth->request_access_token_promise(req->variables->code));
 		auth->set_from_cookie(cookie);
 		mapping user = yield(twitch_api_request("https://api.twitch.tv/helix/users",
 			(["Authorization": "Bearer " + auth->access_token])))
 				->data[0];
-		//write("Login: %O %O\n", auth->access_token, user);
 		if (function f = login_callback[req->variables->state])
 			return f(req, user, (multiset)(req->variables->scope / " "), auth->access_token, cookie);
 		string dest = m_delete(req->misc->session, "redirect_after_login");
