@@ -21,7 +21,7 @@ and is everything that isn't in the Favs/Trays/Specials.
   - The primary anchor point may belong in Actives or may belong in Specials. Uncertain.
 */
 import {set_content, choc, replace_content, lindt, DOM, on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, CODE, DIALOG, DIV, FORM, H3, HEADER, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TEXTAREA, TR, UL} = choc; //autoimport
+const {A, BR, BUTTON, CODE, DIALOG, DIV, FORM, H3, HEADER, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
 
 const SNAP_RANGE = 100; //Distance-squared to permit snapping (eg 25 = 5px radius)
 const canvas = DOM("#command_gui");
@@ -40,7 +40,7 @@ document.body.appendChild(DIALOG({id: "properties"}, SECTION([
 			"This is a template and cannot be edited directly. Drag it to create something in the", BR(),
 			"command, or ==> ", BUTTON({id: "clonetemplate", type: "button"}, "Add to command")
 		]),
-		P(BUTTON({id: "saveprops"}, "Close")),
+		P(BUTTON({id: "saveprops", accesskey: "a"}, "Close")), //The access key makes sense when it changes to Apply
 	])),
 ])));
 fix_dialogs();
@@ -1382,7 +1382,7 @@ on("click", "#clonetemplate", e => {
 	repaint();
 });
 
-on("input", "#properties [name]", e => set_content("#saveprops", "Apply changes"));
+on("input", "#properties [name]", e => set_content("#saveprops", [U("A"), "pply changes"]));
 
 on("submit", "#setprops", e => {
 	const type = types[propedit.type];
