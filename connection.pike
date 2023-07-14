@@ -449,6 +449,66 @@ class channel(string name) { //name begins with hash and is all lower case
 		}
 		if (!msg) return; //If a message doesn't have an Otherwise, it'll end up null.
 
+		//cfg->voice could be absent, blank, "0", or a voice ID eg "279141671"
+		//Absent and blank mean "use the channel default" - config->defvoice - which
+		//might be zero (meaning that the channel default is the global default).
+		//"0" means "use the global default, even if it's not the channel default"
+		//Otherwise, it's the ID of a Twitch user whose voice we should use. Note that
+		//there's no check to ensure that we have permission to do so; if you add a
+		//voice but don't grant permission to use chat, all chat messages will just
+		//fail silently. (This would be fine if it's only used for slash commands.)
+		string voice = (cfg->voice && cfg->voice != "") ? cfg->voice : config->defvoice;
+		if (!config->voices[?voice]) voice = 0; //Ensure that the voice hasn't been deauthenticated since the command was edited
+		if (!voice) {
+			//No voice has been selected (either explicitly or as the channel default).
+			//Use the bot's global default voice, or the intrinsic voice (implicitly zero).
+			voice = persist_config->has_path("channels", "!demo")->?defvoice;
+			//Even if this voice hasn't been activated for this channel, that's fine - it is
+			//implicitly permitted for use by all channels.
+		}
+
+		if (message->mode == "foreach") {
+			//For now, this only iterates over participants. To expand and generalize this,
+			//create a builtin that gathers a collection of participants, and then foreach
+			//will iterate over any collection. The builtin's args would specify the timeout
+			//(or "no timeout" for all in chat), and would probably collect into something
+			//akin to a variable. Then foreach mode would iterate over that variable.
+			//NOTE: Due to Twitch API restrictions, the "everyone in chat" version of this
+			//requires that the currently-selected voice be a moderator with scope permission
+			//to read chatters (moderator:read:chatters). This is a tad awkward. Fortunately,
+			//we can use the "active chatter" mode simply based on sightings in chat. This IS
+			//going to create a bizarre disconnect; for example, you could say "everyone who
+			//has been active within the last 15 minutes", and this may well include people
+			//who are no longer listed in the "all chatters" list.
+			//TODO: Allow the iteration to do other things than just select a user into "each"
+			array users = ({ });
+			if (message->participant_activity) {
+				int limit = time() - (int)message->participant_activity; //eg find people active within the last five minutes
+				mapping n2u = G->G->name_to_uid;
+				foreach (G_G_("participants", name[1..]); string name; mapping info)
+					if (info->lastnotice >= limit) users += ({n2u[name]});
+			} else {
+				//Ask Twitch who's currently in chat.
+				mapping tok = persist_status["voices"][voice];
+				get_helix_paginated(
+					"https://api.twitch.tv/helix/chat/chatters",
+					(["broadcaster_id": (string)userid, "moderator_id": (string)voice]),
+					(["Authorization": "Bearer " + tok->token]),
+				)->then() {
+					cfg |= (["users": cfg->users | (["each": "0"])]);
+					//Now that we've disconnected both cfg and cfg->users, it's okay to mutate.
+					foreach (__ARGS__[0], mapping user) {
+						cfg->users->each = user->user_id;
+						_send_recursive(person, msg, vars, cfg);
+					}
+				};
+			}
+			cfg |= (["users": cfg->users | (["each": "0"])]);
+			//Ditto, mutation is okay now.
+			foreach (users, cfg->users->each) _send_recursive(person, msg, vars, cfg);
+			return;
+		}
+
 		if (mappingp(msg)) {_send_recursive(person, (["conditional": 0]) | msg, vars, cfg); return;} //CJA 20230623: See other of this datemark.
 
 		if (arrayp(msg))
@@ -575,23 +635,6 @@ class channel(string name) { //name begins with hash and is all lower case
 		}
 		msgs += ({prefix + msg});
 
-		//cfg->voice could be absent, blank, "0", or a voice ID eg "279141671"
-		//Absent and blank mean "use the channel default" - config->defvoice - which
-		//might be zero (meaning that the channel default is the global default).
-		//"0" means "use the global default, even if it's not the channel default"
-		//Otherwise, it's the ID of a Twitch user whose voice we should use. Note that
-		//there's no check to ensure that we have permission to do so; if you add a
-		//voice but don't grant permission to use chat, all chat messages will just
-		//fail silently. (This would be fine if it's only used for slash commands.)
-		string voice = (cfg->voice && cfg->voice != "") ? cfg->voice : config->defvoice;
-		if (!config->voices[?voice]) voice = 0; //Ensure that the voice hasn't been deauthenticated since the command was edited
-		if (!voice) {
-			//No voice has been selected (either explicitly or as the channel default).
-			//Use the bot's global default voice, or the intrinsic voice (implicitly zero).
-			voice = persist_config->has_path("channels", "!demo")->?defvoice;
-			//Even if this voice hasn't been activated for this channel, that's fine - it is
-			//implicitly permitted for use by all channels.
-		}
 		if (G->G->send_chat_command) {
 			//Attempt to send the message(s) via the Twitch APIs if they have slash commands
 			//Any that can't be sent that way will be sent the usual way.

@@ -275,6 +275,10 @@ protected void create(string name) {
 			voice_scopes[anno] = all_twitch_scopes[anno] || anno; //If there's a function that uses it, the voices subsystem can grant it.
 		}
 	}
+	//There are additional scopes that don't correspond to any slash command, but might be granted
+	//to a voice.
+	foreach ("moderator:read:chatters" / " ", string scope)
+		voice_scopes[scope] = all_twitch_scopes[scope] || scope;
 	G->G->voice_additional_scopes = voice_scopes;
 	//send_chat_command("/announce This is an announcement from the bot!", G->G->irc->channels["#rosuav"], 0);
 	//send_chat_command("/announce This is an announcement from Mustard Mine!", G->G->irc->channels["#rosuav"], "279141671");
