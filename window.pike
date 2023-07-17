@@ -400,12 +400,9 @@ class _mainwindow
 
 	void makewindow()
 	{
-		object ls=GTK2.ListStore(({"string","string"}));
+		object ls=GTK2.ListStore(({"string"}));
 		foreach (sort(indices(items)),string kwd)
-		{
-			object iter=ls->append();
-			ls->set_value(iter,0,kwd);
-		}
+			ls->set_value(ls->append(),0,kwd);
 		ls->set_value(win->new_iter=ls->append(),0,"-- New --");
 		win->mainwindow=GTK2.Window(windowprops)
 			->add(GTK2.Vbox(0,10)
@@ -419,7 +416,6 @@ class _mainwindow
 					->add(GTK2.ScrolledWindow()->add(
 						win->list=GTK2.TreeView(ls) //All I want is a listbox. This feels like *such* overkill. Oh well.
 							->append_column(GTK2.TreeViewColumn("Item",GTK2.CellRendererText(),"text",0))
-							->append_column(GTK2.TreeViewColumn("",GTK2.CellRendererText(),"text",1))
 					)->set_policy(GTK2.POLICY_NEVER, GTK2.POLICY_AUTOMATIC))
 					->add(GTK2.Vbox(0,0)
 						->add(make_content())
