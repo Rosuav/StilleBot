@@ -275,45 +275,11 @@ class configdlg
 		foreach (win->real_bools,string key) win[key]->set_active((int)info[key]);
 	}
 
-	void makewindow()
-	{
-		object ls=GTK2.ListStore(({"string","string"}));
-		//TODO: Break out the list box code into a separate object - it'd be useful eg for zoneinfo.pike.
-		foreach (sort(indices(items)),string kwd)
-		{
-			object iter=ls->append();
-			ls->set_value(iter,0,kwd);
-		}
-		ls->set_value(win->new_iter=ls->append(),0,"-- New --");
-		//TODO: Have a way to customize this a little (eg a menu bar) without
-		//completely replacing this function.
-		win->mainwindow=GTK2.Window(windowprops)
-			->add(GTK2.Vbox(0,10)
-				->add(GTK2.Hbox(0,5)
-					->add(GTK2.ScrolledWindow()->add(
-						win->list=GTK2.TreeView(ls) //All I want is a listbox. This feels like *such* overkill. Oh well.
-							->append_column(GTK2.TreeViewColumn("Item",GTK2.CellRendererText(),"text",0))
-							->append_column(GTK2.TreeViewColumn("",GTK2.CellRendererText(),"text",1))
-					)->set_policy(GTK2.POLICY_NEVER, GTK2.POLICY_AUTOMATIC))
-					->add(GTK2.Vbox(0,0)
-						->add(make_content())
-						->pack_end(GTK2.HbuttonBox()
-							->add(win->pb_save=GTK2.Button((["label":"_Save","use-underline":1])))
-							->add(win->pb_delete=GTK2.Button((["label":"_Delete","use-underline":1,"sensitive":1])))
-						,0,0,0)
-					)
-				)
-			);
-		win->sel=win->list->get_selection(); win->sel->select_iter(win->new_iter||ls->get_iter_first()); sig_sel_changed();
-		::makewindow();
-	}
-
-	//Generate a widget collection from either the constant or migration mode
-	array(string|GTK2.Widget) collect_widgets(array elem)
+	GTK2.Widget make_content()
 	{
 		array objects = ({ });
 		win->real_strings = win->real_ints = win->real_bools = ({ });
-		foreach (elem, mixed element)
+		foreach (elements, mixed element)
 		{
 			sscanf(element, "%1[?#+'@!*]%s", string type, element);
 			sscanf(element, "%s:%s", string name, string lbl);
@@ -335,12 +301,7 @@ class configdlg
 			}
 		}
 		win->real_strings -= ({"kwd"});
-		return objects;
-	}
-
-	GTK2.Widget make_content()
-	{
-		return two_column(collect_widgets(elements));
+		return two_column(objects);
 	}
 
 	//Attempt to select the given keyword - returns 1 if found, 0 if not
@@ -439,16 +400,38 @@ class _mainwindow
 
 	void makewindow()
 	{
+		object ls=GTK2.ListStore(({"string","string"}));
+		foreach (sort(indices(items)),string kwd)
+		{
+			object iter=ls->append();
+			ls->set_value(iter,0,kwd);
+		}
+		ls->set_value(win->new_iter=ls->append(),0,"-- New --");
+		win->mainwindow=GTK2.Window(windowprops)
+			->add(GTK2.Vbox(0,10)
+				->pack_start(GTK2.MenuBar()
+					->add(GTK2.MenuItem("_Options")->set_submenu(win->optmenu=GTK2.Menu()
+						->add(win->update=GTK2.MenuItem("Update (developer mode)"))
+						->add(win->updatemodules=GTK2.MenuItem("Update modules (developer mode)"))
+						->add(win->manual_auth=GTK2.MenuItem("Authenticate manually"))
+					)),0,0,0)
+				->add(GTK2.Hbox(0,5)
+					->add(GTK2.ScrolledWindow()->add(
+						win->list=GTK2.TreeView(ls) //All I want is a listbox. This feels like *such* overkill. Oh well.
+							->append_column(GTK2.TreeViewColumn("Item",GTK2.CellRendererText(),"text",0))
+							->append_column(GTK2.TreeViewColumn("",GTK2.CellRendererText(),"text",1))
+					)->set_policy(GTK2.POLICY_NEVER, GTK2.POLICY_AUTOMATIC))
+					->add(GTK2.Vbox(0,0)
+						->add(make_content())
+						->pack_end(GTK2.HbuttonBox()
+							->add(win->pb_save=GTK2.Button((["label":"_Save","use-underline":1])))
+							->add(win->pb_delete=GTK2.Button((["label":"_Delete","use-underline":1,"sensitive":1])))
+						,0,0,0)
+					)
+				)
+			);
+		win->sel=win->list->get_selection(); win->sel->select_iter(win->new_iter||ls->get_iter_first()); sig_sel_changed();
 		::makewindow();
-		//Add a menu bar. This is a bit of a hack.
-		object vbox = win->mainwindow->get_child();
-		object menubar = GTK2.MenuBar()
-			->add(GTK2.MenuItem("_Options")->set_submenu(win->optmenu=GTK2.Menu()
-				->add(win->update=GTK2.MenuItem("Update (developer mode)"))
-				->add(win->updatemodules=GTK2.MenuItem("Update modules (developer mode)"))
-				->add(win->manual_auth=GTK2.MenuItem("Authenticate manually"))
-			));
-		vbox->pack_start(menubar,0,0,0)->reorder_child(menubar, 0);
 	}
 
 	void sig_kwd_changed(object self)
