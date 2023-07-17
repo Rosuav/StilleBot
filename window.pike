@@ -181,8 +181,8 @@ class _mainwindow
 {
 	inherit window;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
-	constant elements=({"kwd:Channel", "?chatlog:Log chat to console",
-		"#connprio:Connection priority",
+	constant elements=({"$kwd:Channel", "$display_name:Display name",
+		"?chatlog:Log chat to console", "#connprio:Connection priority",
 	});
 	constant is_subwindow = 0;
 	mapping(string:mapping(string:mixed)) items;
@@ -208,13 +208,12 @@ class _mainwindow
 		string newkwd=win->kwd->get_text();
 		if (newkwd=="") return; //Blank keywords currently disallowed
 		if (newkwd=="-- New --") return; //Since selecteditem() currently depends on "-- New --" being the 'New' entry, don't let it be used anywhere else.
-		mapping info;
-		items[newkwd] = info = m_delete(items, oldkwd) || ([]);
+		mapping info = items[newkwd] = m_delete(items, oldkwd) || ([]);
 		foreach (win->real_strings,string key) info[key]=win[key]->get_text();
 		foreach (win->real_ints,string key) info[key]=(int)win[key]->get_text();
 		foreach (win->real_bools,string key) info[key]=(int)win[key]->get_active();
-		save_content(info);
 		persist_config->save();
+		if (!G->G->irc->channels["#" + newkwd]) function_object(send_message)->reconnect();
 		[object iter,object store]=win->sel->get_selected();
 		if (newkwd!=oldkwd)
 		{
@@ -232,8 +231,9 @@ class _mainwindow
 		store->remove(iter);
 		foreach (win->real_strings+win->real_ints,string key) win[key]->set_text("");
 		foreach (win->real_bools,string key) win[key]->set_active(0);
-		delete_content(kwd,m_delete(items,kwd));
+		m_delete(items, kwd);
 		persist_config->save();
+		function_object(send_message)->reconnect();
 	}
 
 	void sig_sel_changed()
@@ -246,31 +246,12 @@ class _mainwindow
 		foreach (win->real_bools,string key) win[key]->set_active((int)info[key]);
 	}
 
-	//Attempt to select the given keyword - returns 1 if found, 0 if not
-	int select_keyword(string kwd)
-	{
-		object ls=win->list->get_model();
-		object iter=ls->get_iter_first();
-		do
-		{
-			if (ls->get_value(iter,0)==kwd)
-			{
-				win->sel->select_iter(iter); sig_sel_changed();
-				return 1;
-			}
-		} while (ls->iter_next(iter));
-		return 0;
-	}
-
 	GTK2.Widget make_content()
 	{
 		array objects = ({ });
 		win->real_strings = win->real_ints = win->real_bools = ({ });
-		foreach (elements, mixed element)
-		{
-			sscanf(element, "%1[?#+'@!*]%s", string type, element);
-			sscanf(element, "%s:%s", string name, string lbl);
-			if (!lbl) sscanf(lower_case(lbl = element)+" ", "%s ", name);
+		foreach (elements, string element) {
+			sscanf(element, "%1[?#$]%s:%s", string type, string name, string lbl);
 			switch (type)
 			{
 				case "?": //Boolean
@@ -281,7 +262,7 @@ class _mainwindow
 					win->real_ints += ({name});
 					objects += ({lbl, win[name]=GTK2.Entry()});
 					break;
-				case 0: //String
+				case "$": //String
 					win->real_strings += ({name});
 					objects += ({lbl, win[name]=GTK2.Entry()});
 					break;
@@ -367,13 +348,6 @@ class _mainwindow
 	}
 
 	void sig_manual_auth_activate() {ircsettings();}
-
-	void save_content(mapping(string:mixed) info)
-	{
-		string kwd = win->kwd->get_text();
-		if (!G->G->irc->channels["#" + kwd]) function_object(send_message)->reconnect();
-	}
-	void delete_content(string kwd,mapping(string:mixed) info) {function_object(send_message)->reconnect();}
 
 	void closewindow() {exit(0);}
 }
