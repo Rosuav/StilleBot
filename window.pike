@@ -28,36 +28,19 @@ class MessageBox
 	}
 }
 
-multiset(GTK2.Widget) _noexpand=(<>);
-GTK2.Widget noex(GTK2.Widget wid) {_noexpand[wid]=1; return wid;}
-
-GTK2.Table GTK2Table(array(array(string|GTK2.Widget)) contents,mapping|void label_opts)
-{
-	if (!label_opts) label_opts=([]);
+GTK2.Table two_column(array(array|string|GTK2.Widget) contents) {
+	contents /= 2;
 	GTK2.Table tb=GTK2.Table(sizeof(contents[0]),sizeof(contents),0);
 	foreach (contents;int y;array(string|GTK2.Widget) row) foreach (row;int x;string|GTK2.Widget obj) if (obj)
 	{
 		int opt=0;
-		if (stringp(obj)) {obj=GTK2.Label(label_opts+(["label":obj])); opt=GTK2.Fill;}
-		else if (_noexpand[obj]) _noexpand[obj]=0; //Remove it from the set so we don't hang onto references to stuff we don't need
-		else opt=GTK2.Fill|GTK2.Expand;
+		if (stringp(obj)) {obj=GTK2.Label((["xalign": 1.0, "label":obj])); opt=GTK2.Fill;}
 		int xend=x+1; while (xend<sizeof(row) && !row[xend]) ++xend; //Span cols by putting 0 after the element
 		tb->attach(obj,x,xend,y,y+1,opt,opt,1,1);
 	}
 	return tb;
 }
 
-//Derivative of GTK2Table above, specific to a two-column layout. Takes a 1D array.
-//This is the most normal way to lay out labelled objects - alternate string labels and objects, or use CheckButtons without labels.
-//The labels will be right justified.
-GTK2.Table two_column(array(string|GTK2.Widget) contents) {return GTK2Table(contents/2,(["xalign":1.0]));}
-
-//End of generic GTK utility classes/functions
-
-//Generic window handler. If a plugin inherits this, it will normally show the window on startup and
-//keep it there, though other patterns are possible. For instance, the window might be hidden when
-//there's nothing useful to show; although this can cause unnecessary flicker, and so should be kept
-//to a minimum (don't show/hide/show/hide in rapid succession).
 class window
 {
 	constant provides="window";
@@ -292,15 +275,15 @@ class _mainwindow
 			{
 				case "?": //Boolean
 					win->real_bools += ({name});
-					objects += ({0,win[name]=noex(GTK2.CheckButton(lbl))});
+					objects += ({0,win[name]=GTK2.CheckButton(lbl)});
 					break;
 				case "#": //Integer
 					win->real_ints += ({name});
-					objects += ({lbl, win[name]=noex(GTK2.Entry())});
+					objects += ({lbl, win[name]=GTK2.Entry()});
 					break;
 				case 0: //String
 					win->real_strings += ({name});
-					objects += ({lbl, win[name]=noex(GTK2.Entry())});
+					objects += ({lbl, win[name]=GTK2.Entry()});
 					break;
 			}
 		}
