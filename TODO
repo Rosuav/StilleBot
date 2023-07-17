@@ -190,6 +190,11 @@
   the bot will never need to worry about reactivation.
   - Note that this will mean that this is a canonical list of banned users and thus should
     be queried (by API) if ever there is the need to do so.
+* Similarly, a command to remove the bot from a channel
+  - Instead of immediately deleting all data, though, flag the channel as "deactivated",
+    and purge after some delay (eg a week). If the channel is reactivated in that time,
+    all data should be kept.
+  - Or should data be kept permanently, and have a separate "delete my data" action?
 * Handle shoutout errors better
   - User not found
   - On cooldown (don't show to user though)
