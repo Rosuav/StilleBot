@@ -265,3 +265,16 @@
 * Tina's channel points:
   - Choose next section on the diamond painting and choose next diamond painting we work on next
   - Just put messages into chat (at least for now)
+* Silly/funny project idea: Emote colour matcher. Or emote builder? Or emote grid?
+  - Take an emote as selected by the user
+  - List all Twitch global emotes.
+  - If the user puts a channel name after the emote, also select that channel's emotes.
+  - For each pixel in the emote, find the closest emote from the collection to that pixel.
+    - Instead of just the closest, maybe make it probablistic?
+    - Invert the distances and then do a weighted search.
+  - Populate a web page with the results, tiling the selected emotes into a grid.
+  - Make this a channel point redemption in my channel.
+  - Core functionality in a builtin
+    - Return an ID and a URL where the grid can be found
+    - Retain these for a finite time period, as the emotes may change out from under us.
+  - This won't work with animated emotes. Take the static version.
