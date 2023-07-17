@@ -1,9 +1,3 @@
-//GTK utility functions/classes lifted straight from Gypsum
-
-//Usage: gtksignal(some_object,"some_signal",handler,arg,arg,arg) --> save that object.
-//Equivalent to some_object->signal_connect("some_signal",handler,arg,arg,arg)
-//When this object expires, the signal is disconnected, which should gc the function.
-//obj should be a GTK2.G.Object or similar.
 class gtksignal(object obj)
 {
 	int signal_id;
@@ -34,40 +28,9 @@ class MessageBox
 	}
 }
 
-//A message box that calls its callback only if the user chooses OK. If you need to do cleanup
-//on Cancel, use MessageBox above.
-class confirm
-{
-	inherit MessageBox;
-	protected void create(int flags,string message,GTK2.Window parent,function cb,mixed|void cb_arg)
-	{
-		::create(flags,GTK2.MESSAGE_WARNING,GTK2.BUTTONS_OK_CANCEL,message,parent,cb,cb_arg);
-	}
-	void response(object self,int button,mixed cb_arg)
-	{
-		self->destroy();
-		if (callback && button==GTK2.RESPONSE_OK) callback(cb_arg);
-	}
-}
-
-//Advisory note that this widget should be packed without the GTK2.Expand|GTK2.Fill options
-//As of Pike 8.0.2, this could safely be done with wid->set_data(), but it's not
-//safe to call get_data() with a keyword that hasn't been set (it'll segfault older Pikes).
-//So this works with a multiset instead. Once Pike 7.8 support can be dropped, switch to
-//get_data to ensure that loose references are never kept.
 multiset(GTK2.Widget) _noexpand=(<>);
 GTK2.Widget noex(GTK2.Widget wid) {_noexpand[wid]=1; return wid;}
 
-/** Create a GTK2.Table based on a 2D array of widgets
- * The contents will be laid out on the grid. Put a 0 in a cell to span
- * across multiple cells (the object preceding the 0 will span both cells).
- * Use noex(widget) to make a widget not expand (usually will want to do
- * this for a whole column). Shortcut: Labels can be included by simply
- * including a string - it will be turned into a label, expansion off, and
- * with options as set by the second parameter (if any).
- * A leading 0 on a line will be quietly ignored, not resulting in any
- * spanning. Recommended for unlabelled objects in a column of labels.
- */
 GTK2.Table GTK2Table(array(array(string|GTK2.Widget)) contents,mapping|void label_opts)
 {
 	if (!label_opts) label_opts=([]);
