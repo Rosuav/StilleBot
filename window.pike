@@ -165,86 +165,6 @@ class window
 	}
 }
 
-class configdlg
-{
-	inherit window;
-	//Provide me...
-	mapping(string:mixed) windowprops=(["title":"Configure"]);
-	mapping(string:mapping(string:mixed)) items;
-	void save_content(mapping(string:mixed) info) { } //Retrieve content from the window and put it in the mapping.
-	void delete_content(string kwd,mapping(string:mixed) info) { } //Delete the thing with the given keyword.
-	constant elements=({ });
-	//... end provide me.
-
-	//Return the keyword of the selected item, or 0 if none (or new) is selected
-	string selecteditem()
-	{
-		[object iter,object store]=win->sel->get_selected();
-		string kwd=iter && store->get_value(iter,0);
-		return (kwd!="-- New --") && kwd; //TODO: Recognize the "New" entry by something other than its text
-	}
-
-	void sig_pb_save_clicked()
-	{
-		string oldkwd=selecteditem();
-		string newkwd=win->kwd->get_text();
-		if (newkwd=="") return; //Blank keywords currently disallowed
-		if (newkwd=="-- New --") return; //Since selecteditem() currently depends on "-- New --" being the 'New' entry, don't let it be used anywhere else.
-		mapping info;
-		items[newkwd] = info = m_delete(items, oldkwd) || ([]);
-		foreach (win->real_strings,string key) info[key]=win[key]->get_text();
-		foreach (win->real_ints,string key) info[key]=(int)win[key]->get_text();
-		foreach (win->real_bools,string key) info[key]=(int)win[key]->get_active();
-		save_content(info);
-		persist_config->save();
-		[object iter,object store]=win->sel->get_selected();
-		if (newkwd!=oldkwd)
-		{
-			if (!oldkwd) win->sel->select_iter(iter=store->insert_before(win->new_iter));
-			store->set_value(iter,0,newkwd);
-		}
-		sig_sel_changed();
-	}
-
-	void sig_pb_delete_clicked()
-	{
-		[object iter,object store]=win->sel->get_selected();
-		string kwd=iter && store->get_value(iter,0);
-		if (!kwd) return;
-		store->remove(iter);
-		foreach (win->real_strings+win->real_ints,string key) win[key]->set_text("");
-		foreach (win->real_bools,string key) win[key]->set_active(0);
-		delete_content(kwd,m_delete(items,kwd));
-		persist_config->save();
-	}
-
-	void sig_sel_changed()
-	{
-		string kwd = selecteditem();
-		mapping info=items[kwd] || ([]);
-		if (win->kwd) win->kwd->set_text(kwd || "");
-		foreach (win->real_strings,string key) win[key]->set_text((string)(info[key] || ""));
-		foreach (win->real_ints,string key) win[key]->set_text((string)info[key]);
-		foreach (win->real_bools,string key) win[key]->set_active((int)info[key]);
-	}
-
-	//Attempt to select the given keyword - returns 1 if found, 0 if not
-	int select_keyword(string kwd)
-	{
-		object ls=win->list->get_model();
-		object iter=ls->get_iter_first();
-		do
-		{
-			if (ls->get_value(iter,0)==kwd)
-			{
-				win->sel->select_iter(iter); sig_sel_changed();
-				return 1;
-			}
-		} while (ls->iter_next(iter));
-		return 0;
-	}
-}
-
 class menu_item
 {
 	//Provide:
@@ -313,17 +233,87 @@ class ircsettings
 object mainwindow;
 class _mainwindow
 {
-	inherit configdlg;
+	inherit window;
 	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
 	constant elements=({"kwd:Channel", "?chatlog:Log chat to console",
 		"#connprio:Connection priority",
 	});
 	constant is_subwindow = 0;
+	mapping(string:mapping(string:mixed)) items;
+
 	protected void create() {
 		items = persist_config->setdefault("channels", ([]));
 		::create("mainwindow");
 		if (win->mainwindow) remake_content();
 		mainwindow = win->mainwindow;
+	}
+
+	//Return the keyword of the selected item, or 0 if none (or new) is selected
+	string selecteditem()
+	{
+		[object iter,object store]=win->sel->get_selected();
+		string kwd=iter && store->get_value(iter,0);
+		return (kwd!="-- New --") && kwd; //TODO: Recognize the "New" entry by something other than its text
+	}
+
+	void sig_pb_save_clicked()
+	{
+		string oldkwd=selecteditem();
+		string newkwd=win->kwd->get_text();
+		if (newkwd=="") return; //Blank keywords currently disallowed
+		if (newkwd=="-- New --") return; //Since selecteditem() currently depends on "-- New --" being the 'New' entry, don't let it be used anywhere else.
+		mapping info;
+		items[newkwd] = info = m_delete(items, oldkwd) || ([]);
+		foreach (win->real_strings,string key) info[key]=win[key]->get_text();
+		foreach (win->real_ints,string key) info[key]=(int)win[key]->get_text();
+		foreach (win->real_bools,string key) info[key]=(int)win[key]->get_active();
+		save_content(info);
+		persist_config->save();
+		[object iter,object store]=win->sel->get_selected();
+		if (newkwd!=oldkwd)
+		{
+			if (!oldkwd) win->sel->select_iter(iter=store->insert_before(win->new_iter));
+			store->set_value(iter,0,newkwd);
+		}
+		sig_sel_changed();
+	}
+
+	void sig_pb_delete_clicked()
+	{
+		[object iter,object store]=win->sel->get_selected();
+		string kwd=iter && store->get_value(iter,0);
+		if (!kwd) return;
+		store->remove(iter);
+		foreach (win->real_strings+win->real_ints,string key) win[key]->set_text("");
+		foreach (win->real_bools,string key) win[key]->set_active(0);
+		delete_content(kwd,m_delete(items,kwd));
+		persist_config->save();
+	}
+
+	void sig_sel_changed()
+	{
+		string kwd = selecteditem();
+		mapping info=items[kwd] || ([]);
+		if (win->kwd) win->kwd->set_text(kwd || "");
+		foreach (win->real_strings,string key) win[key]->set_text((string)(info[key] || ""));
+		foreach (win->real_ints,string key) win[key]->set_text((string)info[key]);
+		foreach (win->real_bools,string key) win[key]->set_active((int)info[key]);
+	}
+
+	//Attempt to select the given keyword - returns 1 if found, 0 if not
+	int select_keyword(string kwd)
+	{
+		object ls=win->list->get_model();
+		object iter=ls->get_iter_first();
+		do
+		{
+			if (ls->get_value(iter,0)==kwd)
+			{
+				win->sel->select_iter(iter); sig_sel_changed();
+				return 1;
+			}
+		} while (ls->iter_next(iter));
+		return 0;
 	}
 
 	GTK2.Widget make_content()
