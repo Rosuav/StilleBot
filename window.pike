@@ -156,16 +156,16 @@ class ircsettings
 	void makewindow()
 	{
 		win->mainwindow=GTK2.Window((["title":"Authenticate StilleBot"]))->add(two_column(({
-			"Twitch user name", win->nick=GTK2.Entry()->set_text(config->nick||""),
-			"Real name (optional)", win->realname=GTK2.Entry()->set_text(config->realname||""),
-			"Client ID (optional)", win->clientid=GTK2.Entry()->set_text(config->clientid||""),
-			"Client Secret (optional)", win->clientsecret=GTK2.Entry()->set_visibility(0),
-			"OAuth2 key", win->pass=GTK2.Entry()->set_visibility(0),
+			"Twitch user name", win->nick=GTK2.Entry()->set_size_request(400, -1)->set_text(config->nick||""),
+			"Real name (optional)", win->realname=GTK2.Entry()->set_size_request(400, -1)->set_text(config->realname||""),
+			"Client ID (optional)", win->clientid=GTK2.Entry()->set_size_request(400, -1)->set_text(config->clientid||""),
+			"Client Secret (optional)", win->clientsecret=GTK2.Entry()->set_size_request(400, -1)->set_visibility(0),
+			"OAuth2 key", win->pass=GTK2.Entry()->set_size_request(400, -1)->set_visibility(0),
 			GTK2.Label("Keys will not be shown above. Obtain"),0,
 			GTK2.Label("one from twitchapps and paste it in."),0,
-			"Web config address (optional)", win->http_address=GTK2.Entry()->set_text(config->http_address||""),
+			"Web config address (optional)", win->http_address=GTK2.Entry()->set_size_request(400, -1)->set_text(config->http_address||""),
 			"Begin with https:// for an encrypted service - see README", 0,
-			"Listen address/port (advanced)", win->listen_address=GTK2.Entry()->set_text(config->listen_address||""),
+			"Listen address/port (advanced)", win->listen_address=GTK2.Entry()->set_size_request(400, -1)->set_text(config->listen_address||""),
 			GTK2.HbuttonBox()
 				->add(win->save=GTK2.Button("Save"))
 				->add(stock_close())
