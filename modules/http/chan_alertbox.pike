@@ -602,6 +602,7 @@ void resolve_affected_inherits(string userid, string id) {
 
 EventSub raidin = EventSub("raidin", "channel.raid", "1") {
 	object channel = G->G->irc->channels["#" + __ARGS__[0]];
+	if (!channel) return;
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (cfg->hostbackend != "pike" && cfg->hostbackend != "js") { //FIXME: Check if raid alerts are working, this is a bit odd
 		string target = __ARGS__[1]->from_broadcaster_user_login; //TODO: Use user_name instead?
