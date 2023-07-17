@@ -123,7 +123,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	mapping user_attrs = ([]); //Latest-seen user status (see gather_person_info). Not guaranteed fresh. Some parts will be message-specific.
 
 	protected void create() {
-		config = persist_config->path("channels", name[1..]);
+		config = persist_config->path("channels", name[1..]); //FIXME-SEPCHAN
 		if (config->chatlog)
 		{
 			if (!channelcolor[name]) {if (++G->G->nextcolor>7) G->G->nextcolor=1; channelcolor[name]=G->G->nextcolor;}
@@ -151,6 +151,18 @@ class channel(string name) { //name begins with hash and is all lower case
 		};
 		else config->login = config->display_name = name[1..]; //User ID is zero for pseudo-channels
 		user_attrs = G_G_("channel_user_attrs", name);
+	}
+
+	//Like calling the equivalent persist method (TODO: dedup; also, do we need has_path?).
+	//Do not retain references to these mappings long-term as they may be replaced
+	//or reloaded at any time.
+	mapping path(string ... parts) {
+		mapping ret = config;
+		foreach (parts, string idx) {
+			if (undefinedp(ret[idx])) {ret[idx] = ([]); persist_config->save();}
+			ret = ret[idx];
+		}
+		return ret;
 	}
 
 	void channel_online(int uptime) {
@@ -989,6 +1001,16 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 void irc_closed(mapping options) {
 	::irc_closed(options);
 	if (options->voiceid) m_delete(irc_connections, options->voiceid);
+}
+
+//Return the channel config mapping if this is an active channel, or 0
+//TODO: Support user IDs as well as names, but with no lookup; if the
+//user name/ID mapping isn't in cache, this may fail. Use the primary
+//lookup key (currently name, later ID) for reliability.
+//FIXME-SEPCHAN: Find all uses of this tag and update them also to let
+//channel configs be stored in separate files.
+@export: mapping get_channel_config(string chan) {
+	return persist_config["channels"][chan - "#"];
 }
 
 @hook_channel_online: int connected(string chan, int uptime) {

@@ -27,8 +27,7 @@ Feature name | Effect
 ", FEATURES);
 
 echoable_message process(object channel, mapping person, string param) {
-	if (!persist_config->has_path("channels", channel->name[1..])) return 0; //No channel, don't manage features
-	mapping feat = persist_config->path("channels", channel->name[1..], "features");
+	mapping feat = channel->path("features");
 	sscanf(param, "%s %s", string feature, string active);
 	if (FEATUREDESC[param]) {feature = param; active = "";}
 	if (!FEATUREDESC[feature]) return "@$$: Valid feature names are: " + FEATURES[*][0] * ", ";

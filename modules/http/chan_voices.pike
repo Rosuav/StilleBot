@@ -62,8 +62,8 @@ bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping vox = channel->config->voices || ([]);
 	if (id) return vox[id] && (vox[id] | (["scopes": persist_status->has_path("voices", id)->?scopes || ({"chat_login"})]));
-	mapping bv = persist_config->has_path("channels", "!demo")->?voices || ([]);
-	string defvoice = persist_config->has_path("channels", "!demo")->?defvoice;
+	mapping bv = get_channel_config("!demo")->?voices || ([]);
+	string defvoice = get_channel_config("!demo")->?defvoice;
 	if (defvoice && bv[defvoice] && !vox[defvoice]) {
 		vox[defvoice] = bv[defvoice] | ([]);
 		persist_config->save();
@@ -114,7 +114,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 void websocket_cmd_activate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
-	mapping bv = persist_config->has_path("channels", "!demo", "voices", msg->id);
+	mapping bv = get_channel_config("!demo")->?voices[?msg->id];
 	if (!bv) return;
 	//Activating a voice requires that you be either the voice itself, or the bot
 	//intrinsic voice (and also a mod, but without that you don't get a websocket).
@@ -151,7 +151,7 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 		scopes, (["force_verify": "true"])
 	) {
 		[object req, mapping user, multiset scopes, string token, string cookie] = __ARGS__;
-		mapping v = persist_config->path("channels", channel->name[1..], "voices", (string)user->id);
+		mapping v = channel->path("voices", (string)user->id);
 		v->id = (string)user->id;
 		v->name = user->display_name;
 		if (lower_case(user->display_name) != user->login) v->name += " (" + user->login + ")";

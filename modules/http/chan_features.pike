@@ -98,7 +98,7 @@ mapping _get_item(string id, mapping feat) {
 
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping feat = persist_config->path("channels", channel->name[1..], "features");
+	mapping feat = channel->path("features");
 	if (id) return _get_item(id, feat);
 	mapping enableables = ([]);
 	foreach (G->G->enableable_modules; string name; object mod) {

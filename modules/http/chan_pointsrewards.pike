@@ -110,7 +110,7 @@ void points_redeemed(string chan, mapping data, int|void removal)
 	//write("POINTS %s ON %O: %O\n", removal ? "REFUNDED" : "REDEEMED", chan, data);
 	event_notify("point_redemption", chan, data->reward->id, removal, data);
 	string token = persist_status->path("bcaster_token")[chan];
-	mapping cfg = persist_config->has_path("channels", chan); if (!cfg) return;
+	mapping cfg = get_channel_config(chan); if (!cfg) return;
 
 	if (mapping dyn = !removal && cfg->dynamic_rewards && cfg->dynamic_rewards[data->reward->id]) {
 		//Up the price every time it's redeemed
@@ -147,7 +147,7 @@ continue Concurrent.Future populate_rewards_cache(string chan, string|int|void b
 	mapping params = (["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]);
 	array rewards = yield(twitch_api_request(url, params))->data;
 	//Prune the dynamic rewards list
-	mapping current = persist_config->has_path("channels", chan, "dynamic_rewards");
+	mapping current = get_channel_config(chan)->?dynamic_rewards;
 	if (current) {
 		write("Current dynamics: %O\n", current);
 		multiset unseen = (multiset)indices(current) - (multiset)rewards->id;
@@ -204,7 +204,7 @@ EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward
 	array rew = pointsrewards[chan];
 	if (!rew) return;
 	pointsrewards[chan] = filter(rew) {return __ARGS__[0]->id != info->id;};
-	mapping dyn = persist_config->has_path("channels", chan, "dynamic_rewards");
+	mapping dyn = get_channel_config(chan)->?dynamic_rewards;
 	if (dyn) {m_delete(dyn, info->id); persist_config->save();}
 	update_one("#" + chan, info->id);
 	update_one("#" + chan, info->id, "dynreward");
@@ -283,7 +283,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 
 protected void create(string name) {
 	::create(name);
-	foreach (persist_config->path("channels");; mapping cfg) {
+	foreach (persist_config->path("channels");; mapping cfg) { //FIXME-SEPCHAN
 		string chan = cfg->login; if (!chan) continue;
 		if (!pointsrewards[chan]) {
 			string scopes = persist_status->path("bcaster_token_scopes")[chan] || "";
