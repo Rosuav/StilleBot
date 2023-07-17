@@ -57,15 +57,3 @@ echoable_message process(object channel, object person, string param)
 	string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
 	return sprintf("@$$: Quote #%d: %s [%s, %s]", idx, quote->msg, quote->game || "uncategorized", date);
 }
-
-protected void create(string name) {
-	::create(name);
-	//Migrate the disable_quotes flag into the new features flag
-	foreach (persist_config->path("channels");; mapping config) {
-		if (m_delete(config, "disable_quotes")) {
-			if (!config->features) config->features = (["quotes": -1]);
-			else config->features->quotes = -1;
-			persist_config->save();
-		}
-	}
-}
