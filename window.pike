@@ -170,19 +170,11 @@ class configdlg
 	inherit window;
 	//Provide me...
 	mapping(string:mixed) windowprops=(["title":"Configure"]);
-	mapping(string:mapping(string:mixed)) items; //Will never be rebound. Will generally want to be an alias for a better-named mapping, or something out of persist_config[] (and see persist_key)
+	mapping(string:mapping(string:mixed)) items;
 	void save_content(mapping(string:mixed) info) { } //Retrieve content from the window and put it in the mapping.
 	void delete_content(string kwd,mapping(string:mixed) info) { } //Delete the thing with the given keyword.
 	constant elements=({ });
-	constant persist_key=0; //(string) Set this to the persist_config[] key to load items[] from; if set, persist will be saved after edits.
 	//... end provide me.
-	string last_selected; //Set when something is loaded. Unless the user renames the thing, will be equal to win->kwd->get_text().
-
-	protected void create(string|void name)
-	{
-		if (persist_key && !items) items=persist_config->setdefault(persist_key,([]));
-		::create(name);
-	}
 
 	//Return the keyword of the selected item, or 0 if none (or new) is selected
 	string selecteditem()
@@ -204,7 +196,7 @@ class configdlg
 		foreach (win->real_ints,string key) info[key]=(int)win[key]->get_text();
 		foreach (win->real_bools,string key) info[key]=(int)win[key]->get_active();
 		save_content(info);
-		if (persist_key) persist_config->save();
+		persist_config->save();
 		[object iter,object store]=win->sel->get_selected();
 		if (newkwd!=oldkwd)
 		{
@@ -223,47 +215,17 @@ class configdlg
 		foreach (win->real_strings+win->real_ints,string key) win[key]->set_text("");
 		foreach (win->real_bools,string key) win[key]->set_active(0);
 		delete_content(kwd,m_delete(items,kwd));
-		if (persist_key) persist_config->save();
+		persist_config->save();
 	}
 
 	void sig_sel_changed()
 	{
 		string kwd = selecteditem();
-		last_selected = kwd;
 		mapping info=items[kwd] || ([]);
 		if (win->kwd) win->kwd->set_text(kwd || "");
 		foreach (win->real_strings,string key) win[key]->set_text((string)(info[key] || ""));
 		foreach (win->real_ints,string key) win[key]->set_text((string)info[key]);
 		foreach (win->real_bools,string key) win[key]->set_active((int)info[key]);
-	}
-
-	GTK2.Widget make_content()
-	{
-		array objects = ({ });
-		win->real_strings = win->real_ints = win->real_bools = ({ });
-		foreach (elements, mixed element)
-		{
-			sscanf(element, "%1[?#+'@!*]%s", string type, element);
-			sscanf(element, "%s:%s", string name, string lbl);
-			if (!lbl) sscanf(lower_case(lbl = element)+" ", "%s ", name);
-			switch (type)
-			{
-				case "?": //Boolean
-					win->real_bools += ({name});
-					objects += ({0,win[name]=noex(GTK2.CheckButton(lbl))});
-					break;
-				case "#": //Integer
-					win->real_ints += ({name});
-					objects += ({lbl, win[name]=noex(GTK2.Entry())});
-					break;
-				case 0: //String
-					win->real_strings += ({name});
-					objects += ({lbl, win[name]=noex(GTK2.Entry())});
-					break;
-			}
-		}
-		win->real_strings -= ({"kwd"});
-		return two_column(objects);
 	}
 
 	//Attempt to select the given keyword - returns 1 if found, 0 if not
@@ -356,9 +318,42 @@ class _mainwindow
 	constant elements=({"kwd:Channel", "?chatlog:Log chat to console",
 		"#connprio:Connection priority",
 	});
-	constant persist_key = "channels";
 	constant is_subwindow = 0;
-	protected void create() {::create("mainwindow"); remake_content(); mainwindow = win->mainwindow;}
+	protected void create() {
+		items = persist_config->setdefault("channels", ([]));
+		::create("mainwindow");
+		if (win->mainwindow) remake_content();
+		mainwindow = win->mainwindow;
+	}
+
+	GTK2.Widget make_content()
+	{
+		array objects = ({ });
+		win->real_strings = win->real_ints = win->real_bools = ({ });
+		foreach (elements, mixed element)
+		{
+			sscanf(element, "%1[?#+'@!*]%s", string type, element);
+			sscanf(element, "%s:%s", string name, string lbl);
+			if (!lbl) sscanf(lower_case(lbl = element)+" ", "%s ", name);
+			switch (type)
+			{
+				case "?": //Boolean
+					win->real_bools += ({name});
+					objects += ({0,win[name]=noex(GTK2.CheckButton(lbl))});
+					break;
+				case "#": //Integer
+					win->real_ints += ({name});
+					objects += ({lbl, win[name]=noex(GTK2.Entry())});
+					break;
+				case 0: //String
+					win->real_strings += ({name});
+					objects += ({lbl, win[name]=noex(GTK2.Entry())});
+					break;
+			}
+		}
+		win->real_strings -= ({"kwd"});
+		return win->contentblock = two_column(objects);
+	}
 
 	void makewindow()
 	{
@@ -399,7 +394,6 @@ class _mainwindow
 		if (lc != txt) self->set_text(lc);
 	}
 
-	GTK2.Widget make_content() {return win->contentblock = ::make_content();}
 	void remake_content()
 	{
 		object parent = win->contentblock->get_parent();
