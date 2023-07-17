@@ -272,6 +272,11 @@
   - For each pixel in the emote, find the closest emote from the collection to that pixel.
     - Instead of just the closest, maybe make it probablistic?
     - Invert the distances and then do a weighted search.
+    - Define "distance from emote to pixel colour".
+      - Emote distance is sum(distance(pixel, target)**2 for pixel in emote)
+        - Or should it favour the middle of the emote?
+      - Distance from colour to colour is defined in HSV
+      - The respective weights of the three components should be configurable.
   - Populate a web page with the results, tiling the selected emotes into a grid.
   - Make this a channel point redemption in my channel.
   - Core functionality in a builtin
