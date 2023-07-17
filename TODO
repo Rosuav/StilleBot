@@ -283,3 +283,5 @@
     - Return an ID and a URL where the grid can be found
     - Retain these for a finite time period, as the emotes may change out from under us.
   - This won't work with animated emotes. Take the static version.
+  - Consider doing the majority of the work on a separate thread. For dev, run it entirely
+    externally to the bot itself.
