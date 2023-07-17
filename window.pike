@@ -94,10 +94,7 @@ GTK2.Table two_column(array(string|GTK2.Widget) contents) {return GTK2Table(cont
 //Generic window handler. If a plugin inherits this, it will normally show the window on startup and
 //keep it there, though other patterns are possible. For instance, the window might be hidden when
 //there's nothing useful to show; although this can cause unnecessary flicker, and so should be kept
-//to a minimum (don't show/hide/show/hide in rapid succession). Note that this (via a subclass)
-//implements the core window, not just plugin windows, as there's no fundamental difference.
-//Transient windows (eg popups etc) are best implemented with nested classes - see usage of configdlg
-//('inherit configdlg') for the most common example of this.
+//to a minimum (don't show/hide/show/hide in rapid succession).
 class window
 {
 	constant provides="window";
@@ -175,21 +172,16 @@ class configdlg
 	mapping(string:mixed) windowprops=(["title":"Configure"]);
 	mapping(string:mapping(string:mixed)) items; //Will never be rebound. Will generally want to be an alias for a better-named mapping, or something out of persist_config[] (and see persist_key)
 	void save_content(mapping(string:mixed) info) { } //Retrieve content from the window and put it in the mapping.
-	void load_content(mapping(string:mixed) info) { } //Store information from info into the window
 	void delete_content(string kwd,mapping(string:mixed) info) { } //Delete the thing with the given keyword.
-	constant allow_new=1; //Set to 0 to remove the -- New -- entry; if omitted, -- New -- will be present and entries can be created.
-	constant allow_delete=1; //Set to 0 to disable the Delete button (it'll always be visible though)
-	constant allow_rename=1; //Set to 0 to ignore changes to keywords
 	constant elements=({ });
 	constant persist_key=0; //(string) Set this to the persist_config[] key to load items[] from; if set, persist will be saved after edits.
-	constant descr_key=0; //(string) Set this to a key inside the info mapping to populate with descriptions.
 	//... end provide me.
 	string last_selected; //Set when something is loaded. Unless the user renames the thing, will be equal to win->kwd->get_text().
 
 	protected void create(string|void name)
 	{
 		if (persist_key && !items) items=persist_config->setdefault(persist_key,([]));
-		::create(!is_subwindow && name); //Unless we're a main window, pass on no args to the window constructor - all configdlgs are independent
+		::create(name);
 	}
 
 	//Return the keyword of the selected item, or 0 if none (or new) is selected
@@ -203,14 +195,11 @@ class configdlg
 	void sig_pb_save_clicked()
 	{
 		string oldkwd=selecteditem();
-		string newkwd=allow_rename?win->kwd->get_text():oldkwd;
+		string newkwd=win->kwd->get_text();
 		if (newkwd=="") return; //Blank keywords currently disallowed
 		if (newkwd=="-- New --") return; //Since selecteditem() currently depends on "-- New --" being the 'New' entry, don't let it be used anywhere else.
 		mapping info;
-		if (allow_rename) info=m_delete(items,oldkwd); else info=items[oldkwd];
-		if (!info)
-			if (allow_new) info=([]); else return;
-		if (allow_rename) items[newkwd]=info;
+		items[newkwd] = info = m_delete(items, oldkwd) || ([]);
 		foreach (win->real_strings,string key) info[key]=win[key]->get_text();
 		foreach (win->real_ints,string key) info[key]=(int)win[key]->get_text();
 		foreach (win->real_bools,string key) info[key]=(int)win[key]->get_active();
@@ -222,13 +211,11 @@ class configdlg
 			if (!oldkwd) win->sel->select_iter(iter=store->insert_before(win->new_iter));
 			store->set_value(iter,0,newkwd);
 		}
-		if (descr_key && info[descr_key]) store->set_value(iter,1,info[descr_key]);
 		sig_sel_changed();
 	}
 
 	void sig_pb_delete_clicked()
 	{
-		if (!allow_delete) return; //The button will be insensitive anyway, but check just to be sure.
 		[object iter,object store]=win->sel->get_selected();
 		string kwd=iter && store->get_value(iter,0);
 		if (!kwd) return;
@@ -243,7 +230,7 @@ class configdlg
 	{
 		string kwd = last_selected; //NOT using selecteditem() here - compare against the last loaded state.
 		if (!kwd) return 0; //For now, assume that moving off "-- New --" doesn't need to prompt. TODO.
-		if (allow_rename && win->kwd->get_text() != kwd) return 1;
+		if (win->kwd->get_text() != kwd) return 1;
 		mapping info = items[kwd] || ([]);
 		foreach (win->real_strings, string key)
 			if ((info[key] || "") != win[key]->get_text()) return 1;
@@ -286,7 +273,6 @@ class configdlg
 		foreach (win->real_strings,string key) win[key]->set_text((string)(info[key] || ""));
 		foreach (win->real_ints,string key) win[key]->set_text((string)info[key]);
 		foreach (win->real_bools,string key) win[key]->set_active((int)info[key]);
-		load_content(info);
 	}
 
 	void makewindow()
@@ -297,9 +283,8 @@ class configdlg
 		{
 			object iter=ls->append();
 			ls->set_value(iter,0,kwd);
-			if (string descr=descr_key && items[kwd][descr_key]) ls->set_value(iter,1,descr);
 		}
-		if (allow_new) ls->set_value(win->new_iter=ls->append(),0,"-- New --");
+		ls->set_value(win->new_iter=ls->append(),0,"-- New --");
 		//TODO: Have a way to customize this a little (eg a menu bar) without
 		//completely replacing this function.
 		win->mainwindow=GTK2.Window(windowprops)
@@ -314,7 +299,7 @@ class configdlg
 						->add(make_content())
 						->pack_end(GTK2.HbuttonBox()
 							->add(win->pb_save=GTK2.Button((["label":"_Save","use-underline":1])))
-							->add(win->pb_delete=GTK2.Button((["label":"_Delete","use-underline":1,"sensitive":allow_delete])))
+							->add(win->pb_delete=GTK2.Button((["label":"_Delete","use-underline":1,"sensitive":1])))
 						,0,0,0)
 					)
 				)
@@ -353,12 +338,6 @@ class configdlg
 		return objects;
 	}
 
-	//Create and return a widget (most likely a layout widget) representing all the custom content.
-	//If allow_rename (see below), this must assign to win->kwd a GTK2.Entry for editing the keyword;
-	//otherwise, win->kwd is optional (it may be present and read-only (and ignored on save), or
-	//it may be a GTK2.Label, or it may be omitted altogether).
-	//By default, makes a two_column based on collect_widgets. It's easy to override this to add some
-	//additional widgets before or after the ones collect_widgets creates.
 	GTK2.Widget make_content()
 	{
 		return two_column(collect_widgets(elements));
@@ -380,11 +359,6 @@ class configdlg
 		return 0;
 	}
 }
-//End code lifted from Gypsum
-
-//All GUI code starts with this file, which also constructs the primary window.
-//Normally, the "inherit configdlg" line would be at top level, but in this case,
-//the above class definitions have to happen before this one.
 
 class menu_item
 {
