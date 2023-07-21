@@ -218,7 +218,6 @@
   - Everything that looks this up should be safe now, using channel[*]->login instead
   - connection.pike will need to be reworked to use the userid as fundamental
   - window.pike will need to be rethought majorly
-    - Is it time to abandon the connection with Gypsum, which hasn't been updated much anyway?
 * Once all usage of channel->name, channel->name[1..], (string)channel->userid in any
   persist query is done through path() or has_path(), transform them into abstract lookups.
   - When querying persist_status->path("category", channel):
