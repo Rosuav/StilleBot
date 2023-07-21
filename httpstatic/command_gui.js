@@ -414,24 +414,18 @@ const types = {
 	},
 	conditional_string: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => [
-			el.expr1 && el.expr2 ? "If " + el.expr1 + " == " + el.expr2 : el.expr1 ? "If " + el.expr1 + " is blank" : "String comparison",
+			el.conditional === "string" ? (el.expr1 && el.expr2 ? "If " + el.expr1 + " == " + el.expr2 : el.expr1 ? "If " + el.expr1 + " is blank" : "String comparison")
+				: el.conditional === "contains" ? "String includes"
+				: el.conditional === "regexp" ? "Regular expression"
+				: "?? unknown condition ??",
 			"Otherwise:",
 		],
-		params: [{attr: "conditional", values: "string"}, {attr: "casefold", label: "Case insensitive", values: bool_attr},
-			{attr: "expr1", label: "Expression 1"}, {attr: "expr2", label: "Expression 2"}],
+		params: [
+			{attr: "conditional", label: "Condition type", values: ["string", "contains", "regexp"], selections: {string: "String equals", contains: "String includes", regexp: "Regular expression"}},
+			{attr: "casefold", label: "Case insensitive", values: bool_attr},
+			{attr: "expr1", label: "Expression 1"}, {attr: "expr2", label: "Expression 2"},
+		],
 		typedesc: "Make a decision - if THIS is THAT, do one thing, otherwise do something else.",
-	},
-	conditional_contains: {
-		color: "#7777ee", children: ["message", "otherwise"], label: el => ["String includes", "Otherwise:"],
-		params: [{attr: "conditional", values: "contains"}, {attr: "casefold", label: "Case insensitive", values: bool_attr},
-			{attr: "expr1", label: "Needle"}, {attr: "expr2", label: "Haystack"}],
-		typedesc: "Make a decision - if Needle in Haystack, do one thing, otherwise do something else.",
-	},
-	conditional_regexp: {
-		color: "#7777ee", children: ["message", "otherwise"], label: el => ["Regular expression", "Otherwise:"],
-		params: [{attr: "conditional", values: "regexp"}, {attr: "casefold", label: "Case insensitive", values: bool_attr},
-			{attr: "expr1", label: "Reg Exp"}, {attr: "expr2", label: "Compare against"}],
-		typedesc: ["Make a decision - if ", A({href: "/regexp", target: "_blank"}, "regular expression"), " matches, do one thing, otherwise do something else."],
 	},
 	conditional_number: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => ["Numeric computation", "If it's zero/false:"],
@@ -541,7 +535,7 @@ const tray_tabs = [
 	{name: "Default", color: "#efdbb2", items: [
 		{type: "text", message: "Simple text message"},
 		{type: "randrot", mode: "random"},
-		{type: "conditional_string", expr1: "{param}"},
+		{type: "conditional_string", conditional: "string", expr1: "{param}"},
 		{type: "cooldown", cdlength: "30", cdname: ""},
 		{type: "voice", voice: ""},
 	]},
@@ -557,9 +551,9 @@ const tray_tabs = [
 		{type: "delay", delay: "2"},
 	]},
 	{name: "Control Flow", color: "#bbbbf7", items: [
-		{type: "conditional_contains", expr1: "/foo/bar/quux/", expr2: "/{param}/"},
+		{type: "conditional_string", conditional: "contains", expr1: "/foo/bar/quux/", expr2: "/{param}/"},
 		{type: "conditional_number", expr1: "$deaths$ > 10"},
-		{type: "conditional_regexp", expr1: "[Hh]ello", expr2: "{param}"},
+		{type: "conditional_string", conditional: "regexp", expr1: "[Hh]ello", expr2: "{param}"},
 		{type: "chain_of_command", target: "", destcfg: ""},
 		{type: "foreach", "participant_activity": "300"},
 		//NOTE: Even though they're internally conditionals too, cooldowns don't belong in this tray.
@@ -1311,6 +1305,25 @@ on("click", ".insertvar", e => {
 	mle.setRangeText(e.match.dataset.insertme, mle.selectionStart, mle.selectionEnd, "end");
 });
 
+function update_conditional(el) {
+	//If you change the type of conditional expression, re-label the parameters.
+	//This is just hacked in because I don't currently have anywhere other than
+	//conditionals to use this functionality.
+	const labels = {
+		string: {expr1: "Expression 1", expr2: "Expression 2", typedesc: "Make a decision - if THIS is THAT, do one thing, otherwise do something else."},
+		contains: {expr1: "Needle", expr2: "Haystack", typedesc: "Make a decision - if Needle in Haystack, do one thing, otherwise do something else."},
+		regexp: {expr1: "Reg Exp", expr2: "Compare against", typedesc: ["Make a decision - if ", A({href: "/regexp", target: "_blank"}, "regular expression"), " matches, do one thing, otherwise do something else."]},
+	}[el.value];
+	if (!labels) return;
+	el.form.querySelectorAll("label").forEach(el => {
+		if (!el.htmlFor.startsWith("value-")) return;
+		const lbl = labels[el.htmlFor.slice(6)];
+		if (lbl) set_content(el, lbl + ": ");
+	});
+	set_content("#typedesc", labels.typedesc);
+}
+on("change", "select#value-conditional", e => update_conditional(e.match));
+
 let propedit = null;
 canvas.addEventListener("dblclick", e => {
 	e.stopPropagation();
@@ -1353,6 +1366,8 @@ function open_element_properties(el) {
 	])));
 	set_content("#saveprops", "Close");
 	DOM("#templateinfo").style.display = el.template && el.type !== "flag" ? "block" : "none";
+	const sel = DOM("#value-conditional");
+	if (sel) update_conditional(sel);
 	DOM("#properties").showModal();
 	if (focus) (focus.querySelector("[data-editme]") || focus).focus();
 }
