@@ -147,7 +147,7 @@ continue Concurrent.Future populate_rewards_cache(string chan, string|int|void b
 	mapping params = (["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]);
 	array rewards = yield(twitch_api_request(url, params))->data;
 	//Prune the dynamic rewards list
-	mapping current = get_channel_config(chan)->?dynamic_rewards;
+	mapping current = get_channel_config(broadcaster_id)->?dynamic_rewards;
 	if (current) {
 		write("Current dynamics: %O\n", current);
 		multiset unseen = (multiset)indices(current) - (multiset)rewards->id;

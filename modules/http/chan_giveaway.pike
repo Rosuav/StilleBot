@@ -421,7 +421,7 @@ continue mapping|Concurrent.Future get_chan_state(object channel, string grp)
 
 mapping(string:mixed) autoclose = ([]);
 void open_close(string chan, int broadcaster_id, int want_open) {
-	mapping cfg = get_channel_config(chan) || ([]);
+	mapping cfg = get_channel_config(broadcaster_id) || ([]);
 	if (!cfg->giveaway) return; //No rewards, nothing to open/close
 	mapping status = persist_status->path("giveaways", chan);
 	string token = persist_status->path("bcaster_token")[chan];
