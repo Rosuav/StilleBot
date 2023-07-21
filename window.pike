@@ -188,7 +188,7 @@ class _mainwindow
 	mapping(string:mapping(string:mixed)) items;
 
 	protected void create() {
-		items = persist_config->setdefault("channels", ([]));
+		items = persist_config->setdefault("channels", ([])); //FIXME-SEPCHAN
 		::create("mainwindow");
 		if (win->mainwindow) remake_content();
 		mainwindow = win->mainwindow;
