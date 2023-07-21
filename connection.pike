@@ -944,6 +944,16 @@ class channel(string name) { //name begins with hash and is all lower case
 					//test alerts etc. Note that "fakecheer-100" can also be done, if that
 					//is ever useful to your testing. It may confuse things though!
 					params->bits = (string)bits;
+				if (person->badges->?broadcaster && msg == "fakehypechat") {
+					//Similarly, allow a fake hype chat. For this, I'm using one that I sent to Devi, so it was AUD going to Canada.
+					params->pinned_chat_paid_amount = "850";
+					params->pinned_chat_paid_canonical_amount = "850"; //No idea what this one is
+					params->pinned_chat_paid_currency = "AUD";
+					params->pinned_chat_paid_exponent = "2";
+					params->pinned_chat_paid_is_system_message = "1";
+					params->pinned_chat_paid_level = "TWO";
+				}
+				if (params->pinned_chat_paid_level) Stdio.append_file("hypechat.log", sprintf("%s%O %O %O %O\n", ctime(time()), type, chan, msg, params));
 				if (type != "WHISPER" || config->whispers_as_commands) //Whispers aren't normally counted as commands
 					handle_command(person, msg, responsedefaults, params);
 				if (params->bits && (int)params->bits) {
