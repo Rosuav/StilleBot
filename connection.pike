@@ -489,7 +489,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		if (!voice) {
 			//No voice has been selected (either explicitly or as the channel default).
 			//Use the bot's global default voice, or the intrinsic voice (implicitly zero).
-			voice = persist_config->has_path("channels", "!demo")->?defvoice;
+			voice = persist_config->has_path("channels", "!demo")->?defvoice; //FIXME-SEPCHAN - !demo will be id 0
 			//Even if this voice hasn't been activated for this channel, that's fine - it is
 			//implicitly permitted for use by all channels.
 		}
@@ -1187,7 +1187,7 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 //be coded in properly (to allow !demo to still have some example voices).
 array(mapping) shard_voices = ({0});
 void reconnect() {
-	//TODO: When persist_config->channels changes to using userid keys, update this majorly.
+	//FIXME-SEPCHAN: When persist_config->channels changes to using userid keys, update this majorly.
 	array channels = indices(persist_config["channels"] || ([]));
 	sort(channels); //Default to sorting affabeck
 	if (sizeof(channels)) sort(-persist_config["channels"][channels[*]]->connprio[*], channels);
@@ -1237,7 +1237,7 @@ protected void create(string name)
 	if (mapping irc = persist_config["ircsettings"])
 	{
 		bot_nick = irc->nick || "";
-		array voices = values(persist_config->has_path("channels", "!demo", "voices") || ({ }));
+		array voices = values(persist_config->has_path("channels", "!demo", "voices") || ({ })); //FIXME-SEPCHAN
 		sort((array(int))voices->id, voices);
 		foreach (voices; int i; mapping v) if (lower_case(v->name) == lower_case(bot_nick)) voices[i] = 0;
 		//Sharding temporarily disabled :( As of 20230515, this is a probable culprit in the "can't seem to
