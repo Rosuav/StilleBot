@@ -39,7 +39,18 @@ class Persist(string savefn, int flip_save)
 	//Returns a regular mapping, *not* something that autosaves.
 	mapping path(string ... parts) {
 		mapping ret = data;
-		foreach (parts, string idx) {
+		foreach (parts, string|object idx) {
+			if (objectp(idx)) {
+				//If we're given a channel object, look up in compatibility mode.
+				//Note that the order here is important; first one is highest prio.
+				//NOTE: Using truthiness rather than undefinedp here. This may be
+				//unideal but I'm expecting all mappings at this point anyway.
+				if (mixed val = ret[(string)idx->userid]) ret = val;
+				else if (mixed val = ret["#" + idx->login]) ret = val;
+				else if (mixed val = ret[idx->login]) ret = val;
+				else {ret = ret[(string)idx->userid] = ([]); save();}
+				continue;
+			}
 			if (undefinedp(ret[idx])) {ret[idx] = ([]); save();}
 			ret = ret[idx];
 		}
@@ -48,7 +59,15 @@ class Persist(string savefn, int flip_save)
 	//Like path() but returns 0 if any non-mapping is found along the way
 	mapping has_path(string ... parts) {
 		mapping ret = data;
-		foreach (parts, string idx) {
+		foreach (parts, string|object idx) {
+			if (objectp(idx)) {
+				//As above, with all its quirks intact
+				if (mixed val = ret[(string)idx->userid]) ret = val;
+				else if (mixed val = ret["#" + idx->login]) ret = val;
+				else if (mixed val = ret[idx->login]) ret = val;
+				else return UNDEFINED;
+				continue;
+			}
 			if (!mappingp(ret[idx])) return UNDEFINED;
 			ret = ret[idx];
 		}

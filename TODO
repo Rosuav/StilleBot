@@ -221,12 +221,8 @@
   - Search for FIXME-SEPCHAN for anything that directly references the config mapping.
 * Once all usage of channel->name, channel->name[1..], (string)channel->userid in any
   persist query is done through path() or has_path(), transform them into abstract lookups.
-  - When querying persist_status->path("category", channel):
-    - If ret[(string)channel->userid] exists, use that
-    - If ret["#" + channel->login] exists, use that
-    - If ret[channel->login] exists, use that
-    - Otherwise, if has_path, return 0
-    - Create ret[(string)userid] and return it
+  - Support exists within persist->path() and has_path() and will become available next time
+    the bot restarts (20230721).
   - Keep the existing lookups unchanged for stability. Monitor to ensure that nothing breaks.
   - Eventually, rename all to use the userid - no code should break.
     - Should™.
