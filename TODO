@@ -209,6 +209,7 @@
 * Combined condition and variable update: "Spend". Numerically check if the given variable
   is >= the given value, and if it is, adds -value. Not a huge simplicity, but it would
   prevent desynchronization, which is a subtle problem and hard to debug.
+  - Make all comparisons mode-switchable?
 * Block bad variable names (those with "$|{}") on the front end - on the back end, those
   characters will be silently stripped out.
 * Identify whispers better
