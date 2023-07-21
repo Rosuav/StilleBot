@@ -217,7 +217,8 @@ constant condition_parts = ([
 	"string": ({"expr1", "expr2", "casefold"}),
 	"contains": ({"expr1", "expr2", "casefold"}),
 	"regexp": ({"expr1", "expr2", "casefold"}),
-	"number": ({"expr1"}), //Yes, expr1 even though there's no others - means you still see it when you switch
+	"number": ({"expr1"}), //Yes, expr1 even though there's no others - means you still see it when you switch (in the classic editor)
+	"spend": ({"expr1", "expr2"}), //Similarly, this uses the same names for the sake of the classic editor's switching.
 	"cooldown": ({"cdname", "cdlength"}),
 ]);
 

@@ -113,6 +113,11 @@ const conditional_types = {
 		expr1: "Expression to evaluate",
 		"": "The condition passes if the expression is nonzero. Use comparisons eg '$var$ > 100'.",
 	},
+	spend: {
+		expr1: "Variable to spend some of",
+		expr2: "Amount to spend",
+		"": "The condition passes if the variable has at least that much in it. It will be reduced by that amount.",
+	},
 	regexp: {
 		expr1: "Regular expression",
 		expr2: "Search target (use %s for the message)",
@@ -162,6 +167,7 @@ function render_command(cmd, toplevel) {
 			OPTION({value: "contains"}, "Substring search"),
 			OPTION({value: "regexp"}, "Regular expression"),
 			OPTION({value: "number"}, "Numeric calculation"),
+			OPTION({value: "spend"}, "Spend channel points"),
 			OPTION({value: "cooldown"}, "Cooldown/rate limit"),
 		])];
 		const rows = [];

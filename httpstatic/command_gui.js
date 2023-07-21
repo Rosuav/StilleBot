@@ -432,6 +432,14 @@ const types = {
 		params: [{attr: "conditional", values: "number"}, {attr: "expr1", label: "Expression"}],
 		typedesc: "Make a decision - if the result's nonzero, do one thing, otherwise do something else.",
 	},
+	conditional_spend: {
+		color: "#7777ee", children: ["message", "otherwise"], label: el => ["Spend " + el.expr2 + " " + el.expr1, "If it's zero/false:"],
+		params: [{attr: "conditional", values: "spend"},
+			{attr: "expr1", label: "Variable to spend from"},
+			{attr: "expr2", label: "Amount to spend"},
+		],
+		typedesc: "Spend some of a bot-managed value. Subtracts from the variable but won't let it go below zero.",
+	},
 	cooldown: {
 		color: "#aacc55", children: ["message", "otherwise"], label: el => [el.cdlength + "-second cooldown", "If on cooldown:"],
 		params: [{attr: "conditional", values: "cooldown"},
@@ -551,7 +559,7 @@ const tray_tabs = [
 		{type: "delay", delay: "2"},
 	]},
 	{name: "Control Flow", color: "#bbbbf7", items: [
-		{type: "conditional_string", conditional: "contains", expr1: "/foo/bar/quux/", expr2: "/{param}/"},
+		{type: "conditional_spend", expr1: "*points", expr2: "5"},
 		{type: "conditional_number", expr1: "$deaths$ > 10"},
 		{type: "conditional_string", conditional: "regexp", expr1: "[Hh]ello", expr2: "{param}"},
 		{type: "chain_of_command", target: "", destcfg: ""},

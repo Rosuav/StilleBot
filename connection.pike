@@ -252,6 +252,12 @@ class channel(string name) { //name begins with hash and is all lower case
 			//Add to a variable, REXX-style (decimal digits in strings).
 			//Anything unparseable is considered to be zero.
 			val = (string)((int)vars[var] + (int)val);
+		} else if (action == "spend") {
+			//Inverse of add, but will fail (and return 0) if the variable
+			//doesn't have enough value in it.
+			int cur = (int)vars[var];
+			if (cur < (int)val) return 0;
+			val = (string)(cur - (int)val);
 		}
 		//Otherwise, keep the string exactly as-is.
 		vars[var] = val;
@@ -432,6 +438,15 @@ class channel(string name) { //name begins with hash and is all lower case
 					if (value != 0 && value != 0.0) break; //But I didn't fire an arrow...
 					msg = message->otherwise;
 				}) msg = "ERROR: " + (describe_error(ex)/"\n")[0];
+				break;
+			}
+			case "spend":
+			{
+				string var = message->expr1;
+				if (!var || var == "") break; //Blank/missing variable name? Not a functional condition.
+				string val = set_variable(var, message->expr2, "spend", cfg->users);
+				if (!val) msg = message->otherwise; //The condition DOESN'T pass if the spending failed.
+				else if (!has_value(var, '*')) vars["$" + var + "$"] = val; //It usually WILL have an asterisk.
 				break;
 			}
 			case "cooldown": //Timeout (defined in seconds, although the front end may show it as mm:ss or hh:mm:ss)
