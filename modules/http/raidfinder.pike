@@ -322,7 +322,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		else if (req->variables->login == "demo") {
 			//Like specifying login= for each of the channels that I bot for
 			args->user_login = ({ });
-			foreach (persist_config->path("channels");; mapping info) //FIXME-SEPCHAN
+			foreach (list_channel_configs(), mapping info)
 				if (info->login && info->login[0] != '!') args->user_login += ({info->login});
 			title = "This bot's channels";
 		}

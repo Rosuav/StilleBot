@@ -137,6 +137,15 @@ command_handler find_command(object channel, string cmd, int is_mod, int|void is
 	}
 }
 
+//List all broadly-active channels' config mappings
+//Eventually this may start excluding channels that are deemed "inactive", eg if they
+//haven't been logged in or gone live in (say) three months; such channels could still be
+//located by name or ID (see get_channel_config), but might be skipped over for autocommands
+//and other features.
+array(mapping) list_channel_configs() {
+	return values(persist_config["channels"] || ([])); //FIXME-SEPCHAN
+}
+
 //Return a Second or a Fraction representing the given ISO time, or 0 if unparseable
 Calendar.ISO.Second time_from_iso(string time) {
 	if (object ts = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", time)) return ts;

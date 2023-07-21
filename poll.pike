@@ -326,7 +326,7 @@ void streaminfo(array data)
 	mapping channels = ([]);
 	foreach (data, mapping chan) channels[lower_case(chan->user_login)] = chan;
 	//Now we check over our own list of channels. Anything absent is assumed offline.
-	foreach (persist_config["channels"];; mapping cfg) { //FIXME-SEPCHAN
+	foreach (list_channel_configs(), mapping cfg) {
 		string chan = cfg->login;
 		if (chan[0] != '!') stream_status(chan, channels[chan]);
 	}
@@ -666,8 +666,7 @@ void check_hooks(array eventhooks)
 		persist_status->save();
 	}
 
-	foreach (persist_config["channels"] || ([]);; mapping cfg) //FIXME-SEPCHAN
-	{
+	foreach (list_channel_configs(), mapping cfg) {
 		string chan = cfg->login;
 		mapping c = channel_info[chan];
 		int userid = c->?_id;
@@ -684,7 +683,7 @@ void check_hooks(array eventhooks)
 void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //Maybe make the poll interval customizable?
-	array chan = values(persist_config["channels"] || ({ }))->login; //FIXME-SEPCHAN
+	array chan = list_channel_configs()->login;
 	chan = filter(chan) {return __ARGS__[0][0] != '!';};
 	if (!sizeof(chan)) return; //Nothing to check.
 	//Prune any "channel online" statuses for channels we don't track any more

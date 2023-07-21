@@ -176,8 +176,8 @@ void check_autocommands()
 				remove_call_out(m_delete(G->G->autocommands, key));
 		}
 	}
-	//Next, look for any that need to be started. FIXME-SEPCHAN
-	foreach (persist_config["channels"];; mapping cfg) if (cfg->login)
+	//Next, look for any that need to be started.
+	foreach (list_channel_configs(), mapping cfg) if (cfg->login)
 		if (G->G->stream_online_since[cfg->login]) connected(cfg->login);
 }
 
