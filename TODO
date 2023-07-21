@@ -278,3 +278,5 @@
   - This won't work with animated emotes. Take the static version.
   - Consider doing the majority of the work on a separate thread. For dev, run it entirely
     externally to the bot itself.
+* Builtin to generate random integers?? Or would it be better to make a system of functions
+  in the calculator, and then provide a random() function?
