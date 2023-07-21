@@ -216,7 +216,7 @@ class builtin_command {
 	constant default_response = ""; //The response to the default command, and also the default suggestion
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
 	constant aliases = ({ }); //Add aliases here and they'll be defaultly aliased if shadowed too
-	constant command_suggestions = 0; //If unset, will use builtin_name and default_response
+	constant command_suggestions = 0; //If unset, will use builtin_name and default_response (if default_response exists)
 
 	//Override this either as-is or as a continue function to return the useful params.
 	//Note that the person mapping may be as skeletal as (["user": "Nobody"]) - all

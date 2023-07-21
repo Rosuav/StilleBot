@@ -1308,7 +1308,6 @@ constant builtin_param = ({"/Alert type/alertbox_id", "Text"});
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 ]);
-constant command_suggestions = ([]); //This isn't something that you'd create a default command for - it'll want to be custom. (And probably a special, not a command, anyway.)
 
 //Attempt to send an alert. Returns 1 if alert sent, 0 if not (eg if alert disabled).
 //Note that the actual sending of the alert is asynchronous, esp if TTS is used.

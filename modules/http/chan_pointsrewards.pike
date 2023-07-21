@@ -233,7 +233,6 @@ constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{action}": "Action(s) performed, if any (may be blank)",
 ]);
-constant command_suggestions = ([]); //No default command suggestions.
 
 continue mapping|Concurrent.Future message_params(object channel, mapping person, string|array param)
 {

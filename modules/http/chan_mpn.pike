@@ -136,7 +136,6 @@ constant vars_provided = ([
 	"{action}": "Action performed (if any)",
 	"{url}": "URL to the manipulated document, blank if no such document",
 ]);
-constant command_suggestions = ([]); //No default command suggestions as yet. Maybe I'll figure out some later.
 
 mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
