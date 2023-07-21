@@ -222,7 +222,7 @@ void notify_websockets(string chan) {
 }
 
 @hook_point_redemption:
-void redemption(string chan, string id, int(0..1) refund, mapping data) {
+void redemption(string chan, string rewardid, int(0..1) refund, mapping data) {
 	mapping cfg = get_channel_config(chan); if (!cfg) return;
 	update_ticket_count(cfg, data, refund);
 	notify_websockets(chan);
