@@ -1,10 +1,7 @@
 inherit http_websocket;
 inherit annotated;
 
-constant markdown = #"# Game sync
-
-<div id=game></div>
-";
+constant markdown = "# Game sync\n\nloading...";
 
 @retain: mapping game_data = ([]); //Map a room ID to (["data": arbitrary JSON-compatible data])
 
@@ -35,7 +32,8 @@ mapping get_state(string|int group, string|void id) {
 void websocket_cmd_replace_data(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!mappingp(msg->data)) return;
 	mapping info = game_info(conn->group);
-	info->reset = info->data;
+	if (sizeof(info->data) > 1) info->reset = info->data;
+	else m_delete(info, "reset"); //Don't bother resetting to a blank room (one with just the room type set)
 	info->data = msg->data;
 	send_updates_all(conn->group);
 }
