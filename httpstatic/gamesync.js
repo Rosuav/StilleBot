@@ -83,4 +83,8 @@ on("change", "#gameselect", e => {
 on("click", "#resetgame", e => ws_sync.send({cmd: "replace_data", data: {game: last_data.game}}));
 on("click", "#undoreset", e => ws_sync.send({cmd: "replace_data", data: last_data.reset}));
 
-on("click", "button[data-setting]", e => ws_sync.send({cmd: "update_data", key: e.match.dataset.setting, val: e.match.dataset.value}));
+on("click", "button[data-setting]", e => {
+	const key = e.match.dataset.setting;
+	const val = last_data[key] === e.match.dataset.value ? null : e.match.dataset.value; //Selecting the current entry deselects.
+	ws_sync.send({cmd: "update_data", key, val});
+});
