@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIV, FORM, H1, H2, INPUT, LABEL, OPTION, SELECT, STYLE, TABLE, TD, TR} = lindt; //autoimport
+const {BR, BUTTON, DIV, FORM, H1, H2, INPUT, LABEL, OPTION, SELECT, SPAN, STYLE, TABLE, TD, TR} = lindt; //autoimport
 
 let last_data = { };
 
@@ -79,6 +79,38 @@ const games = {
 			this.tagset(data, "Upper 02", ["Bookshelf", "Food cart"]),
 		];},
 	},
+	murkystation: {
+		label: "Payday 2: Murkywater Station",
+		TRAINCAR(data, id) {return [DIV({class: "traincar"}, [
+			SPAN({style: "padding: 0 3em 0 1em"}, id + " "),
+			SELECT({"data-setting": "traincar-mode-" + id, value: data["traincar-mode-" + id]}, [
+				OPTION(""),
+				OPTION("Empty"), OPTION("Empty (open)"),
+				OPTION("Has console"), //ie hasn't been opened yet
+				OPTION("Opened"),
+				OPTION("Contains loot"), OPTION("Contains EMP"),
+				OPTION("Loot removed"),
+			]),
+			" ",
+			SELECT({"data-setting": "traincar-lock-" + id, value: data["traincar-lock-" + id]}, [
+				OPTION(""),
+				OPTION("Keycard"),
+				OPTION("Blowtorch"),
+				OPTION("Thermite"),
+				OPTION("Hard drive"),
+			]),
+		])];},
+		render(data) {return [
+			H2("Dock (north end)"),
+			STYLE(".row {display: flex; gap: 1.5em; justify-content: space-between} .row > * {width: 30%} .traincar {border: 1px solid black; padding: 10px 6px;}"),
+			DIV({class: "row"}, [this.TRAINCAR(data, "06"), this.TRAINCAR(data, "07"), DIV("Whiteboard")]), //whiteboard is outside train yard in low difficulty
+			DIV({style: "padding: 0 10%"}, "[ Ladder ]"),
+			DIV({class: "row"}, [this.TRAINCAR(data, "05"), this.TRAINCAR(data, "04"), this.TRAINCAR(data, "03")]),
+			DIV({style: "display: flex; flex-direction: row-reverse; padding: 0 10%"}, DIV("[ Ladder ]")),
+			DIV({class: "row"}, [this.TRAINCAR(data, "01"), this.TRAINCAR(data, "02"), DIV({class: "traincar", style: "text-align: center"}, "Loco")]),
+			H2("Bridge (south end)"),
+		];},
+	},
 	//TODO: Diamond Heist? It also has the red/green/blue digits like the Golden Grin does.
 };
 
@@ -115,3 +147,4 @@ on("click", "button[data-setting]", e => {
 	const val = last_data[key] === e.match.dataset.value ? null : e.match.dataset.value; //Selecting the current entry deselects.
 	ws_sync.send({cmd: "update_data", key, val});
 });
+on("change", "select[data-setting]", e => ws_sync.send({cmd: "update_data", key: e.match.dataset.setting, val: e.match.value}));
