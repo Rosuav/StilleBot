@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit annotated;
 
 constant markdown = #"# Game sync
 
@@ -40,10 +41,12 @@ void websocket_cmd_replace_data(mapping(string:mixed) conn, mapping(string:mixed
 }
 
 void websocket_cmd_update_data(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!mappingp(msg->data)) return;
+	if (!stringp(msg->key)) return;
 	mapping info = game_info(conn->group);
-	foreach (msg->data; string key; mixed val)
-		info->data[key] = val;
+	if (undefinedp(msg->val)) m_delete(info->data, msg->key);
+	else info->data[msg->key] = msg->val;
 	m_delete(info, "reset");
 	send_updates_all(conn->group);
 }
+
+protected void create(string name) {::create(name);}
