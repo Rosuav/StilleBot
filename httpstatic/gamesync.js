@@ -79,6 +79,7 @@ const games = {
 			this.tagset(data, "Upper 02", ["Bookshelf", "Food cart"]),
 		];},
 	},
+	//TODO: Diamond Heist? It also has the red/green/blue digits like the Golden Grin does.
 };
 
 export function render(data) {
