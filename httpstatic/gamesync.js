@@ -28,7 +28,8 @@ const games = {
 			H2("Entry codes"),
 			TABLE([
 				TR([TD("Room"), TD(BUTTONBOX(data, "room", {style: "background-color: black; color: white"},
-					["101", "102", "103", "104", "105", BR(), "151", "152", "153", "154"]))]),
+					["99", "100", "101", "102", "103", "104", "105", BR(),
+						"150", "151", "152", "153", "154", "155"]))]),
 				TR([TD("Code"), TD([
 					//Red, Green, Blue
 				])]),
