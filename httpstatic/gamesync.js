@@ -3,6 +3,13 @@ const {BR, BUTTON, DIV, FORM, H1, H2, INPUT, LABEL, OPTION, SELECT, TABLE, TD, T
 
 let last_data = { };
 
+function BUTTONBOX(data, name, selected, options) {
+	return options.map(opt =>
+		typeof opt === "object" ? opt :
+		BUTTON({"data-setting": name, "data-value": opt, ...(data[name] === opt ? selected : {})}, opt)
+	);
+}
+
 const games = {
 	goldengrin: {
 		label: "Payday 2: Golden Grin Casino",
@@ -17,6 +24,16 @@ const games = {
 					}, name),
 				)),
 			]))),
+			H2("Entry codes"),
+			TABLE([
+				TR([TD("Room"), TD(BUTTONBOX(data, "room", {style: "background-color: black; color: white"},
+					["101", "102", "103", "104", "105", BR(), "151", "152", "153", "154"]))]),
+				TR([TD("Code"), TD([
+					//Red, Green, Blue
+				])]),
+				TR([TD("Recep PC"), TD(BUTTONBOX(data, "recep", {style: "background-color: black; color: white"},
+					["Left", "Center", "Right"]))]),
+			]),
 		],
 	},
 };
