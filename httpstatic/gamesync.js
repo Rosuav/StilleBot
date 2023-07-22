@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIV, FORM, H1, H2, INPUT, LABEL, OPTION, SELECT, TABLE, TD, TR} = lindt; //autoimport
+const {BR, BUTTON, DIV, FORM, H1, H2, INPUT, LABEL, OPTION, SELECT, STYLE, TABLE, TD, TR} = lindt; //autoimport
 
 let last_data = { };
 
@@ -51,7 +51,33 @@ const games = {
 					}, name))
 				)]),
 			]),
-		];}
+		];},
+	},
+	yacht: {
+		label: "Payday 2: The Yacht Heist",
+		tag_colors: {Green: "#0f0", Blue: "#4fe", Yellow: "#ff0", Red: "#f11", White: "#fff"},
+		tagset(data, deck, opts) {
+			return [H2(deck), DIV({class: "tags"}, opts.map(loc => BUTTON({
+				"data-setting": deck + "-" + loc.split(" ")[0], "data-value": loc,
+				"style": data[deck + "-" + loc.split(" ")[0]] === loc ? "background-color: " + this.tag_colors[data.color] : ""
+			}, loc)))];
+		},
+		render(data) {return [
+			H2("Tag"),
+			STYLE(".tags {display: flex; gap: 1.5em; justify-content: center; flex-wrap: wrap} .tags button {height: 2.5em; width: 6em; font-size: 150%}"),
+			DIV({class: "tags"}, Object.entries(this.tag_colors).map(([name, col]) =>
+				BUTTON({
+					"data-setting": "color", "data-value": name,
+					"style": data.color === name ? "background-color: " + col : "",
+				}, name),
+			)),
+			this.tagset(data, "Lower Deck", ["Fridge"]), //Theoretically Cabinet, but never seen it
+			this.tagset(data, "Main Deck", ["Cigar/Wine", "Lifeboat", "Aquarium", "Food cart"]),
+			BR(),
+			DIV({class: "tags"}, BUTTONBOX(data, "room", {style: "background-color: " + this.tag_colors[data.color]}, ["101", "102", "103", "104"])),
+			this.tagset(data, "Upper 01", ["Food cart", "Aquarium"]),
+			this.tagset(data, "Upper 02", ["Bookshelf", "Food cart"]),
+		];},
 	},
 };
 
