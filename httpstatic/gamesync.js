@@ -13,14 +13,15 @@ function BUTTONBOX(data, name, selected, options) {
 const games = {
 	goldengrin: {
 		label: "Payday 2: Golden Grin Casino",
-		render: data => [
+		drink_colors: [["Green", "#7f7"], ["Blue", "#99f"], ["Pink", "#f7d"], ["Red", "#f77"]],
+		render(data) {return [
 			H2("Bars"),
 			TABLE(["Pool", "VIP", "Above Ladies", "Above VIP"].map(bar => TR([
 				TD(bar),
-				[["Green", "#7f7"], ["Blue", "#99f"], ["Pink", "#f7d"], ["Red", "#f77"]].map(([name, col]) => TD(
+				this.drink_colors.map(([name, col]) => TD(
 					BUTTON({
 						"data-setting": "drink-" + name, "data-value": bar,
-						"style": data["drink-" + name] == bar ? "background-color: " + col : "",
+						"style": data["drink-" + name] === bar ? "background-color: " + col : "",
 					}, name),
 				)),
 			]))),
@@ -34,7 +35,22 @@ const games = {
 				TR([TD("Recep PC"), TD(BUTTONBOX(data, "recep", {style: "background-color: black; color: white"},
 					["Left", "Center", "Right"]))]),
 			]),
-		],
+			H2("Drinks"),
+			TABLE([
+				TR([TD("Gents"), TD(this.drink_colors.map(([name, col]) =>
+					BUTTON({
+						"data-setting": "Gents", "data-value": name,
+						"style": data.Gents === name? "background-color: " + col : "",
+					}, name))
+				)]),
+				TR([TD("Smoko"), TD(this.drink_colors.map(([name, col]) =>
+					BUTTON({
+						"data-setting": "Smoko", "data-value": name,
+						"style": data.Smoko === name? "background-color: " + col : "",
+					}, name))
+				)]),
+			]),
+		];}
 	},
 };
 
