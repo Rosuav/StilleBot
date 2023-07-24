@@ -42,10 +42,13 @@ continue string|Concurrent.Future fetch_emote(string emoteid) {
 }
 
 continue mapping|Concurrent.Future fetch_all_emotes(array(string) emoteids) {
-	catch {emotes_by_id = decode_value(Stdio.read_file("emotedata.cache"));}; //Unnecessary once testing is done
-	foreach (emoteids, string id)
-		if (!emotes_by_id[id]) emotes_by_id[id] = yield(fetch_emote(id));
-	Stdio.write_file("emotedata.cache", encode_value(emotes_by_id)); //Ditto unnecessary
+	mapping emotes_raw = ([]); //Unnecessary once testing is done
+	catch {emotes_raw = decode_value(Stdio.read_file("emotedata.cache"));};
+	foreach (emoteids, string id) if (!emotes_by_id[id]) {
+		if (!emotes_raw[id]) emotes_raw[id] = yield(fetch_emote(id));
+		emotes_by_id[id] = Image.ANY._decode(emotes_raw[id]);
+	}
+	Stdio.write_file("emotedata.cache", encode_value(emotes_raw));
 	return emotes_by_id;
 }
 
@@ -74,7 +77,7 @@ continue string|Concurrent.Future make_emote(string emoteid, string|void channel
 	//correct effect, albeit with some unnecessary work in some cases. The only exception is
 	//completely transparent pixels (alpha == 0), for which the work would be a complete and
 	//utter waste, so we just pick the first emote on the list.
-	mapping(string:mapping) emote_images = yield(fetch_all_emotes(emotes));
+	mixed _ = yield(fetch_all_emotes(emotes));
 	for (int y = 0; y < basis->ysize; ++y) for (int x = 0; x < basis->xsize; ++x) {
 		//For the alpha channel, we don't care about hue or saturation.
 		int alpha = alpha->getpixel(x, y)[2];
