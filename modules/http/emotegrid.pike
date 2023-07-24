@@ -125,6 +125,31 @@ string find_nearest(int r, int g, int b, array(string) emotes) {
 	return emotes[0];
 }
 
+void find_best_distance(string emoteid) {
+	array best = ({0, 0, 0, calculate_distance(0, 0, 0, emoteid)});
+	for (int r = 0; r < 256; r += 4)
+		for (int g = 0; g < 256; g += 4)
+			for (int b = 0; b < 256; b += 4) {
+				int d = calculate_distance(r, g, b, emoteid);
+				if (d < best[3]) best = ({r, g, b, d});
+			}
+	werror("Best distance is #%02X%02X%02X: %d\n", @best);
+}
+
+void find_min_distance(int initr, int initg, int initb, string emoteid) {
+	int r = initr, g = initg, b = initb;
+	int dist = calculate_distance(r, g, b, emoteid);
+	int dr = r > 127 ? -1 : 1, dg = g > 127 ? -1 : 1, db = b > 127 ? -1 : 1;
+	while (1) {
+		int d;
+		if (r + dr >= 0 && r + dr < 256) {d = calculate_distance(r + dr, g, b, emoteid); if (d <= dist) {r += dr; continue;}}
+		if (g + dg >= 0 && g + dg < 256) {d = calculate_distance(r, g + dg, b, emoteid); if (d <= dist) {g += dg; continue;}}
+		if (b + db >= 0 && b + db < 256) {d = calculate_distance(r, g, b + db, emoteid); if (d <= dist) {b += db; continue;}}
+		break; //Any nudge from here results in a worse position.
+	}
+	werror("Best distance from #%02X%02X%02X is #%02X%02X%02X: %d\n", initr, initg, initb, r, g, b, dist);
+}
+
 continue string|Concurrent.Future make_emote(string emoteid, string|void channel) {
 	string code = sprintf("%024x", random(1<<96)); //TODO: check for collisions
 	mapping info = built_emotes[code] = (["emoteid": emoteid, "channel": channel || ""]);
@@ -145,6 +170,8 @@ continue string|Concurrent.Future make_emote(string emoteid, string|void channel
 	//utter waste, so we just pick the first emote on the list.
 	array emoteids = emotes->id; mapping emotenames = mkmapping(emoteids, emotes->name);
 	mixed _ = yield(fetch_all_emotes(emoteids));
+	//find_best_distance(emoteid);
+	//return code;
 	info->matrix = allocate(basis->ysize, allocate(basis->xsize));
 	info->emote_names = ([]);
 	for (int y = 0; y < basis->ysize; ++y) for (int x = 0; x < basis->xsize; ++x) {
