@@ -81,44 +81,44 @@ continue mapping|Concurrent.Future fetch_all_emotes(array(string) emoteids) {
 	return emotes_by_id;
 }
 
+int calculate_distance(int r, int g, int b, string emoteid) {
+	string cachekey = sprintf("%d:%d:%d:%s", r, g, b, emoteid);
+	if (!undefinedp(emote_pixel_distance_cache[cachekey])) return emote_pixel_distance_cache[cachekey];
+	mapping emote = emotes_by_id[emoteid];
+	int total_distance = 0;
+	//int total_distance = 1<<500;
+	for (int y = 0; y < emote->ysize; ++y) for (int x = 0; x < emote->xsize; ++x) {
+		int alpha = emote->alpha_hsv->getpixel(x, y)[2];
+		//Shortcut: Transparent pixels are at max distance. This is calculated
+		//as if the three color channels are all 256 away (256**2 with scaling values), with
+		//the additional max loading of *2 for transparent.
+		int distance = 256 ** 2 * (2 + 4 + 3) * 2;
+		if (alpha) {
+			//Calculate the distance from this pixel on this emote to the target pixel
+			[int rr, int gg, int bb] = emote->image->getpixel(x, y);
+			//Using the redmean algorithm from https://en.wikipedia.org/wiki/Color_difference
+			//(but skipping the square-rooting)
+			int avg_red = (r + rr) / 2;
+			rr = (rr - r) ** 2;
+			gg = (gg - g) ** 2;
+			bb = (bb - b) ** 2;
+			distance = rr * (2 + (avg_red >= 128)) + gg * 4 + bb * (2 + (avg_red < 128));
+			//The more transparent a pixel is, the more distant it is from everything.
+			//Currently this is a scaling factor of 1 for opaque scaling linearly to
+			//2 for transparent.
+			distance = (distance * (512 - alpha)) / 256;
+		}
+		total_distance += distance; //Is simply averaging the distances correct?
+		//if (total_distance > distance) total_distance = distance; //Or pick the minimum distance
+	}
+	return emote_pixel_distance_cache[cachekey] = total_distance / emote->xsize / emote->ysize;
+	//return emote_pixel_distance_cache[cachekey] = total_distance;
+}
+
 string find_nearest(int r, int g, int b, array(string) emotes) {
 	mapping(string:int) distances = ([]);
-	foreach (emotes, string emoteid) {
-		mapping emote = emotes_by_id[emoteid];
-		if (!emote) continue; //Shouldn't happen (the emotes should have been precached)
-		string cachekey = sprintf("%d:%d:%d:%s", r, g, b, emoteid);
-		if (undefinedp(emote_pixel_distance_cache[cachekey])) {
-			int total_distance = 0;
-			//int total_distance = 1<<500;
-			for (int y = 0; y < emote->ysize; ++y) for (int x = 0; x < emote->xsize; ++x) {
-				int alpha = emote->alpha_hsv->getpixel(x, y)[2];
-				//Shortcut: Transparent pixels are at max distance. This is calculated
-				//as if the three color channels are all 256 away (256**2 with scaling values), with
-				//the additional max loading of *2 for transparent.
-				int distance = 256 ** 2 * (2 + 4 + 3) * 2;
-				if (alpha) {
-					//Calculate the distance from this pixel on this emote to the target pixel
-					[int rr, int gg, int bb] = emote->image->getpixel(x, y);
-					//Using the redmean algorithm from https://en.wikipedia.org/wiki/Color_difference
-					//(but skipping the square-rooting)
-					int avg_red = (r + rr) / 2;
-					rr = (rr - r) ** 2;
-					gg = (gg - g) ** 2;
-					bb = (bb - b) ** 2;
-					distance = rr * (2 + (avg_red >= 128)) + gg * 4 + bb * (2 + (avg_red < 128));
-					//The more transparent a pixel is, the more distant it is from everything.
-					//Currently this is a scaling factor of 1 for opaque scaling linearly to
-					//2 for transparent.
-					distance = (distance * (512 - alpha)) / 256;
-				}
-				total_distance += distance; //Is simply averaging the distances correct?
-				//if (total_distance > distance) total_distance = distance; //Or pick the minimum distance
-			}
-			emote_pixel_distance_cache[cachekey] = total_distance / emote->xsize / emote->ysize;
-			//emote_pixel_distance_cache[cachekey] = total_distance;
-		}
-		distances[emoteid] = emote_pixel_distance_cache[cachekey];
-	}
+	foreach (emotes, string emoteid)
+		distances[emoteid] = calculate_distance(r, g, b, emoteid);
 	//Now, pick a suitable emote based on these distances.
 	//For now just pick the single nearest. Ultimately a weighted random will be better.
 	emotes = indices(distances); sort(values(distances), emotes);
