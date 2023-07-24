@@ -36,8 +36,8 @@ continue array|Concurrent.Future fetch_global_emotes() {
 }
 
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
-	if (req->variables->code == "json") built_emotes->json = Standards.JSON.decode(Stdio.read_file("emotegrid.json"));
 	mapping info = built_emotes[req->variables->code];
+	if (!req->variables->code) info = Standards.JSON.decode(Stdio.read_file("emotegrid.json"));
 	if (!info) return 0; //TODO: Better page
 	if (!global_emotes->template) {
 		//Ensure that we at least have the template. It's not going to change often,
