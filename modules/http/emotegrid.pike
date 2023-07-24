@@ -2,11 +2,24 @@ inherit http_endpoint;
 inherit annotated;
 inherit builtin_command;
 
-constant markdown = "# Emote grid\n\n<div id=grid></div>";
+//How (relatively) important are the hue, saturation, and value components
+//in determining the similarity of colours?
+constant HUE_WEIGHT = 1;
+constant SAT_WEIGHT = 1;
+constant VAL_WEIGHT = 1;
+
+constant markdown = #"# Emote grid
+
+<style>
+#emotegrid td {padding: 0;}
+</style>
+
+<div id=grid></div>";
 
 @retain: mapping built_emotes = ([]);
 @retain: mapping global_emotes = ([]);
 @retain: mapping emotes_by_id = ([]); //Map an emote ID to an Image.ANY._decode mapping
+@retain: mapping emote_pixel_distance_cache = ([]); //Map "%d:%d:%d:%s" H/S/V/emoteid to the calculated distance
 
 continue array|Concurrent.Future fetch_global_emotes() {
 	if (global_emotes->fetchtime < time() - 3600) {
@@ -62,7 +75,35 @@ continue mapping|Concurrent.Future fetch_all_emotes(array(string) emoteids) {
 }
 
 string find_nearest(int h, int s, int v, array(string) emotes) {
-	//TODO!
+	mapping(string:int) distances = ([]);
+	foreach (emotes, string emoteid) {
+		mapping emote = emotes_by_id[emoteid];
+		if (!emote) continue; //Shouldn't happen (the emotes should have been precached)
+		string cachekey = sprintf("%d:%d:%d:%s", h, s, v, emoteid);
+		if (undefinedp(emote_pixel_distance_cache[cachekey])) {
+			int total_distance = 0;
+			for (int y = 0; y < emote->ysize; ++y) for (int x = 0; x < emote->xsize; ++x) {
+				//Calculate the distance from this pixel on this emote to the target pixel
+				[int hh, int ss, int vv] = emote->image_hsv->getpixel(x, y);
+				//Calculate by distance-squared
+				hh = (hh - h) ** 2;
+				ss = (ss - s) ** 2;
+				vv = (vv - v) ** 2;
+				int distance = hh * HUE_WEIGHT + ss * SAT_WEIGHT + vv * VAL_WEIGHT;
+				//The more transparent a pixel is, the more distant it is from everything.
+				//This will tend to produce mosaics with "full" emotes rather than those
+				//with some transparency to them. Need to tweak this algorithm.
+				distance *= 256 - emote->alpha_hsv->getpixel(x, y)[2];
+				total_distance += distance; //Is simply summing the distances correct?
+			}
+			emote_pixel_distance_cache[cachekey] = total_distance;
+		}
+		distances[emoteid] = emote_pixel_distance_cache[cachekey];
+	}
+	//Now, pick a suitable emote based on these distances.
+	//For now just pick the single nearest. Ultimately a weighted random will be better.
+	emotes = indices(distances); sort(values(distances), emotes);
+	return emotes[0];
 }
 
 continue string|Concurrent.Future make_emote(string emoteid, string|void channel) {
@@ -74,7 +115,7 @@ continue string|Concurrent.Future make_emote(string emoteid, string|void channel
 		emotes += yield(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes", (["broadcaster_id": channel])))->id;
 	}
 	//Step 1: Fetch the emote we're building from.
-	string imgdata = yield(fetch_emote(emoteid, "3.0"));
+	string imgdata = yield(fetch_emote(emoteid, "1.0")); //TODO: Go back to scale 3.0
 	mapping basis = parse_emote(imgdata);
 	//Note that we won't use the alpha channel in determining the emote to use for a pixel.
 	//Instead, AFTER selecting an emote (which might be meaningless if the pixel is fully
@@ -83,12 +124,15 @@ continue string|Concurrent.Future make_emote(string emoteid, string|void channel
 	//completely transparent pixels (alpha == 0), for which the work would be a complete and
 	//utter waste, so we just pick the first emote on the list.
 	mixed _ = yield(fetch_all_emotes(emotes));
+	info->matrix = allocate(basis->ysize, allocate(basis->xsize));
 	for (int y = 0; y < basis->ysize; ++y) for (int x = 0; x < basis->xsize; ++x) {
 		//For the alpha channel, we don't care about hue or saturation.
 		int alpha = basis->alpha_hsv->getpixel(x, y)[2];
 		string pixel;
 		if (!alpha) pixel = emotes[0];
 		else pixel = find_nearest(@basis->image_hsv->getpixel(x, y), emotes);
+		info->matrix[y][x] = ({pixel, alpha});
+		werror("[%d, %d] %d/%d/%d Pixel: %s/%d\n", x, y, @basis->image_hsv->getpixel(x, y), pixel, alpha);
 	}
 	return code;
 }
