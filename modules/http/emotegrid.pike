@@ -32,12 +32,12 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]));
 }
 
-continue string|Concurrent.Future fetch_emote(string emoteid) {
+continue string|Concurrent.Future fetch_emote(string emoteid, string scale) {
 	return yield(Protocols.HTTP.Promise.get_url(replace(global_emotes->template, ([
 		"{{id}}": emoteid,
 		"{{format}}": "static",
 		"{{theme_mode}}": "light",
-		"{{scale}}": "3.0",
+		"{{scale}}": scale,
 	]))))->get();
 }
 
@@ -53,7 +53,7 @@ continue mapping|Concurrent.Future fetch_all_emotes(array(string) emoteids) {
 	mapping emotes_raw = ([]); //Unnecessary once testing is done
 	catch {emotes_raw = decode_value(Stdio.read_file("emotedata.cache"));};
 	foreach (emoteids, string id) if (!emotes_by_id[id]) {
-		if (!emotes_raw[id]) emotes_raw[id] = yield(fetch_emote(id));
+		if (!emotes_raw[id]) emotes_raw[id] = yield(fetch_emote(id, "1.0"));
 		emotes_by_id[id] = parse_emote(emotes_raw[id]);
 	}
 	Stdio.write_file("emotedata.cache", encode_value(emotes_raw));
@@ -73,7 +73,7 @@ continue string|Concurrent.Future make_emote(string emoteid, string|void channel
 		emotes += yield(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes", (["broadcaster_id": channel])))->id;
 	}
 	//Step 1: Fetch the emote we're building from.
-	string imgdata = yield(fetch_emote(emoteid));
+	string imgdata = yield(fetch_emote(emoteid, "3.0"));
 	mapping basis = parse_emote(imgdata);
 	//Note that we won't use the alpha channel in determining the emote to use for a pixel.
 	//Instead, AFTER selecting an emote (which might be meaningless if the pixel is fully
