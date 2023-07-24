@@ -2,12 +2,6 @@ inherit http_endpoint;
 inherit annotated;
 inherit builtin_command;
 
-//How (relatively) important are the hue, saturation, and value components
-//in determining the similarity of colours?
-constant HUE_WEIGHT = 1;
-constant SAT_WEIGHT = 1;
-constant VAL_WEIGHT = 1;
-
 constant markdown = #"# Emote grid
 
 <style>
@@ -15,6 +9,16 @@ constant markdown = #"# Emote grid
 </style>
 
 <div id=grid></div>";
+
+/* Need to play around with the idea of "similarity" a lot more.
+
+Idea: Calculate the distance from an emote to every possible R/G/B and find the
+nearest colour to that emote. Might be indicative.
+
+(Rather than actually calculate for every 256**3 possible pixel colour, increase
+the red until the distance starts worsening, then increase green, etc.)
+
+*/
 
 @retain: mapping built_emotes = ([]);
 @retain: mapping global_emotes = ([]);
@@ -77,34 +81,41 @@ continue mapping|Concurrent.Future fetch_all_emotes(array(string) emoteids) {
 	return emotes_by_id;
 }
 
-string find_nearest(int h, int s, int v, array(string) emotes) {
+string find_nearest(int r, int g, int b, array(string) emotes) {
 	mapping(string:int) distances = ([]);
 	foreach (emotes, string emoteid) {
 		mapping emote = emotes_by_id[emoteid];
 		if (!emote) continue; //Shouldn't happen (the emotes should have been precached)
-		string cachekey = sprintf("%d:%d:%d:%s", h, s, v, emoteid);
+		string cachekey = sprintf("%d:%d:%d:%s", r, g, b, emoteid);
 		if (undefinedp(emote_pixel_distance_cache[cachekey])) {
 			int total_distance = 0;
+			//int total_distance = 1<<500;
 			for (int y = 0; y < emote->ysize; ++y) for (int x = 0; x < emote->xsize; ++x) {
 				int alpha = emote->alpha_hsv->getpixel(x, y)[2];
 				//Shortcut: Transparent pixels are at max distance. This is calculated
-				//as if the three color channels are all 256 away (256**2 thrice), with
+				//as if the three color channels are all 256 away (256**2 with scaling values), with
 				//the additional max loading of *2 for transparent.
-				if (!alpha) {total_distance += 256 ** 2 * 3 * 2; continue;}
-				//Calculate the distance from this pixel on this emote to the target pixel
-				[int hh, int ss, int vv] = emote->image_hsv->getpixel(x, y);
-				//Calculate by distance-squared
-				hh = (hh - h) ** 2;
-				ss = (ss - s) ** 2;
-				vv = (vv - v) ** 2;
-				int distance = hh * HUE_WEIGHT + ss * SAT_WEIGHT + vv * VAL_WEIGHT;
-				//The more transparent a pixel is, the more distant it is from everything.
-				//Currently this is a scaling factor of 1 for opaque scaling linearly to
-				//2 for transparent.
-				distance = (distance * (512 - alpha)) / 256;
+				int distance = 256 ** 2 * (2 + 4 + 3) * 2;
+				if (alpha) {
+					//Calculate the distance from this pixel on this emote to the target pixel
+					[int rr, int gg, int bb] = emote->image->getpixel(x, y);
+					//Using the redmean algorithm from https://en.wikipedia.org/wiki/Color_difference
+					//(but skipping the square-rooting)
+					int avg_red = (r + rr) / 2;
+					rr = (rr - r) ** 2;
+					gg = (gg - g) ** 2;
+					bb = (bb - b) ** 2;
+					distance = rr * (2 + (avg_red >= 128)) + gg * 4 + bb * (2 + (avg_red < 128));
+					//The more transparent a pixel is, the more distant it is from everything.
+					//Currently this is a scaling factor of 1 for opaque scaling linearly to
+					//2 for transparent.
+					distance = (distance * (512 - alpha)) / 256;
+				}
 				total_distance += distance; //Is simply averaging the distances correct?
+				//if (total_distance > distance) total_distance = distance; //Or pick the minimum distance
 			}
 			emote_pixel_distance_cache[cachekey] = total_distance / emote->xsize / emote->ysize;
+			//emote_pixel_distance_cache[cachekey] = total_distance;
 		}
 		distances[emoteid] = emote_pixel_distance_cache[cachekey];
 	}
@@ -118,6 +129,7 @@ continue string|Concurrent.Future make_emote(string emoteid, string|void channel
 	string code = sprintf("%024x", random(1<<96)); //TODO: check for collisions
 	mapping info = built_emotes[code] = (["emoteid": emoteid, "channel": channel || ""]);
 	array emotes = yield(fetch_global_emotes());
+	//emotes = ({ }); //Optionally hide the global emotes for speed
 	if (channel && channel != "") {
 		channel = (string)yield(get_user_id(channel));
 		emotes += yield(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes", (["broadcaster_id": channel])));
@@ -140,10 +152,10 @@ continue string|Concurrent.Future make_emote(string emoteid, string|void channel
 		int alpha = basis->alpha_hsv->getpixel(x, y)[2];
 		string pixel;
 		if (!alpha) pixel = emoteids[0];
-		else pixel = find_nearest(@basis->image_hsv->getpixel(x, y), emoteids);
+		else pixel = find_nearest(@basis->image->getpixel(x, y), emoteids);
 		info->matrix[y][x] = ({pixel, alpha});
 		info->emote_names[pixel] = emotenames[pixel];
-		werror("[%d, %d] %d/%d/%d Pixel: %s/%d\n", x, y, @basis->image_hsv->getpixel(x, y), pixel, alpha);
+		if (alpha) werror("[%d, %d] %d/%d/%d Pixel: %s/%d\n", x, y, @basis->image->getpixel(x, y), pixel, alpha);
 	}
 	return code;
 }
@@ -162,6 +174,9 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	if (!person->emotes) return (["{error}": "Unfortunately this doesn't work as a channel point redemption (currently)."]);
 	if (!sizeof(person->emotes)) return (["{error}": "Please include an emote to build a grid of."]);
 	if (stringp(param)) param /= " ";
+
+	return (["{error}": "Sorry! This is currently disabled pending massive optimization work."]);
+
 	string channame = sizeof(param) > 1 && param[1]; //TODO: Support "channelname emoteGoesHere" as well
 	string code = yield(make_emote(person->emotes[0][0], channame));
 	return (["{code}": code, "{url}": sprintf("%s/emotegrid?code=%s",
