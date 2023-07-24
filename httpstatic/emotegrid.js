@@ -4,9 +4,8 @@ const {A, BR, IMG, P, TABLE, TD, TR} = choc; //autoimport
 console.log("Emote data", emotedata);
 const size = {"1.0": 28, "2.0": 56, "3.0": 112};
 function EMOTE(emoteid, scale, alpha) {
-	//TODO: Get the emote name for the hover text
 	return IMG({
-		title: emoteid, alt: "", style:
+		title: emotedata.emote_names[emoteid], alt: "", style:
 			"width: " + size[scale] + "px; height: " + size[scale] + "px;"
 			+ (alpha === 255 ? "" : "opacity: " + (alpha / 255)),
 		src: emote_template

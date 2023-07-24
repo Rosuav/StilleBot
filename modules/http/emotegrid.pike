@@ -41,7 +41,10 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		mixed _ = yield(fetch_global_emotes());
 	}
 	return render_template(markdown, ([
-		"vars": (["emotedata": info, "emote_template": global_emotes->template]),
+		"vars": ([
+			"emotedata": info,
+			"emote_template": global_emotes->template,
+		]),
 		"js": "emotegrid",
 	]));
 }
@@ -83,6 +86,11 @@ string find_nearest(int h, int s, int v, array(string) emotes) {
 		if (undefinedp(emote_pixel_distance_cache[cachekey])) {
 			int total_distance = 0;
 			for (int y = 0; y < emote->ysize; ++y) for (int x = 0; x < emote->xsize; ++x) {
+				int alpha = emote->alpha_hsv->getpixel(x, y)[2];
+				//Shortcut: Transparent pixels are at max distance. This is calculated
+				//as if the three color channels are all 256 away (256**2 thrice), with
+				//the additional max loading of *2 for transparent.
+				if (!alpha) {total_distance += 256 ** 2 * 3 * 2; continue;}
 				//Calculate the distance from this pixel on this emote to the target pixel
 				[int hh, int ss, int vv] = emote->image_hsv->getpixel(x, y);
 				//Calculate by distance-squared
@@ -91,12 +99,12 @@ string find_nearest(int h, int s, int v, array(string) emotes) {
 				vv = (vv - v) ** 2;
 				int distance = hh * HUE_WEIGHT + ss * SAT_WEIGHT + vv * VAL_WEIGHT;
 				//The more transparent a pixel is, the more distant it is from everything.
-				//This will tend to produce mosaics with "full" emotes rather than those
-				//with some transparency to them. Need to tweak this algorithm.
-				distance *= 256 - emote->alpha_hsv->getpixel(x, y)[2];
-				total_distance += distance; //Is simply summing the distances correct?
+				//Currently this is a scaling factor of 1 for opaque scaling linearly to
+				//2 for transparent.
+				distance = (distance * (512 - alpha)) / 256;
+				total_distance += distance; //Is simply averaging the distances correct?
 			}
-			emote_pixel_distance_cache[cachekey] = total_distance;
+			emote_pixel_distance_cache[cachekey] = total_distance / emote->xsize / emote->ysize;
 		}
 		distances[emoteid] = emote_pixel_distance_cache[cachekey];
 	}
@@ -109,10 +117,10 @@ string find_nearest(int h, int s, int v, array(string) emotes) {
 continue string|Concurrent.Future make_emote(string emoteid, string|void channel) {
 	string code = sprintf("%024x", random(1<<96)); //TODO: check for collisions
 	mapping info = built_emotes[code] = (["emoteid": emoteid, "channel": channel || ""]);
-	array emotes = yield(fetch_global_emotes())->id;
+	array emotes = yield(fetch_global_emotes());
 	if (channel && channel != "") {
 		channel = (string)yield(get_user_id(channel));
-		emotes += yield(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes", (["broadcaster_id": channel])))->id;
+		emotes += yield(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes", (["broadcaster_id": channel])));
 	}
 	//Step 1: Fetch the emote we're building from.
 	string imgdata = yield(fetch_emote(emoteid, "1.0")); //TODO: Go back to scale 3.0
@@ -123,15 +131,18 @@ continue string|Concurrent.Future make_emote(string emoteid, string|void channel
 	//correct effect, albeit with some unnecessary work in some cases. The only exception is
 	//completely transparent pixels (alpha == 0), for which the work would be a complete and
 	//utter waste, so we just pick the first emote on the list.
-	mixed _ = yield(fetch_all_emotes(emotes));
+	array emoteids = emotes->id; mapping emotenames = mkmapping(emoteids, emotes->name);
+	mixed _ = yield(fetch_all_emotes(emoteids));
 	info->matrix = allocate(basis->ysize, allocate(basis->xsize));
+	info->emote_names = ([]);
 	for (int y = 0; y < basis->ysize; ++y) for (int x = 0; x < basis->xsize; ++x) {
 		//For the alpha channel, we don't care about hue or saturation.
 		int alpha = basis->alpha_hsv->getpixel(x, y)[2];
 		string pixel;
-		if (!alpha) pixel = emotes[0];
-		else pixel = find_nearest(@basis->image_hsv->getpixel(x, y), emotes);
+		if (!alpha) pixel = emoteids[0];
+		else pixel = find_nearest(@basis->image_hsv->getpixel(x, y), emoteids);
 		info->matrix[y][x] = ({pixel, alpha});
+		info->emote_names[pixel] = emotenames[pixel];
 		werror("[%d, %d] %d/%d/%d Pixel: %s/%d\n", x, y, @basis->image_hsv->getpixel(x, y), pixel, alpha);
 	}
 	return code;
