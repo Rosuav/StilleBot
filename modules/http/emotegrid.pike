@@ -6,6 +6,7 @@ constant markdown = "# Emote grid\n\n<div id=grid></div>";
 
 @retain: mapping built_emotes = ([]);
 @retain: mapping global_emotes = ([]);
+@retain: mapping emotes_by_id = ([]); //Map an emote ID to an Image.ANY._decode mapping
 
 continue array|Concurrent.Future fetch_global_emotes() {
 	if (global_emotes->fetchtime < time() - 3600) {
@@ -31,15 +32,56 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]));
 }
 
+continue string|Concurrent.Future fetch_emote(string emoteid) {
+	return yield(Protocols.HTTP.Promise.get_url(replace(global_emotes->template, ([
+		"{{id}}": emoteid,
+		"{{format}}": "static",
+		"{{theme_mode}}": "light",
+		"{{scale}}": "3.0",
+	]))))->get();
+}
+
+continue mapping|Concurrent.Future fetch_all_emotes(array(string) emoteids) {
+	catch {emotes_by_id = decode_value(Stdio.read_file("emotedata.cache"));}; //Unnecessary once testing is done
+	foreach (emoteids, string id)
+		if (!emotes_by_id[id]) emotes_by_id[id] = yield(fetch_emote(id));
+	Stdio.write_file("emotedata.cache", encode_value(emotes_by_id)); //Ditto unnecessary
+	return emotes_by_id;
+}
+
+string find_nearest(int h, int s, int v, array(string) emotes) {
+	//TODO!
+}
+
 continue string|Concurrent.Future make_emote(string emoteid, string|void channel) {
 	string code = sprintf("%024x", random(1<<96)); //TODO: check for collisions
 	mapping info = built_emotes[code] = (["emoteid": emoteid, "channel": channel || ""]);
-	array emotes = yield(fetch_global_emotes());
+	array emotes = yield(fetch_global_emotes())->id;
 	if (channel && channel != "") {
 		channel = (string)yield(get_user_id(channel));
-		emotes += yield(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes", (["broadcaster_id": channel])));
+		emotes += yield(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes", (["broadcaster_id": channel])))->id;
 	}
-	
+	//Step 1: Fetch the emote we're building from.
+	string imgdata = yield(fetch_emote(emoteid));
+	mapping basis = Image.ANY._decode(imgdata);
+	if (!basis->alpha) basis->alpha = Image.Image(basis->xsize, basis->ysize); //TODO: Patch in a default "colour" of full opacity
+	werror("%O\n", basis);
+	Image.Image emote = basis->image->rgb_to_hsv();
+	Image.Image alpha = basis->alpha->rgb_to_hsv();
+	//Note that we won't use the alpha channel in determining the emote to use for a pixel.
+	//Instead, AFTER selecting an emote (which might be meaningless if the pixel is fully
+	//transparent), we apply the same transparency to the entire emote. This should have the
+	//correct effect, albeit with some unnecessary work in some cases. The only exception is
+	//completely transparent pixels (alpha == 0), for which the work would be a complete and
+	//utter waste, so we just pick the first emote on the list.
+	mapping(string:mapping) emote_images = yield(fetch_all_emotes(emotes));
+	for (int y = 0; y < basis->ysize; ++y) for (int x = 0; x < basis->xsize; ++x) {
+		//For the alpha channel, we don't care about hue or saturation.
+		int alpha = alpha->getpixel(x, y)[2];
+		string pixel;
+		if (!alpha) pixel = emotes[0];
+		else pixel = find_nearest(@basis->image->getpixel(x, y), emotes);
+	}
 	return code;
 }
 
