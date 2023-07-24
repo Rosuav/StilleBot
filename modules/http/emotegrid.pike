@@ -41,12 +41,20 @@ continue string|Concurrent.Future fetch_emote(string emoteid) {
 	]))))->get();
 }
 
+mapping parse_emote(string imgdata) {
+	mapping emote = Image.ANY._decode(imgdata);
+	if (!emote->alpha) emote->alpha = Image.Image(emote->xsize, emote->ysize, 255, 255, 255); //Assume full opacity
+	emote->image_hsv = emote->image->rgb_to_hsv();
+	emote->alpha_hsv = emote->alpha->rgb_to_hsv();
+	return emote;
+}
+
 continue mapping|Concurrent.Future fetch_all_emotes(array(string) emoteids) {
 	mapping emotes_raw = ([]); //Unnecessary once testing is done
 	catch {emotes_raw = decode_value(Stdio.read_file("emotedata.cache"));};
 	foreach (emoteids, string id) if (!emotes_by_id[id]) {
 		if (!emotes_raw[id]) emotes_raw[id] = yield(fetch_emote(id));
-		emotes_by_id[id] = Image.ANY._decode(emotes_raw[id]);
+		emotes_by_id[id] = parse_emote(emotes_raw[id]);
 	}
 	Stdio.write_file("emotedata.cache", encode_value(emotes_raw));
 	return emotes_by_id;
@@ -66,11 +74,7 @@ continue string|Concurrent.Future make_emote(string emoteid, string|void channel
 	}
 	//Step 1: Fetch the emote we're building from.
 	string imgdata = yield(fetch_emote(emoteid));
-	mapping basis = Image.ANY._decode(imgdata);
-	if (!basis->alpha) basis->alpha = Image.Image(basis->xsize, basis->ysize); //TODO: Patch in a default "colour" of full opacity
-	werror("%O\n", basis);
-	Image.Image emote = basis->image->rgb_to_hsv();
-	Image.Image alpha = basis->alpha->rgb_to_hsv();
+	mapping basis = parse_emote(imgdata);
 	//Note that we won't use the alpha channel in determining the emote to use for a pixel.
 	//Instead, AFTER selecting an emote (which might be meaningless if the pixel is fully
 	//transparent), we apply the same transparency to the entire emote. This should have the
@@ -80,10 +84,10 @@ continue string|Concurrent.Future make_emote(string emoteid, string|void channel
 	mixed _ = yield(fetch_all_emotes(emotes));
 	for (int y = 0; y < basis->ysize; ++y) for (int x = 0; x < basis->xsize; ++x) {
 		//For the alpha channel, we don't care about hue or saturation.
-		int alpha = alpha->getpixel(x, y)[2];
+		int alpha = basis->alpha_hsv->getpixel(x, y)[2];
 		string pixel;
 		if (!alpha) pixel = emotes[0];
-		else pixel = find_nearest(@basis->image->getpixel(x, y), emotes);
+		else pixel = find_nearest(@basis->image_hsv->getpixel(x, y), emotes);
 	}
 	return code;
 }
