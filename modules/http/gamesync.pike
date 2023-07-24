@@ -32,8 +32,9 @@ mapping get_state(string|int group, string|void id) {
 void websocket_cmd_replace_data(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!mappingp(msg->data)) return;
 	mapping info = game_info(conn->group);
-	if (sizeof(info->data) > 1) info->reset = info->data;
-	else m_delete(info, "reset"); //Don't bother resetting to a blank room (one with just the room type set)
+	if (sizeof(info->data) > 1) info->reset = info->data; //Resetting when you had info creates a reset point
+	else if (Standards.JSON.encode(msg->data, 4) != Standards.JSON.encode(info->data, 4))
+		m_delete(info, "reset"); //Otherwise, clear the reset, unless it's just setting the same data
 	info->data = msg->data;
 	send_updates_all(conn->group);
 }
