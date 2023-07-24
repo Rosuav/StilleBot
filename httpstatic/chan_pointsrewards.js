@@ -29,7 +29,7 @@ export function render_empty() {
 }
 export function render(data) {
 	const sel = DOM("#copyfrom"), val = sel.value;
-	set_content(sel, [sel.firstElementChild, data.items.map(rew => OPTION({value: rew.id}, rew.title))]).value = val;
+	if (data.items) set_content(sel, [sel.firstElementChild, data.items.map(rew => OPTION({value: rew.id}, rew.title))]).value = val;
 }
 
 on("click", ".addcmd", e => {
