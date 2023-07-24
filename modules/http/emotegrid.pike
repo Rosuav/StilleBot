@@ -5,19 +5,41 @@ inherit builtin_command;
 constant markdown = "# Emote grid\n\n<div id=grid></div>";
 
 @retain: mapping built_emotes = ([]);
+@retain: mapping global_emotes = ([]);
 
-mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
+continue array|Concurrent.Future fetch_global_emotes() {
+	if (global_emotes->fetchtime < time() - 3600) {
+		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/chat/emotes/global"));
+		global_emotes->fetchtime = time();
+		global_emotes->emotes = info->data;
+		global_emotes->template = info->template;
+	}
+	return global_emotes->emotes;
+}
+
+continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
 	mapping info = built_emotes[req->variables->code];
 	if (!info) return 0; //TODO: Better page
+	if (!global_emotes->template) {
+		//Ensure that we at least have the template. It's not going to change often,
+		//so I actually don't care about the precise fetch time.
+		mixed _ = yield(fetch_global_emotes());
+	}
 	return render_template(markdown, ([
-		"vars": (["emotedata": info]),
+		"vars": (["emotedata": info, "emote_template": global_emotes->template]),
 		"js": "emotegrid",
 	]));
 }
 
-continue string make_emote(string emoteid, string|void channel) {
+continue string|Concurrent.Future make_emote(string emoteid, string|void channel) {
 	string code = sprintf("%024x", random(1<<96)); //TODO: check for collisions
-	mapping info = built_emotes[code] = (["emoteid": emoteid, "channel": channel]);
+	mapping info = built_emotes[code] = (["emoteid": emoteid, "channel": channel || ""]);
+	array emotes = yield(fetch_global_emotes());
+	if (channel && channel != "") {
+		channel = (string)yield(get_user_id(channel));
+		emotes += yield(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes", (["broadcaster_id": channel])));
+	}
+	
 	return code;
 }
 
