@@ -84,7 +84,7 @@ mapping get_chan_state(object channel, string grp, string|void id, string|void t
 
 void wscmd_add(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array rewards = pointsrewards[channel->name[1..]] || ({ });
-	mapping copyfrom = ([]);
+	mapping copyfrom = (["cost": 1]);
 	string basetitle = "New Custom Reward";
 	if (msg->copyfrom && msg->copyfrom != "") {
 		int idx = search(rewards->id, msg->copyfrom);
@@ -96,6 +96,7 @@ void wscmd_add(object channel, mapping(string:mixed) conn, mapping(string:mixed)
 	string title = basetitle; int idx = 1; //First one doesn't get the number appended
 	while (have_titles[title]) title = sprintf("%s #%d", basetitle, ++idx);
 	//Twitch will notify us when it's created, so no need to explicitly respond.
+	werror("Auth: %O\n", persist_status->path("bcaster_token_scopes")[channel->name[1..]]);
 	twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid,
 		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[channel->name[1..]]]),
 		(["method": "POST", "json": copyfrom | (["title": title])]),
