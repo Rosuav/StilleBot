@@ -31,7 +31,9 @@ const games = {
 					["99", "100", "101", "102", "103", "104", "105", BR(),
 						"150", "151", "152", "153", "154", "155"]))]),
 				TR([TD("Code"), TD([
-					//Red, Green, Blue
+					INPUT({"data-setting": "code-red", style: "background-color: red; color: white", type: "number", value: data["code-red"]}),
+					INPUT({"data-setting": "code-green", style: "background-color: green; color: white", type: "number", value: data["code-green"]}),
+					INPUT({"data-setting": "code-blue", style: "background-color: blue; color: white", type: "number", value: data["code-blue"]}),
 				])]),
 				TR([TD("Recep PC"), TD(BUTTONBOX(data, "recep", {style: "background-color: black; color: white"},
 					["Left", "Center", "Right"]))]),
@@ -148,3 +150,4 @@ on("click", "button[data-setting]", e => {
 	ws_sync.send({cmd: "update_data", key, val});
 });
 on("change", "select[data-setting]", e => ws_sync.send({cmd: "update_data", key: e.match.dataset.setting, val: e.match.value}));
+on("input", "input[data-setting]", e => ws_sync.send({cmd: "update_data", key: e.match.dataset.setting, val: e.match.value}));
