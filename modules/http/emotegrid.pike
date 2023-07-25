@@ -81,73 +81,48 @@ continue mapping|Concurrent.Future fetch_all_emotes(array(string) emoteids) {
 	return emotes_by_id;
 }
 
-int calculate_distance(int r, int g, int b, string emoteid) {
-	string cachekey = sprintf("%d:%d:%d:%s", r, g, b, emoteid);
+//Count the pixels in the emote that are within MAX_COLOR_DISTANCE
+float count_nearby_pixels(int r, int g, int b, string emoteid, float max_dist) {
+	string cachekey = sprintf("%d:%d:%d:%d:%s", r, g, b, (int)max_dist, emoteid);
 	if (!undefinedp(emote_pixel_distance_cache[cachekey])) return emote_pixel_distance_cache[cachekey];
 	mapping emote = emotes_by_id[emoteid];
-	int total_distance = 0;
-	//int total_distance = 1<<500;
+	float total_alpha = 0;
 	for (int y = 0; y < emote->ysize; ++y) for (int x = 0; x < emote->xsize; ++x) {
 		int alpha = emote->alpha_hsv->getpixel(x, y)[2];
-		//Shortcut: Transparent pixels are at max distance. This is calculated
-		//as if the three color channels are all 256 away (256**2 with scaling values), with
-		//the additional max loading of *2 for transparent.
-		int distance = 256 ** 2 * (2 + 4 + 3) * 2;
-		if (alpha) {
-			//Calculate the distance from this pixel on this emote to the target pixel
-			[int rr, int gg, int bb] = emote->image->getpixel(x, y);
-			//Using the redmean algorithm from https://en.wikipedia.org/wiki/Color_difference
-			//(but skipping the square-rooting)
-			int avg_red = (r + rr) / 2;
-			rr = (rr - r) ** 2;
-			gg = (gg - g) ** 2;
-			bb = (bb - b) ** 2;
-			distance = rr * (2 + (avg_red >= 128)) + gg * 4 + bb * (2 + (avg_red < 128));
-			//The more transparent a pixel is, the more distant it is from everything.
-			//Currently this is a scaling factor of 1 for opaque scaling linearly to
-			//2 for transparent.
-			distance = (distance * (512 - alpha)) / 256;
-		}
-		total_distance += distance; //Is simply averaging the distances correct?
-		//if (total_distance > distance) total_distance = distance; //Or pick the minimum distance
+		//Shortcut: Fully transparent pixels can't count.
+		if (!alpha) continue;
+		//Calculate the distance from this pixel on this emote to the target pixel
+		[int rr, int gg, int bb] = emote->image->getpixel(x, y);
+		//Using the redmean algorithm from https://en.wikipedia.org/wiki/Color_difference
+		//(but skipping the square-rooting)
+		int avg_red = (r + rr) / 2;
+		rr = (rr - r) ** 2;
+		gg = (gg - g) ** 2;
+		bb = (bb - b) ** 2;
+		int distance = rr * (2 + (avg_red >= 128)) + gg * 4 + bb * (2 + (avg_red < 128));
+		if (distance > max_dist) continue;
+		//Okay, so the pixel counts. However, if it's partly transparent, it only counts partly.
+		total_alpha += alpha / 255.0;
 	}
-	return emote_pixel_distance_cache[cachekey] = total_distance / emote->xsize / emote->ysize;
-	//return emote_pixel_distance_cache[cachekey] = total_distance;
+	return emote_pixel_distance_cache[cachekey] = total_alpha;
 }
 
-string find_nearest(int r, int g, int b, array(string) emotes) {
-	mapping(string:int) distances = ([]);
-	foreach (emotes, string emoteid)
-		distances[emoteid] = calculate_distance(r, g, b, emoteid);
+array find_nearest(int r, int g, int b, array(string) emotes) {
+	mapping(string:float) counts = ([]);
+	float max_dist = 1024.0 / 4;
+	while (!sizeof(counts)) {
+		max_dist *= 4;
+		foreach (emotes, string emoteid) {
+			float count = count_nearby_pixels(r, g, b, emoteid, max_dist);
+			if (count >= 1.0) counts[emoteid] = count; //If there's less than one entire pixel, ignore it.
+		}
+		if (!sizeof(counts)) continue; //Clearly no successes
+		if (max(@values(counts)) < 100) counts = ([]); //No good hits. Spread the net further.
+	}
 	//Now, pick a suitable emote based on these distances.
 	//For now just pick the single nearest. Ultimately a weighted random will be better.
-	emotes = indices(distances); sort(values(distances), emotes);
-	return emotes[0];
-}
-
-void find_best_distance(string emoteid) {
-	array best = ({0, 0, 0, calculate_distance(0, 0, 0, emoteid)});
-	for (int r = 0; r < 256; r += 4)
-		for (int g = 0; g < 256; g += 4)
-			for (int b = 0; b < 256; b += 4) {
-				int d = calculate_distance(r, g, b, emoteid);
-				if (d < best[3]) best = ({r, g, b, d});
-			}
-	werror("Best distance is #%02X%02X%02X: %d\n", @best);
-}
-
-void find_min_distance(int initr, int initg, int initb, string emoteid) {
-	int r = initr, g = initg, b = initb;
-	int dist = calculate_distance(r, g, b, emoteid);
-	int dr = r > 127 ? -1 : 1, dg = g > 127 ? -1 : 1, db = b > 127 ? -1 : 1;
-	while (1) {
-		int d;
-		if (r + dr >= 0 && r + dr < 256) {d = calculate_distance(r + dr, g, b, emoteid); if (d <= dist) {r += dr; continue;}}
-		if (g + dg >= 0 && g + dg < 256) {d = calculate_distance(r, g + dg, b, emoteid); if (d <= dist) {g += dg; continue;}}
-		if (b + db >= 0 && b + db < 256) {d = calculate_distance(r, g, b + db, emoteid); if (d <= dist) {b += db; continue;}}
-		break; //Any nudge from here results in a worse position.
-	}
-	werror("Best distance from #%02X%02X%02X is #%02X%02X%02X: %d\n", initr, initg, initb, r, g, b, dist);
+	emotes = indices(counts); sort(values(counts), emotes);
+	return ({emotes[-1], sprintf("%O %O", counts[emotes[-1]], max_dist)});
 }
 
 continue string|Concurrent.Future make_emote(string emoteid, string|void channel) {
@@ -170,19 +145,17 @@ continue string|Concurrent.Future make_emote(string emoteid, string|void channel
 	//utter waste, so we just pick the first emote on the list.
 	array emoteids = emotes->id; mapping emotenames = mkmapping(emoteids, emotes->name);
 	mixed _ = yield(fetch_all_emotes(emoteids));
-	//find_best_distance(emoteid);
-	//return code;
 	info->matrix = allocate(basis->ysize, allocate(basis->xsize));
 	info->emote_names = ([]);
 	for (int y = 0; y < basis->ysize; ++y) for (int x = 0; x < basis->xsize; ++x) {
 		//For the alpha channel, we don't care about hue or saturation.
 		int alpha = basis->alpha_hsv->getpixel(x, y)[2];
-		string pixel;
+		string pixel; string meta;
 		if (!alpha) pixel = emoteids[0];
-		else pixel = find_nearest(@basis->image->getpixel(x, y), emoteids);
+		else [pixel, meta] = find_nearest(@basis->image->getpixel(x, y), emoteids);
 		info->matrix[y][x] = ({pixel, alpha});
 		info->emote_names[pixel] = emotenames[pixel];
-		if (alpha) werror("[%d, %d] %d/%d/%d Pixel: %s/%d\n", x, y, @basis->image->getpixel(x, y), pixel, alpha);
+		if (alpha) werror("[%d, %d] %d/%d/%d Pixel: %s/%d [%s]\n", x, y, @basis->image->getpixel(x, y), pixel, alpha, meta);
 	}
 	return code;
 }
