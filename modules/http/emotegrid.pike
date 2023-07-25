@@ -109,20 +109,19 @@ float count_nearby_pixels(int r, int g, int b, string emoteid, float max_dist) {
 
 array find_nearest(int r, int g, int b, array(string) emotes) {
 	mapping(string:float) counts = ([]);
-	float max_dist = 1024.0 / 4;
-	while (!sizeof(counts)) {
-		max_dist *= 4;
+	float max_dist = 2048.0 / 4, total = 0.0;
+	while (total < 1024.0) { //Widen the net until we have some decent choices
+		max_dist *= 4; total = 0.0; counts = ([]);
 		foreach (emotes, string emoteid) {
 			float count = count_nearby_pixels(r, g, b, emoteid, max_dist);
-			if (count >= 1.0) counts[emoteid] = count; //If there's less than one entire pixel, ignore it.
+			if (count >= 100.0) total += (counts[emoteid] = count); //If there's not enough pixels, ignore the emote altogether.
 		}
-		if (!sizeof(counts)) continue; //Clearly no successes
-		if (max(@values(counts)) < 100) counts = ([]); //No good hits. Spread the net further.
 	}
 	//Now, pick a suitable emote based on these distances.
-	//For now just pick the single nearest. Ultimately a weighted random will be better.
-	emotes = indices(counts); sort(values(counts), emotes);
-	return ({emotes[-1], sprintf("%O %O", counts[emotes[-1]], max_dist)});
+	//If we wanted to pick a lot of these, we could binary search, but I can't be bothered.
+	float pos = random(total);
+	foreach (counts; string em; float c)
+		if ((pos -= c) < 0) return ({em, sprintf("%O %O %O", c, max_dist, total)});
 }
 
 continue string|Concurrent.Future make_emote(string emoteid, string|void channel) {
