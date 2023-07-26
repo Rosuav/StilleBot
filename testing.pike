@@ -8,7 +8,11 @@ protected void create(string name) {
 	string rosuavLove = "390023";
 	string rosuavAlice = "300031353";
 	string devicatTrain1 = "emotesv2_60160470cdc943ecb7521329d4874419";
-	spawn_task(eg->make_emote(devicatTrain1, "devicat")) {
+	string atomicRaid = "emotesv2_5edb686a7ea24224a0683d85fe3c8ef3";
+	string maayaEvil = "emotesv2_761343ec4b4e4349b1899180f89013d2";
+	string maayaWut = "emotesv2_23e42f9b3cb04d77b21795b075ee9dee";
+	string SUBprise = "emotesv2_fcbeed664f7c47d6ba3b57691275ef51";
+	spawn_task(eg->make_emote("rosuavAlice", "rosuav")) {
 		Stdio.write_file("emotegrid.json", Standards.JSON.encode(G->G->built_emotes[__ARGS__[0]]));
 		exit(0);
 	};
