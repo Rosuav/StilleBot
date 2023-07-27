@@ -88,7 +88,7 @@ const games = {
 			SELECT({"data-setting": "traincar-mode-" + id, value: data["traincar-mode-" + id]}, [
 				OPTION(""),
 				OPTION("Empty"), OPTION("Empty (open)"),
-				OPTION("Has console"), //ie hasn't been opened yet
+				OPTION("Has panel"), //ie hasn't been opened yet
 				OPTION("Opened"),
 				OPTION("Contains loot"), OPTION("Contains EMP"),
 				OPTION("Loot removed"),
