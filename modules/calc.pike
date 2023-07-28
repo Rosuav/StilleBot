@@ -1,4 +1,10 @@
+#if constant(G)
 inherit builtin_command;
+#else
+int main(int argc, array(string) argv) {
+	write("Result: %O\n", evaluate(argv[1..] * " "));
+}
+#endif
 constant featurename = "info";
 constant docstring = #"
 Calculate something, possibly involving channel variables
@@ -79,4 +85,6 @@ mapping message_params(object channel, mapping person, string param) {
 	return (["{error}": "Invalid expression [" + (describe_error(ex)/"\n")[0] + "]", "{result}": ""]);
 }
 
+#if constant(G)
 protected void create(string name) {::create(name); G->G->evaluate_expr = evaluate;}
+#endif
