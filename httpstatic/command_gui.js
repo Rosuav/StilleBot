@@ -207,9 +207,11 @@ function builtin_types() {
 	return ret;
 }
 
-//If we have pointsrewards, remap it into something more useful
-let rewards = {"": ""}; try {pointsrewards.forEach(r => rewards[r.id] = r.title);} catch (e) { }
-if (Object.keys(rewards).length === 1) rewards = { }; //If there are no rewards whatsoever, show the dropdown differently
+//If we have pointsrewards, remap it into something more useful (as the command anchor gets loaded)
+//Note that the rewards mapping is allowed to have loose entries in it, as long as reward_ids is
+//accurate and contains no junk.
+const rewards = {"": ""}, reward_ids = [""];
+let hack_retain_reward_id = null;
 
 const types = {
 	anchor_command: {
@@ -234,9 +236,31 @@ const types = {
 				if (auto.includes(':')) invok.push(`At ${auto}`);
 				else invok.push(`Every ${auto} minutes`);
 			}
-			if (el.redemption && rewards[el.redemption]) {
-				invok.push(`When '${rewards[el.redemption]}' is redeemed`);
+			reward_ids.length = 1; //Truncate without rebinding (since the param details uses the same array and mapping)
+			try {pointsrewards.forEach(r => {rewards[r.id] = r.title; reward_ids.push(r.id);});} catch (e) { }
+			if (el.redemption) {
+				if (rewards[el.redemption]) invok.push(`When '${rewards[el.redemption]}' is redeemed`);
+				else {
+					//If you have this currently connected to a reward, retain that
+					//until such time as the *server* rejects it.
+					invok.push("When the chosen reward is redeemed");
+					hack_retain_reward_id = el.redemption;
+				}
 			}
+			if (hack_retain_reward_id) {
+				//If you load up /pointsrewards with a fragment link specifying a reward command,
+				//due to peculiarities of timing and what gets loaded when, the list of rewards
+				//won't be available for the drop-down. (Closing and reopening the command editor
+				//dialog fixes this.) To ensure that data is not lost, hack in the specific ID of
+				//the selected reward as the only one that can be selected.
+				if (!rewards[hack_retain_reward_id]) rewards[hack_retain_reward_id] = "selected reward";
+				if (!reward_ids.includes(hack_retain_reward_id)) reward_ids.push(hack_retain_reward_id);
+				//Residual minor flaw: If you load up the page as described, and then delete the
+				//reward that invoked the command that got preloaded, it will be retained on the
+				//client, and until you save, will look like there's a spurious reward.
+			}
+			if (reward_ids.length === 1) reward_ids.length = 0; //If there are no rewards whatsoever, show the dropdown differently
+
 			switch (invok.length) {
 				case 0: return "Command name: " + cmdname; //Fallback for inactive commands
 				case 1: return invok[0] + "..."; //Common case - a single invocation
@@ -267,7 +291,7 @@ const types = {
 				"To have this command performed automatically every X minutes, put X here (or X-Y to randomize).",
 				BR(), "To have it performed automatically at hh:mm, put hh:mm here.",
 			]},
-			{attr: "redemption", label: "Redemption", values: Object.keys(rewards),
+			{attr: "redemption", label: "Redemption", values: reward_ids,
 				selections: rewards},
 			{label: "Invoke this command whenever some channel points reward is redeemed."},
 		],
