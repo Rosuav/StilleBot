@@ -22,6 +22,8 @@ this feature must be restricted. But numbers themselves are fine :)
 ";
 
 //Define functions here that can be called in expressions
+//Note that the function name (after the "func_" prefix) must match the sscanf
+//in evaluate()'s inner tokenizer function.
 
 int|float func_random(array(int|float) args) {
 	if (sizeof(args) != 1) error("random() requires precisely one argument\n");
@@ -29,6 +31,13 @@ int|float func_random(array(int|float) args) {
 	if (args[0] == (int)args[0]) return random((int)args[0]);
 	return random(args[0]); //Otherwise a float.
 }
+
+int|float func(string word, string open, array(int|float) args, string close) {
+	function func = this["func_" + word];
+	if (!func) error("Unknown function " + word + "\n");
+	return func(args);
+}
+int|float func_nullary(string word, string open, string close) {return func(word, open, ({ }), close);}
 
 int|float binop(int|float left, string op, int|float right) {
 	switch (op) {
@@ -54,19 +63,25 @@ string stitch(string ... parts) {return parts * "";}
 int makeint(string digits) {sscanf(digits, "%d", int ret); return ret;} //Always parse as decimal
 float makefloat(string digits) {return (float)digits;}
 int|float parens(string open, int|float val, string close) {return val;}
+array(int|float) make_array(int|float val) {return ({val});}
+array(int|float) prepend_array(int|float val, string _, array(int|float) arr) {return ({val}) + arr;}
 
 Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file("modules/calc.grammar");
 void throw_errors(int level, string subsystem, string msg, mixed ... args) {if (level >= 2) error(msg, @args);}
 
 int|float evaluate(string formula) {
 	parser->set_error_handler(throw_errors);
-	string next() {
+	array|string next() {
 		if (formula == "") return "";
 		sscanf(formula, "%*[ \t\n]%s", formula); //TODO: Handle whitespace in the grammar properly
 		sscanf(formula, "%[*&|<=>!]%s", string token, formula); //All characters that can be part of multi-character tokens
-		if (token == "") sscanf(formula, "%1s%s", token, formula); //Otherwise, grab a single character
+		if (token != "") return token;
+		sscanf(formula, "%[a-zA-Z]%s", token, formula);
+		if (token != "") return ({"word", token}); //Probably a function name.
+		sscanf(formula, "%1s%s", token, formula); //Otherwise, grab a single character
 		return token;
 	}
+	//array|string shownext() {array|string ret = next(); werror("TOKEN: %O\n", ret); return ret;}
 	return parser->parse(next, this);
 }
 

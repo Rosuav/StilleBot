@@ -59,3 +59,9 @@ signedfloat: "-" float {stitch};
 number: signedint {makeint};
 number: signedfloat {makefloat};
 number: "(" expression ")" {parens};
+number: "word" "(" ")" {func_nullary};
+number: "word" "(" arglist ")" {func};
+
+arglist: number {make_array};
+arglist: number "," {make_array};
+arglist: number "," arglist {prepend_array};
