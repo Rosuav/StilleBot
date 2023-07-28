@@ -259,3 +259,4 @@
   in the calculator, and then provide a random() function?
 * When viewing /pointsrewards, the rewards aren't loaded. Editing the command anchor will
   disconnect the execution from the redemption.
+* Replace Process.run() in chan_alertbox::fetch_tts_credentials to allow asynchronicity
