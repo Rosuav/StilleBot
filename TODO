@@ -255,8 +255,6 @@
   - GET A SCREENREADER and see how everything sounds. If needed, adjust.
     - Orca sucks. What others are there?
 * Should Favourites become a tray like any other??
-* Builtin to generate random integers?? Or would it be better to make a system of functions
-  in the calculator, and then provide a random() function?
 * When viewing /pointsrewards, the rewards aren't loaded. Editing the command anchor will
   disconnect the execution from the redemption.
 * Replace Process.run() in chan_alertbox::fetch_tts_credentials to allow asynchronicity
