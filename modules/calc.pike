@@ -2,7 +2,8 @@
 inherit builtin_command;
 #else
 int main(int argc, array(string) argv) {
-	write("Result: %O\n", evaluate(argv[1..] * " "));
+	mixed ex = catch {write("Result: %O\n", evaluate(argv[1..] * " "));};
+	if (ex) write("Invalid expression: %s\n", (describe_error(ex) / "\n")[0]);
 }
 #endif
 constant featurename = "info";
