@@ -21,6 +21,8 @@ To avoid leaking private variables to non-moderators, unfortunately
 this feature must be restricted. But numbers themselves are fine :)
 ";
 
+constant KEYWORDS = (<"x">);
+
 //Define functions here that can be called in expressions
 //Note that the function name (after the "func_" prefix) must match the sscanf
 //in evaluate()'s inner tokenizer function.
@@ -77,6 +79,7 @@ int|float evaluate(string formula) {
 		sscanf(formula, "%[*&|<=>!]%s", string token, formula); //All characters that can be part of multi-character tokens
 		if (token != "") return token;
 		sscanf(formula, "%[a-zA-Z]%s", token, formula);
+		if (KEYWORDS[token]) return token; //Special keywords are themselves and can't be function names.
 		if (token != "") return ({"word", token}); //Probably a function name.
 		sscanf(formula, "%1s%s", token, formula); //Otherwise, grab a single character
 		return token;
