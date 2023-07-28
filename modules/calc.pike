@@ -21,6 +21,15 @@ To avoid leaking private variables to non-moderators, unfortunately
 this feature must be restricted. But numbers themselves are fine :)
 ";
 
+//Define functions here that can be called in expressions
+
+int|float func_random(array(int|float) args) {
+	if (sizeof(args) != 1) error("random() requires precisely one argument\n");
+	//If it looks like an integer, return a random integer.
+	if (args[0] == (int)args[0]) return random((int)args[0]);
+	return random(args[0]); //Otherwise a float.
+}
+
 int|float binop(int|float left, string op, int|float right) {
 	switch (op) {
 		#define BINARY(o) case #o: return left o right
