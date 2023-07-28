@@ -255,29 +255,6 @@
   - GET A SCREENREADER and see how everything sounds. If needed, adjust.
     - Orca sucks. What others are there?
 * Should Favourites become a tray like any other??
-* Tina's channel points:
-  - Choose next section on the diamond painting and choose next diamond painting we work on next
-  - Just put messages into chat (at least for now)
-* Silly/funny project idea: Emote colour matcher. Or emote builder? Or emote grid?
-  - Take an emote as selected by the user
-  - List all Twitch global emotes.
-  - If the user puts a channel name after the emote, also select that channel's emotes.
-  - For each pixel in the emote, find the closest emote from the collection to that pixel.
-    - Instead of just the closest, maybe make it probablistic?
-    - Invert the distances and then do a weighted search.
-    - Define "distance from emote to pixel colour".
-      - Emote distance is sum(distance(pixel, target)**2 for pixel in emote)
-        - Or should it favour the middle of the emote?
-      - Distance from colour to colour is defined in HSV
-      - The respective weights of the three components should be configurable.
-  - Populate a web page with the results, tiling the selected emotes into a grid.
-  - Make this a channel point redemption in my channel.
-  - Core functionality in a builtin
-    - Return an ID and a URL where the grid can be found
-    - Retain these for a finite time period, as the emotes may change out from under us.
-  - This won't work with animated emotes. Take the static version.
-  - Consider doing the majority of the work on a separate thread. For dev, run it entirely
-    externally to the bot itself.
 * Builtin to generate random integers?? Or would it be better to make a system of functions
   in the calculator, and then provide a random() function?
 * When viewing /pointsrewards, the rewards aren't loaded. Editing the command anchor will
