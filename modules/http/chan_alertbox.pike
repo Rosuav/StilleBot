@@ -1529,8 +1529,8 @@ void irc_closed(mapping options) {
 }
 
 continue Concurrent.Future fetch_tts_credentials(int fast) {
-	mapping rc = Process.run(({"gcloud", "auth", "application-default", "print-access-token"}),
-		(["env": getenv() | (["GOOGLE_APPLICATION_CREDENTIALS": "tts-credentials.json"])]));
+	mapping rc = yield(run_process(({"gcloud", "auth", "application-default", "print-access-token"}),
+		(["env": getenv() | (["GOOGLE_APPLICATION_CREDENTIALS": "tts-credentials.json"])])));
 	tts_config->access_token = String.trim(rc->stdout);
 	//Credentials expire after an hour, regardless of usage. It's quite slow to
 	//generate them, so we do it only as needed; if anything fails in the preemptive

@@ -211,6 +211,21 @@ class task_sleep(int|float delay) {
 	}
 }
 
+//Run a subprocess and yield (["rc": returncode, "stdout": bytes sent to stdout])
+//Similar to Process.run() but doesn't do stderr or stdin (and should only be used with small data).
+class run_process {
+	inherit Concurrent.Promise;
+	Stdio.File stdout = Stdio.File();
+	protected void create(array(string) command, mapping|void modifiers) {
+		Process.create_process(command, (modifiers || ([]))
+			| (["callback": done, "stdout": stdout->pipe(Stdio.PROP_IPC)]));
+	}
+	void done(object proc) {
+		if (proc->status() == 2) success((["rc": proc->wait(), "stdout": stdout->read()]));
+	}
+}
+
+
 //Some commands are available for echocommands to call on.
 //Possible future expansion: Separate "inherit builtin" and "inherit command", and then
 //"inherit builtin_command" will imply that it defines a builtin and also a default
