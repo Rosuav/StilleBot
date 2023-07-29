@@ -213,7 +213,7 @@ DOM("#highlights").onclick = () => {
 const tag_element = { };
 function update_tag_display() {
 	set_content("#tags ul", [
-		Object.keys(tag_prefs).sort().map(tag => tag_element[tag] = LI({
+		Object.keys(tag_prefs).sort().map(tag => tag !== "<viewership>" && (tag_element[tag] = LI({
 			"data-tagid": tag, //Tags are identified by their text, there's no separate UUID
 			className: "tagpref" + (tag_prefs[tag] || 0)
 		}, [
@@ -221,7 +221,7 @@ function update_tag_display() {
 			BUTTON({className: "liketag"}, "+"),
 			" ",
 			SPAN({className: "tag"}, tag),
-		])),
+		]))),
 		LI({"data-tagid": "", className: "tagpref0"}, [
 			BUTTON({className: "disliketag"}, "-"),
 			BUTTON({className: "liketag"}, "+"),
@@ -229,9 +229,11 @@ function update_tag_display() {
 			LABEL(["Add new tag: ", INPUT({id: "newtagname", size: 20})]),
 		]),
 	]);
+	if (tag_prefs["<viewership>"] < 0) DOM("#tags input[name=viewership].disliketag").checked = true;
+	else DOM("#tags input[name=viewership].liketag").checked = true;
 }
 function update_tagpref(e, delta) {
-	const tagid = e.match.closest("li").dataset.tagid || DOM("#newtagname").value;
+	const tagid = e.match.closest("[data-tagid]").dataset.tagid || DOM("#newtagname").value;
 	if (tagid === "") return; //Should we say something if the user leaves the input blank?
 	console.log(tagid);
 	const newpref = (tag_prefs[tagid]|0) + delta;
@@ -381,7 +383,7 @@ function build_follow_list() {
 				UL([
 					LI([A({href: stream.url}, [adornment(stream.broadcaster_type), stream.user_name]), " - ", B(stream.category)]),
 					LI({className: "streamtitle"}, stream.title),
-					LI([describe_uptime(stream), ", " + stream.viewer_count + " viewers"]),
+					LI([describe_uptime(stream), !tag_prefs["<viewership>"] && [", " + stream.viewer_count + " viewers"]]),
 					LI({class: "no-indent"}, stream.tags && stream.tags.map(tag => [
 						SPAN({class: "tag tagpref" + (lc_tag_prefs[tag.toLowerCase()] || "0")}, tag),
 						" ",
@@ -399,7 +401,9 @@ function build_follow_list() {
 	ws_sync.send({cmd: "interested", want_streaminfo});
 	if (your_stream)
 		set_content("#yourcat", [
-			your_stream.user_name + " has " + your_stream.viewer_count + " viewers in " + your_stream.category,
+			your_stream.user_name + " has " +
+				(tag_prefs["<viewership>"] ? "some" : your_stream.viewer_count)
+			+ " viewers in " + your_stream.category,
 		]).href = "raidfinder?categories=" + encodeURIComponent(your_stream.category);
 	else set_content("#yourcat", "");
 	if (!precache_timer) precache_timer = setInterval(precache_streaminfo, 2000);

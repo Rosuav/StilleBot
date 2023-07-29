@@ -92,6 +92,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			if (!notes->tags) notes->tags = ([]);
 			foreach (newnotes / "\n", string line) 
 				if (sscanf(line, "%s %d", string id, int pref) == 2) {
+					//Hack: "<viewership>" is used for the "hide viewer counts" setting
+					if (id == "<viewership>") pref = pref < 0 ? -1 : 0;
 					if (!pref || pref > MAX_PREF || pref < MIN_PREF) m_delete(notes->tags, id);
 					else notes->tags[id] = pref;
 				}

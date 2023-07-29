@@ -1,15 +1,17 @@
 # $$title||Followed streams$$
 
-> ### Tag preferences
+> ### Preferences
 > Choose which tags you like or dislike. Liked tags will be promoted among<br>
 > followed streams; disliked tags will be correspondingly demoted. Preferences<br>
 > will affect Magic sort, beginning the next time you load the page.
 >
 > <ul></ul>
+>
+> Viewer counts: <label><input type=radio name=viewership data-tagid="<viewership>" class=liketag> Visible</label> <label><input type=radio name=viewership data-tagid="<viewership>" class=disliketag> Invisible</label>
 {: tag=dialog #tags}
 
 <button id=legend>Legend/info</button> <button id=highlights>Edit highlight list</button>
-<button id=allraids>All recent raids</button> <button id=tagprefs>Tag preferences</button>
+<button id=allraids>All recent raids</button> <button id=tagprefs>Preferences</button>
 <button id=mydetails>This stream's info</button>
 
 * $$sortorders$$
