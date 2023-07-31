@@ -12,13 +12,12 @@ protected void create(string n)
 
 //A sendable message could be a string (echo that string), a mapping with a "message"
 //key (echo that string, possibly with other attributes), or an array of the above
-//(echo them all, in order). Mappings and arrays can nest arbitrarily, but in practice,
-//most commands stick to one of the following:
+//(echo them all, in order). Mappings and arrays can nest arbitrarily; for example:
 //- "single message"
 //- ({"sequential", "messages"})
 //- (["message": "text to send", "attr": "value"])
 //- (["message": ({"sequential", "messages"}), "attr": "value"])
-typedef string|mapping(string:string|_echoable_message)|array(_echoable_message) _echoable_message;
+typedef string|mapping(string:mixed)|array(_echoable_message) _echoable_message;
 //To avoid recompilation ambiguities, the added constant is simply a reference to the
 //(private) recursive typedef above.
 typedef _echoable_message echoable_message;
