@@ -124,7 +124,7 @@ command_handler find_command(object channel, string cmd, int is_mod, int|void is
 	{
 		//NOTE: G->G->commands holds the actual function that gets
 		//called, but we need the corresponding object.
-		command_handler f = G->G->commands[tryme] || G->G->echocommands[tryme];
+		command_handler f = channel->commands[tryme] || G->G->commands[tryme] || G->G->echocommands[tryme];
 		if (!f) continue;
 		object|mapping flags = functionp(f) ? function_object(f) : mappingp(f) ? f : ([]);
 		if (flags->featurename && !channel->config->features[?flags->featurename]) continue;

@@ -121,6 +121,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	int userid;
 	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream online.
 	mapping user_attrs = ([]); //Latest-seen user status (see gather_person_info). Not guaranteed fresh. Some parts will be message-specific.
+	mapping(string:echoable_message) commands = ([]);
 
 	protected void create() {
 		config = persist_config->path("channels", name[1..]); //FIXME-SEPCHAN
@@ -151,6 +152,20 @@ class channel(string name) { //name begins with hash and is all lower case
 		};
 		else config->login = config->display_name = name[1..]; //User ID is zero for pseudo-channels
 		user_attrs = G_G_("channel_user_attrs", name);
+		//Load up the channel's commands. Note that aliases are not stored in the JSON file,
+		//but are individually available here in the lookup mapping.
+		if (config->commands) foreach (config->commands; string cmd; mixed response) {
+			commands[cmd] = response;
+			if (mappingp(response) && response->aliases) {
+				mapping duplicate = (response - (<"aliases">)) | (["alias_of": cmd]);
+				foreach (response->aliases, string alias) {
+					alias -= "!";
+					if (alias != "") commands[alias] = duplicate;
+				}
+			}
+			//TODO: Handle redemption commands, and make sure they get properly purged on deletion
+			//if (mappingp(response) && response->redemption) G->G->redemption_commands[response->redemption] += ({cmd});
+		}
 	}
 
 	//Like calling the equivalent persist method (TODO: dedup; also, do we need has_path?).
