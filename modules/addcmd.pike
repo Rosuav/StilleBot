@@ -115,27 +115,27 @@ void update_aliases(object channel, string aliases, echoable_message response, m
 		sscanf(alias, "%*[!]%[^#\n]", string safealias);
 		if (safealias && safealias != "" && (!mappingp(response) || safealias != response->alias_of)) {
 			string cmd = safealias + channel->name;
-			if (response) G->G->echocommands[cmd] = response;
-			else m_delete(G->G->echocommands, cmd);
+			if (response) channel->commands[safealias] = response;
+			else {m_delete(G->G->echocommands, cmd); m_delete(channel->commands, safealias);}
 			updates[cmd] = 1;
 		}
 	}
 }
 
 void purge(object channel, string cmd, multiset updates) {
-	echoable_message prev = m_delete(G->G->echocommands, cmd);
-	if (prev) updates[cmd] = 1;
+	echoable_message prev = m_delete(G->G->echocommands, cmd + channel->name) || m_delete(channel->commands, cmd);
+	m_delete(channel->path("commands"), cmd);
+	if (prev) updates[cmd + channel->name] = 1;
 	if (!mappingp(prev)) return;
-	if (prev->alias_of) purge(channel, prev->alias_of + channel->name, updates);
+	if (prev->alias_of) purge(channel, prev->alias_of, updates);
 	if (prev->aliases) update_aliases(channel, prev->aliases, 0, updates);
 	if (prev->automate) {
 		//Clear out the timer
-		mixed id = m_delete(G->G->autocommands, cmd);
+		mixed id = m_delete(G->G->autocommands, cmd + channel->name);
 		if (id) remove_call_out(id);
 	}
 	if (prev->redemption) {
-		sscanf(cmd, "%s#", string basename);
-		channel->redemption_commands[prev->redemption] -= ({basename});
+		channel->redemption_commands[prev->redemption] -= ({cmd});
 		if (!sizeof(channel->redemption_commands[prev->redemption])) m_delete(channel->redemption_commands, prev->redemption);
 		updates["rew " + prev->redemption] = 1;
 	}
@@ -147,8 +147,8 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 	sscanf(cmd || "", "%[!]%s#%s", string pfx, string basename, string chan);
 	object channel = G->G->irc->channels["#" + chan]; if (!channel) error("Requires a channel name.\n");
 	multiset updates = (<cmd>);
-	purge(channel, cmd, updates);
-	if (extra) purge(channel, extra->original, updates); //Renaming a command requires removal of what used to be.
+	purge(channel, basename, updates);
+	if (sscanf(extra->?original || "", "%s#", string oldname)) purge(channel, oldname, updates); //Renaming a command requires removal of what used to be.
 	//Purge any iteration variables that begin with ".basename:" - anonymous rotations restart on
 	//any edit. This ensures that none of the anonymous ones hang around. Named ones are regular
 	//variables, though, and might be shared, so we don't delete those.
@@ -159,7 +159,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 		if (object handler = G->G->websocket_types->chan_variables)
 			handler->update_one(channel->name, v - "$");
 	}
-	if (response) G->G->echocommands[cmd] = response;
+	if (response) channel->commands[cmd] = channel->path("commands")[cmd] = response;
 	if (mappingp(response) && response->aliases) update_aliases(channel, response->aliases, (response - (<"aliases">)) | (["alias_of": basename]), updates);
 	foreach (extra->?cooldowns || ([]); string cdname; int cdlength) {
 		//If the cooldown delay is shorter than the cooldown timeout,
@@ -183,6 +183,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 	}
 	string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 	Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
+	persist_config->save(); //FIXME-SEPCHAN: Save the specific channel's config
 	if (object handler = G->G->websocket_types->chan_commands) {
 		//If the command name starts with "!", it's a special, to be
 		//sent out to "!!#channel" and not to "#channel".
@@ -233,8 +234,8 @@ protected void create(string name)
 			sscanf(cmd, "%s#%s", string basename, string chan);
 			object channel = G->G->irc->channels["#" + chan];
 			if (!channel) continue;
-			channel->redemption_commands[response->redemption] -= ({basename}); //Ensure just one copy
-			channel->redemption_commands[response->redemption] += ({basename});
+			if (!has_value(channel->redemption_commands[response->redemption] || ({ }), basename))
+				channel->redemption_commands[response->redemption] += ({basename});
 		}
 	}
 	add_constant("make_echocommand", make_echocommand);
