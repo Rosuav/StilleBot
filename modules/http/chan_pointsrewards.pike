@@ -126,12 +126,12 @@ void points_redeemed(string chan, mapping data, int|void removal)
 				(["method": "PATCH", "json": (["cost": newcost])]),
 			);
 	}
-	if (!removal) foreach (G->G->redemption_commands[data->reward->id] || ({ }), string cmd) {
-		sscanf(cmd, "%*s#%s", string chan);
-		G->G->irc->channels["#" + chan]->send(([
+	object channel = G->G->irc->channels["#" + chan];
+	if (channel && !removal) foreach (channel->redemption_commands[data->reward->id] || ({ }), string cmd) {
+		channel->send(([
 			"displayname": data->user_name, "user": data->user_login,
 			"uid": data->user_id,
-		]), G->G->echocommands[cmd], ([
+		]), channel->commands[cmd] || G->G->echocommands[cmd + channel->name], ([
 			"%s": data->user_input,
 			"{rewardid}": data->reward->id, "{redemptionid}": data->id,
 		]));

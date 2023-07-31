@@ -121,7 +121,11 @@ class channel(string name) { //name begins with hash and is all lower case
 	int userid;
 	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream online.
 	mapping user_attrs = ([]); //Latest-seen user status (see gather_person_info). Not guaranteed fresh. Some parts will be message-specific.
+	//Command names are simple atoms (eg "foo" will handle the "!foo" command), or well-known
+	//bang-prefixed special triggers (eg "!resub" for a channel's resubscription trigger).
 	mapping(string:echoable_message) commands = ([]);
+	//Map a reward ID to the redemption triggers for that reward. Empty arrays should be expunged.
+	mapping(string:array(string)) redemption_commands = ([]);
 
 	protected void create() {
 		config = persist_config->path("channels", name[1..]); //FIXME-SEPCHAN
@@ -163,8 +167,7 @@ class channel(string name) { //name begins with hash and is all lower case
 					if (alias != "") commands[alias] = duplicate;
 				}
 			}
-			//TODO: Handle redemption commands, and make sure they get properly purged on deletion
-			//if (mappingp(response) && response->redemption) G->G->redemption_commands[response->redemption] += ({cmd});
+			if (mappingp(response) && response->redemption) redemption_commands[response->redemption] += ({cmd});
 		}
 	}
 

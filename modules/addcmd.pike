@@ -134,8 +134,9 @@ void purge(object channel, string cmd, multiset updates) {
 		if (id) remove_call_out(id);
 	}
 	if (prev->redemption) {
-		G->G->redemption_commands[prev->redemption] -= ({cmd});
-		if (!sizeof(G->G->redemption_commands[prev->redemption])) m_delete(G->G->redemption_commands, prev->redemption);
+		sscanf(cmd, "%s#", string basename);
+		channel->redemption_commands[prev->redemption] -= ({basename});
+		if (!sizeof(channel->redemption_commands[prev->redemption])) m_delete(channel->redemption_commands, prev->redemption);
 		updates["rew " + prev->redemption] = 1;
 	}
 }
@@ -177,7 +178,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 		if (repeat) function_object(repeat)->connected(channel->login);
 	}
 	if (mappingp(response) && response->redemption) {
-		G->G->redemption_commands[response->redemption] += ({cmd});
+		channel->redemption_commands[response->redemption] += ({basename});
 		updates["rew " + response->redemption] = 1;
 	}
 	string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
@@ -225,9 +226,16 @@ string process(object channel, object person, string param)
 protected void create(string name)
 {
 	::create(name);
+	//Load legacy echocommands. New commands belong in channel config instead.
 	G->G->echocommands = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_commands.json")||"{}");
-	G->G->redemption_commands = ([]);
-	foreach (G->G->echocommands; string cmd; echoable_message response)
-		if (mappingp(response) && response->redemption) G->G->redemption_commands[response->redemption] += ({cmd});
+	foreach (G->G->echocommands; string cmd; echoable_message response) {
+		if (mappingp(response) && response->redemption) {
+			sscanf(cmd, "%s#%s", string basename, string chan);
+			object channel = G->G->irc->channels["#" + chan];
+			if (!channel) continue;
+			channel->redemption_commands[response->redemption] -= ({basename}); //Ensure just one copy
+			channel->redemption_commands[response->redemption] += ({basename});
+		}
+	}
 	add_constant("make_echocommand", make_echocommand);
 }
