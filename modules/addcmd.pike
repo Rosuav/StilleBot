@@ -110,11 +110,11 @@ Editing these special commands can also be done via the bot's web browser
 configuration pages, where available.
 ", SPECIALS, SPECIAL_PARAMS);
 
-void update_aliases(string chan, string aliases, echoable_message response, multiset updates) {
+void update_aliases(object channel, string aliases, echoable_message response, multiset updates) {
 	foreach (aliases / " ", string alias) {
 		sscanf(alias, "%*[!]%[^#\n]", string safealias);
 		if (safealias && safealias != "" && (!mappingp(response) || safealias != response->alias_of)) {
-			string cmd = safealias + "#" + chan;
+			string cmd = safealias + channel->name;
 			if (response) G->G->echocommands[cmd] = response;
 			else m_delete(G->G->echocommands, cmd);
 			updates[cmd] = 1;
@@ -122,12 +122,12 @@ void update_aliases(string chan, string aliases, echoable_message response, mult
 	}
 }
 
-void purge(string chan, string cmd, multiset updates) {
+void purge(object channel, string cmd, multiset updates) {
 	echoable_message prev = m_delete(G->G->echocommands, cmd);
 	if (prev) updates[cmd] = 1;
 	if (!mappingp(prev)) return;
-	if (prev->alias_of) purge(chan, prev->alias_of + "#" + chan, updates);
-	if (prev->aliases) update_aliases(chan, prev->aliases, 0, updates);
+	if (prev->alias_of) purge(channel, prev->alias_of + channel->name, updates);
+	if (prev->aliases) update_aliases(channel, prev->aliases, 0, updates);
 	if (prev->automate) {
 		//Clear out the timer
 		mixed id = m_delete(G->G->autocommands, cmd);
@@ -140,25 +140,26 @@ void purge(string chan, string cmd, multiset updates) {
 	}
 }
 
-//Update (or delete) an echo command and save them to disk
+//Update (or delete) a per-channel echo command and save to disk
 void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 {
 	sscanf(cmd || "", "%[!]%s#%s", string pfx, string basename, string chan);
+	object channel = G->G->irc->channels["#" + chan]; if (!channel) error("Requires a channel name.\n");
 	multiset updates = (<cmd>);
-	purge(chan, cmd, updates);
-	if (extra) purge(chan, extra->original, updates); //Renaming a command requires removal of what used to be.
+	purge(channel, cmd, updates);
+	if (extra) purge(channel, extra->original, updates); //Renaming a command requires removal of what used to be.
 	//Purge any iteration variables that begin with ".basename:" - anonymous rotations restart on
 	//any edit. This ensures that none of the anonymous ones hang around. Named ones are regular
 	//variables, though, and might be shared, so we don't delete those.
-	mapping vars = persist_status->has_path("variables", "#" + chan);
+	mapping vars = persist_status->has_path("variables", channel);
 	string remove = "$." + basename + ":";
 	if (vars) foreach (indices(vars), string v) if (has_prefix(v, remove)) {
 		m_delete(vars, v);
-		if (object handler = chan && G->G->websocket_types->chan_variables)
-			handler->update_one("#" + chan, v - "$");
+		if (object handler = G->G->websocket_types->chan_variables)
+			handler->update_one(channel->name, v - "$");
 	}
 	if (response) G->G->echocommands[cmd] = response;
-	if (mappingp(response) && response->aliases) update_aliases(chan, response->aliases, (response - (<"aliases">)) | (["alias_of": basename]), updates);
+	if (mappingp(response) && response->aliases) update_aliases(channel, response->aliases, (response - (<"aliases">)) | (["alias_of": basename]), updates);
 	foreach (extra->?cooldowns || ([]); string cdname; int cdlength) {
 		//If the cooldown delay is shorter than the cooldown timeout,
 		//reset the timeout. That way, if you accidentally set a command
@@ -166,14 +167,14 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 		//minute), lowering the timeout will fix it. Note that any
 		//cooldowns no longer part of the command won't be purged; at
 		//worst, they'll linger in G->G until restart - no big deal.
-		int timeout = G->G->cooldown_timeout[cdname + "#" + chan] - time();
-		if (cdlength && timeout > cdlength) G->G->cooldown_timeout[cdname + "#" + chan] = cdlength + time();
+		int timeout = G->G->cooldown_timeout[cdname + channel->name] - time();
+		if (cdlength && timeout > cdlength) G->G->cooldown_timeout[cdname + channel->name] = cdlength + time();
 	}
-	if (mappingp(response) && response->automate && G->G->stream_online_since[chan]) {
+	if (mappingp(response) && response->automate && G->G->stream_online_since[channel->login]) {
 		//Start a timer
 		//Currently, a simple hack: notify repeat.pike to recheck everything.
 		function repeat = G->G->commands->repeat;
-		if (repeat) function_object(repeat)->connected(chan);
+		if (repeat) function_object(repeat)->connected(channel->login);
 	}
 	if (mappingp(response) && response->redemption) {
 		G->G->redemption_commands[response->redemption] += ({cmd});
@@ -181,7 +182,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 	}
 	string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 	Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
-	if (object handler = chan && G->G->websocket_types->chan_commands) {
+	if (object handler = G->G->websocket_types->chan_commands) {
 		//If the command name starts with "!", it's a special, to be
 		//sent out to "!!#channel" and not to "#channel".
 		foreach (updates; cmd;) {
@@ -189,17 +190,17 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 			//deleting the old and creating the new.
 			if (has_prefix(cmd, "rew ")) continue;
 			if (has_prefix(cmd, "!trigger#")) handler->send_updates_all("!" + cmd);
-			else handler->update_one(pfx + pfx + "#" + chan, cmd);
+			else handler->update_one(pfx + pfx + channel->name, cmd);
 			handler->send_updates_all(cmd);
 		}
 	}
-	if (object handler = chan && G->G->websocket_types->chan_pointsrewards) {
+	if (object handler = G->G->websocket_types->chan_pointsrewards) {
 		//Similarly to the above, notify changes to any redemption invocations.
 		foreach (updates; cmd;) {
 			if (!has_prefix(cmd, "rew ")) continue;
 			//update_one not currently supported on this socket, so just
 			//send a full update and then stop (so we don't multiupdate).
-			handler->send_updates_all("#" + chan); break;
+			handler->send_updates_all(channel->name); break;
 		}
 	}
 }
