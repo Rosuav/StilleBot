@@ -74,7 +74,7 @@ void autospam(string channel, string msg)
 	if (!G->G->stream_online_since[channel[1..]]) return;
 	mapping cfg = get_channel_config(channel[1..]);
 	if (!cfg) return; //Channel no longer configured
-	echoable_message response = G->G->echocommands[msg[1..] + channel];
+	echoable_message response = cfg->commands[?msg[1..]] || G->G->echocommands[msg[1..] + channel];
 	int|array(int) mins = (mappingp(response) && response->automate) || cfg->autocommands[?msg];
 	if (!mins) return; //Autocommand disabled
 	string key = cfg->autocommands[?msg] ? channel + " " + msg : msg[1..] + channel;
@@ -114,7 +114,7 @@ echoable_message process(object channel, mapping person, string param)
 	//Currently, if you say "!repeat 20-30 commandname", it will error out rather than
 	//search for "!commandname". Would be convenient if it could search; do this later.
 	if (!msg || msg == "" || msg[0] != '!') return "Usage: !repeat x-y !commandname - see https://rosuav.github.io/StilleBot/commands/repeat";
-	echoable_message command = G->G->echocommands[msg[1..] + channel->name];
+	echoable_message command = channel->commands[msg[1..]] || G->G->echocommands[msg[1..] + channel->name];
 	if (mins[0] < 0) {
 		if (!mappingp(command) || !command->automate) return "That message wasn't being repeated, and can't be cancelled";
 		//Copy the command, remove the automation, and do a standard validation
@@ -160,6 +160,12 @@ echoable_message unrepeat(object channel, mapping person, string param)
 		mixed id = autocommands[cmd];
 		if (!id || undefinedp(find_call_out(id)))
 			autocommands[cmd] = call_out(autospam, seconds(response->automate, cfg->timezone), "#" + channel, "!" + (cmd / "#")[0]);
+	}
+	foreach (cfg->commands || ([]); string cmd; echoable_message response) {
+		if (!mappingp(response) || !response->automate) continue;
+		mixed id = autocommands[cmd + "#" + channel];
+		if (!id || undefinedp(find_call_out(id)))
+			autocommands[cmd] = call_out(autospam, seconds(response->automate, cfg->timezone), "#" + channel, "!" + cmd);
 	}
 }
 

@@ -34,7 +34,7 @@ Available to: %s
 class command
 {
 	constant require_moderator = 0; //(deprecated) Set to 1 if the command is mods-only (equivalent to access="mod")
-	//Command flags, same as can be managed for echocommands with !setcmd
+	//Command flags, same as can be set on any echocommand that is a mapping.
 	//Note that the keywords given here by default should be treated as equivalent
 	//to a 0, as echocommands will normally use 0 for the defaults.
 	constant access = "any"; //Set to "mod" for mod-only, "vip" for VIPs and mods, or "none" for disabled/internal-only commands (more useful for echo commands)
@@ -124,7 +124,7 @@ command_handler find_command(object channel, string cmd, int is_mod, int|void is
 	{
 		//NOTE: G->G->commands holds the actual function that gets
 		//called, but we need the corresponding object.
-		command_handler f = channel->commands[tryme] || G->G->commands[tryme] || G->G->echocommands[tryme];
+		command_handler f = G->G->commands[tryme] || channel->commands[tryme] || G->G->echocommands[tryme];
 		if (!f) continue;
 		object|mapping flags = functionp(f) ? function_object(f) : mappingp(f) ? f : ([]);
 		if (flags->featurename && !channel->config->features[?flags->featurename]) continue;

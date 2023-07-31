@@ -37,17 +37,17 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (!req->misc->is_mod) return redirect("commands");
 	mapping ac = req->misc->channel->config->autocommands;
 	if (ac && sizeof(ac)) {
-		//Migrate old autocommands to echocommands with automation
-		string chan = req->misc->channel->name;
+		//Migrate old autocommands to channel commands with automation
+		object channel = req->misc->channel;
 		foreach (ac; string cmd; array automate) {
-			echoable_message command = G->G->echocommands[cmd[1..] + chan];
+			echoable_message command = channel->commands[cmd[1..]] || G->G->echocommands[cmd[1..] + channel->name];
 			if (!command && !has_prefix(cmd, "!")) {
 				//Plain text in the automation table; synthesize a command.
 				command = (["message": command, "access": "none"]);
-				for (int i = 1; G->G->echocommands[(cmd = "auto" + i) + chan]; ++i) ;
+				for (int i = 1; channel->commands[(cmd = "auto" + i) + channel->name] || G->G->echocommands[cmd]; ++i) ;
 			}
 			if (stringp(command)) command = (["message": command]);
-			G->G->update_command(req->misc->channel, "", replace(cmd, "!", ""), command | (["automate": automate]));
+			G->G->update_command(channel, "", replace(cmd, "!", ""), command | (["automate": automate]));
 		}
 		m_delete(req->misc->channel->config, "autocommands");
 		persist_config->save();

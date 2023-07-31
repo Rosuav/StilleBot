@@ -57,7 +57,7 @@ constant ENABLEABLE_FEATURES = ([
 	]),
 ]);
 
-int can_manage_feature(object channel, string kwd) {return G->G->echocommands[kwd + channel->name] ? 2 : 1;} //Should it check if it's the right thing, and if not, return 3?
+int can_manage_feature(object channel, string kwd) {return channel->commands[kwd] || G->G->echocommands[kwd + channel->name] ? 2 : 1;} //Should it check if it's the right thing, and if not, return 3?
 
 void enable_feature(object channel, string kwd, int state) {
 	mapping info = ENABLEABLE_FEATURES[kwd]; if (!info) return;
@@ -139,7 +139,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string c = req->misc->channel->name;
 	array commands = ({ }), order = ({ });
 	object user = user_text();
-	foreach (G->G->echocommands; string cmd; echoable_message response) if (!has_prefix(cmd, "!") && has_suffix(cmd, c))
+	//TODO: Once G->G->echocommands is completely removed, just iterate over channel->commands and filter out specials - nothing else will be cluttering it up.
+	foreach (G->G->echocommands | req->misc->channel->commands; string cmd; echoable_message response) if (!has_prefix(cmd, "!") && (has_suffix(cmd, c) || !has_value(cmd, '#')))
 	{
 		if (mappingp(response) && response->visibility == "hidden") continue;
 		//Recursively convert a response into HTML. Ignores submessage flags.
@@ -173,7 +174,9 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 mapping _get_command(string cmd) {
-	echoable_message response = G->G->echocommands[cmd];
+	sscanf(cmd, "%s#%s", string basename, string chan);
+	object channel = G->G->irc->channels["#" + chan];
+	echoable_message response = channel->commands[basename] || G->G->echocommands[cmd];
 	if (!response) return 0;
 	if (mappingp(response)) return response | (["id": cmd]);
 	return (["message": response, "id": cmd]);
@@ -181,11 +184,12 @@ mapping _get_command(string cmd) {
 
 mapping get_state(string group, string|void id) {
 	sscanf(group, "%s#%s", string command, string chan);
-	if (!G->G->irc->channels["#" + chan]) return 0;
+	object channel = G->G->irc->channels["#" + chan];
+	if (!channel) return 0;
 	if (command == "!!trigger") {
 		//For the front end, we pretend that there are multiple triggers with distinct IDs.
 		//But here on the back end, they're a single array inside one command.
-		echoable_message response = G->G->echocommands["!trigger#" + chan];
+		echoable_message response = channel->commands["!trigger"] || G->G->echocommands["!trigger#" + chan];
 		if (id) return 0; //Partial updates of triggers not currently supported. If there are enough that this matters, consider implementing.
 		return (["items": arrayp(response) ? response : ({ })]);
 	}
@@ -196,6 +200,10 @@ mapping get_state(string group, string|void id) {
 	{
 		if (command == "!!" && has_prefix(cmd, "!") && !has_prefix(cmd, "!!trigger#")) commands += ({_get_command(cmd)});
 		else if (command == "" && !has_prefix(cmd, "!")) commands += ({_get_command(cmd)});
+	}
+	foreach (channel->commands; string cmd; echoable_message response) {
+		if (command == "!!" && has_prefix(cmd, "!") && !has_prefix(cmd, "!!trigger")) commands += ({_get_command(cmd + channel->name)});
+		else if (command == "" && !has_prefix(cmd, "!")) commands += ({_get_command(cmd + channel->name)});
 	}
 	sort(commands->id, commands);
 	return (["items": commands]);
@@ -260,7 +268,7 @@ echoable_message _validate(echoable_message resp, mapping state)
 			//echocommands from the current channel; but you may enter them with
 			//or without their leading exclamation marks.
 			sscanf(ret->target || "", "%*[!]%s", string cmd);
-			if (state->channel && !G->G->echocommands[cmd + state->channel->name])
+			if (state->channel && !state->channel->commands[cmd] && !G->G->echocommands[cmd + state->channel->name])
 				//Attempting to chain to something that doesn't exist is invalid.
 				//TODO: Accept it if it's recursion (or maybe have a separate "chain
 				//to self" notation) to allow a new recursive command to be saved.
@@ -411,7 +419,7 @@ mapping(string:mixed) _syntax_check(mapping(string:mixed) msg, string|void cmdna
 array _validate_command(object channel, string command, string cmdname, echoable_message response, string|void original) {
 	mapping state = (["cmd": command, "cdanon": 0, "cooldowns": ([]), "channel": channel]);
 	if (command == "!!trigger") {
-		echoable_message alltrig = G->G->echocommands["!trigger" + channel->name];
+		echoable_message alltrig = channel->commands["!trigger"] || G->G->echocommands["!trigger" + channel->name];
 		alltrig += ({ }); //Force array, and disconnect it for mutation's sake
 		string id = cmdname - "!";
 		if (id == "") {

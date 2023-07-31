@@ -14,10 +14,10 @@ string process(object channel, object person, string param)
 	if (sscanf(param, "%*[!]%[^# ]", string cmd) == 2)
 	{
 		//As with addcmd, it *always* gets the channel name appended.
-		cmd = command_casefold(cmd) + channel->name;
-		if (!G->G->echocommands[cmd]) return "@$$: No echo command with that name exists here.";
-		make_echocommand(cmd, 0);
-		return sprintf("@$$: Deleted command !%s", cmd - channel->name);
+		cmd = command_casefold(cmd);
+		if (!channel->commands[cmd] && !G->G->echocommands[cmd + channel->name]) return "@$$: No echo command with that name exists here.";
+		make_echocommand(cmd + channel->name, 0);
+		return sprintf("@$$: Deleted command !%s", cmd);
 	}
 	return "@$$: Try !delcmd !cmdname";
 }

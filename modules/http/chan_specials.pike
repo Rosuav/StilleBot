@@ -61,7 +61,7 @@ constant ENABLEABLE_FEATURES = ([
 //Note that, unlike regular trigger IDs, these indices are not intrinsic and can change. -1 indicates not present.
 int get_trig_index(object channel, string kwd) {
 	mapping info = ENABLEABLE_FEATURES[kwd]; if (!info) return 0;
-	echoable_message response = G->G->echocommands[info->special + channel->name];
+	echoable_message response = channel->commands[info->special] || G->G->echocommands[info->special + channel->name];
 	if (!response) return -1;
 	info = info->response;
 	if (info->delay) info = info->message; 
@@ -80,7 +80,7 @@ int can_manage_feature(object channel, string kwd) {return get_trig_index(channe
 void enable_feature(object channel, string kwd, int state) {
 	mapping info = ENABLEABLE_FEATURES[kwd]; if (!info) return;
 	//Hack: Call on the normal commands updater to add a trigger
-	array response = Array.arrayify(G->G->echocommands[info->special + channel->name]) + ({ });
+	array response = Array.arrayify(channel->commands[info->special] || G->G->echocommands[info->special + channel->name]) + ({ });
 	int idx = get_trig_index(channel, kwd);
 	if (idx == -1 && !state) return; //Not present, not wanted, nothing to do
 	if (idx == -1) response += ({info->response});

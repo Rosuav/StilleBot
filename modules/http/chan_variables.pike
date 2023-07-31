@@ -168,6 +168,10 @@ mapping _get_variable(mapping vars, object channel, string varname, int|void per
 		if (has_suffix(cmd, c) && (!mappingp(response) || !response->alias_of))
 			check_for_variables(has_prefix(cmd, "!trigger#") ? "trigger" : cmd[0] == '!' ? "special" : "command",
 				"!" + cmd - c, response, varname, ret);
+	foreach (channel->commands; string cmd; echoable_message response)
+		if (!mappingp(response) || !response->alias_of)
+			check_for_variables(cmd == "!trigger" ? "trigger" : cmd[0] == '!' ? "special" : "command",
+				"!" + cmd, response, varname, ret);
 	foreach (channel->config->monitors || ([]); string nonce; mapping info)
 		check_for_variables(info->type == "goalbar" ? "goalbar" : "monitor", nonce, info->text, varname, ret);
 	return ret;

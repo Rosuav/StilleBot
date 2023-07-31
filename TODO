@@ -236,6 +236,8 @@
     - Now instead of two lookups with different keys into one mapping, it looks up one key
       into two different mappings
     - foreach (({channel->config->commands, G->G->commands}), mapping tryme)
+  - Both are currently supported; new/updated commands should be saved into the channel's
+    configs. At some point, migrate all commands, and eventually, disable echocommands.
 * Eventually, move persist_config to a directory of config files, one per channel, with a
   global config for things that don't apply to one channel. Save into channels/49497888.json
   with globals remaining in twitchbot_config.json for now.
@@ -260,3 +262,4 @@
     be echoable_messages that use them. Good defaults will make this easy.
   - May simplify find_command somewhat as flags like "mod-only" will always and only be
     in the mapping, not in the function's object.
+* Should the !help command be deprecated? If not, should it become a builtin in some way?

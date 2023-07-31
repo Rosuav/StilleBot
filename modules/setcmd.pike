@@ -36,8 +36,7 @@ string process(object channel, object person, string param)
 		cmd = command_casefold(cmd);
 		//These flags don't apply to the addcmd specials
 		if (has_value(cmd, '!')) return "@$$: Command names cannot include exclamation marks";
-		cmd += channel->name;
-		echoable_message command = G->G->echocommands[cmd];
+		echoable_message command = channel->commands[cmd] || G->G->echocommands[cmd + channel->name];
 		if (!command) return "@$$: Command " + cmd + " not found (only echo commands can be configured).";
 		if (!mappingp(command)) command = (["message": command]);
 		else command = command | ([]); //Prevent accidental mutation
@@ -58,8 +57,8 @@ string process(object channel, object person, string param)
 			default: return "@$$: Unknown option " + flag; //Won't update the command
 		}
 		if (sizeof(command) == 1) command = command->message; //No unnecessary mappings
-		make_echocommand(cmd, command);
-		return sprintf("@$$: Updated command !%s", cmd - channel->name);
+		make_echocommand(cmd + channel->name, command);
+		return sprintf("@$$: Updated command !%s", cmd);
 	}
 	return "@$$: Try !setcmd !cmdname option -- see https://rosuav.github.io/StilleBot/commands/setcmd";
 }

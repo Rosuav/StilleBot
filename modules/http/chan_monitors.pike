@@ -152,7 +152,7 @@ void autoadvance(object channel, mapping person, string key, int weight) {
 			//This is the current tier. If we've only barely started it,
 			//then we probably just hit this tier. (If tier is 0, we've
 			//just broken positive after having a negative total.)
-			if (total < advance) channel->send(person, G->G->echocommands[info->lvlupcmd + channel->name], (["%s": (string)tier]));
+			if (total < advance) channel->send(person, channel->commands[info->lvlupcmd] || G->G->echocommands[info->lvlupcmd + channel->name], (["%s": (string)tier]));
 			break;
 		}
 	}

@@ -267,7 +267,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		return 0;
 	}
 	string chatnotif = "[Enable in-chat notifications](vlc?makespecial)";
-	if (G->G->echocommands["!musictrack" + req->misc->channel->name]) {
+	if (req->misc->channel->commands["!musictrack"] || G->G->echocommands["!musictrack" + req->misc->channel->name]) {
 		//TODO: Show a summary of how it'll look, somehow
 		chatnotif = "In-chat notifications active. [Configure details](specials)";
 	}

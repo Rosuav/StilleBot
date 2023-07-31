@@ -38,7 +38,7 @@ echoable_message process(object channel, mapping person, string param)
 			obj->docstring && !hidden ? " Learn more at https://rosuav.github.io/StilleBot/commands/" + pgm : "",
 		);
 	}
-	foreach (({G->G->commands, G->G->echocommands}), mapping commands)
+	foreach (({G->G->commands, channel->commands, G->G->echocommands}), mapping commands)
 		foreach (commands; string cmd; command_handler handler)
 		{
 			object|mapping flags =

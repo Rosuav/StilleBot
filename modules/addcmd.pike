@@ -123,7 +123,7 @@ void update_aliases(object channel, string aliases, echoable_message response, m
 }
 
 void purge(object channel, string cmd, multiset updates) {
-	echoable_message prev = m_delete(G->G->echocommands, cmd + channel->name) || m_delete(channel->commands, cmd);
+	echoable_message prev = m_delete(channel->commands, cmd) || m_delete(G->G->echocommands, cmd + channel->name);
 	m_delete(channel->path("commands"), cmd);
 	if (prev) updates[cmd + channel->name] = 1;
 	if (!mappingp(prev)) return;
@@ -147,7 +147,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 	sscanf(cmd || "", "%[!]%s#%s", string pfx, string basename, string chan);
 	object channel = G->G->irc->channels["#" + chan]; if (!channel) error("Requires a channel name.\n");
 	multiset updates = (<cmd>);
-	purge(channel, basename, updates);
+	purge(channel, pfx + basename, updates);
 	if (sscanf(extra->?original || "", "%s#", string oldname)) purge(channel, oldname, updates); //Renaming a command requires removal of what used to be.
 	//Purge any iteration variables that begin with ".basename:" - anonymous rotations restart on
 	//any edit. This ensures that none of the anonymous ones hang around. Named ones are regular
@@ -159,7 +159,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 		if (object handler = G->G->websocket_types->chan_variables)
 			handler->update_one(channel->name, v - "$");
 	}
-	if (response) channel->commands[cmd] = channel->path("commands")[cmd] = response;
+	if (response) channel->commands[pfx + basename] = channel->path("commands")[pfx + basename] = response;
 	if (mappingp(response) && response->aliases) update_aliases(channel, response->aliases, (response - (<"aliases">)) | (["alias_of": basename]), updates);
 	foreach (extra->?cooldowns || ([]); string cdname; int cdlength) {
 		//If the cooldown delay is shorter than the cooldown timeout,
@@ -216,10 +216,9 @@ string process(object channel, object person, string param)
 		//manually editing the JSON file.
 		cmd = command_casefold(cmd);
 		if (!SPECIAL_NAMES[cmd] && has_value(cmd, '!')) return "@$$: Command names cannot include exclamation marks";
-		cmd += channel->name;
-		string newornot = G->G->echocommands[cmd] ? "Updated" : "Created new";
-		make_echocommand(cmd, response);
-		return sprintf("@$$: %s command !%s", newornot, cmd - channel->name);
+		string newornot = channel->commands[cmd] || G->G->echocommands[cmd + channel->name] ? "Updated" : "Created new";
+		make_echocommand(cmd + channel->name, response);
+		return sprintf("@$$: %s command !%s", newornot, cmd);
 	}
 	return "@$$: Try !addcmd !newcmdname response-message";
 }
