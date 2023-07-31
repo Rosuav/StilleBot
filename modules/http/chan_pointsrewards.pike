@@ -75,7 +75,7 @@ mapping get_chan_state(object channel, string grp, string|void id, string|void t
 	foreach (rewards, mapping rew) {
 		mapping r = current[rew->id];
 		if (r) dynrewards += ({r | (["id": rew->id, "title": rew->title, "curcost": rew->cost])});
-		rew->invocations = G->G->redemption_commands[rew->id] || ({ });
+		rew->invocations = channel->redemption_commands[rew->id] || ({ });
 		if (rew->id == id) return type == "dynreward" ? r && dynrewards[-1] : rew; //Can't be bothered remapping to remove the search
 	}
 	if (id) return 0; //Clearly it wasn't found
