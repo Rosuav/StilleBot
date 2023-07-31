@@ -212,7 +212,7 @@ on("click", "#add_text", e => {
 });
 
 on("click", "#add_goalbar", e => {
-	fetch("monitors", {method: "PUT", headers: {"Content-Type": "application/json"}, body: '{"text": "Achieve a goal!", "type": "goalbar"}'});
+	fetch("monitors", {method: "PUT", headers: {"Content-Type": "application/json"}, body: '{"text": "Achieve a goal!", "type": "goalbar", "active": 1}'});
 });
 
 on("click", "#add_countdown", e => {
