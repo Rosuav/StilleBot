@@ -268,3 +268,7 @@
   - Show current value (as displayed - with tiered goals, won't be the same as the variable)
   - Percentage?
   - Use for (eg) Devi's goal commands - they can show the distance to next goal
+* Raid finder filter: hashtag=StreamInk
+  - Couple this with some other source of data eg categories=Art
+  - Will restrict the results to those whose titles include #StreamInk (case insensitive)
+  - TEST PERFORMANCE. If bad, will be mostly useless. Can some of the info be precached?
