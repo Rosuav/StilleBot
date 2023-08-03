@@ -272,3 +272,4 @@
   - Couple this with some other source of data eg categories=Art
   - Will restrict the results to those whose titles include #StreamInk (case insensitive)
   - TEST PERFORMANCE. If bad, will be mostly useless. Can some of the info be precached?
+* Raid train: date-only mode. Hide all the times, use those dates in the viewer's timezone.
