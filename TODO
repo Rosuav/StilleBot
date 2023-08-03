@@ -263,3 +263,8 @@
   - May simplify find_command somewhat as flags like "mod-only" will always and only be
     in the mapping, not in the function's object.
 * Should the !help command be deprecated? If not, should it become a builtin in some way?
+* New builtin to get goal bar information
+  - Show goal (next goal, if tiered) and distance to it
+  - Show current value (as displayed - with tiered goals, won't be the same as the variable)
+  - Percentage?
+  - Use for (eg) Devi's goal commands - they can show the distance to next goal
