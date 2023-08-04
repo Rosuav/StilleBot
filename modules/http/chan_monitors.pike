@@ -1,5 +1,23 @@
 inherit http_websocket;
 inherit hook;
+inherit builtin_command;
+
+constant builtin_name = "Monitors"; //The front end may redescribe this according to the parameters
+constant builtin_description = "Get information about a channel monitor";
+constant builtin_param = ({"Monitor ID"}); //TODO: /Monitor/monitor_id once the command GUI recognizes that
+constant vars_provided = ([
+	"{error}": "Error message, if any",
+	"{type}": "Monitor type (text, goalbar, countdown)",
+	//NOTE: Any values not applicable to the type in question will be blank/omitted.
+	"{goal}": "Goal bar: Next goal as shown on screen",
+	"{goal_raw}": "Goal bar: Next goal in raw numeric form (eg cents)",
+	"{distance}": "Goal bar: Distance to next goal (negative if goal exceeded)",
+	"{distance_raw}": "Goal bar: Distance in raw numeric form",
+	"{value}": "Goal bar: Current value as shown (distance since the last tier reset)",
+	"{value_raw}": "Goal bar: Current value in raw numeric form",
+	"{percentage}": "Goal bar: Percentage of bar filled (can be above 100) as decimal number",
+	"{tier}": "Goal bar: Current tier number (always 1 for non-tiered goals)",
+]);
 
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
 constant saveable_attributes = "previewbg barcolor fillcolor needlesize thresholds progressive lvlupcmd format width height "
@@ -155,6 +173,57 @@ void autoadvance(object channel, mapping person, string key, int weight) {
 			if (total < advance) channel->send(person, channel->commands[info->lvlupcmd] || G->G->echocommands[info->lvlupcmd + channel->name], (["%s": (string)tier]));
 			break;
 		}
+	}
+}
+
+string format_plain(int value) {return (string)value;}
+string format_currency(int value) {
+	if (!(value % 100)) return "$" + (value / 100);
+	return sprintf("$%d.%02d", value / 100, value % 100);
+}
+string format_subscriptions(int value) {
+	if (!(value % 500)) return (string)(value / 500);
+	return sprintf("%.3f", value / 500.0);
+}
+
+mapping message_params(object channel, mapping person, string|array param) {
+	string monitor = stringp(param) ? param : param[0];
+	mapping info = channel->config->monitors[?monitor];
+	if (!monitor) return (["{error}": "Unrecognized monitor ID - has it been deleted?"]);
+	switch (info->type) {
+		case "goalbar": {
+			int pos = (int)channel->expand_variables(info->text); //The text starts with the variable, then a colon, so this will give us the current (raw) value.
+			int tier, goal, found;
+			foreach (info->thresholds / " "; tier; string th) {
+				goal = (int)th;
+				if (pos < goal) {
+					found = 1;
+					break;
+				}
+				else if (!info->progressive) pos -= goal;
+			}
+			if (!found) {
+				//Beyond the last threshold. Some numbers may exceed normal
+				//limits, eg percentage being above 100. Note that, for a
+				//non-tiered goal bar, this simply means "goal is reached".
+				if (!info->progressive) pos += goal; //Show that we're past the goal
+			}
+			int percent = (int)(pos * 100.0 / goal + 0.5), distance = goal - pos;
+			function fmt = this["format_" + info->format] || format_plain;
+			return ([
+				"{type}": info->type,
+				"{goal}": fmt(goal), "{goal_raw}": (string)goal,
+				"{distance}": fmt(distance), "{distance_raw}": (string)distance,
+				"{value}": fmt(pos), "{value_raw}": (string)pos,
+				"{percentage}": fmt(percent), "{percentage_raw}": (string)percent,
+				"{tier}": (string)(tier + 1),
+			]);
+		}
+		case "countdown": return ([
+			"{type}": info->type,
+			//TODO
+		]);
+		default: return (["{type}": info->type]); //Should be "text".
 	}
 }
 
