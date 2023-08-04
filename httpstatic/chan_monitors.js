@@ -260,12 +260,15 @@ function update_tierpicker() {
 		const prevtotal = total;
 		if (progressive) total = +thresholds[which];
 		else total += +thresholds[which]; //What if thresholds[which] isn't numeric??
-		opts.push(OPTION({value: prevtotal}, desc));
+		//If you have a progressive bar with two equal tier values, or a non-progressive
+		//bar with a zero, that tier will be skipped. Show it as an inaccessible tier.
+		if (total === prevtotal) opts.push(OPTION({value: "(" + prevtotal + ")", disabled: true}, "(" + desc + ")"));
+		else opts.push(OPTION({value: prevtotal}, desc));
 		if (val === -1 && pos < total) val = prevtotal;
 	}
 	set_content(DOM("[name=tierpicker]"), opts).value = val;
 }
-DOM("[name=thresholds]").onchange = DOM("[name=currentval]").onchange = update_tierpicker;
+DOM("[name=thresholds]").onchange = DOM("[name=currentval]").onchange = DOM("[name=progressive]").onclick = update_tierpicker;
 DOM("[name=tierpicker]").onchange = e => DOM("[name=currentval]").value = e.currentTarget.value;
 DOM("#setval").onclick = e => {
 	const val = +DOM("[name=currentval]").value;
