@@ -54,6 +54,7 @@ constant markdown_menu = #"# Raid finder modes
 
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
+	System.Timer tm = System.Timer();
 	//Try to find all creative categories and get their IDs. Is there a better way to do this?
 	if (sizeof(creatives) < sizeof(creative_names)) {
 		//If any aren't found, we'll scan this list repeatedly every time a page is loaded.
@@ -566,6 +567,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			"MAX_PREF": MAX_PREF, "MIN_PREF": MIN_PREF,
 			"all_raids": all_raids[<99..], "mode": "normal",
 			"annotations": annotations,
+			"render_time": (string)tm->get(),
 		]),
 		"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
 		"title": title,
