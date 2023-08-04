@@ -112,6 +112,7 @@ const games = {
 			H2("Bridge (south end)"),
 		];},
 	},
+	//Worth doing Border Crossing? All it needs is three four-digit codes.
 	//TODO: Diamond Heist? It also has the red/green/blue digits like the Golden Grin does.
 };
 
