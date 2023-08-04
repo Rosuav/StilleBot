@@ -4,7 +4,7 @@ inherit builtin_command;
 
 constant builtin_name = "Monitors"; //The front end may redescribe this according to the parameters
 constant builtin_description = "Get information about a channel monitor";
-constant builtin_param = ({"Monitor ID"}); //TODO: /Monitor/monitor_id once the command GUI recognizes that
+constant builtin_param = ({"/Monitor/monitor_id"});
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{type}": "Monitor type (text, goalbar, countdown)",

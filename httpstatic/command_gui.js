@@ -157,6 +157,24 @@ const builtin_validators = {
 		//drop-down should be correctly populated by the time someone actually clicks on something.
 		validate: val => alertcfg.loading || alertcfg.stdalerts.find(a => a.id === val) || alertcfg.personals.find(a => a.id === val),
 	},
+	monitor_id: {...default_handlers,
+		make_control: (id, val, el) => SELECT(id, [
+			//TODO: Sort these in some useful way (or at least consistent)
+			Object.entries(monitors).map(([id, m]) => {
+				let label = m.text;
+				switch (m.type) {
+					case "goalbar": label = "Goal bar - " + /:(.*)$/.exec(m.text)[1]; break;
+					case "countdown": label = "Countdown - " + /:(.*)$/.exec(m.text)[1]; break;
+					default: break; //Simple text can be displayed as-is
+				}
+				return OPTION({".selected": id === val, value: id}, label);
+			}),
+		]),
+		//NOTE: Will permit anything while loading, but that should only happen if we get a hash link
+		//directly to open a command, or if the internet connection is very slow. Either way, the
+		//drop-down should be correctly populated by the time someone actually clicks on something.
+		validate: val => monitors[val],
+	},
 };
 
 const builtin_label_funcs = {

@@ -84,6 +84,7 @@ mapping(string:mixed) command_editor_vars(object channel) {
 		"builtins": G->G->commands_builtins,
 		"pointsrewards": G->G->pointsrewards[channel->name[1..]] || ({ }),
 		"voices": voices,
+		"monitors": channel->config->monitors || ([]),
 	]);
 }
 
