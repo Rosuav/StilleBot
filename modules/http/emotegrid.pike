@@ -1,6 +1,6 @@
 inherit http_endpoint;
 inherit annotated;
-inherit builtin_command;
+//inherit builtin_command; //Hacked out since it isn't currently viable and needn't clutter up the command editor
 
 constant markdown = #"# Emote grid
 
