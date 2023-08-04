@@ -2,6 +2,8 @@ import {lindt, replace_content as set_content, DOM, on} from "https://rosuav.git
 const {A, BR, BUTTON, DIV, IMG, INPUT, LABEL, LI, OPTION, SELECT, SPAN, TD, TEXTAREA, TIME, TR} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
+let day_based = false;
+
 const may_request_options = {
 	none: "closed", any: "open",
 	//TODO: Have an option for "approved persons" or "team members" or something
@@ -58,8 +60,9 @@ function DATE(d, timeonly) {
 	}
 	return TIME({datetime: date.toISOString(), title: date.toLocaleString()}, [
 		//This abbreviated format assumes English. The hover will be in your locale.
-		!timeonly && "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[date.getMonth()] + " " + day + ", ",
-		pad(date.getHours()) + ":00",
+		!timeonly && "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[date.getMonth()] + " " + day,
+		!timeonly && !day_based && ", ",
+		!day_based && pad(date.getHours()) + ":00",
 	]);
 }
 
@@ -85,11 +88,13 @@ export function render(data) {
 	if (data.desc_html) DOM("#cfg_description").innerHTML = data.desc_html;
 	set_content("#cfg_title", data.cfg.title || "Raid train settings");
 	DOM("#cfg_raidcall").value = data.cfg.raidcall || "";
+	day_based = data.cfg.slotsize === 24;
 	set_content("#cfg_dates", [
 		"From ", DATE(data.cfg.startdate),
 		" until ", DATE(data.cfg.enddate),
 	]);
-	set_content("#cfg_slotsize", (data.cfg.slotsize||1) + " hour(s)");
+	if (day_based) set_content("#cfg_slotsize", "Day");
+	else set_content("#cfg_slotsize", (data.cfg.slotsize||1) + " hour(s)");
 	set_content("#cfg_may_request", may_request_options[data.cfg.may_request||"none"]);
 	people = data.people; owner_id = data.owner_id; is_mod = data.is_mod;
 	may_request = data.cfg.may_request; online_streams = data.online_streams;
@@ -117,7 +122,7 @@ function update_schedule() {
 		slot.broadcasterid === self ? "your_slot" : ""
 	}, [
 		TD(abbrevdate(slot.start)),
-		TD(DATE(slot.end, 1)),
+		TD(DATE(slot.end, 1)), //This creates an empty column in day-based mode. Is it worth suppressing the entire column?
 		TD([
 			online_streams[slot.broadcasterid] && online_streams[slot.broadcasterid].online &&
 				SPAN({class: "recording", title: "Live now!"}, "⏺"),
