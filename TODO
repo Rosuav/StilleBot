@@ -263,10 +263,6 @@
   - May simplify find_command somewhat as flags like "mod-only" will always and only be
     in the mapping, not in the function's object.
 * Should the !help command be deprecated? If not, should it become a builtin in some way?
-* Raid finder filter: hashtag=StreamInk
-  - Couple this with some other source of data eg categories=Art
-  - Will restrict the results to those whose titles include #StreamInk (case insensitive)
-  - TEST PERFORMANCE. If bad, will be mostly useless. Can some of the info be precached?
 * Raid train: date-only mode. Hide all the times, use those dates in the viewer's timezone.
 * Command GUI - allow builtins to switch mode the way conditionals do
   - This should eliminate the need for lots of obscure elements in the trays

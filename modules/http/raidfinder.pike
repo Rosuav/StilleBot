@@ -455,6 +455,13 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	multiset seen = (<>);
 	foreach (follows_helix; int i; mapping strm)
 	{
+		//Optional filter: Only those that include a stream title hashtag
+		//Note that this is a naive case-insensitive prefix search; "hashtag=art" will match "#Artist".
+		//(Would it be worth lifting the EU4Parser "fold to ASCII" search?)
+		if (req->variables->hashtag) {
+			if (!has_value(lower_case(strm->title), "#" + req->variables->hashtag)) {follows_helix[i] = 0; continue;}
+			//TODO: Put a highlight on the search term???
+		}
 		mapping(string:int) recommend = ([]);
 		foreach (strm->tags || ({ }), string tag)
 			if (int pref = lc_tag_prefs[lower_case(tag)]) recommend["Tag prefs"] += PREFERENCE_MAGIC_SCORES[pref];
