@@ -452,6 +452,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	mapping(string:int) tag_prefs = notes->tags || ([]);
 	mapping(string:int) lc_tag_prefs = mkmapping(lower_case(indices(tag_prefs)[*]), values(tag_prefs));
 	mapping cached_status = persist_status->path("raidfinder_cache");
+	multiset seen = (<>);
 	foreach (follows_helix; int i; mapping strm)
 	{
 		mapping(string:int) recommend = ([]);
@@ -462,6 +463,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (mapping st = cached_status[strm->user_id]) strm->chanstatus = st;
 		int otheruid = (int)strm->user_id;
 		if (otheruid == userid) {follows_helix[i] = 0; continue;} //Exclude self. There's no easy way to know if you should have shown up, so just always exclude.
+		if (seen[otheruid]) {follows_helix[i] = 0; continue;} //Duplicate results sometimes happen across pagination. Suppress them. (We may have lost something in the gap but we can't know.)
+		seen[otheruid] = 1;
 		//TODO: Configurable hard tag requirements
 		//if (recommend["Tag prefs"] <= -1000 && filter out strong dislikes) {follows_helix[i] = 0; continue;}
 		//if (recommend["Tag prefs"] < 1000 && require at least one mandatory tag) {follows_helix[i] = 0; continue;}
