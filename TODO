@@ -273,3 +273,6 @@
   - Will restrict the results to those whose titles include #StreamInk (case insensitive)
   - TEST PERFORMANCE. If bad, will be mostly useless. Can some of the info be precached?
 * Raid train: date-only mode. Hide all the times, use those dates in the viewer's timezone.
+* Command GUI - allow builtins to switch mode the way conditionals do
+  - This should eliminate the need for lots of obscure elements in the trays
+  - Will need to completely rewrite the parameters any time a mode switch is done.
