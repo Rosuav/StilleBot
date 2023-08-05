@@ -162,7 +162,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			commands[cmd] = response;
 			if (mappingp(response) && response->aliases) {
 				mapping duplicate = (response - (<"aliases">)) | (["alias_of": cmd]);
-				foreach (response->aliases, string alias) {
+				foreach (response->aliases / " ", string alias) {
 					alias -= "!";
 					if (alias != "") commands[alias] = duplicate;
 				}
