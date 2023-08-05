@@ -128,11 +128,13 @@ const games = {
 				{"data-setting": "unlock-arrest", value: data["unlock-arrest"]}, [
 				OPTION(""),
 				OPTION("2002"),
+				OPTION("2017"),
 			])])),
 			DIV({class: "row"}, LABEL(["Graffiti: ", SELECT(
 				{"data-setting": "unlock-graffiti", value: data["unlock-graffiti"]}, [
 				OPTION(""),
 				OPTION("0455"),
+				OPTION("4828"),
 			])])),
 			H2("Mexico side"),
 			DIV([
