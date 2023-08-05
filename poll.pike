@@ -684,7 +684,7 @@ void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //Maybe make the poll interval customizable?
 	array chan = list_channel_configs()->login;
-	chan = filter(chan) {return __ARGS__[0][0] != '!';};
+	chan = filter(chan) {return __ARGS__[0][?0] != '!';};
 	if (!sizeof(chan)) return; //Nothing to check.
 	//Prune any "channel online" statuses for channels we don't track any more
 	foreach (indices(stream_online_since) - chan, string name) m_delete(stream_online_since, name);
