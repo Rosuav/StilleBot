@@ -112,7 +112,35 @@ const games = {
 			H2("Bridge (south end)"),
 		];},
 	},
-	//Worth doing Border Crossing? All it needs is three four-digit codes.
+	bordercrossing: {
+		label: "Payday 2: Border Crossing",
+		render(data) {return [
+			H2("USA side"),
+			STYLE(".row {font-size: 200%; margin: 1em;} select {font-size: 100%;}"),
+			DIV({class: "row"}, LABEL(["Reset code: ", SELECT(
+				{"data-setting": "unlock-reset", value: data["unlock-reset"]}, [
+				OPTION(""),
+				OPTION("0000"),
+				OPTION("1111"),
+				OPTION("1234"),
+			])])),
+			DIV({class: "row"}, LABEL(["First arrest: ", SELECT(
+				{"data-setting": "unlock-arrest", value: data["unlock-arrest"]}, [
+				OPTION(""),
+				OPTION("2002"),
+			])])),
+			DIV({class: "row"}, LABEL(["Graffiti: ", SELECT(
+				{"data-setting": "unlock-graffiti", value: data["unlock-graffiti"]}, [
+				OPTION(""),
+				OPTION("0455"),
+			])])),
+			H2("Mexico side"),
+			DIV([
+				"Tip: Have two players grab keycards from USA and bring them. Otherwise, there's one available here.",
+				" Don't waste keycards on the cages; have one player unlock them upstairs while the other slips inside.",
+			]),
+		];},
+	},
 	//TODO: Diamond Heist? It also has the red/green/blue digits like the Golden Grin does.
 };
 
