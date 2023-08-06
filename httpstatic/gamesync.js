@@ -130,11 +130,18 @@ const games = {
 				OPTION("2002"),
 				OPTION("2017"),
 			])])),
+			DIV({class: "row"}, LABEL(["Club founded: ", SELECT(
+				{"data-setting": "unlock-founding", value: data["unlock-founding"]}, [
+				OPTION(""),
+				OPTION("2008"),
+				OPTION("2009"),
+			])])),
 			DIV({class: "row"}, LABEL(["Graffiti: ", SELECT(
 				{"data-setting": "unlock-graffiti", value: data["unlock-graffiti"]}, [
 				OPTION(""),
 				OPTION("0455"),
 				OPTION("4828"),
+				OPTION("5137"),
 			])])),
 			H2("Mexico side"),
 			DIV([
