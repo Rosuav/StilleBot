@@ -266,3 +266,4 @@
 * Command GUI - allow builtins to switch mode the way conditionals do
   - This should eliminate the need for lots of obscure elements in the trays
   - Will need to completely rewrite the parameters any time a mode switch is done.
+* BUG: Trigger anchor is misdisplaying with changing filter types
