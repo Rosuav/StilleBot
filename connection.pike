@@ -95,7 +95,7 @@ constant deletemsg = ({"object channel", "object person", "string target", "stri
 @create_hook:
 constant deletemsgs = ({"object channel", "object person", "string target"});
 
-continue Concurrent.Future voice_enable(string voiceid, string chan, array(string) msgs, mapping|void tags) {
+continue Concurrent.Future voice_enable(string voiceid, string chan, mapping|void tags) {
 	mapping tok = persist_status["voices"][voiceid];
 	werror("Connecting to voice %O...\n", voiceid);
 	object conn = yield(irc_connect(([
@@ -104,6 +104,7 @@ continue Concurrent.Future voice_enable(string voiceid, string chan, array(strin
 		"capabilities": ({"commands"}),
 	])));
 	werror("Voice %O connected, sending to channel %O\n", voiceid, chan);
+	array msgs = irc_connections[voiceid]; //Note that the queue may be added to while we're connecting.
 	irc_connections[voiceid] = conn;
 	conn->yes_reconnect(); //Mark that we need this connection
 	conn->send(chan, msgs[*], tags);
@@ -698,8 +699,11 @@ class channel(string name) { //name begins with hash and is all lower case
 			nonce_callbacks[nonce] = ({cfg->callback, vars | ([])});
 		}
 		if (voice == (string)G->G->bot_uid) voice = 0; //Use the intrinsic connection if possible.
-		if (irc_connections[voice]) irc_connections[voice]->send(name, msgs[*], tags);
-		else spawn_task(voice_enable(voice, name, msgs, tags));
+		if (objectp(irc_connections[voice])) irc_connections[voice]->send(name, msgs[*], tags);
+		else {
+			if (!arrayp(irc_connections[voice])) spawn_task(voice_enable(voice, name, tags));
+			irc_connections[voice] += msgs;
+		}
 	}
 
 	//Send any sort of echoable message.
