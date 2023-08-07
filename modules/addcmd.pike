@@ -226,16 +226,9 @@ string process(object channel, object person, string param)
 protected void create(string name)
 {
 	::create(name);
-	//Load legacy echocommands. New commands belong in channel config instead.
+	//Load legacy and global echocommands. New channel-specific commands belong in channel config instead.
 	G->G->echocommands = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_commands.json")||"{}");
-	foreach (G->G->echocommands; string cmd; echoable_message response) {
-		if (mappingp(response) && response->redemption) {
-			sscanf(cmd, "%s#%s", string basename, string chan);
-			object channel = G->G->irc->channels["#" + chan];
-			if (!channel) continue;
-			if (!has_value(channel->redemption_commands[response->redemption] || ({ }), basename))
-				channel->redemption_commands[response->redemption] += ({basename});
-		}
-	}
+	foreach (G->G->echocommands; string cmd; echoable_message response)
+		if (has_value(cmd, "#")) catch {make_echocommand(cmd, response);}; //Migrate all channel-specific commands.
 	add_constant("make_echocommand", make_echocommand);
 }
