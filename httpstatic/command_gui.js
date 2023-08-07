@@ -586,8 +586,9 @@ const tray_tabs = [
 		{type: "text", message: "Simple text message"},
 		{type: "randrot", mode: "random"},
 		{type: "conditional_string", conditional: "string", expr1: "{param}"},
-		{type: "cooldown", cdlength: "30", cdname: ""},
 		{type: "voice", voice: ""},
+		{type: "builtin_calc", builtin_param: "1 + 2 + 3",
+			message: [{type: "text", message: "That works out to: {result}"}]},
 	]},
 	{name: "Alternate delivery", color: "#f7bbf7", items: [
 		{type: "whisper_back", message: "Shh! This is a whisper!"},
@@ -605,29 +606,29 @@ const tray_tabs = [
 		{type: "conditional_number", expr1: "$deaths$ > 10"},
 		{type: "conditional_string", conditional: "regexp", expr1: "[Hh]ello", expr2: "{param}"},
 		{type: "chain_of_command", target: "", destcfg: ""},
-		{type: "foreach", "participant_activity": "300"},
 		//NOTE: Even though they're internally conditionals too, cooldowns don't belong in this tray.
 		//Conversely, even though argsplit isn't really control flow, it fits into the same kind of
 		//use case, where you're thinking more like a programmer.
 	]},
 	{name: "Interaction", color: "#ffffbb", items: [
 		{type: "builtin_shoutout", builtin_param: "%s"},
-		{type: "builtin_calc", builtin_param: "1 + 2 + 3",
-			message: [{type: "text", message: "That works out to: {result}"}]},
-		{type: "builtin_chan_alertbox", builtin_param: "follower", builtin_param1: "Test User",
-			message: [{type: "handle_errors"}]},
-		{type: "builtin_hypetrain"},
 		{type: "builtin_chan_labels"},
-	]},
-	{name: "Advanced", color: "#bbffbb", items: [
-		{type: "builtin_uptime"},
 		{type: "builtin_uservars"},
 		{type: "builtin_tz", builtin_param: "Los Angeles"},
+	]},
+	{name: "Advanced", color: "#bbffbb", items: [
 		{type: "builtin_chan_pointsrewards", message: [{type: "handle_errors"}]},
 		{type: "randrot", mode: "rotate"},
 		{type: "builtin_argsplit", builtin_param: "{param}"},
+		{type: "cooldown", cdlength: "30", cdname: ""},
 	]},
-	{name: "Extras", color: "#7f7f7f", items: [{type: "handle_errors"}]}, //I'm REALLY not happy with these names.
+	{name: "Extras", color: "#7f7f7f", items: [ //I'm REALLY not happy with these names.
+		{type: "handle_errors"},
+		{type: "builtin_chan_monitors"},
+		{type: "builtin_chan_giveaway"},
+		{type: "builtin_hypetrain"},
+		{type: "foreach", "participant_activity": "300"},
+	]},
 ];
 const seen_types = {trashcan: 1};
 function make_template(el, par) {
@@ -653,9 +654,10 @@ tray_tabs.forEach((t, i) => {
 for (let t in types) if (!seen_types[t]) {
 	if (t.startsWith("anchor_") || t.endsWith("flag")) continue;
 	if (t.startsWith("builtin_")) {
-		const el = {type: t, hotkey: _hotkeys[trays.Extras.length]};
-		make_template(el);
-		trays.Extras.push(el);
+		//For a quick look at all missing builtins, add them to the last tray:
+		//const el = {type: t, hotkey: _hotkeys[trays.Extras.length]};
+		//make_template(el);
+		//trays.Extras.push(el);
 	}
 	//else console.log("UNSEEN TYPE", t); //Audit to ensure that we have all the ones that matter
 }
