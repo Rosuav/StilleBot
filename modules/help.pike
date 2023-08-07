@@ -38,7 +38,7 @@ echoable_message process(object channel, mapping person, string param)
 			obj->docstring && !hidden ? " Learn more at https://rosuav.github.io/StilleBot/commands/" + pgm : "",
 		);
 	}
-	foreach (({G->G->commands, channel->commands, G->G->echocommands}), mapping commands)
+	foreach (({channel->commands, G->G->commands}), mapping commands)
 		foreach (commands; string cmd; command_handler handler)
 		{
 			object|mapping flags =
@@ -51,8 +51,7 @@ echoable_message process(object channel, mapping person, string param)
 			if ((flags->require_moderator || flags->access == "mod") && !is_mod) continue;
 			if (flags->access == "none") continue;
 			if (has_prefix(cmd, "!")) continue; //Special responses aren't commands
-			if (!has_value(cmd, '#') || has_suffix(cmd, channel->name))
-				cmds[cmd - channel->name] = 1;
+			cmds[cmd] = 1;
 		}
 	string local_info = "";
 	if (string addr = persist_config["ircsettings"]->http_address)
