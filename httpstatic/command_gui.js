@@ -1381,9 +1381,9 @@ canvas.addEventListener("dblclick", e => {
 	const el = element_at_position(e.offsetX, e.offsetY);
 	if (el) open_element_properties(el);
 });
-function open_element_properties(el) {
+function open_element_properties(el, type_override) {
 	propedit = el;
-	const type = types[el.type];
+	const type = types[type_override || el.type];
 	set_content("#toggle_favourite", FAV_BUTTON_TEXT[is_favourite(el) ? 1 : 0]).disabled = type.fixed;
 	set_content("#typedesc", type.typedesc || el.desc);
 	let focus = null;
@@ -1392,6 +1392,13 @@ function open_element_properties(el) {
 		if (!param.attr) return TR(TD({colspan: 2}, param.label)); //Descriptive text
 		let control, id = {name: "value-" + param.attr, id: "value-" + param.attr, disabled: el.template};
 		const values = param.values || default_handlers;
+		if (typeof values === "string" && param.attr === "builtin") {
+			//For builtins, allow a drop-down to completely change mode.
+			//NOTE: This does NOT claim focus; the first "real" attribute
+			//should be the one to get focus.
+			return TR([TD(LABEL({htmlFor: "value-" + param.attr}, "Builtin type: ")), TD(SELECT({...id, value: values},
+				Object.entries(builtins).map(([name, blt]) => OPTION({value: name}, blt.name))))]);
+		}
 		if (typeof values !== "object") return null; //Fixed strings and such
 		let value = el[param.attr];
 		const m = /^(builtin_param)([0-9]*)$/.exec(param.attr); //As per the other of this regex, currently restricted to builtin_param
@@ -1415,13 +1422,14 @@ function open_element_properties(el) {
 	set_content("#providesdesc", Object.entries(type.provides || el.provides || {}).map(([v, d]) => LI([
 		CODE(v), ": " + d,
 	])));
-	set_content("#saveprops", "Close");
+	if (!type_override) set_content("#saveprops", "Close"); //On initial open, say that there are no changes. Type override means there are, in effect, changes.
 	DOM("#templateinfo").style.display = el.template && el.type !== "flag" ? "block" : "none";
 	const sel = DOM("#value-conditional");
 	if (sel) update_conditional(sel);
 	DOM("#properties").showModal();
 	if (focus) (focus.querySelector("[data-editme]") || focus).focus();
 }
+on("change", "select#value-builtin", e => open_element_properties(propedit, "builtin_" + e.match.value));
 //Encapsulation breach: Allow the classic editor to open up an element's properties
 //TODO: Refactor some of this into command_editor.js and then have both call on it?
 window.open_element_properties = open_element_properties;
@@ -1460,9 +1468,12 @@ on("click", "#clonetemplate", e => {
 on("input", "#properties [name]", e => set_content("#saveprops", [U("A"), "pply changes"]));
 
 on("submit", "#setprops", e => {
+	//Hack: This actually changes the type of the element.
+	const newtype = document.getElementById("value-builtin");
+	if (newtype) propedit.type = "builtin_" + newtype.value;
 	const type = types[propedit.type];
 	if (!propedit.template && type.params) for (let param of type.params) if (param.attr) {
-		const val = document.getElementById("value-" + param.attr);
+		const val = param.attr !== "builtin" && document.getElementById("value-" + param.attr);
 		if (val) {
 			const values = param.values || default_handlers;
 			let value = values.retrieve_value ? values.retrieve_value(val, propedit) : val.value;
