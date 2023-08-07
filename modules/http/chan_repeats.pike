@@ -40,11 +40,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//Migrate old autocommands to channel commands with automation
 		object channel = req->misc->channel;
 		foreach (ac; string cmd; array automate) {
-			echoable_message command = channel->commands[cmd[1..]] || G->G->echocommands[cmd[1..] + channel->name];
+			echoable_message command = channel->commands[cmd[1..]];
 			if (!command && !has_prefix(cmd, "!")) {
 				//Plain text in the automation table; synthesize a command.
 				command = (["message": command, "access": "none"]);
-				for (int i = 1; channel->commands[(cmd = "auto" + i) + channel->name] || G->G->echocommands[cmd]; ++i) ;
+				for (int i = 1; channel->commands[cmd = "auto" + i]; ++i) ;
 			}
 			if (stringp(command)) command = (["message": command]);
 			G->G->update_command(channel, "", replace(cmd, "!", ""), command | (["automate": automate]));

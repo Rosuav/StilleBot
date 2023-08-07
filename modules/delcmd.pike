@@ -15,7 +15,7 @@ string process(object channel, object person, string param)
 	{
 		//As with addcmd, it *always* gets the channel name appended.
 		cmd = command_casefold(cmd);
-		if (!channel->commands[cmd] && !G->G->echocommands[cmd + channel->name]) return "@$$: No echo command with that name exists here.";
+		if (!channel->commands[cmd]) return "@$$: No echo command with that name exists here.";
 		make_echocommand(cmd + channel->name, 0);
 		return sprintf("@$$: Deleted command !%s", cmd);
 	}

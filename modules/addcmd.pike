@@ -181,6 +181,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 		channel->redemption_commands[response->redemption] += ({basename});
 		updates["rew " + response->redemption] = 1;
 	}
+	//Write out the global echocommands in case it's changed (it usually won't and is deprecated anyway)
 	string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
 	Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
 	persist_config->save(); //FIXME-SEPCHAN: Save the specific channel's config
@@ -216,7 +217,7 @@ string process(object channel, object person, string param)
 		//manually editing the JSON file.
 		cmd = command_casefold(cmd);
 		if (!SPECIAL_NAMES[cmd] && has_value(cmd, '!')) return "@$$: Command names cannot include exclamation marks";
-		string newornot = channel->commands[cmd] || G->G->echocommands[cmd + channel->name] ? "Updated" : "Created new";
+		string newornot = channel->commands[cmd] ? "Updated" : "Created new";
 		make_echocommand(cmd + channel->name, response);
 		return sprintf("@$$: %s command !%s", newornot, cmd);
 	}

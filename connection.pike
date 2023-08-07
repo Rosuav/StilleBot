@@ -597,7 +597,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			return;
 		}
 
-		if (echoable_message cmd = dest == "/chain" && (commands[target] || G->G->echocommands[target + name])) {
+		if (echoable_message cmd = dest == "/chain" && commands[target]) {
 			//You know what the chain of command is? It's a chain that I get, and then
 			//I BREAK so that nobody else can ever be in command.
 			if (cfg->chaindepth) return; //For now, no chaining if already chaining - hard and fast rule.
@@ -1029,7 +1029,7 @@ class channel(string name) { //name begins with hash and is all lower case
 
 	void trigger_special(string special, mapping person, mapping info)
 	{
-		echoable_message response = commands[special] || G->G->echocommands[special + name];
+		echoable_message response = commands[special];
 		if (!response) return;
 		if (has_value(info, 0)) werror("DEBUG: Special %O got info %O\n", special, info); //Track down those missing-info errors
 		send(person, response, info);

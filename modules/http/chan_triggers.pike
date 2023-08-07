@@ -47,7 +47,7 @@ constant ENABLEABLE_FEATURES = ([
 ]);
 
 string get_trig_id(object channel, string kwd) {
-	echoable_message response = channel->commands["!trigger"] || G->G->echocommands["!trigger" + channel->name];
+	echoable_message response = channel->commands["!trigger"];
 	mapping info = ENABLEABLE_FEATURES[kwd]->?response; if (!info) return 0;
 	if (arrayp(response)) foreach (response, mapping trig) {
 		if (trig->conditional == info->conditional &&

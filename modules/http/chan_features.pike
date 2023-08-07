@@ -56,9 +56,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
 		mapping commands = ([]), specials = ([]);
 		string chan = channel->name[1..];
-		foreach (G->G->echocommands | (channel->config->commands || ([])); string cmd; echoable_message response) {
-			sscanf(cmd, "%s#%s", cmd, string c);
-			if (c && c != chan) continue;
+		foreach (channel->config->commands || ([]); string cmd; echoable_message response) {
 			if (mappingp(response) && response->alias_of) continue;
 			if (has_prefix(cmd, "!")) specials[cmd] = response;
 			else commands[cmd] = response;

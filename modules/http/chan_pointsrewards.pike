@@ -131,7 +131,7 @@ void points_redeemed(string chan, mapping data, int|void removal)
 		channel->send(([
 			"displayname": data->user_name, "user": data->user_login,
 			"uid": data->user_id,
-		]), channel->commands[cmd] || G->G->echocommands[cmd + channel->name], ([
+		]), channel->commands[cmd], ([
 			"%s": data->user_input,
 			"{rewardid}": data->reward->id, "{redemptionid}": data->id,
 		]));

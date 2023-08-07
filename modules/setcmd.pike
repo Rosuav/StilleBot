@@ -36,7 +36,7 @@ string process(object channel, object person, string param)
 		cmd = command_casefold(cmd);
 		//These flags don't apply to the addcmd specials
 		if (has_value(cmd, '!')) return "@$$: Command names cannot include exclamation marks";
-		echoable_message command = channel->commands[cmd] || G->G->echocommands[cmd + channel->name];
+		echoable_message command = channel->commands[cmd];
 		if (!command) return "@$$: Command " + cmd + " not found (only echo commands can be configured).";
 		if (!mappingp(command)) command = (["message": command]);
 		else command = command | ([]); //Prevent accidental mutation
