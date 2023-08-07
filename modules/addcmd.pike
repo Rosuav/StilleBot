@@ -181,9 +181,6 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 		channel->redemption_commands[response->redemption] += ({basename});
 		updates["rew " + response->redemption] = 1;
 	}
-	//Write out the global echocommands in case it's changed (it usually won't and is deprecated anyway)
-	string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
-	Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
 	persist_config->save(); //FIXME-SEPCHAN: Save the specific channel's config
 	if (object handler = G->G->websocket_types->chan_commands) {
 		//If the command name starts with "!", it's a special, to be
@@ -229,7 +226,13 @@ protected void create(string name)
 	::create(name);
 	//Load legacy and global echocommands. New channel-specific commands belong in channel config instead.
 	G->G->echocommands = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_commands.json")||"{}");
+	int sz = sizeof(G->G->echocommands);
 	foreach (G->G->echocommands; string cmd; echoable_message response)
 		if (has_value(cmd, "#")) catch {make_echocommand(cmd, response);}; //Migrate all channel-specific commands.
+	if (sz != sizeof(G->G->echocommands)) {
+		//Save the cleanout of old echocommands. They're deprecated and the file should only have "{}" in it.
+		string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
+		Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
+	}
 	add_constant("make_echocommand", make_echocommand);
 }
