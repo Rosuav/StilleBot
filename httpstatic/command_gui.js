@@ -1359,6 +1359,7 @@ function update_conditional(el) {
 	//If you change the type of conditional expression, re-label the parameters.
 	//This is just hacked in because I don't currently have anywhere other than
 	//conditionals to use this functionality.
+	if (propedit.type.startsWith("anchor_")) return; //Trigger anchors are managed differently.
 	const labels = {
 		string: {expr1: "Expression 1", expr2: "Expression 2", typedesc: "Make a decision - if THIS is THAT, do one thing, otherwise do something else."},
 		contains: {expr1: "Needle", expr2: "Haystack", typedesc: "Make a decision - if Needle in Haystack, do one thing, otherwise do something else."},
