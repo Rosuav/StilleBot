@@ -14,6 +14,8 @@ function format_time(timefmt, target) {
 			target %= 60;
 		case "ss":
 			return min + ("0" + target).slice(-2) + " ";
+		case "mm":
+			return ("0" + Math.floor(target / 60)).slice(-2) + " ";
 	}
 }
 

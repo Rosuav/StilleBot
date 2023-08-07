@@ -44,7 +44,7 @@ details {
 
 constant builtin_name = "Labels"; //The front end may redescribe this according to the parameters
 constant builtin_description = "Create or remove an on-screen label";
-constant builtin_param = ({"Text", "Duration", "/Countdown/=No countdown/ss=Seconds (eg 59)/mmss=Min:Sec (eg 05:00)"});
+constant builtin_param = ({"Text", "Duration", "/Countdown/=No countdown/ss=Seconds (eg 59)/mmss=Min:Sec (eg 05:00)/mm=Minutes (eg 05)"});
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{labelid}": "ID of the newly-created label - can be used to remove it later",
@@ -67,6 +67,7 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string|
 		string timefmt = "";
 		if (sscanf(param, "-mm %s", param)) timefmt = "mm";
 		else if (sscanf(param, "-mmss %s", param)) timefmt = "mmss";
+		else if (sscanf(param, "-ss %s", param)) timefmt = "ss";
 		param = ({param, dur, timefmt});
 	}
 	//Normally we'll be given an array of params.
@@ -85,7 +86,7 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string|
 			"id": labelid = "lbl-" + labels->nextid++,
 			"bread": duration > 0 && time() + duration,
 			"label": param[0],
-			"timefmt": (<"mm", "mmss">)[param[2]] ? param[2] : "",
+			"timefmt": (<"mm", "mmss", "ss">)[param[2]] ? param[2] : "",
 		])});
 		if (duration > 0) call_out(remove_label, duration, chan, labelid);
 		update_one("#" + chan, labelid);
