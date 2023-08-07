@@ -114,17 +114,15 @@ string command_casefold(string cmd) {return lower_case(cmd);}
 //fully active.
 command_handler find_command(object channel, string cmd, int is_mod, int|void is_vip)
 {
-	//Prevent commands from containing a hash, allowing us to use that for
-	//per-chan commands. Since channel->name begins with a hash, that's our
-	//separator. We'll try "help#rosuav" and "help" for "!help".
+	//Prevent commands from containing a hash, as that was formerly used for
+	//per-channel commands. This can be relaxed in the future if needed.
 	if (has_value(cmd, '#')) return 0;
 	if (has_value(cmd, '!')) return 0; //Pseudo-commands can't be run as normal commands
 	cmd = command_casefold(cmd);
-	foreach (({cmd + channel->name, cmd}), string tryme)
+	foreach (({channel->commands[cmd], G->G->commands[cmd]}), command_handler f)
 	{
 		//NOTE: G->G->commands holds the actual function that gets
 		//called, but we need the corresponding object.
-		command_handler f = G->G->commands[tryme] || channel->commands[tryme] || G->G->echocommands[tryme];
 		if (!f) continue;
 		object|mapping flags = functionp(f) ? function_object(f) : mappingp(f) ? f : ([]);
 		if (flags->featurename && !channel->config->features[?flags->featurename]) continue;
