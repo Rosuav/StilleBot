@@ -263,6 +263,3 @@
   - May simplify find_command somewhat as flags like "mod-only" will always and only be
     in the mapping, not in the function's object.
 * Should the !help command be deprecated? If not, should it become a builtin in some way?
-* Command GUI - allow builtins to switch mode the way conditionals do
-  - This should eliminate the need for lots of obscure elements in the trays
-  - Will need to completely rewrite the parameters any time a mode switch is done.
