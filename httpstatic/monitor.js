@@ -73,7 +73,8 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			if (pos < thresholds[which]) {
 				//Found the point to work at.
 				text = m[2].replace("#", which + 1);
-				mark = pos / thresholds[which] * 100;
+				if (t.progressive && which) mark = (pos - thresholds[which - 1]) / thresholds[which] * 100;
+				else mark = pos / thresholds[which] * 100;
 				goal = thresholds[which];
 				break;
 			}
