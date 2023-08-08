@@ -263,3 +263,14 @@
   - May simplify find_command somewhat as flags like "mod-only" will always and only be
     in the mapping, not in the function's object.
 * Should the !help command be deprecated? If not, should it become a builtin in some way?
+* Raid finder suggestion mode
+  - In Preferences, choose whether to accept suggestions from any, from mods, vips, etc.
+  - The streamer opens up https://sikorsky.rosuav.com/raidfinder and then other people open
+    up https://sikorsky.rosuav.com/raidfinder?for=STREAMERNAME . On the latter page, the
+    "raid" button would change to say "Suggest this raid target". It signals the server,
+    which signals any raid finder logged in as the suggestion recipient.
+  - Pop up an immediate dialog? Could be v annoying. Position:fixed flag in the corner?
+    Could be missed. Leave it up to the streamer, as a preference?
+  - To suggest, you will need to be logged in. But you won't need the manage:raids scope.
+    I don't want to skip the login, even if people know exactly which target to suggest,
+    for safety; the suggestion should say "suggested by <user>".
