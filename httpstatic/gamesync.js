@@ -150,7 +150,45 @@ const games = {
 			]),
 		];},
 	},
-	//TODO: Diamond Heist? It also has the red/green/blue digits like the Golden Grin does.
+	sanmartin: {
+		label: "Payday 2: San Martín Bank",
+		light_colors: {Red: "#f11", Green: "#0f0", Blue: "#4fe", Yellow: "#ff0"},
+		render(data) {return [
+			H2("Lock lights (pick two)"),
+			STYLE(".lights {display: flex; gap: 3.5em; justify-content: center; flex-wrap: wrap} .lights > * {height: 2.5em; width: 6em; font-size: 150%; text-align: center}"),
+			DIV({class: "lights"}, Object.entries(this.light_colors).map(([name, col]) =>
+				BUTTON({
+					"data-setting": "color-" + name, "data-value": "on",
+					"style": data["color-" + name] === "on" ? "background-color: " + col : "",
+				}, name),
+			)),
+			DIV({class: "lights"}, Object.entries(this.light_colors).map(([name, col]) =>
+				INPUT({
+					"data-setting": "code-" + name, value: data["code-" + name],
+					"style": data["color-" + name] === "on" ? "background-color: " + col : "background-color: grey",
+				}, name),
+			)),
+			H2("Vault duty"),
+			DIV("Can this become a drop-down?"),
+			DIV([
+				INPUT({"data-setting": "vault-operator", value: data["vault-operator"] || ""}),
+				INPUT({"data-setting": "operator-code", value: data["operator-code"] || ""}),
+			]),
+		];},
+	},
+	diamondheist: {
+		label: "Payday 2: Diamond Heist",
+		render(data) {return [
+			DIV("Not to be confused with The Diamond heist. Seriously, those sound nothing alike."),
+			H2("Entry code"),
+			STYLE(".code {display: flex; gap: 4.5em; justify-content: center; flex-wrap: wrap} .code > * {height: 2.5em; width: 6em; font-size: 150%; text-align: center}"),
+			DIV({class: "code"}, [
+				INPUT({"data-setting": "code-red", style: "background-color: red; color: white", type: "number", value: data["code-red"]}),
+				INPUT({"data-setting": "code-green", style: "background-color: green; color: white", type: "number", value: data["code-green"]}),
+				INPUT({"data-setting": "code-blue", style: "background-color: blue; color: white", type: "number", value: data["code-blue"]}),
+			]),
+		];},
+	},
 };
 
 export function render(data) {
