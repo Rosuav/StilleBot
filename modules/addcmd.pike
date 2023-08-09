@@ -227,8 +227,14 @@ protected void create(string name)
 	//Load legacy and global echocommands. New channel-specific commands belong in channel config instead.
 	G->G->echocommands = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_commands.json")||"{}");
 	int sz = sizeof(G->G->echocommands);
-	foreach (G->G->echocommands; string cmd; echoable_message response)
-		if (has_value(cmd, "#")) catch {make_echocommand(cmd, response);}; //Migrate all channel-specific commands.
+	foreach (G->G->echocommands; string cmd; echoable_message response) {
+		if (!has_value(cmd, "#")) continue; //Migrate only channel-specific commands...
+		if (mappingp(response) && response->alias_of) continue; //... that aren't aliases of something else...
+		object channel = G->G->irc->channels["#" + (cmd / "#")[1]];
+		if (!channel) continue; //... that are connected to a valid channel...
+		if (channel->commands[(cmd / "#")[0]]) continue; //... and haven't already been migrated.
+		catch {make_echocommand(cmd, response);};
+	}
 	if (sz != sizeof(G->G->echocommands)) {
 		//Save the cleanout of old echocommands. They're deprecated and the file should only have "{}" in it.
 		string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
