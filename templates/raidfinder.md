@@ -177,7 +177,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 
 #raidsuggestions {
 	position: fixed;
-	top: 40px; right: 40px;
+	top: 20px; right: 20px;
 	background: rebeccapurple;
 	color: white;
 	border: 1px solid #a0f0c0;
