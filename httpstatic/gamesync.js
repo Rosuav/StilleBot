@@ -164,7 +164,7 @@ const games = {
 			)),
 			DIV({class: "lights"}, Object.entries(this.light_colors).map(([name, col]) =>
 				INPUT({
-					"data-setting": "code-" + name, value: data["code-" + name],
+					"data-setting": "code-" + name, value: data["code-" + name] || "",
 					"style": data["color-" + name] === "on" ? "background-color: " + col : "background-color: grey",
 				}, name),
 			)),
