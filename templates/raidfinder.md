@@ -8,6 +8,8 @@
 > <ul></ul>
 >
 > Viewer counts: <label><input type=radio name=viewership data-tagid="<viewership>" class=liketag> Visible</label> <label><input type=radio name=viewership data-tagid="<viewership>" class=disliketag> Invisible</label>
+>
+> Allow suggestions? <label><input type=radio name=raidsuggestions data-tagid="<raidsuggestions>" class=liketag> Yes, from anyone</label> <label><input type=radio name=raidsuggestions data-tagid="<raidsuggestions>" class=disliketag> No suggestions</label>
 {: tag=dialog #tags}
 
 <button id=legend>Legend/info</button> <button id=highlights>Edit highlight list</button>

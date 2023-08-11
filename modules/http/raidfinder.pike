@@ -104,7 +104,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			foreach (newnotes / "\n", string line) 
 				if (sscanf(line, "%s %d", string id, int pref) == 2) {
 					//Hack: "<viewership>" is used for the "hide viewer counts" setting
-					if (id == "<viewership>") pref = pref < 0 ? -1 : 0;
+					if (id != "" && id[0] == '<') pref = pref < 0 ? -1 : 0;
 					if (!pref || pref > MAX_PREF || pref < MIN_PREF) m_delete(notes->tags, id);
 					else notes->tags[id] = pref;
 				}
@@ -671,6 +671,8 @@ void websocket_cmd_suggestraid(mapping(string:mixed) conn, mapping(string:mixed)
 	int from = (int)conn->session->?user->?id; if (!from) return;
 	int target = (int)msg->target; if (!target) return; //Ensure that it casts to int correctly
 	int recip = (int)msg["for"]; if (!recip) return;
+	mapping notes = persist_status->has_path("raidnotes", (string)recip);
+	if (notes->?tags[?"<raidsuggestions>"] < 0) return; //Raid suggestions are disabled, ignore them.
 	spawn_task(suggestraid(from, target, recip));
 }
 continue Concurrent.Future suggestraid(int from, int target, int recip) {

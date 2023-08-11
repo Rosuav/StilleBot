@@ -213,7 +213,7 @@ DOM("#highlights").onclick = () => {
 const tag_element = { };
 function update_tag_display() {
 	set_content("#tags ul", [
-		Object.keys(tag_prefs).sort().map(tag => tag !== "<viewership>" && (tag_element[tag] = LI({
+		Object.keys(tag_prefs).sort().map(tag => tag[0] !== "<" && (tag_element[tag] = LI({
 			"data-tagid": tag, //Tags are identified by their text, there's no separate UUID
 			className: "tagpref" + (tag_prefs[tag] || 0)
 		}, [
@@ -229,8 +229,10 @@ function update_tag_display() {
 			LABEL(["Add new tag: ", INPUT({id: "newtagname", size: 20})]),
 		]),
 	]);
-	if (tag_prefs["<viewership>"] < 0) DOM("#tags input[name=viewership].disliketag").checked = true;
-	else DOM("#tags input[name=viewership].liketag").checked = true;
+	["viewership", "raidsuggestions"].forEach(pref => {
+		if (tag_prefs["<" + pref + ">"] < 0) DOM("#tags input[name=" + pref + "].disliketag").checked = true;
+		else DOM("#tags input[name=" + pref + "].liketag").checked = true;
+	});
 }
 function update_tagpref(e, delta) {
 	const tagid = e.match.closest("[data-tagid]").dataset.tagid || DOM("#newtagname").value;
