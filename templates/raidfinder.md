@@ -172,6 +172,15 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	border: 1px solid rebeccapurple;
 	background: #e3e3e3;
 }
+
+#raidsuggestions {
+	position: fixed;
+	top: 40px; right: 40px;
+	background: rebeccapurple;
+	color: white;
+	border: 1px solid #a0f0c0;
+	cursor: pointer;
+}
 </style>
 
 > ### Legend/info
@@ -225,3 +234,14 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 >
 > $$raidbtn||$$ [Close](:.dialog_close)
 {: tag=dialog #goraiding}
+
+<ul id=raidsuggestions hidden></ul>
+
+> ### Raid suggestions
+>
+> These suggestions have been submitted by your community.
+>
+> <div id=suggestedtiles></div>
+>
+> [Close](:.dialog_close)
+{: tag=dialog #raidsuggestionsdlg}

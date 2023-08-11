@@ -274,3 +274,6 @@
   - To suggest, you will need to be logged in. But you won't need the manage:raids scope.
     I don't want to skip the login, even if people know exactly which target to suggest,
     for safety; the suggestion should say "suggested by <user>".
+  - If the suggestion is already in your follow list, in addition to the notification,
+    maybe also highlight that channel wherever it is on the page already?
+  - Only one suggestion per user? Mods allowed multiple? Or make that configurable too?

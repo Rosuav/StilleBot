@@ -24,6 +24,16 @@ Concurrent.Future fracture(array stuff, int max, function cb) {
 multiset(string) creative_names = (<"Art", "Science & Technology", "Software and Game Development", "Food & Drink", "Music", "Makers & Crafting", "Beauty & Body Art">);
 multiset(int) creatives = (<>);
 int next_precache_request = time();
+@retain: mapping raid_suggestions = ([]);
+
+array(mapping) prune_raid_suggestions(string id) {
+	if (!raid_suggestions[id]) return ({ });
+	int stale = time() - 15*60; //After fifteen minutes, they expire
+	foreach (raid_suggestions[id]; int i; mapping sugg) {
+		if (sugg->time < stale) raid_suggestions[id][i] = 0;
+	}
+	return raid_suggestions[id] -= ({0});
+}
 
 mapping(string:string|array) safe_query_vars(mapping(string:string|array) vars) {return vars & (<"for">);}
 
@@ -277,7 +287,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			"sortorders": ({"Channel Creation", "Follow Date", "Name"}) * "\n* ",
 		]));
 	}
-	string login, disp, raidbtn = "";
+	string login, disp, raidbtn = logged_in ? "[Suggest](:#suggestraid)" : "";
 	if (logged_in && (int)logged_in->id == userid) {
 		login = logged_in->login; disp = logged_in->display_name;
 		//Do we have authentication to start raids? Note that this is
@@ -569,6 +579,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	return render(req, ([
 		"vars": ([
 			"ws_group": "",
+			"logged_in_as": (int)logged_in->id,
 			"on_behalf_of_userid": userid, //The same userid as you're logged in as, unless for= is specified
 			"follows": follows_helix,
 			"all_tags": ({ }), //Deprecated as of 20230127 - tags by ID are no longer a thing.
@@ -578,6 +589,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			"all_raids": all_raids[<99..], "mode": "normal",
 			"annotations": annotations,
 			"render_time": (string)tm->get(),
+			"raid_suggestions": (int)logged_in->id == userid ? prune_raid_suggestions(logged_in->id) : ({ }),
 		]),
 		"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
 		"title": title,
@@ -649,6 +661,32 @@ void websocket_cmd_raidnow(mapping(string:mixed) conn, mapping(string:mixed) msg
 	string id = conn->session->?user->?id; if (!id) return;
 	int target = (int)msg->target; if (!target) return; //Ensure that it casts to int correctly
 	spawn_task(send_raid(id, target, conn));
+}
+
+//Conversely, THIS message is ONLY sent when you're doing a for= raidfind. It includes
+//all the necessary information (apart from your identity) for a proper suggestion.
+//Again, if you fiddle around and send it manually, it'll be equivalent to any other
+//suggestion, but you have to use userids. It might be nice to suppress the Suggest
+//button if it would be rejected here, though.
+void websocket_cmd_suggestraid(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string from = conn->session->?user->?id; if (!from) return;
+	int target = (int)msg->target; if (!target) return; //Ensure that it casts to int correctly
+	int recip = (int)msg["for"]; if (!recip) return;
+	//TODO: Populate this with all the other info the front end will need.
+	//Note that this may mean we waste some work in the rare situation where
+	//nobody's listening but somebody's talking. Or not so rare, if my social
+	//life is anything to go by.
+	raid_suggestions[(string)recip] += ({([
+		"from": from, "target": (string)target,
+		"time": time(),
+	])});
+	string sendme = Standards.JSON.encode((["cmd": "update", "suggestions": prune_raid_suggestions((string)recip)]));
+	foreach (websocket_groups[""], object sock) if (sock && sock->state == 1) {
+		mapping c;
+		if (catch {c = sock->query_id();}) continue; //If older Pike, suggestions won't work.
+		if ((int)c->session->?user->?id == recip) sock->send_text(sendme);
+	}
+
 }
 
 protected void create(string name) {

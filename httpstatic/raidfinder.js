@@ -419,6 +419,7 @@ export function sockmsg_chanstatus(data) {
 
 let raidtarget = null, raidtargetid = null;
 const raidnow = DOM("#raidnow"); //Won't exist if we aren't authed to raid
+const suggestraid = DOM("#suggestraid"); //Similarly, exists only on a for= raidfind
 on("click", ".raidbtn", e => {
 	raidtarget = e.match.dataset.target;
 	raidtargetid = e.match.dataset.targetid;
@@ -427,6 +428,7 @@ on("click", ".raidbtn", e => {
 	btn.title = "Copy '/raid " + raidtarget + "' to the clipboard";
 	btn.dataset.copyme = "/raid " + raidtarget;
 	if (raidnow) set_content(raidnow, "Raid now!").disabled = false;
+	if (suggestraid) set_content(suggestraid, "Suggest raid").disabled = false;
 	DOM("#raidsuccess").hidden = true; //in case you successfully raid but keep the page open...
 	DOM("#goraiding").showModal();
 });
@@ -436,9 +438,25 @@ on("click", "#raidnow", e => {
 	ws_sync.send({cmd: "raidnow", target: raidtargetid});
 });
 
+on("click", "#suggestraid", e => {
+	if (suggestraid) set_content(suggestraid, "Suggestion sent").disabled = true;
+	ws_sync.send({cmd: "suggestraid", for: ""+on_behalf_of_userid, target: raidtargetid});
+});
+
+on("click", "#raidsuggestions", e => {
+	//TODO: Populate with properly-rendered tiles
+	DOM("#raidsuggestionsdlg").showModal();
+});
+
 export function render(data) {
 	if (data.raidstatus) {
 		set_content("#raidnow", data.raidstatus);
 		if (data.raidstatus === "Raid successful!") DOM("#raidsuccess").hidden = false;
 	}
+	//Assume the server has already done the checks as to who is allowed to suggest
+	if (data.suggestions && logged_in_as === on_behalf_of_userid)
+		set_content("#raidsuggestions", data.suggestions.map(sugg =>
+			LI("Suggestion from " + sugg.from + ": " + sugg.target)
+		)).hidden = false;
 }
+if (raid_suggestions) render({suggestions: raid_suggestions});
