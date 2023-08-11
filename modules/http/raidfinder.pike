@@ -679,14 +679,20 @@ continue Concurrent.Future suggestraid(int from, int target, int recip) {
 	if (!sizeof(streams)) return 0; //Failed suggestion - that stream isn't live.
 	mapping strm = streams[0];
 	int userid = recip;
-	array users = yield(twitch_api_request("https://api.twitch.tv/helix/users?id=" + target))->data;
-	if (!sizeof(users)) return 0; //Wut. We found the stream but not the user??
+	array users = yield(twitch_api_request("https://api.twitch.tv/helix/users?id=" + target + "&id=" + from))->data;
+	mapping target_user, suggestor_user;
+	foreach (users, mapping user) {
+		//Note that if you suggest yourself as a raid target, that's legit (if a bit lame)
+		if (user->id == (string)target) target_user = user;
+		if (user->id == (string)from) suggestor_user = user;
+	}
+	if (!target_user || !suggestor_user) return 0; //Shouldn't normally happen - might be if weird stuff breaks though
 	//TODO: Deduplicate with the main work
 	strm->category = G->G->category_names[strm->game_id] || strm->game_name;
 	if (mapping st = persist_status->path("raidfinder_cache")[strm->user_id]) strm->chanstatus = st;
 	int otheruid = (int)strm->user_id;
-	strm->broadcaster_type = users[0]->broadcaster_type;
-	strm->profile_image_url = users[0]->profile_image_url;
+	strm->broadcaster_type = target_user->broadcaster_type;
+	strm->profile_image_url = target_user->profile_image_url;
 	mapping notes = persist_status->has_path("raidnotes", (string)userid) || ([]);
 	if (string n = notes[(string)otheruid]) strm->notes = n;
 	if (!strm->url) strm->url = "https://twitch.tv/" + strm->user_login; //Is this always correct?
@@ -707,9 +713,8 @@ continue Concurrent.Future suggestraid(int from, int target, int recip) {
 	}
 	sort(lambda(string x) {return x[1..];}(strm->raids[*]), strm->raids); //Sort by date, ignoring the </> direction marker
 	strm->raids = Array.uniq2(strm->raids);
-	//TODO: Fetch more info about the suggestor to provide in the front end
 	//TODO: See if this was suggested by a mod or VIP.
-	strm->suggested_by = (string)from;
+	strm->suggested_by = suggestor_user;
 	strm->suggested_at = time();
 	raid_suggestions[(string)recip] += ({strm});
 	string sendme = Standards.JSON.encode((["cmd": "update", "suggestions": prune_raid_suggestions((string)recip)]));

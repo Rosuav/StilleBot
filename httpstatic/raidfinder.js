@@ -376,7 +376,11 @@ function render_stream_tiles(streams) {
 			]),
 			describe_notes(stream),
 		] : [
-			//TODO: If stream.suggested_by, show the avatar and display name of the one who suggested it.
+			stream.suggested_by && DIV({class: "inforow"}, [
+				"Suggested by: ",
+				IMG({class: "avatar", src: stream.suggested_by.profile_image_url, style: "margin: 0 0.5em"}),
+				B(stream.suggested_by.display_name),
+			]),
 			A({href: stream.url}, IMG({src: stream.thumbnail_url.replace("{width}", 320).replace("{height}", 180)})),
 			DIV({className: "inforow"}, [
 				DIV({className: "img"}, A({href: stream.url}, IMG({className: "avatar", src: stream.profile_image_url}))),
@@ -461,7 +465,7 @@ export function render(data) {
 	//Assume the server has already done the checks as to who is allowed to suggest
 	if (data.suggestions && logged_in_as === on_behalf_of_userid)
 		set_content("#raidsuggestions", (raid_suggestions = data.suggestions).map(sugg =>
-			LI("Suggestion from " + sugg.suggested_by + ": " + sugg.user_name)
+			LI("Suggestion from " + sugg.suggested_by.display_name + ": " + sugg.user_name)
 		)).hidden = data.suggestions.length === 0;
 }
 if (raid_suggestions) render({suggestions: raid_suggestions});
