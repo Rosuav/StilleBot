@@ -249,7 +249,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	}
 	else if (logged_in) userid = (int)logged_in->id; //Raidfind for self if logged in.
 	//TODO: Based on the for= or the logged in user, determine whether raids are tracked.
-	mapping raids = ([]);
 	array follows_helix;
 	mapping broadcaster_type = ([]);
 	//NOTE: Notes come from your *login* userid, unaffected by any for=
@@ -476,7 +475,6 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		foreach (strm->tags || ({ }), string tag)
 			if (int pref = lc_tag_prefs[lower_case(tag)]) recommend["Tag prefs"] += PREFERENCE_MAGIC_SCORES[pref];
 		strm->category = G->G->category_names[strm->game_id] || strm->game_name;
-		strm->raids = raids[strm->user_login] || ({ });
 		if (mapping st = cached_status[strm->user_id]) strm->chanstatus = st;
 		int otheruid = (int)strm->user_id;
 		if (otheruid == userid) {follows_helix[i] = 0; continue;} //Exclude self. There's no easy way to know if you should have shown up, so just always exclude.
@@ -495,6 +493,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		int ancient = time() - 86400 * 365;
 		float raidscore = 0.0;
 		int have_recent_outgoing = 0, have_old_incoming = 0;
+		strm->raids = ({ });
 		foreach (raids || ({ }), mapping raid) //Note that these may not be sorted correctly. Should we sort explicitly?
 		{
 			//write("DEBUG RAID LOG: %O\n", raid);
