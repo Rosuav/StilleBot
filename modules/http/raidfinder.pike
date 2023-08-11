@@ -30,7 +30,7 @@ array(mapping) prune_raid_suggestions(string id) {
 	if (!raid_suggestions[id]) return ({ });
 	int stale = time() - 15*60; //After fifteen minutes, they expire
 	foreach (raid_suggestions[id]; int i; mapping sugg) {
-		if (sugg->time < stale) raid_suggestions[id][i] = 0;
+		if (sugg->suggested_at < stale) raid_suggestions[id][i] = 0;
 	}
 	return raid_suggestions[id] -= ({0});
 }
@@ -668,24 +668,56 @@ void websocket_cmd_raidnow(mapping(string:mixed) conn, mapping(string:mixed) msg
 //suggestion, but you have to use userids. It might be nice to suppress the Suggest
 //button if it would be rejected here, though.
 void websocket_cmd_suggestraid(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	string from = conn->session->?user->?id; if (!from) return;
+	int from = (int)conn->session->?user->?id; if (!from) return;
 	int target = (int)msg->target; if (!target) return; //Ensure that it casts to int correctly
 	int recip = (int)msg["for"]; if (!recip) return;
-	//TODO: Populate this with all the other info the front end will need.
-	//Note that this may mean we waste some work in the rare situation where
-	//nobody's listening but somebody's talking. Or not so rare, if my social
-	//life is anything to go by.
-	raid_suggestions[(string)recip] += ({([
-		"from": from, "target": (string)target,
-		"time": time(),
-	])});
+	spawn_task(suggestraid(from, target, recip));
+}
+continue Concurrent.Future suggestraid(int from, int target, int recip) {
+	array streams = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + target))->data;
+	werror("GOT STREAMS: %O\n", streams);
+	if (!sizeof(streams)) return 0; //Failed suggestion - that stream isn't live.
+	mapping strm = streams[0];
+	int userid = recip;
+	array users = yield(twitch_api_request("https://api.twitch.tv/helix/users?id=" + target))->data;
+	if (!sizeof(users)) return 0; //Wut. We found the stream but not the user??
+	//TODO: Deduplicate with the main work
+	strm->category = G->G->category_names[strm->game_id] || strm->game_name;
+	if (mapping st = persist_status->path("raidfinder_cache")[strm->user_id]) strm->chanstatus = st;
+	int otheruid = (int)strm->user_id;
+	strm->broadcaster_type = users[0]->broadcaster_type;
+	strm->profile_image_url = users[0]->profile_image_url;
+	mapping notes = persist_status->has_path("raidnotes", (string)userid) || ([]);
+	if (string n = notes[(string)otheruid]) strm->notes = n;
+	if (!strm->url) strm->url = "https://twitch.tv/" + strm->user_login; //Is this always correct?
+	int swap = otheruid < userid;
+	array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[(string)(swap ? userid : otheruid)];
+	int recent = time() - 86400 * 30;
+	int ancient = time() - 86400 * 365;
+	strm->raids = ({ });
+	foreach (raids || ({ }), mapping raid) //Note that these may not be sorted correctly. Should we sort explicitly?
+	{
+		object time = Calendar.ISO.Second("unix", raid->time);
+		strm->raids += ({sprintf("%s%s %s raided %s",
+			swap != raid->outgoing ? ">" : "<",
+			time->format_ymd(), raid->from, raid->to,
+		)});
+		if (!undefinedp(raid->viewers) && raid->viewers != -1)
+			strm->raids[-1] += " with " + raid->viewers;
+	}
+	sort(lambda(string x) {return x[1..];}(strm->raids[*]), strm->raids); //Sort by date, ignoring the </> direction marker
+	strm->raids = Array.uniq2(strm->raids);
+	//TODO: Fetch more info about the suggestor to provide in the front end
+	//TODO: See if this was suggested by a mod or VIP.
+	strm->suggested_by = (string)from;
+	strm->suggested_at = time();
+	raid_suggestions[(string)recip] += ({strm});
 	string sendme = Standards.JSON.encode((["cmd": "update", "suggestions": prune_raid_suggestions((string)recip)]));
 	foreach (websocket_groups[""], object sock) if (sock && sock->state == 1) {
 		mapping c;
 		if (catch {c = sock->query_id();}) continue; //If older Pike, suggestions won't work.
 		if ((int)c->session->?user->?id == recip) sock->send_text(sendme);
 	}
-
 }
 
 protected void create(string name) {

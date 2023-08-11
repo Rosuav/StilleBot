@@ -305,8 +305,7 @@ function describe_uptime(stream, el) {
 	return set_content(el, [frond, restrictions, "Uptime " + uptime(stream.started_at)]);
 }
 
-function build_follow_list() {
-	console.log(follows);
+function render_stream_tiles(streams) {
 	function describe_raid(raids) {
 		if (!raids.length) return null;
 		const raiddesc = raids[raids.length - 1];
@@ -367,7 +366,7 @@ function build_follow_list() {
 			title: "Raid " + stream.user_name + "!"},
 				IMG({class: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v1/62836/1.0"}));
 	}
-	set_content("#streams", follows.map(stream => stream.element = DIV({className: describe_size(stream) + " " + (stream.highlight ? "highlighted" : "")},
+	return streams.map(stream => stream.element = DIV({className: describe_size(stream) + " " + (stream.highlight ? "highlighted" : "")},
 		mode === "allfollows" ? [
 			//Cut-down view for channels that might be offline.
 			A({href: "https://twitch.tv/" + stream.login}, [
@@ -377,6 +376,7 @@ function build_follow_list() {
 			]),
 			describe_notes(stream),
 		] : [
+			//TODO: If stream.suggested_by, show the avatar and display name of the one who suggested it.
 			A({href: stream.url}, IMG({src: stream.thumbnail_url.replace("{width}", 320).replace("{height}", 180)})),
 			DIV({className: "inforow"}, [
 				DIV({className: "img"}, A({href: stream.url}, IMG({className: "avatar", src: stream.profile_image_url}))),
@@ -397,7 +397,12 @@ function build_follow_list() {
 			stream.magic_breakdown && show_magic(stream.magic_breakdown), //Will only exist if the back end decides to send it.
 			annotations[stream.user_id] && UL({class: "annotation"}, annotations[stream.user_id].map(anno => LI(anno))),
 		]
-	)));
+	));
+}
+
+function build_follow_list() {
+	console.log(follows);
+	set_content("#streams", render_stream_tiles(follows));
 	ws_sync.send({cmd: "interested", want_streaminfo});
 	if (your_stream)
 		set_content("#yourcat", [
@@ -444,7 +449,7 @@ on("click", "#suggestraid", e => {
 });
 
 on("click", "#raidsuggestions", e => {
-	//TODO: Populate with properly-rendered tiles
+	set_content("#suggestedtiles", render_stream_tiles(raid_suggestions));
 	DOM("#raidsuggestionsdlg").showModal();
 });
 
@@ -455,8 +460,8 @@ export function render(data) {
 	}
 	//Assume the server has already done the checks as to who is allowed to suggest
 	if (data.suggestions && logged_in_as === on_behalf_of_userid)
-		set_content("#raidsuggestions", data.suggestions.map(sugg =>
-			LI("Suggestion from " + sugg.from + ": " + sugg.target)
-		)).hidden = false;
+		set_content("#raidsuggestions", (raid_suggestions = data.suggestions).map(sugg =>
+			LI("Suggestion from " + sugg.suggested_by + ": " + sugg.user_name)
+		)).hidden = data.suggestions.length === 0;
 }
 if (raid_suggestions) render({suggestions: raid_suggestions});

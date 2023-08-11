@@ -17,7 +17,7 @@
 * $$sortorders$$
 {: #sort}
 
-<div id=streams class=sizeborders></div>
+<div id=streams class="streamtiles sizeborders"></div>
 <div id=copied>Copied!</div>
 
 > <span id=notes_about_channel>Channel name: </span>
@@ -37,17 +37,17 @@
 {: tag=dialog #raids}
 
 <style>
-#streams {
+.streamtiles {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: space-around;
 }
-#streams > div {
+.streamtiles > div {
 	width: 324px; /* the width of the preview image plus border size */
 	margin-bottom: 1em;
 }
-#streams ul {list-style-type: none; margin: 0; padding: 0; flex-grow: 1;}
-#streams li:not(.no-indent) {
+.streamtiles ul {list-style-type: none; margin: 0; padding: 0; flex-grow: 1;}
+.streamtiles li:not(.no-indent) {
 	padding-left: 2em;
 	text-indent: -2em;
 }
@@ -165,7 +165,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	padding: 5px;
 }
 
-#streams .annotation {
+.streamtiles .annotation {
 	font-size: 75%;
 	max-width: max-content;
 	margin: auto;
@@ -241,7 +241,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 >
 > These suggestions have been submitted by your community.
 >
-> <div id=suggestedtiles></div>
+> <div id=suggestedtiles class=streamtiles></div>
 >
 > [Close](:.dialog_close)
 {: tag=dialog #raidsuggestionsdlg}
