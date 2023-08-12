@@ -58,6 +58,8 @@ constant markdown_menu = #"# Raid finder modes
   raided you. Add `for=otherstreamer`?? TODO.
 * [Highlighted streamers](raidfinder?highlights) - only those streamers you've
   listed in your highlight list.
+
+<style>li {margin-top: 0.5em;}</style>
 ";
 //Modes train and tradingcards are omitted as they are more usefully accessed from
 //their corresponding pages. Also login=user,user,user omitted as not useful.
