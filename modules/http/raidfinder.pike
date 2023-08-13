@@ -679,7 +679,6 @@ void websocket_cmd_suggestraid(mapping(string:mixed) conn, mapping(string:mixed)
 }
 continue Concurrent.Future suggestraid(int from, int target, int recip) {
 	array streams = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + target))->data;
-	werror("GOT STREAMS: %O\n", streams);
 	if (!sizeof(streams)) return 0; //Failed suggestion - that stream isn't live.
 	mapping strm = streams[0];
 	int userid = recip;
