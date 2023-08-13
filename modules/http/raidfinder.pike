@@ -580,7 +580,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	return render(req, ([
 		"vars": ([
 			"ws_group": "",
-			"logged_in_as": (int)logged_in->id,
+			"logged_in_as": (int)logged_in->?id,
 			"on_behalf_of_userid": userid, //The same userid as you're logged in as, unless for= is specified
 			"follows": follows_helix,
 			"all_tags": ({ }), //Deprecated as of 20230127 - tags by ID are no longer a thing.
