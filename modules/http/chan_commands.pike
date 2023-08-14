@@ -521,4 +521,17 @@ protected void create(string name) {
 	::create(name);
 	call_out(find_builtins, 0);
 	G->G->update_command = update_command; //TODO: Migrate this into addcmd.pike or somewhere
+	//Migrate commands that are no longer governed by feature flags
+	//HACK: In order to only do this once, a separate feature flag is added for each migration.
+	//These can all be removed later, but that might not even matter if the entire features
+	//mapping gets removed.
+	foreach (list_channel_configs(), mapping cfg) {
+		if (!cfg->features) continue;
+		if (cfg->features->info) foreach ("!calc" / " ", string cmd) {
+			if (cfg->features["info-" + cmd]) continue;
+			cfg->features["info-" + cmd] = 1;
+			object channel = G->G->irc->channels["#" + cfg->login]; if (!channel) continue;
+			enable_feature(channel, cmd, 1);
+		}
+	}
 }
