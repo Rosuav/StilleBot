@@ -140,12 +140,15 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel) return;
-	//TODO: Merge in scopes from broadcaster auth???
 	multiset scopes = (multiset)(msg->scopes || ({ }));
 	if (mapping tok = persist_status->has_path("voices", msg->voiceid)) {
 		//Merge in pre-existing scopes. If they're not recorded, assume that we had the ones we used to request.
 		array have = tok->scopes || ({"chat_login", "user_read", "whispers:edit", "user_subscriptions", "user:manage:whispers"});
 		scopes |= (multiset)have;
+	}
+	if (string sc = persist_status->path("bcaster_token_scopes")[channel->name[1..]]) {
+		//Merge in any broadcaster scopes.
+		scopes |= (multiset)(sc / " ");
 	}
 	string url = function_object(G->G->http_endpoints->twitchlogin)->get_redirect_url(
 		scopes, (["force_verify": "true"])
