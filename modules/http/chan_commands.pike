@@ -53,7 +53,7 @@ constant COMPLEX_TEMPLATES = ([
 //It's okay for this to be empty, but this module must remain able to enable and disable features
 constant ENABLEABLE_FEATURES = ([
 	"!song": ([
-		"description": "A !song command to show the currently-playing song (see VLC integration)",
+		"description": "Show the currently-playing song (see VLC integration)",
 		"fragment": "#song/",
 	]),
 ]);
