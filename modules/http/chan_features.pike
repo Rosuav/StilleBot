@@ -110,7 +110,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	foreach (G->G->builtins; string name; object blt)
 		foreach (blt->command_suggestions || ([]); string cmd; mapping resp) {
 			enableables[cmd] = ([
-				"module": "chan_commands", "fragment": "#" + cmd,
+				"module": "chan_commands", "fragment": "#" + (cmd - "!") + "/",
 				"manageable": mod->can_manage_feature(channel, cmd),
 				"description": resp->_description,
 			]);
