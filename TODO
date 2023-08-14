@@ -262,4 +262,10 @@
     be echoable_messages that use them. Good defaults will make this easy.
   - May simplify find_command somewhat as flags like "mod-only" will always and only be
     in the mapping, not in the function's object.
+  - For every command handler module, convert it into a builtin_command and provide a
+    command suggestion. This will then activate it in the features list, allowing each
+    command to be enabled or disabled. Some commands may end up being grouped into a
+    single builtin (eg quote doesn't need to have three separate builtins).
+  - Need a way to group features for sorting, and maybe provide some visual separation.
+    Maybe sort by description??
 * Should the !help command be deprecated? If not, should it become a builtin in some way?
