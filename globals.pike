@@ -21,6 +21,8 @@ typedef string|mapping(string:mixed)|array(_echoable_message) _echoable_message;
 //To avoid recompilation ambiguities, the added constant is simply a reference to the
 //(private) recursive typedef above.
 typedef _echoable_message echoable_message;
+//DEPRECATED. If you actually need to support functions, do so explicitly. Support for
+//functions is itself deprecated and should eventually be removed.
 typedef echoable_message|function(object,object,string:echoable_message) command_handler;
 
 constant _COMMAND_DOCS = #"# !%s: %s
@@ -112,14 +114,14 @@ string command_casefold(string cmd) {return lower_case(cmd);}
 //that eventually fails, but it will attempt to do so as rarely as
 //possible; returning nonzero will NORMALLY mean that the command is
 //fully active.
-command_handler find_command(object channel, string cmd, int is_mod, int|void is_vip)
+echoable_message|function find_command(object channel, string cmd, int is_mod, int|void is_vip)
 {
 	//Prevent commands from containing a hash, as that was formerly used for
 	//per-channel commands. This can be relaxed in the future if needed.
 	if (has_value(cmd, '#')) return 0;
 	if (has_value(cmd, '!')) return 0; //Pseudo-commands can't be run as normal commands
 	cmd = command_casefold(cmd);
-	foreach (({channel->commands[cmd], G->G->commands[cmd]}), command_handler f)
+	foreach (({channel->commands[cmd], G->G->commands[cmd]}), echoable_message|function f)
 	{
 		//NOTE: G->G->commands holds the actual function that gets
 		//called, but we need the corresponding object.

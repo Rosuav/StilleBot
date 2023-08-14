@@ -257,7 +257,7 @@
   - GET A SCREENREADER and see how everything sounds. If needed, adjust.
     - Orca sucks. What others are there?
 * Should Favourites become a tray like any other??
-* Deprecate the type command_handler and everything that uses it.
+* Deprecate the use of functions as command handlers, and G->G->commands
   - Instead of having commands be code directly, provide builtins and then have commands
     be echoable_messages that use them. Good defaults will make this easy.
   - May simplify find_command somewhat as flags like "mod-only" will always and only be

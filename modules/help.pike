@@ -39,7 +39,7 @@ echoable_message process(object channel, mapping person, string param)
 		);
 	}
 	foreach (({channel->commands, G->G->commands}), mapping commands)
-		foreach (commands; string cmd; command_handler handler)
+		foreach (commands; string cmd; mixed handler)
 		{
 			object|mapping flags =
 				//Availability flags come from the providing object for coded functions.

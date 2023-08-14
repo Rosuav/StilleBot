@@ -73,7 +73,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	//Assume that the list of commands for each feature isn't going to change often.
 	//If it does, refresh the page to see the change.
 	mapping featurecmds = ([]);
-	foreach (G->G->commands; string cmd; command_handler f) {
+	foreach (G->G->commands; string cmd; mixed f) {
 		if (has_value(cmd, '#')) continue; //Ignore channel-specific commands
 		object|mapping flags = functionp(f) ? function_object(f) : mappingp(f) ? f : ([]);
 		if (flags->aliases && has_value(flags->aliases, cmd)) continue; //It's an alias, not the primary
