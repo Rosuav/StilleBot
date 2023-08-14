@@ -6,7 +6,6 @@ int main(int argc, array(string) argv) {
 	if (ex) write("Invalid expression: %s\n", (describe_error(ex) / "\n")[0]);
 }
 #endif
-constant featurename = "info";
 constant docstring = #"
 Calculate something, possibly involving channel variables
 

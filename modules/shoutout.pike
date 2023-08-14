@@ -1,5 +1,4 @@
 inherit builtin_command;
-constant featurename = "info";
 constant require_moderator = 1;
 constant docstring = #"
 Give a shout-out to another streamer
@@ -28,20 +27,9 @@ constant game_desc = ([
 	//All others come up as "playing %s"
 ]);
 
-constant command_description = "Shout out another streamer, providing a link and some info about them (alias !so)";
 constant builtin_description = "Fetch information about another channel and what it has recently streamed";
 constant builtin_name = "Shoutout";
 constant builtin_param = "Channel name";
-constant default_response = ([
-	"conditional": "string",
-	"expr1": "{url}",
-	"message": "No channel found (do you have the Twitch time machine?)",
-	"otherwise": ({
-		"{name} was last seen {catdesc}, at {url} - go check that stream out, maybe drop a follow! The last thing done was: {title}",
-		"/shoutout {login}", //Tie in with the twitch_apis handling to do the on-platform shoutout
-	}),
-]);
-constant aliases = ({"so"});
 constant vars_provided = ([
 	"{url}": "Channel URL, or blank if the user wasn't found",
 	"{login}": "Twitch login of the user (usually the same as the parameter but lowercased)",
@@ -50,6 +38,21 @@ constant vars_provided = ([
 	"{catdesc}": "Category in a human-readable form, eg 'playing X' or 'creating Art'",
 	"{title}": "Current or last-seen stream title",
 ]);
+constant command_suggestions = (["!shoutout": ([
+	"_description": "Shout out another streamer, providing a link and some info about them (alias !so)",
+	"builtin": "shoutout", "builtin_param": "%s",
+	"aliases": "so",
+	"access": "mod",
+	"message": ([
+		"conditional": "string",
+		"expr1": "{url}",
+		"message": "No channel found (do you have the Twitch time machine?)",
+		"otherwise": ({
+			"{name} was last seen {catdesc}, at {url} - go check that stream out, maybe drop a follow! The last thing done was: {title}",
+			"/shoutout {login}", //Tie in with the twitch_apis handling to do the on-platform shoutout
+		}),
+	]),
+])]);
 
 continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
