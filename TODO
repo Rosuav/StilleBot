@@ -136,7 +136,7 @@
   - Otherwise, pretty much everything should work
 * Find all forms in dialogs and use tag=formdialog instead
 * chan_giveaway is trying to reference something provided by chan_pointsrewards,
-  which fails on fresh start.
+  which fails on fresh start. This breaks the command editor. FIX THIS.
 * Somewhere in either giveaway or pointsrewards, something attempts to query the
   rewards for Mustard Mine, which bombs with a 403 (b/c not affiliate). Track it
   down at some point; may need to add some instrumentation.
