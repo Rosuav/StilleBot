@@ -105,6 +105,16 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 			enableables[kwd] = info | (["module": name, "manageable": mod->can_manage_feature(channel, kwd)]);
 		}
 	}
+	//Any builtin with suggestions is equally enableable.
+	object mod = G->G->enableable_modules->chan_commands; //Note that the command module handles enabling/disabling suggested commands
+	foreach (G->G->builtins; string name; object blt)
+		foreach (blt->command_suggestions || ([]); string cmd; mapping resp) {
+			enableables[cmd] = ([
+				"module": "chan_commands", "fragment": "#" + cmd,
+				"manageable": mod->can_manage_feature(channel, cmd),
+				"description": resp->_description,
+			]);
+		}
 	array features = function_object(G->G->commands->features)->FEATURES[*][0]; //List of configurable feature IDs. May need other filtering in the future??
 	string timezone = channel->config->timezone;
 	if (!timezone || timezone == "") timezone = "UTC";
@@ -138,6 +148,9 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 			return;
 		}
 	}
+	//If it wasn't found, it's probably a command suggestion.
+	G->G->enableable_modules->chan_commands->enable_feature(channel, msg->id, !!msg->state);
+	send_updates_all(conn->group);
 }
 
 @"is_mod": void wscmd_settimezone(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {

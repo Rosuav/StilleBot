@@ -1,5 +1,5 @@
 inherit http_websocket;
-inherit enableable_module;
+inherit enableable_module; //Also handles all builtins with suggestions
 
 //Simplistic stringification for read-only display.
 string respstr(echoable_message resp)
@@ -49,18 +49,25 @@ constant COMPLEX_TEMPLATES = ([
 		" /me twitchRaid YOUR RAID CALL HERE twitchRaid"
 	}),
 ]);
-	
+
+//It's okay for this to be empty, but this module must remain able to enable and disable features
 constant ENABLEABLE_FEATURES = ([
-	"song": ([
+	"!song": ([
 		"description": "A !song command to show the currently-playing song (see VLC integration)",
 		"fragment": "#song/",
 	]),
 ]);
 
-int can_manage_feature(object channel, string kwd) {return channel->commands[kwd] ? 2 : 1;} //Should it check if it's the right thing, and if not, return 3?
+int can_manage_feature(object channel, string kwd) {return channel->commands[kwd - "!"] ? 2 : 1;} //Should it check if it's the right thing, and if not, return 3?
 
 void enable_feature(object channel, string kwd, int state) {
-	mapping info = ENABLEABLE_FEATURES[kwd]; if (!info) return;
+	mapping info = ENABLEABLE_FEATURES[kwd];
+	//Not one defined here? Try a builtin's suggestions.
+	if (!info) foreach (G->G->builtins; string name; object blt)
+		if (blt->command_suggestions[?kwd]) info = info || (["response":
+			(["builtin": name, "builtin_param": "%s"]) | blt->command_suggestions[kwd]
+		]);
+	if (!info) return;
 	//Hack: Call on the normal commands updater to add a trigger
 	if (!state)
 		websocket_cmd_delete(
@@ -70,7 +77,7 @@ void enable_feature(object channel, string kwd, int state) {
 	else
 		websocket_cmd_update(
 			(["group": channel->name, "session": ([])]),
-			(["cmdname": kwd, "response": info->response || COMPLEX_TEMPLATES["!" + kwd]])
+			(["cmdname": kwd, "response": info->response || COMPLEX_TEMPLATES[kwd]])
 		);
 }
 
