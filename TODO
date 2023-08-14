@@ -263,5 +263,3 @@
   - May simplify find_command somewhat as flags like "mod-only" will always and only be
     in the mapping, not in the function's object.
 * Should the !help command be deprecated? If not, should it become a builtin in some way?
-* Builtin to allow raid suggestions, so that a command (or Maaya's trigger) can add them
-  to the raid finder

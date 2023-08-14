@@ -1,6 +1,7 @@
 inherit http_websocket;
 inherit irc_callback;
 inherit annotated;
+inherit builtin_command;
 /* Raid target finder
   - Raid tracking works only for channels that I track, but I don't have to bot for them.
   - There's not going to be any easy UI for it, but it'd be great to have a "raided my friend"
@@ -677,9 +678,9 @@ void websocket_cmd_suggestraid(mapping(string:mixed) conn, mapping(string:mixed)
 	if (notes->?tags[?"<raidsuggestions>"] < 0) return; //Raid suggestions are disabled, ignore them.
 	spawn_task(suggestraid(from, target, recip));
 }
-continue Concurrent.Future suggestraid(int from, int target, int recip) {
+continue Concurrent.Future|string suggestraid(int from, int target, int recip) {
 	array streams = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + target))->data;
-	if (!sizeof(streams)) return 0; //Failed suggestion - that stream isn't live.
+	if (!sizeof(streams)) return "Stream not live";
 	mapping strm = streams[0];
 	int userid = recip;
 	array users = yield(twitch_api_request("https://api.twitch.tv/helix/users?id=" + target + "&id=" + from))->data;
@@ -689,7 +690,7 @@ continue Concurrent.Future suggestraid(int from, int target, int recip) {
 		if (user->id == (string)target) target_user = user;
 		if (user->id == (string)from) suggestor_user = user;
 	}
-	if (!target_user || !suggestor_user) return 0; //Shouldn't normally happen - might be if weird stuff breaks though
+	if (!target_user || !suggestor_user) return "Unable to get user/channel details"; //Shouldn't normally happen - might be if weird stuff breaks though
 	//TODO: Deduplicate with the main work
 	strm->category = G->G->category_names[strm->game_id] || strm->game_name;
 	if (mapping st = persist_status->path("raidfinder_cache")[strm->user_id]) strm->chanstatus = st;
@@ -726,6 +727,26 @@ continue Concurrent.Future suggestraid(int from, int target, int recip) {
 		if (catch {c = sock->query_id();}) continue; //If older Pike, suggestions won't work.
 		if ((int)c->session->?user->?id == recip) sock->send_text(sendme);
 	}
+}
+
+constant builtin_description = "Send a raid suggestion";
+constant builtin_name = "Raid suggestion";
+constant builtin_param = ({"Suggestion"});
+constant vars_provided = ([
+	"{error}": "Normally blank, but can have an error message",
+]);
+
+continue mapping|Concurrent.Future message_params(object channel, mapping person, string|array param) {
+	if (arrayp(param)) param = param[0];
+	//No facility currently for sending comments about the suggestion, but you can include
+	//them and we'll ignore them (they'll be in chat anyway)
+	sscanf(param, "%*stwitch.tv/%[^ ]", param);
+	int target;
+	if (catch (target = yield(get_user_id(param)))) return (["{error}": "Unknown channel name"]);
+	string error;
+	if (mixed ex = catch {error = yield(suggestraid(person->uid, target, channel->userid));})
+		return (["{error}": describe_error(ex)]);
+	return (["{error}": error || ""]);
 }
 
 protected void create(string name) {
