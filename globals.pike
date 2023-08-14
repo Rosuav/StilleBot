@@ -232,13 +232,13 @@ class run_process {
 @"G->G->builtins";
 class builtin_command {
 	inherit command;
-	constant command_description = "Duplicate, replace, or adjust the normal handling of the !<> command";
-	constant builtin_description = ""; //If omitted, uses command_description
+	constant builtin_description = ""; //Label used in any human-readable context - one line description of purpose
+	constant command_description = ""; //Deprecated: Description for the default response
 	constant builtin_name = ""; //Short human-readable name for the drop-down
 	constant builtin_param = ""; //Label for the parameter, or "/Label/option/option/option" to offer specific selections. If blank, has no parameter. May be an array for multiple params.
-	constant default_response = ""; //The response to the default command, and also the default suggestion
+	constant default_response = ""; //Deprecated: The response to the default command, and also the default suggestion. Use explicit command_suggestions instead.
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
-	constant aliases = ({ }); //Add aliases here and they'll be defaultly aliased if shadowed too
+	constant aliases = ({ }); //Deprecated: Default aliases that go with the default_response (can be done via command_suggestions instead)
 	constant command_suggestions = 0; //Set this to provide some suggestions (which will show up as enableable features)
 
 	//Override this either as-is or as a continue function to return the useful params.

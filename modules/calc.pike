@@ -88,19 +88,22 @@ int|float evaluate(string formula) {
 	return parser->parse(next, this);
 }
 
-constant command_description = "Calculate a simple numeric expression/formula";
 constant builtin_description = "Perform arithmetic calculations";
 constant builtin_name = "Calculator";
 constant builtin_param = "Expression";
-constant default_response = ([
-	"conditional": "string", "expr1": "{error}", "expr2": "",
-	"message": "@$$: {result}",
-	"otherwise": "@$$: {error}",
-]);
 constant vars_provided = ([
 	"{error}": "Blank if all is well, otherwise an error message",
 	"{result}": "The result of the calculation",
 ]);
+constant command_suggestions = (["!calc": ([
+	"_description": "Calculate a simple numeric expression/formula",
+	"builtin": "calc", "builtin_param": "%s",
+	"message": ([
+		"conditional": "string", "expr1": "{error}", "expr2": "",
+		"message": "@$$: {result}",
+		"otherwise": "@$$: {error}",
+	]),
+])]);
 mapping message_params(object channel, mapping person, string param) {
 	if (param == "") return (["{error}": "Usage: !calc 1+2", "{result}": ""]);
 	if (person->badges->?_mod) param = channel->expand_variables(param);
