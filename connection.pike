@@ -196,7 +196,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	array(echoable_message|function|string) locate_command(mapping person, string msg)
 	{
 		int mod = G->G->user_mod_status[person->user + name];
-		if (echoable_message|function f = sscanf(msg, "!%[^# ] %s", string cmd, string param)
+		if (mixed f = sscanf(msg, "!%[^# ] %s", string cmd, string param)
 			&& find_command(this, cmd, mod, person->badges->?vip))
 				return ({f, param||""});
 		return ({0, ""});
@@ -219,7 +219,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		runhooks("all-msgs", 0, this, person, msg);
 		event_notify("allmsgs", this, person, msg);
 		trigger_special("!trigger", person, person->vars);
-		[echoable_message|function cmd, string param] = locate_command(person, msg);
+		[mixed cmd, string param] = locate_command(person, msg);
 		int offset = sizeof(msg) - sizeof(param);
 		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
 		person->measurement_offset = offset;

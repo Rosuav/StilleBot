@@ -121,7 +121,7 @@ echoable_message|function find_command(object channel, string cmd, int is_mod, i
 	if (has_value(cmd, '#')) return 0;
 	if (has_value(cmd, '!')) return 0; //Pseudo-commands can't be run as normal commands
 	cmd = command_casefold(cmd);
-	foreach (({channel->commands[cmd], G->G->commands[cmd]}), echoable_message|function f)
+	foreach (({channel->commands[cmd], G->G->commands[cmd]}), mixed f)
 	{
 		//NOTE: G->G->commands holds the actual function that gets
 		//called, but we need the corresponding object.
