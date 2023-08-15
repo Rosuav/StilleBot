@@ -57,7 +57,7 @@ const games = {
 	},
 	yacht: {
 		label: "Payday 2: The Yacht Heist",
-		tag_colors: {Green: "#0f0", Blue: "#4fe", Yellow: "#ff0", Red: "#f11", White: "#fff"},
+		tag_colors: {Green: "#0f0", Blue: "#4fe", Yellow: "#ff0", Red: location.search.includes("minimode") ? "#f77" : "#f11", White: "#fff"},
 		tagset(data, deck, opts) {
 			return [H2(deck), DIV({class: "tags"}, opts.map(loc => BUTTON({
 				"data-setting": deck + "-" + loc.split(" ")[0], "data-value": loc,
@@ -154,6 +154,18 @@ const games = {
 		label: "Payday 2: San Martín Bank",
 		light_colors: {Red: "#f11", Green: "#0f0", Blue: "#4fe", Yellow: "#ff0"},
 		render(data) {return [
+			H2("Manager"),
+			DIV([
+				"Manager: ", SELECT({"data-setting": "manager-location", value: data["manager-location"]}, [
+					OPTION("Kitchenette"),
+					OPTION("Meeting room"),
+					OPTION("Lounge"),
+				]),
+				" Tape: ", SELECT({"data-setting": "tape-location", value: data["tape-location"]}, [
+					OPTION("Inside mtg room"),
+					OPTION("Outside mtg room"),
+				]),
+			]),
 			H2("Lock lights (pick two)"),
 			STYLE(".lights {display: flex; gap: 3.5em; justify-content: center; flex-wrap: wrap} .lights > * {height: 2.5em; width: 6em; font-size: 150%; text-align: center}"),
 			DIV({class: "lights"}, Object.entries(this.light_colors).map(([name, col]) =>
@@ -169,9 +181,22 @@ const games = {
 				}, name),
 			)),
 			H2("Vault duty"),
-			DIV("Can this become a drop-down?"),
 			DIV([
-				INPUT({"data-setting": "vault-operator", value: data["vault-operator"] || ""}),
+				"Operator: ", SELECT({"data-setting": "vault-operator", value: data["vault-operator"]}, [
+					OPTION("R. R. Mendoza"),
+					OPTION("U. Corberó"),
+					OPTION("J. Lorenzo"),
+					OPTION("M. Zamora"),
+					OPTION("J. Lopez"),
+					OPTION("A. Banderas"),
+					OPTION("A. C. Montes"),
+					OPTION("G. del Toro"),
+					OPTION("B. B. Rodriguez"),
+					OPTION("R. Nadal"),
+					OPTION("P. Montoto"),
+					OPTION("G. Iglesias"),
+					OPTION("S. Segura"),
+				]),
 				INPUT({"data-setting": "operator-code", value: data["operator-code"] || ""}),
 			]),
 		];},
