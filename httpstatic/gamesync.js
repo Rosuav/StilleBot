@@ -226,7 +226,7 @@ export function render(data) {
 	]));
 	replace_content("main", [
 		location.search.includes("minimode") ?
-			STYLE("body main {max-width: unset; margin: unset; background: transparent;}")
+			STYLE("body main {max-width: unset; margin: unset; background: transparent; font-size: 50%;} #topbar {display: none;} button {background: #aaa;}")
 		: [
 			H1(games[data.game] ? games[data.game].label : "Game sync"),
 			SELECT({id: "gameselect", value: data.game},
