@@ -531,7 +531,7 @@ protected void create(string name) {
 			if (cfg->features["info-" + cmd]) continue;
 			cfg->features["info-" + cmd] = 1;
 			object channel = G->G->irc->channels["#" + cfg->login]; if (!channel) continue;
-			enable_feature(channel, cmd, 1);
+			if (!channel->commands[cmd - "!"]) enable_feature(channel, cmd, 1);
 		}
 	}
 }
