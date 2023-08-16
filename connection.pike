@@ -961,11 +961,13 @@ class channel(string name) { //name begins with hash and is all lower case
 				if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
 				//For some reason, whispers show up with "/me" at the start, not "ACTION".
 				else if (sscanf(msg, "/me %s", msg)) person->is_action_msg = 1;
-				if (person->badges->?broadcaster && sscanf(msg, "fakecheer%d", int bits) && bits)
+				if (person->badges->?broadcaster && sscanf(msg, "fakecheer%d", int bits) && bits) {
 					//Allow the broadcaster to "fakecheer100" (start of message only) to
 					//test alerts etc. Note that "fakecheer-100" can also be done, if that
 					//is ever useful to your testing. It may confuse things though!
 					params->bits = (string)bits;
+					person->bits = bits;
+				}
 				if (person->badges->?broadcaster && msg == "fakehypechat") {
 					//Similarly, allow a fake hype chat. For this, I'm using one that I sent to Devi, so it was AUD going to Canada.
 					params->pinned_chat_paid_amount = "850";
