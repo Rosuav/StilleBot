@@ -154,24 +154,19 @@ int subscription(object channel, string type, mapping person, string tier, int q
 //TODO: Have a builtin that allows any command/trigger/special to advance bars
 //Otherwise, changing the variable won't trigger the level-up command.
 void autoadvance(object channel, mapping person, string key, int weight) {
-	foreach (channel->config->monitors || ([]); ; mapping info) {
+	foreach (channel->config->monitors || ([]); string id; mapping info) {
 		if (info->type != "goalbar" || !info->active) continue;
 		int advance = key == "" ? weight : weight * (int)info[key];
 		if (!advance) continue;
 		sscanf(info->text, "$%s$:%s", string varname, string txt);
 		if (!txt) continue;
+		echoable_message lvlup = channel->commands[info->lvlupcmd];
+		int prevtier = lvlup && (int)message_params(channel, person, id)["{tier}"];
 		int total = (int)channel->set_variable(varname, advance, "add"); //Abuse the fact that it'll take an int just fine for add :)
 		Stdio.append_file("subs.log", sprintf("[%s] Advancing %s goal bar by %O*%O = %d - now %d\n", channel->name, varname, key, weight, advance, total));
-		if (advance < 0) continue;
-		//See if we've just hit a new tier. This code is quite probably broken; aren't the tiers already in cents?
-		foreach (info->thresholds / " "; int tier; string th) {
-			int nexttier = 100 * (int)th; //TODO: Don't offset if not currency
-			if (total >= nexttier) {if (!info->progressive) total -= nexttier; continue;}
-			//This is the current tier. If we've only barely started it,
-			//then we probably just hit this tier. (If tier is 0, we've
-			//just broken positive after having a negative total.)
-			if (total < advance) channel->send(person, channel->commands[info->lvlupcmd], (["%s": (string)tier]));
-			break;
+		if (advance > 0 && lvlup) {
+			int newtier = (int)message_params(channel, person, id)["{tier}"];
+			while (prevtier++ < newtier) channel->send(person, lvlup, (["%s": (string)prevtier]));
 		}
 	}
 }
