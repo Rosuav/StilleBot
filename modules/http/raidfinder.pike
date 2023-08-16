@@ -591,7 +591,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			"all_raids": all_raids[<99..], "mode": "normal",
 			"annotations": annotations,
 			"render_time": (string)tm->get(),
-			"raid_suggestions": (int)logged_in->?id == userid ? prune_raid_suggestions(logged_in->id) : ({ }),
+			"raid_suggestions": userid && (int)logged_in->?id == userid ? prune_raid_suggestions(logged_in->id) : ({ }),
 		]),
 		"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
 		"title": title,
