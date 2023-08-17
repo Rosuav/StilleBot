@@ -631,8 +631,7 @@ continue Concurrent.Future send_raid(string id, int target, mapping conn) {
 		(["method": "POST", "return_errors": 1]),
 	));
 	if (result->error) {
-		//Don't give too much info here, not sure what would leak private data
-		conn->sock->send_text(Standards.JSON.encode((["cmd": "update", "raidstatus": "Raid failed."]), 4));
+		conn->sock->send_text(Standards.JSON.encode((["cmd": "update", "raidstatus": "Raid failed.", "detail": result->message]), 4));
 		return 0;
 	}
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "update", "raidstatus": "RAIDING!"]), 4));

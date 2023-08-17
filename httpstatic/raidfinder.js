@@ -463,6 +463,7 @@ export function render(data) {
 	if (data.raidstatus) {
 		set_content("#raidnow", data.raidstatus);
 		if (data.raidstatus === "Raid successful!") DOM("#raidsuccess").hidden = false;
+		//TODO: if data.detail, show it somewhere, as it's some sort of error eg "that streamer doesn't accept raids"
 	}
 	//Assume the server has already done the checks as to who is allowed to suggest
 	if (data.suggestions && logged_in_as === on_behalf_of_userid)
