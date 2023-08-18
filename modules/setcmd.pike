@@ -1,4 +1,5 @@
 inherit command;
+constant active_channels = ({""}); //Deprecated, slated for removal.
 constant featurename = "commands";
 constant require_moderator = 1;
 constant docstring = #"
