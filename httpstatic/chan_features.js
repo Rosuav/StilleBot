@@ -35,7 +35,10 @@ export function render(data) {
 	if (data.enableables) {
 		const parent = DOM("#enableables tbody");
 		const rows = [];
-		for (let kwd in data.enableables) {
+		//Sort the enableables by their descriptions
+		const kwds = Object.keys(data.enableables);
+		kwds.sort((a, b) => data.enableables[a].description.localeCompare(data.enableables[b].description));
+		for (let kwd of kwds) {
 			const info = data.enableables[kwd];
 			const row = parent.querySelector(`[data-id="${kwd}"]`);
 			if (row) {
