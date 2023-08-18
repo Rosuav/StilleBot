@@ -183,6 +183,14 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 	border: 1px solid #a0f0c0;
 	cursor: pointer;
 }
+
+#raiderror {
+	border: 1px solid red;
+	background: #fee;
+	font-weight: bold;
+	text-align: center;
+	padding: 0.5em;
+}
 </style>
 
 > ### Legend/info
@@ -233,6 +241,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 > To raid this streamer, type <code id=raid_command></code> [📋](:.clipbtn) into your chat/dashboard!
 >
 > <p id=raidsuccess hidden>Raid successful! Your viewers should now be arriving at your raid target.<br>Don't forget to <b>stop the broadcast</b>!</p>
+> <p id=raiderror hidden></p>
 >
 > $$raidbtn||$$ [Close](:.dialog_close)
 {: tag=dialog #goraiding}

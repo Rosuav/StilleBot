@@ -441,6 +441,7 @@ on("click", ".raidbtn", e => {
 	if (raidnow) set_content(raidnow, "Raid now!").disabled = false;
 	if (suggestraid) set_content(suggestraid, "Suggest raid").disabled = false;
 	DOM("#raidsuccess").hidden = true; //in case you successfully raid but keep the page open...
+	DOM("#raiderror").hidden = true; //Though it's much more likely you'll retry a raid after failing.
 	DOM("#goraiding").showModal();
 });
 
@@ -463,7 +464,7 @@ export function render(data) {
 	if (data.raidstatus) {
 		set_content("#raidnow", data.raidstatus);
 		if (data.raidstatus === "Raid successful!") DOM("#raidsuccess").hidden = false;
-		//TODO: if data.detail, show it somewhere, as it's some sort of error eg "that streamer doesn't accept raids"
+		if (data.detail) set_content("#raiderror", data.detail).hidden = false;
 	}
 	//Assume the server has already done the checks as to who is allowed to suggest
 	if (data.suggestions && logged_in_as === on_behalf_of_userid)
