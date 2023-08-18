@@ -33,7 +33,18 @@ array(mapping) prune_raid_suggestions(string id) {
 	foreach (raid_suggestions[id]; int i; mapping sugg) {
 		if (sugg->suggested_at < stale) raid_suggestions[id][i] = 0;
 	}
-	return raid_suggestions[id] -= ({0});
+	raid_suggestions[id] -= ({0});
+	//Collapse similar suggestions and make arrays of their suggestors.
+	//This is a naive O(n²) algorithm because I don't expect crazy numbers
+	//of suggestions for a single target streamer within 15 minutes!!
+	array sugg = raid_suggestions[id];
+	array ret = ({ });
+	foreach (sugg->id, string id) {
+		if (has_value(ret->id, id)) continue;
+		array this_target = filter(sugg) {return __ARGS__[0]->id == id;};
+		ret += ({this_target[-1] | (["suggested_by": this_target->suggested_by])});
+	}
+	return ret;
 }
 
 mapping(string:string|array) safe_query_vars(mapping(string:string|array) vars) {return vars & (<"for">);}

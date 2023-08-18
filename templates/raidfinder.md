@@ -56,6 +56,23 @@
 .avatar {max-width: 40px;}
 .inforow {display: flex; overflow-x: clip;}
 .inforow .img {flex-grow: 0; padding: 0.25em;}
+.hoverexpand .expanded {
+	display: flex;
+	position: absolute;
+	opacity: 0;
+	flex-wrap: wrap;
+	z-index: -100;
+	transition: box-shadow 0.125s;
+}
+.hoverexpand:hover .expanded {
+	z-index: 100;
+	background: white;
+	border: 1px solid black;
+	width: 324px;
+	padding: 2px;
+	box-shadow: 10px 10px 5px 0 #b8dd;
+	opacity: 1;
+}
 .streamtitle {font-size: 85%;}
 .emote {max-height: 1.25em;}
 .tag {

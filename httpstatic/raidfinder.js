@@ -378,10 +378,23 @@ function render_stream_tiles(streams) {
 			]),
 			describe_notes(stream),
 		] : [
-			stream.suggested_by && DIV({class: "inforow"}, [
-				"Suggested by: ",
-				IMG({class: "avatar", src: stream.suggested_by.profile_image_url, style: "margin: 0 0.5em"}),
-				B(stream.suggested_by.display_name),
+			stream.suggested_by && DIV({class: "inforow hoverexpand"}, [
+				DIV({style: "display: flex"}, [
+					DIV("Suggested by: "),
+					IMG({class: "avatar", src: stream.suggested_by[0].profile_image_url, style: "margin: 0 0.5em"}),
+					DIV({style: "display: flex; flex-direction: column"}, [
+						B(stream.suggested_by[0].display_name),
+						stream.suggested_by.length === 2 && SPAN(" and another"),
+						stream.suggested_by.length > 2 && SPAN(" and " + (stream.suggested_by.length - 1) + " others"),
+					]),
+				]),
+				stream.suggested_by.length > 1 && DIV({class: "expanded"}, [
+					DIV("Suggested by: "),
+					stream.suggested_by.map(sugg => DIV([
+						IMG({class: "avatar", src: sugg.profile_image_url, style: "margin: 0 0.5em"}),
+						B({style: "display: inline-flex; flex-direction: column; vertical-align: top;"}, sugg.display_name),
+					])),
+				]),
 			]),
 			A({href: stream.url}, IMG({src: stream.thumbnail_url.replace("{width}", 320).replace("{height}", 180)})),
 			DIV({className: "inforow"}, [
@@ -469,7 +482,8 @@ export function render(data) {
 	//Assume the server has already done the checks as to who is allowed to suggest
 	if (data.suggestions && logged_in_as === on_behalf_of_userid)
 		set_content("#raidsuggestions", (raid_suggestions = data.suggestions).map(sugg =>
-			LI("Suggestion from " + sugg.suggested_by.display_name + ": " + sugg.user_name)
+			//Note that a suggestion from multiple people shows only the first.
+			LI("Suggestion from " + sugg.suggested_by[0].display_name + ": " + sugg.user_name)
 		)).hidden = data.suggestions.length === 0;
 }
 if (raid_suggestions) render({suggestions: raid_suggestions});
