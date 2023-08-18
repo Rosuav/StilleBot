@@ -24,7 +24,7 @@ Concurrent.Future fracture(array stuff, int max, function cb) {
 
 multiset(string) creative_names = (<"Art", "Science & Technology", "Software and Game Development", "Food & Drink", "Music", "Makers & Crafting", "Beauty & Body Art">);
 multiset(int) creatives = (<>);
-int next_precache_request = time();
+int next_precache_request;
 @retain: mapping raid_suggestions = ([]);
 
 array(mapping) prune_raid_suggestions(string id) {
@@ -128,9 +128,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//Low-priority request to populate the cache. Never more than 1 per second,
 			//regardless of the number of connected clients.
 			int now = time();
-			int delay = ++next_precache_request - time();
+			if (next_precache_request < now) next_precache_request = now;
+			int delay = next_precache_request - now;
 			if (delay > 5) return jsonify((["error": "Wait a bit"])) | (["error": 425]);
 			if (delay) yield(task_sleep(delay));
+			++next_precache_request;
 		}
 		string html_title;
 		if (!(int)chan) {
