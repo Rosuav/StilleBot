@@ -271,4 +271,3 @@
 * Should the !help command be deprecated? If not, should it become a builtin in some way?
 * Raid suggestions: sort by #times suggested
   - Username "also" suggested. Do this only after the filtering to fifteen minutes - in that func.
-* Populate raid suggestion tiles with (new frond, chat settings), prioritized above other tiles

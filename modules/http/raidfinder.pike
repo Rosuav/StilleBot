@@ -694,7 +694,12 @@ continue Concurrent.Future|string suggestraid(int from, int target, int recip) {
 	if (!target_user || !suggestor_user) return "Unable to get user/channel details"; //Shouldn't normally happen - might be if weird stuff breaks though
 	//TODO: Deduplicate with the main work
 	strm->category = G->G->category_names[strm->game_id] || strm->game_name;
+	//If we can't pull up the chanstatus from cache, populate it with the one most interesting part.
 	if (mapping st = persist_status->path("raidfinder_cache")[strm->user_id]) strm->chanstatus = st;
+	else {
+		mapping settings = yield(twitch_api_request("https://api.twitch.tv/helix/chat/settings?broadcaster_id=" + target));
+		if (arrayp(settings->data) && sizeof(settings->data)) strm->chanstatus = (["cache_time": time(), "chat_settings": settings->data[0]]);
+	}
 	int otheruid = (int)strm->user_id;
 	strm->broadcaster_type = target_user->broadcaster_type;
 	strm->profile_image_url = target_user->profile_image_url;
