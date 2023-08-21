@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {B, CODE, INPUT, LABEL, LI, SPAN} = choc; //autoimport
+const {B, CODE, INPUT, LABEL, LI, SPAN} = lindt; //autoimport
 
 let all_sites = {}, current_url = null, current_origin = "";
 
