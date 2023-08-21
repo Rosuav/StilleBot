@@ -527,7 +527,7 @@ protected void create(string name) {
 	//mapping gets removed.
 	foreach (list_channel_configs(), mapping cfg) {
 		if (!cfg->features) continue;
-		if (cfg->features->info) foreach ("!calc !shoutout !follower" / " ", string cmd) {
+		if (cfg->features->info) foreach ("!calc !shoutout !follower !uptime" / " ", string cmd) {
 			if (cfg->features["info-" + cmd]) continue;
 			cfg->features["info-" + cmd] = 1;
 			object channel = G->G->irc->channels["#" + cfg->login]; if (!channel) continue;

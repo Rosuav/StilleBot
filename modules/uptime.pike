@@ -1,21 +1,13 @@
 inherit builtin_command;
-constant featurename = "info";
-constant docstring = #"
-Show channel uptime.
-
-It's possible that this information will be a little delayed, showing
-that the channel is offline if it's just started, and/or still showing
-the uptime just after it goes offline.
-";
-
-constant command_description = "Show how long the channel has been online";
 constant builtin_description = "See if the channel is online, and if so, for how long";
 constant builtin_name = "Channel uptime";
-constant default_response = ([
+constant command_suggestions = (["!uptime": ([
+	"_description": "Show how long the channel has been online",
+	"builtin": "uptime",
 	"conditional": "string", "expr1": "{uptime}", "expr2": "0",
 	"message": "Channel is currently offline.",
 	"otherwise": "@$$: Channel {channel} has been online for {uptime|time_english}",
-]);
+])]);
 constant vars_provided = ([
 	"{uptime}": "Number of seconds the channel has been online, or 0 if offline",
 	"{uptime_english}": "(deprecated) Equivalent to {uptime|time_english}",
