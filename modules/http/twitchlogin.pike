@@ -1,7 +1,15 @@
+#charset utf-8
 inherit http_endpoint;
 
-//constant scopes = "chat:read chat:edit whispers:read whispers:edit user_subscriptions"; //For authenticating the bot itself
-//constant scopes = ""; //no scopes currently needed
+constant markdown = #"# Twitch Login
+
+Log in to StilleBot to grant the bot permission to do what it needs.
+
+Grant the following permissions:
+$$scopelist$$
+
+[Grant permissions](:.twitchlogin #addscopes)
+";
 
 mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mapping user, multiset scopes, string token, string cookie) {
 	req->misc->session->user = user;
@@ -60,23 +68,23 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		"data": sprintf("Unrecognized scope %O being requested", (array)bad * " ")]);
 	multiset needscopes = havescopes | wantscopes; //Note that we'll keep any that we already have.
 	if (req->variables->urlonly) return jsonify((["uri": get_redirect_url(needscopes, ([]), login_popup_done)]));
-	//Attempt to sanitize or whitelist-check the destination. The goal is to permit
-	//anything that could ever have been req->not_query for any legitimate request,
-	//and to deny anything else.
-	string next = req->variables->next || "";
-	sscanf(next, "%s?%s", next, string query);
-	if (!has_prefix(next, "/")) next = 0; //Destination MUST be absolute within the server but with no protocol or host.
-	else {
-		//Look up a handler. If we find one, then it's valid.
-		[function handler, array args] = find_http_handler(next);
-		if (!handler) next = 0;
-		if (query) {
-			mapping vars = function_object(handler)->safe_query_vars(Protocols.HTTP.Server.http_decode_urlencoded_query(query), @args);
-			if (!vars) next = 0;
-			else if (sizeof(vars)) next += "?" + Protocols.HTTP.http_encode_query(vars);
-		}
+	//NOTE: Prior to 20230821, this would offer a CGI-mode login page. This has not been used
+	//anywhere in core for some time, but if it is linked to anywhere externally, this will
+	//now break. I don't think it's likely but it's possible.
+
+	array order = ({ }), scopelist = ({ });
+	foreach (all_twitch_scopes; string id; string desc) {
+		order += ({desc - "*"});
+		scopelist += ({"* <label><input type=checkbox class=scope_cb" + " checked" * needscopes[id] + " value=\"" + id + "\">"
+			+ (desc[0] == '*' ? "<span class=warningicon>⚠️</span>" : "")
+			+ (desc - "*")});
 	}
-	return twitchlogin(req, needscopes, next);
+	sort(order, scopelist);
+
+	return render_template(markdown, ([
+		"js": "twitchlogin",
+		"scopelist": scopelist * "\n",
+	]));
 }
 
 string get_redirect_url(multiset scopes, mapping extra, function callback) {

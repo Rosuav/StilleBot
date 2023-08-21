@@ -1577,11 +1577,8 @@ class TwitchAuth
 	//Promisified version of refresh_access_token not necessary with Twitch's current "never-expire" policy
 }
 
-mapping(string:mixed) twitchlogin(Protocols.HTTP.Server.Request req, multiset(string) scopes, string|void next)
-{
-	mapping resp = render_template("login.md", (["scopes": ((array)scopes - ({""})) * " "]) | (req->misc->chaninfo || ([])));
-	req->misc->session->redirect_after_login = next || req->full_query; //Shouldn't usually be necessary
-	return resp;
+mapping(string:mixed) _twitchlogin(Protocols.HTTP.Server.Request req, multiset(string) scopes) {
+	return render_template("login.md", (["scopes": ((array)scopes - ({""})) * " "]) | (req->misc->chaninfo || ([])));
 }
 
 //Make sure we have a logged-in user. Returns 0 if the user is already logged in, or
@@ -1597,9 +1594,9 @@ mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|voi
 	multiset bad = wantscopes - TwitchAuth()->list_valid_scopes();
 	if (sizeof(bad)) return (["error": 500, "type": "text/plain", 
 		"data": sprintf("Internal server error: Unrecognized scope %O being requested", (array)bad * " ")]);
-	if (!havescopes) return twitchlogin(req, wantscopes); //Even if you aren't requesting any scopes
+	if (!havescopes) return _twitchlogin(req, wantscopes); //Even if you aren't requesting any scopes
 	multiset needscopes = havescopes | wantscopes; //Note that we'll keep any that we already have.
-	if (sizeof(needscopes) > sizeof(havescopes)) return twitchlogin(req, needscopes);
+	if (sizeof(needscopes) > sizeof(havescopes)) return _twitchlogin(req, needscopes);
 	//If we get here, it's all good, carry on.
 }
 
