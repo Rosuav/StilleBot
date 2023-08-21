@@ -37,15 +37,7 @@ $$save_or_login||> [Export/back up all configuration](:type=submit name=export)
 constant FEATUREDESC = ([
 	"quotes": "Adding, deleting, and removing quotes",
 	"commands": "Chat commands for managing chat commands",
-	"info": "General information and status commands",
 ]);
-
-//TODO: Add shorthands for creating more features:
-//- Giveaway triggers?? Maybe?
-//- Shoutout command, and link to the main commands page ("others here")
-//- Hype train status?
-
-//TODO: Unify the UI for different enableables - not radio buttons for one, action buttons for another
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {

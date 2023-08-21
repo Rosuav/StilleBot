@@ -5,7 +5,6 @@ constant access = "mod";
 constant FEATURES = ({
 	({"quotes", "Adding, deleting, and removing quotes"}),
 	({"commands", "Chat commands for managing chat commands"}),
-	({"info", "General information and status commands"}),
 });
 constant FEATUREDESC = (mapping)FEATURES;
 
