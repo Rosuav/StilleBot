@@ -6,6 +6,6 @@ function update_login_button() {
 	document.querySelectorAll(".scope_cb").forEach(cb => {
 		if (cb.checked) scopes.push(cb.value);
 	});
-	DOM("#addscopes").dataset.scopes = scopes.join(" ");
+	DOM("#addscopes").dataset.scopes = scopes.join(" ") + " " + retain_scopes;
 }
 on("click", ".scope_cb", update_login_button);

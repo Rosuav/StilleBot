@@ -11,6 +11,10 @@ $$scopelist$$
 [Grant permissions](:.twitchlogin #addscopes)
 ";
 
+mapping scope_reasons = ([
+	"moderator:manage:banned_users": "Enables the /ban, /timeout, /unban special commands",
+]);
+
 mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mapping user, multiset scopes, string token, string cookie) {
 	req->misc->session->user = user;
 	req->misc->session->scopes = (multiset)(req->variables->scope / " ");
@@ -72,16 +76,22 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//anywhere in core for some time, but if it is linked to anywhere externally, this will
 	//now break. I don't think it's likely but it's possible.
 
-	array order = ({ }), scopelist = ({ });
+	array order = ({ }), scopelist = ({ }), retain_scopes = ({ });
 	foreach (all_twitch_scopes; string id; string desc) {
+		if (has_prefix(desc, "Deprecated") || has_prefix(desc, "*Deprecated")) {
+			if (needscopes[id]) retain_scopes += ({id});
+			continue;
+		}
 		order += ({desc - "*"});
 		scopelist += ({"* <label><input type=checkbox class=scope_cb" + " checked" * needscopes[id] + " value=\"" + id + "\">"
-			+ (desc[0] == '*' ? "<span class=warningicon>⚠️</span>" : "")
+			//+ (desc[0] == '*' ? "<span class=warningicon>⚠️</span>" : "") //Do we need these here or are they just noise?
 			+ (desc - "*")});
+		if (scope_reasons[id]) scopelist[-1] += "\n  <br>" + scope_reasons[id];
 	}
 	sort(order, scopelist);
 
 	return render_template(markdown, ([
+		"vars": (["retain_scopes": retain_scopes * " "]),
 		"js": "twitchlogin",
 		"scopelist": scopelist * "\n",
 	]));
