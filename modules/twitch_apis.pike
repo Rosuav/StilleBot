@@ -268,11 +268,12 @@ string send_chat_command(string msg, object channel, string voiceid) {
 
 protected void create(string name) {
 	G->G->send_chat_command = send_chat_command;
-	mapping voice_scopes = ([]);
+	mapping voice_scopes = ([]), scope_commands = ([]);
 	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
 		if (ann) foreach (indices(ann), mixed anno) {
 			need_scope[key] = anno;
 			voice_scopes[anno] = all_twitch_scopes[anno] || anno; //If there's a function that uses it, the voices subsystem can grant it.
+			scope_commands[anno] += ({"/" + key});
 		}
 	}
 	//There are additional scopes that don't correspond to any slash command, but might be granted
@@ -280,6 +281,7 @@ protected void create(string name) {
 	foreach ("moderator:read:chatters" / " ", string scope)
 		voice_scopes[scope] = all_twitch_scopes[scope] || scope;
 	G->G->voice_additional_scopes = voice_scopes;
+	G->G->voice_scope_commands = scope_commands;
 	//send_chat_command("/announce This is an announcement from the bot!", G->G->irc->channels["#rosuav"], 0);
 	//send_chat_command("/announce This is an announcement from Mustard Mine!", G->G->irc->channels["#rosuav"], "279141671");
 }

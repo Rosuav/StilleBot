@@ -11,8 +11,18 @@ $$scopelist$$
 [Grant permissions](:.twitchlogin #addscopes)
 ";
 
+//Give additional explanatory notes for a few scopes
+//Note that anything that enables slash commands (see twitch_apis.pike) will automatically
+//have those listed, and does not need an explicit entry here.
 mapping scope_reasons = ([
-	"moderator:manage:banned_users": "Enables the /ban, /timeout, /unban special commands",
+	"bits:read": "Enables the bits leaderboard",
+	"channel:manage:raids": "Go raiding directly from the [Raid Finder](/raidfinder)",
+	"channel:manage:redemptions": "Manage channel point rewards and redemptions",
+	"channel:read:hype_train": "Enables the [Train Tracker](/hypetrain) for your channel",
+	"moderation:read": "Prevent banned users from sharing art with your channel",
+	"moderator:read:chatters": "Enables the 'For each active chatter' command element",
+	"moderator:read:followers": "Enables follower alerts",
+	"user:read:follows": "Enables the core Raid Finder mode",
 ]);
 
 mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mapping user, multiset scopes, string token, string cookie) {
@@ -86,7 +96,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		scopelist += ({"* <label><input type=checkbox class=scope_cb" + " checked" * needscopes[id] + " value=\"" + id + "\">"
 			//+ (desc[0] == '*' ? "<span class=warningicon>⚠️</span>" : "") //Do we need these here or are they just noise?
 			+ (desc - "*")});
-		if (scope_reasons[id]) scopelist[-1] += "\n  <br>" + scope_reasons[id];
+		if (scope_reasons[id]) scopelist[-1] += "\n  <br>*" + scope_reasons[id] + "*";
+		if (array cmd = G->G->voice_scope_commands[id])
+			scopelist[-1] += "\n  <br>*Enables the " + sort(cmd) * ", " + " special command" + ("s" * (sizeof(cmd) > 1)) + "*";
 	}
 	sort(order, scopelist);
 
