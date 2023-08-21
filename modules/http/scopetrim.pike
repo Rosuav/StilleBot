@@ -17,13 +17,12 @@ Use this link instead: <a id=resultant_url href=\"waiting...\" target=_blank>Log
 
 None of this information is sent to my server or anywhere else; your preferences are saved here in your
 browser's local storage and that's all.
-
-<script type=module src=\"$$static||scopetrim.js$$\"></script>
 ";
 
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	return render_template(markdown, ([
 		"vars": (["all_twitch_scopes": all_twitch_scopes]),
+		"js": "scopetrim",
 	]));
 }
