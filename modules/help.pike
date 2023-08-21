@@ -1,4 +1,5 @@
 inherit command;
+constant active_channels = ({""}); //Deprecated, slated for removal.
 constant featurename = "info";
 constant docstring = #"
 List commands available to you

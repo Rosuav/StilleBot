@@ -34,6 +34,12 @@ $$save_or_login||> [Export/back up all configuration](:type=submit name=export)
 </style>
 ";
 
+constant FEATUREDESC = ([
+	"quotes": "Adding, deleting, and removing quotes",
+	"commands": "Chat commands for managing chat commands",
+	"info": "General information and status commands",
+]);
+
 //TODO: Add shorthands for creating more features:
 //- Giveaway triggers?? Maybe?
 //- Shoutout command, and link to the main commands page ("others here")
@@ -87,7 +93,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 }
 
 mapping _get_item(string id, mapping feat) {
-	array FEATUREDESC = function_object(G->G->commands->features)->FEATUREDESC;
 	if (!FEATUREDESC[id]) return 0;
 	return ([
 		"id": id, "desc": FEATUREDESC[id],
@@ -115,7 +120,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 				"description": resp->_description,
 			]);
 		}
-	array features = function_object(G->G->commands->features)->FEATURES[*][0]; //List of configurable feature IDs. May need other filtering in the future??
+	array features = sort(indices(FEATUREDESC));
 	string timezone = channel->config->timezone;
 	if (!timezone || timezone == "") timezone = "UTC";
 	return (["items": _get_item(features[*], feat),

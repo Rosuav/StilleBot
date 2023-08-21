@@ -1,17 +1,15 @@
 inherit command;
-constant featurename = "features";
+constant active_channels = ({""}); //Deprecated, slated for removal.
 constant access = "mod";
 
 constant FEATURES = ({
 	({"quotes", "Adding, deleting, and removing quotes"}),
 	({"commands", "Chat commands for managing chat commands"}),
-	({"features", "Feature management via chat"}),
 	({"info", "General information and status commands"}),
-	//({"unknown", "Problems"}), //If any show up in this list, it's a bug to be fixed.
 });
 constant FEATUREDESC = (mapping)FEATURES;
 
-constant docstring = sprintf(#"
+constant docstring = #"
 Enable or disable bot chat commands.
 
 Usage: `!features featurename {enable|disable}`
@@ -19,12 +17,7 @@ Usage: `!features featurename {enable|disable}`
 Note that features disabled here may still be available via the bot's web
 interface; this governs only the commands available in chat, usually to
 moderators.
-
-Feature name | Effect
--------------|-------------
-%{%s | %s
-%}
-", FEATURES);
+";
 
 echoable_message process(object channel, mapping person, string param) {
 	mapping feat = channel->path("features");
