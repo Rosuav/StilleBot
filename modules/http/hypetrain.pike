@@ -2,8 +2,6 @@ inherit http_endpoint;
 inherit websocket_handler;
 inherit annotated;
 inherit builtin_command;
-constant featurename = "info";
-constant hidden_command = 1;
 @retain: mapping hypetrain_checktime = ([]);
 
 //Parse a timestamp into a valid Unix time. If ts is null, malformed,
@@ -156,10 +154,11 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	]));
 }
 
-constant command_description = "Show the status of a hype train in this channel, or the cooldown before the next can start";
 constant builtin_description = "Get info about a current or recent hype train in this channel";
 constant builtin_name = "Hype Train status";
-constant default_response = ([
+constant command_suggestions = (["!hypetrain": ([
+	"_description": "Show the status of a hype train in this channel, or the cooldown before the next can start",
+	"builtin": "hypetrain",
 	"conditional": "string", "expr1": "{error}", "expr2": "",
 	"message": ([
 		"conditional": "string", "expr1": "{state}", "expr2": "active",
@@ -175,7 +174,7 @@ constant default_response = ([
 		])
 	]),
 	"otherwise": "{error}",
-]);
+])]);
 constant vars_provided = ([
 	"{error}": "Normally blank, but can have an error message",
 	"{state}": "A keyword (idle, active, cooldown). If idle, there's no other info; if cooldown, info pertains to the last hype train.",
