@@ -46,11 +46,15 @@ export function render(data) {
 			rows.push(
 				TR({className: "gap", "data-tabid": tab}, []),
 				row,
-				TR({"data-tabid": tab}, TD({colSpan: 3}, DETAILS([
-					SUMMARY("Happens when: " + cmd.desc),
-					"Parameters: ",
-					UL(describe_all_params(command_lookup[cmd.id] = cmd)),
-				]))),
+				TR({"data-tabid": tab}, TD({colSpan: 3}, [
+					DETAILS([
+						SUMMARY("Happens when: " + cmd.desc),
+						"Parameters: ",
+						UL(describe_all_params(command_lookup[cmd.id] = cmd)),
+					]),
+					//scope_requirement[cmd.id] && "Requires broadcaster authentication.",
+					//Link to https://sikorsky.rosuav.com/reauth?bcaster=channel:read:polls or whatever scope is needed
+				])),
 			);
 		});
 		set_content("#commands tbody", rows);
