@@ -36,6 +36,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!channelsetup | The channel is online and has recently changed its category/title/tags | The broadcaster | category, title, tag_names, ccls
 !!channeloffline | The channel has recently gone offline (stopped streaming) | The broadcaster | uptime, uptime_hms, uptime_english
 !!musictrack | A track just started playing (see VLC integration) | VLC | desc, blockpath, block, track, playing
+!!pollended | A channel poll just ended | The broadcaster | title, choices, points_per_vote, choice_N_title, choice_N_votes, choice_N_pointsvotes, winner_title
 !!giveaway_started | A giveaway just opened, and people can buy tickets | The broadcaster | title, duration, duration_hms, duration_english
 !!giveaway_ticket | Someone bought ticket(s) in the giveaway | Ticket buyer | title, tickets_bought, tickets_total, tickets_max
 !!giveaway_toomany | Ticket purchase attempt failed | Ticket buyer | title, tickets_bought, tickets_total, tickets_max
@@ -91,6 +92,12 @@ Parameter    | Meaning
 {from_name} | Name (possibly username) of the Ko-fi supporter. Not (necessarily) a Twitch username.
 {shop_item_ids} | Blank-separated list of ten-digit hexadecimal item IDs bought.
 {tiername} | Ko-fi subscription tier (if applicable)
+{choices} | Number of choices in the poll
+{points_per_vote} | Channel points to buy a vote (0 if not available)
+{choice_N_title} | For each N from 1 to {choices}, the title of the Nth choice
+{choice_N_votes} | The number of votes that the Nth choice received
+{choice_N_pointsvotes} | The number of votes bought for Nth choice with points
+{winner_title} | The title of the choice that had the most votes
 
 
 Editing these special commands can also be done via the bot's web browser

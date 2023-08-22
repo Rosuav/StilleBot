@@ -19,6 +19,7 @@ constant SPECIALS = ({
 	({"!channelsetup", ({"The channel is online and has recently changed its category/title/tags", "The broadcaster", "category, title, tag_names, ccls"}), "Status"}),
 	({"!channeloffline", ({"The channel has recently gone offline (stopped streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
 	({"!musictrack", ({"A track just started playing (see VLC integration)", "VLC", "desc, blockpath, block, track, playing"}), "Status"}),
+	({"!pollended", ({"A channel poll just ended", "The broadcaster", "title, choices, points_per_vote, choice_N_title, choice_N_votes, choice_N_pointsvotes, winner_title"}), "Status"}),
 
 	({"!giveaway_started", ({"A giveaway just opened, and people can buy tickets", "The broadcaster", "title, duration, duration_hms, duration_english"}), "Giveaways"}),
 	({"!giveaway_ticket", ({"Someone bought ticket(s) in the giveaway", "Ticket buyer", "title, tickets_bought, tickets_total, tickets_max"}), "Giveaways"}),
@@ -71,6 +72,12 @@ constant SPECIAL_PARAMS = ({
 	({"from_name", "Name (possibly username) of the Ko-fi supporter. Not (necessarily) a Twitch username."}),
 	({"shop_item_ids", "Blank-separated list of ten-digit hexadecimal item IDs bought."}),
 	({"tiername", "Ko-fi subscription tier (if applicable)"}),
+	({"choices", "Number of choices in the poll"}),
+	({"points_per_vote", "Channel points to buy a vote (0 if not available)"}),
+	({"choice_N_title", "For each N from 1 to {choices}, the title of the Nth choice"}),
+	({"choice_N_votes", "The number of votes that the Nth choice received"}),
+	({"choice_N_pointsvotes", "The number of votes bought for Nth choice with points"}),
+	({"winner_title", "The title of the choice that had the most votes"}),
 });
 constant docstring = sprintf(#"
 Add an echo command for this channel
