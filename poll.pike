@@ -649,7 +649,6 @@ EventSub raidout = EventSub("raidout", "channel.raid", "1") {[string chan, mappi
 EventSub pollended = EventSub("pollended", "channel.poll.end", "1") {[string chan, mapping info] = __ARGS__;
 	object channel = G->G->irc->channels["#" + chan];
 	mapping c = channel_info[chan];
-	werror("POLL ENDED! %O %O\n", chan, info);
 	if (!channel) return;
 	mapping params = ([
 		"{title}": info->title,
@@ -665,7 +664,6 @@ EventSub pollended = EventSub("pollended", "channel.poll.end", "1") {[string cha
 		if (ch->votes > info->choices[top]->votes) top = i;
 	}
 	params["{winner_title}"] = info->choices[top]->title;
-	werror("Poll ended, params %O\n", params);
 	channel->trigger_special("!pollended", ([
 		"user": chan,
 		"displayname": c->display_name,
