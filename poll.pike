@@ -646,7 +646,10 @@ EventSub raidout = EventSub("raidout", "channel.raid", "1") {[string chan, mappi
 };
 
 //TODO: Prediction ended, to match it
+@retain: multiset polls_ended = (<>); //Twitch sends me double notifications. Suppress the duplicates.
 EventSub pollended = EventSub("pollended", "channel.poll.end", "1") {[string chan, mapping info] = __ARGS__;
+	if (polls_ended[info->id]) return;
+	polls_ended[info->id] = 1;
 	object channel = G->G->irc->channels["#" + chan];
 	mapping c = channel_info[chan];
 	if (!channel) return;
