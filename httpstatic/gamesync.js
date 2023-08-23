@@ -214,6 +214,40 @@ const games = {
 			]),
 		];},
 	},
+	bulucsmansion: {
+		label: "Payday 2: Buluc's Mansion",
+		render(data) {return [
+			H2("Door code"),
+			DIV("To open the secret door, you will need to press buttons marked with images. They are identified by original and English names."),
+			DIV("The clues give their original names, and the visual representations are shown on the corkboard. The English names are shown in hover text on the door itself."),
+			DIV("Note that this has been described as an Aztec calendar, but the words don't appear to be Nahuatl. So I dunno."),
+			STYLE(".code {display: flex; gap: 4.5em; justify-content: center; flex-wrap: wrap; margin-top: 1em;} .code > * {font-size: 125%}"),
+			DIV({class: "code"}, ["one", "two", "three", "four"].map(idx =>
+				SELECT({"data-setting": "code-" + idx, value: data["code-" + idx]}, [
+					OPTION("Peek' [Dog]"),
+					OPTION("T'u'ul [Rabbit]"),
+					OPTION("Ch'i'ibalil [Frog]"),
+					OPTION("Kitam [Boar]"),
+					OPTION("Buho [Owl]"),
+					OPTION("Book' [Bat]"),
+					OPTION("Baalam [Jaguar]"),
+					OPTION("Batsò [Spider]"),
+					OPTION("Cangrejo [Crab]"),
+					OPTION("Ba'ats [Monkey]"),
+					OPTION("Kaan [Snake]"),
+					OPTION("Péepen [Butterfly]"),
+					OPTION("Kaaye' [Fish]"),
+					OPTION("Cocodrilo [Crocodile]"),
+					OPTION("Síinik [Ant]"),
+					OPTION("Áak [Turtle]"),
+					OPTION("Úuricho' [Snail]"),
+					OPTION("Áayin [Lizard]"),
+					OPTION("Ku'uk [Squirrel]"),
+					OPTION("Milpiés [Millipede]"),
+				]),
+			)),
+		];},
+	},
 };
 
 export function render(data) {
