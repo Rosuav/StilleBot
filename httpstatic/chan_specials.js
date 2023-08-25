@@ -1,5 +1,5 @@
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, CODE, DETAILS, DIV, INPUT, LABEL, LI, STYLE, SUMMARY, TD, TR, UL} = choc; //autoimport
+import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
+const {A, B, BUTTON, CODE, DETAILS, DIV, INPUT, LABEL, LI, STYLE, SUMMARY, TD, TR, UL} = choc; //autoimport
 import {render_command, cmd_configure, sockmsg_validated} from "$$static||command_editor.js$$";
 export {sockmsg_validated};
 
@@ -52,7 +52,14 @@ export function render(data) {
 						"Parameters: ",
 						UL(describe_all_params(command_lookup[cmd.id] = cmd)),
 					]),
-					//scope_requirement[cmd.id] && "Requires broadcaster authentication.",
+					cmd.scopes_required === "bcaster" ? [
+						B("NOTE:"),
+						" Requires broadcaster authentication. This trigger will not currently be functional.",
+					] : cmd.scopes_required && [
+						B("NOTE:"),
+						"Requires authentication. ",
+						BUTTON({class: "twitchlogin", "data-scopes": cmd.scopes_required}, "Authenticate"),
+					],
 					//Link to https://sikorsky.rosuav.com/reauth?bcaster=channel:read:polls or whatever scope is needed
 				])),
 			);

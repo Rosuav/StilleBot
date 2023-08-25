@@ -108,8 +108,25 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		]) | req->misc->chaninfo);
 	}
 	object addcmd = function_object(G->G->commands->addcmd);
-	foreach (addcmd->SPECIALS, [string spec, [string desc, string originator, string params], string tab])
-		commands += ({(["id": spec + req->misc->channel->name, "desc": desc, "originator": originator, "params": params, "tab": tab])});
+	multiset scopes = (multiset)((persist_status->path("bcaster_token_scopes")[req->misc->channel->name[1..]]||"") / " ");
+	int is_bcaster = req->misc->channel->userid == (int)req->misc->session->user->id;
+	foreach (addcmd->SPECIALS, [string spec, [string desc, string originator, string params], string tab]) {
+		array scopesets = G->G->SPECIALS_SCOPES[spec - "!"];
+		string scopes_required = 0;
+		if (scopesets) {
+			scopes_required = is_bcaster ? scopesets[0] * " " : "bcaster";
+			foreach (scopesets, array scopeset)
+				if (!has_value(scopes[scopeset[*]], 0)) scopes_required = 0;
+		}
+		commands += ({([
+			"id": spec + req->misc->channel->name,
+			"desc": desc, "originator": originator,
+			"params": params, "tab": tab,
+			//Null if none needed or we already have them. "bcaster" if scopes needed and we're not the broadcaster.
+			//Otherwise, is the scopes required to activate this special.
+			"scopes_required": scopes_required,
+		])});
+	}
 	return render_template("chan_specials.md", ([
 		"vars": ([
 			"commands": commands,
