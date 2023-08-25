@@ -19,6 +19,7 @@ constant SPECIALS = ({
 	({"!channelsetup", ({"The channel is online and has recently changed its category/title/tags", "The broadcaster", "category, title, tag_names, ccls"}), "Status"}),
 	({"!channeloffline", ({"The channel has recently gone offline (stopped streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
 	({"!musictrack", ({"A track just started playing (see VLC integration)", "VLC", "desc, blockpath, block, track, playing"}), "Status"}),
+	({"!pollbegin", ({"A channel poll just began", "The broadcaster", "title, choices, points_per_vote, choice_N_title"}), "Status"}),
 	({"!pollended", ({"A channel poll just ended", "The broadcaster", "title, choices, points_per_vote, choice_N_title, choice_N_votes, choice_N_pointsvotes, winner_title"}), "Status"}),
 
 	({"!giveaway_started", ({"A giveaway just opened, and people can buy tickets", "The broadcaster", "title, duration, duration_hms, duration_english"}), "Giveaways"}),

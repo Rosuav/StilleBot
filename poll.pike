@@ -644,35 +644,6 @@ EventSub raidout = EventSub("raidout", "channel.raid", "1") {[string chan, mappi
 		(int)info->to_broadcaster_user_id, info->to_broadcaster_user_name, 0, (int)info->viewers);
 };
 
-//TODO: Prediction ended, to match it
-@retain: multiset polls_ended = (<>); //Twitch sends me double notifications. Suppress the duplicates.
-EventSub pollended = EventSub("pollended", "channel.poll.end", "1") {[string chan, mapping info] = __ARGS__;
-	if (polls_ended[info->id]) return;
-	polls_ended[info->id] = 1;
-	object channel = G->G->irc->channels["#" + chan];
-	mapping c = channel_info[chan];
-	if (!channel) return;
-	mapping params = ([
-		"{title}": info->title,
-		"{choices}": (string)sizeof(info->choices),
-		"{points_per_vote}": (string)(info->channel_points_voting->enabled && info->channel_points_voting->amount_per_vote),
-	]);
-	int top = 0;
-	foreach (info->choices; int i; mapping ch) {
-		string pfx = "{choice_" + (i+1) + "_";
-		params[pfx + "title}"] = ch->title;
-		params[pfx + "votes}"] = (string)ch->votes;
-		params[pfx + "pointsvotes}"] = (string)ch->channel_points_votes;
-		if (ch->votes > info->choices[top]->votes) top = i;
-	}
-	params["{winner_title}"] = info->choices[top]->title;
-	channel->trigger_special("!pollended", ([
-		"user": chan,
-		"displayname": c->display_name,
-		"uid": (string)c->_id,
-	]), params);
-};
-
 void check_hooks(array eventhooks)
 {
 	foreach (G->G->eventhook_types;; object handler) handler->have_subs = (<>);
@@ -709,8 +680,6 @@ void check_hooks(array eventhooks)
 		new_follower(chan, (["broadcaster_user_id": (string)userid, "moderator_user_id": "49497888"]));
 		//raidin(chan, (["to_broadcaster_user_id": (string)userid]));
 		raidout(chan, (["from_broadcaster_user_id": (string)userid]));
-		if (scopes["channel:read:polls"] || scopes["channel:manage:polls"])
-			pollended(chan, (["broadcaster_user_id": (string)userid]));
 	}
 }
 

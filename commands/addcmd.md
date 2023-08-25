@@ -36,6 +36,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!channelsetup | The channel is online and has recently changed its category/title/tags | The broadcaster | category, title, tag_names, ccls
 !!channeloffline | The channel has recently gone offline (stopped streaming) | The broadcaster | uptime, uptime_hms, uptime_english
 !!musictrack | A track just started playing (see VLC integration) | VLC | desc, blockpath, block, track, playing
+!!pollbegin | A channel poll just began | The broadcaster | title, choices, points_per_vote, choice_N_title
 !!pollended | A channel poll just ended | The broadcaster | title, choices, points_per_vote, choice_N_title, choice_N_votes, choice_N_pointsvotes, winner_title
 !!giveaway_started | A giveaway just opened, and people can buy tickets | The broadcaster | title, duration, duration_hms, duration_english
 !!giveaway_ticket | Someone bought ticket(s) in the giveaway | Ticket buyer | title, tickets_bought, tickets_total, tickets_max
