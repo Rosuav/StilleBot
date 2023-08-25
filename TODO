@@ -269,4 +269,3 @@
   - Need a way to group features for sorting, and maybe provide some visual separation.
     Maybe sort by description??
 * Should the !help command be deprecated? If not, should it become a builtin in some way?
-* On /twitchlogin, update bcaster auth as per ensure_()

@@ -30,6 +30,7 @@ mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mappin
 	req->misc->session->scopes = (multiset)(req->variables->scope / " ");
 	req->misc->session->token = token;
 	req->misc->session->authcookie = cookie;
+	ensure_bcaster_token(req, "", user->login); //If you're a broadcaster, update broadcaster auth.
 	return (["data": "<script>window.close(); window.opener.location.reload();</script>", "type": "text/html"]);
 }
 
