@@ -62,14 +62,15 @@ EventSub pollended = EventSub("pollended", "channel.poll.end", "1") {[string cha
 };
 
 //Ensure that we have all appropriate hooks for this channel (provide channel->config or equivalent)
-void check_hooks(mapping cfg) {
+void specials_check_hooks(mapping cfg) {
 	string chan = cfg->login;
 	multiset scopes = (multiset)((persist_status->path("bcaster_token_scopes")[chan]||"") / " ");
 	foreach (G->G->SPECIALS_SCOPES; string special; array scopesets) {
 		foreach (scopesets, array scopeset) {
-			if (!has_value(scopes[scopeset[*]], 0)) {
-				//TODO: What if this isn't the correct condition parameters?
-				this[special](chan, (["broadcaster_user_id": (string)cfg->userid]));
+			if (!has_value(scopes[scopeset[*]], 0)) { //If there isn't any case of a scope that we don't have... then we have them all!
+				if (cfg->commands[?"!" + special]) //If there's a special of this name, we need the hook. Otherwise no.
+					//TODO: What if this isn't the correct condition parameters?
+					this[special](chan, (["broadcaster_user_id": (string)cfg->userid]));
 				break;
 			}
 		}
@@ -84,5 +85,6 @@ protected void create(string name) {
 			if (stringp(anno)) G->G->SPECIALS_SCOPES[key] = (anno / "|")[*] / " ";
 		}
 	}
-	check_hooks(list_channel_configs()[*]);
+	specials_check_hooks(list_channel_configs()[*]);
+	G->G->specials_check_hooks = specials_check_hooks;
 }

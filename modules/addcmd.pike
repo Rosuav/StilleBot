@@ -211,6 +211,15 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 			handler->send_updates_all(channel->name); break;
 		}
 	}
+	if (function handler = response && G->G->specials_check_hooks) {
+		//If this is a special that requires a hook, ensure that we have the hook.
+		foreach (updates; cmd;) {
+			if (sscanf(cmd, "!%s#", string spec) && G->G->SPECIALS_SCOPES[spec]) {
+				handler(channel->config);
+				break; //No need to update more than once - it'll check all the hooks
+			}
+		}
+	}
 }
 
 string process(object channel, object person, string param)
