@@ -14,11 +14,9 @@ inherit annotated;
 //the parameters are all listed correctly. The scopes are automatically provided by this
 //file but the special and its description come from addcmd.
 
-@retain: multiset polls_ended = (<>); //Twitch sends me double notifications. Suppress the duplicates.
-@"channel:read:polls|channel:manage:polls":
-EventSub pollbegin = EventSub("pollbegin", "channel.poll.begin", "1") {[string chan, mapping info] = __ARGS__;
-	object channel = G->G->irc->channels["#" + chan];
-	if (!channel) return;
+@({"channel:read:polls|channel:manage:polls", "channel.poll.begin", "1"}):
+mapping pollbegin(object channel, mapping info) {
+	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
 	mapping params = ([
 		"{title}": info->title,
 		"{choices}": (string)sizeof(info->choices),
@@ -26,19 +24,15 @@ EventSub pollbegin = EventSub("pollbegin", "channel.poll.begin", "1") {[string c
 	]);
 	foreach (info->choices; int i; mapping ch)
 		params["{choice_" + (i+1) + "_title}"] = ch->title;
-	channel->trigger_special("!pollbegin", ([
-		"user": chan,
-		"displayname": channel->config->display_name,
-		"uid": channel->userid,
-	]), params);
-};
+	return params;
+}
 
-@"channel:read:polls|channel:manage:polls":
-EventSub pollended = EventSub("pollended", "channel.poll.end", "1") {[string chan, mapping info] = __ARGS__;
-	if (polls_ended[info->id]) return;
+@retain: multiset polls_ended = (<>); //Twitch sends me double notifications. Suppress the duplicates.
+@({"channel:read:polls|channel:manage:polls", "channel.poll.end", "1"}):
+mapping pollended(object channel, mapping info) {
+	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
+	if (polls_ended[info->id]) return 0;
 	polls_ended[info->id] = 1;
-	object channel = G->G->irc->channels["#" + chan];
-	if (!channel) return;
 	mapping params = ([
 		"{title}": info->title,
 		"{choices}": (string)sizeof(info->choices),
@@ -53,17 +47,12 @@ EventSub pollended = EventSub("pollended", "channel.poll.end", "1") {[string cha
 		if (ch->votes > info->choices[top]->votes) top = i;
 	}
 	params["{winner_title}"] = info->choices[top]->title;
-	channel->trigger_special("!pollended", ([
-		"user": chan,
-		"displayname": channel->config->display_name,
-		"uid": channel->userid,
-	]), params);
-};
+	return params;
+}
 
-@"channel:read:predictions|channel:manage:predictions":
-EventSub predictionended = EventSub("predictionended", "channel.prediction.end", "1") {[string chan, mapping info] = __ARGS__;
-	object channel = G->G->irc->channels["#" + chan];
-	if (!channel) return;
+@({"channel:read:predictions|channel:manage:predictions", "channel.prediction.end", "1"}):
+mapping predictionended(object channel, mapping info) {
+	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
 	mapping params = ([
 		"{title}": info->title,
 		"{choices}": (string)sizeof(info->outcomes),
@@ -89,12 +78,10 @@ EventSub predictionended = EventSub("predictionended", "channel.prediction.end",
 		if (has_prefix(kwd, winner_pfx)) params["{winner_" + kwd - winner_pfx] = val;
 	if (winner_pfx) foreach (params; string kwd; string val)
 		if (has_prefix(kwd, loser_pfx)) params["{loser_" + kwd - loser_pfx] = val;
-	channel->trigger_special("!predictionended", ([
-		"user": chan,
-		"displayname": channel->config->display_name,
-		"uid": channel->userid,
-	]), params);
-};
+	return params;
+}
+
+mapping eventsubs = ([]);
 
 //Ensure that we have all appropriate hooks for this channel (provide channel->config or equivalent)
 void specials_check_hooks(mapping cfg) {
@@ -104,11 +91,27 @@ void specials_check_hooks(mapping cfg) {
 		foreach (scopesets, array scopeset) {
 			if (!has_value(scopes[scopeset[*]], 0)) { //If there isn't any case of a scope that we don't have... then we have them all!
 				if (cfg->commands[?"!" + special]) //If there's a special of this name, we need the hook. Otherwise no.
-					//TODO: What if this isn't the correct condition parameters?
-					this[special](chan, (["broadcaster_user_id": (string)cfg->userid]));
+					eventsubs[special](chan, this[special](0, (["__condition": cfg])));
 				break;
 			}
 		}
+	}
+}
+
+class EventSubSpecial(function get_params) {
+	inherit EventSub;
+	protected void create(string hookname, string type, string version) {
+		::create(hookname, type, version, send_special);
+	}
+	void send_special(string chan, mapping info) {
+		object channel = G->G->irc->channels["#" + chan];
+		if (!channel) return;
+		mapping params = get_params(channel, info);
+		if (params) channel->trigger_special("!" + hookname, ([
+			"user": chan,
+			"displayname": channel->config->display_name,
+			"uid": channel->userid,
+		]), params);
 	}
 }
 
@@ -117,7 +120,10 @@ protected void create(string name) {
 	G->G->SPECIALS_SCOPES = ([]);
 	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
 		if (ann) foreach (indices(ann), mixed anno) {
-			if (stringp(anno)) G->G->SPECIALS_SCOPES[key] = (anno / "|")[*] / " ";
+			if (arrayp(anno)) {
+				G->G->SPECIALS_SCOPES[key] = (anno[0] / "|")[*] / " ";
+				eventsubs[key] = EventSubSpecial(this[key], key, @anno[1..]);
+			}
 		}
 	}
 	specials_check_hooks(list_channel_configs()[*]);
