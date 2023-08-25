@@ -622,8 +622,7 @@ constant follower = ({"object channel", "mapping follower"});
 //for the "moderator:read:followers" scope. It may be simplest to rely on two checks: either
 //the bot account has this permission, or the broadcaster has granted auth; handling the case
 //of some other mod granting permission may be tricky.
-//After Aug 3rd, bump version to "2".
-EventSub new_follower = EventSub("follower", "channel.follow", "1") { [string chan, mapping follower] = __ARGS__;
+EventSub new_follower = EventSub("follower", "channel.follow", "2") { [string chan, mapping follower] = __ARGS__;
 	notice_user_name(follower->user_login, follower->user_id);
 	if (object channel = G->G->irc->channels["#" + chan])
 		check_following(follower->user_login, chan)->then() {
@@ -705,7 +704,9 @@ void check_hooks(array eventhooks)
 		//After Aug 3rd, add a second condition "moderator_user_id" which is either the same as the
 		//broadcaster (if we have broadcaster auth scope "moderator:read:followers") or the bot's
 		//user id, which will work only if the bot mods for that channel.
-		new_follower(chan, (["broadcaster_user_id": (string)userid]));
+		//CJA 20230825: Hacked in with my user ID, this won't work for anyone else and won't work
+		//if I'm not a mod in that channel.
+		new_follower(chan, (["broadcaster_user_id": (string)userid, "moderator_user_id": "49497888"]));
 		//raidin(chan, (["to_broadcaster_user_id": (string)userid]));
 		raidout(chan, (["from_broadcaster_user_id": (string)userid]));
 		if (scopes["channel:read:polls"] || scopes["channel:manage:polls"])
