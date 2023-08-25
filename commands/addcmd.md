@@ -38,6 +38,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!musictrack | A track just started playing (see VLC integration) | VLC | desc, blockpath, block, track, playing
 !!pollbegin | A channel poll just began | The broadcaster | title, choices, points_per_vote, choice_N_title
 !!pollended | A channel poll just ended | The broadcaster | title, choices, points_per_vote, choice_N_title, choice_N_votes, choice_N_pointsvotes, winner_title
+!!predictionended | A channel prediction just ended | The broadcaster | title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used, choice_N_top_M_points_won, winner_*, loser_*
 !!giveaway_started | A giveaway just opened, and people can buy tickets | The broadcaster | title, duration, duration_hms, duration_english
 !!giveaway_ticket | Someone bought ticket(s) in the giveaway | Ticket buyer | title, tickets_bought, tickets_total, tickets_max
 !!giveaway_toomany | Ticket purchase attempt failed | Ticket buyer | title, tickets_bought, tickets_total, tickets_max
@@ -98,7 +99,14 @@ Parameter    | Meaning
 {choice_N_title} | For each N from 1 to {choices}, the title of the Nth choice
 {choice_N_votes} | The number of votes that the Nth choice received
 {choice_N_pointsvotes} | The number of votes bought for Nth choice with points
+{choice_N_users} | The number of users who selected this choice
+{choice_N_points} | The total number of points spent on this choice
 {winner_title} | The title of the choice that had the most votes
+{choice_N_top_M_user} | Name of the Mth top user for the Nth choice (1 = biggest spender)
+{choice_N_top_M_points_used} | Number of points the Mth user for the Nth choice spent
+{choice_N_top_M_points_won} | Number of points the Mth user for the Nth choice won (0 if lost)
+{winner_*} | Same as choice_N_* for N == {winner}
+{loser_*} | Same as choice_N_* for N != {winner} if there were precisely two options
 
 
 Editing these special commands can also be done via the bot's web browser

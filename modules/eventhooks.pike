@@ -14,7 +14,6 @@ inherit annotated;
 //the parameters are all listed correctly. The scopes are automatically provided by this
 //file but the special and its description come from addcmd.
 
-//TODO: Prediction ended, to match it
 @retain: multiset polls_ended = (<>); //Twitch sends me double notifications. Suppress the duplicates.
 @"channel:read:polls|channel:manage:polls":
 EventSub pollbegin = EventSub("pollbegin", "channel.poll.begin", "1") {[string chan, mapping info] = __ARGS__;
@@ -55,6 +54,42 @@ EventSub pollended = EventSub("pollended", "channel.poll.end", "1") {[string cha
 	}
 	params["{winner_title}"] = info->choices[top]->title;
 	channel->trigger_special("!pollended", ([
+		"user": chan,
+		"displayname": channel->config->display_name,
+		"uid": channel->userid,
+	]), params);
+};
+
+@"channel:read:predictions|channel:manage:predictions":
+EventSub predictionended = EventSub("predictionended", "channel.prediction.end", "1") {[string chan, mapping info] = __ARGS__;
+	object channel = G->G->irc->channels["#" + chan];
+	if (!channel) return;
+	mapping params = ([
+		"{title}": info->title,
+		"{choices}": (string)sizeof(info->outcomes),
+		"{status}": info->status, //"resolved" or "canceled"
+	]);
+	string winner_pfx, loser_pfx;
+	foreach (info->outcomes; int i; mapping ch) {
+		string pfx = "{choice_" + (i+1) + "_";
+		if (ch->id == info->winning_outcome_id) winner_pfx = pfx;
+		else if (sizeof(info->outcomes) == 2) loser_pfx = pfx;
+		params[pfx + "title}"] = ch->title;
+		params[pfx + "users}"] = (string)ch->users;
+		params[pfx + "points}"] = (string)ch->channel_points;
+		foreach (ch->top_predictors; int j; mapping person) {
+			string pfx = pfx + "top_" + (j+1) + "_";
+			params[pfx + "user}"] = person->user_name;
+			params[pfx + "userid}"] = person->user_id;
+			params[pfx + "points_used}"] = (string)person->channel_points_used;
+			params[pfx + "points_won}"] = (string)person->channel_points_won; //0 if you were on the losing side
+		}
+	}
+	if (winner_pfx) foreach (params; string kwd; string val)
+		if (has_prefix(kwd, winner_pfx)) params["{winner_" + kwd - winner_pfx] = val;
+	if (winner_pfx) foreach (params; string kwd; string val)
+		if (has_prefix(kwd, loser_pfx)) params["{loser_" + kwd - loser_pfx] = val;
+	channel->trigger_special("!predictionended", ([
 		"user": chan,
 		"displayname": channel->config->display_name,
 		"uid": channel->userid,
