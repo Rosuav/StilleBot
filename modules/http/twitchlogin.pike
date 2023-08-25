@@ -64,10 +64,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		}
 		resend_redirect[req->variables->code] = dest;
 		call_out(m_delete, 30, resend_redirect, req->variables->code);
-		req->misc->session->user = user;
-		req->misc->session->scopes = (multiset)(req->variables->scope / " ");
-		req->misc->session->token = auth->access_token;
-		req->misc->session->authcookie = cookie;
+		login_popup_done(req, user, (multiset)(req->variables->scope / " "), auth->access_token, cookie);
 		return redirect(dest);
 	}
 	//Merge scopes, similarly to ensure_login()
