@@ -33,15 +33,10 @@ mapping pollended(object channel, mapping info) {
 	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
 	if (polls_ended[info->id]) return 0;
 	polls_ended[info->id] = 1;
-	mapping params = ([
-		"{title}": info->title,
-		"{choices}": (string)sizeof(info->choices),
-		"{points_per_vote}": (string)(info->channel_points_voting->enabled && info->channel_points_voting->amount_per_vote),
-	]);
+	mapping params = pollbegin(channel, info);
 	int top = 0;
 	foreach (info->choices; int i; mapping ch) {
 		string pfx = "{choice_" + (i+1) + "_";
-		params[pfx + "title}"] = ch->title;
 		params[pfx + "votes}"] = (string)ch->votes;
 		params[pfx + "pointsvotes}"] = (string)ch->channel_points_votes;
 		if (ch->votes > info->choices[top]->votes) top = i;
