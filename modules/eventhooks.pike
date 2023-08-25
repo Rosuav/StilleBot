@@ -45,19 +45,16 @@ mapping pollended(object channel, mapping info) {
 	return params;
 }
 
-@({"channel:read:predictions|channel:manage:predictions", "channel.prediction.end", "1"}):
-mapping predictionended(object channel, mapping info) {
+@({"channel:read:predictions|channel:manage:predictions", "channel.prediction.lock", "1"}):
+mapping predictionlocked(object channel, mapping info) {
 	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
 	mapping params = ([
 		"{title}": info->title,
 		"{choices}": (string)sizeof(info->outcomes),
 		"{status}": info->status, //"resolved" or "canceled"
 	]);
-	string winner_pfx, loser_pfx;
 	foreach (info->outcomes; int i; mapping ch) {
 		string pfx = "{choice_" + (i+1) + "_";
-		if (ch->id == info->winning_outcome_id) winner_pfx = pfx;
-		else if (sizeof(info->outcomes) == 2) loser_pfx = pfx;
 		params[pfx + "title}"] = ch->title;
 		params[pfx + "users}"] = (string)ch->users;
 		params[pfx + "points}"] = (string)ch->channel_points;
@@ -69,9 +66,23 @@ mapping predictionended(object channel, mapping info) {
 			params[pfx + "points_won}"] = (string)person->channel_points_won; //0 if you were on the losing side
 		}
 	}
+	return params;
+}
+
+@({"channel:read:predictions|channel:manage:predictions", "channel.prediction.end", "1"}):
+mapping predictionended(object channel, mapping info) {
+	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
+	mapping params = predictionlocked(channel, info);
+	params["{status}"] = info->status; //"resolved" or "canceled"
+	string winner_pfx, loser_pfx;
+	foreach (info->outcomes; int i; mapping ch) {
+		string pfx = "{choice_" + (i+1) + "_";
+		if (ch->id == info->winning_outcome_id) winner_pfx = pfx;
+		else if (sizeof(info->outcomes) == 2) loser_pfx = pfx;
+	}
 	if (winner_pfx) foreach (params; string kwd; string val)
 		if (has_prefix(kwd, winner_pfx)) params["{winner_" + kwd - winner_pfx] = val;
-	if (winner_pfx) foreach (params; string kwd; string val)
+	if (loser_pfx) foreach (params; string kwd; string val)
 		if (has_prefix(kwd, loser_pfx)) params["{loser_" + kwd - loser_pfx] = val;
 	return params;
 }

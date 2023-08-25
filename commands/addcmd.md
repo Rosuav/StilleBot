@@ -38,6 +38,7 @@ Special name | When it happens             | Initiator (`$$`) | Other info
 !!musictrack | A track just started playing (see VLC integration) | VLC | desc, blockpath, block, track, playing
 !!pollbegin | A channel poll just began | The broadcaster | title, choices, points_per_vote, choice_N_title
 !!pollended | A channel poll just ended | The broadcaster | title, choices, points_per_vote, choice_N_title, choice_N_votes, choice_N_pointsvotes, winner_title
+!!predictionlocked | A channel prediction no longer accepts entries | The broadcaster | title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used
 !!predictionended | A channel prediction just ended | The broadcaster | title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used, choice_N_top_M_points_won, winner_*, loser_*
 !!giveaway_started | A giveaway just opened, and people can buy tickets | The broadcaster | title, duration, duration_hms, duration_english
 !!giveaway_ticket | Someone bought ticket(s) in the giveaway | Ticket buyer | title, tickets_bought, tickets_total, tickets_max
