@@ -269,3 +269,18 @@
   - Need a way to group features for sorting, and maybe provide some visual separation.
     Maybe sort by description??
 * Should the !help command be deprecated? If not, should it become a builtin in some way?
+* Path to Affiliate
+  - https://api.twitch.tv/helix/channels/followers?broadcaster_id=
+  - https://api.twitch.tv/helix/users?id=
+  - https://api.twitch.tv/helix/videos?user_id=
+  - Show when they achieve affiliation, with big sparkle party and confetti
+  - Show a goal bar display of their follower count, goal of 50
+  - Maybe show number of recent streams?? Can't see viewership though.
+  - Mention to both Mirror and QueenVKrafty
+  - Anyone can create a pathing collection
+  - If desired, a person can make their collection shareable (cf emotes)
+  - When you open the page (and no other time), check all their stats.
+  - If now affiliate and previously wasn't, record today's date
+  - Anyone who became affiliate more than a week ago is moved to Alumni and stats are
+    no longer checked
+  - Current Pathers can be removed, but otherwise remain in the order they were added.
