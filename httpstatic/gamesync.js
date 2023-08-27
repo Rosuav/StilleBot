@@ -248,6 +248,9 @@ const games = {
 			)),
 		];},
 	},
+	//For Ukrainian Prisoner, it may be of value to have these recorded:
+	//0123456789 --> 零一二三四五六七八九
+	//Chinese numerals. Though the game seems pretty merciful in their use, so it may not be necessary.
 };
 
 export function render(data) {
