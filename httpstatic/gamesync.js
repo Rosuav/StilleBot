@@ -251,6 +251,8 @@ const games = {
 	//For Ukrainian Prisoner, it may be of value to have these recorded:
 	//0123456789 --> 零一二三四五六七八九
 	//Chinese numerals. Though the game seems pretty merciful in their use, so it may not be necessary.
+	//A lot of things are easier with the right assets, eg broken wall and ladder bridge, but w/o them
+	//the numerals might come in handy.
 };
 
 export function render(data) {
