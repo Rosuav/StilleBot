@@ -269,6 +269,11 @@
   - Need a way to group features for sorting, and maybe provide some visual separation.
     Maybe sort by description??
 * Should the !help command be deprecated? If not, should it become a builtin in some way?
+* Raid finder "share status"
+  - Option: "Share status with potential raiders"
+  - If enabled, when you open the raid finder, it signals all raid finders who have you
+    as a tile. Red asterisk to signal "Has raid finder open, is probably ending soon!"
+  - Similarly, when you close the raid finder (or disable the option), signal-revert all.
 * Path to Affiliate
   - https://api.twitch.tv/helix/channels/followers?broadcaster_id=
   - https://api.twitch.tv/helix/users?id=
