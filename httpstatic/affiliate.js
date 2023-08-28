@@ -1,5 +1,6 @@
 import {choc, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {B, BUTTON, FORM, IMG, INPUT, LABEL, LI} = choc; //autoimport
+import {simpleconfirm} from "$$static||utils.js$$";
 
 function render_tiles(streamers) {
 	return streamers.map(strm => LI([
@@ -35,3 +36,9 @@ on("submit", "#newstreamer", e => {
 		.then(r => r.json())
 		.then(cfg => render_or_error(cfg));
 });
+
+on("click", ".remove", simpleconfirm("Are you sure you want to untrack this streamer?", e => {
+	fetch("/affiliate?remove=" + e.match.dataset.id)
+		.then(r => r.json())
+		.then(cfg => render_or_error(cfg));
+}));

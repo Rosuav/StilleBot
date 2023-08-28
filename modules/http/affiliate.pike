@@ -24,6 +24,7 @@ constant markdown = #"# Path to Affiliate streamers
 .tiles li {
 	display: flex;
 	flex-direction: column;
+	gap: 0.25em;
 }
 </style>
 ";
