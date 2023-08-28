@@ -290,3 +290,12 @@
     no longer checked
   - Current Pathers can be removed, but otherwise remain in the order they were added.
   - Queen calls it "Tutorial". Could use that as a viable name depending on what works.
+  - If loggedin user is not affiliate, include self
+  - Have "Recommendations" dialog, which will have some fixed entries and some based
+    on VODs and such - it's okay if they're slower to load, you only see it on click
+    - Raid at the end of your streams
+    - Have a schedule (if you don't already)
+    - Stream at least twice per week
+    - Stream at least two hours per week
+    - Avoid chat restrictions
+    - Engage with your viewers, even if it seems like there's nobody watching/chatting
