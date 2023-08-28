@@ -68,6 +68,14 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	else if (mapping resp = ensure_login(req)) return resp;
 	mapping config = persist_status->path("affiliate", (string)guide); //The path to the Path to Affiliate data :)
 	if (!req->variables->guide) {
+		if (!config->streamers) {
+			config->streamers = ([]);
+			//If you are not yourself affiliated/partnered, include your own box
+			//initially. You can remove yourself though (and you won't autorespawn).
+			mapping info = yield(get_user_info(guide));
+			if (info->broadcaster_type == "") config->streamers[info->id] = (["added": time()]);
+			persist_status->save(); //Always save the fact that config->streamers is non-null; no rechecks.
+		}
 		//Editing is available only when logged in and not using the guide= parameter
 		//Note that editing is done with JSON bodies and assumes front end control.
 		if (string user = req->variables->add) {
@@ -76,14 +84,13 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				return (["error": 404]) | jsonify((["error": describe_error(ex)]));
 			if (info->broadcaster_type != "")
 				return (["error": 400]) | jsonify((["error": "Already " + info->broadcaster_type + "!"]));
-			if (!config->streamers) config->streamers = ([]);
 			config->streamers[info->id] = (["added": time()]);
 			persist_status->save();
 			return jsonify(yield(populate_config(config)));
 		}
 		if (string id = req->variables->remove) {
 			//Should this also remove from alumni??
-			if (!m_delete(config->streamers || ([]), id)) return (["error": 404]);
+			if (!m_delete(config->streamers, id)) return (["error": 404]);
 			persist_status->save();
 			return jsonify(yield(populate_config(config)));
 		}
