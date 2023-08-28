@@ -25,7 +25,7 @@ function render_tiles(streamers) {
 function render(data) {
 	set_content("#streamers", [
 		render_tiles(data.streamers),
-		LI(FORM({id: "newstreamer"}, [
+		editable && LI(FORM({id: "newstreamer"}, [
 			LABEL(["Add a streamer: ", INPUT({autocomplete: "off", size: 20, name: "add"})]),
 			BUTTON({type: "submit"}, "Add!"),
 		])),
