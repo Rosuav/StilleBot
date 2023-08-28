@@ -1,12 +1,23 @@
 import {choc, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {B, BUTTON, FORM, IMG, INPUT, LABEL, LI} = choc; //autoimport
+const {B, BUTTON, DIV, FORM, IMG, INPUT, LABEL, LI} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
+import {update_display, formatters} from "$$static||monitor.js$$";
+
+const goalbar = {
+	"barcolor": "#ddddff", "fillcolor": "#663399", "needlesize": 0.375,
+	"style": "color: #22aa22;font-weight: bold;font-style: normal;font-size: 24px;font-family: Comfortaa;text-align: center;",
+};
+function GOALBAR(foll, goal) {
+	const mark = foll >= goal ? 100 : foll / goal * 100;
+	const background = `linear-gradient(.25turn, ${goalbar.fillcolor} ${mark-goalbar.needlesize}%, red, ${goalbar.barcolor} ${mark+goalbar.needlesize}%, ${goalbar.barcolor})`;
+	return DIV({style: goalbar.style + "background: " + background}, foll + "/" + goal);
+}
 
 function render_tiles(streamers) {
 	return streamers.map(strm => LI([
 		B(strm.display_name),
 		IMG({src: strm.profile_image_url, title: "Profile picture", alt: "Streamer avatar"}),
-		//TODO: Goal bar showing strm.followers out of 50
+		DIV(["Followers: ", GOALBAR(strm.followers, 50)]),
 		editable && BUTTON({class: "remove", "data-id": strm.id}, "Untrack"),
 	]));
 }
