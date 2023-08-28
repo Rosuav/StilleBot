@@ -18,7 +18,10 @@ function render_tiles(streamers) {
 		A({href: "https://twitch.tv/" + strm.login, target: "_blank"}, B(strm.display_name)),
 		A({href: "https://twitch.tv/" + strm.login, target: "_blank"}, IMG({src: strm.profile_image_url, title: "Profile picture", alt: "Streamer avatar"})),
 		DIV(["Followers: ", GOALBAR(strm.followers, 50)]),
-		editable && BUTTON({class: "remove", "data-id": strm.id}, "Untrack"),
+		DIV({class: "buttonbox"}, [
+			BUTTON({class: "recom", "data-id": strm.id}, "Recommendations"),
+			editable && BUTTON({class: "remove", "data-id": strm.id}, "Untrack"),
+		]),
 	]));
 }
 
@@ -53,3 +56,21 @@ on("click", ".remove", simpleconfirm("Are you sure you want to untrack this stre
 		.then(r => r.json())
 		.then(cfg => render_or_error(cfg));
 }));
+
+function format_message(msg) {
+	if (Array.isArray(msg)) return msg.map(format_message);
+	if (typeof msg === "string") return msg;
+	//Assume msg is an object with formatting attributes.
+	let ret = msg.message || "";
+	if (msg.link) ret = A({href: msg.link}, ret);
+	//Add others as needed, with order determining nesting if they're combined.
+	return ret;
+}
+
+on("click", ".recom", async e => {
+	set_content("#tips", LI("loading..."));
+	DOM("#recomdlg").showModal();
+	const info = await (await fetch("/affiliate?recommend=" + e.match.dataset.id)).json();
+	console.log(format_message(info.recommendations));
+	set_content("#tips", info.recommendations.map(tip => LI(format_message(tip))));
+});
