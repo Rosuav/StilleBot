@@ -1048,7 +1048,7 @@ on("click", ".gif-variants", e => {
 			const attrs = revert_data[id] || { };
 			console.log("var ", id, attrs);
 			return TR({"data-id": id.split("-")[1]}, [
-				TD(INPUT({class: "input-id", value: attrs["condval-id"] || ""})),
+				TD(INPUT({name: "kwd", value: attrs["condval-kwd"] || ""})),
 				TD([
 					IMG({className: "preview", "data-library": "image"}), //Will be replaced with a VIDEO element as needed
 					" ",
@@ -1067,8 +1067,8 @@ on("click", ".gif-variants", e => {
 			]);
 		}),
 		TR([
-			TD(INPUT({class: "new-id"})),
-			TD({colspan: 3}, "Enter an ID/keyword to add one!"),
+			TD(INPUT({class: "new-kwd"})),
+			TD({colspan: 3}, "Enter a keyword to add one!"),
 		]),
 	]);
 	DOM("#gif-variants").showModal();

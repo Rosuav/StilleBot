@@ -441,11 +441,11 @@ constant ALERTTYPES = ({([
 	"heading": "Triggerable GIFs or sounds for your community",
 	"description": "When someone redeems the reward or otherwise triggers one",
 	"placeholders": ([
-		"id": "Keyword ID for the particular image",
+		"kwd": "Keyword ID for the particular image",
 	]),
-	"testpholders": (["id": "demo"]),
+	"testpholders": (["kwd": "demo"]),
 	"builtin": "chan_alertbox",
-	"condition_vars": ({"'id"}),
+	"condition_vars": ({"'kwd"}),
 ]), ([
 	//Settings for personal alerts (must be last in the array)
 	"placeholders": ([
