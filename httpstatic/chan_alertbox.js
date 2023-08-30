@@ -1044,7 +1044,6 @@ on("submit", "#renameform", e => {
 //GIF alerts have a cut-down form of variant management. You can still use the full one if you need to tweak.
 on("click", ".gif-variants", e => {
 	console.log("Variants:", revert_data[wanted_tab].variants);
-	//TODO: Load the current ones
 	//TODO: Update on signal
 	//TODO: Save on change
 	set_content("#gif-variants table tbody", [
@@ -1060,7 +1059,7 @@ on("click", ".gif-variants", e => {
 					BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-type": "image,video"}, "Choose"),
 				]),
 				TD(FORM({id: "gif-var-" + id}, [
-					AUDIO({className: "preview", "data-library": "sound", controls: true, src: translate_image_url(attrs.sound || TRANSPARENT_IMAGE)}),
+					AUDIO({className: "preview", "data-library": "sound", controls: true, src: translate_image_url(attrs.sound || TRANSPARENT_IMAGE), ".volume": attrs.volume || 0.5}),
 					BR(),
 					BUTTON({type: "button", className: "showlibrary", "data-target": "sound", "data-type": "audio"}, "Choose"),
 					LABEL([
