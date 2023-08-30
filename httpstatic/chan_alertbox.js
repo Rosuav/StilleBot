@@ -1078,3 +1078,9 @@ on("click", ".gif-variants", e => {
 	]);
 	DOM("#gif-variants").showModal();
 });
+
+on("change", ".new-kwd", e => ws_sync.send({
+	cmd: "alertcfg", type: "gif-", variant: "", parent: "gif",
+	active: true, format: "", "cond-label": e.match.value + " kwd",
+	"condval-kwd": e.match.value, "condoper-kwd": "==",
+}));
