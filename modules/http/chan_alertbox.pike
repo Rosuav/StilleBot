@@ -3,6 +3,8 @@ inherit builtin_command;
 inherit hook;
 inherit irc_callback;
 inherit annotated;
+inherit enableable_module;
+
 /* Bot operators, if you want to use TTS:
 * Create credentials on Google Cloud Platform
   - https://cloud.google.com/docs/authentication/production
@@ -1550,6 +1552,61 @@ void irc_closed(mapping options) {
 	array socks = websocket_groups[cfg->authkey + "#" + options->user] || ({ });
 	werror("ALERTBOX: irc_closed for %O, %d connections, active %O\n", options->user, sizeof(socks), cfg->hostbackend == "pike");
 	if (sizeof(socks) && cfg->hostbackend == "pike") irc_connect(options);
+}
+
+constant ENABLEABLE_FEATURES = ([
+	"!redeem": ([
+		"description": "Trigger GIF/sound alerts via redemption or command",
+		"response": ([
+			"conditional": "string",
+			"expr1": "{param}",
+			"message": "Select one of the (top secret!) keywords to redeem an alert!",
+			"otherwise": ([
+				"builtin": "chan_alertbox",
+				"builtin_param": ({"gif", "{param}"}),
+				"message": ([
+					"conditional": "string",
+					"expr1": "{error}",
+					"message": ([
+						"conditional": "string", "casefold": "",
+						"expr1": "{alert_sent}", "expr2": "yes",
+						"message": ([
+							"builtin": "chan_pointsrewards",
+							"builtin_param": ({"{rewardid}", "fulfil", "{redemptionid}"}),
+							"message": ([
+								"conditional": "string",
+								"expr1": "{error}",
+								"message": "",
+								"otherwise": "Unexpected error: {error}",
+							]),
+						]),
+						"otherwise": ([
+							"builtin": "chan_pointsrewards",
+							"builtin_param": ({"{rewardid}", "cancel", "{redemptionid}"}),
+							"message": "Unrecognized keyword {param}, points refunded",
+						]),
+					]),
+					"otherwise": ([
+						"builtin": "chan_pointsrewards",
+						"builtin_param": ({"{rewardid}", "cancel", "{redemptionid}"}),
+						"message": ([
+							"conditional": "string",
+							"expr1": "{error}",
+							"message": "",
+							"otherwise": "Unexpected error: {error}",
+						]),
+					]),
+				]),
+			]),
+		]),
+	]),
+]);
+
+int can_manage_feature(object channel, string kwd) {return channel->commands[kwd - "!"] ? 2 : 1;}
+
+void enable_feature(object channel, string kwd, int state) {
+	mapping info = ENABLEABLE_FEATURES[kwd]; if (!info) return;
+	make_echocommand((kwd - "!") + channel->name, state && info->response);
 }
 
 continue Concurrent.Future fetch_tts_credentials(int fast) {
