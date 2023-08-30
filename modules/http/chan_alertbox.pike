@@ -336,8 +336,8 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 >
 > Select sounds and/or images to be triggered here. These become alert variants.
 >
-> ID | Image | Sound | Del?
-> ---|-------|-------|-----
+> Keyword | Image | Sound | Del?
+> --------|-------|-------|-----
 > loading... | - | - | -
 >
 > [Close](:.dialog_close)
@@ -441,11 +441,11 @@ constant ALERTTYPES = ({([
 	"heading": "Triggerable GIFs or sounds for your community",
 	"description": "When someone redeems the reward or otherwise triggers one",
 	"placeholders": ([
-		"kwd": "Keyword ID for the particular image",
+		"text": "Keyword (ID) for the particular image",
 	]),
-	"testpholders": (["kwd": "demo"]),
+	"testpholders": (["text": "demo"]),
 	"builtin": "chan_alertbox",
-	"condition_vars": ({"'kwd"}),
+	"condition_vars": ({"'text"}),
 ]), ([
 	//Settings for personal alerts (must be last in the array)
 	"placeholders": ([

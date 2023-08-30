@@ -247,6 +247,39 @@ export function sockmsg_select_variant(msg) {
 	if (basetype === msg.type) {wanted_variant = msg.variant; update_alert_variants();}
 }
 
+function update_gif_variants() {
+	//TODO: Reduce flicker when nothing's changed. Probably will need a "create and then update" pattern like others have.
+	set_content("#gif-variants table tbody", [
+		(revert_data[wanted_tab].variants || []).map(id => {
+			const attrs = revert_data[id] || { };
+			return TR({class: "minialertconfig", "data-type": id}, [
+				TD(INPUT({form: "gif-var-" + id, class: "text", value: attrs["condval-text"] || ""})),
+				TD([
+					attrs.image_is_video ? VIDEO({class: "preview", "data-library": "image", loop: true, ".muted": true, src: translate_image_url(attrs.image || TRANSPARENT_IMAGE), "data-library_uri": attrs.image || ""})
+						: IMG({class: "preview", "data-library": "image", src: translate_image_url(attrs.image || TRANSPARENT_IMAGE), "data-library_uri": attrs.image || ""}),
+					" ",
+					BUTTON({type: "button", form: "gif-var-" + id, class: "showlibrary", "data-target": "image", "data-type": "image,video"}, "Choose"),
+				]),
+				TD(FORM({id: "gif-var-" + id, "data-closest": "tr"}, [
+					AUDIO({class: "preview", "data-library": "sound", controls: true, src: translate_image_url(attrs.sound || TRANSPARENT_IMAGE), ".volume": attrs.volume || 0.5, "data-library_uri": attrs.sound || ""}),
+					BR(),
+					BUTTON({type: "button", className: "showlibrary", "data-target": "sound", "data-type": "audio"}, "Choose"),
+					LABEL([
+						" Volume: ",
+						INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1, value: attrs.volume}),
+						SPAN({className: "rangedisplay"}, typeof attrs.volume === "number" ? Math.floor(attrs.volume * 100) + "%" : "50%"),
+					]),
+				])),
+				TD(BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑")),
+			]);
+		}),
+		TR({"data-type": "gif-"}, [
+			TD(INPUT({class: "text"})),
+			TD({colspan: 3}, "Enter a keyword to add one!"),
+		]),
+	]);
+}
+
 let selecttab = location.hash.slice(1);
 export function render(data) {
 	if (data.authkey === "<REVOKED>") {
@@ -516,36 +549,7 @@ export function render(data) {
 			]);
 			el.value = sets.includes(val) ? val : "";
 		});
-		//TODO: Reduce flicker when nothing's changed. Probably will need a "create and then update" pattern like others have.
-		set_content("#gif-variants table tbody", [
-			(revert_data[wanted_tab].variants || []).map(id => {
-				const attrs = revert_data[id] || { };
-				return TR({class: "minialertconfig", "data-type": id}, [
-					TD(INPUT({form: "gif-var-" + id, class: "kwd", value: attrs["condval-kwd"] || ""})),
-					TD([
-						attrs.image_is_video ? VIDEO({class: "preview", "data-library": "image", loop: true, ".muted": true, src: translate_image_url(attrs.image || TRANSPARENT_IMAGE), "data-library_uri": attrs.image || ""})
-							: IMG({class: "preview", "data-library": "image", src: translate_image_url(attrs.image || TRANSPARENT_IMAGE), "data-library_uri": attrs.image || ""}),
-						" ",
-						BUTTON({type: "button", form: "gif-var-" + id, class: "showlibrary", "data-target": "image", "data-type": "image,video"}, "Choose"),
-					]),
-					TD(FORM({id: "gif-var-" + id, "data-closest": "tr"}, [
-						AUDIO({class: "preview", "data-library": "sound", controls: true, src: translate_image_url(attrs.sound || TRANSPARENT_IMAGE), ".volume": attrs.volume || 0.5, "data-library_uri": attrs.sound || ""}),
-						BR(),
-						BUTTON({type: "button", className: "showlibrary", "data-target": "sound", "data-type": "audio"}, "Choose"),
-						LABEL([
-							" Volume: ",
-							INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1, value: attrs.volume}),
-							SPAN({className: "rangedisplay"}, typeof attrs.volume === "number" ? Math.floor(attrs.volume * 100) + "%" : "50%"),
-						]),
-					])),
-					TD(BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑")),
-				]);
-			}),
-			TR({"data-type": "gif-"}, [
-				TD(INPUT({class: "kwd"})),
-				TD({colspan: 3}, "Enter a keyword to add one!"),
-			]),
-		]);
+		if (DOM("#gif-variants").open) update_gif_variants();
 	}
 	if (data.delpersonal) {
 		//This isn't part of a normal stateful update, and is a signal that a personal
@@ -890,7 +894,7 @@ on("click", ".minialertconfig .confirmdelete", e => {
 	const alert = revert_data[deleteid]; if (!alert) return;
 	deletetype = "variant";
 	//TODO: Indicate the GIF or sound better??
-	DOM("#confirmdeletedlg .thumbnail").replaceWith(P({class: "thumbnail"}, alert["condval-kwd"] || ""));
+	DOM("#confirmdeletedlg .thumbnail").replaceWith(P({class: "thumbnail"}, alert["condval-text"] || ""));
 	set_content("#confirmdeletedlg a", "");
 	document.querySelectorAll(".deltype").forEach(e => e.innerHTML = deletetype);
 	set_content("#deletewarning", [
@@ -1087,10 +1091,10 @@ on("submit", "#renameform", e => {
 });
 
 //GIF alerts have a cut-down form of variant management. You can still use the full one if you need to tweak.
-on("click", ".gif-variants", e => DOM("#gif-variants").showModal());
+on("click", ".gif-variants", e => {update_gif_variants(); DOM("#gif-variants").showModal();});
 
-on("change", ".kwd", e => ws_sync.send({
+on("change", ".text", e => ws_sync.send({
 	cmd: "alertcfg", type: e.match.closest("tr").dataset.type, parent: "gif",
-	active: true, format: "", "cond-label": e.match.value + " kwd",
-	"condval-kwd": e.match.value, "condoper-kwd": "==",
+	active: true, format: "", "cond-label": e.match.value + " text",
+	"condval-text": e.match.value, "condoper-text": "==",
 }));
