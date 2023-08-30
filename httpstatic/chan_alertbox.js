@@ -1,4 +1,4 @@
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
+import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, ABBR, AUDIO, B, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR, VIDEO} = choc; //autoimport
 import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
@@ -393,13 +393,13 @@ export function render(data) {
 				LABEL(["Alert length: ", INPUT({name: "alertlength", type: "number", step: "0.5"}), " seconds; "]),
 				LABEL(["gap before next alert: ", INPUT({name: "alertgap", type: "number", step: "0.25"}), " seconds"]),
 			]),
-			nondef && P({class: "not-alertset inheritblock"}, [
+			nondef && type !== "gif" && P({class: "not-alertset inheritblock"}, [
 				"Image: ",
 				IMG({className: "preview", "data-library": "image"}), //Will be replaced with a VIDEO element as needed
 				" ",
 				BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-type": "image,video"}, "Choose"),
 			]),
-			nondef && P({class: "not-alertset inheritblock"}, [
+			nondef && type !== "gif" && P({class: "not-alertset inheritblock"}, [
 				"Sound: ",
 				AUDIO({className: "preview", "data-library": "sound", controls: true}),
 				" ",
@@ -409,6 +409,9 @@ export function render(data) {
 					INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1}),
 					SPAN({className: "rangedisplay"}, ""),
 				]),
+			]),
+			type === "gif" && P({class: "not-alertset"}, [
+				BUTTON({type: "button", class: "gif-variants"}, "Configure images and sounds"),
 			]),
 			DETAILS({class: "expandbox"}, [
 				SUMMARY("Text-To-Speech settings"),
@@ -1032,4 +1035,41 @@ on("submit", "#renameform", e => {
 		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
 	ws_sync.send(msg);
 	DOM("#renamefiledlg").close();
+});
+
+//GIF alerts have a cut-down form of variant management. You can still use the full one if you need to tweak.
+on("click", ".gif-variants", e => {
+	console.log("Variants:", revert_data[wanted_tab].variants);
+	//TODO: Load the current ones
+	//TODO: Update on signal
+	//TODO: Save on change
+	set_content("#gif-variants table tbody", [
+		(revert_data[wanted_tab].variants || []).map(id => {
+			const attrs = revert_data[id] || { };
+			console.log("var ", id, attrs);
+			return TR({"data-id": id.split("-")[1]}, [
+				TD(INPUT({class: "input-id", value: attrs["condval-id"] || ""})),
+				TD([
+					IMG({className: "preview", "data-library": "image"}), //Will be replaced with a VIDEO element as needed
+					" ",
+					BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-type": "image,video"}, "Choose"),
+				]),
+				TD([
+					AUDIO({className: "preview", "data-library": "sound", controls: true}),
+					BR(),
+					BUTTON({type: "button", className: "showlibrary", "data-target": "sound", "data-type": "audio"}, "Choose"),
+					LABEL([
+						" Volume: ",
+						INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1}),
+						SPAN({className: "rangedisplay"}, ""),
+					]),
+				]),
+			]);
+		}),
+		TR([
+			TD(INPUT({class: "new-id"})),
+			TD({colspan: 3}, "Enter an ID/keyword to add one!"),
+		]),
+	]);
+	DOM("#gif-variants").showModal();
 });

@@ -329,6 +329,19 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 > [Base alert](:.testvariant #tvbase) [Active only](:.testvariant #tvactive)
 > [All variants](:.testvariant #tvall) [Cancel](:.dialog_close)
 {: tag=dialog #testalertdlg}
+
+<!-- -->
+
+> ### Manage images and sounds
+>
+> Select sounds and/or images to be triggered here. These become alert variants.
+>
+> ID | Image | Sound | Del?
+> ---|-------|-------|-----
+> loading... | - | - | -
+>
+> [Close](:.dialog_close)
+{: tag=dialog #gif-variants}
 ";
 
 constant MAX_PER_FILE = 8, MAX_TOTAL_STORAGE = 25; //MB
@@ -422,6 +435,17 @@ constant ALERTTYPES = ({([
 	"testpholders": (["amount": "5 USD"]),
 	"builtin": "kofi",
 	"condition_vars": ({"amount", "is_membership", "is_shopsale", "is_commission", "tiername"}),
+]), ([
+	"id": "gif",
+	"label": "GIFs/Sounds",
+	"heading": "Triggerable GIFs or sounds for your community",
+	"description": "When someone redeems the reward or otherwise triggers one",
+	"placeholders": ([
+		"id": "Keyword ID for the particular image",
+	]),
+	"testpholders": (["id": "demo"]),
+	"builtin": "chan_alertbox",
+	"condition_vars": ({"'id"}),
 ]), ([
 	//Settings for personal alerts (must be last in the array)
 	"placeholders": ([
