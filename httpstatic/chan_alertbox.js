@@ -1060,7 +1060,6 @@ on("submit", "#renameform", e => {
 on("click", ".gif-variants", e => {
 	console.log("Variants:", revert_data[wanted_tab].variants);
 	//TODO: Update on signal
-	//TODO: Save on change
 	set_content("#gif-variants table tbody", [
 		(revert_data[wanted_tab].variants || []).map(id => {
 			const attrs = revert_data[id] || { };
