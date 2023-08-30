@@ -516,6 +516,36 @@ export function render(data) {
 			]);
 			el.value = sets.includes(val) ? val : "";
 		});
+		//TODO: Reduce flicker when nothing's changed. Probably will need a "create and then update" pattern like others have.
+		set_content("#gif-variants table tbody", [
+			(revert_data[wanted_tab].variants || []).map(id => {
+				const attrs = revert_data[id] || { };
+				return TR({class: "minialertconfig", "data-type": id}, [
+					TD(INPUT({form: "gif-var-" + id, class: "kwd", value: attrs["condval-kwd"] || ""})),
+					TD([
+						attrs.image_is_video ? VIDEO({class: "preview", "data-library": "image", loop: true, ".muted": true, src: translate_image_url(attrs.image || TRANSPARENT_IMAGE), "data-library_uri": attrs.image || ""})
+							: IMG({class: "preview", "data-library": "image", src: translate_image_url(attrs.image || TRANSPARENT_IMAGE), "data-library_uri": attrs.image || ""}),
+						" ",
+						BUTTON({type: "button", form: "gif-var-" + id, class: "showlibrary", "data-target": "image", "data-type": "image,video"}, "Choose"),
+					]),
+					TD(FORM({id: "gif-var-" + id, "data-closest": "tr"}, [
+						AUDIO({class: "preview", "data-library": "sound", controls: true, src: translate_image_url(attrs.sound || TRANSPARENT_IMAGE), ".volume": attrs.volume || 0.5, "data-library_uri": attrs.sound || ""}),
+						BR(),
+						BUTTON({type: "button", className: "showlibrary", "data-target": "sound", "data-type": "audio"}, "Choose"),
+						LABEL([
+							" Volume: ",
+							INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1, value: attrs.volume}),
+							SPAN({className: "rangedisplay"}, typeof attrs.volume === "number" ? Math.floor(attrs.volume * 100) + "%" : "50%"),
+						]),
+					])),
+					TD(BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑")),
+				]);
+			}),
+			TR({"data-type": "gif-"}, [
+				TD(INPUT({class: "kwd"})),
+				TD({colspan: 3}, "Enter a keyword to add one!"),
+			]),
+		]);
 	}
 	if (data.delpersonal) {
 		//This isn't part of a normal stateful update, and is a signal that a personal
@@ -1057,41 +1087,7 @@ on("submit", "#renameform", e => {
 });
 
 //GIF alerts have a cut-down form of variant management. You can still use the full one if you need to tweak.
-on("click", ".gif-variants", e => {
-	console.log("Variants:", revert_data[wanted_tab].variants);
-	//TODO: Update on signal
-	set_content("#gif-variants table tbody", [
-		(revert_data[wanted_tab].variants || []).map(id => {
-			const attrs = revert_data[id] || { };
-			console.log("var ", id, attrs);
-			return TR({class: "minialertconfig", "data-type": id}, [
-				TD(INPUT({form: "gif-var-" + id, class: "kwd", value: attrs["condval-kwd"] || ""})),
-				TD([
-					attrs.image_is_video ? VIDEO({class: "preview", "data-library": "image", loop: true, ".muted": true, src: translate_image_url(attrs.image || TRANSPARENT_IMAGE), "data-library_uri": attrs.image || ""})
-						: IMG({class: "preview", "data-library": "image", src: translate_image_url(attrs.image || TRANSPARENT_IMAGE), "data-library_uri": attrs.image || ""}),
-					" ",
-					BUTTON({type: "button", form: "gif-var-" + id, class: "showlibrary", "data-target": "image", "data-type": "image,video"}, "Choose"),
-				]),
-				TD(FORM({id: "gif-var-" + id, "data-closest": "tr"}, [
-					AUDIO({class: "preview", "data-library": "sound", controls: true, src: translate_image_url(attrs.sound || TRANSPARENT_IMAGE), ".volume": attrs.volume || 0.5, "data-library_uri": attrs.sound || ""}),
-					BR(),
-					BUTTON({type: "button", className: "showlibrary", "data-target": "sound", "data-type": "audio"}, "Choose"),
-					LABEL([
-						" Volume: ",
-						INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1, value: attrs.volume}),
-						SPAN({className: "rangedisplay"}, typeof attrs.volume === "number" ? Math.floor(attrs.volume * 100) + "%" : "50%"),
-					]),
-				])),
-				TD(BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑")),
-			]);
-		}),
-		TR({"data-type": "gif-"}, [
-			TD(INPUT({class: "kwd"})),
-			TD({colspan: 3}, "Enter a keyword to add one!"),
-		]),
-	]);
-	DOM("#gif-variants").showModal();
-});
+on("click", ".gif-variants", e => DOM("#gif-variants").showModal());
 
 on("change", ".kwd", e => ws_sync.send({
 	cmd: "alertcfg", type: e.match.closest("tr").dataset.type, parent: "gif",
