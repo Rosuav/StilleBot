@@ -113,6 +113,19 @@ function update_condition_summary(par) {
 	if (target) set_content(target, par.querySelector("[name=cond-label]").value || "always");
 }
 
+function translate_image_url(want, el) {
+	if (want.startsWith(FREEMEDIA_BASE)) {
+		const fn = want.replace(FREEMEDIA_BASE, "");
+		if (freemedia_update_queue) {if (el) freemedia_update_queue.push([el, fn]); return;}
+		else want = freemedia_files[fn].url;
+	}
+	if (want.startsWith(UPLOADS_BASE)) {
+		const file = files[want.replace(UPLOADS_BASE, "")];
+		want = (file && file.url) || TRANSPARENT_IMAGE;
+	}
+	return want;
+}
+
 function load_data(type, attrs, par) {
 	revert_data[type] = attrs;
 	if (!par) par = alerttypes[type];
@@ -148,17 +161,8 @@ function load_data(type, attrs, par) {
 	par.querySelectorAll("[data-library]").forEach(el => {
 		const block = el.closest(".inheritblock");
 		if (block) block.classList.toggle("inherited", !attrs[el.dataset.library]);
-		let want = attrs[el.dataset.library] || TRANSPARENT_IMAGE;
 		el.dataset.library_uri = attrs[el.dataset.library] || "";
-		if (want.startsWith(FREEMEDIA_BASE)) {
-			const fn = want.replace(FREEMEDIA_BASE, "");
-			if (freemedia_update_queue) {freemedia_update_queue.push([el, fn]); return;}
-			else want = freemedia_files[fn].url;
-		}
-		if (want.startsWith(UPLOADS_BASE)) {
-			const file = files[want.replace(UPLOADS_BASE, "")];
-			want = (file && file.url) || TRANSPARENT_IMAGE;
-		}
+		const want = translate_image_url(attrs[el.dataset.library] || TRANSPARENT_IMAGE, el);
 		if (el.src !== want) el.src = want; //Avoid flicker and video breakage by only setting if it's different
 	});
 	update_layout_options(par, attrs.layout);
@@ -1048,22 +1052,23 @@ on("click", ".gif-variants", e => {
 			const attrs = revert_data[id] || { };
 			console.log("var ", id, attrs);
 			return TR({"data-id": id.split("-")[1]}, [
-				TD(INPUT({name: "kwd", value: attrs["condval-kwd"] || ""})),
+				TD(INPUT({form: "gif-var-" + id, name: "kwd", value: attrs["condval-kwd"] || ""})),
 				TD([
-					IMG({className: "preview", "data-library": "image"}), //Will be replaced with a VIDEO element as needed
+					attrs.image_is_video ? VIDEO({class: "preview", "data-library": "image", loop: true, ".muted": true, src: translate_image_url(attrs.image || TRANSPARENT_IMAGE)})
+						: IMG({className: "preview", "data-library": "image", src: translate_image_url(attrs.image || TRANSPARENT_IMAGE)}),
 					" ",
 					BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-type": "image,video"}, "Choose"),
 				]),
-				TD([
-					AUDIO({className: "preview", "data-library": "sound", controls: true}),
+				TD(FORM({id: "gif-var-" + id}, [
+					AUDIO({className: "preview", "data-library": "sound", controls: true, src: translate_image_url(attrs.sound || TRANSPARENT_IMAGE)}),
 					BR(),
 					BUTTON({type: "button", className: "showlibrary", "data-target": "sound", "data-type": "audio"}, "Choose"),
 					LABEL([
 						" Volume: ",
-						INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1}),
-						SPAN({className: "rangedisplay"}, ""),
+						INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1, value: attrs.volume}),
+						SPAN({className: "rangedisplay"}, typeof attrs.volume === "number" ? Math.floor(attrs.volume * 100) + "%" : "50%"),
 					]),
-				]),
+				])),
 			]);
 		}),
 		TR([
