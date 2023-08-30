@@ -692,7 +692,9 @@ on("change", ".instasave", e => {
 let librarytarget = null;
 on("click", ".showlibrary", e => {
 	const mode = e.match.dataset.target;
-	librarytarget = mode ? e.match.form.querySelector("[data-library=" + mode + "]") : null; //In case there are multiple forms, retain the exact object we're targeting
+	//<form closest="tr"> to keep scanning up for a <tr>
+	let parent = e.match.form; if (parent.dataset.closest) parent = parent.closest(parent.dataset.closest);
+	librarytarget = mode ? parent.querySelector("[data-library=" + mode + "]") : null; //In case there are multiple forms, retain the exact object we're targeting
 	const wanttypes = (e.match.dataset.type || "").split(",");
 	document.querySelectorAll("#uploadfrm [data-type]").forEach(el => {
 		const want = wanttypes[0] === "" || wanttypes.includes(el.dataset.type.split("/")[0]);
@@ -702,7 +704,6 @@ on("click", ".showlibrary", e => {
 	if (librarytarget) {
 		const uri = librarytarget.dataset.library_uri;
 		if (uri.startsWith(FREEMEDIA_BASE)) {
-			console.log(uri.replace(FREEMEDIA_BASE, ""));
 			DOM(`#freemedialibrary input[value="${uri.replace(FREEMEDIA_BASE, "")}"]`).checked = true;
 			DOM("#select-freemedia").checked = true;
 		}
@@ -1053,13 +1054,13 @@ on("click", ".gif-variants", e => {
 			return TR({"data-id": id.split("-")[1]}, [
 				TD(INPUT({form: "gif-var-" + id, name: "kwd", value: attrs["condval-kwd"] || ""})),
 				TD([
-					attrs.image_is_video ? VIDEO({class: "preview", "data-library": "image", loop: true, ".muted": true, src: translate_image_url(attrs.image || TRANSPARENT_IMAGE)})
-						: IMG({className: "preview", "data-library": "image", src: translate_image_url(attrs.image || TRANSPARENT_IMAGE)}),
+					attrs.image_is_video ? VIDEO({class: "preview", "data-library": "image", loop: true, ".muted": true, src: translate_image_url(attrs.image || TRANSPARENT_IMAGE), "data-library_uri": attrs.image || ""})
+						: IMG({class: "preview", "data-library": "image", src: translate_image_url(attrs.image || TRANSPARENT_IMAGE), "data-library_uri": attrs.image || ""}),
 					" ",
-					BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-type": "image,video"}, "Choose"),
+					BUTTON({type: "button", form: "gif-var-" + id, class: "showlibrary", "data-target": "image", "data-type": "image,video"}, "Choose"),
 				]),
-				TD(FORM({id: "gif-var-" + id}, [
-					AUDIO({className: "preview", "data-library": "sound", controls: true, src: translate_image_url(attrs.sound || TRANSPARENT_IMAGE), ".volume": attrs.volume || 0.5}),
+				TD(FORM({id: "gif-var-" + id, "data-closest": "tr"}, [
+					AUDIO({class: "preview", "data-library": "sound", controls: true, src: translate_image_url(attrs.sound || TRANSPARENT_IMAGE), ".volume": attrs.volume || 0.5, "data-library_uri": attrs.sound || ""}),
 					BR(),
 					BUTTON({type: "button", className: "showlibrary", "data-target": "sound", "data-type": "audio"}, "Choose"),
 					LABEL([
