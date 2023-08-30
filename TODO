@@ -122,6 +122,7 @@
     - Cache the member IDs but not for as long
   - Purge both caches on looking at a specific page or subpage that looks at
     teams, which can also be where you choose to have teams active
+  - Devi would definitely use this.
 * Alertbox: For any non-personal alert, have a "Revert to Stock" which deletes the
   alert settings that you have, aside from the "Active" flag
   - It may be worth having Active be a single-attribute update, so when you toggle
