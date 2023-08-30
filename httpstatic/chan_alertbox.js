@@ -1052,7 +1052,7 @@ on("click", ".gif-variants", e => {
 			const attrs = revert_data[id] || { };
 			console.log("var ", id, attrs);
 			return TR({class: "minialertconfig", "data-type": id}, [
-				TD(INPUT({form: "gif-var-" + id, name: "kwd", value: attrs["condval-kwd"] || ""})),
+				TD(INPUT({form: "gif-var-" + id, class: "kwd", value: attrs["condval-kwd"] || ""})),
 				TD([
 					attrs.image_is_video ? VIDEO({class: "preview", "data-library": "image", loop: true, ".muted": true, src: translate_image_url(attrs.image || TRANSPARENT_IMAGE), "data-library_uri": attrs.image || ""})
 						: IMG({class: "preview", "data-library": "image", src: translate_image_url(attrs.image || TRANSPARENT_IMAGE), "data-library_uri": attrs.image || ""}),
@@ -1071,16 +1071,16 @@ on("click", ".gif-variants", e => {
 				])),
 			]);
 		}),
-		TR([
-			TD(INPUT({class: "new-kwd"})),
+		TR({"data-type": "gif-"}, [
+			TD(INPUT({class: "kwd"})),
 			TD({colspan: 3}, "Enter a keyword to add one!"),
 		]),
 	]);
 	DOM("#gif-variants").showModal();
 });
 
-on("change", ".new-kwd", e => ws_sync.send({
-	cmd: "alertcfg", type: "gif-", variant: "", parent: "gif",
+on("change", ".kwd", e => ws_sync.send({
+	cmd: "alertcfg", type: e.match.closest("tr").dataset.type, parent: "gif",
 	active: true, format: "", "cond-label": e.match.value + " kwd",
 	"condval-kwd": e.match.value, "condoper-kwd": "==",
 }));
