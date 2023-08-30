@@ -764,7 +764,7 @@ on("click", "#libraryselect", async e => {
 					if (file) {img = file.url; saveme = FREEMEDIA_BASE + file.filename; type = file.mimetype;}
 				}
 		}
-		ws_sync.send({cmd: "alertcfg", type: librarytarget.closest(".alertconfig").dataset.type,
+		ws_sync.send({cmd: "alertcfg", type: librarytarget.closest(".alertconfig,.minialertconfig").dataset.type,
 			[librarytarget.dataset.library]: saveme, image_is_video: type.startsWith("video/")});
 		const isvid = librarytarget.tagName === "VIDEO", wantvid = type.startsWith("video/");
 		if (isvid !== wantvid) librarytarget.replaceWith(wantvid
@@ -1051,7 +1051,7 @@ on("click", ".gif-variants", e => {
 		(revert_data[wanted_tab].variants || []).map(id => {
 			const attrs = revert_data[id] || { };
 			console.log("var ", id, attrs);
-			return TR({"data-id": id.split("-")[1]}, [
+			return TR({class: "minialertconfig", "data-type": id}, [
 				TD(INPUT({form: "gif-var-" + id, name: "kwd", value: attrs["condval-kwd"] || ""})),
 				TD([
 					attrs.image_is_video ? VIDEO({class: "preview", "data-library": "image", loop: true, ".muted": true, src: translate_image_url(attrs.image || TRANSPARENT_IMAGE), "data-library_uri": attrs.image || ""})
