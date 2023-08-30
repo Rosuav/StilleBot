@@ -855,6 +855,20 @@ on("click", ".alertconfig .confirmdelete", e => {
 	DOM("#confirmdeletedlg").showModal();
 });
 
+on("click", ".minialertconfig .confirmdelete", e => {
+	deleteid = e.match.closest("tr").dataset.type;
+	const alert = revert_data[deleteid]; if (!alert) return;
+	deletetype = "variant";
+	//TODO: Indicate the GIF or sound better??
+	DOM("#confirmdeletedlg .thumbnail").replaceWith(P({class: "thumbnail"}, alert["condval-kwd"] || ""));
+	set_content("#confirmdeletedlg a", "");
+	document.querySelectorAll(".deltype").forEach(e => e.innerHTML = deletetype);
+	set_content("#deletewarning", [
+		"Once deleted, this will no longer be removable.",
+	]);
+	DOM("#confirmdeletedlg").showModal();
+});
+
 on("click", "#delete", e => {
 	if (deletetype && deleteid) ws_sync.send({cmd: "delete", type: deletetype, id: deleteid});
 	DOM("#confirmdeletedlg").close();
@@ -1069,6 +1083,7 @@ on("click", ".gif-variants", e => {
 						SPAN({className: "rangedisplay"}, typeof attrs.volume === "number" ? Math.floor(attrs.volume * 100) + "%" : "50%"),
 					]),
 				])),
+				TD(BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑")),
 			]);
 		}),
 		TR({"data-type": "gif-"}, [
