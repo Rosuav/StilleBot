@@ -320,7 +320,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	highlights = users->login * "\n";
 	string title = "Followed streams";
 	//Special searches, which don't use your follow list (and may be possible without logging in)
-	if (req->variables->raiders || req->variables->categories || req->variables->login || req->variables->train || req->variables->highlights) {
+	if (req->variables->raiders || req->variables->categories || req->variables->login || req->variables->train || req->variables->highlights || req->variables->team) {
 		mapping args = ([]);
 		if (req->variables->raiders) {
 			//Raiders mode (categories omitted but "?raiders" specified). Particularly useful with a for= search.
@@ -376,6 +376,27 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			if (!casters) return "No such raid train - check the link and try again";
 			args->user_id = (array(string))casters;
 			title = "Raid Train: " + (trncfg->title || "(untitled)");
+		}
+		else if (string|array team = req->variables->team) {
+			//Team may be an array (team=X&team=Y), a comma-separated list (team=X,Y - also
+			//the obvious form team=X counts as this), or blank (team=) meaning "my teams".
+			if (team == "") {
+				if (mapping resp = ensure_login(req, "user_read")) return resp;
+				team = yield(twitch_api_request("https://api.twitch.tv/helix/teams/channel?broadcaster_id=" + userid))->data->team_name || ({ });
+			}
+			else if (stringp(team)) team /= ",";
+			//team should now be an array of team names, regardless of how it was input
+			args->user_id = ({ });
+			array team_display_names = ({ });
+			foreach (team; int i; string t) catch {
+				mixed data = yield(twitch_api_request("https://api.twitch.tv/helix/teams?name=" + t))->data; //what if team name has specials?
+				if (!sizeof(data)) continue; //Probably team not found
+				team_display_names += ({data[0]->team_display_name});
+				args->user_id += data[0]->users->user_id;
+			};
+			if (!sizeof(args->user_id)) title = "Stream Team not found"; //Most likely this is because you misspelled the team name
+			else if (sizeof(team_display_names) > 1) title = "Stream Teams: " + team_display_names * ", ";
+			else title = "Stream Team: " + team_display_names[0];
 		}
 		else if (mapping tradingcards = persist_status->path("tradingcards", "collections")[lower_case(req->variables->categories)]) {
 			//categories=Canadian to see who's live from the Canadian Streamers collection of trading cards
