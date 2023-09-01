@@ -16,12 +16,6 @@ constant PREFERENCE_MAGIC_SCORES = ({
 	-1000, -250, -50, //Negative ratings
 });
 
-//Fracture a big array into a set of smaller ones and await them all
-//Should get_helix_paginated handle this automatically??
-Concurrent.Future fracture(array stuff, int max, function cb) {
-	return Concurrent.all(cb((stuff / (float)max)[*]))->then() {return __ARGS__[0] * ({ });};
-}
-
 multiset(string) creative_names = (<"Art", "Science & Technology", "Software and Game Development", "Food & Drink", "Music", "Makers & Crafting", "Beauty & Body Art">);
 multiset(int) creatives = (<>);
 int next_precache_request;
@@ -457,9 +451,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		));
 		array(string) ids = streams->user_id + ({(string)userid});
 		follows_helix = streams + self->data;
-		//If you follow a large number of categories, or a single large category,
-		//there could be rather a lot of IDs. Fetch in blocks.
-		users = yield(fracture(ids, 100) {return get_helix_paginated("https://api.twitch.tv/helix/users", (["id": __ARGS__[0]]));});
+		users = yield(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": ids])));
 	}
 	else {
 		if (mapping resp = ensure_login(req, "user:read:follows")) return resp;
