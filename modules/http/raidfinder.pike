@@ -294,7 +294,10 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			strm->user_name = strm->display_name;
 		}
 		return render(req, ([
-			"vars": (["ws_group": "", "follows": follows_helix, "your_stream": 0, "highlights": highlights, "all_raids": ({}), "mode": "allfollows"]),
+			"vars": ([
+				"ws_group": "", "follows": follows_helix, "your_stream": 0, "highlights": highlights,
+				"all_raids": ({}), "raid_suggestions": 0, "mode": "allfollows", "on_behalf_of_userid": userid,
+			]),
 			"sortorders": ({"Channel Creation", "Follow Date", "Name"}) * "\n* ",
 		]));
 	}

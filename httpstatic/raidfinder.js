@@ -131,8 +131,7 @@ function precache_streaminfo() {
 	//the time since 1970, which is a lot of weight. Quite a lot.
 	const sel = Math.floor(Math.random() * sum);
 	const index = weights.findIndex(w => w > sel);
-	if (index === -1) index = 0; //Shouldn't happen. Whatever.
-	const stream = streams[index];
+	const stream = streams[index >= 0 ? index : 0]; //If index is ever -1, just return the first (shouldn't happen)
 	fetch(`/raidfinder?for=${on_behalf_of_userid}&streamlength=${stream.user_id}&ignore=${stream.id}&precache=1`);
 }
 
