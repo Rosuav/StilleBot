@@ -186,7 +186,7 @@ mapping cached_user_info(string user) {
 	//Any non-overflowing parameters will be correctly replicated on all requests.
 	//(If 100 isn't the limit, specify the pagination_limit in options.)
 	mapping overflow = ([]);
-	int pagination_limit = options->pagination_limit || 100;
+	int pagination_limit = (options||([]))->pagination_limit || 100;
 	foreach (query; string key; mixed val)
 		if (arrayp(val) && sizeof(val) > pagination_limit)
 			[query[key], overflow[key]] = Array.shift(val / (float)pagination_limit);
