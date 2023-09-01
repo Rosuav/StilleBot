@@ -178,6 +178,17 @@ mapping cached_user_info(string user) {
 	Standards.URI uri = Standards.URI(url);
 	query = (query || ([])) + ([]);
 	if (!query->first) query->first = "100"; //Default to the largest page permitted.
+
+	//If any query parameter has more than a hundred entries, most Twitch APIs will
+	//reject it. Instead, we hand it the first hundred, and store the rest in overflow.
+	//Note that this won't work reliably if MORE than one parameter overflows; you'll
+	//see the first hundred of parameter 1 with the first hundred of parameter 2, etc.
+	//Any non-overflowing parameters will be correctly replicated on all requests.
+	mapping overflow = ([]);
+	foreach (query; string key; mixed val)
+		if (arrayp(val) && sizeof(val) > 100)
+			[query[key], overflow[key]] = Array.shift(val / 100.0);
+
 	//NOTE: uri->set_query_variables() doesn't correctly encode query data.
 	uri->query = Protocols.HTTP.http_encode_query(query);
 	int empty = 0;
@@ -215,11 +226,24 @@ mapping cached_user_info(string user) {
 				//changing, but we get no data each time. In case this happens
 				//once by chance, we have a "three strikes and WE'RE out" policy.
 				|| (!sizeof(raw->data) && ++empty >= 3)) {
-			//If any of that happens, we're done.
-			return data;
+			//If any of that happens, we're done with this block.
+			//Were there any array parameters that overflowed?
+			if (!sizeof(overflow)) return data;
+			//Grab the next block of array parameters. Note that this may theoretically
+			//involve more than one parameter, but in practice will usually just be one.
+			foreach (indices(overflow), string key) {
+				if (sizeof(overflow[key]) == 1)
+					//It's the last block (for this key, at least).
+					query[key] = m_delete(overflow, key)[0];
+				else
+					//There are more blocks, so return the rest to the overflow.
+					[query[key], overflow[key]] = Array.shift(overflow[key]);
+			}
+			//Reset pagination, and off we go!
+			m_delete(query, "after");
 		}
-		//uri->add_query_variable("after", raw->pagination->cursor);
-		query["after"] = raw->pagination->cursor; uri->query = Protocols.HTTP.http_encode_query(query);
+		else query["after"] = raw->pagination->cursor;
+		uri->query = Protocols.HTTP.http_encode_query(query);
 		return twitch_api_request(uri, headers, options)->then(nextpage);
 	}
 	return twitch_api_request(uri, headers, options)->then(nextpage);
