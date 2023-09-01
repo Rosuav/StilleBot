@@ -114,15 +114,6 @@
 * Replace bcaster_token[name] with user_token[id] and ditto scopes
   - Have a compatibility function that returns a promise and yields the token
     when the name has been translated into an ID
-* Raidfinder: include your stream teams? Make it an option?
-  - GET https://api.twitch.tv/helix/teams/channel?broadcaster_id=YOU
-    - Cache the team IDs maybe, to reduce the number of API calls - most people
-      don't join/leave teams often
-  - https://api.twitch.tv/helix/teams?id=6358&id=7384
-    - Cache the member IDs but not for as long
-  - Purge both caches on looking at a specific page or subpage that looks at
-    teams, which can also be where you choose to have teams active
-  - Devi would definitely use this.
 * Alertbox: For any non-personal alert, have a "Revert to Stock" which deletes the
   alert settings that you have, aside from the "Active" flag
   - It may be worth having Active be a single-attribute update, so when you toggle

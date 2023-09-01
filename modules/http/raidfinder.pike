@@ -53,12 +53,16 @@ constant markdown_menu = #"# Raid finder modes
 * [Your follow list](raidfinder). This is the normal and default mode, and shows
   your own follow list sorted according to your own channel's statistics. Requires
   login. Can give recent raid statistics.
+* [Your stream team(s), if any](raidfinder?team=). If you're a member of any teams,
+  this will show you everyone in them who's live! (Excluding yourself.)
 * <form><label>Recommendations for another streamer: <input name=for size=20></label> <input type=submit value=View></form>
   Show your follow list, but compare against another channel's statistics. Requires
   login. Can give recent raid statistics, if bot is active for the target channel.
 * <form><label>Browse a category: <input name=categories size=20></label> <input type=submit value=Browse></form>
   Show any category - note that large categories may take a while to load! Does not
   require a login.
+* <form><label>Explore a stream team: <input name=team size=20></label> <input type=submit value=View></form>
+  Show any stream team by name (look in the URL - not always the same as the display).
 * [Pixel Plush users](raidfinder?categories=pixelplush) - everyone who's currently
   using games from [Pixel Plush](https://pixelplush.dev). The same channels as are
   seen on their homepage carousel. No login required.
