@@ -205,15 +205,19 @@ mapping cached_user_info(string user) {
 			werror("Next page: %d data, pg %s\n", sizeof(raw->data), pg);
 		}
 		data += raw->data;
-		if (!raw->pagination || !raw->pagination->cursor) return data;
-		//Possible Twitch API bug: If the returned cursor is precisely "IA",
-		//it's probably the end of the results. It's come up more than once
-		//in the past, and might well happen again.
-		if (raw->pagination->cursor == "IA") return data;
-		//Another possible Twitch bug: Sometimes the cursor is constantly
-		//changing, but we get no data each time. In case this happens
-		//once by chance, we have a "three strikes and WE'RE out" policy.
-		if (!sizeof(raw->data) && ++empty >= 3) return data;
+		//Normal completion: No pagination marker
+		if (!raw->pagination || !raw->pagination->cursor
+				//Possible Twitch API bug: If the returned cursor is precisely "IA",
+				//it's probably the end of the results. It's come up more than once
+				//in the past, and might well happen again.
+				|| raw->pagination->cursor == "IA"
+				//Another possible Twitch bug: Sometimes the cursor is constantly
+				//changing, but we get no data each time. In case this happens
+				//once by chance, we have a "three strikes and WE'RE out" policy.
+				|| (!sizeof(raw->data) && ++empty >= 3)) {
+			//If any of that happens, we're done.
+			return data;
+		}
 		//uri->add_query_variable("after", raw->pagination->cursor);
 		query["after"] = raw->pagination->cursor; uri->query = Protocols.HTTP.http_encode_query(query);
 		return twitch_api_request(uri, headers, options)->then(nextpage);
