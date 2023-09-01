@@ -142,9 +142,9 @@ mapping cached_user_info(string user) {
 		else lookups += ({(string)u});
 	}
 	if (!sizeof(lookups)) return Concurrent.resolve(results); //Got 'em all from cache.
-	return twitch_api_request(sprintf("https://api.twitch.tv/helix/users?%{" + type + "=%s&%}", Protocols.HTTP.uri_encode(lookups[*])))
-		->then(lambda(mapping data) {
-			foreach (data->data, mapping info) {
+	return get_helix_paginated("https://api.twitch.tv/helix/users", ([type: lookups]))
+		->then(lambda(array data) {
+			foreach (data, mapping info) {
 				info->_fetch_time = time();
 				user_info[info->login] = user_info[(int)info->id] = info;
 				notice_user_name(info->login, info->id);
