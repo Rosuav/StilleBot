@@ -15,4 +15,5 @@ Additional features and toys available here:
 * [An alternate view to your follow list, good for picking raid targets](/raidfinder)
 * <form method=get action="/hypetrain">Hype train status for a Twitch channel: <input name=for size=20><input type=submit value="Show"></form>
 * <form method=get action="/emotes">Emote showcase for any channel: <input name=broadcaster size=20><input type=submit value="Show"></form>
+* [Path to Affiliate streamer tracking](/affiliate). If you're helping to guide streamers to this milestone, this page can help with tracking and recommendations.
 * [OAuth scope trimmer to help you tame the wild mess of permissions that sites ask for](/scopetrim)
