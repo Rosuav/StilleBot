@@ -282,9 +282,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (mapping resp = ensure_login(req, "user:read:follows")) return resp;
 		array f = yield(get_helix_paginated("https://api.twitch.tv/helix/channels/followed",
 				(["user_id": (string)req->misc->session->user->id])));
-		//TODO: Make a cleaner way to fragment requests - we're gonna need it.
-		array(array(string)) blocks = f->broadcaster_id / 100.0;
-		follows_helix = yield(Concurrent.all(twitch_api_request(("https://api.twitch.tv/helix/users?first=100" + sprintf("%{&id=%s%}", blocks[*])[*])[*])))->data * ({ });
+		follows_helix = yield(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": f->broadcaster_id])));
 		array users = yield(get_users_info(highlightids));
 		highlights = users->login * "\n";
 		foreach (follows_helix; int idx; mapping strm) {
