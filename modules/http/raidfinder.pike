@@ -56,7 +56,7 @@ constant markdown_menu = #"# Raid finder modes
 * <form><label>Recommendations for another streamer: <input name=for size=20></label> <input type=submit value=View></form>
   Show your follow list, but compare against another channel's statistics. Requires
   login. Can give recent raid statistics, if bot is active for the target channel.
-* <form><label>Browse a category: <input name=category size=20></label> <input type=submit value=Browse></form>
+* <form><label>Browse a category: <input name=categories size=20></label> <input type=submit value=Browse></form>
   Show any category - note that large categories may take a while to load! Does not
   require a login.
 * [Pixel Plush users](raidfinder?categories=pixelplush) - everyone who's currently
