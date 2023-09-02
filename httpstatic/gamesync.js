@@ -248,6 +248,14 @@ const games = {
 			)),
 		];},
 	},
+	dragonheist: {
+		label: "Payday 2: Dragon Heist",
+		render(data) {return [
+			STYLE("div,input {font-size: 150%; margin: 0.25em;}"),
+			DIV(["Office computer code: ", INPUT({"data-setting": "office-code", value: data["office-code"] || ""})]),
+			DIV(["Vault code: ", INPUT({"data-setting": "vault-code", value: data["vault-code"] || ""})]),
+		];},
+	},
 	//For Ukrainian Prisoner, it may be of value to have these recorded:
 	//0123456789 --> 零一二三四五六七八九
 	//Chinese numerals. Though the game seems pretty merciful in their use, so it may not be necessary.
