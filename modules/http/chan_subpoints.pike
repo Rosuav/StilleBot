@@ -117,8 +117,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		"points": sort(tierlist) * ""
 			+ sprintf("Total: %d subs, %d points", tot, pts)
 			+ (totgifts ? sprintf(", of which %d (%d) are gifts", totgiftpts, totgifts) : "")
-			+ sprintf("<br>\nPartner Plus points: %d", pts - totgiftpts)
-			+ sprintf("<br>\nTotal as reported by Twitch: %d", raw->points),
+			+ sprintf("<br>\nTotal as reported by Twitch: %d", raw->points)
+			+ sprintf("<br>\nPartner Plus points: %d (minus those from Prime subs)", raw->points - totgiftpts),
 	]) | req->misc->chaninfo);
 }
 
