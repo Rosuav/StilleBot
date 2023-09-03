@@ -1368,7 +1368,8 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 		string val = args->text;
 		string comp = alert["condval-text"];
 		switch (alert["condoper-text"]) {
-			case "==": if (val != comp) return 0;
+			//Note that comparisons are currently case insensitive and there's no way to configure that. Should there be?
+			case "==": if (lower_case(val) != lower_case(comp)) return 0;
 			//TODO: Need incl operator as above
 			default: break;
 		}
