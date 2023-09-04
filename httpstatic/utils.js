@@ -1,8 +1,8 @@
 //Usage:
 //import {...} from "$$static||utils.js$$";
 
-import {on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIALOG, DIV, H3, HEADER, INPUT, LABEL, LINK, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TH, TR} = choc; //autoimport
+import {choc, on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
+const {BR, BUTTON, DIALOG, DIV, H3, HEADER, INPUT, LABEL, LINK, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
 ensure_simpleconfirm_dlg(); //Unnecessary overhead once Firefox 98+ is standard - can then be removed
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
 
@@ -156,7 +156,15 @@ export function ensure_font(font) {
 }
 
 on("click", ".clipbtn", e => {
-	navigator.clipboard.writeText(e.match.dataset.copyme);
+	try {navigator.clipboard.writeText(e.match.dataset.copyme);}
+	catch (exc) {
+		//If we can't copy to clipboard, it might be possible to do it via an MLE.
+		const mle = TEXTAREA({value: e.match.dataset.copyme, style: "position: absolute; left: -99999999px"});
+		document.body.append(mle);
+		mle.select();
+		try {document.execCommand("copy");}
+		finally {mle.remove();}
+	}
 	const c = DOM("#copied");
 	c.classList.add("shown");
 	c.style.left = e.pageX + "px";
