@@ -1277,8 +1277,8 @@ string textformatting_css(mapping cfg) {
 		if (mixed val = cfg[attr - "-"]) css += attr + ": " + val + "px;";
 	if (cfg->font && cfg->fontfamily) css += "font-family: " + cfg->font + ", " + cfg->fontfamily + ";"; //Note that the front end may have other work to do too, but here, we just set the font family.
 	else if (cfg->font || cfg->fontfamily) css += "font-family: " + (cfg->font || cfg->fontfamily) + ";";
-	if ((int)cfg->padvert) css += sprintf("padding-top: %dem; padding-bottom: %<dem;", (int)cfg->padvert);
-	if ((int)cfg->padhoriz) css += sprintf("padding-left: %dem; padding-right: %<dem;", (int)cfg->padhoriz);
+	if ((float)cfg->padvert) css += sprintf("padding-top: %gem; padding-bottom: %<gem;", (float)cfg->padvert);
+	if ((float)cfg->padhoriz) css += sprintf("padding-left: %gem; padding-right: %<gem;", (float)cfg->padhoriz);
 	if (cfg->strokewidth && cfg->strokewidth != "None")
 		css += sprintf("-webkit-text-stroke: %s %s;", cfg->strokewidth, cfg->strokecolor || "black");
 	if (int alpha = (int)cfg->shadowalpha) {
@@ -1312,13 +1312,21 @@ constant _textformatting_kwdattr = ([
 ]);
 int(1bit) textformatting_validate(mapping cfg) {
 	int ok = 1;
-	//Numeric attributes. Note that "0" will be retained, but "" will be removed (and is not an error).
-	foreach ("fontsize borderwidth bgalpha padvert padhoriz shadowx shadowy shadowalpha" / " ", string attr)
+	//Integer attributes. Note that "0" will be retained, but "" will be removed (and is not an error).
+	foreach ("fontsize borderwidth bgalpha shadowx shadowy shadowalpha" / " ", string attr)
 		if (mixed val = cfg[attr]) {
 			if (val == "") m_delete(cfg, attr);
-			else if (intp(val)) val = (string)val; //Not an error, but let's go with strings for consistency
+			else if (intp(val)) cfg[attr] = (string)val; //Not an error, but let's go with strings for consistency
 			else if (!stringp(val)) {m_delete(cfg, attr); ok = 0;}
 			else if (val != (string)(int)val) {m_delete(cfg, attr); ok = 0;} //Should we be merciful about whitespace?
+		}
+	//Float attributes. Similar, but more flexible with formatting. Note that we will reformat them.
+	foreach ("fontsize borderwidth bgalpha shadowx shadowy shadowalpha" / " ", string attr)
+		if (mixed val = cfg[attr]) {
+			if (val == "") m_delete(cfg, attr);
+			else if (intp(val) || floatp(val)) cfg[attr] = (string)val; //Not an error, but let's go with strings for consistency
+			else if (!stringp(val)) {m_delete(cfg, attr); ok = 0;}
+			else cfg[attr] = (string)(float)val;
 		}
 	//Colors. In textformatting_css(), shadowcolor is further mandated to be a hex color, but
 	//for now, we accept more forms.
