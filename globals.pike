@@ -1321,7 +1321,7 @@ int(1bit) textformatting_validate(mapping cfg) {
 			else if (val != (string)(int)val) {m_delete(cfg, attr); ok = 0;} //Should we be merciful about whitespace?
 		}
 	//Float attributes. Similar, but more flexible with formatting. Note that we will reformat them.
-	foreach ("fontsize borderwidth bgalpha shadowx shadowy shadowalpha" / " ", string attr)
+	foreach ("padhoriz padvert" / " ", string attr)
 		if (mixed val = cfg[attr]) {
 			if (val == "") m_delete(cfg, attr);
 			else if (intp(val) || floatp(val)) cfg[attr] = (string)val; //Not an error, but let's go with strings for consistency
