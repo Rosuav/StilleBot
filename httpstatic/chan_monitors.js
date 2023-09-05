@@ -132,7 +132,10 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 		FIELDSET([LEGEND("Text"), INPUT({type: "color", name: "color"})]),
 		FIELDSET([LEGEND("Bar"), INPUT({type: "color", name: "barcolor"})]),
 		FIELDSET([LEGEND("Fill"), INPUT({type: "color", name: "fillcolor"})]),
-		FIELDSET([LEGEND("Border"), INPUT({type: "color", name: "bordercolor"})]),
+		FIELDSET([LEGEND("Border"),
+			INPUT({name: "borderwidth", type: "number"}), " px ",
+			INPUT({name: "bordercolor", type: "color"}),
+		]),
 		FIELDSET([LEGEND("Preview bg"), INPUT({type: "color", name: "previewbg"})]),
 	]))]),
 	TR([TH("Bar size"), TD(DIV({className: "optionset"}, [
