@@ -655,9 +655,10 @@ constant follower = ({"object channel", "mapping follower"});
 EventSub new_follower = EventSub("follower", "channel.follow", "2") { [string chan, mapping follower] = __ARGS__;
 	notice_user_name(follower->user_login, follower->user_id);
 	if (object channel = G->G->irc->channels["#" + chan])
-		check_following(follower->user_login, chan)->then() {
+		/*check_following(follower->user_login, chan)->then()*/ {
 			//Sometimes bots will follow-unfollow. Avoid spamming chat with meaningless follow messages.
-			if (!__ARGS__[0][2]->following) return;
+			//FIXME: Check disabled CJA 20230906 due to API shutdown. Reinstate when ready.
+		//	if (!__ARGS__[0][2]->following) return;
 			event_notify("follower", channel, follower);
 			channel->trigger_special("!follower", ([
 				"user": follower->user_login,

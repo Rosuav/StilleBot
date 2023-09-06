@@ -32,6 +32,7 @@ continue Concurrent.Future|mapping(string:mixed) http_request(Protocols.HTTP.Ser
 		]));
 	}
 	if (req->variables->all && 0) { //Enable only when needed. Can be v slow for streamers w/ many followers.
+		//FIXME: Replace with helix/channels/followers as per below
 		string baseurl = "https://api.twitch.tv/helix/users/follows?first=100&to_id=" + channel + "&after=";
 		string cursor = ""; int tot = 0;
 		string ret = "";
