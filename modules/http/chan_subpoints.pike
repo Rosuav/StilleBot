@@ -87,8 +87,14 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (sub->user_id == sub->broadcaster_id) continue; //Ignore self
 		if (usersubs[sub->user_id])
 		{
-			//Don't know how this would happen, but maybe a pagination failure???
-			tierlist += ({sprintf("Duplicate! <pre>%O\n%O\n</pre><br>\n", usersubs[sub->user_id], sub)});
+			//This can happen if someone upgrades. I don't know how sub points get counted.
+			//For example, if you upgrade from T1 to T3, your old sub was worth 1 and your
+			//new one is worth 6. Are you currently worth 6 or 7? For now, I'm going to let
+			//this through and thus count it as 7.
+			if (usersubs[sub->user_id]->tier == sub->tier) {
+				//But if the tier is the same, what then? A pagination failure?
+				tierlist += ({sprintf("Duplicate! <pre>%O\n%O\n</pre><br>\n", usersubs[sub->user_id], sub)});
+			}
 		}
 		usersubs[sub->user_id] = sub;
 		tiercount[sub->tier]++; if (sub->is_gift) gifts[sub->tier]++;
