@@ -219,7 +219,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 							break;
 						}
 					ret->is_following->follow_length = length;
-					ret->to_name = ret->broadcaster_name; //Old API: from_name, to_name (and their IDs)
+					ret->to_name = ret->is_following->broadcaster_name; //Old API: from_name, to_name (and their IDs)
 					ret->from_name = yield(get_user_info((int)chanid))->display_name; //This might not be necessary; check the front end.
 				}
 				else ret->is_following = (["from_id": chanid]);
