@@ -726,9 +726,12 @@ on("change", ".instasave", e => {
 let librarytarget = null;
 on("click", ".showlibrary", e => {
 	const mode = e.match.dataset.target;
-	//<form closest="tr"> to keep scanning up for a <tr>
-	let parent = e.match.form; if (parent.dataset.closest) parent = parent.closest(parent.dataset.closest);
-	librarytarget = mode ? parent.querySelector("[data-library=" + mode + "]") : null; //In case there are multiple forms, retain the exact object we're targeting
+	//<form data-closest="tr"> to keep scanning up for a <tr>
+	if (mode) {
+		let parent = e.match.form; if (parent.dataset.closest) parent = parent.closest(parent.dataset.closest);
+		librarytarget = parent.querySelector("[data-library=" + mode + "]"); //In case there are multiple forms, retain the exact object we're targeting
+	}
+	else librarytarget = null;
 	const wanttypes = (e.match.dataset.type || "").split(",");
 	document.querySelectorAll("#uploadfrm [data-type]").forEach(el => {
 		const want = wanttypes[0] === "" || wanttypes.includes(el.dataset.type.split("/")[0]);
