@@ -552,23 +552,19 @@ void stream_status(string name, mapping info)
 }
 
 //Basically only used after a follow hook; use the same authentication when that switches over.
-@export: Concurrent.Future check_following(string user, string chan)
+//Returns an ISO 8601 string, or 0 if not following.
+@export: continue Concurrent.Future|string check_following(int userid, int chanid)
 {
-	return twitch_api_request("https://api.twitch.tv/helix/users/follows?from_id={{USER}}&to_id={{CHAN}}", ([]),
-		(["username": (["{{USER}}": user, "{{CHAN}}": chan])]))
-	->then(lambda(mapping info) {
-		if (!sizeof(info->data)) {
-			//Not following. Explicitly store that info.
-			mapping foll = G_G_("participants", chan, user);
-			foll->following = 0;
-			return ({user, chan, foll});
-		}
-		mapping foll = G_G_("participants", chan, user);
-		foll->following = "since " + info->data[0]->followed_at;
-		return ({user, chan, foll});
-	}, lambda(mixed err) {
-		return ({user, chan, ([])}); //Unknown error. Ignore it (most likely the user will be assumed not to be a follower).
-	});
+	//When bcaster_token moves to user_token, keyed by ID, this lookup won't be needed
+	string chan = yield(get_user_info(chanid))->login;
+	multiset scopes = (multiset)((persist_status->path("bcaster_token_scopes")[chan]||"") / " ");
+	int mod = G->G->bot_uid; //TODO: If bot is not a mod, find another mod or use zero here
+	if (scopes["moderator:read:followers"]) mod = chanid;
+	if (!mod) return (["error": "No follower lookup permission"]);
+	mapping info = yield(twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/channels/followers?broadcaster_id=%d&user_id=%d",
+		chanid, userid)));
+	if (sizeof(info->data)) return info->data[0]->followed_at;
 }
 
 //Fetch a stream's schedule, up to N events within the next M seconds.
@@ -655,10 +651,9 @@ constant follower = ({"object channel", "mapping follower"});
 EventSub new_follower = EventSub("follower", "channel.follow", "2") { [string chan, mapping follower] = __ARGS__;
 	notice_user_name(follower->user_login, follower->user_id);
 	if (object channel = G->G->irc->channels["#" + chan])
-		/*check_following(follower->user_login, chan)->then()*/ {
+		spawn_task(check_following((int)follower->user_id, channel->userid)) {
 			//Sometimes bots will follow-unfollow. Avoid spamming chat with meaningless follow messages.
-			//FIXME: Check disabled CJA 20230906 due to API shutdown. Reinstate when ready.
-		//	if (!__ARGS__[0][2]->following) return;
+			if (!__ARGS__[0]) return;
 			event_notify("follower", channel, follower);
 			channel->trigger_special("!follower", ([
 				"user": follower->user_login,

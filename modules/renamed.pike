@@ -32,9 +32,9 @@ continue Concurrent.Future|mapping message_params(object channel, mapping person
 	array names = indices(u2n);
 	sort(values(u2n), names);
 	names -= ({"jtv", "tmi"}); //Some junk data in the files implies falsely that some people renamed to "jtv" or "tmi"
-	[string user, string chan, mapping foll] = yield(check_following(lower_case(param), channel->name[1..]));
+	string foll = yield(check_following(uid, channel->userid));
 	return ([
-		"{following}": foll->following || "",
+		"{following}": foll ? "since " + foll : "",
 		"{prevname}": sizeof(names) >= 2 ? names[-2] : "",
 		"{curname}": sizeof(names) ? names[-1] : param,
 		"{allnames}": names * " ",
