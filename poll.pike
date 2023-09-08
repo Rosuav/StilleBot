@@ -78,9 +78,6 @@ mapping cached_user_info(string user) {
 			}
 			headers->Authorization = "Bearer " + G->G->app_access_token;
 		}
-		else if (sscanf(options->authtype || "", "bcaster:%s", string chan) && chan && chan != "") {
-			headers->Authorization = "Bearer " + persist_status->path("bcaster_token")[chan];
-		}
 		else {
 			//Under what circumstances do we need to use "OAuth <token>" instead?
 			//In Mustard Mine, the only remaining place is PUT /kraken/channels which we
