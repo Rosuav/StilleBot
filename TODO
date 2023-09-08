@@ -112,8 +112,8 @@
 * Rename "gifted" flag in sub alerts to "is_gifted" to trigger boolean handling
   - Migrate existing settings
 * Replace bcaster_token[name] with user_token[id] and ditto scopes
-  - Have a compatibility function that returns a promise and yields the token
-    when the name has been translated into an ID
+  - Use the helper functions token_for_user_{id,login}{,_async} to get user creds
+  - These all return (or yield) an array ({token, scopes}) or 0 if no creds.
 * Alertbox: For any non-personal alert, have a "Revert to Stock" which deletes the
   alert settings that you have, aside from the "Active" flag
   - It may be worth having Active be a single-attribute update, so when you toggle

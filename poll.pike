@@ -175,11 +175,15 @@ mapping cached_user_info(int|string user) {
 //As of 20230908, tokens are stored by user login, and the ID
 //requires a lookup; this will change soon, and then the login
 //versions will require the lookup.
+//TODO: When this migrates, move token_for_user_id (which will
+//then become the fundamental) into globals.pike rather than
+//here. The others can all remain here. This will partly break
+//encapsulation, but maintain dependency ordering.
 @export: array(string) token_for_user_login(string login) {
 	login = lower_case(login);
 	string token = persist_status->path("bcaster_token")[login];
 	if (!token) return 0;
-	return ({token, persist_status->path("bcaster_token_scopes")[login]});
+	return ({token, persist_status->path("bcaster_token_scopes")[login] || ""});
 }
 
 //Eventually this will be important, as the synchronous version may fail.

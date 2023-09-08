@@ -609,7 +609,7 @@ void _IRCTRACE(mixed ... ignore) { }
 /* Available options:
 module		Override the default selection of callbacks and module version
 user		User to log in as. With module, defines connection caching.
-pass		OAuth password. If omitted, uses bcaster_token.
+pass		OAuth password. If omitted, uses the user token.
 capabilities	Optional array of caps to request
 join		Optional array of channels to join (include the hashes)
 login_commands	Optional commands to be sent after (re)connection
@@ -927,6 +927,7 @@ class irc_callback {
 		options->user = lower_case(options->user); //Casefold for the cache, don't have multiples kthx
 		if (!options->pass) {
 			string chan = lower_case(options->user);
+			//TODO: Switch this to token_for_user_id once that function migrates into globals
 			string pass = persist_status->path("bcaster_token")[chan];
 			if (!pass) return Concurrent.reject(({"No broadcaster auth for " + chan + "\n", backtrace()}));
 			array scopes = (persist_status->path("bcaster_token_scopes")[chan]||"") / " ";
