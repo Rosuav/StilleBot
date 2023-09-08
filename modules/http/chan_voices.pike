@@ -146,10 +146,8 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 		array have = tok->scopes || ({"chat_login", "user_read", "whispers:edit", "user_subscriptions", "user:manage:whispers"});
 		scopes |= (multiset)have;
 	}
-	if (string sc = persist_status->path("bcaster_token_scopes")[channel->name[1..]]) {
-		//Merge in any broadcaster scopes.
-		scopes |= (multiset)(sc / " ");
-	}
+	//Merge in any broadcaster scopes. TODO: Switch to ID when that is the fundamental - stay synchronous
+	scopes |= (multiset)(token_for_user_login(channel->name[1..])[1] / " ");
 	string url = function_object(G->G->http_endpoints->twitchlogin)->get_redirect_url(
 		scopes, (["force_verify": "true"])
 	) {

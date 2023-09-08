@@ -96,9 +96,8 @@ void wscmd_add(object channel, mapping(string:mixed) conn, mapping(string:mixed)
 	string title = basetitle; int idx = 1; //First one doesn't get the number appended
 	while (have_titles[title]) title = sprintf("%s #%d", basetitle, ++idx);
 	//Twitch will notify us when it's created, so no need to explicitly respond.
-	werror("Auth: %O\n", persist_status->path("bcaster_token_scopes")[channel->name[1..]]);
 	twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid,
-		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[channel->name[1..]]]),
+		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]]),
 		(["method": "POST", "json": copyfrom | (["title": title])]),
 	);
 }
@@ -110,7 +109,7 @@ void points_redeemed(string chan, mapping data, int|void removal)
 {
 	//write("POINTS %s ON %O: %O\n", removal ? "REFUNDED" : "REDEEMED", chan, data);
 	event_notify("point_redemption", chan, data->reward->id, removal, data);
-	string token = persist_status->path("bcaster_token")[chan];
+	string token = token_for_user_login(chan)[0];
 	mapping cfg = get_channel_config(chan); if (!cfg) return;
 
 	if (mapping dyn = !removal && cfg->dynamic_rewards && cfg->dynamic_rewards[data->reward->id]) {
@@ -145,7 +144,7 @@ continue Concurrent.Future populate_rewards_cache(string chan, string|int|void b
 	if (!broadcaster_id) broadcaster_id = yield(get_user_id(chan));
 	pointsrewards[chan] = ({ }); //If there's any error, don't keep retrying
 	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
-	mapping params = (["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]);
+	mapping params = (["Authorization": "Bearer " + token_for_user_id(broadcaster_id)[0]]);
 	array rewards = yield(twitch_api_request(url, params))->data;
 	//Prune the dynamic rewards list
 	mapping current = get_channel_config(broadcaster_id)->?dynamic_rewards;
@@ -238,8 +237,8 @@ constant vars_provided = ([
 continue mapping|Concurrent.Future message_params(object channel, mapping person, string|array param)
 {
 	if (param == "") return (["{error}": "Need a subcommand"]);
-	string token = persist_status->path("bcaster_token")[channel->name[1..]];
-	if (!token) return (["{error}": "Need broadcaster permissions"]);
+	string token = yield(token_for_user_id_async(channel->userid))[0];
+	if (token == "") return (["{error}": "Need broadcaster permissions"]);
 	string reward_id; array(string) cmds = "";
 	//Hmm. Might need to always have the reward ID, and then put the redemption ID into
 	//the same place that the cost goes. The "fulfil/cancel" API requires both IDs for
@@ -286,7 +285,7 @@ protected void create(string name) {
 	foreach (list_channel_configs(), mapping cfg) {
 		string chan = cfg->login; if (!chan) continue;
 		if (!pointsrewards[chan]) {
-			string scopes = persist_status->path("bcaster_token_scopes")[chan] || "";
+			string scopes = token_for_user_login(chan)[1];
 			if (has_value(scopes / " ", "channel:manage:redemptions")
 				|| has_value(scopes / " ", "channel:read:redemptions"))
 					spawn_task(populate_rewards_cache(chan, cfg->userid));

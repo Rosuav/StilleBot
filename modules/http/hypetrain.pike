@@ -72,7 +72,7 @@ continue mapping|Concurrent.Future get_state(int|string chan)
 		}
 		else uid = (string)yield(get_user_id(chan));
 		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + uid,
-				(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
+				(["Authorization": "Bearer " + token_for_user_id(uid)[0]])));
 		//If there's an error fetching events, don't set up hooks
 		hypetrain_begin(uid, (["broadcaster_user_id": uid]));
 		hypetrain_progress(uid, (["broadcaster_user_id": uid]));
@@ -135,7 +135,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			"backlink": !req->variables->mobile && "<a href=\"hypetrain?mobile\">Switch to mobile view</a>",
 		]));
 	}
-	int need_token = !persist_status->path("bcaster_token")[chan];
+	int need_token = 1; catch {need_token = token_for_user_login(chan)[0] == "";};
 	string scopes = ensure_bcaster_token(req, "channel:read:hype_train", chan);
 	//If we got a fresh token, push updates out, in case they had errors
 	if (need_token && !scopes) send_updates_all(chan);

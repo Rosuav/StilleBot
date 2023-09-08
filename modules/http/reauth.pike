@@ -17,7 +17,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			return render_template("login.md", (["scopes": scopes, "msg": "additional scopes"]));
 		return (["data": sprintf("Broadcaster login for %O saved\nScopes %O\n",
 				req->misc->session->user,
-				persist_status->path("bcaster_token_scopes")[req->misc->session->user->login]),
+				token_for_user_login(req->misc->session->user->login)),
 			"type": "text/plain; charset=\"UTF-8\""]);
 	}
 	mapping config = persist_config->path("ircsettings");

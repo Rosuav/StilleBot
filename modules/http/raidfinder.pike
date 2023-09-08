@@ -196,15 +196,14 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//If you provided for=userid, also show whether the target is following this stream. Gonna die when the deprecation concludes.
 			//TODO: Make it possible for a broadcaster to grant user:read:follows, which would allow such recommendations.
 			//TODO also: Use the same cache that tradingcards.pike uses. Maybe move the code to poll.pike?
-			//FIXME: Save ourselves some trouble once bcaster_token becomes user_token and is keyed by ID
 			//TODO: Move this to poll as a generic "is X following Y" call, which will be cached.
 			//It can then use EITHER form of the query - if we have X's user:read:follows or Y's moderator:read:followers
 			//Might need a way to locate a moderator though. Or go for the partial result with intrinsic auth??
-			string channame = yield(get_user_info((int)chanid))->login;
-			array scopes = (persist_status->path("bcaster_token_scopes")[channame] || "") / " ";
+			array creds = yield(token_for_user_id_async((int)chanid));
+			array scopes = creds[1] / " ";
 			if (has_value(scopes, "user:read:follows")) {
 				mapping info = yield(twitch_api_request(sprintf("https://api.twitch.tv/helix/channels/followed?user_id=%s&broadcaster_id=%s", chanid, chan),
-					(["Authorization": "Bearer " + persist_status->path("bcaster_token")[channame]])));
+					(["Authorization": "Bearer " + creds[0]])));
 				if (sizeof(info->data)) {
 					ret->is_following = info->data[0];
 					object howlong = time_from_iso(ret->is_following->followed_at)->distance(Calendar.ISO.now());

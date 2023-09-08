@@ -89,7 +89,7 @@ continue Concurrent.Future force_recalc(string chan, int|void fast) {
 	int chanid = yield(get_user_id(chan));
 	if (!fast || !stats->mods) {
 		array mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=" + chanid,
-			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])))->data;
+			(["Authorization": "Bearer " + token_for_user_id(chanid)[0]])))->data;
 		stats->mods = mkmapping(mods->user_id, mods->user_name);
 	}
 
@@ -98,7 +98,7 @@ continue Concurrent.Future force_recalc(string chan, int|void fast) {
 	mapping tm = gmtime(time()); //Twitch actually uses America/Pacific. This is behind UTC so it's mostly fine.
 	mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
 			+ sprintf("&started_at=%d-%02d-02T00:00:00Z", tm->year + 1900, tm->mon + 1),
-			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
+			(["Authorization": "Bearer " + token_for_user_id(chanid)[0]])));
 	string was_uncertain = stats["latest_bits_" + period];
 	//I said "mostly fine", but due to the way that rollover works, we can have uncertain data when we're in the
 	//middle of rollover. That's a roughly 8-9 hour period when updates might not push through correctly, so to
@@ -113,7 +113,7 @@ continue Concurrent.Future force_recalc(string chan, int|void fast) {
 		if (was_uncertain != "force" && key != was_uncertain && stats[period + "ly"][key]) break; //We have dependable stats, they shouldn't change now.
 		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
 				+ sprintf("&started_at=%d-%02d-02T00:00:00Z", year, month),
-				(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
+				(["Authorization": "Bearer " + token_for_user_id(chanid)[0]])));
 		stats[period + "ly"][key] = info->data;
 	}
 
@@ -216,9 +216,10 @@ continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:
 	//1.25 seconds to speed it up, hopefully it won't break anything.
 	if (method) {
 		string baseurl = "https://api.twitch.tv/helix/channels/vips?broadcaster_id=" + channel->userid + "&user_id=";
+		string token = yield(token_for_user_id_async(channel->userid))[0];
 		foreach (userids, string uid) {
 			int status = yield(twitch_api_request(baseurl + uid,
-				(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]),
+				(["Authorization": "Bearer " + token]),
 				(["method": method, "return_status": 1])));
 			if (status == 204) ; //Successfully added/removed
 			else if (status == 422) send_message(channel->name, "NOTE: User " + uid + " already " + (add ? "has" : "doesn't have") + " a VIP badge");

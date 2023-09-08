@@ -92,7 +92,7 @@ mapping eventsubs = ([]);
 //Ensure that we have all appropriate hooks for this channel (provide channel->config or equivalent)
 void specials_check_hooks(mapping cfg) {
 	string chan = cfg->login;
-	multiset scopes = (multiset)((persist_status->path("bcaster_token_scopes")[chan]||"") / " ");
+	multiset scopes = (multiset)(token_for_user_login(chan)[1] / " "); //TODO: Switch to user ID to ensure this remains synchronous
 	foreach (G->G->SPECIALS_SCOPES; string special; array scopesets) {
 		foreach (scopesets, array scopeset) {
 			if (!has_value(scopes[scopeset[*]], 0)) { //If there isn't any case of a scope that we don't have... then we have them all!

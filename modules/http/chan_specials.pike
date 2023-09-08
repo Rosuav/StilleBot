@@ -108,7 +108,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		]) | req->misc->chaninfo);
 	}
 	object addcmd = function_object(G->G->commands->addcmd);
-	multiset scopes = (multiset)((persist_status->path("bcaster_token_scopes")[req->misc->channel->name[1..]]||"") / " ");
+	multiset scopes = (multiset)(token_for_user_login(req->misc->channel->name[1..])[1] / " ");
 	int is_bcaster = req->misc->channel->userid == (int)req->misc->session->user->id;
 	foreach (addcmd->SPECIALS, [string spec, [string desc, string originator, string params], string tab]) {
 		array scopesets = G->G->SPECIALS_SCOPES[spec - "!"];

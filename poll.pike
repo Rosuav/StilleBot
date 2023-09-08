@@ -309,11 +309,11 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 		(!cached->expires || cached->expires > Calendar.ISO.Second()))
 			return cached->banlist;
 	string username = yield(get_user_info(userid))->login;
-	string scopes = persist_status->path("bcaster_token_scopes")[username] || "";
-	if (!has_value(scopes / " ", "moderation:read")) error("Don't have broadcaster auth to fetch ban list for %O\n", username);
+	array creds = yield(token_for_user_login_async(username));
+	if (!has_value(creds[1] / " ", "moderation:read")) error("Don't have broadcaster auth to fetch ban list for %O\n", username);
 	mapping ret = yield(get_helix_paginated("https://api.twitch.tv/helix/moderation/banned",
 		(["broadcaster_id": userid]),
-		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[username]]),
+		(["Authorization": "Bearer " + creds[0]]),
 	));
 	cached->stale = 0; cached->taken_at = time();
 	//If any of the entries have expiration times, record the earliest.
@@ -728,7 +728,7 @@ void check_hooks(array eventhooks)
 		int userid = c->?_id;
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses pseudo-channels.)
 		//Seems unnecessary to do all this work every time.
-		multiset scopes = (multiset)((persist_status->path("bcaster_token_scopes")[chan]||"") / " ");
+		multiset scopes = (multiset)(token_for_user_login(chan)[1] / " ");
 		//TODO: Check if the bot is actually a mod, otherwise use zero.
 		string mod = (string)G->G->bot_uid;
 		if (scopes["moderator:read:followers"]) mod = userid; //If we have the necessary permission, use the broadcaster's authentication.

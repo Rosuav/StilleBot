@@ -46,7 +46,7 @@ continue mapping|Concurrent.Future get_sub_points(string chan, int|void raw)
 	int uid = yield(get_user_id(chan)); //Should come from cache
 	array info = yield(get_helix_paginated("https://api.twitch.tv/helix/subscriptions",
 		(["broadcaster_id": (string)uid, "first": "99"]),
-		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
+		(["Authorization": "Bearer " + token_for_user_id(uid)[0]])));
 	if (raw) return info;
 	int points = 0;
 	foreach (info, mapping sub)
@@ -117,7 +117,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	}
 	int uid = yield(get_user_id(chan)); //Should come from cache
 	mapping raw = yield(twitch_api_request("https://api.twitch.tv/helix/subscriptions?broadcaster_id=" + uid,
-		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])));
+		(["Authorization": "Bearer " + token_for_user_id(uid)[0]])));
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 		"points": sort(tierlist) * ""

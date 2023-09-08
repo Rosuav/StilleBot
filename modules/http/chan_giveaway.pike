@@ -237,7 +237,7 @@ Concurrent.Future list_redemptions(int broadcaster_id, string chan, string id) {
 			"status": "UNFULFILLED",
 			"first": "50",
 		]),
-		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]),
+		(["Authorization": "Bearer " + token_for_user_login(chan)[0]]), //TODO: Switch to user_id once that's the fundamental
 	);
 }
 
@@ -250,7 +250,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		"error": "This page will become available once the broadcaster has logged in and configured redemptions.",
 		"login": "[Broadcaster login](:.twitchlogin data-scopes=" + replace(scopes, " ", "%20") + ")",
 	]) | req->misc->chaninfo);
-	string token = persist_status->path("bcaster_token")[chan];
+	string token = yield(token_for_user_login_async(chan))[0];
 	login += " [Mod login](:.twitchlogin)"; //TODO: If logged in as wrong user, allow logout
 	int broadcaster_id = yield(get_user_id(chan));
 	Concurrent.Future call(string method, string query, mixed body) {
@@ -396,7 +396,7 @@ continue mapping|Concurrent.Future get_chan_state(object channel, string grp)
 	int broadcaster_id = yield(get_user_id(chan));
 	array rewards;
 	if (mixed ex = catch {rewards = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + broadcaster_id,
-		(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]])))->data;
+		(["Authorization": "Bearer " + token_for_user_id(broadcaster_id)[0]])))->data;
 	}) {
 		if (arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401")) {
 			m_delete(persist_status->path("bcaster_token"), chan);
@@ -424,7 +424,7 @@ void open_close(string chan, int broadcaster_id, int want_open) {
 	mapping cfg = get_channel_config(broadcaster_id) || ([]);
 	if (!cfg->giveaway) return; //No rewards, nothing to open/close
 	mapping status = persist_status->path("giveaways", chan);
-	string token = persist_status->path("bcaster_token")[chan];
+	string token = token_for_user_login(chan)[0];
 	if (!token) {werror("Can't open/close giveaway w/o bcaster token\n"); return;}
 	status->is_open = want_open;
 	status[want_open ? "last_opened" : "last_closed"] = time();
@@ -576,8 +576,8 @@ void channel_on_off(string channel, int just_went_online)
 		"{dow}": (string)ts->week_day(), //1 = Monday, 7 = Sunday
 	]);
 	get_user_id(channel)->then(lambda(int broadcaster_id) {
-		string token = persist_status->path("bcaster_token")[channel];
-		if (token) foreach (dyn; string reward_id; mapping info) {
+		string token = token_for_user_login(channel)[0];
+		if (token != "") foreach (dyn; string reward_id; mapping info) {
 			int active = 0;
 			mapping params = ([]);
 			//If we just went online/offline, reset to base cost (if there is one).

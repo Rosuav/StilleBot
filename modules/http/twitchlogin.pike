@@ -72,8 +72,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//NOTE: Some things are inconsistent on whether it's "scope" or "scopes". Currently
 	//checking for either. TODO: Make them all consistent.
 	multiset havescopes = req->misc->session->?scopes || (<>);
-	string bcast_scopes = persist_status->path("bcaster_token_scopes")[req->misc->session->user->?login];
-	if (bcast_scopes) havescopes |= (multiset)(bcast_scopes / " ");
+	string bcast_scopes = yield(token_for_user_login_async(req->misc->session->user->?login))[1];
+	if (bcast_scopes != "") havescopes |= (multiset)(bcast_scopes / " ");
 	multiset wantscopes = (multiset)((req->variables->scopes || req->variables->scope || "") / " " - ({""}));
 	multiset bad = wantscopes - TwitchAuth()->list_valid_scopes();
 	if (sizeof(bad)) return (["error": 400, "type": "text/plain", //Note that this is a 400, as opposed to a 500 in ensure_login

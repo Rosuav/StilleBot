@@ -741,8 +741,9 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		string chan = channel->name[1..];
 		ensure_host_connection(chan);
 		string token;
-		if (grp == cfg->authkey && has_value((persist_status->path("bcaster_token_scopes")[chan]||"") / " ", "chat:read")) {
-			if (cfg->hostbackend == "js") token = persist_status->path("bcaster_token")[chan];
+		array creds = token_for_user_login(chan);
+		if (grp == cfg->authkey && has_value(creds[1] / " ", "chat:read")) {
+			if (cfg->hostbackend == "js") token = creds[0];
 			else token = "backendinstead";
 		}
 		return ([
