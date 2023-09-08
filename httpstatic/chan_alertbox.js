@@ -1023,6 +1023,15 @@ on("change", "input[type=file]", e => {
 	}
 	e.match.value = "";
 });
+on("dragover", ".filedropzone", e => e.preventDefault());
+on("drop", ".filedropzone", e => {
+	e.preventDefault();
+	for (let f of e.dataTransfer.items) {
+		f = f.getAsFile();
+		ws_sync.send({cmd: "upload", name: f.name, size: f.size, mimetype: f.type});
+		uploadme[f.name] = f;
+	}
+});
 
 on("click", ".dlg", e => DOM("#" + e.match.id + "dlg").showModal());
 on("click", "#confirmrevokekey", e => {ws_sync.send({cmd: "revokekey"}); DOM("#revokekeydlg").close();});

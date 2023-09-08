@@ -87,7 +87,6 @@ export async function sockmsg_upload(msg) {
 }
 
 on("change", "input[type=file]", e => {
-	console.log(e.match.files);
 	set_content("#errormsg", "").classList.remove("visible");
 	for (let f of e.match.files) {
 		ws_sync.send({cmd: "upload", name: f.name, size: f.size});
@@ -97,7 +96,6 @@ on("change", "input[type=file]", e => {
 });
 on("dragover", ".filedropzone", e => e.preventDefault());
 on("drop", ".filedropzone", e => {
-	console.log(e);
 	e.preventDefault();
 	for (let f of e.dataTransfer.items) {
 		f = f.getAsFile();
