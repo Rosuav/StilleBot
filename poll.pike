@@ -182,7 +182,7 @@ mapping cached_user_info(int|string user) {
 @export: array(string) token_for_user_login(string login) {
 	login = lower_case(login);
 	string token = persist_status->path("bcaster_token")[login];
-	if (!token) return 0;
+	if (!token) return ({"", ""});
 	return ({token, persist_status->path("bcaster_token_scopes")[login] || ""});
 }
 
