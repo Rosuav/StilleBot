@@ -703,12 +703,10 @@ void check_hooks(array eventhooks)
 		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses pseudo-channels.)
 		//Seems unnecessary to do all this work every time.
 		multiset scopes = (multiset)((persist_status->path("bcaster_token_scopes")[chan]||"") / " ");
-		//After Aug 3rd, add a second condition "moderator_user_id" which is either the same as the
-		//broadcaster (if we have broadcaster auth scope "moderator:read:followers") or the bot's
-		//user id, which will work only if the bot mods for that channel.
-		//CJA 20230825: Hacked in with my user ID, this won't work for anyone else and won't work
-		//if I'm not a mod in that channel.
-		new_follower(chan, (["broadcaster_user_id": (string)userid, "moderator_user_id": "49497888"]));
+		//TODO: Check if the bot is actually a mod, otherwise use zero.
+		string mod = (string)G->G->bot_uid;
+		if (scopes["moderator:read:followers"]) mod = userid; //If we have the necessary permission, use the broadcaster's authentication.
+		if (mod != "0") new_follower(chan, (["broadcaster_user_id": (string)userid, "moderator_user_id": mod]));
 		//raidin(chan, (["to_broadcaster_user_id": (string)userid]));
 		raidout(chan, (["from_broadcaster_user_id": (string)userid]));
 	}
