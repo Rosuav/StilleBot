@@ -586,15 +586,13 @@ void stream_status(string name, mapping info)
 //Returns an ISO 8601 string, or 0 if not following.
 @export: continue Concurrent.Future|string check_following(int userid, int chanid)
 {
-	//When bcaster_token moves to user_token, keyed by ID, this lookup won't be needed
-	string chan = yield(get_user_info(chanid))->login;
-	multiset scopes = (multiset)((persist_status->path("bcaster_token_scopes")[chan]||"") / " ");
-	int mod = G->G->bot_uid; //TODO: If bot is not a mod, find another mod or use zero here
-	if (scopes["moderator:read:followers"]) mod = chanid;
-	if (!mod) return (["error": "No follower lookup permission"]);
+	array creds = yield(token_for_user_id_async(chanid));
+	multiset scopes = (multiset)(creds[1] / " ");
+	mapping headers = ([]);
+	if (scopes["moderator:read:followers"]) headers->Authorization = "Bearer " + creds[0];
 	mapping info = yield(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/channels/followers?broadcaster_id=%d&user_id=%d",
-		chanid, userid)));
+		chanid, userid), headers));
 	if (sizeof(info->data)) return info->data[0]->followed_at;
 }
 
