@@ -7,7 +7,7 @@ inherit annotated;
 @retain: mapping category_names = ([]);
 @retain: mapping user_info = ([]);
 
-mapping cached_user_info(string user) {
+mapping cached_user_info(int|string user) {
 	mapping info = user_info[user];
 	if (info && time() - info->_fetch_time < 3600) return info;
 }
@@ -167,6 +167,36 @@ mapping cached_user_info(string user) {
 @export: Concurrent.Future get_user_id(string user)
 {
 	return get_users_info(({user}), "login")->then(lambda(array(mapping) info) {return sizeof(info) && (int)info[0]->id;});
+}
+
+//Four related functions to access user credentials.
+//Fetch by login or ID, fetch synchronously or asynchronously.
+//Async versions are always safe; synchronous depend on cache.
+//As of 20230908, tokens are stored by user login, and the ID
+//requires a lookup; this will change soon, and then the login
+//versions will require the lookup.
+@export: array(string) token_for_user_login(string login) {
+	login = lower_case(login);
+	string token = persist_status->path("bcaster_token")[login];
+	if (!token) return 0;
+	return ({token, persist_status->path("bcaster_token_scopes")[login]});
+}
+
+//Eventually this will be important, as the synchronous version may fail.
+@export: continue Concurrent.Future|array(string) token_for_user_login_async(string login) {
+	return token_for_user_login(login);
+}
+
+//Not currently reliable; use the async variety for certainty.
+@export: array(string) token_for_user_id(int|string userid) {
+	mapping info = cached_user_info((int)userid);
+	if (!info) error("Synchronous fetching of tokens by user ID is not yet available\n");
+	return token_for_user_login(info->login);
+}
+
+@export: continue Concurrent.Future|array(string) token_for_user_id_async(int|string userid) {
+	string login = yield(get_user_info((int)userid))->login;
+	return token_for_user_login(login);
 }
 
 @export: Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
