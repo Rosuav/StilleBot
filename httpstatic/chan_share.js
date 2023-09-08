@@ -10,15 +10,16 @@ if (!is_mod) {
 	DOM("#msgformat").disabled = true;
 }
 
+const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
+
 //NOTE: Item rendering applies to uploaded files. Other things are handled by render() itself.
 const files = { };
 export const render_parent = DOM("#uploads");
 export function render_item(file, obj) {
-	console.log("render_item", file, obj);
 	files[file.id] = file;
 	return LABEL({"data-id": file.id}, [
 		FIGURE([
-			DIV({className: "thumbnail", style: "background-image: url(" + file.url + ")"}),
+			DIV({className: "thumbnail", style: "background-image: url(" + (file.url || TRANSPARENT_IMAGE) + ")"}),
 			FIGCAPTION([
 				A({href: file.url, target: "_blank"}, file.name),
 			]),
@@ -29,7 +30,6 @@ export function render_item(file, obj) {
 
 export function render(data) {
 	if (data.who) {
-		console.log("Who may upload?", data.who);
 		user_types.forEach(u => {
 			const permitted = !!data.who[u[0]];
 			const cb = DOM("#user_types input[data-kwd=" + u[0] + "]");
