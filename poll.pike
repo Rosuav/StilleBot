@@ -193,7 +193,7 @@ mapping cached_user_info(int|string user) {
 
 //Not currently reliable; use the async variety for certainty.
 @export: array(string) token_for_user_id(int|string userid) {
-	mapping info = cached_user_info((int)userid);
+	mapping info = user_info[(int)userid];
 	if (!info) error("Synchronous fetching of tokens by user ID is not yet available\n");
 	return token_for_user_login(info->login);
 }
