@@ -17,6 +17,7 @@ Please note: Files are removed periodically; this is not a portfolio.
 
 <div id=uploads></div>
 <form>Upload new file: <input type=file multiple accept=\"image/*\"></form>
+<div class=filedropzone>Or drop files here to upload</div>
 
 <div id=errormsg></div>
 
@@ -82,6 +83,14 @@ Please note: Files are removed periodically; this is not a portfolio.
 figcaption {
 	max-width: 150px;
 	overflow-wrap: break-word;
+}
+.filedropzone {
+	left: 0; right: 0;
+	height: 4em;
+	border: 1px dashed black;
+	background: #eeeeff;
+	margin: 0 0.25em;
+	padding: 0.5em;
 }
 </style>
 ";

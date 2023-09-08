@@ -95,5 +95,15 @@ on("change", "input[type=file]", e => {
 	}
 	e.match.value = "";
 });
+on("dragover", ".filedropzone", e => e.preventDefault());
+on("drop", ".filedropzone", e => {
+	console.log(e);
+	e.preventDefault();
+	for (let f of e.dataTransfer.items) {
+		f = f.getAsFile();
+		ws_sync.send({cmd: "upload", name: f.name, size: f.size});
+		uploadme[f.name] = f;
+	}
+});
 
 on("change", "#msgformat", e => ws_sync.send({cmd: "config", msgformat: e.match.value}));
