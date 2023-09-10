@@ -590,10 +590,17 @@ void stream_status(string name, mapping info)
 	multiset scopes = (multiset)(creds[1] / " ");
 	mapping headers = ([]);
 	if (scopes["moderator:read:followers"]) headers->Authorization = "Bearer " + creds[0];
-	mapping info = yield(twitch_api_request(sprintf(
-		"https://api.twitch.tv/helix/channels/followers?broadcaster_id=%d&user_id=%d",
-		chanid, userid), headers));
-	if (sizeof(info->data)) return info->data[0]->followed_at;
+	mixed ex = catch {
+		mapping info = yield(twitch_api_request(sprintf(
+			"https://api.twitch.tv/helix/channels/followers?broadcaster_id=%d&user_id=%d",
+			chanid, userid), headers));
+		if (sizeof(info->data)) return info->data[0]->followed_at;
+	};
+	if (ex) {
+		werror("ERROR IN check_following(%O, %O)\n", userid, chanid);
+		if (headers->Authorization) werror("Using broadcaster auth\n");
+		werror(describe_backtrace(ex));
+	}
 }
 
 //Fetch a stream's schedule, up to N events within the next M seconds.
