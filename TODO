@@ -121,11 +121,6 @@
   - When an alert does not have any other details set, it uses a stock alert. Thus
     you can easily enable and disable alerts, without having to do the work of
     creating them. (I think they should start enabled?)
-* Hype trains seem to be uncapped now.
-  - Remove special-casing of level 5. Keep the code somewhere though.
-  - Figure out a pattern to the growth rate and therefore the threshold for Super
-    Hard difficulty (ergo the sixth emotes)
-  - Otherwise, pretty much everything should work
 * Find all forms in dialogs and use tag=formdialog instead
 * chan_giveaway is trying to reference something provided by chan_pointsrewards,
   which fails on fresh start. This breaks the command editor. FIX THIS.
@@ -266,6 +261,3 @@
   - If enabled, when you open the raid finder, it signals all raid finders who have you
     as a tile. Red asterisk to signal "Has raid finder open, is probably ending soon!"
   - Similarly, when you close the raid finder (or disable the option), signal-revert all.
-* Path to Affiliate
-  - Show when they achieve affiliation, with big sparkle party and confetti
-  - Should collections be automatically shareable, or should the guide choose that?
