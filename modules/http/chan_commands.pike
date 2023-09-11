@@ -534,5 +534,11 @@ protected void create(string name) {
 			object channel = G->G->irc->channels["#" + cfg->login]; if (!channel) continue;
 			if (!channel->commands[cmd - "!"]) enable_feature(channel, cmd, 1);
 		}
+		if (cfg->features->quotes) foreach ("!quote" / " ", string cmd) {
+			if (cfg->features["info-" + cmd]) continue;
+			cfg->features["info-" + cmd] = 1;
+			object channel = G->G->irc->channels["#" + cfg->login]; if (!channel) continue;
+			if (!channel->commands[cmd - "!"]) enable_feature(channel, cmd, 1);
+		}
 	}
 }
