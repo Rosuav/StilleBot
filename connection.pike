@@ -71,9 +71,16 @@ mapping(string:mixed) gather_person_info(mapping params, string msg)
 	return ret;
 }
 
+//May receive up to three parameters: the value to be formatted, the default (which can be a parameter),
+//and the channel object
 mapping(string:function(string:string)) text_filters = ([
 	"time_hms": lambda(string tm) {return describe_time_short((int)tm);},
 	"time_english": lambda(string tm) {return describe_time((int)tm);},
+	"date_dmy": lambda(string tm, string dflt, object channel) {
+		object ts = Calendar.Gregorian.Second("unix", (int)tm);
+		if (string tz = channel->config->timezone) ts = ts->set_timezone(tz) || ts;
+		return sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
+	},
 	"upper": upper_case, "lower": lower_case,
 ]);
 
@@ -344,7 +351,7 @@ class channel(string name) { //name begins with hash and is all lower case
 			}
 			else value = vars[type + kwd + tail];
 			if (!value || value == "") return dflt;
-			if (function f = filter != "" && text_filters[filter]) return f(value);
+			if (function f = filter != "" && text_filters[filter]) return f(value, dflt, this);
 			return value;
 		};
 	}
