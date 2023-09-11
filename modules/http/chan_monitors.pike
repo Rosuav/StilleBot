@@ -4,7 +4,7 @@ inherit builtin_command;
 
 constant builtin_name = "Monitors"; //The front end may redescribe this according to the parameters
 constant builtin_description = "Get information about a channel monitor";
-constant builtin_param = ({"/Monitor/monitor_id"});
+constant builtin_param = ({"/Monitor/monitor_id", "Advance by"});
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{type}": "Monitor type (text, goalbar, countdown)",
@@ -182,11 +182,14 @@ string format_subscriptions(int value) {
 }
 
 mapping message_params(object channel, mapping person, string|array param) {
-	string monitor = stringp(param) ? param : param[0];
+	if (stringp(param)) param /= " "; //For now, split on spaces, assume you won't have any more than two words
+	string monitor = param[0];
+	int advance = sizeof(param) > 1 && (int)param[1];
 	mapping info = channel->config->monitors[?monitor];
 	if (!monitor) return (["{error}": "Unrecognized monitor ID - has it been deleted?"]);
 	switch (info->type) {
 		case "goalbar": {
+			if (advance) autoadvance(channel, person, "", advance);
 			int pos = (int)channel->expand_variables(info->text); //The text starts with the variable, then a colon, so this will give us the current (raw) value.
 			int tier, goal, found;
 			foreach (info->thresholds / " "; tier; string th) {
