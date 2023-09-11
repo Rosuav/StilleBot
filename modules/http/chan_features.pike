@@ -35,7 +35,6 @@ $$save_or_login||> [Export/back up all configuration](:type=submit name=export)
 ";
 
 constant FEATUREDESC = ([
-	"quotes": "Adding, deleting, and removing quotes",
 	"commands": "Chat commands for managing chat commands",
 ]);
 

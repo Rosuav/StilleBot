@@ -3,7 +3,6 @@ constant active_channels = ({""}); //Deprecated, slated for removal.
 constant access = "mod";
 
 constant FEATURES = ({
-	({"quotes", "Adding, deleting, and removing quotes"}),
 	({"commands", "Chat commands for managing chat commands"}),
 });
 constant FEATUREDESC = (mapping)FEATURES;

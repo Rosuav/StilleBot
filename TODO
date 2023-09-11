@@ -40,8 +40,6 @@
     - What happens if they're in a different order? This is currently the only plausible
       way to reorder triggers, which might be significant.
   - Update timezone if specified.
-  - What about quotes??? How do we validate their format?
-    - Hand each one, individually, to the updater from the front end??
 * Is it possible to get a "recent messages" timeout? Would allow squishing of spam if the
   channel is too quiet. Might not be worth it though.
 * Polish multi-voice.
