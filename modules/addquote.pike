@@ -66,7 +66,6 @@ string process(object channel, object person, string param)
 	channel->config->quotes += ({([
 		"msg": param,
 		"game": chaninfo->game,
-		"mature": chaninfo->mature,
 		"timestamp": time(),
 		"recorder": person->user,
 	])});
