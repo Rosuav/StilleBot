@@ -21,7 +21,7 @@ constant vars_provided = ([
 ]);
 constant command_suggestions = ([
 	"!quote": ([
-		"_description": "View a chosen or random channel quote",
+		"_description": "Quotes - View a chosen or random channel quote",
 		"builtin": "quote", "builtin_param": ({"Get", "%s"}),
 		"message": ([
 			"conditional": "string", "expr1": "{error}", "expr2": "",
@@ -30,7 +30,7 @@ constant command_suggestions = ([
 		]),
 	]),
 	"!delquote": ([
-		"_description": "Delete a channel quote",
+		"_description": "Quotes - Delete a channel quote",
 		"builtin": "quote", "builtin_param": ({"Delete", "%s"}),
 		"message": ([
 			"conditional": "string", "expr1": "{error}", "expr2": "",
@@ -39,7 +39,7 @@ constant command_suggestions = ([
 		]),
 	]),
 	"!addquote": ([
-		"_description": "Add a channel quote",
+		"_description": "Quotes - Add a channel quote",
 		"builtin": "quote", "builtin_param": ({"Add", "", "{@emoted}"}),
 		"message": ([
 			"conditional": "string", "expr1": "{error}", "expr2": "",
