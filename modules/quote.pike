@@ -51,7 +51,7 @@ mapping message_params(object channel, mapping person, array|string param) {
 	mapping chaninfo = G->G->channel_info[channel->name[1..]];
 	if (!chaninfo) return (["{error}": "Internal error - no channel info"]); //I'm pretty sure this shouldn't happen
 	int idx = (int)param[1];
-	if (idx <= 0 || idx > sizeof(quotes)) return (["{error}": "No such quote."]);
+	if (idx < 0 || idx > sizeof(quotes)) return (["{error}": "No such quote."]);
 	switch (param[0]) {
 		case "Get": {
 			if (!idx) {
@@ -72,5 +72,7 @@ mapping message_params(object channel, mapping person, array|string param) {
 			persist_config->save();
 			return (["{error}": "", "{id}": (string)idx]);
 		}
+		default: break;
 	}
+	return (["{error}": "Unknown subcommand, check configuration"]); //Won't happen if you use the GUI command editor normally
 }
