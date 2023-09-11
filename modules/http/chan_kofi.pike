@@ -13,15 +13,6 @@ this value into the Webhook URL: <input readonly value=\"$$webhook_url$$\" size=
 
 Once authenticated, Ko-fi events will begin showing up in [Special Triggers](specials),
 [Alerts](alertbox#kofi), and [Goal Bars](monitors).
-
-* TODO:
-* Show a list
-* of recent
-* donations,
-* shop sales,
-* and new subs.
-
-TODO: Commissions????
 ";
 
 mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)

@@ -39,6 +39,7 @@ constant sidebar_menu = ({
 	({"*monitors", "Monitors"}),
 	({"messages", "Messages"}),
 	({"share", "Art sharing"}),
+	({"kofi", "Ko-fi integration"}),
 	//TODO: Hype train, raid finder, emote showcase
 });
 array sidebar_modmenu = map(sidebar_menu) {return ({__ARGS__[0][0] - "*", __ARGS__[0][1]});};
