@@ -10,7 +10,7 @@ command to save it for posterity!
 
 constant builtin_description = "View and manage channel quotes";
 constant builtin_name = "Quotes";
-constant builtin_param = ({"/Action/Get/Add/Edit/Delete", "Quote number", "Text (add/edit)"});
+constant builtin_param = ({"/Action/Get/Add/Delete", "Quote number (except Add)", "Text (for Add)"});
 constant vars_provided = ([
 	"{error}": "Blank if all is well, otherwise an error message",
 	"{id}": "ID of the selected quote",
@@ -38,6 +38,15 @@ constant command_suggestions = ([
 			"otherwise": "@$$: {error}",
 		]),
 	]),
+	"!addquote": ([
+		"_description": "Add a channel quote",
+		"builtin": "quote", "builtin_param": ({"Add", "", "{@emoted}"}),
+		"message": ([
+			"conditional": "string", "expr1": "{error}", "expr2": "",
+			"message": "@$$: Added quote #{id}",
+			"otherwise": "@$$: {error}",
+		]),
+	]),
 ]);
 
 mapping message_params(object channel, mapping person, array|string param) {
@@ -53,6 +62,36 @@ mapping message_params(object channel, mapping person, array|string param) {
 	int idx = (int)param[1];
 	if (idx < 0 || idx > sizeof(quotes)) return (["{error}": "No such quote."]);
 	switch (param[0]) {
+		case "Add": {
+			if (idx) return (["{error}": "Cannot add with a specific ID, sorry"]);
+			if (sscanf(param[2], "%*[@]%s %s", string who, string what) && what && what != "") {
+				if (lower_case(who) == channel->name[1..] || G_G_("participants", channel->name[1..])[lower_case(who)]) {
+					//Seems to be a person's name at the start. Flip it to the end.
+					//Note that this isn't perfect; if the person happens to not be in
+					//the viewer list, the transformation won't work.
+					if (what[0] == '\xFFFA') what = " " + what;
+					if (what[-1] == '\xFFFB') what += " ";
+					//We now have spaces guarding any emotes. (Note that we assume here that any
+					//interlinear annotations represent emotes, ie that the FFFA is followed by
+					//the letter "e". Currently the only other use of FFFA/FFFB in StilleBot is
+					//user_text which is only seen during Markdown parsing.)
+					param[2] = sprintf("\"%s\" -- %s", what, who);
+				}
+			}
+			//TODO: Make use of the emoted text for the web site
+			string text = param[2];
+			while (sscanf(text, "%s\ufffae%*s:%s\ufffb%s", string before, string em, string after))
+				text = before + em + after;
+			channel->config->quotes += ({([
+				"msg": text, "emoted": param[2],
+				"game": chaninfo->game,
+				"timestamp": time(),
+				"recorder": person->user,
+			])});
+			idx = sizeof(quotes = channel->config->quotes);
+			persist_config->save();
+			//fallthrough
+		}
 		case "Get": {
 			if (!idx) {
 				if (!sizeof(quotes)) return (["{error}": "No quotes recorded."]);

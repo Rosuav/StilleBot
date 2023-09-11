@@ -528,13 +528,14 @@ protected void create(string name) {
 	//mapping gets removed.
 	foreach (list_channel_configs(), mapping cfg) {
 		if (!cfg->features) continue;
+		m_delete(cfg->features, "info-!addquote");
 		if (cfg->features->info) foreach ("!calc !shoutout !follower !uptime !hypetrain" / " ", string cmd) {
 			if (cfg->features["info-" + cmd]) continue;
 			cfg->features["info-" + cmd] = 1;
 			object channel = G->G->irc->channels["#" + cfg->login]; if (!channel) continue;
 			if (!channel->commands[cmd - "!"]) enable_feature(channel, cmd, 1);
 		}
-		if (cfg->features->quotes) foreach ("!quote !delquote" / " ", string cmd) {
+		if (cfg->features->quotes) foreach ("!quote !addquote !delquote" / " ", string cmd) {
 			if (cfg->features["info-" + cmd]) continue;
 			cfg->features["info-" + cmd] = 1;
 			object channel = G->G->irc->channels["#" + cfg->login]; if (!channel) continue;
