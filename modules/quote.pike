@@ -19,15 +19,26 @@ constant vars_provided = ([
 	"{timestamp}": "When the quote was recorded (use hms for formatting)",
 	"{recorder}": "Person who recorded the quote",
 ]);
-constant command_suggestions = (["!quote": ([
-	"_description": "View a chosen or random channel quote",
-	"builtin": "quote", "builtin_param": ({"Get", "%s"}),
-	"message": ([
-		"conditional": "string", "expr1": "{error}", "expr2": "",
-		"message": "@$$: Quote #{id}: {msg} [{game||uncategorized}, {timestamp|date_dmy}]",
-		"otherwise": "@$$: {error}",
+constant command_suggestions = ([
+	"!quote": ([
+		"_description": "View a chosen or random channel quote",
+		"builtin": "quote", "builtin_param": ({"Get", "%s"}),
+		"message": ([
+			"conditional": "string", "expr1": "{error}", "expr2": "",
+			"message": "@$$: Quote #{id}: {msg} [{game||uncategorized}, {timestamp|date_dmy}]",
+			"otherwise": "@$$: {error}",
+		]),
 	]),
-])]);
+	"!delquote": ([
+		"_description": "Delete a channel quote",
+		"builtin": "quote", "builtin_param": ({"Delete", "%s"}),
+		"message": ([
+			"conditional": "string", "expr1": "{error}", "expr2": "",
+			"message": "@$$: Removed quote #{id}",
+			"otherwise": "@$$: {error}",
+		]),
+	]),
+]);
 
 mapping message_params(object channel, mapping person, array|string param) {
 	if (stringp(param)) {
@@ -40,15 +51,26 @@ mapping message_params(object channel, mapping person, array|string param) {
 	mapping chaninfo = G->G->channel_info[channel->name[1..]];
 	if (!chaninfo) return (["{error}": "Internal error - no channel info"]); //I'm pretty sure this shouldn't happen
 	int idx = (int)param[1];
-	if (!idx) {
-		if (!sizeof(quotes)) return (["{error}": "No quotes recorded."]);
-		idx = random(sizeof(quotes)) + 1;
+	if (idx <= 0 || idx > sizeof(quotes)) return (["{error}": "No such quote."]);
+	switch (param[0]) {
+		case "Get": {
+			if (!idx) {
+				if (!sizeof(quotes)) return (["{error}": "No quotes recorded."]);
+				idx = random(sizeof(quotes)) + 1;
+			}
+			mapping quote = quotes[idx-1];
+			return ([
+				"{error}": "",
+				"{id}": (string)idx, "{msg}": quote->msg, "{game}": quote->game || "",
+				"{timestamp}": (string)quote->timestamp, "{recorder}": quote->recorder || "",
+			]);
+		}
+		case "Delete": {
+			if (!idx) return (["{error}": "No such quote."]);
+			quotes[idx - 1] = 0;
+			channel->config->quotes -= ({0});
+			persist_config->save();
+			return (["{error}": "", "{id}": (string)idx]);
+		}
 	}
-	else if (idx <= 0 || idx > sizeof(quotes)) return (["{error}": "No such quote."]);
-	mapping quote = quotes[idx-1];
-	return ([
-		"{error}": "",
-		"{id}": (string)idx, "{msg}": quote->msg, "{game}": quote->game || "",
-		"{timestamp}": (string)quote->timestamp, "{recorder}": quote->recorder || "",
-	]);
 }
