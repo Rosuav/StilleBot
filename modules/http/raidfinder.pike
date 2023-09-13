@@ -433,6 +433,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				if (sizeof(cats)) {
 					args->game_id = (array(string))cats->id;
 					title = cats->name * ", " + " streams";
+					//Include the box art. What should we do with those that don't have any?
+					title += replace(sprintf("%{ ![](%s)%}", cats->box_art_url), (["{width}": "20", "{height}": "27"]));
 					break;
 				}
 				//Else fall through. Any sort of junk category name, treat it as if it's "?categories"
