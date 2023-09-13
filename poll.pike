@@ -735,7 +735,9 @@ void check_hooks(array eventhooks)
 		//Seems unnecessary to do all this work every time.
 		multiset scopes = (multiset)(token_for_user_login(chan)[1] / " ");
 		//TODO: Check if the bot is actually a mod, otherwise use zero.
-		string mod = (string)G->G->bot_uid;
+		//For now, hacking it in so anyone who's already using the !!follower special trigger
+		//will attempt to continue using the bot's intrinsic auth. This is not perfect.
+		string mod = cfg->commands["!follower"] ? (string)G->G->bot_uid : "0";
 		if (scopes["moderator:read:followers"]) mod = userid; //If we have the necessary permission, use the broadcaster's authentication.
 		if (mod != "0") new_follower(chan, (["broadcaster_user_id": (string)userid, "moderator_user_id": mod]));
 		//raidin(chan, (["to_broadcaster_user_id": (string)userid]));
