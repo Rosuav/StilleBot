@@ -1,13 +1,6 @@
 inherit http_websocket;
 constant markdown = #"# Feature management for channel $$channel$$
 
-## Chat commands
-
-Feature | Description | Command details | Status
---------|-------------|-----------------|---------
-(loading...) | - | - | -
-{: #features}
-
 ## Customizable features
 
 Commands, triggers, specials, and other separately-manageable features of the bot can be
@@ -34,9 +27,7 @@ $$save_or_login||> [Export/back up all configuration](:type=submit name=export)
 </style>
 ";
 
-constant FEATUREDESC = ([
-	"commands": "Chat commands for managing chat commands",
-]);
+constant FEATUREDESC = ([]);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -123,7 +114,6 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 
 @"is_mod": void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping feat = channel->config->features; if (!feat) feat = channel->config->features = ([]);
-	array FEATUREDESC = function_object(G->G->commands->features)->FEATUREDESC;
 	if (!FEATUREDESC[msg->id]) return;
 	switch (msg->state) {
 		case "active": feat[msg->id] = 1; break;

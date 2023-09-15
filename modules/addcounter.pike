@@ -1,8 +1,5 @@
 inherit command;
 constant active_channels = ({""}); //Deprecated, slated for removal.
-constant featurename = "commands";
-constant require_moderator = 1;
-constant hidden_command = 1;
 
 string process(object channel, object person, string param)
 {

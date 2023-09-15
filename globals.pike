@@ -41,7 +41,7 @@ class command
 	//to a 0, as echocommands will normally use 0 for the defaults.
 	constant access = "any"; //Set to "mod" for mod-only, "vip" for VIPs and mods, or "none" for disabled/internal-only commands (more useful for echo commands)
 	constant visibility = "visible"; //Set to "hidden" to suppress the command from !help (or set hidden_command to 1, deprecated alternative)
-	constant featurename = "unknown"; //Set to a feature flag to allow this command to be governed by !features (not usually appropriate for echocommands)
+	constant featurename = "unknown"; //Deprecated. Use builtins and provide command suggestions - way more flexible.
 	constant active_channels = ({ }); //Deprecated. Instead of setting this, design a builtin and create per-channel commands. Still functional though.
 	constant docstring = ""; //Override this with your docs
 	//Override this to do the command's actual functionality, after permission checks.

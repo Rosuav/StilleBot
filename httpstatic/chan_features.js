@@ -6,30 +6,6 @@ const active_desc = {
 	Inactive: "Inactive: Chat commands disabled, web access only",
 };
 const prefix_len = {Active: 2, Inactive: 4, Default: 3}; //Number of characters that get kept even on small screens
-export const render_parent = DOM("#features tbody");
-export function render_item(msg, obj) {
-	if (obj) {
-		set_content(obj.querySelector(".desc"), msg.desc);
-		obj.querySelector(`[value="${msg.state}"]`).checked = true;
-		return obj;
-	}
-	return TR({"data-id": msg.id}, [
-		TD(msg.id),
-		TD({className: "desc"}, msg.desc),
-		TD((featurecmds[msg.id] || []).map(cmd => [A(
-			{href: "https://rosuav.github.io/StilleBot/commands/" + cmd},
-			CODE("!" + cmd)
-		), " "])),
-		TD({className: "no-wrap"}, ["Active", "Inactive"].map(s =>
-			LABEL([INPUT({
-				type: "radio", className: "featurestate",
-				name: msg.id, value: s.toLowerCase(),
-				checked: msg.state == s.toLowerCase(),
-				disabled: !ws_group.startsWith("control#"),
-			}), ABBR({title: active_desc[s]}, [s.slice(0, prefix_len[s]), SPAN(s.slice(prefix_len[s]))])]),
-		)),
-	]);
-}
 
 export function render(data) {
 	if (data.enableables) {

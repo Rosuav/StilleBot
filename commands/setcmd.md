@@ -1,8 +1,6 @@
 # !setcmd: Configure an echo command for this channel
 
-Available to: mods only
-
-Part of manageable feature: commands
+Available to: all users
 
 Usage: `!setcmd !commandname option [option [option...]]`
 

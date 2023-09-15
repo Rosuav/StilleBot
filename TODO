@@ -262,3 +262,5 @@
 * Raid finder: On any categories=X page, have a Bookmark option. This will add/remove it
   to/from the user_followed_categories selection. That way, even if Twitch never makes a
   Helix version of the "get followed categories" API, it'll still be useful.
+* Clean up all remaining use of featurename and cfg->features
+  - Commands no longer need to check for the feature's enablement
