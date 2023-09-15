@@ -1,7 +1,5 @@
 inherit http_websocket;
 inherit builtin_command;
-constant hidden_command = 1;
-constant access = "none";
 constant markdown = #"# MPN - $$channel$$
 
 <$$contenttag$$ id=content rows=25 cols=80></$$contenttag$$>
@@ -122,15 +120,6 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 constant command_description = "Create, manage, or link to an MPN document";
 constant builtin_name = "Multi-Player Notepad";
 constant builtin_param = "Action";
-constant default_response = ([
-	"conditional": "string", "expr1": "{error}", "expr2": "",
-	"message": ([
-		"conditional": "string", "expr1": "{url}", "expr2": "",
-		"message": "{action} Document does not exist.",
-		"otherwise": "{action} Document can be found at: {url}",
-	]),
-	"otherwise": "{error}",
-]);
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{action}": "Action performed (if any)",
