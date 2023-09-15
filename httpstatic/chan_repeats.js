@@ -68,16 +68,19 @@ on("click", "#savechanges", e => {
 	e.preventDefault();
 	addcmd("saveall");
 	document.querySelectorAll("tr.dirty[data-id]").forEach(tr => {
-		const msg = tr.querySelector("input.text").value;
-		if (!msg) {
-			ws_sync.send({cmd: "delete", cmdname: tr.dataset.id}, "cmdedit");
-			return;
-		}
 		//Take a copy of the original command (we're going to JSON-encode it anyway, so this should
 		//be safe) and inject the new message text into it.
 		let response = JSON.parse(JSON.stringify(commands[tr.dataset.id]));
-		if (typeof response === "string") response = msg;
-		else scan_message(response, {replacetext: msg});
+		const inp = tr.querySelector("input.text");
+		if (inp) {
+			const msg = inp.value;
+			if (!msg) {
+				ws_sync.send({cmd: "delete", cmdname: tr.dataset.id}, "cmdedit");
+				return;
+			}
+			if (typeof response === "string") response = msg;
+			else scan_message(response, {replacetext: msg});
+		}
 		const automate = tr.querySelector("input.automate").value;
 		if (!automate) {
 			//If you blank the automation and the command has no other invocations,
