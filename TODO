@@ -262,5 +262,9 @@
 * Raid finder: On any categories=X page, have a Bookmark option. This will add/remove it
   to/from the user_followed_categories selection. That way, even if Twitch never makes a
   Helix version of the "get followed categories" API, it'll still be useful.
-* Clean up all remaining use of featurename and cfg->features
+* Clean up all remaining use of featurename/cfg->features and G->G->commands
   - Commands no longer need to check for the feature's enablement
+  - But commands don't even exist any more.
+  - Everything that's inheriting command should be able to simply remove it.
+  - Everything that looks in G->G->commands will find nothing.
+  - What about the Markdown docs? Should they be retained as docs for the default commands?
