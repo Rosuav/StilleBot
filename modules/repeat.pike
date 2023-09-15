@@ -9,5 +9,5 @@ protected void create(string name)
 {
 	::create(name);
 	register_bouncer(autospam);
-	G->G->commands["unrepeat"] = process;
+	m_delete(G->G->commands, "unrepeat");
 }
