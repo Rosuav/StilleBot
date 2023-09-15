@@ -43,7 +43,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			echoable_message command = channel->commands[cmd[1..]];
 			if (!command && !has_prefix(cmd, "!")) {
 				//Plain text in the automation table; synthesize a command.
-				command = (["message": command, "access": "none"]);
+				command = (["message": cmd, "access": "none"]);
 				for (int i = 1; channel->commands[cmd = "auto" + i]; ++i) ;
 			}
 			if (stringp(command)) command = (["message": command]);
