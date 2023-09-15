@@ -3,6 +3,7 @@
 //TODO: Migrate functionality from chan_commands into here eg validation and updating
 inherit hook;
 inherit annotated;
+inherit builtin_command;
 @retain: mapping autocommands = ([]);
 
 //Convert a number of minutes into a somewhat randomized number of seconds
@@ -52,6 +53,79 @@ void autospam(string channel, string msg) {
 			if (next) remove_call_out(id); //If you used to have it run every 60 minutes, now every 15, cancel the current and retrigger.
 			autocommands[cmd + "#" + channel] = call_out(autospam, seconds(response->automate, cfg->timezone), "#" + channel, "!" + cmd);
 		}
+	}
+}
+
+constant builtin_description = "Manage channel commands";
+constant builtin_name = "Command manager";
+constant builtin_param = ({"/Action/Automate", "Command name", "Time/message"});
+constant vars_provided = ([
+	"{error}": "Blank if all is well, otherwise an error message",
+]);
+constant command_suggestions = ([
+	"!repeat": ([
+		"_description": "Commands - Automate a simple command",
+		"builtin": "argsplit", "builtin_param": "{param}",
+		"message": ([
+			"builtin": "cmdmgr", "builtin_param": ({"Automate", "{arg2}", "{arg1}"}),
+			"message": ([
+				"conditional": "string", "expr1": "{error}", "expr2": "",
+				"message": "@$$: Command will now be run automatically.",
+				"otherwise": "@$$: {error}",
+			]),
+		]),
+	]),
+	"!unrepeat": ([
+		"_description": "Commands - Cancel automation of a command",
+		"builtin": "cmdmgr", "builtin_param": ({"Automate", "{param}", "-1"}),
+		"message": ([
+			"conditional": "string", "expr1": "{error}", "expr2": "",
+			"message": "@$$: Command will no longer run automatically.",
+			"otherwise": "@$$: {error}",
+		]),
+	]),
+]);
+
+mapping message_params(object channel, mapping person, array|string param) {
+	if (!arrayp(param)) param /= " ";
+	if (sizeof(param) < 2) return (["{error}": "Not enough args"]); //Won't happen if you use the GUI editor normally
+	switch (param[0]) {
+		case "Automate": {
+			if (sizeof(param) < 3) return (["{error}": "Not enough args"]);
+			array(int) mins;
+			string msg = param[1] - "!";
+			if (sscanf(param[2], "%d:%d", int hr, int min) == 2)
+				mins = ({hr, min, 1}); //Scheduled at hh:mm
+			else if (sscanf(param[2], "%d-%d", int min, int max) == 2)
+				mins = ({min, max, 0}); //Repeated between X and Y minutes
+			else if (int m = (int)param[2])
+				mins = ({m, m, 0}); //Repeated exactly every X minutes
+			if (!mins) return (["{error}": "Unrecognized time delay format"]);
+			echoable_message command = channel->commands[msg];
+			if (mins[0] < 0) {
+				if (!mappingp(command) || !command->automate) return (["{error}": "That message wasn't being repeated, and can't be cancelled"]);
+				//Copy the command, remove the automation, and do a standard validation
+				G->G->update_command(channel, "", msg, command - (<"automate">));
+				return (["{error}": ""]);
+			}
+			if (!command) return (["{error}": "Command not found"]);
+			switch (mins[2])
+			{
+				case 0:
+					if (mins[0] < 5) return (["{error}": "Minimum five-minute repeat cycle. You should probably keep to a minimum of 20 mins."]);
+					if (mins[1] < mins[0]) return (["{error}": "Maximum period must be at least the minimum period."]);
+					break;
+				case 1:
+					if (mins[0] < 0 || mins[0] >= 24 || mins[1] < 0 || mins[1] >= 60)
+						return (["{error}": "Time must be specified as hh:mm (in your local timezone)."]);
+					break;
+				default: return (["{error}": "Huh?"]); //Shouldn't happen
+			}
+			if (!mappingp(command)) command = (["message": command]);
+			G->G->update_command(channel, "", msg, command | (["automate": mins]));
+			return (["{error}": ""]);
+		}
+		default: return (["{error}": "Unknown subcommand"]);
 	}
 }
 
