@@ -1,6 +1,5 @@
 inherit command;
-constant featurename = "commands";
-constant require_moderator = 1;
+constant active_channels = ({""}); //Replaced with the cmdmgr builtin
 //Note: Each special with the same-named parameter is assumed to use it in the same way.
 //It's good to maintain this for the sake of humans anyway, but also the display makes
 //this assumption, and has only a single description for any given name.
@@ -94,10 +93,7 @@ Add an echo command for this channel
 
 Usage: `!addcmd !newcommandname text-to-echo`
 
-If the command already exists as an echo command, it will be updated. If it
-exists as a global command, the channel-specific echo command will shadow it
-(meaning that the global command cannot be accessed in this channel). Please
-do not shoot yourself in the foot :)
+If the command already exists as an echo command, it will be updated.
 
 Echo commands themselves are available to everyone in the channel, and simply
 display the text they have been given. The marker `%%s` will be replaced with
@@ -159,6 +155,9 @@ void purge(object channel, string cmd, multiset updates) {
 }
 
 //Update (or delete) a per-channel echo command and save to disk
+//TODO: Migrate this (and the two helpers above) into cmdmgr
+//Then, with the chan_commands handlers also in cmdmgr, turn update_command into the
+//one and only externally-callable entrypoint.
 void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 {
 	sscanf(cmd || "", "%[!]%s#%s", string pfx, string basename, string chan);
@@ -231,40 +230,10 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 	}
 }
 
-string process(object channel, object person, string param)
-{
-	if (sscanf(param, "!%[^# ] %s", string cmd, string response) == 2)
-	{
-		//Create a new command. Note that it *always* gets the channel name appended,
-		//making it a channel-specific command; global commands can only be created by
-		//manually editing the JSON file.
-		cmd = command_casefold(cmd);
-		if (!SPECIAL_NAMES[cmd] && has_value(cmd, '!')) return "@$$: Command names cannot include exclamation marks";
-		string newornot = channel->commands[cmd] ? "Updated" : "Created new";
-		make_echocommand(cmd + channel->name, response);
-		return sprintf("@$$: %s command !%s", newornot, cmd);
-	}
-	return "@$$: Try !addcmd !newcmdname response-message";
-}
+string process(object channel, object person, string param) {return "DISABLED";}
 
 protected void create(string name)
 {
 	::create(name);
-	//Load legacy and global echocommands. New channel-specific commands belong in channel config instead.
-	G->G->echocommands = Standards.JSON.decode_utf8(Stdio.read_file("twitchbot_commands.json")||"{}");
-	int sz = sizeof(G->G->echocommands);
-	foreach (G->G->echocommands; string cmd; echoable_message response) {
-		if (!has_value(cmd, "#")) continue; //Migrate only channel-specific commands...
-		if (mappingp(response) && response->alias_of) continue; //... that aren't aliases of something else...
-		object channel = G->G->irc->channels["#" + (cmd / "#")[1]];
-		if (!channel) continue; //... that are connected to a valid channel...
-		if (channel->commands[(cmd / "#")[0]]) continue; //... and haven't already been migrated.
-		catch {make_echocommand(cmd, response);};
-	}
-	if (sz != sizeof(G->G->echocommands)) {
-		//Save the cleanout of old echocommands. They're deprecated and the file should only have "{}" in it.
-		string json = Standards.JSON.encode(G->G->echocommands, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
-		Stdio.write_file("twitchbot_commands.json", string_to_utf8(json));
-	}
 	add_constant("make_echocommand", make_echocommand);
 }

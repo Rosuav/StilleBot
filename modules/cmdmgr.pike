@@ -58,11 +58,33 @@ void autospam(string channel, string msg) {
 
 constant builtin_description = "Manage channel commands";
 constant builtin_name = "Command manager";
-constant builtin_param = ({"/Action/Automate", "Command name", "Time/message"});
+constant builtin_param = ({"/Action/Automate/Create/Delete", "Command name", "Time/message"});
 constant vars_provided = ([
 	"{error}": "Blank if all is well, otherwise an error message",
 ]);
 constant command_suggestions = ([
+	"!addcmd": ([
+		"_description": "Commands - Create a simple command",
+		"conditional": "regexp", "expr1":"^[!]([^ ]+) (.*)$", "expr2":"{param}",
+		"message": ([
+			"builtin": "cmdmgr", "builtin_param": ({"Create", "{regexp1}", "{regexp2}"}),
+			"message": ([
+				"conditional": "string", "expr1": "{error}", "expr2": "",
+				"message": "@$$: {result}",
+				"otherwise": "@$$: {error}",
+			]),
+		]),
+		"otherwise": "@$$: Try !addcmd !newcmdname response-message",
+	]),
+	"!delcmd": ([
+		"_description": "Commands - Delete a simple command",
+		"builtin": "cmdmgr", "builtin_param": ({"Delete", "{param}"}),
+		"message": ([
+			"conditional": "string", "expr1": "{error}", "expr2": "",
+			"message": "@$$: {result}",
+			"otherwise": "@$$: {error}",
+		]),
+	]),
 	"!repeat": ([
 		"_description": "Commands - Automate a simple command",
 		"builtin": "argsplit", "builtin_param": "{param}",
@@ -70,7 +92,7 @@ constant command_suggestions = ([
 			"builtin": "cmdmgr", "builtin_param": ({"Automate", "{arg2}", "{arg1}"}),
 			"message": ([
 				"conditional": "string", "expr1": "{error}", "expr2": "",
-				"message": "@$$: Command will now be run automatically.",
+				"message": "@$$: {result}",
 				"otherwise": "@$$: {error}",
 			]),
 		]),
@@ -80,7 +102,7 @@ constant command_suggestions = ([
 		"builtin": "cmdmgr", "builtin_param": ({"Automate", "{param}", "-1"}),
 		"message": ([
 			"conditional": "string", "expr1": "{error}", "expr2": "",
-			"message": "@$$: Command will no longer run automatically.",
+			"message": "@$$: {result}",
 			"otherwise": "@$$: {error}",
 		]),
 	]),
@@ -106,7 +128,7 @@ mapping message_params(object channel, mapping person, array|string param) {
 				if (!mappingp(command) || !command->automate) return (["{error}": "That message wasn't being repeated, and can't be cancelled"]);
 				//Copy the command, remove the automation, and do a standard validation
 				G->G->update_command(channel, "", msg, command - (<"automate">));
-				return (["{error}": ""]);
+				return (["{error}": "", "{result}": "Command will no longer be run automatically."]);
 			}
 			if (!command) return (["{error}": "Command not found"]);
 			switch (mins[2])
@@ -123,7 +145,21 @@ mapping message_params(object channel, mapping person, array|string param) {
 			}
 			if (!mappingp(command)) command = (["message": command]);
 			G->G->update_command(channel, "", msg, command | (["automate": mins]));
-			return (["{error}": ""]);
+			return (["{error}": "", "{result}": "Command will now be run automatically."]);
+		}
+		case "Create": {
+			if (sizeof(param) < 3) return (["{error}": "Not enough args"]);
+			string cmd = command_casefold(param[1]);
+			if (!function_object(make_echocommand)->SPECIAL_NAMES[cmd] && has_value(cmd, '!')) return (["{error}": "Command names cannot include exclamation marks"]);
+			string newornot = channel->commands[cmd] ? "Updated" : "Created new";
+			make_echocommand(cmd + channel->name, param[2..] * " ");
+			return (["{error}": "", "{result}": sprintf("%s command !%s", newornot, cmd)]);
+		}
+		case "Delete": {
+			string cmd = command_casefold(param[1]);
+			if (!channel->commands[cmd]) return (["{error}": "No echo command with that name exists here."]);
+			make_echocommand(cmd + channel->name, 0);
+			return (["{error}": "", "{result}": sprintf("Deleted command !%s", cmd)]);
 		}
 		default: return (["{error}": "Unknown subcommand"]);
 	}

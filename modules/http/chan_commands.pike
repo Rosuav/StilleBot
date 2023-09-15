@@ -459,7 +459,7 @@ array _validate_command(object channel, string command, string cmdname, echoable
 		command = String.trim(lower_case(command));
 		if (command == "") return 0;
 		state->cmd = command = pfx + command;
-		if (pfx == "!" && !function_object(G->G->commands->addcmd)->SPECIAL_NAMES[command]) command = 0; //Only specific specials are valid
+		if (pfx == "!" && !function_object(make_echocommand)->SPECIAL_NAMES[command]) command = 0; //Only specific specials are valid
 		if (pfx == "") {
 			//See if an original name was provided
 			sscanf(original || "", "%*[!]%s%*[#]", string orig);
@@ -521,7 +521,7 @@ void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) ms
 protected void create(string name) {
 	::create(name);
 	call_out(find_builtins, 0);
-	G->G->update_command = update_command; //TODO: Migrate this into addcmd.pike or somewhere
+	G->G->update_command = update_command; //TODO: Migrate this into cmdmgr.pike
 	//Migrate commands that are no longer governed by feature flags
 	//HACK: In order to only do this once, a separate feature flag is added for each migration.
 	//These can all be removed later, but that might not even matter if the entire features
@@ -541,7 +541,7 @@ protected void create(string name) {
 			object channel = G->G->irc->channels["#" + cfg->login]; if (!channel) continue;
 			if (!channel->commands[cmd - "!"]) enable_feature(channel, cmd, 1);
 		}
-		if (cfg->features->commands) foreach ("!repeat !unrepeat" / " ", string cmd) {
+		if (cfg->features->commands) foreach ("!addcmd !delcmd !repeat !unrepeat" / " ", string cmd) {
 			if (cfg->features["commands-" + cmd]) continue;
 			cfg->features["commands-" + cmd] = 1;
 			object channel = G->G->irc->channels["#" + cfg->login]; if (!channel) continue;

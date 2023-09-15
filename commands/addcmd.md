@@ -1,15 +1,10 @@
 # !addcmd: Add an echo command for this channel
 
-Available to: mods only
-
-Part of manageable feature: commands
+Available to: all users
 
 Usage: `!addcmd !newcommandname text-to-echo`
 
-If the command already exists as an echo command, it will be updated. If it
-exists as a global command, the channel-specific echo command will shadow it
-(meaning that the global command cannot be accessed in this channel). Please
-do not shoot yourself in the foot :)
+If the command already exists as an echo command, it will be updated.
 
 Echo commands themselves are available to everyone in the channel, and simply
 display the text they have been given. The marker `%s` will be replaced with

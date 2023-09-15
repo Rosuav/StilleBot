@@ -1,5 +1,9 @@
 inherit builtin_command;
 
+//What happens when you want to split off a certain number of words,
+//then capture the rest in an implicit string? Should there be a param
+//to argsplit saying "max 2 args" (ie 2-> is joined back together as 2)?
+
 constant builtin_description = "Split an argument list into words";
 constant builtin_name = "Arg Split";
 constant builtin_param = ({"Parameter list eg {param}"});
