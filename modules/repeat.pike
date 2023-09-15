@@ -67,18 +67,13 @@ int seconds(int|array mins, string timezone)
 void autospam(string channel, string msg)
 {
 	if (function f = bounce(this_function)) return f(channel, msg);
-	//TODO: Spam only if there's been text from someone other than the bot?
-	//And if so, then how recently? Since the last time this echo command happened?
-	//If we defer, do we skip an entire execution? Nothing's perfect here, so for
-	//now, just keep it simple: repeated commands WILL repeat, no matter what.
 	if (!G->G->stream_online_since[channel[1..]]) return;
 	mapping cfg = get_channel_config(channel[1..]);
 	if (!cfg) return; //Channel no longer configured
 	echoable_message response = cfg->commands[?msg[1..]];
-	int|array(int) mins = (mappingp(response) && response->automate) || cfg->autocommands[?msg];
+	int|array(int) mins = mappingp(response) && response->automate;
 	if (!mins) return; //Autocommand disabled
-	string key = cfg->autocommands[?msg] ? channel + " " + msg : msg[1..] + channel;
-	G->G->autocommands[key] = call_out(autospam, seconds(mins, cfg->timezone), channel, msg);
+	G->G->autocommands[msg[1..] + channel] = call_out(autospam, seconds(mins, cfg->timezone), channel, msg);
 	if (response) msg = response;
 	string me = persist_config["ircsettings"]->nick;
 	G->G->irc->channels[channel]->send((["nick": me, "user": me]), msg);
@@ -101,16 +96,6 @@ echoable_message process(object channel, mapping person, string param)
 	else if (sscanf(param, "%d %s", int m, msg) && msg)
 		mins = ({m, m, 0}); //Repeated exactly every X minutes
 	if (!mins) return "Check https://rosuav.github.io/StilleBot/commands/repeat for usage information.";
-	if (mixed id = m_delete(autocommands, channel->name + " " + msg))
-		remove_call_out(id); //Old-style key (not used for new-style repeats)
-	if (mins[0] < 0 && channel->config->autocommands[?msg])
-	{
-		//Remove an old-style repeat. This can be done even if it's not a command, in case
-		//someone has legacy data lying around. It will need to be manually migrated.
-		m_delete(channel->config->autocommands, msg);
-		persist_config->save();
-		return "Repeated command disabled.";
-	}
 	//Currently, if you say "!repeat 20-30 commandname", it will error out rather than
 	//search for "!commandname". Would be convenient if it could search; do this later.
 	if (!msg || msg == "" || msg[0] != '!') return "Usage: !repeat x-y !commandname - see https://rosuav.github.io/StilleBot/commands/repeat";
@@ -147,13 +132,6 @@ echoable_message unrepeat(object channel, mapping person, string param)
 @hook_channel_online: int connected(string channel)
 {
 	mapping cfg = get_channel_config(channel); if (!cfg) return 0;
-	if (cfg->autocommands) foreach (cfg->autocommands; string msg; int|array(int) mins)
-	{
-		string key = "#" + channel + " " + msg;
-		mixed id = autocommands[key];
-		if (!id || undefinedp(find_call_out(id)))
-			autocommands[key] = call_out(autospam, seconds(mins, cfg->timezone), "#" + channel, msg);
-	}
 	foreach (cfg->commands || ([]); string cmd; echoable_message response) {
 		if (!mappingp(response) || !response->automate) continue;
 		mixed id = autocommands[cmd + "#" + channel];
@@ -162,28 +140,11 @@ echoable_message unrepeat(object channel, mapping person, string param)
 	}
 }
 
-void check_autocommands()
-{
-	//First look for any that should be removed
-	//No need to worry about channels being offline; they'll be caught at next repeat.
-	foreach (autocommands; string key; mixed id)
-	{
-		//Clean up any from the autocommands table (not counting those from echocommands' automate attributes)
-		if (sscanf(key, "%s %s", string channel, string msg) == 2) {
-			mapping cfg = get_channel_config(channel[1..]);
-			if (!cfg || !cfg->autocommands[?msg])
-				remove_call_out(m_delete(G->G->autocommands, key));
-		}
-	}
-	//Next, look for any that need to be started.
-	foreach (list_channel_configs(), mapping cfg) if (cfg->login)
-		if (G->G->stream_online_since[cfg->login]) connected(cfg->login);
-}
-
 protected void create(string name)
 {
 	::create(name);
 	register_bouncer(autospam);
-	check_autocommands();
+	foreach (list_channel_configs(), mapping cfg) if (cfg->login)
+		if (G->G->stream_online_since[cfg->login]) connected(cfg->login);
 	G->G->commands["unrepeat"] = unrepeat;
 }
