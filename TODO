@@ -268,3 +268,4 @@
   - Everything that's inheriting command should be able to simply remove it.
   - Everything that looks in G->G->commands will find nothing.
   - What about the Markdown docs? Should they be retained as docs for the default commands?
+* chan_features - add a thing for broadcaster scopes, eg for !follower, !hypetrain
