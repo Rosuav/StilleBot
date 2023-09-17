@@ -161,11 +161,11 @@ void autoadvance(object channel, mapping person, string key, int weight) {
 		sscanf(info->text, "$%s$:%s", string varname, string txt);
 		if (!txt) continue;
 		echoable_message lvlup = channel->commands[info->lvlupcmd];
-		int prevtier = lvlup && (int)message_params(channel, person, id)["{tier}"];
+		int prevtier = lvlup && (int)message_params(channel, person, ({id}))["{tier}"];
 		int total = (int)channel->set_variable(varname, advance, "add"); //Abuse the fact that it'll take an int just fine for add :)
 		Stdio.append_file("subs.log", sprintf("[%s] Advancing %s goal bar by %O*%O = %d - now %d\n", channel->name, varname, key, weight, advance, total));
 		if (advance > 0 && lvlup) {
-			int newtier = (int)message_params(channel, person, id)["{tier}"];
+			int newtier = (int)message_params(channel, person, ({id}))["{tier}"];
 			while (prevtier++ < newtier) channel->send(person, lvlup, (["%s": (string)prevtier]));
 		}
 	}
