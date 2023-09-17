@@ -269,3 +269,6 @@
   - Everything that looks in G->G->commands will find nothing.
   - What about the Markdown docs? Should they be retained as docs for the default commands?
 * chan_features - add a thing for broadcaster scopes, eg for !follower, !hypetrain
+  - Group them. Put a note on the ones that require it. If they are active, have a single
+    button to reauthenticate.
+  - This might need to scan ALL commands for any use of builtins flagged as requiring scope.
