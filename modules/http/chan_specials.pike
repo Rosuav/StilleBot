@@ -107,7 +107,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"loadingmsg": "Restricted to moderators only",
 		]) | req->misc->chaninfo);
 	}
-	object addcmd = function_object(G->G->commands->addcmd);
+	object addcmd = function_object(make_echocommand); //TODO: Get this info from cmdmgr instead, or make it its own global
 	multiset scopes = (multiset)(token_for_user_login(req->misc->channel->name[1..])[1] / " ");
 	int is_bcaster = req->misc->channel->userid == (int)req->misc->session->user->id;
 	foreach (addcmd->SPECIALS, [string spec, [string desc, string originator, string params], string tab]) {
