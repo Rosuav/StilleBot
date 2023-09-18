@@ -27,8 +27,6 @@ $$save_or_login||> [Export/back up all configuration](:type=submit name=export)
 </style>
 ";
 
-constant FEATUREDESC = ([]);
-
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->misc->is_mod && !req->misc->session->fake && req->request_type == "POST" && req->variables->export) {
@@ -74,18 +72,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
-mapping _get_item(string id, mapping feat) {
-	if (!FEATUREDESC[id]) return 0;
-	return ([
-		"id": id, "desc": FEATUREDESC[id],
-		"state": feat[id] ? "active" : "inactive",
-	]);
-}
+mapping _get_item(string id, mapping feat) {return 0;}
 
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping feat = channel->path("features");
-	if (id) return _get_item(id, feat);
+	if (id) return 0; //Single-item updates are no longer applicable
 	mapping enableables = ([]);
 	foreach (G->G->enableable_modules; string name; object mod) {
 		foreach (mod->ENABLEABLE_FEATURES; string kwd; mapping info) {
@@ -102,27 +93,13 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 				"description": resp->_description,
 			]);
 		}
-	array features = sort(indices(FEATUREDESC));
 	string timezone = channel->config->timezone;
 	if (!timezone || timezone == "") timezone = "UTC";
-	return (["items": _get_item(features[*], feat),
+	return (["items": ({ }),
 		"timezone": timezone,
 		"flags": ([]), //Not currently in use, but maybe worth using in the future. Front end support is still all there.
 		"enableables": enableables,
 	]);
-}
-
-@"is_mod": void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping feat = channel->config->features; if (!feat) feat = channel->config->features = ([]);
-	if (!FEATUREDESC[msg->id]) return;
-	switch (msg->state) {
-		case "active": feat[msg->id] = 1; break;
-		case "inactive": m_delete(feat, msg->id); break;
-		default: return;
-	}
-	persist_config->save();
-	update_one(conn->group, msg->id);
-	update_one("view" + channel->name, msg->id);
 }
 
 @"is_mod": void wscmd_enable(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
