@@ -1,12 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, ABBR, BUTTON, CODE, TR, TD, LABEL, INPUT, SPAN} = choc;
 
-const active_desc = {
-	Active: "Active: Chat commands are available",
-	Inactive: "Inactive: Chat commands disabled, web access only",
-};
-const prefix_len = {Active: 2, Inactive: 4, Default: 3}; //Number of characters that get kept even on small screens
-
 export function render(data) {
 	if (data.enableables) {
 		const parent = DOM("#enableables tbody");
