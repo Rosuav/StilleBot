@@ -37,7 +37,7 @@ class Persist(string savefn, int flip_save)
 
 	//Dig deep into persist[] according to a path
 	//Returns a regular mapping, *not* something that autosaves.
-	mapping path(string ... parts) {
+	mapping path(string|object ... parts) {
 		mapping ret = data;
 		foreach (parts, string|object idx) {
 			if (objectp(idx)) {

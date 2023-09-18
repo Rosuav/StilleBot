@@ -152,6 +152,32 @@ void purge(object channel, string cmd, multiset updates) {
 		if (!sizeof(channel->redemption_commands[prev->redemption])) m_delete(channel->redemption_commands, prev->redemption);
 		updates["rew " + prev->redemption] = 1;
 	}
+	mapping prefs = persist_status->path("userprefs", (string)channel->userid); //FIXME: Use channel instead of channel->userid
+	if (prefs->notif_perms) foreach (prefs->notif_perms; string perm; array reasons) {
+		int removed = 0;
+		foreach (reasons; int i; mapping r) if (r->reason == "cmd:" + cmd) {reasons[i] = 0; removed = 1;}
+		if (removed) {
+			prefs->notif_perms[perm] = reasons - ({0});
+			persist_status->save();
+			G->G->update_user_prefs(channel->userid, (["notif_perms": prefs->notif_perms]));
+		}
+	}
+}
+
+//Recursively scan a response for all needed permissions
+void scan_for_permissions(echoable_message response, multiset need_perms) {
+	if (stringp(response)) {
+		//TODO: If it's a slash command, record the permission needed for that command
+		//This will require recognition of the voice in use.
+	}
+	if (arrayp(response)) scan_for_permissions(response[*], need_perms);
+	if (!mappingp(response)) return;
+	if (response->builtin) {
+		object builtin = G->G->builtins[response->builtin];
+		if (builtin->scope_required) need_perms[builtin->scope_required] = 1;
+	}
+	scan_for_permissions(response->message, need_perms);
+	scan_for_permissions(response->otherwise, need_perms);
 }
 
 //Update (or delete) a per-channel echo command and save to disk
@@ -225,6 +251,23 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 			if (sscanf(cmd, "!%s#", string spec) && G->G->SPECIALS_SCOPES[spec]) {
 				handler(channel->config);
 				break; //No need to update more than once - it'll check all the hooks
+			}
+		}
+	}
+	//If this uses any builtins that require permissions, and we don't have those, flag the user.
+	multiset need_perms = (<>); scan_for_permissions(response, need_perms);
+	if (sizeof(need_perms)) {
+		mapping prefs = persist_status->path("userprefs", channel);
+		multiset scopes = (multiset)(token_for_user_login(channel->name[1..])[1] / " ");
+		foreach (need_perms; string perm;) {
+			if (!scopes[perm]) {
+				if (!prefs->notif_perms) prefs->notif_perms = ([]);
+				prefs->notif_perms[perm] += ({([
+					"desc": "Command - " + basename, //or special/trigger?
+					"reason": "cmd:" + basename,
+				])});
+				persist_status->save();
+				G->G->update_user_prefs(channel->userid, (["notif_perms": prefs->notif_perms]));
 			}
 		}
 	}
