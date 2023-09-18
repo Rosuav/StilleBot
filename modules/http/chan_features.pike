@@ -95,10 +95,12 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		}
 	string timezone = channel->config->timezone;
 	if (!timezone || timezone == "") timezone = "UTC";
+	mapping chan_prefs = persist_status->path("userprefs", (string)channel->userid); //FIXME: use channel not ->userid
 	return (["items": ({ }),
 		"timezone": timezone,
 		"flags": ([]), //Not currently in use, but maybe worth using in the future. Front end support is still all there.
 		"enableables": enableables,
+		"chan_notif_perms": chan_prefs->notif_perms || ([]),
 	]);
 }
 

@@ -34,6 +34,11 @@ export function render(data) {
 	}
 	if (data.timezone) DOM("input[name=timezone]").value = data.timezone;
 	if (data.flags) Object.entries(data.flags).forEach(([flg, state]) => DOM('.flag[name="' + flg + '"]').checked = state);
+	if (data.chan_notif_perms) {
+		//FIXME: This won't automatically get updated when the channel's notifications
+		//get changed. Maybe this doesn't belong in prefs at all??
+		console.log("CHAN NOTIF PERMS:", data.chan_notif_perms);
+	}
 }
 
 on("change", ".featurestate", e => {
@@ -50,6 +55,10 @@ on("click", ".enabl_deactivate", e => {
 
 on("click", "input[type=checkbox].flag", e => {
 	ws_sync.send({cmd: "enable", id: e.match.name, "state": e.match.checked});
+});
+
+ws_sync.prefs_notify("notif_perms", perms => {
+	console.log("NOTIF PERMS:", perms);
 });
 
 /* TODO: Replace this boring input+button with a nice dialog.
