@@ -156,6 +156,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 
 constant builtin_description = "Get info about a current or recent hype train in this channel";
 constant builtin_name = "Hype Train status";
+constant scope_required = "channel:read:hype_train";
 constant command_suggestions = (["!hypetrain": ([
 	"_description": "Show the status of a hype train in this channel, or the cooldown before the next can start",
 	"builtin": "hypetrain",

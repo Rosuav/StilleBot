@@ -240,6 +240,7 @@ class builtin_command {
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
 	constant aliases = ({ }); //Deprecated: Default aliases that go with the default_response (can be done via command_suggestions instead)
 	constant command_suggestions = 0; //Set this to provide some suggestions (which will show up as enableable features)
+	constant scope_required = ""; //If nonblank, will be offered as a suggestion any time this builtin is used.
 
 	//Override this either as-is or as a continue function to return the useful params.
 	//Note that the person mapping may be as skeletal as (["user": "Nobody"]) - all

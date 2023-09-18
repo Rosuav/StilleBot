@@ -230,6 +230,7 @@ constant builtin_name = "Points rewards";
 //TODO: In the front end, label them as "[En/Dis]able reward", "Mark complete", "Refund points"
 //TODO: Allow setting more than one attribute, eg setting both title and desc atomically
 constant builtin_param = ({"Reward ID", "/Action/enable/disable/title/desc/fulfil/cancel", "Redemption ID"});
+constant scope_required = "channel:manage:redemptions";
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{action}": "Action(s) performed, if any (may be blank)",
