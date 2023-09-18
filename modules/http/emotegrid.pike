@@ -167,12 +167,11 @@ constant vars_provided = ([
 	"{url}": "Web address where the grid can be viewed",
 ]);
 
-continue mapping|Concurrent.Future message_params(object channel, mapping person, string|array param) {
+continue mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
 	//PROBLEM: Channel point redemptions don't actually include emote data. So having this
 	//as a points reward is actually problematic.
 	if (!person->emotes) return (["{error}": "Unfortunately this doesn't work as a channel point redemption (currently)."]);
 	if (!sizeof(person->emotes)) return (["{error}": "Please include an emote to build a grid of."]);
-	if (stringp(param)) param /= " ";
 
 	return (["{error}": "Sorry! This is currently disabled pending massive optimization work."]);
 

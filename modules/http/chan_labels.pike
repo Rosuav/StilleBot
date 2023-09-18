@@ -60,17 +60,7 @@ string remove_label(string chan, string labelid) {
 	}
 }
 
-mapping|Concurrent.Future message_params(object channel, mapping person, string|array param) {
-	if (stringp(param)) {
-		//Compatibility with non-GUI command editor: allow a command string. Clunky but possible.
-		sscanf(param, "%d %s", int dur, param);
-		string timefmt = "";
-		if (sscanf(param, "-mm %s", param)) timefmt = "mm";
-		else if (sscanf(param, "-mmss %s", param)) timefmt = "mmss";
-		else if (sscanf(param, "-ss %s", param)) timefmt = "ss";
-		param = ({param, dur, timefmt});
-	}
-	//Normally we'll be given an array of params.
+mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
 	if (param[0] == "") return (["{error}": "Need a label to work with"]);
 	string chan = channel->name[1..];
 	mapping labels = G_G_("channel_labels", chan);

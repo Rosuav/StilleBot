@@ -49,11 +49,7 @@ constant command_suggestions = ([
 	]),
 ]);
 
-mapping message_params(object channel, mapping person, array|string param) {
-	if (stringp(param)) {
-		param /= " ";
-		param = ({param[0], param[1], param[2..] * " "}); //Only split three parts off
-	}
+mapping message_params(object channel, mapping person, array param) {
 	if (sizeof(param) < 2) param += ({"0"});
 	if (sizeof(param) < 3) param += ({""});
 	array quotes = channel->config->quotes || ({ });

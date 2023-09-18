@@ -108,8 +108,7 @@ constant command_suggestions = ([
 	]),
 ]);
 
-mapping message_params(object channel, mapping person, array|string param) {
-	if (!arrayp(param)) param /= " ";
+mapping message_params(object channel, mapping person, array param) {
 	if (sizeof(param) < 2) return (["{error}": "Not enough args"]); //Won't happen if you use the GUI editor normally
 	switch (param[0]) {
 		case "Automate": {

@@ -181,8 +181,7 @@ string format_subscriptions(int value) {
 	return sprintf("%.3f", value / 500.0);
 }
 
-mapping message_params(object channel, mapping person, string|array param) {
-	if (stringp(param)) param /= " "; //For now, split on spaces, assume you won't have any more than two words
+mapping message_params(object channel, mapping person, array param) {
 	string monitor = param[0];
 	int advance = sizeof(param) > 1 && (int)param[1];
 	mapping info = channel->config->monitors[?monitor];

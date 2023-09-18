@@ -244,11 +244,11 @@ class builtin_command {
 	//Override this either as-is or as a continue function to return the useful params.
 	//Note that the person mapping may be as skeletal as (["user": "Nobody"]) - all
 	//other keys are optional.
-	//The parameter will be a single string when executed by the inherent chat command, but may be
-	//an array if coming from an echocommand's signal. Ultimately the string form MAY be deemed a
-	//legacy form, and the default will be to send ({"param goes here"}) so it's always an array.
-	//Possibly, even, the builtin could be declared to take N parameters, and a string would be
-	//automatically split into N-1 one-word parameters followed by the remainder.
+	//The parameter will be a single string if builtin_param is a string, and an array if it is
+	//an array of multiple strings. In the latter case, incoming strings will be automatically
+	//split into arguments, with the last one collecting any residue.
+	//TODO: If builtin_param is an array of one string, pass an array to message_params instead
+	//of the current somewhat-odd behaviour of passing a string.
 	mapping|function|Concurrent.Future message_params(object channel, mapping person, array|string param, mapping cfg) { }
 
 	protected void create(string name)

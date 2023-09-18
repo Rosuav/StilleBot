@@ -24,19 +24,19 @@ constant command_suggestions = (["!follower": ([
 	]),
 ])]);
 
-continue Concurrent.Future|mapping message_params(object channel, mapping person, string param) {
-	param -= "@";
-	int uid; catch {uid = yield(get_user_id(param));};
+continue Concurrent.Future|mapping message_params(object channel, mapping person, array param) {
+	string user = param[0] - "@";
+	int uid; catch {uid = yield(get_user_id(user));};
 	if (!uid) return (["{prevname}": "", "{error}": "Can't find that person."]);
 	mapping u2n = G->G->uid_to_name[(string)uid] || ([]);
 	array names = indices(u2n);
 	sort(values(u2n), names);
 	names -= ({"jtv", "tmi"}); //Some junk data in the files implies falsely that some people renamed to "jtv" or "tmi"
-	string foll = yield(check_following(uid, channel->userid));
+	string foll = yield(check_following(uid, channel->userid)); //FIXME: What if no perms?
 	return ([
 		"{following}": foll ? "since " + foll : "",
 		"{prevname}": sizeof(names) >= 2 ? names[-2] : "",
-		"{curname}": sizeof(names) ? names[-1] : param,
+		"{curname}": sizeof(names) ? names[-1] : user,
 		"{allnames}": names * " ",
 		"{error}": "",
 	]);

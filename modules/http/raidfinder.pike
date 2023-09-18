@@ -776,18 +776,17 @@ continue Concurrent.Future|string suggestraid(int from, int target, int recip) {
 
 constant builtin_description = "Send a raid suggestion";
 constant builtin_name = "Raid suggestion";
-constant builtin_param = ({"Suggestion"});
+constant builtin_param = ({"Suggestion"}); //Maybe add "Comments" as second param?
 constant vars_provided = ([
 	"{error}": "Normally blank, but can have an error message",
 ]);
 
-continue mapping|Concurrent.Future message_params(object channel, mapping person, string|array param) {
-	if (arrayp(param)) param = param[0];
+continue mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
 	//No facility currently for sending comments about the suggestion, but you can include
 	//them and we'll ignore them (they'll be in chat anyway)
-	sscanf(param, "%*stwitch.tv/%[^ ]", param);
+	sscanf(param[0], "%*stwitch.tv/%[^ ]", string chan);
 	int target;
-	if (catch (target = yield(get_user_id(param)))) return (["{error}": "Unknown channel name"]);
+	if (catch (target = yield(get_user_id(chan)))) return (["{error}": "Unknown channel name"]);
 	string error;
 	if (mixed ex = catch {error = yield(suggestraid(person->uid, target, channel->userid));})
 		return (["{error}": describe_error(ex)]);

@@ -402,7 +402,21 @@ class channel(string name) { //name begins with hash and is all lower case
 		if (message->builtin) {
 			object handler = G->G->builtins[message->builtin] || message->builtin; //Chaining can be done by putting the object itself in the mapping
 			if (objectp(handler)) {
-				string param = _substitute_vars(message->builtin_param || "", vars, person, cfg->users);
+				string|array param = _substitute_vars(message->builtin_param || "", vars, person, cfg->users);
+				if (arrayp(handler->builtin_param) && stringp(param)) {
+					//The builtin is expecting pre-split params, but we were given a single
+					//string. This probably means a legacy command or use of the legacy editor.
+					param = Process.split_quoted_string(param);
+					//If the builtin is expecting 3 params, and the user provides more words
+					//than that, join the remainder into a single string.
+					//Note that if you don't want this kind of parsing, set handler->builtin_param
+					//to a single string, and you will receive the entire string unchanged. This
+					//also is not applied when an array of arguments is given, which will normally
+					//happen with the GUI command editor.
+					int max = sizeof(handler->builtin_param);
+					if (sizeof(param) > max)
+						param = param[..max - 2] + ({param[max - 1..] * " "});
+				}
 				spawn_task(handler->message_params(this, person, param, cfg)) {
 					if (!__ARGS__[0]) return; //No params? No output.
 					mapping cfg_changes = m_delete(__ARGS__[0], "cfg") || ([]);

@@ -228,27 +228,20 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 constant command_description = "Manage channel point rewards - fulfil and cancel need redemption ID too";
 constant builtin_name = "Points rewards";
 //TODO: In the front end, label them as "[En/Dis]able reward", "Mark complete", "Refund points"
+//TODO: Allow setting more than one attribute, eg setting both title and desc atomically
 constant builtin_param = ({"Reward ID", "/Action/enable/disable/title/desc/fulfil/cancel", "Redemption ID"});
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{action}": "Action(s) performed, if any (may be blank)",
 ]);
 
-continue mapping|Concurrent.Future message_params(object channel, mapping person, string|array param)
-{
-	if (param == "") return (["{error}": "Need a subcommand"]);
+continue mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
 	string token = yield(token_for_user_id_async(channel->userid))[0];
 	if (token == "") return (["{error}": "Need broadcaster permissions"]);
-	string reward_id; array(string) cmds = "";
-	//Hmm. Might need to always have the reward ID, and then put the redemption ID into
-	//the same place that the cost goes. The "fulfil/cancel" API requires both IDs for
-	//some reason. On the plus side, that means we consistently require reward_id.
-	if (arrayp(param)) {reward_id = param[0]; cmds = ({param[1] + "=" + param[2]});}
-	else {sscanf(param, "%[-0-9a-f] %s", reward_id, string cmd); cmds = cmd / " ";} //Keep this one unchanged though
+	string reward_id = param[0];
 	mapping params = ([]);
 	int empty_ok = 0;
-	foreach (cmds, string cmd) {
-		sscanf(cmd, "%s=%s", cmd, string arg);
+	foreach (param[1..] / 2, [string cmd, string arg]) {
 		switch (cmd) {
 			case "enable": params->is_enabled = arg != "0" ? Val.true : Val.false; break;
 			case "disable": params->is_enabled = Val.false; break;
