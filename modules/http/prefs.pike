@@ -46,6 +46,4 @@ void websocket_cmd_prefs_update(mapping(string:mixed) conn, mapping(string:mixed
 	if (!sizeof(changed)) return;
 	persist_status->save();
 	websocket_groups[conn->prefs_uid]->send_text(Standards.JSON.encode((["cmd": "prefs_update", "prefs": changed])));
-	//HACK: Temporarily send the whole thing, until clientside is updated. Otherwise old clients will get out of sync.
-	websocket_groups[conn->prefs_uid]->send_text(Standards.JSON.encode((["cmd": "prefs_replace", "prefs": prefs])));
 }
