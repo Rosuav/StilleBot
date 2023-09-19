@@ -1036,7 +1036,14 @@ class channel(string name) { //name begins with hash and is all lower case
 				runhooks("delete-msgs", 0, this, person, params->target_user_id);
 				event_notify("deletemsgs", this, person, params->target_user_id);
 				if (params->target_user_id) get_user_info(params->target_user_id)->then() {
-					G_G_("participants", name[1..], __ARGS__[0]->login)->lastnotice = 0;
+					mapping user = __ARGS__[0];
+					G_G_("participants", name[1..], user->login)->lastnotice = 0;
+					trigger_special("!timeout", ([
+						"nick": user->login, "user": user->login,
+						"uid": (int)user->id,
+						"displayname": user->display_name,
+					]),
+					(["{ban_duration}": params->ban_duration]));
 				};
 				break;
 			case "USERSTATE": { //Sent after our messages. The only ones we care about are those with nonces we sent.
