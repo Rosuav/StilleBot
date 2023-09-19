@@ -62,6 +62,7 @@ continue mapping(string:mixed)|Concurrent.Future populate_config(mapping config)
 		alumni[i] = info | config->alumni[info->id];
 	sort(alumni->graduated, alumni);
 	//Have any of the active streamers just hit affiliate?
+	if (!config->alumni) config->alumni = ([]);
 	foreach (streamers; int i; mapping info) if (info->broadcaster_type != "") {
 		config->alumni[info->id] = m_delete(config->streamers, info->id) | (["graduated": time()]);
 		alumni += ({info | (["graduated": time()])});
