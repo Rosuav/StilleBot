@@ -17,3 +17,4 @@ Additional features and toys available here:
 * <form method=get action="/emotes">Emote showcase for any channel: <input name=broadcaster size=20><input type=submit value="Show"></form>
 * [Path to Affiliate streamer tracking](/affiliate). If you're helping to guide streamers to this milestone, this page can help with tracking and recommendations.
 * [OAuth scope trimmer to help you tame the wild mess of permissions that sites ask for](/scopetrim)
+* [Curious what the bot can do for you? Try the demo!](https://sikorsky.rosuav.com/channels/demo/)
