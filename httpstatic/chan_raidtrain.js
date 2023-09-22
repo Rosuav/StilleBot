@@ -121,8 +121,8 @@ function update_schedule() {
 	{class: slot.start <= now && slot.end > now ? "now" :
 		slot.broadcasterid === self ? "your_slot" : ""
 	}, [
-		TD(abbrevdate(slot.start)),
-		TD(DATE(slot.end, 1)), //This creates an empty column in day-based mode. Is it worth suppressing the entire column?
+		TD({colspan: day_based ? 2 : 1}, abbrevdate(slot.start)),
+		!day_based && TD(DATE(slot.end, 1)),
 		TD([
 			online_streams[slot.broadcasterid] && online_streams[slot.broadcasterid].online &&
 				SPAN({class: "recording", title: "Live now!"}, "⏺"),

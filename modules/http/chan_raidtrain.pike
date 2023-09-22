@@ -20,7 +20,7 @@ $$login_or_edit$$
 This is who's going to be part of the train when. They may be live earlier than this. Slot requesting
 is currently <span id=cfg_may_request>closed</span>.
 
-Start   | End | Streamer | Requests | Notes
+When    | -   | Streamer | Requests | Notes
 --------|-----|----------|----------|-------
 loading | - | - | - | -
 {:#timeslots}
