@@ -64,9 +64,7 @@ void enable_feature(object channel, string kwd, int state) {
 	mapping info = ENABLEABLE_FEATURES[kwd];
 	//Not one defined here? Try a builtin's suggestions.
 	if (!info) foreach (G->G->builtins; string name; object blt)
-		if (blt->command_suggestions[?kwd]) info = info || (["response":
-			(["builtin": name, "builtin_param": "%s"]) | blt->command_suggestions[kwd]
-		]);
+		if (blt->command_suggestions[?kwd]) info = (["response": blt->command_suggestions[kwd]]);
 	if (!info) return;
 	//Hack: Call on the normal commands updater to add a trigger
 	if (!state)
@@ -109,7 +107,7 @@ void find_builtins() {
 		mapping cmds = handler->command_suggestions || ([]);
 		foreach (cmds; string cmd; mapping info) {
 			templates += ({sprintf("%s | %s", cmd, info->_description || handler->command_description)});
-			complex_templates[cmd] = (["builtin": name, "builtin_param": "%s"]) | info - (<"_description">);
+			complex_templates[cmd] = info - (<"_description">);
 		}
 		builtins[name] = (["desc": handler->builtin_description, "name": handler->builtin_name, "param": handler->builtin_param]) | handler->vars_provided;
 		if (builtins[name]->desc == "") builtins[name]->desc = handler->command_description;
