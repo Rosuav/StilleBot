@@ -65,7 +65,7 @@ constant vars_provided = ([
 constant command_suggestions = ([
 	"!addcmd": ([
 		"_description": "Commands - Create a simple command",
-		"conditional": "regexp", "expr1":"^[!]([^ ]+) (.*)$", "expr2":"{param}",
+		"conditional": "regexp", "expr1": "^[!]*([^ ]+) (.*)$", "expr2": "{param}",
 		"message": ([
 			"builtin": "cmdmgr", "builtin_param": ({"Create", "{regexp1}", "{regexp2}"}),
 			"message": ([
