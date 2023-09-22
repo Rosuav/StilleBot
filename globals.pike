@@ -30,56 +30,8 @@ class command
 	//Command flags, same as can be set on any echocommand that is a mapping.
 	constant access = "any"; //Set to "mod" for mod-only, "vip" for VIPs and mods, or "none" for disabled/internal-only commands
 	constant visibility = "visible"; //Set to "hidden" to suppress the command from !help (or set hidden_command to 1, deprecated alternative)
-	constant docstring = ""; //Override this with your docs
-	//Override this to do the command's actual functionality, after permission checks.
-	//Return a string to send that string, with "@$$" to @-notify the user.
-	echoable_message process(object channel, mapping person, string param) { }
 
-	//Make sure that inappropriate commands aren't called. Normally these
-	//checks are done in find_command below, but it's cheap to re-check.
-	//(Maybe remove this and depend on find_command??) EXCEPTION: VIPs are
-	//not recognized by find_command currently, so non-VIPs will see those
-	//commands, and they'll get caught here. This makes !help less helpful.
-	echoable_message check_perms(object channel, mapping person, string param)
-	{
-		if (access == "mod" && !G->G->user_mod_status[person->user + channel->name]) return 0;
-		if (access == "vip" && !G->G->user_mod_status[person->user + channel->name] && !person->badges->?vip) return 0;
-		if (access == "none") return 0;
-		return process(channel, person, param);
-	}
-	protected void create(string name)
-	{
-		sscanf(explode_path(name)[-1],"%s.pike",name);
-		if (!name) return;
-		//Update the docs for this command. NOTE: Nothing will currently
-		//remove docs for a defunct command. Do this manually.
-		if (sscanf(docstring, "%*[\n]%s\n\n%s", string summary, string main) && main)
-		{
-			string content = string_to_utf8(sprintf("# !%s: %s\n\n%s\n", name, summary, main));
-			string fn = sprintf("commands/%s.md", name);
-			string oldcontent = Stdio.read_file(fn);
-			if (content != oldcontent) Stdio.write_file(fn, content);
-			string oldindex = Stdio.read_file("commands/index.md");
-			sscanf(oldindex, "%s\n\nCommands in alphabetical order:\n%s\n\n---\n%s",
-				string before, string commands, string after);
-			array cmds = commands / "\n* "; //First one will always be an empty string
-			string newtext = sprintf("[!%s: %s](%[0]s)", name, summary);
-			foreach (cmds; int i; string cmd)
-			{
-				if (has_prefix(cmd, sprintf("[!%s: ", name)))
-				{
-					cmds[i] = newtext;
-					newtext = 0;
-					break;
-				}
-			}
-			if (newtext) cmds += ({newtext});
-			sort(cmds); //TODO: Figure out why this didn't work
-			string index = sprintf("%s\n\nCommands in alphabetical order:\n%s\n\n---\n%s",
-				before, cmds * "\n* ", after);
-			if (index != oldindex) Stdio.write_file("commands/index.md", index);
-		}
-	}
+	protected void create(string name) { }
 }
 
 //Case-fold command names. For consistency, use this everywhere; that way,
