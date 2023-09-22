@@ -92,13 +92,13 @@ constant SPECIAL_PARAMS = ({
 	({"ban_duration", "Number of seconds the person got timed out for, or 0 for ban"}),
 });
 constant docstring = sprintf(#"
-Add an echo command for this channel
+Add a command for this channel
 
 Usage: `!addcmd !newcommandname text-to-echo`
 
-If the command already exists as an echo command, it will be updated.
+If the command already exists, it will be updated.
 
-Echo commands themselves are available to everyone in the channel, and simply
+Commands are by default available to everyone in the channel, and simply
 display the text they have been given. The marker `%%s` will be replaced with
 whatever additional words are given with the command, if any. Similarly, `$$`
 is replaced with the username of the person who triggered the command.
