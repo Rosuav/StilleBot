@@ -41,10 +41,6 @@ export function render(data) {
 	}
 }
 
-on("change", ".featurestate", e => {
-	ws_sync.send({cmd: "update", id: e.match.name, "state": e.match.value});
-});
-
 on("click", ".enabl_activate", e => {
 	ws_sync.send({cmd: "enable", id: e.match.closest("tr").dataset.id, "state": true});
 });
