@@ -522,30 +522,7 @@ protected void create(string name) {
 	::create(name);
 	call_out(find_builtins, 0);
 	G->G->update_command = update_command; //TODO: Migrate this into cmdmgr.pike
-	//Migrate commands that are no longer governed by feature flags
-	//HACK: In order to only do this once, a separate feature flag is added for each migration.
-	//These can all be removed later, but that might not even matter if the entire features
-	//mapping gets removed.
-	foreach (list_channel_configs(), mapping cfg) {
-		if (!cfg->features) continue;
-		m_delete(cfg->features, "info-!addquote");
-		if (cfg->features->info) foreach ("!calc !shoutout !follower !uptime !hypetrain" / " ", string cmd) {
-			if (cfg->features["info-" + cmd]) continue;
-			cfg->features["info-" + cmd] = 1;
-			object channel = G->G->irc->channels["#" + cfg->login]; if (!channel) continue;
-			if (!channel->commands[cmd - "!"]) enable_feature(channel, cmd, 1);
-		}
-		if (cfg->features->quotes) foreach ("!quote !addquote !delquote" / " ", string cmd) {
-			if (cfg->features["info-" + cmd]) continue;
-			cfg->features["info-" + cmd] = 1;
-			object channel = G->G->irc->channels["#" + cfg->login]; if (!channel) continue;
-			if (!channel->commands[cmd - "!"]) enable_feature(channel, cmd, 1);
-		}
-		if (cfg->features->commands) foreach ("!addcmd !delcmd !repeat !unrepeat" / " ", string cmd) {
-			if (cfg->features["commands-" + cmd]) continue;
-			cfg->features["commands-" + cmd] = 1;
-			object channel = G->G->irc->channels["#" + cfg->login]; if (!channel) continue;
-			if (!channel->commands[cmd - "!"]) enable_feature(channel, cmd, 1);
-		}
-	}
+	//Final layer of migration: Remove any feature mapping references, which are now ignored.
+	foreach (list_channel_configs(), mapping cfg)
+		if (m_delete(cfg, "features")) persist_config->save();
 }
