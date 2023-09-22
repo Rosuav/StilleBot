@@ -253,7 +253,6 @@
     single builtin (eg quote doesn't need to have three separate builtins).
   - Need a way to group features for sorting, and maybe provide some visual separation.
     Maybe sort by description??
-* Should the !help command be deprecated? If not, should it become a builtin in some way?
 * Raid finder "share status"
   - Option: "Share status with potential raiders"
   - If enabled, when you open the raid finder, it signals all raid finders who have you
