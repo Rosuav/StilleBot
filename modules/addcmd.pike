@@ -1,5 +1,3 @@
-inherit command;
-
 //Note: Each special with the same-named parameter is assumed to use it in the same way.
 //It's good to maintain this for the sake of humans anyway, but also the display makes
 //this assumption, and has only a single description for any given name.
@@ -91,40 +89,6 @@ constant SPECIAL_PARAMS = ({
 	({"loser_*", "Same as choice_N_* for N != {winner} if there were precisely two options"}),
 	({"ban_duration", "Number of seconds the person got timed out for, or 0 for ban"}),
 });
-constant docstring = sprintf(#"
-Add a command for this channel
-
-Usage: `!addcmd !newcommandname text-to-echo`
-
-If the command already exists, it will be updated.
-
-Commands are by default available to everyone in the channel, and simply
-display the text they have been given. The marker `%%s` will be replaced with
-whatever additional words are given with the command, if any. Similarly, `$$`
-is replaced with the username of the person who triggered the command.
-
-Special usage: `!addcmd !!specialaction text-to-echo`
-
-Pseudo-commands are not executed in the normal way, but are triggered on
-certain events. The special action must be one of the following:
-
-Special name | When it happens             | Initiator (`$$`) | Other info
--------------|-----------------------------|------------------|-------------
-%{!%s%{ | %s%}
-%}
-
-Each special action has its own set of available parameters, which can be
-inserted into the message, used in conditionals, etc. They are always enclosed
-in braces, and have meanings as follows:
-
-Parameter    | Meaning
--------------|------------------
-%{{%s} | %s
-%}
-
-Editing these special commands can also be done via the bot's web browser
-configuration pages, where available.
-", SPECIALS, SPECIAL_PARAMS);
 
 void update_aliases(object channel, string aliases, echoable_message response, multiset updates) {
 	foreach (aliases / " ", string alias) {
@@ -276,10 +240,4 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 	}
 }
 
-string process(object channel, object person, string param) {return "DISABLED";}
-
-protected void create(string name)
-{
-	::create(name);
-	add_constant("make_echocommand", make_echocommand);
-}
+protected void create(string name) {add_constant("make_echocommand", make_echocommand);}
