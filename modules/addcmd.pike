@@ -1,5 +1,5 @@
 inherit command;
-constant active_channels = ({""}); //Replaced with the cmdmgr builtin
+
 //Note: Each special with the same-named parameter is assumed to use it in the same way.
 //It's good to maintain this for the sake of humans anyway, but also the display makes
 //this assumption, and has only a single description for any given name.

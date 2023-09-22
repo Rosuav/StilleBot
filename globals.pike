@@ -30,7 +30,6 @@ class command
 	//Command flags, same as can be set on any echocommand that is a mapping.
 	constant access = "any"; //Set to "mod" for mod-only, "vip" for VIPs and mods, or "none" for disabled/internal-only commands
 	constant visibility = "visible"; //Set to "hidden" to suppress the command from !help (or set hidden_command to 1, deprecated alternative)
-	constant active_channels = ({ }); //Deprecated. Instead of setting this, design a builtin and create per-channel commands. Still functional though.
 	constant docstring = ""; //Override this with your docs
 	//Override this to do the command's actual functionality, after permission checks.
 	//Return a string to send that string, with "@$$" to @-notify the user.

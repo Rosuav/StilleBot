@@ -1,6 +1,5 @@
 //Somewhat misnamed now, this provides the coded detection of "buy-follows" bots
 inherit hook;
-constant active_channels = ({""}); //Deprecated, slated for removal.
 
 //Keyword checks to see if someone's trying to sell us followers. Will be
 //added to as necessary, and all users of this blacklist will automatically
