@@ -35,23 +35,6 @@ code {overflow-wrap: anywhere;}
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (!req->misc->is_mod) return redirect("commands");
-	mapping ac = req->misc->channel->config->autocommands;
-	if (ac && sizeof(ac)) {
-		//Migrate old autocommands to channel commands with automation
-		object channel = req->misc->channel;
-		foreach (ac; string cmd; array automate) {
-			echoable_message command = channel->commands[cmd[1..]];
-			if (!command && !has_prefix(cmd, "!")) {
-				//Plain text in the automation table; synthesize a command.
-				command = (["message": cmd, "access": "none"]);
-				for (int i = 1; channel->commands[cmd = "auto" + i]; ++i) ;
-			}
-			if (stringp(command)) command = (["message": command]);
-			G->G->update_command(channel, "", replace(cmd, "!", ""), command | (["automate": automate]));
-		}
-		m_delete(req->misc->channel->config, "autocommands");
-		persist_config->save();
-	}
 	return render(req, ([
 		"vars": (["ws_type": "chan_commands", "ws_group": "", "ws_code": "chan_repeats"])
 			| G->G->command_editor_vars(req->misc->channel),

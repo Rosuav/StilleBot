@@ -30,15 +30,14 @@ $$save_or_login||> [Export/back up all configuration](:type=submit name=export)
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->misc->is_mod && !req->misc->session->fake && req->request_type == "POST" && req->variables->export) {
-		//Standard rule: Everything in this export comes from persist_config and the commands list.
-		//(Which ultimately may end up being merged anyway.)
+		//Standard rule: Everything in this export comes from persist_config.
 		//Anything in persist_status does not belong here; there may eventually be
 		//a separate export of that sort of ephemeral data, eg variables.
 		//Config attributes deprecated or for my own use only are not included.
 		object channel = req->misc->channel;
 		mapping cfg = channel->config;
 		mapping ret = ([]);
-		foreach ("autoban autocommands dynamic_rewards giveaway monitors quotes timezone vlcblocks" / " ", string key)
+		foreach ("autoban dynamic_rewards giveaway monitors quotes timezone vlcblocks" / " ", string key)
 			if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
 		mapping commands = ([]), specials = ([]);
 		string chan = channel->name[1..];
