@@ -25,15 +25,6 @@ typedef _echoable_message echoable_message;
 //functions is itself deprecated and should eventually be removed.
 typedef echoable_message|function(object,object,string:echoable_message) command_handler;
 
-class command
-{
-	//Command flags, same as can be set on any echocommand that is a mapping.
-	constant access = "any"; //Set to "mod" for mod-only, "vip" for VIPs and mods, or "none" for disabled/internal-only commands
-	constant visibility = "visible"; //Set to "hidden" to suppress the command from !help (or set hidden_command to 1, deprecated alternative)
-
-	protected void create(string name) { }
-}
-
 //Case-fold command names. For consistency, use this everywhere; that way,
 //commands will be created and found correctly. TODO eventually: Switch
 //this out for a proper Unicode casefold.
@@ -153,7 +144,6 @@ class run_process {
 //Or maybe something different again. Whatever. They're builtin_command for hysterical raisins.
 @"G->G->builtins";
 class builtin_command {
-	inherit command;
 	constant builtin_description = ""; //Label used in any human-readable context - one line description of purpose
 	constant command_description = ""; //Deprecated: Description for the default response
 	constant builtin_name = ""; //Short human-readable name for the drop-down
@@ -174,7 +164,6 @@ class builtin_command {
 
 	protected void create(string name)
 	{
-		::create(name);
 		sscanf(explode_path(name)[-1],"%s.pike",name);
 		if (!name) return;
 		G->G->builtins[name] = this;

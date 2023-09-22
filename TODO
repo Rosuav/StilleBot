@@ -53,10 +53,6 @@
 * Authentication on Firefox may now have issues with the default popup blocker. Can we
   comply with normal "click for popup" expectations somehow?
 * Enable/disable rewards - allow use of title, will do lookup
-* Create a way to daisychain into an existing command. This will allow a special to
-  "alias" to a command, or for a command to do things and then chain.
-  - What should happen with nested information eg from builtins?
-  - Will this make StilleBot commands Turing-complete?
 * If you attempt to rename a command or add an alias that already exists (and isn't an
   alias for the current command), warn on client side and block save unless confirmed.
 * Tidy up demo mode a bit.
@@ -227,17 +223,6 @@
   - GET A SCREENREADER and see how everything sounds. If needed, adjust.
     - Orca sucks. What others are there?
 * Should Favourites become a tray like any other??
-* Deprecate the use of functions as command handlers, and G->G->commands
-  - Instead of having commands be code directly, provide builtins and then have commands
-    be echoable_messages that use them. Good defaults will make this easy.
-  - May simplify find_command somewhat as flags like "mod-only" will always and only be
-    in the mapping, not in the function's object.
-  - For every command handler module, convert it into a builtin_command and provide a
-    command suggestion. This will then activate it in the features list, allowing each
-    command to be enabled or disabled. Some commands may end up being grouped into a
-    single builtin (eg quote doesn't need to have three separate builtins).
-  - Need a way to group features for sorting, and maybe provide some visual separation.
-    Maybe sort by description??
 * Raid finder "share status"
   - Option: "Share status with potential raiders"
   - If enabled, when you open the raid finder, it signals all raid finders who have you
@@ -246,12 +231,6 @@
 * Raid finder: On any categories=X page, have a Bookmark option. This will add/remove it
   to/from the user_followed_categories selection. That way, even if Twitch never makes a
   Helix version of the "get followed categories" API, it'll still be useful.
-* Clean up all remaining use of featurename/cfg->features and G->G->commands
-  - Commands no longer need to check for the feature's enablement
-  - But commands don't even exist any more.
-  - Everything that's inheriting command should be able to simply remove it.
-  - Everything that looks in G->G->commands will find nothing.
-  - What about the Markdown docs? Should they be retained as docs for the default commands?
 * chan_features - add a thing for broadcaster scopes, eg for !follower, !hypetrain
   - Group them. Put a note on the ones that require it. If they are active, have a single
     button to reauthenticate.
