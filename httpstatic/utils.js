@@ -6,6 +6,7 @@ const {BR, BUTTON, DIALOG, DIV, H3, HEADER, INPUT, LABEL, LINK, OPTGROUP, OPTION
 ensure_simpleconfirm_dlg(); //Unnecessary overhead once Firefox 98+ is standard - can then be removed
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
 
+//Deprecated. Use simpleconfirm instead - dialogs work in all current browsers (even inside other dlgs).
 export function waitlate(wait_time, late_time, confirmdesc, callback) {
 	//Assumes that this is attached to a button click. Other objects
 	//and other events may work but are not guaranteed.

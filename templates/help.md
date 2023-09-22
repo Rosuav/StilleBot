@@ -12,11 +12,6 @@ StilleBot uses real-time updates whereever possible. In many cases, status pages
 configuration pages will keep themselves current without your help. If your internet
 connection goes down, this may fail, but it should correct itself before long.
 
-Potentially-destructive actions are often confirmed using a "wait-late" button. Click
-once, then wait for the button to be available, then click again to confirm. Be sure
-that you actually meant to do this! If the button makes you wait a long time, it's
-probably because the action is more destructive.
-
 ## For broadcasters
 
 If StilleBot is serving as your channel bot, a number of configuration pages are
@@ -39,7 +34,7 @@ button above before these features will be available.$$
 
 #### Giveaways
 
-StilleBot can manage a [giveaway](/giveaway) that your viewers enter using their Twitch
+StilleBot can manage a $$link||giveaway$$ that your viewers enter using their Twitch
 channel points. (This requires partnership or affiliation; if you're neither, there are
 other tools which use chat commands to manage giveaways.)
 
@@ -47,7 +42,7 @@ Start by setting everything up - choosing how many points to enter, how many tic
 single viewer can buy, etc. Then open the giveaway, let people buy tickets, and finally,
 pick a winner!
 
-For in-chat notifications, click the "Create Default Notifications" wait-late button.
+For in-chat notifications, click the "Create Default Notifications" button.
 You can then customize the notifications if you wish, but that's entirely optional.
 
 ### Features for any streamer
