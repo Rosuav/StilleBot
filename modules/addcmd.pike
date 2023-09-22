@@ -132,14 +132,14 @@ void update_aliases(object channel, string aliases, echoable_message response, m
 		if (safealias && safealias != "" && (!mappingp(response) || safealias != response->alias_of)) {
 			string cmd = safealias + channel->name;
 			if (response) channel->commands[safealias] = response;
-			else {m_delete(G->G->echocommands, cmd); m_delete(channel->commands, safealias);}
+			else m_delete(channel->commands, safealias);
 			updates[cmd] = 1;
 		}
 	}
 }
 
 void purge(object channel, string cmd, multiset updates) {
-	echoable_message prev = m_delete(channel->commands, cmd) || m_delete(G->G->echocommands, cmd + channel->name);
+	echoable_message prev = m_delete(channel->commands, cmd);
 	m_delete(channel->path("commands"), cmd);
 	if (prev) updates[cmd + channel->name] = 1;
 	if (!mappingp(prev)) return;

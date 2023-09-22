@@ -205,18 +205,6 @@
   - Keep the existing lookups unchanged for stability. Monitor to ensure that nothing breaks.
   - Eventually, rename all to use the userid - no code should break.
     - Should™.
-* Move twitchbot_commands.json into persist_config->path("channels", channel, "commands")
-  - Maybe keep the existing JSON file in case there's need for global echocommands? Or not.
-  - The G->G->commands lookup mapping would now ONLY be for global commands, and even they
-    might end up not being needed (if builtins do all the work). This would, in fact, shift
-    commands from "commands, echocommands, and echocommands that call on builtins" to just
-    "commands, some of which call on builtins".
-  - foreach (({cmd + channel->name, cmd}), string tryme)
-    - Now instead of two lookups with different keys into one mapping, it looks up one key
-      into two different mappings
-    - foreach (({channel->config->commands, G->G->commands}), mapping tryme)
-  - Both are currently supported; new/updated commands should be saved into the channel's
-    configs. At some point, migrate all commands, and eventually, disable echocommands.
 * Eventually, move persist_config to a directory of config files, one per channel, with a
   global config for things that don't apply to one channel. Save into channels/49497888.json
   with globals remaining in twitchbot_config.json for now.

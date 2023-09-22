@@ -267,7 +267,7 @@ echoable_message _validate(echoable_message resp, mapping state)
 		else ret->target = resp->target;
 		if (ret->dest == "/chain") {
 			//Command chaining gets extra validation done. You may ONLY chain to
-			//echocommands from the current channel; but you may enter them with
+			//commands from the current channel; but you may enter them with
 			//or without their leading exclamation marks.
 			sscanf(ret->target || "", "%*[!]%s", string cmd);
 			if (state->channel && !state->channel->commands[cmd])

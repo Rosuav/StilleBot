@@ -37,9 +37,7 @@ class command
 {
 	constant require_moderator = 0; //(deprecated) Set to 1 if the command is mods-only (equivalent to access="mod")
 	//Command flags, same as can be set on any echocommand that is a mapping.
-	//Note that the keywords given here by default should be treated as equivalent
-	//to a 0, as echocommands will normally use 0 for the defaults.
-	constant access = "any"; //Set to "mod" for mod-only, "vip" for VIPs and mods, or "none" for disabled/internal-only commands (more useful for echo commands)
+	constant access = "any"; //Set to "mod" for mod-only, "vip" for VIPs and mods, or "none" for disabled/internal-only commands
 	constant visibility = "visible"; //Set to "hidden" to suppress the command from !help (or set hidden_command to 1, deprecated alternative)
 	constant active_channels = ({ }); //Deprecated. Instead of setting this, design a builtin and create per-channel commands. Still functional though.
 	constant docstring = ""; //Override this with your docs
@@ -221,10 +219,9 @@ class run_process {
 }
 
 
-//Some commands are available for echocommands to call on.
-//Possible future expansion: Separate "inherit builtin" and "inherit command", and then
-//"inherit builtin_command" will imply that it defines a builtin and also a default
-//command. For those builtins where there's no meaningful default command, just use builtin.
+//Some bot features are available for commands to call on.
+//The name is somewhat archaic now, and "builtin" would probably serve better.
+//Or maybe something different again. Whatever. They're builtin_command for hysterical raisins.
 @"G->G->builtins";
 class builtin_command {
 	inherit command;
