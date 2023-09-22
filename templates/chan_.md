@@ -5,7 +5,7 @@ StilleBot can do here:
 
 <!-- TODO: Separate out things only mods can do from things all users can do? -->
 
-* [Standard bot features](features) - can be easily enabled/disabled
+* [Bot features and configuration](features)
 * [Channel-specific commands](commands)
 * [Triggers](triggers)
 * [Special triggered responses](specials)
