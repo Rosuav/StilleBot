@@ -56,18 +56,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		resp->extra_heads = (["Content-disposition": sprintf("attachment; filename=%q", fn)]);
 		return resp;
 	}
-	//Assume that the list of commands for each feature isn't going to change often.
-	//If it does, refresh the page to see the change.
-	mapping featurecmds = ([]);
-	foreach (G->G->commands; string cmd; mixed f) {
-		if (has_value(cmd, '#')) continue; //Ignore channel-specific commands
-		object|mapping flags = functionp(f) ? function_object(f) : mappingp(f) ? f : ([]);
-		if (flags->aliases && has_value(flags->aliases, cmd)) continue; //It's an alias, not the primary
-		if (flags->hidden_command) continue;
-		featurecmds[flags->featurename || "ungoverned"] += ({cmd});
-	}
 	return render(req, ([
-		"vars": (["ws_group": req->misc->is_mod ? "control" : "view", "featurecmds": featurecmds]),
+		"vars": (["ws_group": req->misc->is_mod ? "control" : "view"]),
 		"chan": req->misc->channel->name[1..] - "!",
 	]) | req->misc->chaninfo);
 }
