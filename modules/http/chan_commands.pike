@@ -106,12 +106,7 @@ void find_builtins() {
 	foreach (sort(indices(G->G->builtins)), string name) {
 		object handler = G->G->builtins[name];
 		if (seen[handler]) continue; seen[handler] = 1; //If there are multiple, keep the alphabetically-earliest.
-		mapping cmds = handler->command_suggestions || (handler->default_response != "" ? (["!" + name: ([
-			"builtin_param": "%s",
-			"access": handler->require_moderator ? "mod" : handler->access,
-			"message": handler->default_response,
-			"aliases": handler->aliases * " ",
-		])]) : ([]));
+		mapping cmds = handler->command_suggestions || ([]);
 		foreach (cmds; string cmd; mapping info) {
 			templates += ({sprintf("%s | %s", cmd, info->_description || handler->command_description)});
 			complex_templates[cmd] = (["builtin": name, "builtin_param": "%s"]) | info - (<"_description">);

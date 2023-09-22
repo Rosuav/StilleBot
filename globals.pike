@@ -32,7 +32,6 @@ Available to: %s
 %s
 ";
 
-@"G->G->commands";
 class command
 {
 	constant require_moderator = 0; //(deprecated) Set to 1 if the command is mods-only (equivalent to access="mod")
@@ -61,11 +60,6 @@ class command
 	{
 		sscanf(explode_path(name)[-1],"%s.pike",name);
 		if (!name) return;
-		foreach (indices(G->G->commands), string n) if (n == name || has_prefix(n, name + "#")) m_delete(G->G->commands, n);
-		//active_channels is deprecated, but if set, it should be an array of channel names
-		//for which this command should be activated. (Otherwise it's a global command.)
-		if (!sizeof(active_channels)) G->G->commands[name] = check_perms;
-		else foreach (active_channels, string chan) if (chan!="") G->G->commands[name + "#" + chan] = check_perms;
 		//Update the docs for this command. NOTE: Nothing will currently
 		//remove docs for a defunct command. Do this manually.
 		if (sscanf(docstring, "%*[\n]%s\n\n%s", string summary, string main) && main)
@@ -109,25 +103,19 @@ string command_casefold(string cmd) {return lower_case(cmd);}
 //that eventually fails, but it will attempt to do so as rarely as
 //possible; returning nonzero will NORMALLY mean that the command is
 //fully active.
-echoable_message|function find_command(object channel, string cmd, int is_mod, int|void is_vip)
+echoable_message|function find_command(object channel, string cmdname, int is_mod, int|void is_vip)
 {
 	//Prevent commands from containing a hash, as that was formerly used for
 	//per-channel commands. This can be relaxed in the future if needed.
-	if (has_value(cmd, '#')) return 0;
-	if (has_value(cmd, '!')) return 0; //Pseudo-commands can't be run as normal commands
-	cmd = command_casefold(cmd);
-	foreach (({channel->commands[cmd], G->G->commands[cmd]}), mixed f)
-	{
-		//NOTE: G->G->commands holds the actual function that gets
-		//called, but we need the corresponding object.
-		if (!f) continue;
-		object|mapping flags = functionp(f) ? function_object(f) : mappingp(f) ? f : ([]);
-		if ((flags->require_moderator || flags->access == "mod") && !is_mod) continue;
-		if (flags->access == "vip" && !is_mod && !is_vip) continue;
-		if (flags->access == "none") continue;
-		//If we get here, the command is acceptable.
-		return f;
-	}
+	if (has_value(cmdname, '#')) return 0;
+	if (has_value(cmdname, '!')) return 0; //Pseudo-commands can't be run as normal commands
+	mixed cmd = channel->commands[command_casefold(cmdname)];
+	if (!mappingp(cmd)) return cmd; //This includes if it's not found
+	if ((cmd->require_moderator || cmd->access == "mod") && !is_mod) return 0;
+	if (cmd->access == "vip" && !is_mod && !is_vip) return 0;
+	if (cmd->access == "none") return 0;
+	//If we get here, the command is acceptable.
+	return cmd;
 }
 
 //List all broadly-active channels' config mappings
@@ -229,9 +217,7 @@ class builtin_command {
 	constant command_description = ""; //Deprecated: Description for the default response
 	constant builtin_name = ""; //Short human-readable name for the drop-down
 	constant builtin_param = ""; //Label for the parameter, or "/Label/option/option/option" to offer specific selections. If blank, has no parameter. May be an array for multiple params.
-	constant default_response = ""; //Deprecated: The response to the default command, and also the default suggestion. Use explicit command_suggestions instead.
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
-	constant aliases = ({ }); //Deprecated: Default aliases that go with the default_response (can be done via command_suggestions instead)
 	constant command_suggestions = 0; //Set this to provide some suggestions (which will show up as enableable features)
 	constant scope_required = ""; //If nonblank, will be offered as a suggestion any time this builtin is used.
 
@@ -251,11 +237,6 @@ class builtin_command {
 		sscanf(explode_path(name)[-1],"%s.pike",name);
 		if (!name) return;
 		G->G->builtins[name] = this;
-		foreach (aliases, string alias) G->G->commands[alias] = check_perms;
-		if (default_response == "") m_delete(G->G->commands, name); //Builtins with no default response shouldn't show up in a search
-	}
-	echoable_message process(object channel, mapping person, string param) {
-		return default_response != "" && (["builtin": this, "builtin_param": param, "message": default_response]);
 	}
 }
 
