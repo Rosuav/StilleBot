@@ -1,7 +1,5 @@
 # !setcmd: Configure an echo command for this channel
 
-Available to: all users
-
 Usage: `!setcmd !commandname option [option [option...]]`
 
 Options not specified remain as they are. Newly-created commands have the

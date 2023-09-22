@@ -25,16 +25,8 @@ typedef _echoable_message echoable_message;
 //functions is itself deprecated and should eventually be removed.
 typedef echoable_message|function(object,object,string:echoable_message) command_handler;
 
-constant _COMMAND_DOCS = #"# !%s: %s
-
-Available to: %s
-
-%s
-";
-
 class command
 {
-	constant require_moderator = 0; //(deprecated) Set to 1 if the command is mods-only (equivalent to access="mod")
 	//Command flags, same as can be set on any echocommand that is a mapping.
 	constant access = "any"; //Set to "mod" for mod-only, "vip" for VIPs and mods, or "none" for disabled/internal-only commands
 	constant visibility = "visible"; //Set to "hidden" to suppress the command from !help (or set hidden_command to 1, deprecated alternative)
@@ -51,7 +43,7 @@ class command
 	//commands, and they'll get caught here. This makes !help less helpful.
 	echoable_message check_perms(object channel, mapping person, string param)
 	{
-		if ((require_moderator || access == "mod") && !G->G->user_mod_status[person->user + channel->name]) return 0;
+		if (access == "mod" && !G->G->user_mod_status[person->user + channel->name]) return 0;
 		if (access == "vip" && !G->G->user_mod_status[person->user + channel->name] && !person->badges->?vip) return 0;
 		if (access == "none") return 0;
 		return process(channel, person, param);
@@ -64,9 +56,7 @@ class command
 		//remove docs for a defunct command. Do this manually.
 		if (sscanf(docstring, "%*[\n]%s\n\n%s", string summary, string main) && main)
 		{
-			string content = string_to_utf8(sprintf(_COMMAND_DOCS, name, summary,
-				require_moderator ? "mods only" : (["mod": "mods only", "vip": "mods/VIPs", "any": "all users", "none": "nobody (internal only)"])[access],
-				main));
+			string content = string_to_utf8(sprintf("# !%s: %s\n\n%s\n", name, summary, main));
 			string fn = sprintf("commands/%s.md", name);
 			string oldcontent = Stdio.read_file(fn);
 			if (content != oldcontent) Stdio.write_file(fn, content);
@@ -111,7 +101,7 @@ echoable_message|function find_command(object channel, string cmdname, int is_mo
 	if (has_value(cmdname, '!')) return 0; //Pseudo-commands can't be run as normal commands
 	mixed cmd = channel->commands[command_casefold(cmdname)];
 	if (!mappingp(cmd)) return cmd; //This includes if it's not found
-	if ((cmd->require_moderator || cmd->access == "mod") && !is_mod) return 0;
+	if (cmd->access == "mod" && !is_mod) return 0;
 	if (cmd->access == "vip" && !is_mod && !is_vip) return 0;
 	if (cmd->access == "none") return 0;
 	//If we get here, the command is acceptable.

@@ -1,7 +1,5 @@
 # !calc: Calculate something, possibly involving channel variables
 
-Available to: all users
-
 Usage: `!calc 1 + 2 * 3`
 
 If you are a moderator, this will expand variables. This is therefore

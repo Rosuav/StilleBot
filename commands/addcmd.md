@@ -1,7 +1,5 @@
 # !addcmd: Add a command for this channel
 
-Available to: all users
-
 Usage: `!addcmd !newcommandname text-to-echo`
 
 If the command already exists, it will be updated.

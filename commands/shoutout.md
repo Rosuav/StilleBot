@@ -1,7 +1,5 @@
 # !shoutout: Give a shout-out to another streamer
 
-Available to: mods only
-
 Among Twitch streamers, it's common to say "that's a great person, you should
 definitely check him/her out". Give shout-outs to people who deserve them!
 

@@ -1,5 +1,4 @@
 inherit builtin_command;
-constant require_moderator = 1;
 constant docstring = #"
 Give a shout-out to another streamer
 
