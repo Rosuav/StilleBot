@@ -155,6 +155,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 {
 	sscanf(cmd || "", "%[!]%s#%s", string pfx, string basename, string chan);
 	object channel = G->G->irc->channels["#" + chan]; if (!channel) error("Requires a channel name.\n");
+	if (basename == "") error("Requires a command name.\n");
 	multiset updates = (<cmd>);
 	purge(channel, pfx + basename, updates);
 	if (sscanf(extra->?original || "", "%s#", string oldname)) purge(channel, oldname, updates); //Renaming a command requires removal of what used to be.
