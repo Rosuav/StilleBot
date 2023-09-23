@@ -13,13 +13,15 @@ const may_request_options = {
 
 const pad = n => ("0" + n).slice(-2);
 //Note that the user-facing controls show local time, but the server works in UTC.
+//Unless we're in day mode, in which case everyone sees UTC.
 function makedate(val, id) {
 	const opts = [];
 	for (let hour = 0; hour < 24; ++hour) opts.push(OPTION(pad(hour)));
 	const date = val ? new Date(val * 1000) : new Date();
+	const get = "get";
 	return [
-		INPUT({id, type: "date", value: date.getFullYear() + "-" + pad(date.getMonth()+1) + "-" + pad(date.getDate())}),
-		SELECT({id: id + "_time", value: pad(date.getHours())}, opts),
+		INPUT({id, type: "date", value: date[get + "FullYear"]() + "-" + pad(date[get + "Month"]()+1) + "-" + pad(date[get + "Date"]())}),
+		SELECT({id: id + "_time", value: pad(date[get + "Hours"]())}, opts),
 		":00",
 	];
 }
@@ -51,7 +53,8 @@ const cfg_vars = [
 function DATE(d, timeonly) {
 	if (!d) return "(unspecified)";
 	const date = new Date(d * 1000);
-	let day = date.getDate();
+	const get = day_based ? "getUTC" : "get";
+	let day = date[get + "Date"]();
 	switch (day) {
 		case 1: case 21: day += "st"; break;
 		case 2: case 22: day += "nd"; break;
@@ -60,9 +63,9 @@ function DATE(d, timeonly) {
 	}
 	return TIME({datetime: date.toISOString(), title: date.toLocaleString()}, [
 		//This abbreviated format assumes English. The hover will be in your locale.
-		!timeonly && "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[date.getMonth()] + " " + day,
+		!timeonly && "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[date[get + "Month"]()] + " " + day,
 		!timeonly && !day_based && ", ",
-		!day_based && pad(date.getHours()) + ":00",
+		!day_based && pad(date[get + "Hours"]()) + ":00",
 	]);
 }
 
