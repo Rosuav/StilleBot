@@ -241,3 +241,10 @@
     to go to that page to authenticate (as per /hypetrain).
   - This means that, on the chan_features page, it may need to show the channel's info re
     missing perms, the user's info ditto ditto, or both.
+* Raid train: Fetch everyone's schedules
+  - If day-based: Look at that day +/- 24 hours (maybe filter on front end to "today in my
+    timezone") and find streams that overlap that time
+  - If hour-based: Locate a stream that overlaps the time.
+  - There might well be none. Not everyone uses the schedule, and if someone streams outside
+    their normal time, they might not add it. But if they do, great!
+  - Fetch asynchronously?
