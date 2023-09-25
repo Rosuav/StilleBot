@@ -18,16 +18,16 @@ function makedate(val, id) {
 	const opts = [];
 	for (let hour = 0; hour < 24; ++hour) opts.push(OPTION(pad(hour)));
 	const date = val ? new Date(val * 1000) : new Date();
-	const get = "get";
+	const get = day_based ? "getUTC" : "get";
 	return [
 		INPUT({id, type: "date", value: date[get + "FullYear"]() + "-" + pad(date[get + "Month"]()+1) + "-" + pad(date[get + "Date"]())}),
-		SELECT({id: id + "_time", value: pad(date[get + "Hours"]())}, opts),
-		":00",
+		!day_based && SELECT({id: id + "_time", value: pad(date[get + "Hours"]())}, opts),
+		!day_based && ":00",
 	];
 }
 function getdate(elem) {
 	if (elem.value === "") return 0;
-	const date = new Date(elem.value + "T" + DOM("#" + elem.id + "_time").value + ":00");
+	const date = day_based ? new Date(elem.value) : new Date(elem.value + "T" + DOM("#" + elem.id + "_time").value + ":00");
 	return Math.floor((+date)/1000);
 }
 
@@ -79,6 +79,7 @@ function channel_profile(chan) {
 
 let owner_id = { }, slots = [], people = { }, is_mod = false, may_request = "none", online_streams = { };
 export function render(data) {
+	day_based = data.cfg.slotsize === 24;
 	set_content("#configdlg tbody", cfg_vars.map(v => {
 		const input = v.render(data.cfg[v.key] || "", "edit_" + v.key);
 		//Split the label into lines as required
@@ -91,7 +92,6 @@ export function render(data) {
 	if (data.desc_html) DOM("#cfg_description").innerHTML = data.desc_html;
 	set_content("#cfg_title", data.cfg.title || "Raid train settings");
 	DOM("#cfg_raidcall").value = data.cfg.raidcall || "";
-	day_based = data.cfg.slotsize === 24;
 	set_content("#cfg_dates", [
 		"From ", DATE(data.cfg.startdate),
 		" until ", DATE(data.cfg.enddate),

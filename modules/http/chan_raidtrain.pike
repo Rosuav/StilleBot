@@ -268,6 +268,12 @@ void wscmd_slotnotes(object channel, mapping(string:mixed) conn, mapping(string:
 	if (trn->cfg->startdate && trn->cfg->enddate > trn->cfg->startdate) {
 		int tcstart = trn->cfg->startdate, tcend = trn->cfg->enddate;
 		int slotwidth = (trn->cfg->slotsize || 1) * 3600;
+		if (slotwidth == 86400) {
+			//Day-based scheduling makes sense only if everything is UTC-aligned.
+			trn->cfg->startdate -= trn->cfg->startdate % 86400; //Snap to the start of the corresponding day
+			int ofs = trn->cfg->enddate % 86400;
+			if (ofs) trn->cfg->enddate += 86400 - ofs; //Snap to the end of the day, if any loose time was added.
+		}
 		array slots = trn->cfg->slots || ({ });
 		//Trim the array down to the limits, stopping at any non-empty slot.
 		//That way, if someone has claimed a slot, you won't unclaim it for
