@@ -101,7 +101,7 @@ export function render(data) {
 	set_content("#cfg_may_request", may_request_options[data.cfg.may_request||"none"]);
 	people = data.people; owner_id = data.owner_id; is_mod = data.is_mod;
 	may_request = data.cfg.may_request; online_streams = data.online_streams;
-	if (slots = data.cfg.slots) update_schedule();
+	if (slots = data.slots) update_schedule();
 	const casters = data.cfg.all_casters || [];
 	set_content("#streamer_count", ""+casters.length);
 	DOM("#raidfinder_link a").href = "/raidfinder?train=" + data.owner_id; //Might be nice to use the name, but both work
@@ -147,6 +147,34 @@ function update_schedule() {
 			(is_mod || slot.broadcasterid === self) &&
 				BUTTON({class: "slotnotes", "data-slotidx": i, title: "Edit notes"}, "✍"),
 		]),
+		TD({class: "schedule"}, (slot.schedule || []).map(sched => {
+			if (sched.cancelled_until) return null;
+			const online = new Date(sched.start_time);
+			const offline = new Date(sched.end_time);
+			//NOTE: The end_time can be null, resulting in offline being zero.
+
+			//In day mode, see if the scheduled stream overlaps with the given day in the
+			//viewer's timezone. Otherwise, see if it overlaps in absolute time.
+			let start = slot.start, end = slot.end;
+			if (day_based) {
+				start += new Date(start * 1000).getTimezoneOffset() * 60;
+				end += new Date(end * 1000).getTimezoneOffset() * 60;
+			}
+			let need_day = false;
+			function abbrevtime(ts, date) {
+				if (day_based && (date/1000 < start || date/1000 >= end)) need_day = true;
+				return TIME({datetime: ts, title: date.toLocaleString()}, [
+					need_day && "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[date.getMonth()] + " " + date.getDate() + ", ",
+					pad(date.getHours()) + ":" + pad(date.getMinutes()),
+				]);
+			}
+			if (online/1000 < end && (!sched.end_time || offline/1000 >= start)) return DIV([
+				//choc.PRE(JSON.stringify(sched, null, 4))
+				abbrevtime(sched.start_time, online),
+				" to ",
+				abbrevtime(sched.end_time, offline),
+			]);
+		})),
 	])));
 }
 setInterval(update_schedule, 60000); //Repaint every minute to update the "now" marker

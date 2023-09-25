@@ -20,9 +20,9 @@ $$login_or_edit$$
 This is who's going to be part of the train when. They may be live earlier than this. Slot requesting
 is currently <span id=cfg_may_request>closed</span>.
 
-When    | -   | Streamer | Requests | Notes
---------|-----|----------|----------|-------
-loading | - | - | - | -
+When    | -   | Streamer | Requests | Notes | Schedule
+--------|-----|----------|----------|-------|----------
+loading | - | - | - | - | -
 {:#timeslots}
 
 Refresh the page to see who's live, or check out any of the channels to see what they do!
