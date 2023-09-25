@@ -81,6 +81,28 @@ function channel_profile(chan) {
 	]);
 }
 
+//HACK: Make this available in the console, since I don't have a proper button anywhere
+window.bulk_manage = function() {
+	DOM("#all_slots").value = slots.map(slot => {
+		const person = people[slot.broadcasterid] || {};
+		const name = person.login || person.display_name || slot.broadcasterid || "";
+		const notes = (slot.notes||"").replaceAll("\n", " "); //Yes, you lose information if you had newlines, but they wouldn't render anyway.
+		if (notes !== "") return name + " " + notes;
+		return name;
+	}).join("\n");
+	DOM("#bulkmgmt_dlg").showModal();
+};
+on("submit", "#bulkmgmt_dlg form", e => {
+	DOM("#all_slots").value.split("\n").forEach((line, slotidx) => {
+		const space = line.indexOf(" ");
+		const name = space === -1 ? line : line.slice(0, space);
+		const notes = space === -1 ? "" : line.slice(space + 1);
+		if (name === "") ws_sync.send({cmd: "streamerslot", slotidx, broadcasterid: 0});
+		else ws_sync.send({cmd: "streamerslot", slotidx, broadcasterlogin: name});
+		ws_sync.send({cmd: "slotnotes", slotidx, notes});
+	});
+});
+
 let owner_id = { }, slots = [], people = { }, is_mod = false, may_request = "none", online_streams = { };
 export function render(data) {
 	day_based = data.cfg.slotsize === 24;

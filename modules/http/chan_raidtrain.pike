@@ -75,6 +75,16 @@ tr.your_slot {background: #bff;} /* That's right, you are your own BFF */
 >
 > [Save](:type=submit) [Close](:.dialog_close)
 {: tag=formdialog #slotnotes_dlg}
+
+<!-- -->
+
+> ### Bulk Slot Management
+> Each line corresponds to one time slot. Provide a user name, and optionally notes.
+>
+> <textarea rows=20 cols=50 id=all_slots></textarea>
+>
+> [Save](:type=submit) [Close](:.dialog_close)
+{: tag=formdialog #bulkmgmt_dlg}
 ";
 
 //TODO: Allow requests to be hidden, which would entail taking claims out of the cfg mapping.
