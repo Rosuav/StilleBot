@@ -35,6 +35,7 @@
 <a href="raidfinder?allfollows" target="_blank">All channels you follow</a>
 
 > ### Raids to or from this channel:
+> <label><input type=checkbox checked id=show-outgoing> Outgoing</label> <label><input type=checkbox checked id=show-incoming> Incoming</label>
 > <ul></ul>
 {: tag=dialog #raids}
 
@@ -110,6 +111,8 @@
 .uptime {cursor: pointer;}
 .raid-incoming {font-weight: bold;}
 .raid-incoming,.raid-outgoing {cursor: pointer;}
+.hide-incoming .raid-incoming {display: none}
+.hide-outgoing .raid-outgoing {display: none}
 .notes {margin-right: 0.5em;}
 .notes.absent {filter: grayscale(1);}
 main {max-width: none!important;} /* Override the normal StilleBot style */

@@ -159,6 +159,8 @@ function show_all_raids() {
 	}));
 }
 DOM("#allraids").onclick = show_all_raids;
+on("click", "#show-outgoing", e => e.match.closest("div").classList.toggle("hide-outgoing", !e.match.checked));
+on("click", "#show-incoming", e => e.match.closest("div").classList.toggle("hide-incoming", !e.match.checked));
 
 function edit_notes(stream) {
 	set_content("#notes_about_channel", [
