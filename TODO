@@ -248,3 +248,8 @@
   - There might well be none. Not everyone uses the schedule, and if someone streams outside
     their normal time, they might not add it. But if they do, great!
   - Fetch asynchronously?
+* Raid train: Hide "Requests" column if not control connection and slot requesting is closed.
+* Raid train: In day mode, force all time slots to be UTC midnight to midnight
+  - On back end, ignore the time fields, just use day
+  - On front end, hide the time fields
+  - When editing, use different algorithm for slot adjustment. No wide or short slots.
