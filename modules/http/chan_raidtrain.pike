@@ -99,6 +99,31 @@ void add_person(mapping people, int|string id) {
 	else people[""][id] = 1;
 }
 
+continue Concurrent.Future check_schedules(object channel) {
+	mapping cfg = persist_status->path("raidtrain", (string)channel->userid, "cfg");
+	mapping sched = G->G->raidtrain_schedcache; if (!sched) sched = G->G->raidtrain_schedcache = ([]);
+	int maxage = time() - 3600;
+	//Assume that nobody will start stream more than this long before the scheduled slot. If they do,
+	//the schedule will not show, because Twitch's schedule API allows only "starts between these times"
+	//and not "overlaps with this time block" (which is much more complicated on their backend).
+	int prestart = 5 * 3600, postend = 0;
+	//In day mode, record all entries for schedule times that overlap that day in any timezone.
+	if (cfg->slotsize == 24) {prestart += 24 * 3600; postend += 24 * 3600;}
+	int updated = 0;
+	foreach (cfg->slots || ({ }), mapping slot) {
+		if (!slot->broadcasterid) continue;
+		string key = slot->broadcasterid + "_" + slot->start + "_" + slot->end;
+		if (sched[key]->?age >= maxage) continue;
+		array streams = yield(get_stream_schedule(slot->broadcasterid, time() - (slot->start - prestart), 20, slot->end - time() + postend));
+		sched[key] = (["age": time(), "schedule": streams]);
+		updated = 1;
+	}
+	if (updated) {
+		send_updates_all("control" + channel->name);
+		send_updates_all("view" + channel->name);
+	}
+}
+
 bool need_mod(string grp) {return grp == "control";}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = persist_status->path("raidtrain", (string)channel->userid, "cfg");
@@ -107,12 +132,17 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping people = (["": (<>)]);
 	add_person(people, channel->userid); //First up, the owner. Nice and easy.
 	//Then, everyone who's been allocated a slot.
+	mapping sched = G->G->raidtrain_schedcache; if (!sched) sched = G->G->raidtrain_schedcache = ([]);
+	array slots = ({ });
+	int maxschedage = time() - 3600;
 	if (cfg->slots) foreach (cfg->slots, mapping slot) {
 		add_person(people, slot->broadcasterid);
 		//If you are a mod, also add info for everyone who's placed a request.
 		//If you are not a mod but requests are public, do it anyway.
 		//NOTE: Currently requests are always public.
 		if (slot->claims) add_person(people, slot->claims[*]);
+		string key = slot->broadcasterid + "_" + slot->start + "_" + slot->end;
+		slots += ({slot | (["schedule": sched[key]->?age >= maxschedage && sched[key]->schedule])});
 	}
 	multiset still_need = m_delete(people, "");
 	if (sizeof(still_need)) get_users_info((array)still_need)->then() {
@@ -125,7 +155,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping online_streams = ([]);
 	if (cfg->all_casters) foreach (cfg->all_casters, int uid) {
 		mapping info = cache[uid];
-		if (!info || info->age < maxage) need[uid] = 1;
+		if (info->?age < maxage) need[uid] = 1;
 		else online_streams[(string)uid] = info;
 	}
 	if (sizeof(need)) get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))need]))->then() {
@@ -144,9 +174,10 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		send_updates_all("control" + channel->name);
 		send_updates_all("view" + channel->name);
 	};
+	spawn_task(check_schedules(channel));
 	if (!cfg->slots) cfg->slots = ({ });
 	return ([
-		"cfg": cfg,
+		"cfg": cfg, "slots": slots,
 		"owner_id": channel->userid,
 		"people": people, "online_streams": online_streams,
 		"is_mod": grp == "control",
