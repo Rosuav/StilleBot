@@ -201,7 +201,7 @@ function update_schedule() {
 				//choc.PRE(JSON.stringify(sched, null, 4))
 				abbrevtime(sched.start_time, online),
 				" to ",
-				abbrevtime(sched.end_time, offline),
+				sched.end_time ? abbrevtime(sched.end_time, offline) : "whenever",
 			]);
 		})),
 	])));
