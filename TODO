@@ -241,7 +241,6 @@
     to go to that page to authenticate (as per /hypetrain).
   - This means that, on the chan_features page, it may need to show the channel's info re
     missing perms, the user's info ditto ditto, or both.
-* Raid train: Hide "Requests" column if not control connection and slot requesting is closed.
 * Raid train: In day mode, force all time slots to be UTC midnight to midnight
   - On back end, ignore the time fields, just use day
   - On front end, hide the time fields

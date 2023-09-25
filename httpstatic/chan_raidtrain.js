@@ -120,6 +120,8 @@ function update_schedule() {
 	}
 	const self = ws_sync.get_userid();
 	const now = +new Date / 1000;
+	const have_requests = may_request !== "none" || is_mod;
+	DOM("#timeslots thead th:nth-of-type(3)").hidden = have_requests ? "" : "hidden";
 	set_content("#timeslots tbody", slots.map((slot,i) => TR(
 	{class: slot.start <= now && slot.end > now ? "now" :
 		slot.broadcasterid === self ? "your_slot" : ""
@@ -131,7 +133,7 @@ function update_schedule() {
 				SPAN({class: "recording", title: "Live now!"}, "⏺"),
 			channel_profile(people[slot.broadcasterid]),
 		]),
-		TD([
+		have_requests && TD([
 			!slot.broadcasterid && slot.claims && DIV(slot.claims.map(id => DIV(channel_profile(people[id])))),
 			" ",
 			is_mod ? BUTTON({class: "streamerslot", "data-slotidx": i}, "Manage")
