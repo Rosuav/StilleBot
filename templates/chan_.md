@@ -19,6 +19,7 @@ StilleBot can do here:
 * [VLC integration](vlc) - link to VLC Media Player for "currently playing" etc
 * [Monitors and goal bars](monitors)
 * [Messages](messages) - private messaging system eg for giveaway rewards
+* [Raid Train](raidtrain) - if one is organized by this streamer
 * [Hype Train tracker](/hypetrain?for=$$channel$$) - available to everyone if enabled
 * [Raid finder](/raidfinder?for=$$channel$$) - can be used for recommendations too
 * [Emote showcase](/emotes?broadcaster=$$channel$$)
