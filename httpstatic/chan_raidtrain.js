@@ -17,7 +17,9 @@ const pad = n => ("0" + n).slice(-2);
 function makedate(val, id) {
 	const opts = [];
 	for (let hour = 0; hour < 24; ++hour) opts.push(OPTION(pad(hour)));
-	const date = val ? new Date(val * 1000) : new Date();
+	//Weird hack: For the end date, when working day-based, subtract one second
+	//so it shows inclusive-inclusive, the way humans want to see it.
+	const date = val ? new Date(val * 1000 - (day_based && id === "edit_enddate")) : new Date();
 	const get = day_based ? "getUTC" : "get";
 	return [
 		INPUT({id, type: "date", value: date[get + "FullYear"]() + "-" + pad(date[get + "Month"]()+1) + "-" + pad(date[get + "Date"]())}),
@@ -27,8 +29,10 @@ function makedate(val, id) {
 }
 function getdate(elem) {
 	if (elem.value === "") return 0;
+	//In day mode, ignore any time, and use UTC. Also reverse the "subtract one
+	//second" hack from above, so that the back end can find the right end mark.
 	const date = day_based ? new Date(elem.value) : new Date(elem.value + "T" + DOM("#" + elem.id + "_time").value + ":00");
-	return Math.floor((+date)/1000);
+	return Math.floor((+date)/1000 + (day_based && elem.id === "edit_enddate"));
 }
 
 const cfg_vars = [
@@ -94,7 +98,8 @@ export function render(data) {
 	DOM("#cfg_raidcall").value = data.cfg.raidcall || "";
 	set_content("#cfg_dates", [
 		"From ", DATE(data.cfg.startdate),
-		" until ", DATE(data.cfg.enddate),
+		//As above, hack the end date backwards by one second in day mode, so we get inc-inc range display.
+		" until ", DATE(data.cfg.enddate - day_based),
 	]);
 	if (day_based) set_content("#cfg_slotsize", "Day");
 	else set_content("#cfg_slotsize", (data.cfg.slotsize||1) + " hour(s)");
