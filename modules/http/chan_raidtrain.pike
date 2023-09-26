@@ -152,7 +152,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		//NOTE: Currently requests are always public.
 		if (slot->claims) add_person(people, slot->claims[*]);
 		string key = slot->broadcasterid + "_" + slot->start + "_" + slot->end;
-		slots += ({slot | (["schedule": sched[key]->?age >= maxschedage && sched[key]->schedule])});
+		slots += ({slot | (["schedule": sched[key]->?schedule])});
 	}
 	multiset still_need = m_delete(people, "");
 	if (sizeof(still_need)) get_users_info((array)still_need)->then() {
