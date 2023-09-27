@@ -325,7 +325,13 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		login = user->login || user->name; //helix || kraken
 		disp = user->display_name;
 	}
-	array users = yield(get_users_info(highlightids));
+	array users;
+	if (catch {users = yield(get_users_info(highlightids));}) {
+		//Some or all of the users don't exist. Assume that any that DO exist are now in
+		//the cache, and prune the rest. TODO: Ensure that this is actually the cause of
+		//the error (might need some support inside poll.pike).
+		users = G->G->user_info[highlightids[*]] - ({0});
+	}
 	highlights = users->login * "\n";
 	string title = "Followed streams";
 	//Special searches, which don't use your follow list (and may be possible without logging in)
