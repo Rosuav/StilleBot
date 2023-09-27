@@ -25,7 +25,7 @@ const games = {
 					}, name),
 				)),
 			]))),
-			H2("Entry codes"),
+			H2("Codes and locations"),
 			TABLE([
 				TR([TD("Room"), TD(BUTTONBOX(data, "room", {style: "background-color: black; color: white"},
 					["99", "100", "101", "102", "103", "104", "105", BR(),
@@ -37,6 +37,8 @@ const games = {
 				])]),
 				TR([TD("Recep PC"), TD(BUTTONBOX(data, "recep", {style: "background-color: black; color: white"},
 					["Left", "Center", "Right"]))]),
+				TR([TD("Pit boss"), TD(BUTTONBOX(data, "pitboss", {style: "background-color: black; color: white"},
+					["VIP", "Reception", "Above Gents"]))]),
 			]),
 			H2("Drinks"),
 			TABLE([
