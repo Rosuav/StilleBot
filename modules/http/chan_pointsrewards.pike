@@ -144,7 +144,7 @@ continue Concurrent.Future populate_rewards_cache(string chan, string|int|void b
 	if (!broadcaster_id) broadcaster_id = yield(get_user_id(chan));
 	pointsrewards[chan] = ({ }); //If there's any error, don't keep retrying
 	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
-	mapping params = (["Authorization": "Bearer " + token_for_user_id(broadcaster_id)[0]]);
+	mapping params = (["Authorization": "Bearer " + yield(token_for_user_id_async(broadcaster_id))[0]]);
 	array rewards = yield(twitch_api_request(url, params))->data;
 	//Prune the dynamic rewards list
 	mapping current = get_channel_config(broadcaster_id)->?dynamic_rewards;
