@@ -27,7 +27,7 @@ loading | - | - | - | - | -
 
 Refresh the page to see who's live, or check out any of the channels to see what they do!
 
-[See who's live in a tiled view](/raidfinder?train=LOADING)
+[See all streamers currently live for this raid train](/raidfinder?train=LOADING)
 {:#raidfinder_link}
 
 > ### Configuration

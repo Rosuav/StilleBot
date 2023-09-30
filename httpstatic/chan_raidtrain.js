@@ -131,7 +131,7 @@ export function render(data) {
 	if (slots = data.slots) update_schedule();
 	const casters = data.cfg.all_casters || [];
 	set_content("#streamer_count", ""+casters.length);
-	DOM("#raidfinder_link a").href = "/raidfinder?train=" + data.owner_id; //Might be nice to use the name, but both work
+	set_content("#raidfinder_link a", "See all streamers currently live for " + data.cfg.title).href = "/raidfinder?train=" + data.owner_id; //Might be nice to use the name, but both work
 }
 
 function update_schedule() {
