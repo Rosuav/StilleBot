@@ -86,9 +86,9 @@ int main(int argc,array(string) argv)
 		return -1;
 	}
 	bootstrap_all();
-	foreach ("persist_config command send_message window" / " ", string vital)
+	foreach ("persist_config spawn_task send_message window" / " ", string vital)
 		if (!all_constants()[vital])
-			exit(1, "Vital core files failed to compile, cannot continue.\n");
+			exit(1, "Vital core files failed to compile, cannot continue [missing %O].\n", vital);
 	#ifndef __NT__
 	//Windows has big problems with read callbacks on both stdin and one or more sockets.
 	//(I suspect it's because the select() function works on sockets, not file descriptors.)
