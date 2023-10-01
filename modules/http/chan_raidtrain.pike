@@ -418,7 +418,7 @@ continue Concurrent.Future checkfollowing(object channel, mapping(string:mixed) 
 	mapping cfg = persist_status->path("raidtrain", (string)channel->userid)->cfg;
 	if (!cfg->all_casters) return 0; //No casters, nothing to do
 	[string token, string scopes] = yield(token_for_user_id_async(conn->session->user->id));
-	if (!has_value(scopes / " ", "user:read:follows")) return (["cmd": "checkfollowing", "msg": "No permission, can't check following"]); //Not currently in the UI
+	if (!has_value(scopes / " ", "user:read:follows")) return (["msg": "No permission, can't check following"]); //Not currently in the UI
 	mapping casters = ([]);
 	foreach (cfg->all_casters, int|string bcaster) {
 		bcaster = (string)bcaster;
@@ -436,10 +436,10 @@ continue Concurrent.Future checkfollowing(object channel, mapping(string:mixed) 
 		}
 		casters[bcaster] = foll->followed_at;
 	}
-	return (["cmd": "checkfollowing", "casters": casters]);
+	return (["casters": casters]);
 }
 void wscmd_checkfollowing(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	spawn_task(checkfollowing(channel, conn, msg)) {
-		if (__ARGS__[0]) conn->sock->send_text(Standards.JSON.encode(__ARGS__[0]));
+		if (__ARGS__[0]) conn->sock->send_text(Standards.JSON.encode((["cmd": "checkfollowing"]) | __ARGS__[0]));
 	};
 }

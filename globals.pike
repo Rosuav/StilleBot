@@ -1371,6 +1371,9 @@ class http_websocket
 		[object channel, string grp] = split_channel(conn->group);
 		if (!channel || conn->session->fake) return;
 		if (annotation_lookup[name] && annotation_lookup[name]["is_mod"] && !conn->is_mod) return;
+		//TODO: If it returns (possibly asynchronously) a mapping, send that back, with
+		//cmd set to the incoming cmd. This will allow a convenient request/response.
+		//TODO: What about non-category connections? Should this be handled by websocket_handler?
 		f(channel, conn, msg);
 	}
 	/* Example:
