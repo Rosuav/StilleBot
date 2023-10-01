@@ -54,7 +54,7 @@ continue mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.
 	string login_link = "";
 	if (req->misc->session->scopes[?"user:read:follows"]) foreach (coll->streamers; int i; string bcaster) {
 		//As far as I know, there's no way to check follows in bulk. So to reduce the cost,
-		//we cache them.
+		//we cache them. Duplicated into chan_raidtrain.pike.
 		mapping foll = G_G_("following", bcaster, req->misc->session->user->id);
 		if (foll->stale < time(1)) {
 			mapping info = yield(twitch_api_request(sprintf(
@@ -63,8 +63,8 @@ continue mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.
 				(["Authorization": "Bearer " + req->misc->session->token])));
 			if (sizeof(info->data)) foll->followed_at = info->data[0]->followed_at;
 			else foll->followed_at = 0;
-			//Cache positive entries for an hour, negative for a few minutes.
-			foll->stale = time(1) + (foll->followed_at ? 3600 : 180);
+			//Cache positive entries for a day, negative for a few minutes.
+			foll->stale = time(1) + (foll->followed_at ? 86400 : 180);
 		}
 		//Record the following status as either a timestamp or "!" for not following.
 		//This leaves undefined/absent as "unknown" (eg if not logged in).

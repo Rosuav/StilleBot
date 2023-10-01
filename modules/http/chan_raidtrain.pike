@@ -412,3 +412,34 @@ void wscmd_slotnotes(object channel, mapping(string:mixed) conn, mapping(string:
 	}
 	save_and_send(conn);
 }
+
+continue Concurrent.Future checkfollowing(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->session->user) return 0; //Not logged in, no message needed
+	mapping cfg = persist_status->path("raidtrain", (string)channel->userid)->cfg;
+	if (!cfg->all_casters) return 0; //No casters, nothing to do
+	[string token, string scopes] = yield(token_for_user_id_async(conn->session->user->id));
+	if (!has_value(scopes / " ", "user:read:follows")) return (["cmd": "checkfollowing", "msg": "No permission, can't check following"]); //Not currently in the UI
+	mapping casters = ([]);
+	foreach (cfg->all_casters, int|string bcaster) {
+		bcaster = (string)bcaster;
+		//Lifted from tradingcards.pike
+		mapping foll = G_G_("following", bcaster, conn->session->user->id);
+		if (foll->stale < time(1)) {
+			mapping info = yield(twitch_api_request(sprintf(
+				"https://api.twitch.tv/helix/channels/followed?user_id=%s&broadcaster_id=%s",
+				conn->session->user->id, bcaster),
+				(["Authorization": "Bearer " + token])));
+			if (sizeof(info->data)) foll->followed_at = info->data[0]->followed_at;
+			else foll->followed_at = 0;
+			//Cache positive entries for a day, negative for a few minutes.
+			foll->stale = time(1) + (foll->followed_at ? 86400 : 180);
+		}
+		casters[bcaster] = foll->followed_at;
+	}
+	return (["cmd": "checkfollowing", "casters": casters]);
+}
+void wscmd_checkfollowing(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	spawn_task(checkfollowing(channel, conn, msg)) {
+		if (__ARGS__[0]) conn->sock->send_text(Standards.JSON.encode(__ARGS__[0]));
+	};
+}

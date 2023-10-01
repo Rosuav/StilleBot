@@ -73,12 +73,18 @@ function DATE(d, timeonly) {
 	]);
 }
 
+let need_follow_check = false, followed_casters = { };
 function channel_profile(chan) {
 	if (!chan) return "";
-	return A({href: "https://twitch.tv/" + chan.login, target: "_blank"}, [
-		IMG({className: "avatar", src: chan.profile_image_url}),
-		chan.display_name,
-	]);
+	if (typeof followed_casters[chan.id] === "undefined") need_follow_check = true;
+	return [
+		A({href: "https://twitch.tv/" + chan.login, target: "_blank"}, [
+			IMG({className: "avatar", src: chan.profile_image_url}),
+			chan.display_name,
+		]),
+		//If you ARE following the person, it'll have a string there, otherwise the integer zero
+		typeof followed_casters[chan.id] === "number" && SPAN({class: "new_frond", title: "Might be a new frond!"}, " \u{1f334}"),
+	];
 }
 
 //HACK: Make this available in the console, since I don't have a proper button anywhere
@@ -205,6 +211,7 @@ function update_schedule() {
 			]);
 		})),
 	])));
+	if (need_follow_check) {need_follow_check = false; ws_sync.send({cmd: "checkfollowing"});}
 }
 setInterval(update_schedule, 60000); //Repaint every minute to update the "now" marker
 
@@ -292,3 +299,8 @@ on("submit", "#configdlg form", e => {
 on("click", "#reset_schedule", simpleconfirm(
 	"Resetting the schedule removes all slots, assignments, requests, notes, etc. This cannot be undone!",
 	e => ws_sync.send({cmd: "resetschedule"})));
+
+export function sockmsg_checkfollowing(msg) {
+	followed_casters = msg.casters;
+	update_schedule();
+}
