@@ -128,7 +128,7 @@ export function render(data) {
 	set_content("#cfg_may_request", may_request_options[data.cfg.may_request||"none"]);
 	people = data.people; owner_id = data.owner_id; is_mod = data.is_mod;
 	may_request = data.cfg.may_request; online_streams = data.online_streams;
-	if (slots = data.slots) update_schedule();
+	if (data.slots) {slots = data.slots; update_schedule();}
 	const casters = data.cfg.all_casters || [];
 	set_content("#streamer_count", ""+casters.length);
 	set_content("#raidfinder_link a", "See all streamers currently live for " + data.cfg.title).href = "/raidfinder?train=" + data.owner_id; //Might be nice to use the name, but both work
