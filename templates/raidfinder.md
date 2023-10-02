@@ -30,8 +30,7 @@
 > </form>
 {: tag=dialog #editnotes}
 
-<a id=yourcat href="#" target="_blank">Current category: ??</a><br>
-<a href="raidfinder?categories" target="_blank">Categories you follow</a><br>
+<a id=yourcat href="#" target="_blank">Current category: ??</a><br>$$catfollow||$$
 <a href="raidfinder?allfollows" target="_blank">All channels you follow</a>
 
 > ### Raids to or from this channel:
@@ -276,3 +275,13 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 >
 > [Close](:.dialog_close)
 {: tag=dialog #raidsuggestionsdlg}
+
+<!-- -->
+
+> ### Follow categories
+>
+> <span id=actiondesc>Follow/unfollow these categories:</span>
+> <div id=catlist></div>
+>
+> [Confirm](:#confirmfollowcategory) [Cancel](:.dialog_close)
+{: tag=dialog #followcategorydlg}

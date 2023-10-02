@@ -474,6 +474,36 @@ on("click", "#raidsuggestions", e => {
 	DOM("#raidsuggestionsdlg").showModal();
 });
 
+on("click", "#followcategory", e => {
+	if (e.match.dataset.action === "") return;
+	ws_sync.send({cmd: "followcategory", action: "query", cats: e.match.dataset.cats.split(",")});
+});
+export function sockmsg_followcategory(data) {
+	if (data.status) {
+		set_content("#followcategory", data.status).dataset.action = "";
+		return;
+	}
+	set_content("#actiondesc", [
+		{follow: "Follow", unfollow: "Unfollow", show: "You are following"}[DOM("#followcategory").dataset.action],
+		{0: " no categories", 1: " this category:"}[data.cats.length] || " these categories:",
+	]);
+	const describe_cat = cat => [
+		IMG({src: cat.box_art_url.replace("{width}", "60").replace("{height}", "81"), alt: "Box art"}),
+		" ", cat.name,
+	];
+	if (data.cats.length > 1) set_content("#catlist", UL(data.cats.map(cat => LI(describe_cat(cat)))));
+	else set_content("#catlist", describe_cat(data.cats[0]));
+	if (DOM("#followcategory").dataset.action === "show") {
+		DOM("#confirmfollowcategory").hidden = true;
+		set_content("#confirmfollowcategory ~ button", "Close");
+	}
+	DOM("#followcategorydlg").showModal();
+}
+on("click", "#confirmfollowcategory", e => {
+	ws_sync.send({cmd: "followcategory", action: DOM("#followcategory").dataset.action, cats: DOM("#followcategory").dataset.cats.split(",")});
+	DOM("#followcategorydlg").close();
+});
+
 export function render(data) {
 	if (data.raidstatus) {
 		set_content("#raidnow", data.raidstatus);

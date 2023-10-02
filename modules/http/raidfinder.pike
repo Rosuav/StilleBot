@@ -1,3 +1,4 @@
+#charset utf-8
 inherit http_websocket;
 inherit irc_callback;
 inherit annotated;
@@ -55,6 +56,9 @@ constant markdown_menu = #"# Raid finder modes
 * <form><label>Browse a category: <input name=categories size=20></label> <input type=submit value=Browse></form>
   Show any category - note that large categories may take a while to load! Does not
   require a login.
+* [Categories you follow](raidfinder?categories) - everyone who's currently
+  online in any of the categories you follow. Note that Twitch's own list of your
+  followed channels is currently independent from channels followed on this tool.
 * <form><label>Explore a stream team: <input name=team size=20></label> <input type=submit value=View></form>
   Show any stream team by name (look in the URL - not always the same as the display).
 * [Pixel Plush users](raidfinder?categories=pixelplush) - everyone who's currently
@@ -333,7 +337,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		users = G->G->user_info[highlightids[*]] - ({0});
 	}
 	highlights = users->login * "\n";
-	string title = "Followed streams";
+	string title = "Followed streams", catfollow = "";
 	//Special searches, which don't use your follow list (and may be possible without logging in)
 	if (req->variables->raiders || req->variables->categories || req->variables->login || req->variables->train || req->variables->highlights || req->variables->team) {
 		mapping args = ([]);
@@ -441,26 +445,24 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 					title = cats->name * ", " + " streams";
 					//Include the box art. What should we do with those that don't have any?
 					title += replace(sprintf("%{ ![](%s)%}", cats->box_art_url), (["{width}": "20", "{height}": "27"]));
+					if (req->misc->session->user) {
+						string follow = "unfollow>💔 Unfollow";
+						array followed = persist_status->path("user_followed_categories")[req->misc->session->user->id] || ({ });
+						if (sizeof(followed & cats->id) < sizeof(cats->id))
+							follow = "follow>💜 Follow"; //You aren't following them all, so offer "Follow" rather than "Unfollow"
+						string catdesc = " these categories";
+						if (sizeof(cats) == 1) catdesc = " '" + cats[0]->name + "'";
+						catfollow = "<button id=followcategory data-cats=\"" + cats->id * "," + "\" data-action=" + follow + catdesc + "</button><br>";
+					}
 					break;
 				}
 				//Else fall through. Any sort of junk category name, treat it as if it's "?categories"
 			}
-			case "": case "categories": case "flush": { //For ?categories and ?categories= modes, show those you follow
+			case "": case "categories": { //For ?categories and ?categories= modes, show those you follow
 				if (mapping resp = ensure_login(req, "user_read")) return resp;
-				//20220216: This still isn't available in Helix, so what we do is cache it ourselves.
-				//Populating this cache is outside the scope of this module.
-				array cats = persist_status->path("user_followed_categories")[req->misc->session->user->id];
-				if (!cats || req->variables->categories == "flush") {
-					//Try to populate the cache using an external lookup. As of 20220216,
-					//this lookup will be done using the legacy Kraken API, but will then
-					//be cached so the data is retained post-shutdown.
-					//If ever Twitch reimplements this functionality in Helix, add something
-					//like this here:
-					//cats = yield(twitch_api_request("........."));
-					persist_status->path("user_followed_categories")[req->misc->session->user->id] = cats;
-				}
-				args->game_id = cats;
+				args->game_id = persist_status->path("user_followed_categories")[req->misc->session->user->id] || ({ });
 				title = "Followed categories";
+				catfollow = "<button id=followcategory data-action=show data-cats=\"" + args->game_id * "," + "\">💜 All followed categories</button><br>";
 				break;
 			}
 		}
@@ -641,10 +643,36 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			"raid_suggestions": userid && (int)logged_in->?id == userid ? prune_raid_suggestions(logged_in->id) : ({ }),
 		]),
 		"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
-		"title": title,
+		"title": title, "catfollow": catfollow,
 		"raidbtn": raidbtn,
 		"backlink": "<a href=\"raidfinder?menu\">Other raid finder modes</a>",
 	]));
+}
+
+continue Concurrent.Future followcategory(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!arrayp(msg->cats) || !sizeof(msg->cats)) return 0; //No cats, nothing to do.
+	switch (msg->action) {
+		case "query": {
+			array cats = yield(get_helix_paginated("https://api.twitch.tv/helix/games", (["id": msg->cats])));
+			return (["cats": cats]);
+		}
+		case "follow": case "unfollow": {
+			mapping ufc = persist_status->path("user_followed_categories");
+			string uid = conn->session->user->?id;
+			if (!(int)uid) return 0; //Not logged in, no following/unfollowing possible
+			array cats = ufc[uid] || ({ });
+			if (msg->action == "follow") cats += msg->cats;
+			else cats -= msg->cats;
+			ufc[uid] = cats;
+			return (["status": msg->action == "follow" ? "Now following 💜" : "No longer following 💔"]);
+		}
+		default: break;
+	}
+}
+void websocket_cmd_followcategory(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	spawn_task(followcategory(conn, msg)) {
+		if (__ARGS__[0]) conn->sock->send_text(Standards.JSON.encode((["cmd": "followcategory"]) | __ARGS__[0]));
+	};
 }
 
 //Record what the client is interested in hearing about. It's not consistent or coherent
