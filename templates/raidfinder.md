@@ -1,4 +1,4 @@
-# $$title||Followed streams$$
+# $$title||Followed streams$$$$auxtitle||$$
 
 > ### Preferences
 > Choose which tags you like or dislike. Liked tags will be promoted among<br>

@@ -337,7 +337,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		users = G->G->user_info[highlightids[*]] - ({0});
 	}
 	highlights = users->login * "\n";
-	string title = "Followed streams", catfollow = "";
+	string title = "Followed streams", auxtitle = "", catfollow = "";
 	//Special searches, which don't use your follow list (and may be possible without logging in)
 	if (req->variables->raiders || req->variables->categories || req->variables->login || req->variables->train || req->variables->highlights || req->variables->team) {
 		mapping args = ([]);
@@ -444,7 +444,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 					args->game_id = (array(string))cats->id;
 					title = cats->name * ", " + " streams";
 					//Include the box art. What should we do with those that don't have any?
-					title += replace(sprintf("%{ ![](%s)%}", cats->box_art_url), (["{width}": "20", "{height}": "27"]));
+					auxtitle = replace(sprintf("%{ ![](%s)%}", cats->box_art_url), (["{width}": "20", "{height}": "27"]));
 					if (req->misc->session->user) {
 						string follow = "unfollow>💔 Unfollow";
 						array followed = persist_status->path("user_followed_categories")[req->misc->session->user->id] || ({ });
@@ -643,7 +643,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			"raid_suggestions": userid && (int)logged_in->?id == userid ? prune_raid_suggestions(logged_in->id) : ({ }),
 		]),
 		"sortorders": ({"Magic", "Viewers", "Category", "Uptime", "Raided"}) * "\n* ",
-		"title": title, "catfollow": catfollow,
+		"title": title, "auxtitle": auxtitle, "catfollow": catfollow,
 		"raidbtn": raidbtn,
 		"backlink": "<a href=\"raidfinder?menu\">Other raid finder modes</a>",
 	]));
