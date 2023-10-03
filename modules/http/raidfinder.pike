@@ -520,7 +520,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		//Note that this is a naive case-insensitive prefix search; "hashtag=art" will match "#Artist".
 		//(Would it be worth lifting the EU4Parser "fold to ASCII" search?)
 		if (req->variables->hashtag) {
-			if (!has_value(lower_case(strm->title), "#" + req->variables->hashtag)) {follows_helix[i] = 0; continue;}
+			if (!has_value(lower_case(strm->title), "#" + lower_case(req->variables->hashtag))
+				&& !has_value(lower_case((strm->tags || ({ }))[*]), lower_case(req->variables->hashtag)))
+					{follows_helix[i] = 0; continue;}
 			//TODO: Put a highlight on the search term???
 		}
 		mapping(string:int) recommend = ([]);
