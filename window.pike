@@ -203,23 +203,23 @@ class _mainwindow
 		if (!login) { //Connect to new channel
 			login = win->login->get_text();
 			if (login == "" || login == "-- New --") return; //Invalid names
-			spawn_task(connect_to_channel(login)) {[mapping info] = __ARGS__;
+			spawn_task(connect_to_channel(login)) {[object channel] = __ARGS__;
 				sig_pb_refresh_clicked();
 				object iter = win->ls->get_iter_first();
 				while (win->ls->get_value(iter, 0) != login)
 					if (!win->ls->iter_next(iter)) {iter = win->new_iter; break;}
 				win->sel->select_iter(iter);
 				//win->list->scroll_to_cell(iter->get_path(), 0); //Doesn't seem to work. Whatever.
-				info->connprio = (int)win->connprio->get_text();
-				info->chatlog = (int)win->chatlog->get_active();
-				persist_config->save(); //FIXME-SEPCHAN
+				channel->config->connprio = (int)win->connprio->get_text();
+				channel->config->chatlog = (int)win->chatlog->get_active();
+				channel->config_save();
 			};
 			return;
 		}
-		mapping info = get_channel_config(login); if (!info) return; //TODO: Report error?
-		info->connprio = (int)win->connprio->get_text();
-		info->chatlog = (int)win->chatlog->get_active();
-		persist_config->save(); //FIXME-SEPCHAN
+		object channel = G->G->irc->channels["#" + login]; if (!channel) return; //TODO: Report error?
+		channel->config->connprio = (int)win->connprio->get_text();
+		channel->config->chatlog = (int)win->chatlog->get_active();
+		channel->config_save();
 		sig_sel_changed();
 	}
 
