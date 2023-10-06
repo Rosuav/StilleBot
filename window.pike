@@ -227,7 +227,7 @@ class _mainwindow
 	{
 		[object iter,object store]=win->sel->get_selected();
 		string kwd=iter && store->get_value(iter,0);
-		if (!kwd) return;
+		if (!kwd || kwd == "-- New --") return;
 		store->remove(iter);
 		m_delete(persist_config["channels"], kwd); //FIXME-SEPCHAN
 		persist_config->save();
