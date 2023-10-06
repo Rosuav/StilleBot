@@ -30,7 +30,7 @@ $$save_or_login||> [Export/back up all configuration](:type=submit name=export)
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->misc->is_mod && !req->misc->session->fake && req->request_type == "POST" && req->variables->export) {
-		//Standard rule: Everything in this export comes from persist_config.
+		//Standard rule: Everything in this export comes from channel->config.
 		//Anything in persist_status does not belong here; there may eventually be
 		//a separate export of that sort of ephemeral data, eg variables.
 		//Config attributes deprecated or for my own use only are not included.

@@ -154,13 +154,13 @@ class channel(string name) { //name begins with hash and is all lower case
 		if (config->userid) get_user_info(userid = config->userid)->then() {
 			config->login = __ARGS__[0]->login;
 			config->display_name = __ARGS__[0]->display_name;
-			persist_config->save();
+			config_save();
 		};
 		else if (!has_prefix(name, "#!")) get_user_info(name[1..], "login")->then() {
 			config->userid = userid = (int)__ARGS__[0]->id;
 			config->login = __ARGS__[0]->login;
 			config->display_name = __ARGS__[0]->display_name;
-			persist_config->save();
+			config_save();
 		};
 		else config->login = config->display_name = name[1..]; //User ID is zero for pseudo-channels
 		user_attrs = G_G_("channel_user_attrs", name);
