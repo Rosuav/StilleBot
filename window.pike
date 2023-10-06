@@ -193,20 +193,20 @@ class _mainwindow
 	string selecteditem()
 	{
 		[object iter,object store]=win->sel->get_selected();
-		string kwd=iter && store->get_value(iter,0);
-		return (kwd!="-- New --") && kwd; //TODO: Recognize the "New" entry by something other than its text
+		string login = iter && store->get_value(iter, 0);
+		return (login != "-- New --") && login; //TODO: Recognize the "New" entry by something other than its text
 	}
 
 	void sig_pb_save_clicked()
 	{
-		string kwd = selecteditem();
-		if (!kwd) { //Connect to new channel
-			kwd = win->kwd->get_text();
-			if (kwd == "" || kwd == "-- New --") return; //Invalid names
-			spawn_task(connect_to_channel(kwd)) {[mapping info] = __ARGS__;
+		string login = selecteditem();
+		if (!login) { //Connect to new channel
+			login = win->login->get_text();
+			if (login == "" || login == "-- New --") return; //Invalid names
+			spawn_task(connect_to_channel(login)) {[mapping info] = __ARGS__;
 				sig_pb_refresh_clicked();
 				object iter = win->ls->get_iter_first();
-				while (win->ls->get_value(iter, 0) != kwd)
+				while (win->ls->get_value(iter, 0) != login)
 					if (!win->ls->iter_next(iter)) {iter = win->new_iter; break;}
 				win->sel->select_iter(iter);
 				//win->list->scroll_to_cell(iter->get_path(), 0); //Doesn't seem to work. Whatever.
@@ -216,7 +216,7 @@ class _mainwindow
 			};
 			return;
 		}
-		mapping info = get_channel_config(kwd); if (!info) return; //TODO: Report error?
+		mapping info = get_channel_config(login); if (!info) return; //TODO: Report error?
 		info->connprio = (int)win->connprio->get_text();
 		info->chatlog = (int)win->chatlog->get_active();
 		persist_config->save();
@@ -226,19 +226,19 @@ class _mainwindow
 	void sig_pb_delete_clicked()
 	{
 		[object iter,object store]=win->sel->get_selected();
-		string kwd=iter && store->get_value(iter,0);
-		if (!kwd || kwd == "-- New --") return;
+		string login = iter && store->get_value(iter, 0);
+		if (!login || login == "-- New --") return;
 		store->remove(iter);
-		m_delete(persist_config["channels"], kwd); //FIXME-SEPCHAN
+		m_delete(persist_config["channels"], login); //FIXME-SEPCHAN
 		persist_config->save();
 		function_object(send_message)->reconnect();
 	}
 
 	void sig_sel_changed()
 	{
-		string kwd = selecteditem();
-		mapping cfg = get_channel_config(kwd) || ([]);
-		if (win->kwd) win->kwd->set_text(kwd || "");
+		string login = selecteditem();
+		mapping cfg = get_channel_config(login) || ([]);
+		win->login->set_text(login || "");
 		win->display_name->set_text(cfg->display_name || "");
 		win->connprio->set_text((string)cfg->connprio);
 		win->chatlog->set_active((int)cfg->chatlog);
@@ -261,7 +261,7 @@ class _mainwindow
 					)->set_policy(GTK2.POLICY_NEVER, GTK2.POLICY_AUTOMATIC))
 					->add(GTK2.Vbox(0,0)
 						->add(two_column(({
-							"Channel", win->kwd = GTK2.Entry(),
+							"Channel", win->login = GTK2.Entry(),
 							"Displays as", win->display_name = GTK2.Label(),
 							0, win->chatlog = GTK2.CheckButton("Log chat to console"),
 							"Connection priority", win->connprio = GTK2.Entry(),
@@ -292,7 +292,7 @@ class _mainwindow
 		win->sel->select_iter(win->new_iter);
 	}
 
-	void sig_kwd_changed(object self)
+	void sig_login_changed(object self)
 	{
 		string txt = self->get_text();
 		string lc = lower_case(txt);
