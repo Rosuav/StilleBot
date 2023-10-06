@@ -183,7 +183,6 @@ class _mainwindow
 {
 	inherit window;
 	constant windowtitle = "StilleBot";
-	constant is_subwindow = 0;
 	mapping(string:mapping(string:mixed)) items;
 
 	protected void create() {
