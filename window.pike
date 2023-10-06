@@ -242,10 +242,6 @@ class _mainwindow
 
 	void makewindow()
 	{
-		object ls=GTK2.ListStore(({"string"}));
-		foreach (sort(indices(items)),string kwd)
-			ls->set_value(ls->append(),0,kwd);
-		ls->set_value(win->new_iter=ls->append(),0,"-- New --");
 		win->mainwindow->add(GTK2.Vbox(0,10)
 				->pack_start(GTK2.MenuBar()
 					->add(GTK2.MenuItem("_Options")->set_submenu(win->optmenu=GTK2.Menu()
@@ -255,7 +251,7 @@ class _mainwindow
 					)),0,0,0)
 				->add(GTK2.Hbox(0,5)
 					->add(GTK2.ScrolledWindow()->add(
-						win->list=GTK2.TreeView(ls) //All I want is a listbox. This feels like *such* overkill. Oh well.
+						win->list = GTK2.TreeView(win->ls = GTK2.ListStore(({"string"})))
 							->append_column(GTK2.TreeViewColumn("Item",GTK2.CellRendererText(),"text",0))
 					)->set_policy(GTK2.POLICY_NEVER, GTK2.POLICY_AUTOMATIC))
 					->add(GTK2.Vbox(0,0)
@@ -267,13 +263,24 @@ class _mainwindow
 						})))
 						->pack_end(GTK2.HbuttonBox()
 							->add(win->pb_save=GTK2.Button((["label":"_Save","use-underline":1])))
+							->add(win->pb_refresh=GTK2.Button((["label":"_Refresh","use-underline":1])))
 							->add(win->pb_delete=GTK2.Button((["label":"_Delete","use-underline":1,"sensitive":1])))
 						,0,0,0)
 					)
 				)
 			);
-		win->sel=win->list->get_selection(); win->sel->select_iter(win->new_iter||ls->get_iter_first()); sig_sel_changed();
+		win->sel=win->list->get_selection();
+		sig_pb_refresh_clicked();
+		sig_sel_changed();
 		::makewindow();
+	}
+
+	void sig_pb_refresh_clicked() {
+		win->ls->clear();
+		foreach (sort(indices(items)),string kwd)
+			win->ls->set_value(win->ls->append(), 0, kwd);
+		win->ls->set_value(win->new_iter = win->ls->append(), 0, "-- New --");
+		win->sel->select_iter(win->new_iter || win->ls->get_iter_first());
 	}
 
 	void sig_kwd_changed(object self)
