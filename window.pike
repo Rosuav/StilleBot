@@ -207,9 +207,8 @@ class _mainwindow
 		if (newkwd=="") return; //Blank keywords currently disallowed
 		if (newkwd=="-- New --") return; //Since selecteditem() currently depends on "-- New --" being the 'New' entry, don't let it be used anywhere else.
 		mapping info = items[newkwd] = m_delete(items, oldkwd) || ([]);
-		foreach (win->real_strings,string key) info[key]=win[key]->get_text();
-		foreach (win->real_ints,string key) info[key]=(int)win[key]->get_text();
-		foreach (win->real_bools,string key) info[key]=(int)win[key]->get_active();
+		info->connprio = (int)win->connprio->get_text();
+		info->chatlog = (int)win->chatlog->get_active();
 		persist_config->save();
 		if (!G->G->irc->channels["#" + newkwd]) function_object(send_message)->reconnect();
 		[object iter,object store]=win->sel->get_selected();
@@ -227,8 +226,6 @@ class _mainwindow
 		string kwd=iter && store->get_value(iter,0);
 		if (!kwd) return;
 		store->remove(iter);
-		foreach (win->real_strings+win->real_ints,string key) win[key]->set_text("");
-		foreach (win->real_bools,string key) win[key]->set_active(0);
 		m_delete(items, kwd);
 		persist_config->save();
 		function_object(send_message)->reconnect();
@@ -239,19 +236,16 @@ class _mainwindow
 		string kwd = selecteditem();
 		mapping info=items[kwd] || ([]);
 		if (win->kwd) win->kwd->set_text(kwd || "");
-		foreach (win->real_strings,string key) win[key]->set_text((string)(info[key] || ""));
-		foreach (win->real_ints,string key) win[key]->set_text((string)info[key]);
-		foreach (win->real_bools,string key) win[key]->set_active((int)info[key]);
+		win->display_name->set_text(info->display_name || "");
+		win->connprio->set_text((string)info->connprio);
+		win->chatlog->set_active((int)info->chatlog);
 	}
 
 	GTK2.Widget make_content()
 	{
-		win->real_strings = ({"display_name"});
-		win->real_bools = ({"chatlog"});
-		win->real_ints = ({"connprio"});
 		return two_column(({
 			"Channel", win->kwd = GTK2.Entry(),
-			"Display name", win->display_name = GTK2.Entry(),
+			"Displays as", win->display_name = GTK2.Label(),
 			0, win->chatlog = GTK2.CheckButton("Log chat to console"),
 			"Connection priority", win->connprio = GTK2.Entry(),
 		}));
