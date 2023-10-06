@@ -192,6 +192,16 @@ class channel(string name) { //name begins with hash and is all lower case
 	}
 	void config_save() {persist_config->save();} //FIXME-SEPCHAN
 
+	void remove_bot_from_channel() {
+		//NOTE: This currently deletes all configs for the channel.
+		//TODO: Flag the channel as "inactive", which will disable connecting as it,
+		//disable web access, etc, etc, but will timestamp the configs as "inactive since",
+		//allowing them to remain until considered stale.
+		m_delete(persist_config["channels"], name[1..]); //FIXME-SEPCHAN
+		persist_config->save();
+		reconnect();
+	}
+
 	void channel_online(int uptime) {
 		//Purge the raider list of anyone who didn't raid since the stream went online.
 		//This signal comes through a minute or six after the channel actually goes

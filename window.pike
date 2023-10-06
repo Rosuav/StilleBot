@@ -212,14 +212,14 @@ class _mainwindow
 				//win->list->scroll_to_cell(iter->get_path(), 0); //Doesn't seem to work. Whatever.
 				info->connprio = (int)win->connprio->get_text();
 				info->chatlog = (int)win->chatlog->get_active();
-				persist_config->save();
+				persist_config->save(); //FIXME-SEPCHAN
 			};
 			return;
 		}
 		mapping info = get_channel_config(login); if (!info) return; //TODO: Report error?
 		info->connprio = (int)win->connprio->get_text();
 		info->chatlog = (int)win->chatlog->get_active();
-		persist_config->save();
+		persist_config->save(); //FIXME-SEPCHAN
 		sig_sel_changed();
 	}
 
@@ -229,9 +229,8 @@ class _mainwindow
 		string login = iter && store->get_value(iter, 0);
 		if (!login || login == "-- New --") return;
 		store->remove(iter);
-		m_delete(persist_config["channels"], login); //FIXME-SEPCHAN
-		persist_config->save();
-		function_object(send_message)->reconnect();
+		object channel = G->G->irc->channels["#" + login];
+		if (channel) channel->remove_bot_from_channel();
 	}
 
 	void sig_sel_changed()
