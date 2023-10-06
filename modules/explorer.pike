@@ -6,7 +6,6 @@ class menu_clicked
 {
 	inherit window;
 	constant windowtitle = "Explore StilleBot internals";
-	constant is_subwindow=0;
 	protected void create() {::create();}
 
 	multiset(int) no_recursion = (<>);

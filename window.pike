@@ -46,7 +46,6 @@ class window
 	constant provides="window";
 	constant windowtitle = "Window";
 	mapping(string:mixed) win=([]);
-	constant is_subwindow=1; //Set to 0 to disable the taskbar/pager hinting
 
 	//Replace this and call the original after assigning to win->mainwindow.
 	void makewindow() {if (win->accelgroup) win->mainwindow->add_accel_group(win->accelgroup);}
@@ -102,8 +101,7 @@ class window
 		if (!win->mainwindow) win->mainwindow = GTK2.Window((["title": windowtitle]));
 		else win->mainwindow->remove(win->mainwindow->get_child());
 		makewindow();
-		if (is_subwindow) win->mainwindow->set_transient_for(win->_parentwindow || G->G->window->mainwindow);
-		win->mainwindow->set_skip_taskbar_hint(is_subwindow)->set_skip_pager_hint(is_subwindow)->show_all();
+		win->mainwindow->show_all();
 		dosignals();
 	}
 	int closewindow()

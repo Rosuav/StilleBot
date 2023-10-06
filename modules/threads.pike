@@ -54,7 +54,6 @@ class menu_clicked
 {
 	inherit window;
 	constant windowtitle = "Running threads";
-	constant is_subwindow = 0;
 	protected void create() {::create();}
 
 	void makewindow()
