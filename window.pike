@@ -183,10 +183,8 @@ class _mainwindow
 {
 	inherit window;
 	constant windowtitle = "StilleBot";
-	mapping(string:mapping(string:mixed)) items;
 
 	protected void create() {
-		items = persist_config->setdefault("channels", ([])); //FIXME-SEPCHAN
 		::create("mainwindow");
 		mainwindow = win->mainwindow;
 	}
@@ -205,12 +203,12 @@ class _mainwindow
 		if (!kwd) {
 			kwd = win->kwd->get_text();
 			if (kwd == "" || kwd == "-- New --") return; //Invalid names
-			if (!items[kwd]) items[kwd] = ([]); //Just in case it's been added elsewhere.
+			persist_config->path("channels", kwd); //Force it to exist. FIXME-SEPCHAN.
 			[object iter, object store] = win->sel->get_selected();
 			win->sel->select_iter(iter = store->insert_before(win->new_iter));
 			store->set_value(iter, 0, kwd);
 		}
-		mapping info = items[kwd]; if (!info) return; //TODO: Report error?
+		mapping info = get_channel_config(kwd); if (!info) return; //TODO: Report error?
 		info->connprio = (int)win->connprio->get_text();
 		info->chatlog = (int)win->chatlog->get_active();
 		persist_config->save();
@@ -224,7 +222,7 @@ class _mainwindow
 		string kwd=iter && store->get_value(iter,0);
 		if (!kwd) return;
 		store->remove(iter);
-		m_delete(items, kwd);
+		m_delete(persist_config["channels"], kwd); //FIXME-SEPCHAN
 		persist_config->save();
 		function_object(send_message)->reconnect();
 	}
@@ -232,11 +230,11 @@ class _mainwindow
 	void sig_sel_changed()
 	{
 		string kwd = selecteditem();
-		mapping info=items[kwd] || ([]);
+		mapping cfg = get_channel_config(kwd) || ([]);
 		if (win->kwd) win->kwd->set_text(kwd || "");
-		win->display_name->set_text(info->display_name || "");
-		win->connprio->set_text((string)info->connprio);
-		win->chatlog->set_active((int)info->chatlog);
+		win->display_name->set_text(cfg->display_name || "");
+		win->connprio->set_text((string)cfg->connprio);
+		win->chatlog->set_active((int)cfg->chatlog);
 	}
 
 	void makewindow()
@@ -250,8 +248,9 @@ class _mainwindow
 					)),0,0,0)
 				->add(GTK2.Hbox(0,5)
 					->add(GTK2.ScrolledWindow()->add(
-						win->list = GTK2.TreeView(win->ls = GTK2.ListStore(({"string"})))
-							->append_column(GTK2.TreeViewColumn("Item",GTK2.CellRendererText(),"text",0))
+						win->list = GTK2.TreeView(win->ls = GTK2.ListStore(({"string", "string"})))
+							->append_column(GTK2.TreeViewColumn("Login", GTK2.CellRendererText(), "text", 0))
+							->append_column(GTK2.TreeViewColumn("ID", GTK2.CellRendererText(), "text", 1))
 					)->set_policy(GTK2.POLICY_NEVER, GTK2.POLICY_AUTOMATIC))
 					->add(GTK2.Vbox(0,0)
 						->add(two_column(({
@@ -276,10 +275,14 @@ class _mainwindow
 
 	void sig_pb_refresh_clicked() {
 		win->ls->clear();
-		foreach (sort(indices(items)),string kwd)
-			win->ls->set_value(win->ls->append(), 0, kwd);
+		array configs = list_channel_configs(); sort(configs->login, configs);
+		foreach (configs, mapping cfg) {
+			object iter = win->ls->append();
+			win->ls->set_value(iter, 0, cfg->login || "...");
+			win->ls->set_value(iter, 1, (string)cfg->userid);
+		}
 		win->ls->set_value(win->new_iter = win->ls->append(), 0, "-- New --");
-		win->sel->select_iter(win->new_iter || win->ls->get_iter_first());
+		win->sel->select_iter(win->new_iter);
 	}
 
 	void sig_kwd_changed(object self)
