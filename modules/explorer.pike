@@ -5,6 +5,7 @@ constant menu_label = "Explore StilleBot's internals";
 class menu_clicked
 {
 	inherit window;
+	constant windowtitle = "Explore StilleBot internals";
 	constant is_subwindow=0;
 	protected void create() {::create();}
 
@@ -67,7 +68,7 @@ class menu_clicked
 	{
 		if (!persist_config["explorer_active"])
 		{
-			win->mainwindow=GTK2.Window((["title":"Explore StilleBot internals"]))->add(GTK2.Vbox(0,0)
+			win->mainwindow->add(GTK2.Vbox(0,0)
 				->add(GTK2.Label(#"CAUTION: This will reveal a lot of deep internals
 which are of interest only to developers, and may be confusing even to
 ubernerds. Changing anything here may break StilleBot in ways which may not

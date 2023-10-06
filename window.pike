@@ -44,6 +44,7 @@ GTK2.Table two_column(array(array|string|GTK2.Widget) contents) {
 class window
 {
 	constant provides="window";
+	constant windowtitle = "Window";
 	mapping(string:mixed) win=([]);
 	constant is_subwindow=1; //Set to 0 to disable the taskbar/pager hinting
 
@@ -98,7 +99,9 @@ class window
 		if (name) sscanf(explode_path(name)[-1],"%s.pike",name);
 		if (name) {if (G->G->windows[name]) win=G->G->windows[name]; else G->G->windows[name]=win;}
 		win->self=this;
-		if (!win->mainwindow) makewindow();
+		if (!win->mainwindow) win->mainwindow = GTK2.Window((["title": windowtitle]));
+		else win->mainwindow->remove(win->mainwindow->get_child());
+		makewindow();
 		if (is_subwindow) win->mainwindow->set_transient_for(win->_parentwindow || G->G->window->mainwindow);
 		win->mainwindow->set_skip_taskbar_hint(is_subwindow)->set_skip_pager_hint(is_subwindow)->show_all();
 		dosignals();
@@ -134,11 +137,12 @@ class menu_item
 class ircsettings
 {
 	inherit window;
+	constant windowtitle = "Authenticate StilleBot";
 	mapping config = persist_config->path("ircsettings");
 
 	void makewindow()
 	{
-		win->mainwindow=GTK2.Window((["title":"Authenticate StilleBot"]))->add(two_column(({
+		win->mainwindow->add(two_column(({
 			"Twitch user name", win->nick=GTK2.Entry()->set_size_request(400, -1)->set_text(config->nick||""),
 			"Real name (optional)", win->realname=GTK2.Entry()->set_size_request(400, -1)->set_text(config->realname||""),
 			"Client ID (optional)", win->clientid=GTK2.Entry()->set_size_request(400, -1)->set_text(config->clientid||""),
@@ -180,7 +184,7 @@ object mainwindow;
 class _mainwindow
 {
 	inherit window;
-	mapping(string:mixed) windowprops=(["title": "StilleBot"]);
+	constant windowtitle = "StilleBot";
 	constant elements=({"$kwd:Channel", "$display_name:Display name",
 		"?chatlog:Log chat to console", "#connprio:Connection priority",
 	});
@@ -190,7 +194,6 @@ class _mainwindow
 	protected void create() {
 		items = persist_config->setdefault("channels", ([])); //FIXME-SEPCHAN
 		::create("mainwindow");
-		if (win->mainwindow) remake_content();
 		mainwindow = win->mainwindow;
 	}
 
@@ -269,7 +272,7 @@ class _mainwindow
 			}
 		}
 		win->real_strings -= ({"kwd"});
-		return win->contentblock = two_column(objects);
+		return two_column(objects);
 	}
 
 	void makewindow()
@@ -278,8 +281,7 @@ class _mainwindow
 		foreach (sort(indices(items)),string kwd)
 			ls->set_value(ls->append(),0,kwd);
 		ls->set_value(win->new_iter=ls->append(),0,"-- New --");
-		win->mainwindow=GTK2.Window(windowprops)
-			->add(GTK2.Vbox(0,10)
+		win->mainwindow->add(GTK2.Vbox(0,10)
 				->pack_start(GTK2.MenuBar()
 					->add(GTK2.MenuItem("_Options")->set_submenu(win->optmenu=GTK2.Menu()
 						->add(win->update=GTK2.MenuItem("Update (developer mode)"))
@@ -309,15 +311,6 @@ class _mainwindow
 		string txt = self->get_text();
 		string lc = lower_case(txt);
 		if (lc != txt) self->set_text(lc);
-	}
-
-	void remake_content()
-	{
-		object parent = win->contentblock->get_parent();
-		parent->remove(win->contentblock);
-		parent->add(make_content()->show_all());
-		dosignals(); //For some reason, updating code redoes signals BEFORE triggering this.
-		sig_sel_changed();
 	}
 
 	void sig_update_activate(object self)

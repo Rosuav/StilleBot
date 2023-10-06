@@ -53,6 +53,7 @@ constant menu_label = "Show threads";
 class menu_clicked
 {
 	inherit window;
+	constant windowtitle = "Running threads";
 	constant is_subwindow = 0;
 	protected void create() {::create();}
 
@@ -61,7 +62,7 @@ class menu_clicked
 		object ls = win->store = GTK2.ListStore(({"string", "string", "string"}));
 		G->G->ticker_active = 1;
 		Thread.Thread(thread_watch, ls);
-		win->mainwindow = GTK2.Window((["title": "Running threads"]))->add(GTK2.Vbox(0,0)
+		win->mainwindow->add(GTK2.Vbox(0,0)
 			->add(win->list = GTK2.TreeView(ls)
 				->append_column(GTK2.TreeViewColumn("TID", GTK2.CellRendererText(), "text", 0))
 				->append_column(GTK2.TreeViewColumn("Time", GTK2.CellRendererText(), "text", 1))
