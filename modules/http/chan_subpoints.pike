@@ -174,7 +174,7 @@ void websocket_cmd_create(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!channel->config->subpoints) channel->config->subpoints = ([]);
 	string nonce = replace(MIME.encode_base64(random_string(30)), (["/": "1", "+": "0"]));
 	channel->config->subpoints[nonce] = (["id": nonce, "created": time()]);
-	persist_config->save();
+	channel->config_save();
 	send_updates_all(conn->group);
 }
 
@@ -185,7 +185,7 @@ void websocket_cmd_save(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!tracker) return;
 	foreach ("unpaidpoints font fontsize goal usecomfy" / " ", string k)
 		if (!undefinedp(msg[k])) tracker[k] = msg[k];
-	persist_config->save();
+	channel->config_save();
 	send_updates_all(conn->group);
 }
 
@@ -195,7 +195,7 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	mapping cfg = channel->config->subpoints;
 	if (cfg[?msg->id]) {
 		m_delete(cfg, msg->id);
-		persist_config->save();
+		channel->config_save();
 		send_updates_all(conn->group);
 	}
 }

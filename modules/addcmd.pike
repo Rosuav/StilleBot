@@ -191,7 +191,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 		channel->redemption_commands[response->redemption] += ({basename});
 		updates["rew " + response->redemption] = 1;
 	}
-	persist_config->save(); //FIXME-SEPCHAN: Save the specific channel's config
+	channel->config_save();
 	if (object handler = G->G->websocket_types->chan_commands) {
 		//If the command name starts with "!", it's a special, to be
 		//sent out to "!!#channel" and not to "#channel".

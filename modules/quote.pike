@@ -77,7 +77,7 @@ mapping message_params(object channel, mapping person, array param) {
 				"recorder": person->user,
 			])});
 			idx = sizeof(quotes = channel->config->quotes);
-			persist_config->save();
+			channel->config_save();
 			//fallthrough
 		}
 		case "Get": {
@@ -96,7 +96,7 @@ mapping message_params(object channel, mapping person, array param) {
 			if (!idx) return (["{error}": "No such quote."]);
 			quotes[idx - 1] = 0;
 			channel->config->quotes -= ({0});
-			persist_config->save();
+			channel->config_save();
 			return (["{error}": "", "{id}": (string)idx]);
 		}
 		default: break;

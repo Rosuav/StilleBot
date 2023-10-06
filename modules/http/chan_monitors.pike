@@ -79,7 +79,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (info->needlesize == "") info->needlesize = "0";
 		if (body->varname) info->text = sprintf("$%s$:%s", body->varname, info->text);
 		textformatting_validate(info);
-		persist_config->save();
+		req->misc->channel->config_save();
 		send_updates_all(nonce + req->misc->channel->name);
 		update_one(req->misc->channel->name, nonce);
 		return jsonify((["ok": 1]));
@@ -92,7 +92,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (!cfg->monitors || !cfg->monitors[nonce]) return (["error": 404]);
 		if (req->misc->session->fake) return (["error": 204]);
 		m_delete(cfg->monitors, nonce);
-		persist_config->save();
+		req->misc->channel->config_save();
 		send_updates_all(req->misc->channel->name);
 		return (["error": 204]);
 	}

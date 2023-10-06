@@ -66,7 +66,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	string defvoice = get_channel_config("!demo")->?defvoice;
 	if (defvoice && bv[defvoice] && !vox[defvoice]) {
 		vox[defvoice] = bv[defvoice] | ([]);
-		persist_config->save();
+		channel->config_save();
 	}
 	array voices = values(vox); sort(indices(vox), voices);
 	mapping all_voices = persist_status->path("voices");
@@ -86,7 +86,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (msg->unsetdefault) { //No voice selection here
 		m_delete(channel->config, "defvoice");
 		send_updates_all(conn->group);
-		persist_config->save();
+		channel->config_save();
 		return;
 	}
 	mapping v = channel->config->voices[?msg->id];
@@ -107,7 +107,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			send_updates_all(conn->group); //Changing the default voice requires a full update, no point shortcutting
 		}
 		else update_one(conn->group, msg->id);
-		persist_config->save();
+		channel->config_save();
 	};
 }
 
@@ -122,7 +122,7 @@ void websocket_cmd_activate(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (!channel->config->voices) channel->config->voices = ([]);
 	channel->config->voices[msg->id] = bv;
 	update_one(conn->group, msg->id);
-	persist_config->save();
+	channel->config_save();
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -130,7 +130,7 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	[object channel, string grp] = split_channel(conn->group);
 	mapping vox = channel->config->voices;
 	if (!vox) return; //Nothing to delete.
-	if (m_delete(vox, msg->id)) {update_one(conn->group, msg->id); persist_config->save();}
+	if (m_delete(vox, msg->id)) {update_one(conn->group, msg->id); channel->config_save();}
 	//Note that deleting the default voice doesn't unset the default, but if a command
 	//attempts to use this default, it'll see that the voice isn't authenticated for this
 	//channel, and fall back on the global default.
@@ -159,7 +159,7 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 		if (!v->desc) v->desc = v->name;
 		v->profile_image_url = user->profile_image_url;
 		v->last_auth_time = time();
-		persist_config->save();
+		channel->config_save();
 		mapping tok = persist_status->path("voices", v->id);
 		tok->token = token;
 		tok->authcookie = cookie;

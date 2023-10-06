@@ -310,7 +310,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				existing[info->data[0]->id] = tickets;
 				++numcreated;
 			}
-			persist_config->save();
+			req->misc->channel->config_save();
 			//TODO: Notify the front end what's been changed, not just counts. What else needs to be pushed out?
 			send_updates_all(chan, (["title": cfg->giveaway->title]));
 			return jsonify((["ok": 1, "created": numcreated, "updated": numupdated, "deleted": numdeleted]));
@@ -330,7 +330,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			))->data[0]->id;
 			//write("Created new dynamic: %O\n", info->data[0]);
 			cfg->dynamic_rewards[id] = rwd;
-			persist_config->save();
+			req->misc->channel->config_save();
 			return jsonify((["ok": 1, "reward": rwd | (["id": id])]));
 		}
 		if (string id = body->dynamic_id) { //TODO: Ditto, move to pointsrewards
@@ -348,7 +348,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 					(["method": "PATCH", "json": (["title": body->title, "cost": (int)body->curcost])]),
 				);
 			}
-			persist_config->save();
+			req->misc->channel->config_save();
 			return jsonify((["ok": 1]));
 		}
 		if (body->activate) { //TODO: As above, move to pointsrewards on the ws

@@ -10,7 +10,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (!stringp(body->msg)) return (["error": 400]);
 	if (req->misc->session->fake) return (["error": 204]);
 	quotes[body->id - 1]->msg = body->msg;
-	persist_config->save();
+	req->misc->channel->config_save();
 	write("Edited quote %O\n", body);
 	return (["error": 204]);
 }

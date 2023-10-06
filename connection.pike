@@ -185,11 +185,12 @@ class channel(string name) { //name begins with hash and is all lower case
 	mapping path(string ... parts) {
 		mapping ret = config;
 		foreach (parts, string idx) {
-			if (undefinedp(ret[idx])) {ret[idx] = ([]); persist_config->save();}
+			if (undefinedp(ret[idx])) {ret[idx] = ([]); config_save();}
 			ret = ret[idx];
 		}
 		return ret;
 	}
+	void config_save() {persist_config->save();} //FIXME-SEPCHAN
 
 	void channel_online(int uptime) {
 		//Purge the raider list of anyone who didn't raid since the stream went online.

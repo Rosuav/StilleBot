@@ -151,7 +151,7 @@ continue Concurrent.Future populate_rewards_cache(string chan, string|int|void b
 	if (current) {
 		write("Current dynamics: %O\n", current);
 		multiset unseen = (multiset)indices(current) - (multiset)rewards->id;
-		if (sizeof(unseen)) {m_delete(current, ((array)unseen)[*]); persist_config->save();}
+		if (sizeof(unseen)) {m_delete(current, ((array)unseen)[*]); persist_config->save();} //FIXME-SEPCHAN: Save the specific channel's config
 	}
 	multiset manageable = (multiset)yield(twitch_api_request(url + "&only_manageable_rewards=true", params))->data->id;
 	foreach (rewards, mapping r) r->can_manage = manageable[r->id];
@@ -205,7 +205,7 @@ EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward
 	if (!rew) return;
 	pointsrewards[chan] = filter(rew) {return __ARGS__[0]->id != info->id;};
 	mapping dyn = get_channel_config(chan)->?dynamic_rewards;
-	if (dyn) {m_delete(dyn, info->id); persist_config->save();}
+	if (dyn) {m_delete(dyn, info->id); persist_config->save();} //FIXME-SEPCHAN: Save the specific channel's config
 	update_one("#" + chan, info->id);
 	update_one("#" + chan, info->id, "dynreward");
 };

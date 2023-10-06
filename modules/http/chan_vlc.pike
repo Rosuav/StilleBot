@@ -120,7 +120,7 @@ this works. I don't understand, but I'll take it. */
 //Create (if necessary) and return the VLC Auth Token
 string auth_token(object channel) {
 	if (string t = channel->config->vlcauthtoken) return t;
-	persist_config->save();
+	channel->config_save();
 	return channel->config->vlcauthtoken = String.string2hex(random_string(12));
 }
 
@@ -353,7 +353,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			//we can do a narrow update; no other things will change.
 			b[1] = msg->desc;
 			if (msg->path == msg->id) {
-				persist_config->save();
+				channel->config_save();
 				update_one("blocks" + channel->name, msg->id);
 				return;
 			}
@@ -363,7 +363,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		break;
 	}
 	if (msg->desc != "") channel->config->vlcblocks += ({({msg->path, msg->desc})});
-	persist_config->save();
+	channel->config_save();
 	//It's entirely possible that this will match some of the unknowns. If so, clear 'em out.
 	mapping status = vlc_status[channel->name];
 	if (status->?unknowns) {

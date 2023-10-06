@@ -110,12 +110,12 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 @"is_mod": void wscmd_settimezone(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (msg->timezone == "" || msg->timezone == "UTC") {
 		channel->config->timezone = "";
-		persist_config->save();
+		channel->config_save();
 	}
 	else if (has_value(Calendar.TZnames.zonenames(), msg->timezone))
 	{
 		channel->config->timezone = msg->timezone;
-		persist_config->save();
+		channel->config_save();
 	}
 	send_updates_all(conn->group);
 	send_updates_all("view" + channel->name);
