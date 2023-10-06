@@ -183,9 +183,6 @@ class _mainwindow
 {
 	inherit window;
 	constant windowtitle = "StilleBot";
-	constant elements=({"$kwd:Channel", "$display_name:Display name",
-		"?chatlog:Log chat to console", "#connprio:Connection priority",
-	});
 	constant is_subwindow = 0;
 	mapping(string:mapping(string:mixed)) items;
 
@@ -249,28 +246,15 @@ class _mainwindow
 
 	GTK2.Widget make_content()
 	{
-		array objects = ({ });
-		win->real_strings = win->real_ints = win->real_bools = ({ });
-		foreach (elements, string element) {
-			sscanf(element, "%1[?#$]%s:%s", string type, string name, string lbl);
-			switch (type)
-			{
-				case "?": //Boolean
-					win->real_bools += ({name});
-					objects += ({0,win[name]=GTK2.CheckButton(lbl)});
-					break;
-				case "#": //Integer
-					win->real_ints += ({name});
-					objects += ({lbl, win[name]=GTK2.Entry()});
-					break;
-				case "$": //String
-					win->real_strings += ({name});
-					objects += ({lbl, win[name]=GTK2.Entry()});
-					break;
-			}
-		}
-		win->real_strings -= ({"kwd"});
-		return two_column(objects);
+		win->real_strings = ({"display_name"});
+		win->real_bools = ({"chatlog"});
+		win->real_ints = ({"connprio"});
+		return two_column(({
+			"Channel", win->kwd = GTK2.Entry(),
+			"Display name", win->display_name = GTK2.Entry(),
+			0, win->chatlog = GTK2.CheckButton("Log chat to console"),
+			"Connection priority", win->connprio = GTK2.Entry(),
+		}));
 	}
 
 	void makewindow()
