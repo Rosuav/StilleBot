@@ -200,19 +200,26 @@ class _mainwindow
 	void sig_pb_save_clicked()
 	{
 		string kwd = selecteditem();
-		if (!kwd) {
+		if (!kwd) { //Connect to new channel
 			kwd = win->kwd->get_text();
 			if (kwd == "" || kwd == "-- New --") return; //Invalid names
-			persist_config->path("channels", kwd); //Force it to exist. FIXME-SEPCHAN.
-			[object iter, object store] = win->sel->get_selected();
-			win->sel->select_iter(iter = store->insert_before(win->new_iter));
-			store->set_value(iter, 0, kwd);
+			spawn_task(connect_to_channel(kwd)) {[mapping info] = __ARGS__;
+				sig_pb_refresh_clicked();
+				object iter = win->ls->get_iter_first();
+				while (win->ls->get_value(iter, 0) != kwd)
+					if (!win->ls->iter_next(iter)) {iter = win->new_iter; break;}
+				win->sel->select_iter(iter);
+				//win->list->scroll_to_cell(iter->get_path(), 0); //Doesn't seem to work. Whatever.
+				info->connprio = (int)win->connprio->get_text();
+				info->chatlog = (int)win->chatlog->get_active();
+				persist_config->save();
+			};
+			return;
 		}
 		mapping info = get_channel_config(kwd); if (!info) return; //TODO: Report error?
 		info->connprio = (int)win->connprio->get_text();
 		info->chatlog = (int)win->chatlog->get_active();
 		persist_config->save();
-		if (!G->G->irc->channels["#" + kwd]) function_object(send_message)->reconnect();
 		sig_sel_changed();
 	}
 

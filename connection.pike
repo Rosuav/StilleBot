@@ -1099,6 +1099,18 @@ void irc_closed(mapping options) {
 	return persist_config["channels"][chan - "#"];
 }
 
+@export: continue mapping|Concurrent.Future connect_to_channel(string login) {
+	mapping info = yield(get_user_info(login, "login"));
+	persist_config["channels"][info->login] = ([ //FIXME-SEPCHAN
+		"userid": (int)info->id,
+		"login": info->login,
+		"display_name": info->display_name,
+	]);
+	persist_config->save();
+	reconnect();
+	return info;
+}
+
 @hook_channel_online: int connected(string chan, int uptime) {
 	object channel = G->G->irc->channels[chan];
 	if (channel) channel->channel_online(uptime);
