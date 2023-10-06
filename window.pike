@@ -241,16 +241,6 @@ class _mainwindow
 		win->chatlog->set_active((int)info->chatlog);
 	}
 
-	GTK2.Widget make_content()
-	{
-		return two_column(({
-			"Channel", win->kwd = GTK2.Entry(),
-			"Displays as", win->display_name = GTK2.Label(),
-			0, win->chatlog = GTK2.CheckButton("Log chat to console"),
-			"Connection priority", win->connprio = GTK2.Entry(),
-		}));
-	}
-
 	void makewindow()
 	{
 		object ls=GTK2.ListStore(({"string"}));
@@ -270,7 +260,12 @@ class _mainwindow
 							->append_column(GTK2.TreeViewColumn("Item",GTK2.CellRendererText(),"text",0))
 					)->set_policy(GTK2.POLICY_NEVER, GTK2.POLICY_AUTOMATIC))
 					->add(GTK2.Vbox(0,0)
-						->add(make_content())
+						->add(two_column(({
+							"Channel", win->kwd = GTK2.Entry(),
+							"Displays as", win->display_name = GTK2.Label(),
+							0, win->chatlog = GTK2.CheckButton("Log chat to console"),
+							"Connection priority", win->connprio = GTK2.Entry(),
+						})))
 						->pack_end(GTK2.HbuttonBox()
 							->add(win->pb_save=GTK2.Button((["label":"_Save","use-underline":1])))
 							->add(win->pb_delete=GTK2.Button((["label":"_Delete","use-underline":1,"sensitive":1])))
