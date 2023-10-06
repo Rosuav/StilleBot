@@ -241,3 +241,5 @@
     to go to that page to authenticate (as per /hypetrain).
   - This means that, on the chan_features page, it may need to show the channel's info re
     missing perms, the user's info ditto ditto, or both.
+* Cron job to track channels that have been inactive for a long time (maybe 2 weeks) to
+  archive and eventually dispose of their configs
