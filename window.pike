@@ -202,21 +202,20 @@ class _mainwindow
 
 	void sig_pb_save_clicked()
 	{
-		string oldkwd=selecteditem();
-		string newkwd=win->kwd->get_text();
-		if (newkwd=="") return; //Blank keywords currently disallowed
-		if (newkwd=="-- New --") return; //Since selecteditem() currently depends on "-- New --" being the 'New' entry, don't let it be used anywhere else.
-		mapping info = items[newkwd] = m_delete(items, oldkwd) || ([]);
+		string kwd = selecteditem();
+		if (!kwd) {
+			kwd = win->kwd->get_text();
+			if (kwd == "" || kwd == "-- New --") return; //Invalid names
+			if (!items[kwd]) items[kwd] = ([]); //Just in case it's been added elsewhere.
+			[object iter, object store] = win->sel->get_selected();
+			win->sel->select_iter(iter = store->insert_before(win->new_iter));
+			store->set_value(iter, 0, kwd);
+		}
+		mapping info = items[kwd]; if (!info) return; //TODO: Report error?
 		info->connprio = (int)win->connprio->get_text();
 		info->chatlog = (int)win->chatlog->get_active();
 		persist_config->save();
-		if (!G->G->irc->channels["#" + newkwd]) function_object(send_message)->reconnect();
-		[object iter,object store]=win->sel->get_selected();
-		if (newkwd!=oldkwd)
-		{
-			if (!oldkwd) win->sel->select_iter(iter=store->insert_before(win->new_iter));
-			store->set_value(iter,0,newkwd);
-		}
+		if (!G->G->irc->channels["#" + kwd]) function_object(send_message)->reconnect();
 		sig_sel_changed();
 	}
 
