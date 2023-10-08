@@ -147,11 +147,12 @@ continue Concurrent.Future populate_rewards_cache(string chan, string|int|void b
 	mapping params = (["Authorization": "Bearer " + yield(token_for_user_id_async(broadcaster_id))[0]]);
 	array rewards = yield(twitch_api_request(url, params))->data;
 	//Prune the dynamic rewards list
-	mapping current = get_channel_config(broadcaster_id)->?dynamic_rewards;
+	object channel = G->G->irc->channels["#" + chan];
+	mapping current = channel->?config->?dynamic_rewards;
 	if (current) {
 		write("Current dynamics: %O\n", current);
 		multiset unseen = (multiset)indices(current) - (multiset)rewards->id;
-		if (sizeof(unseen)) {m_delete(current, ((array)unseen)[*]); persist_config->save();} //FIXME-SEPCHAN: Save the specific channel's config
+		if (sizeof(unseen)) {m_delete(current, ((array)unseen)[*]); channel->config_save();}
 	}
 	multiset manageable = (multiset)yield(twitch_api_request(url + "&only_manageable_rewards=true", params))->data->id;
 	foreach (rewards, mapping r) r->can_manage = manageable[r->id];
@@ -204,8 +205,9 @@ EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward
 	array rew = pointsrewards[chan];
 	if (!rew) return;
 	pointsrewards[chan] = filter(rew) {return __ARGS__[0]->id != info->id;};
-	mapping dyn = get_channel_config(chan)->?dynamic_rewards;
-	if (dyn) {m_delete(dyn, info->id); persist_config->save();} //FIXME-SEPCHAN: Save the specific channel's config
+	object channel = G->G->irc->channels["#" + chan];
+	mapping dyn = channel->?config->?dynamic_rewards;
+	if (dyn) {m_delete(dyn, info->id); channel->config_save();}
 	update_one("#" + chan, info->id);
 	update_one("#" + chan, info->id, "dynreward");
 };

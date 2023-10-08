@@ -1095,6 +1095,8 @@ void irc_closed(mapping options) {
 //Supports user IDs as well as names, but with no lookup; if the
 //user name/ID mapping isn't in cache, this may fail. Use the primary
 //lookup key (currently name, later ID) for reliability.
+//NOTE: This may return a live config or a copy. Do not mutate it. If you
+//need a mutable config, look up the channel object and use its config.
 //FIXME-SEPCHAN: Find all uses of this tag and update them also to let
 //channel configs be stored in separate files.
 @export: mapping get_channel_config(string|int chan) {

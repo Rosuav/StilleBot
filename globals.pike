@@ -55,6 +55,8 @@ echoable_message|function find_command(object channel, string cmdname, int is_mo
 //haven't been logged in or gone live in (say) three months; such channels could still be
 //located by name or ID (see get_channel_config), but might be skipped over for autocommands
 //and other features.
+//NOTE: This may return live configs or copies. Do not mutate them. If you need
+//mutable config for a channel, look up its object in G->G->irc and use that.
 array(mapping) list_channel_configs() {
 	return values(persist_config["channels"] || ([])); //FIXME-SEPCHAN
 }
