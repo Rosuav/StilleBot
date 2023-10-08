@@ -540,7 +540,7 @@ class channel(string name) { //name begins with hash and is all lower case
 		if (!voice) {
 			//No voice has been selected (either explicitly or as the channel default).
 			//Use the bot's global default voice, or the intrinsic voice (implicitly zero).
-			voice = persist_config->has_path("channels", "!demo")->?defvoice; //FIXME-SEPCHAN - !demo will be id 0
+			voice = get_channel_config("!demo")->?defvoice; //FIXME-SEPCHAN - !demo will be id 0
 			//Even if this voice hasn't been activated for this channel, that's fine - it is
 			//implicitly permitted for use by all channels.
 		}
