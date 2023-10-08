@@ -228,9 +228,6 @@
   - If enabled, when you open the raid finder, it signals all raid finders who have you
     as a tile. Red asterisk to signal "Has raid finder open, is probably ending soon!"
   - Similarly, when you close the raid finder (or disable the option), signal-revert all.
-* Raid finder: On any categories=X page, have a Bookmark option. This will add/remove it
-  to/from the user_followed_categories selection. That way, even if Twitch never makes a
-  Helix version of the "get followed categories" API, it'll still be useful.
 * chan_features - add a thing for broadcaster scopes, eg for !follower, !hypetrain
   - Group them. Put a note on the ones that require it. If they are active, have a single
     button to reauthenticate.
