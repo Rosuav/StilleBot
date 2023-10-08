@@ -243,3 +243,9 @@
     missing perms, the user's info ditto ditto, or both.
 * Cron job to track channels that have been inactive for a long time (maybe 2 weeks) to
   archive and eventually dispose of their configs
+* Make connection priority dynamic
+  - Inactive/deleted channels are excluded already
+  - But idle channels should have nearly as low a cost
+  - If a channel has been live within the past two weeks, it has "regular" priority
+  - If it's in my notify list, "high" priority??
+  - Maybe allow modules to add to an array of "reasons for priority"?
