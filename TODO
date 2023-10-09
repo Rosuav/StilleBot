@@ -245,3 +245,4 @@
   (stillebot.pike:535692): GLib-GObject-WARNING **: 10:15:44.496: ../../../gobject/gsignal.c:2732: instance '0x55b0f70e9970' has no handler with id '4781'
   - Probably indicates a signal connected to an object, object gets destroyed, then
     signal gets removed.
+* Instead of looking up in G->G->irc->channels["#" + channelname], prefer G->G->irc->id[id]
