@@ -220,7 +220,7 @@ class _mainwindow
 		channel->config->connprio = (int)win->connprio->get_text();
 		channel->config->chatlog = (int)win->chatlog->get_active();
 		channel->config_save();
-		sig_sel_changed();
+		call_out(sig_sel_changed, 0);
 	}
 
 	void sig_pb_delete_clicked()
