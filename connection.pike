@@ -192,15 +192,36 @@ class channel(mapping config) {
 		}
 		return ret;
 	}
-	void config_save() {persist_config->save();} //FIXME-SEPCHAN
+
+	int config_saving = 0;
+	void config_save() {
+		if (persist_config["channels"][name[1..]]) persist_config->save(); //Legacy: save via persist_config
+		else {if (!config_saving) {config_saving = 1; call_out(config_dosave, 0);}}
+	}
+	void config_dosave() { //TODO: Dedup with persist.pike
+		if (mixed ex = catch {
+			//Creep the open file limit up by one while we save, to ensure that we aren't rlimited
+			array lim;
+			catch {lim = System.getrlimit("nofile"); if (lim[0] < lim[1]) System.setrlimit("nofile", lim[0] + 1, lim[1]);};
+			string enc = Standards.JSON.encode(config, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
+			Stdio.write_file("channels/" + userid + ".json", string_to_utf8(enc));
+			if (lim) catch {System.setrlimit("nofile", @lim);};
+			config_saving = 0;
+		}) {
+			werror("Unable to save channels/%d.json: %s\nWill retry in 60 seconds.\n", userid, describe_error(ex));
+			call_out(config_dosave, 60);
+		}
+	}
 
 	void remove_bot_from_channel() {
 		//NOTE: This currently deletes all configs for the channel.
 		//TODO: Flag the channel as "inactive", which will disable connecting as it,
 		//disable web access, etc, etc, but will timestamp the configs as "inactive since",
 		//allowing them to remain until considered stale.
-		m_delete(persist_config["channels"], name[1..]); //FIXME-SEPCHAN
-		persist_config->save();
+		if (persist_config["channels"][name[1..]]) {
+			m_delete(persist_config["channels"], name[1..]);
+			persist_config->save();
+		} else rm("channels/" + userid + ".json");
 		reconnect();
 	}
 
@@ -1107,10 +1128,16 @@ void irc_closed(mapping options) {
 		//For now, I'm not going to support this, but in the future, when everything
 		//is correctly looking up by user ID, they will once again be fine (since the
 		//only problem is looking them up by name).
+		string data = Stdio.read_file("channels/" + chan + ".json");
+		if (data) return Standards.JSON.decode_utf8(data);
 		mapping user = G->G->user_info[(int)chan];
 		return user && persist_config["channels"][user->login];
 	}
-	return persist_config["channels"][chan - "#"];
+	mapping cfg = persist_config["channels"][chan - "#"];
+	if (cfg) return cfg;
+	mapping user = G->G->user_info[chan];
+	string data = Stdio.read_file("channels/" + user->id + ".json");
+	if (data) return Standards.JSON.decode_utf8(data);
 }
 
 @export: continue object|Concurrent.Future connect_to_channel(string login) {
