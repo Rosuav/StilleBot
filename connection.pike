@@ -123,9 +123,9 @@ string subtier(string plan) {
 	return plan[0..0]; //Plans are usually 1000, 2000, 3000 - I don't know if they're ever anything else?
 }
 
-class channel(string name) { //name begins with hash and is all lower case
+class channel(mapping config) {
+	string name; //name begins with a hash and is all lowercase. Preference: Use this->config->login (no hash) instead.
 	string color;
-	mapping config = ([]);
 	int userid;
 	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream online.
 	mapping user_attrs = ([]); //Latest-seen user status (see gather_person_info). Not guaranteed fresh. Some parts will be message-specific.
@@ -136,7 +136,7 @@ class channel(string name) { //name begins with hash and is all lower case
 	mapping(string:array(string)) redemption_commands = ([]);
 
 	protected void create() {
-		config = persist_config->path("channels", name[1..]); //FIXME-SEPCHAN
+		name = "#" + config->login; userid = config->userid;
 		if (config->chatlog)
 		{
 			if (!channelcolor[name]) {if (++G->G->nextcolor>7) G->G->nextcolor=1; channelcolor[name]=G->G->nextcolor;}
@@ -150,12 +150,14 @@ class channel(string name) { //name begins with hash and is all lower case
 		//might look like the perfect solution, but it requires broadcaster's
 		//permission, so it's not actually dependable.
 		G->G->user_mod_status[name[1..] + name] = 1; //eg "rosuav#rosuav" is trivially a mod.
-		//TODO: Make the userid the fundamental, and have login/display_name both merely cached
-		if (config->userid) get_user_info(userid = config->userid)->then() {
+		//Note that !demo has no userid and can't re-fetch login/display name.
+		if (userid) get_user_info(userid)->then() {
 			config->login = __ARGS__[0]->login;
+			name = "#" + config->login; //FIXME: If it's changed, some things might not locate it correctly (see G->G->irc->channels)
 			config->display_name = __ARGS__[0]->display_name;
 			config_save();
 		};
+		//This shouldn't ever be needed - the userid will always have been saved.
 		else if (!has_prefix(name, "#!")) get_user_info(name[1..], "login")->then() {
 			config->userid = userid = (int)__ARGS__[0]->id;
 			config->login = __ARGS__[0]->login;
@@ -1274,13 +1276,19 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 //be coded in properly (to allow !demo to still have some example voices).
 array(mapping) shard_voices = ({0});
 void reconnect() {
-	//FIXME-SEPCHAN: When persist_config->channels changes to using userid keys, update this majorly.
-	array channels = indices(persist_config["channels"] || ([]));
-	sort(channels); //Default to sorting affabeck
-	if (sizeof(channels)) sort(-persist_config["channels"][channels[*]]->connprio[*], channels);
-	channels = "#" + channels[*];
-	G->G->irc = (["channels": mkmapping(channels, channel(channels[*]))]);
-	channels = filter(channels) {return __ARGS__[0][1] != '!';};
+	array channels = list_channel_configs(); //Once loaded, this becomes the master config list and is mutable.
+	if (sizeof(channels)) {
+		sort(channels->login, channels); //Default to sorting affabeck by username
+		sort(-channels->connprio[*], channels);
+	}
+	mapping irc = (["channels": ([]), "id": ([])]);
+	foreach (channels, mapping cfg) {
+		object c = channel(cfg);
+		irc->channels[c->name] = c;
+		irc->id[c->userid] = c;
+	}
+	G->G->irc = irc;
+	channels = filter("#" + channels->login[*]) {return __ARGS__[0][1] != '!';};
 	//Deal the channels out into N piles based on available users. Any spares
 	//go onto the primary channel. This speeds up initial connection when there
 	//are more than 20 channels to connect to, but isn't necessary.
