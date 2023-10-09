@@ -251,3 +251,5 @@
   - Probably indicates a signal connected to an object, object gets destroyed, then
     signal gets removed.
 * Instead of looking up in G->G->irc->channels["#" + channelname], prefer G->G->irc->id[id]
+  - Though channels[] isn't going anywhere. There's too much that needs the name lookup,
+    and it's not worth the churn to remove the hashes.
