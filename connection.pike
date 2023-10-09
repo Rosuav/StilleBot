@@ -213,6 +213,13 @@ class channel(mapping config) {
 		}
 	}
 
+	//Remove this channel's configs from persist_config and make a separate file
+	void migrate_config() {
+		m_delete(persist_config["channels"], name[1..]);
+		config_save();
+		persist_config->save();
+	}
+
 	void remove_bot_from_channel() {
 		//NOTE: This currently deletes all configs for the channel.
 		//TODO: Flag the channel as "inactive", which will disable connecting as it,
@@ -1125,9 +1132,8 @@ void irc_closed(mapping options) {
 @export: mapping get_channel_config(string|int chan) {
 	if (intp(chan) || (string)(int)chan == chan) {
 		//NOTE: It is entirely possible for a channel name to be a string of digits.
-		//For now, I'm not going to support this, but in the future, when everything
-		//is correctly looking up by user ID, they will once again be fine (since the
-		//only problem is looking them up by name).
+		//For now, I'm not going to support this; ensure that such a channel is
+		//always looked up by ID instead.
 		string data = Stdio.read_file("channels/" + chan + ".json");
 		if (data) return Standards.JSON.decode_utf8(data);
 		mapping user = G->G->user_info[(int)chan];
@@ -1135,7 +1141,8 @@ void irc_closed(mapping options) {
 	}
 	mapping cfg = persist_config["channels"][chan - "#"];
 	if (cfg) return cfg;
-	mapping user = G->G->user_info[chan];
+	//Hack: If you look up the name "!demo", return data for id 0 even if that isn't in cache.
+	mapping user = chan == "!demo" ? ([]) : G->G->user_info[chan];
 	string data = Stdio.read_file("channels/" + user->id + ".json");
 	if (data) return Standards.JSON.decode_utf8(data);
 }
@@ -1362,7 +1369,7 @@ protected void create(string name)
 	if (mapping irc = persist_config["ircsettings"])
 	{
 		bot_nick = irc->nick || "";
-		array voices = values(persist_config->has_path("channels", "!demo", "voices") || ({ })); //FIXME-SEPCHAN
+		array voices = values(get_channel_config("!demo")->?voices || ({ })); //FIXME-SEPCHAN
 		sort((array(int))voices->id, voices);
 		foreach (voices; int i; mapping v) if (lower_case(v->name) == lower_case(bot_nick)) voices[i] = 0;
 		//Sharding temporarily disabled :( As of 20230515, this is a probable culprit in the "can't seem to
