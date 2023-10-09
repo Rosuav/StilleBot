@@ -1142,14 +1142,17 @@ void irc_closed(mapping options) {
 
 @export: continue object|Concurrent.Future connect_to_channel(string login) {
 	mapping info = yield(get_user_info(login, "login"));
-	persist_config["channels"][info->login] = ([ //FIXME-SEPCHAN
+	string fn = "channels/" + info->id + ".json";
+	string prev = Stdio.read_file(fn);
+	if (prev) {
+		//There's previous data. Keep it! TODO: Remove any inactive marker.
+	} else Stdio.write_file(fn, string_to_utf8(Standards.JSON.encode(([
 		"userid": (int)info->id,
 		"login": info->login,
 		"display_name": info->display_name,
-	]);
-	persist_config->save();
+	]))));
 	reconnect();
-	return G->G->irc->channels["#" + info->login];
+	return G->G->irc->id[(int)info->id];
 }
 
 @hook_channel_online: int connected(string chan, int uptime) {
