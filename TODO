@@ -192,21 +192,16 @@
     - Channel config->whispers_as_commands - no current way to set it
     - What about secondary voices? For example, whispering CandiCat could execute commands
       in #devicat and then whisper the response from CandiCat.
-* Convert persist_config->channels to use user IDs as keys instead of channel names
-  - Everything that looks this up should be safe now, using channel[*]->login instead
-  - connection.pike will need to be reworked to use the userid as fundamental
-  - window.pike will need to be rethought majorly
-  - Search for FIXME-SEPCHAN for anything that directly references the config mapping.
 * Once all usage of channel->name, channel->name[1..], (string)channel->userid in any
   persist query is done through path() or has_path(), transform them into abstract lookups.
-  - Support exists within persist->path() and has_path() and will become available next time
-    the bot restarts (20230721).
+  - Can use persist_status->path("some_keyword", channel, "whatever")
   - Keep the existing lookups unchanged for stability. Monitor to ensure that nothing breaks.
   - Eventually, rename all to use the userid - no code should break.
     - Should™.
 * Eventually, move persist_config to a directory of config files, one per channel, with a
   global config for things that don't apply to one channel. Save into channels/49497888.json
   with globals remaining in twitchbot_config.json for now.
+  - Both are currently supported; existing data can be migrated when safe.
 * Eventually, move all per-user config out of persist_status into a directory, similarly.
   For example, persist_status->bcaster_token->rosuav would now become users/49497888.json
   with a key of user_token (see above re other changes there).

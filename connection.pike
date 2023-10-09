@@ -570,7 +570,7 @@ class channel(mapping config) {
 		if (!voice) {
 			//No voice has been selected (either explicitly or as the channel default).
 			//Use the bot's global default voice, or the intrinsic voice (implicitly zero).
-			voice = get_channel_config("!demo")->?defvoice; //FIXME-SEPCHAN - !demo will be id 0
+			voice = get_channel_config(0)->?defvoice;
 			//Even if this voice hasn't been activated for this channel, that's fine - it is
 			//implicitly permitted for use by all channels.
 		}
@@ -1127,8 +1127,6 @@ void irc_closed(mapping options) {
 //lookup key (currently name, later ID) for reliability.
 //NOTE: This may return a live config or a copy. Do not mutate it. If you
 //need a mutable config, look up the channel object and use its config.
-//FIXME-SEPCHAN: Find all uses of this tag and update them also to let
-//channel configs be stored in separate files.
 @export: mapping get_channel_config(string|int chan) {
 	if (intp(chan) || (string)(int)chan == chan) {
 		//NOTE: It is entirely possible for a channel name to be a string of digits.
@@ -1369,7 +1367,7 @@ protected void create(string name)
 	if (mapping irc = persist_config["ircsettings"])
 	{
 		bot_nick = irc->nick || "";
-		array voices = values(get_channel_config("!demo")->?voices || ({ })); //FIXME-SEPCHAN
+		array voices = values(get_channel_config(0)->?voices || ({ }));
 		sort((array(int))voices->id, voices);
 		foreach (voices; int i; mapping v) if (lower_case(v->name) == lower_case(bot_nick)) voices[i] = 0;
 		//Sharding temporarily disabled :( As of 20230515, this is a probable culprit in the "can't seem to
