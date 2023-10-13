@@ -11,6 +11,30 @@ mapping irc_connections = ([]); //Not persisted across code reloads, but will be
 @retain: mapping cooldown_timeout = ([]);
 @retain: mapping nonce_callbacks = ([]);
 
+//Return the channel config mapping if this is an active channel, or 0
+//Supports user IDs as well as names, but with no lookup; if the
+//user name/ID mapping isn't in cache, this may fail. Use the primary
+//lookup key (currently name, later ID) for reliability.
+//NOTE: This may return a live config or a copy. Do not mutate it. If you
+//need a mutable config, look up the channel object and use its config.
+@export: mapping get_channel_config(string|int chan) {
+	if (intp(chan) || (string)(int)chan == chan) {
+		//NOTE: It is entirely possible for a channel name to be a string of digits.
+		//For now, I'm not going to support this; ensure that such a channel is
+		//always looked up by ID instead.
+		string data = Stdio.read_file("channels/" + chan + ".json");
+		if (data) return Standards.JSON.decode_utf8(data);
+		mapping user = G->G->user_info[(int)chan];
+		return user && persist_config["channels"][user->login];
+	}
+	mapping cfg = persist_config["channels"][chan - "#"];
+	if (cfg) return cfg;
+	//Hack: If you look up the name "!demo", return data for id 0 even if that isn't in cache.
+	mapping user = chan == "!demo" ? ([]) : G->G->user_info[chan];
+	string data = Stdio.read_file("channels/" + user->id + ".json");
+	if (data) return Standards.JSON.decode_utf8(data);
+}
+
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
 	"broadcaster": "_mod", "moderator": "_mod", "staff": "_mod",
 	"subscriber": "_sub", "founder": "_sub", //Founders (the first 10 or 25 subs) have a special badge.
@@ -1119,30 +1143,6 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 void irc_closed(mapping options) {
 	::irc_closed(options);
 	if (options->voiceid) m_delete(irc_connections, options->voiceid);
-}
-
-//Return the channel config mapping if this is an active channel, or 0
-//Supports user IDs as well as names, but with no lookup; if the
-//user name/ID mapping isn't in cache, this may fail. Use the primary
-//lookup key (currently name, later ID) for reliability.
-//NOTE: This may return a live config or a copy. Do not mutate it. If you
-//need a mutable config, look up the channel object and use its config.
-@export: mapping get_channel_config(string|int chan) {
-	if (intp(chan) || (string)(int)chan == chan) {
-		//NOTE: It is entirely possible for a channel name to be a string of digits.
-		//For now, I'm not going to support this; ensure that such a channel is
-		//always looked up by ID instead.
-		string data = Stdio.read_file("channels/" + chan + ".json");
-		if (data) return Standards.JSON.decode_utf8(data);
-		mapping user = G->G->user_info[(int)chan];
-		return user && persist_config["channels"][user->login];
-	}
-	mapping cfg = persist_config["channels"][chan - "#"];
-	if (cfg) return cfg;
-	//Hack: If you look up the name "!demo", return data for id 0 even if that isn't in cache.
-	mapping user = chan == "!demo" ? ([]) : G->G->user_info[chan];
-	string data = Stdio.read_file("channels/" + user->id + ".json");
-	if (data) return Standards.JSON.decode_utf8(data);
 }
 
 @export: continue object|Concurrent.Future connect_to_channel(string login) {
