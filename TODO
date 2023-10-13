@@ -253,3 +253,6 @@
 * Instead of looking up in G->G->irc->channels["#" + channelname], prefer G->G->irc->id[id]
   - Though channels[] isn't going anywhere. There's too much that needs the name lookup,
     and it's not worth the churn to remove the hashes.
+* Upgrade to Pike 9.0.1
+  - Will likely need a large number of "|zero" directives on nullable entities
+  - This may extend to function return values and maybe some parameters
