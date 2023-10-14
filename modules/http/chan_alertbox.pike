@@ -1251,6 +1251,7 @@ constant cutewords = "puppy kitten crumpet tutu butterscotch flapjack pilliwiggi
 	"gift art flag candle heart love magic save tada hug cool party plush star "
 	"donut teacup cat purring flower sugar biscuit pillow banana berry " / " ";
 continue Concurrent.Future send_with_tts(object channel, mapping args, string|void destgroup) {
+	System.Timer tm = System.Timer(); werror("send_with_tts(%O): starting\n", channel->name);
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->alertconfigs[args->send_alert]) return 0; //On replay, if the alert doesn't exist, do nothing. TODO: Replay a base alert if variant deleted?
 	mapping inh = G_G_("alertbox_resolved", (string)channel->userid, args->send_alert);
@@ -1302,9 +1303,11 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 		fmt = after;
 	}
 	text += fmt;
+	werror("send_with_tts(%O): text parsed %O\n", channel->name, tm->peek());
 	array voice = (inh->tts_voice || "") / "/";
 	if (sizeof(voice) != 3) voice = tts_config->default_voice / "/";
 	if (string token = text != "" && tts_config->?access_token) {
+		werror("send_with_tts(%O): text parsed %O\n", channel->name, tm->peek());
 		object reqargs = Protocols.HTTP.Promise.Arguments((["headers": ([
 				"Authorization": "Bearer " + token,
 				"Content-Type": "application/json; charset=utf-8",
@@ -1320,15 +1323,18 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 		System.Timer tm = System.Timer();
 		object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
 		float delay = tm->get();
-		Stdio.append_file("tts_stats.log", sprintf("Channel %O text %O fetch time %.3f", channel->name, text, delay));
+		Stdio.append_file("tts_stats.log", sprintf("Channel %O text %O fetch time %.3f\n", channel->name, text, delay));
 		mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
+		werror("send_with_tts(%O): TTS responded %O\n", channel->name, tm->peek());
 		if (mappingp(data) && data->error->?details[?0]->?reason == "ACCESS_TOKEN_EXPIRED") {
 			Stdio.append_file("tts_error.log", sprintf("%sTTS access key expired after %d seconds\n",
 				ctime(time()), time() - tts_config->access_token_fetchtime));
 			mixed _ = yield(fetch_tts_credentials(1));
+			werror("send_with_tts(%O): credentials redone %O\n", channel->name, tm->peek());
 			reqargs->headers->Authorization = "Bearer " + tts_config->access_token;
 			object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
 			catch {data = Standards.JSON.decode_utf8(res->get());};
+			werror("send_with_tts(%O): TTS responded anew %O\n", channel->name, tm->peek());
 			//Exactly one retry attempt; if it fails, fall through and report a generic error.
 		}
 		if (mappingp(data) && stringp(data->audioContent))
@@ -1336,6 +1342,7 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 		else Stdio.append_file("tts_error.log", sprintf("%sBad TTS response: %O\n-------------\n", ctime(time()), data));
 	}
 	send_updates_all((destgroup || cfg->authkey) + channel->name, args);
+	werror("send_with_tts(%O): alert pushed out %O\n", channel->name, tm->peek());
 }
 
 constant builtin_name = "Send Alert";
@@ -1348,6 +1355,7 @@ constant vars_provided = ([
 //Attempt to send an alert. Returns 1 if alert sent, 0 if not (eg if alert disabled).
 //Note that the actual sending of the alert is asynchronous, esp if TTS is used.
 int(1bit) send_alert(object channel, string alerttype, mapping args) {
+	System.Timer tm = System.Timer(); werror("send_alert(%O, %O): starting\n", channel->name, alerttype);
 	mapping cfg = persist_status->has_path("alertbox", (string)channel->userid);
 	if (!cfg->?authkey) return 0;
 	int suppress_alert = 0;
@@ -1384,6 +1392,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 			default: break;
 		}
 	}
+	werror("send_alert(%O, %O): conditions checked %O\n", channel->name, alerttype, tm->peek());
 	//Note that due to the oddities of alertsets and inheritance, we actually
 	//use the *resolved* config to check an alert set. This allows a variant
 	//to choose its alertset, it allows a base alert to choose the alertset
@@ -1400,6 +1409,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	//If any variant responds, use that instead.
 	foreach (alert->variants || ({ }), string subid)
 		if (send_alert(channel, subid, args)) return 1;
+	werror("send_alert(%O, %O): variants checked %O\n", channel->name, alerttype, tm->peek());
 
 	if (suppress_alert) return 0;
 	//A completely null alert does not actually fire.
@@ -1414,6 +1424,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	cfg->replay += ({args | (["alert_timestamp": time()])});
 	persist_status->save();
 	send_updates_all("control" + channel->name);
+	werror("send_alert(%O, %O): spawning send_with_tts %O\n", channel->name, alerttype, tm->peek());
 	spawn_task(send_with_tts(channel, args));
 	return 1;
 }
