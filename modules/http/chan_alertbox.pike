@@ -673,6 +673,7 @@ void ensure_host_connection(string chan) {
 }
 
 void ensure_tts_credentials() {
+	remove_call_out(m_delete(G->G, "ensure_tts_callout"));
 	//Check if any connected account uses TTS
 	int need_tts = 0;
 	foreach (G->G->irc->channels; string name; object channel) {
@@ -688,7 +689,6 @@ void ensure_tts_credentials() {
 	if (!need_tts) return;
 	float age = time(tts_config->access_token_fetchtime);
 	if (age > 3500) {age = 0.0; spawn_task(fetch_tts_credentials(1));}
-	remove_call_out(G->G->ensure_tts_callout);
 	G->G->ensure_tts_callout = call_out(ensure_tts_credentials, 3500.0 - age);
 }
 
@@ -711,6 +711,9 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		//has been leaked. In case mods aren't granted full details of the bcaster's
 		//internet location, we obscure the actual IPs behind "IP #1", "IP #2" etc,
 		//with the translation to dotted-quad or IPv6 being stored separately.
+		//FIXME: Is it still possible to yield the OAuth token this way? Does this
+		//even matter? That should only be a thing if using JS host notifications,
+		//which aren't a thing any more.
 
 		//1) Translate conn->remote_ip into an IP index
 		int idx = search(cfg->ip_history || ({ }), conn->remote_ip);
@@ -728,7 +731,12 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			++log[1]; log[3] = time();
 		}
 		persist_status->save();
-		if (cfg->uses_tts) ensure_tts_credentials();
+		//Ensure that we have TTS credentials, but note that the current connection has yet
+		//to be added to the group arrays (as it's not yet validated). So delay the check
+		//and allow the (synchronous) incorporation into the arrays, so that ensure() can
+		//see this connection - otherwise, starting the first connection won't check for
+		//credentials.
+		if (cfg->uses_tts) call_out(ensure_tts_credentials, 0);
 	}
 }
 mapping get_chan_state(object channel, string grp, string|void id) {
