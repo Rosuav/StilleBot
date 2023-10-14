@@ -256,3 +256,4 @@
 * Upgrade to Pike 9.0.1
   - Will likely need a large number of "|zero" directives on nullable entities
   - This may extend to function return values and maybe some parameters
+* channels/*/features - make it possible to create a GIF alert redemption in one click
