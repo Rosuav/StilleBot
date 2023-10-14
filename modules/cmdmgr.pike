@@ -169,4 +169,6 @@ protected void create(string name) {
 	register_bouncer(autospam);
 	foreach (list_channel_configs(), mapping cfg) if (cfg->login)
 		if (G->G->stream_online_since[cfg->login]) connected(cfg->login);
+	//To manually migrate all of a channel's configs, including commands:
+	//G->G->irc->channels["#devicat"]->migrate_config();
 }
