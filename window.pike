@@ -337,6 +337,8 @@ protected void create(string name)
 	#if constant(HEADLESS)
 	//In headless mode, make the window and menu_item inheritables available,
 	//but don't actually initialize any GUI.
+	G->G->windows = ([]);
+	G->G->menuitems = ([]);
 	return;
 	#endif
 	if (!G->G->windows)
