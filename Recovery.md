@@ -9,4 +9,4 @@ Disaster Recovery
 
 POSSIBLE PROBLEMS:
 
-* Unable to initialize SSL due to version conflict??
+* Fresh build of Pike may require the removal of some .o files
