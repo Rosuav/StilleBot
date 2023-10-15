@@ -85,6 +85,11 @@ int main(int argc,array(string) argv)
 		Stdio.stdin->set_read_callback(console);
 		return -1;
 	}
+	//TODO: Invert this and have --gui to enable the GUI
+	if (has_value(argv, "--headless")) {
+		werror("Running bot in headless mode - GUI facilities disabled.\n");
+		add_constant("HEADLESS", 1);
+	}
 	bootstrap_all();
 	foreach ("persist_config spawn_task send_message window" / " ", string vital)
 		if (!all_constants()[vital])

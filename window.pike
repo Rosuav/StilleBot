@@ -334,6 +334,11 @@ protected void create(string name)
 {
 	add_constant("window", window);
 	add_constant("menu_item", menu_item);
+	#if constant(HEADLESS)
+	//In headless mode, make the window and menu_item inheritables available,
+	//but don't actually initialize any GUI.
+	return;
+	#endif
 	if (!G->G->windows)
 	{
 		//First time initialization
