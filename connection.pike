@@ -31,6 +31,7 @@ mapping irc_connections = ([]); //Not persisted across code reloads, but will be
 	if (cfg) return cfg;
 	//Hack: If you look up the name "!demo", return data for id 0 even if that isn't in cache.
 	mapping user = chan == "!demo" ? ([]) : G->G->user_info[chan];
+	if (!user) return 0;
 	string data = Stdio.read_file("channels/" + user->id + ".json");
 	if (data) return Standards.JSON.decode_utf8(data);
 }
