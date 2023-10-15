@@ -122,6 +122,7 @@ class menu_item
 	GTK2.MenuItem make_menu_item() {return GTK2.MenuItem(menu_label);} //Override if customization is required
 	protected void create(string|void name)
 	{
+		#if !constant(HEADLESS)
 		if (!name) return;
 		sscanf(explode_path(name)[-1],"%s.pike",name);
 		if (object old=G->G->menuitems[name]) {({old->destroy})(); destruct(old);}
@@ -129,6 +130,7 @@ class menu_item
 		G->G->windows->mainwindow->optmenu->add(mi->show());
 		mi->signal_connect("activate",menu_clicked);
 		G->G->menuitems[name] = mi;
+		#endif
 	}
 }
 
