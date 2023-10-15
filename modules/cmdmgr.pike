@@ -164,6 +164,11 @@ mapping message_params(object channel, mapping person, array param) {
 	}
 }
 
+//Technically channel point redemptions aren't commands, but they can have commands hooked to them,
+//so this is close enough to reasonable.
+@create_hook:
+constant point_redemption = ({"string chan", "string rewardid", "int(0..1) refund", "mapping data"});
+
 protected void create(string name) {
 	::create(name);
 	register_bouncer(autospam);

@@ -102,9 +102,6 @@ void wscmd_add(object channel, mapping(string:mixed) conn, mapping(string:mixed)
 	);
 }
 
-@create_hook:
-constant point_redemption = ({"string chan", "string rewardid", "int(0..1) refund", "mapping data"});
-
 void points_redeemed(string chan, mapping data, int|void removal)
 {
 	//write("POINTS %s ON %O: %O\n", removal ? "REFUNDED" : "REDEEMED", chan, data);
