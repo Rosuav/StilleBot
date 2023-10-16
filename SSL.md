@@ -11,6 +11,8 @@ to reformat the private key:
 
     openssl rsa -in ....../privkey.pem >..../privkey.pem
 
+(With openssl 3, add the -traditional parameter.)
+
 The "fullchain" certificate from LetsEncrypt is directly usable. If you obtain
 a certificate that comes with a separate authority chain (GoDaddy is known to
 do this), simply concatenate the two files.
