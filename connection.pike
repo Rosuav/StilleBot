@@ -1313,6 +1313,10 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 array(mapping) shard_voices = ({0});
 void reconnect() {
 	array channels = list_channel_configs(); //Once loaded, this becomes the master config list and is mutable.
+	#if constant(HEADLESS)
+	//HACK FOR TESTING: Reduce the number of channels loaded
+	channels = ({get_channel_config("rosuav")});
+	#endif
 	if (sizeof(channels)) {
 		sort(channels->login, channels); //Default to sorting affabeck by username
 		sort(-channels->connprio[*], channels);
@@ -1329,7 +1333,8 @@ void reconnect() {
 	//go onto the primary channel. This speeds up initial connection when there
 	//are more than 20 channels to connect to, but isn't necessary.
 	array shards = Array.transpose(channels / sizeof(shard_voices));
-	shards[0] += channels % sizeof(shard_voices);
+	if (!sizeof(shards)) shards = ({channels}); //If we have fewer channels than voices, connect to them all on the intrinsic voice.
+	else shards[0] += channels % sizeof(shard_voices);
 	foreach (shards; int i; array chan) {
 		irc_connect(([
 			"user": i && shard_voices[i]->name,
