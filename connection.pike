@@ -1412,8 +1412,14 @@ protected void create(string name)
 				//TODO: Save the cert? That way, the self-signed could be pinned
 				//permanently. Currently it'll be regenned each startup.
 				G->G->httpserver = Protocols.WebSocket.SSLPort(http_handler, ws_handler, listen_port, listen_addr, pk, certs);
-				//To enable SNI, load up another key/cert (or more pairs as needed), and:
-				//G->G->httpserver->ctx->add_cert(pk, certs);
+				//To enable SNI, have another keypair with these names. TODO: Check which
+				//certificate is used if neither cert's CN matches the request.
+				key = Stdio.read_file("privkey_local.pem");
+				if (key && (cert = Stdio.read_file("certificate_local.pem"))) {
+					pk = Standards.PEM.simple_decode(key);
+					certs = Standards.PEM.Messages(cert)->get_certificates();
+					G->G->httpserver->ctx->add_cert(pk, certs);
+				}
 			}
 		})
 		{
