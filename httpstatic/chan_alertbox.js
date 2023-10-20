@@ -272,6 +272,7 @@ function update_gif_variants() {
 						SPAN({className: "rangedisplay"}, typeof attrs.volume === "number" ? Math.floor(attrs.volume * 100) + "%" : "50%"),
 					]),
 				])),
+				TD(INPUT({type: "checkbox", class: "ishidden", checked: attrs["condval-is_hidden"]})),
 				TD(BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑")),
 			]);
 		}),
@@ -1108,10 +1109,15 @@ on("submit", "#renameform", e => {
 //GIF alerts have a cut-down form of variant management. You can still use the full one if you need to tweak.
 on("click", ".gif-variants", e => {update_gif_variants(); DOM("#gif-variants").showModal();});
 
-on("change", ".text", e => ws_sync.send({
-	cmd: "alertcfg", type: e.match.closest("tr").dataset.type, parent: "gif",
-	active: true, format: "", "cond-label": e.match.value + " text",
-	"condval-text": e.match.value, "condoper-text": "==",
-}));
+on("change", ".text,.ishidden", e => {
+	const tr = e.match.closest("tr");
+	const text = tr.querySelector(".text"), ishidden = tr.querySelector(".ishidden");
+	ws_sync.send({
+		cmd: "alertcfg", type: tr.dataset.type, parent: "gif",
+		active: true, format: "", "cond-label": text.value + " text",
+		"condval-text": text.value, "condoper-text": "==",
+		"condval-is_hidden": ishidden.checked, "condoper-is_hidden": "==",
+	});
+});
 
 on("click", "#enable_redeem_cmd", e => ws_sync.send({cmd: "enable_redeem_cmd"}));

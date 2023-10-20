@@ -347,9 +347,9 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 >
 > Select sounds and/or images to be triggered here. These become alert variants.
 >
-> Keyword | Image | Sound | Del?
-> --------|-------|-------|-----
-> loading... | - | - | -
+> Keyword | Image | Sound | Hide? | Del?
+> --------|-------|-------|-------|-----
+> loading... | - | - | - | -
 >
 > For these to be functional, you will need a !redeem command and optionally a<br>
 > channel point redemption. [Create them!](:#enable_redeem_cmd)
@@ -457,10 +457,11 @@ constant ALERTTYPES = ({([
 	"description": "When someone redeems the reward or otherwise triggers one",
 	"placeholders": ([
 		"text": "Keyword (ID) for the particular image",
+		"is_hidden": "Set to Yes to hide this from the catalogue (it's still viewable)",
 	]),
 	"testpholders": (["text": "demo"]),
 	"builtin": "chan_alertbox",
-	"condition_vars": ({"'text"}),
+	"condition_vars": ({"'text", "is_hidden"}),
 ]), ([
 	//Settings for personal alerts (must be last in the array)
 	"placeholders": ([
@@ -895,7 +896,11 @@ void websocket_cmd_auditlog(mapping(string:mixed) conn, mapping(string:mixed) ms
 //TODO: Support hidden redeems which won't be in this list
 void update_gif_variants(object channel) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	array kwd = cfg->alertconfigs[cfg->alertconfigs->gif->variants[*]][*]["condval-text"];
+	array kwd = ({ });
+	foreach (cfg->alertconfigs->gif->variants || ({ }), string var) {
+		mapping alert = cfg->alertconfigs[var] || ([]);
+		if (!alert["condval-is_hidden"]) kwd += ({alert["condval-text"]});
+	}
 	sort(kwd);
 	channel->set_variable("nonhiddengifredeems", kwd * ", ", "");
 }
@@ -1386,6 +1391,8 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	} else { //When pushed via the builtin, the only condition possible is a string comparison on the text.
 		string val = args->text;
 		string comp = alert["condval-text"];
+		//NOTE: With GIF alerts, there will potentially be an is_hidden flag, but it
+		//does not affect alert filtering.
 		switch (alert["condoper-text"]) {
 			//Note that comparisons are currently case insensitive and there's no way to configure that. Should there be?
 			case "==": if (lower_case(val) != lower_case(comp)) return 0;
