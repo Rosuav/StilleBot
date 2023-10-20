@@ -96,6 +96,9 @@ void wscmd_add(object channel, mapping(string:mixed) conn, mapping(string:mixed)
 	string title = basetitle; int idx = 1; //First one doesn't get the number appended
 	while (have_titles[title]) title = sprintf("%s #%d", basetitle, ++idx);
 	//Twitch will notify us when it's created, so no need to explicitly respond.
+	//TODO: Copying attributes like cooldown doesn't work currently due to differences
+	//between the way Twitch returns the queried one and the way you create one. Need
+	//to map between them.
 	twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid,
 		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]]),
 		(["method": "POST", "json": copyfrom | (["title": title])]),
