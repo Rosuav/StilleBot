@@ -592,6 +592,7 @@ export function render(data) {
 		rangedisplay(el);
 	}
 	if (data.mastermuted) DOM("form[data-type=defaults] [name=muted]").checked = data.mastermuted;
+	if (typeof data.need_redeem_cmd !== "undefined") DOM("#need-redeem-cmd").hidden = !data.need_redeem_cmd;
 }
 
 on("click", ".replayalert", e => ws_sync.send({cmd: "replay_alert", idx: e.match.dataset.alertidx|0}));
@@ -1110,3 +1111,5 @@ on("change", ".text", e => ws_sync.send({
 	active: true, format: "", "cond-label": e.match.value + " text",
 	"condval-text": e.match.value, "condoper-text": "==",
 }));
+
+on("click", "#enable_redeem_cmd", e => ws_sync.send({cmd: "enable_redeem_cmd"}));

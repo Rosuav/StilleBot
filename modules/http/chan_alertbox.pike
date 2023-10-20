@@ -351,6 +351,10 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 > --------|-------|-------|-----
 > loading... | - | - | -
 >
+> For these to be functional, you will need a !redeem command and optionally a<br>
+> channel point redemption. [Create them!](:#enable_redeem_cmd)
+> {: #need-redeem-cmd hidden=1}
+>
 > [Close](:.dialog_close)
 {: tag=dialog #gif-variants}
 ";
@@ -782,6 +786,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		"replay": cfg->replay || ({ }),
 		"replay_offset": cfg->replay_offset || 0,
 		"ip_log": cfg->ip_log || ({ }),
+		"need_redeem_cmd": !channel->commands->redeem,
 		//"hostbackend": cfg->hostbackend || "none",
 	]);
 }
@@ -1670,6 +1675,11 @@ void enable_feature(object channel, string kwd, int state) {
 		}
 	}
 	make_echocommand((kwd - "!") + channel->name, state && info->response);
+}
+
+@"is_mod": void wscmd_enable_redeem_cmd(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	enable_feature(channel, "!redeem", 1);
+	send_updates_all(conn->group);
 }
 
 continue Concurrent.Future fetch_tts_credentials(int fast) {
