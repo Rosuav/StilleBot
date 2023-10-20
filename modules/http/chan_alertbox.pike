@@ -890,6 +890,16 @@ void websocket_cmd_auditlog(mapping(string:mixed) conn, mapping(string:mixed) ms
 	update_one(conn->group, id); //Note that the display connection doesn't need to be updated
 }
 
+
+//Update the magic variable $nonhiddengifredeems$
+//TODO: Support hidden redeems which won't be in this list
+void update_gif_variants(object channel) {
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	array kwd = cfg->alertconfigs[cfg->alertconfigs->gif->variants[*]][*]["condval-text"];
+	sort(kwd);
+	channel->set_variable("nonhiddengifredeems", kwd * ", ", "");
+}
+
 @"is_mod": void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (msg->type == "variant") {
@@ -906,6 +916,7 @@ void websocket_cmd_auditlog(mapping(string:mixed) conn, mapping(string:mixed) ms
 		base->variants -= ({msg->id});
 		resolve_affected_inherits((string)channel->userid, msg->id);
 		persist_status->save();
+		if (basetype == "gif") update_gif_variants(channel);
 		send_updates_all(conn->group);
 		send_updates_all(cfg->authkey + channel->name);
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "select_variant", "type": basetype, "variant": ""]), 4));
@@ -919,6 +930,7 @@ void websocket_cmd_auditlog(mapping(string:mixed) conn, mapping(string:mixed) ms
 		if (arrayp(base->variants)) m_delete(cfg->alertconfigs, base->variants[*]);
 		resolve_affected_inherits((string)channel->userid, msg->id);
 		persist_status->save();
+		if (msg->id == "gif") update_gif_variants(channel);
 		send_updates_all(conn->group);
 		send_updates_all(cfg->authkey + channel->name);
 		return;
@@ -1187,6 +1199,7 @@ void copy_stock(mapping alertconfigs, string basetype) {
 		cfg->alertconfigs[basetype]->variants = ids;
 	}
 	persist_status->save();
+	if (basetype == "gif") update_gif_variants(channel);
 	send_updates_all(conn->group);
 	send_updates_all(cfg->authkey + channel->name);
 	if (sock_reply) conn->sock->send_text(Standards.JSON.encode(sock_reply, 4));
@@ -1568,7 +1581,12 @@ constant ENABLEABLE_FEATURES = ([
 		"response": ([
 			"conditional": "string",
 			"expr1": "{param}",
-			"message": "Select one of the (top secret!) keywords to redeem an alert!",
+			"message": ([
+				"conditional": "string",
+				"expr1": "$nonhiddengifredeems$",
+				"message": "Select one of the (top secret!) keywords to redeem an alert!",
+				"otherwise": "Available GIFs: $nonhiddengifredeems$",
+			]),
 			"otherwise": ([
 				"builtin": "chan_alertbox",
 				"builtin_param": ({"gif", "{param}"}),
