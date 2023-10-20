@@ -812,9 +812,7 @@ void websocket_cmd_auditlog(mapping(string:mixed) conn, mapping(string:mixed) ms
 }
 
 //NOW it's personal.
-void websocket_cmd_makepersonal(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || grp != "control") return;
+@"is_mod": void wscmd_makepersonal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->personals) cfg->personals = ({ });
 	mapping info;
@@ -841,9 +839,7 @@ void websocket_cmd_makepersonal(mapping(string:mixed) conn, mapping(string:mixed
 	send_updates_all(cfg->authkey + channel->name);
 }
 
-void websocket_cmd_delpersonal(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || grp != "control") return;
+@"is_mod": void wscmd_delpersonal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->personals) return; //Nothing to delete
 	if (!stringp(msg->id)) return;
@@ -855,10 +851,7 @@ void websocket_cmd_delpersonal(mapping(string:mixed) conn, mapping(string:mixed)
 	send_updates_all(conn->group, (["delpersonal": msg->id]));
 }
 
-void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || grp != "control") return;
-	if (conn->session->fake) return;
+@"is_mod": void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->files) cfg->files = ({ });
 	if (!intp(msg->size) || msg->size < 0) return; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
@@ -897,10 +890,7 @@ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	update_one(conn->group, id); //Note that the display connection doesn't need to be updated
 }
 
-void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || grp != "control") return;
-	if (conn->session->fake) return;
+@"is_mod": void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (msg->type == "variant") {
 		//Delete an alert variant. Only valid if it's a variant (not a base
@@ -998,10 +988,7 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 	send_updates_all(dest + channel->name, alert);
 }
 
-void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || grp != "control") return;
-	if (conn->session->fake) return;
+@"is_mod": void wscmd_config(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	foreach ("hostlist_command hostlist_format" / " ", string key) //Removed hostbackend as it's not needed at the moment
 		if (stringp(msg[key])) cfg[key] = msg[key];
@@ -1039,10 +1026,7 @@ void copy_stock(mapping alertconfigs, string basetype) {
 	}
 }
 
-void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || grp != "control") return;
-	if (conn->session->fake) return;
+@"is_mod": void wscmd_alertcfg(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	string basetype = msg->type || ""; sscanf(basetype, "%s-%s", basetype, string variation);
 	if (!valid_alert_type(basetype, cfg)) return;
@@ -1213,14 +1197,11 @@ void websocket_cmd_alertcfg(mapping(string:mixed) conn, mapping(string:mixed) ms
 	}
 }
 
-void websocket_cmd_renamefile(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": void wscmd_renamefile(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Rename a file. Won't change its URL (since that's based on ID),
 	//nor the name of the file as stored (ditto), so this is really an
 	//"edit description" endpoint. But users will think of it as "rename".
-	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || grp != "control") return;
 	if (!stringp(msg->id) || !stringp(msg->name)) return;
-	if (conn->session->fake) return;
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->files) return; //No files, can't rename
 	int idx = search(cfg->files->id, msg->id);
@@ -1231,10 +1212,7 @@ void websocket_cmd_renamefile(mapping(string:mixed) conn, mapping(string:mixed) 
 	update_one(conn->group, file->id);
 }
 
-void websocket_cmd_revokekey(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || grp != "control") return;
-	if (conn->session->fake) return;
+@"is_mod": void wscmd_revokekey(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	string prevkey = m_delete(cfg, "authkey");
 	persist_status->save();
@@ -1243,10 +1221,7 @@ void websocket_cmd_revokekey(mapping(string:mixed) conn, mapping(string:mixed) m
 }
 
 //Currently no UI for this, but it works if you fiddle on the console.
-void websocket_cmd_reload(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || grp != "control") return;
-	if (conn->session->fake) return;
+@"is_mod": void wscmd_reload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	//Send a fake version number that's higher than the current, thus making it think
 	//it needs to update. After it reloads, it will get the regular state, with the
@@ -1445,6 +1420,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 void websocket_cmd_replay_alert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel || grp != "control") return;
+	//Note that alert replaying IS permitted for fake mods (ie demo channel)
 	if (!intp(msg->idx)) return;
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	int idx = msg->idx - cfg->replay_offset;
