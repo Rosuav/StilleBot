@@ -261,3 +261,8 @@
   - Need a way to trigger a code reload (SIGHUP?)
   - Maybe have a way to add and remove channels
   - Enable/disable Localhost Mod Override
+* Expand "dynamic rewards" to cover more than just the cost
+  - Allow title and description to include channel variables; they will autoupdate when the variables change
+  - This may also allow dynamic costs to include variables
+  - Maybe even have variables able to affect enabled/disabled??
+  - Make GIF alerts default to using $nonhiddengifredeems$ in the description
