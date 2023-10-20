@@ -250,7 +250,9 @@ export function sockmsg_select_variant(msg) {
 function update_gif_variants() {
 	//TODO: Reduce flicker when nothing's changed. Probably will need a "create and then update" pattern like others have.
 	set_content("#gif-variants table tbody", [
-		(revert_data[wanted_tab].variants || []).map(id => {
+		(revert_data[wanted_tab].variants || [])
+			.sort((a, b) => (revert_data[a]?.["condval-text"]||"").localeCompare(revert_data[b]?.["condval-text"]||""))
+			.map(id => {
 			const attrs = revert_data[id] || { };
 			return TR({class: "minialertconfig", "data-type": id}, [
 				TD(INPUT({form: "gif-var-" + id, class: "text", value: attrs["condval-text"] || ""})),
