@@ -1633,6 +1633,42 @@ int can_manage_feature(object channel, string kwd) {return channel->commands[kwd
 
 void enable_feature(object channel, string kwd, int state) {
 	mapping info = ENABLEABLE_FEATURES[kwd]; if (!info) return;
+	array tok = token_for_user_id(channel->userid);
+	if (kwd == "!redeem" && has_value(tok[1] / " ", "channel:manage:redemptions")) {
+		//Attempt to create a GIF redeem reward - this will fail if not partner/affiliate
+		if (state) {
+			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid,
+				(["Authorization": "Bearer " + tok[0]]),
+				(["method": "POST", "json": ([
+					"title": "GIFs and sounds",
+					"prompt": "Select a GIF to trigger by keyword", //TODO: Can we automanage this as redemptions are added?
+					"cost": 1000,
+					"global_cooldown_seconds": 60,
+					"is_global_cooldown_enabled": Val.true,
+					"is_user_input_required": Val.true,
+				])]),
+			)->then() {
+				//Update the !redeem command to respond to this reward.
+				//Depends on make_echocommand below happening synchronously, and the
+				//response from Twitch being async.
+				mapping cmd = channel->commands->redeem;
+				if (!cmd) return; //No command? Don't update.
+				if (!mappingp(cmd)) cmd = (["message": cmd, "redemption": __ARGS__[0]->data->id]);
+				else cmd = cmd | (["redemption": __ARGS__[0]->data[0]->id]);
+				make_echocommand((kwd - "!") + channel->name, cmd);
+			}
+			->thencatch() {werror("Error creating !redeem reward: %O\n", __ARGS__);}; //TODO: Ignore the "must be partner/affiliate" error.
+		} else {
+			mapping cmd = channel->commands->redeem;
+			if (mappingp(cmd) && cmd->redemption) twitch_api_request(
+					"https://api.twitch.tv/helix/channel_points/custom_rewards?" +
+					"broadcaster_id=" + channel->userid +
+					"&id=" + cmd->redemption,
+				(["Authorization": "Bearer " + tok[0]]),
+				(["method": "DELETE"]))
+				->thencatch() {werror("Error deleting !redeem reward: %O\n", __ARGS__);};
+		}
+	}
 	make_echocommand((kwd - "!") + channel->name, state && info->response);
 }
 
