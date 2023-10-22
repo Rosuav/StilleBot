@@ -265,3 +265,8 @@
   - This may also allow dynamic costs to include variables
   - Maybe even have variables able to affect enabled/disabled??
   - Make GIF alerts default to using $nonhiddengifredeems$ in the description
+* Command search (including triggers and specials)
+  - eg After an emote got renamed/removed, search for all usage
+  - Be naive. Don't bother excluding things with destinations.
+  - Search results should have the normal command editor gear for editing, but instead
+    of having the editable command, show the path to the match(es)
