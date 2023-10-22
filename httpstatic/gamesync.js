@@ -258,6 +258,33 @@ const games = {
 			DIV(["Vault code: ", INPUT({"data-setting": "vault-code", value: data["vault-code"] || ""})]),
 		];},
 	},
+	blackcat: {
+		label: "Payday 2: Black Cat",
+		render(data) {return [
+			STYLE("table,input,select {font-size: 150%; margin: 0.25em;} button {font-size: 125%; margin: 0 0.25em}"),
+			DIV("North is the bow of the ship"),
+			TABLE([
+				TR([TD("Security room:"), TD(SELECT({"data-setting": "security-room", value: data["security-room"]}, [
+					OPTION("Casino Port (E)"),
+					OPTION("Casino Starboard (W)"),
+					OPTION("Crew area"),
+					OPTION("Spa"),
+				]))]),
+				TR([TD("Electrics: "), TD([
+					BUTTON({
+						"data-setting": "shield-loc", "data-value": "port",
+						"style": data["shield-loc"] === "port" ? "background-color: red; color: white" : "",
+					}, "Port (W)"),
+					BUTTON({
+						"data-setting": "shield-loc", "data-value": "starboard",
+						"style": data["shield-loc"] === "starboard" ? "background-color: #5f5" : "",
+					}, "Starboard (E)"),
+				])]),
+				TR([TD("Xun Kang's room: "), TD(INPUT({"data-setting": "room", value: data["room"] || ""}))]),
+				TR([TD("Vault code: "), TD(INPUT({"data-setting": "vault-code", value: data["vault-code"] || ""}))]),
+			]),
+		];},
+	},
 	//For Ukrainian Prisoner, it may be of value to have these recorded:
 	//0123456789 --> 零一二三四五六七八九
 	//Chinese numerals. Though the game seems pretty merciful in their use, so it may not be necessary.
