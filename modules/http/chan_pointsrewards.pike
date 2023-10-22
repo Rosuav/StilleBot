@@ -36,7 +36,6 @@ purposes).
 }
 </style>
 ";
-@retain: mapping pointsrewards = ([]);
 
 /* Ultimately this should be the master management for all points rewards. All shared code for
 dynamics, giveaway, etc should migrate into here.
@@ -70,7 +69,7 @@ There are three levels of permission that can be granted:
 
 bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id, string|void type) {
-	array rewards = pointsrewards[channel->name[1..]] || ({ }), dynrewards = ({ });
+	array rewards = G->G->pointsrewards[channel->userid] || ({ }), dynrewards = ({ });
 	mapping current = channel->config->dynamic_rewards || ([]);
 	foreach (rewards, mapping rew) {
 		mapping r = current[rew->id];
@@ -83,7 +82,7 @@ mapping get_chan_state(object channel, string grp, string|void id, string|void t
 }
 
 void wscmd_add(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	array rewards = pointsrewards[channel->name[1..]] || ({ });
+	array rewards = G->G->pointsrewards[channel->userid] || ({ });
 	mapping copyfrom = (["cost": 1]);
 	string basetitle = "New Custom Reward";
 	if (msg->copyfrom && msg->copyfrom != "") {
@@ -105,126 +104,27 @@ void wscmd_add(object channel, mapping(string:mixed) conn, mapping(string:mixed)
 	);
 }
 
-void points_redeemed(string chan, mapping data, int|void removal)
-{
-	//write("POINTS %s ON %O: %O\n", removal ? "REFUNDED" : "REDEEMED", chan, data);
-	event_notify("point_redemption", chan, data->reward->id, removal, data);
-	string token = token_for_user_login(chan)[0];
-	mapping cfg = get_channel_config(chan); if (!cfg) return;
-
-	if (mapping dyn = !removal && cfg->dynamic_rewards && cfg->dynamic_rewards[data->reward->id]) {
-		//Up the price every time it's redeemed
-		//For this to be viable, the reward needs a global cooldown of
-		//at least a few seconds, preferably a few minutes.
-		object chan = G->G->irc->channels["#" + chan];
-		int newcost = G->G->evaluate_expr(chan->expand_variables(replace(dyn->formula, "PREV", (string)data->reward->cost)));
-		if ((string)newcost != (string)data->reward->cost)
-			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
-					+ data->broadcaster_user_id + "&id=" + data->reward->id,
-				(["Authorization": "Bearer " + token]),
-				(["method": "PATCH", "json": (["cost": newcost])]),
-			);
-	}
-	object channel = G->G->irc->channels["#" + chan];
-	if (channel && !removal) foreach (channel->redemption_commands[data->reward->id] || ({ }), string cmd) {
-		channel->send(([
-			"displayname": data->user_name, "user": data->user_login,
-			"uid": data->user_id,
-		]), channel->commands[cmd], ([
-			"%s": data->user_input,
-			"{rewardid}": data->reward->id, "{redemptionid}": data->id,
-		]));
-	}
-}
-
-EventSub redemption = EventSub("redemption", "channel.channel_points_custom_reward_redemption.add", "1", points_redeemed);
-EventSub redemptiongone = EventSub("redemptiongone", "channel.channel_points_custom_reward_redemption.update", "1") {points_redeemed(@__ARGS__, 1);};
-
-continue Concurrent.Future populate_rewards_cache(string chan, string|int|void broadcaster_id) {
-	if (!broadcaster_id) broadcaster_id = yield(get_user_id(chan));
-	pointsrewards[chan] = ({ }); //If there's any error, don't keep retrying
-	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
-	mapping params = (["Authorization": "Bearer " + yield(token_for_user_id_async(broadcaster_id))[0]]);
-	array rewards = yield(twitch_api_request(url, params))->data;
-	//Prune the dynamic rewards list
-	object channel = G->G->irc->channels["#" + chan];
-	mapping current = channel->?config->?dynamic_rewards;
-	if (current) {
-		write("Current dynamics: %O\n", current);
-		multiset unseen = (multiset)indices(current) - (multiset)rewards->id;
-		if (sizeof(unseen)) {m_delete(current, ((array)unseen)[*]); channel->config_save();}
-	}
-	multiset manageable = (multiset)yield(twitch_api_request(url + "&only_manageable_rewards=true", params))->data->id;
-	foreach (rewards, mapping r) r->can_manage = manageable[r->id];
-	pointsrewards[chan] = rewards;
-	rewardadd(chan, (["broadcaster_user_id": (string)broadcaster_id]));
-	rewardupd(chan, (["broadcaster_user_id": (string)broadcaster_id]));
-	rewardrem(chan, (["broadcaster_user_id": (string)broadcaster_id]));
-	redemption(chan, (["broadcaster_user_id": (string)broadcaster_id]));
-	redemptiongone(chan, (["broadcaster_user_id": (string)broadcaster_id]));
-	send_updates_all("#" + chan);
-}
-
-//Event messages have all the info that we get by querying, but NOT in the same format.
-mapping remap_eventsub_message(mapping info) {
-	foreach (({
-		({0, "broadcaster_user_id", "broadcaster_id"}),
-		({0, "broadcaster_user_login", "broadcaster_login"}),
-		({0, "broadcaster_user_name", "broadcaster_name"}),
-		({0, "global_cooldown", "global_cooldown_setting"}),
-		({0, "max_per_stream", "max_per_stream_setting"}),
-		({0, "max_per_user_per_stream", "max_per_user_per_stream_setting"}),
-		({"global_cooldown_setting", "seconds", "global_cooldown_seconds"}),
-		({"max_per_stream_setting", "value", "max_per_stream_setting"}),
-		({"max_per_user_per_stream_setting", "value", "max_per_user_per_stream"}),
-	}), [string elem, string from, string to]) {
-		mapping el = elem ? info[elem] : info;
-		if (el && !undefinedp(el[from])) el[to] = m_delete(el, from);
-	}
-	return info;
-}
-
-EventSub rewardadd = EventSub("rewardadd", "channel.channel_points_custom_reward.add", "1") {
-	[string chan, mapping info] = __ARGS__;
-	if (!pointsrewards[chan]) return;
-	pointsrewards[chan] += ({remap_eventsub_message(info)});
-	update_one("#" + chan, info->id);
-	update_one("#" + chan, info->id, "dynreward");
-};
-EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward.update", "1") {
-	[string chan, mapping info] = __ARGS__;
-	array rew = pointsrewards[chan];
-	if (!rew) return;
-	foreach (rew; int i; mapping reward)
-		if (reward->id == info->id) {rew[i] = remap_eventsub_message(info); break;}
-	update_one("#" + chan, info->id);
-	update_one("#" + chan, info->id, "dynreward");
-};
-EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward.remove", "1") {
-	[string chan, mapping info] = __ARGS__;
-	array rew = pointsrewards[chan];
-	if (!rew) return;
-	pointsrewards[chan] = filter(rew) {return __ARGS__[0]->id != info->id;};
-	object channel = G->G->irc->channels["#" + chan];
-	mapping dyn = channel->?config->?dynamic_rewards;
-	if (dyn) {m_delete(dyn, info->id); channel->config_save();}
-	update_one("#" + chan, info->id);
-	update_one("#" + chan, info->id, "dynreward");
-};
-
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	if (string scopes = !req->misc->session->fake && ensure_bcaster_token(req, "channel:manage:redemptions"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
-	array rew = pointsrewards[req->misc->channel->name[1..]] || ({ });
+	array rew = G->G->pointsrewards[req->misc->channel->name[1..]] || ({ });
 	//Force an update, in case we have stale data. Note that the command editor will only use
 	//what's sent in the initial response, but at least this way, if there's an issue, hitting
 	//Refresh will fix it (otherwise there's no way for the client to force a refetch).
-	spawn_task(populate_rewards_cache(req->misc->channel->name[1..], req->misc->channel->userid));
+	spawn_task(G->G->populate_rewards_cache(req->misc->channel->name[1..], req->misc->channel->userid));
 	return render(req, ([
 		"vars": (["ws_group": ""]) | G->G->command_editor_vars(req->misc->channel),
 	]) | req->misc->chaninfo);
+}
+
+@hook_reward_changed: void notify_rewards(object channel, string|void rewardid) {
+	if (rewardid) {
+		update_one(channel->name, rewardid);
+		update_one(channel->name, rewardid, "dynreward");
+	}
+	else send_updates_all(channel->name);
 }
 
 constant command_description = "Manage channel point rewards - fulfil and cancel need redemption ID too";
@@ -276,15 +176,4 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	]);
 }
 
-protected void create(string name) {
-	::create(name);
-	foreach (list_channel_configs(), mapping cfg) {
-		string chan = cfg->login; if (!chan) continue;
-		if (!pointsrewards[chan]) {
-			string scopes = token_for_user_login(chan)[1];
-			if (has_value(scopes / " ", "channel:manage:redemptions")
-				|| has_value(scopes / " ", "channel:read:redemptions"))
-					spawn_task(populate_rewards_cache(chan, cfg->userid));
-		}
-	}
-}
+protected void create(string name) {::create(name);}
