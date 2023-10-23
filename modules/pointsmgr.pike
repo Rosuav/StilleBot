@@ -117,6 +117,7 @@ continue Concurrent.Future update_all_rewards(object channel) {
 @hook_variable_changed: void notify_rewards(object channel, string varname, string newval) {
 	//TODO: Figure out which rewards might have changed (ie which are affected by
 	//the variable that changed) and update only those.
+	if (channel->config->dynamic_rewards) return;
 	if (pending_update_alls[channel->userid]) return; //If multiple variables are updated all at once, do just one batch of updates at the end
 	pending_update_alls[channel->userid] = 1;
 	call_out(spawn_task, 0, update_all_rewards(channel));
