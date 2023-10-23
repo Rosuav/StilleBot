@@ -107,6 +107,17 @@ continue Concurrent.Future update_dynamic_reward(object channel, string rewardid
 	//rewardupd hook above should do this for us.
 }
 
+continue Concurrent.Future update_all_rewards(object channel) {
+	foreach (channel->config->dynamic_rewards; string rewardid; mapping rwd)
+		yield(update_dynamic_reward(channel, rewardid));
+}
+
+@hook_variable_changed: void notify_rewards(object channel, string varname, string newval) {
+	//TODO: Figure out which rewards might have changed (ie which are affected by
+	//the variable that changed) and update only those.
+	spawn_task(update_all_rewards(channel));
+}
+
 continue Concurrent.Future populate_rewards_cache(string chan, string|int|void broadcaster_id) {
 	if (!broadcaster_id) broadcaster_id = yield(get_user_id(chan));
 	pointsrewards[(int)broadcaster_id] = ({ }); //If there's any error, don't keep retrying

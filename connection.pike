@@ -148,6 +148,9 @@ string subtier(string plan) {
 	return plan[0..0]; //Plans are usually 1000, 2000, 3000 - I don't know if they're ever anything else?
 }
 
+@create_hook:
+constant variable_changed = ({"object channel", "string varname", "string newval"});
+
 class channel(mapping config) {
 	string name; //name begins with a hash and is all lowercase. Preference: Use this->config->login (no hash) instead.
 	string color;
@@ -366,6 +369,7 @@ class channel(mapping config) {
 		else G->G->websocket_types->chan_variables->update_one(name, var - "$");
 		//TODO: Defer this until the next tick (with call_out 0), so that multiple
 		//changes can be batched, reducing flicker.
+		//TODO: Do all of these updates using the hook.
 		function send_updates_all = G->G->websocket_types->chan_monitors->send_updates_all;
 		foreach (config->monitors || ([]); string nonce; mapping info) {
 			if (!has_value(info->text, var)) continue;
@@ -374,6 +378,7 @@ class channel(mapping config) {
 			info->id = nonce; send_updates_all(name, info); //Send to the master group as a single-item update
 		}
 		persist_status->save();
+		event_notify("variable_changed", this, var, val);
 		return val;
 	}
 
