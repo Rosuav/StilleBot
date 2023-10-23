@@ -335,19 +335,24 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (string id = body->dynamic_id) { //TODO: Ditto, move to pointsrewards
 			if (!cfg->dynamic_rewards || !cfg->dynamic_rewards[id]) return (["error": 400]);
 			mapping rwd = cfg->dynamic_rewards[id];
-			m_delete(rwd, "title"); //Clean out old data (can get rid of this once we're not saving that any more)
+			if (body->title) {
+				//See if there are any variable or placeholder references in the title.
+				string title = req->misc->channel->expand_variables(body->title);
+				if (title != body->title) rwd->title = body->title;
+			}
 			if (!undefinedp(body->basecost)) rwd->basecost = (int)body->basecost;
 			if (body->formula) rwd->formula = body->formula;
 			if (body->availability) rwd->availability = body->availability;
 			if (rwd->availability == "" && rwd->formula == "") m_delete(cfg->dynamic_rewards, id); //Hack: Delete by blanking the values. Will be replaced later.
-			if (body->title || body->curcost) {
+			if (body->curcost) {
 				//Currently fire-and-forget - there's no feedback if you get something wrong.
 				twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&id=" + id,
 					(["Authorization": "Bearer " + token]),
-					(["method": "PATCH", "json": (["title": body->title, "cost": (int)body->curcost])]),
+					(["method": "PATCH", "json": (["cost": (int)body->curcost])]),
 				);
 			}
 			req->misc->channel->config_save();
+			spawn_task(G->G->update_dynamic_reward(req->misc->channel, id));
 			return jsonify((["ok": 1]));
 		}
 		if (body->activate) { //TODO: As above, move to pointsrewards on the ws

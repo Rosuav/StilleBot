@@ -11,9 +11,9 @@ constant reward_changed = ({"object channel", "string|void rewardid"}); //If no 
 void points_redeemed(string chanid, mapping data, int|void removal)
 {
 	//write("POINTS %s ON %O: %O\n", removal ? "REFUNDED" : "REDEEMED", chan, data);
-	object channel = G->G->irc->channels[(int)chanid]; if (!channel) return;
+	object channel = G->G->irc->id[(int)chanid]; if (!channel) return;
 	event_notify("point_redemption", channel, data->reward->id, removal, data);
-	string token = token_for_user_id((int)chanid)[0];
+	string token = token_for_user_login(channel->login)[0];
 	mapping cfg = channel->config;
 
 	if (mapping dyn = !removal && cfg->dynamic_rewards && cfg->dynamic_rewards[data->reward->id]) {
@@ -80,11 +80,32 @@ EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward
 	array rew = pointsrewards[(int)chanid];
 	if (!rew) return;
 	pointsrewards[(int)chanid] = filter(rew) {return __ARGS__[0]->id != info->id;};
-	object channel = G->G->irc->channels[(int)chanid];
+	object channel = G->G->irc->id[(int)chanid];
 	mapping dyn = channel->?config->?dynamic_rewards;
 	if (dyn) {m_delete(dyn, info->id); channel->config_save();}
 	event_notify("reward_changed", G->G->irc->id[(int)chanid], info->id);
 };
+
+continue Concurrent.Future update_dynamic_reward(object channel, string rewardid) {
+	mapping rwd = channel->config->dynamic_rewards[rewardid];
+	if (!rwd) return 0;
+	mapping updates = ([]);
+	mapping cur = ([]); //If the reward isn't found, assume everything has changed.
+	foreach (pointsrewards[channel->userid], mapping r) if (r->id == rewardid) cur = r;
+	if (rwd->title) {
+		string title = channel->expand_variables(rwd->title);
+		if (title != cur->title) updates->title = title;
+	}
+	if (!sizeof(updates)) return 0;
+	string token = yield(token_for_user_id_async(channel->userid))[0];
+	mixed resp = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + rewardid,
+		(["Authorization": "Bearer " + token]),
+		(["method": "PATCH", "json": updates]),
+	));
+	//TODO: Error check
+	//Note that the update doesn't need to be pushed through the cache, as the
+	//rewardupd hook above should do this for us.
+}
 
 continue Concurrent.Future populate_rewards_cache(string chan, string|int|void broadcaster_id) {
 	if (!broadcaster_id) broadcaster_id = yield(get_user_id(chan));
@@ -93,7 +114,7 @@ continue Concurrent.Future populate_rewards_cache(string chan, string|int|void b
 	mapping params = (["Authorization": "Bearer " + yield(token_for_user_id_async(broadcaster_id))[0]]);
 	array rewards = yield(twitch_api_request(url, params))->data;
 	//Prune the dynamic rewards list
-	object channel = G->G->irc->channels[(int)broadcaster_id];
+	object channel = G->G->irc->id[(int)broadcaster_id];
 	mapping current = channel->?config->?dynamic_rewards;
 	if (current) {
 		write("Current dynamics: %O\n", current);
@@ -115,6 +136,7 @@ continue Concurrent.Future populate_rewards_cache(string chan, string|int|void b
 protected void create(string name) {
 	::create(name);
 	G->G->populate_rewards_cache = populate_rewards_cache;
+	G->G->update_dynamic_reward = update_dynamic_reward;
 	foreach (list_channel_configs(), mapping cfg) {
 		if (!cfg->userid) continue;
 		if (!pointsrewards[cfg->userid]) {

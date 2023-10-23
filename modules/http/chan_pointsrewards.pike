@@ -73,7 +73,8 @@ mapping get_chan_state(object channel, string grp, string|void id, string|void t
 	mapping current = channel->config->dynamic_rewards || ([]);
 	foreach (rewards, mapping rew) {
 		mapping r = current[rew->id];
-		if (r) dynrewards += ({r | (["id": rew->id, "title": rew->title, "curcost": rew->cost])});
+		//Note that attributes set in dynamic_rewards override those seen in current status.
+		if (r) dynrewards += ({(["id": rew->id, "title": rew->title, "curcost": rew->cost]) | r});
 		rew->invocations = channel->redemption_commands[rew->id] || ({ });
 		if (rew->id == id) return type == "dynreward" ? r && dynrewards[-1] : rew; //Can't be bothered remapping to remove the search
 	}
