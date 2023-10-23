@@ -278,7 +278,7 @@ function update_gif_variants() {
 		}),
 		TR({"data-type": "gif-"}, [
 			TD(INPUT({class: "text"})),
-			TD({colspan: 3}, "Enter a keyword to add one!"),
+			TD({colspan: 4}, "Enter a keyword to add one!"),
 		]),
 	]);
 }
@@ -1116,7 +1116,7 @@ on("change", ".text,.ishidden", e => {
 		cmd: "alertcfg", type: tr.dataset.type, parent: "gif",
 		active: true, format: "", "cond-label": text.value + " text",
 		"condval-text": text.value, "condoper-text": "==",
-		"condval-is_hidden": ishidden.checked, "condoper-is_hidden": "==",
+		"condval-is_hidden": ishidden?.checked, "condoper-is_hidden": "==",
 	});
 });
 
