@@ -260,11 +260,10 @@
   - Need a way to trigger a code reload (SIGHUP?)
   - Maybe have a way to add and remove channels
   - Enable/disable Localhost Mod Override
-* Expand "dynamic rewards" to cover more than just the cost
-  - Allow title and description to include channel variables; they will autoupdate when the variables change
-  - This may also allow dynamic costs to include variables
+* Expand "dynamic rewards" variable system to cover all dynamic rewards
+  - Currently handles title/prompt separately from others
+  - This would allow dynamic costs to include variables
   - Maybe even have variables able to affect enabled/disabled??
-  - Make GIF alerts default to using $nonhiddengifredeems$ in the description
 * Command search (including triggers and specials)
   - eg After an emote got renamed/removed, search for all usage
   - Be naive. Don't bother excluding things with destinations.
