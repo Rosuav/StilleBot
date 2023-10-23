@@ -1643,11 +1643,12 @@ void enable_feature(object channel, string kwd, int state) {
 	if (kwd == "!redeem" && has_value(tok[1] / " ", "channel:manage:redemptions")) {
 		//Attempt to create a GIF redeem reward - this will fail if not partner/affiliate
 		if (state) {
+			string prompt = "Select a GIF to trigger: $nonhiddengifredeems$";
 			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid,
 				(["Authorization": "Bearer " + tok[0]]),
 				(["method": "POST", "json": ([
 					"title": "GIFs and sounds",
-					"prompt": "Select a GIF to trigger by keyword", //TODO: Can we automanage this as redemptions are added?
+					"prompt": channel->expand_variables(prompt),
 					"cost": 1000,
 					"global_cooldown_seconds": 60,
 					"is_global_cooldown_enabled": Val.true,
@@ -1659,9 +1660,15 @@ void enable_feature(object channel, string kwd, int state) {
 				//response from Twitch being async.
 				mapping cmd = channel->commands->redeem;
 				if (!cmd) return; //No command? Don't update.
-				if (!mappingp(cmd)) cmd = (["message": cmd, "redemption": __ARGS__[0]->data->id]);
-				else cmd = cmd | (["redemption": __ARGS__[0]->data[0]->id]);
+				string rewardid = __ARGS__[0]->data[0]->id;
+				if (!mappingp(cmd)) cmd = (["message": cmd, "redemption": rewardid]);
+				else cmd = cmd | (["redemption": rewardid]);
 				make_echocommand((kwd - "!") + channel->name, cmd);
+				channel->path("dynamic_rewards")[rewardid] = ([
+					"basecost": 0, "availability": "{online}", "formula": "PREV",
+					"prompt": prompt,
+				]);
+				channel->config_save();
 			}
 			->thencatch() {werror("Error creating !redeem reward: %O\n", __ARGS__);}; //TODO: Ignore the "must be partner/affiliate" error.
 		} else {
