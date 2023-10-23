@@ -92,9 +92,9 @@ continue Concurrent.Future update_dynamic_reward(object channel, string rewardid
 	mapping updates = ([]);
 	mapping cur = ([]); //If the reward isn't found, assume everything has changed.
 	foreach (pointsrewards[channel->userid], mapping r) if (r->id == rewardid) cur = r;
-	if (rwd->title) {
-		string title = channel->expand_variables(rwd->title);
-		if (title != cur->title) updates->title = title;
+	foreach ("title prompt" / " ", string kwd) if (rwd[kwd]) {
+		string value = channel->expand_variables(rwd[kwd]);
+		if (value != cur[kwd]) updates[kwd] = value;
 	}
 	if (!sizeof(updates)) return 0;
 	string token = yield(token_for_user_id_async(channel->userid))[0];
@@ -107,7 +107,9 @@ continue Concurrent.Future update_dynamic_reward(object channel, string rewardid
 	//rewardupd hook above should do this for us.
 }
 
+multiset pending_update_alls = (<>);
 continue Concurrent.Future update_all_rewards(object channel) {
+	pending_update_alls[channel->userid] = 0;
 	foreach (channel->config->dynamic_rewards; string rewardid; mapping rwd)
 		yield(update_dynamic_reward(channel, rewardid));
 }
@@ -115,7 +117,9 @@ continue Concurrent.Future update_all_rewards(object channel) {
 @hook_variable_changed: void notify_rewards(object channel, string varname, string newval) {
 	//TODO: Figure out which rewards might have changed (ie which are affected by
 	//the variable that changed) and update only those.
-	spawn_task(update_all_rewards(channel));
+	if (pending_update_alls[channel->userid]) return; //If multiple variables are updated all at once, do just one batch of updates at the end
+	pending_update_alls[channel->userid] = 1;
+	call_out(spawn_task, 0, update_all_rewards(channel));
 }
 
 continue Concurrent.Future populate_rewards_cache(string chan, string|int|void broadcaster_id) {

@@ -335,20 +335,25 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		if (string id = body->dynamic_id) { //TODO: Ditto, move to pointsrewards
 			if (!cfg->dynamic_rewards || !cfg->dynamic_rewards[id]) return (["error": 400]);
 			mapping rwd = cfg->dynamic_rewards[id];
-			if (body->title) {
-				//See if there are any variable or placeholder references in the title.
-				string title = req->misc->channel->expand_variables(body->title);
-				if (title != body->title) rwd->title = body->title;
+			mapping updates = ([]);
+			foreach ("title prompt" / " ", string kwd) if (body[kwd]) {
+				//See if there are any variable or placeholder references in the title/prompt.
+				//If there are, retain the value with placeholders, for future updates; but
+				//otherwise, set the value immediately, and DON'T store it for placeholdering.
+				string value = req->misc->channel->expand_variables(body[kwd]);
+				if (value != body[kwd]) rwd[kwd] = body[kwd];
+				else {updates[kwd] = body[kwd]; m_delete(rwd, kwd);}
 			}
 			if (!undefinedp(body->basecost)) rwd->basecost = (int)body->basecost;
 			if (body->formula) rwd->formula = body->formula;
 			if (body->availability) rwd->availability = body->availability;
 			if (rwd->availability == "" && rwd->formula == "") m_delete(cfg->dynamic_rewards, id); //Hack: Delete by blanking the values. Will be replaced later.
-			if (body->curcost) {
+			if (body->curcost) updates["cost"] = (int)body->curcost;
+			if (sizeof(updates)) {
 				//Currently fire-and-forget - there's no feedback if you get something wrong.
 				twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&id=" + id,
 					(["Authorization": "Bearer " + token]),
-					(["method": "PATCH", "json": (["cost": (int)body->curcost])]),
+					(["method": "PATCH", "json": updates]),
 				);
 			}
 			req->misc->channel->config_save();

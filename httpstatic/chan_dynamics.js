@@ -7,6 +7,7 @@ export const autorender = {
 	dynreward_parent: DOM("#rewards tbody"),
 	dynreward(r) {return TR({"data-id": r.id}, [
 		TD(FORM({id: r.id, className: "editreward"}, INPUT({name: "title", value: r.title, "size": 40}))),
+		TD(INPUT({name: "prompt", form: r.id, value: r.prompt})),
 		TD(INPUT({name: "basecost", form: r.id, type: "number", value: r.basecost})),
 		TD(INPUT({name: "availability", form: r.id, value: r.availability || "{online}"})),
 		TD(INPUT({name: "formula", form: r.id, value: r.formula})),
@@ -40,7 +41,7 @@ DOM("#add").onclick = async e => {
 };
 
 async function save(el) {
-	const body = {dynamic_id: el.rewardid.value, title: el.title.value, basecost: el.basecost.value,
+	const body = {dynamic_id: el.rewardid.value, title: el.title.value, prompt: el.prompt.value, basecost: el.basecost.value,
 		availability: el.availability.value, formula: el.formula.value, curcost: el.curcost.value};
 	const info = await (await fetch("giveaway", {
 		method: "PUT",

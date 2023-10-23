@@ -1,9 +1,9 @@
 inherit http_endpoint;
 constant markdown = #"# Channel points - dynamic rewards
 
-Title | Base cost | Activation condition | Growth Formula | Current cost | Actions
-------|-----------|----------------------|----------------|--------------|--------
--     | -         | -                    | -              | -            | (loading...)
+Title | Description | Base cost | Activation condition | Growth Formula | Current cost | Actions
+------|-------------|-----------|----------------------|----------------|--------------|--------
+-     | -           | -         | -                    | -              | -            | (loading...)
 {: #rewards}
 
 [Save All](:#save_all) [Activate/Deactivate](:#activate)
