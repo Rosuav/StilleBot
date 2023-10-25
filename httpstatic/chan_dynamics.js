@@ -6,8 +6,8 @@ let allrewards = { };
 export const autorender = {
 	dynreward_parent: DOM("#rewards tbody"),
 	dynreward(r) {return TR({"data-id": r.id}, [
-		TD(FORM({id: r.id, className: "editreward"}, INPUT({name: "title", value: r.title, "size": 40}))),
-		TD(INPUT({name: "prompt", form: r.id, value: r.prompt})),
+		TD(FORM({id: r.id, className: "editreward"}, INPUT({name: "title", value: r.title, "size": 30}))),
+		TD(INPUT({name: "prompt", form: r.id, value: r.prompt, size: 30})),
 		TD(INPUT({name: "basecost", form: r.id, type: "number", value: r.basecost})),
 		TD(INPUT({name: "availability", form: r.id, value: r.availability || "{online}"})),
 		TD(INPUT({name: "formula", form: r.id, value: r.formula})),
