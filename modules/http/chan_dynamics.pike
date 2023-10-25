@@ -6,14 +6,18 @@ Title | Description | Base cost | Activation condition | Growth Formula | Curren
 -     | -           | -         | -                    | -              | -            | (loading...)
 {: #rewards}
 
-[Save All](:#save_all) [Activate/Deactivate](:#activate)
+[Save All](:#save_all) [Activate/Deactivate (debugging)](:#activate)
 
 [Add dynamic reward](:#add) Copy from: <select id=copyfrom><option value=\"-1\">(none)</option></select>
 
 Choose how the price grows by setting a formula, for example:
+* `PREV` (keep the price same - the default)
 * `PREV * 2` (double the price every time)
 * `PREV + 500` (add 500 points per purchase)
 * `PREV * 2 + 1500` (double it, then add 1500 points)
+
+Use [variables](variables) in the title or description to automatically update them
+whenever the variable changes.
 
 Rewards will reset to base price whenever the stream starts, and will be automatically
 put on pause when the stream is offline. Note that, due to various delays, it's best to

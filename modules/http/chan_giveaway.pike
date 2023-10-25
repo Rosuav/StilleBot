@@ -320,7 +320,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//Titles must be unique (among all rewards). To simplify rapid creation of
 			//multiple rewards, add a numeric disambiguator on conflict.
 			string deftitle = copyfrom->title || "Example Dynamic Reward";
-			mapping rwd = (["basecost": copyfrom->cost || 1000, "availability": "{online}", "formula": "PREV * 2"]);
+			mapping rwd = (["basecost": copyfrom->cost || 1000, "availability": "{online}", "formula": "PREV"]);
 			array have = filter((G->G->pointsrewards[chan]||({}))->title, has_prefix, deftitle);
 			copyfrom |= (["title": deftitle + " #" + (sizeof(have) + 1), "cost": rwd->basecost]);
 			string id = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
@@ -586,6 +586,9 @@ void channel_on_off(string channel, int just_went_online)
 	]);
 	get_user_id(channel)->then(lambda(int broadcaster_id) {
 		string token = token_for_user_login(channel)[0];
+		//TODO: Store the cache keyed by id?
+		mapping rewards = ([]);
+		foreach (G->G->pointsrewards[broadcaster_id] || ({ }), mapping r) rewards[r->id] = r;
 		if (token != "") foreach (dyn; string reward_id; mapping info) {
 			int active = 0;
 			mapping params = ([]);
@@ -595,9 +598,14 @@ void channel_on_off(string channel, int just_went_online)
 				//write("Evaluating: %O\n", info->availability);
 				active = G->G->evaluate_expr(chan->expand_variables(info->availability, args));
 				//write("Result: %O\n", active);
-				params->is_enabled = active ? Val.true : Val.false;
+				//Triple negative. We want to know if the enabled state has changed, but
+				//some things will use 1 and 0, others will use Val.true and Val.false.
+				//So to be safe, we booleanly negate both sides, and THEN see if they
+				//differ; if they do, we update using Val.* to ensure the right JSON.
+				if (!rewards[reward_id]->is_enabled != !active)
+					params->is_enabled = active ? Val.true : Val.false;
 			}) werror("ERROR ACTIVATING REWARD:\n%s\n", describe_backtrace(ex)); //TODO: Report to the streamer
-			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+			if (sizeof(params)) twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 					+ broadcaster_id + "&id=" + reward_id,
 				(["Authorization": "Bearer " + token]),
 				(["method": "PATCH", "json": params]),
