@@ -110,7 +110,7 @@ continue Concurrent.Future update_dynamic_reward(object channel, string rewardid
 multiset pending_update_alls = (<>);
 continue Concurrent.Future update_all_rewards(object channel) {
 	pending_update_alls[channel->userid] = 0;
-	foreach (channel->config->dynamic_rewards; string rewardid; mapping rwd)
+	foreach (channel->config->dynamic_rewards || ([]); string rewardid; mapping rwd)
 		yield(update_dynamic_reward(channel, rewardid));
 }
 
