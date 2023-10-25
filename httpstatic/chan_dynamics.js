@@ -24,7 +24,7 @@ export const autorender = {
 export function render(data) {
 	if (data.items) {
 		allrewards = data.items;
-		const copiables = allrewards.map((r, i) => OPTION({value: i}, r.title));
+		const copiables = allrewards.map((r, i) => OPTION({value: i}, r.title + (!r.can_manage || r.is_dynamic ? " (copy)" : "")));
 		copiables.unshift(DOM("#copyfrom").firstElementChild);
 		set_content("#copyfrom", copiables);
 	}

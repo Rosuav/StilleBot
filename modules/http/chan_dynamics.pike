@@ -8,7 +8,7 @@ Title | Description | Base cost | Activation condition | Growth Formula | Curren
 
 [Save All](:#save_all) [Activate/Deactivate (debugging)](:#activate)
 
-[Add dynamic reward](:#add) Copy from: <select id=copyfrom><option value=\"-1\">(none)</option></select>
+<select id=copyfrom><option value=\"-1\">-- Create new --</option></select> [Add dynamic reward](:#add)
 
 Choose how the price grows by setting a formula, for example:
 * `PREV` (keep the price same - the default)

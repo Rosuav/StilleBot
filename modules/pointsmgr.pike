@@ -133,7 +133,6 @@ continue Concurrent.Future populate_rewards_cache(string chan, string|int|void b
 	object channel = G->G->irc->id[(int)broadcaster_id];
 	mapping current = channel->?config->?dynamic_rewards;
 	if (current) {
-		write("Current dynamics: %O\n", current);
 		multiset unseen = (multiset)indices(current) - (multiset)rewards->id;
 		if (sizeof(unseen)) {m_delete(current, ((array)unseen)[*]); channel->config_save();}
 	}
