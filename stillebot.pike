@@ -26,7 +26,7 @@ object bootstrap(string c)
 	mixed ex = catch {compiled = compile_file(c);};
 	if (ex) {werror("Exception in compile!\n"); werror(ex->describe()+"\n"); return 0;}
 	if (!compiled) werror("Compilation failed for "+c+"\n");
-	if (mixed ex = catch {compiled = compiled(name);}) werror(describe_backtrace(ex)+"\n");
+	if (mixed ex = catch {compiled = compiled(name);}) {G->warnings++; werror(describe_backtrace(ex)+"\n");}
 	werror("Bootstrapped "+c+"\n");
 	return compiled;
 }

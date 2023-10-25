@@ -304,15 +304,17 @@ class _mainwindow
 	{
 		//object main = G->bootstrap("stillebot.pike"); //Test new bootstrap code
 		//int err = main ? main->bootstrap_all() : 1;
+		G->G->warnings = 0;
 		int err = G->bootstrap_all(); //Normally the current bootstrap code is fine.
 		gc();
-		if (!err) return; //All OK? Be silent.
+		if (!err && !G->G->warnings) return; //All OK? Be silent.
 		if (string winid = getenv("WINDOWID")) //On some Linux systems we can pop the console up.
 			catch (Process.create_process(({"wmctrl", "-ia", winid}))->wait()); //Try, but don't mind errors, eg if wmctrl isn't installed.
-		MessageBox(0, GTK2.MESSAGE_ERROR, GTK2.BUTTONS_OK, err + " compilation error(s) - see console", win->mainwindow);
+		MessageBox(0, GTK2.MESSAGE_ERROR, GTK2.BUTTONS_OK, err + " compilation error(s), " + G->G->warnings + " warning(s) - see console", win->mainwindow);
 	}
 	void sig_updatemodules_activate(object self)
 	{
+		G->G->warnings = 0;
 		int err = 0;
 		foreach (sort(get_dir("modules")), string f)
 			if (has_suffix(f, ".pike")) err += !G->bootstrap("modules/" + f);
@@ -321,10 +323,10 @@ class _mainwindow
 		foreach (sort(get_dir("zz_local")), string f)
 			if (has_suffix(f, ".pike")) err += !G->bootstrap("zz_local/" + f);
 		gc();
-		if (!err) return; //All OK? Be silent.
+		if (!err && !G->G->warnings) return; //All OK? Be silent.
 		if (string winid = getenv("WINDOWID")) //On some Linux systems we can pop the console up.
 			catch (Process.create_process(({"wmctrl", "-ia", winid}))->wait()); //Try, but don't mind errors, eg if wmctrl isn't installed.
-		MessageBox(0, GTK2.MESSAGE_ERROR, GTK2.BUTTONS_OK, err + " compilation error(s) - see console", win->mainwindow);
+		MessageBox(0, GTK2.MESSAGE_ERROR, GTK2.BUTTONS_OK, err + " compilation error(s), " + G->G->warnings + " warning(s) - see console", win->mainwindow);
 	}
 
 	void sig_manual_auth_activate() {ircsettings();}
