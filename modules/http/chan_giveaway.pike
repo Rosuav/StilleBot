@@ -334,16 +334,21 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//multiple rewards, add a numeric disambiguator on conflict.
 			string deftitle = copyfrom->title || "Example Dynamic Reward";
 			mapping rwd = (["basecost": copyfrom->cost || 1000, "availability": "{online}", "formula": "PREV"]);
-			array have = filter((G->G->pointsrewards[chan]||({}))->title, has_prefix, deftitle);
+			array have = filter((G->G->pointsrewards[broadcaster_id]||({}))->title, has_prefix, deftitle);
 			copyfrom |= (["title": deftitle + " #" + (sizeof(have) + 1), "cost": rwd->basecost]);
-			string id = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
+			mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
 				(["Authorization": "Bearer " + token]),
 				(["method": "POST", "json": copyfrom]),
-			))->data[0]->id;
-			//write("Created new dynamic: %O\n", info->data[0]);
-			cfg->dynamic_rewards[id] = rwd;
+			))->data[0];
+			//write("Created new dynamic: %O\n", info);
+			//TODO: Update G->G->pointsrewards immediately, and push out the update
+			//This will speed up the response to user significantly. Do this once it's
+			//all dealt with by pointsmgr instead of here.
+			cfg->dynamic_rewards[info->id] = rwd;
+			if (!G->G->rewards_manageable[broadcaster_id]) G->G->rewards_manageable[broadcaster_id] = (<>);
+			G->G->rewards_manageable[broadcaster_id][info->id] = 1;
 			req->misc->channel->config_save();
-			return jsonify((["ok": 1, "reward": rwd | (["id": id])]));
+			return jsonify((["ok": 1, "reward": rwd | (["id": info->id])]));
 		}
 		if (string id = body->dynamic_id) { //TODO: Ditto, move to pointsrewards
 			if (!cfg->dynamic_rewards || !cfg->dynamic_rewards[id]) return (["error": 400]);

@@ -2,6 +2,7 @@ inherit hook;
 inherit annotated;
 
 @retain: mapping pointsrewards = ([]);
+@retain: mapping(int:multiset(string)) rewards_manageable = ([]); //rewards_manageable[broadcaster_id][reward_id] is 1 if we can edit that reward
 
 @create_hook:
 constant point_redemption = ({"string chan", "string rewardid", "int(0..1) refund", "mapping data"});
@@ -58,6 +59,9 @@ mapping remap_eventsub_message(mapping info) {
 		mapping el = elem ? info[elem] : info;
 		if (el && !undefinedp(el[from])) el[to] = m_delete(el, from);
 	}
+	if (rewards_manageable[(int)info->broadcaster_id][?info->id]) info->can_manage = 1;
+	mapping current = G->G->irc->id[(int)info->broadcaster_id]->?config->?dynamic_rewards;
+	if (current[?info->id]) info->is_dynamic = 1;
 	return info;
 }
 
@@ -104,7 +108,7 @@ continue Concurrent.Future update_dynamic_reward(object channel, string rewardid
 	));
 	//TODO: Error check
 	//Note that the update doesn't need to be pushed through the cache, as the
-	//rewardupd hook above should do this for us.
+	//rewardupd hook above should do this for us. It would speed things up though.
 }
 
 multiset pending_update_alls = (<>);
@@ -136,8 +140,11 @@ continue Concurrent.Future populate_rewards_cache(string chan, string|int|void b
 		multiset unseen = (multiset)indices(current) - (multiset)rewards->id;
 		if (sizeof(unseen)) {m_delete(current, ((array)unseen)[*]); channel->config_save();}
 	}
-	multiset manageable = (multiset)yield(twitch_api_request(url + "&only_manageable_rewards=true", params))->data->id;
-	foreach (rewards, mapping r) r->can_manage = manageable[r->id];
+	multiset manageable = rewards_manageable[broadcaster_id] = (multiset)yield(twitch_api_request(url + "&only_manageable_rewards=true", params))->data->id;
+	foreach (rewards, mapping r) {
+		r->can_manage = manageable[r->id];
+		if (current[?r->id]) r->is_dynamic = 1;
+	}
 	pointsrewards[(int)broadcaster_id] = rewards;
 	broadcaster_id = (string)broadcaster_id;
 	rewardadd(broadcaster_id, (["broadcaster_user_id": broadcaster_id]));
