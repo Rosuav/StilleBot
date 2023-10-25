@@ -1,5 +1,6 @@
-import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
+import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {TR, TD, FORM, INPUT, OPTION} = choc;
+import {simpleconfirm} from "$$static||utils.js$$";
 
 let allrewards = { };
 
@@ -30,14 +31,35 @@ export function render(data) {
 	}
 }
 
-DOM("#add").onclick = async e => {
+async function make_dynamic(basis) {
 	//TODO: Put this on the websocket
+	//TODO: Put up a spinner - this takes most of a second
 	const res = await fetch("giveaway", {
 		method: "PUT", //Yeah, I know, this probably ought to be a POST request instead
 		headers: {"Content-Type": "application/json"},
-		body: JSON.stringify({new_dynamic: 1, copy_from: allrewards[DOM("#copyfrom").value]}),
+		body: JSON.stringify({new_dynamic: basis.id}),
 	});
 	if (!res.ok) {console.error("Not okay response", res); return;}
+}
+async function create_dynamic(basis) {
+	//TODO: As above
+	const res = await fetch("giveaway", {
+		method: "PUT", //Yeah, I know, this probably ought to be a POST request instead
+		headers: {"Content-Type": "application/json"},
+		body: JSON.stringify({new_dynamic: 1, copy_from: basis}),
+	});
+	if (!res.ok) {console.error("Not okay response", res); return;}
+}
+const confirm_already_dynamic = simpleconfirm("That reward already has dynamic management - want to create a copy of it?", create_dynamic);
+const confirm_not_manageable = simpleconfirm("Due to Twitch limitations, we can't manage that reward itself, but can take a copy of it. Good to go?", create_dynamic);
+
+DOM("#add").onclick = e => {
+	const basis = allrewards[DOM("#copyfrom").value];
+	if (!basis) return create_dynamic({});
+	let next = make_dynamic;
+	if (basis.is_dynamic) next = confirm_already_dynamic;
+	else if (!basis.can_manage) next = confirm_not_manageable;
+	next(basis);
 };
 
 async function save(el) {

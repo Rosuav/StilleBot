@@ -278,4 +278,3 @@
     string substitution before evaluation.
   - This MAY also solve the double-parse limitation, as it would then be possible to use
     calc with string substitution and resulting variable ref.
-* Need a way to make any manageable reward dynamic (cost/title/prompt/etc)

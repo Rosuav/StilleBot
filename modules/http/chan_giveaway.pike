@@ -316,6 +316,19 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		}
 		if (body->new_dynamic) { //TODO: Migrate this to chan_pointsrewards as "create manageable reward". It doesn't necessarily have to have dynamic pricing.
 			if (!cfg->dynamic_rewards) cfg->dynamic_rewards = ([]);
+			if (!body->copy_from) {
+				//Was an existing ID specified? If so - and if it's manageable and not already dynamic - don't copy it.
+				mapping rew;
+				foreach (G->G->pointsrewards[broadcaster_id] || ({ }), mapping r) if (r->id == body->new_dynamic) rew = r;
+				if (rew && rew->can_manage && !rew->is_dynamic) {
+					cfg->dynamic_rewards[rew->id] = ([
+						"basecost": rew->cost || 1000, "availability": "{online}", "formula": "PREV",
+					]);
+					req->misc->channel->config_save();
+					return jsonify((["ok": 1, "reward": rew]));
+				}
+				else body->copy_from = rew; //If there's no such reward, well, we'll start blank anyway. But otherwise, copy that reward.
+			}
 			mapping copyfrom = body->copy_from || ([]); //Whatever we get from the front end, pass to Twitch. Good idea? Not sure.
 			//Titles must be unique (among all rewards). To simplify rapid creation of
 			//multiple rewards, add a numeric disambiguator on conflict.
