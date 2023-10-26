@@ -260,10 +260,6 @@
   - Need a way to trigger a code reload (SIGHUP?)
   - Maybe have a way to add and remove channels
   - Enable/disable Localhost Mod Override
-* Expand "dynamic rewards" variable system to cover all dynamic rewards
-  - Currently handles title/prompt separately from others
-  - This would allow dynamic costs to include variables
-  - Maybe even have variables able to affect enabled/disabled??
 * Command search (including triggers and specials)
   - eg After an emote got renamed/removed, search for all usage
   - Be naive. Don't bother excluding things with destinations.
