@@ -125,11 +125,12 @@ mixed find_callback_task(function cb) {
 }
 
 //mixed _ = yield(task_sleep(seconds)); //Delay the current task efficiently
-class task_sleep(int|float delay) {
+class _task_sleep(int|float delay) {
 	void then(function whendone) {
 		call_out(whendone, delay, delay || "0"); //Never yield zero, it can cause confusion
 	}
 }
+object task_sleep(int|float delay) {return _task_sleep(delay);} //Trick the parser into accepting a task_sleep as if it were a Future
 
 //Run a subprocess and yield (["rc": returncode, "stdout": bytes sent to stdout])
 //Similar to Process.run() but doesn't do stderr or stdin (and should only be used with small data).
@@ -275,7 +276,7 @@ void register_hook(string event, function|string handler)
 	) + ({({origin, handler})}) * functionp(handler);
 }
 
-int runhooks(string event, string skip, mixed ... args)
+int runhooks(string event, string|zero skip, mixed ... args)
 {
 	array(array(string|function)) hooks = G->G->hooks[event];
 	if (!hooks) return 0; //Nothing registered for this event
@@ -852,7 +853,7 @@ class irc_callback {
 				return Concurrent.reject(({"No chat auth for " + chan + "\n", backtrace()}));
 			options->pass = "oauth:" + pass;
 		}
-		object conn = connection_cache[options->user];
+		object|zero conn = connection_cache[options->user];
 		//If the connection exists, give it a chance to update itself. Normally
 		//it will do so, and return 0; otherwise, it'll return 1, we disconnect
 		//it, and start fresh. Problem: We could have multiple connections in
@@ -1032,7 +1033,7 @@ class Renderer
 class Lexer
 {
 	inherit Parser.Markdown.Lexer;
-	object_program lex(string src)
+	this_program lex(string src)
 	{
 		::lex(src);
 		foreach (tokens; int i; mapping tok)

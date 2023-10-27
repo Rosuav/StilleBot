@@ -57,7 +57,7 @@ mapping cached_user_info(int|string user) {
 				if (G->G->app_access_token_expiry == -1) {
 					//TODO: Wait until the other request returns.
 					//For now we just sleep and try again.
-					return Concurrent.resolve(0)->delay(2)->then(lambda() {return twitch_api_request(url, headers, options);});
+					return Concurrent.resolve(0)->delay(2)->then(lambda(mixed _) {return twitch_api_request(url, headers, options);});
 				}
 				G->G->app_access_token_expiry = -1; //Prevent spinning
 				Standards.URI uri = Standards.URI("https://id.twitch.tv/oauth2/token");
@@ -83,7 +83,7 @@ mapping cached_user_info(int|string user) {
 			//In Mustard Mine, the only remaining place is PUT /kraken/channels which we
 			//don't use here, but are there any others?
 			//20200511: It seems emote lookups require "OAuth" instead of "Bearer". Sheesh.
-			sscanf(persist_config["ircsettings"]["pass"] || "", "oauth:%s", string pass);
+			sscanf(persist_config["ircsettings"]["pass"] || "o", "oauth:%s", string pass);
 			if (pass) headers["Authorization"] = (options->authtype || "Bearer") + " " + pass;
 		}
 	}
@@ -302,14 +302,14 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	});
 }
 
-@export: continue Concurrent.Future|array(mapping) get_banned_list(string|int userid, int|void force) {
+@export: continue Concurrent.Future|mapping get_banned_list(string|int userid, int|void force) {
 	if (intp(userid)) userid = (string)userid;
 	mapping cached = G_G_("banned_list", userid);
 	if (!cached->stale && cached->taken_at > time() - 3600 &&
 		(!cached->expires || cached->expires > Calendar.ISO.Second()))
 			return cached->banlist;
 	string username = yield(get_user_info(userid))->login;
-	array creds = yield(token_for_user_login_async(username));
+	array(string) creds = yield((object)token_for_user_login_async(username));
 	if (!has_value(creds[1] / " ", "moderation:read")) error("Don't have broadcaster auth to fetch ban list for %O\n", username);
 	mapping ret = yield(get_helix_paginated("https://api.twitch.tv/helix/moderation/banned",
 		(["broadcaster_id": userid]),
@@ -586,7 +586,7 @@ void stream_status(string name, mapping info)
 //Returns an ISO 8601 string, or 0 if not following.
 @export: continue Concurrent.Future|string check_following(int userid, int chanid)
 {
-	array creds = yield(token_for_user_id_async(chanid));
+	array creds = yield((object)token_for_user_id_async(chanid));
 	multiset scopes = (multiset)(creds[1] / " ");
 	mapping headers = ([]);
 	if (scopes["moderator:read:followers"]) headers->Authorization = "Bearer " + creds[0];
@@ -710,7 +710,7 @@ void check_hooks(array eventhooks)
 {
 	foreach (G->G->eventhook_types;; object handler) handler->have_subs = (<>);
 	foreach (eventhooks, mapping hook) {
-		sscanf(hook->transport->callback || "", "http%*[s]://%*s/junket?%s=%s", string type, string arg);
+		sscanf(hook->transport->callback || "h", "http%*[s]://%*s/junket?%s=%s", string type, string arg);
 		object handler = G->G->eventhook_types[type];
 		if (!handler) {
 			write("Deleting eventhook: %O\n", hook);
@@ -738,7 +738,7 @@ void check_hooks(array eventhooks)
 		//For now, hacking it in so anyone who's already using the !!follower special trigger
 		//will attempt to continue using the bot's intrinsic auth. This is not perfect.
 		string mod = cfg->commands[?"!follower"] ? (string)G->G->bot_uid : "0";
-		if (scopes["moderator:read:followers"]) mod = userid; //If we have the necessary permission, use the broadcaster's authentication.
+		if (scopes["moderator:read:followers"]) mod = (string)userid; //If we have the necessary permission, use the broadcaster's authentication.
 		if (mod != "0") new_follower(chan, (["broadcaster_user_id": (string)userid, "moderator_user_id": mod]));
 		//raidin(chan, (["to_broadcaster_user_id": (string)userid]));
 		raidout(chan, (["from_broadcaster_user_id": (string)userid]));
