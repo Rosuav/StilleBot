@@ -112,7 +112,7 @@ mapping(string:function(string:string)) text_filters = ([
 continue Concurrent.Future raidwatch(int channel, string raiddesc) {
 	mixed _ = yield(task_sleep(30)); //It seems common for streamers to be offline after about 30 seconds
 	string status = "error";
-	mixed ex = catch {status = yield(channel_still_broadcasting(channel));};
+	mixed ex = catch {status = yield((object)channel_still_broadcasting(channel));};
 	Stdio.append_file("raidwatch.log", sprintf("[%s] %s: %s\n", ctime(time())[..<1], raiddesc, status));
 }
 
@@ -595,7 +595,7 @@ class channel(mapping config) {
 		//there's no check to ensure that we have permission to do so; if you add a
 		//voice but don't grant permission to use chat, all chat messages will just
 		//fail silently. (This would be fine if it's only used for slash commands.)
-		string voice = (cfg->voice && cfg->voice != "") ? cfg->voice : config->defvoice;
+		string|zero voice = (cfg->voice && cfg->voice != "") ? cfg->voice : config->defvoice;
 		if (!config->voices[?voice]) voice = 0; //Ensure that the voice hasn't been deauthenticated since the command was edited
 		if (!voice) {
 			//No voice has been selected (either explicitly or as the channel default).
@@ -1393,8 +1393,10 @@ protected void create(string name)
 			int listen_port = use_https ? 443 : 80; //Default port from protocol
 			sscanf(irc->http_address, "http%*[s]://%*s:%d", listen_port); //If one is set for the dest addr, use that
 			//Or if there's an explicit listen address/port set, use that.
-			sscanf(irc->listen_address||"", "%d", listen_port);
-			sscanf(irc->listen_address||"", "%s:%d", listen_addr, listen_port);
+			if (irc->listen_address) {
+				sscanf(irc->listen_address, "%d", listen_port);
+				sscanf(irc->listen_address, "%s:%d", listen_addr, listen_port);
+			}
 
 			string cert = Stdio.read_file("certificate.pem");
 			if (listen_port * -use_https != G->G->httpserver_port_used || cert != G->G->httpserver_certificate)

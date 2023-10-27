@@ -16,7 +16,7 @@ class MessageBox
 	{
 		callback=cb;
 		::create(flags,type,buttons,message,parent);
-		signal_connect("response",response,cb_arg);
+		signal_connect("response", (function)response, cb_arg);
 		show();
 	}
 
@@ -249,10 +249,10 @@ class _mainwindow
 	{
 		win->mainwindow->add(GTK2.Vbox(0,10)
 				->pack_start(GTK2.MenuBar()
-					->add(GTK2.MenuItem("_Options")->set_submenu(win->optmenu=GTK2.Menu()
-						->add(win->update=GTK2.MenuItem("Update (developer mode)"))
-						->add(win->updatemodules=GTK2.MenuItem("Update modules (developer mode)"))
-						->add(win->manual_auth=GTK2.MenuItem("Authenticate manually"))
+					->add((object)GTK2.MenuItem("_Options")->set_submenu(win->optmenu=GTK2.Menu()
+						->add((object)(win->update=GTK2.MenuItem("Update (developer mode)")))
+						->add((object)(win->updatemodules=GTK2.MenuItem("Update modules (developer mode)")))
+						->add((object)(win->manual_auth=GTK2.MenuItem("Authenticate manually")))
 					)),0,0,0)
 				->add(GTK2.Hbox(0,5)
 					->add(GTK2.ScrolledWindow()->add(

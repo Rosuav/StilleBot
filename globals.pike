@@ -17,7 +17,7 @@ protected void create(string n)
 //- ({"sequential", "messages"})
 //- (["message": "text to send", "attr": "value"])
 //- (["message": ({"sequential", "messages"}), "attr": "value"])
-typedef string|mapping(string:mixed)|array(_echoable_message) _echoable_message;
+typedef string|mapping(string:mixed)|array(_echoable_message)|zero _echoable_message;
 //To avoid recompilation ambiguities, the added constant is simply a reference to the
 //(private) recursive typedef above.
 typedef _echoable_message echoable_message;
