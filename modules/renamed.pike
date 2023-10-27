@@ -18,7 +18,7 @@ constant command_suggestions = (["!follower": ([
 		"message": ([
 			"conditional": "string", "expr1": "{following}", "expr2": "",
 			"message": "@{username}: {curname} is not following.",
-			"otherwise": "@{username}: {curname} has been following {following}.",
+			"otherwise": "@{username}: {curname} has been following {followage}.",
 		]),
 		"otherwise": "@$$: {error}",
 	]),
@@ -30,7 +30,7 @@ constant command_suggestions = (["!follower": ([
 		"message": ([
 			"conditional": "string", "expr1": "{following}", "expr2": "",
 			"message": "@{username}: You're not following.",
-			"otherwise": "@{username}: You've been following {following}.",
+			"otherwise": "@{username}: You've been following {followage}.",
 		]),
 		"otherwise": "@$$: {error}",
 	]),
@@ -45,9 +45,22 @@ continue Concurrent.Future|mapping message_params(object channel, mapping person
 	array names = indices(u2n);
 	sort(values(u2n), names);
 	names -= ({"jtv", "tmi"}); //Some junk data in the files implies falsely that some people renamed to "jtv" or "tmi"
-	string foll = yield((mixed)check_following(uid, channel->userid)); //FIXME: What if no perms?
+	string|zero foll = yield((mixed)check_following(uid, channel->userid)); //FIXME: What if no perms?
+	string|zero follage;
+	if (foll) {
+		follage = "";
+		int since = time() - time_from_iso(foll)->unix_time();
+		if (since >= 86400) {
+			int days = since / 86400; since %= 86400;
+			if (days > 365) {follage += (days / 365) + " year(s), "; days %= 365;}
+			if (days > 7) {follage += (days / 7) + " week(s), "; days %= 7;}
+			if (days) follage += days + " day(s), ";
+		}
+		follage += sprintf("%02d:%02d:%02d", since / 3600, (since / 60) % 60, since % 60);
+	}
 	return ([
-		"{following}": foll ? "since " + foll : "",
+		"{following}": foll ? "since " + replace(foll, ({"T", "Z"}), "") : "",
+		"{followage}": follage ? "for " + follage : "",
 		"{prevname}": sizeof(names) >= 2 ? names[-2] : "",
 		"{curname}": sizeof(names) ? names[-1] : user,
 		"{allnames}": names * " ",
