@@ -22,9 +22,22 @@ constant command_suggestions = (["!follower": ([
 		]),
 		"otherwise": "@$$: {error}",
 	]),
+]), "!followage": ([
+	"_description": "Check how long you've been following the channel",
+	"builtin": "renamed", "builtin_param": "{username}",
+	"message": ([
+		"conditional": "string", "expr1": "{error}", "expr2": "",
+		"message": ([
+			"conditional": "string", "expr1": "{following}", "expr2": "",
+			"message": "@{username}: You're not following.",
+			"otherwise": "@{username}: You've been following {following}.",
+		]),
+		"otherwise": "@$$: {error}",
+	]),
 ])]);
 
 continue Concurrent.Future|mapping message_params(object channel, mapping person, array param) {
+	if (!sizeof(param)) param = ({""});
 	string user = param[0] - "@";
 	int uid; catch {uid = yield(get_user_id(user));};
 	if (!uid) return (["{prevname}": "", "{error}": "Can't find that person."]);
@@ -32,7 +45,7 @@ continue Concurrent.Future|mapping message_params(object channel, mapping person
 	array names = indices(u2n);
 	sort(values(u2n), names);
 	names -= ({"jtv", "tmi"}); //Some junk data in the files implies falsely that some people renamed to "jtv" or "tmi"
-	string foll = yield((object)check_following(uid, channel->userid)); //FIXME: What if no perms?
+	string foll = yield((mixed)check_following(uid, channel->userid)); //FIXME: What if no perms?
 	return ([
 		"{following}": foll ? "since " + foll : "",
 		"{prevname}": sizeof(names) >= 2 ? names[-2] : "",
