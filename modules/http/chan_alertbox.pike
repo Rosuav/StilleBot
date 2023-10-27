@@ -590,7 +590,7 @@ string find_alertset(mapping alerts, string id) {
 		return find_alertset(alerts, alert->parent);
 }
 
-mapping resolve_inherits(mapping alerts, string id, mapping alert, string alertset) {
+mapping resolve_inherits(mapping alerts, string id, mapping|zero alert, string|zero alertset) {
 	string par = alert->?parent || (id != alertset && alertset) || "defaults";
 	mapping parent = id == "defaults" ? NULL_ALERT //The defaults themselves are defaulted to the vanilla null alert.
 		: resolve_inherits(alerts, par, alerts[par], alertset); //Everything else has a parent, potentially implicit.
@@ -617,12 +617,12 @@ void resolve_all_inherits(string userid) {
 		if (resolved->image_is_video && COMPAT_VERSION < 3) resolved->version = 3;
 		if (resolved->tts_text && COMPAT_VERSION < 4) resolved->version = 4;
 		foreach (({"image", "sound"}), string url) {
-			if (sscanf(resolved[url] || "", "freemedia://%s", string fn) && fn) {
+			if (sscanf(resolved[url] || "f", "freemedia://%s", string fn) && fn) {
 				mapping media = G->G->freemedia_filelist->_lookup[fn] || ([]);
 				//TODO: What if !media?
 				resolved[url] = media->url;
 			}
-			if (sscanf(resolved[url] || "", "uploads://%s", string fn) && fn) {
+			if (sscanf(resolved[url] || "u", "uploads://%s", string fn) && fn) {
 				mapping media = uploads[fn] || ([]);
 				//As above - what if !media?
 				resolved[url] = media->url;
@@ -1335,7 +1335,7 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 		if (mappingp(data) && data->error->?details[?0]->?reason == "ACCESS_TOKEN_EXPIRED") {
 			Stdio.append_file("tts_error.log", sprintf("%sTTS access key expired after %d seconds\n",
 				ctime(time()), time() - tts_config->access_token_fetchtime));
-			mixed _ = yield(fetch_tts_credentials(1));
+			mixed _ = yield((mixed)fetch_tts_credentials(1));
 			werror("send_with_tts(%O): credentials redone %O\n", channel->name, tm->peek());
 			reqargs->headers->Authorization = "Bearer " + tts_config->access_token;
 			object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
@@ -1724,7 +1724,7 @@ continue Concurrent.Future fetch_tts_credentials(int fast) {
 		sscanf(langcode, "%s-%s", string lang, string cc);
 		//Google uses ISO 639-3 codes, but I only have a 639-2 table (and 639-1 lookups).
 		lang = Standards.ISO639_2.map_639_1(lang) || lang;
-		mapping langname = ([
+		string langname = ([
 			"eng": " English", //Hack: Sort English at the top since most of my users speak English
 			"cmn": "Chinese (Mandarin)",
 			"yue": "Chinese (Yue)", //Or should these be inverted ("Yue Chinese")?
@@ -1744,7 +1744,7 @@ continue Concurrent.Future fetch_tts_credentials(int fast) {
 	tts_config->avail_voices = all_voices;
 }
 
-continue void initialize_inherits() {
+continue Concurrent.Future initialize_inherits() {
 	//Fetch the free media file list if needed, then resolve inherits (which needs free media URLs)
 	if (G->G->freemedia_filelist->?_last_fetched < time() - 3600) {
 		Protocols.HTTP.Promise.Result res = yield(Protocols.HTTP.Promise.get_url("https://rosuav.github.io/free-media/filelist.json"));

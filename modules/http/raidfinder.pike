@@ -78,7 +78,7 @@ constant markdown_menu = #"# Raid finder modes
 //Modes train and tradingcards are omitted as they are more usefully accessed from
 //their corresponding pages. Also login=user,user,user omitted as not useful.
 
-continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	System.Timer tm = System.Timer();
 	//Try to find all creative categories and get their IDs. Is there a better way to do this?
@@ -203,7 +203,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			//TODO: Move this to poll as a generic "is X following Y" call, which will be cached.
 			//It can then use EITHER form of the query - if we have X's user:read:follows or Y's moderator:read:followers
 			//Might need a way to locate a moderator though. Or go for the partial result with intrinsic auth??
-			array creds = yield(token_for_user_id_async((int)chanid));
+			array creds = yield((mixed)token_for_user_id_async((int)chanid));
 			array scopes = creds[1] / " ";
 			if (has_value(scopes, "user:read:follows")) {
 				mapping info = yield(twitch_api_request(sprintf("https://api.twitch.tv/helix/channels/followed?user_id=%s&broadcaster_id=%s", chanid, chan),
@@ -272,7 +272,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			}
 			return (["data": "<style>.bot::marker{color:green}.monitor::marker{color:orange}body{font-size:16pt}</style><ul>" + lines * "\n" + "</ul><p>See tiled: <a href=\"raidfinder?login=demo\">login=demo</a></p>", "type": "text/html"]);
 		}
-		if (userid == (string)(int)userid) userid = (int)userid;
+		if (chan == (string)(int)chan) userid = (int)chan;
 		else userid = yield(get_user_id(chan));
 	}
 	else if (logged_in) userid = (int)logged_in->id; //Raidfind for self if logged in.
@@ -651,7 +651,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]));
 }
 
-continue Concurrent.Future followcategory(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+continue Concurrent.Future|mapping followcategory(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!arrayp(msg->cats) || !sizeof(msg->cats)) return 0; //No cats, nothing to do.
 	switch (msg->action) {
 		case "query": {
@@ -824,7 +824,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	int target;
 	if (catch (target = yield(get_user_id(chan)))) return (["{error}": "Unknown channel name"]);
 	string error;
-	if (mixed ex = catch {error = yield(suggestraid(person->uid, target, channel->userid));})
+	if (mixed ex = catch {error = yield((mixed)suggestraid(person->uid, target, channel->userid));})
 		return (["{error}": describe_error(ex)]);
 	return (["{error}": error || ""]);
 }

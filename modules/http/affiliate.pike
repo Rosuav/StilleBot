@@ -150,7 +150,7 @@ continue array(string|array|mapping)|Concurrent.Future generate_recommendations(
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
 	if (int id = (int)req->variables->recommend) {
 		//Recommendations are independent of the guide.
-		array recoms = yield(generate_recommendations(id));
+		array recoms = yield((mixed)generate_recommendations(id));
 		return jsonify((["recommendations": recoms]));
 	}
 	int guide = (int)req->misc->session->user->?id;
@@ -176,16 +176,16 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				return (["error": 400]) | jsonify((["error": "Already " + info->broadcaster_type + "!"]));
 			config->streamers[info->id] = (["added": time()]);
 			persist_status->save();
-			return jsonify(yield(populate_config(config)));
+			return jsonify(yield((mixed)populate_config(config)));
 		}
 		if (string id = req->variables->remove) {
 			//Should this also remove from alumni??
 			if (!m_delete(config->streamers, id)) return (["error": 404]);
 			persist_status->save();
-			return jsonify(yield(populate_config(config)));
+			return jsonify(yield((mixed)populate_config(config)));
 		}
 	}
-	mapping cfg = yield(populate_config(config));
+	mapping cfg = yield((mixed)populate_config(config));
 	return render_template(markdown, ([
 		"vars": ([
 			"editable": !req->variables->guide,

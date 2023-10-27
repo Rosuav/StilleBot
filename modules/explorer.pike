@@ -9,7 +9,7 @@ class menu_clicked
 	protected void create() {::create();}
 
 	multiset(int) no_recursion = (<>);
-	void add_to_store(mixed thing, string name, GTK2.TreeIter parent)
+	void add_to_store(mixed thing, string|void name, GTK2.TreeIter|void parent)
 	{
 		GTK2.TreeIter row = win->store->append(parent);
 		if (name) name += ": "; else name = "";
@@ -82,15 +82,15 @@ the consequences of this."))
 		}
 		win->store = GTK2.TreeStore(({"string"}));
 		//Completely ephemeral - discarded on program restart. Survives code reload.
-		add_to_store(G->G, "G", UNDEFINED);
+		add_to_store(G->G, "G");
 		//Stored permanently but may be fast-changing or uninteresting
-		add_to_store(persist_status->data, "persist_status", UNDEFINED);
+		add_to_store(persist_status->data, "persist_status");
 		//Stored permanently and intended to be stable. Should change only in direct
 		//response to the operator's command (or a mod or other person with reconfig
 		//powers), and can be git-managed.
-		add_to_store(persist_config->data, "persist_config", UNDEFINED);
+		add_to_store(persist_config->data, "persist_config");
 		array channels = list_channel_configs();
-		add_to_store(mkmapping(channels->login, channels), "channels", UNDEFINED);
+		add_to_store(mkmapping(channels->login, channels), "channels");
 		win->mainwindow=GTK2.Window((["title":"Explore StilleBot internals"]))->add(GTK2.Vbox(0,0)
 			->add(GTK2.ScrolledWindow()
 				->set_policy(GTK2.POLICY_AUTOMATIC,GTK2.POLICY_AUTOMATIC)

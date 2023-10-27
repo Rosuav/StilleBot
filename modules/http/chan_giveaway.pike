@@ -249,7 +249,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		"error": "This page will become available once the broadcaster has logged in and configured redemptions.",
 		"login": "[Broadcaster login](:.twitchlogin data-scopes=" + replace(scopes, " ", "%20") + ")",
 	]) | req->misc->chaninfo);
-	string token = yield(token_for_user_login_async(chan))[0];
+	string token = yield((mixed)token_for_user_login_async(chan))[0];
 	login += " [Mod login](:.twitchlogin)"; //TODO: If logged in as wrong user, allow logout
 	int broadcaster_id = yield(get_user_id(chan));
 	Concurrent.Future call(string method, string query, mixed body) {

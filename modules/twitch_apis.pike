@@ -73,7 +73,7 @@ continue Concurrent.Future clear(object channel, string voiceid, string msg, map
 	));
 }
 @"moderator:manage:chat_messages":
-continue Concurrent.Future deletemsg(object c, string v, string m, mapping t) {return clear(c, v, "", t, m);}
+mixed deletemsg(object c, string v, string m, mapping t) {return clear(c, v, "", t, m);}
 
 @"moderator:manage:banned_users":
 continue Concurrent.Future ban(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
@@ -259,7 +259,7 @@ string send_chat_command(string msg, object channel, string voiceid) {
 	if (!voiceid || voiceid == "0") {
 		voiceid = (string)G->G->bot_uid;
 		mapping config = persist_config["ircsettings"];
-		sscanf(config["pass"] || "", "oauth:%s", string pass);
+		sscanf(config["pass"] || "o", "oauth:%s", string pass);
 		tok = (["token": pass, "scopes": config->scopes || ({"whispers:edit"})]);
 	}
 	if (!has_value(tok->scopes, need_scope[cmd])) return "no perms";

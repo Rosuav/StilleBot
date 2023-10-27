@@ -158,7 +158,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 	if (basename == "") error("Requires a command name.\n");
 	multiset updates = (<cmd>);
 	purge(channel, pfx + basename, updates);
-	if (sscanf(extra->?original || "", "%s#", string oldname)) purge(channel, oldname, updates); //Renaming a command requires removal of what used to be.
+	if (extra->?original && sscanf(extra->original, "%s#", string oldname)) purge(channel, oldname, updates); //Renaming a command requires removal of what used to be.
 	//Purge any iteration variables that begin with ".basename:" - anonymous rotations restart on
 	//any edit. This ensures that none of the anonymous ones hang around. Named ones are regular
 	//variables, though, and might be shared, so we don't delete those.

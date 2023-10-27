@@ -57,7 +57,7 @@ class Persist(string savefn, int flip_save)
 		return ret;
 	}
 	//Like path() but returns 0 if any non-mapping is found along the way
-	mapping has_path(string ... parts) {
+	mapping has_path(string|object ... parts) {
 		mapping ret = data;
 		foreach (parts, string|object idx) {
 			if (objectp(idx)) {

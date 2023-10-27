@@ -109,7 +109,7 @@ void ensure_collections() {
 
 continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	if (req->variables->collection) return show_collection(req, req->variables->collection);
+	if (req->variables->collection) return yield((mixed)show_collection(req, req->variables->collection));
 	//Editing functionality requires that you be logged in as the bot.
 	if (req->misc->session->user->?id == (string)G->G->bot_uid) {
 		if (string username = req->variables->query) {

@@ -45,7 +45,7 @@ constant sidebar_menu = ({
 array sidebar_modmenu = map(sidebar_menu) {return ({__ARGS__[0][0] - "*", __ARGS__[0][1]});};
 array sidebar_nonmodmenu = filter(sidebar_menu) {return __ARGS__[0][0][0] != '*';};
 
-continue mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string chan, string endpoint)
+continue Concurrent.Future|mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string chan, string endpoint)
 {
 	function handler = G->G->http_endpoints["chan_" + endpoint];
 	if (!handler) return 0;
@@ -88,7 +88,7 @@ continue mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, s
 	}
 	else req->misc->chaninfo->save_or_login = "[Mods, login to make changes](:.twitchlogin)";
 	mapping profile = ([]);
-	if (channel->userid) profile = yield(get_user_info(channel->userid));
+	if (channel->userid) profile = yield((mixed)get_user_info(channel->userid));
 	req->misc->chaninfo->menunav = sprintf(
 		"<nav id=sidebar><ul>%{<li><a href=%q>%s</a></li>%}</ul>"
 		"<a href=%q target=_blank><img src=%q alt=\"Channel avatar\" title=%q></a></nav>",

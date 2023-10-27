@@ -78,7 +78,7 @@ continue mapping|Concurrent.Future get_state(int|string chan)
 		hypetrain_progress(uid, (["broadcaster_user_id": uid]));
 		hypetrain_end(uid, (["broadcaster_user_id": uid]));
 		mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
-		return parse_hype_status(data);
+		return yield((mixed)parse_hype_status(data));
 	};
 	if (ex && arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401")) {
 		return (["error": "Authentication problem. It may help to ask the broadcaster to open this page: ", "errorlink": "https://sikorsky.rosuav.com/hypetrain?for=" + chan]);
@@ -198,7 +198,7 @@ string fmt_contrib(mapping c) {
 
 continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
-	mapping state = yield(get_state(channel->name[1..]));
+	mapping state = yield((mixed)get_state(channel->name[1..]));
 	if (state->error) return (["{error}": state->error + " " + state->errorlink]);
 	mapping conductors = (["SUBS": "Nobody", "BITS": "Nobody"]);
 	string|array allcond = ({ });

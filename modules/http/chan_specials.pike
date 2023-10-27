@@ -112,7 +112,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	int is_bcaster = req->misc->channel->userid == (int)req->misc->session->user->id;
 	foreach (addcmd->SPECIALS, [string spec, [string desc, string originator, string params], string tab]) {
 		array scopesets = G->G->SPECIALS_SCOPES[spec - "!"];
-		string scopes_required = 0;
+		string|zero scopes_required = 0;
 		if (scopesets) {
 			scopes_required = is_bcaster ? scopesets[0] * " " : "bcaster";
 			foreach (scopesets, array scopeset)

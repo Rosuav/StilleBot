@@ -32,7 +32,7 @@ continue Concurrent.Future|mapping message_params(object channel, mapping person
 	array names = indices(u2n);
 	sort(values(u2n), names);
 	names -= ({"jtv", "tmi"}); //Some junk data in the files implies falsely that some people renamed to "jtv" or "tmi"
-	string foll = yield(check_following(uid, channel->userid)); //FIXME: What if no perms?
+	string foll = yield((object)check_following(uid, channel->userid)); //FIXME: What if no perms?
 	return ([
 		"{following}": foll ? "since " + foll : "",
 		"{prevname}": sizeof(names) >= 2 ? names[-2] : "",

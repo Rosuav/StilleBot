@@ -124,7 +124,7 @@ continue Concurrent.Future check_schedules(object channel) {
 		if (!slot->broadcasterid) continue;
 		string key = slot->broadcasterid + "_" + slot->start + "_" + slot->end;
 		if (sched[key]->?age >= maxage) continue;
-		array streams = yield(get_stream_schedule(slot->broadcasterid, time() - (slot->start - prestart), 20, slot->end - time() + postend));
+		array streams = yield((mixed)get_stream_schedule(slot->broadcasterid, time() - (slot->start - prestart), 20, slot->end - time() + postend));
 		sched[key] = (["age": time(), "schedule": streams]);
 		updated = 1;
 	}
@@ -413,11 +413,11 @@ void wscmd_slotnotes(object channel, mapping(string:mixed) conn, mapping(string:
 	save_and_send(conn);
 }
 
-continue Concurrent.Future checkfollowing(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+continue Concurrent.Future|mapping checkfollowing(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->session->user) return 0; //Not logged in, no message needed
 	mapping cfg = persist_status->path("raidtrain", (string)channel->userid)->cfg;
 	if (!cfg->all_casters) return 0; //No casters, nothing to do
-	[string token, string scopes] = yield(token_for_user_id_async(conn->session->user->id));
+	[string token, string scopes] = yield((mixed)token_for_user_id_async(conn->session->user->id));
 	if (!has_value(scopes / " ", "user:read:follows")) return (["msg": "No permission, can't check following"]); //Not currently in the UI
 	mapping casters = ([]);
 	foreach (cfg->all_casters, int|string bcaster) {

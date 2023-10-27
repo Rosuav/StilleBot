@@ -194,7 +194,7 @@ continue Concurrent.Future recalculate_status(string chanid) {
 	array(int) next_check = ({time() + 86400}); //Maximum time that we'll ever wait between schedule checks (in case someone adds or changes)
 	if (st->schedule_last_checked < next_check[0]) {
 		int limit = 86400 * 7;
-		array events = yield(get_stream_schedule(chanid, pausetime, 1, limit));
+		array events = yield((mixed)get_stream_schedule(chanid, pausetime, 1, limit));
 		if (sizeof(events)) {
 			st->schedule_next_event = events[0];
 			events[0]->unix_time = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", events[0]->start_time)->unix_time();
@@ -219,10 +219,10 @@ continue Concurrent.Future recalculate_status(string chanid) {
 		write("GHOSTWRITER: Channel %O retaining current status for %d sec\n", config->chan, suppress_autohosting[chanid] - time());
 		return 0;
 	}
-	yield(update_status(chanid));
+	yield((mixed)update_status(chanid));
 }
 
-continue Concurrent.Future update_status(string chanid) {
+continue Concurrent.Future|string update_status(string chanid) {
 	mapping st = chanstate[chanid];
 	if (!st) st = chanstate[chanid] = ([]);
 	mapping config = persist_status->path("ghostwriter", chanid);
@@ -257,7 +257,7 @@ continue Concurrent.Future update_status(string chanid) {
 		//Leave live empty so we'll definitely unhost.
 	}
 	else if (sizeof(targets)) live = yield(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": targets])));
-	string msg = "/unhost", expected = 0;
+	string|zero msg = "/unhost", expected = 0;
 	if (sizeof(live)) {
 		//If any channel has gone offline very very recently, don't autohost it.
 		int mindelay = 86400;
@@ -271,7 +271,7 @@ continue Concurrent.Future update_status(string chanid) {
 			//due to this check, we abandon a channel that comes back online. To avoid this, we
 			//recheck once the sixty-second cooldown is up.
 			mixed _ = yield(task_sleep(mindelay));
-			return recalculate_status(chanid);
+			return yield((mixed)recalculate_status(chanid));
 		}
 
 		if (sizeof(live) > 1) {
@@ -298,7 +298,7 @@ void pause_autohost(string chanid, int target) {
 	schedule_recalculation(chanid, ({target}));
 }
 
-void host_changed(string chanid, string target, string viewers) {
+void host_changed(string chanid, string|zero target, string viewers) {
 	//Note that viewers may be "-" if we're already hosting, so don't depend on it
 	if (!chanid) {werror("GHOSTWRITER: Null channel ID, target %O viewers %O\n", target, viewers); return;}
 	if (target == "-") target = 0; //Not currently hosting
@@ -319,7 +319,7 @@ void host_changed(string chanid, string target, string viewers) {
 
 continue Concurrent.Future target_offline(string channelid, string target) {
 	channel_seen_offline[yield(get_user_id(target))] = time();
-	yield(recalculate_status(channelid));
+	yield((mixed)recalculate_status(channelid));
 }
 
 constant messagetypes = ({"PRIVMSG", "NOTICE", "USERNOTICE", "HOSTTARGET"});
@@ -372,14 +372,14 @@ continue Concurrent.Future|mapping get_state(string group) {
 		| (chanstate[group] || ([]));
 }
 
-continue void force_check(string chanid) {
-	if (!(int)chanid) chanid = (string)yield(get_user_id(chanid)); //Support usernames for the sake of command line access
-	mixed _ = yield(recalculate_status(chanid));
+continue Concurrent.Future force_check(string chanid) {
+	if (!(int)chanid) chanid = (string)yield((mixed)get_user_id(chanid)); //Support usernames for the sake of command line access
+	mixed _ = yield((mixed)recalculate_status(chanid));
 }
 
-continue void force_check_all() {
+continue Concurrent.Future force_check_all() {
 	foreach (persist_status->path("ghostwriter"); string chanid;) {
-		mixed _ = yield(force_check(chanid));
+		mixed _ = yield((mixed)force_check(chanid));
 	}
 }
 

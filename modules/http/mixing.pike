@@ -749,7 +749,7 @@ array(Gmp.mpq) mix(array(Gmp.mpq) base, array(int) modifier) {
 	return _mix_part(base[*], modifier[*]);
 }
 
-string hexcolor(array(Gmp.mpq) color) {
+string hexcolor(array(Gmp.mpq|int) color) {
 	string textcolor = "";
 	if (color[0] * .2126 + color[1] * .7152 + color[2] * .0722 < 128)
 		textcolor = "; color: white"; //Hack: White text for dark colour swatches

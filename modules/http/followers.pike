@@ -12,7 +12,7 @@ $$message||$$
 button {padding: 0;}
 </style>
 ";
-continue Concurrent.Future|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
+continue Concurrent.Future|string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (!req->variables->channel) {
 		return render(req, ([

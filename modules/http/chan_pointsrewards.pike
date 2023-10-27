@@ -140,7 +140,7 @@ constant vars_provided = ([
 ]);
 
 continue mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
-	string token = yield(token_for_user_id_async(channel->userid))[0];
+	string token = yield((object)token_for_user_id_async(channel->userid))[0];
 	if (token == "") return (["{error}": "Need broadcaster permissions"]);
 	string reward_id = param[0];
 	mapping params = ([]);

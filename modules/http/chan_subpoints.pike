@@ -28,7 +28,7 @@ void delayed_get_sub_points(Concurrent.Promise p, string chan) {
 	spawn_task(get_sub_points(chan), p->success);
 }
 
-continue mapping|Concurrent.Future get_sub_points(string chan, int|void raw)
+continue int|array|Concurrent.Future get_sub_points(string chan, int|void raw)
 {
 	if (!raw) {
 		array cd = subpoints_cooldowns[chan];
@@ -78,7 +78,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	string chan = req->misc->channel->name[1..];
 	if (req->misc->session->user->?login != chan) //This is sensitive information, so it's broadcaster-only.
 		return render_template("login.md", (["msg": "authentication as the broadcaster"]));
-	array info = yield(get_sub_points(chan, 1));
+	array info = yield((mixed)get_sub_points(chan, 1));
 	mapping(string:int) tiercount = ([]), gifts = ([]);
 	array(string) tierlist = ({ });
 	mapping(string|int:mapping) usersubs = ([]);
@@ -159,7 +159,7 @@ continue mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	hook_submessage(chan, (["broadcaster_user_id": (string)uid]));
 	if (grp != "") {
 		if (!trackers[grp]) return (["data": 0]); //If you delete the tracker with the page open, it'll be a bit ugly.
-		int points = yield(get_sub_points(channel->name[1..]));
+		int points = yield((mixed)get_sub_points(channel->name[1..]));
 		Stdio.append_file("evt_subpoints.log", sprintf("Fresh load, subpoint count: %d\n", points));
 		return trackers[grp] | (["points": points - (int)trackers[grp]->unpaidpoints]);
 	}

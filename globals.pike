@@ -124,7 +124,7 @@ mixed find_callback_task(function cb) {
 	if (function_name(object_program(obj)) == "spawn_task") return obj;
 }
 
-//mixed _ = yield(task_sleep(seconds)); //Delay the current task efficiently
+//mixed _ = yield(task_sleep(seconds)); //Delay the current task efficiently (the "mixed _ = " part isn't needed in Pike 9)
 class _task_sleep(int|float delay) {
 	void then(function whendone) {
 		call_out(whendone, delay, delay || "0"); //Never yield zero, it can cause confusion

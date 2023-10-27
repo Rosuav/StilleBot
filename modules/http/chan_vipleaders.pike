@@ -125,7 +125,7 @@ continue Concurrent.Future force_recalc(string chan, int|void fast) {
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	string buttons = loggedin;
-	string group = "control";
+	string|zero group = "control";
 	if (string scopes = ensure_bcaster_token(req, "bits:read moderation:read channel:manage:vips"))
 		buttons = sprintf("[Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
 	else if (!req->misc->is_mod) {
@@ -176,7 +176,7 @@ continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:
 	//If you're a mod, but not the broadcaster, do a dry run - put commands in chat
 	//that say what would happen, but don't actually make changes.
 	string addrem = add ? "Adding" : "Removing", tofrom = add ? "to" : "from";
-	string method = add ? "POST" : "DELETE";
+	string|zero method = add ? "POST" : "DELETE";
 	if (conn->session->user->login != chan) {addrem = "Fake-" + lower_case(addrem); method = 0;}
 	mapping stats = persist_status->path("subgiftstats", chan);
 	array bits = stats->monthly["bits" + msg->yearmonth] || ({ });
@@ -216,7 +216,7 @@ continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:
 	//1.25 seconds to speed it up, hopefully it won't break anything.
 	if (method) {
 		string baseurl = "https://api.twitch.tv/helix/channels/vips?broadcaster_id=" + channel->userid + "&user_id=";
-		string token = yield(token_for_user_id_async(channel->userid))[0];
+		string token = yield((mixed)token_for_user_id_async(channel->userid))[0];
 		foreach (userids, string uid) {
 			int status = yield(twitch_api_request(baseurl + uid,
 				(["Authorization": "Bearer " + token]),

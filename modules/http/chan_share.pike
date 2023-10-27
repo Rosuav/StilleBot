@@ -121,9 +121,9 @@ constant file_mime_types = ([
 
 continue Concurrent.Future|string permission_check(object channel, int is_mod, mapping user) {
 	mapping cfg = persist_status->path("artshare", (string)channel->userid, "settings");
-	string scopes = yield(token_for_user_id_async(channel->userid))[1];
+	string scopes = yield((mixed)token_for_user_id_async(channel->userid))[1];
 	if (has_value(scopes / " ", "moderation:read")) { //TODO: How would we get this permission if we don't have it? Some sort of "Forbid banned users" action for the broadcaster?
-		if (has_value(yield(get_banned_list(channel->userid))->user_id, user->id)) {
+		if (has_value(yield((mixed)get_banned_list(channel->userid))->user_id, user->id)) {
 			//Should we show differently if there's an expiration on the timeout?
 			return "You're currently unable to talk in that channel, so you can't share either - sorry!";
 		}
@@ -160,7 +160,7 @@ continue Concurrent.Future|mapping(string:mixed) http_request(Protocols.HTTP.Ser
 		mapping file = cfg->files[idx];
 		if (file->url) return jsonify((["error": "File has already been uploaded"]));
 		if (sizeof(req->body_raw) > MAX_PER_FILE * 1048576) return jsonify((["error": "Upload exceeds maximum file size"]));
-		if (string error = yield(permission_check(req->misc->channel, req->misc->is_mod, req->misc->session->user)))
+		if (string error = yield((mixed)permission_check(req->misc->channel, req->misc->is_mod, req->misc->session->user)))
 			return jsonify((["error": error]));
 		string filename = sprintf("%d-%s", req->misc->channel->userid, file->id);
 		Stdio.write_file("httpstatic/artshare/" + filename, req->body_raw);
@@ -232,7 +232,7 @@ continue Concurrent.Future upload(mapping(string:mixed) conn, mapping(string:mix
 	if (!cfg->files) cfg->files = ({ });
 	if (!intp(msg->size) || msg->size < 0) return 0; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
 	string error;
-	if (string err = yield(permission_check(channel, conn->is_mod, conn->session->user)))
+	if (string err = yield((mixed)permission_check(channel, conn->is_mod, conn->session->user)))
 		error = err;
 	else if (msg->size > MAX_PER_FILE * 1048576)
 		error = "File too large (limit " + MAX_PER_FILE + " MB)";

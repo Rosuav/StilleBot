@@ -29,7 +29,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	mapping cfg = req->misc->channel->config;
 	if (req->variables->view) {
 		//Unauthenticated viewing endpoint. Depends on an existing nonce.
-		string nonce = req->variables->view;
+		string|zero nonce = req->variables->view;
 		mapping info;
 		if (!cfg->monitors || !cfg->monitors[nonce]) nonce = 0;
 		else info = cfg->monitors[nonce];
@@ -116,8 +116,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 void websocket_cmd_createvar(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
-	if (grp != "") return;
-	sscanf(msg->varname || "", "%[A-Za-z]", string var);
+	if (grp != "" || !msg->varname) return;
+	sscanf(msg->varname, "%[A-Za-z]", string var);
 	if (var != "") channel->set_variable(var, "0", "set");
 }
 

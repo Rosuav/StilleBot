@@ -262,7 +262,7 @@ echoable_message _validate(echoable_message resp, mapping state)
 			//Command chaining gets extra validation done. You may ONLY chain to
 			//commands from the current channel; but you may enter them with
 			//or without their leading exclamation marks.
-			sscanf(ret->target || "", "%*[!]%s", string cmd);
+			string cmd = (ret->target || "") - "!";
 			if (state->channel && !state->channel->commands[cmd])
 				//Attempting to chain to something that doesn't exist is invalid.
 				//TODO: Accept it if it's recursion (or maybe have a separate "chain
@@ -346,7 +346,7 @@ echoable_message _validate(echoable_message resp, mapping state)
 	//Voice ID validity depends on the channel we're working with. A syntax-only check will
 	//accept any voice ID as long as it's a string of digits.
 	if (!state->channel) {
-		if (sscanf(resp->voice||"", "%[0-9]%s", string v, string end) && v != "" && end == "") ret->voice = v;
+		if (resp->voice && sscanf(resp->voice, "%[0-9]%s", string v, string end) && v != "" && end == "") ret->voice = v;
 	}
 	else if ((state->channel->config->voices || ([]))[resp->voice]) ret->voice = resp->voice;
 	//Setting voice to "0" resets to the global default, which is useful if there's a local default.
@@ -412,7 +412,7 @@ mapping(string:mixed) _syntax_check(mapping(string:mixed) msg, string|void cmdna
 	return result;
 }
 
-array _validate_command(object channel, string command, string cmdname, echoable_message response, string|void original) {
+array _validate_command(object channel, string|zero command, string cmdname, echoable_message response, string|void original) {
 	mapping state = (["cmd": command, "cdanon": 0, "cooldowns": ([]), "channel": channel]);
 	if (command == "!!trigger") {
 		echoable_message alltrig = channel->commands["!trigger"];
@@ -434,7 +434,7 @@ array _validate_command(object channel, string command, string cmdname, echoable
 			m_delete(trigger, "otherwise"); //Triggers don't have an Else clause
 		}
 		if (cmdname == "") alltrig += ({trigger});
-		else foreach (alltrig; int i; mapping r) {
+		else foreach ([array]alltrig; int i; mapping r) {
 			if (r->id == id) {
 				alltrig[i] = trigger;
 				break;

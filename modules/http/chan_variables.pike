@@ -217,7 +217,7 @@ void wscmd_getuservars(object channel, mapping(string:mixed) conn, mapping(strin
 	if (!mappingp(vars)) return;
 	string var = "$" + (msg->id - "*") + "$";
 	//Scan this for every user that has this variable
-	mapping ret = ({ });
+	array ret = ({ });
 	foreach (vars; string uid; mapping v) if (v[var]) {
 		//Note that it would be kinda nice to show display names here, but that
 		//would potentially incur a Twitch API call for every user, which could
