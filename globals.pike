@@ -25,6 +25,12 @@ typedef _echoable_message echoable_message;
 //functions is itself deprecated and should eventually be removed.
 typedef echoable_message|function(object,object,string:echoable_message) command_handler;
 
+//TODO: Instead of declaring that a continue function or other asynchronous call can return
+//a Future, declare that it returns an awaitable. This allows adjustment of the definition
+//of "awaitable", including ideally the accurate recognition of a generator state function
+//as opposed to some other type of function.
+typedef Concurrent.Future|function awaitable;
+
 //Case-fold command names. For consistency, use this everywhere; that way,
 //commands will be created and found correctly. TODO eventually: Switch
 //this out for a proper Unicode casefold.
@@ -168,7 +174,7 @@ class builtin_command {
 	//split into arguments, with the last one collecting any residue.
 	//TODO: If builtin_param is an array of one string, pass an array to message_params instead
 	//of the current somewhat-odd behaviour of passing a string.
-	mapping|function|Concurrent.Future message_params(object channel, mapping person, array|string param, mapping cfg) { }
+	mapping|Concurrent.Future message_params(object channel, mapping person, array|string param, mapping cfg) { }
 
 	protected void create(string name)
 	{
