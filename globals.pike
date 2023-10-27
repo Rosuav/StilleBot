@@ -972,7 +972,7 @@ class Renderer
 				case 'u': output += replace(texts[(int)info], (["<": "&lt;", "&": "&amp;"])); break;
 				case 'e': {
 					sscanf(info, "%s:%s", string id, string text);
-					output += sprintf("<img src=\"\" title=%q alt=%<q>", emote_url(id, 1), text);
+					output += sprintf("<img src=%q title=%q alt=%<q>", emote_url(id, 1), text);
 				}
 				default: break; //Should this put a noisy error in?
 			}
