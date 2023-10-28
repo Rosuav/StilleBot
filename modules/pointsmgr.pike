@@ -101,7 +101,7 @@ continue Concurrent.Future update_dynamic_reward(object channel, string rewardid
 		if (value != cur[kwd]) updates[kwd] = value;
 	}
 	if (!sizeof(updates)) return 0;
-	string token = yield((object)token_for_user_id_async(channel->userid))[0];
+	string token = yield((mixed)token_for_user_id_async(channel->userid))[0];
 	mixed resp = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + rewardid,
 		(["Authorization": "Bearer " + token]),
 		(["method": "PATCH", "json": updates]),

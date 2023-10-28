@@ -112,7 +112,7 @@ mapping(string:function(string:string)) text_filters = ([
 continue Concurrent.Future raidwatch(int channel, string raiddesc) {
 	mixed _ = yield(task_sleep(30)); //It seems common for streamers to be offline after about 30 seconds
 	string status = "error";
-	mixed ex = catch {status = yield((object)channel_still_broadcasting(channel));};
+	mixed ex = catch {status = yield((mixed)channel_still_broadcasting(channel));};
 	Stdio.append_file("raidwatch.log", sprintf("[%s] %s: %s\n", ctime(time())[..<1], raiddesc, status));
 }
 

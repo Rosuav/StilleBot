@@ -309,7 +309,7 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 		(!cached->expires || cached->expires > Calendar.ISO.Second()))
 			return cached->banlist;
 	string username = yield(get_user_info(userid))->login;
-	array(string) creds = yield((object)token_for_user_login_async(username));
+	array(string) creds = yield((mixed)token_for_user_login_async(username));
 	if (!has_value(creds[1] / " ", "moderation:read")) error("Don't have broadcaster auth to fetch ban list for %O\n", username);
 	mapping ret = yield(get_helix_paginated("https://api.twitch.tv/helix/moderation/banned",
 		(["broadcaster_id": userid]),
@@ -586,7 +586,7 @@ void stream_status(string name, mapping info)
 //Returns an ISO 8601 string, or 0 if not following.
 @export: continue Concurrent.Future|string check_following(int userid, int chanid)
 {
-	array creds = yield((object)token_for_user_id_async(chanid));
+	array creds = yield((mixed)token_for_user_id_async(chanid));
 	multiset scopes = (multiset)(creds[1] / " ");
 	mapping headers = ([]);
 	if (scopes["moderator:read:followers"]) headers->Authorization = "Bearer " + creds[0];

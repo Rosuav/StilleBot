@@ -9,6 +9,6 @@ constant vars_provided = ([
 continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
 	string live = "notfound";
-	catch {live = yield((object)channel_still_broadcasting(replace(param, ({"@", " "}), "")));};
+	catch {live = yield((mixed)channel_still_broadcasting(replace(param, ({"@", " "}), "")));};
 	return (["{channellive}": live]);
 }
