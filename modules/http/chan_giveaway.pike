@@ -620,7 +620,7 @@ void channel_on_off(string channel, int just_went_online)
 				//some things will use 1 and 0, others will use Val.true and Val.false.
 				//So to be safe, we booleanly negate both sides, and THEN see if they
 				//differ; if they do, we update using Val.* to ensure the right JSON.
-				if (!rewards[reward_id]->is_enabled != !active)
+				if (!rewards[reward_id]->?is_enabled != !active)
 					params->is_enabled = active ? Val.true : Val.false;
 			}) werror("ERROR ACTIVATING REWARD:\n%s\n", describe_backtrace(ex)); //TODO: Report to the streamer
 			if (sizeof(params)) twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
