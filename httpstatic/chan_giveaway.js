@@ -51,7 +51,7 @@ export function render(state) {
 				"Winner: ",
 				SPAN({className: "winner_name"}, state.last_winner[1]),
 				` with ${state.last_winner[2] === 1 ? "one ticket" : state.last_winner[2] + " tickets"}` +
-				` and a ${state.last_winner[2]*100/state.last_winner[3]}% chance to win!`,
+				` and a ${(state.last_winner[2]*100/state.last_winner[3]).toPrecision(4)}% chance to win!`,
 			]) : "",
 		]).classList.toggle("is_open", !!state.is_open); //ensure that undefined becomes false :|
 	}
