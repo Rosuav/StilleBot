@@ -102,7 +102,12 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 
 mapping _get_monitor(object channel, mapping monitors, string id) {
 	mapping text = monitors[id];
-	return text && text | (["id": id, "display": channel->expand_variables(text->text), "text_css": textformatting_css(text)]);
+	return text && text | ([
+		"id": id,
+		"display": channel->expand_variables(text->text),
+		"thresholds_rendered": channel->expand_variables(text->thresholds || ""), //In case there are variables in the thresholds
+		"text_css": textformatting_css(text),
+	]);
 }
 bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
 mapping get_chan_state(object channel, string grp, string|void id) {
@@ -110,6 +115,23 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	if (grp != "") return (["data": _get_monitor(channel, monitors, grp)]);
 	if (id) return _get_monitor(channel, monitors, id);
 	return (["items": _get_monitor(channel, monitors, sort(indices(monitors))[*])]);
+}
+
+@hook_variable_changed: void notify_monitors(object channel, string var, string newval) {
+	foreach (channel->config->monitors || ([]); string nonce; mapping info) {
+		if (has_value(info->thresholds || "", var)) {
+			//These cause full updates, which are slower and potentially
+			//flickier than a change to just the text.
+			//TODO: Permit other attributes to also contain variables.
+			send_updates_all(nonce + channel->name);
+			update_one(channel->name, nonce);
+			continue;
+		}
+		if (!has_value(info->text, var)) continue;
+		mapping info = (["data": (["id": nonce, "display": channel->expand_variables(info->text)])]);
+		send_updates_all(nonce + channel->name, info); //Send to the group for just that nonce
+		info->id = nonce; send_updates_all(channel->name, info); //Send to the master group as a single-item update
+	}
 }
 
 //Can overwrite an existing variable
