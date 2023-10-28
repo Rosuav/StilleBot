@@ -274,3 +274,14 @@
     string substitution before evaluation.
   - This MAY also solve the double-parse limitation, as it would then be possible to use
     calc with string substitution and resulting variable ref.
+* Bit Boss???
+  - Alternate display mode for a goal bar: "Hitpoints".
+  - As the value advances toward the goal, the display reduces, ie it is inverted
+  - Use the "level up command" to advance to a new person
+  - Have an enableable feature that gives:
+    - Goal bar, with variable "bitbosshp" and goal "bitbossmaxhp"
+    - Level up command that sets "bitbossuser" to $$, resets bitbosshp to bitbossmaxhp,
+      and maybe changes bitbossmaxhp in some way
+      - Note that "overkill" mode can be done by querying the goal bar before making changes
+    - Stream online special that initializes everything
+    - Secondary monitor that shows the user's name and avatar???
