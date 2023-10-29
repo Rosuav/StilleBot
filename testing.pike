@@ -3,17 +3,9 @@ inherit annotated;
 
 protected void create(string name) {
 	::create(name);
-	object eg = G->bootstrap("modules/http/emotegrid.pike");
-	string rosuavEatMe = "emotesv2_b49b91624898460c8cc2f27a4e56178c";
-	string rosuavLove = "390023";
-	string rosuavAlice = "300031353";
-	string devicatTrain1 = "emotesv2_60160470cdc943ecb7521329d4874419";
-	string atomicRaid = "emotesv2_5edb686a7ea24224a0683d85fe3c8ef3";
-	string maayaEvil = "emotesv2_761343ec4b4e4349b1899180f89013d2";
-	string maayaWut = "emotesv2_23e42f9b3cb04d77b21795b075ee9dee";
-	string SUBprise = "emotesv2_fcbeed664f7c47d6ba3b57691275ef51";
-	spawn_task(eg->make_emote("rosuavAlice", "rosuav")) {
-		Stdio.write_file("emotegrid.json", Standards.JSON.encode(G->G->built_emotes[__ARGS__[0]]));
-		exit(0);
-	};
+	G->G->irc = (["channels": ([])]); //Hack: Prevent follower hook from doing anything
+	string endpoint = "follower", arg = "rosuav";
+	object handler = G->G->eventhook_types[endpoint];
+	handler->callback(arg, (["test": 1]));
+	exit(0);
 }
