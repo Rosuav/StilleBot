@@ -284,4 +284,5 @@
       and maybe changes bitbossmaxhp in some way
       - Note that "overkill" mode can be done by querying the goal bar before making changes
     - Stream online special that initializes everything
-    - Secondary monitor that shows the user's name and avatar???
+    - Secondary monitor that shows the user's name and avatar??? Or should there be two
+      effective monitors in the same page?
