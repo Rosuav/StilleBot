@@ -67,6 +67,7 @@ int|float evaluate(string formula) {
 		sscanf(formula, "%[a-zA-Z]%s", token, formula);
 		if (KEYWORDS[token]) return token; //Special keywords are themselves and can't be function names.
 		if (token != "") return ({"word", token}); //Probably a function name.
+		if (formula[0] == '"' && sscanf(formula, "%O%s", token, formula)) return ({"string", token}); //String literal
 		sscanf(formula, "%1s%s", token, formula); //Otherwise, grab a single character
 		return token;
 	}
@@ -94,7 +95,7 @@ mapping message_params(object channel, mapping person, string param) {
 	if (param == "") return (["{error}": "Usage: !calc 1+2", "{result}": ""]);
 	if (person->badges->?_mod) param = channel->expand_variables(param);
 	mixed ex = catch {
-		int|float result = evaluate(param);
+		int|float|string result = evaluate(param);
 		//"!calc 1.5 + 2.5" will give a result of 4.0, but it's nicer to say "4"
 		if (floatp(result) && result == (float)(int)result) result = (int)result;
 		return (["{error}": "", "{result}": sprintf("%O", result)]);

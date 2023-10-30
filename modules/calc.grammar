@@ -31,9 +31,9 @@ multiply: multiply "*" expon {binop};
 multiply: multiply "x" expon {binop}; /* Humans like to write 3x4 for multiplication */
 multiply: multiply "/" expon {binop};
 multiply: multiply "%" expon {binop};
-expon: number;
-expon: number "**" expon {binop};
-expon: number "^" expon {binop};
+expon: value;
+expon: value "**" expon {binop};
+expon: value "^" expon {binop};
 
 digit: "0";
 digit: "1";
@@ -56,12 +56,13 @@ signedint: "-" integer {stitch};
 signedfloat: float;
 signedfloat: "+" float {stitch};
 signedfloat: "-" float {stitch};
-number: signedint {makeint};
-number: signedfloat {makefloat};
-number: "(" expression ")" {parens};
-number: "word" "(" ")" {func_nullary};
-number: "word" "(" arglist ")" {func};
+value: signedint {makeint};
+value: signedfloat {makefloat};
+value: "string";
+value: "(" expression ")" {parens};
+value: "word" "(" ")" {func_nullary};
+value: "word" "(" arglist ")" {func};
 
-arglist: number {make_array};
-arglist: number "," {make_array};
-arglist: number "," arglist {prepend_array};
+arglist: value {make_array};
+arglist: value "," {make_array};
+arglist: value "," arglist {prepend_array};
