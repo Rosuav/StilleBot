@@ -23,7 +23,8 @@ continue Concurrent.Future check_stats(object channel) {
 }
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
-	if (string scopes = ensure_bcaster_token(req, "channel:manage:ads channel:edit:commercial"))
+	//NOTE: It seems that channel:manage:ads does not imply channel:read:ads.
+	if (string scopes = ensure_bcaster_token(req, "channel:read:ads channel:manage:ads channel:edit:commercial"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator status"]));
 	spawn_task(check_stats(req->misc->channel));
