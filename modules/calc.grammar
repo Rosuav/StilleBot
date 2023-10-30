@@ -62,6 +62,8 @@ value: "string";
 value: "(" expression ")" {parens};
 value: "word" "(" ")" {func_nullary};
 value: "word" "(" arglist ")" {func};
+value: "@" "word" {varlookup};
+value: "@" "=" "word" "=" value {varassign};
 
 arglist: value {make_array};
 arglist: value "," {make_array};

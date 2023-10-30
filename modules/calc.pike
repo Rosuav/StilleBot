@@ -20,12 +20,13 @@ int|float func_random(array(int|float) args) {
 	return random(args[0]); //Otherwise a float.
 }
 
-int|float func(string word, string open, array(int|float) args, string close) {
+int|float func(mixed word, string open, array(int|float) args, string close) {
+	word = word[0];
 	function func = this["func_" + word];
 	if (!func) error("Unknown function " + word + "\n");
 	return func(args);
 }
-int|float func_nullary(string word, string open, string close) {return func(word, open, ({ }), close);}
+int|float func_nullary(mixed word, string open, string close) {return func(word, open, ({ }), close);}
 
 int|float binop(int|float left, string op, int|float right) {
 	switch (op) {
@@ -54,10 +55,17 @@ int|float parens(string open, int|float val, string close) {return val;}
 array(int|float) make_array(int|float val) {return ({val});}
 array(int|float) prepend_array(int|float val, string _, array(int|float) arr) {return ({val}) + arr;}
 
+//To allow variable lookups, bare words must be adorned with a context.
+//Thus "@spam" will carry with it, at very least, the channel to which the
+//variable belongs. Note that all use of variable lookups/assignments is
+//undocumented and unstable, and should not be depended upon.
+int|float|string varlookup(mixed ... args) {werror("VAR LOOKUP %O\n", args); return 42;}
+int|float|string varassign(mixed ... args) {werror("VAR ASSIGN %O\n", args); return 278;} //Assignment returns the RHS.
+
 Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file("modules/calc.grammar");
 void throw_errors(int level, string subsystem, string msg, mixed ... args) {if (level >= 2) error(msg, @args);}
 
-int|float evaluate(string formula) {
+int|float evaluate(string formula, mixed|void ctx) {
 	parser->set_error_handler(throw_errors);
 	array|string next() {
 		if (formula == "") return "";
@@ -66,7 +74,7 @@ int|float evaluate(string formula) {
 		if (token != "") return token;
 		sscanf(formula, "%[a-zA-Z]%s", token, formula);
 		if (KEYWORDS[token]) return token; //Special keywords are themselves and can't be function names.
-		if (token != "") return ({"word", token}); //Probably a function name.
+		if (token != "") return ({"word", ({token, ctx})}); //Probably a function name.
 		if (formula[0] == '"' && sscanf(formula, "%O%s", token, formula)) return ({"string", token}); //String literal
 		sscanf(formula, "%1s%s", token, formula); //Otherwise, grab a single character
 		return token;
@@ -95,7 +103,7 @@ mapping message_params(object channel, mapping person, string param) {
 	if (param == "") return (["{error}": "Usage: !calc 1+2", "{result}": ""]);
 	if (person->badges->?_mod) param = channel->expand_variables(param);
 	mixed ex = catch {
-		int|float|string result = evaluate(param);
+		int|float|string result = evaluate(param, channel);
 		//"!calc 1.5 + 2.5" will give a result of 4.0, but it's nicer to say "4"
 		if (floatp(result) && result == (float)(int)result) result = (int)result;
 		return (["{error}": "", "{result}": sprintf("%O", result)]);
