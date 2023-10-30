@@ -684,7 +684,9 @@ constant follower = ({"object channel", "mapping follower"});
 //for the "moderator:read:followers" scope. It may be simplest to rely on two checks: either
 //the bot account has this permission, or the broadcaster has granted auth; handling the case
 //of some other mod granting permission may be tricky.
-EventSub new_follower = EventSub("follower", "channel.follow", "2") { [string chan, mapping follower] = __ARGS__;
+EventSub new_follower = EventSub("follower", "channel.follow", "2", got_follower);
+//TODO: Check Pike 9 and see if we can revert this to being an implicit lambda
+void got_follower(string chan, mapping follower) {
 	notice_user_name(follower->user_login, follower->user_id);
 	if (object channel = G->G->irc->channels["#" + chan])
 		spawn_task(check_following((int)follower->user_id, channel->userid)) {
