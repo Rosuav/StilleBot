@@ -20,7 +20,7 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 	if (req->request_type == "POST") {
 		//Ko-fi webhook. Check the Verification Token against the one
 		//we have stored, and if it matches, fire all the signals.
-		mapping data = Standards.JSON.decode(req->variables->data); //If malformed, will bomb and send back a 500.
+		mapping data = Standards.JSON.decode(req->variables->data); //If malformed, will bomb and send back a 500. (Note: Don't use decode_utf8 here, it's already Unicode text.)
 		if (!mappingp(data)) return (["error": 400, "type": "text/plain", "data": "No data mapping given"]);
 		mapping cfg = persist_status->has_path("kofi", req->misc->channel->name[1..]);
 		if (!stringp(data->verification_token) || cfg->?verification_token != data->verification_token)
