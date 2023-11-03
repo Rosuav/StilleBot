@@ -87,6 +87,19 @@ mapping predictionended(object channel, mapping info) {
 	return params;
 }
 
+@({"channel:read:ads", "channel.ad_break.begin", "beta"}):
+mapping adbreak(object channel, mapping info) {
+	//TODO: This is worth having even if the special isn't in use. Have it update the
+	//chan_snoozeads websocket.
+	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
+	werror("AD BREAK BEGIN %O\n", info);
+	return ([
+		"length": (string)info->length_seconds,
+		"is_automatic": info->is_automatic ? "1" : "0",
+		"started_at_iso": info->started_at, //TODO
+	]);
+}
+
 mapping eventsubs = ([]);
 
 //Ensure that we have all appropriate hooks for this channel (provide channel->config or equivalent)
