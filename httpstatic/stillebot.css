@@ -296,12 +296,17 @@ nav#sidebar.vis {
 	background-color: #a0f0c0;
 	padding: 8px;
 }
-/* Firefox doesn't currently support the :has selector (it's supported in Ff 103 with a
-flag, but as of 20230414, not vanilla in any version), so instead of the simpler directive
+/* Firefox doesn't currently support the :has selector, so instead of the simpler directive
 body:has(nav#sidebar) nav#topbar {padding-left: 100px;}
 we use two directives, one to create the padding unconditionally, and one to remove it if
 we don't want it. This means that Firefox, until it grows support for the :has selector,
-will waste 100px of space when there's no sidebar. */
+will waste 100px of space when there's no sidebar.
+
+The :has selector is supported in Ff 103 with a flag, and in Ff 121 without. The next ESR
+release supporting :has will be 128 https://whattrainisitnow.com/calendar/ and that means
+that I may be able to make use of this feature in mid-2024 or so. Check back then, and if
+Debian is shipping a firefox-esr package of at least v 128, switch this out and rejoice!
+*/
 body nav#topbar {padding-left: 112px;}
 body:not(:has(nav#sidebar.vis)) nav#topbar {
 	padding-left: 0;
