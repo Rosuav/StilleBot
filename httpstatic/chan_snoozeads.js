@@ -56,7 +56,6 @@ export function render(data) {
 			below.push(DIV({style: "flex-grow: " + (dt - below_dt)}), DIV({style: "flex-basis: 0; white-space: nowrap"}, desc));
 			below_dt = dt;
 			gradient += color + " " + (pos - 0.5) + "%, " + (colors[desc] || "#fff") + " " + (pos - 0.125) + "%, ";
-			console.log(desc, colors[desc])
 		} else {
 			gradient += color + " " + pos + "%, ";
 		}
@@ -66,7 +65,6 @@ export function render(data) {
 	gradient += color + " 100%";
 	above.push(DIV({style: "flex-grow: " + (span - above_dt)}));
 	below.push(DIV({style: "flex-grow: " + (span - below_dt)}));
-	console.log(gradient);
 	replace_content("#nextad", [
 		DIV({style: "display: flex"}, above),
 		DIV({style: "height: 1em; background: linear-gradient(.25turn, " + gradient + ")"}),

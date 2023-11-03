@@ -21,7 +21,6 @@ continue Concurrent.Future check_stats(object channel) {
 	snooze->time_captured = time();
 	object since = G->G->stream_online_since[channel->config->login];
 	if (since) snooze->online_since = since->unix_time();
-	werror("%O\n", snooze);
 	channel_ad_stats[channel->userid] = snooze;
 	send_updates_all(channel->name);
 }
@@ -60,7 +59,6 @@ void wscmd_snooze(object channel, mapping(string:mixed) conn, mapping(string:mix
 		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]]),
 		(["method": "POST"]))
 	->then() {
-		werror("SNOOZE RESULT: %O\n", __ARGS__);
 		//Apply the changes directly to state if we have state
 		if (channel_ad_stats[channel->userid]) {
 			channel_ad_stats[channel->userid] |= __ARGS__[0]->data[0];
@@ -78,7 +76,6 @@ void wscmd_runad(object channel, mapping(string:mixed) conn, mapping(string:mixe
 		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]]),
 		(["method": "POST"]))
 	->then() {
-		werror("RUN AD RESULT: %O\n", __ARGS__);
 		mapping resp = __ARGS__[0]->data[0];
 		//When the ad starts, the webhook should notify us.
 		if (conn->sock->?state) conn->sock->send_text(Standards.JSON.encode(([
