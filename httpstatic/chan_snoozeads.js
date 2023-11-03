@@ -60,6 +60,7 @@ export function render(data) {
 	replace_content("#nextad", [
 		DIV({style: "width: 100%; height: 1em; background: linear-gradient(.25turn, " + gradient.slice(0, -2) + ")"}),
 		UL([
+			//TODO: Add colour swatches to these, linking them to the regions on the tape
 			LI(["No prerolls until ", TIME_T(data.time_captured + data.preroll_free_time_seconds)]),
 			LI(["Last ad: ", TIME_T(data.last_ad_at)]),
 			LI(["Next ad: ", TIME_T(data.next_ad_at), " - ", data.length_seconds, " seconds long"]),
