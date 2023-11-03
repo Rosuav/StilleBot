@@ -23,3 +23,11 @@ export function render(data) {
 
 on("click", "#snooze", e => ws_sync.send({cmd: "snooze"}));
 on("click", "#runad", e => ws_sync.send({cmd: "runad"}));
+
+export function sockmsg_adtriggered(msg) {
+	replace_content("#adtriggered", [
+		msg.length + " second ad triggered. ",
+		msg.message,
+	]);
+	setTimeout(replace_content, msg.length * 1000, "#adtriggered", "");
+}

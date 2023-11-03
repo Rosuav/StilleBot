@@ -5,7 +5,7 @@ constant markdown = #"# Ads and snoozes
 Loading...
 {:#nextad}
 
-[Snooze](:#snooze) [Run Ad](:#runad) <select id=adlength><option>30<option selected>60<option>90<option>120<option>180</select>
+[Snooze](:#snooze) [Run Ad](:#runad) <select id=adlength><option>30<option selected>60<option>90<option>120<option>180</select> <span id=adtriggered></span>
 {:#buttons}
 
 <style>
@@ -77,7 +77,14 @@ void wscmd_runad(object channel, mapping(string:mixed) conn, mapping(string:mixe
 		(["method": "POST"]))
 	->then() {
 		werror("RUN AD RESULT: %O\n", __ARGS__);
+		mapping resp = __ARGS__[0]->data[0];
 		//When the ad starts, the webhook should notify us.
+		if (conn->sock->?state) conn->sock->send_text(Standards.JSON.encode(([
+			"cmd": "adtriggered",
+			"length": resp->length,
+			"message": resp->message,
+		]), 4));
+
 	};
 }
 
