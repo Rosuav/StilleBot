@@ -46,3 +46,21 @@ void wscmd_snooze(object channel, mapping(string:mixed) conn, mapping(string:mix
 		werror("SNOOZE RESULT: %O\n", __ARGS__);
 	};
 }
+
+/*
+If broadcaster, full access, and also radio buttons to grant access to mods: None, View, Manage
+If mod and access is None, report. If access is Manage, include the "Snooze" and "Run Ad" buttons.
+
+Timeline across the top. Current time is shown at the left, stretching out into the future.
+Tick marks above it to show the timestamps in stream uptime (1:02:00 meaning an hour and two minutes
+since the stream went live).
+
+Show, and allow configurable colours on the time tape for, all of:
+* Preroll-free time (from start until preroll_free_time_seconds)
+* Next scheduled ad (including its length)
+* Snoozes available (not on the tape)
+* Next snooze becomes available
+* Maximum delay possible for next ad
+* Based on selected ad length, proposed preroll-free time
+* Time since last ad? Not on the tape. Does length_seconds apply to that?
+*/
