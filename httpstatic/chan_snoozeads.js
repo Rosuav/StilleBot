@@ -22,3 +22,4 @@ export function render(data) {
 }
 
 on("click", "#snooze", e => ws_sync.send({cmd: "snooze"}));
+on("click", "#runad", e => ws_sync.send({cmd: "runad"}));

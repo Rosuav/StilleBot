@@ -5,10 +5,11 @@ constant markdown = #"# Ads and snoozes
 Loading...
 {:#nextad}
 
-[Snooze](:#snooze)
+[Snooze](:#snooze) [Run Ad](:#runad) <select id=adlength><option>30<option selected>60<option>90<option>120<option>180</select>
+{:#buttons}
 
 <style>
-#snooze {font-size: 200%;}
+#buttons button, #buttons select {font-size: 200%;}
 </style>
 ";
 
@@ -49,6 +50,19 @@ void wscmd_snooze(object channel, mapping(string:mixed) conn, mapping(string:mix
 			send_updates_all(channel->name);
 		}
 		else spawn_task(check_stats(channel));
+	};
+}
+
+void wscmd_runad(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	int length = (int)msg->adlength;
+	if (length < 1 || length > 180) length = 60;
+	twitch_api_request("https://api.twitch.tv/helix/channels/commercial?broadcaster_id=" + channel->userid
+			+ "&length=" + length,
+		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]]),
+		(["method": "POST"]))
+	->then() {
+		werror("RUN AD RESULT: %O\n", __ARGS__);
+		spawn_task(check_stats(channel));
 	};
 }
 
