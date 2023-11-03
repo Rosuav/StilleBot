@@ -91,11 +91,11 @@ mapping predictionended(object channel, mapping info) {
 mapping adbreak(object channel, mapping info) {
 	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
 	werror("AD BREAK BEGIN %O\n", info);
-	G->G->websocket_types->chan_snoozeads->send_updates_all(channel->name);
+	spawn_task(G->G->websocket_types->chan_snoozeads->check_stats(channel));
 	return ([
-		"length": (string)info->length_seconds,
-		"is_automatic": info->is_automatic ? "1" : "0",
-		"started_at_iso": info->started_at, //TODO
+		"{length}": (string)info->length_seconds,
+		"{is_automatic}": info->is_automatic ? "1" : "0",
+		"{started_at_iso}": info->started_at, //TODO
 	]);
 }
 
