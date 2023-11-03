@@ -5,8 +5,7 @@ constant markdown = #"# Ads and snoozes
 Loading...
 {:#nextad}
 
-[Snooze](:#snooze) [Run Ad](:#runad) <select id=adlength><option>30<option selected>60<option>90<option>120<option>180</select> <span id=adtriggered></span>
-{:#buttons}
+$$controls||$$
 
 <style>
 #buttons button, #buttons select {font-size: 200%;}
@@ -43,10 +42,20 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
 	}
 	if (string scopes = ensure_bcaster_token(req, "channel:read:ads channel:manage:ads channel:edit:commercial"))
-		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
-	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator status"]));
+		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
+	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator status"]) | req->misc->chaninfo);
 	spawn_task(check_stats(req->misc->channel));
-	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
+	string controls = "[Snooze](:#snooze) [Run Ad](:#runad) <select id=adlength><option>30<option selected>60<option>90<option>120<option>180</select> <span id=adtriggered></span>\n{:#buttons}";
+	if ((int)req->misc->session->user->id == req->misc->channel->userid) {
+		int state = req->misc->channel->config->snoozeads_mods;
+		controls += "\n\n<select id=modsnooze><option value=0" + (!state ? " selected" : "") + ">Mods may not snooze ads<option value=1" + (state ? " selected" : "") + ">Mods may snooze ads on your behalf</select>";
+	} else {
+		if (!req->misc->channel->config->snoozeads_mods) controls = "";
+	}
+	return render(req, ([
+		"vars": (["ws_group": ""]),
+		"controls": controls,
+	]) | req->misc->chaninfo);
 }
 
 bool need_mod(string grp) {return 1;}
@@ -55,6 +64,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 }
 
 void wscmd_snooze(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if ((int)conn->session->user->id != channel->userid && !channel->config->snoozeads_mods) return;
 	twitch_api_request("https://api.twitch.tv/helix/channels/ads/schedule/snooze?broadcaster_id=" + channel->userid,
 		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]]),
 		(["method": "POST"]))
@@ -69,6 +79,7 @@ void wscmd_snooze(object channel, mapping(string:mixed) conn, mapping(string:mix
 }
 
 void wscmd_runad(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if ((int)conn->session->user->id != channel->userid && !channel->config->snoozeads_mods) return;
 	int length = (int)msg->adlength;
 	if (length < 1 || length > 180) length = 60;
 	twitch_api_request("https://api.twitch.tv/helix/channels/commercial?broadcaster_id=" + channel->userid
@@ -83,24 +94,12 @@ void wscmd_runad(object channel, mapping(string:mixed) conn, mapping(string:mixe
 			"length": resp->length,
 			"message": resp->message,
 		]), 4));
-
 	};
 }
 
-/*
-If broadcaster, full access, and also radio buttons to grant access to mods: None, View, Manage
-If mod and access is None, report. If access is Manage, include the "Snooze" and "Run Ad" buttons.
-
-Timeline across the top. Current time is shown at the left, stretching out into the future.
-Tick marks above it to show the timestamps in stream uptime (1:02:00 meaning an hour and two minutes
-since the stream went live).
-
-Show, and allow configurable colours on the time tape for, all of:
-* Preroll-free time (from time_captured until time_captured+preroll_free_time_seconds)
-* Next scheduled ad (including its length)
-* Snoozes available (not on the tape)
-* Next snooze becomes available
-* Maximum delay possible for next ad
-* Based on selected ad length, proposed preroll-free time
-* Time since last ad? Not on the tape. Does length_seconds apply to that?
-*/
+void wscmd_modsnooze(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if ((int)conn->session->user->id != channel->userid) return;
+	channel->config->snoozeads_mods = (int)msg->value;
+	channel->save();
+	send_updates_all(channel->name);
+}

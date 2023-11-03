@@ -70,7 +70,7 @@ export function render(data) {
 		DIV({style: "height: 1em; background: linear-gradient(.25turn, " + gradient + ")"}),
 		DIV({style: "display: flex"}, below),
 		UL([
-			//TODO: Add colour swatches to these, linking them to the regions on the tape
+			LI("Time markers above the tape show stream uptime; times shown here are your local time."),
 			LI(SPAN({style: "background: " + colors.no_prerolls}, ["No prerolls until ", TIME_T(data.time_captured + data.preroll_free_time_seconds)])),
 			LI(["Last ad: ", TIME_T(data.last_ad_at)]),
 			LI(["Next ad: ", TIME_T(data.next_ad_at), " - ", data.length_seconds, " seconds long"]),
@@ -84,6 +84,7 @@ export function render(data) {
 
 on("click", "#snooze", e => ws_sync.send({cmd: "snooze"}));
 on("click", "#runad", e => ws_sync.send({cmd: "runad"}));
+on("change", "#modsnooze", e => ws_sync.send({cmd: "modsnooze", value: e.match.value}));
 
 export function sockmsg_adtriggered(msg) {
 	replace_content("#adtriggered", [
