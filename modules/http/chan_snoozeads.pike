@@ -16,7 +16,8 @@ Loading...
 
 continue Concurrent.Future check_stats(object channel) {
 	mapping snooze = yield(twitch_api_request("https://api.twitch.tv/helix/channels/ads?broadcaster_id=" + channel->userid,
-		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]])));
+		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]])))->data[0];
+	snooze->time_captured = time();
 	werror("%O\n", snooze);
 	channel_ad_stats[channel->userid] = snooze;
 	send_updates_all(channel->name);
@@ -33,9 +34,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 
 bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping stats = channel_ad_stats[channel->userid];
-	//...
-	return (["raw": stats]);
+	return channel_ad_stats[channel->userid];
 }
 
 void wscmd_snooze(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -44,6 +43,12 @@ void wscmd_snooze(object channel, mapping(string:mixed) conn, mapping(string:mix
 		(["method": "POST"]))
 	->then() {
 		werror("SNOOZE RESULT: %O\n", __ARGS__);
+		//Apply the changes directly to state if we have state
+		if (channel_ad_stats[channel->userid]) {
+			channel_ad_stats[channel->userid] |= __ARGS__[0]->data[0];
+			send_updates_all(channel->name);
+		}
+		else spawn_task(check_stats(channel));
 	};
 }
 
@@ -56,7 +61,7 @@ Tick marks above it to show the timestamps in stream uptime (1:02:00 meaning an 
 since the stream went live).
 
 Show, and allow configurable colours on the time tape for, all of:
-* Preroll-free time (from start until preroll_free_time_seconds)
+* Preroll-free time (from time_captured until time_captured+preroll_free_time_seconds)
 * Next scheduled ad (including its length)
 * Snoozes available (not on the tape)
 * Next snooze becomes available
