@@ -1,12 +1,10 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {DIV, LI, TIME, UL} = lindt; //autoimport
+const {DIV, LI, SPAN, TIME, UL} = lindt; //autoimport
 
 const colors = {
 	//Needles
-	"No prerolls": "#ff0000",
-	"Snoozable time": "#ff0000",
 	"Next ad": "#ff0000",
-	"Next snooze": "#ff0000",
+	"Next snooze": "#0000ff",
 	//Fields
 	no_prerolls: "#a0f0c0",
 	snoozable: "#ff88dd",
@@ -36,38 +34,52 @@ export function render(data) {
 	const span = 3600 * 2, cutoff = now + span; //Don't bother showing too much data. (Maybe even 1 hour?)
 	const markers = [];
 	times.forEach(([tm, desc]) => tm > now && tm < cutoff && markers.push([tm - now, desc]));
-	console.log(markers);
-	let color = colors.ads;
-	if (data.time_captured + data.preroll_free_time_seconds > now) color = colors.no_prerolls;
-	else if (now >= data.next_ad_at && snoozable > now) color = colors.snoozable;
+	function pick_color(dt) {
+		//Note that both of these could be true simultaneously. Currently there's simply a
+		//prioritization, but maybe there should be a different colour for "both"?
+		if (now + dt >= data.next_ad_at && snoozable > now + dt) return colors.snoozable;
+		if (data.time_captured + data.preroll_free_time_seconds > now + dt) return colors.no_prerolls;
+		return colors.ads;
+	}
+	let color = pick_color(0);
 	let gradient = color + ", ";
-	markers.push([span, ""]); //Elephant in Cairo
+	const above = [], below = [];
+	let above_dt = 0, below_dt = 0;
 	markers.forEach(([dt, desc]) => {
-		const pos = Math.floor(dt / span * 100); //todo don't floor
-		if (colors[desc])
-			//Show a needle at this point
-			gradient += color + " " + (pos - 0.5) + "%, " + colors[desc] + " " + (pos - 0.125) + "%, ";
-		else
-			//Show a hairline (black) at this point
+		const pos = dt / span * 100;
+		//Blank entry at the end should get both added
+		if (desc.endsWith(":00")) { //Tick marks above the tape, with hairlines
+			above.push(DIV({style: "flex-grow: " + (dt - above_dt)}), DIV(desc));
+			above_dt = dt;
 			gradient += color + " " + (pos - 0.125) + "%, #000000 " + (pos - 0.125) + "%, ";
-		//todo dedup
-		color = colors.ads;
-		if (data.time_captured + data.preroll_free_time_seconds > now + dt) color = colors.no_prerolls;
-		else if (now + dt >= data.next_ad_at && snoozable > now + dt) color = colors.snoozable;
+		} else if (colors[desc]) { //Labels below the tape, with wider markers
+			below.push(DIV({style: "flex-grow: " + (dt - below_dt)}), DIV({style: "flex-basis: 0; white-space: nowrap"}, desc));
+			below_dt = dt;
+			gradient += color + " " + (pos - 0.5) + "%, " + (colors[desc] || "#fff") + " " + (pos - 0.125) + "%, ";
+			console.log(desc, colors[desc])
+		} else {
+			gradient += color + " " + pos + "%, ";
+		}
+		color = pick_color(dt);
 		gradient += color + " " + pos + "%, ";
 	});
+	gradient += color + " 100%";
+	above.push(DIV({style: "flex-grow: " + (span - above_dt)}));
+	below.push(DIV({style: "flex-grow: " + (span - below_dt)}));
 	console.log(gradient);
 	replace_content("#nextad", [
-		DIV({style: "width: 100%; height: 1em; background: linear-gradient(.25turn, " + gradient.slice(0, -2) + ")"}),
+		DIV({style: "display: flex"}, above),
+		DIV({style: "height: 1em; background: linear-gradient(.25turn, " + gradient + ")"}),
+		DIV({style: "display: flex"}, below),
 		UL([
 			//TODO: Add colour swatches to these, linking them to the regions on the tape
-			LI(["No prerolls until ", TIME_T(data.time_captured + data.preroll_free_time_seconds)]),
+			LI(SPAN({style: "background: " + colors.no_prerolls}, ["No prerolls until ", TIME_T(data.time_captured + data.preroll_free_time_seconds)])),
 			LI(["Last ad: ", TIME_T(data.last_ad_at)]),
 			LI(["Next ad: ", TIME_T(data.next_ad_at), " - ", data.length_seconds, " seconds long"]),
-			LI([
+			LI(SPAN({style: "background: " + colors.snoozable}, [
 				"Snoozes: ", data.snooze_count,
 				data.snooze_refresh_at && [" - next at ", TIME_T(data.snooze_refresh_at)],
-			]),
+			])),
 		]),
 	]);
 }
