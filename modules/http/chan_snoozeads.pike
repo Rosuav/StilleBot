@@ -26,6 +26,21 @@ continue Concurrent.Future check_stats(object channel) {
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
 	//NOTE: It seems that channel:manage:ads does not imply channel:read:ads.
+	if (req->misc->session->fake) {
+		//Demo mode uses some plausible information but won't send any updates.
+		//These numbers are all pretty arbitrary.
+		int basis = time();
+		channel_ad_stats[0] = ([
+			"last_ad_at": basis - 912,
+			"length_seconds": 60,
+			"next_ad_at": basis + 1818,
+			"preroll_free_time_seconds": 849,
+			"snooze_count": 2,
+			"snooze_refresh_at": basis + 3600 - 912,
+			"time_captured": basis,
+		]);
+		return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
+	}
 	if (string scopes = ensure_bcaster_token(req, "channel:read:ads channel:manage:ads channel:edit:commercial"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator status"]));
