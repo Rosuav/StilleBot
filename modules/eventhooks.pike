@@ -87,12 +87,11 @@ mapping predictionended(object channel, mapping info) {
 	return params;
 }
 
-@({"channel:read:ads", "channel.ad_break.begin", "beta"}):
+@({"channel:read:ads", "channel.ad_break.begin", "beta", "always"}):
 mapping adbreak(object channel, mapping info) {
-	//TODO: This is worth having even if the special isn't in use. Have it update the
-	//chan_snoozeads websocket.
 	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
 	werror("AD BREAK BEGIN %O\n", info);
+	G->G->websocket_types->chan_snoozeads->send_updates_all(channel->name);
 	return ([
 		"length": (string)info->length_seconds,
 		"is_automatic": info->is_automatic ? "1" : "0",
@@ -109,7 +108,8 @@ void specials_check_hooks(mapping cfg) {
 	foreach (G->G->SPECIALS_SCOPES; string special; array scopesets) {
 		foreach (scopesets, array scopeset) {
 			if (!has_value(scopes[scopeset[*]], 0)) { //If there isn't any case of a scope that we don't have... then we have them all!
-				if (cfg->commands[?"!" + special]) //If there's a special of this name, we need the hook. Otherwise no.
+				if (cfg->commands[?"!" + special] //If there's a special of this name, we need the hook.
+						|| eventsubs[special]->flags->always) //If the eventsub has other functionality, we need the hook.
 					eventsubs[special](chan, this[special](0, (["__condition": cfg])));
 				break;
 			}
@@ -119,8 +119,10 @@ void specials_check_hooks(mapping cfg) {
 
 class EventSubSpecial(function get_params) {
 	inherit EventSub;
-	protected void create(string hookname, string type, string version) {
+	multiset flags = (<>);
+	protected void create(string hookname, string type, string version, string|void flg) {
 		::create(hookname, type, version, send_special);
+		if (flg) foreach (flg / " ", string f) flags[f] = 1;
 	}
 	void send_special(string chan, mapping info) {
 		object channel = G->G->irc->channels["#" + chan];

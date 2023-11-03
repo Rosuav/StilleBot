@@ -62,7 +62,7 @@ void wscmd_runad(object channel, mapping(string:mixed) conn, mapping(string:mixe
 		(["method": "POST"]))
 	->then() {
 		werror("RUN AD RESULT: %O\n", __ARGS__);
-		spawn_task(check_stats(channel));
+		//When the ad starts, the webhook should notify us.
 	};
 }
 
