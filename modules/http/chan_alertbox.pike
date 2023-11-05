@@ -893,7 +893,6 @@ void websocket_cmd_auditlog(mapping(string:mixed) conn, mapping(string:mixed) ms
 
 
 //Update the magic variable $nonhiddengifredeems$
-//TODO: Support hidden redeems which won't be in this list
 void update_gif_variants(object channel) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	array kwd = ({ });
@@ -1210,7 +1209,7 @@ void copy_stock(mapping alertconfigs, string basetype) {
 	if (sock_reply) conn->sock->send_text(Standards.JSON.encode(sock_reply, 4));
 	if (!hosts_were_active) {
 		//Host alerts may have just been activated. Make sure we have a backend.
-		werror("ALERTBOX: Hosts weren't active for %O/%O\n", channel->name[1..], channel->userid);
+		//werror("ALERTBOX: Hosts weren't active for %O/%O\n", channel->name[1..], channel->userid);
 		ensure_host_connection(channel->name[1..]);
 	}
 }
