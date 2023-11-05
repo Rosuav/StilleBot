@@ -564,6 +564,12 @@ class channel(mapping config) {
 					vars["{cooldown}"] = vars["{cooldown_hms}"] = "0";
 					break;
 				}
+				if (message->cdqueue) {
+					//As well as bouncing to the Otherwise, we queue the original message
+					//after the delay. (You probably don't often need an Otherwise here.)
+					cooldown_timeout[key] = time() + delay + message->cdlength;
+					call_out(_send_recursive, delay, person, message | (["conditional": 0, "_changevars": 1]), vars, cfg);
+				}
 				//Yes, it's possible for the timeout to be 0 seconds.
 				msg = message->otherwise;
 				vars["{cooldown}"] = (string)delay;

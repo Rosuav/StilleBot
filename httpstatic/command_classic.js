@@ -132,6 +132,7 @@ const conditional_types = {
 	cooldown: {
 		cdname: "(optional) Synchronization name",
 		cdlength: "Cooldown (seconds)", //TODO: Support hh:mm:ss and show it that way for display
+		cdqueue: "?Queue",
 		"": () => ["The condition passes if the time has passed.", BR(),
 			"Use ", CODE("{cooldown}"), " for the remaining time, or ",
 			CODE("{cooldown_hms}"), " in hh:mm:ss format.", BR(),

@@ -222,7 +222,7 @@ constant condition_parts = ([
 	"regexp": ({"expr1", "expr2", "casefold"}),
 	"number": ({"expr1"}), //Yes, expr1 even though there's no others - means you still see it when you switch (in the classic editor)
 	"spend": ({"expr1", "expr2"}), //Similarly, this uses the same names for the sake of the classic editor's switching.
-	"cooldown": ({"cdname", "cdlength"}),
+	"cooldown": ({"cdname", "cdlength", "cdqueue"}),
 ]);
 
 string normalize_cooldown_name(string|int(0..0) cdname, mapping state) {
