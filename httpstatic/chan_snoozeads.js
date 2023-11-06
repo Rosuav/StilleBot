@@ -49,11 +49,17 @@ export function render(data) {
 		const pos = dt / span * 100;
 		//Blank entry at the end should get both added
 		if (desc.endsWith(":00")) { //Tick marks above the tape, with hairlines
-			above.push(DIV({style: "flex-grow: " + (dt - above_dt)}), DIV(desc));
+			let title = new Date((dt + now) * 1000).toLocaleTimeString();
+			above.push(DIV({style: "flex-grow: " + (dt - above_dt)}), DIV({title}, desc));
 			above_dt = dt;
 			gradient += color + " " + (pos - 0.125) + "%, #000000 " + (pos - 0.125) + "%, ";
 		} else if (colors[desc]) { //Labels below the tape, with wider markers
-			below.push(DIV({style: "flex-grow: " + (dt - below_dt)}), DIV({style: "flex-basis: 0; white-space: nowrap"}, desc));
+			let title = new Date((dt + now) * 1000).toLocaleTimeString();
+			if (desc === "Next ad") title += " - snoozable for " + ((snoozable - data.next_ad_at) / 60) + ":00";
+			below.push(
+				DIV({style: "flex-grow: " + (dt - below_dt)}),
+				DIV({style: "flex-basis: 0; white-space: nowrap", title}, desc),
+			);
 			below_dt = dt;
 			gradient += color + " " + (pos - 0.5) + "%, " + (colors[desc] || "#fff") + " " + (pos - 0.125) + "%, ";
 		} else {
