@@ -16,7 +16,10 @@ function TIME_T(time_t) {
 	return TIME({datetime: date.toISOString()}, date.toLocaleTimeString());
 }
 
+let rerender = 0;
 export function render(data) {
+	clearInterval(rerender);
+	rerender = setInterval(render, 60000, data);
 	//For the time tape, pick out some useful markers and organize them.
 	const now = Math.floor(new Date/1000);
 	const times = [
