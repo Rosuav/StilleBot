@@ -84,7 +84,7 @@ export function render(data) {
 			LI(["Last ad: ", TIME_T(data.last_ad_at)]),
 			LI(["Next ad: ", TIME_T(data.next_ad_at), " - ", data.length_seconds, " seconds long"]),
 			LI(SPAN({style: "background: " + colors.snoozable}, [
-				"Snoozes: ", data.snooze_count,
+				"Snoozes: ", data.snooze_count || "None",
 				data.snooze_refresh_at && [" - next at ", TIME_T(data.snooze_refresh_at)],
 			])),
 		]),
