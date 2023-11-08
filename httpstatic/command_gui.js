@@ -113,6 +113,7 @@ const text_message = {...default_handlers,
 		if (lines.length <= 1) return lines[0] || ""; //Multiple lines but only one non-blank line, so use it as-is.
 		msg.message = lines.map((l,i) => ({type: msg.type, message: l, parent: [msg, "message", i]}));
 		msg.type = "group";
+		delete msg.actionlink; //Force the "pencil" link to be recalculated - a group is shorter than a message
 		actives.push(...msg.message);
 		msg.message.push("");
 		return msg.message;
