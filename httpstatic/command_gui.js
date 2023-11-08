@@ -330,7 +330,7 @@ const types = {
 		label: el => el.expr2 === "{rewardid}" ? 
 				el.expr1 === "-" && el.conditional === "contains" ? "Custom point redemption: any"
 				: "Custom point redemption: " + el.expr1
-			: el.conditional === "contains" ? `When '${el.expr1}' is typed...` : `When a msg matches ${el.expr1} ...`,
+			: el.conditional === "contains" ? `When '${el.expr1}' is typed...` : `When a msg matches ${el.expr1||""} ...`,
 		params: [{attr: "conditional", label: "Match type", values: ["contains", "regexp", "number"],
 				selections: {contains: "Simple match", regexp: "Regular expression", number: "Expression evaluation"}},
 			{attr: "casefold", label: "Case insensitive", values: bool_attr},
