@@ -425,6 +425,7 @@ class channel(mapping config) {
 	{
 		if (!message) return;
 		if (!mappingp(message)) message = (["message": message]);
+		if (message->dest == "//") return; //Comments are ignored. Not even side effects.
 
 		if (message->delay)
 		{

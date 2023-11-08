@@ -208,7 +208,7 @@ mapping get_state(string group, string|void id) {
 //Blank or null is always allowed, and will result in no flag being set.
 constant message_flags = ([
 	"mode": (<"random", "rotate", "foreach">),
-	"dest": (<"/w", "/web", "/set", "/chain", "/reply">),
+	"dest": (<"/w", "/web", "/set", "/chain", "/reply", "//">),
 ]);
 //As above, but applying only to the top level of a command.
 constant command_flags = ([
@@ -252,8 +252,16 @@ echoable_message _validate(echoable_message resp, mapping state)
 	{
 		if (ok[resp[flag]]) ret[flag] = resp[flag];
 	}
+	if (ret->dest == "//") {
+		//Comments begin with a double slash. Whodathunk?
+		//They're not allowed to have anything else though, just the message.
+		//The message itself won't be processed in any way, and could actually
+		//contain other, more complex, content, but as long as it's syntactically
+		//valid, nothing will be done with it.
+		return ret & (<"dest", "message">);
+	}
 	if (ret->dest) {
-		//If there's any dest other than "" (aka "open chat"), it should
+		//If there's any dest other than "" (aka "open chat") or "//", it should
 		//have a target. Failing to have a target breaks other destinations,
 		//so remove that if this is missing; otherwise, any target works.
 		if (!resp->target) m_delete(ret, "dest");

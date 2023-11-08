@@ -289,5 +289,6 @@
 * Add a command node for comments?
   - Could be a destination that goes nowhere
   - Would tie in nicely with a scripting language, if I ever make one
+  - FIXME: Not implemented in classic editor
 * Reward ID should be a drop-down - no reason to force you to type in the ID now that we
   have the full list of them being loaded anyway

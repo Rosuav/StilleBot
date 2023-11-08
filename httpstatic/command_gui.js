@@ -414,6 +414,19 @@ const types = {
 		],
 		typedesc: ["Chain to another command (like calling a function)"],
 	},
+	comment: {
+		color: "#afafaf", label: el => "// " + (el.message || "Comment"),
+		params: [
+			{attr: "dest", values: "//"},
+			{attr: "message", label: "Comment"},
+		],
+		typedesc: ["Comments have no effect, and can be used to add notes to your commands."],
+	},
+	block_comment: {
+		color: "#afafaf", children: ["message"], label: el => "/* ... */",
+		params: [{attr: "dest", values: "//"}],
+		typedesc: ["Comments have no effect, and can be used to add notes to your commands."],
+	},
 	incr_variable: {
 		color: "#dd7777", label: el => `Add ${el.message} to $${el.target}$`,
 		params: [{attr: "dest", values: "/set"}, {attr: "destcfg", values: "add"},
@@ -606,8 +619,10 @@ const tray_tabs = [
 	{name: "Control Flow", color: "#bbbbf7", items: [
 		{type: "conditional_spend", expr1: "*points", expr2: "5"},
 		{type: "conditional_number", expr1: "$deaths$ > 10"},
-		{type: "conditional_string", conditional: "regexp", expr1: "[Hh]ello", expr2: "{param}"},
+		//{type: "conditional_string", conditional: "regexp", expr1: "[Hh]ello", expr2: "{param}"},
 		{type: "chain_of_command", target: "", destcfg: ""},
+		{type: "comment"},
+		{type: "block_comment"},
 		//NOTE: Even though they're internally conditionals too, cooldowns don't belong in this tray.
 		//Conversely, even though argsplit isn't really control flow, it fits into the same kind of
 		//use case, where you're thinking more like a programmer.
