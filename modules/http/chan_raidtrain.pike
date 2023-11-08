@@ -440,6 +440,6 @@ continue Concurrent.Future|mapping checkfollowing(object channel, mapping(string
 }
 void wscmd_checkfollowing(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	spawn_task(checkfollowing(channel, conn, msg)) {
-		if (__ARGS__[0]) conn->sock->send_text(Standards.JSON.encode((["cmd": "checkfollowing"]) | __ARGS__[0]));
+		if (__ARGS__[0] && conn->sock) conn->sock->send_text(Standards.JSON.encode((["cmd": "checkfollowing"]) | __ARGS__[0]));
 	};
 }
