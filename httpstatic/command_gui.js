@@ -981,6 +981,7 @@ function clone_template(t, par) {
 	if (t === "") return "";
 	const el = {...t};
 	delete el.template;
+	delete el.key;
 	if (el.type === "flag") el.type = "dragflag"; //Hack - dragging a flag unfurls it (and doesn't add an active element)
 	else actives.push(el);
 	if (par && el.parent) el.parent[0] = par;
