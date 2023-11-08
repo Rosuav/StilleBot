@@ -11,7 +11,7 @@ const flags = {
 	builtin: {"": "None", "*": "Call on extra information from a built-in function or action"},
 	dest: {"": "Chat", "/w": "Whisper", "/web": "Private message", "/set": "Set a variable",
 		"/chain": "Chain to another command", "/reply": "Reply or join a thread, eg to {msgid}",
-		"*": "Where should the response be sent?"},
+		"//": "Comment (won't be sent anywhere)", "*": "Where should the response be sent?"},
 };
 for (let name in builtins) flags.builtin[name] = builtins[name].name;
 const toplevelflags = ["access", "visibility"];

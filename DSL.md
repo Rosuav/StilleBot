@@ -25,3 +25,6 @@ Do I need one? Maybe?
 - It MAY be worth having a "saved source code" version of a command, which is discarded if you make
   any edit in any other form, but otherwise is retained.
 - This might finally be able to replace the Classic editor, which can then be renamed Legacy
+- Comments will be introduced with a double slash. If it looks like commented-out code and can
+  round trip as such, it should be done accordingly when transformed into GUI mode. Otherwise,
+  it's just text comments like anywhere else.
