@@ -681,7 +681,7 @@ class channel(mapping config) {
 
 		//Variable management. Note that these are silent, so commands may want to pair
 		//these with public messages. (Silence is perfectly acceptable for triggers.)
-		if (dest == "/set" && sscanf(target, "%[*?A-Za-z]", string var) && var && var != "")
+		if (dest == "/set" && sscanf(target, "%[*?A-Za-z0-9]", string var) && var && var != "")
 		{
 			string val = set_variable(var, msg, destcfg, cfg->users);
 			//Variable names with asterisks are per-user (possibly this, possibly another),
