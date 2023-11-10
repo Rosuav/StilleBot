@@ -137,7 +137,8 @@ mapping message_params(object channel, mapping person, string param, mapping cfg
 		int|float|string result = evaluate(param, ({channel, cfg}));
 		//"!calc 1.5 + 2.5" will give a result of 4.0, but it's nicer to say "4"
 		if (floatp(result) && result == (float)(int)result) result = (int)result;
-		return (["{error}": "", "{result}": sprintf("%O", result)]);
+		if (!stringp(result)) result = sprintf("%O", result);
+		return (["{error}": "", "{result}": result]);
 	};
 	return (["{error}": "Invalid expression [" + (describe_error(ex)/"\n")[0] + "]", "{result}": ""]);
 }
