@@ -829,10 +829,10 @@ class channel(mapping config) {
 	//Expand all channel variables, except for {participant} which usually won't
 	//make sense anyway. If you want $$ or %s or any of those, provide them in the
 	//second parameter; otherwise, just expand_variables("Foo is $foo$.") is enough.
-	string expand_variables(string text, mapping|void vars)
+	string expand_variables(string text, mapping|void vars, mapping|void users)
 	{
 		vars = get_channel_variables() | (vars || ([]));
-		return _substitute_vars(text, vars, ([]), ([]));
+		return _substitute_vars(text, vars, ([]), users || ([]));
 	}
 
 	void record_raid(int fromid, string fromname, int toid, string toname, int|void ts, int|void viewers)
