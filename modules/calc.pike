@@ -1,8 +1,17 @@
 #if constant(G)
 inherit builtin_command;
 #else
+string expand_variables(string text, mapping|void vars, mapping|void users) {
+	string result = "42";
+	werror("Substituting vars into %O users %O --> %O\n", text, users, result);
+	return result;
+}
+string set_variable(string var, string val, string action, mapping|void users) {
+	werror("Setting %O to %O users %O\n", var, val, users);
+	return "278";
+}
 int main(int argc, array(string) argv) {
-	mixed ex = catch {write("Result: %O\n", evaluate(argv[1..] * " ", "context context"));};
+	mixed ex = catch {write("Result: %O\n", evaluate(argv[1..] * " ", ({this, (["users": (["": "49497888"])])})));};
 	if (ex) write("Invalid expression: %s\n", (describe_error(ex) / "\n")[0]);
 }
 #endif
@@ -18,6 +27,21 @@ int|float func_random(array(int|float) args) {
 	//If it looks like an integer, return a random integer.
 	if (args[0] == (int)args[0]) return random((int)args[0]);
 	return random(args[0]); //Otherwise a float.
+}
+
+int func_int(array(string) args) {
+	if (sizeof(args) != 1) error("int() requires precisely one argument\n");
+	return (int)args[0];
+}
+
+float func_float(array(string) args) {
+	if (sizeof(args) != 1) error("float() requires precisely one argument\n");
+	return (float)args[0];
+}
+
+string func_string(array(string) args) {
+	if (sizeof(args) != 1) error("string() requires precisely one argument\n");
+	return (string)args[0];
 }
 
 int|float func(string word, string open, array(int|float) args, string close) {
@@ -54,12 +78,19 @@ int|float parens(string open, int|float val, string close) {return val;}
 array(int|float) make_array(int|float val) {return ({val});}
 array(int|float) prepend_array(int|float val, string _, array(int|float) arr) {return ({val}) + arr;}
 
-//To allow variable lookups, bare words must be adorned with a context.
+//To allow variable lookups, the @ token must be adorned with a context.
 //Thus "@spam" will carry with it, at very least, the channel to which the
 //variable belongs. Note that all use of variable lookups/assignments is
 //undocumented and unstable, and should not be depended upon.
-int|float|string varlookup(mixed ... args) {werror("VAR LOOKUP %O\n", args); return 42;}
-int|float|string varassign(mixed ... args) {werror("VAR ASSIGN %O\n", args); return 278;} //Assignment returns the RHS.
+int|float|string varlookup(array context, string varname) {
+	if (!context) error("Variable references require full context\n");
+	return context[0]->expand_variables("$" + varname + "$", ([]), context[1]->users);
+}
+int|float|string varassign(array context, string eq1, string varname, string eq2, int|float|string value) {
+	if (!context) error("Variable references require full context\n");
+	//Assignment returns the RHS.
+	return context[0]->set_variable(varname, (string)value, "set", context[1]->users);
+}
 
 Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file("modules/calc.grammar");
 void throw_errors(int level, string subsystem, string msg, mixed ... args) {if (level >= 2) error(msg, @args);}
