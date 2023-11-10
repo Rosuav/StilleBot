@@ -1256,7 +1256,7 @@ constant cutewords = "puppy kitten crumpet tutu butterscotch flapjack pilliwiggi
 	"gift art flag candle heart love magic save tada hug cool party plush star "
 	"donut teacup cat purring flower sugar biscuit pillow banana berry " / " ";
 continue Concurrent.Future send_with_tts(object channel, mapping args, string|void destgroup) {
-	System.Timer tm = System.Timer(); werror("send_with_tts(%O): starting\n", channel->name);
+	System.Timer tm = System.Timer();
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->alertconfigs[args->send_alert]) return 0; //On replay, if the alert doesn't exist, do nothing. TODO: Replay a base alert if variant deleted?
 	mapping inh = G_G_("alertbox_resolved", (string)channel->userid, args->send_alert);
