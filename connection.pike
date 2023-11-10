@@ -406,11 +406,12 @@ class channel(mapping config) {
 			//an empty string if the var isn't found.
 			[string _, string filter, string dflt] = ((filterdflt + "||") / "|")[..2];
 			string value;
-			if (type == "$" && sscanf(kwd, "%s*%s", string user, string basename) && basename && basename != "") {
+			if (type == "$" && sscanf(kwd, "%s*%s", string user, string basename) && basename) {
 				//If the kwd is of the format "49497888*varname", and the type is "$",
 				//look up a per-user variable called "*varname" for that user.
 				user = users[user] || user;
-				if (mappingp(vars["*"])) value = vars["*"][user][?type + basename + tail];
+				if (basename == "") value = user; //"$*$" or "$kwd*$" will give you the ID of that user.
+				else if (mappingp(vars["*"])) value = vars["*"][user][?type + basename + tail];
 			}
 			else value = vars[type + kwd + tail];
 			if (!value || value == "") return dflt;
