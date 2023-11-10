@@ -2,7 +2,7 @@
 inherit builtin_command;
 #else
 int main(int argc, array(string) argv) {
-	mixed ex = catch {write("Result: %O\n", evaluate(argv[1..] * " "));};
+	mixed ex = catch {write("Result: %O\n", evaluate(argv[1..] * " ", "context context"));};
 	if (ex) write("Invalid expression: %s\n", (describe_error(ex) / "\n")[0]);
 }
 #endif
@@ -20,13 +20,12 @@ int|float func_random(array(int|float) args) {
 	return random(args[0]); //Otherwise a float.
 }
 
-int|float func(mixed word, string open, array(int|float) args, string close) {
-	word = word[0];
+int|float func(string word, string open, array(int|float) args, string close) {
 	function func = this["func_" + word];
 	if (!func) error("Unknown function " + word + "\n");
 	return func(args);
 }
-int|float func_nullary(mixed word, string open, string close) {return func(word, open, ({ }), close);}
+int|float func_nullary(string word, string open, string close) {return func(word, open, ({ }), close);}
 
 int|float binop(int|float left, string op, int|float right) {
 	switch (op) {
@@ -74,9 +73,10 @@ int|float evaluate(string formula, mixed|void ctx) {
 		if (token != "") return token;
 		sscanf(formula, "%[a-zA-Z]%s", token, formula);
 		if (KEYWORDS[token]) return token; //Special keywords are themselves and can't be function names.
-		if (token != "") return ({"word", ({token, ctx})}); //Probably a function name.
+		if (token != "") return ({"word", token}); //Possibly a function/variable name.
 		if (formula[0] == '"' && sscanf(formula, "%O%s", token, formula)) return ({"string", token}); //String literal
 		sscanf(formula, "%1s%s", token, formula); //Otherwise, grab a single character
+		if (token == "@") return ({token, ctx}); //Variable references require context
 		return token;
 	}
 	//array|string shownext() {array|string ret = next(); werror("TOKEN: %O\n", ret); return ret;}
@@ -99,11 +99,11 @@ constant command_suggestions = (["!calc": ([
 		"otherwise": "@$$: {error}",
 	]),
 ])]);
-mapping message_params(object channel, mapping person, string param) {
+mapping message_params(object channel, mapping person, string param, mapping cfg) {
 	if (param == "") return (["{error}": "Usage: !calc 1+2", "{result}": ""]);
 	if (person->badges->?_mod) param = channel->expand_variables(param);
 	mixed ex = catch {
-		int|float|string result = evaluate(param, channel);
+		int|float|string result = evaluate(param, ({channel, cfg}));
 		//"!calc 1.5 + 2.5" will give a result of 4.0, but it's nicer to say "4"
 		if (floatp(result) && result == (float)(int)result) result = (int)result;
 		return (["{error}": "", "{result}": sprintf("%O", result)]);
