@@ -21,7 +21,7 @@ void points_redeemed(string chanid, mapping data, int|void removal)
 		//Up the price every time it's redeemed
 		//For this to be viable, the reward needs a global cooldown of
 		//at least a few seconds, preferably a few minutes.
-		int newcost = G->G->evaluate_expr(channel->expand_variables(replace(dyn->formula, "PREV", (string)data->reward->cost)));
+		int newcost = (int)G->G->evaluate_expr(channel->expand_variables(replace(dyn->formula, "PREV", (string)data->reward->cost)), ({channel, ([])}));
 		if ((string)newcost != (string)data->reward->cost)
 			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 					+ data->broadcaster_user_id + "&id=" + data->reward->id,

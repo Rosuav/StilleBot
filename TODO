@@ -265,15 +265,6 @@
   - Be naive. Don't bother excluding things with destinations.
   - Search results should have the normal command editor gear for editing, but instead
     of having the editable command, show the path to the match(es)
-* Allow the expression evaluator to work with strings
-  - Notably, this will allow simple comparisons, eg `{thing} == "literal"` which can then
-    return 1 or 0 as expected.
-  - This MAY cause some contexts to need to support strings as outputs too, though, as
-    there's no reason to force the result to be numeric.
-  - Change the grammar and usage so that variable refs are first-class tokens, rather than
-    string substitution before evaluation.
-  - This MAY also solve the double-parse limitation, as it would then be possible to use
-    calc with string substitution and resulting variable ref.
 * Bit Boss???
   - Alternate display mode for a goal bar: "Hitpoints".
   - As the value advances toward the goal, the display reduces, ie it is inverted

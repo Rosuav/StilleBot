@@ -614,7 +614,7 @@ void channel_on_off(string channel, int just_went_online)
 			if (just_went_online != -1 && info->basecost) params->cost = info->basecost;
 			if (mixed ex = info->availability && catch {
 				//write("Evaluating: %O\n", info->availability);
-				active = G->G->evaluate_expr(chan->expand_variables(info->availability, args));
+				active = (int)G->G->evaluate_expr(chan->expand_variables(info->availability, args), ({channel, ([])}));
 				//write("Result: %O\n", active);
 				//Triple negative. We want to know if the enabled state has changed, but
 				//some things will use 1 and 0, others will use Val.true and Val.false.
