@@ -421,6 +421,7 @@ const types = {
 			{attr: "message", label: "Comment"},
 		],
 		typedesc: ["Comments have no effect, and can be used to add notes to your commands."],
+		width: 400,
 	},
 	block_comment: {
 		color: "#afafaf", children: ["message"], label: el => "/* ... */",
