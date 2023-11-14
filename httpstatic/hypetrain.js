@@ -51,7 +51,6 @@ function update() {
 }
 
 function subs(n) {return Math.floor((n + 499) / 500);} //Calculate how many T1 subs are needed
-function money(n) {return "$US" + Math.floor(n / 100) + "." + ("0" + (n%100)).slice(-2);}
 
 function fmt_contrib(c) {
 	if (!c.display_name) return ""; //No data available (can happen after a hype train ends)
@@ -118,7 +117,7 @@ export let render = (state) => {
 	if (state.expires)
 	{
 		//Active hype train!
-		goal = `Level ${state.level} requires ${state.goal} bits, ${money(state.goal)} Hype Chat, or ${subs(state.goal)} tier one subs.`;
+		goal = `Level ${state.level} requires ${state.goal} bits or ${subs(state.goal)} tier one subs.`;
 		goalattrs.className = "level" + state.level;
 		let need = state.goal - state.total;
 		if (need <= 0) {goal += " TIER FIVE COMPLETE!"; goalattrs.className = "level6";}
