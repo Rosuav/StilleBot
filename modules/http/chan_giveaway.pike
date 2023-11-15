@@ -224,7 +224,7 @@ void notify_websockets(string chan) {
 @hook_point_redemption:
 void redemption(object channel, string rewardid, int(0..1) refund, mapping data) {
 	update_ticket_count(channel->config, data, refund);
-	notify_websockets(channel->login);
+	notify_websockets(channel->config->login);
 }
 
 //List all redemptions for a particular reward ID

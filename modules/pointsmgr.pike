@@ -11,11 +11,10 @@ constant reward_changed = ({"object channel", "string|void rewardid"}); //If no 
 
 void points_redeemed(string chanid, mapping data, int|void removal)
 {
-	//write("POINTS %s ON %O: %O\n", removal ? "REFUNDED" : "REDEEMED", chan, data);
 	object channel = G->G->irc->id[(int)chanid]; if (!channel) return;
 	event_notify("point_redemption", channel, data->reward->id, removal, data);
-	string token = token_for_user_login(channel->login)[0];
 	mapping cfg = channel->config;
+	string token = token_for_user_login(cfg->login)[0];
 
 	if (mapping dyn = !removal && cfg->dynamic_rewards && cfg->dynamic_rewards[data->reward->id]) {
 		//Up the price every time it's redeemed

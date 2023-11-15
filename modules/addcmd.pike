@@ -184,11 +184,11 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 		int timeout = G->G->cooldown_timeout[cdname + channel->name] - time();
 		if (cdlength && timeout > cdlength) G->G->cooldown_timeout[cdname + channel->name] = cdlength + time();
 	}
-	if (mappingp(response) && response->automate && G->G->stream_online_since[channel->login]) {
+	if (mappingp(response) && response->automate && G->G->stream_online_since[channel->config->login]) {
 		//Start a timer
 		//Currently, a simple hack: notify repeat.pike to recheck everything.
 		function repeat = G->G->commands->repeat;
-		if (repeat) function_object(repeat)->connected(channel->login);
+		if (repeat) function_object(repeat)->connected(channel->config->login);
 	}
 	if (mappingp(response) && response->redemption) {
 		channel->redemption_commands[response->redemption] += ({basename});
