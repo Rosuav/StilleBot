@@ -279,3 +279,5 @@
       effective monitors in the same page?
 * Reward ID should be a drop-down - no reason to force you to type in the ID now that we
   have the full list of them being loaded anyway
+* Partners are getting T2 and T3 animated slots soon. Update the emote showcase to have them
+  shown properly alongside their static emotes.
