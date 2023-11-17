@@ -116,11 +116,6 @@
     you can easily enable and disable alerts, without having to do the work of
     creating them. (I think they should start enabled?)
 * Find all forms in dialogs and use tag=formdialog instead
-* Create a modules/redemptions.pike to collect all channel point redemption management code
-  - Currently, some of that is in giveaways, some is in dynamics, some in pointsrewards,
-    and some might be elsewhere too, not even sure.
-  - chan_giveaway currently tries to reference something provided by chan_pointsrewards,
-    which fails on fresh start. This breaks the command editor. Would be solved thusly.
 * Somewhere in either giveaway or pointsrewards, something attempts to query the
   rewards for Mustard Mine, which bombs with a 403 (b/c not affiliate). Track it
   down at some point; may need to add some instrumentation.
@@ -276,5 +271,3 @@
       effective monitors in the same page?
 * Reward ID should be a drop-down - no reason to force you to type in the ID now that we
   have the full list of them being loaded anyway
-* Partners are getting T2 and T3 animated slots soon. Update the emote showcase to have them
-  shown properly alongside their static emotes.
