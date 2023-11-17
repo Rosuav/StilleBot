@@ -17,7 +17,10 @@ export function render_item(rew) {
 			rew.can_manage ? "✅" + (rew.should_redemptions_skip_request_queue ? "⤐" : "") : "❎"
 		),
 		TD(UL([
-			rew.invocations.map(c => LI({"data-id": c}, BUTTON({class: "advview"}, "!" + c.split("#")[0]))),
+			//NOTE: The invocations are simple names eg "coinflip", but the command editor
+			//expects them to match the commands array, which shows eg "coinflip#rosuav".
+			//We assume that ws_group is always just the channel, no actual group.
+			rew.invocations.map(c => LI({"data-id": c + ws_group}, BUTTON({class: "advview"}, "!" + c.split("#")[0]))),
 			rew.can_manage && LI(BUTTON({class: "addcmd", "data-title": rew.title, "data-reward": rew.id}, "New")),
 		])),
 	]);
