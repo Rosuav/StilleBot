@@ -111,8 +111,14 @@ continue Concurrent.Future unban(object channel, string voiceid, string msg, map
 @"moderator:manage:banned_users":
 mixed untimeout(object c, string v, string m, mapping t) {return unban(c, v, m, t);}
 
+mapping(int:int) qso = ([]); //Not retained, will be purged on code reload
 @"moderator:manage:shoutouts":
-continue Concurrent.Future shoutout(object channel, string voiceid, string msg, mapping tok) {
+continue Concurrent.Future shoutout(object channel, string voiceid, string msg, mapping tok, int|void queue) {
+	if (queue) {
+		int delay = qso[channel->userid] - time();
+		qso[channel->userid] = max(qso[channel->userid], time()) + 121; //Update the queue time before sleeping
+		if (delay > 0) yield(task_sleep(delay));
+	}
 	mapping ret = yield(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/shoutouts?from_broadcaster_id=%d"
 			+ "&to_broadcaster_id={{USER}}&moderator_id=%s",
@@ -120,9 +126,21 @@ continue Concurrent.Future shoutout(object channel, string voiceid, string msg, 
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": "POST",
 			"username": replace(msg, ({"@", " "}), ""),
+			"return_errors": 1,
 		]),
 	));
+	if (ret->status >= 400) {
+		//Something went wrong. Likely possibilities:
+		//400 - no self-shoutouts, no offline shoutouts
+		//429 - either too quick on the shoutouts, or you just shouted that streamer out
+		//TODO: Log this somewhere for the broadcaster to see
+		if (ret->status == 429 && queue && !has_value(ret->message, "the specified streamer")) {
+			werror("** qshoutout failure: Got 429 error, qso %O time %O\n", qso[channel->userid], time());
+		}
+	}
 }
+@"moderator:manage:shoutouts":
+mixed qshoutout(object c, string v, string m, mapping t) {return shoutout(c, v, m, t, 1);}
 
 @"user:manage:whispers":
 continue Concurrent.Future w(object channel, string voiceid, string msg, mapping tok) {
