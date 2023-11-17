@@ -18,6 +18,15 @@ constant markdown = #"# Emote showcases and checklists
 
 ";
 
+//Consistent display order for the well-known groups. Any group not listed here will
+//be included at the top of the page where it's easy to spot.
+constant order = ({
+	"Follower",
+	"Tier 1", "Tier 2", "Tier 3",
+	"Bits",
+	"Subscriber badges", "Bits badges",
+});
+
 continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->variables->cheer) {
@@ -61,7 +70,7 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 		if ((string)id != req->variables->broadcaster) id = yield(get_user_id(req->variables->broadcaster));
 		array emotes = yield(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + id))->data;
 		mapping sets = ([]);
-		mapping setids = ([]); //Map description to ID for second pass
+		mapping setids = (["Subscriber badges": -1, "Bits badges": -2]); //Map description to ID for second pass
 		foreach (emotes, mapping em) {
 			if (em->emote_type == "bitstier") em->emote_set_id = "Bits"; //Hack - we don't get the bits levels anyway, so just group 'em.
 			if (!sets[em->emote_set_id]) {
@@ -115,10 +124,15 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 				);
 			}
 			array b = values(cur); sort(indices(cur), b);
-			if (set->set_id == "subscriber") sets[1<<29] = ({"Subscriber badges", b});
-			if (set->set_id == "bits") sets[1<<30] = ({"Bits badges", b});
+			if (set->set_id == "subscriber") sets[-1] = ({"Subscriber badges", b});
+			if (set->set_id == "bits") sets[-2] = ({"Bits badges", b});
 		}
+		array sorted = ({ });
+		foreach (order, string lbl)
+			if (array s = m_delete(sets, setids[lbl])) sorted += ({s});
+		//Any that weren't found, stick at the beginning so they're obvious
 		array emotesets = values(sets); sort((array(int))indices(sets), emotesets);
+		emotesets += sorted;
 		if (!sizeof(emotesets)) emotesets = ({({"None", ({"No emotes found for this channel. Partnered and affiliated channels have emote slots available; emotes awaiting approval may not show up here."})})});
 		return render_template("checklist.md", ([
 			"login_link": "<button id=greyscale onclick=\"document.body.classList.toggle('greyscale')\">Toggle Greyscale (value check)</button>",
