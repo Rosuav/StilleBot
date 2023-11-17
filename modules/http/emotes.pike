@@ -61,6 +61,7 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 		if ((string)id != req->variables->broadcaster) id = yield(get_user_id(req->variables->broadcaster));
 		array emotes = yield(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + id))->data;
 		mapping sets = ([]);
+		mapping setids = ([]); //Map description to ID for second pass
 		foreach (emotes, mapping em) {
 			if (em->emote_type == "bitstier") em->emote_set_id = "Bits"; //Hack - we don't get the bits levels anyway, so just group 'em.
 			if (!sets[em->emote_set_id]) {
@@ -71,15 +72,27 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 					case "bitstier": desc = "Bits"; break; //The actual unlock level is missing.
 					default: break;
 				}
-				//As of 2022, only T1 sub emotes are ever animated, but if that ever changes, we'll be ready!
-				if (has_value(em->format, "animated")) desc = "Animated " + desc;
+				//Group animated emotes separately so they all show up at the end of the
+				//corresponding block. We'll recombine them later.
+				if (has_value(em->format, "animated")) desc += " Animated";
 				sets[em->emote_set_id] = ({desc, ({ })});
+				setids[desc] = em->emote_set_id;
 			}
 			sets[em->emote_set_id][1] += ({
 				sprintf("<figure>![%s](%s)"
 					"<figcaption>%[0]s</figcaption></figure>", em->name,
 					replace(em->images->url_4x, "/static/", "/default/")) //Most emotes have the same image for static and default. Anims get a one-frame for static, and the animated for default.
 			});
+		}
+		foreach (setids; string desc; string id) if (has_suffix(desc, " Animated")) {
+			if (string other = setids[desc - " Animated"]) {
+				//There's both "Tier 1" and "Tier 1 Animated". Fold them together.
+				sets[other][1] += sets[id][1];
+				m_delete(sets, id);
+			} else {
+				//There's animated but no static for this group. Just remove the tag.
+				sets[id][1] -= " Animated";
+			}
 		}
 		//Also fetch the badges. They're intrinsically at a different size, but they'll be stretched to the same size.
 		//If that's a problem, it'll need to be solved in CSS (probably with a classname on the figure here).
