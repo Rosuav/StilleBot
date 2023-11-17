@@ -87,7 +87,7 @@ mapping(string:mixed) command_editor_vars(object channel) {
 	return ([
 		"complex_templates": G->G->commands_complex_templates,
 		"builtins": G->G->commands_builtins,
-		"pointsrewards": G->G->pointsrewards[channel->name[1..]] || ({ }),
+		"pointsrewards": G->G->pointsrewards[channel->userid] || ({ }),
 		"voices": voices,
 		"monitors": channel->config->monitors || ([]),
 	]);

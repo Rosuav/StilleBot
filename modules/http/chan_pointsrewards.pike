@@ -110,7 +110,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (string scopes = !req->misc->session->fake && ensure_bcaster_token(req, "channel:manage:redemptions"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
-	array rew = G->G->pointsrewards[req->misc->channel->name[1..]] || ({ });
+	array rew = G->G->pointsrewards[req->misc->channel->userid] || ({ });
 	//Force an update, in case we have stale data. Note that the command editor will only use
 	//what's sent in the initial response, but at least this way, if there's an issue, hitting
 	//Refresh will fix it (otherwise there's no way for the client to force a refetch).
