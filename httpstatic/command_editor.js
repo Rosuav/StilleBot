@@ -192,6 +192,14 @@ export function scan_message(msg, msgstatus, parent, key) {
 	}
 	return scan_message(msg.message, msgstatus, msg, "message");
 }
+export function register_command(msg) {
+	commands[msg.id] = msg;
+	if (pending_command && pending_command[0].replace("!", "") === msg.id.split("#")[0].replace("!", "")) {
+		//Let everything else finish loading before opening advanced view
+		setTimeout(open_advanced_view, 0.025, msg, pending_command[1]);
+		pending_command = null;
+	}
+}
 export function render_command(msg) {
 	//All commands are objects with (at a minimum) an id and a message.
 	//A simple command is one which is non-conditional and has a single message. Anything
@@ -214,12 +222,7 @@ export function render_command(msg) {
 		else if (!simpletext) response.push(CODE("(Special command, unable to summarize)")); //Not going to be common. Get some examples before rewording this.
 		else simpletext.forEach(m => response.push(CODE(m), BR()));
 	}
-	commands[msg.id] = msg;
-	if (pending_command && pending_command[0].replace("!", "") === msg.id.split("#")[0].replace("!", "")) {
-		//Let everything else finish loading before opening advanced view
-		setTimeout(open_advanced_view, 0.025, msg, pending_command[1]);
-		pending_command = null;
-	}
+	register_command(msg);
 	return TR({"data-id": msg.id, "data-editid": editid}, [
 		TD(CODE("!" + msg.id.split("#")[0])),
 		TD(response),
