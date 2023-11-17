@@ -269,5 +269,3 @@
     - Stream online special that initializes everything
     - Secondary monitor that shows the user's name and avatar??? Or should there be two
       effective monitors in the same page?
-* Reward ID should be a drop-down - no reason to force you to type in the ID now that we
-  have the full list of them being loaded anyway

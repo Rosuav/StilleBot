@@ -67,6 +67,13 @@ function automation_to_string(val) {
 	else return m1 + "-" + m2; //min-max
 }
 
+//If we have pointsrewards, remap it into something more useful.
+//Note that the rewards mapping is allowed to have loose entries in it, as long as reward_ids is
+//accurate and contains no junk.
+const rewards = {"": ""}, reward_ids = [""];
+try {pointsrewards.forEach(r => {rewards[r.id] = r.title; reward_ids.push(r.id);});} catch (e) { }
+if (reward_ids.length === 1) reward_ids.length = 0; //If there are no rewards whatsoever, show the dropdown differently
+
 const default_handlers = {
 	//Validation sees the original value and determines whether it's possible for it to be correct.
 	validate: val => typeof val === "string" || typeof val === "undefined",
@@ -176,6 +183,18 @@ const builtin_validators = {
 		//drop-down should be correctly populated by the time someone actually clicks on something.
 		validate: val => monitors[val],
 	},
+	reward_id: {...default_handlers,
+		make_control: (id, val, el) => SELECT(id, [
+			reward_ids.map(id => {
+				return OPTION({".selected": id === val, value: id}, rewards[id]);
+			}),
+			OPTION({".selected": val === "{rewardid}", value: "{rewardid}"}, "<Triggering reward>"),
+		]),
+		//NOTE: Will permit anything while loading, but that should only happen if we get a hash link
+		//directly to open a command, or if the internet connection is very slow. Either way, the
+		//drop-down should be correctly populated by the time someone actually clicks on something.
+		validate: val => val === "{rewardid}" || rewards[val],
+	}
 };
 
 const builtin_label_funcs = {
@@ -225,13 +244,6 @@ function builtin_types() {
 	});
 	return ret;
 }
-
-//If we have pointsrewards, remap it into something more useful.
-//Note that the rewards mapping is allowed to have loose entries in it, as long as reward_ids is
-//accurate and contains no junk.
-const rewards = {"": ""}, reward_ids = [""];
-try {pointsrewards.forEach(r => {rewards[r.id] = r.title; reward_ids.push(r.id);});} catch (e) { }
-if (reward_ids.length === 1) reward_ids.length = 0; //If there are no rewards whatsoever, show the dropdown differently
 
 const types = {
 	anchor_command: {
