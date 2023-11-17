@@ -226,11 +226,12 @@ function builtin_types() {
 	return ret;
 }
 
-//If we have pointsrewards, remap it into something more useful (as the command anchor gets loaded)
+//If we have pointsrewards, remap it into something more useful.
 //Note that the rewards mapping is allowed to have loose entries in it, as long as reward_ids is
 //accurate and contains no junk.
 const rewards = {"": ""}, reward_ids = [""];
-let hack_retain_reward_id = null;
+try {pointsrewards.forEach(r => {rewards[r.id] = r.title; reward_ids.push(r.id);});} catch (e) { }
+if (reward_ids.length === 1) reward_ids.length = 0; //If there are no rewards whatsoever, show the dropdown differently
 
 const types = {
 	anchor_command: {
@@ -255,8 +256,7 @@ const types = {
 				if (auto.includes(':')) invok.push(`At ${auto}`);
 				else invok.push(`Every ${auto} minutes`);
 			}
-			reward_ids.length = 1; //Truncate without rebinding (since the param details uses the same array and mapping)
-			try {pointsrewards.forEach(r => {rewards[r.id] = r.title; reward_ids.push(r.id);});} catch (e) { }
+			let hack_retain_reward_id = null;
 			if (el.redemption) {
 				if (rewards[el.redemption]) invok.push(`When '${rewards[el.redemption]}' is redeemed`);
 				else {
@@ -272,13 +272,13 @@ const types = {
 				//won't be available for the drop-down. (Closing and reopening the command editor
 				//dialog fixes this.) To ensure that data is not lost, hack in the specific ID of
 				//the selected reward as the only one that can be selected.
+				if (!reward_ids.length) reward_ids.push(""); //Reinstate the null entry
 				if (!rewards[hack_retain_reward_id]) rewards[hack_retain_reward_id] = "selected reward";
 				if (!reward_ids.includes(hack_retain_reward_id)) reward_ids.push(hack_retain_reward_id);
 				//Residual minor flaw: If you load up the page as described, and then delete the
 				//reward that invoked the command that got preloaded, it will be retained on the
 				//client, and until you save, will look like there's a spurious reward.
 			}
-			if (reward_ids.length === 1) reward_ids.length = 0; //If there are no rewards whatsoever, show the dropdown differently
 
 			switch (invok.length) {
 				case 0: return "Command name: " + cmdname; //Fallback for inactive commands
