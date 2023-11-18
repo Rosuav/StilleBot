@@ -223,9 +223,10 @@ const games = {
 			DIV("To open the secret door, you will need to press buttons marked with images. They are identified by original and English names."),
 			DIV("The clues give their original names, and the visual representations are shown on the corkboard. The English names are shown in hover text on the door itself."),
 			DIV("Note that this has been described as an Aztec calendar, but the words don't appear to be Nahuatl. So I dunno."),
-			STYLE(".code {display: flex; gap: 4.5em; justify-content: center; flex-wrap: wrap; margin-top: 1em;} .code > * {font-size: 125%}"),
+			STYLE(".code {display: flex; gap: 4.5em; justify-content: center; flex-wrap: wrap; margin-top: 1em;} .code > * {font-size: 225%}"),
 			DIV({class: "code"}, ["one", "two", "three", "four"].map(idx =>
 				SELECT({"data-setting": "code-" + idx, value: data["code-" + idx]}, [
+					OPTION(""),
 					OPTION("Peek' [Dog]"),
 					OPTION("T'u'ul [Rabbit]"),
 					OPTION("Ch'i'ibalil [Frog]"),
@@ -248,6 +249,16 @@ const games = {
 					OPTION("Milpiés [Millipede]"),
 				]),
 			)),
+			DIV({class: "code"}, [
+				SPAN("Card holder"),
+				SELECT({"data-setting": "cardholder", value: data.cardholder}, [
+					OPTION(""),
+					OPTION("Raúl"),
+					OPTION("Miguel"),
+					OPTION("Sanchez"),
+					OPTION("Mucho Mike"),
+				]),
+			]),
 		];},
 	},
 	dragonheist: {
