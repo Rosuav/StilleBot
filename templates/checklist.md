@@ -14,7 +14,12 @@ figcaption
 	Move that gap to the bottom instead. */
 	margin-top: -0.25em;
 	margin-bottom: 0.25em;
+	overflow-x: clip;
+	text-wrap: nowrap;
+	max-width: 116px; /* same as the images */
+	text-overflow: ellipsis;
 }
+/* TODO: Hover over the figcaption to see it in full. You still get the title text on the image, at least. */
 img {
 	filter: saturate(0);
 	border: 2px solid transparent;
