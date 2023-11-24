@@ -5,7 +5,7 @@ constant markdown = #"
 
 Errors that happen during bot operation will be shown here.
 
-TODO: [x] Errors [x] Warnings [ ] Info
+Show: <label><input type=checkbox name=show value=ERROR> Errors</label> <label><input type=checkbox name=show value=WARN> Warnings</label> <label><input type=checkbox name=show value=INFO> Info</label>
 
 [Delete selected](:#deletemsgs)
 
@@ -14,6 +14,11 @@ TODO: [x] Errors [x] Warnings [ ] Info
 - | - | - | - | loading...
 {:#msglog}
 
+<style>
+.hide-ERROR .lvl-ERROR {display: none;}
+.hide-WARN .lvl-WARN {display: none;}
+.hide-INFO .lvl-INFO {display: none;}
+</style>
 ";
 
 mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
@@ -33,7 +38,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	}
 	return ([
 		"items": err->msglog || ({ }),
-		//Others incl which levels should be shown by default
+		//TODO: Allow the default visibility to be configured somewhere
+		"visibility": err->visibility || ({"ERROR", "WARN"}),
 	]);
 }
 
