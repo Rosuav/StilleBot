@@ -1161,6 +1161,19 @@ class channel(mapping config) {
 	int error_count() {
 		mapping err = persist_status->path("errors", this);
 		if (err->msglog && sizeof(err->msglog)) {
+			array msglog = err->msglog;
+			if (err->lastread) {
+				if ((int)err->lastread >= (int)msglog[-1]->id) return 0; //Common case: All messages read.
+				//In theory this could binary search for the right ID, but in practice,
+				//not worth the hassle. The most common case will be that all messages
+				//have been read, or none have, both of which will be quick.
+				foreach (msglog; int i; mapping msg) {
+					if ((int)msg->id > (int)err->lastread) {
+						msglog = msglog[i..];
+						break;
+					}
+				}
+			}
 			multiset vis = err->visibility ? (multiset)err->visibility : (<"ERROR", "WARN">);
 			return `+(@vis[err->msglog->level[*]]);
 		}

@@ -265,10 +265,8 @@
     - Stream online special that initializes everything
     - Secondary monitor that shows the user's name and avatar??? Or should there be two
       effective monitors in the same page?
-* Have a channel error log
-  - Any kind of odd situation or possible config error can be reported there
-  - Tried to /shoutout without the permission? Log.
-  - Etcetera.
-  - Mods can see the log too.
-  - Error log should be in the sidebar, with a red number for unreads. Which is ironic.
+* Channel error log
+  - Find other places that should be reporting errors and make them report.
+    - We need to talk to you about your TPS, error, and warning reports.
   - Replace modules/log.pike with a proper "Log" node, for public use
+  - Fully implement unread status - lift code from chan_messages as needed.
