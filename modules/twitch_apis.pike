@@ -1,4 +1,7 @@
 //Transform slash commands (other than /me) into API calls
+//TODO: Delay execution of a multi-part command until the API call returns
+//This will ensure ordering of output when slash commands and regular text
+//are interleaved.
 
 /* Other slash commands, not easy (or maybe even possible) to implement:
 /poll, /deletepoll, /endpoll, /vote, /goal, /prediction (won't open the window, so syntax will differ)
