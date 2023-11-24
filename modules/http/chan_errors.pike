@@ -5,11 +5,13 @@ constant markdown = #"
 
 Errors that happen during bot operation will be shown here.
 
-[x] Errors [x] Warnings [ ] Info
+TODO: [x] Errors [x] Warnings [ ] Info
 
-Timestamp | Level | Message | Context
-----------|-------|---------|---------
-- | - | - | loading...
+[Delete selected](:#deletemsgs)
+
+<input type=checkbox id=selectall> | Timestamp | Level | Message | Context
+--|-----------|-------|---------|---------
+- | - | - | - | loading...
 {:#msglog}
 
 ";
@@ -33,4 +35,13 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		"items": err->msglog || ({ }),
 		//Others incl which levels should be shown by default
 	]);
+}
+
+@"is_mod": void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping err = persist_status->path("errors", channel);
+	if (!arrayp(msg->ids) || !err->msglog) return;
+	multiset ids = (multiset)msg->ids;
+	err->msglog = filter(err->msglog) {return !ids[__ARGS__[0]->id];};
+	persist_status->save();
+	send_updates_all(conn->group);
 }
