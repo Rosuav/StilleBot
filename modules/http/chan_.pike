@@ -41,6 +41,7 @@ constant sidebar_menu = ({
 	({"share", "Art sharing"}),
 	({"kofi", "Ko-fi integration"}),
 	({"*snoozeads", "Ads and snoozes"}),
+	({"*errors", "Error log <span id=errcnt></span>"}),
 	//TODO: Hype train, raid finder, emote showcase
 });
 array sidebar_modmenu = map(sidebar_menu) {return ({__ARGS__[0][0] - "*", __ARGS__[0][1]});};
@@ -97,6 +98,11 @@ continue Concurrent.Future|mapping(string:mixed) find_channel(Protocols.HTTP.Ser
 		"https://twitch.tv/" + profile->login,
 		profile->profile_image_url || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=",
 		"Go to channel " + (profile->display_name || ""));
+	if (req->misc->is_mod) {
+		int count = channel->error_count();
+		if (count) req->misc->chaninfo->menunav = replace(req->misc->chaninfo->menunav, "<span id=errcnt></span>",
+			"<span id=errcnt>(" + count + ")</span>");
+	}
 	return yield(handler(req));
 }
 

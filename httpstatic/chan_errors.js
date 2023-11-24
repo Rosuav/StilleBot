@@ -1,6 +1,7 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {INPUT, TD, TIME, TR} = choc; //autoimport
 
+let msgcount = 0;
 export const render_parent = DOM("#msglog tbody");
 export function render_item(msg) {
 	if (!msg) return 0;
@@ -17,13 +18,26 @@ export function render_item(msg) {
 }
 export function render_empty() {
 	return render_parent.appendChild(TR([
-		TD({colSpan: 4}, "Message log is empty."),
+		TD({colSpan: 5}, "Message log is empty."),
 	]));
 }
 export function render(data) {
 	if (data.visibility) {
 		document.querySelectorAll("input[name=show]").forEach(el => el.checked = data.visibility.includes(el.value));
 		update_visibility();
+	}
+	if (typeof data.msgcount !== "undefined") {
+		msgcount = data.msgcount;
+		set_content("#errcnt", msgcount && "(" + msgcount + ")");
+	}
+	else if (data.id && data.type === "item") {
+		//Assume that any single-item update is a new message. If it's one of the visible
+		//levels, add to the message count.
+		const el = DOM("input[name=show][value=" + data.data.level + "]");
+		if (el && el.checked) {
+			msgcount++;
+			set_content("#errcnt", "(" + msgcount + ")");
+		}
 	}
 }
 

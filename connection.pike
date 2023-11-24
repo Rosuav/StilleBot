@@ -1155,6 +1155,16 @@ class channel(mapping config) {
 		persist_status->save();
 		G->G->websocket_types->chan_errors->update_one(name, msgid);
 	}
+
+	//Count the number of error/warning messages still pending.
+	//TODO: Have a concept of "unread" messages and only count those.
+	int error_count() {
+		mapping err = persist_status->path("errors", this);
+		if (err->msglog && sizeof(err->msglog)) {
+			multiset vis = err->visibility ? (multiset)err->visibility : (<"ERROR", "WARN">);
+			return `+(@vis[err->msglog->level[*]]);
+		}
+	}
 }
 
 void irc_message(string type, string chan, string msg, mapping attrs) {

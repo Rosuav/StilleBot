@@ -320,3 +320,9 @@ body:not(:has(nav#sidebar.vis)) nav#topbar {
 		padding-left: 0;
 	}
 }
+
+#errcnt:empty {display: none;}
+#errcnt {
+	color: red;
+	font-weight: bold;
+}

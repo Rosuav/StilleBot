@@ -40,6 +40,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		"items": err->msglog || ({ }),
 		//TODO: Allow the default visibility to be configured somewhere
 		"visibility": err->visibility || ({"ERROR", "WARN"}),
+		"msgcount": channel->error_count(),
 	]);
 }
 
