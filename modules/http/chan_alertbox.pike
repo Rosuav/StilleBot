@@ -529,7 +529,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"blank": "",
 			"notmod2": "Functionality on this page will be activated for mods (and broadcaster) only.",
 		]));
-		return render_template("login.md", (["msg": "moderator privileges"]));
+		return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	}
 	mapping cfg = persist_status->path("alertbox", (string)req->misc->channel->userid);
 	//For API usage eg command viewer, provide some useful information in JSON.

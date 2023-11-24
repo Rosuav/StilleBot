@@ -49,7 +49,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (string scopes = !req->misc->session->fake && ensure_bcaster_token(req, "channel:manage:redemptions"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
 	//TODO: Should non-mods be allowed to see the details?
-	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
+	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	return render_template(markdown, ([
 		"vars": (["ws_type": "chan_pointsrewards", "ws_group": req->misc->channel->name, "ws_code": "chan_dynamics"]),
 	]) | req->misc->chaninfo);

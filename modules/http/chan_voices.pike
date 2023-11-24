@@ -44,7 +44,7 @@ Name        | Mnemonic | Description/purpose | -
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping cfg = req->misc->channel->config;
-	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
+	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	return render(req, ([
 		"vars": ([
 			"ws_group": "", "additional_scopes": G->G->voice_additional_scopes,

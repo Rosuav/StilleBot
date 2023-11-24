@@ -100,7 +100,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 		"vars": (["ws_type": ws_type, "ws_group": req->variables->key + req->misc->channel->name, "ws_code": "chan_labels"]),
 		"title": "Channel labels", "styles": STYLES,
 	]));
-	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]));
+	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 		"accesskey": get_access_key(req->misc->channel->name[1..]),
