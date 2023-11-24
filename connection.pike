@@ -4,7 +4,7 @@ inherit annotated;
 
 string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
-object substitutions = Regexp.PCRE("(\\$[*?A-Za-z0-9|]+\\$)|({[A-Za-z0-9_@|]+})");
+object substitutions = Regexp.PCRE("(\\$[*?A-Za-z0-9|]*\\$)|({[A-Za-z0-9_@|]+})");
 constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT", "USERSTATE"});
 mapping irc_connections = ([]); //Not persisted across code reloads, but will be repopulated (after checks) from the connection_cache.
 @retain: mapping channelcolor = ([]);
@@ -381,7 +381,7 @@ class channel(mapping config) {
 		if (arrayp(text)) return _substitute_vars(text[*], vars, person, users);
 		//Replace shorthands with their long forms. They are exactly equivalent, but the
 		//long form can be enhanced with filters and/or defaults.
-		text = replace(text, (["%s": "{param}", "$$": "{username}", "$participant$": "{participant}"]));
+		text = replace(text, (["%s": "{param}", "$participant$": "{participant}"]));
 		if (!vars["{participant}"] && has_value(text, "{participant}") && person->user)
 		{
 			//Note that {participant} with a delay will invite people to be active
