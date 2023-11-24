@@ -140,6 +140,7 @@ continue Concurrent.Future shoutout(object channel, string voiceid, string msg, 
 		if (ret->status == 429 && queue && !has_value(ret->message, "the specified streamer")) {
 			werror("** qshoutout failure: Got 429 error, qso %O time %O\n", qso[channel->userid], time());
 		}
+		else channel->report_error("WARN", ret->message, "/shoutout " + msg);
 	}
 }
 @"moderator:manage:shoutouts":

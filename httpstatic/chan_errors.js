@@ -4,7 +4,7 @@ const {TD, TIME, TR} = choc; //autoimport
 export const render_parent = DOM("#msglog tbody");
 export function render_item(msg) {
 	if (!msg) return 0;
-	const when = new Date(msg.datetime);
+	const when = new Date(msg.datetime * 1000);
 	return TR({"data-id": msg.id}, [
 		TD(TIME({datetime: when.toISOString(), title: when.toLocaleString()},
 			when.toLocaleString(), //TODO: If today, use toLocaleTimeString, if recent, give time and DOW, else give just date

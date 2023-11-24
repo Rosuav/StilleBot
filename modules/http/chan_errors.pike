@@ -22,10 +22,15 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 }
 
 bool need_mod(string grp) {return 1;}
-mapping get_chan_state(object channel, string grp) {
-	mapping cfg = persist_status->path("errors", channel);
+mapping get_chan_state(object channel, string grp, string|void id) {
+	mapping err = persist_status->path("errors", channel);
+	if (id) {
+		foreach (err->msglog || ({}), mapping msg)
+			if (msg->id == id) return msg;
+		return 0;
+	}
 	return ([
-		"items": cfg->msglog || ({ }),
-		//Others incl which should be shown by default
+		"items": err->msglog || ({ }),
+		//Others incl which levels should be shown by default
 	]);
 }

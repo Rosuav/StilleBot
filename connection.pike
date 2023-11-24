@@ -1141,6 +1141,20 @@ class channel(mapping config) {
 		if (has_value(info, 0)) werror("DEBUG: Special %O got info %O\n", special, info); //Track down those missing-info errors
 		send(person, response, info);
 	}
+
+	void report_error(string level, string message, string|void context) {
+		mapping err = persist_status->path("errors", this);
+		string msgid = (string)++err->nextid;
+		err->msglog += ({([
+			"id": msgid,
+			"datetime": time(0),
+			"level": level,
+			"message": message,
+			"context": context || "",
+		])});
+		persist_status->save();
+		G->G->websocket_types->chan_errors->update_one(name, msgid);
+	}
 }
 
 void irc_message(string type, string chan, string msg, mapping attrs) {
