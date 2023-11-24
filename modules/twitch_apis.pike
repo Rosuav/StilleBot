@@ -274,7 +274,7 @@ mixed shieldoff(object c, string v, string m, mapping t) {return shield(c, v, m,
 
 //Returns 0 if it sent the message, otherwise a reason code.
 //Yes, the parameter order is a bit odd; it makes filtering by this easier.
-string send_chat_command(string msg, object channel, string voiceid) {
+string|zero send_chat_command(string msg, object channel, string voiceid) {
 	sscanf(msg, "/%[^ ] %s", string cmd, string param);
 	if (!need_scope[cmd]) return "not a command";
 	mapping tok = persist_status["voices"][voiceid];
@@ -284,7 +284,10 @@ string send_chat_command(string msg, object channel, string voiceid) {
 		sscanf(config["pass"] || "o", "oauth:%s", string pass);
 		tok = (["token": pass, "scopes": config->scopes || ({"whispers:edit"})]);
 	}
-	if (!has_value(tok->scopes, need_scope[cmd])) return "no perms";
+	if (!has_value(tok->scopes, need_scope[cmd])) {
+		channel->report_error("ERROR", "This command requires " + need_scope[cmd] + " permission", msg);
+		return 0; //Note that this will still suppress the chat message.
+	}
 	spawn_task(this[cmd](channel, voiceid, param || "", tok));
 }
 
