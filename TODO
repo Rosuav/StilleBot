@@ -271,3 +271,4 @@
   - Etcetera.
   - Mods can see the log too.
   - Error log should be in the sidebar, with a red number for unreads. Which is ironic.
+  - Replace modules/log.pike with a proper "Log" node, for public use

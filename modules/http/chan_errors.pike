@@ -52,3 +52,20 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	persist_status->save();
 	send_updates_all(conn->group);
 }
+
+protected void create(string name) {
+	::create(name);
+	//If the demo channel exists, and if you've attempted to view its errors, and if it
+	//doesn't actually have any, populate it with some examples.
+	object channel = G->G->irc->channels["#!demo"];
+	mapping err = persist_status->has_path("errors", channel);
+	if (err && (!err->msglog || !sizeof(err->msglog))) {
+		channel->report_error("ERROR", "No channel https://twitch.tv/!demo - is this actually the demo?", "");
+		channel->report_error("WARN", "Unable to query moderator list for !demo", "/mods");
+		channel->report_error("ERROR", "This command requires channel:manage:vips permission", "/vip mustardmine");
+		channel->report_error("INFO", "Welcome to StilleBot!", "!hello");
+		channel->report_error("INFO", "Messages like this can be viewed by the broadcaster and mods.", "!hello");
+		channel->report_error("WARN", "The broadcaster may not give another Shoutout to the specified streamer until the cooldown period expires.", "/shoutout mustardmine");
+		err->lastread = err->msglog[-1]->id;
+	}
+}
