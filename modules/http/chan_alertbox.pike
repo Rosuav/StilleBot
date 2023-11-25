@@ -1360,7 +1360,6 @@ constant vars_provided = ([
 //Attempt to send an alert. Returns 1 if alert sent, 0 if not (eg if alert disabled).
 //Note that the actual sending of the alert is asynchronous, esp if TTS is used.
 int(1bit) send_alert(object channel, string alerttype, mapping args) {
-	System.Timer tm = System.Timer(); werror("send_alert(%O, %O): starting\n", channel->name, alerttype);
 	mapping cfg = persist_status->has_path("alertbox", (string)channel->userid);
 	if (!cfg->?authkey) return 0;
 	int suppress_alert = 0;
@@ -1399,7 +1398,6 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 			default: break;
 		}
 	}
-	werror("send_alert(%O, %O): conditions checked %O\n", channel->name, alerttype, tm->peek());
 	//Note that due to the oddities of alertsets and inheritance, we actually
 	//use the *resolved* config to check an alert set. This allows a variant
 	//to choose its alertset, it allows a base alert to choose the alertset
@@ -1416,7 +1414,6 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	//If any variant responds, use that instead.
 	foreach (alert->variants || ({ }), string subid)
 		if (send_alert(channel, subid, args)) return 1;
-	werror("send_alert(%O, %O): variants checked %O\n", channel->name, alerttype, tm->peek());
 
 	if (suppress_alert) return 0;
 	//A completely null alert does not actually fire.
@@ -1431,7 +1428,6 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	cfg->replay += ({args | (["alert_timestamp": time()])});
 	persist_status->save();
 	send_updates_all("control" + channel->name);
-	werror("send_alert(%O, %O): spawning send_with_tts %O\n", channel->name, alerttype, tm->peek());
 	spawn_task(send_with_tts(channel, args));
 	return 1;
 }
