@@ -51,13 +51,13 @@ on("click", "#deletemsgs", e => {
 	//Before scanning for IDs, figure out which ones are actually visible.
 	//(Note that this means "Select All" may select invisible ones, but they won't
 	//be deleted if they are hidden at the moment of pressing the button.)
-	const vis = {};
+	const hidden = {};
 	document.querySelectorAll("input[name=show]").forEach(el =>
-		el.checked && (vis["lvl-" + el.value] = 1));
+		!el.checked && (hidden["lvl-" + el.value] = 1));
 	render_parent.querySelectorAll(".selected").forEach(el => {
-		if (el.checked && vis[el.closest("tr").className]) ids.push(el.closest("[data-id]").dataset.id);
+		if (el.checked && !hidden[el.closest("tr").className]) ids.push(el.closest("[data-id]").dataset.id);
 	});
-	ws_sync.send({cmd: "delete", ids});
+	if (ids.length) ws_sync.send({cmd: "delete", ids});
 });
 
 function update_visibility() {
