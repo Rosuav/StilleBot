@@ -130,7 +130,7 @@ constant command_description = "Manage channel point rewards - fulfil and cancel
 constant builtin_name = "Points rewards";
 //TODO: In the front end, label them as "[En/Dis]able reward", "Mark complete", "Refund points"
 //TODO: Allow setting more than one attribute, eg setting both title and desc atomically
-constant builtin_param = ({"/Reward/reward_id", "/Action/enable/disable/title/desc/fulfil/cancel", "Redemption ID"});
+constant builtin_param = ({"/Reward/reward_id", "/Action/enable/disable/cost/title/desc/fulfil/cancel", "Redemption ID"});
 constant scope_required = "channel:manage:redemptions";
 constant vars_provided = ([
 	"{error}": "Error message, if any",
