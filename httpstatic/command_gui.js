@@ -476,10 +476,10 @@ const types = {
 	},
 	...builtin_types(),
 	handle_errors: {
-		color: "#ff8800", label: el => "Handle errors",
+		color: "#ff8800", label: el => "Report errors in chat",
 		params: [{attr: "conditional", values: "string"}, {attr: "expr1", values: "{error}"},
 			{attr: "otherwise", values: "Unexpected error: {error}"}],
-		typedesc: "Handle potential errors from a builtin",
+		typedesc: "If a builtin is set to catch errors, and one happens, this will report it in the channel chat.",
 	},
 	conditional_string: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => [
