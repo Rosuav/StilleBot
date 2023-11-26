@@ -56,11 +56,11 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 
 constant builtin_description = "Log an error, warning, or informational";
 constant builtin_name = "Log error";
-constant builtin_param = ({"/Level/ERROR/WARN/INFO", "Message", "Context"});
+constant builtin_param = ({"/Level/ERROR/WARN/INFO", "Message"});
 constant vars_provided = ([]);
 mapping message_params(object channel, mapping person, string|array param) {
 	if (!arrayp(param)) param = ({"ERROR", param});
-	channel->report_error(param[0], param[1], sizeof(param) > 2 ? param[2] : "");
+	channel->report_error(param[0], param[1], ""); //TODO: Carry context through the message processing system
 	return ([]);
 }
 
