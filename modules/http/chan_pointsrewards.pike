@@ -130,11 +130,17 @@ constant command_description = "Manage channel point rewards - fulfil and cancel
 constant builtin_name = "Points rewards";
 //TODO: In the front end, label them as "[En/Dis]able reward", "Mark complete", "Refund points"
 //TODO: Allow setting more than one attribute, eg setting both title and desc atomically
-constant builtin_param = ({"/Reward/reward_id", "/Action/enable/disable/cost/title/desc/fulfil/cancel", "Redemption ID"});
+constant builtin_param = ({"/Reward/reward_id", "/Action/enable/disable/cost/title/desc/query/fulfil/cancel", "Redemption ID"});
 constant scope_required = "channel:manage:redemptions";
 constant vars_provided = ([
 	"{error}": "Error message, if any",
 	"{action}": "Action(s) performed, if any (may be blank)",
+	"{prevcost}": "Redemption cost prior to any update",
+	"{prevtitle}": "Short description prior to any update",
+	"{prevdesc}": "Long description (prompt) prior to any update",
+	"{newcost}": "Redemption cost after any update",
+	"{newtitle}": "Short description after any update",
+	"{newdesc}": "Long description (prompt) after any update",
 ]);
 
 continue mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
@@ -152,27 +158,33 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 			case "desc": params->prompt = arg; break; //Use array parameter form instead.
 			case "fulfil": case "cancel": if (arg != "") { //Not an error to attempt to mark nothing
 				complete_redemption(channel->name[1..], reward_id, arg, cmd == "fulfil" ? "FULFILLED" : "CANCELED");
-			}
-			empty_ok = 1;
-			break;
+			} //fallthrough
+			case "query": empty_ok = 1; break; //Query-only. Other modes will also query, but you can use this to avoid making unwanted changes.
 			default: return (["{error}": sprintf("Unknown action %O", cmd)]);
 		}
 	}
-	if (!sizeof(params)) {
-		if (empty_ok) return (["{error}": "", "{action}": "Done"]);
-		else return (["{error}": "No changes requested"]);
-	}
+	if (!sizeof(params) && !empty_ok) return (["{error}": "No changes requested"]);
 	int broadcaster_id = yield(get_user_id(channel->name[1..]));
-	mapping ret = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+	mapping prev = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+			+ broadcaster_id + "&id=" + reward_id,
+		(["Authorization": "Bearer " + token])));
+	mapping ret = sizeof(params) ? yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 			+ broadcaster_id + "&id=" + reward_id,
 		(["Authorization": "Bearer " + token]),
 		(["method": "PATCH", "json": params, "return_errors": 1]),
-	));
+	)) : prev; //If you didn't request any changes, the previous and new states are the same.
 	if (ret->error) return (["{error}": ret->error + ": " + ret->message]);
-	return ([
+	mapping resp = ([
 		"{error}": "",
-		"{action}": "Done", //TODO: Say what actually changed (might require querying before updating)
+		"{action}": "Done", //Would it be worth having a human-readable summary of the actual diff? The raw information is available.
 	]);
+	foreach ((["prev": prev, "new": ret]); string lbl; mapping ret) {
+		if (!arrayp(ret->data) || !sizeof(ret->data)) continue; //No useful data available. Shouldn't normally happen.
+		resp["{" + lbl + "cost}"] = (string)ret->data[0]->cost;
+		resp["{" + lbl + "title}"] = ret->data[0]->title || "";
+		resp["{" + lbl + "desc}"] = ret->data[0]->prompt || "";
+	}
+	return resp;
 }
 
 protected void create(string name) {::create(name);}
