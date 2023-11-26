@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit builtin_command;
 
 constant markdown = #"
 # Channel Error Log
@@ -51,6 +52,16 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	err->msglog = filter(err->msglog) {return !ids[__ARGS__[0]->id];};
 	persist_status->save();
 	send_updates_all(conn->group);
+}
+
+constant builtin_description = "Log an error, warning, or informational";
+constant builtin_name = "Log error";
+constant builtin_param = ({"/Level/ERROR/WARN/INFO", "Message", "Context"});
+constant vars_provided = ([]);
+mapping message_params(object channel, mapping person, string|array param) {
+	if (!arrayp(param)) param = ({"ERROR", param});
+	channel->report_error(param[0], param[1], sizeof(param) > 2 ? param[2] : "");
+	return ([]);
 }
 
 protected void create(string name) {

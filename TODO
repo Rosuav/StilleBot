@@ -268,7 +268,6 @@
 * Channel error log
   - Find other places that should be reporting errors and make them report.
     - We need to talk to you about your TPS, error, and warning reports.
-  - Replace modules/log.pike with a proper "Log" node, for public use
   - Fully implement unread status - lift code from chan_messages as needed.
   - Errors from builtins can then be autologged there, removing the need for "Handle Errors".
     - This will require that a builtin without a message be retained, just like an if/else
