@@ -305,7 +305,7 @@ echoable_message _validate(echoable_message resp, mapping state)
 		//Simple string? Let the builtin itself handle it.
 		if (stringp(resp->builtin_param) && resp->builtin_param != "") ret->builtin_param = resp->builtin_param;
 		//Array of strings? Maybe we should validate the number of arguments (different per builtin),
-		//but for now, any array will be accepted.
+		//but for now, any array of strings will be accepted.
 		else if (arrayp(resp->builtin_param) && sizeof(resp->builtin_param)
 			&& !has_value(stringp(resp->builtin_param[*]), 0))
 				ret->builtin_param = resp->builtin_param;
@@ -325,7 +325,7 @@ echoable_message _validate(echoable_message resp, mapping state)
 			//TODO: Keyword-synchronized cooldowns should synchronize their cdlengths too
 		}
 	}
-	else if (ret->message == "" && (!ret->dest || ret->dest == "/web" || ret->dest == "/w")) {
+	else if (ret->message == "" && (<0, "/web", "/w", "/reply">)[ret->dest]) {
 		//No message? Might be nothing to do. (Though if there's a special destination, it might be okay.)
 		if (!ret->builtin) return "";
 		//But if there's a builtin, assume that it could have side effects.
