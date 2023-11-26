@@ -1430,7 +1430,10 @@ function open_element_properties(el, type_override) {
 			//NOTE: This does NOT claim focus; the first "real" attribute
 			//should be the one to get focus.
 			return TR([TD(LABEL({htmlFor: "value-" + param.attr}, "Builtin type: ")), TD(SELECT({...id, value: values},
-				Object.entries(builtins).map(([name, blt]) => OPTION({value: name}, blt.name))))]);
+				Object.entries(builtins)
+					.sort((a,b) => a[1].name.localeCompare(b[1].name))
+					.map(([name, blt]) => OPTION({value: name}, blt.name))
+			))]);
 		}
 		if (typeof values !== "object") return null; //Fixed strings and such
 		let value = el[param.attr];
