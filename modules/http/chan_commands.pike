@@ -325,16 +325,13 @@ echoable_message _validate(echoable_message resp, mapping state)
 			//TODO: Keyword-synchronized cooldowns should synchronize their cdlengths too
 		}
 	}
-	else if (ret->message == "" && (<0, "/web", "/w", "/reply">)[ret->dest]) {
-		//No message? Might be nothing to do. (Though if there's a special destination, it might be okay.)
-		if (!ret->builtin) return "";
-		//But if there's a builtin, assume that it could have side effects.
-		ret->message = ([ //Synthesized "Handle Errors" element as per the GUI
-			"conditional": "string",
-			"expr1": "{error}",
-			"message": "",
-			"otherwise": "Unexpected error: {error}"
-		]);
+	else if (ret->message == "" && (<0, "/web", "/w", "/reply">)[ret->dest] && !ret->builtin) {
+		//No message? Nothing to do, if a standard destination. Destinations like
+		//"set variable" are perfectly happy to accept blank messages, and builtins
+		//can be used for their side effects only. Note that it's up to the command
+		//designer to know whether this is meaningful or not (Arg Split with no
+		//content isn't very helpful, but Log absolutely would be).
+		return "";
 	}
 	//Delays are integer seconds. We'll permit a string of digits, since that might be
 	//easier for the front end.
