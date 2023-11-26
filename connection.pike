@@ -824,7 +824,13 @@ class channel(mapping config) {
 		vars = get_channel_variables(person->uid) | (vars || ([]));
 		vars["$$"] = person->displayname || person->user;
 		vars["{uid}"] = (string)person->uid; //Will be "0" if no UID known
-		_send_recursive(person, message, vars, (["callback": callback, "users": (["": (string)person->uid])]));
+		if (mixed ex = catch {_send_recursive(person, message, vars, (["callback": callback, "users": (["": (string)person->uid])]));}) {
+			//TODO: Carry context around, eg who triggered what command
+			if (arrayp(ex) && sizeof(ex) && stringp(ex[0]))
+				report_error("ERROR", String.trim(ex[0]), "");
+			else
+				werror("**** Error in command handling, unexpected format ****\n%s\n", describe_backtrace(ex));
+		}
 	}
 
 	//Expand all channel variables, except for {participant} which usually won't
