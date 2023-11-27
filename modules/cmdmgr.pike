@@ -164,9 +164,46 @@ mapping message_params(object channel, mapping person, array param) {
 	}
 }
 
+void scan_command(mapping state, echoable_message message) {
+	if (arrayp(message)) scan_command(state, message[*]);
+	if (!mappingp(message)) return;
+	if (message->builtin && mappingp(message->message) && !message->conditional &&
+		message->message->conditional == "string" && message->message->expr1 == "{error}" &&
+			(!message->message->expr2 || message->message->expr2 == "")) {
+		//We have a builtin, and inside it, something that's checking for errors.
+		//It might be a simple "Handle Errors" or it might be more elaborate, but
+		//either way, transform it.
+		m_delete(message->message, ({"conditional", "expr1", "expr2"})[*]);
+		message->otherwise = m_delete(message->message, "otherwise");
+		if (message->message->builtin) {
+			//It's a bit more complicated. Save ourselves some trouble and just
+			//add a layer of indirection.
+			message->message = (["message": message->message]);
+		}
+		message->message->builtin = m_delete(message, "builtin");
+		message->message->builtin_param = m_delete(message, "builtin_param");
+		message->conditional = "catch";
+		state->changed = 1;
+	}
+	scan_command(state, message->message);
+	scan_command(state, message->otherwise);
+}
+
 protected void create(string name) {
 	::create(name);
 	register_bouncer(autospam);
 	foreach (list_channel_configs(), mapping cfg) if (cfg->login)
 		if (G->G->stream_online_since[cfg->login]) connected(cfg->login);
+	//TODO: Look for any lingering aliases, which shouldn't be stored in channel configs
+	//Look for old-style error handling
+	foreach (list_channel_configs(), mapping cfg) if (cfg->commands) {
+		foreach (cfg->commands; string cmd; echoable_message message) {
+			mapping state = (["changed": 0]);
+			scan_command(state, message);
+			if (state->changed) {
+				werror("CHANGED: %O %O\n", cfg->login, cmd);
+				make_echocommand(cmd + "#" + cfg->login, message);
+			}
+		}
+	}
 }
