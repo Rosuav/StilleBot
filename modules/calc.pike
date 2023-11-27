@@ -118,29 +118,28 @@ constant builtin_description = "Perform arithmetic calculations";
 constant builtin_name = "Calculator";
 constant builtin_param = "Expression";
 constant vars_provided = ([
-	"{error}": "Blank if all is well, otherwise an error message",
 	"{result}": "The result of the calculation",
 ]);
 constant command_suggestions = (["!calc": ([
 	"_description": "Calculate a simple numeric expression/formula",
-	"builtin": "calc", "builtin_param": "%s",
+	"conditional": "catch",
 	"message": ([
-		"conditional": "string", "expr1": "{error}", "expr2": "",
+		"builtin": "calc", "builtin_param": "%s",
 		"message": "@$$: {result}",
-		"otherwise": "@$$: {error}",
 	]),
+	"otherwise": "@$$: {error}",
 ])]);
 mapping message_params(object channel, mapping person, string param, mapping cfg) {
-	if (param == "") return (["{error}": "Usage: !calc 1+2", "{result}": ""]);
+	if (param == "") error("Usage: !calc 1+2\n");
 	if (person->badges->?_mod) param = channel->expand_variables(param);
 	mixed ex = catch {
 		int|float|string result = evaluate(param, ({channel, cfg}));
 		//"!calc 1.5 + 2.5" will give a result of 4.0, but it's nicer to say "4"
 		if (floatp(result) && result == (float)(int)result) result = (int)result;
 		if (!stringp(result)) result = sprintf("%O", result);
-		return (["{error}": "", "{result}": result]);
+		return (["{result}": result]);
 	};
-	return (["{error}": "Invalid expression [" + (describe_error(ex)/"\n")[0] + "]", "{result}": ""]);
+	error("Invalid expression [" + (describe_error(ex)/"\n")[0] + "]"); //The default errors don't really explain that they're expression parse errors.
 }
 
 #if constant(G)
