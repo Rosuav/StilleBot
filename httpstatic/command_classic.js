@@ -139,6 +139,9 @@ const conditional_types = {
 			"All commands with the same sync name share the same cooldown.",
 		],
 	},
+	"catch": {
+		"": () => ["If an error happens in the first block, move into the second."],
+	},
 	choose: {
 		"": "Choose a type of condition.",
 	},
@@ -170,6 +173,7 @@ function render_command(cmd, toplevel) {
 			OPTION({value: "number"}, "Numeric calculation"),
 			OPTION({value: "spend"}, "Spend channel points"),
 			OPTION({value: "cooldown"}, "Cooldown/rate limit"),
+			OPTION({value: "catch"}, "Catch errors"),
 		])];
 		const rows = [];
 		let desc = "";

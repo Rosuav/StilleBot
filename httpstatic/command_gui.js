@@ -518,6 +518,12 @@ const types = {
 		typedesc: ["Prevent the command from being used too quickly. If it's been used recently, the second block happens instead.",
 			BR(), "To have several commands share a cooldown, put the same tag in each one (any word or phrase will do)."],
 	},
+	try_catch: {
+		color: "#ff8800", children: ["message", "otherwise"], label: el => ["Catch errors", "If error happens:"],
+		params: [{attr: "conditional", values: "catch"}],
+		typedesc: ["Put something that might fail in the first block. If it fails, the second block will run.",
+			BR(), "Inside the second block, use {error} to describe the problem."],
+	},
 	randrot: {
 		color: "#ee7777", children: ["message"], label: el => el.mode === "rotate" ? "Rotate" : "Randomize",
 		params: [{attr: "mode", label: "Mode", values: ["random", "rotate"], selections: {random: "Random", rotate: "Rotate"}},
@@ -651,13 +657,14 @@ const tray_tabs = [
 		{type: "randrot", mode: "rotate"},
 		{type: "builtin_argsplit", builtin_param: "{param}"},
 		{type: "cooldown", cdlength: "30", cdname: ""},
+		{type: "foreach", "participant_activity": "300"},
 	]},
 	{name: "Extras", color: "#7f7f7f", items: [ //I'm REALLY not happy with these names.
 		{type: "handle_errors"},
 		{type: "builtin_chan_monitors"},
 		{type: "builtin_chan_giveaway"},
 		{type: "builtin_hypetrain"},
-		{type: "foreach", "participant_activity": "300"},
+		{type: "try_catch"},
 	]},
 ];
 const seen_types = {trashcan: 1};

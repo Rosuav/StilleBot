@@ -585,6 +585,14 @@ class channel(mapping config) {
 					sprintf("%d:%02d:%02d", delay / 3600, (delay / 60) % 60, delay % 60);
 				break;
 			}
+			case "catch": { //Exception handling
+				if (mixed ex = catch {_send_recursive(person, message | (["conditional": 0]), vars, cfg);}) {
+					msg = message->otherwise;
+					if (arrayp(ex) && sizeof(ex) && stringp(ex[0]))
+						vars["{error}"] = String.trim(ex[0]);
+				}
+				else return; //Message has now been sent.
+			}
 			default: break; //including UNDEFINED which means unconditional, and 0 which means "condition already processed"
 		}
 		if (!msg) return; //If a message doesn't have an Otherwise, it'll end up null.
