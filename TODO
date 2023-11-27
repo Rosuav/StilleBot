@@ -270,8 +270,8 @@
     - We need to talk to you about your TPS, error, and warning reports.
   - Fully implement unread status - lift code from chan_messages as needed.
   - Errors from builtins can then be autologged there, removing the need for "Handle Errors".
-    - This will require that a builtin without a message be retained, just like an if/else
-      with one branch empty.
+    - Change all builtins to throw rather than returning their errors. This will be
+      backward incompatible, but necessary IMO.
 * Classic editor has issues with a top-level try/catch. Look into it some time.
   - Issue does not occur if the try/catch is nested inside something.
   - Might be failing to clear something after rendering??

@@ -475,12 +475,6 @@ const types = {
 			"name ", CODE("each*"), " for any variable."],
 	},
 	...builtin_types(),
-	handle_errors: {
-		color: "#ff8800", label: el => "Report errors in chat",
-		params: [{attr: "conditional", values: "string"}, {attr: "expr1", values: "{error}"},
-			{attr: "otherwise", values: "Unexpected error: {error}"}],
-		typedesc: "If a builtin is set to catch errors, and one happens, this will report it in the channel chat.",
-	},
 	conditional_string: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => [
 			el.conditional === "string" ? (el.expr1 && el.expr2 ? "If " + el.expr1 + " == " + el.expr2 : el.expr1 ? "If " + el.expr1 + " is blank" : "String comparison")
@@ -653,14 +647,13 @@ const tray_tabs = [
 		{type: "builtin_tz", builtin_param: "Los Angeles"},
 	]},
 	{name: "Advanced", color: "#bbffbb", items: [
-		{type: "builtin_chan_pointsrewards", message: [{type: "handle_errors"}]},
+		{type: "builtin_chan_pointsrewards"},
 		{type: "randrot", mode: "rotate"},
 		{type: "builtin_argsplit", builtin_param: "{param}"},
 		{type: "cooldown", cdlength: "30", cdname: ""},
 		{type: "foreach", "participant_activity": "300"},
 	]},
 	{name: "Extras", color: "#7f7f7f", items: [ //I'm REALLY not happy with these names.
-		{type: "handle_errors"},
 		{type: "builtin_chan_monitors"},
 		{type: "builtin_chan_giveaway"},
 		{type: "builtin_hypetrain"},
