@@ -272,3 +272,4 @@
 * Classic editor has issues with a top-level try/catch. Look into it some time.
   - Issue does not occur if the try/catch is nested inside something.
   - Might be failing to clear something after rendering??
+* utils.js - replace window.onresize with window.matchMedia?
