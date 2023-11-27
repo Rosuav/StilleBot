@@ -272,3 +272,6 @@
   - Errors from builtins can then be autologged there, removing the need for "Handle Errors".
     - This will require that a builtin without a message be retained, just like an if/else
       with one branch empty.
+* Classic editor has issues with a top-level try/catch. Look into it some time.
+  - Issue does not occur if the try/catch is nested inside something.
+  - Might be failing to clear something after rendering??
