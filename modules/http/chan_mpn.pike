@@ -121,7 +121,6 @@ constant command_description = "Create, manage, or link to an MPN document";
 constant builtin_name = "Multi-Player Notepad";
 constant builtin_param = "Action";
 constant vars_provided = ([
-	"{error}": "Error message, if any",
 	"{action}": "Action performed (if any)",
 	"{url}": "URL to the manipulated document, blank if no such document",
 ]);
@@ -129,7 +128,7 @@ constant vars_provided = ([
 mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
 	write("message_params(channel %O, person %O, %O)\n", channel->name, person->user, param);
-	if (param == "") return (["{error}": "Need a subcommand"]);
+	if (param == "") error("Need a subcommand\n");
 	sscanf(param, "%s %[^ ]%*[ ]%s", string cmd, string document, string arg);
 	mapping doc;
 	string action = "";
@@ -142,7 +141,7 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string 
 	}
 	else {
 		doc = persist_status->path("mpn", channel->name)[document];
-		if (!doc) return (["{error}": "Document does not exist."]);
+		if (!doc) error("Document does not exist.\n");
 	}
 	switch (cmd) {
 		case "create": break; //Handled above
@@ -156,7 +155,7 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string 
 			action = "Added line.";
 			break;
 		default:
-			return (["{error}": "Invalid subcommand " + cmd]);
+			error("Invalid subcommand " + cmd + "\n");
 	}
 	return ([
 		"{url}": sprintf("%s/channels/%s/mpn?document=%s",
@@ -165,7 +164,6 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string 
 			Protocols.HTTP.uri_encode(document),
 		),
 		"{action}": action,
-		"{error}": "",
 	]);
 }
 

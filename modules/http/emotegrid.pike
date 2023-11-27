@@ -162,7 +162,6 @@ continue string|Concurrent.Future make_emote(string emoteid, string|void channel
 constant builtin_name = "Emote grid";
 constant builtin_param = ({"Emote", "Channel name"});
 constant vars_provided = ([
-	"{error}": "Error message, if any",
 	"{code}": "Unique code for the generated grid",
 	"{url}": "Web address where the grid can be viewed",
 ]);
@@ -170,10 +169,10 @@ constant vars_provided = ([
 continue mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
 	//PROBLEM: Channel point redemptions don't actually include emote data. So having this
 	//as a points reward is actually problematic.
-	if (!person->emotes) return (["{error}": "Unfortunately this doesn't work as a channel point redemption (currently)."]);
-	if (!sizeof(person->emotes)) return (["{error}": "Please include an emote to build a grid of."]);
+	if (!person->emotes) error("Unfortunately this doesn't work as a channel point redemption (currently).\n");
+	if (!sizeof(person->emotes)) error("Please include an emote to build a grid of.\n");
 
-	return (["{error}": "Sorry! This is currently disabled pending massive optimization work."]);
+	error("Sorry! This is currently disabled pending massive optimization work.\n");
 
 	string channame = sizeof(param) > 1 && param[1]; //TODO: Support "channelname emoteGoesHere" as well
 	string code = yield((mixed)make_emote(person->emotes[0][0], channame));

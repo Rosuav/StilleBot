@@ -639,7 +639,6 @@ constant builtin_description = "Handle giveaways via channel point redemptions";
 constant builtin_name = "Giveaway tools";
 constant builtin_param = "/Action/refund/status";
 constant vars_provided = ([
-	"{error}": "Error message, if any",
 	"{action}": "Action taken - same as subcommand, or 'none' if there was nothing to do",
 	"{tickets}": "Number of tickets you have (or had)",
 ]);
@@ -659,24 +658,23 @@ constant command_suggestions = ([
 
 mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
-	if (param == "") return (["{error}": "Need a subcommand"]);
+	if (param == "") error("Need a subcommand\n");
 	sscanf(param, "%[^ ]%*[ ]%s", string cmd, string arg);
-	if (cmd != "refund" && cmd != "status") return (["{error}": "Invalid subcommand"]);
-	if (!channel->config->giveaway) return (["{error}": "Giveaways not active"]); //Not the same as "giveaway not open", this one will not normally be seen
+	if (cmd != "refund" && cmd != "status") error("Invalid subcommand\n");
+	if (!channel->config->giveaway) error("Giveaways not active\n"); //Not the same as "giveaway not open", this one will not normally be seen
 	string chan = channel->name[1..];
 	mapping people = giveaway_tickets[chan] || ([]);
 	mapping you = people[(string)person->uid] || ([]);
 	if (cmd == "refund") {
 		mapping status = persist_status->path("giveaways", chan);
-		if (!you->tickets) return (["{error}": "", "{action}": "none", "{tickets}": "0"]);
-		if (!status->is_open) return (["{error}": "The giveaway is closed and you can't refund tickets, sorry!"]);
+		if (!you->tickets) return (["{action}": "none", "{tickets}": "0"]);
+		if (!status->is_open) error("The giveaway is closed and you can't refund tickets, sorry!\n");
 		foreach (values(you->redemptions), mapping redem)
 			set_redemption_status(redem, "CANCELED");
 	}
 	return ([
 		"{tickets}": (string)you->tickets,
 		"{action}": cmd,
-		"{error}": "",
 	]);
 }
 

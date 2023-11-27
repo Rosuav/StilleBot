@@ -297,16 +297,14 @@ void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg)
 constant builtin_name = "Permit Art Share";
 constant builtin_description = "Permit a user to share their art (one upload within 2 minutes)";
 constant builtin_param = ({"User"}); //what other args would be useful here?
-constant vars_provided = ([
-	"{error}": "Error message, if any",
-]);
+constant vars_provided = ([]);
 
 mapping message_params(object channel, mapping person, array param) {
 	string user = param[0];
 	mapping cfg = persist_status->path("artshare", (string)channel->userid, "settings");
 	//TODO: Flag the user as temporarily permitted
 	//TODO: Revoke temporary permission after 2 minutes or one upload
-	return (["{error}": ""]);
+	return ([]);
 }
 
 @hook_deletemsg:

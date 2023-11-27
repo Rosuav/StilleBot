@@ -6,7 +6,6 @@ constant builtin_name = "Monitors"; //The front end may redescribe this accordin
 constant builtin_description = "Get information about a channel monitor";
 constant builtin_param = ({"/Monitor/monitor_id", "Advance by"});
 constant vars_provided = ([
-	"{error}": "Error message, if any",
 	"{type}": "Monitor type (text, goalbar, countdown)",
 	//NOTE: Any values not applicable to the type in question will be blank/omitted.
 	"{goal}": "Goal bar: Next goal as shown on screen",
@@ -207,7 +206,7 @@ mapping message_params(object channel, mapping person, array param) {
 	string monitor = param[0];
 	int advance = sizeof(param) > 1 && (int)param[1];
 	mapping info = channel->config->monitors[?monitor];
-	if (!monitor) return (["{error}": "Unrecognized monitor ID - has it been deleted?"]);
+	if (!monitor) error("Unrecognized monitor ID - has it been deleted?\n");
 	switch (info->type) {
 		case "goalbar": {
 			if (advance) autoadvance(channel, person, "", advance);

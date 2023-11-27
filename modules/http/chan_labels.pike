@@ -46,7 +46,6 @@ constant builtin_name = "Labels"; //The front end may redescribe this according 
 constant builtin_description = "Create or remove an on-screen label";
 constant builtin_param = ({"Text", "Duration", "/Countdown/=No countdown/ss=Seconds (eg 59)/mmss=Min:Sec (eg 05:00)/mm=Minutes (eg 05)"});
 constant vars_provided = ([
-	"{error}": "Error message, if any",
 	"{labelid}": "ID of the newly-created label - can be used to remove it later",
 ]);
 
@@ -61,7 +60,7 @@ string remove_label(string chan, string labelid) {
 }
 
 mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
-	if (param[0] == "") return (["{error}": "Need a label to work with"]);
+	if (param[0] == "") error("Need a label to work with\n");
 	string chan = channel->name[1..];
 	mapping labels = G_G_("channel_labels", chan);
 	string labelid;
@@ -69,7 +68,7 @@ mapping|Concurrent.Future message_params(object channel, mapping person, array p
 	if (duration == -1) {
 		//Delete an existing label
 		labelid = remove_label(chan, param[0]);
-		if (!labelid) return (["{error}": "Label ID not found for deletion: " + param[0]]);
+		if (!labelid) error("Label ID not found for deletion: " + param[0] + "\n");
 	} else {
 		//Create a new label
 		labels->active += ({([
@@ -81,10 +80,7 @@ mapping|Concurrent.Future message_params(object channel, mapping person, array p
 		if (duration > 0) call_out(remove_label, duration, chan, labelid);
 		update_one("#" + chan, labelid);
 	}
-	return ([
-		"{labelid}": labelid,
-		"{error}": "",
-	]);
+	return (["{labelid}": labelid]);
 }
 
 string get_access_key(string chan) {

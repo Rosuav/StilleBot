@@ -59,60 +59,58 @@ void autospam(string channel, string msg) {
 constant builtin_description = "Manage channel commands";
 constant builtin_name = "Command manager";
 constant builtin_param = ({"/Action/Automate/Create/Delete", "Command name", "Time/message"});
-constant vars_provided = ([
-	"{error}": "Blank if all is well, otherwise an error message",
-]);
+constant vars_provided = ([]);
 constant command_suggestions = ([
 	"!addcmd": ([
 		"_description": "Commands - Create a simple command",
 		"conditional": "regexp", "expr1": "^[!]*([^ ]+) (.*)$", "expr2": "{param}",
 		"message": ([
-			"builtin": "cmdmgr", "builtin_param": ({"Create", "{regexp1}", "{regexp2}"}),
+			"conditional": "catch",
 			"message": ([
-				"conditional": "string", "expr1": "{error}", "expr2": "",
+				"builtin": "cmdmgr", "builtin_param": ({"Create", "{regexp1}", "{regexp2}"}),
 				"message": "@$$: {result}",
-				"otherwise": "@$$: {error}",
 			]),
+			"otherwise": "@$$: {error}",
 		]),
 		"otherwise": "@$$: Try !addcmd !newcmdname response-message",
 	]),
 	"!delcmd": ([
 		"_description": "Commands - Delete a simple command",
-		"builtin": "cmdmgr", "builtin_param": ({"Delete", "{param}"}),
+		"conditional": "catch",
 		"message": ([
-			"conditional": "string", "expr1": "{error}", "expr2": "",
+			"builtin": "cmdmgr", "builtin_param": ({"Delete", "{param}"}),
 			"message": "@$$: {result}",
-			"otherwise": "@$$: {error}",
 		]),
+		"otherwise": "@$$: {error}",
 	]),
 	"!repeat": ([
 		"_description": "Commands - Automate a simple command",
 		"builtin": "argsplit", "builtin_param": "{param}",
 		"message": ([
-			"builtin": "cmdmgr", "builtin_param": ({"Automate", "{arg2}", "{arg1}"}),
+			"conditional": "catch",
 			"message": ([
-				"conditional": "string", "expr1": "{error}", "expr2": "",
+				"builtin": "cmdmgr", "builtin_param": ({"Automate", "{arg2}", "{arg1}"}),
 				"message": "@$$: {result}",
-				"otherwise": "@$$: {error}",
 			]),
+			"otherwise": "@$$: {error}",
 		]),
 	]),
 	"!unrepeat": ([
 		"_description": "Commands - Cancel automation of a command",
-		"builtin": "cmdmgr", "builtin_param": ({"Automate", "{param}", "-1"}),
+		"conditional": "catch",
 		"message": ([
-			"conditional": "string", "expr1": "{error}", "expr2": "",
+			"builtin": "cmdmgr", "builtin_param": ({"Automate", "{param}", "-1"}),
 			"message": "@$$: {result}",
-			"otherwise": "@$$: {error}",
 		]),
+		"otherwise": "@$$: {error}",
 	]),
 ]);
 
 mapping message_params(object channel, mapping person, array param) {
-	if (sizeof(param) < 2) return (["{error}": "Not enough args"]); //Won't happen if you use the GUI editor normally
+	if (sizeof(param) < 2) error("Not enough args\n"); //Won't happen if you use the GUI editor normally
 	switch (param[0]) {
 		case "Automate": {
-			if (sizeof(param) < 3) return (["{error}": "Not enough args"]);
+			if (sizeof(param) < 3) error("Not enough args\n");
 			array(int) mins;
 			string msg = param[1] - "!";
 			if (sscanf(param[2], "%d:%d", int hr, int min) == 2)
@@ -121,46 +119,46 @@ mapping message_params(object channel, mapping person, array param) {
 				mins = ({min, max, 0}); //Repeated between X and Y minutes
 			else if (int m = (int)param[2])
 				mins = ({m, m, 0}); //Repeated exactly every X minutes
-			if (!mins) return (["{error}": "Unrecognized time delay format"]);
+			if (!mins) error("Unrecognized time delay format\n");
 			echoable_message command = channel->commands[msg];
 			if (mins[0] < 0) {
-				if (!mappingp(command) || !command->automate) return (["{error}": "That message wasn't being repeated, and can't be cancelled"]);
+				if (!mappingp(command) || !command->automate) error("That message wasn't being repeated, and can't be cancelled\n");
 				//Copy the command, remove the automation, and do a standard validation
 				G->G->update_command(channel, "", msg, command - (<"automate">));
-				return (["{error}": "", "{result}": "Command will no longer be run automatically."]);
+				return (["{result}": "Command will no longer be run automatically."]);
 			}
-			if (!command) return (["{error}": "Command not found"]);
+			if (!command) error("Command not found\n");
 			switch (mins[2])
 			{
 				case 0:
-					if (mins[0] < 5) return (["{error}": "Minimum five-minute repeat cycle. You should probably keep to a minimum of 20 mins."]);
-					if (mins[1] < mins[0]) return (["{error}": "Maximum period must be at least the minimum period."]);
+					if (mins[0] < 5) error("Minimum five-minute repeat cycle. You should probably keep to a minimum of 20 mins.\n");
+					if (mins[1] < mins[0]) error("Maximum period must be at least the minimum period.\n");
 					break;
 				case 1:
 					if (mins[0] < 0 || mins[0] >= 24 || mins[1] < 0 || mins[1] >= 60)
-						return (["{error}": "Time must be specified as hh:mm (in your local timezone)."]);
+						error("Time must be specified as hh:mm (in your local timezone).\n");
 					break;
-				default: return (["{error}": "Huh?"]); //Shouldn't happen
+				default: error("Huh?\n"); //Shouldn't happen
 			}
 			if (!mappingp(command)) command = (["message": command]);
 			G->G->update_command(channel, "", msg, command | (["automate": mins]));
-			return (["{error}": "", "{result}": "Command will now be run automatically."]);
+			return (["{result}": "Command will now be run automatically."]);
 		}
 		case "Create": {
-			if (sizeof(param) < 3) return (["{error}": "Not enough args"]);
+			if (sizeof(param) < 3) error("Not enough args\n");
 			string cmd = command_casefold(param[1]);
-			if (!function_object(make_echocommand)->SPECIAL_NAMES[cmd] && has_value(cmd, '!')) return (["{error}": "Command names cannot include exclamation marks"]);
+			if (!function_object(make_echocommand)->SPECIAL_NAMES[cmd] && has_value(cmd, '!')) error("Command names cannot include exclamation marks\n");
 			string newornot = channel->commands[cmd] ? "Updated" : "Created new";
 			make_echocommand(cmd + channel->name, param[2..] * " ");
-			return (["{error}": "", "{result}": sprintf("%s command !%s", newornot, cmd)]);
+			return (["{result}": sprintf("%s command !%s", newornot, cmd)]);
 		}
 		case "Delete": {
 			string cmd = command_casefold(param[1]);
-			if (!channel->commands[cmd]) return (["{error}": "No echo command with that name exists here."]);
+			if (!channel->commands[cmd]) error("No echo command with that name exists here.\n");
 			make_echocommand(cmd + channel->name, 0);
-			return (["{error}": "", "{result}": sprintf("Deleted command !%s", cmd)]);
+			return (["{result}": sprintf("Deleted command !%s", cmd)]);
 		}
-		default: return (["{error}": "Unknown subcommand"]);
+		default: error("Unknown subcommand\n");
 	}
 }
 

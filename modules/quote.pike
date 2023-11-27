@@ -4,7 +4,6 @@ constant builtin_description = "View and manage channel quotes";
 constant builtin_name = "Quotes";
 constant builtin_param = ({"/Action/Get/Add/Delete", "Quote number (except Add)", "Text (for Add)"});
 constant vars_provided = ([
-	"{error}": "Blank if all is well, otherwise an error message",
 	"{id}": "ID of the selected quote",
 	"{msg}": "Text of the quote",
 	"{game}": "Current category when the quote was recorded",
@@ -14,30 +13,30 @@ constant vars_provided = ([
 constant command_suggestions = ([
 	"!quote": ([
 		"_description": "Quotes - View a chosen or random channel quote",
-		"builtin": "quote", "builtin_param": ({"Get", "%s"}),
+		"conditional": "catch",
 		"message": ([
-			"conditional": "string", "expr1": "{error}", "expr2": "",
+			"builtin": "quote", "builtin_param": ({"Get", "%s"}),
 			"message": "@$$: Quote #{id}: {msg} [{game||uncategorized}, {timestamp|date_dmy}]",
-			"otherwise": "@$$: {error}",
 		]),
+		"otherwise": "@$$: {error}",
 	]),
 	"!delquote": ([
 		"_description": "Quotes - Delete a channel quote",
-		"builtin": "quote", "builtin_param": ({"Delete", "%s"}),
+		"conditional": "catch",
 		"message": ([
-			"conditional": "string", "expr1": "{error}", "expr2": "",
+			"builtin": "quote", "builtin_param": ({"Delete", "%s"}),
 			"message": "@$$: Removed quote #{id}",
-			"otherwise": "@$$: {error}",
 		]),
+		"otherwise": "@$$: {error}",
 	]),
 	"!addquote": ([
 		"_description": "Quotes - Add a channel quote",
-		"builtin": "quote", "builtin_param": ({"Add", "", "{@emoted}"}),
+		"conditional": "catch",
 		"message": ([
-			"conditional": "string", "expr1": "{error}", "expr2": "",
+			"builtin": "quote", "builtin_param": ({"Add", "", "{@emoted}"}),
 			"message": "@$$: Added quote #{id}",
-			"otherwise": "@$$: {error}",
 		]),
+		"otherwise": "@$$: {error}",
 	]),
 ]);
 
@@ -46,12 +45,12 @@ mapping message_params(object channel, mapping person, array param) {
 	if (sizeof(param) < 3) param += ({""});
 	array quotes = channel->config->quotes || ({ });
 	mapping chaninfo = G->G->channel_info[channel->name[1..]];
-	if (!chaninfo) return (["{error}": "Internal error - no channel info"]); //I'm pretty sure this shouldn't happen
+	if (!chaninfo) error("Internal error - no channel info\n"); //I'm pretty sure this shouldn't happen
 	int idx = (int)param[1];
-	if (idx < 0 || idx > sizeof(quotes)) return (["{error}": "No such quote."]);
+	if (idx < 0 || idx > sizeof(quotes)) error("No such quote.\n");
 	switch (param[0]) {
 		case "Add": {
-			if (idx) return (["{error}": "Cannot add with a specific ID, sorry"]);
+			if (idx) error("Cannot add with a specific ID, sorry\n");
 			if (sscanf(param[2], "%*[@]%s %s", string who, string what) && what && what != "") {
 				if (lower_case(who) == channel->name[1..] || G_G_("participants", channel->name[1..])[lower_case(who)]) {
 					//Seems to be a person's name at the start. Flip it to the end.
@@ -82,24 +81,23 @@ mapping message_params(object channel, mapping person, array param) {
 		}
 		case "Get": {
 			if (!idx) {
-				if (!sizeof(quotes)) return (["{error}": "No quotes recorded."]);
+				if (!sizeof(quotes)) error("No quotes recorded.\n");
 				idx = random(sizeof(quotes)) + 1;
 			}
 			mapping quote = quotes[idx-1];
 			return ([
-				"{error}": "",
 				"{id}": (string)idx, "{msg}": quote->msg, "{game}": quote->game || "",
 				"{timestamp}": (string)quote->timestamp, "{recorder}": quote->recorder || "",
 			]);
 		}
 		case "Delete": {
-			if (!idx) return (["{error}": "No such quote."]);
+			if (!idx) error("No such quote.\n");
 			quotes[idx - 1] = 0;
 			channel->config->quotes -= ({0});
 			channel->config_save();
-			return (["{error}": "", "{id}": (string)idx]);
+			return (["{id}": (string)idx]);
 		}
 		default: break;
 	}
-	return (["{error}": "Unknown subcommand, check configuration"]); //Won't happen if you use the GUI command editor normally
+	error("Unknown subcommand, check configuration\n"); //Won't happen if you use the GUI command editor normally
 }

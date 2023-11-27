@@ -1353,9 +1353,7 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 constant builtin_name = "Send Alert";
 constant builtin_description = "Send an alert on the in-browser alertbox. Best with personal (not standard) alerts. Does nothing (no error) if the alert is disabled.";
 constant builtin_param = ({"/Alert type/alertbox_id", "Text"});
-constant vars_provided = ([
-	"{error}": "Error message, if any",
-]);
+constant vars_provided = ([]);
 
 //Attempt to send an alert. Returns 1 if alert sent, 0 if not (eg if alert disabled).
 //Note that the actual sending of the alert is asynchronous, esp if TTS is used.
@@ -1470,9 +1468,9 @@ mapping parse_emotes(string text, mapping person) {
 
 mapping message_params(object channel, mapping person, array param) {
 	[string alert, string text] = param;
-	if (!alert || alert == "") return (["{error}": "Need an alert type"]);
+	if (!alert || alert == "") error("Need an alert type\n");
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	if (!valid_alert_type(alert, cfg)) return (["{error}": "Unknown alert type"]);
+	if (!valid_alert_type(alert, cfg)) error("Unknown alert type\n");
 	mapping emotes = ([]);
 	//TODO: If text isn't exactly %s but is contained in it, give an offset.
 	//TODO: If %s is contained in text, parse that somehow too.
@@ -1482,7 +1480,7 @@ mapping message_params(object channel, mapping person, array param) {
 		"text": text || "",
 		"username": person->displayname,
 	]) | emotes);
-	return (["{error}": "", "{alert_sent}": sent ? "yes" : "no"]);
+	return (["{alert_sent}": sent ? "yes" : "no"]);
 }
 
 @hook_follower:
@@ -1590,11 +1588,9 @@ constant ENABLEABLE_FEATURES = ([
 				"otherwise": "Available GIFs: $nonhiddengifredeems$",
 			]),
 			"otherwise": ([
-				"builtin": "chan_alertbox",
-				"builtin_param": ({"gif", "{param}"}),
+				"conditional": "catch",
 				"message": ([
-					"conditional": "string",
-					"expr1": "{error}",
+					"builtin": "chan_alertbox", "builtin_param": ({"gif", "{param}"}),
 					"message": ([
 						"conditional": "string", "casefold": "",
 						"expr1": "{alert_sent}", "expr2": "yes",
@@ -1614,16 +1610,11 @@ constant ENABLEABLE_FEATURES = ([
 							"message": "Unrecognized keyword {param}, points refunded",
 						]),
 					]),
-					"otherwise": ([
-						"builtin": "chan_pointsrewards",
-						"builtin_param": ({"{rewardid}", "cancel", "{redemptionid}"}),
-						"message": ([
-							"conditional": "string",
-							"expr1": "{error}",
-							"message": "",
-							"otherwise": "Unexpected error: {error}",
-						]),
-					]),
+				]),
+				"otherwise": ([
+					"builtin": "chan_pointsrewards",
+					"builtin_param": ({"{rewardid}", "cancel", "{redemptionid}"}),
+					"message": "Unexpected error: {error}",
 				]),
 			]),
 		]),

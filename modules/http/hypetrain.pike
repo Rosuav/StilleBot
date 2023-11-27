@@ -157,25 +157,26 @@ constant builtin_name = "Hype Train status";
 constant scope_required = "channel:read:hype_train";
 constant command_suggestions = (["!hypetrain": ([
 	"_description": "Show the status of a hype train in this channel, or the cooldown before the next can start",
-	"builtin": "hypetrain",
-	"conditional": "string", "expr1": "{error}", "expr2": "",
+	"conditional": "catch",
 	"message": ([
-		"conditional": "string", "expr1": "{state}", "expr2": "active",
+		"builtin": "hypetrain",
 		"message": ([
-			"conditional": "number", "expr1": "{needbits} <= 0",
-			"message": "/me MrDestructoid Hype Train status: HypeUnicorn1 HypeUnicorn2 HypeUnicorn3 HypeUnicorn4 HypeUnicorn5 HypeUnicorn6 LEVEL FIVE COMPLETE!",
-			"otherwise": "/me MrDestructoid Hype Train status: devicatParty HYPE! Level {level} requires {needbits} more bits or {needsubs} subs!"
+			"conditional": "string", "expr1": "{state}", "expr2": "active",
+			"message": ([
+				"conditional": "number", "expr1": "{needbits} <= 0",
+				"message": "/me MrDestructoid Hype Train status: HypeUnicorn1 HypeUnicorn2 HypeUnicorn3 HypeUnicorn4 HypeUnicorn5 HypeUnicorn6 LEVEL FIVE COMPLETE!",
+				"otherwise": "/me MrDestructoid Hype Train status: devicatParty HYPE! Level {level} requires {needbits} more bits or {needsubs} subs!"
+			]),
+			"otherwise": ([
+				"conditional": "string", "expr1": "{state}", "expr2": "cooldown",
+				"message": "/me MrDestructoid Hype Train status: devicatCozy The hype train is on cooldown for {cooldown}. kittenzSleep",
+				"otherwise": "/me MrDestructoid Hype Train status: NomNom Cookies are done! NomNom"
+			])
 		]),
-		"otherwise": ([
-			"conditional": "string", "expr1": "{state}", "expr2": "cooldown",
-			"message": "/me MrDestructoid Hype Train status: devicatCozy The hype train is on cooldown for {cooldown}. kittenzSleep",
-			"otherwise": "/me MrDestructoid Hype Train status: NomNom Cookies are done! NomNom"
-		])
 	]),
 	"otherwise": "{error}",
 ])]);
 constant vars_provided = ([
-	"{error}": "Normally blank, but can have an error message",
 	"{state}": "A keyword (idle, active, cooldown). If idle, there's no other info; if cooldown, info pertains to the last hype train.",
 	"{level}": "The level that we're currently in (1-5)",
 	"{total}": "The total number of bits or bits-equivalent contributed towards this level",
@@ -197,7 +198,7 @@ string fmt_contrib(mapping c) {
 continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
 {
 	mapping state = yield((mixed)get_state(channel->name[1..]));
-	if (state->error) return (["{error}": state->error + " " + state->errorlink]);
+	if (state->error) error(state->error + " " + state->errorlink + "\n");
 	mapping conductors = (["SUBS": "Nobody", "BITS": "Nobody"]);
 	string|array allcond = ({ });
 	foreach (state->conductors || ({ }), mapping c)
@@ -206,7 +207,6 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	if (state->expires) {
 		int tm = state->expires - time();
 		return ([
-			"{error}": "",
 			"{state}": "active",
 			"{level}": (string)state->level,
 			"{total}": (string)state->total,
@@ -219,7 +219,6 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	} else if (state->cooldown) {
 		int tm = state->cooldown - time();
 		return ([
-			"{error}": "",
 			"{state}": "cooldown",
 			"{level}": (string)state->level,
 			"{total}": (string)state->total,
@@ -227,7 +226,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 			"{cooldown}": sprintf("%02d:%02d", tm / 60, tm % 60),
 			"{conductors}": allcond, "{subs_conduct}": conductors->SUBS, "{bits_conduct}": conductors->BITS,
 		]);
-	} else return (["{error}": "", "{state}": "idle"]);
+	} else return (["{state}": "idle"]);
 }
 
 protected void create(string name) {::create(name);}

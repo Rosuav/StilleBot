@@ -8,39 +8,38 @@ constant vars_provided = ([
 	"{prevname}": "Most recent previous name, or blank if none seen",
 	"{curname}": "Current user name (usually same as the param)",
 	"{allnames}": "Space-separated list of all sighted names",
-	"{error}": "Failure message, if any (prevname will be blank)",
 ]);
 constant command_suggestions = (["!follower": ([
 	"_description": "Check whether someone is following the channel",
-	"builtin": "renamed", "builtin_param": "%s",
+	"conditional": "catch",
 	"message": ([
-		"conditional": "string", "expr1": "{error}", "expr2": "",
+		"builtin": "renamed", "builtin_param": "%s",
 		"message": ([
 			"conditional": "string", "expr1": "{following}", "expr2": "",
 			"message": "@{username}: {curname} is not following.",
 			"otherwise": "@{username}: {curname} has been following {followage}.",
 		]),
-		"otherwise": "@$$: {error}",
 	]),
+	"otherwise": "@$$: {error}",
 ]), "!followage": ([
 	"_description": "Check how long you've been following the channel",
-	"builtin": "renamed", "builtin_param": "{username}",
+	"conditional": "catch",
 	"message": ([
-		"conditional": "string", "expr1": "{error}", "expr2": "",
+		"builtin": "renamed", "builtin_param": "{username}",
 		"message": ([
 			"conditional": "string", "expr1": "{following}", "expr2": "",
 			"message": "@{username}: You're not following.",
 			"otherwise": "@{username}: You've been following {followage}.",
 		]),
-		"otherwise": "@$$: {error}",
 	]),
+	"otherwise": "@$$: {error}",
 ])]);
 
 continue Concurrent.Future|mapping message_params(object channel, mapping person, array param) {
 	if (!sizeof(param)) param = ({""});
 	string user = param[0] - "@";
 	int uid; catch {uid = yield(get_user_id(user));};
-	if (!uid) return (["{prevname}": "", "{error}": "Can't find that person."]);
+	if (!uid) error("Can't find that person.\n");
 	mapping u2n = G->G->uid_to_name[(string)uid] || ([]);
 	array names = indices(u2n);
 	sort(values(u2n), names);
@@ -64,6 +63,5 @@ continue Concurrent.Future|mapping message_params(object channel, mapping person
 		"{prevname}": sizeof(names) >= 2 ? names[-2] : "",
 		"{curname}": sizeof(names) ? names[-1] : user,
 		"{allnames}": names * " ",
-		"{error}": "",
 	]);
 }
