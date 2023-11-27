@@ -204,9 +204,14 @@ protected void create(string name) {
 					make_echocommand(cmd + "#" + cfg->login, 0); //It's not a problem, just delete it.
 					make_echocommand(message->alias_of + "#" + cfg->login, of); //Force recreation of the underlying command
 				}
+				//Colliding aliases are a major problem. Fix them manually; no automated fix exists.
 				else if (of) werror("COLLIDING ALIAS: %O %O %O\n", cfg->login, cmd, message->alias_of);
 				else {
-					//werror("DANGLING ALIAS: %O %O %O\n", cfg->login, cmd, message);
+					//If the alias is just dangling, it's actually still functional, but
+					//can't be edited. Remove the alias marker and allow it to stand alone.
+					werror("DANGLING ALIAS: %O %O %O\n", cfg->login, cmd, message);
+					m_delete(message, "alias_of");
+					make_echocommand(cmd + "#" + cfg->login, message);
 				}
 			}
 	}
