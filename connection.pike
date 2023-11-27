@@ -420,6 +420,23 @@ class channel(mapping config) {
 		};
 	}
 
+	//Mutually recursive with _send_recursive. Call this rather than _send_recursive directly
+	//when you want an error boundary that sends to cfg->error_handler, or if the call is being
+	//delayed in some way.
+	void _send_with_catch(mapping person, echoable_message message, mapping vars, mapping cfg) {
+		if (mixed ex = catch {_send_recursive(person, message, vars, cfg);}) {
+			//TODO: Carry context around, eg who triggered what command
+			if (arrayp(ex) && sizeof(ex) && stringp(ex[0])) {
+				if (cfg->error_handler) {
+					vars["{error}"] = String.trim(ex[0]);
+					_send_with_catch(person, cfg->error_handler->message, vars, cfg->error_handler->cfg);
+				}
+				report_error("ERROR", String.trim(ex[0]), "");
+			}
+			else werror("**** Error in command handling, unexpected format ****\n%s\n", describe_backtrace(ex));
+		}
+	}
+
 	//Changes to vars[] will propagate linearly. Changes to cfg[] will propagate
 	//within a subtree only. Change it only with |=.
 	void _send_recursive(mapping person, echoable_message message, mapping vars, mapping cfg)
@@ -430,7 +447,7 @@ class channel(mapping config) {
 
 		if (message->delay)
 		{
-			call_out(_send_recursive, (int)message->delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg);
+			call_out(_send_with_catch, (int)message->delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg);
 			return;
 		}
 		if (message->_changevars)
@@ -485,7 +502,7 @@ class channel(mapping config) {
 				spawn_task(handler->message_params(this, person, param, cfg)) {
 					if (!__ARGS__[0]) return; //No params? No output.
 					mapping cfg_changes = m_delete(__ARGS__[0], "cfg") || ([]);
-					_send_recursive(person, message->message, vars | __ARGS__[0], cfg | cfg_changes);
+					_send_with_catch(person, message->message, vars | __ARGS__[0], cfg | cfg_changes);
 				};
 				return;
 			}
@@ -570,7 +587,7 @@ class channel(mapping config) {
 					//As well as bouncing to the Otherwise, we queue the original message
 					//after the delay. (You probably don't often need an Otherwise here.)
 					cooldown_timeout[key] = time() + delay + message->cdlength;
-					call_out(_send_recursive, delay, person, message | (["conditional": 0, "_changevars": 1]), vars, cfg);
+					call_out(_send_with_catch, delay, person, message | (["conditional": 0, "_changevars": 1]), vars, cfg);
 				}
 				//Yes, it's possible for the timeout to be 0 seconds.
 				msg = message->otherwise;
@@ -586,12 +603,9 @@ class channel(mapping config) {
 				break;
 			}
 			case "catch": { //Exception handling
-				if (mixed ex = catch {_send_recursive(person, message | (["conditional": 0]), vars, cfg);}) {
-					msg = message->otherwise;
-					if (arrayp(ex) && sizeof(ex) && stringp(ex[0]))
-						vars["{error}"] = String.trim(ex[0]);
-				}
-				else return; //Message has now been sent.
+				_send_with_catch(person, message | (["conditional": 0]), vars,
+					cfg | (["error_handler": (["message": message->otherwise, "cfg": cfg])]));
+				return;
 			}
 			default: break; //including UNDEFINED which means unconditional, and 0 which means "condition already processed"
 		}
@@ -832,13 +846,7 @@ class channel(mapping config) {
 		vars = get_channel_variables(person->uid) | (vars || ([]));
 		vars["$$"] = person->displayname || person->user;
 		vars["{uid}"] = (string)person->uid; //Will be "0" if no UID known
-		if (mixed ex = catch {_send_recursive(person, message, vars, (["callback": callback, "users": (["": (string)person->uid])]));}) {
-			//TODO: Carry context around, eg who triggered what command
-			if (arrayp(ex) && sizeof(ex) && stringp(ex[0]))
-				report_error("ERROR", String.trim(ex[0]), "");
-			else
-				werror("**** Error in command handling, unexpected format ****\n%s\n", describe_backtrace(ex));
-		}
+		_send_with_catch(person, message, vars, (["callback": callback, "users": (["": (string)person->uid])]));
 	}
 
 	//Expand all channel variables, except for {participant} which usually won't
