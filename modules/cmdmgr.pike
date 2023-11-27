@@ -194,10 +194,26 @@ protected void create(string name) {
 	register_bouncer(autospam);
 	foreach (list_channel_configs(), mapping cfg) if (cfg->login)
 		if (G->G->stream_online_since[cfg->login]) connected(cfg->login);
-	//TODO: Look for any lingering aliases, which shouldn't be stored in channel configs
+	//Look for any lingering aliases, which shouldn't be stored in channel configs
+	foreach (list_channel_configs(), mapping cfg) if (cfg->commands) {
+		foreach (cfg->commands; string cmd; echoable_message message)
+			if (mappingp(message) && message->alias_of) {
+				echoable_message of = cfg->commands[message->alias_of];
+				if (mappingp(of) && of->aliases && has_value(of->aliases / " ", cmd)) {
+					werror("LINGERING ALIAS: %O %O %O\n", cfg->login, cmd, message->alias_of);
+					make_echocommand(cmd + "#" + cfg->login, 0); //It's not a problem, just delete it.
+					make_echocommand(message->alias_of + "#" + cfg->login, of); //Force recreation of the underlying command
+				}
+				else if (of) werror("COLLIDING ALIAS: %O %O %O\n", cfg->login, cmd, message->alias_of);
+				else {
+					//werror("DANGLING ALIAS: %O %O %O\n", cfg->login, cmd, message);
+				}
+			}
+	}
 	//Look for old-style error handling
 	foreach (list_channel_configs(), mapping cfg) if (cfg->commands) {
 		foreach (cfg->commands; string cmd; echoable_message message) {
+			if (mappingp(message) && message->alias_of) continue;
 			mapping state = (["changed": 0]);
 			scan_command(state, message);
 			if (state->changed) {
