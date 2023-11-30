@@ -196,7 +196,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 		persist_status->save();
 
 		string chanid = req->variables["for"];
-		if (chanid && chanid != (string)logged_in->?id && chanid != chan) {
+		if ((int)chanid && chanid != (string)logged_in->?id && chanid != chan) {
 			//If you provided for=userid, also show whether the target is following this stream. Gonna die when the deprecation concludes.
 			//TODO: Make it possible for a broadcaster to grant user:read:follows, which would allow such recommendations.
 			//TODO also: Use the same cache that tradingcards.pike uses. Maybe move the code to poll.pike?
