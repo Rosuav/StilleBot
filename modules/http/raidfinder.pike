@@ -818,9 +818,12 @@ constant vars_provided = ([]);
 continue mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
 	//No facility currently for sending comments about the suggestion, but you can include
 	//them and we'll ignore them (they'll be in chat anyway)
-	sscanf(param[0], "%*stwitch.tv/%[^ ]", string chan) || sscanf(param[0], "%s ", chan);
+	string chan = param[0];
+	sscanf(chan, "%*stwitch.tv/%[^ ]", chan);
+	sscanf(chan, "%*[@]%s ", chan);
 	int target;
 	if (catch (target = yield(get_user_id(chan)))) error("Unknown channel name\n");
+	if (!target) error("Unknown channel name\n");
 	string err = yield((mixed)suggestraid(person->uid, target, channel->userid));
 	if (err && err != "") error(err + "\n");
 }
