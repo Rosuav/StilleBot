@@ -426,9 +426,8 @@ continue mapping|Concurrent.Future get_chan_state(object channel, string grp)
 		(["Authorization": "Bearer " + token_for_user_id(broadcaster_id)[0]])))->data;
 	}) {
 		if (arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401")) {
-			m_delete(persist_status->path("bcaster_token"), chan);
 			//TODO: Return a message informing the user
-			//TODO: Notify the broadcaster of the need to re-login
+			channel->report_error("ERROR", "Unable to list channel rewards, may need reauthentication", "");
 			return 0;
 		}
 		werror("Unexpected error listing channel rewards: %s\n", describe_backtrace(ex));
