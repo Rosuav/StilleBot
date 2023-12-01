@@ -203,6 +203,17 @@ mapping cached_user_info(int|string user) {
 	return token_for_user_login(login);
 }
 
+//This isn't currently spawned anywhere. Should it be?
+continue Concurrent.Future check_bcaster_tokens() {
+	mapping tokscopes = persist_status->path("bcaster_token_scopes");
+	foreach (persist_status->path("bcaster_token"); string chan; string token) {
+		mixed resp = yield(twitch_api_request("https://id.twitch.tv/oauth2/validate",
+			(["Authorization": "Bearer " + token])));
+		string scopes = sort(resp->scopes || ({ })) * " ";
+		if (tokscopes[chan] != scopes) {tokscopes[chan] = scopes; persist_status->save();}
+	}
+}
+
 @export: Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
 {
 	array data = ({ });

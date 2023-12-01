@@ -678,19 +678,4 @@ mapping|Concurrent.Future message_params(object channel, mapping person, string 
 	]);
 }
 
-//This really doesn't belong here. But where DOES it belong? (I can't send it back to Dr Bumby either.)
-continue Concurrent.Future check_bcaster_tokens() {
-	mapping tokscopes = persist_status->path("bcaster_token_scopes");
-	foreach (persist_status->path("bcaster_token"); string chan; string token) {
-		mixed resp = yield(twitch_api_request("https://id.twitch.tv/oauth2/validate",
-			(["Authorization": "Bearer " + token])));
-		string scopes = sort(resp->scopes || ({ })) * " ";
-		if (tokscopes[chan] != scopes) {tokscopes[chan] = scopes; persist_status->save();}
-	}
-}
-
-protected void create(string name)
-{
-	::create(name);
-	spawn_task(check_bcaster_tokens());
-}
+protected void create(string name) {::create(name);}
