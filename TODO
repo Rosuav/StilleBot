@@ -298,3 +298,4 @@
   - persist_config["ircsettings"]->http_address will need to become context-sensitive
     so that, for example, Twitch login redirects keep you on the same domain you came
     to originally.
+  - Just like with sharding, incoming webhooks will need to be handled properly.
