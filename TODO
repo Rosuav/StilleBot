@@ -295,3 +295,6 @@
     deploy script to scp the key/cert to Gideon.
   - Once all configs are in database, it should be possible to host that in one
     place and connect to it from multiple.
+  - persist_config["ircsettings"]->http_address will need to become context-sensitive
+    so that, for example, Twitch login redirects keep you on the same domain you came
+    to originally.
