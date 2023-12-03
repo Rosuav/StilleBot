@@ -1256,7 +1256,6 @@ constant cutewords = "puppy kitten crumpet tutu butterscotch flapjack pilliwiggi
 	"gift art flag candle heart love magic save tada hug cool party plush star "
 	"donut teacup cat purring flower sugar biscuit pillow banana berry " / " ";
 continue Concurrent.Future send_with_tts(object channel, mapping args, string|void destgroup) {
-	System.Timer tm = System.Timer();
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->alertconfigs[args->send_alert]) return 0; //On replay, if the alert doesn't exist, do nothing. TODO: Replay a base alert if variant deleted?
 	mapping inh = G_G_("alertbox_resolved", (string)channel->userid, args->send_alert);
@@ -1308,11 +1307,9 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 		fmt = after;
 	}
 	text += fmt;
-	werror("send_with_tts(%O): text parsed %O\n", channel->name, tm->peek());
 	array voice = (inh->tts_voice || "") / "/";
 	if (sizeof(voice) != 3) voice = tts_config->default_voice / "/";
 	if (string token = text != "" && tts_config->?access_token) {
-		werror("send_with_tts(%O): text parsed %O\n", channel->name, tm->peek());
 		object reqargs = Protocols.HTTP.Promise.Arguments((["headers": ([
 				"Authorization": "Bearer " + token,
 				"Content-Type": "application/json; charset=utf-8",
@@ -1330,16 +1327,13 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 		float delay = tm->get();
 		Stdio.append_file("tts_stats.log", sprintf("Channel %O text %O fetch time %.3f\n", channel->name, text, delay));
 		mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
-		werror("send_with_tts(%O): TTS responded %O\n", channel->name, tm->peek());
 		if (mappingp(data) && data->error->?details[?0]->?reason == "ACCESS_TOKEN_EXPIRED") {
 			Stdio.append_file("tts_error.log", sprintf("%sTTS access key expired after %d seconds\n",
 				ctime(time()), time() - tts_config->access_token_fetchtime));
 			mixed _ = yield((mixed)fetch_tts_credentials(1));
-			werror("send_with_tts(%O): credentials redone %O\n", channel->name, tm->peek());
 			reqargs->headers->Authorization = "Bearer " + tts_config->access_token;
 			object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
 			catch {data = Standards.JSON.decode_utf8(res->get());};
-			werror("send_with_tts(%O): TTS responded anew %O\n", channel->name, tm->peek());
 			//Exactly one retry attempt; if it fails, fall through and report a generic error.
 		}
 		if (mappingp(data) && stringp(data->audioContent))
@@ -1347,7 +1341,6 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 		else Stdio.append_file("tts_error.log", sprintf("%sBad TTS response: %O\n-------------\n", ctime(time()), data));
 	}
 	send_updates_all((destgroup || cfg->authkey) + channel->name, args);
-	werror("send_with_tts(%O): alert pushed out %O\n", channel->name, tm->peek());
 }
 
 constant builtin_name = "Send Alert";
