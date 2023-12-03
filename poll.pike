@@ -673,6 +673,7 @@ void stream_status(string name, mapping info)
 				"transport": ([
 					"method": "webhook",
 					"callback": sprintf("%s/junket?%s=%s",
+						//Note that webhooks always and only go to the primary domain name. This may end up multihomed though.
 						persist_config["ircsettings"]["http_address"],
 						hookname, arg,
 					),
