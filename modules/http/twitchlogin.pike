@@ -79,7 +79,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	if (sizeof(bad)) return (["error": 400, "type": "text/plain", //Note that this is a 400, as opposed to a 500 in ensure_login
 		"data": sprintf("Unrecognized scope %O being requested", (array)bad * " ")]);
 	multiset needscopes = havescopes | wantscopes; //Note that we'll keep any that we already have.
-	if (req->variables->urlonly) return jsonify((["uri": get_redirect_url(needscopes, ([]), login_popup_done)]));
+	if (req->variables->urlonly) return jsonify((["uri": get_redirect_url(needscopes, ([]), req->?request_headers->?host, login_popup_done)]));
 	//NOTE: Prior to 20230821, this would offer a CGI-mode login page. This has not been used
 	//anywhere in core for some time, but if it is linked to anywhere externally, this will
 	//now break. I don't think it's likely but it's possible.
@@ -107,9 +107,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]));
 }
 
-string get_redirect_url(multiset scopes, mapping extra, function callback) {
+string get_redirect_url(multiset scopes, mapping extra, string|zero host, function callback) {
 	string state = replace(MIME.encode_base64(random_string(15)), (["/": "1", "+": "0"]));
 	login_callback[state] = callback;
 	call_out(m_delete, 600, login_callback, state);
-	return TwitchAuth(scopes)->get_auth_uri(extra | (["state": state]));
+	return TwitchAuth(scopes, host)->get_auth_uri(extra | (["state": state]));
 }

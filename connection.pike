@@ -1366,6 +1366,7 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 	sock->set_id((["sock": sock, //Minstrel Hall style floop
 		"session": G->G->http_sessions[req->cookies->session] || ([]),
 		"remote_ip": remote_ip,
+		"hostname": req->request_headers->host,
 	]));
 	sock->onmessage = ws_msg;
 	sock->onclose = ws_close;

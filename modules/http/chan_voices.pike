@@ -149,7 +149,7 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	//Merge in any broadcaster scopes. TODO: Switch to ID when that is the fundamental - stay synchronous
 	scopes |= (multiset)(token_for_user_login(channel->name[1..])[1] / " ");
 	string url = function_object(G->G->http_endpoints->twitchlogin)->get_redirect_url(
-		scopes, (["force_verify": "true"])
+		scopes, (["force_verify": "true"]), conn->hostname,
 	) {
 		[object req, mapping user, multiset scopes, string token, string cookie] = __ARGS__;
 		mapping v = channel->path("voices", (string)user->id);

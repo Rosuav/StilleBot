@@ -1501,9 +1501,11 @@ class TwitchAuth
 	constant OAUTH_AUTH_URI  = "https://id.twitch.tv/oauth2/authorize";
 	constant OAUTH_TOKEN_URI = "https://id.twitch.tv/oauth2/token";
 	protected multiset(string) valid_scopes = (multiset)indices(all_twitch_scopes);
-	protected void create(multiset(string)|void scopes) {
+	protected void create(multiset(string)|void scopes, string|void host) {
 		mapping cfg = persist_config["ircsettings"];
-		::create(cfg->clientid, cfg->clientsecret, cfg->http_address + "/twitchlogin", scopes);
+		if (host) host = "https://" + host; //HTTPS is mandatory for login anyway, so just assume that the request came in encrypted
+		else host = cfg->http_address; //The configured address includes the protocol.
+		::create(cfg->clientid, cfg->clientsecret, host + "/twitchlogin", scopes);
 	}
 	Concurrent.Future request_access_token_promise(string code) {
 		return Concurrent.Promise(lambda(function ... cb) {
