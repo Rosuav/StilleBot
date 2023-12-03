@@ -287,6 +287,8 @@
   - We won't get to this state any time soon but aim towards it.
   - https://www.postgresql.org/docs/current/logical-replication.html
   - Note that running StilleBot on Gideon requires ../pike9/bin/pike
+  - Ideally, replication should use both server and client SSL certs, making use of
+    the same certs StilleBot uses for both sikorsky.rosuav.com and gideon.rosuav.com.
 * Multi-homing.
   - Have reserved the names stillebot.rosuav.com and stillebot.com for this purpose.
   - Need to set up a redirect on Gideon: if a certbot request comes in, 302 it to
