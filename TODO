@@ -289,9 +289,9 @@
   - Note that running StilleBot on Gideon requires ../pike9/bin/pike
 * Multi-homing.
   - Have reserved the names stillebot.rosuav.com and stillebot.com for this purpose.
-  - Need to establish an SSL cert for stillebot.com - how does this work when two
-    IP addresses exist for it? How does certbot find the right one?
-  - Need to synchronize the cert on both systems. This is almost certainly a well
-    known concept at Let's Encrypt. Look into it.
+  - Need to set up a redirect on Gideon: if a certbot request comes in, 302 it to
+    http://sikorsky.rosuav.com/...... for the actual resolution.
+  - Need to synchronize the cert on both systems. Probably needs something in the
+    deploy script to scp the key/cert to Gideon.
   - Once all configs are in database, it should be possible to host that in one
     place and connect to it from multiple.
