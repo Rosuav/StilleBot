@@ -287,3 +287,11 @@
   - We won't get to this state any time soon but aim towards it.
   - https://www.postgresql.org/docs/current/logical-replication.html
   - Note that running StilleBot on Gideon requires ../pike9/bin/pike
+* Multi-homing.
+  - Have reserved the names stillebot.rosuav.com and stillebot.com for this purpose.
+  - Need to establish an SSL cert for stillebot.com - how does this work when two
+    IP addresses exist for it? How does certbot find the right one?
+  - Need to synchronize the cert on both systems. This is almost certainly a well
+    known concept at Let's Encrypt. Look into it.
+  - Once all configs are in database, it should be possible to host that in one
+    place and connect to it from multiple.
