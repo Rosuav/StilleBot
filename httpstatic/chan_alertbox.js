@@ -332,7 +332,7 @@ export function render(data) {
 			]),
 			type === "follower" && P({class: "no-dirty no-inherit"}, [
 				follower_alert_scopes && DIV({class: "need-auth"}, [
-					"Follower alerts will, as of August 2023, require authentication as the broadcaster. ",
+					"As of August 2023, follower alerts require authentication as the broadcaster. ",
 					BUTTON({class: "twitchlogin", "data-scopes": follower_alert_scopes}, "Grant permissions"),
 				]),
 			]),
@@ -745,11 +745,13 @@ on("click", ".showlibrary", e => {
 	if (librarytarget) {
 		const uri = librarytarget.dataset.library_uri;
 		if (uri.startsWith(FREEMEDIA_BASE)) {
-			DOM(`#freemedialibrary input[value="${uri.replace(FREEMEDIA_BASE, "")}"]`).checked = true;
+			const elem = DOM(`#freemedialibrary input[value="${uri.replace(FREEMEDIA_BASE, "")}"]`);
+			if (elem) elem.checked = true;
 			DOM("#select-freemedia").checked = true;
 		}
 		else if (uri.startsWith(UPLOADS_BASE)) {
-			DOM(`#uploads input[value="${uri.replace(UPLOADS_BASE, "")}"]`).checked = true;
+			const elem = DOM(`#uploads input[value="${uri.replace(UPLOADS_BASE, "")}"]`);
+			if (elem) elem.checked = true;
 			DOM("#select-personal").checked = true;
 		}
 		else {
