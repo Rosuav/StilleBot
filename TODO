@@ -299,3 +299,7 @@
     place and connect to it from multiple.
   - Just like with sharding, incoming webhooks will need to be handled properly.
 * Alertbox isn't pushing alert changes to preview-only sockets
+* Sometimes the connection will fall over, and the bot won't be aware of this.
+  Need a way to "force disconnection" which basically just overrides the irc_connect
+  retention rules (same as a version mismatch does). Is it worth trying to do this
+  automatically, or just have a menu item for it?
