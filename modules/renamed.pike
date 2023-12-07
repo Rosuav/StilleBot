@@ -2,7 +2,7 @@
 inherit builtin_command;
 constant builtin_name = "User info";
 constant builtin_description = "Get info about a chatter";
-constant builtin_param = ({"User name to look up"});
+constant builtin_param = ({"User name to look up or blank for general stats"});
 constant vars_provided = ([
 	"{following}": "Blank if user is not following, otherwise a description of how long",
 	"{prevname}": "Most recent previous name, or blank if none seen",
@@ -38,6 +38,12 @@ constant command_suggestions = (["!follower": ([
 continue Concurrent.Future|mapping message_params(object channel, mapping person, array param) {
 	if (!sizeof(param)) param = ({""});
 	string user = param[0] - "@";
+	if (user == "") {
+		mapping stats = yield((mixed)twitch_api_request("https://api.twitch.tv/helix/channels/followers?broadcaster_id=" + channel->userid));
+		return ([
+			"{following}": (string)stats->total,
+		]);
+	}
 	int uid; catch {uid = yield(get_user_id(user));};
 	if (!uid) error("Can't find that person.\n");
 	mapping u2n = G->G->uid_to_name[(string)uid] || ([]);
