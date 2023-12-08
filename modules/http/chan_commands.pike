@@ -480,14 +480,8 @@ void update_command(object channel, string command, string cmdname, echoable_mes
 	if (valid && valid[1] != "") make_echocommand(@valid);
 }
 
-array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	sscanf(conn->group, "%s#%s", string mode, string chan);
-	object channel = G->G->irc->channels["#" + chan]; if (!channel) return 0;
-	return _validate_command(channel, mode, msg->cmdname, msg->response, msg->original);
-}
-
 void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	array valid = _validate_update(conn, msg);
+	array valid = _validate_command(channel, (conn->group / "#")[0], msg->cmdname, msg->response, msg->original);
 	if (!valid || !valid[0]) return;
 	make_echocommand(@valid);
 	if (msg->cmdname == "" && has_prefix(conn->group, "!!trigger#")) {
@@ -498,9 +492,11 @@ void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mix
 void wscmd_delete(object c, mapping conn, mapping msg) {wscmd_update(c, conn, msg | (["response": ""]));}
 
 void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	array valid = _validate_update(conn, (["cmdname": "validateme"]) | msg);
+	sscanf(conn->group, "%s#%s", string mode, string chan);
+	object channel = G->G->irc->channels["#" + chan]; if (!channel) return 0;
+	array valid = _validate_command(channel, mode, msg->cmdname || "validateme", msg->response, msg->original);
 	if (!valid) return; //But it's okay if the name is invalid, or in demo mode (fake-mod)
-	string cmdname = ((valid[0] || msg->cmdname) / "#")[0];
+	string cmdname = ((valid[0] || msg->cmdname || "validateme") / "#")[0];
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[1]]), 4));
 }
 
