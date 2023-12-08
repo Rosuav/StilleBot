@@ -500,11 +500,8 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "newtrigger", "response": valid[1][-1]])));
 	}
 }
-void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	array valid = _validate_update(conn, msg | (["response": ""]));
-	if (!valid || !valid[0] || conn->session->fake) return;
-	make_echocommand(@valid);
-}
+void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {websocket_cmd_update(conn, msg | (["response": ""]));}
+
 void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, (["cmdname": "validateme"]) | msg);
 	if (!valid) return; //But it's okay if the name is invalid.
