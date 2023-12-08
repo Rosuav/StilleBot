@@ -494,21 +494,16 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, msg);
 	if (!valid || !valid[0] || conn->session->?fake) return;
-	if (valid[1] != "" || has_prefix(conn->group, "!!#")) { //Blanking a special is equivalent to deleting it.
-		make_echocommand(@valid);
-		if (msg->cmdname == "" && has_prefix(conn->group, "!!trigger#")) {
-			//Newly added command. The client needs to know the ID so it can pop it up.
-			conn->sock->send_text(Standards.JSON.encode((["cmd": "newtrigger", "response": valid[1][-1]])));
-		}
+	make_echocommand(@valid);
+	if (msg->cmdname == "" && has_prefix(conn->group, "!!trigger#")) {
+		//Newly added command. The client needs to know the ID so it can pop it up.
+		conn->sock->send_text(Standards.JSON.encode((["cmd": "newtrigger", "response": valid[1][-1]])));
 	}
-	//Else message failed validation. TODO: Send a response on the socket.
 }
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, msg | (["response": ""]));
 	if (!valid || !valid[0] || conn->session->fake) return;
-	if (valid[1] == "") make_echocommand(valid[0], 0);
-	else if (has_prefix(conn->group, "!!trigger#")) make_echocommand(@valid);
-	//Else something went wrong. Does it need a response?
+	make_echocommand(@valid);
 }
 void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, (["cmdname": "validateme"]) | msg);

@@ -298,3 +298,6 @@
   Need a way to "force disconnection" which basically just overrides the irc_connect
   retention rules (same as a version mismatch does). Is it worth trying to do this
   automatically, or just have a menu item for it?
+* Whenever you save/overwrite a command, log the previous version somewhere for an
+  "Undo" feature?? It's now very possible to accidentally delete slabs of content,
+  or even the entire command.
