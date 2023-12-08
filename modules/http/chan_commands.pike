@@ -116,7 +116,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//or a zero.
 		mixed body = Standards.JSON.decode(utf8_to_string(req->body_raw));
 		if (!body || !mappingp(body) || !mappingp(body->msg)) return (["error": 400]);
-		echoable_message result = validate(body->msg, (["cmd": body->cmdname || "validateme", "cooldowns": ([])]));
+		echoable_message result = _validate_toplevel(body->msg, (["cmd": body->cmdname || "validateme", "cooldowns": ([])]));
 		if (body->cmdname == "!!trigger" && result != "") {
 			if (!mappingp(result)) result = (["message": result]);
 			m_delete(result, "otherwise"); //Triggers don't have an Else clause
@@ -362,7 +362,7 @@ echoable_message _validate(echoable_message resp, mapping state)
 	if (sizeof(ret) == 1) return ret->message; //No flags? Just return the message.
 	return ret;
 }
-echoable_message validate(echoable_message resp, mapping state)
+echoable_message _validate_toplevel(echoable_message resp, mapping state)
 {
 	mixed ret = _validate(resp, state);
 	if (!mappingp(resp)) return ret; //There can't be any top-level flags if you start with a string or array
@@ -412,10 +412,10 @@ array _validate_command(object channel, string|zero mode, string cmdname, echoab
 				else id = (string)((int)alltrig[-1]->id + 1);
 			}
 			else if (id == "validateme" || has_prefix(id, "changetab_"))
-				return ({0, validate(response, state)}); //Validate-only and ignore preexisting triggers
+				return ({0, _validate_toplevel(response, state)}); //Validate-only and ignore preexisting triggers
 			else if (!(int)id) return 0; //Invalid ID
 			state->cmd = "!!trigger-" + id;
-			echoable_message trigger = validate(response, state);
+			echoable_message trigger = _validate_toplevel(response, state);
 			if (trigger != "") { //Empty string will cause a deletion
 				if (!mappingp(trigger)) trigger = (["message": trigger]);
 				trigger->id = id;
