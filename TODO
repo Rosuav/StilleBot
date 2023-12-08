@@ -272,7 +272,6 @@
 * Classic editor has issues with a top-level try/catch. Look into it some time.
   - Issue does not occur if the try/catch is nested inside something.
   - Might be failing to clear something after rendering??
-* utils.js - replace window.onresize with window.matchMedia?
 * Database configs???
   - Parallel stillebot databases on Sikorsky and Gideon
   - Initiate replication from Sikorsky (PG 15) to Gideon (PG 12)

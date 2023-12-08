@@ -174,14 +174,14 @@ on("click", ".clipbtn", e => {
 });
 
 const sidebar = DOM("nav#sidebar"), box = DOM("#togglesidebarbox");
+const sbvis = window.matchMedia("screen and (width >= 600px)");
 on("click", "#togglesidebar", e => {
 	if (sidebar) sidebar.classList.toggle("vis");
 	box.classList.toggle("sbvis");
-	window.onresize = null; //No longer automatically toggle as the window resizes.
+	sbvis.onchange = null; //No longer automatically toggle as the window resizes.
 });
 //On wide windows, default to having the sidebar visible.
-(sidebar || box) && (window.onresize = () => {
-	const sbvis = window.innerWidth > 600;
-	if (sidebar) sidebar.classList.toggle("vis", sbvis);
-	if (box) box.classList.toggle("sbvis", sbvis);
+(sidebar || box) && (sbvis.onchange = () => {
+	if (sidebar) sidebar.classList.toggle("vis", sbvis.matches);
+	if (box) box.classList.toggle("sbvis", sbvis.matches);
 })();
