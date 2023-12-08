@@ -66,12 +66,7 @@ void enable_feature(object channel, string kwd, int state) {
 	if (!info) foreach (G->G->builtins; string name; object blt)
 		if (blt->command_suggestions[?kwd]) info = (["response": blt->command_suggestions[kwd]]);
 	if (!info) return;
-	//Hack: Call on the normal commands updater to add a trigger
-	wscmd_update(
-		channel,
-		(["group": channel->name, "session": ([])]),
-		(["cmdname": kwd, "response": state ? info->response || COMPLEX_TEMPLATES[kwd] : ""])
-	);
+	make_echocommand(@_validate_command(channel, "", kwd, state ? info->response || COMPLEX_TEMPLATES[kwd] : ""));
 }
 
 //Gather all the variables that the JS command editor needs. Some may depend on the channel.
