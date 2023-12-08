@@ -43,3 +43,26 @@ Syntax
 
 Broad structure: Nested groups, including top-level which is implicitly a group.
 Inside any group, assignment statements affect that group and any subgroups.
+
+command: ;
+command: flagged-group;
+flagged-group: message;
+flagged-group: "{" flags group "}";
+flags: ;
+flags: "name" "=" value flags;
+value: "name";
+value: "string";
+value: "number";
+group: message;
+message: "string";
+message: "name" "(" params ")" flagged-group;
+params: ;
+params: param-list;
+params: param-list ",";
+param-list: "string";
+param-list: param-list "," "string";
+
+Tokens:
+name - an atom. Not sure yet what alphabet to support.
+string - quoted string. If it contains quotes, they must be escaped. Use %q from Pike.
+number - a string of digits, optionally a decimal point.
