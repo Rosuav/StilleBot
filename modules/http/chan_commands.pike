@@ -494,7 +494,7 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, msg);
 	if (!valid || !valid[0] || conn->session->?fake) return;
-	if (valid[1] != "") {
+	if (valid[1] != "" || has_prefix(conn->group, "!!#")) { //Blanking a special is equivalent to deleting it.
 		make_echocommand(@valid);
 		if (msg->cmdname == "" && has_prefix(conn->group, "!!trigger#")) {
 			//Newly added command. The client needs to know the ID so it can pop it up.
