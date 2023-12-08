@@ -750,7 +750,10 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		|| has_prefix(grp, "preview-") //Any mod, with the same login token (test alerts only, and only from same user)
 		|| (channel->name == "#!demo" && has_prefix(grp, "demo-")) //Anyone using the demo (test alerts from same IP)
 	) {
-		//Cut-down information for the display
+		//Cut-down information for the display. NOTE: If ever previews and the live
+		//display are disconnected here, be aware that update_all() uses preview to
+		//calculate state, since the authkey might not exist if the broadcaster has
+		//never deployed the alertbox. Previews should still remain functional.
 		string chan = channel->name[1..];
 		ensure_host_connection(chan);
 		string token;
@@ -790,6 +793,23 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		"need_redeem_cmd": !channel->commands->redeem,
 		//"hostbackend": cfg->hostbackend || "none",
 	]);
+}
+
+//Push out changes to all appropriate sockets, including previews.
+void update_all(object channel) {
+	send_updates_all("control" + channel->name); //The control socket gets all the info (different state to the others)
+	//Gather a full list of display sockets. Note that this will still ONLY send to
+	//the correct authkey, since an older code that used to check out should not allow
+	//you access, unless there's a Vader override.
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	array allsocks = ({ });
+	foreach (websocket_groups; string grp; array socks)
+		if (has_suffix(grp, channel->name) &&
+			(grp == cfg->authkey + channel->name || has_prefix(grp, "preview-") || has_prefix(grp, "demo-")))
+				allsocks += socks;
+	//Note that we use preview rather than the authkey here since there
+	//might not be an authkey. It's the same state anyway.
+	_low_send_updates(get_state("preview-" + channel->name), allsocks);
 }
 
 void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -836,8 +856,7 @@ void websocket_cmd_auditlog(mapping(string:mixed) conn, mapping(string:mixed) ms
 	foreach ("label heading description" / " ", string key)
 		if (stringp(msg[key])) info[key] = msg[key];
 	persist_status->save();
-	send_updates_all(conn->group);
-	send_updates_all(cfg->authkey + channel->name);
+	update_all(channel);
 }
 
 @"is_mod": void wscmd_delpersonal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -921,8 +940,7 @@ void update_gif_variants(object channel) {
 		resolve_affected_inherits((string)channel->userid, msg->id);
 		persist_status->save();
 		if (basetype == "gif") update_gif_variants(channel);
-		send_updates_all(conn->group);
-		send_updates_all(cfg->authkey + channel->name);
+		update_all(channel);
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "select_variant", "type": basetype, "variant": ""]), 4));
 		return;
 	}
@@ -935,8 +953,7 @@ void update_gif_variants(object channel) {
 		resolve_affected_inherits((string)channel->userid, msg->id);
 		persist_status->save();
 		if (msg->id == "gif") update_gif_variants(channel);
-		send_updates_all(conn->group);
-		send_updates_all(cfg->authkey + channel->name);
+		update_all(channel);
 		return;
 	}
 	if (!cfg->files) return; //No files, can't delete
@@ -1013,8 +1030,7 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 	//After changing master audio settings, redo all inherit resolutions
 	if (!undefinedp(msg->mastervolume) || !undefinedp(msg->muted)) resolve_all_inherits((string)channel->userid);
 	persist_status->save();
-	send_updates_all(conn->group);
-	send_updates_all(cfg->authkey + channel->name);
+	update_all(channel);
 }
 
 void check_tts_usage(mapping cfg) {
@@ -1089,8 +1105,7 @@ void copy_stock(mapping alertconfigs, string basetype) {
 		foreach (SINGLE_EDIT_ATTRS, string attr) if (!undefinedp(msg[attr])) data[attr] = msg[attr];
 		resolve_affected_inherits((string)channel->userid, msg->type);
 		persist_status->save();
-		send_updates_all(conn->group);
-		send_updates_all(cfg->authkey + channel->name);
+		update_all(channel);
 		if (sock_reply) conn->sock->send_text(Standards.JSON.encode(sock_reply, 4));
 		return;
 	}
@@ -1204,8 +1219,7 @@ void copy_stock(mapping alertconfigs, string basetype) {
 	}
 	persist_status->save();
 	if (basetype == "gif") update_gif_variants(channel);
-	send_updates_all(conn->group);
-	send_updates_all(cfg->authkey + channel->name);
+	update_all(channel);
 	if (sock_reply) conn->sock->send_text(Standards.JSON.encode(sock_reply, 4));
 	if (!hosts_were_active) {
 		//Host alerts may have just been activated. Make sure we have a backend.
@@ -1243,6 +1257,12 @@ void copy_stock(mapping alertconfigs, string basetype) {
 	//Send a fake version number that's higher than the current, thus making it think
 	//it needs to update. After it reloads, it will get the regular state, with the
 	//current version, so it'll reload once and then be happy.
+	//NOTE: Despite previews done by mods being isolated from the broadcaster, this
+	//signal is not. This allows emergency fixes as needed, though they shouldn't ever
+	//make any difference. Could disallow mods from using this if necessary. Note also
+	//that you can't remotely reload your preview in this way. It's also probably not
+	//necessary, given that normal use of previews will be in a context where you can
+	//reload manually; inside OBS or equivalent, it's going to be the live key.
 	send_updates_all(cfg->authkey + channel->name, (["version": LATEST_VERSION + 1]));
 }
 
