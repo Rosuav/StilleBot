@@ -115,8 +115,14 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//Syntax-validate a JSON message structure. Returns the canonicalized version,
 		//or a zero.
 		mixed body = Standards.JSON.decode(utf8_to_string(req->body_raw));
-		if (!body || !mappingp(body) || !body->msg) return (["error": 400]);
-		return jsonify(_syntax_check(body->msg, body->cmdname), 7);
+		if (!body || !mappingp(body) || !mappingp(body->msg)) return (["error": 400]);
+		echoable_message result = validate(body->msg, (["cmd": body->cmdname || "validateme", "cooldowns": ([])]));
+		if (body->cmdname == "!!trigger" && result != "") {
+			if (!mappingp(result)) result = (["message": result]);
+			m_delete(result, "otherwise"); //Triggers don't have an Else clause
+			if (stringp(body->msg->id)) result->id = body->msg->id; //Triggers may have IDs, in which case we should keep them.
+		}
+		return jsonify(result, 7);
 	}
 	if (req->misc->is_mod) {
 		return render(req, ([
@@ -390,22 +396,6 @@ echoable_message validate(echoable_message resp, mapping state)
 	if (stringp(resp->redemption) && resp->redemption != "") ret->redemption = resp->redemption;
 
 	return sizeof(ret) == 1 ? ret->message : ret;
-}
-
-//Check a message for syntactic validity without any actual permissions
-//The channel will be ignored and you don't have to be a mod (or even logged in).
-//If cmdname == "!!trigger", will validate a trigger. Otherwise, will validate
-//a command or special (they behave the same way). Returns 0 if the command fails
-//validation entirely, otherwise returns the canonicalized version of it.
-mapping(string:mixed) _syntax_check(mapping(string:mixed) msg, string|void cmdname) {
-	mapping state = (["cmd": cmdname || "validateme", "cooldowns": ([])]); //No channel so full validation isn't done
-	echoable_message result = validate(msg, state);
-	if (cmdname == "!!trigger" && result != "") {
-		if (!mappingp(result)) result = (["message": result]);
-		m_delete(result, "otherwise"); //Triggers don't have an Else clause
-		if (stringp(msg->id)) result->id = msg->id; //Triggers may have IDs, in which case we should keep them.
-	}
-	return result;
 }
 
 //mode is "" for regular commands, "!!" for specials, "!!trigger" for triggers.
