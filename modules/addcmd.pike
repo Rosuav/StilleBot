@@ -186,9 +186,9 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 	}
 	if (mappingp(response) && response->automate && G->G->stream_online_since[channel->config->login]) {
 		//Start a timer
-		//Currently, a simple hack: notify repeat.pike to recheck everything.
-		function repeat = G->G->commands->repeat;
-		if (repeat) function_object(repeat)->connected(channel->config->login);
+		//Currently, a simple hack: notify cmdmgr.pike to recheck everything.
+		object mgr = G->G->builtins->cmdmgr;
+		if (mgr) mgr->connected(channel->config->login);
 	}
 	if (mappingp(response) && response->redemption) {
 		channel->redemption_commands[response->redemption] += ({basename});
