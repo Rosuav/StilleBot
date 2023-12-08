@@ -67,16 +67,11 @@ void enable_feature(object channel, string kwd, int state) {
 		if (blt->command_suggestions[?kwd]) info = (["response": blt->command_suggestions[kwd]]);
 	if (!info) return;
 	//Hack: Call on the normal commands updater to add a trigger
-	if (!state)
-		websocket_cmd_delete(
-			(["group": channel->name, "session": ([])]),
-			(["cmdname": kwd])
-		);
-	else
-		websocket_cmd_update(
-			(["group": channel->name, "session": ([])]),
-			(["cmdname": kwd, "response": info->response || COMPLEX_TEMPLATES[kwd]])
-		);
+	wscmd_update(
+		channel,
+		(["group": channel->name, "session": ([])]),
+		(["cmdname": kwd, "response": state ? info->response || COMPLEX_TEMPLATES[kwd] : ""])
+	);
 }
 
 //Gather all the variables that the JS command editor needs. Some may depend on the channel.
@@ -491,20 +486,20 @@ array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	return _validate_command(channel, mode, msg->cmdname, msg->response, msg->original);
 }
 
-void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, msg);
-	if (!valid || !valid[0] || conn->session->?fake) return;
+	if (!valid || !valid[0]) return;
 	make_echocommand(@valid);
 	if (msg->cmdname == "" && has_prefix(conn->group, "!!trigger#")) {
 		//Newly added command. The client needs to know the ID so it can pop it up.
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "newtrigger", "response": valid[1][-1]])));
 	}
 }
-void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {websocket_cmd_update(conn, msg | (["response": ""]));}
+void wscmd_delete(object c, mapping conn, mapping msg) {wscmd_update(c, conn, msg | (["response": ""]));}
 
 void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array valid = _validate_update(conn, (["cmdname": "validateme"]) | msg);
-	if (!valid) return; //But it's okay if the name is invalid.
+	if (!valid) return; //But it's okay if the name is invalid, or in demo mode (fake-mod)
 	string cmdname = ((valid[0] || msg->cmdname) / "#")[0];
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[1]]), 4));
 }
