@@ -418,59 +418,62 @@ mapping(string:mixed) _syntax_check(mapping(string:mixed) msg, string|void cmdna
 	return result;
 }
 
-array _validate_command(object channel, string|zero command, string cmdname, echoable_message response, string|void original) {
-	mapping state = (["cmd": command, "cdanon": 0, "cooldowns": ([]), "channel": channel]);
-	if (command == "!!trigger") {
-		echoable_message alltrig = channel->commands["!trigger"];
-		alltrig += ({ }); //Force array, and disconnect it for mutation's sake
-		string id = cmdname - "!";
-		if (id == "") {
-			//Blank command name? Create a new one.
-			if (!sizeof(alltrig)) id = "1";
-			else id = (string)((int)alltrig[-1]->id + 1);
-		}
-		else if (id == "validateme" || has_prefix(id, "changetab_"))
-			return ({0, validate(response, state)}); //Validate-only and ignore preexisting triggers
-		else if (!(int)id) return 0; //Invalid ID
-		state->cmd += "-" + id;
-		echoable_message trigger = validate(response, state);
-		if (trigger != "") { //Empty string will cause a deletion
-			if (!mappingp(trigger)) trigger = (["message": trigger]);
-			trigger->id = id;
-			m_delete(trigger, "otherwise"); //Triggers don't have an Else clause
-		}
-		if (cmdname == "") alltrig += ({trigger});
-		else foreach ([array]alltrig; int i; mapping r) {
-			if (r->id == id) {
-				alltrig[i] = trigger;
-				break;
+//mode is "" for regular commands, "!!" for specials, "!!trigger" for triggers.
+array _validate_command(object channel, string|zero mode, string cmdname, echoable_message response, string|void original) {
+	mapping state = (["cdanon": 0, "cooldowns": ([]), "channel": channel]);
+	switch (mode) {
+		case "!!trigger": {
+			echoable_message alltrig = channel->commands["!trigger"];
+			alltrig += ({ }); //Force array, and disconnect it for mutation's sake
+			string id = cmdname - "!";
+			if (id == "") {
+				//Blank command name? Create a new one.
+				if (!sizeof(alltrig)) id = "1";
+				else id = (string)((int)alltrig[-1]->id + 1);
 			}
+			else if (id == "validateme" || has_prefix(id, "changetab_"))
+				return ({0, validate(response, state)}); //Validate-only and ignore preexisting triggers
+			else if (!(int)id) return 0; //Invalid ID
+			state->cmd = "!!trigger-" + id;
+			echoable_message trigger = validate(response, state);
+			if (trigger != "") { //Empty string will cause a deletion
+				if (!mappingp(trigger)) trigger = (["message": trigger]);
+				trigger->id = id;
+				m_delete(trigger, "otherwise"); //Triggers don't have an Else clause
+			}
+			if (cmdname == "") alltrig += ({trigger});
+			else foreach ([array]alltrig; int i; mapping r) {
+				if (r->id == id) {
+					alltrig[i] = trigger;
+					break;
+				}
+			}
+			alltrig -= ({""});
+			if (!sizeof(alltrig)) alltrig = ""; //No triggers left? Delete the special altogether.
+			return ({"!trigger" + channel->name, alltrig, state});
 		}
-		alltrig -= ({""});
-		if (!sizeof(alltrig)) alltrig = ""; //No triggers left? Delete the special altogether.
-		return ({"!trigger" + channel->name, alltrig});
-	}
-	if (command == "" || command == "!!") {
-		string pfx = command[..0]; //"!" for specials, "" for normals
-		if (!stringp(cmdname)) return 0;
-		sscanf(cmdname, "%*[!]%s%*[#]%s", command, string c);
-		if (c != "" && c != channel->name[1..]) return 0; //If you specify the command name as "!demo#rosuav", that's fine if and only if you're working with channel "#rosuav".
-		command = String.trim(lower_case(command));
-		if (command == "") return 0;
-		state->cmd = command = pfx + command;
-		if (pfx == "!" && !function_object(make_echocommand)->SPECIAL_NAMES[command]) command = 0; //Only specific specials are valid
-		if (pfx == "") {
-			//See if an original name was provided
-			sscanf(original || "", "%*[!]%s%*[#]", string orig);
-			orig = String.trim(lower_case(orig));
-			if (orig != "") state->original = orig + channel->name;
+		case "": case "!!": {
+			string pfx = mode[..0]; //"!" for specials, "" for normals
+			if (!stringp(cmdname)) return 0;
+			sscanf(cmdname, "%*[!]%s%*[#]%s", string|zero command, string c);
+			if (c != "" && c != channel->name[1..]) return 0; //If you specify the command name as "!demo#rosuav", that's fine if and only if you're working with channel "#rosuav".
+			command = String.trim(lower_case(command));
+			if (command == "") return 0;
+			state->cmd = command = pfx + command;
+			if (pfx == "!" && !function_object(make_echocommand)->SPECIAL_NAMES[command]) command = 0; //Only specific specials are valid
+			if (pfx == "") {
+				//See if an original name was provided
+				sscanf(original || "", "%*[!]%s%*[#]", string orig);
+				orig = String.trim(lower_case(orig));
+				if (orig != "") state->original = orig + channel->name;
+			}
+			//Validate the message. Note that there will be some things not caught by this
+			//(eg trying to set access or visibility deep within the response), but they
+			//will be merely useless, not problematic.
+			return ({command + channel->name, validate(response, state), state});
 		}
+		default: return 0; //Internal error, shouldn't happen
 	}
-	if (command) command += channel->name; //Potentially getting us right back to conn->group, but more likely the group is just the channel
-	//Validate the message. Note that there will be some things not caught by this
-	//(eg trying to set access or visibility deep within the response), but they
-	//will be merely useless, not problematic.
-	return ({command, validate(response, state), state});
 }
 
 //TODO: Move this out of chan_commands along with everything it depends on.
@@ -483,12 +486,9 @@ void update_command(object channel, string command, string cmdname, echoable_mes
 }
 
 array _validate_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	sscanf(conn->group, "%s#%s", string command, string chan);
+	sscanf(conn->group, "%s#%s", string mode, string chan);
 	object channel = G->G->irc->channels["#" + chan]; if (!channel) return 0;
-	//TODO: Fold command and msg->cmdname into a single parameter
-	//Currently command is a mode-switch that handles group checks, which is
-	//the job of this function, not _validate_command
-	return _validate_command(channel, command, msg->cmdname, msg->response, msg->original);
+	return _validate_command(channel, mode, msg->cmdname, msg->response, msg->original);
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
