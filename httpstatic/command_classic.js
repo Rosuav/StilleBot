@@ -16,6 +16,8 @@ const flags = {
 for (let name in builtins) flags.builtin[name] = builtins[name].name;
 const toplevelflags = ["access", "visibility"];
 const conditionalkeys = "expr1 expr2 casefold".split(" "); //Include every key used by every conditional type
+//NOTE: Must correspond to the list of params in command_gui types.anchor_command.params
+const anchor_props = ["aliases", "access", "visibility", "automate", "redemption"];
 
 function checkpos() {
 	const dlg = DOM("#advanced_view");
@@ -352,10 +354,11 @@ export function cls_load_message(cmd_basis, cmd_editing) {
 	//so if the basis doesn't tell us what type to be (ie it's a trigger), remove a blank
 	//"otherwise" branch, so it doesn't show to the user.
 	if (!cmd_basis.type && cmd_editing.otherwise === "") delete cmd_editing.otherwise;
-	toplevel_params = {...cmd_basis, ...cmd_editing};
+	toplevel_params = {...cmd_basis, message: cmd_editing};
+	anchor_props.forEach(f => cmd_editing[f] && (toplevel_params[f] = cmd_editing[f]));
 	set_content("#command_details", [
 		//Maybe make the Provides entries clickable to insert that token in the current EF??
 		UL(Object.keys(cmd_basis.provides || { }).map(p => LI([CODE(p), " - " + cmd_basis.provides[p]]))),
-		render_command(cmd_editing, cmd_basis.type === "anchor_command"),
+		render_command(toplevel_params, cmd_basis.type === "anchor_command"),
 	]);
 }

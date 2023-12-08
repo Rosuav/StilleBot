@@ -306,6 +306,8 @@ const types = {
 			+ "Restricting access affects who may", BR(), "type the command, but it may still "
 			+ "be invoked in other ways even if nobody has access."],
 		params: [
+			//NOTE: If more are added here, check command_classic.js anchor_props[] to ensure
+			//that they will at least round-trip correctly.
 			{attr: "aliases", label: "Aliases", values: {...default_handlers,
 				normalize: val => (val||"").replace(/!/g, ""),
 			}},

@@ -269,9 +269,6 @@
   - Find other places that should be reporting errors and make them report.
     - We need to talk to you about your TPS, error, and warning reports.
   - Fully implement unread status - lift code from chan_messages as needed.
-* Classic editor has issues with a top-level try/catch. Look into it some time.
-  - Issue does not occur if the try/catch is nested inside something.
-  - Might be failing to clear something after rendering??
 * Database configs???
   - Parallel stillebot databases on Sikorsky and Gideon
   - Initiate replication from Sikorsky (PG 15) to Gideon (PG 12)
