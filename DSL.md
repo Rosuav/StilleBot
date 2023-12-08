@@ -28,3 +28,18 @@ Do I need one? Maybe?
 - Comments will be introduced with a double slash. If it looks like commented-out code and can
   round trip as such, it should be done accordingly when transformed into GUI mode. Otherwise,
   it's just text comments like anywhere else.
+
+Syntax
+------
+
+* Top-level flags: access, visibility, automate, etc
+  - Assignment style? eg: access=mod
+* Grouping: Braces or square brackets. Must be correctly nested but otherwise behave identically?
+* Comments begin with "//" and end at newline, or with "/*" and end at "*/" - nesting permitted?
+* Mode (rotate/random/foreach), delay, voice
+* Destination (whisper, web, variable, chain, reply)
+* Builtins - function-like syntax?
+* Conditions. These have three parts: condition type and parameters, if-true, if-false.
+
+Broad structure: Nested groups, including top-level which is implicitly a group.
+Inside any group, assignment statements affect that group and any subgroups.
