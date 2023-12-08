@@ -164,7 +164,7 @@ class builtin_command {
 	constant builtin_param = ""; //Label for the parameter, or "/Label/option/option/option" to offer specific selections. If blank, has no parameter. May be an array for multiple params.
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
 	constant command_suggestions = 0; //Set this to provide some suggestions (which will show up as enableable features)
-	constant scope_required = ""; //If nonblank, will be offered as a suggestion any time this builtin is used.
+	constant scope_required = ""; //If nonblank, will be offered as a suggestion any time this builtin is used. TODO: Make this more flexible, so some parameters can ask for scope, others not?
 
 	//Override this either as-is or as a continue function to return the useful params.
 	//Note that the person mapping may be as skeletal as (["user": "Nobody"]) - all
