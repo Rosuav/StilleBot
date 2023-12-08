@@ -172,7 +172,7 @@ void make_echocommand(string cmd, echoable_message response, mapping|void extra)
 		if (object handler = G->G->websocket_types->chan_variables)
 			handler->update_one(channel->name, v - "$");
 	}
-	if (response) channel->commands[pfx + basename] = channel->path("commands")[pfx + basename] = response;
+	if (response && response != "") channel->commands[pfx + basename] = channel->path("commands")[pfx + basename] = response;
 	if (mappingp(response) && response->aliases) update_aliases(channel, response->aliases, (response - (<"aliases">)) | (["alias_of": basename]), updates);
 	foreach (extra->?cooldowns || ([]); string cdname; int cdlength) {
 		//If the cooldown delay is shorter than the cooldown timeout,
