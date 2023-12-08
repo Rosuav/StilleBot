@@ -107,10 +107,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"loadingmsg": "Restricted to moderators only",
 		]) | req->misc->chaninfo);
 	}
-	object addcmd = function_object(make_echocommand); //TODO: Get this info from cmdmgr instead, or make it its own global
 	multiset scopes = (multiset)(token_for_user_login(req->misc->channel->name[1..])[1] / " ");
 	int is_bcaster = req->misc->channel->userid == (int)req->misc->session->user->id;
-	foreach (addcmd->SPECIALS, [string spec, [string desc, string originator, string params], string tab]) {
+	foreach (G->G->cmdmgr->SPECIALS, [string spec, [string desc, string originator, string params], string tab]) {
 		array scopesets = G->G->SPECIALS_SCOPES[spec - "!"];
 		string|zero scopes_required = 0;
 		if (scopesets) {
@@ -130,7 +129,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	return render_template("chan_specials.md", ([
 		"vars": ([
 			"commands": commands,
-			"SPECIAL_PARAMS": mkmapping(@Array.transpose(addcmd->SPECIAL_PARAMS)),
+			"SPECIAL_PARAMS": mkmapping(@Array.transpose(G->G->cmdmgr->SPECIAL_PARAMS)),
 			"ws_type": "chan_commands", "ws_group": "!!" + req->misc->channel->name, "ws_code": "chan_specials",
 		]) | G->G->command_editor_vars(req->misc->channel),
 		"loadingmsg": "Loading...",
