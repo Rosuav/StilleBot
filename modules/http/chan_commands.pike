@@ -231,18 +231,18 @@ string normalize_cooldown_name(string|int(0..0) cdname, mapping state) {
 }
 
 //state array is for purely-linear state that continues past subtrees
-echoable_message _validate(echoable_message resp, mapping state)
+echoable_message _validate_recursive(echoable_message resp, mapping state)
 {
 	//Filter the response to only that which is valid
 	if (stringp(resp)) return resp;
 	if (arrayp(resp)) switch (sizeof(resp))
 	{
 		case 0: return ""; //This should be dealt with at a higher level (and suppressed).
-		case 1: return _validate(resp[0], state); //Collapse single element arrays to their sole element
-		default: return _validate(resp[*], state) - ({""}); //Suppress any empty entries
+		case 1: return _validate_recursive(resp[0], state); //Collapse single element arrays to their sole element
+		default: return _validate_recursive(resp[*], state) - ({""}); //Suppress any empty entries
 	}
 	if (!mappingp(resp)) return ""; //Ensure that nulls become empty strings, for safety and UI simplicity.
-	mapping ret = (["message": _validate(resp->message, state)]);
+	mapping ret = (["message": _validate_recursive(resp->message, state)]);
 	//Whitelist the valid flags. Note that this will quietly suppress any empty
 	//strings, which would be stating the default behaviour.
 	foreach (message_flags; string flag; multiset ok)
@@ -311,7 +311,7 @@ echoable_message _validate(echoable_message resp, mapping state)
 	if (array parts = condition_parts[resp->conditional]) {
 		foreach (parts + ({"conditional"}), string key)
 			if (resp[key]) ret[key] = resp[key];
-		ret->otherwise = _validate(resp->otherwise, state);
+		ret->otherwise = _validate_recursive(resp->otherwise, state);
 		if (ret->message == "" && ret->otherwise == "") return ""; //Conditionals can omit either message or otherwise, but not both
 		if (ret->casefold == "") m_delete(ret, "casefold"); //Blank means not case folded, so omit it
 		if (ret->conditional == "cooldown") {
@@ -364,7 +364,7 @@ echoable_message _validate(echoable_message resp, mapping state)
 }
 echoable_message _validate_toplevel(echoable_message resp, mapping state)
 {
-	mixed ret = _validate(resp, state);
+	mixed ret = _validate_recursive(resp, state);
 	if (!mappingp(resp)) return ret; //There can't be any top-level flags if you start with a string or array
 	if (!mappingp(ret)) ret = (["message": ret]);
 	//If there are any top-level flags, apply them.
@@ -450,7 +450,7 @@ array _validate_command(object channel, string|zero mode, string cmdname, echoab
 			//Validate the message. Note that there will be some things not caught by this
 			//(eg trying to set access or visibility deep within the response), but they
 			//will be merely useless, not problematic.
-			return ({command + channel->name, validate(response, state), state});
+			return ({command + channel->name, _validate_toplevel(response, state), state});
 		}
 		default: return 0; //Internal error, shouldn't happen
 	}
