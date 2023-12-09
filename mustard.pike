@@ -57,7 +57,20 @@ mixed /* echoable_message */ parse_mustard(string|Stdio.Buffer mustard) {
 		if (!sizeof(mustard)) return "";
 		if (array token = mustard->sscanf("%[=,~-]")) //All characters that can be part of multi-character tokens
 			return token[0];
-		if (array tok = mustard[0] == '"' && mustard->sscanf("%O")) return ({"string", tok[0]}); //String literal
+		//In theory, this should do the job. Not sure why it doesn't work.
+		//if (mustard[0] == '"') return ({"string", mustard->read_json()});
+		//Instead, let's roll our own - or, since I already did, lift from
+		//EU4Parser where I basically did the same thing.
+		if (array str = mustard->sscanf("\"%[^\"]\"")) {
+			//Fairly naive handling of backslashes and quotes. It might be better to do this more properly.
+			string lit = str[0];
+			while (lit != "" && lit[-1] == '\\') {
+				str = mustard->sscanf("%[^\"]\"");
+				if (!str) break; //Should possibly be a parse error?
+				lit += "\"" + str[0];
+			}
+			return ({"string", replace(lit, "\\\\", "\\")});
+		}
 		if (array tok = mustard->sscanf("%[a-zA-Z0-9_]")) {
 			string token = tok[0];
 			if (KEYWORDS[token]) return token;
