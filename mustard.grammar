@@ -16,9 +16,28 @@ message: "comment" {makecomment};
 message: "name" "(" params ")" message {builtin};
 message: "{" flags group "}" {flagmessage2};
 message: "[" flags group "]" {flagmessage2};
+message: "if" condition message maybeelse message {conditional};
 
 params: {makeparams};
 params: param_list;
 params: param_list ",";
 param_list: "string" {makeparams};
 param_list: param_list "," "string" {addparam};
+
+condition: "(" condition ")" {taketwo};
+condition: flags value oper value {cond};
+oper: "==";
+oper: "=~";
+oper: "-=";
+oper: "in";
+condition: "test" calc_cond {taketwo}; /* if (test "expr") if-true if-false */
+message: "test" calc_cond message maybeelse message {conditional}; /* test ("expr") if-true if-false */
+calc_cond: "string" {cond_calc};
+calc_cond: "(" calc_cond ")" {taketwo};
+maybeelse: ;
+maybeelse: "else";
+
+/*
+"cooldown": ({"cdname", "cdlength", "cdqueue"}),
+"catch": ({ }), //Currently there's no exception type hierarchy, so you always catch everything.
+*/

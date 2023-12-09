@@ -15,17 +15,38 @@ array gather(mixed elem, array arr) {return ({elem}) + arr;}
 array makeparams(string|void param) {return param ? ({param}) : ({ });}
 array addparam(array params, string comma, string param) {return params + ({param});}
 mapping makecomment(string comment) {return (["dest": "//", "message": comment]);}
+mixed taketwo(mixed ignore, mixed take) {return take;}
+mapping conditional(string kwd, mapping cond, mixed if_true, mixed maybeelse, mixed if_false) {
+	cond->message = if_true;
+	cond->otherwise = if_false;
+	return cond;
+}
+mapping cond(mapping flg, string expr1, string oper, string expr2) {
+	flg->expr1 = expr1;
+	flg->expr2 = expr2;
+	flg->conditional = ([
+		"==": "string",
+		"in": "contains",
+		"=~": "regexp",
+		"-=": "spend",
+	])[oper]; //If bad operator, will be unconditional. Should be caught by the grammar though.
+	return flg;
+}
+mapping cond_calc(string expr1) {return (["conditional": "number", "expr1": expr1]);}
+
+constant KEYWORDS = (<"if", "else", "in", "test">);
 
 mixed /* echoable_message */ parse_mustard(string mustard) {
 	//parser->set_error_handler(throw_errors);
 	array|string next() {
 		sscanf(mustard, "%*[ \t\r\n;]%s", mustard);
 		if (mustard == "") return "";
-		sscanf(mustard, "%[=,]%s", string token, mustard); //All characters that can be part of multi-character tokens
+		sscanf(mustard, "%[=,~-]%s", string token, mustard); //All characters that can be part of multi-character tokens
 		if (token != "") return token;
 		if (mustard[0] == '"' && sscanf(mustard, "%O%s", token, mustard)) return ({"string", token}); //String literal
 		sscanf(mustard, "%[a-zA-Z0-9_]%s", token, mustard);
 		if (token != "") {
+			if (KEYWORDS[token]) return token;
 			//A number has nothing but digits, but a name can't start
 			//with a digit. So it's an error to have eg 123AB4.
 			if (token[0] >= '0' && token[0] <= '9') {
