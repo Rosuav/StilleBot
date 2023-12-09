@@ -4,6 +4,14 @@
 Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file("mustard.grammar");
 void throw_errors(int level, string subsystem, string msg, mixed ... args) {if (level >= 2) error(msg, @args);}
 
+constant oper_fwd = ([
+	"==": "string",
+	"in": "contains",
+	"=~": "regexp",
+	"-=": "spend",
+]);
+mapping oper_rev = mkmapping(values(oper_fwd), indices(oper_fwd));
+
 mapping makeflags() {return ([]);}
 mapping addflag(mapping flg, string hash, string name, string eq, string val) {flg[name] = val; return flg;}
 mapping flagmessage(mapping flg, mixed message) {flg->message = message; return flg;}
@@ -24,12 +32,7 @@ mapping conditional(string kwd, mapping cond, mixed if_true, mixed maybeelse, mi
 mapping cond(mapping flg, string expr1, string oper, string expr2) {
 	flg->expr1 = expr1;
 	flg->expr2 = expr2;
-	flg->conditional = ([
-		"==": "string",
-		"in": "contains",
-		"=~": "regexp",
-		"-=": "spend",
-	])[oper]; //If bad operator, will be unconditional. Should be caught by the grammar though.
+	flg->conditional = oper_fwd[oper]; //If bad operator, will be unconditional. Should be caught by the grammar though.
 	return flg;
 }
 mapping cond_calc(string expr1) {return (["conditional": "number", "expr1": expr1]);}
@@ -79,16 +82,16 @@ string atom(string value) {
 
 void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mapping state) {
 	if (!message) return;
-	if (stringp(message)) {out->sprintf("%s%q\n", state->indent, message); return;}
+	if (stringp(message)) {out->sprintf("%s%q\n", state->indent * state->indentlevel, message); return;}
 	if (arrayp(message)) {
-		out->sprintf("%s{\n", state->indent++ * state->indentlevel);
+		out->sprintf("%s{\n", state->indent * state->indentlevel++);
 		_make_mustard(message[*], out, state);
-		out->sprintf("%s}\n", --state->indent * state->indentlevel);
+		out->sprintf("%s}\n", state->indent * --state->indentlevel);
 	}
 	int block = 0;
 	void ensure_block() {
 		if (block) return;
-		out->sprintf("%s{\n", state->indent++ * state->indentlevel);
+		out->sprintf("%s{\n", state->indent * state->indentlevel++);
 		block = 1;
 	}
 	foreach (message_flags; string flg;) if (message[flg]) {
@@ -103,16 +106,19 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 		//TODO: Emit a block on the same line, or a single message indented on the next line
 	}
 	if (message->conditional) {
-		out->sprintf("%sif (%q %s %q)\n", state->indent * state->indentlevel, message->expr1 || "", message->conditional, message->expr2 || "");
-		//TODO: As above, get the indentation right
+		if (message->conditional == "number")
+			out->sprintf("%stest (%q) {\n", state->indent * state->indentlevel++, message->expr1);
+		else out->sprintf("%sif (%q %s %q) {\n", state->indent * state->indentlevel++, message->expr1 || "", oper_rev[message->conditional], message->expr2 || "");
 		_make_mustard(message->message || "", out, state); //Gotta have the if branch
+		out->sprintf("%s}\n", state->indent * --state->indentlevel);
 		if (message->otherwise) {
-			out->sprintf("%selse\n", state->indent * state->indentlevel);
+			out->sprintf("%selse {\n", state->indent * state->indentlevel++);
 			_make_mustard(message->otherwise, out, state);
+			out->sprintf("%s}\n", state->indent * --state->indentlevel);
 		}
 	}
 	else _make_mustard(message->message, out, state);
-	if (block) out->sprintf("%s}\n", --state->indent * state->indentlevel);
+	if (block) out->sprintf("%s}\n", state->indent * --state->indentlevel);
 }
 
 string make_mustard(mixed /* echoable_message */ message) {
