@@ -55,6 +55,7 @@ mixed /* echoable_message */ parse_mustard(string mustard) {
 		if (mustard == "") return "";
 		sscanf(mustard, "%[=,~-]%s", string token, mustard); //All characters that can be part of multi-character tokens
 		if (token != "") return token;
+		//Need a better way to consume a string literal as a token. Escaped quotes and such aren't working properly.
 		if (mustard[0] == '"' && sscanf(mustard, "%O%s", token, mustard)) return ({"string", token}); //String literal
 		sscanf(mustard, "%[a-zA-Z0-9_]%s", token, mustard);
 		if (token != "") {
