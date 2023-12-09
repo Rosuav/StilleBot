@@ -84,14 +84,17 @@ constant message_flags = ([
 	"dest": (<"/w", "/web", "/set", "/chain", "/reply", "//">),
 ]);
 /***** End duplicated *****/
+string quoted_string(string value) {
+	return Standards.JSON.encode(value);
+}
 string atom(string value) {
 	//TODO: If it's a valid atom, return it as-is
-	return sprintf("%q", value);
+	return quoted_string(value);
 }
 
 void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mapping state, int|void skipblock) {
 	if (!message) return;
-	if (stringp(message)) {out->sprintf("%s%q\n", state->indent * state->indentlevel, message); return;}
+	if (stringp(message)) {out->sprintf("%s%s\n", state->indent * state->indentlevel, quoted_string(message)); return;}
 	if (arrayp(message)) {
 		if (!skipblock) out->sprintf("%s{\n", state->indent * state->indentlevel++);
 		_make_mustard(message[*], out, state);
@@ -110,11 +113,11 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 	}
 	if (message->builtin) {
 		string params = "";
-		if (arrayp(message->builtin_param)) params = sprintf("%q", message->builtin_param[*]) * ", ";
-		if (stringp(message->builtin_param)) params = sprintf("%q", message->builtin_param);
+		if (arrayp(message->builtin_param)) params = quoted_string(message->builtin_param[*]) * ", ";
+		if (stringp(message->builtin_param)) params = quoted_string(message->builtin_param);
 		out->sprintf("%s%s(%s)", state->indent * state->indentlevel, message->builtin, params);
 		mixed msg = message->message || "";
-		if (stringp(msg)) {out->sprintf(" %q\n", msg); return;}
+		if (stringp(msg)) {out->sprintf(" %s\n", quoted_string(msg)); return;}
 		else if (arrayp(msg)) {
 			out->add(" {\n");
 			++state->indentlevel;
@@ -128,7 +131,7 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 	if (message->conditional == "catch") {
 		out->sprintf("%stry", state->indent * state->indentlevel);
 		mixed msg = message->message || "";
-		if (stringp(msg)) out->sprintf(" %q\n", msg);
+		if (stringp(msg)) out->sprintf(" %s\n", quoted_string(msg));
 		else {
 			out->add(" {\n");
 			++state->indentlevel;
@@ -137,7 +140,7 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 		}
 		out->sprintf("%scatch", state->indent * state->indentlevel);
 		msg = message->otherwise || ""; //Should this "compact if possible" bit become a function?
-		if (stringp(msg)) out->sprintf(" %q\n", msg);
+		if (stringp(msg)) out->sprintf(" %s\n", quoted_string(msg));
 		else {
 			out->add(" {\n");
 			++state->indentlevel;
@@ -148,11 +151,11 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 	else if (message->conditional) {
 		//FIXME: All of these need their flags added. Before or after the main condition? Both are legal.
 		if (message->conditional == "number")
-			out->sprintf("%stest (%q) {\n", state->indent * state->indentlevel++, message->expr1);
+			out->sprintf("%stest (%s) {\n", state->indent * state->indentlevel++, quoted_string(message->expr1));
 		else if (message->conditional == "cooldown")
 			out->sprintf("%scooldown (%s) {\n", state->indent * state->indentlevel++, (string)message->delay);
 		else if (string oper = oper_rev[message->conditional])
-			out->sprintf("%sif (%q %s %q) {\n", state->indent * state->indentlevel++, message->expr1 || "", oper, message->expr2 || "");
+			out->sprintf("%sif (%s %s %s) {\n", state->indent * state->indentlevel++, quoted_string(message->expr1 || ""), oper, quoted_string(message->expr2 || ""));
 		else error("Unrecognized conditional type %O\n", message->conditional);
 		_make_mustard(message->message || "", out, state, 1); //Gotta have the if branch
 		out->sprintf("%s}\n", state->indent * --state->indentlevel);
