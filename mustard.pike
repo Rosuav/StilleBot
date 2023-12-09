@@ -212,10 +212,10 @@ int main(int argc, array(string) argv) {
 	foreach (argv[1..], string arg) {
 		if (has_suffix(arg, ".json")) {
 			mixed data = Standards.JSON.decode_utf8(Stdio.read_file(arg));
-			if (mappingp(data) && data->commands) {
+			if (mappingp(data) && data->login) {
 				parser->set_error_handler(throw_errors);
 				//Round-trip testing of an entire channel's commands
-				foreach (sort(indices(data->commands)), string cmd) if (mixed ex = catch {
+				foreach (sort(indices(data->commands || ({ }))), string cmd) if (mixed ex = catch {
 					string code = make_mustard(data->commands[cmd]);
 					mixed parsed = parse_mustard(code);
 					//TODO: Compare (may require some bot infrastructure for cmdmgr)
