@@ -80,13 +80,14 @@ string atom(string value) {
 	return sprintf("%q", value);
 }
 
-void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mapping state) {
+void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mapping state, int|void skipblock) {
 	if (!message) return;
 	if (stringp(message)) {out->sprintf("%s%q\n", state->indent * state->indentlevel, message); return;}
 	if (arrayp(message)) {
-		out->sprintf("%s{\n", state->indent * state->indentlevel++);
+		if (!skipblock) out->sprintf("%s{\n", state->indent * state->indentlevel++);
 		_make_mustard(message[*], out, state);
-		out->sprintf("%s}\n", state->indent * --state->indentlevel);
+		if (!skipblock) out->sprintf("%s}\n", state->indent * --state->indentlevel);
+		return;
 	}
 	int block = 0;
 	void ensure_block() {
@@ -102,18 +103,28 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 		string params = "";
 		if (arrayp(message->builtin_param)) params = sprintf("%q", message->builtin_param[*]) * ", ";
 		if (stringp(message->builtin_param)) params = sprintf("%q", message->builtin_param);
-		out->sprintf("%s%s(%s)\n", state->indent * state->indentlevel, message->builtin, params);
-		//TODO: Emit a block on the same line, or a single message indented on the next line
+		out->sprintf("%s%s(%s)", state->indent * state->indentlevel, message->builtin, params);
+		mixed msg = message->message || "";
+		if (stringp(msg)) {out->sprintf(" %q\n", msg); return;}
+		else if (arrayp(msg)) {
+			out->add(" {\n");
+			++state->indentlevel;
+			_make_mustard(msg, out, state, 1);
+			out->sprintf("%s}\n", state->indent * --state->indentlevel);
+			return;
+		}
+		else out->add(" {\n");
+		block = 1; ++state->indentlevel;
 	}
 	if (message->conditional) {
 		if (message->conditional == "number")
 			out->sprintf("%stest (%q) {\n", state->indent * state->indentlevel++, message->expr1);
 		else out->sprintf("%sif (%q %s %q) {\n", state->indent * state->indentlevel++, message->expr1 || "", oper_rev[message->conditional], message->expr2 || "");
-		_make_mustard(message->message || "", out, state); //Gotta have the if branch
+		_make_mustard(message->message || "", out, state, 1); //Gotta have the if branch
 		out->sprintf("%s}\n", state->indent * --state->indentlevel);
 		if (message->otherwise) {
 			out->sprintf("%selse {\n", state->indent * state->indentlevel++);
-			_make_mustard(message->otherwise, out, state);
+			_make_mustard(message->otherwise, out, state, 1);
 			out->sprintf("%s}\n", state->indent * --state->indentlevel);
 		}
 	}
@@ -124,7 +135,7 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 string make_mustard(mixed /* echoable_message */ message) {
 	mapping state = (["indent": "    ", "indentlevel": 0]);
 	Stdio.Buffer out = Stdio.Buffer();
-	foreach ("access visibility aliases redemption" / " ", string flg) {
+	if (mappingp(message)) foreach ("access visibility aliases redemption" / " ", string flg) {
 		if (message[flg]) out->sprintf("#%s = %s\n", flg, atom(message[flg]));
 	}
 	//TODO: message->automate
