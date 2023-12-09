@@ -1,6 +1,5 @@
 //Command manager
 //Handles autocommands (repeat/automate), and the adding and removing of commands
-//TODO: Migrate functionality from chan_commands into here eg validation and updating
 inherit hook;
 inherit annotated;
 inherit builtin_command;
