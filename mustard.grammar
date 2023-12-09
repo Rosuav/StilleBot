@@ -21,7 +21,7 @@ message: "[" "]" {emptymessage};
 message: "if" condition message maybeelse {conditional};
 message: "test" calc_cond message maybeelse {conditional}; /* test ("expr") if-true if-false */
 message: "try" message "catch" message {trycatch}; /* Possible future expansion: "catch" "(" filter ")" message */
-message: "cooldown" cooldown message maybeelse {cooldown};
+message: "cooldown" cooldown message maybeelse {conditional};
 
 params: {makeparams};
 params: param_list;
