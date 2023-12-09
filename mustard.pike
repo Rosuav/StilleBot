@@ -49,7 +49,7 @@ mapping trycatch(string kwd, mixed message, string kwd2, mixed otherwise) {
 constant KEYWORDS = (<"if", "else", "in", "test", "try", "catch", "cooldown">);
 
 mixed /* echoable_message */ parse_mustard(string|Stdio.Buffer mustard) {
-	if (stringp(mustard)) mustard = Stdio.Buffer(mustard);
+	if (stringp(mustard)) mustard = Stdio.Buffer(string_to_utf8(mustard));
 	mustard->read_only();
 	//parser->set_error_handler(throw_errors);
 	array|string next() {
@@ -69,7 +69,7 @@ mixed /* echoable_message */ parse_mustard(string|Stdio.Buffer mustard) {
 				if (!str) break; //Should possibly be a parse error?
 				lit += "\"" + str[0];
 			}
-			return ({"string", replace(lit, "\\\\", "\\")});
+			return ({"string", utf8_to_string(replace(lit, "\\\\", "\\"))});
 		}
 		if (array tok = mustard->sscanf("%[a-zA-Z0-9_]")) {
 			string token = tok[0];
@@ -98,7 +98,7 @@ constant message_flags = ([
 ]);
 /***** End duplicated *****/
 string quoted_string(string value) {
-	return Standards.JSON.encode(value);
+	return string_to_utf8(Standards.JSON.encode(value));
 }
 string atom(string value) {
 	//TODO: If it's a valid atom, return it as-is
@@ -195,7 +195,7 @@ string make_mustard(mixed /* echoable_message */ message) {
 	}
 	//TODO: message->automate
 	_make_mustard(message, out, state);
-	return (string)out;
+	return utf8_to_string((string)out);
 }
 
 int main(int argc, array(string) argv) {
@@ -221,12 +221,12 @@ int main(int argc, array(string) argv) {
 					//TODO: Compare (may require some bot infrastructure for cmdmgr)
 					write("%s:%s: passed\n", arg, cmd);
 				}) write("%s:%s: %s\n", arg, cmd, describe_error(ex));
-			} else write("%s\n\n", make_mustard(data));
+			} else write("%s\n\n", string_to_utf8(make_mustard(data)));
 		}
 		else if (sscanf(arg, "%s.json:%s", string fn, string cmd) && cmd) {
 			mixed data = Standards.JSON.decode_utf8(Stdio.read_file(fn + ".json"))->commands[cmd];
 			string code = make_mustard(data);
-			write("%s\n\n", code);
+			write("%s\n\n", string_to_utf8(code));
 			write("Parse-back: %O\n", parse_mustard(code));
 		}
 		else write("Result: %O\n", parse_mustard(Stdio.read_file(arg)));
