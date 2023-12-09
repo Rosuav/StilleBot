@@ -66,6 +66,66 @@ mixed /* echoable_message */ parse_mustard(string mustard) {
 	return parser->parse(next, this);
 }
 
+/***** Temporarily duplicated from cmdmgr.pike *****/
+constant message_flags = ([
+	"mode": (<"random", "rotate", "foreach">),
+	"dest": (<"/w", "/web", "/set", "/chain", "/reply", "//">),
+]);
+/***** End duplicated *****/
+string atom(string value) {
+	//TODO: If it's a valid atom, return it as-is
+	return sprintf("%q", value);
+}
+
+void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mapping state) {
+	if (!message) return;
+	if (stringp(message)) {out->sprintf("%s%q\n", state->indent, message); return;}
+	if (arrayp(message)) {
+		out->sprintf("%s{\n", state->indent++ * state->indentlevel);
+		_make_mustard(message[*], out, state);
+		out->sprintf("%s}\n", --state->indent * state->indentlevel);
+	}
+	int block = 0;
+	void ensure_block() {
+		if (block) return;
+		out->sprintf("%s{\n", state->indent++ * state->indentlevel);
+		block = 1;
+	}
+	foreach (message_flags; string flg;) if (message[flg]) {
+		ensure_block();
+		out->sprintf("%s#%s = %s\n", state->indent * state->indentlevel, flg, atom(message[flg]));
+	}
+	if (message->builtin) {
+		string params = "";
+		if (arrayp(message->builtin_param)) params = sprintf("%q", message->builtin_param[*]) * ", ";
+		if (stringp(message->builtin_param)) params = sprintf("%q", message->builtin_param);
+		out->sprintf("%s%s(%s)\n", state->indent * state->indentlevel, message->builtin, params);
+		//TODO: Emit a block on the same line, or a single message indented on the next line
+	}
+	if (message->conditional) {
+		out->sprintf("%sif (%q %s %q)\n", state->indent * state->indentlevel, message->expr1 || "", message->conditional, message->expr2 || "");
+		//TODO: As above, get the indentation right
+		_make_mustard(message->message || "", out, state); //Gotta have the if branch
+		if (message->otherwise) {
+			out->sprintf("%selse\n", state->indent * state->indentlevel);
+			_make_mustard(message->otherwise, out, state);
+		}
+	}
+	else _make_mustard(message->message, out, state);
+	if (block) out->sprintf("%s}\n", --state->indent * state->indentlevel);
+}
+
+string make_mustard(mixed /* echoable_message */ message) {
+	mapping state = (["indent": "    ", "indentlevel": 0]);
+	Stdio.Buffer out = Stdio.Buffer();
+	foreach ("access visibility aliases redemption" / " ", string flg) {
+		if (message[flg]) out->sprintf("#%s = %s\n", flg, atom(message[flg]));
+	}
+	//TODO: message->automate
+	_make_mustard(message, out, state);
+	return (string)out;
+}
+
 int main(int argc, array(string) argv) {
 	//QUIRK: An action attached to a rule with no symbols (eg "flags: {makeflags};") is
 	//interpreted as a callable string instead of a lookup into the action object. So we
@@ -78,7 +138,7 @@ int main(int argc, array(string) argv) {
 	}
 	if (argc < 2) exit(0, "USAGE: pike %s fn [fn [fn...]]\n");
 	foreach (argv[1..], string arg) {
-		if (has_suffix(arg, ".json")) ; //TODO: Load JSON and emit MustardScript
+		if (has_suffix(arg, ".json")) write("%s\n\n", make_mustard(Standards.JSON.decode_utf8(Stdio.read_file(arg))));
 		else write("Result: %O\n", parse_mustard(Stdio.read_file(arg)));
 	}
 }
