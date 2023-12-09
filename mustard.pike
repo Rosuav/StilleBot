@@ -114,6 +114,10 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 		if (!skipblock) out->sprintf("%s}\n", state->indent * --state->indentlevel);
 		return;
 	}
+	if (message->dest == "//" && stringp(message->message)) {
+		out->sprintf("%s//%s\n", state->indent * state->indentlevel, message->message);
+		return;
+	}
 	int block = 0;
 	void ensure_block() {
 		if (block) return;
