@@ -119,7 +119,9 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 	if (message->conditional) {
 		if (message->conditional == "number")
 			out->sprintf("%stest (%q) {\n", state->indent * state->indentlevel++, message->expr1);
-		else out->sprintf("%sif (%q %s %q) {\n", state->indent * state->indentlevel++, message->expr1 || "", oper_rev[message->conditional], message->expr2 || "");
+		else if (string oper = oper_rev[message->conditional])
+			out->sprintf("%sif (%q %s %q) {\n", state->indent * state->indentlevel++, message->expr1 || "", oper, message->expr2 || "");
+		else error("Unrecognized conditional type %O\n", message->conditional);
 		_make_mustard(message->message || "", out, state, 1); //Gotta have the if branch
 		out->sprintf("%s}\n", state->indent * --state->indentlevel);
 		if (message->otherwise) {
@@ -155,7 +157,22 @@ int main(int argc, array(string) argv) {
 	}
 	if (argc < 2) exit(0, "USAGE: pike %s fn [fn [fn...]]\n");
 	foreach (argv[1..], string arg) {
-		if (has_suffix(arg, ".json")) write("%s\n\n", make_mustard(Standards.JSON.decode_utf8(Stdio.read_file(arg))));
+		if (has_suffix(arg, ".json")) {
+			mixed data = Standards.JSON.decode_utf8(Stdio.read_file(arg));
+			if (mappingp(data) && data->commands) {
+				//Round-trip testing of an entire channel's commands
+				foreach (data->commands; string cmd; mixed response) if (mixed ex = catch {
+					string code = make_mustard(response);
+					mixed parsed = parse_mustard(code);
+					//TODO: Compare
+					write("%s:%s: passed\n", arg, cmd);
+				}) write("%s:%s: %s\n", arg, cmd, describe_error(ex));
+			} else write("%s\n\n", make_mustard(data));
+		}
+		else if (sscanf(arg, "%s.json:%s", string fn, string cmd) && cmd) {
+			mixed data = Standards.JSON.decode_utf8(Stdio.read_file(fn + ".json"))->commands[cmd];
+			write("%s\n\n", make_mustard(data));
+		}
 		else write("Result: %O\n", parse_mustard(Stdio.read_file(arg)));
 	}
 }
