@@ -16,7 +16,12 @@ message: "comment" {makecomment};
 message: "name" "(" params ")" message {builtin};
 message: "{" flags group "}" {flagmessage2};
 message: "[" flags group "]" {flagmessage2};
-message: "if" condition message maybeelse message {conditional};
+message: "{" "}" {emptymessage};
+message: "[" "]" {emptymessage};
+message: "if" condition message maybeelse {conditional};
+message: "test" calc_cond message maybeelse {conditional}; /* test ("expr") if-true if-false */
+message: "try" message "catch" message {trycatch}; /* Possible future expansion: "catch" "(" filter ")" message */
+message: "cooldown" cooldown message maybeelse {cooldown};
 
 params: {makeparams};
 params: param_list;
@@ -25,17 +30,18 @@ param_list: "string" {makeparams};
 param_list: param_list "," "string" {addparam};
 
 condition: "(" condition ")" {taketwo};
-condition: flags value oper value {cond};
+condition: flags value oper value flags {cond};
+condition: "test" calc_cond {taketwo}; /* if (test "expr") if-true if-false */
 oper: "==";
 oper: "=~";
 oper: "-=";
 oper: "in";
-condition: "test" calc_cond {taketwo}; /* if (test "expr") if-true if-false */
-message: "test" calc_cond message maybeelse message {conditional}; /* test ("expr") if-true if-false */
 calc_cond: "string" {cond_calc};
 calc_cond: "(" calc_cond ")" {taketwo};
-maybeelse: ;
-maybeelse: "else";
+cooldown: "number" {cd_naked};
+cooldown: "(" flags "number" flags ")" {cd_flags};
+/* maybeelse: ; */ /* How do you design an LR(1) grammar that makes an else optional but binding to closest, without unnecessary complexity? */
+maybeelse: "else" message {taketwo};
 
 /*
 "cooldown": ({"cdname", "cdlength", "cdqueue"}),

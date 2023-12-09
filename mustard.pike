@@ -24,20 +24,29 @@ array makeparams(string|void param) {return param ? ({param}) : ({ });}
 array addparam(array params, string comma, string param) {return params + ({param});}
 mapping makecomment(string comment) {return (["dest": "//", "message": comment]);}
 mixed taketwo(mixed ignore, mixed take) {return take;}
-mapping conditional(string kwd, mapping cond, mixed if_true, mixed maybeelse, mixed if_false) {
+mapping conditional(string kwd, mapping cond, mixed if_true, mixed maybeelse) {
 	cond->message = if_true;
-	cond->otherwise = if_false;
+	if (maybeelse) cond->otherwise = maybeelse;
 	return cond;
 }
-mapping cond(mapping flg, string expr1, string oper, string expr2) {
+mapping cond(mapping flg, string expr1, string oper, string expr2, mapping flg2) {
+	flg |= flg2;
 	flg->expr1 = expr1;
 	flg->expr2 = expr2;
 	flg->conditional = oper_fwd[oper]; //If bad operator, will be unconditional. Should be caught by the grammar though.
 	return flg;
 }
 mapping cond_calc(string expr1) {return (["conditional": "number", "expr1": expr1]);}
+mapping cd_naked(string delay) {return (["conditional": "cooldown", "cdlength": (int)delay]);}
+mapping cd_flags(string open, mapping flg, string delay, mapping flg2, string close) {
+	return flg | flg2 | (["conditional": "cooldown", "cdlength": (int)delay]);
+}
+string emptymessage() {return "";}
+mapping trycatch(string kwd, mixed message, string kwd2, mixed otherwise) {
+	return (["conditional": "catch", "message": message, "otherwise": otherwise]);
+}
 
-constant KEYWORDS = (<"if", "else", "in", "test">);
+constant KEYWORDS = (<"if", "else", "in", "test", "try", "catch", "cooldown">);
 
 mixed /* echoable_message */ parse_mustard(string mustard) {
 	//parser->set_error_handler(throw_errors);
@@ -116,15 +125,39 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 		else out->add(" {\n");
 		block = 1; ++state->indentlevel;
 	}
-	if (message->conditional) {
+	if (message->conditional == "catch") {
+		out->sprintf("%stry", state->indent * state->indentlevel);
+		mixed msg = message->message || "";
+		if (stringp(msg)) out->sprintf(" %q\n", msg);
+		else {
+			out->add(" {\n");
+			++state->indentlevel;
+			_make_mustard(msg, out, state, 1);
+			out->sprintf("%s}\n", state->indent * --state->indentlevel);
+		}
+		out->sprintf("%scatch", state->indent * state->indentlevel);
+		msg = message->otherwise || ""; //Should this "compact if possible" bit become a function?
+		if (stringp(msg)) out->sprintf(" %q\n", msg);
+		else {
+			out->add(" {\n");
+			++state->indentlevel;
+			_make_mustard(msg, out, state, 1);
+			out->sprintf("%s}\n", state->indent * --state->indentlevel);
+		}
+	}
+	else if (message->conditional) {
+		//FIXME: All of these need their flags added. Before or after the main condition? Both are legal.
 		if (message->conditional == "number")
 			out->sprintf("%stest (%q) {\n", state->indent * state->indentlevel++, message->expr1);
+		else if (message->conditional == "cooldown")
+			out->sprintf("%scooldown (%s) {\n", state->indent * state->indentlevel++, (string)message->delay);
 		else if (string oper = oper_rev[message->conditional])
 			out->sprintf("%sif (%q %s %q) {\n", state->indent * state->indentlevel++, message->expr1 || "", oper, message->expr2 || "");
 		else error("Unrecognized conditional type %O\n", message->conditional);
 		_make_mustard(message->message || "", out, state, 1); //Gotta have the if branch
 		out->sprintf("%s}\n", state->indent * --state->indentlevel);
-		if (message->otherwise) {
+		//NOTE: Omitting the else is currently disallowed, but I intend to make the grammar more flexible later.
+		/* if (message->otherwise) */ { //Omitting both the else and its block is legal, and in a lot of cases, will be sufficient (most cooldowns don't need an else)
 			out->sprintf("%selse {\n", state->indent * state->indentlevel++);
 			_make_mustard(message->otherwise, out, state, 1);
 			out->sprintf("%s}\n", state->indent * --state->indentlevel);
@@ -160,18 +193,21 @@ int main(int argc, array(string) argv) {
 		if (has_suffix(arg, ".json")) {
 			mixed data = Standards.JSON.decode_utf8(Stdio.read_file(arg));
 			if (mappingp(data) && data->commands) {
+				parser->set_error_handler(throw_errors);
 				//Round-trip testing of an entire channel's commands
-				foreach (data->commands; string cmd; mixed response) if (mixed ex = catch {
-					string code = make_mustard(response);
+				foreach (sort(indices(data->commands)), string cmd) if (mixed ex = catch {
+					string code = make_mustard(data->commands[cmd]);
 					mixed parsed = parse_mustard(code);
-					//TODO: Compare
+					//TODO: Compare (may require some bot infrastructure for cmdmgr)
 					write("%s:%s: passed\n", arg, cmd);
 				}) write("%s:%s: %s\n", arg, cmd, describe_error(ex));
 			} else write("%s\n\n", make_mustard(data));
 		}
 		else if (sscanf(arg, "%s.json:%s", string fn, string cmd) && cmd) {
 			mixed data = Standards.JSON.decode_utf8(Stdio.read_file(fn + ".json"))->commands[cmd];
-			write("%s\n\n", make_mustard(data));
+			string code = make_mustard(data);
+			write("%s\n\n", code);
+			write("Parse-back: %O\n", parse_mustard(code));
 		}
 		else write("Result: %O\n", parse_mustard(Stdio.read_file(arg)));
 	}
