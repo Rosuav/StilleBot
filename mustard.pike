@@ -48,17 +48,18 @@ mapping trycatch(string kwd, mixed message, string kwd2, mixed otherwise) {
 
 constant KEYWORDS = (<"if", "else", "in", "test", "try", "catch", "cooldown">);
 
-mixed /* echoable_message */ parse_mustard(string mustard) {
+mixed /* echoable_message */ parse_mustard(string|Stdio.Buffer mustard) {
+	if (stringp(mustard)) mustard = Stdio.Buffer(mustard);
+	mustard->read_only();
 	//parser->set_error_handler(throw_errors);
 	array|string next() {
-		sscanf(mustard, "%*[ \t\r\n;]%s", mustard);
-		if (mustard == "") return "";
-		sscanf(mustard, "%[=,~-]%s", string token, mustard); //All characters that can be part of multi-character tokens
-		if (token != "") return token;
-		//Need a better way to consume a string literal as a token. Escaped quotes and such aren't working properly.
-		if (mustard[0] == '"' && sscanf(mustard, "%O%s", token, mustard)) return ({"string", token}); //String literal
-		sscanf(mustard, "%[a-zA-Z0-9_]%s", token, mustard);
-		if (token != "") {
+		mustard->sscanf("%*[ \t\r\n;]");
+		if (!sizeof(mustard)) return "";
+		if (array token = mustard->sscanf("%[=,~-]")) //All characters that can be part of multi-character tokens
+			return token[0];
+		if (array tok = mustard[0] == '"' && mustard->sscanf("%O")) return ({"string", tok[0]}); //String literal
+		if (array tok = mustard->sscanf("%[a-zA-Z0-9_]")) {
+			string token = tok[0];
 			if (KEYWORDS[token]) return token;
 			//A number has nothing but digits, but a name can't start
 			//with a digit. So it's an error to have eg 123AB4.
@@ -69,10 +70,8 @@ mixed /* echoable_message */ parse_mustard(string mustard) {
 			}
 			return ({"name", token});
 		}
-		sscanf(mustard, "//%[^\n]%s", token, mustard);
-		if (token != "") return ({"comment", token});
-		sscanf(mustard, "%1s%s", token, mustard); //Otherwise, grab a single character
-		return token;
+		if (array token = mustard->sscanf("//%[^\n]")) return ({"comment", token[0]});
+		return mustard->read(1); //Otherwise, grab a single character
 	}
 	//array|string shownext() {array|string ret = next(); werror("TOKEN: %O\n", ret); return ret;}
 	//while (shownext() != ""); return 0; //Dump tokens w/o parsing
