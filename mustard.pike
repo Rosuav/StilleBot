@@ -9,7 +9,7 @@ mapping addflag(mapping flg, string hash, string name, string eq, string val) {f
 mapping flagmessage(mapping flg, mixed message) {flg->message = message; return flg;}
 mapping flagmessage2(string open, mapping flg, mixed message, string close) {flg->message = message; return flg;}
 mapping builtin(string name, string open, array params, string close, mixed message) {
-	return (["builtin": name, "builtin_params": params, "message": message]);
+	return (["builtin": name, "builtin_param": params, "message": message]);
 }
 array gather(mixed elem, array arr) {return ({elem}) + arr;}
 array makeparams(string|void param) {return param ? ({param}) : ({ });}
@@ -23,11 +23,18 @@ mixed /* echoable_message */ parse_mustard(string mustard) {
 		if (mustard == "") return "";
 		sscanf(mustard, "%[=,]%s", string token, mustard); //All characters that can be part of multi-character tokens
 		if (token != "") return token;
-		sscanf(mustard, "%[a-zA-Z]%s", token, mustard);
-		if (token != "") return ({"name", token});
 		if (mustard[0] == '"' && sscanf(mustard, "%O%s", token, mustard)) return ({"string", token}); //String literal
-		sscanf(mustard, "%[0-9]%s", token, mustard);
-		if (token != "") return ({"number", token});
+		sscanf(mustard, "%[a-zA-Z0-9_]%s", token, mustard);
+		if (token != "") {
+			//A number has nothing but digits, but a name can't start
+			//with a digit. So it's an error to have eg 123AB4.
+			if (token[0] >= '0' && token[0] <= '9') {
+				[int min, int max] = String.range(token);
+				if (min >= '0' && max <= '9') return ({"number", token});
+				error("Names may not start with digits\n");
+			}
+			return ({"name", token});
+		}
 		sscanf(mustard, "//%[^\n]%s", token, mustard);
 		if (token != "") return ({"comment", token});
 		sscanf(mustard, "%1s%s", token, mustard); //Otherwise, grab a single character
