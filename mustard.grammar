@@ -1,23 +1,23 @@
 mustard: ;
-mustard: flags group;
+mustard: flags group {flagmessage};
 
-flags: ;
-flags: "#" "name" "=" value flags;
+flags: {makeflags};
+flags: flags "#" "name" "=" value {addflag};
 
 value: "name";
 value: "string";
 value: "number";
 
-group: message;
-group: group message;
+group: message {gather};
+group: message group {gather};
 
 message: "string";
-message: "comment";
-message: "name" "(" params ")" message;
-message: "{" flags group "}";
+message: "comment" {makecomment};
+message: "name" "(" params ")" message {builtin};
+message: "{" flags group "}" {flagmessage2};
 
-params: ;
+params: {makeparams};
 params: param_list;
 params: param_list ",";
-param_list: "string";
-param_list: param_list "," "string";
+param_list: "string" {makeparams};
+param_list: param_list "," "string" {addparam};
