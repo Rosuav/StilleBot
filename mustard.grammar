@@ -15,6 +15,7 @@ message: "string";
 message: "comment" {makecomment};
 message: "name" "(" params ")" message {builtin};
 message: "{" flags group "}" {flagmessage2};
+message: "[" flags group "]" {flagmessage2};
 
 params: {makeparams};
 params: param_list;
