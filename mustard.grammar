@@ -1,0 +1,23 @@
+mustard: ;
+mustard: flags group;
+
+flags: ;
+flags: "#" "name" "=" value flags;
+
+value: "name";
+value: "string";
+value: "number";
+
+group: message;
+group: group message;
+
+message: "string";
+message: "comment";
+message: "name" "(" params ")" message;
+message: "{" flags group "}";
+
+params: ;
+params: param_list;
+params: param_list ",";
+param_list: "string";
+param_list: param_list "," "string";

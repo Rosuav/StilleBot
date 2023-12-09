@@ -1,5 +1,7 @@
-Domain-Specific Language
-========================
+MustardScript
+=============
+
+StilleBot's command language, called MustardScript, is entirely equivalent to the JSON internal format.
 
 Do I need one? Maybe?
 
@@ -44,25 +46,15 @@ Syntax
 Broad structure: Nested groups, including top-level which is implicitly a group.
 Inside any group, assignment statements affect that group and any subgroups.
 
-command: ;
-command: flagged-group;
-flagged-group: message;
-flagged-group: "{" flags group "}";
-flags: ;
-flags: "name" "=" value flags;
-value: "name";
-value: "string";
-value: "number";
-group: message;
-message: "string";
-message: "name" "(" params ")" flagged-group;
-params: ;
-params: param-list;
-params: param-list ",";
-param-list: "string";
-param-list: param-list "," "string";
-
 Tokens:
 name - an atom. Not sure yet what alphabet to support.
 string - quoted string. If it contains quotes, they must be escaped. Use %q from Pike.
 number - a string of digits, optionally a decimal point.
+
+Limitations
+-----------
+
+Currently, flags have to be written as "#access=mod" to disambiguate the grammar. I would
+like to be able to avoid that. Is it necessary to have two different types of "name", one
+for flags and one for builtins? That could lead to very confusing error messages. Maybe
+it's okay to write flags like this??
