@@ -688,8 +688,20 @@ void scan_command(mapping state, echoable_message message) {
 		message->conditional = "catch";
 		state->changed = 1;
 	}
+	//Clean up some legacy forms. They don't actually hurt anything, but it makes round-trip testing
+	//harder since they collapse into their modern forms as soon as you sneeze on them. So let's just
+	//fix them all in advance.
 	if (message->casefold == "") {m_delete(message, "casefold"); state->changed = 1;}
 	if (message->builtin && objectp(message->builtin_param) && message->builtin_param->is_val_null) {m_delete(message, "builtin_param"); state->changed = 1;}
+	if (message->dest && sscanf(message->dest, "/set %s", string varname) && varname && !message->target) {
+		message->dest = "/set";
+		message->target = varname;
+		state->changed = 1;
+	}
+	if (message->dest == "/set" && message->action == "add" && !message->destcfg) {
+		message->destcfg = m_delete(message, "action");
+		state->changed = 1;
+	}
 	scan_command(state, message->message);
 	scan_command(state, message->otherwise);
 }
