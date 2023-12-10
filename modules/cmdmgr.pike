@@ -495,10 +495,8 @@ void _save_echocommand(string cmd, echoable_message response, mapping|void extra
 		if (cdlength && timeout > cdlength) G->G->cooldown_timeout[cdname + channel->name] = cdlength + time();
 	}
 	if (mappingp(response) && response->automate && G->G->stream_online_since[channel->config->login]) {
-		//Start a timer
-		//Currently, a simple hack: notify cmdmgr.pike to recheck everything.
-		object mgr = G->G->builtins->cmdmgr;
-		if (mgr) mgr->connected(channel->config->login);
+		//Start a timer. For simplicity, just pretend the channel freshly went online.
+		connected(channel->config->login);
 	}
 	if (mappingp(response) && response->redemption) {
 		channel->redemption_commands[response->redemption] += ({basename});
