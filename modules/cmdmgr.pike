@@ -685,6 +685,7 @@ void scan_command(mapping state, echoable_message message) {
 		message->conditional = "catch";
 		state->changed = 1;
 	}
+	if (message->casefold == "") {m_delete(message, "casefold"); state->changed = 1;}
 	scan_command(state, message->message);
 	scan_command(state, message->otherwise);
 }
