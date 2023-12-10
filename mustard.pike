@@ -169,8 +169,10 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 		//FIXME: All of these need their flags added. Before or after the main condition? Both are legal.
 		if (message->conditional == "number")
 			out->sprintf("%stest (%s) {\n", state->indent * state->indentlevel++, quoted_string(message->expr1));
-		else if (message->conditional == "cooldown")
+		else if (message->conditional == "cooldown") {
 			out->sprintf("%scooldown (%s) {\n", state->indent * state->indentlevel++, (string)message->delay);
+			if (message->cdname) out->sprintf("%s#cdname = %O\n", state->indent * state->indentlevel++, message->cdname);
+		}
 		else if (string oper = oper_rev[message->conditional])
 			out->sprintf("%sif (%s %s %s) {\n", state->indent * state->indentlevel++, quoted_string(message->expr1 || ""), oper, quoted_string(message->expr2 || ""));
 		else error("Unrecognized conditional type %O\n", message->conditional);
@@ -227,7 +229,7 @@ int diff(string old, string new) {
 }
 
 mixed validate(mixed response, string cmd) {
-	mixed validated = G->G->cmdmgr->_validate_toplevel(response, (["cmd": cmd, "cooldowns": ([])]));
+	mixed validated = G->G->cmdmgr->_validate_toplevel(response, (["cmd": cmd, "cooldowns": ([]), "retain_internal_names": 1]));
 	if (cmd == "!trigger") {
 		validated = Array.arrayify(validated); //Triggers are always in an array.
 		//They also lack any 'otherwise' clause, since triggers are conditional inherently.

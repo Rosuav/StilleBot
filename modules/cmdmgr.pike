@@ -174,6 +174,9 @@ constant condition_parts = ([
 
 string normalize_cooldown_name(string|int(0..0) cdname, mapping state) {
 	sscanf(cdname || "", "%[*]%s", string per_user, string name);
+	//For validation purposes, it's easier to retain existing names, since they don't matter to
+	//runtime execution anyway. This helps with some round-trip testing.
+	if (name != "" && state->retain_internal_names) return cdname;
 	//Anonymous cooldowns get named for the back end, but the front end will blank this.
 	//If the front end happens to return something with a dot name in it, ignore it.
 	if (name == "" || name[0] == '.') name = sprintf(".%s:%d", state->cmd, ++state->cdanon);
