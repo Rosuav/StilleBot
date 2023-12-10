@@ -267,7 +267,7 @@ int main(int argc, array(string) argv) {
 			//Or test the validation:
 			mixed validated = G->G->cmdmgr->_validate_toplevel(data, (["cmd": cmd, "cooldowns": ([])]));
 			write("Validated: %O\n", validated);
-			diff(sprintf("%O\n", data), sprintf("%O\n", validated));
+			if (!diff(sprintf("%O\n", data), sprintf("%O\n", validated))) write("Identical!\n");
 		}
 		else write("Result: %O\n", parse_mustard(Stdio.read_file(arg)));
 	}
