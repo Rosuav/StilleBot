@@ -196,7 +196,7 @@ string make_mustard(mixed /* echoable_message */ message) {
 		if (message[flg]) out->sprintf("#%s = %s\n", flg, atom(message[flg]));
 	}
 	//TODO: message->automate
-	_make_mustard(message, out, state);
+	_make_mustard(message, out, state, 1);
 	return utf8_to_string((string)out);
 }
 
