@@ -689,6 +689,7 @@ void scan_command(mapping state, echoable_message message) {
 		state->changed = 1;
 	}
 	if (message->casefold == "") {m_delete(message, "casefold"); state->changed = 1;}
+	if (message->builtin && objectp(message->builtin_param) && message->builtin_param->is_val_null) {m_delete(message, "builtin_param"); state->changed = 1;}
 	scan_command(state, message->message);
 	scan_command(state, message->otherwise);
 }
