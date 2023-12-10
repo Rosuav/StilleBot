@@ -246,8 +246,10 @@ int main(int argc, array(string) argv) {
 				foreach (sort(indices(data->commands || ({ }))), string cmd) if (mixed ex = catch {
 					string code = make_mustard(data->commands[cmd]);
 					mixed parsed = parse_mustard(code);
-					//TODO: Compare (may require some bot infrastructure for cmdmgr)
-					write("%s:%s: passed\n", arg, cmd);
+					mixed validated = G->G->cmdmgr->_validate_toplevel(parsed, (["cmd": "validateme"]));
+					if (sprintf("%O", data->commands[cmd]) == sprintf("%O", validated))
+						write("%s:%s: passed\n", arg, cmd);
+					else write("%s:%s: Not identical\n", arg, cmd);
 				}) write("%s:%s: %s\n", arg, cmd, describe_error(ex));
 			} else write("%s\n\n", string_to_utf8(make_mustard(data)));
 		}
@@ -257,7 +259,7 @@ int main(int argc, array(string) argv) {
 			write("%s\n\n", string_to_utf8(code));
 			mixed parsed = parse_mustard(code);
 			write("Parse-back: %O\n", parsed);
-			mixed validated = G->G->cmdmgr->_validate_toplevel(parsed, ([]));
+			mixed validated = G->G->cmdmgr->_validate_toplevel(parsed, (["cmd": "validateme"]));
 			write("Validated: %O\n", validated);
 			diff(sprintf("%O\n", data), sprintf("%O\n", validated));
 		}
