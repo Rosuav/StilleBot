@@ -301,3 +301,17 @@
 * Whenever you save/overwrite a command, log the previous version somewhere for an
   "Undo" feature?? It's now very possible to accidentally delete slabs of content,
   or even the entire command.
+* Make builtin_param always an array.
+  - On command save, if it's a string, split it into the correct number of args.
+    Notably, this will now happen BEFORE variable substitution. Are there any
+    situations where this will be a problem? eg setting builtin_param to "{param}"
+    and allowing the command parameters to provide everything?
+  - Every builtin needs to now accept an array, not a string. This is a break in
+    backward compatibility, but will resolve some bizarre quirks.
+  - Setting the constant to a string will now be exactly equivalent to setting it
+    to an array containing that string.
+  - There are several comments around the place suggesting that the "new" way to
+    do things actually is to always make an array, and that the GUI editor ought to
+    be doing this. Thus I consider the current behaviour to be a bug. If any builtins
+    outside of the main source tree are depending on this behaviour, they will need
+    to be updated. There's no other way to fix this, sorry.
