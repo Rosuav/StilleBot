@@ -3,9 +3,8 @@ inherit annotated;
 
 protected void create(string name) {
 	::create(name);
-	G->G->irc = (["channels": ([])]); //Hack: Prevent follower hook from doing anything
-	string endpoint = "follower", arg = "rosuav";
-	object handler = G->G->eventhook_types[endpoint];
-	handler->callback(arg, (["test": 1]));
+	object mustard = G->bootstrap("mustard.pike");
+	G->G->argv -= ({"--test"});
+	mustard->main(sizeof(G->G->argv), G->G->argv);
 	exit(0);
 }
