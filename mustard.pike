@@ -209,6 +209,7 @@ int main(int argc, array(string) argv) {
 		}
 	}
 	if (argc < 2) exit(0, "USAGE: pike %s fn [fn [fn...]]\n");
+	object cmdmgr = G->bootstrap("modules/cmdmgr.pike");
 	foreach (argv[1..], string arg) {
 		if (has_suffix(arg, ".json")) {
 			mixed data = Standards.JSON.decode_utf8(Stdio.read_file(arg));
