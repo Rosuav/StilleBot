@@ -270,12 +270,14 @@ int main(int argc, array(string) argv) {
 					if (sprintf("%O", orig) == sprintf("%O", validated)) {
 						if (!quiet) write("%s:%s: passed\n", arg, cmd);
 					}
-					else write("%s:%s: Not identical\n", arg, cmd);
+					else write("%4d %s:%s: Not identical\n", sizeof(sprintf("%O", orig)), arg, cmd);
 				}) write("%s:%s: %s\n", arg, cmd, describe_error(ex));
 			} else write("%s\n\n", string_to_utf8(make_mustard(data)));
 		}
 		else if (sscanf(arg, "%s.json:%s", string fn, string cmd) && cmd) {
-			mixed orig = Standards.JSON.decode_utf8(Stdio.read_file(fn + ".json"))->commands[cmd];
+			mapping data = Standards.JSON.decode_utf8(Stdio.read_file(fn + ".json"));
+			write("Channel: %s\n", data->login);
+			mixed orig = data->commands[cmd];
 			string code = make_mustard(orig);
 			write("%s\n\n", string_to_utf8(code));
 			mixed parsed = parse_mustard(code);
