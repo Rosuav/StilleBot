@@ -246,7 +246,10 @@ int main(int argc, array(string) argv) {
 				foreach (sort(indices(data->commands || ({ }))), string cmd) if (mixed ex = catch {
 					string code = make_mustard(data->commands[cmd]);
 					mixed parsed = parse_mustard(code);
-					mixed validated = G->G->cmdmgr->_validate_toplevel(parsed, (["cmd": "validateme"]));
+					//Test the parser:
+					//mixed validated = G->G->cmdmgr->_validate_toplevel(parsed, (["cmd": cmd, "cooldowns": ([])]));
+					//Or test the validation itself:
+					mixed validated = G->G->cmdmgr->_validate_toplevel(data->commands[cmd], (["cmd": cmd, "cooldowns": ([])]));
 					if (sprintf("%O", data->commands[cmd]) == sprintf("%O", validated))
 						write("%s:%s: passed\n", arg, cmd);
 					else write("%s:%s: Not identical\n", arg, cmd);
@@ -259,7 +262,10 @@ int main(int argc, array(string) argv) {
 			write("%s\n\n", string_to_utf8(code));
 			mixed parsed = parse_mustard(code);
 			write("Parse-back: %O\n", parsed);
-			mixed validated = G->G->cmdmgr->_validate_toplevel(parsed, (["cmd": "validateme"]));
+			//As above, test the parser:
+			//mixed validated = G->G->cmdmgr->_validate_toplevel(parsed, (["cmd": cmd, "cooldowns": ([])]));
+			//Or test the validation:
+			mixed validated = G->G->cmdmgr->_validate_toplevel(data, (["cmd": cmd, "cooldowns": ([])]));
 			write("Validated: %O\n", validated);
 			diff(sprintf("%O\n", data), sprintf("%O\n", validated));
 		}
