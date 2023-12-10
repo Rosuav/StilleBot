@@ -161,7 +161,7 @@ class builtin_command {
 	constant builtin_description = ""; //Label used in any human-readable context - one line description of purpose
 	constant command_description = ""; //Deprecated: Description for the default response
 	constant builtin_name = ""; //Short human-readable name for the drop-down
-	constant builtin_param = ""; //Label for the parameter, or "/Label/option/option/option" to offer specific selections. If blank, has no parameter. May be an array for multiple params.
+	constant builtin_param = ""; //Label(s) for the parameter(s), or "/Label/option/option/option" to offer specific selections. If blank, has no parameter. May be an array for multiple params.
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
 	constant command_suggestions = 0; //Set this to provide some suggestions (which will show up as enableable features)
 	constant scope_required = ""; //If nonblank, will be offered as a suggestion any time this builtin is used. TODO: Make this more flexible, so some parameters can ask for scope, others not?
@@ -169,12 +169,9 @@ class builtin_command {
 	//Override this either as-is or as a continue function to return the useful params.
 	//Note that the person mapping may be as skeletal as (["user": "Nobody"]) - all
 	//other keys are optional.
-	//The parameter will be a single string if builtin_param is a string, and an array if it is
-	//an array of multiple strings. In the latter case, incoming strings will be automatically
-	//split into arguments, with the last one collecting any residue.
-	//TODO: If builtin_param is an array of one string, pass an array to message_params instead
-	//of the current somewhat-odd behaviour of passing a string.
-	mapping|Concurrent.Future message_params(object channel, mapping person, array|string param, mapping cfg) { }
+	//The params will be an array of as many strings as builtin_param contains (if it's
+	//a string directly, that's equivalent to an array of that one string).
+	mapping|Concurrent.Future message_params(object channel, mapping person, array params, mapping cfg) { }
 
 	protected void create(string name)
 	{

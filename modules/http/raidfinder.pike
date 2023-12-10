@@ -815,10 +815,10 @@ constant builtin_name = "Raid suggestion";
 constant builtin_param = ({"Suggestion"}); //Maybe add "Comments" as second param?
 constant vars_provided = ([]);
 
-continue mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
+continue mapping|Concurrent.Future message_params(object channel, mapping person, array params) {
 	//No facility currently for sending comments about the suggestion, but you can include
 	//them and we'll ignore them (they'll be in chat anyway)
-	string chan = param[0];
+	string chan = params[0];
 	sscanf(chan, "%*stwitch.tv/%[^ ]", chan);
 	sscanf(chan, "%*[@]%s ", chan);
 	int target;

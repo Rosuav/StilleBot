@@ -124,12 +124,13 @@ constant command_suggestions = (["!calc": ([
 	"_description": "Calculate a simple numeric expression/formula",
 	"conditional": "catch",
 	"message": ([
-		"builtin": "calc", "builtin_param": "%s",
+		"builtin": "calc", "builtin_param": ({"%s"}),
 		"message": "@$$: {result}",
 	]),
 	"otherwise": "@$$: {error}",
 ])]);
-mapping message_params(object channel, mapping person, string param, mapping cfg) {
+mapping message_params(object channel, mapping person, array params, mapping cfg) {
+	string param = params[0];
 	if (param == "") error("Usage: !calc 1+2\n");
 	if (person->badges->?_mod) param = channel->expand_variables(param);
 	mixed ex = catch {

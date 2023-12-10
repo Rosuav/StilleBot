@@ -40,7 +40,7 @@ constant ENABLEABLE_FEATURES = ([
 			"delay": 60,
 			"message": ([
 				"builtin": "nowlive",
-				"builtin_param": "$$",
+				"builtin_param": ({"$$"}),
 				"message": ([
 					"casefold": "",
 					"conditional": "string",

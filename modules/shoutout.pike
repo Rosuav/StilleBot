@@ -31,7 +31,7 @@ constant vars_provided = ([
 ]);
 constant command_suggestions = (["!shoutout": ([
 	"_description": "Shout out another streamer, providing a link and some info about them (alias !so)",
-	"builtin": "shoutout", "builtin_param": "%s",
+	"builtin": "shoutout", "builtin_param": ({"%s"}),
 	"aliases": "so",
 	"access": "mod",
 	"message": ([
@@ -45,12 +45,12 @@ constant command_suggestions = (["!shoutout": ([
 	]),
 ])]);
 
-continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
+continue mapping|Concurrent.Future message_params(object channel, mapping person, array params)
 {
 	mapping info = ([]);
-	catch {info = yield(get_channel_info(replace(param, ({"@", " "}), ""))) || ([]);}; //If error, leave it an empty mapping
+	catch {info = yield(get_channel_info(replace(params[0], ({"@", " "}), ""))) || ([]);}; //If error, leave it an empty mapping
 	return ([
-		"{login}": info->broadcaster_login || param,
+		"{login}": info->broadcaster_login || params[0],
 		"{name}": info->display_name || "That person",
 		"{url}": info->url || "",
 		"{catdesc}": replace(game_desc[info->game] || "playing %s", "%s", info->game || "(null)"),

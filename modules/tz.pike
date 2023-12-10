@@ -21,9 +21,9 @@ constant vars_provided = ([
 	"{monthname_short}": "Weekday name (in English, abbr, eg 'Sep')",
 ]);
 
-mapping message_params(object channel, mapping person, string param)
+mapping message_params(object channel, mapping person, array params)
 {
-	string tz = replace(param, " ", "_");
+	string tz = replace(params[0], " ", "_");
 	tz = timezones[lower_case(tz)] || tz; //If you enter "Melbourne", use "Australia/Melbourne" automatically.
 	object t = Calendar.Gregorian.Second()->set_timezone(tz);
 	mapping info = (["{tz}": tz, "{unix}": (string)t->unix_time()]);

@@ -195,7 +195,7 @@ string fmt_contrib(mapping c) {
 	return sprintf("%s with %d subs", c->display_name, c->total / 500);
 }
 
-continue mapping|Concurrent.Future message_params(object channel, mapping person, string param)
+continue mapping|Concurrent.Future message_params(object channel, mapping person, array param)
 {
 	mapping state = yield((mixed)get_state(channel->name[1..]));
 	if (state->error) error(state->error + " " + state->errorlink + "\n");

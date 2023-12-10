@@ -1479,8 +1479,7 @@ mapping parse_emotes(string text, mapping person) {
 	return (["_noemotes": noemotes + text[pos..], "_emoted": emoted + ({text[pos..]})]);
 }
 
-mapping message_params(object channel, mapping person, array param) {
-	[string alert, string text] = param;
+mapping message_params(object channel, mapping person, [string alert, string text]) {
 	if (!alert || alert == "") error("Need an alert type\n");
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!valid_alert_type(alert, cfg)) error("Unknown alert type\n");

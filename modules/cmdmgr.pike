@@ -249,15 +249,29 @@ echoable_message _validate_recursive(echoable_message resp, mapping state)
 		if (stringp(resp->destcfg) && resp->destcfg != "") ret->destcfg = resp->destcfg;
 		else if (resp->action == "add") ret->destcfg = "add"; //Handle variable management in the old style
 	}
-	if (resp->builtin && G->G->builtins[resp->builtin]) {
+	if (object handler = resp->builtin && G->G->builtins[resp->builtin]) {
 		//Validated separately as the builtins aren't a constant
 		ret->builtin = resp->builtin;
-		//Simple string? Let the builtin itself handle it.
-		if (stringp(resp->builtin_param) && resp->builtin_param != "") ret->builtin_param = resp->builtin_param;
-		//Array of strings? Maybe we should validate the number of arguments (different per builtin),
-		//but for now, any array of strings will be accepted.
+		//Simple string? Split it into words according to the number of args the builtin expects.
+		//Note that this might not always be correct (builtins can grow args in the future), but
+		//it's a start. Note also that MustardScript commands can pass any number of args they
+		//like to any builtin, so the number of them still has to be checked.
+		if (stringp(resp->builtin_param) && resp->builtin_param != "") {
+			if (!objectp(handler) || !arrayp(handler->builtin_param) || sizeof(handler->builtin_param) <= 1)
+				ret->builtin_param = ({resp->builtin_param}); //Default to assuming that a single arg is fine.
+			else {
+				ret->builtin_param = Process.split_quoted_string(resp->builtin_param);
+				//If the builtin is expecting 3 params, and the user provides more words
+				//than that, join the remainder into a single string.
+				int max = sizeof(handler->builtin_param);
+				if (sizeof(ret->builtin_param) > max)
+					ret->builtin_param = ret->builtin_param[..max - 2] + ({ret->builtin_param[max - 1..] * " "});
+			}
+		}
+		//Array of strings is also valid, but array of anything else won't be.
 		else if (arrayp(resp->builtin_param) && sizeof(resp->builtin_param)
-			&& !has_value(stringp(resp->builtin_param[*]), 0))
+			&& !has_value(stringp(resp->builtin_param[*]), 0)
+			&& (sizeof(resp->builtin_param) > 1 || resp->builtin_param[0] != "")) //A single empty string can be omitted.
 				ret->builtin_param = resp->builtin_param;
 	}
 	//Conditions have their own active ingredients.
@@ -590,7 +604,7 @@ constant command_suggestions = ([
 	]),
 	"!repeat": ([
 		"_description": "Commands - Automate a simple command",
-		"builtin": "argsplit", "builtin_param": "{param}",
+		"builtin": "argsplit", "builtin_param": ({"{param}"}),
 		"message": ([
 			"conditional": "catch",
 			"message": ([
@@ -693,6 +707,24 @@ void scan_command(mapping state, echoable_message message) {
 	//fix them all in advance.
 	if (message->casefold == "") {m_delete(message, "casefold"); state->changed = 1;}
 	if (message->builtin && objectp(message->builtin_param) && message->builtin_param->is_val_null) {m_delete(message, "builtin_param"); state->changed = 1;}
+	if (stringp(message->builtin_param)) {
+		//Split the parameter into words. Note that this is NOT the same as legacy handling, in that
+		//the old way would do this split AFTER variable substitution. This is a backward compat break
+		//but unfortunately it's necessary to fix some other design quirks.
+		object handler = G->G->builtins[message->builtin];
+		int nargs = objectp(handler) && arrayp(handler->builtin_param) ? sizeof(handler->builtin_param) : 1;
+		array param = ({message->builtin_param});
+		if (nargs > 1) {
+			param = Process.split_quoted_string(message->builtin_param);
+			//If the builtin is expecting 3 params, and the user provides more words
+			//than that, join the remainder into a single string.
+			int max = sizeof(handler->builtin_param);
+			if (sizeof(param) > max)
+				param = param[..max - 2] + ({param[max - 1..] * " "});
+		}
+		message->builtin_param = param;
+		state->changed = 1;
+	}
 	if (message->dest && sscanf(message->dest, "/set %s", string varname) && varname && !message->target) {
 		message->dest = "/set";
 		message->target = varname;

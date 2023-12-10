@@ -10,7 +10,7 @@ constant vars_provided = ([
 	"{uptime}": "Time the channel's been online (deprecated)",
 ]);
 
-continue Concurrent.Future|mapping message_params(object channel, mapping person, string param) {
+continue Concurrent.Future|mapping message_params(object channel, mapping person, array params) {
 	mapping videoinfo = yield(G->G->external_api_lookups->get_video_info(channel->name[1..]));
 	mapping res = videoinfo->resolutions;
 	if (!res || !sizeof(res)) return ([]); //Shouldn't happen

@@ -296,7 +296,7 @@ void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg)
 
 constant builtin_name = "Permit Art Share";
 constant builtin_description = "Permit a user to share their art (one upload within 2 minutes)";
-constant builtin_param = ({"User"}); //what other args would be useful here?
+constant builtin_param = "User"; //what other args would be useful here?
 constant vars_provided = ([]);
 
 mapping message_params(object channel, mapping person, array param) {

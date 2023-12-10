@@ -2,7 +2,7 @@
 inherit builtin_command;
 constant builtin_name = "User info";
 constant builtin_description = "Get info about a chatter";
-constant builtin_param = ({"User name to look up or blank for general stats"});
+constant builtin_param = "User name to look up or blank for general stats";
 constant vars_provided = ([
 	"{following}": "Blank if user is not following, otherwise a description of how long",
 	"{prevname}": "Most recent previous name, or blank if none seen",
@@ -13,7 +13,7 @@ constant command_suggestions = (["!follower": ([
 	"_description": "Check whether someone is following the channel",
 	"conditional": "catch",
 	"message": ([
-		"builtin": "renamed", "builtin_param": "%s",
+		"builtin": "renamed", "builtin_param": ({"%s"}),
 		"message": ([
 			"conditional": "string", "expr1": "{following}", "expr2": "",
 			"message": "@{username}: {curname} is not following.",
@@ -25,7 +25,7 @@ constant command_suggestions = (["!follower": ([
 	"_description": "Check how long you've been following the channel",
 	"conditional": "catch",
 	"message": ([
-		"builtin": "renamed", "builtin_param": "{username}",
+		"builtin": "renamed", "builtin_param": ({"{username}"}),
 		"message": ([
 			"conditional": "string", "expr1": "{following}", "expr2": "",
 			"message": "@{username}: You're not following.",

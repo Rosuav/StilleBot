@@ -15,7 +15,7 @@ constant vars_provided = ([
 	"{channel}": "Channel name (may later become the display name)",
 ]);
 
-mapping message_params(object channel, mapping person, string param) {
+mapping message_params(object channel, mapping person, array params) {
 	int t = channel_uptime(channel->name[1..]);
 	return ([
 		"{channel}": channel->name[1..], //TODO: Show the display name instead

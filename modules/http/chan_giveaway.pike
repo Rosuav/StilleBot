@@ -644,21 +644,21 @@ constant vars_provided = ([
 constant command_suggestions = ([
 	"!tickets": ([
 		"_description": "Giveaways - show number of tickets you have (any user)",
-		"builtin": "chan_giveaway", "builtin_param": "status",
+		"builtin": "chan_giveaway", "builtin_param": ({"status"}),
 		"message": "@$$: You have {tickets} tickets.",
 	]),
 	"!refund": ([
 		"_description": "Giveaways - refund all your tickets (any user)",
-		"builtin": "chan_giveaway", "builtin_param": "refund",
+		"builtin": "chan_giveaway", "builtin_param": ({"refund"}),
 		"message": "@$$: All your tickets have been refunded.",
 	]),
 	//TODO: Mod-only refund command (maybe the same one??) to refund other person's tickets
 ]);
 
-mapping|Concurrent.Future message_params(object channel, mapping person, string param)
+mapping|Concurrent.Future message_params(object channel, mapping person, array params)
 {
-	if (param == "") error("Need a subcommand\n");
-	sscanf(param, "%[^ ]%*[ ]%s", string cmd, string arg);
+	if (params[0] == "") error("Need a subcommand\n");
+	sscanf(params[0], "%[^ ]%*[ ]%s", string cmd, string arg);
 	if (cmd != "refund" && cmd != "status") error("Invalid subcommand\n");
 	if (!channel->config->giveaway) error("Giveaways not active\n"); //Not the same as "giveaway not open", this one will not normally be seen
 	string chan = channel->name[1..];

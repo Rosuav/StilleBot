@@ -125,11 +125,11 @@ constant vars_provided = ([
 	"{url}": "URL to the manipulated document, blank if no such document",
 ]);
 
-mapping|Concurrent.Future message_params(object channel, mapping person, string param)
+mapping|Concurrent.Future message_params(object channel, mapping person, array param)
 {
 	write("message_params(channel %O, person %O, %O)\n", channel->name, person->user, param);
-	if (param == "") error("Need a subcommand\n");
-	sscanf(param, "%s %[^ ]%*[ ]%s", string cmd, string document, string arg);
+	if (param[0] == "") error("Need a subcommand\n");
+	sscanf(param[0], "%s %[^ ]%*[ ]%s", string cmd, string document, string arg);
 	mapping doc;
 	string action = "";
 	if (cmd == "create" && document && document != "") {
