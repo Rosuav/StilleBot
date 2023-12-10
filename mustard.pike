@@ -226,6 +226,16 @@ int diff(string old, string new) {
 	return proc->wait();
 }
 
+mixed validate(mixed response, string cmd) {
+	mixed validated = G->G->cmdmgr->_validate_toplevel(response, (["cmd": cmd, "cooldowns": ([])]));
+	if (cmd == "!trigger") {
+		validated = Array.arrayify(validated); //Triggers are always in an array.
+		//They also lack any 'otherwise' clause, since triggers are conditional inherently.
+		foreach (validated, mixed trig) if (mappingp(trig)) m_delete(trig, "otherwise");
+	}
+	return validated;
+}
+
 int main(int argc, array(string) argv) {
 	//QUIRK: An action attached to a rule with no symbols (eg "flags: {makeflags};") is
 	//interpreted as a callable string instead of a lookup into the action object. So we
@@ -237,37 +247,48 @@ int main(int argc, array(string) argv) {
 		}
 	}
 	if (argc < 2) exit(0, "USAGE: pike %s fn [fn [fn...]]\n");
+	int quiet = 0;
 	foreach (argv[1..], string arg) {
+		if (arg == "-q") {quiet = 1; continue;}
 		if (has_suffix(arg, ".json")) {
 			mixed data = Standards.JSON.decode_utf8(Stdio.read_file(arg));
 			if (mappingp(data) && data->login) {
 				parser->set_error_handler(throw_errors);
 				//Round-trip testing of an entire channel's commands
 				foreach (sort(indices(data->commands || ({ }))), string cmd) if (mixed ex = catch {
-					string code = make_mustard(data->commands[cmd]);
+					mixed orig = data->commands[cmd];
+					string code = make_mustard(orig);
 					mixed parsed = parse_mustard(code);
 					//Test the parser:
-					//mixed validated = G->G->cmdmgr->_validate_toplevel(parsed, (["cmd": cmd, "cooldowns": ([])]));
+					//mixed validated = validate(parsed, cmd);
 					//Or test the validation itself:
-					mixed validated = G->G->cmdmgr->_validate_toplevel(data->commands[cmd], (["cmd": cmd, "cooldowns": ([])]));
-					if (sprintf("%O", data->commands[cmd]) == sprintf("%O", validated))
-						write("%s:%s: passed\n", arg, cmd);
+					mixed validated = validate(orig, cmd);
+					//For comparison purposes, hide the id attributes on triggers.
+					if (cmd == "!trigger")
+						foreach (orig, mixed trig)
+							if (mappingp(trig)) m_delete(trig, "id");
+					if (sprintf("%O", orig) == sprintf("%O", validated)) {
+						if (!quiet) write("%s:%s: passed\n", arg, cmd);
+					}
 					else write("%s:%s: Not identical\n", arg, cmd);
 				}) write("%s:%s: %s\n", arg, cmd, describe_error(ex));
 			} else write("%s\n\n", string_to_utf8(make_mustard(data)));
 		}
 		else if (sscanf(arg, "%s.json:%s", string fn, string cmd) && cmd) {
-			mixed data = Standards.JSON.decode_utf8(Stdio.read_file(fn + ".json"))->commands[cmd];
-			string code = make_mustard(data);
+			mixed orig = Standards.JSON.decode_utf8(Stdio.read_file(fn + ".json"))->commands[cmd];
+			string code = make_mustard(orig);
 			write("%s\n\n", string_to_utf8(code));
 			mixed parsed = parse_mustard(code);
 			write("Parse-back: %O\n", parsed);
 			//As above, test the parser:
-			//mixed validated = G->G->cmdmgr->_validate_toplevel(parsed, (["cmd": cmd, "cooldowns": ([])]));
+			//mixed validated = validate(parsed, cmd);
 			//Or test the validation:
-			mixed validated = G->G->cmdmgr->_validate_toplevel(data, (["cmd": cmd, "cooldowns": ([])]));
+			mixed validated = validate(orig, cmd);
+			if (cmd == "!trigger")
+				foreach (orig, mixed trig)
+					if (mappingp(trig)) m_delete(trig, "id");
 			write("Validated: %O\n", validated);
-			if (!diff(sprintf("%O\n", data), sprintf("%O\n", validated))) write("Identical!\n");
+			if (!diff(sprintf("%O\n", orig), sprintf("%O\n", validated))) write("Identical!\n");
 		}
 		else write("Result: %O\n", parse_mustard(Stdio.read_file(arg)));
 	}
