@@ -262,9 +262,9 @@ int main(int argc, array(string) argv) {
 					string code = make_mustard(orig);
 					mixed parsed = parse_mustard(code);
 					//Test the parser:
-					//mixed validated = validate(parsed, cmd);
+					mixed validated = validate(parsed, cmd);
 					//Or test the validation itself:
-					mixed validated = validate(orig, cmd);
+					//mixed validated = validate(orig, cmd);
 					//For comparison purposes, hide the id attributes on triggers.
 					if (cmd == "!trigger")
 						foreach (orig, mixed trig)
@@ -285,9 +285,9 @@ int main(int argc, array(string) argv) {
 			mixed parsed = parse_mustard(code);
 			write("Parse-back: %O\n", parsed);
 			//As above, test the parser:
-			//mixed validated = validate(parsed, cmd);
+			mixed validated = validate(parsed, cmd);
 			//Or test the validation:
-			mixed validated = validate(orig, cmd);
+			//mixed validated = validate(orig, cmd);
 			if (cmd == "!trigger")
 				foreach (orig, mixed trig)
 					if (mappingp(trig)) m_delete(trig, "id");
