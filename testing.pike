@@ -4,6 +4,7 @@ inherit annotated;
 
 protected void create(string name) {
 	::create(name);
+	G->bootstrap("modules/cmdmgr.pike");
 	object mustard = G->bootstrap("mustard.pike");
 	G->G->argv -= ({"--test"});
 	mustard->main(sizeof(G->G->argv), G->G->argv);

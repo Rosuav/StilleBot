@@ -198,6 +198,34 @@ string make_mustard(mixed /* echoable_message */ message) {
 	return utf8_to_string((string)out);
 }
 
+//Invoke diff(1) with FDs 0 and 3 carrying the provided strings
+//Returns 1 if there were any differences, 0 if identical (or any other return code from diff)
+int diff(string old, string new) {
+	object|zero fdold = Stdio.File();
+	object|zero fdnew = Stdio.File();
+	object proc = Process.Process(
+		({"diff", "-u", "-", "/dev/fd/3"}),
+		([
+			"stdin": fdold->pipe(Stdio.PROP_IPC|Stdio.PROP_REVERSE),
+			"fds": ({fdnew->pipe(Stdio.PROP_IPC|Stdio.PROP_REVERSE)}),
+			"callback": lambda() {fdold = fdnew = 0;},
+		]),
+	);
+	Pike.SmallBackend backend = Pike.SmallBackend();
+	Shuffler.Shuffler shuf = Shuffler.Shuffler();
+	shuf->set_backend(backend);
+	Shuffler.Shuffle sfold = shuf->shuffle(fdold);
+	sfold->add_source(old);
+	sfold->set_done_callback() {fdold->close(); fdold = 0;};
+	sfold->start();
+	Shuffler.Shuffle sfnew = shuf->shuffle(fdnew);
+	sfnew->add_source(new);
+	sfnew->set_done_callback() {fdnew->close(); fdnew = 0;};
+	sfnew->start();
+	while (fdold || fdnew) backend(1.0);
+	return proc->wait();
+}
+
 int main(int argc, array(string) argv) {
 	//QUIRK: An action attached to a rule with no symbols (eg "flags: {makeflags};") is
 	//interpreted as a callable string instead of a lookup into the action object. So we
@@ -209,7 +237,6 @@ int main(int argc, array(string) argv) {
 		}
 	}
 	if (argc < 2) exit(0, "USAGE: pike %s fn [fn [fn...]]\n");
-	object cmdmgr = G->bootstrap("modules/cmdmgr.pike");
 	foreach (argv[1..], string arg) {
 		if (has_suffix(arg, ".json")) {
 			mixed data = Standards.JSON.decode_utf8(Stdio.read_file(arg));
@@ -228,7 +255,11 @@ int main(int argc, array(string) argv) {
 			mixed data = Standards.JSON.decode_utf8(Stdio.read_file(fn + ".json"))->commands[cmd];
 			string code = make_mustard(data);
 			write("%s\n\n", string_to_utf8(code));
-			write("Parse-back: %O\n", parse_mustard(code));
+			mixed parsed = parse_mustard(code);
+			write("Parse-back: %O\n", parsed);
+			mixed validated = G->G->cmdmgr->_validate_toplevel(parsed, ([]));
+			write("Validated: %O\n", validated);
+			diff(sprintf("%O\n", data), sprintf("%O\n", validated));
 		}
 		else write("Result: %O\n", parse_mustard(Stdio.read_file(arg)));
 	}
