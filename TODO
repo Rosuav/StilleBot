@@ -301,3 +301,4 @@
 * Whenever you save/overwrite a command, log the previous version somewhere for an
   "Undo" feature?? It's now very possible to accidentally delete slabs of content,
   or even the entire command.
+* Add a builtin to manage (not just respond to) channel setup
