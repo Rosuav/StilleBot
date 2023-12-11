@@ -13,7 +13,8 @@ constant oper_fwd = ([
 mapping oper_rev = mkmapping(values(oper_fwd), indices(oper_fwd));
 
 mapping makeflags() {return ([]);}
-mapping addflag(mapping flg, string hash, string name, string eq, string val) {flg[name] = val; return flg;}
+mapping addflag(mapping flg, string hash, string name, string val) {flg[name] = val; return flg;}
+mapping addflag2(mapping flg, string hash, string name, string eq, string val) {flg[name] = val; return flg;}
 mapping flagmessage(mapping flg, mixed message) {flg->message = message; return flg;}
 mapping flagmessage2(string open, mapping flg, mixed message, string close) {flg->message = message; return flg;}
 mapping builtin(string name, string open, array params, string close, mixed message) {
@@ -122,7 +123,7 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 	}
 	foreach (message_flags, string flg) if (message[flg]) {
 		ensure_block();
-		out->sprintf("%s#%s = %s\n", state->indent * state->indentlevel, flg, atom(message[flg]));
+		out->sprintf("%s#%s %s\n", state->indent * state->indentlevel, flg, atom(message[flg]));
 	}
 	if (message->builtin) {
 		string params = "";
@@ -190,8 +191,8 @@ string make_mustard(mixed /* echoable_message */ message) {
 	Stdio.Buffer out = Stdio.Buffer();
 	if (mappingp(message)) {
 		foreach ("access visibility aliases redemption" / " ", string flg)
-			if (message[flg]) out->sprintf("#%s = %s\n", flg, atom(message[flg]));
-		if (message->automate) out->sprintf("#automate = %s\n", quoted_string(G->G->cmdmgr->automation_to_string(message->automate)));
+			if (message[flg]) out->sprintf("#%s %s\n", flg, atom(message[flg]));
+		if (message->automate) out->sprintf("#automate %s\n", quoted_string(G->G->cmdmgr->automation_to_string(message->automate)));
 	}
 	_make_mustard(message, out, state, 2);
 	return utf8_to_string((string)out);

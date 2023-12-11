@@ -2,7 +2,8 @@ mustard: ;
 mustard: flags group {flagmessage};
 
 flags: {makeflags};
-flags: flags "#" "name" "=" value {addflag};
+flags: flags "#" "name" value {addflag};
+flags: flags "#" "name" "=" value {addflag2};
 
 value: "name";
 value: "string";
