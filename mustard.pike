@@ -114,9 +114,9 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 		out->sprintf("%s//%s\n", state->indent * state->indentlevel, message->message);
 		return;
 	}
-	int block = skipblock == 2; //On initial build, we can skip ANY block, not just a safe one
+	int block = 0; //On initial build, we can skip ANY block, not just a safe one
 	void ensure_block() {
-		if (block) return;
+		if (block || skipblock == 2) return;
 		out->sprintf("%s{\n", state->indent * state->indentlevel++);
 		block = 1;
 	}
@@ -181,8 +181,8 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 			out->sprintf("%s}\n", state->indent * --state->indentlevel);
 		}
 	}
-	else _make_mustard(message->message, out, state, block);
-	if (block && skipblock != 2) out->sprintf("%s}\n", state->indent * --state->indentlevel);
+	else _make_mustard(message->message, out, state, block || skipblock == 2);
+	if (block) out->sprintf("%s}\n", state->indent * --state->indentlevel);
 }
 
 string make_mustard(mixed /* echoable_message */ message) {
