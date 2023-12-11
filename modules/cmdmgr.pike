@@ -716,6 +716,15 @@ void scan_command(mapping state, echoable_message message) {
 		message->conditional = "catch";
 		state->changed = 1;
 	}
+	if (message->builtin && message->conditional == "string" && message->expr1 == "{error}" &&
+			(!message->expr2 || message->expr2 == "")) {
+		//We have a builtin trying to handle its own errors. Add another layer for safety.
+		m_delete(message, ({"conditional", "expr1", "expr2"})[*]);
+		message->message = (["message": message->message, "builtin": m_delete(message, "builtin")]);
+		if (mixed p = m_delete(message, "builtin_param")) message->message->builtin_param = p;
+		message->conditional = "catch";
+		state->changed = 1;
+	}
 	//Clean up some legacy forms. They don't actually hurt anything, but it makes round-trip testing
 	//harder since they collapse into their modern forms as soon as you sneeze on them. So let's just
 	//fix them all in advance.
