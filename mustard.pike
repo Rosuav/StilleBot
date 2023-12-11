@@ -91,11 +91,7 @@ mixed /* echoable_message */ parse_mustard(string|Stdio.Buffer mustard) {
 	return parser->parse(next, this);
 }
 
-/***** Temporarily duplicated from cmdmgr.pike *****/
-constant message_flags = ([
-	"mode": (<"random", "rotate", "foreach">),
-	"dest": (<"/w", "/web", "/set", "/chain", "/reply", "//">),
-]);
+constant message_flags = ({"delay", "dest", "target", "voice", "mode"});
 /***** End duplicated *****/
 string quoted_string(string value) {
 	return string_to_utf8(Standards.JSON.encode(value));
@@ -124,7 +120,7 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 		out->sprintf("%s{\n", state->indent * state->indentlevel++);
 		block = 1;
 	}
-	foreach (message_flags; string flg;) if (message[flg]) {
+	foreach (message_flags, string flg) if (message[flg]) {
 		ensure_block();
 		out->sprintf("%s#%s = %s\n", state->indent * state->indentlevel, flg, atom(message[flg]));
 	}
