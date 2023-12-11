@@ -183,6 +183,28 @@ string normalize_cooldown_name(string|int(0..0) cdname, mapping state) {
 	return per_user + name;
 }
 
+array|zero string_to_automation(string automate) {
+	if (sscanf(automate, "%d:%d", int hr, int min) == 2) return ({hr, min, 1});
+	else if (sscanf(automate, "%d-%d", int min, int max) && min >= 0 && max >= min && max > 0) return ({min, max, 0});
+	else if (sscanf(automate, "%d", int minmax) && minmax > 0) return ({minmax, minmax, 0});
+	//Else there's no valid automation, so return zero.
+}
+string automation_to_string(mixed val) {
+	//NOTE: Keep this in sync with the same-named function in command_gui.js
+	if (!val) return "";
+	if (!arrayp(val)) {
+		//Parse string to array, then parse array to string, thus ensuring canonicalization.
+		int mode = has_value(val, ':');
+		array m = val / (mode ? ":" : "-");
+		if (sizeof(m) == 1) m += ({m[0]});
+		val = ({(int)m[0], (int)m[1], mode});
+	}
+	int m1 = val[0], m2 = val[1], mode = sizeof(val) > 2 ? val[2] : 0;
+	if (mode) return sprintf("%02d:%02d", m1, m2); //hr:min
+	else if (m1 >= m2) return (string)m1; //min-min is the same as just min
+	else return sprintf("%d-%d", m1, m2); //min-max
+}
+
 //state array is for purely-linear state that continues past subtrees
 echoable_message _validate_recursive(echoable_message resp, mapping state)
 {
@@ -352,10 +374,8 @@ echoable_message _validate_toplevel(echoable_message resp, mapping state)
 	//Very very basic validation is done (no zero-minute automation) but otherwise, stupid stuff is
 	//fine; I'm not going to stop you from setting a command to run every 1048576 minutes.
 	if (stringp(resp->automate)) {
-		if (sscanf(resp->automate, "%d:%d", int hr, int min) == 2) ret->automate = ({hr, min, 1});
-		else if (sscanf(resp->automate, "%d-%d", int min, int max) && min >= 0 && max >= min && max > 0) ret->automate = ({min, max, 0});
-		else if (sscanf(resp->automate, "%d", int minmax) && minmax > 0) ret->automate = ({minmax, minmax, 0});
-		//Else don't set ret->automate.
+		array|zero automate = string_to_automation(resp->automate);
+		if (automate) ret->automate = automate;
 	} else if (arrayp(resp->automate) && sizeof(resp->automate) == 3 && min(@resp->automate) >= 0 && max(@resp->automate) > 0 && resp->automate[2] <= 1)
 		ret->automate = resp->automate;
 
@@ -630,14 +650,8 @@ mapping message_params(object channel, mapping person, array param) {
 	switch (param[0]) {
 		case "Automate": {
 			if (sizeof(param) < 3) error("Not enough args\n");
-			array(int) mins;
 			string msg = param[1] - "!";
-			if (sscanf(param[2], "%d:%d", int hr, int min) == 2)
-				mins = ({hr, min, 1}); //Scheduled at hh:mm
-			else if (sscanf(param[2], "%d-%d", int min, int max) == 2)
-				mins = ({min, max, 0}); //Repeated between X and Y minutes
-			else if (int m = (int)param[2])
-				mins = ({m, m, 0}); //Repeated exactly every X minutes
+			array(int) mins = string_to_automation(param[2]);
 			if (!mins) error("Unrecognized time delay format\n");
 			echoable_message command = channel->commands[msg];
 			if (mins[0] < 0) {

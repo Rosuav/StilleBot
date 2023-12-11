@@ -188,10 +188,11 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 string make_mustard(mixed /* echoable_message */ message) {
 	mapping state = (["indent": "    ", "indentlevel": 0]);
 	Stdio.Buffer out = Stdio.Buffer();
-	if (mappingp(message)) foreach ("access visibility aliases redemption" / " ", string flg) {
-		if (message[flg]) out->sprintf("#%s = %s\n", flg, atom(message[flg]));
+	if (mappingp(message)) {
+		foreach ("access visibility aliases redemption" / " ", string flg)
+			if (message[flg]) out->sprintf("#%s = %s\n", flg, atom(message[flg]));
+		if (message->automate) out->sprintf("#automate = %s\n", G->G->cmdmgr->automation_to_string(message->automate));
 	}
-	//TODO: message->automate
 	_make_mustard(message, out, state, 2);
 	return utf8_to_string((string)out);
 }

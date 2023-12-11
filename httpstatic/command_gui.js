@@ -53,6 +53,7 @@ const ensure_blank = arr => {
 };
 
 function automation_to_string(val) {
+	//NOTE: Keep this in sync with the same-named function in cmdmgr.pike
 	if (!val) return "";
 	if (!Array.isArray(val)) {
 		//Parse string to array, then parse array to string, thus ensuring canonicalization.
