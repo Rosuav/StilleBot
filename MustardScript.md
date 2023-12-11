@@ -58,3 +58,12 @@ Currently, flags have to be written as "#access=mod" to disambiguate the grammar
 like to be able to avoid that. Is it necessary to have two different types of "name", one
 for flags and one for builtins? That could lead to very confusing error messages. Maybe
 it's okay to write flags like this??
+
+Future improvements
+-------------------
+
+Note that many of these will continue to be possible using the "naive" syntax, but the
+preferred syntax will read better.
+
+* dest, target, and destcfg
+* Setting of variables, maybe that gets its own syntax??

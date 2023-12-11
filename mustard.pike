@@ -181,7 +181,7 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 			out->sprintf("%s}\n", state->indent * --state->indentlevel);
 		}
 	}
-	else _make_mustard(message->message, out, state);
+	else _make_mustard(message->message, out, state, block);
 	if (block) out->sprintf("%s}\n", state->indent * --state->indentlevel);
 }
 
