@@ -493,7 +493,7 @@ class channel(mapping config) {
 				};
 				return;
 			}
-			else message = (["message": sprintf("Bad builtin name %O", message->builtin)]);
+			else message = (["message": sprintf("Bad builtin name %O", message->builtin)]); //FIXME: Log error instead?
 		}
 
 		echoable_message msg = message->message;
