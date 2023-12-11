@@ -67,3 +67,4 @@ preferred syntax will read better.
 
 * dest, target, and destcfg
 * Setting of variables, maybe that gets its own syntax??
+* Per-user-ness of cooldowns and variables?

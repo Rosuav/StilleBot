@@ -167,8 +167,10 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 		if (message->conditional == "number")
 			out->sprintf("%stest (%s) {\n", state->indent * state->indentlevel++, quoted_string(message->expr1));
 		else if (message->conditional == "cooldown") {
-			out->sprintf("%scooldown (%s) {\n", state->indent * state->indentlevel++, (string)message->delay);
-			if (message->cdname) out->sprintf("%s#cdname = %O\n", state->indent * state->indentlevel++, message->cdname);
+			string attrs = "";
+			foreach (({"cdname", "cdqueue"}), string attr) if (message[attr])
+				attrs = sprintf("%s #%s %s", attrs, attr, stringp(message[attr]) ? quoted_string(message[attr]) : (string)message[attr]);
+			out->sprintf("%scooldown (%s%s) {\n", state->indent * state->indentlevel++, (string)message->cdlength, attrs);
 		}
 		else if (string oper = oper_rev[message->conditional])
 			out->sprintf("%sif (%s %s %s) {\n", state->indent * state->indentlevel++, quoted_string(message->expr1 || ""), oper, quoted_string(message->expr2 || ""));
