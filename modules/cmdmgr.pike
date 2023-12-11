@@ -299,10 +299,9 @@ echoable_message _validate_recursive(echoable_message resp, mapping state)
 	//Conditions have their own active ingredients.
 	if (array parts = condition_parts[resp->conditional]) {
 		foreach (parts + ({"conditional"}), string key)
-			if (resp[key]) ret[key] = resp[key];
+			if (resp[key] && resp[key] != "") ret[key] = resp[key];
 		ret->otherwise = _validate_recursive(resp->otherwise, state);
 		if (ret->message == "" && ret->otherwise == "") return ""; //Conditionals can omit either message or otherwise, but not both
-		if (ret->casefold == "") m_delete(ret, "casefold"); //Blank means not case folded, so omit it
 		if (ret->conditional == "cooldown") {
 			ret->cdname = normalize_cooldown_name(ret->cdname, state);
 			ret->cdlength = (int)ret->cdlength;
