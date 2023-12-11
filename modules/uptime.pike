@@ -4,9 +4,11 @@ constant builtin_name = "Channel uptime";
 constant command_suggestions = (["!uptime": ([
 	"_description": "Show how long the channel has been online",
 	"builtin": "uptime",
-	"conditional": "string", "expr1": "{uptime}", "expr2": "0",
-	"message": "Channel is currently offline.",
-	"otherwise": "@$$: Channel {channel} has been online for {uptime|time_english}",
+	"message": ([
+		"conditional": "string", "expr1": "{uptime}", "expr2": "0",
+		"message": "Channel is currently offline.",
+		"otherwise": "@$$: Channel {channel} has been online for {uptime|time_english}",
+	]),
 ])]);
 constant vars_provided = ([
 	"{uptime}": "Number of seconds the channel has been online, or 0 if offline",
