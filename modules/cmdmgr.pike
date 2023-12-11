@@ -725,6 +725,14 @@ void scan_command(mapping state, echoable_message message) {
 		message->conditional = "catch";
 		state->changed = 1;
 	}
+	if (message->builtin == "uptime" && message->conditional) {
+		//Combining builtin and conditional doesn't work, so add a layer, same as above.
+		message->message = (["message": message->message]);
+		foreach (({"conditional", "expr1", "expr2", "otherwise"}), string attr)
+			if (mixed val = m_delete(message, attr)) message->message[attr] = val;
+		m_delete(message, "builtin_param"); //The uptime builtin doesn't use its parameter, so just drop it.
+		state->changed = 1;
+	}
 	//Clean up some legacy forms. They don't actually hurt anything, but it makes round-trip testing
 	//harder since they collapse into their modern forms as soon as you sneeze on them. So let's just
 	//fix them all in advance.
