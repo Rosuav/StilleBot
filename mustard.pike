@@ -31,8 +31,8 @@ mapping conditional(string kwd, mapping cond, mixed if_true, mixed maybeelse) {
 }
 mapping cond(mapping flg, string expr1, string oper, string expr2, mapping flg2) {
 	flg |= flg2;
-	flg->expr1 = expr1;
-	flg->expr2 = expr2;
+	if (expr1 != "") flg->expr1 = expr1;
+	if (expr2 != "") flg->expr2 = expr2;
 	flg->conditional = oper_fwd[oper]; //If bad operator, will be unconditional. Should be caught by the grammar though.
 	return flg;
 }
