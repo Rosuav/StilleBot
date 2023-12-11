@@ -748,6 +748,7 @@ void scan_command(mapping state, echoable_message message) {
 		message->destcfg = m_delete(message, "action");
 		state->changed = 1;
 	}
+	if (message->expr2 == "") {m_delete(message, "expr2"); state->changed = 1;}
 	scan_command(state, message->message);
 	scan_command(state, message->otherwise);
 }

@@ -15,7 +15,7 @@ constant command_suggestions = (["!follower": ([
 	"message": ([
 		"builtin": "renamed", "builtin_param": ({"%s"}),
 		"message": ([
-			"conditional": "string", "expr1": "{following}", "expr2": "",
+			"conditional": "string", "expr1": "{following}",
 			"message": "@{username}: {curname} is not following.",
 			"otherwise": "@{username}: {curname} has been following {followage}.",
 		]),
@@ -27,7 +27,7 @@ constant command_suggestions = (["!follower": ([
 	"message": ([
 		"builtin": "renamed", "builtin_param": ({"{username}"}),
 		"message": ([
-			"conditional": "string", "expr1": "{following}", "expr2": "",
+			"conditional": "string", "expr1": "{following}",
 			"message": "@{username}: You're not following.",
 			"otherwise": "@{username}: You've been following {followage}.",
 		]),
