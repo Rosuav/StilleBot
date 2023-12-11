@@ -68,9 +68,9 @@ mixed /* echoable_message */ parse_mustard(string|Stdio.Buffer mustard) {
 			while (lit != "" && lit[-1] == '\\') {
 				str = mustard->sscanf("%[^\"]\"");
 				if (!str) break; //Should possibly be a parse error?
-				lit += "\"" + str[0];
+				lit = lit[..<1] + "\"" + str[0];
 			}
-			return ({"string", utf8_to_string(replace(lit, "\\\\", "\\"))});
+			return ({"string", utf8_to_string(replace(lit, (["\\\\": "\\", "\n": " "])))});
 		}
 		if (array tok = mustard->sscanf("%[a-zA-Z0-9_]")) {
 			string token = tok[0];

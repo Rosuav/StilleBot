@@ -68,3 +68,6 @@ preferred syntax will read better.
 * dest, target, and destcfg
 * Setting of variables, maybe that gets its own syntax??
 * Per-user-ness of cooldowns and variables?
+
+Currently strings don't break at end of line. Should they? Errors become hard to read
+when an unmatched quote suddenly consumes the whole rest of the file.
