@@ -42,8 +42,3 @@ cooldown: "number" {cd_naked};
 cooldown: "(" flags "number" flags ")" {cd_flags};
 /* maybeelse: ; */ /* How do you design an LR(1) grammar that makes an else optional but binding to closest, without unnecessary complexity? */
 maybeelse: "else" message {taketwo};
-
-/*
-"cooldown": ({"cdname", "cdlength", "cdqueue"}),
-"catch": ({ }), //Currently there's no exception type hierarchy, so you always catch everything.
-*/

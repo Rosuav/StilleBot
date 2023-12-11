@@ -294,6 +294,11 @@ int main(int argc, array(string) argv) {
 			write("Validated: %O\n", validated);
 			if (!diff(sprintf("%O\n", orig), sprintf("%O\n", validated))) write("Identical!\n");
 		}
-		else write("Result: %O\n", parse_mustard(Stdio.read_file(arg)));
+		else {
+			mixed parsed = parse_mustard(Stdio.read_file(arg));
+			write("Parsed: %O\n", parsed);
+			mixed validated = validate(parsed, parsed->command || "command");
+			write("Validated: %O\n", validated);
+		}
 	}
 }
