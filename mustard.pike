@@ -172,8 +172,12 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 				attrs = sprintf("%s #%s %s", attrs, attr, stringp(message[attr]) ? quoted_string(message[attr]) : (string)message[attr]);
 			out->sprintf("%scooldown (%s%s) {\n", state->indent * state->indentlevel++, (string)message->cdlength, attrs);
 		}
-		else if (string oper = oper_rev[message->conditional])
-			out->sprintf("%sif (%s %s %s) {\n", state->indent * state->indentlevel++, quoted_string(message->expr1 || ""), oper, quoted_string(message->expr2 || ""));
+		else if (string oper = oper_rev[message->conditional]) {
+			string attrs = "";
+			foreach (({"casefold"}), string attr) if (message[attr])
+				attrs = sprintf("%s #%s %s", attrs, attr, stringp(message[attr]) ? quoted_string(message[attr]) : (string)message[attr]);
+			out->sprintf("%sif (%s %s %s%s) {\n", state->indent * state->indentlevel++, quoted_string(message->expr1 || ""), oper, quoted_string(message->expr2 || ""), attrs);
+		}
 		else error("Unrecognized conditional type %O\n", message->conditional);
 		_make_mustard(message->message || "", out, state, 1); //Gotta have the if branch
 		out->sprintf("%s}\n", state->indent * --state->indentlevel);
