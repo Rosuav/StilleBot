@@ -46,6 +46,11 @@ string emptymessage() {return "";}
 mapping trycatch(string kwd, mixed message, string kwd2, mixed otherwise) {
 	return (["conditional": "catch", "message": message, "otherwise": otherwise]);
 }
+mapping setvar(string varname, string oper, mixed value) {
+	return (["dest": "/set", "destcfg": ([
+		"=": "", "+=": "add", "-=": "spend",
+	])[oper], "target": varname, "message": value]);
+}
 
 constant KEYWORDS = (<"if", "else", "in", "test", "try", "catch", "cooldown">);
 
@@ -56,7 +61,7 @@ mixed /* echoable_message */ parse_mustard(string|Stdio.Buffer mustard) {
 	array|string next() {
 		mustard->sscanf("%*[ \t\r\n;]");
 		if (!sizeof(mustard)) return "";
-		if (array token = mustard->sscanf("%[=,~-]")) //All characters that can be part of multi-character tokens
+		if (array token = mustard->sscanf("%[=,~+-]")) //All characters that can be part of multi-character tokens
 			return token[0];
 		//In theory, this should do the job. Not sure why it doesn't work.
 		//if (mustard[0] == '"') return ({"string", mustard->read_json()});
@@ -85,6 +90,10 @@ mixed /* echoable_message */ parse_mustard(string|Stdio.Buffer mustard) {
 			return ({"name", token});
 		}
 		if (array token = mustard->sscanf("//%[^\n]")) return ({"comment", token[0]});
+		if (array token = mustard->sscanf("$%[A-Za-z0-9*]%[$]")) {
+			//TODO: If token[1] != "$", throw error (need that trailing dollar sign)
+			return ({"varname", token[0]});
+		}
 		return mustard->read(1); //Otherwise, grab a single character
 	}
 	//array|string shownext() {array|string ret = next(); werror("TOKEN: %O\n", ret); return ret;}
@@ -112,6 +121,13 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 	}
 	if (message->dest == "//" && stringp(message->message)) {
 		out->sprintf("%s//%s\n", state->indent * state->indentlevel, message->message);
+		return;
+	}
+	if (message->dest == "/set" && stringp(message->message)) {
+		out->sprintf("%s$%s$ %s %s\n", state->indent * state->indentlevel,
+			message->target,
+			(["add": "+=", "spend": "-="])[message->destcfg] || "=",
+			quoted_string(message->message));
 		return;
 	}
 	int block = 0; //On initial build, we can skip ANY block, not just a safe one

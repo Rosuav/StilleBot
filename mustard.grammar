@@ -23,6 +23,7 @@ message: "if" condition message maybeelse {conditional};
 message: "test" calc_cond message maybeelse {conditional}; /* test ("expr") if-true if-false */
 message: "try" message "catch" message {trycatch}; /* Possible future expansion: "catch" "(" filter ")" message */
 message: "cooldown" cooldown message maybeelse {conditional};
+message: "varname" varoper value {setvar};
 
 params: {makeparams};
 params: param_list;
@@ -43,3 +44,7 @@ cooldown: "number" {cd_naked};
 cooldown: "(" flags "number" flags ")" {cd_flags};
 /* maybeelse: ; */ /* How do you design an LR(1) grammar that makes an else optional but binding to closest, without unnecessary complexity? */
 maybeelse: "else" message {taketwo};
+
+varoper: "=";
+varoper: "+=";
+varoper: "-=";

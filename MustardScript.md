@@ -72,3 +72,13 @@ preferred syntax will read better.
 
 Currently strings don't break at end of line. Should they? Errors become hard to read
 when an unmatched quote suddenly consumes the whole rest of the file.
+
+
+NOTE: There is a distinct semantic difference between these two statements:
+
+    $var$ += -1
+    $var$ -= 1
+
+The latter is a "spend" operation, best used in a condition, and will never take the
+variable below zero. The former is simple arithmetic, and uses both positive and
+negative values freely.
