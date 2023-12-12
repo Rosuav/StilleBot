@@ -258,6 +258,13 @@ const games = {
 					OPTION("Sanchez"),
 					OPTION("Mucho Mike"),
 				]),
+				SELECT({"data-setting": "mask", value: data.mask}, [
+					OPTION(""),
+					OPTION({value: "tiger"}, "Tiger (orange suit, orange mask)"),
+					OPTION({value: "blue"}, "?? (blue suit, blue mask)"),
+					OPTION({value: "bird"}, "Bird (orange suit, red/yellow mask)"),
+					OPTION({value: "mouse"}, "Mouse (red suit, b/w/grey mask)"),
+				]),
 			]),
 		];},
 	},
