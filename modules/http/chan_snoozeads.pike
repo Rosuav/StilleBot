@@ -32,9 +32,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		int basis = time();
 		channel_ad_stats[0] = ([
 			"last_ad_at": basis - 912,
-			"length_seconds": 60,
+			"duration": 60,
 			"next_ad_at": basis + 1818,
-			"preroll_free_time_seconds": 849,
+			"preroll_free_time": 849,
 			"snooze_count": 2,
 			"snooze_refresh_at": basis + 3600 - 912,
 			"time_captured": basis,

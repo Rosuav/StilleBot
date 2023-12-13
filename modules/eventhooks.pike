@@ -87,12 +87,12 @@ mapping predictionended(object channel, mapping info) {
 	return params;
 }
 
-@({"channel:read:ads", "channel.ad_break.begin", "beta", "always"}):
+@({"channel:read:ads", "channel.ad_break.begin", "1", "always"}):
 mapping adbreak(object channel, mapping info) {
 	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
 	spawn_task(G->G->websocket_types->chan_snoozeads->check_stats(channel));
 	return ([
-		"{length}": (string)info->length_seconds,
+		"{length}": (string)info->duration_seconds,
 		"{is_automatic}": info->is_automatic ? "1" : "0",
 		"{started_at_iso}": info->started_at, //TODO
 	]);
