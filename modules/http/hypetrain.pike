@@ -90,11 +90,11 @@ void probe_hype_train(int channel) {
 	get_user_info(channel)->then() {send_updates_all(__ARGS__[0]->login);};
 }
 
-constant emotes = #"HypeLUL HypeCool HypeLove1 HypeSleep HypePat HypeCozy1
-HypeHands1 HypeHands2 HypeFail HypeHai HypeNom HypeBoop
-HypeBLEH HypeApplause HypeRage HypeMwah HypeHuh HypeSeemsGood
-HypeWave HypeReading HypeShock HypeStress HypeCry HypeDerp1
-HypeCheer HypeLurk HypePopcorn HypeEvil HypeAwww HypeHype";
+constant emotes = #"HypeCute HypeYummy HypeKEKW HypeNoods HypeOho HypePizza
+HypeHi HypeChill HypeMyHeart HypeWarm HypeFist HypePizza
+HypeCries HypeGGEyes HypeAwh HypeElf HypeDelight HypePizza
+HypeNotLikeSnow HypePls HypeMelt HypeCocoa HypeConfetti HypePizza
+HypeSanta HypePeek HypeOhDeer HypeUwu HypeLick HypePizza";
 
 string avail_emotes = "";
 

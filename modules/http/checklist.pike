@@ -6,8 +6,16 @@ inherit irc_callback;
 //be greyed out if not available.
 //NOTE: The display is aimed at no more than six emotes across.
 constant hypetrain = replace(#"
+## Hype Train set six
+### Unlockable Dec 2023... ongoing or not?
+HypeCute HypeYummy HypeKEKW HypeNoods HypeOho ????<br>
+HypeHi HypeChill HypeMyHeart HypeWarm HypeFist ????<br>
+HypeCries HypeGGEyes HypeAwh HypeElf HypeDelight ????<br>
+HypeNotLikeSnow HypePls HypeMelt HypeCocoa HypeConfetti ????<br>
+HypeSanta HypePeek HypeOhDeer HypeUwu HypeLick ????<br>
+
 ## Hype Train set five
-### Unlockable Nov 2021 to current
+### Unlockable Nov 2021 to Dec 2023
 HypeLUL HypeCool HypeLove1 HypeSleep HypePat HypeCozy1<br>
 HypeHands1 HypeHands2 HypeFail HypeHai HypeNom HypeBoop<br>
 HypeBLEH HypeApplause HypeRage HypeMwah HypeHuh HypeSeemsGood<br>
@@ -114,6 +122,31 @@ constant emoteids = ([
 	"HypeYas": "emotesv2_d8271fc8f0264fdc9b1ac79051f75349",
 	"HypeAttack": "emotesv2_f35caa0f5f3243b88cfbd85a3c9e69ff",
 	"HypeShy": "emotesv2_d4a50cfaa51f46e99e5228ce8ef953c4",
+	//Hype Train v6 uncollected emotes
+	"HypeYummy": "emotesv2_1de038c78b7b42a6813eec49203a03e9",
+	"HypeKEKW": "emotesv2_0ed449060b1042a3886705a71878d95d",
+	"HypeNoods": "emotesv2_5c7d8853101c4f1daf94bae1e6008f72",
+	"HypeOho": "emotesv2_c280f4f1d638452eb457b245bbdc0626",
+	"HypeHi": "emotesv2_2ac008e6cefc423eb8a72388fe547eda",
+	"HypeChill": "emotesv2_75fbd37276e14b2da995d1495246a267",
+	"HypeMyHeart": "emotesv2_9f4c19c52e444ef98bc0af5b61f95a2b",
+	"HypeWarm": "emotesv2_5c1d7a2705c341ac860915b706d51086",
+	"HypeFist": "emotesv2_b520efa278fb4506971914f7d290f3f8",
+	"HypeCries": "emotesv2_ce3c1c5b380746cdbbdbd2915bef3710",
+	"HypeGGEyes": "emotesv2_da473526a7ce4c2b9ff5b62f18f561b0",
+	"HypeAwh": "emotesv2_3a56169d4e0343a2ba72dd07e3aa8fb4",
+	"HypeElf": "emotesv2_0264c8e0fe854a0a9486ffb30a46b1da",
+	"HypeDelight": "emotesv2_15cb5689e3f64777b93c112fba0190ae",
+	"HypeNotLikeSnow": "emotesv2_922c1f4705fa49d28b7439fac7d0ca03",
+	"HypePls": "emotesv2_a002670712f54576acd0ce40e9015a12",
+	"HypeMelt": "emotesv2_eb3ae3548224414ea104de573aee4d91",
+	"HypeCocoa": "emotesv2_5b7686be9f65488e9a5910965ef0ce38",
+	"HypeConfetti": "emotesv2_d026a0d9211e434fb153ba249c669d6b",
+	"HypeSanta": "emotesv2_6c99e6a1d90c4e50a9f087ebeb659bbe",
+	"HypePeek": "emotesv2_e621ef332af0497f91552c0efbfff0dd",
+	"HypeOhDeer": "emotesv2_f721d941d14642e2b30de2e86fa28082",
+	"HypeUwu": "emotesv2_9c5840880c854913867fa2e5ffdc1f17",
+	"HypeLick": "emotesv2_47d858d7a1e042a3bf72eab138351415",
 ]);
 array(string) tracked_emote_names;
 
