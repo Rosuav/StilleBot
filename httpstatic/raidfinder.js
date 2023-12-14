@@ -48,9 +48,10 @@ function hms(time) {
 }
 function uptime(startdate) {return hms(Math.floor((new Date() - new Date(startdate)) / 1000));}
 
-async function show_vod_lengths(userid, vodid, startdate) {
+async function show_vod_lengths(userid, vodid, startdate, ccls) {
 	set_content("#is_following", "");
 	set_content("#chat_restrictions", "");
+	set_content("#ccls_in_use", ccls.map(ccl => [tag_prefs["<CCL_Warn_" + ccl + ">"] ? "⚠️" : "🏷️", ccl_names[ccl] || ccl]));
 	set_content("#vods", LI("... loading VODs ..."));
 	DOM("#vodlengths").showModal();
 	const info = typeof userid === "object" ? userid :
@@ -112,7 +113,7 @@ async function show_vod_lengths(userid, vodid, startdate) {
 	}));
 }
 
-on("click", "#mydetails", e => show_vod_lengths(on_behalf_of_userid, your_stream && your_stream.id, your_stream && your_stream.started_at));
+on("click", "#mydetails", e => show_vod_lengths(on_behalf_of_userid, your_stream && your_stream.id, your_stream && your_stream.started_at, your_stream && your_stream.content_classification_labels));
 
 let precache_timer = 0;
 function precache_streaminfo() {
@@ -234,14 +235,21 @@ function update_tag_display() {
 		if (tag_prefs["<" + pref + ">"] < 0) DOM("#tags input[name=" + pref + "].disliketag").checked = true;
 		else DOM("#tags input[name=" + pref + "].liketag").checked = true;
 	});
+	Object.keys(ccl_names).forEach(ccl => ["Warn", "Blur"].forEach(action => {
+		const pref = "CCL_" + action + "_" + ccl;
+		DOM("#tags input[name=" + pref + "]").checked = tag_prefs["<" + pref + ">"] < 0;
+	}));
 }
-function update_tagpref(e, delta) {
+function like_dislike(e, delta) {
 	const tagid = e.match.closest("[data-tagid]").dataset.tagid || DOM("#newtagname").value;
 	if (tagid === "") return; //Should we say something if the user leaves the input blank?
 	console.log(tagid);
 	const newpref = (tag_prefs[tagid]|0) + delta;
 	console.log("New pref:", tag_prefs[tagid], " + ", delta, " = ", newpref);
 	if (newpref > MAX_PREF || newpref < MIN_PREF) return;
+	update_tagpref(tagid, newpref);
+}
+function update_tagpref(tagid, newpref) {
 	fetch("/raidfinder", {
 		method: "POST",
 		headers: {"content-type": "application/json"},
@@ -255,6 +263,7 @@ function update_tagpref(e, delta) {
 }
 on("click", ".liketag", e => update_tagpref(e, 1));
 on("click", ".disliketag", e => update_tagpref(e, -1));
+on("click", "input[type=checkbox][name^=CCL_]", e => update_tagpref("<" + e.match.name + ">", e.match.checked ? -1 : 0));
 
 //TODO: Have a quick way to promote/demote a tag that you see in your follow list
 DOM("#tagprefs").onclick = () => {update_tag_display(); DOM("#tags").showModal();}
@@ -273,8 +282,16 @@ function adornment(type) {
 function describe_uptime(stream, el) {
 	if (!el) el = SPAN({
 		className: "uptime",
-		onclick: () => show_vod_lengths(stream.user_id, stream.id, stream.started_at),
+		onclick: () => show_vod_lengths(stream.user_id, stream.id, stream.started_at, stream.content_classification_labels),
 	});
+	let ccls = null;
+	if (stream.content_classification_labels?.length) {
+		let warnccls = stream.content_classification_labels.filter(lbl => tag_prefs["<CCL_Warn_" + lbl + ">"] < 0);
+		if (warnccls.length) ccls = SPAN({title: "CCLs: " + warnccls.join(", ")}, "⚠️");
+		else ccls = SPAN({title: "CCLs: " + stream.content_classification_labels.join(", ")}, "🏷️");
+	}
+	let branded = null;
+	if (stream.is_branded_content) branded = SPAN({title: "Is branded content"}, "💰");
 	//If no chat restrictions seen in cache, add a0f0c0 badge. If some seen, add ff0 badge.
 	let restrictions = null;
 	const cached = stream.chanstatus ? stream.chanstatus.cache_time : 0;
@@ -305,7 +322,7 @@ function describe_uptime(stream, el) {
 
 	//TODO: Colour the background of the word "Uptime" based on how close we are to the
 	//average VOD duration.
-	return set_content(el, [frond, restrictions, "Uptime " + uptime(stream.started_at)]);
+	return set_content(el, [frond, ccls, branded, restrictions, "Uptime " + uptime(stream.started_at)]);
 }
 
 function render_stream_tiles(streams) {
@@ -397,7 +414,10 @@ function render_stream_tiles(streams) {
 					])),
 				]),
 			]),
-			A({href: stream.url}, IMG({src: stream.thumbnail_url.replace("{width}", 320).replace("{height}", 180)})),
+			A({href: stream.url}, IMG({
+				src: stream.thumbnail_url.replace("{width}", 320).replace("{height}", 180),
+				style: stream.content_classification_labels?.some(lbl => tag_prefs["<CCL_Blur_" + lbl + ">"] < 0) ? "filter: blur(5px)" : "",
+			})),
 			DIV({className: "inforow"}, [
 				DIV({className: "img"}, A({href: stream.url}, IMG({className: "avatar", src: stream.profile_image_url}))),
 				UL([

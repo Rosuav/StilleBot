@@ -10,6 +10,12 @@
 > Viewer counts: <label><input type=radio name=viewership data-tagid="<viewership>" class=liketag> Visible</label> <label><input type=radio name=viewership data-tagid="<viewership>" class=disliketag> Invisible</label>
 >
 > Allow suggestions? <label><input type=radio name=raidsuggestions data-tagid="<raidsuggestions>" class=liketag> Yes, from anyone</label> <label><input type=radio name=raidsuggestions data-tagid="<raidsuggestions>" class=disliketag> No suggestions</label>
+>
+> Content Classification Labels | Warn? | Blur thumbnail?
+> ------------------------------|-------|----------------
+$$ccl_options||> - | - | (not available)$$
+> {: #prefs_ccls}
+>
 {: tag=dialog #tags}
 
 <button id=legend>Legend/info</button> <button id=highlights>Edit highlight list</button>
@@ -248,6 +254,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 > Dates and times are in your local time zone.
 >
 > <span id=is_following></span>
+> <span id=ccls_in_use></span>
 > <ul id=chat_restrictions></ul>
 >
 > <ul id=vods></ul>

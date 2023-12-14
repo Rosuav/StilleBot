@@ -503,6 +503,13 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 	foreach (follows_helix, mapping strm)
 		if ((int)strm->user_id == userid) your_stream = strm;
 	mapping(int:mapping(string:mixed)) extra_info = ([]);
+	//Get some extra info that isn't in the /streams API.
+	array channels = yield(get_helix_paginated("https://api.twitch.tv/helix/channels", (["broadcaster_id": follows_helix->user_id])));
+	foreach (channels, mapping chan)
+		extra_info[(int)chan->broadcaster_id] = ([
+			"is_branded_content": chan->is_branded_content,
+			"content_classification_labels": chan->content_classification_labels,
+		]);
 	foreach (users, mapping user)
 		extra_info[(int)user->id] = ([
 			"broadcaster_type": user->broadcaster_type,
@@ -629,16 +636,22 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 	sort(all_raids->time, all_raids);
 	follows_helix -= ({0}); //Remove self (already nulled out)
 	sort(-follows_helix->recommend[*], follows_helix); //Sort by magic initially
+	if (!G->G->ccl_options) {
+		//Assume CCLs seldom change. Currently no cache purge option.
+		array ccls = yield(twitch_api_request("https://api.twitch.tv/helix/content_classification_labels"))->data;
+		G->G->ccl_names = mkmapping(ccls->id, ccls->name);
+		G->G->ccl_options_table = sprintf("> %s | <input type=checkbox name=CCL_Warn_%s> | <input type=checkbox name=CCL_Blur_%<s>\n", ccls->name[*], ccls->id[*]) * "";
+	}
 	return render(req, ([
 		"vars": ([
 			"ws_group": "",
 			"logged_in_as": (int)logged_in->?id,
 			"on_behalf_of_userid": userid, //The same userid as you're logged in as, unless for= is specified
 			"follows": follows_helix,
-			"all_tags": ({ }), //Deprecated as of 20230127 - tags by ID are no longer a thing.
 			"your_stream": your_stream, "highlights": highlights,
 			"tag_prefs": tag_prefs, "lc_tag_prefs": lc_tag_prefs,
 			"MAX_PREF": MAX_PREF, "MIN_PREF": MIN_PREF,
+			"ccl_names": G->G->ccl_names,
 			"all_raids": all_raids[<99..], "mode": "normal",
 			"annotations": annotations,
 			"render_time": (string)tm->get(),
@@ -648,6 +661,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 		"title": title, "auxtitle": auxtitle, "catfollow": catfollow,
 		"raidbtn": raidbtn,
 		"backlink": "<a href=\"raidfinder?menu\">Other raid finder modes</a>",
+		"ccl_options": G->G->ccl_options_table,
 	]));
 }
 
