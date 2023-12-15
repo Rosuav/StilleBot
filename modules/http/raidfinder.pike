@@ -504,12 +504,14 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 		if ((int)strm->user_id == userid) your_stream = strm;
 	mapping(int:mapping(string:mixed)) extra_info = ([]);
 	//Get some extra info that isn't in the /streams API.
-	array channels = yield(get_helix_paginated("https://api.twitch.tv/helix/channels", (["broadcaster_id": follows_helix->user_id])));
-	foreach (channels, mapping chan)
-		extra_info[(int)chan->broadcaster_id] = ([
-			"is_branded_content": chan->is_branded_content,
-			"content_classification_labels": chan->content_classification_labels,
-		]);
+	if (sizeof(follows_helix)) {
+		array channels = yield(get_helix_paginated("https://api.twitch.tv/helix/channels", (["broadcaster_id": follows_helix->user_id])));
+		foreach (channels, mapping chan)
+			extra_info[(int)chan->broadcaster_id] = ([
+				"is_branded_content": chan->is_branded_content,
+				"content_classification_labels": chan->content_classification_labels,
+			]);
+	}
 	foreach (users, mapping user)
 		extra_info[(int)user->id] = ([
 			"broadcaster_type": user->broadcaster_type,
