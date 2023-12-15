@@ -202,7 +202,10 @@ mapping get_state(string group, string|void id) {
 }
 
 void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	array valid = G->G->cmdmgr->validate_command(channel, (conn->group / "#")[0], msg->cmdname, msg->response, (["original": msg->original]));
+	array valid = G->G->cmdmgr->validate_command(channel, (conn->group / "#")[0], msg->cmdname, msg->response, ([
+		"original": msg->original,
+		"language": msg->language == "mustard" ? "mustard" : "",
+	]));
 	if (!valid || !valid[0]) return;
 	make_echocommand(@valid);
 	if (msg->cmdname == "" && has_prefix(conn->group, "!!trigger#")) {
@@ -215,8 +218,16 @@ void wscmd_delete(object c, mapping conn, mapping msg) {wscmd_update(c, conn, ms
 void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	sscanf(conn->group, "%s#%s", string mode, string chan);
 	object channel = G->G->irc->channels["#" + chan]; if (!channel) return 0;
-	array valid = G->G->cmdmgr->validate_command(channel, mode, msg->cmdname || "validateme", msg->response, (["original": msg->original]));
+	array valid = G->G->cmdmgr->validate_command(channel, mode, msg->cmdname || "validateme", msg->response, ([
+		"original": msg->original,
+		"language": msg->language == "mustard" ? "mustard" : "",
+	]));
 	if (!valid) return; //But it's okay if the name is invalid, or in demo mode (fake-mod)
+	if (msg->cmdname == "changetab_mustard") {
+		//HACK: Currently using the changetab name to request MustardScript.
+		//TODO: Do this properly somehow.
+		valid[1] = G->G->mustard->make_mustard(valid[1]);
+	}
 	string cmdname = ((valid[0] || msg->cmdname || "validateme") / "#")[0];
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[1]]), 4));
 }

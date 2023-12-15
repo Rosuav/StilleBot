@@ -388,6 +388,10 @@ echoable_message _validate_toplevel(echoable_message resp, mapping state)
 array validate_command(object channel, string|zero mode, string cmdname, echoable_message response, mapping|void options) {
 	if (!options) options = ([]);
 	mapping state = (["cdanon": 0, "cooldowns": ([]), "channel": channel]);
+	if (options->language == "mustard") {
+		//Incoming MustardScript as a simple string. Convert it and THEN parse/validate.
+		response = G->G->mustard->parse_mustard(response);
+	}
 	switch (mode) {
 		case "!!trigger": {
 			echoable_message alltrig = channel->commands["!trigger"];

@@ -1,7 +1,7 @@
-//Command advanced editor framework, and Raw mode editor
+//Command advanced editor framework, and Script and Raw mode editors
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {ABBR, B, BR, BUTTON, CANVAS, CODE, DIALOG, DIV, EM, FORM, H3, HEADER, INPUT, LABEL, LI, P, SECTION, SPAN, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
-const tablist = ["Classic", "Graphical", "Raw"];
+const tablist = ["Classic", "Graphical", "Mustard", "Raw"];
 let defaulttab = "graphical"; //Can be overridden with prefs
 document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 	HEADER([
@@ -73,6 +73,7 @@ function get_message_details() {
 	switch (mode) {
 		case "classic": return cls_save_message();
 		case "graphical": return gui_save_message();
+		case "mustard": return DOM("#mustardscript").value;
 		case "raw": {
 			let response;
 			try {response = JSON.parse(DOM("#raw_text").value);}
@@ -85,7 +86,7 @@ function get_message_details() {
 }
 function change_tab(tab) {
 	let response = get_message_details();
-	if (response) ws_sync.send({cmd: "validate", cmdname: "changetab_" + tab, response}, "cmdedit");
+	if (response) ws_sync.send({cmd: "validate", cmdname: "changetab_" + tab, response, language: mode === "mustard" ? "mustard" : ""}, "cmdedit");
 	else select_tab(tab, cmd_editing);
 }
 
@@ -108,6 +109,10 @@ function select_tab(tab, response) {
 			try_gui_load_message(cmd_basis, cmd_editing);
 			break;
 		}
+		case "mustard": set_content("#command_details", [
+			P("MustardScript is StilleBot's scripting language."),
+			TEXTAREA({id: "mustardscript", rows: 25, cols: 100}, cmd_editing),
+		]); break;
 		case "raw": set_content("#command_details", [
 			P("Copy and paste entire commands in JSON format. Make changes as desired!"),
 			DIV({className: "error", id: "raw_error"}),
@@ -124,7 +129,11 @@ on("click", "#makedefault", e => ws_sync.send({cmd: "prefs_update", cmd_defaultt
 export function open_advanced_view(cmd, tab) {
 	mode = ""; cmd_id = cmd.id; cmd_basis = config.get_command_basis(cmd);
 	if (!tablist.some(t => t.toLowerCase() === tab)) tab = defaulttab;
-	DOM('[name="editor"][value="' + tab + '"]').checked = true; select_tab(tab, cmd);
+	DOM('[name="editor"][value="' + tab + '"]').checked = true;
+	//Since we don't get MustardScript for any commands initially, loading into this mode
+	//requires asking the server to enscriptify the command for us.
+	if (tab === "mustard") ws_sync.send({cmd: "validate", cmdname: "changetab_" + tab, response: cmd}, "cmdedit");
+	else select_tab(tab, cmd);
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
 }
@@ -137,7 +146,7 @@ on("click", "#save_advanced", async e => {
 	const info = get_message_details();
 	document.getElementById("advanced_view").close();
 	const el = DOM("#cmdname");
-	ws_sync.send({cmd: "update", cmdname: el ? el.value : cmd_id, original: cmd_id, response: info}, "cmdedit");
+	ws_sync.send({cmd: "update", cmdname: el ? el.value : cmd_id, original: cmd_id, response: info, language: mode === "mustard" ? "mustard" : ""}, "cmdedit");
 });
 
 on("click", "#delete_advanced", simpleconfirm("Delete this command?", e => {
