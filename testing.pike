@@ -11,6 +11,10 @@ protected void create(string name) {
 	G->bootstrap("modules/cmdmgr.pike");
 	object mustard = G->bootstrap("mustard.pike");
 	G->G->argv -= ({"--test"});
-	mustard->main(sizeof(G->G->argv), G->G->argv);
+	int quiet = 0;
+	foreach (G->G->argv[1..], string arg) {
+		if (arg == "-q") quiet = 1;
+		else mustard->run_test(arg, quiet);
+	}
 	exit(0);
 }
