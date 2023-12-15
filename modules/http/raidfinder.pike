@@ -120,7 +120,8 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 			foreach (newnotes / "\n", string line) 
 				if (sscanf(line, "%s %d", string id, int pref) == 2) {
 					//Hack: "<viewership>" is used for the "hide viewer counts" setting
-					if (id != "" && id[0] == '<') pref = pref < 0 ? -1 : 0;
+					//Though for CCL settings, it's able to store -3 to 0.
+					if (id != "" && id[0] == '<' && !has_prefix(id, "<CCL")) pref = pref < 0 ? -1 : 0;
 					if (!pref || pref > MAX_PREF || pref < MIN_PREF) m_delete(notes->tags, id);
 					else notes->tags[id] = pref;
 				}
