@@ -1,7 +1,7 @@
 //Eventually this will be folded into the core, but for now, it's a
 //stand-alone script that just parses and synthesizes MustardScript.
 
-Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file("mustard.grammar");
+Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file("modules/mustard.grammar");
 void throw_errors(int level, string subsystem, string msg, mixed ... args) {if (level >= 2) error(msg, @args);}
 
 constant oper_fwd = ([
@@ -218,6 +218,8 @@ string make_mustard(mixed /* echoable_message */ message) {
 	_make_mustard(message, out, state, 2);
 	return utf8_to_string((string)out);
 }
+
+//Tools for testing MustardScript and whether things properly round-trip
 
 //Invoke diff(1) with FDs 0 and 3 carrying the provided strings
 //Returns 1 if there were any differences, 0 if identical (or any other return code from diff)

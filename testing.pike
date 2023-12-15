@@ -9,7 +9,7 @@ protected void create(string name) {
 	::create(name);
 	G->G->builtins = mkmapping(builtin_names, allocate(sizeof(builtin_names), 1));
 	G->bootstrap("modules/cmdmgr.pike");
-	object mustard = G->bootstrap("mustard.pike");
+	object mustard = G->bootstrap("modules/mustard.pike");
 	G->G->argv -= ({"--test"});
 	int quiet = 0;
 	foreach (G->G->argv[1..], string arg) {
