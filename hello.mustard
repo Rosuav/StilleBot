@@ -1,7 +1,0 @@
-#command = "hello"
-"Hello, {username}!"
-{
-	#delay = 3
-	//Everything inside here happens after a delay!
-	"Hello, everyone else too!"
-}
