@@ -1,6 +1,6 @@
 //Command advanced editor framework, and Script and Raw mode editors
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {ABBR, B, BR, BUTTON, CANVAS, CODE, DIALOG, DIV, EM, FORM, H3, HEADER, INPUT, LABEL, LI, P, SECTION, SPAN, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
+const {A, ABBR, B, BR, BUTTON, CANVAS, CODE, DIALOG, DIV, EM, FORM, H3, HEADER, INPUT, LABEL, LI, P, SECTION, SPAN, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
 import "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.min.js"; //Editor for MustardScript
 window.ace.config.set("basePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/");
 const tablist = ["Classic", "Graphical", "Mustard", "Raw"];
@@ -113,7 +113,7 @@ function select_tab(tab, response) {
 		}
 		case "mustard": {
 			set_content("#command_details", [
-				P("MustardScript is StilleBot's scripting language."),
+				P([A({href: "https://rosuav.github.io/StilleBot/MustardScript"}, "MustardScript"), " is StilleBot's scripting language."]),
 				DIV({style: "border: 1px solid black; padding: 0.25em;"},
 					DIV({id: "mustardscript", style: "width: 100%; height: 500px;"}),
 				),
