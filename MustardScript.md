@@ -33,6 +33,18 @@ Syntax
 * Conditional statements use the `if` and `else` keywords.
   `if ("{param}" == "hello") "Hello to you too!" else "Goodbye."`
   - Using groups here is generally good for readability.
+  - Valid types of condition:
+    - String comparison: `if ("this" == "that")`
+    - String inclusion: `if ("word" in "this has words in it")`
+    - Regular expression: `if ("([0-9]+)" =~ "{param}")`
+    - Spend: `if ($variable$ -= 5)` Equivalent to doing the variable spend, but if
+      the spend fails due to insufficient value, the `else` clause will be run instead
+      of the `if` block.
+* Exception handling
+  `try {"/shoutout {param}"} catch {"Can't shout out now, {error}"}`
+  - Leaving the catch block empty will silently suppress errors
+  - Uncaught errors will be logged to your channel's Error Log
+  - Use `chan_errors("THROW", "Whoopsie") {}` to raise errors for testing.
 
 To try out different forms of syntax, create them using the graphical editor, then
 switch to script view to see how they look. You can then edit the script and return
