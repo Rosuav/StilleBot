@@ -1,84 +1,52 @@
 MustardScript
 =============
 
-StilleBot's command language, called MustardScript, is entirely equivalent to the JSON internal format.
+StilleBot's command language, called MustardScript, is a human-editable text representation of a
+command. Like Raw mode, it turns the entire command into simple text; unlike Raw mode, it's actually
+something you would want to read and write.
 
-Do I need one? Maybe?
-
-- Come up with a grammar which can compile to the same array/mapping that the command executor runs
-- This will confirm that this truly is an AST, and one that can be saved efficiently in JSON
-- Go through the validator for features. It's okay if the grammar parses to an inefficient version,
-  same as the GUI editor often does. That's what an AST optimization step is for.
-- Design goals:
-  - Be simple. Avoid unnecessary punctuation.
-  - Be unambiguous. Don't omit *necessary* punctuation. This is a DSL not a shell command.
-  - Be indentation-safe
-    - Maybe have a one-liner version (like semicolon separation, Python style)?
-  - Have complexity that scales as linearly as possible
-  - Eschew boilerplate of any kind
-  - Have all of the power of the command editor
-  - Be compact enough to work with in chat
-- Hello world should simply be "Hello, world!" - double quotes for a string, and a string is a message.
-- Builtins should be entirely generic. Any builtin should be able to become any other.
-- Other features (voices etc) may end up being custom syntax, but don't have syntax for everything if
-  it's possible to combine some in sensible ways.
-- First design a parser, completely external to the main bot. Use Parser.LR same as calc.
-- Then design a decompiler that takes the AST and crafts viable source code
-- It MAY be worth having a "saved source code" version of a command, which is discarded if you make
-  any edit in any other form, but otherwise is retained.
-- This might finally be able to replace the Classic editor, which can then be renamed Legacy
-- Comments will be introduced with a double slash. If it looks like commented-out code and can
-  round trip as such, it should be done accordingly when transformed into GUI mode. Otherwise,
-  it's just text comments like anywhere else.
+The language is designed with simplicity in mind. Simple commands are simple; complex commands are
+no more complex than they need to be.
 
 Syntax
 ------
 
-* Top-level flags: access, visibility, automate, etc
-  - Assignment style? eg: access=mod
-* Grouping: Braces or square brackets. Must be correctly nested but otherwise behave identically?
-* Comments begin with "//" and end at newline, or with "/*" and end at "*/" - nesting permitted?
-* Mode (rotate/random/foreach), delay, voice
-* Destination (whisper, web, variable, chain, reply)
-* Builtins - function-like syntax?
-* Conditions. These have three parts: condition type and parameters, if-true, if-false.
+* Comments begin with "//" and end at the end of the current line. Aside from this, line breaks
+  are meaningless, and you could collapse an entire command onto one line if you wanted to!
+* A string in quotes `"like this"` will normally be sent as a message.
+* Builtin functionality such as the calculator can be called on using function-like syntax:
+  `calc("1 + 2 + 3") "{result}"`
+* Flags are set on any message or group as directives:
+  `#access mod`
+  If the flag/setting is not a simple word or number, it can be put in quotes:
+  `#automate "10-15"`
+* Grouping of messages: Use either braces or square brackets.
+  `["Hello" "world"]`
+  This will send both messages. Useful when applying settings to a group.
+* Variables are set by giving their names:
+  `$variable$ = "some value"`
+  - This includes ephemeral and per-user variables `$*somevar$ = 123`
+  - To add to a variable: `$variable$ += 1`
+  - To spend from a variable: `$variable$ -= 1` Note that this will silently fail if
+    the variable's prior content is insufficient for the spend. This is not very useful
+    on its own, but can be used in an `if` statement.
+* Conditional statements use the `if` and `else` keywords.
+  `if ("{param}" == "hello") "Hello to you too!" else "Goodbye."`
+  - Using groups here is generally good for readability.
 
-Broad structure: Nested groups, including top-level which is implicitly a group.
-Inside any group, assignment statements affect that group and any subgroups.
-
-Tokens:
-name - an atom. Not sure yet what alphabet to support.
-string - quoted string. If it contains quotes, they must be escaped. Use %q from Pike.
-number - a string of digits, optionally a decimal point.
-
-Limitations
------------
-
-Currently, flags have to be written as "#access=mod" to disambiguate the grammar. I would
-like to be able to avoid that. Is it necessary to have two different types of "name", one
-for flags and one for builtins? That could lead to very confusing error messages. Maybe
-it's okay to write flags like this??
+To try out different forms of syntax, create them using the graphical editor, then
+switch to script view to see how they look. You can then edit the script and return
+to graphical view to see the effect.
 
 Future improvements
 -------------------
 
-Note that many of these will continue to be possible using the "naive" syntax, but the
-preferred syntax will read better.
+As the language evolves, new syntax may be created which will improve readability.
+Existing notation will continue to be valid, but will be equivalent to the newer form.
 
 * dest, target, and destcfg
-* Setting of variables, maybe that gets its own syntax??
 * Per-user-ness of cooldowns and variables?
-* Setting boolean attributes eg casefold - currently <<#casefold = "on">> which sucks
+* Setting boolean attributes eg casefold - currently `#casefold = "on"` which sucks
 
 Currently strings don't break at end of line. Should they? Errors become hard to read
 when an unmatched quote suddenly consumes the whole rest of the file.
-
-
-NOTE: There is a distinct semantic difference between these two statements:
-
-    $var$ += -1
-    $var$ -= 1
-
-The latter is a "spend" operation, best used in a condition, and will never take the
-variable below zero. The former is simple arithmetic, and uses both positive and
-negative values freely.
