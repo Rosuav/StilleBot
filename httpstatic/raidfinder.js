@@ -12,7 +12,7 @@ const chat_restrictions = [
 	["unique_chat_mode", "Unique chat (R9k) mode", 1],
 ];
 const want_streaminfo = { }; //Channel IDs that we don't yet know about chat restrictions for
-const CCL_Notify = 0, CCL_Warn = -1, CCL_Blur = -2, CCL_Hide = -3;
+const CCL_Notify = 0, CCL_Warn = -1, CCL_Blur = -2, CCL_Suppress = -3;
 
 const sortfunc = {
 	Magic: (s1, s2) => s2.recommend - s1.recommend,
@@ -387,7 +387,11 @@ function render_stream_tiles(streams) {
 			title: "Raid " + stream.user_name + "!"},
 				IMG({class: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v1/62836/1.0"}));
 	}
-	return streams.map(stream => stream.element = DIV({className: describe_size(stream) + " " + (stream.highlight ? "highlighted" : "")},
+	let strongest_ccl;
+	return streams.map(stream => stream.element = DIV({
+			className: describe_size(stream) + " " + (stream.highlight ? "highlighted" : ""),
+			".hidden": (strongest_ccl = Math.min(0, ...(stream.content_classification_labels||[]).map(lbl => tag_prefs["<CCL_" + lbl + ">"] || 0))) <= CCL_Suppress,
+		},
 		mode === "allfollows" ? [
 			//Cut-down view for channels that might be offline.
 			A({href: "https://twitch.tv/" + stream.login}, [
@@ -417,7 +421,7 @@ function render_stream_tiles(streams) {
 			]),
 			A({href: stream.url}, IMG({
 				src: stream.thumbnail_url.replace("{width}", 320).replace("{height}", 180),
-				style: stream.content_classification_labels?.some(lbl => tag_prefs["<CCL_" + lbl + ">"] <= CCL_Blur) ? "filter: blur(5px)" : "",
+				style: strongest_ccl <= CCL_Blur ? "filter: blur(5px)" : "",
 			})),
 			DIV({className: "inforow"}, [
 				DIV({className: "img"}, A({href: stream.url}, IMG({className: "avatar", src: stream.profile_image_url}))),
