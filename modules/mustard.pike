@@ -1,5 +1,6 @@
 //Eventually this will be folded into the core, but for now, it's a
 //stand-alone script that just parses and synthesizes MustardScript.
+inherit annotated;
 
 Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file("modules/mustard.grammar");
 void throw_errors(int level, string subsystem, string msg, mixed ... args) {if (level >= 2) error(msg, @args);}
@@ -54,10 +55,10 @@ mapping setvar(string varname, string oper, mixed value) {
 
 constant KEYWORDS = (<"if", "else", "in", "test", "try", "catch", "cooldown">);
 
-mixed /* echoable_message */ parse_mustard(string|Stdio.Buffer mustard) {
+echoable_message parse_mustard(string|Stdio.Buffer mustard) {
 	if (stringp(mustard)) mustard = Stdio.Buffer(string_to_utf8(mustard));
 	mustard->read_only();
-	//parser->set_error_handler(throw_errors);
+	parser->set_error_handler(throw_errors);
 	array|string next() {
 		mustard->sscanf("%*[ \t\r\n;]");
 		if (!sizeof(mustard)) return "";
@@ -110,7 +111,7 @@ string atom(string value) {
 	return quoted_string(value);
 }
 
-void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mapping state, int|void skipblock) {
+void _make_mustard(echoable_message message, Stdio.Buffer out, mapping state, int|void skipblock) {
 	if (!message) return;
 	if (stringp(message)) {out->sprintf("%s%s\n", state->indent * state->indentlevel, quoted_string(message)); return;}
 	if (arrayp(message)) {
@@ -207,7 +208,7 @@ void _make_mustard(mixed /* echoable_message */ message, Stdio.Buffer out, mappi
 	if (block) out->sprintf("%s}\n", state->indent * --state->indentlevel);
 }
 
-string make_mustard(mixed /* echoable_message */ message) {
+string make_mustard(echoable_message message) {
 	mapping state = (["indent": "    ", "indentlevel": 0]);
 	Stdio.Buffer out = Stdio.Buffer();
 	if (mappingp(message)) {
@@ -264,7 +265,6 @@ void run_test(string arg, int|void quiet) {
 	if (has_suffix(arg, ".json")) {
 		mixed data = Standards.JSON.decode_utf8(Stdio.read_file(arg));
 		if (mappingp(data) && data->login) {
-			parser->set_error_handler(throw_errors);
 			//Round-trip testing of an entire channel's commands
 			foreach (sort(indices(data->commands || ({ }))), string cmd) if (mixed ex = catch {
 				mixed orig = data->commands[cmd];
@@ -312,6 +312,8 @@ void run_test(string arg, int|void quiet) {
 }
 
 protected void create(string name) {
+	::create(name);
+	G->G->mustard = this;
 	//QUIRK: An action attached to a rule with no symbols (eg "flags: {makeflags};") is
 	//interpreted as a callable string instead of a lookup into the action object. So we
 	//redefine it.
