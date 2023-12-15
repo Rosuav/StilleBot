@@ -11,9 +11,9 @@
 >
 > Allow suggestions? <label><input type=radio name=raidsuggestions data-tagid="<raidsuggestions>" class=liketag> Yes, from anyone</label> <label><input type=radio name=raidsuggestions data-tagid="<raidsuggestions>" class=disliketag> No suggestions</label>
 >
-> Content Classification Labels | Warn? | Blur thumbnail?
-> ------------------------------|-------|----------------
-$$ccl_options||> - | - | (not available)$$
+> Content Classification Labels | Notify | Warn | Blur thumbnail | Suppress
+> ------------------------------|--------|------|----------------|----------
+$$ccl_options||> - | - | - | - | (not available)$$
 > {: #prefs_ccls}
 >
 {: tag=dialog #tags}

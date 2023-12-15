@@ -643,7 +643,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 		//Assume CCLs seldom change. Currently no cache purge option.
 		array ccls = yield(twitch_api_request("https://api.twitch.tv/helix/content_classification_labels"))->data;
 		G->G->ccl_names = mkmapping(ccls->id, ccls->name);
-		G->G->ccl_options_table = sprintf("> %s | <input type=checkbox name=CCL_Warn_%s> | <input type=checkbox name=CCL_Blur_%<s>\n", ccls->name[*], ccls->id[*]) * "";
+		G->G->ccl_options_table = sprintf("> %s | <input type=radio name=CCL_%s value=0> | <input type=radio name=CCL_%<s value=-1> | <input type=radio name=CCL_%<s value=-2> | <input type=radio name=CCL_%<s value=-3>\n", ccls->name[*], ccls->id[*]) * "";
 	}
 	return render(req, ([
 		"vars": ([

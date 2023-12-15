@@ -12,6 +12,7 @@ const chat_restrictions = [
 	["unique_chat_mode", "Unique chat (R9k) mode", 1],
 ];
 const want_streaminfo = { }; //Channel IDs that we don't yet know about chat restrictions for
+const CCL_Notify = 0, CCL_Warn = -1, CCL_Blur = -2, CCL_Hide = -3;
 
 const sortfunc = {
 	Magic: (s1, s2) => s2.recommend - s1.recommend,
@@ -51,7 +52,7 @@ function uptime(startdate) {return hms(Math.floor((new Date() - new Date(startda
 async function show_vod_lengths(userid, vodid, startdate, ccls) {
 	set_content("#is_following", "");
 	set_content("#chat_restrictions", "");
-	set_content("#ccls_in_use", ccls.map(ccl => [tag_prefs["<CCL_Warn_" + ccl + ">"] ? "⚠️" : "🏷️", ccl_names[ccl] || ccl]));
+	set_content("#ccls_in_use", ccls.map(ccl => [tag_prefs["<CCL_" + ccl + ">"] <= CCL_Warn ? "⚠️" : "🏷️", ccl_names[ccl] || ccl]));
 	set_content("#vods", LI("... loading VODs ..."));
 	DOM("#vodlengths").showModal();
 	const info = typeof userid === "object" ? userid :
@@ -235,9 +236,9 @@ function update_tag_display() {
 		if (tag_prefs["<" + pref + ">"] < 0) DOM("#tags input[name=" + pref + "].disliketag").checked = true;
 		else DOM("#tags input[name=" + pref + "].liketag").checked = true;
 	});
-	Object.keys(ccl_names).forEach(ccl => ["Warn", "Blur"].forEach(action => {
-		const pref = "CCL_" + action + "_" + ccl;
-		DOM("#tags input[name=" + pref + "]").checked = tag_prefs["<" + pref + ">"] < 0;
+	Object.keys(ccl_names).forEach(ccl => ["🏷️ Notify", "⚠️ Warn", "Blur", "Hide"].forEach(action => {
+		const pref = "CCL_" + ccl;
+		DOM("#tags input[name=" + pref + "][value=\"" + (tag_prefs["<" + pref + ">"]||0) + "\"").checked = true;
 	}));
 }
 function like_dislike(e, delta) {
@@ -263,7 +264,7 @@ function update_tagpref(tagid, newpref) {
 }
 on("click", ".liketag", e => update_tagpref(e, 1));
 on("click", ".disliketag", e => update_tagpref(e, -1));
-on("click", "input[type=checkbox][name^=CCL_]", e => update_tagpref("<" + e.match.name + ">", e.match.checked ? -1 : 0));
+on("click", "input[type=radio][name^=CCL_]", e => update_tagpref("<" + e.match.name + ">", e.match.value));
 
 //TODO: Have a quick way to promote/demote a tag that you see in your follow list
 DOM("#tagprefs").onclick = () => {update_tag_display(); DOM("#tags").showModal();}
@@ -286,7 +287,7 @@ function describe_uptime(stream, el) {
 	});
 	let ccls = null;
 	if (stream.content_classification_labels?.length) {
-		let warnccls = stream.content_classification_labels.filter(lbl => tag_prefs["<CCL_Warn_" + lbl + ">"] < 0);
+		let warnccls = stream.content_classification_labels.filter(lbl => tag_prefs["<CCL_" + lbl + ">"] <= CCL_Warn);
 		if (warnccls.length) ccls = SPAN({title: "CCLs: " + warnccls.join(", ")}, "⚠️");
 		else ccls = SPAN({title: "CCLs: " + stream.content_classification_labels.join(", ")}, "🏷️");
 	}
@@ -416,7 +417,7 @@ function render_stream_tiles(streams) {
 			]),
 			A({href: stream.url}, IMG({
 				src: stream.thumbnail_url.replace("{width}", 320).replace("{height}", 180),
-				style: stream.content_classification_labels?.some(lbl => tag_prefs["<CCL_Blur_" + lbl + ">"] < 0) ? "filter: blur(5px)" : "",
+				style: stream.content_classification_labels?.some(lbl => tag_prefs["<CCL_" + lbl + ">"] <= CCL_Blur) ? "filter: blur(5px)" : "",
 			})),
 			DIV({className: "inforow"}, [
 				DIV({className: "img"}, A({href: stream.url}, IMG({className: "avatar", src: stream.profile_image_url}))),
