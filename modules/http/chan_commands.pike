@@ -228,7 +228,7 @@ void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) ms
 		//TODO: Do this properly somehow.
 		valid[1] = G->G->mustard->make_mustard(valid[1]);
 	}
-	string cmdname = ((valid[0] || msg->cmdname || "validateme") / "#")[0];
+	string cmdname = ((msg->cmdname || valid[0] || "validateme") / "#")[0];
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[1]]), 4));
 }
 
