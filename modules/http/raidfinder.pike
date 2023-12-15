@@ -90,7 +90,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 	if (req->request_type == "POST")
 	{
 		//Update notes
-		if (mapping resp = ensure_login(req, "user_read")) return (["error": 401]);
+		if (mapping resp = ensure_login(req)) return (["error": 401]);
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body) || !intp(body->id)) return (["error": 400]);
 		string newnotes = body->notes || "";
@@ -400,7 +400,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 			//Team may be an array (team=X&team=Y), a comma-separated list (team=X,Y - also
 			//the obvious form team=X counts as this), or blank (team=) meaning "my teams".
 			if (team == "") {
-				if (mapping resp = ensure_login(req, "user_read")) return resp;
+				if (mapping resp = ensure_login(req)) return resp;
 				team = yield(twitch_api_request("https://api.twitch.tv/helix/teams/channel?broadcaster_id=" + userid))->data->team_name || ({ });
 			}
 			else if (stringp(team)) team /= ",";
@@ -459,7 +459,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 				//Else fall through. Any sort of junk category name, treat it as if it's "?categories"
 			}
 			case "": case "categories": { //For ?categories and ?categories= modes, show those you follow
-				if (mapping resp = ensure_login(req, "user_read")) return resp;
+				if (mapping resp = ensure_login(req)) return resp;
 				args->game_id = persist_status->path("user_followed_categories")[req->misc->session->user->id] || ({ });
 				title = "Followed categories";
 				catfollow = "<button id=followcategory data-action=show data-cats=\"" + args->game_id * "," + "\">💜 All followed categories</button><br>";
