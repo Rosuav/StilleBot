@@ -385,7 +385,8 @@ echoable_message _validate_toplevel(echoable_message resp, mapping state)
 }
 
 //mode is "" for regular commands, "!!" for specials, "!!trigger" for triggers.
-array validate_command(object channel, string|zero mode, string cmdname, echoable_message response, string|void original) {
+array validate_command(object channel, string|zero mode, string cmdname, echoable_message response, mapping|void options) {
+	if (!options) options = ([]);
 	mapping state = (["cdanon": 0, "cooldowns": ([]), "channel": channel]);
 	switch (mode) {
 		case "!!trigger": {
@@ -429,7 +430,7 @@ array validate_command(object channel, string|zero mode, string cmdname, echoabl
 			if (pfx == "!" && !SPECIAL_NAMES[command]) command = 0; //Only specific specials are valid
 			if (pfx == "") {
 				//See if an original name was provided
-				sscanf(original || "", "%*[!]%s%*[#]", string orig);
+				sscanf(options->original || "", "%*[!]%s%*[#]", string orig);
 				orig = String.trim(lower_case(orig));
 				if (orig != "") state->original = orig + channel->name;
 			}
@@ -589,8 +590,8 @@ void _save_echocommand(string cmd, echoable_message response, mapping|void extra
 }
 
 //Validate and update. TODO: Use this instead of make_echocommand everywhere.
-void update_command(object channel, string command, string cmdname, echoable_message response, string|void original) {
-	array valid = validate_command(channel, command, cmdname, response, original);
+void update_command(object channel, string command, string cmdname, echoable_message response, mapping|void options) {
+	array valid = validate_command(channel, command, cmdname, response, options);
 	if (valid) _save_echocommand(@valid);
 }
 
