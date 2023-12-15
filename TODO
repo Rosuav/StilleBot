@@ -302,3 +302,6 @@
   "Undo" feature?? It's now very possible to accidentally delete slabs of content,
   or even the entire command.
 * Add a builtin to manage (not just respond to) channel setup
+* MustardScript enhancements
+  - Look into making a syntax highlighter config
+  - Can "else" please become optional??

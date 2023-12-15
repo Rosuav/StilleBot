@@ -115,7 +115,7 @@ function select_tab(tab, response) {
 			set_content("#command_details", [
 				P([A({href: "https://rosuav.github.io/StilleBot/MustardScript"}, "MustardScript"), " is StilleBot's scripting language."]),
 				DIV({style: "border: 1px solid black; padding: 0.25em;"},
-					DIV({id: "mustardscript", style: "width: 100%; height: 500px;"}),
+					DIV({id: "mustardscript", style: "width: 900px; height: 500px;"}),
 				),
 			]);
 			mustard_editor = window.ace.edit(DOM("#mustardscript"), {
