@@ -1,6 +1,8 @@
 //Command advanced editor framework, and Script and Raw mode editors
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {ABBR, B, BR, BUTTON, CANVAS, CODE, DIALOG, DIV, EM, FORM, H3, HEADER, INPUT, LABEL, LI, P, SECTION, SPAN, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
+import "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.min.js"; //Editor for MustardScript
+window.ace.config.set("basePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/");
 const tablist = ["Classic", "Graphical", "Mustard", "Raw"];
 let defaulttab = "graphical"; //Can be overridden with prefs
 document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
@@ -68,12 +70,12 @@ export const commands = { }; //Deprecated. Need to try to not have this exported
 const config = {get_command_basis: cmd => ({ })};
 export function cmd_configure(cfg) {Object.assign(config, cfg);}
 
-let cmd_editing = null, mode = "", cmd_id = "", cmd_basis = { };
+let cmd_editing = null, mode = "", cmd_id = "", cmd_basis = { }, mustard_editor = null;
 function get_message_details() {
 	switch (mode) {
 		case "classic": return cls_save_message();
 		case "graphical": return gui_save_message();
-		case "mustard": return DOM("#mustardscript").value;
+		case "mustard": return mustard_editor.getValue();
 		case "raw": {
 			let response;
 			try {response = JSON.parse(DOM("#raw_text").value);}
@@ -109,10 +111,19 @@ function select_tab(tab, response) {
 			try_gui_load_message(cmd_basis, cmd_editing);
 			break;
 		}
-		case "mustard": set_content("#command_details", [
-			P("MustardScript is StilleBot's scripting language."),
-			TEXTAREA({id: "mustardscript", rows: 25, cols: 100}, cmd_editing),
-		]); break;
+		case "mustard": {
+			set_content("#command_details", [
+				P("MustardScript is StilleBot's scripting language."),
+				DIV({style: "border: 1px solid black; padding: 0.25em;"},
+					DIV({id: "mustardscript", style: "width: 100%; height: 500px;"}),
+				),
+			]);
+			mustard_editor = window.ace.edit(DOM("#mustardscript"), {
+				selectionStyle: "text",
+				value: response,
+			});
+			break;
+		}
 		case "raw": set_content("#command_details", [
 			P("Copy and paste entire commands in JSON format. Make changes as desired!"),
 			DIV({className: "error", id: "raw_error"}),
