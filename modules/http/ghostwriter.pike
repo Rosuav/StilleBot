@@ -126,8 +126,8 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	return "Not your data";
 }
 
+#ifndef NERF
 EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string chanid, mapping event] = __ARGS__;
-	#ifndef NERF
 	//Mark the channel as just-gone-offline. That way, we won't attempt to
 	//host it while it's still shutting down.
 	channel_seen_offline[(int)chanid] = time();
@@ -135,8 +135,8 @@ EventSub stream_offline = EventSub("gw_offline", "stream.offline", "1") {[string
 	foreach (chanstate; string id; mapping st) {
 		if (st->hostingid == chanid) recalculate_soon(id);
 	}
-	#endif
 };
+#endif
 
 void scheduled_recalculation(string chanid) {
 	if (G->G->ghostwritercallouts[""] != hash_value(this)) return; //Code's been updated. Don't do anything.
@@ -241,7 +241,9 @@ continue Concurrent.Future|string update_status(string chanid) {
 		targets = ({id});
 		st->hostingid = id;
 		//Make sure we get notified when that channel goes offline
+		#ifndef NERF
 		stream_offline(id, (["broadcaster_user_id": (string)id]));
+		#endif
 	}
 	else if (st->statustype != "idle") {
 		//If we're live, paused, or in any other yet-to-be-invented state, the only thing we want
