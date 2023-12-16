@@ -731,6 +731,12 @@ void check_hooks(array eventhooks)
 			twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
 				([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
 		}
+		else if (handler->have_subs[arg]) {
+			//This shouldn't happen. Not sure how a bunch of adbreak hooks got re-added.
+			write("Deleting duplicate eventhook: %O=%O\n", type, arg);
+			twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
+				([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
+		}
 		else handler->have_subs[arg] = 1;
 	}
 
