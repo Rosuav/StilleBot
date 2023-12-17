@@ -639,7 +639,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 	sort(all_raids->time, all_raids);
 	follows_helix -= ({0}); //Remove self (already nulled out)
 	sort(-follows_helix->recommend[*], follows_helix); //Sort by magic initially
-	if (!G->G->ccl_options) {
+	if (!G->G->ccl_options_table) {
 		//Assume CCLs seldom change. Currently no cache purge option.
 		array ccls = yield(twitch_api_request("https://api.twitch.tv/helix/content_classification_labels"))->data;
 		G->G->ccl_names = mkmapping(ccls->id, ccls->name);
