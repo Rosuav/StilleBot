@@ -302,6 +302,11 @@
   "Undo" feature?? It's now very possible to accidentally delete slabs of content,
   or even the entire command.
 * Add a builtin to manage (not just respond to) channel setup
+  - Also useful: a special trigger on hype train start, level up, end
+  - Combining these two: "!hypetitle HYPE TRAIN HAPPENING":
+    - Record current title in a variable
+    - Set title to {param}
+    - On hype train end, if variable non-blank, set title to variable and blank it
 * MustardScript enhancements
   - Look into making a syntax highlighter config
   - Can "else" please become optional??
