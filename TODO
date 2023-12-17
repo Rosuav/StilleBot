@@ -301,7 +301,7 @@
 * Whenever you save/overwrite a command, log the previous version somewhere for an
   "Undo" feature?? It's now very possible to accidentally delete slabs of content,
   or even the entire command.
-* Create special triggers for hype trains: start, level up, end
+* Create special triggers for hype trains: start, level up, end, maybe cooldown done
   - Example usage: "!hypetitle HYPE TRAIN HAPPENING":
     - On command, set stream title to {param}, set $prevtitle?$ to {prevtitle}
     - On hype train end, if $prevtitle?$, set title to $prevtitle?$, clear variable.
