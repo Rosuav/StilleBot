@@ -180,7 +180,7 @@ class EventSubSpecial(function get_params) {
 		if (flg) foreach (flg / " ", string f) flags[f] = 1;
 	}
 	void send_special(string chan, mapping info) {
-		object channel = G->G->irc->channels["#" + chan];
+		object channel = flags->uid ? G->G->irc->id[(int)chan] : G->G->irc->channels["#" + chan];
 		if (!channel) return;
 		mapping params = get_params(channel, info);
 		if (params) channel->trigger_special("!" + hookname, ([
