@@ -116,7 +116,7 @@ mapping hypetrain(string hook, object channel, mapping info) {
 	G->G->websocket_types->hypetrain->hypetrain_progression(hook, "", info);
 	string levelup = "";
 	if (hook == "begin" || (int)info->level != last_seen_hype_level[channel->userid]) {
-		levelup = (string)((int)info->level - 1); //The level achieved
+		if ((int)info->level > 1) levelup = (string)((int)info->level - 1); //The level achieved
 		last_seen_hype_level[channel->userid] = (int)info->level;
 	}
 	return ([
