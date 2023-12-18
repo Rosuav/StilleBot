@@ -120,6 +120,13 @@ mapping(string:mixed) redirect_no_s(Protocols.HTTP.Server.Request req, string ta
 	return redirect(sprintf("/channels/%s", tail), 301);
 }
 
+mapping(string:mixed) your_channel(Protocols.HTTP.Server.Request req, string tail) {
+	//Redirect /c/commands to /channels/YOURNAME/commands
+	string user = req->misc->session->?user->?login;
+	if (!G->G->irc->channels["#" + user]) user = "demo";
+	return redirect(sprintf("/channels/%s/%s", user, tail), 302); //Not a 301, since it depends on the user
+}
+
 mapping(string:string|array) safe_query_vars(mapping(string:string|array) vars, mixed ... args) {
 	if (sizeof(args) != 2) return 0;
 	function handler = G->G->http_endpoints["chan_" + args[1]];
@@ -133,4 +140,5 @@ protected void create(string name)
 	G->G->http_endpoints["/channels/%[^/]"] = redirect_no_slash;
 	G->G->http_endpoints["/channel/%[^\n]"] = redirect_no_s;
 	G->G->http_endpoints["/channels/%[^/]/%[^/]"] = find_channel;
+	G->G->http_endpoints["/c/%[^/]"] = your_channel;
 }
