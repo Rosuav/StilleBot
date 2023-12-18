@@ -51,15 +51,11 @@ continue mapping|Concurrent.Future parse_hype_status(mapping data)
 	return state;
 }
 
-void hypetrain_progression(string status, string chan, mapping info)
-{
+//Triggered by the hooks in eventhooks.pike
+void hypetrain_progression(string status, string chan, mapping info) {
 	//Stdio.append_file("evthook.log", sprintf("EVENT: Hype %s [%O, %d]: %O\n", status, chan, time(), info));
 	spawn_task(parse_hype_status(info)) {send_updates_all(info->broadcaster_user_login, @__ARGS__);};
 }
-
-EventSub hypetrain_begin = EventSub("hypetrain_begin", "channel.hype_train.begin", "1") {hypetrain_progression("begin", @__ARGS__);};
-EventSub hypetrain_progress = EventSub("hypetrain_progress", "channel.hype_train.progress", "1") {hypetrain_progression("progress", @__ARGS__);};
-EventSub hypetrain_end = EventSub("hypetrain_end", "channel.hype_train.end", "1") {hypetrain_progression("end", @__ARGS__);};
 
 continue mapping|Concurrent.Future get_state(int|string chan)
 {
@@ -74,9 +70,7 @@ continue mapping|Concurrent.Future get_state(int|string chan)
 		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + uid,
 				(["Authorization": "Bearer " + token_for_user_id(uid)[0]])));
 		//If there's an error fetching events, don't set up hooks
-		hypetrain_begin(uid, (["broadcaster_user_id": uid]));
-		hypetrain_progress(uid, (["broadcaster_user_id": uid]));
-		hypetrain_end(uid, (["broadcaster_user_id": uid]));
+		G->G->specials_check_modular_hooks((["login": chan, "userid": uid]), "hypetrain");
 		mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
 		return yield((mixed)parse_hype_status(data));
 	};

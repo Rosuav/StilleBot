@@ -18,6 +18,10 @@ constant SPECIALS = ({
 	({"!cheerbadge", ({"A viewer attains a new cheer badge", "The cheerer", "level"}), "Stream support"}),
 	({"!raided", ({"Another broadcaster raided you", "The raiding broadcaster", "viewers"}), "Stream support"}),
 	({"!charity", ({"Someone donates to the charity you're supporting", "The donor", "amount, msgid"}), "Stream support"}),
+	//Do these need to move somewhere else? Also - check their provides, it may be added to soon.
+	({"!hypetrain_begin", ({"A hype train just started!", "The broadcaster", ""}), "Stream support"}),
+	({"!hypetrain_progress", ({"Progress was made on a hype train", "The broadcaster", ""}), "Stream support"}),
+	({"!hypetrain_end", ({"A hype train just ended (successfully or unsuccessfully)", "The broadcaster", ""}), "Stream support"}),
 
 	({"!channelonline", ({"The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
 	({"!channelsetup", ({"The channel is online and has recently changed its category/title/tags", "The broadcaster", "category, title, tag_names, ccls"}), "Status"}),

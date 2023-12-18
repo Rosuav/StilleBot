@@ -14,6 +14,18 @@ inherit annotated;
 //the parameters are all listed correctly. The scopes are automatically provided by this
 //file but the special and its description come from addcmd.
 
+//The annotation has three required parts, the scopes (pipe delimited - any is acceptable),
+//the subscription type, and the version. An optional fourth parameter provides some blank
+//delimited flags, which have the following meanings:
+//always  - Create this hook even if the corresponding special does not exist. Useful if the
+//          hook provides other functionality than simply executing the special.
+//modular - This hook, possibly as part of a set of hooks, can be activated by some other
+//          module, even with the bot not being active in the channel. See details in
+//          specials_check_modular_hooks. Hooks are identified by name, or by group, with
+//          the latter being identified by an additional flag (not listed in this table).
+//uid     - Use the broadcaster user ID as the hook parameter
+//login   - Use the broadcaster login as the hook parameter (currently the default)
+
 @({"channel:read:polls|channel:manage:polls", "channel.poll.begin", "1"}):
 mapping pollbegin(object channel, mapping info) {
 	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
@@ -98,6 +110,19 @@ mapping adbreak(object channel, mapping info) {
 	]);
 }
 
+mapping hypetrain(string hook, object channel, mapping info) {
+	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
+	G->G->websocket_types->hypetrain->hypetrain_progression(hook, "", info);
+	return ([]); //TODO: Provide information. For now, just use the builtin.
+}
+
+@({"channel:read:hype_train", "channel.hype_train.begin", "1", "uid modular hypetrain"}):
+mapping hypetrain_begin(object channel, mapping info) {return hypetrain("begin", channel, info);}
+@({"channel:read:hype_train", "channel.hype_train.progress", "1", "uid modular hypetrain"}):
+mapping hypetrain_progress(object channel, mapping info) {return hypetrain("progress", channel, info);}
+@({"channel:read:hype_train", "channel.hype_train.end", "1", "uid modular hypetrain"}):
+mapping hypetrain_end(object channel, mapping info) {return hypetrain("end", channel, info);}
+
 mapping eventsubs = ([]);
 
 //Ensure that we have all appropriate hooks for this channel (provide channel->config or equivalent)
@@ -107,9 +132,32 @@ void specials_check_hooks(mapping cfg) {
 	foreach (G->G->SPECIALS_SCOPES; string special; array scopesets) {
 		foreach (scopesets, array scopeset) {
 			if (!has_value(scopes[scopeset[*]], 0)) { //If there isn't any case of a scope that we don't have... then we have them all!
+				multiset flg = eventsubs[special]->flags;
 				if (cfg->commands[?"!" + special] //If there's a special of this name, we need the hook.
-						|| eventsubs[special]->flags->always) //If the eventsub has other functionality, we need the hook.
-					eventsubs[special](chan, this[special](0, (["__condition": cfg])));
+						|| flg->always) //If the eventsub has other functionality, we need the hook.
+					eventsubs[special](flg->uid ? (string)cfg->userid : chan, this[special](0, (["__condition": cfg])));
+				break;
+			}
+		}
+	}
+}
+
+//Check for the specific modular hooks needed. Specify the group either as a hook name, or
+//a flag that all the interesting hooks will have. The given config mapping MUST have a
+//userid attribute; anything else is not guaranteed and is negotiated by the caller and
+//hook function. If the hook has the 'login' flag (and not the 'uid' flag), cfg must also
+//include a login. (For now, ALWAYS include login, but that will become optional once
+//tokens are tied to IDs instead of logins.)
+void specials_check_modular_hooks(mapping cfg, string group) {
+	string login = cfg->login, uid = (string)cfg->userid;
+	multiset scopes = (multiset)(token_for_user_login(cfg->login)[1] / " "); //TODO: Switch to user ID to ensure this remains synchronous
+	foreach (G->G->SPECIALS_SCOPES; string special; array scopesets) {
+		multiset flg = eventsubs[special]->flags;
+		if (!flg->modular) continue;
+		foreach (scopesets, array scopeset) {
+			if (!has_value(scopes[scopeset[*]], 0)) { //If there isn't any case of a scope that we don't have... then we have them all!
+				if (special == group || flg[group])
+					eventsubs[special](flg->uid ? uid : login, this[special](0, (["__condition": cfg])));
 				break;
 			}
 		}
@@ -148,4 +196,5 @@ protected void create(string name) {
 	}
 	specials_check_hooks(list_channel_configs()[*]);
 	G->G->specials_check_hooks = specials_check_hooks;
+	G->G->specials_check_modular_hooks = specials_check_modular_hooks;
 }
