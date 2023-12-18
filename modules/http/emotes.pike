@@ -100,7 +100,7 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 				m_delete(sets, id);
 			} else {
 				//There's animated but no static for this group. Just remove the tag.
-				sets[id][1] -= " Animated";
+				sets[id][0] -= " Animated";
 			}
 		}
 		//Also fetch the badges. They're intrinsically at a different size, but they'll be stretched to the same size.
