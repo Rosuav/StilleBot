@@ -434,7 +434,8 @@ array validate_command(object channel, string|zero mode, string cmdname, echoabl
 			if (pfx == "!" && !SPECIAL_NAMES[command]) command = 0; //Only specific specials are valid
 			if (pfx == "") {
 				//See if an original name was provided
-				sscanf(options->original || "", "%*[!]%s%*[#]", string orig);
+				string orig = "";
+				if (options->original) sscanf(options->original, "%*[!]%s%*[#]", orig);
 				orig = String.trim(lower_case(orig));
 				if (orig != "") state->original = orig + channel->name;
 			}
