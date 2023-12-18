@@ -110,10 +110,18 @@ mapping adbreak(object channel, mapping info) {
 	]);
 }
 
+@retain: mapping(int:int) last_seen_hype_level = ([]);
 mapping hypetrain(string hook, object channel, mapping info) {
 	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
 	G->G->websocket_types->hypetrain->hypetrain_progression(hook, "", info);
-	return ([]); //TODO: Provide information. For now, just use the builtin.
+	string levelup = "";
+	if (hook == "begin" || (int)info->level != last_seen_hype_level[channel->userid]) {
+		levelup = (string)((int)info->level - 1); //The level achieved
+		last_seen_hype_level[channel->userid] = (int)info->level;
+	}
+	return ([
+		"{levelup}": levelup,
+	]);
 }
 
 @({"channel:read:hype_train", "channel.hype_train.begin", "1", "uid modular hypetrain"}):

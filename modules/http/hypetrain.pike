@@ -181,7 +181,9 @@ constant vars_provided = ([
 	"{subs_conduct}": "Either Nobody or the name of the current conductor for subs",
 	"{bits_conduct}": "Either Nobody or the name of the current conductor for bits",
 	"{expires}": "Minutes:Seconds until the hype train runs out of time (only if Active)",
+	"{expires_secs}": "Total number of seconds until the hype train runs out of time",
 	"{cooldown}": "Minutes:Seconds until the next hype train can start (only if Cooldown)",
+	"{cooldown_secs}": "Total number of seconds until the next hype train",
 ]);
 
 string fmt_contrib(mapping c) {
@@ -208,6 +210,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 			"{needbits}": (string)(state->goal - state->total),
 			"{needsubs}": (string)((state->goal - state->total + 499) / 500),
 			"{expires}": sprintf("%02d:%02d", tm / 60, tm % 60),
+			"{expires_secs}": (string)tm,
 			"{conductors}": allcond, "{subs_conduct}": conductors->SUBS, "{bits_conduct}": conductors->BITS,
 		]);
 	} else if (state->cooldown) {
@@ -218,6 +221,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 			"{total}": (string)state->total,
 			"{goal}": (string)state->goal,
 			"{cooldown}": sprintf("%02d:%02d", tm / 60, tm % 60),
+			"{cooldown_secs}": (string)tm,
 			"{conductors}": allcond, "{subs_conduct}": conductors->SUBS, "{bits_conduct}": conductors->BITS,
 		]);
 	} else return (["{state}": "idle"]);

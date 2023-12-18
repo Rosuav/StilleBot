@@ -19,8 +19,8 @@ constant SPECIALS = ({
 	({"!raided", ({"Another broadcaster raided you", "The raiding broadcaster", "viewers"}), "Stream support"}),
 	({"!charity", ({"Someone donates to the charity you're supporting", "The donor", "amount, msgid"}), "Stream support"}),
 	//Do these need to move somewhere else? Also - check their provides, it may be added to soon.
-	({"!hypetrain_begin", ({"A hype train just started!", "The broadcaster", ""}), "Stream support"}),
-	({"!hypetrain_progress", ({"Progress was made on a hype train", "The broadcaster", ""}), "Stream support"}),
+	({"!hypetrain_begin", ({"A hype train just started!", "The broadcaster", "levelup"}), "Stream support"}),
+	({"!hypetrain_progress", ({"Progress was made on a hype train", "The broadcaster", "levelup"}), "Stream support"}),
 	({"!hypetrain_end", ({"A hype train just ended (successfully or unsuccessfully)", "The broadcaster", ""}), "Stream support"}),
 
 	({"!channelonline", ({"The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
@@ -102,6 +102,7 @@ constant SPECIAL_PARAMS = ({
 	({"ban_duration", "Number of seconds the person got timed out for, or 0 for ban"}),
 	({"length", "How many seconds it will last for"}),
 	({"is_automatic", "Whether it was triggered automatically rather than manually"}),
+	({"levelup", "Level number the hype train just reached, or blank if it didn't"}),
 });
 
 //Convert a number of minutes into a somewhat randomized number of seconds
