@@ -323,11 +323,13 @@ echoable_message _validate_recursive(echoable_message resp, mapping state)
 		//content isn't very helpful, but Log absolutely would be).
 		return "";
 	}
-	//Delays are integer seconds. We'll permit a string of digits, since that might be
-	//easier for the front end.
-	if (resp->delay && resp->delay != "0" &&
-			(intp(resp->delay) || (sscanf((string)resp->delay, "%[0-9]", string d) && d == resp->delay)))
-		ret->delay = (int)resp->delay;
+	//Delays are either integer seconds, or a string representing that delay. If it looks
+	//like a string of digits, store it as an integer to save the execution some work.
+	if (resp->delay && resp->delay != "0" && (intp(resp->delay) || stringp(resp->delay))) {
+		int|string delay = resp->delay;
+		if (stringp(delay) && sscanf(delay, "%[0-9]", string d) && d == delay) delay = (int)delay;
+		ret->delay = delay;
+	}
 
 	if (ret->mode == "rotate") {
 		//Anonymous rotations, like anonymous cooldowns, get named for the back end only.

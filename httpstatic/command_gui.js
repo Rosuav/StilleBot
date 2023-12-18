@@ -390,6 +390,11 @@ const types = {
 		params: [{attr: "delay", label: "Delay (seconds)", values: [1, 86400, 1]}],
 		typedesc: "Delay message(s) by a certain length of time",
 	},
+	delay_custom: {
+		color: "#77ee77", children: ["message"], label: el => `Delay '${el.delay}' seconds`,
+		params: [{attr: "delay", label: "Delay (seconds)", values: required}],
+		typedesc: "Delay message(s) by a certain length of time - variables may be used here",
+	},
 	voice: {
 		color: "#bbbb33", children: ["message"], label: el => "Voice: " + (voices_available[el.voice] || el.voice),
 		params: [{attr: "voice", label: "Voice", values: Object.keys(voices_available), selections: voices_available}],

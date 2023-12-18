@@ -445,9 +445,12 @@ class channel(mapping config) {
 		if (!mappingp(message)) message = (["message": message]);
 		if (message->dest == "//") return; //Comments are ignored. Not even side effects.
 
-		if (message->delay)
-		{
-			call_out(_send_with_catch, (int)message->delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg);
+		if (message->delay && message->delay != "") {
+			int|string delay = message->delay;
+			if (!intp(delay)) delay = (int)_substitute_vars((string)delay, vars, person, cfg->users);
+			//Note that, if a string delay evaluates to zero - say, it has a bad variable
+			//reference that falls to blank - this will call_out zero, which should work fine.
+			call_out(_send_with_catch, delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg);
 			return;
 		}
 		if (message->_changevars)
