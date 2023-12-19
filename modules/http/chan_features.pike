@@ -18,6 +18,8 @@ Timezone: <input name=timezone size=30> [Set](:#settimezone)
 $$save_or_login||> [Export/back up all configuration](:type=submit name=export)
 {:tag=form method=post}$$
 
+<div id=featureauth></div>
+
 <style>
 :checked + abbr {background-color: #a0f0c0;}
 .no-wrap {white-space: nowrap;}

@@ -55,6 +55,11 @@ on("click", "input[type=checkbox].flag", e => {
 
 ws_sync.prefs_notify("notif_perms", perms => {
 	console.log("NOTIF PERMS:", perms);
+	const need = Object.keys(perms).filter(p => p !== "");
+	if (need.length) set_content("#featureauth", [
+		"Need some permissions to make everything work!",
+		BUTTON({type: "button", class: "twitchlogin", "data-scopes": need.join(" ")}, "Authenticate"),
+	]);
 });
 
 /* TODO: Replace this boring input+button with a nice dialog.
