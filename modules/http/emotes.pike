@@ -208,21 +208,49 @@ mapping analyze_emote(string raw) {
 	}
 	//Animating emotes with automated tools (including Twitch's own) doesn't work too well if you
 	//have any partial transparency.
-	object alpha = emote->alpha->clone();
+	object alpha, alphahalf, aqlight, aqdark;
 	int have_partial = 0;
-	for (int y = 0; y < alpha->ysize(); ++y) for (int x = 0; x < alpha->xsize(); ++x) {
-		int value = `+(@alpha->getpixel(x, y));
-		if (value > 0 && value < 255*3) {
-			have_partial = 1;
-			value = value < 128*3 ? 0 : 255;
-			alpha->setpixel(x, y, value, value, value);
+	for (int y = 0; y < emote->ysize; ++y) for (int x = 0; x < emote->xsize; ++x) {
+		int value = emote->alpha->getpixel(x, y)[0]; //Assumes that all three are set to the same value
+		if (value > 0 && value < 255) {
+			if (!have_partial) {
+				have_partial = 1;
+				//Copy the emote. The alpha channel gets set to either full or empty,
+				//and three versions are created: unchanged, folded towards light, and
+				//folded towards dark (where "light" and "dark" are white and #18181B).
+				alpha = emote->alpha->clone();
+				alphahalf = emote->alpha->clone();
+				aqlight = emote->image->clone();
+				aqdark = emote->image->clone();
+			}
+			int half = value < 128 ? 0 : 255;
+			int tight = value < 5 ? 0 : 255; //Tighter definition of "transparent" - anything under 2% becomes transparent, else solid
+			alphahalf->setpixel(x, y, half, half, half);
+			alpha->setpixel(x, y, tight, tight, tight);
+			if (tight) { //(otherwise the pixel colour is irrelevant)
+				array orig = emote->image->getpixel(x, y)[*] * value;
+				array light = ({255, 255, 255})[*] * (256 - value);
+				array dark = ({0x18, 0x18, 0x1B})[*] * (256 - value);
+				array newlight = light[*] + orig[*];
+				array newdark = dark[*] + orig[*];
+				if (x > 28 && y > 28 && x < 84 && y < 84)
+					werror("[%d,%d] Orig (%d)%{ %d%} Now%{ %d%} or%{ %d%}\n", x, y, value, emote->image->getpixel(x, y), newlight[*] / 256, newdark[*] / 256);
+				aqlight->setpixel(x, y, @(newlight[*] / 256));
+				aqdark->setpixel(x, y, @(newdark[*] / 256));
+			}
 		}
 	}
 	if (have_partial) {
 		ret->tips += ({"Image has partial transparency. This works in PNG files but not in GIFs, so this may have trouble with animations. Consider quantizing alpha levels if animating this emote."});
 		ret->downloads += ({([
 			"label": "Alpha-quantized",
-			"image": make_emote(emote->image, alpha),
+			"image": make_emote(emote->image, alphahalf),
+		]), ([
+			"label": "AQ Light",
+			"image": make_emote(aqlight, alpha),
+		]), ([
+			"label": "AQ Dark",
+			"image": make_emote(aqdark, alpha),
 		])});
 	}
 	return ret;
