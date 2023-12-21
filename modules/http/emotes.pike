@@ -42,7 +42,7 @@ constant markdown = #"# Emote tools, showcases and checklists
 #img_dl {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 5px;
+	gap: 15px;
 }
 #img_dl image {
 	width: 116px;
@@ -55,6 +55,7 @@ constant markdown = #"# Emote tools, showcases and checklists
 }
 #img_dl figcaption {
 	width: 116px;
+	text-align: center;
 }
 </style>
 ";

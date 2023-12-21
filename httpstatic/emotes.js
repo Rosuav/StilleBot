@@ -12,7 +12,7 @@ const emote_backgrounds = {
 set_content("#emotebg", [
 	"Background: ",
 	Object.entries(emote_backgrounds).map(([lbl, color], idx) => LABEL([
-		INPUT({type: "radio", name: "emotebg", value: lbl.replaceAll(" ", ""), checked: idx === 2}), //hack: pre-select "Light HL"
+		INPUT({type: "radio", name: "emotebg", value: lbl.replaceAll(" ", ""), checked: idx === 0}), //Pre-select the first option
 		" ", lbl,
 		SPAN({class: "swatch", style: "background: " + color}),
 	])),
