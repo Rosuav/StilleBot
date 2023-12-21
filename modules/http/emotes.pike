@@ -19,6 +19,7 @@ constant markdown = #"# Emote tools, showcases and checklists
 ## Analysis and tips
 <form>Upload an emote for tips: <input type=file accept=\"image/*\"></form>
 <div class=filedropzone>Or drop a PNG file here</div>
+<div id=emotebg hidden></div>
 <div id=emotetips></div>
 
 <style>
@@ -27,6 +28,33 @@ constant markdown = #"# Emote tools, showcases and checklists
 	background-color: #fdd;
 	padding: 5px;
 	margin: 10px;
+}
+#emotebg label {
+	margin: 0 0.5em;
+}
+.swatch {
+	display: inline-block;
+	height: 1.2em; width: 1.2em;
+	margin: 0 0.2em;
+	vertical-align: bottom;
+	border: 1px solid rebeccapurple;
+}
+#img_dl {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+#img_dl image {
+	width: 116px;
+	height: 116px;
+	border: 2px solid rebeccapurple;
+}
+#img_dl figure {
+	margin: 0;
+	padding: 0;
+}
+#img_dl figcaption {
+	width: 116px;
 }
 </style>
 ";
@@ -190,9 +218,9 @@ mapping analyze_emote(string raw) {
 		}
 	}
 	if (have_partial) {
-		ret->tips += ({"Image has partial transparency. This works in PNG files but not in GIFs, so this may have trouble with animations."});
+		ret->tips += ({"Image has partial transparency. This works in PNG files but not in GIFs, so this may have trouble with animations. Consider quantizing alpha levels if animating this emote."});
 		ret->downloads += ({([
-			"label": "Transparency quantized for better animation",
+			"label": "Alpha-quantized",
 			"image": make_emote(emote->image, alpha),
 		])});
 	}
