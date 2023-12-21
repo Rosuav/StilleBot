@@ -11,8 +11,8 @@ const emote_backgrounds = {
 
 set_content("#emotebg", [
 	"Background: ",
-	Object.entries(emote_backgrounds).map(([lbl, color]) => LABEL([
-		INPUT({type: "radio", name: "emotebg", value: lbl.replaceAll(" ", "")}),
+	Object.entries(emote_backgrounds).map(([lbl, color], idx) => LABEL([
+		INPUT({type: "radio", name: "emotebg", value: lbl.replaceAll(" ", ""), checked: idx === 2}), //hack: pre-select "Light HL"
 		" ", lbl,
 		SPAN({class: "swatch", style: "background: " + color}),
 	])),
@@ -23,7 +23,7 @@ document.body.append(STYLE(Object.entries(emote_backgrounds).map(([lbl, color]) 
 on("click", "input[name=emotebg]", e => DOM("#img_dl").classList = e.match.value);
 
 function IMAGE(data, label) {
-	return A({href: label + ".png"}, FIGURE([IMG({src: data, alt: ""}), FIGCAPTION(label)]));
+	return A({href: data, download: label + ".png"}, FIGURE([IMG({src: data, alt: ""}), FIGCAPTION(label)]));
 }
 
 async function upload(file) {
@@ -38,11 +38,12 @@ async function upload(file) {
 	const reader = new FileReader();
 	reader.readAsDataURL(file);
 	reader.onloadend = () => {
+		const rb = DOM("input[name=emotebg]:checked");
 		set_content("#emotetips", [
 			resp.warnings && [H3("Warnings"), UL(resp.warnings.map(w => LI(w)))],
 			resp.tips && [H3("Tips"), UL(resp.tips.map(w => LI(w)))],
 			H3("Images"),
-			DIV({id: "img_dl"}, [
+			DIV({id: "img_dl", class: rb ? rb.value : ""}, [
 				IMAGE(reader.result, "Original"),
 				resp.downloads && resp.downloads.map(img => IMAGE(img.image, img.label)),
 			]),
