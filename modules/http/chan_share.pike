@@ -85,12 +85,7 @@ figcaption {
 	overflow-wrap: break-word;
 }
 .filedropzone {
-	left: 0; right: 0;
 	height: 4em;
-	border: 1px dashed black;
-	background: #eeeeff;
-	margin: 0 0.25em;
-	padding: 0.5em;
 }
 </style>
 ";

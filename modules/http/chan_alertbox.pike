@@ -286,14 +286,6 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 	display: flex;
 	flex-direction: column-reverse; /* Recent at the top */
 }
-
-.filedropzone {
-	left: 0; right: 0;
-	border: 1px dashed black;
-	background: #eeeeff;
-	margin: 0 0.25em;
-	padding: 0.5em;
-}
 </style>
 
 > ### Alert preview

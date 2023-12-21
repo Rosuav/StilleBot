@@ -10,12 +10,25 @@ inherit http_endpoint;
 
 */
 
-constant markdown = #"# Emote showcases and checklists
+constant markdown = #"# Emote tools, showcases and checklists
 
 * [Checklist of unlockable emotes](checklist) eg hype trains, special promos
 * <form><label>Channel name: <input name=broadcaster size=20></label><input type=submit value=\"Show channel emotes\"></form>
 * [Global cheer emotes](emotes?cheer)
 
+## Analysis and tips
+<form>Upload an emote for tips: <input type=file accept=\"image/*\"></form>
+<div class=filedropzone>Or drop a PNG file here</div>
+<div id=emotetips></div>
+
+<style>
+.error {
+	border: 2px solid red;
+	background-color: #fdd;
+	padding: 5px;
+	margin: 10px;
+}
+</style>
 ";
 
 //Consistent display order for the well-known groups. Any group not listed here will
@@ -29,6 +42,10 @@ constant order = ({
 
 continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP.Server.Request req)
 {
+	if (!req->misc->session->fake && req->request_type == "POST" && req->variables->checkfile) {
+		if (sizeof(req->body_raw) > 1024*1024*10) return jsonify((["error": "File too large for analysis."]));
+		return jsonify(analyze_emote(req->body_raw));
+	}
 	if (req->variables->cheer) {
 		//Show cheeremotes, possibly for a specific broadcaster
 		//Nothing to do with the main page, other than that it's all about emotes.
@@ -140,5 +157,44 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 			"text": sprintf("%{\n## %s\n%{%s %}\n%}", emotesets),
 		]));
 	}
-	return render_template(markdown, ([]));
+	return render_template(markdown, (["js": "emotes.js"]));
+}
+
+string make_emote(object image, object alpha) {
+	string raw = Image.PNG.encode(image, (["alpha": alpha]));
+	return "data:image/png;base64," + MIME.encode_base64(raw, 1);
+}
+
+mapping analyze_emote(string raw) {
+	if (!has_prefix(raw, "\x89PNG\r\n\x1a\n\0")) return (["error": "Only PNG emotes can be analyzed at this time."]);
+	mapping emote = Image.PNG._decode(raw);
+	mapping ret = ([]);
+	if (emote->xsize != emote->ysize) ret->warnings += ({sprintf("Emote is not square - %dx%d", emote->xsize, emote->ysize)});
+	if (emote->xsize != 112 || emote->ysize != 112) {
+		ret->tips += ({"Emotes generally work best at 112x112"});
+		ret->downloads += ({([
+			"label": "Rescaled to 112x112",
+			"image": make_emote(emote->image->scale(112, 112), emote->alpha->scale(112, 112)),
+		])});
+	}
+	//Animating emotes with automated tools (including Twitch's own) doesn't work too well if you
+	//have any partial transparency.
+	object alpha = emote->alpha->clone();
+	int have_partial = 0;
+	for (int y = 0; y < alpha->ysize(); ++y) for (int x = 0; x < alpha->xsize(); ++x) {
+		int value = `+(@alpha->getpixel(x, y));
+		if (value > 0 && value < 255*3) {
+			have_partial = 1;
+			value = value < 128*3 ? 0 : 255;
+			alpha->setpixel(x, y, value, value, value);
+		}
+	}
+	if (have_partial) {
+		ret->tips += ({"Image has partial transparency. This works in PNG files but not in GIFs, so this may have trouble with animations."});
+		ret->downloads += ({([
+			"label": "Transparency quantized for better animation",
+			"image": make_emote(emote->image, alpha),
+		])});
+	}
+	return ret;
 }
