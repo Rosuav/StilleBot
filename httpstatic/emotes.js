@@ -1,5 +1,5 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, DIV, FIGCAPTION, FIGURE, H3, IMG, INPUT, LABEL, LI, SPAN, STYLE, UL} = choc; //autoimport
+const {A, BUTTON, DIV, FIGCAPTION, FIGURE, H3, IMG, INPUT, LABEL, LI, SPAN, STYLE, UL} = choc; //autoimport
 
 const emote_backgrounds = {
 	Light: "#ffffff",
@@ -26,6 +26,17 @@ function IMAGE(data, label) {
 	return A({href: data, download: label + ".png"}, FIGURE([IMG({src: data, alt: ""}), FIGCAPTION(label)]));
 }
 
+const embed = {
+	"quantizing alpha levels": (p) => [p, BUTTON({type: "button", class: "opendlg", "data-dlg": "aqdlg", title: "How do you quantize alpha? Details."}, "(?)")],
+};
+function embeds(s) {
+	const parts = s.split("||");
+	if (parts.length === 1) return s;
+	return parts.map(p => embed[p] ? embed[p](p) : p);
+}
+
+on("click", ".opendlg", e => document.getElementById(e.match.dataset.dlg).showModal());
+
 async function upload(file) {
 	set_content("#emotetips", "Analyzing...");
 	DOM("#emotebg").hidden = false;
@@ -41,7 +52,7 @@ async function upload(file) {
 		const rb = DOM("input[name=emotebg]:checked");
 		set_content("#emotetips", [
 			resp.warnings && [H3("Warnings"), UL(resp.warnings.map(w => LI(w)))],
-			resp.tips && [H3("Tips"), UL(resp.tips.map(w => LI(w)))],
+			resp.tips && [H3("Tips"), UL(resp.tips.map(w => LI(embeds(w))))],
 			H3("Images"),
 			DIV({id: "img_dl", class: rb ? rb.value : ""}, [
 				IMAGE(reader.result, "Original"),

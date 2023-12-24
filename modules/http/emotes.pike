@@ -57,7 +57,37 @@ constant markdown = #"# Emote tools, showcases and checklists
 	width: 116px;
 	text-align: center;
 }
+#aqdlg {
+	max-width: 800px;
+}
+.opendlg {
+	padding: 0 0.1em;
+	margin: 0.3em;
+}
 </style>
+
+> ### What's alpha quantization?
+>
+> TLDR: If animations fail, try alpha quantization.
+>
+> The [PNG file format](https://en.wikipedia.org/wiki/PNG) supports all kinds of
+> features, including gentle edges that fade away to transparent. However, animated
+> emotes use the [GIF file format](https://en.wikipedia.org/wiki/GIF), which has a
+> number of restrictions; something can be completely transparent, but it can't be
+> half transparent. This is called the \"alpha channel\" in a PNG file, and if you
+> use an automated tool to animate your emote, there may be issues from partial
+> transparency.
+>
+> After alpha quantization, everything will be either completely transparent, or
+> completely opaque (not transparent at all). This may be a little bit ugly, so it
+> might be worth manually touching up the file a little afterwards. Three versions
+> are provided - the default will look decent on both light and dark modes, but may
+> lose some detail; and then one each for light and dark which will look correct in
+> that mode, but will look a bit wrong in the other. Use whichever makes the most
+> sense for your emotes.
+>
+> [Close](:.dialog_close)
+{: tag=dialog #aqdlg}
 ";
 
 //Consistent display order for the well-known groups. Any group not listed here will
@@ -206,6 +236,11 @@ mapping analyze_emote(string raw) {
 			"image": make_emote(emote->image->scale(112, 112), emote->alpha->scale(112, 112)),
 		])});
 	}
+	//Should this be conditional on it, maybe, having colour? For now, just always show it.
+	ret->downloads += ({([
+		"label": "Greyscale",
+		"image": make_emote(emote->image->grey(), emote->alpha),
+	])});
 	//Animating emotes with automated tools (including Twitch's own) doesn't work too well if you
 	//have any partial transparency.
 	object alpha, alphahalf, aqlight, aqdark;
@@ -241,7 +276,9 @@ mapping analyze_emote(string raw) {
 		}
 	}
 	if (have_partial) {
-		ret->tips += ({"Image has partial transparency. This works in PNG files but not in GIFs, so this may have trouble with animations. Consider quantizing alpha levels if animating this emote."});
+		ret->tips += ({
+			"Image has partial transparency. This works in PNG files but not in GIFs, so this may have trouble with animations. Consider ||quantizing alpha levels|| if animating this emote.",
+		});
 		ret->downloads += ({([
 			"label": "Alpha-quantized",
 			"image": make_emote(emote->image, alphahalf),
