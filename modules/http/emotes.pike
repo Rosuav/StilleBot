@@ -68,7 +68,7 @@ constant markdown = #"# Emote tools, showcases and checklists
 
 > ### What's alpha quantization?
 >
-> TLDR: If animations fail, try alpha quantization.
+> TLDR: If animations look weird, try alpha quantization.
 >
 > The [PNG file format](https://en.wikipedia.org/wiki/PNG) supports all kinds of
 > features, including gentle edges that fade away to transparent. However, animated
