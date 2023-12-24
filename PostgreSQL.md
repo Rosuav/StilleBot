@@ -25,5 +25,6 @@ chown postgres: *.pem
 chmod 600 *.pem
 
 
-Most likely, will need to upgrade Gideon to PG 15 before this will work.
-Hopefully, after that, upgrades to either end won't be a problem.
+To make things work, *tables* must exist on both ends; the replication
+will only transfer row changes. There will need to be a bot-managed
+table update system.
