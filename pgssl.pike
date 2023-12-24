@@ -13,11 +13,11 @@ int main() {
 	array(string) root = Standards.PEM.Messages(Stdio.read_file("/etc/ssl/certs/ISRG_Root_X1.pem"))->get_certificates();
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
 	//* //Attempt to use the new ssl_context feature
-	object sql = Sql.Sql("pgsql://rosuav@192.168.0.19/rosuav", ([
+	object sql = Sql.Sql("pgsql://rosuav@sikorsky.rosuav.com/stillebot", ([
 		"force_ssl": 1, "ssl_context": ctx,
 	]));
 	werror("Connection: %O\n", sql);
-	werror("Query result: %O\n", sql->query("table asdf")); // */
+	werror("Query result: %O\n", sql->query("table stillebot.user_followed_categories")); // */
 	/* //Done manually, it works fine, as long as all is nonblocking.
 	object sock = Stdio.File();
 	int port = 5432;
