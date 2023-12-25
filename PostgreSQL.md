@@ -28,3 +28,10 @@ chmod 600 *.pem
 To make things work, *tables* must exist on both ends; the replication
 will only transfer row changes. There will need to be a bot-managed
 table update system.
+
+The code in pgssl.pike works as long as Pike has the necessary patches to allow
+SSL.Context() configuration for an Sql.Sql() connection. It will then be able to
+run the bot on either Gideon or Sikorsky and talk to a database on either Gideon
+or Sikorsky. (TODO: Open up Gideon with the same SSL certificate authentication.)
+Ultimately, migrate all configs into the database, and then have a way to select
+which DB host is in use.
