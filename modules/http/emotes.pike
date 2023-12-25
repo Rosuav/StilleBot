@@ -237,6 +237,10 @@ mapping analyze_emote(string raw) {
 		])});
 	}
 	//Should this be conditional on it, maybe, having colour? For now, just always show it.
+	ret->tips += ({
+		"How good is the contrast between foreground and background after all the colour is removed? Check the greyscale version to be sure.",
+		"Does the emote look correct on a variety of backgrounds?",
+	});
 	ret->downloads += ({([
 		"label": "Greyscale",
 		"image": make_emote(emote->image->grey(), emote->alpha),
