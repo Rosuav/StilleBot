@@ -1,5 +1,5 @@
-//Eventually this will be folded into the core, but for now, it's a
-//stand-alone script that just parses and synthesizes MustardScript.
+//All tools related to parsing and synthesizing MustardScript.
+//Includes some tests designed to be invoked from testing.pike.
 inherit annotated;
 
 Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file("modules/mustard.grammar");
