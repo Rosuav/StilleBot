@@ -181,27 +181,33 @@ void _make_mustard(echoable_message message, Stdio.Buffer out, mapping state, in
 	else if (message->conditional) {
 		//FIXME: All of these need their flags added. Before or after the main condition? Both are legal.
 		if (message->conditional == "number")
-			out->sprintf("%stest (%s) {\n", state->indent * state->indentlevel++, quoted_string(message->expr1));
+			out->sprintf("%stest (%s) ", state->indent * state->indentlevel, quoted_string(message->expr1));
 		else if (message->conditional == "cooldown") {
 			string attrs = "";
 			foreach (({"cdname", "cdqueue"}), string attr) if (message[attr])
 				attrs = sprintf("%s #%s %s", attrs, attr, stringp(message[attr]) ? quoted_string(message[attr]) : (string)message[attr]);
-			out->sprintf("%scooldown (%s%s) {\n", state->indent * state->indentlevel++, (string)message->cdlength, attrs);
+			out->sprintf("%scooldown (%s%s) ", state->indent * state->indentlevel, (string)message->cdlength, attrs);
 		}
 		else if (string oper = oper_rev[message->conditional]) {
 			string attrs = "";
 			foreach (({"casefold"}), string attr) if (message[attr])
 				attrs = sprintf("%s #%s %s", attrs, attr, stringp(message[attr]) ? quoted_string(message[attr]) : (string)message[attr]);
-			out->sprintf("%sif (%s %s %s%s) {\n", state->indent * state->indentlevel++, quoted_string(message->expr1 || ""), oper, quoted_string(message->expr2 || ""), attrs);
+			out->sprintf("%sif (%s %s %s%s) ", state->indent * state->indentlevel, quoted_string(message->expr1 || ""), oper, quoted_string(message->expr2 || ""), attrs);
 		}
 		else error("Unrecognized conditional type %O\n", message->conditional);
-		_make_mustard(message->message || "", out, state, 1); //Gotta have the if branch
-		out->sprintf("%s}\n", state->indent * --state->indentlevel);
-		//NOTE: Omitting the else is currently disallowed, but I intend to make the grammar more flexible later.
-		/* if (message->otherwise) */ { //Omitting both the else and its block is legal, and in a lot of cases, will be sufficient (most cooldowns don't need an else)
-			out->sprintf("%selse {\n", state->indent * state->indentlevel++);
-			_make_mustard(message->otherwise, out, state, 1);
+		//If the 'if' branch is a simple string and there's no 'else', abbreviate. No need for
+		//lots of braces.
+		if (stringp(message->message) && (!message->otherwise || message->otherwise == ""))
+			out->sprintf("%s\n", quoted_string(message->message));
+		else {
+			out->sprintf("{\n"); ++state->indentlevel;
+			_make_mustard(message->message || "", out, state, 1); //Gotta have the if branch
 			out->sprintf("%s}\n", state->indent * --state->indentlevel);
+			if (message->otherwise && message->otherwise != "") { //Omitting both the else and its block is legal, and in a lot of cases, will be sufficient (most cooldowns don't need an else)
+				out->sprintf("%selse {\n", state->indent * state->indentlevel++);
+				_make_mustard(message->otherwise, out, state, 1);
+				out->sprintf("%s}\n", state->indent * --state->indentlevel);
+			}
 		}
 	}
 	else _make_mustard(message->message, out, state, block || skipblock == 2);
