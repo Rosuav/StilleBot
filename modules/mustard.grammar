@@ -9,20 +9,51 @@ value: "name";
 value: "string";
 value: "number";
 
-group: message {gather};
-group: message group {gather};
+/* There's some complexity here to allow conditions to have optional 'else', and
+to have optional braces. It layers in a bit. Lemme walk you through it. */
+/* A group has one or more messages, which might be conditional. */
+group: condmessage {gather};
+group: condmessage group {gather};
 
+/* In order to disambiguate, we will either be in "open" or "closed" form.
+An "open" message can have optional else clauses; a "closed" one cannot. */
+condmessage: opencond;
+condmessage: closedcond;
+
+/* When we're in "open" mode, it's legal to have if-else, and it's legal to
+have if without else. However, inside the "if" branch of one with an else,
+you cannot have an elseless condition - it MUST have its own else. This is
+the key to making the 'else' bind to the nearest 'if'. However, in the 'if'
+of something that doesn't have an 'else', it's fine to have either if-else
+or if-without-else. */
+opencond: if closedcond "else" opencond {conditional};
+opencond: if condmessage {conditional};
+
+/* "Closed" mode is the inside of an if block that has an else. You can't
+omit the 'else' here, neither in the if nor the else. */
+closedcond: message;
+closedcond: if closedcond "else" closedcond {conditional};
+
+/* Note that, all the above concepts of "if-else" apply equivalently to all
+three forms of condition, since they all have the same "else" behaviour. */
+/* Incidentally, the keywords are entirely handled by the grammar here, and
+can be discarded for subsequent processing. The condition itself is all that
+matters. Strange how that happens. */
+if: "if" condition {taketwo};
+if: "test" calc_cond {taketwo};
+if: "cooldown" cooldown {taketwo};
+
+/* Of course, if you need to override any of the above rules, all you need
+to do is encase something in braces, which counts as a 'message' (the lowest
+form, valid in all nodes). */
 message: "string";
 message: "comment" {makecomment};
-message: "name" "(" params ")" message {builtin};
+message: "name" "(" params ")" condmessage {builtin};
 message: "{" flags group "}" {flagmessage2};
 message: "[" flags group "]" {flagmessage2};
 message: "{" "}" {emptymessage};
 message: "[" "]" {emptymessage};
-message: "if" condition message maybeelse {conditional};
-message: "test" calc_cond message maybeelse {conditional}; /* test ("expr") if-true if-false */
-message: "try" message "catch" message {trycatch}; /* Possible future expansion: "catch" "(" filter ")" message */
-message: "cooldown" cooldown message maybeelse {conditional};
+message: "try" condmessage "catch" condmessage {trycatch}; /* Possible future expansion: "catch" "(" filter ")" condmessage */
 message: "varname" varoper value {setvar};
 
 params: {makeparams};
@@ -42,8 +73,6 @@ calc_cond: "string" {cond_calc};
 calc_cond: "(" calc_cond ")" {taketwo};
 cooldown: "number" {cd_naked};
 cooldown: "(" flags "number" flags ")" {cd_flags};
-/* maybeelse: ; */ /* How do you design an LR(1) grammar that makes an else optional but binding to closest, without unnecessary complexity? */
-maybeelse: "else" message {taketwo};
 
 varoper: "=";
 varoper: "+=";

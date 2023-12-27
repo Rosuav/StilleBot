@@ -26,9 +26,9 @@ array makeparams(string|void param) {return param ? ({param}) : ({ });}
 array addparam(array params, string comma, string param) {return params + ({param});}
 mapping makecomment(string comment) {return (["dest": "//", "message": comment]);}
 mixed taketwo(mixed ignore, mixed take) {return take;}
-mapping conditional(string kwd, mapping cond, mixed if_true, mixed maybeelse) {
+mapping conditional(mapping cond, mixed if_true, string|void maybeelse, mixed otherwise) {
 	cond->message = if_true;
-	if (maybeelse) cond->otherwise = maybeelse;
+	if (maybeelse) cond->otherwise = otherwise;
 	return cond;
 }
 mapping cond(mapping flg, string expr1, string oper, string expr2, mapping flg2) {
