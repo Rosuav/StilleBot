@@ -306,7 +306,7 @@ void run_test(string arg, int|void quiet) {
 	else {
 		mixed parsed = parse_mustard(Stdio.read_file(arg));
 		write("Parsed: %O\n", parsed);
-		mixed validated = validate(parsed, parsed->command || "command");
+		mixed validated = validate(parsed, mappingp(parsed) && parsed->command || "command");
 		write("Validated: %O\n", validated);
 	}
 }
