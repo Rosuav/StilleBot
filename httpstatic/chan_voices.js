@@ -94,7 +94,7 @@ on("click", ".perms", e => {
 });
 
 on("click", "#authenticate", e => {
-	const scopes = [];
+	const scopes = ["chat_login"];
 	document.querySelectorAll("#scopelist input:checked").forEach(cb => scopes.push(cb.name));
 	ws_sync.send({cmd: "login", voiceid: perms_voiceid, scopes});
 });
