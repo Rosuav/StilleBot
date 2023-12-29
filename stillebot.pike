@@ -85,6 +85,27 @@ int main(int argc,array(string) argv)
 		Stdio.stdin->set_read_callback(console);
 		return -1;
 	}
+	if (has_value(argv, "--script")) {
+		//Test MustardScript parsing and reconstitution.
+		add_constant("INTERACTIVE", 1);
+		restricted_update = ({"persist.pike", "globals.pike", "poll.pike"});
+		bootstrap_all();
+		mapping get_channel_config(string|int chan) {error("Channel configuration unavailable.\n");}
+		add_constant("get_channel_config", get_channel_config);
+		//Rather than actually load up all the builtins, just make sure the names can be validated.
+		//List is correct as of 20231210.
+		constant builtin_names = ({"chan_share", "chan_giveaway", "shoutout", "cmdmgr", "hypetrain", "chan_mpn", "tz", "chan_alertbox", "raidfinder", "uptime", "renamed", "log", "quote", "nowlive", "calc", "chan_monitors", "chan_errors", "argsplit", "chan_pointsrewards", "chan_labels", "uservars"});
+		G->builtins = mkmapping(builtin_names, allocate(sizeof(builtin_names), 1));
+		bootstrap("modules/cmdmgr.pike");
+		object mustard = bootstrap("modules/mustard.pike");
+		argv -= ({"--script"});
+		int quiet = 0;
+		foreach (argv[1..], string arg) {
+			if (arg == "-q") quiet = 1;
+			else mustard->run_test(arg, quiet);
+		}
+		return 0;
+	}
 	//TODO: Invert this and have --gui to enable the GUI
 	if (has_value(argv, "--headless")) {
 		werror("Running bot in headless mode - GUI facilities disabled.\n");
