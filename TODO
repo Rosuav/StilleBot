@@ -304,6 +304,9 @@
     - ALTER DATABASE reset
     - notify readonly, 'off'
   - StilleBot connects to Gideon and pushes out any pending changes
+  - REQUIREMENT: After a code update, disconnect and reconnect, but don't lose any
+    current settings changes. Flag (both) old connection(s) as read-only, connect
+    once they are both quiescent, then close the old ones.
 * Multi-homing.
   - Have reserved the names stillebot.rosuav.com and stillebot.com for this purpose.
   - Need to set up a redirect on Gideon: if a certbot request comes in, 302 it to
