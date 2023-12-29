@@ -287,42 +287,23 @@
     the same certs StilleBot uses for both sikorsky.rosuav.com and gideon.rosuav.com.
 * Database transfer procedure
   - Initially, Sikorsky is read-write, Gideon is read-only.
-    - TEST: That we can mark the DB as read-only, but happily connect.
+    - ALTER DATABASE on Gideon default_transaction_read_only = on
   - I choose to bring Sikorsky's DB down.
   - Sikorsky's DB becomes read-only
-    - TEST: That we can mark the DB as read-only while existing connections and
-      transactions exist.
+    - ALTER DATABASE on Sikorsky default_transaction_read_only = on
+    - notify readonly, 'on'
   - Wait until there are no open read-write transactions
-    - TEST: That we can detect read-write transactions while permitting read-only
+    - select count(*) from pg_stat_activity where application_name = 'stillebot';
+    - Note that this will also count any in-progress connections, but they should
+      notice the read_only flag and change their names promptly.
   - Reverse the direction of replication
     - TEST: That replication can occur in either direction and be started and
       stopped independently; OR that replication can concurrently exist in both
       directions without conflict (assuming one database is read-only).
   - Mark Gideon's DB as read-write
-    - TEST: That StilleBot can detect that read-write transactions are denied
+    - ALTER DATABASE reset
+    - notify readonly, 'off'
   - StilleBot connects to Gideon and pushes out any pending changes
-  - Notifications require a level of protocolling.
-    - Connect using application_name "stillebot"
-    - Query "show default_transaction_read_only"
-    - If result is "off":
-      - Query "listen readonly" and set_notify_callback
-      - Query "show default_transaction_read_only". If result is "on", immediately
-        disconnect and start over - race condition has happened, database JUST went
-        into read-only mode.
-      - Current connection is active.
-    - If result is "on":
-      - Query "set application_name = 'stillebot-ro'"
-      - Attempt connection to other database, using same logic
-      - If both are read-only, queue all changes and periodically attempt reconnection
-        - Note that querying CAN be done in this state, and from the user's perspective
-          so can changes, but they will be vulnerable to a crash until the other is up.
-      - Otherwise, whichever is read/write is active, and the other can be closed.
-    - Upon receipt of notification on the "readonly" channel:
-      - Ensure that there are no active transactions
-      - Disconnect from the active database, attempt reconnection according to original
-        logic. This will likely result in a switchover, but there may be a both-read-only
-        period. Note that a notification on "readonly" may indicate the END of read-only
-        mode, and the reconnection might now allow us to go read/write.
 * Multi-homing.
   - Have reserved the names stillebot.rosuav.com and stillebot.com for this purpose.
   - Need to set up a redirect on Gideon: if a certbot request comes in, 302 it to
