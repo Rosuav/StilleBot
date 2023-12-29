@@ -18,12 +18,14 @@ class DBConnection(string host) {
 	void notify_readonly(int pid, string cond, string extra) {
 		if (extra == "on" && !readonly) {
 			werror("SWITCHING TO READONLY MODE: %O\n", host);
-			db->query("set application_name = 'stillebot-ro', default_transaction_read_only = on");
+			db->query(#"select set_config('application_name', 'stillebot-ro', false),
+					set_config('default_transaction_read_only', 'on', false)");
 			readonly = 1;
 			if (active && active->host == host) active = 0; //Even if it's not the same object (just in case)
 		} else if (extra == "off" && readonly) {
 			werror("SWITCHING TO READ-WRITE MODE: %O\n", host);
-			db->query("set application_name = 'stillebot', default_transaction_read_only = off");
+			db->query(#"select set_config('application_name', 'stillebot', false),
+					set_config('default_transaction_read_only', 'off', false)");
 			readonly = 0;
 			if (!active) active = this;
 		}
@@ -38,7 +40,7 @@ class DBConnection(string host) {
 		object ctx = SSLContext();
 		array(string) root = Standards.PEM.Messages(Stdio.read_file("/etc/ssl/certs/ISRG_Root_X1.pem"))->get_certificates();
 		ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
-		object db = Sql.Sql("pgsql://rosuav@" + host + "/stillebot", ([
+		db = Sql.Sql("pgsql://rosuav@" + host + "/stillebot", ([
 			"force_ssl": 1, "ssl_context": ctx, "application_name": "stillebot",
 		]));
 		db->set_notify_callback("readonly", notify_readonly);
@@ -61,8 +63,15 @@ void reconnect() {
 	else active = sikorsky;
 }
 
+void ping() {
+	call_out(ping, 10);
+	if (active) werror("Query: %O\n", active->db->query("select * from stillebot.user_followed_categories limit 1")[0]);
+	else werror("No active connection.\n");
+}
+
 protected void create(string name) {
 	::create(name);
 	reconnect();
 	werror("Active: %O\n", active && active->host);
+	call_out(ping, 10);
 }
