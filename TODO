@@ -294,6 +294,10 @@
       transactions exist.
   - Wait until there are no open read-write transactions
     - TEST: That we can detect read-write transactions while permitting read-only
+  - Reverse the direction of replication
+    - TEST: That replication can occur in either direction and be started and
+      stopped independently; OR that replication can concurrently exist in both
+      directions without conflict (assuming one database is read-only).
   - Mark Gideon's DB as read-write
     - TEST: That StilleBot can detect that read-write transactions are denied
   - StilleBot connects to Gideon and pushes out any pending changes
