@@ -342,3 +342,4 @@
 * MustardScript enhancements
   - Look into making a syntax highlighter config
 * Redirect /channels/NotFlatCase/ to lowercase
+* Got a shift/reduce conflict on "else", I thought I fixed those??
