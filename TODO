@@ -301,6 +301,28 @@
   - Mark Gideon's DB as read-write
     - TEST: That StilleBot can detect that read-write transactions are denied
   - StilleBot connects to Gideon and pushes out any pending changes
+  - Notifications require a level of protocolling.
+    - Connect using application_name "stillebot"
+    - Query "show default_transaction_read_only"
+    - If result is "off":
+      - Query "listen readonly" and set_notify_callback
+      - Query "show default_transaction_read_only". If result is "on", immediately
+        disconnect and start over - race condition has happened, database JUST went
+        into read-only mode.
+      - Current connection is active.
+    - If result is "on":
+      - Query "set application_name = 'stillebot-ro'"
+      - Attempt connection to other database, using same logic
+      - If both are read-only, queue all changes and periodically attempt reconnection
+        - Note that querying CAN be done in this state, and from the user's perspective
+          so can changes, but they will be vulnerable to a crash until the other is up.
+      - Otherwise, whichever is read/write is active, and the other can be closed.
+    - Upon receipt of notification on the "readonly" channel:
+      - Ensure that there are no active transactions
+      - Disconnect from the active database, attempt reconnection according to original
+        logic. This will likely result in a switchover, but there may be a both-read-only
+        period. Note that a notification on "readonly" may indicate the END of read-only
+        mode, and the reconnection might now allow us to go read/write.
 * Multi-homing.
   - Have reserved the names stillebot.rosuav.com and stillebot.com for this purpose.
   - Need to set up a redirect on Gideon: if a certbot request comes in, 302 it to

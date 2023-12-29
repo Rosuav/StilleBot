@@ -14,10 +14,16 @@ int main() {
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
 	//* //Attempt to use the new ssl_context feature
 	object sql = Sql.Sql("pgsql://rosuav@sikorsky.rosuav.com/stillebot", ([
-		"force_ssl": 1, "ssl_context": ctx,
+		"force_ssl": 1, "ssl_context": ctx, "application_name": "pgssl-test",
 	]));
 	werror("Connection: %O\n", sql);
+	sql->set_notify_callback("readonly") {
+		werror("GOT NOTIFY %O\n", __ARGS__);
+		werror("Read-only now %O\n", sql->query("show default_transaction_read_only")[0]->default_transaction_read_only);
+	};
+	sql->query("listen readonly");
 	werror("Query result: %O\n", sql->query("table stillebot.user_followed_categories")); // */
+	return -1; //To get notifications, activate the backend, then use "notify readonly, 'new-state'" in another session
 	/* //Done manually, it works fine, as long as all is nonblocking.
 	object sock = Stdio.File();
 	int port = 5432;
