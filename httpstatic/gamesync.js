@@ -208,7 +208,7 @@ const games = {
 		render(data) {return [
 			DIV("Not to be confused with The Diamond heist. Seriously, those sound nothing alike."),
 			H2("Entry code"),
-			STYLE(".code {display: flex; gap: 4.5em; justify-content: center; flex-wrap: wrap} .code > * {height: 2.5em; width: 6em; font-size: 150%; text-align: center}"),
+			STYLE(".code {display: flex; gap: 4.5em; justify-content: center; flex-wrap: wrap} .code > * {height: 2.5em; width: 6em; font-size: 175%; text-align: center}"),
 			DIV({class: "code"}, [
 				INPUT({"data-setting": "code-red", style: "background-color: red; color: white", type: "number", value: data["code-red"]}),
 				INPUT({"data-setting": "code-green", style: "background-color: green; color: white", type: "number", value: data["code-green"]}),
