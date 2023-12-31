@@ -323,6 +323,11 @@
 * Whenever you save/overwrite a command, log the previous version somewhere for an
   "Undo" feature?? It's now very possible to accidentally delete slabs of content,
   or even the entire command.
+  - Stick 'em in Postgres. Table with ID SERIAL, TwitchID, CommandName, Active bool,
+    and a unique index on (TwitchID, CommandName) WHERE ACTIVE, to enforce that only
+    one is active. That way, reverting is simply a matter of deactivating the latest
+    and activating an older one. (Would help to have statistical columns eg creation
+    date.)
 * MustardScript enhancements
   - Look into making a syntax highlighter config
 * Redirect /channels/NotFlatCase/ to lowercase
