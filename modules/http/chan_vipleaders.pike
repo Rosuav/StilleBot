@@ -61,13 +61,13 @@ constant loggedin = #"
 
 mapping tierval = (["2": 2, "3": 6]); //TODO: Should this be configurable? Some people might prefer a T3 to be worth 5.
 
-void add_score(mapping monthly, mapping sub) {
+void add_score(mapping monthly, string board, mapping sub) {
 	object cal = Calendar.ISO.Second("unix", sub->timestamp)->set_timezone("UTC");
-	string month = sprintf("subs%04d%02d", cal->year_no(), cal->month_no()); //To generate weekly or yearly stats, this is the main part to change
+	string month = sprintf("%s%04d%02d", board, cal->year_no(), cal->month_no()); //To generate weekly or yearly stats, this is the main part to change
 	if (!monthly[month]) monthly[month] = ([]);
 	mapping user = monthly[month][sub->giver->user_id];
 	if (!user) monthly[month][sub->giver->user_id] = user = ([
-		"firstsub": sub->timestamp, //Tiebreaker - earliest sub takes the spot
+		"firstsub": sub->timestamp, //Tiebreaker - earliest takes the spot (note that "sub" is orphanned here, it might be a Ko-fi tip)
 		"user_id": sub->giver->user_id,
 	]);
 	//If a person renames, update the display on seeing the next sub gift. Note that this
@@ -83,7 +83,8 @@ continue Concurrent.Future force_recalc(string chan, int|void fast) {
 	if (!stats->?active) return 0;
 	if (!fast || !stats->monthly) {
 		stats->monthly = ([]);
-		foreach (stats->all || ({ }), mapping sub) add_score(stats->monthly, sub);
+		foreach (stats->all || ({ }), mapping sub) add_score(stats->monthly, "subs", sub);
+		//foreach (stats->allkofi || ({ }), mapping sub) add_score(stats->monthly, "kofi", sub);
 	}
 
 	int chanid = yield(get_user_id(chan));
@@ -154,7 +155,7 @@ void websocket_cmd_configure(mapping(string:mixed) conn, mapping(string:mixed) m
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	mapping stats = persist_status->path("subgiftstats", channel->name[1..]);
-	constant options = "active badge_count board_count private_leaderboard" / " ";
+	constant options = "active badge_count board_count private_leaderboard use_kofi" / " ";
 	int was_private = stats->private_leaderboard;
 	foreach (options, string opt) if (!undefinedp(msg[opt])) stats[opt] = (int)msg[opt]; //They're all integers at the moment
 	if (!was_private || !stats->private_leaderboard) send_updates_all(channel->name);
@@ -180,8 +181,6 @@ continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:
 	if (conn->session->user->login != chan) {addrem = "Fake-" + lower_case(addrem); method = 0;}
 	mapping stats = persist_status->path("subgiftstats", chan);
 	array bits = stats->monthly["bits" + msg->yearmonth] || ({ });
-	array subs = values(stats->monthly["subs" + msg->yearmonth] || ([]));
-	sort(subs->firstsub, subs); sort(-subs->score[*], subs);
 	//1) Get the top cheerers
 	int limit = stats->badge_count || 10;
 	array(string) userids = ({ }), people = ({ });
@@ -194,6 +193,8 @@ continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:
 	if (!sizeof(people)) send_message(channel->name, "No non-mods have cheered bits in that month.");
 	else send_message(channel->name, addrem + " VIP status " + tofrom + " cheerers: " + people * ", ");
 	//2) Get the top subbers
+	array subs = values(stats->monthly["subs" + msg->yearmonth] || ([]));
+	sort(subs->firstsub, subs); sort(-subs->score[*], subs);
 	limit = stats->badge_count || 10; people = ({ });
 	foreach (subs, mapping person) {
 		if (stats->mods[person->user_id]) continue;
@@ -222,7 +223,11 @@ continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:
 				(["Authorization": "Bearer " + token]),
 				(["method": method, "return_status": 1])));
 			if (status == 204) ; //Successfully added/removed
-			else if (status == 422) send_message(channel->name, "NOTE: User " + uid + " already " + (add ? "has" : "doesn't have") + " a VIP badge");
+			else if (status == 422) {
+				//TODO: If attempting to add a VIP badge to someone who already has it,
+				//maybe record that and don't remove it later?
+				send_message(channel->name, "NOTE: User " + uid + " already " + (add ? "has" : "doesn't have") + " a VIP badge");
+			}
 			else send_message(channel->name, "Error " + status + " applying VIP badge to user " + uid + ", skipping");
 			mixed _ = yield(task_sleep(2.0));
 		}
@@ -230,9 +235,6 @@ continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:
 	send_message(channel->name, "Done " + lower_case(addrem) + " VIPs.");
 }
 
-//Note that slabs of this don't depend on the HTTP interface, but for simplicity,
-//this is in modules/http. If you're not using StilleBot's web interface, this may
-//need to have some things stubbed out.
 @hook_subscription:
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type != "subgift" && type != "subbomb") return 0; 
@@ -255,7 +257,7 @@ int subscription(object channel, string type, mapping person, string tier, int q
 	])});
 	//Assume that monthly is the type wanted. TODO: Make it configurable.
 	if (!stats->monthly) stats->monthly = ([]);
-	add_score(stats->monthly, stats->all[-1]);
+	add_score(stats->monthly, "subs", stats->all[-1]);
 	persist_status->save();
 	send_updates_all(channel->name);
 	send_updates_all("control" + channel->name);
