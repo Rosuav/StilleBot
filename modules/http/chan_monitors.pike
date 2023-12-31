@@ -172,8 +172,8 @@ int subscription(object channel, string type, mapping person, string tier, int q
 	autoadvance(channel, person, "sub_t" + tier, qty);
 }
 
-//TODO: Have a builtin that allows any command/trigger/special to advance bars
-//Otherwise, changing the variable won't trigger the level-up command.
+//Note: Use the builtin to advance bars from a command/trigger/special.
+//Otherwise, simply assigning to the variable won't trigger the level-up command.
 void autoadvance(object channel, mapping person, string key, int weight) {
 	foreach (channel->config->monitors || ([]); string id; mapping info) {
 		if (info->type != "goalbar" || !info->active) continue;
