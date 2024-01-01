@@ -84,7 +84,7 @@ continue Concurrent.Future force_recalc(string chan, int|void fast) {
 	if (!fast || !stats->monthly) {
 		stats->monthly = ([]);
 		foreach (stats->all || ({ }), mapping sub) add_score(stats->monthly, "subs", sub);
-		//foreach (stats->allkofi || ({ }), mapping sub) add_score(stats->monthly, "kofi", sub);
+		foreach (stats->allkofi || ({ }), mapping sub) add_score(stats->monthly, "kofi", sub);
 	}
 
 	int chanid = yield(get_user_id(chan));
@@ -199,6 +199,7 @@ continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:
 	foreach (subs, mapping person) {
 		if (stats->mods[person->user_id]) continue;
 		if ((string)person->user_id == "274598607") continue; //AnAnonymousGifter
+		if ((string)(int)person->user_id != (string)person->user_id) continue; //Non-numeric user "ids" are for truly-anonymous donations
 		if (!has_value(userids, person->user_id)) {
 			//If that person has already received a VIP badge for cheering, don't re-add.
 			userids += ({person->user_id});
@@ -235,6 +236,41 @@ continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:
 	send_message(channel->name, "Done " + lower_case(addrem) + " VIPs.");
 }
 
+@hook_kofi_support:
+int kofi_tip(object channel, string type, mapping params, mapping raw) {
+	if (type != "!kofi_dono") return 0; 
+	mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
+	if (!stats->?active || !stats->use_kofi) return 0;
+	spawn_task(low_kofi_tip(channel, type, params, raw));
+}
+continue Concurrent.Future low_kofi_tip(object channel, string type, mapping params, mapping raw) {
+	mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
+	//Ko-fi support comes with a username, but NOT a Twitch user ID. So we look up
+	//the Twitch user **at the time of donation**, and record all details. If the
+	//lookup fails, the gift is considered anonymous. Note that, if a user renames,
+	//their donations will be credited to the same user as long as the name used
+	//in the donation matched the name *as of that time*.
+	mapping user = ([]);
+	catch {user = yield(get_user_info(params->username, "login"));}; //Any error, leave it as "anonymous"
+	stats->allkofi += ({([
+		"giver": ([
+			//If we don't have a recognized user, use the name and email as the identity. Close enough
+			//but won't give any VIP badges out.
+			"user_id": user->id || raw->email,
+			"login": user->login || params->username,
+			"displayname": user->displayname || params->username,
+		]),
+		"qty": params->cents,
+		"timestamp": time(),
+	])});
+	//As below, assume that monthly is the type wanted.
+	if (!stats->monthly) stats->monthly = ([]);
+	add_score(stats->monthly, "kofi", stats->allkofi[-1]);
+	persist_status->save();
+	send_updates_all(channel->name);
+	send_updates_all("control" + channel->name);
+}
+
 @hook_subscription:
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type != "subgift" && type != "subbomb") return 0; 
@@ -250,7 +286,7 @@ int subscription(object channel, string type, mapping person, string tier, int q
 			"user_id": extra->user_id,
 			"login": extra->login,
 			"displayname": person->displayname,
-			"is_mod": person->_mod,
+			"is_mod": person->_mod, //TODO: Is this used anywhere? Normally stats->mods is used instead.
 		]),
 		"tier": tier, "qty": qty,
 		"timestamp": time(),

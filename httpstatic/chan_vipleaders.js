@@ -18,11 +18,13 @@ function remap_to_array(stats) {
 }
 
 let badge_count = {}, badge_streak = {};
-function make_list(arr, desc, empty, eligible, which) {
+function make_list(arr, fmt, empty, eligible, which) {
 	if (!arr || !arr.length) return DIV(empty);
+	if (arr.length > board_count) arr.length = board_count; //We display a limited number, but the back end tracks more
 	return OL(arr.map(p => {
 		let className = "", title = "Not eligible for a badge in this month";
 		if (p.user_id === "274598607") {className = "anonymous"; title = "Anonymous - ineligible for badge";}
+		else if ("" + +p.user_id !== "" + p.user_id) {className = ""; title = "Not a Twitch user - no badge awarded";}
 		else if (mods[p.user_id]) {className = "is_mod"; title = "Moderator - already has a badge, won't take a VIP slot";}
 		else if (eligible-- > 0) {
 			className = "eligible";
@@ -37,9 +39,15 @@ function make_list(arr, desc, empty, eligible, which) {
 			}
 		}
 		return LI({className, title, "data-uid": p.user_id, "data-which": which, "data-streak": badge_streak[p.user_id]},
-			[SPAN({className: "username"}, p.user_name), " with ", p.score, desc]
+			[SPAN({className: "username"}, p.user_name), " with ", fmt(p.score)]
 		);
 	}));
+}
+
+const currency_formatter = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
+function cents_formatter(cents) {
+	if (cents >= 0 && !(cents % 100)) return "$" + (cents / 100); //Abbreviate the display to "$5" for 500
+	return currency_formatter.format(cents / 100);
 }
 
 const monthnames = ["???", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -57,17 +65,18 @@ export function render(data) {
 		for (let i = 0; i < 7; ++i) {
 			const ym = year * 100 + mon;
 			const subs = remap_to_array(data.monthly["subs" + ym]);
+			const kofi = remap_to_array(data.monthly["kofi" + ym]);
 			const bits = data.monthly["bits" + ym];
-			if (bits && bits.length > board_count) bits.length = board_count; //We display a limited number, but the back end tracks more
 			//IDs are set so you can, in theory, deep link. I doubt anyone will though.
-			rows.push(TR({"id": ym, "data-period": monthnames[mon] + " " + year}, TH({colSpan: 2}, [
+			rows.push(TR({"id": ym, "data-period": monthnames[mon] + " " + year}, TH({colSpan: 3}, [
 				monthnames[mon] + " " + year,
 				mod && BUTTON({className: "addvip", title: "Add VIPs"}, "💎"),
 				mod && BUTTON({className: "remvip", title: "Remove VIPs"}, "X"),
 			])));
 			rows.push(TR([
-				TD(make_list(subs, " subs", "(no subgifting data)", data.badge_count || 10, which_month)),
-				TD(make_list(bits, " bits", "(no cheering data)", data.badge_count || 10, which_month)),
+				TD(make_list(subs, s => [s, " subs"], "(no subgifting data)", data.badge_count || 10, which_month)),
+				TD(make_list(bits, s => [s, " bits"], "(no cheering data)", data.badge_count || 10, which_month)),
+				data.use_kofi && TD(make_list(kofi, cents_formatter, "(no tipping data)", data.badge_count || 10, which_month)),
 			]));
 			if (!--mon) {--year; mon = 12;}
 			++which_month;
@@ -120,6 +129,10 @@ export function render(data) {
 				P(LABEL([
 					INPUT({name: "private_leaderboard", type: "checkbox"}),
 					" Hide the leaderboard from non-mods",
+				])),
+				P(LABEL([
+					INPUT({name: "use_kofi", type: "checkbox"}),
+					" Show Ko-fi donations on a third leaderboard (requires Ko-fi Integration)",
 				])),
 				P(BUTTON({type: "submit"}, "Save")),
 			]),

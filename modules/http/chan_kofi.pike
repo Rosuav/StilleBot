@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit hook;
 
 constant markdown = #"
 # Ko-fi integration
@@ -14,6 +15,11 @@ this value into the Webhook URL: <input readonly value=\"$$webhook_url$$\" size=
 Once authenticated, Ko-fi events will begin showing up in [Special Triggers](specials),
 [Alerts](alertbox#kofi), and [Goal Bars](monitors).
 ";
+
+//NOTE: Currently this is only used by chan_vipleaders, which is alphabetically after
+//chan_kofi. If others start using it, it may be necessary to move this to some higher
+//level module, which would break encapsulation.
+@create_hook: constant kofi_support = ({"object channel", "string type", "mapping params", "mapping raw"});
 
 mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
@@ -59,13 +65,21 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 		if (amount[<2..] == ".00") amount = amount[..<3];
 		amount += " " + data->currency;
 		string special;
+		//TODO: What about currencies like JPY, which don't scale the same way?
+		//Ko-fi may or may not send us the right number of decimal places.
+		sscanf(data->amount, "%d.%d", int dollars, int cents);
+		cents += dollars * 100; //TODO: Scale differently for different currencies
+		//TODO maybe: Filter to only your currency??? Attempt an approximate conversion?
+		//If the latter, just do a lookup and get a value back, and be consistent.
 		mapping params = ([
 			"{amount}": amount,
+			"{cents}": (string)cents,
 			"{msg}": data->message,
 			"{from_name}": data->from_name,
 		]);
 		mapping alertparams = ([
 			"amount": amount,
+			"cents": cents,
 			"msg": data->message,
 			"username": data->from_name,
 		]);
@@ -82,15 +96,11 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 			//What about quantities??
 		} else special = "!kofi_dono";
 		if (special) {
+			//TODO: Replace the others with hooks
+			event_notify("kofi_support", req->misc->channel, special, alertparams, data);
 			G->G->send_alert(req->misc->channel, "kofi", alertparams);
 			req->misc->channel->trigger_special(special, (["user": chan]), params);
 		} else special = "!kofi_renew"; //Hack: Goal bars (might) advance on renewals even though nothing else does.
-		//TODO: What about currencies like JPY, which don't scale the same way?
-		//Ko-fi may or may not send us the right number of decimal places.
-		sscanf(data->amount, "%d.%d", int dollars, int cents);
-		cents += dollars * 100; //TODO: Scale differently for different currencies
-		//TODO maybe: Filter to only your currency??? Attempt an approximate conversion?
-		//If the latter, just do a lookup and get a value back, and be consistent.
 		G->G->goal_bar_autoadvance(req->misc->channel, (["user": chan]), special[1..], cents);
 		return "Cool thanks!";
 	}
@@ -123,3 +133,5 @@ mapping get_chan_state(object channel, string grp) {
 		"token": stringp(cfg->verification_token) && "..." + cfg->verification_token[<3..],
 	]);
 }
+
+protected void create(string name) {::create(name);}
