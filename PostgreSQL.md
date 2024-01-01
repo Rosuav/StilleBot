@@ -23,6 +23,7 @@ cp /etc/letsencrypt/live/sikorsky.rosuav.com/fullchain.pem /etc/postgresql/15/ma
 cp /etc/letsencrypt/live/sikorsky.rosuav.com/privkey.pem /etc/postgresql/15/main/
 chown postgres: *.pem
 chmod 600 *.pem
+-- TODO: Do this on both Gideon and Sikorsky, as part of their renewal-hooks
 
 
 To make things work, *tables* must exist on both ends; the replication
@@ -35,3 +36,7 @@ run the bot on either Gideon or Sikorsky and talk to a database on either Gideon
 or Sikorsky. (TODO: Open up Gideon with the same SSL certificate authentication.)
 Ultimately, migrate all configs into the database, and then have a way to select
 which DB host is in use.
+
+NOTE: Attempting to connect to gideon.rosuav.com from Sikorsky MAY result in an
+unsuccessful attempt to use IPv6. (Sigh. Why can't it be successful?) Instead,
+use the name ipv4.rosuav.com to force protocol.
