@@ -1,3 +1,12 @@
+/* Having trouble debugging this grammar? It's almost compatible with
+GNU Bison - just add this line before everything else:
+%%
+Now you can use "bison modules/mustard.grammar -Wcounterexamples" to
+see what's going on with any shift/reduce conflicts. It'll also create
+a file called "mustard.tab.grammar" which is mostly C but contains the
+references to Pike functions, which will thus not compile; but it's at
+least *syntactically* valid. */
+
 mustard: ;
 mustard: flags group {flagmessage};
 
@@ -48,13 +57,20 @@ to do is encase something in braces, which counts as a 'message' (the lowest
 form, valid in all nodes). */
 message: "string";
 message: "comment" {makecomment};
-message: "name" "(" params ")" condmessage {builtin};
 message: "{" flags group "}" {flagmessage2};
 message: "[" flags group "]" {flagmessage2};
 message: "{" "}" {emptymessage};
 message: "[" "]" {emptymessage};
-message: "try" condmessage "catch" condmessage {trycatch}; /* Possible future expansion: "catch" "(" filter ")" condmessage */
 message: "varname" varoper value {setvar};
+message: "name" "(" params ")" closedcond {builtin};
+message: "try" condmessage "catch" closedcond {trycatch}; /* Possible future expansion: "catch" "(" filter ")" condmessage */
+/* For any grammar rule that ends with chaining to another message -
+that is, anything where you stick a prefix onto a message - there have
+to be two variants, one in "message" that chains to closedcond, and one
+in "opencond" that chains to another "opencond". This maintains the
+state of whether 'else' clauses are optional or mandatory. */
+opencond: "name" "(" params ")" opencond {builtin};
+opencond: "try" condmessage "catch" opencond {trycatch};
 
 params: {makeparams};
 params: param_list;
