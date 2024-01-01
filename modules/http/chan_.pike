@@ -56,6 +56,7 @@ continue Concurrent.Future|mapping(string:mixed) find_channel(Protocols.HTTP.Ser
 		"type": "text/plain; charset=\"UTF-8\"",
 		"error": 404,
 	]);
+	if (chan != lower_case(chan)) return redirect(sprintf("/channels/%s/%s", lower_case(chan), endpoint), 301);
 	if (chan == "demo") {
 		chan = "!demo"; //Use /channels/demo/commands to access fake-mod demo mode
 		string l = req->misc->session->user->?login;
