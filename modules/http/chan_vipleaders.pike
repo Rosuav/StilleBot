@@ -155,7 +155,7 @@ void websocket_cmd_configure(mapping(string:mixed) conn, mapping(string:mixed) m
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	mapping stats = persist_status->path("subgiftstats", channel->name[1..]);
-	constant options = "active badge_count board_count private_leaderboard use_kofi" / " ";
+	constant options = "active badge_count board_count private_leaderboard use_kofi use_streamlabs" / " ";
 	int was_private = stats->private_leaderboard;
 	foreach (options, string opt) if (!undefinedp(msg[opt])) stats[opt] = (int)msg[opt]; //They're all integers at the moment
 	if (!was_private || !stats->private_leaderboard) send_updates_all(channel->name);
@@ -256,7 +256,7 @@ continue Concurrent.Future low_kofi_tip(object channel, string type, mapping par
 		"giver": ([
 			//If we don't have a recognized user, use the name and email as the identity. Close enough
 			//but won't give any VIP badges out.
-			"user_id": user->id || raw->email,
+			"user_id": user->id || raw->email || "274598607",
 			"login": user->login || params->username,
 			"displayname": user->displayname || params->username,
 		]),
@@ -269,6 +269,20 @@ continue Concurrent.Future low_kofi_tip(object channel, string type, mapping par
 	persist_status->save();
 	send_updates_all(channel->name);
 	send_updates_all("control" + channel->name);
+}
+
+@hook_allmsgs:
+int message(object channel, mapping person, string msg)
+{
+	//TODO: Unify this somewhere and have an event hook for tips.
+	if (person->user == "streamlabs") {
+		sscanf(msg, "%s just tipped $%d.%d!", string user, int dollars, int cents);
+		mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
+		if (stats->?active && stats->use_streamlabs) spawn_task(low_kofi_tip(channel, "!kofi_dono", ([
+			"cents": dollars * 100 + cents,
+			"username": user,
+		]), (["email": user])));
+	}
 }
 
 @hook_subscription:

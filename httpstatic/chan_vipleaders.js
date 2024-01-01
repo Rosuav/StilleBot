@@ -76,7 +76,7 @@ export function render(data) {
 			rows.push(TR([
 				TD(make_list(subs, s => [s, " subs"], "(no subgifting data)", data.badge_count || 10, which_month)),
 				TD(make_list(bits, s => [s, " bits"], "(no cheering data)", data.badge_count || 10, which_month)),
-				data.use_kofi && TD(make_list(kofi, cents_formatter, "(no tipping data)", data.badge_count || 10, which_month)),
+				(data.use_kofi || data.use_streamlabs) && TD(make_list(kofi, cents_formatter, "(no tipping data)", data.badge_count || 10, which_month)),
 			]));
 			if (!--mon) {--year; mon = 12;}
 			++which_month;
@@ -133,6 +133,10 @@ export function render(data) {
 				P(LABEL([
 					INPUT({name: "use_kofi", type: "checkbox"}),
 					" Show Ko-fi donations on a third leaderboard (requires Ko-fi Integration)",
+				])),
+				P(LABEL([
+					INPUT({name: "use_streamlabs", type: "checkbox"}),
+					" Show StreamLabs donations on a third leaderboard (combined with Ko-fi if applicable)",
 				])),
 				P(BUTTON({type: "submit"}, "Save")),
 			]),
