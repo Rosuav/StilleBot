@@ -275,8 +275,7 @@ continue Concurrent.Future low_kofi_tip(object channel, string type, mapping par
 int message(object channel, mapping person, string msg)
 {
 	//TODO: Unify this somewhere and have an event hook for tips.
-	if (person->user == "streamlabs") {
-		sscanf(msg, "%s just tipped $%d.%d!", string user, int dollars, int cents);
+	if (person->user == "streamlabs" && sscanf(msg, "%s just tipped $%d.%d!", string user, int dollars, int cents) && user && (dollars || cents)) {
 		sscanf(user, "> %s", user); //Not sure if this always happens or not.
 		mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
 		if (stats->?active && stats->use_streamlabs) spawn_task(low_kofi_tip(channel, "!kofi_dono", ([
