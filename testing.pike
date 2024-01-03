@@ -54,10 +54,18 @@ class DBConnection(string host) {
 	}
 }
 
-void reconnect() {
-	sikorsky = DBConnection("sikorsky.rosuav.com");
+void reconnect(int force) {
+	if (force) {
+		foreach (({sikorsky, gideon}), object|zero db) if (db) {
+			werror("Closing connection to %s.\n", db->host);
+			db->close();
+			destruct(db);
+		}
+		sikorsky = gideon = 0;
+	}
+	if (!sikorsky) sikorsky = DBConnection("sikorsky.rosuav.com");
 	if (sikorsky->readonly) {
-		gideon = DBConnection("ipv4.rosuav.com");
+		if (!gideon) gideon = DBConnection("ipv4.rosuav.com");
 		if (gideon->readonly) {werror("No active DB, suspending saves\n"); active = 0;}
 		else active = gideon;
 	}
@@ -66,13 +74,16 @@ void reconnect() {
 
 void ping() {
 	call_out(ping, 10);
-	if (active) werror("Query: %O\n", active->db->query("select * from stillebot.user_followed_categories limit 1")[0]);
-	else werror("No active connection.\n");
+	if (!active) {
+		reconnect(0);
+		if (!active) {werror("No active connection.\n"); return;}
+	}
+	werror("Query: %O\n", active->db->query("select * from stillebot.user_followed_categories limit 1")[0]);
 }
 
 protected void create(string name) {
 	::create(name);
-	reconnect();
+	reconnect(1);
 	werror("Active: %O\n", active && active->host);
 	call_out(ping, 10);
 }
