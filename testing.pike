@@ -43,10 +43,10 @@ class DBConnection(string host) {
 		db = Sql.Sql("pgsql://rosuav@" + host + "/stillebot", ([
 			"force_ssl": 1, "ssl_context": ctx, "application_name": "stillebot",
 		]));
-		werror("Connected to %O.\n", host);
 		db->set_notify_callback("readonly", notify_readonly);
 		db->query("listen readonly");
 		string ro = db->query("show default_transaction_read_only")[0]->default_transaction_read_only;
+		werror("Connected to %O - %s.\n", host, ro == "on" ? "r/o" : "r-w");
 		if (ro == "on") {
 			db->query("set application_name = 'stillebot-ro'");
 			readonly = 1;
