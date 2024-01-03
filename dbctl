@@ -1,7 +1,7 @@
 #!/bin/bash
 case $1 in
 	up)
-		psql stillebot -c "alter database stillebot reset default_transaction_read_only; notify readonly, 'off';"
+		psql stillebot -c "begin read write; alter database stillebot reset default_transaction_read_only; commit; notify readonly, 'off';"
 	;;
 	dn|down)
 		psql stillebot -c "alter database stillebot set default_transaction_read_only = on; notify readonly, 'on';"
