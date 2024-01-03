@@ -330,3 +330,7 @@
     date.)
 * MustardScript enhancements
   - Look into making a syntax highlighter config
+* Twitch is planning to blur sexual content by default, and to give the option to
+  filter. When this rolls out, consider matching their defaults (currently, the user
+  has to explicitly choose to hide explicit content), and if the user prefs are made
+  visible, query them in the raid finder and do what the user wants.
