@@ -56,7 +56,7 @@ class DBConnection(string host) {
 void reconnect() {
 	sikorsky = DBConnection("sikorsky.rosuav.com");
 	if (sikorsky->readonly) {
-		gideon = DBConnection("gideon.rosuav.com");
+		gideon = DBConnection("ipv4.rosuav.com");
 		if (gideon->readonly) {werror("No active DB, suspending saves\n"); active = 0;}
 		else active = gideon;
 	}
