@@ -31,7 +31,7 @@ void notify_readonly(int pid, string cond, string extra, string host) {
 	//condition on startup, but we're already going to be in the right state anyway.
 }
 
-mapping connect(string host) {
+continue Concurrent.Future connect(string host) {
 	werror("Connecting to Postgres on %O...\n", host);
 	mapping db = connections[host] = (["host": host]); //Not a floop, strings are just strings :)
 	string key = Stdio.read_file("privkey.pem");
@@ -43,17 +43,17 @@ mapping connect(string host) {
 		"force_ssl": 1, "ssl_context": ctx, "application_name": "stillebot",
 	]));
 	db->conn->set_notify_callback("readonly", notify_readonly, 0, host);
-	db->conn->query("listen readonly");
-	string ro = db->conn->query("show default_transaction_read_only")[0]->default_transaction_read_only;
+	yield(db->conn->promise_query("listen readonly"));
+	string ro = yield(db->conn->promise_query("show default_transaction_read_only"))->get()[0]->default_transaction_read_only;
 	werror("Connected to %O - %s.\n", host, ro == "on" ? "r/o" : "r-w");
 	if (ro == "on") {
-		db->conn->query("set application_name = 'stillebot-ro'");
+		yield(db->conn->promise_query("set application_name = 'stillebot-ro'"));
 		db->readonly = 1;
 	}
 	db->connected = 1;
 }
 
-void reconnect(int force) {
+continue Concurrent.Future|zero reconnect(int force) {
 	if (force) {
 		foreach (connections; string host; mapping db) {
 			if (!db->connected) {werror("Still connecting to %s...\n", host); continue;} //Will probably need a timeout somewhere
@@ -64,25 +64,27 @@ void reconnect(int force) {
 		connections = ([]); //TODO: Ensure that it's okay to rebind like this, otherwise empty the existing mapping instead
 	}
 	foreach (({"sikorsky.rosuav.com", "ipv4.rosuav.com"}), string host) {
-		if (!connections[host]) connect(host);
-		if (!connections[host]->readonly) {active = host; return;}
+		if (!connections[host]) yield((mixed)connect(host));
+		if (!connections[host]->readonly) {active = host; return 0;}
 	}
 	werror("No active DB, suspending saves\n");
 	active = 0;
 }
 
-void ping() {
-	call_out(ping, 10);
-	if (!active) {
-		reconnect(0);
-		if (!active) {werror("No active connection.\n"); return;}
+continue Concurrent.Future|zero ping() {
+	yield((mixed)reconnect(1));
+	werror("Active: %s\n", active || "None!");
+	while (1) {
+		if (!active) {
+			yield((mixed)reconnect(0));
+			if (!active) {werror("No active connection.\n"); return 0;}
+		}
+		werror("Query: %O\n", yield(connections[active]->conn->promise_query("select * from stillebot.user_followed_categories limit 1"))->get()[0]);
+		yield(task_sleep(10));
 	}
-	werror("Query: %O\n", connections[active]->conn->query("select * from stillebot.user_followed_categories limit 1")[0]);
 }
 
 protected void create(string name) {
 	::create(name);
-	reconnect(1);
-	werror("Active: %O\n", active || "None!");
-	call_out(ping, 10);
+	spawn_task(ping());
 }
