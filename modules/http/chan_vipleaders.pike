@@ -58,6 +58,11 @@ constant loggedin = #"
 //would never have badges removed (even if they were given leaderboard badges before becoming permavips),
 //and will always have them added when any badges are added (to ensure that they retain them).
 //Possible action: "turn current VIPs permanent". Good as part of setting up for the first time.
+//Note that this should be shown on the front end, in case such users end up on the leaderboard. This
+//might have been unlikely when this was first created (the ones Devi gives VIP to permanently are not
+//likely to be cheering/subgifting enough to get on the board), but now it's possible to donate a spot
+//on the leaderboard by tipping with their name, so anyone could be on the list!
+
 
 mapping tierval = (["2": 2, "3": 6]); //TODO: Should this be configurable? Some people might prefer a T3 to be worth 5.
 
