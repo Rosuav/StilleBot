@@ -61,7 +61,7 @@ void reconnect(int force) {
 			db->conn->close();
 			destruct(db->conn);
 		}
-		connections = ([]); //TODO: Check if it's okay to rebind like this, otherwise empty the existing mapping instead
+		connections = ([]); //TODO: Ensure that it's okay to rebind like this, otherwise empty the existing mapping instead
 	}
 	foreach (({"sikorsky.rosuav.com", "ipv4.rosuav.com"}), string host) {
 		if (!connections[host]) connect(host);
