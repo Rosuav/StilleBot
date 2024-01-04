@@ -50,11 +50,13 @@ mapping connect(string host) {
 		db->conn->query("set application_name = 'stillebot-ro'");
 		db->readonly = 1;
 	}
+	db->connected = 1;
 }
 
 void reconnect(int force) {
 	if (force) {
 		foreach (connections; string host; mapping db) {
+			if (!db->connected) {werror("Still connecting to %s...\n", host); continue;} //Will probably need a timeout somewhere
 			werror("Closing connection to %s.\n", host);
 			db->conn->close();
 			destruct(db->conn);
