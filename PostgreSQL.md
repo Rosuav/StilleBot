@@ -79,10 +79,11 @@ Start with both databases down and replicating. (Use `./dbctl dn` and `./dbctl r
 on whichever was up.) During this time, all actual changes will be queued in the
 bot itself, with no actual DB updates being done.
 
-Then, on each database, perform the necessary changes. (Start with 'begin read write'
-to enable changes despite the DB being notionally down.) Finally, with all changes
-done on both ends and committed, do this as root:
+With the databases quiescent, running the DB script with `--update` (currently
+that's done by testing.pike, ultimately it'll have a proper home) will update all
+databases with the necessary changes. Then when it's done, use `./dbctl refreshrepl`
+on both ends if any new tables have been created, otherwise go ahead and bring the
+database back up again.
 
-    stillebot=# alter subscription multihome refresh publication with (copy_data = false);
-
-This should then allow full replication to resume.
+If any database is in read-write mode, attempting an update will silently succeed
+as long as nothing needs to be changed, but otherwise will error out.

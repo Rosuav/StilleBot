@@ -11,7 +11,7 @@ case $1 in
 		sudo sudo -u postgres psql stillebot -c "begin read write; alter subscription multihome enable; commit;"
 	;;
 	refreshrepl)
-		sudo sudo -u postgres psql stillebot -c "set default_transaction_read_only = false" -c "alter subscription multihome refresh publication;"
+		sudo sudo -u postgres psql stillebot -c "set default_transaction_read_only = false" -c "alter subscription multihome refresh publication with (copy_data = false);"
 	;;
 	stat|status)
 		psql stillebot -c "
