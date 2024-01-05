@@ -1,10 +1,14 @@
 #!/bin/bash
 case $1 in
 	up)
+		sudo sudo -u postgres psql stillebot -c "set default_transaction_read_only = 'off'; alter subscription multihome disable;"
 		psql stillebot -c "begin read write; alter database stillebot reset default_transaction_read_only; commit; notify readonly, 'off';"
 	;;
 	dn|down)
 		psql stillebot -c "alter database stillebot set default_transaction_read_only = on; notify readonly, 'on';"
+	;;
+	replicate|repl|rep)
+		sudo sudo -u postgres psql stillebot -c "set default_transaction_read_only = 'off'; alter subscription multihome enable;"
 	;;
 	stat|status)
 		psql stillebot -c "
