@@ -15,7 +15,7 @@ PostgreSQL is used with the following configuration options:
   Currently this is /etc/ssl/certs/ISRG_Root_X1.pem but may need to change.
 * Connect: PGSSLROOTCERT=/etc/ssl/certs/ISRG_Root_X1.pem PGSSLCERT=certificate.pem PGSSLKEY=privkey.pem psql -h sikorsky.rosuav.com
 * Create a publication on Sikorsky:
-  stillebot=# create publication multihome for tables in schema stillebot;
+  stillebot=# create publication multihome for all tables;
 * Create a subscription on Gideon:
   stillebot=# create subscription multihome connection 'dbname=stillebot host=sikorsky.rosuav.com user=rosuav sslmode=require sslcert=/etc/postgresql/15/main/certificate.pem sslkey=/etc/postgresql/15/main/privkey.pem sslrootcert=/etc/ssl/certs/ISRG_Root_X1.pem application_name=multihome' publication multihome with (copy_data = false);
   - Note that the user 'rosuav' must have the Replication attribute (confirm with `\du+`).
@@ -69,3 +69,20 @@ be possible, using the 'origin' parameter to ensure that they don't see repeated
 transactions. But for now, I'm using Postgres 15, so for safety's sake, disable
 the replication as a database comes up, and only enable it on a down database
 once it's definitely quiescent.
+
+Changes to table structure
+--------------------------
+
+DDL statements are not replicated. Thus all changes to table structure (including
+and especially the creation of new tables) must be done on both databases at once.
+Start with both databases down and replicating. (Use `./dbctl dn` and `./dbctl repl`
+on whichever was up.) During this time, all actual changes will be queued in the
+bot itself, with no actual DB updates being done.
+
+Then, on each database, perform the necessary changes. (Start with 'begin read write'
+to enable changes despite the DB being notionally down.) Finally, with all changes
+done on both ends and committed, do this as root:
+
+    stillebot=# alter subscription multihome refresh publication with (copy_data = false);
+
+This should then allow full replication to resume.
