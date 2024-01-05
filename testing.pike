@@ -72,16 +72,16 @@ continue Concurrent.Future|zero reconnect(int force) {
 	active = 0;
 }
 
-continue Concurrent.Future|zero ping() {
+continue Concurrent.Future ping() {
 	yield((mixed)reconnect(1));
 	werror("Active: %s\n", active || "None!");
 	while (1) {
+		yield(task_sleep(10));
 		if (!active) {
 			yield((mixed)reconnect(0));
-			if (!active) {werror("No active connection.\n"); return 0;}
+			if (!active) {werror("No active connection.\n"); continue;}
 		}
 		werror("Query: %O\n", yield(connections[active]->conn->promise_query("select * from stillebot.user_followed_categories limit 1"))->get()[0]);
-		yield(task_sleep(10));
 	}
 }
 
