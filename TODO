@@ -285,28 +285,6 @@
   - Note that running StilleBot on Gideon requires ../pike9/bin/pike
   - Ideally, replication should use both server and client SSL certs, making use of
     the same certs StilleBot uses for both sikorsky.rosuav.com and gideon.rosuav.com.
-* Database transfer procedure
-  - Initially, Sikorsky is read-write, Gideon is read-only.
-    - ALTER DATABASE on Gideon default_transaction_read_only = on
-  - I choose to bring Sikorsky's DB down.
-  - Sikorsky's DB becomes read-only
-    - ALTER DATABASE on Sikorsky default_transaction_read_only = on
-    - notify readonly, 'on'
-  - Wait until there are no open read-write transactions
-    - select count(*) from pg_stat_activity where application_name = 'stillebot';
-    - Note that this will also count any in-progress connections, but they should
-      notice the read_only flag and change their names promptly.
-  - Reverse the direction of replication
-    - TEST: That replication can occur in either direction and be started and
-      stopped independently; OR that replication can concurrently exist in both
-      directions without conflict (assuming one database is read-only).
-  - Mark Gideon's DB as read-write
-    - ALTER DATABASE reset
-    - notify readonly, 'off'
-  - StilleBot connects to Gideon and pushes out any pending changes
-  - REQUIREMENT: After a code update, disconnect and reconnect, but don't lose any
-    current settings changes. Flag (both) old connection(s) as read-only, connect
-    once they are both quiescent, then close the old ones.
 * Multi-homing.
   - Have reserved the names stillebot.rosuav.com and stillebot.com for this purpose.
   - Need to set up a redirect on Gideon: if a certbot request comes in, 302 it to

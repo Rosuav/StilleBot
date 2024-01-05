@@ -40,3 +40,23 @@ which DB host is in use.
 NOTE: Attempting to connect to gideon.rosuav.com from Sikorsky MAY result in an
 unsuccessful attempt to use IPv6. (Sigh. Why can't it be successful?) Instead,
 use the name ipv4.rosuav.com to force protocol.
+
+Database transfer procedure
+---------------------------
+
+Initially, Sikorsky is read-write, Gideon is read-only. (Procedure works equally
+either direction.) Confirm this with `./dbctl stat` on both systems: should show
+that default_transaction_read_only is 'off' on Sikorsky and 'On' on Gideon.
+
+1. On Sikorsky, `./dbctl down'
+2. Sikorsky: `./dbctl stat' until no rows with application_name 'stillebot'
+   remain (they've all switched to 'stillebot-ro').
+3. TODO: Reverse the direction of replication
+   - TEST: That replication can occur in either direction and be started and
+     stopped independently; OR that replication can concurrently exist in both
+     directions without conflict (assuming one database is read-only).
+4. On Gideon, `./dbctl up`
+5. Bot instances should all notice this and push out pending changes. It will
+   now be safe to bring down Sikorsky's DB.
+
+Same procedure with roles switched should bring everything back to normal.
