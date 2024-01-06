@@ -25,3 +25,9 @@ void websocket_cmd_test(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	}
 	conn->sock->send_text(Standards.JSON.encode(ret, 4));
 }
+
+mapping(string:mixed) redirect_no_p(Protocols.HTTP.Server.Request req) {return redirect("/regexp");}
+protected void create(string name) {
+	::create(name);
+	G->G->http_endpoints["/regex"] = redirect_no_p;
+}
