@@ -87,7 +87,7 @@ tr.your_slot {background: #bff;} /* That's right, you are your own BFF */
 {: tag=formdialog #bulkmgmt_dlg}
 ";
 
-//TODO: Allow requests to be hidden, which would entail taking claims out of the cfg mapping.
+//Maybe in the future, allow requests to be hidden? This would entail taking claims out of the cfg mapping.
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
