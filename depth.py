@@ -6,6 +6,9 @@ def search(path, data):
 	# Some things are stored as blobs - don't bother recursing into them.
 	if len(path) > 2 and path[1] == "commands": return
 	if len(path) > 3 and path[1] == "userprefs": return
+	# Some might need to be, unsure as yet.
+	if len(path) > 2 and path[1] in ("subgiftstats", "raidtrain"): return
+	if len(path) > 4 and path[1] == "alertbox" and path[3] == "replay": return
 	if isinstance(data, list): data = enumerate(data)
 	elif isinstance(data, dict): data = data.items()
 	else: return
