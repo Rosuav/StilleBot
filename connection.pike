@@ -1230,7 +1230,7 @@ void session_cleanup()
 	int limit = time();
 	foreach (sess; string cookie; mapping info)
 		if (info->expires <= limit) m_delete(sess, cookie);
-	Stdio.write_file("twitchbot_sessions.json", encode_value(sess));
+	Stdio.write_file("twitchbot_sessions.db", encode_value(sess));
 	if (sizeof(sess)) G->G->http_session_cleanup = call_out(session_cleanup, 86400);
 }
 
@@ -1280,7 +1280,7 @@ continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 		resp->extra_heads["Set-Cookie"] = "session=" + sess->cookie + "; Path=/; Max-Age=604800; SameSite=Strict";
 		G->G->http_sessions[sess->cookie] = sess;
 		if (!G->G->http_session_cleanup) session_cleanup();
-		else Stdio.write_file("twitchbot_sessions.json", encode_value(G->G->http_sessions));
+		else Stdio.write_file("twitchbot_sessions.db", encode_value(G->G->http_sessions));
 	}
 	req->response_and_finish(resp);
 }
@@ -1415,7 +1415,7 @@ protected void create(string name)
 {
 	::create(name);
 	if (!G->G->http_sessions) {
-		mixed sess; catch {sess = decode_value(Stdio.read_file("twitchbot_sessions.json"));};
+		mixed sess; catch {sess = decode_value(Stdio.read_file("twitchbot_sessions.db"));};
 		G->G->http_sessions = mappingp(sess) ? sess : ([]);
 	}
 	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
