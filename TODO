@@ -312,3 +312,4 @@
   filter. When this rolls out, consider matching their defaults (currently, the user
   has to explicitly choose to hide explicit content), and if the user prefs are made
   visible, query them in the raid finder and do what the user wants.
+* Show the trigger text in the summary view on /triggers
