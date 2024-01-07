@@ -101,8 +101,7 @@ continue Concurrent.Future|zero reconnect(int force) {
 continue Concurrent.Future ping() {
 	yield((mixed)reconnect(1));
 	werror("Active: %s\n", active || "None!");
-	while (1) {
-		yield(task_sleep(10));
+	for (;;yield(task_sleep(10))) {
 		if (!active) {
 			yield((mixed)reconnect(0));
 			if (!active) {werror("No active connection.\n"); continue;}
