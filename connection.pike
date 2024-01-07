@@ -480,7 +480,7 @@ class channel(mapping config) {
 		//Note that message->action was a variables-only form of destcfg, so it is merged in too.
 		else if (message->dest) cfg |= ([
 			"dest": message->dest,
-			"target": _substitute_vars(message->target || "", vars, person, cfg->users),
+			"target": String.trim(_substitute_vars(message->target || "", vars, person, cfg->users)),
 			"destcfg": _substitute_vars(message->action || message->destcfg || "", vars, person, cfg->users),
 		]);
 

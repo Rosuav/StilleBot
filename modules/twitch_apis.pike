@@ -148,7 +148,7 @@ mixed qshoutout(object c, string v, string m, mapping t) {return shoutout(c, v, 
 
 @"user:manage:whispers":
 continue Concurrent.Future w(object channel, string voiceid, string msg, mapping tok) {
-	sscanf(msg, "%s %s", string user, string message);
+	sscanf(String.trim(msg), "%s %s", string user, string message);
 	if (!message) return 0;
 	mapping ret = yield(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/whispers?from_user_id=%s&to_user_id={{USER}}",
