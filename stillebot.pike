@@ -7,16 +7,16 @@ Requires OAuth authentication, which is by default handled by the GUI.
 
 array(string) bootstrap_files = ({"persist.pike", "globals.pike", "poll.pike", "connection.pike", "window.pike", "modules", "modules/http", "zz_local"});
 array(string) restricted_update;
-mapping G = ([]);
+mapping G = (["consolecmd": ([])]);
 
-void console(object stdin, string buf)
-{
-	while (has_value(buf, "\n"))
-	{
+void console(object stdin, string buf) {
+	while (has_value(buf, "\n")) {
 		sscanf(buf, "%s\n%s", string line, buf);
 		if (line == "update") bootstrap_all();
+		else if (function f = G->consolecmd[line]) f(line); //TODO: Allow word splitting, look up based on first word, provide others
 	}
-	if (buf == "update") bootstrap_all();
+	if (buf == "update") bootstrap_all(); //TODO: Dedup with the above
+	else if (function f = G->consolecmd[buf]) f(buf);
 }
 
 object bootstrap(string c)

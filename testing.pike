@@ -111,6 +111,10 @@ continue Concurrent.Future ping() {
 	}
 }
 
+continue Concurrent.Future increment() {
+	werror("Increment unimplemented\n"); //stub
+}
+
 //Attempt to create all tables and alter them as needed to have all columns
 continue Concurrent.Future create_tables() {
 	yield((mixed)reconnect(0)); //Ensure that we have at least one connection
@@ -176,4 +180,6 @@ protected void create(string name) {
 		return;
 	}
 	spawn_task(ping());
+	G->G->consolecmd->inc = lambda() {spawn_task(increment());};
+	G->G->consolecmd->quit = lambda() {exit(0);};
 }
