@@ -10,6 +10,7 @@ inherit annotated;
 //NOTE: We assume that no table will ever exist without columns. I mean, why?!?
 //Altering of tables is extremely simplistic and will only ever drop or add a
 //column. For more complex changes, devise a system when one becomes needed.
+//NOTE: Tables will never be dropped, although columns removed from tables will.
 constant tables = ([
 	"user_followed_categories": ({
 		"twitchid bigint not null",
@@ -153,19 +154,19 @@ void increment() {
 //Attempt to create all tables and alter them as needed to have all columns
 continue Concurrent.Future create_tables() {
 	yield((mixed)reconnect(0)); //Ensure that we have at least one connection
-	array(object) dbs;
+	array(mapping) dbs;
 	if (active) {
 		//We can't make changes, but can verify and report inconsistencies.
-		dbs = ({connections[active]->conn});
+		dbs = ({connections[active]});
 	} else if (!sizeof(connections)) {
 		//No connections, nothing succeeded
 		error("Unable to verify database status, no PostgreSQL connections\n");
 	} else {
 		//Update all databases. This is what we normally want.
-		dbs = values(connections)->conn;
+		dbs = values(connections);
 	}
-	foreach (dbs, object db) {
-		array cols = yield(db->promise_query("select table_name, column_name from information_schema.columns where table_schema = 'stillebot' order by table_name, ordinal_position"))->get();
+	foreach (dbs, mapping db) {
+		array cols = yield(db->conn->promise_query("select table_name, column_name from information_schema.columns where table_schema = 'stillebot' order by table_name, ordinal_position"))->get();
 		array stmts = ({ });
 		mapping(string:array(string)) havecols = ([]);
 		foreach (cols, mapping col) havecols[col->table_name] += ({col->column_name});
@@ -195,10 +196,10 @@ continue Concurrent.Future create_tables() {
 		}
 		if (sizeof(stmts)) {
 			if (active) error("Table structure changes needed!\n%O\n", stmts);
-			werror("Making changes: %O\n", stmts);
-			yield(db->promise_query("begin read write"));
-			foreach (stmts, string stmt) yield(db->promise_query(stmt));
-			yield(db->promise_query("commit"));
+			werror("Making changes on %s: %O\n", db->host, stmts);
+			yield(db->conn->promise_query("begin read write"));
+			foreach (stmts, string stmt) yield(db->conn->promise_query(stmt));
+			yield(db->conn->promise_query("commit"));
 		}
 	}
 }
