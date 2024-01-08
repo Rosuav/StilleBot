@@ -30,6 +30,19 @@ constant tables = ([
 mapping(string:mapping(string:mixed)) connections = ([]);
 string active; //Host name only, not the connection object itself
 
+array(array(string|mapping)) waiting_for_active = ({ });
+continue Concurrent.Future _got_active(object conn) {
+	//Pull all the pendings and reset the array before actually saving any of them.
+	array wfa = waiting_for_active; waiting_for_active = ({ });
+	werror("Unpending WFAs: %O\n", wfa);
+	foreach (wfa, [string query, mapping bindings]) {
+		werror("Executing pending save! %s\n", query);
+		mixed err = catch {yield(conn->promise_query(query, bindings));};
+		if (err) werror("Unable to save pending to database!\n%s\n", describe_backtrace(err));
+	}
+}
+void _have_active(string a) {active = a; spawn_task(_got_active(connections[active]->conn));}
+
 class SSLContext {
 	inherit SSL.Context;
 	array|zero find_cert_issuer(array(string) ders) {
@@ -45,13 +58,13 @@ void notify_readonly(int pid, string cond, string extra, string host) {
 		db->conn->query(#"select set_config('application_name', 'stillebot-ro', false),
 				set_config('default_transaction_read_only', 'on', false)");
 		db->readonly = 1;
-		if (active == host) active = 0;
+		if (active == host) {active = 0; spawn_task(reconnect(0));}
 	} else if (extra == "off" && db->readonly) {
 		werror("SWITCHING TO READ-WRITE MODE: %O\n", host);
 		db->conn->query(#"select set_config('application_name', 'stillebot', false),
 				set_config('default_transaction_read_only', 'off', false)");
 		db->readonly = 0;
-		if (!active) active = host;
+		if (!active) _have_active(host);
 	}
 	//Else we're setting the mode we're already in. This may indicate a minor race
 	//condition on startup, but we're already going to be in the right state anyway.
@@ -92,26 +105,49 @@ continue Concurrent.Future|zero reconnect(int force) {
 	}
 	foreach (({"sikorsky.rosuav.com", "ipv4.rosuav.com"}), string host) {
 		if (!connections[host]) yield((mixed)connect(host));
-		if (!connections[host]->readonly) {active = host; return 0;}
+		if (!connections[host]->readonly) {_have_active(host); return 0;}
 	}
 	werror("No active DB, suspending saves\n");
 	active = 0;
 }
 
+int cur_category;
 continue Concurrent.Future ping() {
 	yield((mixed)reconnect(1));
 	werror("Active: %s\n", active || "None!");
 	for (;;yield(task_sleep(10))) {
 		if (!active) {
 			yield((mixed)reconnect(0));
-			if (!active) {werror("No active connection.\n"); continue;}
+			if (!active) {werror("No active connection - cached value is %d.\n", cur_category); continue;}
 		}
-		werror("Query: %O\n", yield(connections[active]->conn->promise_query("select * from stillebot.user_followed_categories limit 1"))->get()[0]);
+		mapping ret = yield(connections[active]->conn->promise_query("select * from stillebot.user_followed_categories where twitchid = 1"))->get()[0];
+		werror("Current value: %O\n", cur_category = ret->category);
 	}
 }
 
-continue Concurrent.Future increment() {
-	werror("Increment unimplemented\n"); //stub
+continue Concurrent.Future|string save_to_db(string query, mapping bindings) {
+	if (active) {
+		mixed err = catch {yield(connections[active]->conn->promise_query(query, bindings));};
+		if (!err) return "ok"; //All good!
+		//Report the error to the console, since the caller isn't hanging around.
+		//TODO: If the error is because there's actually no database available,
+		//put ourselves in the queue.
+		werror("Unable to save to database!\n%s\n", describe_backtrace(err));
+		return "fail";
+	}
+	werror("Save pending! %s\n", query);
+	waiting_for_active += ({({query, bindings})});
+	return "retry";
+}
+
+void save(string query) { //Eventually this will be multiple save functions for different logical datasets
+	spawn_task(save_to_db(query, ([])));
+}
+
+void increment() {
+	int newval = ++cur_category;
+	werror("Updating value to %d and saving.\n", newval);
+	save(sprintf("update stillebot.user_followed_categories set category = %d where twitchid = 1", newval));
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
@@ -179,6 +215,6 @@ protected void create(string name) {
 		return;
 	}
 	spawn_task(ping());
-	G->G->consolecmd->inc = lambda() {spawn_task(increment());};
+	G->G->consolecmd->inc = increment;
 	G->G->consolecmd->quit = lambda() {exit(0);};
 }
