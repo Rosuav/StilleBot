@@ -26,6 +26,20 @@ constant tables = ([
 		"created timestamp with time zone not null default now()",
 		"create unique index on stillebot.commands (channel, cmdname) where active;",
 	}),
+	//Generic channel info that stores anything that could be in channels/TWITCHID.json
+	//or twitchbot_status.json.
+	"config": ({
+		"twitchid bigint not null",
+		"keyword varchar not null",
+		"data json not null",
+		" primary key (twitchid, keyword)",
+	}),
+	//Simple list of the "exportable" configs as stored in stillebot.config above.
+	//A user may (when implemented) request their exportable data, as a backup etc.
+	//Can be used for an outer join to exclude non-exportable rows.
+	"config_exportable": ({
+		"keyword varchar primary key",
+	}),
 ]);
 
 mapping(string:mapping(string:mixed)) connections = ([]);
@@ -113,6 +127,7 @@ continue Concurrent.Future|zero reconnect(int force) {
 }
 
 int cur_category;
+mapping cfgtest = ([]);
 continue Concurrent.Future ping() {
 	yield((mixed)reconnect(1));
 	werror("Active: %s\n", active || "None!");
@@ -123,6 +138,8 @@ continue Concurrent.Future ping() {
 		}
 		mapping ret = yield(connections[active]->conn->promise_query("select * from stillebot.user_followed_categories where twitchid = 1"))->get()[0];
 		werror("Current value: %O\n", cur_category = ret->category);
+		cfgtest = yield((mixed)load_config(0, "testing"));
+		werror("Got: %O\n", cfgtest);
 	}
 }
 
@@ -141,14 +158,35 @@ continue Concurrent.Future|string save_to_db(string query, mapping bindings) {
 	return "retry";
 }
 
-void save(string query) { //Eventually this will be multiple save functions for different logical datasets
-	spawn_task(save_to_db(query, ([])));
+void save_sql(string query, mapping|void bindings) {
+	spawn_task(save_to_db(query, bindings));
+}
+
+void save_config(string|int twitchid, string kwd, mixed data) {
+	data = Standards.JSON.encode(data, 4);
+	spawn_task(save_to_db("insert into stillebot.config values (:twitchid, :kwd, :data) on conflict (twitchid, keyword) do update set data=:data",
+		(["twitchid": (int)twitchid, "kwd": kwd, "data": data])));
+}
+
+continue Concurrent.Future|mapping load_config(string|int twitchid, string kwd) {
+	//FIXME: What should happen if there's no DB available? Is it okay to fetch from a read-only database?
+	if (!active) error("No database connection, can't load data!\n");
+	array rows = yield(connections[active]->conn->promise_query("select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
+		(["twitchid": (int)twitchid, "kwd": kwd])))->get();
+	werror("GOT DATA: %O\n", rows);
+	if (!sizeof(rows)) return ([]);
+	return Standards.JSON.decode_utf8(rows[0]->data);
 }
 
 void increment() {
 	int newval = ++cur_category;
 	werror("Updating value to %d and saving.\n", newval);
-	save(sprintf("update stillebot.user_followed_categories set category = %d where twitchid = 1", newval));
+	save_sql("update stillebot.user_followed_categories set category = :newval where twitchid = 1", (["newval": newval]));
+}
+
+void increment2() {
+	werror("Updating value to %d and saving.\n", ++cfgtest->nextid);
+	save_config(0, "testing", cfgtest);
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
@@ -217,5 +255,6 @@ protected void create(string name) {
 	}
 	spawn_task(ping());
 	G->G->consolecmd->inc = increment;
+	G->G->consolecmd->inc2 = increment2;
 	G->G->consolecmd->quit = lambda() {exit(0);};
 }
