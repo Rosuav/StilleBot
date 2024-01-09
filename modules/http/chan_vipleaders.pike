@@ -92,7 +92,7 @@ continue Concurrent.Future force_recalc(string chan, int|void fast) {
 		foreach (stats->allkofi || ({ }), mapping sub) {
 			/* Enable this if a reparse of Ko-fi or SL tips is needed. Much slower of course.
 			foreach ("user_id login displayname" / " ", string key)
-				if (sub->giver[key]) sscanf(sub->giver[key], "%*[>+] %s", sub->giver[key]);
+				if (sub->giver[key]) sscanf(sub->giver[key], "%*[>+?] %s", sub->giver[key]);
 			if (!(int)sub->giver->user_id) catch {
 				mapping user = yield(get_user_info(sub->giver->login, "login"));
 				sub->giver->user_id = user->id;
@@ -290,7 +290,7 @@ int message(object channel, mapping person, string msg)
 {
 	//TODO: Unify this somewhere and have an event hook for tips.
 	if (person->user == "streamlabs" && sscanf(msg, "%s just tipped $%d.%d!", string user, int dollars, int cents) && user && (dollars || cents)) {
-		sscanf(user, "%*[>+] %s", user); //Not sure if this always happens or not. The first "word" has various different symbols in it, usually only one.
+		sscanf(user, "%*[>+?] %s", user); //Not sure if this always happens or not. The first "word" has various different symbols in it, usually only one.
 		mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
 		if (stats->?active && stats->use_streamlabs) spawn_task(low_kofi_tip(channel, "!kofi_dono", ([
 			"cents": dollars * 100 + cents,
