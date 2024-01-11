@@ -290,7 +290,7 @@ int message(object channel, mapping person, string msg)
 {
 	//TODO: Unify this somewhere and have an event hook for tips.
 	if (person->user == "streamlabs" && sscanf(msg, "%s just tipped $%d.%d!", string user, int dollars, int cents) && user && (dollars || cents)) {
-		sscanf(user, "%*[>+?!] %s", user); //Not sure if this always happens or not. The first "word" has various different symbols in it, usually only one.
+		if (sizeof(user) > 3 && user[1] == ' ') user = user[2..]; //Not sure if this always happens. There's often some sort of symbol, and I have no idea if it means anything, just before the name.
 		mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
 		if (stats->?active && stats->use_streamlabs) spawn_task(low_kofi_tip(channel, "!kofi_dono", ([
 			"cents": dollars * 100 + cents,
