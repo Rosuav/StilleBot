@@ -1490,6 +1490,8 @@ mapping all_twitch_scopes = ([
 	//New as of 20231021:
 	"channel:read:ads": "View ad schedule and status", "channel:manage:ads": "Snooze ads", //Been asking for these for ages!
 	"user:read:chat": "Read chat?", "channel:bot": "Be a bot?", "user:bot": "Be a bot??", //Not sure what these mean
+	//New as of 20230111:
+	"user:read:moderated_channels": "See which channels you're a mod for",
 ]);
 
 class TwitchAuth
