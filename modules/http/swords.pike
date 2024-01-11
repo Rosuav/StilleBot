@@ -2,6 +2,8 @@
 inherit http_endpoint;
 constant markdown = #"# The swords you carry
 
+You carry $$swordcount$$ swords across Twitch.
+
 $$swords$$
 
 <style>
@@ -27,6 +29,7 @@ continue string|mapping(string:mixed)|Concurrent.Future http_request(Protocols.H
 	array details_raw = yield(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": channels->broadcaster_id])));
 	mapping details = mkmapping(details_raw->id, details_raw);
 	return render_template(markdown, ([
+		"swordcount": (string)sizeof(channels),
 		"swords": format_sword(channels[*], details) * "\n",
 	]));
 }
