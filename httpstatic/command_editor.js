@@ -220,7 +220,7 @@ export function register_command(msg) {
 		pending_command = null;
 	}
 }
-export function render_command(msg) {
+export function render_command(msg, prefix) {
 	//All commands are objects with (at a minimum) an id and a message.
 	//A simple command is one which is non-conditional and has a single message. Anything
 	//else is a non-simple command and will be non-editable in the table - it can only be
@@ -245,7 +245,7 @@ export function render_command(msg) {
 	register_command(msg);
 	return TR({"data-id": msg.id, "data-editid": editid}, [
 		TD(CODE("!" + msg.id.split("#")[0])),
-		TD(response),
+		TD([prefix, response]),
 		TD(BUTTON({type: "button", className: "advview", title: "Open editor"}, "\u2699")),
 	]);
 }

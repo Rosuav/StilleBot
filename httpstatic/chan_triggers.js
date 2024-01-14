@@ -1,10 +1,16 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {TR, TD} = choc;
-import {render_command, sockmsg_validated} from "$$static||command_editor.js$$";
+const {CODE, TD, TR} = choc; //autoimport
+import {render_command, cmd_configure, sockmsg_validated} from "$$static||command_editor.js$$";
 export {sockmsg_validated};
 
 export const render_parent = DOM("#triggers tbody");
-export const render_item = render_command;
+export function render_item(el) {
+	return render_command(el,
+		el.conditional === "contains" ?
+			["When ", CODE(el.expr1), " is typed..."]
+		: ["When a msg matches ", CODE(el.expr1 || ""), " ..."],
+	);
+}
 export function render_empty() {
 	return render_parent.appendChild(TR([
 		TD({colSpan: 3}, "No triggers defined. Create one!"),
