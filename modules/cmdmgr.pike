@@ -397,7 +397,8 @@ array validate_command(object channel, string|zero mode, string cmdname, echoabl
 	mapping state = (["cdanon": 0, "cooldowns": ([]), "channel": channel]);
 	if (options->language == "mustard") {
 		//Incoming MustardScript as a simple string. Convert it and THEN parse/validate.
-		response = G->G->mustard->parse_mustard(response);
+		mixed ex = catch {response = G->G->mustard->parse_mustard(response);};
+		if (ex) return 0; //TODO: Report the error in some way??
 	}
 	switch (mode) {
 		case "!!trigger": {

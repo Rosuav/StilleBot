@@ -222,7 +222,11 @@ void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) ms
 		"original": msg->original,
 		"language": msg->language == "mustard" ? "mustard" : "",
 	]));
-	if (!valid) return; //But it's okay if the name is invalid, or in demo mode (fake-mod)
+	if (!valid) { //But it's okay if the name is invalid, or in demo mode (fake-mod)
+		if (has_prefix(msg->cmdname, "changetab_"))
+			conn->sock->send_text(Standards.JSON.encode((["cmd": "changetab_failed"]), 4));
+		return;
+	}
 	if (msg->cmdname == "changetab_mustard") {
 		//HACK: Currently using the changetab name to request MustardScript.
 		//TODO: Do this properly somehow.

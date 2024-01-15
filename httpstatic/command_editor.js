@@ -181,6 +181,10 @@ on("click", ".raw_view", e => {
 export function sockmsg_validated(data) {
 	if (data.cmdname.startsWith("changetab_")) select_tab(data.cmdname.replace("changetab_", ""), data.response);
 }
+export function sockmsg_changetab_failed(data) {
+	//TODO: Report the error (which needs to be sent by the server)
+	DOM('[name="editor"][value="' + mode + '"]').checked = true;
+}
 
 let pending_command = null;
 if (location.hash && location.hash.includes("/")) pending_command = location.hash.slice(1).split("/", 2);

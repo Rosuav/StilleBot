@@ -1,7 +1,7 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, CODE, EM, INPUT, TD, TR} = choc; //autoimport
-import {sockmsg_validated, scan_message, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
-export {sockmsg_validated};
+import {sockmsg_validated, sockmsg_changetab_failed, scan_message, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+export {sockmsg_validated, sockmsg_changetab_failed};
 
 cmd_configure({
 	get_command_basis: cmd => {

@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {BUTTON, IMG, INPUT, LI, OPTION, TD, TR, UL} = choc; //autoimport
-import {sockmsg_validated, commands, register_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+import {sockmsg_validated, sockmsg_changetab_failed, commands, register_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 export const render_parent = DOM("#rewards tbody");
 export function render_item(rew) {
@@ -68,5 +68,5 @@ cmd_configure({
 ws_sync.connect(ws_group, {
 	ws_type: "chan_commands", ws_sendid: "cmdedit",
 	render_parent: UL(), //Don't actually need them rendered anywhere (and register_command returns null anyway)
-	render_item: register_command, sockmsg_validated, render: data => { },
+	render_item: register_command, sockmsg_validated, sockmsg_changetab_failed, render: data => { },
 });
