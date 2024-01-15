@@ -119,6 +119,8 @@ function select_tab(tab, response) {
 				),
 			]);
 			mustard_editor = window.ace.edit(DOM("#mustardscript"), {
+				mode: "ace/mode/mustardscript",
+				theme: "ace/theme/tomorrow",
 				selectionStyle: "text",
 				value: response,
 			});
@@ -289,4 +291,54 @@ on("click", "#templates tbody tr", e => {
 	if (typeof template !== "object" || Array.isArray(template)) template = {message: template};
 	const id = cmdname.startsWith("!") ? cmdname.slice(1) : ""; //Triggers don't get IDs until the server assigns them
 	open_advanced_view({...template, id, template: true});
+});
+
+//Syntax highlighting configuration for the Ace editor
+define("ace/mode/mustardscript", function(require, exports, module) {
+	var oop = require("ace/lib/oop");
+	var TextMode = require("ace/mode/text").Mode;
+	var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
+
+	function MustardScriptHighlightRules() {
+		this.$rules = {
+			start: [
+				{token: "keyword.operator", regex: /[-=,~+]+/},
+				{token: "string.double", regex: /"/, next: "string"},
+				{token: "keyword.control", regex: /if|else|in|test|try|catch|cooldown/},
+				{
+					regex: /[a-zA-Z0-9_]+/,
+					token: function(n) {
+						if (builtins[n]) return "constant.language";
+						if (n[0] >= '0' && n[0] <= '9') {
+							//If it begins with a digit, it's a number, but then
+							//it's not allowed to have ANY non-digits.
+							if (/^\d+$/.test(n)) return "constant.numeric";
+							else return "invalid.illegal";
+						}
+						return "support.type";
+					},
+				},
+				{token: "comment.line.double-slash", regex: /\/\/[^\n]*/},
+				{token: "variable", regex: /\$[A-Za-z0-9*?]+\$/},
+				{token: "invalid.illegal", regex: /\$\S+/},
+				{defaultToken: "text"},
+			],
+			string: [
+				{token: "string.double", regex: /\\"/}, //Escaped quote - don't end the string yet
+				{token: "string.double", regex: /"/, next: "start"}, //End of quoted string
+				{token: "variable", regex: /\$[A-Za-z0-9*?]+\$/},
+				{token: "variable", regex: /{[A-Za-z0-9*?]+}/},
+				{token: "invalid.illegal", regex: /\$[^\s"]+/},
+				{token: "invalid.illegal", regex: /{[^\s"]+/},
+				{defaultToken: "string.double"},
+			],
+		};
+	}
+	oop.inherits(MustardScriptHighlightRules, TextHighlightRules);
+
+	function Mode() {
+		this.HighlightRules = MustardScriptHighlightRules;
+	};
+	oop.inherits(Mode, TextMode);
+	exports.Mode = Mode;
 });

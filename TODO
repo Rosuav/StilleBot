@@ -306,8 +306,11 @@
     one is active. That way, reverting is simply a matter of deactivating the latest
     and activating an older one. (Would help to have statistical columns eg creation
     date.)
-* MustardScript enhancements
-  - Look into making a syntax highlighter config
+* MustardScript syntax highlighting enhancements
+  - Use the https://github.com/ajaxorg/ace/blob/master/src/ext/themelist.js extn to
+    allow people to pick a theme; save it to their prefs.
+  - Autoindent? After a brace, indent. After a builtin function call or keyword,
+    indent if there was nothing on the previous line. Dedent appropriately??
 * Twitch is planning to blur sexual content by default, and to give the option to
   filter. When this rolls out, consider matching their defaults (currently, the user
   has to explicitly choose to hide explicit content), and if the user prefs are made
