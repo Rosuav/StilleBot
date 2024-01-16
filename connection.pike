@@ -18,17 +18,16 @@ mapping irc_connections = ([]); //Not persisted across code reloads, but will be
 //NOTE: This returns a non-live config copy. Do not mutate it. If you
 //need a mutable config, look up the channel object and use its config.
 @export: mapping get_channel_config(string|int chan) {
-	if (intp(chan) || (string)(int)chan == chan) {
+	if (stringp(chan) && (string)(int)chan != chan) {
 		//NOTE: It is entirely possible for a channel name to be a string of digits.
-		//For now, I'm not going to support this; ensure that such a channel is
-		//always looked up by ID instead.
-		string data = Stdio.read_file("channels/" + chan + ".json");
-		return data && Standards.JSON.decode_utf8(data);
+		//If that happens, it will not work in the (few) places where a name lookup
+		//is done. Lookup by name is deprecated anyway.
+		//Hack: If you look up the name "!demo", return data for id 0 even if that isn't in cache.
+		mapping user = chan == "!demo" ? ([]) : G->G->user_info[chan];
+		if (!user) return 0;
+		chan = user->id;
 	}
-	//Hack: If you look up the name "!demo", return data for id 0 even if that isn't in cache.
-	mapping user = chan == "!demo" ? ([]) : G->G->user_info[chan];
-	if (!user) return 0;
-	string data = Stdio.read_file("channels/" + user->id + ".json");
+	string data = Stdio.read_file("channels/" + chan + ".json");
 	return data && Standards.JSON.decode_utf8(data);
 }
 
