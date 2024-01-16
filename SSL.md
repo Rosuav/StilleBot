@@ -36,6 +36,6 @@ cert is shared among all shards, but the secondary is not. If the bot is not
 sharded, use a single cert for simplicity. It's fine for either or both of
 these certificates to have multiple domains, eg:
 
-certbot certonly -d stillebot.com -d stillebot.rosuav.com -d mustardmine.com --standalone
+certbot certonly -d stillebot.com,stillebot.rosuav.com,mustardmine.com --standalone --key-type rsa
 
 and the bot will correctly select a certificate accordingly.
