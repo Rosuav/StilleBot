@@ -15,7 +15,7 @@ mapping irc_connections = ([]); //Not persisted across code reloads, but will be
 //Supports user names as well as IDs, but with no lookup; if the
 //user name/ID mapping isn't in cache, this may fail. Use the ID
 //for reliability.
-//NOTE: This may return a live config or a copy. Do not mutate it. If you
+//NOTE: This returns a non-live config copy. Do not mutate it. If you
 //need a mutable config, look up the channel object and use its config.
 @export: mapping get_channel_config(string|int chan) {
 	if (intp(chan) || (string)(int)chan == chan) {
@@ -23,17 +23,13 @@ mapping irc_connections = ([]); //Not persisted across code reloads, but will be
 		//For now, I'm not going to support this; ensure that such a channel is
 		//always looked up by ID instead.
 		string data = Stdio.read_file("channels/" + chan + ".json");
-		if (data) return Standards.JSON.decode_utf8(data);
-		mapping user = G->G->user_info[(int)chan];
-		return user && persist_config["channels"][user->login];
+		return data && Standards.JSON.decode_utf8(data);
 	}
-	mapping cfg = persist_config["channels"][chan - "#"];
-	if (cfg) return cfg;
 	//Hack: If you look up the name "!demo", return data for id 0 even if that isn't in cache.
 	mapping user = chan == "!demo" ? ([]) : G->G->user_info[chan];
 	if (!user) return 0;
 	string data = Stdio.read_file("channels/" + user->id + ".json");
-	if (data) return Standards.JSON.decode_utf8(data);
+	return data && Standards.JSON.decode_utf8(data);
 }
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
