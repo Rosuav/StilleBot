@@ -189,10 +189,6 @@
   - Keep the existing lookups unchanged for stability. Monitor to ensure that nothing breaks.
   - Eventually, rename all to use the userid - no code should break.
     - Should™.
-* Eventually, move persist_config to a directory of config files, one per channel, with a
-  global config for things that don't apply to one channel. Save into channels/49497888.json
-  with globals remaining in twitchbot_config.json for now.
-  - Both are currently supported; existing data can be migrated when safe.
 * Eventually, move all per-user config out of persist_status into a directory, similarly.
   For example, persist_status->bcaster_token->rosuav would now become users/49497888.json
   with a key of user_token (see above re other changes there).
@@ -299,3 +295,10 @@
   filter. When this rolls out, consider matching their defaults (currently, the user
   has to explicitly choose to hide explicit content), and if the user prefs are made
   visible, query them in the raid finder and do what the user wants.
+* Migrate most configs into Postgres, but leave a few in persist_config.json.
+  - Retain explorer_active?
+  - Retain ircsettings for clientid, clientsecret, http_address, listen_address
+  - Everything else from ircsettings should go into PG, as it can be updated by the
+    /reauth endpoint.
+  - No need for persist_config->save() now, so it's just some global configs that
+    get loaded up initialization of some module and then kept.
