@@ -222,10 +222,7 @@ class channel(mapping config) {
 	}
 
 	int config_saving = 0;
-	void config_save() {
-		if (persist_config["channels"][name[1..]]) persist_config->save(); //Legacy: save via persist_config
-		else {if (!config_saving) {config_saving = 1; call_out(config_dosave, 0);}}
-	}
+	void config_save() {if (!config_saving) {config_saving = 1; call_out(config_dosave, 0);}}
 	void config_dosave() { //TODO: Dedup with persist.pike
 		if (mixed ex = catch {
 			//Creep the open file limit up by one while we save, to ensure that we aren't rlimited
@@ -241,22 +238,12 @@ class channel(mapping config) {
 		}
 	}
 
-	//Remove this channel's configs from persist_config and make a separate file
-	void migrate_config() {
-		m_delete(persist_config["channels"], name[1..]);
-		config_save();
-		persist_config->save();
-	}
-
 	void remove_bot_from_channel() {
 		//NOTE: This currently deletes all configs for the channel.
 		//TODO: Flag the channel as "inactive", which will disable connecting as it,
 		//disable web access, etc, etc, but will timestamp the configs as "inactive since",
 		//allowing them to remain until considered stale.
-		if (persist_config["channels"][name[1..]]) {
-			m_delete(persist_config["channels"], name[1..]);
-			persist_config->save();
-		} else rm("channels/" + userid + ".json");
+		rm("channels/" + userid + ".json");
 		reconnect();
 	}
 
