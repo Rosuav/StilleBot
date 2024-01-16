@@ -396,12 +396,10 @@ void streaminfo(array data)
 	//First, quickly remap the array into a lookup mapping
 	//This helps us ensure that we look up those we care about, and no others.
 	mapping channels = ([]);
-	foreach (data, mapping chan) channels[lower_case(chan->user_login)] = chan;
+	foreach (data, mapping chan) channels[(int)chan->user_id] = chan;
 	//Now we check over our own list of channels. Anything absent is assumed offline.
-	foreach (list_channel_configs(), mapping cfg) {
-		string chan = cfg->login;
-		if (chan[0] != '!') stream_status(chan, channels[chan]);
-	}
+	foreach (list_channel_configs(), mapping cfg)
+		if (cfg->userid) stream_status(cfg->userid, cfg->login, channels[cfg->userid]);
 }
 
 continue Concurrent.Future cache_game_names(string game_id)
@@ -505,7 +503,7 @@ continue Concurrent.Future|mapping save_channel_info(string name, mapping info) 
 @create_hook: constant channel_offline = ({"string channel", "int uptime"});
 
 //Receive stream status, either polled or by notification
-void stream_status(string name, mapping info)
+void stream_status(int userid, string name, mapping info)
 {
 	if (!info)
 	{
