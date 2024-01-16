@@ -12,21 +12,11 @@ mapping irc_connections = ([]); //Not persisted across code reloads, but will be
 @retain: mapping nonce_callbacks = ([]);
 
 //Return the channel config mapping if this is an active channel, or 0
-//Supports user names as well as IDs, but with no lookup; if the
-//user name/ID mapping isn't in cache, this may fail. Use the ID
-//for reliability.
 //NOTE: This returns a non-live config copy. Do not mutate it. If you
 //need a mutable config, look up the channel object and use its config.
 @export: mapping get_channel_config(string|int chan) {
-	if (stringp(chan) && (string)(int)chan != chan) {
-		//NOTE: It is entirely possible for a channel name to be a string of digits.
-		//If that happens, it will not work in the (few) places where a name lookup
-		//is done. Lookup by name is deprecated anyway.
-		//Hack: If you look up the name "!demo", return data for id 0 even if that isn't in cache.
-		mapping user = chan == "!demo" ? ([]) : G->G->user_info[chan];
-		if (!user) return 0;
-		chan = user->id;
-	}
+	//Note that strings are permitted, but they have to be strings of digits, eg "49497888" for
+	//ID 49497888. This does not support passing "rosuav" for 4949788 and will do no lookups.
 	string data = Stdio.read_file("channels/" + chan + ".json");
 	return data && Standards.JSON.decode_utf8(data);
 }

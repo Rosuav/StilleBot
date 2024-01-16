@@ -238,7 +238,7 @@ class _mainwindow
 	void sig_sel_changed()
 	{
 		string login = selecteditem();
-		mapping cfg = get_channel_config(login) || ([]);
+		mapping cfg = get_channel_config(G->G->user_info[login]->?id) || ([]);
 		win->login->set_text(login || "");
 		win->display_name->set_text(cfg->display_name || "");
 		win->connprio->set_text((string)cfg->connprio);
