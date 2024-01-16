@@ -12,9 +12,9 @@ mapping irc_connections = ([]); //Not persisted across code reloads, but will be
 @retain: mapping nonce_callbacks = ([]);
 
 //Return the channel config mapping if this is an active channel, or 0
-//Supports user IDs as well as names, but with no lookup; if the
-//user name/ID mapping isn't in cache, this may fail. Use the primary
-//lookup key (currently name, later ID) for reliability.
+//Supports user names as well as IDs, but with no lookup; if the
+//user name/ID mapping isn't in cache, this may fail. Use the ID
+//for reliability.
 //NOTE: This may return a live config or a copy. Do not mutate it. If you
 //need a mutable config, look up the channel object and use its config.
 @export: mapping get_channel_config(string|int chan) {
