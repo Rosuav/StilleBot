@@ -136,6 +136,12 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	//channel, and fall back on the global default.
 }
 
+void wscmd_testvoice(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping vox = channel->config->voices;
+	if (!vox || !vox[msg->id]) return; //Voice has to have been authenticated to do a test
+	channel->send((["user": "test"]), (["voice": msg->id, "message": "Hello from " + vox[msg->id]->name + "!"]));
+}
+
 void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);

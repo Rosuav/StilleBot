@@ -25,6 +25,7 @@ export function render_item(item, mode) {
 				BUTTON({type: "button", className: "delete"}, "Delete"),
 				BUTTON({type: "button", class: "perms", "data-scopes": item.scopes.join("/")}, "Permissions"),
 				BUTTON({type: "button", class: "makedefault"}, "Make default"),
+				BUTTON({type: "button", class: "testvoice"}, "Say Hello"),
 			]),
 			DIV({class: "isdefault"}, [
 				"This is the default voice for this channel. ",
@@ -52,6 +53,10 @@ export function render(data) {
 }
 
 export function sockmsg_login(data) {window.open(data.uri, "login", "width=525, height=900");}
+
+on("click", ".testvoice", e => {
+	ws_sync.send({cmd: "testvoice", id: e.match.closest("tr").dataset.id});
+});
 
 on("click", ".makedefault", e => {
 	ws_sync.send({cmd: "update", id: e.match.closest("tr").dataset.id, makedefault: 1});
