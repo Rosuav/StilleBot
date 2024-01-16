@@ -128,29 +128,32 @@ int seconds(int|array mins, string timezone) {
 	}
 }
 
+//TODO: When stream_online_since stores channel IDs, change this to string|int channel,
+//always provide the ID, and if a string is provided, use get_channel_config first.
 void autospam(string channel, string cmd) {
 	if (function f = bounce(this_function)) return f(channel, cmd);
 	if (!G->G->stream_online_since[channel[1..]]) return;
 	cmd -= "!"; //Compat with older style where this was "msg" and a leading ! meant it was a command
 	mapping cfg = get_channel_config(channel[1..]);
 	if (!cfg) return; //Channel no longer configured
+	int chanid = cfg->userid;
 	echoable_message response = cfg->commands[?cmd];
 	int|array(int) mins = mappingp(response) && response->automate;
 	if (!mins) return; //Autocommand disabled
-	autocommands[cmd + channel] = call_out(autospam, seconds(mins, cfg->timezone), channel, cmd);
+	autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(mins, cfg->timezone), channel, cmd);
 	string me = persist_config["ircsettings"]->nick;
-	G->G->irc->channels[channel]->send((["nick": me, "user": me]), response);
+	G->G->irc->id[chanid]->send((["nick": me, "user": me]), response);
 }
 
 @hook_channel_online: int connected(string channel, int uptime, int chanid) {
 	mapping cfg = get_channel_config(chanid); if (!cfg) return 0;
 	foreach (cfg->commands || ([]); string cmd; echoable_message response) {
 		if (!mappingp(response) || !response->automate) continue;
-		mixed id = autocommands[cmd + "#" + channel];
+		mixed id = autocommands[chanid + "!" + cmd];
 		int next = id && find_call_out(id);
 		if (undefinedp(next) || next > seconds(response->automate, cfg->timezone)) {
 			if (next) remove_call_out(id); //If you used to have it run every 60 minutes, now every 15, cancel the current and retrigger.
-			autocommands[cmd + "#" + channel] = call_out(autospam, seconds(response->automate, cfg->timezone), "#" + channel, cmd);
+			autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(response->automate, cfg->timezone), "#" + channel, cmd);
 		}
 	}
 }
