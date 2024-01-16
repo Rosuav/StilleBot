@@ -379,7 +379,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			return jsonify((["ok": 1]));
 		}
 		if (body->activate) { //TODO: As above, move to pointsrewards on the ws
-			channel_on_off(chan, -1); //TODO: If an ID is given, just activate/deactivate that reward
+			channel_on_off(chan, -1, broadcaster_id); //TODO: If an ID is given, just activate/deactivate that reward
 			return jsonify((["ok": 1]));
 		}
 		return jsonify((["ok": 1]));
@@ -499,9 +499,9 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	string chan = channel->name[1..];
-	mapping cfg = get_channel_config(chan) || ([]);
+	int broadcaster_id = channel->userid;
+	mapping cfg = get_channel_config(broadcaster_id) || ([]);
 	if (!cfg->giveaway) return 0; //No rewards, nothing to activate or anything
-	int broadcaster_id = yield(get_user_id(chan));
 	switch (msg->action) {
 		case "open":
 		case "close": {
@@ -581,13 +581,12 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 }
 
 //TODO: Migrate the dynamic reward management to pointsrewards, keeping the giveaway management here
-void channel_on_off(string channel, int just_went_online)
+void channel_on_off(string channel, int just_went_online, int broadcaster_id)
 {
-	mapping cfg = get_channel_config(channel);
+	mapping cfg = get_channel_config(broadcaster_id);
 	mapping dyn = cfg->dynamic_rewards || ([]);
-	mapping rewards = (cfg->giveaway && cfg->giveaway->rewards) || ([]);
-	if (!sizeof(dyn) && !sizeof(rewards)) return; //Nothing to do
-	object chan = G->G->irc->channels["#" + channel]; if (!chan) return;
+	if (!sizeof(dyn) && !sizeof(cfg->giveaway->?rewards || ([]))) return; //Nothing to do
+	object chan = G->G->irc->id[broadcaster_id]; if (!chan) return;
 	object ts = G->G->stream_online_since[channel] || Calendar.now();
 	if (cfg->timezone && cfg->timezone != "") ts = ts->set_timezone(cfg->timezone) || ts;
 	string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
@@ -601,37 +600,35 @@ void channel_on_off(string channel, int just_went_online)
 		"{hour}": (string)ts->hour_no(), "{min}": (string)ts->minute_no(), "{sec}": (string)ts->second_no(),
 		"{dow}": (string)ts->week_day(), //1 = Monday, 7 = Sunday
 	]);
-	get_user_id(channel)->then(lambda(int broadcaster_id) {
-		string token = token_for_user_login(channel)[0];
-		//TODO: Store the cache keyed by id?
-		mapping rewards = ([]);
-		foreach (G->G->pointsrewards[broadcaster_id] || ({ }), mapping r) rewards[r->id] = r;
-		if (token != "") foreach (dyn; string reward_id; mapping info) {
-			int active = 0;
-			mapping params = ([]);
-			//If we just went online/offline, reset to base cost (if there is one).
-			if (just_went_online != -1 && info->basecost) params->cost = info->basecost;
-			if (mixed ex = info->availability && catch {
-				//write("Evaluating: %O\n", info->availability);
-				active = (int)G->G->evaluate_expr(chan->expand_variables(info->availability, args), ({channel, ([])}));
-				//write("Result: %O\n", active);
-				//Triple negative. We want to know if the enabled state has changed, but
-				//some things will use 1 and 0, others will use Val.true and Val.false.
-				//So to be safe, we booleanly negate both sides, and THEN see if they
-				//differ; if they do, we update using Val.* to ensure the right JSON.
-				if (!rewards[reward_id]->?is_enabled != !active)
-					params->is_enabled = active ? Val.true : Val.false;
-			}) werror("ERROR ACTIVATING REWARD:\n%s\n", describe_backtrace(ex)); //TODO: Report to the streamer
-			if (sizeof(params)) twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
-					+ broadcaster_id + "&id=" + reward_id,
-				(["Authorization": "Bearer " + token]),
-				(["method": "PATCH", "json": params]),
-			);
-		}
-	});
+	string token = token_for_user_login(channel)[0];
+	//TODO: Store the cache keyed by id?
+	mapping rewards = ([]);
+	foreach (G->G->pointsrewards[broadcaster_id] || ({ }), mapping r) rewards[r->id] = r;
+	if (token != "") foreach (dyn; string reward_id; mapping info) {
+		int active = 0;
+		mapping params = ([]);
+		//If we just went online/offline, reset to base cost (if there is one).
+		if (just_went_online != -1 && info->basecost) params->cost = info->basecost;
+		if (mixed ex = info->availability && catch {
+			//write("Evaluating: %O\n", info->availability);
+			active = (int)G->G->evaluate_expr(chan->expand_variables(info->availability, args), ({channel, ([])}));
+			//write("Result: %O\n", active);
+			//Triple negative. We want to know if the enabled state has changed, but
+			//some things will use 1 and 0, others will use Val.true and Val.false.
+			//So to be safe, we booleanly negate both sides, and THEN see if they
+			//differ; if they do, we update using Val.* to ensure the right JSON.
+			if (!rewards[reward_id]->?is_enabled != !active)
+				params->is_enabled = active ? Val.true : Val.false;
+		}) werror("ERROR ACTIVATING REWARD:\n%s\n", describe_backtrace(ex)); //TODO: Report to the streamer
+		if (sizeof(params)) twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+				+ broadcaster_id + "&id=" + reward_id,
+			(["Authorization": "Bearer " + token]),
+			(["method": "PATCH", "json": params]),
+		);
+	}
 }
-@hook_channel_online: int channel_online(string channel) {channel_on_off(channel, 1);}
-@hook_channel_offline: int channel_offline(string channel) {channel_on_off(channel, 0);}
+@hook_channel_online: int channel_online(string channel, int uptime, int id) {channel_on_off(channel, 1, id);}
+@hook_channel_offline: int channel_offline(string channel, int uptime, int id) {channel_on_off(channel, 0, id);}
 
 constant command_description = "Giveaway tools. Use subcommand 'status' or 'refund'.";
 constant builtin_description = "Handle giveaways via channel point redemptions"; //The subcommands are mandated by the parameter type
