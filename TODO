@@ -312,3 +312,5 @@
   - chan_giveaway.pike giveaway_tickets[] should use user IDs
   - Sweeping change: First allow, then encourage, and finally mandate, that chan_*
     websockets use IDs rather than channel logins.
+* Failed auth when attempting to send a voiced message should be logged to the
+  channel's error log.
