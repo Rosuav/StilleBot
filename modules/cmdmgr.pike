@@ -128,18 +128,18 @@ int seconds(int|array mins, string timezone) {
 	}
 }
 
-void autospam(string channel, string msg) {
-	if (function f = bounce(this_function)) return f(channel, msg);
+void autospam(string channel, string cmd) {
+	if (function f = bounce(this_function)) return f(channel, cmd);
 	if (!G->G->stream_online_since[channel[1..]]) return;
+	cmd -= "!"; //Compat with older style where this was "msg" and a leading ! meant it was a command
 	mapping cfg = get_channel_config(channel[1..]);
 	if (!cfg) return; //Channel no longer configured
-	echoable_message response = cfg->commands[?msg[1..]];
+	echoable_message response = cfg->commands[?cmd];
 	int|array(int) mins = mappingp(response) && response->automate;
 	if (!mins) return; //Autocommand disabled
-	G->G->autocommands[msg[1..] + channel] = call_out(autospam, seconds(mins, cfg->timezone), channel, msg);
-	if (response) msg = response;
+	autocommands[cmd + channel] = call_out(autospam, seconds(mins, cfg->timezone), channel, cmd);
 	string me = persist_config["ircsettings"]->nick;
-	G->G->irc->channels[channel]->send((["nick": me, "user": me]), msg);
+	G->G->irc->channels[channel]->send((["nick": me, "user": me]), response);
 }
 
 @hook_channel_online: int connected(string channel, int uptime, int chanid) {
@@ -150,7 +150,7 @@ void autospam(string channel, string msg) {
 		int next = id && find_call_out(id);
 		if (undefinedp(next) || next > seconds(response->automate, cfg->timezone)) {
 			if (next) remove_call_out(id); //If you used to have it run every 60 minutes, now every 15, cancel the current and retrigger.
-			autocommands[cmd + "#" + channel] = call_out(autospam, seconds(response->automate, cfg->timezone), "#" + channel, "!" + cmd);
+			autocommands[cmd + "#" + channel] = call_out(autospam, seconds(response->automate, cfg->timezone), "#" + channel, cmd);
 		}
 	}
 }
@@ -477,7 +477,7 @@ void purge(object channel, string cmd, multiset updates) {
 	if (prev->aliases) update_aliases(channel, prev->aliases, 0, updates);
 	if (prev->automate) {
 		//Clear out the timer
-		mixed id = m_delete(G->G->autocommands, cmd + channel->name);
+		mixed id = m_delete(autocommands, cmd + channel->name);
 		if (id) remove_call_out(id);
 	}
 	if (prev->redemption) {
