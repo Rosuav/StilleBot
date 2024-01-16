@@ -263,15 +263,15 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 		{
 			array online = indices(G->G->stream_online_since);
 			if (!sizeof(online)) return (["data": "Nobody's online that I can see!", "type": "text/plain"]);
-			if (sizeof(online) == 1) return redirect("/raidfinder?for=" + online[0]); //Send you straight there if only one
+			if (sizeof(online) == 1) return redirect("/raidfinder?for=" + online[0]); //Send you straight there if only one (uses the ID for simplicity)
 			array lines = ({ });
-			foreach (sort(online), string name) {
-				object chan = G->G->irc->channels["#" + name];
-				if (chan) lines += ({sprintf("<li class=bot><a href=\"/raidfinder?for=%s\">%<s</a></li>",
-					name,
+			foreach (sort(online), int id) {
+				object chan = G->G->irc->id[id];
+				if (chan) lines += ({sprintf("<li><a href=\"/raidfinder?for=%s\">%s</a></li>",
+					chan->config->login, chan->config->display_name,
 				)});
 			}
-			return (["data": "<style>.bot::marker{color:green}.monitor::marker{color:orange}body{font-size:16pt}</style><ul>" + lines * "\n" + "</ul><p>See tiled: <a href=\"raidfinder?login=demo\">login=demo</a></p>", "type": "text/html"]);
+			return (["data": "<style>body{font-size:16pt}</style><ul>" + lines * "\n" + "</ul><p>See tiled: <a href=\"raidfinder?login=demo\">login=demo</a></p>", "type": "text/html"]);
 		}
 		if (chan == (string)(int)chan) userid = (int)chan;
 		else userid = yield(get_user_id(chan));

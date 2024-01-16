@@ -587,13 +587,13 @@ void channel_on_off(string channel, int just_went_online, int broadcaster_id)
 	mapping dyn = cfg->dynamic_rewards || ([]);
 	if (!sizeof(dyn) && !sizeof(cfg->giveaway->?rewards || ([]))) return; //Nothing to do
 	object chan = G->G->irc->id[broadcaster_id]; if (!chan) return;
-	object ts = G->G->stream_online_since[channel] || Calendar.now();
+	object ts = G->G->stream_online_since[broadcaster_id] || Calendar.now();
 	if (cfg->timezone && cfg->timezone != "") ts = ts->set_timezone(cfg->timezone) || ts;
 	string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
 	mapping args = ([
 		//Is "1" or "0" based on whether you are probably online. It's possible for this to be wrong
 		//if you just went live or shut down.
-		"{online}": (string)(just_went_online == -1 ? !!G->G->stream_online_since[channel] : just_went_online),
+		"{online}": (string)(just_went_online == -1 ? !!G->G->stream_online_since[broadcaster_id] : just_went_online),
 		//Date/time info is in your timezone or UTC if not set, and is the time the stream went online
 		//or (approximately) offline.
 		"{year}": (string)ts->year_no(), "{month}": (string)ts->month_no(), "{day}": (string)ts->month_day(),

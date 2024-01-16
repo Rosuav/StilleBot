@@ -515,7 +515,7 @@ void stream_status(int userid, string name, mapping info)
 			get_channel_info(name);
 		}
 		else m_delete(channel_info[name], "online_type");
-		if (object started = m_delete(stream_online_since, name))
+		if (object started = m_delete(stream_online_since, userid))
 		{
 			write("** Channel %s noticed offline at %s **\n", name, Calendar.now()->format_nice());
 			object chan = G->G->irc->id[userid];
@@ -548,7 +548,7 @@ void stream_status(int userid, string name, mapping info)
 	else
 	{
 		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->started_at);
-		if (!stream_online_since[name])
+		if (!stream_online_since[userid])
 		{
 			//Is there a cleaner way to say "convert to local time"?
 			object started_here = started->set_timezone(Calendar.now()->timezone());
@@ -570,7 +570,7 @@ void stream_status(int userid, string name, mapping info)
 		}
 		spawn_task(save_channel_info(userid, name, info));
 		notice_user_name(name, info->user_id);
-		stream_online_since[name] = started;
+		stream_online_since[userid] = started;
 		int viewers = info->viewer_count;
 		//Calculate half-hour rolling average, and then do stats on that
 		//Record each stream's highest and lowest half-hour average, and maybe the overall average (not the average of the averages)
@@ -767,17 +767,17 @@ void check_hooks(array eventhooks)
 void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //Maybe make the poll interval customizable?
-	array chan = list_channel_configs()->login;
-	chan = filter(chan) {return __ARGS__[0][?0] != '!';};
+	array chan = list_channel_configs()->userid;
+	chan = filter(chan) {return __ARGS__[0];}; //Exclude !demo which has a userid of 0
 	if (!sizeof(chan)) return; //Nothing to check.
 	//Prune any "channel online" statuses for channels we don't track any more
-	foreach (indices(stream_online_since) - chan, string name) m_delete(stream_online_since, name);
-	//Note: There's a slight TOCTOU here - the list of channel names will be
-	//re-checked from persist_config when the response comes in. If there are
+	foreach (indices(stream_online_since) - chan, int id) m_delete(stream_online_since, id);
+	//Note: There's a slight TOCTOU here - the list of channel IDs will be
+	//re-checked from saved configs when the response comes in. If there are
 	//channels that we get info for and don't need, ignore them; if there are
 	//some that we wanted but didn't get, we'll just think they're offline
 	//until the next poll.
-	get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_login": chan, "first": "100"]))
+	get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))chan, "first": "100"]))
 		->on_success(streaminfo);
 	//There has been an issue with failures and a rate limiting from Twitch.
 	//I suspect that something is automatically retrying AND the sixty-sec

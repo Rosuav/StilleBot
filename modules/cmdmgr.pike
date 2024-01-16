@@ -128,19 +128,17 @@ int seconds(int|array mins, string timezone) {
 	}
 }
 
-//TODO: When stream_online_since stores channel IDs, change this to string|int chanid,
-//always provide the ID, and drop the separate chanid variable.
-void autospam(string|int channel, string cmd) {
-	if (function f = bounce(this_function)) return f(channel, cmd);
-	channel -= "#"; cmd -= "!"; //Compat with older parameter style
-	int chanid = stringp(channel) ? G->G->user_info[channel]->id : channel;
-	if (!G->G->stream_online_since[channel]) return;
+void autospam(string|int chanid, string cmd) {
+	if (function f = bounce(this_function)) return f(chanid, cmd);
+	cmd -= "!"; //Compat with older parameter style
+	if (stringp(chanid)) chanid = G->G->user_info[chanid - "#"]->id; //Compat with older param style
+	if (!G->G->stream_online_since[chanid]) return;
 	mapping cfg = get_channel_config(chanid);
 	if (!cfg) return; //Channel no longer configured
 	echoable_message response = cfg->commands[?cmd];
 	int|array(int) mins = mappingp(response) && response->automate;
 	if (!mins) return; //Autocommand disabled
-	autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(mins, cfg->timezone), channel, cmd);
+	autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(mins, cfg->timezone), chanid, cmd);
 	string me = persist_config["ircsettings"]->nick;
 	G->G->irc->id[chanid]->send((["nick": me, "user": me]), response);
 }
@@ -153,7 +151,7 @@ void autospam(string|int channel, string cmd) {
 		int next = id && find_call_out(id);
 		if (undefinedp(next) || next > seconds(response->automate, cfg->timezone)) {
 			if (next) remove_call_out(id); //If you used to have it run every 60 minutes, now every 15, cancel the current and retrigger.
-			autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(response->automate, cfg->timezone), channel, cmd);
+			autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(response->automate, cfg->timezone), chanid, cmd);
 		}
 	}
 }
@@ -547,9 +545,9 @@ void _save_echocommand(string cmd, echoable_message response, mapping|void extra
 		int timeout = G->G->cooldown_timeout[cdname + channel->name] - time();
 		if (cdlength && timeout > cdlength) G->G->cooldown_timeout[cdname + channel->name] = cdlength + time();
 	}
-	if (mappingp(response) && response->automate && G->G->stream_online_since[channel->config->login]) {
+	if (mappingp(response) && response->automate && G->G->stream_online_since[channel->userid]) {
 		//Start a timer. For simplicity, just pretend the channel freshly went online.
-		connected(channel->config->login, 0, channel->config->userid);
+		connected(channel->config->login, 0, channel->userid);
 	}
 	if (mappingp(response) && response->redemption) {
 		channel->redemption_commands[response->redemption] += ({basename});
@@ -796,7 +794,7 @@ protected void create(string name) {
 	add_constant("make_echocommand", _save_echocommand);
 	register_bouncer(autospam);
 	foreach (list_channel_configs(), mapping cfg) if (cfg->login)
-		if (G->G->stream_online_since[cfg->login]) connected(cfg->login, 0, cfg->userid);
+		if (G->G->stream_online_since[cfg->userid]) connected(cfg->login, 0, cfg->userid);
 	//Look for any lingering aliases, which shouldn't be stored in channel configs
 	foreach (list_channel_configs(), mapping cfg) if (cfg->commands) {
 		foreach (cfg->commands; string cmd; echoable_message message)

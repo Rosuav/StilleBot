@@ -18,9 +18,9 @@ constant vars_provided = ([
 ]);
 
 mapping message_params(object channel, mapping person, array params) {
-	int t = channel_uptime(channel->name[1..]);
+	int t = channel_uptime(channel->userid);
 	return ([
-		"{channel}": channel->name[1..], //TODO: Show the display name instead
+		"{channel}": channel->config->display_name,
 		"{uptime}": (string)t,
 		"{uptime_english}": t ? describe_time(t) : "",
 		"{uptime_hms}": t ? describe_time_short(t) : "",

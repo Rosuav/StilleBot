@@ -18,7 +18,7 @@ continue Concurrent.Future check_stats(object channel) {
 	mapping snooze = yield(twitch_api_request("https://api.twitch.tv/helix/channels/ads?broadcaster_id=" + channel->userid,
 		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]])))->data[0];
 	snooze->time_captured = time();
-	object since = G->G->stream_online_since[channel->config->login];
+	object since = G->G->stream_online_since[channel->userid];
 	if (since) snooze->online_since = since->unix_time();
 	channel_ad_stats[channel->userid] = snooze;
 	send_updates_all(channel->name);

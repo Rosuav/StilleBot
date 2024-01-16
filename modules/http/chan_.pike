@@ -7,7 +7,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	string user_is_mod = "[Log in to make changes](:.twitchlogin)";
 	object channel = req->misc->channel;
-	int uptime = channel_uptime(req->misc->channel->name[1..]);
+	int uptime = channel_uptime(req->misc->channel->userid);
 	if (req->misc->is_mod)
 	{
 		user_is_mod = "Welcome, " + req->misc->session->user->display_name + ", and your modsword.";
