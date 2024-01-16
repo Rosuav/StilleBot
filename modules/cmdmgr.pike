@@ -128,15 +128,15 @@ int seconds(int|array mins, string timezone) {
 	}
 }
 
-//TODO: When stream_online_since stores channel IDs, change this to string|int channel,
-//always provide the ID, and if a string is provided, use get_channel_config first.
-void autospam(string channel, string cmd) {
+//TODO: When stream_online_since stores channel IDs, change this to string|int chanid,
+//always provide the ID, and drop the separate chanid variable.
+void autospam(string|int channel, string cmd) {
 	if (function f = bounce(this_function)) return f(channel, cmd);
-	if (!G->G->stream_online_since[channel[1..]]) return;
-	cmd -= "!"; //Compat with older style where this was "msg" and a leading ! meant it was a command
-	mapping cfg = get_channel_config(channel[1..]);
+	channel -= "#"; cmd -= "!"; //Compat with older parameter style
+	int chanid = stringp(channel) ? G->G->user_info[channel]->id : channel;
+	if (!G->G->stream_online_since[channel]) return;
+	mapping cfg = get_channel_config(chanid);
 	if (!cfg) return; //Channel no longer configured
-	int chanid = cfg->userid;
 	echoable_message response = cfg->commands[?cmd];
 	int|array(int) mins = mappingp(response) && response->automate;
 	if (!mins) return; //Autocommand disabled
@@ -153,7 +153,7 @@ void autospam(string channel, string cmd) {
 		int next = id && find_call_out(id);
 		if (undefinedp(next) || next > seconds(response->automate, cfg->timezone)) {
 			if (next) remove_call_out(id); //If you used to have it run every 60 minutes, now every 15, cancel the current and retrigger.
-			autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(response->automate, cfg->timezone), "#" + channel, cmd);
+			autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(response->automate, cfg->timezone), channel, cmd);
 		}
 	}
 }
