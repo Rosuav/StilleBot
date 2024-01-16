@@ -239,7 +239,4 @@ void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) ms
 protected void create(string name) {
 	::create(name);
 	call_out(find_builtins, 0);
-	//Final layer of migration: Remove any feature mapping references, which are now ignored.
-	foreach (list_channel_configs(), mapping cfg)
-		if (m_delete(cfg, "features")) persist_config->save();
 }
