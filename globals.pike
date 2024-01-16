@@ -66,10 +66,8 @@ echoable_message|function find_command(object channel, string cmdname, int is_mo
 array(mapping) list_channel_configs() {
 	//NOTE: This may be quite inefficient, but hopefully with filesystem caching, it
 	//will be good enough.
-	array legacy = values(persist_config["channels"] || ([])); //Deprecated, will eventually be removed
 	array files = "channels/" + glob("*.json", get_dir("channels"))[*];
-	array data = Standards.JSON.decode_utf8(Stdio.read_file(files[*])[*]);
-	return legacy + data;
+	return Standards.JSON.decode_utf8(Stdio.read_file(files[*])[*]);
 }
 
 //Return a Second or a Fraction representing the given ISO time, or 0 if unparseable
