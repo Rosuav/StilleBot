@@ -1359,7 +1359,7 @@ void reconnect() {
 	array channels = list_channel_configs(); //Once loaded, this becomes the master config list and is mutable.
 	#if constant(HEADLESS)
 	//HACK FOR TESTING: Reduce the number of channels loaded
-	//channels = ({get_channel_config("rosuav")});
+	//channels = ({get_channel_config(49497888)});
 	#endif
 	if (sizeof(channels)) {
 		sort(channels->login, channels); //Default to sorting affabeck by username
