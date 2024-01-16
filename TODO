@@ -304,6 +304,9 @@
     get loaded up initialization of some module and then kept.
 * Migration yak shaving. Need to be done bottom-up.
   - Remove all references to persist_config that aren't going to stay there
+  - Separate http_address from listen_address. The former is for external reference
+    (eg redirect URI for OAuth), the latter is for internal usage (bind to address).
+    Gideon will need to differentiate since Apache will be forwarding requests.
 * Migration queue. Do whenever stack is empty.
   - G->G->channel_info (see poll.pike's retain) should use user IDs
   - chan_giveaway.pike giveaway_tickets[] should use user IDs
