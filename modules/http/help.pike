@@ -21,7 +21,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		loglink = "[Log out](:.twitchlogout)";
 		yourname = "You are currently logged in as " + yourname + ".";
 		chan = req->misc->?session->?user->login;
-		if (get_channel_config(chan)) {
+		int uid = req->misc->?session->?user->?id;
+		if (uid && get_channel_config(uid)) {
 			yourname += " I currently serve as a bot for your channel, so there are additional features available.";
 			link = lambda(string desttxt) {
 				sscanf(desttxt, "%s %s", string dest, string txt);
