@@ -307,3 +307,6 @@
   - get_channel_config should always and only be called with an ID, otherwise it'll
     be unreliable with all-digit user names
   - hook_channel_online and friends need to provide IDs
+* Migration queue. Do whenever stack is empty.
+  - G->G->channel_info (see poll.pike's retain) should use user IDs
+  - stream_online_since ditto

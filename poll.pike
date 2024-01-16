@@ -462,7 +462,7 @@ mapping build_channel_info(mapping stream)
 	return ret;
 }
 
-continue Concurrent.Future|mapping save_channel_info(string name, mapping info) {
+continue Concurrent.Future|mapping save_channel_info(int userid, string name, mapping info) {
 	//Attempt to gather channel info from the stream info. If we
 	//can't, we'll get that info via an API call.
 	mapping synthesized = build_channel_info(info);
@@ -483,7 +483,7 @@ continue Concurrent.Future|mapping save_channel_info(string name, mapping info) 
 		changed += synthesized[attr] != channel_info[name][?attr];
 	channel_info[name] = synthesized;
 	if (changed) {
-		object chan = G->G->irc->channels["#"+name];
+		object chan = G->G->irc->id[userid];
 		if (chan) chan->trigger_special("!channelsetup", ([
 			//Synthesize a basic person mapping
 			"user": name,
@@ -502,7 +502,7 @@ continue Concurrent.Future|mapping save_channel_info(string name, mapping info) 
 @create_hook: constant channel_online = ({"string channel", "int uptime"});
 @create_hook: constant channel_offline = ({"string channel", "int uptime"});
 
-//Receive stream status, either polled or by notification
+//Receive stream status, either polled or (once upon a time) by notification
 void stream_status(int userid, string name, mapping info)
 {
 	if (!info)
@@ -517,7 +517,7 @@ void stream_status(int userid, string name, mapping info)
 		if (object started = m_delete(stream_online_since, name))
 		{
 			write("** Channel %s noticed offline at %s **\n", name, Calendar.now()->format_nice());
-			object chan = G->G->irc->channels["#"+name];
+			object chan = G->G->irc->id[userid];
 			runhooks("channel-offline", 0, name);
 			int uptime = time() - started->unix_time();
 			event_notify("channel_offline", name, uptime);
@@ -525,13 +525,13 @@ void stream_status(int userid, string name, mapping info)
 				//Synthesize a basic person mapping
 				"user": name,
 				"displayname": name, //Might not have the actual display name handy (get_channel_info is async)
-				"uid": G->G->name_to_uid[name] || "0", //It should always be there, but if someone renames while live, who knows.
+				"uid": (string)userid,
 			]), ([
 				"{uptime}": (string)uptime,
 				"{uptime_hms}": describe_time_short(uptime),
 				"{uptime_english}": describe_time(uptime),
 			]));
-			mapping vstat = m_delete(G->G->viewer_stats, name);
+			mapping vstat = m_delete(G->G->viewer_stats, userid) || m_delete(G->G->viewer_stats, name); //Second half can be removed in a few days (as of 20240116)
 			if (sizeof(vstat->half_hour) == 30)
 			{
 				mapping status = persist_status->path("stream_stats");
@@ -552,7 +552,7 @@ void stream_status(int userid, string name, mapping info)
 			//Is there a cleaner way to say "convert to local time"?
 			object started_here = started->set_timezone(Calendar.now()->timezone());
 			write("** Channel %s went online at %s **\n", name, started_here->format_nice());
-			object chan = G->G->irc->channels["#"+name];
+			object chan = G->G->irc->id[userid];
 			runhooks("channel-online", 0, name);
 			int uptime = time() - started->unix_time();
 			event_notify("channel_online", name, uptime);
@@ -567,7 +567,7 @@ void stream_status(int userid, string name, mapping info)
 				"{uptime_english}": describe_time(uptime),
 			]));
 		}
-		spawn_task(save_channel_info(name, info));
+		spawn_task(save_channel_info(userid, name, info));
 		notice_user_name(name, info->user_id);
 		stream_online_since[name] = started;
 		int viewers = info->viewer_count;
@@ -577,8 +577,8 @@ void stream_status(int userid, string name, mapping info)
 		//StreamLabs, but we could have our own graph to double-check and maybe learn about
 		//different measuring/reporting techniques.
 		mapping vstat = G->G->viewer_stats; if (!vstat) vstat = G->G->viewer_stats = ([]);
-		if (!vstat[name]) vstat[name] = (["start": time()]); //The stats might not have started at stream start, eg if bot wasn't running
-		vstat = vstat[name]; //Focus on this channel.
+		if (!vstat[userid]) vstat[userid] = (["start": time()]); //The stats might not have started at stream start, eg if bot wasn't running
+		vstat = vstat[userid]; //Focus on this channel.
 		vstat->half_hour += ({viewers});
 		if (sizeof(vstat->half_hour) >= 30)
 		{
