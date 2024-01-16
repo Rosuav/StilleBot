@@ -29,3 +29,13 @@ By default, StilleBot will listen on all available addresses (IPv4 and IPv6);
 if this causes problems, explicitly select a listening address such as
 `"0.0.0.0:6789"` (any IPv4 address, no IPv6) or `"192.168.1.1:443"` (specific
 address - any other address won't be responsive).
+
+Note that the server can use up to two certificates, `certificate.pem` and
+`certificate_local.pem`. The intention is, if the server is sharded, the main
+cert is shared among all shards, but the secondary is not. If the bot is not
+sharded, use a single cert for simplicity. It's fine for either or both of
+these certificates to have multiple domains, eg:
+
+certbot certonly -d stillebot.com -d stillebot.rosuav.com -d mustardmine.com --standalone
+
+and the bot will correctly select a certificate accordingly.
