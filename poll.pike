@@ -499,8 +499,9 @@ continue Concurrent.Future|mapping save_channel_info(int userid, string name, ma
 	}
 }
 
-@create_hook: constant channel_online = ({"string channel", "int uptime"});
-@create_hook: constant channel_offline = ({"string channel", "int uptime"});
+//The regrettable order of parameters is due to channelids being added later.
+@create_hook: constant channel_online = ({"string channelname", "int uptime", "int channelid"});
+@create_hook: constant channel_offline = ({"string channelname", "int uptime", "int channelid"});
 
 //Receive stream status, either polled or (once upon a time) by notification
 void stream_status(int userid, string name, mapping info)
@@ -520,7 +521,7 @@ void stream_status(int userid, string name, mapping info)
 			object chan = G->G->irc->id[userid];
 			runhooks("channel-offline", 0, name);
 			int uptime = time() - started->unix_time();
-			event_notify("channel_offline", name, uptime);
+			event_notify("channel_offline", name, uptime, userid);
 			if (chan) chan->trigger_special("!channeloffline", ([
 				//Synthesize a basic person mapping
 				"user": name,
@@ -555,7 +556,7 @@ void stream_status(int userid, string name, mapping info)
 			object chan = G->G->irc->id[userid];
 			runhooks("channel-online", 0, name);
 			int uptime = time() - started->unix_time();
-			event_notify("channel_online", name, uptime);
+			event_notify("channel_online", name, uptime, userid);
 			if (chan) chan->trigger_special("!channelonline", ([
 				//Synthesize a basic person mapping
 				"user": name,

@@ -142,8 +142,8 @@ void autospam(string channel, string msg) {
 	G->G->irc->channels[channel]->send((["nick": me, "user": me]), msg);
 }
 
-@hook_channel_online: int connected(string channel) {
-	mapping cfg = get_channel_config(channel); if (!cfg) return 0;
+@hook_channel_online: int connected(string channel, int uptime, int chanid) {
+	mapping cfg = get_channel_config(chanid); if (!cfg) return 0;
 	foreach (cfg->commands || ([]); string cmd; echoable_message response) {
 		if (!mappingp(response) || !response->automate) continue;
 		mixed id = autocommands[cmd + "#" + channel];
@@ -546,7 +546,7 @@ void _save_echocommand(string cmd, echoable_message response, mapping|void extra
 	}
 	if (mappingp(response) && response->automate && G->G->stream_online_since[channel->config->login]) {
 		//Start a timer. For simplicity, just pretend the channel freshly went online.
-		connected(channel->config->login);
+		connected(channel->config->login, 0, channel->config->userid);
 	}
 	if (mappingp(response) && response->redemption) {
 		channel->redemption_commands[response->redemption] += ({basename});
@@ -793,7 +793,7 @@ protected void create(string name) {
 	add_constant("make_echocommand", _save_echocommand);
 	register_bouncer(autospam);
 	foreach (list_channel_configs(), mapping cfg) if (cfg->login)
-		if (G->G->stream_online_since[cfg->login]) connected(cfg->login);
+		if (G->G->stream_online_since[cfg->login]) connected(cfg->login, 0, cfg->userid);
 	//Look for any lingering aliases, which shouldn't be stored in channel configs
 	foreach (list_channel_configs(), mapping cfg) if (cfg->commands) {
 		foreach (cfg->commands; string cmd; echoable_message message)

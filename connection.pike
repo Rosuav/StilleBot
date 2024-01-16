@@ -1204,8 +1204,8 @@ void irc_closed(mapping options) {
 	return G->G->irc->id[(int)info->id];
 }
 
-@hook_channel_online: int connected(string chan, int uptime) {
-	object channel = G->G->irc->channels[chan];
+@hook_channel_online: int connected(string chan, int uptime, int chanid) {
+	object channel = G->G->irc->id[chanid];
 	if (channel) channel->channel_online(uptime);
 }
 
