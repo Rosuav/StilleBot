@@ -43,7 +43,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		//It's a positive response from Twitch
 		if (string dest = resend_redirect[req->variables->code]) return redirect(dest);
 		//write("Login response %O\n", req->variables);
-		object auth = TwitchAuth();
+		object auth = TwitchAuth(0, deduce_host(req->request_headers || ([])));
 		//write("Requesting access token for %O...\n", req->variables->code); //This shows up twice when those crashes happen. Maybe caching the redirect will help?
 		string cookie = yield(auth->request_access_token_promise(req->variables->code));
 		auth->set_from_cookie(cookie);
