@@ -28,7 +28,11 @@ but can allow fancy tricks like redirecting to different port numbers in NAT.
 By default, StilleBot will listen on all available addresses (IPv4 and IPv6);
 if this causes problems, explicitly select a listening address such as
 `"0.0.0.0:6789"` (any IPv4 address, no IPv6) or `"192.168.1.1:443"` (specific
-address - any other address won't be responsive).
+address - any other address won't be responsive). If encryption is handled
+externally to StilleBot, specifying a listen address of `http://[ip:]port`
+will cause all external addresses to still include the `https` protocol, but
+the bot will not look for certificates/private keys and will not attempt to
+encrypt its traffic.
 
 Note that the server can use up to two certificates, `certificate.pem` and
 `certificate_local.pem`. The intention is, if the server is sharded, the main

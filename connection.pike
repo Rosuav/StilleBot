@@ -1418,8 +1418,10 @@ protected void create(string name)
 			sscanf(irc->http_address, "http%*[s]://%*s:%d", listen_port); //If one is set for the dest addr, use that
 			//Or if there's an explicit listen address/port set, use that.
 			if (irc->listen_address) {
-				sscanf(irc->listen_address, "%d", listen_port);
-				sscanf(irc->listen_address, "%s:%d", listen_addr, listen_port);
+				string listen = irc->listen_address;
+				if (sscanf(listen, "http://%s", listen)) use_https = 0; //Use this when encryption is done outside of the bot (no cert here, but external addresses still use https).
+				sscanf(listen, "%s:%s", listen_addr, listen);
+				sscanf(listen, "%d", listen_port);
 			}
 
 			string cert = Stdio.read_file("certificate.pem");
