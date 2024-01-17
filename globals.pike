@@ -1550,6 +1550,17 @@ string ensure_bcaster_token(Protocols.HTTP.Server.Request req, string scopes, st
 	if (sizeof(needscopes) > sizeof(havescopes)) return sort(indices(needscopes)) * " ";
 }
 
+//Figure out the most suitable host name to represent us. If a person went to the URL
+//"https://sikorsky.rosuav.com:6789/foo/bar", this should return "sikorsky.rosuav.com:6789".
+//Respects configuration settings about the use of Apache forwarding.
+string deduce_host(mapping request_headers) {
+	mapping cfg = persist_config["ircsettings"];
+	if (string fwd = cfg->http_forwarded && request_headers["x-forwarded-for"]) return fwd;
+	if (string host = request_headers["host"]) return host;
+	sscanf(cfg->http_address || "", "%*s://%s", string dflt);
+	return dflt; //Might be 0 if we get nothing whatsoever, but that's highly unlikely
+}
+
 //When automatically linkifying links, use this regex for consistency.
 //Note that this is probably a bit too restrictive. Feel free to add more, just as
 //long as nothing abusable can be recognized by this. It's also okay if it doesn't
