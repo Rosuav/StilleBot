@@ -262,8 +262,8 @@ function update_tagpref(tagid, newpref) {
 		update_tag_display();
 	});
 }
-on("click", ".liketag", e => update_tagpref(e, 1));
-on("click", ".disliketag", e => update_tagpref(e, -1));
+on("click", ".liketag", e => like_dislike(e, 1));
+on("click", ".disliketag", e => like_dislike(e, -1));
 on("click", "input[type=radio][name^=CCL_]", e => update_tagpref("<" + e.match.name + ">", e.match.value));
 
 //TODO: Have a quick way to promote/demote a tag that you see in your follow list
