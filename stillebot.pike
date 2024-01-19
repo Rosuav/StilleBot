@@ -110,6 +110,7 @@ int main(int argc,array(string) argv)
 	if (has_value(argv, "--headless")) {
 		werror("Running bot in headless mode - GUI facilities disabled.\n");
 		add_constant("HEADLESS", 1);
+		signal(1, bootstrap_all);
 	}
 	bootstrap_all();
 	foreach ("persist_config spawn_task send_message window" / " ", string vital)

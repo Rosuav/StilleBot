@@ -316,3 +316,12 @@
     SIGHUP will do a full update.
   - Confirm that logs get both stdout and stderr into journalctl
 * Try out database synchronization from within the bot itself
+* Can we get sd_notify support? Would be nice if, upon receipt of a "reload" signal,
+  the bot notifies systemd that it's reloading, then that it's ready, and can report
+  failure so the terminal gets an immediate response. (Failure details will of course
+  be in the log.)
+* Postgres config: Which bot is active? If it's you, all is well. If not, do not send
+  any channel responses, and forward all notifications to the active bot. If no bot
+  is active, queue all notifications for subsequent handling or forwarding.
+  - Bot should be able to fully boot in "inactive" mode, get everything initialized,
+    and then be activated as a near-atomic action.

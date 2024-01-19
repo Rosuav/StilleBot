@@ -12,6 +12,7 @@ int main() {
 User=%s
 WorkingDirectory=%s
 ExecStart=%s stillebot --headless
+ExecReload=kill -HUP $MAINPID
 
 [Install]
 WantedBy=multi-user.target
