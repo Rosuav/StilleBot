@@ -311,10 +311,6 @@
     websockets use IDs rather than channel logins.
 * Failed auth when attempting to send a voiced message should be logged to the
   channel's error log.
-* Background running
-  - This will not be aimed at rapid development, so there's no module update. But
-    SIGHUP will do a full update.
-  - Confirm that logs get both stdout and stderr into journalctl
 * Try out database synchronization from within the bot itself
 * Can we get sd_notify support? Would be nice if, upon receipt of a "reload" signal,
   the bot notifies systemd that it's reloading, then that it's ready, and can report
