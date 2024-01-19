@@ -1557,7 +1557,7 @@ string deduce_host(mapping request_headers) {
 	mapping cfg = persist_config["ircsettings"];
 	if (string fwd = cfg->http_forwarded && request_headers["x-forwarded-host"]) return fwd;
 	if (string host = request_headers["host"]) return host;
-	sscanf(cfg->http_address || "", "%*s://%s", string dflt);
+	sscanf(cfg->http_address || "://", "%*s://%s", string dflt);
 	return dflt; //Might be 0 if we get nothing whatsoever, but that's highly unlikely
 }
 
