@@ -1068,7 +1068,7 @@ class channel(mapping config) {
 				#ifdef __NT__
 				int wid = 80 - sizeof(pfx);
 				#else
-				int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
+				int wid = (Stdio.stdin->tcgetattr()->?columns || 1024) - sizeof(pfx);
 				#endif
 				if (person->badges->?_mod) msg = "\u2694 " + msg;
 				msg = string_to_utf8(msg) + " "; //Trailing space improves wrapping with %= mode
