@@ -80,9 +80,16 @@ int main(int argc,array(string) argv)
 	}
 	if (has_value(argv, "--test")) {
 		add_constant("INTERACTIVE", 1);
-		restricted_update = ({"persist.pike", "globals.pike", "poll.pike", "testing.pike"});
+		restricted_update = ({"persist.pike", "globals.pike", "poll.pike", "database.pike", "testing.pike"});
 		bootstrap_all();
 		Stdio.stdin->set_read_callback(console);
+		return -1;
+	}
+	if (has_value(argv, "--dbupdate")) {
+		add_constant("INTERACTIVE", 1);
+		restricted_update = ({"persist.pike", "globals.pike", "poll.pike", "database.pike"});
+		bootstrap_all();
+		all_constants()["spawn_task"](G->database->create_tables_and_stop());
 		return -1;
 	}
 	if (has_value(argv, "--script")) {
