@@ -311,10 +311,7 @@
     websockets use IDs rather than channel logins.
 * Failed auth when attempting to send a voiced message should be logged to the
   channel's error log.
-* Make a systemd service file
-  - Have Pike script to generate the file. Use readlink("/proc/self/exe") for the
-    executable name.
-  - Run bot in headless mode.
+* Background running
   - This will not be aimed at rapid development, so there's no module update. But
     SIGHUP will do a full update.
   - Confirm that logs get both stdout and stderr into journalctl
