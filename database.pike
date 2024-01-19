@@ -48,9 +48,7 @@ array(array(string|mapping)) waiting_for_active = ({ });
 continue Concurrent.Future _got_active(object conn) {
 	//Pull all the pendings and reset the array before actually saving any of them.
 	array wfa = waiting_for_active; waiting_for_active = ({ });
-	werror("Unpending WFAs: %O\n", wfa);
 	foreach (wfa, [string query, mapping bindings]) {
-		werror("Executing pending save! %s\n", query);
 		mixed err = catch {yield(conn->promise_query(query, bindings));};
 		if (err) werror("Unable to save pending to database!\n%s\n", describe_backtrace(err));
 	}
@@ -155,7 +153,6 @@ continue Concurrent.Future|string save_to_db(string query, mapping bindings) {
 	if (!active) error("No database connection, can't load data!\n");
 	array rows = yield(connections[active]->conn->promise_query("select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
 		(["twitchid": (int)twitchid, "kwd": kwd])))->get();
-	werror("GOT DATA: %O\n", rows);
 	if (!sizeof(rows)) return ([]);
 	return Standards.JSON.decode_utf8(rows[0]->data);
 }
