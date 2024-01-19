@@ -321,3 +321,5 @@
   is active, queue all notifications for subsequent handling or forwarding.
   - Bot should be able to fully boot in "inactive" mode, get everything initialized,
     and then be activated as a near-atomic action.
+  - Disallow any websocket connections if bot is inactive. If there is an active bot,
+    return a 302 redirect to the active bot by its specific domain name.

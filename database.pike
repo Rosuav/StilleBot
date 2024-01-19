@@ -39,6 +39,12 @@ constant tables = ([
 	"config_exportable": ({
 		"keyword varchar primary key",
 	}),
+	//Single-row table for fundamental bot config. Trust this only if the database is
+	//read-write; otherwise, consider it advisory.
+	"settings": ({
+		"active_bot varchar",
+		"insert into stillebot.settings default values;",
+	}),
 ]);
 
 mapping(string:mapping(string:mixed)) connections = ([]);
