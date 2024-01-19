@@ -35,7 +35,7 @@ constant tables = ([
 	}),
 	//Simple list of the "exportable" configs as stored in stillebot.config above.
 	//A user may (when implemented) request their exportable data, as a backup etc.
-	//Can be used for an outer join to exclude non-exportable rows.
+	//Can be used for an outer join to recognize non-exportable rows.
 	"config_exportable": ({
 		"keyword varchar primary key",
 	}),
