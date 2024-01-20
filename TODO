@@ -323,4 +323,3 @@
     and then be activated as a near-atomic action.
   - Disallow any websocket connections if bot is inactive. If there is an active bot,
     return a 302 redirect to the active bot by its specific domain name.
-* Uhhh.... disabling raid suggestions isn't working...
