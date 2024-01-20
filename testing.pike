@@ -27,10 +27,17 @@ void increment2() {
 	save_config(0, "testing", cfgtest);
 }
 
+continue Concurrent.Future get_settings() {
+	werror("Settings now: %O\n", G->G->dbsettings);
+	mapping settings = yield(G->G->database->generic_query("select * from stillebot.settings"))[0];
+	werror("Queried settings: %O\n", settings);
+}
+
 protected void create(string name) {
 	::create(name);
 	spawn_task(ping());
 	G->G->consolecmd->inc = increment;
 	G->G->consolecmd->inc2 = increment2;
+	G->G->consolecmd->settings = lambda() {spawn_task(get_settings());};
 	G->G->consolecmd->quit = lambda() {exit(0);};
 }
