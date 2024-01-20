@@ -112,7 +112,7 @@ continue Concurrent.Future connect(string host) {
 		//Any time we have a read-write database connection, update settings.
 		//TODO: Set up an update trigger to NOTIFY, then LISTEN for that, and autoupdate
 		//Have this trigger only on the active one?
-		G->G->dbsettings = yield(db->conn->promise_query("select * from settings"))->get()[0];
+		G->G->dbsettings = yield(db->conn->promise_query("select * from stillebot.settings"))->get()[0];
 	}
 	db->connected = 1;
 }
