@@ -1,6 +1,7 @@
 //Build code into this file to be able to quickly and easily run it using "stillebot --test"
 inherit annotated;
 
+int last_activity = time();
 int cur_category;
 mapping cfgtest = ([]);
 continue Concurrent.Future ping() {
@@ -9,10 +10,10 @@ continue Concurrent.Future ping() {
 	for (;;yield(task_sleep(10))) {
 		if (mixed ex = catch {
 			mapping ret = yield(G->G->database->generic_query("select * from stillebot.user_followed_categories where twitchid = 1"))[0];
-			werror("Current value: %O\n", cur_category = ret->category);
+			werror("[%d] Current value: %O\n", time() - last_activity, cur_category = ret->category);
 			cfgtest = yield((mixed)load_config(0, "testing"));
 			werror("Got: %O\n", cfgtest);
-		}) werror("No active connection - cached value is %d.\n", cur_category);
+		}) werror("[%d] No active connection - cached value is %d.\n", time() - last_activity, cur_category);
 	}
 }
 
@@ -38,6 +39,7 @@ continue Concurrent.Future activity() {
 	while (1) {
 		yield(task_sleep(60));
 		write("It is now " + ctime(time()));
+		last_activity = time();
 	}
 }
 
