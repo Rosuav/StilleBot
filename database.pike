@@ -60,7 +60,7 @@ continue Concurrent.Future _got_active(object conn) {
 		if (err) werror("Unable to save pending to database!\n%s\n", describe_backtrace(err));
 	}
 }
-void _have_active(string a) {active = a; spawn_task(_got_active(connections[active]->conn));}
+void _have_active(string a) {werror("*** HAVE ACTIVE: %O\n", a); active = a; spawn_task(_got_active(connections[active]->conn));}
 
 class SSLContext {
 	inherit SSL.Context;

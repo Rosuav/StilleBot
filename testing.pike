@@ -13,7 +13,7 @@ continue Concurrent.Future ping() {
 			werror("[%d] Current value: %O\n", time() - last_activity, cur_category = ret->category);
 			cfgtest = yield((mixed)load_config(0, "testing"));
 			werror("Got: %O\n", cfgtest);
-		}) werror("[%d] No active connection - cached value is %d.\n", time() - last_activity, cur_category);
+		}) werror("[%d] No active connection - cached value is %d.\n%s\n", time() - last_activity, cur_category, describe_error(ex));
 	}
 }
 
