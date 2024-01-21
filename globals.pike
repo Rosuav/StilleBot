@@ -1566,3 +1566,17 @@ string deduce_host(mapping request_headers) {
 //long as nothing abusable can be recognized by this. It's also okay if it doesn't
 //match every possible link, as this is meant as a courtesy, not a validator.
 object hyperlink = Regexp.PCRE("^http(s|)://[A-Za-z0-9.]+(/[-A-Za-z0-9/.+]*|)(\\?[A-Za-z0-9=&+]*|)(#[A-Za-z0-9]*|)$");
+
+//True if the bot is definitely active, or false if uncertain or not active.
+int(1bit) is_active_bot() {
+	string active = G->G->dbsettings->?active_bot;
+	if (!active || active == "") return 0; //Might be there's no active bot, or maybe we just don't know for sure.
+	sscanf(persist_config["ircsettings"]->?http_address || "://", "%*s://%s%*[:]", string host);
+	return host == active;
+}
+
+//Return the currently-active bot, or 0 if we don't know for sure
+string|zero get_active_bot() {
+	string active = G->G->dbsettings->?active_bot;
+	return active != "" && active;
+}
