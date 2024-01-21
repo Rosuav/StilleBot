@@ -41,10 +41,10 @@ constant tables = ([
 	}),
 	//Single-row table for fundamental bot config. Trust this only if the database is
 	//read-write; otherwise, consider it advisory.
-	//FIXME: Needs "replica identity full". Implement and test.
 	"settings": ({
+		"asterisk char primary key", //There's only one row, but give it a PK anyway for the sake of replication.
 		"active_bot varchar",
-		"insert into stillebot.settings default values;",
+		"insert into stillebot.settings (asterisk) values ('*');",
 	}),
 ]);
 
