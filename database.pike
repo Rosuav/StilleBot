@@ -113,6 +113,7 @@ continue Concurrent.Future connect(string host) {
 		//TODO: Set up an update trigger to NOTIFY, then LISTEN for that, and autoupdate
 		//Have this trigger only on the active one?
 		G->G->dbsettings = yield(db->conn->promise_query("select * from stillebot.settings"))->get()[0];
+		werror("Got settings %O\n", G->G->dbsettings);
 	}
 	db->connected = 1;
 }
