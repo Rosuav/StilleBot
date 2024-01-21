@@ -33,9 +33,18 @@ continue Concurrent.Future get_settings() {
 	werror("Queried settings: %O\n", settings);
 }
 
+//Demonstrate if the event loop ever gets stalled out (eg by a blocking operation)
+continue Concurrent.Future activity() {
+	while (1) {
+		yield(task_sleep(60));
+		write("It is now " + ctime(time()));
+	}
+}
+
 protected void create(string name) {
 	::create(name);
 	spawn_task(ping());
+	spawn_task(activity());
 	G->G->consolecmd->inc = increment;
 	G->G->consolecmd->inc2 = increment2;
 	G->G->consolecmd->settings = lambda() {spawn_task(get_settings());};
