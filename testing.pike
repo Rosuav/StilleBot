@@ -38,7 +38,7 @@ continue Concurrent.Future get_settings() {
 continue Concurrent.Future activity() {
 	while (1) {
 		yield(task_sleep(60));
-		write("It is now " + ctime(time()));
+		write("%%%% Watchdog %%%% It is now " + ctime(time()));
 		last_activity = time();
 	}
 }
