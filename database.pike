@@ -253,3 +253,27 @@ protected void create(string name) {
 	spawn_task(reconnect(0));
 	#endif
 }
+
+/* Current problem: connection falling over silently.
+
+It seems to fail in load_config(). Often it's completely silent; other times, the next update
+query results in "Invalid number of bindings, expected 1, got 2", which correlates with the
+update being:
+"update stillebot.user_followed_categories set category = :newval where twitchid = 1"
+and the config load being:
+"select data from stillebot.config where twitchid = :twitchid and keyword = :kwd"
+Which means that what seems to have happened is that the config query is prepared, then the
+bindings aren't sent for some reason; and then the update is prepared but that's being
+ignored (?? or dropped?? or is erroring out but the error is getting lost??), and the binding
+(singular) for the update is being submitted next.
+
+Do we need to serialize queries? If so:
+* Never use promise_query directly
+* Wrapper, query(), which:
+  - Copy global pending to local pending
+  - Set new promise into global pending and local completion
+  - If local pending, await it.
+  - Call promise_query, get result
+  - Signal local completion
+  - If global pending is local completion, clear it.
+*/
