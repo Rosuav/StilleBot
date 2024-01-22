@@ -1308,8 +1308,17 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 	}
 	if (string other = !is_active_bot() && get_active_bot()) {
 		//If we are definitely not active and there's someone who is,
-		//send the request over there instead.
-		req->response_and_finish(redirect("https://" + other + "/ws"));
+		//send the request over there instead. Unfortunately, browsers
+		//don't all follow 302 redirects for websockets; and even if they
+		//did, session and login information would be lost, since the
+		//websocket would be going to an unrelated origin. So instead, it
+		//may be preferable to proxy the entire connection, using a magic
+		//startup packet that includes the entire session... somehow that
+		//needs to be done safely and securely, not sure what to do with
+		//that. Alternatively, it may be better instead to have the whole
+		//session infrastructure done through the Postgres database, such
+		//that sessions are effectively shared.
+		req->response_and_finish((["error": 501, "type": "text/plain", "data": "This bot not active, need a redirect"]));
 		return;
 	}
 	//Lifted from Protocols.HTTP.Server.Request since, for some reason,
