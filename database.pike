@@ -52,15 +52,15 @@ mapping(string:mapping(string:mixed)) connections = ([]);
 string active; //Host name only, not the connection object itself
 
 array(array(string|mapping)) waiting_for_active = ({ });
-continue Concurrent.Future _got_active(object conn) {
+continue Concurrent.Future _got_active(mapping db) {
 	//Pull all the pendings and reset the array before actually saving any of them.
 	array wfa = waiting_for_active; waiting_for_active = ({ });
 	foreach (wfa, [string query, mapping bindings]) {
-		mixed err = catch {yield(conn->promise_query(query, bindings));};
+		mixed err = catch {yield(db->conn->promise_query(query, bindings));};
 		if (err) werror("Unable to save pending to database!\n%s\n", describe_backtrace(err));
 	}
 }
-void _have_active(string a) {werror("*** HAVE ACTIVE: %O\n", a); active = a; spawn_task(_got_active(connections[active]->conn));}
+void _have_active(string a) {werror("*** HAVE ACTIVE: %O\n", a); active = a; spawn_task(_got_active(connections[active]));}
 
 class SSLContext {
 	inherit SSL.Context;
@@ -184,7 +184,7 @@ continue Concurrent.Future|mapping generic_query(string sql, mapping|void bindin
 		yield((mixed)reconnect(0));
 		if (!active) error("No database connection available.\n");
 	}
-	return yield(connections[active]->conn->promise_query(sql, bindings))->get();
+	return yield(query(connections[active], sql, bindings));
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
