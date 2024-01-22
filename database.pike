@@ -283,4 +283,5 @@ Do we need to serialize queries? If so:
   - Call promise_query, get result
   - Signal local completion
   - If global pending is local completion, clear it.
+Note that "global" here is per-database-host, so it belongs inside connections[host].
 */
