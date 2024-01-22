@@ -51,12 +51,19 @@ constant tables = ([
 mapping(string:mapping(string:mixed)) connections = ([]);
 string active; //Host name only, not the connection object itself
 
+//ALL queries should go through this function.
+//Is it more efficient, with queries where we don't care about the result, to avoid calling get()?
+//Conversely, does failing to call get() result in risk of problems?
+continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping|void bindings) {
+	return yield(db->conn->promise_query(query, bindings))->get();
+}
+
 array(array(string|mapping)) waiting_for_active = ({ });
 continue Concurrent.Future _got_active(mapping db) {
 	//Pull all the pendings and reset the array before actually saving any of them.
 	array wfa = waiting_for_active; waiting_for_active = ({ });
-	foreach (wfa, [string query, mapping bindings]) {
-		mixed err = catch {yield(db->conn->promise_query(query, bindings));};
+	foreach (wfa, [string sql, mapping bindings]) {
+		mixed err = catch {yield((mixed)query(db, sql, bindings));};
 		if (err) werror("Unable to save pending to database!\n%s\n", describe_backtrace(err));
 	}
 }
@@ -107,17 +114,17 @@ continue Concurrent.Future connect(string host) {
 	]));
 	db->conn->set_notify_callback("readonly", notify_readonly, 0, host);
 	db->conn->set_notify_callback("", notify_unknown, 0, host);
-	yield(db->conn->promise_query("listen readonly"));
-	string ro = yield(db->conn->promise_query("show default_transaction_read_only"))->get()[0]->default_transaction_read_only;
+	yield((mixed)query(db, "listen readonly"));
+	string ro = yield((mixed)query(db, "show default_transaction_read_only"))[0]->default_transaction_read_only;
 	werror("Connected to %O - %s.\n", host, ro == "on" ? "r/o" : "r-w");
 	if (ro == "on") {
-		yield(db->conn->promise_query("set application_name = 'stillebot-ro'"));
+		yield((mixed)query(db, "set application_name = 'stillebot-ro'"));
 		db->readonly = 1;
 	} else {
 		//Any time we have a read-write database connection, update settings.
 		//TODO: Set up an update trigger to NOTIFY, then LISTEN for that, and autoupdate
 		//Have this trigger only on the active one?
-		G->G->dbsettings = yield(db->conn->promise_query("select * from stillebot.settings"))->get()[0];
+		G->G->dbsettings = yield((mixed)query(db, "select * from stillebot.settings"))[0];
 		werror("Got settings %O\n", G->G->dbsettings);
 	}
 	db->connected = 1;
@@ -141,9 +148,9 @@ continue Concurrent.Future connect(string host) {
 	active = 0;
 }
 
-continue Concurrent.Future|string save_to_db(string query, mapping bindings) {
+continue Concurrent.Future|string save_to_db(string sql, mapping bindings) {
 	if (active) {
-		mixed err = catch {yield(connections[active]->conn->promise_query(query, bindings));};
+		mixed err = catch {yield((mixed)query(connections[active], sql, bindings));};
 		if (!err) return "ok"; //All good!
 		//Report the error to the console, since the caller isn't hanging around.
 		//TODO: If the error is because there's actually no database available,
@@ -151,8 +158,8 @@ continue Concurrent.Future|string save_to_db(string query, mapping bindings) {
 		werror("Unable to save to database!\n%s\n", describe_backtrace(err));
 		return "fail";
 	}
-	werror("Save pending! %s\n", query);
-	waiting_for_active += ({({query, bindings})});
+	werror("Save pending! %s\n", sql);
+	waiting_for_active += ({({sql, bindings})});
 	return "retry";
 }
 
@@ -169,8 +176,8 @@ continue Concurrent.Future|string save_to_db(string query, mapping bindings) {
 @export: continue Concurrent.Future|mapping load_config(string|int twitchid, string kwd) {
 	//FIXME: What should happen if there's no DB available? Is it okay to fetch from a read-only database?
 	if (!active) error("No database connection, can't load data!\n");
-	array rows = yield(connections[active]->conn->promise_query("select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
-		(["twitchid": (int)twitchid, "kwd": kwd])))->get();
+	array rows = yield((mixed)query(connections[active], "select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
+		(["twitchid": (int)twitchid, "kwd": kwd])));
 	if (!sizeof(rows)) return ([]);
 	return Standards.JSON.decode_utf8(rows[0]->data);
 }
@@ -184,7 +191,7 @@ continue Concurrent.Future|mapping generic_query(string sql, mapping|void bindin
 		yield((mixed)reconnect(0));
 		if (!active) error("No database connection available.\n");
 	}
-	return yield(query(connections[active], sql, bindings));
+	return yield((mixed)query(connections[active], sql, bindings));
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
@@ -202,7 +209,7 @@ continue Concurrent.Future create_tables() {
 		dbs = values(connections);
 	}
 	foreach (dbs, mapping db) {
-		array cols = yield(db->conn->promise_query("select table_name, column_name from information_schema.columns where table_schema = 'stillebot' order by table_name, ordinal_position"))->get();
+		array cols = yield((mixed)query(db, "select table_name, column_name from information_schema.columns where table_schema = 'stillebot' order by table_name, ordinal_position"));
 		array stmts = ({ });
 		mapping(string:array(string)) havecols = ([]);
 		foreach (cols, mapping col) havecols[col->table_name] += ({col->column_name});
@@ -234,9 +241,9 @@ continue Concurrent.Future create_tables() {
 		if (sizeof(stmts)) {
 			if (active) error("Table structure changes needed!\n%O\n", stmts);
 			werror("Making changes on %s: %O\n", db->host, stmts);
-			yield(db->conn->promise_query("begin read write"));
-			foreach (stmts, string stmt) yield(db->conn->promise_query(stmt));
-			yield(db->conn->promise_query("commit"));
+			yield((mixed)query(db, "begin read write"));
+			foreach (stmts, string stmt) yield((mixed)query(db, stmt));
+			yield((mixed)query(db, "commit"));
 		}
 	}
 }
