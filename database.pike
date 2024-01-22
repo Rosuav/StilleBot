@@ -179,12 +179,12 @@ continue Concurrent.Future|string save_to_db(string query, mapping bindings) {
 //any mutation; use the proper load_config/save_config/save_sql instead. This is deliberately
 //NOT exported, so to use it, write yield(G->G->database->generic_query("...")) - clunky as a
 //reminder to avoid doing this where possible.
-continue Concurrent.Future|mapping generic_query(string sql) {
+continue Concurrent.Future|mapping generic_query(string sql, mapping|void bindings) {
 	if (!connections[active]) {
 		yield((mixed)reconnect(0));
 		if (!active) error("No database connection available.\n");
 	}
-	return yield(connections[active]->conn->promise_query(sql))->get();
+	return yield(connections[active]->conn->promise_query(sql, bindings))->get();
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
