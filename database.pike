@@ -89,6 +89,10 @@ void notify_readonly(int pid, string cond, string extra, string host) {
 	//condition on startup, but we're already going to be in the right state anyway.
 }
 
+void notify_unknown(int pid, string cond, string extra, string host) {
+	werror("[%s] Unknown notification %O from pid %O, extra %O\n", host, cond, pid, extra);
+}
+
 continue Concurrent.Future connect(string host) {
 	werror("Connecting to Postgres on %O...\n", host);
 	mapping db = connections[host] = (["host": host]); //Not a floop, strings are just strings :)
@@ -102,6 +106,7 @@ continue Concurrent.Future connect(string host) {
 		"force_ssl": 1, "ssl_context": ctx, "application_name": "stillebot",
 	]));
 	db->conn->set_notify_callback("readonly", notify_readonly, 0, host);
+	db->conn->set_notify_callback("", notify_unknown, 0, host);
 	yield(db->conn->promise_query("listen readonly"));
 	string ro = yield(db->conn->promise_query("show default_transaction_read_only"))->get()[0]->default_transaction_read_only;
 	werror("Connected to %O - %s.\n", host, ro == "on" ? "r/o" : "r-w");
