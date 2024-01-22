@@ -1306,6 +1306,12 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 		req->response_and_finish((["error": 404, "type": "text/plain", "data": "Not found"]));
 		return;
 	}
+	if (string other = !is_active_bot() && get_active_bot()) {
+		//If we are definitely not active and there's someone who is,
+		//send the request over there instead.
+		req->response_and_finish(redirect("https://" + other + "/ws"));
+		return;
+	}
 	//Lifted from Protocols.HTTP.Server.Request since, for some reason,
 	//this isn't done for WebSocket requests.
 	if (req->request_headers->cookie)
