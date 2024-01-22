@@ -119,6 +119,8 @@ int main(int argc,array(string) argv)
 		add_constant("HEADLESS", 1);
 		signal(1, bootstrap_all);
 	}
+	//HACK: Provide some sample dbsettings without actually calling on Postgres
+	G->dbsettings =  (["active_bot": "sikorsky.rosuav.com"]);
 	bootstrap_all();
 	foreach ("persist_config spawn_task send_message window" / " ", string vital)
 		if (!all_constants()[vital])
