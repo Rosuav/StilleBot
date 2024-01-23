@@ -7,7 +7,7 @@ inherit irc_callback;
 //NOTE: The display is aimed at no more than six emotes across.
 constant hypetrain = replace(#"
 ## Hype Train set six
-### Unlockable Dec 2023... ongoing or not?
+### Unlockable Dec 2023 to current
 HypeCute HypeYummy HypeKEKW HypeNoods HypeOho ????<br>
 HypeHi HypeChill HypeMyHeart HypeWarm HypeFist ????<br>
 HypeCries HypeGGEyes HypeAwh HypeElf HypeDelight ????<br>
