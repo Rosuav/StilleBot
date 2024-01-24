@@ -57,14 +57,14 @@ string active; //Host name only, not the connection object itself
 continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping|void bindings) {
 	object pending = db->pending;
 	object completion = db->pending = Concurrent.Promise();
-	if (pending) {werror("... waiting ...\n"); yield(pending->future()); werror("Wait done, querying\n");} //If there's a queue, put us at the end of it.
+	if (pending) {werror("... waiting ...\n"); db = yield(pending->future()); werror("Wait done, querying\n");} //If there's a queue, put us at the end of it.
 	//The timeout at the moment is crazy long.
 	mixed ret;
 	while (mixed ex = catch {ret = yield(db->conn->promise_query(query, bindings)->timeout(120))->get();}) {
 		werror("ERROR IN QUERY:\n%s\n", describe_backtrace(ex));
 		if (mixed ex = catch {db->conn->close();
 		destruct(db->conn);}) werror("ERROR CLOSING CONN:\n%s\n", describe_backtrace(ex));
-		m_delete(connections, db->host);
+		object waspending = m_delete(connections, db->host)->pending;
 		werror("Reconnecting...\n");
 		yield((mixed)reconnect(0));
 		werror("Reconnect complete...?\n");
@@ -72,7 +72,7 @@ continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping
 		if (!db) {werror("Unable to reconnect.\n"); error("No database connection\n");}
 		werror("Reconnected.\n");
 	}
-	completion->success(1);
+	completion->success(db);
 	if (db->pending == completion) db->pending = 0;
 	return ret;
 }
