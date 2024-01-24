@@ -71,6 +71,7 @@ continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping
 		db = connections[active];
 		if (!db) {werror("Unable to reconnect.\n"); error("No database connection\n");}
 		werror("Reconnected.\n");
+		db->pending = waspending;
 	}
 	completion->success(db);
 	if (db->pending == completion) db->pending = 0;
