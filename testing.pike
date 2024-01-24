@@ -24,7 +24,7 @@ void increment() {
 }
 
 void increment2() {
-	werror("Updating value to %d and saving.\n", ++cfgtest->nextid);
+	werror("Updating ID to %d and saving.\n", ++cfgtest->nextid);
 	save_config(0, "testing", cfgtest);
 }
 
