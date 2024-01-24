@@ -55,7 +55,13 @@ string active; //Host name only, not the connection object itself
 //Is it more efficient, with queries where we don't care about the result, to avoid calling get()?
 //Conversely, does failing to call get() result in risk of problems?
 continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping|void bindings) {
-	return yield(db->conn->promise_query(query, bindings))->get();
+	object pending = db->pending;
+	object completion = db->pending = Concurrent.Promise();
+	if (pending) yield(pending->future()); //If there's a queue, put us at the end of it.
+	mixed ret = yield(db->conn->promise_query(query, bindings))->get();
+	completion->success(1);
+	if (db->pending == completion) db->pending = 0;
+	return ret;
 }
 
 array(array(string|mapping)) waiting_for_active = ({ });
@@ -273,15 +279,4 @@ Which means that what seems to have happened is that the config query is prepare
 bindings aren't sent for some reason; and then the update is prepared but that's being
 ignored (?? or dropped?? or is erroring out but the error is getting lost??), and the binding
 (singular) for the update is being submitted next.
-
-Do we need to serialize queries? If so:
-* Never use promise_query directly
-* Wrapper, query(), which:
-  - Copy global pending to local pending
-  - Set new promise into global pending and local completion
-  - If local pending, await it.
-  - Call promise_query, get result
-  - Signal local completion
-  - If global pending is local completion, clear it.
-Note that "global" here is per-database-host, so it belongs inside connections[host].
 */
