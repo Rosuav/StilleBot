@@ -62,8 +62,6 @@ continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping
 	mixed ret;
 	while (mixed ex = catch {ret = yield(db->conn->promise_query(query, bindings)->timeout(120))->get();}) {
 		werror("ERROR IN QUERY:\n%s\n", describe_backtrace(ex));
-		if (mixed ex = catch {db->conn->close();
-		destruct(db->conn);}) werror("ERROR CLOSING CONN:\n%s\n", describe_backtrace(ex));
 		object waspending = m_delete(connections, db->host)->pending;
 		werror("Reconnecting...\n");
 		yield((mixed)reconnect(0));
