@@ -64,7 +64,10 @@ continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping
 		werror("ERROR IN QUERY:\n%s\n", describe_backtrace(ex));
 		db->conn->close();
 		destruct(db->conn);
+		m_delete(connections, db->host);
 		yield((mixed)reconnect(0));
+		db = connections[active];
+		if (!db) {werror("Unable to reconnect.\n"); error("No database connection\n");}
 		werror("Reconnected.\n");
 	}
 	completion->success(1);
