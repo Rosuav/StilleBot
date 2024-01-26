@@ -296,4 +296,8 @@ Which means that what seems to have happened is that the config query is prepare
 bindings aren't sent for some reason; and then the update is prepared but that's being
 ignored (?? or dropped?? or is erroring out but the error is getting lost??), and the binding
 (singular) for the update is being submitted next.
+
+Plan: Wade through pgssl.log. Fracture the file at the watchdog lines. Diff successive minute-long
+segments. Figure out which parts are irrelevant and script them away. Then see if the final block,
+where the failure happens, actually had some clues prior to that.
 */
