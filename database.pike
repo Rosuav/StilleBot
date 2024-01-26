@@ -64,6 +64,9 @@ continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping
 		if (arrayp(ex) && ex[0] == "Timeout.\n") {
 			//TODO: Silently reconnect? For now, just letting this grind until the failure happens.
 			werror("Timed out. Ending.\n");
+			werror("Connection: %O\n", db->conn->proxy.c);
+			foreach (Thread.all_threads(), object t)
+				werror("Thread id %d:\n%s\n", t->id_number(), describe_backtrace(t->backtrace()));
 			exit(0);
 		}
 		werror("ERROR IN QUERY:\n%s\n", describe_backtrace(ex));
