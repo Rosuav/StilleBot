@@ -61,6 +61,11 @@ continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping
 	//The timeout at the moment is crazy long.
 	mixed ret;
 	while (mixed ex = catch {ret = yield(db->conn->promise_query(query, bindings)->timeout(120))->get();}) {
+		if (arrayp(ex) && ex[0] == "Timeout.\n") {
+			//TODO: Silently reconnect? For now, just letting this grind until the failure happens.
+			werror("Timed out. Ending.\n");
+			exit(0);
+		}
 		werror("ERROR IN QUERY:\n%s\n", describe_backtrace(ex));
 		object waspending = m_delete(connections, db->host)->pending;
 		werror("Reconnecting...\n");
