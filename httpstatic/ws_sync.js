@@ -1,5 +1,9 @@
 //Generic websocket synchronization handler
 //Relies on globals ws_type and ws_group
+//NOTE: While it is certainly possible to connect to multiple sockets, reconnection
+//information is global. So the progressive back-off will work a little oddly, and
+//more importantly, we assume that ALL sockets can be redirected safely to the same
+//destination.
 
 let default_handler = null;
 let send_socket, send_sockets = { }; //If populated, send() is functional.
@@ -8,6 +12,7 @@ let pending_message = null; //Allow at most one message to be queued on startup 
 let prefs = { }; //Updated from the server as needed
 const prefs_hooks = [];
 let reconnect_delay = 250;
+let redirect_host = null, redirect_xfr = null;
 
 let userid = 0;
 export function get_userid() {
@@ -30,11 +35,13 @@ export function connect(group, handler)
 	const cfg = handler.ws_config || { };
 	if (!cfg.quiet) cfg.quiet = { };
 	function verbose(kwd, ...msg) {if (!cfg.quiet[kwd]) console.log(...msg)}
-	let socket = new WebSocket(protocol + window.location.host + "/ws");
+	let socket = new WebSocket(protocol + (redirect_host || window.location.host) + "/ws");
 	socket.onopen = () => {
 		reconnect_delay = 250;
 		verbose("conn", "Socket connection established.");
-		socket.send(JSON.stringify({cmd: "init", type: handler.ws_type || ws_type, group}));
+		const msg = {cmd: "init", type: handler.ws_type || ws_type, group};
+		if (redirect_host && redirect_xfr) msg.xfr = redirect_xfr;
+		socket.send(JSON.stringify(msg));
 		//NOTE: It's possible that the server is about to kick us (for any of a number of reasons,
 		//including that the bot is shutting down, we need to be a mod, or the type/group is just
 		//plain wrong). The socket_connected hook is still called in these situations, sending is
@@ -44,6 +51,7 @@ export function connect(group, handler)
 		else if (handler.ws_sendid) send_sockets[handler.ws_sendid] = socket;
 		else send_socket = socket; //Don't activate send() until we're initialized
 		if (pending_message) {socket.send(JSON.stringify(pending_message)); pending_message = null;}
+		window.__socket__ = socket; window.__handler__ = handler;
 	};
 	socket.onclose = () => {
 		if (handler.socket_connected) handler.socket_connected(null);
@@ -114,6 +122,14 @@ export function connect(group, handler)
 				else if (data.prefs[p.key]) p.func(prefs[p.key]);
 			});
 			unknown = "";
+		}
+		else if (data.cmd === "*DC*") {
+			//The server's kicking us. If we're VERY fortunate, we'll be told of an alternative
+			//place to connect. Otherwise, well, I guess it's back to the retry loop.
+			socket.close();
+			//If these are non-null, they can be used, otherwise we'll return to default.
+			//A simple packet of {"cmd": "*DC*"} will cause us to revert to normal.
+			redirect_host = data.redirect; redirect_xfr = data.xfr;
 		}
 		const f = handler["sockmsg_" + data.cmd];
 		if (f) {f(data); unknown = "";}
