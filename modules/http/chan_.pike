@@ -49,6 +49,7 @@ array sidebar_nonmodmenu = filter(sidebar_menu) {return __ARGS__[0][0][0] != '*'
 
 continue Concurrent.Future|mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string chan, string endpoint)
 {
+	if (!endpoint) return redirect_no_slash(req, chan || ""); //Probably misparsed.
 	function handler = G->G->http_endpoints["chan_" + endpoint];
 	if (!handler) return 0;
 	if (chan == "") return ([ //TODO: Better landing page? No menu of channels though, that would leak info
