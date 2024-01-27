@@ -35,6 +35,11 @@ export function connect(group, handler)
 		reconnect_delay = 250;
 		verbose("conn", "Socket connection established.");
 		socket.send(JSON.stringify({cmd: "init", type: handler.ws_type || ws_type, group}));
+		//NOTE: It's possible that the server is about to kick us (for any of a number of reasons,
+		//including that the bot is shutting down, we need to be a mod, or the type/group is just
+		//plain wrong). The socket_connected hook is still called in these situations, sending is
+		//permitted, etc. There's currently no way to be 100% sure that you have a connection until
+		//you receive some sort of message (most sockets will send cmd:update on startup).
 		if (handler.socket_connected) handler.socket_connected(socket);
 		else if (handler.ws_sendid) send_sockets[handler.ws_sendid] = socket;
 		else send_socket = socket; //Don't activate send() until we're initialized

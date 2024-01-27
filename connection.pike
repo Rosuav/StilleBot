@@ -1272,6 +1272,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 			//some extremely short duration, after which the client would be
 			//told "redirect back to default".
 			conn->sock->send_text(Standards.JSON.encode(([
+				"cmd": "*DC*",
 				"error": "This bot is not active, see other",
 				"redirect": other,
 				"xfr": conn->session->cookie,
