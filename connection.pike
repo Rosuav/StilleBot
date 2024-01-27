@@ -1257,6 +1257,27 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 	if (!stringp(data->cmd)) return;
 	if (data->cmd == "init")
 	{
+		if (string other = !is_active_bot() && get_active_bot()) {
+			//If we are definitely not active and there's someone who is,
+			//send the request over there instead. Browsers don't all follow
+			//302 redirects for websockets, and even if they did, session and
+			//login information would be lost (since the websocket would be
+			//going to an unrelated origin). So instead, we notify the client
+			//of the situation. This DOES mean that we have to give the JS the
+			//session cookie, but that's only a minor security issue - you'd
+			//have to know how to retrieve that, and then use it to gain access
+			//to the real server. In theory, the transfer cookie could be some
+			//completely separate identifier, which we first stash into the DB
+			//somewhere before notifying the client; this would be valid for
+			//some extremely short duration, after which the client would be
+			//told "redirect back to default".
+			conn->sock->send_text(Standards.JSON.encode(([
+				"error": "This bot is not active, see other",
+				"redirect": other,
+				"xfr": conn->session->cookie,
+			])));
+			return;
+		}
 		//Initialization is done with a type and a group.
 		//The type has to match a module ("inherit websocket_handler")
 		//The group has to be a string or integer.
@@ -1304,21 +1325,6 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 	if (req->not_query != "/ws")
 	{
 		req->response_and_finish((["error": 404, "type": "text/plain", "data": "Not found"]));
-		return;
-	}
-	if (string other = !is_active_bot() && get_active_bot()) {
-		//If we are definitely not active and there's someone who is,
-		//send the request over there instead. Unfortunately, browsers
-		//don't all follow 302 redirects for websockets; and even if they
-		//did, session and login information would be lost, since the
-		//websocket would be going to an unrelated origin. So instead, it
-		//may be preferable to proxy the entire connection, using a magic
-		//startup packet that includes the entire session... somehow that
-		//needs to be done safely and securely, not sure what to do with
-		//that. Alternatively, it may be better instead to have the whole
-		//session infrastructure done through the Postgres database, such
-		//that sessions are effectively shared.
-		req->response_and_finish((["error": 501, "type": "text/plain", "data": "This bot not active, need a redirect"]));
 		return;
 	}
 	//Lifted from Protocols.HTTP.Server.Request since, for some reason,
