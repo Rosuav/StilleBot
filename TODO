@@ -308,7 +308,10 @@
   - G->G->channel_info (see poll.pike's retain) should use user IDs
   - chan_giveaway.pike giveaway_tickets[] should use user IDs
   - Sweeping change: First allow, then encourage, and finally mandate, that chan_*
-    websockets use IDs rather than channel logins.
+    websocket groups use IDs rather than channel logins.
+  - Remove req->misc->session->token. Instead, have req->misc->token which is
+    taken from the user ID, and always store the token against that user (not the
+    session).
 * Failed auth when attempting to send a voiced message should be logged to the
   channel's error log.
 * Try out database synchronization from within the bot itself
