@@ -1239,7 +1239,7 @@ continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 	if (sizeof(sess) && !sess->fake) {
 		if (!sess->cookie) do {sess->cookie = random(1<<64)->digits(36);} while (G->G->http_sessions[sess->cookie]);
 		sess->expires = time() + 604800; //Overwrite expiry time every request
-		resp->extra_heads["Set-Cookie"] = "session=" + sess->cookie + "; Path=/; Max-Age=604800; SameSite=Lax";
+		resp->extra_heads["Set-Cookie"] = "session=" + sess->cookie + "; Path=/; Max-Age=604800; SameSite=Lax; HttpOnly";
 		G->G->http_sessions[sess->cookie] = sess;
 		if (!G->G->http_session_cleanup) session_cleanup();
 		else Stdio.write_file("twitchbot_sessions.db", encode_value(G->G->http_sessions));
