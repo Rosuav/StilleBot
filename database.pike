@@ -45,6 +45,9 @@ constant tables = ([
 		"asterisk char primary key", //There's only one row, but give it a PK anyway for the sake of replication.
 		"active_bot varchar",
 		"insert into stillebot.settings (asterisk) values ('*');",
+		//Not tested as part of database recreation, has been done manually.
+		//"create or replace function send_settings_notification() returns trigger language plpgsql as $$begin perform pg_notify('stillebot.settings', ''); return null; end$$;",
+		//"create trigger settings_update_notify after update on stillebot.settings execute function send_settings_notification();",
 	}),
 ]);
 
@@ -64,7 +67,7 @@ continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping
 		if (arrayp(ex) && ex[0] == "Timeout.\n") {
 			//TODO: Silently reconnect? For now, just letting this grind until the failure happens.
 			werror("Timed out. Ending.\n");
-			werror("Connection: %O\n", db->conn->proxy.c);
+			werror("Connection: %O\n", db->conn->proxy->c);
 			foreach (Thread.all_threads(), object t)
 				werror("Thread id %d:\n%s\n", t->id_number(), describe_backtrace(t->backtrace()));
 			exit(0);
@@ -126,6 +129,16 @@ void notify_unknown(int pid, string cond, string extra, string host) {
 	werror("[%s] Unknown notification %O from pid %O, extra %O\n", host, cond, pid, extra);
 }
 
+continue Concurrent.Future fetch_settings(mapping db) {
+	G->G->dbsettings = yield((mixed)query(db, "select * from stillebot.settings"))[0];
+	werror("Got settings %O\n", G->G->dbsettings);
+}
+
+void notify_settings_change(int pid, string cond, string extra, string host) {
+	werror("SETTINGS CHANGED\n");
+	spawn_task(fetch_settings(connections[host]));
+}
+
 continue Concurrent.Future connect(string host) {
 	werror("Connecting to Postgres on %O...\n", host);
 	mapping db = connections[host] = (["host": host]); //Not a floop, strings are just strings :)
@@ -139,8 +152,10 @@ continue Concurrent.Future connect(string host) {
 		"force_ssl": 1, "ssl_context": ctx, "application_name": "stillebot",
 	]));
 	db->conn->set_notify_callback("readonly", notify_readonly, 0, host);
+	db->conn->set_notify_callback("stillebot.settings", notify_settings_change, 0, host);
 	db->conn->set_notify_callback("", notify_unknown, 0, host);
 	yield((mixed)query(db, "listen readonly"));
+	yield((mixed)query(db, "listen \"stillebot.settings\""));
 	string ro = yield((mixed)query(db, "show default_transaction_read_only"))[0]->default_transaction_read_only;
 	werror("Connected to %O - %s.\n", host, ro == "on" ? "r/o" : "r-w");
 	if (ro == "on") {
@@ -148,10 +163,10 @@ continue Concurrent.Future connect(string host) {
 		db->readonly = 1;
 	} else {
 		//Any time we have a read-write database connection, update settings.
-		//TODO: Set up an update trigger to NOTIFY, then LISTEN for that, and autoupdate
-		//Have this trigger only on the active one?
-		G->G->dbsettings = yield((mixed)query(db, "select * from stillebot.settings"))[0];
-		werror("Got settings %O\n", G->G->dbsettings);
+		//....????? I don't understand why, but if I don't store this in a
+		//variable, it results in an error about ?: and void. My best guess is
+		//the optimizer has replaced this if/else with a ?: maybe???
+		mixed _ = yield((mixed)fetch_settings(db));
 	}
 	db->connected = 1;
 }
