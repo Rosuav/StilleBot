@@ -85,11 +85,11 @@ void probe_hype_train(int channel) {
 }
 
 constant emotes = #"HypeCute HypeYummy HypeKEKW HypeNoods HypeOho HypePizza
-HypeHi HypeChill HypeMyHeart HypeWarm HypeFist HypePizza
+HahaBall 2020Rivalry 2020Wish 2020ByeGuys 2020Celebrate HypePizza
 HypeCries HypeGGEyes HypeAwh HypeElf HypeDelight HypePizza
 HypeNotLikeSnow HypePls HypeMelt HypeCocoa HypeConfetti HypePizza
 HypeSanta HypePeek HypeOhDeer HypeUwu HypeLick HypePizza";
-
+//6 (may or may not be same as 5): PrideUwu PrideLaugh PrideCute PridePog PrideFloat
 string avail_emotes = "";
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
