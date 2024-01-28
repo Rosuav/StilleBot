@@ -87,7 +87,7 @@ void probe_hype_train(int channel) {
 constant emotes = #"LuvPeekL LuvPeekR LuvBlush LuvHearts LuvSign HypePizza
 HahaBall 2020Rivalry 2020Wish 2020ByeGuys 2020Celebrate HypePizza
 RPGAyaya HahaCat RPGGhosto PrideWingR PrideWingL HypePizza
-HypeNotLikeSnow HypePls HypeMelt HypeCocoa HypeConfetti HypePizza
+2020Party 2020Pajamas 2020Shred 2020Snacking 2020Glitchy HypePizza
 PrideUwu PrideLaugh PrideCute PridePog PrideFloat HypePizza";
 string avail_emotes = "";
 
