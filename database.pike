@@ -107,6 +107,7 @@ class SSLContext {
 }
 
 void notify_readonly(int pid, string cond, string extra, string host) {
+	if (function f = bounce(this_function)) {f(pid, cond, extra, host); return;}
 	mapping db = connections[host];
 	if (extra == "on" && !db->readonly) {
 		werror("SWITCHING TO READONLY MODE: %O\n", host);
@@ -126,6 +127,7 @@ void notify_readonly(int pid, string cond, string extra, string host) {
 }
 
 void notify_unknown(int pid, string cond, string extra, string host) {
+	if (function f = bounce(this_function)) {f(pid, cond, extra, host); return;}
 	werror("[%s] Unknown notification %O from pid %O, extra %O\n", host, cond, pid, extra);
 }
 
@@ -135,6 +137,7 @@ continue Concurrent.Future fetch_settings(mapping db) {
 }
 
 void notify_settings_change(int pid, string cond, string extra, string host) {
+	if (function f = bounce(this_function)) {f(pid, cond, extra, host); return;}
 	werror("SETTINGS CHANGED\n");
 	spawn_task(fetch_settings(connections[host]));
 }
@@ -296,6 +299,9 @@ continue Concurrent.Future create_tables_and_stop() {
 
 protected void create(string name) {
 	::create(name);
+	register_bouncer(notify_settings_change);
+	register_bouncer(notify_unknown);
+	register_bouncer(notify_readonly);
 	G->G->database = this;
 	#if !constant(INTERACTIVE)
 	spawn_task(reconnect(0));
