@@ -7,7 +7,7 @@ Requires OAuth authentication, which is by default handled by the GUI.
 
 array(string) bootstrap_files = ({"persist.pike", "globals.pike", "poll.pike", "connection.pike", "window.pike", "modules", "modules/http", "zz_local"});
 array(string) restricted_update;
-mapping G = (["consolecmd": ([])]);
+mapping G = (["consolecmd": ([]), "dbsettings": ([])]);
 
 void console(object stdin, string buf) {
 	while (has_value(buf, "\n")) {
