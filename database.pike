@@ -303,4 +303,6 @@ ignored (?? or dropped?? or is erroring out but the error is getting lost??), an
 Plan: Wade through pgssl.log. Fracture the file at the watchdog lines. Diff successive minute-long
 segments. Figure out which parts are irrelevant and script them away. Then see if the final block,
 where the failure happens, actually had some clues prior to that.
+
+This MIGHT now be solved, by the strategy of using synchronous write callbacks inside PG PSQL.
 */
