@@ -70,6 +70,13 @@ transactions. But for now, I'm using Postgres 15, so for safety's sake, disable
 the replication as a database comes up, and only enable it on a down database
 once it's definitely quiescent.
 
+UPDATE: This is becoming more annoying. Desynchronization is a constant issue.
+It's time to get PG 16. Adding the Postgres repo to sources, pinning it to prio
+50, and then installing PG 16 is pretty easy. Question is, though, what are the
+quinceconses?
+
+Will completely dispose of the replication (pub and sub) and start over.
+
 Changes to table structure
 --------------------------
 
