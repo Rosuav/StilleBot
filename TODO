@@ -328,3 +328,8 @@
     and then be activated as a near-atomic action.
   - Disallow any websocket connections if bot is inactive. If there is an active bot,
     return a 302 redirect to the active bot by its specific domain name.
+* Come up with a good API for maintaining transactional integrity in database.pike
+  - Will need to be able to submit a batch of changes which will become a transaction.
+  - If anything happens, requeue the entire transaction as a block.
+  - The database can't go read-only while we're submitting it, but if we lose link,
+    requeue the entire transaction block on the other database.
