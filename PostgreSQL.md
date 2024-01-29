@@ -65,6 +65,12 @@ down.
 
 At this point, everything should be back to normal.
 
+NOTE: Marking a database as "down" is necessary to prevent split-brain syndrome.
+Once replication breaks, there should be only ONE active database until the
+replication resumes; otherwise, it's possible that conflicts will occur between
+the two databases. TODO: Test that the DB is still "down" after a reboot if it
+was "down" prior to it.
+
 Bidirectional replication
 -------------------------
 
