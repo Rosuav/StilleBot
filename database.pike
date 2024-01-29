@@ -49,6 +49,11 @@ constant tables = ([
 		//"create or replace function send_settings_notification() returns trigger language plpgsql as $$begin perform pg_notify('stillebot.settings', ''); return null; end$$;",
 		//"create trigger settings_update_notify after update on stillebot.settings execute function send_settings_notification();",
 	}),
+	"http_sessions": ({
+		"cookie varchar(14) primary key",
+		"active timestamp with time zone default now()",
+		"data bytea not null",
+	}),
 ]);
 
 mapping(string:mapping(string:mixed)) connections = ([]);

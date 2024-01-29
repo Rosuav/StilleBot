@@ -312,6 +312,8 @@
   - Remove req->misc->session->token. Instead, have req->misc->token which is
     taken from the user ID, and always store the token against that user (not the
     session).
+    - Remove req->misc->session->scopes at the same time. This should leave sessions
+      JSON-compatible; then convert the database to use JSON instead of encode_value.
 * Failed auth when attempting to send a voiced message should be logged to the
   channel's error log.
 * Try out database synchronization from within the bot itself

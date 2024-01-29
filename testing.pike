@@ -34,6 +34,16 @@ continue Concurrent.Future get_settings() {
 	werror("Queried settings: %O\n", settings);
 }
 
+continue Concurrent.Future session() {
+	mapping session = (["cookie": random(1<<64)->digits(36), "user": "don't you wanna know"]);
+	yield(G->G->database->generic_query("insert into stillebot.http_sessions (cookie, data) values (:cookie, :data)",
+		(["cookie": session->cookie, "data": encode_value(session)])));
+	mapping readback = yield(G->G->database->generic_query("select * from stillebot.http_sessions where cookie = :cookie",
+		(["cookie": session->cookie])))[0];
+	werror("Queried session: %O\n", readback);
+	werror("Decoded session: %O\n", decode_value(readback->data));
+}
+
 //Demonstrate if the event loop ever gets stalled out (eg by a blocking operation)
 continue Concurrent.Future activity() {
 	while (1) {
@@ -50,5 +60,6 @@ protected void create(string name) {
 	G->G->consolecmd->inc = increment;
 	G->G->consolecmd->inc2 = increment2;
 	G->G->consolecmd->settings = lambda() {spawn_task(get_settings());};
+	G->G->consolecmd->sess = lambda() {spawn_task(session());};
 	G->G->consolecmd->quit = lambda() {exit(0);};
 }
