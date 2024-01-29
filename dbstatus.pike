@@ -5,10 +5,6 @@ int main() {
 	sscanf(data, "%s\n%s\n%s", string readonly, string replpid, string clients);
 	int ro = readonly == "on";
 	write("* Database is %s\n", ro ? "\e[1;34mread-only\e[0m" : "\e[1;32mread/write\e[0m");
-	//Replicating while read-only is good - normal state when not the active db.
-	//Not replicating while read-write is good - normal state when active.
-	//Not replicating while read-only is a transitional state, waiting for clients to finish.
-	//Replicating while read-write is very bad. It could result in conflicts.
 	write("* Incoming replication %sactive\e[0m\n", (int)replpid ? "" : "\e[34min");
 	foreach (clients / "\n", string cli) {
 		if (cli == "") continue;
