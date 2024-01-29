@@ -307,3 +307,12 @@ protected void create(string name) {
 	spawn_task(reconnect(0));
 	#endif
 }
+
+/* Code reload tests
+1. What happens to in-flight requests?
+2. Do old connections get promptly closed?
+3. Code updates should be fine (since it's all new connections) but test.
+4. If the reconnect is slow (artificially delay it), do reads and writes get delayed?
+
+Transactional integrity will need to be enforced in a different way.
+*/
