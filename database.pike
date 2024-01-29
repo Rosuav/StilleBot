@@ -61,6 +61,8 @@ constant tables = ([
 //need to be bounced to the new code.
 mapping(string:mapping(string:mixed)) connections = ([]);
 string active; //Host name only, not the connection object itself
+array(Concurrent.Promise) when_active = ({ }); //If active is null, add yourself to this to be told when there's an active.
+array(array(string|mapping)) waiting_for_active = ({ }); //If active is null and you want to asynchronously save, add yourself to this.
 array(string) database_ips = ({"sikorsky.rosuav.com", "ipv4.rosuav.com"});
 
 //ALL queries should go through this function.
@@ -78,7 +80,6 @@ continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping
 	return ret;
 }
 
-array(array(string|mapping)) waiting_for_active = ({ });
 continue Concurrent.Future _got_active(mapping db) {
 	//Pull all the pendings and reset the array before actually saving any of them.
 	array wfa = waiting_for_active; waiting_for_active = ({ });
@@ -87,7 +88,18 @@ continue Concurrent.Future _got_active(mapping db) {
 		if (err) werror("Unable to save pending to database!\n%s\n", describe_backtrace(err));
 	}
 }
-void _have_active(string a) {werror("*** HAVE ACTIVE: %O\n", a); active = a; spawn_task(_got_active(connections[active]));}
+void _have_active(string a) {
+	werror("*** HAVE ACTIVE: %O\n", a);
+	active = a;
+	array wa = when_active; when_active = ({ });
+	wa->success(active);
+	spawn_task(_got_active(connections[active]));
+}
+Concurrent.Future await_active() {
+	Concurrent.Promise pending = Concurrent.Promise();
+	when_active += ({pending});
+	return pending->future();
+}
 
 class SSLContext {
 	inherit SSL.Context;
@@ -218,8 +230,9 @@ continue Concurrent.Future|string save_to_db(string sql, mapping bindings) {
 }
 
 @export: continue Concurrent.Future|mapping load_config(string|int twitchid, string kwd) {
-	//FIXME: What should happen if there's no DB available? Is it okay to fetch from a read-only database?
-	if (!active) error("No database connection, can't load data!\n");
+	//NOTE: If there's no database connection, this will block. For higher speed
+	//queries, do we need a try_load_config() that would error out?
+	if (!active) yield(await_active());
 	array rows = yield((mixed)query(connections[active], "select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
 		(["twitchid": (int)twitchid, "kwd": kwd])));
 	if (!sizeof(rows)) return ([]);
