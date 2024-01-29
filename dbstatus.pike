@@ -9,8 +9,7 @@ int main() {
 	//Not replicating while read-write is good - normal state when active.
 	//Not replicating while read-only is a transitional state, waiting for clients to finish.
 	//Replicating while read-write is very bad. It could result in conflicts.
-	if (ro) write("* Incoming replication %sactive\e[0m\n", (int)replpid ? "" : "\e[34min");
-	else if ((int)replpid && !ro) write("\e[1;31mREPLICATING WHILE READ-WRITE\e[0m\n");
+	write("* Incoming replication %sactive\e[0m\n", (int)replpid ? "" : "\e[34min");
 	foreach (clients / "\n", string cli) {
 		if (cli == "") continue;
 		[string client_addr, string application_name, string xact_start, string state] = cli / "|";
