@@ -310,29 +310,3 @@ protected void create(string name) {
 	spawn_task(reconnect(0));
 	#endif
 }
-
-/* Current problem: connection falling over silently.
-
-It seems to fail in load_config(). Often it's completely silent; other times, the next update
-query results in "Invalid number of bindings, expected 1, got 2", which correlates with the
-update being:
-"update stillebot.user_followed_categories set category = :newval where twitchid = 1"
-and the config load being:
-"select data from stillebot.config where twitchid = :twitchid and keyword = :kwd"
-Which means that what seems to have happened is that the config query is prepared, then the
-bindings aren't sent for some reason; and then the update is prepared but that's being
-ignored (?? or dropped?? or is erroring out but the error is getting lost??), and the binding
-(singular) for the update is being submitted next.
-
-Plan: Wade through pgssl.log. Fracture the file at the watchdog lines. Diff successive minute-long
-segments. Figure out which parts are irrelevant and script them away. Then see if the final block,
-where the failure happens, actually had some clues prior to that.
-
-This MIGHT now be solved, by the strategy of using synchronous write callbacks inside PG PSQL.
-*/
-
-/* Bug notes
-
-Sometimes, connecting doesn't seem to work. Check if it causes the watchdog to stall, or if it
-is an asynchronous failure. If the latter, stick a timeout on it and move on.
-*/
