@@ -333,3 +333,5 @@
   - If anything happens, requeue the entire transaction as a block.
   - The database can't go read-only while we're submitting it, but if we lose link,
     requeue the entire transaction block on the other database.
+* Are conduits useful? Can we have one shard for Gideon and one for Sikorsky?
+  https://dev.twitch.tv/docs/eventsub/handling-conduit-events/
