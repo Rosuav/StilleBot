@@ -171,7 +171,9 @@ continue Concurrent.Future connect(string host) {
 		}
 		connections = ([]); //TODO: Ensure that it's okay to rebind like this, otherwise empty the existing mapping instead
 	}
-	foreach (({"sikorsky.rosuav.com", "ipv4.rosuav.com"}), string host) {
+	array ips = ({"sikorsky.rosuav.com", "ipv4.rosuav.com"});
+	if (has_value(G->G->argv, "--gideon")) ips = ({ips[1], ips[0]}); //Switch connection order for testing, Gideon first
+	foreach (ips, string host) {
 		if (!connections[host]) yield((mixed)connect(host));
 		if (!connections[host]->readonly) {_have_active(host); return 0;}
 	}
