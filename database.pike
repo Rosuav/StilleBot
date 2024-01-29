@@ -333,3 +333,12 @@ where the failure happens, actually had some clues prior to that.
 
 This MIGHT now be solved, by the strategy of using synchronous write callbacks inside PG PSQL.
 */
+
+/* Bug notes
+
+Sometimes, connecting doesn't seem to work. Check if it causes the watchdog to stall, or if it
+is an asynchronous failure. If the latter, stick a timeout on it and move on.
+
+SQL errors result in retry loops. Why? What's going on? Let SQL errors bubble up. Maybe remove
+the timeout or handle timeouts differently?
+*/
