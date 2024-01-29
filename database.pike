@@ -138,8 +138,8 @@ continue Concurrent.Future connect(string host) {
 	object ctx = SSLContext();
 	array(string) root = Standards.PEM.Messages(Stdio.read_file("/etc/ssl/certs/ISRG_Root_X1.pem"))->get_certificates();
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
-	//Establishing the connection is synchronous, might not be ideal.
 	while (1) {
+		//Establishing the connection is synchronous, might not be ideal.
 		db->conn = Sql.Sql("pgsql://rosuav@" + host + "/stillebot", ([
 			"force_ssl": 1, "ssl_context": ctx, "application_name": "stillebot",
 		]));
