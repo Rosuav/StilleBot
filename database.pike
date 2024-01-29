@@ -58,6 +58,7 @@ constant tables = ([
 
 mapping(string:mapping(string:mixed)) connections = ([]);
 string active; //Host name only, not the connection object itself
+array(string) database_ips = ({"sikorsky.rosuav.com", "ipv4.rosuav.com"});
 
 //ALL queries should go through this function.
 //Is it more efficient, with queries where we don't care about the result, to avoid calling get()?
@@ -180,9 +181,7 @@ continue Concurrent.Future connect(string host) {
 		}
 		connections = ([]); //TODO: Ensure that it's okay to rebind like this, otherwise empty the existing mapping instead
 	}
-	array ips = ({"sikorsky.rosuav.com", "ipv4.rosuav.com"});
-	if (has_value(G->G->argv, "--gideon")) ips = ({ips[1], ips[0]}); //Switch connection order for testing, Gideon first
-	foreach (ips, string host) {
+	foreach (database_ips, string host) {
 		if (!connections[host]) yield((mixed)connect(host));
 		if (!connections[host]->readonly) {_have_active(host); return 0;}
 	}
@@ -298,6 +297,8 @@ continue Concurrent.Future create_tables_and_stop() {
 
 protected void create(string name) {
 	::create(name);
+	//For testing, force the opposite connection order
+	if (has_value(G->G->argv, "--gideondb")) database_ips = ({"ipv4.rosuav.com", "sikorsky.rosuav.com"});
 	register_bouncer(notify_settings_change);
 	register_bouncer(notify_unknown);
 	register_bouncer(notify_readonly);
