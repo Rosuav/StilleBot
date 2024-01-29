@@ -139,21 +139,24 @@ continue Concurrent.Future connect(string host) {
 	array(string) root = Standards.PEM.Messages(Stdio.read_file("/etc/ssl/certs/ISRG_Root_X1.pem"))->get_certificates();
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
 	//Establishing the connection is synchronous, might not be ideal.
-	db->conn = Sql.Sql("pgsql://rosuav@" + host + "/stillebot", ([
-		"force_ssl": 1, "ssl_context": ctx, "application_name": "stillebot",
-	]));
-	db->conn->set_notify_callback("readonly", notify_readonly, 0, host);
-	db->conn->set_notify_callback("stillebot.settings", notify_settings_change, 0, host);
-	db->conn->set_notify_callback("", notify_unknown, 0, host);
-	//Sometimes, the connection fails, but we only notice it here at this point when the
-	//first query goes through. It won't necessarily even FAIL fail, it just stalls here.
-	//So we limit how long this can take. When working locally, it takes about 100ms or
-	//so; talking to a remote server, a couple of seconds. If it's been ten seconds, IMO
-	//there must be a problem.
-	mixed ex = catch {yield(db->conn->promise_query("listen readonly")->timeout(10));};
-	if (ex) {
-		werror("Timeout connecting to %s, retrying...\n", host);
-		return yield((mixed)connect(host)); //I don't expect many retries. Just recurse.
+	while (1) {
+		db->conn = Sql.Sql("pgsql://rosuav@" + host + "/stillebot", ([
+			"force_ssl": 1, "ssl_context": ctx, "application_name": "stillebot",
+		]));
+		db->conn->set_notify_callback("readonly", notify_readonly, 0, host);
+		db->conn->set_notify_callback("stillebot.settings", notify_settings_change, 0, host);
+		db->conn->set_notify_callback("", notify_unknown, 0, host);
+		//Sometimes, the connection fails, but we only notice it here at this point when the
+		//first query goes through. It won't necessarily even FAIL fail, it just stalls here.
+		//So we limit how long this can take. When working locally, it takes about 100ms or
+		//so; talking to a remote server, a couple of seconds. If it's been ten seconds, IMO
+		//there must be a problem.
+		mixed ex = catch {yield(db->conn->promise_query("listen readonly")->timeout(10));};
+		if (ex) {
+			werror("Timeout connecting to %s, retrying...\n", host);
+			continue;
+		}
+		break;
 	}
 	yield((mixed)query(db, "listen \"stillebot.settings\""));
 	string ro = yield((mixed)query(db, "show default_transaction_read_only"))[0]->default_transaction_read_only;
