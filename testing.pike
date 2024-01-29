@@ -23,7 +23,8 @@ void increment() {
 	save_sql("update stillebot.user_followed_categories set category = :newval where twitchid = 1", (["newval": newval]));
 }
 
-void increment2() {
+continue Concurrent.Future increment2() {
+	cfgtest = yield((mixed)load_config(0, "testing"));
 	werror("Updating ID to %d and saving.\n", ++cfgtest->nextid);
 	save_config(0, "testing", cfgtest);
 }
@@ -58,7 +59,7 @@ protected void create(string name) {
 	spawn_task(ping());
 	spawn_task(activity());
 	G->G->consolecmd->inc = increment;
-	G->G->consolecmd->inc2 = increment2;
+	G->G->consolecmd->inc2 = lambda() {spawn_task(increment2());};
 	G->G->consolecmd->settings = lambda() {spawn_task(get_settings());};
 	G->G->consolecmd->sess = lambda() {spawn_task(session());};
 	G->G->consolecmd->quit = lambda() {exit(0);};
