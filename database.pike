@@ -288,6 +288,7 @@ continue Concurrent.Future create_tables() {
 			yield((mixed)query(db, "begin read write"));
 			foreach (stmts, string stmt) yield((mixed)query(db, stmt));
 			yield((mixed)query(db, "commit"));
+			werror("Be sure to `./dbctl refreshrepl` on both ends!\n");
 		}
 	}
 }

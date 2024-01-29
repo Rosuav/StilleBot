@@ -7,7 +7,7 @@ case $1 in
 		psql stillebot -c "alter database stillebot set default_transaction_read_only = on; notify readonly, 'on';"
 	;;
 	refreshrepl)
-		sudo sudo -u postgres psql stillebot -c "alter subscription multihome refresh publication with (copy_data = false);"
+		sudo sudo -u postgres psql stillebot -c "set default_transaction_read_only = false" -c "alter subscription multihome refresh publication with (copy_data = false);"
 	;;
 	stat|status)
 		psql stillebot -Atc "
