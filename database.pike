@@ -56,6 +56,9 @@ constant tables = ([
 	}),
 ]);
 
+//NOTE: Connections are not currently retained across code reloads, meaning that the old
+//connections will be disposed of and fresh ones acquired. If this changes, callbacks will
+//need to be bounced to the new code.
 mapping(string:mapping(string:mixed)) connections = ([]);
 string active; //Host name only, not the connection object itself
 array(string) database_ips = ({"sikorsky.rosuav.com", "ipv4.rosuav.com"});
@@ -95,7 +98,6 @@ class SSLContext {
 }
 
 void notify_readonly(int pid, string cond, string extra, string host) {
-	if (function f = bounce(this_function)) {f(pid, cond, extra, host); return;}
 	mapping db = connections[host];
 	if (extra == "on" && !db->readonly) {
 		werror("SWITCHING TO READONLY MODE: %O\n", host);
@@ -115,7 +117,6 @@ void notify_readonly(int pid, string cond, string extra, string host) {
 }
 
 void notify_unknown(int pid, string cond, string extra, string host) {
-	if (function f = bounce(this_function)) {f(pid, cond, extra, host); return;}
 	werror("[%s] Unknown notification %O from pid %O, extra %O\n", host, cond, pid, extra);
 }
 
@@ -125,7 +126,6 @@ continue Concurrent.Future fetch_settings(mapping db) {
 }
 
 void notify_settings_change(int pid, string cond, string extra, string host) {
-	if (function f = bounce(this_function)) {f(pid, cond, extra, host); return;}
 	werror("SETTINGS CHANGED\n");
 	spawn_task(fetch_settings(connections[host]));
 }
@@ -302,9 +302,6 @@ protected void create(string name) {
 	::create(name);
 	//For testing, force the opposite connection order
 	if (has_value(G->G->argv, "--gideondb")) database_ips = ({"ipv4.rosuav.com", "sikorsky.rosuav.com"});
-	register_bouncer(notify_settings_change);
-	register_bouncer(notify_unknown);
-	register_bouncer(notify_readonly);
 	G->G->database = this;
 	#if !constant(INTERACTIVE)
 	spawn_task(reconnect(0));
