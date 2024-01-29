@@ -66,29 +66,11 @@ continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping
 	object pending = db->pending;
 	object completion = db->pending = Concurrent.Promise();
 	if (pending) {werror("... waiting ...\n"); db = yield(pending->future()); werror("Wait done, querying\n");} //If there's a queue, put us at the end of it.
-	//The timeout at the moment is crazy long.
 	mixed ret;
-	while (mixed ex = catch {ret = yield(db->conn->promise_query(query, bindings)->timeout(120))->get();}) {
-		if (arrayp(ex) && ex[0] == "Timeout.\n") {
-			//TODO: Silently reconnect? For now, just letting this grind until the failure happens.
-			werror("Timed out. Ending.\n");
-			werror("Connection: %O\n", db->conn->proxy->c);
-			foreach (Thread.all_threads(), object t)
-				werror("Thread id %d:\n%s\n", t->id_number(), describe_backtrace(t->backtrace()));
-			exit(0);
-		}
-		werror("ERROR IN QUERY:\n%s\n", describe_backtrace(ex));
-		object waspending = m_delete(connections, db->host)->pending;
-		werror("Reconnecting...\n");
-		yield((mixed)reconnect(0));
-		werror("Reconnect complete...?\n");
-		db = connections[active];
-		if (!db) {werror("Unable to reconnect.\n"); error("No database connection\n");}
-		werror("Reconnected.\n");
-		db->pending = waspending;
-	}
+	mixed ex = catch {ret = yield(db->conn->promise_query(query, bindings))->get();};
 	completion->success(db);
 	if (db->pending == completion) db->pending = 0;
+	if (ex) throw(ex);
 	return ret;
 }
 
@@ -338,7 +320,4 @@ This MIGHT now be solved, by the strategy of using synchronous write callbacks i
 
 Sometimes, connecting doesn't seem to work. Check if it causes the watchdog to stall, or if it
 is an asynchronous failure. If the latter, stick a timeout on it and move on.
-
-SQL errors result in retry loops. Why? What's going on? Let SQL errors bubble up. Maybe remove
-the timeout or handle timeouts differently?
 */
