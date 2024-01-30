@@ -231,7 +231,7 @@ continue Concurrent.Future|string save_to_db(string sql, mapping bindings) {
 
 @export: continue Concurrent.Future|mapping load_config(string|int twitchid, string kwd) {
 	//NOTE: If there's no database connection, this will block. For higher speed
-	//queries, do we need a try_load_config() that would error out?
+	//queries, do we need a try_load_config() that would error out (or return null)?
 	if (!active) yield(await_active());
 	array rows = yield((mixed)query(connections[active], "select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
 		(["twitchid": (int)twitchid, "kwd": kwd])));
