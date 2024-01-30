@@ -4,8 +4,8 @@ import {render_command, cmd_configure, sockmsg_validated, sockmsg_changetab_fail
 export {sockmsg_validated, sockmsg_changetab_failed};
 
 export const render_parent = DOM("#triggers tbody");
-export function render_item(el) {
-	return render_command(el,
+export function render_item(el, prev) {
+	return render_command(el, prev,
 		el.conditional === "contains" ?
 			["When ", CODE(el.expr1), " is typed..."]
 		: ["When a msg matches ", CODE(el.expr1 || ""), " ..."],

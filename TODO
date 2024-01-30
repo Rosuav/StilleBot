@@ -335,4 +335,3 @@
     requeue the entire transaction block on the other database.
 * Are conduits useful? Can we have one shard for Gideon and one for Sikorsky?
   https://dev.twitch.tv/docs/eventsub/handling-conduit-events/
-* BUG: Saving a command crashes out, element inside parent.

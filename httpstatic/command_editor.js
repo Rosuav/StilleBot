@@ -226,7 +226,7 @@ export function register_command(msg) {
 		pending_command = null;
 	}
 }
-export function render_command(msg, prefix) {
+export function render_command(msg, prev, prefix) {
 	//All commands are objects with (at a minimum) an id and a message.
 	//A simple command is one which is non-conditional and has a single message. Anything
 	//else is a non-simple command and will be non-editable in the table - it can only be
