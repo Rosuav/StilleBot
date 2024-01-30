@@ -190,7 +190,7 @@ continue Concurrent.Future connect(string host) {
 	db->connected = 1;
 }
 
-@export: continue Concurrent.Future|zero reconnect(int force) {
+continue Concurrent.Future|zero reconnect(int force) {
 	if (force) {
 		foreach (connections; string host; mapping db) {
 			if (!db->connected) {werror("Still connecting to %s...\n", host); continue;} //Will probably need a timeout somewhere

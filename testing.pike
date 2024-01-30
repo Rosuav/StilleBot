@@ -5,7 +5,7 @@ int last_activity = time();
 int cur_category;
 mapping cfgtest = ([]);
 continue Concurrent.Future ping() {
-	yield((mixed)reconnect(1));
+	yield((mixed)G->G->database->reconnect(1));
 	werror("Active: %s\n", G->G->database->active || "None!");
 	for (;;yield(task_sleep(10))) {
 		if (mixed ex = catch {
