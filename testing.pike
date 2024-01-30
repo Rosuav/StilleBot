@@ -39,12 +39,9 @@ continue Concurrent.Future get_settings() {
 
 continue Concurrent.Future session() {
 	mapping session = (["cookie": random(1<<64)->digits(36), "user": "don't you wanna know"]);
-	yield((mixed)DB->module->generic_query("insert into stillebot.http_sessions (cookie, data) values (:cookie, :data)",
-		(["cookie": session->cookie, "data": encode_value(session)])));
-	mapping readback = yield((mixed)DB->module->generic_query("select * from stillebot.http_sessions where cookie = :cookie",
-		(["cookie": session->cookie])))[0];
+	DB->save_session(session);
+	mapping readback = yield((mixed)DB->load_session(session->cookie));
 	werror("Queried session: %O\n", readback);
-	werror("Decoded session: %O\n", decode_value(readback->data));
 }
 
 //Demonstrate if the event loop ever gets stalled out (eg by a blocking operation)

@@ -50,7 +50,7 @@ constant tables = ([
 		//"create trigger settings_update_notify after update on stillebot.settings execute function send_settings_notification();",
 	}),
 	"http_sessions": ({
-		"cookie varchar(14) primary key",
+		"cookie varchar primary key",
 		"active timestamp with time zone default now()",
 		"data bytea not null",
 	}),
@@ -242,6 +242,22 @@ continue Concurrent.Future|string save_to_db(string sql, mapping bindings) {
 		(["twitchid": (int)twitchid, "kwd": kwd])));
 	if (!sizeof(rows)) return ([]);
 	return Standards.JSON.decode_utf8(rows[0]->data);
+}
+
+//NOTE: In the future, this MAY be changed to require that data be JSON-compatible.
+//The mapping MUST include a 'cookie' which is a short string.
+@"export": void save_session(mapping data) {
+	if (!stringp(data->cookie)) return;
+	spawn_task(save_to_db("insert into stillebot.http_sessions (cookie, data) values (:cookie, :data) on conflict (cookie) do update set data=:data, active = now()",
+		(["cookie": data->cookie, "data": encode_value(data)])));
+}
+
+@"export": continue Concurrent.Future|mapping load_session(string cookie) {
+	if (!active) yield(await_active());
+	array rows = yield((mixed)query(connections[active], "select data from stillebot.http_sessions where cookie = :cookie",
+		(["cookie": cookie])));
+	if (!sizeof(rows)) return (["cookie": cookie]);
+	return decode_value(rows[0]->data);
 }
 
 //Generic SQL query on the current database. Not recommended; definitely not recommended for
