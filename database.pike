@@ -56,10 +56,11 @@ constant tables = ([
 	}),
 ]);
 
-//NOTE: Connections are not currently retained across code reloads, meaning that the old
-//connections will be disposed of and fresh ones acquired. If this changes, callbacks will
-//need to be bounced to the new code.
-mapping(string:mapping(string:mixed)) connections = ([]);
+//NOTE: Despite this retention, actual connections are not currently retained across code
+//reloads - the old connections will be disposed of and fresh ones acquired. There may be
+//some sort of reference loop - it seems that we're not disposing of old versions of this
+//module properly - but the connections themselves should be closed by the new module.
+@retain: mapping(string:mapping(string:mixed)) connections = ([]);
 string active; //Host name only, not the connection object itself
 @retain: mapping waiting_for_active = ([ //If active is null, use these to defer database requests.
 	"queue": ({ }), //Add a Promise to this to be told when there's an active.
@@ -197,7 +198,7 @@ continue Concurrent.Future connect(string host) {
 			db->conn->close();
 			destruct(db->conn);
 		}
-		connections = ([]); //TODO: Ensure that it's okay to rebind like this, otherwise empty the existing mapping instead
+		m_delete(connections, indices(connections)[*]); //Mutate the existing mapping so all clones of the module see that there are no connections
 	}
 	foreach (database_ips, string host) {
 		if (!connections[host]) yield((mixed)connect(host));
@@ -320,7 +321,7 @@ protected void create(string name) {
 	if (has_value(G->G->argv, "--gideondb")) database_ips = ({"ipv4.rosuav.com", "sikorsky.rosuav.com"});
 	G->G->database = this;
 	#if !constant(INTERACTIVE)
-	spawn_task(reconnect(0));
+	spawn_task(reconnect(1));
 	#endif
 }
 
