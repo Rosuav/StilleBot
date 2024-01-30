@@ -7,14 +7,16 @@ mapping cfgtest = ([]);
 continue Concurrent.Future ping() {
 	yield((mixed)DB->module->reconnect(1));
 	werror("Active: %s\n", DB->module->active || "None!");
-	for (;;yield(task_sleep(10))) {
-		if (mixed ex = catch {
-			mapping ret = yield((mixed)DB->module->generic_query("select * from stillebot.user_followed_categories where twitchid = 1"))[0];
-			werror("[%d] Current value: %O\n", time() - last_activity, cur_category = ret->category);
-			cfgtest = yield((mixed)DB->load_config(0, "testing"));
-			werror("Got: %O\n", cfgtest);
-		}) werror("[%d] No active connection - cached value is %d.\n%O\n", time() - last_activity, cur_category, ex);
-	}
+	for (;;yield(task_sleep(10))) yield(G->G->run_test());
+}
+
+continue Concurrent.Future run_test() {
+	if (mixed ex = catch {
+		mapping ret = yield((mixed)DB->module->generic_query("select * from stillebot.user_followed_categories where twitchid = 1"))[0];
+		werror("[%d] Current value: %O\n", time() - last_activity, cur_category = ret->category);
+		cfgtest = yield((mixed)DB->load_config(0, "testing"));
+		werror("Got: %O\n", cfgtest);
+	}) werror("[%d] No active connection - cached value is %d.\n%O\n", time() - last_activity, cur_category, ex);
 }
 
 void increment() {
@@ -66,4 +68,5 @@ protected void create(string name) {
 	G->G->consolecmd->settings = lambda() {spawn_task(get_settings());};
 	G->G->consolecmd->sess = lambda() {spawn_task(session());};
 	G->G->consolecmd->quit = lambda() {exit(0);};
+	G->G->run_test = run_test;
 }
