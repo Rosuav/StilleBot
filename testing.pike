@@ -56,8 +56,11 @@ continue Concurrent.Future activity() {
 
 protected void create(string name) {
 	::create(name);
-	spawn_task(ping());
-	spawn_task(activity());
+	if (!G->G->have_tasks) {
+		G->G->have_tasks = 1;
+		spawn_task(ping());
+		spawn_task(activity());
+	} else spawn_task(DB->module->reconnect(1));
 	G->G->consolecmd->inc = increment;
 	G->G->consolecmd->inc2 = lambda() {spawn_task(increment2());};
 	G->G->consolecmd->settings = lambda() {spawn_task(get_settings());};
