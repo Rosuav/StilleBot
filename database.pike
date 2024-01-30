@@ -67,7 +67,7 @@ string active; //Host name only, not the connection object itself
 	"saveme": ({ }), //These will be asynchronously saved as soon as there's an active.
 ]);
 array(string) database_ips = ({"sikorsky.rosuav.com", "ipv4.rosuav.com"});
-int module_replaced = 0; //Set to 1 by an incoming module.
+int module_replaced = 0; void replace_module() {module_replaced = 1;}
 
 //ALL queries should go through this function.
 //Is it more efficient, with queries where we don't care about the result, to avoid calling get()?
@@ -323,9 +323,11 @@ protected void create(string name) {
 	#if !constant(DB)
 	mapping DB = ([]); add_constant("DB", DB);
 	#else
-	DB->module->module_replaced = 1;
+	DB->module->replace_module();
 	#endif
-	DB->module = this;
+	//For some reason, DB->module can't be assigned to, but DB[m] can.
+	string m = "module";
+	DB[m] = this;
 	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann])
 		if (ann && ann["export"]) DB[key] = this[key];
 	#if !constant(INTERACTIVE)
