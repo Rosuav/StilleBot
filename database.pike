@@ -67,6 +67,7 @@ string active; //Host name only, not the connection object itself
 	"saveme": ({ }), //These will be asynchronously saved as soon as there's an active.
 ]);
 array(string) database_ips = ({"sikorsky.rosuav.com", "ipv4.rosuav.com"});
+int module_replaced = 0; //Set to 1 by an incoming module.
 
 //ALL queries should go through this function.
 //Is it more efficient, with queries where we don't care about the result, to avoid calling get()?
@@ -92,7 +93,7 @@ continue Concurrent.Future _got_active(mapping db) {
 	}
 }
 void _have_active(string a) {
-	if (G->G->database != this) return; //Let the current version of the code handle them
+	if (module_replaced) return; //Let the current version of the code handle them
 	werror("*** HAVE ACTIVE: %O\n", a);
 	active = a;
 	array wa = waiting_for_active->queue; waiting_for_active->queue = ({ });
@@ -223,17 +224,17 @@ continue Concurrent.Future|string save_to_db(string sql, mapping bindings) {
 	return "retry";
 }
 
-@export: void save_sql(string query, mapping|void bindings) {
+@"export": void save_sql(string query, mapping|void bindings) {
 	spawn_task(save_to_db(query, bindings));
 }
 
-@export: void save_config(string|int twitchid, string kwd, mixed data) {
+@"export": void save_config(string|int twitchid, string kwd, mixed data) {
 	data = Standards.JSON.encode(data, 4);
 	spawn_task(save_to_db("insert into stillebot.config values (:twitchid, :kwd, :data) on conflict (twitchid, keyword) do update set data=:data",
 		(["twitchid": (int)twitchid, "kwd": kwd, "data": data])));
 }
 
-@export: continue Concurrent.Future|mapping load_config(string|int twitchid, string kwd) {
+@"export": continue Concurrent.Future|mapping load_config(string|int twitchid, string kwd) {
 	//NOTE: If there's no database connection, this will block. For higher speed
 	//queries, do we need a try_load_config() that would error out (or return null)?
 	if (!active) yield(await_active());
@@ -245,7 +246,7 @@ continue Concurrent.Future|string save_to_db(string sql, mapping bindings) {
 
 //Generic SQL query on the current database. Not recommended; definitely not recommended for
 //any mutation; use the proper load_config/save_config/save_sql instead. This is deliberately
-//NOT exported, so to use it, write yield(G->G->database->generic_query("...")) - clunky as a
+//NOT exported, so to use it, write yield((mixed)DB->module->generic_query("...")) - clunky as a
 //reminder to avoid doing this where possible.
 continue Concurrent.Future|mapping generic_query(string sql, mapping|void bindings) {
 	if (!connections[active]) {
@@ -319,7 +320,14 @@ protected void create(string name) {
 	::create(name);
 	//For testing, force the opposite connection order
 	if (has_value(G->G->argv, "--gideondb")) database_ips = ({"ipv4.rosuav.com", "sikorsky.rosuav.com"});
-	G->G->database = this;
+	#if !constant(DB)
+	mapping DB = ([]); add_constant("DB", DB);
+	#else
+	DB->module->module_replaced = 1;
+	#endif
+	DB->module = this;
+	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann])
+		if (ann && ann["export"]) DB[key] = this[key];
 	#if !constant(INTERACTIVE)
 	spawn_task(reconnect(1));
 	#endif
