@@ -61,8 +61,10 @@ constant tables = ([
 //need to be bounced to the new code.
 mapping(string:mapping(string:mixed)) connections = ([]);
 string active; //Host name only, not the connection object itself
-array(Concurrent.Promise) when_active = ({ }); //If active is null, add yourself to this to be told when there's an active.
-array(array(string|mapping)) waiting_for_active = ({ }); //If active is null and you want to asynchronously save, add yourself to this.
+@retain: mapping waiting_for_active = ([ //If active is null, use these to defer database requests.
+	"queue": ({ }), //Add a Promise to this to be told when there's an active.
+	"saveme": ({ }), //These will be asynchronously saved as soon as there's an active.
+]);
 array(string) database_ips = ({"sikorsky.rosuav.com", "ipv4.rosuav.com"});
 
 //ALL queries should go through this function.
@@ -82,22 +84,23 @@ continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping
 
 continue Concurrent.Future _got_active(mapping db) {
 	//Pull all the pendings and reset the array before actually saving any of them.
-	array wfa = waiting_for_active; waiting_for_active = ({ });
+	array wfa = waiting_for_active->saveme; waiting_for_active->saveme = ({ });
 	foreach (wfa, [string sql, mapping bindings]) {
 		mixed err = catch {yield((mixed)query(db, sql, bindings));};
 		if (err) werror("Unable to save pending to database!\n%s\n", describe_backtrace(err));
 	}
 }
 void _have_active(string a) {
+	if (G->G->database != this) return; //Let the current version of the code handle them
 	werror("*** HAVE ACTIVE: %O\n", a);
 	active = a;
-	array wa = when_active; when_active = ({ });
+	array wa = waiting_for_active->queue; waiting_for_active->queue = ({ });
 	wa->success(active);
 	spawn_task(_got_active(connections[active]));
 }
 Concurrent.Future await_active() {
 	Concurrent.Promise pending = Concurrent.Promise();
-	when_active += ({pending});
+	waiting_for_active->queue += ({pending});
 	return pending->future();
 }
 
@@ -215,7 +218,7 @@ continue Concurrent.Future|string save_to_db(string sql, mapping bindings) {
 		return "fail";
 	}
 	werror("Save pending! %s\n", sql);
-	waiting_for_active += ({({sql, bindings})});
+	waiting_for_active->saveme += ({({sql, bindings})});
 	return "retry";
 }
 
