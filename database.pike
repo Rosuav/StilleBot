@@ -74,10 +74,10 @@ array(string) database_ips = ({"sikorsky.rosuav.com", "ipv4.rosuav.com"});
 continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping|void bindings) {
 	object pending = db->pending;
 	object completion = db->pending = Concurrent.Promise();
-	if (pending) {werror("... waiting ...\n"); db = yield(pending->future()); werror("Wait done, querying\n");} //If there's a queue, put us at the end of it.
+	if (pending) yield(pending->future()); //If there's a queue, put us at the end of it.
 	mixed ret;
 	mixed ex = catch {ret = yield(db->conn->promise_query(query, bindings))->get();};
-	completion->success(db);
+	completion->success(1);
 	if (db->pending == completion) db->pending = 0;
 	if (ex) throw(ex);
 	return ret;
