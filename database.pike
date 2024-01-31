@@ -346,7 +346,5 @@ protected void create(string name) {
 	DB[m] = this;
 	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann])
 		if (ann && ann["export"]) DB[key] = this[key];
-	#if !constant(INTERACTIVE)
 	spawn_task(reconnect(1));
-	#endif
 }

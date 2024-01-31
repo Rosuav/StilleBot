@@ -5,7 +5,7 @@ https://dev.twitch.tv/docs/api/reference
 Requires OAuth authentication, which is by default handled by the GUI.
 */
 
-array(string) bootstrap_files = ({"persist.pike", "globals.pike", "poll.pike", "connection.pike", "window.pike", "modules", "modules/http", "zz_local"});
+array(string) bootstrap_files = ({"persist.pike", "globals.pike", "database.pike", "poll.pike", "connection.pike", "window.pike", "modules", "modules/http", "zz_local"});
 array(string) restricted_update;
 mapping G = (["consolecmd": ([]), "dbsettings": ([])]);
 
@@ -95,7 +95,7 @@ int main(int argc,array(string) argv)
 	if (has_value(argv, "--script")) {
 		//Test MustardScript parsing and reconstitution.
 		add_constant("INTERACTIVE", 1);
-		restricted_update = ({"persist.pike", "globals.pike", "poll.pike"});
+		restricted_update = ({"persist.pike", "globals.pike", "database.pike", "poll.pike"});
 		bootstrap_all();
 		mapping get_channel_config(string|int chan) {error("Channel configuration unavailable.\n");}
 		add_constant("get_channel_config", get_channel_config);
