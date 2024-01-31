@@ -1278,6 +1278,18 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 		if (conn->type) return; //Can't init twice
 		object handler = G->G->websocket_types[data->type];
 		if (!handler) return; //Ignore any unknown types.
+		//If this socket was redirected from a different node, it will include a
+		//session transfer cookie. (See above; currently, a "transfer cookie" is
+		//just the session cookie itself, but that may change.)
+		if (stringp(data->xfr) && data->xfr != conn->session->cookie) {
+			conn->session = ({frm});
+			spawn_task(G->G->DB->load_session(data->xfr)) {
+				array pending = conn->session;
+				conn->session = __ARGS__[0];
+				ws_msg(pending[*], conn);
+			};
+			return;
+		}
 		if (string err = handler->websocket_validate(conn, data)) {
 			conn->sock->send_text(Standards.JSON.encode((["error": err])));
 			return;
