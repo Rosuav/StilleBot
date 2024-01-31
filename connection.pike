@@ -1283,7 +1283,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 		//just the session cookie itself, but that may change.)
 		if (stringp(data->xfr) && data->xfr != conn->session->cookie) {
 			conn->session = ({frm});
-			spawn_task(G->G->DB->load_session(data->xfr)) {
+			spawn_task(G->G->DB->load_session(data->xfr)) { //TODO: Deduplicate with below?
 				array pending = conn->session;
 				conn->session = __ARGS__[0];
 				ws_msg(pending[*], conn);
