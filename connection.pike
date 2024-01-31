@@ -1357,6 +1357,23 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 	sock->onclose = ws_close;
 }
 
+@hook_database_settings: void kick_when_inactive(mapping settings) {
+	string other = !is_active_bot() && get_active_bot();
+	if (!other) return; //We're active (or uncertain), don't kick clients.
+	foreach (G->G->websocket_groups; string type; mapping groups)
+		foreach (groups; string group; array socks)
+			foreach (socks, object sock) {
+				mapping conn = sock->query_id();
+				if (!conn || !mappingp(conn->session)) continue;
+				sock->send_text(Standards.JSON.encode(([
+					"cmd": "*DC*",
+					"error": "This bot is deactivating, see other",
+					"redirect": other,
+					"xfr": conn->session->cookie,
+				])));
+			}
+}
+
 //If desired, sharding of the primary connection can be done using the !demo channel's
 //assigned voices. This is unnecessary if there are fewer than 20 channels in use, and
 //barely necessary for fewer than about 60, but beyond that, becomes more valuable. It
