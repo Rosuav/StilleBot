@@ -1184,21 +1184,15 @@ void irc_closed(mapping options) {
 	if (channel) channel->channel_online(uptime);
 }
 
-void session_cleanup()
-{
+void session_cleanup() {
 	//Go through all HTTP sessions and dispose of old ones
-	G->G->http_session_cleanup = 0;
-	mapping sess = G->G->http_sessions;
-	int limit = time();
-	foreach (sess; string cookie; mapping info)
-		if (info->expires <= limit) m_delete(sess, cookie);
-	Stdio.write_file("twitchbot_sessions.db", encode_value(sess));
-	if (sizeof(sess)) G->G->http_session_cleanup = call_out(session_cleanup, 86400);
+	G->G->http_session_cleanup = call_out(session_cleanup, 86400);
+	G->G->DB->generic_query("delete from stillebot.http_sessions where active < now () - '7 days'::interval");
 }
 
 continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
-	req->misc->session = G->G->http_sessions[req->cookies->session] || ([]);
+	req->misc->session = yield((mixed)G->G->DB->load_session(req->cookies->session));
 	//TODO maybe: Refresh the login token. Currently the tokens don't seem to expire,
 	//but if they do, we can get the refresh token via authcookie (if present).
 	[function handler, array args] = find_http_handler(req->not_query);
@@ -1237,12 +1231,9 @@ continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 	resp->extra_heads["Access-Control-Allow-Private-Network"] = "true";
 	mapping sess = req->misc->session;
 	if (sizeof(sess) && !sess->fake) {
-		if (!sess->cookie) do {sess->cookie = random(1<<64)->digits(36);} while (G->G->http_sessions[sess->cookie]);
-		sess->expires = time() + 604800; //Overwrite expiry time every request
+		if (!sess->cookie) sess->cookie = yield(G->G->DB->generate_session_cookie());
+		G->G->DB->save_session(sess);
 		resp->extra_heads["Set-Cookie"] = "session=" + sess->cookie + "; Path=/; Max-Age=604800; SameSite=Lax; HttpOnly";
-		G->G->http_sessions[sess->cookie] = sess;
-		if (!G->G->http_session_cleanup) session_cleanup();
-		else Stdio.write_file("twitchbot_sessions.db", encode_value(G->G->http_sessions));
 	}
 	req->response_and_finish(resp);
 }
@@ -1252,6 +1243,8 @@ void http_handler(Protocols.HTTP.Server.Request req) {spawn_task(http_request(re
 void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 {
 	if (function f = bounce(this_function)) {f(frm, conn); return;}
+	//Depending on timings, we might not have loaded the session yet. Hold all messages till we have.
+	if (arrayp(conn->session)) {conn->session += ({frm}); return;}
 	mixed data;
 	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
 	if (!stringp(data->cmd)) return;
@@ -1337,11 +1330,17 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 	//End lifted from Pike's sources
 	string remote_ip = req->get_ip(); //Not available after accepting the socket for some reason
 	Protocols.WebSocket.Connection sock = req->websocket_accept(0);
-	sock->set_id((["sock": sock, //Minstrel Hall style floop
-		"session": G->G->http_sessions[req->cookies->session] || ([]),
+	mapping conn = (["sock": sock, //Minstrel Hall style floop
+		"session": ({ }), //Queue of requests awaiting the session
 		"remote_ip": remote_ip,
 		"hostname": deduce_host(req->request_headers),
-	]));
+	]);
+	sock->set_id(conn);
+	spawn_task(G->G->DB->load_session(req->cookies->session)) {
+		array pending = conn->session;
+		conn->session = __ARGS__[0];
+		if (sizeof(pending)) ws_msg(pending[*], conn);
+	};
 	sock->onmessage = ws_msg;
 	sock->onclose = ws_close;
 }
@@ -1398,12 +1397,10 @@ void send_message(string chan, string msg) {if (irc_connections[0]) irc_connecti
 protected void create(string name)
 {
 	::create(name);
-	if (!G->G->http_sessions) {
-		mixed sess; catch {sess = decode_value(Stdio.read_file("twitchbot_sessions.db"));};
-		G->G->http_sessions = mappingp(sess) ? sess : ([]);
-	}
+	if (G->G->http_sessions) foreach (G->G->http_sessions; string cookie; mapping data)
+		G->G->DB->save_session(data);
 	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
-	if (sizeof(G->G->http_sessions)) session_cleanup();
+	session_cleanup();
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
 	if (!G->G->cheeremotes) twitch_api_request("https://api.twitch.tv/helix/bits/cheermotes")->then() {
 		mapping c = G->G->cheeremotes = ([]);
