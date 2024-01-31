@@ -1,4 +1,5 @@
 inherit annotated;
+inherit hook;
 
 //For each table, we have a set of columns, plus some other info. Any entry
 //beginning with a space is included in the CREATE TABLE but will not be added
@@ -136,9 +137,13 @@ void notify_unknown(int pid, string cond, string extra, string host) {
 	werror("[%s] Unknown notification %O from pid %O, extra %O\n", host, cond, pid, extra);
 }
 
+//Called whenever we have settings available, notably after any change or potential change.
+//Note that if you require _actual_ change detection, you'll need to do it yourself.
+@create_hook: constant database_settings = ({"mapping settings"});
 continue Concurrent.Future fetch_settings(mapping db) {
 	G->G->dbsettings = yield((mixed)query(db, "select * from stillebot.settings"))[0];
 	werror("Got settings %O\n", G->G->dbsettings);
+	event_notify("database_settings", G->G->dbsettings);
 }
 
 void notify_settings_change(int pid, string cond, string extra, string host) {
