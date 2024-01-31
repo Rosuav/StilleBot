@@ -1397,8 +1397,6 @@ void send_message(string chan, string msg) {if (irc_connections[0]) irc_connecti
 protected void create(string name)
 {
 	::create(name);
-	if (G->G->http_sessions) foreach (G->G->http_sessions; string cookie; mapping data)
-		G->G->DB->save_session(data);
 	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
 	session_cleanup();
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
