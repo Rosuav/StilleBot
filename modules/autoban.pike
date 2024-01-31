@@ -5,7 +5,7 @@ inherit hook;
 //added to as necessary, and all users of this blacklist will automatically
 //start noticing the new ones.
 constant buyfollows = ({"addviewers.com", "bigfollows . com", "bigfollows .com", "bigfollows*com", "bigfollow s . com",
-	"vk.cc/c7aT0b", "bigfollows-com", "u.to/jazMGw", "clck.ru/ZEWvg", "vk.cc/c8R4EY", "dogehype dot com", "Go to streamrise ru"});
+	"vk.cc/c7aT0b", "bigfollows-com", "u.to/jazMGw", "clck.ru/ZEWvg", "vk.cc/c8R4EY", "dogehype dot com", "Go to streamrise"});
 
 @hook_allmsgs:
 int message(object channel, mapping person, string msg)
