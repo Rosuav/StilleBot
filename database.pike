@@ -67,7 +67,6 @@ string active; //Host name only, not the connection object itself
 	"saveme": ({ }), //These will be asynchronously saved as soon as there's an active.
 ]);
 array(string) database_ips = ({"sikorsky.rosuav.com", "ipv4.rosuav.com"});
-int module_replaced = 0; void replace_module() {module_replaced = 1;}
 
 //ALL queries should go through this function.
 //Is it more efficient, with queries where we don't care about the result, to avoid calling get()?
@@ -93,7 +92,7 @@ continue Concurrent.Future _got_active(mapping db) {
 	}
 }
 void _have_active(string a) {
-	if (module_replaced) return; //Let the current version of the code handle them
+	if (G->G->DB != this) return; //Let the current version of the code handle them
 	werror("*** HAVE ACTIVE: %O\n", a);
 	active = a;
 	array wa = waiting_for_active->queue; waiting_for_active->queue = ({ });
@@ -224,17 +223,17 @@ continue Concurrent.Future|string save_to_db(string sql, mapping bindings) {
 	return "retry";
 }
 
-@"export": void save_sql(string query, mapping|void bindings) {
+void save_sql(string query, mapping|void bindings) {
 	spawn_task(save_to_db(query, bindings));
 }
 
-@"export": void save_config(string|int twitchid, string kwd, mixed data) {
+void save_config(string|int twitchid, string kwd, mixed data) {
 	data = Standards.JSON.encode(data, 4);
 	spawn_task(save_to_db("insert into stillebot.config values (:twitchid, :kwd, :data) on conflict (twitchid, keyword) do update set data=:data",
 		(["twitchid": (int)twitchid, "kwd": kwd, "data": data])));
 }
 
-@"export": continue Concurrent.Future|mapping load_config(string|int twitchid, string kwd) {
+continue Concurrent.Future|mapping load_config(string|int twitchid, string kwd) {
 	//NOTE: If there's no database connection, this will block. For higher speed
 	//queries, do we need a try_load_config() that would error out (or return null)?
 	if (!active) yield(await_active());
@@ -246,13 +245,13 @@ continue Concurrent.Future|string save_to_db(string sql, mapping bindings) {
 
 //NOTE: In the future, this MAY be changed to require that data be JSON-compatible.
 //The mapping MUST include a 'cookie' which is a short string.
-@"export": void save_session(mapping data) {
+void save_session(mapping data) {
 	if (!stringp(data->cookie)) return;
 	spawn_task(save_to_db("insert into stillebot.http_sessions (cookie, data) values (:cookie, :data) on conflict (cookie) do update set data=:data, active = now()",
 		(["cookie": data->cookie, "data": encode_value(data)])));
 }
 
-@"export": continue Concurrent.Future|mapping load_session(string cookie) {
+continue Concurrent.Future|mapping load_session(string cookie) {
 	if (!active) yield(await_active());
 	array rows = yield((mixed)query(connections[active], "select data from stillebot.http_sessions where cookie = :cookie",
 		(["cookie": cookie])));
@@ -260,9 +259,21 @@ continue Concurrent.Future|string save_to_db(string sql, mapping bindings) {
 	return decode_value(rows[0]->data);
 }
 
+//Generate a new session cookie that definitely doesn't exist
+continue Concurrent.Future|string generate_session_cookie() {
+	if (!active) yield(await_active());
+	while (1) {
+		string cookie = random(1<<64)->digits(36);
+		mixed ex = catch {yield((mixed)query(connections[active], "insert into stillebot.http_sessions (cookie) values(:cookie)",
+			(["cookie": cookie])));};
+		if (!ex) return cookie;
+		//TODO: If it wasn't a PK conflict, let the exception bubble up
+	}
+}
+
 //Generic SQL query on the current database. Not recommended; definitely not recommended for
 //any mutation; use the proper load_config/save_config/save_sql instead. This is deliberately
-//NOT exported, so to use it, write yield((mixed)DB->module->generic_query("...")) - clunky as a
+//NOT exported, so to use it, write yield((mixed)G->G->DB->generic_query("...")) - clunky as a
 //reminder to avoid doing this where possible.
 continue Concurrent.Future|mapping generic_query(string sql, mapping|void bindings) {
 	if (!connections[active]) {
@@ -336,15 +347,6 @@ protected void create(string name) {
 	::create(name);
 	//For testing, force the opposite connection order
 	if (has_value(G->G->argv, "--gideondb")) database_ips = ({"ipv4.rosuav.com", "sikorsky.rosuav.com"});
-	#if !constant(DB)
-	mapping DB = ([]); add_constant("DB", DB);
-	#else
-	DB->module->replace_module();
-	#endif
-	//For some reason, DB->module can't be assigned to, but DB[m] can.
-	string m = "module";
-	DB[m] = this;
-	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann])
-		if (ann && ann["export"]) DB[key] = this[key];
+	G->G->DB = this;
 	spawn_task(reconnect(1));
 }
