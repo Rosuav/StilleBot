@@ -264,10 +264,12 @@ continue Concurrent.Future|string generate_session_cookie() {
 	if (!active) yield(await_active());
 	while (1) {
 		string cookie = random(1<<64)->digits(36);
-		mixed ex = catch {yield((mixed)query(connections[active], "insert into stillebot.http_sessions (cookie) values(:cookie)",
+		mixed ex = catch {yield((mixed)query(connections[active], "insert into stillebot.http_sessions (cookie, data) values(:cookie, '')",
 			(["cookie": cookie])));};
 		if (!ex) return cookie;
 		//TODO: If it wasn't a PK conflict, let the exception bubble up
+		werror("COOKIE INSERTION\n%s\n", describe_backtrace(ex));
+		yield((mixed)task_sleep(1));
 	}
 }
 
