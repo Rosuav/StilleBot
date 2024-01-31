@@ -256,7 +256,10 @@ continue Concurrent.Future|mapping load_session(string cookie) {
 	array rows = yield((mixed)query(connections[active], "select data from stillebot.http_sessions where cookie = :cookie",
 		(["cookie": cookie])));
 	if (!sizeof(rows)) return (["cookie": cookie]);
-	return decode_value(rows[0]->data);
+	//For some reason, sometimes I get an array of strings instead of an array of mappings.
+	mapping|string data = rows[0];
+	if (mappingp(data)) data = data->data;
+	return decode_value(data);
 }
 
 //Generate a new session cookie that definitely doesn't exist
