@@ -211,7 +211,7 @@ continue Concurrent.Future|zero reconnect(int force) {
 	}
 	foreach (database_ips, string host) {
 		if (!connections[host]) yield((mixed)connect(host));
-		if (!connections[host]->readonly) {_have_active(host); return 0;}
+		if (force != 2 && !connections[host]->readonly) {_have_active(host); return 0;}
 	}
 	werror("No active DB, suspending saves\n");
 	active = 0;
@@ -299,7 +299,7 @@ continue Concurrent.Future|mapping generic_query(string sql, mapping|void bindin
 
 //Attempt to create all tables and alter them as needed to have all columns
 continue Concurrent.Future create_tables() {
-	yield((mixed)reconnect(0)); //Ensure that we have at least one connection
+	yield((mixed)reconnect(2)); //Ensure that we have at least one connection
 	array(mapping) dbs;
 	if (active) {
 		//We can't make changes, but can verify and report inconsistencies.

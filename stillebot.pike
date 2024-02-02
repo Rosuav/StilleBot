@@ -89,7 +89,7 @@ int main(int argc,array(string) argv)
 		add_constant("INTERACTIVE", 1);
 		restricted_update = ({"persist.pike", "globals.pike", "database.pike", "poll.pike"});
 		bootstrap_all();
-		all_constants()["spawn_task"](G->database->create_tables_and_stop());
+		all_constants()["spawn_task"](G->DB->create_tables_and_stop());
 		return -1;
 	}
 	if (has_value(argv, "--script")) {
