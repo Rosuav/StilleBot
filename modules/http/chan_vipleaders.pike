@@ -7,7 +7,7 @@ statistical purposes, but will be skipped for VIP badges. Sorry, ghosts.
 Similarly, moderators (shown with a green highlight) already have a badge
 and will generously pass along the gemstone to the next person.
 
-NOTE: Subgifting and tiping stats are currently based on UTC month rollover, but
+NOTE: Subgifting and tipping stats are currently based on UTC month rollover, but
 cheering stats come directly from the Twitch API and are based on Los Angeles
 time instead. This creates a 7-8 hour discrepancy in the rollover times.
 
@@ -72,7 +72,7 @@ void add_score(mapping monthly, string board, mapping sub) {
 	if (!monthly[month]) monthly[month] = ([]);
 	mapping user = monthly[month][sub->giver->user_id];
 	if (!user) monthly[month][sub->giver->user_id] = user = ([
-		"firstsub": sub->timestamp, //Tiebreaker - earliest takes the spot (note that "sub" is orphanned here, it might be a Ko-fi tip)
+		"firstsub": sub->timestamp, //Tiebreaker - earliest takes the spot (note that "sub" is orphanned here, it might be a Ko-fi/StreamLabs tip)
 		"user_id": sub->giver->user_id,
 	]);
 	//If a person renames, update the display on seeing the next sub gift. Note that this
@@ -206,25 +206,27 @@ continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:
 	}
 	if (!sizeof(people)) send_message(channel->name, "No non-mods have cheered bits in that month.");
 	else send_message(channel->name, addrem + " VIP status " + tofrom + " cheerers: " + people * ", ");
-	//2) Get the top subbers
-	array subs = values(stats->monthly["subs" + msg->yearmonth] || ([]));
-	sort(subs->firstsub, subs); sort(-subs->score[*], subs);
-	limit = stats->badge_count || 10; people = ({ });
-	foreach (subs, mapping person) {
-		if (stats->mods[person->user_id]) continue;
-		if ((string)person->user_id == "274598607") continue; //AnAnonymousGifter
-		if ((string)(int)person->user_id != (string)person->user_id) continue; //Non-numeric user "ids" are for truly-anonymous donations
-		if (!has_value(userids, person->user_id)) {
-			//If that person has already received a VIP badge for cheering, don't re-add.
-			userids += ({person->user_id});
-			people += ({person->user_name});
+	//2) Get the top subbers and tippers
+	foreach (({"subs", "kofi"}), string which) {
+		array subs = values(stats->monthly[which + msg->yearmonth] || ([])); //(or tips, whatever)
+		sort(subs->firstsub, subs); sort(-subs->score[*], subs);
+		limit = stats->badge_count || 10; people = ({ });
+		foreach (subs, mapping person) {
+			if (stats->mods[person->user_id]) continue;
+			if ((string)person->user_id == "274598607") continue; //AnAnonymousGifter
+			if ((string)(int)person->user_id != (string)person->user_id) continue; //Non-numeric user "ids" are for truly-anonymous donations
+			if (!has_value(userids, person->user_id)) {
+				//If that person has already received a VIP badge for cheering, don't re-add.
+				userids += ({person->user_id});
+				people += ({person->user_name});
+			}
+			else people += ({"(" + person->user_name + ")"});
+			if (!--limit) break;
 		}
-		else people += ({"(" + person->user_name + ")"});
-		if (!--limit) break;
-	}
-	if (sizeof(people)) {
-		//If nobody's subbed, don't even say anything.
-		send_message(channel->name, addrem + " VIP status " + tofrom + " subgifters: " + people * ", ");
+		if (sizeof(people)) {
+			//If nobody's subbed/tipped, don't even say anything.
+			send_message(channel->name, addrem + " VIP status for " + which + ": " + people * ", ");
+		}
 	}
 	//3) Actually implement badge changes
 	//The Twitch API actually limits this to 10 badge changes every 10 seconds,
