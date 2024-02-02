@@ -286,6 +286,9 @@
     one is active. That way, reverting is simply a matter of deactivating the latest
     and activating an older one. (Would help to have statistical columns eg creation
     date.)
+    - update stillebot.commands set active = false where channel = :channel and cmdname = :cmdname and active = true
+    - Otherwise it will have to do a tbscan to find any that need updating. With the
+      extra check "active = true", it can use the unique index.
 * MustardScript syntax highlighting enhancements
   - Use the https://github.com/ajaxorg/ace/blob/master/src/ext/themelist.js extn to
     allow people to pick a theme; save it to their prefs.
