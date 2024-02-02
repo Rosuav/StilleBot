@@ -128,10 +128,11 @@ Likely causes of this include:
     to know which one should "win", so an arbitrary decision of "the one that was
     originally newer wins" is no worse than any other.
   - Resolution: On detection of problem:
-    - Connect to both databases. Query the active rows for each. Take the newer
-      "created" timestamp, record its ID, this is "winner"
-    - On both databases, update set active = false for all relevant versions of
-      that command. This should reenable replication.
+    - Connect to both databases.
+    - On each database:
+      update stillebot.commands set active = false where twitchid = :channel and cmdname = :cmd and active = true returning id, created;
+      This should reenable replication.
+    - Determine the winner - the one with the newer 'created' value.
     - On either database, update set active = true where id = winner.
     - Signal all websockets to push out changes.
     - Conflict resolution should be done always and only by the active_bot.
