@@ -101,3 +101,57 @@ If any database is in read-write mode, attempting an update will silently succee
 as long as nothing needs to be changed, but otherwise will error out.
 
 TODO: Test all this in a PG16 world.
+
+Conflicts
+---------
+
+If true multi-master replication is the goal, this would mean the potential for
+transactions that succeed on their respective ends, but conflict on replication.
+Likely causes of this include:
+
+* Any table: Two transactions each create a new row, using the SERIAL, and then
+  conflict on the primary key. Very annoying since there's no easy way to fix it,
+  plus it's something that could easily happen with busy tables.
+* stillebot.commands: Two transactions each "update set active = false where..."
+  followed by "insert (channel, cmdname, active = true)". These will be separate
+  command entries. Two likely possibilities:
+  - Each incoming replication transaction does the full searched update. This is
+    subtle, since neither of them will know that there's a problem; they'll just
+    have desynchronized data (each one getting the value that was set by the one
+    at the other end), since each will have set its own one to inactive.
+  - The exact tuple change is what gets replicated out. The incoming transactions
+    will fail, since each one will re-deactivate the same previous row (this part
+    is fine), and then insert a new active row (thus causing a conflict).
+  - Either way, the correct resolution is to deactivate the one with the lower
+    timestamp. In the extremely unlikely event that two nodes simultaneously do a
+    rollback (which involves updating an older row to be active), there's no way
+    to know which one should "win", so an arbitrary decision of "the one that was
+    originally newer wins" is no worse than any other.
+* stillebot.config: Several failure modes possible here.
+  - The application can either upsert ("insert, on conflict update") or delete.
+  - Note that delete currently is not supported, but make plans for it to be sure
+    replication won't fail.
+  - Dual upsert: The row didn't exist. What gets replicated? The full upsert, or
+    the resultant insert? If the latter, will cause a PK conflict and replication
+    failure; if the former, will result in each end overwriting with the other's.
+    No easy resolution available. Probably just pick arbitrarily :(
+  - Upsert-insert and delete: The row didn't exist. One end attempts to set it,
+    the other attempts to delete it. The searched delete will simply do nothing
+    if it doesn't find it, but will delete the newly-inserted row. OOS depending
+    on transaction ordering. No easy resolution available.
+
+TEST ME:
+
+* Can I trigger a replication failure in psql?
+  - Begin transactions on both ends
+  - Make the conflicting updates. Should have no issues at this point.
+  - Commit one end. What happens on the other?
+  - Commit other end. What happens? Watch both logs.
+* If it's not that easy:
+  - Disable replication
+  - Make the updates (autocommit would be fine)
+  - Reenable replication, watch the logs
+* Can an application see that replication has failed? This won't catch the OOS
+  errors, but would at least get the ones that are blocking future replication.
+  - And if it can, can it see what the transaction did, or at least where the
+    conflict is? Maybe there's another change that can be done that fixes it.
