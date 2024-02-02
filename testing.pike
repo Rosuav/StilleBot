@@ -53,6 +53,27 @@ continue Concurrent.Future activity() {
 	}
 }
 
+void log_readable(string line) {
+	werror(">> PG << %s\n", line);
+}
+
+void start_inotify() {
+	object inot = G->G->inotify = System.Inotify.Instance();
+	inot->set_nonblocking();
+	string logfn = "/var/log/postgresql/postgresql-16-main.log";
+	Stdio.File log = Stdio.File(logfn);
+	log->seek(0, Stdio.SEEK_END);
+	log->set_nonblocking();
+	string buf = "";
+	inot->add_watch(logfn, System.Inotify.IN_MODIFY) {
+		[int event, int cookie, string path] = __ARGS__;
+		buf += log->read(); //TODO: What if there's too much for a single nonblocking read?
+		while (sscanf(buf, "%s\n%s", string line, buf))
+			G->G->postgres_log_readable(String.trim(line));
+		//Any remaining partial line can be left in buf for next time.
+	};
+}
+
 protected void create(string name) {
 	::create(name);
 	if (!G->G->have_tasks) {
@@ -66,4 +87,6 @@ protected void create(string name) {
 	G->G->consolecmd->sess = lambda() {spawn_task(session());};
 	G->G->consolecmd->quit = lambda() {exit(0);};
 	G->G->run_test = run_test;
+	G->G->postgres_log_readable = log_readable;
+	if (!G->G->inotify) start_inotify();
 }
