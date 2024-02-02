@@ -53,8 +53,61 @@ continue Concurrent.Future activity() {
 	}
 }
 
+@retain: mapping postgres_log_messages = ([]);
+
+//Collision form: Two simultaneous inserts into the commands table.
+int(1bit) handle_command_collision(array(string) errors) {
+	int twitchid; string cmdname;
+	foreach (errors, string line)
+		if (sscanf(line, "DETAIL:  Key (twitchid, cmdname)=(%d, %[^)]) already exists.", twitchid, cmdname)) break;
+	if (!twitchid) return 0;
+	postgres_log_messages->pause_notifications = 1;
+	spawn_task(resolve_command_collision(twitchid, cmdname));
+}
+
+continue Concurrent.Future resolve_command_collision(int twitchid, string cmdname) {
+	mixed ex = catch {
+		//TODO
+	};
+	postgres_log_messages->pause_notifications = 0;
+}
+
 void log_readable(string line) {
-	werror(">> PG << %s\n", line);
+	if (postgres_log_messages->pause_notifications) return;
+	/* Interesting lines:
+	%*[-0-9 :.AESDT] [%d] rosuav@stillebot LOG:  starting logical decoding for slot "multihome"
+	-- Record the pid, this is the current worker pid
+	%*[-0-9 :.AESDT] [%d] ERROR:  duplicate key value violates unique constraint "commands_twitchid_cmdname_idx"
+	-- If the PID is the current worker pid, we have a replication failure. The precise error will need
+	   specific handling; if it's an unknown error, report loudly (The Kick?).
+	%*[-0-9 :.AESDT] [%d] DETAIL:  Key (twitchid, cmdname)=(49497888, fight) already exists.
+	-- Further information about the same replication failure, will be important
+	%*[-0-9 :.AESDT] [%d] CONTEXT:  processing remote data for replication origin "pg_17593" during message type "INSERT" for replication target relation "stillebot.commands" in transaction 10025, finished at 0/529C778
+	%*[-0-9 :.AESDT] [%*d] LOG:  background worker "logical replication worker" (PID %d) exited with exit code 1
+	-- This indicates replication failure. Make this the moment to report.
+	*/
+	//Note: If we get any of the intermediate lines but don't have the worker pid, save them,
+	//keyed by pid, and use the closer message to tell us which to retrieve.
+	sscanf(line, "%*[-0-9 :.AESDT][%d] %s", int pid, string msg);
+	if (!msg) return; //Uninteresting.
+	if (msg == "LOG:  starting logical decoding for slot \"multihome\"") {
+		werror(">>> PG <<< Worker PID is %d [%O]\n", pid, line);
+		G->G->postgres_log_messages = postgres_log_messages = ([]); //No need to retain any old data
+		postgres_log_messages->current_worker_pid = pid;
+	} else if (sscanf(msg, "LOG:  background worker \"logical replication worker\" (PID %d) exited with exit code %d",
+			int workerpid, int exitcode) && exitcode) { //Only report if exitcode parsed and is nonzero
+		foreach (postgres_log_messages[workerpid] || ({ }), string line) {
+			if (line == "ERROR:  duplicate key value violates unique constraint \"commands_twitchid_cmdname_idx\"")
+				if (handle_command_collision(postgres_log_messages[workerpid])) return;
+		}
+		//If we get here, there was some sort of unknown error. Report loudly.
+		//TODO: Fire an audio alert in prod.
+		werror(">>> PG <<< Worker PID %d failed\n", workerpid);
+		werror("%{%s\n%}", postgres_log_messages[workerpid] || ({ }));
+		werror(">>> PG <<< End worker failure\n", workerpid);
+	} else if (!postgres_log_messages->current_worker_pid || pid == postgres_log_messages->current_worker_pid) {
+		postgres_log_messages[pid] += ({msg});
+	}
 }
 
 void start_inotify() {
