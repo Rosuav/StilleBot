@@ -49,12 +49,16 @@ constant tables = ([
 		//Not tested as part of database recreation, has been done manually.
 		//"create or replace function send_settings_notification() returns trigger language plpgsql as $$begin perform pg_notify('stillebot.settings', ''); return null; end$$;",
 		//"create trigger settings_update_notify after update on stillebot.settings execute function send_settings_notification();",
+		//"alter table stillebot.settings enable always trigger settings_update_notify;",
 	}),
 	"http_sessions": ({
 		"cookie varchar primary key",
 		"active timestamp with time zone default now()",
 		"data bytea not null",
 	}),
+	//TODO: Have a trigger that fires any time ANY table with a twitchid is updated, sending
+	//a notification that includes both the table name (maybe) and the twitchid (definitely).
+	//Use this to force a settings reload for that channel.
 ]);
 
 //NOTE: Despite this retention, actual connections are not currently retained across code
@@ -142,12 +146,12 @@ void notify_unknown(int pid, string cond, string extra, string host) {
 @create_hook: constant database_settings = ({"mapping settings"});
 continue Concurrent.Future fetch_settings(mapping db) {
 	G->G->dbsettings = yield((mixed)query(db, "select * from stillebot.settings"))[0];
-	werror("Got settings %O\n", G->G->dbsettings);
+	werror("Got settings from %s: %O\n", db->host, G->G->dbsettings);
 	event_notify("database_settings", G->G->dbsettings);
 }
 
 void notify_settings_change(int pid, string cond, string extra, string host) {
-	werror("SETTINGS CHANGED\n");
+	werror("SETTINGS CHANGED [%s]\n", host);
 	spawn_task(fetch_settings(connections[host]));
 }
 
