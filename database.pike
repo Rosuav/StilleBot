@@ -18,13 +18,13 @@ constant tables = ([
 		" primary key (twitchid, category)",
 	}),
 	"commands": ({
-		"id serial primary key",
-		"channel bigint not null",
+		"id uuid primary key default gen_random_uuid()",
+		"twitchid bigint not null",
 		"cmdname text not null",
 		"active boolean not null",
 		"content json not null",
 		"created timestamp with time zone not null default now()",
-		"create unique index on stillebot.commands (channel, cmdname) where active;",
+		"create unique index on stillebot.commands (twitchid, cmdname) where active;",
 	}),
 	//Generic channel info that stores anything that could be in channels/TWITCHID.json
 	//or twitchbot_status.json.

@@ -127,6 +127,17 @@ Likely causes of this include:
     rollback (which involves updating an older row to be active), there's no way
     to know which one should "win", so an arbitrary decision of "the one that was
     originally newer wins" is no worse than any other.
+  - Resolution: On detection of problem:
+    - Connect to both databases. Query the active rows for each. Take the newer
+      "created" timestamp, record its ID, this is "winner"
+    - On both databases, update set active = false for all relevant versions of
+      that command. This should reenable replication.
+    - On either database, update set active = true where id = winner.
+    - Signal all websockets to push out changes.
+    - Conflict resolution should be done always and only by the active_bot.
+    - Conflict recognition can be done through the local log exclusively - any time
+      there's a conflict, it will be in both logs. You know, like how Mum always
+      used to say: it takes two to fight.
 * stillebot.config: Several failure modes possible here.
   - The application can either upsert ("insert, on conflict update") or delete.
   - Note that delete currently is not supported, but make plans for it to be sure
