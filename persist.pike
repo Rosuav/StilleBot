@@ -113,7 +113,7 @@ object config = Persist("twitchbot_config.json", 0);
 object status = Persist("twitchbot_status.json", 1);
 
 protected void create() {
-	persist_config->path("ircsettings"); //Ensure that this key exists, it's the most important one
+	config->path("ircsettings"); //Ensure that this key exists, it's the most important one
 	add_constant("persist_config", config);
 	add_constant("persist_status", status);
 }
