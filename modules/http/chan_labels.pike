@@ -109,11 +109,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 bool need_mod(string grp) {return 1;}
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->group)) return "Bad group";
-	sscanf(msg->group, "%s#%s", string subgroup, string chan);
+	[object channel, string subgroup] = split_channel(msg->group);
 	if (subgroup == "") return ::websocket_validate(conn, msg);
-	string key = persist_status->has_path("channel_labels", chan)->?accesskey;
+	string key = persist_status->has_path("channel_labels", channel->config->login)->?accesskey;
 	if (subgroup != key) return "Bad key";
-	msg->group = "#" + chan; //effectively, subgroup becomes blank
+	msg->group = "#" + channel->config->login; //effectively, subgroup becomes blank
 }
 
 mapping get_chan_state(object channel, string grp, string|void id) {
