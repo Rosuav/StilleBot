@@ -109,9 +109,6 @@ If true multi-master replication is the goal, this would mean the potential for
 transactions that succeed on their respective ends, but conflict on replication.
 Likely causes of this include:
 
-* Any table: Two transactions each create a new row, using the SERIAL, and then
-  conflict on the primary key. Very annoying since there's no easy way to fix it,
-  plus it's something that could easily happen with busy tables.
 * stillebot.commands: Two transactions each "update set active = false where..."
   followed by "insert (channel, cmdname, active = true)". These will be separate
   command entries. Two likely possibilities:

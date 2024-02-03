@@ -11,6 +11,8 @@ inherit hook;
 //Altering of tables is extremely simplistic and will only ever drop or add a
 //column. For more complex changes, devise a system when one becomes needed.
 //NOTE: Tables will never be dropped, although columns removed from tables will.
+//CAUTION: Avoid using serial/identity primary keys as they may cause conflicts
+//due to the sequence not being replicated. UUIDs are safer.
 constant tables = ([
 	"user_followed_categories": ({
 		"twitchid bigint not null",
