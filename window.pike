@@ -138,7 +138,7 @@ class ircsettings
 {
 	inherit window;
 	constant windowtitle = "Authenticate StilleBot";
-	mapping config = persist_config->path("ircsettings");
+	mapping config = persist_config["ircsettings"];
 
 	void makewindow()
 	{
