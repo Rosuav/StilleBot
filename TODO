@@ -305,8 +305,6 @@
     /reauth endpoint.
   - No need for persist_config->save() now, so it's just some global configs that
     get loaded up initialization of some module and then kept.
-* Migration yak shaving. Need to be done bottom-up.
-  - Remove all references to persist_config that aren't going to stay there
 * Migration queue. Do whenever stack is empty.
   - G->G->channel_info (see poll.pike's retain) should use user IDs
   - chan_giveaway.pike giveaway_tickets[] should use user IDs
