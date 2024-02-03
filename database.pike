@@ -48,7 +48,7 @@ constant tables = ([
 		"insert into stillebot.settings (asterisk) values ('*');",
 		//Not tested as part of database recreation, has been done manually.
 		//"create or replace function send_settings_notification() returns trigger language plpgsql as $$begin perform pg_notify('stillebot.settings', ''); return null; end$$;",
-		//"create trigger settings_update_notify after update on stillebot.settings execute function send_settings_notification();",
+		//"create trigger settings_update_notify after update on stillebot.settings for each row execute function send_settings_notification();",
 		//"alter table stillebot.settings enable always trigger settings_update_notify;",
 	}),
 	"http_sessions": ({
