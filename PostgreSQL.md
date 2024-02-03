@@ -151,19 +151,3 @@ Likely causes of this include:
     the other attempts to delete it. The searched delete will simply do nothing
     if it doesn't find it, but will delete the newly-inserted row. OOS depending
     on transaction ordering. No easy resolution available.
-
-TEST ME:
-
-* Can I trigger a replication failure in psql?
-  - Begin transactions on both ends
-  - Make the conflicting updates. Should have no issues at this point.
-  - Commit one end. What happens on the other?
-  - Commit other end. What happens? Watch both logs.
-* If it's not that easy:
-  - Disable replication
-  - Make the updates (autocommit would be fine)
-  - Reenable replication, watch the logs
-* Can an application see that replication has failed? This won't catch the OOS
-  errors, but would at least get the ones that are blocking future replication.
-  - And if it can, can it see what the transaction did, or at least where the
-    conflict is? Maybe there's another change that can be done that fixes it.
