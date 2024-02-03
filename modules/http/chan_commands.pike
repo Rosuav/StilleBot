@@ -170,6 +170,8 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!(<"", "!!", "!!trigger">)[command]) return "UNIMPL"; //TODO: Check that there actually is a command of that name
 }
 
+//TODO: Namespace these inside their corresponding channels, and don't have the
+//channel name incorporated in the command name. It's not necessary any more.
 mapping _get_command(string cmd) {
 	sscanf(cmd, "%s#%s", string basename, string chan);
 	object channel = G->G->irc->channels["#" + chan];
@@ -179,10 +181,7 @@ mapping _get_command(string cmd) {
 	return (["message": response, "id": cmd]);
 }
 
-mapping get_state(string group, string|void id) {
-	sscanf(group, "%s#%s", string command, string chan);
-	object channel = G->G->irc->channels["#" + chan];
-	if (!channel) return 0;
+mapping get_chan_state(object channel, string command, string|void id) {
 	if (command == "!!trigger") {
 		//For the front end, we pretend that there are multiple triggers with distinct IDs.
 		//But here on the back end, they're a single array inside one command.
@@ -216,8 +215,8 @@ void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mix
 void wscmd_delete(object c, mapping conn, mapping msg) {wscmd_update(c, conn, msg | (["response": ""]));}
 
 void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	sscanf(conn->group, "%s#%s", string mode, string chan);
-	object channel = G->G->irc->channels["#" + chan]; if (!channel) return 0;
+	[object channel, string mode] = split_channel(conn->group);
+	if (!channel) return 0;
 	array valid = G->G->cmdmgr->validate_command(channel, mode, msg->cmdname || "validateme", msg->response, ([
 		"original": msg->original,
 		"language": msg->language == "mustard" ? "mustard" : "",
