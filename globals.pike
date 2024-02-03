@@ -453,6 +453,9 @@ class websocket_handler
 	array(object|string) split_channel(string|void group) {
 		if (!stringp(group) || !has_value(group, '#')) return ({0, ""}); //Including if we don't have a group set yet
 		sscanf(group, "%s#%s", string subgroup, string chan);
+		//Allow the channel to be identified by Twitch ID
+		//Note: If the channel name is entirely digits, it cannot reliably be specified by name.
+		if ((string)(int)chan == chan) return ({G->G->irc->id[(int)chan], subgroup});
 		return ({G->G->irc->channels["#" + chan], subgroup});
 	}
 
