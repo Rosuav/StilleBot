@@ -65,7 +65,7 @@ constant tables = ([
 //reloads - the old connections will be disposed of and fresh ones acquired. There may be
 //some sort of reference loop - it seems that we're not disposing of old versions of this
 //module properly - but the connections themselves should be closed by the new module.
-@retain: mapping(string:mapping(string:mixed)) connections = ([]);
+@retain: mapping(string:mapping(string:mixed)) pg_connections = m_delete(G->G, "connections") || ([]);
 string active; //Host name only, not the connection object itself
 @retain: mapping waiting_for_active = ([ //If active is null, use these to defer database requests.
 	"queue": ({ }), //Add a Promise to this to be told when there's an active.
@@ -102,7 +102,7 @@ void _have_active(string a) {
 	active = a;
 	array wa = waiting_for_active->queue; waiting_for_active->queue = ({ });
 	wa->success(active);
-	spawn_task(_got_active(connections[active]));
+	spawn_task(_got_active(pg_connections[active]));
 }
 Concurrent.Future await_active() {
 	Concurrent.Promise pending = Concurrent.Promise();
@@ -119,7 +119,7 @@ class SSLContext {
 }
 
 void notify_readonly(int pid, string cond, string extra, string host) {
-	mapping db = connections[host];
+	mapping db = pg_connections[host];
 	if (extra == "on" && !db->readonly) {
 		werror("SWITCHING TO READONLY MODE: %O\n", host);
 		db->conn->query(#"select set_config('application_name', 'stillebot-ro', false),
@@ -152,12 +152,12 @@ continue Concurrent.Future fetch_settings(mapping db) {
 
 void notify_settings_change(int pid, string cond, string extra, string host) {
 	werror("SETTINGS CHANGED [%s]\n", host);
-	spawn_task(fetch_settings(connections[host]));
+	spawn_task(fetch_settings(pg_connections[host]));
 }
 
 continue Concurrent.Future connect(string host) {
 	werror("Connecting to Postgres on %O...\n", host);
-	mapping db = connections[host] = (["host": host]); //Not a floop, strings are just strings :)
+	mapping db = pg_connections[host] = (["host": host]); //Not a floop, strings are just strings :)
 	string key = Stdio.read_file("privkey.pem");
 	string cert = Stdio.read_file("certificate.pem");
 	object ctx = SSLContext();
@@ -199,19 +199,19 @@ continue Concurrent.Future connect(string host) {
 	db->connected = 1;
 }
 
-continue Concurrent.Future|zero reconnect(int force) {
+continue Concurrent.Future|zero reconnect(int force, int|void both) {
 	if (force) {
-		foreach (connections; string host; mapping db) {
+		foreach (pg_connections; string host; mapping db) {
 			if (!db->connected) {werror("Still connecting to %s...\n", host); continue;} //Will probably need a timeout somewhere
 			werror("Closing connection to %s.\n", host);
 			db->conn->close();
 			destruct(db->conn);
 		}
-		m_delete(connections, indices(connections)[*]); //Mutate the existing mapping so all clones of the module see that there are no connections
+		m_delete(pg_connections, indices(pg_connections)[*]); //Mutate the existing mapping so all clones of the module see that there are no connections
 	}
 	foreach (database_ips, string host) {
-		if (!connections[host]) yield((mixed)connect(host));
-		if (force != 2 && !connections[host]->readonly) {_have_active(host); return 0;}
+		if (!pg_connections[host]) yield((mixed)connect(host));
+		if (!both && !pg_connections[host]->readonly) {_have_active(host); return 0;}
 	}
 	werror("No active DB, suspending saves\n");
 	active = 0;
@@ -219,7 +219,7 @@ continue Concurrent.Future|zero reconnect(int force) {
 
 continue Concurrent.Future|string save_to_db(string sql, mapping bindings) {
 	if (active) {
-		mixed err = catch {yield((mixed)query(connections[active], sql, bindings));};
+		mixed err = catch {yield((mixed)query(pg_connections[active], sql, bindings));};
 		if (!err) return "ok"; //All good!
 		//Report the error to the console, since the caller isn't hanging around.
 		//TODO: If the error is because there's actually no database available,
@@ -246,7 +246,7 @@ continue Concurrent.Future|mapping load_config(string|int twitchid, string kwd) 
 	//NOTE: If there's no database connection, this will block. For higher speed
 	//queries, do we need a try_load_config() that would error out (or return null)?
 	if (!active) yield(await_active());
-	array rows = yield((mixed)query(connections[active], "select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
+	array rows = yield((mixed)query(pg_connections[active], "select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
 		(["twitchid": (int)twitchid, "kwd": kwd])));
 	if (!sizeof(rows)) return ([]);
 	return Standards.JSON.decode_utf8(rows[0]->data);
@@ -262,7 +262,7 @@ void save_session(mapping data) {
 
 continue Concurrent.Future|mapping load_session(string cookie) {
 	if (!active) yield(await_active());
-	array rows = yield((mixed)query(connections[active], "select data from stillebot.http_sessions where cookie = :cookie",
+	array rows = yield((mixed)query(pg_connections[active], "select data from stillebot.http_sessions where cookie = :cookie",
 		(["cookie": cookie])));
 	if (!sizeof(rows)) return (["cookie": cookie]);
 	//For some reason, sometimes I get an array of strings instead of an array of mappings.
@@ -276,7 +276,7 @@ continue Concurrent.Future|string generate_session_cookie() {
 	if (!active) yield(await_active());
 	while (1) {
 		string cookie = random(1<<64)->digits(36);
-		mixed ex = catch {yield((mixed)query(connections[active], "insert into stillebot.http_sessions (cookie, data) values(:cookie, '')",
+		mixed ex = catch {yield((mixed)query(pg_connections[active], "insert into stillebot.http_sessions (cookie, data) values(:cookie, '')",
 			(["cookie": cookie])));};
 		if (!ex) return cookie;
 		//TODO: If it wasn't a PK conflict, let the exception bubble up
@@ -290,26 +290,26 @@ continue Concurrent.Future|string generate_session_cookie() {
 //NOT exported, so to use it, write yield((mixed)G->G->DB->generic_query("...")) - clunky as a
 //reminder to avoid doing this where possible.
 continue Concurrent.Future|mapping generic_query(string sql, mapping|void bindings) {
-	if (!connections[active]) {
+	if (!pg_connections[active]) {
 		yield((mixed)reconnect(0));
 		if (!active) error("No database connection available.\n");
 	}
-	return yield((mixed)query(connections[active], sql, bindings));
+	return yield((mixed)query(pg_connections[active], sql, bindings));
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
 continue Concurrent.Future create_tables() {
-	yield((mixed)reconnect(2)); //Ensure that we have at least one connection
+	yield((mixed)reconnect(1, 1)); //Ensure that we have at least one connection, both if possible
 	array(mapping) dbs;
 	if (active) {
 		//We can't make changes, but can verify and report inconsistencies.
-		dbs = ({connections[active]});
-	} else if (!sizeof(connections)) {
+		dbs = ({pg_connections[active]});
+	} else if (!sizeof(pg_connections)) {
 		//No connections, nothing succeeded
 		error("Unable to verify database status, no PostgreSQL connections\n");
 	} else {
 		//Update all databases. This is what we normally want.
-		dbs = values(connections);
+		dbs = values(pg_connections);
 	}
 	foreach (dbs, mapping db) {
 		array cols = yield((mixed)query(db, "select table_name, column_name from information_schema.columns where table_schema = 'stillebot' order by table_name, ordinal_position"));
