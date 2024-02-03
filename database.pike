@@ -297,6 +297,16 @@ continue Concurrent.Future|mapping generic_query(string sql, mapping|void bindin
 	return yield((mixed)query(pg_connections[active], sql, bindings));
 }
 
+//Don't use this. If you are in a proper position to violate that rule, you already know what
+//you're doing. Future me: Past me sincerely hopes that you decide you can't justify using this.
+continue awaitable|mapping for_each_db(string sql, mapping|void bindings) {
+	yield(reconnect(0, 1));
+	mapping ret = ([]);
+	foreach (pg_connections; string host; mapping db)
+		ret[host] = yield(query(db, sql, bindings));
+	return ret;
+}
+
 //Attempt to create all tables and alter them as needed to have all columns
 continue Concurrent.Future create_tables() {
 	yield((mixed)reconnect(1, 1)); //Ensure that we have at least one connection, both if possible

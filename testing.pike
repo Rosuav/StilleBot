@@ -67,7 +67,28 @@ int(1bit) handle_command_collision(array(string) errors) {
 
 continue Concurrent.Future resolve_command_collision(int twitchid, string cmdname) {
 	mixed ex = catch {
-		//TODO
+		//To resolve this sort of collision, we first mark ALL conflicting commands
+		//as inactive. This should get replication working again.
+		mapping each = yield(G->G->DB->for_each_db(#"update stillebot.commands
+			set active = false
+			where twitchid = :twitchid and cmdname = :cmdname and active = true
+			returning id, created",
+			(["twitchid": twitchid, "cmdname": cmdname])));
+		//Remap ([host: ({([info...])}), ...]) into ({(["host": host, info...]), ...})
+		//array dbs = values(each)[*][0][*] | (["host": indices(each)[*]])[*];
+		//Or, since in this case we don't actually care which host it's on:
+		array dbs = values(each) * ({ }); //Just flatten them into a simple array.
+		sort(dbs->created, dbs);
+		//Then, we take the one command that happened the latest, and mark it as active.
+		//This can be done on any database and will be replicated out correctly.
+		//TODO: Can we wait until replication has indeed happened? For now, just sticking
+		//in a nice long delay.
+		yield(task_sleep(5));
+		spawn_task(G->G->DB->generic_query("update stillebot.commands set active = true where id = :id",
+			(["id": dbs[-1]->id])));
+		Stdio.append_file("postgresql_conflict_resolution.log",
+			sprintf("=====\n%sCONFLICT: stillebot.commands\n%O\nResolved.\n",
+				ctime(time()), each));
 	};
 	postgres_log_messages->pause_notifications = 0;
 }
