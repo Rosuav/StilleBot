@@ -170,15 +170,12 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!(<"", "!!", "!!trigger">)[command]) return "UNIMPL"; //TODO: Check that there actually is a command of that name
 }
 
-//TODO: Namespace these inside their corresponding channels, and don't have the
-//channel name incorporated in the command name. It's not necessary any more.
-mapping _get_command(string cmd) {
-	sscanf(cmd, "%s#%s", string basename, string chan);
-	object channel = G->G->irc->channels["#" + chan];
-	echoable_message response = channel->commands[basename];
+mapping _get_command(object channel, string cmd) {
+	sscanf(cmd, "%s#", cmd); //In case any command names have the channel name appended (it'll be ignored even if wrong).
+	echoable_message response = channel->commands[cmd];
 	if (!response) return 0;
-	if (mappingp(response)) return response | (["id": cmd]);
-	return (["message": response, "id": cmd]);
+	if (mappingp(response)) return response | (["id": cmd + channel->name]);
+	return (["message": response, "id": cmd + channel->name]);
 }
 
 mapping get_chan_state(object channel, string command, string|void id) {
@@ -189,12 +186,12 @@ mapping get_chan_state(object channel, string command, string|void id) {
 		if (id) return 0; //Partial updates of triggers not currently supported. If there are enough that this matters, consider implementing.
 		return (["items": arrayp(response) ? response : ({ })]);
 	}
-	if (id) return _get_command(id); //Partial update of a single command. This will only happen if signalled from the back end.
+	if (id) return _get_command(channel, id); //Partial update of a single command. This will only happen if signalled from the back end.
 	if (command != "" && command != "!!") return 0; //Single-command usage not yet implemented
 	array commands = ({ });
 	foreach (channel->commands; string cmd; echoable_message response) {
-		if (command == "!!" && has_prefix(cmd, "!") && !has_prefix(cmd, "!!trigger")) commands += ({_get_command(cmd + channel->name)});
-		else if (command == "" && !has_prefix(cmd, "!")) commands += ({_get_command(cmd + channel->name)});
+		if (command == "!!" && has_prefix(cmd, "!") && !has_prefix(cmd, "!!trigger")) commands += ({_get_command(channel, cmd)});
+		else if (command == "" && !has_prefix(cmd, "!")) commands += ({_get_command(channel, cmd)});
 	}
 	sort(commands->id, commands);
 	return (["items": commands]);
