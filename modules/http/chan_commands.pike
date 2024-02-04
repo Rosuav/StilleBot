@@ -198,12 +198,11 @@ mapping get_chan_state(object channel, string command, string|void id) {
 }
 
 void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	array valid = G->G->cmdmgr->validate_command(channel, (conn->group / "#")[0], msg->cmdname, msg->response, ([
+	echoable_message valid = G->G->cmdmgr->update_command(channel, (conn->group / "#")[0], msg->cmdname, msg->response, ([
 		"original": msg->original,
 		"language": msg->language == "mustard" ? "mustard" : "",
 	]));
-	if (!valid || !valid[0]) return;
-	make_echocommand(@valid);
+	if (!valid) return;
 	if (msg->cmdname == "" && has_prefix(conn->group, "!!trigger#")) {
 		//Newly added command. The client needs to know the ID so it can pop it up.
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "newtrigger", "response": valid[1][-1]])));

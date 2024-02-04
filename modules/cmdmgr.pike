@@ -603,10 +603,11 @@ void _save_echocommand(string cmd, echoable_message response, mapping|void extra
 	}
 }
 
-//Validate and update. TODO: Use this instead of make_echocommand everywhere.
-void update_command(object channel, string command, string cmdname, echoable_message response, mapping|void options) {
+//Validate and update. Returns 0 if command was invalid, otherwise the response.
+//TODO: Use this instead of make_echocommand everywhere.
+echoable_message|zero update_command(object channel, string command, string cmdname, echoable_message response, mapping|void options) {
 	array valid = validate_command(channel, command, cmdname, response, options);
-	if (valid) _save_echocommand(@valid);
+	if (valid) {_save_echocommand(@valid); return valid[1];}
 }
 
 constant builtin_description = "Manage channel commands";
