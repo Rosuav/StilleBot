@@ -140,7 +140,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	cfg->style = style;
 	//Save anything else eg max labels to show
 	persist_status->save();
-	send_updates_all(channel->name);
+	send_updates_all(channel, "");
 }
 
 @"is_mod": void wscmd_revokekey(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {

@@ -562,7 +562,7 @@ void _save_echocommand(string cmd, echoable_message response, mapping|void extra
 			//deleting the old and creating the new.
 			if (has_prefix(cmd, "rew ")) continue;
 			if (has_prefix(cmd, "!trigger#")) handler->send_updates_all("!" + cmd);
-			else handler->update_one(pfx + pfx + channel->name, cmd);
+			else handler->update_one(channel, pfx + pfx, cmd);
 			handler->send_updates_all(cmd);
 		}
 	}
