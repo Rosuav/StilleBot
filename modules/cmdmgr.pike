@@ -412,7 +412,7 @@ array validate_command(object channel, string|zero mode, string cmdname, echoabl
 				else id = (string)((int)alltrig[-1]->id + 1);
 			}
 			else if (id == "validateme" || has_prefix(id, "changetab_"))
-				return ({0, _validate_toplevel(response, state)}); //Validate-only and ignore preexisting triggers
+				return ({"!trigger" + channel->name, _validate_toplevel(response, state)}); //Validate-only and ignore preexisting triggers
 			else if (!(int)id) return 0; //Invalid ID
 			state->cmd = "!!trigger-" + id;
 			echoable_message trigger = _validate_toplevel(response, state);
