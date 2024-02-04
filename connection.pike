@@ -1290,6 +1290,16 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 			};
 			return;
 		}
+		if (stringp(data->group) && has_value(data->group, '#')) {
+			[object channel, string grp] = handler->split_channel(data->group);
+			//In the future, this transformation will transform to userids instead.
+			if (channel) data->group = grp + channel->name;
+			//if (channel) data->group = grp + "#" + channel->userid;
+			//NOTE: Don't save the channel object itself here, in case code gets
+			//updated. We want to fetch up the latest channel object whenever it's
+			//needed. But it'll be useful to synchronize the group, regardless of
+			//whether it was requested by name or ID.
+		}
 		if (string err = handler->websocket_validate(conn, data)) {
 			conn->sock->send_text(Standards.JSON.encode((["error": err])));
 			return;

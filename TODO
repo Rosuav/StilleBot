@@ -308,12 +308,8 @@
 * Migration queue. Do whenever stack is empty.
   - G->G->channel_info (see poll.pike's retain) should use user IDs
   - chan_giveaway.pike giveaway_tickets[] should use user IDs
-  - Sweeping change: First allow, then encourage, and finally mandate, that chan_*
+  - Sweeping change: Encourage, and eventually mandate, that chan_*
     websocket groups use IDs rather than channel logins.
-    - Everything should allow you to connect using IDs now. However, the group will
-      be considered different - "#rosuav" and "#49497888" are not the same, and any
-      message pushed to one will be missed by the other. Next step: Fold the groups
-      together on the init message; for compatibility, initially fold to the name.
   - Remove req->misc->session->token. Instead, have req->misc->token which is
     taken from the user ID, and always store the token against that user (not the
     session).
