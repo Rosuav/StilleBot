@@ -126,13 +126,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		return jsonify(result, 7);
 	}
 	if (req->misc->is_mod) {
-		if (req->variables->forceuid) return render_template("chan_commands.md", ([
-			"vars": (["ws_group": "#" + req->misc->channel->userid, "ws_type": "chan_commands"]) | command_editor_vars(req->misc->channel),
-			"templates": G->G->commands_templates * "\n",
-			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
-				"[Save all](:#saveall)"
-			),
-		]) | req->misc->chaninfo);
 		return render(req, ([
 			"vars": (["ws_group": ""]) | command_editor_vars(req->misc->channel),
 			"templates": G->G->commands_templates * "\n",
