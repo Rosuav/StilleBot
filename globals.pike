@@ -452,7 +452,7 @@ class websocket_handler
 	}
 	//Compatibility overlap variant form, as above.
 	variant void update_one(object chan, string|int group, string id, string|void type) {
-		send_updates_all(group + chan->name, (["id": id, "data": get_state(group, id, type), "type": type || "item"]));
+		send_updates_all(group + chan->name, (["id": id, "data": get_state(group + chan->name, id, type), "type": type || "item"]));
 	}
 
 	//Returns ({channel, subgroup}) - if channel is 0, it's not valid
