@@ -1646,7 +1646,7 @@ void enable_feature(object channel, string kwd, int state) {
 				])]),
 			)->then() {
 				//Update the !redeem command to respond to this reward.
-				//Depends on make_echocommand below happening synchronously, and the
+				//Depends on update_command below happening synchronously, and the
 				//response from Twitch being async. FIXME: This will no longer be true
 				//once commands are stored in PG. Is it sufficient that the query to
 				//save the command will start prior to whatever depends on the command
@@ -1656,7 +1656,7 @@ void enable_feature(object channel, string kwd, int state) {
 				string rewardid = __ARGS__[0]->data[0]->id;
 				if (!mappingp(cmd)) cmd = (["message": cmd, "redemption": rewardid]);
 				else cmd = cmd | (["redemption": rewardid]);
-				make_echocommand((kwd - "!") + channel->name, cmd);
+				G->G->cmdmgr->update_command(channel, "", kwd - "!", cmd);
 				channel->path("dynamic_rewards")[rewardid] = ([
 					"basecost": 0, "availability": "{online}", "formula": "PREV",
 					"prompt": prompt,
@@ -1675,7 +1675,7 @@ void enable_feature(object channel, string kwd, int state) {
 				->thencatch() {werror("Error deleting !redeem reward: %O\n", __ARGS__);};
 		}
 	}
-	make_echocommand((kwd - "!") + channel->name, state && info->response);
+	G->G->cmdmgr->update_command(channel, "", kwd - "!", state && info->response);
 }
 
 @"is_mod": void wscmd_enable_redeem_cmd(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {

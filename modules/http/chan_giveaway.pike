@@ -491,7 +491,7 @@ void websocket_cmd_makenotifs(mapping(string:mixed) conn, mapping(string:mixed) 
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	foreach (NOTIFICATION_SPECIALS; string kwd; mapping resp)
-		make_echocommand(sprintf("!giveaway_%s%s", kwd, channel->name), resp);
+		G->G->cmdmgr->update_command(channel, "!!", "!giveaway_" + kwd, resp);
 }
 
 void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(master_control(conn, msg));}

@@ -152,7 +152,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			if (cmd == "" || resp == "") continue;
 			sscanf(cmd, "%*[!]%[A-Za-z]", cmd);
 			messages += ({sprintf("* Creating %s command !%s", kw, cmd)});
-			make_echocommand(cmd + c, this["build_" + kw](counter, resp));
+			G->G->cmdmgr->update_command(req->misc->channel, "", cmd, this["build_" + kw](counter, resp));
 		}
 		if (!rawdata["$" + counter + "$"]) {rawdata["$" + counter + "$"] = "0"; persist_status->save();}
 	}

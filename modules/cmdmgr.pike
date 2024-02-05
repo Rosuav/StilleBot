@@ -604,9 +604,8 @@ void _save_echocommand(string cmd, echoable_message response, mapping|void extra
 }
 
 //Validate and update. Returns 0 if command was invalid, otherwise the response.
-//TODO: Use this instead of make_echocommand everywhere.
-echoable_message|zero update_command(object channel, string command, string cmdname, echoable_message response, mapping|void options) {
-	array valid = validate_command(channel, command, cmdname, response, options);
+echoable_message|zero update_command(object channel, string mode, string cmdname, echoable_message response, mapping|void options) {
+	array valid = validate_command(channel, mode, cmdname, response, options);
 	if (valid) {_save_echocommand(@valid); return valid[1];}
 }
 
@@ -789,10 +788,8 @@ protected void create(string name) {
 	::create(name);
 	G->G->cmdmgr = this;
 	G->G->update_command = update_command; //Deprecated alias for G->G->cmdmgr->update_command
-	//The previous API, make_echocommand, is deprecated. Ideally move to G->G->cmdmgr->update_command
-	//which will validate as well as save, but otherwise, use G->G->cmdmgr->_save_echocommand to make
-	//it clear that this is using an internal API. (With a weird signature too.)
-	add_constant("make_echocommand", _save_echocommand);
+	//Old API - if you are using this, switch to update_command which also validates.
+	add_constant("make_echocommand", lambda() {error("make_echocommand is no longer supported.\n");});
 	register_bouncer(autospam);
 	foreach (list_channel_configs(), mapping cfg) if (cfg->login)
 		if (G->G->stream_online_since[cfg->userid]) connected(cfg->login, 0, cfg->userid);
