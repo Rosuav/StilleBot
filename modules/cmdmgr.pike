@@ -709,81 +709,6 @@ mapping message_params(object channel, mapping person, array param) {
 	}
 }
 
-void scan_command(mapping state, echoable_message message) {
-	if (arrayp(message)) scan_command(state, message[*]);
-	if (!mappingp(message)) return;
-	if (message->builtin && mappingp(message->message) && !message->conditional &&
-		message->message->conditional == "string" && message->message->expr1 == "{error}" &&
-			(!message->message->expr2 || message->message->expr2 == "")) {
-		//We have a builtin, and inside it, something that's checking for errors.
-		//It might be a simple "Handle Errors" or it might be more elaborate, but
-		//either way, transform it.
-		m_delete(message->message, ({"conditional", "expr1", "expr2"})[*]);
-		message->otherwise = m_delete(message->message, "otherwise");
-		if (message->message->builtin) {
-			//It's a bit more complicated. Save ourselves some trouble and just
-			//add a layer of indirection.
-			message->message = (["message": message->message]);
-		}
-		message->message->builtin = m_delete(message, "builtin");
-		message->message->builtin_param = m_delete(message, "builtin_param");
-		message->conditional = "catch";
-		state->changed = 1;
-	}
-	if (message->builtin && message->conditional == "string" && message->expr1 == "{error}" &&
-			(!message->expr2 || message->expr2 == "")) {
-		//We have a builtin trying to handle its own errors. Add another layer for safety.
-		m_delete(message, ({"conditional", "expr1", "expr2"})[*]);
-		message->message = (["message": message->message, "builtin": m_delete(message, "builtin")]);
-		if (mixed p = m_delete(message, "builtin_param")) message->message->builtin_param = p;
-		message->conditional = "catch";
-		state->changed = 1;
-	}
-	if (message->builtin == "uptime" && message->conditional) {
-		//Combining builtin and conditional doesn't work, so add a layer, same as above.
-		message->message = (["message": message->message]);
-		foreach (({"conditional", "expr1", "expr2", "otherwise"}), string attr)
-			if (mixed val = m_delete(message, attr)) message->message[attr] = val;
-		m_delete(message, "builtin_param"); //The uptime builtin doesn't use its parameter, so just drop it.
-		state->changed = 1;
-	}
-	//Clean up some legacy forms. They don't actually hurt anything, but it makes round-trip testing
-	//harder since they collapse into their modern forms as soon as you sneeze on them. So let's just
-	//fix them all in advance.
-	if (message->casefold == "") {m_delete(message, "casefold"); state->changed = 1;}
-	if (message->builtin && objectp(message->builtin_param) && message->builtin_param->is_val_null) {m_delete(message, "builtin_param"); state->changed = 1;}
-	if (stringp(message->builtin_param)) {
-		//Split the parameter into words. Note that this is NOT the same as legacy handling, in that
-		//the old way would do this split AFTER variable substitution. This is a backward compat break
-		//but unfortunately it's necessary to fix some other design quirks.
-		object handler = G->G->builtins[message->builtin];
-		int nargs = objectp(handler) && arrayp(handler->builtin_param) ? sizeof(handler->builtin_param) : 1;
-		array param = ({message->builtin_param});
-		if (nargs > 1) {
-			param = Process.split_quoted_string(message->builtin_param);
-			//If the builtin is expecting 3 params, and the user provides more words
-			//than that, join the remainder into a single string.
-			int max = sizeof(handler->builtin_param);
-			if (sizeof(param) > max)
-				param = param[..max - 2] + ({param[max - 1..] * " "});
-		}
-		message->builtin_param = param;
-		state->changed = 1;
-	}
-	if (message->dest && sscanf(message->dest, "/set %s", string varname) && varname && !message->target) {
-		message->dest = "/set";
-		message->target = varname;
-		state->changed = 1;
-	}
-	if (message->dest == "/set" && message->action == "add" && !message->destcfg) {
-		message->destcfg = m_delete(message, "action");
-		state->changed = 1;
-	}
-	if (message->expr2 == "") {m_delete(message, "expr2"); state->changed = 1;}
-	scan_command(state, message->message);
-	scan_command(state, message->otherwise);
-}
-
 protected void create(string name) {
 	::create(name);
 	G->G->cmdmgr = this;
@@ -793,37 +718,4 @@ protected void create(string name) {
 	register_bouncer(autospam);
 	foreach (list_channel_configs(), mapping cfg) if (cfg->login)
 		if (G->G->stream_online_since[cfg->userid]) connected(cfg->login, 0, cfg->userid);
-	//Look for any lingering aliases, which shouldn't be stored in channel configs
-	foreach (list_channel_configs(), mapping cfg) if (cfg->commands) {
-		foreach (cfg->commands; string cmd; echoable_message message)
-			if (mappingp(message) && message->alias_of) {
-				echoable_message of = cfg->commands[message->alias_of];
-				if (mappingp(of) && of->aliases && has_value(of->aliases / " ", cmd)) {
-					werror("LINGERING ALIAS: %O %O %O\n", cfg->login, cmd, message->alias_of);
-					_save_echocommand(cmd + "#" + cfg->login, 0); //It's not a problem, just delete it.
-					_save_echocommand(message->alias_of + "#" + cfg->login, of); //Force recreation of the underlying command
-				}
-				//Colliding aliases are a major problem. Fix them manually; no automated fix exists.
-				else if (of) werror("COLLIDING ALIAS: %O %O %O\n", cfg->login, cmd, message->alias_of);
-				else {
-					//If the alias is just dangling, it's actually still functional, but
-					//can't be edited. Remove the alias marker and allow it to stand alone.
-					werror("DANGLING ALIAS: %O %O %O\n", cfg->login, cmd, message);
-					m_delete(message, "alias_of");
-					_save_echocommand(cmd + "#" + cfg->login, message);
-				}
-			}
-	}
-	//Look for old-style error handling
-	foreach (list_channel_configs(), mapping cfg) if (cfg->commands) {
-		foreach (cfg->commands; string cmd; echoable_message message) {
-			if (mappingp(message) && message->alias_of) continue;
-			mapping state = (["changed": 0]);
-			scan_command(state, message);
-			if (state->changed) {
-				werror("CHANGED: %O %O\n", cfg->login, cmd);
-				_save_echocommand(cmd + "#" + cfg->login, message);
-			}
-		}
-	}
 }
