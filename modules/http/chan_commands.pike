@@ -174,8 +174,8 @@ mapping _get_command(object channel, string cmd) {
 	sscanf(cmd, "%s#", cmd); //In case any command names have the channel name appended (it'll be ignored even if wrong).
 	echoable_message response = channel->commands[cmd];
 	if (!response) return 0;
-	if (mappingp(response)) return response | (["id": cmd + channel->name]);
-	return (["message": response, "id": cmd + channel->name]);
+	if (mappingp(response)) return response | (["id": cmd]);
+	return (["message": response, "id": cmd]);
 }
 
 mapping get_chan_state(object channel, string command, string|void id) {

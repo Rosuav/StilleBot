@@ -118,7 +118,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				if (!has_value(scopes[scopeset[*]], 0)) scopes_required = 0;
 		}
 		commands += ({([
-			"id": spec + req->misc->channel->name,
+			"id": spec,
 			"desc": desc, "originator": originator,
 			"params": params, "tab": tab,
 			//Null if none needed or we already have them. "bcaster" if scopes needed and we're not the broadcaster.

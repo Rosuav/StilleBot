@@ -412,7 +412,7 @@ array validate_command(object channel, string|zero mode, string cmdname, echoabl
 				else id = (string)((int)alltrig[-1]->id + 1);
 			}
 			else if (id == "validateme" || has_prefix(id, "changetab_"))
-				return ({"!trigger" + channel->name, _validate_toplevel(response, state)}); //Validate-only and ignore preexisting triggers
+				return ({channel, "!trigger", _validate_toplevel(response, state)}); //Validate-only and ignore preexisting triggers
 			else if (!(int)id) return 0; //Invalid ID
 			state->cmd = "!!trigger-" + id;
 			echoable_message trigger = _validate_toplevel(response, state);
@@ -430,7 +430,7 @@ array validate_command(object channel, string|zero mode, string cmdname, echoabl
 			}
 			alltrig -= ({""});
 			if (!sizeof(alltrig)) alltrig = ""; //No triggers left? Delete the special altogether.
-			return ({"!trigger" + channel->name, alltrig, state});
+			return ({channel, "!trigger", alltrig, state});
 		}
 		case "": case "!!": {
 			string pfx = mode[..0]; //"!" for specials, "" for normals
@@ -451,7 +451,7 @@ array validate_command(object channel, string|zero mode, string cmdname, echoabl
 			//Validate the message. Note that there will be some things not caught by this
 			//(eg trying to set access or visibility deep within the response), but they
 			//will be merely useless, not problematic.
-			return ({command + channel->name, _validate_toplevel(response, state), state});
+			return ({channel, command, _validate_toplevel(response, state), state});
 		}
 		default: return 0; //Internal error, shouldn't happen
 	}
@@ -472,7 +472,7 @@ void update_aliases(object channel, string aliases, echoable_message response, m
 void purge(object channel, string cmd, multiset updates) {
 	echoable_message prev = m_delete(channel->commands, cmd);
 	m_delete(channel->path("commands"), cmd);
-	if (prev) updates[cmd + channel->name] = 1;
+	if (prev) updates[cmd] = 1;
 	if (!mappingp(prev)) return;
 	if (prev->alias_of) purge(channel, prev->alias_of, updates);
 	if (prev->aliases) update_aliases(channel, prev->aliases, 0, updates);
@@ -515,13 +515,12 @@ void scan_for_permissions(echoable_message response, multiset need_perms) {
 }
 
 //Update (or delete) a per-channel echo command and save to disk
-void _save_echocommand(string cmd, echoable_message response, mapping|void extra)
+void _save_command(object channel, string cmd, echoable_message response, mapping|void extra)
 {
-	sscanf(cmd || "", "%[!]%s#%s", string pfx, string basename, string chan);
-	object channel = G->G->irc->channels["#" + chan]; if (!channel) error("Requires a channel name.\n");
+	sscanf(cmd, "%[!]%s#", string pfx, string basename);
 	if (basename == "") error("Requires a command name.\n");
 	multiset updates = (<cmd>);
-	purge(channel, pfx + basename, updates);
+	purge(channel, cmd, updates);
 	if (extra->?original && sscanf(extra->original, "%s#", string oldname)) purge(channel, oldname, updates); //Renaming a command requires removal of what used to be.
 	//Purge any iteration variables that begin with ".basename:" - anonymous rotations restart on
 	//any edit. This ensures that none of the anonymous ones hang around. Named ones are regular
@@ -533,8 +532,8 @@ void _save_echocommand(string cmd, echoable_message response, mapping|void extra
 		if (object handler = G->G->websocket_types->chan_variables)
 			handler->update_one(channel->name, v - "$");
 	}
-	if (response && response != "") channel->commands[pfx + basename] = channel->path("commands")[pfx + basename] = response;
-	if (mappingp(response) && response->aliases) update_aliases(channel, response->aliases, (response - (<"aliases">)) | (["alias_of": basename]), updates);
+	if (response && response != "") channel->commands[cmd] = channel->path("commands")[cmd] = response;
+	if (mappingp(response) && response->aliases) update_aliases(channel, response->aliases, (response - (<"aliases">)) | (["alias_of": cmd]), updates);
 	foreach (extra->?cooldowns || ([]); string cdname; int cdlength) {
 		//If the cooldown delay is shorter than the cooldown timeout,
 		//reset the timeout. That way, if you accidentally set a command
@@ -550,7 +549,7 @@ void _save_echocommand(string cmd, echoable_message response, mapping|void extra
 		connected(channel->config->login, 0, channel->userid);
 	}
 	if (mappingp(response) && response->redemption) {
-		channel->redemption_commands[response->redemption] += ({basename});
+		channel->redemption_commands[response->redemption] += ({cmd});
 		updates["rew " + response->redemption] = 1;
 	}
 	channel->config_save();
@@ -561,9 +560,9 @@ void _save_echocommand(string cmd, echoable_message response, mapping|void extra
 			//TODO maybe: If a command has been renamed, notify clients to rename, rather than
 			//deleting the old and creating the new.
 			if (has_prefix(cmd, "rew ")) continue;
-			if (has_prefix(cmd, "!trigger#")) handler->send_updates_all("!" + cmd);
+			if (cmd == "!trigger") handler->send_updates_all(channel, "!" + cmd);
 			else handler->update_one(channel, pfx + pfx, cmd);
-			handler->send_updates_all(cmd);
+			handler->send_updates_all(channel, cmd);
 		}
 	}
 	if (object handler = G->G->websocket_types->chan_pointsrewards) {
@@ -606,7 +605,7 @@ void _save_echocommand(string cmd, echoable_message response, mapping|void extra
 //Validate and update. Returns 0 if command was invalid, otherwise the response.
 echoable_message|zero update_command(object channel, string mode, string cmdname, echoable_message response, mapping|void options) {
 	array valid = validate_command(channel, mode, cmdname, response, options);
-	if (valid) {_save_echocommand(@valid); return valid[1];}
+	if (valid) {_save_command(@valid); return valid[1];}
 }
 
 constant builtin_description = "Manage channel commands";
@@ -696,13 +695,13 @@ mapping message_params(object channel, mapping person, array param) {
 			string cmd = command_casefold(param[1]);
 			if (!SPECIAL_NAMES[cmd] && has_value(cmd, '!')) error("Command names cannot include exclamation marks\n");
 			string newornot = channel->commands[cmd] ? "Updated" : "Created new";
-			_save_echocommand(cmd + channel->name, param[2..] * " ");
+			_save_command(channel, cmd, param[2..] * " ");
 			return (["{result}": sprintf("%s command !%s", newornot, cmd)]);
 		}
 		case "Delete": {
 			string cmd = command_casefold(param[1]);
 			if (!channel->commands[cmd]) error("No echo command with that name exists here.\n");
-			_save_echocommand(cmd + channel->name, 0);
+			_save_command(channel, cmd, 0);
 			return (["{result}": sprintf("Deleted command !%s", cmd)]);
 		}
 		default: error("Unknown subcommand\n");
