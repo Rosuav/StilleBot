@@ -379,4 +379,5 @@ protected void create(string name) {
 	if (has_value(G->G->argv, "--gideondb")) database_ips = ({"ipv4.rosuav.com", "sikorsky.rosuav.com"});
 	G->G->DB = this;
 	spawn_task(reconnect(1));
+	if (!G->G->http_sessions_deleted) G->G->http_sessions_deleted = ([]);
 }

@@ -1245,6 +1245,29 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 	if (function f = bounce(this_function)) {f(frm, conn); return;}
 	//Depending on timings, we might not have loaded the session yet. Hold all messages till we have.
 	if (arrayp(conn->session)) {conn->session += ({frm}); return;}
+	//Check for an expired session. It's highly unlikely that a websocket will be idle for a week
+	//without anything pinging the session, but much more likely that the user logs out in another
+	//tab, which should kick the websocket's session and login.
+	if (conn->session->user && !conn->session->fake && G->G->http_sessions_deleted[conn->session->cookie]) {
+		//This is only relevant if the user's logged in; otherwise, I don't think anyone will
+		//much care if a still-connected socket remains. We then keep a list of removed sessions.
+		string cookie = conn->session->cookie;
+		conn->session = ({frm});
+		spawn_task(G->G->DB->load_session(cookie)) { //TODO: Deduplicate, again
+			if (sizeof(__ARGS__[0]) < 2) {
+				//No active session. Kick the socket.
+				conn->sock->send_text(Standards.JSON.encode(([
+					"cmd": "*DC*",
+					"error": "Logged out.",
+				])));
+				return;
+			}
+			//Otherwise, we have a session, so go ahead and use it (freshly loaded).
+			array pending = conn->session;
+			conn->session = __ARGS__[0];
+			ws_msg(pending[*], conn);
+		};
+	}
 	mixed data;
 	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
 	if (!stringp(data->cmd)) return;
