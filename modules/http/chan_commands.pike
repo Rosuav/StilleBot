@@ -212,12 +212,12 @@ void wscmd_delete(object c, mapping conn, mapping msg) {wscmd_update(c, conn, ms
 
 void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string mode] = split_channel(conn->group);
-	if (!channel) return 0;
+	if (!channel) return 0; //Fake-mod mode is okay here (this handles tab switching inside the editor)
 	array valid = G->G->cmdmgr->validate_command(channel, mode, msg->cmdname || "validateme", msg->response, ([
 		"original": msg->original,
 		"language": msg->language == "mustard" ? "mustard" : "",
 	]));
-	if (!valid) { //But it's okay if the name is invalid, or in demo mode (fake-mod)
+	if (!valid) {
 		if (has_prefix(msg->cmdname, "changetab_"))
 			conn->sock->send_text(Standards.JSON.encode((["cmd": "changetab_failed"]), 4));
 		return;
@@ -225,10 +225,10 @@ void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) ms
 	if (msg->cmdname == "changetab_mustard") {
 		//HACK: Currently using the changetab name to request MustardScript.
 		//TODO: Do this properly somehow.
-		valid[1] = G->G->mustard->make_mustard(valid[1]);
+		valid[2] = G->G->mustard->make_mustard(valid[2]);
 	}
-	string cmdname = ((msg->cmdname || valid[0] || "validateme") / "#")[0];
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[1]]), 4));
+	string cmdname = ((msg->cmdname || valid[1] || "validateme") / "#")[0];
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[2]]), 4));
 }
 
 protected void create(string name) {
