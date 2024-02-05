@@ -90,13 +90,16 @@ Name | Value | Actions | Usage
 loading... | - | - | -
 {:#variables}
 
-- | - | Add commands for a counter variable by filling in these details. Anything left blank will be omitted.
-------|---|---
-Variable name: | <input name=newcounter placeholder=\"deaths\"> | Identifying keyword for this counter%{
-%[0]s: | <input name=%[0]scmd placeholder=%[1]q> | <input name=%[0]sresp class=widetext placeholder=%[2]q><br>%[3]s%}
-{:#newcounter}
+&nbsp; <-- bit of a gap here, semantically as well as visually -->
 
-<input type=submit value=\"Add counter commands\">
+> - | - | Add commands for a counter variable by filling in these details. Anything left blank will be omitted.
+> ------|---|---
+> Variable name: | <input name=newcounter placeholder=\"deaths\"> | Identifying keyword for this counter%{
+> %[0]s: | <input name=%[0]scmd placeholder=%[1]q> | <input name=%[0]sresp class=widetext placeholder=%[2]q><br>%[3]s%}
+> {:#newcounter}
+>
+> <input type=submit value=\"Add counter commands\">
+{:tag=form method=post}
 
 To customize the commands, [use the gear button on the Commands page](commands).
 
@@ -137,7 +140,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (req->misc->is_mod && !req->misc->session->fake && sscanf(req->variables->newcounter || "", "%[a-zA-Z]", string counter) && counter != "")
 	{
 		//Create some simple commands. This isn't designed for editing, although
-		//it will overwrite if given a duplicate name.
+		//it will overwrite if given a duplicate name. TODO: Replace the CGI form
+		//here with something done in JS on the front end. Stick it in a dialog,
+		//too - the inputs don't need to be hanging around all the time.
 		foreach (newcommands, array info)
 		{
 			string kw = info[0]; mapping attr = info[1]; //Ignore the spare elements in info
