@@ -52,18 +52,13 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				->data[0];
 		if (function f = login_callback[req->variables->state])
 			return f(req, user, (multiset)(req->variables->scope / " "), auth->access_token, cookie);
-		string dest = m_delete(req->misc->session, "redirect_after_login");
-		if (!dest || dest == req->not_query || has_prefix(dest + "?", req->not_query))
-		{
-			//If no destination was given, try to figure out a plausible default.
-			//For streamers, redirect to the stream's landing page. Doesn't work
-			//for mods, as there might be more than one (and we'd need permission
-			//to do a sword hunt anyway).
-			object channel = G->G->irc->channels["#" + user->login];
-			if (channel && channel->config->active)
-				dest = "/channels/" + user->login + "/";
-			else dest = "/login_ok";
-		}
+		//Try to figure out a plausible place to send the person after login.
+		//For streamers, redirect to the stream's landing page. Doesn't work
+		//for mods, as there might be more than one (and we'd need permission
+		//to do a sword hunt anyway).
+		string dest = "/login_ok";
+		object channel = G->G->irc->channels["#" + user->login];
+		if (channel && channel->config->active) dest = "/channels/" + user->login + "/";
 		resend_redirect[req->variables->code] = dest;
 		call_out(m_delete, 30, resend_redirect, req->variables->code);
 		login_popup_done(req, user, (multiset)(req->variables->scope / " "), auth->access_token, cookie);
