@@ -1,5 +1,4 @@
 twitchbot_*.json
-twitchbot_sessions.db
 *.log
 *.pem
 httpstatic/atc-*.json

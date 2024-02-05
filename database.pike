@@ -263,6 +263,7 @@ void save_session(mapping data) {
 }
 
 continue Concurrent.Future|mapping load_session(string cookie) {
+	if (!cookie || cookie == "") return ([]); //Will trigger new-cookie handling on save
 	if (!active) yield(await_active());
 	array rows = yield((mixed)query(pg_connections[active], "select data from stillebot.http_sessions where cookie = :cookie",
 		(["cookie": cookie])));
