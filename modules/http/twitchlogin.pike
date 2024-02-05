@@ -57,7 +57,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		{
 			//If no destination was given, try to figure out a plausible default.
 			//For streamers, redirect to the stream's landing page. Doesn't work
-			//for mods, as we have no easy way to check which channel(s).
+			//for mods, as there might be more than one (and we'd need permission
+			//to do a sword hunt anyway).
 			object channel = G->G->irc->channels["#" + user->login];
 			if (channel && channel->config->active)
 				dest = "/channels/" + user->login + "/";

@@ -258,7 +258,10 @@ continue Concurrent.Future|mapping load_config(string|int twitchid, string kwd) 
 //The mapping MUST include a 'cookie' which is a short string.
 void save_session(mapping data) {
 	if (!stringp(data->cookie)) return;
-	spawn_task(save_to_db("insert into stillebot.http_sessions (cookie, data) values (:cookie, :data) on conflict (cookie) do update set data=:data, active = now()",
+	if (sizeof(data) == 1)
+		//Saving (["cookie": "nomnom"]) with no data will delete the session.
+		spawn_task(save_to_db("delete from stillebot.http_sessions where cookie = :cookie", data));
+	else spawn_task(save_to_db("insert into stillebot.http_sessions (cookie, data) values (:cookie, :data) on conflict (cookie) do update set data=:data, active = now()",
 		(["cookie": data->cookie, "data": encode_value(data)])));
 }
 

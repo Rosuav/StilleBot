@@ -489,8 +489,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 			//logout link?
 			werror("RAIDFINDER: Failed to fetch, revoking login\n");
 			werror("%s\n", describe_backtrace(ex));
-			m_delete(G->G->http_sessions, req->misc->session->cookie);
-			req->misc->session = ([]);
+			req->misc->session = (["hacky": "hack"]); //Ensure that a new session is created
 			werror("RAIDFINDER: Returning login page\n");
 			return ensure_login(req, "user:read:follows");
 		}

@@ -3,7 +3,7 @@ inherit http_endpoint;
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
-	m_delete(G->G->http_sessions, req->misc->session->cookie);
+	G->G->DB->save_session((["cookie": req->misc->session->cookie]));
 	req->misc->session = ([]); //Prevent session recreation
 	return ([
 		"data": "You are now logged out.",
