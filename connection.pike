@@ -1263,8 +1263,10 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 				return;
 			}
 			//Otherwise, we have a session, so go ahead and use it (freshly loaded).
+			//And we can drop it from the deleted list, so we don't keep checking.
 			array pending = conn->session;
 			conn->session = __ARGS__[0];
+			m_delete(G->G->http_sessions_deleted, conn->session->cookie);
 			ws_msg(pending[*], conn);
 		};
 	}

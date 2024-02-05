@@ -57,6 +57,10 @@ constant tables = ([
 		"cookie varchar primary key",
 		"active timestamp with time zone default now()",
 		"data bytea not null",
+		//Also not tested.
+		//"create or replace function send_session_notification() returns trigger language plpgsql as $$begin perform pg_notify('stillebot.http_sessions', old.cookie); return null; end$$;",
+		//"create or replace trigger http_session_deleted after delete on stillebot.http_sessions for each row execute function send_session_notification();",
+		//"alter table stillebot.http_sessions enable always trigger http_session_deleted;",
 	}),
 	//TODO: Have a trigger that fires any time ANY table with a twitchid is updated, sending
 	//a notification that includes both the table name (maybe) and the twitchid (definitely).
@@ -157,6 +161,11 @@ void notify_settings_change(int pid, string cond, string extra, string host) {
 	spawn_task(fetch_settings(pg_connections[host]));
 }
 
+void notify_session_gone(int pid, string cond, string extra, string host) {
+	werror("SESSION DELETED [%s, %s]\n", cond, extra);
+	G->G->http_sessions_deleted[extra] = 1;
+}
+
 continue Concurrent.Future connect(string host) {
 	werror("Connecting to Postgres on %O...\n", host);
 	mapping db = pg_connections[host] = (["host": host]); //Not a floop, strings are just strings :)
@@ -172,6 +181,7 @@ continue Concurrent.Future connect(string host) {
 		]));
 		db->conn->set_notify_callback("readonly", notify_readonly, 0, host);
 		db->conn->set_notify_callback("stillebot.settings", notify_settings_change, 0, host);
+		db->conn->set_notify_callback("stillebot.http_sessions", notify_session_gone, 0, host);
 		db->conn->set_notify_callback("", notify_unknown, 0, host);
 		//Sometimes, the connection fails, but we only notice it here at this point when the
 		//first query goes through. It won't necessarily even FAIL fail, it just stalls here.
@@ -186,6 +196,7 @@ continue Concurrent.Future connect(string host) {
 		break;
 	}
 	yield((mixed)query(db, "listen \"stillebot.settings\""));
+	yield((mixed)query(db, "listen \"stillebot.http_sessions\""));
 	string ro = yield((mixed)query(db, "show default_transaction_read_only"))[0]->default_transaction_read_only;
 	werror("Connected to %O - %s.\n", host, ro == "on" ? "r/o" : "r-w");
 	if (ro == "on") {
