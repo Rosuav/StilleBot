@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, LABEL, INPUT, TR, TD} = choc;
+const {A, BUTTON, INPUT, LABEL, OPTION, SELECT, TD, TR} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#trackers tbody");
@@ -11,7 +11,14 @@ export function render_item(msg, obj) {
 			INPUT({name: "font", value: msg.font || ""}),
 			INPUT({name: "fontsize", type: "number", value: msg.fontsize || 18}),
 		]),
-		TD(INPUT({name: "goal", type: "number", value: msg.goal || 0})),
+		TD([
+			INPUT({name: "goal", type: "number", value: msg.goal || 0}),
+			SELECT({name: "goaltype", value: msg.goaltype || "points"}, [
+				OPTION({value: "points"}, "points"),
+				OPTION({value: "subs"}, "subs"),
+				OPTION({value: "plus"}, "Plus points"),
+			]),
+		]),
 		TD([
 			LABEL([INPUT({name: "usecomfy", type: "checkbox", checked: msg.usecomfy}), "Use chat notifications"]),
 		]),
@@ -36,7 +43,7 @@ on("click", "#add_tracker", e => {
 on("click", ".savebtn", e => {
 	const tr = e.match.closest("tr");
 	const msg = {cmd: "save", id: tr.dataset.id};
-	tr.querySelectorAll("input").forEach(inp => msg[inp.name] = inp.type == "checkbox" ? inp.checked : inp.value);
+	tr.querySelectorAll("input,select").forEach(inp => msg[inp.name] = inp.type === "checkbox" ? inp.checked : inp.value);
 	ws_sync.send(msg);
 });
 

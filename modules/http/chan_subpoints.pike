@@ -17,27 +17,29 @@ loading... | - | - | - | - | -
 * Changing the font or options will require a refresh of the in-OBS page
 * In-chat notifications add load to your OBS, but *might* improve reliability.
   Regardless of this setting, an event hook will be active, which may be sufficient.
+* \"Plus Points\" here are calculated simplistically by excluding gift subs. This only
+  very roughly approximates to Twitch's calculation, and discrepancies can be expected.
 ";
 
 constant tiers = (["1000": 1, "2000": 2, "3000": 6]); //Sub points per tier
 
 mapping subpoints_cooldowns = ([]);
 
-void delayed_get_sub_points(Concurrent.Promise p, string chan) {
+void delayed_get_sub_points(Concurrent.Promise p, string chan, string|void type) {
 	m_delete(subpoints_cooldowns, chan);
-	spawn_task(get_sub_points(chan), p->success);
+	spawn_task(get_sub_points(chan, type), p->success);
 }
 
-continue int|array|Concurrent.Future get_sub_points(string chan, int|void raw)
+continue int|array|Concurrent.Future get_sub_points(string chan, string|void type)
 {
-	if (!raw) {
+	if (type == "raw") {
 		array cd = subpoints_cooldowns[chan];
 		if (cd && cd[1]) return yield(cd[1]);
 		if (cd && cd[0] > time()) {
 			//Not using task_sleep to ensure that it's reusable. We want multiple
 			//clients to all wait until there's a result, then return the same.
 			Concurrent.Promise p = Concurrent.Promise();
-			call_out(delayed_get_sub_points, cd[0] - time(), p, chan);
+			call_out(delayed_get_sub_points, cd[0] - time(), p, chan, type);
 			cd[1] = p->future();
 			return yield(cd[1]);
 		}
@@ -47,11 +49,16 @@ continue int|array|Concurrent.Future get_sub_points(string chan, int|void raw)
 	array info = yield(get_helix_paginated("https://api.twitch.tv/helix/subscriptions",
 		(["broadcaster_id": (string)uid, "first": "99"]),
 		(["Authorization": "Bearer " + token_for_user_id(uid)[0]])));
-	if (raw) return info;
+	if (type == "raw") return info;
 	int points = 0;
 	foreach (info, mapping sub)
-		if (sub->user_id != sub->broadcaster_id) //Ignore self
-			points += tiers[sub->tier] || 10000; //Hack: Big noisy thing if the tier is broken
+		if (sub->user_id != sub->broadcaster_id) { //Ignore self
+			switch (type) {
+				case "subs": points += 1; break;
+				case "plus": if (!sub->is_gift) points += tiers[sub->tier] || 10000; break;
+				default: points += tiers[sub->tier] || 10000; break; //Hack: Big noisy thing if the tier is broken
+			}
+		}
 	return points;
 }
 
@@ -80,7 +87,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		//&& !is_localhost_mod(req->misc->session->user->?login, req->get_ip()) //But testing may at times be needed.
 	)
 		return render_template("login.md", (["msg": "authentication as the broadcaster"]));
-	array info = yield((mixed)get_sub_points(chan, 1));
+	array info = yield((mixed)get_sub_points(chan, "raw"));
+	if (req->variables->raw) return render(req, ([
+		"vars": (["ws_group": ""]),
+		"points": sprintf("<pre>%O</pre>", info),
+	]) | req->misc->chaninfo);
 	mapping(string:int) tiercount = ([]), gifts = ([]);
 	array(string) tierlist = ({ });
 	mapping(string|int:mapping) usersubs = ([]);
@@ -161,8 +172,9 @@ continue mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	hook_submessage(chan, (["broadcaster_user_id": (string)uid]));
 	if (grp != "") {
 		if (!trackers[grp]) return (["data": 0]); //If you delete the tracker with the page open, it'll be a bit ugly.
-		int points = yield((mixed)get_sub_points(channel->name[1..]));
-		Stdio.append_file("evt_subpoints.log", sprintf("Fresh load, subpoint count: %d\n", points));
+		string type = trackers[grp]->goaltype || "points";
+		int points = yield((mixed)get_sub_points(channel->name[1..], type));
+		Stdio.append_file("evt_subpoints.log", sprintf("Fresh load, subpoint count: %d %s\n", points, type));
 		return trackers[grp] | (["points": points - (int)trackers[grp]->unpaidpoints]);
 	}
 	if (id) return trackers[id];
@@ -185,7 +197,7 @@ void websocket_cmd_save(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (grp != "") return;
 	mapping tracker = channel->config->subpoints[?msg->id];
 	if (!tracker) return;
-	foreach ("unpaidpoints font fontsize goal usecomfy" / " ", string k)
+	foreach ("unpaidpoints font fontsize goal goaltype usecomfy" / " ", string k)
 		if (!undefinedp(msg[k])) tracker[k] = msg[k];
 	channel->config_save();
 	send_updates_all(conn->group);
