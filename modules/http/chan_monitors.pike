@@ -20,7 +20,7 @@ constant vars_provided = ([
 
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
 constant saveable_attributes = "previewbg barcolor fillcolor needlesize thresholds progressive lvlupcmd format width height "
-	"active bit sub_t1 sub_t2 sub_t3 tip follow kofi_dono kofi_member kofi_renew kofi_shop" / " " + TEXTFORMATTING_ATTRS;
+	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop" / " " + TEXTFORMATTING_ATTRS;
 constant valid_types = (<"text", "goalbar", "countdown">);
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -169,14 +169,15 @@ int message(object channel, mapping person, string msg)
 @hook_subscription:
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type == "subbomb") return 0; //Sometimes sub bombs come through AFTER their constituent parts :( Safer to count the parts and skip the bomb.
-	autoadvance(channel, person, "sub_t" + tier, qty);
+	autoadvance(channel, person, "sub_t" + tier, qty, type == "subgift");
 }
 
 //Note: Use the builtin to advance bars from a command/trigger/special.
 //Otherwise, simply assigning to the variable won't trigger the level-up command.
-void autoadvance(object channel, mapping person, string key, int weight) {
+void autoadvance(object channel, mapping person, string key, int weight, int|void isgift) {
 	foreach (channel->config->monitors || ([]); string id; mapping info) {
 		if (info->type != "goalbar" || !info->active) continue;
+		if (isgift && info->exclude_gifts) continue;
 		int advance = key == "" ? weight : weight * (int)info[key];
 		if (!advance) continue;
 		sscanf(info->text, "$%s$:%s", string varname, string txt);
