@@ -10,6 +10,7 @@ mapping irc_connections = ([]); //Not persisted across code reloads, but will be
 @retain: mapping channelcolor = ([]);
 @retain: mapping cooldown_timeout = ([]);
 @retain: mapping nonce_callbacks = ([]);
+int(1bit) is_active; //Cache of is_active_bot() since we need to check it freuqently.
 
 //Return the channel config mapping if this is an active channel, or 0
 //NOTE: This returns a non-live config copy. Do not mutate it. If you
@@ -1275,7 +1276,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 	if (!stringp(data->cmd)) return;
 	if (data->cmd == "init")
 	{
-		if (string other = !is_active_bot() && get_active_bot()) {
+		if (string other = !is_active && get_active_bot()) {
 			//If we are definitely not active and there's someone who is,
 			//send the request over there instead. Browsers don't all follow
 			//302 redirects for websockets, and even if they did, session and
@@ -1391,7 +1392,8 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 }
 
 @hook_database_settings: void kick_when_inactive(mapping settings) {
-	string other = !is_active_bot() && get_active_bot();
+	is_active = is_active_bot(); //Cache it - we'll check this a lot
+	string other = !is_active && get_active_bot();
 	if (!other) return; //We're active (or uncertain), don't kick clients.
 	foreach (G->G->websocket_groups; string type; mapping groups)
 		foreach (groups; string group; array socks)
@@ -1459,6 +1461,7 @@ void send_message(string chan, string msg) {if (irc_connections[0]) irc_connecti
 protected void create(string name)
 {
 	::create(name);
+	is_active = is_active_bot();
 	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
 	session_cleanup();
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
