@@ -76,7 +76,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	if (string scopes = ensure_bcaster_token(req, "channel:read:subscriptions"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]));
 	string chan = req->misc->channel->name[1..];
-	if (req->misc->session->user->?login != chan) //This is sensitive information, so it's broadcaster-only.
+	if (req->misc->session->user->?login != chan //This is sensitive information, so it's broadcaster-only.
+		//&& !is_localhost_mod(req->misc->session->user->?login, req->get_ip()) //But testing may at times be needed.
+	)
 		return render_template("login.md", (["msg": "authentication as the broadcaster"]));
 	array info = yield((mixed)get_sub_points(chan, 1));
 	mapping(string:int) tiercount = ([]), gifts = ([]);
