@@ -806,6 +806,8 @@ class channel(mapping config) {
 	//the message ID that just got sent.
 	void send(mapping person, echoable_message message, mapping|void vars, function|void callback)
 	{
+		if (!is_active) Stdio.append_file("inactivebot.log", sprintf(#"==================\n%sInactive bot sending message:\nperson %O\nmessage %O\nvars %O\n%s\n",
+			ctime(time()), person, message, vars, describe_backtrace(backtrace())));
 		vars = get_channel_variables(person->uid) | (vars || ([]));
 		vars["$$"] = person->displayname || person->user;
 		vars["{uid}"] = (string)person->uid; //Will be "0" if no UID known
@@ -823,6 +825,7 @@ class channel(mapping config) {
 
 	void record_raid(int fromid, string fromname, int toid, string toname, int|void ts, int|void viewers)
 	{
+		if (!is_active) return;
 		write("Detected a raid: %O %O %O %O %O\n", fromid, fromname, toid, toname, ts);
 		if (!ts) ts = time();
 		//JavaScript timestamps seem to be borked (given in ms instead of seconds).
@@ -859,6 +862,7 @@ class channel(mapping config) {
 
 	mapping subbomb_ids = ([]);
 	void irc_message(string type, string chan, string msg, mapping params) {
+		if (!is_active) return;
 		mapping(string:mixed) person = gather_person_info(params, msg);
 		if (person->uid) user_attrs[person->uid] = person;
 		mapping responsedefaults;
@@ -1249,6 +1253,10 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 	//Check for an expired session. It's highly unlikely that a websocket will be idle for a week
 	//without anything pinging the session, but much more likely that the user logs out in another
 	//tab, which should kick the websocket's session and login.
+	//Note that this is the only place we reload the session. Changes to an existing session are not
+	//currently picked up. That means, if you log in again (eg to add scopes), the token will most
+	//likely be broken. This may require redefining "http_sessions_deleted" to "session_login_changed"
+	//or something, and using it for both. Reconsider this if tokens get removed from session though.
 	if (conn->session->user && !conn->session->fake && G->G->http_sessions_deleted[conn->session->cookie]) {
 		//This is only relevant if the user's logged in; otherwise, I don't think anyone will
 		//much care if a still-connected socket remains. We then keep a list of removed sessions.
@@ -1392,7 +1400,9 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 }
 
 @hook_database_settings: void kick_when_inactive(mapping settings) {
-	is_active = is_active_bot(); //Cache it - we'll check this a lot
+	int now_active = is_active_bot();
+	if (now_active && !is_active) call_out(reconnect, 0); //Just become active? Make sure we're connected.
+	is_active = now_active;
 	string other = !is_active && get_active_bot();
 	if (!other) return; //We're active (or uncertain), don't kick clients.
 	foreach (G->G->websocket_groups; string type; mapping groups)
@@ -1432,6 +1442,10 @@ void reconnect() {
 		irc->id[c->userid] = c;
 	}
 	G->G->irc = irc;
+	//If we're not active, don't bother connecting. This doesn't stop us from BEING
+	//connected (if we've been deactivated), but we will ignore all messages that
+	//come in. OTOH, if we become active after previously not, we need to connect.
+	if (!is_active) return;
 	channels = filter("#" + channels->login[*]) {return __ARGS__[0][1] != '!';};
 	//Deal the channels out into N piles based on available users. Any spares
 	//go onto the primary channel. This speeds up initial connection when there
@@ -1461,7 +1475,7 @@ void send_message(string chan, string msg) {if (irc_connections[0]) irc_connecti
 protected void create(string name)
 {
 	::create(name);
-	is_active = is_active_bot();
+	is_active = is_active_bot(); //Cache it - we'll check this a lot
 	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
 	session_cleanup();
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);

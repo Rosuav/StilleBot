@@ -792,23 +792,28 @@ void poll()
 			->on_success(check_hooks);
 }
 
+int(1bit) is_active; //Last-known active state
+@hook_database_settings: void poll_only_when_active(mapping settings) {
+	int now_active = is_active_bot();
+	if (now_active == is_active) return;
+	is_active = now_active;
+	if (is_active) poll();
+	else remove_call_out(m_delete(G->G, "poll_call_out"));
+}
+
 protected void create(string|void name)
 {
 	if (!G->G->uid_to_name) {
+		//TODO: Move these to Postgres
 		G->G->uid_to_name = ([]);
 		G->G->name_to_uid = ([]);
 		catch {[G->G->uid_to_name, G->G->name_to_uid] = Standards.JSON.decode(Stdio.read_file("twitchbot_uids.json"));};
-		//Migrate UID mappings from persist
-		mapping u2n = m_delete(persist_status, "uid_to_name");
-		mapping n2u = m_delete(persist_status, "name_to_uid");
-		if (u2n && !sizeof(G->G->uid_to_name)) G->G->uid_to_name = u2n;
-		if (n2u && !sizeof(G->G->name_to_uid)) G->G->name_to_uid = n2u;
-		if (u2n || n2u) {persist_status->save(); Stdio.write_file("twitchbot_uids.json", Standards.JSON.encode(({G->G->uid_to_name, G->G->name_to_uid})), 1);}
 	}
 
+	is_active = is_active_bot();
 	remove_call_out(G->G->poll_call_out);
 	#if !constant(INTERACTIVE)
-	poll();
+	if (is_active) poll();
 	#endif
 	::create(name);
 }
