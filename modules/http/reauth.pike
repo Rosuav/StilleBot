@@ -27,12 +27,13 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (sscanf(key, "scope-%s", string scope) && scope && scope != "") scopes[scope] = 1;
 	if (mapping resp = ensure_login(req, indices(scopes) * " ")) return resp;
 	string desc = "Login details saved.";
-	if (config->nick == req->misc->session->user->login) {
+	if (G->G->dbsettings->credentials->userid == req->misc->session->user->id) {
 		config->pass = "oauth:" + req->misc->session->token;
 		config->scopes = sort(indices(req->misc->session->scopes));
 		persist_config->save();
 		mapping c = G->G->dbsettings->credentials | ([
 			"username": req->misc->session->user->login,
+			"userid": req->misc->session->user->id,
 			"token": req->misc->session->token,
 			"scopes": sort(indices(req->misc->session->scopes)),
 		]);
