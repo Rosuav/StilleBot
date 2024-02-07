@@ -797,8 +797,10 @@ int(1bit) is_active; //Last-known active state
 	int now_active = is_active_bot();
 	if (now_active == is_active) return;
 	is_active = now_active;
+	#if !constant(INTERACTIVE)
 	if (is_active) poll();
 	else remove_call_out(m_delete(G->G, "poll_call_out"));
+	#endif
 }
 
 protected void create(string|void name)
