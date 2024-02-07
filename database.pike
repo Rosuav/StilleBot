@@ -181,10 +181,10 @@ continue Concurrent.Future connect(string host) {
 		db->conn = Sql.Sql("pgsql://rosuav@" + host + "/stillebot", ([
 			"force_ssl": 1, "ssl_context": ctx, "application_name": "stillebot",
 		]));
-		db->conn->set_notify_callback("readonly", notify_readonly, 0, host);
-		db->conn->set_notify_callback("stillebot.settings", notify_settings_change, 0, host);
-		db->conn->set_notify_callback("stillebot.http_sessions", notify_session_gone, 0, host);
-		db->conn->set_notify_callback("", notify_unknown, 0, host);
+		db->conn->set_notify_callback("readonly", notify_readonly, 1, host);
+		db->conn->set_notify_callback("stillebot.settings", notify_settings_change, 1, host);
+		db->conn->set_notify_callback("stillebot.http_sessions", notify_session_gone, 1, host);
+		db->conn->set_notify_callback("", notify_unknown, 1, host);
 		//Sometimes, the connection fails, but we only notice it here at this point when the
 		//first query goes through. It won't necessarily even FAIL fail, it just stalls here.
 		//So we limit how long this can take. When working locally, it takes about 100ms or
