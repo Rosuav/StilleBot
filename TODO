@@ -321,13 +321,6 @@
   the bot notifies systemd that it's reloading, then that it's ready, and can report
   failure so the terminal gets an immediate response. (Failure details will of course
   be in the log.)
-* Postgres config: Which bot is active? If it's you, all is well. If not, do not send
-  any channel responses, and forward all notifications to the active bot. If no bot
-  is active, queue all notifications for subsequent handling or forwarding.
-  - Bot should be able to fully boot in "inactive" mode, get everything initialized,
-    and then be activated as a near-atomic action.
-  - Disallow any websocket connections if bot is inactive. If there is an active bot,
-    return a 302 redirect to the active bot by its specific domain name.
 * Come up with a good API for maintaining transactional integrity in database.pike
   - Will need to be able to submit a batch of changes which will become a transaction.
   - If anything happens, requeue the entire transaction as a block.
