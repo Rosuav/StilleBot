@@ -65,21 +65,6 @@ class menu_clicked
 
 	void makewindow()
 	{
-		if (!persist_config["explorer_active"])
-		{
-			win->mainwindow->add(GTK2.Vbox(0,0)
-				->add(GTK2.Label(#"CAUTION: This will reveal a lot of deep internals
-which are of interest only to developers, and may be confusing even to
-ubernerds. Changing anything here may break StilleBot in ways which may not
-even be obvious at first. Click the button below when you have understood
-the consequences of this."))
-				->add(GTK2.HbuttonBox()
-					->add(win->do_as_i_say=GTK2.Button("Yes, do as I say"))
-					->add(stock_close())
-				)
-			);
-			return;
-		}
 		win->store = GTK2.TreeStore(({"string"}));
 		//Completely ephemeral - discarded on program restart. Survives code reload.
 		add_to_store(G->G, "G");
@@ -100,12 +85,5 @@ the consequences of this."))
 			)
 			->pack_start(GTK2.HbuttonBox()->add(stock_close()), 0, 0, 0)
 		);
-	}
-
-	void sig_do_as_i_say_clicked()
-	{
-		persist_config["explorer_active"] = 1;
-		closewindow();
-		menu_clicked();
 	}
 }
