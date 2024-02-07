@@ -116,5 +116,7 @@ protected void create() {
 	config->path("ircsettings"); //Ensure that this key exists, it's the most important one
 	add_constant("persist_config", config);
 	add_constant("persist_status", status);
+	//Bootstrapping: Ensure that we know the bot's UID.
+	G->G->bot_uid = config["bot_uid"] || "49497888"; //Hack: Use my ID if it isn't set.
 }
 #endif

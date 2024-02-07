@@ -83,8 +83,7 @@ mapping cached_user_info(int|string user) {
 			//In Mustard Mine, the only remaining place is PUT /kraken/channels which we
 			//don't use here, but are there any others?
 			//20200511: It seems emote lookups require "OAuth" instead of "Bearer". Sheesh.
-			sscanf(persist_config["ircsettings"]["pass"] || "o", "oauth:%s", string pass);
-			if (pass) headers["Authorization"] = (options->authtype || "Bearer") + " " + pass;
+			headers["Authorization"] = (options->authtype || "Bearer") + " " + G->G->dbsettings->credentials->token;
 		}
 	}
 	if (string c = !headers["Client-ID"] && persist_config["ircsettings"]["clientid"])

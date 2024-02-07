@@ -138,16 +138,16 @@ class ircsettings
 {
 	inherit window;
 	constant windowtitle = "Authenticate StilleBot";
-	mapping config = persist_config["ircsettings"];
+	mapping config = G->G->dbsettings->credentials | persist_config["ircsettings"];
 
 	void makewindow()
 	{
 		win->mainwindow->add(two_column(({
-			"Twitch user name", win->nick=GTK2.Entry()->set_size_request(400, -1)->set_text(config->nick||""),
-			"Real name (optional)", win->realname=GTK2.Entry()->set_size_request(400, -1)->set_text(config->realname||""),
+			"Twitch user name", win->username=GTK2.Entry()->set_size_request(400, -1)->set_text(config->username||""),
+			"Real name (optional)", win->display_name=GTK2.Entry()->set_size_request(400, -1)->set_text(config->display_name||""),
 			"Client ID (optional)", win->clientid=GTK2.Entry()->set_size_request(400, -1)->set_text(config->clientid||""),
 			"Client Secret (optional)", win->clientsecret=GTK2.Entry()->set_size_request(400, -1)->set_visibility(0),
-			"OAuth2 key", win->pass=GTK2.Entry()->set_size_request(400, -1)->set_visibility(0),
+			"OAuth2 token", win->token=GTK2.Entry()->set_size_request(400, -1)->set_visibility(0),
 			GTK2.Label("Keys will not be shown above. Obtain"),0,
 			GTK2.Label("one from twitchapps and paste it in."),0,
 			"Web config address (optional)", win->http_address=GTK2.Entry()->set_size_request(400, -1)->set_text(config->http_address||""),
@@ -162,21 +162,26 @@ class ircsettings
 
 	void sig_save_clicked()
 	{
-		config->nick = win->nick->get_text();
-		config->realname = win->realname->get_text();
-		config->clientid = win->clientid->get_text();
+		mapping c = G->G->dbsettings->credentials | ([
+			"username": win->username->get_text(),
+			"display_name": win->display_name->get_text(),
+		]);
+		persist_config["ircsettings"]->clientid = win->clientid->get_text();
 		string secret = win->clientsecret->get_text();
-		if (secret != "") config->clientsecret = secret;
-		string pass = win->pass->get_text();
-		if (has_prefix(pass, "oauth:")) config->pass = pass;
-		config->http_address = win->http_address->get_text();
-		if (!sscanf(config->http_address, "http%*[s]://%s", string addr) || !addr)
-			config->http_address = "http://" + config->http_address;
-		if (has_suffix(config->http_address, "/")) config->http_address = config->http_address[..<1]; //Strip trailing slash
-		config->listen_address = win->listen_address->get_text();
+		if (secret != "") persist_config["ircsettings"]->clientsecret = secret;
+		string token = win->token->get_text();
+		if (token != "") c->token = token;
+		string address = win->http_address->get_text();
+		if (!sscanf(address, "http%*[s]://%s", string addr) || !addr)
+			address = "http://" + address;
+		if (has_suffix(address, "/")) address = address[..<1]; //Strip trailing slash
+		persist_config["ircsettings"]->http_address = address;
+		persist_config["ircsettings"]->listen_address = win->listen_address->get_text();
 		persist_config->save();
+		werror("Saving to DB.\n");
+		spawn_task(G->G->DB->generic_query("update stillebot.settings set credentials = :c",
+			(["c": Standards.JSON.encode(c, 4)])));
 		closewindow();
-		if (!G->G->irc) G->bootstrap_all(); //Force an update to get us connected.
 	}
 }
 

@@ -153,9 +153,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		return redirect("vlc");
 	}
 	if (req->misc->is_mod && !req->misc->session->fake && req->variables->lua) {
-		mapping cfg = persist_config["ircsettings"];
 		mapping resp = render_template("vlcstillebot.lua", ([
-			"url": cfg->http_address + req->not_query,
+			"url": persist_config["ircsettings"]->http_address + req->not_query,
 			"auth": auth_token(channel),
 		]));
 		resp->type = "application/x-lua";

@@ -280,9 +280,8 @@ string|zero send_chat_command(string msg, object channel, string voiceid) {
 	mapping tok = persist_status["voices"][voiceid];
 	if (!voiceid || voiceid == "0") {
 		voiceid = (string)G->G->bot_uid;
-		mapping config = persist_config["ircsettings"];
-		sscanf(config["pass"] || "o", "oauth:%s", string pass);
-		tok = (["token": pass, "scopes": config->scopes || ({"whispers:edit"})]);
+		tok = (["token": G->G->dbsettings->credentials->token,
+			"scopes": G->G->dbsettings->credentials->scopes || ({"whispers:edit"})]);
 	}
 	if (!has_value(tok->scopes, need_scope[cmd])) {
 		channel->report_error("ERROR", "This command requires " + need_scope[cmd] + " permission", msg);

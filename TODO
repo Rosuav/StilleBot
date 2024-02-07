@@ -299,8 +299,7 @@
   has to explicitly choose to hide explicit content), and if the user prefs are made
   visible, query them in the raid finder and do what the user wants.
 * Migrate most configs into Postgres, but leave a few in persist_config.json.
-  - Retain explorer_active?
-  - Retain ircsettings for clientid, clientsecret, http_address, listen_address
+  - Retain clientid, clientsecret, http_address, listen_address, http_forwarded
   - Everything else from ircsettings should go into PG, as it can be updated by the
     /reauth endpoint.
   - No need for persist_config->save() now, so it's just some global configs that

@@ -2,7 +2,6 @@ inherit hook;
 inherit irc_callback;
 inherit annotated;
 
-string bot_nick;
 mapping simple_regex_cache = ([]); //Emptied on code reload.
 object substitutions = Regexp.PCRE("(\\$[*?A-Za-z0-9|]*\\$)|({[A-Za-z0-9_@|]+})");
 constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT", "USERSTATE"});
@@ -1485,17 +1484,13 @@ protected void create(string name)
 		//Hack to enable fakecheers to look like emotes
 		c->fakecheer = c->cheerwhal;
 	};
-	if (mapping irc = persist_config["ircsettings"])
+	if (mapping irc = persist_config["ircsettings"]) //Now less about IRC than HTTP but whatever
 	{
-		bot_nick = irc->nick || "";
 		array voices = values(get_channel_config(0)->?voices || ({ }));
 		sort((array(int))voices->id, voices);
-		foreach (voices; int i; mapping v) if (lower_case(v->name) == lower_case(bot_nick)) voices[i] = 0;
-		//Sharding temporarily disabled :( As of 20230515, this is a probable culprit in the "can't seem to
-		//stay connected" issues. Let's see if it's better. CJA 20230519: Reenabling to see if stuff breaks.
+		foreach (voices; int i; mapping v) if (v->id == G->G->bot_uid) voices[i] = 0;
 		shard_voices = ({0}) + (voices - ({0})); //Move the null entry (for intrinsic voice) to the start
 		reconnect();
-		if (bot_nick != "") get_user_id(bot_nick)->then() {G->G->bot_uid = __ARGS__[0];};
 		if (mixed ex = irc->http_address && irc->http_address != "" && catch
 		{
 			int use_https = has_prefix(irc->http_address, "https://");

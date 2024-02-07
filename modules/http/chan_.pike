@@ -15,7 +15,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"Actions taken here will not be saved, so feel free to try things out!";
 	}
 	return render_template("chan_.md", ([
-		"bot_or_mod": G->G->user_mod_status[persist_config["ircsettings"]->nick + channel->name] ? "mod" : "bot",
+		"bot_or_mod": G->G->user_mod_status[G->G->dbsettings->credentials->username + channel->name] ? "mod" : "bot",
 		"uptime": uptime ? "Channel has been online for " + describe_time(uptime) : "Channel is currently offline.",
 		"user_is_mod": user_is_mod,
 	]) | req->misc->chaninfo);

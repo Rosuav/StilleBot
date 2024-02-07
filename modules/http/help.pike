@@ -14,8 +14,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	string yourname = req->misc->?session->?user->?display_name || "";
 	string loglink = "You are not currently logged in. If you wish, you may: [Log in with your Twitch credentials](:.twitchlogin)";
 	function link = nonlink, anon = keeptext, loggedin = ignoretext;
-	string botname = persist_config["ircsettings"]->nick, chan = botname;
-	string botowner = yield(get_user_info(botname, "login"))->display_name;
+	mapping bot = yield(get_user_info(G->G->bot_uid, "login"));
+	string chan = bot->login;
 	if (yourname != "")
 	{
 		loglink = "[Log out](:.twitchlogout)";
@@ -33,7 +33,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		}
 	}
 	return render_template("help.md", ([
-		"botname": botname, "botowner": botowner,
+		"botname": bot->login, "botowner": bot->display_name,
 		"yourname": yourname, "loglink": loglink,
 		"link": link, "chan": chan,
 		"anon": anon, "loggedin": loggedin,

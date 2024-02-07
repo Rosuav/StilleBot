@@ -842,9 +842,9 @@ class irc_callback {
 		options = (["module": this, "version": 11]) | (options || ([]));
 		if (!options->user) {
 			//Default credentials from the bot's main configs
-			mapping cfg = persist_config["ircsettings"];
-			if (!cfg->pass) return Concurrent.reject(({"IRC authentication not configured\n", backtrace()}));
-			options->user = cfg->nick; options->pass = cfg->pass;
+			mapping cred = G->G->dbsettings->credentials;
+			if (!cred->token) return Concurrent.reject(({"IRC authentication not configured\n", backtrace()}));
+			options->user = cred->username; options->pass = "oauth:" + cred->token;
 		}
 		options->user = lower_case(options->user); //Casefold for the cache, don't have multiples kthx
 		if (!options->pass) {
@@ -1314,7 +1314,7 @@ int(1bit) textformatting_validate(mapping cfg) {
 }
 
 int(1bit) is_localhost_mod(string login, string ip) {
-	return login && login == persist_config["ircsettings"]->nick && //Allow mod status if you're me,
+	return login && login == G->G->dbsettings->credentials->username && //Allow mod status if you're me,
 		NetUtils.is_local_host(ip) && //from here,
 		G->G->menuitems->chan_->get_active(); //and we're allowing me to pretend to be a mod
 }
