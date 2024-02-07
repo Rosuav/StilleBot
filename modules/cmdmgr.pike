@@ -139,7 +139,7 @@ void autospam(string|int chanid, string cmd) {
 	int|array(int) mins = mappingp(response) && response->automate;
 	if (!mins) return; //Autocommand disabled
 	autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(mins, cfg->timezone), chanid, cmd);
-	string me = persist_config["ircsettings"]->nick;
+	string me = "MustardMine"; //This would be used if you put $$ into an autocommand. Should it be the broadcaster?
 	G->G->irc->id[chanid]->send((["nick": me, "user": me]), response);
 }
 
