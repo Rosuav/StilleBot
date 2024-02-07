@@ -20,16 +20,16 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				token_for_user_login(req->misc->session->user->login)),
 			"type": "text/plain; charset=\"UTF-8\""]);
 	}
-	mapping config = persist_config["ircsettings"];
-	multiset scopes = (multiset)(config->scopes || (<>)) | (<"chat:read", "chat:edit", "user_read", "whispers:edit", "user_subscriptions">);
+	array havescopes = G->G->dbsettings->credentials->scopes || persist_config["ircsettings"]->scopes || ({ });
+	multiset scopes = (multiset)havescopes | (<"chat:read", "chat:edit", "user_read", "whispers:edit", "user_subscriptions">);
 	//Add any requested scopes
 	foreach (req->variables; string key; string value)
 		if (sscanf(key, "scope-%s", string scope) && scope && scope != "") scopes[scope] = 1;
 	if (mapping resp = ensure_login(req, indices(scopes) * " ")) return resp;
 	string desc = "Login details saved.";
 	if (G->G->dbsettings->credentials->userid == req->misc->session->user->id) {
-		config->pass = "oauth:" + req->misc->session->token;
-		config->scopes = sort(indices(req->misc->session->scopes));
+		persist_config["ircsettings"]->pass = "oauth:" + req->misc->session->token;
+		persist_config["ircsettings"]->scopes = sort(indices(req->misc->session->scopes));
 		persist_config->save();
 		mapping c = G->G->dbsettings->credentials | ([
 			"username": req->misc->session->user->login,
