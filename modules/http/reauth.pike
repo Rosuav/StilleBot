@@ -20,7 +20,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				token_for_user_login(req->misc->session->user->login)),
 			"type": "text/plain; charset=\"UTF-8\""]);
 	}
-	mapping config = persist_config->path("ircsettings");
+	mapping config = persist_config["ircsettings"];
 	multiset scopes = (multiset)(config->scopes || (<>)) | (<"chat:read", "chat:edit", "user_read", "whispers:edit", "user_subscriptions">);
 	//Add any requested scopes
 	foreach (req->variables; string key; string value)
@@ -31,6 +31,13 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		config->pass = "oauth:" + req->misc->session->token;
 		config->scopes = sort(indices(req->misc->session->scopes));
 		persist_config->save();
+		mapping c = G->G->dbsettings->credentials | ([
+			"token": req->misc->session->token,
+			"scopes": sort(indices(req->misc->session->scopes)),
+		]);
+		werror("Saving to DB.\n");
+		spawn_task(G->G->DB->generic_query("update stillebot.settings set credentials = :c",
+			(["c": Standards.JSON.encode(c, 4)])));
 	}
 	else desc = "oauth:" + req->misc->session->token;
 	string add_scopes = "", authbtn = "All permissions granted.";
