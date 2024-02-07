@@ -32,6 +32,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		config->scopes = sort(indices(req->misc->session->scopes));
 		persist_config->save();
 		mapping c = G->G->dbsettings->credentials | ([
+			"username": req->misc->session->user->login,
 			"token": req->misc->session->token,
 			"scopes": sort(indices(req->misc->session->scopes)),
 		]);
