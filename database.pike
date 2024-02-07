@@ -47,6 +47,7 @@ constant tables = ([
 	"settings": ({
 		"asterisk char primary key", //There's only one row, but give it a PK anyway for the sake of replication.
 		"active_bot varchar",
+		"credentials json not null default '{}'",
 		"insert into stillebot.settings (asterisk) values ('*');",
 		//Not tested as part of database recreation, has been done manually.
 		//"create or replace function send_settings_notification() returns trigger language plpgsql as $$begin perform pg_notify('stillebot.settings', ''); return null; end$$;",
@@ -152,6 +153,7 @@ void notify_unknown(int pid, string cond, string extra, string host) {
 @create_hook: constant database_settings = ({"mapping settings"});
 continue Concurrent.Future fetch_settings(mapping db) {
 	G->G->dbsettings = yield((mixed)query(db, "select * from stillebot.settings"))[0];
+	G->G->dbsettings->credentials = Standards.JSON.decode_utf8(G->G->dbsettings->credentials);
 	werror("Got settings from %s: %O\n", db->host, G->G->dbsettings);
 	event_notify("database_settings", G->G->dbsettings);
 }
