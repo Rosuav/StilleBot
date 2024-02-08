@@ -1400,6 +1400,13 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 }
 
 @hook_database_settings: void kick_when_inactive(mapping settings) {
+	//Delay this till we have access to credentials
+	if (!G->G->cheeremotes) twitch_api_request("https://api.twitch.tv/helix/bits/cheermotes")->then() {
+		mapping c = G->G->cheeremotes = ([]);
+		foreach (__ARGS__[0]->data, mapping em) c[lower_case(em->prefix)] = em;
+		//Hack to enable fakecheers to look like emotes
+		c->fakecheer = c->cheerwhal;
+	};
 	int now_active = is_active_bot();
 	if (now_active && !is_active) call_out(reconnect, 0); //Just become active? Make sure we're connected.
 	is_active = now_active;
@@ -1479,12 +1486,6 @@ protected void create(string name)
 	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
 	session_cleanup();
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
-	if (!G->G->cheeremotes) twitch_api_request("https://api.twitch.tv/helix/bits/cheermotes")->then() {
-		mapping c = G->G->cheeremotes = ([]);
-		foreach (__ARGS__[0]->data, mapping em) c[lower_case(em->prefix)] = em;
-		//Hack to enable fakecheers to look like emotes
-		c->fakecheer = c->cheerwhal;
-	};
 	if (mapping irc = persist_config["ircsettings"]) //Now less about IRC than HTTP but whatever
 	{
 		array voices = values(get_channel_config(0)->?voices || ({ }));
