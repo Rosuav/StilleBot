@@ -64,6 +64,7 @@ class Hilfe {
 		::create(({"start backend",
 			"mixed _ignore = G->bootstrap(\"persist.pike\");",
 			"mixed _ignore = G->bootstrap(\"globals.pike\");",
+			"mixed _ignore = G->bootstrap(\"database.pike\");",
 			"object poll = G->bootstrap(\"poll.pike\"); function req = poll->twitch_api_request;",
 		}));
 	}
