@@ -1333,6 +1333,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 		//whether it was requested by name or ID.
 		if (string err = handler->websocket_validate(conn, data)) {
 			conn->sock->send_text(Standards.JSON.encode((["error": err])));
+			conn->sock->close(); destruct(conn->sock);
 			return;
 		}
 		string group = (stringp(data->group) || intp(data->group)) ? data->group : "";
