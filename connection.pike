@@ -1303,6 +1303,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 				"redirect": other,
 				"xfr": conn->session->cookie,
 			])));
+			conn->sock->close(); destruct(conn->sock);
 			return;
 		}
 		//Initialization is done with a type and a group.
