@@ -268,6 +268,23 @@ continue Concurrent.Future|mapping load_config(string|int twitchid, string kwd) 
 	return Standards.JSON.decode_utf8(rows[0]->data);
 }
 
+//Command IDs are UUIDs. They come back in binary format, which is fine for comparisons,
+//but not for human readability. Try this:
+//sprintf("%x%x-%x-%x-%x-%x%x%x", @array_sscanf("F\255C|\377gK\316\223iW\351\215\37\377=", "%{%2c%}")[0][*][0]);
+//or:
+//sscanf("F\255C|\377gK\316\223iW\351\215\37\377=", "%{%2c%}", array words);
+//sprintf("%x%x-%x-%x-%x-%x%x%x", @words[*][0]);
+continue awaitable|array(mapping) load_commands(string|int twitchid, string|void cmdname, int|void allversions) {
+	if (!active) yield(await_active());
+	string sql = "select * from stillebot.commands where twitchid = :twitchid";
+	mapping bindings = (["twitchid": twitchid]);
+	if (cmdname) {sql += " and cmdname = :cmdname"; bindings->cmdname = cmdname;}
+	if (!allversions) sql += " and active";
+	array rows = yield((mixed)query(pg_connections[active], sql, bindings));
+	foreach (rows, mapping command) command->content = Standards.JSON.decode_utf8(command->content);
+	return rows;
+}
+
 //NOTE: In the future, this MAY be changed to require that data be JSON-compatible.
 //The mapping MUST include a 'cookie' which is a short string.
 void save_session(mapping data) {
