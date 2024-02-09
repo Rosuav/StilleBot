@@ -20,7 +20,7 @@ export function render_item(rew) {
 			//NOTE: The invocations are simple names eg "coinflip", but the command editor
 			//expects them to match the commands array, which shows eg "coinflip#rosuav".
 			//We assume that ws_group is always just the channel, no actual group.
-			rew.invocations.map(c => LI({"data-id": c + ws_group}, BUTTON({class: "advview"}, "!" + c.split("#")[0]))),
+			rew.invocations.map(c => LI({"data-id": c}, BUTTON({class: "advview"}, "!" + c))),
 			rew.can_manage && LI(BUTTON({class: "addcmd", "data-title": rew.title, "data-reward": rew.id}, "New")),
 		])),
 	]);
