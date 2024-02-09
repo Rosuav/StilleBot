@@ -133,21 +133,29 @@ mapping hypetrain_end(object channel, mapping info) {return hypetrain("end", cha
 
 mapping eventsubs = ([]);
 
-//Ensure that we have all appropriate hooks for this channel (provide channel->config or equivalent)
-void specials_check_hooks(mapping cfg) {
-	string chan = cfg->login;
-	multiset scopes = (multiset)(token_for_user_login(chan)[1] / " "); //TODO: Switch to user ID to ensure this remains synchronous
+//Ensure that we have all appropriate hooks for this channel
+void specials_check_hooks(object channel) {
+	multiset scopes = (multiset)(token_for_user_login(channel->config->login)[1] / " "); //TODO: Switch to user ID to ensure this remains synchronous
 	foreach (G->G->SPECIALS_SCOPES; string special; array scopesets) {
 		foreach (scopesets, array scopeset) {
 			if (!has_value(scopes[scopeset[*]], 0)) { //If there isn't any case of a scope that we don't have... then we have them all!
 				multiset flg = eventsubs[special]->flags;
-				if (cfg->commands[?"!" + special] //If there's a special of this name, we need the hook.
+				if (channel->commands[?"!" + special] //If there's a special of this name, we need the hook.
 						|| flg->always) //If the eventsub has other functionality, we need the hook.
-					eventsubs[special](flg->uid ? (string)cfg->userid : chan, this[special](0, (["__condition": cfg])));
+					eventsubs[special](flg->uid ? (string)channel->userid : channel->config->login, this[special](0, (["__condition": channel->config])));
 				break;
 			}
 		}
 	}
+}
+
+void specials_check_hooks_all_channels(int warn) {
+	if (sizeof(G->G->irc->loading)) {
+		//We're still loading some or all channels. Give 'em a few seconds.
+		if (warn) werror("WARNING: Unable to check for special hooks - still loading: %O\n", G->G->irc->loading);
+		call_out(specials_check_hooks_all_channels, 3, 1);
+	}
+	else specials_check_hooks(values(G->G->irc->id)[*]);
 }
 
 //Check for the specific modular hooks needed. Specify the group either as a hook name, or
@@ -202,7 +210,7 @@ protected void create(string name) {
 			}
 		}
 	}
-	specials_check_hooks(list_channel_configs()[*]);
+	specials_check_hooks_all_channels(0);
 	G->G->specials_check_hooks = specials_check_hooks;
 	G->G->specials_check_modular_hooks = specials_check_modular_hooks;
 }
