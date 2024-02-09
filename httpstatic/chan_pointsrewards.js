@@ -46,10 +46,7 @@ on("click", ".addcmd", e => {
 		message: [
 			"@{username}, you redeemed: " + e.match.dataset.title,
 			//TODO: Include this only if the reward doesn't skip the queue
-			{builtin: "chan_pointsrewards", builtin_param: ["{rewardid}", "fulfil", "{redemptionid}"], message: {
-				conditional: "string", expr1: "{error}",
-				message: "", otherwise: "Unexpected error: {error}",
-			}},
+			{builtin: "chan_pointsrewards", builtin_param: ["{rewardid}", "fulfil", "{redemptionid}"], message: ""},
 		],
 		redemption: e.match.dataset.reward,
 	})
