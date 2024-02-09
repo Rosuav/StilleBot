@@ -167,7 +167,7 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 			FIELDSET([LEGEND("T1 sub"), INPUT({type: "number", name: "sub_t1"})]),
 			FIELDSET([LEGEND("T2 sub"), INPUT({type: "number", name: "sub_t2"})]),
 			FIELDSET([LEGEND("T3 sub"), INPUT({type: "number", name: "sub_t3"})]),
-			FIELDSET([LEGEND("Gift subs"), LABEL([
+			FIELDSET([LEGEND("Gift & Prime"), LABEL([
 				INPUT({type: "checkbox", name: "exclude_gifts"}),
 				" Exclude",
 			])]),

@@ -169,15 +169,15 @@ int message(object channel, mapping person, string msg)
 @hook_subscription:
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type == "subbomb") return 0; //Sometimes sub bombs come through AFTER their constituent parts :( Safer to count the parts and skip the bomb.
-	autoadvance(channel, person, "sub_t" + tier, qty, type == "subgift");
+	autoadvance(channel, person, "sub_t" + tier, qty, type == "subgift" || extra->msg_param_sub_plan == "Prime");
 }
 
 //Note: Use the builtin to advance bars from a command/trigger/special.
 //Otherwise, simply assigning to the variable won't trigger the level-up command.
-void autoadvance(object channel, mapping person, string key, int weight, int|void isgift) {
+void autoadvance(object channel, mapping person, string key, int weight, int|void isgiftorprime) {
 	foreach (channel->config->monitors || ([]); string id; mapping info) {
 		if (info->type != "goalbar" || !info->active) continue;
-		if (isgift && info->exclude_gifts) continue;
+		if (isgiftorprime && info->exclude_gifts) continue;
 		int advance = key == "" ? weight : weight * (int)info[key];
 		if (!advance) continue;
 		sscanf(info->text, "$%s$:%s", string varname, string txt);
