@@ -485,6 +485,7 @@ void purge(object channel, string cmd, multiset updates) {
 		if (!sizeof(channel->redemption_commands[prev->redemption])) m_delete(channel->redemption_commands, prev->redemption);
 		updates["rew " + prev->redemption] = 1;
 	}
+	//TODO: Only do this if not extra->?nosave (which we don't currently have here)
 	mapping prefs = persist_status->path("userprefs", (string)channel->userid); //FIXME: Use channel instead of channel->userid
 	if (prefs->notif_perms) foreach (prefs->notif_perms; string perm; array reasons) {
 		int removed = 0;
@@ -520,10 +521,15 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 	if (basename == "") error("Requires a command name.\n");
 	multiset updates = (<cmd>);
 	purge(channel, cmd, updates);
-	if (extra->?original && sscanf(extra->original, "%s#", string oldname)) purge(channel, oldname, updates); //Renaming a command requires removal of what used to be.
+	if (extra->?original && sscanf(extra->original, "%s#", string oldname)) {
+		//Renaming a command requires removal of what used to be.
+		purge(channel, oldname, updates);
+		if (!extra->?nosave) ; //TODO when applicable: Remove from Postgres too
+	}
 	//Purge any iteration variables that begin with ".basename:" - anonymous rotations restart on
 	//any edit. This ensures that none of the anonymous ones hang around. Named ones are regular
 	//variables, though, and might be shared, so we don't delete those.
+	//TODO: Only do this if not extra->?nosave, as this should already have been done.
 	mapping vars = persist_status->has_path("variables", channel);
 	string remove = "$." + basename + ":";
 	if (vars) foreach (indices(vars), string v) if (has_prefix(v, remove)) {
@@ -531,8 +537,14 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 		if (object handler = G->G->websocket_types->chan_variables)
 			handler->update_one(channel->name, v - "$");
 	}
-	if (response && response != "") channel->commands[cmd] = channel->path("commands")[cmd] = response;
+	if (response && response != "") {
+		channel->commands[cmd] = response;
+		if (!extra->?nosave) channel->path("commands")[cmd] = response; //Don't re-save to the database if it came from there.
+	}
 	if (mappingp(response) && response->aliases) update_aliases(channel, response->aliases, (response - (<"aliases">)) | (["alias_of": cmd]), updates);
+	//FIXME: What happens with cooldowns after a change is detected in the database?
+	//Should we just scan the command for cooldowns at the same time as scanning for
+	//permissions (see below), which would make this work even when fetching from PG?
 	foreach (extra->?cooldowns || ([]); string cdname; int cdlength) {
 		//If the cooldown delay is shorter than the cooldown timeout,
 		//reset the timeout. That way, if you accidentally set a command
@@ -545,6 +557,8 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 	}
 	if (mappingp(response) && response->automate && G->G->stream_online_since[channel->userid]) {
 		//Start a timer. For simplicity, just pretend the channel freshly went online.
+		//Note that database saving is asynchronous, but the live channel->commands[] mapping
+		//will already have been updated, so this will be safe.
 		connected(channel->config->login, 0, channel->userid);
 	}
 	if (mappingp(response) && response->redemption) {
@@ -583,6 +597,7 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 		}
 	}
 	//If this uses any builtins that require permissions, and we don't have those, flag the user.
+	//TODO: Do this only if not extra->?nosave.
 	multiset need_perms = (<>); scan_for_permissions(response, need_perms);
 	if (sizeof(need_perms)) {
 		mapping prefs = persist_status->path("userprefs", channel);
