@@ -182,11 +182,12 @@ class channel(mapping config) {
 		spawn_task(load_commands(loading));
 	}
 
-	continue awaitable load_commands(multiset|void loading) { //TODO: Load from PostgreSQL (which will require asynchronicity)
+	continue awaitable load_commands(multiset|void loading) {
 		//Load up the channel's commands. Note that aliases are not stored in the JSON file,
 		//but are individually available here in the lookup mapping.
 		commands = ([]);
 		if (config->commands) foreach (config->commands; string cmd; mixed response) {
+			//Legacy commands from the JSON config
 			commands[cmd] = response;
 			if (mappingp(response) && response->aliases) {
 				mapping duplicate = (response - (<"aliases">)) | (["alias_of": cmd]);
@@ -197,6 +198,20 @@ class channel(mapping config) {
 			}
 			if (mappingp(response) && response->redemption) redemption_commands[response->redemption] += ({cmd});
 		}
+		array cmds = yield(G->G->DB->load_commands(userid));
+		foreach (cmds, mapping cmd) {
+			echoable_message response = commands[cmd->cmdname] = cmd->content;
+			if (!mappingp(response)) continue; //No top-level flags, nothing to handle specially.
+			if (response->aliases) {
+				mapping duplicate = (response - (<"aliases">)) | (["alias_of": cmd]);
+				foreach (response->aliases / " ", string alias) {
+					alias -= "!";
+					if (alias != "") commands[alias] = duplicate;
+				}
+			}
+			if (response->redemption) redemption_commands[response->redemption] += ({cmd});
+		}
+		if (userid == 49497888) werror("ROSUAV COMMANDS: %O\n", sort(indices(commands)));
 		//Indicate that we're now done loading. If other things than commands are done
 		//asynchronously but in parallel, don't remove from loading till ALL are done.
 		if (loading) loading[userid] = 0;
