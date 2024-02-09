@@ -148,7 +148,7 @@ class channel(mapping config) {
 	//Map a reward ID to the redemption triggers for that reward. Empty arrays should be expunged.
 	mapping(string:array(string)) redemption_commands = ([]);
 
-	protected void create() {
+	protected void create(multiset|void loading) {
 		name = "#" + config->login; userid = config->userid;
 		if (config->chatlog)
 		{
@@ -179,10 +179,10 @@ class channel(mapping config) {
 		};
 		else config->login = config->display_name = name[1..]; //User ID is zero for pseudo-channels
 		user_attrs = G_G_("channel_user_attrs", name);
-		spawn_task(load_commands());
+		spawn_task(load_commands(loading));
 	}
 
-	continue awaitable load_commands() { //TODO: Load from PostgreSQL (which will require asynchronicity)
+	continue awaitable load_commands(multiset|void loading) { //TODO: Load from PostgreSQL (which will require asynchronicity)
 		//Load up the channel's commands. Note that aliases are not stored in the JSON file,
 		//but are individually available here in the lookup mapping.
 		commands = ([]);
@@ -197,6 +197,9 @@ class channel(mapping config) {
 			}
 			if (mappingp(response) && response->redemption) redemption_commands[response->redemption] += ({cmd});
 		}
+		//Indicate that we're now done loading. If other things than commands are done
+		//asynchronously but in parallel, don't remove from loading till ALL are done.
+		if (loading) loading[userid] = 0;
 	}
 
 	//Like calling the equivalent persist method (TODO: dedup; also, do we need has_path?).
@@ -1448,9 +1451,10 @@ void reconnect() {
 		sort(channels->login, channels); //Default to sorting affabeck by username
 		sort(-channels->connprio[*], channels);
 	}
-	mapping irc = (["channels": ([]), "id": ([])]);
+	mapping irc = (["channels": ([]), "id": ([]), "loading": (<>)]);
 	foreach (channels, mapping cfg) {
-		object c = channel(cfg);
+		irc->loading[cfg->userid] = 1;
+		object c = channel(cfg, irc->loading);
 		irc->channels[c->name] = c;
 		irc->id[c->userid] = c;
 	}
