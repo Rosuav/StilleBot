@@ -27,6 +27,10 @@ constant tables = ([
 		"content json not null",
 		"created timestamp with time zone not null default now()",
 		"create unique index on stillebot.commands (twitchid, cmdname) where active;",
+		//Yet more untested.
+		//"create or replace function send_command_notification() returns trigger language plpgsql as $$begin perform pg_notify('stillebot.commands', concat(new.twitchid, ':', new.cmdname)); return null; end$$;",
+		//"create or replace trigger command_created after insert on stillebot.commands for each row execute function send_command_notification();",
+		//"alter table stillebot.commands enable always trigger command_created;",
 	}),
 	//Generic channel info that stores anything that could be in channels/TWITCHID.json
 	//or twitchbot_status.json.
@@ -191,6 +195,18 @@ void notify_session_gone(int pid, string cond, string extra, string host) {
 	G->G->http_sessions_deleted[extra] = 1;
 }
 
+void notify_command_added(int pid, string cond, string extra, string host) {
+	werror("COMMAND CREATED [%s, %s]\n", cond, extra);
+	if (!G->G->irc) return; //Interactive mode - no need to push updates out
+	sscanf(extra, "%d:%s", int twitchid, string cmdname);
+	if (!cmdname || cmdname == "") return;
+	object channel = G->G->irc->id[twitchid]; if (!channel) return;
+	spawn_task(load_commands(twitchid, cmdname)) {echoable_message cmd = __ARGS__[0];
+		cmd = sizeof(cmd) && cmd[0]->content;
+		G->G->cmdmgr->_save_command(channel, cmdname, cmd, (["nosave": 1]));
+	};
+}
+
 continue Concurrent.Future connect(string host) {
 	werror("Connecting to Postgres on %O...\n", host);
 	mapping db = pg_connections[host] = (["host": host]); //Not a floop, strings are just strings :)
@@ -207,6 +223,7 @@ continue Concurrent.Future connect(string host) {
 		db->conn->set_notify_callback("readonly", notify_readonly, 1, host);
 		db->conn->set_notify_callback("stillebot.settings", notify_settings_change, 1, host);
 		db->conn->set_notify_callback("stillebot.http_sessions", notify_session_gone, 1, host);
+		db->conn->set_notify_callback("stillebot.commands", notify_command_added, 1, host);
 		db->conn->set_notify_callback("", notify_unknown, 1, host);
 		//Sometimes, the connection fails, but we only notice it here at this point when the
 		//first query goes through. It won't necessarily even FAIL fail, it just stalls here.
@@ -222,6 +239,7 @@ continue Concurrent.Future connect(string host) {
 	}
 	yield((mixed)query(db, "listen \"stillebot.settings\""));
 	yield((mixed)query(db, "listen \"stillebot.http_sessions\""));
+	yield((mixed)query(db, "listen \"stillebot.commands\""));
 	string ro = yield((mixed)query(db, "show default_transaction_read_only"))[0]->default_transaction_read_only;
 	werror("Connected to %O - %s.\n", host, ro == "on" ? "r/o" : "r-w");
 	if (ro == "on") {
@@ -310,7 +328,9 @@ continue awaitable|array(mapping) load_commands(string|int twitchid, string|void
 void save_command(string|int twitchid, string cmdname, echoable_message content) {
 	spawn_task(save_to_db(({
 		"update stillebot.commands set active = false where twitchid = :twitchid and cmdname = :cmdname and active = true",
-		content && content != "" && "insert into stillebot.commands (twitchid, cmdname, active, content) values (:twitchid, :cmdname, true, :content)",
+		content && content != ""
+			? "insert into stillebot.commands (twitchid, cmdname, active, content) values (:twitchid, :cmdname, true, :content)"
+			: "select pg_notify('stillebot.commands', concat(cast(:twitchid as text), ':', cast(:cmdname as text)))",
 	}), ([
 		"twitchid": twitchid, "cmdname": cmdname,
 		"content": Standards.JSON.encode(content, 4),
