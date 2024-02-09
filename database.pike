@@ -307,6 +307,16 @@ continue awaitable|array(mapping) load_commands(string|int twitchid, string|void
 	return rows;
 }
 
+void save_command(string|int twitchid, string cmdname, echoable_message content) {
+	spawn_task(save_to_db(({
+		"update stillebot.commands set active = false where twitchid = :twitchid and cmdname = :cmdname and active = true",
+		content && content != "" && "insert into stillebot.commands (twitchid, cmdname, active, content) values (:twitchid, :cmdname, true, :content)",
+	}), ([
+		"twitchid": twitchid, "cmdname": cmdname,
+		"content": Standards.JSON.encode(content, 4),
+	])));
+}
+
 //NOTE: In the future, this MAY be changed to require that data be JSON-compatible.
 //The mapping MUST include a 'cookie' which is a short string.
 void save_session(mapping data) {
