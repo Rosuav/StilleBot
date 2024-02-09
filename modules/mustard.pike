@@ -268,6 +268,7 @@ mixed validate(mixed response, string cmd) {
 
 //Test a script file, a JSON command file, a JSON channel config, or one command from a channel config
 void run_test(string arg, int|void quiet) {
+	//TODO: Fetch commands from Postgres
 	if (has_suffix(arg, ".json")) {
 		mixed data = Standards.JSON.decode_utf8(Stdio.read_file(arg));
 		if (mappingp(data) && data->login) {
