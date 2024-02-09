@@ -461,10 +461,9 @@ void update_aliases(object channel, string aliases, echoable_message response, m
 	foreach (aliases / " ", string alias) {
 		sscanf(alias, "%*[!]%[^#\n]", string safealias);
 		if (safealias && safealias != "" && (!mappingp(response) || safealias != response->alias_of)) {
-			string cmd = safealias + channel->name;
 			if (response) channel->commands[safealias] = response;
 			else m_delete(channel->commands, safealias);
-			updates[cmd] = 1;
+			updates[safealias] = 1;
 		}
 	}
 }
@@ -477,7 +476,7 @@ void purge(object channel, string cmd, multiset updates) {
 	if (prev->alias_of) purge(channel, prev->alias_of, updates);
 	if (prev->aliases) update_aliases(channel, prev->aliases, 0, updates);
 	if (prev->automate) {
-		//Clear out the timer
+		//Clear out the timer. FIXME: Only do this if the command is really going away (not just if it's being updated).
 		mixed id = m_delete(autocommands, cmd + channel->name);
 		if (id) remove_call_out(id);
 	}
