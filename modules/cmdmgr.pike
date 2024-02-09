@@ -133,25 +133,25 @@ void autospam(string|int chanid, string cmd) {
 	cmd -= "!"; //Compat with older parameter style
 	if (stringp(chanid)) chanid = G->G->user_info[chanid - "#"]->id; //Compat with older param style
 	if (!G->G->stream_online_since[chanid]) return;
-	mapping cfg = get_channel_config(chanid);
-	if (!cfg) return; //Channel no longer configured
-	echoable_message response = cfg->commands[?cmd];
+	object channel = G->G->irc->id[chanid];
+	if (!channel) return; //Channel no longer configured (TODO: handle channel deactivation)
+	echoable_message response = channel->commands[?cmd];
 	int|array(int) mins = mappingp(response) && response->automate;
 	if (!mins) return; //Autocommand disabled
-	autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(mins, cfg->timezone), chanid, cmd);
+	autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(mins, channel->config->timezone), chanid, cmd);
 	string me = "MustardMine"; //This would be used if you put $$ into an autocommand. Should it be the broadcaster?
-	G->G->irc->id[chanid]->send((["nick": me, "user": me]), response);
+	channel->send((["nick": me, "user": me]), response);
 }
 
-@hook_channel_online: int connected(string channel, int uptime, int chanid) {
-	mapping cfg = get_channel_config(chanid); if (!cfg) return 0;
-	foreach (cfg->commands || ([]); string cmd; echoable_message response) {
+@hook_channel_online: int connected(string chan, int uptime, int chanid) {
+	object channel = G->G->irc->id[chanid]; if (!channel) return 0;
+	foreach (channel->commands || ([]); string cmd; echoable_message response) {
 		if (!mappingp(response) || !response->automate) continue;
 		mixed id = autocommands[chanid + "!" + cmd];
 		int next = id && find_call_out(id);
-		if (undefinedp(next) || next > seconds(response->automate, cfg->timezone)) {
+		if (undefinedp(next) || next > seconds(response->automate, channel->config->timezone)) {
 			if (next) remove_call_out(id); //If you used to have it run every 60 minutes, now every 15, cancel the current and retrigger.
-			autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(response->automate, cfg->timezone), chanid, cmd);
+			autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(response->automate, channel->config->timezone), chanid, cmd);
 		}
 	}
 }
