@@ -90,7 +90,7 @@ Name | Value | Actions | Usage
 loading... | - | - | -
 {:#variables}
 
-&nbsp; <-- bit of a gap here, semantically as well as visually -->
+&nbsp; <!-- bit of a gap here, semantically as well as visually -->
 
 > - | - | Add commands for a counter variable by filling in these details. Anything left blank will be omitted.
 > ------|---|---
