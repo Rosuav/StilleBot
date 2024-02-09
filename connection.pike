@@ -211,7 +211,6 @@ class channel(mapping config) {
 			}
 			if (response->redemption) redemption_commands[response->redemption] += ({cmd});
 		}
-		if (userid == 49497888) werror("ROSUAV COMMANDS: %O\n", sort(indices(commands)));
 		//Indicate that we're now done loading. If other things than commands are done
 		//asynchronously but in parallel, don't remove from loading till ALL are done.
 		if (loading) loading[userid] = 0;
