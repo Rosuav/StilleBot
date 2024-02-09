@@ -6,7 +6,14 @@ inherit irc_callback;
 //be greyed out if not available.
 //NOTE: The display is aimed at no more than six emotes across.
 constant hypetrain = replace(#"
-(Note: Hype trains currently offer unlocks from a variety of older sets.)
+## Hype Train rereleases
+### Unlockable Jan 2024 to current
+### Hype trains currently offer unlocks from a variety of older sets.
+LuvPeekL LuvPeekR LuvBlush LuvHearts LuvSign ????<br>
+HahaBall 2020Rivalry 2020Wish 2020ByeGuys 2020Celebrate ????<br>
+RPGAyaya HahaCat RPGGhosto PrideWingR PrideWingL ????<br>
+2020Party 2020Pajamas 2020Shred 2020Snacking 2020Glitchy ????<br>
+PrideUwu PrideLaugh PrideCute PridePog PrideFloat ????<br>
 
 ## Hype Train set six
 ### Unlockable Dec 2023 to Jan 2024
