@@ -179,8 +179,13 @@ class channel(mapping config) {
 		};
 		else config->login = config->display_name = name[1..]; //User ID is zero for pseudo-channels
 		user_attrs = G_G_("channel_user_attrs", name);
+		spawn_task(load_commands());
+	}
+
+	continue awaitable load_commands() { //TODO: Load from PostgreSQL (which will require asynchronicity)
 		//Load up the channel's commands. Note that aliases are not stored in the JSON file,
 		//but are individually available here in the lookup mapping.
+		commands = ([]);
 		if (config->commands) foreach (config->commands; string cmd; mixed response) {
 			commands[cmd] = response;
 			if (mappingp(response) && response->aliases) {
