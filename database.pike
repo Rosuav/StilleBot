@@ -83,12 +83,34 @@ array(string) database_ips = ({"sikorsky.rosuav.com", "ipv4.rosuav.com"});
 //ALL queries should go through this function.
 //Is it more efficient, with queries where we don't care about the result, to avoid calling get()?
 //Conversely, does failing to call get() result in risk of problems?
-continue Concurrent.Future query(mapping(string:mixed) db, string query, mapping|void bindings) {
+//If the query is an array of strings, they all share the same bindings, and will be performed in
+//a single transaction (ie if the connection fails, they will be requeued as a set). The return
+//value in this case is an array of results (not counting the implicit BEGIN and COMMIT).
+continue Concurrent.Future query(mapping(string:mixed) db, string|array sql, mapping|void bindings) {
 	object pending = db->pending;
 	object completion = db->pending = Concurrent.Promise();
 	if (pending) yield(pending->future()); //If there's a queue, put us at the end of it.
-	mixed ret;
-	mixed ex = catch {ret = yield(db->conn->promise_query(query, bindings))->get();};
+	mixed ret, ex;
+	if (arrayp(sql)) {
+		ret = ({ });
+		ex = catch {yield(db->conn->promise_query("begin"))->get();};
+		if (!ex) foreach (sql, string q) {
+			//A null entry in the array of queries is ignored, and will not have a null return value to correspond.
+			if (ex = q && catch {ret += ({yield(db->conn->promise_query(q, bindings))->get()});}) break;
+		}
+		//Ignore errors from rolling back - the exception that gets raised will have come from
+		//the actual query (or possibly the BEGIN), not from rolling back.
+		if (ex) catch {yield(db->conn->promise_query("rollback"))->get();};
+		//But for committing, things get trickier. Technically an exception here leaves the
+		//transaction in an uncertain state, but I'm going to just raise the error. It is
+		//possible that the transaction DID complete, but we can't be sure.
+		else ex = catch {yield(db->conn->promise_query("commit"))->get();};
+	}
+	else {
+		//Implicit transaction is fine here; this is also suitable for transactionless
+		//queries (of which there are VERY few).
+		ex = catch {ret = yield(db->conn->promise_query(sql, bindings))->get();};
+	}
 	completion->success(1);
 	if (db->pending == completion) db->pending = 0;
 	if (ex) throw(ex);
@@ -233,7 +255,7 @@ continue Concurrent.Future|zero reconnect(int force, int|void both) {
 	active = 0;
 }
 
-continue Concurrent.Future|string save_to_db(string sql, mapping bindings) {
+continue Concurrent.Future|string save_to_db(string|array sql, mapping bindings) {
 	if (active) {
 		mixed err = catch {yield((mixed)query(pg_connections[active], sql, bindings));};
 		if (!err) return "ok"; //All good!
@@ -248,7 +270,7 @@ continue Concurrent.Future|string save_to_db(string sql, mapping bindings) {
 	return "retry";
 }
 
-void save_sql(string query, mapping|void bindings) {
+void save_sql(string|array query, mapping|void bindings) {
 	spawn_task(save_to_db(query, bindings));
 }
 

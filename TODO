@@ -318,10 +318,5 @@
   the bot notifies systemd that it's reloading, then that it's ready, and can report
   failure so the terminal gets an immediate response. (Failure details will of course
   be in the log.)
-* Come up with a good API for maintaining transactional integrity in database.pike
-  - Will need to be able to submit a batch of changes which will become a transaction.
-  - If anything happens, requeue the entire transaction as a block.
-  - The database can't go read-only while we're submitting it, but if we lose link,
-    requeue the entire transaction block on the other database.
 * Are conduits useful? Can we have one shard for Gideon and one for Sikorsky?
   https://dev.twitch.tv/docs/eventsub/handling-conduit-events/
