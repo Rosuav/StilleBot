@@ -153,7 +153,7 @@ void specials_check_hooks_all_channels(int warn) {
 	if (sizeof(G->G->irc->loading)) {
 		//We're still loading some or all channels. Give 'em a few seconds.
 		if (warn) werror("WARNING: Unable to check for special hooks - still loading: %O\n", G->G->irc->loading);
-		call_out(specials_check_hooks_all_channels, 3, 1);
+		call_out(specials_check_hooks_all_channels, 5, 1);
 	}
 	else specials_check_hooks(values(G->G->irc->id)[*]);
 }
