@@ -524,7 +524,7 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 	if (extra->?original && sscanf(extra->original, "%s#", string oldname)) {
 		//Renaming a command requires removal of what used to be.
 		purge(channel, oldname, updates);
-		if (!extra->?nosave) ; //TODO when applicable: Remove from Postgres too
+		if (!extra->?nosave) G->G->DB->save_command(channel->userid, oldname, 0);
 	}
 	//Purge any iteration variables that begin with ".basename:" - anonymous rotations restart on
 	//any edit. This ensures that none of the anonymous ones hang around. Named ones are regular
@@ -539,7 +539,7 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 	}
 	if (response && response != "") {
 		channel->commands[cmd] = response;
-		if (!extra->?nosave) channel->path("commands")[cmd] = response; //Don't re-save to the database if it came from there.
+		if (!extra->?nosave) G->G->DB->save_command(channel->userid, cmd, response); //Don't re-save to the database if it came from there.
 	}
 	if (mappingp(response) && response->aliases) update_aliases(channel, response->aliases, (response - (<"aliases">)) | (["alias_of": cmd]), updates);
 	//FIXME: What happens with cooldowns after a change is detected in the database?
