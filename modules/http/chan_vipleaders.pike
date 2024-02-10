@@ -83,8 +83,8 @@ void add_score(mapping monthly, string board, mapping sub) {
 	user->score += sub->qty * (tierval[sub->tier] || 1);
 }
 
-continue Concurrent.Future force_recalc(string chan, int|void fast) {
-	mapping stats = persist_status->has_path("subgiftstats", chan);
+continue Concurrent.Future force_recalc(object channel, int|void fast) {
+	mapping stats = persist_status->has_path("subgiftstats", channel);
 	if (!stats->?active) return 0;
 	if (!fast || !stats->monthly) {
 		stats->monthly = ([]);
@@ -101,7 +101,7 @@ continue Concurrent.Future force_recalc(string chan, int|void fast) {
 		}
 	}
 
-	int chanid = yield(get_user_id(chan));
+	int chanid = channel->userid;
 	if (!fast || !stats->mods) {
 		array mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=" + chanid,
 			(["Authorization": "Bearer " + token_for_user_id(chanid)[0]])))->data;
@@ -133,8 +133,8 @@ continue Concurrent.Future force_recalc(string chan, int|void fast) {
 	}
 
 	persist_status->save();
-	if (!stats->private) send_updates_all("#" + chan);
-	send_updates_all("control#" + chan);
+	if (!stats->private) send_updates_all(channel, "");
+	send_updates_all(channel, "control");
 }
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -179,7 +179,7 @@ void websocket_cmd_configure(mapping(string:mixed) conn, mapping(string:mixed) m
 void websocket_cmd_recalculate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
-	spawn_task(force_recalc(channel->name[1..]));
+	spawn_task(force_recalc(channel));
 }
 
 void websocket_cmd_addvip(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(addremvip(conn, msg, 1));}
@@ -333,7 +333,7 @@ int subscription(object channel, string type, mapping person, string tier, int q
 int cheer(object channel, mapping person, int bits, mapping extra) {
 	mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
 	if (!stats->?active) return 0;
-	call_out(spawn_task, 1, force_recalc(channel->name[1..], 1)); //Wait a second, then do a fast update (is that enough time?)
+	call_out(spawn_task, 1, force_recalc(channel, 1)); //Wait a second, then do a fast update (is that enough time?)
 }
 
 protected void create(string name) {::create(name);}
