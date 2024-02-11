@@ -39,6 +39,10 @@ constant tables = ([
 		"keyword varchar not null",
 		"data json not null",
 		" primary key (twitchid, keyword)",
+		//If ever I start over, there's gonna be a lot of these to test.
+		//"create or replace function send_config_notification() returns trigger language plpgsql as $$begin perform pg_notify(concat('stillebot.config', ':', new.keyword), new.twitchid::text); return null; end$$;",
+		//"create or replace trigger config_changed after insert or update on stillebot.config for each row execute function send_config_notification();",
+		//"alter table stillebot.config enable always trigger config_changed;",
 	}),
 	//Simple list of the "exportable" configs as stored in stillebot.config above.
 	//A user may (when implemented) request their exportable data, as a backup etc.
@@ -398,6 +402,48 @@ continue awaitable|mapping for_each_db(string sql, mapping|void bindings) {
 	return ret;
 }
 
+//Credentials are stored in stillebot.confing under (twitchid, 'credentials')
+//and have the following keys (or some subset of them):
+//userid    - Twitch user ID, as an integer
+//login     - Twitch user name (mandatory)
+//token     - the actual Twitch OAuth login (mandatory)
+//authcookie- returned by the OAuth process and contains most other info, encode_value()'d
+//scopes    - array of strings of Twitch scopes. May be empty.
+//validated - time() when the login was last checked. This is either when the login was done, or
+//            when /oauth2/validate was used on it. This does NOT count other calls using the token.
+//user_info - mapping of additional info from Twitch. Advisory only, may have changed. Will often
+//            contain display_name though, which could be handy.
+//TODO: What happens as things get bigger? Eventually this will be a lot of loading. Should
+//the credentials query functions be made async and do the fetching themselves?
+continue awaitable preload_user_credentials() {
+	G->G->user_credentials_loading = 1;
+	mapping cred = G->G->user_credentials = ([]);
+	if (!active) yield(await_active());
+	array rows = yield((mixed)query(pg_connections[active], "select twitchid, data from stillebot.config where keyword = 'credentials'"));
+	foreach (rows, mapping row) {
+		mapping data = Standards.JSON.decode_utf8(rows[0]->data);
+		cred[(int)row->twitchid] = cred[data->login] = data;
+	}
+	G->G->user_credentials_loaded = 1;
+	m_delete(G->G, "user_credentials_loading");
+}
+
+@"stillebot.config:credentials":
+void notify_credentials_changed(int pid, string cond, string extra, string host) {
+	spawn_task(load_config(extra, "credentials")) {[mapping data] = __ARGS__;
+		mapping cred = G->G->user_credentials;
+		cred[(int)extra] = cred[data->login] = data;
+	};
+}
+
+//Save credentials, but also synchronously update the local version. Using save_config() would
+//not do the latter, resulting in a short delay before the new credentials are used.
+void save_user_credentials(mapping data) {
+	mapping cred = G->G->user_credentials;
+	cred[data->userid] = cred[data->login] = data;
+	save_config(data->userid, "credentials", data);
+}
+
 //Attempt to create all tables and alter them as needed to have all columns
 continue Concurrent.Future create_tables() {
 	yield((mixed)reconnect(1, 1)); //Ensure that we have at least one connection, both if possible
@@ -469,4 +515,5 @@ protected void create(string name) {
 	G->G->DB = this;
 	spawn_task(reconnect(1));
 	if (!G->G->http_sessions_deleted) G->G->http_sessions_deleted = ([]);
+	if (!G->G->user_credentials_loading && !G->G->user_credentials_loaded) spawn_task(preload_user_credentials());
 }
