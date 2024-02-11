@@ -228,7 +228,11 @@ continue Concurrent.Future check_bcaster_tokens() {
 
 @export: Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
 {
-	if (!G->G->dbsettings->credentials) return spawn_task(get_credentials()) {get_helix_paginated(url, query, headers, options, debug);};
+	if (!G->G->dbsettings->credentials) {
+		Concurrent.Promise p = Concurrent.Promise();
+		spawn_task(get_credentials()) {p->fulfil(get_helix_paginated(url, query, headers, options, debug));};
+		return p->future();
+	}
 	array data = ({ });
 	Standards.URI uri = Standards.URI(url);
 	query = (query || ([])) + ([]);
