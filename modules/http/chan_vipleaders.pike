@@ -172,8 +172,8 @@ void websocket_cmd_configure(mapping(string:mixed) conn, mapping(string:mixed) m
 	constant options = "active badge_count board_count private_leaderboard use_kofi use_streamlabs" / " ";
 	int was_private = stats->private_leaderboard;
 	foreach (options, string opt) if (!undefinedp(msg[opt])) stats[opt] = (int)msg[opt]; //They're all integers at the moment
-	if (!was_private || !stats->private_leaderboard) send_updates_all(channel->name);
-	send_updates_all("control" + channel->name);
+	if (!was_private || !stats->private_leaderboard) send_updates_all(channel, "");
+	send_updates_all(channel, "control");
 }
 
 void websocket_cmd_recalculate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -283,8 +283,8 @@ continue Concurrent.Future low_kofi_tip(object channel, string type, mapping par
 	if (!stats->monthly) stats->monthly = ([]);
 	add_score(stats->monthly, "kofi", stats->allkofi[-1]);
 	persist_status->save();
-	send_updates_all(channel->name);
-	send_updates_all("control" + channel->name);
+	send_updates_all(channel, "");
+	send_updates_all(channel, "control");
 }
 
 @hook_allmsgs:
@@ -325,8 +325,8 @@ int subscription(object channel, string type, mapping person, string tier, int q
 	if (!stats->monthly) stats->monthly = ([]);
 	add_score(stats->monthly, "subs", stats->all[-1]);
 	persist_status->save();
-	send_updates_all(channel->name);
-	send_updates_all("control" + channel->name);
+	send_updates_all(channel, "");
+	send_updates_all(channel, "control");
 }
 
 @hook_cheer:

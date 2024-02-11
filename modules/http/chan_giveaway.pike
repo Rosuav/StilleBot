@@ -311,7 +311,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			}
 			req->misc->channel->config_save();
 			//TODO: Notify the front end what's been changed, not just counts. What else needs to be pushed out?
-			send_updates_all(chan, (["title": cfg->giveaway->title]));
+			send_updates_all(req->misc->channel, (["title": cfg->giveaway->title]));
 			return jsonify((["ok": 1, "created": numcreated, "updated": numupdated, "deleted": numdeleted]));
 		}
 		if (body->new_dynamic) { //TODO: Migrate this to chan_pointsrewards as "create manageable reward". It doesn't necessarily have to have dynamic pricing.

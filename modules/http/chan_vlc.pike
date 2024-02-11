@@ -138,9 +138,9 @@ void sendstatus(object channel) {
 	//there automatically.
 	channel->set_variable("vlcplaying", (string)status->playing, "set");
 	channel->set_variable("vlccurtrack", status->current || "", "set");
-	send_updates_all(channel->name);
-	send_updates_all("blocks" + channel->name);
-	if (channel->config->vlcauthtoken) send_updates_all(channel->config->vlcauthtoken + channel->name);
+	send_updates_all(channel, "");
+	send_updates_all(channel, "blocks");
+	if (channel->config->vlcauthtoken) send_updates_all(channel, channel->config->vlcauthtoken);
 }
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
@@ -202,7 +202,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				if (!status->unknowns || !has_value(status->unknowns, block)) {
 					status->unknowns += ({block});
 					//werror("New unknowns: %O\n", status->unknowns);
-					send_updates_all("blocks" + channel->name);
+					send_updates_all(channel, "blocks");
 				}
 			}
 			//TODO: Allow filename cleanup to be customized?
@@ -321,8 +321,8 @@ void websocket_cmd_karaoke(mapping(string:mixed) conn, mapping(string:mixed) msg
 	status->audiodata = msg->audiodata; //Might be null
 	status->audiotype = msg->audiotype;
 	status->webvttdata = msg->webvttdata;
-	send_updates_all(channel->name);
-	send_updates_all("blocks" + channel->name);
+	send_updates_all(channel, "");
+	send_updates_all(channel, "blocks");
 }
 
 void websocket_cmd_provideaudio(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -369,7 +369,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		object re = Regexp.PCRE(msg->path, Regexp.PCRE.OPTION.ANCHORED);
 		status->unknowns = filter(status->unknowns) {return !re->split2(__ARGS__[0]);};
 	}
-	send_updates_all("blocks" + channel->name);
+	send_updates_all(channel, "blocks");
 }
 
 @hook_channel_offline: int disconnected(string channel) {

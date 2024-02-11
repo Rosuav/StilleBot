@@ -79,8 +79,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (body->varname) info->text = sprintf("$%s$:%s", body->varname, info->text);
 		textformatting_validate(info);
 		req->misc->channel->config_save();
-		send_updates_all(nonce + req->misc->channel->name);
-		update_one(req->misc->channel->name, nonce);
+		send_updates_all(req->misc->channel, nonce);
+		update_one(req->misc->channel, "", nonce);
 		return jsonify((["ok": 1]));
 	}
 	if (req->request_type == "DELETE") {
@@ -92,7 +92,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		if (req->misc->session->fake) return (["error": 204]);
 		m_delete(cfg->monitors, nonce);
 		req->misc->channel->config_save();
-		send_updates_all(req->misc->channel->name);
+		send_updates_all(req->misc->channel, "");
 		return (["error": 204]);
 	}
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
@@ -122,14 +122,14 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 			//These cause full updates, which are slower and potentially
 			//flickier than a change to just the text.
 			//TODO: Permit other attributes to also contain variables.
-			send_updates_all(nonce + channel->name);
-			update_one(channel->name, nonce);
+			send_updates_all(channel, nonce);
+			update_one(channel, "", nonce);
 			continue;
 		}
 		if (!has_value(info->text, var)) continue;
 		mapping info = (["data": (["id": nonce, "display": channel->expand_variables(info->text)])]);
-		send_updates_all(nonce + channel->name, info); //Send to the group for just that nonce
-		info->id = nonce; send_updates_all(channel->name, info); //Send to the master group as a single-item update
+		send_updates_all(channel, nonce, info); //Send to the group for just that nonce
+		info->id = nonce; send_updates_all(channel, "", info); //Send to the master group as a single-item update
 	}
 }
 

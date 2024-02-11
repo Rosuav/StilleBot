@@ -129,8 +129,8 @@ continue Concurrent.Future check_schedules(object channel) {
 		updated = 1;
 	}
 	if (updated) {
-		send_updates_all("control" + channel->name);
-		send_updates_all("view" + channel->name);
+		send_updates_all(channel, "control");
+		send_updates_all(channel, "view");
 	}
 }
 
@@ -156,8 +156,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	}
 	multiset still_need = m_delete(people, "");
 	if (sizeof(still_need)) get_users_info((array)still_need)->then() {
-		send_updates_all("control" + channel->name);
-		send_updates_all("view" + channel->name);
+		send_updates_all(channel, "control");
+		send_updates_all(channel, "view");
 	};
 	mapping cache = G->G->raidtrain_streamcache; if (!cache) cache = G->G->raidtrain_streamcache = ([]);
 	multiset need = (<>);
@@ -181,8 +181,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		}
 		//Any we didn't see must be offline.
 		foreach (need; int uid;) cache[uid] = (["online": 0, "age": now]);
-		send_updates_all("control" + channel->name);
-		send_updates_all("view" + channel->name);
+		send_updates_all(channel, "control");
+		send_updates_all(channel, "view");
 	};
 	spawn_task(check_schedules(channel));
 	if (!cfg->slots) cfg->slots = ({ });

@@ -151,7 +151,7 @@ void subpoints_updated(string hook, string chan, mapping info) {
 		int points = __ARGS__[0];
 		Stdio.append_file("evt_subpoints.log", sprintf("Updated subpoint count: %d\n", points));
 		foreach (cfg; string nonce; mapping tracker)
-			send_updates_all(nonce + "#" + chan, tracker | (["points": points - (int)tracker->unpaidpoints]));
+			send_updates_all(channel, nonce, tracker | (["points": points - (int)tracker->unpaidpoints]));
 	};
 }
 EventSub hook_sub = EventSub("sub", "channel.subscribe", "1") {subpoints_updated("sub", @__ARGS__);};

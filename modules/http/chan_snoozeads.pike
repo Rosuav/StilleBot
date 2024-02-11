@@ -21,7 +21,7 @@ continue Concurrent.Future check_stats(object channel) {
 	object since = G->G->stream_online_since[channel->userid];
 	if (since) snooze->online_since = since->unix_time();
 	channel_ad_stats[channel->userid] = snooze;
-	send_updates_all(channel->name);
+	send_updates_all(channel, "");
 }
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
@@ -72,7 +72,7 @@ void wscmd_snooze(object channel, mapping(string:mixed) conn, mapping(string:mix
 		//Apply the changes directly to state if we have state
 		if (channel_ad_stats[channel->userid]) {
 			channel_ad_stats[channel->userid] |= __ARGS__[0]->data[0];
-			send_updates_all(channel->name);
+			send_updates_all(channel, "");
 		}
 		else spawn_task(check_stats(channel));
 	};
@@ -101,5 +101,5 @@ void wscmd_modsnooze(object channel, mapping(string:mixed) conn, mapping(string:
 	if ((int)conn->session->user->id != channel->userid) return;
 	channel->config->snoozeads_mods = (int)msg->value;
 	channel->save();
-	send_updates_all(channel->name);
+	send_updates_all(channel, "");
 }

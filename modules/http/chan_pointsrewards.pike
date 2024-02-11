@@ -120,10 +120,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 
 @hook_reward_changed: void notify_rewards(object channel, string|void rewardid) {
 	if (rewardid) {
-		update_one(channel->name, rewardid);
-		update_one(channel->name, rewardid, "dynreward");
+		update_one(channel, "", rewardid);
+		update_one(channel, "", rewardid, "dynreward");
 	}
-	else send_updates_all(channel->name);
+	else send_updates_all(channel, "");
 }
 
 constant command_description = "Manage channel point rewards - fulfil and cancel need redemption ID too";

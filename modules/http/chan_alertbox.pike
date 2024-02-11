@@ -784,7 +784,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 
 //Push out changes to all appropriate sockets, including previews.
 void update_all(object channel) {
-	send_updates_all("control" + channel->name); //The control socket gets all the info (different state to the others)
+	send_updates_all(channel, "control"); //The control socket gets all the info (different state to the others)
 	//Gather a full list of display sockets. Note that this will still ONLY send to
 	//the correct authkey, since an older code that used to check out should not allow
 	//you access, unless there's a Vader override.
@@ -1005,7 +1005,7 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 		}
 		else alert[key] = value;
 	}
-	send_updates_all(dest + channel->name, alert);
+	send_updates_all(channel, dest, alert);
 }
 
 @"is_mod": void wscmd_config(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -1235,7 +1235,7 @@ void copy_stock(mapping alertconfigs, string basetype) {
 	string prevkey = m_delete(cfg, "authkey");
 	persist_status->save();
 	send_updates_all(conn->group, (["authkey": "<REVOKED>"]));
-	send_updates_all(prevkey + channel->name, (["breaknow": 1]));
+	send_updates_all(channel, prevkey, (["breaknow": 1]));
 }
 
 //Currently no UI for this, but it works if you fiddle on the console.
@@ -1250,7 +1250,7 @@ void copy_stock(mapping alertconfigs, string basetype) {
 	//that you can't remotely reload your preview in this way. It's also probably not
 	//necessary, given that normal use of previews will be in a context where you can
 	//reload manually; inside OBS or equivalent, it's going to be the live key.
-	send_updates_all(cfg->authkey + channel->name, (["version": LATEST_VERSION + 1]));
+	send_updates_all(channel, cfg->authkey, (["version": LATEST_VERSION + 1]));
 }
 
 //Words created by a quick brainstorm among DeviCat's community :)
@@ -1425,7 +1425,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	//TODO: Prune if necessary (but if so, increment cfg->replay_offset by the number removed)
 	cfg->replay += ({args | (["alert_timestamp": time()])});
 	persist_status->save();
-	send_updates_all("control" + channel->name);
+	send_updates_all(channel, "control");
 	spawn_task(send_with_tts(channel, args));
 	return 1;
 }

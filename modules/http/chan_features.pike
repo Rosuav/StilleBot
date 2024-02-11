@@ -120,5 +120,5 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		channel->config_save();
 	}
 	send_updates_all(conn->group);
-	send_updates_all("view" + channel->name);
+	send_updates_all(channel, "view");
 }

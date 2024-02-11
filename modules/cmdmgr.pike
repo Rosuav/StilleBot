@@ -584,7 +584,7 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 			if (!has_prefix(cmd, "rew ")) continue;
 			//update_one not currently supported on this socket, so just
 			//send a full update and then stop (so we don't multiupdate).
-			handler->send_updates_all(channel->name); break;
+			handler->send_updates_all(channel, ""); break;
 		}
 	}
 	if (function handler = response && G->G->specials_check_hooks) {
