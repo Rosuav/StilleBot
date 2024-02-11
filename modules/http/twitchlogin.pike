@@ -36,7 +36,7 @@ mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mappin
 		"login": user->login,
 		"token": token,
 		"authcookie": cookie,
-		"scopes": req->variables->scope / " ",
+		"scopes": sort(req->variables->scope / " "),
 		"validated": time(),
 		"user_info": user,
 	]));

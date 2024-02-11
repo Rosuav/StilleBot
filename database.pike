@@ -408,7 +408,7 @@ continue awaitable|mapping for_each_db(string sql, mapping|void bindings) {
 //login     - Twitch user name (mandatory)
 //token     - the actual Twitch OAuth login (mandatory)
 //authcookie- returned by the OAuth process and contains most other info, encode_value()'d
-//scopes    - array of strings of Twitch scopes. May be empty.
+//scopes    - sorted array of strings of Twitch scopes. May be empty.
 //validated - time() when the login was last checked. This is either when the login was done, or
 //            when /oauth2/validate was used on it. This does NOT count other calls using the token.
 //user_info - mapping of additional info from Twitch. Advisory only, may have changed. Will often
