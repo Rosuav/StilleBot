@@ -182,29 +182,34 @@ mapping cached_user_info(int|string user) {
 //encapsulation, but maintain dependency ordering.
 @export: array(string) token_for_user_login(string login) {
 	login = lower_case(login);
+	mapping cred = G->G->user_credentials[login];
+	if (cred) return ({cred->token, cred->scopes * " "});
 	string token = persist_status->path("bcaster_token")[login];
 	if (!token) return ({"", ""});
 	return ({token, persist_status->path("bcaster_token_scopes")[login] || ""});
 }
 
-//Eventually this will be important, as the synchronous version may fail.
+//Eventually this may be essential - if credentials aren't yet loaded, this can block.
 @export: continue Concurrent.Future|array(string) token_for_user_login_async(string login) {
 	return token_for_user_login(login);
 }
 
-//Not currently reliable; use the async variety for certainty.
 @export: array(string) token_for_user_id(int|string userid) {
+	mapping cred = G->G->user_credentials[(int)userid];
+	if (cred) return ({cred->token, cred->scopes * " "});
 	mapping info = user_info[(int)userid];
 	if (!info) error("Synchronous fetching of tokens by user ID is not yet available\n");
 	return token_for_user_login(info->login);
 }
 
 @export: continue Concurrent.Future|array(string) token_for_user_id_async(int|string userid) {
+	mapping cred = G->G->user_credentials[(int)userid];
+	if (cred) return ({cred->token, cred->scopes * " "});
 	string login = yield(get_user_info((int)userid))->login;
 	return token_for_user_login(login);
 }
 
-//This isn't currently spawned anywhere. Should it be?
+//This isn't currently spawned anywhere. Should it be? What if auth fails?
 continue Concurrent.Future check_bcaster_tokens() {
 	mapping tokscopes = persist_status->path("bcaster_token_scopes");
 	foreach (persist_status->path("bcaster_token"); string chan; string token) {
