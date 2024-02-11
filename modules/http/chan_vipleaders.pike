@@ -84,7 +84,7 @@ void add_score(mapping monthly, string board, mapping sub) {
 }
 
 continue Concurrent.Future force_recalc(object channel, int|void fast) {
-	mapping stats = persist_status->has_path("subgiftstats", channel);
+	mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
 	if (!stats->?active) return 0;
 	if (!fast || !stats->monthly) {
 		stats->monthly = ([]);
