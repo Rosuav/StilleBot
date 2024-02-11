@@ -91,10 +91,8 @@ int(0..1) is_genstate(mixed x) {return functionp(x) && has_value(sprintf("%O", x
 //2) Generator state function
 //3) Array of the above. Use Concurrent.all implicitly, and return an array.
 //4) Anything else?
-class spawn_task(mixed gen, function|void got_result, function|void got_error) {
-	mixed extra;
-	protected void create(mixed ... args) {
-		extra = args;
+class spawn_task(mixed gen, function|void got_result, function|void got_error, mixed ... extra) {
+	protected void create() {
 		if (!got_result) got_result = _ignore_result;
 		if (!got_error) got_error = _unhandled_error;
 		if (is_genstate(gen)) pump(0, 0);
