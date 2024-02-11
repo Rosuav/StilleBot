@@ -645,11 +645,6 @@ EventSub raidin = EventSub("raidin", "channel.raid", "1") {
 			"is_raid": 1,
 		]));
 	}
-	//The JS backend doesn't know about raids, won't get alerts for them, but should
-	//at very least include them in the hostlist command (which is a hack anyway).
-	if (cfg->hostbackend == "js")
-		send_updates_all(cfg->authkey + channel->name, (["raidhack": __ARGS__[1]->from_broadcaster_user_login]));
-	//Stdio.append_file("alertbox_hosts.log", sprintf("[%d] SRVRAID: %s -> %O\n", time(), __ARGS__[0], __ARGS__[1]));
 };
 
 void ensure_host_connection(string chan) {
