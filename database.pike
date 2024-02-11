@@ -83,6 +83,7 @@ string active; //Host name only, not the connection object itself
 	"saveme": ({ }), //These will be asynchronously saved as soon as there's an active.
 ]);
 array(string) database_ips = ({"sikorsky.rosuav.com", "ipv4.rosuav.com"});
+mapping notify_channels = ([]);
 
 //ALL queries should go through this function.
 //Is it more efficient, with queries where we don't care about the result, to avoid calling get()?
@@ -185,16 +186,19 @@ continue Concurrent.Future fetch_settings(mapping db) {
 	event_notify("database_settings", G->G->dbsettings);
 }
 
+@"stillebot.settings":
 void notify_settings_change(int pid, string cond, string extra, string host) {
 	werror("SETTINGS CHANGED [%s]\n", host);
 	spawn_task(fetch_settings(pg_connections[host]));
 }
 
+@"stillebot.http_sessions":
 void notify_session_gone(int pid, string cond, string extra, string host) {
 	werror("SESSION DELETED [%s, %s]\n", cond, extra);
 	G->G->http_sessions_deleted[extra] = 1;
 }
 
+@"stillebot.commands":
 void notify_command_added(int pid, string cond, string extra, string host) {
 	werror("COMMAND CREATED [%s, %s]\n", cond, extra);
 	if (!G->G->irc) return; //Interactive mode - no need to push updates out
@@ -221,10 +225,6 @@ continue Concurrent.Future connect(string host) {
 			"force_ssl": 1, "ssl_context": ctx, "application_name": "stillebot",
 		]));
 		db->conn->set_notify_callback("readonly", notify_readonly, 1, host);
-		db->conn->set_notify_callback("stillebot.settings", notify_settings_change, 1, host);
-		db->conn->set_notify_callback("stillebot.http_sessions", notify_session_gone, 1, host);
-		db->conn->set_notify_callback("stillebot.commands", notify_command_added, 1, host);
-		db->conn->set_notify_callback("", notify_unknown, 1, host);
 		//Sometimes, the connection fails, but we only notice it here at this point when the
 		//first query goes through. It won't necessarily even FAIL fail, it just stalls here.
 		//So we limit how long this can take. When working locally, it takes about 100ms or
@@ -237,9 +237,11 @@ continue Concurrent.Future connect(string host) {
 		}
 		break;
 	}
-	yield((mixed)query(db, "listen \"stillebot.settings\""));
-	yield((mixed)query(db, "listen \"stillebot.http_sessions\""));
-	yield((mixed)query(db, "listen \"stillebot.commands\""));
+	foreach (notify_channels; string channel; mixed callback) {
+		db->conn->set_notify_callback(channel, callback, 1, host);
+		yield((mixed)query(db, "listen \"" + channel + "\""));
+	}
+	db->conn->set_notify_callback("", notify_unknown, 1, host);
 	string ro = yield((mixed)query(db, "show default_transaction_read_only"))[0]->default_transaction_read_only;
 	werror("Connected to %O - %s.\n", host, ro == "on" ? "r/o" : "r-w");
 	if (ro == "on") {
@@ -458,6 +460,10 @@ continue Concurrent.Future create_tables_and_stop() {
 
 protected void create(string name) {
 	::create(name);
+	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
+		if (ann) foreach (indices(ann), mixed anno)
+			if (stringp(anno)) notify_channels[anno] = this[key];
+	}
 	//For testing, force the opposite connection order
 	if (has_value(G->G->argv, "--gideondb")) database_ips = ({"ipv4.rosuav.com", "sikorsky.rosuav.com"});
 	G->G->DB = this;
