@@ -230,7 +230,7 @@ continue Concurrent.Future check_bcaster_tokens() {
 {
 	if (!G->G->dbsettings->credentials) {
 		Concurrent.Promise p = Concurrent.Promise();
-		spawn_task(get_credentials()) {p->fulfil(get_helix_paginated(url, query, headers, options, debug));};
+		spawn_task(get_credentials()) {get_helix_paginated(url, query, headers, options, debug)->then(p->fulfil);};
 		return p->future();
 	}
 	array data = ({ });
