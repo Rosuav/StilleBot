@@ -1347,9 +1347,9 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 			return;
 		}
 		[object channel, string grp] = handler->split_channel(data->group);
-		//In the future, this transformation will transform to userids instead.
-		if (channel) data->group = grp + channel->name;
-		//if (channel) data->group = grp + "#" + channel->userid;
+		//Previously, this transformation would transform to logins.
+		//if (channel) data->group = grp + channel->name;
+		if (channel) data->group = grp + "#" + channel->userid;
 		//NOTE: Don't save the channel object itself here, in case code gets
 		//updated. We want to fetch up the latest channel object whenever it's
 		//needed. But it'll be useful to synchronize the group, regardless of
