@@ -12,11 +12,17 @@ mapping cached_user_info(int|string user) {
 	if (info && time() - info->_fetch_time < 3600) return info;
 }
 
+continue awaitable get_credentials() {
+	//TODO: Wait properly, don't just sleep
+	while (!G->G->dbsettings->credentials) yield(task_sleep(1));
+}
+
 //Place a request to the API. Returns a Future that will be resolved with a fully
 //decoded result (a mapping of Unicode text, generally), or rejects if Twitch or
 //the network failed the request.
 @export: Concurrent.Future twitch_api_request(Protocols.HTTP.Session.URL url, mapping|void headers, mapping|void options)
 {
+	if (!G->G->dbsettings->credentials) return spawn_task(get_credentials()) {twitch_api_request(url, headers, options);};
 	headers = (headers || ([])) + ([]);
 	options = options || ([]);
 	if (options->username)
@@ -222,6 +228,7 @@ continue Concurrent.Future check_bcaster_tokens() {
 
 @export: Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
 {
+	if (!G->G->dbsettings->credentials) return spawn_task(get_credentials()) {get_helix_paginated(url, query, headers, options, debug);};
 	array data = ({ });
 	Standards.URI uri = Standards.URI(url);
 	query = (query || ([])) + ([]);
