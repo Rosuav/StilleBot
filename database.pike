@@ -428,7 +428,7 @@ continue awaitable preload_user_credentials() {
 	m_delete(G->G, "user_credentials_loading");
 }
 
-@"stillebot.config:credentials":
+//@"stillebot.config:credentials":
 void notify_credentials_changed(int pid, string cond, string extra, string host) {
 	spawn_task(load_config(extra, "credentials")) {[mapping data] = __ARGS__;
 		mapping cred = G->G->user_credentials;
@@ -442,6 +442,16 @@ void save_user_credentials(mapping data) {
 	mapping cred = G->G->user_credentials;
 	cred[data->userid] = cred[data->login] = data;
 	save_config(data->userid, "credentials", data);
+}
+continue awaitable save_user_credentials_async(mixed data) {
+	mapping cred = G->G->user_credentials;
+	cred[data->userid] = cred[data->login] = data;
+	int userid = data->userid;
+	data = Standards.JSON.encode(data, 4);
+	werror("Saving...\n");
+	yield(save_to_db("insert into stillebot.config values (:twitchid, :kwd, :data) on conflict (twitchid, keyword) do update set data=:data",
+		(["twitchid": userid, "kwd": "credentials", "data": data])));
+	werror("Saved.\n");
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
@@ -515,5 +525,5 @@ protected void create(string name) {
 	G->G->DB = this;
 	spawn_task(reconnect(1));
 	if (!G->G->http_sessions_deleted) G->G->http_sessions_deleted = ([]);
-	if (!G->G->user_credentials_loading && !G->G->user_credentials_loaded) spawn_task(preload_user_credentials());
+	//if (!G->G->user_credentials_loading && !G->G->user_credentials_loaded) spawn_task(preload_user_credentials());
 }

@@ -226,6 +226,29 @@ continue Concurrent.Future check_bcaster_tokens() {
 	}
 }
 
+continue awaitable import_bcaster_tokens() {
+	while (!G->G->user_credentials_loaded) yield(task_sleep(1));
+	werror("Importing...\n");
+	mapping tokscopes = persist_status->path("bcaster_token_scopes");
+	foreach (sort(indices(persist_status->path("bcaster_token"))), string chan) {
+		if (G->G->user_credentials[chan]) continue;
+		int userid;
+		if (mixed ex = catch {userid = yield(get_user_id(chan));}) {
+			werror("Skipping %O\n", chan);
+			continue;
+		}
+		yield(G->G->DB->save_user_credentials_async(([
+			"userid": userid,
+			"login": chan,
+			"token": persist_status->path("bcaster_token")[chan],
+			"scopes": sort(tokscopes[chan] / " "),
+		])));
+		werror("Saved to DB.\n");
+		array rows = yield(G->G->DB->generic_query("select twitchid, data from stillebot.config where keyword = 'credentials'"));
+		werror("Now have %d rows.\n", sizeof(rows));
+	}
+}
+
 @export: Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
 {
 	if (!G->G->dbsettings->credentials) {
