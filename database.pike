@@ -419,7 +419,7 @@ continue awaitable preload_user_credentials() {
 	G->G->user_credentials_loading = 1;
 	mapping cred = G->G->user_credentials = ([]);
 	if (!active) yield(await_active());
-	array rows = yield((mixed)query(pg_connections[active], "select twitchid, data from stillebot.config where keyword = 'credentials' limit 0"));
+	array rows = yield((mixed)query(pg_connections[active], "select twitchid, data from stillebot.config where keyword = 'credentials'"));
 	foreach (rows, mapping row) {
 		mapping data = Standards.JSON.decode_utf8(rows[0]->data);
 		cred[(int)row->twitchid] = cred[data->login] = data;
@@ -428,7 +428,7 @@ continue awaitable preload_user_credentials() {
 	m_delete(G->G, "user_credentials_loading");
 }
 
-//@"stillebot.config:credentials":
+@"stillebot.config:credentials":
 void notify_credentials_changed(int pid, string cond, string extra, string host) {
 	spawn_task(load_config(extra, "credentials")) {[mapping data] = __ARGS__;
 		mapping cred = G->G->user_credentials;
