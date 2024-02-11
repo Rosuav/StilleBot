@@ -4,17 +4,17 @@ inherit annotated;
 int last_activity = time();
 int cur_category;
 mapping cfgtest = ([]);
-continue Concurrent.Future ping() {
-	yield((mixed)G->G->DB->reconnect(1));
+__async__ void ping() {
+	await(G->G->DB->reconnect(1));
 	werror("Active: %s\n", G->G->DB->active || "None!");
-	for (;;yield(task_sleep(10))) yield(G->G->run_test());
+	for (;;await(task_sleep(10))) await(G->G->run_test());
 }
 
-continue Concurrent.Future run_test() {
+__async__ void run_test() {
 	if (mixed ex = catch {
-		mapping ret = yield((mixed)G->G->DB->generic_query("select * from stillebot.user_followed_categories where twitchid = 1"))[0];
+		mapping ret = await(G->G->DB->generic_query("select * from stillebot.user_followed_categories where twitchid = 1"))[0];
 		werror("[%d] Current value: %O\n", time() - last_activity, cur_category = ret->category);
-		cfgtest = yield((mixed)G->G->DB->load_config(0, "testing"));
+		cfgtest = await(G->G->DB->load_config(0, "testing"));
 		werror("Got: %O\n", cfgtest);
 	}) werror("[%d] No active connection - cached value is %d.\n%O\n", time() - last_activity, cur_category, ex);
 }
@@ -25,29 +25,29 @@ void increment() {
 	G->G->DB->save_sql("update stillebot.user_followed_categories set category = :newval where twitchid = 1", (["newval": newval]));
 }
 
-continue Concurrent.Future increment2() {
-	cfgtest = yield((mixed)G->G->DB->load_config(0, "testing"));
+__async__ void increment2() {
+	cfgtest = await(G->G->DB->load_config(0, "testing"));
 	werror("Updating ID to %d and saving.\n", ++cfgtest->nextid);
 	G->G->DB->save_config(0, "testing", cfgtest);
 }
 
-continue Concurrent.Future get_settings() {
+__async__ void get_settings() {
 	werror("Settings now: %O\n", G->G->dbsettings);
-	mapping settings = yield((mixed)G->G->DB->generic_query("select * from stillebot.settings"))[0];
+	mapping settings = await(G->G->DB->generic_query("select * from stillebot.settings"))[0];
 	werror("Queried settings: %O\n", settings);
 }
 
-continue Concurrent.Future session() {
+__async__ void session() {
 	mapping session = (["cookie": random(1<<64)->digits(36), "user": "don't you wanna know"]);
 	G->G->DB->save_session(session);
-	mapping readback = yield((mixed)G->G->DB->load_session(session->cookie));
+	mapping readback = await(G->G->DB->load_session(session->cookie));
 	werror("Queried session: %O\n", readback);
 }
 
 //Demonstrate if the event loop ever gets stalled out (eg by a blocking operation)
-continue Concurrent.Future activity() {
+__async__ void activity() {
 	while (1) {
-		yield(task_sleep(60));
+		await(task_sleep(60));
 		write("%%%% Watchdog %%%% It is now " + ctime(time()));
 		last_activity = time();
 	}
@@ -65,11 +65,11 @@ int(1bit) handle_command_collision(array(string) errors) {
 	spawn_task(resolve_command_collision(twitchid, cmdname));
 }
 
-continue Concurrent.Future resolve_command_collision(int twitchid, string cmdname) {
+__async__ void resolve_command_collision(int twitchid, string cmdname) {
 	mixed ex = catch {
 		//To resolve this sort of collision, we first mark ALL conflicting commands
 		//as inactive. This should get replication working again.
-		mapping each = yield(G->G->DB->for_each_db(#"update stillebot.commands
+		mapping each = await(G->G->DB->for_each_db(#"update stillebot.commands
 			set active = false
 			where twitchid = :twitchid and cmdname = :cmdname and active = true
 			returning id, created",
@@ -83,9 +83,9 @@ continue Concurrent.Future resolve_command_collision(int twitchid, string cmdnam
 		//This can be done on any database and will be replicated out correctly.
 		//TODO: Can we wait until replication has indeed happened? For now, just sticking
 		//in a nice long delay.
-		yield(task_sleep(5));
-		spawn_task(G->G->DB->generic_query("update stillebot.commands set active = true where id = :id",
-			(["id": dbs[-1]->id])));
+		await(task_sleep(5));
+		G->G->DB->generic_query("update stillebot.commands set active = true where id = :id",
+			(["id": dbs[-1]->id]));
 		Stdio.append_file("postgresql_conflict_resolution.log",
 			sprintf("=====\n%sCONFLICT: stillebot.commands\n%O\nResolved.\n",
 				ctime(time()), each));
@@ -148,6 +148,13 @@ void start_inotify() {
 	};
 }
 
+Concurrent.Future kaboom() {
+	return task_sleep(3)->then() {
+		write("Blowing up...\n");
+		error("Kaboooom!\n");
+	};
+}
+
 protected void create(string name) {
 	::create(name);
 	if (!G->G->have_tasks) {
@@ -163,4 +170,5 @@ protected void create(string name) {
 	G->G->run_test = run_test;
 	G->G->postgres_log_readable = log_readable;
 	if (!G->G->inotify) start_inotify();
+	spawn_task(kaboom());
 }

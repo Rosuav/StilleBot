@@ -95,30 +95,30 @@ mapping notify_channels = ([]);
 //If the query is an array of strings, they all share the same bindings, and will be performed in
 //a single transaction (ie if the connection fails, they will be requeued as a set). The return
 //value in this case is an array of results (not counting the implicit BEGIN and COMMIT).
-continue Concurrent.Future query(mapping(string:mixed) db, string|array sql, mapping|void bindings) {
+__async__ array query(mapping(string:mixed) db, string|array sql, mapping|void bindings) {
 	object pending = db->pending;
 	object completion = db->pending = Concurrent.Promise();
-	if (pending) yield(pending->future()); //If there's a queue, put us at the end of it.
+	if (pending) await(pending->future()); //If there's a queue, put us at the end of it.
 	mixed ret, ex;
 	if (arrayp(sql)) {
 		ret = ({ });
-		ex = catch {yield(db->conn->promise_query("begin"))->get();};
+		ex = catch {await(db->conn->promise_query("begin"))->get();};
 		if (!ex) foreach (sql, string q) {
 			//A null entry in the array of queries is ignored, and will not have a null return value to correspond.
-			if (ex = q && catch {ret += ({yield(db->conn->promise_query(q, bindings))->get()});}) break;
+			if (ex = q && catch {ret += ({await(db->conn->promise_query(q, bindings))->get()});}) break;
 		}
 		//Ignore errors from rolling back - the exception that gets raised will have come from
 		//the actual query (or possibly the BEGIN), not from rolling back.
-		if (ex) catch {yield(db->conn->promise_query("rollback"))->get();};
+		if (ex) catch {await(db->conn->promise_query("rollback"))->get();};
 		//But for committing, things get trickier. Technically an exception here leaves the
 		//transaction in an uncertain state, but I'm going to just raise the error. It is
 		//possible that the transaction DID complete, but we can't be sure.
-		else ex = catch {yield(db->conn->promise_query("commit"))->get();};
+		else ex = catch {await(db->conn->promise_query("commit"))->get();};
 	}
 	else {
 		//Implicit transaction is fine here; this is also suitable for transactionless
 		//queries (of which there are VERY few).
-		ex = catch {ret = yield(db->conn->promise_query(sql, bindings))->get();};
+		ex = catch {ret = await(db->conn->promise_query(sql, bindings))->get();};
 	}
 	completion->success(1);
 	if (db->pending == completion) db->pending = 0;
@@ -126,11 +126,11 @@ continue Concurrent.Future query(mapping(string:mixed) db, string|array sql, map
 	return ret;
 }
 
-continue Concurrent.Future _got_active(mapping db) {
+__async__ void _got_active(mapping db) {
 	//Pull all the pendings and reset the array before actually saving any of them.
 	array wfa = waiting_for_active->saveme; waiting_for_active->saveme = ({ });
 	foreach (wfa, [string sql, mapping bindings]) {
-		mixed err = catch {yield((mixed)query(db, sql, bindings));};
+		mixed err = catch {await((mixed)query(db, sql, bindings));};
 		if (err) werror("Unable to save pending to database!\n%s\n", describe_backtrace(err));
 	}
 }
@@ -182,8 +182,8 @@ void notify_unknown(int pid, string cond, string extra, string host) {
 //Called whenever we have settings available, notably after any change or potential change.
 //Note that if you require _actual_ change detection, you'll need to do it yourself.
 @create_hook: constant database_settings = ({"mapping settings"});
-continue Concurrent.Future fetch_settings(mapping db) {
-	G->G->dbsettings = yield((mixed)query(db, "select * from stillebot.settings"))[0];
+__async__ void fetch_settings(mapping db) {
+	G->G->dbsettings = await((mixed)query(db, "select * from stillebot.settings"))[0];
 	G->G->dbsettings->credentials = Standards.JSON.decode_utf8(G->G->dbsettings->credentials);
 	G->G->bot_uid = G->G->dbsettings->credentials->userid; //Convenience alias. We use this in a good few places.
 	werror("Got settings from %s: active bot %O\n", db->host, G->G->dbsettings->active_bot);
@@ -215,7 +215,7 @@ void notify_command_added(int pid, string cond, string extra, string host) {
 	};
 }
 
-continue Concurrent.Future connect(string host) {
+__async__ void connect(string host) {
 	werror("Connecting to Postgres on %O...\n", host);
 	mapping db = pg_connections[host] = (["host": host]); //Not a floop, strings are just strings :)
 	string key = Stdio.read_file("privkey.pem");
@@ -234,7 +234,7 @@ continue Concurrent.Future connect(string host) {
 		//So we limit how long this can take. When working locally, it takes about 100ms or
 		//so; talking to a remote server, a couple of seconds. If it's been ten seconds, IMO
 		//there must be a problem.
-		mixed ex = catch {yield(db->conn->promise_query("listen readonly")->timeout(10));};
+		mixed ex = catch {await(db->conn->promise_query("listen readonly")->timeout(10));};
 		if (ex) {
 			werror("Timeout connecting to %s, retrying...\n", host);
 			continue;
@@ -243,25 +243,25 @@ continue Concurrent.Future connect(string host) {
 	}
 	foreach (notify_channels; string channel; mixed callback) {
 		db->conn->set_notify_callback(channel, callback, 1, host);
-		yield((mixed)query(db, "listen \"" + channel + "\""));
+		await(query(db, "listen \"" + channel + "\""));
 	}
 	db->conn->set_notify_callback("", notify_unknown, 1, host);
-	string ro = yield((mixed)query(db, "show default_transaction_read_only"))[0]->default_transaction_read_only;
+	string ro = await(query(db, "show default_transaction_read_only"))[0]->default_transaction_read_only;
 	werror("Connected to %O - %s.\n", host, ro == "on" ? "r/o" : "r-w");
 	if (ro == "on") {
-		yield((mixed)query(db, "set application_name = 'stillebot-ro'"));
+		await(query(db, "set application_name = 'stillebot-ro'"));
 		db->readonly = 1;
 	} else {
 		//Any time we have a read-write database connection, update settings.
 		//....????? I don't understand why, but if I don't store this in a
 		//variable, it results in an error about ?: and void. My best guess is
 		//the optimizer has replaced this if/else with a ?: maybe???
-		mixed _ = yield((mixed)fetch_settings(db));
+		mixed _ = await((mixed)fetch_settings(db));
 	}
 	db->connected = 1;
 }
 
-continue Concurrent.Future|zero reconnect(int force, int|void both) {
+__async__ void reconnect(int force, int|void both) {
 	if (force) {
 		foreach (pg_connections; string host; mapping db) {
 			if (!db->connected) {werror("Still connecting to %s...\n", host); continue;} //Will probably need a timeout somewhere
@@ -272,16 +272,16 @@ continue Concurrent.Future|zero reconnect(int force, int|void both) {
 		m_delete(pg_connections, indices(pg_connections)[*]); //Mutate the existing mapping so all clones of the module see that there are no connections
 	}
 	foreach (database_ips, string host) {
-		if (!pg_connections[host]) yield((mixed)connect(host));
-		if (!both && !pg_connections[host]->readonly) {_have_active(host); return 0;}
+		if (!pg_connections[host]) await((mixed)connect(host));
+		if (!both && !pg_connections[host]->readonly) {_have_active(host); return;}
 	}
 	werror("No active DB, suspending saves\n");
 	active = 0;
 }
 
-continue Concurrent.Future|string save_to_db(string|array sql, mapping bindings) {
+__async__ string save_to_db(string|array sql, mapping bindings) {
 	if (active) {
-		mixed err = catch {yield((mixed)query(pg_connections[active], sql, bindings));};
+		mixed err = catch {await(query(pg_connections[active], sql, bindings));};
 		if (!err) return "ok"; //All good!
 		//Report the error to the console, since the caller isn't hanging around.
 		//TODO: If the error is because there's actually no database available,
@@ -295,20 +295,20 @@ continue Concurrent.Future|string save_to_db(string|array sql, mapping bindings)
 }
 
 void save_sql(string|array query, mapping|void bindings) {
-	spawn_task(save_to_db(query, bindings));
+	save_to_db(query, bindings);
 }
 
 void save_config(string|int twitchid, string kwd, mixed data) {
 	data = Standards.JSON.encode(data, 4);
-	spawn_task(save_to_db("insert into stillebot.config values (:twitchid, :kwd, :data) on conflict (twitchid, keyword) do update set data=:data",
-		(["twitchid": (int)twitchid, "kwd": kwd, "data": data])));
+	save_to_db("insert into stillebot.config values (:twitchid, :kwd, :data) on conflict (twitchid, keyword) do update set data=:data",
+		(["twitchid": (int)twitchid, "kwd": kwd, "data": data]));
 }
 
-continue Concurrent.Future|mapping load_config(string|int twitchid, string kwd) {
+__async__ mapping load_config(string|int twitchid, string kwd) {
 	//NOTE: If there's no database connection, this will block. For higher speed
 	//queries, do we need a try_load_config() that would error out (or return null)?
-	if (!active) yield(await_active());
-	array rows = yield((mixed)query(pg_connections[active], "select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
+	if (!active) await(await_active());
+	array rows = await(query(pg_connections[active], "select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
 		(["twitchid": (int)twitchid, "kwd": kwd])));
 	if (!sizeof(rows)) return ([]);
 	return Standards.JSON.decode_utf8(rows[0]->data);
@@ -320,13 +320,13 @@ continue Concurrent.Future|mapping load_config(string|int twitchid, string kwd) 
 //or:
 //sscanf("F\255C|\377gK\316\223iW\351\215\37\377=", "%{%2c%}", array words);
 //sprintf("%x%x-%x-%x-%x-%x%x%x", @words[*][0]);
-continue awaitable|array(mapping) load_commands(string|int twitchid, string|void cmdname, int|void allversions) {
-	if (!active) yield(await_active());
+__async__ array(mapping) load_commands(string|int twitchid, string|void cmdname, int|void allversions) {
+	if (!active) await(await_active());
 	string sql = "select * from stillebot.commands where twitchid = :twitchid";
 	mapping bindings = (["twitchid": twitchid]);
 	if (cmdname) {sql += " and cmdname = :cmdname"; bindings->cmdname = cmdname;}
 	if (!allversions) sql += " and active";
-	array rows = yield((mixed)query(pg_connections[active], sql, bindings));
+	array rows = await(query(pg_connections[active], sql, bindings));
 	foreach (rows, mapping command) command->content = Standards.JSON.decode_utf8(command->content);
 	return rows;
 }
@@ -354,10 +354,10 @@ void save_session(mapping data) {
 		(["cookie": data->cookie, "data": encode_value(data)])));
 }
 
-continue Concurrent.Future|mapping load_session(string cookie) {
+__async__ mapping load_session(string cookie) {
 	if (!cookie || cookie == "") return ([]); //Will trigger new-cookie handling on save
-	if (!active) yield(await_active());
-	array rows = yield((mixed)query(pg_connections[active], "select data from stillebot.http_sessions where cookie = :cookie",
+	if (!active) await(await_active());
+	array rows = await(query(pg_connections[active], "select data from stillebot.http_sessions where cookie = :cookie",
 		(["cookie": cookie])));
 	if (!sizeof(rows)) return (["cookie": cookie]);
 	//For some reason, sometimes I get an array of strings instead of an array of mappings.
@@ -367,38 +367,37 @@ continue Concurrent.Future|mapping load_session(string cookie) {
 }
 
 //Generate a new session cookie that definitely doesn't exist
-continue Concurrent.Future|string generate_session_cookie() {
-	if (!active) yield(await_active());
+__async__ string generate_session_cookie() {
+	if (!active) await(await_active());
 	while (1) {
 		string cookie = random(1<<64)->digits(36);
-		mixed ex = catch {yield((mixed)query(pg_connections[active], "insert into stillebot.http_sessions (cookie, data) values(:cookie, '')",
+		mixed ex = catch {await(query(pg_connections[active], "insert into stillebot.http_sessions (cookie, data) values(:cookie, '')",
 			(["cookie": cookie])));};
 		if (!ex) return cookie;
 		//TODO: If it wasn't a PK conflict, let the exception bubble up
 		werror("COOKIE INSERTION\n%s\n", describe_backtrace(ex));
-		yield((mixed)task_sleep(1));
+		await(task_sleep(1));
 	}
 }
 
 //Generic SQL query on the current database. Not recommended; definitely not recommended for
 //any mutation; use the proper load_config/save_config/save_sql instead. This is deliberately
-//NOT exported, so to use it, write yield((mixed)G->G->DB->generic_query("...")) - clunky as a
-//reminder to avoid doing this where possible.
-continue Concurrent.Future|mapping generic_query(string sql, mapping|void bindings) {
+//NOT exported - avoid it unless there's no better way.
+__async__ mapping generic_query(string sql, mapping|void bindings) {
 	if (!pg_connections[active]) {
-		yield((mixed)reconnect(0));
+		await(reconnect(0));
 		if (!active) error("No database connection available.\n");
 	}
-	return yield((mixed)query(pg_connections[active], sql, bindings));
+	return await(query(pg_connections[active], sql, bindings));
 }
 
 //Don't use this. If you are in a proper position to violate that rule, you already know what
 //you're doing. Future me: Past me sincerely hopes that you decide you can't justify using this.
-continue awaitable|mapping for_each_db(string sql, mapping|void bindings) {
-	yield(reconnect(0, 1));
+__async__ mapping for_each_db(string sql, mapping|void bindings) {
+	await(reconnect(0, 1));
 	mapping ret = ([]);
 	foreach (pg_connections; string host; mapping db)
-		ret[host] = yield(query(db, sql, bindings));
+		ret[host] = await(query(db, sql, bindings));
 	return ret;
 }
 
@@ -415,11 +414,11 @@ continue awaitable|mapping for_each_db(string sql, mapping|void bindings) {
 //            contain display_name though, which could be handy.
 //TODO: What happens as things get bigger? Eventually this will be a lot of loading. Should
 //the credentials query functions be made async and do the fetching themselves?
-continue awaitable preload_user_credentials() {
+__async__ void preload_user_credentials() {
 	G->G->user_credentials_loading = 1;
 	mapping cred = G->G->user_credentials = ([]);
-	if (!active) yield(await_active());
-	array rows = yield((mixed)query(pg_connections[active], "select twitchid, data from stillebot.config where keyword = 'credentials'"));
+	if (!active) await(await_active());
+	array rows = await(query(pg_connections[active], "select twitchid, data from stillebot.config where keyword = 'credentials'"));
 	foreach (rows, mapping row) {
 		mapping data = Standards.JSON.decode_utf8(rows[0]->data);
 		cred[(int)row->twitchid] = cred[data->login] = data;
@@ -443,20 +442,20 @@ void save_user_credentials(mapping data) {
 	cred[data->userid] = cred[data->login] = data;
 	save_config(data->userid, "credentials", data);
 }
-continue awaitable save_user_credentials_async(mixed data) {
+__async__ void save_user_credentials_async(mixed data) {
 	mapping cred = G->G->user_credentials;
 	cred[data->userid] = cred[data->login] = data;
 	int userid = data->userid;
 	data = Standards.JSON.encode(data, 4);
 	werror("Saving...\n");
-	yield(save_to_db("insert into stillebot.config values (:twitchid, :kwd, :data) on conflict (twitchid, keyword) do update set data=:data",
+	await(save_to_db("insert into stillebot.config values (:twitchid, :kwd, :data) on conflict (twitchid, keyword) do update set data=:data",
 		(["twitchid": userid, "kwd": "credentials", "data": data])));
 	werror("Saved.\n");
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
-continue Concurrent.Future create_tables() {
-	yield((mixed)reconnect(1, 1)); //Ensure that we have at least one connection, both if possible
+__async__ void create_tables() {
+	await(reconnect(1, 1)); //Ensure that we have at least one connection, both if possible
 	array(mapping) dbs;
 	if (active) {
 		//We can't make changes, but can verify and report inconsistencies.
@@ -469,7 +468,7 @@ continue Concurrent.Future create_tables() {
 		dbs = values(pg_connections);
 	}
 	foreach (dbs, mapping db) {
-		array cols = yield((mixed)query(db, "select table_name, column_name from information_schema.columns where table_schema = 'stillebot' order by table_name, ordinal_position"));
+		array cols = await(query(db, "select table_name, column_name from information_schema.columns where table_schema = 'stillebot' order by table_name, ordinal_position"));
 		array stmts = ({ });
 		mapping(string:array(string)) havecols = ([]);
 		foreach (cols, mapping col) havecols[col->table_name] += ({col->column_name});
@@ -501,16 +500,16 @@ continue Concurrent.Future create_tables() {
 		if (sizeof(stmts)) {
 			if (active) error("Table structure changes needed!\n%O\n", stmts);
 			werror("Making changes on %s: %O\n", db->host, stmts);
-			yield((mixed)query(db, "begin read write"));
-			foreach (stmts, string stmt) yield((mixed)query(db, stmt));
-			yield((mixed)query(db, "commit"));
+			await(query(db, "begin read write"));
+			foreach (stmts, string stmt) await(query(db, stmt));
+			await(query(db, "commit"));
 			werror("Be sure to `./dbctl refreshrepl` on both ends!\n");
 		}
 	}
 }
 
-continue Concurrent.Future create_tables_and_stop() {
-	yield((mixed)create_tables());
+__async__ void create_tables_and_stop() {
+	await(create_tables());
 	exit(0);
 }
 

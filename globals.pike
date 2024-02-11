@@ -73,47 +73,17 @@ Calendar.ISO.Second time_from_iso(string time) {
 	return Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s.%f%z", time);
 }
 
-void _unhandled_error(mixed err) {
-	werror("Unhandled asynchronous exception\n%s\n", describe_backtrace(err));
+//Handle asynchronous results. Can be used to conveniently wrap promise-returning functions
+//in a non-async context.
+__async__ mixed spawn_task(mixed gen, function|void got_result, function|void got_error, mixed ... extra) {
+	mixed ret;
+	if (got_error) {
+		mixed ex = catch {ret = await(gen);};
+		if (ex) return got_error(ex);
+	} else ret = await(gen);
+	if (got_result) return got_result(ret);
+	return ret;
 }
-void _ignore_result(mixed value) { }
-
-//TODO: Replace this with a Function.function_type() check or similar
-int(0..1) is_genstate(mixed x) {return functionp(x) && has_value(sprintf("%O", x), "\\u0000");}
-
-//Handle asynchronous results. Will either call the callback immediately
-//(before returning), or will call it when the asynchronous results are
-//made available. Result and error callbacks get called with value and
-//any extra args appended.
-//TODO: If/when a Pike function is available to unambiguously identify
-//whether a generator has finished or not, permit more types of yields:
-//1) Concurrent.Future, as now
-//2) Generator state function
-//3) Array of the above. Use Concurrent.all implicitly, and return an array.
-//4) Anything else?
-class spawn_task(mixed gen, function|void got_result, function|void got_error, mixed ... extra) {
-	protected void create() {
-		if (!got_result) got_result = _ignore_result;
-		if (!got_error) got_error = _unhandled_error;
-		if (is_genstate(gen)) pump(0, 0);
-		else if (objectp(gen) && gen->then)
-			gen->then(got_result, got_error, @extra);
-		else got_result(gen, @extra);
-	}
-	//Pump a generator function. It should yield Futures until it returns a
-	//final result. If it yields a non-Future, it will be passed back
-	//immediately, but don't do that.
-	void pump(mixed last, mixed err) {
-		mixed resp;
-		if (mixed ex = catch {resp = gen(last){if (err) throw(err);};}) {got_error(ex, @extra); return;}
-		if (undefinedp(resp)) got_result(last, @extra);
-		else if (is_genstate(resp)) spawn_task(resp, pump, propagate_error);
-		else if (objectp(resp) && resp->then) resp->then(pump, propagate_error);
-		else pump(resp, 0);
-	}
-	void propagate_error(mixed err) {pump(0, err || ({"Null error\n", backtrace()}));}
-}
-constant handle_async = spawn_task; //Compatibility name (deprecated)
 
 //If cb is a spawn_task->pump/propagate_error function, return the corresponding task, else 0.
 mixed find_callback_task(function cb) {
@@ -123,13 +93,10 @@ mixed find_callback_task(function cb) {
 	if (function_name(object_program(obj)) == "spawn_task") return obj;
 }
 
-//mixed _ = yield(task_sleep(seconds)); //Delay the current task efficiently (the "mixed _ = " part isn't needed in Pike 9)
-class _task_sleep(int|float delay) {
-	void then(function whendone) {
-		call_out(whendone, delay, delay || "0"); //Never yield zero, it can cause confusion
-	}
+//await(task_sleep(seconds)); //Delay the current task efficiently
+Concurrent.Future task_sleep(int|float delay) {
+	return Concurrent.resolve(0)->delay(delay);
 }
-object task_sleep(int|float delay) {return _task_sleep(delay);} //Trick the parser into accepting a task_sleep as if it were a Future
 
 //Run a subprocess and yield (["rc": returncode, "stdout": bytes sent to stdout])
 //Similar to Process.run() but doesn't do stderr or stdin (and should only be used with small data).

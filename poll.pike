@@ -12,17 +12,17 @@ mapping cached_user_info(int|string user) {
 	if (info && time() - info->_fetch_time < 3600) return info;
 }
 
-continue awaitable get_credentials() {
+__async__ void get_credentials() {
 	//TODO: Wait properly, don't just sleep
-	while (!G->G->dbsettings->credentials) yield(task_sleep(1));
+	while (!G->G->dbsettings->credentials) await(task_sleep(1));
 }
 
 //Place a request to the API. Returns a Future that will be resolved with a fully
 //decoded result (a mapping of Unicode text, generally), or rejects if Twitch or
 //the network failed the request.
-@export: Concurrent.Future twitch_api_request(Protocols.HTTP.Session.URL url, mapping|void headers, mapping|void options)
+@export: __async__ mapping|int twitch_api_request(Protocols.HTTP.Session.URL url, mapping|void headers, mapping|void options)
 {
-	if (!G->G->dbsettings->credentials) return spawn_task(get_credentials()) {twitch_api_request(url, headers, options);};
+	if (!G->G->dbsettings->credentials) await(get_credentials());
 	headers = (headers || ([])) + ([]);
 	options = options || ([]);
 	if (options->username)
@@ -41,9 +41,10 @@ continue awaitable get_credentials() {
 			});
 		}
 		if (sizeof(reqs) > 1) reqs = ({Concurrent.all(@reqs)});
-		if (sizeof(reqs)) return reqs[0]->then(lambda() {
-			return twitch_api_request(replace(url, usernames), headers, options - (<"username">));
-		});
+		if (sizeof(reqs)) {
+			await(reqs[0]); //Populate the cache. TODO: Instead of recursing, just carry on.
+			return await(twitch_api_request(replace(url, usernames), headers, options - (<"username">)));
+		}
 		url = replace(url, usernames);
 		//If we found everything in cache, carry on with a modified URL.
 	}
@@ -59,11 +60,12 @@ continue awaitable get_credentials() {
 		if (options->authtype == "app") {
 			//App authorization token. If we don't have one, get one.
 			if (!G->G->app_access_token || G->G->app_access_token_expiry < time()) {
-				if (!persist_config["ircsettings"]["clientsecret"]) return Concurrent.reject(({sprintf("%s\nUnable to use app auth without a client secret\n", url), backtrace()}));
+				if (!persist_config["ircsettings"]["clientsecret"]) error("%s\nUnable to use app auth without a client secret\n", url);
 				if (G->G->app_access_token_expiry == -1) {
 					//TODO: Wait until the other request returns.
 					//For now we just sleep and try again.
-					return Concurrent.resolve(0)->delay(2)->then(lambda(mixed _) {return twitch_api_request(url, headers, options);});
+					await(task_sleep(2));
+					return await(twitch_api_request(url, headers, options));
 				}
 				G->G->app_access_token_expiry = -1; //Prevent spinning
 				Standards.URI uri = Standards.URI("https://id.twitch.tv/oauth2/token");
@@ -96,21 +98,19 @@ continue awaitable get_credentials() {
 		//Most requests require a Client ID. Not sure which don't, so just provide it (if not already set).
 		headers["Client-ID"] = c;
 	++G->G->twitch_api_query_count;
-	return Protocols.HTTP.Promise.do_method(method, url,
-			Protocols.HTTP.Promise.Arguments((["headers": headers, "data": body])))
-		->then(lambda(Protocols.HTTP.Promise.Result res) {
-			int limit = (int)res->headers["ratelimit-limit"],
-				left = (int)res->headers["ratelimit-remaining"];
-			#if !constant(HEADLESS)
-			if (limit) write("Rate limit: %d/%d   \r", limit - left, limit); //Will usually get overwritten
-			#endif
-			if (options->return_status) return res->status; //For requests not expected to have a body, but might have multiple success returns
-			if (res->status == 204 && res->get() == "") return ([]); //Otherwise, pretend that a 204 response is an empty mapping.
-			mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
-			if (!mappingp(data)) return Concurrent.reject(({sprintf("%s\nUnparseable response\n%O\n", url, res->get()[..64]), backtrace()}));
-			if (data->error && !options->return_errors) return Concurrent.reject(({sprintf("%s\nError from Twitch: %O (%O)\n%O\n", url, data->error, data->status, data), backtrace()}));
-			return data;
-		});
+	Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.do_method(method, url,
+			Protocols.HTTP.Promise.Arguments((["headers": headers, "data": body]))));
+	int limit = (int)res->headers["ratelimit-limit"],
+		left = (int)res->headers["ratelimit-remaining"];
+	#if !constant(HEADLESS)
+	if (limit) write("Rate limit: %d/%d   \r", limit - left, limit); //Will usually get overwritten
+	#endif
+	if (options->return_status) return res->status; //For requests not expected to have a body, but might have multiple success returns
+	if (res->status == 204 && res->get() == "") return ([]); //Otherwise, pretend that a 204 response is an empty mapping.
+	mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
+	if (!mappingp(data)) error("%s\nUnparseable response\n%O\n", url, res->get()[..64]);
+	if (data->error && !options->return_errors) error("%s\nError from Twitch: %O (%O)\n%O\n", url, data->error, data->status, data);
+	return data;
 }
 
 @export: void notice_user_name(string login, string id) {
@@ -129,11 +129,10 @@ continue awaitable get_credentials() {
 }
 
 //Will return from cache if available. Set type to "login" to look up by name, else uses ID.
-@export: Concurrent.Future get_users_info(array(int|string) users, string|void type)
-{
+@export: __async__ array(mapping)|zero get_users_info(array(int|string) users, string|void type) {
 	//Simplify things elsewhere: 0 yields 0 with no error. (Otherwise you'll
 	//always get an array of mappings, or a rejection.)
-	if (!users) return Concurrent.resolve(0);
+	if (!users) return 0;
 	users -= ({0});
 
 	if (type != "login") {type = "id"; users = (array(int))users;}
@@ -145,35 +144,33 @@ continue awaitable get_credentials() {
 		if (mapping info = cached_user_info(u)) results[i] = info;
 		else lookups += ({(string)u});
 	}
-	if (!sizeof(lookups)) return Concurrent.resolve(results); //Got 'em all from cache.
-	return get_helix_paginated("https://api.twitch.tv/helix/users", ([type: lookups]))
-		->then(lambda(array data) {
-			foreach (data, mapping info) {
-				info->_fetch_time = time();
-				user_info[info->login] = user_info[(int)info->id] = info;
-				notice_user_name(info->login, info->id);
-			}
-			foreach (users; int i; int|string u)
-			{
-				if (mapping info = cached_user_info(u)) results[i] = info;
-				//Note that the returned error will only ever name a single failed lookup.
-				//It's entirely possible that others failed too, but it probably won't matter.
-				else return Concurrent.reject(({"User not found: " + u + "\n", backtrace()}));
-			}
-			return results;
-		});
+	if (!sizeof(lookups)) return results; //Got 'em all from cache.
+	array data = await(get_helix_paginated("https://api.twitch.tv/helix/users", ([type: lookups])));
+	foreach (data, mapping info) {
+		info->_fetch_time = time();
+		user_info[info->login] = user_info[(int)info->id] = info;
+		notice_user_name(info->login, info->id);
+	}
+	foreach (users; int i; int|string u)
+	{
+		if (mapping info = cached_user_info(u)) results[i] = info;
+		//Note that the returned error will only ever name a single failed lookup.
+		//It's entirely possible that others failed too, but it probably won't matter.
+		else error("User not found: " + u + "\n");
+	}
+	return results;
 }
 
 //As above but only a single user's info. For convenience, 0 will yield 0 without an error.
-@export: Concurrent.Future get_user_info(int|string user, string|void type)
-{
-	return get_users_info(({user}), type)->then(lambda(array(mapping) info) {return sizeof(info) && info[0];});
+@export: __async__ mapping|zero get_user_info(int|string user, string|void type) {
+	array(mapping) info = await(get_users_info(({user}), type));
+	return sizeof(info) && info[0];
 }
 
 //Convenience shorthand when all you need is the ID
-@export: Concurrent.Future get_user_id(string user)
-{
-	return get_users_info(({user}), "login")->then(lambda(array(mapping) info) {return sizeof(info) && (int)info[0]->id;});
+@export: __async__ int get_user_id(string user) {
+	array(mapping) info = await(get_users_info(({user}), "login"));
+	return sizeof(info) && (int)info[0]->id;
 }
 
 //Four related functions to access user credentials.
@@ -196,7 +193,7 @@ continue awaitable get_credentials() {
 }
 
 //Eventually this may be essential - if credentials aren't yet loaded, this can block.
-@export: continue Concurrent.Future|array(string) token_for_user_login_async(string login) {
+@export: __async__ array(string) token_for_user_login_async(string login) {
 	return token_for_user_login(login);
 }
 
@@ -208,54 +205,50 @@ continue awaitable get_credentials() {
 	return token_for_user_login(info->login);
 }
 
-@export: continue Concurrent.Future|array(string) token_for_user_id_async(int|string userid) {
+@export: __async__ array(string) token_for_user_id_async(int|string userid) {
 	mapping cred = G->G->user_credentials[(int)userid];
 	if (cred) return ({cred->token, cred->scopes * " "});
-	string login = yield(get_user_info((int)userid))->login;
+	string login = await(get_user_info((int)userid))->login;
 	return token_for_user_login(login);
 }
 
 //This isn't currently spawned anywhere. Should it be? What if auth fails?
-continue Concurrent.Future check_bcaster_tokens() {
+__async__ void check_bcaster_tokens() {
 	mapping tokscopes = persist_status->path("bcaster_token_scopes");
 	foreach (persist_status->path("bcaster_token"); string chan; string token) {
-		mixed resp = yield(twitch_api_request("https://id.twitch.tv/oauth2/validate",
+		mixed resp = await(twitch_api_request("https://id.twitch.tv/oauth2/validate",
 			(["Authorization": "Bearer " + token])));
 		string scopes = sort(resp->scopes || ({ })) * " ";
 		if (tokscopes[chan] != scopes) {tokscopes[chan] = scopes; persist_status->save();}
 	}
 }
 
-continue awaitable import_bcaster_tokens() {
-	while (!G->G->user_credentials_loaded) yield(task_sleep(1));
+__async__ void import_bcaster_tokens() {
+	while (!G->G->user_credentials_loaded) await(task_sleep(1));
 	werror("Importing...\n");
 	mapping tokscopes = persist_status->path("bcaster_token_scopes");
 	foreach (sort(indices(persist_status->path("bcaster_token"))), string chan) {
 		if (G->G->user_credentials[chan]) continue;
 		int userid;
-		if (mixed ex = catch {userid = yield(get_user_id(chan));}) {
+		if (mixed ex = catch {userid = await(get_user_id(chan));}) {
 			werror("Skipping %O\n", chan);
 			continue;
 		}
-		yield(G->G->DB->save_user_credentials_async(([
+		await(G->G->DB->save_user_credentials_async(([
 			"userid": userid,
 			"login": chan,
 			"token": persist_status->path("bcaster_token")[chan],
 			"scopes": sort(tokscopes[chan] / " "),
 		])));
 		werror("Saved to DB.\n");
-		array rows = yield(G->G->DB->generic_query("select twitchid, data from stillebot.config where keyword = 'credentials'"));
+		array rows = await(G->G->DB->generic_query("select twitchid, data from stillebot.config where keyword = 'credentials'"));
 		werror("Now have %d rows.\n", sizeof(rows));
 	}
 }
 
-@export: Concurrent.Future get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
+@export: __async__ array(mapping) get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
 {
-	if (!G->G->dbsettings->credentials) {
-		Concurrent.Promise p = Concurrent.Promise();
-		spawn_task(get_credentials()) {get_helix_paginated(url, query, headers, options, debug)->then(p->fulfil);};
-		return p->future();
-	}
+	if (!G->G->dbsettings->credentials) await(get_credentials());
 	array data = ({ });
 	Standards.URI uri = Standards.URI(url);
 	query = (query || ([])) + ([]);
@@ -330,7 +323,7 @@ continue awaitable import_bcaster_tokens() {
 		uri->query = Protocols.HTTP.http_encode_query(query);
 		return twitch_api_request(uri, headers, options)->then(nextpage);
 	}
-	return twitch_api_request(uri, headers, options)->then(nextpage);
+	return await(twitch_api_request(uri, headers, options)->then(nextpage));
 }
 
 //Doesn't help, but it's certainly very interesting.
@@ -353,16 +346,16 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	});
 }
 
-@export: continue Concurrent.Future|mapping get_banned_list(string|int userid, int|void force) {
+@export: __async__ mapping get_banned_list(string|int userid, int|void force) {
 	if (intp(userid)) userid = (string)userid;
 	mapping cached = G_G_("banned_list", userid);
 	if (!cached->stale && cached->taken_at > time() - 3600 &&
 		(!cached->expires || cached->expires > Calendar.ISO.Second()))
 			return cached->banlist;
-	string username = yield(get_user_info(userid))->login;
-	array(string) creds = yield((mixed)token_for_user_login_async(username));
+	string username = await(get_user_info(userid))->login;
+	array(string) creds = await(token_for_user_login_async(username));
 	if (!has_value(creds[1] / " ", "moderation:read")) error("Don't have broadcaster auth to fetch ban list for %O\n", username);
-	mapping ret = yield(get_helix_paginated("https://api.twitch.tv/helix/moderation/banned",
+	mapping ret = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/banned",
 		(["broadcaster_id": userid]),
 		(["Authorization": "Bearer " + creds[0]]),
 	));
@@ -387,14 +380,14 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 }
 
 //Returns "offline" if not broadcasting, or a channel uptime.
-@export: continue Concurrent.Future|string channel_still_broadcasting(string|int chan) {
-	if (stringp(chan)) chan = yield(get_user_id(chan));
-	array initial = yield(twitch_api_request("https://api.twitch.tv/helix/videos?type=archive&user_id=" + chan + "&first=1"))->data;
+@export: __async__ string channel_still_broadcasting(string|int chan) {
+	if (stringp(chan)) chan = await(get_user_id(chan));
+	array initial = await(twitch_api_request("https://api.twitch.tv/helix/videos?type=archive&user_id=" + chan + "&first=1"))->data;
 	//If there are no videos found, then presumably the person isn't live, since
 	//(even if VODs are disabled) the current livestream always shows up.
 	if (!sizeof(initial)) return "offline";
-	mixed _ = yield(task_sleep(1.5));
-	array second = yield(twitch_api_request("https://api.twitch.tv/helix/videos?type=archive&user_id=" + chan + "&first=1"))->data;
+	await(task_sleep(1.5));
+	array second = await(twitch_api_request("https://api.twitch.tv/helix/videos?type=archive&user_id=" + chan + "&first=1"))->data;
 	//When a channel is offline, the VOD doesn't grow in length.
 	if (!sizeof(second) || second[0]->duration == initial[0]->duration) return "offline";
 	return second[0]->duration;
@@ -442,15 +435,15 @@ void streaminfo(array data)
 		if (cfg->userid) stream_status(cfg->userid, cfg->login, channels[cfg->userid]);
 }
 
-continue Concurrent.Future cache_game_names(string game_id)
+__async__ void cache_game_names(string game_id)
 {
 	if (mixed ex = catch {
-		array games = yield(get_helix_paginated("https://api.twitch.tv/helix/games/top", (["first":"100"])));
+		array games = await(get_helix_paginated("https://api.twitch.tv/helix/games/top", (["first":"100"])));
 		foreach (games, mapping game) category_names[game->id] = game->name;
 		write("Fetched %d games, total %d\n", sizeof(games), sizeof(category_names));
 		if (!category_names[game_id]) {
 			//We were specifically asked for this game ID. Explicitly ask Twitch for it.
-			mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/games?id=" + game_id));
+			mapping info = await(twitch_api_request("https://api.twitch.tv/helix/games?id=" + game_id));
 			if (!sizeof(info->data)) werror("Unable to fetch game info for ID %O\n", game_id);
 			else if (info->data[0]->id != game_id) werror("???? Asked for game %O but got %O ????\n", game_id, info->data[0]->id);
 			else category_names[game_id] = info->data[0]->name;
@@ -461,7 +454,7 @@ continue Concurrent.Future cache_game_names(string game_id)
 }
 
 //Deprecated, will stop working before long, but isn't needed any more - the API can use new-style tags.
-@export: continue Concurrent.Future|array translate_tag_ids(array tag_ids) {return ({ });}
+@export: __async__ array translate_tag_ids(array tag_ids) {return ({ });}
 
 int fetching_game_names = 0;
 //Attempt to construct a channel info mapping from the stream info
@@ -502,17 +495,17 @@ mapping build_channel_info(mapping stream)
 	return ret;
 }
 
-continue Concurrent.Future|mapping save_channel_info(int userid, string name, mapping info) {
+__async__ mapping save_channel_info(int userid, string name, mapping info) {
 	//Attempt to gather channel info from the stream info. If we
 	//can't, we'll get that info via an API call.
 	mapping synthesized = build_channel_info(info);
 	if (!synthesized) {
 		if (info->game_id != "") write("SYNTHESIS FAILED - maybe bad game? %O\n", info->game_id);
-		synthesized = yield(get_channel_info(name));
+		synthesized = await(get_channel_info(name));
 	}
 	if (!synthesized->content_classification_labels) {
 		//As of 20230713, the /streams endpoint doesn't include CCLs.
-		synthesized = yield(get_channel_info(name));
+		synthesized = await(get_channel_info(name));
 	}
 	synthesized->viewer_count = info->viewer_count;
 	synthesized->tags = info->tags || ({ });
@@ -634,14 +627,14 @@ void stream_status(int userid, string name, mapping info)
 
 //Basically only used after a follow hook; use the same authentication when that switches over.
 //Returns an ISO 8601 string, or 0 if not following.
-@export: continue Concurrent.Future|string check_following(int userid, int chanid)
+@export: __async__ string check_following(int userid, int chanid)
 {
-	array creds = yield((mixed)token_for_user_id_async(chanid));
+	array creds = await(token_for_user_id_async(chanid));
 	multiset scopes = (multiset)(creds[1] / " ");
 	mapping headers = ([]);
 	if (scopes["moderator:read:followers"]) headers->Authorization = "Bearer " + creds[0];
 	mixed ex = catch {
-		mapping info = yield(twitch_api_request(sprintf(
+		mapping info = await(twitch_api_request(sprintf(
 			"https://api.twitch.tv/helix/channels/followers?broadcaster_id=%d&user_id=%d",
 			chanid, userid), headers));
 		if (sizeof(info->data)) return info->data[0]->followed_at;
@@ -654,8 +647,8 @@ void stream_status(int userid, string name, mapping info)
 }
 
 //Fetch a stream's schedule, up to N events within the next M seconds.
-@export: continue Concurrent.Future|array get_stream_schedule(int|string channel, int rewind, int maxevents, int maxtime) {
-	int id = (int)channel || yield(get_user_id(channel));
+@export: __async__ array get_stream_schedule(int|string channel, int rewind, int maxevents, int maxtime) {
+	int id = (int)channel || await(get_user_id(channel));
 	if (!id) return ({ });
 	//NOTE: Do not use get_helix_paginated here as the events probably go on forever.
 	array events = ({ });
@@ -665,7 +658,7 @@ void stream_status(int userid, string name, mapping info)
 	object limit = Calendar.ISO.Second()->set_timezone("UTC")->add(maxtime);
 	string cutoff = limit->format_ymd() + "T" + limit->format_tod() + "Z";
 	while (1) {
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/schedule?broadcaster_id=" + id
+		mapping info = await(twitch_api_request("https://api.twitch.tv/helix/schedule?broadcaster_id=" + id
 			+ "&start_time=" + starttime + "&after=" + cursor + "&first=25",
 			([]), (["return_errors": 1])));
 		if (info->error) break; //Probably 404, schedule not found.
