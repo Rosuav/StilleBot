@@ -12,11 +12,11 @@ int main() {
 	};
 	persist: foreach (sort(indices(persist_status)), string key) {
 		mixed data = persist_status[key];
-		key = sprintf("%*s", len, key);
+		key = sprintf("%*s [%5d]", len, key, sizeof(data));
 		if (!mappingp(data)) {write("%s: %t\n", key, data); continue;}
 		foreach (data; string k;) {
 			if (channel[k]) {write("%s: %s\n", key, channel[k]); continue persist;}
 		}
-		write("%s: Unknown/Other [%d entries]\n", key, sizeof(data));
+		write("%s: Unknown/Other\n", key);
 	}
 }
