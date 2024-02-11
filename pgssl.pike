@@ -22,8 +22,10 @@ int main() {
 		werror("Read-only now %O\n", sql->query("show default_transaction_read_only")[0]->default_transaction_read_only);
 	};
 	sql->query("listen readonly");
-	werror("Query result: %O\n", sql->query("table stillebot.user_followed_categories")); // */
-	return -1; //To get notifications, activate the backend, then use "notify readonly, 'new-state'" in another session
+	werror("\n\n\n**********************************\n\n\n");
+	array rows = sql->query("select twitchid, data from stillebot.config where keyword = 'credentials' limit 55");
+	werror("Got %d rows\n", sizeof(rows));
+	return 0; //To get notifications, activate the backend, then use "notify readonly, 'new-state'" in another session
 	/* //Done manually, it works fine, as long as all is nonblocking.
 	object sock = Stdio.File();
 	int port = 5432;
