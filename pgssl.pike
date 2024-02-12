@@ -23,7 +23,14 @@ int main() {
 	};
 	sql->query("listen readonly");
 	werror("\n\n\n**********************************\n\n\n");
-	array rows = sql->query("select twitchid, data from stillebot.config where keyword = 'credentials' limit 55");
+	Thread.Thread() {
+		sleep(3);
+		werror("\n\n\n**********************************\n\n\n");
+		foreach (Thread.all_threads(), object t) if (t != Thread.this_thread())
+			werror("\n<< Thread %O >>\n%s\n", t, describe_backtrace(t->backtrace()));
+		exit(0);
+	};
+	array rows = sql->query("select table_schema, table_name, column_name from information_schema.columns order by table_schema, table_name, column_name");
 	werror("Got %d rows\n", sizeof(rows));
 	return 0; //To get notifications, activate the backend, then use "notify readonly, 'new-state'" in another session
 	/* //Done manually, it works fine, as long as all is nonblocking.
