@@ -1231,7 +1231,10 @@ __async__ void http_request(Protocols.HTTP.Server.Request req)
 		};
 	}
 	mapping|string resp;
-	if (mixed ex = handler && catch (resp = await(handler(req, @args)))) {
+	if (mixed ex = handler && catch {
+		mixed h = handler(req, @args); //Either a promise or a result (mapping/string).
+		resp = objectp(h) && h->on_await ? await(h) : h; //Await if promise, otherwise we already have it.
+	}) {
 		werror("HTTP handler crash: %O\n", req->not_query);
 		werror(describe_backtrace(ex));
 		resp = (["error": 500, "data": "Internal server error\n", "type": "text/plain; charset=\"UTF-8\""]);
