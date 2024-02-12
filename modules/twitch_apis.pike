@@ -11,8 +11,8 @@
 mapping need_scope = ([]); //Filled in by create()
 
 @"moderator:manage:announcements":
-continue Concurrent.Future announce(object channel, string voiceid, string msg, mapping tok, string|void color) {
-	mapping ret = yield(twitch_api_request(sprintf(
+__async__ void announce(object channel, string voiceid, string msg, mapping tok, string|void color) {
+	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/announcements?broadcaster_id=%d&moderator_id=%s",
 		channel->userid, voiceid),
 		(["Authorization": "Bearer " + tok->token]),
@@ -32,11 +32,11 @@ mixed announceorange(object c, string v, string m, mapping t) {return announce(c
 @"moderator:manage:announcements":
 mixed announcepurple(object c, string v, string m, mapping t) {return announce(c, v, m, t, "purple");}
 
-continue Concurrent.Future chat_settings(object channel, string voiceid, string msg, mapping tok, string field, mixed val, string|void duration) {
+__async__ void chat_settings(object channel, string voiceid, string msg, mapping tok, string field, mixed val, string|void duration) {
 	mapping cfg = ([field: val]);
 	//For /followers and /slow, a parameter specifies the duration too.
 	if (duration) cfg[duration] = (int)msg;
-	mapping ret = yield(twitch_api_request(sprintf(
+	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/settings?broadcaster_id=%d&moderator_id=%s",
 		channel->userid, voiceid),
 		(["Authorization": "Bearer " + tok->token]),
@@ -66,9 +66,9 @@ mixed uniquechat(object c, string v, string m, mapping t) {return chat_settings(
 mixed uniquechatoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "unique_chat_mode", Val.false);}
 
 @"moderator:manage:chat_messages":
-continue Concurrent.Future clear(object channel, string voiceid, string msg, mapping tok, string|void msgid) {
+__async__ void clear(object channel, string voiceid, string msg, mapping tok, string|void msgid) {
 	//Pass a msgid to delete an individual message, else clears all chat
-	mapping ret = yield(twitch_api_request(sprintf(
+	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/chat?broadcaster_id=%d&moderator_id=%s%s",
 		channel->userid, voiceid, msgid ? "&message_id=" + msgid : ""),
 		(["Authorization": "Bearer " + tok->token]),
@@ -79,9 +79,9 @@ continue Concurrent.Future clear(object channel, string voiceid, string msg, map
 mixed deletemsg(object c, string v, string m, mapping t) {return clear(c, v, "", t, m);}
 
 @"moderator:manage:banned_users":
-continue Concurrent.Future ban(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
+__async__ void ban(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
 	sscanf(msg, "%s %s", string username, string reason);
-	int uid = yield(get_user_id(username || msg));
+	int uid = await(get_user_id(username || msg));
 	mapping params = (["user_id": uid]);
 	if (timeout == 1) {
 		//The /timeout command accepts a duration prior to the reason.
@@ -90,7 +90,7 @@ continue Concurrent.Future ban(object channel, string voiceid, string msg, mappi
 		reason = r; //Ensure that reason is reassigned (otherwise "/timeout user 120" would time them out for 120 seconds with a reason of "120")
 	}
 	if (reason && reason != "") params->reason = reason;
-	mapping ret = yield(twitch_api_request(sprintf(
+	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/bans?broadcaster_id=%d&moderator_id=%s",
 		channel->userid, voiceid),
 		(["Authorization": "Bearer " + tok->token]),
@@ -103,8 +103,8 @@ mixed timeout(object c, string v, string m, mapping t) {return ban(c, v, m, t, 1
 mixed t(object c, string v, string m, mapping t) {return ban(c, v, m, t, 1);}
 
 @"moderator:manage:banned_users":
-continue Concurrent.Future unban(object channel, string voiceid, string msg, mapping tok) {
-	mapping ret = yield(twitch_api_request(sprintf(
+__async__ void unban(object channel, string voiceid, string msg, mapping tok) {
+	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/bans?broadcaster_id=%d&moderator_id=%s&user_id={{USER}}",
 		channel->userid, voiceid),
 		(["Authorization": "Bearer " + tok->token]),
@@ -116,13 +116,13 @@ mixed untimeout(object c, string v, string m, mapping t) {return unban(c, v, m, 
 
 mapping(int:int) qso = ([]); //Not retained, will be purged on code reload
 @"moderator:manage:shoutouts":
-continue Concurrent.Future shoutout(object channel, string voiceid, string msg, mapping tok, int|void queue) {
+__async__ void shoutout(object channel, string voiceid, string msg, mapping tok, int|void queue) {
 	if (queue) {
 		int delay = qso[channel->userid] - time();
 		qso[channel->userid] = max(qso[channel->userid], time()) + 121; //Update the queue time before sleeping
-		if (delay > 0) yield(task_sleep(delay));
+		if (delay > 0) await(task_sleep(delay));
 	}
-	mapping ret = yield(twitch_api_request(sprintf(
+	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/shoutouts?from_broadcaster_id=%d"
 			+ "&to_broadcaster_id={{USER}}&moderator_id=%s",
 			channel->userid, voiceid),
@@ -147,10 +147,10 @@ continue Concurrent.Future shoutout(object channel, string voiceid, string msg, 
 mixed qshoutout(object c, string v, string m, mapping t) {return shoutout(c, v, m, t, 1);}
 
 @"user:manage:whispers":
-continue Concurrent.Future w(object channel, string voiceid, string msg, mapping tok) {
+__async__ void w(object channel, string voiceid, string msg, mapping tok) {
 	sscanf(String.trim(msg), "%s %s", string user, string message);
 	if (!message) return 0;
-	mapping ret = yield(twitch_api_request(sprintf(
+	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/whispers?from_user_id=%s&to_user_id={{USER}}",
 			voiceid),
 		(["Authorization": "Bearer " + tok->token]), ([
@@ -164,8 +164,8 @@ continue Concurrent.Future w(object channel, string voiceid, string msg, mapping
 mixed whisper(object c, string v, string m, mapping t) {return w(c, v, m, t);}
 
 @"channel:edit:commercial":
-continue Concurrent.Future commercial(object channel, string voiceid, string msg, mapping tok) {
-	mapping ret = yield(twitch_api_request("https://api.twitch.tv/helix/channels/commercial",
+__async__ void commercial(object channel, string voiceid, string msg, mapping tok) {
+	mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/channels/commercial",
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": "POST",
 			"json": ([
@@ -177,8 +177,8 @@ continue Concurrent.Future commercial(object channel, string voiceid, string msg
 }
 
 @"channel:manage:broadcast":
-continue Concurrent.Future marker(object channel, string voiceid, string msg, mapping tok) {
-	mapping ret = yield(twitch_api_request("https://api.twitch.tv/helix/streams/markers",
+__async__ void marker(object channel, string voiceid, string msg, mapping tok) {
+	mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/streams/markers",
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": "POST",
 			"json": ([
@@ -190,8 +190,8 @@ continue Concurrent.Future marker(object channel, string voiceid, string msg, ma
 }
 
 @"channel:manage:raids":
-continue Concurrent.Future raid(object channel, string voiceid, string msg, mapping tok) {
-	mapping ret = yield(twitch_api_request(sprintf(
+__async__ void raid(object channel, string voiceid, string msg, mapping tok) {
+	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/raids?from_broadcaster_id=%d&to_broadcaster_id={{USER}}",
 			channel->userid),
 		(["Authorization": "Bearer " + tok->token]), ([
@@ -202,8 +202,8 @@ continue Concurrent.Future raid(object channel, string voiceid, string msg, mapp
 }
 
 @"channel:manage:raids":
-continue Concurrent.Future unraid(object channel, string voiceid, string msg, mapping tok) {
-	mapping ret = yield(twitch_api_request(sprintf(
+__async__ void unraid(object channel, string voiceid, string msg, mapping tok) {
+	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/raids?broadcaster_id=%d",
 			channel->userid),
 		(["Authorization": "Bearer " + tok->token]), ([
@@ -213,8 +213,8 @@ continue Concurrent.Future unraid(object channel, string voiceid, string msg, ma
 }
 
 @"channel:manage:vips":
-continue Concurrent.Future vip(object channel, string voiceid, string msg, mapping tok, int|void remove) {
-	mapping ret = yield(twitch_api_request(sprintf(
+__async__ void vip(object channel, string voiceid, string msg, mapping tok, int|void remove) {
+	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/channels/vips?broadcaster_id=%d&user_id={{USER}}",
 			channel->userid),
 		(["Authorization": "Bearer " + tok->token]), ([
@@ -227,8 +227,8 @@ continue Concurrent.Future vip(object channel, string voiceid, string msg, mappi
 mixed unvip(object c, string v, string m, mapping t) {return vip(c, v, m, t, 1);}
 
 @"channel:manage:moderators":
-continue Concurrent.Future mod(object channel, string voiceid, string msg, mapping tok, int|void remove) {
-	mapping ret = yield(twitch_api_request(sprintf(
+__async__ void mod(object channel, string voiceid, string msg, mapping tok, int|void remove) {
+	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=%d&user_id={{USER}}",
 			channel->userid),
 		(["Authorization": "Bearer " + tok->token]), ([
@@ -243,13 +243,13 @@ mixed unmod(object c, string v, string m, mapping t) {return mod(c, v, m, t, 1);
 Regexp.SimpleRegexp bicap = Regexp.SimpleRegexp("[a-z][A-Z]");
 string bicap_to_snake(string pair) {return pair / 1 * "_";}
 @"user:manage:chat_color":
-continue Concurrent.Future color(object channel, string voiceid, string msg, mapping tok) {
+__async__ void color(object channel, string voiceid, string msg, mapping tok) {
 	if (msg == "") return 0; //No error return here for simplicity (we can't send to just the user anyway)
 	//Twitch expects users to write BiCapitalized colour names eg "GoldenRod", but
 	//the API expects them in snake_case instead eg "golden_rod". Don't add any
 	//underscores in a hex string though, as it's likely a coincidence.
 	if (msg[0] != '#') msg = lower_case(bicap->replace(msg, bicap_to_snake));
-	mapping ret = yield(twitch_api_request(sprintf(
+	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/color?user_id=%s&color=%s",
 			voiceid, Protocols.HTTP.uri_encode(msg)),
 		(["Authorization": "Bearer " + tok->token]), ([
@@ -259,8 +259,8 @@ continue Concurrent.Future color(object channel, string voiceid, string msg, map
 }
 
 @"moderator:manage:shield_mode":
-continue Concurrent.Future shield(object channel, string voiceid, string msg, mapping tok, int|void remove) {
-	mapping ret = yield(twitch_api_request(sprintf(
+__async__ void shield(object channel, string voiceid, string msg, mapping tok, int|void remove) {
+	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/shield_mode?broadcaster_id=%d&moderator_id=%s",
 			channel->userid, voiceid),
 		(["Authorization": "Bearer " + tok->token]), ([

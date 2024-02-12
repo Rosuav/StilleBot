@@ -12,7 +12,7 @@ $$message||$$
 button {padding: 0;}
 </style>
 ";
-continue Concurrent.Future|string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
+__async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (!req->variables->channel) {
 		return render(req, ([
@@ -25,7 +25,7 @@ continue Concurrent.Future|string|mapping(string:mixed) http_request(Protocols.H
 	}
 	int channel = (int)req->variables->channel;
 	if (!channel) {
-		mixed ex = catch (channel = yield(get_user_id(req->variables->channel)));
+		mixed ex = catch (channel = await(get_user_id(req->variables->channel)));
 		if (ex) return render(req, ([
 			"channel": "channel selection",
 			"message": "Unknown channel name " + req->variables->channel,
@@ -37,30 +37,30 @@ continue Concurrent.Future|string|mapping(string:mixed) http_request(Protocols.H
 		string cursor = ""; int tot = 0;
 		string ret = "";
 		do {
-			mapping cur = yield(twitch_api_request(baseurl + cursor));
+			mapping cur = await(twitch_api_request(baseurl + cursor));
 			werror("Loaded %d/%d...\n", tot += sizeof(cur->data), cur->total);
 			ret += cur->data->from_name * "\n" + "\n";
 			cursor = cur->pagination->?cursor;
-			mixed _ = yield(task_sleep(1));
+			await(task_sleep(1));
 		} while (cursor && cursor != "IA");
 		Stdio.write_file("all_follows.txt", string_to_utf8(ret));
 		return "Done";
 	}
-	mapping resp = yield(twitch_api_request("https://api.twitch.tv/helix/channels/followers?broadcaster_id=" + channel,
+	mapping resp = await(twitch_api_request("https://api.twitch.tv/helix/channels/followers?broadcaster_id=" + channel,
 		(["Authorization": "Bearer " + req->misc->session->token]),
 	));
 	//Note: If we don't have permission, there'll be a result but it has only the
 	//follower *count*, not the actual names. Unfortunately, this could also imply
 	//that the channel has no followers whatsoever...
 	if (!sizeof(resp->data) && resp->total) return render(req, ([
-		"channel": yield(get_user_info(channel))->display_name,
+		"channel": await(get_user_info(channel))->display_name,
 		"message": resp->total + " followers. As of 2023, viewing followers requires moderator permissions. "
 			"[Moderator login](:.twitchlogin data-scopes=moderator:read:followers)",
 	]));
 	int autoupdate = has_value(values(G->G->irc->channels)->userid, channel);
 	return render(req, ([
 		"vars": (["current_followers": resp->data[..20], "ws_group": autoupdate && channel]),
-		"channel": yield(get_user_info(channel))->display_name,
+		"channel": await(get_user_info(channel))->display_name,
 		"message": autoupdate
 			? "Will automatically update as people follow"
 			: "Not guaranteed to automatically update - refresh as needed"

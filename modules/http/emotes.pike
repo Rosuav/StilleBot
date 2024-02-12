@@ -99,8 +99,7 @@ constant order = ({
 	"Subscriber badges", "Bits badges",
 });
 
-continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP.Server.Request req)
-{
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->session->fake && req->request_type == "POST" && req->variables->checkfile) {
 		if (sizeof(req->body_raw) > 1024*1024*10) return jsonify((["error": "File too large for analysis."]));
 		return jsonify(analyze_emote(req->body_raw));
@@ -108,7 +107,7 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 	if (req->variables->cheer) {
 		//Show cheeremotes, possibly for a specific broadcaster
 		//Nothing to do with the main page, other than that it's all about emotes.
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/cheermotes?broadcaster_id={{USER}}",
+		mapping info = await(twitch_api_request("https://api.twitch.tv/helix/bits/cheermotes?broadcaster_id={{USER}}",
 			0, (["username": req->variables->broadcaster || "twitch"])));
 		array emotes = info->data; info->data = "<suppressed>";
 		array cheeremotes = ({ });
@@ -143,8 +142,8 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 		//Nothing to do with the main page, other than that it's all about emotes.
 		int id = (int)req->variables->broadcaster;
 		//If you pass ?broadcaster=49497888 this will show for that user ID. Otherwise, look up the name and get the ID.
-		if ((string)id != req->variables->broadcaster) id = yield(get_user_id(req->variables->broadcaster));
-		array emotes = yield(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + id))->data;
+		if ((string)id != req->variables->broadcaster) id = await(get_user_id(req->variables->broadcaster));
+		array emotes = await(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + id))->data;
 		mapping sets = ([]);
 		mapping setids = (["Subscriber badges": -1, "Bits badges": -2]); //Map description to ID for second pass
 		foreach (emotes, mapping em) {
@@ -181,7 +180,7 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 		}
 		//Also fetch the badges. They're intrinsically at a different size, but they'll be stretched to the same size.
 		//If that's a problem, it'll need to be solved in CSS (probably with a classname on the figure here).
-		array badges = yield(twitch_api_request("https://api.twitch.tv/helix/chat/badges?broadcaster_id=" + id))->data;
+		array badges = await(twitch_api_request("https://api.twitch.tv/helix/chat/badges?broadcaster_id=" + id))->data;
 		foreach (badges, mapping set) {
 			mapping cur = ([]);
 			if (set->set_id == "subscriber") cur[1999] = cur[2999] = "<br>";
@@ -212,7 +211,7 @@ continue mapping(string:mixed)|Concurrent.Future|int http_request(Protocols.HTTP
 		if (!sizeof(emotesets)) emotesets = ({({"None", ({"No emotes found for this channel. Partnered and affiliated channels have emote slots available; emotes awaiting approval may not show up here."})})});
 		return render_template("checklist.md", ([
 			"login_link": "<button id=greyscale onclick=\"document.body.classList.toggle('greyscale')\">Toggle Greyscale (value check)</button>",
-			"emotes": "img", "title": "Channel emotes: " + yield(get_user_info(id))->display_name,
+			"emotes": "img", "title": "Channel emotes: " + await(get_user_info(id))->display_name,
 			"text": sprintf("%{\n## %s\n%{%s %}\n%}", emotesets),
 		]));
 	}

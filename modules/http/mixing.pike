@@ -774,7 +774,7 @@ array(string) devise_messages(array(string) avoid, int n, multiset|void bootstra
 	}
 }
 
-continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
+mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	string group = "0";
 	string uid = req->misc->session->user->?id;
 	mapping state = diffie_hellman[req->variables->game];

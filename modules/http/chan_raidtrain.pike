@@ -109,7 +109,7 @@ void add_person(mapping people, int|string id) {
 	else people[""][id] = 1;
 }
 
-continue Concurrent.Future check_schedules(object channel) {
+__async__ void check_schedules(object channel) {
 	mapping cfg = persist_status->path("raidtrain", (string)channel->userid, "cfg");
 	mapping sched = G->G->raidtrain_schedcache; if (!sched) sched = G->G->raidtrain_schedcache = ([]);
 	int maxage = time() - 3600;
@@ -124,7 +124,7 @@ continue Concurrent.Future check_schedules(object channel) {
 		if (!slot->broadcasterid) continue;
 		string key = slot->broadcasterid + "_" + slot->start + "_" + slot->end;
 		if (sched[key]->?age >= maxage) continue;
-		array streams = yield((mixed)get_stream_schedule(slot->broadcasterid, time() - (slot->start - prestart), 20, slot->end - time() + postend));
+		array streams = await(get_stream_schedule(slot->broadcasterid, time() - (slot->start - prestart), 20, slot->end - time() + postend));
 		sched[key] = (["age": time(), "schedule": streams]);
 		updated = 1;
 	}
@@ -216,12 +216,12 @@ void wscmd_streamerslot(object channel, mapping(string:mixed) conn, mapping(stri
 	if (!conn->is_mod) return; //Should streamers be allowed to revoke their own slots??
 	spawn_task(async_streamerslot(channel, conn, msg, slot));
 }
-continue Concurrent.Future async_streamerslot(object channel, mapping conn, mapping msg, mapping slot) {
+__async__ void async_streamerslot(object channel, mapping conn, mapping msg, mapping slot) {
 	slot->broadcasterid = (int)msg->broadcasterid;
 	if (!slot->broadcasterid && msg->broadcasterlogin) {
 		string login = replace(msg->broadcasterlogin, ({"https://", "www.twitch.tv/", "twitch.tv/"}), "");
 		sscanf(login, "%s%*[/?]", login); //Remove any "?referrer=raid" or "/popout/chat" from the URL
-		mixed ex = catch (slot->broadcasterid = yield(get_user_id(login)));
+		mixed ex = catch (slot->broadcasterid = await(get_user_id(login)));
 		//if (ex) ; //TODO: Report errors back to the conn
 	}
 	//Identify the set of streamers participating. If we had Python-style order-retaining
@@ -413,11 +413,11 @@ void wscmd_slotnotes(object channel, mapping(string:mixed) conn, mapping(string:
 	save_and_send(conn);
 }
 
-continue Concurrent.Future|mapping checkfollowing(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ mapping checkfollowing(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->session->user) return 0; //Not logged in, no message needed
 	mapping cfg = persist_status->path("raidtrain", (string)channel->userid)->cfg;
 	if (!cfg->all_casters) return 0; //No casters, nothing to do
-	[string token, string scopes] = yield((mixed)token_for_user_id_async(conn->session->user->id));
+	[string token, string scopes] = await(token_for_user_id_async(conn->session->user->id));
 	if (!has_value(scopes / " ", "user:read:follows")) return (["msg": "No permission, can't check following"]); //Not currently in the UI
 	mapping casters = ([]);
 	foreach (cfg->all_casters, int|string bcaster) {
@@ -425,7 +425,7 @@ continue Concurrent.Future|mapping checkfollowing(object channel, mapping(string
 		//Lifted from tradingcards.pike
 		mapping foll = G_G_("following", bcaster, conn->session->user->id);
 		if (foll->stale < time(1)) {
-			mapping info = yield(twitch_api_request(sprintf(
+			mapping info = await(twitch_api_request(sprintf(
 				"https://api.twitch.tv/helix/channels/followed?user_id=%s&broadcaster_id=%s",
 				conn->session->user->id, bcaster),
 				(["Authorization": "Bearer " + token])));

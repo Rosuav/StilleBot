@@ -1262,7 +1262,7 @@ constant cutewords = "puppy kitten crumpet tutu butterscotch flapjack pilliwiggi
 	"blueberry rainbow treasure princess cutie shiny dance bread sakura train "
 	"gift art flag candle heart love magic save tada hug cool party plush star "
 	"donut teacup cat purring flower sugar biscuit pillow banana berry " / " ";
-continue Concurrent.Future send_with_tts(object channel, mapping args, string|void destgroup) {
+__async__ void send_with_tts(object channel, mapping args, string|void destgroup) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->alertconfigs[args->send_alert]) return 0; //On replay, if the alert doesn't exist, do nothing. TODO: Replay a base alert if variant deleted?
 	mapping inh = G_G_("alertbox_resolved", (string)channel->userid, args->send_alert);
@@ -1286,7 +1286,7 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 			}
 			if (inh->tts_filter_badwords != "none") {
 				if (tts_config->badwordlist_fetchtime < time() - 86400) {
-					object res = yield(Protocols.HTTP.Promise.get_url(
+					object res = await(Protocols.HTTP.Promise.get_url(
 						"https://raw.githubusercontent.com/coffee-and-fun/google-profanity-words/main/data/list.txt"
 					));
 					tts_config->badwordlist_fetchtime = time();
@@ -1330,16 +1330,16 @@ continue Concurrent.Future send_with_tts(object channel, mapping args, string|vo
 				"audioConfig": (["audioEncoding": "OGG_OPUS"]),
 			])))]));
 		System.Timer tm = System.Timer();
-		object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
+		object res = await(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
 		float delay = tm->get();
 		Stdio.append_file("tts_stats.log", sprintf("Channel %O text %O fetch time %.3f\n", channel->name, text, delay));
 		mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
 		if (mappingp(data) && data->error->?details[?0]->?reason == "ACCESS_TOKEN_EXPIRED") {
 			Stdio.append_file("tts_error.log", sprintf("%sTTS access key expired after %d seconds\n",
 				ctime(time()), time() - tts_config->access_token_fetchtime));
-			mixed _ = yield((mixed)fetch_tts_credentials(1));
+			await(fetch_tts_credentials(1));
 			reqargs->headers->Authorization = "Bearer " + tts_config->access_token;
-			object res = yield(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
+			object res = await(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
 			catch {data = Standards.JSON.decode_utf8(res->get());};
 			//Exactly one retry attempt; if it fails, fall through and report a generic error.
 		}
@@ -1678,8 +1678,8 @@ void enable_feature(object channel, string kwd, int state) {
 	send_updates_all(conn->group);
 }
 
-continue Concurrent.Future fetch_tts_credentials(int fast) {
-	mapping rc = yield(run_process(({"gcloud", "auth", "application-default", "print-access-token"}),
+__async__ void fetch_tts_credentials(int fast) {
+	mapping rc = await(run_process(({"gcloud", "auth", "application-default", "print-access-token"}),
 		(["env": getenv() | (["GOOGLE_APPLICATION_CREDENTIALS": "tts-credentials.json"])])));
 	tts_config->access_token = String.trim(rc->stdout);
 	//Credentials expire after an hour, regardless of usage. It's quite slow to
@@ -1690,7 +1690,7 @@ continue Concurrent.Future fetch_tts_credentials(int fast) {
 	tts_config->access_token_fetchtime = time();
 	if (fast) return 0;
 	//To filter to just English results, add "?languageCode=en"
-	object res = yield(Protocols.HTTP.Promise.get_url("https://texttospeech.googleapis.com/v1/voices",
+	object res = await(Protocols.HTTP.Promise.get_url("https://texttospeech.googleapis.com/v1/voices",
 		Protocols.HTTP.Promise.Arguments((["headers": ([
 			"Authorization": "Bearer " + tts_config->access_token,
 		])]))));
@@ -1732,10 +1732,10 @@ continue Concurrent.Future fetch_tts_credentials(int fast) {
 	tts_config->avail_voices = all_voices;
 }
 
-continue Concurrent.Future initialize_inherits() {
+__async__ void initialize_inherits() {
 	//Fetch the free media file list if needed, then resolve inherits (which needs free media URLs)
 	if (G->G->freemedia_filelist->?_last_fetched < time() - 3600) {
-		Protocols.HTTP.Promise.Result res = yield(Protocols.HTTP.Promise.get_url("https://rosuav.github.io/free-media/filelist.json"));
+		Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url("https://rosuav.github.io/free-media/filelist.json"));
 		mapping fl = G->G->freemedia_filelist = Standards.JSON.decode_utf8(res->get());
 		fl->_last_fetched = time();
 		fl->_lookup = mkmapping(fl->files->filename, fl->files);

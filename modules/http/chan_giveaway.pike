@@ -240,7 +240,7 @@ Concurrent.Future list_redemptions(int broadcaster_id, string chan, string id) {
 	);
 }
 
-continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping cfg = req->misc->channel->config;
 	string chan = req->misc->channel->name[1..];
@@ -249,9 +249,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		"error": "This page will become available once the broadcaster has logged in and configured redemptions.",
 		"login": "[Broadcaster login](:.twitchlogin data-scopes=" + replace(scopes, " ", "%20") + ")",
 	]) | req->misc->chaninfo);
-	string token = yield((mixed)token_for_user_login_async(chan))[0];
+	string token = await((mixed)token_for_user_login_async(chan))[0];
 	login += " [Mod login](:.twitchlogin)"; //TODO: If logged in as wrong user, allow logout
-	int broadcaster_id = yield(get_user_id(chan));
+	int broadcaster_id = await(get_user_id(chan));
 	Concurrent.Future call(string method, string query, mixed body) {
 		return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&" + query,
 			(["Authorization": "Bearer " + token]),
@@ -285,11 +285,11 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 				if (!has_value(qty, tickets)) {
 					m_delete(existing, id);
 					++numdeleted;
-					mixed _ = yield(call("DELETE", "id=" + id, 0));
+					await(call("DELETE", "id=" + id, 0));
 				}
 				else {
 					++numupdated;
-					if (catch (yield(call("PATCH", "id=" + id, ([
+					if (catch (await(call("PATCH", "id=" + id, ([
 						"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
 						"cost": cost * tickets,
 						"is_enabled": status->is_open || cfg->giveaway->pausemode,
@@ -300,7 +300,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			}
 			//Create any that we don't yet have
 			foreach (qty, int tickets) {
-				mapping info = yield(call("POST", "", ([
+				mapping info = await(call("POST", "", ([
 					"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
 					"cost": cost * tickets,
 					"is_enabled": status->is_open || cfg->giveaway->pausemode,
@@ -336,7 +336,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			mapping rwd = (["basecost": copyfrom->cost || 1000, "availability": "{online}", "formula": "PREV"]);
 			array have = filter((G->G->pointsrewards[broadcaster_id]||({}))->title, has_prefix, deftitle);
 			copyfrom |= (["title": deftitle + " #" + (sizeof(have) + 1), "cost": rwd->basecost]);
-			mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
+			mapping info = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
 				(["Authorization": "Bearer " + token]),
 				(["method": "POST", "json": copyfrom]),
 			))->data[0];
@@ -410,7 +410,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 }
 
 bool need_mod(string grp) {return grp == "control";}
-continue mapping|Concurrent.Future get_chan_state(object channel, string grp)
+__async__ mapping get_chan_state(object channel, string grp)
 {
 	string chan = channel->name[1..];
 	mapping status = persist_status->has_path("giveaways", chan) || ([]);
@@ -420,9 +420,9 @@ continue mapping|Concurrent.Future get_chan_state(object channel, string grp)
 		"last_winner": status->last_winner,
 	]);
 	if (grp != "control") return 0;
-	int broadcaster_id = yield(get_user_id(chan));
+	int broadcaster_id = await(get_user_id(chan));
 	array rewards;
-	if (mixed ex = catch {rewards = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + broadcaster_id,
+	if (mixed ex = catch {rewards = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + broadcaster_id,
 		(["Authorization": "Bearer " + token_for_user_id(broadcaster_id)[0]])))->data;
 	}) {
 		if (arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401")) {
@@ -433,7 +433,7 @@ continue mapping|Concurrent.Future get_chan_state(object channel, string grp)
 		werror("Unexpected error listing channel rewards: %s\n", describe_backtrace(ex));
 		return 0;
 	}
-	array(array) redemptions = yield(Concurrent.all(list_redemptions(broadcaster_id, chan, rewards->id[*])));
+	array(array) redemptions = await(Concurrent.all(list_redemptions(broadcaster_id, chan, rewards->id[*])));
 	//Every time a new websocket is established, fully recalculate. Guarantee fresh data.
 	giveaway_tickets[chan] = ([]);
 	foreach (redemptions * ({ }), mapping redem) update_ticket_count(channel->config, redem);
@@ -495,7 +495,7 @@ void websocket_cmd_makenotifs(mapping(string:mixed) conn, mapping(string:mixed) 
 }
 
 void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(master_control(conn, msg));}
-continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	string chan = channel->name[1..];
@@ -565,7 +565,7 @@ continue Concurrent.Future master_control(mapping(string:mixed) conn, mapping(st
 			notify_websockets(chan);
 			persist_status->save();
 			if (cfg->giveaway->refund_nonwinning) msg->action = "cancel";
-			array(array) redemptions = yield(Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*])));
+			array(array) redemptions = await(Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*])));
 			foreach (redemptions * ({ }), mapping redem)
 				set_redemption_status(redem, msg->action == "cancel" ? "CANCELED" : "FULFILLED");
 			array people = values(giveaway_tickets[chan]);

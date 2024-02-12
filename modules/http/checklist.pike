@@ -180,7 +180,7 @@ string img(string code, int|string id)
 		"<figcaption>%[0]s</figcaption></figure>", code, emote_url((string)id, 3));
 }
 
-continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping emotesets = ([]);
 	string login_link = "[Log in to highlight the emotes you have access to](:.twitchlogin data-scopes=@chat_login chat:edit@)";
@@ -230,10 +230,10 @@ mapping get_state(string group) {
 	return (["emotes": indices(persist_status->has_path("seen_emotes", group) || ([]))]);
 }
 
-continue Concurrent.Future echolocate(string user, string pass, array emotes) {
+__async__ void echolocate(string user, string pass, array emotes) {
 	//Break up the list of emote names into blocks no more than 500 characters each
 	array messages = String.trim((sprintf("%=500s", emotes * " ") / "\n")[*]);
-	object irc = yield(irc_connect((["user": user, "pass": pass])));
+	object irc = await(irc_connect((["user": user, "pass": pass])));
 	irc->send(echolocation_channel, messages[*]);
 	irc->quit();
 }

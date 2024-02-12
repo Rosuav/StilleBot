@@ -18,10 +18,10 @@ constant vars_provided = ([
 	"{newccls}": "Active CCLs after any update",
 ]);
 
-continue mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
-	string token = yield((mixed)token_for_user_id_async(channel->userid))[0];
+__async__ mapping message_params(object channel, mapping person, array param) {
+	string token = await(token_for_user_id_async(channel->userid))[0];
 	if (token == "") error("Need broadcaster permissions\n");
-	mapping prev = yield(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,
+	mapping prev = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,
 		(["Authorization": "Bearer " + token])));
 	mapping params = ([]);
 	int empty_ok = 0;
@@ -47,7 +47,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 					multiset is_enabled = (multiset)(arg / " ");
 					if (!G->G->ccl_names) {
 						//NOTE: Partly duplicated from raid finder. Should this be deduped?
-						array ccls = yield(twitch_api_request("https://api.twitch.tv/helix/content_classification_labels"))->data;
+						array ccls = await(twitch_api_request("https://api.twitch.tv/helix/content_classification_labels"))->data;
 						G->G->ccl_names = mkmapping(ccls->id, ccls->name);
 					}
 					params->content_classification_labels = mkmapping(indices(G->G->ccl_names), is_enabled[indices(G->G->ccl_names)[*]]);
@@ -60,12 +60,12 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	}
 	mapping now;
 	if (sizeof(params)) {
-		mapping ret = yield(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,
+		mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,
 			(["Authorization": "Bearer " + token]),
 			(["method": "PATCH", "json": params, "return_errors": 1]),
 		));
 		if (ret->error) error(ret->error + ": " + ret->message + "\n");
-		now = yield(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,
+		now = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,
 			(["Authorization": "Bearer " + token])));
 	} else {
 		if (!empty_ok) error("No changes requested\n");

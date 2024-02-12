@@ -47,7 +47,7 @@ constant sidebar_menu = ({
 array sidebar_modmenu = map(sidebar_menu) {return ({__ARGS__[0][0] - "*", __ARGS__[0][1]});};
 array sidebar_nonmodmenu = filter(sidebar_menu) {return __ARGS__[0][0][0] != '*';};
 
-continue Concurrent.Future|mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string chan, string endpoint)
+__async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, string chan, string endpoint)
 {
 	if (!endpoint) return redirect_no_slash(req, chan || ""); //Probably misparsed.
 	function handler = G->G->http_endpoints["chan_" + endpoint];
@@ -92,7 +92,7 @@ continue Concurrent.Future|mapping(string:mixed) find_channel(Protocols.HTTP.Ser
 	}
 	else req->misc->chaninfo->save_or_login = "[Mods, login to make changes](:.twitchlogin)";
 	mapping profile = ([]);
-	if (channel->userid) profile = yield((mixed)get_user_info(channel->userid));
+	if (channel->userid) profile = await(get_user_info(channel->userid));
 	req->misc->chaninfo->menunav = sprintf(
 		"<nav id=sidebar><ul>%{<li><a href=%q>%s</a></li>%}</ul>"
 		"<a href=%q target=_blank><img src=%q alt=\"Channel avatar\" title=%q></a></nav>",
@@ -105,7 +105,7 @@ continue Concurrent.Future|mapping(string:mixed) find_channel(Protocols.HTTP.Ser
 		if (count) req->misc->chaninfo->menunav = replace(req->misc->chaninfo->menunav, "<span id=errcnt></span>",
 			"<span id=errcnt>(" + count + ")</span>");
 	}
-	return yield(handler(req));
+	return await(handler(req));
 }
 
 mapping(string:mixed) redirect_no_slash(Protocols.HTTP.Server.Request req, string chan)

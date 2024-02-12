@@ -35,22 +35,22 @@ constant command_suggestions = (["!follower": ([
 	"otherwise": "@$$: {error}",
 ])]);
 
-continue Concurrent.Future|mapping message_params(object channel, mapping person, array param) {
+__async__ mapping message_params(object channel, mapping person, array param) {
 	if (!sizeof(param)) param = ({""});
 	string user = param[0] - "@";
 	if (user == "") {
-		mapping stats = yield((mixed)twitch_api_request("https://api.twitch.tv/helix/channels/followers?broadcaster_id=" + channel->userid));
+		mapping stats = await(twitch_api_request("https://api.twitch.tv/helix/channels/followers?broadcaster_id=" + channel->userid));
 		return ([
 			"{following}": (string)stats->total,
 		]);
 	}
-	int uid; catch {uid = yield(get_user_id(user));};
+	int uid; catch {uid = await(get_user_id(user));};
 	if (!uid) error("Can't find that person.\n");
 	mapping u2n = G->G->uid_to_name[(string)uid] || ([]);
 	array names = indices(u2n);
 	sort(values(u2n), names);
 	names -= ({"jtv", "tmi"}); //Some junk data in the files implies falsely that some people renamed to "jtv" or "tmi"
-	string|zero foll = yield((mixed)check_following(uid, channel->userid)); //FIXME: What if no perms?
+	string|zero foll = await(check_following(uid, channel->userid)); //FIXME: What if no perms?
 	string|zero follage;
 	if (foll) {
 		follage = "";

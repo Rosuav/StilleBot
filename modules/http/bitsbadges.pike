@@ -23,7 +23,7 @@ string header(int level)
 
 mapping(int|string:mixed) cache = ([]);
 
-continue string|mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+__async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "bits:read")) return resp;
 	if ((<"year", "month", "week", "day">)[req->variables->period]) {
@@ -33,11 +33,11 @@ continue string|mapping(string:mixed)|Concurrent.Future http_request(Protocols.H
 		if (string start = req->variables->vip || req->variables->unvip) {
 			sscanf(start, "%d-%d-%dT%d:%d:%dZ", int year, int month, int day, int hour, int min, int sec);
 			start = sprintf("%04d-%02d-%02dT%02d:%02d:%02dZ", year, month, day, hour, min, sec);
-			mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
+			mapping info = await(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
 				+ "&started_at=" + start,
 				(["Authorization": "Bearer " + req->misc->session->token])));
 			int limit = 10; //TODO: Make configurable
-			mapping mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id="
+			mapping mods = await(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id="
 				+ req->misc->session->user->id,
 				(["Authorization": "Bearer " + req->misc->session->token])));
 			multiset is_mod = (multiset)mods->data->user_id;
@@ -67,7 +67,7 @@ continue string|mapping(string:mixed)|Concurrent.Future http_request(Protocols.H
 				"vars": vars,
 				"text": sprintf("<div id=leaders></div><script type=module src=%q></script>", G->G->template_defaults["static"]("bitsbadges.js")),
 			]));
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period,
+		mapping info = await(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period,
 				(["Authorization": "Bearer " + req->misc->session->token])));
 		sscanf(info->date_range->started_at, "%d-%d-%*dT%*d:%*d:%*dZ", int year, int month);
 		array periodicdata = ({({"Current", info->data, ""})});
@@ -76,12 +76,12 @@ continue string|mapping(string:mixed)|Concurrent.Future http_request(Protocols.H
 			//Get stats for a previous month. TODO: Make this work with any period, not just month
 			//Will need to worry about timezones. Maybe don't support day??
 			if (!--month) {--year; month = 12;}
-			mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
+			mapping info = await(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
 					+ sprintf("&started_at=%d-%02d-02T00:00:00Z", year, month),
 					(["Authorization": "Bearer " + req->misc->session->token])));
 			periodicdata += ({({sprintf("%s %d", months[month - 1], year), info->data, info->date_range->started_at})});
 		}
-		mapping mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id="
+		mapping mods = await(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id="
 				+ req->misc->session->user->id,
 				(["Authorization": "Bearer " + req->misc->session->token])));
 		return render_template("bitsbadges.md", ([
@@ -93,7 +93,7 @@ continue string|mapping(string:mixed)|Concurrent.Future http_request(Protocols.H
 			"text": sprintf("<div id=leaders></div><script type=module src=%q></script>", G->G->template_defaults["static"]("bitsbadges.js")),
 		]));
 	}
-	mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=100",
+	mapping info = await(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=100",
 			(["Authorization": "Bearer " + req->misc->session->token])));
 	if (!sizeof(info->data)) return render_template("bitsbadges.md", (["text": "No data found."]));
 	int lvl = 0;

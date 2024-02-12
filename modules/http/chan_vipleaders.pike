@@ -83,7 +83,7 @@ void add_score(mapping monthly, string board, mapping sub) {
 	user->score += sub->qty * (tierval[sub->tier] || 1);
 }
 
-continue Concurrent.Future force_recalc(object channel, int|void fast) {
+__async__ void force_recalc(object channel, int|void fast) {
 	mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
 	if (!stats->?active) return 0;
 	if (!fast || !stats->monthly) {
@@ -94,7 +94,7 @@ continue Concurrent.Future force_recalc(object channel, int|void fast) {
 			foreach ("user_id login displayname" / " ", string key)
 				if (sub->giver[key]) sscanf(sub->giver[key], "%*[>+?!] %s", sub->giver[key]);
 			if (!(int)sub->giver->user_id) catch {
-				mapping user = yield(get_user_info(sub->giver->login, "login"));
+				mapping user = await(get_user_info(sub->giver->login, "login"));
 				sub->giver->user_id = user->id;
 			}; // */
 			add_score(stats->monthly, "kofi", sub);
@@ -103,7 +103,7 @@ continue Concurrent.Future force_recalc(object channel, int|void fast) {
 
 	int chanid = channel->userid;
 	if (!fast || !stats->mods) {
-		array mods = yield(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=" + chanid,
+		array mods = await(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=" + chanid,
 			(["Authorization": "Bearer " + token_for_user_id(chanid)[0]])))->data;
 		stats->mods = mkmapping(mods->user_id, mods->user_name);
 	}
@@ -111,7 +111,7 @@ continue Concurrent.Future force_recalc(object channel, int|void fast) {
 	//Collect bit stats for that time period. NOTE: Periods other than "monthly" are basically broken. FIXME.
 	string period = "month";
 	mapping tm = gmtime(time()); //Twitch actually uses America/Pacific. This is behind UTC so it's mostly fine.
-	mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
+	mapping info = await(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
 			+ sprintf("&started_at=%d-%02d-02T00:00:00Z", tm->year + 1900, tm->mon + 1),
 			(["Authorization": "Bearer " + token_for_user_id(chanid)[0]])));
 	string was_uncertain = stats["latest_bits_" + period];
@@ -126,7 +126,7 @@ continue Concurrent.Future force_recalc(object channel, int|void fast) {
 		if (!--month) {--year; month = 12;}
 		string key = sprintf("bits%04d%02d", year, month);
 		if (was_uncertain != "force" && key != was_uncertain && stats[period + "ly"][key]) break; //We have dependable stats, they shouldn't change now.
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
+		mapping info = await(twitch_api_request("https://api.twitch.tv/helix/bits/leaderboard?count=25&period=" + period
 				+ sprintf("&started_at=%d-%02d-02T00:00:00Z", year, month),
 				(["Authorization": "Bearer " + token_for_user_id(chanid)[0]])));
 		stats[period + "ly"][key] = info->data;
@@ -184,7 +184,7 @@ void websocket_cmd_recalculate(mapping(string:mixed) conn, mapping(string:mixed)
 
 void websocket_cmd_addvip(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(addremvip(conn, msg, 1));}
 void websocket_cmd_remvip(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(addremvip(conn, msg, 0));}
-continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
+__async__ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	string chan = channel->name[1..];
@@ -234,9 +234,9 @@ continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:
 	//1.25 seconds to speed it up, hopefully it won't break anything.
 	if (method) {
 		string baseurl = "https://api.twitch.tv/helix/channels/vips?broadcaster_id=" + channel->userid + "&user_id=";
-		string token = yield((mixed)token_for_user_id_async(channel->userid))[0];
+		string token = await(token_for_user_id_async(channel->userid))[0];
 		foreach (userids, string uid) {
-			int status = yield(twitch_api_request(baseurl + uid,
+			int status = await(twitch_api_request(baseurl + uid,
 				(["Authorization": "Bearer " + token]),
 				(["method": method, "return_status": 1])));
 			if (status == 204) ; //Successfully added/removed
@@ -246,7 +246,7 @@ continue Concurrent.Future addremvip(mapping(string:mixed) conn, mapping(string:
 				send_message(channel->name, "NOTE: User " + uid + " already " + (add ? "has" : "doesn't have") + " a VIP badge");
 			}
 			else send_message(channel->name, "Error " + status + " applying VIP badge to user " + uid + ", skipping");
-			mixed _ = yield(task_sleep(2.0));
+			await(task_sleep(2.0));
 		}
 	}
 	send_message(channel->name, "Done " + lower_case(addrem) + " VIPs.");
@@ -259,7 +259,7 @@ int kofi_tip(object channel, string type, mapping params, mapping raw) {
 	if (!stats->?active || !stats->use_kofi) return 0;
 	spawn_task(low_kofi_tip(channel, type, params, raw));
 }
-continue Concurrent.Future low_kofi_tip(object channel, string type, mapping params, mapping raw) {
+__async__ void low_kofi_tip(object channel, string type, mapping params, mapping raw) {
 	mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
 	//Ko-fi support comes with a username, but NOT a Twitch user ID. So we look up
 	//the Twitch user **at the time of donation**, and record all details. If the
@@ -267,7 +267,7 @@ continue Concurrent.Future low_kofi_tip(object channel, string type, mapping par
 	//their donations will be credited to the same user as long as the name used
 	//in the donation matched the name *as of that time*.
 	mapping user = ([]);
-	catch {user = yield(get_user_info(params->username, "login"));}; //Any error, leave it as "anonymous"
+	catch {user = await(get_user_info(params->username, "login"));}; //Any error, leave it as "anonymous"
 	stats->allkofi += ({([
 		"giver": ([
 			//If we don't have a recognized user, use the name and email as the identity. Close enough

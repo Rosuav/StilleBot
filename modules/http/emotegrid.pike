@@ -25,9 +25,9 @@ the red until the distance starts worsening, then increase green, etc.)
 @retain: mapping emotes_by_id = ([]); //Map an emote ID to an Image.ANY._decode mapping
 @retain: mapping emote_pixel_distance_cache = ([]); //Map "%d:%d:%d:%s" H/S/V/emoteid to the calculated distance
 
-continue array|Concurrent.Future fetch_global_emotes() {
+__async__ array fetch_global_emotes() {
 	if (global_emotes->fetchtime < time() - 3600) {
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/chat/emotes/global"));
+		mapping info = await(twitch_api_request("https://api.twitch.tv/helix/chat/emotes/global"));
 		global_emotes->fetchtime = time();
 		global_emotes->emotes = info->data;
 		global_emotes->template = info->template;
@@ -35,14 +35,14 @@ continue array|Concurrent.Future fetch_global_emotes() {
 	return global_emotes->emotes;
 }
 
-continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	mapping info = built_emotes[req->variables->code];
 	if (!req->variables->code) info = Standards.JSON.decode(Stdio.read_file("emotegrid.json"));
 	if (!info) return 0; //TODO: Better page
 	if (!global_emotes->template) {
 		//Ensure that we at least have the template. It's not going to change often,
 		//so I actually don't care about the precise fetch time.
-		mixed _ = yield((mixed)fetch_global_emotes());
+		await((mixed)fetch_global_emotes());
 	}
 	return render_template(markdown, ([
 		"vars": ([
@@ -53,8 +53,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	]));
 }
 
-continue string|Concurrent.Future fetch_emote(string emoteid, string scale) {
-	return yield(Protocols.HTTP.Promise.get_url(replace(global_emotes->template, ([
+__async__ string fetch_emote(string emoteid, string scale) {
+	return await(Protocols.HTTP.Promise.get_url(replace(global_emotes->template, ([
 		"{{id}}": emoteid,
 		"{{format}}": "static",
 		"{{theme_mode}}": "light",
@@ -70,11 +70,11 @@ mapping parse_emote(string imgdata) {
 	return emote;
 }
 
-continue mapping|Concurrent.Future fetch_all_emotes(array(string) emoteids) {
+__async__ mapping fetch_all_emotes(array(string) emoteids) {
 	mapping emotes_raw = ([]); //Unnecessary once testing is done
 	catch {emotes_raw = decode_value(Stdio.read_file("emotedata.cache"));};
 	foreach (emoteids, string id) if (!emotes_by_id[id]) {
-		if (!emotes_raw[id]) emotes_raw[id] = yield((mixed)fetch_emote(id, "1.0"));
+		if (!emotes_raw[id]) emotes_raw[id] = await(fetch_emote(id, "1.0"));
 		emotes_by_id[id] = parse_emote(emotes_raw[id]);
 	}
 	Stdio.write_file("emotedata.cache", encode_value(emotes_raw));
@@ -124,17 +124,17 @@ array find_nearest(int r, int g, int b, array(string) emotes) {
 		if ((pos -= c) < 0) return ({em, sprintf("%O %O %O", c, max_dist, total)});
 }
 
-continue string|Concurrent.Future make_emote(string emoteid, string|void channel) {
+__async__ string make_emote(string emoteid, string|void channel) {
 	string code = sprintf("%024x", random(1<<96)); //TODO: check for collisions
 	mapping info = built_emotes[code] = (["emoteid": emoteid, "channel": channel || ""]);
-	array emotes = yield((mixed)fetch_global_emotes());
+	array emotes = await(fetch_global_emotes());
 	//emotes = ({ }); //Optionally hide the global emotes for speed
 	if (channel && channel != "") {
-		channel = (string)yield(get_user_id(channel));
-		emotes += yield(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes", (["broadcaster_id": channel])));
+		channel = (string)await(get_user_id(channel));
+		emotes += await(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes", (["broadcaster_id": channel])));
 	}
 	//Step 1: Fetch the emote we're building from.
-	string imgdata = yield((mixed)fetch_emote(emoteid, "1.0")); //TODO: Go back to scale 3.0
+	string imgdata = await(fetch_emote(emoteid, "1.0")); //TODO: Go back to scale 3.0
 	mapping basis = parse_emote(imgdata);
 	//Note that we won't use the alpha channel in determining the emote to use for a pixel.
 	//Instead, AFTER selecting an emote (which might be meaningless if the pixel is fully
@@ -143,7 +143,7 @@ continue string|Concurrent.Future make_emote(string emoteid, string|void channel
 	//completely transparent pixels (alpha == 0), for which the work would be a complete and
 	//utter waste, so we just pick the first emote on the list.
 	array emoteids = emotes->id; mapping emotenames = mkmapping(emoteids, emotes->name);
-	mixed _ = yield((mixed)fetch_all_emotes(emoteids));
+	await(fetch_all_emotes(emoteids));
 	info->matrix = allocate(basis->ysize, allocate(basis->xsize));
 	info->emote_names = ([]);
 	for (int y = 0; y < basis->ysize; ++y) for (int x = 0; x < basis->xsize; ++x) {
@@ -166,7 +166,7 @@ constant vars_provided = ([
 	"{url}": "Web address where the grid can be viewed",
 ]);
 
-continue mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
+__async__ mapping message_params(object channel, mapping person, array param) {
 	//PROBLEM: Channel point redemptions don't actually include emote data. So having this
 	//as a points reward is actually problematic.
 	if (!person->emotes) error("Unfortunately this doesn't work as a channel point redemption (currently).\n");
@@ -175,7 +175,7 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 	error("Sorry! This is currently disabled pending massive optimization work.\n");
 
 	string channame = sizeof(param) > 1 && param[1]; //TODO: Support "channelname emoteGoesHere" as well
-	string code = yield((mixed)make_emote(person->emotes[0][0], channame));
+	string code = await(make_emote(person->emotes[0][0], channame));
 	return (["{code}": code, "{url}": sprintf("%s/emotegrid?code=%s",
 		persist_config["ircsettings"]->http_address || "http://BOT_ADDRESS",
 		code,

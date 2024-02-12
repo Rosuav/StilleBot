@@ -38,7 +38,7 @@ $$login_link$$
 [Who's live right now?](/raidfinder?categories=$$coll_id$$)
 ";
 
-continue mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.Server.Request req, string collection)
+__async__ mapping(string:mixed) show_collection(Protocols.HTTP.Server.Request req, string collection)
 {
 	collection = lower_case(collection);
 	if (collection == "add" && req->misc->session->user->?id == (string)G->G->bot_uid) {
@@ -57,7 +57,7 @@ continue mapping(string:mixed)|Concurrent.Future show_collection(Protocols.HTTP.
 		//we cache them. Duplicated into chan_raidtrain.pike.
 		mapping foll = G_G_("following", bcaster, req->misc->session->user->id);
 		if (foll->stale < time(1)) {
-			mapping info = yield(twitch_api_request(sprintf(
+			mapping info = await(twitch_api_request(sprintf(
 				"https://api.twitch.tv/helix/channels/followed?user_id=%s&broadcaster_id=%s",
 				req->misc->session->user->id, bcaster),
 				(["Authorization": "Bearer " + req->misc->session->token])));
@@ -107,15 +107,15 @@ void ensure_collections() {
 	}
 }
 
-continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
-	if (req->variables->collection) return yield((mixed)show_collection(req, req->variables->collection));
+	if (req->variables->collection) return await(show_collection(req, req->variables->collection));
 	//Editing functionality requires that you be logged in as the bot.
 	if (req->misc->session->user->?id == (string)G->G->bot_uid) {
 		if (string username = req->variables->query) {
 			username -= "https://twitch.tv/"; //Allow the full URL to be entered if desired
-			mapping raw = yield(get_user_info(username, "login"));
-			array col = yield(twitch_api_request("https://api.twitch.tv/helix/chat/color?user_id=" + raw->id))->data->color;
+			mapping raw = await(get_user_info(username, "login"));
+			array col = await(twitch_api_request("https://api.twitch.tv/helix/chat/color?user_id=" + raw->id))->data->color;
 			if (!sizeof(col)) col = ({"#000000"});
 			mapping strm = persist_status->path("tradingcards", "all_streamers")[raw->id] || ([]);
 			mapping info = ([
@@ -134,8 +134,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 			mixed body = Standards.JSON.decode_utf8(req->body_raw);
 			if (!body || !mappingp(body) || !mappingp(body->info)) return (["error": 400]);
 			mapping info = body->info;
-			mapping raw = yield(get_user_info(info->id));
-			array col = yield(twitch_api_request("https://api.twitch.tv/helix/chat/color?user_id=" + raw->id))->data->color;
+			mapping raw = await(get_user_info(info->id));
+			array col = await(twitch_api_request("https://api.twitch.tv/helix/chat/color?user_id=" + raw->id))->data->color;
 			if (!sizeof(col)) col = ({"#000000"});
 			mapping streamers = persist_status->path("tradingcards", "all_streamers");
 			streamers[raw->id] = ([

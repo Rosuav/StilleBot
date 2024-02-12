@@ -16,12 +16,12 @@ this URL: [$$calurl$$]($$calurl$$)
 
 " + form;
 
-continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	string chan = req->variables["for"];
 	if (!chan) return render_template("# Twitch stream calendar\n\n" + form, ([]));
-	mapping info = yield(get_user_info(chan, "login"));
-	array events = yield((mixed)get_stream_schedule(info->id, 0, 100, 86400 * 7));
+	mapping info = await(get_user_info(chan, "login"));
+	array events = await(get_stream_schedule(info->id, 0, 100, 86400 * 7));
 	events = map(events) {[mapping ev] = __ARGS__;
 		string datedesc = ev->start_time; //TODO: Format this nicely
 		return sprintf("* <time datetime=\"%s\">%s</time> %s", ev->start_time, datedesc, ev->title);

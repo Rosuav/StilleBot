@@ -30,23 +30,23 @@ void delayed_get_sub_points(Concurrent.Promise p, string chan, string|void type)
 	spawn_task(get_sub_points(chan, type), p->success);
 }
 
-continue int|array|Concurrent.Future get_sub_points(string chan, string|void type)
+__async__ int|array get_sub_points(string chan, string|void type)
 {
 	if (type == "raw") {
 		array cd = subpoints_cooldowns[chan];
-		if (cd && cd[1]) return yield(cd[1]);
+		if (cd && cd[1]) return await(cd[1]);
 		if (cd && cd[0] > time()) {
 			//Not using task_sleep to ensure that it's reusable. We want multiple
 			//clients to all wait until there's a result, then return the same.
 			Concurrent.Promise p = Concurrent.Promise();
 			call_out(delayed_get_sub_points, cd[0] - time(), p, chan, type);
 			cd[1] = p->future();
-			return yield(cd[1]);
+			return await(cd[1]);
 		}
 		else subpoints_cooldowns[chan] = ({time() + 10, 0});
 	}
-	int uid = yield(get_user_id(chan)); //Should come from cache
-	array info = yield(get_helix_paginated("https://api.twitch.tv/helix/subscriptions",
+	int uid = await(get_user_id(chan)); //Should come from cache
+	array info = await(get_helix_paginated("https://api.twitch.tv/helix/subscriptions",
 		(["broadcaster_id": (string)uid, "first": "99"]),
 		(["Authorization": "Bearer " + token_for_user_id(uid)[0]])));
 	if (type == "raw") return info;
@@ -62,7 +62,7 @@ continue int|array|Concurrent.Future get_sub_points(string chan, string|void typ
 	return points;
 }
 
-continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping cfg = req->misc->channel->config;
 	if (string nonce = req->variables->view) {
@@ -87,7 +87,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		//&& !is_localhost_mod(req->misc->session->user->?login, req->get_ip()) //But testing may at times be needed.
 	)
 		return render_template("login.md", (["msg": "authentication as the broadcaster"]));
-	array info = yield((mixed)get_sub_points(chan, "raw"));
+	array info = await(get_sub_points(chan, "raw"));
 	if (req->variables->raw) return render(req, ([
 		"vars": (["ws_group": ""]),
 		"points": sprintf("<pre>%O</pre>", info),
@@ -128,8 +128,8 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		string gift = gifts[tier] ? sprintf(", of which %d (%d) are gifts", tiers[tier] * gifts[tier], gifts[tier]) : "";
 		tierlist += ({sprintf("Tier %c: %d (%d)%s<br>\n", tier[0], tiers[tier] * count, count, gift)});
 	}
-	int uid = yield(get_user_id(chan)); //Should come from cache
-	mapping raw = yield(twitch_api_request("https://api.twitch.tv/helix/subscriptions?broadcaster_id=" + uid,
+	int uid = await(get_user_id(chan)); //Should come from cache
+	mapping raw = await(twitch_api_request("https://api.twitch.tv/helix/subscriptions?broadcaster_id=" + uid,
 		(["Authorization": "Bearer " + token_for_user_id(uid)[0]])));
 	return render(req, ([
 		"vars": (["ws_group": ""]),
@@ -160,12 +160,12 @@ EventSub hook_subgift = EventSub("subgift", "channel.subscription.gift", "1") {s
 EventSub hook_submessage = EventSub("submessage", "channel.subscription.message", "1") {subpoints_updated("submessage", @__ARGS__);};
 
 //bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
-continue mapping|Concurrent.Future get_state(string|int group, string|void id) { //get_chan_state isn't asynchronous-compatible
+__async__ mapping get_state(string|int group, string|void id) { //get_chan_state isn't asynchronous-compatible
 	[object channel, string grp] = split_channel(group);
 	if (!channel) return 0;
 	mapping trackers = channel->config->subpoints || ([]);
 	string chan = channel->name[1..];
-	int uid = yield(get_user_id(chan));
+	int uid = await(get_user_id(chan));
 	hook_sub(chan, (["broadcaster_user_id": (string)uid]));
 	hook_subend(chan, (["broadcaster_user_id": (string)uid]));
 	hook_subgift(chan, (["broadcaster_user_id": (string)uid]));
@@ -173,7 +173,7 @@ continue mapping|Concurrent.Future get_state(string|int group, string|void id) {
 	if (grp != "") {
 		if (!trackers[grp]) return (["data": 0]); //If you delete the tracker with the page open, it'll be a bit ugly.
 		string type = trackers[grp]->goaltype || "points";
-		int points = yield((mixed)get_sub_points(channel->name[1..], type));
+		int points = await(get_sub_points(channel->name[1..], type));
 		Stdio.append_file("evt_subpoints.log", sprintf("Fresh load, subpoint count: %d %s\n", points, type));
 		return trackers[grp] | (["points": points - (int)trackers[grp]->unpaidpoints]);
 	}

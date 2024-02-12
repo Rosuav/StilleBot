@@ -142,8 +142,8 @@ constant vars_provided = ([
 	"{newdesc}": "Long description (prompt) after any update",
 ]);
 
-continue mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
-	string token = yield((mixed)token_for_user_id_async(channel->userid))[0];
+__async__ mapping message_params(object channel, mapping person, array param) {
+	string token = await(token_for_user_id_async(channel->userid))[0];
 	if (token == "") error("Need broadcaster permissions\n");
 	string reward_id = param[0];
 	mapping params = ([]);
@@ -163,11 +163,11 @@ continue mapping|Concurrent.Future message_params(object channel, mapping person
 		}
 	}
 	if (!sizeof(params) && !empty_ok) error("No changes requested\n");
-	int broadcaster_id = yield(get_user_id(channel->name[1..]));
-	mapping prev = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+	int broadcaster_id = await(get_user_id(channel->name[1..]));
+	mapping prev = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 			+ broadcaster_id + "&id=" + reward_id,
 		(["Authorization": "Bearer " + token])));
-	mapping ret = sizeof(params) ? yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+	mapping ret = sizeof(params) ? await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 			+ broadcaster_id + "&id=" + reward_id,
 		(["Authorization": "Bearer " + token]),
 		(["method": "PATCH", "json": params, "return_errors": 1]),

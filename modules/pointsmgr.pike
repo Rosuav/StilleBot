@@ -89,7 +89,7 @@ EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward
 	event_notify("reward_changed", G->G->irc->id[(int)chanid], info->id);
 };
 
-continue Concurrent.Future update_dynamic_reward(object channel, string rewardid) {
+__async__ void update_dynamic_reward(object channel, string rewardid) {
 	mapping rwd = channel->config->dynamic_rewards[rewardid];
 	if (!rwd) return 0;
 	mapping updates = ([]);
@@ -100,8 +100,8 @@ continue Concurrent.Future update_dynamic_reward(object channel, string rewardid
 		if (value != cur[kwd]) updates[kwd] = value;
 	}
 	if (!sizeof(updates)) return 0;
-	string token = yield((mixed)token_for_user_id_async(channel->userid))[0];
-	mixed resp = yield(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + rewardid,
+	string token = await(token_for_user_id_async(channel->userid))[0];
+	mixed resp = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + rewardid,
 		(["Authorization": "Bearer " + token]),
 		(["method": "PATCH", "json": updates]),
 	));
@@ -111,10 +111,10 @@ continue Concurrent.Future update_dynamic_reward(object channel, string rewardid
 }
 
 multiset pending_update_alls = (<>);
-continue Concurrent.Future update_all_rewards(object channel) {
+__async__ void update_all_rewards(object channel) {
 	pending_update_alls[channel->userid] = 0;
 	foreach (channel->config->dynamic_rewards || ([]); string rewardid; mapping rwd)
-		yield((mixed)update_dynamic_reward(channel, rewardid));
+		await(update_dynamic_reward(channel, rewardid));
 }
 
 @hook_variable_changed: void notify_rewards(object channel, string varname, string newval) {
@@ -126,12 +126,12 @@ continue Concurrent.Future update_all_rewards(object channel) {
 	call_out(spawn_task, 0, update_all_rewards(channel));
 }
 
-continue Concurrent.Future|mixed populate_rewards_cache(string chan, string|int|void broadcaster_id) {
-	if (!broadcaster_id) broadcaster_id = yield(get_user_id(chan));
+__async__ void populate_rewards_cache(string chan, string|int|void broadcaster_id) {
+	if (!broadcaster_id) broadcaster_id = await(get_user_id(chan));
 	pointsrewards[(int)broadcaster_id] = ({ }); //If there's any error, don't keep retrying
 	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
-	mapping params = (["Authorization": "Bearer " + yield(token_for_user_id_async(broadcaster_id))[0]]);
-	array rewards = yield(twitch_api_request(url, params))->data;
+	mapping params = (["Authorization": "Bearer " + await(token_for_user_id_async(broadcaster_id))[0]]);
+	array rewards = await(twitch_api_request(url, params))->data;
 	//Prune the dynamic rewards list
 	object channel = G->G->irc->id[(int)broadcaster_id];
 	mapping current = channel->?config->?dynamic_rewards;
@@ -139,7 +139,7 @@ continue Concurrent.Future|mixed populate_rewards_cache(string chan, string|int|
 		multiset unseen = (multiset)indices(current) - (multiset)rewards->id;
 		if (sizeof(unseen)) {m_delete(current, ((array)unseen)[*]); channel->config_save();}
 	}
-	multiset manageable = rewards_manageable[broadcaster_id] = (multiset)yield(twitch_api_request(url + "&only_manageable_rewards=true", params))->data->id;
+	multiset manageable = rewards_manageable[broadcaster_id] = (multiset)await(twitch_api_request(url + "&only_manageable_rewards=true", params))->data->id;
 	foreach (rewards, mapping r) {
 		r->can_manage = manageable[r->id];
 		if (current[?r->id]) r->is_dynamic = 1;

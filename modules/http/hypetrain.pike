@@ -13,7 +13,7 @@ int until(string ts, int now)
 }
 mapping cached = 0; int cache_time = 0;
 
-continue mapping|Concurrent.Future parse_hype_status(mapping data)
+__async__ mapping parse_hype_status(mapping data)
 {
 	int now = time();
 	int cooldown = until(data->cooldown_end_time || data->cooldown_ends_at, now);
@@ -43,7 +43,7 @@ continue mapping|Concurrent.Future parse_hype_status(mapping data)
 	foreach (data->top_contributions + ({data->last_contribution}) - ({0}), mapping user) {
 		if (user->user_id) user->user = user->user_id;
 		if (user->user_name) user->display_name = user->user_name;
-		else user->display_name = yield(get_user_info(user->user))->display_name;
+		else user->display_name = await(get_user_info(user->user))->display_name;
 		user->type = (["bits": "BITS", "subscription": "SUBS"])[user->type] || user->type; //Events say "bits", API says "BITS".
 	}
 	state->lastcontrib = data->last_contribution || ([]);
@@ -57,22 +57,22 @@ void hypetrain_progression(string status, string chan, mapping info) {
 	spawn_task(parse_hype_status(info)) {send_updates_all(info->broadcaster_user_login, @__ARGS__);};
 }
 
-continue mapping|Concurrent.Future get_state(int|string chan)
+__async__ mapping get_state(int|string chan)
 {
 	if (chan == "-") return 0;
 	mixed ex = catch {
 		string uid;
 		if (intp(chan)) {//Deprecated, might change everything to be all channel names at some point
 			uid = (string)chan;
-			chan = yield(get_user_info(chan))->login;
+			chan = await(get_user_info(chan))->login;
 		}
-		else uid = (string)yield(get_user_id(chan));
-		mapping info = yield(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + uid,
+		else uid = (string)await(get_user_id(chan));
+		mapping info = await(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + uid,
 				(["Authorization": "Bearer " + token_for_user_id(uid)[0]])));
 		//If there's an error fetching events, don't set up hooks
 		G->G->specials_check_modular_hooks((["login": chan, "userid": uid]), "hypetrain");
 		mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
-		return yield((mixed)parse_hype_status(data));
+		return await(parse_hype_status(data));
 	};
 	if (ex && arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401")) {
 		return (["error": "Authentication problem. It may help to ask the broadcaster to open this page: ", "errorlink": "https://sikorsky.rosuav.com/hypetrain?for=" + chan]);
@@ -190,9 +190,9 @@ string fmt_contrib(mapping c) {
 	return sprintf("%s with %d subs", c->display_name, c->total / 500);
 }
 
-continue mapping|Concurrent.Future message_params(object channel, mapping person, array param)
+__async__ mapping message_params(object channel, mapping person, array param)
 {
-	mapping state = yield((mixed)get_state(channel->name[1..]));
+	mapping state = await(get_state(channel->name[1..]));
 	if (state->error) error(state->error + " " + state->errorlink + "\n");
 	mapping conductors = (["SUBS": "Nobody", "BITS": "Nobody"]);
 	string|array allcond = ({ });

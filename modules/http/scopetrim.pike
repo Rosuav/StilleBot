@@ -19,8 +19,7 @@ None of this information is sent to my server or anywhere else; your preferences
 browser's local storage and that's all.
 ";
 
-continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
-{
+mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	return render_template(markdown, ([
 		"vars": (["all_twitch_scopes": all_twitch_scopes]),
 		"js": "scopetrim",

@@ -20,13 +20,13 @@ string format_sword(mapping chan, mapping details) {
 	);
 }
 
-continue string|mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+__async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (mapping resp = ensure_login(req, "user:read:moderated_channels")) return resp;
-	array channels = yield(get_helix_paginated("https://api.twitch.tv/helix/moderation/channels",
+	array channels = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/channels",
 		(["user_id": req->misc->session->user->id]),
 		(["Authorization": "Bearer " + req->misc->session->token])));
-	array details_raw = yield(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": channels->broadcaster_id])));
+	array details_raw = await(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": channels->broadcaster_id])));
 	mapping details = mkmapping(details_raw->id, details_raw);
 	return render_template(markdown, ([
 		"swordcount": (string)sizeof(channels),

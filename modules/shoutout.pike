@@ -45,10 +45,10 @@ constant command_suggestions = (["!shoutout": ([
 	]),
 ])]);
 
-continue mapping|Concurrent.Future message_params(object channel, mapping person, array params)
+__async__ mapping message_params(object channel, mapping person, array params)
 {
 	mapping info = ([]);
-	catch {info = yield(get_channel_info(replace(params[0], ({"@", " "}), ""))) || ([]);}; //If error, leave it an empty mapping
+	catch {info = await(get_channel_info(replace(params[0], ({"@", " "}), ""))) || ([]);}; //If error, leave it an empty mapping
 	return ([
 		"{login}": info->broadcaster_login || params[0],
 		"{name}": info->display_name || "That person",

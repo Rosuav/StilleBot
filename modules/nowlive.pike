@@ -6,9 +6,9 @@ constant vars_provided = ([
 	"{channellive}": "Either 'offline' or a human-readable-ish time",
 ]);
 
-continue mapping|Concurrent.Future message_params(object channel, mapping person, array params)
+__async__ mapping message_params(object channel, mapping person, array params)
 {
 	string live = "notfound";
-	catch {live = yield((mixed)channel_still_broadcasting(replace(params[0], ({"@", " "}), "")));};
+	catch {live = await(channel_still_broadcasting(replace(params[0], ({"@", " "}), "")));};
 	return (["{channellive}": live]);
 }

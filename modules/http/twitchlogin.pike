@@ -45,7 +45,7 @@ mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mappin
 
 mapping(string:function) login_callback = ([]);
 mapping(string:string) resend_redirect = ([]);
-continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->variables->code)
 	{
@@ -54,9 +54,9 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 		//write("Login response %O\n", req->variables);
 		object auth = TwitchAuth(0, deduce_host(req->request_headers || ([])));
 		//write("Requesting access token for %O...\n", req->variables->code); //This shows up twice when those crashes happen. Maybe caching the redirect will help?
-		string cookie = yield(auth->request_access_token_promise(req->variables->code));
+		string cookie = await(auth->request_access_token_promise(req->variables->code));
 		auth->set_from_cookie(cookie);
-		mapping user = yield(twitch_api_request("https://api.twitch.tv/helix/users",
+		mapping user = await(twitch_api_request("https://api.twitch.tv/helix/users",
 			(["Authorization": "Bearer " + auth->access_token])))
 				->data[0];
 		if (function f = login_callback[req->variables->state])
@@ -77,7 +77,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	//NOTE: Some things are inconsistent on whether it's "scope" or "scopes". Currently
 	//checking for either. TODO: Make them all consistent.
 	multiset havescopes = req->misc->session->?scopes || (<>);
-	string bcast_scopes = yield((mixed)token_for_user_login_async(req->misc->session->user->?login))[1];
+	string bcast_scopes = await(token_for_user_login_async(req->misc->session->user->?login))[1];
 	if (bcast_scopes != "") havescopes |= (multiset)(bcast_scopes / " ");
 	multiset wantscopes = (multiset)((req->variables->scopes || req->variables->scope || "") / " " - ({""}));
 	multiset bad = wantscopes - TwitchAuth()->list_valid_scopes();

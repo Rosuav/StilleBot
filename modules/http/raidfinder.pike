@@ -78,7 +78,7 @@ constant markdown_menu = #"# Raid finder modes
 //Modes train and tradingcards are omitted as they are more usefully accessed from
 //their corresponding pages. Also login=user,user,user omitted as not useful.
 
-continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req)
 {
 	System.Timer tm = System.Timer();
 	//Try to find all creative categories and get their IDs. Is there a better way to do this?
@@ -103,7 +103,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 			array(string) channels = replace(newnotes, ",;\n"/"", " ") / " " - ({""});
 			//Trim URLs down to just the channel name
 			foreach (channels; int i; string c) sscanf(c, "http%*[s]://twitch.tv/%s%*[?/]", channels[i]);
-			array users = yield(get_users_info(channels, "login")); //TODO: If this throws "user not found", report it nicely
+			array users = await(get_users_info(channels, "login")); //TODO: If this throws "user not found", report it nicely
 			notes->highlight = (array(string))users->id * "\n";
 			persist_status->save();
 			return jsonify(([
@@ -145,17 +145,17 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 			if (next_precache_request < now) next_precache_request = now;
 			int delay = next_precache_request - now;
 			if (delay > 5) return jsonify((["error": "Wait a bit"])) | (["error": 425]);
-			if (delay) yield(task_sleep(delay));
+			if (delay) await(task_sleep(delay));
 			++next_precache_request;
 		}
 		string html_title;
 		if (!(int)chan) {
 			//Client-side view. Return HTML and enough variables to open up the popup.
 			html_title = "VOD lengths for " + chan;
-			if (mixed ex = catch (chan = (string)yield(get_user_id(chan))))
+			if (mixed ex = catch (chan = (string)await(get_user_id(chan))))
 				return (["error": 400, "data": "Unrecognized channel name " + chan]);
 		}
-		array vods = yield(get_helix_paginated("https://api.twitch.tv/helix/videos", (["user_id": chan, "type": "archive"])));
+		array vods = await(get_helix_paginated("https://api.twitch.tv/helix/videos", (["user_id": chan, "type": "archive"])));
 		if (string ignore = req->variables->ignore) //Ignore the stream ID for a currently live broadcast
 			vods = filter(vods) {return __ARGS__[0]->stream_id != ignore;};
 		//For convenience of the front end, do some parsing here in Pike.
@@ -188,7 +188,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 		//Ping Twitch and check if there are any chat restrictions. So far I can't do this in bulk, but
 		//it's great to be able to query them this way for the VOD length popup. Note that we're not
 		//asking for mod settings here, so non_moderator_chat_delay won't be in the response.
-		mapping settings = yield(twitch_api_request("https://api.twitch.tv/helix/chat/settings?broadcaster_id=" + chan));
+		mapping settings = await(twitch_api_request("https://api.twitch.tv/helix/chat/settings?broadcaster_id=" + chan));
 		if (arrayp(settings->data) && sizeof(settings->data)) ret->chat_settings = settings->data[0];
 
 		//Hang onto this info in cache, apart from is_following (below).
@@ -204,10 +204,10 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 			//TODO: Move this to poll as a generic "is X following Y" call, which will be cached.
 			//It can then use EITHER form of the query - if we have X's user:read:follows or Y's moderator:read:followers
 			//Might need a way to locate a moderator though. Or go for the partial result with intrinsic auth??
-			array creds = yield((mixed)token_for_user_id_async((int)chanid));
+			array creds = await((mixed)token_for_user_id_async((int)chanid));
 			array scopes = creds[1] / " ";
 			if (has_value(scopes, "user:read:follows")) {
-				mapping info = yield(twitch_api_request(sprintf("https://api.twitch.tv/helix/channels/followed?user_id=%s&broadcaster_id=%s", chanid, chan),
+				mapping info = await(twitch_api_request(sprintf("https://api.twitch.tv/helix/channels/followed?user_id=%s&broadcaster_id=%s", chanid, chan),
 					(["Authorization": "Bearer " + creds[0]])));
 				if (sizeof(info->data)) {
 					ret->is_following = info->data[0];
@@ -224,7 +224,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 						}
 					ret->is_following->follow_length = length;
 					ret->to_name = ret->is_following->broadcaster_name; //Old API: from_name, to_name (and their IDs)
-					ret->from_name = yield(get_user_info((int)chanid))->display_name; //This might not be necessary; check the front end.
+					ret->from_name = await(get_user_info((int)chanid))->display_name; //This might not be necessary; check the front end.
 				}
 				else ret->is_following = (["from_id": chanid]);
 			}
@@ -274,7 +274,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 			return (["data": "<style>body{font-size:16pt}</style><ul>" + lines * "\n" + "</ul><p>See tiled: <a href=\"raidfinder?login=demo\">login=demo</a></p>", "type": "text/html"]);
 		}
 		if (chan == (string)(int)chan) userid = (int)chan;
-		else userid = yield(get_user_id(chan));
+		else userid = await(get_user_id(chan));
 	}
 	else if (logged_in) userid = (int)logged_in->id; //Raidfind for self if logged in.
 	//TODO: Based on the for= or the logged in user, determine whether raids are tracked.
@@ -295,10 +295,10 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 		//Show everyone that you follow (not just those who are live), in an
 		//abbreviated form, mainly for checking notes.
 		if (mapping resp = ensure_login(req, "user:read:follows")) return resp;
-		array f = yield(get_helix_paginated("https://api.twitch.tv/helix/channels/followed",
+		array f = await(get_helix_paginated("https://api.twitch.tv/helix/channels/followed",
 				(["user_id": (string)req->misc->session->user->id])));
-		follows_helix = yield(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": f->broadcaster_id])));
-		array users = yield(get_users_info(highlightids));
+		follows_helix = await(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": f->broadcaster_id])));
+		array users = await(get_users_info(highlightids));
 		highlights = users->login * "\n";
 		foreach (follows_helix; int idx; mapping strm) {
 			if (string n = notes[strm->id]) strm->notes = n;
@@ -331,7 +331,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 		disp = user->display_name;
 	}
 	array users;
-	if (catch {users = yield(get_users_info(highlightids));}) {
+	if (catch {users = await(get_users_info(highlightids));}) {
 		//Some or all of the users don't exist. Assume that any that DO exist are now in
 		//the cache, and prune the rest. TODO: Ensure that this is actually the cause of
 		//the error (might need some support inside poll.pike).
@@ -390,7 +390,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 			//for streams who are currently live. Ignores the schedule and just
 			//uses the list of all_casters.
 			string owner = req->variables->train;
-			if (!(int)owner) owner = (string)yield(get_user_id(owner));
+			if (!(int)owner) owner = (string)await(get_user_id(owner));
 			mapping trncfg = persist_status->has_path("raidtrain", owner, "cfg");
 			array casters = trncfg->?all_casters;
 			if (!casters) return "No such raid train - check the link and try again";
@@ -402,14 +402,14 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 			//the obvious form team=X counts as this), or blank (team=) meaning "my teams".
 			if (team == "") {
 				if (mapping resp = ensure_login(req)) return resp;
-				team = yield(twitch_api_request("https://api.twitch.tv/helix/teams/channel?broadcaster_id=" + userid))->data->team_name || ({ });
+				team = await(twitch_api_request("https://api.twitch.tv/helix/teams/channel?broadcaster_id=" + userid))->data->team_name || ({ });
 			}
 			else if (stringp(team)) team /= ",";
 			//team should now be an array of team names, regardless of how it was input
 			args->user_id = ({ });
 			array team_display_names = ({ });
 			foreach (team; int i; string t) catch {
-				mixed data = yield(twitch_api_request("https://api.twitch.tv/helix/teams?name=" + t))->data; //what if team name has specials?
+				mixed data = await(twitch_api_request("https://api.twitch.tv/helix/teams?name=" + t))->data; //what if team name has specials?
 				if (!sizeof(data)) continue; //Probably team not found
 				team_display_names += ({data[0]->team_display_name});
 				args->user_id += data[0]->users->user_id;
@@ -425,7 +425,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 		}
 		else switch (req->variables->categories) {
 			case "pixelplush": { //categories=pixelplush - use an undocumented API to find people playing the !drop game etc
-				object res = yield(Protocols.HTTP.Promise.get_url(
+				object res = await(Protocols.HTTP.Promise.get_url(
 					"https://api.pixelplush.dev/v1/analytics/sessions/live"
 				));
 				mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
@@ -440,7 +440,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 				break;
 			}
 			default: { //For ?categories=Art,Food%20%26%20Drink - explicit categories
-				array cats = yield(get_helix_paginated("https://api.twitch.tv/helix/games", (["name": req->variables->categories / ","])));
+				array cats = await(get_helix_paginated("https://api.twitch.tv/helix/games", (["name": req->variables->categories / ","])));
 				if (sizeof(cats)) {
 					args->game_id = (array(string))cats->id;
 					title = cats->name * ", " + " streams";
@@ -467,18 +467,18 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 				break;
 			}
 		}
-		[array streams, mapping self] = yield(Concurrent.all(
+		[array streams, mapping self] = await(Concurrent.all(
 			get_helix_paginated("https://api.twitch.tv/helix/streams", args),
 			twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + userid),
 		));
 		array(string) ids = streams->user_id + ({(string)userid});
 		follows_helix = streams + self->data;
-		users = yield(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": ids])));
+		users = await(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": ids])));
 	}
 	else {
 		if (mapping resp = ensure_login(req, "user:read:follows")) return resp;
 		if (mixed ex = catch {
-			follows_helix = yield(get_helix_paginated("https://api.twitch.tv/helix/streams/followed",
+			follows_helix = await(get_helix_paginated("https://api.twitch.tv/helix/streams/followed",
 				(["user_id": (string)req->misc->session->user->id]),
 				(["Authorization": "Bearer " + req->misc->session->token])));
 		}) {
@@ -494,10 +494,10 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 			return ensure_login(req, "user:read:follows");
 		}
 		//Ensure that we have the user we're looking up (yourself, unless it's a for=USERNAME raidfind)
-		follows_helix += yield(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (string)userid])));
+		follows_helix += await(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (string)userid])));
 		//Grab some additional info from the Users API, including profile image and
 		//whether the person is partnered or affiliated.
-		users = yield(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": follows_helix->user_id + ({(string)userid})])));
+		users = await(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": follows_helix->user_id + ({(string)userid})])));
 	}
 	mapping your_stream;
 	foreach (follows_helix, mapping strm)
@@ -505,7 +505,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 	mapping(int:mapping(string:mixed)) extra_info = ([]);
 	//Get some extra info that isn't in the /streams API.
 	if (sizeof(follows_helix)) {
-		array channels = yield(get_helix_paginated("https://api.twitch.tv/helix/channels", (["broadcaster_id": follows_helix->user_id])));
+		array channels = await(get_helix_paginated("https://api.twitch.tv/helix/channels", (["broadcaster_id": follows_helix->user_id])));
 		foreach (channels, mapping chan)
 			extra_info[(int)chan->broadcaster_id] = ([
 				"is_branded_content": chan->is_branded_content,
@@ -640,7 +640,7 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 	sort(-follows_helix->recommend[*], follows_helix); //Sort by magic initially
 	if (!G->G->ccl_options_table) {
 		//Assume CCLs seldom change. Currently no cache purge option.
-		array ccls = yield(twitch_api_request("https://api.twitch.tv/helix/content_classification_labels"))->data;
+		array ccls = await(twitch_api_request("https://api.twitch.tv/helix/content_classification_labels"))->data;
 		G->G->ccl_names = mkmapping(ccls->id, ccls->name);
 		G->G->ccl_options_table = sprintf("> %s | <input type=radio name=CCL_%s value=0> | <input type=radio name=CCL_%<s value=-1> | <input type=radio name=CCL_%<s value=-2> | <input type=radio name=CCL_%<s value=-3>\n", ccls->name[*], ccls->id[*]) * "";
 	}
@@ -667,11 +667,11 @@ continue mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.H
 	]));
 }
 
-continue Concurrent.Future|mapping followcategory(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ mapping followcategory(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!arrayp(msg->cats) || !sizeof(msg->cats)) return 0; //No cats, nothing to do.
 	switch (msg->action) {
 		case "query": {
-			array cats = yield(get_helix_paginated("https://api.twitch.tv/helix/games", (["id": msg->cats])));
+			array cats = await(get_helix_paginated("https://api.twitch.tv/helix/games", (["id": msg->cats])));
 			return (["cats": cats]);
 		}
 		case "follow": case "unfollow": {
@@ -716,8 +716,8 @@ void irc_message(string type, string chan, string msg, mapping attrs) {
 	}
 }
 
-continue Concurrent.Future send_raid(string id, int target, mapping conn) {
-	mapping result = yield(twitch_api_request(sprintf(
+__async__ void send_raid(string id, int target, mapping conn) {
+	mapping result = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/raids?from_broadcaster_id=%s&to_broadcaster_id=%d",
 			id, target),
 		(["Authorization": "Bearer " + conn->session->token]),
@@ -731,14 +731,14 @@ continue Concurrent.Future send_raid(string id, int target, mapping conn) {
 	//Should there be an "Abort Raid" button on the dialog? The permission required is the same.
 	//The biggest problem is that it would be easy to misclick it.
 	int cookie = time();
-	raids_in_progress[id] = ({"#" + yield(get_user_info(target))->login, cookie, conn});
+	raids_in_progress[id] = ({"#" + await(get_user_info(target))->login, cookie, conn});
 	//Invert the mapping to deduplicate raid targets
 	mapping invert = mkmapping(values(raids_in_progress)[*][0], indices(raids_in_progress));
-	object irc = yield(irc_connect(([
+	object irc = await(irc_connect(([
 		"capabilities": ({"commands", "tags"}),
 		"join": indices(invert),
 	])));
-	mixed _ = yield(task_sleep(120));
+	await(task_sleep(120));
 	if (raids_in_progress[id][?1] == cookie) {
 		//Two minutes after starting the raid, it hasn't gone through. It probably won't.
 		m_delete(raids_in_progress, id);
@@ -770,12 +770,12 @@ void websocket_cmd_suggestraid(mapping(string:mixed) conn, mapping(string:mixed)
 	if (notes->?tags[?"<raidsuggestions>"] < 0) return; //Raid suggestions are disabled, ignore them.
 	spawn_task(suggestraid(from, target, recip));
 }
-continue Concurrent.Future|string suggestraid(int from, int target, int recip) {
-	array streams = yield(twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + target))->data;
+__async__ string suggestraid(int from, int target, int recip) {
+	array streams = await(twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + target))->data;
 	if (!sizeof(streams)) return "Stream not live";
 	mapping strm = streams[0];
 	int userid = recip;
-	array users = yield(twitch_api_request("https://api.twitch.tv/helix/users?id=" + target + "&id=" + from))->data;
+	array users = await(twitch_api_request("https://api.twitch.tv/helix/users?id=" + target + "&id=" + from))->data;
 	mapping target_user, suggestor_user;
 	foreach (users, mapping user) {
 		//Note that if you suggest yourself as a raid target, that's legit (if a bit lame)
@@ -788,7 +788,7 @@ continue Concurrent.Future|string suggestraid(int from, int target, int recip) {
 	//If we can't pull up the chanstatus from cache, populate it with the one most interesting part.
 	if (mapping st = persist_status->path("raidfinder_cache")[strm->user_id]) strm->chanstatus = st;
 	else {
-		mapping settings = yield(twitch_api_request("https://api.twitch.tv/helix/chat/settings?broadcaster_id=" + target));
+		mapping settings = await(twitch_api_request("https://api.twitch.tv/helix/chat/settings?broadcaster_id=" + target));
 		if (arrayp(settings->data) && sizeof(settings->data)) strm->chanstatus = (["cache_time": time(), "chat_settings": settings->data[0]]);
 	}
 	int otheruid = (int)strm->user_id;
@@ -831,16 +831,16 @@ constant builtin_name = "Raid suggestion";
 constant builtin_param = ({"Suggestion"}); //Maybe add "Comments" as second param?
 constant vars_provided = ([]);
 
-continue mapping|Concurrent.Future message_params(object channel, mapping person, array params) {
+__async__ mapping message_params(object channel, mapping person, array params) {
 	//No facility currently for sending comments about the suggestion, but you can include
 	//them and we'll ignore them (they'll be in chat anyway)
 	string chan = params[0];
 	sscanf(chan, "%*stwitch.tv/%[^ ]", chan);
 	sscanf(chan, "%*[@]%s ", chan);
 	int target;
-	if (catch (target = yield(get_user_id(chan)))) error("Unknown channel name\n");
+	if (catch (target = await(get_user_id(chan)))) error("Unknown channel name\n");
 	if (!target) error("Unknown channel name\n");
-	string err = yield((mixed)suggestraid(person->uid, target, channel->userid));
+	string err = await(suggestraid(person->uid, target, channel->userid));
 	if (err && err != "") error(err + "\n");
 }
 

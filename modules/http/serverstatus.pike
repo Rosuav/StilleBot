@@ -17,8 +17,7 @@ constant markdown = #"# StilleBot server status
 }
 </style>
 ";
-continue Concurrent.Future|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
-{
+mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	return render(req, (["vars": (["ws_group": ""])]));
 }
 
@@ -27,9 +26,9 @@ array(int) cputime() {
 	return ({user + nice + sys + idle, idle});
 }
 
-continue Concurrent.Future updater() {
+__async__ void updater() {
 	while (G->G->serverstatus_updater) {
-		mixed _ = yield(task_sleep(0.25));
+		await(task_sleep(0.25));
 		mixed ex = catch {G->G->serverstatus_updatefunc();};
 		if (ex) {G->G->serverstatus_updater = 0; werror("ERROR IN SERVER STATUS UPDATE:\n%s\n", describe_backtrace(ex));}
 	}
