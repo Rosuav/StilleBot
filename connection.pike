@@ -94,10 +94,10 @@ mapping(string:function(string:string)) text_filters = ([
 	"upper": upper_case, "lower": lower_case,
 ]);
 
-continue Concurrent.Future raidwatch(int channel, string raiddesc) {
-	mixed _ = yield(task_sleep(30)); //It seems common for streamers to be offline after about 30 seconds
+__async__ void raidwatch(int channel, string raiddesc) {
+	await(task_sleep(30)); //It seems common for streamers to be offline after about 30 seconds
 	string status = "error";
-	mixed ex = catch {status = yield((mixed)channel_still_broadcasting(channel));};
+	mixed ex = catch {status = await(channel_still_broadcasting(channel));};
 	Stdio.append_file("raidwatch.log", sprintf("[%s] %s: %s\n", ctime(time())[..<1], raiddesc, status));
 }
 
@@ -112,10 +112,10 @@ constant deletemsg = ({"object channel", "object person", "string target", "stri
 @create_hook:
 constant deletemsgs = ({"object channel", "object person", "string target"});
 
-continue Concurrent.Future voice_enable(string voiceid, string chan, mapping|void tags) {
+__async__ void voice_enable(string voiceid, string chan, mapping|void tags) {
 	mapping tok = persist_status["voices"][voiceid];
 	werror("Connecting to voice %O...\n", voiceid);
-	object conn = yield(irc_connect(([
+	object conn = await(irc_connect(([
 		"user": tok->login, "pass": "oauth:" + tok->token,
 		"voiceid": voiceid, //Triggers auto-cleanup when the voice is no longer in use
 		"capabilities": ({"commands"}),
@@ -182,7 +182,7 @@ class channel(mapping config) {
 		spawn_task(load_commands(loading));
 	}
 
-	continue awaitable load_commands(multiset|void loading) {
+	__async__ void load_commands(multiset|void loading) {
 		//Load up the channel's commands. Note that aliases are not stored in the JSON file,
 		//but are individually available here in the lookup mapping.
 		commands = ([]);
@@ -198,7 +198,7 @@ class channel(mapping config) {
 			}
 			if (mappingp(response) && response->redemption) redemption_commands[response->redemption] += ({cmd});
 		}
-		array cmds = yield(G->G->DB->load_commands(userid));
+		array cmds = await(G->G->DB->load_commands(userid));
 		foreach (cmds, mapping cmd) {
 			echoable_message response = commands[cmd->cmdname] = cmd->content;
 			if (!mappingp(response)) continue; //No top-level flags, nothing to handle specially.
@@ -1190,8 +1190,8 @@ void irc_closed(mapping options) {
 	if (options->voiceid) m_delete(irc_connections, options->voiceid);
 }
 
-@export: continue object|Concurrent.Future connect_to_channel(string login) {
-	mapping info = yield(get_user_info(login, "login"));
+@export: __async__ object connect_to_channel(string login) {
+	mapping info = await(get_user_info(login, "login"));
 	string fn = "channels/" + info->id + ".json";
 	string prev = Stdio.read_file(fn);
 	if (prev) {
@@ -1216,9 +1216,9 @@ void session_cleanup() {
 	G->G->DB->generic_query("delete from stillebot.http_sessions where active < now () - '7 days'::interval");
 }
 
-continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+__async__ void http_request(Protocols.HTTP.Server.Request req)
 {
-	req->misc->session = yield((mixed)G->G->DB->load_session(req->cookies->session));
+	req->misc->session = await(G->G->DB->load_session(req->cookies->session));
 	//TODO maybe: Refresh the login token. Currently the tokens don't seem to expire,
 	//but if they do, we can get the refresh token via authcookie (if present).
 	[function handler, array args] = find_http_handler(req->not_query);
@@ -1231,7 +1231,7 @@ continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 		};
 	}
 	mapping|string resp;
-	if (mixed ex = handler && catch (resp = yield(handler(req, @args)))) {
+	if (mixed ex = handler && catch (resp = await(handler(req, @args)))) {
 		werror("HTTP handler crash: %O\n", req->not_query);
 		werror(describe_backtrace(ex));
 		resp = (["error": 500, "data": "Internal server error\n", "type": "text/plain; charset=\"UTF-8\""]);
@@ -1257,7 +1257,7 @@ continue Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 	resp->extra_heads["Access-Control-Allow-Private-Network"] = "true";
 	mapping sess = req->misc->session;
 	if (sizeof(sess) && !sess->fake) {
-		if (!sess->cookie) sess->cookie = yield(G->G->DB->generate_session_cookie());
+		if (!sess->cookie) sess->cookie = await(G->G->DB->generate_session_cookie());
 		G->G->DB->save_session(sess);
 		resp->extra_heads["Set-Cookie"] = "session=" + sess->cookie + "; Path=/; Max-Age=604800; SameSite=Lax; HttpOnly";
 	}
@@ -1507,6 +1507,7 @@ protected void create(string name)
 {
 	::create(name);
 	add_constant("send_message", send_message);
+	export(this, name, "connect_to_channel");
 	#if constant(INTERACTIVE)
 	G->G->irc = (["channels": ([]), "id": ([]), "loading": (<>)]);
 	return;

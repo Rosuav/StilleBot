@@ -846,4 +846,6 @@ protected void create(string|void name)
 	if (is_active) poll();
 	#endif
 	::create(name);
+	//Due to a current bug, async functions don't have annotations. Manually export them.
+	export(this, name, ("twitch_api_request get_users_info get_user_info get_user_id token_for_user_login_async token_for_user_id_async get_helix_paginated get_banned_list channel_still_broadcasting translate_tag_ids check_following get_stream_schedule" / " ")[*]);
 }
