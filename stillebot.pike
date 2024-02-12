@@ -86,6 +86,16 @@ int main(int argc,array(string) argv)
 		Stdio.stdin->set_read_callback(console);
 		return -1;
 	}
+	if (has_value(argv, "--modules")) {
+		add_constant("INTERACTIVE", 1);
+		add_constant("HEADLESS", 1);
+		restricted_update = ({"persist.pike", "globals.pike", "database.pike", "poll.pike", "connection.pike", "window.pike"});
+		if (bootstrap_all()) return 1;
+		foreach (({"modules", "modules/http", "zz_local"}), string path)
+			foreach (sort(get_dir(path)), string f)
+				if (has_suffix(f, ".pike") && !bootstrap(path + "/" + f)) return 1;
+		return 0;
+	}
 	if (has_value(argv, "--dbupdate")) {
 		add_constant("INTERACTIVE", 1);
 		restricted_update = ({"persist.pike", "globals.pike", "database.pike", "poll.pike"});

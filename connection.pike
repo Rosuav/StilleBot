@@ -1506,6 +1506,11 @@ void send_message(string chan, string msg) {if (irc_connections[0]) irc_connecti
 protected void create(string name)
 {
 	::create(name);
+	add_constant("send_message", send_message);
+	#if constant(INTERACTIVE)
+	G->G->irc = (["channels": ([]), "id": ([]), "loading": (<>)]);
+	return;
+	#endif
 	is_active = is_active_bot(); //Cache it - we'll check this a lot
 	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
 	session_cleanup();
@@ -1570,5 +1575,4 @@ protected void create(string name)
 			if (object http = m_delete(G->G, "httpserver")) catch {http->close();};
 		}
 	}
-	add_constant("send_message", send_message);
 }
