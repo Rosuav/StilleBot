@@ -381,8 +381,9 @@ class websocket_handler
 		if (function f = this["websocket_cmd_" + msg->cmd]) f(conn, msg);
 	}
 
-	void _send_updates(array(object) socks, string|int group, mapping|void data) {
-		spawn_task(data || get_state(group), _low_send_updates, 0, socks);
+	__async__ void _send_updates(array(object) socks, string|int group, mapping|void data) {
+		if (!data) data = await(get_state(group));
+		_low_send_updates(data, socks);
 	}
 	void _low_send_updates(mapping resp, array(object) socks) {
 		if (!resp) return;
