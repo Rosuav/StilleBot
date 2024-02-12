@@ -1,7 +1,7 @@
-class gtksignal(object obj)
+class gtksignal(object obj, mixed ... args)
 {
 	int signal_id;
-	protected void create(mixed ... args) {if (obj) signal_id=obj->signal_connect(@args);}
+	protected void create() {if (obj) signal_id=obj->signal_connect(@args);}
 	protected void destroy() {if (obj && signal_id) obj->signal_disconnect(signal_id);}
 	protected void _destruct() {if (obj && signal_id) obj->signal_disconnect(signal_id);}
 }
