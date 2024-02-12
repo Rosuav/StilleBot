@@ -93,7 +93,10 @@ int main(int argc,array(string) argv)
 		if (bootstrap_all()) return 1;
 		foreach (({"modules", "modules/http", "zz_local"}), string path)
 			foreach (sort(get_dir(path)), string f)
-				if (has_suffix(f, ".pike") && !bootstrap(path + "/" + f)) return 1;
+				if (has_suffix(f, ".pike") && !bootstrap(path + "/" + f)) {
+					Process.create_process(({"SciTE", path + "/" + f}));
+					return 1;
+				}
 		return 0;
 	}
 	if (has_value(argv, "--dbupdate")) {
