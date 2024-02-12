@@ -31,7 +31,7 @@ mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mappin
 	req->misc->session->token = token;
 	req->misc->session->authcookie = cookie;
 	ensure_bcaster_token(req, "", user->login); //If you're a broadcaster, update broadcaster auth.
-	G->G->DB->save_user_credentials(([
+	/*G->G->DB->save_user_credentials(([
 		"userid": (int)user->id,
 		"login": user->login,
 		"token": token,
@@ -39,7 +39,7 @@ mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mappin
 		"scopes": sort(req->variables->scope / " "),
 		"validated": time(),
 		"user_info": user,
-	]));
+	]));*/
 	return (["data": "<script>window.close(); window.opener.location.reload();</script>", "type": "text/html"]);
 }
 

@@ -526,4 +526,5 @@ protected void create(string name) {
 	spawn_task(reconnect(1));
 	if (!G->G->http_sessions_deleted) G->G->http_sessions_deleted = ([]);
 	//if (!G->G->user_credentials_loading && !G->G->user_credentials_loaded) spawn_task(preload_user_credentials());
+	G->G->user_credentials = ([]); //HACK: Load no credentials from the database
 }
