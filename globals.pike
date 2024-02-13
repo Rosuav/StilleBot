@@ -78,9 +78,9 @@ Calendar.ISO.Second time_from_iso(string time) {
 __async__ mixed spawn_task(mixed gen, function|void got_result, function|void got_error, mixed ... extra) {
 	mixed ret;
 	if (got_error) {
-		mixed ex = catch {ret = await(gen);};
+		mixed ex = catch {ret = objectp(gen) && gen->on_await ? await(gen) : gen;};
 		if (ex) return got_error(ex);
-	} else ret = await(gen);
+	} else ret = objectp(gen) && gen->on_await ? await(gen) : gen;
 	if (got_result) return got_result(ret);
 	return ret;
 }
