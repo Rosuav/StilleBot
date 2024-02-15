@@ -14,7 +14,7 @@ continue mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Ser
 	string yourname = req->misc->?session->?user->?display_name || "";
 	string loglink = "You are not currently logged in. If you wish, you may: [Log in with your Twitch credentials](:.twitchlogin)";
 	function link = nonlink, anon = keeptext, loggedin = ignoretext;
-	mapping bot = yield(get_user_info(G->G->bot_uid, "login"));
+	mapping bot = yield(get_user_info(G->G->bot_uid));
 	string chan = bot->login;
 	if (yourname != "")
 	{
