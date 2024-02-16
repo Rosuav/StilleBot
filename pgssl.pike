@@ -12,6 +12,8 @@ class Database(string host, object ctx) {
 	string state;
 	int backendpid, secretkey;
 	mapping server_params = ([]);
+	array(Concurrent.Promise) pending = ({ });
+
 	protected void create() {
 		//TODO: Do this nonblocking too
 		sock = Stdio.File();
@@ -50,7 +52,7 @@ class Database(string host, object ctx) {
 					break;
 				}
 				case 'R': {
-					if (msg == "\0\0\0\0") {state = "ready"; break;}
+					if (msg == "\0\0\0\0") {ready(); break;}
 					//Otherwise it's some sort of request for more auth, not supported here.
 					//We require password-free authentication, meaning it has to be trusted,
 					//peer-authenticated, or SSL certificate authenticated (mainly that one).
@@ -60,7 +62,10 @@ class Database(string host, object ctx) {
 					break;
 				}
 				case 'K': sscanf(msg, "%4d%4d", backendpid, secretkey); break;
-				case 'Z': state = (["I": "ready", "T": "transaction", "E": "transacterr"])[msg]; break;
+				case 'Z':
+					if (msg == "I") ready();
+					else state = (["T": "transaction", "E": "transacterr"])[msg];
+					break;
 				case 'S': { //Note that this is ParameterStatus from the back end, but if the front end sends it, it's Sync
 					sscanf(msg, "%s\0%s\0", string param, string value);
 					server_params[param] = value;
@@ -71,6 +76,34 @@ class Database(string host, object ctx) {
 		}
 	}
 	void sockclosed() {werror("Closed.\n"); exit(0);}
+
+	void ready() { //Must be atomic. If multithreading is added, put a lock around this.
+		state = "ready";
+		if (sizeof(pending)) {
+			state = "busy";
+			[Concurrent.Promise next, pending] = Array.shift(pending);
+			next->success(1);
+		}
+	}
+
+	__async__ array(mapping) query(string sql, mapping|void bindings) {
+		//Must be atomic with ready()
+		if (state == "ready") state = "busy";
+		else {
+			object p = Concurrent.Promise();
+			pending += ({p});
+			await(p->future()); //Enqueue us until ready() declares that we're done
+		}
+
+		array|zero ret = 0;
+		mixed ex = catch {
+			werror("Starting query: %s\n", sql);
+			ret = ({"????"}); //Stub!
+		};
+
+		if (ex) throw(ex);
+		return ret;
+	}
 }
 
 int main() {
@@ -80,5 +113,10 @@ int main() {
 	array(string) root = Standards.PEM.Messages(Stdio.read_file("/etc/ssl/certs/ISRG_Root_X1.pem"))->get_certificates();
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
 	object sql = Database("sikorsky.rosuav.com", ctx);
+	sql->query("select 1+2+3")->then() {werror("Simple query: %O\n", __ARGS__[0]);};
+	sql->query("select * from stillebot.commands where twitchid = :twitchid and cmdname = :cmd and active",
+		(["twitchid": "49497888", "cmd": "iidpio"]))->then() {
+			werror("Command lookup: %O\n", __ARGS__[0]);
+		};
 	return -1;
 }
