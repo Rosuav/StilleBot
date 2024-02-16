@@ -13,6 +13,8 @@ class Database(string host, object ctx) {
 	int backendpid, secretkey;
 	mapping server_params = ([]);
 	array(Concurrent.Promise) pending = ({ });
+	mapping inflight = ([]); //Map a portal name to some info about the query-to-be
+	int(1bit) writable = 1;
 
 	protected void create() {
 		//TODO: Do this nonblocking too
@@ -24,23 +26,23 @@ class Database(string host, object ctx) {
 		sock->write("\0\0\0\b\4\322\26/"); //Magic packet to request SSL
 		return;
 	}
-	void rawread(object sock, string data) {
+	void rawread(object s, string data) {
 		if (data != "S") {sock->close(); return;} //Bad handshake
 		sock = SSL.File(sock, ctx);
-		sock->set_nonblocking(sockread, 0, sockclosed, 0, 0) {
+		sock->set_nonblocking(sockread, sockwrite, sockclosed, 0, 0) {
 			sock->set_buffer_mode(in = Stdio.Buffer(), out = Stdio.Buffer());
 			out->add_hstring("\0\3\0\0user\0rosuav\0database\0stillebot\0application_name\0stillebot\0\0", 4, 4);
-			out->output_to(sock);
+			write();
 			state = "auth";
 		};
 		sock->connect();
 	}
 	void sockread() {
-		while (1) {
+		while (sizeof(in)) {
 			object rew = in->rewind_on_error();
 			int msgtype = in->read_int8();
 			string msg = in->read_hstring(4, 4);
-			if (!msg) return; //Hopefully it'll rewind, leave the partial message in buffer, and retrigger us when there's more data
+			if (!msg) {werror("Incomplete message %O\n", (string)in); return;} //Hopefully it'll rewind, leave the partial message in buffer, and retrigger us when there's more data
 			rew->release();
 			switch (msgtype) {
 				case 'E': { //Error. See https://www.postgresql.org/docs/current/protocol-error-fields.html
@@ -52,7 +54,7 @@ class Database(string host, object ctx) {
 					break;
 				}
 				case 'R': {
-					if (msg == "\0\0\0\0") {ready(); break;}
+					if (msg == "\0\0\0\0") break;
 					//Otherwise it's some sort of request for more auth, not supported here.
 					//We require password-free authentication, meaning it has to be trusted,
 					//peer-authenticated, or SSL certificate authenticated (mainly that one).
@@ -75,7 +77,22 @@ class Database(string host, object ctx) {
 			}
 		}
 	}
+	void sockwrite() {werror("sockwrite\n"); writable = 1;}
 	void sockclosed() {werror("Closed.\n"); exit(0);}
+	void write() {
+		if (!writable) return;
+		werror("Attempting to send %d bytes...\n", sizeof(out));
+		out->output_to(sock);
+		werror("Sent. Remaining: %d bytes.\n", sizeof(out));
+		if (sizeof(out)) writable = 0;
+	}
+
+	//This kind of idea would be nice, but how do I distinguish Int16 from Int32?
+	/*string build_packet(int type, mixed ... args) {
+		string packet = "";
+		foreach (args, mixed arg) add_arg_to_packet;
+		return sprintf("%c%4H", type, packet);
+	}*/
 
 	void ready() { //Must be atomic. If multithreading is added, put a lock around this.
 		state = "ready";
@@ -94,10 +111,24 @@ class Database(string host, object ctx) {
 			pending += ({p});
 			await(p->future()); //Enqueue us until ready() declares that we're done
 		}
+		string portalname = ""; //Do we need portal support?
+		//if (inflight[portalname]) ...
 
 		array|zero ret = 0;
 		mixed ex = catch {
 			werror("Starting query: %s\n", sql);
+			//string packet = sprintf("%s\0%s\0%2c%{%4c%}", portalname, sql, sizeof(params), params);
+			object completion = Concurrent.Promise();
+			inflight[portalname] = ([
+				"query": sql, //For debugging only
+				"bindings": bindings || ([]),
+				"completion": completion,
+			]);
+			string packet = portalname + "\0" + sql + "\0\0\0"; //With no parameters, it's just this.
+			//out->add_int8('P')->add_hstring(packet, 4, 4);
+			//out->add_int8('Q')->add_hstring(sql + "\0", 4, 4);
+			sock->write(sprintf("Q%4c%s\0", sizeof(sql) + 5, sql));
+			await(completion->future());
 			ret = ({"????"}); //Stub!
 		};
 
