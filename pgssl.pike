@@ -20,6 +20,16 @@ mapping parse_result_row(array fields, string row) {
 	return ret;
 }
 
+string encode_as_type(mixed value, int typeoid) {
+	if (objectp(value) && value->is_val_null) return "\377\377\377\377"; //Any NULL is encoded as length -1
+	switch (typeoid) {
+		case 20: return sprintf("\0\0\0\b%8c", (int)value);
+		case 21: return sprintf("\0\0\0\2%2c", (int)value);
+		case 23: return sprintf("\0\0\0\4%4c", (int)value);
+		default: return sprintf("%4H", (string)value);
+	}
+}
+
 class Database(string host, object ctx) {
 	Stdio.File|SSL.File sock;
 	Stdio.Buffer in, out;
@@ -94,12 +104,8 @@ class Database(string host, object ctx) {
 					werror("For portal %O, %d params: %O\n", preparing_statements[0], nparams, params);
 					string portalname = preparing_statements[0];
 					mapping stmt = inflight[portalname];
-					stmt->params = params[*][0];
 					array packet = ({portalname, 0, portalname, "\0\0\1\0\1", sprintf("%2c", nparams)});
-					foreach (params, array param) {
-						//TODO: If value is NULL, packet += ({"\xFF\xFF\xFF\xFF"});
-						packet += ({sprintf("%4H", "")}); //TODO
-					}
+					packet += encode_as_type(stmt->paramvalues[*], params[*][0][*]);
 					packet += ({"\0\1\0\1"});
 					out->add_int8('B')->add_hstring(packet, 4, 4);
 					out->add_int8('E')->add_hstring(({portalname, "\0\0\0\0\0"}), 4, 4);
@@ -162,6 +168,15 @@ class Database(string host, object ctx) {
 	}
 
 	__async__ array(mapping) query(string sql, mapping|void bindings) {
+		//Preparse the query and bindings
+		array paramvalues = ({ });
+		if (bindings) foreach (bindings; string param; mixed val) {
+			param = ":" + param;
+			if (!has_value(sql, param)) continue; //It's fine to have unnecessary bindings (see eg group/transaction handling)
+			paramvalues += ({val});
+			sql = replace(sql, param, "$" + sizeof(paramvalues)); //TODO for performance: Replace all at once
+		}
+
 		//Must be atomic with ready()
 		if (state == "ready") state = "busy";
 		else {
@@ -183,7 +198,7 @@ class Database(string host, object ctx) {
 			object completion = Concurrent.Promise();
 			mapping stmt = inflight[portalname] = ([
 				"query": sql, //For debugging only
-				"bindings": bindings || ([]),
+				"paramvalues": paramvalues,
 				"completion": completion,
 				"results": ({ }),
 			]);
