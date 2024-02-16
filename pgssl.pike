@@ -6,6 +6,20 @@ class SSLContext {
 	}
 }
 
+mapping parse_result_row(array fields, string row) {
+	mapping ret = ([]);
+	foreach (fields, array field) {
+		if (sscanf(row, "\377\377\377\377%s", row)) {ret[field[0]] = Val.null; continue;}
+		sscanf(row, "%4H%s", mixed val, row);
+		switch (field[3]) { //type OID
+			case 20: case 21: case 23: sscanf(val, "%" + field[4] + "c", val); break;
+			default: break;
+		}
+		ret[field[0]] = val;
+	}
+	return ret;
+}
+
 class Database(string host, object ctx) {
 	Stdio.File|SSL.File sock;
 	Stdio.Buffer in, out;
@@ -93,10 +107,12 @@ class Database(string host, object ctx) {
 					break;
 				}
 				case 'T': { //RowDescription
-					sscanf(msg, "%2c%{%s\0%4c%2c%4c%2c%4c%2c%}", int nfields, array fields);
+					string portalname = preparing_statements[0];
+					mapping stmt = inflight[portalname];
+					sscanf(msg, "%2c%{%s\0%4c%2c%4c%2c%4c%2c%}", int nfields, stmt->fields);
 					//Each field is [tableoid, attroid, typeoid, typesize, typemod, format]
 					//Most interesting here will be typeoid
-					werror("Fields: %O\n", fields);
+					werror("Fields: %O\n", stmt->fields);
 					break;
 				}
 				case 'D': { //DataRow
@@ -165,7 +181,7 @@ class Database(string host, object ctx) {
 			werror("Starting query: %s\n", sql);
 			//string packet = sprintf("%s\0%s\0%2c%{%4c%}", portalname, sql, sizeof(params), params);
 			object completion = Concurrent.Promise();
-			inflight[portalname] = ([
+			mapping stmt = inflight[portalname] = ([
 				"query": sql, //For debugging only
 				"bindings": bindings || ([]),
 				"completion": completion,
@@ -176,8 +192,10 @@ class Database(string host, object ctx) {
 			out->add_int8('D')->add_hstring(({'S', portalname, 0}), 4, 4);
 			flushsend();
 			await(completion->future());
-			ret = m_delete(inflight, portalname)->results;
+			m_delete(inflight, portalname);
 			out->add("S\0\0\0\4"); write();
+			//Now to parse out those rows and properly comprehend them.
+			ret = parse_result_row(stmt->fields, stmt->results[*]);
 		};
 
 		if (ex) throw(ex);
