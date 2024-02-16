@@ -15,6 +15,7 @@ class Database(string host, object ctx) {
 	array(Concurrent.Promise) pending = ({ });
 	mapping inflight = ([]); //Map a portal name to some info about the query-to-be
 	int(1bit) writable = 1;
+	array(string) preparing_statements = ({ });
 
 	protected void create() {
 		//TODO: Do this nonblocking too
@@ -73,7 +74,43 @@ class Database(string host, object ctx) {
 					server_params[param] = value;
 					break;
 				}
-				case '1': break; //ParseComplete (not important, we'll already have queued other packets)
+				case '1': case '2': break; //ParseComplete, BindComplete (not important, we'll already have queued other packets)
+				case 't': {
+					sscanf(msg, "%2c%{%4c%}", int nparams, array params);
+					werror("For portal %O, %d params: %O\n", preparing_statements[0], nparams, params);
+					string portalname = preparing_statements[0];
+					mapping stmt = inflight[portalname];
+					stmt->params = params[*][0];
+					array packet = ({portalname, 0, portalname, "\0\0\1\0\1", sprintf("%2c", nparams)});
+					foreach (params, array param) {
+						//TODO: If value is NULL, packet += ({"\xFF\xFF\xFF\xFF"});
+						packet += ({sprintf("%4H", "")}); //TODO
+					}
+					packet += ({"\0\1\0\1"});
+					out->add_int8('B')->add_hstring(packet, 4, 4);
+					out->add_int8('E')->add_hstring(({portalname, "\0\0\0\0\0"}), 4, 4);
+					flushsend();
+					break;
+				}
+				case 'T': { //RowDescription
+					sscanf(msg, "%2c%{%s\0%4c%2c%4c%2c%4c%2c%}", int nfields, array fields);
+					//Each field is [tableoid, attroid, typeoid, typesize, typemod, format]
+					//Most interesting here will be typeoid
+					werror("Fields: %O\n", fields);
+					break;
+				}
+				case 'D': { //DataRow
+					string portalname = preparing_statements[0];
+					mapping stmt = inflight[portalname];
+					stmt->results += ({msg[2..]});
+					break;
+				}
+				case 'C': { //CommandComplete
+					[string portalname, preparing_statements] = Array.shift(preparing_statements);
+					mapping stmt = inflight[portalname];
+					stmt->completion->success(1);
+					break;
+				}
 				default: werror("Got unknown message [state %s]: %c %O\n", state, msgtype, msg);
 			}
 		}
@@ -116,6 +153,10 @@ class Database(string host, object ctx) {
 			pending += ({p});
 			await(p->future()); //Enqueue us until ready() declares that we're done
 		}
+		//NOTE: For now, I am assuming that portals and prepared statements will always
+		//use the same names. We're not really using concurrent inflight queries here,
+		//so it'll just be to take advantage of pre-described statements. Thus, in this
+		//class, a "portalname" sometimes actually refers to a prepared statement.
 		string portalname = ""; //Do we need portal support?
 		//if (inflight[portalname]) ...
 
@@ -128,12 +169,15 @@ class Database(string host, object ctx) {
 				"query": sql, //For debugging only
 				"bindings": bindings || ([]),
 				"completion": completion,
+				"results": ({ }),
 			]);
+			preparing_statements += ({portalname});
 			out->add_int8('P')->add_hstring(({portalname, 0, sql, "\0\0\0"}), 4, 4);
 			out->add_int8('D')->add_hstring(({'S', portalname, 0}), 4, 4);
 			flushsend();
 			await(completion->future());
-			ret = ({"????"}); //Stub!
+			ret = m_delete(inflight, portalname)->results;
+			out->add("S\0\0\0\4"); write();
 		};
 
 		if (ex) throw(ex);
@@ -148,7 +192,7 @@ int main() {
 	array(string) root = Standards.PEM.Messages(Stdio.read_file("/etc/ssl/certs/ISRG_Root_X1.pem"))->get_certificates();
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
 	object sql = Database("sikorsky.rosuav.com", ctx);
-	sql->query("select 1+2+3")->then() {werror("Simple query: %O\n", __ARGS__[0]);};
+	sql->query("select 1+2+3, current_user")->then() {werror("Simple query: %O\n", __ARGS__[0]);};
 	sql->query("select * from stillebot.commands where twitchid = :twitchid and cmdname = :cmd and active",
 		(["twitchid": "49497888", "cmd": "iidpio"]))->then() {
 			werror("Command lookup: %O\n", __ARGS__[0]);
