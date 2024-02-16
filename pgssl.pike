@@ -14,7 +14,8 @@ mapping parse_result_row(array fields, string row) {
 		if (sscanf(row, "\377\377\377\377%s", row)) {ret[field[0]] = Val.null; continue;}
 		sscanf(row, "%4H%s", mixed val, row);
 		switch (field[3]) { //type OID
-			case 20: case 21: case 23: sscanf(val, "%" + field[4] + "c", val); break;
+			case 16: val = val == "\1"; break; //Boolean
+			case 20: case 21: case 23: sscanf(val, "%" + field[4] + "c", val); break; //Integers, various
 			default: break;
 		}
 		ret[field[0]] = val;
@@ -25,6 +26,7 @@ mapping parse_result_row(array fields, string row) {
 string encode_as_type(mixed value, int typeoid) {
 	if (objectp(value) && value->is_val_null) return "\377\377\377\377"; //Any NULL is encoded as length -1
 	switch (typeoid) {
+		case 16: return value ? "\0\0\0\1\1" : "\0\0\0\1\0";
 		case 20: return sprintf("\0\0\0\b%8c", (int)value);
 		case 21: return sprintf("\0\0\0\2%2c", (int)value);
 		case 23: return sprintf("\0\0\0\4%4c", (int)value);
@@ -221,8 +223,8 @@ int main() {
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
 	object sql = Database("sikorsky.rosuav.com", ctx);
 	sql->query("select 1+2+3, current_user")->then() {werror("Simple query: %O\n", __ARGS__[0]);};
-	sql->query("select * from stillebot.commands where twitchid = :twitchid and cmdname = :cmd and active",
-		(["twitchid": "49497888", "cmd": "iidpio"]))->then() {
+	sql->query("select * from stillebot.commands where twitchid = :twitchid and cmdname = :cmd",
+		(["twitchid": "49497888", "cmd": "tz"]))->then() {
 			werror("Command lookup: %O\n", __ARGS__[0]);
 		};
 	return -1;
