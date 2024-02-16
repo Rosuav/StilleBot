@@ -121,7 +121,7 @@ class Database(string host, object ctx) {
 					break;
 				}
 				case '1': case '2': break; //ParseComplete, BindComplete (not important, we'll already have queued other packets)
-				case 't': {
+				case 't': { //ParameterDescription
 					sscanf(msg, "%2c%{%4c%}", int nparams, array params);
 					string portalname = preparing_statements[0];
 					mapping stmt = inflight[portalname];
@@ -145,10 +145,16 @@ class Database(string host, object ctx) {
 					stmt->results += ({msg[2..]});
 					break;
 				}
+				case 'n': break; //NoData. Sent when there are no DataRows.
 				case 'C': { //CommandComplete
 					[string portalname, preparing_statements] = Array.shift(preparing_statements);
 					mapping stmt = inflight[portalname];
 					stmt->completion->success(1);
+					break;
+				}
+				case 'A': { //NotificationResponse
+					sscanf(msg, "%4c%s\0%s\0", int pid, string channel, string payload);
+					werror("NOTIFICATION: %O %O\n", channel, payload);
 					break;
 				}
 				default: werror("Got unknown message [state %s]: %c %O\n", state, msgtype, msg);
@@ -249,5 +255,7 @@ int main() {
 		(["id": "3b482366-b032-48db-8572-d4ffa56e7bb4"]))->then() {
 			werror("Command lookup: %O\n", __ARGS__[0]);
 		};
+	sql->query("LISTEN testing");
+	sql->query("NOTIFY testing, 'hello'");
 	return -1;
 }
