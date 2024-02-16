@@ -6,6 +6,9 @@ class SSLContext {
 	}
 }
 
+//Offset between 1970 and 2000
+#define EPOCH2000 (10957*24*3600*1000000)
+
 mapping parse_result_row(array fields, string row) {
 	//Each field is [tableoid, attroid, typeoid, typesize, typemod, format]
 	//Most interesting here will be typeoid
@@ -17,9 +20,16 @@ mapping parse_result_row(array fields, string row) {
 			case 16: val = val == "\1"; break; //Boolean
 			case 20: case 21: case 23: sscanf(val, "%" + field[4] + "c", val); break; //Integers, various
 			case 114: val = Standards.JSON.decode_utf8(val); break;
+			case 1184: {//Timestamp with time zone
+				sscanf(val, "%8c", int usec);
+				val = Val.Timestamp();
+				val->usecs = usec + EPOCH2000;
+				break;
+			}
 			case 2950: { //UUID
 				sscanf(val, "%{%2c%}", array words);
 				val = sprintf("%x%x-%x-%x-%x-%x%x%x", @words[*][0]);
+				break;
 			}
 			default: break;
 		}
@@ -36,6 +46,7 @@ string encode_as_type(mixed value, int typeoid) {
 		case 21: return sprintf("\0\0\0\2%2c", (int)value);
 		case 23: return sprintf("\0\0\0\4%4c", (int)value);
 		case 114: return sprintf("%4H", Standards.JSON.encode(value, 4));
+		case 1184: return sprintf("\0\0\0\8%8c", value->usecs - EPOCH2000);
 		case 2950: return sprintf("\0\0\0\20%@2c", array_sscanf(value, "%4x%4x-%4x-%4x-%4x-%4x%4x%4x"));
 		default: return sprintf("%4H", (string)value);
 	}
