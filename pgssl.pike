@@ -7,6 +7,8 @@ class SSLContext {
 }
 
 mapping parse_result_row(array fields, string row) {
+	//Each field is [tableoid, attroid, typeoid, typesize, typemod, format]
+	//Most interesting here will be typeoid
 	mapping ret = ([]);
 	foreach (fields, array field) {
 		if (sscanf(row, "\377\377\377\377%s", row)) {ret[field[0]] = Val.null; continue;}
@@ -101,7 +103,6 @@ class Database(string host, object ctx) {
 				case '1': case '2': break; //ParseComplete, BindComplete (not important, we'll already have queued other packets)
 				case 't': {
 					sscanf(msg, "%2c%{%4c%}", int nparams, array params);
-					werror("For portal %O, %d params: %O\n", preparing_statements[0], nparams, params);
 					string portalname = preparing_statements[0];
 					mapping stmt = inflight[portalname];
 					array packet = ({portalname, 0, portalname, "\0\0\1\0\1", sprintf("%2c", nparams)});
@@ -116,9 +117,6 @@ class Database(string host, object ctx) {
 					string portalname = preparing_statements[0];
 					mapping stmt = inflight[portalname];
 					sscanf(msg, "%2c%{%s\0%4c%2c%4c%2c%4c%2c%}", int nfields, stmt->fields);
-					//Each field is [tableoid, attroid, typeoid, typesize, typemod, format]
-					//Most interesting here will be typeoid
-					werror("Fields: %O\n", stmt->fields);
 					break;
 				}
 				case 'D': { //DataRow
@@ -137,13 +135,11 @@ class Database(string host, object ctx) {
 			}
 		}
 	}
-	void sockwrite() {werror("sockwrite\n"); writable = 1;}
+	void sockwrite() {writable = 1;}
 	void sockclosed() {werror("Closed.\n"); exit(0);}
 	void write() {
 		if (!writable) return;
-		werror("Attempting to send %d bytes...\n", sizeof(out));
 		out->output_to(sock);
-		werror("Sent. Remaining: %d bytes.\n", sizeof(out));
 		if (sizeof(out)) writable = 0;
 	}
 	void flushsend() {
@@ -193,7 +189,6 @@ class Database(string host, object ctx) {
 
 		array|zero ret = 0;
 		mixed ex = catch {
-			werror("Starting query: %s\n", sql);
 			//string packet = sprintf("%s\0%s\0%2c%{%4c%}", portalname, sql, sizeof(params), params);
 			object completion = Concurrent.Promise();
 			mapping stmt = inflight[portalname] = ([
