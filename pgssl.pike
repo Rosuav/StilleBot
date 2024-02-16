@@ -73,6 +73,7 @@ class Database(string host, object ctx) {
 					server_params[param] = value;
 					break;
 				}
+				case '1': break; //ParseComplete (not important, we'll already have queued other packets)
 				default: werror("Got unknown message [state %s]: %c %O\n", state, msgtype, msg);
 			}
 		}
@@ -85,6 +86,10 @@ class Database(string host, object ctx) {
 		out->output_to(sock);
 		werror("Sent. Remaining: %d bytes.\n", sizeof(out));
 		if (sizeof(out)) writable = 0;
+	}
+	void flushsend() {
+		out->add("H\0\0\0\4");
+		write();
 	}
 
 	//This kind of idea would be nice, but how do I distinguish Int16 from Int32?
@@ -124,10 +129,9 @@ class Database(string host, object ctx) {
 				"bindings": bindings || ([]),
 				"completion": completion,
 			]);
-			string packet = portalname + "\0" + sql + "\0\0\0"; //With no parameters, it's just this.
-			//out->add_int8('P')->add_hstring(packet, 4, 4);
-			//out->add_int8('Q')->add_hstring(sql + "\0", 4, 4);
-			sock->write(sprintf("Q%4c%s\0", sizeof(sql) + 5, sql));
+			out->add_int8('P')->add_hstring(({portalname, 0, sql, "\0\0\0"}), 4, 4);
+			out->add_int8('D')->add_hstring(({'S', portalname, 0}), 4, 4);
+			flushsend();
 			await(completion->future());
 			ret = ({"????"}); //Stub!
 		};
