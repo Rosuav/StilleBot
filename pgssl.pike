@@ -16,6 +16,11 @@ mapping parse_result_row(array fields, string row) {
 		switch (field[3]) { //type OID
 			case 16: val = val == "\1"; break; //Boolean
 			case 20: case 21: case 23: sscanf(val, "%" + field[4] + "c", val); break; //Integers, various
+			case 114: val = Standards.JSON.decode_utf8(val); break;
+			case 2950: { //UUID
+				sscanf(val, "%{%2c%}", array words);
+				val = sprintf("%x%x-%x-%x-%x-%x%x%x", @words[*][0]);
+			}
 			default: break;
 		}
 		ret[field[0]] = val;
@@ -30,6 +35,8 @@ string encode_as_type(mixed value, int typeoid) {
 		case 20: return sprintf("\0\0\0\b%8c", (int)value);
 		case 21: return sprintf("\0\0\0\2%2c", (int)value);
 		case 23: return sprintf("\0\0\0\4%4c", (int)value);
+		case 114: return sprintf("%4H", Standards.JSON.encode(value, 4));
+		case 2950: return sprintf("\0\0\0\20%@2c", array_sscanf(value, "%4x%4x-%4x-%4x-%4x-%4x%4x%4x"));
 		default: return sprintf("%4H", (string)value);
 	}
 }
@@ -225,6 +232,10 @@ int main() {
 	sql->query("select 1+2+3, current_user")->then() {werror("Simple query: %O\n", __ARGS__[0]);};
 	sql->query("select * from stillebot.commands where twitchid = :twitchid and cmdname = :cmd",
 		(["twitchid": "49497888", "cmd": "tz"]))->then() {
+			werror("Command lookup: %O\n", __ARGS__[0]);
+		};
+	sql->query("select * from stillebot.commands where id = :id",
+		(["id": "3b482366-b032-48db-8572-d4ffa56e7bb4"]))->then() {
 			werror("Command lookup: %O\n", __ARGS__[0]);
 		};
 	return -1;
