@@ -105,7 +105,8 @@ __async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, 
 		if (count) req->misc->chaninfo->menunav = replace(req->misc->chaninfo->menunav, "<span id=errcnt></span>",
 			"<span id=errcnt>(" + count + ")</span>");
 	}
-	return await(handler(req));
+	mixed h = handler(req); //Either a promise or a result (mapping/string).
+	return objectp(h) && h->on_await ? await(h) : h; //Await if promise, otherwise we already have it.
 }
 
 mapping(string:mixed) redirect_no_slash(Protocols.HTTP.Server.Request req, string chan)
