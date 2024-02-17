@@ -257,5 +257,14 @@ int main() {
 		};
 	sql->query("LISTEN testing");
 	sql->query("NOTIFY testing, 'hello'");
+	sql->query("select table_schema, count(*) from information_schema.columns group by table_schema")->then() {
+		werror("Schema column counts: %O\n", mkmapping(__ARGS__[0]->table_schema, __ARGS__[0]->count));
+	};
+	//Now let's do the same thing less efficiently, to stress-test the fetching.
+	sql->query("select table_schema, table_name, column_name from information_schema.columns")->then() {
+		mapping counts = ([]);
+		foreach (__ARGS__[0], array row) counts[row->table_schema]++;
+		werror("Schema column counts: %O\n", counts);
+	};
 	return -1;
 }
