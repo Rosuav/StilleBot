@@ -436,6 +436,18 @@ class websocket_handler
 	}
 }
 
+array(string) token_for_user_login(string login) {
+	mapping cred = G->G->user_credentials[lower_case(login)];
+	if (cred) return ({cred->token, cred->scopes * " "});
+	return ({"", ""});
+}
+
+array(string) token_for_user_id(int|string userid) {
+	mapping cred = G->G->user_credentials[(int)userid];
+	if (cred) return ({cred->token, cred->scopes * " "});
+	return ({"", ""});
+}
+
 //Token bucket system, shared among all IRC connections.
 float request_rate_token(string user, string chan, int|void lowprio) {
 	//By default, messages are limited to 20 every 30 seconds.
@@ -780,18 +792,6 @@ class _TwitchIRC(mapping options) {
 		if (wait) queue = ({wait, ({get_token, chan})}) + queue;
 	}
 	//TODO: If msg_ratelimit comes in, retry last message????
-}
-
-array(string) token_for_user_login(string login) {
-	mapping cred = G->G->user_credentials[lower_case(login)];
-	if (cred) return ({cred->token, cred->scopes * " "});
-	return ({"", ""});
-}
-
-array(string) token_for_user_id(int|string userid) {
-	mapping cred = G->G->user_credentials[(int)userid];
-	if (cred) return ({cred->token, cred->scopes * " "});
-	return ({"", ""});
 }
 
 //Inherit this to listen to connection responses
