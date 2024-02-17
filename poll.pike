@@ -128,6 +128,86 @@ __async__ void get_credentials() {
 	if (save) Stdio.write_file("twitchbot_uids.json", Standards.JSON.encode(({G->G->uid_to_name, G->G->name_to_uid})), 1);
 }
 
+@export: __async__ array(mapping) get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
+{
+	if (!G->G->dbsettings->credentials) await(get_credentials());
+	array data = ({ });
+	Standards.URI uri = Standards.URI(url);
+	query = (query || ([])) + ([]);
+	if (!query->first) query->first = "100"; //Default to the largest page permitted.
+
+	//If any query parameter has more than a hundred entries, most Twitch APIs will
+	//reject it. Instead, we hand it the first hundred, and store the rest in overflow.
+	//Note that this won't work reliably if MORE than one parameter overflows; you'll
+	//see the first hundred of parameter 1 with the first hundred of parameter 2, etc.
+	//Any non-overflowing parameters will be correctly replicated on all requests.
+	//(If 100 isn't the limit, specify the pagination_limit in options.)
+	mapping overflow = ([]);
+	int pagination_limit = (options||([]))->pagination_limit || 100;
+	foreach (query; string key; mixed val)
+		if (arrayp(val) && sizeof(val) > pagination_limit)
+			[query[key], overflow[key]] = Array.shift(val / (float)pagination_limit);
+
+	//NOTE: uri->set_query_variables() doesn't correctly encode query data.
+	uri->query = Protocols.HTTP.http_encode_query(query);
+	int empty = 0;
+	if (debug) werror("get_helix_paginated %O %O\n", url, uri->query);
+	mixed nextpage(mapping raw)
+	{
+		if (!raw->data) return Concurrent.reject(({"Unparseable response\n", backtrace()}));
+		if (debug)
+		{
+			string pg = (raw->pagination && raw->pagination->cursor) || "";
+			catch {pg = MIME.decode_base64(pg);};
+			if (sscanf(pg, "{\"b\":{\"Cursor\":\"%[-0-9.T:Z]\"},\"a\":{\"Cursor\":\"%[-0-9.T:Z]\"}}",
+				string b, string a) && a)
+			{
+				pg = sprintf("FROM %s TO %s", b, a);
+				/*
+				object t = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", a)->add(-10);
+				a = sprintf("%04d-%02d-%02dT%02d:%02d:%02dZ",
+					t->year_no(), t->month_no(), t->month_day(),
+					t->hour_no(), t->minute_no(), t->second_no(),
+				);
+				raw->pagination->cursor = sprintf("{\"b\":{\"Cursor\":\"%s\"},\"a\":{\"Cursor\":\"%s\"}}", b, a);
+				*/
+			}
+			werror("Next page: %d data, pg %s\n", sizeof(raw->data), pg);
+		}
+		data += raw->data;
+		//Normal completion: No pagination marker
+		if (!raw->pagination || !raw->pagination->cursor
+				//Possible Twitch API bug: If the returned cursor is precisely "IA",
+				//it's probably the end of the results. It's come up more than once
+				//in the past, and might well happen again.
+				|| raw->pagination->cursor == "IA"
+				//Another possible Twitch bug: Sometimes the cursor is constantly
+				//changing, but we get no data each time. In case this happens
+				//once by chance, we have a "three strikes and WE'RE out" policy.
+				|| (!sizeof(raw->data) && ++empty >= 3)) {
+			//If any of that happens, we're done with this block.
+			//Were there any array parameters that overflowed?
+			if (!sizeof(overflow)) return data;
+			//Grab the next block of array parameters. Note that this may theoretically
+			//involve more than one parameter, but in practice will usually just be one.
+			foreach (indices(overflow), string key) {
+				if (sizeof(overflow[key]) == 1)
+					//It's the last block (for this key, at least).
+					query[key] = m_delete(overflow, key)[0];
+				else
+					//There are more blocks, so return the rest to the overflow.
+					[query[key], overflow[key]] = Array.shift(overflow[key]);
+			}
+			//Reset pagination, and off we go!
+			m_delete(query, "after");
+		}
+		else query["after"] = raw->pagination->cursor;
+		uri->query = Protocols.HTTP.http_encode_query(query);
+		return twitch_api_request(uri, headers, options)->then(nextpage);
+	}
+	return await(twitch_api_request(uri, headers, options)->then(nextpage));
+}
+
 //Will return from cache if available. Set type to "login" to look up by name, else uses ID.
 @export: __async__ array(mapping)|zero get_users_info(array(int|string) users, string|void type) {
 	//Simplify things elsewhere: 0 yields 0 with no error. (Otherwise you'll
@@ -244,86 +324,6 @@ __async__ void import_bcaster_tokens() {
 		array rows = await(G->G->DB->generic_query("select twitchid, data from stillebot.config where keyword = 'credentials'"));
 		werror("Now have %d rows.\n", sizeof(rows));
 	}
-}
-
-@export: __async__ array(mapping) get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
-{
-	if (!G->G->dbsettings->credentials) await(get_credentials());
-	array data = ({ });
-	Standards.URI uri = Standards.URI(url);
-	query = (query || ([])) + ([]);
-	if (!query->first) query->first = "100"; //Default to the largest page permitted.
-
-	//If any query parameter has more than a hundred entries, most Twitch APIs will
-	//reject it. Instead, we hand it the first hundred, and store the rest in overflow.
-	//Note that this won't work reliably if MORE than one parameter overflows; you'll
-	//see the first hundred of parameter 1 with the first hundred of parameter 2, etc.
-	//Any non-overflowing parameters will be correctly replicated on all requests.
-	//(If 100 isn't the limit, specify the pagination_limit in options.)
-	mapping overflow = ([]);
-	int pagination_limit = (options||([]))->pagination_limit || 100;
-	foreach (query; string key; mixed val)
-		if (arrayp(val) && sizeof(val) > pagination_limit)
-			[query[key], overflow[key]] = Array.shift(val / (float)pagination_limit);
-
-	//NOTE: uri->set_query_variables() doesn't correctly encode query data.
-	uri->query = Protocols.HTTP.http_encode_query(query);
-	int empty = 0;
-	if (debug) werror("get_helix_paginated %O %O\n", url, uri->query);
-	mixed nextpage(mapping raw)
-	{
-		if (!raw->data) return Concurrent.reject(({"Unparseable response\n", backtrace()}));
-		if (debug)
-		{
-			string pg = (raw->pagination && raw->pagination->cursor) || "";
-			catch {pg = MIME.decode_base64(pg);};
-			if (sscanf(pg, "{\"b\":{\"Cursor\":\"%[-0-9.T:Z]\"},\"a\":{\"Cursor\":\"%[-0-9.T:Z]\"}}",
-				string b, string a) && a)
-			{
-				pg = sprintf("FROM %s TO %s", b, a);
-				/*
-				object t = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", a)->add(-10);
-				a = sprintf("%04d-%02d-%02dT%02d:%02d:%02dZ",
-					t->year_no(), t->month_no(), t->month_day(),
-					t->hour_no(), t->minute_no(), t->second_no(),
-				);
-				raw->pagination->cursor = sprintf("{\"b\":{\"Cursor\":\"%s\"},\"a\":{\"Cursor\":\"%s\"}}", b, a);
-				*/
-			}
-			werror("Next page: %d data, pg %s\n", sizeof(raw->data), pg);
-		}
-		data += raw->data;
-		//Normal completion: No pagination marker
-		if (!raw->pagination || !raw->pagination->cursor
-				//Possible Twitch API bug: If the returned cursor is precisely "IA",
-				//it's probably the end of the results. It's come up more than once
-				//in the past, and might well happen again.
-				|| raw->pagination->cursor == "IA"
-				//Another possible Twitch bug: Sometimes the cursor is constantly
-				//changing, but we get no data each time. In case this happens
-				//once by chance, we have a "three strikes and WE'RE out" policy.
-				|| (!sizeof(raw->data) && ++empty >= 3)) {
-			//If any of that happens, we're done with this block.
-			//Were there any array parameters that overflowed?
-			if (!sizeof(overflow)) return data;
-			//Grab the next block of array parameters. Note that this may theoretically
-			//involve more than one parameter, but in practice will usually just be one.
-			foreach (indices(overflow), string key) {
-				if (sizeof(overflow[key]) == 1)
-					//It's the last block (for this key, at least).
-					query[key] = m_delete(overflow, key)[0];
-				else
-					//There are more blocks, so return the rest to the overflow.
-					[query[key], overflow[key]] = Array.shift(overflow[key]);
-			}
-			//Reset pagination, and off we go!
-			m_delete(query, "after");
-		}
-		else query["after"] = raw->pagination->cursor;
-		uri->query = Protocols.HTTP.http_encode_query(query);
-		return twitch_api_request(uri, headers, options)->then(nextpage);
-	}
-	return await(twitch_api_request(uri, headers, options)->then(nextpage));
 }
 
 //Doesn't help, but it's certainly very interesting.
