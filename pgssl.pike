@@ -44,7 +44,7 @@ string encode_as_type(mixed value, int typeoid) {
 		case 20: return sprintf("\0\0\0\b%8c", (int)value);
 		case 21: return sprintf("\0\0\0\2%2c", (int)value);
 		case 23: return sprintf("\0\0\0\4%4c", (int)value);
-		case 114: return sprintf("%4H", Standards.JSON.encode(value, 4));
+		case 114: return sprintf("%4H", Standards.JSON.encode(value, 5));
 		case 1184: return sprintf("\0\0\0\b%8c", value->usecs - EPOCH2000);
 		case 2950: return sprintf("\0\0\0\20%@2c", array_sscanf(value, "%4x%4x-%4x-%4x-%4x-%4x%4x%4x"));
 		default: return sprintf("%4H", (string)value);
