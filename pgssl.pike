@@ -1,11 +1,3 @@
-class SSLContext {
-	inherit SSL.Context;
-	array|zero find_cert_issuer(array(string) ders) {
-		if (sizeof(cert_chains_issuer)) return values(cert_chains_issuer)[0]; //Return the first available cert
-		return ::find_cert_issuer(ders);
-	}
-}
-
 //Offset between 1970 and 2000
 #define EPOCH2000 (10957*24*3600*1000000)
 
@@ -20,7 +12,7 @@ mapping parse_result_row(array fields, string row) {
 			case 16: val = val == "\1"; break; //Boolean
 			case 20: case 21: case 23: sscanf(val, "%" + field[4] + "c", val); break; //Integers, various
 			case 114: val = Standards.JSON.decode_utf8(val); break;
-			case 1184: {//Timestamp with time zone
+			case 1184: { //Timestamp with time zone
 				sscanf(val, "%8c", int usec);
 				val = Val.Timestamp();
 				val->usecs = usec + EPOCH2000;
@@ -52,7 +44,7 @@ string encode_as_type(mixed value, int typeoid) {
 	}
 }
 
-class Database(string host, object ctx) {
+class SSLDatabase(string host, object ctx) {
 	Stdio.File|SSL.File sock;
 	Stdio.Buffer in, out;
 	string state;
@@ -239,13 +231,23 @@ class Database(string host, object ctx) {
 	}
 }
 
+#if !constant(G)
+//Stand-alone testing
+class SSLContext {
+	inherit SSL.Context;
+	array|zero find_cert_issuer(array(string) ders) {
+		if (sizeof(cert_chains_issuer)) return values(cert_chains_issuer)[0]; //Return the first available cert
+		return ::find_cert_issuer(ders);
+	}
+}
+
 int main() {
 	string key = Stdio.read_file("privkey.pem");
 	string cert = Stdio.read_file("certificate.pem");
 	object ctx = SSLContext();
 	array(string) root = Standards.PEM.Messages(Stdio.read_file("/etc/ssl/certs/ISRG_Root_X1.pem"))->get_certificates();
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
-	object sql = Database("sikorsky.rosuav.com", ctx);
+	object sql = SSLDatabase("sikorsky.rosuav.com", ctx);
 	sql->query("select 1+2+3, current_user")->then() {werror("Simple query: %O\n", __ARGS__[0]);};
 	sql->query("select * from stillebot.commands where twitchid = :twitchid and cmdname = :cmd",
 		(["twitchid": "49497888", "cmd": "tz"]))->then() {
@@ -268,3 +270,8 @@ int main() {
 	};
 	return -1;
 }
+#else
+protected void create(string name) {
+	add_constant("SSLDatabase", SSLDatabase);
+}
+#endif
