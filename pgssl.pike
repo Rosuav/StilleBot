@@ -94,8 +94,16 @@ class SSLDatabase(string host, mapping|void cfg) {
 					mapping fields = ([]);
 					while (sscanf(msg, "%1s%s\0%s", string field, string value, msg) == 3)
 						fields[field] = value;
-					werror("Error: %O\n", fields);
-					if (state == "auth") state = "authfailed";
+					if (state == "busy" && sizeof(preparing_statements)) {
+						[string portalname, preparing_statements] = Array.shift(preparing_statements);
+						mapping stmt = inflight[portalname];
+						stmt->completion->failure(({
+							sprintf("%s\n%s\n", fields->M || "Unknown query error", fields->D || ""),
+							backtrace(),
+						}));
+					}
+					else if (state == "auth") state = "authfailed";
+					else werror("Database error, unknown cause: %O\n", fields);
 					break;
 				}
 				case 'R': {
@@ -270,6 +278,10 @@ int main() {
 	sql->query("select * from stillebot.commands where id = :id",
 		(["id": "3b482366-b032-48db-8572-d4ffa56e7bb4"]))->then() {
 			werror("Command lookup: %O\n", __ARGS__[0]);
+		};
+	sql->query("insert into stillebot.commands (twitchid, cmdname, active, content) values (:twitchid, :cmdname, true, :content)",
+		(["twitchid": "49497888", "cmdname": "tz", "content": "test"]))->then() {
+			werror("Command insertion: %O\n", __ARGS__[0]);
 		};
 	sql->query("LISTEN testing");
 	sql->query("NOTIFY testing, 'hello'");
