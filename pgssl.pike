@@ -230,28 +230,24 @@ class SSLDatabase(string host, mapping|void cfg) {
 		//if (inflight[portalname]) ...
 
 		array|zero ret = 0;
-		mixed ex = catch {
-			//string packet = sprintf("%s\0%s\0%2c%{%4c%}", portalname, sql, sizeof(params), params);
-			object completion = Concurrent.Promise();
-			mapping stmt = inflight[portalname] = ([
-				"query": sql, //For debugging only
-				"paramvalues": paramvalues,
-				"completion": completion,
-				"results": ({ }),
-			]);
-			preparing_statements += ({portalname});
-			out->add_int8('P')->add_hstring(({portalname, 0, sql, "\0\0\0"}), 4, 4);
-			out->add_int8('D')->add_hstring(({'S', portalname, 0}), 4, 4);
-			flushsend();
-			await(completion->future());
-			m_delete(inflight, portalname);
-			out->add("S\0\0\0\4"); write();
-			//Now to parse out those rows and properly comprehend them.
-			ret = parse_result_row(stmt->fields, stmt->results[*]);
-		};
-
+		//string packet = sprintf("%s\0%s\0%2c%{%4c%}", portalname, sql, sizeof(params), params);
+		object completion = Concurrent.Promise();
+		mapping stmt = inflight[portalname] = ([
+			"query": sql, //For debugging only
+			"paramvalues": paramvalues,
+			"completion": completion,
+			"results": ({ }),
+		]);
+		preparing_statements += ({portalname});
+		out->add_int8('P')->add_hstring(({portalname, 0, sql, "\0\0\0"}), 4, 4);
+		out->add_int8('D')->add_hstring(({'S', portalname, 0}), 4, 4);
+		flushsend();
+		mixed ex = catch (await(completion->future()));
+		m_delete(inflight, portalname);
+		out->add("S\0\0\0\4"); write(); //After the query, synchronize, whether we succeeded or failed.
 		if (ex) throw(ex);
-		return ret;
+		//Now to parse out those rows and properly comprehend them.
+		return parse_result_row(stmt->fields, stmt->results[*]);
 	}
 	//Sql.Sql-compatible API
 	__async__ PromiseResult promise_query(string sql, mapping|void bindings) {
