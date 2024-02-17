@@ -456,7 +456,6 @@ __async__ void preload_user_credentials() {
 	mapping cred = G->G->user_credentials = ([]);
 	if (!active) await(await_active());
 	array rows = await(query(pg_connections[active], "select twitchid, data from stillebot.config where keyword = 'credentials'"));
-	werror("Loaded %d creds\n", sizeof(rows));
 	foreach (rows, mapping row) {
 		mapping data = JSONDECODE(row->data);
 		cred[(int)row->twitchid] = cred[data->login] = data;

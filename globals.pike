@@ -1518,8 +1518,8 @@ mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|voi
 string ensure_bcaster_token(Protocols.HTTP.Server.Request req, string scopes, string|void chan) {
 	if (req->misc->session->fake) return scopes; //There'll never be a valid broadcaster login with fake mod mode active
 	if (!chan) chan = req->misc->channel->name[1..];
-	mapping cred = G->G->user_credentials[chan];
-	array havescopes = cred->scopes;
+	mapping cred = G->G->user_credentials[chan] || (["login": chan]);
+	array havescopes = cred->scopes || ({ });
 	if (req->misc->session->user->?login == chan && !sizeof((multiset)havescopes - req->misc->session->scopes)) {
 		//The broadcaster is logged in, with at least as much scope as we previously
 		//had. Upgrade to this token.
