@@ -69,7 +69,7 @@ __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Reques
 }
 
 //No initial state; the socket exists solely for pushed updates via the follower hook.
-Concurrent.Future|mapping get_state(string|int group) {return ([]);}
+mapping get_state(string|int group) {return ([]);}
 
 @hook_follower:
 void follower(object channel, mapping follower) {

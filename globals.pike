@@ -375,15 +375,16 @@ class websocket_handler
 		if (function f = this["websocket_cmd_" + msg->cmd]) f(conn, msg);
 	}
 
-	__async__ void _send_updates(array(object) socks, string|int group, mapping|void data) {
-		if (!data) data = await(get_state(group));
-		_low_send_updates(data, socks);
-	}
 	void _low_send_updates(mapping resp, array(object) socks) {
 		if (!resp) return;
 		string text = Standards.JSON.encode(resp | (["cmd": "update"]), 4);
 		foreach (socks, object sock)
 			if (sock && sock->state == 1) sock->send_text(text);
+	}
+	void _send_updates(array(object) socks, string|int group, mapping|void data) {
+		if (!data) data = get_state(group);
+		if (objectp(data) && data->then) data->then() {_low_send_updates(__ARGS__[0], socks);};
+		else _low_send_updates(data, socks);
 	}
 
 	//Send an update to a specific connection. If not provided, data will

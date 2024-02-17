@@ -827,7 +827,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	return "Bad game ID";
 }
 
-mapping|Concurrent.Future get_state(string|int group, string|void id) {
+mapping get_state(string|int group, string|void id) {
 	mapping state = (["loginbtn": -1, "paints": ({({0, "Standard Beige", hexcolor(STANDARD_BASE)})})]);
 	sscanf(group, "%d#%s", int uid, string game);
 	if (!uid || !game) state->no_save = 1;

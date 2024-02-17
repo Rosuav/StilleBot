@@ -48,7 +48,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 mapping state = ([]);
-Concurrent.Future|mapping get_state(string|int group) {return state;}
+mapping get_state(string|int group) {return state;}
 
 void update() {
 	string spinner = "⠇⠦⠴⠸⠙⠋";
