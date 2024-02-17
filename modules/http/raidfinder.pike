@@ -232,7 +232,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 
 		//Publish this info to all socket-connected clients that care.
 		string msg = Standards.JSON.encode((["cmd": "chanstatus", "channelid": chan, "chanstatus": ret]));
-		foreach (websocket_groups[""], object sock) if (sock && sock->state == 1) {
+		foreach (websocket_groups[""] || ({ }), object sock) if (sock && sock->state == 1) {
 			//See if the client is interested in this channel
 			catch {
 				mapping conn = sock->query_id(); //If older Pike, don't bother with the check, just push it out anyway
