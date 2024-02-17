@@ -162,7 +162,7 @@ class Database(string host, object ctx) {
 		}
 	}
 	void sockwrite() {writable = 1;}
-	void sockclosed() {werror("Closed.\n"); exit(0);}
+	void sockclosed() {werror("Closed.\n"); destruct();}
 	void write() {
 		if (!writable) return;
 		out->output_to(sock);
