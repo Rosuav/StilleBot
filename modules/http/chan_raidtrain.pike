@@ -439,7 +439,7 @@ __async__ mapping checkfollowing(object channel, mapping(string:mixed) conn, map
 	return (["casters": casters]);
 }
 void wscmd_checkfollowing(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	spawn_task(checkfollowing(channel, conn, msg)) {
+	checkfollowing(channel, conn, msg)->then() {
 		if (__ARGS__[0] && conn->sock) conn->sock->send_text(Standards.JSON.encode((["cmd": "checkfollowing"]) | __ARGS__[0]));
 	};
 }

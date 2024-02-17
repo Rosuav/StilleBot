@@ -210,7 +210,7 @@ class _mainwindow
 		if (!login) { //Connect to new channel
 			login = win->login->get_text();
 			if (login == "" || login == "-- New --") return; //Invalid names
-			spawn_task(connect_to_channel(login)) {[object channel] = __ARGS__;
+			connect_to_channel(login)->then() {[object channel] = __ARGS__;
 				sig_pb_refresh_clicked();
 				object iter = win->ls->get_iter_first();
 				while (win->ls->get_value(iter, 0) != login)

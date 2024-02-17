@@ -239,7 +239,7 @@ void notify_command_added(int pid, string cond, string extra, string host) {
 	sscanf(extra, "%d:%s", int twitchid, string cmdname);
 	if (!cmdname || cmdname == "") return;
 	object channel = G->G->irc->id[twitchid]; if (!channel) return;
-	spawn_task(load_commands(twitchid, cmdname)) {echoable_message cmd = __ARGS__[0];
+	spawn_task(load_commands(twitchid, cmdname))->then() {echoable_message cmd = __ARGS__[0];
 		cmd = sizeof(cmd) && cmd[0]->content;
 		G->G->cmdmgr->_save_command(channel, cmdname, cmd, (["nosave": 1]));
 	};
@@ -470,7 +470,7 @@ __async__ void preload_user_credentials() {
 
 //@"stillebot.config:credentials":
 void notify_credentials_changed(int pid, string cond, string extra, string host) {
-	spawn_task(load_config(extra, "credentials")) {[mapping data] = __ARGS__;
+	spawn_task(load_config(extra, "credentials"))->then() {[mapping data] = __ARGS__;
 		mapping cred = G->G->user_credentials;
 		cred[(int)extra] = cred[data->login] = data;
 	};

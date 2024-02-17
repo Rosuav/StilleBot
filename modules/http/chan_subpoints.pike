@@ -27,7 +27,7 @@ mapping subpoints_cooldowns = ([]);
 
 void delayed_get_sub_points(Concurrent.Promise p, string chan, string|void type) {
 	m_delete(subpoints_cooldowns, chan);
-	spawn_task(get_sub_points(chan, type), p->success);
+	get_sub_points(chan, type)->then(p->success);
 }
 
 __async__ int|array get_sub_points(string chan, string|void type)
@@ -147,7 +147,7 @@ void subpoints_updated(string hook, string chan, mapping info) {
 	object channel = G->G->irc->channels["#" + chan];
 	mapping cfg = channel->?config->?subpoints;
 	if (!cfg || !sizeof(cfg)) return;
-	spawn_task(get_sub_points(chan)) {
+	get_sub_points(chan)->then() {
 		int points = __ARGS__[0];
 		Stdio.append_file("evt_subpoints.log", sprintf("Updated subpoint count: %d\n", points));
 		foreach (cfg; string nonce; mapping tracker)

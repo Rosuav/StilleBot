@@ -54,7 +54,7 @@ __async__ mapping parse_hype_status(mapping data)
 //Triggered by the hooks in eventhooks.pike
 void hypetrain_progression(string status, string chan, mapping info) {
 	//Stdio.append_file("evthook.log", sprintf("EVENT: Hype %s [%O, %d]: %O\n", status, chan, time(), info));
-	spawn_task(parse_hype_status(info)) {send_updates_all(info->broadcaster_user_login, @__ARGS__);};
+	parse_hype_status(info)->then() {send_updates_all(info->broadcaster_user_login, @__ARGS__);};
 }
 
 __async__ mapping get_state(int|string chan)

@@ -73,16 +73,10 @@ Calendar.ISO.Second time_from_iso(string time) {
 	return Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s.%f%z", time);
 }
 
-//Handle asynchronous results. Can be used to conveniently wrap promise-returning functions
-//in a non-async context.
-__async__ mixed spawn_task(mixed gen, function|void got_result, function|void got_error, mixed ... extra) {
-	mixed ret;
-	if (got_error) {
-		mixed ex = catch {ret = objectp(gen) && gen->on_await ? await(gen) : gen;};
-		if (ex) return got_error(ex);
-	} else ret = objectp(gen) && gen->on_await ? await(gen) : gen;
-	if (got_result) return got_result(ret);
-	return ret;
+//Handle potentially-asynchronous results. Can be used to paper over a distinction between
+//async and sync functions (forcing them all to be async).
+__async__ mixed spawn_task(mixed gen) {
+	return objectp(gen) && gen->on_await ? await(gen) : gen;
 }
 
 //If cb is a spawn_task->pump/propagate_error function, return the corresponding task, else 0.

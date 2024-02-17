@@ -483,7 +483,7 @@ class channel(mapping config) {
 			if (objectp(handler)) {
 				string|array param = _substitute_vars(message->builtin_param || "", vars, person, cfg->users);
 				if (stringp(param)) param = ({param});
-				spawn_task(handler->message_params(this, person, param, cfg)) {
+				spawn_task(handler->message_params(this, person, param, cfg))->then() {
 					if (!__ARGS__[0]) return; //No params? No output.
 					mapping cfg_changes = m_delete(__ARGS__[0], "cfg") || ([]);
 					_send_with_catch(person, message->message, vars | __ARGS__[0], cfg | cfg_changes);
@@ -863,7 +863,7 @@ class channel(mapping config) {
 			//an incoming raid for 1234 from 2345. Either way, it's in
 			//status->raids->1234->2345 and then has the timestamp.
 			[int fromid, int toid] = ids;
-			spawn_task(raidwatch(fromid, sprintf("%s raided %s", fromname, toname))) { };
+			raidwatch(fromid, sprintf("%s raided %s", fromname, toname));
 			int outgoing = fromid < toid;
 			string base = outgoing ? (string)fromid : (string)toid;
 			string other = outgoing ? (string)toid : (string)fromid;
@@ -1286,7 +1286,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 		//much care if a still-connected socket remains. We then keep a list of removed sessions.
 		string cookie = conn->session->cookie;
 		conn->session = ({frm});
-		spawn_task(G->G->DB->load_session(cookie)) { //TODO: Deduplicate, again
+		G->G->DB->load_session(cookie)->then() { //TODO: Deduplicate, again
 			if (sizeof(__ARGS__[0]) < 2) {
 				//No active session. Kick the socket.
 				conn->sock->send_text(Standards.JSON.encode(([
@@ -1342,7 +1342,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 		//just the session cookie itself, but that may change.)
 		if (stringp(data->xfr) && data->xfr != conn->session->cookie) {
 			conn->session = ({frm});
-			spawn_task(G->G->DB->load_session(data->xfr)) { //TODO: Deduplicate with below?
+			G->G->DB->load_session(data->xfr)->then() { //TODO: Deduplicate with below?
 				array pending = conn->session;
 				conn->session = __ARGS__[0];
 				ws_msg(pending[*], conn);
@@ -1416,7 +1416,7 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 		"hostname": deduce_host(req->request_headers),
 	]);
 	sock->set_id(conn);
-	spawn_task(G->G->DB->load_session(req->cookies->session)) {
+	G->G->DB->load_session(req->cookies->session)->then() {
 		array pending = conn->session;
 		conn->session = __ARGS__[0];
 		if (sizeof(pending)) ws_msg(pending[*], conn);

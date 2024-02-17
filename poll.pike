@@ -475,7 +475,7 @@ mapping build_channel_info(mapping stream)
 			//in the ordering of the "top 100" and "next 100". It should be safe
 			//to retain any previous ones seen this run.
 			fetching_game_names = 1;
-			spawn_task(cache_game_names(stream->game_id)) {fetching_game_names = 0;};
+			cache_game_names(stream->game_id)->then() {fetching_game_names = 0;};
 		}
 		return 0;
 	}
@@ -731,7 +731,7 @@ EventSub new_follower = EventSub("follower", "channel.follow", "2", got_follower
 void got_follower(string chan, mapping follower) {
 	notice_user_name(follower->user_login, follower->user_id);
 	if (object channel = G->G->irc->channels["#" + chan])
-		spawn_task(check_following((int)follower->user_id, channel->userid)) {
+		check_following((int)follower->user_id, channel->userid)->then() {
 			//Sometimes bots will follow-unfollow. Avoid spamming chat with meaningless follow messages.
 			if (!__ARGS__[0]) return;
 			event_notify("follower", channel, follower);

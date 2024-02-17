@@ -688,7 +688,7 @@ __async__ mapping followcategory(mapping(string:mixed) conn, mapping(string:mixe
 	}
 }
 void websocket_cmd_followcategory(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	spawn_task(followcategory(conn, msg)) {
+	followcategory(conn, msg)->then() {
 		if (__ARGS__[0]) conn->sock->send_text(Standards.JSON.encode((["cmd": "followcategory"]) | __ARGS__[0]));
 	};
 }
