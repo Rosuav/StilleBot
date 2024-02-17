@@ -152,9 +152,9 @@ __async__ void get_credentials() {
 	uri->query = Protocols.HTTP.http_encode_query(query);
 	int empty = 0;
 	if (debug) werror("get_helix_paginated %O %O\n", url, uri->query);
-	mixed nextpage(mapping raw)
-	{
-		if (!raw->data) return Concurrent.reject(({"Unparseable response\n", backtrace()}));
+	while (1) {
+		mapping raw = await(twitch_api_request(uri, headers, options));
+		if (!raw->data) error("Unparseable response\n");
 		if (debug)
 		{
 			string pg = (raw->pagination && raw->pagination->cursor) || "";
@@ -203,9 +203,7 @@ __async__ void get_credentials() {
 		}
 		else query["after"] = raw->pagination->cursor;
 		uri->query = Protocols.HTTP.http_encode_query(query);
-		return twitch_api_request(uri, headers, options)->then(nextpage);
 	}
-	return await(twitch_api_request(uri, headers, options)->then(nextpage));
 }
 
 //Will return from cache if available. Set type to "login" to look up by name, else uses ID.
