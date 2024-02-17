@@ -38,13 +38,13 @@ string encode_as_type(mixed value, int typeoid) {
 		case 21: return sprintf("\0\0\0\2%2c", (int)value);
 		case 23: return sprintf("\0\0\0\4%4c", (int)value);
 		case 114: return sprintf("%4H", Standards.JSON.encode(value, 4));
-		case 1184: return sprintf("\0\0\0\8%8c", value->usecs - EPOCH2000);
+		case 1184: return sprintf("\0\0\0\b%8c", value->usecs - EPOCH2000);
 		case 2950: return sprintf("\0\0\0\20%@2c", array_sscanf(value, "%4x%4x-%4x-%4x-%4x-%4x%4x%4x"));
 		default: return sprintf("%4H", (string)value);
 	}
 }
 
-class SSLDatabase(string host, object ctx) {
+class SSLDatabase(string host, mapping|void cfg) {
 	Stdio.File|SSL.File sock;
 	Stdio.Buffer in, out;
 	string state;
@@ -56,6 +56,7 @@ class SSLDatabase(string host, object ctx) {
 	array(string) preparing_statements = ({ });
 
 	protected void create() {
+		if (!cfg) cfg = ([]);
 		//TODO: Do this nonblocking too
 		sock = Stdio.File();
 		sock->open_socket();
@@ -67,7 +68,7 @@ class SSLDatabase(string host, object ctx) {
 	}
 	void rawread(object s, string data) {
 		if (data != "S") {sock->close(); return;} //Bad handshake
-		sock = SSL.File(sock, ctx);
+		sock = SSL.File(sock, cfg->ctx || SSL.Context());
 		sock->set_nonblocking(sockread, sockwrite, sockclosed, 0, 0) {
 			sock->set_buffer_mode(in = Stdio.Buffer(), out = Stdio.Buffer());
 			out->add_hstring("\0\3\0\0user\0rosuav\0database\0stillebot\0application_name\0stillebot\0\0", 4, 4);
@@ -147,6 +148,7 @@ class SSLDatabase(string host, object ctx) {
 				case 'A': { //NotificationResponse
 					sscanf(msg, "%4c%s\0%s\0", int pid, string channel, string payload);
 					werror("NOTIFICATION: %O %O\n", channel, payload);
+					if (cfg->notify_callback) cfg->notify_callback(this, pid, channel, payload);
 					break;
 				}
 				default: werror("Got unknown message [state %s]: %c %O\n", state, msgtype, msg);
@@ -247,7 +249,7 @@ int main() {
 	object ctx = SSLContext();
 	array(string) root = Standards.PEM.Messages(Stdio.read_file("/etc/ssl/certs/ISRG_Root_X1.pem"))->get_certificates();
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
-	object sql = SSLDatabase("sikorsky.rosuav.com", ctx);
+	object sql = SSLDatabase("sikorsky.rosuav.com", (["ctx": ctx]));
 	sql->query("select 1+2+3, current_user")->then() {werror("Simple query: %O\n", __ARGS__[0]);};
 	sql->query("select * from stillebot.commands where twitchid = :twitchid and cmdname = :cmd",
 		(["twitchid": "49497888", "cmd": "tz"]))->then() {
