@@ -320,7 +320,7 @@ __async__ void reconnect(int force, int|void both) {
 	active = 0;
 }
 
-__async__ string save_to_db(string|array sql, mapping bindings) {
+__async__ string save_sql(string|array sql, mapping bindings) {
 	if (active) {
 		mixed err = catch {await(query(pg_connections[active], sql, bindings));};
 		if (!err) return "ok"; //All good!
@@ -335,13 +335,9 @@ __async__ string save_to_db(string|array sql, mapping bindings) {
 	return "retry";
 }
 
-void save_sql(string|array query, mapping|void bindings) {
-	save_to_db(query, bindings);
-}
-
-void save_config(string|int twitchid, string kwd, mixed data) {
+Concurrent.Future save_config(string|int twitchid, string kwd, mixed data) {
 	data = JSONENCODE(data);
-	save_to_db("insert into stillebot.config values (:twitchid, :kwd, :data) on conflict (twitchid, keyword) do update set data=:data",
+	return save_sql("insert into stillebot.config values (:twitchid, :kwd, :data) on conflict (twitchid, keyword) do update set data=:data",
 		(["twitchid": (int)twitchid, "kwd": kwd, "data": data]));
 }
 
@@ -372,8 +368,8 @@ __async__ array(mapping) load_commands(string|int twitchid, string|void cmdname,
 	return rows;
 }
 
-void save_command(string|int twitchid, string cmdname, echoable_message content) {
-	spawn_task(save_to_db(({
+Concurrent.Future save_command(string|int twitchid, string cmdname, echoable_message content) {
+	return save_sql(({
 		"update stillebot.commands set active = false where twitchid = :twitchid and cmdname = :cmdname and active = true",
 		content && content != ""
 			? "insert into stillebot.commands (twitchid, cmdname, active, content) values (:twitchid, :cmdname, true, :content)"
@@ -381,18 +377,18 @@ void save_command(string|int twitchid, string cmdname, echoable_message content)
 	}), ([
 		"twitchid": twitchid, "cmdname": cmdname,
 		"content": JSONENCODE(content),
-	])));
+	]));
 }
 
 //NOTE: In the future, this MAY be changed to require that data be JSON-compatible.
 //The mapping MUST include a 'cookie' which is a short string.
-void save_session(mapping data) {
-	if (!stringp(data->cookie)) return;
+Concurrent.Future save_session(mapping data) {
+	if (!stringp(data->cookie)) return Concurrent.resolve(0);
 	if (sizeof(data) == 1)
 		//Saving (["cookie": "nomnom"]) with no data will delete the session.
-		spawn_task(save_to_db("delete from stillebot.http_sessions where cookie = :cookie", data));
-	else spawn_task(save_to_db("insert into stillebot.http_sessions (cookie, data) values (:cookie, :data) on conflict (cookie) do update set data=:data, active = now()",
-		(["cookie": data->cookie, "data": encode_value(data)])));
+		return save_sql("delete from stillebot.http_sessions where cookie = :cookie", data);
+	else return save_sql("insert into stillebot.http_sessions (cookie, data) values (:cookie, :data) on conflict (cookie) do update set data=:data, active = now()",
+		(["cookie": data->cookie, "data": encode_value(data)]));
 }
 
 __async__ mapping load_session(string cookie) {
@@ -478,20 +474,10 @@ void notify_credentials_changed(int pid, string cond, string extra, string host)
 
 //Save credentials, but also synchronously update the local version. Using save_config() would
 //not do the latter, resulting in a short delay before the new credentials are used.
-void save_user_credentials(mapping data) {
+Concurrent.Future save_user_credentials(mapping data) {
 	mapping cred = G->G->user_credentials;
 	cred[data->userid] = cred[data->login] = data;
-	save_config(data->userid, "credentials", data);
-}
-__async__ void save_user_credentials_async(mixed data) {
-	mapping cred = G->G->user_credentials;
-	cred[data->userid] = cred[data->login] = data;
-	int userid = data->userid;
-	data = JSONENCODE(data);
-	werror("Saving...\n");
-	await(save_to_db("insert into stillebot.config values (:twitchid, :kwd, :data) on conflict (twitchid, keyword) do update set data=:data",
-		(["twitchid": userid, "kwd": "credentials", "data": data])));
-	werror("Saved.\n");
+	return save_config(data->userid, "credentials", data);
 }
 
 //Attempt to create all tables and alter them as needed to have all columns

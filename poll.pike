@@ -312,7 +312,7 @@ __async__ void import_bcaster_tokens() {
 			werror("Skipping %O\n", chan);
 			continue;
 		}
-		await(G->G->DB->save_user_credentials_async(([
+		await(G->G->DB->save_user_credentials(([
 			"userid": userid,
 			"login": chan,
 			"token": persist_status->path("bcaster_token")[chan],
