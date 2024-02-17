@@ -89,7 +89,7 @@ class Database(string host, object ctx) {
 			object rew = in->rewind_on_error();
 			int msgtype = in->read_int8();
 			string msg = in->read_hstring(4, 4);
-			if (!msg) {werror("Incomplete message %O\n", (string)in); return;} //Hopefully it'll rewind, leave the partial message in buffer, and retrigger us when there's more data
+			if (!msg) return; //Hopefully it'll rewind, leave the partial message in buffer, and retrigger us when there's more data
 			rew->release();
 			switch (msgtype) {
 				case 'E': { //Error. See https://www.postgresql.org/docs/current/protocol-error-fields.html
@@ -261,7 +261,7 @@ int main() {
 		werror("Schema column counts: %O\n", mkmapping(__ARGS__[0]->table_schema, __ARGS__[0]->count));
 	};
 	//Now let's do the same thing less efficiently, to stress-test the fetching.
-	sql->query("select table_schema, table_name, column_name from information_schema.columns")->then() {
+	sql->query("select * from information_schema.columns")->then() {
 		mapping counts = ([]);
 		foreach (__ARGS__[0], array row) counts[row->table_schema]++;
 		werror("Schema column counts: %O\n", counts);
