@@ -80,7 +80,7 @@ constant tables = ([
 //reloads - the old connections will be disposed of and fresh ones acquired. There may be
 //some sort of reference loop - it seems that we're not disposing of old versions of this
 //module properly - but the connections themselves should be closed by the new module.
-@retain: mapping(string:mapping(string:mixed)) pg_connections = m_delete(G->G, "connections") || ([]);
+@retain: mapping(string:mapping(string:mixed)) pg_connections = ([]);
 string active; //Host name only, not the connection object itself
 @retain: mapping waiting_for_active = ([ //If active is null, use these to defer database requests.
 	"queue": ({ }), //Add a Promise to this to be told when there's an active.
@@ -89,6 +89,15 @@ string active; //Host name only, not the connection object itself
 array(string) database_ips = ({"sikorsky.rosuav.com", "ipv4.rosuav.com"});
 mapping notify_channels = ([]);
 
+#if constant(SSLDatabase)
+//SSLDatabase automatically parses and encodes JSON.
+#define JSONDECODE(x) (x)
+#define JSONENCODE(x) (x)
+#else
+#define JSONDECODE(x) Standards.JSON.decode_utf8(x)
+#define JSONENCODE(x) Standards.JSON.encode(x, 4)
+#endif
+
 //ALL queries should go through this function.
 //Is it more efficient, with queries where we don't care about the result, to avoid calling get()?
 //Conversely, does failing to call get() result in risk of problems?
@@ -96,6 +105,26 @@ mapping notify_channels = ([]);
 //a single transaction (ie if the connection fails, they will be requeued as a set). The return
 //value in this case is an array of results (not counting the implicit BEGIN and COMMIT).
 __async__ array query(mapping(string:mixed) db, string|array sql, mapping|void bindings) {
+	#if constant(SSLDatabase)
+	if (arrayp(sql)) {
+		array ret = ({ });
+		mixed ex = catch {await(db->conn->query("begin"));};
+		if (!ex) foreach (sql, string q) {
+			//A null entry in the array of queries is ignored, and will not have a null return value to correspond.
+			if (ex = q && catch {ret += ({await(db->conn->query(q, bindings))});}) break;
+		}
+		//Ignore errors from rolling back - the exception that gets raised will have come from
+		//the actual query (or possibly the BEGIN), not from rolling back.
+		if (ex) catch {await(db->conn->query("rollback"));};
+		//But for committing, things get trickier. Technically an exception here leaves the
+		//transaction in an uncertain state, but I'm going to just raise the error. It is
+		//possible that the transaction DID complete, but we can't be sure.
+		else ex = catch {await(db->conn->query("commit"));};
+		if (ex) throw(ex);
+		return ret;
+	}
+	else return await(db->conn->query(sql, bindings));
+	#else
 	object pending = db->pending;
 	object completion = db->pending = Concurrent.Promise();
 	if (pending) await(pending->future()); //If there's a queue, put us at the end of it.
@@ -124,6 +153,7 @@ __async__ array query(mapping(string:mixed) db, string|array sql, mapping|void b
 	if (db->pending == completion) db->pending = 0;
 	if (ex) throw(ex);
 	return ret;
+	#endif
 }
 
 __async__ void _got_active(mapping db) {
@@ -184,7 +214,7 @@ void notify_unknown(int pid, string cond, string extra, string host) {
 @create_hook: constant database_settings = ({"mapping settings"});
 __async__ void fetch_settings(mapping db) {
 	G->G->dbsettings = await((mixed)query(db, "select * from stillebot.settings"))[0];
-	G->G->dbsettings->credentials = Standards.JSON.decode_utf8(G->G->dbsettings->credentials);
+	G->G->dbsettings->credentials = JSONDECODE(G->G->dbsettings->credentials);
 	G->G->bot_uid = G->G->dbsettings->credentials->userid; //Convenience alias. We use this in a good few places.
 	werror("Got settings from %s: active bot %O\n", db->host, G->G->dbsettings->active_bot);
 	event_notify("database_settings", G->G->dbsettings);
@@ -215,6 +245,10 @@ void notify_command_added(int pid, string cond, string extra, string host) {
 	};
 }
 
+void notify_callback(object conn, int pid, string channel, string payload) {
+	(notify_channels[channel] || notify_unknown)(pid, channel, payload, conn->host);
+}
+
 __async__ void connect(string host) {
 	werror("Connecting to Postgres on %O...\n", host);
 	mapping db = pg_connections[host] = (["host": host]); //Not a floop, strings are just strings :)
@@ -223,6 +257,12 @@ __async__ void connect(string host) {
 	object ctx = SSLContext();
 	array(string) root = Standards.PEM.Messages(Stdio.read_file("/etc/ssl/certs/ISRG_Root_X1.pem"))->get_certificates();
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
+	#if constant(SSLDatabase)
+	db->conn = SSLDatabase(host, (["ctx": ctx, "notify_callback": notify_callback]));
+	foreach (notify_channels; string channel; mixed callback)
+		await(db->conn->query("listen \"" + channel + "\""));
+	string ro = db->conn->server_params->default_transaction_read_only;
+	#else
 	while (1) {
 		//Establishing the connection is synchronous, might not be ideal.
 		db->conn = Sql.Sql("pgsql://rosuav@" + host + "/stillebot", ([
@@ -247,6 +287,7 @@ __async__ void connect(string host) {
 	}
 	db->conn->set_notify_callback("", notify_unknown, 1, host);
 	string ro = await(query(db, "show default_transaction_read_only"))[0]->default_transaction_read_only;
+	#endif
 	werror("Connected to %O - %s.\n", host, ro == "on" ? "r/o" : "r-w");
 	if (ro == "on") {
 		await(query(db, "set application_name = 'stillebot-ro'"));
@@ -267,7 +308,7 @@ __async__ void reconnect(int force, int|void both) {
 			if (!db->connected) {werror("Still connecting to %s...\n", host); continue;} //Will probably need a timeout somewhere
 			werror("Closing connection to %s.\n", host);
 			db->conn->close();
-			destruct(db->conn);
+			destruct(db->conn); //Might not be necessary with SSLDatabase
 		}
 		m_delete(pg_connections, indices(pg_connections)[*]); //Mutate the existing mapping so all clones of the module see that there are no connections
 	}
@@ -299,7 +340,7 @@ void save_sql(string|array query, mapping|void bindings) {
 }
 
 void save_config(string|int twitchid, string kwd, mixed data) {
-	data = Standards.JSON.encode(data, 4);
+	data = JSONENCODE(data);
 	save_to_db("insert into stillebot.config values (:twitchid, :kwd, :data) on conflict (twitchid, keyword) do update set data=:data",
 		(["twitchid": (int)twitchid, "kwd": kwd, "data": data]));
 }
@@ -311,7 +352,7 @@ __async__ mapping load_config(string|int twitchid, string kwd) {
 	array rows = await(query(pg_connections[active], "select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
 		(["twitchid": (int)twitchid, "kwd": kwd])));
 	if (!sizeof(rows)) return ([]);
-	return Standards.JSON.decode_utf8(rows[0]->data);
+	return JSONDECODE(rows[0]->data);
 }
 
 //Command IDs are UUIDs. They come back in binary format, which is fine for comparisons,
@@ -327,7 +368,7 @@ __async__ array(mapping) load_commands(string|int twitchid, string|void cmdname,
 	if (cmdname) {sql += " and cmdname = :cmdname"; bindings->cmdname = cmdname;}
 	if (!allversions) sql += " and active";
 	array rows = await(query(pg_connections[active], sql, bindings));
-	foreach (rows, mapping command) command->content = Standards.JSON.decode_utf8(command->content);
+	foreach (rows, mapping command) command->content = JSONDECODE(command->content); //Unnecessary with SSLDatabase
 	return rows;
 }
 
@@ -339,7 +380,7 @@ void save_command(string|int twitchid, string cmdname, echoable_message content)
 			: "select pg_notify('stillebot.commands', concat(cast(:twitchid as text), ':', cast(:cmdname as text)))",
 	}), ([
 		"twitchid": twitchid, "cmdname": cmdname,
-		"content": Standards.JSON.encode(content, 4),
+		"content": JSONENCODE(content),
 	])));
 }
 
@@ -420,7 +461,7 @@ __async__ void preload_user_credentials() {
 	if (!active) await(await_active());
 	array rows = await(query(pg_connections[active], "select twitchid, data from stillebot.config where keyword = 'credentials'"));
 	foreach (rows, mapping row) {
-		mapping data = Standards.JSON.decode_utf8(rows[0]->data);
+		mapping data = JSONDECODE(rows[0]->data);
 		cred[(int)row->twitchid] = cred[data->login] = data;
 	}
 	G->G->user_credentials_loaded = 1;
@@ -446,7 +487,7 @@ __async__ void save_user_credentials_async(mixed data) {
 	mapping cred = G->G->user_credentials;
 	cred[data->userid] = cred[data->login] = data;
 	int userid = data->userid;
-	data = Standards.JSON.encode(data, 4);
+	data = JSONENCODE(data);
 	werror("Saving...\n");
 	await(save_to_db("insert into stillebot.config values (:twitchid, :kwd, :data) on conflict (twitchid, keyword) do update set data=:data",
 		(["twitchid": userid, "kwd": "credentials", "data": data])));

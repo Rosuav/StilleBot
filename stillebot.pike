@@ -5,7 +5,7 @@ https://dev.twitch.tv/docs/api/reference
 Requires OAuth authentication, which is by default handled by the GUI.
 */
 
-array(string) bootstrap_files = ({"persist.pike", "globals.pike", "database.pike", "poll.pike", "connection.pike", "window.pike", "modules", "modules/http", "zz_local"});
+array(string) bootstrap_files = ({"persist.pike", "globals.pike", "pgssl.pike", "database.pike", "poll.pike", "connection.pike", "window.pike", "modules", "modules/http", "zz_local"});
 array(string) restricted_update;
 mapping G = (["consolecmd": ([]), "dbsettings": ([])]);
 
@@ -64,6 +64,7 @@ class Hilfe {
 		::create(({"start backend",
 			"mixed _ignore = G->bootstrap(\"persist.pike\");",
 			"mixed _ignore = G->bootstrap(\"globals.pike\");",
+			"mixed _ignore = G->bootstrap(\"pgssl.pike\");",
 			"mixed _ignore = G->bootstrap(\"database.pike\");",
 			"object poll = G->bootstrap(\"poll.pike\"); function req = poll->twitch_api_request;",
 		}));
@@ -81,7 +82,7 @@ int main(int argc,array(string) argv)
 	}
 	if (has_value(argv, "--test")) {
 		add_constant("INTERACTIVE", 1);
-		restricted_update = ({"persist.pike", "globals.pike", "database.pike", "poll.pike", "testing.pike"});
+		restricted_update = ({"persist.pike", "globals.pike", "pgssl.pike", "database.pike", "poll.pike", "testing.pike"});
 		bootstrap_all();
 		Stdio.stdin->set_read_callback(console);
 		return -1;
@@ -89,7 +90,7 @@ int main(int argc,array(string) argv)
 	if (has_value(argv, "--modules")) {
 		add_constant("INTERACTIVE", 1);
 		add_constant("HEADLESS", 1);
-		restricted_update = ({"persist.pike", "globals.pike", "database.pike", "poll.pike", "connection.pike", "window.pike"});
+		restricted_update = ({"persist.pike", "globals.pike", "pgssl.pike", "database.pike", "poll.pike", "connection.pike", "window.pike"});
 		if (bootstrap_all()) return 1;
 		foreach (({"modules", "modules/http", "zz_local"}), string path)
 			foreach (sort(get_dir(path)), string f)
@@ -101,7 +102,7 @@ int main(int argc,array(string) argv)
 	}
 	if (has_value(argv, "--dbupdate")) {
 		add_constant("INTERACTIVE", 1);
-		restricted_update = ({"persist.pike", "globals.pike", "database.pike", "poll.pike"});
+		restricted_update = ({"persist.pike", "globals.pike", "pgssl.pike", "database.pike", "poll.pike"});
 		bootstrap_all();
 		all_constants()["spawn_task"](G->DB->create_tables_and_stop());
 		return -1;
@@ -109,7 +110,7 @@ int main(int argc,array(string) argv)
 	if (has_value(argv, "--script")) {
 		//Test MustardScript parsing and reconstitution.
 		add_constant("INTERACTIVE", 1);
-		restricted_update = ({"persist.pike", "globals.pike", "database.pike", "poll.pike"});
+		restricted_update = ({"persist.pike", "globals.pike", "pgssl.pike", "database.pike", "poll.pike"});
 		bootstrap_all();
 		mapping get_channel_config(string|int chan) {error("Channel configuration unavailable.\n");}
 		add_constant("get_channel_config", get_channel_config);

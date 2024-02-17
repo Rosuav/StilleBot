@@ -44,6 +44,11 @@ string encode_as_type(mixed value, int typeoid) {
 	}
 }
 
+//Sql.Sql-compatible API.
+class PromiseResult(array data) {
+	array get() {return data;}
+}
+
 class SSLDatabase(string host, mapping|void cfg) {
 	Stdio.File|SSL.File sock;
 	Stdio.Buffer in, out;
@@ -61,7 +66,7 @@ class SSLDatabase(string host, mapping|void cfg) {
 		sock = Stdio.File();
 		sock->open_socket();
 		sock->set_nonblocking(rawread, 0, sockclosed);
-		sock->connect("sikorsky.rosuav.com", 5432);
+		sock->connect(host, 5432);
 		state = "handshake";
 		sock->write("\0\0\0\b\4\322\26/"); //Magic packet to request SSL
 		return;
@@ -167,6 +172,8 @@ class SSLDatabase(string host, mapping|void cfg) {
 		write();
 	}
 
+	void close() {sock->close();}
+
 	//This kind of idea would be nice, but how do I distinguish Int16 from Int32?
 	/*string build_packet(int type, mixed ... args) {
 		string packet = "";
@@ -230,6 +237,11 @@ class SSLDatabase(string host, mapping|void cfg) {
 
 		if (ex) throw(ex);
 		return ret;
+	}
+	//Sql.Sql-compatible API
+	__async__ PromiseResult promise_query(string sql, mapping|void bindings) {
+		array ret = await(query(sql, bindings));
+		return PromiseResult(ret);
 	}
 }
 
