@@ -456,17 +456,18 @@ __async__ void preload_user_credentials() {
 	mapping cred = G->G->user_credentials = ([]);
 	if (!active) await(await_active());
 	array rows = await(query(pg_connections[active], "select twitchid, data from stillebot.config where keyword = 'credentials'"));
+	werror("Loaded %d creds\n", sizeof(rows));
 	foreach (rows, mapping row) {
-		mapping data = JSONDECODE(rows[0]->data);
+		mapping data = JSONDECODE(row->data);
 		cred[(int)row->twitchid] = cred[data->login] = data;
 	}
 	G->G->user_credentials_loaded = 1;
 	m_delete(G->G, "user_credentials_loading");
 }
 
-//@"stillebot.config:credentials":
+@"stillebot.config:credentials":
 void notify_credentials_changed(int pid, string cond, string extra, string host) {
-	spawn_task(load_config(extra, "credentials"))->then() {[mapping data] = __ARGS__;
+	load_config(extra, "credentials")->then() {[mapping data] = __ARGS__;
 		mapping cred = G->G->user_credentials;
 		cred[(int)extra] = cred[data->login] = data;
 	};
@@ -551,6 +552,5 @@ protected void create(string name) {
 	G->G->DB = this;
 	spawn_task(reconnect(1));
 	if (!G->G->http_sessions_deleted) G->G->http_sessions_deleted = ([]);
-	//if (!G->G->user_credentials_loading && !G->G->user_credentials_loaded) spawn_task(preload_user_credentials());
-	G->G->user_credentials = ([]); //HACK: Load no credentials from the database
+	if (!G->G->user_credentials_loading && !G->G->user_credentials_loaded) preload_user_credentials();
 }

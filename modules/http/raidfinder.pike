@@ -204,7 +204,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			//TODO: Move this to poll as a generic "is X following Y" call, which will be cached.
 			//It can then use EITHER form of the query - if we have X's user:read:follows or Y's moderator:read:followers
 			//Might need a way to locate a moderator though. Or go for the partial result with intrinsic auth??
-			array creds = await((mixed)token_for_user_id_async((int)chanid));
+			array creds = token_for_user_id((int)chanid);
 			array scopes = creds[1] / " ";
 			if (has_value(scopes, "user:read:follows")) {
 				mapping info = await(twitch_api_request(sprintf("https://api.twitch.tv/helix/channels/followed?user_id=%s&broadcaster_id=%s", chanid, chan),

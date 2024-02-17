@@ -782,6 +782,18 @@ class _TwitchIRC(mapping options) {
 	//TODO: If msg_ratelimit comes in, retry last message????
 }
 
+array(string) token_for_user_login(string login) {
+	mapping cred = G->G->user_credentials[lower_case(login)];
+	if (cred) return ({cred->token, cred->scopes * " "});
+	return ({"", ""});
+}
+
+array(string) token_for_user_id(int|string userid) {
+	mapping cred = G->G->user_credentials[(int)userid];
+	if (cred) return ({cred->token, cred->scopes * " "});
+	return ({"", ""});
+}
+
 //Inherit this to listen to connection responses
 class irc_callback {
 	mapping connection_cache;
@@ -810,16 +822,14 @@ class irc_callback {
 		options->user = lower_case(options->user); //Casefold for the cache, don't have multiples kthx
 		if (!options->pass) {
 			string chan = lower_case(options->user);
-			//TODO: Switch this to token_for_user_id once that function migrates into globals
-			string pass = persist_status->path("bcaster_token")[chan];
-			if (!pass) return Concurrent.reject(({"No broadcaster auth for " + chan + "\n", backtrace()}));
-			array scopes = (persist_status->path("bcaster_token_scopes")[chan]||"") / " ";
+			mapping cred = G->G->user_credentials[chan];
+			if (!cred) return Concurrent.reject(({"No broadcaster auth for " + chan + "\n", backtrace()}));
 			//Note that we accept chat:read even if there are commands that would require
 			//chat:edit permission. This isn't meant to be a thorough check, just a quick
 			//confirmation that we really are trying to work with chat here.
-			if (!has_value(scopes, "chat:edit") && !has_value(scopes, "chat:read"))
+			if (!has_value(cred->scopes, "chat:edit") && !has_value(cred->scopes, "chat:read"))
 				return Concurrent.reject(({"No chat auth for " + chan + "\n", backtrace()}));
-			options->pass = "oauth:" + pass;
+			options->pass = "oauth:" + cred->token;
 		}
 		object|zero conn = connection_cache[options->user];
 		//If the connection exists, give it a chance to update itself. Normally
@@ -1508,13 +1518,13 @@ mapping(string:mixed) ensure_login(Protocols.HTTP.Server.Request req, string|voi
 string ensure_bcaster_token(Protocols.HTTP.Server.Request req, string scopes, string|void chan) {
 	if (req->misc->session->fake) return scopes; //There'll never be a valid broadcaster login with fake mod mode active
 	if (!chan) chan = req->misc->channel->name[1..];
-	array havescopes = (persist_status->path("bcaster_token_scopes")[chan]||"") / " " - ({""});
+	mapping cred = G->G->user_credentials[chan];
+	array havescopes = cred->scopes;
 	if (req->misc->session->user->?login == chan && !sizeof((multiset)havescopes - req->misc->session->scopes)) {
 		//The broadcaster is logged in, with at least as much scope as we previously
-		//had. Upgrade bcaster_token to this token.
-		persist_status->path("bcaster_token")[chan] = req->misc->session->token;
-		persist_status->path("bcaster_token_scopes")[chan] = sort(havescopes = indices(req->misc->session->scopes)) * " ";
-		persist_status->save();
+		//had. Upgrade to this token.
+		cred->token = req->misc->session->token;
+		cred->scopes = sort(havescopes = indices(req->misc->session->scopes)) * " ";
 	}
 	multiset wantscopes = (multiset)(scopes / " ");
 	multiset needscopes = (multiset)havescopes | wantscopes;

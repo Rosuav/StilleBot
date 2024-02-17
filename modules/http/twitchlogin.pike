@@ -77,7 +77,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	//NOTE: Some things are inconsistent on whether it's "scope" or "scopes". Currently
 	//checking for either. TODO: Make them all consistent.
 	multiset havescopes = req->misc->session->?scopes || (<>);
-	string bcast_scopes = await(token_for_user_login_async(req->misc->session->user->?login))[1];
+	string bcast_scopes = token_for_user_login(req->misc->session->user->?login)[1];
 	if (bcast_scopes != "") havescopes |= (multiset)(bcast_scopes / " ");
 	multiset wantscopes = (multiset)((req->variables->scopes || req->variables->scope || "") / " " - ({""}));
 	multiset bad = wantscopes - TwitchAuth()->list_valid_scopes();

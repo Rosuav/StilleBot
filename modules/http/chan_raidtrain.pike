@@ -417,7 +417,7 @@ __async__ mapping checkfollowing(object channel, mapping(string:mixed) conn, map
 	if (!conn->session->user) return 0; //Not logged in, no message needed
 	mapping cfg = persist_status->path("raidtrain", (string)channel->userid)->cfg;
 	if (!cfg->all_casters) return 0; //No casters, nothing to do
-	[string token, string scopes] = await(token_for_user_id_async(conn->session->user->id));
+	[string token, string scopes] = token_for_user_id(conn->session->user->id);
 	if (!has_value(scopes / " ", "user:read:follows")) return (["msg": "No permission, can't check following"]); //Not currently in the UI
 	mapping casters = ([]);
 	foreach (cfg->all_casters, int|string bcaster) {

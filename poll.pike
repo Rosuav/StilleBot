@@ -251,46 +251,8 @@ __async__ void get_credentials() {
 	return sizeof(info) && (int)info[0]->id;
 }
 
-//Four related functions to access user credentials.
-//Fetch by login or ID, fetch synchronously or asynchronously.
-//Async versions are always safe; synchronous depend on cache.
-//As of 20230908, tokens are stored by user login, and the ID
-//requires a lookup; this will change soon, and then the login
-//versions will require the lookup.
-//TODO: When this migrates, move token_for_user_id (which will
-//then become the fundamental) into globals.pike rather than
-//here. The others can all remain here. This will partly break
-//encapsulation, but maintain dependency ordering.
-@export: array(string) token_for_user_login(string login) {
-	login = lower_case(login);
-	mapping cred = G->G->user_credentials[login];
-	if (cred) return ({cred->token, cred->scopes * " "});
-	string token = persist_status->path("bcaster_token")[login];
-	if (!token) return ({"", ""});
-	return ({token, persist_status->path("bcaster_token_scopes")[login] || ""});
-}
-
-//Eventually this may be essential - if credentials aren't yet loaded, this can block.
-@export: __async__ array(string) token_for_user_login_async(string login) {
-	return token_for_user_login(login);
-}
-
-@export: array(string) token_for_user_id(int|string userid) {
-	mapping cred = G->G->user_credentials[(int)userid];
-	if (cred) return ({cred->token, cred->scopes * " "});
-	mapping info = user_info[(int)userid];
-	if (!info) error("Synchronous fetching of tokens by user ID is not yet available\n");
-	return token_for_user_login(info->login);
-}
-
-@export: __async__ array(string) token_for_user_id_async(int|string userid) {
-	mapping cred = G->G->user_credentials[(int)userid];
-	if (cred) return ({cred->token, cred->scopes * " "});
-	string login = await(get_user_info((int)userid))->login;
-	return token_for_user_login(login);
-}
-
 //This isn't currently spawned anywhere. Should it be? What if auth fails?
+//TODO: Update it to use database-stored credentials
 __async__ void check_bcaster_tokens() {
 	mapping tokscopes = persist_status->path("bcaster_token_scopes");
 	foreach (persist_status->path("bcaster_token"); string chan; string token) {
@@ -351,7 +313,7 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 		(!cached->expires || cached->expires > Calendar.ISO.Second()))
 			return cached->banlist;
 	string username = await(get_user_info(userid))->login;
-	array(string) creds = await(token_for_user_login_async(username));
+	array(string) creds = token_for_user_login(username);
 	if (!has_value(creds[1] / " ", "moderation:read")) error("Don't have broadcaster auth to fetch ban list for %O\n", username);
 	mapping ret = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/banned",
 		(["broadcaster_id": userid]),
@@ -366,12 +328,13 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 
 @export: Concurrent.Future complete_redemption(string chan, string rewardid, string redemid, string status) {
 	//Fulfil or reject the redemption, consuming or refunding the points
+	array(string) creds = token_for_user_login(chan);
 	return get_user_id(chan)->then() {
 		return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions"
 				+ "?broadcaster_id=" + __ARGS__[0]
 				+ "&reward_id=" + rewardid
 				+ "&id=" + redemid,
-			(["Authorization": "Bearer " + persist_status->path("bcaster_token")[chan]]),
+			(["Authorization": "Bearer " + creds[0]]),
 			(["method": "PATCH", "json": (["status": status])]),
 		);
 	};
@@ -627,7 +590,7 @@ void stream_status(int userid, string name, mapping info)
 //Returns an ISO 8601 string, or 0 if not following.
 @export: __async__ string check_following(int userid, int chanid)
 {
-	array creds = await(token_for_user_id_async(chanid));
+	array creds = token_for_user_id(chanid);
 	multiset scopes = (multiset)(creds[1] / " ");
 	mapping headers = ([]);
 	if (scopes["moderator:read:followers"]) headers->Authorization = "Bearer " + creds[0];
@@ -845,5 +808,5 @@ protected void create(string|void name)
 	#endif
 	::create(name);
 	//Due to a current bug, async functions don't have annotations. Manually export them.
-	export(this, name, ("twitch_api_request get_users_info get_user_info get_user_id token_for_user_login_async token_for_user_id_async get_helix_paginated get_banned_list channel_still_broadcasting translate_tag_ids check_following get_stream_schedule" / " ")[*]);
+	export(this, name, ("twitch_api_request get_users_info get_user_info get_user_id get_helix_paginated get_banned_list channel_still_broadcasting translate_tag_ids check_following get_stream_schedule" / " ")[*]);
 }

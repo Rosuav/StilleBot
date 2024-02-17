@@ -234,7 +234,7 @@ __async__ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, 
 	//1.25 seconds to speed it up, hopefully it won't break anything.
 	if (method) {
 		string baseurl = "https://api.twitch.tv/helix/channels/vips?broadcaster_id=" + channel->userid + "&user_id=";
-		string token = await(token_for_user_id_async(channel->userid))[0];
+		string token = token_for_user_id(channel->userid)[0];
 		foreach (userids, string uid) {
 			int status = await(twitch_api_request(baseurl + uid,
 				(["Authorization": "Bearer " + token]),

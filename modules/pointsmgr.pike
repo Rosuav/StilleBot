@@ -100,7 +100,7 @@ __async__ void update_dynamic_reward(object channel, string rewardid) {
 		if (value != cur[kwd]) updates[kwd] = value;
 	}
 	if (!sizeof(updates)) return 0;
-	string token = await(token_for_user_id_async(channel->userid))[0];
+	string token = token_for_user_id(channel->userid)[0];
 	mixed resp = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + rewardid,
 		(["Authorization": "Bearer " + token]),
 		(["method": "PATCH", "json": updates]),
@@ -130,7 +130,7 @@ __async__ void populate_rewards_cache(string chan, string|int|void broadcaster_i
 	if (!broadcaster_id) broadcaster_id = await(get_user_id(chan));
 	pointsrewards[(int)broadcaster_id] = ({ }); //If there's any error, don't keep retrying
 	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
-	mapping params = (["Authorization": "Bearer " + await(token_for_user_id_async(broadcaster_id))[0]]);
+	mapping params = (["Authorization": "Bearer " + token_for_user_id(broadcaster_id)[0]]);
 	array rewards = await(twitch_api_request(url, params))->data;
 	//Prune the dynamic rewards list
 	object channel = G->G->irc->id[(int)broadcaster_id];

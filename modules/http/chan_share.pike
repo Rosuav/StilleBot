@@ -116,7 +116,7 @@ constant file_mime_types = ([
 
 __async__ string permission_check(object channel, int is_mod, mapping user) {
 	mapping cfg = persist_status->path("artshare", (string)channel->userid, "settings");
-	string scopes = await(token_for_user_id_async(channel->userid))[1];
+	string scopes = token_for_user_id(channel->userid)[1];
 	if (has_value(scopes / " ", "moderation:read")) { //TODO: How would we get this permission if we don't have it? Some sort of "Forbid banned users" action for the broadcaster?
 		if (has_value(await(get_banned_list(channel->userid))->user_id, user->id)) {
 			//Should we show differently if there's an expiration on the timeout?
