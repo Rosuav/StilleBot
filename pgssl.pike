@@ -72,11 +72,14 @@ class SSLDatabase(string host, mapping|void cfg) {
 		//TODO: Do this nonblocking too
 		sock = Stdio.File();
 		sock->open_socket();
-		sock->set_nonblocking(rawread, 0, sockclosed);
+		sock->set_nonblocking(rawread, rawwrite, sockclosed);
 		sock->connect(host, 5432);
+		state = "connect";
+	}
+	void rawwrite() {
 		state = "handshake";
 		sock->write("\0\0\0\b\4\322\26/"); //Magic packet to request SSL
-		return;
+		sock->set_write_callback(0); //Once only. We assume that the magic packet really is just one packet.
 	}
 	void rawread(object s, string data) {
 		if (data != "S") {sock->close(); return;} //Bad handshake
