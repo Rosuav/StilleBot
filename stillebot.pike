@@ -55,9 +55,8 @@ class Hilfe {
 	protected void create() {
 		function orig_reswrite = reswrite;
 		reswrite = lambda(function w, string sres, int num, mixed res) {
-			mixed spawn_task = all_constants()["spawn_task"];
-			if (spawn_task) spawn_task(res) {orig_reswrite(w, sprintf("%O", __ARGS__[0]), num, __ARGS__[0]);};
-			else orig_reswrite(w, sres, num, res); //Fallback if we can't spawn tasks yet
+			if (objectp(res) && res->then) res->then() {orig_reswrite(w, sprintf("%O", __ARGS__[0]), num, __ARGS__[0]);};
+			else orig_reswrite(w, sres, num, res);
 		};
 		G->Hilfe = this;
 		//The superclass won't return till the user is done.
