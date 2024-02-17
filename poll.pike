@@ -75,14 +75,14 @@ __async__ void get_credentials() {
 					"client_secret": persist_config["ircsettings"]["clientsecret"],
 					"grant_type": "client_credentials",
 				]));
-				return twitch_api_request(uri, ([]), (["method": "POST"]))
+				return await(twitch_api_request(uri, ([]), (["method": "POST"]))
 					->then(lambda (mapping data) {
 						G->G->app_access_token = data->access_token;
 						G->G->app_access_token_expiry = time() + data->expires_in - 120;
 						//If this becomes a continue function, we could just fall through
 						//instead of calling ourselves recursively.
 						return twitch_api_request(url, headers, options);
-					});
+					}));
 			}
 			headers->Authorization = "Bearer " + G->G->app_access_token;
 		}
@@ -154,7 +154,7 @@ __async__ void get_credentials() {
 	if (debug) werror("get_helix_paginated %O %O\n", url, uri->query);
 	while (1) {
 		mapping raw = await(twitch_api_request(uri, headers, options));
-		if (!raw->data) error("Unparseable response\n");
+		if (!raw->data) error("Unparseable response\n%O\n", indices(raw));
 		if (debug)
 		{
 			string pg = (raw->pagination && raw->pagination->cursor) || "";
