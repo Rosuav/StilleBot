@@ -1523,7 +1523,7 @@ string ensure_bcaster_token(Protocols.HTTP.Server.Request req, string scopes, st
 		//The broadcaster is logged in, with at least as much scope as we previously
 		//had. Upgrade to this token.
 		cred->token = req->misc->session->token;
-		cred->scopes = sort(havescopes = indices(req->misc->session->scopes)) * " ";
+		cred->scopes = sort(havescopes = indices(req->misc->session->scopes));
 	}
 	multiset wantscopes = (multiset)(scopes / " ");
 	multiset needscopes = (multiset)havescopes | wantscopes;
