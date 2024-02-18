@@ -22,7 +22,7 @@ chan_voices    | #channel
 chan_subpoints | Either "#channel" or "nonce#channel"
 hypetrain      | Twitch channel ID (integer)
 
-When the type begins "chan_", the group will generally end "#channelname".
+When the type begins "chan_", the group will generally end "#channelid".
 Note that some sockets require authentication. There is currently no API-friendly
 way to authenticate, but this may be a future enhancement.
 
@@ -53,7 +53,7 @@ Client usage
 Making use of ws_sync.js to establish the websocket will handle most of the
 above protocol automatically. Initialize global variables thus:
 
-    let ws_group = "some-group-name"; //For channel-based groups, end with "#channame"
+    let ws_group = "some-group-name"; //For channel-based groups, end with "#channelid"
     let ws_type = "some-type-name";
     let ws_code = "/static/chan_dynamics.js";
     let ws_sync = null; import('/static/ws_sync.js').then(m => ws_sync = m);
