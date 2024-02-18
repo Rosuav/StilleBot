@@ -30,15 +30,6 @@ mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mappin
 	req->misc->session->scopes = (multiset)(req->variables->scope / " ");
 	req->misc->session->token = token;
 	req->misc->session->authcookie = cookie;
-	G->G->DB->save_user_credentials(([
-		"userid": (int)user->id,
-		"login": user->login,
-		"token": token,
-		"authcookie": cookie,
-		"scopes": sort(req->variables->scope / " "),
-		"validated": time(),
-		"user_info": user,
-	]));
 	return (["data": "<script>window.close(); window.opener.location.reload();</script>", "type": "text/html"]);
 }
 
@@ -58,6 +49,15 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		mapping user = await(twitch_api_request("https://api.twitch.tv/helix/users",
 			(["Authorization": "Bearer " + auth->access_token])))
 				->data[0];
+		G->G->DB->save_user_credentials(([
+			"userid": (int)user->id,
+			"login": user->login,
+			"token": auth->access_token,
+			"authcookie": cookie,
+			"scopes": sort(req->variables->scope / " "),
+			"validated": time(),
+			"user_info": user,
+		]));
 		if (function f = login_callback[req->variables->state])
 			return f(req, user, (multiset)(req->variables->scope / " "), auth->access_token, cookie);
 		//Try to figure out a plausible place to send the person after login.
