@@ -402,10 +402,9 @@ class websocket_handler
 		if (dest && sizeof(dest)) _send_updates(dest, group, data);
 	}
 	//Compatibility overlap variant form. Use this with a channel object to send to
-	//the correct group for that channel. At some point this will change to being
-	//group + "#" + chan->userid, but this function will still work fine.
+	//the correct group for that channel.
 	variant void send_updates_all(object chan, string|int group, mapping|void data) {
-		send_updates_all(group + chan->name, data);
+		send_updates_all(group + "#" + chan->userid, data);
 	}
 
 	void update_one(string|int group, string id, string|void type) {
@@ -413,7 +412,7 @@ class websocket_handler
 	}
 	//Compatibility overlap variant form, as above.
 	variant void update_one(object chan, string|int group, string id, string|void type) {
-		send_updates_all(group + chan->name, (["id": id, "data": get_state(group + chan->name, id, type), "type": type || "item"]));
+		send_updates_all(group + "#" + chan->userid, (["id": id, "data": get_state(group + "#" + chan->userid, id, type), "type": type || "item"]));
 	}
 
 	//Returns ({channel, subgroup}) - if channel is 0, it's not valid
