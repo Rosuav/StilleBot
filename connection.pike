@@ -113,7 +113,7 @@ constant deletemsg = ({"object channel", "object person", "string target", "stri
 constant deletemsgs = ({"object channel", "object person", "string target"});
 
 __async__ void voice_enable(string voiceid, string chan, mapping|void tags) {
-	mapping tok = persist_status["voices"][voiceid];
+	mapping tok = G->G->user_credentials[(int)voiceid];
 	werror("Connecting to voice %O...\n", voiceid);
 	object conn = await(irc_connect(([
 		"user": tok->login, "pass": "oauth:" + tok->token,
@@ -635,7 +635,7 @@ class channel(mapping config) {
 					if (info->lastnotice >= limit) users += ({n2u[name]});
 			} else {
 				//Ask Twitch who's currently in chat.
-				mapping tok = persist_status["voices"][voice];
+				mapping tok = G->G->user_credentials[(int)voice];
 				get_helix_paginated(
 					"https://api.twitch.tv/helix/chat/chatters",
 					(["broadcaster_id": (string)userid, "moderator_id": (string)voice]),

@@ -61,7 +61,7 @@ bool need_mod(string grp) {return 1;}
 
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping vox = channel->config->voices || ([]);
-	if (id) return vox[id] && (vox[id] | (["scopes": persist_status->has_path("voices", id)->?scopes || ({"chat_login"})]));
+	if (id) return vox[id] && (vox[id] | (["scopes": G->G->user_credentials[(int)id]->?scopes || ({"chat_login"})]));
 	mapping bv = get_channel_config(0)->?voices || ([]);
 	string defvoice = get_channel_config(0)->?defvoice;
 	if (defvoice && bv[defvoice] && !vox[defvoice]) {
@@ -69,9 +69,9 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		channel->config_save();
 	}
 	array voices = values(vox); sort(indices(vox), voices);
-	mapping all_voices = persist_status->path("voices");
+	mapping all_voices = G->G->user_credentials;
 	foreach (voices, mapping voice)
-		voice->scopes = all_voices[voice->id]->?scopes || ({"chat_login"});
+		voice->scopes = all_voices[(int)voice->id]->?scopes || ({"chat_login"});
 	array botvoices = values(bv); sort((array(int))indices(bv), botvoices);
 	return ([
 		"items": voices,
@@ -148,7 +148,7 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	if (!channel) return;
 	multiset scopes = (multiset)(msg->scopes || ({ }));
 	if (mapping tok = persist_status->has_path("voices", msg->voiceid)) {
-		//Merge in pre-existing scopes. If they're not recorded, assume that we had the ones we used to request.
+		//Incorporate any legacy scopes
 		array have = tok->scopes || ({"chat_login", "user_read", "whispers:edit", "user_subscriptions", "user:manage:whispers"});
 		scopes |= (multiset)have;
 	}
@@ -169,13 +169,6 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 		v->profile_image_url = user->profile_image_url;
 		v->last_auth_time = time();
 		channel->config_save();
-		mapping tok = persist_status->path("voices", v->id);
-		tok->token = token;
-		tok->authcookie = cookie;
-		tok->login = user->login;
-		tok->last_auth_time = v->last_auth_time;
-		tok->scopes = (array)scopes;
-		persist_status->save();
 		update_one(conn->group, v->id);
 		return (["data": "<script>window.close()</script>", "type": "text/html"]);
 	};

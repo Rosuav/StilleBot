@@ -280,7 +280,7 @@ void shieldoff(object c, string v, string m, mapping t) {shield(c, v, m, t, 1);}
 string|zero send_chat_command(string msg, object channel, string voiceid) {
 	sscanf(msg, "/%[^ ] %s", string cmd, string param);
 	if (!need_scope[cmd]) return "not a command";
-	mapping tok = persist_status["voices"][voiceid];
+	mapping tok = G->G->user_credentials[(int)voiceid];
 	if (!voiceid || voiceid == "0") {
 		voiceid = (string)G->G->bot_uid;
 		tok = (["token": G->G->dbsettings->credentials->token,
