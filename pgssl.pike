@@ -128,8 +128,8 @@ class SSLDatabase(string host, mapping|void cfg) {
 				}
 				case 'K': sscanf(msg, "%4d%4d", backendpid, secretkey); break;
 				case 'Z':
-					if (msg == "I") ready();
-					else state = (["T": "transaction", "E": "transacterr"])[msg];
+					if (msg == "I" || msg == "T") ready();
+					else if (msg = "E") state = "transacterr";
 					break;
 				case 'S': { //Note that this is ParameterStatus from the back end, but if the front end sends it, it's Sync
 					sscanf(msg, "%s\0%s\0", string param, string value);

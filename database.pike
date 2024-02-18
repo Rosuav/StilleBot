@@ -234,7 +234,6 @@ void notify_session_gone(int pid, string cond, string extra, string host) {
 
 @"stillebot.commands":
 void notify_command_added(int pid, string cond, string extra, string host) {
-	werror("COMMAND CREATED [%s, %s]\n", cond, extra);
 	if (!G->G->irc) return; //Interactive mode - no need to push updates out
 	sscanf(extra, "%d:%s", int twitchid, string cmdname);
 	if (!cmdname || cmdname == "") return;
