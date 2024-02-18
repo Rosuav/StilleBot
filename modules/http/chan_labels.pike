@@ -96,7 +96,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	//TODO: If fake, show something?? maybe?? Borrow ideas from alertbox demo mode.
 	//TODO: If ?key=x passed, but key is incorrect, give an immediate failure (don't wait for WS failure)
 	if (req->variables->key) return render_template("monitor.html", ([
-		"vars": (["ws_type": ws_type, "ws_group": req->variables->key + req->misc->channel->name, "ws_code": "chan_labels"]),
+		"vars": (["ws_type": ws_type, "ws_group": req->variables->key + "#" + req->misc->channel->userid, "ws_code": "chan_labels"]),
 		"title": "Channel labels", "styles": STYLES,
 	]));
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
@@ -152,7 +152,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	m_delete(cfg, "accesskey");
 	string newkey = get_access_key(channel->userid);
 	//Non-mod connections get kicked
-	foreach (websocket_groups[channel->name], object sock)
+	foreach (websocket_groups["#" + channel->userid], object sock)
 		if (!sock->query_id()->is_mod) sock->close();
 	//Other mod connections remain but will have the wrong key. Only THIS connection gets the new one.
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "authkey", "key": newkey]), 4));
