@@ -61,6 +61,7 @@ constant tables = ([
 		//"create or replace function send_settings_notification() returns trigger language plpgsql as $$begin perform pg_notify('stillebot.settings', ''); return null; end$$;",
 		//"create trigger settings_update_notify after update on stillebot.settings for each row execute function send_settings_notification();",
 		//"alter table stillebot.settings enable always trigger settings_update_notify;",
+		//TODO: Have a deletion trigger to avoid stale data in in-memory caches
 	}),
 	"http_sessions": ({
 		"cookie varchar primary key",
@@ -75,6 +76,9 @@ constant tables = ([
 	//a notification that includes both the table name (maybe) and the twitchid (definitely).
 	//Use this to force a settings reload for that channel.
 ]);
+multiset precached_config = (<"channel_labels">); //TODO: Have other modules submit requests?
+@retain: mapping pcc_loadstate = ([]);
+@retain: mapping pcc_cache = ([]);
 
 //NOTE: Despite this retention, actual connections are not currently retained across code
 //reloads - the old connections will be disposed of and fresh ones acquired. There may be
@@ -335,6 +339,12 @@ __async__ string save_sql(string|array sql, mapping bindings) {
 }
 
 Concurrent.Future save_config(string|int twitchid, string kwd, mixed data) {
+	//TODO: If data is an empty mapping, delete it instead
+	if (precached_config[kwd] && pcc_loadstate[kwd] == 2) {
+		//Immediately (and synchronously) update the local cache.
+		//Note that it will be re-updated by the database trigger.
+		pcc_cache[kwd][(int)twitchid] = data;
+	}
 	data = JSONENCODE(data);
 	return save_sql("insert into stillebot.config values (:twitchid, :kwd, :data) on conflict (twitchid, keyword) do update set data=:data",
 		(["twitchid": (int)twitchid, "kwd": kwd, "data": data]));
@@ -348,6 +358,28 @@ __async__ mapping load_config(string|int twitchid, string kwd) {
 		(["twitchid": (int)twitchid, "kwd": kwd])));
 	if (!sizeof(rows)) return ([]);
 	return JSONDECODE(rows[0]->data);
+}
+
+mapping load_cached_config(string|int twitchid, string kwd) {
+	if (!precached_config[kwd]) error("Can only load_cached_config() with the keywords listed\n");
+	if (pcc_loadstate[kwd] < 2) error("Config not yet loaded\n");
+	return pcc_cache[kwd][(int)twitchid] || ([]);
+}
+
+//There's no decorator on this as the actual channel list is set by precached_config[]
+void update_cache(int pid, string cond, string extra, string host) {
+	sscanf(cond, "%*s:%s", string kwd);
+	load_config(extra, kwd)->then() {pcc_cache[kwd][(int)extra] = __ARGS__[0];};
+}
+
+__async__ void preload_config(string kwd) {
+	pcc_loadstate[kwd] = 1;
+	mapping cache = pcc_cache[kwd] = ([]);
+	if (!active) await(await_active());
+	array rows = await(query(pg_connections[active], "select twitchid, data from stillebot.config where keyword = :kwd", (["kwd": kwd])));
+	foreach (rows, mapping row)
+		cache[(int)row->twitchid] = JSONDECODE(row->data);
+	pcc_loadstate[kwd] = 2;
 }
 
 //Fire this off to migrate configs from persist_status->path("foo") into load_config(id, "foo")
@@ -461,6 +493,8 @@ __async__ mapping for_each_db(string sql, mapping|void bindings) {
 //            contain display_name though, which could be handy.
 //TODO: What happens as things get bigger? Eventually this will be a lot of loading. Should
 //the credentials query functions be made async and do the fetching themselves?
+//Note that this is nearly identical to the more general precached config feature, but the
+//cache is dual-keyed. It might be better to have the cache keyed only by ID?
 __async__ void preload_user_credentials() {
 	G->G->user_credentials_loading = 1;
 	mapping cred = G->G->user_credentials = ([]);
@@ -555,6 +589,10 @@ protected void create(string name) {
 	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
 		if (ann) foreach (indices(ann), mixed anno)
 			if (stringp(anno)) notify_channels[anno] = this[key];
+	}
+	foreach (precached_config; string kwd;) {
+		notify_channels["stillebot.config:" + kwd] = update_cache;
+		if (!pcc_loadstate[kwd]) preload_config(kwd);
 	}
 	//For testing, force the opposite connection order
 	if (has_value(G->G->argv, "--gideondb")) database_ips = ({"ipv4.rosuav.com", "sikorsky.rosuav.com"});
