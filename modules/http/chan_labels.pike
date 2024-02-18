@@ -142,7 +142,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	textformatting_validate(style);
 	cfg->style = style;
 	//Save anything else eg max labels to show
-	persist_status->save();
+	G->G->DB->save_config(channel->userid, "channel_labels", cfg);
 	send_updates_all(channel, "");
 }
 
