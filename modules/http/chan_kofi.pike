@@ -21,14 +21,14 @@ Once authenticated, Ko-fi events will begin showing up in [Special Triggers](spe
 //level module, which would break encapsulation.
 @create_hook: constant kofi_support = ({"object channel", "string type", "mapping params", "mapping raw"});
 
-mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->request_type == "POST") {
 		//Ko-fi webhook. Check the Verification Token against the one
 		//we have stored, and if it matches, fire all the signals.
 		mapping data = Standards.JSON.decode(req->variables->data); //If malformed, will bomb and send back a 500. (Note: Don't use decode_utf8 here, it's already Unicode text.)
 		if (!mappingp(data)) return (["error": 400, "type": "text/plain", "data": "No data mapping given"]);
-		mapping cfg = persist_status->has_path("kofi", req->misc->channel->name[1..]);
+		mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "kofi"));
 		if (!stringp(data->verification_token) || cfg->?verification_token != data->verification_token)
 			//Note that, if we don't have a token on file, it's guaranteed to be a bad
 			//token. This means that any mis-sent POST requests that happen to have a
@@ -120,15 +120,18 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 
 @"is_mod": void wscmd_settoken(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->token)) return;
-	mapping cfg = persist_status->path("kofi", channel->name[1..]);
-	cfg->verification_token = msg->token;
-	persist_status->save();
-	send_updates_all(conn->group);
+	G->G->DB->load_config(channel->userid, "kofi")->then() {mapping cfg = __ARGS__[0];
+		cfg->verification_token = msg->token;
+		G->G->DB->save_config(channel->userid, "kofi", cfg);
+		send_updates_all(conn->group);
+	};
 }
 
 bool need_mod(string grp) {return 1;}
-mapping get_chan_state(object channel, string grp) {
-	mapping cfg = persist_status->path("kofi", channel->name[1..]);
+__async__ mapping get_state(string group) {
+	[object channel, string grp] = split_channel(group);
+	if (!channel) return 0;
+	mapping cfg = await(G->G->DB->load_config(channel->userid, "kofi"));
 	return ([
 		"token": stringp(cfg->verification_token) && "..." + cfg->verification_token[<3..],
 	]);
