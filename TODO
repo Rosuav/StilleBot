@@ -298,4 +298,3 @@
   be in the log.)
 * Are conduits useful? Can we have one shard for Gideon and one for Sikorsky?
   https://dev.twitch.tv/docs/eventsub/handling-conduit-events/
-* Pull Pike, then switch from continue functions to async/await (!!!)
