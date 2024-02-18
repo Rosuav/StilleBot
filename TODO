@@ -84,9 +84,6 @@
     be just another way to have more than one invocation for a single command.
 * With the shutdown of Kraken, can we record things locally that used to be on Twitch?
   - Followed games/categories - you can still follow/unfollow but you can't query it in API
-* Need to enumerate all the places where a channel name gets used as a config key
-  (outside of persist_config->channels->username) so they can be changed on rename.
-  - persist_status->bcaster_token, bcaster_token_scopes
 * Art Share tool
   - Implement !permit command for temporary single-use access
   - Mod command to nuke the last-posted file?
@@ -105,9 +102,6 @@
   - Builtin params need to cope with splitting strings to arrays
 * Rename "gifted" flag in sub alerts to "is_gifted" to trigger boolean handling
   - Migrate existing settings
-* Replace bcaster_token[name] with user_token[id] and ditto scopes
-  - Use the helper functions token_for_user_{id,login}{,_async} to get user creds
-  - These all return (or yield) an array ({token, scopes}) or 0 if no creds.
 * Alertbox: For any non-personal alert, have a "Revert to Stock" which deletes the
   alert settings that you have, aside from the "Active" flag
   - It may be worth having Active be a single-attribute update, so when you toggle
@@ -189,11 +183,6 @@
   - Keep the existing lookups unchanged for stability. Monitor to ensure that nothing breaks.
   - Eventually, rename all to use the userid - no code should break.
     - Should™.
-* Eventually, move all per-user config out of persist_status into a directory, similarly.
-  For example, persist_status->bcaster_token->rosuav would now become users/49497888.json
-  with a key of user_token (see above re other changes there).
-  - Note that anything that isn't clearly one single user's data (such as raids) can stay
-    where it is.
 * Migrate channel info out of persist_status into channel config
 * Allow users to take a backup of their full config?? Currently the "Backup Settings" thing
   is designed to have consistent format so people can git-manage it, but if I move stuff

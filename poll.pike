@@ -263,29 +263,6 @@ __async__ void check_bcaster_tokens() {
 	}
 }
 
-__async__ void import_bcaster_tokens() {
-	while (!G->G->user_credentials_loaded) await(task_sleep(1));
-	werror("Importing...\n");
-	mapping tokscopes = persist_status->path("bcaster_token_scopes");
-	foreach (sort(indices(persist_status->path("bcaster_token"))), string chan) {
-		if (G->G->user_credentials[chan]) continue;
-		int userid;
-		if (mixed ex = catch {userid = await(get_user_id(chan));}) {
-			werror("Skipping %O\n", chan);
-			continue;
-		}
-		await(G->G->DB->save_user_credentials(([
-			"userid": userid,
-			"login": chan,
-			"token": persist_status->path("bcaster_token")[chan],
-			"scopes": sort(tokscopes[chan] / " "),
-		])));
-		werror("Saved to DB.\n");
-		array rows = await(G->G->DB->generic_query("select twitchid, data from stillebot.config where keyword = 'credentials'"));
-		werror("Now have %d rows.\n", sizeof(rows));
-	}
-}
-
 //Doesn't help, but it's certainly very interesting.
 //Attempt to probe the Helix pagination issues I've been seeing by paginating on two different
 //numbers and then combining the results. It's possible that there are two page sizes that would
