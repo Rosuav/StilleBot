@@ -156,7 +156,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	int guide = (int)req->misc->session->user->?id;
 	if (req->variables->guide) guide = await(get_user_id(req->variables->guide));
 	else if (mapping resp = ensure_login(req)) return resp;
-	mapping config = persist_status->path("affiliate", (string)guide); //The path to the Path to Affiliate data :)
+	mapping config = await(G->G->DB->load_config(guide, "affiliate"));
 	if (!req->variables->guide) {
 		if (!config->streamers) {
 			config->streamers = ([]);
@@ -164,7 +164,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			//initially. You can remove yourself though (and you won't autorespawn).
 			mapping info = await(get_user_info(guide));
 			if (info->broadcaster_type == "") config->streamers[info->id] = (["added": time()]);
-			persist_status->save(); //Always save the fact that config->streamers is non-null; no rechecks.
+			G->G->DB->save_config(guide, "affiliate", config); //Always save the fact that config->streamers is non-null; no rechecks.
 		}
 		//Editing is available only when logged in and not using the guide= parameter
 		//Note that editing is done with JSON bodies and assumes front end control.
@@ -175,13 +175,13 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			if (info->broadcaster_type != "")
 				return (["error": 400]) | jsonify((["error": "Already " + info->broadcaster_type + "!"]));
 			config->streamers[info->id] = (["added": time()]);
-			persist_status->save();
+			G->G->DB->save_config(guide, "affiliate", config);
 			return jsonify(await(populate_config(config)));
 		}
 		if (string id = req->variables->remove) {
 			//Should this also remove from alumni??
 			if (!m_delete(config->streamers, id)) return (["error": 404]);
-			persist_status->save();
+			G->G->DB->save_config(guide, "affiliate", config);
 			return jsonify(await(populate_config(config)));
 		}
 	}
