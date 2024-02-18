@@ -350,6 +350,17 @@ __async__ mapping load_config(string|int twitchid, string kwd) {
 	return JSONDECODE(rows[0]->data);
 }
 
+//Fire this off to migrate configs from persist_status->path("foo") into load_config(id, "foo")
+__async__ void migrate_config(string kwd, mapping|void source) {
+	if (!source) source = persist_status[kwd]; if (!source) return;
+	foreach (source; string chan; mapping cfg) {
+		if (!sizeof(cfg)) continue;
+		//Supports "49497888", "#rosuav", and "rosuav" as keys
+		int uid = (int)chan || await(get_user_id(chan - "#"));
+		await(G->G->DB->save_config(uid, kwd, cfg));
+	}
+}
+
 //Command IDs are UUIDs. They come back in binary format, which is fine for comparisons,
 //but not for human readability. Try this:
 //sprintf("%x%x-%x-%x-%x-%x%x%x", @array_sscanf("F\255C|\377gK\316\223iW\351\215\37\377=", "%{%2c%}")[0][*][0]);
