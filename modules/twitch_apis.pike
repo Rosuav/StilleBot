@@ -11,8 +11,8 @@
 mapping need_scope = ([]); //Filled in by create()
 
 @"moderator:manage:announcements":
-__async__ void announce(object channel, string voiceid, string msg, mapping tok, string|void color) {
-	mapping ret = await(twitch_api_request(sprintf(
+void announce(object channel, string voiceid, string msg, mapping tok, string|void color) {
+	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/announcements?broadcaster_id=%d&moderator_id=%s",
 		channel->userid, voiceid),
 		(["Authorization": "Bearer " + tok->token]),
@@ -20,66 +20,68 @@ __async__ void announce(object channel, string voiceid, string msg, mapping tok,
 			"message": msg,
 			"color": color || "primary",
 		])]),
-	));
+	);
 }
 
 @"moderator:manage:announcements":
-mixed announceblue(object c, string v, string m, mapping t) {return announce(c, v, m, t, "blue");}
+void announceblue(object c, string v, string m, mapping t) {announce(c, v, m, t, "blue");}
 @"moderator:manage:announcements":
-mixed announcegreen(object c, string v, string m, mapping t) {return announce(c, v, m, t, "green");}
+void announcegreen(object c, string v, string m, mapping t) {announce(c, v, m, t, "green");}
 @"moderator:manage:announcements":
-mixed announceorange(object c, string v, string m, mapping t) {return announce(c, v, m, t, "orange");}
+void announceorange(object c, string v, string m, mapping t) {announce(c, v, m, t, "orange");}
 @"moderator:manage:announcements":
-mixed announcepurple(object c, string v, string m, mapping t) {return announce(c, v, m, t, "purple");}
+void announcepurple(object c, string v, string m, mapping t) {announce(c, v, m, t, "purple");}
 
-__async__ void chat_settings(object channel, string voiceid, string msg, mapping tok, string field, mixed val, string|void duration) {
+void chat_settings(object channel, string voiceid, string msg, mapping tok, string field, mixed val, string|void duration) {
 	mapping cfg = ([field: val]);
 	//For /followers and /slow, a parameter specifies the duration too.
 	if (duration) cfg[duration] = (int)msg;
-	mapping ret = await(twitch_api_request(sprintf(
+	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/settings?broadcaster_id=%d&moderator_id=%s",
 		channel->userid, voiceid),
 		(["Authorization": "Bearer " + tok->token]),
 		(["method": "PATCH", "json": cfg]),
-	));
+	);
 }
 
 @"moderator:manage:chat_settings":
-mixed emoteonly(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "emote_mode", Val.true);}
+void emoteonly(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "emote_mode", Val.true);}
 @"moderator:manage:chat_settings":
-mixed emoteonlyoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "emote_mode", Val.false);}
+void emoteonlyoff(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "emote_mode", Val.false);}
 @"moderator:manage:chat_settings":
-mixed followers(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "follower_mode", Val.true, "follower_mode_duration");}
+void followers(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "follower_mode", Val.true, "follower_mode_duration");}
 @"moderator:manage:chat_settings":
-mixed followersoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "follower_mode", Val.false);}
+void followersoff(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "follower_mode", Val.false);}
 @"moderator:manage:chat_settings":
-mixed slow(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "slow_mode", Val.true, "slow_mode_wait_time");}
+void slow(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "slow_mode", Val.true, "slow_mode_wait_time");}
 @"moderator:manage:chat_settings":
-mixed slowoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "slow_mode", Val.false);}
+void slowoff(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "slow_mode", Val.false);}
 @"moderator:manage:chat_settings":
-mixed subscribers(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "subscriber_mode", Val.true);}
+void subscribers(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "subscriber_mode", Val.true);}
 @"moderator:manage:chat_settings":
-mixed subscribersoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "subscriber_mode", Val.false);}
+void subscribersoff(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "subscriber_mode", Val.false);}
 @"moderator:manage:chat_settings":
-mixed uniquechat(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "unique_chat_mode", Val.true);}
+void uniquechat(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "unique_chat_mode", Val.true);}
 @"moderator:manage:chat_settings":
-mixed uniquechatoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "unique_chat_mode", Val.false);}
+void uniquechatoff(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "unique_chat_mode", Val.false);}
 
 @"moderator:manage:chat_messages":
-__async__ void clear(object channel, string voiceid, string msg, mapping tok, string|void msgid) {
+void clear(object channel, string voiceid, string msg, mapping tok, string|void msgid) {
 	//Pass a msgid to delete an individual message, else clears all chat
-	mapping ret = await(twitch_api_request(sprintf(
+	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/chat?broadcaster_id=%d&moderator_id=%s%s",
 		channel->userid, voiceid, msgid ? "&message_id=" + msgid : ""),
 		(["Authorization": "Bearer " + tok->token]),
 		(["method": "DELETE"]),
-	));
+	);
 }
 @"moderator:manage:chat_messages":
-mixed deletemsg(object c, string v, string m, mapping t) {return clear(c, v, "", t, m);}
+void deletemsg(object c, string v, string m, mapping t) {clear(c, v, "", t, m);}
 
 @"moderator:manage:banned_users":
-__async__ void ban(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
+void ban(object channel, string voiceid, string msg, mapping tok, int|void timeout) {asyncban(channel, voiceid, msg, tok, timeout);}
+//Can't annotate async functions?
+__async__ void asyncban(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
 	sscanf(msg, "%s %s", string username, string reason);
 	int uid = await(get_user_id(username || msg));
 	mapping params = (["user_id": uid]);
@@ -90,33 +92,34 @@ __async__ void ban(object channel, string voiceid, string msg, mapping tok, int|
 		reason = r; //Ensure that reason is reassigned (otherwise "/timeout user 120" would time them out for 120 seconds with a reason of "120")
 	}
 	if (reason && reason != "") params->reason = reason;
-	mapping ret = await(twitch_api_request(sprintf(
+	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/bans?broadcaster_id=%d&moderator_id=%s",
 		channel->userid, voiceid),
 		(["Authorization": "Bearer " + tok->token]),
 		(["method": "POST", "json": (["data": params])]), //Not sure why it needs to be wrapped like this
-	));
+	);
 }
 @"moderator:manage:banned_users":
-mixed timeout(object c, string v, string m, mapping t) {return ban(c, v, m, t, 1);}
+void timeout(object c, string v, string m, mapping t) {ban(c, v, m, t, 1);}
 @"moderator:manage:banned_users":
-mixed t(object c, string v, string m, mapping t) {return ban(c, v, m, t, 1);}
+void t(object c, string v, string m, mapping t) {ban(c, v, m, t, 1);}
 
 @"moderator:manage:banned_users":
-__async__ void unban(object channel, string voiceid, string msg, mapping tok) {
-	mapping ret = await(twitch_api_request(sprintf(
+void unban(object channel, string voiceid, string msg, mapping tok) {
+	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/bans?broadcaster_id=%d&moderator_id=%s&user_id={{USER}}",
 		channel->userid, voiceid),
 		(["Authorization": "Bearer " + tok->token]),
 		(["method": "DELETE", "username": msg]),
-	));
+	);
 }
 @"moderator:manage:banned_users":
-mixed untimeout(object c, string v, string m, mapping t) {return unban(c, v, m, t);}
+void untimeout(object c, string v, string m, mapping t) {unban(c, v, m, t);}
 
 mapping(int:int) qso = ([]); //Not retained, will be purged on code reload
 @"moderator:manage:shoutouts":
-__async__ void shoutout(object channel, string voiceid, string msg, mapping tok, int|void queue) {
+void shoutout(object channel, string voiceid, string msg, mapping tok, int|void queue) {asyncso(channel, voiceid, msg, tok, queue);}
+__async__ void asyncso(object channel, string voiceid, string msg, mapping tok, int|void queue) {
 	if (queue) {
 		int delay = qso[channel->userid] - time();
 		qso[channel->userid] = max(qso[channel->userid], time()) + 121; //Update the queue time before sleeping
@@ -144,13 +147,13 @@ __async__ void shoutout(object channel, string voiceid, string msg, mapping tok,
 	}
 }
 @"moderator:manage:shoutouts":
-mixed qshoutout(object c, string v, string m, mapping t) {return shoutout(c, v, m, t, 1);}
+void qshoutout(object c, string v, string m, mapping t) {shoutout(c, v, m, t, 1);}
 
 @"user:manage:whispers":
-__async__ void w(object channel, string voiceid, string msg, mapping tok) {
+void w(object channel, string voiceid, string msg, mapping tok) {
 	sscanf(String.trim(msg), "%s %s", string user, string message);
 	if (!message) return 0;
-	mapping ret = await(twitch_api_request(sprintf(
+	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/whispers?from_user_id=%s&to_user_id={{USER}}",
 			voiceid),
 		(["Authorization": "Bearer " + tok->token]), ([
@@ -158,14 +161,14 @@ __async__ void w(object channel, string voiceid, string msg, mapping tok) {
 			"username": replace(user, ({"@", " "}), ""),
 			"json": (["message": message]),
 		]),
-	));
+	);
 }
 @"user:manage:whispers":
-mixed whisper(object c, string v, string m, mapping t) {return w(c, v, m, t);}
+void whisper(object c, string v, string m, mapping t) {w(c, v, m, t);}
 
 @"channel:edit:commercial":
-__async__ void commercial(object channel, string voiceid, string msg, mapping tok) {
-	mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/channels/commercial",
+void commercial(object channel, string voiceid, string msg, mapping tok) {
+	twitch_api_request("https://api.twitch.tv/helix/channels/commercial",
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": "POST",
 			"json": ([
@@ -173,12 +176,12 @@ __async__ void commercial(object channel, string voiceid, string msg, mapping to
 				"length": (int)msg || 30,
 			]),
 		]),
-	));
+	);
 }
 
 @"channel:manage:broadcast":
-__async__ void marker(object channel, string voiceid, string msg, mapping tok) {
-	mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/streams/markers",
+void marker(object channel, string voiceid, string msg, mapping tok) {
+	twitch_api_request("https://api.twitch.tv/helix/streams/markers",
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": "POST",
 			"json": ([
@@ -186,91 +189,91 @@ __async__ void marker(object channel, string voiceid, string msg, mapping tok) {
 				"description": msg,
 			]),
 		]),
-	));
+	);
 }
 
 @"channel:manage:raids":
-__async__ void raid(object channel, string voiceid, string msg, mapping tok) {
-	mapping ret = await(twitch_api_request(sprintf(
+void raid(object channel, string voiceid, string msg, mapping tok) {
+	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/raids?from_broadcaster_id=%d&to_broadcaster_id={{USER}}",
 			channel->userid),
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": "POST",
 			"username": replace(msg, ({"@", " "}), ""),
 		]),
-	));
+	);
 }
 
 @"channel:manage:raids":
-__async__ void unraid(object channel, string voiceid, string msg, mapping tok) {
-	mapping ret = await(twitch_api_request(sprintf(
+void unraid(object channel, string voiceid, string msg, mapping tok) {
+	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/raids?broadcaster_id=%d",
 			channel->userid),
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": "DELETE",
 		]),
-	));
+	);
 }
 
 @"channel:manage:vips":
-__async__ void vip(object channel, string voiceid, string msg, mapping tok, int|void remove) {
-	mapping ret = await(twitch_api_request(sprintf(
+void vip(object channel, string voiceid, string msg, mapping tok, int|void remove) {
+	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/channels/vips?broadcaster_id=%d&user_id={{USER}}",
 			channel->userid),
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": remove ? "DELETE" : "POST",
 			"username": replace(msg, ({"@", " "}), ""),
 		]),
-	));
+	);
 }
 @"channel:manage:vips":
-mixed unvip(object c, string v, string m, mapping t) {return vip(c, v, m, t, 1);}
+void unvip(object c, string v, string m, mapping t) {vip(c, v, m, t, 1);}
 
 @"channel:manage:moderators":
-__async__ void mod(object channel, string voiceid, string msg, mapping tok, int|void remove) {
-	mapping ret = await(twitch_api_request(sprintf(
+void mod(object channel, string voiceid, string msg, mapping tok, int|void remove) {
+	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=%d&user_id={{USER}}",
 			channel->userid),
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": remove ? "DELETE" : "POST",
 			"username": replace(msg, ({"@", " "}), ""),
 		]),
-	));
+	);
 }
 @"channel:manage:moderators":
-mixed unmod(object c, string v, string m, mapping t) {return mod(c, v, m, t, 1);}
+void unmod(object c, string v, string m, mapping t) {mod(c, v, m, t, 1);}
 
 Regexp.SimpleRegexp bicap = Regexp.SimpleRegexp("[a-z][A-Z]");
 string bicap_to_snake(string pair) {return pair / 1 * "_";}
 @"user:manage:chat_color":
-__async__ void color(object channel, string voiceid, string msg, mapping tok) {
+void color(object channel, string voiceid, string msg, mapping tok) {
 	if (msg == "") return 0; //No error return here for simplicity (we can't send to just the user anyway)
 	//Twitch expects users to write BiCapitalized colour names eg "GoldenRod", but
 	//the API expects them in snake_case instead eg "golden_rod". Don't add any
 	//underscores in a hex string though, as it's likely a coincidence.
 	if (msg[0] != '#') msg = lower_case(bicap->replace(msg, bicap_to_snake));
-	mapping ret = await(twitch_api_request(sprintf(
+	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/color?user_id=%s&color=%s",
 			voiceid, Protocols.HTTP.uri_encode(msg)),
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": "PUT",
 		]),
-	));
+	);
 }
 
 @"moderator:manage:shield_mode":
-__async__ void shield(object channel, string voiceid, string msg, mapping tok, int|void remove) {
-	mapping ret = await(twitch_api_request(sprintf(
+void shield(object channel, string voiceid, string msg, mapping tok, int|void remove) {
+	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/shield_mode?broadcaster_id=%d&moderator_id=%s",
 			channel->userid, voiceid),
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": "PUT",
 			"json": (["is_active": remove ? Val.false : Val.true]),
 		]),
-	));
+	);
 }
 @"moderator:manage:shield_mode":
-mixed shieldoff(object c, string v, string m, mapping t) {return shield(c, v, m, t, 1);}
+void shieldoff(object c, string v, string m, mapping t) {shield(c, v, m, t, 1);}
 
 //Returns 0 if it sent the message, otherwise a reason code.
 //Yes, the parameter order is a bit odd; it makes filtering by this easier.
@@ -287,7 +290,7 @@ string|zero send_chat_command(string msg, object channel, string voiceid) {
 		channel->report_error("ERROR", "This command requires " + need_scope[cmd] + " permission", msg);
 		return 0; //Note that this will still suppress the chat message.
 	}
-	spawn_task(this[cmd](channel, voiceid, param || "", tok));
+	this[cmd](channel, voiceid, param || "", tok);
 }
 
 protected void create(string name) {
@@ -306,6 +309,6 @@ protected void create(string name) {
 		voice_scopes[scope] = all_twitch_scopes[scope] || scope;
 	G->G->voice_additional_scopes = voice_scopes;
 	G->G->voice_scope_commands = scope_commands;
-	//send_chat_command("/announce This is an announcement from the bot!", G->G->irc->channels["#rosuav"], 0);
+	//send_chat_command("/announce This is an announcement from the bot!", G->G->irc->channels["#rosuav"], "0");
 	//send_chat_command("/announce This is an announcement from Mustard Mine!", G->G->irc->channels["#rosuav"], "279141671");
 }
