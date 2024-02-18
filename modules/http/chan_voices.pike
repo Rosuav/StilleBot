@@ -152,8 +152,11 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 		array have = tok->scopes || ({"chat_login", "user_read", "whispers:edit", "user_subscriptions", "user:manage:whispers"});
 		scopes |= (multiset)have;
 	}
-	//Merge in any broadcaster scopes. TODO: Switch to ID when that is the fundamental - stay synchronous
-	scopes |= (multiset)(token_for_user_login(channel->name[1..])[1] / " ");
+	//Grab the existing credentials. If authenticating new, guess that we're likely
+	//going to auth as the current user - it's slightly more likely than the opposite.
+	int existing_user = (int)msg->voiceid || (int)conn->session->user->id;
+	mapping cred = G->G->user_credentials[existing_user];
+	if (cred) scopes |= (multiset)cred->scopes;
 	string url = function_object(G->G->http_endpoints->twitchlogin)->get_redirect_url(
 		scopes, (["force_verify": "true"]), conn->hostname,
 	) {

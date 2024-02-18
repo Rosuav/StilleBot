@@ -4,8 +4,6 @@ import {simpleconfirm} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#voices tbody");
 export function render_item(item, mode) {
-	//item.last_auth_time and (possibly) item.last_error_time - if auth < error,
-	//suggest reauthenticating
 	const botvoice = DOM(`#voices thead [data-id="${item.id}"]`);
 	if (botvoice) botvoice.replaceWith();
 	return TR({"data-id": item.id}, [
