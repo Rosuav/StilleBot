@@ -1315,7 +1315,7 @@ class http_websocket
 	mapping(string:mixed) render(Protocols.HTTP.Server.Request req, mapping replacements) {
 		if (replacements->vars->?ws_group) {
 			if (!replacements->vars->ws_type) replacements->vars->ws_type = ws_type;
-			if (req->misc->channel) replacements->vars->ws_group += req->misc->channel->name;
+			if (req->misc->channel) replacements->vars->ws_group += req->misc->channel->userid;
 		}
 		if (markdown != "") return render_template(markdown, replacements);
 		return render_template(ws_type + ".md", replacements);
