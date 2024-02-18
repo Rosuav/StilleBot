@@ -78,14 +78,17 @@ mapping|Concurrent.Future message_params(object channel, mapping person, array p
 			"timefmt": (<"mm", "mmss", "ss">)[param[2]] ? param[2] : "",
 		])});
 		if (duration > 0) call_out(remove_label, duration, chan, labelid);
-		update_one("#" + chan, labelid);
+		update_one(channel, "", labelid);
 	}
 	return (["{labelid}": labelid]);
 }
 
-string get_access_key(string chan) {
-	mapping cfg = persist_status->path("channel_labels", chan);
-	if (!cfg->accesskey) {cfg->accesskey = String.string2hex(random_string(13)); persist_status->save();}
+string get_access_key(int chanid) {
+	mapping cfg = G->G->DB->load_cached_config(chanid, "channel_labels");
+	if (!cfg->accesskey) {
+		cfg->accesskey = String.string2hex(random_string(13));
+		G->G->DB->save_config(chanid, "channel_labels", cfg);
+	}
 	return cfg->accesskey;
 }
 
@@ -99,7 +102,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	return render(req, ([
 		"vars": (["ws_group": ""]),
-		"accesskey": get_access_key(req->misc->channel->name[1..]),
+		"accesskey": get_access_key(req->misc->channel->userid),
 	]) | req->misc->chaninfo);
 }
 
@@ -111,14 +114,14 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!stringp(msg->group)) return "Bad group";
 	[object channel, string subgroup] = split_channel(msg->group);
 	if (subgroup == "") return ::websocket_validate(conn, msg);
-	string key = persist_status->has_path("channel_labels", channel->config->login)->?accesskey;
+	string key = G->G->DB->load_cached_config(channel->userid, "channel_labels")->accesskey;
 	if (subgroup != key) return "Bad key";
-	msg->group = "#" + channel->config->login; //effectively, subgroup becomes blank
+	msg->group = "#" + channel->userid; //effectively, subgroup becomes blank
 }
 
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping labels = G_G_("channel_labels", channel->name[1..]);
-	mapping cfg = persist_status->path("channel_labels", channel->name[1..]);
+	mapping cfg = G->G->DB->load_cached_config(channel->userid, "channel_labels");
 	if (id) {
 		foreach (labels->active || ({}), mapping lbl)
 			if (lbl->id == id) return lbl;
@@ -132,7 +135,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 }
 
 @"is_mod": void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping cfg = persist_status->path("channel_labels", channel->name[1..]);
+	mapping cfg = G->G->DB->load_cached_config(channel->userid, "channel_labels");
 	//Assume that any update completely rewrites the formatting
 	mapping style = ([]);
 	foreach (TEXTFORMATTING_ATTRS, string attr) style[attr] = msg[attr];
@@ -145,9 +148,9 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 
 @"is_mod": void wscmd_revokekey(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return;
-	mapping cfg = persist_status->path("channel_labels", channel->name[1..]);
+	mapping cfg = G->G->DB->load_cached_config(channel->userid, "channel_labels");
 	m_delete(cfg, "accesskey");
-	string newkey = get_access_key(channel->name[1..]);
+	string newkey = get_access_key(channel->userid);
 	//Non-mod connections get kicked
 	foreach (websocket_groups[channel->name], object sock)
 		if (!sock->query_id()->is_mod) sock->close();
