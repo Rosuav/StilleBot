@@ -94,7 +94,7 @@ __async__ void update_dynamic_reward(object channel, string rewardid) {
 	if (!rwd) return 0;
 	mapping updates = ([]);
 	mapping cur = ([]); //If the reward isn't found, assume everything has changed.
-	foreach (pointsrewards[channel->userid], mapping r) if (r->id == rewardid) cur = r;
+	foreach (pointsrewards[channel->userid] || ({ }), mapping r) if (r->id == rewardid) cur = r;
 	foreach ("title prompt" / " ", string kwd) if (rwd[kwd]) {
 		string value = channel->expand_variables(rwd[kwd]);
 		if (value != cur[kwd]) updates[kwd] = value;
