@@ -448,7 +448,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 					auxtitle = replace(sprintf("%{ ![](%s)%}", cats->box_art_url), (["{width}": "20", "{height}": "27"]));
 					if (req->misc->session->user) {
 						string follow = "unfollow>💔 Unfollow";
-						array followed = persist_status->path("user_followed_categories")[req->misc->session->user->id] || ({ });
+						array followed = await(G->G->DB->load_config(req->misc->session->user->id, "followed_categories", ({ })));
 						if (sizeof(followed & cats->id) < sizeof(cats->id))
 							follow = "follow>💜 Follow"; //You aren't following them all, so offer "Follow" rather than "Unfollow"
 						string catdesc = " these categories";
@@ -461,7 +461,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			}
 			case "": case "categories": { //For ?categories and ?categories= modes, show those you follow
 				if (mapping resp = ensure_login(req)) return resp;
-				args->game_id = persist_status->path("user_followed_categories")[req->misc->session->user->id] || ({ });
+				args->game_id = await(G->G->DB->load_config(req->misc->session->user->id, "followed_categories", ({ })));
 				title = "Followed categories";
 				catfollow = "<button id=followcategory data-action=show data-cats=\"" + args->game_id * "," + "\">💜 All followed categories</button><br>";
 				break;
@@ -675,13 +675,12 @@ __async__ mapping followcategory(mapping(string:mixed) conn, mapping(string:mixe
 			return (["cats": cats]);
 		}
 		case "follow": case "unfollow": {
-			mapping ufc = persist_status->path("user_followed_categories");
 			string uid = conn->session->user->?id;
 			if (!(int)uid) return 0; //Not logged in, no following/unfollowing possible
-			array cats = ufc[uid] || ({ });
+			array cats = await(G->G->DB->load_config(uid, "followed_categories", ({ })));
 			if (msg->action == "follow") cats += msg->cats;
 			else cats -= msg->cats;
-			ufc[uid] = cats;
+			G->G->DB->save_config(uid, "followed_categories", cats);
 			return (["status": msg->action == "follow" ? "Now following 💜" : "No longer following 💔"]);
 		}
 		default: break;
