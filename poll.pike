@@ -592,18 +592,20 @@ void stream_status(int userid, string name, mapping info)
 		if (!G->G->eventhook_types) G->G->eventhook_types = ([]);
 		if (object other = G->G->eventhook_types[hookname]) have_subs = other->have_subs;
 		G->G->eventhook_types[hookname] = this;
-		G->G->DB->load_config(0, "eventhook_secret")->then() {mapping secrets = __ARGS__[0];
-			if (!secrets[hookname]) {
-				secrets[hookname] = MIME.encode_base64(random_string(15));
-				//Save the secret. This is unencrypted and potentially could be leaked.
-				//The attack surface is fairly small, though - at worst, an attacker
-				//could forge a notification from Twitch, causing us to... whatever the
-				//event hook triggers, probably some sort of API call. I guess you could
-				//disrupt the hype train tracker's display or something. Congrats.
-				G->G->DB->save_config(0, "eventhook_secret", secrets);
-			}
-			signer = Crypto.SHA256.HMAC(secret = secrets[hookname]);
-		};
+		build_signer();
+	}
+	__async__ void build_signer() {
+		mapping secrets = await(G->G->DB->load_config(0, "eventhook_secret"));
+		if (!secrets[hookname]) {
+			secrets[hookname] = MIME.encode_base64(random_string(15));
+			//Save the secret. This is unencrypted and potentially could be leaked.
+			//The attack surface is fairly small, though - at worst, an attacker
+			//could forge a notification from Twitch, causing us to... whatever the
+			//event hook triggers, probably some sort of API call. I guess you could
+			//disrupt the hype train tracker's display or something. Congrats.
+			G->G->DB->save_config(0, "eventhook_secret", secrets);
+		}
+		signer = Crypto.SHA256.HMAC(secret = secrets[hookname]);
 	}
 	protected void `()(string|mixed arg, mapping condition) {
 		if (!stringp(arg)) arg = (string)arg; //It really should be a string
