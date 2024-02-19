@@ -14,7 +14,7 @@ inherit hook;
 //CAUTION: Avoid using serial/identity primary keys as they may cause conflicts
 //due to the sequence not being replicated. UUIDs are safer.
 constant tables = ([
-	"user_followed_categories": ({
+	"user_followed_categories": ({ //Not actually used, other than for testing
 		"twitchid bigint not null",
 		"category integer not null",
 		" primary key (twitchid, category)",
@@ -350,13 +350,13 @@ Concurrent.Future save_config(string|int twitchid, string kwd, mixed data) {
 		(["twitchid": (int)twitchid, "kwd": kwd, "data": data]));
 }
 
-__async__ mapping load_config(string|int twitchid, string kwd) {
+__async__ mapping load_config(string|int twitchid, string kwd, mixed|void dflt) {
 	//NOTE: If there's no database connection, this will block. For higher speed
 	//queries, do we need a try_load_config() that would error out (or return null)?
 	if (!active) await(await_active());
 	array rows = await(query(pg_connections[active], "select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
 		(["twitchid": (int)twitchid, "kwd": kwd])));
-	if (!sizeof(rows)) return ([]);
+	if (!sizeof(rows)) return dflt || ([]);
 	return JSONDECODE(rows[0]->data);
 }
 
