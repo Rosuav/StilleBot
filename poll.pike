@@ -503,17 +503,6 @@ void stream_status(int userid, string name, mapping info)
 				"{uptime_hms}": describe_time_short(uptime),
 				"{uptime_english}": describe_time(uptime),
 			]));
-			mapping vstat = m_delete(G->G->viewer_stats, userid) || m_delete(G->G->viewer_stats, name); //Second half can be removed in a few days (as of 20240116)
-			if (sizeof(vstat->half_hour) == 30)
-			{
-				mapping status = persist_status->path("stream_stats");
-				status[name] += ({([
-					"start": vstat->start, "end": time(),
-					"viewers_high": vstat->high_half_hour,
-					"viewers_low": vstat->low_half_hour,
-				])});
-				persist_status->save();
-			}
 		}
 	}
 	else
@@ -542,24 +531,6 @@ void stream_status(int userid, string name, mapping info)
 		spawn_task(save_channel_info(userid, name, info));
 		notice_user_name(name, info->user_id);
 		stream_online_since[userid] = started;
-		int viewers = info->viewer_count;
-		//Calculate half-hour rolling average, and then do stats on that
-		//Record each stream's highest and lowest half-hour average, and maybe the overall average (not the average of the averages)
-		//To maybe do: Offer a graph showing the channel's progress. Probably now done better by
-		//StreamLabs, but we could have our own graph to double-check and maybe learn about
-		//different measuring/reporting techniques.
-		mapping vstat = G->G->viewer_stats; if (!vstat) vstat = G->G->viewer_stats = ([]);
-		if (!vstat[userid]) vstat[userid] = (["start": time()]); //The stats might not have started at stream start, eg if bot wasn't running
-		vstat = vstat[userid]; //Focus on this channel.
-		vstat->half_hour += ({viewers});
-		if (sizeof(vstat->half_hour) >= 30)
-		{
-			vstat->half_hour = vstat->half_hour[<29..]; //Keep just the last half hour of stats
-			int avg = `+(@vstat->half_hour) / 30;
-			vstat->high_half_hour = max(vstat->high_half_hour, avg);
-			if (!has_index(vstat, "low_half_hour")) vstat->low_half_hour = avg;
-			else vstat->low_half_hour = min(vstat->low_half_hour, avg);
-		}
 	}
 }
 
