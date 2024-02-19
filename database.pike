@@ -390,7 +390,12 @@ __async__ void migrate_config(string kwd, mapping|void source) {
 		//Supports "49497888", "#rosuav", and "rosuav" as keys
 		int uid = 0;
 		if (chan != "0" && chan != "#!demo" && chan != "!demo") //The demo account can't be looked up that way, but has UID 0.
+			#if constant(get_user_id)
 			uid = (int)chan || await(get_user_id(chan - "#"));
+			#else
+			//This sucks but whatever. We're misordered here (database is before poll).
+			error("Can only migrate configs after everything's loaded");
+			#endif
 		await(G->G->DB->save_config(uid, kwd, cfg));
 	}
 }
