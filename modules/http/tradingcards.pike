@@ -47,10 +47,11 @@ __async__ mapping(string:mixed) show_collection(Protocols.HTTP.Server.Request re
 			"js": "tradingcards", "css": "tradingcards",
 		]));
 	}
-	mapping coll = persist_status->path("tradingcards", "collections")[collection];
+	mapping tc = await(G->G->DB->load_config(0, "tradingcards"));
+	mapping coll = tc->collections[collection];
 	if (!coll) return redirect("/tradingcards");
 	//TODO: Allow the owner to edit the collection metadata
-	array streamers = map(coll->streamers, persist_status->path("tradingcards", "all_streamers"));
+	array streamers = map(coll->streamers, tc->all_streamers);
 	string login_link = "";
 	if (req->misc->session->scopes[?"user:read:follows"]) foreach (coll->streamers; int i; string bcaster) {
 		//As far as I know, there's no way to check follows in bulk. So to reduce the cost,
@@ -82,11 +83,10 @@ __async__ mapping(string:mixed) show_collection(Protocols.HTTP.Server.Request re
 	]));
 }
 
-void ensure_collections() {
-	mapping streamers = persist_status->path("tradingcards", "all_streamers");
-	mapping collections = persist_status->path("tradingcards", "collections");
+__async__ void ensure_collections(mapping tc) { //Note: Neither loads from DB nor saves to it.
+	mapping collections = tc->collections;
 	mapping tagcount = ([]), tagcase = ([]);
-	foreach (streamers; string id; mapping s)
+	foreach (tc->all_streamers; string id; mapping s)
 		foreach (s->tags || ({ }), string t) {
 			tagcount[lower_case(t)] += ({id});
 			tagcase[lower_case(t)] = t;
@@ -100,10 +100,8 @@ void ensure_collections() {
 			"owner": G->G->bot_uid,
 		]);
 		sort((array(int))strm, strm);
-		if ((collections[t]->streamers || ({ })) * "," != strm * ",") {
+		if ((collections[t]->streamers || ({ })) * "," != strm * ",")
 			collections[t]->streamers = strm;
-			persist_status->save();
-		}
 	}
 }
 
@@ -117,7 +115,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			mapping raw = await(get_user_info(username, "login"));
 			array col = await(twitch_api_request("https://api.twitch.tv/helix/chat/color?user_id=" + raw->id))->data->color;
 			if (!sizeof(col)) col = ({"#000000"});
-			mapping strm = persist_status->path("tradingcards", "all_streamers")[raw->id] || ([]);
+			mapping strm = await(G->G->DB->load_config(0, "tradingcards"))->all_streamers[raw->id] || ([]);
 			mapping info = ([
 				"id": raw->id,
 				"card_name": strm->card_name || raw->display_name,
@@ -137,8 +135,8 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			mapping raw = await(get_user_info(info->id));
 			array col = await(twitch_api_request("https://api.twitch.tv/helix/chat/color?user_id=" + raw->id))->data->color;
 			if (!sizeof(col)) col = ({"#000000"});
-			mapping streamers = persist_status->path("tradingcards", "all_streamers");
-			streamers[raw->id] = ([
+			mapping tc = await(G->G->DB->load_config(0, "tradingcards"));
+			tc->all_streamers[raw->id] = ([
 				"card_name": info->card_name || raw->display_name,
 				"type": info->type || raw->display_name,
 				"color": col[0],
@@ -147,12 +145,13 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				"flavor_text": info->flavor_text || raw->description || "",
 				"tags": arrayp(info->tags) ? info->tags : ({ }),
 			]);
-			ensure_collections();
-			persist_status->save();
+			ensure_collections(tc);
+			G->G->DB->save_config(0, "tradingcards", tc);
 		}
 	}
 	array coll = ({ }), order = ({ });
-	foreach ((array)persist_status->path("tradingcards", "collections"), [string id, mapping info]) {
+	mapping tc = await(G->G->DB->load_config(0, "tradingcards"));
+	foreach ((array)tc->collections, [string id, mapping info]) {
 		coll += ({sprintf("* [%s (%d)](/tradingcards/%s)", info->label, sizeof(info->streamers), id)});
 		order += ({info->label}); //Or should they be sorted by streamer count?
 	}
@@ -167,5 +166,6 @@ protected void create(string name)
 {
 	::create(name);
 	G->G->http_endpoints["/tradingcards/%[^/]"] = show_collection;
-	ensure_collections();
+	G->G->DB->save_config(0, "tradingcards", persist_status->path("tradingcards"));
+	//ensure_collections(); //Should this be done on startup or is it unnecessary?
 }
