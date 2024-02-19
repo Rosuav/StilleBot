@@ -35,14 +35,14 @@ mapping get_state(string group) {return (["info": "See Other"]);}
 
 //Everything from here down should be looking at the user prefs, and may come from any page,
 //not just /prefs.
-void websocket_cmd_prefs_send(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void websocket_cmd_prefs_send(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->prefs_uid) return;
-	mapping prefs = persist_status->path("userprefs", conn->prefs_uid);
+	mapping prefs = await(G->G->DB->load_config(conn->prefs_uid, "userprefs"));
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "prefs_replace", "userid": (int)conn->prefs_uid, "prefs": prefs])));
 }
-void websocket_cmd_prefs_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void websocket_cmd_prefs_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->prefs_uid) return;
-	mapping prefs = persist_status->path("userprefs", conn->prefs_uid);
+	mapping prefs = await(G->G->DB->load_config(conn->prefs_uid, "userprefs"));
 	mapping changed = ([]);
 	foreach (msg; string k; mixed v) {
 		//Update individual keys, but in case something gets looped back, don't
@@ -66,4 +66,5 @@ void update_user_prefs(string|int userid, mapping changed) {
 protected void create(string name) {
 	::create(name);
 	G->G->update_user_prefs = update_user_prefs;
+	G->G->DB->migrate_config("userprefs");
 }

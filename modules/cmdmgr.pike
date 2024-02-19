@@ -468,12 +468,12 @@ void update_aliases(object channel, string aliases, echoable_message response, m
 	}
 }
 
-void purge(object channel, string cmd, multiset updates) {
+void purge(object channel, string cmd, multiset updates, multiset permsgone) {
 	echoable_message prev = m_delete(channel->commands, cmd);
 	m_delete(channel->path("commands"), cmd);
 	if (prev) updates[cmd] = 1;
 	if (!mappingp(prev)) return;
-	if (prev->alias_of) purge(channel, prev->alias_of, updates);
+	if (prev->alias_of) purge(channel, prev->alias_of, updates, permsgone);
 	if (prev->aliases) update_aliases(channel, prev->aliases, 0, updates);
 	if (prev->automate) {
 		//Clear out the timer. FIXME: Only do this if the command is really going away (not just if it's being updated).
@@ -486,16 +486,7 @@ void purge(object channel, string cmd, multiset updates) {
 		updates["rew " + prev->redemption] = 1;
 	}
 	//TODO: Only do this if not extra->?nosave (which we don't currently have here)
-	mapping prefs = persist_status->path("userprefs", (string)channel->userid); //FIXME: Use channel instead of channel->userid
-	if (prefs->notif_perms) foreach (prefs->notif_perms; string perm; array reasons) {
-		int removed = 0;
-		foreach (reasons; int i; mapping r) if (r->reason == "cmd:" + cmd) {reasons[i] = 0; removed = 1;}
-		if (removed) {
-			prefs->notif_perms[perm] = reasons - ({0});
-			persist_status->save();
-			G->G->update_user_prefs(channel->userid, (["notif_perms": prefs->notif_perms]));
-		}
-	}
+	permsgone["cmd:" + cmd] = 1;
 }
 
 //Recursively scan a response for all needed permissions
@@ -519,11 +510,11 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 {
 	sscanf(cmd, "%[!]%s#", string pfx, string basename);
 	if (basename == "") error("Requires a command name.\n");
-	multiset updates = (<cmd>);
-	purge(channel, cmd, updates);
+	multiset updates = (<cmd>), permsgone = (<>);
+	purge(channel, cmd, updates, permsgone);
 	if (extra->?original && sscanf(extra->original, "%s#", string oldname)) {
 		//Renaming a command requires removal of what used to be.
-		purge(channel, oldname, updates);
+		purge(channel, oldname, updates, permsgone);
 		if (!extra->?nosave) G->G->DB->save_command(channel->userid, oldname, 0);
 	}
 	//Purge any iteration variables that begin with ".basename:" - anonymous rotations restart on
@@ -599,20 +590,31 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 	//If this uses any builtins that require permissions, and we don't have those, flag the user.
 	//TODO: Do this only if not extra->?nosave.
 	multiset need_perms = (<>); scan_for_permissions(response, need_perms);
-	if (sizeof(need_perms)) {
-		mapping prefs = persist_status->path("userprefs", channel);
-		multiset scopes = (multiset)(token_for_user_login(channel->name[1..])[1] / " ");
-		foreach (need_perms; string perm;) {
-			if (!scopes[perm]) {
-				if (!prefs->notif_perms) prefs->notif_perms = ([]);
-				prefs->notif_perms[perm] += ({([
-					"desc": "Command - " + basename, //or special/trigger?
-					"reason": "cmd:" + basename,
-				])});
-				persist_status->save();
-				G->G->update_user_prefs(channel->userid, (["notif_perms": prefs->notif_perms]));
-			}
+	if (sizeof(need_perms) || sizeof(permsgone)) update_perms_notifications(channel->userid, need_perms, permsgone, basename);
+}
+
+__async__ void update_perms_notifications(int channelid, multiset need_perms, multiset permsgone, string basename) {
+	mapping prefs = await(G->G->DB->load_config(channelid, "userprefs"));
+	int changed = 0;
+	if (prefs->notif_perms) foreach (prefs->notif_perms; string perm; array reasons) {
+		int removed = 0;
+		foreach (reasons; int i; mapping r) if (permsgone[r->reason]) {reasons[i] = 0; removed = 1;}
+		if (removed) {prefs->notif_perms[perm] = reasons - ({0}); changed = 1;}
+	}
+	multiset scopes = (multiset)(G->G->user_credentials[channelid]->scopes || ({ }));
+	foreach (need_perms; string perm;) {
+		if (!scopes[perm]) {
+			if (!prefs->notif_perms) prefs->notif_perms = ([]);
+			prefs->notif_perms[perm] += ({([
+				"desc": "Command - " + basename, //or special/trigger?
+				"reason": "cmd:" + basename,
+			])});
+			changed = 1;
 		}
+	}
+	if (changed) {
+		G->G->DB->save_config(channelid, "userprefs", prefs);
+		G->G->update_user_prefs(channelid, (["notif_perms": prefs->notif_perms]));
 	}
 }
 
