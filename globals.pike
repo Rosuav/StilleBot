@@ -408,11 +408,13 @@ class websocket_handler
 	}
 
 	void update_one(string|int group, string id, string|void type) {
-		send_updates_all(group, (["id": id, "data": get_state(group, id, type), "type": type || "item"]));
+		spawn_task(get_state(group, id, type))->then() {
+			send_updates_all(group, (["id": id, "data": __ARGS__[0], "type": type || "item"]));
+		};
 	}
 	//Compatibility overlap variant form, as above.
 	variant void update_one(object chan, string|int group, string id, string|void type) {
-		send_updates_all(group + "#" + chan->userid, (["id": id, "data": get_state(group + "#" + chan->userid, id, type), "type": type || "item"]));
+		update_one(group + "#" + chan->userid, id, type);
 	}
 
 	//Returns ({channel, subgroup}) - if channel is 0, it's not valid
