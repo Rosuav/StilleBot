@@ -388,7 +388,9 @@ __async__ void migrate_config(string kwd, mapping|void source) {
 	foreach (source; string chan; mapping cfg) {
 		if (!sizeof(cfg)) continue;
 		//Supports "49497888", "#rosuav", and "rosuav" as keys
-		int uid = (int)chan || await(get_user_id(chan - "#"));
+		int uid = 0;
+		if (chan != "0" && chan != "#!demo" && chan != "!demo") //The demo account can't be looked up that way, but has UID 0.
+			uid = (int)chan || await(get_user_id(chan - "#"));
 		await(G->G->DB->save_config(uid, kwd, cfg));
 	}
 }
