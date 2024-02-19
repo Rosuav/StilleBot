@@ -33,7 +33,7 @@ bool need_mod(string grp) {return 1;}
 __async__ mapping get_state(string group, string|void id) {
 	[object channel, string grp] = split_channel(group);
 	if (!channel) return 0;
-	mapping err = persist_status->path("errors", channel);
+	mapping err = await(G->G->DB->load_config(channel->userid, "errors"));
 	if (id) {
 		foreach (err->msglog || ({}), mapping msg)
 			if (msg->id == id) return msg;
@@ -49,12 +49,13 @@ __async__ mapping get_state(string group, string|void id) {
 	]);
 }
 
-@"is_mod": void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping err = persist_status->path("errors", channel);
+@"is_mod": void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {async_wscmd_delete(channel, conn, msg);}
+__async__ void async_wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping err = await(G->G->DB->load_config(channel->userid, "errors"));
 	if (!arrayp(msg->ids) || !err->msglog) return;
 	multiset ids = (multiset)msg->ids;
 	err->msglog = filter(err->msglog) {return !ids[__ARGS__[0]->id];};
-	persist_status->save();
+	await(G->G->DB->save_config(channel->userid, "errors", err));
 	send_updates_all(conn->group);
 }
 
@@ -69,12 +70,11 @@ mapping message_params(object channel, mapping person, string|array param) {
 	return ([]);
 }
 
-protected void create(string name) {
-	::create(name);
+__async__ void populate_demo_errors() {
 	//If the demo channel exists, and if you've attempted to view its errors, and if it
 	//doesn't actually have any, populate it with some examples.
-	object channel = G->G->irc->channels["#!demo"];
-	mapping err = persist_status->has_path("errors", channel);
+	mapping err = await(G->G->DB->load_config(0, "errors"));
+	object channel = G->G->irc->id[0];
 	if (err && (!err->msglog || !sizeof(err->msglog))) {
 		channel->report_error("ERROR", "No channel https://twitch.tv/!demo - is this actually the demo?", "");
 		channel->report_error("WARN", "Unable to query moderator list for !demo", "/mods");
@@ -84,4 +84,9 @@ protected void create(string name) {
 		channel->report_error("WARN", "The broadcaster may not give another Shoutout to the specified streamer until the cooldown period expires.", "/shoutout mustardmine");
 		err->lastread = err->msglog[-1]->id;
 	}
+}
+
+protected void create(string name) {
+	::create(name);
+	populate_demo_errors();
 }

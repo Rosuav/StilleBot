@@ -1142,8 +1142,9 @@ class channel(mapping config) {
 		send(person, response, info);
 	}
 
-	void report_error(string level, string message, string|void context) {
-		mapping err = persist_status->path("errors", this);
+	int _cached_error_count, _cached_error_count_time; //Cache gets discarded on code reload, no big deal
+	__async__ void report_error(string level, string message, string|void context) {
+		mapping err = await(G->G->DB->load_config(userid, "errors"));
 		string msgid = (string)++err->nextid;
 		err->msglog += ({([
 			"id": msgid,
@@ -1152,18 +1153,21 @@ class channel(mapping config) {
 			"message": message,
 			"context": context || "",
 		])});
-		persist_status->save();
+		++_cached_error_count; //Cache staleness is not affected here - we just assume an increment.
+		await(G->G->DB->save_config(userid, "errors", err));
 		G->G->websocket_types->chan_errors->update_one("#" + userid, msgid);
 	}
 
 	//Count the number of error/warning messages still pending.
 	//If cacheable is 1 and we have a recent figure, it'll use that (might not be entirely accurate).
 	__async__ int error_count(int(1bit) cacheable) {
-		mapping err = persist_status->path("errors", this);
+		if (cacheable && _cached_error_count_time > time() - 600) return _cached_error_count;
+		mapping err = await(G->G->DB->load_config(userid, "errors"));
+		_cached_error_count_time = time();
 		if (err->msglog && sizeof(err->msglog)) {
 			array msglog = err->msglog;
 			if (err->lastread) {
-				if ((int)err->lastread >= (int)msglog[-1]->id) return 0; //Common case: All messages read.
+				if ((int)err->lastread >= (int)msglog[-1]->id) return _cached_error_count = 0; //Common case: All messages read.
 				//In theory this could binary search for the right ID, but in practice,
 				//not worth the hassle. The most common case will be that all messages
 				//have been read, or none have, both of which will be quick.
@@ -1175,8 +1179,9 @@ class channel(mapping config) {
 				}
 			}
 			multiset vis = err->visibility ? (multiset)err->visibility : (<"ERROR", "WARN">);
-			return `+(@vis[err->msglog->level[*]]);
+			return _cached_error_count = `+(@vis[err->msglog->level[*]]);
 		}
+		return _cached_error_count = 0;
 	}
 }
 
