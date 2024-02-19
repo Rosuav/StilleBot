@@ -235,7 +235,7 @@ export function render_command(msg, prev, prefix) {
 	let editid = msg.id;
 	if (msg.alias_of) {
 		response.push(CODE("Alias of !" + msg.alias_of));
-		editid = msg.alias_of + "#" + msg.id.split("#")[1];
+		editid = msg.alias_of;
 	}
 	else {
 		const msgstatus = { };
