@@ -206,10 +206,10 @@ array tickets_in_order(string chan) {
 }
 
 //Send an update based on cached data rather than forcing a full recalc every time
-void notify_websockets(string chan) {
-	mapping status = persist_status->has_path("giveaways", chan) || ([]);
+void notify_websockets(int chan, string channame) { //TODO: Drop the second param
+	mapping status = persist_status->has_path("giveaways", channame) || ([]);
 	send_updates_all("control#" + chan, ([
-		"tickets": tickets_in_order(chan),
+		"tickets": tickets_in_order(channame),
 		"last_opened": status->last_opened, "last_closed": status->last_closed,
 		"is_open": status->is_open, "end_time": status->end_time,
 		"last_winner": status->last_winner,
@@ -224,7 +224,7 @@ void notify_websockets(string chan) {
 @hook_point_redemption:
 void redemption(object channel, string rewardid, int(0..1) refund, mapping data) {
 	update_ticket_count(channel->config, data, refund);
-	notify_websockets(channel->config->login);
+	notify_websockets(channel->userid, channel->config->login);
 }
 
 //List all redemptions for a particular reward ID
@@ -470,7 +470,7 @@ void open_close(string chan, int broadcaster_id, int want_open) {
 			])]),
 		);
 	persist_status->save();
-	notify_websockets(chan);
+	notify_websockets(broadcaster_id, chan);
 	object channel = G->G->irc->channels["#" + chan];
 	array people = values(giveaway_tickets[chan]);
 	int tickets = `+(0, @people->tickets), entrants = sizeof(people->tickets - ({0}));
@@ -540,7 +540,7 @@ __async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) 
 				winner[1]->redemptions = ([]);
 				winner[1]->tickets = 0;
 			}
-			notify_websockets(chan);
+			notify_websockets(broadcaster_id, chan);
 			persist_status->save();
 			channel->trigger_special("!giveaway_winner", (["user": chan]), ([
 				"{title}": cfg->giveaway->title || "",
@@ -562,7 +562,7 @@ __async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) 
 				p->redemptions = ([]);
 				p->tickets = 0;
 			}
-			notify_websockets(chan);
+			notify_websockets(broadcaster_id, chan);
 			persist_status->save();
 			if (cfg->giveaway->refund_nonwinning) msg->action = "cancel";
 			array(array) redemptions = await(Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*])));
