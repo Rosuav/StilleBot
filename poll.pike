@@ -585,24 +585,25 @@ void stream_status(int userid, string name, mapping info)
 }
 
 @export: class EventSub(string hookname, string type, string version, function callback) {
-	Crypto.SHA256.HMAC signer;
+	Crypto.SHA256.HMAC signer; string secret;
 	multiset(string) have_subs = (<>);
 	protected void create() {
 		if (!persist_status->path) return;
-		mapping secrets = persist_status->path("eventhook_secret");
-		if (!secrets[hookname]) {
-			secrets[hookname] = MIME.encode_base64(random_string(15));
-			//Save the secret. This is unencrypted and potentially could be leaked.
-			//The attack surface is fairly small, though - at worst, an attacker
-			//could forge a notification from Twitch, causing us to... whatever the
-			//event hook triggers, probably some sort of API call. I guess you could
-			//disrupt the hype train tracker's display or something. Congrats.
-			persist_status->save();
-		}
-		signer = Crypto.SHA256.HMAC(secrets[hookname]);
 		if (!G->G->eventhook_types) G->G->eventhook_types = ([]);
 		if (object other = G->G->eventhook_types[hookname]) have_subs = other->have_subs;
 		G->G->eventhook_types[hookname] = this;
+		G->G->DB->load_config(0, "eventhook_secret")->then() {mapping secrets = __ARGS__[0];
+			if (!secrets[hookname]) {
+				secrets[hookname] = MIME.encode_base64(random_string(15));
+				//Save the secret. This is unencrypted and potentially could be leaked.
+				//The attack surface is fairly small, though - at worst, an attacker
+				//could forge a notification from Twitch, causing us to... whatever the
+				//event hook triggers, probably some sort of API call. I guess you could
+				//disrupt the hype train tracker's display or something. Congrats.
+				G->G->DB->save_config(0, "eventhook_secret", secrets);
+			}
+			signer = Crypto.SHA256.HMAC(secret = secrets[hookname]);
+		};
 	}
 	protected void `()(string|mixed arg, mapping condition) {
 		if (!stringp(arg)) arg = (string)arg; //It really should be a string
@@ -619,7 +620,7 @@ void stream_status(int userid, string name, mapping info)
 						persist_config["ircsettings"]["http_address"],
 						hookname, arg,
 					),
-					"secret": persist_status->path("eventhook_secret")[hookname],
+					"secret": secret,
 				]),
 			]),
 			"return_errors": 1,
@@ -682,12 +683,13 @@ void check_hooks(array eventhooks)
 		else handler->have_subs[arg] = 1;
 	}
 
-	mapping secrets = persist_status->path("eventhook_secret");
-	if (sizeof(secrets - G->G->eventhook_types)) {
-		//This could be done unconditionally, but there's no point doing an unnecessary save
-		secrets = G->G->eventhook_types & secrets;
-		persist_status->save();
-	}
+	G->G->DB->load_config(0, "eventhook_secret")->then() {mapping secrets = __ARGS__[0];
+		if (sizeof(secrets - G->G->eventhook_types)) {
+			foreach (indices(secrets), string key)
+				if (!G->G->eventhook_types[key]) m_delete(secrets, key);
+			G->G->DB->save_config(0, "eventhook_secret", secrets);
+		}
+	};
 
 	foreach (list_channel_configs(), mapping cfg) {
 		string chan = cfg->login;
