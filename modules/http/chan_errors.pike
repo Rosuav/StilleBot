@@ -30,7 +30,9 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 }
 
 bool need_mod(string grp) {return 1;}
-mapping get_chan_state(object channel, string grp, string|void id) {
+__async__ mapping get_state(string group, string|void id) {
+	[object channel, string grp] = split_channel(group);
+	if (!channel) return 0;
 	mapping err = persist_status->path("errors", channel);
 	if (id) {
 		foreach (err->msglog || ({}), mapping msg)
@@ -41,7 +43,9 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		"items": err->msglog || ({ }),
 		//TODO: Allow the default visibility to be configured somewhere
 		"visibility": err->visibility || ({"ERROR", "WARN"}),
-		"msgcount": channel->error_count(),
+		//Note: Don't remove this, even if the msgcount is better provided directly.
+		//We want to let the channel object repopulate its own cache.
+		"msgcount": await(channel->error_count(0)),
 	]);
 }
 

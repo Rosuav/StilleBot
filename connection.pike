@@ -1153,12 +1153,12 @@ class channel(mapping config) {
 			"context": context || "",
 		])});
 		persist_status->save();
-		G->G->websocket_types->chan_errors->update_one(name, msgid);
+		G->G->websocket_types->chan_errors->update_one("#" + userid, msgid);
 	}
 
 	//Count the number of error/warning messages still pending.
-	//TODO: Have a concept of "unread" messages and only count those.
-	int error_count() {
+	//If cacheable is 1 and we have a recent figure, it'll use that (might not be entirely accurate).
+	__async__ int error_count(int(1bit) cacheable) {
 		mapping err = persist_status->path("errors", this);
 		if (err->msglog && sizeof(err->msglog)) {
 			array msglog = err->msglog;

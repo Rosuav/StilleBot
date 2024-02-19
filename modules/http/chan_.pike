@@ -101,7 +101,7 @@ __async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, 
 		profile->profile_image_url || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=",
 		"Go to channel " + (profile->display_name || ""));
 	if (req->misc->is_mod) {
-		int count = channel->error_count();
+		int count = await(channel->error_count(1));
 		if (count) req->misc->chaninfo->menunav = replace(req->misc->chaninfo->menunav, "<span id=errcnt></span>",
 			"<span id=errcnt>(" + count + ")</span>");
 	}
