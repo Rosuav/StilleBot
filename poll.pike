@@ -252,14 +252,15 @@ __async__ void get_credentials() {
 }
 
 //This isn't currently spawned anywhere. Should it be? What if auth fails?
-//TODO: Update it to use database-stored credentials
 __async__ void check_bcaster_tokens() {
-	mapping tokscopes = persist_status->path("bcaster_token_scopes");
-	foreach (persist_status->path("bcaster_token"); string chan; string token) {
+	foreach (G->G->user_credentials; string|int chan; mapping cred) {
+		if (stringp(chan)) continue; //Don't need to check both username and userid
 		mixed resp = await(twitch_api_request("https://id.twitch.tv/oauth2/validate",
-			(["Authorization": "Bearer " + token])));
-		string scopes = sort(resp->scopes || ({ })) * " ";
-		if (tokscopes[chan] != scopes) {tokscopes[chan] = scopes; persist_status->save();}
+			(["Authorization": "Bearer " + cred->token])));
+		array scopes = sort(resp->scopes || ({ }));
+		if (cred->scopes * " " != scopes * " ") cred->scopes = scopes;
+		cred->validated = time();
+		G->G->DB->save_user_credentials(cred);
 	}
 }
 
