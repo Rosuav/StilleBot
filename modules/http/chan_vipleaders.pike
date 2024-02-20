@@ -1,3 +1,4 @@
+//*************************************** Check branch vipleader *********************//
 inherit http_websocket;
 inherit hook;
 constant markdown = #"# Leaderboards and VIPs
