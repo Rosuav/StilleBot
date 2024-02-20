@@ -148,16 +148,19 @@ void start_inotify() {
 	};
 }
 
-Concurrent.Future kaboom() {
-	return task_sleep(3)->then() {
-		write("Blowing up...\n");
-		error("Kaboooom!\n");
-	};
+__async__ void big_query_test() {
+	int n = 5000;
+	array ret = await(G->G->DB->generic_query(
+		"select length(:stuff)",
+		(["stuff": "*" * n]),
+	));
+	write("For n = %d: %O\n", n, ret[0]->length);
+	exit(0);
 }
 
 protected void create(string name) {
 	::create(name);
-	if (!G->G->have_tasks) {
+	/*if (!G->G->have_tasks) {
 		G->G->have_tasks = 1;
 		spawn_task(ping());
 		spawn_task(activity());
@@ -170,5 +173,6 @@ protected void create(string name) {
 	G->G->run_test = run_test;
 	G->G->postgres_log_readable = log_readable;
 	if (!G->G->inotify) start_inotify();
-	spawn_task(kaboom());
+	spawn_task(kaboom());*/
+	big_query_test();
 }
