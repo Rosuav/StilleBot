@@ -92,52 +92,59 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (conn->session->user->?id != uid) return "Bad group ID"; //Shouldn't happen, but maybe if you refresh the page after logging in as a different user???
 }
 
-mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping msgs = persist_status->path("private", channel->name)[grp];
+__async__ mapping get_state(string group, string|void id) {
+	[object channel, string grp] = split_channel(group); if (!channel) return 0;
+	mapping msgs = await(G->G->DB->load_config(channel->userid, "private"))[grp];
 	if (!msgs) return (["items": ({ })]);
 	if (id) return _get_message(id, msgs);
 	return (["items": _get_message(sort((array(int))indices(msgs) - ({0}))[*], msgs) - ({0})]);
 }
 
-void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping msgs = persist_status->path("private", channel->name)[conn->subgroup];
+__async__ void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping priv = await(G->G->DB->load_config(channel->userid, "private"));
+	mapping msgs = priv[conn->subgroup];
 	if (!msgs) return;
+	string update;
 	if (arrayp(msg->id)) {
 		//Bulk deletion. Take them all out, then update all at once.
 		int len = sizeof(msgs);
 		m_delete(msgs, msg->id[*]);
 		if (sizeof(msgs) == len) conn->sock->send_text(Standards.JSON.encode((["cmd": "notify", "msg": "Deletion failed (all gone?)"])));
-		else send_updates_all(conn->group);
+		else update = "all";
 	}
-	else if (m_delete(msgs, (string)msg->id)) update_one(conn->group, msg->id); //Single deletion - less traffic.
+	else if (m_delete(msgs, (string)msg->id)) update = "one"; //Single deletion - less traffic.
 	else conn->sock->send_text(Standards.JSON.encode((["cmd": "notify", "msg": "Deletion failed (already gone)"])));
-	persist_status->save();
+	await(G->G->DB->save_config(channel->userid, "private", priv));
+	if (update == "one") update_one(conn->group, msg->id);
+	else if (update == "all") send_updates_all(conn->group);
 }
 
-void wscmd_acknowledge(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping msgs = persist_status->path("private", channel->name)[conn->subgroup];
+__async__ void wscmd_acknowledge(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping priv = await(G->G->DB->load_config(channel->userid, "private"));
+	mapping msgs = priv[conn->subgroup];
 	if (!msgs) return;
 	mapping mail = m_delete(msgs, (string)msg->id);
 	if (mail->acknowledgement) {
 		mapping person = (["uid": (int)conn->subgroup]);
-		get_user_info((int)conn->subgroup)->then() {mapping user = __ARGS__[0];
-			if (!user) return;
+		mapping user = await(get_user_info((int)conn->subgroup));
+		if (user) {
 			person->displayname = user->display_name;
 			person->user = user->login;
 			channel->send(person, mail->acknowledgement);
-		};
+		}
 	}
-	if (mail) update_one(conn->group, msg->id);
 	mapping msgmeta = msgs->_meta;
 	if (msgmeta) msgmeta->lastread = msgmeta->lastid; //When you acknowledge any message, also mark all messages as serverside-read.
-	persist_status->save();
+	await(G->G->DB->save_config(channel->userid, "private", priv));
+	if (mail) update_one(conn->group, msg->id);
 }
 
-void wscmd_mark_read(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping msgmeta = persist_status->path("private", channel->name)[conn->subgroup]->?_meta;
+__async__ void wscmd_mark_read(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping priv = await(G->G->DB->load_config(channel->userid, "private"));
+	mapping msgmeta = priv[conn->subgroup]->?_meta;
 	if (!msgmeta) return;
 	int was = msgmeta->lastread;
 	msgmeta->lastread = msgmeta->lastid;
-	persist_status->save();
+	G->G->DB->save_config(channel->userid, "private", priv);
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "mark_read", "why": msg->why || "", "was": was, "now": msgmeta->lastread])));
 }

@@ -313,11 +313,35 @@ class channel(mapping config) {
 		else send(person, cmd, person->vars);
 	}
 
-	void delete_msg(string uid, string msgid) {
-		mapping msgs = persist_status->path("private", name, uid);
+	__async__ void delete_msg(string uid, string msgid) {
+		mapping priv = await(G->G->DB->load_config(userid, "private"));
+		mapping msgs = priv[uid] || ([]);
 		m_delete(msgs, msgid);
-		persist_status->save();
-		G->G->websocket_types->chan_messages->update_one(uid + name, msgid);
+		await(G->G->DB->save_config(userid, "private", priv));
+		G->G->websocket_types->chan_messages->update_one(uid + "#" + userid, msgid);
+	}
+
+	__async__ void send_private_message(string uid, echoable_message msg, string destcfg) {
+		mapping priv = await(G->G->DB->load_config(userid, "private"));
+		mapping msgs = priv[uid]; if (!msgs) msgs = priv[uid] = ([]);
+		mapping meta = msgs["_meta"]; if (!meta) meta = msgs["_meta"] = ([]);
+		int id = ++meta->lastid;
+		msgs[(string)id] = (["received": time(), "message": msg]);
+		//NOTE: The destcfg has already been var-substituted, and then it gets reprocessed
+		//when it gets sent. That's a bit awkward. Maybe the ideal would be to retain it
+		//unprocessed, but keep the local vars, and then when it's sent, set _changevars?
+		if (destcfg != "") {
+			//TODO maybe: make destcfg accept non-string values, then it can just have
+			//multiple parts.
+			sscanf(destcfg, ":%d:%s", int timeout, string ack);
+			msgs[(string)id]->acknowledgement = ack || destcfg;
+			if (timeout) {
+				msgs[(string)id]->expiry = time() + timeout;
+				call_out(delete_msg, timeout, uid, (string)id);
+			}
+		}
+		await(G->G->DB->save_config(userid, "private", priv));
+		G->G->websocket_types->chan_messages->update_one(uid + "#" + userid, (string)id);
 	}
 
 	mapping(string:string) get_channel_variables(int|string|void uid) {
@@ -733,32 +757,7 @@ class channel(mapping config) {
 			else
 			{
 				//Normally, you'll be sending something to someone who was recently in chat.
-				mapping msgs = persist_status->path("private", name, uid);
-				mapping meta = msgs["_meta"]; if (!meta) meta = msgs["_meta"] = ([]);
-				//Compat: If there are old messages, migrate them to the new ID scheme.
-				array(int) ids = sort((array(int))indices(msgs));
-				foreach (ids, int i) if (i > meta->lastid) {
-					mapping msg = m_delete(msgs, (string)i);
-					if (msg) msgs[(string)++meta->lastid] = msg;
-				}
-				//End compat, shouldn't be needed once all are migrated.
-				int id = ++meta->lastid;
-				msgs[(string)id] = (["received": time(), "message": msg]);
-				//NOTE: The destcfg has already been var-substituted, and then it gets reprocessed
-				//when it gets sent. That's a bit awkward. Maybe the ideal would be to retain it
-				//unprocessed, but keep the local vars, and then when it's sent, set _changevars?
-				if (destcfg != "") {
-					//TODO maybe: make destcfg accept non-string values, then it can just have
-					//multiple parts.
-					sscanf(destcfg, ":%d:%s", int timeout, string ack);
-					msgs[(string)id]->acknowledgement = ack || destcfg;
-					if (timeout) {
-						msgs[(string)id]->expiry = time() + timeout;
-						call_out(delete_msg, timeout, uid, (string)id);
-					}
-				}
-				persist_status->save();
-				G->G->websocket_types->chan_messages->update_one(uid + name, (string)id);
+				send_private_message(uid, msg, destcfg);
 				return; //Nothing more to send here.
 			}
 		}
