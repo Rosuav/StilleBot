@@ -355,6 +355,7 @@ class websocket_handler
 	//be given if update_one was called, otherwise it will be 0. Type is rarely needed
 	//but is used only in conjunction with an ID.
 	mapping|Concurrent.Future get_state(string|int group, string|void id, string|void type) { }
+	//__async__ mapping get_state(string|int group, string|void id, string|void type) { } //Alternate (equivalent) signature
 
 	//Override to validate any init requests. Return 0 to allow the socket
 	//establishment, or an error message.
@@ -1299,7 +1300,8 @@ class http_websocket
 	//mod privileges. If not overridden, all groups are open to non-mods.
 	bool need_mod(string grp) { }
 	//Provide channel state this way, or override get_state and do everything
-	mapping get_chan_state(object channel, string grp, string|void id, string|void type) { }
+	mapping|Concurrent.Future get_chan_state(object channel, string grp, string|void id, string|void type) { }
+	//__async__ mapping get_chan_state(object channel, string grp, string|void id, string|void type) { } //Alternate (equivalent) signature
 
 	protected void create(string name) {
 		annotation_lookup = mkmapping(indices(this), annotations(this)); //This could go somewhere else, it's likely to be useful for more than just this class
@@ -1339,7 +1341,7 @@ class http_websocket
 		conn->subgroup = grp;
 	}
 
-	mapping get_state(string group, string|void id, string|void type) {
+	mapping|Concurrent.Future get_state(string group, string|void id, string|void type) {
 		[object channel, string grp] = split_channel(group);
 		if (!channel) return 0;
 		return get_chan_state(channel, grp, id, type);
