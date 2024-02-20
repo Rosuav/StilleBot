@@ -30,9 +30,7 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 }
 
 bool need_mod(string grp) {return 1;}
-__async__ mapping get_state(string group, string|void id) {
-	[object channel, string grp] = split_channel(group);
-	if (!channel) return 0;
+__async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping err = await(G->G->DB->load_config(channel->userid, "errors"));
 	if (id) {
 		foreach (err->msglog || ({}), mapping msg)

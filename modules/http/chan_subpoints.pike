@@ -160,9 +160,7 @@ EventSub hook_subgift = EventSub("subgift", "channel.subscription.gift", "1") {s
 EventSub hook_submessage = EventSub("submessage", "channel.subscription.message", "1") {subpoints_updated("submessage", @__ARGS__);};
 
 //bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
-__async__ mapping get_state(string|int group, string|void id) { //get_chan_state isn't asynchronous-compatible
-	[object channel, string grp] = split_channel(group);
-	if (!channel) return 0;
+__async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping trackers = channel->config->subpoints || ([]);
 	string chan = channel->name[1..];
 	int uid = await(get_user_id(chan));

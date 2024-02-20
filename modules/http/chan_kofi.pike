@@ -128,9 +128,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 }
 
 bool need_mod(string grp) {return 1;}
-__async__ mapping get_state(string group) {
-	[object channel, string grp] = split_channel(group);
-	if (!channel) return 0;
+__async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "kofi"));
 	return ([
 		"token": stringp(cfg->verification_token) && "..." + cfg->verification_token[<3..],

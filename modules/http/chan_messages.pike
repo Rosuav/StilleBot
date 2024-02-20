@@ -92,8 +92,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (conn->session->user->?id != uid) return "Bad group ID"; //Shouldn't happen, but maybe if you refresh the page after logging in as a different user???
 }
 
-__async__ mapping get_state(string group, string|void id) {
-	[object channel, string grp] = split_channel(group); if (!channel) return 0;
+__async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping msgs = await(G->G->DB->load_config(channel->userid, "private"))[grp];
 	if (!msgs) return (["items": ({ })]);
 	if (id) return _get_message(id, msgs);

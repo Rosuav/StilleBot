@@ -66,8 +66,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 mapping _get_item(string id, mapping feat) {return 0;}
 
 bool need_mod(string grp) {return grp == "control";}
-__async__ mapping get_state(string group, string|void id) {
-	[object channel, string grp] = split_channel(group); if (!channel) return 0;
+__async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	if (id) return 0; //Single-item updates are no longer applicable
 	mapping enableables = ([]);
 	foreach (G->G->enableable_modules; string name; object mod) {
