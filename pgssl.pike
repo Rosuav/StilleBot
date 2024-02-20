@@ -85,7 +85,8 @@ class SSLDatabase(string host, mapping|void cfg) {
 		if (data != "S") {sock->close(); return;} //Bad handshake
 		sock = SSL.File(sock, cfg->ctx || SSL.Context());
 		sock->set_nonblocking(sockread, sockwrite, sockclosed, 0, 0) {
-			sock->set_buffer_mode(in = Stdio.Buffer(), out = Stdio.Buffer());
+			out = Stdio.Buffer(); //Not actually using buffer mode for output
+			sock->set_buffer_mode(in = Stdio.Buffer(), 0);
 			out->add_hstring("\0\3\0\0user\0rosuav\0database\0stillebot\0application_name\0stillebot\0\0", 4, 4);
 			write();
 			state = "auth";
@@ -178,7 +179,10 @@ class SSLDatabase(string host, mapping|void cfg) {
 			}
 		}
 	}
-	void sockwrite() {writable = 1;}
+	void sockwrite() {
+		out->output_to(sock);
+		if (!sizeof(out)) writable = 1;
+	}
 	void sockclosed() {werror("Closed.\n"); destruct();}
 	void write() {
 		if (!writable) return;
