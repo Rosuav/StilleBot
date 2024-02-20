@@ -66,5 +66,4 @@ void update_user_prefs(string|int userid, mapping changed) {
 protected void create(string name) {
 	::create(name);
 	G->G->update_user_prefs = update_user_prefs;
-	G->G->DB->migrate_config("userprefs");
 }
