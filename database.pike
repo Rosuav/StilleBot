@@ -594,6 +594,7 @@ __async__ void create_tables_and_stop() {
 
 protected void create(string name) {
 	::create(name);
+	#if !constant(INTERACTIVE)
 	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
 		if (ann) foreach (indices(ann), mixed anno)
 			if (stringp(anno)) notify_channels[anno] = this[key];
@@ -602,6 +603,7 @@ protected void create(string name) {
 		notify_channels["stillebot.config:" + kwd] = update_cache;
 		if (!pcc_loadstate[kwd]) preload_config(kwd);
 	}
+	#endif
 	//For testing, force the opposite connection order
 	if (has_value(G->G->argv, "--gideondb")) database_ips = ({"ipv4.rosuav.com", "sikorsky.rosuav.com"});
 	G->G->DB = this;
