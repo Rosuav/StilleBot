@@ -1,4 +1,3 @@
-//*************************************** Check branch vipleader *********************//
 inherit http_websocket;
 inherit hook;
 constant markdown = #"# Leaderboards and VIPs
@@ -85,8 +84,8 @@ void add_score(mapping monthly, string board, mapping sub) {
 }
 
 __async__ void force_recalc(object channel, int|void fast) {
-	mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
-	if (!stats->?active) return 0;
+	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
+	if (!stats->?active) return;
 	if (!fast || !stats->monthly) {
 		stats->monthly = ([]);
 		foreach (stats->all || ({ }), mapping sub) add_score(stats->monthly, "subs", sub);
@@ -133,19 +132,20 @@ __async__ void force_recalc(object channel, int|void fast) {
 		stats[period + "ly"][key] = info->data;
 	}
 
-	persist_status->save();
+	await(G->G->DB->save_config(channel->userid, "subgiftstats", stats));
 	if (!stats->private) send_updates_all(channel, "");
 	send_updates_all(channel, "control");
 }
 
-mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	string buttons = loggedin;
 	string|zero group = "control";
 	if (string scopes = ensure_bcaster_token(req, "bits:read moderation:read channel:manage:vips"))
 		buttons = sprintf("[Grant permission](: .twitchlogin data-scopes=@%s@)", scopes);
 	else if (!req->misc->is_mod) {
-		if (persist_status->has_path("subgiftstats", req->misc->channel->name[1..])->?private_leaderboard) {
+		mapping stats = await(G->G->DB->load_config(req->misc->channel->userid, "subgiftstats"));
+		if (stats->private_leaderboard) {
 			group = 0; //Empty string gives read-only access, null gives no socket (more efficient than one that gives no info)
 			buttons = "*This leaderboard is private and viewable only by the moderators.*";
 		} else {
@@ -160,19 +160,20 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 }
 
 bool need_mod(string grp) {return grp == "control";}
-mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping stats = persist_status->path("subgiftstats", channel->name[1..]);
+__async__ mapping get_chan_state(object channel, string grp, string|void id) {
+	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
 	if (grp != "control" && stats->private_leaderboard) return ([]);
 	return stats;
 }
 
-void websocket_cmd_configure(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void websocket_cmd_configure(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
-	mapping stats = persist_status->path("subgiftstats", channel->name[1..]);
+	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
 	constant options = "active badge_count board_count private_leaderboard use_kofi use_streamlabs" / " ";
 	int was_private = stats->private_leaderboard;
 	foreach (options, string opt) if (!undefinedp(msg[opt])) stats[opt] = (int)msg[opt]; //They're all integers at the moment
+	await(G->G->DB->save_config(channel->userid, "subgiftstats", stats));
 	if (!was_private || !stats->private_leaderboard) send_updates_all(channel, "");
 	send_updates_all(channel, "control");
 }
@@ -194,7 +195,7 @@ __async__ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, 
 	string addrem = add ? "Adding" : "Removing", tofrom = add ? "to" : "from";
 	string|zero method = add ? "POST" : "DELETE";
 	if (conn->session->user->login != chan) {addrem = "Fake-" + lower_case(addrem); method = 0;}
-	mapping stats = persist_status->path("subgiftstats", chan);
+	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
 	array bits = stats->monthly["bits" + msg->yearmonth] || ({ });
 	//1) Get the top cheerers
 	int limit = stats->badge_count || 10;
@@ -256,12 +257,11 @@ __async__ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, 
 @hook_kofi_support:
 int kofi_tip(object channel, string type, mapping params, mapping raw) {
 	if (type != "!kofi_dono") return 0; 
-	mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
-	if (!stats->?active || !stats->use_kofi) return 0;
-	spawn_task(low_kofi_tip(channel, type, params, raw));
+	add_tip(channel, type, params, raw, "use_kofi");
 }
-__async__ void low_kofi_tip(object channel, string type, mapping params, mapping raw) {
-	mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
+__async__ void add_tip(object channel, string type, mapping params, mapping raw, string flag) {
+	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
+	if (!stats->?active || !stats[flag]) return 0;
 	//Ko-fi support comes with a username, but NOT a Twitch user ID. So we look up
 	//the Twitch user **at the time of donation**, and record all details. If the
 	//lookup fails, the gift is considered anonymous. Note that, if a user renames,
@@ -283,7 +283,7 @@ __async__ void low_kofi_tip(object channel, string type, mapping params, mapping
 	//As below, assume that monthly is the type wanted.
 	if (!stats->monthly) stats->monthly = ([]);
 	add_score(stats->monthly, "kofi", stats->allkofi[-1]);
-	persist_status->save();
+	await(G->G->DB->save_config(channel->userid, "subgiftstats", stats));
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
 }
@@ -294,19 +294,18 @@ int message(object channel, mapping person, string msg)
 	//TODO: Unify this somewhere and have an event hook for tips.
 	if (person->user == "streamlabs" && sscanf(msg, "%s just tipped $%d.%d!", string user, int dollars, int cents) && user && (dollars || cents)) {
 		if (sizeof(user) > 3 && user[1] == ' ') user = user[2..]; //Not sure if this always happens. There's often some sort of symbol, and I have no idea if it means anything, just before the name.
-		mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
-		if (stats->?active && stats->use_streamlabs) spawn_task(low_kofi_tip(channel, "!kofi_dono", ([
+		add_tip(channel, "!kofi_dono", ([
 			"cents": dollars * 100 + cents,
 			"username": user,
-		]), (["email": user])));
+		]), (["email": user]), "use_streamlabs");
 	}
 }
 
 @hook_subscription:
-int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
+__async__ int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type != "subgift" && type != "subbomb") return 0; 
 	if (extra->came_from_subbomb) return 0;
-	mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
+	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
 	if (!stats->?active) return 0;
 
 	int months = (int)extra->msg_param_gift_months;
@@ -325,16 +324,17 @@ int subscription(object channel, string type, mapping person, string tier, int q
 	//Assume that monthly is the type wanted. TODO: Make it configurable.
 	if (!stats->monthly) stats->monthly = ([]);
 	add_score(stats->monthly, "subs", stats->all[-1]);
-	persist_status->save();
+	await(G->G->DB->save_config(channel->userid, "subgiftstats", stats));
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
 }
 
 @hook_cheer:
-int cheer(object channel, mapping person, int bits, mapping extra) {
-	mapping stats = persist_status->has_path("subgiftstats", channel->name[1..]);
+__async__ int cheer(object channel, mapping person, int bits, mapping extra) {
+	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
 	if (!stats->?active) return 0;
-	call_out(spawn_task, 1, force_recalc(channel, 1)); //Wait a second, then do a fast update (is that enough time?)
+	await(task_sleep(1)); //Wait a second, then do a fast update (is that enough time?)
+	force_recalc(channel, 1);
 }
 
 protected void create(string name) {::create(name);}
