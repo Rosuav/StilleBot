@@ -117,9 +117,8 @@ Concurrent.Future set_redemption_status(mapping redem, string status) {
 		redem->reward->id, redem->id, status);
 }
 
-__async__ void update_ticket_count(mapping givcfg, mapping|zero status, mapping redem, int|void removal) {
-	if (!givcfg) return;
-	mapping values = givcfg->rewards || ([]);
+__async__ void update_ticket_count(mapping givcfg, mapping redem, int|void removal) {
+	mapping values = givcfg->?rewards || ([]);
 	if (!values[redem->reward->id]) return; //No value assigned to this reward, so it's presumably not a giveaway ticket redemption
 	string chan = redem->broadcaster_login || redem->broadcaster_user_login;
 	mapping people = giveaway_tickets[chan];
@@ -138,17 +137,16 @@ __async__ void update_ticket_count(mapping givcfg, mapping|zero status, mapping 
 	}
 	else {
 		int now = person->tickets + values[redem->reward->id];
-		if (!status) status = persist_status->path("giveaways", chan);
 		int max = givcfg->max_tickets || (1<<100); //Hack: Max max tickets is a big number, not infinite. Whatever.
 		int too_late = 0;
-		if (!status->is_open) {
+		if (!givcfg->is_open) {
 			//If anything snuck in while we were closing the giveaway, refund it as soon as we notice.
 			too_late = 1;
-			if (status->last_opened < status->last_closed) {
+			if (givcfg->last_opened < givcfg->last_closed) {
 				//It's possible that the giveaway was recently closed, and that you bought tickets
 				//while it was open. If so, honour those purchases.
 				int redemption_time = time_from_iso(redem->redeemed_at)->unix_time();
-				if (status->last_opened <= redemption_time && redemption_time <= status->last_closed)
+				if (givcfg->last_opened <= redemption_time && redemption_time <= givcfg->last_closed)
 					too_late = 0;
 			}
 		}
@@ -160,7 +158,7 @@ __async__ void update_ticket_count(mapping givcfg, mapping|zero status, mapping 
 				catch {
 					object ts = time_from_iso(redem->redeemed_at);
 					int redemption_time = ts->unix_time();
-					array timestamps = ({redemption_time, status->last_opened, status->last_closed});
+					array timestamps = ({redemption_time, givcfg->last_opened, givcfg->last_closed});
 					array ts_labels = ({"Bought", "Opened", "Closed"});
 					sort(timestamps, ts_labels);
 					foreach (timestamps; int i; int ts)
@@ -206,25 +204,25 @@ array tickets_in_order(string chan) {
 }
 
 //Send an update based on cached data rather than forcing a full recalc every time
-void notify_websockets(int chan, string channame, mapping|zero status) { //TODO: Drop the second param
-	if (!status) status = persist_status->has_path("giveaways", channame) || ([]);
+void notify_websockets(int chan, string channame, mapping givcfg) { //TODO: Drop the second param
 	send_updates_all("control#" + chan, ([
 		"tickets": tickets_in_order(channame),
-		"last_opened": status->last_opened, "last_closed": status->last_closed,
-		"is_open": status->is_open, "end_time": status->end_time,
-		"last_winner": status->last_winner,
+		"last_opened": givcfg->last_opened, "last_closed": givcfg->last_closed,
+		"is_open": givcfg->is_open, "end_time": givcfg->end_time,
+		"last_winner": givcfg->last_winner,
 	]));
 	send_updates_all("view#" + chan, ([
-		"last_opened": status->last_opened, "last_closed": status->last_closed,
-		"is_open": status->is_open, "end_time": status->end_time,
-		"last_winner": status->last_winner,
+		"last_opened": givcfg->last_opened, "last_closed": givcfg->last_closed,
+		"is_open": givcfg->is_open, "end_time": givcfg->end_time,
+		"last_winner": givcfg->last_winner,
 	]));
 }
 
 @hook_point_redemption:
 __async__ void redemption(object channel, string rewardid, int(0..1) refund, mapping data) {
-	await(update_ticket_count(channel->config->giveaway, 0, data, refund));
-	notify_websockets(channel->userid, channel->config->login, 0);
+	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaway"));
+	await(update_ticket_count(givcfg, data, refund));
+	notify_websockets(channel->userid, channel->config->login, givcfg);
 }
 
 //List all redemptions for a particular reward ID
@@ -242,6 +240,7 @@ Concurrent.Future list_redemptions(int broadcaster_id, string chan, string id) {
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
+	mapping givcfg = await(G->G->DB->load_config(req->misc->channel->userid, "giveaway"));
 	mapping cfg = req->misc->channel->config;
 	string chan = req->misc->channel->name[1..];
 	string login = "[Broadcaster login](:.twitchlogin data-scopes=channel:manage:redemptions)";
@@ -251,7 +250,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 	string token = token_for_user_login(chan)[0];
 	login += " [Mod login](:.twitchlogin)"; //TODO: If logged in as wrong user, allow logout
-	int broadcaster_id = await(get_user_id(chan));
+	int broadcaster_id = req->misc->channel->userid;
 	Concurrent.Future call(string method, string query, mixed body) {
 		return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&" + query,
 			(["Authorization": "Bearer " + token]),
@@ -266,8 +265,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			array qty = (array(int))(replace(body->multi || "1 10 100 1000 10000 100000 1000000", ",", " ") / " ") - ({0});
 			if (!has_value(qty, 1)) qty = ({1}) + qty;
 			if (!cfg->giveaway) cfg->giveaway = ([]);
-			mapping givcfg = cfg->giveaway;
-			mapping status = persist_status->path("giveaways", chan);
 			givcfg->title = body->title;
 			if (int max = givcfg->max_tickets = (int)body->max)
 				qty = filter(qty) {return __ARGS__[0] <= max;};
@@ -293,8 +290,8 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 					if (catch (await(call("PATCH", "id=" + id, ([
 						"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
 						"cost": cost * tickets,
-						"is_enabled": status->is_open || givcfg->pausemode,
-						"is_paused": !status->is_open && givcfg->pausemode,
+						"is_enabled": givcfg->is_open || givcfg->pausemode,
+						"is_paused": !givcfg->is_open && givcfg->pausemode,
 					]))))) {m_delete(existing, id); continue;} //And let it get recreated
 				}
 				qty -= ({tickets});
@@ -304,13 +301,13 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				mapping info = await(call("POST", "", ([
 					"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
 					"cost": cost * tickets,
-					"is_enabled": status->is_open || givcfg->pausemode,
-					"is_paused": !status->is_open && givcfg->pausemode,
+					"is_enabled": givcfg->is_open || givcfg->pausemode,
+					"is_paused": !givcfg->is_open && givcfg->pausemode,
 				])));
 				existing[info->data[0]->id] = tickets;
 				++numcreated;
 			}
-			req->misc->channel->config_save();
+			await(G->G->DB->save_config(req->misc->channel->userid, "giveaway", givcfg));
 			//TODO: Notify the front end what's been changed, not just counts. What else needs to be pushed out?
 			send_updates_all(req->misc->channel, (["title": givcfg->title]));
 			return jsonify((["ok": 1, "created": numcreated, "updated": numupdated, "deleted": numdeleted]));
@@ -386,7 +383,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		return jsonify((["ok": 1]));
 	}
 	mapping config = ([]);
-	mapping givcfg = cfg->giveaway || ([]);
 	config->title = givcfg->title || ""; //Give this one even to non-mods
 	if (req->misc->is_mod) {
 		config->cost = givcfg->cost || 1;
@@ -414,11 +410,11 @@ bool need_mod(string grp) {return grp == "control";}
 __async__ mapping get_chan_state(object channel, string grp)
 {
 	string chan = channel->name[1..];
-	mapping status = persist_status->has_path("giveaways", chan) || ([]);
+	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaway"));
 	if (grp == "view") return ([
-		"title": channel->config->giveaway->?title,
-		"is_open": status->is_open, "end_time": status->end_time,
-		"last_winner": status->last_winner,
+		"title": givcfg->?title,
+		"is_open": givcfg->is_open, "end_time": givcfg->end_time,
+		"last_winner": givcfg->last_winner,
 	]);
 	if (grp != "control") return 0;
 	int broadcaster_id = await(get_user_id(chan));
@@ -437,30 +433,29 @@ __async__ mapping get_chan_state(object channel, string grp)
 	array(array) redemptions = await(Concurrent.all(list_redemptions(broadcaster_id, chan, rewards->id[*])));
 	//Every time a new websocket is established, fully recalculate. Guarantee fresh data.
 	giveaway_tickets[chan] = ([]);
-	foreach (redemptions * ({ }), mapping redem) await(update_ticket_count(channel->config->giveaway, status, redem));
+	foreach (redemptions * ({ }), mapping redem) await(update_ticket_count(givcfg, redem));
 	return ([
-		"title": channel->config->giveaway->?title,
+		"title": givcfg->?title,
 		"rewards": rewards, "tickets": tickets_in_order(chan),
-		"is_open": status->is_open, "end_time": status->end_time,
-		"last_winner": status->last_winner,
+		"is_open": givcfg->is_open, "end_time": givcfg->end_time,
+		"last_winner": givcfg->last_winner,
 	]);
 }
 
 mapping(string:mixed) autoclose = ([]);
-void open_close(string chan, int broadcaster_id, int want_open) {
-	mapping givcfg = (get_channel_config(broadcaster_id) || ([]))->giveaway;
+__async__ void open_close(string chan, int broadcaster_id, int want_open) {
+	mapping givcfg = await(G->G->DB->load_config(broadcaster_id, "giveaway", 0));
 	if (!givcfg) return; //No rewards, nothing to open/close
-	mapping status = persist_status->path("giveaways", chan);
 	string token = token_for_user_login(chan)[0];
 	if (!token) {werror("Can't open/close giveaway w/o bcaster token\n"); return;}
-	status->is_open = want_open;
-	status[want_open ? "last_opened" : "last_closed"] = time();
+	givcfg->is_open = want_open;
+	givcfg[want_open ? "last_opened" : "last_closed"] = time();
 	if (mixed id = m_delete(autoclose, chan)) remove_call_out(id);
 	if (int d = want_open && givcfg->duration) {
-		status->end_time = time() + d;
+		givcfg->end_time = time() + d;
 		autoclose[chan] = call_out(open_close, d, chan, broadcaster_id, 0);
 	}
-	else m_delete(status, "end_time");
+	else m_delete(givcfg, "end_time");
 	//Note: Updates reward status in fire and forget mode.
 	foreach (givcfg->rewards || ([]); string id;)
 		twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&id=" + id,
@@ -470,12 +465,12 @@ void open_close(string chan, int broadcaster_id, int want_open) {
 				"is_paused": !want_open && givcfg->pausemode,
 			])]),
 		);
-	persist_status->save();
-	notify_websockets(broadcaster_id, chan, status);
+	await(G->G->DB->save_config(broadcaster_id, "giveaway", givcfg));
+	notify_websockets(broadcaster_id, chan, givcfg);
 	object channel = G->G->irc->channels["#" + chan];
 	array people = values(giveaway_tickets[chan]);
 	int tickets = `+(0, @people->tickets), entrants = sizeof(people->tickets - ({0}));
-	if (status->is_open) channel->trigger_special("!giveaway_started", (["user": chan]), ([
+	if (givcfg->is_open) channel->trigger_special("!giveaway_started", (["user": chan]), ([
 		"{title}": givcfg->title || "",
 		"{duration}": (string)givcfg->duration,
 		"{duration_hms}": describe_time_short(givcfg->duration),
@@ -501,14 +496,13 @@ __async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) 
 	if (grp != "control") return 0;
 	string chan = channel->name[1..];
 	int broadcaster_id = channel->userid;
-	mapping givcfg = (get_channel_config(broadcaster_id) || ([]))->giveaway;
+	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaway", 0));
 	if (!givcfg) return 0; //No rewards, nothing to activate or anything
 	switch (msg->action) {
 		case "open":
 		case "close": {
 			int want_open = msg->action == "open";
-			mapping status = persist_status->path("giveaways", chan);
-			if (want_open == status->is_open) {
+			if (want_open == givcfg->is_open) {
 				send_update(conn, (["message": "Giveaway is already " + (want_open ? "open" : "closed")]));
 				return 0;
 			}
@@ -530,8 +524,7 @@ __async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) 
 			//I could binary search but I doubt there'll be enough entrants to make a difference.
 			array winner;
 			foreach (partials; int i; int last) if (ticket < last) {winner = people[i]; break;}
-			mapping status = persist_status->path("giveaways", chan);
-			status->last_winner = ({winner[0], winner[1]->name, winner[1]->tickets, tot}); //ID, name, ticket count, out of total
+			givcfg->last_winner = ({winner[0], winner[1]->name, winner[1]->tickets, tot}); //ID, name, ticket count, out of total
 			if (!givcfg->allow_multiwin)
 			{
 				foreach (values(winner[1]->redemptions), mapping redem)
@@ -541,13 +534,13 @@ __async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) 
 				winner[1]->redemptions = ([]);
 				winner[1]->tickets = 0;
 			}
-			notify_websockets(broadcaster_id, chan, status);
-			persist_status->save();
+			notify_websockets(broadcaster_id, chan, givcfg);
+			await(G->G->DB->save_config(channel->userid, "giveaway", givcfg));
 			channel->trigger_special("!giveaway_winner", (["user": chan]), ([
 				"{title}": givcfg->title || "",
-				"{winner_name}": status->last_winner[1],
-				"{winner_tickets}": (string)status->last_winner[2],
-				"{tickets_total}": (string)status->last_winner[3],
+				"{winner_name}": givcfg->last_winner[1],
+				"{winner_tickets}": (string)givcfg->last_winner[2],
+				"{tickets_total}": (string)givcfg->last_winner[3],
 				"{entries_total}": (string)sizeof(people[*][1]->tickets - ({0})),
 			]));
 			break;
@@ -556,15 +549,14 @@ __async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) 
 		case "end": {
 			mapping existing = givcfg->rewards;
 			if (!existing) break; //No rewards, nothing to cancel
-			mapping status = persist_status->path("giveaways", chan);
-			m_delete(status, "last_winner");
+			m_delete(givcfg, "last_winner");
 			//Clear out the front end's view of ticket purchases to reduce flicker
 			foreach (values(giveaway_tickets[chan] || ([])), mapping p) {
 				p->redemptions = ([]);
 				p->tickets = 0;
 			}
-			notify_websockets(broadcaster_id, chan, status);
-			persist_status->save();
+			notify_websockets(broadcaster_id, chan, givcfg);
+			await(G->G->DB->save_config(channel->userid, "giveaway", givcfg));
 			if (givcfg->refund_nonwinning) msg->action = "cancel";
 			array(array) redemptions = await(Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*])));
 			foreach (redemptions * ({ }), mapping redem)
@@ -653,19 +645,19 @@ constant command_suggestions = ([
 	//TODO: Mod-only refund command (maybe the same one??) to refund other person's tickets
 ]);
 
-mapping|Concurrent.Future message_params(object channel, mapping person, array params)
+__async__ mapping message_params(object channel, mapping person, array params)
 {
 	if (params[0] == "") error("Need a subcommand\n");
 	sscanf(params[0], "%[^ ]%*[ ]%s", string cmd, string arg);
 	if (cmd != "refund" && cmd != "status") error("Invalid subcommand\n");
-	if (!channel->config->giveaway) error("Giveaways not active\n"); //Not the same as "giveaway not open", this one will not normally be seen
+	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaway", 0));
+	if (!givcfg) error("Giveaways not active\n"); //Not the same as "giveaway not open", this one will not normally be seen
 	string chan = channel->name[1..];
 	mapping people = giveaway_tickets[chan] || ([]);
 	mapping you = people[(string)person->uid] || ([]);
 	if (cmd == "refund") {
-		mapping status = persist_status->path("giveaways", chan);
 		if (!you->tickets) return (["{action}": "none", "{tickets}": "0"]);
-		if (!status->is_open) error("The giveaway is closed and you can't refund tickets, sorry!\n");
+		if (!givcfg->is_open) error("The giveaway is closed and you can't refund tickets, sorry!\n");
 		foreach (values(you->redemptions), mapping redem)
 			set_redemption_status(redem, "CANCELED");
 	}
@@ -675,4 +667,14 @@ mapping|Concurrent.Future message_params(object channel, mapping person, array p
 	]);
 }
 
-protected void create(string name) {::create(name);}
+__async__ void migrate_cfg() {
+	foreach (list_channel_configs(), mapping info) {
+		if (!info->giveaway) continue;
+		mapping status = persist_status->path("giveaways", info->login);
+		mapping givcfg = info->giveaway | status;
+		werror("Channel %O %O: %O\n", info->userid, info->login, givcfg);
+		await(G->G->DB->save_config(info->userid, "giveaways", givcfg));
+	}
+}
+
+protected void create(string name) {::create(name); /*migrate_cfg();*/}
