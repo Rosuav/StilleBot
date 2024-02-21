@@ -667,14 +667,4 @@ __async__ mapping message_params(object channel, mapping person, array params)
 	]);
 }
 
-__async__ void migrate_cfg() {
-	foreach (list_channel_configs(), mapping info) {
-		if (!info->giveaway) continue;
-		mapping status = persist_status->path("giveaways", info->login);
-		mapping givcfg = info->giveaway | status;
-		werror("Channel %O %O: %O\n", info->userid, info->login, givcfg);
-		await(G->G->DB->save_config(info->userid, "giveaways", givcfg));
-	}
-}
-
-protected void create(string name) {::create(name); /*migrate_cfg();*/}
+protected void create(string name) {::create(name);}
