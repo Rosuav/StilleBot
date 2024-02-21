@@ -117,7 +117,7 @@ Concurrent.Future set_redemption_status(mapping redem, string status) {
 		redem->reward->id, redem->id, status);
 }
 
-void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
+__async__ void update_ticket_count(mapping cfg, mapping|zero status, mapping redem, int|void removal) {
 	if (!cfg->giveaway) return;
 	mapping values = cfg->giveaway->rewards || ([]);
 	if (!values[redem->reward->id]) return; //No value assigned to this reward, so it's presumably not a giveaway ticket redemption
@@ -138,7 +138,7 @@ void update_ticket_count(mapping cfg, mapping redem, int|void removal) {
 	}
 	else {
 		int now = person->tickets + values[redem->reward->id];
-		mapping status = persist_status->path("giveaways", chan);
+		if (!status) status = persist_status->path("giveaways", chan);
 		int max = cfg->giveaway->max_tickets || (1<<100); //Hack: Max max tickets is a big number, not infinite. Whatever.
 		int too_late = 0;
 		if (!status->is_open) {
@@ -206,8 +206,8 @@ array tickets_in_order(string chan) {
 }
 
 //Send an update based on cached data rather than forcing a full recalc every time
-void notify_websockets(int chan, string channame) { //TODO: Drop the second param
-	mapping status = persist_status->has_path("giveaways", channame) || ([]);
+void notify_websockets(int chan, string channame, mapping|zero status) { //TODO: Drop the second param
+	if (!status) status = persist_status->has_path("giveaways", channame) || ([]);
 	send_updates_all("control#" + chan, ([
 		"tickets": tickets_in_order(channame),
 		"last_opened": status->last_opened, "last_closed": status->last_closed,
@@ -222,9 +222,9 @@ void notify_websockets(int chan, string channame) { //TODO: Drop the second para
 }
 
 @hook_point_redemption:
-void redemption(object channel, string rewardid, int(0..1) refund, mapping data) {
-	update_ticket_count(channel->config, data, refund);
-	notify_websockets(channel->userid, channel->config->login);
+__async__ void redemption(object channel, string rewardid, int(0..1) refund, mapping data) {
+	await(update_ticket_count(channel->config, 0, data, refund));
+	notify_websockets(channel->userid, channel->config->login, 0);
 }
 
 //List all redemptions for a particular reward ID
@@ -436,7 +436,7 @@ __async__ mapping get_chan_state(object channel, string grp)
 	array(array) redemptions = await(Concurrent.all(list_redemptions(broadcaster_id, chan, rewards->id[*])));
 	//Every time a new websocket is established, fully recalculate. Guarantee fresh data.
 	giveaway_tickets[chan] = ([]);
-	foreach (redemptions * ({ }), mapping redem) update_ticket_count(channel->config, redem);
+	foreach (redemptions * ({ }), mapping redem) await(update_ticket_count(channel->config, status, redem));
 	return ([
 		"title": channel->config->giveaway->?title,
 		"rewards": rewards, "tickets": tickets_in_order(chan),
@@ -470,7 +470,7 @@ void open_close(string chan, int broadcaster_id, int want_open) {
 			])]),
 		);
 	persist_status->save();
-	notify_websockets(broadcaster_id, chan);
+	notify_websockets(broadcaster_id, chan, status);
 	object channel = G->G->irc->channels["#" + chan];
 	array people = values(giveaway_tickets[chan]);
 	int tickets = `+(0, @people->tickets), entrants = sizeof(people->tickets - ({0}));
@@ -540,7 +540,7 @@ __async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) 
 				winner[1]->redemptions = ([]);
 				winner[1]->tickets = 0;
 			}
-			notify_websockets(broadcaster_id, chan);
+			notify_websockets(broadcaster_id, chan, status);
 			persist_status->save();
 			channel->trigger_special("!giveaway_winner", (["user": chan]), ([
 				"{title}": cfg->giveaway->title || "",
@@ -562,7 +562,7 @@ __async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) 
 				p->redemptions = ([]);
 				p->tickets = 0;
 			}
-			notify_websockets(broadcaster_id, chan);
+			notify_websockets(broadcaster_id, chan, status);
 			persist_status->save();
 			if (cfg->giveaway->refund_nonwinning) msg->action = "cancel";
 			array(array) redemptions = await(Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*])));
