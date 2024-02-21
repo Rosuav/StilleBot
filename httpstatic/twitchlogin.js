@@ -9,3 +9,4 @@ function update_login_button() {
 	DOM("#addscopes").dataset.scopes = scopes.join(" ") + " " + retain_scopes;
 }
 on("click", ".scope_cb", update_login_button);
+update_login_button();

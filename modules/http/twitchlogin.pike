@@ -84,10 +84,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"data": sprintf("Unrecognized scope %O being requested", (array)bad * " ")]);
 	multiset needscopes = havescopes | wantscopes; //Note that we'll keep any that we already have.
 	if (req->variables->urlonly) return jsonify((["uri": get_redirect_url(needscopes, ([]), deduce_host(req->request_headers || ([])), login_popup_done)]));
-	//NOTE: Prior to 20230821, this would offer a CGI-mode login page. This has not been used
-	//anywhere in core for some time, but if it is linked to anywhere externally, this will
-	//now break. I don't think it's likely but it's possible.
 
+	//Offer an interactive page for adding scopes. Can also be used with a handy URL
+	//like https://sikorsky.rosuav.com/twitchlogin?scopes=channel:manage:redemptions
+	//to add a specific permission.
 	array order = ({ }), scopelist = ({ }), retain_scopes = ({ });
 	foreach (all_twitch_scopes; string id; string desc) {
 		if (has_prefix(desc, "Deprecated") || has_prefix(desc, "*Deprecated")) {
