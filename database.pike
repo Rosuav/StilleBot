@@ -72,6 +72,14 @@ constant tables = ([
 		//"create or replace trigger http_session_deleted after delete on stillebot.http_sessions for each row execute function send_session_notification();",
 		//"alter table stillebot.http_sessions enable always trigger http_session_deleted;",
 	}),
+	//Array of raids from fromid to toid. At least one of fromid and toid will be
+	//a channel that I monitor.
+	"raids": ({
+		"fromid bigint not null",
+		"toid bigint not null",
+		"data json not null",
+		" primary key (fromid, toid)",
+	}),
 	//TODO: Have a trigger that fires any time ANY table with a twitchid is updated, sending
 	//a notification that includes both the table name (maybe) and the twitchid (definitely).
 	//Use this to force a settings reload for that channel.
