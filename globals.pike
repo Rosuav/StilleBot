@@ -394,6 +394,12 @@ class websocket_handler
 	//Generates just one state object and sends it everywhere.
 	void send_updates_all(string|int group, mapping|void data) {
 		array dest = websocket_groups[group];
+		if (!dest) {
+			//If you attempt to send updates to "control#rosuav", send them instead
+			//to "control#49497888", assuming there weren't any sockets for the former.
+			[object channel, string subgroup] = split_channel(group);
+			if (channel) dest = websocket_groups[subgroup + "#" + channel->userid];
+		}
 		if (dest && sizeof(dest)) _send_updates(dest, group, data);
 	}
 	//Compatibility overlap variant form. Use this with a channel object to send to
