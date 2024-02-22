@@ -509,7 +509,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		return render_template("alertbox.html", ([
 			"vars": ([
 				"ws_type": ws_type, "ws_code": "alertbox",
-				"ws_group": group + req->misc->channel->name,
+				"ws_group": group + "#" + req->misc->channel->userid,
 				"alertbox_version": LATEST_VERSION,
 			]),
 			"channelname": req->misc->channel->name[1..],
@@ -541,7 +541,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		file->url = sprintf("%s/static/upload-%s", persist_config["ircsettings"]->http_address, filename);
 		persist_status->path("upload_metadata")[filename] = (["mimetype": file->mimetype]);
 		persist_status->save();
-		update_one("control" + req->misc->channel->name, file->id); //Display connection doesn't need to get updated.
+		update_one("control" + req->misc->channel->userid, file->id); //Display connection doesn't need to get updated.
 		return jsonify((["url": file->url]));
 	}
 	return render(req, ([
@@ -791,12 +791,12 @@ void update_all(object channel) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	array allsocks = ({ });
 	foreach (websocket_groups; string grp; array socks)
-		if (has_suffix(grp, channel->name) &&
-			(grp == cfg->authkey + channel->name || has_prefix(grp, "preview-") || has_prefix(grp, "demo-")))
+		if (has_suffix(grp, "#" + channel->userid) &&
+			(grp == cfg->authkey + "#" + channel->userid || has_prefix(grp, "preview-") || has_prefix(grp, "demo-")))
 				allsocks += socks;
 	//Note that we use preview rather than the authkey here since there
 	//might not be an authkey. It's the same state anyway.
-	_low_send_updates(get_state("preview-" + channel->name), allsocks);
+	_low_send_updates(get_state("preview-#" + channel->userid), allsocks);
 }
 
 void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -960,7 +960,7 @@ void update_gif_variants(object channel) {
 		}
 	persist_status->save();
 	update_one(conn->group, file->id);
-	if (changed_alert) update_one(cfg->authkey + channel->name, file->id); //TODO: Is this needed? Does the client conn use these pushes?
+	if (changed_alert) update_one(cfg->authkey + "#" + channel->userid, file->id); //TODO: Is this needed? Does the client conn use these pushes?
 }
 
 int(0..1) valid_alert_type(string type, mapping|void cfg) {
