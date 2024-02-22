@@ -54,7 +54,7 @@ __async__ void websocket_cmd_prefs_update(mapping(string:mixed) conn, mapping(st
 		if (v == Val.null) m_delete(prefs, k); else prefs[k] = v;
 	}
 	if (!sizeof(changed)) return;
-	persist_status->save();
+	await(G->G->DB->save_config(conn->prefs_uid, "userprefs", prefs));
 	update_user_prefs(conn->prefs_uid, changed);
 }
 
