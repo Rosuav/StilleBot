@@ -108,8 +108,7 @@ void add_person(mapping people, int|string id) {
 	else people[""][id] = 1;
 }
 
-__async__ void check_schedules(object channel) {
-	mapping cfg = persist_status->path("raidtrain", (string)channel->userid, "cfg");
+__async__ void check_schedules(object channel, mapping cfg) {
 	mapping sched = G->G->raidtrain_schedcache; if (!sched) sched = G->G->raidtrain_schedcache = ([]);
 	int maxage = time() - 3600;
 	//Assume that nobody will start stream more than this long before the scheduled slot. If they do,
@@ -134,8 +133,8 @@ __async__ void check_schedules(object channel) {
 }
 
 bool need_mod(string grp) {return grp == "control";}
-mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping cfg = persist_status->path("raidtrain", (string)channel->userid, "cfg");
+__async__ mapping get_chan_state(object channel, string grp, string|void id) {
+	mapping cfg = await(G->G->DB->load_config(channel->userid, "raidtrain"))->cfg;
 	//Populate a mapping of people info for the front end. It contains only what we
 	//already have in cache.
 	mapping people = (["": (<>)]);
@@ -183,7 +182,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		send_updates_all(channel, "control");
 		send_updates_all(channel, "view");
 	};
-	spawn_task(check_schedules(channel));
+	spawn_task(check_schedules(channel, cfg));
 	if (!cfg->slots) cfg->slots = ({ });
 	return ([
 		"cfg": cfg, "slots": slots,
@@ -202,15 +201,15 @@ mapping get_slot(mapping trn, mapping(string:mixed) msg) {
 	return slots[msg->slotidx];
 }
 
-void save_and_send(int chan, mapping trn) {
-	persist_status->save();
+__async__ void save_and_send(int chan, mapping trn) {
+	await(G->G->DB->save_config(chan, "raidtrain", trn));
 	send_updates_all("control#" + chan);
 	send_updates_all("view#" + chan);
 }
 
 __async__ void wscmd_streamerslot(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->is_mod) return; //Should streamers be allowed to revoke their own slots??
-	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+	mapping trn = await(G->G->DB->load_config(channel->userid, "raidtrain"));
 	mapping slot = get_slot(trn, msg); if (!slot) return;
 	slot->broadcasterid = (int)msg->broadcasterid;
 	if (!slot->broadcasterid && msg->broadcasterlogin) {
@@ -231,15 +230,16 @@ __async__ void wscmd_streamerslot(object channel, mapping(string:mixed) conn, ma
 	save_and_send(channel->userid, trn);
 }
 
-@"is_mod": void wscmd_revokeclaim(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+@"is_mod": void wscmd_revokeclaim(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_revokeclaim1(channel, conn, msg);}
+__async__ void wscmd_revokeclaim1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping trn = await(G->G->DB->load_config(channel->userid, "raidtrain"));
 	mapping slot = get_slot(trn, msg); if (!slot) return;
 	if (slot->claims) slot->claims -= ({(int)msg->broadcasterid});
 	save_and_send(channel->userid, trn);
 }
 
-void wscmd_requestslot(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+__async__ void wscmd_requestslot(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping trn = await(G->G->DB->load_config(channel->userid, "raidtrain"));
 	mapping slot = get_slot(trn, msg); if (!slot) return;
 	if (slot->broadcasterid) return; //Don't request slots that are taken
 	if (!slot->claims) slot->claims = ({ });
@@ -248,8 +248,8 @@ void wscmd_requestslot(object channel, mapping(string:mixed) conn, mapping(strin
 	save_and_send(channel->userid, trn);
 }
 
-void wscmd_slotnotes(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+__async__ void wscmd_slotnotes(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping trn = await(G->G->DB->load_config(channel->userid, "raidtrain"));
 	mapping slot = get_slot(trn, msg); if (!slot) return;
 	int userid = (int)conn->session->user->?id; if (!userid) return; //You don't have to be a mod, but you have to be logged in
 	if (!stringp(msg->notes)) return;
@@ -258,14 +258,16 @@ void wscmd_slotnotes(object channel, mapping(string:mixed) conn, mapping(string:
 	save_and_send(channel->userid, trn);
 }
 
-@"is_mod": void wscmd_resetschedule(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+@"is_mod": void wscmd_resetschedule(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_resetschedule1(channel, conn, msg);}
+__async__ void wscmd_resetschedule1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping trn = await(G->G->DB->load_config(channel->userid, "raidtrain"));
 	trn->cfg->slots = ({ });
 	save_and_send(channel->userid, trn);
 }
 
-@"is_mod": void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+@"is_mod": void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_update1(channel, conn, msg);}
+__async__ void wscmd_update1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping trn = await(G->G->DB->load_config(channel->userid, "raidtrain"));
 	foreach ("title description raidcall may_request" / " ", string str)
 		if (msg[str]) trn->cfg[str] = msg[str];
 	foreach ("startdate enddate slotsize" / " ", string num)
@@ -412,7 +414,7 @@ void wscmd_slotnotes(object channel, mapping(string:mixed) conn, mapping(string:
 
 __async__ mapping checkfollowing(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->session->user) return 0; //Not logged in, no message needed
-	mapping cfg = persist_status->path("raidtrain", (string)channel->userid)->cfg;
+	mapping cfg = await(G->G->DB->load_config(channel->userid, "raidtrain"))->cfg;
 	if (!cfg->all_casters) return 0; //No casters, nothing to do
 	[string token, string scopes] = token_for_user_id(conn->session->user->id);
 	if (!has_value(scopes / " ", "user:read:follows")) return (["msg": "No permission, can't check following"]); //Not currently in the UI
