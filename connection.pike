@@ -843,7 +843,7 @@ class channel(mapping config) {
 		return _substitute_vars(text, vars, ([]), users || ([]));
 	}
 
-	void record_raid(int fromid, string fromname, int toid, string toname, int|void ts, int|void viewers)
+	__async__ void record_raid(int fromid, string fromname, int toid, string toname, int|void ts, int|void viewers)
 	{
 		if (!is_active) return;
 		write("Detected a raid: %O %O %O %O %O\n", fromid, fromname, toid, toname, ts);
@@ -852,16 +852,13 @@ class channel(mapping config) {
 		//Real timestamps won't hit this threshold until September 33658. At some
 		//point close to that date (!), adjust this threshold.
 		else if (ts > 1000000000000) ts /= 1000;
-		Concurrent.all(
-			fromid ? Concurrent.resolve(fromid) : get_user_id(fromname),
-			toid ? Concurrent.resolve(toid) : get_user_id(toname),
-		)->then(lambda(array(int) ids) {
+		if (!fromid) fromid = await(get_user_id(fromname));
+		if (!toid) toid = await(get_user_id(toname));
 			//Record all raids in a "base" of the lower user ID, for
 			//consistency. If UID 1234 raids UID 2345, it's an outgoing
 			//raid from 1234 to 2345; if 2345 raids 1234, it is instead
 			//an incoming raid for 1234 from 2345. Either way, it's in
 			//status->raids->1234->2345 and then has the timestamp.
-			[int fromid, int toid] = ids;
 			raidwatch(fromid, sprintf("%s raided %s", fromname, toname));
 			int outgoing = fromid < toid;
 			string base = outgoing ? (string)fromid : (string)toid;
@@ -877,7 +874,6 @@ class channel(mapping config) {
 				"viewers": undefinedp(viewers) ? -1 : (int)viewers,
 			])});
 			persist_status->save();
-		});
 	}
 
 	mapping subbomb_ids = ([]);
