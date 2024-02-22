@@ -409,6 +409,38 @@ __async__ void migrate_config(string kwd, mapping|void source) {
 	}
 }
 
+//Call with two IDs for raids between those two channels, or with one ID for
+//all raids involving that channel. If bidi is set, will also include raids
+//the opposite direction.
+__async__ array load_raids(string|int fromid, string|int toid, int|void bidi) {
+	if (!active) await(await_active());
+	if (!toid && !fromid) return ({ }); //No you can't get "every raid, ever".
+	string sql;
+	if (!toid) { //TODO: Tidy this up a bit, it's a mess.
+		if (bidi) sql = "fromid = :fromid or toid = :fromid";
+		else sql = "fromid = :fromid";
+	} else if (!fromid) {
+		if (bidi) sql = "toid = :toid or fromid = :toid";
+		else sql = "toid = :toid";
+	} else {
+		if (bidi) sql = "(fromid = :fromid and toid = :toid) or (fromid = :toid and toid = :fromid)";
+		else sql = "fromid = :fromid and toid = :toid";
+	}
+	array rows = await(query(pg_connections[active], "select * from stillebot.raids where " + sql,
+		(["fromid": (int)fromid, "toid": (int)toid])));
+	return rows; //TODO upon switching back to Sql.Sql: JSONDECODE the data fields
+}
+
+//NOTE: Automatically appends to the raids, does not replace.
+__async__ void add_raid(string|int fromid, string|int toid, mapping raid) {
+	array raids = await(load_raids(fromid, toid));
+	if (!sizeof(raids)) raids = ({raid}); //No raids recorded, start fresh
+	else if (raids[0]->data[-1]->time > raid->time - 60) return; //Ignore duplicate raids within 60s
+	else raids = raids[0]->data + ({raid});
+	await(save_sql("insert into stillebot.raids values (:fromid, :toid, :data) on conflict (fromid, toid) do update set data=:data",
+		(["fromid": (int)fromid, "toid": toid, "data": JSONENCODE(raids)])));
+}
+
 //Command IDs are UUIDs. They come back in binary format, which is fine for comparisons,
 //but not for human readability. Try this:
 //sprintf("%x%x-%x-%x-%x-%x%x%x", @array_sscanf("F\255C|\377gK\316\223iW\351\215\37\377=", "%{%2c%}")[0][*][0]);

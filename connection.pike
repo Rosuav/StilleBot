@@ -854,26 +854,12 @@ class channel(mapping config) {
 		else if (ts > 1000000000000) ts /= 1000;
 		if (!fromid) fromid = await(get_user_id(fromname));
 		if (!toid) toid = await(get_user_id(toname));
-			//Record all raids in a "base" of the lower user ID, for
-			//consistency. If UID 1234 raids UID 2345, it's an outgoing
-			//raid from 1234 to 2345; if 2345 raids 1234, it is instead
-			//an incoming raid for 1234 from 2345. Either way, it's in
-			//status->raids->1234->2345 and then has the timestamp.
-			raidwatch(fromid, sprintf("%s raided %s", fromname, toname));
-			int outgoing = fromid < toid;
-			string base = outgoing ? (string)fromid : (string)toid;
-			string other = outgoing ? (string)toid : (string)fromid;
-			mapping raids = persist_status->path("raids", base);
-			if (!raids[other]) raids[other] = ({ });
-			else if (raids[other][-1]->time > ts) {write("FUTURE RAID - %d, %O\n", ts, raids[other][-1]); return;} //Bugs happen. If timestamps go weird, report what we can.
-			else if (raids[other][-1]->time > ts - 60) return; //Ignore duplicate raids within 60s
-			raids[other] += ({([
-				"time": ts,
-				"from": fromname, "to": toname,
-				"outgoing": outgoing,
-				"viewers": undefinedp(viewers) ? -1 : (int)viewers,
-			])});
-			persist_status->save();
+		raidwatch(fromid, sprintf("%s raided %s", fromname, toname));
+		await(G->G->DB->add_raid(fromid, toid, ([
+			"time": ts,
+			"from": fromname, "to": toname,
+			"viewers": undefinedp(viewers) ? -1 : (int)viewers,
+		])));
 	}
 
 	mapping subbomb_ids = ([]);

@@ -347,17 +347,13 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			//List everyone who's raided you, including their timestamps
 			//Assume that the last entry in each array is the latest.
 			//The result is that raiders will contain one entry for each
-			//unique user ID that has ever been raided, and raidtimes will
+			//unique user ID that has ever raided in, and raidtimes will
 			//have the corresponding timestamps.
+			array raids = await(G->G->DB->load_raids(0, userid));
 			array raiders = ({ }), raidtimes = ({ });
-			foreach (persist_status->path("raids"); string id; mapping raids) {
-				if (id == (string)userid)
-					foreach (raids; string otherid; array raids) {
-						foreach (reverse(raids), mapping r)
-							if (!r->outgoing) {raiders += ({otherid}); raidtimes += ({r->timestamp}); break;}
-					}
-				else foreach (reverse(raids[(string)userid] || ({ })), mapping r)
-					if (r->outgoing) {raiders += ({(string)userid}); raidtimes += ({r->timestamp}); break;}
+			foreach (raids, mapping r) {
+				raiders += ({(string)r->fromid});
+				raidtimes += ({r->data[-1]->timestamp});
 			}
 			sort(raidtimes, raiders);
 			args->user_id = raiders[<99..]; //Is it worth trying to support more than 100 raiders? Would need to paginate.
@@ -550,20 +546,20 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		if (string n = notes[(string)otheruid]) strm->notes = n;
 		if (has_value(highlightids, otheruid)) strm->highlight = 1;
 		if (!strm->url) strm->url = "https://twitch.tv/" + strm->user_login; //Is this always correct?
-		int swap = otheruid < userid;
-		array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[(string)(swap ? userid : otheruid)];
+		//Would be nice to optimize this. Currently it's a separate database query for each streamer.
+		array raids = await(G->G->DB->load_raids(userid, otheruid, 1));
 		int recent = time() - 86400 * 30;
 		int ancient = time() - 86400 * 365;
 		float raidscore = 0.0;
 		int have_recent_outgoing = 0, have_old_incoming = 0;
 		strm->raids = ({ });
-		foreach (raids || ({ }), mapping raid) //Note that these may not be sorted correctly. Should we sort explicitly?
+		foreach (raids, mapping raidset) foreach (raidset->data, mapping raid)
 		{
 			//write("DEBUG RAID LOG: %O\n", raid);
 			//TODO: Translate these by timezone (if available)
 			object time = Calendar.ISO.Second("unix", raid->time);
 			raidscore *= 0.85; //If there are tons of raids, factor the most recent ones strongly, and weaken it into the past.
-			if (swap != raid->outgoing) {
+			if (raidset->fromid == (int)userid) {
 				strm->raids += ({sprintf(">%s %s raided %s", time->format_ymd(), raid->from, raid->to)});
 				if (raid->time > recent) {have_recent_outgoing = 1; raidscore -= 200;}
 				else if (raid->time > ancient) raidscore -= 50;
@@ -628,12 +624,12 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	}
 	//List 100 most recent raids.
 	array all_raids = ({ });
-	foreach (persist_status->path("raids"); string id; mapping raids) {
-		if (id == (string)userid)
-			foreach (raids; string otherid; array raids)
-				all_raids += raids;
-		else foreach (raids[(string)userid] || ({ }), mapping r)
-			all_raids += ({r | (["outgoing": !r->outgoing])});
+	array raidraw = await(G->G->DB->load_raids(userid, 0, 1));
+	foreach (raidraw, mapping raidset) {
+		if (raidset->fromid == (int)userid) {
+			foreach (raidset->data, mapping raid)
+				all_raids += ({raid | (["outgoing": 1])});
+		} else all_raids += raidset->data;
 	}
 	sort(all_raids->time, all_raids);
 	follows_helix -= ({0}); //Remove self (already nulled out)
@@ -796,16 +792,15 @@ __async__ string suggestraid(int from, int target, int recip) {
 	mapping notes = persist_status->has_path("raidnotes", (string)userid) || ([]);
 	if (string n = notes[(string)otheruid]) strm->notes = n;
 	if (!strm->url) strm->url = "https://twitch.tv/" + strm->user_login; //Is this always correct?
-	int swap = otheruid < userid;
-	array raids = persist_status->path("raids", (string)(swap ? otheruid : userid))[(string)(swap ? userid : otheruid)];
+	array raids = await(G->G->DB->load_raids(userid, otheruid, 1));
 	int recent = time() - 86400 * 30;
 	int ancient = time() - 86400 * 365;
 	strm->raids = ({ });
-	foreach (raids || ({ }), mapping raid) //Note that these may not be sorted correctly. Should we sort explicitly?
+	foreach (raids, mapping raidset) foreach (raidset->data, mapping raid)
 	{
 		object time = Calendar.ISO.Second("unix", raid->time);
 		strm->raids += ({sprintf("%s%s %s raided %s",
-			swap != raid->outgoing ? ">" : "<",
+			raidset->fromid == (int)userid ? ">" : "<",
 			time->format_ymd(), raid->from, raid->to,
 		)});
 		if (!undefinedp(raid->viewers) && raid->viewers != -1)
