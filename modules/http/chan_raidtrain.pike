@@ -91,7 +91,6 @@ tr.your_slot {background: #bff;} /* That's right, you are your own BFF */
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
-	mapping trn = persist_status->path("raidtrain", (string)req->misc->channel->userid);
 	return render(req, ([
 		"vars": (["ws_group": req->misc->is_mod ? "control" : "view", "logged_in_as": (int)req->misc->session->user->?id]),
 		"login_or_edit":
@@ -197,26 +196,22 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	]);
 }
 
-mapping get_slot(object channel, mapping(string:mixed) msg) {
-	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+mapping get_slot(mapping trn, mapping(string:mixed) msg) {
 	array slots = trn->cfg->slots || ({ });
 	if (!intp(msg->slotidx) || msg->slotidx < 0 || msg->slotidx >= sizeof(slots)) return 0;
 	return slots[msg->slotidx];
 }
 
-void save_and_send(mapping(string:mixed) conn) {
-	sscanf(conn->group, "%s#%s", string grp, string chan);
+void save_and_send(int chan, mapping trn) {
 	persist_status->save();
 	send_updates_all("control#" + chan);
 	send_updates_all("view#" + chan);
 }
 
-void wscmd_streamerslot(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping slot = get_slot(channel, msg); if (!slot) return;
+__async__ void wscmd_streamerslot(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->is_mod) return; //Should streamers be allowed to revoke their own slots??
-	spawn_task(async_streamerslot(channel, conn, msg, slot));
-}
-__async__ void async_streamerslot(object channel, mapping conn, mapping msg, mapping slot) {
+	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+	mapping slot = get_slot(trn, msg); if (!slot) return;
 	slot->broadcasterid = (int)msg->broadcasterid;
 	if (!slot->broadcasterid && msg->broadcasterlogin) {
 		string login = replace(msg->broadcasterlogin, ({"https://", "www.twitch.tv/", "twitch.tv/"}), "");
@@ -228,43 +223,45 @@ __async__ void async_streamerslot(object channel, mapping conn, mapping msg, map
 	//mappings, this would be more efficient, but whatever; it's not like you'll have stupid
 	//numbers of streamers such that array searches become notably slow.
 	array casters = ({ });
-	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
 	foreach (trn->cfg->slots, mapping s)
 		if (s->broadcasterid && !has_value(casters, s->broadcasterid))
 			casters += ({s->broadcasterid});
 	trn->cfg->all_casters = casters;
 	if (slot->broadcasterid) get_user_info(slot->broadcasterid); //Populate cache just in case
-	save_and_send(conn);
+	save_and_send(channel->userid, trn);
 }
 
 @"is_mod": void wscmd_revokeclaim(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping slot = get_slot(channel, msg); if (!slot) return;
+	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+	mapping slot = get_slot(trn, msg); if (!slot) return;
 	if (slot->claims) slot->claims -= ({(int)msg->broadcasterid});
-	save_and_send(conn);
+	save_and_send(channel->userid, trn);
 }
 
 void wscmd_requestslot(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping slot = get_slot(channel, msg); if (!slot) return;
+	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+	mapping slot = get_slot(trn, msg); if (!slot) return;
 	if (slot->broadcasterid) return; //Don't request slots that are taken
 	if (!slot->claims) slot->claims = ({ });
 	int id = (int)conn->session->user->?id; if (!id) return;
 	slot->claims ^= ({id});
-	save_and_send(conn);
+	save_and_send(channel->userid, trn);
 }
 
 void wscmd_slotnotes(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping slot = get_slot(channel, msg); if (!slot) return;
+	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
+	mapping slot = get_slot(trn, msg); if (!slot) return;
 	int userid = (int)conn->session->user->?id; if (!userid) return; //You don't have to be a mod, but you have to be logged in
 	if (!stringp(msg->notes)) return;
 	if (!conn->is_mod && slot->broadcasterid != userid) return; //If you're not a mod, you have to be the streamer in that slot.
 	slot->notes = msg->notes;
-	save_and_send(conn);
+	save_and_send(channel->userid, trn);
 }
 
 @"is_mod": void wscmd_resetschedule(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping trn = persist_status->path("raidtrain", (string)channel->userid);
 	trn->cfg->slots = ({ });
-	save_and_send(conn);
+	save_and_send(channel->userid, trn);
 }
 
 @"is_mod": void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -410,7 +407,7 @@ void wscmd_slotnotes(object channel, mapping(string:mixed) conn, mapping(string:
 		//all thoroughly.
 		trn->cfg->slots = fresh + slots;
 	}
-	save_and_send(conn);
+	save_and_send(channel->userid, trn);
 }
 
 __async__ mapping checkfollowing(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
