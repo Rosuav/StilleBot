@@ -660,7 +660,7 @@ void got_follower(string chan, mapping follower) {
 EventSub raidout = EventSub("raidout", "channel.raid", "1") {[string chan, mapping info] = __ARGS__;
 	object channel = G->G->irc->channels["#" + chan];
 	Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s with %d\n",
-		Calendar.now()->format_time(), chan, info->to_broadcaster_user_name, (int)info->viewers));
+		Calendar.now()->format_time(), chan, string_to_utf8(info->to_broadcaster_user_name), (int)info->viewers));
 	if (channel) channel->record_raid((int)info->from_broadcaster_user_id, info->from_broadcaster_user_name,
 		(int)info->to_broadcaster_user_id, info->to_broadcaster_user_name, 0, (int)info->viewers);
 };
