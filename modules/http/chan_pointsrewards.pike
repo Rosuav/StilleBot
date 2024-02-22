@@ -163,6 +163,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 		}
 	}
 	if (!sizeof(params) && !empty_ok) error("No changes requested\n");
+	if (reward_id == "") return (["{action}": "Nothing to do"]);
 	int broadcaster_id = await(get_user_id(channel->name[1..]));
 	mapping prev = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 			+ broadcaster_id + "&id=" + reward_id,
