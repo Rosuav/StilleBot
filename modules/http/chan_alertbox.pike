@@ -1347,7 +1347,7 @@ __async__ void send_with_tts(object channel, mapping args, string|void destgroup
 			args->tts = "data:audio/ogg;base64," + data->audioContent;
 		else Stdio.append_file("tts_error.log", sprintf("%sBad TTS response: %O\n-------------\n", ctime(time()), data));
 	}
-	send_updates_all((destgroup || cfg->authkey) + channel->name, args);
+	send_updates_all((destgroup || cfg->authkey) + "#" + channel->userid, args);
 }
 
 constant builtin_name = "Send Alert";
