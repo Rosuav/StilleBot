@@ -115,7 +115,7 @@ constant file_mime_types = ([
 @retain: mapping artshare_messageid = ([]);
 
 __async__ string permission_check(object channel, int is_mod, mapping user) {
-	mapping cfg = persist_status->path("artshare", (string)channel->userid, "settings");
+	mapping settings = await(G->G->DB->load_config(channel->userid, "artshare"));
 	string scopes = token_for_user_id(channel->userid)[1];
 	if (has_value(scopes / " ", "moderation:read")) { //TODO: How would we get this permission if we don't have it? Some sort of "Forbid banned users" action for the broadcaster?
 		if (has_value(await(get_banned_list(channel->userid))->user_id, user->id)) {
@@ -123,7 +123,7 @@ __async__ string permission_check(object channel, int is_mod, mapping user) {
 			return "You're currently unable to talk in that channel, so you can't share either - sorry!";
 		}
 	}
-	mapping who = cfg->who || ([]);
+	mapping who = settings->who || ([]);
 	if (who->all) return 0; //Go for it!
 	//Ideally, replace this error with something more helpful, based on who DOES have permission.
 	//The order of these checks is important, as the last one wins on error messages.
@@ -182,10 +182,10 @@ Upload time: %s
 		persist_status->path("share_metadata")[filename] = (["mimetype": mimetype]);
 		persist_status->save();
 		update_one(req->misc->session->user->id + req->misc->channel->name, file->id);
-		mapping cfg = persist_status->path("artshare", (string)req->misc->channel->userid, "settings");
+		mapping settings = await(G->G->DB->load_config(req->misc->channel->userid, "artshare"));
 		req->misc->channel->send(
 			(["displayname": req->misc->session->user->display_name]),
-			cfg->msgformat || DEFAULT_MSG_FORMAT,
+			settings->msgformat || DEFAULT_MSG_FORMAT,
 			(["{URL}": file->url, "{sharerid}": req->misc->session->user->id, "{fileid}": file->id]),
 		) {[mapping vars, mapping params] = __ARGS__;
 			file->messageid = params->id; //If this has somehow already been deleted from persist, it won't matter; we'll save an unchanged persist mapping.
@@ -204,9 +204,9 @@ Upload time: %s
 	]) | req->misc->chaninfo);
 }
 
-mapping get_chan_state(object channel, string grp, string|void id) {
+__async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = persist_status->path("artshare", (string)channel->userid, grp);
-	mapping settings = persist_status->path("artshare", (string)channel->userid, "settings");
+	mapping settings = await(G->G->DB->load_config(channel->userid, "artshare"));
 	if (id) {
 		if (!cfg->files) return 0;
 		int idx = search(cfg->files->id, id);
@@ -267,20 +267,20 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	delete_file(channel, grp, msg->id);
 }
 
-void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || conn->session->fake || !conn->is_mod) return;
-	mapping cfg = persist_status->path("artshare", (string)channel->userid, "settings");
+	if (!channel || conn->session->fake || !conn->is_mod) return; //TODO: Use wscmd_ once async functions can be annotated
+	mapping settings = await(G->G->DB->load_config(channel->userid, "artshare"));
 	foreach ("msgformat" / " ", string key)
-		if (stringp(msg[key])) cfg[key] = msg[key];
+		if (stringp(msg[key])) settings[key] = msg[key];
 	if (mappingp(msg->who)) {
-		if (!cfg->who) cfg->who = ([]);
+		if (!settings->who) settings->who = ([]);
 		foreach (user_types, array user) {
 			mixed perm = msg->who[user[0]];
-			if (!undefinedp(perm)) cfg->who[user[0]] = !!perm;
+			if (!undefinedp(perm)) settings->who[user[0]] = !!perm;
 		}
 	}
-	persist_status->save();
+	await(G->G->DB->save_config(channel->userid, "artshare", settings));
 	//NOTE: We don't actually update everyone when these change.
 	//It's going to be unusual, and for non-mods, it's just a courtesy note anyway.
 	send_updates_all(conn->group);
