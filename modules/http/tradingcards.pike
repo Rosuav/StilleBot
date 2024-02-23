@@ -166,6 +166,5 @@ protected void create(string name)
 {
 	::create(name);
 	G->G->http_endpoints["/tradingcards/%[^/]"] = show_collection;
-	G->G->DB->save_config(0, "tradingcards", persist_status->path("tradingcards"));
 	//ensure_collections(); //Should this be done on startup or is it unnecessary?
 }

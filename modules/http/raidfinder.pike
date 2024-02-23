@@ -414,7 +414,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			else if (sizeof(team_display_names) > 1) title = "Stream Teams: " + team_display_names * ", ";
 			else title = "Stream Team: " + team_display_names[0];
 		}
-		else if (mapping tradingcards = persist_status->path("tradingcards", "collections")[lower_case(req->variables->categories)]) {
+		else if (mapping tradingcards = await(G->G->DB->load_config(0, "tradingcards"))->collections[lower_case(req->variables->categories)]) {
 			//categories=Canadian to see who's live from the Canadian Streamers collection of trading cards
 			title = "Active " + tradingcards->label + " streamers";
 			args->user_id = tradingcards->streamers;
