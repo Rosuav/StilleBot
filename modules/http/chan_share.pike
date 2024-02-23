@@ -219,10 +219,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	]);
 }
 
-__async__ void websocket_cmd_upload(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || conn->session->fake) return 0;
-	mapping cfg = persist_status->path("artshare", (string)channel->userid, grp);
+__async__ void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping cfg = persist_status->path("artshare", (string)channel->userid, conn->subgroup);
 	if (!cfg->files) cfg->files = ({ });
 	if (!intp(msg->size) || msg->size < 0) return 0; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
 	string error;
@@ -295,7 +293,6 @@ constant vars_provided = ([]);
 
 mapping message_params(object channel, mapping person, array param) {
 	string user = param[0];
-	mapping cfg = persist_status->path("artshare", (string)channel->userid, "settings");
 	//TODO: Flag the user as temporarily permitted
 	//TODO: Revoke temporary permission after 2 minutes or one upload
 	return ([]);
