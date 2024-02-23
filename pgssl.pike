@@ -27,7 +27,7 @@ mapping parse_result_row(array fields, string row) {
 			}
 			case 2950: { //UUID
 				sscanf(val, "%{%2c%}", array words);
-				val = sprintf("%x%x-%x-%x-%x-%x%x%x", @words[*][0]);
+				val = sprintf("%04x%04x-%04x-%04x-%04x-%04x%04x%04x", @words[*][0]);
 				break;
 			}
 			default: break;
