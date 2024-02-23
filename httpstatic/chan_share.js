@@ -19,9 +19,9 @@ export function render_item(file, obj) {
 	files[file.id] = file;
 	return LABEL({"data-id": file.id}, [
 		FIGURE([
-			DIV({className: "thumbnail", style: "background-image: url(" + (file.url || TRANSPARENT_IMAGE) + ")"}),
+			DIV({className: "thumbnail", style: "background-image: url(" + (file.metadata.url || TRANSPARENT_IMAGE) + ")"}),
 			FIGCAPTION([
-				A({href: file.url, target: "_blank"}, file.name),
+				A({href: file.metadata.url, target: "_blank"}, file.name),
 			]),
 			BUTTON({type: "button", className: "confirmdelete", title: "Delete"}, "🗑"),
 		]),

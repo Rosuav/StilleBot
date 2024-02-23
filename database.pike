@@ -80,9 +80,16 @@ constant tables = ([
 		"data json not null",
 		" primary key (fromid, toid)",
 	}),
-	//TODO: Have a trigger that fires any time ANY table with a twitchid is updated, sending
-	//a notification that includes both the table name (maybe) and the twitchid (definitely).
-	//Use this to force a settings reload for that channel.
+	"uploads": ({
+		"id uuid primary key default gen_random_uuid()",
+		"channel bigint not null",
+		"uploader bigint not null",
+		"name text not null default ''",
+		"metadata json not null default '{}'",
+		"expires timestamp with time zone", //NULL means it never expires
+		"data bytea not null", //The actual blob.
+		//TODO: Figure out what would make useful indexes
+	}),
 ]);
 multiset precached_config = (<"channel_labels">); //TODO: Have other modules submit requests?
 @retain: mapping pcc_loadstate = ([]);
@@ -570,6 +577,50 @@ Concurrent.Future save_user_credentials(mapping data) {
 	mapping cred = G->G->user_credentials;
 	cred[data->userid] = cred[data->login] = data;
 	return save_config(data->userid, "credentials", data);
+}
+
+__async__ array(mapping) list_ephemeral_files(string|int channel, string|int uploader, string|void id, int|void include_blob) {
+	if (!active) await(await_active());
+	return await(G->G->DB->generic_query(
+		"select id, name, metadata" + (include_blob ? ", data" : "") +
+		" from stillebot.uploads where channel = :channel and uploader = :uploader and expires is not null"
+		+ (id ? " and id = :id" : ""),
+		(["channel": channel, "uploader": uploader, "id": id]),
+	));
+}
+
+__async__ mapping|zero get_file(string id, int|void include_blob) {
+	if (!active) await(await_active());
+	array rows = await(G->G->DB->generic_query(
+		"select id, channel, uploader, name, metadata, expires" + (include_blob ? ", data" : "") +
+		" from stillebot.uploads where id = :id",
+		(["id": id]),
+	));
+	return sizeof(rows) && rows[0];
+}
+
+__async__ string prepare_file(string|int channel, string|int uploader, string name, int(1bit) ephemeral) {
+	if (!active) await(await_active());
+	return await(G->G->DB->generic_query(
+		"insert into stillebot.uploads (channel, uploader, name, data, expires) values (:channel, :uploader, :name, '', "
+			+ (ephemeral ? "now() + interval '24 hours'" : "NULL") + ") returning id",
+		(["channel": channel, "uploader": uploader, "name": name]),
+	))[0]->id;
+}
+
+void upload_file(string(21bit) id, string(8bit) raw, mapping metadata) {
+	G->G->DB->save_sql(
+		"update stillebot.uploads set data = :data, metadata = :metadata where id = :id",
+		(["id": id, "data": raw, "metadata": metadata]),
+	);
+}
+
+Concurrent.Future purge_ephemeral_files(string|int channel, string|int uploader, string|void id) {
+	return G->G->DB->generic_query(
+		"delete from stillebot.uploads where channel = :channel and uploader = :uploader"
+			+ (id ? " and id = :id" : "") + " and expires is not null returning id, metadata",
+		(["channel": channel, "uploader": uploader, "id": id]),
+	);
 }
 
 //Attempt to create all tables and alter them as needed to have all columns

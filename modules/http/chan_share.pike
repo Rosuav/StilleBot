@@ -112,6 +112,8 @@ constant file_mime_types = ([
 	"matroska,webm": "video/webm",
 ]);
 
+//TODO: What happens with multihoming and is it a problem? These message IDs are extremely
+//transient, as the messages disappear from view fairly quickly.
 @retain: mapping artshare_messageid = ([]);
 
 __async__ string permission_check(object channel, int is_mod, mapping user) {
@@ -147,20 +149,17 @@ __async__ string permission_check(object channel, int is_mod, mapping user) {
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (mapping resp = ensure_login(req)) return resp;
-	mapping cfg = persist_status->path("artshare", (string)req->misc->channel->userid, (string)req->misc->session->user->id);
 	if (!req->misc->session->fake && req->request_type == "POST") {
 		if (!req->variables->id) return jsonify((["error": "No file ID specified"]));
-		int idx = search((cfg->files || ({ }))->id, req->variables->id);
-		if (idx < 0) return jsonify((["error": "Bad file ID specified (may have been deleted already)"]));
-		mapping file = cfg->files[idx];
-		if (file->url) return jsonify((["error": "File has already been uploaded"]));
+		array files = await(G->G->DB->list_ephemeral_files(req->misc->channel->userid, req->misc->session->user->id, req->variables->id));
+		if (!sizeof(files)) return jsonify((["error": "Bad file ID specified (may have been deleted already)"]));
+		mapping file = files[0];
+		if (file->metadata->url) return jsonify((["error": "File has already been uploaded"]));
 		if (sizeof(req->body_raw) > MAX_PER_FILE * 1048576) return jsonify((["error": "Upload exceeds maximum file size"]));
 		if (string error = await(permission_check(req->misc->channel, req->misc->is_mod, req->misc->session->user)))
 			return jsonify((["error": error]));
-		string filename = sprintf("%d-%s", req->misc->channel->userid, file->id);
-		Stdio.write_file("httpstatic/artshare/" + filename, req->body_raw);
 		string mimetype;
-		mapping rc = Process.run(({"ffprobe", "httpstatic/artshare/" + filename, "-print_format", "json", "-show_format", "-v", "quiet"}));
+		mapping rc = Process.run(({"ffprobe", "-", "-print_format", "json", "-show_format", "-v", "quiet"}), (["stdin": req->body_raw]));
 		mixed raw_ffprobe = rc->stdout + "\n" + rc->stderr + "\n";
 		if (!rc->exitcode) {
 			catch {raw_ffprobe = Standards.JSON.decode(rc->stdout);};
@@ -178,21 +177,21 @@ Upload time: %s
 			delete_file(req->misc->channel, req->misc->session->user->id, file->id);
 			return jsonify((["error": "File type unrecognized. If it should have been supported, contact Rosuav and quote ID art-" + file->id]));
 		}
-		file->url = sprintf("%s/static/share-%s", persist_config["ircsettings"]->http_address, filename);
-		persist_status->path("share_metadata")[filename] = (["mimetype": mimetype]);
-		persist_status->save();
-		update_one(req->misc->session->user->id + req->misc->channel->name, file->id);
+		file->metadata->url = sprintf("%s/upload/%s", persist_config["ircsettings"]->http_address, file->id);
+		file->metadata->mimetype = mimetype;
+		file->metadata->etag = String.string2hex(Crypto.SHA1.hash(req->body_raw));
+		G->G->DB->upload_file(file->id, req->body_raw, file->metadata);
+		update_one(req->misc->session->user->id + "#" + req->misc->channel->userid, file->id);
 		mapping settings = await(G->G->DB->load_config(req->misc->channel->userid, "artshare"));
 		req->misc->channel->send(
 			(["displayname": req->misc->session->user->display_name]),
 			settings->msgformat || DEFAULT_MSG_FORMAT,
-			(["{URL}": file->url, "{sharerid}": req->misc->session->user->id, "{fileid}": file->id]),
+			(["{URL}": file->metadata->url, "{sharerid}": req->misc->session->user->id, "{fileid}": file->id]),
 		) {[mapping vars, mapping params] = __ARGS__;
-			file->messageid = params->id; //If this has somehow already been deleted from persist, it won't matter; we'll save an unchanged persist mapping.
-			persist_status->save();
 			//Note that the channel ID isn't strictly necessary, as any deletion signal will
 			//itself be associated with that channel; but it's nice to have for debugging.
 			artshare_messageid[params->id] = ({(string)req->misc->channel->userid, vars["{sharerid}"], vars["{fileid}"]});
+			//TODO: Synchronize message IDs with the other bot?
 		};
 		return jsonify((["url": file->url]));
 	}
@@ -205,14 +204,13 @@ Upload time: %s
 }
 
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping cfg = persist_status->path("artshare", (string)channel->userid, grp);
 	mapping settings = await(G->G->DB->load_config(channel->userid, "artshare"));
 	if (id) {
-		if (!cfg->files) return 0;
-		int idx = search(cfg->files->id, id);
-		return idx >= 0 && cfg->files[idx];
+		array files = await(G->G->DB->list_ephemeral_files(channel->userid, grp, id));
+		return sizeof(files) && files[0];
 	}
-	return (["items": cfg->files || ({ }),
+	array files = await(G->G->DB->list_ephemeral_files(channel->userid, grp));
+	return (["items": files,
 		"who": settings->who || ([]),
 		"msgformat": settings->msgformat,
 		"defaultmsg": DEFAULT_MSG_FORMAT,
@@ -220,45 +218,26 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 }
 
 __async__ void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping cfg = persist_status->path("artshare", (string)channel->userid, conn->subgroup);
-	if (!cfg->files) cfg->files = ({ });
 	if (!intp(msg->size) || msg->size < 0) return 0; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
 	string error;
 	if (string err = await(permission_check(channel, conn->is_mod, conn->session->user)))
 		error = err;
 	else if (msg->size > MAX_PER_FILE * 1048576)
 		error = "File too large (limit " + MAX_PER_FILE + " MB)";
-	else if (sizeof(cfg->files) >= MAX_FILES)
+	else if (sizeof(await(G->G->DB->list_ephemeral_files(channel->userid, conn->session->user->id))) >= MAX_FILES)
 		error = "Limit of " + MAX_FILES + " files reached. Delete other files to make room.";
 	if (error) {
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "uploaderror", "name": msg->name, "error": error]), 4));
 		return;
 	}
-	string id;
-	mapping meta = persist_status->path("share_metadata");
-	while (meta[sprintf("%d-%s", channel->userid, id = "share-" + String.string2hex(random_string(14)))])
-		; //I would be highly surprised if this loops at all, let alone more than once
-	cfg->files += ({([
-		"id": id, "name": msg->name,
-		"uploaded": time(),
-	])});
-	persist_status->save();
+	string id = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, msg->name, 1));
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "upload", "id": id, "name": msg->name]), 4));
 	update_one(conn->group, id);
 }
 
 void delete_file(object channel, string userid, string fileid) {
-	mapping cfg = persist_status->path("artshare", (string)channel->userid, userid);
-	if (!cfg->files) return; //No files, can't delete
-	int idx = search(cfg->files->id, fileid);
-	if (idx == -1) return; //Not found.
-	mapping file = cfg->files[idx];
-	cfg->files = cfg->files[..idx-1] + cfg->files[idx+1..];
-	string fn = sprintf("%d-%s", channel->userid, file->id);
-	rm("httpstatic/artshare/" + fn); //If it returns 0 (file not found/not deleted), no problem
-	m_delete(persist_status->path("share_metadata"), fn);
-	persist_status->save();
-	update_one(userid + channel->name, file->id);
+	G->G->DB->purge_ephemeral_files(channel->userid, userid, fileid)
+		->then() {update_one(userid + "#" + channel->userid, fileid);};
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -308,39 +287,22 @@ int delmsg(object channel, object person, string target, string msgid) {
 @hook_deletemsgs:
 int delmsgs(object channel, object person, string target) {
 	//If someone gets timed out or banned, delete all their files.
-	mapping cfg = persist_status->path("artshare", (string)channel->userid)[target];
-	foreach (cfg->?files || ({ }), mapping file) {
-		delete_file(channel, target, file->id);
-		//And delete the messages that announced them
-		if (file->messageid) channel->send(([]), "/deletemsg " + file->messageid);
-	}
+	G->G->DB->purge_ephemeral_files(channel->userid, target)->then() {
+		foreach (__ARGS__[0], mapping file) {
+			delete_file(channel, target, file->id);
+			//And delete the messages that announced them
+			if (file->metadata->messageid) channel->send(([]), "/deletemsg " + file->messageid);
+		}
+	};
 }
 
 void cleanup() {
-	if (mixed co = m_delete(G->G, "artshare_cleanup")) remove_call_out(co);
-	mapping meta = persist_status->path("share_metadata");
-	mapping artshare = persist_status->path("artshare");
-	int old = time() - 86400; //Max age
-	array chans = values(G->G->irc->channels);
-	foreach (artshare; string channelid; mapping configs) {
-		//First, find the right channel object.
-		int idx = search(chans->userid, (int)channelid);
-		if (idx < 0) continue; //Are we still loading, or is this a deleted channel? Hard to know.
-		object channel = chans[idx];
-		foreach (configs; string userid; mapping cfg) {
-			if (!(int)userid) continue; //Not a user ID (probably the word "settings")
-			if (cfg->files) foreach (cfg->files, mapping file) {
-				if (file->uploaded >= old) continue; //Mmmm, still fresh!
-				//This file is old. Dispose of it. Eww.
-				delete_file(channel, userid, file->id);
-			}
-		}
-	}
-	//Note: It is possible for upload permission to be requested, but the upload
-	//not happen, which would leave entries in the channel+user file list, but
-	//nothing in meta. This is only a problem if there are actually no files at
-	//all that have been fully uploaded.
-	if (sizeof(meta)) G->G->artshare_cleanup = call_out(cleanup, 3600 * 12); //Check twice a day for anything over a day old
+	remove_call_out(G->G->artshare_cleanup);
+	G->G->artshare_cleanup = call_out(cleanup, 3600 * 12); //Check twice a day for anything over a day old
+	G->G->DB->generic_query("delete from stillebot.uploads where expires < now() returning channel, uploader, id")->then() {
+		foreach (__ARGS__[0], mapping f)
+			update_one(f->uploader + "#" + f->channel, f->id);
+	};
 }
 
 protected void create(string name) {
