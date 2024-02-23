@@ -387,7 +387,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			//uses the list of all_casters.
 			string owner = req->variables->train;
 			if (!(int)owner) owner = (string)await(get_user_id(owner));
-			mapping trncfg = persist_status->has_path("raidtrain", owner, "cfg");
+			mapping trncfg = await(G->G->DB->load_config(owner, "raidtrain"))->cfg;
 			array casters = trncfg->?all_casters;
 			if (!casters) return "No such raid train - check the link and try again";
 			args->user_id = (array(string))casters;
