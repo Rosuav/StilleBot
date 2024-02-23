@@ -29,7 +29,7 @@ $$save_or_login||> [Export/back up all configuration](:type=submit name=export)
 </style>
 ";
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->misc->is_mod && !req->misc->session->fake && req->request_type == "POST" && req->variables->export) {
 		//Standard rule: Everything in this export comes from channel->config.
@@ -39,8 +39,14 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		object channel = req->misc->channel;
 		mapping cfg = channel->config;
 		mapping ret = ([]);
-		foreach ("autoban dynamic_rewards giveaway monitors quotes timezone vlcblocks" / " ", string key)
+		foreach ("autoban dynamic_rewards monitors quotes timezone vlcblocks" / " ", string key)
 			if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
+		//Save any exportable configs. This will cover a lot of things, but not those that
+		//are in separate tables.
+		foreach (await(G->G->DB->generic_query(#"select * from stillebot.config
+			join stillebot.config_exportable on stillebot.config.keyword = stillebot.config_exportable.keyword
+			where twitchid = :twitchid", (["twitchid": channel->userid]))), mapping cfg)
+				if (sizeof(cfg->data)) ret[cfg->keyword] = cfg->data;
 		mapping commands = ([]), specials = ([]);
 		string chan = channel->name[1..];
 		foreach (channel->commands || ([]); string cmd; echoable_message response) {
