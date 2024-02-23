@@ -302,6 +302,7 @@ int message(object channel, mapping person, string msg)
 }
 
 @hook_subscription:
+int _subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {subscription(channel, type, person, tier, qty, extra);}
 __async__ int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type != "subgift" && type != "subbomb") return 0; 
 	if (extra->came_from_subbomb) return 0;
@@ -330,6 +331,7 @@ __async__ int subscription(object channel, string type, mapping person, string t
 }
 
 @hook_cheer:
+int _cheer(object channel, mapping person, int bits, mapping extra) {cheer(channel, person, bits, extra);}
 __async__ int cheer(object channel, mapping person, int bits, mapping extra) {
 	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
 	if (!stats->?active) return 0;

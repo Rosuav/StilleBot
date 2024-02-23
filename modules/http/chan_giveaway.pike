@@ -219,6 +219,7 @@ void notify_websockets(int chan, string channame, mapping givcfg) { //TODO: Drop
 }
 
 @hook_point_redemption:
+void redemption1(object channel, string rewardid, int(0..1) refund, mapping data) {redemption(channel, rewardid, refund, data);}
 __async__ void redemption(object channel, string rewardid, int(0..1) refund, mapping data) {
 	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaway"));
 	await(update_ticket_count(givcfg, data, refund));
