@@ -91,7 +91,7 @@ figcaption {
 ";
 
 constant DEFAULT_MSG_FORMAT = "New art share from {username}: {URL}";
-constant MAX_PER_FILE = 15, MAX_FILES = 4; //MB and file count. Larger than the alertbox limits since these files are ephemeral.
+constant MAX_PER_FILE = 16, MAX_FILES = 4; //MB and file count. File size is advisory, upload.pike has the hard limit.
 constant user_types = ({
 	//Keyword, label, description
 	({"mod", "Mods", "The broadcaster and channel moderators"}),
@@ -100,17 +100,6 @@ constant user_types = ({
 	//TODO: !permit command, which will work via a builtin that grants temp permission
 	({"all", "Anyone", "Anyone is allowed, any time"}),
 });
-
-//Map the FFProbe results to their MIME types.
-//If not listed, the file is unrecognized and will be rejected.
-constant file_mime_types = ([
-	//"apng": "image/apng"? "video/apng"? WHAT?!?
-	"gif": "image/gif", "gif_pipe": "image/gif",
-	"jpeg_pipe": "image/jpeg",
-	"png_pipe": "image/png",
-	"svg_pipe": "image/svg+xml",
-	"matroska,webm": "video/webm",
-]);
 
 //TODO: What happens with multihoming and is it a problem? These message IDs are extremely
 //transient, as the messages disappear from view fairly quickly.
@@ -149,58 +138,27 @@ __async__ string permission_check(object channel, int is_mod, mapping user) {
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (mapping resp = ensure_login(req)) return resp;
-	if (!req->misc->session->fake && req->request_type == "POST") {
-		if (!req->variables->id) return jsonify((["error": "No file ID specified"]));
-		array files = await(G->G->DB->list_ephemeral_files(req->misc->channel->userid, req->misc->session->user->id, req->variables->id));
-		if (!sizeof(files)) return jsonify((["error": "Bad file ID specified (may have been deleted already)"]));
-		mapping file = files[0];
-		if (file->metadata->url) return jsonify((["error": "File has already been uploaded"]));
-		if (sizeof(req->body_raw) > MAX_PER_FILE * 1048576) return jsonify((["error": "Upload exceeds maximum file size"]));
-		if (string error = await(permission_check(req->misc->channel, req->misc->is_mod, req->misc->session->user)))
-			return jsonify((["error": error]));
-		string mimetype;
-		mapping rc = Process.run(({"ffprobe", "-", "-print_format", "json", "-show_format", "-v", "quiet"}), (["stdin": req->body_raw]));
-		mixed raw_ffprobe = rc->stdout + "\n" + rc->stderr + "\n";
-		if (!rc->exitcode) {
-			catch {raw_ffprobe = Standards.JSON.decode(rc->stdout);};
-			if (mappingp(raw_ffprobe)) mimetype = file_mime_types[raw_ffprobe->format->format_name];
-		}
-		if (!mimetype) {
-			Stdio.append_file("artshare.log", sprintf(#"Unable to ffprobe file art-%s
-Channel: %s
-File size: %d
-Beginning of file: %O
-FFProbe result: %O
-Upload time: %s
--------------------------
-", file->id, req->misc->channel->name, sizeof(req->body_raw), req->body_raw[..64], raw_ffprobe, ctime(time())[..<1]));
-			delete_file(req->misc->channel, req->misc->session->user->id, file->id);
-			return jsonify((["error": "File type unrecognized. If it should have been supported, contact Rosuav and quote ID art-" + file->id]));
-		}
-		file->metadata->url = sprintf("%s/upload/%s", persist_config["ircsettings"]->http_address, file->id);
-		file->metadata->mimetype = mimetype;
-		file->metadata->etag = String.string2hex(Crypto.SHA1.hash(req->body_raw));
-		G->G->DB->upload_file(file->id, req->body_raw, file->metadata);
-		update_one(req->misc->session->user->id + "#" + req->misc->channel->userid, file->id);
-		mapping settings = await(G->G->DB->load_config(req->misc->channel->userid, "artshare"));
-		req->misc->channel->send(
-			(["displayname": req->misc->session->user->display_name]),
-			settings->msgformat || DEFAULT_MSG_FORMAT,
-			(["{URL}": file->metadata->url, "{sharerid}": req->misc->session->user->id, "{fileid}": file->id]),
-		) {[mapping vars, mapping params] = __ARGS__;
-			//Note that the channel ID isn't strictly necessary, as any deletion signal will
-			//itself be associated with that channel; but it's nice to have for debugging.
-			artshare_messageid[params->id] = ({(string)req->misc->channel->userid, vars["{sharerid}"], vars["{fileid}"]});
-			//TODO: Synchronize message IDs with the other bot?
-		};
-		return jsonify((["url": file->url]));
-	}
 	return render(req, ([
 		"vars": (["ws_group": (string)req->misc->session->user->id,
 			"maxfilesize": MAX_PER_FILE, "maxfiles": MAX_FILES,
 			"user_types": user_types, "is_mod": req->misc->is_mod,
 		]),
 	]) | req->misc->chaninfo);
+}
+
+__async__ void file_uploaded(int channelid, mapping user, mapping file) {
+	update_one(user->id + "#" + channelid, file->id);
+	mapping settings = await(G->G->DB->load_config(channelid, "artshare"));
+	G->G->irc->id[channelid]->send(
+		(["displayname": user->display_name]),
+		settings->msgformat || DEFAULT_MSG_FORMAT,
+		(["{URL}": file->metadata->url, "{sharerid}": user->id, "{fileid}": file->id]),
+	) {[mapping vars, mapping params] = __ARGS__;
+		//Note that the channel ID isn't strictly necessary, as any deletion signal will
+		//itself be associated with that channel; but it's nice to have for debugging.
+		artshare_messageid[params->id] = ({(string)channelid, vars["{sharerid}"], vars["{fileid}"]});
+		//TODO: Synchronize message IDs with the other bot?
+	};
 }
 
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
@@ -230,14 +188,17 @@ __async__ void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "uploaderror", "name": msg->name, "error": error]), 4));
 		return;
 	}
-	string id = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, msg->name, 1));
+	string id = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, ([
+		"name": msg->name,
+		"size": msg->size,
+	]), 1));
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "upload", "id": id, "name": msg->name]), 4));
 	update_one(conn->group, id);
 }
 
 void delete_file(object channel, string userid, string fileid) {
 	G->G->DB->purge_ephemeral_files(channel->userid, userid, fileid)
-		->then() {update_one(userid + "#" + channel->userid, fileid);};
+		->then() {if (sizeof(__ARGS__[0])) update_one(userid + "#" + channel->userid, fileid);};
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {

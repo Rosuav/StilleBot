@@ -84,7 +84,6 @@ constant tables = ([
 		"id uuid primary key default gen_random_uuid()",
 		"channel bigint not null",
 		"uploader bigint not null",
-		"name text not null default ''",
 		"metadata json not null default '{}'",
 		"expires timestamp with time zone", //NULL means it never expires
 		"data bytea not null", //The actual blob.
@@ -582,7 +581,7 @@ Concurrent.Future save_user_credentials(mapping data) {
 __async__ array(mapping) list_ephemeral_files(string|int channel, string|int uploader, string|void id, int|void include_blob) {
 	if (!active) await(await_active());
 	return await(G->G->DB->generic_query(
-		"select id, name, metadata" + (include_blob ? ", data" : "") +
+		"select id, metadata" + (include_blob ? ", data" : "") +
 		" from stillebot.uploads where channel = :channel and uploader = :uploader and expires is not null"
 		+ (id ? " and id = :id" : ""),
 		(["channel": channel, "uploader": uploader, "id": id]),
@@ -592,19 +591,19 @@ __async__ array(mapping) list_ephemeral_files(string|int channel, string|int upl
 __async__ mapping|zero get_file(string id, int|void include_blob) {
 	if (!active) await(await_active());
 	array rows = await(G->G->DB->generic_query(
-		"select id, channel, uploader, name, metadata, expires" + (include_blob ? ", data" : "") +
+		"select id, channel, uploader, metadata, expires" + (include_blob ? ", data" : "") +
 		" from stillebot.uploads where id = :id",
 		(["id": id]),
 	));
 	return sizeof(rows) && rows[0];
 }
 
-__async__ string prepare_file(string|int channel, string|int uploader, string name, int(1bit) ephemeral) {
+__async__ string prepare_file(string|int channel, string|int uploader, mapping metadata, int(1bit) ephemeral) {
 	if (!active) await(await_active());
 	return await(G->G->DB->generic_query(
-		"insert into stillebot.uploads (channel, uploader, name, data, expires) values (:channel, :uploader, :name, '', "
+		"insert into stillebot.uploads (channel, uploader, data, metadata, expires) values (:channel, :uploader, '', :metadata, "
 			+ (ephemeral ? "now() + interval '24 hours'" : "NULL") + ") returning id",
-		(["channel": channel, "uploader": uploader, "name": name]),
+		(["channel": channel, "uploader": uploader, "metadata": metadata]),
 	))[0]->id;
 }
 

@@ -21,7 +21,7 @@ export function render_item(file, obj) {
 		FIGURE([
 			DIV({className: "thumbnail", style: "background-image: url(" + (file.metadata.url || TRANSPARENT_IMAGE) + ")"}),
 			FIGCAPTION([
-				A({href: file.metadata.url, target: "_blank"}, file.name),
+				A({href: file.metadata.url, target: "_blank"}, file.metadata.name),
 			]),
 			BUTTON({type: "button", className: "confirmdelete", title: "Delete"}, "🗑"),
 		]),
@@ -55,7 +55,7 @@ on("click", ".confirmdelete", e => {
 	deleteid = e.match.closest("[data-id]").dataset.id;
 	const file = files[deleteid];
 	DOM("#confirmdeletedlg .thumbnail").replaceWith(DIV({className: "thumbnail", style: "background-image: url(" + file.url + ")"}));
-	set_content("#confirmdeletedlg a", file.name).href = file.url;
+	set_content("#confirmdeletedlg a", file.metadata.name).href = file.url;
 	DOM("#confirmdeletedlg").showModal();
 });
 
@@ -77,7 +77,7 @@ export async function sockmsg_upload(msg) {
 	const file = uploadme[msg.name];
 	if (!file) return;
 	delete uploadme[msg.name];
-	const resp = await (await fetch("share?id=" + msg.id, { //The server guarantees that the ID is URL-safe
+	const resp = await (await fetch("/upload/" + msg.id, { //The server guarantees that the ID is URL-safe
 		method: "POST",
 		body: file,
 		credentials: "same-origin",
