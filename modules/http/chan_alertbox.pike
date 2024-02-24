@@ -743,7 +743,6 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		]);
 	}
 	if (grp != "control") return 0; //If it's not "control" and not the auth key (or a preview key), it's probably an expired auth key.
-	array files = ({ });
 	if (id) {
 		if (!cfg->files) return 0;
 		int idx = search(cfg->files->id, id);

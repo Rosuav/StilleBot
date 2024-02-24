@@ -1,7 +1,6 @@
 //Uploads include both art shares and alertbox GIFs/sounds
 inherit http_endpoint;
 
-constant MAX_PER_FILE = 16;
 //Map the FFProbe results to their MIME types.
 //If not listed, the file is unrecognized and will be rejected.
 constant file_mime_types = ([
