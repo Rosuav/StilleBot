@@ -301,3 +301,5 @@
   https://dev.twitch.tv/docs/eventsub/handling-conduit-events/
 * After a voice authentication change, kick the IRC connection so it gets reconnected
   on next usage.
+* Explore the PostgreSQL "jsonb" type. It's recommended rather than "json".
+  - Notably, what happens with Sql.Sql? Does it return as binary, text, or decoded?
