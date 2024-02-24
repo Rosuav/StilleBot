@@ -11,6 +11,9 @@ constant file_mime_types = ([
 	"png_pipe": "image/png",
 	"svg_pipe": "image/svg+xml",
 	"matroska,webm": "video/webm",
+	"mov,mp4,m4a,3gp,3g2,mj2": "video/mp4",
+	"mp3": "audio/mp3",
+	"wav": "audio/wav",
 ]);
 
 
@@ -22,7 +25,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, 
 		mapping file = await(G->G->DB->get_file(fileid));
 		if (!file) return jsonify((["error": "Bad file ID specified (may have been deleted already)"]));
 		if (file->metadata->url) return jsonify((["error": "File has already been uploaded"]));
-		if (sizeof(req->body_raw) > MAX_PER_FILE * 1048576) return jsonify((["error": "Upload exceeds maximum file size"]));
+		if (sizeof(req->body_raw) > file->metadata->size) return jsonify((["error": "Requested upload of " + file->size + " bytes, not " + sizeof(req->body_raw) + " bytes!"]));
 		string mimetype;
 		mapping rc = Process.run(({"ffprobe", "-", "-print_format", "json", "-show_format", "-v", "quiet"}), (["stdin": req->body_raw]));
 		mixed raw_ffprobe = rc->stdout + "\n" + rc->stderr + "\n";
@@ -30,19 +33,21 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, 
 			catch {raw_ffprobe = Standards.JSON.decode(rc->stdout);};
 			if (mappingp(raw_ffprobe)) mimetype = file_mime_types[raw_ffprobe->format->format_name];
 		}
-		if (!mimetype) {
-			Stdio.append_file("artshare.log", sprintf(#"Unable to ffprobe file art-%s
-Channel: %s
+		if (!mimetype && (has_prefix(req->body_raw, "GIF87a") || has_prefix(req->body_raw, "GIF89a")))
+			mimetype = "image/gif"; //For some reason FFMPEG doesn't always recognize GIFs.
+		if (!mimetype && !file->metadata->mimetype) { //TODO: What if we get both, but they're different?
+			Stdio.append_file("upload.log", sprintf(#"Unable to ffprobe file upl-%s
+Channel: %d
 File size: %d
 Beginning of file: %O
 FFProbe result: %O
 Upload time: %s
 -------------------------
-", file->id, req->misc->channel->name, sizeof(req->body_raw), req->body_raw[..64], raw_ffprobe, ctime(time())[..<1]));
-			return jsonify((["error": "File type unrecognized. If it should have been supported, contact Rosuav and quote ID art-" + file->id]));
+", file->id, file->channel, sizeof(req->body_raw), req->body_raw[..64], raw_ffprobe, ctime(time())[..<1]));
+			return jsonify((["error": "File type unrecognized. If it should have been supported, contact Rosuav and quote ID upl-" + file->id]));
 		}
 		file->metadata->url = sprintf("%s/upload/%s", persist_config["ircsettings"]->http_address, file->id);
-		file->metadata->mimetype = mimetype; //TODO: What if we got one from the client? Should we report discrepancies?
+		if (mimetype) file->metadata->mimetype = mimetype;
 		file->metadata->etag = String.string2hex(Crypto.SHA1.hash(req->body_raw));
 		G->G->DB->upload_file(file->id, req->body_raw, file->metadata);
 		function cb = G->G->websocket_types[file->expires ? "chan_share" : "chan_alertbox"]->file_uploaded;
