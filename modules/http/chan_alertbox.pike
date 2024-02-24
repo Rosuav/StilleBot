@@ -529,21 +529,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"stdalerts": ALERTTYPES[2..<1],
 		"personals": cfg->personals || ({ }),
 	]));
-	if (!req->misc->session->fake && req->request_type == "POST") {
-		if (!req->variables->id) return jsonify((["error": "No file ID specified"]));
-		int idx = search((cfg->files || ({ }))->id, req->variables->id);
-		if (idx < 0) return jsonify((["error": "Bad file ID specified (may have been deleted already)"]));
-		mapping file = cfg->files[idx];
-		if (file->url) return jsonify((["error": "File has already been uploaded"]));
-		if (file->size < sizeof(req->body_raw)) return jsonify((["error": "Requested upload of " + file->size + "bytes, not " + sizeof(req->body_raw) + " bytes!"]));
-		string filename = sprintf("%d-%s", req->misc->channel->userid, file->id);
-		Stdio.write_file("httpstatic/uploads/" + filename, req->body_raw);
-		file->url = sprintf("%s/static/upload-%s", persist_config["ircsettings"]->http_address, filename);
-		persist_status->path("upload_metadata")[filename] = (["mimetype": file->mimetype]);
-		persist_status->save();
-		update_one("control" + req->misc->channel->userid, file->id); //Display connection doesn't need to get updated.
-		return jsonify((["url": file->url]));
-	}
 	return render(req, ([
 		"vars": (["ws_group": "control",
 			"maxfilesize": MAX_PER_FILE, "maxtotsize": MAX_TOTAL_STORAGE,
@@ -858,7 +843,8 @@ void websocket_cmd_auditlog(mapping(string:mixed) conn, mapping(string:mixed) ms
 	send_updates_all(conn->group, (["delpersonal": msg->id]));
 }
 
-@"is_mod": void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_upload1(channel, conn, msg);}
+__async__ void wscmd_upload1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->files) cfg->files = ({ });
 	if (!intp(msg->size) || msg->size < 0) return; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
@@ -884,19 +870,28 @@ void websocket_cmd_auditlog(mapping(string:mixed) conn, mapping(string:mixed) ms
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "uploaderror", "name": msg->name, "error": error]), 4));
 		return;
 	}
-	string id;
-	while (has_value(cfg->files->id, id = String.string2hex(random_string(14))))
-		; //I would be highly surprised if this loops at all, let alone more than once
+	string id = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, ([
+		"name": msg->name,
+		"size": msg->size, "allocation": allocation,
+		"mimetype": msg->mimetype, //TODO: Ensure that it's a valid type, or at least formatted correctly
+	]), 0));
 	cfg->files += ({([
 		"id": id, "name": msg->name,
 		"size": msg->size, "allocation": allocation,
-		"mimetype": msg->mimetype, //TODO: Ensure that it's a valid type, or at least formatted correctly
+		"mimetype": msg->mimetype,
 	])});
 	persist_status->save();
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "upload", "id": id, "name": msg->name]), 4));
 	update_one(conn->group, id); //Note that the display connection doesn't need to be updated
 }
 
+__async__ void file_uploaded(int channelid, mapping user, mapping file) {
+	mapping cfg = persist_status->path("alertbox", (string)channelid);
+	int idx = search((cfg->files || ({ }))->id, file->id);
+	if (idx < 0) return;
+	cfg->files[idx]->url = file->metadata->url;
+	update_one("control#" + channelid, file->id); //Display connection doesn't need to get updated.
+}
 
 //Update the magic variable $nonhiddengifredeems$
 void update_gif_variants(object channel) {
@@ -951,6 +946,7 @@ void update_gif_variants(object channel) {
 	string fn = sprintf("%d-%s", channel->userid, file->id);
 	rm("httpstatic/uploads/" + fn); //If it returns 0 (file not found/not deleted), no problem
 	m_delete(persist_status->path("upload_metadata"), fn);
+	G->G->DB->delete_file(file->id);
 	int changed_alert = 0;
 	string uri = "uploads://" + file->id;
 	foreach (cfg->alertconfigs || ([]);; mapping alert)

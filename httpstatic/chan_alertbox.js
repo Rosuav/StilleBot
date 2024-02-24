@@ -1013,7 +1013,7 @@ export async function sockmsg_upload(msg) {
 	const file = uploadme[msg.name];
 	if (!file) return;
 	delete uploadme[msg.name];
-	const resp = await (await fetch("alertbox?id=" + msg.id, { //The server guarantees that the ID is URL-safe
+	const resp = await (await fetch("/upload/" + msg.id, { //The server guarantees that the ID is URL-safe
 		method: "POST",
 		body: file,
 		credentials: "same-origin",

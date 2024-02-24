@@ -614,12 +614,17 @@ void upload_file(string(21bit) id, string(8bit) raw, mapping metadata) {
 	);
 }
 
+//TODO: Use save_sql? What if we need to be able to await this?
 Concurrent.Future purge_ephemeral_files(string|int channel, string|int uploader, string|void id) {
 	return G->G->DB->generic_query(
 		"delete from stillebot.uploads where channel = :channel and uploader = :uploader"
 			+ (id ? " and id = :id" : "") + " and expires is not null returning id, metadata",
 		(["channel": channel, "uploader": uploader, "id": id]),
 	);
+}
+
+void delete_file(string id) {
+	G->G->DB->save_sql("delete from stillebot.uploads where id = :id", (["id": id]));
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
