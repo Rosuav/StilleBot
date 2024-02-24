@@ -30,7 +30,7 @@ mapping parse_result_row(array fields, string row) {
 				val = sprintf("%04x%04x-%04x-%04x-%04x-%04x%04x%04x", @words[*][0]);
 				break;
 			}
-			default: break;
+			default: /*werror("Unknown type OID: %O\n", field);*/ break;
 		}
 		ret[field[0]] = val;
 	}

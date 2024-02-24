@@ -198,6 +198,13 @@ __async__ void array_test() {
 	exit(0);
 }
 
+__async__ void json_test() {
+	if (!G->G->DB->active) await(G->G->DB->await_active());
+	werror("Result: %O\n", await(G->G->DB->generic_query("select '[1,2,3]'::json")));
+	werror("Result: %O\n", await(G->G->DB->generic_query("select '[1,2,3]'::jsonb as arr, '{\"a\":\"b\"}'::jsonb as obj")));
+	exit(0);
+}
+
 protected void create(string name) {
 	::create(name);
 	/*if (!G->G->have_tasks) {
@@ -215,5 +222,6 @@ protected void create(string name) {
 	if (!G->G->inotify) start_inotify();*/
 	//big_query_test();
 	//import_raids();
-	array_test();
+	//array_test();
+	json_test();
 }
