@@ -1742,6 +1742,34 @@ __async__ void initialize_inherits() {
 		if (!resolved[userid]) resolve_all_inherits(userid);
 }
 
+__async__ void migrate_uploaded_files() {
+	mapping upload_metadata = persist_status->path("upload_metadata");
+	foreach (persist_status->path("alertbox"); string userid; mapping cfg) {
+		if (!cfg->files) continue;
+		foreach (cfg->files, mapping file) {
+			string raw = Stdio.read_file("httpstatic/uploads/" + userid + "-" + file->id);
+			if (!raw) continue;
+			write("%40s: %d %s\n", userid + "-" + file->id, sizeof(raw), sizeof(raw) == file->size ? "OK" : "**** BAD ****" + file->size);
+			string id = await(G->G->DB->prepare_file(userid, userid, ([]), 0));
+			mapping metadata = ([
+				"allocation": file->allocation,
+				"etag": String.string2hex(Crypto.SHA1.hash(raw)),
+				"mimetype": file->mimetype,
+				"name": file->name,
+				"size": file->size,
+				"url": sprintf("%s/upload/%s", persist_config["ircsettings"]->http_address, id),
+				"compat_url": file->url,
+			]);
+			await(G->G->DB->generic_query(
+				"update stillebot.uploads set data = :data, metadata = :metadata where id = :id",
+				(["id": id, "data": raw, "metadata": metadata]),
+			));
+			upload_metadata[userid + "-" + file->id] = (["redirect": metadata->url]);
+		}
+	}
+	persist_status->save();
+}
+
 protected void create(string name) {
 	::create(name);
 	//See if we have a credentials file. If so, get local credentials via gcloud.
@@ -1751,6 +1779,7 @@ protected void create(string name) {
 	foreach (persist_status->path("alertbox"); string id; mapping cfg)
 		check_tts_usage(cfg);
 	ensure_tts_credentials();
+	//migrate_uploaded_files();
 }
 
 /* A Tale of Two Backends
