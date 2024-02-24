@@ -221,7 +221,7 @@ void notify_websockets(int chan, string channame, mapping givcfg) { //TODO: Drop
 @hook_point_redemption:
 void redemption1(object channel, string rewardid, int(0..1) refund, mapping data) {redemption(channel, rewardid, refund, data);}
 __async__ void redemption(object channel, string rewardid, int(0..1) refund, mapping data) {
-	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaway"));
+	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaways"));
 	await(update_ticket_count(givcfg, data, refund));
 	notify_websockets(channel->userid, channel->config->login, givcfg);
 }
@@ -241,7 +241,7 @@ Concurrent.Future list_redemptions(int broadcaster_id, string chan, string id) {
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
-	mapping givcfg = await(G->G->DB->load_config(req->misc->channel->userid, "giveaway"));
+	mapping givcfg = await(G->G->DB->load_config(req->misc->channel->userid, "giveaways"));
 	mapping cfg = req->misc->channel->config;
 	string chan = req->misc->channel->name[1..];
 	string login = "[Broadcaster login](:.twitchlogin data-scopes=channel:manage:redemptions)";
@@ -308,7 +308,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				existing[info->data[0]->id] = tickets;
 				++numcreated;
 			}
-			await(G->G->DB->save_config(req->misc->channel->userid, "giveaway", givcfg));
+			await(G->G->DB->save_config(req->misc->channel->userid, "giveaways", givcfg));
 			//TODO: Notify the front end what's been changed, not just counts. What else needs to be pushed out?
 			send_updates_all(req->misc->channel, (["title": givcfg->title]));
 			return jsonify((["ok": 1, "created": numcreated, "updated": numupdated, "deleted": numdeleted]));
@@ -411,7 +411,7 @@ bool need_mod(string grp) {return grp == "control";}
 __async__ mapping get_chan_state(object channel, string grp)
 {
 	string chan = channel->name[1..];
-	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaway"));
+	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaways"));
 	if (grp == "view") return ([
 		"title": givcfg->?title,
 		"is_open": givcfg->is_open, "end_time": givcfg->end_time,
@@ -445,7 +445,7 @@ __async__ mapping get_chan_state(object channel, string grp)
 
 mapping(string:mixed) autoclose = ([]);
 __async__ void open_close(string chan, int broadcaster_id, int want_open) {
-	mapping givcfg = await(G->G->DB->load_config(broadcaster_id, "giveaway", 0));
+	mapping givcfg = await(G->G->DB->load_config(broadcaster_id, "giveaways", 0));
 	if (!givcfg) return; //No rewards, nothing to open/close
 	string token = token_for_user_login(chan)[0];
 	if (!token) {werror("Can't open/close giveaway w/o bcaster token\n"); return;}
@@ -466,7 +466,7 @@ __async__ void open_close(string chan, int broadcaster_id, int want_open) {
 				"is_paused": !want_open && givcfg->pausemode,
 			])]),
 		);
-	await(G->G->DB->save_config(broadcaster_id, "giveaway", givcfg));
+	await(G->G->DB->save_config(broadcaster_id, "giveaways", givcfg));
 	notify_websockets(broadcaster_id, chan, givcfg);
 	object channel = G->G->irc->channels["#" + chan];
 	array people = values(giveaway_tickets[chan]);
@@ -497,7 +497,7 @@ __async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) 
 	if (grp != "control") return 0;
 	string chan = channel->name[1..];
 	int broadcaster_id = channel->userid;
-	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaway", 0));
+	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaways", 0));
 	if (!givcfg) return 0; //No rewards, nothing to activate or anything
 	switch (msg->action) {
 		case "open":
@@ -536,7 +536,7 @@ __async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) 
 				winner[1]->tickets = 0;
 			}
 			notify_websockets(broadcaster_id, chan, givcfg);
-			await(G->G->DB->save_config(channel->userid, "giveaway", givcfg));
+			await(G->G->DB->save_config(channel->userid, "giveaways", givcfg));
 			channel->trigger_special("!giveaway_winner", (["user": chan]), ([
 				"{title}": givcfg->title || "",
 				"{winner_name}": givcfg->last_winner[1],
@@ -557,7 +557,7 @@ __async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) 
 				p->tickets = 0;
 			}
 			notify_websockets(broadcaster_id, chan, givcfg);
-			await(G->G->DB->save_config(channel->userid, "giveaway", givcfg));
+			await(G->G->DB->save_config(channel->userid, "giveaways", givcfg));
 			if (givcfg->refund_nonwinning) msg->action = "cancel";
 			array(array) redemptions = await(Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*])));
 			foreach (redemptions * ({ }), mapping redem)
@@ -651,7 +651,7 @@ __async__ mapping message_params(object channel, mapping person, array params)
 	if (params[0] == "") error("Need a subcommand\n");
 	sscanf(params[0], "%[^ ]%*[ ]%s", string cmd, string arg);
 	if (cmd != "refund" && cmd != "status") error("Invalid subcommand\n");
-	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaway", 0));
+	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaways", 0));
 	if (!givcfg) error("Giveaways not active\n"); //Not the same as "giveaway not open", this one will not normally be seen
 	string chan = channel->name[1..];
 	mapping people = giveaway_tickets[chan] || ([]);
