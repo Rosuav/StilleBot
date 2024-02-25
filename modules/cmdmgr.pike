@@ -528,10 +528,9 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 		if (object handler = G->G->websocket_types->chan_variables)
 			handler->update_one(channel->name, v - "$");
 	}
-	if (response && response != "") {
-		channel->commands[cmd] = response;
-		if (!extra->?nosave) G->G->DB->save_command(channel->userid, cmd, response); //Don't re-save to the database if it came from there.
-	}
+	if (response && response != "") channel->commands[cmd] = response;
+	//TODO: What if other things need to be purged?
+	if (!extra->?nosave) G->G->DB->save_command(channel->userid, cmd, response); //Don't re-save to the database if it came from there.
 	if (mappingp(response) && response->aliases) update_aliases(channel, response->aliases, (response - (<"aliases">)) | (["alias_of": cmd]), updates);
 	//FIXME: What happens with cooldowns after a change is detected in the database?
 	//Should we just scan the command for cooldowns at the same time as scanning for
