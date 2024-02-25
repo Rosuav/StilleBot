@@ -1306,7 +1306,7 @@ __async__ void send_with_tts(object channel, mapping args, string|void destgroup
 constant builtin_name = "Send Alert";
 constant builtin_description = "Send an alert on the in-browser alertbox. Best with personal (not standard) alerts. Does nothing (no error) if the alert is disabled.";
 constant builtin_param = ({"/Alert type/alertbox_id", "Text"});
-constant vars_provided = ([]);
+constant vars_provided = (["{alert_sent}": "Either 'yes' or 'no' depending on whether the alert happened."]);
 
 //Attempt to send an alert. Returns 1 if alert sent, 0 if not (eg if alert disabled).
 //Note that the actual sending of the alert is asynchronous, esp if TTS is used.
