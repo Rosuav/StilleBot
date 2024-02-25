@@ -859,8 +859,7 @@ __async__ void file_uploaded(int channelid, mapping user, mapping file) {
 }
 
 //Update the magic variable $nonhiddengifredeems$
-void update_gif_variants(object channel) {
-	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+void update_gif_variants(object channel, mapping cfg) {
 	array kwd = ({ });
 	foreach (cfg->alertconfigs->gif->variants || ({ }), string var) {
 		mapping alert = cfg->alertconfigs[var] || ([]);
@@ -886,7 +885,7 @@ void update_gif_variants(object channel) {
 		base->variants -= ({msg->id});
 		resolve_affected_inherits((string)channel->userid, msg->id);
 		persist_status->save();
-		if (basetype == "gif") update_gif_variants(channel);
+		if (basetype == "gif") update_gif_variants(channel, cfg);
 		update_all(channel);
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "select_variant", "type": basetype, "variant": ""]), 4));
 		return;
@@ -899,7 +898,7 @@ void update_gif_variants(object channel) {
 		if (arrayp(base->variants)) m_delete(cfg->alertconfigs, base->variants[*]);
 		resolve_affected_inherits((string)channel->userid, msg->id);
 		persist_status->save();
-		if (msg->id == "gif") update_gif_variants(channel);
+		if (msg->id == "gif") update_gif_variants(channel, cfg);
 		update_all(channel);
 		return;
 	}
@@ -1162,7 +1161,7 @@ __async__ void wscmd_alertcfg1(object channel, mapping(string:mixed) conn, mappi
 		cfg->alertconfigs[basetype]->variants = ids;
 	}
 	persist_status->save();
-	if (basetype == "gif") update_gif_variants(channel);
+	if (basetype == "gif") update_gif_variants(channel, cfg);
 	update_all(channel);
 	if (sock_reply) conn->sock->send_text(Standards.JSON.encode(sock_reply, 4));
 	if (!hosts_were_active) {
