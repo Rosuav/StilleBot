@@ -668,8 +668,8 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		if (ip != conn->remote_ip) return "That's not where you are";
 	}
 	[object channel, string grp] = split_channel(msg->group);
-	mapping cfg = channel && persist_status->path("alertbox", (string)channel->userid);
-	if (grp == cfg->?authkey) {
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	if (grp == cfg->authkey) {
 		//When using the official auth key (which will yield the OAuth token), log
 		//the IP address used. This will give some indication of whether the key
 		//has been leaked. In case mods aren't granted full details of the bcaster's
