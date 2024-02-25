@@ -17,6 +17,7 @@ mapping parse_result_row(array fields, string row) {
 		sscanf(row, "%4H%s", mixed val, row);
 		switch (field[3]) { //type OID
 			case 16: val = val == "\1"; break; //Boolean
+			case 18: case 25: val = utf8_to_string(val); break;
 			case 20: case 21: case 23: sscanf(val, "%" + field[4] + "c", val); break; //Integers, various
 			case 114: val = Standards.JSON.decode_utf8(val); break;
 			case 1184: { //Timestamp with time zone
@@ -41,6 +42,7 @@ string encode_as_type(mixed value, int typeoid) {
 	if (objectp(value) && value->is_val_null) return "\377\377\377\377"; //Any NULL is encoded as length -1
 	switch (typeoid) {
 		case 16: value = value ? "\1" : "\0"; break;
+		case 18: case 25: value = string_to_utf8((string)value); break;
 		case 20: value = sprintf("%8c", (int)value); break;
 		case 21: value = sprintf("%2c", (int)value); break;
 		case 23: value = sprintf("%4c", (int)value); break;
