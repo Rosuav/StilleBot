@@ -621,7 +621,7 @@ __async__ void update_perms_notifications(int channelid, multiset need_perms, mu
 //Validate and update. Returns 0 if command was invalid, otherwise the response.
 echoable_message|zero update_command(object channel, string mode, string cmdname, echoable_message response, mapping|void options) {
 	array valid = validate_command(channel, mode, cmdname, response, options);
-	if (valid) {_save_command(@valid); return valid[1];}
+	if (valid) {_save_command(@valid); return valid[2];}
 }
 
 constant builtin_description = "Manage channel commands";
