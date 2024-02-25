@@ -1,7 +1,6 @@
 inherit http_websocket;
 inherit builtin_command;
 inherit hook;
-inherit irc_callback;
 inherit annotated;
 inherit enableable_module;
 
@@ -374,9 +373,9 @@ constant ALERTTYPES = ({([
 	"condition_vars": ({ }),
 ]), ([ //Alert types sent to the command editor begin here - first two are sliced off; see stdalerts.
 	"id": "hostalert",
-	"label": "Host/Raid",
-	"heading": "Hosted or raided by another channel",
-	"description": "When some other channel hosts/raids yours",
+	"label": "Raid",
+	"heading": "Raided by another channel",
+	"description": "When some other channel raids (formerly hosts) yours",
 	"placeholders": ([
 		"username": "Channel name (equivalently {NAME})",
 		"viewers": "View count (equivalently {VIEWERS})",
@@ -619,32 +618,19 @@ void resolve_affected_inherits(string userid, string id) {
 EventSub raidin = EventSub("raidin", "channel.raid", "1") {
 	object channel = G->G->irc->channels["#" + __ARGS__[0]];
 	if (!channel) return;
-	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	if (cfg->hostbackend != "pike" && cfg->hostbackend != "js") { //FIXME: Check if raid alerts are working, this is a bit odd
-		string target = __ARGS__[1]->from_broadcaster_user_login; //TODO: Use user_name instead?
-		int viewers = __ARGS__[1]->viewers;
-		send_alert(channel, "hostalert", ([
-			"NAME": target, "username": target,
-			"VIEWERS": viewers, "viewers": viewers,
-			"is_raid": 1,
-		]));
-	}
+	string target = __ARGS__[1]->from_broadcaster_user_login; //TODO: Use user_name instead?
+	int viewers = __ARGS__[1]->viewers;
+	send_alert(channel, "hostalert", ([
+		"NAME": target, "username": target,
+		"VIEWERS": viewers, "viewers": viewers,
+		"is_raid": 1,
+	]));
 };
 
 void ensure_host_connection(string chan) {
-	//If host alerts are active, we need notifications so we can push them through.
+	//If host alerts are active, we need notifications so we can push them through. Function name is orphanned.
 	object channel = G->G->irc->channels["#" + chan];
 	if (!channel->userid) return; //Most likely the demo channel. Don't try to set up notifications.
-	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	if (cfg->hostbackend == "pike") {
-		werror("ALERTBOX: Ensuring connection for %O/%O\n", chan, channel->userid);
-		irc_connect((["user": chan, "userid": channel->userid, "join": chan]))->then() {
-			werror("ALERTBOX: Connected to %O\n", chan);
-		}->thencatch() {
-			werror("ALERTBOX: Unable to connect to %O\n", chan);
-			werror("%O\n", __ARGS__);
-		};
-	}
 	raidin(chan, (["to_broadcaster_user_id": (string)channel->userid]));
 }
 
@@ -687,9 +673,6 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		//has been leaked. In case mods aren't granted full details of the bcaster's
 		//internet location, we obscure the actual IPs behind "IP #1", "IP #2" etc,
 		//with the translation to dotted-quad or IPv6 being stored separately.
-		//FIXME: Is it still possible to yield the OAuth token this way? Does this
-		//even matter? That should only be a thing if using JS host notifications,
-		//which aren't a thing any more.
 
 		//1) Translate conn->remote_ip into an IP index
 		int idx = search(cfg->ip_history || ({ }), conn->remote_ip);
@@ -728,15 +711,9 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		//never deployed the alertbox. Previews should still remain functional.
 		string chan = channel->name[1..];
 		ensure_host_connection(chan);
-		string token;
-		array creds = token_for_user_login(chan);
-		if (grp == cfg->authkey && has_value(creds[1] / " ", "chat:read")) {
-			if (cfg->hostbackend == "js") token = creds[0];
-			else token = "backendinstead";
-		}
 		return ([
 			"alertconfigs": G_G_("alertbox_resolved")[(string)channel->userid] || ([]),
-			"token": token,
+			"token": "backendinstead", //20240225: Feature removed, but old copies of the JS may still be around. Can drop this after a reasonable delay.
 			"hostlist_command": cfg->hostlist_command || "",
 			"hostlist_format": cfg->hostlist_format || "",
 			"version": COMPAT_VERSION,
@@ -755,15 +732,12 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["items": files,
 		"alertconfigs": incorporate_stock_alerts(cfg->alertconfigs),
 		"alerttypes": ALERTTYPES[..<1] + (cfg->personals || ({ })),
-		"hostlist_command": cfg->hostlist_command || "",
-		"hostlist_format": cfg->hostlist_format || "",
 		"mastervolume": undefinedp(cfg->mastervolume) ? 1.0 : (float)cfg->mastervolume,
 		"mastermuted": cfg->muted ? Val.true : Val.false, //Force it to be a boolean so JS can do equality checks
 		"replay": cfg->replay || ({ }),
 		"replay_offset": cfg->replay_offset || 0,
 		"ip_log": cfg->ip_log || ({ }),
 		"need_redeem_cmd": !channel->commands->redeem,
-		//"hostbackend": cfg->hostbackend || "none",
 	]);
 }
 
@@ -990,8 +964,8 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 
 @"is_mod": void wscmd_config(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	foreach ("hostlist_command hostlist_format" / " ", string key) //Removed hostbackend as it's not needed at the moment
-		if (stringp(msg[key])) cfg[key] = msg[key];
+	//foreach ("" / " ", string key) //No configs that are simple strings, actually
+	//	if (stringp(msg[key])) cfg[key] = msg[key];
 	if (!undefinedp(msg->mastervolume)) cfg->mastervolume = min(max((float)msg->mastervolume, 0.0), 1.0);
 	if (!undefinedp(msg->muted)) cfg->muted = !!msg->muted;
 	//After changing master audio settings, redo all inherit resolutions
@@ -1514,45 +1488,6 @@ void cheer(object channel, mapping person, int bits, mapping extra, string msg) 
 	]) | parse_emotes(msg, person));
 }
 
-constant messagetypes = ({"PRIVMSG", "NOTICE"});
-void irc_message(string type, string chan, string msg, mapping attrs) {
-	werror("irc_message - %O %O %O %O\n", type, chan, msg, attrs);
-	if (attrs->user == "jtv") {
-		//TODO: Filter to new hosts only
-		//TODO: Clear the "new hosts" list when stream goes on/offline
-		//-- maybe use timestamps, or when online, clear since last went-offline
-		//seenhosts[chan] = 1;
-		//For zero-viewer hosts, it looks like "USERNAME is now hosting you."
-		//Check what the message says if there are viewers.
-		string target = "-", viewers = "0";
-		if (has_suffix(msg, " is now hosting you."))
-			sscanf(msg, "%s is", target);
-		//else sscanf(msg, "%s is now hosting for %s viewers", target, viewers)?
-		werror("ALERTBOX: Host target (%O, %O, %O)\n", chan, target, viewers);
-		Stdio.append_file("alertbox_hosts.log", sprintf("[%d] SRVHOST: %s -> %O\n", time(), chan, msg));
-		if (target && target != "-") {
-			object channel = G->G->irc->channels[chan]; if (!channel) return;
-			mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-			if (cfg->hostbackend == "pike") {
-				send_alert(channel, "hostalert", ([
-					"NAME": target, "username": target,
-					"VIEWERS": viewers, "viewers": viewers,
-					"is_raid": 0,
-				]));
-			}
-		}
-	}
-}
-
-void irc_closed(mapping options) {
-	::irc_closed(options);
-	//If we still need host alerts for this user, reconnect.
-	mapping cfg = persist_status->path("alertbox", (string)options->userid);
-	array socks = websocket_groups[cfg->authkey + "#" + options->user] || ({ });
-	werror("ALERTBOX: irc_closed for %O, %d connections, active %O\n", options->user, sizeof(socks), cfg->hostbackend == "pike");
-	if (sizeof(socks) && cfg->hostbackend == "pike") irc_connect(options);
-}
-
 constant ENABLEABLE_FEATURES = ([
 	"!redeem": ([
 		"description": "Trigger GIF/sound alerts via redemption or command",
@@ -1731,39 +1666,5 @@ protected void create(string name) {
 	if (file_stat("tts-credentials.json") && !tts_config->access_token) spawn_task(fetch_tts_credentials(0));
 	spawn_task(initialize_inherits());
 	G->G->send_alert = send_alert;
-	foreach (persist_status->path("alertbox"); string id; mapping cfg)
-		check_tts_usage(cfg);
 	ensure_tts_credentials();
 }
-
-/* A Tale of Two Backends
-
-(Technically three, since "None" is viable, but it's just "not this and not this")
-
-Host alerts can be provided serverside (backend == "pike") or clientside (backend == "js").
-These are not currently at feature parity, and they will never be identical in flexibility or security.
-
-JS backend
-==========
-
-* Uses ComfyJS inside CEF inside OBS
-* Supports !hostlist command to report current hosts
-* Independent of IRC issues on Sikorsky
-* Requires OAuth token to be sent to client
-* Basically useless now that hosts don't exist.
-
-Pike backend
-============
-
-* Uses IRC and pushes signals on websocket
-* No !hostlist command. If one is needed, try using the command system to implement it?
-* Requires OAuth on the back end only - much safer
-* Capable of alert variants, filtering, etc
-* Can recognize raids
-* Stores replayable alerts
-* The IRC half is useless now that hosts don't exist
-
-I'm keeping the code for the JS backend around, in case hosting ever returns or an equivalent
-is created, but for now, the Pike backend is the only one that's useful. And even that is
-mostly useless (the IRC half isn't necessary), so all we really need is the raid-in hook.
-*/

@@ -1,6 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {AUDIO, DIV, FIGCAPTION, FIGURE, IMG, P, SECTION, VIDEO} = choc; //autoimport
-import "https://cdn.jsdelivr.net/npm/comfy.js/dist/comfy.min.js"; const ComfyJS = window.ComfyJS;
 import {ensure_font} from "$$static||utils.js$$";
 
 const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
@@ -52,7 +51,7 @@ const alert_formats = {
 //6) A long alert_gap will result in weird waiting periods between alerts. A
 //   short alert_gap will have alerts coming hard on each other's heels.
 
-let inited = false, token = null;
+let inited = false;
 let hostlist_command = null, hostlist_format = null;
 const alert_active = { };
 const retainme = ["alertlength", "alertgap", "tts_dwell", "tts_volume"];
@@ -80,18 +79,10 @@ export function render(data) {
 	}
 	if (data.send_alert) do_alert("#" + data.send_alert, data);
 	if (data.raidhack) current_hosts[data.raidhack] = 1;
-	if (data.token && data.token !== token) {
-		if (inited) ComfyJS.Disconnect();
-		if (data.token !== "backendinstead") {
-			inited = true;
-			token = data.token;
-			ComfyJS.Init(ws_group.split("#")[1], data.token);
-		}
-	}
 	if (data.breaknow) {
 		//Token has been revoked. This will be the last message we receive
 		//on the websocket. Clean up some resources rather than waiting around.
-		ComfyJS.Disconnect();
+		//(Nothing currently needs to do this.)
 	}
 	if (data.hostlist_command) hostlist_command = data.hostlist_command;
 	if (data.hostlist_format) hostlist_format = data.hostlist_format;
@@ -175,19 +166,3 @@ function do_alert(alert, replacements) {
 	if (!playing) elem.querySelector("audio").play();
 	alerttimeout = setTimeout(remove_alert, alertlength * 1000, alert, elem.dataset.alertgap);
 }
-
-ComfyJS.onHosted = (username, viewers, autohost, extra) => {
-	//Note that ComfyJS itself never seems to announce autohosts. It also
-	//doesn't provide the displayname, so we fall back on the username.
-	if (current_hosts[username]) return;
-	current_hosts[username] = 1;
-	console.log("HOST:", username, viewers, autohost, extra);
-	do_alert("#hostalert", {NAME: username, VIEWERS: viewers, username, viewers});
-};
-
-ComfyJS.onCommand = (user, command, message, flags, extra) => {
-	if (!hostlist_command || !hostlist_format || command !== hostlist_command) return;
-	if (!flags.broadcaster && !flags.mod) return;
-	const hosts = Object.keys(current_hosts);
-	ComfyJS.Say(hostlist_format.replace("{count}", hosts.length).replace("{hosts}", hosts.join(", ")));
-};
