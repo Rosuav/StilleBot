@@ -205,6 +205,18 @@ __async__ void json_test() {
 	exit(0);
 }
 
+__async__ void fix_kofi_name() {
+	//TODO: Make an actual UI for this somewhere
+	mapping stats = await(G->G->DB->load_config(54212603, "subgiftstats"));
+	foreach (stats->allkofi, mapping gift) {
+		if (gift->giver->user_id == "email@address.example") {
+			gift->giver->user_id = "12345678";
+			gift->giver->login = gift->giver->displayname = "some_user_name";
+		}
+	}
+	await(G->G->DB->save_config(54212603, "subgiftstats", stats));
+}
+
 protected void create(string name) {
 	::create(name);
 	/*if (!G->G->have_tasks) {
