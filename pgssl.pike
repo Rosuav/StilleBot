@@ -27,7 +27,7 @@ mapping parse_result_row(array fields, string row) {
 		sscanf(row, "%4H%s", mixed val, row);
 		switch (field[3]) { //type OID
 			case 16: val = val == "\1"; break; //Boolean
-			case 18: case 25: val = utf8_to_string(val); break;
+			case 18: case 19: case 25: case 1042: case 1043: val = utf8_to_string(val); break;
 			case 20: case 21: case 23: case 26: sscanf(val, "%" + field[4] + "c", val); break; //Integers, various
 			case 114: val = Standards.JSON.decode_utf8(val); break;
 			case 1184: { //Timestamp with time zone
