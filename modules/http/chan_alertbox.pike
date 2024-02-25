@@ -904,7 +904,6 @@ void update_gif_variants(object channel, mapping cfg) {
 	}
 	string fn = sprintf("%d-%s", channel->userid, msg->id);
 	rm("httpstatic/uploads/" + fn); //If it returns 0 (file not found/not deleted), no problem
-	m_delete(persist_status->path("upload_metadata"), fn);
 	G->G->DB->delete_file(msg->id);
 	int changed_alert = 0;
 	string uri = "uploads://" + msg->id;
@@ -913,7 +912,7 @@ void update_gif_variants(object channel, mapping cfg) {
 			alert[key] = "";
 			changed_alert = 1;
 		}
-	persist_status->save();
+	if (changed_alert) persist_status->save();
 	update_one(conn->group, msg->id);
 	if (changed_alert) update_one(cfg->authkey + "#" + channel->userid, msg->id); //TODO: Is this needed? Does the client conn use these pushes?
 }

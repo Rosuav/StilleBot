@@ -64,3 +64,7 @@ Upload time: %s
 		"extra_heads": (["ETag": "\"" + file->metadata->etag + "\""]),
 	]);
 }
+
+//TODO: Have a thing on code reload or somewhere that cleans out upload_metadata,
+//removing entries for files that are no longer present. That way, if those files
+//eventually get deleted, we'll throw away their metadata.
