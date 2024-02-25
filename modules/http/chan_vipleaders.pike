@@ -269,6 +269,8 @@ __async__ void add_tip(object channel, string type, mapping params, mapping raw,
 	//in the donation matched the name *as of that time*.
 	mapping user = ([]);
 	catch {user = await(get_user_info(params->username, "login"));}; //Any error, leave it as "anonymous"
+	//TODO: If we have a user (and thus an ID), scan through allkofi to find any
+	//with the same email address and update them. If that is done, do a full recalc.
 	stats->allkofi += ({([
 		"giver": ([
 			//If we don't have a recognized user, use the name and email as the identity. Close enough
