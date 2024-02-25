@@ -580,7 +580,6 @@ void resolve_all_inherits(string userid) {
 	float vol = master->muted ? 0.0 : (master->mastervolume || 1.0);
 	mapping alerts = incorporate_stock_alerts(master->alertconfigs || ([]));
 	mapping ret = ([]);
-	mapping uploads = master->files ? mkmapping(master->files->id, master->files) : ([]); //Worth caching this?
 	foreach (alerts; string id; mapping alert) if (id != "defaults") {
 		//First walk the list of parents to find the alert set.
 		string alertset = find_alertset(alerts, id);
@@ -600,9 +599,9 @@ void resolve_all_inherits(string userid) {
 				resolved[url] = media->url;
 			}
 			if (sscanf(resolved[url] || "u", "uploads://%s", string fn) && fn) {
-				mapping media = uploads[fn] || ([]);
-				//As above - what if !media?
-				resolved[url] = media->url;
+				//We assume here that the file does exist - cheaper than looking it up.
+				//If it doesn't, the URL given here will toss a 404 back.
+				resolved[url] = sprintf("%s/upload/%s", persist_config["ircsettings"]->http_address, fn);
 			}
 		}
 	}
@@ -716,7 +715,8 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		if (cfg->uses_tts) call_out(ensure_tts_credentials, 0);
 	}
 }
-mapping get_chan_state(object channel, string grp, string|void id) {
+
+__async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (grp == cfg->authkey //The broadcaster, not requiring any login token
 		|| has_prefix(grp, "preview-") //Any mod, with the same login token (test alerts only, and only from same user)
@@ -744,14 +744,15 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	}
 	if (grp != "control") return 0; //If it's not "control" and not the auth key (or a preview key), it's probably an expired auth key.
 	if (id) {
-		if (!cfg->files) return 0;
-		int idx = search(cfg->files->id, id);
-		return idx >= 0 && cfg->files[idx];
+		array files = await(G->G->DB->list_channel_files(channel->userid, id));
+		return sizeof(files) && (files[0]->metadata | (["id": files[0]->id]));
 	}
+	array files = await(G->G->DB->list_channel_files(channel->userid));
+	foreach (files; int i; mapping f) files[i] = f->metadata | (["id": f->id]);
 	if (!cfg->alertconfigs) cfg->alertconfigs = ([]);
 	cfg->alertconfigs->defaults = resolve_inherits(cfg->alertconfigs, "defaults",
 		cfg->alertconfigs->defaults || ([]), 0);
-	return (["items": cfg->files || ({ }),
+	return (["items": files,
 		"alertconfigs": incorporate_stock_alerts(cfg->alertconfigs),
 		"alerttypes": ALERTTYPES[..<1] + (cfg->personals || ({ })),
 		"hostlist_command": cfg->hostlist_command || "",
@@ -780,7 +781,7 @@ void update_all(object channel) {
 				allsocks += socks;
 	//Note that we use preview rather than the authkey here since there
 	//might not be an authkey. It's the same state anyway.
-	_low_send_updates(get_state("preview-#" + channel->userid), allsocks);
+	get_state("preview-#" + channel->userid)->then() {_low_send_updates(__ARGS__[0], allsocks);};
 }
 
 void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -844,10 +845,9 @@ void websocket_cmd_auditlog(mapping(string:mixed) conn, mapping(string:mixed) ms
 
 @"is_mod": void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_upload1(channel, conn, msg);}
 __async__ void wscmd_upload1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	if (!cfg->files) cfg->files = ({ });
 	if (!intp(msg->size) || msg->size < 0) return; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
-	int used = `+(0, @cfg->files->allocation);
+	array files = await(G->G->DB->list_channel_files(channel->userid));
+	int used = `+(0, @files->allocation);
 	//Count 1KB chunks, rounding up, and adding one chunk for overhead. Won't make much
 	//difference to most files, but will stop someone from uploading twenty-five million
 	//one-byte files, which would be just stupid :)
@@ -874,21 +874,11 @@ __async__ void wscmd_upload1(object channel, mapping(string:mixed) conn, mapping
 		"size": msg->size, "allocation": allocation,
 		"mimetype": msg->mimetype, //TODO: Ensure that it's a valid type, or at least formatted correctly
 	]), 0));
-	cfg->files += ({([
-		"id": id, "name": msg->name,
-		"size": msg->size, "allocation": allocation,
-		"mimetype": msg->mimetype,
-	])});
-	persist_status->save();
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "upload", "id": id, "name": msg->name]), 4));
 	update_one(conn->group, id); //Note that the display connection doesn't need to be updated
 }
 
 __async__ void file_uploaded(int channelid, mapping user, mapping file) {
-	mapping cfg = persist_status->path("alertbox", (string)channelid);
-	int idx = search((cfg->files || ({ }))->id, file->id);
-	if (idx < 0) return;
-	cfg->files[idx]->url = file->metadata->url;
 	update_one("control#" + channelid, file->id); //Display connection doesn't need to get updated.
 }
 
@@ -937,25 +927,20 @@ void update_gif_variants(object channel) {
 		update_all(channel);
 		return;
 	}
-	if (!cfg->files) return; //No files, can't delete
-	int idx = search(cfg->files->id, msg->id);
-	if (idx == -1) return; //Not found.
-	mapping file = cfg->files[idx];
-	cfg->files = cfg->files[..idx-1] + cfg->files[idx+1..];
-	string fn = sprintf("%d-%s", channel->userid, file->id);
+	string fn = sprintf("%d-%s", channel->userid, msg->id);
 	rm("httpstatic/uploads/" + fn); //If it returns 0 (file not found/not deleted), no problem
 	m_delete(persist_status->path("upload_metadata"), fn);
-	G->G->DB->delete_file(file->id);
+	G->G->DB->delete_file(msg->id);
 	int changed_alert = 0;
-	string uri = "uploads://" + file->id;
+	string uri = "uploads://" + msg->id;
 	foreach (cfg->alertconfigs || ([]);; mapping alert)
 		while (string key = search(alert, uri)) {
 			alert[key] = "";
 			changed_alert = 1;
 		}
 	persist_status->save();
-	update_one(conn->group, file->id);
-	if (changed_alert) update_one(cfg->authkey + "#" + channel->userid, file->id); //TODO: Is this needed? Does the client conn use these pushes?
+	update_one(conn->group, msg->id);
+	if (changed_alert) update_one(cfg->authkey + "#" + channel->userid, msg->id); //TODO: Is this needed? Does the client conn use these pushes?
 }
 
 int(0..1) valid_alert_type(string type, mapping|void cfg) {
@@ -1040,7 +1025,8 @@ void copy_stock(mapping alertconfigs, string basetype) {
 	}
 }
 
-@"is_mod": void wscmd_alertcfg(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": void wscmd_alertcfg(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_alertcfg1(channel, conn, msg);}
+__async__ void wscmd_alertcfg1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	string basetype = msg->type || ""; sscanf(basetype, "%s-%s", basetype, string variation);
 	if (!valid_alert_type(basetype, cfg)) return;
@@ -1071,9 +1057,9 @@ void copy_stock(mapping alertconfigs, string basetype) {
 			//If you're setting the image, see if we need to set the "image_is_video" flag.
 			//Also, if the image URI is invalid, don't set it (retain the previous).
 			if (sscanf(msg->image, "uploads://%s", string imgid) && imgid) {
-				int idx = search((cfg->files || ({ }))->id, imgid);
-				if (idx == -1) m_delete(msg, "image");
-				else data->image_is_video = has_prefix(cfg->files[idx]->mimetype, "video/");
+				mapping file = await(G->G->DB->get_file(imgid));
+				if (!file) m_delete(msg, "image");
+				else data->image_is_video = has_prefix(file->metadata->mimetype, "video/");
 			}
 			else if (sscanf(msg->image, "freemedia://%s", string fn) && fn) {
 				mapping media = G->G->freemedia_filelist->_lookup[fn];
@@ -1210,18 +1196,16 @@ void copy_stock(mapping alertconfigs, string basetype) {
 	}
 }
 
-@"is_mod": void wscmd_renamefile(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": void wscmd_renamefile(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_renamefile1(channel, conn, msg);}
+__async__ void wscmd_renamefile1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Rename a file. Won't change its URL (since that's based on ID),
 	//nor the name of the file as stored (ditto), so this is really an
 	//"edit description" endpoint. But users will think of it as "rename".
 	if (!stringp(msg->id) || !stringp(msg->name)) return;
-	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	if (!cfg->files) return; //No files, can't rename
-	int idx = search(cfg->files->id, msg->id);
-	if (idx == -1) return; //Not found.
-	mapping file = cfg->files[idx];
-	file->name = msg->name;
-	persist_status->save();
+	mapping file = await(G->G->DB->get_file(msg->id));
+	if (!file) return; //Not found.
+	file->metadata->name = msg->name;
+	G->G->DB->update_file(file->id, file->metadata);
 	update_one(conn->group, file->id);
 }
 
@@ -1741,34 +1725,6 @@ __async__ void initialize_inherits() {
 		if (!resolved[userid]) resolve_all_inherits(userid);
 }
 
-__async__ void migrate_uploaded_files() {
-	mapping upload_metadata = persist_status->path("upload_metadata");
-	foreach (persist_status->path("alertbox"); string userid; mapping cfg) {
-		if (!cfg->files) continue;
-		foreach (cfg->files, mapping file) {
-			string raw = Stdio.read_file("httpstatic/uploads/" + userid + "-" + file->id);
-			if (!raw) continue;
-			write("%40s: %d %s\n", userid + "-" + file->id, sizeof(raw), sizeof(raw) == file->size ? "OK" : "**** BAD ****" + file->size);
-			string id = await(G->G->DB->prepare_file(userid, userid, ([]), 0));
-			mapping metadata = ([
-				"allocation": file->allocation,
-				"etag": String.string2hex(Crypto.SHA1.hash(raw)),
-				"mimetype": file->mimetype,
-				"name": file->name,
-				"size": file->size,
-				"url": sprintf("%s/upload/%s", persist_config["ircsettings"]->http_address, id),
-				"compat_url": file->url,
-			]);
-			await(G->G->DB->generic_query(
-				"update stillebot.uploads set data = :data, metadata = :metadata where id = :id",
-				(["id": id, "data": raw, "metadata": metadata]),
-			));
-			upload_metadata[userid + "-" + file->id] = (["redirect": metadata->url]);
-		}
-	}
-	persist_status->save();
-}
-
 protected void create(string name) {
 	::create(name);
 	//See if we have a credentials file. If so, get local credentials via gcloud.
@@ -1778,7 +1734,6 @@ protected void create(string name) {
 	foreach (persist_status->path("alertbox"); string id; mapping cfg)
 		check_tts_usage(cfg);
 	ensure_tts_credentials();
-	//migrate_uploaded_files();
 }
 
 /* A Tale of Two Backends

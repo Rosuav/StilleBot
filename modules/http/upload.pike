@@ -48,11 +48,13 @@ Upload time: %s
 		file->metadata->url = sprintf("%s/upload/%s", persist_config["ircsettings"]->http_address, file->id);
 		if (mimetype) file->metadata->mimetype = mimetype;
 		file->metadata->etag = String.string2hex(Crypto.SHA1.hash(req->body_raw));
-		G->G->DB->upload_file(file->id, req->body_raw, file->metadata);
+		G->G->DB->upload_file(file->id, file->metadata, req->body_raw);
 		function cb = G->G->websocket_types[file->expires ? "chan_share" : "chan_alertbox"]->file_uploaded;
 		if (cb) cb(file->channel, req->misc->session->user, file);
 		return jsonify((["url": file->url]));
 	}
+	if (string redir = persist_status->has_path("upload_metadata", fileid)->?redirect) return redirect(redir, 301);
+	if (sizeof(fileid / "-") != 5) return 0; //Not a UUID. Probably a legacy URL for something that's been deleted.
 	mapping file = await(G->G->DB->get_file(fileid, 1));
 	if (!file) return 0;
 	if (req->request_headers["if-none-match"] == file->metadata->etag) return (["error": 304]);
@@ -62,4 +64,3 @@ Upload time: %s
 		"extra_heads": (["ETag": "\"" + file->metadata->etag + "\""]),
 	]);
 }
-

@@ -588,6 +588,15 @@ __async__ array(mapping) list_ephemeral_files(string|int channel, string|int upl
 	));
 }
 
+__async__ array(mapping) list_channel_files(string|int channel, string|void id) {
+	if (!active) await(await_active());
+	return await(G->G->DB->generic_query(
+		"select id, metadata from stillebot.uploads where channel = :channel and expires is null"
+		+ (id ? " and id = :id" : ""),
+		(["channel": channel, "id": id]),
+	));
+}
+
 __async__ mapping|zero get_file(string id, int|void include_blob) {
 	if (!active) await(await_active());
 	array rows = await(G->G->DB->generic_query(
@@ -607,9 +616,9 @@ __async__ string prepare_file(string|int channel, string|int uploader, mapping m
 	))[0]->id;
 }
 
-void upload_file(string(21bit) id, string(8bit) raw, mapping metadata) {
+void update_file(string(21bit) id, mapping metadata, string(8bit)|void raw) {
 	G->G->DB->save_sql(
-		"update stillebot.uploads set data = :data, metadata = :metadata where id = :id",
+		"update stillebot.uploads set " + (raw ? "data = :data, " : "") + "metadata = :metadata where id = :id",
 		(["id": id, "data": raw, "metadata": metadata]),
 	);
 }
