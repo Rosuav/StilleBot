@@ -522,12 +522,14 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		]));
 		return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	}
-	mapping cfg = persist_status->path("alertbox", (string)req->misc->channel->userid);
-	//For API usage eg command viewer, provide some useful information in JSON.
-	if (req->variables->summary) return jsonify(([
-		"stdalerts": ALERTTYPES[2..<1],
-		"personals": cfg->personals || ({ }),
-	]));
+	if (req->variables->summary) {
+		//For API usage eg command viewer, provide some useful information in JSON.
+		mapping cfg = persist_status->path("alertbox", (string)req->misc->channel->userid);
+		return jsonify(([
+			"stdalerts": ALERTTYPES[2..<1],
+			"personals": cfg->personals || ({ }),
+		]));
+	}
 	return render(req, ([
 		"vars": (["ws_group": "control",
 			"maxfilesize": MAX_PER_FILE, "maxtotsize": MAX_TOTAL_STORAGE,
