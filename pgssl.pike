@@ -40,15 +40,16 @@ mapping parse_result_row(array fields, string row) {
 string encode_as_type(mixed value, int typeoid) {
 	if (objectp(value) && value->is_val_null) return "\377\377\377\377"; //Any NULL is encoded as length -1
 	switch (typeoid) {
-		case 16: return value ? "\0\0\0\1\1" : "\0\0\0\1\0";
-		case 20: return sprintf("\0\0\0\b%8c", (int)value);
-		case 21: return sprintf("\0\0\0\2%2c", (int)value);
-		case 23: return sprintf("\0\0\0\4%4c", (int)value);
-		case 114: return sprintf("%4H", Standards.JSON.encode(value, 5));
-		case 1184: return sprintf("\0\0\0\b%8c", value->usecs - EPOCH2000);
-		case 2950: return sprintf("\0\0\0\20%@2c", array_sscanf(value, "%4x%4x-%4x-%4x-%4x-%4x%4x%4x"));
-		default: return sprintf("%4H", (string)value);
+		case 16: value = value ? "\1" : "\0"; break;
+		case 20: value = sprintf("%8c", (int)value); break;
+		case 21: value = sprintf("%2c", (int)value); break;
+		case 23: value = sprintf("%4c", (int)value); break;
+		case 114: value = Standards.JSON.encode(value, 5); break;
+		case 1184: value = sprintf("%8c", value->usecs - EPOCH2000); break;
+		case 2950: value = sprintf("%@2c", array_sscanf(value, "%4x%4x-%4x-%4x-%4x-%4x%4x%4x")); break;
+		default: value = (string)value;
 	}
+	return sprintf("%4H", value);
 }
 
 //Sql.Sql-compatible API.
