@@ -33,6 +33,10 @@ mixed decode_as_type(string val, int type) {
 			return v;
 		}
 		case 114: return Standards.JSON.decode_utf8(val);
+		case 700: case 701: { //Float
+			sscanf(val, "%" + sizeof(val) + "F", float v);
+			return v;
+		}
 		case 1184: { //Timestamp with time zone
 			sscanf(val, "%8c", int usec);
 			object v = Val.Timestamp();
@@ -108,6 +112,8 @@ string encode_as_type(mixed value, int typeoid) {
 		case 21: value = sprintf("%2c", (int)value); break;
 		case 23: value = sprintf("%4c", (int)value); break;
 		case 114: value = Standards.JSON.encode(value, 5); break;
+		case 700: value = sprintf("%4F", (float)value); break;
+		case 701: value = sprintf("%8F", (float)value); break;
 		case 1184: value = sprintf("%8c", value->usecs - EPOCH2000); break;
 		case 2950: value = sprintf("%@2c", array_sscanf(value, "%4x%4x-%4x-%4x-%4x-%4x%4x%4x")); break;
 		default:
