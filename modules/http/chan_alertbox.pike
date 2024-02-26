@@ -576,10 +576,9 @@ mapping resolve_inherits(mapping alerts, string id, mapping|zero alert, string|z
 	return parent | alert;
 }
 
-void resolve_all_inherits(string userid) {
-	mapping master = persist_status->path("alertbox", userid);
-	float vol = master->muted ? 0.0 : (master->mastervolume || 1.0);
-	mapping alerts = incorporate_stock_alerts(master->alertconfigs || ([]));
+void resolve_all_inherits(mapping cfg, string userid) {
+	float vol = cfg->muted ? 0.0 : (cfg->mastervolume || 1.0);
+	mapping alerts = incorporate_stock_alerts(cfg->alertconfigs || ([]));
 	mapping ret = ([]);
 	foreach (alerts; string id; mapping alert) if (id != "defaults") {
 		//First walk the list of parents to find the alert set.
@@ -609,12 +608,12 @@ void resolve_all_inherits(string userid) {
 	G_G_("alertbox_resolved")[userid] = ret;
 }
 
-void resolve_affected_inherits(string userid, string id) {
+void resolve_affected_inherits(mapping cfg, string userid, string id) {
 	//TODO maybe: Resolve this ID, and anything that depends on it.
 	//Best way would be to switch this and resolve_all, so that
 	//resolve_all really means "resolve those affected by defaults".
 	//For now, a bit of overkill: just always resolve all.
-	resolve_all_inherits(userid);
+	resolve_all_inherits(cfg, userid);
 }
 
 EventSub raidin = EventSub("raidin", "channel.raid", "1") {
@@ -812,7 +811,7 @@ void websocket_cmd_auditlog(mapping(string:mixed) conn, mapping(string:mixed) ms
 	int idx = search(cfg->personals->id, msg->id);
 	if (idx == -1) return; //Not found (maybe was already deleted)
 	cfg->personals = cfg->personals[..idx-1] + cfg->personals[idx+1..];
-	if (cfg->alertconfigs) {m_delete(cfg->alertconfigs, msg->id); resolve_all_inherits((string)channel->userid);}
+	if (cfg->alertconfigs) {m_delete(cfg->alertconfigs, msg->id); resolve_all_inherits(cfg, (string)channel->userid);}
 	persist_status->save();
 	send_updates_all(conn->group, (["delpersonal": msg->id]));
 }
@@ -881,7 +880,7 @@ void update_gif_variants(object channel, mapping cfg) {
 		if (!arrayp(base->variants)) return; //A properly-saved alert variant should have a base alert with a set of variants.
 		m_delete(cfg->alertconfigs, msg->id);
 		base->variants -= ({msg->id});
-		resolve_affected_inherits((string)channel->userid, msg->id);
+		resolve_affected_inherits(cfg, (string)channel->userid, msg->id);
 		persist_status->save();
 		if (basetype == "gif") update_gif_variants(channel, cfg);
 		update_all(channel);
@@ -894,7 +893,7 @@ void update_gif_variants(object channel, mapping cfg) {
 		mapping base = m_delete(cfg->alertconfigs, msg->id);
 		if (!base) return; //Already didn't exist.
 		if (arrayp(base->variants)) m_delete(cfg->alertconfigs, base->variants[*]);
-		resolve_affected_inherits((string)channel->userid, msg->id);
+		resolve_affected_inherits(cfg, (string)channel->userid, msg->id);
 		persist_status->save();
 		if (msg->id == "gif") update_gif_variants(channel, cfg);
 		update_all(channel);
@@ -967,7 +966,7 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 	if (!undefinedp(msg->mastervolume)) cfg->mastervolume = min(max((float)msg->mastervolume, 0.0), 1.0);
 	if (!undefinedp(msg->muted)) cfg->muted = !!msg->muted;
 	//After changing master audio settings, redo all inherit resolutions
-	if (!undefinedp(msg->mastervolume) || !undefinedp(msg->muted)) resolve_all_inherits((string)channel->userid);
+	if (!undefinedp(msg->mastervolume) || !undefinedp(msg->muted)) resolve_all_inherits(cfg, (string)channel->userid);
 	persist_status->save();
 	update_all(channel);
 }
@@ -1043,7 +1042,7 @@ __async__ void wscmd_alertcfg1(object channel, mapping(string:mixed) conn, mappi
 			else data->image_is_video = has_prefix(msg->image, "https://") && msg->image_is_video;
 		}
 		foreach (SINGLE_EDIT_ATTRS, string attr) if (!undefinedp(msg[attr])) data[attr] = msg[attr];
-		resolve_affected_inherits((string)channel->userid, msg->type);
+		resolve_affected_inherits(cfg, (string)channel->userid, msg->type);
 		persist_status->save();
 		update_all(channel);
 		if (sock_reply) conn->sock->send_text(Standards.JSON.encode(sock_reply, 4));
@@ -1142,7 +1141,7 @@ __async__ void wscmd_alertcfg1(object channel, mapping(string:mixed) conn, mappi
 		}
 		data->specificity = specificity;
 	}
-	resolve_affected_inherits((string)channel->userid, msg->type);
+	resolve_affected_inherits(cfg, (string)channel->userid, msg->type);
 	if (variation) {
 		//For convenience, every time a change is made, we update an array of
 		//variants in the base alert's data.
@@ -1654,8 +1653,8 @@ __async__ void initialize_inherits() {
 	}
 	mapping resolved = G_G_("alertbox_resolved");
 	//mapping resolved = G->G->alertbox_resolved = ([]); //Use this instead (once) if a change breaks inheritance
-	foreach (persist_status->path("alertbox"); string userid;)
-		if (!resolved[userid]) resolve_all_inherits(userid);
+	foreach (persist_status->path("alertbox"); string userid; mapping cfg)
+		if (!resolved[userid]) resolve_all_inherits(cfg, userid);
 }
 
 protected void create(string name) {
