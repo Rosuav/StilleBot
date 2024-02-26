@@ -66,10 +66,6 @@ $$notmod2||[Show library](:.showlibrary) [Recent events](:#recentevents .dlg)$$
 > After doing this, you will need to update any browser sources showing your alerts,<br>
 > but all your configuration will be retained.
 >
-> Your authentication key has been used from these locations:
-> * loading IP history...
-> {: #ip_log}
->
 > [Generate a new key, disabling the old one](:#confirmrevokekey) [Cancel](:.dialog_close)
 {: tag=dialog #revokekeydlg}
 
@@ -667,36 +663,18 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		if (ip != conn->remote_ip) return "That's not where you are";
 	}
 	[object channel, string grp] = split_channel(msg->group);
-	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	if (grp == cfg->authkey) {
-		//When using the official auth key (which will yield the OAuth token), log
-		//the IP address used. This will give some indication of whether the key
-		//has been leaked. In case mods aren't granted full details of the bcaster's
-		//internet location, we obscure the actual IPs behind "IP #1", "IP #2" etc,
-		//with the translation to dotted-quad or IPv6 being stored separately.
+	tts_check(grp);
+}
 
-		//1) Translate conn->remote_ip into an IP index
-		int idx = search(cfg->ip_history || ({ }), conn->remote_ip);
-		if (idx == -1) {
-			cfg->ip_history += ({conn->remote_ip});
-			idx = sizeof(cfg->ip_history) - 1;
-		}
-		//2) Add a log entry, as compactly as possible
-		if (!cfg->ip_log || !sizeof(cfg->ip_log) || cfg->ip_log[-1][0] != idx) {
-			//Add a new log entry: this IP index, one retrieval between now and now
-			cfg->ip_log += ({({idx, 1, time(), time()})});
-		} else {
-			//For compactness, augment the existing entry.
-			array log = cfg->ip_log[-1];
-			++log[1]; log[3] = time();
-		}
-		persist_status->save();
+__async__ void tts_check(string grp) {
+	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+	if (cfg->uses_tts) {
 		//Ensure that we have TTS credentials, but note that the current connection has yet
 		//to be added to the group arrays (as it's not yet validated). So delay the check
 		//and allow the (synchronous) incorporation into the arrays, so that ensure() can
 		//see this connection - otherwise, starting the first connection won't check for
 		//credentials.
-		if (cfg->uses_tts) call_out(ensure_tts_credentials, 0);
+		call_out(ensure_tts_credentials, 0);
 	}
 }
 
@@ -767,14 +745,6 @@ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->authkey) {cfg->authkey = String.string2hex(random_string(11)); persist_status->save();}
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "authkey", "key": cfg->authkey]), 4));
-}
-
-void websocket_cmd_auditlog(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || grp != "control") return;
-	if (conn->session->user->id != (string)channel->userid) return;
-	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "auditlog", "ip_history": cfg->ip_history]), 4));
 }
 
 //NOW it's personal.
