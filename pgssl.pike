@@ -8,13 +8,12 @@ library that haven't yet been upstreamed (eg UUID/JSON parsing). */
 //Offset between 1970 and 2000
 #define EPOCH2000 (10957*24*3600*1000000)
 
-//For every OID representing an array type (eg int4[]), map to the
-//corresponding element type (eg int4). Presence in this mapping
-//implies that the wire format is the array format.
-mapping(int:int) arrayoids = G->G->arrayoids || ([]);
+//List the category for every OID in pg_type. Used for determining wire format
+//where not specifically listed.
 mapping(int:string) typcategory = G->G->typcategory || ([]);
 
 #ifdef SHOW_UNKNOWN_OIDS
+//Improve debugging? Maybe?
 multiset(int) sighted_unknowns = (< >);
 mapping(int:string) typname = ([]);
 #endif
@@ -44,9 +43,22 @@ mixed decode_as_type(string val, int type) {
 	}
 	//Okay, we don't know the type directly. Do we know what *kind* of type it is?
 	switch (typcategory[type]) {
-		case "A": if (int elem = arrayoids[type]) {
-			//It's an array of something. (We ought to have the element OID. If not, error out.)
-			
+		case "A": {
+			//It's an array of something. The element OID is essential here.
+			sscanf(val, "%4c%4c%4c%s", int dim, int unknown, int elemoid, val);
+			if (!dim) { //Zero-dimensional array. For our purposes, this is treated as a 1-dimensional empty array.
+				//assert val == ""
+				return ({ });
+			}
+			array dims = allocate(dim);
+			for (int d = 0; d < dim; ++d) sscanf(val, "%4c%*4c%s", dims[d], val); //Is always followed by int4 1, not sure the meaning.
+			sscanf(val, "%{%4H%}", array values);
+			values = decode_as_type(values[*][0][*], elemoid);
+			//Split the array according to the dimensions. The last (or rather, first)
+			//is not split, but we could assert that sizeof(values) == dims[0] if we
+			//felt like it.
+			for (int d = sizeof(dims) - 1; d > 0; --d) values /= dims[d];
+			return values;
 		}
 		break;
 		//case "D": //Date/time
@@ -138,17 +150,13 @@ class SSLDatabase(string host, mapping|void cfg) {
 			out->add_hstring("\0\3\0\0user\0rosuav\0database\0stillebot\0application_name\0stillebot\0\0", 4, 4);
 			write();
 			state = "auth";
-			if (!sizeof(arrayoids)) {
-				//We don't have any arrays listed. This seems highly unlikely, so
-				//assume they haven't yet been loaded.
-				query("select oid, typcategory, typname, typarray from pg_type where typtype in ('b', 'r', 'm')")->then() {
+			if (!sizeof(typcategory)) {
+				//Type categories have not been loaded. (Not redone on reconnect.)
+				query("select oid, typcategory, typname from pg_type where typtype in ('b', 'r', 'm')")->then() {
+					typcategory = mkmapping(__ARGS__[0]->oid, __ARGS__[0]->typcategory);
 					#ifdef SHOW_UNKNOWN_OIDS
 					typname = mkmapping(__ARGS__[0]->oid, __ARGS__[0]->typname);
 					#endif
-					foreach (__ARGS__[0], mapping typ) {
-						typcategory[typ->oid] = typ->typcategory;
-						if (typ->typarray) arrayoids[typ->typarray] = typ->oid;
-					}
 				};
 			}
 		};
