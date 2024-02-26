@@ -12,18 +12,21 @@ library that haven't yet been upstreamed (eg UUID/JSON parsing). */
 //corresponding element type (eg int4). Presence in this mapping
 //implies that the wire format is the array format.
 mapping(int:int) arrayoids = G->G->arrayoids || ([]);
+mapping(int:string) typcategory = G->G->typcategory || ([]);
 
 #ifdef SHOW_UNKNOWN_OIDS
 multiset(int) sighted_unknowns = (< >);
 mapping(int:string) typname = ([]);
 #endif
 
-mixed decode_as_type(string val, array field) {
-	switch (field[3]) { //type OID
+mixed decode_as_type(string val, int type) {
+	//First off, fast check for known OIDs. This group *must* include all data types
+	//required for bootstrapping up to the point of fetching pg_type.
+	switch (type) {
 		case 16: return val == "\1"; //Boolean
 		case 18: case 19: case 25: case 1042: case 1043: return utf8_to_string(val);
 		case 20: case 21: case 23: case 26: { //Integers, various
-			sscanf(val, "%" + field[4] + "c", int v); //Assumes that all int-like values (eg OID etc) have their sizes specified
+			sscanf(val, "%" + sizeof(val) + "c", int v); //Assumes that all int-like values (eg OID etc) have the correct size
 			return v;
 		}
 		case 114: return Standards.JSON.decode_utf8(val);
@@ -37,15 +40,34 @@ mixed decode_as_type(string val, array field) {
 			sscanf(val, "%{%2c%}", array words);
 			return sprintf("%04x%04x-%04x-%04x-%04x-%04x%04x%04x", @words[*][0]);
 		}
-		default:
-			#ifdef SHOW_UNKNOWN_OIDS
-			if (!sighted_unknowns[field[3]]) {
-				werror("Unknown type OID [%s]: %O\n", typname[field[3]] || "unknown", field);
-				sighted_unknowns[field[3]] = 1;
-			}
-			#endif
-			break;
+		default: break;
 	}
+	//Okay, we don't know the type directly. Do we know what *kind* of type it is?
+	switch (typcategory[type]) {
+		case "A": if (int elem = arrayoids[type]) {
+			//It's an array of something. (We ought to have the element OID. If not, error out.)
+			
+		}
+		break;
+		//case "D": //Date/time
+		//case "G": //Geometric
+		//case "I": //Internet address
+		case "N": {sscanf(val, "%" + sizeof(val) + "c", int v); return v;} //Numeric. Anything non-integer needs to be in the primary switch above.
+		//case "R": //Range types (including multiranges)
+		case "S": return utf8_to_string(val);
+		//case "T": //Timespan types (but there's only one)
+		//case "U": //User-defined types
+		//case "V": //Bit-string types
+		//case "X": //Unknown types
+		//case "Z": //Internal types
+		default: break;
+	}
+	#ifdef SHOW_UNKNOWN_OIDS
+	if (!sighted_unknowns[type]) {
+		werror("Unknown type OID %d: %s (category %O)\n", type, typname[type] || "unknown", typcategory[type]);
+		sighted_unknowns[type] = 1;
+	}
+	#endif
 	return val;
 }
 
@@ -56,7 +78,7 @@ mapping parse_result_row(array fields, string row) {
 	foreach (fields, array field) {
 		if (sscanf(row, "\377\377\377\377%s", row)) {ret[field[0]] = Val.null; continue;}
 		sscanf(row, "%4H%s", mixed val, row);
-		ret[field[0]] = decode_as_type(val, field);
+		ret[field[0]] = decode_as_type(val, field[3]);
 	}
 	return ret;
 }
@@ -116,6 +138,19 @@ class SSLDatabase(string host, mapping|void cfg) {
 			out->add_hstring("\0\3\0\0user\0rosuav\0database\0stillebot\0application_name\0stillebot\0\0", 4, 4);
 			write();
 			state = "auth";
+			if (!sizeof(arrayoids)) {
+				//We don't have any arrays listed. This seems highly unlikely, so
+				//assume they haven't yet been loaded.
+				query("select oid, typcategory, typname, typarray from pg_type where typtype in ('b', 'r', 'm')")->then() {
+					#ifdef SHOW_UNKNOWN_OIDS
+					typname = mkmapping(__ARGS__[0]->oid, __ARGS__[0]->typname);
+					#endif
+					foreach (__ARGS__[0], mapping typ) {
+						typcategory[typ->oid] = typ->typcategory;
+						if (typ->typarray) arrayoids[typ->typarray] = typ->oid;
+					}
+				};
+			}
 		};
 		sock->connect();
 	}
@@ -235,16 +270,6 @@ class SSLDatabase(string host, mapping|void cfg) {
 			state = "busy";
 			[Concurrent.Promise next, pending] = Array.shift(pending);
 			next->success(1);
-		} else if (!sizeof(arrayoids)) {
-			//We don't have any arrays listed. This seems highly unlikely, so
-			//assume they haven't yet been loaded.
-			query("select oid, typname, typtype, typarray from pg_type where typtype in ('b', 'r', 'm')")->then() {
-				#ifdef SHOW_UNKNOWN_OIDS
-				typname = mkmapping(__ARGS__[0]->oid, __ARGS__[0]->typname);
-				#endif
-				foreach (__ARGS__[0], mapping typ) if (typ->typarray) arrayoids[typ->typarray] = typ->oid;
-				//TODO: Support range and multirange
-			};
 		}
 	}
 

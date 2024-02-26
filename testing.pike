@@ -195,6 +195,7 @@ __async__ void array_test() {
 	werror("Result: %O\n", await(G->G->DB->generic_query("select '{1,2,3}'::int[]")));
 	werror("Result: %O\n", await(G->G->DB->generic_query("select int4range(10, 20)")));
 	werror("Result: %O\n", await(G->G->DB->generic_query("select '{[1,2], (3,10)}'::int4multirange")));
+	werror("Result: %O\n", await(G->G->DB->generic_query("select 1.5 a, 0.1 b, 0.2 c, 0.3 d, 0.1 + 0.2 e")));
 	werror("Result: %O\n", await(G->G->DB->generic_query("select * from stillebot.config where twitchid = any(:ids)",
 		(["ids": "\0\0\0\1\0\0\0\0\0\0\0\24\0\0\0\3\0\0\0\1\0\0\0\b\0\0\0\0\0\0\0\1\0\0\0\b\0\0\0\0\0\0\0\2\0\0\0\b\0\0\0\0\0\0\0\3"]))));
 	exit(0);
