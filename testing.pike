@@ -193,6 +193,8 @@ __async__ void array_test() {
 	//the one you're raidfinding for; currently each is a separate query.
 	if (!G->G->DB->active) await(G->G->DB->await_active());
 	werror("Result: %O\n", await(G->G->DB->generic_query("select '{1,2,3}'::int[]")));
+	werror("Result: %O\n", await(G->G->DB->generic_query("select int4range(10, 20)")));
+	werror("Result: %O\n", await(G->G->DB->generic_query("select '{[1,2], (3,10)}'::int4multirange")));
 	werror("Result: %O\n", await(G->G->DB->generic_query("select * from stillebot.config where twitchid = any(:ids)",
 		(["ids": "\0\0\0\1\0\0\0\0\0\0\0\24\0\0\0\3\0\0\0\1\0\0\0\b\0\0\0\0\0\0\0\1\0\0\0\b\0\0\0\0\0\0\0\2\0\0\0\b\0\0\0\0\0\0\0\3"]))));
 	exit(0);
@@ -234,6 +236,6 @@ protected void create(string name) {
 	if (!G->G->inotify) start_inotify();*/
 	//big_query_test();
 	//import_raids();
-	//array_test();
-	json_test();
+	array_test();
+	//json_test();
 }
