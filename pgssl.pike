@@ -43,6 +43,13 @@ mixed decode_as_type(string val, int type) {
 			v->usecs = usec + EPOCH2000;
 			return v;
 		}
+		case 1700: { //NUMERIC
+			//It seems to have two integer portions, but either one can be
+			//omitted. For example, 1::numeric(10, 5) will not have any fraction
+			//portion - it's completely omitted - but also, 0.125::numeric(10, 5)
+			//will omit the integer portion. So far, not supported.
+			return String.string2hex(val);
+		}
 		case 2950: { //UUID
 			sscanf(val, "%{%2c%}", array words);
 			return sprintf("%04x%04x-%04x-%04x-%04x-%04x%04x%04x", @words[*][0]);
