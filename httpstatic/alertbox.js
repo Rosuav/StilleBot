@@ -1,4 +1,4 @@
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
+import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {AUDIO, DIV, FIGCAPTION, FIGURE, IMG, P, SECTION, VIDEO} = choc; //autoimport
 import {ensure_font} from "$$static||utils.js$$";
 
@@ -51,11 +51,8 @@ const alert_formats = {
 //6) A long alert_gap will result in weird waiting periods between alerts. A
 //   short alert_gap will have alerts coming hard on each other's heels.
 
-let inited = false;
-let hostlist_command = null, hostlist_format = null;
 const alert_active = { };
 const retainme = ["alertlength", "alertgap", "tts_dwell", "tts_volume"];
-const current_hosts = { };
 export function render(data) {
 	if (data.version > alertbox_version) {location.reload(); return;}
 	if (data.alertconfigs) {
@@ -78,14 +75,11 @@ export function render(data) {
 		removeme.forEach(el => el.replaceWith()); //Do all the removal after the checks, to avoid trampling on things
 	}
 	if (data.send_alert) do_alert("#" + data.send_alert, data);
-	if (data.raidhack) current_hosts[data.raidhack] = 1;
 	if (data.breaknow) {
-		//Token has been revoked. This will be the last message we receive
+		//Auth key has been revoked. This will be the last message we receive
 		//on the websocket. Clean up some resources rather than waiting around.
 		//(Nothing currently needs to do this.)
 	}
-	if (data.hostlist_command) hostlist_command = data.hostlist_command;
-	if (data.hostlist_format) hostlist_format = data.hostlist_format;
 }
 
 const alert_queue = [];

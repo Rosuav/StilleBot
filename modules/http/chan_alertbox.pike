@@ -716,8 +716,6 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		return ([
 			"alertconfigs": G_G_("alertbox_resolved")[(string)channel->userid] || ([]),
 			"token": "backendinstead", //20240225: Feature removed, but old copies of the JS may still be around. Can drop this after a reasonable delay.
-			"hostlist_command": cfg->hostlist_command || "",
-			"hostlist_format": cfg->hostlist_format || "",
 			"version": COMPAT_VERSION,
 		]);
 	}
