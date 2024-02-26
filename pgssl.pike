@@ -18,6 +18,37 @@ multiset(int) sighted_unknowns = (< >);
 mapping(int:string) typname = ([]);
 #endif
 
+mixed decode_as_type(string val, array field) {
+	switch (field[3]) { //type OID
+		case 16: return val == "\1"; //Boolean
+		case 18: case 19: case 25: case 1042: case 1043: return utf8_to_string(val);
+		case 20: case 21: case 23: case 26: { //Integers, various
+			sscanf(val, "%" + field[4] + "c", int v); //Assumes that all int-like values (eg OID etc) have their sizes specified
+			return v;
+		}
+		case 114: return Standards.JSON.decode_utf8(val);
+		case 1184: { //Timestamp with time zone
+			sscanf(val, "%8c", int usec);
+			object v = Val.Timestamp();
+			v->usecs = usec + EPOCH2000;
+			return v;
+		}
+		case 2950: { //UUID
+			sscanf(val, "%{%2c%}", array words);
+			return sprintf("%04x%04x-%04x-%04x-%04x-%04x%04x%04x", @words[*][0]);
+		}
+		default:
+			#ifdef SHOW_UNKNOWN_OIDS
+			if (!sighted_unknowns[field[3]]) {
+				werror("Unknown type OID [%s]: %O\n", typname[field[3]] || "unknown", field);
+				sighted_unknowns[field[3]] = 1;
+			}
+			#endif
+			break;
+	}
+	return val;
+}
+
 mapping parse_result_row(array fields, string row) {
 	//Each field is [tableoid, attroid, typeoid, typesize, typemod, format]
 	//Most interesting here will be typeoid
@@ -25,32 +56,7 @@ mapping parse_result_row(array fields, string row) {
 	foreach (fields, array field) {
 		if (sscanf(row, "\377\377\377\377%s", row)) {ret[field[0]] = Val.null; continue;}
 		sscanf(row, "%4H%s", mixed val, row);
-		switch (field[3]) { //type OID
-			case 16: val = val == "\1"; break; //Boolean
-			case 18: case 19: case 25: case 1042: case 1043: val = utf8_to_string(val); break;
-			case 20: case 21: case 23: case 26: sscanf(val, "%" + field[4] + "c", val); break; //Integers, various
-			case 114: val = Standards.JSON.decode_utf8(val); break;
-			case 1184: { //Timestamp with time zone
-				sscanf(val, "%8c", int usec);
-				val = Val.Timestamp();
-				val->usecs = usec + EPOCH2000;
-				break;
-			}
-			case 2950: { //UUID
-				sscanf(val, "%{%2c%}", array words);
-				val = sprintf("%04x%04x-%04x-%04x-%04x-%04x%04x%04x", @words[*][0]);
-				break;
-			}
-			default:
-				#ifdef SHOW_UNKNOWN_OIDS
-				if (!sighted_unknowns[field[3]]) {
-					werror("Unknown type OID [%s]: %O\n", typname[field[3]] || "unknown", field);
-					sighted_unknowns[field[3]] = 1;
-				}
-				#endif
-				break;
-		}
-		ret[field[0]] = val;
+		ret[field[0]] = decode_as_type(val, field);
 	}
 	return ret;
 }
@@ -233,7 +239,6 @@ class SSLDatabase(string host, mapping|void cfg) {
 			//We don't have any arrays listed. This seems highly unlikely, so
 			//assume they haven't yet been loaded.
 			query("select oid, typname, typtype, typarray from pg_type where typtype in ('b', 'r', 'm')")->then() {
-				werror("Got types! %O\n", __ARGS__[0][0]);
 				#ifdef SHOW_UNKNOWN_OIDS
 				typname = mkmapping(__ARGS__[0]->oid, __ARGS__[0]->typname);
 				#endif
