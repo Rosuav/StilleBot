@@ -11,6 +11,10 @@ library that haven't yet been upstreamed (eg UUID/JSON parsing). */
 //List the category for every OID in pg_type. Used for determining wire format
 //where not specifically listed.
 mapping(int:string) typcategory = G->G->typcategory || ([]);
+//If an OID represents an array, this is the element type. Note that this comes
+//not from the typelem column but from typarray, as there are other ways for
+//typelem to be filled in. Required for encoding, but not for decoding.
+mapping(int:int) array_oid = G->G->array_oid || ([]);
 
 #ifdef SHOW_UNKNOWN_OIDS
 //Improve debugging? Maybe?
@@ -106,7 +110,26 @@ string encode_as_type(mixed value, int typeoid) {
 		case 114: value = Standards.JSON.encode(value, 5); break;
 		case 1184: value = sprintf("%8c", value->usecs - EPOCH2000); break;
 		case 2950: value = sprintf("%@2c", array_sscanf(value, "%4x%4x-%4x-%4x-%4x-%4x%4x%4x")); break;
-		default: value = (string)value;
+		default:
+			if (int elemoid = arrayp(value) && array_oid[typeoid]) {
+				if (!sizeof(value)) {
+					value = sprintf("%4c%4c%4c", 0, 0, elemoid);
+					break;
+				}
+				array dims = ({sizeof(value)});
+				//Not sure what to happen if we hit an empty array rather than finding scalars.
+				//I think it would be considered malformed?? Can't have emptiness, other than a
+				//zero-dimensional array which we generate from an empty array above.
+				for (mixed inner = value[0]; arrayp(inner); inner = inner[0]) {
+					dims += ({sizeof(inner)});
+					value *= ({ });
+				}
+				value = sprintf("%4c%4c%4c%{%4c\0\0\0\1%}%{%s%}",
+					sizeof(dims), 0, elemoid,
+					dims, encode_as_type(value[*], elemoid));
+				break;
+			}
+			else value = (string)value;
 	}
 	return sprintf("%4H", value);
 }
@@ -152,11 +175,12 @@ class SSLDatabase(string host, mapping|void cfg) {
 			state = "auth";
 			if (!sizeof(typcategory)) {
 				//Type categories have not been loaded. (Not redone on reconnect.)
-				query("select oid, typcategory, typname from pg_type where typtype in ('b', 'r', 'm')")->then() {
+				query("select oid, typcategory, typname, typarray from pg_type where typtype in ('b', 'r', 'm')")->then() {
 					typcategory = mkmapping(__ARGS__[0]->oid, __ARGS__[0]->typcategory);
 					#ifdef SHOW_UNKNOWN_OIDS
 					typname = mkmapping(__ARGS__[0]->oid, __ARGS__[0]->typname);
 					#endif
+					array_oid = mkmapping(__ARGS__[0]->typarray, __ARGS__[0]->oid);
 				};
 			}
 		};

@@ -192,16 +192,26 @@ __async__ void array_test() {
 	//queries such as raidfinder's lookup of raids for all live streamers to/from
 	//the one you're raidfinding for; currently each is a separate query.
 	if (!G->G->DB->active) await(G->G->DB->await_active());
+	/*
 	werror("Result: %O\n", await(G->G->DB->generic_query("select '{}'::int[]")));
 	werror("Result: %O\n", await(G->G->DB->generic_query("select '{1,2,3}'::int[]")));
 	werror("Result: %O\n", await(G->G->DB->generic_query("select string_to_array('1,2,3', ',')")));
-	//werror("Result: %O\n", await(G->G->DB->generic_query("select '{{{1,2,3,4,5},{3,4,5,6,7}},{{5,6,7,8,9},{7,8,9,0,1}},{{1,3,5,7,9},{2,4,6,8,0}},{{1,4,7,0,2},{3,5,7,9,2}}}'::int[]")));
-	/*
+	werror("Result: %O\n", await(G->G->DB->generic_query("select '{{{1,2,3,4,5},{3,4,5,6,7}},{{5,6,7,8,9},{7,8,9,0,1}},{{1,3,5,7,9},{2,4,6,8,0}},{{1,4,7,0,2},{3,5,7,9,2}}}'::int[]")));
 	werror("Result: %O\n", await(G->G->DB->generic_query("select int4range(10, 20)")));
 	werror("Result: %O\n", await(G->G->DB->generic_query("select '{[1,2], (3,10)}'::int4multirange")));
 	werror("Result: %O\n", await(G->G->DB->generic_query("select 1.5 a, 0.1 b, 0.2 c, 0.3 d, 0.1 + 0.2 e")));
+	*/
 	werror("Result: %O\n", await(G->G->DB->generic_query("select * from stillebot.config where twitchid = any(:ids)",
-		(["ids": "\0\0\0\1\0\0\0\0\0\0\0\24\0\0\0\3\0\0\0\1\0\0\0\b\0\0\0\0\0\0\0\1\0\0\0\b\0\0\0\0\0\0\0\2\0\0\0\b\0\0\0\0\0\0\0\3"]))));
+		(["ids": ({1, 2, 3})]))));
+	/*
+	werror("Result: %O\n", await(G->G->DB->generic_query("select :ids::int4[]",
+		(["ids": ({ })]))));
+	werror("Result: %O\n", await(G->G->DB->generic_query("select :ids::int4[]",
+		(["ids": ({({1, 2}), ({3, 4}), ({5, 6})})]))));
+	werror("Result: %O\n", await(G->G->DB->generic_query("select :ids::int4[]",
+		(["ids": ({({1, 2, 3}), ({4, 5, 6})})]))));
+	werror("Result: %O\n", await(G->G->DB->generic_query("select :ids::int4[]",
+		(["ids": ({({({({({1})})})})})]))));
 	*/
 	exit(0);
 }
