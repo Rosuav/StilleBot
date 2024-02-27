@@ -487,7 +487,7 @@ constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump
 @retain: mapping tts_config = ([]);
 mapping stock_alerts; // == persist_status->path("alertbox", "0", "alertconfigs") - cached, fetched on code reload only.
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (string key = req->variables->key) {
 		string group = req->variables->key;
@@ -631,7 +631,7 @@ void ensure_host_connection(string chan) {
 	raidin(chan, (["to_broadcaster_user_id": (string)channel->userid]));
 }
 
-void ensure_tts_credentials(int need_tts) { //If you already KNOW we need it, skip the search
+__async__ void ensure_tts_credentials(int need_tts) { //If you already KNOW we need it, skip the search
 	remove_call_out(m_delete(G->G, "ensure_tts_callout"));
 	//Check if any connected account uses TTS
 	if (!need_tts) foreach (G->G->irc->channels; string name; object channel) {
@@ -718,23 +718,22 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 }
 
 //Push out changes to all appropriate sockets, including previews.
-void update_all(object channel) {
-	send_updates_all(channel, "control"); //The control socket gets all the info (different state to the others)
+void update_all(string|int channelid, string authkey) {
+	send_updates_all("control#" + channelid); //The control socket gets all the info (different state to the others)
 	//Gather a full list of display sockets. Note that this will still ONLY send to
 	//the correct authkey, since an older code that used to check out should not allow
 	//you access, unless there's a Vader override.
-	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	array allsocks = ({ });
 	foreach (websocket_groups; string grp; array socks)
-		if (has_suffix(grp, "#" + channel->userid) &&
-			(grp == cfg->authkey + "#" + channel->userid || has_prefix(grp, "preview-") || has_prefix(grp, "demo-")))
+		if (has_suffix(grp, "#" + channelid) &&
+			(grp == authkey + "#" + channelid || has_prefix(grp, "preview-") || has_prefix(grp, "demo-")))
 				allsocks += socks;
 	//Note that we use preview rather than the authkey here since there
 	//might not be an authkey. It's the same state anyway.
-	get_state("preview-#" + channel->userid)->then() {_low_send_updates(__ARGS__[0], allsocks);};
+	get_state("preview-#" + channelid)->then() {_low_send_updates(__ARGS__[0], allsocks);};
 }
 
-void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel || grp != "control") return;
 	if (conn->session->user->id != (string)channel->userid) {
@@ -747,7 +746,8 @@ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 //NOW it's personal.
-@"is_mod": void wscmd_makepersonal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": void wscmd_makepersonal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_makepersonal1(channel, conn, msg);}
+__async__ void wscmd_makepersonal1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->personals) cfg->personals = ({ });
 	mapping info;
@@ -770,10 +770,11 @@ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	foreach ("label heading description" / " ", string key)
 		if (stringp(msg[key])) info[key] = msg[key];
 	persist_status->save();
-	update_all(channel);
+	update_all(channel->userid, cfg->authkey);
 }
 
-@"is_mod": void wscmd_delpersonal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": void wscmd_delpersonal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_delpersonal1(channel, conn, msg);}
+__async__ void wscmd_delpersonal1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!cfg->personals) return; //Nothing to delete
 	if (!stringp(msg->id)) return;
@@ -835,7 +836,8 @@ void update_gif_variants(object channel, mapping cfg) {
 	channel->set_variable("nonhiddengifredeems", kwd * ", ", "");
 }
 
-@"is_mod": void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_delete1(channel, conn, msg);}
+__async__ void wscmd_delete1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (msg->type == "variant") {
 		//Delete an alert variant. Only valid if it's a variant (not a base
@@ -852,7 +854,7 @@ void update_gif_variants(object channel, mapping cfg) {
 		resolve_affected_inherits(cfg, (string)channel->userid, msg->id);
 		persist_status->save();
 		if (basetype == "gif") update_gif_variants(channel, cfg);
-		update_all(channel);
+		update_all(channel->userid, cfg->authkey);
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "select_variant", "type": basetype, "variant": ""]), 4));
 		return;
 	}
@@ -865,7 +867,7 @@ void update_gif_variants(object channel, mapping cfg) {
 		resolve_affected_inherits(cfg, (string)channel->userid, msg->id);
 		persist_status->save();
 		if (msg->id == "gif") update_gif_variants(channel, cfg);
-		update_all(channel);
+		update_all(channel->userid, cfg->authkey);
 		return;
 	}
 	string fn = sprintf("%d-%s", channel->userid, msg->id);
@@ -888,7 +890,7 @@ int(0..1) valid_alert_type(string type, mapping|void cfg) {
 	if (cfg->?personals && has_value(cfg->personals->id, type)) return 1;
 }
 
-void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel || grp != "control") return;
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
@@ -928,7 +930,8 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 	send_updates_all(channel, dest, alert);
 }
 
-@"is_mod": void wscmd_config(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": void wscmd_config(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_config1(channel, conn, msg);}
+__async__ void wscmd_config1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	//foreach ("" / " ", string key) //No configs that are simple strings, actually
 	//	if (stringp(msg[key])) cfg[key] = msg[key];
@@ -937,7 +940,7 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 	//After changing master audio settings, redo all inherit resolutions
 	if (!undefinedp(msg->mastervolume) || !undefinedp(msg->muted)) resolve_all_inherits(cfg, (string)channel->userid);
 	persist_status->save();
-	update_all(channel);
+	update_all(channel->userid, cfg->authkey);
 }
 
 void check_tts_usage(mapping cfg) {
@@ -1011,7 +1014,7 @@ __async__ void wscmd_alertcfg1(object channel, mapping(string:mixed) conn, mappi
 		foreach (SINGLE_EDIT_ATTRS, string attr) if (!undefinedp(msg[attr])) data[attr] = msg[attr];
 		resolve_affected_inherits(cfg, (string)channel->userid, msg->type);
 		persist_status->save();
-		update_all(channel);
+		update_all(channel->userid, cfg->authkey);
 		if (sock_reply) conn->sock->send_text(Standards.JSON.encode(sock_reply, 4));
 		return;
 	}
@@ -1125,7 +1128,7 @@ __async__ void wscmd_alertcfg1(object channel, mapping(string:mixed) conn, mappi
 	}
 	persist_status->save();
 	if (basetype == "gif") update_gif_variants(channel, cfg);
-	update_all(channel);
+	update_all(channel->userid, cfg->authkey);
 	if (sock_reply) conn->sock->send_text(Standards.JSON.encode(sock_reply, 4));
 	if (!hosts_were_active) {
 		//Host alerts may have just been activated. Make sure we have a backend.
@@ -1147,7 +1150,8 @@ __async__ void wscmd_renamefile1(object channel, mapping(string:mixed) conn, map
 	update_one(conn->group, file->id);
 }
 
-@"is_mod": void wscmd_revokekey(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": void wscmd_revokekey(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_revokekey1(channel, conn, msg);}
+__async__ void wscmd_revokekey1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	string prevkey = m_delete(cfg, "authkey");
 	persist_status->save();
@@ -1156,7 +1160,8 @@ __async__ void wscmd_renamefile1(object channel, mapping(string:mixed) conn, map
 }
 
 //Currently no UI for this, but it works if you fiddle on the console.
-@"is_mod": void wscmd_reload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": void wscmd_reload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_reload1(channel, conn, msg);}
+__async__ void wscmd_reload1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	//Send a fake version number that's higher than the current, thus making it think
 	//it needs to update. After it reloads, it will get the regular state, with the
@@ -1273,7 +1278,7 @@ constant vars_provided = (["{alert_sent}": "Either 'yes' or 'no' depending on wh
 
 //Attempt to send an alert. Returns 1 if alert sent, 0 if not (eg if alert disabled).
 //Note that the actual sending of the alert is asynchronous, esp if TTS is used.
-int(1bit) send_alert(object channel, string alerttype, mapping args, mapping|void cfg) {
+__async__ int(1bit) send_alert(object channel, string alerttype, mapping args, mapping|void cfg) {
 	if (!cfg) cfg = persist_status->has_path("alertbox", (string)channel->userid);
 	if (!cfg->?authkey) return 0;
 	int suppress_alert = 0;
@@ -1327,7 +1332,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args, mapping|voi
 
 	//If any variant responds, use that instead.
 	foreach (alert->variants || ({ }), string subid)
-		if (send_alert(channel, subid, args, cfg)) return 1;
+		if (await(send_alert(channel, subid, args, cfg))) return 1;
 
 	if (suppress_alert) return 0;
 	//A completely null alert does not actually fire.
@@ -1346,7 +1351,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args, mapping|voi
 	return 1;
 }
 
-void websocket_cmd_replay_alert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void websocket_cmd_replay_alert(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel || grp != "control") return;
 	//Note that alert replaying IS permitted for fake mods (ie demo channel)
@@ -1382,7 +1387,7 @@ mapping parse_emotes(string text, mapping person) {
 	return (["_noemotes": noemotes + text[pos..], "_emoted": emoted + ({text[pos..]})]);
 }
 
-mapping message_params(object channel, mapping person, [string alert, string text]) {
+__async__ mapping message_params(object channel, mapping person, [string alert, string text]) {
 	if (!alert || alert == "") error("Need an alert type\n");
 	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
 	if (!valid_alert_type(alert, cfg)) error("Unknown alert type\n");
@@ -1390,11 +1395,11 @@ mapping message_params(object channel, mapping person, [string alert, string tex
 	//TODO: If text isn't exactly %s but is contained in it, give an offset.
 	//TODO: If %s is contained in text, parse that somehow too.
 	if (text == person->vars[?"%s"]) emotes = parse_emotes(text, person);
-	int sent = send_alert(channel, alert, ([
+	int sent = await(send_alert(channel, alert, ([
 		"TEXT": text || "",
 		"text": text || "",
 		"username": person->displayname,
-	]) | emotes, cfg);
+	]) | emotes, cfg));
 	return (["{alert_sent}": sent ? "yes" : "no"]);
 }
 
@@ -1453,13 +1458,13 @@ void subscription(object channel, string type, mapping person, string tier, int 
 
 __async__ void send_subbomb_alert(object channel, mapping args, string id) {
 	mapping cfg = persist_status->has_path("alertbox", (string)channel->userid);
-	if (/*await*/(send_alert(channel, "sub", args, cfg))) {
+	if (await(send_alert(channel, "sub", args, cfg))) {
 		//A sub bomb alert was sent. Suppress the rest.
 		subbomb_ids[id] = 1;
 	} else {
 		//The bomb wasn't sent. Queue up any of the existing alerts, and
 		//remove the marker so subsequent alerts will fire naturally.
-		foreach (m_delete(subbomb_ids, id), args) /*await*/(send_alert(channel, "sub", args, cfg));
+		foreach (m_delete(subbomb_ids, id), args) await(send_alert(channel, "sub", args, cfg));
 	}
 }
 
