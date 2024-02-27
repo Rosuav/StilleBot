@@ -641,8 +641,8 @@ void ensure_tts_credentials(int need_tts) { //If you already KNOW we need it, sk
 		//ensure that TTS is available (so that test alerts work). Note that
 		//preview logins won't trigger this, since they will only ever receive
 		//alerts if there's a corresponding control connection.
-		if (sizeof(websocket_groups[cfg->authkey + name] || ({ }))) {need_tts = 1; break;}
-		if (sizeof(websocket_groups["control" + name] || ({ }))) {need_tts = 1; break;}
+		if (sizeof(websocket_groups[cfg->authkey + "#" + channel->userid] || ({ }))) {need_tts = 1; break;}
+		if (sizeof(websocket_groups["control#" + channel->userid] || ({ }))) {need_tts = 1; break;}
 	}
 	if (!need_tts) return;
 	float age = time(tts_config->access_token_fetchtime);
