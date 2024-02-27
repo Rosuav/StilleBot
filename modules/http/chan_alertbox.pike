@@ -485,6 +485,7 @@ constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump
 //Version 3 supports <video> tags for images.
 //Version 4 supports TTS.
 @retain: mapping tts_config = ([]);
+mapping stock_alerts; // == persist_status->path("alertbox", "0", "alertconfigs") - cached, fetched on code reload only.
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -539,15 +540,14 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 mapping incorporate_stock_alerts(mapping alertconfigs) {
 	mapping alerts = alertconfigs + ([]); //Allow mutation
 	//For any alerts that aren't configured here, copy in the corresponding stock alert
-	mapping stock = persist_status->path("alertbox", "0", "alertconfigs");
-	foreach (sort(indices(stock)), string key) { //NOTE: Must sort, to ensure that base alerts are sighted before their variants
+	foreach (sort(indices(stock_alerts)), string key) { //NOTE: Must sort, to ensure that base alerts are sighted before their variants
 		if (alerts[key]) continue;
 		if (sscanf(key, "%s-%s", string base, string var) && var) {
 			//Gotta have the variant in the base, which probably means it's largely stock
 			if (!alerts[base] || !has_value(alerts[base]->variants || ({ }), key)) continue;
 		}
 		//Okay. Copy it in.
-		alerts[key] = stock[key];
+		alerts[key] = stock_alerts[key];
 	}
 	return alerts;
 }
@@ -907,7 +907,7 @@ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(string:mixed) m
 		"NAME": channel->name[1..], "username": channel->name[1..], //TODO: Use the display name
 		"test_alert": 1,
 	]);
-	mapping alertcfg = cfg->alertconfigs[msg->type] || persist_status->path("alertbox", "0", "alertconfigs")[msg->type];
+	mapping alertcfg = cfg->alertconfigs[msg->type] || stock_alerts[msg->type];
 	if (!alertcfg) return;
 	int idx = search(ALERTTYPES->id, basetype);
 	mapping pholders = ALERTTYPES[idx]->testpholders;
@@ -957,13 +957,11 @@ void check_tts_usage(mapping cfg) {
 void copy_stock(mapping alertconfigs, string basetype) {
 	//If an alerts isn't yet configured here, copy in the corresponding stock alert
 	mapping base = alertconfigs[basetype]; if (base) return;
-	mapping stock = persist_status->path("alertbox", "0", "alertconfigs");
 	//Copy in the alert. Be sure to avoid unintended change propagation.
-	alertconfigs[basetype] = base = Standards.JSON.decode(Standards.JSON.encode(stock[basetype] || ([])));
+	alertconfigs[basetype] = base = Standards.JSON.decode(Standards.JSON.encode(stock_alerts[basetype] || ([])));
 	//If the alert has variants, copy those too. Not recursive.
-	foreach (base->variants || ({ }), string var) {
-		alertconfigs[var] = Standards.JSON.decode(Standards.JSON.encode(stock[var]));
-	}
+	foreach (base->variants || ({ }), string var)
+		alertconfigs[var] = Standards.JSON.decode(Standards.JSON.encode(stock_alerts[var]));
 }
 
 @"is_mod": void wscmd_alertcfg(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_alertcfg1(channel, conn, msg);}
@@ -1623,7 +1621,9 @@ __async__ void initialize_inherits() {
 	}
 	mapping resolved = G_G_("alertbox_resolved");
 	//mapping resolved = G->G->alertbox_resolved = ([]); //Use this instead (once) if a change breaks inheritance
-	foreach (persist_status->path("alertbox"); string userid; mapping cfg)
+	mapping allcfg = persist_status->path("alertbox");
+	stock_alerts = allcfg["0"];
+	foreach (allcfg; string userid; mapping cfg)
 		if (!resolved[userid]) resolve_all_inherits(cfg, userid);
 }
 
@@ -1631,7 +1631,7 @@ protected void create(string name) {
 	::create(name);
 	//See if we have a credentials file. If so, get local credentials via gcloud.
 	if (file_stat("tts-credentials.json") && !tts_config->access_token) spawn_task(fetch_tts_credentials(0));
-	spawn_task(initialize_inherits());
+	initialize_inherits();
 	G->G->send_alert = send_alert;
 	ensure_tts_credentials();
 }
