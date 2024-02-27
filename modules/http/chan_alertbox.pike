@@ -663,11 +663,11 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		if (ip != conn->remote_ip) return "That's not where you are";
 	}
 	[object channel, string grp] = split_channel(msg->group);
-	tts_check(grp);
+	tts_check(channel->userid);
 }
 
-__async__ void tts_check(string grp) {
-	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+__async__ void tts_check(string|int channelid) {
+	mapping cfg = persist_status->path("alertbox", (string)channelid);
 	if (cfg->uses_tts) {
 		//Ensure that we have TTS credentials, but note that the current connection has yet
 		//to be added to the group arrays (as it's not yet validated). So delay the check
