@@ -1409,20 +1409,24 @@ void follower(object channel, mapping follower) {
 	]));
 }
 
-//When we fire a dedicated sub bomb alert, save extra->msg_param_origin_id into this
-//set, and it will suppress all the alerts from the individuals. Assumptions: The IDs
-//are unique across all channels; code will not be updated in the middle of processing
-//of a sub bomb (a very narrow window normally - this isn't the length of the alerts);
-//and IDs will not be reused.
-multiset subbomb_ids = (<>);
+//Sub bombs result in a dedicated "sub bomb" notification, followed by the individual
+//sub gifts. If we have a sub bomb alert, we fire that when the notification comes in,
+//and then suppress the individual alerts; but if we don't, the individual ones will
+//happen. This raises a bit of a problem. All those alerts will arrive in short order,
+//and we have to fetch from the database asynchronously, so we need to respond to the
+//individual alert before we even know whether a sub bomb alert exists.
+//Thus, this. It maps extra->msg_param_origin_id (which is the same for the bomb and
+//all the individuals) to one of three options:
+//0 (absent): No sub bomb known, or no sub bomb alert. Let the alert fire.
+//An array: Add yourself to the array and do nothing.
+//1: We've fired the bomb alert, so suppress the individual alert.
+mapping(string:array|int(0..1)) subbomb_ids = ([]);
 
 @hook_subscription:
 void subscription(object channel, string type, mapping person, string tier, int qty, mapping extra, string|void msg) {
 	mapping cfg = persist_status->has_path("alertbox", (string)channel->userid);
 	if (!cfg->?authkey) return;
 	int months = (int)extra->msg_param_cumulative_months || 1;
-	//If this channel has a subbomb alert variant, the follow-up sub messages will be skipped.
-	if (extra->came_from_subbomb && subbomb_ids[extra->msg_param_origin_id]) return;
 	mapping args = ([
 		"username": person->displayname,
 		"tier": tier, "months": months,
@@ -1438,8 +1442,28 @@ void subscription(object channel, string type, mapping person, string tier, int 
 			args->subbomb = (string)extra->msg_param_mass_gift_count;
 		}
 	}
-	if (!send_alert(channel, "sub", args)) return; //If alert didn't happen, don't do any further processing.
-	if (type == "subbomb") subbomb_ids[extra->msg_param_origin_id] = 1; //Suppress the other alerts
+	//If this channel has a subbomb alert variant, the follow-up sub messages will be skipped.
+	string id = extra->msg_param_origin_id;
+	if (extra->came_from_subbomb) {
+		if (arrayp(subbomb_ids[id])) subbomb_ids[id] += ({args});
+		if (subbomb_ids[id]) return;
+	}
+	if (type == "subbomb") {
+		subbomb_ids[id] = ({ });
+		send_subbomb_alert(channel, args, id);
+	}
+	else send_alert(channel, "sub", args);
+}
+
+__async__ void send_subbomb_alert(object channel, mapping args, string id) {
+	if (/*await*/(send_alert(channel, "sub", args))) {
+		//A sub bomb alert was sent. Suppress the rest.
+		subbomb_ids[id] = 1;
+	} else {
+		//The bomb wasn't sent. Queue up any of the existing alerts, and
+		//remove the marker so subsequent alerts will fire naturally.
+		foreach (m_delete(subbomb_ids, id), args) /*await*/(send_alert(channel, "sub", args));
+	}
 }
 
 @hook_cheer:
