@@ -374,6 +374,16 @@ __async__ mapping load_config(string|int twitchid, string kwd, mixed|void dflt) 
 	return JSONDECODE(rows[0]->data);
 }
 
+//Collect all configs of a particular keyword, returning them keyed by Twitch user ID.
+__async__ mapping load_all_configs(string kwd) {
+	if (!active) await(await_active());
+	array rows = await(query(pg_connections[active], "select twitchid, data from stillebot.config where keyword = :kwd",
+		(["kwd": kwd])));
+	mapping ret = ([]);
+	foreach (rows, mapping r) ret[r->twitchid] = JSONDECODE(r->data);
+	return ret;
+}
+
 mapping load_cached_config(string|int twitchid, string kwd) {
 	if (!precached_config[kwd]) error("Can only load_cached_config() with the keywords listed\n");
 	if (pcc_loadstate[kwd] < 2) error("Config not yet loaded\n");
