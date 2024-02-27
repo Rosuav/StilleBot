@@ -631,11 +631,10 @@ void ensure_host_connection(string chan) {
 	raidin(chan, (["to_broadcaster_user_id": (string)channel->userid]));
 }
 
-void ensure_tts_credentials() {
+void ensure_tts_credentials(int need_tts) { //If you already KNOW we need it, skip the search
 	remove_call_out(m_delete(G->G, "ensure_tts_callout"));
 	//Check if any connected account uses TTS
-	int need_tts = 0;
-	foreach (G->G->irc->channels; string name; object channel) {
+	if (!need_tts) foreach (G->G->irc->channels; string name; object channel) {
 		mapping cfg = persist_status->has_path("alertbox", (string)channel->userid) || ([]);
 		if (!cfg->uses_tts) continue;
 		//If you're using the renderer front end, or the editing control panel,
@@ -648,7 +647,7 @@ void ensure_tts_credentials() {
 	if (!need_tts) return;
 	float age = time(tts_config->access_token_fetchtime);
 	if (age > 3500) {age = 0.0; spawn_task(fetch_tts_credentials(1));}
-	G->G->ensure_tts_callout = call_out(ensure_tts_credentials, 3500.0 - age);
+	G->G->ensure_tts_callout = call_out(ensure_tts_credentials, 3500.0 - age, 0);
 }
 
 bool need_mod(string grp) {return grp == "control" || has_prefix(grp, "preview-");}
@@ -674,7 +673,7 @@ __async__ void tts_check(string|int channelid) {
 		//and allow the (synchronous) incorporation into the arrays, so that ensure() can
 		//see this connection - otherwise, starting the first connection won't check for
 		//credentials.
-		call_out(ensure_tts_credentials, 0);
+		call_out(ensure_tts_credentials, 0, 1);
 	}
 }
 
@@ -1180,8 +1179,7 @@ constant cutewords = "puppy kitten crumpet tutu butterscotch flapjack pilliwiggi
 	"blueberry rainbow treasure princess cutie shiny dance bread sakura train "
 	"gift art flag candle heart love magic save tada hug cool party plush star "
 	"donut teacup cat purring flower sugar biscuit pillow banana berry " / " ";
-__async__ void send_with_tts(object channel, mapping args, string|void destgroup) {
-	mapping cfg = persist_status->path("alertbox", (string)channel->userid);
+__async__ void send_with_tts(object channel, mapping args, string|void destgroup, mapping cfg) {
 	if (!cfg->alertconfigs[args->send_alert]) return 0; //On replay, if the alert doesn't exist, do nothing. TODO: Replay a base alert if variant deleted?
 	mapping inh = G_G_("alertbox_resolved", (string)channel->userid, args->send_alert);
 	string fmt = inh->tts_text || "", text = "";
@@ -1275,8 +1273,8 @@ constant vars_provided = (["{alert_sent}": "Either 'yes' or 'no' depending on wh
 
 //Attempt to send an alert. Returns 1 if alert sent, 0 if not (eg if alert disabled).
 //Note that the actual sending of the alert is asynchronous, esp if TTS is used.
-int(1bit) send_alert(object channel, string alerttype, mapping args) {
-	mapping cfg = persist_status->has_path("alertbox", (string)channel->userid);
+int(1bit) send_alert(object channel, string alerttype, mapping args, mapping|void cfg) {
+	if (!cfg) cfg = persist_status->has_path("alertbox", (string)channel->userid);
 	if (!cfg->?authkey) return 0;
 	int suppress_alert = 0;
 	mapping alert = cfg->alertconfigs[?alerttype]; if (!alert) return 0; //No alert means it can't possibly fire
@@ -1329,7 +1327,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 
 	//If any variant responds, use that instead.
 	foreach (alert->variants || ({ }), string subid)
-		if (send_alert(channel, subid, args)) return 1;
+		if (send_alert(channel, subid, args, cfg)) return 1;
 
 	if (suppress_alert) return 0;
 	//A completely null alert does not actually fire.
@@ -1344,7 +1342,7 @@ int(1bit) send_alert(object channel, string alerttype, mapping args) {
 	cfg->replay += ({args | (["alert_timestamp": time()])});
 	persist_status->save();
 	send_updates_all(channel, "control");
-	spawn_task(send_with_tts(channel, args));
+	spawn_task(send_with_tts(channel, args, 0, cfg));
 	return 1;
 }
 
@@ -1362,7 +1360,7 @@ void websocket_cmd_replay_alert(mapping(string:mixed) conn, mapping(string:mixed
 	else if (conn->session->user->id == (string)channel->userid) dest = cfg->authkey;
 	else dest = "preview-" + conn->session->user->login;
 	//Resend the alert exactly as-is, modulo configuration changes.
-	spawn_task(send_with_tts(channel, cfg->replay[idx] | (["test_alert": 1]), dest));
+	spawn_task(send_with_tts(channel, cfg->replay[idx] | (["test_alert": 1]), dest, cfg));
 }
 
 mapping parse_emotes(string text, mapping person) {
@@ -1396,7 +1394,7 @@ mapping message_params(object channel, mapping person, [string alert, string tex
 		"TEXT": text || "",
 		"text": text || "",
 		"username": person->displayname,
-	]) | emotes);
+	]) | emotes, cfg);
 	return (["{alert_sent}": sent ? "yes" : "no"]);
 }
 
@@ -1424,8 +1422,6 @@ mapping(string:array|int(0..1)) subbomb_ids = ([]);
 
 @hook_subscription:
 void subscription(object channel, string type, mapping person, string tier, int qty, mapping extra, string|void msg) {
-	mapping cfg = persist_status->has_path("alertbox", (string)channel->userid);
-	if (!cfg->?authkey) return;
 	int months = (int)extra->msg_param_cumulative_months || 1;
 	mapping args = ([
 		"username": person->displayname,
@@ -1456,20 +1452,19 @@ void subscription(object channel, string type, mapping person, string tier, int 
 }
 
 __async__ void send_subbomb_alert(object channel, mapping args, string id) {
-	if (/*await*/(send_alert(channel, "sub", args))) {
+	mapping cfg = persist_status->has_path("alertbox", (string)channel->userid);
+	if (/*await*/(send_alert(channel, "sub", args, cfg))) {
 		//A sub bomb alert was sent. Suppress the rest.
 		subbomb_ids[id] = 1;
 	} else {
 		//The bomb wasn't sent. Queue up any of the existing alerts, and
 		//remove the marker so subsequent alerts will fire naturally.
-		foreach (m_delete(subbomb_ids, id), args) /*await*/(send_alert(channel, "sub", args));
+		foreach (m_delete(subbomb_ids, id), args) /*await*/(send_alert(channel, "sub", args, cfg));
 	}
 }
 
 @hook_cheer:
 void cheer(object channel, mapping person, int bits, mapping extra, string msg) {
-	mapping cfg = persist_status->has_path("alertbox", (string)channel->userid);
-	if (!cfg->?authkey) return;
 	send_alert(channel, "cheer", ([
 		"username": person->displayname,
 		"bits": (string)bits,
@@ -1657,5 +1652,5 @@ protected void create(string name) {
 	if (file_stat("tts-credentials.json") && !tts_config->access_token) spawn_task(fetch_tts_credentials(0));
 	initialize_inherits();
 	G->G->send_alert = send_alert;
-	ensure_tts_credentials();
+	ensure_tts_credentials(0);
 }
