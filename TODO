@@ -177,19 +177,6 @@
     - Channel config->whispers_as_commands - no current way to set it
     - What about secondary voices? For example, whispering CandiCat could execute commands
       in #devicat and then whisper the response from CandiCat.
-* Once all usage of channel->name, channel->name[1..], (string)channel->userid in any
-  persist query is done through path() or has_path(), transform them into abstract lookups.
-  - Can use persist_status->path("some_keyword", channel, "whatever")
-  - Keep the existing lookups unchanged for stability. Monitor to ensure that nothing breaks.
-  - Eventually, rename all to use the userid - no code should break.
-    - Should™.
-* Migrate channel info out of persist_status into channel config
-* Allow users to take a backup of their full config?? Currently the "Backup Settings" thing
-  is designed to have consistent format so people can git-manage it, but if I move stuff
-  from persist_status into there, it might not work so well for that. Or maybe I keep the
-  current "settings" backup but have a separate thing for a GDPR-style "request my info"?
-  Not sure that I want to dig into the full details of GDPR, and I definitely don't want to
-  imply that I have if I haven't.
 * Make the GUI command editor more accessible
   - GET A SCREENREADER and see how everything sounds. If needed, adjust.
     - Orca sucks. What others are there?
@@ -212,7 +199,7 @@
 * Instead of deleting a channel's config, flag it as Inactive
   - This flag probably shouldn't go in the channel config file, since that would require
     loading every config file to determine which ones to not bother loading.
-  - Instead, we may need metadata in persist_status, indicating which channels are active.
+  - Instead, we may need metadata in load_config(), indicating which channels are active.
   - Ensure that newly-added channels are immediately active
 * Cron job to track channels that have been inactive for a long time (maybe 2 weeks) to
   archive and eventually dispose of their configs
