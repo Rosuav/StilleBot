@@ -144,11 +144,6 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel) return;
 	multiset scopes = (multiset)(msg->scopes || ({ }));
-	if (mapping tok = persist_status->has_path("voices", msg->voiceid)) {
-		//Incorporate any legacy scopes
-		array have = tok->scopes || ({"chat_login", "user_read", "whispers:edit", "user_subscriptions", "user:manage:whispers"});
-		scopes |= (multiset)have;
-	}
 	//Grab the existing credentials. If authenticating new, guess that we're likely
 	//going to auth as the current user - it's slightly more likely than the opposite.
 	int existing_user = (int)msg->voiceid || (int)conn->session->user->id;

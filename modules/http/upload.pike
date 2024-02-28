@@ -53,8 +53,11 @@ Upload time: %s
 		if (cb) cb(file->channel, req->misc->session->user, file);
 		return jsonify((["url": file->url]));
 	}
-	if (string redir = persist_status->has_path("upload_metadata", fileid)->?redirect) return redirect(redir, 301);
-	if (sizeof(fileid / "-") != 5) return 0; //Not a UUID. Probably a legacy URL for something that's been deleted.
+	array(string) parts = fileid / "-";
+	if (sizeof(parts) != 5) { //Not a UUID. Probably a legacy URL.
+		string|zero redir = await(G->G->DB->load_config(0, "upload_redirect"))[parts[-1]]->?redirect;
+		return redir && redirect(redir, 301); //If we don't have a redirect, it's probably deleted, so... 404.
+	}
 	mapping file = await(G->G->DB->get_file(fileid, 1));
 	if (!file) return 0;
 	if (req->request_headers["if-none-match"] == file->metadata->etag) return (["error": 304]);
@@ -65,6 +68,6 @@ Upload time: %s
 	]);
 }
 
-//TODO: Have a thing on code reload or somewhere that cleans out upload_metadata,
+//TODO: Have a thing on code reload or somewhere that cleans out upload_redirect,
 //removing entries for files that are no longer present. That way, if those files
 //eventually get deleted, we'll throw away their metadata.

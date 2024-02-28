@@ -17,11 +17,8 @@ int _get_mtime(string filename, multiset|void ignore) {
 	return mtime;
 }
 
-//Map filename prefix to directory name
-constant upload_dirs = (["upload": "uploads", "share": "artshare"]);
-
 constant http_path_pattern = "/static/%[^/]";
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string filename)
+mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req, string filename)
 {
 	if (filename == "" || has_prefix(filename, ".")) return (["error": 403, "data": "Forbidden"]);
 	string dir = "httpstatic";
@@ -30,13 +27,11 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req, string fil
 	foreach (([".css": "text/css", ".flac": "audio/flac", ".mp3": "audio/mp3", ".html": "text/html"]); string ext; string t)
 		if (has_suffix(filename, ext)) type = t;
 	//Support a small number of subdirectory names
-	if (sscanf(filename, "%s-%s", string pfx, filename) && upload_dirs[pfx] &&
-			filename && filename != "" && !has_prefix(filename, ".")) {
-		mapping meta = persist_status->has_path(pfx + "_metadata", filename);
-		if (!meta) return (["error": 404, "data": "Not found"]); //It's possible that the file exists but has no metadata, but more likely it just doesn't.
-		if (meta->redirect) return redirect(meta->redirect, 301);
-		dir = "httpstatic/" + upload_dirs[pfx];
-		type = meta->mimetype;
+	if (has_prefix(filename, "upload-")) { //Possible legacy URL. Check if we have a new URL for it.
+		return G->G->DB->load_config(0, "upload_redirect")->then() {
+			string|zero redir = __ARGS__[0][filename - "upload-"]->?redirect;
+			return redir && redirect(redir, 301);
+		};
 	}
 	//For absolute paranoia-level safety, instead of trying to open the
 	//file directly, we check that the name comes up in a directory listing.
@@ -77,10 +72,8 @@ string staticfile(string fn)
 	return "/static/" + fn;
 }
 
-protected void create(string name)
-{
+protected void create(string name) {
 	::create(name);
 	G->G->http_endpoints["favicon.ico"] = favicon;
 	G->G->template_defaults["static"] = staticfile;
-	foreach (upload_dirs;; string dir) mkdir("httpstatic/" + dir); //Autocreate directories as needed
 }
