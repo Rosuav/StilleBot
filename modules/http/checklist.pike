@@ -190,7 +190,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (req->variables->showcase) {
 		//?showcase=49497888 to see Rosuav's emotes
 		//Only if permission granted.
-		v2_have = persist_status->has_path("seen_emotes", req->variables->showcase) || ([]);
+		v2_have = await(G->G->DB->load_config(req->variables->showcase, "seen_emotes"));
 		if (!v2_have->_allow_showcase) v2_have = ([]);
 		else title = "Emote showcase for " + v2_have->_allow_showcase;
 	}
@@ -200,7 +200,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>\n\n"
 			"[Check for newly-unlocked emotes](:#echolocate) [Enable showcase](:#toggleshowcase)\n\n"
 			"[Show off your emotes here](checklist?showcase=" + req->misc->session->?user->?id + ")";
-		v2_have = persist_status->path("seen_emotes", (string)req->misc->session->?user->?id) || ([]);
+		v2_have = await(G->G->DB->load_config(req->misc->session->?user->?id, "seen_emotes"));
 	}
 	else login_link += "\n\n<input type=checkbox id=showall style=\"display:none\" checked>"; //Hack: Show all if not logged in
 	mapping have_emotes = ([]);
@@ -226,8 +226,8 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 }
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {if (msg->group != conn->session->?user->?id) return "Not you";}
-mapping get_state(string group) {
-	return (["emotes": indices(persist_status->has_path("seen_emotes", group) || ([]))]);
+__async__ mapping get_state(string group) {
+	return (["emotes": indices(await(G->G->DB->load_config(group, "seen_emotes")))]);
 }
 
 __async__ void echolocate(string user, string pass, array emotes) {
@@ -238,17 +238,17 @@ __async__ void echolocate(string user, string pass, array emotes) {
 	irc->quit();
 }
 
-void websocket_cmd_echolocate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping seen = persist_status->path("seen_emotes", conn->session->user->id);
+__async__ void websocket_cmd_echolocate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping seen = await(G->G->DB->load_config(conn->session->?user->?id, "seen_emotes"));
 	int threshold = time() - 86400;
 	array emotes = filter(tracked_emote_names) {return seen[__ARGS__[0]] < threshold;};
 	spawn_task(echolocate(conn->session->user->login, "oauth:" + conn->session->token, emotes));
 }
 
-void websocket_cmd_toggleshowcase(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping seen = persist_status->path("seen_emotes", conn->session->user->id);
-	if (!m_delete(seen, "_allow_showcase")) seen->_allow_showcase = conn->session->user->display_name;
-	persist_status->save();
+__async__ void websocket_cmd_toggleshowcase(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	await(G->G->DB->mutate_config(conn->session->?user->?id, "seen_emotes") {mapping seen = __ARGS__[0];
+		if (!m_delete(seen, "_allow_showcase")) seen->_allow_showcase = conn->session->user->display_name;
+	});
 	send_updates_all(conn->group);
 }
 
@@ -256,7 +256,7 @@ void websocket_cmd_toggleshowcase(mapping(string:mixed) conn, mapping(string:mix
 __async__ int message1(object channel, mapping person, string msg) {
 	if (!person->uid || !person->emotes || (!sizeof(person->emotes) && channel->name != echolocation_channel)) return 0;
 	mapping v2 = G->G->emotes_v2;
-	mapping seen = persist_status->has_path("seen_emotes", (string)person->uid);
+	mapping seen = await(G->G->DB->load_config(person->uid, "seen_emotes"));
 	mapping botemotes = person->uid == G->G->bot_uid && await(G->G->DB->load_config(0, "bot_emotes"));
 	int changed = 0, now = time();
 	foreach (person->emotes, [string id, int start, int end]) {
@@ -275,10 +275,8 @@ __async__ int message1(object channel, mapping person, string msg) {
 			if (has_value(hypetrain, code)) emotename = code;
 			else continue;
 		}
-		if (!seen) seen = persist_status->path("seen_emotes", (string)person->uid);
 		if (!seen[emotename]) changed = 1;
 		seen[emotename] = now;
-		persist_status->save();
 	}
 	if (channel->name == echolocation_channel && seen) {
 		//When it's a message specifically for emote testing, scan for words that are NOT emotes and
@@ -289,11 +287,10 @@ __async__ int message1(object channel, mapping person, string msg) {
 			if (seen[w] && seen[w] != now) {
 				m_delete(seen, w);
 				persist_status->save();
-				changed = 1;
 			}
 		}
 	}
-	if (changed) send_updates_all((string)person->uid);
+	if (changed) {send_updates_all((string)person->uid); await(G->G->DB->save_config(person->uid, "seen_emotes", seen));}
 }
 
 __async__ void load_emotes() {
