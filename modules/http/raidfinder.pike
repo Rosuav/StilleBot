@@ -95,8 +95,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body) || !intp(body->id)) return (["error": 400]);
 		string newnotes = body->notes || "";
-		//TODO: Migrate this into persist_status->path("prefs", (string)req->misc->session->user->id, "raidnotes")
-		mapping notes = persist_status->path("raidnotes", (string)req->misc->session->user->id);
+		mapping notes = await(G->G->DB->load_config(req->misc->session->user->id, "raidnotes"));
 		if (body->id == 0)
 		{
 			//Special case: List of highlight channels.
@@ -106,7 +105,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			foreach (channels; int i; string c) sscanf(c, "http%*[s]://twitch.tv/%s%*[?/]", channels[i]);
 			array users = await(get_users_info(channels, "login")); //TODO: If this throws "user not found", report it nicely
 			notes->highlight = (array(string))users->id * "\n";
-			persist_status->save();
+			await(G->G->DB->save_config(req->misc->session->user->id, "raidnotes", notes));
 			return jsonify(([
 				"highlights": users->login * "\n",
 				"highlightids": users->id,
@@ -126,12 +125,12 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 					if (!pref || pref > MAX_PREF || pref < MIN_PREF) m_delete(notes->tags, id);
 					else notes->tags[id] = pref;
 				}
-			persist_status->save();
+			await(G->G->DB->save_config(req->misc->session->user->id, "raidnotes", notes));
 			return jsonify((["ok": 1, "prefs": notes->tags]));
 		}
 		if (newnotes == "") m_delete(notes, (string)body->id);
 		else notes[(string)body->id] = newnotes;
-		persist_status->save();
+		await(G->G->DB->save_config(req->misc->session->user->id, "raidnotes", notes));
 		return (["error": 204]);
 	}
 	mapping logged_in = req->misc->session && req->misc->session->user;
@@ -284,7 +283,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	//annotation. For notes attached to a channel, that channel's ID is
 	//used; other forms of notes are attached to specific keywords. In a
 	//previous iteration of this, notes ID 0 was used for "highlight".
-	mapping notes = persist_status->has_path("raidnotes", (string)logged_in->?id) || ([]);
+	mapping notes = await(G->G->DB->load_config(logged_in->?id, "raidnotes"));
 	array highlightids = ({ });
 	if (notes["0"]) notes->highlight = m_delete(notes, "0"); //Migrate
 	if (notes->highlight) highlightids = (array(int))(notes->highlight / "\n");
@@ -760,11 +759,11 @@ void websocket_cmd_suggestraid(mapping(string:mixed) conn, mapping(string:mixed)
 	int from = (int)conn->session->?user->?id; if (!from) return;
 	int target = (int)msg->target; if (!target) return; //Ensure that it casts to int correctly
 	int recip = (int)msg["for"]; if (!recip) return;
-	mapping notes = persist_status->has_path("raidnotes", (string)recip);
-	if (notes->?tags[?"<raidsuggestions>"] < 0) return; //Raid suggestions are disabled, ignore them.
-	spawn_task(suggestraid(from, target, recip));
+	suggestraid(from, target, recip);
 }
 __async__ string suggestraid(int from, int target, int recip) {
+	mapping notes = await(G->G->DB->load_config(recip, "raidnotes"));
+	if (notes->?tags[?"<raidsuggestions>"] < 0) return "Streamer does not accept suggestions";
 	array streams = await(twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + target))->data;
 	if (!sizeof(streams)) return "Stream not live";
 	mapping strm = streams[0];
@@ -788,7 +787,6 @@ __async__ string suggestraid(int from, int target, int recip) {
 	int otheruid = (int)strm->user_id;
 	strm->broadcaster_type = target_user->broadcaster_type;
 	strm->profile_image_url = target_user->profile_image_url;
-	mapping notes = persist_status->has_path("raidnotes", (string)userid) || ([]);
 	if (string n = notes[(string)otheruid]) strm->notes = n;
 	if (!strm->url) strm->url = "https://twitch.tv/" + strm->user_login; //Is this always correct?
 	array raids = await(G->G->DB->load_raids(userid, otheruid, 1));
