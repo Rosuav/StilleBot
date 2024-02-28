@@ -21,6 +21,7 @@ multiset(string) creative_names = (<"Art", "Science & Technology", "Software and
 multiset(int) creatives = (<>);
 int next_precache_request;
 @retain: mapping raid_suggestions = ([]);
+@retain: mapping raidfinder_cache = ([]);
 
 array(mapping) prune_raid_suggestions(string id) {
 	if (!raid_suggestions[id]) return ({ });
@@ -193,8 +194,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 
 		//Hang onto this info in cache, apart from is_following (below).
 		ret->cache_time = time();
-		persist_status->path("raidfinder_cache")[chan] = ret;
-		persist_status->save();
+		raidfinder_cache[chan] = ret | ([]);
 
 		string chanid = req->variables["for"];
 		if ((int)chanid && chanid != (string)logged_in->?id && chanid != chan) {
@@ -517,7 +517,6 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	//build up a final result.
 	mapping(string:int) tag_prefs = notes->tags || ([]);
 	mapping(string:int) lc_tag_prefs = mkmapping(lower_case(indices(tag_prefs)[*]), values(tag_prefs));
-	mapping cached_status = persist_status->path("raidfinder_cache");
 	multiset seen = (<>);
 	foreach (follows_helix; int i; mapping strm)
 	{
@@ -534,7 +533,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		foreach (strm->tags || ({ }), string tag)
 			if (int pref = lc_tag_prefs[lower_case(tag)]) recommend["Tag prefs"] += PREFERENCE_MAGIC_SCORES[pref];
 		strm->category = G->G->category_names[strm->game_id] || strm->game_name;
-		if (mapping st = cached_status[strm->user_id]) strm->chanstatus = st;
+		if (mapping st = raidfinder_cache[strm->user_id]) strm->chanstatus = st;
 		int otheruid = (int)strm->user_id;
 		if (otheruid == userid) {follows_helix[i] = 0; continue;} //Exclude self. There's no easy way to know if you should have shown up, so just always exclude.
 		if (seen[otheruid]) {follows_helix[i] = 0; continue;} //Duplicate results sometimes happen across pagination. Suppress them. (We may have lost something in the gap but we can't know.)
@@ -781,7 +780,7 @@ __async__ string suggestraid(int from, int target, int recip) {
 	//TODO: Deduplicate with the main work
 	strm->category = G->G->category_names[strm->game_id] || strm->game_name;
 	//If we can't pull up the chanstatus from cache, populate it with the one most interesting part.
-	if (mapping st = persist_status->path("raidfinder_cache")[strm->user_id]) strm->chanstatus = st;
+	if (mapping st = raidfinder_cache[strm->user_id]) strm->chanstatus = st;
 	else {
 		mapping settings = await(twitch_api_request("https://api.twitch.tv/helix/chat/settings?broadcaster_id=" + target));
 		if (arrayp(settings->data) && sizeof(settings->data)) strm->chanstatus = (["cache_time": time(), "chat_settings": settings->data[0]]);
@@ -840,11 +839,9 @@ __async__ mapping message_params(object channel, mapping person, array params) {
 
 protected void create(string name) {
 	::create(name);
-	//Clean out the raid finder cache of anything more than two weeks old
-	mapping cache = persist_status["raidfinder_cache"] || ([]);
+	//Clean out the VOD length cache of anything more than two weeks old
 	int stale = time() - 86400 * 14;
-	foreach (indices(cache), string uid) {
-		if (cache[uid]->cache_time < stale) m_delete(cache, uid);
+	foreach (indices(raidfinder_cache), string uid) {
+		if (raidfinder_cache[uid]->cache_time < stale) m_delete(raidfinder_cache, uid);
 	}
-	persist_status->save();
 }
