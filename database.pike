@@ -432,6 +432,7 @@ __async__ mapping mutate_config(string|int twitchid, string kwd, function mutato
 			sizeof(rows) ? "update stillebot.config set data = :data where twitchid = :twitchid and keyword = :kwd"
 			: "insert into stillebot.config values (:twitchid, :kwd, :data)",
 			(["twitchid": (int)twitchid, "kwd": kwd, "data": data])));
+		return data;
 	}));
 }
 
