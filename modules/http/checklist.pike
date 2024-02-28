@@ -165,7 +165,7 @@ constant emoteids = ([
 	"HypeUwu": "emotesv2_9c5840880c854913867fa2e5ffdc1f17",
 	"HypeLick": "emotesv2_47d858d7a1e042a3bf72eab138351415",
 ]);
-array(string) tracked_emote_names;
+array(string) tracked_emote_names = ({ });
 
 //HACK: Send to a channel nobody cares about, but which the bot tracks.
 //Bot hosts, ensure that this is a channel that you use with the bot.
@@ -180,7 +180,7 @@ string img(string code, int|string id)
 		"<figcaption>%[0]s</figcaption></figure>", code, emote_url((string)id, 3));
 }
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping emotesets = ([]);
 	string login_link = "[Log in to highlight the emotes you have access to](:.twitchlogin data-scopes=@chat_login chat:edit@)";
@@ -207,7 +207,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	array(string) used = indices(v2_have); //Emote names that we have AND used. If they're in that mapping, they're in the checklist (by definition).
 	foreach (emotesets;; array set) foreach (set, mapping em)
 		have_emotes[em->code] = img(em->code, em->id);
-	mapping botemotes = persist_status->path("bot_emotes");
+	mapping botemotes = await(G->G->DB->load_config(0, "bot_emotes"));
 	string text = words->replace(hypetrain, lambda(string w) {
 		//1) Do we (the logged-in user) have the emote?
 		if (string have = have_emotes[w]) {used += ({w}); return have;}
@@ -252,12 +252,12 @@ void websocket_cmd_toggleshowcase(mapping(string:mixed) conn, mapping(string:mix
 	send_updates_all(conn->group);
 }
 
-@hook_allmsgs:
-int message(object channel, mapping person, string msg) {
+@hook_allmsgs: int message(object channel, mapping person, string msg) {message1(channel, person, msg);}
+__async__ int message1(object channel, mapping person, string msg) {
 	if (!person->uid || !person->emotes || (!sizeof(person->emotes) && channel->name != echolocation_channel)) return 0;
 	mapping v2 = G->G->emotes_v2;
 	mapping seen = persist_status->has_path("seen_emotes", (string)person->uid);
-	mapping botemotes = person->uid == G->G->bot_uid && persist_status->path("bot_emotes");
+	mapping botemotes = person->uid == G->G->bot_uid && await(G->G->DB->load_config(0, "bot_emotes"));
 	int changed = 0, now = time();
 	foreach (person->emotes, [string id, int start, int end]) {
 		if (botemotes) {
@@ -296,6 +296,18 @@ int message(object channel, mapping person, string msg) {
 	if (changed) send_updates_all((string)person->uid);
 }
 
+__async__ void load_emotes() {
+	//List all emotes that would be detected by the main translation loop.
+	//Technically the replacement is ignored, but it's consistent with the above.
+	array trackme = ({ });
+	mapping botemotes = await(G->G->DB->load_config(0, "bot_emotes"));
+	string text = words->replace(hypetrain, lambda(string w) {
+		if (botemotes[w] || emoteids[w]) trackme += ({w});
+		return w;
+	});
+	tracked_emote_names = trackme;
+}
+
 protected void create(string name) {
 	::create(name);
 	//List of emotes to track - specifically, all the v2 emote IDs shown in the checklist.
@@ -304,13 +316,5 @@ protected void create(string name) {
 	//used in X seconds", which will be possible, since they're stored with their timestamps.
 	mapping v2 = filter(emoteids, stringp);
 	G->G->emotes_v2 = mkmapping(values(v2), indices(v2));
-	//List all emotes that would be detected by the main translation loop.
-	//Technically the replacement is ignored, but it's consistent with the above.
-	array trackme = ({ });
-	mapping botemotes = persist_status->path("bot_emotes");
-	string text = words->replace(hypetrain, lambda(string w) {
-		if (botemotes[w] || emoteids[w]) trackme += ({w});
-		return w;
-	});
-	tracked_emote_names = trackme;
+	load_emotes();
 }

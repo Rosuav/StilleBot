@@ -56,14 +56,13 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
-mapping _get_message(string|int id, mapping msgs) {
+mapping _get_message(string|int id, mapping msgs, mapping botemotes) {
 	string|mapping msg = msgs[(string)id];
 	if (!msg) return 0;
 	if (stringp(msg)) msg = (["message": msg]); else msg = ([]) | msg;
 	if (msg->expiry && msg->expiry < time()) return 0;
 	if (!msg->parts) {
 		array parts = ({""});
-		mapping botemotes = persist_status->path("bot_emotes");
 		foreach (msg->message / " "; int i; string w)
 			if (sscanf(w, "\uFFFAe%s:%s\uFFFB", string emoteid, string alt)) //Assumes that emotes are always entire words, for simplicity
 				parts += ({(["type": "image", "url": emote_url(emoteid, 1), "text": alt]), " "});
@@ -95,8 +94,9 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping msgs = await(G->G->DB->load_config(channel->userid, "private"))[grp];
 	if (!msgs) return (["items": ({ })]);
-	if (id) return _get_message(id, msgs);
-	return (["items": _get_message(sort((array(int))indices(msgs) - ({0}))[*], msgs) - ({0})]);
+	mapping botemotes = await(G->G->DB->load_config(0, "bot_emotes"));
+	if (id) return _get_message(id, msgs, botemotes);
+	return (["items": _get_message(sort((array(int))indices(msgs) - ({0}))[*], msgs, botemotes) - ({0})]);
 }
 
 __async__ void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {

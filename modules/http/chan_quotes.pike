@@ -1,6 +1,6 @@
 inherit http_endpoint;
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	array quotes = req->misc->channel->config->quotes;
 	if (!quotes || !sizeof(quotes)) return render_template("chan_quotes.md", (["quotes": "(none)"]) | req->misc->chaninfo);
@@ -8,7 +8,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string tz = req->misc->channel->config->timezone;
 	object user = user_text();
 	string btn = req->misc->is_mod ? " [\U0001F589](:.editbtn)" : "";
-	mapping botemotes = persist_status->path("bot_emotes");
+	mapping botemotes = await(G->G->DB->load_config(0, "bot_emotes"));
 	foreach (quotes; int i; mapping quote)
 	{
 		//Render emotes. TODO: Use the bot's emote list primarily, but

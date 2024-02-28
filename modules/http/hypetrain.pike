@@ -91,10 +91,10 @@ RPGAyaya HahaCat RPGGhosto PrideWingR PrideWingL HypePizza
 PrideUwu PrideLaugh PrideCute PridePog PrideFloat HypePizza";
 string avail_emotes = "";
 
-mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (avail_emotes == "") {
-		mapping botemotes = persist_status->path("bot_emotes");
+		mapping botemotes = await(G->G->DB->load_config(0, "bot_emotes"));
 		mapping emoteids = function_object(G->G->http_endpoints->checklist)->emoteids; //Hack!
 		avail_emotes = "";
 		foreach (emotes / "\n", string level)
