@@ -36,10 +36,7 @@ Name        | Mnemonic | Description/purpose | -
 </style>
 ";
 //Note that, in theory, multiple voice support could be done without an HTTP interface.
-//It would be fiddly to set up, though, so I'm not going to try to support it at this
-//stage. Maybe in the future. For now, if you're working without the web interface, you
-//will need to manually set a "voice" on a command, and you'll need to manually craft
-//the persist_status entries for the login.
+//It would be fiddly to set up, though, so I'm not going to try to support it.
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {
