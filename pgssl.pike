@@ -162,6 +162,8 @@ class SSLDatabase(string host, mapping|void cfg) {
 	mapping inflight = ([]); //Map a portal name to some info about the query-to-be
 	int(1bit) writable = 1;
 	array(string) preparing_statements = ({ });
+	int(1bit) in_transaction = 0; //If true, we're in a transaction, and autocommitted queries have to wait.
+	Concurrent.Promise|zero transaction_pending = 0;
 
 	protected void create() {
 		if (!cfg) cfg = ([]);
@@ -215,7 +217,10 @@ class SSLDatabase(string host, mapping|void cfg) {
 						[string portalname, preparing_statements] = Array.shift(preparing_statements);
 						mapping stmt = inflight[portalname];
 						stmt->completion->failure(({
-							sprintf("%s\n%s\n", fields->M || "Unknown query error", fields->D || ""),
+							sprintf("Error in query: %O\n%s\n%s\n",
+								stmt->query,
+								fields->M || "Unknown query error",
+								fields->D || ""),
 							backtrace(),
 						}));
 					}
@@ -235,8 +240,8 @@ class SSLDatabase(string host, mapping|void cfg) {
 				}
 				case 'K': sscanf(msg, "%4d%4d", backendpid, secretkey); break;
 				case 'Z':
-					if (msg == "I" || msg == "T") ready();
-					else if (msg = "E") state = "transacterr";
+					if (msg == "I") ready();
+					else if (msg == "T" || msg == "E") transaction_ready(); //Note that in the error state, the only query we expect is "rollback"
 					break;
 				case 'S': { //Note that this is ParameterStatus from the back end, but if the front end sends it, it's Sync
 					sscanf(msg, "%s\0%s\0", string param, string value);
@@ -317,8 +322,12 @@ class SSLDatabase(string host, mapping|void cfg) {
 			next->success(1);
 		}
 	}
+	void transaction_ready() { //Like ready() but when we're in transaction state. Note that this is slightly broader than PG's "we're in a transaction" marker.
+		if (transaction_pending) {transaction_pending->success(1); transaction_pending = 0;}
+		else state = "transactionready";
+	}
 
-	__async__ array(mapping) query(string sql, mapping|void bindings) {
+	__async__ array(mapping) _low_query(string readystate, string sql, mapping|void bindings) {
 		//Preparse the query and bindings
 		array paramvalues = ({ });
 		if (bindings) foreach (bindings; string param; mixed val) {
@@ -329,11 +338,12 @@ class SSLDatabase(string host, mapping|void cfg) {
 		}
 
 		//Must be atomic with ready()
-		if (state == "ready") state = "busy";
+		if (state == readystate) state = "busy";
 		else {
 			object p = Concurrent.Promise();
-			pending += ({p});
-			await(p->future()); //Enqueue us until ready() declares that we're done
+			if (readystate == "ready") pending += ({p});
+			else transaction_pending = p;
+			await(p->future()); //Enqueue us until ready() or equiv declares that we're done
 		}
 		//NOTE: For now, I am assuming that portals and prepared statements will always
 		//use the same names. We're not really using concurrent inflight queries here,
@@ -346,7 +356,7 @@ class SSLDatabase(string host, mapping|void cfg) {
 		//string packet = sprintf("%s\0%s\0%2c%{%4c%}", portalname, sql, sizeof(params), params);
 		object completion = Concurrent.Promise();
 		mapping stmt = inflight[portalname] = ([
-			"query": sql, //For debugging only
+			"query": sql, //Context for error messages
 			"paramvalues": paramvalues,
 			"completion": completion,
 			"results": ({ }),
@@ -362,10 +372,42 @@ class SSLDatabase(string host, mapping|void cfg) {
 		//Now to parse out those rows and properly comprehend them.
 		return parse_result_row(stmt->fields, stmt->results[*]);
 	}
+	Concurrent.Future query(string sql, mapping|void bindings) {
+		if (in_transaction) error("Use transaction() OR query(), don't mix them.\n");
+		return _low_query("ready", sql, bindings);
+	}
 	//Sql.Sql-compatible API
 	__async__ PromiseResult promise_query(string sql, mapping|void bindings) {
 		array ret = await(query(sql, bindings));
 		return PromiseResult(ret);
+	}
+
+	Concurrent.Future transaction_query(string sql, mapping|void bindings) {
+		//Version of query() to be called ONLY from inside a transaction block.
+		if (!in_transaction) error("Use transaction() or query(), don't use this directly.\n");
+		return _low_query("transactionready", sql, bindings);
+	}
+
+	//Execute the given function in a transaction context. Kinda like a 'with' block
+	//in Python, this will propagate the return value or exception from the body,
+	//while managing the transaction (rolling back if exception, committing else).
+	//The callback will be passed a function equivalent to query(), followed by any
+	//additional arguments. NOTE: Keep this function short and fast! All other DB
+	//queries will be queued until this transaction completes.
+	__async__ mixed transaction(function body, mixed ... args) {
+		await(_low_query("ready", "begin")); //Not transaction_query here. Queue us like any autocommitted call.
+		in_transaction = 1;
+		mixed ret;
+		mixed ex = catch {
+			ret = await(body(transaction_query, @args));
+		};
+		if (ex) {
+			catch {await(transaction_query("rollback"));}; //Ignore errors from the rollback itself, they'll just be cascaded.
+			throw(ex);
+		}
+		await(transaction_query("commit")); //Don't ignore errors from commit. Let 'em bubble.
+		in_transaction = 0;
+		return ret;
 	}
 }
 

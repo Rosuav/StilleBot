@@ -222,6 +222,24 @@ __async__ void json_test() {
 	exit(0);
 }
 
+__async__ void transact_test() {
+	await(G->G->DB->mutate_config(1, "test", lambda(mapping data) {
+		werror("Mutating!\n");
+		data->foo++;
+	}));
+	if (!G->G->DB->active) await(G->G->DB->await_active());
+	await(G->G->DB->pg_connections[G->G->DB->active]->conn->transaction(__async__ lambda(function query) {
+		werror("Inside transaction!\n");
+		werror("1 + 1 => %O\n", await(query("select 1 + 1")));
+		werror("42 => %O\n", await(query("select 42")));
+	}));
+	werror("Transaction done.\n");
+	werror("Double query: %O\n", await(G->G->DB->generic_query(({
+		"select 1 + 1", "select 42"
+	}))));
+	exit(0);
+}
+
 __async__ void fix_kofi_name() {
 	//TODO: Make an actual UI for this somewhere
 	mapping stats = await(G->G->DB->load_config(54212603, "subgiftstats"));
@@ -251,6 +269,7 @@ protected void create(string name) {
 	if (!G->G->inotify) start_inotify();*/
 	//big_query_test();
 	//import_raids();
-	array_test();
+	//array_test();
 	//json_test();
+	transact_test();
 }

@@ -126,19 +126,12 @@ __async__ array query(mapping(string:mixed) db, string|array sql, mapping|void b
 	#if constant(SSLDatabase)
 	if (arrayp(sql)) {
 		array ret = ({ });
-		mixed ex = catch {await(db->conn->query("begin"));};
-		if (!ex) foreach (sql, string q) {
-			//A null entry in the array of queries is ignored, and will not have a null return value to correspond.
-			if (ex = q && catch {ret += ({await(db->conn->query(q, bindings))});}) break;
-		}
-		//Ignore errors from rolling back - the exception that gets raised will have come from
-		//the actual query (or possibly the BEGIN), not from rolling back.
-		if (ex) catch {await(db->conn->query("rollback"));};
-		//But for committing, things get trickier. Technically an exception here leaves the
-		//transaction in an uncertain state, but I'm going to just raise the error. It is
-		//possible that the transaction DID complete, but we can't be sure.
-		else ex = catch {await(db->conn->query("commit"));};
-		if (ex) throw(ex);
+		await(db->conn->transaction(__async__ lambda(function query) {
+			foreach (sql, string q) {
+				//A null entry in the array of queries is ignored, and will not have a null return value to correspond.
+				if (q) ret += ({await(query(q, bindings))});
+			}
+		}));
 		return ret;
 	}
 	else return await(db->conn->query(sql, bindings));
@@ -423,6 +416,23 @@ __async__ void migrate_config(string kwd, mapping|void source) {
 		}
 		await(G->G->DB->save_config(uid, kwd, cfg));
 	}
+}
+
+//Doesn't currently support Sql.Sql().
+__async__ mapping mutate_config(string|int twitchid, string kwd, function mutator) {
+	if (!active) await(await_active());
+	return await(pg_connections[active]->conn->transaction(__async__ lambda(function query) {
+		//TODO: Is it worth having load_config/save_config support transactional mode?
+		array rows = await(query("select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
+			(["twitchid": (int)twitchid, "kwd": kwd])));
+		mapping data = sizeof(rows) ? rows[0]->data : ([]);
+		mapping|void ret = mutator(data); //Note that the mutator currently is expected to be synchronous. Is there need for awaits in here??
+		if (mappingp(ret)) data = ret; //Otherwise, assume that the original mapping was mutated.
+		await(query(
+			sizeof(rows) ? "update stillebot.config set data = :data where twitchid = :twitchid and keyword = :kwd"
+			: "insert into stillebot.config values (:twitchid, :kwd, :data)",
+			(["twitchid": (int)twitchid, "kwd": kwd, "data": data])));
+	}));
 }
 
 //Call with two IDs for raids between those two channels, or with one ID for
