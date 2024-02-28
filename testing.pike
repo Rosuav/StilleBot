@@ -159,31 +159,6 @@ __async__ void big_query_test() {
 	exit(0);
 }
 
-__async__ void import_raids() {
-	if (!G->G->DB->active) await(G->G->DB->await_active());
-	werror("Importing raids.\n");
-	mapping(string:array) all_raids = ([]);
-	foreach (persist_status->path("raids"); string id; mapping raids) {
-		foreach (raids; string otherid; array raids) {
-			foreach (raids, mapping raid) {
-				//werror("%O %O %O\n", id, otherid, raid);
-				string fromid = otherid, toid = id;
-				if (m_delete(raid, "outgoing")) [fromid, toid] = ({toid, fromid});
-				all_raids[fromid + ":" + toid] += ({raid});
-			}
-		}
-	}
-	foreach (all_raids; string ids; array r) {
-		werror("%s...        \r", ids);
-		if (sizeof(r) >= 50) werror("%d %s %O\n", sizeof(r), ids, r[0]);
-		sscanf(ids, "%d:%d", int fromid, int toid);
-		await(G->G->DB->save_sql("insert into stillebot.raids values (:fromid, :toid, :data)",
-			(["fromid": fromid, "toid": toid, "data": r])));
-	}
-	werror("Total raid arrays: %O\n", sizeof(all_raids));
-	exit(0);
-}
-
 __async__ void array_test() {
 	//TODO: Come up with a good generic way to encode arrays on the wire protocol
 	//The array seems to have an "inner type" (eg type 1007 includes that it's 23,
@@ -268,7 +243,6 @@ protected void create(string name) {
 	G->G->postgres_log_readable = log_readable;
 	if (!G->G->inotify) start_inotify();*/
 	//big_query_test();
-	//import_raids();
 	//array_test();
 	//json_test();
 	transact_test();
