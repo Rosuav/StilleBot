@@ -1155,9 +1155,8 @@ __async__ void wscmd_renamefile1(object channel, mapping(string:mixed) conn, map
 
 @"is_mod": void wscmd_revokekey(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_revokekey1(channel, conn, msg);}
 __async__ void wscmd_revokekey1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping cfg = await(G->G->DB->load_config(channel->userid, "alertbox"));
-	string prevkey = m_delete(cfg, "authkey");
-	await(G->G->DB->save_config(channel->userid, "alertbox", cfg));
+	string prevkey;
+	await(G->G->DB->mutate_config(channel->userid, "alertbox") {prevkey = m_delete(__ARGS__[0], "authkey");});
 	send_updates_all(conn->group, (["authkey": "<REVOKED>"]));
 	send_updates_all(channel, prevkey, (["breaknow": 1]));
 }
