@@ -1638,7 +1638,6 @@ __async__ void fetch_tts_credentials(int fast) {
 }
 
 __async__ void initialize_inherits() {
-	await(G->G->DB->migrate_config("alertbox"));
 	//Fetch the free media file list if needed, then resolve inherits (which needs free media URLs)
 	if (G->G->freemedia_filelist->?_last_fetched < time() - 3600) {
 		Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url("https://rosuav.github.io/free-media/filelist.json"));
