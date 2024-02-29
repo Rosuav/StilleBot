@@ -286,7 +286,7 @@ __async__ int message1(object channel, mapping person, string msg) {
 		foreach (msg / " ", string w) {
 			if (seen[w] && seen[w] != now) {
 				m_delete(seen, w);
-				persist_status->save();
+				changed = 1;
 			}
 		}
 	}
