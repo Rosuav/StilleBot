@@ -130,12 +130,13 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (!req->misc->is_mod) return redirect("commands");
 	string c = req->misc->channel->name;
 	array messages = ({ });
-	mapping rawdata = persist_status->path("variables", c);
+	mapping rawdata = G->G->DB->load_cached_config(req->misc->channel->userid, "variables");
+	int changed = 0;
 	//Prune any bad entries. Shouldn't be needed. Good guard against bugs in other places though (goalbars, I'm looking at you)
 	foreach (indices(rawdata), string var) if (sizeof(var) < 3 || var[0] != '$' || var[-1] != '$') {
 		if (var == "*" && mappingp(rawdata[var])) continue; //But per-user variables are fine (and currently unvalidated).
 		m_delete(rawdata, var);
-		persist_status->save();
+		changed = 1;
 	}
 	if (req->misc->is_mod && !req->misc->session->fake && sscanf(req->variables->newcounter || "", "%[a-zA-Z]", string counter) && counter != "")
 	{
@@ -154,8 +155,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			messages += ({sprintf("* Creating %s command !%s", kw, cmd)});
 			G->G->cmdmgr->update_command(req->misc->channel, "", cmd, this["build_" + kw](counter, resp));
 		}
-		if (!rawdata["$" + counter + "$"]) {rawdata["$" + counter + "$"] = "0"; persist_status->save();}
+		if (!rawdata["$" + counter + "$"]) {rawdata["$" + counter + "$"] = "0"; changed = 1;}
 	}
+	if (changed) G->G->DB->save_config(req->misc->channel->userid, "variables", rawdata);
 	//Convert (["x": "1"]) into (["x": (["curval": "1"])]) to allow us to add metadata
 	mapping variabledata = mkmapping(indices(rawdata), (["curval": values(rawdata)[*]]));
 	return render(req, ([
@@ -179,7 +181,7 @@ mapping _get_variable(mapping vars, object channel, string varname, int|void per
 }
 bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping vars = persist_status->path("variables", channel->name);
+	mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
 	if (id) return _get_variable(vars, channel, "$" + id + "$");
 	array variabledata = _get_variable(vars, channel, sort(indices(vars) - ({"*"}))[*]);
 	if (mapping uservars = vars["*"]) {
@@ -197,14 +199,14 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
-	mapping vars = persist_status->path("variables", channel->name);
+	mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
 	if (m_delete(vars, "$" + msg->id + "$")) update_one(conn->group, msg->id);
 }
 
 void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
-	mapping vars = persist_status->path("variables", channel->name);
+	mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
 	if (mappingp(msg->per_user)) {
 		string var = "*" + replace(msg->id, "*|${}" / 1, "");
 		//TODO: Filter to existing variables according to the all_per_user set
@@ -218,7 +220,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 void wscmd_getuservars(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping vars = persist_status->path("variables", channel->name)["*"];
+	mapping vars = G->G->DB->load_cached_config(channel->userid, "variables")["*"];
 	if (!mappingp(vars)) return;
 	string var = "$" + (msg->id - "*") + "$";
 	//Scan this for every user that has this variable

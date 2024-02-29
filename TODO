@@ -3,9 +3,11 @@
   - Is there a way to detect channel slow mode on connection? If it changes, there's a NOTICE.
     - Possibly ROOMSTATE, but I'm not receiving those.
 * Variables.
-  - NOTE: As of 2021-01-13, all variables are stored in persist_status->variables->#chan->$var$
+  - NOTE: As of 2024-02-29, all variables are stored in precached config named "$var$",
     and any that aren't dollar-bracketed are buggy. This may change in the future, with
-    the persisted mapping NOT having the dollar signs.
+    the persisted mapping NOT having the dollar signs. This may also coincide with storing
+    them in their own table eg stillebot.variables, with channelid, varname, userid (may
+    be NULL in which case it's not a per-user variable), and the value.
 * Add some example/template commands that use cooldowns.
   - The functionality exists, but it can be used in a variety of ways. Good examples:
     - Short cooldown, no else. A simple squelch effect (command can't be used inside

@@ -216,13 +216,20 @@ class channel(mapping config) {
 		if (loading) loading[userid] = 0;
 	}
 
-	//Like calling the equivalent persist method (TODO: dedup; also, do we need has_path?).
-	//Do not retain references to these mappings long-term as they may be replaced
-	//or reloaded at any time.
+	//Deprecated. Uses old configs.
 	mapping path(string ... parts) {
 		mapping ret = config;
 		foreach (parts, string idx) {
 			if (undefinedp(ret[idx])) {ret[idx] = ([]); config_save();}
+			ret = ret[idx];
+		}
+		return ret;
+	}
+	//Non-deprecated version of the above. Might end up becoming global?
+	mapping _path(mapping base, string ... parts) {
+		mapping ret = base;
+		foreach (parts, string idx) {
+			if (undefinedp(ret[idx])) ret[idx] = ([]);
 			ret = ret[idx];
 		}
 		return ret;
@@ -345,7 +352,7 @@ class channel(mapping config) {
 	}
 
 	mapping(string:string) get_channel_variables(int|string|void uid) {
-		mapping vars = persist_status->has_path("variables", name) || ([]);
+		mapping vars = G->G->DB->load_cached_config(userid, "variables");
 		mapping ephemvars = G->G->variables[?name];
 		if (ephemvars) return vars | ephemvars;
 		return vars;
@@ -358,9 +365,8 @@ class channel(mapping config) {
 		int per_user = sscanf(var, "%s*%s", string user, var);
 		int ephemeral = sscanf(var, "%s?", var);
 		var = "$" + var + "?" * ephemeral + "$";
-		function fetcher = ephemeral ? G_G_ : persist_status->path;
-		mapping vars = per_user ? fetcher("variables", name, "*", (string)users[?user])
-				: fetcher("variables", name);
+		mapping basevars = ephemeral ? G_G_("variables", (string)userid) : G->G->DB->load_cached_config(userid, "variables");
+		mapping vars = per_user ? _path(basevars, "*", (string)users[?user]) : basevars;
 		if (action == "add") {
 			//Add to a variable, REXX-style (decimal digits in strings).
 			//Anything unparseable is considered to be zero.
@@ -377,17 +383,15 @@ class channel(mapping config) {
 		if (val == "" && per_user) {
 			//Per-user variables don't need to store blank
 			m_delete(vars, var);
-			if (!sizeof(vars)) m_delete(fetcher("variables", name, "*"), (string)users[?user]);
+			if (!sizeof(vars)) m_delete(basevars["*"], (string)users[?user]);
 		}
 		if (ephemeral) return val; //Ephemeral variables are not pushed out to listeners.
 		//Notify those that depend on this. Note that an unadorned per-user variable is
 		//probably going to behave bizarrely in a monitor, so don't do that; use either
 		//global variables or namespace to a particular user eg "$49497888*varname$".
+		G->G->DB->save_config(userid, "variables", basevars);
 		if (per_user) var = "$" + (string)users[?user] + "*" + var[1..];
 		else G->G->websocket_types->chan_variables->update_one(name, var - "$");
-		//TODO: Defer this until the next tick (with call_out 0), so that multiple
-		//changes can be batched, reducing flicker.
-		persist_status->save();
 		event_notify("variable_changed", this, var, val);
 		return val;
 	}

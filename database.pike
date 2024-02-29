@@ -90,7 +90,7 @@ constant tables = ([
 		//TODO: Figure out what would make useful indexes
 	}),
 ]);
-multiset precached_config = (<"channel_labels">); //TODO: Have other modules submit requests?
+multiset precached_config = (<"channel_labels", "variables">); //TODO: Have other modules submit requests?
 @retain: mapping pcc_loadstate = ([]);
 @retain: mapping pcc_cache = ([]);
 

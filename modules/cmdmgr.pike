@@ -521,12 +521,17 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 	//any edit. This ensures that none of the anonymous ones hang around. Named ones are regular
 	//variables, though, and might be shared, so we don't delete those.
 	//TODO: Only do this if not extra->?nosave, as this should already have been done.
-	mapping vars = persist_status->has_path("variables", channel);
-	string remove = "$." + basename + ":";
-	if (vars) foreach (indices(vars), string v) if (has_prefix(v, remove)) {
-		m_delete(vars, v);
-		if (object handler = G->G->websocket_types->chan_variables)
-			handler->update_one(channel->name, v - "$");
+	{
+		mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
+		string remove = "$." + basename + ":";
+		int changed = 0;
+		if (vars) foreach (indices(vars), string v) if (has_prefix(v, remove)) {
+			changed = 1;
+			m_delete(vars, v);
+			if (object handler = G->G->websocket_types->chan_variables)
+				handler->update_one(channel->name, v - "$");
+		}
+		if (changed) G->G->DB->save_config(channel->userid, "variables", vars);
 	}
 	if (response && response != "") channel->commands[cmd] = response;
 	//TODO: What if other things need to be purged?
