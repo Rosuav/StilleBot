@@ -114,7 +114,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//Force an update, in case we have stale data. Note that the command editor will only use
 	//what's sent in the initial response, but at least this way, if there's an issue, hitting
 	//Refresh will fix it (otherwise there's no way for the client to force a refetch).
-	spawn_task(G->G->populate_rewards_cache(req->misc->channel->name[1..], req->misc->channel->userid));
+	G->G->populate_rewards_cache(req->misc->channel->userid);
 	return render(req, (["vars": vars]) | req->misc->chaninfo);
 }
 

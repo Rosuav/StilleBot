@@ -126,8 +126,7 @@ __async__ void update_all_rewards(object channel) {
 	call_out(spawn_task, 0, update_all_rewards(channel));
 }
 
-__async__ void populate_rewards_cache(string chan, string|int|void broadcaster_id) {
-	if (!broadcaster_id) broadcaster_id = await(get_user_id(chan));
+__async__ void populate_rewards_cache(string|int broadcaster_id) {
 	pointsrewards[(int)broadcaster_id] = ({ }); //If there's any error, don't keep retrying
 	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
 	mapping params = (["Authorization": "Bearer " + token_for_user_id(broadcaster_id)[0]]);
@@ -139,7 +138,7 @@ __async__ void populate_rewards_cache(string chan, string|int|void broadcaster_i
 		multiset unseen = (multiset)indices(current) - (multiset)rewards->id;
 		if (sizeof(unseen)) {m_delete(current, ((array)unseen)[*]); channel->config_save();}
 	}
-	multiset manageable = rewards_manageable[broadcaster_id] = (multiset)await(twitch_api_request(url + "&only_manageable_rewards=true", params))->data->id;
+	multiset manageable = rewards_manageable[(int)broadcaster_id] = (multiset)await(twitch_api_request(url + "&only_manageable_rewards=true", params))->data->id;
 	foreach (rewards, mapping r) {
 		r->can_manage = manageable[r->id];
 		if (current[?r->id]) r->is_dynamic = 1;
@@ -154,17 +153,18 @@ __async__ void populate_rewards_cache(string chan, string|int|void broadcaster_i
 	event_notify("reward_changed", channel, 0);
 }
 
+@on_irc_loaded: void populate_all_rewards() {
+	foreach (indices(G->G->irc->id), int userid)
+		if (userid && !pointsrewards[userid]) {
+			string scopes = token_for_user_id(userid)[1];
+			if (has_value(scopes / " ", "channel:manage:redemptions")
+				|| has_value(scopes / " ", "channel:read:redemptions"))
+					populate_rewards_cache(userid);
+		}
+}
+
 protected void create(string name) {
 	::create(name);
 	G->G->populate_rewards_cache = populate_rewards_cache;
 	G->G->update_dynamic_reward = update_dynamic_reward;
-	foreach (list_channel_configs(), mapping cfg) {
-		if (!cfg->userid) continue;
-		if (!pointsrewards[cfg->userid]) {
-			string scopes = token_for_user_login(cfg->login)[1]; //TODO: Switch to ID when that's fundamental
-			if (has_value(scopes / " ", "channel:manage:redemptions")
-				|| has_value(scopes / " ", "channel:read:redemptions"))
-					spawn_task(populate_rewards_cache(cfg->login, cfg->userid));
-		}
-	}
 }
