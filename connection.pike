@@ -28,7 +28,7 @@ twitchid primary key (was userid)
 deactivated: NULL, or time_t when deactivated. A deactivated account is largely invisible and inactive.
 login, display_name: Re-fetched from Twitch periodically
 
-Migrate to load_config(twitchid, "naming-is-hard"):
+Migrate to load_config(twitchid, "botconfig"):
 chatlog: 1 if chat is to be logged to console. No web UI way to set this.
 connprio: Integer, higher means it'll be connected to earlier during full system reset. No web UI.
 defvoice: ID of default voice for all commands. Set by chan_voices.
@@ -45,7 +45,7 @@ voices
 vlcblocks
 
 Battle plan:
-1. Import from the (still-canonical) config files into botservice. Redo if needed.
+1. Run migrate_channels() in testing.pike. Redo if needed.
 2. Remove all usage of list_channel_configs outside of this file.
 3. Replace lcc here with a database call but retain it (don't wait on code reload)
 4. Hook changes to the table and call_out(reconnect, 0)

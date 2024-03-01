@@ -227,6 +227,27 @@ __async__ void fix_kofi_name() {
 	await(G->G->DB->save_config(54212603, "subgiftstats", stats));
 }
 
+__async__ void migrate_channels() {
+	if (!G->G->DB->active) await(G->G->DB->await_active());
+	array files = "channels/" + glob("*.json", get_dir("channels"))[*];
+	array configs = Standards.JSON.decode_utf8(Stdio.read_file(files[*])[*]);
+	await(G->G->DB->pg_connections[G->G->DB->active]->conn->transaction(__async__ lambda(function query) {
+		await(query("truncate table stillebot.botservice"));
+		foreach (configs, mapping config) {
+			werror("Migrating %O / %s...\n", config->userid, config->display_name);
+			config->userid = config->userid; //Force the demo channel to have an explicit userid of zero :)
+			await(query("insert into stillebot.botservice values (:userid, NULL, :login, :display_name)", config));
+			mapping basics = ([]);
+			foreach ("chatlog connprio defvoice snoozeads_mods timezone" / " ", string key) //TODO: Also vlcauthtoken
+				if (config[key] && config[key] != "") basics[key] = config[key];
+			await(query("insert into stillebot.config values (:twitchid, 'botconfig', :data) on conflict (twitchid, keyword) do update set data=:data",
+				(["twitchid": config->userid, "data": basics])));
+		}
+	}));
+	werror("Completed migration.\n");
+	exit(0);
+}
+
 protected void create(string name) {
 	::create(name);
 	/*if (!G->G->have_tasks) {
@@ -245,5 +266,6 @@ protected void create(string name) {
 	//big_query_test();
 	//array_test();
 	//json_test();
+	//migrate_channels();
 	transact_test();
 }
