@@ -364,9 +364,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		}
 		else if (req->variables->login == "demo") {
 			//Like specifying login= for each of the channels that I bot for
-			args->user_login = ({ });
-			foreach (list_channel_configs(), mapping info)
-				if (info->login && info->login[0] != '!') args->user_login += ({info->login});
+			args->user_id = (array(string))(indices(G->G->irc->id) - ({0}));
 			title = "This bot's channels";
 		}
 		else if (req->variables->login) {
