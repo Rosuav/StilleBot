@@ -281,18 +281,18 @@ class _mainwindow
 				)
 			);
 		win->sel=win->list->get_selection();
-		sig_pb_refresh_clicked();
+		on_irc_loaded(this, "window::mainwindow", "sig_pb_refresh_clicked");
 		sig_sel_changed();
 		::makewindow();
 	}
 
 	void sig_pb_refresh_clicked() {
 		win->ls->clear();
-		array configs = list_channel_configs(); sort(configs->login, configs);
-		foreach (configs, mapping cfg) {
+		array channels = values(G->G->irc->id); sort(channels->login, channels);
+		foreach (channels, object channel) {
 			object iter = win->ls->append();
-			win->ls->set_value(iter, 0, cfg->login || "...");
-			win->ls->set_value(iter, 1, (string)cfg->userid);
+			win->ls->set_value(iter, 0, channel->login || "...");
+			win->ls->set_value(iter, 1, (string)channel->userid);
 		}
 		win->ls->set_value(win->new_iter = win->ls->append(), 0, "-- New --");
 		win->sel->select_iter(win->new_iter);
