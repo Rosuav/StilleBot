@@ -23,20 +23,22 @@ int(1bit) is_active; //Cache of is_active_bot() since we need to check it freuqe
 
 /* What's in channels/TWITCHID.json?
 
-Migrate to load_config (or maybe cached) userid, "botservice":
-userid: maybe?
-deactivated: 0, or time_t when deactivated. A deactivated account is largely invisible and inactive.
+Migrate to stillebot.botservice:
+twitchid primary key (was userid)
+deactivated: NULL, or time_t when deactivated. A deactivated account is largely invisible and inactive.
+login, display_name: Re-fetched from Twitch periodically
+
+Migrate to load_config(twitchid, "naming-is-hard"):
 chatlog: 1 if chat is to be logged to console. No web UI way to set this.
 connprio: Integer, higher means it'll be connected to earlier during full system reset. No web UI.
 defvoice: ID of default voice for all commands. Set by chan_voices.
-login, display_name: Fetched from Twitch periodically
 snoozeads_mods: 1 if moderators are allowed to snooze ads
 timezone: IANA timezone name for all scheduling etc
 vlcauthtoken: Auth key for VLC integration
 
 Migrate to separate configs:
 commands - support already exists, just move them all
-dynamic_rwards
+dynamic_rewards
 monitors
 quotes
 voices

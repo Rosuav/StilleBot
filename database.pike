@@ -89,6 +89,15 @@ constant tables = ([
 		"data bytea not null", //The actual blob.
 		//TODO: Figure out what would make useful indexes
 	}),
+	"botservice": ({
+		"twitchid bigint primary key",
+		"deactivated timestamp with time zone", //Active channels have this set to NULL.
+		"login text not null",
+		"display_name text not null",
+		"create or replace function send_botservice_notification() returns trigger language plpgsql as $$begin perform pg_notify('stillebot.botservice', new.twitchid::text); return null; end$$;",
+		"create or replace trigger botservice_changed after insert or update on stillebot.botservice for each row execute function send_botservice_notification();",
+		"alter table stillebot.botservice enable always trigger botservice_changed;",
+	}),
 ]);
 multiset precached_config = (<"channel_labels", "variables">); //TODO: Have other modules submit requests?
 @retain: mapping pcc_loadstate = ([]);
@@ -704,9 +713,15 @@ __async__ void create_tables() {
 		if (sizeof(stmts)) {
 			if (active) error("Table structure changes needed!\n%O\n", stmts);
 			werror("Making changes on %s: %O\n", db->host, stmts);
+			#if constant(SSLDatabase)
+			await(db->conn->transaction(__async__ lambda(function query) {
+				foreach (stmts, string stmt) await(query(stmt));
+			}));
+			#else
 			await(query(db, "begin read write"));
 			foreach (stmts, string stmt) await(query(db, stmt));
 			await(query(db, "commit"));
+			#endif
 			werror("Be sure to `./dbctl refreshrepl` on both ends!\n");
 		}
 	}
