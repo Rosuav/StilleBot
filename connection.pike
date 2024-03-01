@@ -35,11 +35,12 @@ voices
 vlcblocks
 
 Battle plan:
-1. Run migrate_channels() in testing.pike. Redo if needed.
-2. Remove all usage of list_channel_configs outside of this file. DONE.
-3. Replace lcc here with a database call but retain it (don't wait on code reload)
-4. Hook changes to the table and call_out(reconnect, 0)
-5. Audit all use of get_channel_config. Should it be querying via G->G->irc? DONE.
+1. Find all usage of the "migrate to separate configs" entries and disconnect them from the channel objects.
+2. Load all channels by joining stillebot.botconfig with stillebot.config keyword = 'botconfig' and deactivated is null
+   - Await this on first load, but retain it in memory for code reload
+   - On changes to stillebot.botconfig, purge the cache and call_out(reconnect, 0)
+   - On changes to stillebot.config:botconfig, update the existing channel object with new configs.
+3. Rerun migrate_channels() in testing.pike as needed. It is currently not primary.
 */
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
