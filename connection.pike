@@ -27,7 +27,6 @@ timezone: IANA timezone name for all scheduling etc
 vlcauthtoken: Auth key for VLC integration
 
 Migrate to separate configs:
-commands - support already exists, just move them all
 dynamic_rewards
 monitors
 voices
@@ -207,18 +206,6 @@ class channel(mapping config) {
 		//Load up the channel's commands. Note that aliases are not stored in the JSON file,
 		//but are individually available here in the lookup mapping.
 		commands = ([]);
-		if (config->commands) foreach (config->commands; string cmd; mixed response) {
-			//Legacy commands from the JSON config
-			commands[cmd] = response;
-			if (mappingp(response) && response->aliases) {
-				mapping duplicate = (response - (<"aliases">)) | (["alias_of": cmd]);
-				foreach (response->aliases / " ", string alias) {
-					alias -= "!";
-					if (alias != "") commands[alias] = duplicate;
-				}
-			}
-			if (mappingp(response) && response->redemption) redemption_commands[response->redemption] += ({cmd});
-		}
 		array cmds = await(G->G->DB->load_commands(userid));
 		foreach (cmds, mapping cmd) {
 			echoable_message response = commands[cmd->cmdname] = cmd->content;
