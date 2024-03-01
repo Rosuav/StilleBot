@@ -668,7 +668,7 @@ class channel(mapping config) {
 		if (!voice) {
 			//No voice has been selected (either explicitly or as the channel default).
 			//Use the bot's global default voice, or the intrinsic voice (implicitly zero).
-			voice = get_channel_config(0)->?defvoice;
+			voice = G->G->irc->id[0]->?config->?defvoice;
 			//Even if this voice hasn't been activated for this channel, that's fine - it is
 			//implicitly permitted for use by all channels.
 		}
