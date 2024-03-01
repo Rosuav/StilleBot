@@ -14,7 +14,7 @@ int(1bit) is_active; //Cache of is_active_bot() since we need to check it freuqe
 //Return the channel config mapping if this is an active channel, or 0
 //NOTE: This returns a non-live config copy. Do not mutate it. If you
 //need a mutable config, look up the channel object and use its config.
-@export: mapping get_channel_config(string|int chan) {
+mapping get_channel_config(string|int chan) {
 	//Note that strings are permitted, but they have to be strings of digits, eg "49497888" for
 	//ID 49497888. This does not support passing "rosuav" for 4949788 and will do no lookups.
 	string data = Stdio.read_file("channels/" + chan + ".json");

@@ -111,8 +111,6 @@ int main(int argc,array(string) argv)
 		add_constant("INTERACTIVE", 1);
 		restricted_update = ({"persist.pike", "globals.pike", "pgssl.pike", "database.pike", "poll.pike"});
 		bootstrap_all();
-		mapping get_channel_config(string|int chan) {error("Channel configuration unavailable.\n");}
-		add_constant("get_channel_config", get_channel_config);
 		//Rather than actually load up all the builtins, just make sure the names can be validated.
 		//List is correct as of 20231210.
 		constant builtin_names = ({"chan_share", "chan_giveaway", "shoutout", "cmdmgr", "hypetrain", "chan_mpn", "tz", "chan_alertbox", "raidfinder", "uptime", "renamed", "log", "quote", "nowlive", "calc", "chan_monitors", "chan_errors", "argsplit", "chan_pointsrewards", "chan_labels", "uservars"});
