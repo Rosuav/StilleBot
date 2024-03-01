@@ -370,8 +370,8 @@ void streaminfo(array data)
 	mapping channels = ([]);
 	foreach (data, mapping chan) channels[(int)chan->user_id] = chan;
 	//Now we check over our own list of channels. Anything absent is assumed offline.
-	foreach (list_channel_configs(), mapping cfg)
-		if (cfg->userid) stream_status(cfg->userid, cfg->login, channels[cfg->userid]);
+	foreach (values(G->G->irc->id), object channel)
+		if (channel->userid) stream_status(channel->userid, channel->login, channels[channel->userid]);
 }
 
 __async__ void cache_game_names(string game_id)
@@ -693,25 +693,23 @@ void check_hooks(array eventhooks)
 		}
 	};
 
-	foreach (list_channel_configs(), mapping cfg) {
-		string chan = cfg->login;
-		mapping c = channel_info[chan];
-		int userid = c->?_id;
-		if (!userid) continue; //We need the user ID for this. If we don't have it, the hook can be retried later. (This also suppresses pseudo-channels.)
+	foreach (values(G->G->irc->id), object channel) {
+		int userid = channel->userid;
+		if (!userid) continue; //Ignore the demo
 		//Seems unnecessary to do all this work every time.
-		multiset scopes = (multiset)(token_for_user_login(chan)[1] / " ");
+		multiset scopes = (multiset)(token_for_user_id(userid)[1] / " ");
 		//TODO: Check if the bot is actually a mod and use that permission
 		if (scopes["moderator:read:followers"]) //If we have the necessary permission, use the broadcaster's authentication.
-			new_follower(chan, (["broadcaster_user_id": (string)userid, "moderator_user_id": (string)userid]));
-		//raidin(chan, (["to_broadcaster_user_id": (string)userid]));
-		raidout(chan, (["from_broadcaster_user_id": (string)userid]));
+			new_follower(channel->login, (["broadcaster_user_id": (string)userid, "moderator_user_id": (string)userid]));
+		//raidin(channel->login, (["to_broadcaster_user_id": (string)userid]));
+		raidout(channel->login, (["from_broadcaster_user_id": (string)userid]));
 	}
 }
 
 void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //Maybe make the poll interval customizable?
-	array chan = list_channel_configs()->userid;
+	array chan = indices(G->G->irc->?id || ([]));
 	chan = filter(chan) {return __ARGS__[0];}; //Exclude !demo which has a userid of 0
 	if (!sizeof(chan)) return; //Nothing to check.
 	//Prune any "channel online" statuses for channels we don't track any more
