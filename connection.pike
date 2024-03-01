@@ -42,6 +42,14 @@ dynamic_rewards
 monitors
 quotes
 voices
+vlcblocks
+
+Battle plan:
+1. Import from the (still-canonical) config files into botservice. Redo if needed.
+2. Remove all usage of list_channel_configs outside of this file.
+3. Replace lcc here with a database call but retain it (don't wait on code reload)
+4. Hook changes to the table and call_out(reconnect, 0)
+5. Audit all use of get_channel_config. Should it be querying via G->G->irc?
 */
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
