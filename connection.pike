@@ -32,7 +32,6 @@ dynamic_rewards
 monitors
 quotes
 voices
-vlcblocks
 
 Battle plan:
 1. Find all usage of the "migrate to separate configs" entries and disconnect them from the channel objects.

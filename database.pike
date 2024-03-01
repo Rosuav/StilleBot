@@ -408,22 +408,14 @@ __async__ void preload_config(string kwd) {
 	pcc_loadstate[kwd] = 2;
 }
 
-//Fire this off to migrate configs from persist_status->path("foo") into load_config(id, "foo")
-__async__ void migrate_config(string kwd, mapping|void source) {
-	if (!source) source = persist_status[kwd]; if (!source) return;
-	foreach (source; string chan; mapping cfg) {
-		if (!sizeof(cfg)) continue;
-		//Supports "49497888", "#rosuav", and "rosuav" as keys
-		int uid = 0;
-		if (chan != "0" && chan != "#!demo" && chan != "!demo") { //The demo account can't be looked up that way, but has UID 0.
-			#if constant(get_user_id)
-			if (catch {uid = (int)chan || await(get_user_id(chan - "#"));}) continue; //Ignore any not found
-			#else
-			//This sucks but whatever. We're misordered here (database is before poll).
-			error("Can only migrate configs after everything's loaded");
-			#endif
-		}
-		await(G->G->DB->save_config(uid, kwd, cfg));
+//Fire this off to migrate configs from channel->config["foo"] into load_config(channel->userid, "foo")
+__async__ void migrate_config(string kwd) {
+	foreach (G->G->irc->id; int userid; object channel) {
+		mapping cfg = channel->config[kwd];
+		if (!cfg || !sizeof(cfg)) continue; //Most likely it'll be an array or mapping, but strings are okay too
+		werror("Migrating %O %O\n", userid, cfg);
+		m_delete(channel->config, kwd); channel->config_save();
+		await(save_config(channel->userid, kwd, cfg));
 	}
 }
 

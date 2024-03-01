@@ -143,7 +143,7 @@ void sendstatus(object channel) {
 	if (channel->config->vlcauthtoken) send_updates_all(channel, channel->config->vlcauthtoken);
 }
 
-mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	object channel = req->misc->channel;
 	if (req->misc->is_mod && req->variables->makespecial) {
@@ -187,7 +187,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 			if (!fn || fn == "") fn = basename(uri);
 			else catch {fn = utf8_to_string(fn);}; //Ditto - UTF-8 with Latin-1 fallback
 			//Translate the block names via a per-channel mapping.
-			array blocks = channel->config->vlcblocks || ({ });
+			array blocks = await(G->G->DB->load_config(channel->userid, "vlcblocks", ({ })));
 			string blockdesc;
 			foreach (blocks, [string regex, string desc]) {
 				array match = Regexp.PCRE(regex, Regexp.PCRE.OPTION.ANCHORED)->split2(block);
@@ -261,7 +261,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				foreach (engines, object sock)
 					if (sock && sock->state == 1) sock->send_text(text);
 			}
-			return p->future();
+			return await(p->future());
 		}
 		return 0;
 	}
@@ -278,9 +278,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 }
 
 bool need_mod(string grp) {return grp == "blocks";}
-mapping get_chan_state(object channel, string grp, string|void id) {
+__async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	if (grp == "blocks" && id) {
-		foreach (channel->config->vlcblocks || ({ }), array b)
+		foreach (await(G->G->DB->load_config(channel->userid, "vlcblocks", ({ }))), array b)
 			if (b[0] == id) return (["id": id, "desc": b[1]]);
 		return (["id": id, "desc": ""]);
 	}
@@ -292,7 +292,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 		"time_usec": status->time,
 	]);
 	if (grp == "blocks") {
-		ret->items = map(channel->config->vlcblocks || ({ }),
+		ret->items = map(await(G->G->DB->load_config(channel->userid, "vlcblocks", ({ }))),
 			lambda(array b) {return (["id": b[0], "desc": b[1]]);});
 		if (status->unknowns) ret->items += (["id": status->unknowns[*], "desc": ""]);
 	}
@@ -336,15 +336,16 @@ void websocket_cmd_provideaudio(mapping(string:mixed) conn, mapping(string:mixed
 	status->audiodata = msg->audiodata;
 }
 
-void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "blocks") return; //Not mod view? No edits.
 	//Match based on the provided ID to recognize overwrites.
-	foreach (channel->config->vlcblocks || ({ }); int i; array b) if (b[0] == msg->id) {
+	array blocks = await(G->G->DB->load_config(channel->userid, "vlcblocks", ({ })));
+	foreach (blocks; int i; array b) if (b[0] == msg->id) {
 		if (msg->desc == "") {
 			//Delete.
-			channel->config->vlcblocks = channel->config->vlcblocks[..i-1] + channel->config->vlcblocks[i+1..];
+			blocks = blocks[..i-1] + blocks[i+1..];
 		}
 		else {
 			//Update. It's perfectly valid to update the path - for instance,
@@ -352,7 +353,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			//we can do a narrow update; no other things will change.
 			b[1] = msg->desc;
 			if (msg->path == msg->id) {
-				channel->config_save();
+				await(G->G->DB->save_config(channel->userid, "vlcblocks", blocks));
 				update_one("blocks" + channel->name, msg->id);
 				return;
 			}
@@ -361,8 +362,8 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		msg->desc = "";
 		break;
 	}
-	if (msg->desc != "") channel->config->vlcblocks += ({({msg->path, msg->desc})});
-	channel->config_save();
+	if (msg->desc != "") blocks += ({({msg->path, msg->desc})});
+	await(G->G->DB->save_config(channel->userid, "vlcblocks", blocks));
 	//It's entirely possible that this will match some of the unknowns. If so, clear 'em out.
 	mapping status = vlc_status[channel->name];
 	if (status->?unknowns) {
@@ -379,4 +380,4 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	status->recent = ({ });
 }
 
-protected void create(string name) {::create(name);}
+protected void create(string name) {::create(name); G->G->DB->migrate_config("vlcblocks");}
