@@ -168,9 +168,9 @@ string subtier(string plan) {
 constant variable_changed = ({"object channel", "string varname", "string newval"});
 
 class channel(mapping config) {
-	string name; //name begins with a hash and is all lowercase. Preference: Use this->config->login (no hash) instead.
+	string name; //name begins with a hash and is all lowercase. Preference: Use this->login (no hash) instead.
 	string color;
-	int userid;
+	int userid; string login, display_name;
 	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream online.
 	mapping user_attrs = ([]); //Latest-seen user status (see gather_person_info). Not guaranteed fresh. Some parts will be message-specific.
 	//Command names are simple atoms (eg "foo" will handle the "!foo" command), or well-known
@@ -181,6 +181,7 @@ class channel(mapping config) {
 
 	protected void create(multiset|void loading) {
 		name = "#" + config->login; userid = config->userid;
+		login = config->login; display_name = config->display_name;
 		if (config->chatlog)
 		{
 			if (!channelcolor[name]) {if (++G->G->nextcolor>7) G->G->nextcolor=1; channelcolor[name]=G->G->nextcolor;}
