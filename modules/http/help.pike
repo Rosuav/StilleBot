@@ -22,7 +22,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		yourname = "You are currently logged in as " + yourname + ".";
 		chan = req->misc->?session->?user->login;
 		int uid = req->misc->?session->?user->?id;
-		if (uid && get_channel_config(uid)) {
+		if (uid && G->G->irc->id[uid]) {
 			yourname += " I currently serve as a bot for your channel, so there are additional features available.";
 			link = lambda(string desttxt) {
 				sscanf(desttxt, "%s %s", string dest, string txt);
