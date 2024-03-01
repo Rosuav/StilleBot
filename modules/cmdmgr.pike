@@ -605,7 +605,7 @@ __async__ void update_perms_notifications(int channelid, multiset need_perms, mu
 		foreach (reasons; int i; mapping r) if (permsgone[r->reason]) {reasons[i] = 0; removed = 1;}
 		if (removed) {prefs->notif_perms[perm] = reasons - ({0}); changed = 1;}
 	}
-	multiset scopes = (multiset)(G->G->user_credentials[channelid]->scopes || ({ }));
+	multiset scopes = (multiset)(G->G->user_credentials[channelid]->?scopes || ({ }));
 	foreach (need_perms; string perm;) {
 		if (!scopes[perm]) {
 			if (!prefs->notif_perms) prefs->notif_perms = ([]);
