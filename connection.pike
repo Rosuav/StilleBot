@@ -1483,10 +1483,6 @@ array(mapping) shard_voices = ({0});
 void reconnect() {
 	array files = "channels/" + glob("*.json", get_dir("channels"))[*];
 	array channels = Standards.JSON.decode_utf8(Stdio.read_file(files[*])[*]);
-	#if constant(HEADLESS)
-	//HACK FOR TESTING: Reduce the number of channels loaded
-	//channels = ({get_channel_config(49497888)});
-	#endif
 	if (sizeof(channels)) {
 		sort(channels->login, channels); //Default to sorting affabeck by username
 		sort(-channels->connprio[*], channels);
