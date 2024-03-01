@@ -286,6 +286,18 @@ object retain = class {
 	}
 }();
 
+//Decorate a function with this to have it called once G->G->irc is populated.
+//If it's already populated (eg on code reload), function will be called immediately.
+//NOTE: When this is called, G->G->irc will be populated, but not all configs are
+//necessarily fully populated. See G->G->irc->loading.
+object on_irc_loaded = class {
+	constant is_callable_annotation = 1;
+	protected void `()(object module, string modname, string key) {
+		if (sizeof(G->G->irc->?id || ({ }))) module[key]();
+		else G->G->awaiting_irc_loaded += ({module[key]});
+	}
+}();
+
 @"G->G->enableable_modules";
 class enableable_module {
 	constant ENABLEABLE_FEATURES = ([]); //Map keywords to mappings containing descriptions and other info

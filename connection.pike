@@ -1497,6 +1497,7 @@ void reconnect() {
 		irc->id[c->userid] = c;
 	}
 	G->G->irc = irc;
+	if (array waiting = m_delete(G->G, "awaiting_irc_loaded")) waiting(); //Notify everyone who's waiting for the channel list.
 	//If we're not active, don't bother connecting. This doesn't stop us from BEING
 	//connected (if we've been deactivated), but we will ignore all messages that
 	//come in. OTOH, if we become active after previously not, we need to connect.

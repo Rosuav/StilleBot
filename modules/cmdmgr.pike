@@ -728,6 +728,11 @@ mapping message_params(object channel, mapping person, array param) {
 	}
 }
 
+@on_irc_loaded: void check_autospam() {
+	foreach (indices(G->G->irc->id), int userid)
+		if (G->G->stream_online_since[userid]) connected("", 0, userid);
+}
+
 protected void create(string name) {
 	::create(name);
 	G->G->cmdmgr = this;
@@ -735,6 +740,4 @@ protected void create(string name) {
 	//Old API - if you are using this, switch to update_command which also validates.
 	add_constant("make_echocommand", lambda() {error("make_echocommand is no longer supported.\n");});
 	register_bouncer(autospam);
-	foreach (list_channel_configs(), mapping cfg) if (cfg->login)
-		if (G->G->stream_online_since[cfg->userid]) connected(cfg->login, 0, cfg->userid);
 }
