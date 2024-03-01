@@ -46,7 +46,7 @@ vlcblocks
 
 Battle plan:
 1. Run migrate_channels() in testing.pike. Redo if needed.
-2. Remove all usage of list_channel_configs outside of this file.
+2. Remove all usage of list_channel_configs outside of this file. DONE.
 3. Replace lcc here with a database call but retain it (don't wait on code reload)
 4. Hook changes to the table and call_out(reconnect, 0)
 5. Audit all use of get_channel_config. Should it be querying via G->G->irc?
@@ -1481,7 +1481,8 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 //be coded in properly (to allow !demo to still have some example voices).
 array(mapping) shard_voices = ({0});
 void reconnect() {
-	array channels = list_channel_configs(); //Once loaded, this becomes the master config list and is mutable.
+	array files = "channels/" + glob("*.json", get_dir("channels"))[*];
+	array channels = Standards.JSON.decode_utf8(Stdio.read_file(files[*])[*]);
 	#if constant(HEADLESS)
 	//HACK FOR TESTING: Reduce the number of channels loaded
 	//channels = ({get_channel_config(49497888)});
