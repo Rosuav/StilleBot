@@ -30,7 +30,6 @@ Migrate to separate configs:
 commands - support already exists, just move them all
 dynamic_rewards
 monitors
-quotes
 voices
 
 Battle plan:

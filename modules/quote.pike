@@ -40,10 +40,10 @@ constant command_suggestions = ([
 	]),
 ]);
 
-mapping message_params(object channel, mapping person, array param) {
+__async__ mapping message_params(object channel, mapping person, array param) {
 	if (sizeof(param) < 2) param += ({"0"});
 	if (sizeof(param) < 3) param += ({""});
-	array quotes = channel->config->quotes || ({ });
+	array quotes = await(G->G->DB->load_config(channel->userid, "quotes", ({ })));
 	mapping chaninfo = G->G->channel_info[channel->name[1..]];
 	if (!chaninfo) error("Internal error - no channel info\n"); //I'm pretty sure this shouldn't happen
 	int idx = (int)param[1];
@@ -69,14 +69,14 @@ mapping message_params(object channel, mapping person, array param) {
 			string text = param[2];
 			while (sscanf(text, "%s\ufffae%*s:%s\ufffb%s", string before, string em, string after))
 				text = before + em + after;
-			channel->config->quotes += ({([
+			quotes += ({([
 				"msg": text, "emoted": param[2],
 				"game": chaninfo->game,
 				"timestamp": time(),
 				"recorder": person->user,
 			])});
-			idx = sizeof(quotes = channel->config->quotes);
-			channel->config_save();
+			idx = sizeof(quotes);
+			await(G->G->DB->save_config(channel->userid, "quotes", quotes));
 			//fallthrough
 		}
 		case "Get": {
@@ -92,9 +92,8 @@ mapping message_params(object channel, mapping person, array param) {
 		}
 		case "Delete": {
 			if (!idx) error("No such quote.\n");
-			quotes[idx - 1] = 0;
-			channel->config->quotes -= ({0});
-			channel->config_save();
+			quotes[idx - 1] = 0; quotes -= ({0});
+			await(G->G->DB->save_config(channel->userid, "quotes", quotes));
 			return (["{id}": (string)idx]);
 		}
 		default: break;

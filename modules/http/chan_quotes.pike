@@ -2,7 +2,7 @@ inherit http_endpoint;
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
-	array quotes = req->misc->channel->config->quotes;
+	array quotes = await(G->G->DB->load_config(req->misc->channel->userid, "quotes", ({ })));
 	if (!quotes || !sizeof(quotes)) return render_template("chan_quotes.md", (["quotes": "(none)"]) | req->misc->chaninfo);
 	array q = ({ });
 	string tz = req->misc->channel->config->timezone;

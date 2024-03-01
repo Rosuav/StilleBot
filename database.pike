@@ -413,7 +413,6 @@ __async__ void migrate_config(string kwd) {
 	foreach (G->G->irc->id; int userid; object channel) {
 		mapping cfg = channel->config[kwd];
 		if (!cfg || !sizeof(cfg)) continue; //Most likely it'll be an array or mapping, but strings are okay too
-		werror("Migrating %O %O\n", userid, cfg);
 		m_delete(channel->config, kwd); channel->config_save();
 		await(save_config(channel->userid, kwd, cfg));
 	}
