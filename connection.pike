@@ -11,16 +11,6 @@ mapping irc_connections = ([]); //Not persisted across code reloads, but will be
 @retain: mapping nonce_callbacks = ([]);
 int(1bit) is_active; //Cache of is_active_bot() since we need to check it freuqently.
 
-//Return the channel config mapping if this is an active channel, or 0
-//NOTE: This returns a non-live config copy. Do not mutate it. If you
-//need a mutable config, look up the channel object and use its config.
-mapping get_channel_config(string|int chan) {
-	//Note that strings are permitted, but they have to be strings of digits, eg "49497888" for
-	//ID 49497888. This does not support passing "rosuav" for 4949788 and will do no lookups.
-	string data = Stdio.read_file("channels/" + chan + ".json");
-	return data && Standards.JSON.decode_utf8(data);
-}
-
 /* What's in channels/TWITCHID.json?
 
 Migrate to stillebot.botservice:
@@ -49,7 +39,7 @@ Battle plan:
 2. Remove all usage of list_channel_configs outside of this file. DONE.
 3. Replace lcc here with a database call but retain it (don't wait on code reload)
 4. Hook changes to the table and call_out(reconnect, 0)
-5. Audit all use of get_channel_config. Should it be querying via G->G->irc?
+5. Audit all use of get_channel_config. Should it be querying via G->G->irc? DONE.
 */
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
@@ -1539,9 +1529,10 @@ protected void create(string name)
 	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
 	session_cleanup();
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
-	if (mapping irc = persist_config["ircsettings"]) //Now less about IRC than HTTP but whatever
-	{
-		array voices = values(get_channel_config(0)->?voices || ({ }));
+	if (mapping irc = persist_config["ircsettings"]) { //Now less about IRC than HTTP but whatever
+		//Fetch up the list of bot shard voices from the demo's available voices
+		string rawcfg = Stdio.read_file("channels/0.json");
+		array voices = values(Standards.JSON.decode_utf8(rawcfg)->?voices || ({ }));
 		sort((array(int))voices->id, voices);
 		foreach (voices; int i; mapping v) if (v->id == G->G->bot_uid) voices[i] = 0;
 		shard_voices = ({0}) + (voices - ({0})); //Move the null entry (for intrinsic voice) to the start
