@@ -74,8 +74,6 @@ class menu_clicked
 		//response to the operator's command (or a mod or other person with reconfig
 		//powers), and can be git-managed.
 		add_to_store(persist_config->data, "persist_config");
-		array channels = list_channel_configs();
-		add_to_store(mkmapping(channels->login, channels), "channels");
 		win->mainwindow=GTK2.Window((["title":"Explore StilleBot internals"]))->add(GTK2.Vbox(0,0)
 			->add(GTK2.ScrolledWindow()
 				->set_policy(GTK2.POLICY_AUTOMATIC,GTK2.POLICY_AUTOMATIC)
