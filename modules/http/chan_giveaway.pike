@@ -577,12 +577,11 @@ __async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) 
 //TODO: Migrate the dynamic reward management to pointsrewards, keeping the giveaway management here
 void channel_on_off(string channel, int just_went_online, int broadcaster_id)
 {
-	mapping cfg = get_channel_config(broadcaster_id);
-	mapping dyn = cfg->dynamic_rewards || ([]);
-	if (!sizeof(dyn) && !sizeof(cfg->giveaway->?rewards || ([]))) return; //Nothing to do
 	object chan = G->G->irc->id[broadcaster_id]; if (!chan) return;
+	mapping dyn = chan->config->dynamic_rewards || ([]);
+	if (!sizeof(dyn) && !sizeof(chan->config->giveaway->?rewards || ([]))) return; //Nothing to do
 	object ts = G->G->stream_online_since[broadcaster_id] || Calendar.now();
-	if (cfg->timezone && cfg->timezone != "") ts = ts->set_timezone(cfg->timezone) || ts;
+	if (chan->config->timezone && chan->config->timezone != "") ts = ts->set_timezone(chan->config->timezone) || ts;
 	string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
 	mapping args = ([
 		//Is "1" or "0" based on whether you are probably online. It's possible for this to be wrong
