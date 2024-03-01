@@ -282,7 +282,6 @@ class SSLDatabase(string host, mapping|void cfg) {
 				}
 				case 'A': { //NotificationResponse
 					sscanf(msg, "%4c%s\0%s\0", int pid, string channel, string payload);
-					werror("NOTIFICATION: %O %O\n", channel, payload);
 					if (cfg->notify_callback) cfg->notify_callback(this, pid, channel, payload);
 					break;
 				}
