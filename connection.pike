@@ -361,7 +361,7 @@ class channel(mapping config) {
 
 	mapping(string:string) get_channel_variables(int|string|void uid) {
 		mapping vars = G->G->DB->load_cached_config(userid, "variables");
-		mapping ephemvars = G->G->variables[?name];
+		mapping ephemvars = G->G->variables[?(string)userid];
 		if (ephemvars) return vars | ephemvars;
 		return vars;
 	}
