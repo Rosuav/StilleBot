@@ -9,14 +9,14 @@ constant point_redemption = ({"string chan", "string rewardid", "int(0..1) refun
 @create_hook:
 constant reward_changed = ({"object channel", "string|void rewardid"}); //If no second arg, could be all rewards changed
 
-void points_redeemed(string chanid, mapping data, int|void removal)
+__async__ void points_redeemed(string chanid, mapping data, int|void removal)
 {
 	object channel = G->G->irc->id[(int)chanid]; if (!channel) return;
 	event_notify("point_redemption", channel, data->reward->id, removal, data);
-	mapping cfg = channel->config;
-	string token = token_for_user_login(cfg->login)[0];
+	string token = token_for_user_id((int)chanid)[0];
 
-	if (mapping dyn = !removal && cfg->dynamic_rewards && cfg->dynamic_rewards[data->reward->id]) {
+	mapping all_dyn = await(G->G->DB->load_config(chanid, "dynamic_rewards"));
+	if (mapping dyn = !removal && all_dyn[data->reward->id]) {
 		//Up the price every time it's redeemed
 		//For this to be viable, the reward needs a global cooldown of
 		//at least a few seconds, preferably a few minutes.
@@ -87,8 +87,7 @@ EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward
 	if (!rew) return;
 	pointsrewards[(int)chanid] = filter(rew) {return __ARGS__[0]->id != info->id;};
 	object channel = G->G->irc->id[(int)chanid];
-	mapping dyn = channel->?config->?dynamic_rewards;
-	if (dyn) {m_delete(dyn, info->id); channel->config_save();}
+	G->G->DB->mutate_config(chanid, "dynamic_rewards") {m_delete(__ARGS__[0], info->id);};
 	event_notify("reward_changed", G->G->irc->id[(int)chanid], info->id);
 };
 
@@ -115,14 +114,14 @@ __async__ void update_dynamic_reward(object channel, string rewardid, mapping rw
 multiset pending_update_alls = (<>);
 __async__ void update_all_rewards(object channel) {
 	pending_update_alls[channel->userid] = 0;
-	foreach (channel->config->dynamic_rewards || ([]); string rewardid; mapping rwd)
+	mapping dyn = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
+	foreach (dyn; string rewardid; mapping rwd)
 		await(update_dynamic_reward(channel, rewardid, rwd));
 }
 
 @hook_variable_changed: void notify_rewards(object channel, string varname, string newval) {
 	//TODO: Figure out which rewards might have changed (ie which are affected by
 	//the variable that changed) and update only those.
-	if (!channel->config->dynamic_rewards) return;
 	if (pending_update_alls[channel->userid]) return; //If multiple variables are updated all at once, do just one batch of updates at the end
 	pending_update_alls[channel->userid] = 1;
 	call_out(spawn_task, 0, update_all_rewards(channel));
@@ -135,7 +134,7 @@ __async__ void populate_rewards_cache(string|int broadcaster_id) {
 	array rewards = await(twitch_api_request(url, params))->data;
 	//Prune the dynamic rewards list
 	object channel = G->G->irc->id[(int)broadcaster_id];
-	mapping current = channel->?config->?dynamic_rewards;
+	mapping current = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
 	if (current) {
 		multiset unseen = (multiset)indices(current) - (multiset)rewards->id;
 		if (sizeof(unseen)) {m_delete(current, ((array)unseen)[*]); channel->config_save();}

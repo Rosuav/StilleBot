@@ -1552,11 +1552,12 @@ void enable_feature(object channel, string kwd, int state) {
 				if (!mappingp(cmd)) cmd = (["message": cmd, "redemption": rewardid]);
 				else cmd = cmd | (["redemption": rewardid]);
 				G->G->cmdmgr->update_command(channel, "", kwd - "!", cmd);
-				channel->path("dynamic_rewards")[rewardid] = ([
-					"basecost": 0, "availability": "{online}", "formula": "PREV",
-					"prompt": prompt,
-				]);
-				channel->config_save();
+				G->G->DB->mutate_config(channel->userid, "dynamic_rewards") {
+					__ARGS__[0][rewardid] = ([
+						"basecost": 0, "availability": "{online}", "formula": "PREV",
+						"prompt": prompt,
+					]);
+				};
 			}
 			->thencatch() {werror("Error creating !redeem reward: %O\n", __ARGS__);}; //TODO: Ignore the "must be partner/affiliate" error.
 		} else {

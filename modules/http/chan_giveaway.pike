@@ -314,16 +314,16 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			return jsonify((["ok": 1, "created": numcreated, "updated": numupdated, "deleted": numdeleted]));
 		}
 		if (body->new_dynamic) { //TODO: Migrate this to chan_pointsrewards as "create manageable reward". It doesn't necessarily have to have dynamic pricing.
-			if (!cfg->dynamic_rewards) cfg->dynamic_rewards = ([]);
+			mapping dyn = await(G->G->DB->load_config(req->misc->channel->userid, "dynamic_rewards"));
 			if (!body->copy_from) {
 				//Was an existing ID specified? If so - and if it's manageable and not already dynamic - don't copy it.
 				mapping rew;
 				foreach (G->G->pointsrewards[broadcaster_id] || ({ }), mapping r) if (r->id == body->new_dynamic) rew = r;
 				if (rew && rew->can_manage && !rew->is_dynamic) {
-					cfg->dynamic_rewards[rew->id] = ([
+					dyn[rew->id] = ([
 						"basecost": rew->cost || 1000, "availability": "{online}", "formula": "PREV",
 					]);
-					req->misc->channel->config_save();
+					await(G->G->DB->save_config(req->misc->channel->userid, "dynamic_rewards", dyn));
 					return jsonify((["ok": 1, "reward": rew]));
 				}
 				else body->copy_from = rew; //If there's no such reward, well, we'll start blank anyway. But otherwise, copy that reward.
@@ -343,15 +343,15 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			//TODO: Update G->G->pointsrewards immediately, and push out the update
 			//This will speed up the response to user significantly. Do this once it's
 			//all dealt with by pointsmgr instead of here.
-			cfg->dynamic_rewards[info->id] = rwd;
+			dyn[info->id] = rwd;
 			if (!G->G->rewards_manageable[broadcaster_id]) G->G->rewards_manageable[broadcaster_id] = (<>);
 			G->G->rewards_manageable[broadcaster_id][info->id] = 1;
-			req->misc->channel->config_save();
+			await(G->G->DB->save_config(req->misc->channel->userid, "dynamic_rewards", dyn));
 			return jsonify((["ok": 1, "reward": rwd | (["id": info->id])]));
 		}
 		if (string id = body->dynamic_id) { //TODO: Ditto, move to pointsrewards
-			if (!cfg->dynamic_rewards || !cfg->dynamic_rewards[id]) return (["error": 400]);
-			mapping rwd = cfg->dynamic_rewards[id];
+			mapping dyn = await(G->G->DB->load_config(req->misc->channel->userid, "dynamic_rewards"));
+			mapping rwd = dyn[id]; if (!rwd) return (["error": 400]);
 			mapping updates = ([]);
 			foreach ("title prompt" / " ", string kwd) if (body[kwd]) {
 				//See if there are any variable or placeholder references in the title/prompt.
@@ -364,7 +364,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			if (!undefinedp(body->basecost)) rwd->basecost = (int)body->basecost;
 			if (body->formula) rwd->formula = body->formula;
 			if (body->availability) rwd->availability = body->availability;
-			if (rwd->availability == "" && rwd->formula == "") m_delete(cfg->dynamic_rewards, id); //Hack: Delete by blanking the values. Will be replaced later.
+			if (rwd->availability == "" && rwd->formula == "") m_delete(dyn, id); //Hack: Delete by blanking the values. Will be replaced later.
 			if (body->curcost) updates["cost"] = (int)body->curcost;
 			if (sizeof(updates)) {
 				//Currently fire-and-forget - there's no feedback if you get something wrong.
@@ -373,12 +373,12 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 					(["method": "PATCH", "json": updates]),
 				);
 			}
-			req->misc->channel->config_save();
+			await(G->G->DB->save_config(req->misc->channel->userid, "dynamic_rewards", dyn));
 			spawn_task(G->G->update_dynamic_reward(req->misc->channel, id, rwd));
 			return jsonify((["ok": 1]));
 		}
 		if (body->activate) { //TODO: As above, move to pointsrewards on the ws
-			channel_on_off(chan, -1, broadcaster_id); //TODO: If an ID is given, just activate/deactivate that reward
+			await(channel_on_off(chan, -1, broadcaster_id)); //TODO: If an ID is given, just activate/deactivate that reward
 			return jsonify((["ok": 1]));
 		}
 		return jsonify((["ok": 1]));
@@ -575,10 +575,10 @@ __async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) 
 }
 
 //TODO: Migrate the dynamic reward management to pointsrewards, keeping the giveaway management here
-void channel_on_off(string channel, int just_went_online, int broadcaster_id)
+__async__ void channel_on_off(string channel, int just_went_online, int broadcaster_id)
 {
 	object chan = G->G->irc->id[broadcaster_id]; if (!chan) return;
-	mapping dyn = chan->config->dynamic_rewards || ([]);
+	mapping dyn = await(G->G->DB->load_config(broadcaster_id, "dynamic_rewards"));
 	if (!sizeof(dyn) && !sizeof(chan->config->giveaway->?rewards || ([]))) return; //Nothing to do
 	object ts = G->G->stream_online_since[broadcaster_id] || Calendar.now();
 	if (chan->config->timezone && chan->config->timezone != "") ts = ts->set_timezone(chan->config->timezone) || ts;

@@ -68,9 +68,9 @@ There are three levels of permission that can be granted:
 */
 
 bool need_mod(string grp) {return 1;}
-mapping get_chan_state(object channel, string grp, string|void id, string|void type) {
+__async__ mapping get_chan_state(object channel, string grp, string|void id, string|void type) {
 	array rewards = G->G->pointsrewards[channel->userid] || ({ }), dynrewards = ({ });
-	mapping current = channel->config->dynamic_rewards || ([]);
+	mapping current = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
 	foreach (rewards, mapping rew) {
 		mapping r = current[rew->id];
 		//Note that attributes set in dynamic_rewards override those seen in current status.

@@ -27,7 +27,6 @@ timezone: IANA timezone name for all scheduling etc
 vlcauthtoken: Auth key for VLC integration
 
 Migrate to separate configs:
-dynamic_rewards
 monitors
 voices
 
