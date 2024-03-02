@@ -58,9 +58,12 @@ mapping remap_eventsub_message(mapping info) {
 		mapping el = elem ? info[elem] : info;
 		if (el && !undefinedp(el[from])) el[to] = m_delete(el, from);
 	}
+	//There's something borked about these already, so I'm not migrating it to the new
+	//way to look up dynamic rewards. TODO: Fix this so that updating of rewards doesn't
+	//lose these "is dynamic" and "is manageable" flags.
 	if (rewards_manageable[(int)info->broadcaster_id][?info->id]) info->can_manage = 1;
-	mapping current = G->G->irc->id[(int)info->broadcaster_id]->?config->?dynamic_rewards;
-	if (current[?info->id]) info->is_dynamic = 1;
+	//mapping current = G->G->irc->id[(int)info->broadcaster_id]->?config->?dynamic_rewards;
+	//if (current[?info->id]) info->is_dynamic = 1;
 	return info;
 }
 
@@ -89,8 +92,7 @@ EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward
 	event_notify("reward_changed", G->G->irc->id[(int)chanid], info->id);
 };
 
-__async__ void update_dynamic_reward(object channel, string rewardid) {
-	mapping rwd = channel->config->dynamic_rewards[rewardid];
+__async__ void update_dynamic_reward(object channel, string rewardid, mapping rwd) {
 	if (!rwd) return 0;
 	mapping updates = ([]);
 	mapping cur = ([]); //If the reward isn't found, assume everything has changed.
@@ -114,7 +116,7 @@ multiset pending_update_alls = (<>);
 __async__ void update_all_rewards(object channel) {
 	pending_update_alls[channel->userid] = 0;
 	foreach (channel->config->dynamic_rewards || ([]); string rewardid; mapping rwd)
-		await(update_dynamic_reward(channel, rewardid));
+		await(update_dynamic_reward(channel, rewardid, rwd));
 }
 
 @hook_variable_changed: void notify_rewards(object channel, string varname, string newval) {

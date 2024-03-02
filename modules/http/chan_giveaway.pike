@@ -374,7 +374,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				);
 			}
 			req->misc->channel->config_save();
-			spawn_task(G->G->update_dynamic_reward(req->misc->channel, id));
+			spawn_task(G->G->update_dynamic_reward(req->misc->channel, id, rwd));
 			return jsonify((["ok": 1]));
 		}
 		if (body->activate) { //TODO: As above, move to pointsrewards on the ws
