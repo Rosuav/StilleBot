@@ -203,7 +203,7 @@ class channel(mapping config) {
 	}
 
 	__async__ void load_commands(multiset|void loading) {
-		//Load up the channel's commands. Note that aliases are not stored in the JSON file,
+		//Load up the channel's commands. Note that aliases are not stored in the database,
 		//but are individually available here in the lookup mapping.
 		commands = ([]);
 		array cmds = await(G->G->DB->load_commands(userid));
@@ -211,13 +211,13 @@ class channel(mapping config) {
 			echoable_message response = commands[cmd->cmdname] = cmd->content;
 			if (!mappingp(response)) continue; //No top-level flags, nothing to handle specially.
 			if (response->aliases) {
-				mapping duplicate = (response - (<"aliases">)) | (["alias_of": cmd]);
+				mapping duplicate = (response - (<"aliases">)) | (["alias_of": cmd->cmdname]);
 				foreach (response->aliases / " ", string alias) {
 					alias -= "!";
 					if (alias != "") commands[alias] = duplicate;
 				}
 			}
-			if (response->redemption) redemption_commands[response->redemption] += ({cmd});
+			if (response->redemption) redemption_commands[response->redemption] += ({cmd->cmdname});
 		}
 		//Indicate that we're now done loading. If other things than commands are done
 		//asynchronously but in parallel, don't remove from loading till ALL are done.
