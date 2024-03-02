@@ -1546,11 +1546,6 @@ void enable_feature(object channel, string kwd, int state) {
 				])]),
 			)->then() {
 				//Update the !redeem command to respond to this reward.
-				//Depends on update_command below happening synchronously, and the
-				//response from Twitch being async. FIXME: This will no longer be true
-				//once commands are stored in PG. Is it sufficient that the query to
-				//save the command will start prior to whatever depends on the command
-				//existing? TEST IT.
 				mapping cmd = channel->commands->redeem;
 				if (!cmd) return; //No command? Don't update.
 				string rewardid = __ARGS__[0]->data[0]->id;
