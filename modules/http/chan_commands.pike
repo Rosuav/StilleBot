@@ -70,7 +70,7 @@ void enable_feature(object channel, string kwd, int state) {
 }
 
 //Gather all the variables that the JS command editor needs. Some may depend on the channel.
-mapping(string:mixed) command_editor_vars(object channel) {
+__async__ mapping(string:mixed) command_editor_vars(object channel) {
 	mapping voices = channel->config->voices || ([]);
 	string defvoice = channel->config->defvoice;
 	if (voices[defvoice]) voices |= (["0": (["name": "Bot's own voice"])]); //TODO: Give the bot's username?
@@ -108,7 +108,7 @@ void find_builtins() {
 	G->G->command_editor_vars = command_editor_vars;
 }
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->request_type == "POST") {
 		//Undocumented and private. May be moved to a better location and made public.
@@ -127,7 +127,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	if (req->misc->is_mod) {
 		return render(req, ([
-			"vars": (["ws_group": ""]) | command_editor_vars(req->misc->channel),
+			"vars": (["ws_group": ""]) | await(command_editor_vars(req->misc->channel)),
 			"templates": G->G->commands_templates * "\n",
 			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
 				"[Save all](:#saveall)"

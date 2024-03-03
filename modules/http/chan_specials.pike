@@ -98,7 +98,7 @@ void enable_feature(object channel, string kwd, int state) {
 		);
 }
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	array commands = ({ });
 	if (!req->misc->is_mod) {
@@ -131,7 +131,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"commands": commands,
 			"SPECIAL_PARAMS": mkmapping(@Array.transpose(G->G->cmdmgr->SPECIAL_PARAMS)),
 			"ws_type": "chan_commands", "ws_group": "!!" + req->misc->channel->name, "ws_code": "chan_specials",
-		]) | G->G->command_editor_vars(req->misc->channel),
+		]) | await(G->G->command_editor_vars(req->misc->channel)),
 		"loadingmsg": "Loading...",
 		"save_or_login": "[Save all](:#saveall)",
 	]) | req->misc->chaninfo);
