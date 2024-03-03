@@ -25,7 +25,7 @@ $$buttons$$
 > `%{text...%s...more text%}`<br>
 > Any text (including multiple lines) can be used.
 >
-> <textarea id=formattext rows=10 cols=60></textarea>
+> <textarea id=formattext rows=15 cols=60></textarea>
 >
 > [Save](:#formatsave) [Close](:.dialog_close)
 {: tag=dialog #formatdlg}
@@ -37,7 +37,7 @@ $$buttons$$
 > Configured in the mod section. This includes VIPs from the<br>
 > month of <span id=formatdate></span>.
 >
-> <textarea readonly id=displaytext rows=10 cols=60></textarea>
+> <textarea readonly id=displaytext rows=20 cols=60></textarea>
 >
 > [Close](:.dialog_close)
 {: tag=dialog #displaydlg}
