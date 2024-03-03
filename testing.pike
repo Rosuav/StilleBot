@@ -233,6 +233,7 @@ __async__ void migrate_channels() {
 	array configs = Standards.JSON.decode_utf8(Stdio.read_file(files[*])[*]);
 	await(G->G->DB->pg_connections[G->G->DB->active]->conn->transaction(__async__ lambda(function query) {
 		await(query("truncate table stillebot.botservice"));
+		await(query("delete from stillebot.config where keyword = 'botservice'"));
 		foreach (configs, mapping config) {
 			werror("Migrating %O / %s...\n", config->userid, config->display_name);
 			config->userid = config->userid; //Force the demo channel to have an explicit userid of zero :)
