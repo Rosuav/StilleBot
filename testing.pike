@@ -248,23 +248,6 @@ __async__ void migrate_channels() {
 	exit(0);
 }
 
-__async__ void migrate_commands() {
-	if (!G->G->DB->active) await(G->G->DB->await_active());
-	array files = "channels/" + glob("*.json", get_dir("channels"))[*];
-	array configs = Standards.JSON.decode_utf8(Stdio.read_file(files[*])[*]);
-	foreach (configs, mapping config) {
-		if (config->commands) foreach (config->commands; string cmd; mixed response) {
-			werror("MIGRATING: %O %O\n", config->login, cmd);
-			await(G->G->DB->save_sql(#"insert into stillebot.commands
-				(twitchid, cmdname, active, content, created)
-				values (:twitchid, :cmdname, true, :content, '1970-01-01 utc'::timestamptz)",
-				(["twitchid": config->userid, "cmdname": cmd, "content": response])));
-		}
-	}
-	werror("Completed migration.\n");
-	exit(0);
-}
-
 protected void create(string name) {
 	::create(name);
 	/*if (!G->G->have_tasks) {
