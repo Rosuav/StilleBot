@@ -175,7 +175,7 @@ mapping _get_variable(mapping vars, object channel, string varname, int|void per
 		if (!mappingp(response) || !response->alias_of)
 			check_for_variables(cmd == "!trigger" ? "trigger" : cmd[0] == '!' ? "special" : "command",
 				"!" + cmd, response, varname, ret);
-	foreach (channel->config->monitors || ([]); string nonce; mapping info)
+	foreach (G->G->DB->load_cached_config(channel->userid, "monitors"); string nonce; mapping info)
 		check_for_variables(info->type == "goalbar" ? "goalbar" : "monitor", nonce, info->text, varname, ret);
 	return ret;
 }

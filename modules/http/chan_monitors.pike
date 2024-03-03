@@ -23,17 +23,15 @@ constant saveable_attributes = "previewbg barcolor fillcolor needlesize threshol
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop" / " " + TEXTFORMATTING_ATTRS;
 constant valid_types = (<"text", "goalbar", "countdown">);
 
-mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
-{
-	mapping cfg = req->misc->channel->config;
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+	mapping monitors = G->G->DB->load_cached_config(req->misc->channel->userid, "monitors");
 	if (req->variables->view) {
 		//Unauthenticated viewing endpoint. Depends on an existing nonce.
 		string|zero nonce = req->variables->view;
-		mapping info;
-		if (!cfg->monitors || !cfg->monitors[nonce]) nonce = 0;
-		else info = cfg->monitors[nonce];
+		mapping info = monitors[nonce];
+		if (!info) nonce = 0;
 		return render_template("monitor.html", ([
-			"vars": (["ws_type": ws_type, "ws_group": nonce + req->misc->channel->name, "ws_code": "monitor"]),
+			"vars": (["ws_type": ws_type, "ws_group": nonce + req->misc->channel->userid, "ws_code": "monitor"]),
 			"styles": "#display div {width: 33%;}#display div:nth-of-type(2) {text-align: center;}#display div:nth-of-type(3) {text-align: right;}",
 		]));
 	}
@@ -43,14 +41,12 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		mixed body = Standards.JSON.decode_utf8(req->body_raw);
 		if (!body || !mappingp(body) || !stringp(body->text)) return (["error": 400]);
 		if (req->misc->session->fake) return jsonify((["ok": 1]));
-		if (!cfg->monitors) cfg->monitors = ([]);
 		string nonce = body->nonce;
-		if (!cfg->monitors[nonce]) {
+		if (!monitors[nonce]) {
 			//The given nonce doesn't exist - or none was given. Create a new monitor.
 			//Note that this is deliberately slightly shorter than the subpoints nonce
 			//(by 4 base64 characters), to allow them to be distinguished for debugging.
 			nonce = replace(MIME.encode_base64(random_string(27)), (["/": "1", "+": "0"]));
-			call_out(send_updates_all, 0, req->misc->channel->name); //When we're done, tell everyone there's a new monitor
 			if (body->type == "goalbar") {
 				//Hack: Create a new variable for a new goal bar.
 				if (!body->varname) {
@@ -72,13 +68,13 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 				]) | body;
 			}
 		}
-		mapping info = cfg->monitors[nonce] = (["type": "text", "text": body->text]);
+		mapping info = monitors[nonce] = (["type": "text", "text": body->text]);
 		if (valid_types[body->type]) info->type = body->type;
 		foreach (saveable_attributes, string key) if (body[key]) info[key] = body[key];
 		if (info->needlesize == "") info->needlesize = "0";
 		if (body->varname) info->text = sprintf("$%s$:%s", body->varname, info->text);
 		textformatting_validate(info);
-		req->misc->channel->config_save();
+		await(G->G->DB->save_config(req->misc->channel->userid, "monitors", monitors));
 		send_updates_all(req->misc->channel, nonce);
 		update_one(req->misc->channel, "", nonce);
 		return jsonify((["ok": 1]));
@@ -88,10 +84,10 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body) || !stringp(body->nonce)) return (["error": 400]);
 		string nonce = body->nonce;
-		if (!cfg->monitors || !cfg->monitors[nonce]) return (["error": 404]);
+		if (!monitors[nonce]) return (["error": 404]);
 		if (req->misc->session->fake) return (["error": 204]);
-		m_delete(cfg->monitors, nonce);
-		req->misc->channel->config_save();
+		m_delete(monitors, nonce);
+		await(G->G->DB->save_config(req->misc->channel->userid, "monitors", monitors));
 		send_updates_all(req->misc->channel, "");
 		return (["error": 204]);
 	}
@@ -110,14 +106,14 @@ mapping _get_monitor(object channel, mapping monitors, string id) {
 }
 bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
 mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping monitors = channel->config->monitors || ([]);
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	if (grp != "") return (["data": _get_monitor(channel, monitors, grp)]);
 	if (id) return _get_monitor(channel, monitors, id);
 	return (["items": _get_monitor(channel, monitors, sort(indices(monitors))[*])]);
 }
 
 @hook_variable_changed: void notify_monitors(object channel, string var, string newval) {
-	foreach (channel->config->monitors || ([]); string nonce; mapping info) {
+	foreach (G->G->DB->load_cached_config(channel->userid, "monitors"); string nonce; mapping info) {
 		if (has_value(info->thresholds || "", var)) {
 			//These cause full updates, which are slower and potentially
 			//flickier than a change to just the text.
@@ -155,7 +151,7 @@ void websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg)
 @hook_allmsgs:
 int message(object channel, mapping person, string msg)
 {
-	mapping mon = channel->config->monitors;
+	mapping mon = G->G->DB->load_cached_config(channel->userid, "monitors");
 	if (!mon || !sizeof(mon)) return 0;
 	//TODO: Support other ways of recognizing donations
 	if (person->user == "streamlabs") {
@@ -174,7 +170,7 @@ int subscription(object channel, string type, mapping person, string tier, int q
 //Note: Use the builtin to advance bars from a command/trigger/special.
 //Otherwise, simply assigning to the variable won't trigger the level-up command.
 void autoadvance(object channel, mapping person, string key, int weight, int|void isgiftorprime) {
-	foreach (channel->config->monitors || ([]); string id; mapping info) {
+	foreach (G->G->DB->load_cached_config(channel->userid, "monitors"); string id; mapping info) {
 		if (info->type != "goalbar" || !info->active) continue;
 		if (isgiftorprime && info->exclude_gifts) continue;
 		int advance = key == "" ? weight : weight * (int)info[key];
@@ -205,7 +201,7 @@ string format_subscriptions(int value) {
 mapping message_params(object channel, mapping person, array param) {
 	string monitor = param[0];
 	int advance = sizeof(param) > 1 && (int)param[1];
-	mapping info = channel->config->monitors[?monitor];
+	mapping info = G->G->DB->load_cached_config(channel->userid, "monitors")[monitor];
 	if (!monitor) error("Unrecognized monitor ID - has it been deleted?\n");
 	switch (info->type) {
 		case "goalbar": {
@@ -248,4 +244,5 @@ mapping message_params(object channel, mapping person, array param) {
 protected void create(string name) {
 	::create(name);
 	G->G->goal_bar_autoadvance = autoadvance;
+	G->G->DB->migrate_config("monitors");
 }

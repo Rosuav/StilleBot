@@ -99,7 +99,7 @@ constant tables = ([
 		"alter table stillebot.botservice enable always trigger botservice_changed;",
 	}),
 ]);
-multiset precached_config = (<"channel_labels", "variables">); //TODO: Have other modules submit requests?
+multiset precached_config = (<"channel_labels", "variables", "monitors">); //TODO: Have other modules submit requests?
 @retain: mapping pcc_loadstate = ([]);
 @retain: mapping pcc_cache = ([]);
 

@@ -131,7 +131,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"commands": commands,
 			"SPECIAL_PARAMS": mkmapping(@Array.transpose(G->G->cmdmgr->SPECIAL_PARAMS)),
 			"ws_type": "chan_commands", "ws_group": "!!" + req->misc->channel->name, "ws_code": "chan_specials",
-		]) | await(G->G->command_editor_vars(req->misc->channel)),
+		]) | G->G->command_editor_vars(req->misc->channel),
 		"loadingmsg": "Loading...",
 		"save_or_login": "[Save all](:#saveall)",
 	]) | req->misc->chaninfo);

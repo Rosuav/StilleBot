@@ -39,7 +39,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		object channel = req->misc->channel;
 		mapping cfg = channel->config;
 		mapping ret = ([]);
-		foreach ("autoban monitors quotes timezone" / " ", string key)
+		foreach ("autoban quotes timezone" / " ", string key)
 			if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
 		//Save any exportable configs. This will cover a lot of things, but not those that
 		//are in separate tables.
