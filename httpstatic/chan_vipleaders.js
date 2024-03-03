@@ -72,6 +72,7 @@ export function render(data) {
 				monthnames[mon] + " " + year,
 				mod && BUTTON({className: "addvip", title: "Add VIPs"}, "💎"),
 				mod && BUTTON({className: "remvip", title: "Remove VIPs"}, "X"),
+				mod && data.displayformat && BUTTON({className: "fmtvip", title: "Show summary"}, "📃"),
 			])));
 			rows.push(TR([
 				TD(make_list(subs, s => [s, " subs"], "(no subgifting data)", data.badge_count || 10, which_month)),
@@ -138,6 +139,10 @@ export function render(data) {
 					INPUT({name: "use_streamlabs", type: "checkbox"}),
 					" Show StreamLabs donations on a third leaderboard (combined with Ko-fi if applicable)",
 				])),
+				P([
+					"Want a summary of VIP leaders for social media? ",
+					BUTTON({type: "button", class: "showdialog", "data-dlg": "formatdlg"}, "Configure it here!"),
+				]),
 				P(BUTTON({type: "submit"}, "Save")),
 			]),
 		]));
@@ -146,6 +151,7 @@ export function render(data) {
 		for (let el of DOM("#configform").elements)
 			if (el.name && data[el.name])
 				el[el.type === "checkbox" ? "checked" : "value"] = data[el.name];
+		if (data.displayformat) DOM("#formattext").value = data.displayformat;
 	} else {
 		if (!DOM("#modcontrols").childElementCount) set_content("#modcontrols",
 			BUTTON({class: "twitchlogin", type: "button"}, "Login"),
@@ -173,3 +179,17 @@ on("submit", "#configform", e => {
 		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
 	ws_sync.send(msg);
 });
+
+on("click", ".showdialog", e => DOM("#" + e.match.dataset.dlg).showModal());
+on("click", "#formatsave", e => {
+	ws_sync.send({cmd: "configure", displayformat: DOM("#formattext").value});
+	DOM("#formatdlg").close();
+});
+on("click", ".fmtvip", e => {
+	set_content("#formatdate", e.match.closest("TR").dataset.period);
+	ws_sync.send({cmd: "formattext", monthyear: e.match.closest("TR").id});
+});
+export function sockmsg_formattext(msg) {
+	DOM("#displaytext").value = msg.text;
+	DOM("#displaydlg").showModal();
+}

@@ -19,8 +19,31 @@ Ties are broken by favouring whoever was first to subgift/tip in the given month
 
 $$buttons$$
 
+> ### Formatted display
+>
+> Include the following directive to embed the VIP leader names:<br>
+> `%{text...%s...more text%}`<br>
+> Any text (including multiple lines) can be used.
+>
+> <textarea id=formattext rows=10 cols=60></textarea>
+>
+> [Save](:#formatsave) [Close](:.dialog_close)
+{: tag=dialog #formatdlg}
+
+<!-- -->
+
+> ### Formatted display
+>
+> Configured in the mod section. This includes VIPs from the<br>
+> month of <span id=formatdate></span>.
+>
+> <textarea readonly id=displaytext rows=10 cols=60></textarea>
+>
+> [Close](:.dialog_close)
+{: tag=dialog #displaydlg}
+
 <style>
-.addvip,.remvip {
+.addvip,.remvip,.fmtvip {
 	margin-left: 0.5em;
 	min-width: 2.4em; height: 1.7em;
 }
@@ -170,9 +193,11 @@ __async__ void websocket_cmd_configure(mapping(string:mixed) conn, mapping(strin
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
-	constant options = "active badge_count board_count private_leaderboard use_kofi use_streamlabs" / " ";
+	constant intopt = "active badge_count board_count private_leaderboard use_kofi use_streamlabs" / " ";
+	constant stropt = "displayformat" / " ";
 	int was_private = stats->private_leaderboard;
-	foreach (options, string opt) if (!undefinedp(msg[opt])) stats[opt] = (int)msg[opt]; //They're all integers at the moment
+	foreach (intopt, string opt) if (!undefinedp(msg[opt])) stats[opt] = (int)msg[opt];
+	foreach (stropt, string opt) if (!undefinedp(msg[opt])) stats[opt] = msg[opt];
 	await(G->G->DB->save_config(channel->userid, "subgiftstats", stats));
 	if (!was_private || !stats->private_leaderboard) send_updates_all(channel, "");
 	send_updates_all(channel, "control");
@@ -182,6 +207,53 @@ void websocket_cmd_recalculate(mapping(string:mixed) conn, mapping(string:mixed)
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	spawn_task(force_recalc(channel));
+}
+
+array(array(string)|array(array(string))) collect_leaders(mapping stats, string yearmonth, int include_dups) {
+	array bits = stats->monthly["bits" + yearmonth] || ({ });
+	//1) Get the top cheerers
+	int limit = stats->badge_count || 10;
+	array(string) userids = ({ }), people = ({ });
+	foreach (bits, mapping person) {
+		if (stats->mods[person->user_id]) continue;
+		userids += ({person->user_id});
+		people += ({person->user_name});
+		if (!--limit) break;
+	}
+	array(array(string)) all_people = ({people});
+	//2) Get the top subbers and tippers
+	foreach (({"subs", "kofi"}), string which) {
+		array subs = values(stats->monthly[which + yearmonth] || ([])); //(or tips, whatever)
+		sort(subs->firstsub, subs); sort(-subs->score[*], subs);
+		limit = stats->badge_count || 10; people = ({ });
+		foreach (subs, mapping person) {
+			if (stats->mods[person->user_id]) continue;
+			if ((string)person->user_id == "274598607") continue; //AnAnonymousGifter
+			if ((string)(int)person->user_id != (string)person->user_id) continue; //Non-numeric user "ids" are for truly-anonymous donations
+			if (!has_value(userids, person->user_id)) {
+				//If that person has already received a VIP badge for cheering, don't re-add.
+				userids += ({person->user_id});
+				people += ({person->user_name});
+			}
+			else if (include_dups) people += ({"(" + person->user_name + ")"});
+			if (!--limit) break;
+		}
+		all_people += ({people});
+	}
+	return ({userids, all_people});
+}
+
+__async__ void websocket_cmd_formattext(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!msg->monthyear) return;
+	[object channel, string grp] = split_channel(conn->group);
+	if (grp != "control") return;
+	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
+	if (!stats->displayformat) return;
+	array all_people = collect_leaders(stats, msg->monthyear, 0)[1];
+	string text;
+	if (mixed ex = catch {text = sprintf(stats->displayformat, all_people * ({ }));})
+		text = describe_error(ex);
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "formattext", "text": text]), 4));
 }
 
 void websocket_cmd_addvip(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(addremvip(conn, msg, 1));}
@@ -196,41 +268,10 @@ __async__ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, 
 	string|zero method = add ? "POST" : "DELETE";
 	if (conn->session->user->login != chan) {addrem = "Fake-" + lower_case(addrem); method = 0;}
 	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
-	array bits = stats->monthly["bits" + msg->yearmonth] || ({ });
-	//1) Get the top cheerers
-	int limit = stats->badge_count || 10;
-	array(string) userids = ({ }), people = ({ });
-	foreach (bits, mapping person) {
-		if (stats->mods[person->user_id]) continue;
-		userids += ({person->user_id});
-		people += ({person->user_name});
-		if (!--limit) break;
-	}
-	if (!sizeof(people)) send_message(channel->name, "No non-mods have cheered bits in that month.");
-	else send_message(channel->name, addrem + " VIP status " + tofrom + " cheerers: " + people * ", ");
-	//2) Get the top subbers and tippers
-	foreach (({"subs", "kofi"}), string which) {
-		array subs = values(stats->monthly[which + msg->yearmonth] || ([])); //(or tips, whatever)
-		sort(subs->firstsub, subs); sort(-subs->score[*], subs);
-		limit = stats->badge_count || 10; people = ({ });
-		foreach (subs, mapping person) {
-			if (stats->mods[person->user_id]) continue;
-			if ((string)person->user_id == "274598607") continue; //AnAnonymousGifter
-			if ((string)(int)person->user_id != (string)person->user_id) continue; //Non-numeric user "ids" are for truly-anonymous donations
-			if (!has_value(userids, person->user_id)) {
-				//If that person has already received a VIP badge for cheering, don't re-add.
-				userids += ({person->user_id});
-				people += ({person->user_name});
-			}
-			else people += ({"(" + person->user_name + ")"});
-			if (!--limit) break;
-		}
-		if (sizeof(people)) {
-			//If nobody's subbed/tipped, don't even say anything.
-			send_message(channel->name, addrem + " VIP status for " + which + ": " + people * ", ");
-		}
-	}
-	//3) Actually implement badge changes
+	[array(string) userids, [array(string) cheerers, array(string) subbers, array(string) tippers]] = collect_leaders(stats, msg->yearmonth, 1);
+	if (sizeof(cheerers)) send_message(channel->name, addrem + " VIP status " + tofrom + " cheerers: " + cheerers * ", ");
+	if (sizeof(subbers)) send_message(channel->name, addrem + " VIP status for subs: " + subbers * ", ");
+	if (sizeof(tippers)) send_message(channel->name, addrem + " VIP status for Ko-fi: " + tippers * ", ");
 	//The Twitch API actually limits this to 10 badge changes every 10 seconds,
 	//but we simplify this down to 1 every 2 seconds. TODO: Try this at 1 every
 	//1.25 seconds to speed it up, hopefully it won't break anything.
