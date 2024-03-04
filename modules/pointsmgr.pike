@@ -137,7 +137,10 @@ __async__ void populate_rewards_cache(string|int broadcaster_id) {
 	mapping current = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
 	if (current) {
 		multiset unseen = (multiset)indices(current) - (multiset)rewards->id;
-		if (sizeof(unseen)) {m_delete(current, ((array)unseen)[*]); channel->config_save();}
+		if (sizeof(unseen)) {
+			m_delete(current, ((array)unseen)[*]);
+			await(G->G->DB->save_config(channel->userid, "dynamic_rewards", current));
+		}
 	}
 	multiset manageable = rewards_manageable[(int)broadcaster_id] = (multiset)await(twitch_api_request(url + "&only_manageable_rewards=true", params))->data->id;
 	foreach (rewards, mapping r) {

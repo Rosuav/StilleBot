@@ -153,7 +153,7 @@ string subtier(string plan) {
 @create_hook:
 constant variable_changed = ({"object channel", "string varname", "string newval"});
 
-class channel(mapping config) {
+class channel(mapping identity) {
 	string name; //name begins with a hash and is all lowercase. Preference: Use this->login (no hash) instead.
 	string color;
 	int userid; string login, display_name;
@@ -164,8 +164,11 @@ class channel(mapping config) {
 	mapping(string:echoable_message) commands = ([]);
 	//Map a reward ID to the redemption triggers for that reward. Empty arrays should be expunged.
 	mapping(string:array(string)) redemption_commands = ([]);
+	mapping botconfig, config;
 
 	protected void create(multiset|void loading) {
+		botconfig = m_delete(identity, "data") || ([]);
+		config = identity | botconfig;
 		name = "#" + config->login; userid = config->userid;
 		login = config->login; display_name = config->display_name;
 		if (config->chatlog)
@@ -183,19 +186,11 @@ class channel(mapping config) {
 		G->G->user_mod_status[name[1..] + name] = 1; //eg "rosuav#rosuav" is trivially a mod.
 		//Note that !demo has no userid and can't re-fetch login/display name.
 		if (userid) get_user_info(userid)->then() {
-			config->login = __ARGS__[0]->login;
-			name = "#" + config->login; //FIXME: If it's changed, some things might not locate it correctly (see G->G->irc->channels)
-			config->display_name = __ARGS__[0]->display_name;
-			config_save();
+			if (config->login != __ARGS__[0]->login || config->display_name != __ARGS__[0]->display_name) {
+				//Note: This is asynchronous, but we'll be triggering a reconnect shortly.
+				G->G->DB->save_sql("update stillebot.botservice set login = :login, display_name = :display_name where twitchid = :id", __ARGS__[0]);
+			}
 		};
-		//This shouldn't ever be needed - the userid will always have been saved.
-		else if (!has_prefix(name, "#!")) get_user_info(name[1..], "login")->then() {
-			config->userid = userid = (int)__ARGS__[0]->id;
-			config->login = __ARGS__[0]->login;
-			config->display_name = __ARGS__[0]->display_name;
-			config_save();
-		};
-		else config->login = config->display_name = name[1..]; //User ID is zero for pseudo-channels
 		user_attrs = G_G_("channel_user_attrs", name);
 		spawn_task(load_commands(loading));
 	}
@@ -222,7 +217,13 @@ class channel(mapping config) {
 		if (loading) loading[userid] = 0;
 	}
 
-	void reconfigure(mapping data) { } //TODO
+	void botconfig_save() {
+		config = identity | botconfig; //Update the mapping synchronously - we'll also be notified via reconfigure shortly
+		G->G->DB->save_config(userid, "botconfig", botconfig);
+	}
+	void reconfigure(mapping data) { //Called after a bot config change is noticed in the database
+		config = identity | (botconfig = data);
+	}
 
 	//Drill down into any mapping. Could become global?? maybe??
 	mapping _path(mapping base, string ... parts) {
@@ -234,30 +235,9 @@ class channel(mapping config) {
 		return ret;
 	}
 
-	int config_saving = 0;
-	void config_save() {if (!config_saving) {config_saving = 1; call_out(config_dosave, 0);}}
-	void config_dosave() { //TODO: Dedup with persist.pike
-		if (mixed ex = catch {
-			//Creep the open file limit up by one while we save, to ensure that we aren't rlimited
-			array lim;
-			catch {lim = System.getrlimit("nofile"); if (lim[0] < lim[1]) System.setrlimit("nofile", lim[0] + 1, lim[1]);};
-			string enc = Standards.JSON.encode(config, Standards.JSON.HUMAN_READABLE|Standards.JSON.PIKE_CANONICAL);
-			Stdio.write_file("channels/" + userid + ".json", string_to_utf8(enc));
-			if (lim) catch {System.setrlimit("nofile", @lim);};
-			config_saving = 0;
-		}) {
-			werror("Unable to save channels/%d.json: %s\nWill retry in 60 seconds.\n", userid, describe_error(ex));
-			call_out(config_dosave, 60);
-		}
-	}
-
 	void remove_bot_from_channel() {
-		//NOTE: This currently deletes all configs for the channel.
-		//TODO: Flag the channel as "inactive", which will disable connecting as it,
-		//disable web access, etc, etc, but will timestamp the configs as "inactive since",
-		//allowing them to remain until considered stale.
-		rm("channels/" + userid + ".json");
-		reconnect();
+		G->G->DB->save_sql("update stillebot.botservice set deactivated = now() where twitchid = :userid and deactivated is null", (["userid": userid]));
+		rm("channels/" + userid + ".json"); //In case it's still lurking about
 	}
 
 	void channel_online(int uptime) {
@@ -1179,19 +1159,10 @@ void irc_closed(mapping options) {
 	if (options->voiceid) m_delete(irc_connections, options->voiceid);
 }
 
-@export: __async__ object connect_to_channel(string login) {
-	mapping info = await(get_user_info(login, "login"));
-	string fn = "channels/" + info->id + ".json";
-	string prev = Stdio.read_file(fn);
-	if (prev) {
-		//There's previous data. Keep it! TODO: Remove any inactive marker.
-	} else Stdio.write_file(fn, string_to_utf8(Standards.JSON.encode(([
-		"userid": (int)info->id,
-		"login": info->login,
-		"display_name": info->display_name,
-	]))));
-	await(reconnect());
-	return G->G->irc->id[(int)info->id];
+@export: object connect_to_channel(string login) {
+	get_user_info(login, "login")->then() {
+		G->G->DB->save_sql("insert into stillebot.botservice values (:id, null, :login, :display_name)", __ARGS__[0]);
+	};
 }
 
 @hook_channel_online: int connected(string chan, int uptime, int chanid) {
@@ -1452,10 +1423,8 @@ __async__ void reconnect() {
 		//Fetch up the list of bot shard voices from the demo's available voices
 		mapping demo_voices;
 		while (1) {
-			catch {
-				demo_voices = G->G->DB->load_cached_config(0, "voices");
-				break;
-			};
+			catch (demo_voices = G->G->DB->load_cached_config(0, "voices"));
+			if (demo_voices) break;
 			//If there's an exception, most likely the voices haven't been loaded yet.
 			//Delay a bit and try again.
 			sleep(0.25);
@@ -1465,11 +1434,14 @@ __async__ void reconnect() {
 		foreach (voices; int i; mapping v) if (v->id == G->G->bot_uid) voices[i] = 0;
 		shard_voices = ({0}) + (voices - ({0})); //Move the null entry (for intrinsic voice) to the start
 	}
-	array files = "channels/" + glob("*.json", get_dir("channels"))[*];
-	array channels = Standards.JSON.decode_utf8(Stdio.read_file(files[*])[*]);
+	array channels = await(G->G->DB->generic_query(#"
+		select stillebot.botservice.twitchid as userid, login, display_name, coalesce(data, '{}') as data
+		from stillebot.botservice left join stillebot.config
+		on stillebot.botservice.twitchid = stillebot.config.twitchid and keyword = 'botconfig'
+		where deactivated is null"));
 	if (sizeof(channels)) {
 		sort(channels->login, channels); //Default to sorting affabeck by username
-		sort(-channels->connprio[*], channels);
+		sort(-channels->data->connprio[*], channels);
 	}
 	mapping irc = (["channels": ([]), "id": ([]), "loading": (<>)]);
 	foreach (channels, mapping cfg) {
@@ -1514,7 +1486,6 @@ protected void create(string name)
 {
 	::create(name);
 	add_constant("send_message", send_message);
-	export(this, name, "connect_to_channel");
 	#if constant(INTERACTIVE)
 	G->G->irc = (["channels": ([]), "id": ([]), "loading": (<>)]);
 	return;
@@ -1524,6 +1495,7 @@ protected void create(string name)
 	session_cleanup();
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
 	if (mapping irc = persist_config["ircsettings"]) { //Now less about IRC than HTTP but whatever
+		G->G->on_botservice_change = reconnect;
 		reconnect();
 		if (mixed ex = irc->http_address && irc->http_address != "" && catch
 		{

@@ -62,7 +62,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	string defvoice = G->G->irc->id[0]->?config->?defvoice;
 	if (defvoice && bv[defvoice] && !vox[defvoice]) {
 		vox[defvoice] = bv[defvoice] | ([]);
-		channel->config_save();
+		G->G->DB->save_config(channel->userid, "voices", vox);
 	}
 	array voices = values(vox); sort(indices(vox), voices);
 	mapping all_voices = G->G->user_credentials;
@@ -80,9 +80,9 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
 	if (msg->unsetdefault) { //No voice selection here
-		m_delete(channel->config, "defvoice");
+		m_delete(channel->botconfig, "defvoice");
 		send_updates_all(conn->group);
-		channel->config_save();
+		channel->botconfig_save();
 		return;
 	}
 	mapping v = G->G->DB->load_cached_config(channel->userid, "voices")[msg->id];
@@ -99,11 +99,13 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		}
 		v->profile_image_url = user->profile_image_url;
 		if (msg->makedefault) {
-			if (G->G->DB->load_cached_config(channel->userid, "voices")[msg->id]) channel->config->defvoice = msg->id;
+			if (G->G->DB->load_cached_config(channel->userid, "voices")[msg->id]) {
+				channel->botconfig->defvoice = msg->id;
+				channel->botconfig_save();
+			}
 			send_updates_all(conn->group); //Changing the default voice requires a full update, no point shortcutting
 		}
 		else update_one(conn->group, msg->id);
-		channel->config_save();
 	};
 }
 

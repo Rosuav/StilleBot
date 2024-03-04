@@ -559,7 +559,6 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 		channel->redemption_commands[response->redemption] += ({cmd});
 		updates["rew " + response->redemption] = 1;
 	}
-	channel->config_save();
 	if (object handler = G->G->websocket_types->chan_commands) {
 		//If the command name starts with "!", it's a special, to be
 		//sent out to "!!#channel" and not to "#channel".

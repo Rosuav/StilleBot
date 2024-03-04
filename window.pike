@@ -210,23 +210,13 @@ class _mainwindow
 		if (!login) { //Connect to new channel
 			login = win->login->get_text();
 			if (login == "" || login == "-- New --") return; //Invalid names
-			connect_to_channel(login)->then() {[object channel] = __ARGS__;
-				sig_pb_refresh_clicked();
-				object iter = win->ls->get_iter_first();
-				while (win->ls->get_value(iter, 0) != login)
-					if (!win->ls->iter_next(iter)) {iter = win->new_iter; break;}
-				win->sel->select_iter(iter);
-				//win->list->scroll_to_cell(iter->get_path(), 0); //Doesn't seem to work. Whatever.
-				channel->config->connprio = (int)win->connprio->get_text();
-				channel->config->chatlog = (int)win->chatlog->get_active();
-				channel->config_save();
-			};
+			connect_to_channel(login);
 			return;
 		}
 		object channel = G->G->irc->channels["#" + login]; if (!channel) return; //TODO: Report error?
-		channel->config->connprio = (int)win->connprio->get_text();
-		channel->config->chatlog = (int)win->chatlog->get_active();
-		channel->config_save();
+		channel->botconfig->connprio = (int)win->connprio->get_text();
+		channel->botconfig->chatlog = (int)win->chatlog->get_active();
+		channel->botconfig_save();
 		call_out(sig_sel_changed, 0);
 	}
 

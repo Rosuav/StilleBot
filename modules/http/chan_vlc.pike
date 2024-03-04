@@ -120,8 +120,8 @@ this works. I don't understand, but I'll take it. */
 //Create (if necessary) and return the VLC Auth Token
 string auth_token(object channel) {
 	if (string t = channel->config->vlcauthtoken) return t;
-	channel->config_save();
-	return channel->config->vlcauthtoken = String.string2hex(random_string(12));
+	call_out(channel->botconfig_save, 0);
+	return channel->botconfig->vlcauthtoken = String.string2hex(random_string(12));
 }
 
 void sendstatus(object channel) {

@@ -671,6 +671,7 @@ void notify_botconfig_changed(int pid, string cond, string extra, string host) {
 @"stillebot.botservice":
 void notify_botservice_changed(int pid, string cond, string extra, string host) {
 	werror("botservice changed!\n");
+	if (function f = is_active_bot() && G->G->on_botservice_change) f();
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
