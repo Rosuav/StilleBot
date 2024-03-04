@@ -272,6 +272,9 @@ class _mainwindow
 			);
 		win->sel=win->list->get_selection();
 		on_irc_loaded(this, "window::mainwindow", "sig_pb_refresh_clicked");
+		object iter = win->ls->append();
+		win->ls->set_value(iter, 0, "... loading ...");
+		win->ls->set_value(iter, 1, "... userid ...");
 		sig_sel_changed();
 		::makewindow();
 	}
