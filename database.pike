@@ -398,14 +398,18 @@ void update_cache(int pid, string cond, string extra, string host) {
 	load_config(extra, kwd)->then() {pcc_cache[kwd][(int)extra] = __ARGS__[0];};
 }
 
-__async__ void preload_config(string kwd) {
-	pcc_loadstate[kwd] = 1;
-	mapping cache = pcc_cache[kwd] = ([]);
+__async__ void preload_configs(array(string) kwds) {
+	foreach (kwds, string kwd) {
+		pcc_loadstate[kwd] = 1;
+		pcc_cache[kwd] = ([]);
+	}
 	if (!active) await(await_active());
-	array rows = await(query(pg_connections[active], "select twitchid, data from stillebot.config where keyword = :kwd", (["kwd": kwd])));
+	array rows = await(query(pg_connections[active],
+		"select twitchid, keyword, data from stillebot.config where keyword = any(:kwd)",
+		(["kwd": kwds])));
 	foreach (rows, mapping row)
-		cache[(int)row->twitchid] = JSONDECODE(row->data);
-	pcc_loadstate[kwd] = 2;
+		pcc_cache[row->keyword][(int)row->twitchid] = JSONDECODE(row->data);
+	foreach (kwds, string kwd) pcc_loadstate[kwd] = 2;
 }
 
 //Fire this off to migrate configs from channel->config["foo"] into load_config(channel->userid, "foo")
@@ -738,10 +742,12 @@ protected void create(string name) {
 		if (ann) foreach (indices(ann), mixed anno)
 			if (stringp(anno)) notify_channels[anno] = this[key];
 	}
+	array needkwd = ({ });
 	foreach (precached_config; string kwd;) {
 		notify_channels["stillebot.config:" + kwd] = update_cache;
-		if (!pcc_loadstate[kwd]) preload_config(kwd);
+		if (!pcc_loadstate[kwd]) needkwd += ({kwd});
 	}
+	if (sizeof(needkwd)) preload_configs(needkwd);
 	#endif
 	//For testing, force the opposite connection order
 	if (has_value(G->G->argv, "--gideondb")) database_ips = ({"ipv4.rosuav.com", "sikorsky.rosuav.com"});
