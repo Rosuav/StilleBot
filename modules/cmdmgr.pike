@@ -470,7 +470,6 @@ void update_aliases(object channel, string aliases, echoable_message response, m
 
 void purge(object channel, string cmd, multiset updates, multiset permsgone) {
 	echoable_message prev = m_delete(channel->commands, cmd);
-	m_delete(channel->path("commands"), cmd);
 	if (prev) updates[cmd] = 1;
 	if (!mappingp(prev)) return;
 	if (prev->alias_of) purge(channel, prev->alias_of, updates, permsgone);

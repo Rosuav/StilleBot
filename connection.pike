@@ -222,16 +222,7 @@ class channel(mapping config) {
 		if (loading) loading[userid] = 0;
 	}
 
-	//Deprecated. Uses old configs.
-	mapping path(string ... parts) {
-		mapping ret = config;
-		foreach (parts, string idx) {
-			if (undefinedp(ret[idx])) {ret[idx] = ([]); config_save();}
-			ret = ret[idx];
-		}
-		return ret;
-	}
-	//Non-deprecated version of the above. Might end up becoming global?
+	//Drill down into any mapping. Could become global?? maybe??
 	mapping _path(mapping base, string ... parts) {
 		mapping ret = base;
 		foreach (parts, string idx) {
