@@ -38,8 +38,7 @@ Name        | Mnemonic | Description/purpose | -
 //Note that, in theory, multiple voice support could be done without an HTTP interface.
 //It would be fiddly to set up, though, so I'm not going to try to support it.
 
-mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
-{
+mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	mapping cfg = req->misc->channel->config;
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	return render(req, ([
@@ -57,9 +56,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 bool need_mod(string grp) {return 1;}
 
 mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping vox = channel->config->voices || ([]);
+	mapping vox = G->G->DB->load_cached_config(channel->userid, "voices");
 	if (id) return vox[id] && (vox[id] | (["scopes": G->G->user_credentials[(int)id]->?scopes || ({"chat_login"})]));
-	mapping bv = G->G->irc->id[0]->?config->?voices || ([]);
+	mapping bv = G->G->DB->load_cached_config(0, "voices");
 	string defvoice = G->G->irc->id[0]->?config->?defvoice;
 	if (defvoice && bv[defvoice] && !vox[defvoice]) {
 		vox[defvoice] = bv[defvoice] | ([]);
@@ -86,7 +85,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		channel->config_save();
 		return;
 	}
-	mapping v = channel->config->voices[?msg->id];
+	mapping v = G->G->DB->load_cached_config(channel->userid, "voices")[msg->id];
 	if (!v) return;
 	if (msg->desc) v->desc = msg->desc;
 	if (msg->notes) v->notes = msg->notes;
@@ -100,7 +99,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		}
 		v->profile_image_url = user->profile_image_url;
 		if (msg->makedefault) {
-			if (channel->config->voices[msg->id]) channel->config->defvoice = msg->id;
+			if (G->G->DB->load_cached_config(channel->userid, "voices")[msg->id]) channel->config->defvoice = msg->id;
 			send_updates_all(conn->group); //Changing the default voice requires a full update, no point shortcutting
 		}
 		else update_one(conn->group, msg->id);
@@ -111,32 +110,32 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 void websocket_cmd_activate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
-	mapping bv = G->G->irc->id[0]->?config->?voices[?msg->id];
+	mapping bv = G->G->DB->load_cached_config(0, "voices")[msg->id];
 	if (!bv) return;
 	//Activating a voice requires that you be either the voice itself, or the bot
 	//intrinsic voice (and also a mod, but without that you don't get a websocket).
 	if (conn->session->user->id != bv->id && conn->session->user->id != (string)G->G->bot_uid) return;
-	if (!channel->config->voices) channel->config->voices = ([]);
-	channel->config->voices[msg->id] = bv;
-	update_one(conn->group, msg->id);
-	channel->config_save();
+	G->G->DB->mutate_config(channel->userid, "voices") {
+		__ARGS__[msg->id] = bv;
+		update_one(conn->group, msg->id);
+	};
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return;
 	[object channel, string grp] = split_channel(conn->group);
-	mapping vox = channel->config->voices;
-	if (!vox) return; //Nothing to delete.
-	if (m_delete(vox, msg->id)) {update_one(conn->group, msg->id); channel->config_save();}
+	G->G->DB->mutate_config(channel->userid, "voices") {
+		if (m_delete(__ARGS__[0], msg->id)) update_one(conn->group, msg->id);
+	};
 	//Note that deleting the default voice doesn't unset the default, but if a command
 	//attempts to use this default, it'll see that the voice isn't authenticated for this
 	//channel, and fall back on the global default.
 }
 
 void wscmd_testvoice(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping vox = channel->config->voices;
-	if (!vox || !vox[msg->id]) return; //Voice has to have been authenticated to do a test
-	channel->send((["user": "test"]), (["voice": msg->id, "message": "Hello from " + vox[msg->id]->name + "!"]));
+	mapping vox = G->G->DB->load_cached_config(channel->userid, "voices")[msg->id];
+	if (!vox) return; //Voice has to have been authenticated to do a test
+	channel->send((["user": "test"]), (["voice": msg->id, "message": "Hello from " + vox->name + "!"]));
 }
 
 void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -153,14 +152,15 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 		scopes, (["force_verify": "true"]), conn->hostname,
 	) {
 		[object req, mapping user, multiset scopes, string token, string cookie] = __ARGS__;
-		mapping v = channel->path("voices", (string)user->id);
+		mapping vox = G->G->DB->load_cached_config(channel->userid, "voices");
+		mapping v = vox[user->id]; if (!v) v = vox[user->id] = ([]);
 		v->id = (string)user->id;
 		v->name = user->display_name;
 		if (lower_case(user->display_name) != user->login) v->name += " (" + user->login + ")";
 		if (!v->desc) v->desc = v->name;
 		v->profile_image_url = user->profile_image_url;
 		v->last_auth_time = time();
-		channel->config_save();
+		G->G->DB->save_config(channel->userid, "voices", vox);
 		update_one(conn->group, v->id);
 		return (["data": "<script>window.close()</script>", "type": "text/html"]);
 	};

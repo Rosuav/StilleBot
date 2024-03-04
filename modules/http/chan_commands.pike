@@ -72,7 +72,7 @@ void enable_feature(object channel, string kwd, int state) {
 //Gather all the variables that the JS command editor needs. Some may depend on the channel.
 //TODO: Accept just the channelid, not the whole channel object
 mapping(string:mixed) command_editor_vars(object channel) {
-	mapping voices = channel->config->voices || ([]);
+	mapping voices = G->G->DB->load_cached_config(channel->userid, "voices");
 	string defvoice = channel->config->defvoice;
 	if (voices[defvoice]) voices |= (["0": (["name": "Bot's own voice"])]); //TODO: Give the bot's username?
 	return ([

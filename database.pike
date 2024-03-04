@@ -99,7 +99,7 @@ constant tables = ([
 		"alter table stillebot.botservice enable always trigger botservice_changed;",
 	}),
 ]);
-multiset precached_config = (<"channel_labels", "variables", "monitors">); //TODO: Have other modules submit requests?
+multiset precached_config = (<"channel_labels", "variables", "monitors", "voices">); //TODO: Have other modules submit requests?
 @retain: mapping pcc_loadstate = ([]);
 @retain: mapping pcc_cache = ([]);
 
@@ -421,6 +421,14 @@ __async__ void migrate_config(string kwd) {
 //Doesn't currently support Sql.Sql().
 __async__ mapping mutate_config(string|int twitchid, string kwd, function mutator) {
 	if (!active) await(await_active());
+	if (precached_config[kwd]) {
+		//No transaction necessary here; we have the data in memory.
+		if (pcc_loadstate[kwd] < 2) error("Config not yet loaded\n"); //Or maybe we don't.
+		mapping data = pcc_cache[kwd][(int)twitchid] || ([]);
+		mapping|void ret = mutator(data);
+		if (mappingp(ret)) data = ret;
+		return await(save_config(twitchid, kwd, data));
+	}
 	return await(pg_connections[active]->conn->transaction(__async__ lambda(function query) {
 		//TODO: Is it worth having load_config/save_config support transactional mode?
 		array rows = await(query("select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",

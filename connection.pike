@@ -27,7 +27,7 @@ timezone: IANA timezone name for all scheduling etc
 vlcauthtoken: Auth key for VLC integration
 
 Migrate to separate configs:
-voices
+[All done!]
 
 Battle plan:
 1. Find all usage of the "migrate to separate configs" entries and disconnect them from the channel objects.
@@ -638,7 +638,7 @@ class channel(mapping config) {
 		//voice but don't grant permission to use chat, all chat messages will just
 		//fail silently. (This would be fine if it's only used for slash commands.)
 		string|zero voice = (cfg->voice && cfg->voice != "") ? cfg->voice : config->defvoice;
-		if (!config->voices[?voice]) voice = 0; //Ensure that the voice hasn't been deauthenticated since the command was edited
+		if (!G->G->DB->load_cached_config(userid, "voices")[voice]) voice = 0; //Ensure that the voice hasn't been deauthenticated since the command was edited
 		if (!voice) {
 			//No voice has been selected (either explicitly or as the channel default).
 			//Use the bot's global default voice, or the intrinsic voice (implicitly zero).
@@ -1197,7 +1197,7 @@ void irc_closed(mapping options) {
 		"login": info->login,
 		"display_name": info->display_name,
 	]))));
-	reconnect();
+	await(reconnect());
 	return G->G->irc->id[(int)info->id];
 }
 
@@ -1453,8 +1453,25 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 //barely necessary for fewer than about 60, but beyond that, becomes more valuable. It
 //is also completely unnecessary if the bot has Verified status, but this would need to
 //be coded in properly (to allow !demo to still have some example voices).
-array(mapping) shard_voices = ({0});
-void reconnect() {
+array(mapping) shard_voices;
+__async__ void reconnect() {
+	if (!shard_voices) {
+		//Fetch up the list of bot shard voices from the demo's available voices
+		mapping demo_voices;
+		while (1) {
+			catch {
+				demo_voices = G->G->DB->load_cached_config(0, "voices");
+				break;
+			};
+			//If there's an exception, most likely the voices haven't been loaded yet.
+			//Delay a bit and try again.
+			sleep(0.25);
+		}
+		array voices = values(demo_voices);
+		sort((array(int))voices->id, voices);
+		foreach (voices; int i; mapping v) if (v->id == G->G->bot_uid) voices[i] = 0;
+		shard_voices = ({0}) + (voices - ({0})); //Move the null entry (for intrinsic voice) to the start
+	}
 	array files = "channels/" + glob("*.json", get_dir("channels"))[*];
 	array channels = Standards.JSON.decode_utf8(Stdio.read_file(files[*])[*]);
 	if (sizeof(channels)) {
@@ -1514,12 +1531,6 @@ protected void create(string name)
 	session_cleanup();
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
 	if (mapping irc = persist_config["ircsettings"]) { //Now less about IRC than HTTP but whatever
-		//Fetch up the list of bot shard voices from the demo's available voices
-		string rawcfg = Stdio.read_file("channels/0.json");
-		array voices = values(Standards.JSON.decode_utf8(rawcfg)->?voices || ({ }));
-		sort((array(int))voices->id, voices);
-		foreach (voices; int i; mapping v) if (v->id == G->G->bot_uid) voices[i] = 0;
-		shard_voices = ({0}) + (voices - ({0})); //Move the null entry (for intrinsic voice) to the start
 		reconnect();
 		if (mixed ex = irc->http_address && irc->http_address != "" && catch
 		{

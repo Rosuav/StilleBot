@@ -346,7 +346,7 @@ echoable_message _validate_recursive(echoable_message resp, mapping state)
 	if (!state->channel) {
 		if (resp->voice && sscanf(resp->voice, "%[0-9]%s", string v, string end) && v != "" && end == "") ret->voice = v;
 	}
-	else if ((state->channel->config->voices || ([]))[resp->voice]) ret->voice = resp->voice;
+	else if (G->G->DB->load_cached_config(state->channel->userid, "voices")[resp->voice]) ret->voice = resp->voice;
 	//Setting voice to "0" resets to the global default, which is useful if there's a local default.
 	else if (resp->voice == "0" && state->channel->config->defvoice) ret->voice = resp->voice;
 	else if (resp->voice == "") {
