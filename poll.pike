@@ -117,7 +117,7 @@ __async__ void get_credentials() {
 	//uid_to_name[(string)userid] maps the user names seen to the timestamps.
 	//To detect renames, sort the keys and values in parallel; the most recent
 	//change is represented by the last two keys.
-	if (!login || !persist_status->path) return; //The latter check stops us from bombing in CLI usage
+	if (!login) return;
 	id = (string)id; login = lower_case((string)login);
 	int save = 0;
 	mapping u2n = G->G->uid_to_name[id]; if (!u2n) u2n = G->G->uid_to_name[id] = ([]);
@@ -588,7 +588,6 @@ void stream_status(int userid, string name, mapping info)
 	Crypto.SHA256.HMAC signer; string secret;
 	multiset(string) have_subs = (<>);
 	protected void create() {
-		if (!persist_status->path) return;
 		if (!G->G->eventhook_types) G->G->eventhook_types = ([]);
 		if (object other = G->G->eventhook_types[hookname]) have_subs = other->have_subs;
 		G->G->eventhook_types[hookname] = this;
