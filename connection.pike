@@ -222,6 +222,8 @@ class channel(mapping config) {
 		if (loading) loading[userid] = 0;
 	}
 
+	void reconfigure(mapping data) { } //TODO
+
 	//Drill down into any mapping. Could become global?? maybe??
 	mapping _path(mapping base, string ... parts) {
 		mapping ret = base;

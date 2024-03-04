@@ -669,6 +669,20 @@ void delete_file(string id) {
 	G->G->DB->save_sql("delete from stillebot.uploads where id = :id", (["id": id]));
 }
 
+@"stillebot.config:botconfig":
+void notify_botconfig_changed(int pid, string cond, string extra, string host) {
+	load_config(extra, "botconfig")->then() {[mapping data] = __ARGS__;
+		werror("botconfig changed for %O\n", extra);
+		mapping channel = G->G->irc->?id[?(int)extra];
+		if (channel) channel->reconfigure(data);
+	};
+}
+
+@"stillebot.botservice":
+void notify_botservice_changed(int pid, string cond, string extra, string host) {
+	werror("botservice changed!\n");
+}
+
 //Attempt to create all tables and alter them as needed to have all columns
 __async__ void create_tables() {
 	await(reconnect(1, 1)); //Ensure that we have at least one connection, both if possible

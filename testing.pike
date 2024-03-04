@@ -241,7 +241,7 @@ __async__ void migrate_channels() {
 			mapping basics = ([]);
 			foreach ("chatlog connprio defvoice snoozeads_mods timezone" / " ", string key) //TODO: Also vlcauthtoken
 				if (config[key] && config[key] != "") basics[key] = config[key];
-			await(query("insert into stillebot.config values (:twitchid, 'botconfig', :data) on conflict (twitchid, keyword) do update set data=:data",
+			if (sizeof(basics)) await(query("insert into stillebot.config values (:twitchid, 'botconfig', :data) on conflict (twitchid, keyword) do update set data=:data",
 				(["twitchid": config->userid, "data": basics])));
 		}
 	}));
