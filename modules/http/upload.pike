@@ -55,7 +55,7 @@ Upload time: %s
 	}
 	array(string) parts = fileid / "-";
 	if (sizeof(parts) != 5) { //Not a UUID. Probably a legacy URL.
-		string|zero redir = await(G->G->DB->load_config(0, "upload_redirect"))[parts[-1]]->?redirect;
+		string|zero redir = await(G->G->DB->load_config(0, "upload_redirect"))[parts[-1]];
 		return redir && redirect(redir, 301); //If we don't have a redirect, it's probably deleted, so... 404.
 	}
 	mapping file = await(G->G->DB->get_file(fileid, 1));
