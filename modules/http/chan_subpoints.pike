@@ -64,10 +64,9 @@ __async__ int|array get_sub_points(string chan, string|void type)
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
-	mapping cfg = req->misc->channel->config;
 	if (string nonce = req->variables->view) {
 		//Unauthenticated viewing endpoint. Depends on an existing nonce.
-		mapping info = cfg->subpoints[?nonce];
+		mapping info = await(G->G->DB->load_config(req->misc->channel->userid, "subpoints"))[nonce];
 		if (!info) return 0; //If you get the nonce wrong, just return an ugly 404 page.
 		string style = "";
 		if (info->font && info->font != "")
@@ -76,7 +75,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 					"%s", Protocols.HTTP.uri_encode(info->font), info->font, style);
 		if ((int)info->fontsize) style += "#display {font-size: " + (int)info->fontsize + "px;}";
 		return render_template("monitor.html", ([
-			"vars": (["ws_type": ws_type, "ws_group": nonce + req->misc->channel->name, "ws_code": "subpoints"]),
+			"vars": (["ws_type": ws_type, "ws_group": nonce + "#" + req->misc->channel->userid, "ws_code": "subpoints"]),
 			"styles": style,
 		]));
 	}
@@ -141,29 +140,27 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
-void subpoints_updated(string hook, string chan, mapping info) {
+__async__ void subpoints_updated(string hook, string chan, mapping info) {
 	//TODO: If it's reliable, maintain the subpoint figure and adjust it, instead of re-fetching.
 	Stdio.append_file("evt_subpoints.log", sprintf("EVENT: Subpoints %s [%O, %d]: %O\n", hook, chan, time(), info));
 	object channel = G->G->irc->channels["#" + chan];
-	mapping cfg = channel->?config->?subpoints;
-	if (!cfg || !sizeof(cfg)) return;
-	get_sub_points(chan)->then() {
-		int points = __ARGS__[0];
-		Stdio.append_file("evt_subpoints.log", sprintf("Updated subpoint count: %d\n", points));
-		foreach (cfg; string nonce; mapping tracker)
-			send_updates_all(channel, nonce, tracker | (["points": points - (int)tracker->unpaidpoints]));
-	};
+	mapping trackers = await(G->G->DB->load_config(channel->userid, "subpoints"));
+	if (!sizeof(trackers)) return;
+	int points = await(get_sub_points(chan));
+	Stdio.append_file("evt_subpoints.log", sprintf("Updated subpoint count: %d\n", points));
+	foreach (trackers; string nonce; mapping tracker)
+		send_updates_all(channel, nonce, tracker | (["points": points - (int)tracker->unpaidpoints]));
 }
 EventSub hook_sub = EventSub("sub", "channel.subscribe", "1") {subpoints_updated("sub", @__ARGS__);};
 EventSub hook_subend = EventSub("subend", "channel.subscription.end", "1") {subpoints_updated("subend", @__ARGS__);};
 EventSub hook_subgift = EventSub("subgift", "channel.subscription.gift", "1") {subpoints_updated("subgift", @__ARGS__);};
 EventSub hook_submessage = EventSub("submessage", "channel.subscription.message", "1") {subpoints_updated("submessage", @__ARGS__);};
 
-//bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
+bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping trackers = channel->config->subpoints || ([]);
+	mapping trackers = await(G->G->DB->load_config(channel->userid, "subpoints"));
 	string chan = channel->name[1..];
-	int uid = await(get_user_id(chan));
+	int uid = channel->userid;
 	hook_sub(chan, (["broadcaster_user_id": (string)uid]));
 	hook_subend(chan, (["broadcaster_user_id": (string)uid]));
 	hook_subgift(chan, (["broadcaster_user_id": (string)uid]));
@@ -183,31 +180,27 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 void websocket_cmd_create(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "") return;
-	if (!channel->config->subpoints) channel->config->subpoints = ([]);
 	string nonce = replace(MIME.encode_base64(random_string(30)), (["/": "1", "+": "0"]));
-	channel->config->subpoints[nonce] = (["id": nonce, "created": time()]);
-	channel->config_save();
-	send_updates_all(conn->group);
+	G->G->DB->mutate_config(channel->userid, "subpoints") {
+		__ARGS__[0][nonce] = (["id": nonce, "created": time()]);
+	}->then() {send_updates_all(conn->group);};
 }
 
 void websocket_cmd_save(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "") return;
-	mapping tracker = channel->config->subpoints[?msg->id];
-	if (!tracker) return;
-	foreach ("unpaidpoints font fontsize goal goaltype usecomfy" / " ", string k)
-		if (!undefinedp(msg[k])) tracker[k] = msg[k];
-	channel->config_save();
-	send_updates_all(conn->group);
+	G->G->DB->mutate_config(channel->userid, "subpoints") {
+		mapping tracker = __ARGS__[0][msg->id];
+		if (!tracker) return;
+		foreach ("unpaidpoints font fontsize goal goaltype usecomfy" / " ", string k)
+			if (!undefinedp(msg[k])) tracker[k] = msg[k];
+	}->then() {send_updates_all(conn->group);};
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "") return;
-	mapping cfg = channel->config->subpoints;
-	if (cfg[?msg->id]) {
-		m_delete(cfg, msg->id);
-		channel->config_save();
-		send_updates_all(conn->group);
-	}
+	G->G->DB->mutate_config(channel->userid, "subpoints") {
+		m_delete(__ARGS__[0], msg->id);
+	}->then() {send_updates_all(conn->group);};
 }
