@@ -31,7 +31,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		mapping info = monitors[nonce];
 		if (!info) nonce = 0;
 		return render_template("monitor.html", ([
-			"vars": (["ws_type": ws_type, "ws_group": nonce + req->misc->channel->userid, "ws_code": "monitor"]),
+			"vars": (["ws_type": ws_type, "ws_group": nonce + "#" + req->misc->channel->userid, "ws_code": "monitor"]),
 			"styles": "#display div {width: 33%;}#display div:nth-of-type(2) {text-align: center;}#display div:nth-of-type(3) {text-align: right;}",
 		]));
 	}
