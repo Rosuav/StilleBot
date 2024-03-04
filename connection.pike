@@ -1458,8 +1458,8 @@ protected void create(string name)
 {
 	::create(name);
 	add_constant("send_message", send_message);
+	if (!G->G->irc) G->G->irc = (["channels": ([]), "id": ([]), "loading": (<>)]);
 	#if constant(INTERACTIVE)
-	G->G->irc = (["channels": ([]), "id": ([]), "loading": (<>)]);
 	return;
 	#endif
 	is_active = is_active_bot(); //Cache it - we'll check this a lot

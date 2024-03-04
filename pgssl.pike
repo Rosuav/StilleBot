@@ -14,7 +14,7 @@ mapping(int:string) typcategory = G->G->typcategory || ([]);
 //If an OID represents an array, this is the element type. Note that this comes
 //not from the typelem column but from typarray, as there are other ways for
 //typelem to be filled in. Required for encoding, but not for decoding.
-mapping(int:int) array_oid = G->G->array_oid || ([]);
+mapping(int:int) array_oid = G->G->array_oid || ([1009: 25]); //Bootstrap by knowing about text[].
 
 #ifdef SHOW_UNKNOWN_OIDS
 //Improve debugging? Maybe?
@@ -191,11 +191,11 @@ class SSLDatabase(string host, mapping|void cfg) {
 			if (!sizeof(typcategory)) {
 				//Type categories have not been loaded. (Not redone on reconnect.)
 				query("select oid, typcategory, typname, typarray from pg_type where typtype in ('b', 'r', 'm')")->then() {
-					typcategory = mkmapping(__ARGS__[0]->oid, __ARGS__[0]->typcategory);
+					G->G->typcategory = typcategory = mkmapping(__ARGS__[0]->oid, __ARGS__[0]->typcategory);
 					#ifdef SHOW_UNKNOWN_OIDS
 					typname = mkmapping(__ARGS__[0]->oid, __ARGS__[0]->typname);
 					#endif
-					array_oid = mkmapping(__ARGS__[0]->typarray, __ARGS__[0]->oid);
+					G->G->array_oid = array_oid = mkmapping(__ARGS__[0]->typarray, __ARGS__[0]->oid);
 				};
 			}
 		};
