@@ -110,12 +110,10 @@ class Persist(string savefn, int flip_save)
 	}
 }
 object config = Persist("twitchbot_config.json", 0);
-object status = Persist("twitchbot_status.json", 1);
 
 protected void create() {
 	config->path("ircsettings"); //Ensure that this key exists, it's the most important one
 	add_constant("persist_config", config);
-	add_constant("persist_status", status);
 	//Bootstrapping: Ensure that we know the bot's UID.
 	G->G->bot_uid = (int)config["bot_uid"] || 49497888; //Hack: Use my ID if it isn't set.
 }
