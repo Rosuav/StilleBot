@@ -265,7 +265,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			//Master reconfiguration
 			array qty = (array(int))(replace(body->multi || "1 10 100 1000 10000 100000 1000000", ",", " ") / " ") - ({0});
 			if (!has_value(qty, 1)) qty = ({1}) + qty;
-			if (!cfg->giveaway) cfg->giveaway = ([]);
 			givcfg->title = body->title;
 			if (int max = givcfg->max_tickets = (int)body->max)
 				qty = filter(qty) {return __ARGS__[0] <= max;};
@@ -579,7 +578,7 @@ __async__ void channel_on_off(string channel, int just_went_online, int broadcas
 {
 	object chan = G->G->irc->id[broadcaster_id]; if (!chan) return;
 	mapping dyn = await(G->G->DB->load_config(broadcaster_id, "dynamic_rewards"));
-	if (!sizeof(dyn) && !sizeof(chan->config->giveaway->?rewards || ([]))) return; //Nothing to do
+	if (!sizeof(dyn)) return; //Nothing to do
 	object ts = G->G->stream_online_since[broadcaster_id] || Calendar.now();
 	if (chan->config->timezone && chan->config->timezone != "") ts = ts->set_timezone(chan->config->timezone) || ts;
 	string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
