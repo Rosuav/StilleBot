@@ -244,5 +244,4 @@ mapping message_params(object channel, mapping person, array param) {
 protected void create(string name) {
 	::create(name);
 	G->G->goal_bar_autoadvance = autoadvance;
-	G->G->DB->migrate_config("monitors");
 }

@@ -379,5 +379,3 @@ __async__ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:m
 	status->playing = 0;
 	status->recent = ({ });
 }
-
-protected void create(string name) {::create(name); G->G->DB->migrate_config("vlcblocks");}

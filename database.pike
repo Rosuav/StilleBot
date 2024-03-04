@@ -412,16 +412,6 @@ __async__ void preload_configs(array(string) kwds) {
 	foreach (kwds, string kwd) pcc_loadstate[kwd] = 2;
 }
 
-//Fire this off to migrate configs from channel->config["foo"] into load_config(channel->userid, "foo")
-__async__ void migrate_config(string kwd) {
-	foreach (G->G->irc->id; int userid; object channel) {
-		mapping cfg = channel->config[kwd];
-		if (!cfg || !sizeof(cfg)) continue; //Most likely it'll be an array or mapping, but strings are okay too
-		m_delete(channel->config, kwd); channel->config_save();
-		await(save_config(channel->userid, kwd, cfg));
-	}
-}
-
 //Doesn't currently support Sql.Sql().
 __async__ mapping mutate_config(string|int twitchid, string kwd, function mutator) {
 	if (!active) await(await_active());
