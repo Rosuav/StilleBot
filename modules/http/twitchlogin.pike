@@ -66,7 +66,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//to do a sword hunt anyway).
 		string dest = "/login_ok";
 		object channel = G->G->irc->channels["#" + user->login];
-		if (channel && channel->config->active) dest = "/channels/" + user->login + "/";
+		if (channel) dest = "/channels/" + user->login + "/";
 		resend_redirect[req->variables->code] = dest;
 		call_out(m_delete, 30, resend_redirect, req->variables->code);
 		login_popup_done(req, user, (multiset)(req->variables->scope / " "), auth->access_token, cookie);
