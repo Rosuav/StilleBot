@@ -11,33 +11,6 @@ mapping irc_connections = ([]); //Not persisted across code reloads, but will be
 @retain: mapping nonce_callbacks = ([]);
 int(1bit) is_active; //Cache of is_active_bot() since we need to check it freuqently.
 
-/* What's in channels/TWITCHID.json?
-
-Migrate to stillebot.botservice:
-twitchid primary key (was userid)
-deactivated: NULL, or time_t when deactivated. A deactivated account is largely invisible and inactive.
-login, display_name: Re-fetched from Twitch periodically
-
-Migrate to load_config(twitchid, "botconfig"):
-chatlog: 1 if chat is to be logged to console. No web UI way to set this.
-connprio: Integer, higher means it'll be connected to earlier during full system reset. No web UI.
-defvoice: ID of default voice for all commands. Set by chan_voices.
-snoozeads_mods: 1 if moderators are allowed to snooze ads
-timezone: IANA timezone name for all scheduling etc
-vlcauthtoken: Auth key for VLC integration
-
-Migrate to separate configs:
-[All done!]
-
-Battle plan:
-1. Find all usage of the "migrate to separate configs" entries and disconnect them from the channel objects.
-2. Load all channels by joining stillebot.botconfig with stillebot.config keyword = 'botconfig' and deactivated is null
-   - Await this on first load, but retain it in memory for code reload
-   - On changes to stillebot.botconfig, purge the cache and call_out(reconnect, 0)
-   - On changes to stillebot.config:botconfig, update the existing channel object with new configs.
-3. Rerun migrate_channels() in testing.pike as needed. It is currently not primary.
-*/
-
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
 	"broadcaster": "_mod", "moderator": "_mod", "staff": "_mod",
 	"subscriber": "_sub", "founder": "_sub", //Founders (the first 10 or 25 subs) have a special badge.
@@ -237,7 +210,6 @@ class channel(mapping identity) {
 
 	void remove_bot_from_channel() {
 		G->G->DB->save_sql("update stillebot.botservice set deactivated = now() where twitchid = :userid and deactivated is null", (["userid": userid]));
-		rm("channels/" + userid + ".json"); //In case it's still lurking about
 	}
 
 	void channel_online(int uptime) {

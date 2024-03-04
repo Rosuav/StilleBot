@@ -32,8 +32,7 @@ constant tables = ([
 		//"create or replace trigger command_created after insert on stillebot.commands for each row execute function send_command_notification();",
 		//"alter table stillebot.commands enable always trigger command_created;",
 	}),
-	//Generic channel info that stores anything that could be in channels/TWITCHID.json
-	//or twitchbot_status.json.
+	//Generic channel/user info. Formerly in persist_config, persist_status, or channels/USERID.json
 	"config": ({
 		"twitchid bigint not null",
 		"keyword varchar not null",
