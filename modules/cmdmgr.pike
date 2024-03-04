@@ -585,7 +585,7 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 		//If this is a special that requires a hook, ensure that we have the hook.
 		foreach (updates; cmd;) {
 			if (sscanf(cmd, "!%s#", string spec) && G->G->SPECIALS_SCOPES[spec]) {
-				handler(channel->config);
+				handler(channel);
 				break; //No need to update more than once - it'll check all the hooks
 			}
 		}
