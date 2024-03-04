@@ -296,7 +296,11 @@
   suggestions". Track how many times they've been suggested? Show only those who are
   currently live.
 * Eventually, enumerate every use of the local file system. There should be:
-  - Code, obviously (including Markdown files).
+  - Reading of git-tracked files: code, templates, statics
   - Log files (exclusively(?) using Stdio.append_file)
   - PEM files for certs and private keys
-  - Find all other configs and list them here.
+  - tts-credentials.json - move to DB??
+  - twitchbot_uids.json - move to DB
+  - twitchbot_config.json (persist_config) - replace with G->G->http_credentials,
+    loaded from http_credentials.json??? No need for the whole save() system.
+* Rework explorer to be able to poke through stillebot.config
