@@ -68,11 +68,7 @@ class menu_clicked
 		win->store = GTK2.TreeStore(({"string"}));
 		//Completely ephemeral - discarded on program restart. Survives code reload.
 		add_to_store(G->G, "G");
-		//Stored permanently but may be fast-changing or uninteresting
-		add_to_store(persist_status->data, "persist_status");
-		//Stored permanently and intended to be stable. Should change only in direct
-		//response to the operator's command (or a mod or other person with reconfig
-		//powers), and can be git-managed.
+		//Key configuration, can be different on different instances of the bot
 		add_to_store(persist_config->data, "persist_config");
 		win->mainwindow=GTK2.Window((["title":"Explore StilleBot internals"]))->add(GTK2.Vbox(0,0)
 			->add(GTK2.ScrolledWindow()
