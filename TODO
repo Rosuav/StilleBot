@@ -296,7 +296,7 @@
   suggestions". Track how many times they've been suggested? Show only those who are
   currently live.
 * Eventually, enumerate every use of the local file system. There should be:
-  - Code, obviously.
+  - Code, obviously (including Markdown files).
   - Log files (exclusively(?) using Stdio.append_file)
   - PEM files for certs and private keys
   - Find all other configs and list them here.
