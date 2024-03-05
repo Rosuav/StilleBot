@@ -304,3 +304,5 @@
   - twitchbot_config.json (persist_config) - replace with G->G->http_credentials,
     loaded from http_credentials.json??? No need for the whole save() system.
 * Rework explorer to be able to poke through stillebot.config
+* Action: Scan all commands for missing perms for any voice, update user prefs, log
+* Make a shareable link feature for twitchlogin.pike
