@@ -28,9 +28,9 @@ class menu_clicked
 		{
 			win->store->set_value(row, 0, sprintf("%s%t (%d)", name, thing, sizeof(thing)));
 			thing = (array)thing;
-			foreach (thing[..99], mixed subthing)
+			foreach (thing[..199], mixed subthing)
 				add_to_store(subthing, 0, row);
-			if (sizeof(thing) > 100)
+			if (sizeof(thing) > 200)
 				win->store->set_value(win->store->append(row), 0,
 					sprintf("... %d more entries...", sizeof(thing)-100));
 		}
@@ -41,7 +41,7 @@ class menu_clicked
 			foreach (sort(indices(thing)), mixed key)
 			{
 				add_to_store(thing[key], stringp(key) ? key : sprintf("%O", key), row);
-				if (++count >= 100) break;
+				if (++count >= 200) break;
 			}
 			if (sizeof(thing) > count)
 				win->store->set_value(win->store->append(row), 0,
