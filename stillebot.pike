@@ -118,12 +118,7 @@ int main(int argc,array(string) argv)
 		bootstrap("modules/cmdmgr.pike");
 		object mustard = bootstrap("modules/mustard.pike");
 		argv -= ({"--script"});
-		int quiet = 0;
-		foreach (argv[1..], string arg) {
-			if (arg == "-q") quiet = 1;
-			else mustard->run_test(arg, quiet);
-		}
-		return 0;
+		return mustard->run_tests(argv[1..]);
 	}
 	//TODO: Invert this and have --gui to enable the GUI
 	if (has_value(argv, "--headless")) {

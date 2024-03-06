@@ -266,55 +266,51 @@ mixed validate(mixed response, string cmd) {
 	return validated;
 }
 
-//Test a script file, a JSON command file, a JSON channel config, or one command from a channel config
-void run_test(string arg, int|void quiet) {
-	//TODO: Fetch commands from Postgres
-	if (has_suffix(arg, ".json")) {
-		mixed data = Standards.JSON.decode_utf8(Stdio.read_file(arg));
-		if (mappingp(data) && data->login) {
-			//Round-trip testing of an entire channel's commands
-			foreach (sort(indices(data->commands || ({ }))), string cmd) if (mixed ex = catch {
-				mixed orig = data->commands[cmd];
-				string code = make_mustard(orig);
-				mixed parsed = parse_mustard(code);
-				//Test the parser:
-				mixed validated = validate(parsed, cmd);
-				//Or test the validation itself:
-				//mixed validated = validate(orig, cmd);
-				//For comparison purposes, hide the id attributes on triggers.
-				if (cmd == "!trigger")
-					foreach (orig, mixed trig)
-						if (mappingp(trig)) m_delete(trig, "id");
+//Test a script file, a JSON command file, or one/all of a channel's commands
+__async__ void run_test(string arg, int|void quiet) {
+	if (sscanf(arg, "%d:%s", int userid, string cmd)) { //Channel command(s) - "49497888" for all, or "49497888:bot" for one
+		array commands = await(G->G->DB->load_commands(userid, cmd));
+		foreach (commands, mapping c) {
+			mixed orig = c->content;
+			string code = make_mustard(orig);
+			if (cmd) write("%s\n\n", string_to_utf8(code));
+			mixed parsed = parse_mustard(code);
+			if (cmd) write("Parse-back: %O\n", parsed);
+			//As above, test the parser:
+			mixed validated = validate(parsed, cmd);
+			//Or test the validation:
+			//mixed validated = validate(orig, cmd);
+			if (cmd == "!trigger")
+				foreach (orig, mixed trig)
+					if (mappingp(trig)) m_delete(trig, "id");
+			if (cmd) {
+				write("Validated: %O\n", validated);
+				if (!diff(sprintf("%O\n", orig), sprintf("%O\n", validated))) write("Identical!\n");
+			} else {
+				//When testing an entire channel command set, show just a summary.
 				if (sprintf("%O", orig) == sprintf("%O", validated)) {
-					if (!quiet) write("%s:%s: passed\n", arg, cmd);
-				}
-				else write("%4d %s:%s: Not identical\n", sizeof(sprintf("%O", orig)), arg, cmd);
-			}) write("%s:%s: %s\n", arg, cmd, describe_error(ex));
-		} else write("%s\n\n", string_to_utf8(make_mustard(data)));
+					if (!quiet) write("%s:%s: passed\n", arg, c->cmdname);
+				} else write("%4d %s:%s: Not identical\n", sizeof(sprintf("%O", orig)), arg, c->cmdname);
+			}
+		}
 	}
-	else if (sscanf(arg, "%s.json:%s", string fn, string cmd) && cmd) {
-		mapping data = Standards.JSON.decode_utf8(Stdio.read_file(fn + ".json"));
-		write("Channel: %s\n", data->login);
-		mixed orig = data->commands[cmd];
-		string code = make_mustard(orig);
-		write("%s\n\n", string_to_utf8(code));
-		mixed parsed = parse_mustard(code);
-		write("Parse-back: %O\n", parsed);
-		//As above, test the parser:
-		mixed validated = validate(parsed, cmd);
-		//Or test the validation:
-		//mixed validated = validate(orig, cmd);
-		if (cmd == "!trigger")
-			foreach (orig, mixed trig)
-				if (mappingp(trig)) m_delete(trig, "id");
-		write("Validated: %O\n", validated);
-		if (!diff(sprintf("%O\n", orig), sprintf("%O\n", validated))) write("Identical!\n");
+	else if (has_suffix(arg, ".json")) { //JSON -> MustardScript
+		mixed data = Standards.JSON.decode_utf8(Stdio.read_file(arg));
+		write("%s\n\n", string_to_utf8(make_mustard(data)));
 	}
-	else {
+	else { //MustardScript -> AST
 		mixed parsed = parse_mustard(Stdio.read_file(arg));
 		write("Parsed: %O\n", parsed);
 		mixed validated = validate(parsed, mappingp(parsed) && parsed->command || "command");
 		write("Validated: %O\n", validated);
+	}
+}
+
+__async__ void run_tests(array(string) args) {
+	int quiet = 0;
+	foreach (args, string arg) {
+		if (arg == "-q") quiet = 1;
+		else await(run_test(arg, quiet));
 	}
 }
 
