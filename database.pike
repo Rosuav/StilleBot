@@ -357,7 +357,7 @@ Concurrent.Future save_config(string|int twitchid, string kwd, mixed data) {
 	//TODO: If data is an empty mapping, delete it instead
 	if (precached_config[kwd] && pcc_loadstate[kwd] == 2) {
 		//Immediately (and synchronously) update the local cache.
-		//Note that it will be re-updated by the database trigger.
+		//Note that it will not be re-updated by the database trigger, to avoid trampling on ourselves.
 		pcc_cache[kwd][(int)twitchid] = data;
 	}
 	data = JSONENCODE(data);
@@ -393,6 +393,7 @@ mapping load_cached_config(string|int twitchid, string kwd) {
 
 //There's no decorator on this as the actual channel list is set by precached_config[]
 void update_cache(int pid, string cond, string extra, string host) {
+	if (pid == pg_connections[host]->?backendpid) return; //Ignore signals from our own updates
 	sscanf(cond, "%*s:%s", string kwd);
 	load_config(extra, kwd)->then() {pcc_cache[kwd][(int)extra] = __ARGS__[0];};
 }
