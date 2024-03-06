@@ -468,11 +468,11 @@ void update_aliases(object channel, string aliases, echoable_message response, m
 	}
 }
 
-void purge(object channel, string cmd, multiset updates, multiset permsgone) {
+void purge(object channel, string cmd, multiset updates) {
 	echoable_message prev = m_delete(channel->commands, cmd);
 	if (prev) updates[cmd] = 1;
 	if (!mappingp(prev)) return;
-	if (prev->alias_of) purge(channel, prev->alias_of, updates, permsgone);
+	if (prev->alias_of) purge(channel, prev->alias_of, updates);
 	if (prev->aliases) update_aliases(channel, prev->aliases, 0, updates);
 	if (prev->automate) {
 		//Clear out the timer. FIXME: Only do this if the command is really going away (not just if it's being updated).
@@ -484,24 +484,28 @@ void purge(object channel, string cmd, multiset updates, multiset permsgone) {
 		if (!sizeof(channel->redemption_commands[prev->redemption])) m_delete(channel->redemption_commands, prev->redemption);
 		updates["rew " + prev->redemption] = 1;
 	}
-	//TODO: Only do this if not extra->?nosave (which we don't currently have here)
-	permsgone["cmd:" + cmd] = 1;
 }
 
 //Recursively scan a response for all needed permissions
-void scan_for_permissions(echoable_message response, multiset need_perms) {
+void scan_for_permissions(echoable_message response, mapping state) {
 	if (stringp(response)) {
-		//TODO: If it's a slash command, record the permission needed for that command
-		//This will require recognition of the voice in use.
+		//Replicating logic from twitch_apis and connection
+		sscanf(response, "/%[^ ] %s", string cmd, string param);
+		string scope = G->G->voice_command_scopes[cmd];
+		string|zero voice = (state->voice && state->voice != "") ? state->voice : state->defvoice;
+		if (!voice) voice = G->G->irc->id[0]->?config->?defvoice;
+		if (scope) state->needperms[(int)voice] |= (<scope>);
 	}
-	if (arrayp(response)) scan_for_permissions(response[*], need_perms);
+	if (arrayp(response)) scan_for_permissions(response[*], state);
 	if (!mappingp(response)) return;
+	if (response->voice) state |= (["voice": response->voice]);
 	if (response->builtin) {
 		object builtin = G->G->builtins[response->builtin];
-		if (builtin->scope_required) need_perms[builtin->scope_required] = 1;
+		if (builtin->scope_required && builtin->scope_required != "")
+			state->needperms[state->broadcasterid] |= (<builtin->scope_required>);
 	}
-	scan_for_permissions(response->message, need_perms);
-	scan_for_permissions(response->otherwise, need_perms);
+	scan_for_permissions(response->message, state);
+	scan_for_permissions(response->otherwise, state);
 }
 
 //Update (or delete) a per-channel echo command and save to disk
@@ -509,11 +513,11 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 {
 	sscanf(cmd, "%[!]%s#", string pfx, string basename);
 	if (basename == "") error("Requires a command name.\n");
-	multiset updates = (<cmd>), permsgone = (<>);
-	purge(channel, cmd, updates, permsgone);
+	multiset updates = (<cmd>);
+	purge(channel, cmd, updates);
 	if (extra->?original && sscanf(extra->original, "%s#", string oldname)) {
 		//Renaming a command requires removal of what used to be.
-		purge(channel, oldname, updates, permsgone);
+		purge(channel, oldname, updates);
 		if (!extra->?nosave) G->G->DB->save_command(channel->userid, oldname, 0);
 	}
 	//Purge any iteration variables that begin with ".basename:" - anonymous rotations restart on
@@ -591,33 +595,32 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 	}
 	//If this uses any builtins that require permissions, and we don't have those, flag the user.
 	//TODO: Do this only if not extra->?nosave.
-	multiset need_perms = (<>); scan_for_permissions(response, need_perms);
-	if (sizeof(need_perms) || sizeof(permsgone)) update_perms_notifications(channel->userid, need_perms, permsgone, basename);
-}
-
-__async__ void update_perms_notifications(int channelid, multiset need_perms, multiset permsgone, string basename) {
-	mapping prefs = await(G->G->DB->load_config(channelid, "userprefs"));
-	int changed = 0;
-	if (prefs->notif_perms) foreach (prefs->notif_perms; string perm; array reasons) {
-		int removed = 0;
-		foreach (reasons; int i; mapping r) if (permsgone[r->reason]) {reasons[i] = 0; removed = 1;}
-		if (removed) {prefs->notif_perms[perm] = reasons - ({0}); changed = 1;}
-	}
-	multiset scopes = (multiset)(G->G->user_credentials[channelid]->?scopes || ({ }));
-	foreach (need_perms; string perm;) {
-		if (!scopes[perm]) {
-			if (!prefs->notif_perms) prefs->notif_perms = ([]);
-			prefs->notif_perms[perm] += ({([
-				"desc": "Command - " + basename, //or special/trigger?
-				"reason": "cmd:" + basename,
-			])});
-			changed = 1;
-		}
-	}
-	if (changed) {
-		G->G->DB->save_config(channelid, "userprefs", prefs);
-		G->G->update_user_prefs(channelid, (["notif_perms": prefs->notif_perms]));
-	}
+	//TODO: Scan all previous versions of the same command (the ones getting purged) for perms
+	//and remove those (if not also being readded).
+	mapping state = (["broadcasterid": channel->userid, "defvoice": channel->config->defvoice, "needperms": ([])]);
+	scan_for_permissions(response, state);
+	foreach (state->needperms; int userid; multiset perms)
+		G->G->DB->mutate_config(userid, "userprefs") {[mapping prefs, int channelid] = __ARGS__;
+			int changed = 0;
+			//Need to remove unneeded perms requests at some point
+			/*if (prefs->notif_perms) foreach (prefs->notif_perms; string perm; array reasons) {
+				int removed = 0;
+				foreach (reasons; int i; mapping r) if (permsgone[r->reason]) {reasons[i] = 0; removed = 1;}
+				if (removed) {prefs->notif_perms[perm] = reasons - ({0}); changed = 1;}
+			}*/
+			multiset scopes = (multiset)(G->G->user_credentials[channelid]->?scopes || ({ }));
+			foreach (state->needperms[channelid]; string perm;) {
+				if (!scopes[perm]) {
+					if (!prefs->notif_perms) prefs->notif_perms = ([]);
+					prefs->notif_perms[perm] += ({([
+						"desc": "Command - " + basename, //or special/trigger?
+						"reason": "cmd:" + basename,
+					])});
+					changed = 1;
+				}
+			}
+			if (changed) G->G->update_user_prefs(channelid, (["notif_perms": prefs->notif_perms]));
+		};
 }
 
 //Validate and update. Returns 0 if command was invalid, otherwise the response.
@@ -738,4 +741,15 @@ protected void create(string name) {
 	//Old API - if you are using this, switch to update_command which also validates.
 	add_constant("make_echocommand", lambda() {error("make_echocommand is no longer supported.\n");});
 	register_bouncer(autospam);
+	//TODO: Update prefs, don't just log to console
+	foreach (G->G->irc->id; int id; object channel) {
+		foreach (channel->commands; string cmdname; mixed response) {
+			mapping state = (["broadcasterid": id, "defvoice": channel->config->defvoice, "needperms": ([])]);
+			scan_for_permissions(response, state);
+			foreach (state->needperms; int voice; multiset perms) {
+				perms -= (multiset)(G->G->user_credentials[voice]->?scopes || (<>));
+				if (sizeof(perms)) write("%O:%O: %O %s\n", channel->name, cmdname, voice, sort(indices(perms)) * " ");
+			}
+		}
+	}
 }

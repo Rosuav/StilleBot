@@ -428,7 +428,7 @@ __async__ mapping mutate_config(string|int twitchid, string kwd, function mutato
 		array rows = await(query("select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
 			(["twitchid": (int)twitchid, "kwd": kwd])));
 		mapping data = sizeof(rows) ? rows[0]->data : ([]);
-		mapping|void ret = mutator(data); //Note that the mutator currently is expected to be synchronous. Is there need for awaits in here??
+		mapping|void ret = mutator(data, (int)twitchid, kwd); //Note that the mutator currently is expected to be synchronous. Is there need for awaits in here??
 		if (mappingp(ret)) data = ret; //Otherwise, assume that the original mapping was mutated.
 		await(query(
 			sizeof(rows) ? "update stillebot.config set data = :data where twitchid = :twitchid and keyword = :kwd"
