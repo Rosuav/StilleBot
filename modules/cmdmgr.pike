@@ -599,7 +599,7 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 	//and remove those (if not also being readded).
 	mapping state = (["broadcasterid": channel->userid, "defvoice": channel->config->defvoice, "needperms": ([])]);
 	scan_for_permissions(response, state);
-	update_user_need_permissions(state->needperms, "cmd:" + basename, "Command - " + basename); //TODO: Say "Special" or "Trigger" as needed
+	update_user_need_permissions(state->needperms, "cmd:" + basename, "Command - !" + basename); //TODO: Say "Special" or "Trigger" as needed
 }
 
 void update_user_need_permissions(mapping needperms, string reason, string desc) {
@@ -755,7 +755,7 @@ __async__ void recalculate_perms_prefs() {
 		foreach (channel->commands; string cmdname; mixed response) {
 			mapping state = (["broadcasterid": id, "defvoice": channel->config->defvoice, "needperms": ([])]);
 			scan_for_permissions(response, state);
-			update_user_need_permissions(state->needperms, "cmd:" + cmdname, "Command - " + cmdname);
+			update_user_need_permissions(state->needperms, "cmd:" + cmdname, "Command - !" + cmdname);
 			/* Dump the needed perms to the console for a quick check
 			foreach (state->needperms; int voice; multiset perms) {
 				perms -= (multiset)(G->G->user_credentials[voice]->?scopes || (<>));

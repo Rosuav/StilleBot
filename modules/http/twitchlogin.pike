@@ -94,18 +94,22 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	//like https://sikorsky.rosuav.com/twitchlogin?scopes=channel:manage:redemptions
 	//to add a specific permission.
 	array order = ({ }), scopelist = ({ }), retain_scopes = ({ });
+	//Have we been notified of any perms required for active features? If so, preselect them.
+	mapping need_perms = (req->misc->session->user->?id && await(G->G->DB->load_config(req->misc->session->user->?id, "userprefs"))->notif_perms) || ([]);
 	foreach (all_twitch_scopes; string id; string desc) {
 		if (has_prefix(desc, "Deprecated") || has_prefix(desc, "*Deprecated")) {
 			if (needscopes[id]) retain_scopes += ({id});
 			continue;
 		}
 		order += ({desc - "*"});
-		scopelist += ({"* <label><input type=checkbox class=scope_cb" + " checked" * needscopes[id] + " value=\"" + id + "\">"
+		scopelist += ({"* <label><input type=checkbox class=scope_cb" + (needscopes[id] || need_perms[id] ? " checked" : "") + " value=\"" + id + "\">"
 			//+ (desc[0] == '*' ? "<span class=warningicon>⚠️</span>" : "") //Do we need these here or are they just noise?
 			+ (desc - "*")});
 		if (scope_reasons[id]) scopelist[-1] += "\n  <br>*" + scope_reasons[id] + "*";
 		if (array cmd = G->G->voice_scope_commands[id])
 			scopelist[-1] += "\n  <br>*Enables the " + sort(cmd) * ", " + " special command" + ("s" * (sizeof(cmd) > 1)) + "*";
+		foreach (need_perms[id] || ({ }), mapping reason)
+			scopelist[-1] += sprintf("\n  <br>*Required for* <code>%s</code>", reason->desc);
 	}
 	sort(order, scopelist);
 
