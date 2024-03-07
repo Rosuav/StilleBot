@@ -599,8 +599,12 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 	//and remove those (if not also being readded).
 	mapping state = (["broadcasterid": channel->userid, "defvoice": channel->config->defvoice, "needperms": ([])]);
 	scan_for_permissions(response, state);
-	foreach (state->needperms; int userid; multiset perms)
-		G->G->DB->mutate_config(userid, "userprefs") {[mapping prefs, int channelid] = __ARGS__;
+	update_user_need_permissions(state->needperms, "cmd:" + basename, "Command - " + basename); //TODO: Say "Special" or "Trigger" as needed
+}
+
+void update_user_need_permissions(mapping needperms, string reason, string desc) {
+	foreach (needperms; int userid; multiset perms)
+		G->G->DB->mutate_config(userid, "userprefs") {[mapping prefs, int channelid, string kwd] = __ARGS__;
 			int changed = 0;
 			//Need to remove unneeded perms requests at some point
 			/*if (prefs->notif_perms) foreach (prefs->notif_perms; string perm; array reasons) {
@@ -609,13 +613,10 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 				if (removed) {prefs->notif_perms[perm] = reasons - ({0}); changed = 1;}
 			}*/
 			multiset scopes = (multiset)(G->G->user_credentials[channelid]->?scopes || ({ }));
-			foreach (state->needperms[channelid]; string perm;) {
+			foreach (needperms[channelid]; string perm;) {
 				if (!scopes[perm]) {
 					if (!prefs->notif_perms) prefs->notif_perms = ([]);
-					prefs->notif_perms[perm] += ({([
-						"desc": "Command - " + basename, //or special/trigger?
-						"reason": "cmd:" + basename,
-					])});
+					prefs->notif_perms[perm] += ({(["desc": desc, "reason": reason])});
 					changed = 1;
 				}
 			}
@@ -741,11 +742,11 @@ protected void create(string name) {
 	//Old API - if you are using this, switch to update_command which also validates.
 	add_constant("make_echocommand", lambda() {error("make_echocommand is no longer supported.\n");});
 	register_bouncer(autospam);
-	//TODO: Update prefs, don't just log to console
 	foreach (G->G->irc->id; int id; object channel) {
 		foreach (channel->commands; string cmdname; mixed response) {
 			mapping state = (["broadcasterid": id, "defvoice": channel->config->defvoice, "needperms": ([])]);
 			scan_for_permissions(response, state);
+			update_user_need_permissions(state->needperms, "cmd:" + cmdname, "Command - " + cmdname);
 			foreach (state->needperms; int voice; multiset perms) {
 				perms -= (multiset)(G->G->user_credentials[voice]->?scopes || (<>));
 				if (sizeof(perms)) write("%O:%O: %O %s\n", channel->name, cmdname, voice, sort(indices(perms)) * " ");
