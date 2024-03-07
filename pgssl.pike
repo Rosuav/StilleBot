@@ -406,6 +406,7 @@ class SSLDatabase(string host, mapping|void cfg) {
 		};
 		if (ex) {
 			catch {await(transaction_query("rollback"));}; //Ignore errors from the rollback itself, they'll just be cascaded.
+			in_transaction = 0;
 			throw(ex);
 		}
 		await(transaction_query("commit")); //Don't ignore errors from commit. Let 'em bubble.
