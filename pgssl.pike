@@ -372,7 +372,11 @@ class SSLDatabase(string host, mapping|void cfg) {
 		return parse_result_row(stmt->fields, stmt->results[*]);
 	}
 	Concurrent.Future query(string sql, mapping|void bindings) {
-		if (in_transaction) error("Use transaction() OR query(), don't mix them.\n");
+		//if (in_transaction) error("Use transaction() OR query(), don't mix them.\n");
+		//NOTE: If you call this from inside a transaction callback, it will deadlock.
+		//This would be bad. Don't do that. TODO: Figure out a way to check the call
+		//stack for a transaction() and error out in that case. It should still be
+		//valid to call this from other tasks, and it should queue.
 		return _low_query("ready", sql, bindings);
 	}
 	//Sql.Sql-compatible API
