@@ -735,6 +735,36 @@ mapping message_params(object channel, mapping person, array param) {
 		if (G->G->stream_online_since[userid]) connected("", 0, userid);
 }
 
+__async__ void recalculate_perms_prefs() {
+	//Step 1: Clean out all prefs with a reason beginning "cmd:"
+	mapping allpref = await(G->G->DB->load_all_configs("userprefs"));
+	foreach (allpref; int id; mapping prefs) if (mapping np = prefs["notif_perms"]) {
+		int changed = 0;
+		if (m_delete(np, "")) changed = 1; //Borked data, shouldn't reoccur
+		foreach (indices(np), string perm) {
+			array orig = np[perm];
+			array purged = filter(orig) {return !has_prefix(__ARGS__[0]->reason, "cmd:");};
+			if (sizeof(purged) == sizeof(orig) && sizeof(purged)) continue; //Update if we removed any, or if we found an empty array for any reason
+			changed = 1;
+			if (sizeof(purged)) np[perm] = purged; else m_delete(np, perm);
+		}
+		if (!sizeof(np)) {m_delete(prefs, "notif_perms"); changed = 1;}
+		if (changed) await(G->G->DB->save_config(id, "userprefs", prefs));
+	}
+	foreach (G->G->irc->id; int id; object channel) {
+		foreach (channel->commands; string cmdname; mixed response) {
+			mapping state = (["broadcasterid": id, "defvoice": channel->config->defvoice, "needperms": ([])]);
+			scan_for_permissions(response, state);
+			update_user_need_permissions(state->needperms, "cmd:" + cmdname, "Command - " + cmdname);
+			/* Dump the needed perms to the console for a quick check
+			foreach (state->needperms; int voice; multiset perms) {
+				perms -= (multiset)(G->G->user_credentials[voice]->?scopes || (<>));
+				if (sizeof(perms)) write("%O:%O: %O %s\n", channel->name, cmdname, voice, sort(indices(perms)) * " ");
+			}// */
+		}
+	}
+}
+
 protected void create(string name) {
 	::create(name);
 	G->G->cmdmgr = this;
@@ -742,15 +772,5 @@ protected void create(string name) {
 	//Old API - if you are using this, switch to update_command which also validates.
 	add_constant("make_echocommand", lambda() {error("make_echocommand is no longer supported.\n");});
 	register_bouncer(autospam);
-	foreach (G->G->irc->id; int id; object channel) {
-		foreach (channel->commands; string cmdname; mixed response) {
-			mapping state = (["broadcasterid": id, "defvoice": channel->config->defvoice, "needperms": ([])]);
-			scan_for_permissions(response, state);
-			update_user_need_permissions(state->needperms, "cmd:" + cmdname, "Command - " + cmdname);
-			foreach (state->needperms; int voice; multiset perms) {
-				perms -= (multiset)(G->G->user_credentials[voice]->?scopes || (<>));
-				if (sizeof(perms)) write("%O:%O: %O %s\n", channel->name, cmdname, voice, sort(indices(perms)) * " ");
-			}
-		}
-	}
+	recalculate_perms_prefs();
 }
