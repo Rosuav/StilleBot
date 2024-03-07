@@ -491,7 +491,7 @@ void scan_for_permissions(echoable_message response, mapping state) {
 	if (stringp(response)) {
 		//Replicating logic from twitch_apis and connection
 		sscanf(response, "/%[^ ] %s", string cmd, string param);
-		string scope = G->G->voice_command_scopes[cmd];
+		string scope = G->G->voice_command_scopes[cmd] || "chat:edit";
 		string|zero voice = (state->voice && state->voice != "") ? state->voice : state->defvoice;
 		if (!voice) voice = G->G->irc->id[0]->?config->?defvoice;
 		if (scope) state->needperms[(int)voice] |= (<scope>);
