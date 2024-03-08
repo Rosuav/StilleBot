@@ -1,9 +1,9 @@
 /* Styling across all StilleBot pages */
-@import url('https://fonts.googleapis.com/css2?family=Lato&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lexend&display=swap');
 
 * {box-sizing: border-box;}
 
-body {font-family: 'Lato', sans-serif;}
+body {font-family: 'Lexend', sans-serif;}
 
 td {padding: 0.25em 0.5em;}
 
