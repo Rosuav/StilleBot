@@ -114,18 +114,12 @@ __async__ void get_credentials() {
 }
 
 @export: void notice_user_name(string login, string id) {
-	//uid_to_name[(string)userid] maps the user names seen to the timestamps.
-	//To detect renames, sort the keys and values in parallel; the most recent
-	//change is represented by the last two keys.
 	if (!login) return;
 	id = (string)id; login = lower_case((string)login);
-	int save = 0;
-	mapping u2n = G->G->uid_to_name[id]; if (!u2n) u2n = G->G->uid_to_name[id] = ([]);
-	if (!u2n[login]) {u2n[login] = time(); save = 1;}
-	//The name-to-UID mapping should be considered advisory, and useful mainly for recent ones.
-	mapping n2u = G->G->name_to_uid;
-	if (n2u[login] != id) {n2u[login] = id; save = 1;}
-	if (save) Stdio.write_file("twitchbot_uids.json", Standards.JSON.encode(({G->G->uid_to_name, G->G->name_to_uid})), 1);
+	//The name-to-UID mapping should be considered advisory, and useful only for recent
+	//ones - it is not saved, and has data only for the current session. Intended for
+	//easy lookups when referencing a recently-seen username.
+	G->G->DB->save_sql("insert into stillebot.user_login_sightings (twitchid, login) values (:id, :login) on conflict do nothing", (["id": id, "login": login]));
 }
 
 @export: __async__ array(mapping) get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
@@ -744,13 +738,6 @@ int(1bit) is_active; //Last-known active state
 
 protected void create(string|void name)
 {
-	if (!G->G->uid_to_name) {
-		//TODO: Move these to Postgres
-		G->G->uid_to_name = ([]);
-		G->G->name_to_uid = ([]);
-		catch {[G->G->uid_to_name, G->G->name_to_uid] = Standards.JSON.decode(Stdio.read_file("twitchbot_uids.json"));};
-	}
-
 	is_active = is_active_bot();
 	remove_call_out(G->G->poll_call_out);
 	#if !constant(INTERACTIVE)

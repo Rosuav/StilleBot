@@ -219,25 +219,27 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	channel->set_variable(msg->id, msg->value || "", "set");
 }
 
-void wscmd_getuservars(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void wscmd_getuservars(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping vars = G->G->DB->load_cached_config(channel->userid, "variables")["*"];
 	if (!mappingp(vars)) return;
 	string var = "$" + (msg->id - "*") + "$";
 	//Scan this for every user that has this variable
+	mapping uservars = ([]);
+	foreach (vars; string uid; mapping v) if (v[var]) uservars[uid] = v[var];
+	//Note that it would be kinda nice to show display names here, but that
+	//would potentially incur a Twitch API call for every user, which could
+	//get rather costly. So we just show the most recently sighted login.
+	//The array of names may contain duplicates, but the most recent will be
+	//the last, so mkmapping will happily override the earlier ones.
+	array names = await(G->G->DB->generic_query("select * from stillebot.user_login_sightings where twitchid = any(:ids) order by twitchid, sighted",
+		(["ids": indices(uservars)])));
+	mapping uid_to_name = mkmapping(names->twitchid, names->login);
 	array ret = ({ });
-	foreach (vars; string uid; mapping v) if (v[var]) {
-		//Note that it would be kinda nice to show display names here, but that
-		//would potentially incur a Twitch API call for every user, which could
-		//get rather costly. So we just show the most recently sighted login.
-		mapping u2n = G->G->uid_to_name[uid] || ([]);
-		array names = indices(u2n); sort(values(u2n), names);
-		names -= ({"jtv", "tmi"});
-		ret += ({([
-			"uid": uid,
-			"username": sizeof(names) ? names[-1] : "(unknown user)",
-			"value": v[var],
-		])});
-	}
+	foreach (uservars; string uid; string value) ret += ({([
+		"uid": uid,
+		"username": uid_to_name[uid] || "(unknown user)",
+		"value": value,
+	])});
 	if (sizeof(ret)) sort((array(int))ret->uid, ret);
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "uservars", "varname": var, "users": ret]), 4));
 }

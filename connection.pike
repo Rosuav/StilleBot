@@ -234,7 +234,11 @@ class channel(mapping identity) {
 	//code is in here, and other code is down in "case PRIVMSG" below. Whatever.
 	void handle_command(mapping person, string msg, mapping defaults, mapping params)
 	{
-		if (person->user) G_G_("participants", name[1..], person->user)->lastnotice = time();
+		if (person->user) {
+			mapping p = G_G_("participants", name[1..], person->user);
+			p->lastnotice = time();
+			p->userid = person->uid;
+		}
 		person->vars = ([
 			"%s": msg, "{@mod}": person->badges->?_mod ? "1" : "0", "{@sub}": person->badges->?_sub ? "1" : "0",
 			//Even without broadcaster permissions, it's possible to see the UUID of a reward.
@@ -279,7 +283,8 @@ class channel(mapping identity) {
 		G->G->websocket_types->chan_messages->update_one(uid + "#" + userid, msgid);
 	}
 
-	__async__ void send_private_message(string uid, echoable_message msg, string destcfg) {
+	__async__ void send_private_message(string login, echoable_message msg, string destcfg) {
+		string uid = (string)await(get_user_id(login));
 		mapping priv = await(G->G->DB->load_config(userid, "private"));
 		mapping msgs = priv[uid]; if (!msgs) msgs = priv[uid] = ([]);
 		mapping meta = msgs["_meta"]; if (!meta) meta = msgs["_meta"] = ([]);
@@ -609,9 +614,8 @@ class channel(mapping identity) {
 			array users = ({ });
 			if (message->participant_activity) {
 				int limit = time() - (int)message->participant_activity; //eg find people active within the last five minutes
-				mapping n2u = G->G->name_to_uid;
 				foreach (G_G_("participants", name[1..]); string name; mapping info)
-					if (info->lastnotice >= limit) users += ({n2u[name]});
+					if (info->lastnotice >= limit) users += ({info->userid});
 			} else {
 				//Ask Twitch who's currently in chat.
 				mapping tok = G->G->user_credentials[(int)voice];
@@ -699,22 +703,8 @@ class channel(mapping identity) {
 			if (target == "") return; //Attempting to send to a borked destination just silences it
 			//Stash the text away. Recommendation: Have a public message that informs the
 			//recipient that info is available at https://sikorsky.rosuav.com/channels/%s/private
-			string uid = G->G->name_to_uid[lower_case(target - "@")]; //Yes, it's a string, even though it's always going to be digits
-			if (target == "#mods") uid = "-1"; //Pseudo-user for "all mods"
-			if (!uid)
-			{
-				//TODO: Look the person up, delay the message, and then if
-				//still not found, give a different error. For now, it depends
-				//on the person having said something at some point.
-				msg = sprintf("No added MSG. Reason: User %s not found (has s/he said anything in chat?)", target);
-				dest = name; //Send it to the default, the channel.
-			}
-			else
-			{
-				//Normally, you'll be sending something to someone who was recently in chat.
-				send_private_message(uid, msg, destcfg);
-				return; //Nothing more to send here.
-			}
+			send_private_message(target - "@", msg, destcfg);
+			return; //Nothing more to send here.
 		}
 
 		//Whispers are currently handled with a command prefix. The actual sending

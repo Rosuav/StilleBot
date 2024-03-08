@@ -97,6 +97,12 @@ constant tables = ([
 		"create or replace trigger botservice_changed after insert or update on stillebot.botservice for each row execute function send_botservice_notification();",
 		"alter table stillebot.botservice enable always trigger botservice_changed;",
 	}),
+	"user_login_sightings": ({
+		"twitchid bigint not null",
+		"login text not null",
+		"sighted timestamp with time zone not null default now()",
+		" primary key (twitchid, login)",
+	}),
 ]);
 multiset precached_config = (<"channel_labels", "variables", "monitors", "voices">); //TODO: Have other modules submit requests?
 @retain: mapping pcc_loadstate = ([]);

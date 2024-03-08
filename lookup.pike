@@ -1,5 +1,7 @@
 int main(int argc, array(string) argv)
 {
+	//TODO: Switch this to search the database - maybe pike stillebot --lookup username?
+	//While you're at it, have a proper name-to-uid lookup via API too, and notice the current name.
 	[mapping uid_to_name, mapping name_to_uid] = Standards.JSON.decode(Stdio.read_file("twitchbot_uids.json"));
 	int show_times = has_value(argv, "--times"); argv -= ({"--times"});
 	foreach (argv[1..], string name)
