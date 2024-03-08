@@ -120,6 +120,12 @@ int main(int argc,array(string) argv)
 		argv -= ({"--script"});
 		return mustard->run_tests(argv[1..]);
 	}
+	if (has_value(argv, "--lookup")) {
+		add_constant("INTERACTIVE", 1);
+		restricted_update = ({"persist.pike", "globals.pike", "pgssl.pike", "database.pike", "poll.pike", "modules/renamed.pike"});
+		bootstrap_all();
+		return G->builtins->renamed->lookup(argv[1..] - ({"--lookup"}));
+	}
 	//TODO: Invert this and have --gui to enable the GUI
 	if (has_value(argv, "--headless")) {
 		werror("Running bot in headless mode - GUI facilities disabled.\n");
