@@ -40,6 +40,7 @@ class menu_clicked
 			int count = 0;
 			foreach (sort(indices(thing)), mixed key)
 			{
+				if (functionp(thing[key])) continue; //Ignore some uninteresting things stashed in G->G
 				add_to_store(thing[key], stringp(key) ? key : sprintf("%O", key), row);
 				if (++count >= 200) break;
 			}
