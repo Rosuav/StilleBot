@@ -45,7 +45,7 @@ Upload time: %s
 ", file->id, file->channel, sizeof(req->body_raw), req->body_raw[..64], raw_ffprobe, ctime(time())[..<1]));
 			return jsonify((["error": "File type unrecognized. If it should have been supported, contact Rosuav and quote ID upl-" + file->id]));
 		}
-		file->metadata->url = sprintf("%s/upload/%s", persist_config["ircsettings"]->http_address, file->id);
+		file->metadata->url = sprintf("%s/upload/%s", G->G->instance_config->http_address, file->id);
 		if (mimetype) file->metadata->mimetype = mimetype;
 		file->metadata->etag = String.string2hex(Crypto.SHA1.hash(req->body_raw));
 		G->G->DB->update_file(file->id, file->metadata, req->body_raw);

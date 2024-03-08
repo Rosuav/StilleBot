@@ -5,6 +5,7 @@ protected void create(string n)
 		if (stringp(anno) && sscanf(anno, "G->G->%s", string gl) && gl)
 			if (!G->G[gl]) G->G[gl] = ([]);
 	if (!all_constants()["create_hook"]) add_constant("create_hook", _HookID("")); //Don't recreate this one
+	catch {G->G->instance_config = Standards.JSON.decode_utf8(Stdio.read_file("instance-config.json"));};
 }
 
 //A sendable message could be a string (echo that string), a mapping with a "message"
@@ -1478,7 +1479,7 @@ class TwitchAuth
 	constant OAUTH_TOKEN_URI = "https://id.twitch.tv/oauth2/token";
 	protected multiset(string) valid_scopes = (multiset)indices(all_twitch_scopes);
 	protected void create(multiset(string)|void scopes, string|void host) {
-		mapping cfg = persist_config["ircsettings"];
+		mapping cfg = G->G->instance_config;
 		if (host) host = "https://" + host; //HTTPS is mandatory for login anyway, so just assume that the request came in encrypted
 		else host = cfg->http_address; //The configured address includes the protocol.
 		::create(cfg->clientid, cfg->clientsecret, host + "/twitchlogin", scopes);
@@ -1529,7 +1530,7 @@ string ensure_bcaster_token(Protocols.HTTP.Server.Request req, string scopes, st
 //"https://sikorsky.rosuav.com:6789/foo/bar", this should return "sikorsky.rosuav.com:6789".
 //Respects configuration settings about the use of Apache forwarding.
 string deduce_host(mapping request_headers) {
-	mapping cfg = persist_config["ircsettings"];
+	mapping cfg = G->G->instance_config;
 	if (string fwd = cfg->http_forwarded && request_headers["x-forwarded-host"]) return fwd;
 	if (string host = request_headers["host"]) return host;
 	sscanf(cfg->http_address || "://", "%*s://%s", string dflt);
@@ -1546,7 +1547,7 @@ object hyperlink = Regexp.PCRE("^http(s|)://[A-Za-z0-9.]+(/[-A-Za-z0-9/.+]*|)(\\
 int(1bit) is_active_bot() {
 	string active = G->G->dbsettings->?active_bot;
 	if (!active || active == "") return 0; //Might be there's no active bot, or maybe we just don't know for sure.
-	sscanf(persist_config["ircsettings"]->?http_address || "://", "%*s://%s%*[:]", string host);
+	sscanf(G->G->instance_config->http_address || "://", "%*s://%s%*[:]", string host);
 	return host == active;
 }
 

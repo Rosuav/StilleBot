@@ -69,7 +69,6 @@ __async__ mapping(string:mixed) show_collection(Protocols.HTTP.Server.Request re
 		}
 		//Record the following status as either a timestamp or "!" for not following.
 		//This leaves undefined/absent as "unknown" (eg if not logged in).
-		//Don't mutate the streamer info as that's straight from persist
 		streamers[i] = streamers[i] | (["following": foll->followed_at || "!"]);
 		if (bcaster == req->misc->session->user->id) streamers[i]->following = "forever";
 	}

@@ -69,8 +69,6 @@ class menu_clicked
 		win->store = GTK2.TreeStore(({"string"}));
 		//Ephemeral - discarded on program restart. Survives code reload.
 		add_to_store(G->G, "G");
-		//Key configuration, can be different on different instances of the bot
-		add_to_store(persist_config->data, "persist_config");
 		//Database configuration. Shared between instances, can update live. Note that
 		//precached config is not separated out here; it may be nice to at least annotate
 		//which ones are PCC and which are not, but for now they're just in together.

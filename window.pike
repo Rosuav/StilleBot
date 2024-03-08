@@ -138,7 +138,7 @@ class ircsettings
 {
 	inherit window;
 	constant windowtitle = "Authenticate StilleBot";
-	mapping config = G->G->dbsettings->credentials | persist_config["ircsettings"];
+	mapping config = G->G->dbsettings->credentials | G->G->instance_config;
 
 	void makewindow()
 	{
@@ -166,21 +166,21 @@ class ircsettings
 			"username": win->username->get_text(),
 			"display_name": win->display_name->get_text(),
 		]);
-		persist_config["ircsettings"]->clientid = win->clientid->get_text();
+		G->G->instance_config->clientid = win->clientid->get_text();
 		string secret = win->clientsecret->get_text();
-		if (secret != "") persist_config["ircsettings"]->clientsecret = secret;
+		if (secret != "") G->G->instance_config->clientsecret = secret;
 		string token = win->token->get_text();
 		if (token != "") c->token = token;
 		string address = win->http_address->get_text();
 		if (!sscanf(address, "http%*[s]://%s", string addr) || !addr)
 			address = "http://" + address;
 		if (has_suffix(address, "/")) address = address[..<1]; //Strip trailing slash
-		persist_config["ircsettings"]->http_address = address;
-		persist_config["ircsettings"]->listen_address = win->listen_address->get_text();
-		persist_config->save();
+		G->G->instance_config->http_address = address;
+		G->G->instance_config->listen_address = win->listen_address->get_text();
+		Stdio.write_file("instance-config.json", Standards.JSON.encode(G->G->instance_config, 7));
 		werror("Saving to DB.\n");
 		spawn_task(G->G->DB->generic_query("update stillebot.settings set credentials = :c",
-			(["c": Standards.JSON.encode(c, 4)])));
+			(["c": c]))); //TODO: On moving back to Sql.Sql, check JSON encoding.
 		closewindow();
 	}
 }

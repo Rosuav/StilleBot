@@ -108,7 +108,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		return render(req, ([
 			"vars": (["ws_group": ""]),
 			"webhook_url": sprintf("%s/channels/%s/kofi",
-				persist_config["ircsettings"]->http_address,
+				G->G->instance_config->http_address,
 				req->misc->channel->name[1..]),
 
 		]) | req->misc->chaninfo);

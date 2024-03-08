@@ -69,7 +69,6 @@ mixed render(object req, mapping args) { }
 mapping(string|int:array(object)) websocket_groups = ([]);
 void send_update(mapping(string:mixed) conn, mapping|void data) { }
 void send_updates_all(string|int group, mapping|void data) { }
-mapping persist_config = (["ircsettings": ([])]);
 void send_message(string to, string msg) { }
 mapping G = (["G": ([])]);
 #endif
@@ -1108,7 +1107,7 @@ void websocket_cmd_chatlink(mapping(string:mixed) conn, mapping(string:mixed) ms
 	sscanf(conn->group, "%d#%s", int uid, string game); if (!uid) return;
 	mapping gs = diffie_hellman[game]; if (!gs) return;
 	if (gs->host != uid) return;
-	string url = persist_config["ircsettings"]->http_address + "/mixing?game=" + game;
+	string url = G->G->instance_config->http_address + "/mixing?game=" + game;
 	send_message("#" + conn->session->user->login, replace(msg->msg, "{link}", url));
 }
 

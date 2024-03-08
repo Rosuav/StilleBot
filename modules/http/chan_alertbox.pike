@@ -597,7 +597,7 @@ void resolve_all_inherits(mapping cfg, string userid) {
 			if (sscanf(resolved[url] || "u", "uploads://%s", string fn) && fn) {
 				//We assume here that the file does exist - cheaper than looking it up.
 				//If it doesn't, the URL given here will toss a 404 back.
-				resolved[url] = sprintf("%s/upload/%s", persist_config["ircsettings"]->http_address, fn);
+				resolved[url] = sprintf("%s/upload/%s", G->G->instance_config->http_address, fn);
 			}
 		}
 	}

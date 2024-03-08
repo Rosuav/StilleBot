@@ -154,7 +154,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	if (req->misc->is_mod && !req->misc->session->fake && req->variables->lua) {
 		mapping resp = render_template("vlcstillebot.lua", ([
-			"url": persist_config["ircsettings"]->http_address + req->not_query,
+			"url": G->G->instance_config->http_address + req->not_query,
 			"auth": auth_token(channel),
 		]));
 		resp->type = "application/x-lua";

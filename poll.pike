@@ -60,7 +60,7 @@ __async__ void get_credentials() {
 		if (options->authtype == "app") {
 			//App authorization token. If we don't have one, get one.
 			if (!G->G->app_access_token || G->G->app_access_token_expiry < time()) {
-				if (!persist_config["ircsettings"]["clientsecret"]) error("%s\nUnable to use app auth without a client secret\n", url);
+				if (!G->G->instance_config->clientsecret) error("%s\nUnable to use app auth without a client secret\n", url);
 				if (G->G->app_access_token_expiry == -1) {
 					//TODO: Wait until the other request returns.
 					//For now we just sleep and try again.
@@ -71,8 +71,8 @@ __async__ void get_credentials() {
 				Standards.URI uri = Standards.URI("https://id.twitch.tv/oauth2/token");
 				//As below, uri->set_query_variables() doesn't correctly encode query data.
 				uri->query = Protocols.HTTP.http_encode_query(([
-					"client_id": persist_config["ircsettings"]["clientid"],
-					"client_secret": persist_config["ircsettings"]["clientsecret"],
+					"client_id": G->G->instance_config->clientid,
+					"client_secret": G->G->instance_config->clientsecret,
 					"grant_type": "client_credentials",
 				]));
 				return await(twitch_api_request(uri, ([]), (["method": "POST"]))
@@ -94,7 +94,7 @@ __async__ void get_credentials() {
 			headers["Authorization"] = (options->authtype || "Bearer") + " " + G->G->dbsettings->credentials->token;
 		}
 	}
-	if (string c = !headers["Client-ID"] && persist_config["ircsettings"]["clientid"])
+	if (string c = !headers["Client-ID"] && G->G->instance_config->clientid)
 		//Most requests require a Client ID. Not sure which don't, so just provide it (if not already set).
 		headers["Client-ID"] = c;
 	++G->G->twitch_api_query_count;
@@ -612,7 +612,7 @@ void stream_status(int userid, string name, mapping info)
 					"method": "webhook",
 					"callback": sprintf("%s/junket?%s=%s",
 						//Note that webhooks always and only go to the primary domain name. This may end up multihomed though.
-						persist_config["ircsettings"]["http_address"],
+						G->G->instance_config->http_address,
 						hookname, arg,
 					),
 					"secret": secret,
@@ -719,7 +719,7 @@ void poll()
 	//poll is triggering again, causing stacking requests. Look into it if
 	//possible. Otherwise, there'll be a bit of outage (cooldown) any time
 	//I hit this sort of problem.
-	string addr = persist_config["ircsettings"]["http_address"];
+	string addr = G->G->instance_config->http_address;
 	if (addr && addr != "")
 		get_helix_paginated("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([]), (["authtype": "app"]))
 			->on_success(check_hooks);

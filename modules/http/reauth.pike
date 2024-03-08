@@ -20,7 +20,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				token_for_user_login(req->misc->session->user->login)),
 			"type": "text/plain; charset=\"UTF-8\""]);
 	}
-	array havescopes = G->G->dbsettings->credentials->scopes || persist_config["ircsettings"]->scopes || ({ });
+	array havescopes = G->G->dbsettings->credentials->scopes || ({ });
 	multiset scopes = (multiset)havescopes | (<"chat:read", "chat:edit", "user_read", "whispers:edit", "user_subscriptions">);
 	//Add any requested scopes
 	foreach (req->variables; string key; string value)
@@ -28,9 +28,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (mapping resp = ensure_login(req, indices(scopes) * " ")) return resp;
 	string desc = "Login details saved.";
 	if (G->G->dbsettings->credentials->userid == req->misc->session->user->id) {
-		persist_config["ircsettings"]->pass = "oauth:" + req->misc->session->token;
-		persist_config["ircsettings"]->scopes = sort(indices(req->misc->session->scopes));
-		persist_config->save();
 		mapping c = G->G->dbsettings->credentials | ([
 			"username": req->misc->session->user->login,
 			"userid": req->misc->session->user->id,
@@ -39,7 +36,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		]);
 		werror("Saving to DB.\n");
 		spawn_task(G->G->DB->generic_query("update stillebot.settings set credentials = :c",
-			(["c": Standards.JSON.encode(c, 4)])));
+			(["c": c]))); //TODO: On switching back to Sql.Sql, check JSON encoding
 	}
 	else desc = "oauth:" + req->misc->session->token;
 	string add_scopes = "", authbtn = "All permissions granted.";

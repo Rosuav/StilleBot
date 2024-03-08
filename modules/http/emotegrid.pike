@@ -177,7 +177,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 	string channame = sizeof(param) > 1 && param[1]; //TODO: Support "channelname emoteGoesHere" as well
 	string code = await(make_emote(person->emotes[0][0], channame));
 	return (["{code}": code, "{url}": sprintf("%s/emotegrid?code=%s",
-		persist_config["ircsettings"]->http_address || "http://BOT_ADDRESS",
+		G->G->instance_config->http_address || "http://BOT_ADDRESS",
 		code,
 	)]);
 }

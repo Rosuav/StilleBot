@@ -1456,18 +1456,18 @@ protected void create(string name)
 	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
 	session_cleanup();
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
-	if (mapping irc = persist_config["ircsettings"]) { //Now less about IRC than HTTP but whatever
+	if (mapping http = G->G->instance_config) {
 		G->G->on_botservice_change = reconnect;
 		reconnect();
-		if (mixed ex = irc->http_address && irc->http_address != "" && catch
+		if (mixed ex = http->http_address && http->http_address != "" && catch
 		{
-			int use_https = has_prefix(irc->http_address, "https://");
+			int use_https = has_prefix(http->http_address, "https://");
 			string listen_addr = "::"; //By default, listen on IPv4 and IPv6
 			int listen_port = use_https ? 443 : 80; //Default port from protocol
-			sscanf(irc->http_address, "http%*[s]://%*s:%d", listen_port); //If one is set for the dest addr, use that
+			sscanf(http->http_address, "http%*[s]://%*s:%d", listen_port); //If one is set for the dest addr, use that
 			//Or if there's an explicit listen address/port set, use that.
-			if (irc->listen_address) {
-				string listen = irc->listen_address;
+			if (http->listen_address) {
+				string listen = http->listen_address;
 				if (sscanf(listen, "http://%s", listen)) use_https = 0; //Use this when encryption is done outside of the bot (no cert here, but external addresses still use https).
 				sscanf(listen, "%s:%s", listen_addr, listen);
 				sscanf(listen, "%d", listen_port);

@@ -1,4 +1,4 @@
-twitchbot_*.json
 *.log
 *.pem
 tts-credentials.json
+instance-config.json

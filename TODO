@@ -145,8 +145,6 @@
     - If possible, the central dispatcher should be able to move. Might require some
       careful handling though.
   - Incoming webhooks have to be dispatched to the shards
-  - Updates to persisted info need to be centralized. This may predicate this on a config
-    system built on something other than JSON files. Maybe move to PGSQL?
   - May be of lower importance now that the IRC connection can be sharded within a single
     process; this is no longer a startup performance concern, but a reduction in outages
     and potential geographic sharding.
@@ -244,7 +242,7 @@
     - We need to talk to you about your TPS, error, and warning reports.
   - Fully implement unread status - lift code from chan_messages as needed.
 * Multi-homing.
-  - Have reserved the names stillebot.rosuav.com and stillebot.com for this purpose.
+  - Have reserved the names stillebot.rosuav.com, stillebot.com, mustardmine.com
   - Need to set up a redirect on Gideon: if a certbot request comes in, 302 it to
     http://sikorsky.rosuav.com/...... for the actual resolution.
   - Need to synchronize the cert on both systems. Probably needs something in the
@@ -253,6 +251,9 @@
     place and connect to it from multiple.
   - Just like with sharding, incoming webhooks will need to be handled properly.
   - Uploaded files are a problem. How do we synchronize them?
+  - Currently G->G->instance_config->http_address is ambiguous. Split it into
+    local_address and shared_address where the latter is the canonical name for ALL
+    instances to respond to (probably mustardmine.com?)
 * Sometimes the connection will fall over, and the bot won't be aware of this.
   Need a way to "force disconnection" which basically just overrides the irc_connect
   retention rules (same as a version mismatch does). Is it worth trying to do this
@@ -266,10 +267,6 @@
   filter. When this rolls out, consider matching their defaults (currently, the user
   has to explicitly choose to hide explicit content), and if the user prefs are made
   visible, query them in the raid finder and do what the user wants.
-* Migrate most configs into Postgres, but leave a few in persist_config.json.
-  - Retain clientid, clientsecret, http_address, listen_address, http_forwarded
-  - No need for persist_config->save() now, so it's just some global configs that
-    get loaded up initialization of some module and then kept.
 * Migration queue. Do whenever stack is empty.
   - G->G->channel_info (see poll.pike's retain) should use user IDs
   - chan_giveaway.pike giveaway_tickets[] should use user IDs
@@ -300,6 +297,4 @@
   - Log files (exclusively(?) using Stdio.append_file)
   - PEM files for certs and private keys
   - tts-credentials.json - move to DB??
-  - twitchbot_config.json (persist_config) - replace with G->G->http_credentials,
-    loaded from http_credentials.json??? No need for the whole save() system.
 * Make a shareable link feature for twitchlogin.pike

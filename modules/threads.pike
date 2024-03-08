@@ -21,12 +21,8 @@ void thread_watch(object ls) {
 			string location;
 			//Find the last plausible backtrace entry
 			foreach (t->backtrace(), object f) {
-				if (f->filename && f->filename != "-" && f->filename[0] != '/') {
+				if (f->filename && f->filename != "-" && f->filename[0] != '/')
 					location = sprintf("%s:%d", f->filename, f->line);
-					if (location == "persist.pike:62") {
-						location += " - " + function_object(f->fun)->savefn;
-					}
-				}
 			}
 			if (location) hotspots[location]++;
 			ls->set_value(iter, 2, location || "(unknown)");
