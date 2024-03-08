@@ -302,5 +302,4 @@
   - tts-credentials.json - move to DB??
   - twitchbot_config.json (persist_config) - replace with G->G->http_credentials,
     loaded from http_credentials.json??? No need for the whole save() system.
-* Rework explorer to be able to poke through stillebot.config
 * Make a shareable link feature for twitchlogin.pike
