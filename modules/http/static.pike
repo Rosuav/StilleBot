@@ -26,7 +26,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//Guess a MIME type based on the extension, by default
 	foreach (([".css": "text/css", ".flac": "audio/flac", ".mp3": "audio/mp3", ".html": "text/html"]); string ext; string t)
 		if (has_suffix(filename, ext)) type = t;
-	//Support a small number of subdirectory names
 	if (has_prefix(filename, "upload-")) { //Possible legacy URL. Check if we have a new URL for it.
 		return G->G->DB->load_config(0, "upload_redirect")->then() {
 			string|zero redir = __ARGS__[0][filename - "upload-"]->?redirect;
