@@ -294,7 +294,7 @@
   currently live.
 * Eventually, enumerate every use of the local file system. There should be:
   - Reading of git-tracked files: code, templates, statics
-  - Log files (exclusively(?) using Stdio.append_file)
+  - Log files (exclusively using Stdio.append_file)
   - PEM files for certs and private keys
   - instance-config.json and tts-credentials.json
 * Make a shareable link feature for twitchlogin.pike
