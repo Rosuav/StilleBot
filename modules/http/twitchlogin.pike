@@ -51,9 +51,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				->data[0];
 		//Check if these credentials are at least what we already had.
 		mapping tok = G->G->user_credentials[(int)user->id] || ([]);
-		array missing = (tok->scopes || ({ })) - (req->variables->scope / " ");
+		array missing = (tok->scopes || ({ })) - (req->variables->scope / " ") - ({""});
 		if (sizeof(missing)) {
 			//TODO: Send back a redirect with a new login request?
+			werror("MISSING SCOPES: %O\n", missing);
 		} else G->G->DB->save_user_credentials(([
 			"userid": (int)user->id,
 			"login": user->login,
