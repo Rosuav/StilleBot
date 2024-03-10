@@ -1,4 +1,4 @@
-inherit http_endpoint;
+inherit http_websocket;
 
 /* TODO: Merge checklist.pike into this file.
 
@@ -220,14 +220,20 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		//Hack for the moment. Not sure what I want for this page. The main reason
 		//I want this feature is to allow mods to pick out emotes for any voice.
 		if (mapping resp = ensure_login(req, "user:read:emotes")) return resp;
-		mapping emotes = await(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes/user", ([
+		/*mapping emotes = await(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes/user", ([
 			"user_id": req->misc->session->user->id,
 			//"broadcaster_id": channel_id, //optionally include follower emotes from that channel
-		]), (["Authorization": "Bearer " + req->misc->session->token])));
-		return render_template("checklist.md", (["text": sprintf("<pre>%O</pre>", emotes)]));
+		]), (["Authorization": "Bearer " + req->misc->session->token])));*/
+		return render_template("checklist.md", ([
+			"vars": (["ws_group": req->misc->session->?user->?id, "ws_type": "emotes", "ws_code": "checklist"]),
+			"login_link": "", "emotes": "img", "title": "All your emotes", "text": sprintf("<section id=all_emotes>Loading...</section>")
+		]));
 	}
 	return render_template(markdown, (["js": "emotes.js"]));
 }
+
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {if (msg->group != conn->session->?user->?id) return "Not you";}
+mapping get_state(string group) {return (["emotes": ({ })]);}
 
 string make_emote(object image, object alpha) {
 	string raw = Image.PNG.encode(image, (["alpha": alpha]));
