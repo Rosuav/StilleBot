@@ -250,7 +250,6 @@
   - Once all configs are in database, it should be possible to host that in one
     place and connect to it from multiple.
   - Just like with sharding, incoming webhooks will need to be handled properly.
-  - Uploaded files are a problem. How do we synchronize them?
   - Currently G->G->instance_config->http_address is ambiguous. Split it into
     local_address and shared_address where the latter is the canonical name for ALL
     instances to respond to (probably mustardmine.com?)
