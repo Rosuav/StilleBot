@@ -772,5 +772,5 @@ protected void create(string name) {
 	//Old API - if you are using this, switch to update_command which also validates.
 	add_constant("make_echocommand", lambda() {error("make_echocommand is no longer supported.\n");});
 	register_bouncer(autospam);
-	recalculate_perms_prefs();
+	//recalculate_perms_prefs(); //TODO: Do this when needed, slowly if necessary?
 }
