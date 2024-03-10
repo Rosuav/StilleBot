@@ -14,6 +14,7 @@ constant markdown = #"# Emote tools, showcases and checklists
 
 * [Checklist of unlockable emotes](checklist) eg hype trains, special promos
 * <form><label>Channel name: <input name=broadcaster size=20></label><input type=submit value=\"Show channel emotes\"></form>
+* [View all of your available emotes](emotes?available)
 * [Global cheer emotes](emotes?cheer)
 
 ## Analysis and tips
@@ -214,6 +215,16 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			"emotes": "img", "title": "Channel emotes: " + await(get_user_info(id))->display_name,
 			"text": sprintf("%{\n## %s\n%{%s %}\n%}", emotesets),
 		]));
+	}
+	if (req->variables->available) {
+		//Hack for the moment. Not sure what I want for this page. The main reason
+		//I want this feature is to allow mods to pick out emotes for any voice.
+		if (mapping resp = ensure_login(req, "user:read:emotes")) return resp;
+		mapping emotes = await(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes/user", ([
+			"user_id": req->misc->session->user->id,
+			//"broadcaster_id": channel_id, //optionally include follower emotes from that channel
+		]), (["Authorization": "Bearer " + req->misc->session->token])));
+		return render_template("checklist.md", (["text": sprintf("<pre>%O</pre>", emotes)]));
 	}
 	return render_template(markdown, (["js": "emotes.js"]));
 }
