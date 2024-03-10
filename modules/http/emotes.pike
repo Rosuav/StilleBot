@@ -232,8 +232,17 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	return render_template(markdown, (["js": "emotes.js"]));
 }
 
-string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {if (msg->group != conn->session->?user->?id) return "Not you";}
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (msg->group != conn->session->?user->?id) return "Not you";
+	begin_search(conn);
+}
 mapping get_state(string group) {return (["emotes": ({ })]);}
+
+__async__ void begin_search(mapping(string:mixed) conn) {
+	array all_emotes = ({ });
+	//...
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "update", "all_emotes": all_emotes, "loading": 0])));
+}
 
 string make_emote(object image, object alpha) {
 	string raw = Image.PNG.encode(image, (["alpha": alpha]));
