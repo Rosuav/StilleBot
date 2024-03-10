@@ -46,7 +46,7 @@ td ul {margin: 0;}
 	font-weight: bold;
 	border: 1px solid black;
 	border-radius: 0.5em 0.5em 0 0;
-	height: 2em; width: 8em;
+	height: 2em; width: 9em;
 	text-align: center;
 }
 tr[data-tabid] {display: none; background: #e1e1e1;}
