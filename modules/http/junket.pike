@@ -12,6 +12,12 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		handler->have_subs[arg] = 1;
 		return (["data": body->challenge]);
 	}
+	//HACK FOR TESTING: If the magic cookie is in the request, ignore HMAC and
+	//body, and permit even a GET request to trigger something.
+	if (G->G->eventhook_hack_cookie && req->variables->cookie == G->G->eventhook_hack_cookie) {
+		handler->callback(arg, (["title": req->variables->title || "No Title", "choices": ({ }), "channel_points_voting": ([])]));
+		return (["data": "Hack sent.\n"]);
+	}
 	if (req->body_raw == "" || !has_prefix(req->request_headers["content-type"], "application/json")) return 0;
 	//It's probably safe to assume that any message sent by Twitch is in UTF-8.
 	//So we verify the signature, and then trust the rest. Also, we assume that
