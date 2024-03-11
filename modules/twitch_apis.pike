@@ -305,7 +305,7 @@ protected void create(string name) {
 	}
 	//There are additional scopes that don't correspond to any slash command, but might be granted
 	//to a voice.
-	foreach ("moderator:read:chatters" / " ", string scope)
+	foreach ("moderator:read:chatters user:read:emotes" / " ", string scope)
 		voice_scopes[scope] = all_twitch_scopes[scope] || scope;
 	G->G->voice_additional_scopes = voice_scopes;
 	G->G->voice_scope_commands = scope_commands;
