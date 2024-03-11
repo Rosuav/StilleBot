@@ -33,5 +33,4 @@ export function render(data) {
 	]);
 }
 
-on("click", "#emotecheck", e => ws_sync.send({cmd: "emotecheck"}));
 on("click", "#toggleshowcase", e => ws_sync.send({cmd: "toggleshowcase"}));

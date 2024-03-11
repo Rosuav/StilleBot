@@ -190,7 +190,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	else if (scopes["user:read:emotes"]) {
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>\n\n"
-			"[Check which emotes you have](:#emotecheck) [Enable showcase](:#toggleshowcase)\n\n"
+			"[Enable showcase](:#toggleshowcase)\n\n"
 			"[Show off your emotes here](checklist?showcase=" + req->misc->session->?user->?id + ")";
 		v2_have = await(G->G->DB->load_config(req->misc->session->?user->?id, "seen_emotes"));
 	}
@@ -220,11 +220,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {if (msg->group != conn->session->?user->?id) return "Not you";}
 __async__ mapping get_state(string group) {
 	return (["emotes": indices(await(G->G->DB->load_config(group, "seen_emotes")))]);
-}
-
-__async__ void websocket_cmd_emotecheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping seen = await(G->G->DB->load_config(conn->session->?user->?id, "seen_emotes"));
-	//TODO: Query Twitch instead of echolocating
 }
 
 __async__ void websocket_cmd_toggleshowcase(mapping(string:mixed) conn, mapping(string:mixed) msg) {

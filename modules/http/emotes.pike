@@ -220,10 +220,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		//Hack for the moment. Not sure what I want for this page. The main reason
 		//I want this feature is to allow mods to pick out emotes for any voice.
 		if (mapping resp = ensure_login(req, "user:read:emotes")) return resp;
-		/*mapping emotes = await(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes/user", ([
-			"user_id": req->misc->session->user->id,
-			//"broadcaster_id": channel_id, //optionally include follower emotes from that channel
-		]), (["Authorization": "Bearer " + req->misc->session->token])));*/
 		return render_template("checklist.md", ([
 			"vars": (["ws_group": req->misc->session->?user->?id, "ws_type": "emotes", "ws_code": "checklist"]),
 			"login_link": "", "emotes": "img", "title": "All your emotes", "text": sprintf("<section id=all_emotes>Loading...</section>")
@@ -240,7 +236,6 @@ mapping get_state(string group) {return ([]);}
 
 __async__ void begin_search(mapping(string:mixed) conn) {
 	array all_emotes = ({ });
-	System.Timer tm = System.Timer();
 	string after = "";
 	multiset fakes = (<"0">); //Fake user IDs that own emotes - don't keep looking them up
 	while (1) {
