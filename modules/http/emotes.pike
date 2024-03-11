@@ -253,7 +253,16 @@ __async__ void begin_search(mapping(string:mixed) conn) {
 		foreach (all_emotes, mapping em) {
 			mapping owner = ([]);
 			if (!fakes[em->owner_id] && catch {owner = await(get_user_info(em->owner_id));}) fakes[em->owner_id] = 1;
-			emotesets[(owner->display_name || em->owner_id) + "-" + em->emote_type + "-" + em->emote_set_id] += ({em});
+			string set = owner->display_name || (em->owner_id + "-" + em->emote_type + "-" + em->emote_set_id);
+			if (em->emote_type == "limitedtime") {
+				//Limited-time emotes are in lots of tiny groups. Regroup them by their
+				//emote prefix.
+				if (sscanf(em->name, "%1[A-Z]%[a-z]", string uc, string lc)) set = "limitedtime-" + uc + lc;
+				else if (sscanf(em->name, "%[a-z]", string lc) && lc != "") set = "limitedtime-" + lc;
+				else if (sscanf(em->name, "%[0-9]", string num)) set = "limitedtime-" + num;
+				//Otherwise, not sure what it is, keep the entire long prefix.
+			}
+			emotesets[set] += ({em});
 		}
 
 		conn->sock->send_text(Standards.JSON.encode(([
