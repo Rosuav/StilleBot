@@ -5,7 +5,7 @@ export function render(data) {
 	if (data.emotes) {
 		replace_content("#haveemotes",
 			"img.have, " +
-			data.emotes.map(e => "img[title=\"" + e + "\"]").join(", ") +
+			data.emotes.map(e => "img[title=\"" + e.replace("\\", "\\\\") + "\"]").join(", ") +
 			"{filter: saturate(1); border-color: green;}"
 		);
 		const showcase = DOM("#toggleshowcase");

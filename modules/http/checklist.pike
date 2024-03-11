@@ -1,6 +1,6 @@
 inherit http_websocket;
 inherit hook;
-inherit irc_callback;
+inherit annotated;
 
 //Markdown; emote names will be replaced with their emotes, but will
 //be greyed out if not available.
@@ -168,95 +168,84 @@ constant emoteids = ([
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
 
+@retain: mapping(string:multiset(string)) user_emotes = ([]); //Cached but easily purged
+
 string img(string code, int|string id)
 {
 	return sprintf("<figure>![%s](%s)"
 		"<figcaption>%[0]s</figcaption></figure>", code, emote_url((string)id, 3));
 }
 
+string parsed_emote_text;
+
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
-	mapping emotesets = ([]);
 	string login_link = "[Log in to highlight the emotes you have access to](:.twitchlogin data-scopes=@user:read:emotes@)";
-	mapping v2_have = ([]);
 	multiset scopes = req->misc->session->?scopes || (<>);
 	string title = "Emote checklist";
+	string group = req->misc->session->?user->?id;
 	if (req->variables->showcase) {
 		//?showcase=49497888 to see Rosuav's emotes
 		//Only if permission granted.
-		v2_have = await(G->G->DB->load_config(req->variables->showcase, "seen_emotes"));
-		if (!v2_have->_allow_showcase) v2_have = ([]);
-		else title = "Emote showcase for " + v2_have->_allow_showcase;
+		string allow_showcase; //TODO: If it's allowed, fetch up a display name
+		if (!allow_showcase) return 0;
+		title = "Emote showcase for " + allow_showcase;
+		group = req->variables->showcase;
 	}
 	else if (scopes["user:read:emotes"]) {
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>\n\n"
 			"[Enable showcase](:#toggleshowcase)\n\n"
 			"[Show off your emotes here](checklist?showcase=" + req->misc->session->?user->?id + ")";
-		v2_have = await(G->G->DB->load_config(req->misc->session->?user->?id, "seen_emotes"));
 	}
 	else login_link += "\n\n<input type=checkbox id=showall style=\"display:none\" checked>"; //Hack: Show all if not logged in
-	mapping have_emotes = ([]);
-	array(string) used = indices(v2_have); //Emote names that we have AND used. If they're in that mapping, they're in the checklist (by definition).
-	foreach (emotesets;; array set) foreach (set, mapping em)
-		have_emotes[em->code] = img(em->code, em->id);
 	mapping botemotes = await(G->G->DB->load_config(G->G->bot_uid, "bot_emotes"));
-	string text = words->replace(hypetrain, lambda(string w) {
-		//1) Do we (the logged-in user) have the emote?
-		if (string have = have_emotes[w]) {used += ({w}); return have;}
-		//2) Does the bot have the emote?
-		if (string id = botemotes[w]) return img(w, id);
-		//3) Is it in the hard-coded list of known emote IDs?
-		if (string id = emoteids[w]) return img(w, id);
+	if (!parsed_emote_text) parsed_emote_text = words->replace(hypetrain, lambda(string w) {
+		if (string id = botemotes[w] || emoteids[w]) return img(w, id);
 		return w;
 	});
 	return render(req, ([
-		"vars": (["ws_group": req->misc->session->?user->?id]),
+		"vars": (["ws_group": group]),
 		"login_link": login_link,
-		"text": text, "emotes": sprintf("img[title=\"%s\"]", used[*]) * ", ",
+		"text": parsed_emote_text, "emotes": "",
 		"title": title,
 	]));
 }
 
-string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {if (msg->group != conn->session->?user->?id) return "Not you";}
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (msg->group != conn->session->?user->?id) return "Not you";
+	multiset scopes = conn->session->?scopes || (<>);
+	if (scopes["user:read:emotes"]) update_user_emotes(conn->session->user->id, conn->session->token);
+}
 __async__ mapping get_state(string group) {
-	return (["emotes": indices(await(G->G->DB->load_config(group, "seen_emotes")))]);
+	return (["emotes": (array)(user_emotes[group] || ({ }))]);
 }
 
 __async__ void websocket_cmd_toggleshowcase(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	await(G->G->DB->mutate_config(conn->session->?user->?id, "seen_emotes") {mapping seen = __ARGS__[0];
+	//TODO: Figure out a way to record this better
+	/*await(G->G->DB->mutate_config(conn->session->?user->?id, "seen_emotes") {mapping seen = __ARGS__[0];
 		if (!m_delete(seen, "_allow_showcase")) seen->_allow_showcase = conn->session->user->display_name;
-	});
+	});*/
 	send_updates_all(conn->group);
 }
 
-@hook_allmsgs: int message(object channel, mapping person, string msg) {message1(channel, person, msg);}
-__async__ int message1(object channel, mapping person, string msg) {
-	if (!person->uid || !person->emotes || !sizeof(person->emotes)) return 0;
-	mapping v2 = G->G->emotes_v2;
-	mapping seen = await(G->G->DB->load_config(person->uid, "seen_emotes"));
-	int changed = 0, now = time();
-	foreach (person->emotes, [string id, int start, int end]) {
-		string emotename = v2[id];
-		if (!emotename) {
-			//If it's not one of our list of known tracked emotes, check if the
-			//emote name (drawn from the message text) shows up anywhere in the
-			//Markdown for the emote checklist blocks. TODO: Recognize actual
-			//emotes a bit more reliably.
-			string code = msg[start..end];
-			if (has_value(hypetrain, code)) emotename = code;
-			else continue;
-		}
-		if (!seen[emotename]) changed = 1;
-		seen[emotename] = now;
-	}
-	if (changed) {send_updates_all((string)person->uid); await(G->G->DB->save_config(person->uid, "seen_emotes", seen));}
+__async__ void update_user_emotes(string userid, string token) {
+	//TODO: Fetch the template from Twitch; currently it's being discarded in the get_helix_paginated processing
+	string template = "https://static-cdn.jtvnw.net/emoticons/v2/{{id}}/{{format}}/{{theme_mode}}/{{scale}}";
+	array emotes = await(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes/user", ([
+		"user_id": userid,
+		//"broadcaster_id": channel_id, //optionally include follower emotes from that channel
+	]), (["Authorization": "Bearer " + token])));
+	user_emotes[userid] = (multiset)emotes->name; //Ignore all else and just keep the emote names (eg "DinoDance")
+	send_updates_all(userid);
 }
 
-protected void create(string name) {
-	::create(name);
-	//List of emotes to track - specifically, all the v2 emote IDs shown in the checklist.
-	//No other emotes will be tracked, though a full query of a user's emotes will augment
-	//this collection.
-	mapping v2 = filter(emoteids, stringp);
-	G->G->emotes_v2 = mkmapping(values(v2), indices(v2));
+@hook_allmsgs: int message(object channel, mapping person, string msg) {
+	if (!person->uid || !person->emotes || !sizeof(person->emotes)) return 0;
+	multiset emotes = user_emotes[(string)person->uid]; if (!emotes) return 0;
+	int changed = 0;
+	foreach (person->emotes, [string id, int start, int end])
+		if (!emotes[id]) emotes[id] = changed = 1;
+	if (changed) send_updates_all((string)person->uid);
 }
+
+protected void create(string name) {::create(name);}
