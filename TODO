@@ -292,3 +292,16 @@
   suggestions". Track how many times they've been suggested? Show only those who are
   currently live.
 * Make a shareable link feature for twitchlogin.pike
+* Make an emote picker
+  - Drop-down to select a voice. If you open the picker from the command editor, go
+    through the command and find the active voice at that point, preselect it.
+  - Load/reload emotes in the background (only if not recently loaded??)
+  - Show emotes in groups
+    - Mostly sorted out in emotes?available
+    - Tie in with the unlocks checklist to recognize groups??
+  - Click to insert, naturally.
+  - Go through all uses of seen_emotes and bot_emotes
+    - Any use of seen_emotes should now use G->G->user_emotes and populate it if
+      needed and if permission granted (if not granted, maybe link to checklist?)
+    - All uses of bot_emotes should now stipulate the voice rather than using the
+      bot's intrinsic voice for everything.
