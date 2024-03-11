@@ -165,12 +165,6 @@ constant emoteids = ([
 	"HypeUwu": "emotesv2_9c5840880c854913867fa2e5ffdc1f17",
 	"HypeLick": "emotesv2_47d858d7a1e042a3bf72eab138351415",
 ]);
-array(string) tracked_emote_names = ({ });
-
-//HACK: Send to a channel nobody cares about, but which the bot tracks.
-//Bot hosts, ensure that this is a channel that you use with the bot.
-//(Name must be in lowercase to match incoming message channel name.)
-constant echolocation_channel = "#mustardmine";
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
 
@@ -198,7 +192,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//Helix-friendly: query emotes by pushing them through chat.
 		//No, this is not better than the Kraken way. Not even slightly.
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>\n\n"
-			"[Check for newly-unlocked emotes](:#echolocate) [Enable showcase](:#toggleshowcase)\n\n"
+			"[Check which emotes you have](:#emotecheck) [Enable showcase](:#toggleshowcase)\n\n"
 			"[Show off your emotes here](checklist?showcase=" + req->misc->session->?user->?id + ")";
 		v2_have = await(G->G->DB->load_config(req->misc->session->?user->?id, "seen_emotes"));
 	}
@@ -230,19 +224,9 @@ __async__ mapping get_state(string group) {
 	return (["emotes": indices(await(G->G->DB->load_config(group, "seen_emotes")))]);
 }
 
-__async__ void echolocate(string user, string pass, array emotes) {
-	//Break up the list of emote names into blocks no more than 500 characters each
-	array messages = String.trim((sprintf("%=500s", emotes * " ") / "\n")[*]);
-	object irc = await(irc_connect((["user": user, "pass": pass])));
-	irc->send(echolocation_channel, messages[*]);
-	irc->quit();
-}
-
-__async__ void websocket_cmd_echolocate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void websocket_cmd_emotecheck(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping seen = await(G->G->DB->load_config(conn->session->?user->?id, "seen_emotes"));
-	int threshold = time() - 86400;
-	array emotes = filter(tracked_emote_names) {return seen[__ARGS__[0]] < threshold;};
-	spawn_task(echolocate(conn->session->user->login, "oauth:" + conn->session->token, emotes));
+	//TODO: Query Twitch instead of echolocating
 }
 
 __async__ void websocket_cmd_toggleshowcase(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -254,7 +238,7 @@ __async__ void websocket_cmd_toggleshowcase(mapping(string:mixed) conn, mapping(
 
 @hook_allmsgs: int message(object channel, mapping person, string msg) {message1(channel, person, msg);}
 __async__ int message1(object channel, mapping person, string msg) {
-	if (!person->uid || !person->emotes || (!sizeof(person->emotes) && channel->name != echolocation_channel)) return 0;
+	if (!person->uid || !person->emotes || !sizeof(person->emotes)) return 0;
 	mapping v2 = G->G->emotes_v2;
 	mapping seen = await(G->G->DB->load_config(person->uid, "seen_emotes"));
 	int changed = 0, now = time();
@@ -271,18 +255,6 @@ __async__ int message1(object channel, mapping person, string msg) {
 		}
 		if (!seen[emotename]) changed = 1;
 		seen[emotename] = now;
-	}
-	if (channel->name == echolocation_channel && seen) {
-		//When it's a message specifically for emote testing, scan for words that are NOT emotes and
-		//remove them from the seen_emotes list. This will avoid the uncertainty of whether or not
-		//an emote is indeed available, and saves us the hassle of deciding whether to query
-		//destructively or nondestructively, by being a brilliant combination of both.
-		foreach (msg / " ", string w) {
-			if (seen[w] && seen[w] != now) {
-				m_delete(seen, w);
-				changed = 1;
-			}
-		}
 	}
 	if (changed) {send_updates_all((string)person->uid); await(G->G->DB->save_config(person->uid, "seen_emotes", seen));}
 }
