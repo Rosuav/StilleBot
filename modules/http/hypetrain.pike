@@ -131,10 +131,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	//If we got a fresh token, push updates out, in case they had errors
 	if (need_token && !scopes) send_updates_all(chan);
 	//In case the user activates checklist mode, enumerate emotes we've seen used.
-	mapping seen_emotes = await(G->G->DB->load_config(req->misc->session->?user->?id, "seen_emotes"));
 	array have_emotes = ({ });
+	/*mapping seen_emotes = await(G->G->DB->load_config(req->misc->session->?user->?id, "seen_emotes"));
 	foreach (replace(emotes, "\n", " ") / " ", string emote)
-		if (seen_emotes[emote]) have_emotes += ({sprintf("#emotes.emotes_checklist img[title=\"%s\"]", emote)});
+		if (seen_emotes[emote]) have_emotes += ({sprintf("#emotes.emotes_checklist img[title=\"%s\"]", emote)});*/
 
 	return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
 		"vars": (["ws_type": "hypetrain", "ws_group": chan, "need_scopes": scopes || ""]),
