@@ -177,7 +177,7 @@ string img(string code, int|string id)
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping emotesets = ([]);
-	string login_link = "[Log in to highlight the emotes you have access to](:.twitchlogin data-scopes=@chat_login chat:edit@)";
+	string login_link = "[Log in to highlight the emotes you have access to](:.twitchlogin data-scopes=@user:read:emotes@)";
 	mapping v2_have = ([]);
 	multiset scopes = req->misc->session->?scopes || (<>);
 	string title = "Emote checklist";
@@ -188,9 +188,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (!v2_have->_allow_showcase) v2_have = ([]);
 		else title = "Emote showcase for " + v2_have->_allow_showcase;
 	}
-	else if (scopes->chat_login && scopes["chat:edit"]) {
-		//Helix-friendly: query emotes by pushing them through chat.
-		//No, this is not better than the Kraken way. Not even slightly.
+	else if (scopes["user:read:emotes"]) {
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>\n\n"
 			"[Check which emotes you have](:#emotecheck) [Enable showcase](:#toggleshowcase)\n\n"
 			"[Show off your emotes here](checklist?showcase=" + req->misc->session->?user->?id + ")";
