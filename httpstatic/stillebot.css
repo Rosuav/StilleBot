@@ -183,6 +183,13 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 }
 .msgedit {
 	width: min-content;
+	position: relative;
+}
+.msgedit .emotepicker {
+	position: absolute;
+	right: 0.2em;
+	bottom: 0.5em;
+	cursor: pointer;
 }
 #typedesc {max-width: fit-content;}
 #setprops {min-width: 25em;}

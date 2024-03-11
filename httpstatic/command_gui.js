@@ -110,6 +110,7 @@ const text_message = {...default_handlers,
 		return DIV({className: "msgedit"}, [
 			DIV({className: "buttonbox attached"}, Object.entries(allvars).map(([v, d]) => BUTTON({type: "button", title: d, className: "insertvar", "data-insertme": v}, v))),
 			TEXTAREA({...id, rows: 10, cols: 60, "data-editme": 1}, el.message || ""),
+			DIV({class: "emotepicker"}, "☺"),
 		]);
 	},
 	retrieve_value: (el, msg) => {
