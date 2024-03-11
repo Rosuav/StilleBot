@@ -236,12 +236,43 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (msg->group != conn->session->?user->?id) return "Not you";
 	begin_search(conn);
 }
-mapping get_state(string group) {return (["emotes": ({ })]);}
+mapping get_state(string group) {return ([]);}
 
 __async__ void begin_search(mapping(string:mixed) conn) {
 	array all_emotes = ({ });
-	//...
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "update", "all_emotes": all_emotes, "loading": 0])));
+	System.Timer tm = System.Timer();
+	string after = "";
+	multiset fakes = (<"0">); //Fake user IDs that own emotes - don't keep looking them up
+	while (1) {
+		mapping raw = await(twitch_api_request(
+			"https://api.twitch.tv/helix/chat/emotes/user?user_id=" + conn->session->user->id
+			//+ "&broadcaster_id=" + channel_id //optionally include follower emotes from that channel
+			+ "&first=100" + after,
+			(["Authorization": "Bearer " + conn->session->token]),
+		));
+		if (!raw->data) error("Unparseable response\n%O\n", indices(raw));
+		all_emotes += raw->data;
+		//Every time we get more emotes, reparse and resend. It can take a long time (20 secs
+		//on my account) to fetch the entire collection.
+		mapping emotesets = ([]);
+		foreach (all_emotes, mapping em) {
+			mapping owner = ([]);
+			if (!fakes[em->owner_id] && catch {owner = await(get_user_info(em->owner_id));}) fakes[em->owner_id] = 1;
+			emotesets[(owner->display_name || em->owner_id) + "-" + em->emote_type + "-" + em->emote_set_id] += ({em});
+		}
+
+		conn->sock->send_text(Standards.JSON.encode(([
+			"cmd": "update",
+			"all_emotes": emotesets,
+			"loading": !!raw->pagination->?cursor,
+			"template": raw->template,
+		])));
+
+		//Alright, let's go get some more emotes.
+		if (!raw->pagination->?cursor) break;
+		after = "&after=" + raw->pagination->cursor;
+	}
+	werror("All done, got %d\n", sizeof(all_emotes));
 }
 
 string make_emote(object image, object alpha) {
