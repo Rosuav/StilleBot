@@ -3,7 +3,7 @@
 
 * {box-sizing: border-box;}
 
-body {
+body, button { /* not sure why buttons don't get this by inheritance */
 	font-family: 'Lexend', sans-serif;
 	line-height: 1.3;
 }
