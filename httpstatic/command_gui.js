@@ -43,6 +43,13 @@ document.body.appendChild(DIALOG({id: "properties"}, SECTION([
 		P(BUTTON({id: "saveprops", accesskey: "a"}, "Close")), //The access key makes sense when it changes to Apply
 	])),
 ])));
+document.body.appendChild(DIALOG({id: "emotepicker"}, SECTION([
+	HEADER([H3("Emotes for <USER>"), DIV([BUTTON({type: "button", class: "dialog_cancel"}, "x")])]),
+	DIV({id: "emotelist"}, [
+		"loading...",
+	]),
+	P(BUTTON({class: "dialog_close"}, "Close")),
+])));
 fix_dialogs();
 
 const in_rect = (x, y, rect) => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
