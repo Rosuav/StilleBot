@@ -207,7 +207,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	array(string) used = indices(v2_have); //Emote names that we have AND used. If they're in that mapping, they're in the checklist (by definition).
 	foreach (emotesets;; array set) foreach (set, mapping em)
 		have_emotes[em->code] = img(em->code, em->id);
-	mapping botemotes = await(G->G->DB->load_config(0, "bot_emotes"));
+	mapping botemotes = await(G->G->DB->load_config(G->G->bot_uid, "bot_emotes"));
 	string text = words->replace(hypetrain, lambda(string w) {
 		//1) Do we (the logged-in user) have the emote?
 		if (string have = have_emotes[w]) {used += ({w}); return have;}
@@ -257,14 +257,8 @@ __async__ int message1(object channel, mapping person, string msg) {
 	if (!person->uid || !person->emotes || (!sizeof(person->emotes) && channel->name != echolocation_channel)) return 0;
 	mapping v2 = G->G->emotes_v2;
 	mapping seen = await(G->G->DB->load_config(person->uid, "seen_emotes"));
-	mapping botemotes = person->uid == G->G->bot_uid && await(G->G->DB->load_config(0, "bot_emotes"));
 	int changed = 0, now = time();
 	foreach (person->emotes, [string id, int start, int end]) {
-		if (botemotes) {
-			string code = msg[start..end];
-			if (!has_prefix(code, "/") && !has_value(code, '_'))
-				botemotes[code] = id;
-		}
 		string emotename = v2[id];
 		if (!emotename) {
 			//If it's not one of our list of known tracked emotes, check if the
@@ -293,25 +287,11 @@ __async__ int message1(object channel, mapping person, string msg) {
 	if (changed) {send_updates_all((string)person->uid); await(G->G->DB->save_config(person->uid, "seen_emotes", seen));}
 }
 
-__async__ void load_emotes() {
-	//List all emotes that would be detected by the main translation loop.
-	//Technically the replacement is ignored, but it's consistent with the above.
-	array trackme = ({ });
-	mapping botemotes = await(G->G->DB->load_config(0, "bot_emotes"));
-	string text = words->replace(hypetrain, lambda(string w) {
-		if (botemotes[w] || emoteids[w]) trackme += ({w});
-		return w;
-	});
-	tracked_emote_names = trackme;
-}
-
 protected void create(string name) {
 	::create(name);
 	//List of emotes to track - specifically, all the v2 emote IDs shown in the checklist.
-	//No other emotes will be tracked, and we assume in general that these emotes will not
-	//ever be lost. If they are, there'll need to be some way to say "purge those I haven't
-	//used in X seconds", which will be possible, since they're stored with their timestamps.
+	//No other emotes will be tracked, though a full query of a user's emotes will augment
+	//this collection.
 	mapping v2 = filter(emoteids, stringp);
 	G->G->emotes_v2 = mkmapping(values(v2), indices(v2));
-	load_emotes();
 }

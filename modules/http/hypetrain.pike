@@ -94,7 +94,7 @@ string avail_emotes = "";
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (avail_emotes == "") {
-		mapping botemotes = await(G->G->DB->load_config(0, "bot_emotes"));
+		mapping botemotes = await(G->G->DB->load_config(G->G->bot_uid, "bot_emotes"));
 		mapping emoteids = function_object(G->G->http_endpoints->checklist)->emoteids; //Hack!
 		avail_emotes = "";
 		foreach (emotes / "\n", string level)
