@@ -1519,6 +1519,23 @@ on("click", "#clonetemplate", e => {
 
 on("input", "#properties [name]", e => set_content("#saveprops", [U("A"), "pply changes"]));
 
+const emotes_available = { };
+function update_emote_picker(voice) {
+	if (!emotes_available[voice]) ; // show "loading..."
+}
+on("click", ".emotepicker", e => {
+	//TODO: Figure out which voice would be active here
+	let voice = "0";
+	update_emote_picker(voice);
+	if (!emotes_available[voice]) ws_sync.send({cmd: "list_emotes", voice});
+	DOM("#emotepicker").showModal();
+});
+ws_sync.register_callback(function chan_commands_emotes_available(msg) {
+	console.log("Got emotes:", msg.voice, msg.emotes);
+	emotes_available[msg.voice] = msg.emotes;
+	update_emote_picker(msg.voice); //TODO: Only if emote picker is still open with this voice
+});
+
 on("submit", "#setprops", e => {
 	//Hack: This actually changes the type of the element.
 	const newtype = document.getElementById("value-builtin");

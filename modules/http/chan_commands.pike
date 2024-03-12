@@ -232,6 +232,14 @@ void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) ms
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "validated", "cmdname": cmdname, "response": valid[2]]), 4));
 }
 
+void websocket_cmd_list_emotes(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string mode] = split_channel(conn->group);
+	if (!channel) return 0; //Fake-mod mode is okay here too for the same reason (emote picker)
+	//TODO: Verify that the selected voice is actually active for this channel
+	array emotes = ({ });
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "emotes_available", "voice": msg->voice, "emotes": emotes]), 4));
+}
+
 protected void create(string name) {
 	::create(name);
 	call_out(find_builtins, 0);
