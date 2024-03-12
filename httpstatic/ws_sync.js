@@ -13,6 +13,7 @@ let prefs = { }; //Updated from the server as needed
 const prefs_hooks = [];
 let reconnect_delay = 250;
 let redirect_host = null, redirect_xfr = null;
+const callbacks = {};
 
 let userid = 0;
 export function get_userid() {
@@ -36,6 +37,7 @@ export function connect(group, handler)
 	if (!cfg.quiet) cfg.quiet = { };
 	function verbose(kwd, ...msg) {if (!cfg.quiet[kwd]) console.log(...msg)}
 	let socket = new WebSocket(protocol + (redirect_host || window.location.host) + "/ws");
+	const callback_pfx = (handler.ws_type || ws_type) + "_";
 	socket.onopen = () => {
 		reconnect_delay = 250;
 		verbose("conn", "Socket connection established.");
@@ -133,7 +135,7 @@ export function connect(group, handler)
 			redirect_host = data.redirect; redirect_xfr = data.xfr;
 			return;
 		}
-		const f = handler["sockmsg_" + data.cmd];
+		const f = handler["sockmsg_" + data.cmd] || callbacks[callback_pfx + data.cmd];
 		if (f) {f(data); unknown = "";}
 		verbose(unknown ? "unkmsg" : "msg", "Got " + unknown + "message from server:", data);
 	};
@@ -161,3 +163,8 @@ export function prefs_notify(key, func) {
 	prefs_hooks.push({key, func});
 }
 export function get_prefs() {return prefs;}
+
+//Usage: ws_sync.register_callback(function sockettype_socketcommand(msg) {...})
+//If there's no sockmsg_socketcommand in the handler for that sockettype, this will be
+//called instead. Does not need to be exported (the way sockmsg_* does).
+export function register_callback(func) {callbacks[func.name] = func;}

@@ -1,7 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {CODE, TD, TR} = choc; //autoimport
-import {render_command, cmd_configure, sockmsg_validated, sockmsg_changetab_failed} from "$$static||command_editor.js$$";
-export {sockmsg_validated, sockmsg_changetab_failed};
+import {render_command, cmd_configure} from "$$static||command_editor.js$$";
 
 export const render_parent = DOM("#triggers tbody");
 export function render_item(el, prev) {
