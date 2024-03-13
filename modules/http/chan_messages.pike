@@ -94,7 +94,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping msgs = await(G->G->DB->load_config(channel->userid, "private"))[grp];
 	if (!msgs) return (["items": ({ })]);
-	mapping botemotes = await(G->G->DB->load_config(G->G->bot_uid, "bot_emotes"));
+	mapping botemotes = await(G->G->DB->load_config(G->G->bot_uid, "bot_emotes")); //TODO: Use the channel default voice instead of bot_uid
 	if (id) return _get_message(id, msgs, botemotes);
 	return (["items": _get_message(sort((array(int))indices(msgs) - ({0}))[*], msgs, botemotes) - ({0})]);
 }

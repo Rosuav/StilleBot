@@ -8,7 +8,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string tz = req->misc->channel->config->timezone;
 	object user = user_text();
 	string btn = req->misc->is_mod ? " [\U0001F589](:.editbtn)" : "";
-	mapping botemotes = await(G->G->DB->load_config(G->G->bot_uid, "bot_emotes"));
+	mapping botemotes = await(G->G->DB->load_config(G->G->bot_uid, "bot_emotes")); //TODO: Use the channel default voice instead of bot_uid
 	foreach (quotes; int i; mapping quote)
 	{
 		//Render emotes. TODO: Use the bot's emote list primarily, but

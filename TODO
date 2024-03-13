@@ -292,7 +292,3 @@
   suggestions". Track how many times they've been suggested? Show only those who are
   currently live.
 * Make a shareable link feature for twitchlogin.pike
-* Make an emote picker
-  - Go through all uses of seen_emotes and bot_emotes
-    - All uses of bot_emotes should now stipulate the voice rather than using the
-      bot's intrinsic voice for everything.
