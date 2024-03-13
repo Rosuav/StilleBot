@@ -1525,7 +1525,7 @@ function update_emote_picker(voice) {
 }
 on("click", ".emotepicker", e => {
 	//TODO: Figure out which voice would be active here
-	let voice = "0";
+	let voice = "";
 	update_emote_picker(voice);
 	if (!emotes_available[voice]) ws_sync.send({cmd: "list_emotes", voice});
 	DOM("#emotepicker").showModal();

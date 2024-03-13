@@ -235,20 +235,24 @@ void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) ms
 __async__ void websocket_cmd_list_emotes(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string mode] = split_channel(conn->group);
 	if (!channel) return 0; //Fake-mod mode is okay here too for the same reason (emote picker)
-	//TODO: Verify that the selected voice is actually active for this channel
-	mapping emotes = G_G_("voice_emotes", (string)channel->userid, msg->voice);
-	if (emotes->fetched < time() - 3600) {
-		mapping cred = G->G->user_credentials[channel->userid];
-		if (!has_value(cred->scopes, "user:read:emotes")) return; //TODO: Send an error back? Suppress the emote picker icon?
-		emotes = (["emotes": await(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes/user", ([
-			"user_id": msg->voice,
-			"broadcaster_id": (string)channel->userid, //Include follower emotes from this channel
-		]), (["Authorization": "Bearer " + cred->token])))]);
-		//TODO: Retain this rather than discarding it in get_helix_paginated
-		emotes->template = "https://static-cdn.jtvnw.net/emoticons/v2/{{id}}/{{format}}/{{theme_mode}}/{{scale}}";
-		emotes->fetched = time();
-	}
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "emotes_available", "voice": msg->voice, "emotes": emotes]), 4));
+	mapping voices = G->G->DB->load_cached_config(channel->userid, "voices");
+	string voice = msg->voice;
+	if (!voice || voice == "") voice = channel->config->defvoice;
+	if (!voices[voice]) return; //TODO: Send an error back?
+	mapping emotes = G_G_("voice_emotes", (string)channel->userid, voice);
+	//Send the existing emotes, then update them once they're fetched.
+	if (emotes->emotes) conn->sock->send_text(Standards.JSON.encode((["cmd": "emotes_available", "voice": voices[voice], "emotes": emotes]), 4));
+	if (emotes->fetched > time() - 60) return; //Or not. I mean, one minute, it can have stale data if it wants.
+	mapping cred = G->G->user_credentials[channel->userid];
+	if (!has_value(cred->scopes, "user:read:emotes")) return; //TODO: Send an error back? Suppress the emote picker icon?
+	emotes->emotes = await(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes/user", ([
+		"user_id": voice,
+		"broadcaster_id": (string)channel->userid, //Include follower emotes from this channel
+	]), (["Authorization": "Bearer " + cred->token])));
+	//TODO: Retain this rather than discarding it in get_helix_paginated
+	emotes->template = "https://static-cdn.jtvnw.net/emoticons/v2/{{id}}/{{format}}/{{theme_mode}}/{{scale}}";
+	emotes->fetched = time();
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "emotes_available", "voice": voices[voice], "emotes": emotes]), 4));
 }
 
 protected void create(string name) {
