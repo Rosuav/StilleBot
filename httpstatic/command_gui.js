@@ -48,7 +48,7 @@ document.body.appendChild(DIALOG({id: "emotepicker"}, SECTION([
 	DIV({id: "emotelist"}, [
 		"loading...",
 	]),
-	P(BUTTON({class: "dialog_close"}, "Close")),
+	P([BUTTON({class: "dialog_close"}, "Close"), " Tip: Hold Ctrl to insert multiple without closing picker"]),
 ])));
 fix_dialogs();
 
@@ -1556,6 +1556,12 @@ ws_sync.register_callback(function chan_commands_emotes_available(msg) {
 	//is the actual ID of the voice. If both are numbers, they will be the same number.
 	emotes_available[msg.voice] = emotes_available[msg.emotes.voice] = msg.emotes;
 	update_emote_picker(msg.voice); //TODO: Only if emote picker is still open with this voice
+});
+
+on("click", ".emoteset img", e => {
+	const textarea = DOM("#value-message"); //For now, assume that we were invoked from a "message" attribute
+	textarea.setRangeText(e.match.title + " ", textarea.selectionEnd, textarea.selectionEnd, "end");
+	if (!e.ctrlKey) {DOM("#emotepicker").close(); textarea.focus();}
 });
 
 on("submit", "#setprops", e => {
