@@ -1530,14 +1530,14 @@ function update_emote_picker(voice) {
 			.sort((a, b) => a[0] === "Globals" ? 1 : b[0] === "Globals" ? -1 : a[0].localeCompare(b[0]))
 			.map(([grp, emotes]) => [
 				H5(grp),
-				emotes.map(em => IMG({
+				DIV({class: "emoteset"}, emotes.map(em => IMG({
 					src: emav.template
 						.replace("{{id}}", em.id)
 						.replace("{{format}}", em.format[em.format.length - 1])
 						.replace("{{theme_mode}}", em.theme_mode[0])
 						.replace("{{scale}}", em.scale[0]),
 					alt: em.name, title: em.name,
-				})),
+				}))),
 			]),
 	);
 }

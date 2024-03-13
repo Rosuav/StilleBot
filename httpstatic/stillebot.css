@@ -191,6 +191,30 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 	bottom: 0.5em;
 	cursor: pointer;
 }
+
+#emotelist {
+	max-width: 40em;
+	padding-right: 1em;
+	margin-bottom: 0.25em;
+}
+#emotelist h5 {
+	margin: 0;
+}
+#emotepicker p {
+	margin: 0;
+}
+.emoteset {
+	border: 1px solid rebeccapurple;
+	padding: 0.5em;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 7px;
+	margin-bottom: 1em;
+}
+.emoteset img {
+	cursor: pointer;
+}
+
 #typedesc {max-width: fit-content;}
 #setprops {min-width: 25em;}
 /* Alternating colours doesn't really improve things much
