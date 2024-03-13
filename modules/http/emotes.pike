@@ -234,10 +234,28 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 mapping get_state(string group) {return ([]);}
 
+multiset fakes = (<"0">); //Fake user IDs that own emotes - don't keep looking them up
+__async__ mapping categorize_emotes(array all_emotes) {
+	mapping emotesets = ([]);
+	multiset seen = (<>);
+	foreach (all_emotes, mapping em) {
+		if (seen[em->name]) continue; seen[em->name] = 1; //For some reason, your own emotes come up twice??
+		mapping owner = ([]);
+		if (!fakes[em->owner_id] && catch {owner = await(get_user_info(em->owner_id));}) fakes[em->owner_id] = 1;
+		string set = owner->display_name || (em->owner_id + "-" + em->emote_type + "-" + em->emote_set_id);
+		if (!owner->display_name) set = ([
+			"limitedtime": "Unlocked",
+			"rewards": "Unlocked",
+			"globals": "Globals",
+		])[em->emote_type] || em->emote_type;
+		emotesets[set] += ({em});
+	}
+	return emotesets;
+}
+
 __async__ void begin_search(mapping(string:mixed) conn) {
 	array all_emotes = ({ });
 	string after = "";
-	multiset fakes = (<"0">); //Fake user IDs that own emotes - don't keep looking them up
 	while (1) {
 		mapping raw = await(twitch_api_request(
 			"https://api.twitch.tv/helix/chat/emotes/user?user_id=" + conn->session->user->id
@@ -249,25 +267,9 @@ __async__ void begin_search(mapping(string:mixed) conn) {
 		all_emotes += raw->data;
 		//Every time we get more emotes, reparse and resend. It can take a long time (20 secs
 		//on my account) to fetch the entire collection.
-		mapping emotesets = ([]);
-		foreach (all_emotes, mapping em) {
-			mapping owner = ([]);
-			if (!fakes[em->owner_id] && catch {owner = await(get_user_info(em->owner_id));}) fakes[em->owner_id] = 1;
-			string set = owner->display_name || (em->owner_id + "-" + em->emote_type + "-" + em->emote_set_id);
-			if (em->emote_type == "limitedtime") {
-				//Limited-time emotes are in lots of tiny groups. Regroup them by their
-				//emote prefix.
-				if (sscanf(em->name, "%1[A-Z]%[a-z]", string uc, string lc)) set = "limitedtime-" + uc + lc;
-				else if (sscanf(em->name, "%[a-z]", string lc) && lc != "") set = "limitedtime-" + lc;
-				else if (sscanf(em->name, "%[0-9]", string num)) set = "limitedtime-" + num;
-				//Otherwise, not sure what it is, keep the entire long prefix.
-			}
-			emotesets[set] += ({em});
-		}
-
 		conn->sock->send_text(Standards.JSON.encode(([
 			"cmd": "update",
-			"all_emotes": emotesets,
+			"all_emotes": await(categorize_emotes(all_emotes)),
 			"loading": !!raw->pagination->?cursor,
 			"template": raw->template,
 		])));
@@ -355,4 +357,9 @@ mapping analyze_emote(string raw) {
 		])});
 	}
 	return ret;
+}
+
+protected void create(string name) {
+	::create(name);
+	G->G->categorize_emotes = categorize_emotes;
 }

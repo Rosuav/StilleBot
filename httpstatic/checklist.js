@@ -14,7 +14,8 @@ export function render(data) {
 	if (data.all_emotes) replace_content("#all_emotes", [
 		data.loading && DIV("Loading..."),
 		Object.entries(data.all_emotes)
-			.sort((a, b) => a[0].localeCompare(b[0]))
+			//Sort alphabetically, but put Globals at the end. (There'll only be one, we won't have to compare globals to globals.)
+			.sort((a, b) => a[0] === "Globals" ? 1 : b[0] === "Globals" ? -1 : a[0].localeCompare(b[0]))
 			.map(([grp, emotes]) => [
 				H2(grp),
 				emotes.map(em => FIGURE([
