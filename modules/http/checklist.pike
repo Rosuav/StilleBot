@@ -190,7 +190,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//Only if permission granted.
 		if (!await(G->G->DB->load_config(id, "is_enabled"))->showcase) return 0;
 		title = "Emote showcase for " + await(get_user_info(id))->display_name;
-		group = "sc-" + id; valid_showcase_groups[group] = time() + 60;
+		valid_showcase_groups[group = id] = time() + 60;
 	}
 	else if (scopes["user:read:emotes"]) {
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>\n\n"
@@ -212,10 +212,9 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 }
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (sscanf(msg->group, "sc-%d", int id)) {
-		if (valid_showcase_groups[msg->group] < time()) return "Not an open showcase";
-		mapping cred = G->G->user_credentials[id];
-		if (has_value(cred->scopes, "user:read:emotes")) update_user_emotes((string)id, cred->token);
+	if (valid_showcase_groups[msg->group] > time()) {
+		mapping cred = G->G->user_credentials[(int)msg->group];
+		if (has_value(cred->scopes, "user:read:emotes")) update_user_emotes(msg->group, cred->token);
 		return 0;
 	}
 	if (msg->group != conn->session->?user->?id) return "Not you";
