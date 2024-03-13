@@ -1524,8 +1524,11 @@ function update_emote_picker(voice) {
 	if (!emotes_available[voice]) ; // show "loading..."
 }
 on("click", ".emotepicker", e => {
-	//TODO: Figure out which voice would be active here
-	let voice = "";
+	//Scan up for a "Change Voice" node. As soon as we find one, accept it - assume that
+	//it's valid, if it isn't, the back end will just reject this.
+	let voice = ""; //If we never find a Voice node, empty string means "channel default".
+	for (let node = propedit; node; node = node.parent?.[0])
+		if (node.type === "voice") {voice = node.voice; break;}
 	update_emote_picker(voice);
 	if (!emotes_available[voice]) ws_sync.send({cmd: "list_emotes", voice});
 	DOM("#emotepicker").showModal();
