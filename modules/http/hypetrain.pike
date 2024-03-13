@@ -122,7 +122,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"channelname": "(no channel)",
 			//TODO: When emote IDs are easily available, provide the matrix of emotes
 			//and their IDs to the front end, instead of doing it with a Markdown list.
-			"emotes": avail_emotes, "have_emotes": "",
+			"emotes": avail_emotes,
 			"backlink": !req->variables->mobile && "<a href=\"hypetrain?mobile\">Switch to mobile view</a>",
 		]));
 	}
@@ -130,17 +130,11 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string scopes = ensure_bcaster_token(req, "channel:read:hype_train", chan);
 	//If we got a fresh token, push updates out, in case they had errors
 	if (need_token && !scopes) send_updates_all(chan);
-	//In case the user activates checklist mode, enumerate emotes we've seen used.
-	array have_emotes = ({ });
-	/*mapping seen_emotes = await(G->G->DB->load_config(req->misc->session->?user->?id, "seen_emotes"));
-	foreach (replace(emotes, "\n", " ") / " ", string emote)
-		if (seen_emotes[emote]) have_emotes += ({sprintf("#emotes.emotes_checklist img[title=\"%s\"]", emote)});*/
 
 	return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
 		"vars": (["ws_type": "hypetrain", "ws_group": chan, "need_scopes": scopes || ""]),
 		"loading": "Loading hype status...",
 		"channelname": chan, "emotes": avail_emotes,
-		"have_emotes": have_emotes * ",",
 		"backlink": !req->variables->mobile && sprintf("<a href=\"hypetrain?for=%s&mobile\">Switch to mobile view</a>", chan),
 	]));
 }

@@ -119,10 +119,6 @@ audio {display: none;}
 	max-width: 40em;
 	border: 1px dashed blue;
 }
-
-#emotes.emotes_checklist img {opacity: 1;}
-$$have_emotes$$ {opacity: 0.25;}
-#emotes.emotes_checklist:not(.emotes_large) em img {opacity: 1;}
 </style>
 
 > ### Train Track configuration <!-- that sounds like something completely different -->
