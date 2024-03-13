@@ -1521,7 +1521,12 @@ on("input", "#properties [name]", e => set_content("#saveprops", [U("A"), "pply 
 
 const emotes_available = { };
 function update_emote_picker(voice) {
-	if (!emotes_available[voice]) ; // show "loading..."
+	const em = emotes_available[voice];
+	console.log("Update emote picker!", em);
+	if (em) set_content("#emotepicker h3", "Emotes for " + em.voice_name);
+	replace_content("#emotelist",
+		!em ? "Loading..." : ""
+	);
 }
 on("click", ".emotepicker", e => {
 	//Scan up for a "Change Voice" node. As soon as we find one, accept it - assume that
@@ -1534,8 +1539,9 @@ on("click", ".emotepicker", e => {
 	DOM("#emotepicker").showModal();
 });
 ws_sync.register_callback(function chan_commands_emotes_available(msg) {
-	console.log("Got emotes:", msg.voice, msg.emotes);
-	emotes_available[msg.voice] = msg.emotes;
+	//Note that msg.voice is the ID we requested, which might be "", but msg.emotes.voice
+	//is the actual ID of the voice. If both are numbers, they will be the same number.
+	emotes_available[msg.voice] = emotes_available[msg.emotes.voice] = msg.emotes;
 	update_emote_picker(msg.voice); //TODO: Only if emote picker is still open with this voice
 });
 
