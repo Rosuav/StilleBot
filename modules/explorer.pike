@@ -72,14 +72,12 @@ class menu_clicked
 		//Database configuration. Shared between instances, can update live. Note that
 		//precached config is not separated out here; it may be nice to at least annotate
 		//which ones are PCC and which are not, but for now they're just in together.
-		G->G->DB->generic_query("select * from stillebot.config where keyword != 'seen_emotes'")->then() {
+		G->G->DB->generic_query("select * from stillebot.config")->then() {
 			//Remap to a mapping, simpler than reimplementing parts of add_to_store
 			mapping dbcfg = ([]);
 			foreach (__ARGS__[0], mapping cfg) dbcfg[cfg->keyword] |= ([cfg->twitchid: cfg->data]);
-			//Two special cases. Firstly, the seen_emotes mapping is completely excluded as it's
-			//slow to load and quite uninteresting; if you want it, delve into it in psql. Secondly,
-			//if the only twitchid for a keyword is 0, it's probably one where users are not part of
-			//the keying, so remove the unnecessary indirection level.
+			//Special case: If the only twitchid for a keyword is 0, it's probably one where users
+			//are not part of the keying, so remove the unnecessary indirection level.
 			foreach (dbcfg; string keyword; mapping users)
 				if (sizeof(users) == 1 && users[0]) dbcfg[keyword] = users[0];
 			add_to_store(dbcfg, "stillebot.config");
