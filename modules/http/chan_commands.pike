@@ -252,7 +252,10 @@ __async__ void websocket_cmd_list_emotes(mapping(string:mixed) conn, mapping(str
 	//TODO: Retain this rather than discarding it in get_helix_paginated
 	emotes->template = "https://static-cdn.jtvnw.net/emoticons/v2/{{id}}/{{format}}/{{theme_mode}}/{{scale}}";
 	emotes->fetched = time();
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "emotes_available", "voice": voices[voice], "emotes": emotes]), 4));
+	emotes->voice = voices[voice]->id;
+	emotes->voice_name = voices[voice]->desc; //Or should it use voices[voice]->name?
+	emotes->profile_image_url = voices[voice]->profile_image_url;
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "emotes_available", "voice": msg->voice, "emotes": emotes]), 4));
 }
 
 protected void create(string name) {
