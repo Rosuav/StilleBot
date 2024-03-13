@@ -177,6 +177,7 @@ string img(string code, int|string id)
 }
 
 string parsed_emote_text;
+mapping valid_showcase_groups = ([]); //After verifying, is valid for 60 seconds.
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -184,13 +185,12 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	multiset scopes = req->misc->session->?scopes || (<>);
 	string title = "Emote checklist";
 	string group = req->misc->session->?user->?id;
-	if (req->variables->showcase) {
+	if (string id = req->variables->showcase) {
 		//?showcase=49497888 to see Rosuav's emotes
 		//Only if permission granted.
-		string allow_showcase; //TODO: If it's allowed, fetch up a display name
-		if (!allow_showcase) return 0;
-		title = "Emote showcase for " + allow_showcase;
-		group = req->variables->showcase;
+		if (!await(G->G->DB->load_config(id, "is_enabled"))->showcase) return 0;
+		title = "Emote showcase for " + await(get_user_info(id))->display_name;
+		group = "sc-" + id; valid_showcase_groups[group] = time() + 60;
 	}
 	else if (scopes["user:read:emotes"]) {
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>\n\n"
@@ -212,6 +212,12 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 }
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (sscanf(msg->group, "sc-%d", int id)) {
+		if (valid_showcase_groups[msg->group] < time()) return "Not an open showcase";
+		mapping cred = G->G->user_credentials[id];
+		if (has_value(cred->scopes, "user:read:emotes")) update_user_emotes((string)id, cred->token);
+		return 0;
+	}
 	if (msg->group != conn->session->?user->?id) return "Not you";
 	multiset scopes = conn->session->?scopes || (<>);
 	if (scopes["user:read:emotes"]) update_user_emotes(conn->session->user->id, conn->session->token);
@@ -221,10 +227,9 @@ __async__ mapping get_state(string group) {
 }
 
 __async__ void websocket_cmd_toggleshowcase(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	//TODO: Figure out a way to record this better
-	/*await(G->G->DB->mutate_config(conn->session->?user->?id, "seen_emotes") {mapping seen = __ARGS__[0];
-		if (!m_delete(seen, "_allow_showcase")) seen->_allow_showcase = conn->session->user->display_name;
-	});*/
+	await(G->G->DB->mutate_config(conn->session->?user->?id, "is_enabled") {mapping en = __ARGS__[0];
+		if (!m_delete(en, "showcase")) en->showcase = 1;
+	});
 	send_updates_all(conn->group);
 }
 
