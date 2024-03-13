@@ -245,10 +245,11 @@ __async__ void websocket_cmd_list_emotes(mapping(string:mixed) conn, mapping(str
 	if (emotes->fetched > time() - 60) return; //Or not. I mean, one minute, it can have stale data if it wants.
 	mapping cred = G->G->user_credentials[(int)voice];
 	if (!has_value(cred->scopes, "user:read:emotes")) return; //TODO: Send an error back? Suppress the emote picker icon?
-	emotes->emotes = await(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes/user", ([
+	array emotes_raw = await(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes/user", ([
 		"user_id": voice,
 		"broadcaster_id": (string)channel->userid, //Include follower emotes from this channel
 	]), (["Authorization": "Bearer " + cred->token])));
+	emotes->emotes = await(G->G->categorize_emotes(emotes_raw));
 	//TODO: Retain this rather than discarding it in get_helix_paginated
 	emotes->template = "https://static-cdn.jtvnw.net/emoticons/v2/{{id}}/{{format}}/{{theme_mode}}/{{scale}}";
 	emotes->fetched = time();

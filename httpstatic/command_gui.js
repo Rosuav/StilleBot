@@ -21,7 +21,7 @@ and is everything that isn't in the Favs/Trays/Specials.
   - The primary anchor point may belong in Actives or may belong in Specials. Uncertain.
 */
 import {set_content, choc, replace_content, lindt, DOM, on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, CODE, DIALOG, DIV, FORM, H3, HEADER, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
+const {A, BR, BUTTON, CODE, DIALOG, DIV, FIGCAPTION, FIGURE, FORM, H3, H5, HEADER, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
 
 const SNAP_RANGE = 100; //Distance-squared to permit snapping (eg 25 = 5px radius)
 const canvas = DOM("#command_gui");
@@ -1521,11 +1521,24 @@ on("input", "#properties [name]", e => set_content("#saveprops", [U("A"), "pply 
 
 const emotes_available = { };
 function update_emote_picker(voice) {
-	const em = emotes_available[voice];
-	console.log("Update emote picker!", em);
-	if (em) set_content("#emotepicker h3", "Emotes for " + em.voice_name);
+	const emav = emotes_available[voice];
+	console.log("Update emote picker!", emav);
+	set_content("#emotepicker h3", ["Emotes for ", emav?.voice_name || "..."]);
 	replace_content("#emotelist",
-		!em ? "Loading..." : ""
+		!emav ? "Loading..." : Object.entries(emav.emotes)
+			//Sort alphabetically, but put Globals at the end. (There'll only be one, we won't have to compare globals to globals.)
+			.sort((a, b) => a[0] === "Globals" ? 1 : b[0] === "Globals" ? -1 : a[0].localeCompare(b[0]))
+			.map(([grp, emotes]) => [
+				H5(grp),
+				emotes.map(em => IMG({
+					src: emav.template
+						.replace("{{id}}", em.id)
+						.replace("{{format}}", em.format[em.format.length - 1])
+						.replace("{{theme_mode}}", em.theme_mode[0])
+						.replace("{{scale}}", em.scale[0]),
+					alt: em.name, title: em.name,
+				})),
+			]),
 	);
 }
 on("click", ".emotepicker", e => {
