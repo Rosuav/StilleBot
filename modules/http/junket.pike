@@ -15,6 +15,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	//HACK FOR TESTING: If the magic cookie is in the request, ignore HMAC and
 	//body, and permit even a GET request to trigger something.
 	if (G->G->eventhook_hack_cookie && req->variables->cookie == G->G->eventhook_hack_cookie) {
+		werror("Event hook hack sent, simulating %O message for %O\n", endpoint, arg);
 		handler->callback(arg, (["title": req->variables->title || "No Title", "choices": ({ }), "channel_points_voting": ([])]));
 		return (["data": "Hack sent.\n"]);
 	}
