@@ -240,7 +240,7 @@ void notify_unknown(int pid, string cond, string extra, string host) {
 __async__ void fetch_settings(mapping db) {
 	G->G->dbsettings = await((mixed)query(db, "select * from stillebot.settings"))[0];
 	G->G->dbsettings->credentials = JSONDECODE(G->G->dbsettings->credentials);
-	G->G->bot_uid = G->G->dbsettings->credentials->userid; //Convenience alias. We use this in a good few places.
+	G->G->bot_uid = (int)G->G->dbsettings->credentials->userid; //Convenience alias. We use this in a good few places.
 	werror("Got settings from %s: active bot %O\n", db->host, G->G->dbsettings->active_bot);
 	event_notify("database_settings", G->G->dbsettings);
 }
