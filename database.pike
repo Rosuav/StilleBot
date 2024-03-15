@@ -591,11 +591,13 @@ __async__ void preload_user_credentials() {
 	m_delete(G->G, "user_credentials_loading");
 }
 
+@create_hook: constant credentials_changed = ({"mapping cred"});
 @"stillebot.config:credentials":
 void notify_credentials_changed(int pid, string cond, string extra, string host) {
 	load_config(extra, "credentials")->then() {[mapping data] = __ARGS__;
 		mapping cred = G->G->user_credentials;
 		cred[(int)extra] = cred[data->login] = data;
+		event_notify("credentials_changed", data);
 	};
 }
 

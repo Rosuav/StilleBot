@@ -112,6 +112,7 @@ __async__ void voice_enable(string voiceid, string chan, mapping|void tags) {
 	])));
 	werror("Voice %O connected, sending to channel %O\n", voiceid, chan);
 	array msgs = irc_connections[voiceid]; //Note that the queue may be added to while we're connecting.
+	if (!arrayp(msgs)) {conn->queueclose(); return;} //We've been kicked for auth change. Ignore it.
 	irc_connections[voiceid] = conn;
 	conn->yes_reconnect(); //Mark that we need this connection
 	conn->send(chan, msgs[*], tags);
@@ -1442,6 +1443,28 @@ __async__ void reconnect() {
 		->thencatch() {werror("Unable to connect to Twitch:\n%s\n", describe_backtrace(__ARGS__[0]));};
 	}
 	werror("Now connecting: %O queue %O\n", connection_cache->rosuav, connection_cache->rosuav->queue);
+}
+
+@hook_credentials_changed: void kick_voice_on_auth_change(mapping cred) {
+	//If the user that just reauthenticated is an active bot voice, reconnect.
+	//Note that this comes in two forms depending on whether it's a shard voice
+	//or an alternate voice.
+	werror("Got credentials for %O/%O\n", cred->userid, cred->login);
+	if (cred->userid == G->G->bot_uid || has_value((shard_voices - ({0}))->id, (string)cred->userid)) {
+		//If the bot's primary auth has changed, or any of the voices used for sharding, do a full
+		//reconnect and reestablish them all.
+		werror("Reconnecting due to credentials change for %O/%O\n", cred->userid, cred->login);
+		reconnect();
+	} else if (object|array conn = m_delete(irc_connections, (string)cred->userid)) {
+		//Otherwise, if we're connected to that voice (note that this is also true of shard voices
+		//so we need to check for that first), kick the connection and let it be resumed later.
+		//Now, things get a bit awkward. If conn is an object, we have a connection, so we need to
+		//kick it; but if it's an array, we might be half way through connecting, but that might
+		//just fail. For simplicity's sake, I'm going to discard any pending messages in that case,
+		//since the most likely cause is that a voice got deauthed; people will just retrigger the
+		//messages after reauthing anyway.
+		werror("Kicking voice credentials for %O/%O\n", cred->userid, cred->login);
+	}
 }
 
 void send_message(string chan, string msg) {if (irc_connections[0]) irc_connections[0]->send(chan, msg);}
