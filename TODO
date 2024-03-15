@@ -290,4 +290,3 @@
   suggestions". Track how many times they've been suggested? Show only those who are
   currently live.
 * Make a shareable link feature for twitchlogin.pike
-* Emote picker looks ugly if no perms - suggest that bot owner auth from voices page

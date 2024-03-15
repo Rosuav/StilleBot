@@ -243,19 +243,27 @@ __async__ void websocket_cmd_list_emotes(mapping(string:mixed) conn, mapping(str
 	//Send the existing emotes, then update them once they're fetched.
 	if (emotes->emotes) conn->sock->send_text(Standards.JSON.encode((["cmd": "emotes_available", "voice": voices[voice], "emotes": emotes]), 4));
 	if (emotes->fetched > time() - 60) return; //Or not. I mean, one minute, it can have stale data if it wants.
+	emotes->voice = voices[voice]->id;
+	emotes->voice_name = voices[voice]->desc; //Or should it use voices[voice]->name?
+	emotes->profile_image_url = voices[voice]->profile_image_url;
+	m_delete(emotes, "error");
 	mapping cred = G->G->user_credentials[(int)voice];
-	if (!has_value(cred->scopes, "user:read:emotes")) return; //TODO: Send an error back? Suppress the emote picker icon?
-	array emotes_raw = await(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes/user", ([
-		"user_id": voice,
-		"broadcaster_id": (string)channel->userid, //Include follower emotes from this channel
-	]), (["Authorization": "Bearer " + cred->token])));
+	if (!has_value(cred->scopes, "user:read:emotes")) {
+		emotes->error = "Emote picker not available for this voice - reauthenticating may help";
+		conn->sock->send_text(Standards.JSON.encode(([
+			"cmd": "emotes_available", "voice": msg->voice,
+			"emotes": emotes,
+		]), 4));
+		return;
+	}
+	mapping args = (["user_id": voice]);
+	if (channel->userid) args->broadcaster_id = (string)channel->userid; //Include follower emotes from this channel (unless it's the demo)
+	array emotes_raw = await(get_helix_paginated("https://api.twitch.tv/helix/chat/emotes/user",
+		args, (["Authorization": "Bearer " + cred->token])));
 	emotes->emotes = await(G->G->categorize_emotes(emotes_raw));
 	//TODO: Retain this rather than discarding it in get_helix_paginated
 	emotes->template = "https://static-cdn.jtvnw.net/emoticons/v2/{{id}}/{{format}}/{{theme_mode}}/{{scale}}";
 	emotes->fetched = time();
-	emotes->voice = voices[voice]->id;
-	emotes->voice_name = voices[voice]->desc; //Or should it use voices[voice]->name?
-	emotes->profile_image_url = voices[voice]->profile_image_url;
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "emotes_available", "voice": msg->voice, "emotes": emotes]), 4));
 }
 

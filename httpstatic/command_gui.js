@@ -1525,7 +1525,9 @@ function update_emote_picker(voice) {
 	console.log("Update emote picker!", emav);
 	set_content("#emotepicker h3", ["Emotes for ", emav?.voice_name || "..."]);
 	replace_content("#emotelist",
-		!emav ? "Loading..." : Object.entries(emav.emotes)
+		!emav ? "Loading..." :
+		emav.error ? emav.error :
+		Object.entries(emav.emotes)
 			//Sort alphabetically, but put Globals at the end. (There'll only be one, we won't have to compare globals to globals.)
 			.sort((a, b) => a[0] === "Globals" ? 1 : b[0] === "Globals" ? -1 : a[0].localeCompare(b[0]))
 			.map(([grp, emotes]) => [
