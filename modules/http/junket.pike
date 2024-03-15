@@ -34,3 +34,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	handler->callback(arg, data);
 	return (["data": "PRAD"]);
 }
+
+//For junket hack testing, set a cookie and then remove this line again.
+//protected void create(string name) {::create(name); G->G->eventhook_hack_cookie = "...";}
