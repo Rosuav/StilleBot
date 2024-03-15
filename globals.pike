@@ -1471,7 +1471,7 @@ mapping all_twitch_scopes = ([
 	//New as of 20240111:
 	"user:read:moderated_channels": "See which channels you're a mod for",
 	//New as of 20240307:
-	"user:read:emotes": "See which emotes you have access to", //WAHOOOOOOOOOOOOOOOOO!
+	"user:read:emotes": "List your emotes - enables emote picker", //WAHOOOOOOOOOOOOOOOOO!
 ]);
 
 class TwitchAuth
