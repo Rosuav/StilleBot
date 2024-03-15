@@ -1347,6 +1347,7 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 	sock->onclose = ws_close;
 }
 
+int(1bit) activate_when_active;
 @hook_database_settings: void kick_when_inactive(mapping settings) {
 	//Delay this till we have access to credentials
 	if (!G->G->cheeremotes) twitch_api_request("https://api.twitch.tv/helix/bits/cheermotes")->then() {
@@ -1356,7 +1357,8 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 		c->fakecheer = c->cheerwhal;
 	};
 	int now_active = is_active_bot();
-	if (now_active && !is_active) call_out(reconnect, 0); //Just become active? Make sure we're connected.
+	if (now_active && !is_active && activate_when_active) call_out(reconnect, 0); //Just become active? Make sure we're connected.
+	if (!now_active) activate_when_active = 1;
 	is_active = now_active;
 	string other = !is_active && get_active_bot();
 	if (!other) return; //We're active (or uncertain), don't kick clients.
@@ -1393,7 +1395,7 @@ __async__ void reconnect() {
 		}
 		array voices = values(demo_voices);
 		sort((array(int))voices->id, voices);
-		foreach (voices; int i; mapping v) if (v->id == G->G->bot_uid) voices[i] = 0;
+		foreach (voices; int i; mapping v) if (v->id == (string)G->G->bot_uid) voices[i] = 0;
 		shard_voices = ({0}) + (voices - ({0})); //Move the null entry (for intrinsic voice) to the start
 	}
 	array channels = await(G->G->DB->generic_query(#"
@@ -1417,7 +1419,7 @@ __async__ void reconnect() {
 	//If we're not active, don't bother connecting. This doesn't stop us from BEING
 	//connected (if we've been deactivated), but we will ignore all messages that
 	//come in. OTOH, if we become active after previously not, we need to connect.
-	if (!is_active) return;
+	if (!is_active) {activate_when_active = 1; return;}
 	channels = filter("#" + channels->login[*]) {return __ARGS__[0][1] != '!';};
 	//Deal the channels out into N piles based on available users. Any spares
 	//go onto the primary channel. This speeds up initial connection when there
