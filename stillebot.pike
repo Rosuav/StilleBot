@@ -19,12 +19,21 @@ void console(object stdin, string buf) {
 	else if (function f = G->consolecmd[buf]) f(buf);
 }
 
+class CompilerErrors {
+	int(1bit) reported;
+	void compile_error(string filename, int line, string msg) {
+		reported = 1;
+		werror("\e[1;31m%s:%d\e[0m: %s\n", filename, line, msg);
+	}
+}
+
 object bootstrap(string c)
 {
 	sscanf(explode_path(c)[-1], "%s.pike", string name);
 	program|object compiled;
-	mixed ex = catch {compiled = compile_file(c);};
-	if (ex) {werror("Exception in compile!\n"); werror(ex->describe()+"\n"); return 0;}
+	object handler = CompilerErrors();
+	mixed ex = catch {compiled = compile_file(c, handler);};
+	if (ex) {if (!handler->reported) werror("Exception in compile!\n%s\n", ex->describe()); return 0;}
 	if (!compiled) werror("Compilation failed for "+c+"\n");
 	if (mixed ex = catch {compiled = compiled(name);}) {G->warnings++; werror(describe_backtrace(ex)+"\n");}
 	werror("Bootstrapped "+c+"\n");
