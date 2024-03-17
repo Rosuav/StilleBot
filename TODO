@@ -184,16 +184,6 @@
   - If enabled, when you open the raid finder, it signals all raid finders who have you
     as a tile. Red asterisk to signal "Has raid finder open, is probably ending soon!"
   - Similarly, when you close the raid finder (or disable the option), signal-revert all.
-* chan_features - add a thing for broadcaster scopes, eg for !follower, !hypetrain
-  - Group them. Put a note on the ones that require it. If they are active, have a single
-    button to reauthenticate.
-  - This might need to scan ALL commands for any use of builtins flagged as requiring scope.
-  - Back end work is largely sorted, except that stashing it in prefs might not be right.
-  - We need to show this info primarily to the broadcaster, but also to mods, so that they
-    know that some commands might not be fully functional (yet), and can advise the caster
-    to go to that page to authenticate (as per /hypetrain).
-  - This means that, on the chan_features page, it may need to show the channel's info re
-    missing perms, the user's info ditto ditto, or both.
 * Instead of deleting a channel's config, flag it as Inactive
   - This flag probably shouldn't go in the channel config file, since that would require
     loading every config file to determine which ones to not bother loading.
