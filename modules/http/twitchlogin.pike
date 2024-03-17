@@ -29,7 +29,6 @@ mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mappin
 	req->misc->session->user = user;
 	req->misc->session->scopes = (multiset)(req->variables->scope / " ");
 	req->misc->session->token = token;
-	req->misc->session->authcookie = cookie;
 	return (["data": "<script>window.close(); window.opener.location.reload();</script>", "type": "text/html"]);
 }
 
@@ -59,7 +58,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"userid": (int)user->id,
 			"login": user->login,
 			"token": auth->access_token,
-			"authcookie": cookie,
+			//"authcookie": cookie, //Not currently stored since it's not needed. Consider storing it encoded if it would help with anything.
 			"scopes": sort(req->variables->scope / " "),
 			"validated": time(),
 			"user_info": user,

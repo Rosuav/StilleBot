@@ -24,7 +24,7 @@ constant tables = ([
 		"twitchid bigint not null",
 		"cmdname text not null",
 		"active boolean not null",
-		"content json not null",
+		"content jsonb not null",
 		"created timestamp with time zone not null default now()",
 		"create unique index on stillebot.commands (twitchid, cmdname) where active;",
 		//Yet more untested.
@@ -36,7 +36,7 @@ constant tables = ([
 	"config": ({
 		"twitchid bigint not null",
 		"keyword varchar not null",
-		"data json not null",
+		"data jsonb not null",
 		" primary key (twitchid, keyword)",
 		//If ever I start over, there's gonna be a lot of these to test.
 		//"create or replace function send_config_notification() returns trigger language plpgsql as $$begin perform pg_notify(concat('stillebot.config', ':', new.keyword), new.twitchid::text); return null; end$$;",
@@ -54,7 +54,7 @@ constant tables = ([
 	"settings": ({
 		"asterisk char primary key", //There's only one row, but give it a PK anyway for the sake of replication.
 		"active_bot varchar",
-		"credentials json not null default '{}'",
+		"credentials jsonb not null default '{}'",
 		"insert into stillebot.settings (asterisk) values ('*');",
 		//Not tested as part of database recreation, has been done manually.
 		//"create or replace function send_settings_notification() returns trigger language plpgsql as $$begin perform pg_notify('stillebot.settings', ''); return null; end$$;",
@@ -76,14 +76,14 @@ constant tables = ([
 	"raids": ({
 		"fromid bigint not null",
 		"toid bigint not null",
-		"data json not null",
+		"data jsonb not null",
 		" primary key (fromid, toid)",
 	}),
 	"uploads": ({
 		"id uuid primary key default gen_random_uuid()",
 		"channel bigint not null",
 		"uploader bigint not null",
-		"metadata json not null default '{}'",
+		"metadata jsonb not null default '{}'",
 		"expires timestamp with time zone", //NULL means it never expires
 		"data bytea not null", //The actual blob.
 		//TODO: Figure out what would make useful indexes

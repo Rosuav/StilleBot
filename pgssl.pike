@@ -33,6 +33,7 @@ mixed decode_as_type(string val, int type) {
 			return v;
 		}
 		case 114: return Standards.JSON.decode_utf8(val);
+		case 3802: return Standards.JSON.decode_utf8(val[1..]);
 		case 700: case 701: { //Float
 			sscanf(val, "%" + sizeof(val) + "F", float v);
 			return v;
@@ -119,6 +120,7 @@ string encode_as_type(mixed value, int typeoid) {
 		case 21: value = sprintf("%2c", (int)value); break;
 		case 23: value = sprintf("%4c", (int)value); break;
 		case 114: value = Standards.JSON.encode(value, 5); break;
+		case 3802: value = "\1" + Standards.JSON.encode(value); break; //I think? It seems to expect a version number but otherwise be JSON.
 		case 700: value = sprintf("%4F", (float)value); break;
 		case 701: value = sprintf("%8F", (float)value); break;
 		case 1184: value = sprintf("%8c", value->usecs - EPOCH2000); break;
