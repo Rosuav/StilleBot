@@ -98,10 +98,6 @@
   can do the dynamic updates too?
   - Change the Add New Dynamic to let you select any manageable reward first
   - If you don't pick one, then you can create new (optionally copying)
-* Classic command editor is lagging behind a bit.
-  - Set variable, "extra config", that sucks. The whole destcfg thing is a bit of a
-    hack though, so I don't think it's worth going to any effort for this yet.
-  - Mode "foreach" is also clunky, plus it can't have the participant_activity set.
 * GUI editor - params need formatting options, in and out
   - Builtin params need to cope with splitting strings to arrays
 * Rename "gifted" flag in sub alerts to "is_gifted" to trigger boolean handling
