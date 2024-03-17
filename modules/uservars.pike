@@ -13,6 +13,7 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 		//If it looks like a number, assume you meant a user ID, otherwise a user name.
 		//Note that looking up an ID will not skip the API call; this ensures that, even
 		//if it looks like an ID, we check that it's an actual user.
+		param[1] -= "@";
 		info = await(get_user_info(param[1], (int)param[1] ? "id" : "login"));
 	};
 	//If something went wrong, the ID will be zero, which can be probed for using $kwd*$.
