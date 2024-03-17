@@ -807,6 +807,9 @@ __async__ string suggestraid(int from, int target, int recip) {
 	strm->suggested_by = suggestor_user;
 	strm->suggested_at = time();
 	raid_suggestions[(string)recip] += ({strm});
+	G->G->DB->mutate_config(recip, "raid_suggestions") {__ARGS__[0]->history += ({([
+		"suggestor": from, "target": target, "time": time(),
+	])});};
 	string sendme = Standards.JSON.encode((["cmd": "update", "suggestions": prune_raid_suggestions((string)recip)]));
 	foreach (websocket_groups[""], object sock) if (sock && sock->state == 1) {
 		mapping c;

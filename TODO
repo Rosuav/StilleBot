@@ -284,9 +284,6 @@
   be in the log.)
 * Are conduits useful? Can we have one shard for Gideon and one for Sikorsky?
   https://dev.twitch.tv/docs/eventsub/handling-conduit-events/
-* Raid finder suggestions: After they expire from the current one, move them to "past
-  suggestions". Track how many times they've been suggested? Show only those who are
-  currently live.
 * Make a shareable link feature for twitchlogin.pike
 * Webhooks on Gideon
   - Need to have Gideon reliably able to reload code again. No idea what's wrong.
