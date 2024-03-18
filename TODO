@@ -276,6 +276,10 @@
   - If active and no websocket, establish WS and update shard
   - Hook conduit.shard.disabled on all nodes, not just active, to know when the other
     has gone down - maybe automatically raise self? Use webhook for this one.
+  - NOTE: Where webhooks have hookname=arg, websockets just have the message body.
+    Every EventSub needs to have a unique message type, which will be the way they
+    get routed, and most of them will share channel handling, so have the check for
+    payload->event->broadcaster_user_id at a high level, and pass on a channel object.
 * Make a shareable link feature for twitchlogin.pike
 * Webhooks on Gideon
   - Need to have Gideon reliably able to reload code again. No idea what's wrong.
