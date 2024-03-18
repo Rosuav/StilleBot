@@ -120,7 +120,7 @@ string encode_as_type(mixed value, int typeoid) {
 		case 21: value = sprintf("%2c", (int)value); break;
 		case 23: value = sprintf("%4c", (int)value); break;
 		case 114: value = Standards.JSON.encode(value, 5); break;
-		case 3802: value = "\1" + Standards.JSON.encode(value); break; //I think? It seems to expect a version number but otherwise be JSON.
+		case 3802: value = "\1" + Standards.JSON.encode(value, 5); break; //I think? It seems to expect a version number but otherwise be JSON.
 		case 700: value = sprintf("%4F", (float)value); break;
 		case 701: value = sprintf("%8F", (float)value); break;
 		case 1184: value = sprintf("%8c", value->usecs - EPOCH2000); break;
