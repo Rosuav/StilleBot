@@ -612,6 +612,8 @@ void stream_status(int userid, string name, mapping info)
 					"method": "webhook",
 					"callback": sprintf("%s/junket?%s=%s",
 						//Note that webhooks always and only go to the primary domain name. This may end up multihomed though.
+						//NOTE: If eventhooks are used only for conduit-shard-disabled, it should go to
+						//each instance address instead.
 						G->G->instance_config->http_address,
 						hookname, arg,
 					),
@@ -662,6 +664,7 @@ void check_hooks(array eventhooks)
 {
 	foreach (G->G->eventhook_types;; object handler) handler->have_subs = (<>);
 	foreach (eventhooks, mapping hook) {
+		if (hook->transport->method == "conduit") continue; //TEMP HACK: Allow testing of conduits without interfering with normal operation
 		sscanf(hook->transport->callback || "h", "http%*[s]://%*s/junket?%s=%s", string type, string arg);
 		object handler = G->G->eventhook_types[type];
 		if (!handler) {
