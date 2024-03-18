@@ -280,6 +280,11 @@
     Every EventSub needs to have a unique message type, which will be the way they
     get routed, and most of them will share channel handling, so have the check for
     payload->event->broadcaster_user_id at a high level, and pass on a channel object.
+  - EventSubs need to be audited. Can they switch to identifying channel by payload?
+    If so, do they need other filtering? Can it be augmented?
+  - Make a constant in the inheritable for the key used in both the condition and the
+    lookup from the payload. Default to "broadcaster_user_id". This will cover most.
+  - Check EventSubSpecial and everything in eventhooks.pike
 * Make a shareable link feature for twitchlogin.pike
 * Webhooks on Gideon
   - Need to have Gideon reliably able to reload code again. No idea what's wrong.
