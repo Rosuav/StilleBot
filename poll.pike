@@ -581,6 +581,7 @@ void stream_status(int userid, string name, mapping info)
 @export: class EventSub(string hookname, string type, string version, function callback) {
 	Crypto.SHA256.HMAC signer; string secret;
 	multiset(string) have_subs = (<>);
+	array|zero pending = ({ });
 	protected void create() {
 		if (!G->G->eventhook_types) G->G->eventhook_types = ([]);
 		if (object other = G->G->eventhook_types[hookname]) have_subs = other->have_subs;
@@ -599,10 +600,15 @@ void stream_status(int userid, string name, mapping info)
 			G->G->DB->save_config(0, "eventhook_secret", secrets);
 		}
 		signer = Crypto.SHA256.HMAC(secret = secrets[hookname]);
+		//If attempts were made to establish subscriptions before we had the signing
+		//secret, redo them now.
+		array queue = pending; pending = 0;
+		foreach (queue, [string arg, mapping cond]) this(arg, cond);
 	}
 	protected void `()(string|mixed arg, mapping condition) {
 		if (!stringp(arg)) arg = (string)arg; //It really should be a string
 		if (have_subs[arg]) return;
+		if (pending) {pending += ({ ({arg, condition}) }); return;}
 		twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
 			"authtype": "app",
 			"json": ([
