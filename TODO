@@ -285,6 +285,14 @@
   - Make a constant in the inheritable for the key used in both the condition and the
     lookup from the payload. Default to "broadcaster_user_id". This will cover most.
   - Check EventSubSpecial and everything in eventhooks.pike
+  - Raids need to be handled specially, since we might care about from_id, might care
+    about to_id. The same raid can trigger both a raid alert AND an outgoing raid log.
+  - The common case is channel hooks.
+    - These require a specific broadcaster permission. Some may support mod permission.
+    - Use event value "broadcaster_user_id" to route them back to the correct channel.
+    - Only applicable to channels the bot is active in.
+    - Probe for them on reconnect(), using the table of required scopes.
+  - Others: Raid, hype train
 * Make a shareable link feature for twitchlogin.pike
 * Webhooks on Gideon
   - Need to have Gideon reliably able to reload code again. No idea what's wrong.

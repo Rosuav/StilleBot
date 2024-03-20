@@ -252,7 +252,7 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mixed id) {
 				"json": ([
 					"type": "channel.chat.message", "version": "1",
 					"condition": (["broadcaster_user_id": "49497888", "user_id": "49497888"]),
-					//"type": "channel.channel_points_custom_reward_redemption.add", "version": "1",
+					//"type": "channel.channel_points_automatic_reward_redemption.add", "version": "beta",
 					//"condition": (["broadcaster_user_id": "49497888"]),
 					"transport": ([
 						"method": "conduit",
@@ -262,6 +262,12 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mixed id) {
 				"return_errors": 1,
 			]))));*/
 			//werror("Current subs: %O\n", await(twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions?type=channel.chat.message", ([]), (["authtype": "app"]))));
+			break;
+		}
+		case "notification": { //Incoming notification. Send it to the appropriate module.
+			mapping event = data->payload->?event; if (!mappingp(event)) return;
+			string type = data->metadata->subscription_type;
+			//TODO: Look up the type in the mapping and send the event there
 			break;
 		}
 		default: break;
