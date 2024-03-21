@@ -249,7 +249,7 @@ class annotated {
 		G->G->exports[name] = ([]);
 		foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
 			if (ann) foreach (indices(ann), mixed anno) {
-				if (objectp(anno) && anno->is_callable_annotation) anno(this, name, key);
+				if (functionp(anno)) anno(this, name, key);
 			}
 		}
 		//Purge any that are no longer being exported (handles renames etc)
@@ -257,33 +257,24 @@ class annotated {
 			add_constant(key);
 	}
 }
-object export = class {
-	constant is_callable_annotation = 1;
-	protected void `()(object module, string modname, string key) {
-		add_constant(key, module[key]);
-		G->G->exports[modname][key] = 1;
-	}
-}();
+void export(object module, string modname, string key) {
+	add_constant(key, module[key]);
+	G->G->exports[modname][key] = 1;
+}
 
-object retain = class {
-	constant is_callable_annotation = 1;
-	protected void `()(object module, string modname, string key) {
-		if (!G->G[key]) G->G[key] = module[key];
-		else module[key] = G->G[key];
-	}
-}();
+void retain(object module, string modname, string key) {
+	if (!G->G[key]) G->G[key] = module[key];
+	else module[key] = G->G[key];
+}
 
 //Decorate a function with this to have it called once G->G->irc is populated.
 //If it's already populated (eg on code reload), function will be called immediately.
 //NOTE: When this is called, G->G->irc will be populated, but not all configs are
 //necessarily fully populated. See G->G->irc->loading.
-object on_irc_loaded = class {
-	constant is_callable_annotation = 1;
-	protected void `()(object module, string modname, string key) {
-		if (sizeof(G->G->irc->?id || ({ }))) module[key]();
-		else G->G->awaiting_irc_loaded += ({module[key]});
-	}
-}();
+void on_irc_loaded(object module, string modname, string key) {
+	if (sizeof(G->G->irc->?id || ({ }))) module[key]();
+	else G->G->awaiting_irc_loaded += ({module[key]});
+}
 
 @"G->G->enableable_modules";
 class enableable_module {
