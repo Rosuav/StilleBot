@@ -12,13 +12,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		handler->have_subs[arg] = 1;
 		return (["data": body->challenge]);
 	}
-	//HACK FOR TESTING: If the magic cookie is in the request, ignore HMAC and
-	//body, and permit even a GET request to trigger something.
-	if (G->G->eventhook_hack_cookie && req->variables->cookie == G->G->eventhook_hack_cookie) {
-		werror("Event hook hack sent, simulating %O message for %O\n", endpoint, arg);
-		handler->callback(arg, (["title": req->variables->title || "No Title", "choices": ({ }), "channel_points_voting": ([])]));
-		return (["data": "Hack sent.\n"]);
-	}
 	if (req->body_raw == "" || !has_prefix(req->request_headers["content-type"], "application/json")) return 0;
 	//It's probably safe to assume that any message sent by Twitch is in UTF-8.
 	//So we verify the signature, and then trust the rest. Also, we assume that
@@ -35,6 +28,3 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	handler->callback(arg, data);
 	return (["data": "PRAD"]);
 }
-
-//For junket hack testing, set a cookie and then remove this line again.
-//protected void create(string name) {::create(name); G->G->eventhook_hack_cookie = "...";}
