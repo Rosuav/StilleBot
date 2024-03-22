@@ -2,6 +2,7 @@ inherit http_endpoint;
 inherit websocket_handler;
 inherit annotated;
 inherit builtin_command;
+inherit hook;
 @retain: mapping hypetrain_checktime = ([]);
 
 //Parse a timestamp into a valid Unix time. If ts is null, malformed,
@@ -51,8 +52,10 @@ __async__ mapping parse_hype_status(mapping data)
 	return state;
 }
 
-//Triggered by the hooks in eventhooks.pike
-void hypetrain_progression(string status, string chan, mapping info) {
+@EventNotify("channel.hype_train.begin=1"):
+@EventNotify("channel.hype_train.progress=1"):
+@EventNotify("channel.hype_train.end=1"):
+void hypetrain_progression(object chan, mapping info) {
 	//Stdio.append_file("evthook.log", sprintf("EVENT: Hype %s [%O, %d]: %O\n", status, chan, time(), info));
 	parse_hype_status(info)->then() {send_updates_all(info->broadcaster_user_login, @__ARGS__);};
 }
@@ -70,7 +73,7 @@ __async__ mapping get_state(int|string chan)
 		mapping info = await(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + uid,
 				(["Authorization": "Bearer " + token_for_user_id(uid)[0]])));
 		//If there's an error fetching events, don't set up hooks
-		G->G->specials_check_modular_hooks((["login": chan, "userid": uid]), "hypetrain");
+		establish_notifications(uid);
 		mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
 		return await(parse_hype_status(data));
 	};

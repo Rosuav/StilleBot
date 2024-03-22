@@ -107,7 +107,6 @@ mapping adbreak(object channel, mapping info) {
 
 @retain: mapping(int:int) last_seen_hype_level = ([]);
 mapping hypetrain(string hook, object channel, mapping info) {
-	G->G->websocket_types->hypetrain->hypetrain_progression(hook, "", info);
 	string levelup = "";
 	if (hook == "begin" || (int)info->level != last_seen_hype_level[channel->userid]) {
 		if ((int)info->level > 1) levelup = (string)((int)info->level - 1); //The level achieved
