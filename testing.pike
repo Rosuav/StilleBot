@@ -227,70 +227,10 @@ __async__ void fix_kofi_name() {
 	await(G->G->DB->save_config(54212603, "subgiftstats", stats));
 }
 
-string condid;
-__async__ void conduit_message(Protocols.WebSocket.Frame frm, mixed id) {
-	mixed data;
-	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
-	string type = mappingp(data) && data->metadata->?message_type;
-	if (!type || type == "session_keepalive") return;
-	werror("Got WS msg: %O\n", data);
-	switch (type) {
-		case "session_welcome": { //New socket established. Associate with shard.
-			mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/conduits/shards", ([]), ([
-				"authtype": "app", "method": "PATCH", "json": ([
-					"conduit_id": condid, "shards": ({([
-						"id": "0", "transport": ([
-							"method": "websocket",
-							"session_id": data->payload->session->id,
-						]),
-					])}),
-				]),
-			])));
-			werror("Updated shard: %O\n", ret);
-			/*werror("Added subscription: %O\n", await(twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
-				"authtype": "app",
-				"json": ([
-					"type": "channel.chat.message", "version": "1",
-					"condition": (["broadcaster_user_id": "49497888", "user_id": "49497888"]),
-					//"type": "channel.channel_points_automatic_reward_redemption.add", "version": "beta",
-					//"condition": (["broadcaster_user_id": "49497888"]),
-					"transport": ([
-						"method": "conduit",
-						"conduit_id": condid,
-					]),
-				]),
-				"return_errors": 1,
-			]))));*/
-			//werror("Current subs: %O\n", await(twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions?type=channel.chat.message", ([]), (["authtype": "app"]))));
-			break;
-		}
-		case "notification": { //Incoming notification. Send it to the appropriate module.
-			mapping event = data->payload->?event; if (!mappingp(event)) return;
-			string type = data->metadata->subscription_type;
-			//TODO: Look up the type in the mapping and send the event there
-			break;
-		}
-		default: break;
-	}
-}
-
-void conduit_shard_close(int reason, mixed id) {
-	werror("WS closed: %d\n", reason);
-}
-
-__async__ void conduits() {
-	werror("Current conduits: %O\n", await(twitch_api_request("https://api.twitch.tv/helix/eventsub/conduits", ([]), (["authtype": "app"]))));
-	/*mapping conduit = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/conduits", ([]), ([
-		"authtype": "app", "json": (["shard_count": 1]),
-	])));
-	werror("Create conduit: %O\n", conduit);
-	condid = conduit->data[0]->id; //Assume there are no others. Maybe [-1] instead of [0]?*/
-	condid = "64e2637e-f5cf-43d6-a7ae-308fb623a0d3";
-	werror("Shards: %O\n", await(twitch_api_request("https://api.twitch.tv/helix/eventsub/conduits/shards?conduit_id=" + condid, ([]), (["authtype": "app"]))));
-	Protocols.WebSocket.Connection conn = Protocols.WebSocket.Connection();
-	conn->connect("wss://eventsub.wss.twitch.tv/ws"); //Will establish TCP and TLS synchronously, then HTTP and WS asynchronously
-	conn->onmessage = conduit_message;
-	conn->onclose = conduit_shard_close;
+inherit hook;
+@EventNotify("channel.chat.message=1"):
+void chatmessage(object channel, mapping info) {
+	werror("Got a chat message! %O %O\n", channel->?name, info->message->text);
 }
 
 protected void create(string name) {
@@ -312,5 +252,5 @@ protected void create(string name) {
 	//array_test();
 	//json_test();
 	//transact_test();
-	conduits();
+	G->bootstrap("connection.pike")->setup_conduit();
 }

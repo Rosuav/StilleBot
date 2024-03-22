@@ -178,7 +178,10 @@ class hook {
 						continue;
 					}
 					//Otherwise, it's registering a function for an existing hook.
-					if (!G->G->eventhooks[anno->event]) error("Unrecognized hook %s\n", anno->event);
+					if (!G->G->eventhooks[anno->event]) {
+						if (has_value(anno->event, '=')) G->G->eventhooks[anno->event] = ([]); //EventSub hooks can be created implicitly.
+						else error("Unrecognized hook %s\n", anno->event);
+					}
 					G->G->eventhooks[anno->event][name] = this[key];
 				}
 			}
@@ -197,6 +200,10 @@ class hook {
 				werror("Error in hook %s->%s: %s", name, event, describe_backtrace(ex));
 	}
 }
+
+//Usage: @EventNotify("channel.subscription.gift=1"): void subgift(mapping info) { }
+//Ties in with "inherit hook". (Or should it tie in with "inherit annotated" instead?)
+class EventNotify(string event) {@constant; constant is_hook_annotation = 1;}
 
 //Deprecated way of implementing hooks. Is buggy in a number of ways. Use "inherit hook" instead (see above).
 //To deregister a hook: register_hook("...event...", Program.defined(this_program));
