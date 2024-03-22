@@ -199,6 +199,17 @@ class hook {
 			if (mixed ex = catch (func(@args)))
 				werror("Error in hook %s->%s: %s", name, event, describe_backtrace(ex));
 	}
+
+	//Establish hook notifications for the specified channel and all hooks in the current module
+	void establish_notifications(int channelid) {
+		foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
+			if (ann) foreach (indices(ann), mixed anno) {
+				if (objectp(anno) && anno->is_hook_annotation) {
+					if (has_value(anno->event, '=')) G->G->establish_hook_notification(channelid, anno->event);
+				}
+			}
+		}
+	}
 }
 
 //Usage: @EventNotify("channel.subscription.gift=1"): void subgift(mapping info) { }

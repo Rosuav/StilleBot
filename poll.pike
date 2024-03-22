@@ -670,7 +670,16 @@ void check_hooks(array eventhooks)
 {
 	foreach (G->G->eventhook_types;; object handler) handler->have_subs = (<>);
 	foreach (eventhooks, mapping hook) {
-		if (hook->transport->method == "conduit") continue; //TEMP HACK: Allow testing of conduits without interfering with normal operation
+		if (hook->transport->method == "conduit") {
+			string type = hook->type + "=" + hook->version;
+			if (!G->G->eventhooks[type]) {
+				write("Deleting conduit eventhook: %O\n", hook);
+				twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
+					([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
+			} else G_G_("eventhooks", type, "")[hook->condition->broadcaster_user_id] = 1;
+			continue;
+		}
+		//Otherwise it's a webhook event. Eventually this will only be for conduitbroken.
 		sscanf(hook->transport->callback || "h", "http%*[s]://%*s/junket?%s=%s", string type, string arg);
 		object handler = G->G->eventhook_types[type];
 		if (!handler) {
@@ -728,6 +737,7 @@ void poll()
 	//poll is triggering again, causing stacking requests. Look into it if
 	//possible. Otherwise, there'll be a bit of outage (cooldown) any time
 	//I hit this sort of problem.
+	//TODO: Only check this occasionally. No need to hammer this every 60 seconds.
 	string addr = G->G->instance_config->http_address;
 	if (addr && addr != "")
 		get_helix_paginated("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([]), (["authtype": "app"]))
