@@ -612,23 +612,22 @@ void resolve_affected_inherits(mapping cfg, string userid, string id) {
 	resolve_all_inherits(cfg, userid);
 }
 
-EventSub raidin = EventSub("raidin", "channel.raid", "1") {
-	object channel = G->G->irc->channels["#" + __ARGS__[0]];
-	if (!channel) return;
-	string target = __ARGS__[1]->from_broadcaster_user_login; //TODO: Use user_name instead?
-	int viewers = __ARGS__[1]->viewers;
+@EventNotify("channel.raid=1"):
+void raidin(object _, mapping info) {
+	object channel = G->G->irc->id[(int)info->to_broadcaster_user_id]; if (!channel) return;
+	string target = info->from_broadcaster_user_login; //TODO: Use user_name instead?
+	int viewers = info->viewers;
 	send_alert(channel, "hostalert", ([
 		"NAME": target, "username": target,
 		"VIEWERS": viewers, "viewers": viewers,
 		"is_raid": 1,
 	]));
-};
+}
 
 void ensure_host_connection(string chan) {
 	//If host alerts are active, we need notifications so we can push them through. Function name is orphanned.
 	object channel = G->G->irc->channels["#" + chan];
 	if (!channel->userid) return; //Most likely the demo channel. Don't try to set up notifications.
-	raidin(chan, (["to_broadcaster_user_id": (string)channel->userid]));
 }
 
 __async__ void ensure_tts_credentials(int need_tts) { //If you already KNOW we need it, skip the search

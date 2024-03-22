@@ -1374,7 +1374,7 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mixed id) {
 		case "notification": { //Incoming notification. Send it to the appropriate module.
 			mapping event = data->payload->?event; if (!mappingp(event)) return;
 			string type = data->metadata->subscription_type + "=" + data->metadata->subscription_version;
-			object channel = G->G->irc->id[(int)event->broadcaster_user_id];
+			object channel = G->G->irc->id[(int)event->broadcaster_user_id]; //Some events (eg raid) won't have a single channel, so this will be null
 			foreach (G->G->eventhooks[type] || ([]); string name; function func)
 				if (mixed ex = name != "" && catch (func(channel, event)))
 					werror("Error in hook %s->%s: %s", name, event, describe_backtrace(ex));

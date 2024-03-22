@@ -656,14 +656,15 @@ void got_follower(object channel, mapping follower) {
 			]), ([]));
 		};
 };
-//EventSub raidin = EventSub("raidin", "channel.raid", "1") {Stdio.append_file("evthook.log", sprintf("EVENT: Raid incoming [%d, %O]: %O\n", time(), @__ARGS__));};
-EventSub raidout = EventSub("raidout", "channel.raid", "1") {[string chan, mapping info] = __ARGS__;
-	object channel = G->G->irc->channels["#" + chan];
+
+@EventNotify("channel.raid=1"):
+void raidout(object _, mapping info) {
+	object channel = G->G->irc->id[(int)info->from_broadcaster_user_id];
 	Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s with %d\n",
-		Calendar.now()->format_time(), chan, string_to_utf8(info->to_broadcaster_user_name), (int)info->viewers));
+		Calendar.now()->format_time(), string_to_utf8(info->from_broadcaster_user_name), string_to_utf8(info->to_broadcaster_user_name), (int)info->viewers));
 	if (channel) channel->record_raid((int)info->from_broadcaster_user_id, info->from_broadcaster_user_name,
 		(int)info->to_broadcaster_user_id, info->to_broadcaster_user_name, 0, (int)info->viewers);
-};
+}
 
 void check_hooks(array eventhooks)
 {
@@ -675,7 +676,11 @@ void check_hooks(array eventhooks)
 				write("Deleting conduit eventhook: %O\n", hook);
 				twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
 					([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
-			} else G_G_("eventhooks", type, "")[hook->condition->broadcaster_user_id] = 1;
+			} else {
+				foreach (({"", "from_", "to_"}), string pfx)
+					if (hook->condition[pfx + "broadcaster_user_id"])
+						G_G_("eventhooks", type, "")[pfx + hook->condition[pfx + "broadcaster_user_id"]] = 1;
+			}
 			continue;
 		}
 		//Otherwise it's a webhook event. Eventually this will only be for conduitbroken.
@@ -711,8 +716,8 @@ void check_hooks(array eventhooks)
 		//TODO: Check if the bot is actually a mod and use that permission
 		if (scopes["moderator:read:followers"]) //If we have the necessary permission, use the broadcaster's authentication.
 			G->G->establish_hook_notification(userid, "channel.follow=2", (["broadcaster_user_id": (string)userid, "moderator_user_id": (string)userid]));
-		//raidin(channel->login, (["to_broadcaster_user_id": (string)userid]));
-		raidout(channel->login, (["from_broadcaster_user_id": (string)userid]));
+		G->G->establish_hook_notification("from_" + userid, "channel.raid=1", (["from_broadcaster_user_id": (string)userid]));
+		G->G->establish_hook_notification("to_" + userid, "channel.raid=1", (["to_broadcaster_user_id": (string)userid]));
 	}
 }
 
