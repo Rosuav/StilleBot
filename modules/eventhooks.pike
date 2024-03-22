@@ -28,7 +28,6 @@ inherit annotated;
 
 @({"channel:read:polls|channel:manage:polls", "channel.poll.begin", "1"}):
 mapping pollbegin(object channel, mapping info) {
-	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
 	mapping params = ([
 		"{title}": info->title,
 		"{choices}": (string)sizeof(info->choices),
@@ -42,7 +41,6 @@ mapping pollbegin(object channel, mapping info) {
 @retain: multiset polls_ended = (<>); //Twitch sends me double notifications. Suppress the duplicates.
 @({"channel:read:polls|channel:manage:polls", "channel.poll.end", "1"}):
 mapping pollended(object channel, mapping info) {
-	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
 	if (polls_ended[info->id]) return 0;
 	polls_ended[info->id] = 1;
 	mapping params = pollbegin(channel, info);
@@ -59,7 +57,6 @@ mapping pollended(object channel, mapping info) {
 
 @({"channel:read:predictions|channel:manage:predictions", "channel.prediction.lock", "1"}):
 mapping predictionlocked(object channel, mapping info) {
-	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
 	mapping params = ([
 		"{title}": info->title,
 		"{choices}": (string)sizeof(info->outcomes),
@@ -83,7 +80,6 @@ mapping predictionlocked(object channel, mapping info) {
 
 @({"channel:read:predictions|channel:manage:predictions", "channel.prediction.end", "1"}):
 mapping predictionended(object channel, mapping info) {
-	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
 	mapping params = predictionlocked(channel, info);
 	params["{status}"] = info->status; //"resolved" or "canceled"
 	string winner_pfx, loser_pfx;
@@ -101,7 +97,6 @@ mapping predictionended(object channel, mapping info) {
 
 @({"channel:read:ads", "channel.ad_break.begin", "1", "always"}):
 mapping adbreak(object channel, mapping info) {
-	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
 	spawn_task(G->G->websocket_types->chan_snoozeads->check_stats(channel));
 	return ([
 		"{length}": (string)info->duration_seconds,
@@ -112,7 +107,6 @@ mapping adbreak(object channel, mapping info) {
 
 @retain: mapping(int:int) last_seen_hype_level = ([]);
 mapping hypetrain(string hook, object channel, mapping info) {
-	if (mapping cfg = info->__condition) return (["broadcaster_user_id": (string)cfg->userid]);
 	G->G->websocket_types->hypetrain->hypetrain_progression(hook, "", info);
 	string levelup = "";
 	if (hook == "begin" || (int)info->level != last_seen_hype_level[channel->userid]) {
@@ -142,7 +136,7 @@ void specials_check_hooks(object channel) {
 				multiset flg = eventsubs[special]->flags;
 				if (channel->commands[?"!" + special] //If there's a special of this name, we need the hook.
 						|| flg->always) //If the eventsub has other functionality, we need the hook.
-					eventsubs[special](flg->uid ? (string)channel->userid : channel->config->login, this[special](0, (["__condition": channel->config])));
+					eventsubs[special](flg->uid ? (string)channel->userid : channel->config->login, (["broadcaster_user_id": (string)channel->userid]));
 				break;
 			}
 		}
@@ -173,7 +167,7 @@ void specials_check_modular_hooks(mapping cfg, string group) {
 		foreach (scopesets, array scopeset) {
 			if (!has_value(scopes[scopeset[*]], 0)) { //If there isn't any case of a scope that we don't have... then we have them all!
 				if (special == group || flg[group])
-					eventsubs[special](flg->uid ? uid : login, this[special](0, (["__condition": cfg])));
+					eventsubs[special](flg->uid ? uid : login, (["broadcaster_user_id": uid]));
 				break;
 			}
 		}
