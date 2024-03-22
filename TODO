@@ -270,36 +270,14 @@
   the bot notifies systemd that it's reloading, then that it's ready, and can report
   failure so the terminal gets an immediate response. (Failure details will of course
   be in the log.)
-* Are conduits useful? Can we have one shard for Gideon and one for Sikorsky?
-  https://dev.twitch.tv/docs/eventsub/handling-conduit-events/
+* Conduits. https://dev.twitch.tv/docs/eventsub/handling-conduit-events/
   - One shard for the active bot
   - If active and no websocket, establish WS and update shard
   - Hook conduit.shard.disabled on all nodes, not just active, to know when the other
     has gone down - maybe automatically raise self? Use webhook for this one.
-  - NOTE: Where webhooks have hookname=arg, websockets just have the message body.
-    Every EventSub needs to have a unique message type, which will be the way they
-    get routed, and most of them will share channel handling, so have the check for
-    payload->event->broadcaster_user_id at a high level, and pass on a channel object.
-  - EventSubs need to be audited. Can they switch to identifying channel by payload?
-    If so, do they need other filtering? Can it be augmented?
-  - Make a constant in the inheritable for the key used in both the condition and the
-    lookup from the payload. Default to "broadcaster_user_id". This will cover most.
   - Check EventSubSpecial and everything in eventhooks.pike
-  - Raids need to be handled specially, since we might care about from_id, might care
-    about to_id. The same raid can trigger both a raid alert AND an outgoing raid log.
-  - The common case is channel hooks.
-    - These require a specific broadcaster permission. Some may support mod permission.
-    - Use event value "broadcaster_user_id" to route them back to the correct channel.
-    - Only applicable to channels the bot is active in.
-    - Probe for them on reconnect(), using the table of required scopes.
-  - Others: Raid, hype train
+  - Hype train may need some special handling due to not being on an active channel.
 * Make a shareable link feature for twitchlogin.pike
-* Webhooks on Gideon
-  - Need to have Gideon reliably able to reload code again. No idea what's wrong.
-  - Test if running inside and outside systemctl makes a difference
-  - Send a hack. It should do nothing since not active bot.
-  - Ultimately forward the message to the active bot; if no active bot, reject with
-    500? Don't queue them.
-  - Conduits may be a viable alternative to most of this.
+* Gideon isn't reliably able to reload code. Why?
 * Running into weird problems with app auth. Maybe the cached G->G->app_access_token
   needs to be purged at some point?? Possibly on reauth???
