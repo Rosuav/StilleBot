@@ -642,11 +642,10 @@ constant follower = ({"object channel", "mapping follower"});
 //for the "moderator:read:followers" scope. It may be simplest to rely on two checks: either
 //the bot account has this permission, or the broadcaster has granted auth; handling the case
 //of some other mod granting permission may be tricky.
-EventSub new_follower = EventSub("follower", "channel.follow", "2", got_follower);
-//TODO: Check Pike 9 and see if we can revert this to being an implicit lambda
-void got_follower(string chan, mapping follower) {
+@EventNotify("channel.follow=2"):
+void got_follower(object channel, mapping follower) {
 	notice_user_name(follower->user_login, follower->user_id);
-	if (object channel = G->G->irc->channels["#" + chan])
+	if (channel)
 		check_following((int)follower->user_id, channel->userid)->then() {
 			//Sometimes bots will follow-unfollow. Avoid spamming chat with meaningless follow messages.
 			if (!__ARGS__[0]) return;
@@ -711,7 +710,7 @@ void check_hooks(array eventhooks)
 		multiset scopes = (multiset)(token_for_user_id(userid)[1] / " ");
 		//TODO: Check if the bot is actually a mod and use that permission
 		if (scopes["moderator:read:followers"]) //If we have the necessary permission, use the broadcaster's authentication.
-			new_follower(channel->login, (["broadcaster_user_id": (string)userid, "moderator_user_id": (string)userid]));
+			G->G->establish_hook_notification(userid, "channel.follow=2", (["moderator_user_id": (string)userid]));
 		//raidin(channel->login, (["to_broadcaster_user_id": (string)userid]));
 		raidout(channel->login, (["from_broadcaster_user_id": (string)userid]));
 	}
