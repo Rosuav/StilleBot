@@ -710,7 +710,7 @@ void check_hooks(array eventhooks)
 		multiset scopes = (multiset)(token_for_user_id(userid)[1] / " ");
 		//TODO: Check if the bot is actually a mod and use that permission
 		if (scopes["moderator:read:followers"]) //If we have the necessary permission, use the broadcaster's authentication.
-			G->G->establish_hook_notification(userid, "channel.follow=2", (["moderator_user_id": (string)userid]));
+			G->G->establish_hook_notification(userid, "channel.follow=2", (["broadcaster_user_id": (string)userid, "moderator_user_id": (string)userid]));
 		//raidin(channel->login, (["to_broadcaster_user_id": (string)userid]));
 		raidout(channel->login, (["from_broadcaster_user_id": (string)userid]));
 	}
