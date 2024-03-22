@@ -14,13 +14,8 @@ inherit annotated;
 //the parameters are all listed correctly. The scopes are automatically provided by this
 //file but the special and its description come from addcmd.
 
-//The annotation has three required parts, the scopes (pipe delimited - any is acceptable),
-//the subscription type, and the version. An optional fourth parameter provides some blank
-//delimited flags, which have the following meanings:
-//always  - Create this hook even if the corresponding special does not exist. Useful if the
-//          hook provides other functionality than simply executing the special.
-//uid     - Use the broadcaster user ID as the hook parameter
-//login   - Use the broadcaster login as the hook parameter (currently the default)
+//The annotation has three parts, the scopes (pipe delimited - any is acceptable),
+//the subscription type, and the version.
 
 @({"channel:read:polls|channel:manage:polls", "channel.poll.begin", "1"}):
 mapping pollbegin(object channel, mapping info) {
@@ -91,7 +86,7 @@ mapping predictionended(object channel, mapping info) {
 	return params;
 }
 
-@({"channel:read:ads", "channel.ad_break.begin", "1", "always"}):
+@({"channel:read:ads", "channel.ad_break.begin", "1"}):
 mapping adbreak(object channel, mapping info) {
 	spawn_task(G->G->websocket_types->chan_snoozeads->check_stats(channel));
 	return ([
@@ -113,14 +108,14 @@ mapping hypetrain(string hook, object channel, mapping info) {
 	]);
 }
 
-@({"channel:read:hype_train", "channel.hype_train.begin", "1", "uid"}):
+@({"channel:read:hype_train", "channel.hype_train.begin", "1"}):
 mapping hypetrain_begin(object channel, mapping info) {return hypetrain("begin", channel, info);}
-@({"channel:read:hype_train", "channel.hype_train.progress", "1", "uid"}):
+@({"channel:read:hype_train", "channel.hype_train.progress", "1"}):
 mapping hypetrain_progress(object channel, mapping info) {return hypetrain("progress", channel, info);}
-@({"channel:read:hype_train", "channel.hype_train.end", "1", "uid"}):
+@({"channel:read:hype_train", "channel.hype_train.end", "1"}):
 mapping hypetrain_end(object channel, mapping info) {return hypetrain("end", channel, info);}
 
-mapping eventsubs = ([]);
+mapping eventsubs = ([]); //Map the special name (== function name) to the hook type/version for convenience
 
 //Ensure that we have all appropriate hooks for this channel
 void specials_check_hooks(object channel) {
@@ -128,10 +123,8 @@ void specials_check_hooks(object channel) {
 	foreach (G->G->SPECIALS_SCOPES; string special; array scopesets) {
 		foreach (scopesets, array scopeset) {
 			if (!has_value(scopes[scopeset[*]], 0)) { //If there isn't any case of a scope that we don't have... then we have them all!
-				multiset flg = eventsubs[special]->flags;
-				if (channel->commands[?"!" + special] //If there's a special of this name, we need the hook.
-						|| flg->always) //If the eventsub has other functionality, we need the hook.
-					eventsubs[special](flg->uid ? (string)channel->userid : channel->config->login, (["broadcaster_user_id": (string)channel->userid]));
+				if (channel->commands[?"!" + special])
+					G->G->establish_hook_notification(channel->userid, eventsubs[special]);
 				break;
 			}
 		}
@@ -147,23 +140,15 @@ void specials_check_hooks_all_channels(int warn) {
 	else specials_check_hooks(values(G->G->irc->id)[*]);
 }
 
-class EventSubSpecial(function get_params) {
-	inherit EventSub;
-	multiset flags = (<>);
-	protected void create(string hookname, string type, string version, string|void flg) {
-		::create(hookname, type, version, send_special);
-		if (flg) foreach (flg / " ", string f) flags[f] = 1;
-	}
-	void send_special(string chan, mapping info) {
-		object channel = flags->uid ? G->G->irc->id[(int)chan] : G->G->irc->channels["#" + chan];
-		if (!channel) return;
-		mapping params = get_params(channel, info);
+function make_eventhook_handler(string hookname) {
+	return lambda(object channel, mapping info) {
+		mapping params = channel && this[hookname](channel, info);
 		if (params) channel->trigger_special("!" + hookname, ([
-			"user": chan,
+			"user": channel->login,
 			"displayname": channel->config->display_name,
 			"uid": channel->userid,
 		]), params);
-	}
+	};
 }
 
 protected void create(string name) {
@@ -173,7 +158,10 @@ protected void create(string name) {
 		if (ann) foreach (indices(ann), mixed anno) {
 			if (arrayp(anno)) {
 				G->G->SPECIALS_SCOPES[key] = (anno[0] / "|")[*] / " ";
-				eventsubs[key] = EventSubSpecial(this[key], key, @anno[1..]);
+				string hook = anno[1] + "=" + anno[2];
+				eventsubs[key] = hook;
+				if (!G->G->eventhooks[hook]) G->G->eventhooks[hook] = ([]);
+				G->G->eventhooks[hook][name] = make_eventhook_handler(key);
 			}
 		}
 	}
