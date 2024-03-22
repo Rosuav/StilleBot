@@ -19,10 +19,6 @@ inherit annotated;
 //delimited flags, which have the following meanings:
 //always  - Create this hook even if the corresponding special does not exist. Useful if the
 //          hook provides other functionality than simply executing the special.
-//modular - This hook, possibly as part of a set of hooks, can be activated by some other
-//          module, even with the bot not being active in the channel. See details in
-//          specials_check_modular_hooks. Hooks are identified by name, or by group, with
-//          the latter being identified by an additional flag (not listed in this table).
 //uid     - Use the broadcaster user ID as the hook parameter
 //login   - Use the broadcaster login as the hook parameter (currently the default)
 
@@ -117,11 +113,11 @@ mapping hypetrain(string hook, object channel, mapping info) {
 	]);
 }
 
-@({"channel:read:hype_train", "channel.hype_train.begin", "1", "uid modular hypetrain"}):
+@({"channel:read:hype_train", "channel.hype_train.begin", "1", "uid"}):
 mapping hypetrain_begin(object channel, mapping info) {return hypetrain("begin", channel, info);}
-@({"channel:read:hype_train", "channel.hype_train.progress", "1", "uid modular hypetrain"}):
+@({"channel:read:hype_train", "channel.hype_train.progress", "1", "uid"}):
 mapping hypetrain_progress(object channel, mapping info) {return hypetrain("progress", channel, info);}
-@({"channel:read:hype_train", "channel.hype_train.end", "1", "uid modular hypetrain"}):
+@({"channel:read:hype_train", "channel.hype_train.end", "1", "uid"}):
 mapping hypetrain_end(object channel, mapping info) {return hypetrain("end", channel, info);}
 
 mapping eventsubs = ([]);
@@ -149,28 +145,6 @@ void specials_check_hooks_all_channels(int warn) {
 		call_out(specials_check_hooks_all_channels, 5, 1);
 	}
 	else specials_check_hooks(values(G->G->irc->id)[*]);
-}
-
-//Check for the specific modular hooks needed. Specify the group either as a hook name, or
-//a flag that all the interesting hooks will have. The given config mapping MUST have a
-//userid attribute; anything else is not guaranteed and is negotiated by the caller and
-//hook function. If the hook has the 'login' flag (and not the 'uid' flag), cfg must also
-//include a login. (For now, ALWAYS include login, but that will become optional once
-//tokens are tied to IDs instead of logins.)
-void specials_check_modular_hooks(mapping cfg, string group) {
-	string login = cfg->login, uid = (string)cfg->userid;
-	multiset scopes = (multiset)(token_for_user_login(cfg->login)[1] / " "); //TODO: Switch to user ID to ensure this remains synchronous
-	foreach (G->G->SPECIALS_SCOPES; string special; array scopesets) {
-		multiset flg = eventsubs[special]->flags;
-		if (!flg->modular) continue;
-		foreach (scopesets, array scopeset) {
-			if (!has_value(scopes[scopeset[*]], 0)) { //If there isn't any case of a scope that we don't have... then we have them all!
-				if (special == group || flg[group])
-					eventsubs[special](flg->uid ? uid : login, (["broadcaster_user_id": uid]));
-				break;
-			}
-		}
-	}
 }
 
 class EventSubSpecial(function get_params) {
@@ -205,5 +179,4 @@ protected void create(string name) {
 	}
 	specials_check_hooks_all_channels(0);
 	G->G->specials_check_hooks = specials_check_hooks;
-	G->G->specials_check_modular_hooks = specials_check_modular_hooks;
 }
