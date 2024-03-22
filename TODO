@@ -301,3 +301,5 @@
   - Ultimately forward the message to the active bot; if no active bot, reject with
     500? Don't queue them.
   - Conduits may be a viable alternative to most of this.
+* Running into weird problems with app auth. Maybe the cached G->G->app_access_token
+  needs to be purged at some point?? Possibly on reauth???
