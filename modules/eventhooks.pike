@@ -88,7 +88,6 @@ mapping predictionended(object channel, mapping info) {
 
 @({"channel:read:ads", "channel.ad_break.begin", "1"}):
 mapping adbreak(object channel, mapping info) {
-	spawn_task(G->G->websocket_types->chan_snoozeads->check_stats(channel));
 	return ([
 		"{length}": (string)info->duration_seconds,
 		"{is_automatic}": info->is_automatic ? "1" : "0",

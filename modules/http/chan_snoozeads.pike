@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit hook;
 
 constant markdown = #"# Ads and snoozes
 
@@ -14,6 +15,8 @@ $$controls||$$
 
 @retain: mapping channel_ad_stats = ([]);
 
+@EventNotify("channel.ad_break.begin=1"):
+void check_stats_shim(object channel, mapping info) {check_stats(channel);}
 __async__ void check_stats(object channel) {
 	mapping snooze = await(twitch_api_request("https://api.twitch.tv/helix/channels/ads?broadcaster_id=" + channel->userid,
 		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]])))->data[0];
@@ -44,6 +47,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (string scopes = ensure_bcaster_token(req, "channel:read:ads channel:manage:ads channel:edit:commercial"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator status"]) | req->misc->chaninfo);
+	establish_notifications(req->misc->channel->userid);
 	spawn_task(check_stats(req->misc->channel));
 	string controls = "[Snooze](:#snooze) [Run Ad](:#runad) <select id=adlength><option>30<option selected>60<option>90<option>120<option>180</select> <span id=adtriggered></span>\n{:#buttons}";
 	if ((int)req->misc->session->user->id == req->misc->channel->userid) {
@@ -103,3 +107,5 @@ void wscmd_modsnooze(object channel, mapping(string:mixed) conn, mapping(string:
 	channel->save();
 	send_updates_all(channel, "");
 }
+
+protected void create(string name) {::create(name);}
