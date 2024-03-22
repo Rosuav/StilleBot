@@ -15,7 +15,6 @@ void redemptiongone(object channel, mapping data) {points_redeemed1(channel, dat
 void points_redeemed(object channel, mapping data) {points_redeemed1(channel, data, 0);}
 __async__ void points_redeemed1(object channel, mapping data, int|void removal) {
 	if (!channel) return;
-	werror("points_redeemed(%O) [%d] %O\n", channel->name, removal, data);
 	event_notify("point_redemption", channel, data->reward->id, removal, data);
 	string token = token_for_user_id(channel->userid)[0];
 
