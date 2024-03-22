@@ -9,13 +9,17 @@ constant point_redemption = ({"string chan", "string rewardid", "int(0..1) refun
 @create_hook:
 constant reward_changed = ({"object channel", "string|void rewardid"}); //If no second arg, could be all rewards changed
 
-__async__ void points_redeemed(string chanid, mapping data, int|void removal)
-{
-	object channel = G->G->irc->id[(int)chanid]; if (!channel) return;
+@EventNotify("channel.channel_points_custom_reward_redemption.update=1"):
+void redemptiongone(object channel, mapping data) {points_redeemed1(channel, data, 1);} //Not an async annotation shim, this one remains (as points_redeemed).
+@EventNotify("channel.channel_points_custom_reward_redemption.add=1"):
+void points_redeemed(object channel, mapping data) {points_redeemed1(channel, data, 0);}
+__async__ void points_redeemed1(object channel, mapping data, int|void removal) {
+	if (!channel) return;
+	werror("points_redeemed(%O) [%d] %O\n", channel->name, removal, data);
 	event_notify("point_redemption", channel, data->reward->id, removal, data);
-	string token = token_for_user_id((int)chanid)[0];
+	string token = token_for_user_id(channel->userid)[0];
 
-	mapping all_dyn = await(G->G->DB->load_config(chanid, "dynamic_rewards"));
+	mapping all_dyn = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
 	if (mapping dyn = !removal && all_dyn[data->reward->id]) {
 		//Up the price every time it's redeemed
 		//For this to be viable, the reward needs a global cooldown of
@@ -38,9 +42,6 @@ __async__ void points_redeemed(string chanid, mapping data, int|void removal)
 		]));
 	}
 }
-
-EventSub redemption = EventSub("redemption", "channel.channel_points_custom_reward_redemption.add", "1", points_redeemed);
-EventSub redemptiongone = EventSub("redemptiongone", "channel.channel_points_custom_reward_redemption.update", "1") {points_redeemed(@__ARGS__, 1);};
 
 //Event messages have all the info that we get by querying, but NOT in the same format.
 mapping remap_eventsub_message(mapping info) {
@@ -152,8 +153,7 @@ __async__ void populate_rewards_cache(string|int broadcaster_id) {
 	rewardadd(broadcaster_id, (["broadcaster_user_id": broadcaster_id]));
 	rewardupd(broadcaster_id, (["broadcaster_user_id": broadcaster_id]));
 	rewardrem(broadcaster_id, (["broadcaster_user_id": broadcaster_id]));
-	redemption(broadcaster_id, (["broadcaster_user_id": broadcaster_id]));
-	redemptiongone(broadcaster_id, (["broadcaster_user_id": broadcaster_id]));
+	establish_notifications(broadcaster_id);
 	event_notify("reward_changed", channel, 0);
 }
 
