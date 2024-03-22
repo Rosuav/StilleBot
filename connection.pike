@@ -1399,7 +1399,7 @@ __async__ void setup_conduit() {
 	conn->onmessage = conduit_message;
 }
 
-void establish_hook_notification(int channelid, string hook, mapping|void extracond) {
+void establish_hook_notification(string|int channelid, string hook, mapping|void extracond) {
 	//TODO: If we don't have a condid yet, queue the request
 	if (G->G->eventhooks[hook][?""][?(string)channelid]) return; //Already got the subscription.
 	sscanf(hook, "%s=%s", string type, string version);

@@ -201,7 +201,7 @@ class hook {
 	}
 
 	//Establish hook notifications for the specified channel and all hooks in the current module
-	void establish_notifications(int channelid) {
+	void establish_notifications(string|int channelid) {
 		foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
 			if (ann) foreach (indices(ann), mixed anno) {
 				if (objectp(anno) && anno->is_hook_annotation) {
