@@ -68,28 +68,27 @@ mapping remap_eventsub_message(mapping info) {
 	return info;
 }
 
-EventSub rewardadd = EventSub("rewardadd", "channel.channel_points_custom_reward.add", "1") {
-	[string chanid, mapping info] = __ARGS__;
-	if (!pointsrewards[(int)chanid]) return;
-	pointsrewards[(int)chanid] += ({remap_eventsub_message(info)});
-	event_notify("reward_changed", G->G->irc->id[(int)chanid], info->id);
+@EventNotify("channel.channel_points_custom_reward.add=1"):
+void rewardadd(object channel, mapping info) {
+	if (!pointsrewards[channel->userid]) return;
+	pointsrewards[channel->userid] += ({remap_eventsub_message(info)});
+	event_notify("reward_changed", channel, info->id);
 };
-EventSub rewardupd = EventSub("rewardupd", "channel.channel_points_custom_reward.update", "1") {
-	[string chanid, mapping info] = __ARGS__;
-	array rew = pointsrewards[(int)chanid];
+@EventNotify("channel.channel_points_custom_reward.update=1"):
+void rewardupd(object channel, mapping info) {
+	array rew = pointsrewards[channel->userid];
 	if (!rew) return;
 	foreach (rew; int i; mapping reward)
 		if (reward->id == info->id) {rew[i] = remap_eventsub_message(info); break;}
-	event_notify("reward_changed", G->G->irc->id[(int)chanid], info->id);
+	event_notify("reward_changed", channel, info->id);
 };
-EventSub rewardrem = EventSub("rewardrem", "channel.channel_points_custom_reward.remove", "1") {
-	[string chanid, mapping info] = __ARGS__;
-	array rew = pointsrewards[(int)chanid];
+@EventNotify("channel.channel_points_custom_reward.remove=1"):
+void rewardrem(object channel, mapping info) {
+	array rew = pointsrewards[channel->userid];
 	if (!rew) return;
-	pointsrewards[(int)chanid] = filter(rew) {return __ARGS__[0]->id != info->id;};
-	object channel = G->G->irc->id[(int)chanid];
-	G->G->DB->mutate_config(chanid, "dynamic_rewards") {m_delete(__ARGS__[0], info->id);};
-	event_notify("reward_changed", G->G->irc->id[(int)chanid], info->id);
+	pointsrewards[channel->userid] = filter(rew) {return __ARGS__[0]->id != info->id;};
+	G->G->DB->mutate_config(channel->userid, "dynamic_rewards") {m_delete(__ARGS__[0], info->id);};
+	event_notify("reward_changed", channel, info->id);
 };
 
 __async__ void update_dynamic_reward(object channel, string rewardid, mapping rwd) {
@@ -149,10 +148,6 @@ __async__ void populate_rewards_cache(string|int broadcaster_id) {
 		if (current[?r->id]) r->is_dynamic = 1;
 	}
 	pointsrewards[(int)broadcaster_id] = rewards;
-	broadcaster_id = (string)broadcaster_id;
-	rewardadd(broadcaster_id, (["broadcaster_user_id": broadcaster_id]));
-	rewardupd(broadcaster_id, (["broadcaster_user_id": broadcaster_id]));
-	rewardrem(broadcaster_id, (["broadcaster_user_id": broadcaster_id]));
 	establish_notifications(broadcaster_id);
 	event_notify("reward_changed", channel, 0);
 }
