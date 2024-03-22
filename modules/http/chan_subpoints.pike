@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit hook;
 
 constant markdown = #"# Subpoints trackers for $$channel$$
 
@@ -140,31 +141,25 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	]) | req->misc->chaninfo);
 }
 
-__async__ void subpoints_updated(string hook, string chan, mapping info) {
+@EventNotify("channel.subscribe=1"): @EventNotify("channel.subscription.end=1"):
+@EventNotify("channel.subscription.gift=1"): @EventNotify("channel.subscription.message=1"):
+void subpoints_updated(object channel, mapping info) {subpoints_updated1(channel, info);}
+__async__ void subpoints_updated1(object channel, mapping info) {
 	//TODO: If it's reliable, maintain the subpoint figure and adjust it, instead of re-fetching.
-	Stdio.append_file("evt_subpoints.log", sprintf("EVENT: Subpoints %s [%O, %d]: %O\n", hook, chan, time(), info));
-	object channel = G->G->irc->channels["#" + chan];
+	Stdio.append_file("evt_subpoints.log", sprintf("EVENT: Subpoints [%O, %d]: %O\n", channel->name, time(), info));
 	mapping trackers = await(G->G->DB->load_config(channel->userid, "subpoints"));
 	if (!sizeof(trackers)) return;
-	int points = await(get_sub_points(chan));
+	int points = await(get_sub_points(channel->name[1..]));
 	Stdio.append_file("evt_subpoints.log", sprintf("Updated subpoint count: %d\n", points));
 	foreach (trackers; string nonce; mapping tracker)
 		send_updates_all(channel, nonce, tracker | (["points": points - (int)tracker->unpaidpoints]));
 }
-EventSub hook_sub = EventSub("sub", "channel.subscribe", "1") {subpoints_updated("sub", @__ARGS__);};
-EventSub hook_subend = EventSub("subend", "channel.subscription.end", "1") {subpoints_updated("subend", @__ARGS__);};
-EventSub hook_subgift = EventSub("subgift", "channel.subscription.gift", "1") {subpoints_updated("subgift", @__ARGS__);};
-EventSub hook_submessage = EventSub("submessage", "channel.subscription.message", "1") {subpoints_updated("submessage", @__ARGS__);};
 
 bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping trackers = await(G->G->DB->load_config(channel->userid, "subpoints"));
 	string chan = channel->name[1..];
-	int uid = channel->userid;
-	hook_sub(chan, (["broadcaster_user_id": (string)uid]));
-	hook_subend(chan, (["broadcaster_user_id": (string)uid]));
-	hook_subgift(chan, (["broadcaster_user_id": (string)uid]));
-	hook_submessage(chan, (["broadcaster_user_id": (string)uid]));
+	establish_notifications(channel->userid);
 	if (grp != "") {
 		if (!trackers[grp]) return (["data": 0]); //If you delete the tracker with the page open, it'll be a bit ugly.
 		string type = trackers[grp]->goaltype || "points";
@@ -204,3 +199,5 @@ void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		m_delete(__ARGS__[0], msg->id);
 	}->then() {send_updates_all(conn->group);};
 }
+
+protected void create(string name) {::create(name);}
