@@ -1380,7 +1380,7 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mixed id) {
 					werror("Error in hook %s->%s: %s", name, event, describe_backtrace(ex));
 			break;
 		}
-		default: break;
+		default: werror("Got unknown WS message: %O\n", data); break;
 	}
 }
 
