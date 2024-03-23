@@ -24,7 +24,8 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mixed body = Standards.JSON.decode_utf8(req->body_raw);
 	array|mapping data = mappingp(body) && body->event;
 	if (!data) return (["error": 400, "data": "Unrecognized body type"]);
-	werror("Conduit broken! %O\n", data);
-	if (G->G->emergency) G->G->emergency();
+	werror("Conduit broken! %O\n", data); //Probably a non-event if we're active??
+	if (is_active_bot()) G->G->setup_conduit();
+	else if (G->G->emergency) G->G->emergency();
 	return (["data": "PRAD"]);
 }

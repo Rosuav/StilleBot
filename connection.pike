@@ -1546,6 +1546,7 @@ protected void create(string name)
 	::create(name);
 	add_constant("send_message", send_message);
 	G->G->establish_hook_notification = establish_hook_notification;
+	G->G->setup_conduit = setup_conduit; //Reestablish fter disconnect.
 	if (!G->G->irc) G->G->irc = (["channels": ([]), "id": ([]), "loading": (<>)]);
 	#if constant(INTERACTIVE)
 	return;
