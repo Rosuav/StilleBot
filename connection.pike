@@ -1541,12 +1541,6 @@ __async__ void reconnect() {
 
 void send_message(string chan, string msg) {if (irc_connections[0]) irc_connections[0]->send(chan, msg);}
 
-EventSub conduit_broken = EventSub("conduitbroken", "conduit.shard.disabled", "1") {[string _, mapping info] = __ARGS__;
-	//TODO: If we are the active bot, reconnect the conduit websocket.
-	//Otherwise, wait a moment, then activate self and connect to WS?
-	werror("Conduit broken! %O\n", info);
-};
-
 protected void create(string name)
 {
 	::create(name);
@@ -1563,7 +1557,6 @@ protected void create(string name)
 	if (mapping http = G->G->instance_config) {
 		G->G->on_botservice_change = reconnect;
 		reconnect();
-		conduit_broken("the_antipathies", (["client_id": G->G->instance_config->clientid]));
 		if (mixed ex = http->http_address && http->http_address != "" && catch
 		{
 			int use_https = has_prefix(http->http_address, "https://");

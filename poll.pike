@@ -578,63 +578,6 @@ void stream_status(int userid, string name, mapping info)
 	return events;
 }
 
-@export: class EventSub(string hookname, string type, string version, function callback) {
-	Crypto.SHA256.HMAC signer; string secret;
-	multiset(string) have_subs = (<>);
-	array|zero pending = ({ });
-	protected void create() {
-		if (!G->G->eventhook_types) G->G->eventhook_types = ([]);
-		if (object other = G->G->eventhook_types[hookname]) have_subs = other->have_subs;
-		G->G->eventhook_types[hookname] = this;
-		build_signer();
-	}
-	__async__ void build_signer() {
-		mapping secrets = await(G->G->DB->load_config(0, "eventhook_secret"));
-		if (!secrets[hookname]) {
-			secrets[hookname] = MIME.encode_base64(random_string(15));
-			//Save the secret. This is unencrypted and potentially could be leaked.
-			//The attack surface is fairly small, though - at worst, an attacker
-			//could forge a notification from Twitch, causing us to... whatever the
-			//event hook triggers, probably some sort of API call. I guess you could
-			//disrupt the hype train tracker's display or something. Congrats.
-			G->G->DB->save_config(0, "eventhook_secret", secrets);
-		}
-		signer = Crypto.SHA256.HMAC(secret = secrets[hookname]);
-		//If attempts were made to establish subscriptions before we had the signing
-		//secret, redo them now.
-		array queue = pending; pending = 0;
-		foreach (queue, [string arg, mapping cond]) this(arg, cond);
-	}
-	protected void `()(string|mixed arg, mapping condition) {
-		if (!stringp(arg)) arg = (string)arg; //It really should be a string
-		if (have_subs[arg]) return;
-		if (pending) {pending += ({ ({arg, condition}) }); return;}
-		twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
-			"authtype": "app",
-			"json": ([
-				"type": type, "version": version,
-				"condition": condition,
-				"transport": ([
-					"method": "webhook",
-					"callback": sprintf("%s/junket?%s=%s",
-						//Note that webhooks always and only go to the primary domain name. This may end up multihomed though.
-						//NOTE: If eventhooks are used only for conduit-shard-disabled, it should go to
-						//each instance address instead.
-						G->G->instance_config->http_address,
-						hookname, arg,
-					),
-					"secret": secret,
-				]),
-			]),
-			"return_errors": 1,
-		]))
-		->then(lambda(mapping ret) {
-			if (ret->error && ret->status != 409) //409 ("Conflict") probably just means we're restarting w/o recollection
-				werror("EventSub error response - %s=%s\n%O\n", hookname, arg, ret);
-		});
-	}
-}
-
 @create_hook:
 constant follower = ({"object channel", "mapping follower"});
 
@@ -669,6 +612,7 @@ void raidout(object _, mapping info) {
 void check_hooks(array eventhooks)
 {
 	foreach (G->G->eventhook_types;; object handler) handler->have_subs = (<>);
+	multiset(string) have_conduitbroken = (<>);
 	foreach (eventhooks, mapping hook) {
 		if (hook->transport->method == "conduit") {
 			string type = hook->type + "=" + hook->version;
@@ -683,30 +627,16 @@ void check_hooks(array eventhooks)
 			}
 			continue;
 		}
-		//Otherwise it's a webhook event. Eventually this will only be for conduitbroken.
-		sscanf(hook->transport->callback || "h", "http%*[s]://%*s/junket?%s=%s", string type, string arg);
-		object handler = G->G->eventhook_types[type];
-		if (!handler) {
+		//Otherwise it's a webhook event. There is only one of these, and it's conduitbroken; which means
+		//we need to establish it if we don't yet have it.
+		sscanf(hook->transport->callback || "h", "http%*[s]://%s/junket?%s=", string addr, string type);
+		if (type != "conduitbroken") {
 			write("Deleting eventhook: %O\n", hook);
 			twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
 				([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
 		}
-		else if (handler->have_subs[arg]) {
-			//This shouldn't happen. Not sure how a bunch of adbreak hooks got re-added.
-			write("Deleting duplicate eventhook: %O=%O\n", type, arg);
-			twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
-				([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
-		}
-		else handler->have_subs[arg] = 1;
+		else have_conduitbroken[addr] = 1;
 	}
-
-	G->G->DB->load_config(0, "eventhook_secret")->then() {mapping secrets = __ARGS__[0];
-		if (sizeof(secrets - G->G->eventhook_types)) {
-			foreach (indices(secrets), string key)
-				if (!G->G->eventhook_types[key]) m_delete(secrets, key);
-			G->G->DB->save_config(0, "eventhook_secret", secrets);
-		}
-	};
 
 	foreach (values(G->G->irc->id), object channel) {
 		int userid = channel->userid;
@@ -718,6 +648,32 @@ void check_hooks(array eventhooks)
 			G->G->establish_hook_notification(userid, "channel.follow=2", (["broadcaster_user_id": (string)userid, "moderator_user_id": (string)userid]));
 		G->G->establish_hook_notification("from_" + userid, "channel.raid=1", (["from_broadcaster_user_id": (string)userid]));
 		G->G->establish_hook_notification("to_" + userid, "channel.raid=1", (["to_broadcaster_user_id": (string)userid]));
+	}
+
+	//If we don't have a conduitbroken eventhook for our local address, establish one.
+	if (!have_conduitbroken[G->G->instance_config->local_address]) {
+		string secret = MIME.encode_base64(random_string(15));
+		G->G->DB->mutate_config(0, "eventhook_secret") {
+			//Save the secret. This is unencrypted and potentially could be leaked.
+			//The attack surface is fairly small, though - at worst, an attacker
+			//could forge a notification from Twitch, causing us to switch which
+			//bot is primary. And to do that, you'd need access to the database.
+			__ARGS__[0][G->G->instance_config->local_address] = secret;
+			werror("New secrets %O\n", __ARGS__[0]);
+		};
+		twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
+			"authtype": "app",
+			"json": ([
+				"type": "conduit.shard.disabled", "version": "1", //As of 20240324, the docs say it should be version "beta", but "1" seems to be what works
+				"condition": (["client_id": G->G->instance_config->clientid]),
+				"transport": ([
+					"method": "webhook",
+					"callback": sprintf("https://%s/junket?conduitbroken=1",
+						G->G->instance_config->local_address),
+					"secret": secret,
+				]),
+			]),
+		]));
 	}
 }
 
