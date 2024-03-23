@@ -38,7 +38,7 @@ mapping get_state(string group) {return (["info": "See Other"]);}
 __async__ void websocket_cmd_prefs_send(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->prefs_uid) return;
 	mapping prefs = await(G->G->DB->load_config(conn->prefs_uid, "userprefs"));
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "prefs_replace", "userid": (int)conn->prefs_uid, "prefs": prefs])));
+	if (conn->sock) conn->sock->send_text(Standards.JSON.encode((["cmd": "prefs_replace", "userid": (int)conn->prefs_uid, "prefs": prefs])));
 }
 __async__ void websocket_cmd_prefs_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->prefs_uid) return;
