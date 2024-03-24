@@ -227,6 +227,12 @@ __async__ void fix_kofi_name() {
 	await(G->G->DB->save_config(54212603, "subgiftstats", stats));
 }
 
+/*
+1. Get baseline timings
+2. Does the existing transaction infrastructure help?
+3. Query batching. Pass an array of queries and pipeline the lot. Implicit BEGIN/COMMIT around them.
+Batches are all without bindings for simplicity.
+*/
 __async__ void db_queue() {
 	werror("Awaiting ten queries...\n");
 	for (int i = 0; i < 10; ++i) 
