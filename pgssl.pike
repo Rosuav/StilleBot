@@ -279,7 +279,7 @@ class SSLDatabase(string host, mapping|void cfg) {
 				case 'C': { //CommandComplete
 					[string portalname, preparing_statements] = Array.shift(preparing_statements);
 					mapping stmt = inflight[portalname];
-					stmt->completion->success(1);
+					if (!--stmt->query_count) stmt->completion->success(1);
 					break;
 				}
 				case 'A': { //NotificationResponse
@@ -361,6 +361,7 @@ class SSLDatabase(string host, mapping|void cfg) {
 			"paramvalues": paramvalues,
 			"completion": completion,
 			"results": ({ }),
+			"query_count": 1,
 		]);
 		preparing_statements += ({portalname});
 		out->add_int8('P')->add_hstring(({portalname, 0, sql, "\0\0\0"}), 4, 4);
@@ -414,6 +415,39 @@ class SSLDatabase(string host, mapping|void cfg) {
 		await(transaction_query("commit")); //Don't ignore errors from commit. Let 'em bubble.
 		in_transaction = 0;
 		return ret;
+	}
+
+	//A batch of queries is executed in a BEGIN/COMMIT bracket as a fast way to do
+	//a series of simple requests. No responses will be fetched. Bindings are not
+	//supported, as this should be for VERY simple queries.
+	__async__ void batch(array(string) queries) {
+		queries = ({"begin"}) + queries + ({"commit"}); //Ensure simple transactional integrity
+		//Wait for our turn in queue, same as regular query() does
+		if (state == "ready") state = "busy";
+		else {
+			object p = Concurrent.Promise();
+			pending += ({p});
+			await(p->future());
+		}
+		string portalname = "";
+		object completion = Concurrent.Promise();
+		mapping stmt = inflight[portalname] = ([
+			"query": queries[0], //Context for error messages
+			"completion": completion,
+			"results": ({ }),
+			"query_count": sizeof(queries),
+		]);
+		preparing_statements += ({portalname}) * sizeof(queries);
+		foreach (queries, string sql) {
+			out->add_int8('P')->add_hstring(({portalname, 0, sql, "\0\0\0"}), 4, 4);
+			out->add_int8('B')->add_hstring(({portalname, 0, portalname, "\0\0\0\0\0\0\0"}), 4, 4);
+			out->add_int8('E')->add_hstring(({portalname, "\0\0\0\0\0"}), 4, 4);
+		}
+		flushsend();
+		mixed ex = catch (await(completion->future()));
+		m_delete(inflight, portalname);
+		out->add("S\0\0\0\4"); write(); //After the query, synchronize, whether we succeeded or failed.
+		if (ex) throw(ex);
 	}
 }
 

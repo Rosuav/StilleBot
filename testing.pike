@@ -234,15 +234,22 @@ __async__ void fix_kofi_name() {
 Batches are all without bindings for simplicity.
 */
 __async__ void db_queue() {
-	werror("Awaiting ten queries...\n");
+	if (!G->G->DB->active) {werror("Waiting for active...\n"); await(G->G->DB->await_active());} //Exclude this from the timings
+	object tm = System.Timer();
+	werror("[%.3f] Awaiting ten queries...\n", tm->peek());
 	for (int i = 0; i < 10; ++i) 
 		await(G->G->DB->generic_query("listen channel" + i));
-	werror("Spawning ten queries...\n");
-	for (int i = 10; i < 20; ++i) 
-		G->G->DB->generic_query("listen channel" + i);
-	werror("Triggering notification...\n");
-	await(G->G->DB->generic_query("notify channel19"));
-	werror("Waiting one second\n");
+	werror("[%.3f] Awaiting ten more in a batch...\n", tm->peek());
+	await(G->G->DB->pg_connections["ipv4.rosuav.com"]->conn->batch(
+		"listen channel" + enumerate(10, 1, 10)[*]
+	));
+	werror("[%.3f] Triggering notifications...\n", tm->peek());
+	await(G->G->DB->pg_connections["ipv4.rosuav.com"]->conn->batch(({
+		"notify channel9",
+		"notify channel10",
+		"notify channel11",
+	})));
+	werror("[%.3f] Waiting one second\n", tm->peek());
 	sleep(1);
 	exit(0);
 }
