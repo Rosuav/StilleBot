@@ -227,10 +227,18 @@ __async__ void fix_kofi_name() {
 	await(G->G->DB->save_config(54212603, "subgiftstats", stats));
 }
 
-inherit hook;
-@EventNotify("channel.chat.message=1"):
-void chatmessage(object channel, mapping info) {
-	werror("Got a chat message! %O %O\n", channel->?name, info->message->text);
+__async__ void db_queue() {
+	werror("Awaiting ten queries...\n");
+	for (int i = 0; i < 10; ++i) 
+		await(G->G->DB->generic_query("listen channel" + i));
+	werror("Spawning ten queries...\n");
+	for (int i = 10; i < 20; ++i) 
+		G->G->DB->generic_query("listen channel" + i);
+	werror("Triggering notification...\n");
+	await(G->G->DB->generic_query("notify channel19"));
+	werror("Waiting one second\n");
+	sleep(1);
+	exit(0);
 }
 
 protected void create(string name) {
@@ -252,5 +260,6 @@ protected void create(string name) {
 	//array_test();
 	//json_test();
 	//transact_test();
-	G->bootstrap("connection.pike")->setup_conduit();
+	//G->bootstrap("connection.pike")->setup_conduit();
+	db_queue();
 }
