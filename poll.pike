@@ -649,7 +649,6 @@ void check_hooks(array eventhooks)
 		G->G->establish_hook_notification("to_" + userid, "channel.raid=1", (["to_broadcaster_user_id": (string)userid]));
 	}
 
-	werror("Have conduit: %O\n", have_conduitbroken);
 	//If we don't have a conduitbroken eventhook for our local address, establish one.
 	if (!have_conduitbroken[G->G->instance_config->local_address]) {
 		string secret = MIME.encode_base64(random_string(15));
@@ -659,7 +658,6 @@ void check_hooks(array eventhooks)
 			//could forge a notification from Twitch, causing us to switch which
 			//bot is primary. And to do that, you'd need access to the database.
 			__ARGS__[0][G->G->instance_config->local_address] = secret;
-			werror("New secrets %O\n", __ARGS__[0]);
 		};
 		twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
 			"authtype": "app",
