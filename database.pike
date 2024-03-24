@@ -376,9 +376,13 @@ Concurrent.Future save_config(string|int twitchid, string kwd, mixed data) {
 		(["twitchid": (int)twitchid, "kwd": kwd, "data": data]));
 }
 
-__async__ mapping load_config(string|int twitchid, string kwd, mixed|void dflt) {
+__async__ mapping load_config(string|int twitchid, string kwd, mixed|void dflt, int|void force) {
 	//NOTE: If there's no database connection, this will block. For higher speed
 	//queries, do we need a try_load_config() that would error out (or return null)?
+	if (precached_config[kwd] && !force) {
+		while (pcc_loadstate[kwd] < 2) sleep(0.25); //Simpler than having a load-state promise
+		return pcc_cache[kwd][(int)twitchid] || ([]);
+	}
 	if (!active) await(await_active());
 	array rows = await(query(pg_connections[active], "select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
 		(["twitchid": (int)twitchid, "kwd": kwd])));
@@ -396,6 +400,7 @@ __async__ mapping load_all_configs(string kwd) {
 	return ret;
 }
 
+//Fully synchronous, works only on precached configs.
 mapping load_cached_config(string|int twitchid, string kwd) {
 	if (!precached_config[kwd]) error("Can only load_cached_config() with the keywords listed\n");
 	if (pcc_loadstate[kwd] < 2) error("Config not yet loaded\n");
@@ -406,7 +411,7 @@ mapping load_cached_config(string|int twitchid, string kwd) {
 void update_cache(int pid, string cond, string extra, string host) {
 	if (pid == pg_connections[host]->?backendpid) return; //Ignore signals from our own updates
 	sscanf(cond, "%*s:%s", string kwd);
-	load_config(extra, kwd)->then() {pcc_cache[kwd][(int)extra] = __ARGS__[0];};
+	load_config(extra, kwd, 0, 1)->then() {pcc_cache[kwd][(int)extra] = __ARGS__[0];};
 }
 
 __async__ void preload_configs(array(string) kwds) {
