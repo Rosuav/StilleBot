@@ -1384,6 +1384,7 @@ canvas.onkeydown = e => {
 document.onkeydown = e => {
 	//Pressing Home takes you to the anchor, but only if we don't have a properties dialog open
 	if (e.target.closest("dialog") !== canvas.closest("dialog")) return;
+	if (!canvas.checkVisibility()) return; //Similarly, if we're on a different tab, don't consume keys.
 	if (e.key === "Home") {
 		e.preventDefault();
 		canvas.firstElementChild.focus();
