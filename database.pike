@@ -274,7 +274,8 @@ void notify_callback(object conn, int pid, string channel, string payload) {
 }
 
 __async__ void connect(string host) {
-	werror("Connecting to Postgres on %O...\n", host);
+	object tm = System.Timer();
+	werror("[%.3f] Connecting to Postgres on %O...\n", tm->peek(), host);
 	mapping db = pg_connections[host] = (["host": host]); //Not a floop, strings are just strings :)
 	string key = Stdio.read_file("privkey.pem");
 	string cert = Stdio.read_file("certificate.pem");
@@ -283,6 +284,7 @@ __async__ void connect(string host) {
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
 	#if constant(SSLDatabase)
 	db->conn = SSLDatabase(host, (["ctx": ctx, "notify_callback": notify_callback]));
+	werror("[%.3f] Established Sql.Sql, listening...\n", tm->peek());
 	foreach (notify_channels; string channel; mixed callback)
 		await(db->conn->query("listen \"" + channel + "\""));
 	string ro = db->conn->server_params->default_transaction_read_only;
@@ -305,6 +307,7 @@ __async__ void connect(string host) {
 		}
 		break;
 	}
+	werror("[%.3f] Established pgssl, listening...\n", tm->peek());
 	foreach (notify_channels; string channel; mixed callback) {
 		db->conn->set_notify_callback(channel, callback, 1, host);
 		await(query(db, "listen \"" + channel + "\""));
@@ -312,7 +315,7 @@ __async__ void connect(string host) {
 	db->conn->set_notify_callback("", notify_unknown, 1, host);
 	string ro = await(query(db, "show default_transaction_read_only"))[0]->default_transaction_read_only;
 	#endif
-	werror("Connected to %O - %s.\n", host, ro == "on" ? "r/o" : "r-w");
+	werror("[%.3f] Connected to %O - %s.\n", tm->peek(), host, ro == "on" ? "r/o" : "r-w");
 	if (ro == "on") {
 		await(query(db, "set application_name = 'stillebot-ro'"));
 		db->readonly = 1;
