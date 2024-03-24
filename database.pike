@@ -104,7 +104,7 @@ constant tables = ([
 		" primary key (twitchid, login)",
 	}),
 ]);
-multiset precached_config = (<"channel_labels", "variables", "monitors", "voices">); //TODO: Have other modules submit requests?
+multiset precached_config = (<"channel_labels", "variables", "monitors", "voices", "alertbox">); //TODO: Have other modules submit requests?
 @retain: mapping pcc_loadstate = ([]);
 @retain: mapping pcc_cache = ([]);
 
