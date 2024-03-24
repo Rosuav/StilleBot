@@ -284,7 +284,7 @@ __async__ void connect(string host) {
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
 	#if constant(SSLDatabase)
 	db->conn = SSLDatabase(host, (["ctx": ctx, "notify_callback": notify_callback]));
-	werror("[%.3f] Established Sql.Sql, listening...\n", tm->peek());
+	werror("[%.3f] Established pgssl, listening...\n", tm->peek());
 	foreach (notify_channels; string channel; mixed callback)
 		await(db->conn->query("listen \"" + channel + "\""));
 	string ro = db->conn->server_params->default_transaction_read_only;
@@ -307,7 +307,7 @@ __async__ void connect(string host) {
 		}
 		break;
 	}
-	werror("[%.3f] Established pgssl, listening...\n", tm->peek());
+	werror("[%.3f] Established Sql.Sql, listening...\n", tm->peek());
 	foreach (notify_channels; string channel; mixed callback) {
 		db->conn->set_notify_callback(channel, callback, 1, host);
 		await(query(db, "listen \"" + channel + "\""));
