@@ -697,11 +697,6 @@ void poll()
 	//poll is triggering again, causing stacking requests. Look into it if
 	//possible. Otherwise, there'll be a bit of outage (cooldown) any time
 	//I hit this sort of problem.
-	//TODO: Only check this occasionally. No need to hammer this every 60 seconds.
-	string addr = G->G->instance_config->http_address;
-	if (addr && addr != "")
-		get_helix_paginated("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([]), (["authtype": "app"]))
-			->on_success(check_hooks);
 }
 
 int(1bit) is_active; //Last-known active state
@@ -721,6 +716,11 @@ protected void create(string|void name)
 	remove_call_out(G->G->poll_call_out);
 	#if !constant(INTERACTIVE)
 	if (is_active) poll();
+	//TODO: Check this periodically. No need to hammer this every 60 seconds, but more than just on code reload would be good.
+	string addr = G->G->instance_config->http_address;
+	if (addr && addr != "")
+		get_helix_paginated("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([]), (["authtype": "app"]))
+			->on_success(check_hooks);
 	#endif
 	::create(name);
 	//Due to a current bug, async functions don't have annotations. Manually export them.
