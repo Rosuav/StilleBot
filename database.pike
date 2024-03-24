@@ -494,8 +494,15 @@ __async__ array(mapping) load_commands(string|int twitchid, string|void cmdname,
 	if (cmdname) {sql += " and cmdname = :cmdname"; bindings->cmdname = cmdname;}
 	if (!allversions) sql += " and active";
 	array rows = await(query(pg_connections[active], sql, bindings));
-	foreach (rows, mapping command) command->content = JSONDECODE(command->content); //Unnecessary with SSLDatabase
+	//foreach (rows, mapping command) command->content = JSONDECODE(command->content); //Unnecessary with SSLDatabase
 	return rows;
+}
+
+__async__ mapping(int:array(mapping)) preload_commands(array(int) twitchids) {
+	array rows = await(query(pg_connections[active], "select * from stillebot.commands where twitchid = any(:twitchids) and active", (["twitchids": twitchids])));
+	mapping ret = ([]);
+	foreach (rows, mapping row) ret[row->twitchid] += ({row});
+	return ret;
 }
 
 Concurrent.Future save_command(string|int twitchid, string cmdname, echoable_message content) {

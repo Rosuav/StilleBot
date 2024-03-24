@@ -140,7 +140,7 @@ class channel(mapping identity) {
 	mapping(string:array(string)) redemption_commands = ([]);
 	mapping botconfig, config;
 
-	protected void create(multiset|void loading) {
+	protected void create(multiset|void loading, array|void commands) {
 		botconfig = m_delete(identity, "data") || ([]);
 		config = identity | botconfig;
 		name = "#" + config->login; userid = config->userid;
@@ -166,14 +166,14 @@ class channel(mapping identity) {
 			}
 		};
 		user_attrs = G_G_("channel_user_attrs", name);
-		spawn_task(load_commands(loading));
+		load_commands(loading, commands);
 	}
 
-	__async__ void load_commands(multiset|void loading) {
+	__async__ void load_commands(multiset|void loading, array|void cmds) {
 		//Load up the channel's commands. Note that aliases are not stored in the database,
 		//but are individually available here in the lookup mapping.
 		commands = ([]);
-		array cmds = await(G->G->DB->load_commands(userid));
+		if (!cmds) cmds = await(G->G->DB->load_commands(userid));
 		foreach (cmds, mapping cmd) {
 			echoable_message response = commands[cmd->cmdname] = cmd->content;
 			if (!mappingp(response)) continue; //No top-level flags, nothing to handle specially.
@@ -1480,9 +1480,10 @@ __async__ void reconnect() {
 		sort(-channels->data->connprio[*], channels);
 	}
 	mapping irc = (["channels": ([]), "id": ([]), "loading": (<>)]);
+	mapping commands = await(G->G->DB->preload_commands(channels->userid));
 	foreach (channels, mapping cfg) {
 		irc->loading[cfg->userid] = 1;
-		object c = channel(cfg, irc->loading);
+		object c = channel(cfg, irc->loading, commands[cfg->userid]);
 		irc->channels[c->name] = c;
 		irc->id[c->userid] = c;
 	}
