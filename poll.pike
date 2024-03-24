@@ -611,7 +611,6 @@ void raidout(object _, mapping info) {
 
 void check_hooks(array eventhooks)
 {
-	foreach (G->G->eventhook_types;; object handler) handler->have_subs = (<>);
 	multiset(string) have_conduitbroken = (<>);
 	foreach (eventhooks, mapping hook) {
 		if (hook->transport->method == "conduit") {
@@ -650,6 +649,7 @@ void check_hooks(array eventhooks)
 		G->G->establish_hook_notification("to_" + userid, "channel.raid=1", (["to_broadcaster_user_id": (string)userid]));
 	}
 
+	werror("Have conduit: %O\n", have_conduitbroken);
 	//If we don't have a conduitbroken eventhook for our local address, establish one.
 	if (!have_conduitbroken[G->G->instance_config->local_address]) {
 		string secret = MIME.encode_base64(random_string(15));

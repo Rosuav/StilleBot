@@ -157,7 +157,7 @@ mapping G_G_(string ... path)
 //TODO: Make this callable, move the functionality for hooks into here, and maybe fold "inherit hook" into "inherit annotated"?
 class _HookID(string event) {constant is_hook_annotation = 1;}
 
-@"G->G->eventhooks"; //Unfortunate naming, since eventhook_types is completely different. Maybe when G->G->hooks is removed, rename this to that??
+@"G->G->eventhooks";
 class hook {
 	protected void create(string name) {
 		//1) Clear out any hooks for the same name
