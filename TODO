@@ -233,14 +233,6 @@
   - Have reserved the names stillebot.rosuav.com, stillebot.com, mustardmine.com
   - Need to set up a redirect on Gideon: if a certbot request comes in, 302 it to
     http://sikorsky.rosuav.com/...... for the actual resolution.
-  - Need to synchronize the cert on both systems. Probably needs something in the
-    deploy script to scp the key/cert to Gideon.
-  - Once all configs are in database, it should be possible to host that in one
-    place and connect to it from multiple.
-  - Incoming webhooks will need to be handled properly. See below.
-  - Currently G->G->instance_config->http_address is ambiguous. Split it into
-    local_address and shared_address where the latter is the canonical name for ALL
-    instances to respond to (probably mustardmine.com?)
 * Sometimes the connection will fall over, and the bot won't be aware of this.
   Need a way to "force disconnection" which basically just overrides the irc_connect
   retention rules (same as a version mismatch does). Is it worth trying to do this

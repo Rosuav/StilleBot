@@ -1558,8 +1558,7 @@ object hyperlink = Regexp.PCRE("^http(s|)://[A-Za-z0-9.]+(/[-A-Za-z0-9/.+]*|)(\\
 int(1bit) is_active_bot() {
 	string active = G->G->dbsettings->?active_bot;
 	if (!active || active == "") return 0; //Might be there's no active bot, or maybe we just don't know for sure.
-	sscanf(G->G->instance_config->http_address || "://", "%*s://%s%*[:]", string host);
-	return host == active;
+	return G->G->instance_config->local_address == active;
 }
 
 //Return the currently-active bot, or 0 if we don't know for sure
