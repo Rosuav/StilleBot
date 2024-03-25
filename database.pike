@@ -409,7 +409,15 @@ mapping load_cached_config(string|int twitchid, string kwd) {
 void update_cache(int pid, string cond, string extra, string host) {
 	if (pid == pg_connections[host]->?backendpid) return; //Ignore signals from our own updates
 	sscanf(cond, "%*s:%s", string kwd);
-	load_config(extra, kwd, 0, 1)->then() {pcc_cache[kwd][(int)extra] = __ARGS__[0];};
+	#ifdef PGSSL_TIMING
+	werror("[%d] Got update_cache signal %O %O\n", time(), cond, extra);
+	#endif
+	load_config(extra, kwd, 0, 1)->then() {
+		pcc_cache[kwd][(int)extra] = __ARGS__[0];
+		#ifdef PGSSL_TIMING
+		werror("[%d] Done update_cache for %O %O\n", time(), cond, extra);
+		#endif
+	};
 }
 
 __async__ void preload_configs(array(string) kwds) {
