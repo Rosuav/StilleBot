@@ -417,11 +417,13 @@ class SSLDatabase(string host, mapping|void cfg) {
 		return ret;
 	}
 
-	//A batch of queries is executed in a BEGIN/COMMIT bracket as a fast way to do
-	//a series of simple requests. No responses will be fetched. Bindings are not
-	//supported, as this should be for VERY simple queries.
+	//A batch of queries is executed in quick succession without waiting for
+	//individual responses. Bindings are not supported and results are not fetched.
+	//Bracket the queries in BEGIN/COMMIT if transactional integrity is desired;
+	//without this, some measure of rollback may happen automatically on error, but
+	//if it matters, be explicit. Note that errors will be blamed on the first
+	//query in the batch; perhaps having the remaining query_count would be useful?
 	__async__ void batch(array(string) queries) {
-		queries = ({"begin"}) + queries + ({"commit"}); //Ensure simple transactional integrity
 		//Wait for our turn in queue, same as regular query() does
 		if (state == "ready") state = "busy";
 		else {

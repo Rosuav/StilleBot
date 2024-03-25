@@ -236,18 +236,28 @@ Batches are all without bindings for simplicity.
 __async__ void db_queue() {
 	if (!G->G->DB->active) {werror("Waiting for active...\n"); await(G->G->DB->await_active());} //Exclude this from the timings
 	object tm = System.Timer();
-	werror("[%.3f] Awaiting ten queries...\n", tm->peek());
-	for (int i = 0; i < 10; ++i) 
-		await(G->G->DB->generic_query("listen channel" + i));
-	werror("[%.3f] Awaiting ten more in a batch...\n", tm->peek());
+	werror("[%.3f] Awaiting twenty queries in a batch...\n", tm->peek());
 	await(G->G->DB->pg_connections["ipv4.rosuav.com"]->conn->batch(
-		"listen channel" + enumerate(10, 1, 10)[*]
+		"listen channel" + enumerate(20)[*]
 	));
+	werror("[%.3f] Awaiting five more with an error...\n", tm->peek());
+	mixed ex = catch (await(G->G->DB->pg_connections["ipv4.rosuav.com"]->conn->batch(({
+		"listen okay1",
+		"listen okay2",
+		"list and learn",
+		"listen aftererror1",
+		"listen aftererror2",
+	}))));
+	werror("[%.3f] Exception: %O\n", tm->peek(), ex);
+	await(G->G->DB->generic_query("listen singlechan"));
 	werror("[%.3f] Triggering notifications...\n", tm->peek());
 	await(G->G->DB->pg_connections["ipv4.rosuav.com"]->conn->batch(({
 		"notify channel9",
 		"notify channel10",
 		"notify channel11",
+		"notify okay1",
+		"notify aftererror1",
+		"notify singlechan",
 	})));
 	werror("[%.3f] Waiting one second\n", tm->peek());
 	sleep(1);
