@@ -633,15 +633,17 @@ void ensure_host_connection(string chan) {
 __async__ void ensure_tts_credentials(int need_tts) { //If you already KNOW we need it, skip the search
 	remove_call_out(m_delete(G->G, "ensure_tts_callout"));
 	//Check if any connected account uses TTS
-	if (!need_tts) foreach (G->G->irc->channels; string name; object channel) {
-		mapping cfg = await(G->G->DB->load_config(channel->userid, "alertbox"));
-		if (!cfg->uses_tts) continue;
-		//If you're using the renderer front end, or the editing control panel,
-		//ensure that TTS is available (so that test alerts work). Note that
-		//preview logins won't trigger this, since they will only ever receive
-		//alerts if there's a corresponding control connection.
-		if (sizeof(websocket_groups[cfg->authkey + "#" + channel->userid] || ({ }))) {need_tts = 1; break;}
-		if (sizeof(websocket_groups["control#" + channel->userid] || ({ }))) {need_tts = 1; break;}
+	if (!need_tts) {
+		//List every channel that uses TTS, then see if any are currently connected.
+		array tts_users = await(G->G->DB->generic_query("select twitchid, data -> 'authkey' as authkey from stillebot.config where keyword = 'alertbox' and data -> 'uses_tts' = '1'"));
+		foreach (tts_users, mapping cfg) {
+			//If you're using the renderer front end, or the editing control panel,
+			//ensure that TTS is available (so that test alerts work). Note that
+			//preview logins won't trigger this, since they will only ever receive
+			//alerts if there's a corresponding control connection.
+			if (sizeof(websocket_groups[cfg->authkey + "#" + cfg->userid] || ({ }))) {need_tts = 1; break;}
+			if (sizeof(websocket_groups["control#" + cfg->userid] || ({ }))) {need_tts = 1; break;}
+		}
 	}
 	if (!need_tts) return;
 	float age = time(tts_config->access_token_fetchtime);
