@@ -374,6 +374,9 @@ Concurrent.Future save_config(string|int twitchid, string kwd, mixed data) {
 		(["twitchid": (int)twitchid, "kwd": kwd, "data": data]));
 }
 
+//TODO maybe: If we get a signal to update_cache for something we're already halfway through
+//loading, ignore it and let the existing request go through. Would save a little traffic.
+//multiset pcc_loading = (<>);
 __async__ mapping load_config(string|int twitchid, string kwd, mixed|void dflt, int|void force) {
 	//NOTE: If there's no database connection, this will block. For higher speed
 	//queries, do we need a try_load_config() that would error out (or return null)?
