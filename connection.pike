@@ -159,12 +159,15 @@ class channel(mapping identity) {
 		//permission, so it's not actually dependable.
 		G->G->user_mod_status[name[1..] + name] = 1; //eg "rosuav#rosuav" is trivially a mod.
 		//Note that !demo has no userid and can't re-fetch login/display name.
-		if (userid) get_user_info(userid)->then() {
-			if (config->login != __ARGS__[0]->login || config->display_name != __ARGS__[0]->display_name) {
-				//Note: This is asynchronous, but we'll be triggering a reconnect shortly.
-				G->G->DB->save_sql("update stillebot.botservice set login = :login, display_name = :display_name where twitchid = :id", __ARGS__[0]);
-			}
-		};
+		if (userid) {
+			G->G->recent_user_sightings[userid] = login;
+			get_user_info(userid)->then() {
+				if (config->login != __ARGS__[0]->login || config->display_name != __ARGS__[0]->display_name) {
+					//Note: This is asynchronous, but we'll be triggering a reconnect shortly.
+					G->G->DB->save_sql("update stillebot.botservice set login = :login, display_name = :display_name where twitchid = :id", __ARGS__[0]);
+				}
+			};
+		}
 		user_attrs = G_G_("channel_user_attrs", name);
 		load_commands(loading, commands);
 	}

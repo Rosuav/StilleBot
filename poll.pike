@@ -113,8 +113,11 @@ __async__ void get_credentials() {
 	return data;
 }
 
-@export: void notice_user_name(string login, string id) {
+@retain: mapping recent_user_sightings = ([]); //Map a user ID (int) to a login
+@export: void notice_user_name(string login, string|int id) {
 	if (!login) return;
+	if (recent_user_sightings[(int)id] == login) return;
+	recent_user_sightings[(int)id] = login;
 	G->G->DB->save_sql("insert into stillebot.user_login_sightings (twitchid, login) values (:id, :login) on conflict do nothing",
 		(["id": id, "login": lower_case(login)]));
 }
@@ -521,7 +524,6 @@ void stream_status(int userid, string name, mapping info)
 			]));
 		}
 		spawn_task(save_channel_info(userid, name, info));
-		notice_user_name(name, info->user_id);
 		stream_online_since[userid] = started;
 	}
 }
