@@ -329,6 +329,12 @@ class SSLDatabase(string host, mapping|void cfg) {
 	}
 
 	__async__ array(mapping) _low_query(string readystate, string sql, mapping|void bindings) {
+		#ifdef PGSSL_TIMING
+		string label = sprintf("%O", replace(sql, "\n", " ")[..100]);
+		if (sql == "select data from stillebot.config where twitchid = :twitchid and keyword = :kwd")
+			label = sprintf("load_config(%O, %O)", bindings->twitchid, bindings->kwd);
+		werror("[%d] Init query %s\n", time(), label);
+		#endif
 		//Preparse the query and bindings
 		array paramvalues = ({ });
 		if (bindings) foreach (bindings; string param; mixed val) {
@@ -352,6 +358,9 @@ class SSLDatabase(string host, mapping|void cfg) {
 		//class, a "portalname" sometimes actually refers to a prepared statement.
 		string portalname = ""; //Do we need portal support?
 		//if (inflight[portalname]) ...
+		#ifdef PGSSL_TIMING
+		werror("[%d] Exec query %s\n", time(), label);
+		#endif
 
 		array|zero ret = 0;
 		//string packet = sprintf("%s\0%s\0%2c%{%4c%}", portalname, sql, sizeof(params), params);
@@ -370,6 +379,9 @@ class SSLDatabase(string host, mapping|void cfg) {
 		mixed ex = catch (await(completion->future()));
 		m_delete(inflight, portalname);
 		out->add("S\0\0\0\4"); write(); //After the query, synchronize, whether we succeeded or failed.
+		#ifdef PGSSL_TIMING
+		werror("[%d] Exec query %s\n", time(), label);
+		#endif
 		if (ex) throw(ex);
 		//Now to parse out those rows and properly comprehend them.
 		return parse_result_row(stmt->fields, stmt->results[*]);
