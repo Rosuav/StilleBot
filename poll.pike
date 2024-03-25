@@ -601,10 +601,10 @@ void got_follower(object channel, mapping follower) {
 
 @EventNotify("channel.raid=1"):
 void raidout(object _, mapping info) {
-	object channel = G->G->irc->id[(int)info->from_broadcaster_user_id];
+	object channel = G->G->irc->id[(int)info->from_broadcaster_user_id]; if (!channel) return;
 	Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s with %d\n",
 		Calendar.now()->format_time(), string_to_utf8(info->from_broadcaster_user_name), string_to_utf8(info->to_broadcaster_user_name), (int)info->viewers));
-	if (channel) channel->record_raid((int)info->from_broadcaster_user_id, info->from_broadcaster_user_name,
+	channel->record_raid((int)info->from_broadcaster_user_id, info->from_broadcaster_user_name,
 		(int)info->to_broadcaster_user_id, info->to_broadcaster_user_name, 0, (int)info->viewers);
 }
 
