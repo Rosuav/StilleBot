@@ -333,6 +333,8 @@ class SSLDatabase(string host, mapping|void cfg) {
 		string label = sprintf("%O", replace(sql, "\n", " ")[..100]);
 		if (sql == "select data from stillebot.config where twitchid = :twitchid and keyword = :kwd")
 			label = sprintf("load_config(%O, %O)", bindings->twitchid, bindings->kwd);
+		else if (sql == "insert into stillebot.user_login_sightings (twitchid, login) values (:id, :login) on conflict do nothing")
+			label = sprintf("notice_user_name(%O, %O)", bindings->login, bindings->id);
 		werror("[%d] Init query %s\n", time(), label);
 		#endif
 		//Preparse the query and bindings
