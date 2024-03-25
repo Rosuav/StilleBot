@@ -126,14 +126,14 @@ __async__ void update_all_rewards(object channel) {
 	call_out(spawn_task, 0, update_all_rewards(channel));
 }
 
-__async__ void populate_rewards_cache(string|int broadcaster_id) {
+__async__ void populate_rewards_cache(string|int broadcaster_id, mapping|void current) {
 	pointsrewards[(int)broadcaster_id] = ({ }); //If there's any error, don't keep retrying
 	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
 	mapping params = (["Authorization": "Bearer " + token_for_user_id(broadcaster_id)[0]]);
 	array rewards = await(twitch_api_request(url, params))->data;
 	//Prune the dynamic rewards list
 	object channel = G->G->irc->id[(int)broadcaster_id];
-	mapping current = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
+	if (!current) current = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
 	if (current) {
 		multiset unseen = (multiset)indices(current) - (multiset)rewards->id;
 		if (sizeof(unseen)) {
@@ -152,13 +152,15 @@ __async__ void populate_rewards_cache(string|int broadcaster_id) {
 }
 
 @on_irc_loaded: void populate_all_rewards() {
-	foreach (indices(G->G->irc->id), int userid)
-		if (userid && !pointsrewards[userid]) {
-			string scopes = token_for_user_id(userid)[1];
-			if (has_value(scopes / " ", "channel:manage:redemptions")
-				|| has_value(scopes / " ", "channel:read:redemptions"))
-					populate_rewards_cache(userid);
-		}
+	G->G->DB->load_all_configs("dynamic_rewards")->then() {
+		foreach (indices(G->G->irc->id), int userid)
+			if (userid && !pointsrewards[userid]) {
+				string scopes = token_for_user_id(userid)[1];
+				if (has_value(scopes / " ", "channel:manage:redemptions")
+					|| has_value(scopes / " ", "channel:read:redemptions"))
+						populate_rewards_cache(userid, __ARGS__[0][userid] || ([]));
+			}
+	};
 }
 
 protected void create(string name) {
