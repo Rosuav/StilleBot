@@ -105,7 +105,7 @@ constant tables = ([
 	}),
 ]);
 //TODO: Have other modules submit requests for configs to be precached??
-multiset precached_config = (<"channel_labels", "variables", "monitors", "voices", "alertbox">);
+multiset precached_config = (<"channel_labels", "variables", "monitors", "voices">);
 @retain: mapping pcc_loadstate = ([]);
 @retain: mapping pcc_cache = ([]);
 
