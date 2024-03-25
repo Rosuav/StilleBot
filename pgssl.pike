@@ -380,7 +380,7 @@ class SSLDatabase(string host, mapping|void cfg) {
 		m_delete(inflight, portalname);
 		out->add("S\0\0\0\4"); write(); //After the query, synchronize, whether we succeeded or failed.
 		#ifdef PGSSL_TIMING
-		werror("[%d] Exec query %s\n", time(), label);
+		werror("[%d] Done query %s\n", time(), label);
 		#endif
 		if (ex) throw(ex);
 		//Now to parse out those rows and properly comprehend them.
