@@ -115,11 +115,8 @@ __async__ void get_credentials() {
 
 @export: void notice_user_name(string login, string id) {
 	if (!login) return;
-	id = (string)id; login = lower_case((string)login);
-	//The name-to-UID mapping should be considered advisory, and useful only for recent
-	//ones - it is not saved, and has data only for the current session. Intended for
-	//easy lookups when referencing a recently-seen username.
-	G->G->DB->save_sql("insert into stillebot.user_login_sightings (twitchid, login) values (:id, :login) on conflict do nothing", (["id": id, "login": login]));
+	G->G->DB->save_sql("insert into stillebot.user_login_sightings (twitchid, login) values (:id, :login) on conflict do nothing",
+		(["id": id, "login": lower_case(login)]));
 }
 
 @export: __async__ array(mapping) get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
