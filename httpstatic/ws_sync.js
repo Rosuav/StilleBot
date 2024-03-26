@@ -145,6 +145,11 @@ async function init() {default_handler = await import(ws_code); connect(ws_group
 if (document.readyState !== "loading") init();
 else window.addEventListener("DOMContentLoaded", init);
 
+export function reconnect(sendid) {
+	const sock = send_sockets[sendid] || send_socket;
+	if (sock) sock.onclose();
+}
+
 export function send(msg, sendid) {
 	const quiet = default_handler?.ws_config?.quiet?.send;
 	if (!quiet) console.log("Sending to " + (sendid ? sendid + " socket" : "server") + ":", msg);
