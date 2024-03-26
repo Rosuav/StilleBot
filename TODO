@@ -272,3 +272,8 @@
 * Make a shareable link feature for twitchlogin.pike
 * Running into weird problems with app auth. Maybe the cached G->G->app_access_token
   needs to be purged at some point?? Possibly on reauth???
+* Need to verify:
+  - Signal Gideon to become live bot, leaving db on Sikorsky
+  - Signal Gideon to become live db, leaving bot on Sikorsky
+  - Move both to Gideon, perform tests from Sikorsky
+  - How are timings on all forms?
