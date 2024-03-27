@@ -9,11 +9,13 @@ constant hypetrain = replace(#"
 ## Hype Train rereleases
 ### Unlockable Jan 2024 to current
 ### Hype trains currently offer unlocks from a variety of older sets.
+### Starting 20240327, getting past level 5 has more emotes!
 LuvPeekL LuvPeekR LuvBlush LuvHearts LuvSign ????<br>
 HahaBall 2020Rivalry 2020Wish 2020ByeGuys 2020Celebrate ????<br>
 RPGAyaya HahaCat RPGGhosto PrideWingR PrideWingL ????<br>
 2020Party 2020Pajamas 2020Shred 2020Snacking 2020Glitchy ????<br>
 PrideUwu PrideLaugh PrideCute PridePog PrideFloat ????<br>
+(10) BleedPurpleHD (25) HeyHeyGuys (50) PogChomp (100) KappaInfinite<br>
 
 ## Hype Train set six
 ### Unlockable Dec 2023 to Jan 2024
@@ -164,6 +166,9 @@ constant emoteids = ([
 	"HypeOhDeer": "emotesv2_f721d941d14642e2b30de2e86fa28082",
 	"HypeUwu": "emotesv2_9c5840880c854913867fa2e5ffdc1f17",
 	"HypeLick": "emotesv2_47d858d7a1e042a3bf72eab138351415",
+	//New bonus emotes for exceeding level 5!
+	"BleedPurpleHD": "emotesv2_bf888b2af57b4abd80653dff26768ae5",
+	"HeyHeyGuys": "emotesv2_132feb3980ee410e856244931d63fd31",
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
