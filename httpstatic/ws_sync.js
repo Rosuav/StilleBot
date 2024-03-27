@@ -55,11 +55,11 @@ export function connect(group, handler)
 		if (pending_message) {socket.send(JSON.stringify(pending_message)); pending_message = null;}
 		window.__socket__ = socket; window.__handler__ = handler;
 	};
-	socket.onclose = () => {
+	socket.onclose = (e) => {
 		if (handler.socket_connected) handler.socket_connected(null);
 		else send_socket = null;
 		verbose("conn", "Socket connection lost.");
-		setTimeout(connect, reconnect_delay, group, handler);
+		setTimeout(connect, reconnect_delay, e.new_group || group, handler);
 		if (reconnect_delay < 5000) reconnect_delay *= 1.5 + 0.5 * Math.random(); //Exponential back-off with a (small) random base
 	};
 	socket.onmessage = (ev) => {
@@ -145,9 +145,9 @@ async function init() {default_handler = await import(ws_code); connect(ws_group
 if (document.readyState !== "loading") init();
 else window.addEventListener("DOMContentLoaded", init);
 
-export function reconnect(sendid) {
+export function reconnect(sendid, new_group) {
 	const sock = send_sockets[sendid] || send_socket;
-	if (sock) sock.onclose();
+	if (sock) sock.onclose({new_group});
 }
 
 export function send(msg, sendid) {
