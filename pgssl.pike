@@ -240,7 +240,7 @@ class SSLDatabase(string host, mapping|void cfg) {
 					werror("ERROR: Unsupported authentication type [%d]\n", authtype);
 					break;
 				}
-				case 'K': sscanf(msg, "%4d%4d", backendpid, secretkey); break;
+				case 'K': sscanf(msg, "%4c%4c", backendpid, secretkey); break;
 				case 'Z':
 					if (msg == "I") ready();
 					else if (msg == "T" || msg == "E") transaction_ready(); //Note that in the error state, the only query we expect is "rollback"
