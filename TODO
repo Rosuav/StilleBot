@@ -277,3 +277,6 @@
   - Signal Gideon to become live db, leaving bot on Sikorsky
   - Move both to Gideon, perform tests from Sikorsky
   - How are timings on all forms?
+* Need to actually establish most of the links (notably, poll.pike::poll() needs to
+  happen), but anything that would send out messages (eg channel->trigger_special)
+  has to guard against running.
