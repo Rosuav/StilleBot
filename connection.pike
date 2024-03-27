@@ -1577,7 +1577,9 @@ protected void create(string name)
 			}
 
 			string cert = Stdio.read_file("certificate.pem");
-			if (listen_port * -use_https != G->G->httpserver_port_used || cert != G->G->httpserver_certificate)
+			string cert2 = Stdio.read_file("certificate_local.pem");
+			string combined = (cert || "") + (cert2 || ""); //If either cert changes, update both certs and keys
+			if (listen_port * -use_https != G->G->httpserver_port_used || combined != G->G->httpserver_certificate)
 			{
 				//Port or SSL status has changed. Force the server to be restarted.
 				if (object http = m_delete(G->G, "httpserver")) http->close();
@@ -1589,7 +1591,7 @@ protected void create(string name)
 			else if (!use_https) G->G->httpserver = Protocols.WebSocket.Port(http_handler, ws_handler, listen_port, listen_addr);
 			else
 			{
-				G->G->httpserver_certificate = cert;
+				G->G->httpserver_certificate = combined;
 				string key = Stdio.read_file("privkey.pem");
 				array certs = cert && Standards.PEM.Messages(cert)->get_certificates();
 				string pk = key && Standards.PEM.simple_decode(key);
@@ -1601,9 +1603,9 @@ protected void create(string name)
 				//certificate will be used for all connections that do not stipulate
 				//a servername found in the local key's CN or SAN.
 				key = Stdio.read_file("privkey_local.pem");
-				if (key && (cert = Stdio.read_file("certificate_local.pem"))) {
+				if (key && cert2) {
 					pk = Standards.PEM.simple_decode(key);
-					certs = Standards.PEM.Messages(cert)->get_certificates();
+					certs = Standards.PEM.Messages(cert2)->get_certificates();
 					G->G->httpserver->ctx->add_cert(pk, certs);
 				}
 			}
