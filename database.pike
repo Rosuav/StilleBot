@@ -410,7 +410,7 @@ mapping load_cached_config(string|int twitchid, string kwd) {
 
 //There's no decorator on this as the actual channel list is set by precached_config[]
 void update_cache(int pid, string cond, string extra, string host) {
-	if (pid == pg_connections[host]->?backendpid) return; //Ignore signals from our own updates
+	if (pid == pg_connections[host]->?conn->?backendpid) return; //Ignore signals from our own updates
 	sscanf(cond, "%*s:%s", string kwd);
 	#ifdef PGSSL_TIMING
 	werror("[%d] Got update_cache signal %O %O\n", time(), cond, extra);
