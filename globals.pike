@@ -378,6 +378,13 @@ class websocket_handler
 		if (function f = this["websocket_cmd_" + msg->cmd]) f(conn, msg);
 	}
 
+	void websocket_cmd_chgrp(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+		if (websocket_validate(conn, msg)) return;
+		websocket_groups[conn->group] -= ({conn->sock});
+		websocket_groups[conn->group = msg->group] += ({conn->sock});
+		send_update(conn);
+	}
+
 	void _low_send_updates(mapping resp, array(object) socks) {
 		if (!resp) return;
 		string text = Standards.JSON.encode(resp | (["cmd": "update"]), 4);
