@@ -19,7 +19,7 @@ export function render_item(item) {
 		TD(item.per_user ? "(per-user)" : INPUT({class: "value", value: item.curval})),
 		TD(item.per_user ? BUTTON({type: "button", class: "showuservars"}, "Show users")
 			: [BUTTON({type: "button", class: "setvalue"}, "Set value"),
-				BUTTON({type: "button", class: "delete"}, "Delete variable")]),
+				BUTTON({type: "button", class: "delete"}, "Delete")]),
 		TD(UL(item.usage.map(u => LI(describe_usage(u))))),
 	]);
 }
