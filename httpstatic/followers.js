@@ -1,5 +1,6 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {BUTTON, IMG, INPUT, SPAN, TD, TIME, TR} = lindt; //autoimport
+import {simpleconfirm} from "./utils.js";
 
 function if_different(login, name) {
 	if (login === name.toLowerCase()) return null;
@@ -29,12 +30,16 @@ function recent_time(basis, iso) {
 	return TIME({datetime: tm, title: tm.toLocaleString()}, desc);
 }
 
+const banned = { };
 export function render(data) {
 	if (data.newfollow) current_followers.unshift(data.newfollow);
+	if (data.banned) data.banned.forEach(x => banned[x] = 1);
 	const basis = new Date; //Get a consistent comparison basis for "X minutes ago" (not that it's going to take THAT much time)
 	replace_content("#followers tbody",
 		current_followers.map(f => TR({class: "follower", key: f.user_id}, [
-			TD(INPUT({type: "checkbox", "aria-labelledby": "login-" + f.user_id})),
+			TD(
+				banned[f.user_id] ? "Banned"
+				: INPUT({type: "checkbox", "aria-labelledby": "login-" + f.user_id, "data-uid": f.user_id})),
 			TD([
 				IMG({src: f.details?.profile_image_url || "", class: "avatar"}),
 				BUTTON({class: "clipbtn", "data-copyme": f.user_login,
@@ -67,3 +72,9 @@ on("click", "tr.follower", e => {
 	e.match.classList.toggle("selected", state);
 	last_clicked = e.match;
 });
+
+on("click", "#banselected", simpleconfirm("Are you SURE you want to ban all of these users?", e => {
+	const users = [];
+	document.querySelectorAll("input:checked").forEach(cb => users.push(cb.dataset.uid));
+	ws_sync.send({cmd: "banusers", users, reason: DOM("#banreason").value});
+}));

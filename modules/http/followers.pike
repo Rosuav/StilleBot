@@ -5,6 +5,8 @@ constant markdown = #"# Recent followers - $$channel$$
 
 $$message||$$
 
+$$banbtn||$$
+
 X | User | Followed | Created | Description
 --|------|----------|---------|-------------
 - |-     |-         |-        | loading...
@@ -69,6 +71,7 @@ __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Reques
 	return render(req, ([
 		"vars": (["current_followers": resp->data, "ws_group": G->G->irc->id[channel] && channel]),
 		"channel": await(get_user_info(channel))->display_name,
+		"banbtn": G->G->irc->id[channel] ? "[Ban selected](:#banselected) Reason: <input id=banreason size=40>" : "",
 		"message": G->G->irc->id[channel]
 			? "Will automatically update as people follow"
 			: "Not guaranteed to automatically update - refresh as needed"
@@ -88,6 +91,33 @@ void follower(object channel, mapping follower) {
 		"user_name": follower->user_name,
 		"details": __ARGS__[0],
 	])]));};
+}
+
+__async__ void websocket_cmd_banusers(mapping conn, mapping msg) {
+	//Note that we don't actually check for mod status here. Instead, we just use the
+	//current user's credentials; if you aren't a mod and you fiddle this to try to
+	//ban people, it'll fail at Twitch's end, probably with an ugly traceback.
+	if (!arrayp(msg->users)) return;
+	string url = "https://api.twitch.tv/helix/moderation/bans?broadcaster_id=" + conn->group + "&moderator_id=" + conn->session->user->id;
+	array banned = ({ });
+	//Baymax with a sword: "I will now ban you."
+	foreach (msg->users, string uid) {
+		mapping ret = await(twitch_api_request(url,
+			(["Authorization": "Bearer " + conn->session->token]),
+			([
+				"json": (["data": (["user_id": uid, "reason": msg->reason || ""])]),
+				"return_errors": 1,
+			]),
+		));
+		if (ret->error) {
+			//Most errors, just bail. But if it's an issue with that user, do the others.
+			if (has_prefix(ret->message || "--", "The user specified ")) continue;
+			break;
+		}
+		banned += ({uid});
+	}
+	//"Ban complete."
+	send_updates_all(conn->group, (["banned": banned]));
 }
 
 protected void create(string name) {::create(name);}
