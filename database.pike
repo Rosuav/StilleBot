@@ -214,6 +214,7 @@ class SSLContext {
 	}
 }
 
+@"readonly":
 void notify_readonly(int pid, string cond, string extra, string host) {
 	mapping db = pg_connections[host];
 	if (extra == "on" && !db->readonly) {
@@ -778,7 +779,11 @@ __async__ void create_tables_and_stop() {
 
 protected void create(string name) {
 	::create(name);
-	#if !constant(INTERACTIVE)
+	#if constant(INTERACTIVE)
+	//In interactive mode, most notifications are disabled, but we still want to know about
+	//changes to read-only/read-write status of a database.
+	notify_channels->readonly = notify_readonly;
+	#else
 	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
 		if (ann) foreach (indices(ann), mixed anno)
 			if (stringp(anno)) notify_channels[anno] = this[key];
