@@ -286,7 +286,7 @@ __async__ void connect(string host) {
 	#if constant(SSLDatabase)
 	db->conn = SSLDatabase(host, (["ctx": ctx, "notify_callback": notify_callback]));
 	werror("[%.3f] Established pgssl, listening...\n", tm->peek());
-	await(db->conn->batch(sprintf("listen \"%s\"", indices(notify_channels)[*])));
+	if (sizeof(notify_channels)) await(db->conn->batch(sprintf("listen \"%s\"", indices(notify_channels)[*])));
 	string ro = db->conn->server_params->default_transaction_read_only;
 	#else
 	while (1) {
