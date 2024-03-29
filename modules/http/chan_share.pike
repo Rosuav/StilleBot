@@ -260,7 +260,7 @@ int delmsgs(object channel, object person, string target) {
 void cleanup() {
 	remove_call_out(G->G->artshare_cleanup);
 	G->G->artshare_cleanup = call_out(cleanup, 3600 * 12); //Check twice a day for anything over a day old
-	G->G->DB->generic_query("delete from stillebot.uploads where expires < now() returning channel, uploader, id")->then() {
+	G->G->DB->query_rw("delete from stillebot.uploads where expires < now() returning channel, uploader, id")->then() {
 		foreach (__ARGS__[0], mapping f)
 			update_one(f->uploader + "#" + f->channel, f->id);
 	};

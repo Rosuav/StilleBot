@@ -1139,7 +1139,7 @@ void irc_closed(mapping options) {
 void session_cleanup() {
 	//Go through all HTTP sessions and dispose of old ones
 	G->G->http_session_cleanup = call_out(session_cleanup, 86400);
-	G->G->DB->generic_query("delete from stillebot.http_sessions where active < now () - '7 days'::interval");
+	G->G->DB->query_rw("delete from stillebot.http_sessions where active < now () - '7 days'::interval");
 }
 
 __async__ void http_request(Protocols.HTTP.Server.Request req)
@@ -1473,7 +1473,7 @@ __async__ void reconnect() {
 		foreach (voices; int i; mapping v) if (v->id == (string)G->G->bot_uid) voices[i] = 0;
 		shard_voices = ({0}) + (voices - ({0})); //Move the null entry (for intrinsic voice) to the start
 	}
-	array channels = await(G->G->DB->generic_query(#"
+	array channels = await(G->G->DB->query_ro(#"
 		select stillebot.botservice.twitchid as userid, login, display_name, coalesce(data, '{}') as data
 		from stillebot.botservice left join stillebot.config
 		on stillebot.botservice.twitchid = stillebot.config.twitchid and keyword = 'botconfig'

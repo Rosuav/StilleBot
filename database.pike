@@ -114,10 +114,10 @@ multiset precached_config = (<"channel_labels", "variables", "monitors", "voices
 //some sort of reference loop - it seems that we're not disposing of old versions of this
 //module properly - but the connections themselves should be closed by the new module.
 @retain: mapping(string:mapping(string:mixed)) pg_connections = ([]);
-string active; //Host name only, not the connection object itself
-@retain: mapping waiting_for_active = ([ //If active is null, use these to defer database requests.
-	"queue": ({ }), //Add a Promise to this to be told when there's an active.
-	"saveme": ({ }), //These will be asynchronously saved as soon as there's an active.
+string livedb, fastdb; //Host name for the current read-write database, and possibly a local fast (but read-only) db
+@retain: mapping waiting_for_database = ([
+	"livequeue": ({ }), //Add a Promise to this to be told when there's a read-write database.
+	"fastqueue": ({ }), //Ditto but can be handled from a read-only database
 ]);
 array(string) database_ips = ({"sikorsky.rosuav.com", "gideon.rosuav.com"});
 //Hack: Connect to a different name/IP but stick to the conceptual name
@@ -184,26 +184,42 @@ __async__ array query(mapping(string:mixed) db, string|array sql, mapping|void b
 	#endif
 }
 
-__async__ void _got_active(mapping db) {
-	//Pull all the pendings and reset the array before actually saving any of them.
-	array wfa = waiting_for_active->saveme; waiting_for_active->saveme = ({ });
-	foreach (wfa, [string sql, mapping bindings]) {
-		mixed err = catch {await((mixed)query(db, sql, bindings));};
-		if (err) werror("Unable to save pending to database!\n%s\n", describe_backtrace(err));
-	}
-}
-void _have_active(string a) {
+void _have_fastdb(string host) {
 	if (G->G->DB != this) return; //Let the current version of the code handle them
-	werror("*** HAVE ACTIVE: %O\n", a);
-	active = a;
-	array wa = waiting_for_active->queue; waiting_for_active->queue = ({ });
-	wa->success(active);
-	spawn_task(_got_active(pg_connections[active]));
+	werror("*** HAVE FAST DB: %O\n", host);
+	fastdb = host;
+	array wa = waiting_for_database->fastqueue; waiting_for_database->fastqueue = ({ });
+	wa->success(1);
 }
-Concurrent.Future await_active() {
+void _have_livedb(string host) {
+	if (G->G->DB != this) return;
+	werror("*** HAVE LIVE DB: %O\n", host);
+	livedb = host;
+	array wa = waiting_for_database->livequeue + waiting_for_database->fastqueue;
+	waiting_for_database->livequeue = waiting_for_database->fastqueue = ({ });
+	wa->success(1);
+}
+Concurrent.Future await_fastdb() {
 	Concurrent.Promise pending = Concurrent.Promise();
-	waiting_for_active->queue += ({pending});
+	waiting_for_database->fastqueue += ({pending});
 	return pending->future();
+}
+Concurrent.Future await_livedb() {
+	Concurrent.Promise pending = Concurrent.Promise();
+	waiting_for_database->livequeue += ({pending});
+	return pending->future();
+}
+
+//Generic SQL query handlers. Use _ro for potentially higher performance local database,
+//no mutations allowed; use _rw to guarantee that it's the live DB.
+__async__ array query_ro(string|array sql, mapping|void bindings) {
+	if (!fastdb && !livedb) await(await_fastdb());
+	return await(query(pg_connections[fastdb] || pg_connections[livedb], sql, bindings));
+}
+
+__async__ array query_rw(string|array sql, mapping|void bindings) {
+	if (!livedb) await(await_livedb());
+	return await(query(pg_connections[livedb], sql, bindings));
 }
 
 class SSLContext {
@@ -222,13 +238,15 @@ void notify_readonly(int pid, string cond, string extra, string host) {
 		db->conn->query(#"select set_config('application_name', 'stillebot-ro', false),
 				set_config('default_transaction_read_only', 'on', false)");
 		db->readonly = 1;
-		if (active == host) {active = 0; spawn_task(reconnect(0));}
+		//If this one was the live (read-write) DB, we no longer have a read-write DB.
+		//However, it's still allowed to continue serving as the fast DB.
+		if (livedb == host) {livedb = 0; spawn_task(reconnect(0));}
 	} else if (extra == "off" && db->readonly) {
 		werror("SWITCHING TO READ-WRITE MODE: %O\n", host);
 		db->conn->query(#"select set_config('application_name', 'stillebot', false),
 				set_config('default_transaction_read_only', 'off', false)");
 		db->readonly = 0;
-		if (!active) _have_active(host);
+		if (!livedb) _have_livedb(host);
 	}
 	//Else we're setting the mode we're already in. This may indicate a minor race
 	//condition on startup, but we're already going to be in the right state anyway.
@@ -344,26 +362,14 @@ __async__ void reconnect(int force, int|void both) {
 	}
 	foreach (database_ips, string host) {
 		if (!pg_connections[host]) await((mixed)connect(host));
-		if (!both && !pg_connections[host]->readonly) {_have_active(host); return;}
+		if (!both && host == G->G->instance_config->local_address) _have_fastdb(host);
+		if (!both && !pg_connections[host]->readonly) {_have_livedb(host); return;}
 	}
-	werror("No active DB, suspending saves\n");
-	active = 0;
+	werror("No read-write DB, suspending saves\n");
+	livedb = 0;
 }
 
-__async__ string save_sql(string|array sql, mapping bindings) {
-	if (active) {
-		mixed err = catch {await(query(pg_connections[active], sql, bindings));};
-		if (!err) return "ok"; //All good!
-		//Report the error to the console, since the caller isn't hanging around.
-		//TODO: If the error is because there's actually no database available,
-		//put ourselves in the queue.
-		werror("Unable to save to database!\n%s\n", describe_backtrace(err));
-		return "fail";
-	}
-	werror("Save pending! %s\n", sql);
-	waiting_for_active->saveme += ({({sql, bindings})});
-	return "retry";
-}
+Concurrent.Future save_sql(string|array sql, mapping bindings) {return query_rw(sql, bindings);}
 
 Concurrent.Future save_config(string|int twitchid, string kwd, mixed data) {
 	//TODO: If data is an empty mapping, delete it instead
@@ -387,8 +393,7 @@ __async__ mapping load_config(string|int twitchid, string kwd, mixed|void dflt, 
 		while (pcc_loadstate[kwd] < 2) sleep(0.25); //Simpler than having a load-state promise
 		return pcc_cache[kwd][(int)twitchid] || ([]);
 	}
-	if (!active) await(await_active());
-	array rows = await(query(pg_connections[active], "select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
+	array rows = await(query_ro("select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
 		(["twitchid": (int)twitchid, "kwd": kwd])));
 	if (!sizeof(rows)) return dflt || ([]);
 	return JSONDECODE(rows[0]->data);
@@ -396,8 +401,7 @@ __async__ mapping load_config(string|int twitchid, string kwd, mixed|void dflt, 
 
 //Collect all configs of a particular keyword, returning them keyed by Twitch user ID.
 __async__ mapping load_all_configs(string kwd) {
-	if (!active) await(await_active());
-	array rows = await(query(pg_connections[active], "select twitchid, data from stillebot.config where keyword = :kwd",
+	array rows = await(query_ro("select twitchid, data from stillebot.config where keyword = :kwd",
 		(["kwd": kwd])));
 	mapping ret = ([]);
 	foreach (rows, mapping r) ret[r->twitchid] = JSONDECODE(r->data);
@@ -431,9 +435,7 @@ __async__ void preload_configs(array(string) kwds) {
 		pcc_loadstate[kwd] = 1;
 		pcc_cache[kwd] = ([]);
 	}
-	if (!active) await(await_active());
-	array rows = await(query(pg_connections[active],
-		"select twitchid, keyword, data from stillebot.config where keyword = any(:kwd)",
+	array rows = await(query_ro("select twitchid, keyword, data from stillebot.config where keyword = any(:kwd)",
 		(["kwd": kwds])));
 	foreach (rows, mapping row)
 		pcc_cache[row->keyword][(int)row->twitchid] = JSONDECODE(row->data);
@@ -442,7 +444,7 @@ __async__ void preload_configs(array(string) kwds) {
 
 //Doesn't currently support Sql.Sql().
 __async__ mapping mutate_config(string|int twitchid, string kwd, function mutator) {
-	if (!active) await(await_active());
+	if (!livedb) await(await_livedb());
 	if (precached_config[kwd]) {
 		//No transaction necessary here; we have the data in memory.
 		if (pcc_loadstate[kwd] < 2) error("Config not yet loaded\n"); //Or maybe we don't.
@@ -451,7 +453,7 @@ __async__ mapping mutate_config(string|int twitchid, string kwd, function mutato
 		if (mappingp(ret)) data = ret;
 		return await(save_config(twitchid, kwd, data));
 	}
-	return await(pg_connections[active]->conn->transaction(__async__ lambda(function query) {
+	return await(pg_connections[livedb]->conn->transaction(__async__ lambda(function query) {
 		//TODO: Is it worth having load_config/save_config support transactional mode?
 		array rows = await(query("select data from stillebot.config where twitchid = :twitchid and keyword = :kwd",
 			(["twitchid": (int)twitchid, "kwd": kwd])));
@@ -470,7 +472,6 @@ __async__ mapping mutate_config(string|int twitchid, string kwd, function mutato
 //all raids involving that channel. If bidi is set, will also include raids
 //the opposite direction.
 __async__ array load_raids(string|int fromid, string|int toid, int|void bidi) {
-	if (!active) await(await_active());
 	if (!toid && !fromid) return ({ }); //No you can't get "every raid, ever".
 	string sql;
 	if (!toid) { //TODO: Tidy this up a bit, it's a mess.
@@ -483,7 +484,7 @@ __async__ array load_raids(string|int fromid, string|int toid, int|void bidi) {
 		if (bidi) sql = "(fromid = :fromid and toid = :toid) or (fromid = :toid and toid = :fromid)";
 		else sql = "fromid = :fromid and toid = :toid";
 	}
-	array rows = await(query(pg_connections[active], "select * from stillebot.raids where " + sql,
+	array rows = await(query_ro("select * from stillebot.raids where " + sql,
 		(["fromid": (int)fromid, "toid": (int)toid])));
 	return rows; //TODO upon switching back to Sql.Sql: JSONDECODE the data fields
 }
@@ -505,18 +506,17 @@ __async__ void add_raid(string|int fromid, string|int toid, mapping raid) {
 //sscanf("F\255C|\377gK\316\223iW\351\215\37\377=", "%{%2c%}", array words);
 //sprintf("%x%x-%x-%x-%x-%x%x%x", @words[*][0]);
 __async__ array(mapping) load_commands(string|int twitchid, string|void cmdname, int|void allversions) {
-	if (!active) await(await_active());
 	string sql = "select * from stillebot.commands where twitchid = :twitchid";
 	mapping bindings = (["twitchid": twitchid]);
 	if (cmdname) {sql += " and cmdname = :cmdname"; bindings->cmdname = cmdname;}
 	if (!allversions) sql += " and active";
-	array rows = await(query(pg_connections[active], sql, bindings));
+	array rows = await(query_ro(sql, bindings));
 	//foreach (rows, mapping command) command->content = JSONDECODE(command->content); //Unnecessary with SSLDatabase
 	return rows;
 }
 
 __async__ mapping(int:array(mapping)) preload_commands(array(int) twitchids) {
-	array rows = await(query(pg_connections[active], "select * from stillebot.commands where twitchid = any(:twitchids) and active", (["twitchids": twitchids])));
+	array rows = await(query_ro("select * from stillebot.commands where twitchid = any(:twitchids) and active", (["twitchids": twitchids])));
 	mapping ret = mkmapping(twitchids, allocate(sizeof(twitchids), ({ }))); //Ensure that there's an array for every ID checked, even if no actual commands are found
 	foreach (rows, mapping row) ret[row->twitchid] += ({row});
 	return ret;
@@ -547,8 +547,7 @@ Concurrent.Future save_session(mapping data) {
 
 __async__ mapping load_session(string cookie) {
 	if (!cookie || cookie == "") return ([]); //Will trigger new-cookie handling on save
-	if (!active) await(await_active());
-	array rows = await(query(pg_connections[active], "select data from stillebot.http_sessions where cookie = :cookie",
+	array rows = await(query_ro("select data from stillebot.http_sessions where cookie = :cookie",
 		(["cookie": cookie])));
 	if (!sizeof(rows)) return (["cookie": cookie]);
 	//For some reason, sometimes I get an array of strings instead of an array of mappings.
@@ -559,27 +558,15 @@ __async__ mapping load_session(string cookie) {
 
 //Generate a new session cookie that definitely doesn't exist
 __async__ string generate_session_cookie() {
-	if (!active) await(await_active());
 	while (1) {
 		string cookie = random(1<<64)->digits(36);
-		mixed ex = catch {await(query(pg_connections[active], "insert into stillebot.http_sessions (cookie, data) values(:cookie, '')",
+		mixed ex = catch {await(query_rw("insert into stillebot.http_sessions (cookie, data) values(:cookie, '')",
 			(["cookie": cookie])));};
 		if (!ex) return cookie;
 		//TODO: If it wasn't a PK conflict, let the exception bubble up
 		werror("COOKIE INSERTION\n%s\n", describe_backtrace(ex));
 		await(task_sleep(1));
 	}
-}
-
-//Generic SQL query on the current database. Not recommended; definitely not recommended for
-//any mutation; use the proper load_config/save_config/save_sql instead. This is deliberately
-//NOT exported - avoid it unless there's no better way.
-__async__ mapping generic_query(string sql, mapping|void bindings) {
-	if (!pg_connections[active]) {
-		await(reconnect(0));
-		if (!active) error("No database connection available.\n");
-	}
-	return await(query(pg_connections[active], sql, bindings));
 }
 
 //Don't use this. If you are in a proper position to violate that rule, you already know what
@@ -610,8 +597,7 @@ __async__ mapping for_each_db(string sql, mapping|void bindings) {
 __async__ void preload_user_credentials() {
 	G->G->user_credentials_loading = 1;
 	mapping cred = G->G->user_credentials = ([]);
-	if (!active) await(await_active());
-	array rows = await(query(pg_connections[active], "select twitchid, data from stillebot.config where keyword = 'credentials'"));
+	array rows = await(query_ro("select twitchid, data from stillebot.config where keyword = 'credentials'"));
 	foreach (rows, mapping row) {
 		mapping data = JSONDECODE(row->data);
 		cred[(int)row->twitchid] = cred[data->login] = data;
@@ -639,8 +625,7 @@ Concurrent.Future save_user_credentials(mapping data) {
 }
 
 __async__ array(mapping) list_ephemeral_files(string|int channel, string|int uploader, string|void id, int|void include_blob) {
-	if (!active) await(await_active());
-	return await(G->G->DB->generic_query(
+	return await(query_ro(
 		"select id, metadata" + (include_blob ? ", data" : "") +
 		" from stillebot.uploads where channel = :channel and uploader = :uploader and expires is not null"
 		+ (id ? " and id = :id" : ""),
@@ -649,8 +634,7 @@ __async__ array(mapping) list_ephemeral_files(string|int channel, string|int upl
 }
 
 __async__ array(mapping) list_channel_files(string|int channel, string|void id) {
-	if (!active) await(await_active());
-	return await(G->G->DB->generic_query(
+	return await(query_ro(
 		"select id, metadata from stillebot.uploads where channel = :channel and expires is null"
 		+ (id ? " and id = :id" : ""),
 		(["channel": channel, "id": id]),
@@ -658,8 +642,7 @@ __async__ array(mapping) list_channel_files(string|int channel, string|void id) 
 }
 
 __async__ mapping|zero get_file(string id, int|void include_blob) {
-	if (!active) await(await_active());
-	array rows = await(G->G->DB->generic_query(
+	array rows = await(query_ro(
 		"select id, channel, uploader, metadata, expires" + (include_blob ? ", data" : "") +
 		" from stillebot.uploads where id = :id",
 		(["id": id]),
@@ -668,24 +651,22 @@ __async__ mapping|zero get_file(string id, int|void include_blob) {
 }
 
 __async__ string prepare_file(string|int channel, string|int uploader, mapping metadata, int(1bit) ephemeral) {
-	if (!active) await(await_active());
-	return await(G->G->DB->generic_query(
+	return await(query_rw(
 		"insert into stillebot.uploads (channel, uploader, data, metadata, expires) values (:channel, :uploader, '', :metadata, "
 			+ (ephemeral ? "now() + interval '24 hours'" : "NULL") + ") returning id",
 		(["channel": channel, "uploader": uploader, "metadata": metadata]),
 	))[0]->id;
 }
 
-void update_file(string(21bit) id, mapping metadata, string(8bit)|void raw) {
-	G->G->DB->save_sql(
+Concurrent.Future update_file(string(21bit) id, mapping metadata, string(8bit)|void raw) {
+	return query_rw(
 		"update stillebot.uploads set " + (raw ? "data = :data, " : "") + "metadata = :metadata where id = :id",
 		(["id": id, "data": raw, "metadata": metadata]),
 	);
 }
 
-//TODO: Use save_sql? What if we need to be able to await this?
 Concurrent.Future purge_ephemeral_files(string|int channel, string|int uploader, string|void id) {
-	return G->G->DB->generic_query(
+	return query_rw(
 		"delete from stillebot.uploads where channel = :channel and uploader = :uploader"
 			+ (id ? " and id = :id" : "") + " and expires is not null returning id, metadata",
 		(["channel": channel, "uploader": uploader, "id": id]),
@@ -715,9 +696,9 @@ void notify_botservice_changed(int pid, string cond, string extra, string host) 
 __async__ void create_tables() {
 	await(reconnect(1, 1)); //Ensure that we have at least one connection, both if possible
 	array(mapping) dbs;
-	if (active) {
+	if (livedb) {
 		//We can't make changes, but can verify and report inconsistencies.
-		dbs = ({pg_connections[active]});
+		dbs = ({pg_connections[livedb]});
 	} else if (!sizeof(pg_connections)) {
 		//No connections, nothing succeeded
 		error("Unable to verify database status, no PostgreSQL connections\n");
@@ -756,7 +737,7 @@ __async__ void create_tables() {
 			else write("Table %s unchanged\n", tbname);
 		}
 		if (sizeof(stmts)) {
-			if (active) error("Table structure changes needed!\n%O\n", stmts);
+			if (livedb) error("Table structure changes needed!\n%O\n", stmts);
 			werror("Making changes on %s: %O\n", db->host, stmts);
 			#if constant(SSLDatabase)
 			await(db->conn->transaction(__async__ lambda(function query) {

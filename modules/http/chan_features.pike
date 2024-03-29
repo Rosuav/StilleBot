@@ -39,7 +39,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
 		//Save any exportable configs. This will cover a lot of things, but not those that
 		//are in separate tables.
-		foreach (await(G->G->DB->generic_query(#"select * from stillebot.config
+		foreach (await(G->G->DB->query_ro(#"select * from stillebot.config
 			join stillebot.config_exportable on stillebot.config.keyword = stillebot.config_exportable.keyword
 			where twitchid = :twitchid", (["twitchid": channel->userid]))), mapping cfg)
 				if (sizeof(cfg->data)) ret[cfg->keyword] = cfg->data;

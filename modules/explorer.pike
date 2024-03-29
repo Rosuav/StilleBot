@@ -72,7 +72,7 @@ class menu_clicked
 		//Database configuration. Shared between instances, can update live. Note that
 		//precached config is not separated out here; it may be nice to at least annotate
 		//which ones are PCC and which are not, but for now they're just in together.
-		G->G->DB->generic_query("select * from stillebot.config")->then() {
+		G->G->DB->query_ro("select * from stillebot.config")->then() {
 			//Remap to a mapping, simpler than reimplementing parts of add_to_store
 			mapping dbcfg = ([]);
 			foreach (__ARGS__[0], mapping cfg) dbcfg[cfg->keyword] |= ([cfg->twitchid: cfg->data]);

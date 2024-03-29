@@ -35,7 +35,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"scopes": sort(indices(req->misc->session->scopes)),
 		]);
 		werror("Saving to DB.\n");
-		spawn_task(G->G->DB->generic_query("update stillebot.settings set credentials = :c",
+		spawn_task(G->G->DB->query_rw("update stillebot.settings set credentials = :c",
 			(["c": c]))); //TODO: On switching back to Sql.Sql, check JSON encoding
 	}
 	else desc = "oauth:" + req->misc->session->token;

@@ -635,7 +635,7 @@ __async__ void ensure_tts_credentials(int need_tts) { //If you already KNOW we n
 	//Check if any connected account uses TTS
 	if (!need_tts) {
 		//List every channel that uses TTS, then see if any are currently connected.
-		array tts_users = await(G->G->DB->generic_query("select twitchid, data -> 'authkey' as authkey from stillebot.config where keyword = 'alertbox' and data -> 'uses_tts' = '1'"));
+		array tts_users = await(G->G->DB->query_ro("select twitchid, data -> 'authkey' as authkey from stillebot.config where keyword = 'alertbox' and data -> 'uses_tts' = '1'"));
 		foreach (tts_users, mapping cfg) {
 			//If you're using the renderer front end, or the editing control panel,
 			//ensure that TTS is available (so that test alerts work). Note that

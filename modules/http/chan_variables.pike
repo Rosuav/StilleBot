@@ -231,7 +231,7 @@ __async__ void wscmd_getuservars(object channel, mapping(string:mixed) conn, map
 	//get rather costly. So we just show the most recently sighted login.
 	//The array of names may contain duplicates, but the most recent will be
 	//the last, so mkmapping will happily override the earlier ones.
-	array names = await(G->G->DB->generic_query("select * from stillebot.user_login_sightings where twitchid = any(:ids) order by twitchid, sighted",
+	array names = await(G->G->DB->query_ro("select * from stillebot.user_login_sightings where twitchid = any(:ids) order by twitchid, sighted",
 		(["ids": indices(uservars)])));
 	mapping uid_to_name = mkmapping(names->twitchid, names->login);
 	array ret = ({ });

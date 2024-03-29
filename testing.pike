@@ -12,7 +12,7 @@ __async__ void ping() {
 
 __async__ void run_test() {
 	if (mixed ex = catch {
-		mapping ret = await(G->G->DB->generic_query("select * from stillebot.user_followed_categories where twitchid = 1"))[0];
+		mapping ret = await(G->G->DB->query_ro("select * from stillebot.user_followed_categories where twitchid = 1"))[0];
 		werror("[%d] Current value: %O\n", time() - last_activity, cur_category = ret->category);
 		cfgtest = await(G->G->DB->load_config(0, "testing"));
 		werror("Got: %O\n", cfgtest);
@@ -33,7 +33,7 @@ __async__ void increment2() {
 
 __async__ void get_settings() {
 	werror("Settings now: %O\n", G->G->dbsettings);
-	mapping settings = await(G->G->DB->generic_query("select * from stillebot.settings"))[0];
+	mapping settings = await(G->G->DB->query_ro("select * from stillebot.settings"))[0];
 	werror("Queried settings: %O\n", settings);
 }
 
@@ -84,7 +84,7 @@ __async__ void resolve_command_collision(int twitchid, string cmdname) {
 		//TODO: Can we wait until replication has indeed happened? For now, just sticking
 		//in a nice long delay.
 		await(task_sleep(5));
-		G->G->DB->generic_query("update stillebot.commands set active = true where id = :id",
+		G->G->DB->query_rw("update stillebot.commands set active = true where id = :id",
 			(["id": dbs[-1]->id]));
 		Stdio.append_file("postgresql_conflict_resolution.log",
 			sprintf("=====\n%sCONFLICT: stillebot.commands\n%O\nResolved.\n",
@@ -150,7 +150,7 @@ void start_inotify() {
 
 __async__ void big_query_test() {
 	for (int n = 1000; n < (1<<32); n *= 10) {
-		array ret = await(G->G->DB->generic_query(
+		array ret = await(G->G->DB->query_ro(
 			"select length(:stuff)",
 			(["stuff": "*" * n]),
 		));
@@ -166,34 +166,32 @@ __async__ void array_test() {
 	//values, each length-preceded. This would ultimately improve performance of
 	//queries such as raidfinder's lookup of raids for all live streamers to/from
 	//the one you're raidfinding for; currently each is a separate query.
-	if (!G->G->DB->active) await(G->G->DB->await_active());
 	/*
-	werror("Result: %O\n", await(G->G->DB->generic_query("select '{}'::int[]")));
-	werror("Result: %O\n", await(G->G->DB->generic_query("select '{1,2,3}'::int[]")));
-	werror("Result: %O\n", await(G->G->DB->generic_query("select string_to_array('1,2,3', ',')")));
-	werror("Result: %O\n", await(G->G->DB->generic_query("select '{{{1,2,3,4,5},{3,4,5,6,7}},{{5,6,7,8,9},{7,8,9,0,1}},{{1,3,5,7,9},{2,4,6,8,0}},{{1,4,7,0,2},{3,5,7,9,2}}}'::int[]")));
-	werror("Result: %O\n", await(G->G->DB->generic_query("select int4range(10, 20)")));
-	werror("Result: %O\n", await(G->G->DB->generic_query("select '{[1,2], (3,10)}'::int4multirange")));
-	werror("Result: %O\n", await(G->G->DB->generic_query("select 1.5 a, 0.1 b, 0.2 c, 0.3 d, 0.1 + 0.2 e")));
-	werror("Result: %O\n", await(G->G->DB->generic_query("select 1.125::numeric(10, 5) a, 2.25::numeric(10, 5) b, 0.125::numeric(10, 5) c, 4::numeric(10, 5) d, 5::numeric(10, 5) e")));
-	werror("Result: %O\n", await(G->G->DB->generic_query("select * from stillebot.config where twitchid = any(:ids)",
+	werror("Result: %O\n", await(G->G->DB->query_ro("select '{}'::int[]")));
+	werror("Result: %O\n", await(G->G->DB->query_ro("select '{1,2,3}'::int[]")));
+	werror("Result: %O\n", await(G->G->DB->query_ro("select string_to_array('1,2,3', ',')")));
+	werror("Result: %O\n", await(G->G->DB->query_ro("select '{{{1,2,3,4,5},{3,4,5,6,7}},{{5,6,7,8,9},{7,8,9,0,1}},{{1,3,5,7,9},{2,4,6,8,0}},{{1,4,7,0,2},{3,5,7,9,2}}}'::int[]")));
+	werror("Result: %O\n", await(G->G->DB->query_ro("select int4range(10, 20)")));
+	werror("Result: %O\n", await(G->G->DB->query_ro("select '{[1,2], (3,10)}'::int4multirange")));
+	werror("Result: %O\n", await(G->G->DB->query_ro("select 1.5 a, 0.1 b, 0.2 c, 0.3 d, 0.1 + 0.2 e")));
+	werror("Result: %O\n", await(G->G->DB->query_ro("select 1.125::numeric(10, 5) a, 2.25::numeric(10, 5) b, 0.125::numeric(10, 5) c, 4::numeric(10, 5) d, 5::numeric(10, 5) e")));
+	werror("Result: %O\n", await(G->G->DB->query_ro("select * from stillebot.config where twitchid = any(:ids)",
 		(["ids": ({1, 2, 3})]))));
-	werror("Result: %O\n", await(G->G->DB->generic_query("select :ids::int4[]",
+	werror("Result: %O\n", await(G->G->DB->query_ro("select :ids::int4[]",
 		(["ids": ({ })]))));
-	werror("Result: %O\n", await(G->G->DB->generic_query("select :ids::int4[]",
+	werror("Result: %O\n", await(G->G->DB->query_ro("select :ids::int4[]",
 		(["ids": ({({1, 2}), ({3, 4}), ({5, 6})})]))));
-	werror("Result: %O\n", await(G->G->DB->generic_query("select :ids::int4[]",
+	werror("Result: %O\n", await(G->G->DB->query_ro("select :ids::int4[]",
 		(["ids": ({({1, 2, 3}), ({4, 5, 6})})]))));
-	werror("Result: %O\n", await(G->G->DB->generic_query("select :ids::int4[]",
+	werror("Result: %O\n", await(G->G->DB->query_ro("select :ids::int4[]",
 		(["ids": ({({({({({1})})})})})]))));
 	*/
 	exit(0);
 }
 
 __async__ void json_test() {
-	if (!G->G->DB->active) await(G->G->DB->await_active());
-	werror("Result: %O\n", await(G->G->DB->generic_query("select '[1,2,3]'::json")));
-	werror("Result: %O\n", await(G->G->DB->generic_query("select '[1,2,3]'::jsonb as arr, '{\"a\":\"b\"}'::jsonb as obj")));
+	werror("Result: %O\n", await(G->G->DB->query_ro("select '[1,2,3]'::json")));
+	werror("Result: %O\n", await(G->G->DB->query_ro("select '[1,2,3]'::jsonb as arr, '{\"a\":\"b\"}'::jsonb as obj")));
 	exit(0);
 }
 
@@ -202,14 +200,14 @@ __async__ void transact_test() {
 		werror("Mutating!\n");
 		data->foo++;
 	}));
-	if (!G->G->DB->active) await(G->G->DB->await_active());
+	if (!G->G->DB->livedb) await(G->G->DB->await_livedb());
 	await(G->G->DB->pg_connections[G->G->DB->active]->conn->transaction(__async__ lambda(function query) {
 		werror("Inside transaction!\n");
 		werror("1 + 1 => %O\n", await(query("select 1 + 1")));
 		werror("42 => %O\n", await(query("select 42")));
 	}));
 	werror("Transaction done.\n");
-	werror("Double query: %O\n", await(G->G->DB->generic_query(({
+	werror("Double query: %O\n", await(G->G->DB->query_ro(({
 		"select 1 + 1", "select 42"
 	}))));
 	exit(0);
@@ -234,14 +232,15 @@ __async__ void fix_kofi_name() {
 Batches are all without bindings for simplicity.
 */
 __async__ void db_queue() {
-	if (!G->G->DB->active) {werror("Waiting for active...\n"); await(G->G->DB->await_active());} //Exclude this from the timings
+	if (!G->G->DB->livedb) {werror("Waiting for active...\n"); await(G->G->DB->await_livedb());} //Exclude this from the timings
+	string db = G->G->DB->livedb;
 	object tm = System.Timer();
 	werror("[%.3f] Awaiting twenty queries in a batch...\n", tm->peek());
-	await(G->G->DB->pg_connections["ipv4.rosuav.com"]->conn->batch(
+	await(G->G->DB->pg_connections[db]->conn->batch(
 		"listen channel" + enumerate(20)[*]
 	));
 	werror("[%.3f] Awaiting five more with an error...\n", tm->peek());
-	mixed ex = catch (await(G->G->DB->pg_connections["ipv4.rosuav.com"]->conn->batch(({
+	mixed ex = catch (await(G->G->DB->pg_connections[db]->conn->batch(({
 		"listen okay1",
 		"listen okay2",
 		"list and learn",
@@ -249,9 +248,9 @@ __async__ void db_queue() {
 		"listen aftererror2",
 	}))));
 	werror("[%.3f] Exception: %O\n", tm->peek(), ex);
-	await(G->G->DB->generic_query("listen singlechan"));
+	await(G->G->DB->query_ro("listen singlechan"));
 	werror("[%.3f] Triggering notifications...\n", tm->peek());
-	await(G->G->DB->pg_connections["ipv4.rosuav.com"]->conn->batch(({
+	await(G->G->DB->pg_connections[db]->conn->batch(({
 		"notify channel9",
 		"notify channel10",
 		"notify channel11",

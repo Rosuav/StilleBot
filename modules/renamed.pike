@@ -46,7 +46,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 	}
 	int uid; catch {uid = await(get_user_id(user));};
 	if (!uid) error("Can't find that person.\n");
-	array names = await(G->G->DB->generic_query("select login from stillebot.user_login_sightings where twitchid = :id order by sighted",
+	array names = await(G->G->DB->query_ro("select login from stillebot.user_login_sightings where twitchid = :id order by sighted",
 		(["id": uid])))->login;
 	string|zero foll = await(check_following(uid, channel->userid)); //FIXME: What if no perms?
 	string|zero follage;
@@ -76,7 +76,7 @@ __async__ void lookup(array(string) names) {
 	foreach (names, string name) {
 		int uid = await(get_user_id(name));
 		if (!uid) {write(name + ": Not found\n"); continue;}
-		array times = await(G->G->DB->generic_query("select login, sighted from stillebot.user_login_sightings where twitchid = :id order by sighted",
+		array times = await(G->G->DB->query_ro("select login, sighted from stillebot.user_login_sightings where twitchid = :id order by sighted",
 			(["id": uid])));
 		if (show_times) foreach (times, mapping t) write("[%s] %s\n", t->sighted, t->login);
 		else write(name + ": " + times->login * ", " + "\n");
