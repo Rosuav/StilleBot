@@ -56,11 +56,12 @@ __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Reques
 	}
 	mapping resp = await(twitch_api_request("https://api.twitch.tv/helix/channels/followers?first=100&broadcaster_id=" + channel,
 		(["Authorization": "Bearer " + req->misc->session->token]),
+		(["return_errors": 1]),
 	));
 	//Note: If we don't have permission, there'll be a result but it has only the
 	//follower *count*, not the actual names. Unfortunately, this could also imply
 	//that the channel has no followers whatsoever...
-	if (!sizeof(resp->data) && resp->total) return render(req, ([
+	if (resp->error || (!sizeof(resp->data) && resp->total)) return render(req, ([
 		"channel": await(get_user_info(channel))->display_name,
 		"message": resp->total + " followers. As of 2023, viewing followers requires moderator permissions. "
 			"[Moderator login](:.twitchlogin data-scopes=moderator:read:followers)",
