@@ -788,8 +788,11 @@ protected void create(string name) {
 	}
 	if (sizeof(needkwd)) preload_configs(needkwd);
 	#endif
-	//For testing, force the opposite connection order
-	if (has_value(G->G->argv, "--gideondb")) database_ips = ({"ipv4.rosuav.com", "sikorsky.rosuav.com"});
+	//On Gideon, swap the database connection order
+	if (G->G->instance_config->local_address == "gideon.rosuav.com")
+		database_ips = ({"ipv4.rosuav.com", "sikorsky.rosuav.com"});
+	//For testing, allow inversion of the natural connection order
+	if (has_value(G->G->argv, "--swapdb")) database_ips = ({database_ips[1], database_ips[0]});
 	G->G->DB = this;
 	spawn_task(reconnect(1));
 	if (!G->G->http_sessions_deleted) G->G->http_sessions_deleted = ([]);
