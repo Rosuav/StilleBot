@@ -15,6 +15,7 @@ X | User | Followed | Created | Description
 <style>
 button {padding: 0;}
 img.avatar {max-width: 40px;}
+tr.selected {background: #fa7;}
 </style>
 ";
 __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
