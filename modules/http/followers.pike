@@ -5,11 +5,16 @@ constant markdown = #"# Recent followers - $$channel$$
 
 $$message||$$
 
-<ul id=followers></ul>
+X | User | Followed | Created | Description
+--|------|----------|---------|-------------
+- |-     |-         |-        | loading...
+{:#followers}
+
 <div id=copied>Copied!</div>
 
 <style>
 button {padding: 0;}
+img.avatar {max-width: 40px;}
 </style>
 ";
 __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
@@ -46,7 +51,7 @@ __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Reques
 		Stdio.write_file("all_follows.txt", string_to_utf8(ret));
 		return "Done";
 	}
-	mapping resp = await(twitch_api_request("https://api.twitch.tv/helix/channels/followers?broadcaster_id=" + channel,
+	mapping resp = await(twitch_api_request("https://api.twitch.tv/helix/channels/followers?first=100&broadcaster_id=" + channel,
 		(["Authorization": "Bearer " + req->misc->session->token]),
 	));
 	//Note: If we don't have permission, there'll be a result but it has only the
@@ -57,11 +62,13 @@ __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Reques
 		"message": resp->total + " followers. As of 2023, viewing followers requires moderator permissions. "
 			"[Moderator login](:.twitchlogin data-scopes=moderator:read:followers)",
 	]));
-	int autoupdate = has_value(values(G->G->irc->channels)->userid, channel);
+	array user_info = await(get_users_info(resp->data->user_id));
+	mapping users = mkmapping(user_info->id, user_info);
+	foreach (resp->data, mapping user) user->details = users[user->user_id] || ([]);
 	return render(req, ([
-		"vars": (["current_followers": resp->data[..20], "ws_group": autoupdate && channel]),
+		"vars": (["current_followers": resp->data, "ws_group": G->G->irc->id[channel] && channel]),
 		"channel": await(get_user_info(channel))->display_name,
-		"message": autoupdate
+		"message": G->G->irc->id[channel]
 			? "Will automatically update as people follow"
 			: "Not guaranteed to automatically update - refresh as needed"
 				"\n\n<script type=module>import {render} from '" + G->G->template_defaults["static"]("followers.js") + "'; render({});</script>",
@@ -73,12 +80,13 @@ mapping get_state(string|int group) {return ([]);}
 
 @hook_follower:
 void follower(object channel, mapping follower) {
-	send_updates_all(channel->userid, (["newfollow": ([
+	get_user_info(follower->user_id)->then() {send_updates_all(channel->userid, (["newfollow": ([
 		"followed_at": follower->followed_at, //Note that this includes subsecond resolution, which it doesn't in get_state()
 		"user_id": follower->user_id,
 		"user_login": follower->user_login,
 		"user_name": follower->user_name,
-	])]));
+		"details": __ARGS__[0],
+	])]));};
 }
 
 protected void create(string name) {::create(name);}

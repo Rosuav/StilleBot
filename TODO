@@ -282,9 +282,9 @@
   has to guard against running. Symptom: https://gideon.mustardmine.com/channels/devicat/
   says channel is offline b/c poll isn't running.
 * True bulk reporting???
-  - Show recent followers, one per line, in a textarea. Can be edited as required.
-    Notably, it's easy to select a particular block, or a couple of blocks.
-  - Ban all the selected users.
+  - Show recent followers. Check boxes, and shift-select for a range. Table.
+  - Button to ban all the selected users
+  - Button to block all selected users?
   - Then, Chrome extension, applicable to mod view. On change of any ".report-reason-selector-label input",
     replicate the change to all others. You can still, of course, click the little [x] to
     remove ones that shouldn't be.
