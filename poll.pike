@@ -392,7 +392,6 @@ void streaminfo(array data)
 				write("** Channel %s isn't online - fetching last-known state **\n", channel->login);
 				get_channel_info(channel->login);
 			}
-			else m_delete(channel_info[channel->login], "online_type");
 			if (object started = m_delete(stream_online_since, channel->userid)) {
 				write("** Channel %s noticed offline at %s **\n", channel->login, Calendar.now()->format_nice());
 				int uptime = time() - started->unix_time();
@@ -400,7 +399,7 @@ void streaminfo(array data)
 				channel->trigger_special("!channeloffline", ([
 					//Synthesize a basic person mapping
 					"user": channel->login,
-					"displayname": channel_info[channel->login]->?display_name || channel->login, //Might not have the actual display name handy (get_channel_info is async)
+					"displayname": channel->display_name,
 					"uid": (string)channel->userid,
 				]), ([
 					"{uptime}": (string)uptime,

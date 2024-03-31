@@ -44,8 +44,6 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 	if (sizeof(param) < 2) param += ({"0"});
 	if (sizeof(param) < 3) param += ({""});
 	array quotes = await(G->G->DB->load_config(channel->userid, "quotes", ({ })));
-	mapping chaninfo = G->G->channel_info[channel->name[1..]];
-	if (!chaninfo) error("Internal error - no channel info\n"); //I'm pretty sure this shouldn't happen
 	int idx = (int)param[1];
 	if (idx < 0 || idx > sizeof(quotes)) error("No such quote.\n");
 	switch (param[0]) {
@@ -71,7 +69,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 				text = before + em + after;
 			quotes += ({([
 				"msg": text, "emoted": param[2],
-				"game": chaninfo->game,
+				"game": G->G->channel_info[channel->name[1..]]->?game || "something",
 				"timestamp": time(),
 				"recorder": person->user,
 			])});

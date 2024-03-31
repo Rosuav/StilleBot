@@ -77,11 +77,10 @@ __async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, 
 	object channel = G->G->irc->channels["#" + chan];
 	if (!channel) return 0;
 	req->misc->channel = channel;
-	string channame = G->G->channel_info[channel->name[1..]]->?display_name || channel->name[1..];
 	req->misc->is_mod = 0; //If is_mod is false, save_or_login will be overridden
 	req->misc->chaninfo = ([ //Additional (or overriding) template variables
-		"channel": channame,
-		"backlink": "<a href=\"./\">StilleBot - " + channame + "</a>",
+		"channel": channel->display_name,
+		"backlink": "<a href=\"./\">StilleBot - " + channel->display_name + "</a>",
 		"menubutton": "<span id=togglesidebarbox><button type=button id=togglesidebar title=\"Show/hide sidebar\">Show/hide sidebar</button></span>",
 	]);
 	if (mapping user = req->misc->session->?user) {
