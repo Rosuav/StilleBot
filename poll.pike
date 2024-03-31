@@ -371,7 +371,6 @@ void streaminfo(array data)
 				//Is there a cleaner way to say "convert to local time"?
 				object started_here = started->set_timezone(Calendar.now()->timezone());
 				write("** Channel %s went online at %s **\n", channel->login, started_here->format_nice());
-				runhooks("channel-online", 0, channel->login);
 				int uptime = time() - started->unix_time();
 				event_notify("channel_online", channel->login, uptime, channel->userid);
 				channel->trigger_special("!channelonline", ([
@@ -396,7 +395,6 @@ void streaminfo(array data)
 			else m_delete(channel_info[channel->login], "online_type");
 			if (object started = m_delete(stream_online_since, channel->userid)) {
 				write("** Channel %s noticed offline at %s **\n", channel->login, Calendar.now()->format_nice());
-				runhooks("channel-offline", 0, channel->login);
 				int uptime = time() - started->unix_time();
 				event_notify("channel_offline", channel->login, uptime, channel->userid);
 				channel->trigger_special("!channeloffline", ([
@@ -663,7 +661,6 @@ void check_hooks(array eventhooks)
 
 void poll()
 {
-	werror("Calling poll() [%d]\n", is_active);
 	G->G->poll_call_out = call_out(poll, 60); //Maybe make the poll interval customizable?
 	array chan = indices(G->G->irc->?id || ([]));
 	chan = filter(chan) {return __ARGS__[0];}; //Exclude !demo which has a userid of 0

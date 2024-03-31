@@ -190,9 +190,6 @@ class hook {
 	}
 
 	//Run all registered hook functions for the given event, in an arbitrary order
-	//Unlike hooks set up with the register_hook/runhooks globals, there is no concept
-	//of returning 1 to cancel the event, nor of deferring execution of the underlying
-	//action. Event notifications are fire-and-forget.
 	void event_notify(string event, mixed ... args) {
 		mapping hooks = G->G->eventhooks[event];
 		if (!hooks) error("Unrecognized hook %s\n", event);
@@ -217,29 +214,10 @@ class hook {
 //Ties in with "inherit hook". (Or should it tie in with "inherit annotated" instead?)
 class EventNotify(string event) {@constant; constant is_hook_annotation = 1;}
 
-//Deprecated way of implementing hooks. Is buggy in a number of ways. Use "inherit hook" instead (see above).
-//To deregister a hook: register_hook("...event...", Program.defined(this_program));
-@"G->G->hooks";
-void register_hook(string event, function|string handler)
-{
-	if (functionp(handler)) werror("WARNING: Deprecated use of register_hook() - use 'inherit hook' instead\n");
-	string origin = functionp(handler) ? Program.defined(function_program(handler)) : handler;
-	//Trim out any hooks for this event that were defined in the same class
-	//"Same class" is identified by its textual origin, rather than the actual
-	//identity of the program, such that a reloaded/updated version of a class
-	//counts as the same one as before.
-	G->G->hooks[event] = filter(G->G->hooks[event] || ({ }),
-		lambda(array(string|function) f) {return f[0] != origin;}
-	) + ({({origin, handler})}) * functionp(handler);
-}
-
-int runhooks(string event, string|zero skip, mixed ... args)
-{
-	array(array(string|function)) hooks = G->G->hooks[event];
-	if (!hooks) return 0; //Nothing registered for this event
-	foreach (hooks, [string name, function func]) if (!skip || skip<name)
-		if (mixed ex = catch {if (func(@args)) return 1;})
-			werror("Error in hook %s->%s: %s", name, event, describe_backtrace(ex));
+//Old way of implementing hooks. Was buggy in a number of ways. Use "inherit hook" instead (see above).
+//Hook deregistration with register_hook("...event...", Program.defined(this_program)); is still permitted but useless.
+void register_hook(string event, function|string handler) {
+	if (functionp(handler)) error("register_hook() has been removed - use 'inherit hook' instead\n");
 }
 
 /* Easily slide a delayed callback to the latest code

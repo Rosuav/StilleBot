@@ -252,7 +252,6 @@ class channel(mapping identity) {
 			"{msgid}": params->id || "",
 			"{usernamecolor}": params->color || "", //Undocumented, mainly here as a toy
 		]);
-		runhooks("all-msgs", 0, this, person, msg);
 		event_notify("allmsgs", this, person, msg);
 		trigger_special("!trigger", person, person->vars);
 		[mixed cmd, string param] = locate_command(person, msg);
@@ -872,7 +871,6 @@ class channel(mapping identity) {
 						"{multimonth}": params->msg_param_multimonth_duration || "1",
 						//There's also msg_param_multimonth_tenure - what happens when they get announced? Does duration remain and tenure count up?
 					]));
-					runhooks("subscription", 0, this, "sub", person, tier, 1, params);
 					event_notify("subscription", this, "sub", person, tier, 1, params, "");
 					break;
 				}
@@ -886,7 +884,6 @@ class channel(mapping identity) {
 						"{multimonth}": params->msg_param_multimonth_duration || "1", //Ditto re tenure
 						"{msg}": msg, "{msgid}": params->id || "",
 					]));
-					runhooks("subscription", 0, this, "resub", person, tier, 1, params);
 					event_notify("subscription", this, "resub", person, tier, 1, params, msg);
 					break;
 				}
@@ -922,7 +919,6 @@ class channel(mapping identity) {
 					//Other params: login, user_id, msg_param_recipient_user_name, msg_param_recipient_id,
 					//msg_param_sender_count (the total gifts this person has given in this channel)
 					//Remember that all params are strings, even those that look like numbers
-					runhooks("subscription", 0, this, "subgift", person, tier, 1, params);
 					event_notify("subscription", this, "subgift", person, tier, 1, params, "");
 					break;
 				}
@@ -941,8 +937,6 @@ class channel(mapping identity) {
 						//TODO: See if this can actually happen, and if not, drop it
 						"{multimonth}": params->msg_param_gift_months || "1",
 					]));
-					runhooks("subscription", 0, this, "subbomb", person, tier,
-						(int)params->msg_param_mass_gift_count, params);
 					event_notify("subscription", this, "subbomb", person, tier,
 						(int)params->msg_param_mass_gift_count, params, "");
 					break;
@@ -1002,7 +996,6 @@ class channel(mapping identity) {
 				if (type != "WHISPER" || config->whispers_as_commands) //Whispers aren't normally counted as commands
 					handle_command(person, msg, responsedefaults, params);
 				if (params->bits && (int)params->bits) {
-					runhooks("cheer", 0, this, person, (int)params->bits, params);
 					event_notify("cheer", this, person, (int)params->bits, params, msg);
 					trigger_special("!cheer", person, (["{bits}": params->bits, "{msg}": msg, "{msgid}": params->id || ""]));
 				}
@@ -1027,13 +1020,11 @@ class channel(mapping identity) {
 			//the participant list, so autobanned people won't ever get
 			//acknowledged accidentally.
 			case "CLEARMSG":
-				runhooks("delete-msg", 0, this, person, params->login, params->target_msg_id);
 				event_notify("deletemsg", this, person, params->login, params->target_msg_id);
 				G_G_("participants", name[1..], params->login)->lastnotice = 0;
 				break;
 			case "CLEARCHAT":
 				G_G_("banned_list", (string)userid)->stale = 1; //When anyone's banned/timed out, drop the banned users cache
-				runhooks("delete-msgs", 0, this, person, params->target_user_id);
 				event_notify("deletemsgs", this, person, params->target_user_id);
 				if (params->target_user_id) get_user_info(params->target_user_id)->then() {
 					mapping user = __ARGS__[0];
