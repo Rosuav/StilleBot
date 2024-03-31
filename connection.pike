@@ -1074,10 +1074,10 @@ class channel(mapping identity) {
 		//NOTE: This can currently be called on a non-active bot. Normally there should
 		//be no way to trigger errors that aren't already restricted to active bots, but
 		//if there is something, we need to see the error reported.
+		string msgid;
 		await(G->G->DB->mutate_config(userid, "errors") {[mapping err] = __ARGS__;
-			string msgid = (string)++err->nextid;
 			err->msglog += ({([
-				"id": msgid,
+				"id": msgid = (string)++err->nextid,
 				"datetime": time(0),
 				"level": level,
 				"message": message,
@@ -1085,7 +1085,6 @@ class channel(mapping identity) {
 			])});
 			++_cached_error_count; //Cache staleness is not affected here - we just assume an increment.
 		});
-		await(G->G->DB->save_config(userid, "errors", err));
 		G->G->websocket_types->chan_errors->update_one("#" + userid, msgid);
 	}
 
