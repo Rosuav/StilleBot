@@ -280,3 +280,5 @@
   happen), but anything that would send out messages (eg channel->trigger_special)
   has to guard against running. Symptom: https://gideon.mustardmine.com/channels/devicat/
   says channel is offline b/c poll isn't running.
+* CCLs are getting requeried unnecessarily. There may also be a bug in triggering the
+  !!channelsetup special; check for it while online.
