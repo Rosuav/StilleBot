@@ -676,6 +676,7 @@ void check_hooks(array eventhooks)
 
 void poll()
 {
+	werror("Calling poll() [%d]\n", is_active);
 	G->G->poll_call_out = call_out(poll, 60); //Maybe make the poll interval customizable?
 	array chan = indices(G->G->irc->?id || ([]));
 	chan = filter(chan) {return __ARGS__[0];}; //Exclude !demo which has a userid of 0
@@ -687,7 +688,7 @@ void poll()
 	//channels that we get info for and don't need, ignore them; if there are
 	//some that we wanted but didn't get, we'll just think they're offline
 	//until the next poll.
-	get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))chan, "first": "100"]))
+	if (is_active) get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))chan, "first": "100"]))
 		->on_success(streaminfo);
 	//There has been an issue with failures and a rate limiting from Twitch.
 	//I suspect that something is automatically retrying AND the sixty-sec
@@ -703,7 +704,6 @@ int(1bit) is_active; //Last-known active state
 	is_active = now_active;
 	#if !constant(INTERACTIVE)
 	if (is_active) poll();
-	else remove_call_out(m_delete(G->G, "poll_call_out"));
 	#endif
 }
 
@@ -712,7 +712,7 @@ protected void create(string|void name)
 	is_active = is_active_bot();
 	remove_call_out(G->G->poll_call_out);
 	#if !constant(INTERACTIVE)
-	if (is_active) poll();
+	poll();
 	//TODO: Check this periodically. No need to hammer this every 60 seconds, but more than just on code reload would be good.
 	string addr = G->G->instance_config->http_address;
 	if (addr && addr != "")
