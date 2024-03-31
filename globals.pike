@@ -6,7 +6,7 @@ protected void create(string n)
 			if (!G->G[gl]) G->G[gl] = ([]);
 	if (!all_constants()["create_hook"]) add_constant("create_hook", _HookID("")); //Don't recreate this one
 	catch {G->G->instance_config = Standards.JSON.decode_utf8(Stdio.read_file("instance-config.json"));};
-	if (has_value(G->G->argv, "--no-http")) m_delete(G->G->instance_config, ({"http_address", "listen_address", "local_address"})[*]);
+	if (has_value(G->G->argv, "--no-http")) G->G->instance_config->http_address = G->G->instance_config->local_address = "";
 }
 
 //A sendable message could be a string (echo that string), a mapping with a "message"
