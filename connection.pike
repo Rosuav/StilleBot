@@ -1061,11 +1061,11 @@ class channel(mapping identity) {
 		if (config->chatlog) write(fmt, @args);
 	}
 
-	void trigger_special(string special, mapping person, mapping info)
-	{
+	void trigger_special(string special, mapping person, mapping info) {
+		if (!is_active) return;
 		echoable_message response = commands[special];
 		if (!response) return;
-		if (has_value(info, 0)) werror("DEBUG: Special %O got info %O\n", special, info); //Track down those missing-info errors
+		//if (has_value(info, 0)) werror("DEBUG: Special %O got info %O\n", special, info); //Track down those missing-info errors
 		send(person, response, info);
 	}
 
