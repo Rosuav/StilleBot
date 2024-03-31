@@ -1071,16 +1071,20 @@ class channel(mapping identity) {
 
 	int _cached_error_count, _cached_error_count_time; //Cache gets discarded on code reload, no big deal
 	__async__ void report_error(string level, string message, string|void context) {
-		mapping err = await(G->G->DB->load_config(userid, "errors"));
-		string msgid = (string)++err->nextid;
-		err->msglog += ({([
-			"id": msgid,
-			"datetime": time(0),
-			"level": level,
-			"message": message,
-			"context": context || "",
-		])});
-		++_cached_error_count; //Cache staleness is not affected here - we just assume an increment.
+		//NOTE: This can currently be called on a non-active bot. Normally there should
+		//be no way to trigger errors that aren't already restricted to active bots, but
+		//if there is something, we need to see the error reported.
+		await(G->G->DB->mutate_config(userid, "errors") {[mapping err] = __ARGS__;
+			string msgid = (string)++err->nextid;
+			err->msglog += ({([
+				"id": msgid,
+				"datetime": time(0),
+				"level": level,
+				"message": message,
+				"context": context || "",
+			])});
+			++_cached_error_count; //Cache staleness is not affected here - we just assume an increment.
+		});
 		await(G->G->DB->save_config(userid, "errors", err));
 		G->G->websocket_types->chan_errors->update_one("#" + userid, msgid);
 	}
