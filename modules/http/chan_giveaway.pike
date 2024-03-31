@@ -574,8 +574,8 @@ __async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) 
 }
 
 //TODO: Migrate the dynamic reward management to pointsrewards, keeping the giveaway management here
-__async__ void channel_on_off(string channel, int just_went_online, int broadcaster_id)
-{
+__async__ void channel_on_off(string channel, int just_went_online, int broadcaster_id) {
+	if (!is_active_bot()) return 0;
 	object chan = G->G->irc->id[broadcaster_id]; if (!chan) return;
 	mapping dyn = await(G->G->DB->load_config(broadcaster_id, "dynamic_rewards"));
 	if (!sizeof(dyn)) return; //Nothing to do

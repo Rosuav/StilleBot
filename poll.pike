@@ -400,7 +400,7 @@ void streaminfo(array data)
 				channel->trigger_special("!channeloffline", ([
 					//Synthesize a basic person mapping
 					"user": channel->login,
-					"displayname": channel_info[name]->?display_name || channel->login, //Might not have the actual display name handy (get_channel_info is async)
+					"displayname": channel_info[channel->login]->?display_name || channel->login, //Might not have the actual display name handy (get_channel_info is async)
 					"uid": (string)channel->userid,
 				]), ([
 					"{uptime}": (string)uptime,
@@ -510,6 +510,7 @@ __async__ mapping save_channel_info(int userid, string name, mapping info) {
 }
 
 //The regrettable order of parameters is due to channelids being added later.
+//NOTE: These hooks may be called on a non-active bot. Check for this if it matters to you.
 @create_hook: constant channel_online = ({"string channelname", "int uptime", "int channelid"});
 @create_hook: constant channel_offline = ({"string channelname", "int uptime", "int channelid"});
 

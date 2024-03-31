@@ -89,6 +89,9 @@ Solution #2: If we change from playing to paused to playing inside 2s, suppress 
 would be done in the default command, NOT here in the code.
 */
 
+//TODO: What happens if the bot hops between locations? Will VLC notifications come through
+//to the correct bot? What if they come through to a non-active bot?
+
 //Additional Markdown code added if, and only if, you're logged in as a mod
 constant MODCONFIG = #"> ### Configuration
 > * <chatnotif>

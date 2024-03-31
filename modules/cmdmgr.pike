@@ -144,6 +144,7 @@ void autospam(string|int chanid, string cmd) {
 }
 
 @hook_channel_online: int connected(string chan, int uptime, int chanid) {
+	if (!is_active_bot()) return 0;
 	object channel = G->G->irc->id[chanid]; if (!channel) return 0;
 	foreach (channel->commands || ([]); string cmd; echoable_message response) {
 		if (!mappingp(response) || !response->automate) continue;
