@@ -364,8 +364,54 @@ void streaminfo(array data)
 	mapping channels = ([]);
 	foreach (data, mapping chan) channels[(int)chan->user_id] = chan;
 	//Now we check over our own list of channels. Anything absent is assumed offline.
-	foreach (values(G->G->irc->id), object channel)
-		if (channel->userid) stream_status(channel->userid, channel->login, channels[channel->userid]);
+	foreach (values(G->G->irc->id), object channel) if (channel->userid) {
+		if (mapping info = channels[channel->userid]) {
+			object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->started_at);
+			if (!stream_online_since[channel->userid]) {
+				//Is there a cleaner way to say "convert to local time"?
+				object started_here = started->set_timezone(Calendar.now()->timezone());
+				write("** Channel %s went online at %s **\n", channel->login, started_here->format_nice());
+				runhooks("channel-online", 0, channel->login);
+				int uptime = time() - started->unix_time();
+				event_notify("channel_online", channel->login, uptime, channel->userid);
+				channel->trigger_special("!channelonline", ([
+					//Synthesize a basic person mapping
+					"user": channel->login,
+					"displayname": info->user_name,
+					"uid": (string)info->user_id,
+				]), ([
+					"{uptime}": (string)uptime,
+					"{uptime_hms}": describe_time_short(uptime),
+					"{uptime_english}": describe_time(uptime),
+				]));
+			}
+			save_channel_info(channel->userid, channel->login, info);
+			stream_online_since[channel->userid] = started;
+		} else { //If the channel's offline, we have no status info (since it returns data only for those online).
+			if (!channel_info[channel->login]) {
+				//Make sure we know about all channels
+				write("** Channel %s isn't online - fetching last-known state **\n", channel->login);
+				get_channel_info(channel->login);
+			}
+			else m_delete(channel_info[channel->login], "online_type");
+			if (object started = m_delete(stream_online_since, channel->userid)) {
+				write("** Channel %s noticed offline at %s **\n", channel->login, Calendar.now()->format_nice());
+				runhooks("channel-offline", 0, channel->login);
+				int uptime = time() - started->unix_time();
+				event_notify("channel_offline", channel->login, uptime, channel->userid);
+				channel->trigger_special("!channeloffline", ([
+					//Synthesize a basic person mapping
+					"user": channel->login,
+					"displayname": channel->login, //Might not have the actual display name handy (get_channel_info is async)
+					"uid": (string)channel->userid,
+				]), ([
+					"{uptime}": (string)uptime,
+					"{uptime_hms}": describe_time_short(uptime),
+					"{uptime_english}": describe_time(uptime),
+				]));
+			}
+		}
+	}
 }
 
 __async__ void cache_game_names(string game_id)
@@ -468,65 +514,6 @@ __async__ mapping save_channel_info(int userid, string name, mapping info) {
 //The regrettable order of parameters is due to channelids being added later.
 @create_hook: constant channel_online = ({"string channelname", "int uptime", "int channelid"});
 @create_hook: constant channel_offline = ({"string channelname", "int uptime", "int channelid"});
-
-//Receive stream status, either polled or (once upon a time) by notification
-void stream_status(int userid, string name, mapping info)
-{
-	if (!info)
-	{
-		if (!channel_info[name])
-		{
-			//Make sure we know about all channels
-			write("** Channel %s isn't online - fetching last-known state **\n", name);
-			get_channel_info(name);
-		}
-		else m_delete(channel_info[name], "online_type");
-		if (object started = m_delete(stream_online_since, userid))
-		{
-			write("** Channel %s noticed offline at %s **\n", name, Calendar.now()->format_nice());
-			object chan = G->G->irc->id[userid];
-			runhooks("channel-offline", 0, name);
-			int uptime = time() - started->unix_time();
-			event_notify("channel_offline", name, uptime, userid);
-			if (chan) chan->trigger_special("!channeloffline", ([
-				//Synthesize a basic person mapping
-				"user": name,
-				"displayname": name, //Might not have the actual display name handy (get_channel_info is async)
-				"uid": (string)userid,
-			]), ([
-				"{uptime}": (string)uptime,
-				"{uptime_hms}": describe_time_short(uptime),
-				"{uptime_english}": describe_time(uptime),
-			]));
-		}
-	}
-	else
-	{
-		object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->started_at);
-		if (!stream_online_since[userid])
-		{
-			//Is there a cleaner way to say "convert to local time"?
-			object started_here = started->set_timezone(Calendar.now()->timezone());
-			write("** Channel %s went online at %s **\n", name, started_here->format_nice());
-			object chan = G->G->irc->id[userid];
-			runhooks("channel-online", 0, name);
-			int uptime = time() - started->unix_time();
-			event_notify("channel_online", name, uptime, userid);
-			if (chan) chan->trigger_special("!channelonline", ([
-				//Synthesize a basic person mapping
-				"user": name,
-				"displayname": info->user_name,
-				"uid": (string)info->user_id,
-			]), ([
-				"{uptime}": (string)uptime,
-				"{uptime_hms}": describe_time_short(uptime),
-				"{uptime_english}": describe_time(uptime),
-			]));
-		}
-		spawn_task(save_channel_info(userid, name, info));
-		stream_online_since[userid] = started;
-	}
-}
 
 //Basically only used after a follow hook; use the same authentication when that switches over.
 //Returns an ISO 8601 string, or 0 if not following.
