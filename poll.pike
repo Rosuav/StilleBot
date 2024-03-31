@@ -400,7 +400,7 @@ void streaminfo(array data)
 				channel->trigger_special("!channeloffline", ([
 					//Synthesize a basic person mapping
 					"user": channel->login,
-					"displayname": channel->login, //Might not have the actual display name handy (get_channel_info is async)
+					"displayname": channel_info[name]->?display_name || channel->login, //Might not have the actual display name handy (get_channel_info is async)
 					"uid": (string)channel->userid,
 				]), ([
 					"{uptime}": (string)uptime,
