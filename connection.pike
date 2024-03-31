@@ -280,10 +280,7 @@ class channel(mapping identity) {
 	}
 
 	__async__ void delete_msg(string uid, string msgid) {
-		mapping priv = await(G->G->DB->load_config(userid, "private"));
-		mapping msgs = priv[uid] || ([]);
-		m_delete(msgs, msgid);
-		await(G->G->DB->save_config(userid, "private", priv));
+		await(G->G->DB->mutate_config(userid, "private") {m_delete(__ARGS__[0][uid] || ([]), msgid);});
 		G->G->websocket_types->chan_messages->update_one(uid + "#" + userid, msgid);
 	}
 
