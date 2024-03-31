@@ -7,7 +7,7 @@ Requires OAuth authentication, which is by default handled by the GUI.
 
 array(string) bootstrap_files = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike", "connection.pike", "window.pike", "modules", "modules/http", "zz_local"});
 array(string) restricted_update;
-mapping G = (["consolecmd": ([]), "dbsettings": ([])]);
+mapping G = (["consolecmd": ([]), "dbsettings": ([]), "instance_config": ([])]);
 
 void console(object stdin, string buf) {
 	while (has_value(buf, "\n")) {
@@ -140,8 +140,6 @@ int main(int argc,array(string) argv)
 		add_constant("HEADLESS", 1);
 		signal(1, bootstrap_all);
 	}
-	//Ensure that G->G->dbsettings can be indexed even before we load from the database
-	G->dbsettings = ([]);
 	bootstrap_all();
 	foreach ("spawn_task send_message window" / " ", string vital)
 		if (!all_constants()[vital])

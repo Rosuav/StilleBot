@@ -1559,62 +1559,61 @@ protected void create(string name)
 	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
 	session_cleanup();
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
-	if (mapping http = G->G->instance_config) {
-		G->G->on_botservice_change = reconnect;
-		reconnect();
-		if (mixed ex = http->http_address && http->http_address != "" && catch
-		{
-			int use_https = has_prefix(http->http_address, "https://");
-			string listen_addr = "::"; //By default, listen on IPv4 and IPv6
-			int listen_port = use_https ? 443 : 80; //Default port from protocol
-			sscanf(http->http_address, "http%*[s]://%*s:%d", listen_port); //If one is set for the dest addr, use that
-			//Or if there's an explicit listen address/port set, use that.
-			if (http->listen_address) {
-				string listen = http->listen_address;
-				if (sscanf(listen, "http://%s", listen)) use_https = 0; //Use this when encryption is done outside of the bot (no cert here, but external addresses still use https).
-				sscanf(listen, "%s:%s", listen_addr, listen);
-				sscanf(listen, "%d", listen_port);
-			}
-
-			string cert = Stdio.read_file("certificate.pem");
-			string cert2 = Stdio.read_file("certificate_local.pem");
-			string combined = (cert || "") + (cert2 || ""); //If either cert changes, update both certs and keys
-			if (listen_port * -use_https != G->G->httpserver_port_used || combined != G->G->httpserver_certificate)
-			{
-				//Port or SSL status has changed. Force the server to be restarted.
-				if (object http = m_delete(G->G, "httpserver")) http->close();
-				G->G->httpserver_port_used = listen_port * -use_https;
-				werror("Resetting HTTP server.\n");
-			}
-
-			if (G->G->httpserver) G->G->httpserver->callback = http_handler;
-			else if (!use_https) G->G->httpserver = Protocols.WebSocket.Port(http_handler, ws_handler, listen_port, listen_addr);
-			else
-			{
-				G->G->httpserver_certificate = combined;
-				string key = Stdio.read_file("privkey.pem");
-				array certs = cert && Standards.PEM.Messages(cert)->get_certificates();
-				string pk = key && Standards.PEM.simple_decode(key);
-				//If we don't have a valid PK and cert(s), Pike will autogenerate a cert.
-				//TODO: Save the cert? That way, the self-signed could be pinned
-				//permanently. Currently it'll be regenned each startup.
-				G->G->httpserver = Protocols.WebSocket.SSLPort(http_handler, ws_handler, listen_port, listen_addr, pk, certs);
-				//To enable SNI, have another keypair with these names. The above
-				//certificate will be used for all connections that do not stipulate
-				//a servername found in the local key's CN or SAN.
-				key = Stdio.read_file("privkey_local.pem");
-				if (key && cert2) {
-					pk = Standards.PEM.simple_decode(key);
-					certs = Standards.PEM.Messages(cert2)->get_certificates();
-					G->G->httpserver->ctx->add_cert(pk, certs);
-				}
-			}
-		})
-		{
-			werror("NO HTTP SERVER AVAILABLE\n%s\n", describe_backtrace(ex));
-			werror("Continuing without.\n");
-			//Ensure that we don't accidentally use something unsafe (eg if it's an SSL issue)
-			if (object http = m_delete(G->G, "httpserver")) catch {http->close();};
+	G->G->on_botservice_change = reconnect;
+	reconnect();
+	mapping http = G->G->instance_config;
+	if (mixed ex = http->http_address && http->http_address != "" && catch
+	{
+		int use_https = has_prefix(http->http_address, "https://");
+		string listen_addr = "::"; //By default, listen on IPv4 and IPv6
+		int listen_port = use_https ? 443 : 80; //Default port from protocol
+		sscanf(http->http_address, "http%*[s]://%*s:%d", listen_port); //If one is set for the dest addr, use that
+		//Or if there's an explicit listen address/port set, use that.
+		if (http->listen_address) {
+			string listen = http->listen_address;
+			if (sscanf(listen, "http://%s", listen)) use_https = 0; //Use this when encryption is done outside of the bot (no cert here, but external addresses still use https).
+			sscanf(listen, "%s:%s", listen_addr, listen);
+			sscanf(listen, "%d", listen_port);
 		}
+
+		string cert = Stdio.read_file("certificate.pem");
+		string cert2 = Stdio.read_file("certificate_local.pem");
+		string combined = (cert || "") + (cert2 || ""); //If either cert changes, update both certs and keys
+		if (listen_port * -use_https != G->G->httpserver_port_used || combined != G->G->httpserver_certificate)
+		{
+			//Port or SSL status has changed. Force the server to be restarted.
+			if (object http = m_delete(G->G, "httpserver")) http->close();
+			G->G->httpserver_port_used = listen_port * -use_https;
+			werror("Resetting HTTP server.\n");
+		}
+
+		if (G->G->httpserver) G->G->httpserver->callback = http_handler;
+		else if (!use_https) G->G->httpserver = Protocols.WebSocket.Port(http_handler, ws_handler, listen_port, listen_addr);
+		else
+		{
+			G->G->httpserver_certificate = combined;
+			string key = Stdio.read_file("privkey.pem");
+			array certs = cert && Standards.PEM.Messages(cert)->get_certificates();
+			string pk = key && Standards.PEM.simple_decode(key);
+			//If we don't have a valid PK and cert(s), Pike will autogenerate a cert.
+			//TODO: Save the cert? That way, the self-signed could be pinned
+			//permanently. Currently it'll be regenned each startup.
+			G->G->httpserver = Protocols.WebSocket.SSLPort(http_handler, ws_handler, listen_port, listen_addr, pk, certs);
+			//To enable SNI, have another keypair with these names. The above
+			//certificate will be used for all connections that do not stipulate
+			//a servername found in the local key's CN or SAN.
+			key = Stdio.read_file("privkey_local.pem");
+			if (key && cert2) {
+				pk = Standards.PEM.simple_decode(key);
+				certs = Standards.PEM.Messages(cert2)->get_certificates();
+				G->G->httpserver->ctx->add_cert(pk, certs);
+			}
+		}
+	})
+	{
+		werror("NO HTTP SERVER AVAILABLE\n%s\n", describe_backtrace(ex));
+		werror("Continuing without.\n");
+		//Ensure that we don't accidentally use something unsafe (eg if it's an SSL issue)
+		if (object http = m_delete(G->G, "httpserver")) catch {http->close();};
 	}
 }
