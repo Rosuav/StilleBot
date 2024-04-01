@@ -1066,9 +1066,9 @@ class channel(mapping identity) {
 		//be no way to trigger errors that aren't already restricted to active bots, but
 		//if there is something, we need to see the error reported.
 		string msgid;
-		await(G->G->DB->mutate_config(userid, "errors") {[mapping err] = __ARGS__;
-			err->msglog += ({([
-				"id": msgid = (string)++err->nextid,
+		await(G->G->DB->mutate_config(userid, "errors") {
+			__ARGS__[0]->msglog += ({([
+				"id": msgid = (string)++__ARGS__[0]->nextid,
 				"datetime": time(0),
 				"level": level,
 				"message": message,
