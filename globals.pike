@@ -1287,7 +1287,7 @@ int(1bit) textformatting_validate(mapping cfg) {
 int(1bit) is_localhost_mod(string login, string ip) {
 	return login && login == G->G->dbsettings->credentials->username && //Allow mod status if you're me,
 		NetUtils.is_local_host(ip) && //from here,
-		G->G->menuitems->chan_->get_active(); //and we're allowing me to pretend to be a mod
+		G->G->menuitems->chan_ && G->G->menuitems->chan_->get_active(); //and we're allowing me to pretend to be a mod
 }
 
 //An HTTP handler, a websocket handler, and Markdown
