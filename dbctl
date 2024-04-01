@@ -12,6 +12,7 @@ case $1 in
 	stat|status)
 		psql stillebot -Atc "
 			show default_transaction_read_only;
+			select active_bot from stillebot.settings;
 			select pid from pg_stat_subscription where subname = 'multihome';
 			select client_addr, application_name, xact_start, state from pg_stat_activity where usename = 'rosuav' and pid != pg_backend_pid();
 		" | pike dbstatus.pike
