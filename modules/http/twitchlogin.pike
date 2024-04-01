@@ -91,7 +91,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (req->variables->urlonly) return jsonify((["uri": get_redirect_url(needscopes, ([]), deduce_host(req->request_headers || ([])), login_popup_done)]));
 
 	//Offer an interactive page for adding scopes. Can also be used with a handy URL
-	//like https://sikorsky.rosuav.com/twitchlogin?scopes=channel:manage:redemptions
+	//like https://mustardmine.com/twitchlogin?scopes=channel:manage:redemptions
 	//to add a specific permission.
 	array order = ({ }), scopelist = ({ }), retain_scopes = ({ });
 	//Have we been notified of any perms required for active features? If so, preselect them.

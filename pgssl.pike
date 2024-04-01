@@ -483,7 +483,7 @@ int main() {
 	object ctx = SSLContext();
 	array(string) root = Standards.PEM.Messages(Stdio.read_file("/etc/ssl/certs/ISRG_Root_X1.pem"))->get_certificates();
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
-	object sql = SSLDatabase("sikorsky.rosuav.com", (["ctx": ctx]));
+	object sql = SSLDatabase("sikorsky.mustardmine.com", (["ctx": ctx]));
 	sql->query("select 1+2+3, current_user")->then() {werror("Simple query: %O\n", __ARGS__[0]);};
 	sql->query("select * from stillebot.commands where twitchid = :twitchid and cmdname = :cmd",
 		(["twitchid": "49497888", "cmd": "tz"]))->then() {

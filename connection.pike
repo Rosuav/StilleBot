@@ -701,8 +701,6 @@ class channel(mapping identity) {
 		if (dest == "/web")
 		{
 			if (target == "") return; //Attempting to send to a borked destination just silences it
-			//Stash the text away. Recommendation: Have a public message that informs the
-			//recipient that info is available at https://sikorsky.rosuav.com/channels/%s/private
 			send_private_message(target - "@", msg, destcfg);
 			return; //Nothing more to send here.
 		}
@@ -1241,7 +1239,6 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 			//somewhere before notifying the client; this would be valid for
 			//some extremely short duration, after which the client would be
 			//told "redirect back to default".
-			if (other == "gideon.rosuav.com") other = "gideon.mustardmine.com"; //HACK until I migrate to the .mm.com names
 			conn->sock->send_text(Standards.JSON.encode(([
 				"cmd": "*DC*",
 				"error": "This bot is not active, see other",

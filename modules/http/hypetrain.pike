@@ -77,9 +77,8 @@ __async__ mapping get_state(int|string chan)
 		mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
 		return await(parse_hype_status(data));
 	};
-	if (ex && arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401")) {
-		return (["error": "Authentication problem. It may help to ask the broadcaster to open this page: ", "errorlink": "https://sikorsky.rosuav.com/hypetrain?for=" + chan]);
-	}
+	if (ex && arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401"))
+		return (["error": "Authentication problem. It may help to ask the broadcaster to open this page: ", "errorlink": "https://mustardmine.com/hypetrain?for=" + chan]);
 	throw(ex);
 }
 

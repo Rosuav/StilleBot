@@ -45,7 +45,7 @@ $$save_or_login||$$
 > > Command  | Text
 > > ---------|------
 > > !winner  | Congratulations, %s! You have won The Thing, see this link for details...
-> > !join    | Join us in Jackbox games! Type !play and go to https://sikorsky.rosuav.com/channels/##CHANNEL##/private
+> > !join    | Join us in Jackbox games! Type !play and go to https://mustardmine.com/channels/##CHANNEL##/private
 > > !play    | (Private message) We're over here: https://jackbox.tv/#ABCD
 > > $$templates$$
 > {: tag=details}

@@ -1081,7 +1081,6 @@ mapping(string:mixed) render_template(string template, mapping replacements)
 			//If possible, shortcut the "fail, then get transferred" by providing
 			//the hostname of the active bot.
 			string|zero active = !is_active_bot() && G->G->dbsettings->?active_bot;
-			if (active == "gideon.rosuav.com") active = "gideon.mustardmine.com"; //hack
 			if (active && active != "") vars += ({jsonvar(({"ws_host", active}))});
 			*/
 		}
@@ -1531,7 +1530,7 @@ string ensure_bcaster_token(Protocols.HTTP.Server.Request req, string scopes, st
 }
 
 //Figure out the most suitable host name to represent us. If a person went to the URL
-//"https://sikorsky.rosuav.com:6789/foo/bar", this should return "sikorsky.rosuav.com:6789".
+//"https://sikorsky.mustardmine.com:6789/foo/bar", this should return "sikorsky.mustardmine.com:6789".
 //Respects configuration settings about the use of Apache forwarding.
 string deduce_host(mapping request_headers) {
 	mapping cfg = G->G->instance_config;

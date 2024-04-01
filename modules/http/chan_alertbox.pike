@@ -287,7 +287,7 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 >
 > Drag this to OBS or use this URL as a browser source:
 > <a id=alertboxlink href=\"alertbox?key=LOADING\" target=_blank>Alert Box</a><br><label id=alertboxlabel>
-> Click to reveal: <input readonly disabled size=65 value=\"https://sikorsky.rosuav.com/channels/$$channel$$/alertbox?key=(hidden)\" id=alertboxdisplay></label>
+> Click to reveal: <input readonly disabled size=65 value=\"https://mustardmine.com/channels/$$channel$$/alertbox?key=(hidden)\" id=alertboxdisplay></label>
 >
 > Your alerts currently look like this:
 >

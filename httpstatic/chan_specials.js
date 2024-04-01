@@ -59,7 +59,6 @@ export function render(data) {
 						"Requires authentication. ",
 						BUTTON({class: "twitchlogin", "data-scopes": cmd.scopes_required}, "Authenticate"),
 					],
-					//Link to https://sikorsky.rosuav.com/reauth?bcaster=channel:read:polls or whatever scope is needed
 				])),
 			);
 		});

@@ -119,9 +119,7 @@ string livedb, fastdb; //Host name for the current read-write database, and poss
 	"livequeue": ({ }), //Add a Promise to this to be told when there's a read-write database.
 	"fastqueue": ({ }), //Ditto but can be handled from a read-only database
 ]);
-array(string) database_ips = ({"sikorsky.rosuav.com", "gideon.rosuav.com"});
-//Hack: Connect to a different name/IP but stick to the conceptual name
-mapping(string:string) hostname = (["gideon.rosuav.com": "ipv4.rosuav.com"]);
+array(string) database_ips = ({"sikorsky.mustardmine.com", "gideon.mustardmine.com"});
 mapping notify_channels = ([]);
 
 #if constant(SSLDatabase)
@@ -305,14 +303,14 @@ __async__ void connect(string host) {
 	array(string) root = Standards.PEM.Messages(Stdio.read_file("/etc/ssl/certs/ISRG_Root_X1.pem"))->get_certificates();
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
 	#if constant(SSLDatabase)
-	db->conn = SSLDatabase(hostname[host] || host, (["ctx": ctx, "host": host, "notify_callback": notify_callback]));
+	db->conn = SSLDatabase(host, (["ctx": ctx, "host": host, "notify_callback": notify_callback]));
 	werror("[%.3f] Established pgssl, listening...\n", tm->peek());
 	if (sizeof(notify_channels)) await(db->conn->batch(sprintf("listen \"%s\"", indices(notify_channels)[*])));
 	string ro = db->conn->server_params->default_transaction_read_only;
 	#else
 	while (1) {
 		//Establishing the connection is synchronous, might not be ideal.
-		db->conn = Sql.Sql("pgsql://rosuav@" + (hostname[host] || host) + "/stillebot", ([
+		db->conn = Sql.Sql("pgsql://rosuav@" + host + "/stillebot", ([
 			"force_ssl": 1, "ssl_context": ctx, "application_name": "stillebot",
 		]));
 		db->conn->set_notify_callback("readonly", notify_readonly, 1, host);
@@ -776,9 +774,10 @@ protected void create(string name) {
 	}
 	if (sizeof(needkwd)) preload_configs(needkwd);
 	#endif
-	//On Gideon, swap the database connection order
-	if (G->G->instance_config->local_address == "gideon.rosuav.com")
-		database_ips = ({"gideon.rosuav.com", "sikorsky.rosuav.com"});
+	//Move the local database to the front. If both are up, this will allow fast read-only
+	//transactions even if the primary DB is the remote one.
+	string addr = G->G->instance_config->local_address;
+	if (has_value(database_ips, addr)) database_ips = ({addr}) + (database_ips - ({addr}));
 	//For testing, allow inversion of the natural connection order
 	if (has_value(G->G->argv, "--swapdb")) database_ips = ({database_ips[1], database_ips[0]});
 	G->G->DB = this;

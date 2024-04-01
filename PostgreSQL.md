@@ -51,7 +51,7 @@ Initially, both databases are read-write. Replication will be occurring both
 directions, and all should be stable. Assume that Sikorsky needs to be brought
 down.
 
-1. update stillebot.settings set active_bot = 'ipv4.rosuav.com';
+1. update stillebot.settings set active_bot = 'gideon.mustardmine.com';
 2. On Sikorsky, `./dbctl down`
 3. Sikorsky: `./dbctl stat` until no rows with application_name 'stillebot'
    remain (they've all switched to 'stillebot-ro').
@@ -61,7 +61,7 @@ down.
    outage of web requests until clients start using the other IP.
    TODO: Test this - make sure clients will test both. Far from guaranteed.
 6. To bring Sikorsky up again: `./dbctl up`
-7. update stillebot.settings set active_bot = 'sikorsky.rosuav.com';
+7. update stillebot.settings set active_bot = 'sikorsky.mustardmine.com';
 
 At this point, everything should be back to normal.
 
