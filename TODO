@@ -281,3 +281,4 @@
   location though. Best fix: Have Twitch provide tags in the channel.update notif, and
   have that notif also sent when tags are changed.
 * Change use of local_address in config to be *.mustardmine.com
+* Update the valid redirect_uri list to include all the *.mustardmine.com variants
