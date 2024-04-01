@@ -1245,7 +1245,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 				"redirect": other,
 				"xfr": conn->session->cookie,
 			])));
-			conn->sock->close(); destruct(conn->sock);
+			conn->sock->close();
 			return;
 		}
 		//Initialization is done with a type and a group.
@@ -1275,8 +1275,8 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 		//needed. But it'll be useful to synchronize the group, regardless of
 		//whether it was requested by name or ID.
 		if (string err = handler->websocket_validate(conn, data)) {
-			conn->sock->send_text(Standards.JSON.encode((["error": err])));
-			conn->sock->close(); destruct(conn->sock);
+			conn->sock->send_text(Standards.JSON.encode((["cmd": "*DC*", "error": err])));
+			conn->sock->close();
 			return;
 		}
 		string group = (stringp(data->group) || intp(data->group)) ? data->group : "";
