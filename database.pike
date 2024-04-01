@@ -353,7 +353,7 @@ __async__ void reconnect(int force, int|void both) {
 		foreach (pg_connections; string host; mapping db) {
 			if (!db->connected) {werror("Still connecting to %s...\n", host); continue;} //Will probably need a timeout somewhere
 			werror("Closing connection to %s.\n", host);
-			db->conn->close();
+			if (db->conn) db->conn->close();
 			destruct(db->conn); //Might not be necessary with SSLDatabase
 		}
 		m_delete(pg_connections, indices(pg_connections)[*]); //Mutate the existing mapping so all clones of the module see that there are no connections
