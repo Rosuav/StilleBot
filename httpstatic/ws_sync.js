@@ -14,6 +14,7 @@ const prefs_hooks = [];
 let reconnect_delay = 250;
 let redirect_host = null, redirect_xfr = null;
 const callbacks = {};
+//try {redirect_host = ws_host;} catch (e) { } //If a global ws_host is set, use that for the initial connection. Not currently in use.
 
 let userid = 0;
 export function get_userid() {

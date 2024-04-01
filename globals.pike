@@ -1077,6 +1077,13 @@ mapping(string:mixed) render_template(string template, mapping replacements)
 				jsonvar(({"ws_code", static_fn(code)})),
 				"let ws_sync = null; import('" + static_fn("ws_sync.js") + "').then(m => ws_sync = m);",
 			});
+			/* Not currently in use. Will be more useful when everyone uses *.mustardmine.com.
+			//If possible, shortcut the "fail, then get transferred" by providing
+			//the hostname of the active bot.
+			string|zero active = !is_active_bot() && G->G->dbsettings->?active_bot;
+			if (active == "gideon.rosuav.com") active = "gideon.mustardmine.com"; //hack
+			if (active && active != "") vars += ({jsonvar(({"ws_host", active}))});
+			*/
 		}
 		replacements->js_variables = "<script>" + vars * "\n" + "</script>";
 	}
