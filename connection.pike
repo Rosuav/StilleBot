@@ -1239,6 +1239,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 			//somewhere before notifying the client; this would be valid for
 			//some extremely short duration, after which the client would be
 			//told "redirect back to default".
+			if (other == "gideon.rosuav.com") other = "gideon.mustardmine.com"; //HACK until I migrate to the .mm.com names
 			conn->sock->send_text(Standards.JSON.encode(([
 				"cmd": "*DC*",
 				"error": "This bot is not active, see other",
