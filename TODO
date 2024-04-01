@@ -280,4 +280,3 @@
   and there are lots of weird corner cases. Probably should be documented in a user-facing
   location though. Best fix: Have Twitch provide tags in the channel.update notif, and
   have that notif also sent when tags are changed.
-* Update the valid redirect_uri list to include all the *.mustardmine.com variants
