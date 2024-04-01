@@ -13,7 +13,7 @@ PostgreSQL is used with the following configuration options:
   chown/chmod them as needed
 * Need to know which SSL root cert ultimately signs the required certs.
   Currently this is /etc/ssl/certs/ISRG_Root_X1.pem but may need to change.
-* Connect: PGSSLROOTCERT=/etc/ssl/certs/ISRG_Root_X1.pem PGSSLCERT=certificate.pem PGSSLKEY=privkey.pem psql -h sikorsky.rosuav.com
+* Connect: PGSSLROOTCERT=/etc/ssl/certs/ISRG_Root_X1.pem PGSSLCERT=certificate.pem PGSSLKEY=privkey.pem psql -h sikorsky.rosuav.com stillebot
 * Create a publication on Sikorsky:
   stillebot=# create publication multihome for all tables;
 * Create a subscription on Gideon:
