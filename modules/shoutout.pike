@@ -51,10 +51,10 @@ __async__ mapping message_params(object channel, mapping person, array params)
 	catch {info = await(get_channel_info(replace(params[0], ({"@", " "}), ""))) || ([]);}; //If error, leave it an empty mapping
 	return ([
 		"{login}": info->broadcaster_login || params[0],
-		"{name}": info->display_name || "That person",
+		"{name}": info->broadcaster_name || "That person",
 		"{url}": info->url || "",
 		"{catdesc}": replace(game_desc[info->game] || "playing %s", "%s", info->game || "(null)"),
 		"{category}": info->game || "(null)",
-		"{title}": info->status || "(null)",
+		"{title}": info->title || "(null)",
 	]);
 }

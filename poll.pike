@@ -3,7 +3,6 @@
 inherit hook;
 inherit annotated;
 @retain: mapping stream_online_since = ([]);
-@retain: mapping channel_info = ([]);
 @retain: mapping category_names = ([]);
 @retain: mapping user_info = ([]);
 
@@ -326,33 +325,15 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	return second[0]->duration;
 }
 
-@export: Concurrent.Future get_channel_info(string name)
-{
+@export: Concurrent.Future get_channel_info(string name) { //Get info based on a user NAME, not ID, eg for shoutouts
 	return twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id={{USER}}", ([]), (["username": name]))
 	->then(lambda(mapping info) {
 		info = info->data[0];
-		//Provide Kraken-like attribute names for convenience
-		//TODO: Find everything that uses the Kraken names and correct them
 		info->game = info->game_name;
-		info->display_name = info->broadcaster_name;
 		info->url = "https://twitch.tv/" + info->broadcaster_login; //Should be reliable, I think?
-		info->_id = info->broadcaster_id;
-		info->status = info->title;
-		if (!channel_info[name]) channel_info[name] = info; //Autocache
 		return info;
-		/* Things we make use of:
-		 * game => category
-		 * mature => boolean, true if has click-through warning
-		 * display_name => preferred way to show the channel name
-		 * url => just "https://www.twitch.tv/"+name if we want to hack it
-		 * status => stream title
-		 * _id => numeric user ID
-		 */
 	}, lambda(mixed err) {
-		if (has_prefix(err[0], "User not found: ")) {
-			werror(err[0]);
-			if (!channel_info[name]) channel_info[name] = ([ ]);
-		}
+		if (has_prefix(err[0], "User not found: ")) werror(err[0]); //Should probably become a channel error message if it came from a !so
 		else return Concurrent.reject(err);
 	});
 }
@@ -384,14 +365,8 @@ void streaminfo(array data)
 					"{uptime_english}": describe_time(uptime),
 				]));
 			}
-			save_channel_info(channel->userid, channel->login, info);
 			stream_online_since[channel->userid] = started;
 		} else { //If the channel's offline, we have no status info (since it returns data only for those online).
-			if (!channel_info[channel->login]) {
-				//Make sure we know about all channels
-				write("** Channel %s isn't online - fetching last-known state **\n", channel->login);
-				get_channel_info(channel->login);
-			}
 			if (object started = m_delete(stream_online_since, channel->userid)) {
 				write("** Channel %s noticed offline at %s **\n", channel->login, Calendar.now()->format_nice());
 				int uptime = time() - started->unix_time();
@@ -411,101 +386,24 @@ void streaminfo(array data)
 	}
 }
 
-__async__ void cache_game_names(string game_id)
-{
-	if (mixed ex = catch {
-		array games = await(get_helix_paginated("https://api.twitch.tv/helix/games/top", (["first":"100"])));
-		foreach (games, mapping game) category_names[game->id] = game->name;
-		write("Fetched %d games, total %d\n", sizeof(games), sizeof(category_names));
-		if (!category_names[game_id]) {
-			//We were specifically asked for this game ID. Explicitly ask Twitch for it.
-			mapping info = await(twitch_api_request("https://api.twitch.tv/helix/games?id=" + game_id));
-			if (!sizeof(info->data)) werror("Unable to fetch game info for ID %O\n", game_id);
-			else if (info->data[0]->id != game_id) werror("???? Asked for game %O but got %O ????\n", game_id, info->data[0]->id);
-			else category_names[game_id] = info->data[0]->name;
-		}
-	}) {
-		werror("Error fetching games:\n%s\n", describe_backtrace(ex));
-	}
-}
-
-//Deprecated, will stop working before long, but isn't needed any more - the API can use new-style tags.
-@export: __async__ array translate_tag_ids(array tag_ids) {return ({ });}
-
-int fetching_game_names = 0;
-//Attempt to construct a channel info mapping from the stream info
-//May use other caches of information. If unable to build the full
-//channel info, returns 0 (recommendation: fetch info via Kraken).
-mapping build_channel_info(mapping stream)
-{
-	mapping ret = ([]);
-	ret->game_id = stream->game_id;
-	if (!(ret->game = category_names[stream->game_id]))
-	{
-		if (stream->game_id != "0" && stream->game_id != "" && !fetching_game_names)
-		{
-			write("Fetching games because we know %d games but not %O\n",
-				sizeof(category_names), stream->game_id);
-			//Note that category_names is NOT cleared before we start. There
-			//have been many instances where games aren't being detected, and I
-			//suspect that either some games are being omitted from the return
-			//value, or they're slipping in the gap between pages due to changes
-			//in the ordering of the "top 100" and "next 100". It should be safe
-			//to retain any previous ones seen this run.
-			fetching_game_names = 1;
-			cache_game_names(stream->game_id)->then() {fetching_game_names = 0;};
-		}
-		return 0;
-	}
-	ret->display_name = stream->user_name;
-	ret->url = "https://www.twitch.tv/" + lower_case(stream->user_name); //TODO: Get the actual login, which may be different
-	ret->status = stream->title;
-	ret->online_type = stream->type; //Really, THIS should be called "status" (eg "live"), and "status" should be called Title. But whatevs.
-	ret->_id = ret->user_id = stream->user_id;
-	//TODO: Keep an eye on the API and see if content classification labels get
-	//added to the /stream endpoint (they're only in /channels as of 20230713).
-	//This is currently going to be stashing a null into ret.
-	ret->content_classification_labels = stream->content_classification_labels;
-	ret->_raw = stream; //Avoid using this except for testing
-	//Add anything else here that might be of interest
-	return ret;
-}
-
-__async__ mapping save_channel_info(int userid, string name, mapping info) {
-	//Attempt to gather channel info from the stream info. If we
-	//can't, we'll get that info via an API call.
-	mapping synthesized = build_channel_info(info);
-	if (!synthesized) {
-		if (info->game_id != "") write("SYNTHESIS FAILED - maybe bad game? %O\n", info->game_id);
-		synthesized = await(get_channel_info(name));
-	}
-	if (!synthesized->content_classification_labels) {
-		//As of 20230713, the /streams endpoint doesn't include CCLs.
-		synthesized = await(get_channel_info(name));
-	}
-	synthesized->viewer_count = info->viewer_count;
-	synthesized->tags = info->tags || ({ });
-	synthesized->tag_names = sprintf("[%s]", synthesized->tags[*]) * ", ";
-	synthesized->ccls = sprintf("[%s]", synthesized->content_classification_labels[*]) * ", ";
-	int changed = 0;
-	foreach ("game status tag_names ccls" / " ", string attr)
-		changed += synthesized[attr] != channel_info[name][?attr];
-	channel_info[name] = synthesized;
-	if (changed) {
-		object chan = G->G->irc->id[userid];
-		if (chan) chan->trigger_special("!channelsetup", ([
-			//Synthesize a basic person mapping
-			"user": name,
-			"displayname": info->user_name,
-			"uid": (string)info->user_id,
-		]), ([
-			"{category}": synthesized->game,
-			"{title}": synthesized->status,
-			"{tag_names}": synthesized->tag_names,
-			"{tag_ids}": "", //Deprecated - use the tag names (new-style tags have no IDs)
-			"{ccls}": synthesized->ccls,
-		]));
-	}
+@EventNotify("channel.update=2"): void channel_setup_changed(object channel, mapping info) {channel_setup_changed1(channel, info);}
+__async__ void channel_setup_changed1(object channel, mapping info) {
+	//As of 20240401, this notification does not include stream tags. Even worse, there's a
+	//short time delay during which the OLD tags are returned by the API. So we lag out by
+	//a bit, *then* query the tags. Can eliminate both if the notification grows tags.
+	sleep(0.5);
+	mapping chaninfo = await(get_channel_info(info->broadcaster_user_name));
+	channel->trigger_special("!channelsetup", ([
+		//Synthesize a basic person mapping
+		"user": info->broadcaster_user_login,
+		"displayname": info->broadcaster_user_name,
+		"uid": info->broadcaster_user_id,
+	]), ([
+		"{category}": info->category_name,
+		"{title}": info->title,
+		"{tag_names}": sprintf("[%s]", chaninfo->tags[*]) * ", ",
+		"{ccls}": sprintf("[%s]", info->content_classification_labels[*]) * ", ",
+	]));
 }
 
 //The regrettable order of parameters is due to channelids being added later.
@@ -629,6 +527,7 @@ void check_hooks(array eventhooks)
 		//TODO: Check if the bot is actually a mod and use that permission
 		if (scopes["moderator:read:followers"]) //If we have the necessary permission, use the broadcaster's authentication.
 			G->G->establish_hook_notification(userid, "channel.follow=2", (["broadcaster_user_id": (string)userid, "moderator_user_id": (string)userid]));
+		G->G->establish_hook_notification(userid, "channel.update=2", (["broadcaster_user_id": (string)userid]));
 		G->G->establish_hook_notification("from_" + userid, "channel.raid=1", (["from_broadcaster_user_id": (string)userid]));
 		G->G->establish_hook_notification("to_" + userid, "channel.raid=1", (["to_broadcaster_user_id": (string)userid]));
 	}
@@ -705,5 +604,5 @@ protected void create(string|void name)
 	#endif
 	::create(name);
 	//Due to a current bug, async functions don't have annotations. Manually export them.
-	export(this, name, ("twitch_api_request get_users_info get_user_info get_user_id get_helix_paginated get_banned_list channel_still_broadcasting translate_tag_ids check_following get_stream_schedule" / " ")[*]);
+	export(this, name, ("twitch_api_request get_users_info get_user_info get_user_id get_helix_paginated get_banned_list channel_still_broadcasting check_following get_stream_schedule" / " ")[*]);
 }

@@ -46,6 +46,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 	array quotes = await(G->G->DB->load_config(channel->userid, "quotes", ({ })));
 	int idx = (int)param[1];
 	if (idx < 0 || idx > sizeof(quotes)) error("No such quote.\n");
+	mapping chaninfo = ([]); catch {await(get_channel_info(channel->login));}; //If we can't query, don't worry about it.
 	switch (param[0]) {
 		case "Add": {
 			if (idx) error("Cannot add with a specific ID, sorry\n");
@@ -69,7 +70,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 				text = before + em + after;
 			quotes += ({([
 				"msg": text, "emoted": param[2],
-				"game": G->G->channel_info[channel->name[1..]]->?game || "something",
+				"game": chaninfo->game || "something",
 				"timestamp": time(),
 				"recorder": person->user,
 			])});

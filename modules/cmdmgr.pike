@@ -24,7 +24,7 @@ constant SPECIALS = ({
 	({"!hypetrain_end", ({"A hype train just ended (successfully or unsuccessfully)", "The broadcaster", ""}), "Stream support"}),
 
 	({"!channelonline", ({"The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
-	({"!channelsetup", ({"The channel is online and has recently changed its category/title/tags", "The broadcaster", "category, title, tag_names, ccls"}), "Status"}),
+	({"!channelsetup", ({"The channel has changed its category/title/CCLs", "The broadcaster", "category, title, tag_names, ccls"}), "Status"}),
 	({"!channeloffline", ({"The channel has recently gone offline (stopped streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
 	({"!musictrack", ({"A track just started playing (see VLC integration)", "VLC", "desc, blockpath, block, track, playing"}), "Status"}),
 	({"!pollbegin", ({"A channel poll just began", "The broadcaster", "title, choices, points_per_vote, choice_N_title"}), "Status"}),

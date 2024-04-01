@@ -248,7 +248,6 @@
   has to explicitly choose to hide explicit content), and if the user prefs are made
   visible, query them in the raid finder and do what the user wants.
 * Migration queue. Do whenever stack is empty.
-  - G->G->channel_info (see poll.pike's retain) should use user IDs
   - chan_giveaway.pike giveaway_tickets[] should use user IDs
   - Sweeping change: Encourage, and eventually mandate, that chan_*
     websocket groups use IDs rather than channel logins.
@@ -276,5 +275,8 @@
   - Signal Gideon to become live db, leaving bot on Sikorsky
   - Move both to Gideon, perform tests from Sikorsky
   - How are timings on all forms?
-* CCLs are getting requeried unnecessarily. There may also be a bug in triggering the
-  !!channelsetup special; check for it while online.
+* Current limitation: Changing stream tags without changing anything else won't trigger
+  a !!streamsetup special. No easy way to fix this without some kind of reliable poll,
+  and there are lots of weird corner cases. Probably should be documented in a user-facing
+  location though. Best fix: Have Twitch provide tags in the channel.update notif, and
+  have that notif also sent when tags are changed.
