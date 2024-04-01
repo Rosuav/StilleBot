@@ -1179,7 +1179,9 @@ __async__ void http_request(Protocols.HTTP.Server.Request req)
 	if (sizeof(sess) && !sess->fake) {
 		if (!sess->cookie) sess->cookie = await(G->G->DB->generate_session_cookie());
 		G->G->DB->save_session(sess);
-		resp->extra_heads["Set-Cookie"] = "session=" + sess->cookie + "; Path=/; Max-Age=604800; SameSite=Lax; HttpOnly";
+		string host = deduce_host(req->request_headers);
+		resp->extra_heads["Set-Cookie"] = "session=" + sess->cookie + "; Path=/; Max-Age=604800; SameSite=Lax; HttpOnly"
+			+ (has_suffix(host, "mustardmine.com") ? "; Domain=mustardmine.com" : "");
 	}
 	req->response_and_finish(resp);
 }
