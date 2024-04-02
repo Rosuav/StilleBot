@@ -18,6 +18,12 @@ constant markdown = #"# StilleBot server status
 </style>
 ";
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+	if (req->variables->which) return jsonify(([
+		"responder": G->G->instance_config->local_address, //If you ask for https://mustardmine.com/serverstatus?which, you will be told which bot actually responded.
+		"active_bot": G->G->dbsettings->?active_bot || "",
+		"db_fast": G->G->DB->fastdb,
+		"db_live": G->G->DB->livedb,
+	]));
 	return render(req, (["vars": (["ws_group": ""])]));
 }
 
