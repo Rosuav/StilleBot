@@ -2,7 +2,7 @@
 //Run this on every available origin to show the timings.
 __async__ int main() {
 	string origin = gethostname() || "?";
-	write("%-8s | %-8s | %-8s | Time  | Time  | Time\n", "Origin", "Bot", "Postgres");
+	write("%-8s | %-8s | %-8s | Time  | Time  | Time\n", "Origin", "Bot", "Database");
 	foreach (({"sikorsky", "gideon"}), string host) {
 		Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url(sprintf("https://%s.mustardmine.com/serverstatus?which", host)));
 		mapping data = Standards.JSON.decode_utf8(res->get());
