@@ -159,23 +159,23 @@ a fetch from one computer or other (always on a bot computer), to both bots, and
 in each case, a read-only and a read/write transaction were performed. This means
 some of the database transactions are resolved locally but others are remote.
 
-Origin   | Bot      | Database | Time  | Time  | Time 
----------+----------+----------+-------+-------+------
-sikorsky | sikorsky | sikorsky | 0.005 | 0.005 | 0.004
-sikorsky | sikorsky | sikorsky | 0.004 | 0.004 | 0.004
-sikorsky | gideon   | gideon   | 1.282 | 1.281 | 1.283
-sikorsky | gideon   | sikorsky | 1.915 | 1.880 | 1.910
-sikorsky | sikorsky | sikorsky | 0.005 | 0.005 | 0.005
-sikorsky | sikorsky | gideon   | 0.621 | 0.924 | 0.925
-sikorsky | gideon   | gideon   | 1.266 | 1.281 | 1.281
-sikorsky | gideon   | gideon   | 1.281 | 1.269 | 1.269
-gideon   | sikorsky | sikorsky | 1.265 | 1.292 | 1.285
-gideon   | sikorsky | gideon   | 1.870 | 1.919 | 1.903
-gideon   | gideon   | gideon   | 0.024 | 0.018 | 0.018
-gideon   | gideon   | gideon   | 0.018 | 0.017 | 0.018
-gideon   | sikorsky | sikorsky | 1.272 | 1.272 | 1.297
-gideon   | sikorsky | sikorsky | 1.296 | 1.276 | 1.291
-gideon   | gideon   | gideon   | 0.024 | 0.023 | 0.019
-gideon   | gideon   | sikorsky | 0.655 | 0.950 | 0.944
+| Origin   | Bot      | Database | Time  | Time  | Time 
+|----------|----------|----------|-------|-------|------
+| sikorsky | sikorsky | sikorsky | 0.005 | 0.005 | 0.004
+| sikorsky | sikorsky | sikorsky | 0.004 | 0.004 | 0.004
+| sikorsky | gideon   | gideon   | 1.282 | 1.281 | 1.283
+| sikorsky | gideon   | sikorsky | 1.915 | 1.880 | 1.910
+| sikorsky | sikorsky | sikorsky | 0.005 | 0.005 | 0.005
+| sikorsky | sikorsky | gideon   | 0.621 | 0.924 | 0.925
+| sikorsky | gideon   | gideon   | 1.266 | 1.281 | 1.281
+| sikorsky | gideon   | gideon   | 1.281 | 1.269 | 1.269
+| gideon   | sikorsky | sikorsky | 1.265 | 1.292 | 1.285
+| gideon   | sikorsky | gideon   | 1.870 | 1.919 | 1.903
+| gideon   | gideon   | gideon   | 0.024 | 0.018 | 0.018
+| gideon   | gideon   | gideon   | 0.018 | 0.017 | 0.018
+| gideon   | sikorsky | sikorsky | 1.272 | 1.272 | 1.297
+| gideon   | sikorsky | sikorsky | 1.296 | 1.276 | 1.291
+| gideon   | gideon   | gideon   | 0.024 | 0.023 | 0.019
+| gideon   | gideon   | sikorsky | 0.655 | 0.950 | 0.944
 
 The "read-only local" special case is highly beneficial.
