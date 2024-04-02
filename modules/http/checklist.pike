@@ -169,6 +169,8 @@ constant emoteids = ([
 	//New bonus emotes for exceeding level 5!
 	"BleedPurpleHD": "emotesv2_bf888b2af57b4abd80653dff26768ae5",
 	"HeyHeyGuys": "emotesv2_132feb3980ee410e856244931d63fd31",
+	"PogChomp": "emotesv2_00659fc4ae6948a6b23585e83f62d477",
+	"KappaInfinite": "emotesv2_ae9328d25e4b424c8dd2af714045e538",
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
