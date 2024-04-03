@@ -417,20 +417,17 @@ __async__ mapping get_chan_state(object channel, string grp)
 		"last_winner": givcfg->last_winner,
 	]);
 	if (grp != "control") return 0;
-	int broadcaster_id = await(get_user_id(chan));
 	array rewards;
-	if (mixed ex = catch {rewards = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + broadcaster_id,
-		(["Authorization": "Bearer " + token_for_user_id(broadcaster_id)[0]])))->data;
+	if (mixed ex = catch {rewards = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + channel->userid,
+		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]])))->data;
 	}) {
 		if (arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401")) {
-			//TODO: Return a message informing the user
-			channel->report_error("ERROR", "Unable to list channel rewards, may need reauthentication", "");
-			return 0;
+			return (["error": "Unable to list channel rewards, may need reauthentication"]);
 		}
 		werror("Unexpected error listing channel rewards: %s\n", describe_backtrace(ex));
 		return 0;
 	}
-	array(array) redemptions = await(Concurrent.all(list_redemptions(broadcaster_id, chan, rewards->id[*])));
+	array(array) redemptions = await(Concurrent.all(list_redemptions(channel->userid, chan, rewards->id[*])));
 	//Every time a new websocket is established, fully recalculate. Guarantee fresh data.
 	giveaway_tickets[chan] = ([]);
 	foreach (redemptions * ({ }), mapping redem) await(update_ticket_count(givcfg, redem));

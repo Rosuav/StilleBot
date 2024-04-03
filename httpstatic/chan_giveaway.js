@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {DIV, H3, LI, SPAN} = choc;
+const {BUTTON, DIV, H3, LI, SPAN} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 const fields = "title cost desc max multi pausemode duration".split(" ");
@@ -29,12 +29,24 @@ function recommend(btn) {
 let message_timeout = 0;
 function update_message(msg) {
 	set_content("#errormessage", msg).classList.toggle("hidden", msg === "");
-	clearTimeout(message_timeout);
-	message_timeout = setTimeout(update_message, 10000, "");
+	clearTimeout(message_timeout); message_timeout = 0;
+	if (msg !== "") message_timeout = setTimeout(update_message, 10000, "");
 }
 
 export function render(state) {
 	if (state.message) {update_message(state.message); return;}
+	if (state.error) {
+		set_content("#errormessage", [
+			state.error,
+			state.error.includes("reauthentication") && BUTTON(
+				{type: "button", class: "twitchlogin", "data-scopes": "channel:manage:redemptions"},
+				"Broadcaster login",
+			),
+		]).classList.remove("hidden");
+		clearTimeout(message_timeout); message_timeout = 0;
+		//Unlike update_message(), does not time out the message.
+		return;
+	}
 	if (state.title) set_content("h1", "Giveaway - " + state.title + "!");
 	if (state.tickets) set_content("#ticketholders", state.tickets.map(t => LI([""+t.tickets, " ", t.name])));
 	if ("is_open" in state) {
