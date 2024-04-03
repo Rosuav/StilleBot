@@ -104,6 +104,9 @@ __async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, 
 		if (count) req->misc->chaninfo->menunav = replace(req->misc->chaninfo->menunav, "<span id=errcnt></span>",
 			"<span id=errcnt>(" + count + ")</span>");
 	}
+	if (deduce_host(req->request_headers) == "sikorsky.rosuav.com") req->misc->chaninfo->banner = #"
+		<aside id=domainbanner>You're on the old domain. Pages may potentially load faster if you <a href=/xfr>transfer</a>.</aside>
+	";
 	mixed h = handler(req); //Either a promise or a result (mapping/string).
 	return objectp(h) && h->on_await ? await(h) : h; //Await if promise, otherwise we already have it.
 }

@@ -8,6 +8,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		m_delete(xfr_cookie, xfr_cookie[sess]); //If we already have another, remove it
 		string xfr = MIME.encode_base64("xf-" + random_string(9));
 		xfr_cookie[xfr] = sess; xfr_cookie[sess] = xfr;
+		call_out(m_delete, 60, xfr_cookie, sess);
+		call_out(m_delete, 60, xfr_cookie, xfr);
+		if (sscanf(req->request_headers->referer || "r", "https://sikorsky.rosuav.com/%s", string path) && path)
+			req->misc->session->xfr_redirect = path;
 		return redirect("https://sikorsky.mustardmine.com/xfr?goal=" + xfr);
 	}
 	if (string xfr = host == "sikorsky.mustardmine.com" && req->variables->goal) {
@@ -18,7 +22,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		//Merge the sessions. Priority goes to the sikorsky.rosuav.com session if there's
 		//a conflict, including the session token.
 		req->misc->session |= new_session;
+		if (string path = m_delete(req->misc->session, "xfr_redirect"))
+			return redirect("https://mustardmine.com/" + path);
 	}
-	return redirect("https://mustardmine.com/");
+	sscanf(req->request_headers->referer || "r", "https://sikorsky.rosuav.com/%s", string path);
+	return redirect("https://mustardmine.com/" + (path || ""));
 }
 

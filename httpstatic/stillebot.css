@@ -368,3 +368,13 @@ body:not(:has(nav#sidebar.vis)) nav#topbar {
 	margin: 0 0.25em;
 	padding: 0.5em;
 }
+
+/* Warning banner for being on the old domain. Not too in-your-face. */
+#domainbanner {
+	background: #faa;
+	border: 1px solid red;
+	position: fixed;
+	left: 120px; right: 0px;
+	top: 10px; height: 30px;
+	text-align: center;
+}
