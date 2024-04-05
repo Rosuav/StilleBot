@@ -1,7 +1,6 @@
 constant listen_addr = "::", listen_port = 9876;
 
-void http_handler(Protocols.HTTP.Server.Request req)
-{
+void http_handler(Protocols.HTTP.Server.Request req) {
 	int before = sizeof(get_dir("/proc/self/fd"));
 	int garbo = gc(); //Disabling this check results in FDs accumulating.
 	int after = sizeof(get_dir("/proc/self/fd"));
