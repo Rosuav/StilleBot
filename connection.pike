@@ -1182,6 +1182,12 @@ __async__ void http_request(Protocols.HTTP.Server.Request req)
 			+ (has_suffix(host, "mustardmine.com") ? "; Domain=mustardmine.com" : "");
 	}
 	req->response_and_finish(resp);
+	// *********** Current issue under investigation ************ //
+	//For some reason, open files are accumulating, sometimes reaching critical levels,
+	//without triggering garbage collection. This MAY be related to HTTP requests, but
+	//even if it's not, this is a place that gets hit fairly often, so we'll do the
+	//collection here.
+	gc();
 }
 
 void http_handler(Protocols.HTTP.Server.Request req) {spawn_task(http_request(req));}
