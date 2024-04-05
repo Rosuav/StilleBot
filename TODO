@@ -279,3 +279,5 @@
   out of FDs and spinning. Order uncertain.
 * Queued WS messages sent prior to handshake completion are showing up with type == 0
   - Or is it not a timing issue but that the socket got kicked?
+* Check raid notifs and alertbox - are we getting doubles due to incoming and outgoing
+  hooks if one monitored channel raids another?
