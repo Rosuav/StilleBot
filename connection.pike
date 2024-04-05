@@ -1291,7 +1291,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 	}
 	string type = has_prefix(data->cmd||"", "prefs_") ? "prefs" : conn->type;
 	if (object handler = G->G->websocket_types[type]) handler->websocket_msg(conn, data);
-	else write("Message: %O\n", data);
+	else write("Message to unknown type %O: %O\n", type, data);
 }
 
 void ws_close(int reason, mapping conn)

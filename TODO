@@ -277,3 +277,5 @@
   have that notif also sent when tags are changed.
 * Bot active on Gideon with database on Gideon sometimes leads to Sikorsky's running
   out of FDs and spinning. Order uncertain.
+* Queued WS messages sent prior to handshake completion are showing up with type == 0
+  - Or is it not a timing issue but that the socket got kicked?
