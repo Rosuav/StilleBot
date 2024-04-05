@@ -14,6 +14,8 @@ void http_handler(Protocols.HTTP.Server.Request req) {
 
 int main() {
 	//If you don't have a cert, the first request is slower b/c generating self-signed.
+	//This ONLY happens with SSL connections. There are *three* file descriptors wasted
+	//for every request.
 	string cert = Stdio.read_file("certificate_local.pem");
 	string key = Stdio.read_file("privkey_local.pem");
 	array certs = cert && Standards.PEM.Messages(cert)->get_certificates();
