@@ -1350,10 +1350,14 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 
 //FIXME: Start with this null once initial testing is done. Hard-coding this saves a couple of seconds each startup.
 @retain: string condid = "64e2637e-f5cf-43d6-a7ae-308fb623a0d3";
+int last_conduit_message;
 __async__ void conduit_message(Protocols.WebSocket.Frame frm, mixed id) {
 	mixed data;
 	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
 	string type = mappingp(data) && data->metadata->?message_type;
+	//TODO: If it's been too long since a message came in, kick the conduit and start over
+	werror("[+%d] Got conduit msg %O\n", time() - last_conduit_message, type);
+	last_conduit_message = time();
 	if (!type || type == "session_keepalive") return;
 	//werror("Got WS msg: %O\n", data);
 	switch (type) {
