@@ -593,8 +593,8 @@ __async__ mapping cache_chanstatus(string chan, int|void userid) {
 	foreach (websocket_groups[""] || ({ }), object sock) if (sock && sock->state == 1) {
 		//See if the client is interested in this channel
 		mapping conn = sock->query_id();
-		if (!conn->want_streaminfo || !has_value(conn->want_streaminfo, chan)) continue;
-		conn->want_streaminfo -= ({chan});
+		if (!multisetp(conn->want_streaminfo) || !conn->want_streaminfo[chan]) continue;
+		conn->want_streaminfo[chan] = 0;
 		sock->send_text(sendme);
 	}
 	//TODO: Change is_following to be a mapping of userid to follow status, allowing "New Frond" in recommendations
@@ -630,11 +630,26 @@ __async__ mapping cache_chanstatus(string chan, int|void userid) {
 	return ret;
 }
 
+void precache_chanstatus() {
+	m_delete(G->G, "raidfinder_precache_timer");
+	multiset(string) all_wanted = (<>);
+	foreach (websocket_groups[""] || ({ }), object sock) if (sock && sock->state == 1) {
+		//See if the client is interested in this channel
+		mapping conn = sock->query_id();
+		if (multisetp(conn->want_streaminfo)) all_wanted |= conn->want_streaminfo;
+	}
+	if (!sizeof(all_wanted)) return;
+	cache_chanstatus(random(all_wanted)); //TODO: List the for= for each requestor
+	G->G->raidfinder_precache_timer = call_out(G->G->websocket_types->raidfinder->precache_chanstatus, 1);
+}
+
 //Record what the client is interested in hearing about. It's not consistent or coherent
 //enough to use the standard 'groups' system, as a single client may be interested in
 //many similar things, but it's the same kind of idea.
 void websocket_cmd_interested(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (arrayp(msg->want_streaminfo)) conn->want_streaminfo = msg->want_streaminfo;
+	if (!arrayp(msg->want_streaminfo)) return;
+	conn->want_streaminfo = (multiset)msg->want_streaminfo;
+	if (!G->G->raidfinder_precache_timer) G->G->raidfinder_precache_timer = call_out(precache_chanstatus, 1);
 }
 
 __async__ void websocket_cmd_streamlength(mapping(string:mixed) conn, mapping(string:mixed) msg) {
