@@ -1350,7 +1350,6 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 
 //FIXME: Start with this null once initial testing is done. Hard-coding this saves a couple of seconds each startup.
 @retain: string condid = "64e2637e-f5cf-43d6-a7ae-308fb623a0d3";
-int last_conduit_message;
 constant CONDUIT_KICK_TIMEOUT = 60; //If we haven't heard from the server in this many seconds, kick the conduit and restart.
 __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 	mixed data;
@@ -1359,8 +1358,8 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 	//If it's been too long since a message came in, kick the conduit and start over
 	remove_call_out(G->G->conduit_fallen_over);
 	G->G->conduit_fallen_over = call_out(setup_conduit, CONDUIT_KICK_TIMEOUT);
-	werror("[+%d] Got conduit msg %O\n", time() - last_conduit_message, type);
-	last_conduit_message = time();
+	werror("[+%d] Got conduit msg %O\n", time() - conn->last_message, type);
+	conn->last_message = time();
 	//if (type == "session_keepalive") werror("Got WS msg: %O\n", data);
 	switch (type) {
 		case "session_welcome": { //New socket established. Associate with shard.
