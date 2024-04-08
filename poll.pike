@@ -63,25 +63,20 @@ __async__ void get_credentials() {
 				if (G->G->app_access_token_expiry == -1) {
 					//TODO: Wait until the other request returns.
 					//For now we just sleep and try again.
-					await(task_sleep(2));
-					return await(twitch_api_request(url, headers, options));
+					while (G->G->app_access_token_expiry == -1) sleep(2);
+				} else {
+					G->G->app_access_token_expiry = -1; //Prevent spinning
+					Standards.URI uri = Standards.URI("https://id.twitch.tv/oauth2/token");
+					//As below, uri->set_query_variables() doesn't correctly encode query data.
+					uri->query = Protocols.HTTP.http_encode_query(([
+						"client_id": G->G->instance_config->clientid,
+						"client_secret": G->G->instance_config->clientsecret,
+						"grant_type": "client_credentials",
+					]));
+					mapping data = await(twitch_api_request(uri, ([]), (["method": "POST"])));
+					G->G->app_access_token = data->access_token;
+					G->G->app_access_token_expiry = time() + data->expires_in - 120;
 				}
-				G->G->app_access_token_expiry = -1; //Prevent spinning
-				Standards.URI uri = Standards.URI("https://id.twitch.tv/oauth2/token");
-				//As below, uri->set_query_variables() doesn't correctly encode query data.
-				uri->query = Protocols.HTTP.http_encode_query(([
-					"client_id": G->G->instance_config->clientid,
-					"client_secret": G->G->instance_config->clientsecret,
-					"grant_type": "client_credentials",
-				]));
-				return await(twitch_api_request(uri, ([]), (["method": "POST"]))
-					->then(lambda (mapping data) {
-						G->G->app_access_token = data->access_token;
-						G->G->app_access_token_expiry = time() + data->expires_in - 120;
-						//If this becomes a continue function, we could just fall through
-						//instead of calling ourselves recursively.
-						return twitch_api_request(url, headers, options);
-					}));
 			}
 			headers->Authorization = "Bearer " + G->G->app_access_token;
 		}
