@@ -1380,7 +1380,7 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 		case "session_keepalive":
 			//If another instance has added itself as the active shard, disconnect this one on next notification.
 			if (conn->shard_id != G->G->active_conduit_shard_id) {
-				werror("CLOSING OLD CONDUIT SHARD %O b/c %O active\n", conn->shard_id, G->G->conduit_shard_id);
+				werror("CLOSING OLD CONDUIT SHARD %O b/c %O active\n", conn->shard_id, G->G->active_conduit_shard_id);
 				conn->sock->close();
 				return;
 			}
