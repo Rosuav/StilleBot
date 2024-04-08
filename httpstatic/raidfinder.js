@@ -49,16 +49,18 @@ function hms(time) {
 }
 function uptime(startdate) {return hms(Math.floor((new Date() - new Date(startdate)) / 1000));}
 
-async function show_vod_lengths(userid, vodid, startdate, ccls) {
+let vodlength_startdate;
+function show_vod_lengths(userid, vodid, startdate, ccls) {
 	set_content("#is_following", "");
 	set_content("#chat_restrictions", "");
 	set_content("#ccls_in_use", ccls.map(ccl => [tag_prefs["<CCL_" + ccl + ">"] <= CCL_Warn ? "⚠️" : "🏷️", ccl_names[ccl] || ccl]));
 	set_content("#vods", LI("... loading VODs ..."));
 	DOM("#vodlengths").showModal();
-	const info = typeof userid === "object" ? userid :
-		await (await fetch(`/raidfinder?for=${on_behalf_of_userid}&streamlength=${userid}&ignore=${vodid}`)).json();
-	console.log("VODs:", info);
+	vodlength_startdate = startdate; //can't be bothered carrying it through properly
+	ws_sync.send({cmd: "streamlength", userid, ignore: vodid, "for": on_behalf_of_userid});
+}
 
+export function sockmsg_streamlength(info) {
 	if (info.is_following) {
 		if (info.is_following.followed_at) set_content("#is_following", [
 			B(info.is_following.from_name),
@@ -81,9 +83,9 @@ async function show_vod_lengths(userid, vodid, startdate, ccls) {
 		set_content("#vods", LI("No VODs found, unable to estimate stream duration"));
 		return;
 	}
-	const uptime = startdate ? Math.floor((new Date() - new Date(startdate)) / 1000) : info.max_duration;
+	const uptime = vodlength_startdate ? Math.floor((new Date() - new Date(vodlength_startdate)) / 1000) : info.max_duration;
 	const scale = Math.max(info.max_duration, uptime);
-	if (startdate) info.vods.unshift({duration_seconds: uptime, week_correlation: 0});
+	if (vodlength_startdate) info.vods.unshift({duration_seconds: uptime, week_correlation: 0});
 	set_content("#vods", info.vods.map(vod => {
 		let date = "Current stream";
 		if (vod.created_at) {
@@ -456,7 +458,7 @@ function build_follow_list() {
 			+ " viewers in " + your_stream.category,
 		]).href = "raidfinder?categories=" + encodeURIComponent(your_stream.category);
 	else set_content("#yourcat", "");
-	if (!precache_timer) precache_timer = setInterval(precache_streaminfo, 2000);
+	//if (!precache_timer) precache_timer = setInterval(precache_streaminfo, 2000);
 }
 if (mode === "vodlength") show_vod_lengths(vodinfo); else build_follow_list();
 

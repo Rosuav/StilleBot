@@ -19,7 +19,6 @@ constant PREFERENCE_MAGIC_SCORES = ({
 
 multiset(string) creative_names = (<"Art", "Science & Technology", "Software and Game Development", "Food & Drink", "Music", "Makers & Crafting", "Beauty & Body Art">);
 multiset(int) creatives = (<>);
-int next_precache_request;
 @retain: mapping raid_suggestions = ([]);
 @retain: mapping raidfinder_cache = ([]);
 
@@ -134,107 +133,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		return (["error": 204]);
 	}
 	mapping logged_in = req->misc->session && req->misc->session->user;
-	//Provide some info on VOD durations for the front end to display graphically
-	//Additionally (since this is a costly check anyway, so it won't add much), it
-	//checks if the for= target is following them.
-	if (string chan = req->variables->streamlength) {
-		if (req->variables->precache) {
-			//Low-priority request to populate the cache. Never more than 1 per second,
-			//regardless of the number of connected clients.
-			int now = time();
-			if (next_precache_request < now) next_precache_request = now;
-			int delay = next_precache_request - now;
-			if (delay > 5) return jsonify((["error": "Wait a bit"])) | (["error": 425]);
-			if (delay) await(task_sleep(delay));
-			++next_precache_request;
-		}
-		array vods = await(get_helix_paginated("https://api.twitch.tv/helix/videos", (["user_id": chan, "type": "archive"])));
-		if (string ignore = req->variables->ignore) //Ignore the stream ID for a currently live broadcast
-			vods = filter(vods) {return __ARGS__[0]->stream_id != ignore;};
-		//For convenience of the front end, do some parsing here in Pike.
-		mapping ret = (["vods": map(vods) {mapping raw = __ARGS__[0];
-			mapping vod = (["created_at": raw->created_at]);
-			//Attributes in use: created_at, duration_seconds, week_correlation
-			if (sscanf(raw->duration, "%dh%dm%ds", int h, int m, int s) == 3) vod->duration_seconds = h * 3600 + m * 60 + s;
-			else if (sscanf(raw->duration, "%dm%ds", int m, int s) == 2) vod->duration_seconds = m * 60 + s;
-			else if (sscanf(raw->duration, "%ds", int s)) vod->duration_seconds = s;
-			//What do day-long streams look like?
-			else {werror("**** UNKNOWN VOD DURATION FORMAT %O ****\n", raw->duration); vod->duration_seconds = 0;}
-
-			//Would be nice to show the category too but I don't know where to get the data from. Kraken gets it.
-
-			//Calculate how close this VOD is to the current time, modulo a week
-			//If the VOD spans the current time, return zero. Otherwise, return the shorter of the time
-			//until the start, and the time since the end.
-			//Assumes no leap seconds.
-			int howlongago = (time() - time_from_iso(vod->created_at)->unix_time()) % 604800;
-			//Three options: the inverse of the time since it started; or the time since ending; or, if
-			//time since ending is negative, zero.
-			vod->week_correlation = max(min(604800 - howlongago, howlongago - vod->duration_seconds), 0);
-			return vod;
-		}]);
-		ret->max_duration = max(@ret->vods->duration_seconds);
-		//TODO: Calculate an approximate average VOD duration, which can (if available) be used in place of
-		//the four hour threshold used for magic sort. Ignore outliers. Don't bother trying to combine
-		//broken VODs together - too hard, too rare, let it adjust the average, it's fine.
-
-		//Ping Twitch and check if there are any chat restrictions. So far I can't do this in bulk, but
-		//it's great to be able to query them this way for the VOD length popup. Note that we're not
-		//asking for mod settings here, so non_moderator_chat_delay won't be in the response.
-		mapping settings = await(twitch_api_request("https://api.twitch.tv/helix/chat/settings?broadcaster_id=" + chan));
-		if (arrayp(settings->data) && sizeof(settings->data)) ret->chat_settings = settings->data[0];
-
-		//Hang onto this info in cache, apart from is_following (below).
-		ret->cache_time = time();
-		raidfinder_cache[chan] = ret | ([]);
-
-		string chanid = req->variables["for"];
-		if ((int)chanid && chanid != (string)logged_in->?id && chanid != chan) {
-			//If you provided for=userid, also show whether the target is following this stream. Gonna die when the deprecation concludes.
-			//TODO: Make it possible for a broadcaster to grant user:read:follows, which would allow such recommendations.
-			//TODO also: Use the same cache that tradingcards.pike uses. Maybe move the code to poll.pike?
-			//TODO: Move this to poll as a generic "is X following Y" call, which will be cached.
-			//It can then use EITHER form of the query - if we have X's user:read:follows or Y's moderator:read:followers
-			//Might need a way to locate a moderator though. Or go for the partial result with intrinsic auth??
-			array creds = token_for_user_id((int)chanid);
-			array scopes = creds[1] / " ";
-			if (has_value(scopes, "user:read:follows")) {
-				mapping info = await(twitch_api_request(sprintf("https://api.twitch.tv/helix/channels/followed?user_id=%s&broadcaster_id=%s", chanid, chan),
-					(["Authorization": "Bearer " + creds[0]])));
-				if (sizeof(info->data)) {
-					ret->is_following = info->data[0];
-					object howlong = time_from_iso(ret->is_following->followed_at)->distance(Calendar.ISO.now());
-					string length = "less than a day";
-					foreach (({
-						({Calendar.ISO.Year, "year"}),
-						({Calendar.ISO.Month, "month"}),
-						({Calendar.ISO.Day, "day"}),
-					}), [program span, string desc])
-						if (int n = howlong / span) {
-							length = sprintf("%d %s%s", n, desc, "s" * (n > 1));
-							break;
-						}
-					ret->is_following->follow_length = length;
-					ret->to_name = ret->is_following->broadcaster_name; //Old API: from_name, to_name (and their IDs)
-					ret->from_name = await(get_user_info((int)chanid))->display_name; //This might not be necessary; check the front end.
-				}
-				else ret->is_following = (["from_id": chanid]);
-			}
-		}
-
-		//Publish this info to all socket-connected clients that care.
-		string msg = Standards.JSON.encode((["cmd": "chanstatus", "channelid": chan, "chanstatus": ret]));
-		foreach (websocket_groups[""] || ({ }), object sock) if (sock && sock->state == 1) {
-			//See if the client is interested in this channel
-			catch {
-				mapping conn = sock->query_id(); //If older Pike, don't bother with the check, just push it out anyway
-				if (!conn->want_streaminfo || !has_index(conn->want_streaminfo, chan)) continue;
-			};
-			sock->send_text(msg);
-		}
-
-		return jsonify(ret);
-	}
+	if (req->variables->streamlength) return jsonify((["error": "Switch to ws message pls"])) | (["error": 429]);
 	if (req->variables->menu) {
 		//Show a menu of available raid finder modes.
 		return render_template(markdown_menu, ([]));
@@ -677,6 +576,96 @@ void websocket_cmd_followcategory(mapping(string:mixed) conn, mapping(string:mix
 //many similar things, but it's the same kind of idea.
 void websocket_cmd_interested(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (mappingp(msg->want_streaminfo)) conn->want_streaminfo = msg->want_streaminfo;
+}
+
+__async__ void websocket_cmd_streamlength(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Provide some info on VOD durations for the front end to display graphically
+	//Additionally (since this is a costly check anyway, so it won't add much), it
+	//checks if the for= target is following them.
+	string chan = msg->userid;
+	array vods = await(get_helix_paginated("https://api.twitch.tv/helix/videos", (["user_id": chan, "type": "archive"])));
+	if (string ignore = msg->ignore) //Ignore the stream ID for a currently live broadcast
+		vods = filter(vods) {return __ARGS__[0]->stream_id != ignore;};
+	//For convenience of the front end, do some parsing here in Pike.
+	mapping ret = (["vods": map(vods) {mapping raw = __ARGS__[0];
+		mapping vod = (["created_at": raw->created_at]);
+		//Attributes in use: created_at, duration_seconds, week_correlation
+		if (sscanf(raw->duration, "%dh%dm%ds", int h, int m, int s) == 3) vod->duration_seconds = h * 3600 + m * 60 + s;
+		else if (sscanf(raw->duration, "%dm%ds", int m, int s) == 2) vod->duration_seconds = m * 60 + s;
+		else if (sscanf(raw->duration, "%ds", int s)) vod->duration_seconds = s;
+		//What do day-long streams look like?
+		else {werror("**** UNKNOWN VOD DURATION FORMAT %O ****\n", raw->duration); vod->duration_seconds = 0;}
+
+		//Would be nice to show the category too but I don't know where to get the data from. Kraken gets it.
+
+		//Calculate how close this VOD is to the current time, modulo a week
+		//If the VOD spans the current time, return zero. Otherwise, return the shorter of the time
+		//until the start, and the time since the end.
+		//Assumes no leap seconds.
+		int howlongago = (time() - time_from_iso(vod->created_at)->unix_time()) % 604800;
+		//Three options: the inverse of the time since it started; or the time since ending; or, if
+		//time since ending is negative, zero.
+		vod->week_correlation = max(min(604800 - howlongago, howlongago - vod->duration_seconds), 0);
+		return vod;
+	}]);
+	ret->max_duration = max(@ret->vods->duration_seconds);
+	//TODO: Calculate an approximate average VOD duration, which can (if available) be used in place of
+	//the four hour threshold used for magic sort. Ignore outliers. Don't bother trying to combine
+	//broken VODs together - too hard, too rare, let it adjust the average, it's fine.
+
+	//Ping Twitch and check if there are any chat restrictions. So far I can't do this in bulk, but
+	//it's great to be able to query them this way for the VOD length popup. Note that we're not
+	//asking for mod settings here, so non_moderator_chat_delay won't be in the response.
+	mapping settings = await(twitch_api_request("https://api.twitch.tv/helix/chat/settings?broadcaster_id=" + chan));
+	if (arrayp(settings->data) && sizeof(settings->data)) ret->chat_settings = settings->data[0];
+
+	//Hang onto this info in cache, apart from is_following (below).
+	ret->cache_time = time();
+	raidfinder_cache[chan] = ret | ([]);
+
+	int chanid = msg["for"];
+	mapping|zero logged_in = conn->session->?user;
+	if (chanid && chanid != (int)logged_in->?id && chanid != (int)chan) {
+		//If you provided for=userid, also show whether the target is following this stream.
+		//TODO: Make it possible for a broadcaster to grant user:read:follows, which would allow such recommendations.
+		array creds = token_for_user_id(chanid);
+		array scopes = creds[1] / " ";
+		if (has_value(scopes, "user:read:follows")) {
+			mapping info = await(twitch_api_request(sprintf("https://api.twitch.tv/helix/channels/followed?user_id=%d&broadcaster_id=%s", chanid, chan),
+				(["Authorization": "Bearer " + creds[0]])));
+			if (sizeof(info->data)) {
+				ret->is_following = info->data[0];
+				object howlong = time_from_iso(ret->is_following->followed_at)->distance(Calendar.ISO.now());
+				string length = "less than a day";
+				foreach (({
+					({Calendar.ISO.Year, "year"}),
+					({Calendar.ISO.Month, "month"}),
+					({Calendar.ISO.Day, "day"}),
+				}), [program span, string desc])
+					if (int n = howlong / span) {
+						length = sprintf("%d %s%s", n, desc, "s" * (n > 1));
+						break;
+					}
+				//FIXME: The display here is a bit broken at times, omitting the user name.
+				ret->is_following->follow_length = length;
+				ret->to_name = ret->is_following->broadcaster_name; //Old API: from_name, to_name (and their IDs)
+				ret->from_name = await(get_user_info(chanid))->display_name; //This might not be necessary; check the front end.
+			}
+			else ret->is_following = (["from_id": (string)chanid]);
+		}
+	}
+
+	//Publish this info to all socket-connected clients that care.
+	string sendme = Standards.JSON.encode((["cmd": "chanstatus", "channelid": chan, "chanstatus": ret]));
+	foreach (websocket_groups[""] || ({ }), object sock) if (sock && sock->state == 1) {
+		//See if the client is interested in this channel
+		catch {
+			mapping conn = sock->query_id(); //If older Pike, don't bother with the check, just push it out anyway
+			if (!conn->want_streaminfo || !has_index(conn->want_streaminfo, chan)) continue;
+		};
+		sock->send_text(sendme);
+	}
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "streamlength"]) | ret));
 }
 
 @retain: mapping raids_in_progress = ([]);
