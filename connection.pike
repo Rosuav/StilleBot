@@ -1351,11 +1351,14 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 //FIXME: Start with this null once initial testing is done. Hard-coding this saves a couple of seconds each startup.
 @retain: string condid = "64e2637e-f5cf-43d6-a7ae-308fb623a0d3";
 int last_conduit_message;
+constant CONDUIT_KICK_TIMEOUT = 60; //If we haven't heard from the server in this many seconds, kick the conduit and restart.
 __async__ void conduit_message(Protocols.WebSocket.Frame frm, mixed id) {
 	mixed data;
 	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
 	string type = mappingp(data) && data->metadata->?message_type;
-	//TODO: If it's been too long since a message came in, kick the conduit and start over
+	//If it's been too long since a message came in, kick the conduit and start over
+	remove_call_out(G->G->conduit_fallen_over);
+	G->G->conduit_fallen_over = call_out(setup_conduit, CONDUIT_KICK_TIMEOUT);
 	werror("[+%d] Got conduit msg %O\n", time() - last_conduit_message, type);
 	last_conduit_message = time();
 	if (!type || type == "session_keepalive") return;
@@ -1399,7 +1402,7 @@ __async__ void setup_conduit() {
 		} else condid = cond->data[0]->id;
 	}
 	Protocols.WebSocket.Connection conn = Protocols.WebSocket.Connection();
-	conn->connect("wss://eventsub.wss.twitch.tv/ws"); //Will establish TCP and TLS synchronously, then HTTP and WS asynchronously
+	conn->connect("wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=" + (CONDUIT_KICK_TIMEOUT - 5)); //Will establish TCP and TLS synchronously, then HTTP and WS asynchronously
 	conn->onmessage = conduit_message;
 }
 
