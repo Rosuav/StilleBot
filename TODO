@@ -275,8 +275,6 @@
   and there are lots of weird corner cases. Probably should be documented in a user-facing
   location though. Best fix: Have Twitch provide tags in the channel.update notif, and
   have that notif also sent when tags are changed.
-* Queued WS messages sent prior to handshake completion are showing up with type == 0
-  - Or is it not a timing issue but that the socket got kicked?
 * Inexplicable problem: Gideon stopped responding to requests.
   - Far as I can tell, Apache was up, no problems
   - Requests were probably not getting to the bot. They certainly weren't being logged.
