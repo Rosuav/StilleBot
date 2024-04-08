@@ -62,12 +62,13 @@ function show_vod_lengths(userid, vodid, startdate, ccls) {
 }
 
 export function sockmsg_streamlength(info) {
-	if (info.is_following) {
-		if (info.is_following.followed_at) set_content("#is_following", [
-			B(info.is_following.from_name),
+	const fol = info.following[on_behalf_of_userid];
+	if (fol) {
+		if (fol.followed_at) set_content("#is_following", [
+			B(fol.from_name),
 			" has been following ",
-			B(info.is_following.to_name),
-			" for " + info.is_following.follow_length + ".",
+			B(fol.broadcaster_name),
+			" for " + fol.follow_length + ".",
 		]).className = "is_following";
 		else set_content("#is_following",
 			"Not currently followed, might be a new frond!",
@@ -298,8 +299,8 @@ function describe_uptime(stream, el) {
 	//following this channel, show a "new frond" icon (a palm tree).
 	//This won't show on initial load but may show up if random loads happen.
 	let frond = null;
-	const fol = stream.chanstatus?.is_following;
-	if (fol && +fol.from_id === on_behalf_of_userid && !fol.followed_at)
+	const fol = stream.chanstatus?.following[on_behalf_of_userid];
+	if (fol && !fol.followed_at)
 		frond = SPAN({className: "new_frond", title: "Might be a new frond! (click to confirm)"}, "\u{1f334}");
 
 	//TODO: Colour the background of the word "Uptime" based on how close we are to the
@@ -429,7 +430,7 @@ function render_stream_tiles(streams) {
 function build_follow_list() {
 	console.log(follows);
 	set_content("#streams", render_stream_tiles(follows));
-	ws_sync.send({cmd: "interested", want_streaminfo});
+	ws_sync.send({cmd: "interested", want_streaminfo, on_behalf_of_userid});
 	if (your_stream)
 		set_content("#yourcat", [
 			your_stream.user_name + " has " +
