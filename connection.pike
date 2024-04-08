@@ -1359,8 +1359,6 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 	//If it's been too long since a message came in, kick the conduit and start over
 	remove_call_out(G->G->conduit_fallen_over);
 	G->G->conduit_fallen_over = call_out(setup_conduit, CONDUIT_KICK_TIMEOUT);
-	werror("[+%d] Got conduit msg %O\n", time() - conn->last_message, type);
-	conn->last_message = time();
 	//if (type == "session_keepalive") werror("Got WS msg: %O\n", data);
 	switch (type) {
 		case "session_welcome": { //New socket established. Associate with shard.
