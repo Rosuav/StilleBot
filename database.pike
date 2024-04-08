@@ -273,7 +273,6 @@ void notify_settings_change(int pid, string cond, string extra, string host) {
 
 @"stillebot.http_sessions":
 void notify_session_gone(int pid, string cond, string extra, string host) {
-	werror("SESSION DELETED [%s, %s]\n", cond, extra);
 	G->G->http_sessions_deleted[extra] = 1;
 }
 
