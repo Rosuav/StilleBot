@@ -148,13 +148,6 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			if (delay) await(task_sleep(delay));
 			++next_precache_request;
 		}
-		string html_title;
-		if (!(int)chan) {
-			//Client-side view. Return HTML and enough variables to open up the popup.
-			html_title = "VOD lengths for " + chan;
-			if (mixed ex = catch (chan = (string)await(get_user_id(chan))))
-				return (["error": 400, "data": "Unrecognized channel name " + chan]);
-		}
 		array vods = await(get_helix_paginated("https://api.twitch.tv/helix/videos", (["user_id": chan, "type": "archive"])));
 		if (string ignore = req->variables->ignore) //Ignore the stream ID for a currently live broadcast
 			vods = filter(vods) {return __ARGS__[0]->stream_id != ignore;};
@@ -240,11 +233,6 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			sock->send_text(msg);
 		}
 
-		if (html_title) return render(req, ([
-			"vars": (["mode": "vodlength", "vodinfo": ret]),
-			"sortorders": "<script type=module src=\"" + G->G->template_defaults["static"]("raidfinder.js") + "\"></script>",
-			"title": html_title,
-		]));
 		return jsonify(ret);
 	}
 	if (req->variables->menu) {
