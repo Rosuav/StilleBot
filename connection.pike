@@ -1352,7 +1352,7 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 @retain: string condid = "64e2637e-f5cf-43d6-a7ae-308fb623a0d3";
 int last_conduit_message;
 constant CONDUIT_KICK_TIMEOUT = 60; //If we haven't heard from the server in this many seconds, kick the conduit and restart.
-__async__ void conduit_message(Protocols.WebSocket.Frame frm, mixed id) {
+__async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 	mixed data;
 	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
 	string type = mappingp(data) && data->metadata->?message_type;
@@ -1369,7 +1369,7 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mixed id) {
 					"conduit_id": condid, "shards": ({([
 						"id": "0", "transport": ([
 							"method": "websocket",
-							"session_id": data->payload->session->id,
+							"session_id": G->G->active_conduit_shard_id = conn->shard_id = data->payload->session->id,
 						]),
 					])}),
 				]),
@@ -1377,6 +1377,14 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mixed id) {
 			werror("* Conduit notifications active *\n"); //TODO: Check the response to make sure it really is successful
 			break;
 		}
+		case "session_keepalive":
+			//If another instance has added itself as the active shard, disconnect this one on next notification.
+			if (conn->shard_id != G->G->active_conduit_shard_id) {
+				werror("CLOSING OLD CONDUIT SHARD %O b/c %O active\n", conn->shard_id, G->G->conduit_shard_id);
+				conn->sock->close();
+				return;
+			}
+			break;
 		case "notification": { //Incoming notification. Send it to the appropriate module.
 			mapping event = data->payload->?event; if (!mappingp(event)) return;
 			string type = data->metadata->subscription_type + "=" + data->metadata->subscription_version;
@@ -1390,6 +1398,8 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mixed id) {
 	}
 }
 
+void conduit_closed(int reason, mapping conn) {werror("CONDUIT CONNECTION GONE: %O\n", conn); m_delete(conn, "sock");}
+
 __async__ void setup_conduit() {
 	if (!condid) { // or if something fails?
 		mapping cond = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/conduits", ([]), (["authtype": "app"])));
@@ -1402,7 +1412,9 @@ __async__ void setup_conduit() {
 	}
 	Protocols.WebSocket.Connection conn = Protocols.WebSocket.Connection();
 	conn->connect("wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=" + (CONDUIT_KICK_TIMEOUT - 5)); //Will establish TCP and TLS synchronously, then HTTP and WS asynchronously
+	conn->set_id((["sock": conn]));
 	conn->onmessage = conduit_message;
+	conn->onclose = conduit_closed;
 }
 
 void establish_hook_notification(string|int channelid, string hook, mapping|void cond) {
