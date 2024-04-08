@@ -571,6 +571,59 @@ void websocket_cmd_followcategory(mapping(string:mixed) conn, mapping(string:mix
 	};
 }
 
+__async__ mapping cache_chanstatus(string chan, int|void userid) {
+	//Ping Twitch and check if there are any chat restrictions. So far I can't do this in bulk, but
+	//it's great to be able to query them this way for the VOD length popup. Note that we're not
+	//asking for mod settings here, so non_moderator_chat_delay won't be in the response.
+	mapping settings = await(twitch_api_request("https://api.twitch.tv/helix/chat/settings?broadcaster_id=" + chan));
+	mapping ret = ([]);
+	if (arrayp(settings->data) && sizeof(settings->data)) ret->chat_settings = settings->data[0];
+
+	//Hang onto this info in cache, apart from is_following (below).
+	ret->cache_time = time();
+	raidfinder_cache[chan] = ret | ([]);
+	//Publish this info to all socket-connected clients that care.
+	string sendme = Standards.JSON.encode((["cmd": "chanstatus", "channelid": chan, "chanstatus": ret]));
+	foreach (websocket_groups[""] || ({ }), object sock) if (sock && sock->state == 1) {
+		//See if the client is interested in this channel
+		mapping conn = sock->query_id();
+		if (!conn->want_streaminfo || !has_index(conn->want_streaminfo, chan)) continue;
+		conn->want_streaminfo -= ({chan});
+		sock->send_text(sendme);
+	}
+	//TODO: Change is_following to be a mapping of userid to follow status, allowing "New Frond" in recommendations
+	if (userid && userid != (int)chan) {
+		//If you provided for=userid, also show whether the target is following this stream.
+		//TODO: Make it possible for a broadcaster to grant user:read:follows, which would allow such recommendations.
+		array creds = token_for_user_id(userid);
+		array scopes = creds[1] / " ";
+		if (has_value(scopes, "user:read:follows")) {
+			mapping info = await(twitch_api_request(sprintf("https://api.twitch.tv/helix/channels/followed?user_id=%d&broadcaster_id=%s", userid, chan),
+				(["Authorization": "Bearer " + creds[0]])));
+			if (sizeof(info->data)) {
+				ret->is_following = info->data[0];
+				object howlong = time_from_iso(ret->is_following->followed_at)->distance(Calendar.ISO.now());
+				string length = "less than a day";
+				foreach (({
+					({Calendar.ISO.Year, "year"}),
+					({Calendar.ISO.Month, "month"}),
+					({Calendar.ISO.Day, "day"}),
+				}), [program span, string desc])
+					if (int n = howlong / span) {
+						length = sprintf("%d %s%s", n, desc, "s" * (n > 1));
+						break;
+					}
+				//FIXME: The display here is a bit broken at times, omitting the user name.
+				ret->is_following->follow_length = length;
+				ret->to_name = ret->is_following->broadcaster_name; //Old API: from_name, to_name (and their IDs)
+				ret->from_name = await(get_user_info(userid))->display_name; //This might not be necessary; check the front end.
+			}
+			else ret->is_following = (["from_id": (string)userid]);
+		}
+	}
+	return ret;
+}
+
 //Record what the client is interested in hearing about. It's not consistent or coherent
 //enough to use the standard 'groups' system, as a single client may be interested in
 //many similar things, but it's the same kind of idea.
@@ -613,59 +666,8 @@ __async__ void websocket_cmd_streamlength(mapping(string:mixed) conn, mapping(st
 	//the four hour threshold used for magic sort. Ignore outliers. Don't bother trying to combine
 	//broken VODs together - too hard, too rare, let it adjust the average, it's fine.
 
-	//Ping Twitch and check if there are any chat restrictions. So far I can't do this in bulk, but
-	//it's great to be able to query them this way for the VOD length popup. Note that we're not
-	//asking for mod settings here, so non_moderator_chat_delay won't be in the response.
-	mapping settings = await(twitch_api_request("https://api.twitch.tv/helix/chat/settings?broadcaster_id=" + chan));
-	if (arrayp(settings->data) && sizeof(settings->data)) ret->chat_settings = settings->data[0];
-
-	//Hang onto this info in cache, apart from is_following (below).
-	ret->cache_time = time();
-	raidfinder_cache[chan] = ret | ([]);
-
-	int chanid = msg["for"];
-	mapping|zero logged_in = conn->session->?user;
-	if (chanid && chanid != (int)logged_in->?id && chanid != (int)chan) {
-		//If you provided for=userid, also show whether the target is following this stream.
-		//TODO: Make it possible for a broadcaster to grant user:read:follows, which would allow such recommendations.
-		array creds = token_for_user_id(chanid);
-		array scopes = creds[1] / " ";
-		if (has_value(scopes, "user:read:follows")) {
-			mapping info = await(twitch_api_request(sprintf("https://api.twitch.tv/helix/channels/followed?user_id=%d&broadcaster_id=%s", chanid, chan),
-				(["Authorization": "Bearer " + creds[0]])));
-			if (sizeof(info->data)) {
-				ret->is_following = info->data[0];
-				object howlong = time_from_iso(ret->is_following->followed_at)->distance(Calendar.ISO.now());
-				string length = "less than a day";
-				foreach (({
-					({Calendar.ISO.Year, "year"}),
-					({Calendar.ISO.Month, "month"}),
-					({Calendar.ISO.Day, "day"}),
-				}), [program span, string desc])
-					if (int n = howlong / span) {
-						length = sprintf("%d %s%s", n, desc, "s" * (n > 1));
-						break;
-					}
-				//FIXME: The display here is a bit broken at times, omitting the user name.
-				ret->is_following->follow_length = length;
-				ret->to_name = ret->is_following->broadcaster_name; //Old API: from_name, to_name (and their IDs)
-				ret->from_name = await(get_user_info(chanid))->display_name; //This might not be necessary; check the front end.
-			}
-			else ret->is_following = (["from_id": (string)chanid]);
-		}
-	}
-
-	//Publish this info to all socket-connected clients that care.
-	string sendme = Standards.JSON.encode((["cmd": "chanstatus", "channelid": chan, "chanstatus": ret]));
-	foreach (websocket_groups[""] || ({ }), object sock) if (sock && sock->state == 1) {
-		//See if the client is interested in this channel
-		catch {
-			mapping conn = sock->query_id(); //If older Pike, don't bother with the check, just push it out anyway
-			if (!conn->want_streaminfo || !has_index(conn->want_streaminfo, chan)) continue;
-		};
-		sock->send_text(sendme);
-	}
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "streamlength"]) | ret));
+	mapping chanstatus = await(cache_chanstatus(chan, msg["for"]));
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "streamlength"]) | ret | chanstatus));
 }
 
 @retain: mapping raids_in_progress = ([]);
