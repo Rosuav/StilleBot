@@ -53,7 +53,8 @@ let vodlength_startdate;
 function show_vod_lengths(userid, vodid, startdate, ccls) {
 	set_content("#is_following", "");
 	set_content("#chat_restrictions", "");
-	set_content("#ccls_in_use", ccls.map(ccl => [tag_prefs["<CCL_" + ccl + ">"] <= CCL_Warn ? "⚠️" : "🏷️", ccl_names[ccl] || ccl]));
+	//TODO: Show CCLs in recommendations too
+	if (ccls) set_content("#ccls_in_use", ccls.map(ccl => [tag_prefs["<CCL_" + ccl + ">"] <= CCL_Warn ? "⚠️" : "🏷️", ccl_names[ccl] || ccl]));
 	set_content("#vods", LI("... loading VODs ..."));
 	DOM("#vodlengths").showModal();
 	vodlength_startdate = startdate; //can't be bothered carrying it through properly
