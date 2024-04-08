@@ -587,7 +587,7 @@ __async__ mapping cache_chanstatus(string chan, int|void userid) {
 	foreach (websocket_groups[""] || ({ }), object sock) if (sock && sock->state == 1) {
 		//See if the client is interested in this channel
 		mapping conn = sock->query_id();
-		if (!conn->want_streaminfo || !has_index(conn->want_streaminfo, chan)) continue;
+		if (!conn->want_streaminfo || !has_value(conn->want_streaminfo, chan)) continue;
 		conn->want_streaminfo -= ({chan});
 		sock->send_text(sendme);
 	}
@@ -628,7 +628,7 @@ __async__ mapping cache_chanstatus(string chan, int|void userid) {
 //enough to use the standard 'groups' system, as a single client may be interested in
 //many similar things, but it's the same kind of idea.
 void websocket_cmd_interested(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (mappingp(msg->want_streaminfo)) conn->want_streaminfo = msg->want_streaminfo;
+	if (arrayp(msg->want_streaminfo)) conn->want_streaminfo = msg->want_streaminfo;
 }
 
 __async__ void websocket_cmd_streamlength(mapping(string:mixed) conn, mapping(string:mixed) msg) {

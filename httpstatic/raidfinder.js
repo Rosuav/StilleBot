@@ -11,7 +11,7 @@ const chat_restrictions = [
 	["subscriber_mode", "Subscriber-only mode"],
 	["unique_chat_mode", "Unique chat (R9k) mode", 1],
 ];
-const want_streaminfo = { }; //Channel IDs that we don't yet know about chat restrictions for
+const want_streaminfo = []; //Channel IDs that we don't yet know about chat restrictions for
 const CCL_Notify = 0, CCL_Warn = -1, CCL_Blur = -2, CCL_Suppress = -3;
 
 const sortfunc = {
@@ -117,27 +117,6 @@ export function sockmsg_streamlength(info) {
 }
 
 on("click", "#mydetails", e => show_vod_lengths(on_behalf_of_userid, your_stream && your_stream.id, your_stream && your_stream.started_at, your_stream && your_stream.content_classification_labels));
-
-let precache_timer = 0;
-function precache_streaminfo() {
-	const now = Math.floor(new Date / 1000) - 86400;
-	const streams = [], weights = [];
-	let sum = 0;
-	for (let stream of follows) {
-		const cacheage = now - want_streaminfo[stream.user_id];
-		if (cacheage <= 0) continue;
-		weights.push(sum += cacheage);
-		streams.push(stream);
-	}
-	if (!streams.length) return clearInterval(precache_timer); //Nothing to look up? We're done.
-	//Pick a weighted random selection, such that older cache entries are picked
-	//more frequently. Something not in cache at all will have a weight equal to
-	//the time since 1970, which is a lot of weight. Quite a lot.
-	const sel = Math.floor(Math.random() * sum);
-	const index = weights.findIndex(w => w > sel);
-	const stream = streams[index >= 0 ? index : 0]; //If index is ever -1, just return the first (shouldn't happen)
-	fetch(`/raidfinder?for=${on_behalf_of_userid}&streamlength=${stream.user_id}&ignore=${stream.id}&precache=1`);
-}
 
 function low_show_raids(raids) {
 	const scrollme = set_content("#raids ul", raids).parentElement;
@@ -297,10 +276,9 @@ function describe_uptime(stream, el) {
 	if (stream.is_branded_content) branded = SPAN({title: "Is branded content"}, "💰");
 	//If no chat restrictions seen in cache, add a0f0c0 badge. If some seen, add ff0 badge.
 	let restrictions = null;
-	const cached = stream.chanstatus ? stream.chanstatus.cache_time : 0;
-	want_streaminfo[stream.user_id] = cached;
-	if (cached > new Date/1000 - 86400 * 14) {
-		const set = stream.chanstatus.chat_settings;
+	if (!stream.chanstatus) want_streaminfo.push(stream.user_id);
+	const set = stream.chanstatus?.chat_settings;
+	if (set) {
 		let warn = false, info = false;
 		chat_restrictions.forEach(r => {if (set[r[0]]) {
 			if (r[2]) info = true; else warn = true;
@@ -458,7 +436,6 @@ function build_follow_list() {
 			+ " viewers in " + your_stream.category,
 		]).href = "raidfinder?categories=" + encodeURIComponent(your_stream.category);
 	else set_content("#yourcat", "");
-	//if (!precache_timer) precache_timer = setInterval(precache_streaminfo, 2000);
 }
 if (mode === "vodlength") show_vod_lengths(vodinfo); else build_follow_list();
 
