@@ -1361,8 +1361,7 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mixed id) {
 	G->G->conduit_fallen_over = call_out(setup_conduit, CONDUIT_KICK_TIMEOUT);
 	werror("[+%d] Got conduit msg %O\n", time() - last_conduit_message, type);
 	last_conduit_message = time();
-	if (!type || type == "session_keepalive") return;
-	//werror("Got WS msg: %O\n", data);
+	//if (type == "session_keepalive") werror("Got WS msg: %O\n", data);
 	switch (type) {
 		case "session_welcome": { //New socket established. Associate with shard.
 			mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/conduits/shards", ([]), ([
