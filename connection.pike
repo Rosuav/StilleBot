@@ -1384,6 +1384,11 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 				return;
 			}
 			break;
+		case "session_reconnect": {
+			Stdio.append_file("conduit_reconnect.log", sprintf("%sRECONNECT: %O\n", ctime(time()), data));
+			setup_conduit(data->payload->?session->?reconnect_url);
+			break;
+		}
 		case "notification": { //Incoming notification. Send it to the appropriate module.
 			mapping event = data->payload->?event; if (!mappingp(event)) return;
 			string type = data->metadata->subscription_type + "=" + data->metadata->subscription_version;
@@ -1399,7 +1404,7 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 
 void conduit_closed(int reason, mapping conn) {werror("CONDUIT CONNECTION GONE: %O\n", conn); m_delete(conn, "sock");}
 
-__async__ void setup_conduit() {
+__async__ void setup_conduit(string|void url) {
 	if (!condid) { // or if something fails?
 		mapping cond = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/conduits", ([]), (["authtype": "app"])));
 		if (!sizeof(cond->data)) {
@@ -1410,7 +1415,7 @@ __async__ void setup_conduit() {
 		} else condid = cond->data[0]->id;
 	}
 	Protocols.WebSocket.Connection conn = Protocols.WebSocket.Connection();
-	conn->connect("wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=" + (CONDUIT_KICK_TIMEOUT - 5)); //Will establish TCP and TLS synchronously, then HTTP and WS asynchronously
+	conn->connect(url || "wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=" + (CONDUIT_KICK_TIMEOUT - 5)); //Will establish TCP and TLS synchronously, then HTTP and WS asynchronously
 	conn->set_id((["sock": conn]));
 	conn->onmessage = conduit_message;
 	conn->onclose = conduit_closed;
