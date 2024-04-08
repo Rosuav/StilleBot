@@ -1351,6 +1351,7 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 //FIXME: Start with this null once initial testing is done. Hard-coding this saves a couple of seconds each startup.
 @retain: string condid = "64e2637e-f5cf-43d6-a7ae-308fb623a0d3";
 constant CONDUIT_KICK_TIMEOUT = 60; //If we haven't heard from the server in this many seconds, kick the conduit and restart.
+multiset recent_raids = (<>);
 __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 	mixed data;
 	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
@@ -1392,6 +1393,18 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 		case "notification": { //Incoming notification. Send it to the appropriate module.
 			mapping event = data->payload->?event; if (!mappingp(event)) return;
 			string type = data->metadata->subscription_type + "=" + data->metadata->subscription_version;
+			if (type == "channel.raid=1") {
+				//Raids are a bit hacky. When one tracked channel raids another, this triggers
+				//the same raid notification both as an outgoing and an incoming raid. Sometimes
+				//we need to deduplicate. One option would be to use data->payload->subscription
+				//to figure out whether we hooked this as an incoming or outgoing event, and send
+				//the event on to modules separately for the two; the other option is to dedup
+				//events based on the two IDs.
+				string key = event->from_broadcaster_user_id + ":" + event->to_broadcaster_user_id;
+				if (recent_raids[key]) return;
+				recent_raids[key] = 1;
+				call_out(m_delete, 30, recent_raids, key);
+			}
 			object channel = G->G->irc->id[(int)event->broadcaster_user_id]; //Some events (eg raid) won't have a single channel, so this will be null
 			foreach (G->G->eventhooks[type] || ([]); string name; function func)
 				if (mixed ex = name != "" && catch (func(channel, event)))
