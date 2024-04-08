@@ -417,7 +417,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		foreach (strm->tags || ({ }), string tag)
 			if (int pref = lc_tag_prefs[lower_case(tag)]) recommend["Tag prefs"] += PREFERENCE_MAGIC_SCORES[pref];
 		strm->category = G->G->category_names[strm->game_id] || strm->game_name;
-		if (mapping st = raidfinder_cache[strm->user_id]) strm->chanstatus = st;
+		if (mapping st = get_cache_chanstatus(strm->user_id, userid)) strm->chanstatus = st;
 		int otheruid = (int)strm->user_id;
 		if (otheruid == userid) {follows_helix[i] = 0; continue;} //Exclude self. There's no easy way to know if you should have shown up, so just always exclude.
 		if (seen[otheruid]) {follows_helix[i] = 0; continue;} //Duplicate results sometimes happen across pagination. Suppress them. (We may have lost something in the gap but we can't know.)
@@ -571,6 +571,12 @@ void websocket_cmd_followcategory(mapping(string:mixed) conn, mapping(string:mix
 	};
 }
 
+mapping get_cache_chanstatus(string chan, int|void userid) {
+	//Get chanstatus if we have it, otherwise 0.
+	mapping st = raidfinder_cache[chan];
+	//TODO: If the userid isn't listed in the followers list (positively or negatively), return 0.
+	if (st && st->cache_time > time() - 86400 * 14) return st;
+}
 __async__ mapping cache_chanstatus(string chan, int|void userid) {
 	//Ping Twitch and check if there are any chat restrictions. So far I can't do this in bulk, but
 	//it's great to be able to query them this way for the VOD length popup. Note that we're not
@@ -756,11 +762,7 @@ __async__ string suggestraid(int from, int target, int recip) {
 	//TODO: Deduplicate with the main work
 	strm->category = G->G->category_names[strm->game_id] || strm->game_name;
 	//If we can't pull up the chanstatus from cache, populate it with the one most interesting part.
-	if (mapping st = raidfinder_cache[strm->user_id]) strm->chanstatus = st;
-	else {
-		mapping settings = await(twitch_api_request("https://api.twitch.tv/helix/chat/settings?broadcaster_id=" + target));
-		if (arrayp(settings->data) && sizeof(settings->data)) strm->chanstatus = (["cache_time": time(), "chat_settings": settings->data[0]]);
-	}
+	strm->chanstatus = await(cache_chanstatus(strm->user_id, recip));
 	int otheruid = (int)strm->user_id;
 	strm->broadcaster_type = target_user->broadcaster_type;
 	strm->profile_image_url = target_user->profile_image_url;
