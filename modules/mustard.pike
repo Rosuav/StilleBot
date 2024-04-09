@@ -306,14 +306,6 @@ __async__ void run_test(string arg, int|void quiet) {
 	}
 }
 
-__async__ void run_tests(array(string) args) {
-	int quiet = 0;
-	foreach (args, string arg) {
-		if (arg == "-q") quiet = 1;
-		else await(run_test(arg, quiet));
-	}
-}
-
 protected void create(string name) {
 	::create(name);
 	G->G->mustard = this;

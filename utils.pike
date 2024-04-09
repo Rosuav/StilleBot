@@ -277,6 +277,16 @@ __async__ void lookup() {
 	}
 }
 
+__async__ void script() { //Test MustardScript parsing and reconstitution.
+	//Rather than actually load up all the builtins, just make sure the names can be validated.
+	//List is correct as of 20231210.
+	constant builtin_names = ({"chan_share", "chan_giveaway", "shoutout", "cmdmgr", "hypetrain", "chan_mpn", "tz", "chan_alertbox", "raidfinder", "uptime", "renamed", "log", "quote", "nowlive", "calc", "chan_monitors", "chan_errors", "argsplit", "chan_pointsrewards", "chan_labels", "uservars"});
+	G->G->builtins = mkmapping(builtin_names, allocate(sizeof(builtin_names), 1));
+	G->bootstrap("modules/cmdmgr.pike");
+	object mustard = G->bootstrap("modules/mustard.pike");
+	foreach (G->G->args[Arg.REST], string arg) await(mustard->run_test(arg, G->G->args->q));
+}
+
 protected void create(string name) {
 	::create(name);
 	G->G->utils = this;

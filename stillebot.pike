@@ -87,19 +87,6 @@ int|Concurrent.Future main(int argc,array(string) argv) {
 		return 0;
 	}
 	foreach ("test dbupdate lookup script" / " ", string cmd) if (G->args[cmd]) G->args->exec = cmd; //"--test" is a synonym for "--exec=test"
-	if (G->args->script) {
-		//Test MustardScript parsing and reconstitution.
-		add_constant("INTERACTIVE", 1);
-		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike"});
-		bootstrap_all();
-		//Rather than actually load up all the builtins, just make sure the names can be validated.
-		//List is correct as of 20231210.
-		constant builtin_names = ({"chan_share", "chan_giveaway", "shoutout", "cmdmgr", "hypetrain", "chan_mpn", "tz", "chan_alertbox", "raidfinder", "uptime", "renamed", "log", "quote", "nowlive", "calc", "chan_monitors", "chan_errors", "argsplit", "chan_pointsrewards", "chan_labels", "uservars"});
-		G->builtins = mkmapping(builtin_names, allocate(sizeof(builtin_names), 1));
-		bootstrap("modules/cmdmgr.pike");
-		object mustard = bootstrap("modules/mustard.pike");
-		return mustard->run_tests(G->args[Arg.REST]);
-	}
 	if (string fn = G->args->exec) {
 		add_constant("INTERACTIVE", 1);
 		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike", "utils.pike"});
