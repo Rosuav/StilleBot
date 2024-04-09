@@ -129,12 +129,6 @@ int main(int argc,array(string) argv)
 	foreach ("spawn_task send_message window" / " ", string vital)
 		if (!all_constants()[vital])
 			exit(1, "Vital core files failed to compile, cannot continue [missing %O].\n", vital);
-	#ifndef __NT__
-	//Windows has big problems with read callbacks on both stdin and one or more sockets.
-	//(I suspect it's because the select() function works on sockets, not file descriptors.)
-	//Since this is just for debug/emergency anyway, we just suppress it; worst case, you
-	//have to restart StilleBot in a situation where an update would have been sufficient.
 	Stdio.stdin->set_read_callback(console);
-	#endif
 	return -1;
 }
