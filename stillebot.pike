@@ -78,8 +78,7 @@ class Hilfe {
 	}
 }
 
-int main(int argc,array(string) argv)
-{
+int|Concurrent.Future main(int argc,array(string) argv) {
 	add_constant("G", this);
 	G->args = Arg.parse(G->argv = argv); //Note that G->G->argv is deprecated; use G->G->args instead.
 	if (G->args->i) {
@@ -87,13 +86,7 @@ int main(int argc,array(string) argv)
 		Hilfe();
 		return 0;
 	}
-	if (G->args->test) {
-		add_constant("INTERACTIVE", 1);
-		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike", "testing.pike"});
-		bootstrap_all();
-		Stdio.stdin->set_read_callback(console);
-		return -1;
-	}
+	if (G->args->test) G->args->exec = "test"; //"--test" is a synonym for "--exec=test"
 	if (G->args->dbupdate) {
 		add_constant("INTERACTIVE", 1);
 		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike"});
@@ -119,6 +112,12 @@ int main(int argc,array(string) argv)
 		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike", "modules/renamed.pike"});
 		bootstrap_all();
 		return G->builtins->renamed->lookup(G->args[Arg.REST]);
+	}
+	if (string fn = G->args->exec) {
+		add_constant("INTERACTIVE", 1);
+		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike", "utils.pike"});
+		bootstrap_all();
+		return G->utils[fn]();
 	}
 	if (G->args->headless) {
 		werror("Running bot in headless mode - GUI facilities disabled.\n");

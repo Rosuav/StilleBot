@@ -1,4 +1,4 @@
-//Build code into this file to be able to quickly and easily run it using "stillebot --test"
+//Build code into this file to be able to quickly and easily run it using "stillebot --exec=fn"
 inherit annotated;
 
 int last_activity = time();
@@ -231,7 +231,7 @@ __async__ void fix_kofi_name() {
 3. Query batching. Pass an array of queries and pipeline the lot. Implicit BEGIN/COMMIT around them.
 Batches are all without bindings for simplicity.
 */
-__async__ void db_queue() {
+__async__ void test() {
 	if (!G->G->DB->livedb) {werror("Waiting for active...\n"); await(G->G->DB->await_livedb());} //Exclude this from the timings
 	string db = G->G->DB->livedb;
 	object tm = System.Timer();
@@ -265,6 +265,7 @@ __async__ void db_queue() {
 
 protected void create(string name) {
 	::create(name);
+	G->G->utils = this;
 	/*if (!G->G->have_tasks) {
 		G->G->have_tasks = 1;
 		spawn_task(ping());
@@ -283,5 +284,4 @@ protected void create(string name) {
 	//json_test();
 	//transact_test();
 	//G->bootstrap("connection.pike")->setup_conduit();
-	db_queue();
 }
