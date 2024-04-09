@@ -265,6 +265,18 @@ __async__ void test() {
 
 Concurrent.Future dbupdate() {return G->G->DB->create_tables();}
 
+__async__ void lookup() {
+	array(string) names = G->G->args[Arg.REST];
+	foreach (names, string name) {
+		int uid = await(get_user_id(name));
+		if (!uid) {write(name + ": Not found\n"); continue;}
+		array times = await(G->G->DB->query_ro("select login, sighted from stillebot.user_login_sightings where twitchid = :id order by sighted",
+			(["id": uid])));
+		if (G->G->args->times) foreach (times, mapping t) write("[%s] %s\n", t->sighted, t->login);
+		else write(name + ": " + times->login * ", " + "\n");
+	}
+}
+
 protected void create(string name) {
 	::create(name);
 	G->G->utils = this;

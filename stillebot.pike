@@ -86,8 +86,7 @@ int|Concurrent.Future main(int argc,array(string) argv) {
 		Hilfe();
 		return 0;
 	}
-	if (G->args->test) G->args->exec = "test"; //"--test" is a synonym for "--exec=test"
-	if (G->args->dbupdate) G->args->exec = "dbupdate"; //Deprecated synonym
+	foreach ("test dbupdate lookup script" / " ", string cmd) if (G->args[cmd]) G->args->exec = cmd; //"--test" is a synonym for "--exec=test"
 	if (G->args->script) {
 		//Test MustardScript parsing and reconstitution.
 		add_constant("INTERACTIVE", 1);
@@ -100,12 +99,6 @@ int|Concurrent.Future main(int argc,array(string) argv) {
 		bootstrap("modules/cmdmgr.pike");
 		object mustard = bootstrap("modules/mustard.pike");
 		return mustard->run_tests(G->args[Arg.REST]);
-	}
-	if (G->args->lookup) {
-		add_constant("INTERACTIVE", 1);
-		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike", "modules/renamed.pike"});
-		bootstrap_all();
-		return G->builtins->renamed->lookup(G->args[Arg.REST]);
 	}
 	if (string fn = G->args->exec) {
 		add_constant("INTERACTIVE", 1);

@@ -69,16 +69,3 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 		"{allnames}": names * " ",
 	]);
 }
-
-//Command-line interface
-__async__ void lookup(array(string) names) {
-	int show_times = has_value(names, "--times"); names -= ({"--times"});
-	foreach (names, string name) {
-		int uid = await(get_user_id(name));
-		if (!uid) {write(name + ": Not found\n"); continue;}
-		array times = await(G->G->DB->query_ro("select login, sighted from stillebot.user_login_sightings where twitchid = :id order by sighted",
-			(["id": uid])));
-		if (show_times) foreach (times, mapping t) write("[%s] %s\n", t->sighted, t->login);
-		else write(name + ": " + times->login * ", " + "\n");
-	}
-}
