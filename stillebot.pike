@@ -81,20 +81,20 @@ class Hilfe {
 int main(int argc,array(string) argv)
 {
 	add_constant("G", this);
-	G->argv = argv;
-	if (has_value(argv, "-i")) {
+	G->args = Arg.parse(G->argv = argv); //Note that G->G->argv is deprecated; use G->G->args instead.
+	if (G->args->i) {
 		add_constant("INTERACTIVE", 1);
 		Hilfe();
 		return 0;
 	}
-	if (has_value(argv, "--test")) {
+	if (G->args->test) {
 		add_constant("INTERACTIVE", 1);
 		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike", "testing.pike"});
 		bootstrap_all();
 		Stdio.stdin->set_read_callback(console);
 		return -1;
 	}
-	if (has_value(argv, "--modules")) {
+	if (G->args->modules) {
 		add_constant("INTERACTIVE", 1);
 		add_constant("HEADLESS", 1);
 		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike", "connection.pike", "window.pike"});
@@ -107,14 +107,14 @@ int main(int argc,array(string) argv)
 				}
 		return 0;
 	}
-	if (has_value(argv, "--dbupdate")) {
+	if (G->args->dbupdate) {
 		add_constant("INTERACTIVE", 1);
 		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike"});
 		bootstrap_all();
 		all_constants()["spawn_task"](G->DB->create_tables_and_stop());
 		return -1;
 	}
-	if (has_value(argv, "--script")) {
+	if (G->args->script) {
 		//Test MustardScript parsing and reconstitution.
 		add_constant("INTERACTIVE", 1);
 		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike"});
@@ -125,17 +125,15 @@ int main(int argc,array(string) argv)
 		G->builtins = mkmapping(builtin_names, allocate(sizeof(builtin_names), 1));
 		bootstrap("modules/cmdmgr.pike");
 		object mustard = bootstrap("modules/mustard.pike");
-		argv -= ({"--script"});
-		return mustard->run_tests(argv[1..]);
+		return mustard->run_tests(G->args[Arg.REST]);
 	}
-	if (has_value(argv, "--lookup")) {
+	if (G->args->lookup) {
 		add_constant("INTERACTIVE", 1);
 		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike", "modules/renamed.pike"});
 		bootstrap_all();
-		return G->builtins->renamed->lookup(argv[1..] - ({"--lookup"}));
+		return G->builtins->renamed->lookup(G->args[Arg.REST]);
 	}
-	//TODO: Invert this and have --gui to enable the GUI
-	if (has_value(argv, "--headless")) {
+	if (G->args->headless) {
 		werror("Running bot in headless mode - GUI facilities disabled.\n");
 		add_constant("HEADLESS", 1);
 		signal(1, bootstrap_all);

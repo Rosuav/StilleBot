@@ -1557,7 +1557,7 @@ __async__ void reconnect() {
 		->thencatch() {werror("Unable to connect to Twitch:\n%s\n", describe_backtrace(__ARGS__[0]));};
 	}
 	werror("Now connecting: %O queue %O\n", connection_cache->rosuav, connection_cache->rosuav->queue);
-	if (!has_value(G->G->argv, "--no-conduit")) setup_conduit(); //Asynchronously establish event hooks too
+	if (!G->G->args["no-conduit"]) setup_conduit(); //Asynchronously establish event hooks too
 }
 
 @hook_credentials_changed: void kick_voice_on_auth_change(mapping cred) {

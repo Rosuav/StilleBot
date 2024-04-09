@@ -6,7 +6,9 @@ protected void create(string n)
 			if (!G->G[gl]) G->G[gl] = ([]);
 	if (!all_constants()["create_hook"]) add_constant("create_hook", _HookID("")); //Don't recreate this one
 	catch {G->G->instance_config = Standards.JSON.decode_utf8(Stdio.read_file("instance-config.json"));};
-	if (has_value(G->G->argv, "--no-http")) G->G->instance_config->http_address = G->G->instance_config->local_address = "";
+	//HACK: Support hot reload across the implementation of G->G->args. Can delete once bot restarted everywhere.
+	if (!G->G->args) G->G->args = Arg.parse(G->G->argv);
+	if (G->G->args["no-http"]) G->G->instance_config->http_address = G->G->instance_config->local_address = "";
 }
 
 //A sendable message could be a string (echo that string), a mapping with a "message"

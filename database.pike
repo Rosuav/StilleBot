@@ -778,7 +778,7 @@ protected void create(string name) {
 	string addr = G->G->instance_config->local_address;
 	if (has_value(database_ips, addr)) database_ips = ({addr}) + (database_ips - ({addr}));
 	//For testing, allow inversion of the natural connection order
-	if (has_value(G->G->argv, "--swapdb")) database_ips = ({database_ips[1], database_ips[0]});
+	if (G->G->args->swapdb) database_ips = ({database_ips[1], database_ips[0]});
 	G->G->DB = this;
 	spawn_task(reconnect(1));
 	if (!G->G->http_sessions_deleted) G->G->http_sessions_deleted = ([]);
