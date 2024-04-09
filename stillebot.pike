@@ -87,13 +87,7 @@ int|Concurrent.Future main(int argc,array(string) argv) {
 		return 0;
 	}
 	if (G->args->test) G->args->exec = "test"; //"--test" is a synonym for "--exec=test"
-	if (G->args->dbupdate) {
-		add_constant("INTERACTIVE", 1);
-		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike"});
-		bootstrap_all();
-		all_constants()["spawn_task"](G->DB->create_tables_and_stop());
-		return -1;
-	}
+	if (G->args->dbupdate) G->args->exec = "dbupdate"; //Deprecated synonym
 	if (G->args->script) {
 		//Test MustardScript parsing and reconstitution.
 		add_constant("INTERACTIVE", 1);

@@ -750,11 +750,6 @@ __async__ void create_tables() {
 	}
 }
 
-__async__ void create_tables_and_stop() {
-	await(create_tables());
-	exit(0);
-}
-
 protected void create(string name) {
 	::create(name);
 	#if constant(INTERACTIVE)

@@ -263,6 +263,8 @@ __async__ void test() {
 	exit(0);
 }
 
+Concurrent.Future dbupdate() {return G->G->DB->create_tables();}
+
 protected void create(string name) {
 	::create(name);
 	G->G->utils = this;
