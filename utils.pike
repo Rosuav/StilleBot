@@ -1,58 +1,6 @@
 //Build code into this file to be able to quickly and easily run it using "stillebot --exec=fn"
 inherit annotated;
 
-int last_activity = time();
-int cur_category;
-mapping cfgtest = ([]);
-__async__ void ping() {
-	await(G->G->DB->reconnect(1));
-	werror("Active: %s\n", G->G->DB->active || "None!");
-	for (;;await(task_sleep(10))) await(G->G->run_test());
-}
-
-__async__ void run_test() {
-	if (mixed ex = catch {
-		mapping ret = await(G->G->DB->query_ro("select * from stillebot.user_followed_categories where twitchid = 1"))[0];
-		werror("[%d] Current value: %O\n", time() - last_activity, cur_category = ret->category);
-		cfgtest = await(G->G->DB->load_config(0, "testing"));
-		werror("Got: %O\n", cfgtest);
-	}) werror("[%d] No active connection - cached value is %d.\n%O\n", time() - last_activity, cur_category, ex);
-}
-
-void increment() {
-	int newval = ++cur_category;
-	werror("Updating value to %d and saving.\n", newval);
-	G->G->DB->save_sql("update stillebot.user_followed_categories set category = :newval where twitchid = 1", (["newval": newval]));
-}
-
-__async__ void increment2() {
-	cfgtest = await(G->G->DB->load_config(0, "testing"));
-	werror("Updating ID to %d and saving.\n", ++cfgtest->nextid);
-	G->G->DB->save_config(0, "testing", cfgtest);
-}
-
-__async__ void get_settings() {
-	werror("Settings now: %O\n", G->G->dbsettings);
-	mapping settings = await(G->G->DB->query_ro("select * from stillebot.settings"))[0];
-	werror("Queried settings: %O\n", settings);
-}
-
-__async__ void session() {
-	mapping session = (["cookie": random(1<<64)->digits(36), "user": "don't you wanna know"]);
-	G->G->DB->save_session(session);
-	mapping readback = await(G->G->DB->load_session(session->cookie));
-	werror("Queried session: %O\n", readback);
-}
-
-//Demonstrate if the event loop ever gets stalled out (eg by a blocking operation)
-__async__ void activity() {
-	while (1) {
-		await(task_sleep(60));
-		write("%%%% Watchdog %%%% It is now " + ctime(time()));
-		last_activity = time();
-	}
-}
-
 @retain: mapping postgres_log_messages = ([]);
 
 //Collision form: Two simultaneous inserts into the commands table.
@@ -148,73 +96,8 @@ void start_inotify() {
 	};
 }
 
-__async__ void big_query_test() {
-	for (int n = 1000; n < (1<<32); n *= 10) {
-		array ret = await(G->G->DB->query_ro(
-			"select length(:stuff)",
-			(["stuff": "*" * n]),
-		));
-		write("For n = %d: %O\n", n, ret[0]->length);
-	}
-	exit(0);
-}
-
-__async__ void array_test() {
-	//TODO: Come up with a good generic way to encode arrays on the wire protocol
-	//The array seems to have an "inner type" (eg type 1007 includes that it's 23,
-	//array-of-int4 contains int4) and some dimensions, followed by a series of
-	//values, each length-preceded. This would ultimately improve performance of
-	//queries such as raidfinder's lookup of raids for all live streamers to/from
-	//the one you're raidfinding for; currently each is a separate query.
-	/*
-	werror("Result: %O\n", await(G->G->DB->query_ro("select '{}'::int[]")));
-	werror("Result: %O\n", await(G->G->DB->query_ro("select '{1,2,3}'::int[]")));
-	werror("Result: %O\n", await(G->G->DB->query_ro("select string_to_array('1,2,3', ',')")));
-	werror("Result: %O\n", await(G->G->DB->query_ro("select '{{{1,2,3,4,5},{3,4,5,6,7}},{{5,6,7,8,9},{7,8,9,0,1}},{{1,3,5,7,9},{2,4,6,8,0}},{{1,4,7,0,2},{3,5,7,9,2}}}'::int[]")));
-	werror("Result: %O\n", await(G->G->DB->query_ro("select int4range(10, 20)")));
-	werror("Result: %O\n", await(G->G->DB->query_ro("select '{[1,2], (3,10)}'::int4multirange")));
-	werror("Result: %O\n", await(G->G->DB->query_ro("select 1.5 a, 0.1 b, 0.2 c, 0.3 d, 0.1 + 0.2 e")));
-	werror("Result: %O\n", await(G->G->DB->query_ro("select 1.125::numeric(10, 5) a, 2.25::numeric(10, 5) b, 0.125::numeric(10, 5) c, 4::numeric(10, 5) d, 5::numeric(10, 5) e")));
-	werror("Result: %O\n", await(G->G->DB->query_ro("select * from stillebot.config where twitchid = any(:ids)",
-		(["ids": ({1, 2, 3})]))));
-	werror("Result: %O\n", await(G->G->DB->query_ro("select :ids::int4[]",
-		(["ids": ({ })]))));
-	werror("Result: %O\n", await(G->G->DB->query_ro("select :ids::int4[]",
-		(["ids": ({({1, 2}), ({3, 4}), ({5, 6})})]))));
-	werror("Result: %O\n", await(G->G->DB->query_ro("select :ids::int4[]",
-		(["ids": ({({1, 2, 3}), ({4, 5, 6})})]))));
-	werror("Result: %O\n", await(G->G->DB->query_ro("select :ids::int4[]",
-		(["ids": ({({({({({1})})})})})]))));
-	*/
-	exit(0);
-}
-
-__async__ void json_test() {
-	werror("Result: %O\n", await(G->G->DB->query_ro("select '[1,2,3]'::json")));
-	werror("Result: %O\n", await(G->G->DB->query_ro("select '[1,2,3]'::jsonb as arr, '{\"a\":\"b\"}'::jsonb as obj")));
-	exit(0);
-}
-
-__async__ void transact_test() {
-	await(G->G->DB->mutate_config(1, "test", lambda(mapping data) {
-		werror("Mutating!\n");
-		data->foo++;
-	}));
-	if (!G->G->DB->livedb) await(G->G->DB->await_livedb());
-	await(G->G->DB->pg_connections[G->G->DB->active]->conn->transaction(__async__ lambda(function query) {
-		werror("Inside transaction!\n");
-		werror("1 + 1 => %O\n", await(query("select 1 + 1")));
-		werror("42 => %O\n", await(query("select 42")));
-	}));
-	werror("Transaction done.\n");
-	werror("Double query: %O\n", await(G->G->DB->query_ro(({
-		"select 1 + 1", "select 42"
-	}))));
-	exit(0);
-}
-
 __async__ void fix_kofi_name() {
-	//TODO: Make an actual UI for this somewhere
+	//TODO: Control this with args, don't just hard-code stuff
 	mapping stats = await(G->G->DB->load_config(54212603, "subgiftstats"));
 	foreach (stats->allkofi, mapping gift) {
 		if (gift->giver->user_id == "email@address.example") {
@@ -223,44 +106,6 @@ __async__ void fix_kofi_name() {
 		}
 	}
 	await(G->G->DB->save_config(54212603, "subgiftstats", stats));
-}
-
-/*
-1. Get baseline timings
-2. Does the existing transaction infrastructure help?
-3. Query batching. Pass an array of queries and pipeline the lot. Implicit BEGIN/COMMIT around them.
-Batches are all without bindings for simplicity.
-*/
-__async__ void test() {
-	if (!G->G->DB->livedb) {werror("Waiting for active...\n"); await(G->G->DB->await_livedb());} //Exclude this from the timings
-	string db = G->G->DB->livedb;
-	object tm = System.Timer();
-	werror("[%.3f] Awaiting twenty queries in a batch...\n", tm->peek());
-	await(G->G->DB->pg_connections[db]->conn->batch(
-		"listen channel" + enumerate(20)[*]
-	));
-	werror("[%.3f] Awaiting five more with an error...\n", tm->peek());
-	mixed ex = catch (await(G->G->DB->pg_connections[db]->conn->batch(({
-		"listen okay1",
-		"listen okay2",
-		"list and learn",
-		"listen aftererror1",
-		"listen aftererror2",
-	}))));
-	werror("[%.3f] Exception: %O\n", tm->peek(), ex);
-	await(G->G->DB->query_ro("listen singlechan"));
-	werror("[%.3f] Triggering notifications...\n", tm->peek());
-	await(G->G->DB->pg_connections[db]->conn->batch(({
-		"notify channel9",
-		"notify channel10",
-		"notify channel11",
-		"notify okay1",
-		"notify aftererror1",
-		"notify singlechan",
-	})));
-	werror("[%.3f] Waiting one second\n", tm->peek());
-	sleep(1);
-	exit(0);
 }
 
 Concurrent.Future dbupdate() {return G->G->DB->create_tables();}
@@ -290,22 +135,6 @@ __async__ void script() { //Test MustardScript parsing and reconstitution.
 protected void create(string name) {
 	::create(name);
 	G->G->utils = this;
-	/*if (!G->G->have_tasks) {
-		G->G->have_tasks = 1;
-		spawn_task(ping());
-		spawn_task(activity());
-	} else spawn_task(G->G->DB->reconnect(1));
-	G->G->consolecmd->inc = increment;
-	G->G->consolecmd->inc2 = lambda() {spawn_task(increment2());};
-	G->G->consolecmd->settings = lambda() {spawn_task(get_settings());};
-	G->G->consolecmd->sess = lambda() {spawn_task(session());};
-	G->G->consolecmd->quit = lambda() {exit(0);};
-	G->G->run_test = run_test;
-	G->G->postgres_log_readable = log_readable;
+	/*G->G->postgres_log_readable = log_readable;
 	if (!G->G->inotify) start_inotify();*/
-	//big_query_test();
-	//array_test();
-	//json_test();
-	//transact_test();
-	//G->bootstrap("connection.pike")->setup_conduit();
 }
