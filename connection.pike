@@ -1134,6 +1134,15 @@ void session_cleanup() {
 __async__ void http_request(Protocols.HTTP.Server.Request req)
 {
 	req->misc->session = await(G->G->DB->load_session(req->cookies->session));
+	if (string dest = req->request_type == "GET" && req->misc->session->autoxfr) {
+		//This check shouldn't be necessary; the session value can't easily be set except on this one host.
+		string host = deduce_host(req->request_headers);
+		if (host == "sikorsky.rosuav.com") {
+			req->response_and_finish(redirect("https://" + dest + req->full_query));
+			return;
+		}
+		//Otherwise carry on as if the autoxfr marker wasn't there. (This also applies to non-GET requests.)
+	}
 	//TODO maybe: Refresh the login token. Currently the tokens don't seem to expire,
 	//but if they do, we can get the refresh token via authcookie (if present).
 	[function handler, array args] = find_http_handler(req->not_query);
