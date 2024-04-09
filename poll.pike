@@ -40,12 +40,9 @@ __async__ void get_credentials() {
 			});
 		}
 		if (sizeof(reqs) > 1) reqs = ({Concurrent.all(@reqs)});
-		if (sizeof(reqs)) {
-			await(reqs[0]); //Populate the cache. TODO: Instead of recursing, just carry on.
-			return await(twitch_api_request(replace(url, usernames), headers, options - (<"username">)));
-		}
+		if (sizeof(reqs)) await(reqs[0]); //Populate the cache. TODO: Tidy it up, don't use then().
 		url = replace(url, usernames);
-		//If we found everything in cache, carry on with a modified URL.
+		//Carry on with a modified URL.
 	}
 	string body = options->data;
 	if (options->json) {
