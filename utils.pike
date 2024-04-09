@@ -96,6 +96,12 @@ void start_inotify() {
 	};
 }
 
+int pgmonitor() {
+	G->G->postgres_log_readable = log_readable;
+	if (!G->G->inotify) start_inotify();
+	return -1;
+}
+
 __async__ void fix_kofi_name() {
 	//TODO: Control this with args, don't just hard-code stuff
 	mapping stats = await(G->G->DB->load_config(54212603, "subgiftstats"));
@@ -135,6 +141,4 @@ __async__ void script() { //Test MustardScript parsing and reconstitution.
 protected void create(string name) {
 	::create(name);
 	G->G->utils = this;
-	/*G->G->postgres_log_readable = log_readable;
-	if (!G->G->inotify) start_inotify();*/
 }
