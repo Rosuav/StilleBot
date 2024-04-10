@@ -283,3 +283,11 @@
   - Possibly related to all the back-and-forthing of which bot is active
   - Didn't test whether there was an issue with the database, which would stall out
     the lookup of the session.
+* Follower alerts/special trigger
+  - Is there a way to get notified when I receive a new modsword? If not, may need to
+    periodically recheck, or ping all voice accounts when one is authenticated, or when
+    a broadcaster does something like adding the !!follower special.
+  - Query all of that channel's voices - most importantly, all the default voices - for
+    their modswords
+  - If any voice both has a modsword for a channel and has the moderator:read:followers
+    scope, it can be used for follower hooks.
