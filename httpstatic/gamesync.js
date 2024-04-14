@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, DIV, FORM, H1, H2, INPUT, LABEL, OPTION, SELECT, SPAN, STYLE, TABLE, TD, TR} = lindt; //autoimport
+const {A, BR, BUTTON, DIV, FORM, H1, H2, INPUT, LABEL, OPTION, SELECT, SPAN, STYLE, TABLE, TD, TH, TR} = lindt; //autoimport
 
 let last_data = { };
 
@@ -213,6 +213,39 @@ const games = {
 				INPUT({"data-setting": "code-red", style: "background-color: red; color: white", type: "number", value: data["code-red"]}),
 				INPUT({"data-setting": "code-green", style: "background-color: green; color: white", type: "number", value: data["code-green"]}),
 				INPUT({"data-setting": "code-blue", style: "background-color: blue; color: white", type: "number", value: data["code-blue"]}),
+			]),
+		];},
+	},
+	whitehouse: {
+		label: "Payday 2: White House",
+		light_colors: {Red: "#f11", Green: "#0f0", Blue: "#4fe", Yellow: "#ff0"},
+		rooms: [
+			{WCorridor: "yellow", OutsideRed: "#faa", Piano: "yellow", OutsideGreen: "#8f8", ECorridor: "yellow"},
+			{White: "#000; color: white", Red: "#f55", Blue: "#4fe", Green: "#0f0"},
+			{Library: "yellow", Paintings: "yellow", Murals: "yellow", ChinaShop: "yellow"},
+		],
+		render(data) {return [
+			H2("Lock lights (pick two)"),
+			STYLE(".lights {display: flex; gap: 3.5em; justify-content: center; flex-wrap: wrap} .lights > * {height: 2.5em; width: 6em; font-size: 150%; text-align: center}"),
+			DIV({class: "lights"}, Object.entries(this.light_colors).map(([name, col]) =>
+				BUTTON({
+					"data-setting": "color-" + name, "data-value": "on",
+					"style": data["color-" + name] === "on" ? "background-color: " + col : "",
+				}, name),
+			)),
+			H2("Rooms"),
+			TABLE({style: "text-align: center"}, [
+				this.rooms.map(row => TR(Object.entries(row).map(([name, col]) => TD([
+					SPAN({style: "background-color: " + col}, name), BR(),
+					BUTTON({
+						"data-setting": "roombox-" + name, "data-value": "on",
+						"style": data["roombox-" + name] === "on" ? "background-color: " + col : "",
+					}, "Has box"), BR(),
+					BUTTON({
+						"data-setting": "roomcam-" + name, "data-value": "on",
+						"style": data["roomcam-" + name] === "on" ? "background-color: " + col : "",
+					}, "Has camera"), BR(),
+				])))),
 			]),
 		];},
 	},
