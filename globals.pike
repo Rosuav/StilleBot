@@ -446,6 +446,18 @@ array(string) token_for_user_id(int|string userid) {
 	return ({"", ""});
 }
 
+//Mod status is stored by ID, but attempt to find it (synchronously) based on usernames.
+//Will return 0 if it isn't confident that user IS a mod.
+//NOTE: chan MUST begin with a hash.
+int(1bit) is_mod_for(string user, string chan) {
+	if ("#" + user == chan) return 1;
+	object channel = G->G->irc->channels[chan];
+	if (!channel) return 0; //Uncertain for any channel we don't monitor, or before channels loaded
+	int id = (int)G->G->user_info[user]->?id; //Note that we don't care about cache expiration here, but if it's not in cache, fail.
+	if (!id) return 0;
+	return channel->user_badges[id]->?_mod;
+}
+
 //Token bucket system, shared among all IRC connections.
 float request_rate_token(string user, string chan, int|void lowprio) {
 	//By default, messages are limited to 20 every 30 seconds.
@@ -468,7 +480,7 @@ float request_rate_token(string user, string chan, int|void lowprio) {
 		bucket[0] = now + 11.0; //safety margin
 		return 0;
 	}
-	else if (chan == "#" + user || G->G->user_mod_status[user + chan])
+	else if (is_mod_for(user, chan))
 		//You can spam harder in channels you mod for.
 		bucket_size = 100;
 	else if (has_suffix(chan, "-nonmod")) {
@@ -510,7 +522,7 @@ encrypt		Set to 1 to require encryption, -1 to require unencrypted.
 		The default will change at some point such that most are encrypted.
 lowprio		Reduce priority by some value 1-9, default 0 is highest priority
 */
-@"G->G->irc_callbacks"; @"G->G->irc_token_bucket"; @"G->G->user_mod_status";
+@"G->G->irc_callbacks"; @"G->G->irc_token_bucket";
 class _TwitchIRC(mapping options) {
 	constant server = "irc.chat.twitch.tv"; //Port 6667 or 6697 depending on SSL status
 	string ip; //Randomly selected from the A/AAAA records for the server.
@@ -1342,7 +1354,7 @@ class http_websocket
 			]);
 			conn->is_mod = 1;
 		}
-		else conn->is_mod = G->G->user_mod_status[login + channel->name] || is_localhost_mod(login, conn->remote_ip);
+		else conn->is_mod = channel->user_badges[(int)conn->session->user->?id]->_mod || is_localhost_mod(login, conn->remote_ip);
 		if (!conn->is_mod && need_mod(grp)) return "Not logged in";
 		conn->subgroup = grp;
 	}

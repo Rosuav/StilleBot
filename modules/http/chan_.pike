@@ -15,7 +15,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"Actions taken here will not be saved, so feel free to try things out!";
 	}
 	return render_template("chan_.md", ([
-		"bot_or_mod": G->G->user_mod_status[G->G->dbsettings->credentials->username + channel->name] ? "mod" : "bot",
+		"bot_or_mod": channel->user_badges[(int)G->G->dbsettings->credentials->userid]->?_mod ? "mod" : "bot",
 		"uptime": uptime ? "Channel has been online for " + describe_time(uptime) : "Channel is currently offline.",
 		"user_is_mod": user_is_mod,
 	]) | req->misc->chaninfo);
@@ -84,7 +84,7 @@ __async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, 
 		"menubutton": "<span id=togglesidebarbox><button type=button id=togglesidebar title=\"Show/hide sidebar\">Show/hide sidebar</button></span>",
 	]);
 	if (mapping user = req->misc->session->?user) {
-		if (G->G->user_mod_status[user->login + channel->name] || is_localhost_mod(user->login, req->get_ip()))
+		if (channel->user_badges[(int)user->id]->_mod || is_localhost_mod(user->login, req->get_ip()))
 			req->misc->is_mod = 1;
 		else req->misc->chaninfo->save_or_login = "<i>You're logged in, but not a recognized mod. Before you can make changes, go to the channel and say something, so I can see your mod sword. Thanks!</i>";
 		req->misc->chaninfo->logout = "| <a href=\"/logout\" class=twitchlogout>Log out</a>";

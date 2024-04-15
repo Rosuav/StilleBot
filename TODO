@@ -291,4 +291,3 @@
     their modswords
   - If any voice both has a modsword for a channel and has the moderator:read:followers
     scope, it can be used for follower hooks.
-* Mod recognition not working on non-active bot?

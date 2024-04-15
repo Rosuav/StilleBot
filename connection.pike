@@ -132,7 +132,7 @@ class channel(mapping identity) {
 	string color;
 	int userid; string login, display_name;
 	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream online.
-	mapping user_attrs = ([]); //Latest-seen user status (see gather_person_info). Not guaranteed fresh. Some parts will be message-specific.
+	mapping user_badges = ([]); //Latest-seen user badge status (see gather_person_info). Not guaranteed fresh.
 	//Command names are simple atoms (eg "foo" will handle the "!foo" command), or well-known
 	//bang-prefixed special triggers (eg "!resub" for a channel's resubscription trigger).
 	mapping(string:echoable_message) commands = ([]);
@@ -157,7 +157,15 @@ class channel(mapping identity) {
 		//the bot" in chat first.) The helix/moderation/moderators endpoint
 		//might look like the perfect solution, but it requires broadcaster's
 		//permission, so it's not actually dependable.
-		G->G->user_mod_status[name[1..] + name] = 1; //eg "rosuav#rosuav" is trivially a mod.
+		user_badges = G_G_("channel_user_badges", (string)userid);
+		if (!user_badges[userid]) user_badges[userid] = (["_mod": 1, "broadcaster": 1]);
+		/* TODO:
+		if (have the right permission) twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=49497888")->then() {
+			foreach (__ARGS__[0]->data || ({ }), mapping mod)
+				if (!user_badges[(int)mod->user_id]) user_badges[(int)mod->user_id] = (["_mod": 1, "moderator": 1]);
+		};
+		This won't quite work due to timing and the way credentials get loaded asynchronously.
+		*/
 		//Note that !demo has no userid and can't re-fetch login/display name.
 		if (userid) {
 			G->G->recent_user_sightings[userid] = login;
@@ -168,7 +176,6 @@ class channel(mapping identity) {
 				}
 			};
 		}
-		user_attrs = G_G_("channel_user_attrs", name);
 		load_commands(loading, commands);
 	}
 
@@ -227,9 +234,8 @@ class channel(mapping identity) {
 
 	array(echoable_message|function|string) locate_command(mapping person, string msg)
 	{
-		int mod = G->G->user_mod_status[person->user + name];
 		if (mixed f = sscanf(msg, "!%[^# ] %s", string cmd, string param)
-			&& find_command(this, cmd, mod, person->badges->?vip))
+			&& find_command(this, cmd, person->badges->_mod, person->badges->?vip))
 				return ({f, param||""});
 		return ({0, ""});
 	}
@@ -807,9 +813,9 @@ class channel(mapping identity) {
 
 	mapping subbomb_ids = ([]);
 	void irc_message(string type, string chan, string msg, mapping params) {
-		if (!is_active) return;
 		mapping(string:mixed) person = gather_person_info(params, msg);
-		if (person->uid) user_attrs[person->uid] = person;
+		if (person->uid && person->badges) user_badges[person->uid] = person->badges;
+		if (!is_active) return;
 		mapping responsedefaults;
 		//For some unknown reason, certain types of notification come through
 		//as PRIVMSG when they would more logically be a NOTICE. They're usually
@@ -973,7 +979,6 @@ class channel(mapping identity) {
 			case "PRIVMSG":
 			{
 				request_rate_token(lower_case(person->nick), name); //Do we need to lowercase it?
-				if (person->badges) G->G->user_mod_status[person->user + name] = person->badges->_mod;
 				if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
 				//For some reason, whispers show up with "/me" at the start, not "ACTION".
 				else if (sscanf(msg, "/me %s", msg)) person->is_action_msg = 1;

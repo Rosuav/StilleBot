@@ -129,8 +129,7 @@ __async__ string permission_check(object channel, int is_mod, mapping user) {
 		error = "Moderators are allowed to share artwork. If you're a mod, please say something in chat so I can see your mod sword.";
 	}
 	if (who->vip) {
-		mapping attrs = channel->user_attrs[(int)user->id];
-		if (attrs->?badges->?vip) return 0;
+		if (!channel->user_badges[(int)user->id]->?vip) return 0;
 		error = (who->mod ? "Mods and" : "Only") + " VIPs are allowed to share artwork. If you are such, please say something in chat so I can see your badge.";
 	}
 	return error;
