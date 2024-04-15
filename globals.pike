@@ -1354,7 +1354,7 @@ class http_websocket
 			]);
 			conn->is_mod = 1;
 		}
-		else conn->is_mod = channel->user_badges[(int)conn->session->user->?id]->_mod || is_localhost_mod(login, conn->remote_ip);
+		else conn->is_mod = channel->user_badges[(int)conn->session->user->?id]->?_mod || is_localhost_mod(login, conn->remote_ip);
 		if (!conn->is_mod && need_mod(grp)) return "Not logged in";
 		conn->subgroup = grp;
 	}

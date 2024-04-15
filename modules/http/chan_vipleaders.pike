@@ -360,7 +360,6 @@ __async__ int subscription(object channel, string type, mapping person, string t
 			"user_id": extra->user_id,
 			"login": extra->login,
 			"displayname": person->displayname,
-			"is_mod": person->_mod, //TODO: Is this used anywhere? Normally stats->mods is used instead.
 		]),
 		"tier": tier, "qty": qty,
 		"timestamp": time(),

@@ -84,7 +84,7 @@ __async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, 
 		"menubutton": "<span id=togglesidebarbox><button type=button id=togglesidebar title=\"Show/hide sidebar\">Show/hide sidebar</button></span>",
 	]);
 	if (mapping user = req->misc->session->?user) {
-		if (channel->user_badges[(int)user->id]->_mod || is_localhost_mod(user->login, req->get_ip()))
+		if (channel->user_badges[(int)user->id]->?_mod || is_localhost_mod(user->login, req->get_ip()))
 			req->misc->is_mod = 1;
 		else req->misc->chaninfo->save_or_login = "<i>You're logged in, but not a recognized mod. Before you can make changes, go to the channel and say something, so I can see your mod sword. Thanks!</i>";
 		req->misc->chaninfo->logout = "| <a href=\"/logout\" class=twitchlogout>Log out</a>";

@@ -235,7 +235,7 @@ class channel(mapping identity) {
 	array(echoable_message|function|string) locate_command(mapping person, string msg)
 	{
 		if (mixed f = sscanf(msg, "!%[^# ] %s", string cmd, string param)
-			&& find_command(this, cmd, person->badges->_mod, person->badges->?vip))
+			&& find_command(this, cmd, person->badges->?_mod, person->badges->?vip))
 				return ({f, param||""});
 		return ({0, ""});
 	}
