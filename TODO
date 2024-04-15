@@ -282,3 +282,12 @@
     their modswords
   - If any voice both has a modsword for a channel and has the moderator:read:followers
     scope, it can be used for follower hooks.
+* Next priorities:
+  - Command history. Have a page (not in the main sidebar but linked from chan_commands)
+    that shows every command name ever used and the history for them, and also the most
+    recent changes to any command (sorted by created desc, without cmdname).
+  - Page to activate the bot for a user.
+    - Obviously requires broadcaster auth. Which scopes?
+    - Immediately redirect to /channels/username/
+    - Consider augmenting the chan_ landing page to make this a better greeting
+  - Same page as can *activate* can also *deactivate*?? Or a separate page?
