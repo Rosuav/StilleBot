@@ -228,12 +228,6 @@
   - Find other places that should be reporting errors and make them report.
     - We need to talk to you about your TPS, error, and warning reports.
   - Fully implement unread status - lift code from chan_messages as needed.
-* Multi-homing.
-  - It's time to start testing. Both stillebot.com and mustardmine.com have two IPv4
-    addresses. Ask people whether they're faster or slower than sikorsky.rosuav.com.
-    (Probably slower but how much?) Try to reduce the performance delta. Is it okay
-    to have Gideon connect to both databases and to do read-only transactions on the
-    local one?
 * Sometimes the connection will fall over, and the bot won't be aware of this.
   Need a way to "force disconnection" which basically just overrides the irc_connect
   retention rules (same as a version mismatch does). Is it worth trying to do this
