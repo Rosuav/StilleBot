@@ -9,6 +9,14 @@ case $1 in
 	refreshrepl)
 		sudo sudo -u postgres psql stillebot -c "set default_transaction_read_only = false" -c "alter subscription multihome refresh publication with (copy_data = false);"
 	;;
+	ac|activate)
+		psql stillebot <<EOF
+			\set instance_config \`cat `dirname $0`/instance-config.json\`
+			select active_bot from stillebot.settings;
+			update stillebot.settings set active_bot = :'instance_config'::jsonb ->> 'local_address';
+			select active_bot from stillebot.settings;
+EOF
+	;;
 	stat|status)
 		psql stillebot -Atc "
 			show default_transaction_read_only;
