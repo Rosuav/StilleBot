@@ -819,13 +819,6 @@ class channel(mapping identity) {
 		{
 			case "NOTICE": case "USERNOTICE": switch (params->msg_id)
 			{
-				case "room_mods": if (sscanf(msg, "The moderators of this channel are: %s", string names) && names)
-				{
-					//Response to a "/mods" command. Not sure if we still need this, but whatever.
-					foreach (names / ", ", string mod)
-						G->G->user_mod_status[mod + name] = 1;
-				}
-				break;
 				case "unrecognized_cmd": werror("NOTICE: %O\n", msg); break; //The message already says "Unrecognized command"
 				case "slow_on": case "slow_off": break; //Channel is now/no longer in slow mode
 				case "emote_only_on": case "emote_only_off": break; //Channel is now/no longer in emote-only mode
