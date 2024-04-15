@@ -1459,7 +1459,6 @@ void establish_hook_notification(string|int channelid, string hook, mapping|void
 	]));
 }
 
-int(1bit) activate_when_active;
 @hook_database_settings: void kick_when_inactive(mapping settings) {
 	//Delay this till we have access to credentials
 	if (!G->G->cheeremotes) twitch_api_request("https://api.twitch.tv/helix/bits/cheermotes")->then() {
@@ -1469,8 +1468,7 @@ int(1bit) activate_when_active;
 		c->fakecheer = c->cheerwhal;
 	};
 	int now_active = is_active_bot();
-	if (now_active && !is_active && activate_when_active) call_out(reconnect, 0); //Just become active? Make sure we're connected.
-	if (!now_active) activate_when_active = 1;
+	if (now_active && !is_active) call_out(reconnect, 0); //Just become active? Make sure we're connected.
 	is_active = now_active;
 	string other = !is_active && get_active_bot();
 	if (!other) return; //We're active (or uncertain), don't kick clients.
@@ -1529,10 +1527,6 @@ __async__ void reconnect() {
 	}
 	G->G->irc = irc;
 	if (array waiting = m_delete(G->G, "awaiting_irc_loaded")) waiting(); //Notify everyone who's waiting for the channel list.
-	//If we're not active, don't bother connecting. This doesn't stop us from BEING
-	//connected (if we've been deactivated), but we will ignore all messages that
-	//come in. OTOH, if we become active after previously not, we need to connect.
-	if (!is_active) {activate_when_active = 1; return;}
 	channels = filter("#" + channels->login[*]) {return __ARGS__[0][1] != '!';};
 	//Deal the channels out into N piles based on available users. Any spares
 	//go onto the primary channel. This speeds up initial connection when there
