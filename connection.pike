@@ -159,6 +159,7 @@ class channel(mapping identity) {
 		//permission, so it's not actually dependable.
 		user_badges = G_G_("channel_user_badges", (string)userid);
 		if (!user_badges[userid]) user_badges[userid] = (["_mod": 1, "broadcaster": 1]);
+		if (name == "#!demo") user_badges[3141592653589793] = (["_mod": 1, "moderator": 1]); //Fake mod status for the fake mod
 		/* TODO:
 		if (have the right permission) twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=49497888")->then() {
 			foreach (__ARGS__[0]->data || ({ }), mapping mod)
