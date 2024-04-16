@@ -83,11 +83,16 @@ class run_process {
 	Stdio.File stdout = Stdio.File();
 	protected void create(array(string) command, mapping|void modifiers) {
 		Process.create_process(command, (modifiers || ([]))
-			| (["callback": done, "stdout": stdout->pipe(Stdio.PROP_IPC)]));
+			| (["callback": donecb, "stdout": stdout->pipe(Stdio.PROP_IPC)]));
 	}
 	void done(object proc) {
 		if (proc->status() == 2) success((["rc": proc->wait(), "stdout": stdout->read()]));
 	}
+	//NOTE: The callback is called from a signal context. This can cause issues in some
+	//narrow circumstances (eg process not found and run_process called during create())
+	//if we attempt to wait on the process in that context. Since this is asynchronous
+	//already, there's no great cost to bouncing it back to the event loop.
+	void donecb(object proc) {call_out(done, 0, proc);}
 }
 
 
