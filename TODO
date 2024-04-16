@@ -266,14 +266,6 @@
   and there are lots of weird corner cases. Probably should be documented in a user-facing
   location though. Best fix: Have Twitch provide tags in the channel.update notif, and
   have that notif also sent when tags are changed.
-* Inexplicable problem: Gideon stopped responding to requests.
-  - Far as I can tell, Apache was up, no problems
-  - Requests were probably not getting to the bot. They certainly weren't being logged.
-  - Simple code update seemed to run correctly (I think?) but didn't fix it.
-  - Restarting the bot fixed it. Restarting Apache didn't.
-  - Possibly related to all the back-and-forthing of which bot is active
-  - Didn't test whether there was an issue with the database, which would stall out
-    the lookup of the session.
 * Follower alerts/special trigger
   - There's no way to get notified when I receive a new modsword, sadly. May need to
     periodically recheck, or ping all voice accounts when one is authenticated, or when
