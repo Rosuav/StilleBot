@@ -21,6 +21,7 @@ Ad-vance warning: <input type=number id=advance_warning> seconds. Enables the [!
 @retain: mapping channel_ad_vance_warning = ([]);
 
 __async__ void check_stats(object channel) {
+	remove_call_out(channel_ad_callouts[channel->userid]);
 	mapping snooze = await(twitch_api_request("https://api.twitch.tv/helix/channels/ads?broadcaster_id=" + channel->userid,
 		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]])))->data[0];
 	//NOTE: The docs say that the timestamps are given in text format, but they seem to be numbers.
@@ -29,7 +30,6 @@ __async__ void check_stats(object channel) {
 	if (since) {
 		snooze->online_since = since->unix_time();
 		if (int adv = channel->config->advance_warning) {
-			remove_call_out(channel_ad_callouts[channel->userid]);
 			//TODO: Bouncer?
 			int next = snooze->next_ad_at - time();
 			if (next > adv + 60) {
@@ -67,10 +67,6 @@ void ad_fired(object channel, mapping info) {
 	check_stats(channel);
 }
 
-//When channel online, spawn check_stats
-//When within t+60 of ad time, spawn check_stats
-//When within t of ad time, fire special
-//Redo all this every time we see stats for any reason
 @hook_channel_online: int channel_online(string chan, int uptime, int chanid) {
 	object channel = G->G->irc->id[chanid]; if (!channel) return 0;
 	if (channel->config->advance_warning) check_stats(channel);
