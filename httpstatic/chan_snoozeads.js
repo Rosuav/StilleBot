@@ -18,6 +18,7 @@ function TIME_T(time_t) {
 
 let rerender = 0;
 export function render(data) {
+	DOM("#advance_warning").value = data.advance_warning;
 	clearInterval(rerender);
 	rerender = setInterval(render, 60000, data);
 	//For the time tape, pick out some useful markers and organize them.
@@ -94,6 +95,7 @@ export function render(data) {
 on("click", "#snooze", e => ws_sync.send({cmd: "snooze"}));
 on("click", "#runad", e => ws_sync.send({cmd: "runad"}));
 on("change", "#modsnooze", e => ws_sync.send({cmd: "modsnooze", value: e.match.value}));
+on("change", "#advance_warning", e => ws_sync.send({cmd: "advance_warning", value: e.match.value}));
 
 export function sockmsg_adtriggered(msg) {
 	replace_content("#adtriggered", [

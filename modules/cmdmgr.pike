@@ -34,6 +34,7 @@ constant SPECIALS = ({
 	//Should these go into some other category?
 	({"!timeout", ({"A user got timed out or banned", "The victim", "ban_duration"}), "Status"}),
 	({"!adbreak", ({"An ad just started on this channel", "The broadcaster", "length, is_automatic"}), "Status"}),
+	({"!adsoon", ({"An ad is scheduled to start soon (see Ads/Snoozes)", "The broadcaster", "advance_warning"}), "Status"}),
 
 	({"!giveaway_started", ({"A giveaway just opened, and people can buy tickets", "The broadcaster", "title, duration, duration_hms, duration_english"}), "Giveaways"}),
 	({"!giveaway_ticket", ({"Someone bought ticket(s) in the giveaway", "Ticket buyer", "title, tickets_bought, tickets_total, tickets_max"}), "Giveaways"}),
