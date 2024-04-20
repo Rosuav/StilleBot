@@ -1,5 +1,6 @@
 inherit http_websocket;
 inherit hook;
+inherit annotated;
 
 constant markdown = #"# Ads and snoozes
 
@@ -41,7 +42,7 @@ __async__ void check_stats(object channel) {
 			} else if (m_delete(channel_ad_vance_warning, channel->userid)) {
 				//We set up to send the notification. Let's send it.
 				//Leave next (roughly) where it is, and we'll recheck when the ad is scheduled.
-				channel->trigger_special("!adsoon", (["user": channel->login]), (["advance_warning": (string)next]));
+				channel->trigger_special("!adsoon", (["user": channel->login]), (["{advance_warning}": (string)next]));
 				//NOTE: If, in response to this message, the streamer hits a snooze, we'll most likely
 				//need to get retriggered. Since we don't get notifications on snoozes, the best way to
 				//know that this has happened is to ping Twitch at the time when the ad is due to occur,
@@ -51,6 +52,7 @@ __async__ void check_stats(object channel) {
 			}
 			//Otherwise check when the ad is scheduled to fire.
 			//We'll also get notified if an ad is explicitly run.
+			werror("Scheduling next ad check for %O in %O seconds\n", channel->login, next);
 			channel_ad_callouts[channel->userid] = call_out(check_stats_by_id, next, channel->userid);
 		}
 	}
@@ -111,7 +113,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 
 bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
-	return channel_ad_stats[channel->userid] | (["advance_warning": channel->config->advance_warning]);
+	return (channel_ad_stats[channel->userid] || ([])) | (["advance_warning": channel->config->advance_warning]);
 }
 
 void wscmd_snooze(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -159,7 +161,7 @@ void wscmd_modsnooze(object channel, mapping(string:mixed) conn, mapping(string:
 void wscmd_advance_warning(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	channel->botconfig->advance_warning = (int)msg->value;
 	channel->botconfig_save();
-	send_updates_all(channel, "");
+	check_stats(channel); //Will send_updates_all when it has all the stats
 }
 
 protected void create(string name) {::create(name);}
