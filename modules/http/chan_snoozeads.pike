@@ -104,7 +104,7 @@ void wscmd_runad(object channel, mapping(string:mixed) conn, mapping(string:mixe
 void wscmd_modsnooze(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if ((int)conn->session->user->id != channel->userid) return;
 	channel->config->snoozeads_mods = (int)msg->value;
-	channel->save();
+	channel->botconfig_save();
 	send_updates_all(channel, "");
 }
 
