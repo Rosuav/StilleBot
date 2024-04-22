@@ -269,7 +269,7 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	});
 }
 
-@export: __async__ mapping get_banned_list(string|int userid, int|void force) {
+@export: __async__ array get_banned_list(string|int userid, int|void force) {
 	if (intp(userid)) userid = (string)userid;
 	mapping cached = G_G_("banned_list", userid);
 	if (!cached->stale && cached->taken_at > time() - 3600 &&
@@ -278,7 +278,7 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	string username = await(get_user_info(userid))->login;
 	array(string) creds = token_for_user_login(username);
 	if (!has_value(creds[1] / " ", "moderation:read")) error("Don't have broadcaster auth to fetch ban list for %O\n", username);
-	mapping ret = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/banned",
+	array(mapping) ret = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/banned",
 		(["broadcaster_id": userid]),
 		(["Authorization": "Bearer " + creds[0]]),
 	));
@@ -595,6 +595,4 @@ protected void create(string|void name)
 			->on_success(check_hooks);
 	#endif
 	::create(name);
-	//Due to a current bug, async functions don't have annotations. Manually export them.
-	export(this, name, ("twitch_api_request get_users_info get_user_info get_user_id get_helix_paginated get_banned_list channel_still_broadcasting check_following get_stream_schedule" / " ")[*]);
 }
