@@ -52,8 +52,10 @@ __async__ void check_stats(object channel) {
 			}
 			//Otherwise check when the ad is scheduled to fire.
 			//We'll also get notified if an ad is explicitly run.
-			werror("Scheduling next ad check for %O in %O seconds\n", channel->login, next);
-			channel_ad_callouts[channel->userid] = call_out(check_stats_by_id, next, channel->userid);
+			if (next > 0) {
+				werror("Scheduling next ad check for %O in %O seconds\n", channel->login, next);
+				channel_ad_callouts[channel->userid] = call_out(check_stats_by_id, next, channel->userid);
+			}
 		}
 	}
 	channel_ad_stats[channel->userid] = snooze;
