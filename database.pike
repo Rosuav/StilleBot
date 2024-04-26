@@ -506,7 +506,8 @@ __async__ array(mapping) load_commands(string|int twitchid, string|void cmdname,
 	string sql = "select * from stillebot.commands where twitchid = :twitchid";
 	mapping bindings = (["twitchid": twitchid]);
 	if (cmdname) {sql += " and cmdname = :cmdname"; bindings->cmdname = cmdname;}
-	if (!allversions) sql += " and active";
+	if (allversions) sql += " order by created desc, cmdname";
+	else sql += " and active";
 	array rows = await(query_ro(sql, bindings));
 	//foreach (rows, mapping command) command->content = JSONDECODE(command->content); //Unnecessary with SSLDatabase
 	return rows;
