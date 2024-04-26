@@ -532,6 +532,17 @@ Concurrent.Future save_command(string|int twitchid, string cmdname, echoable_mes
 	]));
 }
 
+Concurrent.Future revert_command(string|int twitchid, string cmdname, string uuid) {
+	return save_sql(({
+		"update stillebot.commands set active = false where twitchid = :twitchid and cmdname = :cmdname and active = true",
+		"update stillebot.commands set active = true where twitchid = :twitchid and cmdname = :cmdname and id = :uuid",
+		"select pg_notify('stillebot.commands', concat(cast(:twitchid as text), ':', cast(:cmdname as text)))",
+	}), ([
+		"twitchid": twitchid, "cmdname": cmdname,
+		"uuid": uuid,
+	]));
+}
+
 //NOTE: In the future, this MAY be changed to require that data be JSON-compatible.
 //The mapping MUST include a 'cookie' which is a short string.
 Concurrent.Future save_session(mapping data) {

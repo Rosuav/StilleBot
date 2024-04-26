@@ -3,11 +3,8 @@ inherit annotated;
 /* Command history. Maybe other changelogs too in the future.
 
 TODO:
-* List all command versions, most recent first
 * Filter by command name (drop-down, exact match only)
 * Search within the JSON (text search, nonstructured). Space separates multiple search terms?
-* Click gear on any to open it up in the command viewer.
-* On cmdmgr::_save_command, signal this websocket.
 */
 
 constant markdown = #"# Command history for $$channel$$
@@ -48,7 +45,9 @@ __async__ mapping get_chan_state(object channel, string group, string|void id) {
 void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//TODO: Detect if any changes have been made to the command. If so, don't revert,
 	//just create a new command as if it had been freshly saved.
-	werror("Revert %O to ID %O\n", msg->cmdname, msg->original);
+	//TODO: Handle triggers. Somehow.
+	if (!msg->cmdname || msg->cmdname == "" || msg->cmdname[0] != '!' || msg->cmdname == "!!trigger") return;
+	G->G->DB->revert_command(channel->userid, msg->cmdname[1..], msg->original);
 }
 
 protected void create(string name) {::create(name);}
