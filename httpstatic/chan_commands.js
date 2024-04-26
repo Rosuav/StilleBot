@@ -11,11 +11,6 @@ cmd_configure({
 	},
 });
 
-on("click", 'a[href="/emotes"]', e => {
-	e.preventDefault();
-	window.open("/emotes", "emotes", "width=900, height=700");
-});
-
 function check_save() {DOM("#save_advanced").disabled = DOM("#cmdname").value.replace("!", "").trim() === "";}
 on("input", "#cmdname", check_save);
 
