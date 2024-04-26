@@ -10,13 +10,26 @@ TODO:
 constant markdown = #"# Command history for $$channel$$
 
 Every time a command is saved, it is added here; commands that are deleted or
-replaced remain here. You can view old versions of commands, and (TODO) revert
+replaced remain here. You can view old versions of commands, and revert
 to them as required.
+
+* Show command: <select id=pickcommand><option value=''>Loading...</select>
+* Search for: <input id=filter size=30>
+* <label><input type=checkbox id=currentonly> Current versions only</label>
+{:#filters}
 
 Created | Command | Output |
 --------|---------|--------|-
 - | - | Loading....
 {: #commandview}
+
+<style>
+#filters {
+	display: flex;
+	list-style-type: none;
+	gap: 2em;
+}
+</style>
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {

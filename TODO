@@ -204,11 +204,6 @@
   - Need a way to trigger a code reload (SIGHUP?)
   - Maybe have a way to add and remove channels
   - Enable/disable Localhost Mod Override
-* Command search (including triggers and specials)
-  - eg After an emote got renamed/removed, search for all usage
-  - Be naive. Don't bother excluding things with destinations.
-  - Search results should have the normal command editor gear for editing, but instead
-    of having the editable command, show the path to the match(es)
 * Bit Boss???
   - Alternate display mode for a goal bar: "Hitpoints".
   - As the value advances toward the goal, the display reduces, ie it is inverted
@@ -276,9 +271,6 @@
   - If any voice both has a modsword for a channel and has the moderator:read:followers
     scope, it can be used for follower hooks.
 * Next priorities:
-  - Command history. Have a page (not in the main sidebar but linked from chan_commands)
-    that shows every command name ever used and the history for them, and also the most
-    recent changes to any command (sorted by created desc, without cmdname).
   - Page to activate the bot for a user.
     - Obviously requires broadcaster auth. Which scopes?
     - Immediately redirect to /channels/username/

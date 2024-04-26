@@ -5,6 +5,8 @@ command, and `%s` will take whatever text was added after the command name.
 
 To remove a command or part of a command's output, just blank it.
 
+Command changes are logged to [command history](history) for reference.
+
 Command | Output |
 --------|--------|-
 $$commands||- | Loading....$$
