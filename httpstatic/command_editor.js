@@ -101,7 +101,7 @@ function try_gui_load_message(basis, editing) {
 function select_tab(tab, response) {
 	mode = tab; cmd_editing = response;
 	const hash = config.location_format ? config.location_format(cmd_id, tab)
-		: cmd_id.split("#")[0].replace("!", "") + "/" + tab;
+		: cmd_id.replace("!", "") + "/" + tab;
 	if (typeof hash === "string") history.replaceState(null, "", "#" + hash);
 	DOM("#command_frame").style.display = tab == "graphical" ? "block" : "none"; //Hack - hide and show the GUI rather than destroying and creating it.
 	switch (tab) {
