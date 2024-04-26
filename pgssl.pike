@@ -39,7 +39,7 @@ mixed decode_as_type(string val, int type) {
 			return v;
 		}
 		case 1184: { //Timestamp with time zone
-			sscanf(val, "%8c", int usec);
+			sscanf(val, "%+8c", int usec);
 			object v = Val.Timestamp();
 			v->usecs = usec + EPOCH2000;
 			return v;
