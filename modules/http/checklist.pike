@@ -16,6 +16,7 @@ RPGAyaya HahaCat RPGGhosto PrideWingR PrideWingL ????<br>
 2020Party 2020Pajamas 2020Shred 2020Snacking 2020Glitchy ????<br>
 PrideUwu PrideLaugh PrideCute PridePog PrideFloat ????<br>
 (10) BleedPurpleHD (25) HeyHeyGuys (50) PogChomp (100) KappaInfinite<br>
+(106) DidIBreakIt (uncertain)<br>
 
 ## Hype Train set six
 ### Unlockable Dec 2023 to Jan 2024
@@ -171,6 +172,7 @@ constant emoteids = ([
 	"HeyHeyGuys": "emotesv2_132feb3980ee410e856244931d63fd31",
 	"PogChomp": "emotesv2_00659fc4ae6948a6b23585e83f62d477",
 	"KappaInfinite": "emotesv2_ae9328d25e4b424c8dd2af714045e538",
+	"DidIBreakIt": "emotesv2_6d23a98b64ad45d9a9c78cb7e48908d6",
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
