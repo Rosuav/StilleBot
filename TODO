@@ -273,3 +273,7 @@
     - Immediately redirect to /channels/username/
     - Consider augmenting the chan_ landing page to make this a better greeting
   - Same page as can *activate* can also *deactivate*?? Or a separate page?
+* Monitors: Add a thing for Twitch-controlled goal bars
+  - Graphically the same as existing goal bars
+  - Can't have multiple levels until such time as Twitch gives us an "Update Goal" API
+  - On progress, update the variable automatically
