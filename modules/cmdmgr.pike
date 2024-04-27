@@ -22,6 +22,8 @@ constant SPECIALS = ({
 	({"!hypetrain_begin", ({"A hype train just started!", "The broadcaster", "levelup"}), "Stream support"}),
 	({"!hypetrain_progress", ({"Progress was made on a hype train", "The broadcaster", "levelup"}), "Stream support"}),
 	({"!hypetrain_end", ({"A hype train just ended (successfully or unsuccessfully)", "The broadcaster", ""}), "Stream support"}),
+	//So many in this section.
+	({"!goalprogress", ({"A Twitch goal has advanced - bits, subs, etc", "The broadcaster", "goalid, title, current, target"}), "Stream support"}),
 
 	({"!channelonline", ({"The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
 	({"!channelsetup", ({"The channel has changed its category/title/CCLs", "The broadcaster", "category, title, tag_names, ccls"}), "Status"}),
@@ -104,6 +106,9 @@ constant SPECIAL_PARAMS = ({
 	({"length", "How many seconds it will last for"}),
 	({"is_automatic", "Whether it was triggered automatically rather than manually"}),
 	({"levelup", "Level number the hype train just reached, or blank if it didn't"}),
+	({"goalid", "Unique ID of the goal being looked at"}),
+	({"current", "Current amount - where we are now"}),
+	({"target", "Target amount - what we need to reach"}),
 });
 
 //Convert a number of minutes into a somewhat randomized number of seconds

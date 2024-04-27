@@ -114,6 +114,16 @@ mapping hypetrain_progress(object channel, mapping info) {return hypetrain("prog
 @({"channel:read:hype_train", "channel.hype_train.end", "1"}):
 mapping hypetrain_end(object channel, mapping info) {return hypetrain("end", channel, info);}
 
+@({"channel:read:goals", "channel.goal.progress", "1"}):
+mapping goalprogress(object channel, mapping info) {
+	return ([
+		"{goalid}": info->id,
+		"{title}": info->description,
+		"{current}": (string)info->current_amount,
+		"{target}": (string)info->target_amount,
+	]);
+}
+
 mapping eventsubs = ([]); //Map the special name (== function name) to the hook type/version for convenience
 
 //Ensure that we have all appropriate hooks for this channel
