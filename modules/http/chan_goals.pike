@@ -1,6 +1,7 @@
 inherit http_websocket;
 inherit builtin_command;
 inherit annotated;
+inherit hook;
 
 constant markdown = #"# Channel goals
 
@@ -13,13 +14,33 @@ constant markdown = #"# Channel goals
 
 constant builtin_name = "Goals";
 constant builtin_description = "Query Twitch goals";
+constant builtin_param = ({"Goal ID"});
 constant vars_provided = ([
-	"{target}": "", //TODO: Synchronize for the sake of docos
-	"{current}": "",
+	"{goalid}": "Goal ID; if multiple available and none selected, is all goal IDs.",
+	"{type}": "Type of goal - selected, or the first available - follower, subscription, etc",
+	"{current}": "Current amount for the selected/first goal",
+	"{target}": "Target for the selected/first goal",
+	"{title}": "Title of the goal",
 ]);
 
-mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
-	return (["{target}": "0"]);
+__async__ mapping message_params(object channel, mapping person, array param) {
+	mapping info = await(twitch_api_request("https://api.twitch.tv/helix/goals?broadcaster_id=" + channel->userid,
+		(["Authorization": "Bearer " + G->G->user_credentials[channel->userid]->token])));
+	if (!sizeof(info->data)) return (["{goalid}": ""]); //No goals.
+	mapping goal = info->data[0];
+	string id = info->data->id * " ";
+	if (sizeof(param) && param[0] != "") {
+		//Pick out a single goal by its ID
+		foreach (info->data, mapping g) if (g->id == param[0]) {goal = g; id = g->id; break;}
+		//Not found? Fall through as if no ID specified.
+	}
+	return ([
+		"{goalid}": id,
+		"{type}": goal->type,
+		"{current}": (string)goal->current_amount,
+		"{target}": (string)goal->target_amount,
+		"{title}": goal->description,
+	]);
 }
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
@@ -30,7 +51,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	]) | req->misc->chaninfo);
 }
 
-bool need_mod(string grp) {return grp == "control";}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping info = await(twitch_api_request("https://api.twitch.tv/helix/goals?broadcaster_id=" + channel->userid,
 		(["Authorization": "Bearer " + G->G->user_credentials[channel->userid]->token])));
@@ -39,7 +59,8 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	]);
 }
 
-@"is_mod": void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@EventNotify("channel.goal.progress=1"):
+void goal_advanced(object channel, mapping info) {
 	send_updates_all(channel, "");
 }
 
