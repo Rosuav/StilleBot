@@ -84,6 +84,11 @@ __async__ void get_credentials() {
 			//20200511: It seems emote lookups require "OAuth" instead of "Bearer". Sheesh.
 			headers["Authorization"] = (options->authtype || "Bearer") + " " + G->G->dbsettings->credentials->token;
 		}
+	} else if (intp(headers["Authorization"])) {
+		//Simplify a common case
+		mapping cred = G->G->user_credentials[headers["Authorization"]];
+		if (!cred) error("%s\nNo authorization for %O\n", url, headers["Authorization"]);
+		headers["Authorization"] = "Bearer " + cred->token;
 	}
 	if (string c = !headers["Client-ID"] && G->G->instance_config->clientid)
 		//Most requests require a Client ID. Not sure which don't, so just provide it (if not already set).
