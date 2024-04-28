@@ -4,7 +4,7 @@ inherit http_endpoint;
 mapping xfr_cookie = ([]); //NOT retained and not shared either.
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	string host = deduce_host(req->request_headers);
-	if (string dest = host == "sikorsky.rosuav.com" && req->misc->session->cookie && req->variables->dest) {
+	if (string dest = host == "sikorsky.rosuav.com" && req->variables->dest) {
 		//Set a default destination
 		if ((<"sikorsky.mustardmine.com", "gideon.mustardmine.com", "mustardmine.com">)[dest])
 			req->misc->session->autoxfr = dest;
