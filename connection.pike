@@ -1115,7 +1115,8 @@ void irc_closed(mapping options) {
 
 @export: object connect_to_channel(string login) {
 	get_user_info(login, "login")->then() {
-		G->G->DB->save_sql("insert into stillebot.botservice values (:id, null, :login, :display_name)", __ARGS__[0]);
+		G->G->DB->save_sql(#"insert into stillebot.botservice values (:id, null, :login, :display_name)
+			on conflict (twitchid) do update set deactivated = null", __ARGS__[0]);
 	};
 }
 
