@@ -15,6 +15,9 @@ From here, you can make all kinds of really important changes. Maybe.
 	padding: 8px;
 }
 </style>
+
+> [Export/back up all configuration](:type=submit name=export)
+{:tag=form method=post action=features}
 ";
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {

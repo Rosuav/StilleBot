@@ -15,8 +15,7 @@ Feature | Description | Manager | Status
 
 Timezone: <input name=timezone size=30> [Set](:#settimezone)
 
-$$save_or_login||> [Export/back up all configuration](:type=submit name=export)
-{:tag=form method=post}$$
+$$save_or_login||$$
 
 <div id=featureauth></div>
 
@@ -32,6 +31,7 @@ $$save_or_login||> [Export/back up all configuration](:type=submit name=export)
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (req->misc->is_mod && !req->misc->session->fake && req->request_type == "POST" && req->variables->export) {
+		//TODO: Move this into chan_mastercontrol which is where the button is
 		object channel = req->misc->channel;
 		mapping cfg = channel->config;
 		mapping ret = ([]);
