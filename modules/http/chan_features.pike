@@ -30,7 +30,7 @@ $$save_or_login||$$
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
-	if (req->misc->is_mod && !req->misc->session->fake && req->request_type == "POST" && req->variables->export) {
+	if (req->misc->is_mod && req->request_type == "POST" && req->variables->export) {
 		//TODO: Move this into chan_mastercontrol which is where the button is
 		object channel = req->misc->channel;
 		mapping cfg = channel->config;
