@@ -24,6 +24,7 @@ StilleBot can do here:
 * [Raid finder](/raidfinder?for=$$channel$$) - can be used for recommendations too
 * [Emote showcase](/emotes?broadcaster=$$channel$$)
 * [Art Sharing](share) - if enabled, viewers (or raiders) can share their art with chat
+$$extralinks||$$
 
 $$uptime$$
 

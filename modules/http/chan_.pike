@@ -8,16 +8,19 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string user_is_mod = "[Log in to make changes](:.twitchlogin)";
 	object channel = req->misc->channel;
 	int uptime = channel_uptime(req->misc->channel->userid);
-	if (req->misc->is_mod)
-	{
+	string extralinks = "";
+	if (req->misc->is_mod) {
 		user_is_mod = "Welcome, " + req->misc->session->user->display_name + ", and your modsword.";
 		if (req->misc->session->fake) user_is_mod = "Welcome, demo user, and your modsword. On this special channel, everyone is considered a moderator! " +
 			"Actions taken here will not be saved, so feel free to try things out!";
+		if ((int)req->misc->session->user->id == req->misc->channel->userid)
+			extralinks = "* [Master Control Panel](mastercontrol) - vital settings, broadcaster-only, not normally needed\n";
 	}
 	return render_template("chan_.md", ([
 		"bot_or_mod": channel->user_badges[(int)G->G->dbsettings->credentials->userid]->?_mod ? "mod" : "bot",
 		"uptime": uptime ? "Channel has been online for " + describe_time(uptime) : "Channel is currently offline.",
 		"user_is_mod": user_is_mod,
+		"extralinks": extralinks,
 	]) | req->misc->chaninfo);
 }
 
