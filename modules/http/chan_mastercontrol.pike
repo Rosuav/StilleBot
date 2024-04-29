@@ -20,6 +20,14 @@ From here, you can make all kinds of really important changes. Maybe.
 {:tag=form method=post action=features}
 ";
 
+/* Other things to potentially add here:
+
+* Support ticket. Options include feature request, bug report, and outage notification. If I, as admin,
+  flag the user as trusted, "outage notification" will cause a scream at Sikorsky (as per my own alerts).
+* Timezone setting, migrated from /features
+
+*/
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "that the broadcaster use it"]) | req->misc->chaninfo);
 	if ((int)req->misc->session->user->id != req->misc->channel->userid)
