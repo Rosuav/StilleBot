@@ -265,3 +265,4 @@
   - Graphically the same as existing goal bars
   - Can't have multiple levels until such time as Twitch gives us an "Update Goal" API
   - On progress, update the variable automatically
+* Find user-facing places with the name StilleBot and change to MustardMine
