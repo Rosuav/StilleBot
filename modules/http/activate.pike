@@ -27,6 +27,7 @@ __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Reques
 			while (!G->G->irc->id[userid]) sleep(1);
 			return redirect("/channels/" + login + "/");
 		}
+		else scopes = 0; //Enable the Activate button
 	}
 	return render_template(markdown, ([
 		"logged_in": !scopes ? "<form method=post>\n\n[Activate bot!](:#activate type=submit)\n</form>"
