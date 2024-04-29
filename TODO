@@ -120,6 +120,11 @@
   - Should /kofi be renamed and grow all the others?
   - Throne?
 * Seek verification status.
+  - Augment the chan_ landing page to make it a better greeting - it's the first page
+    a new user will see post-activation
+  - FAQ page?
+  - Get a logo for Mustard Mine, to use as profile pic and favicon
+  - Create a way to permaban a user??? It's sadly likely to become necessary at some point.
   - https://dev.twitch.tv/limit-increase
   - Requires a panel on the bot's channel saying:
     (1) Owner contact information,
@@ -145,17 +150,6 @@
   - May be of lower importance now that the IRC connection can be sharded within a single
     process; this is no longer a startup performance concern, but a reduction in outages
     and potential geographic sharding.
-* Create a command in the MustardMine channel (and StilleBot if it gets granted to me) to
-  add the bot to the user's channel. Note that, if a person misbehaves and the bot gets
-  deauthenticated from their channel, all I have to do is ban them from #mustardmine and
-  the bot will never need to worry about reactivation.
-  - Note that this will mean that this is a canonical list of banned users and thus should
-    be queried (by API) if ever there is the need to do so.
-* Similarly, a command to remove the bot from a channel
-  - Instead of immediately deleting all data, though, flag the channel as "deactivated",
-    and purge after some delay (eg a week). If the channel is reactivated in that time,
-    all data should be kept.
-  - Or should data be kept permanently, and have a separate "delete my data" action?
 * Per-channel per-user data
   - Variables - can use "$*foo$" or "$49497888*foo$" for explicit UID
     - Support this notation for cooldowns too?? Including aliasing via the builtin.
@@ -267,12 +261,6 @@
     their modswords
   - If any voice both has a modsword for a channel and has the moderator:read:followers
     scope, it can be used for follower hooks.
-* Next priorities:
-  - Page to activate the bot for a user.
-    - Obviously requires broadcaster auth. Which scopes?
-    - Immediately redirect to /channels/username/
-    - Consider augmenting the chan_ landing page to make this a better greeting
-  - Same page as can *activate* can also *deactivate*?? Or a separate page?
 * Monitors: Add a thing for Twitch-controlled goal bars
   - Graphically the same as existing goal bars
   - Can't have multiple levels until such time as Twitch gives us an "Update Goal" API
