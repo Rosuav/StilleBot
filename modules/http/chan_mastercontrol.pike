@@ -56,7 +56,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(msg->group);
-	if ((int)conn->session->user->?id != channel->userid) return "Broadcaster only";
+	if ((int)conn->session->user->?id != channel->?userid) return "Broadcaster only";
 	return ::websocket_validate(conn, msg);
 }
 
@@ -72,5 +72,15 @@ void websocket_cmd_deactivate(mapping(string:mixed) conn, mapping(string:mixed) 
 	//Shouldn't be necessary as the websocket won't validate else, but still. Paranoia.
 	if ((int)conn->session->user->?id != channel->userid) return;
 	Stdio.append_file("activation.log", sprintf("[%d] Account deactivated by broadcaster request: uid %d login %O\n", time(), channel->userid, channel->login));
-	
+	//Alright. Let's leave that channel.
+	int chanid = channel->userid;
+	channel->remove_bot_from_channel();
+	//Find all websockets for this channel and kick them.
+	foreach (G->G->websocket_groups;; mapping groups) foreach (groups; string|int grp; array socks) {
+		if (stringp(grp) && has_suffix(grp, "#" + chanid))
+			conn->sock->send_text(Standards.JSON.encode(([
+				"cmd": "*DC*",
+				"error": "Channel deactivated.",
+			])));
+	}
 }
