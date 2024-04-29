@@ -6,7 +6,11 @@ From here, you can make all kinds of really important changes. Maybe.
 > ### Danger Zone
 >
 > Caution: These settings may break things!
-{:#dangerzone tag=hgroup}
+>
+> Deactivate the bot completely. This will remove the bot from your channel and
+> disable the web configuration pages. To reinstate the bot, you will need to
+> reauthenticate and reactivate it. [Deactivate](:#deactivate)
+{: tag=hgroup #dangerzone}
 
 <style>
 #dangerzone {
@@ -18,6 +22,21 @@ From here, you can make all kinds of really important changes. Maybe.
 
 > [Export/back up all configuration](:type=submit name=export)
 {:tag=form method=post action=features}
+
+<!-- -->
+
+> ### Deactivate account
+>
+> Are you SURE you wish to deactivate your account? This will remove the bot from
+> your channel, disable all these web configuration pages, and delete all your
+> settings as stored on the server.
+>
+> To confirm, enter the exact Twitch channel name here: <input data-expect=\"$$channel$$\" autocomplete=off> <code>$$channel$$</code>
+>
+> To further confirm, enter the name of the bot you wish to remove: <input data-expect=\"Mustard Mine\" autocomplete=off> <code>Mustard Mine</code>
+>
+> [Yes, do as I say](:#deactivateaccount disabled=true) [No, didn't mean that](:.dialog_close)
+{: tag=dialog #deactivatedlg}
 ";
 
 /* Other things to potentially add here:
@@ -30,13 +49,9 @@ From here, you can make all kinds of really important changes. Maybe.
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "that the broadcaster use it"]) | req->misc->chaninfo);
-	if ((int)req->misc->session->user->id != req->misc->channel->userid)
+	if (!req->misc->session->fake && (int)req->misc->session->user->id != req->misc->channel->userid)
 		return render_template("login.md", (["msg": "that the broadcaster use it. It contains settings so dangerous they are not available to mods. Sorry! If you ARE the broadcaster, please reauthenticate"]) | req->misc->chaninfo);
-	return render(req, ([
-		"vars": ([
-			//"ws_group": "", //Not sure if we need a websocket yet
-		]),
-	]) | req->misc->chaninfo);
+	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
 }
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -46,10 +61,16 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 mapping get_chan_state(object channel, string grp, string|void id) {
-	return ([]); //Do we need a websocket?
+	return ([]); //Only using the ws for command signalling currently.
 }
 
-void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+void websocket_cmd_deactivate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return;
-
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel) return;
+	//Final confirmation: this really IS being done by the broadcaster
+	//Shouldn't be necessary as the websocket won't validate else, but still. Paranoia.
+	if ((int)conn->session->user->?id != channel->userid) return;
+	Stdio.append_file("activation.log", sprintf("[%d] Account deactivated by broadcaster request: uid %d login %O\n", time(), channel->userid, channel->login));
+	
 }
