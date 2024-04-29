@@ -13,6 +13,8 @@ $$logged_in$$
 __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	string|zero scopes = "chat:read channel:bot"; //Do we need chat_login or user:read:chat?
 	if (int userid = (int)req->misc->session->user->?id) {
+		object channel = G->G->irc->id[userid];
+		if (channel) return redirect("/channels/" + channel->login + "/");
 		//Like ensure_bcaster_token but using the user ID
 		array havescopes = G->G->user_credentials[userid]->?scopes || ({ });
 		multiset wantscopes = (multiset)(scopes / " ");
