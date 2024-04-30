@@ -266,3 +266,13 @@
   - Can't have multiple levels until such time as Twitch gives us an "Update Goal" API
   - On progress, update the variable automatically
 * Find user-facing places with the name StilleBot and change to MustardMine
+* VIP Leaderboard: Have a "claim tips" button
+  - We already keep email addresses (I think?)
+  - Let people log in with Twitch. If it's the same address, they can claim the tips
+    and be credited for them on the board.
+  - Retain the original name. If someone wants to donate VIP, they can unclaim a tip
+    and it'll go by name not email.
+  - Once someone has claimed their tips, it should default to claiming future tips
+    (but this can be turned off per user).
+  - If they DON'T use the same email address, is it worth having an email verification
+    system (send a unique link, they can claim those tips)?
