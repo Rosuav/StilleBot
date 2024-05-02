@@ -1,6 +1,6 @@
-# Using StilleBot
+# Using the Mustard Mine
 
-StilleBot is a Twitch channel bot. This one operates under the name "$$botname$$",
+Mustard Mine is a Twitch channel bot. This one operates under the name "$$botname$$",
 but [the source code](https://github.com/rosuav/stillebot) is available to anyone
 who wishes to use it, learn from it, or borrow code from it.
 
@@ -8,16 +8,16 @@ $$yourname$$ $$loglink$$
 
 ## For everyone
 
-StilleBot uses real-time updates whereever possible. In many cases, status pages and
+Mustard Mine uses real-time updates whereever possible. In many cases, status pages and
 configuration pages will keep themselves current without your help. If your internet
 connection goes down, this may fail, but it should correct itself before long.
 
 ## For broadcasters
 
-If StilleBot is serving as your channel bot, a number of configuration pages are
-available to you. If you'd like StilleBot to be added to your channel, contact
-the bot owner! For reasons of etiquette and safety, the bot will not speak in any
-channel unless explicitly invited, so contact $$botowner$$ for more information.
+If the Mustard Mine is serving as your channel bot, a number of configuration pages
+are available to you. Want him in your channel? [Activate the bot here!](/activate)
+Not sure yet? [Check out the demo pages](/channels/demo/) which let you see everything
+that a broadcaster or mod would see!
 
 ### Key bot features
 
@@ -34,7 +34,7 @@ button above before these features will be available.$$
 
 #### Giveaways
 
-StilleBot can manage a $$link||giveaway$$ that your viewers enter using their Twitch
+Mustard Mine can manage a $$link||giveaway$$ that your viewers enter using their Twitch
 channel points. (This requires partnership or affiliation; if you're neither, there are
 other tools which use chat commands to manage giveaways.)
 
@@ -72,7 +72,7 @@ Want more information about your channel? Got you covered!
 
 #### Raid finder
 
-When you look for some streamer to raid at the end of your own stream, StilleBot can
+When you look for some streamer to raid at the end of your own stream, Mustard Mine can
 help you [find a suitable target](/raidfinder). Based on factors such as similarity of
 viewer count, category, and tags, the bot will organize your follow list into a series
 of recommendations. You can then eyeball all the channels, see who you want to raid,
@@ -83,7 +83,7 @@ recorded, and will be used for recommendations also.
 
 ## For moderators and viewers
 
-Moderating a channel managed by StilleBot grants you many of the privileges that the
+Moderating a channel managed by Mustard Mine grants you many of the privileges that the
 broadcaster has. All of the [key bot features](#key-bot-features) above are available
 to you too; the easiest way to access them is to go to the channel's landing page.
 
