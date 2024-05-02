@@ -1,28 +1,34 @@
-## StilleBot
+## Mustard Mine
 
-StilleBot handles Twitch chat and some other functionality. It's named after
-Oberstille, because he joked around with me about names right at the time when
-I needed to figure out a name. (On such thin threads...)
+Mustard Mine handles Twitch chat and some other functionality. The name harkens back to a
+conversation between [Alice Liddell](https://en.wikipedia.org/wiki/Alice_Liddell) and the
+[Duchess](https://en.wikipedia.org/wiki/Duchess_(Alice%27s_Adventures_in_Wonderland)) in
+the famous book [Alice's Adventures in Wonderland](https://en.wikisource.org/wiki/Alice%27s_Adventures_in_Wonderland_(1866)/Chapter_9#134);
+the motto of this bot is: "The more work there is of mine, the less there is of yours".
 
-The [source code](https://github.com/rosuav/stillebot) for StilleBot is available under the
+The [source code](https://github.com/rosuav/stillebot) for this bot is available under the
 terms of the [MIT License](LICENSE) and can be found on GitHub. [Installing and running
 your own instance of the bot](INSTALL) is possible and legal, though may take some effort.
+(The bot software is named StilleBot after Oberstille, because he joked around with me about
+names right at the time when I needed to figure out a name. (On such thin threads...) The
+actual running bot is the Mustard Mine. The names can be used broadly interchangeably.)
 
-The reference bot goes by the name [Rosuav](https://twitch.tv/rosuav) and is accessible at
+The reference bot is operated by [Rosuav](https://twitch.tv/rosuav) and is accessible at
 https://mustardmine.com/ where he serves a number of Twitch channels.
 
-## What can StilleBot do for you?
+## What can the Mustard Mine do for you?
 
 ### Running a channel
 
-When StilleBot is the primary bot for a Twitch channel, a number of features are available.
+When Mustard Mine is the primary bot for a Twitch channel, a number of features are available.
 
 * Classic information/response commands, including shoutouts, automated commands (timers),
   quotes, etc, etc.
 * A full-power command editor to allow the streamer and mods to edit these commands
 * Twitch alerts (eg when someone follows, subs, cheers, etc)
+* Goal bars of various kinds
 * Giveaway management
-* Channel point redemptions
+* Channel point redemptions, including dynamic management of the rewards themselves
 * Art sharing with upload capability
 
 StilleBot is perfectly happy to coexist with other bots, and if he is working in a
@@ -36,8 +42,8 @@ where the bot pretends that you are a mod for a (fake) channel named "!Demo".
 
 ### See What's Happening
 
-Even for people and channels where StilleBot is not an active bot, some services are
-available! Some of these require authentication.
+Even for people and channels where the Mustard Mine is not an active bot, some services
+are available! Some of these require authentication.
 
 * [Emote showcase](https://mustardmine.com/emotes?broadcaster=rosuav) for any
   Twitch channel. Shows off your emotes, nice and large, and can also let you see them
@@ -59,18 +65,15 @@ A few tools don't really connect with any specific channel, and can be used by a
 * [Pixel Plush showcase](https://mustardmine.com/raidfinder?categories=pixelplush) -
   everyone who's currently using any of the [Pixel Plush](https://pixelplush.dev)
   games. Try the <code>!drop</code> or <code>!plinko</code> command in their chat!
-* TODO: Raid train management
 
 ## Can I haz?
 
-Yes! Well, probably. Depends what you want!
+Yes! The bot is available for any streamer to make use of!
 
-To request that StilleBot be added to your channel, contact Rosuav.
-
-(TODO: Have a thing here to make that easier?)
-
-(TODO: Figure out some wording for "hey don't make me swear kthx", with caveat that
-you can authenticate your own voice and use that)
+To activate the bot in your channel, [here's the place to be](https://mustardmine.com/activate).
+Once activated, the bot will remain active until the broadcaster requests its removal
+(in the [Master Control Panel](https://mustardmine.com/c/mastercontrol)), and all of its
+features will be available from the [channel configuration pages](https://mustardmine.com/c/).
 
 ## More information
 
