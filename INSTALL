@@ -4,7 +4,8 @@ Installing StilleBot on your own system
 StilleBot, being fully open source, is entirely capable of being run on your own
 computer as your own personal bot. You will need:
 
-* Pike version 8.1 or better, with GTK support
+* Pike version 9.0 or better, with GTK support unless `--headless` is used
+* A PostgreSQL server for configuration
 * A Twitch developer account and the appropriate keys
 * Optionally an [SSL certificate](SSL)
 
