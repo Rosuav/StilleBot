@@ -31,7 +31,7 @@ When Mustard Mine is the primary bot for a Twitch channel, a number of features 
 * Channel point redemptions, including dynamic management of the rewards themselves
 * Art sharing with upload capability
 
-StilleBot is perfectly happy to coexist with other bots, and if he is working in a
+Mustard Mine is perfectly happy to coexist with other bots, and if he is working in a
 secondary role, features can be enabled on an "as-needed" basis, with the bot quietly
 lurking until called upon.
 
