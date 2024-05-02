@@ -1,7 +1,7 @@
 MustardScript
 =============
 
-StilleBot's command language, called MustardScript, is a human-editable text representation of a
+Mustard Mine's command language, called MustardScript, is a human-editable text representation of a
 command. Like Raw mode, it turns the entire command into simple text; unlike Raw mode, it's actually
 something you would want to read and write.
 
