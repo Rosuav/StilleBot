@@ -1,16 +1,17 @@
-WebSockets in StilleBot
-=======================
+WebSockets in the Mustard Mine
+==============================
 
-If StilleBot has a web interface (if an HTTP(S) listen address is set), its
-front end and back end will rely heavily on websockets for real-time sharing
-of synchronized data.
+Mustard Mine's web interface relies heavily on websockets for real-time sharing
+of synchronized data. Herein are some technical notes; you don't need any of
+this information to use the bot, but if you're interested in making third-party
+integrations, this may be of value.
 
 Every established websocket has two identifying values: a type and a group.
 The type is a keyword, with valid values being defined in the code by modules
 that inherit websocket_handler; any other values are errors. The group is
 either a string or an integer, and its meaning depends on the type.
 
-Type           | Groups
+Example type   | Corresponding groups
 ---------------|-----------------------------
 chan_commands  | Either "#channel" or "cmdname#channel"
 chan_giveaway  | Either "view#channel" or "control#channel"
@@ -22,6 +23,7 @@ chan_voices    | #channel
 chan_subpoints | Either "#channel" or "nonce#channel"
 hypetrain      | Twitch channel ID (integer)
 
+(There are other type/group pairs available; explore the source code or experiment.)
 When the type begins "chan_", the group will generally end "#channelid".
 Note that some sockets require authentication. There is currently no API-friendly
 way to authenticate, but this may be a future enhancement.
@@ -98,9 +100,14 @@ outside the item_parent.
 Elements returned from the item renderer will have their data-id attribute set
 automatically to the ID of the corresponding element.
 
-Using these sockets outside of StilleBot
-----------------------------------------
+Using these sockets outside of Mustard Mine
+-------------------------------------------
 
 These websockets constitute a weak API, in that there is some small measure of
 backward compatibility maintained. In particular, the hype train socket can be
 used externally, so if you want to build on top of what I've made, go ahead!
+
+The easiest sockets to listen on would probably be chan_monitors and
+chan_alertbox, using their nonce#channel groups for read-only access (this is
+how the browser source inside OBS gets its signals). Third party integrations
+would be able to receive notifications from Mustard Mine when things happen.
