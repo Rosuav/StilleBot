@@ -143,8 +143,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 
 @EventNotify("channel.subscribe=1"): @EventNotify("channel.subscription.end=1"):
 @EventNotify("channel.subscription.gift=1"): @EventNotify("channel.subscription.message=1"):
-void subpoints_updated(object channel, mapping info) {subpoints_updated1(channel, info);}
-__async__ void subpoints_updated1(object channel, mapping info) {
+__async__ void subpoints_updated(object channel, mapping info) {
 	//TODO: If it's reliable, maintain the subpoint figure and adjust it, instead of re-fetching.
 	Stdio.append_file("evt_subpoints.log", sprintf("EVENT: Subpoints [%O, %d]: %O\n", channel->name, time(), info));
 	mapping trackers = await(G->G->DB->load_config(channel->userid, "subpoints"));

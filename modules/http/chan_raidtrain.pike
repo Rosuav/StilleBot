@@ -230,8 +230,7 @@ __async__ void wscmd_streamerslot(object channel, mapping(string:mixed) conn, ma
 	save_and_send(channel->userid, trn);
 }
 
-@"is_mod": void wscmd_revokeclaim(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_revokeclaim1(channel, conn, msg);}
-__async__ void wscmd_revokeclaim1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_revokeclaim(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping trn = await(G->G->DB->load_config(channel->userid, "raidtrain"));
 	mapping slot = get_slot(trn, msg); if (!slot) return;
 	if (slot->claims) slot->claims -= ({(int)msg->broadcasterid});
@@ -258,15 +257,13 @@ __async__ void wscmd_slotnotes(object channel, mapping(string:mixed) conn, mappi
 	save_and_send(channel->userid, trn);
 }
 
-@"is_mod": void wscmd_resetschedule(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_resetschedule1(channel, conn, msg);}
-__async__ void wscmd_resetschedule1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_resetschedule(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping trn = await(G->G->DB->load_config(channel->userid, "raidtrain"));
 	trn->cfg->slots = ({ });
 	save_and_send(channel->userid, trn);
 }
 
-@"is_mod": void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_update1(channel, conn, msg);}
-__async__ void wscmd_update1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping trn = await(G->G->DB->load_config(channel->userid, "raidtrain"));
 	foreach ("title description raidcall may_request" / " ", string str)
 		if (msg[str]) trn->cfg[str] = msg[str];

@@ -758,8 +758,7 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 }
 
 //NOW it's personal.
-@"is_mod": void wscmd_makepersonal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_makepersonal1(channel, conn, msg);}
-__async__ void wscmd_makepersonal1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_makepersonal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "alertbox"));
 	if (!cfg->personals) cfg->personals = ({ });
 	mapping info;
@@ -785,8 +784,7 @@ __async__ void wscmd_makepersonal1(object channel, mapping(string:mixed) conn, m
 	update_all(channel->userid, cfg->authkey);
 }
 
-@"is_mod": void wscmd_delpersonal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_delpersonal1(channel, conn, msg);}
-__async__ void wscmd_delpersonal1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_delpersonal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "alertbox"));
 	if (!cfg->personals) return; //Nothing to delete
 	if (!stringp(msg->id)) return;
@@ -798,8 +796,7 @@ __async__ void wscmd_delpersonal1(object channel, mapping(string:mixed) conn, ma
 	send_updates_all(conn->group, (["delpersonal": msg->id]));
 }
 
-@"is_mod": void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_upload1(channel, conn, msg);}
-__async__ void wscmd_upload1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!intp(msg->size) || msg->size < 0) return; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
 	array files = await(G->G->DB->list_channel_files(channel->userid));
 	int used = `+(0, @files->allocation);
@@ -848,8 +845,7 @@ void update_gif_variants(object channel, mapping cfg) {
 	channel->set_variable("nonhiddengifredeems", kwd * ", ", "");
 }
 
-@"is_mod": void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_delete1(channel, conn, msg);}
-__async__ void wscmd_delete1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "alertbox"));
 	if (msg->type == "variant") {
 		//Delete an alert variant. Only valid if it's a variant (not a base
@@ -942,8 +938,7 @@ __async__ void websocket_cmd_testalert(mapping(string:mixed) conn, mapping(strin
 	send_updates_all(channel, dest, alert);
 }
 
-@"is_mod": void wscmd_config(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_config1(channel, conn, msg);}
-__async__ void wscmd_config1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_config(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "alertbox"));
 	//foreach ("" / " ", string key) //No configs that are simple strings, actually
 	//	if (stringp(msg[key])) cfg[key] = msg[key];
@@ -978,8 +973,7 @@ void copy_stock(mapping alertconfigs, string basetype) {
 		alertconfigs[var] = Standards.JSON.decode(Standards.JSON.encode(stock_alerts[var]));
 }
 
-@"is_mod": void wscmd_alertcfg(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_alertcfg1(channel, conn, msg);}
-__async__ void wscmd_alertcfg1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_alertcfg(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "alertbox"));
 	string basetype = msg->type || ""; sscanf(basetype, "%s-%s", basetype, string variation);
 	if (!valid_alert_type(basetype, cfg)) return;
@@ -1149,8 +1143,7 @@ __async__ void wscmd_alertcfg1(object channel, mapping(string:mixed) conn, mappi
 	}
 }
 
-@"is_mod": void wscmd_renamefile(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_renamefile1(channel, conn, msg);}
-__async__ void wscmd_renamefile1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_renamefile(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Rename a file. Won't change its URL (since that's based on ID),
 	//nor the name of the file as stored (ditto), so this is really an
 	//"edit description" endpoint. But users will think of it as "rename".
@@ -1162,8 +1155,7 @@ __async__ void wscmd_renamefile1(object channel, mapping(string:mixed) conn, map
 	update_one(conn->group, file->id);
 }
 
-@"is_mod": void wscmd_revokekey(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_revokekey1(channel, conn, msg);}
-__async__ void wscmd_revokekey1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_revokekey(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	string prevkey;
 	await(G->G->DB->mutate_config(channel->userid, "alertbox") {prevkey = m_delete(__ARGS__[0], "authkey");});
 	send_updates_all(conn->group, (["authkey": "<REVOKED>"]));
@@ -1171,8 +1163,7 @@ __async__ void wscmd_revokekey1(object channel, mapping(string:mixed) conn, mapp
 }
 
 //Currently no UI for this, but it works if you fiddle on the console.
-@"is_mod": void wscmd_reload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {wscmd_reload1(channel, conn, msg);}
-__async__ void wscmd_reload1(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_reload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "alertbox"));
 	//Send a fake version number that's higher than the current, thus making it think
 	//it needs to update. After it reloads, it will get the regular state, with the
