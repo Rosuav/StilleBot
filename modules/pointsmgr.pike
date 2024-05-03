@@ -10,10 +10,9 @@ constant point_redemption = ({"string chan", "string rewardid", "int(0..1) refun
 constant reward_changed = ({"object channel", "string|void rewardid"}); //If no second arg, could be all rewards changed
 
 @EventNotify("channel.channel_points_custom_reward_redemption.update=1"):
-void redemptiongone(object channel, mapping data) {points_redeemed1(channel, data, 1);} //Not an async annotation shim, this one remains (as points_redeemed).
+void redemptiongone(object channel, mapping data) {points_redeemed(channel, data, 1);}
 @EventNotify("channel.channel_points_custom_reward_redemption.add=1"):
-void points_redeemed(object channel, mapping data) {points_redeemed1(channel, data, 0);}
-__async__ void points_redeemed1(object channel, mapping data, int|void removal) {
+__async__ void points_redeemed(object channel, mapping data, int|void removal) {
 	if (!channel) return;
 	event_notify("point_redemption", channel, data->reward->id, removal, data);
 	string token = token_for_user_id(channel->userid)[0];
