@@ -1,20 +1,42 @@
 inherit http_endpoint;
 
-constant markdown = #"# Activate the bot for your channel
+//(Or if you don't have enough scopes yet)
+constant not_logged_in = #"# Activate the bot for your channel
 
 Welcome to the Mustard Mine family!
 
 To activate this bot on your channel, you'll need to authenticate and confirm that you want
-to do this.
+to do this. There is no cost, this just ensures that the bot is only where he is wanted :)
 
-$$logged_in$$
+[Authenticate!](:.twitchlogin data-scopes=@$$scopes$$@)
+";
+
+constant logged_in = #"# Activate the bot for your channel
+
+Welcome to the Mustard Mine family!
+
+The bot is ready to activate for your channel! Just say the word, and the Mustard Mine will
+be fully operational and available to be configured to your needs.
+
+<form method=post>[Bot, Activate!](:#activate type=submit)</form>
+";
+
+constant bot_is_active = #"# Activate the bot for your channel
+
+The Mustard Mine is currently serving your channel! You can [configure the bot here](/c/).
+If you wish to remove the bot, the [Master Control Panel](/c/mastercontrol) has the option to do so.
+
+What can the bot do for you? Check out the [help pages](/c/help) or dive right in with
+[activating features](/c/features).
+
+Still got questions? Reach out to [Rosuav](https://twitch.tv/rosuav) via Twitch, Discord, or GitHub.
 ";
 
 __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	string|zero scopes = "chat:read channel:bot"; //Do we need chat_login or user:read:chat?
 	if (int userid = (int)req->misc->session->user->?id) {
 		object channel = G->G->irc->id[userid];
-		if (channel) return redirect("/channels/" + channel->login + "/");
+		if (channel) return render_template(bot_is_active, ([]));
 		//Like ensure_bcaster_token but using the user ID
 		array havescopes = G->G->user_credentials[userid]->?scopes || ({ });
 		multiset wantscopes = (multiset)(scopes / " ");
@@ -29,10 +51,7 @@ __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Reques
 			while (!G->G->irc->id[userid]) sleep(1);
 			return redirect("/channels/" + login + "/");
 		}
-		else scopes = 0; //Enable the Activate button
+		else return render_template(logged_in, ([]));
 	}
-	return render_template(markdown, ([
-		"logged_in": !scopes ? "<form method=post>\n\n[Activate bot!](:#activate type=submit)\n</form>"
-			: "[Authenticate!](:.twitchlogin data-scopes=@" + scopes + "@)",
-	]));
+	return render_template(not_logged_in, (["scopes": scopes]));
 }
