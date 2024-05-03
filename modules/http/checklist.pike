@@ -6,9 +6,17 @@ inherit annotated;
 //be greyed out if not available.
 //NOTE: The display is aimed at no more than six emotes across.
 constant hypetrain = replace(#"
-## Hype Train rereleases
-### Unlockable Jan 2024 to current
-### Hype trains currently offer unlocks from a variety of older sets.
+## Hype Train set eight
+### Unlockable May 2024 to current
+FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume<br>
+AGiftForYou KittyHype DangerDance PersonalBest Henlo GimmeDat<br>
+MegaMlep Rawk FallDamage RedCard ApplauseBreak TouchOfSalt<br>
+KittyLove TurnUp CatScare LateSave NoTheyDidNot Behold<br>
+RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot<br>
+
+## Hype Train set seven
+### Unlockable Jan 2024 to Apr 2024
+### Note that these are rereleases from older sets
 ### Starting 20240327, getting past level 5 has more emotes!
 LuvPeekL LuvPeekR LuvBlush LuvHearts LuvSign ????<br>
 HahaBall 2020Rivalry 2020Wish 2020ByeGuys 2020Celebrate ????<br>
@@ -173,6 +181,37 @@ constant emoteids = ([
 	"PogChomp": "emotesv2_00659fc4ae6948a6b23585e83f62d477",
 	"KappaInfinite": "emotesv2_ae9328d25e4b424c8dd2af714045e538",
 	"DidIBreakIt": "emotesv2_6d23a98b64ad45d9a9c78cb7e48908d6",
+	//Hype train set 8
+	"FrogPonder": "emotesv2_a3cdcbfcae9b41bb8215b012362eea35",
+	"ChillGirl": "emotesv2_7fa0ba50748c418d956afa59c2e94883",
+	"ButtonMash": "emotesv2_92d34a3642744c6bb540b091d3e9e9b0",
+	"BatterUp": "emotesv2_bc2ca1d0a58b4731a9fc3432cb175c86",
+	"GoodOne": "emotesv2_692f743d3e7147068bb1ddf842f9b99d",
+	"MegaConsume": "emotesv2_aa8db3de21e1465dab81bedfa47e29f2",
+	"AGiftForYou": "emotesv2_e7c9f4491c9b44d68e41aff832851872",
+	"KittyHype": "emotesv2_3969f334f5a2425d9fad53daabb06982",
+	"DangerDance": "emotesv2_da6ee66bc259434085eb866429687941",
+	"PersonalBest": "emotesv2_20a5c29af55240d4a276e0ffd828db3e",
+	"Henlo": "emotesv2_18479de9ad48456aab82a8c9e24e864b",
+	"GimmeDat": "emotesv2_0d9792a1c8d3499cac7c2b517dc0f682",
+	"KittyLove": "emotesv2_3e61175d445245838665fff146bd2bb0",
+	"TurnUp": "emotesv2_8b79f878cfff4671ae0fb7522c69ea07",
+	"CatScare": "emotesv2_1cce76af186d4022821e8e67bb367055",
+	"LateSave": "emotesv2_e8236afbc65347ebb4938c6507a78012",
+	"NoTheyDidNot": "emotesv2_94736686188047bab48c9e2ca9666496",
+	"Behold": "emotesv2_cef4e35f8d134fbc8172fe622bc51bfe",
+	"RaccoonPop": "emotesv2_1d68d57fa07a4636aa3325e95c85f19a",
+	"GoblinJam": "emotesv2_f033a950174e447cb68a3380ed9da914",
+	"YouMissed": "emotesv2_b13f48e4ca704d1cb13123631467616e",
+	"GriddyGoose": "emotesv2_c7aefc45412147b284273098a518c94b",
+	"CheersToThat": "emotesv2_b308322f860543f78e046294a9614c68",
+	"StirThePot": "emotesv2_827188949087491ab7d44ecfbfb4e58c",
+	"MegaMlep": "emotesv2_2a52b54c6fb04a6fbb6b9eb51fa8e0d0",
+	"Rawk": "emotesv2_91b3e913c6484fca894830ab953aa16b",
+	"FallDamage": "emotesv2_8120b15b9e054b31a200a5cb6cade4c7",
+	"RedCard": "emotesv2_a83f8ade02cd4b37b8ae079584407c66",
+	"ApplauseBreak": "emotesv2_c3db311615df4ecb9e3be0c492fbfc8b",
+	"TouchOfSalt": "emotesv2_871fb6fa55d54fae8e807198c59e082f",
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
