@@ -3,24 +3,57 @@ inherit menu_item;
 constant menu_label = "Localhost Mod Override";
 GTK2.MenuItem make_menu_item() {return GTK2.CheckMenuItem(menu_label);}
 
+constant bcaster_greeting = #"
+> ### Welcome to the Mustard Mine!
+>
+> The bot is fully active for your channel now, and can be configured below.
+> For further information, see [Help](help).
+>
+> Your moderators can help you with bot management in a variety of ways, using
+> these same pages.
+>
+> [Got it!](: #dismissgreeting)
+{:#greeting}
+
+<script>
+document.getElementById('dismissgreeting').onclick = e => {
+	document.getElementById('greeting').remove();
+	fetch('?dismiss', {credentials: 'same-origin'});
+};
+</script>
+<style>
+#greeting {
+	border: 3px double green;
+	background: #bff;
+	padding: 8px 16px;
+}
+</style>
+";
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	string user_is_mod = "[Log in to make changes](:.twitchlogin)";
 	object channel = req->misc->channel;
 	int uptime = channel_uptime(req->misc->channel->userid);
-	string extralinks = "";
+	string extralinks = "", greeting = "";
 	if (req->misc->is_mod) {
 		user_is_mod = "Welcome, " + req->misc->session->user->display_name + ", and your modsword.";
 		if (req->misc->session->fake) user_is_mod = "Welcome, demo user, and your modsword. On this special channel, everyone is considered a moderator! " +
 			"Actions taken here will not be saved, so feel free to try things out!";
-		if ((int)req->misc->session->user->id == req->misc->channel->userid)
+		if ((int)req->misc->session->user->id == req->misc->channel->userid) {
 			extralinks = "* [Master Control Panel](mastercontrol) - vital settings, broadcaster-only, not normally needed\n";
+			if (req->variables->dismiss) {
+				channel->botconfig->greeting_dismissed = 1;
+				channel->botconfig_save();
+			}
+			if (!channel->config->greeting_dismissed) greeting = bcaster_greeting;
+		}
 	}
 	return render_template("chan_.md", ([
 		"bot_or_mod": channel->user_badges[(int)G->G->dbsettings->credentials->userid]->?_mod ? "mod" : "bot",
 		"uptime": uptime ? "Channel has been online for " + describe_time(uptime) : "Channel is currently offline.",
 		"user_is_mod": user_is_mod,
-		"extralinks": extralinks,
+		"extralinks": extralinks, "greeting": greeting,
 	]) | req->misc->chaninfo);
 }
 

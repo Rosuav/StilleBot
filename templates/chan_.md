@@ -1,7 +1,9 @@
 # Channel info for $$channel$$
 
 Mustard Mine is a $$bot_or_mod$$ for this channel. You can find out more about what
-the Mustard Mine can do here:
+the Mustard Mine can do here.
+
+$$greeting||$$
 
 <!-- TODO: Separate out things only mods can do from things all users can do? -->
 
