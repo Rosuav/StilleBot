@@ -120,11 +120,9 @@
   - Should /kofi be renamed and grow all the others?
   - Throne?
 * Seek verification status.
-  - Augment the chan_ landing page to make it a better greeting - it's the first page
-    a new user will see post-activation
   - FAQ page?
   - Get a logo for Mustard Mine, to use as profile pic and favicon
-    - Is Maaya open? What about MoonieRaven (see Discord)?
+    - Maaya's not open, or she'd have been first choice. What about MoonieRaven (see Discord)?
   - Create a way to permaban a user??? It's sadly likely to become necessary at some point.
   - https://dev.twitch.tv/limit-increase
   - Requires a panel on the bot's channel saying:
@@ -133,7 +131,7 @@
     (3) Instructions on how to add the bot to a channel, and
     (4) Instructions on how to remove the bot from a channel
   - Appeal to Twitch for the name StilleBot? If it can be made available, activate it as
-    another voice, and maybe make it the new default. Otherwise use MustardMine.
+    another voice, available to all. MustardMine will remain the default though.
 * Bot sharding. What would it take?
   - MUST NOT disrupt external usage eg URLs
   - Each channel will need to stay together, meaning that all shards will need IRC and
@@ -175,13 +173,8 @@
   - If enabled, when you open the raid finder, it signals all raid finders who have you
     as a tile. Red asterisk to signal "Has raid finder open, is probably ending soon!"
   - Similarly, when you close the raid finder (or disable the option), signal-revert all.
-* Instead of deleting a channel's config, flag it as Inactive
-  - This flag probably shouldn't go in the channel config file, since that would require
-    loading every config file to determine which ones to not bother loading.
-  - Instead, we may need metadata in load_config(), indicating which channels are active.
-  - Ensure that newly-added channels are immediately active
 * Cron job to track channels that have been inactive for a long time (maybe 2 weeks) to
-  archive and eventually dispose of their configs
+  dispose of their configs
 * Make connection priority dynamic
   - Inactive/deleted channels are excluded already
   - But idle channels should have nearly as low a cost
@@ -221,9 +214,9 @@
   filter. When this rolls out, consider matching their defaults (currently, the user
   has to explicitly choose to hide explicit content), and if the user prefs are made
   visible, query them in the raid finder and do what the user wants.
-* Migration queue. Do whenever stack is empty.
+* Minor changes noted during massive DB migration:
   - chan_giveaway.pike giveaway_tickets[] should use user IDs
-  - Sweeping change: Encourage, and eventually mandate, that chan_*
+  - Sweeping change: Eventually mandate that chan_*
     websocket groups use IDs rather than channel logins.
   - Remove req->misc->session->token. Instead, have req->misc->token which is
     taken from the user ID, and always store the token against that user (not the
