@@ -273,3 +273,5 @@
     (but this can be turned off per user).
   - If they DON'T use the same email address, is it worth having an email verification
     system (send a unique link, they can claim those tips)?
+* BUG: Gideon is not seeing modswords. Possible cause: Connection falls over, active
+  bot reestablishes, inactive bot does not?
