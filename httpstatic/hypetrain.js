@@ -97,7 +97,8 @@ export let render = (state) => {
 	document.querySelectorAll("#emotes li").forEach((li, idx) => li.className =
 		lvl >= idx + 2 || state.total >= state.goal ? "available" :
 		state.expires && lvl === idx + 1 ? "next" : ""); //Only show "next" during active hype trains
-	document.getElementById("emotes").classList.toggle("hardmode", state.goal >= hardmode[state.level]);
+	//As of 20240504, Twitch doesn't seem to do the "hard mode" thing any more; everyone gets access to all six.
+	document.getElementById("emotes").classList.toggle("hardmode", /*state.goal >= hardmode[state.level]*/true);
 
 	if (!state.expires && !state.cooldown) {
 		//Idle state. If we previously had a cooldown, it's now expired.
