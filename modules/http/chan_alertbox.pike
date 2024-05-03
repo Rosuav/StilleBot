@@ -124,6 +124,14 @@ $$notmod2||[Show library](:.showlibrary) [Recent events](:#recentevents .dlg)$$
 {: tag=dialog #recenteventsdlg}
 
 <style>
+.blur {
+	border: 1px solid black;
+}
+.blur input {
+	border: 0;
+	background: none;
+	filter: blur(2px);
+}
 #library p {margin: 0;}
 #uploadfrm {
 	border: 1px solid black;
@@ -287,7 +295,7 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 >
 > Drag this to OBS or use this URL as a browser source:
 > <a id=alertboxlink href=\"alertbox?key=LOADING\" target=_blank>Alert Box</a><br><label id=alertboxlabel>
-> Click to reveal: <input readonly disabled size=65 value=\"https://mustardmine.com/channels/$$channel$$/alertbox?key=(hidden)\" id=alertboxdisplay></label>
+> Click to reveal: <span class=blur><input readonly size=65 value=\"https://mustardmine.com/channels/$$channel$$/alertbox?key=(hidden)\" id=alertboxdisplay></span></label>
 >
 > Your alerts currently look like this:
 >

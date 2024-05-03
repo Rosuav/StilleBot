@@ -832,7 +832,7 @@ on("click", "#authpreview", e => {
 on("click", "#alertboxlabel", e => {
 	const inp = DOM("#alertboxdisplay");
 	inp.value = DOM("#alertboxlink").href;
-	inp.disabled = false;
+	inp.parentElement.classList.remove("blur");
 	inp.select();
 });
 
