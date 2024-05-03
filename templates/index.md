@@ -1,6 +1,6 @@
-# StilleBot
+# Mustard Mine
 
-StilleBot is a Twitch channel bot. This one operates under the name "$$botname$$",
+Mustard Mine is a Twitch channel bot. This one operates under the name "$$botname$$",
 but [the source code](https://github.com/rosuav/stillebot) is available to anyone
 who wishes to use it, learn from it, or borrow code from it.
 

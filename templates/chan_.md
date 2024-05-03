@@ -1,7 +1,7 @@
 # Channel info for $$channel$$
 
-StilleBot is a $$bot_or_mod$$ for this channel. You can find out more about what
-StilleBot can do here:
+Mustard Mine is a $$bot_or_mod$$ for this channel. You can find out more about what
+the Mustard Mine can do here:
 
 <!-- TODO: Separate out things only mods can do from things all users can do? -->
 
