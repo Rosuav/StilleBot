@@ -795,8 +795,8 @@ class channel(mapping identity) {
 
 	__async__ void record_raid(int fromid, string fromname, int toid, string toname, int|void ts, int|void viewers)
 	{
-		if (!is_active) return;
 		write("Detected a raid: %O %O %O %O %O\n", fromid, fromname, toid, toname, ts);
+		if (!is_active) return;
 		if (!ts) ts = time();
 		//JavaScript timestamps seem to be borked (given in ms instead of seconds).
 		//Real timestamps won't hit this threshold until September 33658. At some
@@ -1408,7 +1408,7 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 				//the event on to modules separately for the two; the other option is to dedup
 				//events based on the two IDs.
 				string key = event->from_broadcaster_user_id + ":" + event->to_broadcaster_user_id;
-				if (recent_raids[key]) return;
+				if (recent_raids[key]) {werror("Ignoring duplicate raid signal %O\n", key); return;}
 				recent_raids[key] = 1;
 				call_out(m_delete, 30, recent_raids, key);
 			}
