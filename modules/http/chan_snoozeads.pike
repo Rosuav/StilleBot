@@ -62,7 +62,7 @@ __async__ void check_stats(object channel) {
 	send_updates_all(channel, "");
 }
 
-void check_stats_by_id(int chanid) {check_stats(G->G->irc->id[chanid]);} //After a delay, look up the channel object again, don't rely on retention
+void check_stats_by_id(int chanid) {G->G->websocket_types->chan_snoozeads->check_stats(G->G->irc->id[chanid]);} //After a delay, look up everything again, don't rely on retention
 @EventNotify("channel.ad_break.begin=1"):
 void ad_fired(object channel, mapping info) {
 	m_delete(channel_ad_vance_warning, channel->userid);
