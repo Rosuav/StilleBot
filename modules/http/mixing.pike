@@ -213,7 +213,7 @@ body.isguest .useronly {display: none;}
 > will allow you to share a new code. How? There is a public message board on which anyone may leave a note,
 > so you must leave a message there, with some proof that it is truly from you.
 >
-> [Mission Briefing](:.infobtn data-dlg=sitrep) [The Secret Trick](:.infobtn data-dlg=secret) [How it really works](:.infobtn data-dlg=dhke)
+> [Mission Briefing](:.opendlg data-dlg=sitrep) [The Secret Trick](:.opendlg data-dlg=secret) [How it really works](:.opendlg data-dlg=dhke)
 {: tag=details open=1 #sitrepdetails}
 
 To participate in games, you'll need to confirm your Twitch account name. Otherwise, feel free to
@@ -224,7 +224,7 @@ To participate in games, you'll need to confirm your Twitch account name. Otherw
 <div class=hidden id=errormessage><p>Error: No error has occurred.</p></div>
 
 To join an operation in progress, ask the host for a link. Alternatively,
-[start a new game](:#newgame .infobtn data-dlg=newgamedlg) and
+[start a new game](:#newgame .opendlg data-dlg=newgamedlg) and
 share the link with others!
 {: #gamedesc .useronly}
 
@@ -335,7 +335,7 @@ share the link with others!
 > Notes on the board: <ol id=all_notes></ol>
 >
 > <div id=comparison><div id=notecolor class=\"swatch large\"></div><div id=midbtn><div>Waiting for comparison...</div></div><div id=paintcolor class=\"swatch large\"></div></div>
-> [Use these instructions!](: .infobtn data-dlg=useinstrs .contact .hidden)
+> [Use these instructions!](: .opendlg data-dlg=useinstrs .contact .hidden)
 >
 > <ol reversed id=comparison_log></ol>
 {: tag=article #readnote}
@@ -347,7 +347,7 @@ share the link with others!
 > {: #gamesummary}
 >
 > <ul id=invitations></ul>
-> [Start new game](: .infobtn data-dlg=newgamedlg .useronly)
+> [Start new game](: .opendlg data-dlg=newgamedlg .useronly)
 {: tag=article #gameover}
 
 <!-- -->

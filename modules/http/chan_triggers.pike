@@ -87,7 +87,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		]) | G->G->command_editor_vars(req->misc->channel),
 		"loadingmsg": "Loading...",
 		"templates": TEMPLATES * "\n",
-		"save_or_login": "[Save all](:#saveall)\n<p><a href=\"#examples\" id=examples>Create new trigger</a></p>",
+		"save_or_login": "[Save all](:#saveall)\n<p><a href=\"#examples\" class=opendlg data-dlg=templates>Create new trigger</a></p>",
 	]) | req->misc->chaninfo);
 }
 

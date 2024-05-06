@@ -106,7 +106,6 @@ on("submit", "#configform", async e => {
 	set_content("#refund_nonwinning_desc", body.refund_nonwinning === "yes" ? "refunding" : "clearing out");
 });
 
-DOM("#showmaster").onclick = e => DOM("#master").showModal();
 on("click", ".master", async e => {
 	ws_sync.send({cmd: "master", action: e.match.id})
 });

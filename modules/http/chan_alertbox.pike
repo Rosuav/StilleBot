@@ -54,9 +54,9 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 <!-- -->
 
 $$notmodmsg||To use these alerts, [show the preview](:#authpreview) from which you can access your unique display link.<br>$$
-$$blank||Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:#revokekey .dlg) to generate a new one.$$
+$$blank||Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:.opendlg data-dlg=revokekeydlg) to generate a new one.$$
 
-$$notmod2||[Show library](:.showlibrary) [Recent events](:#recentevents .dlg)$$
+$$notmod2||[Show library](:.showlibrary) [Recent events](:.opendlg data-dlg=recenteventsdlg)$$
 
 > ### Revoke authentication key
 >

@@ -18,7 +18,7 @@ $$ccl_options||> - | - | - | - | (not available)$$
 >
 {: tag=dialog #tags}
 
-<button id=legend>Legend/info</button> <button id=highlights>Edit highlight list</button>
+<button class=opendlg data-dlg=infodlg>Legend/info</button> <button id=highlights>Edit highlight list</button>
 <button id=allraids>All recent raids</button> <button id=tagprefs>Preferences</button>
 <button id=mydetails>This stream's info</button>
 

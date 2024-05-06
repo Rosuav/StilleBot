@@ -30,7 +30,7 @@ export function render(data) {
 			" to recruit both friends and enemies!",
 			data.is_host && P([
 				"Are you live-streaming? ",
-				BUTTON({className: "infobtn", "data-dlg": "chatlink"}, "I can post in chat for you"),
+				BUTTON({class: "opendlg", "data-dlg": "chatlink"}, "I can post in chat for you"),
 				" to try to attract people!",
 			]),
 		],
@@ -40,7 +40,7 @@ export function render(data) {
 		data.phase === "gameover" && ["The ", B("game is over"), ", and the results can be seen below."],
 		data.is_host && data.phase !== "gameover" && P([
 			"When everything is ready, use your host privileges to ",
-			BUTTON({className: "infobtn", "data-dlg": "nextphasedlg"}, "advance time"), " to the next phase.",
+			BUTTON({class: "opendlg", "data-dlg": "nextphasedlg"}, "advance time"), " to the next phase.",
 			data.nophaseshift && " (Once everything's ready. " + data.nophaseshift + ")",
 		]),
 		data.phase !== "recruit" && data.spymaster && data.contact && P([
@@ -206,7 +206,6 @@ on("click", "#startnewgame", e => {
 });
 
 on("click", ".setrole", e => ws_sync.send({cmd: "setrole", role: e.match.dataset.role}));
-on("click", ".infobtn", e => DOM("#" + e.match.dataset.dlg).showModal());
 
 //After starting a new game, have a completely fresh start - don't try to fudge things.
 export function sockmsg_redirect(data) {location.href = "/mixing?game=" + data.game;}

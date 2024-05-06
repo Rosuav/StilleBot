@@ -94,7 +94,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	return render(req, ([
 		"vars": (["ws_group": req->misc->is_mod ? "control" : "view", "logged_in_as": (int)req->misc->session->user->?id]),
 		"login_or_edit":
-			req->misc->is_mod ? "[Edit configuration](:#editconfig)"
+			req->misc->is_mod ? "[Edit configuration](:.opendlg data-dlg=configdlg)"
 			: req->misc->session->user ? "Logged in as " + req->misc->session->user->display_name
 			: "[Log in to make changes or request slots](:.twitchlogin)",
 	]) | req->misc->chaninfo);

@@ -130,7 +130,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		return render(req, ([
 			"vars": (["ws_group": ""]) | command_editor_vars(req->misc->channel),
 			"templates": G->G->commands_templates * "\n",
-			"save_or_login": ("<p><a href=\"#examples\" id=examples>Example and template commands</a></p>"
+			"save_or_login": ("<p><a href=\"#examples\" class=opendlg data-dlg=templates>Example and template commands</a></p>"
 				"[Save all](:#saveall)"
 			),
 		]) | req->misc->chaninfo);

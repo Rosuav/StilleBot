@@ -281,11 +281,6 @@ on("click", "#saveall", e => {
 	});
 });
 
-//Not applicable on all callers, but if it is, it should behave consistently
-on("click", "#examples", e => {
-	e.preventDefault();
-	document.getElementById("templates").showModal();
-});
 on("click", "#templates tbody tr", e => {
 	e.preventDefault();
 	document.getElementById("templates").close();

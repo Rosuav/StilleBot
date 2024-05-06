@@ -141,7 +141,7 @@ export function render(data) {
 				])),
 				P([
 					"Want a summary of VIP leaders for social media? ",
-					BUTTON({type: "button", class: "showdialog", "data-dlg": "formatdlg"}, "Configure it here!"),
+					BUTTON({type: "button", class: "opendlg", "data-dlg": "formatdlg"}, "Configure it here!"),
 				]),
 				P(BUTTON({type: "submit"}, "Save")),
 			]),
@@ -180,7 +180,6 @@ on("submit", "#configform", e => {
 	ws_sync.send(msg);
 });
 
-on("click", ".showdialog", e => DOM("#" + e.match.dataset.dlg).showModal());
 on("click", "#formatsave", e => {
 	ws_sync.send({cmd: "configure", displayformat: DOM("#formattext").value});
 	DOM("#formatdlg").close();

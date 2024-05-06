@@ -35,8 +35,6 @@ on("click", "#sort li", e => {
 	follows.forEach((stream, idx) => stream.element.style.order = idx);
 });
 
-DOM("#legend").onclick = e => DOM("#infodlg").showModal();
-
 function hms(time) {
 	if (time < 60) return time + " seconds";
 	const hh = Math.floor((time / 3600) % 24);

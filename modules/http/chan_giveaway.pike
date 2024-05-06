@@ -35,7 +35,7 @@ $$login$$
 > </form>
 {: tag=details .modonly}
 
-[Master Control](:#showmaster)
+[Master Control](:.opendlg data-dlg=master)
 {: .modonly}
 
 > ### Master Control

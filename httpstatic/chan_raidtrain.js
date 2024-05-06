@@ -285,7 +285,6 @@ on("submit", "#slotnotes_dlg form", e => {
 	selectedslot = { }; slotidx = -1;
 });
 
-on("click", "#editconfig", e => DOM("#configdlg").showModal());
 on("submit", "#configdlg form", e => {
 	const el = e.match.elements;
 	const msg = {cmd: "update"};
