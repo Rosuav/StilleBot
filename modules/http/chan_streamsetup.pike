@@ -1,8 +1,64 @@
 inherit builtin_command;
-inherit annotated;
+inherit http_websocket;
 
 //TODO: Document the fact that tags and CCLs can be added to with "+tagname" and removed
 //from with "-tagname". It's a useful feature but hard to explain compactly.
+
+/* TODO: Migrate in functionality from mustard-mine.herokuapp.com
+
+* User checklist
+* Setups. Store an array in a single DB config entry. No need for anything to do with tweets, but have a Comments field.
+* Import from old Mustard Mine
+  - Save the setups and checklist into save_config("streamsetups")
+  - Automatically create timers for chan_timers
+
+Separately, need a Timers feature.
+* It can be autostarted on page activation - good for a break timer.
+  - On WS connection, if timer not active, start with a known countdown
+* Have a builtin to manipulate timers
+* Timers can be set to a specific duration ("10 minute countdown") or a defined target (using your timezone).
+  - Can be linked to your Twitch schedule (see get_stream_schedule()) to define the target.
+
+*/
+
+constant markdown = #"# Stream setup
+
+TODO. Massive massive TODO.
+
+On this page you can to configure your broadcast's category, title, tags, and content classification labels.
+
+Saved setups allow you to quickly select commonly-used settings. They have unique IDs that can be used to apply them from commands.
+
+You can create [commands](commands) that change these same settings.
+
+Were you using the old Mustard Mine? [Import your settings here!](: .opendlg data-dlg=importdlg)
+
+> ### Import old settings
+>
+> Were you previously using [the old Mustard Mine](https://mustard-mine.herokuapp.com/)? You can
+> export settings from there (scroll all the way down) and import them here.
+>
+> <input type=file accept=application/json>
+>
+> [Close](:.dialog_close)
+{: tag=dialog #importdlg}
+";
+
+mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+	if (string scopes = ensure_bcaster_token(req, "channel:manage:broadcast"))
+		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
+	return render(req, ([
+		"vars": (["ws_group": ""]),
+	]) | req->misc->chaninfo);
+}
+
+__async__ mapping get_chan_state(object channel, string grp, string|void id) {
+	mapping info = await(G->G->DB->load_config(channel->userid, "streamsetups"));
+	return ([
+		"checklist": info->checklist || "",
+		"items": info->setups || ({ }),
+	]);
+}
 
 constant builtin_name = "Stream setup";
 constant builtin_param = ({"/Action/query/title/category/tags/ccls", "New value"});
