@@ -76,6 +76,8 @@ on("click", ".twitchlogout", async e => {
 	location.reload();
 });
 
+on("click", ".opendlg", e => DOM("#" + e.match.dataset.dlg).showModal());
+
 export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 	cfg.textname !== "-" && TR({class: cfg.textclass || ""}, [TH(cfg.textlabel || "Text"), TD([INPUT({size: 40, name: cfg.textname || "text"}), cfg.textdesc])]),
 	TR([TH("Font"), TD([
