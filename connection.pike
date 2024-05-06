@@ -1413,6 +1413,7 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 				call_out(m_delete, 30, recent_raids, key);
 			}
 			object channel = G->G->irc->id[(int)event->broadcaster_user_id]; //Some events (eg raid) won't have a single channel, so this will be null
+			werror("Hook %O channel %O\n", type, channel->?login);
 			foreach (G->G->eventhooks[type] || ([]); string name; function func)
 				if (mixed ex = name != "" && catch (func(channel, event)))
 					werror("Error in hook %s->%s: %s", name, event, describe_backtrace(ex));
@@ -1470,6 +1471,7 @@ void establish_hook_notification(string|int channelid, string hook, mapping|void
 		c->fakecheer = c->cheerwhal;
 	};
 	int now_active = is_active_bot();
+	werror("kick_when_inactive: was %O now %O\n", is_active, now_active);
 	if (now_active && !is_active) call_out(reconnect, 0); //Just become active? Make sure we're connected.
 	is_active = now_active;
 	string other = !is_active && get_active_bot();
@@ -1589,6 +1591,7 @@ protected void create(string name)
 	return;
 	#endif
 	is_active = is_active_bot(); //Cache it - we'll check this a lot
+	werror("Initializing: active %O\n", is_active);
 	if (mixed id = m_delete(G->G, "http_session_cleanup")) remove_call_out(id);
 	session_cleanup();
 	register_bouncer(ws_handler); register_bouncer(ws_msg); register_bouncer(ws_close);
