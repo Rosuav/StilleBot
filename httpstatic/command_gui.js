@@ -1448,6 +1448,7 @@ function open_element_properties(el, type_override) {
 			//should be the one to get focus.
 			return TR([TD(LABEL({htmlFor: "value-" + param.attr}, "Builtin type: ")), TD(SELECT({...id, value: values},
 				Object.entries(builtins)
+					.filter(([name, blt]) => !blt.name.includes("(deprecated)")) //NOTE: If one is currently in use, it will show up blank on the drop-down
 					.sort((a,b) => a[1].name.localeCompare(b[1].name))
 					.map(([name, blt]) => OPTION({value: name}, blt.name))
 			))]);
@@ -1570,7 +1571,7 @@ on("click", ".emoteset img", e => {
 on("submit", "#setprops", e => {
 	//Hack: This actually changes the type of the element.
 	const newtype = document.getElementById("value-builtin");
-	if (newtype) propedit.type = "builtin_" + newtype.value;
+	if (newtype && newtype.value) propedit.type = "builtin_" + newtype.value;
 	const type = types[propedit.type];
 	if (!propedit.template && type.params) for (let param of type.params) if (param.attr) {
 		const val = param.attr !== "builtin" && document.getElementById("value-" + param.attr);

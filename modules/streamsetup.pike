@@ -1,7 +1,7 @@
 //Deprecated in favour of chan_streamsetup, kept as a bouncer
 inherit builtin_command;
 
-constant builtin_name = "Setup (deprecated)";
+constant builtin_name = "Stream setup (deprecated)";
 constant builtin_param = ({"/Action/query/title/category/tags/ccls", "New value"});
 constant scope_required = "channel:manage:broadcast"; //If you only use "query", it could be done without privilege, though.
 constant vars_provided = ([
