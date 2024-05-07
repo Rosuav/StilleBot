@@ -96,12 +96,14 @@ void start_inotify() {
 	};
 }
 
+@"Monitor the PostgreSQL log for evidence of conflicts":
 int pgmonitor() {
 	G->G->postgres_log_readable = log_readable;
 	if (!G->G->inotify) start_inotify();
 	return -1;
 }
 
+@"Fix someone's Ko-fi donation name on the leaderboard":
 __async__ void fix_kofi_name() {
 	//TODO: Control this with args, don't just hard-code stuff
 	mapping stats = await(G->G->DB->load_config(54212603, "subgiftstats"));
@@ -114,8 +116,10 @@ __async__ void fix_kofi_name() {
 	await(G->G->DB->save_config(54212603, "subgiftstats", stats));
 }
 
+@"Update the database schema":
 Concurrent.Future dbupdate() {return G->G->DB->create_tables();}
 
+@"Look up someone's previous names":
 __async__ void lookup() {
 	array(string) names = G->G->args[Arg.REST];
 	foreach (names, string name) {
@@ -128,7 +132,8 @@ __async__ void lookup() {
 	}
 }
 
-__async__ void script() { //Test MustardScript parsing and reconstitution.
+@"Test MustardScript parsing and reconstitution":
+__async__ void script() {
 	//Rather than actually load up all the builtins, just make sure the names can be validated.
 	//List is correct as of 20231210.
 	constant builtin_names = ({"chan_share", "chan_giveaway", "shoutout", "cmdmgr", "hypetrain", "chan_mpn", "tz", "chan_alertbox", "raidfinder", "uptime", "renamed", "log", "quote", "nowlive", "calc", "chan_monitors", "chan_errors", "argsplit", "chan_pointsrewards", "chan_labels", "uservars"});
@@ -136,6 +141,16 @@ __async__ void script() { //Test MustardScript parsing and reconstitution.
 	G->bootstrap("modules/cmdmgr.pike");
 	object mustard = G->bootstrap("modules/mustard.pike");
 	foreach (G->G->args[Arg.REST], string arg) await(mustard->run_test(arg, G->G->args->q));
+}
+
+@"This help information":
+void help() {
+	write("\nUSAGE: pike stillebot --exec=ACTION\nwhere ACTION is one of the following:\n");
+	array names = indices(this), annot = annotations(this);
+	sort(names, annot);
+	foreach (annot; int i; multiset|zero annot)
+		foreach (annot || (<>); mixed anno;)
+			if (stringp(anno)) write("%-15s: %s\n", names[i], anno);
 }
 
 protected void create(string name) {

@@ -86,12 +86,15 @@ int|Concurrent.Future main(int argc,array(string) argv) {
 		Hilfe();
 		return 0;
 	}
-	foreach ("test dbupdate lookup script" / " ", string cmd) if (G->args[cmd]) G->args->exec = cmd; //"--test" is a synonym for "--exec=test"
+	foreach ("test dbupdate lookup script help" / " ", string cmd) if (G->args[cmd]) G->args->exec = cmd; //"--test" is a synonym for "--exec=test"
 	if (string fn = G->args->exec) {
 		add_constant("INTERACTIVE", 1);
 		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike", "utils.pike"});
 		bootstrap_all();
-		return G->utils[fn]();
+		if (fn == 1)
+			if (sizeof(G->args[Arg.REST])) [fn, G->args[Arg.REST]] = Array.shift(G->args[Arg.REST]);
+			else fn = "help";
+		return (G->utils[replace(fn, "-", "_")] || G->utils->help)();
 	}
 	if (G->args->headless) {
 		werror("Running bot in headless mode - GUI facilities disabled.\n");
