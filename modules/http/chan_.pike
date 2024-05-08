@@ -75,7 +75,7 @@ constant sidebar_menu = ({
 	({"*monitors", "Monitors"}),
 	({"messages", "Messages"}),
 	({"share", "Art sharing"}),
-	({"kofi", "Ko-fi integration"}),
+	({"integrations", "Shop integrations"}),
 	({"*snoozeads", "Ads and snoozes"}),
 	({"*errors", "Error log <span id=errcnt></span>"}),
 	//TODO: Hype train, raid finder, emote showcase

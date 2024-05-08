@@ -117,7 +117,7 @@
 * Before Aug 3rd, complete the changeover to follower requests with authentication
   - See poll.pike and comments regarding this date
 * Other support platforms? Which ones have integrations available?
-  - Should /kofi be renamed and grow all the others?
+  - Fourth Wall
   - Throne?
 * Seek verification status.
   - FAQ page?

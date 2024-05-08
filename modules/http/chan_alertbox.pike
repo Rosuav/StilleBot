@@ -443,7 +443,7 @@ constant ALERTTYPES = ({([
 		"is_commission": "Is this a commission?",
 	]),
 	"testpholders": (["amount": "5 USD"]),
-	"builtin": "kofi",
+	"builtin": "integrations",
 	"condition_vars": ({"amount", "is_membership", "is_shopsale", "is_commission", "tiername"}),
 ]), ([
 	"id": "gif",
