@@ -2,18 +2,32 @@ inherit http_websocket;
 inherit hook;
 
 constant markdown = #"
-# Ko-fi integration
+# Integration
 
 ## Enabling Ko-fi notifications
 
 Go to [Ko-Fi's configuration](https://ko-fi.com/manage/webhooks) and paste
 this value into the Webhook URL: <input readonly value=\"$$webhook_url$$\" size=60>
 
-<form id=kofitoken autocomplete=off>Then take the Verification Token from that page and paste it here:
-<input name=token size=40><input type=submit value=\"Save token\"></form>
+<form class=token data-platform=kofi autocomplete=off>Then take the Verification Token from that page and paste it here:
+<input name=token id=kofitoken size=40><input type=submit value=\"Save token\"></form>
 
 Once authenticated, Ko-fi events will begin showing up in [Special Triggers](specials),
 [Alerts](alertbox#kofi), and [Goal Bars](monitors).
+
+## Enabling Fourth Wall notifications
+
+Go to [Fourth Wall's configuration](https://my-shop.fourthwall.com/admin/dashboard/settings/for-developers?redirect)
+and select \"Create webhook\". Paste this value in as the URL: <input readonly value=\"$$webhook_url$$\" size=60>
+
+Select the events you want integrations for; I suggest Order Placed, Gift Purchase, Donation, and
+Subscription Purchased. Click Save.
+
+<form class=token data-platform=fourthwall autocomplete=off>There will be a secret signing token on the settings page
+that looks something like: `8e7d24cf-66b4-4695-a651-3e744df5a861`<br>Paste it here to complete integration:
+<input name=token id=fwtoken size=40><input type=submit value=\"Save token\"></form>
+
+Once this is complete, Fourth Wall events will begin showing up, if I ever actually implement anything.
 ";
 
 //NOTE: Currently this is only used by chan_vipleaders, which is alphabetically after
@@ -23,7 +37,7 @@ Once authenticated, Ko-fi events will begin showing up in [Special Triggers](spe
 
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req)
 {
-	if (req->request_type == "POST") {
+	if (req->request_type == "POST" && req->variables->data) {
 		//Ko-fi webhook. Check the Verification Token against the one
 		//we have stored, and if it matches, fire all the signals.
 		mapping data = Standards.JSON.decode(req->variables->data); //If malformed, will bomb and send back a 500. (Note: Don't use decode_utf8 here, it's already Unicode text.)
@@ -104,10 +118,34 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		G->G->goal_bar_autoadvance(req->misc->channel, (["user": chan]), special[1..], cents);
 		return "Cool thanks!";
 	}
+	if (string sig = req->request_type == "POST" && req->request_headers["x-fourthwall-hmac-sha256"]) {
+		//Fourth Wall integration - could be a sale, donation, subscription, etc
+		//TODO: Deduplicate based on the ID
+		mapping data = Standards.JSON.decode_utf8(req->body_raw);
+		mapping fw = await(G->G->DB->load_config(req->misc->channel->userid, "fourthwall"));
+		object signer = Crypto.SHA256.HMAC(fw->verification_token || "");
+		if (sig != MIME.encode_base64(signer(req->body_raw)))
+			return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
+		Stdio.append_file("fourthwall.log", sprintf("%sINTEGRATION: %O\n", ctime(time()), data));
+		//TODO: Update goal bars etc
+		switch (data->type) {
+			case "ORDER_PLACED":
+			case "GIFT_PURCHASE":
+			case "DONATION":
+			case "SUBSCRIPTION_PURCHASED":
+			default: break;
+		}
+		G->G->send_alert(req->misc->channel, "fourthwall", ([
+			"username": data->data->username,
+			"amount": (string)data->data->amounts->?total->?value,
+			"msg": data->data->message || "",
+		]));
+		return "Awesome, thanks!";
+	}
 	if (req->misc->is_mod) {
 		return render(req, ([
 			"vars": (["ws_group": ""]),
-			"webhook_url": sprintf("%s/channels/%s/kofi",
+			"webhook_url": sprintf("%s/channels/%s/integrations",
 				G->G->instance_config->http_address,
 				req->misc->channel->name[1..]),
 
@@ -118,20 +156,22 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	]) | req->misc->chaninfo);
 }
 
-@"is_mod": void wscmd_settoken(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_settoken(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->token)) return;
-	G->G->DB->load_config(channel->userid, "kofi")->then() {mapping cfg = __ARGS__[0];
+	if (!(<"kofi", "fourthwall">)[msg->platform]) return;
+	await(G->G->DB->mutate_config(channel->userid, msg->platform) {mapping cfg = __ARGS__[0];
 		cfg->verification_token = msg->token;
-		G->G->DB->save_config(channel->userid, "kofi", cfg);
-		send_updates_all(conn->group);
-	};
+	});
+	send_updates_all(conn->group);
 }
 
 bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping cfg = await(G->G->DB->load_config(channel->userid, "kofi"));
+	mapping kofi = await(G->G->DB->load_config(channel->userid, "kofi"));
+	mapping fw = await(G->G->DB->load_config(channel->userid, "fourthwall"));
 	return ([
-		"token": stringp(cfg->verification_token) && "..." + cfg->verification_token[<3..],
+		"kofitoken": stringp(kofi->verification_token) && "..." + kofi->verification_token[<3..],
+		"fwtoken": stringp(fw->verification_token) && "..." + fw->verification_token[<3..],
 	]);
 }
 

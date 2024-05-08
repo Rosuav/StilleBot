@@ -446,6 +446,20 @@ constant ALERTTYPES = ({([
 	"builtin": "integrations",
 	"condition_vars": ({"amount", "is_membership", "is_shopsale", "is_commission", "tiername"}),
 ]), ([
+	"id": "fourthwall",
+	"label": "4th Wall",
+	"heading": "Fourth Wall sale, donation, or subscription",
+	"description": "When someone supports your channel via your Fourth Wall store",
+	"placeholders": ([
+		"username": "Display name of the supporter",
+		"amount": "Amount donated or total sale value",
+		"msg": "Message text (if any)",
+		"type": "Type of support eg ORDER_PLACED",
+	]),
+	"testpholders": (["amount": "5"]),
+	"builtin": "integrations",
+	"condition_vars": ({"amount", "type"}),
+]), ([
 	"id": "gif",
 	"label": "GIFs/Sounds",
 	"heading": "Triggerable GIFs or sounds for your community",
