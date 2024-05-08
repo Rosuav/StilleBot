@@ -27,7 +27,8 @@ Subscription Purchased. Click Save.
 that looks something like: `8e7d24cf-66b4-4695-a651-3e744df5a861`<br>Paste it here to complete integration:
 <input name=token id=fwtoken size=40><input type=submit value=\"Save token\"></form>
 
-Once this is complete, Fourth Wall events will begin showing up, if I ever actually implement anything.
+Once this is complete, Fourth Wall events will begin showing up in [Alerts](alertbox#fourthwall) and
+anywhere else they end up getting added.
 ";
 
 //NOTE: Currently this is only used by chan_vipleaders, which is alphabetically after
