@@ -36,11 +36,17 @@ anywhere else they end up getting added.
 //level module, which would break encapsulation.
 @create_hook: constant kofi_support = ({"object channel", "string type", "mapping params", "mapping raw"});
 
-__async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req)
-{
+__async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
 	if (req->request_type == "POST" && req->variables->data) {
 		//Ko-fi webhook. Check the Verification Token against the one
 		//we have stored, and if it matches, fire all the signals.
+		if (string other = !is_active_bot() && get_active_bot()) {
+			werror("Ko-fi integration - forwarding...\n");
+			Concurrent.Future fwd = Protocols.HTTP.Promise.post_url("https://" + other + req->not_query,
+				Protocols.HTTP.Promise.Arguments((["headers": (["content-type": req->request_headers["content-type"]]), "data": req->body_raw])));
+			//Not currently awaiting the promise. Should we?
+			return "Passing it along.";
+		}
 		mapping data = Standards.JSON.decode(req->variables->data); //If malformed, will bomb and send back a 500. (Note: Don't use decode_utf8 here, it's already Unicode text.)
 		if (!mappingp(data)) return (["error": 400, "type": "text/plain", "data": "No data mapping given"]);
 		mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "kofi"));
@@ -121,6 +127,13 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	}
 	if (string sig = req->request_type == "POST" && req->request_headers["x-fourthwall-hmac-sha256"]) {
 		//Fourth Wall integration - could be a sale, donation, subscription, etc
+		if (string other = !is_active_bot() && get_active_bot()) {
+			werror("Fourth Wall integration - forwarding...\n");
+			Concurrent.Future fwd = Protocols.HTTP.Promise.post_url("https://" + other + req->not_query,
+				Protocols.HTTP.Promise.Arguments((["headers": (["x-fourthwall-hmac-sha256": sig]), "data": req->body_raw])));
+			//Not currently awaiting the promise. Should we?
+			return "Passing it along.";
+		}
 		//TODO: Deduplicate based on the ID
 		mapping data = Standards.JSON.decode_utf8(req->body_raw);
 		mapping fw = await(G->G->DB->load_config(req->misc->channel->userid, "fourthwall"));
