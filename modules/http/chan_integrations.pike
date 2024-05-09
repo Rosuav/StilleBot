@@ -2,7 +2,7 @@ inherit http_websocket;
 inherit hook;
 
 constant markdown = #"
-# Integration
+# Integrations
 
 ## Enabling Ko-fi notifications
 
