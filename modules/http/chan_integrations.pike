@@ -125,9 +125,11 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		mapping data = Standards.JSON.decode_utf8(req->body_raw);
 		mapping fw = await(G->G->DB->load_config(req->misc->channel->userid, "fourthwall"));
 		object signer = Crypto.SHA256.HMAC(fw->verification_token || "");
-		if (sig != MIME.encode_base64(signer(req->body_raw)))
+		if (sig != MIME.encode_base64(signer(req->body_raw))) {
+			Stdio.append_file("fourthwall.log", sprintf("\n%sFAILED INTEGRATION for %O: %O\nSig: %O\nHeaders %O\n", ctime(time()), req->misc->channel->login, data, sig, req->request_headers));
 			return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
-		Stdio.append_file("fourthwall.log", sprintf("%sINTEGRATION: %O\n", ctime(time()), data));
+		}
+		Stdio.append_file("fourthwall.log", sprintf("\n%sINTEGRATION for %O: %O\n", ctime(time()), req->misc->channel->login, data));
 		//TODO: Update goal bars etc
 		switch (data->type) {
 			case "ORDER_PLACED":
