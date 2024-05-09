@@ -279,7 +279,3 @@
   - Watch for song changes. Also support a volume control?? Wouldn't work for VLC as the
     Lua extension doesn't establish a bidirectional connection.
   - Try to get both the URL and the song title (as Unicode, no mojibake thanks)
-* Ko-fi integrations, now generic "Integrations"
-  - If webhook notif comes to inactive bot, forward to active
-  - Change recommended URL from s.r.com to mm.com
-  - Add Fourth Wall support with the same considerations
