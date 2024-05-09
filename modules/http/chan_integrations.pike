@@ -129,6 +129,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			Stdio.append_file("fourthwall.log", sprintf("\n%sFAILED INTEGRATION for %O: %O\nSig: %O\nHeaders %O\n", ctime(time()), req->misc->channel->login, data, sig, req->request_headers));
 			return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
 		}
+		foreach ("shipping billing email" / " ", string key) if (data->data[key]) data->data[key] = "(...)";
 		Stdio.append_file("fourthwall.log", sprintf("\n%sINTEGRATION for %O: %O\n", ctime(time()), req->misc->channel->login, data));
 		//TODO: Update goal bars etc
 		switch (data->type) {
@@ -136,13 +137,14 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			case "GIFT_PURCHASE":
 			case "DONATION":
 			case "SUBSCRIPTION_PURCHASED":
+				G->G->send_alert(req->misc->channel, "fourthwall", ([
+					"username": data->data->username,
+					"amount": (string)data->data->amounts->?total->?value,
+					"msg": data->data->message || "",
+				]));
+				break;
 			default: break;
 		}
-		G->G->send_alert(req->misc->channel, "fourthwall", ([
-			"username": data->data->username,
-			"amount": (string)data->data->amounts->?total->?value,
-			"msg": data->data->message || "",
-		]));
 		return "Awesome, thanks!";
 	}
 	if (req->misc->is_mod) {
