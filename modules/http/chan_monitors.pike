@@ -20,7 +20,8 @@ constant vars_provided = ([
 
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
 constant saveable_attributes = "previewbg barcolor fillcolor needlesize thresholds progressive lvlupcmd format width height "
-	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop" / " " + TEXTFORMATTING_ATTRS;
+	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop "
+	"fw_dono fw_member fw_shop fw_gift" / " " + TEXTFORMATTING_ATTRS;
 constant valid_types = (<"text", "goalbar", "countdown">);
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {

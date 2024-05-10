@@ -35,6 +35,7 @@ const preset_defaults = {
 	bit: "", tip: "", follow: "",
 	sub_t1: "", sub_t2: "", sub_t3: "",
 	kofi_dono: "", kofi_member: "", kofi_renew: "", kofi_shop: "",
+	fw_dono: "", fw_member: "", fw_shop: "", fw_gift: "",
 };
 const presets = {
 	Subscribers: {...preset_defaults,
@@ -53,6 +54,7 @@ const presets = {
 		bit: 1, tip: 1,
 		sub_t1: 500, sub_t2: 1000, sub_t3: 2500,
 		kofi_dono: 1, kofi_member: 1, kofi_shop: 1,
+		fw_dono: 1, fw_member: 1, fw_shop: 1, fw_gift: 1,
 	},
 	Followers: {...preset_defaults,
 		follow: 1,
@@ -178,6 +180,13 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 			FIELDSET([LEGEND("Membership"), INPUT({type: "number", name: "kofi_member"})]),
 			FIELDSET([LEGEND("Renewal"), INPUT({type: "number", name: "kofi_renew"})]),
 			FIELDSET([LEGEND("Shop sale"), INPUT({type: "number", name: "kofi_shop"})]),
+		]),
+		"And for Fourth Wall support (all scaled by number of cents)",
+		DIV({className: "optionset"}, [
+			FIELDSET([LEGEND("Donation"), INPUT({type: "number", name: "fw_dono"})]),
+			FIELDSET([LEGEND("Membership"), INPUT({type: "number", name: "fw_member"})]),
+			FIELDSET([LEGEND("Shop sale"), INPUT({type: "number", name: "fw_shop"})]),
+			FIELDSET([LEGEND("Gift"), INPUT({type: "number", name: "fw_gift"})]),
 		]),
 		"For events not listed, create a command or trigger.",
 		DIV(["Select preset: ", SELECT({name: "preset"}, [
