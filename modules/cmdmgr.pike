@@ -48,6 +48,12 @@ constant SPECIALS = ({
 	({"!kofi_dono", ({"Donation received on Ko-fi.", "The broadcaster", "amount, msg, from_name"}), "Ko-fi"}),
 	({"!kofi_member", ({"New monthly membership on Ko-fi.", "The broadcaster", "amount, msg, from_name, tiername"}), "Ko-fi"}),
 	({"!kofi_shop", ({"Shop sale on Ko-fi.", "The broadcaster", "amount, msg, from_name, shop_item_ids"}), "Ko-fi"}),
+
+	({"!fw_dono", ({"Donation received on Fourth Wall.", "The broadcaster", "amount, msg, from_name"}), "Fourth Wall"}),
+	({"!fw_member", ({"New monthly membership on Fourth Wall.", "The broadcaster", "amount, msg, from_name"}), "Fourth Wall"}),
+	({"!fw_shop", ({"Shop sale on Fourth Wall.", "The broadcaster", "is_test, amount, msg, from_name, shop_item_ids"}), "Fourth Wall"}),
+	({"!fw_gift", ({"Gift purchase on Fourth Wall.", "The broadcaster", "amount, msg, from_name, shop_item_ids"}), "Fourth Wall"}),
+	({"!fw_other", ({"Other notification from Fourth Wall - not usually useful.", "The broadcaster", "notif_type"}), "Fourth Wall"}),
 });
 constant SPECIAL_NAMES = (multiset)SPECIALS[*][0];
 constant SPECIAL_PARAMS = ({
@@ -86,7 +92,7 @@ constant SPECIAL_PARAMS = ({
 	({"winner_tickets", "Number of tickets the winner had purchased"}),
 	({"giveaway_cancelled", "1 if the giveaway was cancelled (refunding all tickets), 0 if not (normal ending)"}),
 	({"amount", "Total amount given (with currency eg '3 USD')"}),
-	({"from_name", "Name (possibly username) of the Ko-fi supporter. Not (necessarily) a Twitch username."}),
+	({"from_name", "Name (possibly username) of the supporter. Not (necessarily) a Twitch username."}),
 	({"shop_item_ids", "Blank-separated list of ten-digit hexadecimal item IDs bought."}),
 	({"tiername", "Ko-fi subscription tier (if applicable)"}),
 	({"choices", "Number of choices in the poll"}),
@@ -109,6 +115,7 @@ constant SPECIAL_PARAMS = ({
 	({"goalid", "Unique ID of the goal being looked at"}),
 	({"current", "Current amount - where we are now"}),
 	({"target", "Target amount - what we need to reach"}),
+	({"is_test", "1 if the order was done as a test (from the shop owner), 0 otherwise"}),
 });
 
 //Convert a number of minutes into a somewhat randomized number of seconds

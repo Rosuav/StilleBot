@@ -135,29 +135,57 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			return "Passing it along.";
 		}
 		//TODO: Deduplicate based on the ID
-		mapping data = Standards.JSON.decode_utf8(req->body_raw);
 		mapping fw = await(G->G->DB->load_config(req->misc->channel->userid, "fourthwall"));
 		object signer = Crypto.SHA256.HMAC(fw->verification_token || "");
 		if (sig != MIME.encode_base64(signer(req->body_raw))) {
-			Stdio.append_file("fourthwall.log", sprintf("\n%sFAILED INTEGRATION for %O: %O\nSig: %O\nHeaders %O\n", ctime(time()), req->misc->channel->login, data, sig, req->request_headers));
+			Stdio.append_file("fourthwall.log", sprintf("\n%sFAILED INTEGRATION for %O: %O\nSig: %O\nHeaders %O\n", ctime(time()), req->misc->channel->login, req->body_raw, sig, req->request_headers));
 			return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
 		}
-		foreach ("shipping billing email" / " ", string key) if (data->data[key]) data->data[key] = "(...)";
-		Stdio.append_file("fourthwall.log", sprintf("\n%sINTEGRATION for %O: %O\n", ctime(time()), req->misc->channel->login, data));
-		//TODO: Update goal bars etc
-		switch (data->type) {
-			case "ORDER_PLACED":
-			case "GIFT_PURCHASE":
-			case "DONATION":
-			case "SUBSCRIPTION_PURCHASED":
-				G->G->send_alert(req->misc->channel, "fourthwall", ([
-					"username": data->data->username,
-					"amount": (string)data->data->amounts->?total->?value,
-					"msg": data->data->message || "",
-				]));
-				break;
+		mapping body = Standards.JSON.decode_utf8(req->body_raw);
+		mapping data = mappingp(body) && body->data;
+		if (!mappingp(data)) return (["error": 400, "data": "No data in body"]);
+		foreach ("shipping billing email" / " ", string key) if (data[key]) data[key] = "(...)";
+		Stdio.append_file("fourthwall.log", sprintf("\n%sINTEGRATION for %O: %O\n", ctime(time()), req->misc->channel->login, body));
+		string special = "!fw_other";
+		mapping params = (["{notif_type}": body->type]);
+		switch (body->type) {
+			case "ORDER_PLACED": special = "!fw_shop"; params = ([
+				"{is_test}": (string)body->testMode,
+				"{from_name}": data->username || "Anonymous",
+				"{amount}": data->amounts->?total->?value + " " + data->amounts->?total->?currency,
+				"{msg}": data->message || "",
+				"{shop_item_ids}": Array.arrayify(data->offers->?id) * " ",
+			]); break;
+			//TODO: Check this against what we see in the log
+			case "GIFT_PURCHASE": special = "!fw_gift"; params = ([
+				"{from_name}": data->username || "Anonymous",
+				"{amount}": data->amounts->?total->?value + " " + data->amounts->?total->?currency,
+				"{msg}": data->message || "",
+				"{shop_item_ids}": Array.arrayify(data->offers->?id) * " ",
+			]); break;
+			//TODO: Check this against what we see in the log
+			case "DONATION": special = "!fw_dono"; params = ([
+				"{from_name}": data->username || "Anonymous",
+				"{amount}": data->amounts->?total->?value + " " + data->amounts->?total->?currency,
+				"{msg}": data->message || "",
+			]); break;
+			//TODO: Check this against what we see in the log
+			case "SUBSCRIPTION_PURCHASED": special = "!fw_member"; params = ([
+				"{from_name}": data->username || "Anonymous",
+				"{amount}": data->amounts->?total->?value + " " + data->amounts->?total->?currency,
+				"{msg}": data->message || "",
+			]); break;
 			default: break;
 		}
+		if (special != "!fw_other") G->G->send_alert(req->misc->channel, "fourthwall", ([
+			"username": data->username || "Anonymous",
+			"amount": (string)data->amounts->?total->?value,
+			"msg": data->message || "",
+		]));
+		req->misc->channel->trigger_special(special, (["user": req->misc->channel->login]), params);
+		int|float amount = data->amounts->?total->?value;
+		if (floatp(amount)) amount = (int)(amount * 100 + 0.5); else amount *= 100;
+		if (amount) G->G->goal_bar_autoadvance(req->misc->channel, (["user": req->misc->channel->login]), special[1..], amount);
 		return "Awesome, thanks!";
 	}
 	if (req->misc->is_mod) {
