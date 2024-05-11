@@ -163,7 +163,6 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				"{msg}": data->message || "",
 				"{shop_item_ids}": Array.arrayify(data->offers->?id) * " ",
 			]); break;
-			//TODO: Check this against what we see in the log
 			case "DONATION": special = "!fw_dono"; params = ([
 				"{from_name}": data->username || "Anonymous",
 				"{amount}": data->amounts->?total->?value + " " + data->amounts->?total->?currency,
