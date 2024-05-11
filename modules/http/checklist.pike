@@ -9,7 +9,7 @@ constant hypetrain = replace(#"
 ## Hype Train set eight
 ### Unlockable May 2024 to current
 FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume<br>
-AGiftForYou KittyHype DangerDance PersonalBest Henlo GimmeDat<br>
+AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat<br>
 MegaMlep Rawk FallDamage RedCard ApplauseBreak TouchOfSalt<br>
 KittyLove TurnUp CatScare LateSave NoTheyDidNot Behold<br>
 RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot<br>
@@ -192,7 +192,7 @@ constant emoteids = ([
 	"KittyHype": "emotesv2_3969f334f5a2425d9fad53daabb06982",
 	"DangerDance": "emotesv2_da6ee66bc259434085eb866429687941",
 	"PersonalBest": "emotesv2_20a5c29af55240d4a276e0ffd828db3e",
-	"Henlo": "emotesv2_18479de9ad48456aab82a8c9e24e864b",
+	"HenloThere": "emotesv2_18479de9ad48456aab82a8c9e24e864b",
 	"GimmeDat": "emotesv2_0d9792a1c8d3499cac7c2b517dc0f682",
 	"KittyLove": "emotesv2_3e61175d445245838665fff146bd2bb0",
 	"TurnUp": "emotesv2_8b79f878cfff4671ae0fb7522c69ea07",
