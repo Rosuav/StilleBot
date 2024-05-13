@@ -48,7 +48,7 @@ Upload time: %s
 		file->metadata->url = sprintf("%s/upload/%s", G->G->instance_config->http_address, file->id);
 		if (mimetype) file->metadata->mimetype = mimetype;
 		file->metadata->etag = String.string2hex(Crypto.SHA1.hash(req->body_raw));
-		G->G->DB->update_file(file->id, file->metadata, req->body_raw);
+		await(G->G->DB->update_file(file->id, file->metadata, req->body_raw));
 		function cb = G->G->websocket_types[file->expires ? "chan_share" : "chan_alertbox"]->file_uploaded;
 		if (cb) cb(file->channel, req->misc->session->user, file);
 		return jsonify((["url": file->url]));
