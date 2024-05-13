@@ -43,7 +43,9 @@ on("click", ".setvalue", e => {
 });
 
 on("click", ".delete", simpleconfirm("Delete this variable?", e => {
-	ws_sync.send({cmd: "delete", id: e.match.closest("tr").dataset.id});
+	const tr = e.match.closest("tr");
+	ws_sync.send({cmd: "delete", id: tr.dataset.id});
+	if (tr.dataset.id.includes(":")) tr.remove(); //Hack: We don't get signalled by the back end when grouped vars change, so do a local removal. You'll need to reopen the dialog to see other changes anyway.
 }));
 
 on("click", ".showgroupvars", e => {
@@ -72,8 +74,8 @@ export function sockmsg_groupvars(msg) {
 	//TODO: Fix the table headings
 	editmode = "group";
 	set_content("#uservarname", editing_uservar = msg.prefix);
-	set_content("#uservars table tbody", msg.vars.map(v => TR([
-		TD(msg.prefix),
+	set_content("#uservars table tbody", msg.vars.map(v => TR({"data-id": msg.prefix + v.suffix}, [
+		TD(BUTTON({type: "button", class: "delete"}, "Delete")),
 		TD(v.suffix),
 		TD(INPUT({class: "value", "data-uid": v.suffix, value: v.value})),
 	])));

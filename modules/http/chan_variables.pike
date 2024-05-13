@@ -243,10 +243,10 @@ __async__ void wscmd_getgroupvars(object channel, mapping(string:mixed) conn, ma
 	//but for the front end display, they are collapsed together.
 	array ret = ({ });
 	foreach (sort(indices(vars)), string name) if (has_prefix(name, pfx)) ret += ({([
-		"suffix": name - pfx,
+		"suffix": name - pfx - "$",
 		"value": vars[name],
 	])});
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "groupvars", "prefix": pfx, "vars": ret]), 4));
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "groupvars", "prefix": pfx - "$", "vars": ret]), 4));
 }
 
 __async__ void wscmd_getuservars(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
