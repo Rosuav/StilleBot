@@ -237,7 +237,7 @@ __async__ void wscmd_getuservars(object channel, mapping(string:mixed) conn, map
 	array ret = ({ });
 	foreach (uservars; string uid; string value) ret += ({([
 		"uid": uid,
-		"username": uid_to_name[uid] || "(unknown user)",
+		"username": uid_to_name[(int)uid] || "(unknown user)",
 		"value": value,
 	])});
 	if (sizeof(ret)) sort((array(int))ret->uid, ret);
