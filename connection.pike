@@ -3,7 +3,7 @@ inherit irc_callback;
 inherit annotated;
 
 mapping simple_regex_cache = ([]); //Emptied on code reload.
-object substitutions = Regexp.PCRE("(\\$[*?A-Za-z0-9|]*\\$)|({[A-Za-z0-9_@|]+})");
+object substitutions = Regexp.PCRE("(\\$[*?A-Za-z0-9|:]*\\$)|({[A-Za-z0-9_@|]+})");
 constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT", "USERSTATE"});
 mapping irc_connections = ([]); //Not persisted across code reloads, but will be repopulated (after checks) from the connection_cache.
 @retain: mapping channelcolor = ([]);
@@ -679,7 +679,7 @@ class channel(mapping identity) {
 
 		//Variable management. Note that these are silent, so commands may want to pair
 		//these with public messages. (Silence is perfectly acceptable for triggers.)
-		if (dest == "/set" && sscanf(target, "%[*?A-Za-z0-9]", string var) && var && var != "")
+		if (dest == "/set" && sscanf(target, "%[*?A-Za-z0-9:]", string var) && var && var != "")
 		{
 			string val = set_variable(var, msg, destcfg, cfg->users);
 			//Variable names with asterisks are per-user (possibly this, possibly another),

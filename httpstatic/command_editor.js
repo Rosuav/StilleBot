@@ -318,7 +318,7 @@ define("ace/mode/mustardscript", function(require, exports, module) {
 					},
 				},
 				{token: "comment.line.double-slash", regex: /\/\/[^\n]*/},
-				{token: "variable", regex: /\$[A-Za-z0-9*?]+\$/},
+				{token: "variable", regex: /\$[A-Za-z0-9*?:]+\$/},
 				{token: "invalid.illegal", regex: /\$\S+/},
 				{defaultToken: "text"},
 			],

@@ -91,7 +91,7 @@ echoable_message parse_mustard(string|Stdio.Buffer mustard) {
 			return ({"name", token});
 		}
 		if (array token = mustard->sscanf("//%[^\n]")) return ({"comment", token[0]});
-		if (array token = mustard->sscanf("$%[A-Za-z0-9*?]%[$]")) {
+		if (array token = mustard->sscanf("$%[A-Za-z0-9*?:]%[$]")) {
 			//TODO: If token[1] != "$", throw error (need that trailing dollar sign)
 			return ({"varname", token[0]});
 		}
