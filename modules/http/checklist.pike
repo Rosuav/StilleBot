@@ -10,7 +10,7 @@ constant hypetrain = replace(#"
 ### Unlockable May 2024 to current
 FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume<br>
 AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat<br>
-MegaMlep Rawk FallDamage RedCard ApplauseBreak TouchOfSalt<br>
+MegaMlep RockOut FallDamage RedCard ApplauseBreak TouchOfSalt<br>
 KittyLove TurnUp CatScare LateSave NoTheyDidNot BeholdThis<br>
 RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot<br>
 
@@ -207,7 +207,7 @@ constant emoteids = ([
 	"CheersToThat": "emotesv2_b308322f860543f78e046294a9614c68",
 	"StirThePot": "emotesv2_827188949087491ab7d44ecfbfb4e58c",
 	"MegaMlep": "emotesv2_2a52b54c6fb04a6fbb6b9eb51fa8e0d0",
-	"Rawk": "emotesv2_91b3e913c6484fca894830ab953aa16b",
+	"RockOut": "emotesv2_91b3e913c6484fca894830ab953aa16b",
 	"FallDamage": "emotesv2_8120b15b9e054b31a200a5cb6cade4c7",
 	"RedCard": "emotesv2_a83f8ade02cd4b37b8ae079584407c66",
 	"ApplauseBreak": "emotesv2_c3db311615df4ecb9e3be0c492fbfc8b",
