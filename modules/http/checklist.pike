@@ -11,7 +11,7 @@ constant hypetrain = replace(#"
 FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume<br>
 AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat<br>
 MegaMlep Rawk FallDamage RedCard ApplauseBreak TouchOfSalt<br>
-KittyLove TurnUp CatScare LateSave NoTheyDidNot Behold<br>
+KittyLove TurnUp CatScare LateSave NoTheyDidNot BeholdThis<br>
 RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot<br>
 
 ## Hype Train set seven
@@ -199,7 +199,7 @@ constant emoteids = ([
 	"CatScare": "emotesv2_1cce76af186d4022821e8e67bb367055",
 	"LateSave": "emotesv2_e8236afbc65347ebb4938c6507a78012",
 	"NoTheyDidNot": "emotesv2_94736686188047bab48c9e2ca9666496",
-	"Behold": "emotesv2_cef4e35f8d134fbc8172fe622bc51bfe",
+	"BeholdThis": "emotesv2_cef4e35f8d134fbc8172fe622bc51bfe",
 	"RaccoonPop": "emotesv2_1d68d57fa07a4636aa3325e95c85f19a",
 	"GoblinJam": "emotesv2_f033a950174e447cb68a3380ed9da914",
 	"YouMissed": "emotesv2_b13f48e4ca704d1cb13123631467616e",

@@ -89,7 +89,7 @@ void probe_hype_train(int channel) {
 constant emotes = #"FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume
 AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat
 MegaMlep Rawk FallDamage RedCard ApplauseBreak TouchOfSalt
-KittyLove TurnUp CatScare LateSave NoTheyDidNot Behold
+KittyLove TurnUp CatScare LateSave NoTheyDidNot BeholdThis
 RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot";
 string avail_emotes = "";
 
