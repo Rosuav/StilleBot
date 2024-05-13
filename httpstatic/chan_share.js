@@ -21,7 +21,7 @@ export function render_item(file, obj) {
 		FIGURE([
 			DIV({className: "thumbnail", style: "background-image: url(" + (file.metadata.url || TRANSPARENT_IMAGE) + ")"}),
 			FIGCAPTION([
-				A({href: file.metadata.url, target: "_blank"}, file.metadata.name),
+				A({href: file.metadata.url || "about:blank", target: "_blank"}, file.metadata.name),
 			]),
 			BUTTON({type: "button", className: "confirmdelete", title: "Delete"}, "🗑"),
 		]),
