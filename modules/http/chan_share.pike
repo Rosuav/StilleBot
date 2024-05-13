@@ -101,9 +101,8 @@ constant user_types = ({
 	({"all", "Anyone", "Anyone is allowed, any time"}),
 });
 
-//TODO: What happens with multihoming and is it a problem? These message IDs are extremely
-//transient, as the messages disappear from view fairly quickly.
 @retain: mapping artshare_messageid = ([]);
+@retain: mapping artshare_file_messageid = ([]); //Map a UUID for a file to the corresponding message ID
 
 __async__ string permission_check(object channel, int is_mod, mapping user) {
 	mapping settings = await(G->G->DB->load_config(channel->userid, "artshare"));
@@ -156,7 +155,7 @@ __async__ void file_uploaded(int channelid, mapping user, mapping file) {
 		//Note that the channel ID isn't strictly necessary, as any deletion signal will
 		//itself be associated with that channel; but it's nice to have for debugging.
 		artshare_messageid[params->id] = ({(string)channelid, vars["{sharerid}"], vars["{fileid}"]});
-		//TODO: Synchronize message IDs with the other bot?
+		artshare_file_messageid[vars["{fileid}"]] = params->id;
 	};
 }
 
@@ -195,9 +194,12 @@ __async__ void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(
 	update_one(conn->group, id);
 }
 
-void delete_file(object channel, string userid, string fileid) {
-	G->G->DB->purge_ephemeral_files(channel->userid, userid, fileid)
-		->then() {if (sizeof(__ARGS__[0])) update_one(userid + "#" + channel->userid, fileid);};
+__async__ void delete_file(object channel, string userid, string fileid) {
+	array files = await(G->G->DB->purge_ephemeral_files(channel->userid, userid, fileid));
+	if (sizeof(files)) {
+		update_one(userid + "#" + channel->userid, fileid);
+		if (string id = artshare_file_messageid[fileid]) channel->send(([]), "/deletemsg " + id);
+	}
 }
 
 void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -247,13 +249,7 @@ int delmsg(object channel, object person, string target, string msgid) {
 @hook_deletemsgs:
 int delmsgs(object channel, object person, string target) {
 	//If someone gets timed out or banned, delete all their files.
-	G->G->DB->purge_ephemeral_files(channel->userid, target)->then() {
-		foreach (__ARGS__[0], mapping file) {
-			delete_file(channel, target, file->id);
-			//And delete the messages that announced them
-			if (file->metadata->messageid) channel->send(([]), "/deletemsg " + file->messageid);
-		}
-	};
+	G->G->DB->purge_ephemeral_files(channel->userid, target);
 }
 
 void cleanup() {
