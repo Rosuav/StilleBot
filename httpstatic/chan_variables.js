@@ -16,10 +16,17 @@ export const render_parent = DOM("#variables tbody");
 export function render_item(item) {
 	return TR({"data-id": item.id}, [
 		TD(item.id),
-		TD(item.per_user ? "(per-user)" : INPUT({class: "value", value: item.curval})),
-		TD(item.per_user ? BUTTON({type: "button", class: "showuservars"}, "Show users")
+		TD(
+			item.per_user ? "(per-user)"
+			: item.is_group ? "(group)"
+			: INPUT({class: "value", value: item.curval})
+		),
+		TD(
+			item.per_user ? BUTTON({type: "button", class: "showuservars"}, "Show users")
+			: item.is_group ? BUTTON({type: "button", class: "showgroupvars"}, "Show vars")
 			: [BUTTON({type: "button", class: "setvalue"}, "Set value"),
-				BUTTON({type: "button", class: "delete"}, "Delete")]),
+				BUTTON({type: "button", class: "delete"}, "Delete")]
+		),
 		TD(UL(item.usage.map(u => LI(describe_usage(u))))),
 	]);
 }
@@ -39,17 +46,36 @@ on("click", ".delete", simpleconfirm("Delete this variable?", e => {
 	ws_sync.send({cmd: "delete", id: e.match.closest("tr").dataset.id});
 }));
 
+on("click", ".showgroupvars", e => {
+	ws_sync.send({cmd: "getgroupvars", id: e.match.closest("tr").dataset.id});
+});
+
 on("click", ".showuservars", e => {
 	ws_sync.send({cmd: "getuservars", id: e.match.closest("tr").dataset.id});
 });
 
-let editing_uservar = null;
+let editing_uservar = null, editmode;
 export function sockmsg_uservars(msg) {
+	editmode = "per_user";
 	set_content("#uservarname", editing_uservar = msg.varname);
 	set_content("#uservars table tbody", msg.users.map(u => TR([
 		TD(u.uid),
 		TD(u.username),
 		TD(INPUT({class: "value", "data-uid": u.uid, value: u.value})),
+	])));
+	DOM("#uservars").classList.add("clean");
+	set_content("#uservars #close_or_cancel", "Close");
+	DOM("#uservars").showModal();
+}
+
+export function sockmsg_groupvars(msg) {
+	//TODO: Fix the table headings
+	editmode = "group";
+	set_content("#uservarname", editing_uservar = msg.prefix);
+	set_content("#uservars table tbody", msg.vars.map(v => TR([
+		TD(msg.prefix),
+		TD(v.suffix),
+		TD(INPUT({class: "value", "data-uid": v.suffix, value: v.value})),
 	])));
 	DOM("#uservars").classList.add("clean");
 	set_content("#uservars #close_or_cancel", "Close");
@@ -66,9 +92,10 @@ on("change", "#uservars input", e => dirty(e.match));
 on("paste", "#uservars input", e => dirty(e.match));
 
 on("submit", "#uservars form", e => {
+	//Note that this might be group variables, but it's still called user.
 	const users = { };
 	e.match.querySelectorAll(".dirty").forEach(input => users[input.dataset.uid] = input.value);
 	//Assumes there'll be at least one, since the submit button isn't enabled otherwise.
 	//If you go fiddling, it'll potentially send an empty message back to the server.
-	ws_sync.send({cmd: "update", id: editing_uservar, per_user: users});
+	ws_sync.send({cmd: "update", id: editing_uservar, [editmode]: users});
 });

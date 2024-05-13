@@ -167,10 +167,12 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 }
 
 mapping _get_variable(mapping vars, object channel, string varname, int|void per_user) {
-	if (!per_user && undefinedp(vars[varname])) return 0; //Note that per-user variables will never be push-deleted
+	int(1bit) is_group = has_suffix(varname, ":*");
+	if (!per_user && !is_group && undefinedp(vars[varname])) return 0; //Note that per-user variables will never be push-deleted
 	string c = channel->name;
 	if (per_user) varname = "$*" + varname[1..];
 	mapping ret = (["id": varname - "$", "curval": vars[varname], "usage": ({ }), "per_user": per_user]);
+	if (is_group) return ret | (["is_group": 1]);
 	foreach (channel->commands; string cmd; echoable_message response)
 		if (!mappingp(response) || !response->alias_of)
 			check_for_variables(cmd == "!trigger" ? "trigger" : cmd[0] == '!' ? "special" : "command",
@@ -183,7 +185,14 @@ bool need_mod(string grp) {return 1;}
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
 	if (id) return _get_variable(vars, channel, "$" + id + "$");
-	array variabledata = _get_variable(vars, channel, sort(indices(vars) - ({"*"}))[*]);
+	//Collect all variable names, collapsing "base:suffix" var names to just "base:*"
+	multiset(string) varnames = (<>);
+	foreach (vars; string name;) {
+		if (name == "*") continue; //Ignore the collection of user vars
+		if (sscanf(name, "%s:%*s", string base)) varnames[base + ":*"] = 1;
+		else varnames[name] = 1;
+	}
+	array variabledata = _get_variable(vars, channel, sort(indices(varnames))[*]);
 	if (mapping uservars = vars["*"]) {
 		//Note: This is potentially slow. Would it be worth caching somewhere? Most likely,
 		//per-user variables will all have broadly the same shape.
@@ -215,8 +224,29 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			channel->set_variable(var, value, "set", (["": uid]));
 		return;
 	}
+	if (mappingp(msg->group)) {
+		string pfx = replace(msg->id, "*|$:{}" / 1, "") + ":";
+		foreach (msg->group; string suffix; string value) {
+			string var = pfx + replace(suffix, "*|$:{}" / 1, "");
+			if (!undefinedp(vars["$" + var + "$"])) channel->set_variable(var, value, "set");
+		}
+		return;
+	}
 	if (undefinedp(vars["$" + msg->id + "$"])) return; //Only update existing vars this way.
 	channel->set_variable(msg->id, msg->value || "", "set");
+}
+
+__async__ void wscmd_getgroupvars(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
+	string pfx = "$" + (msg->id - "*" - ":") + ":";
+	//Scan for every variable that starts with this prefix. They're all independent,
+	//but for the front end display, they are collapsed together.
+	array ret = ({ });
+	foreach (sort(indices(vars)), string name) if (has_prefix(name, pfx)) ret += ({([
+		"suffix": name - pfx,
+		"value": vars[name],
+	])});
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "groupvars", "prefix": pfx, "vars": ret]), 4));
 }
 
 __async__ void wscmd_getuservars(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
