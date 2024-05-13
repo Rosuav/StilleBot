@@ -354,7 +354,13 @@ class channel(mapping identity) {
 		//global variables or namespace to a particular user eg "$49497888*varname$".
 		G->G->DB->save_config(userid, "variables", basevars);
 		if (per_user) var = "$" + (string)users[?user] + "*" + var[1..];
-		else G->G->websocket_types->chan_variables->update_one(name, var - "$");
+		else if (!has_value(var, ':')) G->G->websocket_types->chan_variables->update_one(name, var - "$");
+		//Note that we don't currently push out signals relating to grouped variables.
+		//The only signal that would matter is "hey, there's a new grouped var", but
+		//that's going to be fairly rare anyway. The update_one handler would need to
+		//be enhanced to handle groups, and it's more complexity than it's worth. We
+		//do, however, use variable_changed, so it's only the /c/variables page that
+		//is missing out on this information (eg monitors work fine).
 		event_notify("variable_changed", this, var, val);
 		return val;
 	}
