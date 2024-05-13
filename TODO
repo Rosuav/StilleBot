@@ -268,7 +268,6 @@
     system (send a unique link, they can claim those tips)?
 * BUG: Gideon is not seeing modswords. Possible cause: Connection falls over, active
   bot reestablishes, inactive bot does not?
-* Art Share is broken. The delete prompt shows undefined, and videos don't render at all.
 * Chrome Youtube Music integration
   - Like VLC integration, it could link in with variables and whatnot
   - Provide a Chrome extension.
