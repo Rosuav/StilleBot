@@ -24,6 +24,7 @@ constant SPECIALS = ({
 	({"!hypetrain_end", ({"A hype train just ended (successfully or unsuccessfully)", "The broadcaster", ""}), "Stream support"}),
 	//So many in this section.
 	({"!goalprogress", ({"A Twitch goal has advanced - bits, subs, etc", "The broadcaster", "goalid, title, current, target"}), "Stream support"}),
+	({"!watchstreak", ({"Someone achieved a new watch streak!", "The viewer", "months, reward"}), "Stream support"}),
 
 	({"!channelonline", ({"The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
 	({"!channelsetup", ({"The channel has changed its category/title/CCLs", "The broadcaster", "category, title, tag_names, ccls"}), "Status"}),
@@ -58,7 +59,7 @@ constant SPECIALS = ({
 constant SPECIAL_NAMES = (multiset)SPECIALS[*][0];
 constant SPECIAL_PARAMS = ({
 	({"tier", "Subscription tier - 1, 2, or 3 (Prime subs show as tier 1)"}),
-	({"months", "Cumulative months of subscription"}), //TODO: Check interaction with multimonth
+	({"months", "Cumulative months of subscription/viewership"}), //TODO: Check interaction with multimonth
 	({"streak", "Consecutive months of subscription. If a sub is restarted after a delay, {months} continues, but {streak} resets."}),
 	({"recipient", "Display name of the gift sub recipient"}),
 	({"multimonth", "Number of consecutive months of subscription given"}),
@@ -116,6 +117,7 @@ constant SPECIAL_PARAMS = ({
 	({"current", "Current amount - where we are now"}),
 	({"target", "Target amount - what we need to reach"}),
 	({"is_test", "1 if the order was done as a test (from the shop owner), 0 otherwise"}),
+	({"reward", "Channel points reward granted"}),
 });
 
 //Convert a number of minutes into a somewhat randomized number of seconds

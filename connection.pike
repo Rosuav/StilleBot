@@ -896,7 +896,16 @@ class channel(mapping identity) {
 				case "primepaidupgrade": break; //Similar to the above - if you were on Prime but now pledge to continue, which could be done half price Subtember 2019.
 				case "standardpayforward": break; //X is paying forward the Gift they got from Y to Z!
 				case "communitypayforward": break; //X is paying forward the Gift they got from Y to the community!
-				case "viewermilestone": break; //"X sparked a watch streak!" params->msg_param_category == "watch-streak", also has a msg_param_value == months
+				case "viewermilestone": switch (params->msg_param_category) {
+					case "watch-streak": //"X sparked a watch streak!" params->msg_param_category == "watch-streak", also has a msg_param_value == months
+						trigger_special("!watchstreak", person, ([
+							"{months}": params->msg_param_value,
+							"{reward}": params->msg_param_copoReward,
+						]));
+						break;
+					default: break;
+				}
+				break;
 				case "subgift":
 				{
 					string tier = subtier(params->msg_param_sub_plan);
