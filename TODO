@@ -278,4 +278,4 @@
   - Watch for song changes. Also support a volume control?? Wouldn't work for VLC as the
     Lua extension doesn't establish a bidirectional connection.
   - Try to get both the URL and the song title (as Unicode, no mojibake thanks)
-* Collapse "x:y" variables the same way user variables are?
+* Allow "for each" across user vars for a given stem
