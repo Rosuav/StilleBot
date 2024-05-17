@@ -625,12 +625,26 @@ class channel(mapping identity) {
 			//who are no longer listed in the "all chatters" list.
 			//TODO: Allow the iteration to do other things than just select a user into "each"
 			array users = ({ });
-			if (message->variables) {
+			if (string varname = message->variables) {
 				//Iterate over every user for whom there are variables.
 				//Note that there may not be a specific variable; you'll need to do some
 				//sort of check eg "$each*varname$" == "" to see if it's actually set.
 				mapping vars = G->G->DB->load_cached_config(userid, "variables")["*"] || ([]);
-				users = indices(vars);
+				if (varname == "*") users = sort(indices(vars)); //Everyone who has any variable, in ID order.
+				else {
+					//Everyone who has this variable set, in descending order by the intification of
+					//that variable. NOTE: If the variable is set to "0" or "foo", the person will be
+					//included in the result, sorted at position 0; but if the variable is absent,
+					//they will not be included at all. Thus this can be used - albeit without useful
+					//sorting - for non-numeric variables too.
+					array(int) values = ({ });
+					varname = "$" + replace(varname, "$", "") + "$";
+					foreach (vars; string uid; mapping v) if (v[varname]) {
+						users += ({uid});
+						values += ({-(int)v[varname]}); //Descending sort
+					}
+					sort(values, users);
+				}
 			} else if (message->participant_activity) {
 				int limit = time() - (int)message->participant_activity; //eg find people active within the last five minutes
 				foreach (G_G_("participants", name[1..]); string name; mapping info)
