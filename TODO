@@ -279,3 +279,4 @@
     Lua extension doesn't establish a bidirectional connection.
   - Try to get both the URL and the song title (as Unicode, no mojibake thanks)
 * Allow "for each" across user vars for a given stem
+* Make an activatable feature for a Seize Crown redemption?
