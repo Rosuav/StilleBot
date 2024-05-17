@@ -70,6 +70,7 @@ void ad_fired(object channel, mapping info) {
 }
 
 @hook_channel_online: int channel_online(string chan, int uptime, int chanid) {
+	werror("snoozeads hook channel_online: %O %O %O %O\n", chan, uptime, chanid, G->G->irc->id[chanid]);
 	object channel = G->G->irc->id[chanid]; if (!channel) return 0;
 	if (channel->config->advance_warning) check_stats(channel);
 }
