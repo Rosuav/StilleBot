@@ -98,8 +98,8 @@ void throw_errors(int level, string subsystem, string msg, mixed ... args) {if (
 int|float evaluate(string formula, mixed|void ctx) {
 	parser->set_error_handler(throw_errors);
 	array|string next() {
-		if (formula == "") return "";
 		sscanf(formula, "%*[ \t\n]%s", formula);
+		if (formula == "") return "";
 		sscanf(formula, "%[*&|<=>!]%s", string token, formula); //All characters that can be part of multi-character tokens
 		if (token != "") return token;
 		sscanf(formula, "%[a-zA-Z]%s", token, formula);
