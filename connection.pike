@@ -625,7 +625,13 @@ class channel(mapping identity) {
 			//who are no longer listed in the "all chatters" list.
 			//TODO: Allow the iteration to do other things than just select a user into "each"
 			array users = ({ });
-			if (message->participant_activity) {
+			if (message->variables) {
+				//Iterate over every user for whom there are variables.
+				//Note that there may not be a specific variable; you'll need to do some
+				//sort of check eg "$each*varname$" == "" to see if it's actually set.
+				mapping vars = G->G->DB->load_cached_config(userid, "variables")["*"] || ([]);
+				users = indices(vars);
+			} else if (message->participant_activity) {
 				int limit = time() - (int)message->participant_activity; //eg find people active within the last five minutes
 				foreach (G_G_("participants", name[1..]); string name; mapping info)
 					if (info->lastnotice >= limit) users += ({info->userid});

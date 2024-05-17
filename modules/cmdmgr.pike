@@ -356,6 +356,8 @@ echoable_message _validate_recursive(echoable_message resp, mapping state)
 	//Iteration can be done on all-in-chat or all-who've-chatted.
 	if (int timeout = ret->mode == "foreach" && (int)resp->participant_activity)
 		ret->participant_activity = timeout;
+	//It can also be done for all variables. The value here is irrelevant but it's useful to be consistent.
+	if (ret->mode == "foreach" && resp->variables) ret->variables = "set";
 
 	//Voice ID validity depends on the channel we're working with. A syntax-only check will
 	//accept any voice ID as long as it's a string of digits.

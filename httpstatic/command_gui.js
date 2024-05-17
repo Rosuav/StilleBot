@@ -482,6 +482,13 @@ const types = {
 		typedesc: ["Capture message into a variable. Can be accessed as $varname$ in this or any other command.", BR(),
 			"Use ", CODE("*varname"), " for a per-user variable, and/or ", CODE("varname?"), " for ephemeral."],
 	},
+	foreach_vars: {
+		color: "#66ee66", children: ["message"], label: el => "For each user with vars",
+		params: [{attr: "mode", values: "foreach"},
+			{attr: "variables", values: "set"},],
+		typedesc: ["Do something for every person for whom we have variables recorded. This user's variables", BR(),
+			"will be available with the name ", CODE("each*"), " for any variable."],
+	},
 	foreach: {
 		color: "#66ee66", children: ["message"], label: el => +el.participant_activity ? "For each active chatter" : "For each person in chat",
 		params: [{attr: "mode", values: "foreach"},
@@ -667,6 +674,7 @@ const tray_tabs = [
 		{type: "randrot", mode: "rotate"},
 		{type: "builtin_argsplit", builtin_param: "{param}"},
 		{type: "cooldown", cdlength: "30", cdname: ""},
+		{type: "foreach_vars"},
 		{type: "foreach", "participant_activity": "300"},
 	]},
 	{name: "Extras", color: "#7f7f7f", items: [ //I'm REALLY not happy with these names.
