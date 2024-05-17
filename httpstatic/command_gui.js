@@ -485,7 +485,7 @@ const types = {
 	foreach_vars: {
 		color: "#66ee66", children: ["message"], label: el => "For each user with vars",
 		params: [{attr: "mode", values: "foreach"},
-			{attr: "variables", values: "set"},],
+			{attr: "variables", values: "*"},],
 		typedesc: ["Do something for every person for whom we have variables recorded. This user's variables", BR(),
 			"will be available with the name ", CODE("each*"), " for any variable."],
 	},
