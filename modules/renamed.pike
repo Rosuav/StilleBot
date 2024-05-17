@@ -44,6 +44,28 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 			"{following}": (string)stats->total,
 		]);
 	}
+	if (has_value(user, ',')) {
+		//If you provide a comma-separated list of IDs or logins, retrieve basic information
+		//about all of them.
+		//NOTE: Is assumed to be either all IDs or all logins. All-numeric logins are, as always,
+		//a bit of a pain. To force them to be interpreted as logins, stick ",mustardmine" at the
+		//end, which will prevent interpretation as IDs.
+		array(string) logins = String.trim((user / ",")[*]) - ({""});
+		if (!sizeof(logins)) error("No users specified.\n");
+		array(int) ids = (array(int))logins;
+		array users;
+		if (has_value(ids, 0))
+			//At least one user name failed to parse as int. Use logins.
+			users = await(get_users_info(logins, "login"));
+		else
+			//They all look like IDs.
+			users = await(get_users_info(ids, "id"));
+		return ([
+			"{names}": users->display_name * ", ",
+			"{logins}": users->login * ", ",
+			"{ids}": users->id * ", ",
+		]);
+	}
 	int uid; catch {uid = await(get_user_id(user));};
 	if (!uid) error("Can't find that person.\n");
 	array names = await(G->G->DB->query_ro("select login from stillebot.user_login_sightings where twitchid = :id order by sighted",
