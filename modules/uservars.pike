@@ -3,6 +3,11 @@ inherit builtin_command;
 constant builtin_description = "Look up a user's variables";
 constant builtin_name = "User Vars";
 constant builtin_param = ({"Keyword (optional)", "User name/ID"});
+constant vars_provided = ([
+	"{login}": "Twitch login of the user (usually the same as the display name but lowercased)",
+	"{name}": "Display name of the user",
+	"{uid}": "User's Twitch ID",
+]);
 
 //TODO: A thing kinda like this for a leaderboard.
 //Instaed of "set this keyword to this user's ID", it will be "set this keyword to the
@@ -19,5 +24,10 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	//If something went wrong, the ID will be zero, which can be probed for using $kwd*$.
 	//Note particularly that this will *BLOCK* access to any previously-assigned user
 	//with that keyword, preventing accidental access to the wrong variables.
-	return (["cfg": (["users": cfg->users | ([param[0]: (string)info->id])])]);
+	return ([
+		"cfg": (["users": cfg->users | ([param[0]: (string)info->id])]),
+		"{login}": info->login,
+		"{name}": info->display_name,
+		"{uid}": info->id,
+	]);
 }
