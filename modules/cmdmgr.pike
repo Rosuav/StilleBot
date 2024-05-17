@@ -357,8 +357,8 @@ echoable_message _validate_recursive(echoable_message resp, mapping state)
 	if (int timeout = ret->mode == "foreach" && (int)resp->participant_activity)
 		ret->participant_activity = timeout;
 	//It can also be done for all variables, or for a specific variable.
-	if (string v = ret->mode == "foreach" && resp->variables)
-		ret->variables = v == "" ? "*" : v; //Ensure that we never use empty strings here, they could cause confusion
+	if (string v = ret->mode == "foreach" && resp->variable)
+		ret->variable = v == "" ? "*" : v; //Ensure that we never use empty strings here, they could cause confusion
 
 	//Voice ID validity depends on the channel we're working with. A syntax-only check will
 	//accept any voice ID as long as it's a string of digits.

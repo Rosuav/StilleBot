@@ -625,7 +625,7 @@ class channel(mapping identity) {
 			//who are no longer listed in the "all chatters" list.
 			//TODO: Allow the iteration to do other things than just select a user into "each"
 			array users = ({ });
-			if (string varname = message->variables) {
+			if (string varname = message->variable) {
 				//Iterate over every user for whom there are variables.
 				//Note that there may not be a specific variable; you'll need to do some
 				//sort of check eg "$each*varname$" == "" to see if it's actually set.
