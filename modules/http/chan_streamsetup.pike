@@ -33,8 +33,8 @@ Separately, need a Timers feature.
     as a recurring schedule will usually result in completed timers migrating to the next event, most likely
     putting them into "inactive" state.
   - Allow custom textformatting for Completed and Inactive, but have a "delete" button that leaves it unchanged
-    (ie identical to Active) as this will be the most common.]
-  - Notably, this can be used to show different text.
+    (ie identical to Active) as this will be the most common.
+  - Notably, this can be used to show different text, including different formatting of the countdown time.
   - Allow variables in this text?
 
 */
