@@ -116,7 +116,6 @@ mapping hypetrain_end(object channel, mapping info) {return hypetrain("end", cha
 
 @({"channel:read:goals", "channel.goal.progress", "1"}):
 mapping goalprogress(object channel, mapping info) {
-	werror("GOAL PROGRESS: %O %O\n", channel->login, info);
 	return ([
 		"{goalid}": info->id,
 		"{title}": info->description,
