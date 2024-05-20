@@ -50,6 +50,15 @@ function countdown_ticker(elem, id) {
 	set_content(elem, parts.join(":"));
 }
 
+let lastvis = "hidden";
+function vischange() {
+	if (lastvis === "hidden" && document.visibilityState === "visible") {
+		//We've just become visible. Signal the server to start the timer.
+		ws_sync.send({cmd: "sceneactive"});
+	}
+	lastvis = document.visibilityState;
+}
+
 export function render(data) {update_display(DOM("#display"), data.data);}
 export function update_display(elem, data) { //Used for the preview as well as the live display
 	//Update styles. The server provides a single "text_css" attribute covering most of the easy
@@ -104,6 +113,9 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		elem._stillebot_countdown_format = m[2];
 		elem._stillebot_countdown_interval = setInterval(countdown_ticker, 1000, elem, data.id);
 		countdown_ticker(elem, data.id);
+		if (data.startonscene && ws_group[0] !== '#') //Don't do this on the control/preview connection
+			(document.onvisibilitychange = vischange)();
+		else document.onvisibilitychange = null; //Note: Using this instead of on() for idempotency
 	}
 	else set_content(elem, data.display);
 }

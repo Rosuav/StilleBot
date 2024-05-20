@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, CODE, DIV, FIELDSET, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
+const {A, BR, BUTTON, CODE, DIV, FIELDSET, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
 import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
@@ -99,6 +99,18 @@ set_content("#editcountdown form div", [
 		{name: "textcompleted", label: "Completed", desc: " If blank, same as Active"},
 		{name: "textinactive", label: "Inactive", desc: " If blank, same as Active"},
 	]}),
+	TABLE({border: 1}, [
+		TR(TH({colspan: 2}, "Automate timer based on...")),
+		TR([TH("Scene"), TD([
+			LABEL([INPUT({name: "startonscene", type: "checkbox"}),
+				" Start the countdown when this scene is selected"]),
+			P(["If this countdown is in an OBS scene and it becomes visible, the timer", BR(),
+			"will be started or reset. Good for break/BRB scenes."]),
+			LABEL(["Initial time ", INPUT({name: "startonscene_time", type: "number"}),
+				" Will count down from this time (eg 600 = ten minutes)"]),
+		])]),
+		TR([TH("Schedule"), TD("TODO: Link this timer to your Twitch schedule (maybe w/ offset)")]),
+	]),
 ]);
 
 set_content("#editgoalbar form div", TABLE({border: 1}, [

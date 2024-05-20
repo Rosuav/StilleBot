@@ -3,8 +3,6 @@ inherit hook;
 inherit builtin_command;
 
 /* Subset of functionality from mustard-mine.herokuapp.com:
-* It can be autostarted on page activation - good for a break timer.
-  - On WS connection, if timer not active, start with a known countdown
 * It can be linked to your Twitch schedule (see get_stream_schedule()) to define the target.
   - Note that this will likely mean that schedule updates become crucial.
     - Obviously will require a call to get_stream_schedule inside get_chan_state
@@ -44,7 +42,7 @@ constant vars_provided = ([
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
 constant saveable_attributes = "previewbg barcolor fillcolor needlesize thresholds progressive lvlupcmd format width height "
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop "
-	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive" / " " + TEXTFORMATTING_ATTRS;
+	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time" / " " + TEXTFORMATTING_ATTRS;
 constant valid_types = (<"text", "goalbar", "countdown">);
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
@@ -128,6 +126,7 @@ mapping _get_monitor(object channel, mapping monitors, string id) {
 		"text_css": textformatting_css(text),
 	]);
 }
+
 bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
 mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
@@ -170,6 +169,15 @@ void websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	string prev = G->G->DB->load_cached_config(channel->userid, "variables")["$" + msg->varname + "$"];
 	if (!prev) return;
 	channel->set_variable(msg->varname, (string)(int)msg->val, "set");
+}
+
+//NOTE: This is a very rare message - a mutator that does not require mod powers or even a login.
+//The *only* thing you can do with it is (re)start a countdown configured to start on scene.
+void wscmd_sceneactive(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping mon = G->G->DB->load_cached_config(channel->userid, "monitors")[conn->subgroup];
+	if (!mon->?startonscene) return;
+	sscanf(mon->text, "$%s$:", string varname);
+	channel->set_variable(varname, (string)(time() + (int)mon->startonscene_time));
 }
 
 @hook_allmsgs:
