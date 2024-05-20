@@ -5,9 +5,7 @@ inherit builtin_command;
 /* Subset of functionality from mustard-mine.herokuapp.com:
 * It can be autostarted on page activation - good for a break timer.
   - On WS connection, if timer not active, start with a known countdown
-* Have a builtin to manipulate timers
-* Timers can be set to a specific duration ("10 minute countdown") or a defined target (using your timezone).
-  - Can be linked to your Twitch schedule (see get_stream_schedule()) to define the target.
+* It can be linked to your Twitch schedule (see get_stream_schedule()) to define the target.
   - Note that this will likely mean that schedule updates become crucial.
     - Obviously will require a call to get_stream_schedule inside get_chan_state
     - What if the schedule changes while the browser source is open? When will we notice?
@@ -277,6 +275,8 @@ mapping message_params(object channel, mapping person, array param) {
 				case "extend": //Extend a timer (use a negative number to shorten)
 					channel->set_variable(varname, (string)(pos += (int)p2));
 					break;
+				//TODO: "set" to choose a specific Unix time, or some kind of time string that will
+				//be interpreted in your time zone. Borrow from automation maybe?
 				default: break; //No change requested, just get status
 			}
 			int paused = pos <= 1000000000;
