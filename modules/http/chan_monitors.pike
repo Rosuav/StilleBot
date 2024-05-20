@@ -222,11 +222,11 @@ string format_subscriptions(int value) {
 
 mapping message_params(object channel, mapping person, array param) {
 	string monitor = param[0];
-	int advance = sizeof(param) > 1 && (int)param[1];
 	mapping info = G->G->DB->load_cached_config(channel->userid, "monitors")[monitor];
 	if (!monitor) error("Unrecognized monitor ID - has it been deleted?\n");
 	switch (info->type) {
 		case "goalbar": {
+			int advance = sizeof(param) > 1 && (int)param[1];
 			if (advance) autoadvance(channel, person, "", advance);
 			int pos = (int)channel->expand_variables(info->text); //The text starts with the variable, then a colon, so this will give us the current (raw) value.
 			int tier, goal, found;
