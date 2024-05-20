@@ -175,18 +175,21 @@ const builtin_validators = {
 		validate: val => alertcfg.loading || alertcfg.stdalerts.find(a => a.id === val) || alertcfg.personals.find(a => a.id === val),
 	},
 	monitor_id: {...default_handlers,
-		make_control: (id, val, el) => SELECT(id, [
-			//TODO: Sort these in some useful way (or at least consistent)
-			Object.entries(monitors).map(([id, m]) => {
-				let label = m.text;
-				switch (m.type) {
-					case "goalbar": label = "Goal bar - " + /:(.*)$/.exec(m.text)[1]; break;
-					case "countdown": label = "Countdown - " + /:(.*)$/.exec(m.text)[1]; break;
-					default: break; //Simple text can be displayed as-is
-				}
-				return OPTION({".selected": id === val, value: id}, label);
-			}),
-		]),
+		make_control(id, val, el) {
+			setTimeout(check_monitor_params, 0, val);
+			return SELECT({id, class: "monitor-selection"}, [
+				//TODO: Sort these in some useful way (or at least consistent)
+				Object.entries(monitors).map(([id, m]) => {
+					let label = m.text;
+					switch (m.type) {
+						case "goalbar": label = "Goal bar - " + /:(.*)$/.exec(m.text)[1]; break;
+						case "countdown": label = "Countdown - " + /:(.*)$/.exec(m.text)[1]; break;
+						default: break; //Simple text can be displayed as-is
+					}
+					return OPTION({".selected": id === val, value: id}, label);
+				}),
+			])
+		},
 		//NOTE: Will permit anything while loading, but that should only happen if we get a hash link
 		//directly to open a command, or if the internet connection is very slow. Either way, the
 		//drop-down should be correctly populated by the time someone actually clicks on something.
@@ -205,6 +208,16 @@ const builtin_validators = {
 		validate: val => val === "{rewardid}" || rewards[val],
 	}
 };
+function check_monitor_params(id) {
+	const mon = monitors[id];
+	if (!mon) return; //Can only happen if it's really slow or you're fast clicking on it
+	let labels = [null, null];
+	if (mon.type === "countdown") labels = ["Action", "Time (seconds)"];
+	else if (mon.type === "goalbar") labels = ["Advance by", null];
+	set_content('label[for="value-builtin_param1"]', labels[0] || "n/a").closest("tr").hidden = !labels[0];
+	set_content('label[for="value-builtin_param2"]', labels[1] || "n/a").closest("tr").hidden = !labels[1];
+}
+on("change", ".monitor-selection", e => check_monitor_params(e.match.value));
 
 const builtin_label_funcs = {
 	chan_pointsrewards: el => {

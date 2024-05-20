@@ -25,7 +25,8 @@ inherit builtin_command;
 
 constant builtin_name = "Monitors"; //The front end may redescribe this according to the parameters
 constant builtin_description = "Get information about a channel monitor";
-constant builtin_param = ({"/Monitor/monitor_id", "Advance by"});
+//NOTE: The labels for parameters 1 and 2 will be replaced by the GUI editor based on monitor type.
+constant builtin_param = ({"/Monitor/monitor_id", "Advance by or action", "Time (countdowns only)"});
 constant vars_provided = ([
 	"{type}": "Monitor type (text, goalbar, countdown)",
 	//NOTE: Any values not applicable to the type in question will be blank/omitted.
@@ -37,6 +38,9 @@ constant vars_provided = ([
 	"{value_raw}": "Goal bar: Current value in raw numeric form",
 	"{percentage}": "Goal bar: Percentage of bar filled (can be above 100) as decimal number",
 	"{tier}": "Goal bar: Current tier number (always 1 for non-tiered goals)",
+	"{paused}": "Countdown: 1 if currently paused, 0 if counting down",
+	"{timeleft}": "Countdown: Number of seconds to completion (may be negative)",
+	"{targettime}": "Countdown: Unix time when the timeleft will hit zero",
 ]);
 
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
