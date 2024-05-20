@@ -227,7 +227,7 @@ mapping message_params(object channel, mapping person, array param) {
 	switch (info->type) {
 		case "goalbar": {
 			int advance = sizeof(param) > 1 && (int)param[1];
-			if (advance) autoadvance(channel, person, "", advance);
+			if (advance) autoadvance(channel, person, "", advance); //FIXME: Is this really advancing ALL goal bars?? That has to be a bug right?
 			int pos = (int)channel->expand_variables(info->text); //The text starts with the variable, then a colon, so this will give us the current (raw) value.
 			int tier, goal, found;
 			foreach (info->thresholds / " "; tier; string th) {
@@ -255,10 +255,34 @@ mapping message_params(object channel, mapping person, array param) {
 				"{tier}": (string)(tier + 1),
 			]);
 		}
-		case "countdown": return ([
-			"{type}": info->type,
-			//TODO
-		]);
+		case "countdown": {
+			sscanf(info->text, "$%s$:%s", string varname, string txt);
+			string p2 = sizeof(param) > 2 && param[2];
+			int pos = (int)channel->expand_variables(info->text);
+			int now = time();
+			switch (sizeof(param) > 1 && param[1]) {
+				case "start": //Set the timer to X seconds from now
+					channel->set_variable(varname, (string)(pos = time() + (int)p2));
+					break;
+				case "pause": //Pause the countdown
+					if (pos > now) channel->set_variable(varname, (string)(pos -= now));
+					break;
+				case "resume": //Unpause a paused timer
+					if (pos <= 1000000000) channel->set_variable(varname, (string)(pos += now));
+					break;
+				case "extend": //Extend a timer (use a negative number to shorten)
+					channel->set_variable(varname, (string)(pos += (int)p2));
+					break;
+				default: break; //No change requested, just get status
+			}
+			int paused = pos <= 1000000000;
+			return ([
+				"{type}": info->type,
+				"{paused}": (string)paused,
+				"{timeleft}": paused ? (string)pos : (string)(pos - now),
+				"{targettime}": paused ? (string)(pos + now) : (string)pos,
+			]);
+		}
 		default: return (["{type}": info->type]); //Should be "text".
 	}
 }
