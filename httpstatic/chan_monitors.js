@@ -108,6 +108,7 @@ set_content("#editcountdown form div", [
 			"will be started or reset. Good for break/BRB scenes."]),
 			LABEL(["Initial time ", INPUT({name: "startonscene_time", type: "number"}),
 				" Will count down from this time (eg 600 = ten minutes)"]),
+			P("For best results, configure OBS to shutdown source when not visible."), //And maybe refresh on visible? Or not needed?
 		])]),
 		TR([TH("Schedule"), TD("TODO: Link this timer to your Twitch schedule (maybe w/ offset)")]),
 	]),
