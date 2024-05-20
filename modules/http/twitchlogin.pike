@@ -43,8 +43,14 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//write("Login response %O\n", req->variables);
 		object auth = TwitchAuth(0, deduce_host(req->request_headers || ([])));
 		//write("Requesting access token for %O...\n", req->variables->code); //This shows up twice when those crashes happen. Maybe caching the redirect will help?
-		string cookie = await(auth->request_access_token_promise(req->variables->code));
-		auth->set_from_cookie(cookie);
+		if (mixed ex = catch {
+			string cookie = await(auth->request_access_token_promise(req->variables->code));
+			auth->set_from_cookie(cookie);
+		}) {
+			werror("ERROR getting logged-in user status\n%O\n", ex);
+			if (arrayp(ex)) werror(describe_backtrace(ex));
+			return redirect("/login_ok");
+		}
 		mapping user = await(twitch_api_request("https://api.twitch.tv/helix/users",
 			(["Authorization": "Bearer " + auth->access_token])))
 				->data[0];
@@ -64,7 +70,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"user_info": user,
 		]));
 		if (function f = login_callback[req->variables->state])
-			return f(req, user, (multiset)(req->variables->scope / " "), auth->access_token, cookie);
+			return f(req, user, (multiset)(req->variables->scope / " "), auth->access_token, /*cookie*/""/*hackedout*/);
 		//Try to figure out a plausible place to send the person after login.
 		//For streamers, redirect to the stream's landing page. Doesn't work
 		//for mods, as there might be more than one (and we'd need permission
@@ -74,7 +80,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (channel) dest = "/channels/" + user->login + "/";
 		resend_redirect[req->variables->code] = dest;
 		call_out(m_delete, 30, resend_redirect, req->variables->code);
-		login_popup_done(req, user, (multiset)(req->variables->scope / " "), auth->access_token, cookie);
+		login_popup_done(req, user, (multiset)(req->variables->scope / " "), auth->access_token, /*cookie*/""/*hackedout*/);
 		return redirect(dest);
 	}
 	//Merge scopes, similarly to ensure_login()
