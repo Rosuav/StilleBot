@@ -78,8 +78,12 @@ on("click", ".twitchlogout", async e => {
 
 on("click", ".opendlg", e => {e.preventDefault(); DOM("#" + e.match.dataset.dlg).showModal();});
 
-export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
-	cfg.textname !== "-" && TR({class: cfg.textclass || ""}, [TH(cfg.textlabel || "Text"), TD([INPUT({size: 40, name: cfg.textname || "text"}), cfg.textdesc])]),
+export function TEXTFORMATTING(cfg) {
+    //Half an indent coz I can't be bothered
+    if (cfg.textname === "-") cfg.texts = []; //Compat (deprecated)
+    if (!cfg.texts) cfg.texts = [{ }];
+    return TABLE({border: 1}, [
+	cfg.texts.map(t => TR({class: t.class || cfg.textclass || ""}, [TH(t.label || cfg.textlabel || "Text"), TD([INPUT({size: 40, name: t.name || cfg.textname || "text"}), t.desc])])),
 	TR([TH("Font"), TD([
 		INPUT({name: "font", size: "28"}),
 		SELECT({name: "fontweight"}, [cfg.blank_opts && OPTION(), OPTION("normal"), OPTION("bold")]),
@@ -141,7 +145,8 @@ export function TEXTFORMATTING(cfg) {return TABLE({border: 1}, [
 		SELECT({name: "textalign"}, [cfg.blank_opts && OPTION(), "start end center justify".split(" ").map(o => OPTION(o))]),
 	])]),
 	TR([TH("Custom CSS"), TD(INPUT({name: "css", size: 60}))]),
-])}
+    ]);
+}
 
 //Ensure that a font is loaded if applicable. If this fails, the font may
 //still be usable if installed on the person's computer (not suitable for
