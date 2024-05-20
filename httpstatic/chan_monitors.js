@@ -375,6 +375,6 @@ const variables = { };
 ws_sync.connect(ws_group, {
 	ws_type: "chan_variables",
 	render_parent: DOM("[name=varname]"),
-	render_item: (v, obj) => {console.log("render var", v, obj); return obj || OPTION({"data-id": v.id}, v.id)},
-	render: function(data) {console.log("Got variables", data);},
+	render_item: (v, obj) => obj || OPTION({"data-id": v.id}, v.id),
+	render: function(data) { },
 });
