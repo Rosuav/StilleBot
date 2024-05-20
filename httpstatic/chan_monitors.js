@@ -93,7 +93,13 @@ export function render_empty() {
 export function render(data) { }
 
 set_content("#edittext form div", TEXTFORMATTING({use_preview: true}));
-set_content("#editcountdown form div", TEXTFORMATTING({use_preview: true}));
+set_content("#editcountdown form div", [
+	TEXTFORMATTING({use_preview: true, texts: [
+		{label: "Active"},
+		{name: "textcompleted", label: "Completed", desc: " If blank, same as Active"},
+		{name: "textinactive", label: "Inactive", desc: " If blank, same as Active"},
+	]}),
+]);
 
 set_content("#editgoalbar form div", TABLE({border: 1}, [
 	TR([TH("Active"), TD(LABEL([INPUT({name: "active", type: "checkbox"}), "Enable auto-advance and level up messages"]))]),

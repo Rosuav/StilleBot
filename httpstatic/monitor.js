@@ -1,4 +1,4 @@
-import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
+import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {DIV} = choc;
 import {ensure_font} from "$$static||utils.js$$";
 
@@ -14,14 +14,23 @@ export const formatters = {
 	},
 }
 
-function countdown_ticker(elem) {
+const styleinfo = { }; //Retained info for when the styles need to change based on data (for goal bars)
+
+function countdown_ticker(elem, id) {
 	//"##:##" for min:sec
 	//"#:##" for min:sec w/o leading zero
 	//"##" for seconds, padded to two places with zeroes (ditto "###" or "#")
 	let time = elem._stillebot_countdown_target;
 	//Times below a gigasecond are paused times, times above that are time_t when it hits zero
 	if (time > 1e9) time = Math.floor(time - new Date() / 1000);
-	if (time < 0) time = 0; //Leave it stuck on 00:00 after it expires
+	if (time < 0) {
+		//If you have special text for "in the past", use that the moment we hit zero.
+		if (styleinfo[id].textcompleted) return set_content(elem, styleinfo[id].textcompleted);
+		time = 0; //Leave it stuck on 00:00 after it expires
+	}
+	if (time > 3600) { //TODO: Make this boundary configurable
+		if (styleinfo[id].textinactive) return set_content(elem, styleinfo[id].textinactive);
+	}
 	const parts = elem._stillebot_countdown_format.split(":##");
 	//For every ":##" in the string, fracture off one sixtieth of the time (thus seconds and minutes)
 	//Then a hash in the first part of the string gets whatever's left,
@@ -41,7 +50,6 @@ function countdown_ticker(elem) {
 	set_content(elem, parts.join(":"));
 }
 
-const styleinfo = { }; //Retained info for when the styles need to change based on data (for goal bars)
 export function render(data) {update_display(DOM("#display"), data.data);}
 export function update_display(elem, data) { //Used for the preview as well as the live display
 	//Update styles. The server provides a single "text_css" attribute covering most of the easy
@@ -50,11 +58,9 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		elem.style.cssText = data.text_css;
 		if (data.type) styleinfo[data.id] = {type: data.type}; //Reset all type-specific info when type is sent
 		if (data.thresholds) styleinfo[data.id].t = (data.thresholds_rendered || data.thresholds).split(" ").map(x => +x).filter(x => x && x === x); //Suppress any that fail to parse as numbers
-		if (data.barcolor) styleinfo[data.id].barcolor = data.barcolor;
-		if (data.fillcolor) styleinfo[data.id].fillcolor = data.fillcolor;
-		if (data.format) styleinfo[data.id].format = data.format;
 		if (data.needlesize) styleinfo[data.id].needlesize = +data.needlesize;
-		if (data.progressive) styleinfo[data.id].progressive = data.progressive;
+		["barcolor", "fillcolor", "format", "progressive", "textcompleted", "textinactive"].forEach(
+			key => data[key] && (styleinfo[data.id][key] = data[key]));
 		ensure_font(data.font);
 	}
 	const type = styleinfo[data.id] && styleinfo[data.id].type;
@@ -96,8 +102,8 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		if (!m) {console.error("Something's misconfigured (see monitor.js countdown regex) -- display", data.display); return;}
 		elem._stillebot_countdown_target = +m[1];
 		elem._stillebot_countdown_format = m[2];
-		elem._stillebot_countdown_interval = setInterval(countdown_ticker, 1000, elem);
-		countdown_ticker(elem);
+		elem._stillebot_countdown_interval = setInterval(countdown_ticker, 1000, elem, data.id);
+		countdown_ticker(elem, data.id);
 	}
 	else set_content(elem, data.display);
 }

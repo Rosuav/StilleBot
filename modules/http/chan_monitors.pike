@@ -14,18 +14,13 @@ inherit builtin_command;
       There's no EventSub message relating to the schedule, sadly.
     - Have centralized fetching of the schedule. Any time we fetch for the sake of the front end,
       it can send_updates_all() to make changes take effect.
-* Provide three states, with formatting options:
-  - Timer active. Goal is in the near future.
-  - Timer completed. Goal is in the past.
-  - Timer inactive. Goal is in the distant future.
-  - The definition of "near" and "distant" should be configurable; default to one hour.
+* The "Completed" and "Inactive" states currently are fixed text only.
+  - The boundary between "Active" and "Inactive" should ideally be configurable; default to one hour.
   - For timers tied to the Twitch schedule, recommend that "completed" and "inactive" be treated identically,
     as a recurring schedule will usually result in completed timers migrating to the next event, most likely
     putting them into "inactive" state.
   - Allow custom textformatting for Completed and Inactive, but have a "delete" button that leaves it unchanged
     (ie identical to Active) as this will be the most common.
-  - Notably, this can be used to show different text, including different formatting of the countdown time.
-  - Allow variables in this text?
 */
 
 constant builtin_name = "Monitors"; //The front end may redescribe this according to the parameters
@@ -47,7 +42,7 @@ constant vars_provided = ([
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
 constant saveable_attributes = "previewbg barcolor fillcolor needlesize thresholds progressive lvlupcmd format width height "
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop "
-	"fw_dono fw_member fw_shop fw_gift" / " " + TEXTFORMATTING_ATTRS;
+	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive" / " " + TEXTFORMATTING_ATTRS;
 constant valid_types = (<"text", "goalbar", "countdown">);
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
