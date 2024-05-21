@@ -29,6 +29,8 @@ that looks something like: `8e7d24cf-66b4-4695-a651-3e744df5a861`<br>Paste it he
 
 Once this is complete, Fourth Wall events will begin showing up in [Alerts](alertbox#fourthwall) and
 anywhere else they end up getting added.
+
+$$loginprompt||$$
 ";
 
 //NOTE: Currently this is only used by chan_vipleaders, which is alphabetically after
@@ -198,6 +200,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	}
 	return render(req, ([
 		"webhook_url": "",
+		"loginprompt": "[Log in to make changes](:.twitchlogin)",
 	]) | req->misc->chaninfo);
 }
 
