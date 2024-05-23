@@ -21,6 +21,7 @@ document.getElementById('dismissgreeting').onclick = e => {
 	fetch('?dismiss', {credentials: 'same-origin'});
 };
 </script>
+
 <style>
 #greeting {
 	border: 3px double green;
