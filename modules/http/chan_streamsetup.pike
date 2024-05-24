@@ -55,6 +55,22 @@ loading... | - | - | - | - | -
 >
 > [Close](:.dialog_close)
 {: tag=dialog #importdlg}
+
+<style>
+#setups tbody tr:nth-child(odd) {
+	background: #ddf;
+	cursor: pointer;
+}
+
+#setups tbody tr:nth-child(even) {
+	background: #dff;
+	cursor: pointer;
+}
+
+#setups tbody tr:hover {
+	background: #ff0;
+}
+</style>
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
