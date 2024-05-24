@@ -1,15 +1,16 @@
 import {choc, on} from "https://rosuav.github.io/choc/factory.js";
 const {BUTTON, TD, TR} = choc; //autoimport
+import {simpleconfirm} from "./utils.js";
 
 export const render_parent = DOM("#setups tbody");
 export function render_item(msg, obj) {
-	return msg && TR([
+	return msg && TR({"data-id": msg.id}, [
 		TD(msg.category), //Include box art?
 		TD(msg.title),
 		TD(msg.tags), //may need to be joined
 		TD(msg.ccls), //ditto
 		TD(msg.comments),
-		TD(BUTTON("X")), //TODO
+		TD(BUTTON({class: "delete"}, "X")), //TODO
 	]);
 }
 export function render_empty() {
@@ -31,3 +32,7 @@ on("click", "#save", e => {
 	"category title tags ccls comments".split(" ").forEach(id => msg[id] = el[id].value);
 	ws_sync.send(msg);
 });
+
+on("click", ".delete", simpleconfirm("Delete this setup?", e => {
+	ws_sync.send({cmd: "delsetup", id: e.match.closest("[data-id]").dataset.id});
+}));

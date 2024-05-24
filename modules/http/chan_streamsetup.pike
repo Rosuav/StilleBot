@@ -75,7 +75,16 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 
 @"is_mod": void wscmd_newsetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	G->G->DB->mutate_config(channel->userid, "streamsetups") {
-		__ARGS__[0]->setups += ({msg & (<"category", "title", "tags", "ccls", "comments">)});
+		if (!stringp(msg->id)) msg->id = MIME.encode_base64(random_string(9)); //Allow the user to specify an ID, otherwise autogenerate
+		__ARGS__[0]->setups = filter(__ARGS__[0]->setups) {return __ARGS__[0]->id != msg->id;}
+			+ ({msg & (<"id", "category", "title", "tags", "ccls", "comments">)});
+	}->then() {send_updates_all(channel, "");};
+}
+
+@"is_mod": void wscmd_delsetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	G->G->DB->mutate_config(channel->userid, "streamsetups") {
+		if (msg->id == "undefined") msg->id = 0;
+		__ARGS__[0]->setups = filter(__ARGS__[0]->setups) {return __ARGS__[0]->id != msg->id;};
 	}->then() {send_updates_all(channel, "");};
 }
 
