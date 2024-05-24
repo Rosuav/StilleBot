@@ -10,7 +10,7 @@ inherit http_websocket;
 * Setups. Store an array in a single DB config entry. No need for anything to do with tweets, but have a Comments field.
 * Import from old Mustard Mine
   - Save the setups and checklist into save_config("streamsetups")
-  - Automatically create timers for chan_timers
+  - Automatically create timers for chan_monitors
 */
 
 constant markdown = #"# Stream setup
@@ -24,6 +24,27 @@ Saved setups allow you to quickly select commonly-used settings. They have uniqu
 You can create [commands](commands) that change these same settings.
 
 Were you using the old Mustard Mine? [Import your settings here!](: .opendlg data-dlg=importdlg)
+
+Category | Title | Tags | CCLs | Comments |
+---------|-------|------|------|----------|-
+loading... | - | - | - | - | -
+{:#setups}
+
+<div id=prevsetup></div>
+<form id=setupconfig>
+<table>
+<tr>
+	<td><label for=category>Category:</label></td>
+	<td><input id=category name=category size=30><button id=pick_cat type=button>Pick</button></td>
+</tr>
+<tr><td><label for=ccls>Classification:</label></td><td><input id=ccls name=ccls size=118 readonly> <button id=pick_ccls type=button>Pick</button></td></tr>
+<tr><td><label for=title>Stream title:</label></td><td><input id=title name=title size=125></td></tr>
+<tr><td>Tags:</td><td><input id=tags name=tags size=125></td></tr>
+<tr><td colspan=2>Separate multiple tags with commas.</td></tr>
+<tr><td><label for=comments>Comments:</td><td><textarea id=comments name=comments></textarea></td></tr>
+</table>
+<button type=submit>Update stream info</button> <button type=button id=save>Save this setup</button>
+</form>
 
 > ### Import old settings
 >
@@ -50,6 +71,12 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		"checklist": info->checklist || "",
 		"items": info->setups || ({ }),
 	]);
+}
+
+@"is_mod": void wscmd_newsetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	G->G->DB->mutate_config(channel->userid, "streamsetups") {
+		__ARGS__[0]->setups += ({msg & (<"category", "title", "tags", "ccls", "comments">)});
+	}->then() {send_updates_all(channel, "");};
 }
 
 constant builtin_name = "Stream setup";
