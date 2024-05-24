@@ -7,7 +7,6 @@ inherit http_websocket;
 /* TODO: Migrate in functionality from mustard-mine.herokuapp.com
 
 * User checklist
-* Setups. Store an array in a single DB config entry. No need for anything to do with tweets, but have a Comments field.
 * Import from old Mustard Mine
   - Save the setups and checklist into save_config("streamsetups")
   - Automatically create timers for chan_monitors
@@ -100,6 +99,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	]) | req->misc->chaninfo);
 }
 
+bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping info = await(G->G->DB->load_config(channel->userid, "streamsetups"));
 	return ([
@@ -108,7 +108,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	]);
 }
 
-@"is_mod": void wscmd_newsetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+void wscmd_newsetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	G->G->DB->mutate_config(channel->userid, "streamsetups") {
 		if (!stringp(msg->id)) msg->id = MIME.encode_base64(random_string(9)); //Allow the user to specify an ID, otherwise autogenerate
 		__ARGS__[0]->setups = filter(__ARGS__[0]->setups) {return __ARGS__[0]->id != msg->id;}
@@ -116,14 +116,13 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	}->then() {send_updates_all(channel, "");};
 }
 
-@"is_mod": void wscmd_delsetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+void wscmd_delsetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	G->G->DB->mutate_config(channel->userid, "streamsetups") {
-		if (msg->id == "undefined") msg->id = 0;
 		__ARGS__[0]->setups = filter(__ARGS__[0]->setups) {return __ARGS__[0]->id != msg->id;};
 	}->then() {send_updates_all(channel, "");};
 }
 
-@"is_mod": __async__ void wscmd_applysetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void wscmd_applysetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Note that this does NOT apply by ID; it sets all the specifics.
 	mapping params = ([]);
 	if (msg->title) params->title = msg->title; //Easy.
