@@ -96,6 +96,18 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	}->then() {send_updates_all(channel, "");};
 }
 
+@"is_mod": void wscmd_applysetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Note that this does NOT apply by ID; it sets all the specifics.
+	mapping params = ([]);
+	if (msg->title) params->title = msg->title; //Easy.
+	if (msg->tags) params->tags = String.trim((msg->tags / ",")[*]);
+	//TODO: CCLs, category
+	twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,
+		(["Authorization": channel->userid]),
+		(["method": "PATCH", "json": params, "return_errors": 1]),
+	);
+}
+
 constant builtin_name = "Stream setup";
 constant builtin_param = ({"/Action/query/title/category/tags/ccls", "New value"});
 constant scope_required = "channel:manage:broadcast"; //If you only use "query", it could be done without privilege, though.

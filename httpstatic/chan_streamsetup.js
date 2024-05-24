@@ -41,7 +41,11 @@ on("input", "#setupconfig input", e => e.match.form.classList.add("dirty"));
 
 on("submit", "#setupconfig", e => {
 	e.preventDefault();
-	//TODO: Update stream setup (and remove Dirty flag - only here, not when you save)
+	const el = DOM("#setupconfig").elements;
+	const msg = {cmd: "applysetup"};
+	"category title tags ccls".split(" ").forEach(id => msg[id] = el[id].value);
+	ws_sync.send(msg);
+	e.match.classList.remove("dirty");
 });
 
 on("click", "#save", e => {
