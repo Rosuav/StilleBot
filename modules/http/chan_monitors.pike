@@ -22,7 +22,7 @@ inherit builtin_command;
 constant builtin_name = "Monitors"; //The front end may redescribe this according to the parameters
 constant builtin_description = "Get information about a channel monitor";
 //NOTE: The labels for parameters 1 and 2 will be replaced by the GUI editor based on monitor type.
-constant builtin_param = ({"/Monitor/monitor_id", "Advance by or action", "Time (countdowns only)"});
+constant builtin_param = ({"/Monitor/monitor_id", "Advancement/action", "Time (countdowns only)"});
 constant vars_provided = ([
 	"{type}": "Monitor type (text, goalbar, countdown)",
 	//NOTE: Any values not applicable to the type in question will be blank/omitted.
