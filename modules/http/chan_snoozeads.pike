@@ -28,7 +28,7 @@ __async__ void check_stats(object channel, int|void trace) {
 	//NOTE: The docs say that the timestamps are given in text format, but they seem to be numbers.
 	snooze->time_captured = time();
 	object since = G->G->stream_online_since[channel->userid];
-	if (trace) werror("check_stats since %O\n", since);
+	if (trace) werror("check_stats since %O snooze %O\n", since, snooze);
 	if (since) {
 		snooze->online_since = since->unix_time();
 		if (trace) werror("check_stats warning %O\n", channel->config->advance_warning);
@@ -58,6 +58,10 @@ __async__ void check_stats(object channel, int|void trace) {
 			if (next > 0) {
 				werror("Scheduling next ad check for %O in %O seconds\n", channel->login, next);
 				channel_ad_callouts[channel->userid] = call_out(check_stats_by_id, next, channel->userid);
+			}
+			else if (next < -3600*4) {
+				werror("Next ad check for %O would be in %O seconds! Rescheduling in five.\n", channel->login, next);
+				channel_ad_callouts[channel->userid] = call_out(check_stats_by_id, 300, channel->userid);
 			}
 			else if (trace) werror("check_stats next %O\n", next);
 		}
