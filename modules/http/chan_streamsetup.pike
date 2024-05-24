@@ -57,11 +57,19 @@ loading... | - | - | - | - | -
 {: tag=dialog #importdlg}
 ";
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
-	if (string scopes = ensure_bcaster_token(req, "channel:manage:broadcast"))
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+	if (string scopes = req->misc->channel->userid && ensure_bcaster_token(req, "channel:manage:broadcast"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
+	array prev;
+	if (req->misc->channel->userid) prev = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + req->misc->channel->userid))->data;
+	else prev = ({([ //Sample data for the demo channel
+		"game_name": "Software and Game Development",
+		"tags": "TwitchChannelBot Demo HelloWorld" / " ",
+		"content_classification_labels": ({ }),
+		"title": "Example title of an example stream",
+	])});
 	return render(req, ([
-		"vars": (["ws_group": ""]),
+		"vars": (["ws_group": "", "initialsetup": sizeof(prev) && prev[0]]),
 	]) | req->misc->chaninfo);
 }
 

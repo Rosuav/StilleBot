@@ -54,3 +54,11 @@ on("click", "#save", e => {
 on("click", ".delete", simpleconfirm("Delete this setup?", e => {
 	ws_sync.send({cmd: "delsetup", id: e.match.closest("[data-id]").dataset.id});
 }));
+
+if (initialsetup) {
+	const el = DOM("#setupconfig").elements;
+	el.category.value = initialsetup.game_name;
+	el.ccls.value = initialsetup.content_classification_labels.join(", "); //TODO: Are they just strings?
+	el.title.value = initialsetup.title;
+	el.tags.value = initialsetup.tags.join(", ");
+}
