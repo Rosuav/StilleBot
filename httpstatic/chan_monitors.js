@@ -110,7 +110,14 @@ set_content("#editcountdown form div", [
 				" Will count down from this time (eg 600 = ten minutes)"]),
 			P("For best results, configure OBS to shutdown source when not visible."), //And maybe refresh on visible? Or not needed?
 		])]),
-		TR([TH("Schedule"), TD("TODO: Link this timer to your Twitch schedule (maybe w/ offset)")]),
+		TR([TH("Schedule"), TD([
+			LABEL([INPUT({name: "twitchsched", type: "checkbox"}),
+				" Tie this countdown to your Twitch schedule"]),
+			P(["The countdown will always target the next nearest event on your Twitch", BR(),
+			"schedule. Add an offset (positive or negative) to have it show that many seconds", BR(),
+			"at the time of the event (eg 300 to count to five minutes after the event)."]),
+			LABEL(["Time offset ", INPUT({name: "twitchsched_offset", type: "number"})]),
+		])]),
 	]),
 ]);
 
@@ -253,7 +260,7 @@ on("click", "#add_goalbar", e => {
 });
 
 on("click", "#add_countdown", e => {
-	fetch("monitors", {method: "PUT", headers: {"Content-Type": "application/json"}, body: '{"text": "$countdown$:#:##", "type": "countdown"}'});
+	fetch("monitors", {method: "PUT", headers: {"Content-Type": "application/json"}, body: '{"text": "#:##", "type": "countdown"}'});
 });
 
 on("click", ".editbtn", e => {

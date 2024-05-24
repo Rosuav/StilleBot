@@ -2,14 +2,7 @@ inherit http_websocket;
 inherit hook;
 inherit builtin_command;
 
-/* Subset of functionality from mustard-mine.herokuapp.com:
-* It can be linked to your Twitch schedule (see get_stream_schedule()) to define the target.
-  - Note that this will likely mean that schedule updates become crucial.
-    - Obviously will require a call to get_stream_schedule inside get_chan_state
-    - What if the schedule changes while the browser source is open? When will we notice?
-      There's no EventSub message relating to the schedule, sadly.
-    - Have centralized fetching of the schedule. Any time we fetch for the sake of the front end,
-      it can send_updates_all() to make changes take effect.
+/* TODO:
 * The "Completed" and "Inactive" states currently are fixed text only.
   - The boundary between "Active" and "Inactive" should ideally be configurable; default to one hour.
   - For timers tied to the Twitch schedule, recommend that "completed" and "inactive" be treated identically,
@@ -42,7 +35,8 @@ constant vars_provided = ([
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
 constant saveable_attributes = "previewbg barcolor fillcolor needlesize thresholds progressive lvlupcmd format width height "
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop "
-	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time" / " " + TEXTFORMATTING_ATTRS;
+	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time "
+	"twitchsched twitchsched_offset" / " " + TEXTFORMATTING_ATTRS;
 constant valid_types = (<"text", "goalbar", "countdown">);
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
@@ -69,16 +63,16 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			//Note that this is deliberately slightly shorter than the subpoints nonce
 			//(by 4 base64 characters), to allow them to be distinguished for debugging.
 			nonce = replace(MIME.encode_base64(random_string(27)), (["/": "1", "+": "0"]));
+			//Hack: Create a new variable for a new goal bar/countdown.
+			if ((<"countdown", "goalbar">)[body->type] && !body->varname) {
+				mapping vars = G->G->DB->load_cached_config(req->misc->channel->userid, "variables");
+				void tryvar(string v) {werror("Trying %O --> %O\n", v, vars["$"+v+"$"]); if (!vars["$"+v+"$"]) body->varname = v;}
+				for (int i = 0; i < 26 && !body->varname; ++i) tryvar(sprintf("%s%c", body->type, 'A' + i));
+				for (int i = 0; i < 26*26 && !body->varname; ++i) tryvar(sprintf("%s%c%c", body->type, 'A' + i / 26, 'A' + i % 26));
+				//Do I need to attempt goalbarAAA ? We get 700 options without, or 18K with.
+				req->misc->channel->set_variable(body->varname, "0", "set");
+			}
 			if (body->type == "goalbar") {
-				//Hack: Create a new variable for a new goal bar.
-				if (!body->varname) {
-					mapping vars = G->G->DB->load_cached_config(req->misc->channel->userid, "variables");
-					void tryvar(string v) {if (!vars["$"+v+"$"]) body->varname = v;}
-					for (int i = 0; i < 26 && !body->varname; ++i) tryvar(sprintf("goalbar%c", 'A' + i));
-					for (int i = 0; i < 26*26 && !body->varname; ++i) tryvar(sprintf("goalbar%c%c", 'A' + i / 26, 'A' + i % 26));
-					//Do I need to attempt goalbarAAA ? We get 700 options without, or 18K with.
-					req->misc->channel->set_variable(body->varname, "0", "set");
-				}
 				//Apply some defaults where not provided.
 				body = ([
 					"thresholds": "100",
@@ -117,9 +111,20 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
 }
 
+__async__ void update_scheduled_timer(object channel, mapping mon) {
+	array ev = await(get_stream_schedule(channel->userid, (int)mon->twitchsched_offset, 1, 86400));
+	int target = 0;
+	if (sizeof(ev)) //It's possible there are no events coming; leave it at zero.
+		target = time_from_iso(ev[0]->start_time)->unix_time() + (int)mon->twitchsched_offset;
+	sscanf(mon->text, "$%s$:", string varname);
+	channel->set_variable(varname, (string)target);
+}
+
 mapping _get_monitor(object channel, mapping monitors, string id) {
 	mapping text = monitors[id];
-	return text && text | ([
+	if (!text) return 0;
+	if (text->type == "countdown" && text->twitchsched) update_scheduled_timer(channel, text);
+	return text | ([
 		"id": id,
 		"display": channel->expand_variables(text->text),
 		"thresholds_rendered": channel->expand_variables(text->thresholds || ""), //In case there are variables in the thresholds
