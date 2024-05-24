@@ -70,6 +70,16 @@ loading... | - | - | - | - | -
 #setups tbody tr:hover {
 	background: #ff0;
 }
+
+#prevsetup {
+	margin: 0.25em;
+	padding: 0.25em;
+	border: 1px solid blue;
+	display: none;
+}
+#prevsetup span {
+	margin: 0 0.5em;
+}
 </style>
 ";
 
@@ -113,16 +123,21 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	}->then() {send_updates_all(channel, "");};
 }
 
-@"is_mod": void wscmd_applysetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_applysetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Note that this does NOT apply by ID; it sets all the specifics.
 	mapping params = ([]);
 	if (msg->title) params->title = msg->title; //Easy.
 	if (msg->tags) params->tags = String.trim((msg->tags / ",")[*]);
 	//TODO: CCLs, category
-	twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,
+	mapping prev = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid));
+	prev = prev->data[0];
+	prev->tags *= ", ";
+	//TODO: Reformat CCLs too
+	await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,
 		(["Authorization": channel->userid]),
 		(["method": "PATCH", "json": params, "return_errors": 1]),
-	);
+	));
+	conn->sock->send_text(Standards.JSON.encode((["cmd": "prevsetup", "setup": prev])));
 }
 
 constant builtin_name = "Stream setup";

@@ -1,5 +1,5 @@
 import {choc, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, TD, TR} = choc; //autoimport
+const {BUTTON, SPAN, TD, TR} = choc; //autoimport
 import {simpleconfirm} from "./utils.js";
 
 const setups = {}; //Keyed by ID
@@ -28,6 +28,9 @@ on("click", "#setups tr[data-id]", e => {
 	console.log("click");
 	const setup = setups[e.match.dataset.id];
 	if (!setup) return; //Shouldn't happen
+	pick_setup(setup);
+});
+function pick_setup(setup) {
 	const setupform = DOM("#setupconfig").elements;
 	setupform.category.value = setup.category;
 	setupform.title.value = setup.title;
@@ -35,7 +38,7 @@ on("click", "#setups tr[data-id]", e => {
 	setupform.ccls.value = setup.ccls;
 	setupform.comments.value = setup.comments;
 	DOM("#setupconfig").classList.add("dirty");
-});
+}
 
 on("input", "#setupconfig input", e => e.match.form.classList.add("dirty"));
 
@@ -46,6 +49,25 @@ on("submit", "#setupconfig", e => {
 	"category title tags ccls".split(" ").forEach(id => msg[id] = el[id].value);
 	ws_sync.send(msg);
 	e.match.classList.remove("dirty");
+});
+
+let prevsetup = { };
+export function sockmsg_prevsetup(msg) {
+	prevsetup = msg.setup;
+	set_content("#prevsetup", [
+		SPAN("Previous setup:"),
+		SPAN(prevsetup.category),
+		SPAN(prevsetup.title),
+		SPAN(prevsetup.tags),
+		SPAN(BUTTON({onclick: () => pick_setup(prevsetup)}, "Reapply")),
+		SPAN(BUTTON({id: "saveprev"}, "Save")),
+	]).style.display = "block";
+}
+
+on("click", "#saveprev", e => {
+	const msg = {cmd: "newsetup"};
+	"category title tags ccls comments".split(" ").forEach(id => msg[id] = prevsetup[id]);
+	ws_sync.send(msg);
 });
 
 on("click", "#save", e => {
