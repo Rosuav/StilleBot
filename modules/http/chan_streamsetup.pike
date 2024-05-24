@@ -58,6 +58,7 @@ loading... | - | - | - | - | -
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	if (string scopes = req->misc->channel->userid && ensure_bcaster_token(req, "channel:manage:broadcast"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
 	array prev;
