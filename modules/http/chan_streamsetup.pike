@@ -4,14 +4,6 @@ inherit http_websocket;
 //TODO: Document the fact that tags and CCLs can be added to with "+tagname" and removed
 //from with "-tagname". It's a useful feature but hard to explain compactly.
 
-/* TODO: Migrate in functionality from mustard-mine.herokuapp.com
-
-* User checklist
-* Import from old Mustard Mine
-  - Save the setups and checklist into save_config("streamsetups")
-  - Automatically create timers for chan_monitors
-*/
-
 constant markdown = #"# Stream setup
 
 TODO. Massive massive TODO.
@@ -40,7 +32,7 @@ loading... | - | - | - | - | -
 <tr><td><label for=title>Stream title:</label></td><td><input id=title name=title size=125></td></tr>
 <tr><td>Tags:</td><td><input id=tags name=tags size=125></td></tr>
 <tr><td colspan=2>Separate multiple tags/CCLs with commas.</td></tr>
-<tr><td><label for=comments>Comments:</td><td><textarea id=comments name=comments></textarea></td></tr>
+<tr><td><label for=comments>Comments:</td><td><textarea id=comments name=comments rows=5 cols=80></textarea></td></tr>
 </table>
 <button type=submit>Update stream info</button> <button type=button id=save>Save this setup</button>
 </form>
@@ -50,9 +42,9 @@ loading... | - | - | - | - | -
 > Were you previously using [the old Mustard Mine](https://mustard-mine.herokuapp.com/)? You can
 > export settings from there (scroll all the way down) and import them here.
 >
-> <input type=file accept=application/json>
+> <input id=importfile type=file accept=application/json>
 >
-> [Close](:.dialog_close)
+> [Import](:#importsettings disabled=true) [Close](:.dialog_close)
 {: tag=dialog #importdlg}
 
 <style>
@@ -103,7 +95,7 @@ bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping info = await(G->G->DB->load_config(channel->userid, "streamsetups"));
 	return ([
-		"checklist": info->checklist || "",
+		"checklist": info->checklist || "", //TODO: Not implemented on front end yet
 		"items": info->setups || ({ }),
 	]);
 }
@@ -137,6 +129,17 @@ __async__ void wscmd_applysetup(object channel, mapping(string:mixed) conn, mapp
 		(["method": "PATCH", "json": params, "return_errors": 1]),
 	));
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "prevsetup", "setup": prev])));
+}
+
+void wscmd_import(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	G->G->DB->mutate_config(channel->userid, "streamsetups") { mapping cfg = __ARGS__[0];
+		foreach (msg->data->setups || ({ }), mapping|string setup) if (mappingp(setup)) {
+			setup->id = MIME.encode_base64(random_string(9));
+			setup->comments = m_delete(setup, "tweet") || ""; //Tweets aren't supported, but comments are new (and mean we don't lose any data)
+			cfg->setups += ({setup});
+		}
+		if (arrayp(msg->data->checklist)) cfg->checklist = String.trim(msg->data->checklist * "\n");
+	}->then() {send_updates_all(channel, "");};
 }
 
 constant builtin_name = "Stream setup";
