@@ -20,18 +20,15 @@ Ad-vance warning: <input type=number id=advance_warning> seconds. Enables the [!
 @retain: mapping channel_ad_callouts = ([]);
 @retain: mapping channel_ad_vance_warning = ([]);
 
-__async__ void check_stats(object channel, int|void trace) {
-	if (trace) werror("check_stats for channel %O, tracing\n", channel->login);
+__async__ void check_stats(object channel) {
 	remove_call_out(channel_ad_callouts[channel->userid]);
 	mapping snooze = await(twitch_api_request("https://api.twitch.tv/helix/channels/ads?broadcaster_id=" + channel->userid,
 		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]])))->data[0];
 	//NOTE: The docs say that the timestamps are given in text format, but they seem to be numbers.
 	snooze->time_captured = time();
 	object since = G->G->stream_online_since[channel->userid];
-	if (trace) werror("check_stats since %O snooze %O\n", since, snooze);
 	if (since) {
 		snooze->online_since = since->unix_time();
-		if (trace) werror("check_stats warning %O\n", channel->config->advance_warning);
 		if (int adv = channel->config->advance_warning) {
 			//TODO: Bouncer?
 			int next = snooze->next_ad_at - time();
@@ -63,7 +60,6 @@ __async__ void check_stats(object channel, int|void trace) {
 				werror("Next ad check for %O would be in %O seconds! Rescheduling in five.\n", channel->login, next);
 				channel_ad_callouts[channel->userid] = call_out(check_stats_by_id, 300, channel->userid);
 			}
-			else if (trace) werror("check_stats next %O\n", next);
 		}
 	}
 	channel_ad_stats[channel->userid] = snooze;
@@ -81,7 +77,7 @@ void ad_fired(object channel, mapping info) {
 	werror("snoozeads hook channel_online: %O %O %O %O\n", chan, uptime, chanid, G->G->irc->id[chanid]);
 	object channel = G->G->irc->id[chanid]; if (!channel) return 0;
 	werror("advance_warning: %O\n", channel->config->advance_warning);
-	if (channel->config->advance_warning) call_out(check_stats, 0, channel, 1); //Let the initialization complete before checking status
+	if (channel->config->advance_warning) call_out(check_stats, 120, channel); //Twitch doesn't have the "next ad" immediately, so we'll check for it in two minutes.
 }
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
