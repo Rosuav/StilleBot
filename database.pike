@@ -570,6 +570,7 @@ __async__ mapping load_session(string cookie) {
 
 //Generate a new session cookie that definitely doesn't exist
 __async__ string generate_session_cookie() {
+	if (!livedb) await(await_livedb());
 	while (1) {
 		string cookie = random(1<<64)->digits(36);
 		mixed ex = catch {await(query_rw("insert into stillebot.http_sessions (cookie, data) values(:cookie, '')",
