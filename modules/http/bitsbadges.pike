@@ -1,5 +1,10 @@
 inherit http_endpoint;
 
+constant markdown = #"# Who has bits badges?
+
+$$text$$
+";
+
 constant levels = ({5000000, 4500000, 4000000, 3500000, 3000000, 2500000, 2000000,
 	1750000, 1500000, 1250000, 1000000, 900000, 800000, 700000, 600000, 500000,
 	400000, 300000, 200000, 100000, 75000, 50000, 25000, 10000, 5000, 1000});
@@ -36,5 +41,5 @@ __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Reques
 		users += ", " + user->user_name;
 	}
 	if (sizeof(info->data) == 100) text += "\n\nNOTE: This shows only the top 100 users, and the last tier may have other people in it.";
-	return render_template("bitsbadges.md", (["text": text]));
+	return render_template(markdown, (["text": text]));
 }
