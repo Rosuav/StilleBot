@@ -844,8 +844,8 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 	update_one(conn->group, id); //Note that the display connection doesn't need to be updated
 }
 
-__async__ void file_uploaded(int channelid, mapping user, mapping file) {
-	update_one("control#" + channelid, file->id); //Display connection doesn't need to get updated.
+__async__ void file_uploaded(mapping file) {
+	update_one("control#" + file->channel, file->id); //Display connection doesn't need to get updated.
 }
 
 //Update the magic variable $nonhiddengifredeems$

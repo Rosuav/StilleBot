@@ -86,7 +86,10 @@ constant tables = ([
 		"metadata jsonb not null default '{}'",
 		"expires timestamp with time zone", //NULL means it never expires
 		"data bytea not null", //The actual blob.
-		//TODO: Figure out what would make useful indexes
+		//Another not tested.
+		//"create or replace function send_upload_notification() returns trigger language plpgsql as $$begin perform pg_notify('stillebot.uploads', old.id::text); return null; end$$;",
+		//"create trigger uploads_update_notify after update on stillebot.uploads for each row execute function send_upload_notification();",
+		//"alter table stillebot.uploads enable always trigger uploads_update_notify;",
 	}),
 	"botservice": ({
 		"twitchid bigint primary key",
@@ -684,6 +687,16 @@ Concurrent.Future purge_ephemeral_files(string|int channel, string|int uploader,
 
 void delete_file(string id) {
 	G->G->DB->save_sql("delete from stillebot.uploads where id = :id", (["id": id]));
+}
+
+@"stillebot.uploads":
+__async__ void notify_file_updated(int pid, string cond, string extra, string host) {
+	//Note that this could be a fresh upload (just received its blob), or it
+	//could be a simple metadata edit. Either way, force it out to the websockets.
+	if (!is_active_bot()) return; //Should be no websockets on an inactive bot anyway.
+	mapping file = await(get_file(extra)); if (!file) return;
+	function cb = G->G->websocket_types[file->expires ? "chan_share" : "chan_alertbox"]->file_uploaded;
+	if (cb) cb(file);
 }
 
 @"stillebot.config:botconfig":

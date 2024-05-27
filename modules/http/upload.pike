@@ -1,4 +1,7 @@
 //Uploads include both art shares and alertbox GIFs/sounds
+//NOTE: This *must* be able to function on a non-active bot. Uploads can be sent
+//to any instance, and will not be redirected to main. This can result in logs
+//on either Gideon or Sikorsky in the event of an upload failure.
 inherit http_endpoint;
 
 //Map the FFProbe results to their MIME types.
@@ -49,8 +52,6 @@ Upload time: %s
 		if (mimetype) file->metadata->mimetype = mimetype;
 		file->metadata->etag = String.string2hex(Crypto.SHA1.hash(req->body_raw));
 		await(G->G->DB->update_file(file->id, file->metadata, req->body_raw));
-		function cb = G->G->websocket_types[file->expires ? "chan_share" : "chan_alertbox"]->file_uploaded;
-		if (cb) cb(file->channel, req->misc->session->user, file);
 		return jsonify((["url": file->url]));
 	}
 	array(string) parts = fileid / "-";

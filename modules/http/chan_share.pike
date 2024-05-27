@@ -144,17 +144,18 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	]) | req->misc->chaninfo);
 }
 
-__async__ void file_uploaded(int channelid, mapping user, mapping file) {
-	update_one(user->id + "#" + channelid, file->id);
-	mapping settings = await(G->G->DB->load_config(channelid, "artshare"));
-	G->G->irc->id[channelid]->send(
+__async__ void file_uploaded(mapping file) {
+	mapping user = await(get_user_info(file->uploader, "id"));
+	update_one(user->id + "#" + file->channel, file->id);
+	mapping settings = await(G->G->DB->load_config(file->channel, "artshare"));
+	G->G->irc->id[file->channel]->send(
 		(["displayname": user->display_name]),
 		settings->msgformat || DEFAULT_MSG_FORMAT,
 		(["{URL}": file->metadata->url, "{sharerid}": user->id, "{fileid}": file->id]),
 	) {[mapping vars, mapping params] = __ARGS__;
 		//Note that the channel ID isn't strictly necessary, as any deletion signal will
 		//itself be associated with that channel; but it's nice to have for debugging.
-		artshare_messageid[params->id] = ({(string)channelid, vars["{sharerid}"], vars["{fileid}"]});
+		artshare_messageid[params->id] = ({(string)file->channel, vars["{sharerid}"], vars["{fileid}"]});
 		artshare_file_messageid[vars["{fileid}"]] = params->id;
 	};
 }
