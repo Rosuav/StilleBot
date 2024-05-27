@@ -30,6 +30,7 @@ function fetchkaraoke() {
 	//Fetch the audio and retain it locally, to allow seeking
 	if (fetchedaudio === curnamehash) return 1;
 	fetchedaudio = curnamehash;
+	//TODO: Make this work even if we're not on the active bot
 	fetch("vlc?raw=audio&hash=" + curnamehash).then(r => r.blob()).then(blob => {
 		DOM("#karaoke").src = URL.createObjectURL(blob);
 		set_karaoke_pos();
