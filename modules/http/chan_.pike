@@ -44,6 +44,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if ((int)req->misc->session->user->id == req->misc->channel->userid) {
 			extralinks = "* [Master Control Panel](mastercontrol) - vital settings, broadcaster-only, not normally needed\n";
 			if (req->variables->dismiss) {
+				//NOTE: We may be a non-active bot, but it should still work since it's pushing
+				//through PGSQL.
 				channel->botconfig->greeting_dismissed = 1;
 				channel->botconfig_save();
 			}
