@@ -1159,7 +1159,7 @@ void copy_stock(mapping alertconfigs, string basetype) {
 
 @"is_mod": __async__ void wscmd_renamefile(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Rename a file. Won't change its URL (since that's based on ID),
-	//nor the name of the file as stored (ditto), so this is really an
+	//nor where the file is stored (it's in the DB), so this is really an
 	//"edit description" endpoint. But users will think of it as "rename".
 	if (!stringp(msg->id) || !stringp(msg->name)) return;
 	mapping file = await(G->G->DB->get_file(msg->id));
