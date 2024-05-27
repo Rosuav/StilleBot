@@ -236,32 +236,16 @@ on("click", "#createvar", e => {
 });
 
 on("submit", "dialog form", async e => {
-	console.log(e.match.elements);
 	const dlg = e.match.closest("dialog");
-	const body = {nonce: dlg.dataset.nonce, type: dlg.id.slice(4)};
+	const body = {cmd: "updatemonitor", nonce: dlg.dataset.nonce, type: dlg.id.slice(4)};
 	for (let el of e.match.elements)
 		if (el.name) body[el.name] = el.type === "checkbox" ? el.checked : el.value;
-	console.log("Saving", body);
-	const res = await fetch("monitors", {
-		method: "PUT",
-		headers: {"Content-Type": "application/json"},
-		body: JSON.stringify(body),
-	});
-	if (!res.ok) console.error("Something went wrong in the save, check console"); //TODO: Report errors properly
+	ws_sync.send(body);
 });
 
-on("click", "#add_text", e => {
-	//TODO: Replace this with a ws message
-	fetch("monitors", {method: "PUT", headers: {"Content-Type": "application/json"}, body: '{"text": ""}'});
-});
-
-on("click", "#add_goalbar", e => {
-	fetch("monitors", {method: "PUT", headers: {"Content-Type": "application/json"}, body: '{"text": "Achieve a goal!", "type": "goalbar", "active": 1}'});
-});
-
-on("click", "#add_countdown", e => {
-	fetch("monitors", {method: "PUT", headers: {"Content-Type": "application/json"}, body: '{"text": "#:##", "type": "countdown"}'});
-});
+on("click", "#add_text", e => ws_sync.send({cmd: "addmonitor", type: "text"}));
+on("click", "#add_goalbar", e => ws_sync.send({cmd: "addmonitor", type: "goalbar"}));
+on("click", "#add_countdown", e => ws_sync.send({cmd: "addmonitor", type: "countdown"}));
 
 on("click", ".editbtn", e => {
 	const nonce = e.match.closest("tr").dataset.id;
@@ -274,16 +258,8 @@ on("click", ".editbtn", e => {
 	dlg.showModal();
 });
 
-on("click", ".deletebtn", simpleconfirm("Delete this monitor?", async e => {
-	const nonce = e.match.dataset.nonce;
-	console.log("Delete.");
-	const res = await fetch("monitors", {
-		method: "DELETE",
-		headers: {"Content-Type": "application/json"},
-		body: JSON.stringify({nonce}),
-	});
-	if (!res.ok) console.error("Something went wrong in the save, check console"); //TODO: Report errors properly
-}));
+on("click", ".deletebtn", simpleconfirm("Delete this monitor?", e =>
+	ws_sync.send({cmd: "deletemonitor", nonce: e.match.dataset.nonce})));
 
 on("dragstart", ".monitorlink", e => {
 	const url = `${e.match.href}&layer-name=StilleBot%20monitor&layer-width=${e.match.dataset.width||400}&layer-height=${e.match.dataset.height||120}`;

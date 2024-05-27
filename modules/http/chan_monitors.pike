@@ -51,62 +51,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			"styles": "#display div {width: 33%;}#display div:nth-of-type(2) {text-align: center;}#display div:nth-of-type(3) {text-align: right;}",
 		]));
 	}
-	if (req->request_type == "PUT") {
-		//API handling.
-		if (!req->misc->is_mod) return (["error": 401]); //JS wants it this way, not a redirect that a human would like
-		mixed body = Standards.JSON.decode_utf8(req->body_raw);
-		if (!body || !mappingp(body) || !stringp(body->text)) return (["error": 400]);
-		if (req->misc->session->fake) return jsonify((["ok": 1]));
-		string nonce = body->nonce;
-		if (!monitors[nonce]) {
-			//The given nonce doesn't exist - or none was given. Create a new monitor.
-			//Note that this is deliberately slightly shorter than the subpoints nonce
-			//(by 4 base64 characters), to allow them to be distinguished for debugging.
-			nonce = replace(MIME.encode_base64(random_string(27)), (["/": "1", "+": "0"]));
-			//Hack: Create a new variable for a new goal bar/countdown.
-			if ((<"countdown", "goalbar">)[body->type] && !body->varname) {
-				mapping vars = G->G->DB->load_cached_config(req->misc->channel->userid, "variables");
-				void tryvar(string v) {werror("Trying %O --> %O\n", v, vars["$"+v+"$"]); if (!vars["$"+v+"$"]) body->varname = v;}
-				for (int i = 0; i < 26 && !body->varname; ++i) tryvar(sprintf("%s%c", body->type, 'A' + i));
-				for (int i = 0; i < 26*26 && !body->varname; ++i) tryvar(sprintf("%s%c%c", body->type, 'A' + i / 26, 'A' + i % 26));
-				//Do I need to attempt goalbarAAA ? We get 700 options without, or 18K with.
-				req->misc->channel->set_variable(body->varname, "0", "set");
-			}
-			if (body->type == "goalbar") {
-				//Apply some defaults where not provided.
-				body = ([
-					"thresholds": "100",
-					"color": "#005500",
-					"barcolor": "#DDDDFF",
-					"fillcolor": "#FFFF55",
-					"previewbg": "#BBFFFF",
-					"needlesize": "0.375",
-				]) | body;
-			}
-		}
-		mapping info = monitors[nonce] = (["type": "text", "text": body->text]);
-		if (valid_types[body->type]) info->type = body->type;
-		foreach (saveable_attributes, string key) if (body[key]) info[key] = body[key];
-		if (info->needlesize == "") info->needlesize = "0";
-		if (body->varname) info->text = sprintf("$%s$:%s", body->varname, info->text);
-		textformatting_validate(info);
-		await(G->G->DB->save_config(req->misc->channel->userid, "monitors", monitors));
-		send_updates_all(req->misc->channel, nonce);
-		update_one(req->misc->channel, "", nonce);
-		return jsonify((["ok": 1]));
-	}
-	if (req->request_type == "DELETE") {
-		if (!req->misc->is_mod) return (["error": 401]); //JS wants it this way, not a redirect that a human would like
-		mixed body = Standards.JSON.decode(req->body_raw);
-		if (!body || !mappingp(body) || !stringp(body->nonce)) return (["error": 400]);
-		string nonce = body->nonce;
-		if (!monitors[nonce]) return (["error": 404]);
-		if (req->misc->session->fake) return (["error": 204]);
-		m_delete(monitors, nonce);
-		await(G->G->DB->save_config(req->misc->channel->userid, "monitors", monitors));
-		send_updates_all(req->misc->channel, "");
-		return (["error": 204]);
-	}
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
 }
@@ -174,6 +118,67 @@ void websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	string prev = G->G->DB->load_cached_config(channel->userid, "variables")["$" + msg->varname + "$"];
 	if (!prev) return;
 	channel->set_variable(msg->varname, (string)(int)msg->val, "set");
+}
+
+@"is_mod": __async__ void wscmd_addmonitor(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!valid_types[msg->type]) return;
+	//Note that this is deliberately slightly shorter than the subpoints nonce
+	//(by 4 base64 characters), to allow them to be distinguished for debugging.
+	string nonce = replace(MIME.encode_base64(random_string(27)), (["/": "1", "+": "0"]));
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	mapping info = monitors[nonce] = ([
+		"type": msg->type,
+		"text": ([
+			"goalbar": "Achieve a goal!",
+			"countdown": "#:##",
+		])[msg->type] || "",
+	]);
+	//Hack: Create a new variable for a new goal bar/countdown.
+	if ((<"countdown", "goalbar">)[msg->type]) {
+		mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
+		void tryvar(string v) {if (!vars["$"+v+"$"]) info->varname = v;}
+		for (int i = 0; i < 26 && !info->varname; ++i) tryvar(sprintf("%s%c", info->type, 'A' + i));
+		for (int i = 0; i < 26*26 && !info->varname; ++i) tryvar(sprintf("%s%c%c", info->type, 'A' + i / 26, 'A' + i % 26));
+		//Do I need to attempt goalbarAAA ? We get 700 options without, or 18K with.
+		channel->set_variable(info->varname, "0", "set");
+	}
+	if (info->varname) info->text = sprintf("$%s$:%s", info->varname, info->text);
+	textformatting_validate(info);
+	if (msg->type == "goalbar") monitors[nonce] |= ([
+		"thresholds": "100",
+		"color": "#005500",
+		"barcolor": "#DDDDFF",
+		"fillcolor": "#FFFF55",
+		"previewbg": "#BBFFFF",
+		"needlesize": "0.375",
+		"active": 1,
+	]);
+	await(G->G->DB->save_config(channel->userid, "monitors", monitors));
+	send_updates_all(channel, nonce);
+	update_one(channel, "", nonce);
+}
+
+@"is_mod": __async__ void wscmd_updatemonitor(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	string nonce = msg->nonce;
+	if (!stringp(msg->text) || !monitors[nonce]) return; //Monitor doesn't exist. You can't create monitors with this.
+	mapping info = monitors[nonce] = (["type": "text", "type": monitors[nonce]->type, "text": msg->text]);
+	foreach (saveable_attributes, string key) if (msg[key]) info[key] = msg[key];
+	if (info->needlesize == "") info->needlesize = "0";
+	if (msg->varname) info->text = sprintf("$%s$:%s", msg->varname, info->text);
+	textformatting_validate(info);
+	await(G->G->DB->save_config(channel->userid, "monitors", monitors));
+	send_updates_all(channel, nonce);
+	update_one(channel, "", nonce);
+}
+
+@"is_mod": __async__ void wscmd_deletemonitor(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	string nonce = msg->nonce;
+	if (!monitors[nonce]) return;
+	m_delete(monitors, nonce);
+	await(G->G->DB->save_config(channel->userid, "monitors", monitors));
+	send_updates_all(channel, "");
 }
 
 //NOTE: This is a very rare message - a mutator that does not require mod powers or even a login.

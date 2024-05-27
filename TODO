@@ -278,6 +278,5 @@
 * Avoid use of fetch() when a websocket could do the job.
   - /affiliate currently has no websocket
   - chan_dynamics/chan_giveaway
-  - chan_monitors
-  - quote_edit
+  - quote_edit - rework it completely, use a websocket if logged in as a mod
   - raidfinder
