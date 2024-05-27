@@ -210,10 +210,6 @@
     allow people to pick a theme; save it to their prefs.
   - Autoindent? After a brace, indent. After a builtin function call or keyword,
     indent if there was nothing on the previous line. Dedent appropriately??
-* Twitch is planning to blur sexual content by default, and to give the option to
-  filter. When this rolls out, consider matching their defaults (currently, the user
-  has to explicitly choose to hide explicit content), and if the user prefs are made
-  visible, query them in the raid finder and do what the user wants.
 * Minor changes noted during massive DB migration:
   - chan_giveaway.pike giveaway_tickets[] should use user IDs
   - Sweeping change: Eventually mandate that chan_*
@@ -279,3 +275,9 @@
     Lua extension doesn't establish a bidirectional connection.
   - Try to get both the URL and the song title (as Unicode, no mojibake thanks)
 * Make an activatable feature for a Seize Crown redemption?
+* Avoid use of fetch() when a websocket could do the job.
+  - /affiliate currently has no websocket
+  - chan_dynamics/chan_giveaway
+  - chan_monitors
+  - quote_edit
+  - raidfinder

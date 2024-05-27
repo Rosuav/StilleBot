@@ -543,6 +543,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	}
 	if (req->variables->summary) {
 		//For API usage eg command viewer, provide some useful information in JSON.
+		//Note that this may be queried on a non-active bot, and must remain accurate.
 		mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "alertbox"));
 		return jsonify(([
 			"stdalerts": ALERTTYPES[2..<1],

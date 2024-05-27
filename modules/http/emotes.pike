@@ -102,6 +102,7 @@ constant order = ({
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->session->fake && req->request_type == "POST" && req->variables->checkfile) {
+		//Can be called on a non-active bot. Does not actually use bot tools at all.
 		if (sizeof(req->body_raw) > 1024*1024*10) return jsonify((["error": "File too large for analysis."]));
 		return jsonify(analyze_emote(req->body_raw));
 	}
