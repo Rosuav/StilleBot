@@ -177,7 +177,7 @@ const builtin_validators = {
 	monitor_id: {...default_handlers,
 		make_control(id, val, el) {
 			setTimeout(check_monitor_params, 0, val);
-			return SELECT({id, class: "monitor-selection"}, [
+			return SELECT({...id, class: "monitor-selection"}, [
 				//TODO: Sort these in some useful way (or at least consistent)
 				Object.entries(monitors).map(([id, m]) => {
 					let label = m.text;
