@@ -87,51 +87,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		foreach (G->G->category_names; int id; string name)
 			if (creative_names[name]) creatives[id] = 1;
 	}
-	if (req->request_type == "POST")
-	{
-		//Update notes
-		if (mapping resp = ensure_login(req)) return (["error": 401]);
-		mixed body = Standards.JSON.decode(req->body_raw);
-		if (!body || !mappingp(body) || !intp(body->id)) return (["error": 400]);
-		string newnotes = body->notes || "";
-		mapping notes = await(G->G->DB->load_config(req->misc->session->user->id, "raidnotes"));
-		if (body->id == 0)
-		{
-			//Special case: List of highlight channels.
-			//Channel names are separated by space or newline or comma or whatever
-			array(string) channels = replace(newnotes, ",;\n"/"", " ") / " " - ({""});
-			//Trim URLs down to just the channel name
-			foreach (channels; int i; string c) sscanf(c, "http%*[s]://twitch.tv/%s%*[?/]", channels[i]);
-			array users = await(get_users_info(channels, "login")); //TODO: If this throws "user not found", report it nicely
-			notes->highlight = (array(string))users->id * "\n";
-			await(G->G->DB->save_config(req->misc->session->user->id, "raidnotes", notes));
-			return jsonify(([
-				"highlights": users->login * "\n",
-				"highlightids": users->id,
-			]), 7);
-		}
-		if (body->id == -1) { //Should the front end use the same keywords??
-			//Update tag preferences. Note that this does NOT fully replace
-			//existing tag prefs; it changes only those which are listed.
-			//Note also that tag prefs, unlike other raid notes, are stored
-			//as a mapping.
-			if (!notes->tags) notes->tags = ([]);
-			foreach (newnotes / "\n", string line) 
-				if (sscanf(line, "%s %d", string id, int pref) == 2) {
-					//Hack: "<viewership>" is used for the "hide viewer counts" setting
-					//Though for CCL settings, it's able to store -3 to 0.
-					if (id != "" && id[0] == '<' && !has_prefix(id, "<CCL")) pref = pref < 0 ? -1 : 0;
-					if (!pref || pref > MAX_PREF || pref < MIN_PREF) m_delete(notes->tags, id);
-					else notes->tags[id] = pref;
-				}
-			await(G->G->DB->save_config(req->misc->session->user->id, "raidnotes", notes));
-			return jsonify((["ok": 1, "prefs": notes->tags]));
-		}
-		if (newnotes == "") m_delete(notes, (string)body->id);
-		else notes[(string)body->id] = newnotes;
-		await(G->G->DB->save_config(req->misc->session->user->id, "raidnotes", notes));
-		return (["error": 204]);
-	}
+	if (req->request_type == "POST") return jsonify((["error": "Switch to WS message pls"])) | (["error": 429]);
 	mapping logged_in = req->misc->session && req->misc->session->user;
 	if (req->variables->streamlength) return jsonify((["error": "Switch to ws message pls"])) | (["error": 429]);
 	if (req->variables->menu) {
@@ -544,6 +500,49 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		"backlink": "<a href=\"raidfinder?menu\">Other raid finder modes</a>",
 		"ccl_options": G->G->ccl_options_table,
 	]));
+}
+
+void websocket_cmd_update_tagpref(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Update tag preferences. Note that this does NOT fully replace
+	//existing tag prefs; it changes only those which are listed.
+	//Note also that tag prefs, unlike other raid notes, are stored
+	//as a mapping. (Should they be stored separately?)
+	G->G->DB->mutate_config(conn->session->user->id, "raidnotes") {
+		mapping tags = __ARGS__[0]->tags;
+		if (!tags) tags = __ARGS__[0]->tags = ([]);
+		string id = msg->tag; int pref = msg->pref;
+		//Hack: "<viewership>" is used for the "hide viewer counts" setting (boolean).
+		//And "<CCL*>" is used for CCL settings, which store -3 to 0.
+		if (id != "" && id[0] == '<' && !has_prefix(id, "<CCL")) pref = pref < 0 ? -1 : 0;
+		if (!pref || pref > MAX_PREF || pref < MIN_PREF) m_delete(tags, id);
+		else tags[id] = pref;
+		conn->sock->send_text(Standards.JSON.encode((["cmd": "tagprefs", "prefs": tags]), 4));
+	};
+}
+
+__async__ void websocket_cmd_update_highlights(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Channel names are separated by space or newline or comma or whatever
+	array(string) channels = replace(msg->highlights || "", ",;\n"/"", " ") / " " - ({""});
+	//Trim URLs down to just the channel name
+	foreach (channels; int i; string c) sscanf(c, "http%*[s]://twitch.tv/%s%*[?/]", channels[i]);
+	array users = await(get_users_info(channels, "login")); //TODO: If this throws "user not found", report it nicely
+	await(G->G->DB->mutate_config(conn->session->user->id, "raidnotes") {
+		__ARGS__[0]->highlight = (array(string))users->id * "\n";
+	});
+	conn->sock->send_text(Standards.JSON.encode(([
+		"cmd": "highlights",
+		"highlights": users->login * "\n",
+		"highlightids": users->id,
+	]), 4));
+}
+
+__async__ void websocket_cmd_update_notes(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!intp(msg->id)) return;
+	string newnotes = msg->notes || "";
+	mapping notes = await(G->G->DB->load_config(conn->session->user->id, "raidnotes"));
+	if (newnotes == "") m_delete(notes, (string)msg->id);
+	else notes[(string)msg->id] = newnotes;
+	await(G->G->DB->save_config(conn->session->user->id, "raidnotes", notes));
 }
 
 __async__ mapping followcategory(mapping(string:mixed) conn, mapping(string:mixed) msg) {

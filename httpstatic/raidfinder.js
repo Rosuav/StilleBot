@@ -163,23 +163,18 @@ DOM("#editnotes").onclose = e => {
 	if (e.currentTarget.returnValue !== "save") return;
 	const stream = e.currentTarget.stream;
 	const newnotes = DOM("#editnotes textarea").value;
-	fetch("/raidfinder", {
-		method: "POST",
-		headers: {"content-type": "application/json"},
-		body: JSON.stringify({id: +stream.user_id, notes: newnotes}),
-	}).then(res => {
-		if (!res.ok) {console.error("ERROR SAVING NOTES"); console.error(res);} //This could include a 401 if the login has expired
-		if (!stream.element) return res.json(); //Changing the highlights gets an actual response
-		const btn = stream.element.querySelector(".notes");
-		if (newnotes === "") {btn.className = "notes absent"; set_content(btn, "\u270D");}
-		else {btn.className = "notes present"; set_content(btn, "\u270D \u2709");}
-		stream.notes = newnotes;
-	}).then(response => {
-		if (!response) return; //Stream-specific notes have no response body.
-		highlights = response.highlights;
-		//The highlight IDs are there too if needed.
-		console.log(response.highlightids);
-	});
+	if (!stream.element) return ws_sync.send({cmd: "update_highlights", highlights: newnotes});
+	ws_sync.send({cmd: "update_notes", id: +stream.user_id, notes: newnotes});
+	const btn = stream.element.querySelector(".notes");
+	if (newnotes === "") {btn.className = "notes absent"; set_content(btn, "\u270D");}
+	else {btn.className = "notes present"; set_content(btn, "\u270D \u2709");}
+	stream.notes = newnotes;
+}
+
+export function sockmsg_highlights(msg) {
+	highlights = response.highlights;
+	//The highlight IDs are there too if needed.
+	console.log(response.highlightids);
 }
 
 DOM("#highlights").onclick = () => {
@@ -190,7 +185,7 @@ DOM("#highlights").onclick = () => {
 	]);
 	DOM("#editnotes textarea").value = highlights || "";
 	DOM("#editnotes").returnValue = "close";
-	DOM("#editnotes").stream = {user_id: 0};
+	DOM("#editnotes").stream = { };
 	DOM("#editnotes").showModal();
 }
 
@@ -225,27 +220,19 @@ function update_tag_display() {
 function like_dislike(e, delta) {
 	const tagid = e.match.closest("[data-tagid]").dataset.tagid || DOM("#newtagname").value;
 	if (tagid === "") return; //Should we say something if the user leaves the input blank?
-	console.log(tagid);
 	const newpref = (tag_prefs[tagid]|0) + delta;
-	console.log("New pref:", tag_prefs[tagid], " + ", delta, " = ", newpref);
 	if (newpref > MAX_PREF || newpref < MIN_PREF) return;
-	update_tagpref(tagid, newpref);
-}
-function update_tagpref(tagid, newpref) {
-	fetch("/raidfinder", {
-		method: "POST",
-		headers: {"content-type": "application/json"},
-		body: JSON.stringify({id: -1, notes: tagid + " " + newpref}),
-	}).then(res => res.json()).then(resp => {
-		//Update ALL prefs on any change. Helps to minimize desyncs.
-		tag_prefs = resp.prefs;
-		console.log("New prefs:", tag_prefs);
-		update_tag_display();
-	});
+	ws_sync.send({cmd: "update_tagpref", tag: tagid, pref: newpref});
 }
 on("click", ".liketag", e => like_dislike(e, 1));
 on("click", ".disliketag", e => like_dislike(e, -1));
-on("click", "input[type=radio][name^=CCL_]", e => update_tagpref("<" + e.match.name + ">", e.match.value));
+on("click", "input[type=radio][name^=CCL_]", e =>
+	ws_sync.send({cmd: "update_tagpref", tag: "<" + e.match.name + ">", pref: +e.match.value}));
+export function sockmsg_tagprefs(msg) {
+	//Update ALL prefs on any change. Helps to minimize desyncs.
+	tag_prefs = msg.prefs;
+	update_tag_display();
+}
 
 //TODO: Have a quick way to promote/demote a tag that you see in your follow list
 DOM("#tagprefs").onclick = () => {update_tag_display(); DOM("#tags").showModal();}
