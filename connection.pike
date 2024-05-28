@@ -1348,15 +1348,9 @@ void ws_close(int reason, mapping conn)
 {
 	if (function f = bounce(this_function)) {f(reason, conn); return;}
 	if (object handler = G->G->websocket_types[conn->type])
-	{
-		handler->websocket_msg(conn, 0);
 		handler->websocket_groups[conn->group] -= ({conn->sock});
-	}
 	if (object handler = conn->prefs_uid && G->G->websocket_types->prefs) //Disconnect from preferences
-	{
-		handler->websocket_msg(conn, 0);
 		handler->websocket_groups[conn->prefs_uid] -= ({conn->sock});
-	}
 	m_delete(conn, "sock"); //De-floop
 }
 
