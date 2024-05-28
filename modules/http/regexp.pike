@@ -10,7 +10,7 @@ mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Serve
 
 mapping get_state(string group, string|void id) {return ([]);}
 
-void websocket_cmd_test(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+mapping websocket_cmd_test(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	object re = regex_cache[msg->regexp];
 	mapping ret = (["cmd": "testresult", "regexp": msg->regexp, "text": msg->text]);
 	if (mixed ex = !re && catch (re = regex_cache[msg->regexp] = Regexp.PCRE(msg->regexp))) {
@@ -23,7 +23,7 @@ void websocket_cmd_test(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 		ret->matches = arrayp(match);
 		if (arrayp(match)) ret->matchtext = map(match / 2) {return msg->text[__ARGS__[0][0]..__ARGS__[0][1]-1];};
 	}
-	conn->sock->send_text(Standards.JSON.encode(ret, 4));
+	return ret;
 }
 
 mapping(string:mixed) redirect_no_p(Protocols.HTTP.Server.Request req) {return redirect("/regexp");}
