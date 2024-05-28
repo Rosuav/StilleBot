@@ -75,39 +75,18 @@ if (config.cost) {
 	el.refund_nonwinning.checked = config.refund_nonwinning === "yes";
 	set_content("#refund_nonwinning_desc", config.refund_nonwinning === "yes" ? "refunding" : "clearing out");
 }
-/*
-1) Create rewards - DONE
-2) Activate rewards - DONE
-3) Notice redemptions - DONE
-4) Deactivate rewards - DONE
-5) Pick a winner and remove (accept) all that person's tickets (so you can pick multiple winners) - DONE
-   - Needs an in-chat notification. Need a good system for these. Use for noobs run too. Pick command from dropdown, can edit.
-6) Clear all tickets - DONE
-7) Cancel giveaway and refund all tickets - DONE
-8) Userspace command to refund all my tickets. No need for partials, probably (too hard to manage)
-   - Allow this only while the giveaway is open.
-
-When no current giveaway, show most recent winner - DONE
-*/
 
 on("submit", "#configform", async e => {
 	e.preventDefault();
 	const el = e.match.elements;
-	const body = { };
+	const body = {cmd: "masterconfig"};
 	fields.forEach(f => body[f] = el[f].value);
 	body.allow_multiwin = el.allow_multiwin.checked ? "yes" : "no";
 	body.refund_nonwinning = el.refund_nonwinning.checked ? "yes" : "no";
-	const info = await (await fetch("giveaway", {
-		method: "PUT",
-		headers: {"Content-Type": "application/json"},
-		body: JSON.stringify(body),
-	})).json();
-	console.log("Got response:", info);
+	ws_sync.send(body);
 	set_content("#refund_nonwinning_desc", body.refund_nonwinning === "yes" ? "refunding" : "clearing out");
 });
 
-on("click", ".master", async e => {
-	ws_sync.send({cmd: "master", action: e.match.id})
-});
+on("click", ".master", e => ws_sync.send({cmd: "master", action: e.match.id}));
 
 on("click", "#makenotifs", simpleconfirm("Create commands? Will overwrite any that exist!", e => ws_sync.send({cmd: "makenotifs"})));

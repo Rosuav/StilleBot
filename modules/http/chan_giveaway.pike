@@ -251,66 +251,9 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string token = token_for_user_login(chan)[0];
 	login += " [Mod login](:.twitchlogin)"; //TODO: If logged in as wrong user, allow logout
 	int broadcaster_id = req->misc->channel->userid;
-	Concurrent.Future call(string method, string query, mixed body) {
-		return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&" + query,
-			(["Authorization": "Bearer " + token]),
-			(["method": method, "json": body, "return_status": !body]),
-		);
-	}
 	if (req->misc->is_mod && req->request_type == "PUT") {
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body)) return (["error": 400]);
-		if (int cost = (int)body->cost) {
-			//Master reconfiguration
-			array qty = (array(int))(replace(body->multi || "1 10 100 1000 10000 100000 1000000", ",", " ") / " ") - ({0});
-			if (!has_value(qty, 1)) qty = ({1}) + qty;
-			givcfg->title = body->title;
-			if (int max = givcfg->max_tickets = (int)body->max)
-				qty = filter(qty) {return __ARGS__[0] <= max;};
-			givcfg->desc_template = body->desc;
-			givcfg->multibuy = body->multi;
-			givcfg->cost = cost;
-			givcfg->pausemode = body->pausemode == "pause";
-			givcfg->allow_multiwin = body->allow_multiwin == "yes";
-			givcfg->duration = min(max((int)body->duration, 0), 3600);
-			givcfg->refund_nonwinning = body->refund_nonwinning == "yes";
-			mapping existing = givcfg->rewards;
-			if (!existing) existing = givcfg->rewards = ([]);
-			int numcreated = 0, numupdated = 0, numdeleted = 0;
-			//Prune any that we no longer need
-			foreach (existing; string id; int tickets) {
-				if (!has_value(qty, tickets)) {
-					m_delete(existing, id);
-					++numdeleted;
-					await(call("DELETE", "id=" + id, 0));
-				}
-				else {
-					++numupdated;
-					if (catch (await(call("PATCH", "id=" + id, ([
-						"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
-						"cost": cost * tickets,
-						"is_enabled": givcfg->is_open || givcfg->pausemode,
-						"is_paused": !givcfg->is_open && givcfg->pausemode,
-					]))))) {m_delete(existing, id); continue;} //And let it get recreated
-				}
-				qty -= ({tickets});
-			}
-			//Create any that we don't yet have
-			foreach (qty, int tickets) {
-				mapping info = await(call("POST", "", ([
-					"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
-					"cost": cost * tickets,
-					"is_enabled": givcfg->is_open || givcfg->pausemode,
-					"is_paused": !givcfg->is_open && givcfg->pausemode,
-				])));
-				existing[info->data[0]->id] = tickets;
-				++numcreated;
-			}
-			await(G->G->DB->save_config(req->misc->channel->userid, "giveaways", givcfg));
-			//TODO: Notify the front end what's been changed, not just counts. What else needs to be pushed out?
-			send_updates_all(req->misc->channel, (["title": givcfg->title]));
-			return jsonify((["ok": 1, "created": numcreated, "updated": numupdated, "deleted": numdeleted]));
-		}
 		if (body->new_dynamic) { //TODO: Migrate this to chan_pointsrewards as "create manageable reward". It doesn't necessarily have to have dynamic pricing.
 			mapping dyn = await(G->G->DB->load_config(req->misc->channel->userid, "dynamic_rewards"));
 			if (!body->copy_from) {
@@ -438,6 +381,64 @@ __async__ mapping get_chan_state(object channel, string grp)
 	]);
 }
 
+@"is_mod": __async__ void wscmd_masterconfig(object channel, mapping(string:mixed) conn, mapping(string:mixed) body) {
+	int cost = (int)body->cost; if (cost <= 0) return; //That'd just be silly :)
+	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaways"));
+	array qty = (array(int))(replace(body->multi || "1 10 100 1000 10000 100000 1000000", ",", " ") / " ") - ({0});
+	if (!has_value(qty, 1)) qty = ({1}) + qty;
+	givcfg->title = body->title;
+	if (int max = givcfg->max_tickets = (int)body->max)
+		qty = filter(qty) {return __ARGS__[0] <= max;};
+	givcfg->desc_template = body->desc;
+	givcfg->multibuy = body->multi;
+	givcfg->cost = cost;
+	givcfg->pausemode = body->pausemode == "pause";
+	givcfg->allow_multiwin = body->allow_multiwin == "yes";
+	givcfg->duration = min(max((int)body->duration, 0), 3600);
+	givcfg->refund_nonwinning = body->refund_nonwinning == "yes";
+	mapping existing = givcfg->rewards;
+	if (!existing) existing = givcfg->rewards = ([]);
+	int numcreated = 0, numupdated = 0, numdeleted = 0;
+	Concurrent.Future call(string method, string query, mixed body) {
+		return twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&" + query,
+			(["Authorization": channel->userid]),
+			(["method": method, "json": body, "return_status": !body]),
+		);
+	}
+	//Prune any that we no longer need
+	foreach (existing; string id; int tickets) {
+		if (!has_value(qty, tickets)) {
+			m_delete(existing, id);
+			++numdeleted;
+			await(call("DELETE", "id=" + id, 0));
+		}
+		else {
+			++numupdated;
+			if (catch (await(call("PATCH", "id=" + id, ([
+				"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
+				"cost": cost * tickets,
+				"is_enabled": givcfg->is_open || givcfg->pausemode,
+				"is_paused": !givcfg->is_open && givcfg->pausemode,
+			]))))) {m_delete(existing, id); continue;} //And let it get recreated
+		}
+		qty -= ({tickets});
+	}
+	//Create any that we don't yet have
+	foreach (qty, int tickets) {
+		mapping info = await(call("POST", "", ([
+			"title": replace(body->desc || "Buy # tickets", "#", (string)tickets),
+			"cost": cost * tickets,
+			"is_enabled": givcfg->is_open || givcfg->pausemode,
+			"is_paused": !givcfg->is_open && givcfg->pausemode,
+		])));
+		existing[info->data[0]->id] = tickets;
+		++numcreated;
+	}
+	await(G->G->DB->save_config(channel->userid, "giveaways", givcfg));
+	send_updates_all(channel, "control", (["title": givcfg->title]));
+	send_updates_all(channel, "view", (["title": givcfg->title]));
+}
+
 mapping(string:mixed) autoclose = ([]);
 __async__ void open_close(string chan, int broadcaster_id, int want_open) {
 	mapping givcfg = await(G->G->DB->load_config(broadcaster_id, "giveaways", 0));
@@ -486,8 +487,7 @@ void websocket_cmd_makenotifs(mapping(string:mixed) conn, mapping(string:mixed) 
 		G->G->cmdmgr->update_command(channel, "!!", "!giveaway_" + kwd, resp);
 }
 
-void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {spawn_task(master_control(conn, msg));}
-__async__ void master_control(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	string chan = channel->name[1..];
