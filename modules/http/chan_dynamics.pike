@@ -41,7 +41,7 @@ code {background: #ffe;}
 - Other attributes maybe, or let people handle them elsewhere
 
 TODO: Expand on chan_pointsrewards so it can handle most of the work, including the
-JSON API for managing the rewards (the HTML page will be different though).
+API for managing the rewards (the HTML page will be different though).
 */
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
