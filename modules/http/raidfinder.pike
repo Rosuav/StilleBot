@@ -502,12 +502,12 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	]));
 }
 
-void websocket_cmd_update_tagpref(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ mapping websocket_cmd_update_tagpref(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Update tag preferences. Note that this does NOT fully replace
 	//existing tag prefs; it changes only those which are listed.
 	//Note also that tag prefs, unlike other raid notes, are stored
 	//as a mapping. (Should they be stored separately?)
-	G->G->DB->mutate_config(conn->session->user->id, "raidnotes") {
+	mapping notes = await(G->G->DB->mutate_config(conn->session->user->id, "raidnotes") {
 		mapping tags = __ARGS__[0]->tags;
 		if (!tags) tags = __ARGS__[0]->tags = ([]);
 		string id = msg->tag; int pref = msg->pref;
@@ -516,8 +516,8 @@ void websocket_cmd_update_tagpref(mapping(string:mixed) conn, mapping(string:mix
 		if (id != "" && id[0] == '<' && !has_prefix(id, "<CCL")) pref = pref < 0 ? -1 : 0;
 		if (!pref || pref > MAX_PREF || pref < MIN_PREF) m_delete(tags, id);
 		else tags[id] = pref;
-		conn->sock->send_text(Standards.JSON.encode((["cmd": "tagprefs", "prefs": tags]), 4));
-	};
+	});
+	return (["cmd": "tagprefs", "prefs": notes->tags]);
 }
 
 __async__ void websocket_cmd_update_highlights(mapping(string:mixed) conn, mapping(string:mixed) msg) {
