@@ -63,14 +63,6 @@ __async__ mixed spawn_task(mixed gen) {
 	return objectp(gen) && gen->on_await ? await(gen) : gen;
 }
 
-//If cb is a spawn_task->pump/propagate_error function, return the corresponding task, else 0.
-mixed find_callback_task(function cb) {
-	object obj = function_object(cb);
-	//Note: Don't check if the program is exactly spawn_task from above, since code
-	//might have been reloaded. This should be able to recognize older-instance tasks.
-	if (function_name(object_program(obj)) == "spawn_task") return obj;
-}
-
 //await(task_sleep(seconds)); //Delay the current task efficiently
 Concurrent.Future task_sleep(int|float delay) {
 	return Concurrent.resolve(0)->delay(delay);
