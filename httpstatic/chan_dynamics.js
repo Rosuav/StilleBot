@@ -31,25 +31,10 @@ export function render(data) {
 	}
 }
 
-async function make_dynamic(basis) {
-	//TODO: Put this on the websocket
-	//TODO: Put up a spinner - this takes most of a second
-	const res = await fetch("giveaway", {
-		method: "PUT", //Yeah, I know, this probably ought to be a POST request instead
-		headers: {"Content-Type": "application/json"},
-		body: JSON.stringify({new_dynamic: basis.id}),
-	});
-	if (!res.ok) {console.error("Not okay response", res); return;}
-}
-async function create_dynamic(basis) {
-	//TODO: As above
-	const res = await fetch("giveaway", {
-		method: "PUT", //Yeah, I know, this probably ought to be a POST request instead
-		headers: {"Content-Type": "application/json"},
-		body: JSON.stringify({new_dynamic: 1, copy_from: basis}),
-	});
-	if (!res.ok) {console.error("Not okay response", res); return;}
-}
+//TODO: Put up a spinner - this takes most of a second
+//TODO: Simplify the logic in this now that all it's doing is a WS message
+function make_dynamic(basis) {ws_sync.send({cmd: "new_dynamic", id: basis.id});}
+function create_dynamic(basis) {ws_sync.send({cmd: "new_dynamic", copy_from: basis});}
 const confirm_already_dynamic = simpleconfirm("That reward already has dynamic management - want to create a copy of it?", create_dynamic);
 const confirm_not_manageable = simpleconfirm("Due to Twitch limitations, we can't manage that reward itself, but can take a copy of it. Good to go?", create_dynamic);
 

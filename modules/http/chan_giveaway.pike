@@ -254,42 +254,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (req->misc->is_mod && req->request_type == "PUT") {
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body)) return (["error": 400]);
-		if (body->new_dynamic) { //TODO: Migrate this to chan_pointsrewards as "create manageable reward". It doesn't necessarily have to have dynamic pricing.
-			mapping dyn = await(G->G->DB->load_config(req->misc->channel->userid, "dynamic_rewards"));
-			if (!body->copy_from) {
-				//Was an existing ID specified? If so - and if it's manageable and not already dynamic - don't copy it.
-				mapping rew;
-				foreach (G->G->pointsrewards[broadcaster_id] || ({ }), mapping r) if (r->id == body->new_dynamic) rew = r;
-				if (rew && rew->can_manage && !rew->is_dynamic) {
-					dyn[rew->id] = ([
-						"basecost": rew->cost || 1000, "availability": "{online}", "formula": "PREV",
-					]);
-					await(G->G->DB->save_config(req->misc->channel->userid, "dynamic_rewards", dyn));
-					return jsonify((["ok": 1, "reward": rew]));
-				}
-				else body->copy_from = rew; //If there's no such reward, well, we'll start blank anyway. But otherwise, copy that reward.
-			}
-			mapping copyfrom = body->copy_from || ([]); //Whatever we get from the front end, pass to Twitch. Good idea? Not sure.
-			//Titles must be unique (among all rewards). To simplify rapid creation of
-			//multiple rewards, add a numeric disambiguator on conflict.
-			string deftitle = copyfrom->title || "Example Dynamic Reward";
-			mapping rwd = (["basecost": copyfrom->cost || 1000, "availability": "{online}", "formula": "PREV"]);
-			array have = filter((G->G->pointsrewards[broadcaster_id]||({}))->title, has_prefix, deftitle);
-			copyfrom |= (["title": deftitle + " #" + (sizeof(have) + 1), "cost": rwd->basecost]);
-			mapping info = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
-				(["Authorization": "Bearer " + token]),
-				(["method": "POST", "json": copyfrom]),
-			))->data[0];
-			//write("Created new dynamic: %O\n", info);
-			//TODO: Update G->G->pointsrewards immediately, and push out the update
-			//This will speed up the response to user significantly. Do this once it's
-			//all dealt with by pointsmgr instead of here.
-			dyn[info->id] = rwd;
-			if (!G->G->rewards_manageable[broadcaster_id]) G->G->rewards_manageable[broadcaster_id] = (<>);
-			G->G->rewards_manageable[broadcaster_id][info->id] = 1;
-			await(G->G->DB->save_config(req->misc->channel->userid, "dynamic_rewards", dyn));
-			return jsonify((["ok": 1, "reward": rwd | (["id": info->id])]));
-		}
 		if (string id = body->dynamic_id) { //TODO: Ditto, move to pointsrewards
 			mapping dyn = await(G->G->DB->load_config(req->misc->channel->userid, "dynamic_rewards"));
 			mapping rwd = dyn[id]; if (!rwd) return (["error": 400]);
