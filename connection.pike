@@ -1391,7 +1391,6 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 constant CONDUIT_KICK_TIMEOUT = 60; //If we haven't heard from the server in this many seconds, kick the conduit and restart.
 multiset recent_raids = (<>);
 __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
-	Stdio.append_file("conduit_reconnect.log", sprintf("%sCONNECT on %s bot [%s]\n%s\n\n", ctime(time()), is_active_bot() ? "active" : "inactive", get_active_bot(), describe_backtrace(backtrace())));
 	mixed data;
 	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
 	string type = mappingp(data) && data->metadata->?message_type;
@@ -1456,6 +1455,7 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 void conduit_closed(int reason, mapping conn) {werror("CONDUIT CONNECTION GONE: %O\n", conn); m_delete(conn, "sock");}
 
 __async__ void setup_conduit(string|void url) {
+	Stdio.append_file("conduit_reconnect.log", sprintf("%sCONNECT on %s bot [%s]\n%s\n\n", ctime(time()), is_active_bot() ? "active" : "inactive", get_active_bot(), describe_backtrace(backtrace())));
 	if (!condid) { // or if something fails?
 		mapping cond = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/conduits", ([]), (["authtype": "app"])));
 		if (!sizeof(cond->data)) {
