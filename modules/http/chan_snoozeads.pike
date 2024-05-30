@@ -56,10 +56,6 @@ __async__ void check_stats(object channel) {
 				werror("Scheduling next ad check for %O in %O seconds\n", channel->login, next);
 				channel_ad_callouts[channel->userid] = call_out(check_stats_by_id, next, channel->userid);
 			}
-			else if (next < -3600*4) {
-				werror("Next ad check for %O would be in %O seconds (at %O)! Rescheduling in five.\n", channel->login, next, snooze->next_ad_at);
-				channel_ad_callouts[channel->userid] = call_out(check_stats_by_id, 300, channel->userid);
-			}
 		}
 	}
 	channel_ad_stats[channel->userid] = snooze;
