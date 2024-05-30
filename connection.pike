@@ -1391,6 +1391,7 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 constant CONDUIT_KICK_TIMEOUT = 60; //If we haven't heard from the server in this many seconds, kick the conduit and restart.
 multiset recent_raids = (<>);
 __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
+	Stdio.append_file("conduit_reconnect.log", sprintf("%sCONNECT on %s bot [%s]\n", ctime(time()), is_active_bot() ? "active" : "inactive", get_active_bot()));
 	mixed data;
 	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
 	string type = mappingp(data) && data->metadata->?message_type;
