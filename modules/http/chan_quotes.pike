@@ -28,6 +28,15 @@ Twitch Clips, quotes are a great way to remember those fun moments forever.
 </style>
 ";
 
+string deduce_emoted_text(string msg, mapping botemotes) {
+	array words = msg / " ";
+	foreach (words; int i; string w)
+		if (botemotes[w]) words[i] = sprintf("\uFFFAe%s:%s\uFFFB", botemotes[w], w);
+		else if (sscanf(w, "%s_%s", string base, string mod) && botemotes[base] && mod)
+			words[i] = sprintf("\uFFFAe%s:%s\uFFFB", botemotes[base] + "_" + mod, w);
+	return words * " ";
+}
+
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	array quotes = await(G->G->DB->load_config(req->misc->channel->userid, "quotes", ({ })));
@@ -36,26 +45,25 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string tz = req->misc->channel->config->timezone;
 	object user = user_text();
 	string btn = req->misc->is_mod && !req->misc->session->fake ? " [\U0001F589](:.editbtn)" : "";
-	mapping botemotes = await(G->G->DB->load_config(G->G->bot_uid, "bot_emotes")); //TODO: Use the channel default voice instead of bot_uid
+	mapping botemotes;
 	foreach (quotes; int i; mapping quote)
 	{
-		//Render emotes. TODO: Use the bot's emote list primarily, but
-		//if we have emote info retained from addquote, use that too.
 		object ts = Calendar.Gregorian.Second("unix", quote->timestamp);
 		if (tz) ts = ts->set_timezone(tz) || ts;
-		array words = quote->msg / " ";
-		//This is pretty inefficient - it makes a separate user() entry for each
-		//individual word. If this is a problem, consider at least checking for
-		//any emotes at all, and if not, just set msg to user(text) instead.
-		foreach (words; int i; string w)
-			if (botemotes[w]) words[i] = sprintf("![%s](%s)", w, emote_url(botemotes[w], 1));
-			else if (sscanf(w, "%s_%s", string base, string mod) && botemotes[base] && mod)
-				words[i] = sprintf("![%s](%s)", w, emote_url(botemotes[base] + "_" + mod, 1));
-			else words[i] = user(w);
-		string msg = words * " ";
+		//If we don't have emoted text recorded, use the bot's emote list to figure out what it should be.
+		if (!quote->emoted) {
+			botemotes = await(G->G->DB->load_config(G->G->bot_uid, "bot_emotes")); //TODO: Use the channel default voice instead of bot_uid
+			quote->emoted = deduce_emoted_text(quote->msg, botemotes);
+		}
+		string msg = "", em = quote->emoted;
+		while (sscanf(em, "%s\uFFFAe%s:%s\uFFFB%s", string txt, string emoteid, string emotename, em)) {
+			msg += user(txt) + sprintf("![%s](%s)", emotename, emote_url(emoteid, 1));
+		}
+		msg += user(em);
 		string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
 		q += ({sprintf("%d. %s [%s, %s]%s", i + 1, msg, quote->game || "uncategorized", date, btn)});
 	}
+	if (botemotes) await(G->G->DB->save_config(req->misc->channel->userid, "quotes", quotes)); //We must have done at least one edit
 	return render(req, ([
 		"quotes": q * "\n",
 		"vars": btn != "" && (["ws_group": ""]),
@@ -76,7 +84,8 @@ __async__ void wscmd_edit_quote(object channel, mapping(string:mixed) conn, mapp
 	if (idx < 1 || idx > sizeof(quotes)) return;
 	if (!stringp(msg->msg)) return;
 	quotes[idx - 1]->msg = msg->msg;
-	m_delete(quotes[idx - 1], "emoted"); //TODO: Rewrite instead of removing
+	mapping botemotes = await(G->G->DB->load_config(G->G->bot_uid, "bot_emotes")); //TODO: As above, use the default voice
+	quotes[idx - 1]->emoted = deduce_emoted_text(msg->msg, botemotes);
 	await(G->G->DB->save_config(channel->userid, "quotes", quotes));
 	send_updates_all(channel, ""); //No update_one support at the moment
 }
