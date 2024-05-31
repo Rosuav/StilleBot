@@ -25,6 +25,10 @@ class CompilerErrors {
 		reported = 1;
 		werror("\e[1;31m%s:%d\e[0m: %s\n", filename, line, msg);
 	}
+	void compile_warning(string filename, int line, string msg) {
+		reported = 1;
+		werror("\e[1;33m%s:%d\e[0m: %s\n", filename, line, msg);
+	}
 }
 
 object bootstrap(string c)
@@ -33,8 +37,9 @@ object bootstrap(string c)
 	program|object compiled;
 	object handler = CompilerErrors();
 	mixed ex = catch {compiled = compile_file(c, handler);};
-	if (ex) {if (!handler->reported) werror("Exception in compile!\n%s\n", ex->describe()); return 0;}
-	if (!compiled) werror("Compilation failed for "+c+"\n");
+	if (handler->reported) return 0; //ANY error or warning, fail the build.
+	if (ex) {werror("Exception in compile!\n%s\n", ex->describe()); return 0;} //Compilation exceptions indicate abnormal failures eg unable to read the file.
+	if (!compiled) werror("Compilation failed for "+c+"\n"); //And bizarre failures that report nothing but fail to result in a working program should be reported too.
 	if (mixed ex = catch {compiled = compiled(name);}) {G->warnings++; werror(describe_backtrace(ex)+"\n");}
 	werror("Bootstrapped "+c+"\n");
 	return compiled;
