@@ -275,8 +275,3 @@
     Lua extension doesn't establish a bidirectional connection.
   - Try to get both the URL and the song title (as Unicode, no mojibake thanks)
 * Make an activatable feature for a Seize Crown redemption?
-* Avoid use of fetch() when a websocket could do the job.
-  - /affiliate currently has no websocket
-  - chan_dynamics/chan_giveaway
-  - quote_edit - rework it completely, use a websocket if logged in as a mod
-  - raidfinder
