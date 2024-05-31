@@ -1,13 +1,41 @@
-inherit http_endpoint;
+inherit http_websocket;
+
+constant markdown = #"# Recorded quotes for $$channel$$
+
+$$quotes$$
+{: #quotelist .emotedtext}
+
+Record fun quotes from the channel's broadcaster and/or community! Alongside
+Twitch Clips, quotes are a great way to remember those fun moments forever.
+
+> ### Edit !quote <span id=idx></span>
+> Make changes sensitively. Don't change other people's words :)
+>
+> Quoted at | <span id=timestamp></span>
+> ----------|-----------
+> Text      | <textarea id=text rows=4 cols=80></textarea>
+> Category  | <span id=category></span>
+> Recorder  | <span id=recorder></span>
+>
+> <button type=button id=update class=dialog_close>Update</button>
+{: tag=dialog #editdlg}
+
+<style>
+.editbtn {
+	padding: 0 5px;
+	width: 2em; height: 2em;
+}
+</style>
+";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	array quotes = await(G->G->DB->load_config(req->misc->channel->userid, "quotes", ({ })));
-	if (!quotes || !sizeof(quotes)) return render_template("chan_quotes.md", (["quotes": "(none)"]) | req->misc->chaninfo);
+	if (!sizeof(quotes)) return render(req, (["quotes": "(none)"]) | req->misc->chaninfo);
 	array q = ({ });
 	string tz = req->misc->channel->config->timezone;
 	object user = user_text();
-	string btn = req->misc->is_mod ? " [\U0001F589](:.editbtn)" : "";
+	string btn = req->misc->is_mod && !req->misc->session->fake ? " [\U0001F589](:.editbtn)" : "";
 	mapping botemotes = await(G->G->DB->load_config(G->G->bot_uid, "bot_emotes")); //TODO: Use the channel default voice instead of bot_uid
 	foreach (quotes; int i; mapping quote)
 	{
@@ -28,10 +56,27 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
 		q += ({sprintf("%d. %s [%s, %s]%s", i + 1, msg, quote->game || "uncategorized", date, btn)});
 	}
-	return render_template("chan_quotes.md", ([
+	return render(req, ([
 		"quotes": q * "\n",
-		"editjs": req->misc->is_mod ? "<script type=module src=\"" + G->G->template_defaults["static"]("quotes.js") + "\"></script>" : "",
-		"vars": req->misc->is_mod && (["quotes": quotes]),
+		"vars": btn != "" && (["ws_group": ""]),
 		"user text": user,
 	]) | req->misc->chaninfo);
+}
+
+bool need_mod(string grp) {return 1;}
+__async__ mapping get_chan_state(object channel, string grp, string|void id) {
+	array quotes = await(G->G->DB->load_config(channel->userid, "quotes", ({ })));
+	if (id) return (int)id < sizeof(quotes) && quotes[(int)id];
+	return (["items": quotes]);
+}
+
+__async__ void wscmd_edit_quote(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	array quotes = await(G->G->DB->load_config(channel->userid, "quotes", ({ })));
+	int idx = (int)msg->idx;
+	if (idx < 1 || idx > sizeof(quotes)) return;
+	if (!stringp(msg->msg)) return;
+	quotes[idx - 1]->msg = msg->msg;
+	m_delete(quotes[idx - 1], "emoted"); //TODO: Rewrite instead of removing
+	await(G->G->DB->save_config(channel->userid, "quotes", quotes));
+	send_updates_all(channel, ""); //No update_one support at the moment
 }
