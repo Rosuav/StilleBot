@@ -280,5 +280,3 @@
   - chan_dynamics/chan_giveaway
   - quote_edit - rework it completely, use a websocket if logged in as a mod
   - raidfinder
-* get_channel_info("rosuav") failed to get the category while streaming Talos 2. Is this
-  an issue with wrong bot active? Test next time in same category.
