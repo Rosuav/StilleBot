@@ -48,14 +48,9 @@ DOM("#add").onclick = e => {
 };
 
 async function save(el) {
-	const body = {dynamic_id: el.rewardid.value, title: el.title.value, prompt: el.prompt.value, basecost: el.basecost.value,
-		availability: el.availability.value, formula: el.formula.value, curcost: el.curcost.value};
-	const info = await (await fetch("giveaway", {
-		method: "PUT",
-		headers: {"Content-Type": "application/json"},
-		body: JSON.stringify(body),
-	})).json();
-	console.log("Got response:", info);
+	ws_sync.send({cmd: "update_dynamic",
+		dynamic_id: el.rewardid.value, title: el.title.value, prompt: el.prompt.value, basecost: el.basecost.value,
+		availability: el.availability.value, formula: el.formula.value, curcost: el.curcost.value});
 }
 on("submit", "form.editreward", e => {e.preventDefault(); save(e.match.elements);}, true);
 

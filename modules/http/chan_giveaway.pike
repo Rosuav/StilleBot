@@ -254,34 +254,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (req->misc->is_mod && req->request_type == "PUT") {
 		mixed body = Standards.JSON.decode(req->body_raw);
 		if (!body || !mappingp(body)) return (["error": 400]);
-		if (string id = body->dynamic_id) { //TODO: Ditto, move to pointsrewards
-			mapping dyn = await(G->G->DB->load_config(req->misc->channel->userid, "dynamic_rewards"));
-			mapping rwd = dyn[id]; if (!rwd) return (["error": 400]);
-			mapping updates = ([]);
-			foreach ("title prompt" / " ", string kwd) if (body[kwd]) {
-				//See if there are any variable or placeholder references in the title/prompt.
-				//If there are, retain the value with placeholders, for future updates; but
-				//otherwise, set the value immediately, and DON'T store it for placeholdering.
-				string value = req->misc->channel->expand_variables(body[kwd]);
-				if (value != body[kwd]) rwd[kwd] = body[kwd];
-				else {updates[kwd] = body[kwd]; m_delete(rwd, kwd);}
-			}
-			if (!undefinedp(body->basecost)) rwd->basecost = (int)body->basecost;
-			if (body->formula) rwd->formula = body->formula;
-			if (body->availability) rwd->availability = body->availability;
-			if (rwd->availability == "" && rwd->formula == "") m_delete(dyn, id); //Hack: Delete by blanking the values. Will be replaced later.
-			if (body->curcost) updates["cost"] = (int)body->curcost;
-			if (sizeof(updates)) {
-				//Currently fire-and-forget - there's no feedback if you get something wrong.
-				twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&id=" + id,
-					(["Authorization": "Bearer " + token]),
-					(["method": "PATCH", "json": updates]),
-				);
-			}
-			await(G->G->DB->save_config(req->misc->channel->userid, "dynamic_rewards", dyn));
-			spawn_task(G->G->update_dynamic_reward(req->misc->channel, id, rwd));
-			return jsonify((["ok": 1]));
-		}
 		if (body->activate) { //TODO: As above, move to pointsrewards on the ws
 			await(channel_on_off(chan, -1, broadcaster_id)); //TODO: If an ID is given, just activate/deactivate that reward
 			return jsonify((["ok": 1]));

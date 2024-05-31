@@ -145,6 +145,36 @@ __async__ void wscmd_new_dynamic(object channel, mapping(string:mixed) conn, map
 	await(G->G->DB->save_config(channel->userid, "dynamic_rewards", dyn));
 }
 
+__async__ void wscmd_update_dynamic(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string id = msg->dynamic_id;
+	mapping body = msg; //this used to be a PUT request...
+	mapping dyn = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
+	mapping rwd = dyn[id]; if (!rwd) return;
+	mapping updates = ([]);
+	foreach ("title prompt" / " ", string kwd) if (body[kwd]) {
+		//See if there are any variable or placeholder references in the title/prompt.
+		//If there are, retain the value with placeholders, for future updates; but
+		//otherwise, set the value immediately, and DON'T store it for placeholdering.
+		string value = channel->expand_variables(body[kwd]);
+		if (value != body[kwd]) rwd[kwd] = body[kwd];
+		else {updates[kwd] = body[kwd]; m_delete(rwd, kwd);}
+	}
+	if (!undefinedp(body->basecost)) rwd->basecost = (int)body->basecost;
+	if (body->formula) rwd->formula = body->formula;
+	if (body->availability) rwd->availability = body->availability;
+	if (rwd->availability == "" && rwd->formula == "") m_delete(dyn, id); //Hack: Delete by blanking the values. Will be replaced later.
+	if (body->curcost) updates["cost"] = (int)body->curcost;
+	if (sizeof(updates)) {
+		//Currently fire-and-forget - there's no feedback if you get something wrong.
+		twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + id,
+			(["Authorization": channel->userid]),
+			(["method": "PATCH", "json": updates]),
+		);
+	}
+	await(G->G->DB->save_config(channel->userid, "dynamic_rewards", dyn));
+	G->G->update_dynamic_reward(channel, id, rwd);
+}
+
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (string scopes = !req->misc->session->fake && ensure_bcaster_token(req, "channel:manage:redemptions"))
