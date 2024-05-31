@@ -9,7 +9,7 @@ export function render_item(goal) {
 	return LI({"data-id": goal.id}, [
 		goal.description || "Goal", " ",
 		goal.current_amount + "", " / ", goal.target_amount + "",
-		" ", type,
+		" ", type, " (id ", goal.id, ")"
 	]);
 }
 
