@@ -6,7 +6,7 @@ Title | Description | Base cost | Activation condition | Growth Formula | Curren
 -     | -           | -         | -                    | -              | -            | (loading...)
 {: #rewards}
 
-[Save All](:#save_all) [Activate/Deactivate (debugging)](:#activate)
+[Save All](:#save_all)
 
 <select id=copyfrom><option value=\"-1\">-- Create new --</option></select> [Add dynamic reward](:#add)
 

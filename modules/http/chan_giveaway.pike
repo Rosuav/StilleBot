@@ -248,18 +248,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"error": "This page will become available once the broadcaster has logged in and configured redemptions.",
 		"login": "[Broadcaster login](:.twitchlogin data-scopes=" + replace(scopes, " ", "%20") + ")",
 	]) | req->misc->chaninfo);
-	string token = token_for_user_login(chan)[0];
 	login += " [Mod login](:.twitchlogin)"; //TODO: If logged in as wrong user, allow logout
-	int broadcaster_id = req->misc->channel->userid;
-	if (req->misc->is_mod && req->request_type == "PUT") {
-		mixed body = Standards.JSON.decode(req->body_raw);
-		if (!body || !mappingp(body)) return (["error": 400]);
-		if (body->activate) { //TODO: As above, move to pointsrewards on the ws
-			await(channel_on_off(chan, -1, broadcaster_id)); //TODO: If an ID is given, just activate/deactivate that reward
-			return jsonify((["ok": 1]));
-		}
-		return jsonify((["ok": 1]));
-	}
 	mapping config = ([]);
 	config->title = givcfg->title || ""; //Give this one even to non-mods
 	if (req->misc->is_mod) {
