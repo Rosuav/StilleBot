@@ -176,7 +176,9 @@ class channel(mapping identity) {
 					werror("User details updated for %O - login %O->%O disp %O->%O\n",
 						userid, config->login, __ARGS__[0]->login,
 						config->display_name, __ARGS__[0]->display_name);
-					G->G->DB->save_sql("update stillebot.botservice set login = :login, display_name = :display_name where twitchid = :id", __ARGS__[0]);
+					G->G->DB->save_sql("update stillebot.botservice set login = :login, display_name = :display_name where twitchid = :id", __ARGS__[0])
+						->then() {werror("Saved user details\n");}
+						->thencatch() {werror("Unable to save user details:\n%s\n", describe_backtrace(__ARGS__[0]));};
 				}
 			};
 		}
