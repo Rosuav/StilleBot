@@ -55,6 +55,10 @@ mixed decode_as_type(string val, int type) {
 			sscanf(val, "%{%2c%}", array words);
 			return sprintf("%04x%04x-%04x-%04x-%04x-%04x%04x%04x", @words[*][0]);
 		}
+		case 3220: { //LSN
+			sscanf(val, "%4c%4c", int n1, int n2);
+			return sprintf("%X/%X", n1, n2);
+		}
 		default: break;
 	}
 	//Okay, we don't know the type directly. Do we know what *kind* of type it is?
@@ -125,6 +129,11 @@ string encode_as_type(mixed value, int typeoid) {
 		case 701: value = sprintf("%8F", (float)value); break;
 		case 1184: value = sprintf("%8c", value->usecs - EPOCH2000); break;
 		case 2950: value = sprintf("%@2c", array_sscanf(value, "%4x%4x-%4x-%4x-%4x-%4x%4x%4x")); break;
+		case 3220: { //LSN
+			sscanf(value, "%x/%x", int n1, int n2);
+			value = sprintf("%4c%4c", n1, n2);
+			break;
+		}
 		default:
 			if (int elemoid = arrayp(value) && array_oid[typeoid]) {
 				if (!sizeof(value)) {
