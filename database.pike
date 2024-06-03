@@ -715,6 +715,34 @@ void notify_botservice_changed(int pid, string cond, string extra, string host) 
 	if (function f = G->G->on_botservice_change) f();
 }
 
+@"scream.emergency":
+void emergency(int pid, string cond, string extra, string host) {
+	werror("EMERGENCY NOTIFICATION from %O: %O\n", host, extra);
+	if (G->G->emergency) G->G->emergency();
+}
+
+__async__ void replication_watchdog() {
+	G->G->repl_wdog_call_out = call_out(replication_watchdog, 60);
+	//Check to see if replication appears stalled.
+	//If the R/W database is advancing, the fast database isn't, and they're different,
+	//then we may have a stall. "Advancing" means the position isn't the same as it was
+	//last check; we don't actually enforce monotonicity here.
+	if (!livedb || !fastdb) return; //Only worth doing this if we have separate DBs.
+	//Note that we use query_rw to ensure that this lands on the live db. It's not actually mutating anything.
+	array live = await(query_rw("select * from pg_replication_slots"));
+	array repl = await(query_ro("select * from pg_stat_subscription"));
+	if (!sizeof(live) || !sizeof(repl)) {
+		//Might be down somewhere. Not sure what to do here.
+		werror("REPL WDOG: %d live %d repl\n", sizeof(live), sizeof(repl));
+		return;
+	}
+	werror("REPL WDOG: live %O %O repl %O %O\n",
+		live[0]->restart_lsn, live[0]->confirmed_flush_lsn,
+		repl[0]->received_lsn, repl[0]->latest_end_lsn,
+	);
+	//query_rw("notify \"scream.emergency\"");
+}
+
 //Attempt to create all tables and alter them as needed to have all columns
 __async__ void create_tables() {
 	await(reconnect(1, 1)); //Ensure that we have at least one connection, both if possible
@@ -804,4 +832,6 @@ protected void create(string name) {
 	spawn_task(reconnect(1));
 	if (!G->G->http_sessions_deleted) G->G->http_sessions_deleted = ([]);
 	if (!G->G->user_credentials_loading && !G->G->user_credentials_loaded) preload_user_credentials();
+	remove_call_out(G->G->repl_wdog_call_out);
+	G->G->repl_wdog_call_out = call_out(replication_watchdog, 60);
 }
