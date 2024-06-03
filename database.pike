@@ -742,12 +742,12 @@ __async__ void replication_watchdog() {
 		repl_failures = 0;
 		return; //All good, in sync.
 	}
-	werror("REPL WDOG: live %O %O repl %O %O\n",
+	werror("REPL WDOG: [%d] live %O %O repl %O %O\n", ++repl_failures,
 		live[0]->restart_lsn, live[0]->confirmed_flush_lsn,
 		repl[0]->received_lsn, repl[0]->latest_end_lsn,
 	);
-	//If it's been three checks with them not in sync, scream.
-	if (++repl_failures == 3) query_rw("notify \"scream.emergency\"");
+	//If it's been three checks with them not in sync, scream. Don't keep screaming every minute after, though.
+	if (repl_failures == 3) query_rw("notify \"scream.emergency\"");
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
