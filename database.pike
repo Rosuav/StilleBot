@@ -721,13 +721,14 @@ void emergency(int pid, string cond, string extra, string host) {
 	if (G->G->emergency) G->G->emergency();
 }
 
+int repl_failures = 0;
 __async__ void replication_watchdog() {
 	G->G->repl_wdog_call_out = call_out(replication_watchdog, 60);
 	//Check to see if replication appears stalled.
 	//If the R/W database is advancing, the fast database isn't, and they're different,
 	//then we may have a stall. "Advancing" means the position isn't the same as it was
 	//last check; we don't actually enforce monotonicity here.
-	if (!livedb || !fastdb) return; //Only worth doing this if we have separate DBs.
+	if (!livedb || !fastdb || livedb == fastdb) return; //Only worth doing this if we have separate DBs.
 	//Note that we use query_rw to ensure that this lands on the live db. It's not actually mutating anything.
 	array live = await(query_rw("select * from pg_replication_slots"));
 	array repl = await(query_ro("select * from pg_stat_subscription"));
@@ -736,11 +737,17 @@ __async__ void replication_watchdog() {
 		werror("REPL WDOG: %d live %d repl\n", sizeof(live), sizeof(repl));
 		return;
 	}
+	if (live[0]->confirmed_flush_lsn == repl[0]->received_lsn &&
+			repl[0]->received_lsn == repl[0]->latest_end_lsn) {
+		repl_failures = 0;
+		return; //All good, in sync.
+	}
 	werror("REPL WDOG: live %O %O repl %O %O\n",
 		live[0]->restart_lsn, live[0]->confirmed_flush_lsn,
 		repl[0]->received_lsn, repl[0]->latest_end_lsn,
 	);
-	//query_rw("notify \"scream.emergency\"");
+	//If it's been three checks with them not in sync, scream.
+	if (++repl_failures == 3) query_rw("notify \"scream.emergency\"");
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
