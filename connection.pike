@@ -173,6 +173,9 @@ class channel(mapping identity) {
 			get_user_info(userid)->then() {
 				if (config->login != __ARGS__[0]->login || config->display_name != __ARGS__[0]->display_name) {
 					//Note: This is asynchronous, but we'll be triggering a reconnect shortly.
+					werror("User details updated for %O - login %O->%O disp %O->%O\n",
+						userid, config->login, __ARGS__[0]->login,
+						config->display_name, __ARGS__[0]->display_name);
 					G->G->DB->save_sql("update stillebot.botservice set login = :login, display_name = :display_name where twitchid = :id", __ARGS__[0]);
 				}
 			};
