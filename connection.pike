@@ -1000,7 +1000,7 @@ class channel(mapping identity) {
 					#ifdef __NT__
 					int wid = 80 - sizeof(pfx);
 					#else
-					int wid = Stdio.stdin->tcgetattr()->columns - sizeof(pfx);
+					int wid = (Stdio.stdin->tcgetattr()->?columns || 1024) - sizeof(pfx);
 					#endif
 					msg = string_to_utf8(msg) + " "; //Trailing space improves wrapping with %= mode
 					log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
