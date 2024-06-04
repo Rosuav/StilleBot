@@ -18,21 +18,21 @@ RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot<br>
 ### Unlockable Jan 2024 to Apr 2024
 ### Note that these are rereleases from older sets
 ### Starting 20240327, getting past level 5 has more emotes!
-LuvPeekL LuvPeekR LuvBlush LuvHearts LuvSign ????<br>
-HahaBall 2020Rivalry 2020Wish 2020ByeGuys 2020Celebrate ????<br>
-RPGAyaya HahaCat RPGGhosto PrideWingR PrideWingL ????<br>
-2020Party 2020Pajamas 2020Shred 2020Snacking 2020Glitchy ????<br>
-PrideUwu PrideLaugh PrideCute PridePog PrideFloat ????<br>
+LuvPeekL LuvPeekR LuvBlush LuvHearts LuvSign<br>
+HahaBall 2020Rivalry 2020Wish 2020ByeGuys 2020Celebrate<br>
+RPGAyaya HahaCat RPGGhosto PrideWingR PrideWingL<br>
+2020Party 2020Pajamas 2020Shred 2020Snacking 2020Glitchy<br>
+PrideUwu PrideLaugh PrideCute PridePog PrideFloat<br>
 (10) BleedPurpleHD (25) HeyHeyGuys (50) PogChomp (100) KappaInfinite<br>
 (106) DidIBreakIt (uncertain)<br>
 
 ## Hype Train set six
 ### Unlockable Dec 2023 to Jan 2024
-HypeCute HypeYummy HypeKEKW HypeNoods HypeOho ????<br>
-HypeHi HypeChill HypeMyHeart HypeWarm HypeFist ????<br>
-HypeCries HypeGGEyes HypeAwh HypeElf HypeDelight ????<br>
-HypeNotLikeSnow HypePls HypeMelt HypeCocoa HypeConfetti ????<br>
-HypeSanta HypePeek HypeOhDeer HypeUwu HypeLick ????<br>
+HypeCute HypeYummy HypeKEKW HypeNoods HypeOho<br>
+HypeHi HypeChill HypeMyHeart HypeWarm HypeFist<br>
+HypeCries HypeGGEyes HypeAwh HypeElf HypeDelight<br>
+HypeNotLikeSnow HypePls HypeMelt HypeCocoa HypeConfetti<br>
+HypeSanta HypePeek HypeOhDeer HypeUwu HypeLick<br>
 
 ## Hype Train set five
 ### Unlockable Nov 2021 to Dec 2023
