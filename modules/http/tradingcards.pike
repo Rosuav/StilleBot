@@ -48,6 +48,13 @@ __async__ mapping(string:mixed) show_collection(Protocols.HTTP.Server.Request re
 		]));
 	}
 	mapping tc = await(G->G->DB->load_config(0, "tradingcards"));
+	if (mapping strm = tc->all_streamers[collection]) return render_template(markdown, ([
+		"coll_id": collection,
+		"label": strm->card_name, "desc": strm->card_name,
+		"login_link": "",
+		"vars": (["collection": ({strm})]),
+		"js": "tradingcards", "css": "tradingcards",
+	]));
 	mapping coll = tc->collections[collection];
 	if (!coll) return redirect("/tradingcards");
 	//TODO: Allow the owner to edit the collection metadata
