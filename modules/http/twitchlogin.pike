@@ -57,15 +57,14 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//Check if these credentials are at least what we already had.
 		mapping tok = G->G->user_credentials[(int)user->id] || ([]);
 		array missing = (tok->scopes || ({ })) - (req->variables->scope / " ") - ({""});
-		if (sizeof(missing)) {
-			return render_template(#"# Twitch Login
+		if (sizeof(missing)) return render_template(#"# Twitch Login
 
 Hey, sorry, something seems to be messed up. Rosuav is looking into it. For now, you may
 be able to get logged in by clicking this button:
 
-[Try again](:.twitchlogin)
-", ([]));
-		} else G->G->DB->save_user_credentials(([
+[Try again](:.twitchlogin data-scopes=@$$scopes$$@)
+", (["scopes": missing * " "]));
+		G->G->DB->save_user_credentials(([
 			"userid": (int)user->id,
 			"login": user->login,
 			"token": auth->access_token,
