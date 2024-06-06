@@ -152,7 +152,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (req->misc->is_mod && req->variables->makespecial) {
 		//Note that this option isn't made obvious if you already have the command,
 		//but we won't stop you from using it if you do so manually. It'll overwrite.
-		G->G->enableable_modules->specials->enable_feature(channel, "songannounce", 1);
+		G->G->enableable_modules->chan_specials->enable_feature(channel, "songannounce", 1);
 		return redirect("vlc");
 	}
 	if (req->misc->is_mod && !req->misc->session->fake && req->variables->lua) {
