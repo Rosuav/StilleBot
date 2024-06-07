@@ -142,11 +142,19 @@ void wscmd_delsetup(object channel, mapping(string:mixed) conn, mapping(string:m
 	}->then() {send_updates_all(channel, "");};
 }
 
+__async__ string get_category_id(string name) {
+	//TODO: Cache for performance. It's highly likely this will be called with known categories.
+	array ret = await(twitch_api_request("https://api.twitch.tv/helix/games?name=" + Protocols.HTTP.uri_encode(name)))->data;
+	if (!ret || !sizeof(ret)) return "";
+	return ret[0]->id;
+}
+
 __async__ void wscmd_applysetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	//Note that this does NOT apply by ID; it sets all the specifics.
+	//Note that this does NOT apply a setup by ID; it sets all the specifics.
 	mapping params = ([]);
 	if (msg->title && msg->title != "") params->title = msg->title; //Easy.
 	if (msg->tags) params->tags = String.trim((msg->tags / ",")[*]) - ({""});
+	if (msg->category) params->game_id = await(get_category_id(msg->category));
 	if (msg->ccls) {
 		//Twitch expects us to show "add/remove" for each CCL. So if you select a specific
 		//set of them, we apply a change to every known CCL.
@@ -208,7 +216,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 	foreach (param / 2, [string cmd, string arg]) {
 		switch (cmd) {
 			case "title": params->title = arg; break;
-			case "category": error("UNIMPLEMENTED - need to look up game ID\n"); break;
+			case "category": params->game_id = await(get_category_id(arg)); break;
 			case "tags": {
 				//On Twitch's side, you always replace all tags. So we take the previous and modify.
 				if (!params->tags) params->tags = prev->tags;
