@@ -1141,6 +1141,8 @@ class channel(mapping identity) {
 		}
 		return _cached_error_count = 0;
 	}
+
+	protected string _sprintf(int type) {return type == 'O' && sprintf("channel(%O)", login);}
 }
 
 void irc_message(string type, string chan, string msg, mapping attrs) {
