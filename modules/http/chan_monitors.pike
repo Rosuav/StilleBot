@@ -162,7 +162,7 @@ void websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	string nonce = msg->nonce;
 	if (!stringp(msg->text) || !monitors[nonce]) return; //Monitor doesn't exist. You can't create monitors with this.
-	mapping info = monitors[nonce] = (["type": "text", "type": monitors[nonce]->type, "text": msg->text]);
+	mapping info = monitors[nonce] = (["type": monitors[nonce]->type, "text": msg->text]);
 	foreach (saveable_attributes, string key) if (msg[key]) info[key] = msg[key];
 	if (info->needlesize == "") info->needlesize = "0";
 	if (msg->varname) info->text = sprintf("$%s$:%s", msg->varname, info->text);
