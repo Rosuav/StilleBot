@@ -72,7 +72,32 @@ loading... | - | - | - | - | -
 	margin: 0 0.5em;
 }
 </style>
+
+> ### Pick a category
+>
+> <input id=picker_search size=50>
+> <ul id=picker_results></ul>
+>
+> [Cancel](:.dialog_close)
+{: tag=dialog #categorydlg}
+
+<!-- -->
+
+> ### Select CCLs
+>
+> Select the classification labels appropriate to your stream. Be sure to follow
+> [Twitch's rules about CCLs](https://help.twitch.tv/s/article/content-classification-labels)
+> and [applicable guidelines](https://safety.twitch.tv/s/article/Content-Classification-Guidelines)
+>
+> $$ccl_options$$
+> {:#ccl_options}
+>
+> [Apply](:#ccl_apply) [Cancel](:.dialog_close)
+{: tag=dialog #cclsdlg}
 ";
+
+//Cached. Should we go recheck it at any point?
+@retain: array ccl_options;
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
@@ -88,6 +113,9 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	])});
 	return render(req, ([
 		"vars": (["ws_group": "", "initialsetup": sizeof(prev) && prev[0]]),
+		"ccl_options": map(ccl_options) { mapping ccl = __ARGS__[0];
+			return sprintf("* <label><input type=checkbox name=%s> %s<br><i>%s</i>", ccl->id, ccl->name, ccl->description);
+		} * "\n",
 	]) | req->misc->chaninfo);
 }
 
@@ -117,18 +145,32 @@ void wscmd_delsetup(object channel, mapping(string:mixed) conn, mapping(string:m
 __async__ void wscmd_applysetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Note that this does NOT apply by ID; it sets all the specifics.
 	mapping params = ([]);
-	if (msg->title) params->title = msg->title; //Easy.
-	if (msg->tags) params->tags = String.trim((msg->tags / ",")[*]);
-	//TODO: CCLs, category
+	if (msg->title && msg->title != "") params->title = msg->title; //Easy.
+	if (msg->tags) params->tags = String.trim((msg->tags / ",")[*]) - ({""});
+	if (msg->ccls) {
+		//Twitch expects us to show "add/remove" for each CCL. So if you select a specific
+		//set of them, we apply a change to every known CCL.
+		multiset is_enabled = (multiset)String.trim((msg->ccls / ",")[*]);
+		params->content_classification_labels = map(ccl_options->id) {return (["id": __ARGS__[0], "is_enabled": is_enabled[__ARGS__[0]]]);};
+	}
 	mapping prev = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid));
 	prev = prev->data[0];
 	prev->tags *= ", ";
-	//TODO: Reformat CCLs too
-	await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,
+	prev->ccls = prev->content_classification_labels * ", ";
+	mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,
 		(["Authorization": channel->userid]),
 		(["method": "PATCH", "json": params, "return_errors": 1]),
 	));
+	//TODO: Report errors
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "prevsetup", "setup": prev])));
+}
+
+__async__ void wscmd_catsearch(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	array ret = ({ });
+	if (msg->q != "") ret = await(twitch_api_request("https://api.twitch.tv/helix/search/categories?first=5&query="
+			+ Protocols.HTTP.uri_encode(msg->q))
+		)->data;
+	send_msg(conn, (["cmd": "catsearch", "results": ret]));
 }
 
 void wscmd_import(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -183,12 +225,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 				else if (arg != "" && arg[0] == '-') params->content_classification_labels += ({(["id": arg[1..], "is_enabled": 0])});
 				else {
 					multiset is_enabled = (multiset)(arg / " ");
-					if (!G->G->ccl_names) {
-						//NOTE: Partly duplicated from raid finder. Should this be deduped?
-						array ccls = await(twitch_api_request("https://api.twitch.tv/helix/content_classification_labels"))->data;
-						G->G->ccl_names = mkmapping(ccls->id, ccls->name);
-					}
-					params->content_classification_labels = mkmapping(indices(G->G->ccl_names), is_enabled[indices(G->G->ccl_names)[*]]);
+					params->content_classification_labels = map(indices(G->G->ccl_names)) {return (["id": __ARGS__[0], "is_enabled": is_enabled[__ARGS__[0]]]);};
 				}
 				break;
 			}
@@ -220,4 +257,14 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 	return resp;
 }
 
-protected void create(string name) {::create(name);}
+protected void create(string name) {
+	if (!G->G->ccl_names || !ccl_options) {
+		//NOTE: Partly duplicated from raid finder. Should this be deduped?
+		twitch_api_request("https://api.twitch.tv/helix/content_classification_labels")->then() {
+			array ccls = __ARGS__[0]->data;
+			G->G->ccl_names = mkmapping(ccls->id, ccls->name); //NOTE: This includes MatureGame as it's used for viewership warnings.
+			ccl_options = filter(ccls) {return __ARGS__[0]->id != "MatureGame";};
+		};
+	}
+	::create(name);
+}

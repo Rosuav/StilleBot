@@ -1,5 +1,5 @@
 import {choc, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, SPAN, TD, TR} = choc; //autoimport
+const {BUTTON, IMG, LI, SPAN, TD, TR} = choc; //autoimport
 import {simpleconfirm} from "./utils.js";
 
 const setups = {}; //Keyed by ID
@@ -80,6 +80,43 @@ on("click", "#save", e => {
 on("click", ".delete", simpleconfirm("Delete this setup?", e => {
 	ws_sync.send({cmd: "delsetup", id: e.match.closest("[data-id]").dataset.id});
 }));
+
+on("click", "#pick_cat", e => {
+	DOM("#picker_search").value = "";
+	set_content("#picker_results", "");
+	DOM("#categorydlg").showModal();
+});
+on("click", "#pick_ccls", e => {
+	const ccls = DOM("#ccls").value.split(", "); //Require the spaces between them - this isn't human-editable
+	DOM("#ccl_options").querySelectorAll("input").forEach(el => el.checked = ccls.includes(el.name));
+	DOM("#cclsdlg").showModal();
+});
+on("click", "#ccl_apply", e => {
+	const ccls = [];
+	DOM("#ccl_options").querySelectorAll("input").forEach(el => el.checked && ccls.push(el.name));
+	DOM("#ccls").value = ccls.join(", ");
+	DOM("#cclsdlg").close();
+});
+
+let searchingfor = null;
+on("input", "#picker_search", e => {
+	if (searchingfor) return;
+	ws_sync.send({cmd: "catsearch", q: searchingfor = e.match.value});
+});
+export function sockmsg_catsearch(msg) {
+	const q = DOM("#picker_search").value;
+	if (searchingfor !== q) ws_sync.send({cmd: "catsearch", q: searchingfor = q});
+	else searchingfor = null;
+	set_content("#picker_results", msg.results.map(game => LI({
+		"data-pick": game.name,
+	}, [IMG({src: game.box_art_url, alt: ""}), game.name])));
+}
+
+on("click", "#picker_results li", e => {
+	DOM("#category").value = e.match.dataset.pick;
+	DOM("#categorydlg").close();
+	DOM("#setupconfig").classList.add("dirty");
+});
 
 on("change", "#importfile", e => DOM("#importsettings").disabled = e.match.value === "");
 
