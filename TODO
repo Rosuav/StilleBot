@@ -277,4 +277,3 @@
 * Make an activatable feature for a Seize Crown redemption?
 * In interactive mode, have an explore(mixed value) that will create a GTK window to
   show the value, same as Internals does
-* /followers - clicking the CB may be double-toggling (b/c click is propagating)
