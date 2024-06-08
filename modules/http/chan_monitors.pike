@@ -58,10 +58,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 __async__ void update_scheduled_timer(object channel, mapping mon) {
 	array ev = await(get_stream_schedule(channel->userid, (int)mon->twitchsched_offset, 1, 86400));
 	int target = 0;
-	if (sizeof(ev)) //It's possible there are no events coming; leave it at zero.
+	if (sizeof(ev)) //If there are no events within the next day, leave it at zero.
 		target = time_from_iso(ev[0]->start_time)->unix_time() + (int)mon->twitchsched_offset;
 	sscanf(mon->text, "$%s$:", string varname);
-	channel->set_variable(varname, (string)target);
+	if (varname) channel->set_variable(varname, (string)target);
 }
 
 mapping _get_monitor(object channel, mapping monitors, string id) {
