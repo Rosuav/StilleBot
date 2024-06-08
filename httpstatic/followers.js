@@ -57,7 +57,7 @@ let last_clicked = null;
 on("click", "tr.follower", e => {
 	document.getSelection().removeAllRanges(); //Don't select on shift-click
 	const cb = e.match.querySelector("input[type=checkbox]");
-	const state = cb.checked = !cb.checked;
+	const state = cb === e.target ? cb.checked : (cb.checked = !cb.checked); //Don't toggle if you clicked directly on the CB
 	if (e.shiftKey && last_clicked && last_clicked.querySelector("input[type=checkbox]").checked === state) {
 		const pos = e.match.compareDocumentPosition(last_clicked);
 		let from, to;
