@@ -71,6 +71,29 @@ loading... | - | - | - | - | -
 #prevsetup span {
 	margin: 0 0.5em;
 }
+
+#categorydlg li {
+	cursor: pointer;
+	border: 1px solid transparent;
+}
+
+#categorydlg li:hover {
+	border-color: #0df;
+	background: #eff;
+}
+
+#categorydlg li img {
+	vertical-align: middle;
+	margin-top: 0.25em;
+}
+
+#ccl_options li {
+	margin-bottom: 1em;
+}
+
+input[readonly] {
+	background-color: #ddd;
+}
 </style>
 
 > ### Pick a category
