@@ -275,7 +275,3 @@
 * Make an activatable feature for a Seize Crown redemption?
 * In interactive mode, have an explore(mixed value) that will create a GTK window to
   show the value, same as Internals does
-* Display the Personal Checklist on /c/streamsetup front end
-  - Plain text only (no HTML or Markdown), but auto-link URLs
-  - Dialog to edit
-  - This will be the last step before it should be ready to be added to the sidebar.

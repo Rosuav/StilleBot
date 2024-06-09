@@ -37,6 +37,12 @@ loading... | - | - | - | - | -
 <button type=submit>Update stream info</button> <button type=button id=save>Save this setup</button>
 </form>
 
+### Personal Checklist
+
+<ul id=checklist></ul>
+
+[Edit](:.opendlg data-dlg=editchecklistdlg)
+
 > ### Import old settings
 >
 > Were you previously using [the old Mustard Mine](https://mustard-mine.herokuapp.com/)? You can
@@ -94,6 +100,18 @@ loading... | - | - | - | - | -
 input[readonly] {
 	background-color: #ddd;
 }
+
+#checklist {
+	padding: 0;
+}
+#checklist li {
+	font-size: 1.25em;
+	list-style: none;
+}
+#checklist input[type=checkbox] {
+	height: 1.75em;
+	width: 1.75em;
+}
 </style>
 
 > ### Pick a category
@@ -110,13 +128,26 @@ input[readonly] {
 >
 > Select the classification labels appropriate to your stream. Be sure to follow
 > [Twitch's rules about CCLs](https://help.twitch.tv/s/article/content-classification-labels)
-> and [applicable guidelines](https://safety.twitch.tv/s/article/Content-Classification-Guidelines)
+> and [applicable guidelines](https://safety.twitch.tv/s/article/Content-Classification-Guidelines).
 >
 > $$ccl_options$$
 > {:#ccl_options}
 >
 > [Apply](:#ccl_apply) [Cancel](:.dialog_close)
 {: tag=dialog #cclsdlg}
+
+<!-- -->
+
+> ### Edit Checklist
+>
+> Your personal checklist will be visible on the Stream Setup page, and you can<br>
+> mark things as completed. This is purely for your own reference and can be edited<br>
+> any time you choose. Blank lines form separators.
+>
+> <textarea id=newchecklist rows=10 cols=40></textarea>
+>
+> [Update](:#savechecklist) [Cancel](:.dialog_close)
+{: tag=dialog #editchecklistdlg}
 ";
 
 //Cached. Should we go recheck it at any point?
@@ -202,6 +233,13 @@ __async__ void wscmd_catsearch(object channel, mapping(string:mixed) conn, mappi
 			+ Protocols.HTTP.uri_encode(msg->q))
 		)->data;
 	send_msg(conn, (["cmd": "catsearch", "results": ret]));
+}
+
+void wscmd_setchecklist(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!stringp(msg->checklist)) return;
+	G->G->DB->mutate_config(channel->userid, "streamsetups") {
+		__ARGS__[0]->checklist = msg->checklist;
+	}->then() {send_updates_all(channel, "");};
 }
 
 void wscmd_import(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {

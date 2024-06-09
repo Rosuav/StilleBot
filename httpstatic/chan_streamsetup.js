@@ -1,5 +1,5 @@
-import {choc, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, IMG, LI, SPAN, TD, TR} = choc; //autoimport
+import {choc, set_content, on} from "https://rosuav.github.io/choc/factory.js";
+const {BUTTON, IMG, INPUT, LABEL, LI, SPAN, TD, TR} = choc; //autoimport
 import {simpleconfirm} from "./utils.js";
 
 const setups = {}; //Keyed by ID
@@ -22,7 +22,16 @@ export function render_empty() {
 		TD({colSpan: 6}, "No setups defined. Create one!"),
 	]));
 }
-export function render(data) { }
+export function render(data) {
+	if (data.checklist) set_content("#checklist",
+		(DOM("#newchecklist").value = data.checklist).trim().split("\n")
+		.map(item => item.trim()
+			//TODO: Autolink URLs for convenience
+			? LI(LABEL([INPUT({type: "checkbox"}), item]))
+			: LI({class: "separator"}, "\xA0")
+		)
+	);
+}
 
 on("click", "#setups tr[data-id]", e => {
 	console.log("click");
@@ -116,6 +125,11 @@ on("click", "#picker_results li", e => {
 	DOM("#category").value = e.match.dataset.pick;
 	DOM("#categorydlg").close();
 	DOM("#setupconfig").classList.add("dirty");
+});
+
+on("click", "#savechecklist", e => {
+	ws_sync.send({cmd: "setchecklist", checklist: DOM("#newchecklist").value});
+	DOM("#editchecklistdlg").close();
 });
 
 on("change", "#importfile", e => DOM("#importsettings").disabled = e.match.value === "");
