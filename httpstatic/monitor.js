@@ -44,7 +44,7 @@ function countdown_ticker(elem, id) {
 	//that many, but allow more digits if needed.
 	time = "" + time;
 	parts[0] = parts[0].replace(/#+$/, hashes => {
-		if (hashes.length > time.length) return time;
+		if (hashes.length < time.length) return time;
 		return ("0".repeat(hashes.length) + time).slice(-hashes.length);
 	});
 	set_content(elem, parts.join(":"));
