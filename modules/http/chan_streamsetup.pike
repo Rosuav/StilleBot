@@ -6,11 +6,11 @@ inherit http_websocket;
 
 constant markdown = #"# Stream setup
 
-TODO. Massive massive TODO.
+Get ready for streaming!
 
-On this page you can to configure your broadcast's category, title, tags, and content classification labels.
+On this page you can quickly configure your broadcast's category, title, tags, and content classification labels.
 
-Saved setups allow you to quickly select commonly-used settings. They have unique IDs that can be used to apply them from commands.
+Saved setups allow you to quickly select commonly-used settings. Retain your favourites, use them as-is or adjust as required.
 
 You can create [commands](commands) that change these same settings.
 

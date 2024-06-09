@@ -19,6 +19,7 @@ $$greeting||$$
 * [Alert Box](alertbox) - configure alerts for follows, subs, cheers, etc
 * [Voices](voices) - authenticate another user name for the bot to speak under
 * [VLC integration](vlc) - link to VLC Media Player for "currently playing" etc
+* [Stream setup](streamsetup) - prepare your title, category, tags, etc
 * [Monitors and goal bars](monitors)
 * [Messages](messages) - private messaging system eg for giveaway rewards
 * [Raid Train](raidtrain) - if one is organized by this streamer

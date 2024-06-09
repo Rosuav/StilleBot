@@ -75,6 +75,7 @@ constant sidebar_menu = ({
 	({"*alertbox", "Alert box"}),
 	({"*voices", "Voices"}),
 	//({"vlc", "VLC music"}), //Not really needed in the sidebar IMO
+	({"*streamsetup", "Stream Setup"}),
 	({"*monitors", "Monitors"}),
 	({"messages", "Messages"}),
 	({"share", "Art sharing"}),
