@@ -8,16 +8,6 @@
     the persisted mapping NOT having the dollar signs. This may also coincide with storing
     them in their own table eg stillebot.variables, with channelid, varname, userid (may
     be NULL in which case it's not a per-user variable), and the value.
-* Add some example/template commands that use cooldowns.
-  - The functionality exists, but it can be used in a variety of ways. Good examples:
-    - Short cooldown, no else. A simple squelch effect (command can't be used inside
-      fifteen seconds).
-    - Long cooldown, 'else' has alternate message. Command gives you some actual benefit,
-      and you can only use it once every hour.
-    - Very short cooldown (2 seconds), 'else' adds to variable and has output with a two
-      second delay that emits everything from the variable. Will batch up busy responses.
-      - Would be perfect in a !!giveaway_ticket special, or anything where it's normal
-        for lots of people to use it all at once.
 * Across an update of connection.pike, retain the mod list, until such time as we get an
   updated list.
 * Pike HTTP, SSL, and keep-alive: what's going on? Is that why Chrome gets confused?
@@ -33,8 +23,6 @@
   - The allfollows display could be this, but it's nondiscoverable and could be quite costly
     for people who follow a lot of people.
   - Adding ?raiders will show incoming, but not outgoing, raids.
-* Raid finder: Once the /streams endpoint starts reporting CCLs (the way /channels does),
-  show this info on the tile somewhere.
 * Importing of config export files
   - Create all listed commands, but don't destroy unmentioned ones (overwrite any with
     the same name, of course). Ditto specials, but whitelist the names, of course.
@@ -46,14 +34,6 @@
   - Update timezone if specified.
 * Is it possible to get a "recent messages" timeout? Would allow squishing of spam if the
   channel is too quiet. Might not be worth it though.
-* Polish multi-voice.
-  - This would allow the bot to see its own messages, but only if sent by a non-primary
-    account.
-  - Allow accounts to have a different default voice - probably just the channel's own.
-    Then allow people to activate the bot, authenticate for self-voicing, and immediately
-    start using bot features, with some restrictions, and with me able to lift those by
-    granting them full permission.
-  - Unify permissions for bcaster_auth and voice authentication
 * Authentication on Firefox may now have issues with the default popup blocker. Can we
   comply with normal "click for popup" expectations somehow?
 * Enable/disable rewards - allow use of title, will do lookup
@@ -85,8 +65,6 @@
 * Should ALL specials function as implicit arrays, the way triggers do?
   - Alternatively: should invocations and executions be separated? Aliases would then
     be just another way to have more than one invocation for a single command.
-* With the shutdown of Kraken, can we record things locally that used to be on Twitch?
-  - Followed games/categories - you can still follow/unfollow but you can't query it in API
 * Art Share tool
   - Implement !permit command for temporary single-use access
   - Mod command to nuke the last-posted file?
@@ -113,23 +91,17 @@
   rewards for Mustard Mine, which bombs with a 403 (b/c not affiliate). Track it
   down at some point; may need to add some instrumentation.
 * Have an image that people can use to link to the bot's landing page, if they
-  wish to give credit.
+  wish to give credit. (Same as the pfp/banner mentioned below?)
 * Before Aug 3rd, complete the changeover to follower requests with authentication
   - See poll.pike and comments regarding this date
 * Other support platforms? Which ones have integrations available?
-  - Fourth Wall
   - Throne?
 * Seek verification status.
-  - FAQ page?
-  - Get a logo for Mustard Mine, to use as profile pic and favicon
+  - Get a logo for Mustard Mine, to use as profile pic and favicon; and a banner for the
+    landing page and other splash pages. Ensure that the logo works for the Twitch panel.
     - Maaya's not open, or she'd have been first choice. What about MoonieRaven (see Discord)?
   - Create a way to permaban a user??? It's sadly likely to become necessary at some point.
   - https://dev.twitch.tv/limit-increase
-  - Requires a panel on the bot's channel saying:
-    (1) Owner contact information,
-    (2) Bot description,
-    (3) Instructions on how to add the bot to a channel, and
-    (4) Instructions on how to remove the bot from a channel
   - Appeal to Twitch for the name StilleBot? If it can be made available, activate it as
     another voice, available to all. MustardMine will remain the default though.
 * Bot sharding. What would it take?
