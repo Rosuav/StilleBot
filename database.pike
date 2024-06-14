@@ -103,6 +103,7 @@ constant tables = ([
 	"user_login_sightings": ({
 		"twitchid bigint not null",
 		"login text not null",
+		"bot text not null",
 		"sighted timestamp with time zone not null default now()",
 		" primary key (twitchid, login)",
 	}),
@@ -739,6 +740,10 @@ __async__ void replication_watchdog() {
 	}
 	if (live[0]->confirmed_flush_lsn == repl[0]->received_lsn &&
 			repl[0]->received_lsn == repl[0]->latest_end_lsn) {
+		if (repl_failures) werror("REPL WDOG: Back in sync %O %O %O %O\n",
+			live[0]->restart_lsn, live[0]->confirmed_flush_lsn,
+			repl[0]->received_lsn, repl[0]->latest_end_lsn,
+		);
 		repl_failures = 0;
 		return; //All good, in sync.
 	}
