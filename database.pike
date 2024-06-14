@@ -105,7 +105,7 @@ constant tables = ([
 		"login text not null",
 		"bot text not null",
 		"sighted timestamp with time zone not null default now()",
-		" primary key (twitchid, login)",
+		" primary key (twitchid, login, bot)",
 	}),
 ]);
 //TODO: Have other modules submit requests for configs to be precached??

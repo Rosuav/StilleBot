@@ -112,10 +112,11 @@ __async__ void get_credentials() {
 @retain: mapping recent_user_sightings = ([]); //Map a user ID (int) to a login
 @export: void notice_user_name(string login, string|int id) {
 	if (!login) return;
+	string bot = G->G->instance_config->local_address; if (!bot) return;
 	if (recent_user_sightings[(int)id] == login) return;
 	recent_user_sightings[(int)id] = login;
-	//G->G->DB->save_sql("insert into stillebot.user_login_sightings (twitchid, login) values (:id, :login) on conflict do nothing",
-	//	(["id": id, "login": lower_case(login)]));
+	G->G->DB->save_sql("insert into stillebot.user_login_sightings (twitchid, login, bot) values (:id, :login, :bot) on conflict do nothing",
+		(["id": id, "login": lower_case(login), "bot": bot]));
 }
 
 @export: __async__ array(mapping) get_helix_paginated(string url, mapping|void query, mapping|void headers, mapping|void options, int|void debug)
