@@ -41,6 +41,20 @@ __async__ void resolve_command_collision(int twitchid, string cmdname) {
 	postgres_log_messages->pause_notifications = 0;
 }
 
+//Collision form: Two reports of the same user id / login sighting
+int(1bit) handle_sighting_collision(array(string) errors) {
+	int twitchid; string login;
+	foreach (errors, string line)
+		if (sscanf(line, "DETAIL:  Key (twitchid, login)=(%d, %[^)]) already exists.", twitchid, login)) break;
+	if (!twitchid) return 0;
+	werror("RESOLVING %O %O\n", twitchid, login);
+	//We resolve this on the fast DB, but read-write. Maybe this should go inside database.pike?
+	G->G->DB->pg_connections[G->G->DB->fastdb]->conn->transaction(__async__ lambda(function query) {
+		await(query("delete from stillebot.user_login_sightings where twitchid = :id and login = :login",
+			(["id": twitchid, "login": login])));
+	});
+}
+
 void log_readable(string line) {
 	if (postgres_log_messages->pause_notifications) return;
 	/* Interesting lines:
@@ -68,6 +82,8 @@ void log_readable(string line) {
 		foreach (postgres_log_messages[workerpid] || ({ }), string line) {
 			if (line == "ERROR:  duplicate key value violates unique constraint \"commands_twitchid_cmdname_idx\"")
 				if (handle_command_collision(postgres_log_messages[workerpid])) return;
+			if (line == "ERROR:  duplicate key value violates unique constraint \"user_login_sightings_pkey\"")
+				if (handle_sighting_collision(postgres_log_messages[workerpid])) return;
 		}
 		//If we get here, there was some sort of unknown error. Report loudly.
 		//TODO: Fire an audio alert in prod.

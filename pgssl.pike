@@ -424,7 +424,7 @@ class SSLDatabase(string host, mapping|void cfg) {
 	//additional arguments. NOTE: Keep this function short and fast! All other DB
 	//queries will be queued until this transaction completes.
 	__async__ mixed transaction(function body, mixed ... args) {
-		await(_low_query("ready", "begin")); //Not transaction_query here. Queue us like any autocommitted call.
+		await(_low_query("ready", "begin read write")); //Not transaction_query here. Queue us like any autocommitted call.
 		in_transaction = 1;
 		mixed ret;
 		mixed ex = catch {
