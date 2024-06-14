@@ -8,11 +8,17 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	{
 		loglink = "[Log out](:.twitchlogout)";
 		yourname = "You are currently logged in as " + yourname + ".";
+		int id = (int)req->misc->session->user->id;
+		if (id && G->G->irc->id[id]) yourname += " [Manage your channel](/c/)";
 	}
 	return render_template("index.md", ([
 		"botname": G->G->dbsettings->credentials->username,
 		"yourname": yourname, "loglink": loglink,
 	]));
+}
+
+mapping(string:mixed)|Concurrent.Future faq(Protocols.HTTP.Server.Request req) {
+	return render_template("faq.md", ([]));
 }
 
 //Timing tests. Each performs exactly one database query; "ro" should be able to be resolved
@@ -29,6 +35,7 @@ protected void create(string name)
 {
 	::create(name);
 	G->G->http_endpoints[""] = http_request;
+	G->G->http_endpoints["faq"] = faq;
 	G->G->http_endpoints["pingro"] = pingro;
 	G->G->http_endpoints["pingrw"] = pingrw;
 }

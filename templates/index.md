@@ -1,20 +1,32 @@
 # Mustard Mine
 
-Mustard Mine is a Twitch channel bot. This one operates under the name "$$botname$$",
-but [the source code](https://github.com/rosuav/stillebot) is available to anyone
-who wishes to use it, learn from it, or borrow code from it.
+<!-- Banner goes here -->
 
-Information about each channel that this bot serves is available.
-<form method=get action="/channels/">Select a Twitch channel: <input name=chan size=20><input type=submit value="Show"></form>
+Mustard Mine is a Twitch channel bot. It offers a wide variety of tools to streamers
+and viewers, including:
+
+* Simple commands to give information
+* Responses to stream support such as subscriptions and cheers
+* Integrations with online shops (Ko-fi, Fourth Wall)
+* Goal bars, including multi-leveled goal bars
+* Hype Train tracking and reporting
+* Management of channel point rewards
+* Stream preparation eg setting title, category, tags
+* On-screen alerts
+* Raid target searching in various forms
+* And, as they say, much much more!
+
+Unsure if you want to use this bot? Nearly all the features can be explored in [demo mode]
+(/channels/demo) where you have the power of a moderator in a mythical channel!
+
+Interested? [Activate the bot here!](/activate)
+
+Want to learn more? Check out [our FAQ](/faq) or contact Rosuav on Twitch or Discord.
 
 $$yourname$$ $$loglink$$
 
-Additional features and toys available here:
+Quick links:
 * [See who has which bit badges in your channel](/bitsbadges) (needs login)
 * [Emote checklist](/checklist)
 * [An alternate view to your follow list, good for picking raid targets](/raidfinder)
-* <form method=get action="/hypetrain">Hype train status for a Twitch channel: <input name=for size=20><input type=submit value="Show"></form>
-* <form method=get action="/emotes">Emote showcase for any channel: <input name=broadcaster size=20><input type=submit value="Show"></form>
-* [Path to Affiliate streamer tracking](/affiliate). If you're helping to guide streamers to this milestone, this page can help with tracking and recommendations.
 * [OAuth scope trimmer to help you tame the wild mess of permissions that sites ask for](/scopetrim)
-* [Curious what the bot can do for you? Try the demo!](https://mustardmine.com/channels/demo/)
