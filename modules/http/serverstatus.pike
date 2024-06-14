@@ -78,6 +78,9 @@ void update() {
 	state->cpu = 100 - 100 * (idle - lastidle) / (tot - lasttot);
 	state->spinner = (string)({spinner[spinnerpos % sizeof(spinner)]});
 	G->G->serverstatus_cputime = ({tot, idle, spinnerpos + 1});
+	sscanf(Stdio.read_file("/proc/meminfo"), "MemTotal: %d kB\nMemFree: %d kB", int memtotal, int memfree); //Or would MemAvailable be more useful?
+	state->ram = memfree * 100 / memtotal;
+	state->ramtotal = memtotal / 1048576;
 	//If there's nobody listening, stop monitoring.
 	send_updates_all("");
 	if (!sizeof(websocket_groups[""])) G->G->serverstatus_updater = 0;

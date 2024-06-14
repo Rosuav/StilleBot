@@ -1,7 +1,7 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {P, SPAN} = choc; //autoimport
 
-const sharedattrs = {cpu: "CPU", spinner: -1};
+const sharedattrs = {cpu: "CPU", ram: "RAM", spinner: -1};
 const attrs = {
 	Gideon: {...sharedattrs},
 	Sikorsky: {...sharedattrs, gpu: "GPU", vram: "VRAM", enc: -1, dec: -1},
