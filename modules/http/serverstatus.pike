@@ -8,6 +8,11 @@ constant markdown = #"# StilleBot server status
 <p id=content></p>
 
 <style>
+.label {
+	width: 5em;
+	display: inline-block;
+	font-weight: bold;
+}
 .percent {
 	width: 2em;
 	display: inline-block;
