@@ -25,7 +25,10 @@ EOF
 			select client_addr, application_name, xact_start, state from pg_stat_activity where usename = 'rosuav' and pid != pg_backend_pid();
 		" | pike dbstatus.pike
 	;;
+	log|tail|logs)
+		tail -F /var/log/postgresql/postgresql-16-main.log
+	;;
 	*)
-		echo "Usage: $0 up|dn|status"
+		echo "Usage: $0 up|dn|status|log"
 	;;
 esac
