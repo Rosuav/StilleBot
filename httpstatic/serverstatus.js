@@ -9,19 +9,23 @@ set_content("#content", ["Gideon", "Sikorsky"].map(id => P({id}, [
 	"Enc: ", SPAN({class: "enc percent"}), ":", SPAN({class: "dec percent"}), " ",
 	SPAN({class: "spinner"}),
 ])));
-if (location.hash === "#mini") {
+function minify() {
 	const content = DOM("#content");
 	DOM("main").replaceWith(content, DOM("main style"));
 	content.style.margin = "0";
 }
+if (location.hash === "#mini") minify();
+on("click", 'a[href="#mini"]', minify);
 
 function update(data, par) {
 	Object.keys(data).forEach(name => attrs[name] && set_content(par + " ." + name, ""+data[name]));
 }
 export function render(data) {update(data, "#Sikorsky");}
 export const ws_host = "sikorsky.mustardmine.com";
+export const ws_config = {quiet: {msg: 1}};
 
 ws_sync.connect("", {
+	ws_config: {quiet: {msg: 1}},
 	ws_host: "gideon.mustardmine.com",
 	render: data => update(data, "#Gideon"),
 });
