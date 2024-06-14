@@ -3,7 +3,7 @@
 //NOTE: While it is certainly possible to connect to multiple sockets, reconnection
 //information is global. So the progressive back-off will work a little oddly, and
 //more importantly, we assume that ALL sockets can be redirected safely to the same
-//destination.
+//destination. (With rare exception; the handler *may* override the host. Not normal.)
 
 let default_handler = null;
 let send_socket, send_sockets = { }; //If populated, send() is functional.
@@ -38,7 +38,7 @@ export function connect(group, handler)
 	const cfg = handler.ws_config || { };
 	if (!cfg.quiet) cfg.quiet = { };
 	function verbose(kwd, ...msg) {if (!cfg.quiet[kwd]) console.log(...msg)}
-	let socket = new WebSocket(protocol + (redirect_host || window.location.host) + "/ws");
+	let socket = new WebSocket(protocol + (handler.ws_host || redirect_host || window.location.host) + "/ws");
 	const callback_pfx = (handler.ws_type || ws_type) + "_";
 	socket.onopen = () => {
 		reconnect_delay = 250;

@@ -17,3 +17,9 @@ if (location.hash === "#mini") {
 export function render(data) {
 	Object.keys(data).forEach(id => attrs[id] && set_content("#" + id, ""+data[id]));
 }
+export const ws_host = "sikorsky.mustardmine.com";
+
+ws_sync.connect("", {
+	ws_host: "gideon.mustardmine.com",
+	render: data => console.log("Got data from gideon", data),
+});

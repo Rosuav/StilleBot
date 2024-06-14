@@ -58,12 +58,14 @@ mapping get_state(string|int group) {return state;}
 
 void update() {
 	string spinner = "⠇⠦⠴⠸⠙⠋";
-	mapping proc = Process.run(({"nvidia-settings", "-t",
-		"-q=:0/VideoEncoderUtilization",
-		"-q=:0/VideoDecoderUtilization",
-		"-q=:0/GPUUtilization",
-	}));
-	sscanf(proc->stdout, "%d\n%d\ngraphics=%d, memory=%d", state->enc, state->dec, state->gpu, state->vram);
+	catch { //If no nvidia-settings, leave those absent
+		mapping proc = Process.run(({"nvidia-settings", "-t",
+			"-q=:0/VideoEncoderUtilization",
+			"-q=:0/VideoDecoderUtilization",
+			"-q=:0/GPUUtilization",
+		}));
+		sscanf(proc->stdout, "%d\n%d\ngraphics=%d, memory=%d", state->enc, state->dec, state->gpu, state->vram);
+	};
 	[int lasttot, int lastidle, int spinnerpos] = G->G->serverstatus_cputime;
 	[int tot, int idle] = cputime();
 	if (tot == lasttot) --lasttot; //Prevent division by zero
