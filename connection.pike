@@ -1521,7 +1521,7 @@ void establish_hook_notification(string|int channelid, string hook, mapping|void
 	foreach (G->G->websocket_groups; string type; mapping groups)
 		foreach (groups; string group; array socks)
 			foreach (socks, object sock) {
-				mapping conn = sock->query_id();
+				mapping conn = sock->?query_id();
 				if (!conn || !mappingp(conn->session)) continue;
 				sock->send_text(Standards.JSON.encode(([
 					"cmd": "*DC*",
