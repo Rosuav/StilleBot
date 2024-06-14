@@ -17,7 +17,9 @@ constant markdown = #"# StilleBot server status
 }
 </style>
 ";
+mapping state = ([]);
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+	state->responder = G->G->instance_config->local_address;
 	if (req->variables->which) return jsonify(([
 		"responder": G->G->instance_config->local_address, //If you ask for https://mustardmine.com/serverstatus?which, you will be told which bot actually responded.
 		"active_bot": G->G->dbsettings->?active_bot || "",
@@ -53,7 +55,6 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	ensure_updater();
 }
 
-mapping state = ([]);
 mapping get_state(string|int group) {return state;}
 
 void update() {
