@@ -20,6 +20,9 @@ constant markdown = #"# StilleBot server status
 .percent::after {
 	content: \"%\";
 }
+.db {
+	margin-right: 1em;
+}
 </style>
 ";
 mapping state = ([]);
@@ -62,6 +65,14 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 
 mapping get_state(string|int group) {return state;}
 
+__async__ void checkdb(string which, System.Timer tm) {
+	string db = G->G->DB[which];
+	if (!db || (which == "fastdb" && db == G->G->DB->livedb)) {state[which] = ([]); return;}
+	await(G->G->DB->pg_connections[db]->conn->query("select 1"));
+	state[which] = (["host": (db / ".")[0], "ping": tm->peek()]);
+}
+
+int lastdbcheck;
 void update() {
 	string spinner = "⠇⠦⠴⠸⠙⠋";
 	catch { //If no nvidia-settings, leave those absent
@@ -81,6 +92,13 @@ void update() {
 	sscanf(Stdio.read_file("/proc/meminfo"), "MemTotal: %d kB\nMemFree: %d kB", int memtotal, int memfree); //Or would MemAvailable be more useful?
 	state->ram = memfree * 100 / memtotal;
 	state->ramtotal = memtotal / 1048576;
+	//Check database timings periodically
+	if (time() - lastdbcheck > 30) {
+		lastdbcheck = time();
+		System.Timer tm = System.Timer();
+		checkdb("fastdb", tm);
+		checkdb("livedb", tm);
+	}
 	//If there's nobody listening, stop monitoring.
 	send_updates_all("");
 	if (!sizeof(websocket_groups[""])) G->G->serverstatus_updater = 0;

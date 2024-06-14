@@ -12,6 +12,7 @@ set_content("#content", ["Gideon", "Sikorsky"].map(id => {
 		SPAN({class: "label"}, id + ": "),
 		Object.keys(attrs[id]).map(name => attrs[id][name] !== -1 && [attrs[id][name] + ": ", SPAN({class: name + " percent"}), " "]),
 		attrs[id].enc && ["Enc: ", SPAN({class: "enc percent"}), ":", SPAN({class: "dec percent"}), " "],
+		SPAN({class: "db"}),
 		SPAN({class: "spinner"}),
 	]);
 }));
@@ -25,6 +26,10 @@ on("click", 'a[href="#mini"]', minify);
 
 function update(data, par) {
 	Object.keys(data).forEach(name => attrs[par][name] && set_content("#" + par + " ." + name, ""+data[name]));
+	set_content("#" + par + " .db", [
+		data.livedb?.host && ["DB: ", data.livedb.host, " (" + Math.floor(data.livedb.ping * 1000) + " ms)"],
+		data.fastdb?.host && [" Alt DB: ", data.fastdb.host, " (" + Math.floor(data.fastdb.ping * 1000) + " ms)"],
+	]);
 }
 export function render(data) {update(data, "Sikorsky");}
 export const ws_host = "sikorsky.mustardmine.com";
