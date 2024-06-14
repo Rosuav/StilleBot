@@ -1,15 +1,15 @@
 # Special triggers for $$channel$$
 
-When certain events happen, StilleBot can automatically react, to thank a
+When certain events happen, Mustard Mine can automatically react, to thank a
 person or celebrate an activity etc. Every event is triggered by somebody -
 the initiator of the special action - and many events have additional information
 available. For example, when someone [cheers](https://help.twitch.tv/s/article/guide-to-cheering-with-bits)
-in your channel, StilleBot can thank the person with a message such as:
+in your channel, Mustard Mine can thank the person with a message such as:
 
 <pre>Thank you for the {bits} bits, $$$$!
 
-MustardMine: This is a test cheer cheer100
-StilleBot: Thank you for the 100 bits, MustardMine!
+SomeGenerousUser: This is a test cheer cheer100
+MustardMine: Thank you for the 100 bits, SomeGenerousUser!
 </pre>
 
 To respond to the contents of regular messages, see [Triggers](triggers).

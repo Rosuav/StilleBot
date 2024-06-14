@@ -12,7 +12,7 @@ export function render_item(rew) {
 		TD(rew.title),
 		TD(rew.prompt),
 		TD({title: rew.can_manage
-			? "Reward can be managed by StilleBot" + (rew.should_redemptions_skip_request_queue ? " (redemptions skip queue)" : "")
+			? "Reward can be managed by Mustard Mine" + (rew.should_redemptions_skip_request_queue ? " (redemptions skip queue)" : "")
 			: "Reward created elsewhere, can attach functionality only"},
 			rew.can_manage ? "✅" + (rew.should_redemptions_skip_request_queue ? "⤐" : "") : "❎"
 		),

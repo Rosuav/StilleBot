@@ -113,7 +113,7 @@ function select_tab(tab, response) {
 		}
 		case "mustard": {
 			set_content("#command_details", [
-				P([A({href: "https://rosuav.github.io/StilleBot/MustardScript"}, "MustardScript"), " is StilleBot's scripting language."]),
+				P([A({href: "https://rosuav.github.io/StilleBot/MustardScript"}, "MustardScript"), " is this bot's scripting language."]),
 				DIV({style: "border: 1px solid black; padding: 0.25em;"},
 					DIV({id: "mustardscript", style: "width: 900px; height: 500px;"}),
 				),

@@ -264,7 +264,7 @@ on("click", ".deletebtn", simpleconfirm("Delete this monitor?", e =>
 	ws_sync.send({cmd: "deletemonitor", nonce: e.match.dataset.nonce})));
 
 on("dragstart", ".monitorlink", e => {
-	const url = `${e.match.href}&layer-name=StilleBot%20monitor&layer-width=${e.match.dataset.width||400}&layer-height=${e.match.dataset.height||120}`;
+	const url = `${e.match.href}&layer-name=Mustard%20Mine%20monitor&layer-width=${e.match.dataset.width||400}&layer-height=${e.match.dataset.height||120}`;
 	e.dataTransfer.setData("text/uri-list", url);
 });
 

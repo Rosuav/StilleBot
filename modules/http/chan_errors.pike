@@ -77,7 +77,7 @@ __async__ void populate_demo_errors() {
 		channel->report_error("ERROR", "No channel https://twitch.tv/!demo - is this actually the demo?", "");
 		channel->report_error("WARN", "Unable to query moderator list for !demo", "/mods");
 		channel->report_error("ERROR", "This command requires channel:manage:vips permission", "/vip mustardmine");
-		channel->report_error("INFO", "Welcome to StilleBot!", "!hello");
+		channel->report_error("INFO", "Welcome to the Mustard Mine!", "!hello");
 		channel->report_error("INFO", "Messages like this can be viewed by the broadcaster and mods.", "!hello");
 		channel->report_error("WARN", "The broadcaster may not give another Shoutout to the specified streamer until the cooldown period expires.", "/shoutout mustardmine");
 		err->lastread = err->msglog[-1]->id;

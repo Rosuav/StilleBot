@@ -219,7 +219,6 @@
     their modswords
   - If any voice both has a modsword for a channel and has the moderator:read:followers
     scope, it can be used for follower hooks.
-* Find user-facing places with the name StilleBot and change to MustardMine
 * VIP Leaderboard: Have a "claim tips" button
   - We already keep email addresses (I think?)
   - Let people log in with Twitch. If it's the same address, they can claim the tips

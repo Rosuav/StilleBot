@@ -220,7 +220,7 @@ main {max-width: none!important;} /* Override the normal StilleBot style */
 
 > ### Legend/info
 > This raid finder shows the people you currently follow, and helps you select someone<br>
-> to raid. Incoming and outgoing raids $$is_tracked||will be shown if StilleBot tracks this channel$$.
+> to raid. Incoming and outgoing raids $$is_tracked||will be shown if Mustard Mine tracks this channel$$.
 >
 > The recommendations sort order is based upon the following factors:
 >

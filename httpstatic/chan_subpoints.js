@@ -52,6 +52,6 @@ on("click", ".deletebtn", simpleconfirm("Delete this monitor?", e => {
 }));
 
 on("dragstart", ".monitorlink", e => {
-	const url = `${e.match.href}&layer-name=StilleBot%20subpoint%20tracker&layer-width=200&layer-height=120`;
+	const url = `${e.match.href}&layer-name=Mustard%20Mine%20subpoint%20tracker&layer-width=200&layer-height=120`;
 	e.dataTransfer.setData("text/uri-list", url);
 });

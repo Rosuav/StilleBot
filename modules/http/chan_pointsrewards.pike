@@ -14,7 +14,7 @@ Icon | Title | Prompt | Manage? | Commands
 [Add reward](:#add) Copy from: <select id=copyfrom><option value=\"\">(none)</option></select>
 
 If you are a Twitch partner or affiliate, you can see here a list of all your channel point rewards,
-whether they can be managed by StilleBot, and a place to attach behaviour to them. Coupled with
+whether they can be managed by Mustard Mine, and a place to attach behaviour to them. Coupled with
 appropriate use of channel voices, this can allow a wide variety of interactions with other bots.
 
 You can remove functionality from a reward by deleting the corresponding command, or editing

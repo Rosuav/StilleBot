@@ -4,7 +4,7 @@ Variable substitutions in command execution
 (Note: "Command execution" refers also to triggers, specials, and any other
 related features.)
 
-Commands in StilleBot have access to a variety of extra information. These
+Mustard Mine commands have access to a variety of extra information. These
 notations can be used to include this information in your messages:
 
 * $varname$ - variables created by and for your own channel. For example,

@@ -3,7 +3,7 @@ inherit http_endpoint;
 
 constant markdown = #"# Twitch Login
 
-Log in to StilleBot to grant the bot permission to do what it needs.
+Log in to Mustard Mine to grant the bot permission to do what it needs.
 
 Grant the following permissions:
 $$scopelist$$
