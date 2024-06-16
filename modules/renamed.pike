@@ -68,7 +68,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 	}
 	int uid; catch {uid = await(get_user_id(user));};
 	if (!uid) error("Can't find that person.\n");
-	array names = await(G->G->DB->query_ro("select login from stillebot.user_login_sightings where twitchid = :id order by sighted",
+	array names = await(G->G->DB->query_ro("select login from stillebot.user_login_sightings where twitchid = :id group by login order by min(sighted)",
 		(["id": uid])))->login;
 	string|zero foll = await(check_following(uid, channel->userid)); //FIXME: What if no perms?
 	string|zero follage;
