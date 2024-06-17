@@ -57,7 +57,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//Check if these credentials are at least what we already had.
 		mapping tok = G->G->user_credentials[(int)user->id] || ([]);
 		array missing = (tok->scopes || ({ })) - (req->variables->scope / " ") - ({""});
-		if (sizeof(missing)) return render_template(#"# Twitch Login
+		if (sizeof(missing)) {werror("LOGIN FAIL: %O %O %O\n", tok->scopes, req->variables->scope, sort(tok->scopes + req->variables->scope / " ") * " "); return render_template(#"# Twitch Login
 
 Hey, sorry, something seems to be messed up. Rosuav is looking into it. For now, you may
 be able to get logged in by clicking this button:
@@ -69,10 +69,10 @@ be able to get logged in by clicking this button:
 			"login": user->login,
 			"token": auth->access_token,
 			//"authcookie": cookie, //Not currently stored since it's not needed. Consider storing it encoded if it would help with anything.
-			"scopes": sort(req->variables->scope / " "),
+			"scopes": sort(tok->scopes + req->variables->scope / " ") * " ",
 			"validated": time(),
 			"user_info": user,
-		]));
+		]));}
 		if (function f = login_callback[req->variables->state])
 			return f(req, user, (multiset)(req->variables->scope / " "), auth->access_token, /*cookie*/""/*hackedout*/);
 		//Try to figure out a plausible place to send the person after login.
