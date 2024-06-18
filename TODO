@@ -197,6 +197,7 @@
   the bot notifies systemd that it's reloading, then that it's ready, and can report
   failure so the terminal gets an immediate response. (Failure details will of course
   be in the log.)
+  - Requires systemd v253 for Type=notify-reload in order for this to work.
 * Conduits. https://dev.twitch.tv/docs/eventsub/handling-conduit-events/
   - One shard for the active bot
   - If active and no websocket, establish WS and update shard
