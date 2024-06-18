@@ -57,7 +57,7 @@ mixed decode_as_type(string val, int type) {
 		}
 		case 3220: { //LSN
 			sscanf(val, "%4c%4c", int n1, int n2);
-			return sprintf("%X/%8X", n1, n2);
+			return sprintf("%X/%X", n1, n2);
 		}
 		default: break;
 	}
