@@ -182,7 +182,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	highlights = users->login * "\n";
 	string title = "Followed streams", auxtitle = "", catfollow = "";
 	//Special searches, which don't use your follow list (and may be possible without logging in)
-	if (req->variables->login == "demo") return redirect("raidfinder?categories=mustardmine");
+	if (req->variables->login == "demo") return redirect("raidfinder?categories=mustardmine"); //Old URL for the same functionality
 	if (req->variables->raiders || req->variables->categories || req->variables->login || req->variables->train || req->variables->highlights || req->variables->team) {
 		mapping args = ([]);
 		if (req->variables->raiders) {
@@ -205,11 +205,6 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			//Restrict your follow list to those you have highlighted.
 			args->user_id = (array(string))highlightids;
 			title = "Highlighted channels";
-		}
-		else if (req->variables->categories == "mustardmine") {
-			//Like specifying login= for each of the channels that I bot for
-			args->user_id = (array(string))(indices(G->G->irc->id) - ({0}));
-			title = "Mustard Mine users";
 		}
 		else if (req->variables->login) {
 			//TODO: Load up the specified users even if they're not currently online.
@@ -261,6 +256,11 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			args->user_id = tradingcards->streamers;
 		}
 		else switch (req->variables->categories) {
+			case "mustardmine":
+				args->user_id = (array(string))(indices(G->G->irc->id) - ({0}));
+				title = "Mustard Mine users";
+				auxtitle = " <img src=/static/MustardMineAvatar.png style=\"height: 1.25em\">";
+				break;
 			case "pixelplush": { //categories=pixelplush - use an undocumented API to find people playing the !drop game etc
 				object res = await(Protocols.HTTP.Promise.get_url(
 					"https://api.pixelplush.dev/v1/analytics/sessions/live"
