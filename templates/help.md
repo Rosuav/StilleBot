@@ -1,3 +1,5 @@
+!["Mustard Mine" banner](/static/MustardMineBanner.png)
+
 # Using the Mustard Mine
 
 Mustard Mine is a Twitch channel bot. This one operates under the name "$$botname$$",

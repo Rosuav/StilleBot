@@ -1,6 +1,8 @@
+!["Mustard Mine" logo](/static/MustardMinePanel.png)
+
 # Frequently Asked Questions
 
-<!-- Banner here again? -->
+<style>img {margin: auto; display: block; padding: 1em}</style>
 
 ## So what's with the name?
 

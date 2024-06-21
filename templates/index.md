@@ -1,6 +1,6 @@
 # Mustard Mine
 
-<!-- Banner goes here -->
+!["Mustard Mine" banner](/static/MustardMineBanner.png)
 
 Mustard Mine is a Twitch channel bot. It offers a wide variety of tools to streamers
 and viewers, including:
@@ -16,8 +16,8 @@ and viewers, including:
 * Raid target searching in various forms
 * And, as they say, much much more!
 
-Unsure if you want to use this bot? Nearly all the features can be explored in [demo mode]
-(/channels/demo) where you have the power of a moderator in a mythical channel!
+Unsure if you want to use this bot? Nearly all the features can be explored in
+[demo mode](/channels/demo) where you have the power of a moderator in a mythical channel!
 
 Interested? [Activate the bot here!](/activate)
 

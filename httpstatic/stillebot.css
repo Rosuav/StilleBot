@@ -378,3 +378,7 @@ body:not(:has(nav#sidebar.vis)) nav#topbar {
 	top: 10px; height: 30px;
 	text-align: center;
 }
+
+img[src="/static/MustardMineBanner.png"] {
+	max-width: 100%;
+}
