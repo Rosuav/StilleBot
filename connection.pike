@@ -183,6 +183,7 @@ class channel(mapping identity) {
 			};
 		}
 		load_commands(loading, commands);
+		establish_notifications(userid); //CHECK ME: Is this too soon on initial startup?
 	}
 
 	__async__ void load_commands(multiset|void loading, array|void cmds) {
@@ -1165,6 +1166,17 @@ void irc_closed(mapping options) {
 @hook_channel_online: int connected(string chan, int uptime, int chanid) {
 	object channel = G->G->irc->id[chanid];
 	if (channel) channel->channel_online(uptime);
+}
+
+@EventNotify("channel.channel_points_automatic_reward_redemption.add=1"):
+void autoreward(object channel, mapping data) {
+	//Some automatic rewards (eg "unlock emote") cost channel points. Others (eg "gigantify")
+	//cost bits. The ones that cost bits count as cheers and advance goal bars.
+	if ((<"message_effect", "gigantify_an_emote", "celebration">)[data->reward->type]) {
+		//These three rewards cost bits, the others cost points.
+		mapping person = (["uid": data->user_id, "user": data->user_login, "displayname": data->user_name]);
+		event_notify("cheer", channel, person, data->reward->cost, data, data->message->text);
+	}
 }
 
 void session_cleanup() {

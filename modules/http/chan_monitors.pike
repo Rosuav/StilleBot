@@ -200,7 +200,11 @@ int message(object channel, mapping person, string msg)
 		sscanf(msg, "%*s just tipped $%d.%d!", int dollars, int cents);
 		autoadvance(channel, person, "tip", 100 * dollars + cents);
 	}
-	if (person->bits) autoadvance(channel, person, "bit", person->bits);
+}
+
+@hook_cheer:
+void cheer(object channel, mapping person, int bits, mapping extra, string msg) {
+	autoadvance(channel, person, "bit", bits);
 }
 
 @hook_subscription:

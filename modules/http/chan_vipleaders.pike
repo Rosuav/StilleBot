@@ -373,7 +373,6 @@ __async__ int subscription(object channel, string type, mapping person, string t
 }
 
 @hook_cheer:
-int _cheer(object channel, mapping person, int bits, mapping extra) {cheer(channel, person, bits, extra);}
 __async__ int cheer(object channel, mapping person, int bits, mapping extra) {
 	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
 	if (!stats->?active) return 0;
