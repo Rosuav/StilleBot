@@ -92,8 +92,6 @@
   down at some point; may need to add some instrumentation.
 * Have an image that people can use to link to the bot's landing page, if they
   wish to give credit. (Same as the pfp/banner mentioned below?)
-* Before Aug 3rd, complete the changeover to follower requests with authentication
-  - See poll.pike and comments regarding this date
 * Other support platforms? Which ones have integrations available?
   - Throne?
 * Seek verification status.
