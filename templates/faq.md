@@ -22,6 +22,12 @@ welcome to, but all features are available to everyone. In the future, I may off
 some sort of paid cosmetic enhancements, but all core features should always remain
 free to use.
 
+## Can I at least give you credit?
+
+Thanks, that would be awesome!! A bot command or Twitch panel linking to https://mustardmine.com
+would help people to find me. You can use [this image](/static/MustardMinePanel.png)
+as the panel image if you so desire.
+
 ## Your bot is speaking in my channel and I don't like it.
 
 Sorry about that! You can remove the bot from your channel by going to your [Master
@@ -35,4 +41,3 @@ and pretty much everywhere. Contact him with further questions.
 
 [The bot's source code](https://github.com/rosuav/stillebot) is available to anyone
 who wishes to use it, learn from it, or borrow code from it.
-

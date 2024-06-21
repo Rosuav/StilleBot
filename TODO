@@ -90,8 +90,6 @@
 * Somewhere in either giveaway or pointsrewards, something attempts to query the
   rewards for Mustard Mine, which bombs with a 403 (b/c not affiliate). Track it
   down at some point; may need to add some instrumentation.
-* Have an image that people can use to link to the bot's landing page, if they
-  wish to give credit. (Same as the pfp/banner mentioned below?)
 * Other support platforms? Which ones have integrations available?
   - Throne?
 * Seek verification status.
