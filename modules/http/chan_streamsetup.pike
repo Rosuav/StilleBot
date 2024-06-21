@@ -158,9 +158,12 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	if (string scopes = req->misc->channel->userid && ensure_bcaster_token(req, "channel:manage:broadcast"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
 	array prev;
-	if (req->misc->channel->userid) prev = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + req->misc->channel->userid))->data;
+	if (req->misc->channel->userid) {
+		prev = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + req->misc->channel->userid))->data;
+		if (sizeof(prev)) prev[0]->category = prev[0]->game_name;
+	}
 	else prev = ({([ //Sample data for the demo channel
-		"game_name": "Software and Game Development",
+		"category": "Software and Game Development",
 		"tags": "TwitchChannelBot Demo HelloWorld" / " ",
 		"content_classification_labels": ({ }),
 		"title": "Example title of an example stream",
@@ -177,7 +180,7 @@ bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping info = await(G->G->DB->load_config(channel->userid, "streamsetups"));
 	return ([
-		"checklist": info->checklist || "", //TODO: Not implemented on front end yet
+		"checklist": info->checklist || "",
 		"items": info->setups || ({ }),
 	]);
 }
@@ -217,6 +220,7 @@ __async__ void wscmd_applysetup(object channel, mapping(string:mixed) conn, mapp
 	}
 	mapping prev = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid));
 	prev = prev->data[0];
+	prev->category = prev->game_name;
 	prev->tags *= ", ";
 	prev->ccls = prev->content_classification_labels * ", ";
 	mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,

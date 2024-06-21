@@ -45,7 +45,7 @@ function pick_setup(setup) {
 	setupform.title.value = setup.title;
 	setupform.tags.value = setup.tags;
 	setupform.ccls.value = setup.ccls;
-	setupform.comments.value = setup.comments;
+	setupform.comments.value = setup.comments || "";
 	DOM("#setupconfig").classList.add("dirty");
 }
 
@@ -145,7 +145,7 @@ on("click", "#importsettings", async e => {
 
 if (initialsetup) {
 	const el = DOM("#setupconfig").elements;
-	el.category.value = initialsetup.game_name;
+	el.category.value = initialsetup.category;
 	el.ccls.value = initialsetup.content_classification_labels.join(", "); //TODO: Are they just strings?
 	el.title.value = initialsetup.title;
 	el.tags.value = initialsetup.tags.join(", ");
