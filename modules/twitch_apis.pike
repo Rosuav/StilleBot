@@ -275,6 +275,22 @@ void shield(object channel, string voiceid, string msg, mapping tok, int|void re
 @"moderator:manage:shield_mode":
 void shieldoff(object c, string v, string m, mapping t) {shield(c, v, m, t, 1);}
 
+//TODO: Should there be a corresponding special trigger when the user acknowledges it?
+@"moderator:manage:warnings":
+__async__ void warn(object channel, string voiceid, string msg, mapping tok) {
+	sscanf(msg, "%s %s", string user, string reason);
+	if (!user) user = msg;
+	int uid = await(get_user_id(user));
+	twitch_api_request(sprintf(
+		"https://api.twitch.tv/helix/moderation/warnings?broadcaster_id=%d&moderator_id=%s",
+			channel->userid, voiceid),
+		(["Authorization": "Bearer " + tok->token]), ([
+			"method": "POST",
+			"json": (["data": (["user_id": (string)uid, "reason": reason || ""])]),
+		]),
+	);
+}
+
 //Returns 0 if it sent the message, otherwise a reason code.
 //Yes, the parameter order is a bit odd; it makes filtering by this easier.
 string|zero send_chat_command(string msg, object channel, string voiceid) {
